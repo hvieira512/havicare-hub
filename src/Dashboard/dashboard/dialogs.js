@@ -36,6 +36,27 @@ export function confirmDestructive(title, text = "") {
     });
 }
 
+/**
+ * Pede uma password nova.
+ *
+ * Uma password não é valor que se mostre numa célula, e por isso muda-se aqui e não por
+ * edição na grelha. O `inputValidator` tranca o vazio antes de fechar: uma caixa vazia
+ * queria dizer "põe esta" e "não lhe toques" ao mesmo tempo.
+ */
+export function promptPassword(title, text = "") {
+    return Swal.fire({
+        titleText: title,
+        text,
+        input: "password",
+        inputAttributes: { autocomplete: "new-password" },
+        inputValidator: (value) => (value ? undefined : "A password é obrigatória"),
+        showCancelButton: true,
+        confirmButtonText: "Guardar",
+        cancelButtonText: "Cancelar",
+        reverseButtons: true,
+    });
+}
+
 /** A mensagem de um erro da API; o código serve de texto quando não há mensagem. */
 export function apiError(result) {
     return (

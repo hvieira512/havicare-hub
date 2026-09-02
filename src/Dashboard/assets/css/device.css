@@ -780,7 +780,7 @@
 
 /* A pastilha ocupa o que o seu texto ocupa. Como item de grelha esticava a largura da
    coluna, e "LIGADO" ficava com a mesma medida de "DESLIGADO". */
-.device-card > .config-state {
+.device-card > .state-badge {
     justify-self: start;
 }
 
@@ -880,7 +880,7 @@
     }
 
     .device-card-thumb { grid-area: thumb; }
-    .device-card > .config-state { grid-area: state; }
+    .device-card > .state-badge { grid-area: state; }
     .device-card-identity { grid-area: identity; min-width: 0; }
 
     /* O SIM pede a largura que precisa em vez de levar 5.25rem fixos: um número português

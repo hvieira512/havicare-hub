@@ -20,7 +20,8 @@ import {
 import { html, raw } from "../html.js";
 import { capabilityLabel } from "../capability-catalog.js";
 import { apiError, toast } from "../dialogs.js";
-import { deviceLicenseHtml, emptyPanel, filterChips, onlineBadge } from "../widgets.js";
+import { deviceLicenseHtml, emptyPanel, filterChips } from "../widgets.js";
+import { onlineBadge } from "../components/state-badge.js";
 import {
     cardTone,
     telemetryCard,

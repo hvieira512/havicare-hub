@@ -7,7 +7,7 @@ import {
     updateCompany as apiUpdateCompany,
 } from "../api/index.js";
 import { ensureLicensesLoaded, invalidateLicenses } from "../licenses.js";
-import { stateBadge } from "../widgets.js";
+import { stateBadge } from "../components/state-badge.js";
 import { state } from "../state.js";
 import { html, raw } from "../html.js";
 import { apiError, confirmDestructive, toast } from "../dialogs.js";
@@ -15,7 +15,6 @@ import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
-import { sortRows } from "../sorting.js";
 
 /**
  * O separador das licenças, com as licenças de cada empresa dentro dela.
@@ -34,24 +33,12 @@ let els;
 let currentCompanies = [];
 let currentLicenses = [];
 
-// A ordenação das licenças dentro de cada empresa. Vazio é a ordem em que a API as devolve.
-let licenseSort = null;
-
 // Uma vaga só para os dois tipos de linha: abrir uma empresa fecha a licença que estivesse
 // aberta, e ao contrário, sem ninguém se lembrar de o fazer.
 const editor = inlineEditor(() => renderCompanySection());
 
 export function initSettingsCompanies(context) {
     els = context.els;
-}
-
-/** O `-` à frente pede descendente, como no `sort` da API. Vazio volta à ordem de origem. */
-export function handleLicenseSortChange() {
-    const value = els.licenseSort?.value || "";
-    licenseSort = value
-        ? { column: value.replace(/^-/, ""), descending: value.startsWith("-") }
-        : null;
-    renderCompanySection();
 }
 
 export async function loadSettingsCompanySection(companiesPage = 1) {
@@ -136,7 +123,7 @@ function companyHeaderView(company, owned) {
         <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
             <div class="fw-semibold">${company.name}</div>
             <div class="d-flex align-items-center gap-2">
-                ${raw(stateBadge(`${owned.length} ${owned.length === 1 ? "licença" : "licenças"}`, "config-state-secondary"))}
+                ${raw(stateBadge(`${owned.length} ${owned.length === 1 ? "licença" : "licenças"}`, "secondary"))}
                 <button class="btn btn-outline-secondary btn-sm" data-action="newLicenseForCompany" data-company-id="${company.id}" title="Nova licença" aria-label="Nova licença nesta empresa"><i class="fa-solid fa-plus"></i></button>
                 <button class="btn btn-outline-secondary btn-sm" data-action="editCompany" data-id="${company.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn btn-outline-danger btn-sm" data-id="${company.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
@@ -162,11 +149,7 @@ function companyCard(company) {
     const owned = currentLicenses.filter(
         (license) => String(license.company_id) === String(company.id),
     );
-    // Ordena dentro da empresa: as empresas ficam onde estavam, e são as licenças de cada
-    // uma que se reorganizam. O `license_id` é número e ordena por valor, não por texto.
-    const rows = sortRows(owned, licenseSort, (license, column) => (
-        column === "license_id" ? Number(license.license_id) : license[column]
-    ))
+    const rows = owned
         .map((license) => (editor.at("license", license.id)
             ? licenseEditorRow(license, company.id)
             : licenseViewRow(license)))

@@ -10,7 +10,7 @@ import {
 import { DETECTION_TYPE_LABEL, PRESS_TYPE_LABEL } from "./domain.js";
 import { html, raw } from "./html.js";
 import { capabilityLabel } from "./capability-catalog.js";
-import { stateBadge } from "./widgets.js";
+import { stateBadge } from "./components/state-badge.js";
 
 /** Os cartões de telemetria. As peças genéricas de interface estão em `widgets.js`. */
 
@@ -209,12 +209,12 @@ const UPLINK_CARD_RENDERERS = {
 
 // A mesma pastilha das configurações; o tom vazio deixa-a no azul neutro da marca.
 const STATUS_BADGE_TONE = {
-    queued: "config-state-secondary",
+    queued: "secondary",
     sent: "",
-    waiting: "config-state-warning",
-    acked: "config-state-success",
-    failed: "config-state-danger",
-    dropped: "config-state-danger",
+    waiting: "warning",
+    acked: "success",
+    failed: "danger",
+    dropped: "danger",
 };
 
 const STATUS_BADGE_LABEL = {
@@ -286,7 +286,7 @@ export function telemetryCard({
     const state = stateLabel
         ? stateBadge(
                 stateLabel,
-                stateTone || (pending ? "config-state-warning" : "config-state-secondary"),
+                stateTone || (pending ? "warning" : "secondary"),
                 "align-self-start",
             )
         : "";
@@ -732,11 +732,11 @@ function dataPointValue(value) {
  * valor, nem `superseded`, porque há um pedido mais recente atrás dele.
  */
 const REQUEST_CARD_STATE = {
-    queued: { label: "em fila", tone: "config-state-secondary" },
-    sent: { label: "enviado", tone: "config-state-secondary" },
-    waiting: { label: "à espera", tone: "config-state-warning" },
-    failed: { label: "falhou", tone: "config-state-danger" },
-    dropped: { label: "descartado", tone: "config-state-danger" },
+    queued: { label: "em fila", tone: "secondary" },
+    sent: { label: "enviado", tone: "secondary" },
+    waiting: { label: "à espera", tone: "warning" },
+    failed: { label: "falhou", tone: "danger" },
+    dropped: { label: "descartado", tone: "danger" },
 };
 
 /**
@@ -756,7 +756,7 @@ function latestRequestState(type, commands, lastTelemetryTime) {
         return null;
     }
 
-    const failed = entry.tone === "config-state-danger";
+    const failed = entry.tone === "danger";
     if (
         failed &&
         lastTelemetryTime &&
@@ -857,7 +857,7 @@ export function renderRequestCardShell(
         feature: requestable ? type : "",
         pending: requestable && loading,
         stateLabel: loading ? "a pedir" : requestState?.label || "",
-        stateTone: loading ? "config-state-warning" : requestState?.tone || "",
+        stateTone: loading ? "warning" : requestState?.tone || "",
         tone: cardTone(type),
     });
 }
@@ -888,7 +888,7 @@ function requestTelemetryTypes(type) {
 export function statusBadge(status) {
     return stateBadge(
         STATUS_BADGE_LABEL[status] || titleize(status).toLowerCase(),
-        STATUS_BADGE_TONE[status] ?? "config-state-secondary",
+        STATUS_BADGE_TONE[status] ?? "secondary",
     );
 }
 

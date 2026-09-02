@@ -48,7 +48,6 @@ export const state = {
         online: null,
     },
     deviceSearchQuery: "",
-    deviceSort: "",
     selectedImei: null,
     selectedDetail: null,
     // Com cache, e aqui e não no `settingsModal` porque a coluna de detalhe também o lê.
@@ -212,18 +211,6 @@ export function setDeviceListPage(page) {
 
 /** Mudar o que a listagem mostra volta-a à primeira página: a página 4 era de outra lista. */
 export function resetDeviceListPage() {
-    state.deviceListPage = 1;
-}
-
-/**
- * A coluna por que a listagem se ordena, com `-` à frente para descendente. Vazio é a
- * ordem por omissão do servidor, e por isso o parâmetro nem sai no pedido.
- *
- * Volta à primeira página pela mesma razão que os filtros: a página 4 da lista ordenada de
- * outra maneira não tem as mesmas linhas.
- */
-export function setDeviceSort(value) {
-    state.deviceSort = value || "";
     state.deviceListPage = 1;
 }
 

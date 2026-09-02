@@ -21,34 +21,6 @@ function search_input(string $id, string $placeholder, string $wrapperClass = ''
         . '</div>';
 }
 
-/**
- * A ordenação de uma listagem servida em páginas pelo servidor. Os valores são os que o
- * `sort` da API aceita, com o `-` a pedir descendente.
- *
- * Um `<select>` nativo e não um menu próprio: teclado, leitor de ecrã e o comportamento
- * em telefone vêm de borla.
- */
-function sort_select(string $id): string
-{
-    $columns = [
-        'imei' => 'IMEI',
-        'company' => 'Empresa',
-        'licenseName' => 'Licença',
-        'supplier' => 'Fornecedor',
-        'model' => 'Modelo',
-        'deviceType' => 'Tipo',
-    ];
-
-    $options = '';
-    foreach ($columns as $value => $label) {
-        $options .= '<option value="' . h($value) . '">' . h($label) . ' (A→Z)</option>'
-            . '<option value="-' . h($value) . '">' . h($label) . ' (Z→A)</option>';
-    }
-
-    return '<label for="' . h($id) . '" class="section-label mb-0">Ordenar</label>'
-        . '<select id="' . h($id) . '" class="form-select form-select-sm w-auto">' . $options . '</select>';
-}
-
 function page_size_select(string $id): string
 {
     $options = '';
@@ -64,10 +36,9 @@ function page_size_select(string $id): string
  * A casca de uma tabela de listagem: o corpo fica vazio para o JavaScript o preencher.
  *
  * Uma coluna sem título passa como cadeia vazia -- é o caso da miniatura e da coluna de
- * acções, que não têm cabeçalho para mostrar. Uma coluna ordenável passa como
- * `[etiqueta, coluna]`, e a coluna é a chave que o JavaScript recebe no `data-sort`.
+ * acções, que não têm cabeçalho para mostrar.
  *
- * @param list<string|array{string, string}> $headers
+ * @param list<string> $headers
  */
 function data_table(
     array $headers,
@@ -75,18 +46,8 @@ function data_table(
     string $tableClass = '',
     string $wrapperClass = ''
 ): string {
-    // O `aria-sort` e a seta ficam por preencher: quem sabe por qual coluna a lista está
-    // ordenada é o JavaScript, e o servidor desenha a casca sem esse estado.
     $cells = '';
     foreach ($headers as $header) {
-        if (is_array($header)) {
-            [$label, $column] = $header;
-            $cells .= '<th scope="col" role="button" tabindex="0" data-sort="' . h($column) . '"'
-                . ' aria-sort="none" class="user-select-none">' . h($label)
-                . ' <span class="sort-mark" aria-hidden="true"></span></th>';
-            continue;
-        }
-
         $cells .= '<th>' . h($header) . '</th>';
     }
 

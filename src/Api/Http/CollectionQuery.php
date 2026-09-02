@@ -66,9 +66,12 @@ final class CollectionQuery
     }
 
     /**
-     * As colunas por que se ordena e o sentido de cada uma, separadas por vírgula e pela
-     * ordem em que foram escritas -- `-company,model` ordena por empresa descendente e
-     * desempata por modelo. O `-` à frente pede descendente.
+     * As colunas por que se ordena e o sentido de cada uma, escritos por extenso e separados
+     * por vírgula, pela ordem em que mandam: `company:desc,model:asc` ordena por empresa
+     * descendente e desempata por modelo ascendente. Sem sentido escrito, é ascendente.
+     *
+     * O sentido vai ao lado do nome, e não num sinal à frente dele: `-company` obriga a
+     * saber a convenção para se ler, e num log não se percebe sozinho.
      *
      * O valor acaba num `ORDER BY`, onde não pode entrar como parâmetro ligado. A allowlist
      * é por isso a fronteira, e o que não estiver nela não é limpo -- cai fora. Uma coluna
@@ -89,16 +92,19 @@ final class CollectionQuery
         $resolved = [];
         $seen = [];
         foreach (explode(',', $raw) as $piece) {
-            $piece = trim($piece);
-            $descending = str_starts_with($piece, '-');
-            $wanted = strtolower(ltrim($piece, '-'));
+            [$wanted, $direction] = array_pad(explode(':', trim($piece), 2), 2, 'asc');
+            $wanted = strtolower(trim($wanted));
+            $direction = strtolower(trim($direction));
+            if ($direction !== 'asc' && $direction !== 'desc') {
+                continue;
+            }
 
             foreach ($allowed as $column) {
                 if (strtolower($column) !== $wanted || isset($seen[$column])) {
                     continue;
                 }
                 $seen[$column] = true;
-                $resolved[] = ['column' => $column, 'descending' => $descending];
+                $resolved[] = ['column' => $column, 'descending' => $direction === 'desc'];
                 break;
             }
         }

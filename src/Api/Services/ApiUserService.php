@@ -5,6 +5,8 @@ namespace Hub\Api\Services;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionQuery;
+use Hub\Api\Http\ApiUserColumns;
+use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Api\Request\ApiUserWriteRequest;
@@ -25,6 +27,7 @@ class ApiUserService
 
     private CollectionQuery $query;
     private CollectionResponder $collection;
+    private CollectionPresenter $presenter;
     private RequestBinder $binder;
 
     public function __construct(
@@ -35,30 +38,19 @@ class ApiUserService
     ) {
         $this->query = $query ?? new CollectionQuery();
         $this->collection = $collection ?? new CollectionResponder();
+        $this->presenter = new CollectionPresenter($this->query, $this->collection);
         $this->binder = $binder ?? new RequestBinder();
     }
 
     public function list(string $query = ''): array
     {
         $params = $this->query->params($query);
-        $page = $this->query->page($params);
-        $limit = $this->query->limit($params, self::DEFAULT_COLLECTION_LIMIT);
-        $filters = [
-            'role' => $this->query->filter($params, 'role'),
-            'enabled' => $this->query->filter($params, 'enabled'),
-        ];
-        $users = array_values(array_filter($this->db->apiUsers->all(), static function (array $user) use ($filters): bool {
-            $enabled = ((int)($user['enabled'] ?? 0)) === 1 ? 'true' : 'false';
-            $role = (string)($user['role'] ?? '');
-
-            return (($filters['role'] ?? null) === null || $role === $filters['role'])
-                && (($filters['enabled'] ?? null) === null || $enabled === $filters['enabled']);
-        }));
-
-        return $this->collection->respond($users, $page, $limit, $filters, [
-            'role' => ApiAuthContext::roles(),
-            'enabled' => ['true', 'false'],
-        ]);
+        return $this->presenter->present(
+            $this->db->apiUsers->all(),
+            ApiUserColumns::definition(),
+            $params,
+            self::DEFAULT_COLLECTION_LIMIT,
+        );
     }
 
     public function create(array $payload): array

@@ -1,8 +1,8 @@
 /**
  * Uma grelha construída a partir do descritor que a API devolve.
  *
- * O `GET /api/devices` diz que colunas existem, quais se ordenam, quais se editam e como se
- * filtram -- caixa de texto ou lista de opções, com o parâmetro e os valores já contados.
+ * A resposta da listagem diz que colunas existem, quais se ordenam, quais se editam e como
+ * se filtram -- caixa de texto ou lista de opções, com o parâmetro e os valores já contados.
  * Este módulo traduz isso para o AG Grid, e é o único sítio do projeto que o conhece.
  *
  * Ordenar, filtrar e paginar acontecem no servidor. Fazê-lo no cliente ordenaria só a página
@@ -11,32 +11,29 @@
  * incoerente.
  */
 
-/** As etiquetas são daqui e não da API: o descritor descreve estrutura, não apresentação. */
-const COLUMN_TITLES = {
-    imei: "IMEI",
-    supplier: "Fornecedor",
-    model: "Modelo",
-    deviceType: "Tipo",
-    licenseId: "Licença",
-    licenseName: "Nome da licença",
-    company: "Empresa",
-    simNumber: "SIM",
-    deviceId: "Id do fabricante",
-    online: "Estado",
-};
+/**
+ * As etiquetas são de quem monta a grelha e não da API: o descritor descreve estrutura, e
+ * traduzir é trabalho de quem desenha a interface. Viajam por grelha e não num estado do
+ * módulo, para duas grelhas vivas ao mesmo tempo não se trocarem as etiquetas.
+ */
+const labelFor = (labels, value) => labels[value] ?? String(value ?? "");
 
-const VALUE_LABELS = {
-    watch: "Relógio",
-    radar: "Radar",
-    gateway: "Gateway",
-    bracelet: "Pulseira",
-    ncs: "NCS",
-    diaper_sensor: "Medidor de fraldas",
-    online: "Ligado",
-    offline: "Desligado",
-};
+/**
+ * Os módulos do AG Grid, registados uma vez só.
+ *
+ * Registá-los a cada grelha nova parece inofensivo e não é: as linhas e as colunas aparecem
+ * na mesma, mas os `cellRenderer` passam a ser ignorados em silêncio -- sem erro e sem
+ * aviso, com a célula simplesmente vazia.
+ */
+let registered = false;
 
-const label = (value) => VALUE_LABELS[value] ?? String(value ?? "");
+function registerOnce() {
+    if (registered) {
+        return;
+    }
+    agGrid.ModuleRegistry.registerModules([agGrid.AllCommunityModule]);
+    registered = true;
+}
 
 /**
  * O filtro de uma coluna de opções.
@@ -72,19 +69,15 @@ class ServerSelectFilter {
 }
 
 /** O `<select>` que aparece na linha de filtros, alimentado pelas opções do descritor. */
-class ServerSelectFloatingFilter {
+export class ServerSelectFloatingFilter {
     init(params) {
-        const options = params.options ?? [];
+        this.labels = params.labels ?? {};
         this.select = document.createElement("select");
-        this.select.className = "ag-floating-filter-input";
+        // As classes do Bootstrap, e não as do AG Grid: é o mesmo `form-select` do resto da
+        // plataforma, e assim o filtro parece-se com os outros campos da dashboard.
+        this.select.className = "form-select form-select-sm";
         this.select.setAttribute("aria-label", `Filtrar ${params.colDef?.headerName ?? ""}`);
-        this.select.innerHTML = ["<option value=\"\">Todos</option>"]
-            .concat(options.map((option) => {
-                const count = option.count === null || option.count === undefined ? "" : ` (${option.count})`;
-                const value = String(option.value ?? "");
-                return `<option value="${value.replace(/"/g, "&quot;")}">${label(value)}${count}</option>`;
-            }))
-            .join("");
+        this.setOptions(params.options ?? []);
 
         this.select.addEventListener("change", () => {
             params.parentFilterInstance((instance) => {
@@ -92,6 +85,30 @@ class ServerSelectFloatingFilter {
                 params.api.onFilterChanged();
             });
         });
+
+        params.register?.(this);
+    }
+
+    /**
+     * As opções da última resposta. O valor escolhido entra a zero quando não vem nelas: a
+     * faceta conta-se sem o filtro da própria coluna, e sem isto o `<select>` voltava a
+     * "Todos" com o filtro ainda a estreitar a tabela.
+     */
+    setOptions(options) {
+        const chosen = this.select.value;
+        const listed = options.map((option) => ({ value: String(option.value ?? ""), count: option.count }));
+        if (chosen !== "" && !listed.some((option) => option.value === chosen)) {
+            listed.push({ value: chosen, count: 0 });
+            listed.sort((left, right) => left.value.localeCompare(right.value));
+        }
+
+        this.select.innerHTML = ["<option value=\"\">Todos</option>"]
+            .concat(listed.map(({ value, count }) => {
+                const tally = count === null || count === undefined ? "" : ` (${count})`;
+                return `<option value="${value.replace(/"/g, "&quot;")}">${labelFor(this.labels, value)}${tally}</option>`;
+            }))
+            .join("");
+        this.select.value = chosen;
     }
 
     getGui() {
@@ -104,28 +121,30 @@ class ServerSelectFloatingFilter {
 }
 
 /** Uma coluna do descritor na forma que o AG Grid entende. */
-function toColumnDef(column) {
+function toColumnDef(column, { titles, labels, renderers, register }) {
     const definition = {
         field: column.field,
-        headerName: COLUMN_TITLES[column.field] ?? column.field,
+        headerName: titles[column.field] ?? column.field,
         sortable: column.sortable === true,
         editable: column.editable === true,
         resizable: true,
         minWidth: 120,
         flex: 1,
-        // Quem ordena é o servidor, e a grelha ordenaria por cima a página que recebeu. Com
-        // vinte linhas o resultado até coincidia, mas escondia as regras que só o servidor
-        // tem -- o desempate por IMEI e a falta de valor a ir para o fim.
+        // Quem ordena é o servidor, e sem isto a grelha reordenava por cima a página que
+        // recebeu -- escondendo as regras que só o servidor tem, como a falta de valor ir
+        // para o fim nos dois sentidos.
         comparator: () => 0,
     };
 
-    if (column.field === "online") {
-        // `cellDataType: "text"` porque o AG Grid desenha um booleano como caixa de marcar e
-        // ignora o formatador: aqui quer-se a palavra, e o estado não se edita.
+    // Um desenho próprio para a coluna, quando a listagem o traz -- a pastilha de estado,
+    // os botões de acção. `cellDataType: "text"` porque o AG Grid desenha um booleano como
+    // caixa de marcar e ignoraria o que se lhe dê.
+    const custom = renderers[column.field];
+    if (custom) {
         definition.cellDataType = "text";
-        definition.valueFormatter = (params) => label(params.value ? "online" : "offline");
-    } else if (column.field === "deviceType") {
-        definition.valueFormatter = (params) => label(params.value);
+        Object.assign(definition, typeof custom === "function" ? { cellRenderer: custom } : custom);
+    } else if (column.filter?.type === "select") {
+        definition.valueFormatter = (params) => labelFor(labels, params.value);
     }
 
     const filter = column.filter;
@@ -141,7 +160,7 @@ function toColumnDef(column) {
         definition.suppressHeaderMenuButton = true;
         // Pelo canal do AG Grid e não por uma chave inventada no `colDef`: o que se põe
         // fora deste objecto não chega ao componente.
-        definition.floatingFilterComponentParams = { options: filter.options ?? [] };
+        definition.floatingFilterComponentParams = { options: filter.options ?? [], labels, register };
     }
 
     return definition;
@@ -158,11 +177,11 @@ class SettingsHeader {
     init(params) {
         this.button = document.createElement("button");
         this.button.type = "button";
-        this.button.className = "btn btn-link p-0 border-0 ag-grid-settings-button";
+        this.button.className = "btn btn-link p-0 border-0 grid-settings-button";
         this.button.title = "Opções da tabela";
         this.button.setAttribute("aria-label", "Opções da tabela");
         this.button.setAttribute("aria-haspopup", "true");
-        this.button.innerHTML = "<i class=\"fa-solid fa-gear\"></i>";
+        this.button.innerHTML = "<i class=\"fa-solid fa-gear\" aria-hidden=\"true\"></i>";
         this.button.addEventListener("click", (event) => {
             event.stopPropagation();
             params.onOpen(this.button);
@@ -179,17 +198,24 @@ class SettingsHeader {
 }
 
 /** O painel que a engrenagem abre: as colunas, e o que mais se pode fazer à tabela. */
-function buildSettingsPanel(api, host, defaultState) {
+export function buildSettingsPanel(api, host, defaultState) {
     const panel = document.createElement("div");
-    panel.className = "ag-grid-settings-panel card shadow d-none";
+    panel.className = "grid-settings dropdown-menu d-none";
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-label", "Opções da tabela");
+
+    const heading = (text) => {
+        const element = document.createElement("h6");
+        element.className = "dropdown-header section-label";
+        element.textContent = text;
+        return element;
+    };
 
     const action = (icon, text, run) => {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = "dropdown-item d-flex align-items-center gap-2 rounded";
-        button.innerHTML = `<i class="fa-solid ${icon} text-secondary"></i><span></span>`;
+        button.className = "dropdown-item d-flex align-items-center gap-2";
+        button.innerHTML = `<i class="fa-solid ${icon} fa-fw text-secondary"></i><span></span>`;
         button.querySelector("span").textContent = text;
         button.addEventListener("click", run);
         return button;
@@ -197,32 +223,27 @@ function buildSettingsPanel(api, host, defaultState) {
 
     function render() {
         panel.innerHTML = "";
+        panel.appendChild(heading("Colunas visíveis"));
 
-        const title = document.createElement("div");
-        title.className = "px-3 pt-2 pb-1 section-label";
-        title.textContent = "Colunas";
-        panel.appendChild(title);
-
-        const list = document.createElement("div");
-        list.className = "ag-grid-settings-columns px-2";
         for (const item of columnToggleItems(api)) {
             const row = document.createElement("label");
-            row.className = "dropdown-item d-flex align-items-center gap-2 rounded mb-0";
-            row.innerHTML = `<input type="checkbox" class="form-check-input mt-0" ${item.visible ? "checked" : ""}><span></span>`;
+            row.className = "dropdown-item form-check d-flex align-items-center gap-2 mb-0";
+            row.innerHTML = "<input type=\"checkbox\" class=\"form-check-input m-0\"><span></span>";
+            row.querySelector("input").checked = item.visible;
             row.querySelector("span").textContent = item.title;
             row.querySelector("input").addEventListener("change", item.toggle);
-            list.appendChild(row);
+            panel.appendChild(row);
         }
-        panel.appendChild(list);
 
-        panel.appendChild(Object.assign(document.createElement("hr"), { className: "my-2" }));
+        panel.appendChild(Object.assign(document.createElement("hr"), { className: "dropdown-divider" }));
+        panel.appendChild(heading("Tabela"));
 
-        const actions = document.createElement("div");
-        actions.className = "px-2 pb-2";
-        actions.append(
-            action("fa-arrows-left-right-to-line", "Ajustar larguras ao conteúdo", () => api.autoSizeAllColumns()),
+        panel.append(
+            action("fa-arrows-left-right-to-line", "Ajustar larguras", () => api.autoSizeAllColumns()),
             action("fa-filter-circle-xmark", "Limpar filtros", () => {
                 api.setFilterModel(null);
+                // O modelo do AG Grid sozinho não repõe os `<select>`, que ficavam a mostrar
+                // uma escolha que já não estava aplicada.
                 for (const select of host.querySelectorAll(".ag-header-cell select")) {
                     select.value = "";
                 }
@@ -235,11 +256,14 @@ function buildSettingsPanel(api, host, defaultState) {
                 render();
             }),
         );
-        panel.appendChild(actions);
     }
 
     /** Aberto pelo botão, fechado por um clique fora ou pelo Escape. */
-    const close = () => panel.classList.add("d-none");
+    const close = () => panel.classList.remove("show");
+    // O clique pára aqui em vez de se perguntar lá em baixo se veio de dentro: "Repor
+    // colunas" refaz a lista e tira do documento o próprio botão carregado, e a partir daí
+    // o `contains` respondia que não e o painel fechava-se por se lhe mexer.
+    panel.addEventListener("click", (event) => event.stopPropagation());
     document.addEventListener("click", (event) => {
         if (!panel.contains(event.target)) {
             close();
@@ -254,12 +278,13 @@ function buildSettingsPanel(api, host, defaultState) {
     return {
         element: panel,
         toggle(anchor) {
-            if (!panel.classList.contains("d-none")) {
+            if (panel.classList.contains("show")) {
                 close();
                 return;
             }
             render();
             panel.classList.remove("d-none");
+            panel.classList.add("show");
             // Alinhado pela direita do botão, e dentro da grelha para rolar com ela.
             const host_ = anchor.closest(".ag-root-wrapper") || host;
             const box = anchor.getBoundingClientRect();
@@ -290,7 +315,7 @@ const THEME_PARAMS = {
     },
 };
 
-export const themeFor = (dark) => agGrid.themeQuartz.withParams(dark ? THEME_PARAMS.dark : THEME_PARAMS.light);
+const themeFor = (dark) => agGrid.themeQuartz.withParams(dark ? THEME_PARAMS.dark : THEME_PARAMS.light);
 
 /**
  * O estado do cabeçalho traduzido em parâmetros do pedido.
@@ -298,7 +323,7 @@ export const themeFor = (dark) => agGrid.themeQuartz.withParams(dark ? THEME_PAR
  * O `param` de cada filtro vem do descritor, e não de um mapa escrito aqui: é assim que uma
  * coluna nova passa a filtrar sem se tocar neste ficheiro.
  */
-function requestParams(columns, page, limit, columnState, filterModel) {
+export function requestParams(columns, page, limit, columnState, filterModel) {
     const byField = new Map(columns.map((column) => [column.field, column]));
     const params = { page, limit };
 
@@ -306,7 +331,7 @@ function requestParams(columns, page, limit, columnState, filterModel) {
     const sort = columnState
         .filter((state) => state.sort && byField.get(state.colId)?.sortable)
         .sort((left, right) => (left.sortIndex ?? 0) - (right.sortIndex ?? 0))
-        .map((state) => (state.sort === "desc" ? "-" : "") + state.colId);
+        .map((state) => `${state.colId}:${state.sort}`);
     if (sort.length) {
         params.sort = sort.join(",");
     }
@@ -323,18 +348,62 @@ function requestParams(columns, page, limit, columnState, filterModel) {
     return params;
 }
 
-export function createDeviceGrid({ element, columns, load, save, onPage, onError, pageSize = 20, dark = true }) {
-    agGrid.ModuleRegistry.registerModules([agGrid.AllCommunityModule]);
+/**
+ * O que grava uma célula editada, e repõe o valor antigo quando o servidor recusa.
+ *
+ * O recuo mexe nos dados e repinta em vez de passar pelo `setDataValue`: esse conta como
+ * outra alteração de célula e volta a disparar este evento, com que uma recusa fica a
+ * alternar entre os dois valores e cada volta é mais uma escrita.
+ */
+export function cellSaver(save, onError) {
+    return async (event) => {
+        try {
+            await save(event.data, event.colDef.field);
+        } catch (error) {
+            const field = event.colDef.field;
+            event.data[field] = event.oldValue;
+            event.api.refreshCells({ rowNodes: [event.node], columns: [field], force: true });
+            onError?.(error);
+        }
+    };
+}
+
+export function createGrid({
+    element,
+    columns,
+    load,
+    save,
+    onPage,
+    onError,
+    pageSize = 20,
+    dark = true,
+    columnTitles = {},
+    valueLabels = {},
+    cellRenderers = {},
+    // Colunas que não vêm do descritor porque não são campos da linha -- as acções sobre
+    // ela, por exemplo. Entram à direita, antes da engrenagem.
+    extraColumns = [],
+    emptyMessage = "Nada para este filtro.",
+}) {
+    registerOnce();
 
     let page = 1;
     let limit = pageSize;
     let ready = false;
+
+    // Os `<select>` vivos do cabeçalho, por campo, para lhes dar as facetas de cada resposta.
+    const selectFilters = new Map();
 
     async function refresh() {
         const state = api.getColumnState();
         const response = await load(requestParams(columns, page, limit, state, api.getFilterModel()));
         page = response.pagination?.page ?? page;
         api.setGridOption("rowData", response.data || []);
+        for (const column of response.columns ?? []) {
+            if (column.filter?.type === "select") {
+                selectFilters.get(column.field)?.setOptions(column.filter.options ?? []);
+            }
+        }
         onPage?.(response.pagination || {});
     }
 
@@ -364,29 +433,35 @@ export function createDeviceGrid({ element, columns, load, save, onPage, onError
         suppressMovable: true,
         lockPosition: "right",
         valueGetter: () => "",
+        cellClass: "grid-settings-cell",
     };
 
     const api = agGrid.createGrid(element, {
         theme: themeFor(dark),
-        columnDefs: [...columns.map(toColumnDef), settingsColumn],
+        columnDefs: [
+            ...columns.map((column) => toColumnDef(column, {
+                titles: columnTitles,
+                labels: valueLabels,
+                renderers: cellRenderers,
+                register: (instance) => selectFilters.set(column.field, instance),
+            })),
+            ...extraColumns,
+            settingsColumn,
+        ],
         rowData: [],
+        // A grelha pede a altura das linhas que tem, em vez de lhe darmos uma medida fixa
+        // que sobra numa página curta e corta numa cheia. Quem limita é a paginação.
+        domLayout: "autoHeight",
         // O servidor manda em tudo o que estreita ou reordena a lista.
         pagination: false,
         // Sem `multiSortKey` o AG Grid usa Shift+clique para a segunda coluna. Com `"ctrl"`
         // seria Ctrl ou Cmd, e no macOS o Ctrl+clique é o clique-direito do sistema.
         suppressMovableColumns: false,
-        overlayNoRowsTemplate: "<span class=\"p-3\">Nenhum dispositivo para este filtro.</span>",
+        overlayNoRowsTemplate: `<span class="p-3">${emptyMessage}</span>`,
         defaultColDef: { resizable: true },
         onSortChanged: restart,
         onFilterChanged: restart,
-        onCellValueChanged: async (event) => {
-            try {
-                await save(event.data, event.colDef.field);
-            } catch (error) {
-                event.node.setDataValue(event.colDef.field, event.oldValue);
-                onError?.(error);
-            }
-        },
+        onCellValueChanged: cellSaver(save, onError),
         onGridReady: () => {
             ready = true;
             settings = buildSettingsPanel(api, element, api.getColumnState());
@@ -413,8 +488,8 @@ export function createDeviceGrid({ element, columns, load, save, onPage, onError
     };
 }
 
-/** O que alimenta um menu de escolher colunas, construído do que a grelha tem. */
-export function columnToggleItems(api) {
+/** O que alimenta o menu de escolher colunas, construído do que a grelha tem. */
+function columnToggleItems(api) {
     return api.getColumns()
         .filter((column) => column.getColDef().field)
         .map((column) => ({

@@ -1,5 +1,6 @@
 import { esc, titleize } from "../../format.js";
-import { emptyPanel, stateBadge } from "../../widgets.js";
+import { emptyPanel } from "../../widgets.js";
+import { stateBadge } from "../../components/state-badge.js";
 // Os mesmos cinco ícones do catálogo de capacidades: as secções são as mesmas, e um separador
 // com outro ícone para a mesma secção lia-se como sendo outra coisa.
 import { CAPABILITY_SECTION_ICONS } from "../../settings/capabilities.js";
@@ -675,7 +676,7 @@ function renderConfigSection(
                     ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
                 </div>
                 ${showConfigurationBadge
-                    ? stateBadge(deliveryMeta.label, `config-state-${deliveryMeta.tone}`)
+                    ? stateBadge(deliveryMeta.label, deliveryMeta.tone)
                     : ""}
             </div>
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}
@@ -851,10 +852,11 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
             delivery,
         );
 
-        const badge = section.querySelector(".config-state");
+        // Trocada inteira pela do componente, e não remendada classe a classe: eram duas
+        // cópias da mesma marcação a ter de andar a par.
+        const badge = section.querySelector(".state-badge");
         if (badge) {
-            badge.className = `config-state config-state-${meta.tone}`;
-            badge.innerHTML = `<span class="config-state-dot"></span>${esc(meta.label)}`;
+            badge.outerHTML = stateBadge(meta.label, meta.tone);
         }
 
         const notice = section.querySelector("[role=\"status\"]");

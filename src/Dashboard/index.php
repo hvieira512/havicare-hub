@@ -276,6 +276,9 @@ require_once __DIR__ . '/components/modal.php';
     </script>
     <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <?php /* As grelhas do modal das definições. Não é módulo: expõe-se em `agGrid` global,
+             e o `dashboard/grid.js` conta com ele já carregado. */ ?>
+    <script src="/assets/vendor/ag-grid/ag-grid-community.min.js"></script>
     <script type="module" src="main.js"></script>
 </body>
 

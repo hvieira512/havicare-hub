@@ -16,11 +16,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const ENTRY = path.join(here, "../../src/Dashboard/main.js");
 const MODULE_ROOT = path.join(here, "../../src/Dashboard/dashboard");
 
-/**
- * As portas de entrada do grafo. A dashboard entra pelo `main.js`; a página da grelha é
- * servida à parte, numa rota própria, e importa por caminho absoluto de dentro do HTML.
- */
-const ENTRY_POINTS = [ENTRY, path.join(here, "../../src/Dashboard/grid-demo.html")];
+/** A porta de entrada do grafo: a dashboard entra toda pelo `main.js`. */
+const ENTRY_POINTS = [ENTRY];
 
 test("module graph links: main.js", async () => {
     try {
@@ -48,12 +45,6 @@ const reachableFrom = (entry, seen = new Set()) => {
     for (const [, specifier] of source.matchAll(/from\s+["']([^"']+)["']/g)) {
         if (specifier.startsWith(".")) {
             reachableFrom(path.resolve(path.dirname(entry), specifier), seen);
-            continue;
-        }
-        // O `/dashboard/...` que uma página servida à parte usa, que é o mesmo módulo por
-        // outro caminho.
-        if (specifier.startsWith("/dashboard/")) {
-            reachableFrom(path.join(MODULE_ROOT, specifier.slice("/dashboard/".length)), seen);
         }
     }
     return seen;

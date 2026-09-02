@@ -38,9 +38,16 @@ final class TenancyPaths
                 'get' => [
                     'tags' => ['API Users'],
                     'summary' => 'List API users',
+                    // O `columns` da resposta anuncia que colunas se ordenam, quais se
+                    // editam e como se filtram; estes parâmetros são o outro lado disso.
                     'parameters' => array_merge(Parameters::pagination(), [
                         Parameters::stringQuery('role'),
                         Parameters::stringQuery('enabled'),
+                        Parameters::stringQuery('username'),
+                        Parameters::query('sort', [
+                            'type' => 'string',
+                            'example' => 'username:asc,role:desc',
+                        ]),
                     ]),
                     'responses' => [
                         '200' => Responses::json('Paginated API user collection', 'ApiUserListResponse'),

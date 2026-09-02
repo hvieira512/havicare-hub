@@ -8,7 +8,8 @@ import {
 /**
  * As peças de interface que não pertencem a um ecrã em particular: a atribuição de um
  * dispositivo, a imagem de um modelo, os grupos de botões, o mosaico de tipos, as pastilhas
- * de filtro e o estado vazio. Os cartões de telemetria estão no `telemetry-cards.js`.
+ * de filtro e o estado vazio. Os cartões de telemetria estão no `telemetry-cards.js`, e a
+ * pastilha de estado no `components/state-badge.js`.
  */
 
 /**
@@ -53,23 +54,6 @@ export function sectionStrip(sections, action, activeKey = "") {
             ${raw(icon ? html`<i class="fa-solid ${icon}"></i>` : "")}${label}<span class="count count-number" data-section-count>${count}</span>
         </button>`)
         .join("");
-}
-
-/**
- * A pastilha de estado: o ponto e a etiqueta. `tone` é a classe do tom
- * (`config-state-success`, `config-state-danger`, …) e vazio deixa-a no tom neutro.
- */
-export function stateBadge(label, tone = "", extraClass = "") {
-    const classes = ["config-state", tone, extraClass].filter(Boolean).join(" ");
-    return html`<span class="${classes}"><span class="config-state-dot"></span>${label}</span>`;
-}
-
-/** Ligado ou desligado: a mesma expressão em três ecrãs, com um parâmetro só. */
-export function onlineBadge(online) {
-    return stateBadge(
-        online ? "Ligado" : "Desligado",
-        online ? "config-state-success" : "config-state-secondary",
-    );
 }
 
 export function modelImageHtml(modelInfo, size = 40) {

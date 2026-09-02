@@ -4,101 +4,206 @@ import {
     saveApiUser as apiSaveApiUser,
 } from "../api/index.js";
 import { ensureLicensesLoaded } from "../licenses.js";
-import { stateBadge } from "../widgets.js";
+import { stateBadge } from "../components/state-badge.js";
 import { state } from "../state.js";
 import { html, raw } from "../html.js";
-import { apiError, confirmDestructive, toast } from "../dialogs.js";
+import { apiError, confirmDestructive, promptPassword, toast } from "../dialogs.js";
 import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
-import { renderPagination } from "../pagination.js";
-import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
-import { nextSort, sortRows } from "../sorting.js";
+import { renderPagination, resolvePaginationPage } from "../pagination.js";
+import { editorOf, focusEditor } from "./row-editor.js";
+import { createGrid } from "../grid.js";
 
 /**
- * O separador dos utilizadores da API. A edição acontece na própria linha: a linha que se
- * toca é a que se transforma, e nada se mexe de sítio.
+ * Os utilizadores da API, numa grelha. As colunas, o que se ordena, o que se filtra e o que
+ * se edita vêm do descritor que o `GET /api/users` devolve.
  *
- * As licenças vêm com a lista porque só este ecrã as usa, e um cliente sem licença não pode
- * ser gravado.
+ * Edita-se por célula. A password não é coluna -- não é valor que se mostre --, e por isso é
+ * uma acção da linha. Criar continua a ser formulário: um utilizador novo precisa de
+ * password e de licença antes de existir, e isso não cabe numa célula.
  */
 let els;
-let apiUserLicenses = [];
-let currentUsers = [];
-let apiUserSort = null;
+let grid = null;
+let licenses = [];
+let users = [];
+let adminCount = 0;
 
-const editor = inlineEditor(() => renderApiUsersSection());
+const COLUMN_TITLES = {
+    username: "Utilizador",
+    role: "Perfil",
+    company_name: "Empresa",
+    license_id: "Licença",
+    enabled: "Estado",
+};
+
+const VALUE_LABELS = {
+    hub_admin: "Administrador",
+    license_client: "Cliente",
+    1: "Ativo",
+    0: "Inativo",
+};
+
+/** O primeiro é o que um utilizador novo traz escolhido. */
+const ROLES = ["license_client", "hub_admin"];
+
+const isEnabled = (user) => Number(user.enabled) === 1;
+
+const labelOf = (value) => VALUE_LABELS[value] ?? String(value ?? "");
+
+/** Um conjunto fechado escolhe-se de uma lista; sem isto o editor era caixa de texto. */
+const closedSet = (values) => ({
+    cellEditor: "agSelectCellEditor",
+    cellEditorParams: { values },
+    valueFormatter: (params) => labelOf(params.value),
+});
+
+/**
+ * O perfil, na pastilha: o escudo é quem manda em todas as licenças, o edifício é quem tem
+ * uma. O `secondary` fica de fora porque aqui lê-se como inativo, e um cliente não é isso.
+ */
+const ROLE_BADGES = {
+    hub_admin: { tone: "primary", icon: "fa-shield-halved" },
+    license_client: { tone: "info", icon: "fa-building" },
+};
+
+function roleCell(params) {
+    const badge = ROLE_BADGES[params.value];
+
+    return stateBadge(labelOf(params.value), badge?.tone, { icon: badge?.icon });
+}
+
+/**
+ * A pastilha só veste a célula em repouso. O `valueFormatter` que vem do `closedSet` desenha
+ * as opções do `agSelectCellEditor`, e marcação dentro de um `<option>` não se desenha.
+ *
+ * A largura mínima é maior do que a das outras colunas porque uma pastilha não encolhe: com
+ * os 120 por omissão, "ADMINISTRADOR" em maiúsculas ficava cortado a meio numa janela
+ * estreita.
+ */
+export const ROLE_COLUMN = { ...closedSet(ROLES), cellRenderer: roleCell, minWidth: 180 };
+
+/** O estado, na pastilha que o resto da dashboard usa. */
+function stateCell(params) {
+    const enabled = Number(params.value) === 1;
+
+    return stateBadge(enabled ? "Ativo" : "Inativo", enabled ? "success" : "secondary");
+}
+
+/** As acções da linha. Os cliques sobem por delegação, como no resto do modal. */
+function actionsCell(params) {
+    const user = params.data || {};
+    const enabled = isEnabled(user);
+
+    return html`
+        <div class="d-flex justify-content-end gap-1">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="changeApiUserPassword" data-id="${user.id}" title="Mudar password" aria-label="Mudar password"><i class="fa-solid fa-key"></i></button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="toggleApiUser" data-id="${user.id}" title="${enabled ? "Desativar" : "Ativar"}" aria-label="${enabled ? "Desativar" : "Ativar"}"><i class="fa-solid ${enabled ? "fa-pause" : "fa-play"}"></i></button>
+        <button type="button" class="btn btn-outline-danger btn-sm" data-action="deleteApiUser" data-id="${user.id}" title="Apagar" aria-label="Apagar"><i class="fa-solid fa-trash"></i></button>
+        </div>`;
+}
+
+/** Não vem do descritor: não é um campo do utilizador, são as acções sobre ele. */
+const ACTIONS_COLUMN = {
+    colId: "actions",
+    headerName: "",
+    cellRenderer: actionsCell,
+    pinned: "right",
+    width: 132,
+    minWidth: 132,
+    resizable: false,
+    sortable: false,
+    suppressMovable: true,
+    lockPosition: "right",
+    valueGetter: () => "",
+};
 
 export function initSettingsApiUsers(context) {
     els = context.els;
 }
 
-/** O âmbito e o estado ordenam-se pelo que se lê, e não pelo identificador guardado. */
-function apiUserSortValue(user, column) {
-    if (column === "role") return apiRoleLabel(user.role);
-    // "Todas as licenças" primeiro, que é o mesmo texto por que a coluna se lê.
-    if (column === "scope") {
-        return user.role === "hub_admin"
-            ? "Todas as licenças"
-            : user.company_name && user.license_id
-                ? `${user.company_name} / ${user.license_id}`
-                : "Sem licença válida";
-    }
-    if (column === "enabled") return Number(user.enabled) === 1 ? 0 : 1;
+const showError = (error) => toast("error", error.message);
+const run = (work) => void work.catch(showError);
 
-    return user[column];
-}
+/** A grelha sabe em que página está: recarregar é pedi-la outra vez. */
+const reload = () => (grid === null ? Promise.resolve() : grid.start().catch(showError));
 
-/** Carregar num cabeçalho: ascendente, descendente, e depois a ordem em que vieram. */
-export function handleApiUserSortClick(event) {
-    const header = event.target.closest("[data-sort]");
-    if (!header || !els.apiUserListBody?.closest("table")?.contains(header)) {
-        return false;
-    }
-    if (event.type === "keydown" && event.key !== "Enter" && event.key !== " ") {
-        return false;
-    }
-    if (event.type === "keydown") {
-        event.preventDefault();
+async function fetchApiUsers(params) {
+    const response = await apiGetApiUsers(params);
+    if (response.error) {
+        throw new Error(apiError(response));
     }
 
-    apiUserSort = nextSort(apiUserSort, header.dataset.sort);
-    renderApiUsersSection();
-    return true;
-}
+    users = response.data || [];
+    // A contagem da faceta, e não das linhas desta página: o resumo fala da lista toda.
+    adminCount = (response.filters?.counts?.role || [])
+        .find((option) => option.value === "hub_admin")?.count ?? 0;
 
-/** A seta e o `aria-sort` de cada cabeçalho, a partir do estado actual. */
-function renderApiUserSortMarks() {
-    const headers = els.apiUserListBody?.closest("table")?.querySelectorAll("[data-sort]") || [];
-    for (const header of headers) {
-        const active = apiUserSort?.column === header.dataset.sort;
-        header.setAttribute("aria-sort", active ? (apiUserSort.descending ? "descending" : "ascending") : "none");
-        const mark = header.querySelector(".sort-mark");
-        if (mark) {
-            mark.textContent = active ? (apiUserSort.descending ? "▼" : "▲") : "";
-        }
-    }
-}
-
-/** O perfil de um utilizador da API, por palavras. Só a aba de utilizadores o mostra. */
-function apiRoleLabel(role) {
-    return role === "hub_admin" ? "Admin Hub" : "Cliente por licença";
+    return response;
 }
 
 export async function loadSettingsApiUsersSection(page = 1) {
-    // As licenças não mudam por se gravar um utilizador: vêm da cache partilhada, e é só a
-    // lista de utilizadores que se vai buscar outra vez.
-    const [response, licenses] = await Promise.all([
-        apiGetApiUsers({ page }),
-        ensureLicensesLoaded(),
-    ]);
-    currentUsers = response.data || [];
-    apiUserLicenses = licenses ?? [];
-    state.settingsModal.apiUsersPagination = response.pagination || null;
     state.settingsModal.sectionLoaded.apiUsers = true;
-    editor.reset();
-    renderApiUsersSection();
+
+    try {
+        if (grid !== null) {
+            await grid.goToPage(page);
+            return;
+        }
+
+        // O primeiro pedido traz o descritor com que a grelha é construída. As licenças são
+        // só do formulário de criar, e vêm da cache partilhada.
+        const [first, loaded] = await Promise.all([
+            fetchApiUsers({ page: 1, limit: 1 }),
+            ensureLicensesLoaded(),
+        ]);
+        licenses = loaded ?? [];
+
+        grid = createGrid({
+            element: els.apiUserGrid,
+            columns: first.columns,
+            dark: document.documentElement.getAttribute("data-bs-theme") === "dark",
+            columnTitles: COLUMN_TITLES,
+            valueLabels: VALUE_LABELS,
+            emptyMessage: "Nenhum utilizador para este filtro.",
+            cellRenderers: {
+                role: ROLE_COLUMN,
+                enabled: { ...closedSet(["1", "0"]), cellRenderer: stateCell },
+            },
+            extraColumns: [ACTIONS_COLUMN],
+            load: fetchApiUsers,
+            save: saveEditedCell,
+            onPage: renderApiUsersPage,
+            onError: showError,
+        });
+
+        els.settingsApiUsersPaginationControls?.addEventListener("click", (event) => {
+            const current = state.settingsModal.apiUsersPagination;
+            const next = resolvePaginationPage(event, current, "settingsApiUsersPage");
+            if (next !== null && next !== current?.page) {
+                void grid.goToPage(next);
+            }
+        });
+
+        await grid.start();
+    } catch (error) {
+        showError(error);
+    }
+}
+
+function renderApiUsersPage(pagination) {
+    state.settingsModal.apiUsersPagination = pagination;
+
+    const total = pagination.total ?? 0;
+    setSettingsNavCount("ApiUsers", total);
+    if (els.apiUsersTabSummary) {
+        els.apiUsersTabSummary.textContent = total === 0
+            ? "Nenhum utilizador"
+            : `${total} ${total === 1 ? "utilizador" : "utilizadores"}` +
+                (adminCount ? ` · ${adminCount} com acesso a todas as licenças` : "");
+    }
+
     renderPagination({
-        pagination: state.settingsModal.apiUsersPagination,
+        pagination,
         rootEl: els.settingsApiUsersPagination,
         summaryEl: els.settingsApiUsersPaginationSummary,
         controlsEl: els.settingsApiUsersPaginationControls,
@@ -106,231 +211,186 @@ export async function loadSettingsApiUsersSection(page = 1) {
     });
 }
 
-function licenseOptionsHtml(selected) {
-    return "<option value=\"\">Selecionar licença</option>" +
-        apiUserLicenses
-            .map((license) => html`<option value="${license.id}" ${raw(String(license.id) === String(selected) ? "selected" : "")}>${`${license.company_name || "-"} / ${license.license_id} — ${license.name || ""}`}</option>`)
-            .join("");
-}
-
-function viewRow(user) {
-    const enabled = Number(user.enabled) === 1;
-    // O âmbito é a informação com mais consequência da tabela -- quem vê os dados de que
-    // licença --, e "Todas" é um privilégio e não um valor por omissão.
-    const scope = user.role === "hub_admin"
-        ? raw(stateBadge("Todas as licenças"))
-        : user.company_name && user.license_id
-            ? `${user.company_name} / ${user.license_id}`
-            : "Sem licença válida";
-
-    return html`
-        <tr class="d-block d-sm-table-row">
-        <td class="fw-semibold d-block d-sm-table-cell border-0 pb-0 py-sm-2">${user.username}</td>
-        <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
-            <span class="section-label d-sm-none me-2">Perfil</span>
-            <span class="section-label">${apiRoleLabel(user.role)}</span>
-        </td>
-        <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
-        <span class="section-label d-sm-none me-2">Âmbito</span>${scope}</td>
-        <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
-            ${raw(stateBadge(
-                enabled ? "Ativo" : "Inativo",
-                enabled ? "config-state-success" : "config-state-secondary",
-            ))}
-        </td>
-        <td class="text-end text-nowrap d-block d-sm-table-cell border-0 pt-2">
-        <button class="btn btn-outline-secondary btn-sm" data-action="editApiUser" data-id="${user.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-outline-secondary btn-sm" data-action="toggleApiUser" data-id="${user.id}" data-username="${user.username}" data-role="${user.role}" data-license-ref-id="${user.license_ref_id || ""}" data-enabled="${enabled ? "1" : ""}" title="${enabled ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${enabled ? "pause" : "play"}"></i></button>
-        <button class="btn btn-outline-danger btn-sm" data-id="${user.id}" data-action="deleteApiUser" title="Apagar"><i class="fa-solid fa-trash"></i></button>
-        </td>
-        </tr>`;
-}
-
 /**
- * A linha aberta para edição. Editar não mostra campo de password nenhum: mostra uma acção, e
- * o campo só existe depois de alguém a pedir -- uma caixa vazia queria dizer "põe esta" ao
- * criar e "não lhe toques" ao editar.
+ * A licença que vai no corpo. Um admin manda em todas e por isso não fica preso a nenhuma;
+ * o resto sai inteiro, porque a API declara `?int` e recusa a string em vez de a converter.
  */
-function editorRow(user) {
-    const isNew = user === null;
-    const role = user?.role || "license_client";
-    const enabled = user ? Number(user.enabled) === 1 : true;
-    const isAdmin = role === "hub_admin";
-
-    return html`
-        <tr class="d-block d-sm-table-row">
-        <td class="border-0 p-0 pb-2 d-block d-sm-table-cell" colspan="5">
-        <div class="border rounded-3 p-3 d-flex flex-column gap-3 bg-body-tertiary" data-editor="apiUser" data-id="${user?.id || ""}">
-            <div class="row g-2 align-items-center">
-                <div class="col-12 col-md-3">
-                    <label class="section-label d-block mb-1" for="apiUserRowUsername">Utilizador</label>
-                    <input type="text" class="form-control form-control-sm" id="apiUserRowUsername" data-field="username" autocomplete="off" value="${user?.username || ""}">
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="section-label d-block mb-1" for="apiUserRowRole">Perfil</label>
-                    <select class="form-select form-select-sm" id="apiUserRowRole" data-field="role">
-                        <option value="license_client" ${raw(isAdmin ? "" : "selected")}>Cliente por licença</option>
-                        <option value="hub_admin" ${raw(isAdmin ? "selected" : "")}>Admin Hub</option>
-                    </select>
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="section-label d-block mb-1" for="apiUserRowLicense">Licença</label>
-                    <select class="form-select form-select-sm" id="apiUserRowLicense" data-field="licenseRefId" ${raw(isAdmin ? "disabled" : "")}>${raw(licenseOptionsHtml(user?.license_ref_id))}</select>
-                </div>
-                <div class="col-12 col-md-2">
-                    <div class="form-check form-switch mt-md-4">
-                        <input class="form-check-input" type="checkbox" role="switch" id="apiUserRowEnabled" data-field="enabled" ${raw(enabled ? "checked" : "")}>
-                        <label class="form-check-label section-label" for="apiUserRowEnabled">Ativo</label>
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex align-items-end gap-2 flex-wrap">
-                <div class="${raw(isNew ? "" : "d-none")}" data-password-field style="min-width:14rem">
-                    <label class="section-label d-block mb-1" for="apiUserRowPassword">Password</label>
-                    <input type="password" class="form-control form-control-sm" id="apiUserRowPassword" data-field="password" autocomplete="new-password" placeholder="${isNew ? "Obrigatória" : "Nova password"}">
-                </div>
-                ${raw(isNew ? "" : html`<button type="button" class="btn btn-outline-secondary btn-sm" data-action="revealApiUserPassword">Redefinir password</button>`)}
-                <div class="ms-auto d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="cancelEdit">Cancelar</button>
-                    <button type="button" class="btn btn-primary btn-sm" data-action="saveApiUserRow">Guardar</button>
-                </div>
-            </div>
-        </div>
-        </td>
-        </tr>`;
-}
-
-function renderApiUsersSection() {
-    const users = currentUsers || [];
-    const total = users.length;
-    const admins = users.filter((user) => user.role === "hub_admin").length;
-    if (els.apiUsersTabSummary) {
-        setSettingsNavCount("ApiUsers", total);
-        els.apiUsersTabSummary.textContent = total === 0
-            ? "Nenhum utilizador"
-            : `${total} ${total === 1 ? "utilizador" : "utilizadores"}` +
-                (admins ? ` · ${admins} com acesso a todas as licenças` : "");
+export function licenseRefIdFor(role, value) {
+    if (role === "hub_admin" || value === null || value === undefined || value === "") {
+        return null;
     }
 
-    els.apiUserListBody.innerHTML =
-        (editor.at("apiUser") ? editorRow(null) : "") +
-        sortRows(users, apiUserSort, apiUserSortValue)
-            .map((user) => (editor.at("apiUser", user.id) ? editorRow(user) : viewRow(user)))
-            .join("");
-
-    renderApiUserSortMarks();
-    focusEditor(els.apiUserListBody);
+    return Number(value);
 }
 
-/** Abrir um rascunho no topo da lista: criar é uma linha nova, não um formulário à parte. */
-export function newApiUser() {
-    editor.draft("apiUser");
-}
-
-/** O campo da password só aparece quando alguém pede para a mudar. */
-function revealApiUserPassword(button) {
-    const row = editorOf(button, "apiUser");
-    if (!row) return;
-    row.el.querySelector("[data-password-field]")?.classList.remove("d-none");
-    button.classList.add("d-none");
-    row.field("password")?.focus();
-}
-
-/** O perfil de admin manda em todas as licenças, por isso a escolha de uma não se aplica. */
-function syncApiUserRowRole(select) {
-    const row = editorOf(select, "apiUser");
-    const license = row?.field("licenseRefId");
-    if (!license) return;
-    const isAdmin = select.value === "hub_admin";
-    license.disabled = isAdmin;
-    if (isAdmin) license.value = "";
-}
-
-async function saveApiUserRow(button) {
-    const row = editorOf(button, "apiUser");
-    if (!row) return;
-
-    const { el, id, field } = row;
-    const passwordEl = field("password");
-    // Numa edição sem "Redefinir password" não se envia password nenhuma, em vez de enviar
-    // uma vazia: o pedido diz o que se quer mudar, e não o que se quer que fique na mesma.
-    const changingPassword = !id || !passwordEl.closest("[data-password-field]").classList.contains("d-none");
-
+/** O `PUT` substitui o registo: vai a linha inteira, e não só o campo que mudou. */
+async function saveUser(user, changes = {}) {
     const body = {
-        username: row.value("username"),
-        role: field("role").value,
-        licenseRefId: row.value("licenseRefId"),
-        enabled: field("enabled").checked,
+        username: user.username,
+        role: user.role,
+        enabled: isEnabled(user),
+        ...changes,
     };
-    if (changingPassword) body.password = passwordEl.value;
+    body.licenseRefId = licenseRefIdFor(body.role, user.license_ref_id);
 
-    clearInvalid(el);
-    if (!body.username) {
-        markInvalid(field("username"), "Utilizador é obrigatório");
-    }
-    if (!id && !(body.password || "").trim()) {
-        markInvalid(passwordEl, "Password é obrigatória para novo utilizador");
-    }
-    if (body.role === "license_client" && !body.licenseRefId) {
-        markInvalid(field("licenseRefId"), "Licença é obrigatória para clientes");
-    }
-    if (el.querySelector(".is-invalid")) return;
-
-    const result = await apiSaveApiUser(id, body);
+    const result = await apiSaveApiUser(user.id, body);
     if (result.error) {
-        toast("error", apiError(result));
-        return;
+        throw new Error(apiError(result));
     }
-
-    state.settingsModal.sectionLoaded.apiUsers = false;
-    await loadSettingsApiUsersSection();
 }
 
-async function toggleApiUser(button) {
-    const result = await apiSaveApiUser(button.dataset.id, {
-        username: button.dataset.username || "",
-        role: button.dataset.role || "license_client",
-        licenseRefId: button.dataset.licenseRefId || "",
-        enabled: !button.dataset.enabled,
-    });
-    if (result.error) {
-        toast("error", apiError(result));
-        return;
+/** Lançar o erro é o que faz a grelha repor o valor antigo da célula. */
+export async function saveEditedCell(user, field) {
+    await saveUser(user);
+    // A empresa e a licença seguem o perfil, e quem lhes mexeu foi o servidor.
+    if (field === "role") {
+        await reload();
     }
-    state.settingsModal.sectionLoaded.apiUsers = false;
-    await loadSettingsApiUsersSection();
 }
 
-/** Exportado para o `destructive-confirm.test.js`, que tranca o cancelar não chegar à API. */
+async function toggleApiUser(user) {
+    await saveUser(user, { enabled: !isEnabled(user) });
+    await reload();
+}
+
+async function changeApiUserPassword(user) {
+    const { isConfirmed, value } = await promptPassword("Nova password", user.username);
+    if (!isConfirmed) {
+        return;
+    }
+    await saveUser(user, { password: value });
+    toast("success", "Password alterada");
+}
+
 export async function deleteApiUser(id) {
     const { isConfirmed } = await confirmDestructive("Apagar utilizador API?");
-    if (!isConfirmed) return;
+    if (!isConfirmed) {
+        return;
+    }
     const result = await apiDeleteApiUser(id);
     if (result.error) {
         toast("error", apiError(result));
         return;
     }
-    state.settingsModal.sectionLoaded.apiUsers = false;
-    await loadSettingsApiUsersSection();
+    await reload();
 }
 
-/** Os cliques da lista, como no separador das empresas: o mapa vive ao lado das linhas. */
+const licenseOptions = () =>
+    "<option value=\"\">Selecionar licença</option>" +
+    licenses
+        .map((license) => html`<option value="${license.id}">${`${license.company_name || "-"} / ${license.license_id} — ${license.name || ""}`}</option>`)
+        .join("");
+
+const roleOptions = () =>
+    ROLES.map((role) => html`<option value="${role}">${VALUE_LABELS[role]}</option>`).join("");
+
+/** Criar pede password e licença, que a grelha não edita. Nasce ativo. */
+function renderCreateForm(open) {
+    if (!open) {
+        els.apiUserCreateRow.innerHTML = "";
+        return;
+    }
+
+    els.apiUserCreateRow.innerHTML = html`
+        <div class="border rounded-3 p-3 mb-2 bg-body-tertiary" data-editor="apiUser">
+            <div class="row g-2">
+                <div class="col-12 col-md-3">
+                    <label class="section-label d-block mb-1" for="apiUserNewUsername">Utilizador</label>
+                    <input type="text" class="form-control form-control-sm" id="apiUserNewUsername" data-field="username" autocomplete="off">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="section-label d-block mb-1" for="apiUserNewPassword">Password</label>
+                    <input type="password" class="form-control form-control-sm" id="apiUserNewPassword" data-field="password" autocomplete="new-password">
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="section-label d-block mb-1" for="apiUserNewRole">Perfil</label>
+                    <select class="form-select form-select-sm" id="apiUserNewRole" data-field="role">${raw(roleOptions())}</select>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="section-label d-block mb-1" for="apiUserNewLicense">Licença</label>
+                    <select class="form-select form-select-sm" id="apiUserNewLicense" data-field="licenseRefId">${raw(licenseOptions())}</select>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="cancelEdit">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" data-action="saveApiUserRow">Criar</button>
+            </div>
+        </div>`;
+
+    focusEditor(els.apiUserCreateRow);
+}
+
+export function newApiUser() {
+    renderCreateForm(true);
+}
+
+async function createApiUser(button) {
+    const row = editorOf(button, "apiUser");
+    if (!row) {
+        return;
+    }
+
+    const { el, field } = row;
+    const body = {
+        username: row.value("username"),
+        password: field("password").value,
+        role: field("role").value,
+        licenseRefId: licenseRefIdFor(field("role").value, row.value("licenseRefId")),
+    };
+
+    clearInvalid(el);
+    if (!body.username) {
+        markInvalid(field("username"), "Utilizador é obrigatório");
+    }
+    if (!body.password.trim()) {
+        markInvalid(field("password"), "Password é obrigatória para novo utilizador");
+    }
+    if (body.role === "license_client" && !body.licenseRefId) {
+        markInvalid(field("licenseRefId"), "Licença é obrigatória para clientes");
+    }
+    if (el.querySelector(".is-invalid")) {
+        return;
+    }
+
+    const result = await apiSaveApiUser("", body);
+    if (result.error) {
+        toast("error", apiError(result));
+        return;
+    }
+
+    renderCreateForm(false);
+    await reload();
+}
+
+/** Os cliques da secção: o formulário de criar, e as acções que a grelha desenha nas linhas. */
 export function handleApiUserListClick(event) {
     const button = event.target.closest("[data-action]");
-    if (!button) return;
+    if (!button) {
+        return;
+    }
+    const user = users.find((row) => String(row.id) === button.dataset.id);
     const actions = {
-        editApiUser: () => editor.edit("apiUser", button.dataset.id),
-        cancelEdit: () => editor.cancel(),
-        revealApiUserPassword: () => revealApiUserPassword(button),
-        saveApiUserRow: () => void saveApiUserRow(button),
-        toggleApiUser: () => toggleApiUser(button),
-        deleteApiUser: () => deleteApiUser(parseInt(button.dataset.id)),
+        cancelEdit: () => renderCreateForm(false),
+        saveApiUserRow: () => run(createApiUser(button)),
+        changeApiUserPassword: () => user && run(changeApiUserPassword(user)),
+        toggleApiUser: () => user && run(toggleApiUser(user)),
+        deleteApiUser: () => user && run(deleteApiUser(user.id)),
     };
     actions[button.dataset.action]?.();
 }
 
-/** O perfil muda dentro da linha aberta, e a licença acompanha-o. */
+/** O perfil de admin manda em todas as licenças, por isso a escolha de uma não se aplica. */
 export function handleApiUserListChange(event) {
     const select = event.target.closest("[data-field=\"role\"]");
-    if (select) syncApiUserRowRole(select);
+    if (!select) {
+        return;
+    }
+    const license = editorOf(select, "apiUser")?.field("licenseRefId");
+    if (!license) {
+        return;
+    }
+    license.disabled = select.value === "hub_admin";
+    if (license.disabled) {
+        license.value = "";
+    }
 }

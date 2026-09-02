@@ -4,7 +4,8 @@ import {
 } from "../../api/index.js";
 import { state } from "../../state.js";
 import { esc } from "../../format.js";
-import { deviceTypeIcon, modelImageHtml, stateBadge } from "../../widgets.js";
+import { deviceTypeIcon, modelImageHtml } from "../../widgets.js";
+import { stateBadge } from "../../components/state-badge.js";
 import {
     deviceTypeLabel,
     modelCommercialName,
@@ -105,7 +106,7 @@ function typeCard(group) {
         <span class="fw-semibold">${esc(deviceTypeLabel(group.deviceType))}</span>
         ${stateBadge(
             `${plural(models, "modelo", "modelos")} · ${plural(group.suppliers.length, "fornecedor", "fornecedores")}`,
-            "config-state-secondary",
+            "secondary",
             "ms-auto",
         )}
         <i class="fa-solid fa-chevron-down catalog-caret text-secondary" aria-hidden="true"></i>

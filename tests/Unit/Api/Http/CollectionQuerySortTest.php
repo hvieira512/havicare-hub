@@ -32,9 +32,18 @@ final class CollectionQuerySortTest extends TestCase
         self::assertSame([['column' => 'company', 'descending' => false]], $this->sort(['sort' => 'company']));
     }
 
-    public function testALeadingMinusAsksForDescending(): void
+    /** O sentido vem escrito, e não num sinal à frente do nome. */
+    public function testTheDirectionIsWrittenNextToTheColumn(): void
     {
-        self::assertSame([['column' => 'company', 'descending' => true]], $this->sort(['sort' => '-company']));
+        self::assertSame([['column' => 'company', 'descending' => true]], $this->sort(['sort' => 'company:desc']));
+        self::assertSame([['column' => 'company', 'descending' => false]], $this->sort(['sort' => 'company:asc']));
+    }
+
+
+    /** Sem sentido escrito, ascendente -- que é o que ordenar por uma coluna quer dizer. */
+    public function testAColumnWithoutADirectionIsAscending(): void
+    {
+        self::assertSame([['column' => 'company', 'descending' => false]], $this->sort(['sort' => 'company']));
     }
 
     /** Várias colunas por vírgula, pela ordem em que se escreveram: a primeira manda. */
@@ -45,7 +54,7 @@ final class CollectionQuerySortTest extends TestCase
                 ['column' => 'company', 'descending' => true],
                 ['column' => 'model', 'descending' => false],
             ],
-            $this->sort(['sort' => '-company,model']),
+            $this->sort(['sort' => 'company:desc,model:asc']),
         );
     }
 
@@ -53,8 +62,8 @@ final class CollectionQuerySortTest extends TestCase
     public function testAnUnknownColumnIsDroppedAndTheRestSurvive(): void
     {
         self::assertSame(
-            [['column' => 'company', 'descending' => false], ['column' => 'model', 'descending' => false]],
-            $this->sort(['sort' => 'company,inventada,model']),
+            [['column' => 'company', 'descending' => false], ['column' => 'model', 'descending' => true]],
+            $this->sort(['sort' => 'company:asc,inventada:asc,model:desc']),
         );
     }
 
@@ -63,7 +72,7 @@ final class CollectionQuerySortTest extends TestCase
     {
         self::assertSame(
             [['column' => 'company', 'descending' => false]],
-            $this->sort(['sort' => 'company,-company']),
+            $this->sort(['sort' => 'company:asc,company:desc']),
         );
     }
 
@@ -71,7 +80,7 @@ final class CollectionQuerySortTest extends TestCase
     {
         self::assertSame(
             [['column' => 'company', 'descending' => false], ['column' => 'imei', 'descending' => true]],
-            $this->sort(['sort' => ' company , -imei ']),
+            $this->sort(['sort' => ' company:asc , imei:desc ']),
         );
     }
 
@@ -99,7 +108,10 @@ final class CollectionQuerySortTest extends TestCase
             'comentário SQL' => ['imei--'],
             'ponto e vírgula' => ['imei; DROP TABLE whitelist'],
             'vazio' => [''],
-            'só o sinal' => ['-'],
+            'só o separador' => [':'],
+            'sentido inventado' => ['company:acima'],
+            // O `-coluna` não é a forma desta API: o sentido escreve-se por extenso.
+            'sinal à frente do nome' => ['-company'],
         ];
     }
 
@@ -118,14 +130,14 @@ final class CollectionQuerySortTest extends TestCase
     public static function injectionsThatCarryAValidColumn(): array
     {
         return [
-            'espaço depois da coluna' => ['imei DESC, company', [['column' => 'company', 'descending' => false]]],
-            'subconsulta' => ['imei, (SELECT 1)', [['column' => 'imei', 'descending' => false]]],
+            'espaço depois da coluna' => ['imei DESC, company:asc', [['column' => 'company', 'descending' => false]]],
+            'subconsulta' => ['imei:asc, (SELECT 1)', [['column' => 'imei', 'descending' => false]]],
         ];
     }
 
     public function testTheDirectionSurvivesAnUppercaseColumn(): void
     {
-        self::assertSame([['column' => 'model', 'descending' => true]], $this->sort(['sort' => '-MODEL']));
+        self::assertSame([['column' => 'model', 'descending' => true]], $this->sort(['sort' => 'MODEL:DESC']));
     }
 
     public function testAnArrayIsNotAColumn(): void

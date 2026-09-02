@@ -111,7 +111,9 @@ ob_start();
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2 mt-3">
-                                            <span class="config-state config-state-secondary" id="modelDetailDirtyState"><span class="config-state-dot"></span>Sem alterações</span>
+                                            <?php /* As mesmas classes que o `components/state-badge.js` monta: esta pastilha
+                                                   * nunca é redesenhada, só se esconde, e por isso vive aqui à mão. */ ?>
+                                            <span class="state-badge badge rounded-pill d-inline-flex align-items-center gap-1 text-uppercase fw-semibold lh-sm px-2 bg-secondary-subtle text-body-secondary" id="modelDetailDirtyState"><span class="state-badge-dot rounded-circle d-inline-block"></span>Sem alterações</span>
                                             <button type="button" class="btn btn-primary btn-sm d-none" id="modelDetailSaveBtn"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
                                             <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="modelDetailResetBtn">Descartar</button>
                                         </div>
@@ -182,16 +184,6 @@ ob_start();
                         . ' data-action="newCompany">'
                         . icon('fa-plus', 'me-1') . 'Nova empresa</button>'
                     ) ?>
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <label for="licenseSort" class="section-label mb-0">Ordenar licenças</label>
-                        <select id="licenseSort" class="form-select form-select-sm w-auto">
-                            <option value="">Como vêm</option>
-                            <option value="license_id">ID (menor primeiro)</option>
-                            <option value="-license_id">ID (maior primeiro)</option>
-                            <option value="name">Nome (A→Z)</option>
-                            <option value="-name">Nome (Z→A)</option>
-                        </select>
-                    </div>
                     <div id="companyListBody" class="mb-4"></div>
                     <?= pagination_component('settingsCompanyPagination') ?>
                 </div>
@@ -205,7 +197,12 @@ ob_start();
                         . ' data-action="newApiUser">'
                         . icon('fa-plus', 'me-1') . 'Novo utilizador</button>'
                     ) ?>
-                    <?= data_table([['Utilizador', 'username'], ['Perfil', 'role'], ['Âmbito', 'scope'], ['Estado', 'enabled'], ''], 'apiUserListBody') ?>
+                    <?php /* O invólucro apanha os cliques dos dois: o formulário de criar e as
+                           * acções que a grelha desenha em cada linha. */ ?>
+                    <div id="apiUserList">
+                        <div id="apiUserCreateRow"></div>
+                        <div id="apiUserGrid" class="settings-grid"></div>
+                    </div>
                     <?= pagination_component('settingsApiUsersPagination') ?>
                 </div>
             </div>

@@ -72,8 +72,8 @@ import {
 import {
     modelImageHtml,
     modelPreviewHtml,
-    onlineBadge,
 } from "../widgets.js";
+import { onlineBadge } from "../components/state-badge.js";
 import {
     clearSelection,
     selectImei,

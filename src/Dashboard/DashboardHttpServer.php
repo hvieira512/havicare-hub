@@ -200,12 +200,10 @@ final class DashboardHttpServer
         }
 
         // Rotas nomeadas, uma a uma. O `html` fica fora das extensões públicas de propósito:
-        // acrescentá-lo serviria qualquer ficheiro HTML de dentro de `assets/`, e o que se
-        // quer é publicar esta página e mais nenhuma.
+        // acrescentá-lo serviria qualquer ficheiro HTML de dentro de `assets/`.
         $routes = [
             '/main.css' => [__DIR__, 'main.css'],
             '/main.js' => [__DIR__, 'main.js'],
-            '/grid-demo' => [__DIR__, 'grid-demo.html'],
         ];
         if (isset($routes[$requestPath])) {
             // Uma rota nomeada é um ficheiro escrito aqui, e não um caminho que alguém

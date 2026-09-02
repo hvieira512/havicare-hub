@@ -12,16 +12,25 @@ final class CommonSchemas
     /**
      * O envelope de colecção paginada que todos os endpoints de listagem usam.
      */
-    public static function collection(string $itemSchema): array
+    /**
+     * O `$withColumns` é opcional porque só algumas listagens se descrevem a si próprias:
+     * pô-lo em todas documentava um campo que a maioria não devolve.
+     */
+    public static function collection(string $itemSchema, bool $withColumns = false): array
     {
-        return [
-            'type' => 'object',
-            'properties' => [
-                'data' => ['type' => 'array', 'items' => Responses::ref($itemSchema)],
-                'pagination' => Responses::ref('CollectionPagination'),
-                'filters' => Responses::ref('CollectionFilters'),
-            ],
+        $properties = [
+            'data' => ['type' => 'array', 'items' => Responses::ref($itemSchema)],
+            'pagination' => Responses::ref('CollectionPagination'),
+            'filters' => Responses::ref('CollectionFilters'),
         ];
+        if ($withColumns) {
+            $properties['columns'] = [
+                'type' => 'array',
+                'items' => Responses::ref('CollectionColumn'),
+            ];
+        }
+
+        return ['type' => 'object', 'properties' => $properties];
     }
 
     /**
@@ -70,6 +79,38 @@ final class CommonSchemas
                 'properties' => [
                     'applied' => ['type' => 'object', 'additionalProperties' => true],
                     'available' => ['type' => 'object', 'additionalProperties' => ['type' => 'array', 'items' => ['type' => 'string']]],
+                ],
+            ],
+            // Uma coluna descreve-se pelo que se lhe pode fazer, e não por como se desenha:
+            // o nome visível é de quem constrói a interface, e traduzir é trabalho dela.
+            'CollectionColumn' => [
+                'type' => 'object',
+                'properties' => [
+                    'field' => ['type' => 'string'],
+                    'sortable' => ['type' => 'boolean'],
+                    'editable' => ['type' => 'boolean'],
+                    'filter' => [
+                        'nullable' => true,
+                        'type' => 'object',
+                        'description' => 'Null when the column cannot be filtered. A "text" filter takes'
+                            . ' free text; a "select" filter announces the closed set of values with the'
+                            . ' count each one would yield.',
+                        'properties' => [
+                            'type' => ['type' => 'string', 'enum' => ['text', 'select']],
+                            'param' => ['type' => 'string'],
+                            'multiple' => ['type' => 'boolean'],
+                            'options' => [
+                                'type' => 'array',
+                                'items' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'value' => ['type' => 'string'],
+                                        'count' => ['type' => 'integer'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
                 ],
             ],
             'AuthTokenResponse' => [

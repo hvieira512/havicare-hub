@@ -27,13 +27,11 @@ import {
 import {
     handleApiUserListChange,
     handleApiUserListClick,
-    handleApiUserSortClick,
     loadSettingsApiUsersSection,
     newApiUser,
 } from "../settings/api-users.js";
 import {
     handleCompanyListClick,
-    handleLicenseSortChange,
     loadSettingsCompanySection,
     newCompany,
 } from "../settings/companies.js";
@@ -171,12 +169,10 @@ function bindCapabilities() {
 
 function bindApiUsers() {
     els.newApiUserBtn?.addEventListener("click", newApiUser);
-    els.apiUserListBody.addEventListener("click", handleApiUserListClick);
-    // O cabeçalho está fora do `tbody`, por isso o ouvinte vai na tabela inteira.
-    const apiUserTable = els.apiUserListBody.closest("table");
-    apiUserTable?.addEventListener("click", handleApiUserSortClick);
-    apiUserTable?.addEventListener("keydown", handleApiUserSortClick);
-    els.apiUserListBody.addEventListener("change", handleApiUserListChange);
+    // O invólucro e não a tabela: apanha os cliques do formulário de criar e os das acções
+    // que a grelha desenha em cada linha. Ordenar é do cabeçalho dela, e vai ao servidor.
+    els.apiUserList.addEventListener("click", handleApiUserListClick);
+    els.apiUserList.addEventListener("change", handleApiUserListChange);
     els.settingsApiUsersPagination?.addEventListener("click", (event) =>
         handleSettingsPaginationClick(
             event,
@@ -189,7 +185,6 @@ function bindApiUsers() {
 function bindCompanies() {
     els.newCompanyBtn?.addEventListener("click", newCompany);
     els.companyListBody.addEventListener("click", handleCompanyListClick);
-    els.licenseSort?.addEventListener("change", handleLicenseSortChange);
     els.settingsCompanyPagination?.addEventListener("click", (event) =>
         handleSettingsPaginationClick(event, "companyPagination", (page) =>
             loadSettingsCompanySection(page),

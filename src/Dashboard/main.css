@@ -652,58 +652,19 @@
     color: var(--bs-secondary-color);
 }
 
-/* ===== estado de um bloco de configuração ===== */
+/* ===== pastilha de estado ===== */
 
 /* O estado vive no bloco e não no separador: umas configurações viajam para o
    dispositivo e podem ficar pendentes, outras valem de imediato. Nomear separadores por essa
    diferença era nomear pela implementação.
 
-   A mesma pastilha serve as duas famílias -- a regra do hub, que só tem um estado, e a
-   configuração por downlink, que tem vários. O que muda é o tom, e só o fundo: a leitura não
-   pode depender da cor, por isso o texto diz sempre qual é o estado. */
-.config-state {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    font-size: var(--fs-label);
-    font-weight: 600;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    padding: .15rem .55rem;
-    border-radius: 20px;
-    background: var(--bs-primary-bg-subtle);
-    color: var(--bs-emphasis-color);
-    white-space: nowrap;
-}
-
-/* O texto acompanha a cor da pastilha, e o ponto com ele porque e `currentColor`. So o
-   fundo estava definido, o que deixava todas as pastilhas com texto quase preto -- e uma
-   pastilha vermelha com texto preto não lê como perigo, lê como um fundo colorido. */
-.config-state-secondary {
-    background: var(--bs-secondary-bg-subtle);
-    color: var(--bs-secondary-color);
-}
-
-.config-state-success {
-    background: var(--bs-success-bg-subtle);
-    color: var(--bs-success-text-emphasis);
-}
-
-.config-state-warning {
-    background: var(--bs-warning-bg-subtle);
-    color: var(--bs-warning-text-emphasis);
-}
-
-.config-state-danger {
-    background: var(--bs-danger-bg-subtle);
-    color: var(--bs-danger-text-emphasis);
-}
-
-.config-state .config-state-dot {
+   A pastilha é o `badge` do Bootstrap com as utilitárias `bg-*-subtle` e `text-*-emphasis`,
+   montada no `components/state-badge.js`. Sobra aqui o ponto, para que o Bootstrap não tem
+   medida. A leitura não pode depender da cor, e por isso o rótulo diz sempre o estado. */
+.state-badge-dot {
     width: 6px;
     height: 6px;
-    border-radius: 50%;
-    background: currentColor;
+    background: currentcolor;
 }
 
 @media (prefers-reduced-motion: reduce) {

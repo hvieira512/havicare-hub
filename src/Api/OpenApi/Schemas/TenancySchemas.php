@@ -35,7 +35,7 @@ final class TenancySchemas
                     'updated_at' => ['type' => 'string'],
                 ],
             ],
-            'ApiUserListResponse' => CommonSchemas::collection('ApiUserItem'),
+            'ApiUserListResponse' => CommonSchemas::collection('ApiUserItem', withColumns: true),
             // Derivados do `ApiUserWriteRequest`, que é onde as regras vivem e correm. Este
             // bloco era escrito à mão e já não dizia o mesmo que o serviço: declarava o
             // `role` obrigatório, quando o serviço lhe dá `license_client` por omissão, e

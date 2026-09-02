@@ -1,5 +1,6 @@
 import { html, raw } from "../html.js";
-import { deviceLicenseHtml, onlineBadge } from "../widgets.js";
+import { deviceLicenseHtml } from "../widgets.js";
+import { onlineBadge } from "../components/state-badge.js";
 import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 
 /**

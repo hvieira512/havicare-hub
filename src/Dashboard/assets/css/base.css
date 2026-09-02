@@ -199,6 +199,95 @@ body[data-swal2-theme] {
     --bs-btn-disabled-border-color: var(--brand);
 }
 
+/* ===== as grelhas =====
+   O `themeQuartz` do AG Grid veste-se a si próprio; daqui vai só o que ele não sabe da
+   plataforma. A linha de filtros usa os campos do Bootstrap, e as folgas dele à volta deles
+   têm de sair. */
+/* A altura é do `domLayout: "autoHeight"` do AG Grid, que pede a das linhas que tem. */
+
+/*
+ * O AG Grid centra o texto de uma célula dando-lhe a altura da linha como `line-height`.
+ * Um desenho próprio -- a pastilha de estado, os botões da linha -- herda-a: cresce até
+ * transbordar a linha, e assenta na linha de base em vez de ficar ao centro.
+ */
+.settings-grid .ag-cell {
+    display: flex;
+    align-items: center;
+    line-height: var(--bs-body-line-height);
+}
+
+.ag-header-row-column-filter .ag-header-cell {
+    padding-inline: .4rem;
+}
+
+.ag-floating-filter-body,
+.ag-floating-filter-full-body {
+    display: flex;
+    align-items: center;
+}
+
+/* O botão que abre o menu de condições do filtro de texto: no servidor só há "contém", e
+   um botão que abre uma escolha de uma opção só é ruído. */
+.ag-floating-filter-button {
+    display: none !important;
+}
+
+/* O campo de texto do AG Grid vestido como um `form-control-sm`, já que esse não se lhe
+   pode dar por classe. */
+.ag-header-cell .ag-text-field-input {
+    height: calc(1.5em + .5rem + 2px);
+    padding: .25rem .5rem;
+    font-size: .875rem;
+    line-height: 1.5;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-sm);
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+.ag-header-cell .ag-text-field-input:focus {
+    border-color: var(--bs-primary-border-subtle);
+    box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .2);
+    outline: 0;
+}
+
+/* A coluna da engrenagem não tem conteúdo: as células não desenham nada. */
+.grid-settings-cell {
+    border: 0 !important;
+    background: transparent !important;
+}
+
+.grid-settings-button {
+    color: var(--bs-body-color);
+    opacity: .65;
+    line-height: 1;
+}
+
+.grid-settings-button:hover,
+.grid-settings-button:focus-visible {
+    color: var(--bs-body-color);
+    opacity: 1;
+}
+
+/* O painel da engrenagem é um `dropdown-menu`, posicionado à mão dentro da grelha. Uma área
+   de scroll só: com a lista de colunas a rolar por dentro havia duas barras encaixadas. */
+.grid-settings {
+    position: absolute;
+    z-index: 5;
+    min-width: 15rem;
+    max-height: min(28rem, 60vh);
+    overflow-y: auto;
+    --bs-dropdown-item-padding-y: .3rem;
+}
+
+.grid-settings.show {
+    display: block;
+}
+
+.grid-settings .dropdown-item {
+    cursor: pointer;
+}
+
 /* ===== o cabeçalho de uma tabela de listagem =====
    No telemóvel as células empilham e cada uma leva a sua etiqueta ao lado do valor, por isso
    o cabeçalho nomearia colunas que ali não existem.
