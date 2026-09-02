@@ -29,124 +29,43 @@ INSERT IGNORE INTO companies (name) VALUES
     ('hitcare');
 
 INSERT INTO licenses (company_id, license_id, name)
-SELECT c.id, 1, 'hc.dev' FROM companies c WHERE c.name = 'havicare'
-ON DUPLICATE KEY UPDATE name = 'hc.dev';
+SELECT c.id, l.license_id, l.name FROM companies c JOIN (
+    SELECT 'havicare' AS company, 1 AS license_id, 'hc.dev' AS name
+    UNION ALL SELECT 'havicare', 22, 'hc2.dev'
+    UNION ALL SELECT 'hitcare', 1001, 'gucc.dev'
+) l ON l.company = c.name
+ON DUPLICATE KEY UPDATE name = VALUES(name);
 
-INSERT INTO licenses (company_id, license_id, name)
-SELECT c.id, 22, 'hc2.dev' FROM companies c WHERE c.name = 'havicare'
-ON DUPLICATE KEY UPDATE name = 'hc2.dev';
-
-INSERT INTO licenses (company_id, license_id, name)
-SELECT c.id, 1001, 'gucc.dev' FROM companies c WHERE c.name = 'hitcare'
-ON DUPLICATE KEY UPDATE name = 'gucc.dev';
-
+-- A W6 e a W6B são a mesma pulseira, com e sem botão macio, por isso partilham a imagem. O
+-- W812 não tem imagem, e é por isso que a actualização não deixa uma imagem vazia apagar a
+-- que lá esteja: uma trocada no painel não se perde por o seed não trazer nenhuma.
 INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'D41', 'D41', 'watch', '/model-images/9201181e4f07060bd5ded5e48ca8e20a.jpg'
-FROM suppliers s WHERE s.name = '4P Touch'
-ON DUPLICATE KEY UPDATE commercial_name = 'D41', device_type = 'watch',
-    image_path = '/model-images/9201181e4f07060bd5ded5e48ca8e20a.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'D44S', 'R05', 'watch', '/model-images/be4e5160e602a993f519011e6c9f796c.jpg'
-FROM suppliers s WHERE s.name = '4P Touch'
-ON DUPLICATE KEY UPDATE commercial_name = 'R05', device_type = 'watch',
-    image_path = '/model-images/be4e5160e602a993f519011e6c9f796c.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'D45 Pro', 'D45 Pro', 'watch', '/model-images/4a088f59242d03d7023d5e51d4da8e49.jpg'
-FROM suppliers s WHERE s.name = '4P Touch'
-ON DUPLICATE KEY UPDATE commercial_name = 'D45 Pro', device_type = 'watch',
-    image_path = '/model-images/4a088f59242d03d7023d5e51d4da8e49.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'D46', 'R04', 'watch', '/model-images/1347f078cd3c213a48495d8f1a366713.jpg'
-FROM suppliers s WHERE s.name = '4P Touch'
-ON DUPLICATE KEY UPDATE commercial_name = 'R04', device_type = 'watch',
-    image_path = '/model-images/1347f078cd3c213a48495d8f1a366713.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'Y6M', 'Y6M', 'watch', '/model-images/9648d481eb3381148ea91c84aba2687c.jpg'
-FROM suppliers s WHERE s.name = '4P Touch'
-ON DUPLICATE KEY UPDATE commercial_name = 'Y6M', device_type = 'watch',
-    image_path = '/model-images/9648d481eb3381148ea91c84aba2687c.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'Y6S', 'R03', 'watch', '/model-images/3d48c42e589923177a1ac3ed147758e0.jpg'
-FROM suppliers s WHERE s.name = '4P Touch'
-ON DUPLICATE KEY UPDATE commercial_name = 'R03', device_type = 'watch',
-    image_path = '/model-images/3d48c42e589923177a1ac3ed147758e0.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'MKGW3', 'MOKOSmart MKGW3', 'gateway', '/model-images/45bee5a0028156faa71ff5c6c081b6d7.jpg'
-FROM suppliers s WHERE s.name = 'MOKO'
-ON DUPLICATE KEY UPDATE commercial_name = 'MOKOSmart MKGW3', device_type = 'gateway',
-    image_path = '/model-images/45bee5a0028156faa71ff5c6c081b6d7.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'MKGW4', 'MOKOSmart MKGW4', 'gateway', '/model-images/3bbccf9f4d8e4830480adf834cdfd278.jpg'
-FROM suppliers s WHERE s.name = 'MOKO'
-ON DUPLICATE KEY UPDATE commercial_name = 'MOKOSmart MKGW4', device_type = 'gateway',
-    image_path = '/model-images/3bbccf9f4d8e4830480adf834cdfd278.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'MKGW-mini 03-20D', 'MOKOSmart MKGW-mini 03-20D', 'gateway', '/model-images/a8b0f419d117411508270b342869add0.jpg'
-FROM suppliers s WHERE s.name = 'MOKO'
-ON DUPLICATE KEY UPDATE commercial_name = 'MOKOSmart MKGW-mini 03-20D', device_type = 'gateway',
-    image_path = '/model-images/a8b0f419d117411508270b342869add0.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'W6B', 'MOKO W6B', 'bracelet', '/model-images/78888c5376784c64ca05b691c4686ecd.jpg'
-FROM suppliers s WHERE s.name = 'MOKO'
-ON DUPLICATE KEY UPDATE commercial_name = 'MOKO W6B', device_type = 'bracelet',
-    image_path = '/model-images/78888c5376784c64ca05b691c4686ecd.jpg';
-
--- A W6 e a W6B são a mesma pulseira, com e sem botão macio, por isso partilham a imagem.
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'W6', 'MOKO W6', 'bracelet', '/model-images/78888c5376784c64ca05b691c4686ecd.jpg'
-FROM suppliers s WHERE s.name = 'MOKO'
-ON DUPLICATE KEY UPDATE commercial_name = 'MOKO W6', device_type = 'bracelet',
-    image_path = '/model-images/78888c5376784c64ca05b691c4686ecd.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'MECS-PRO', 'MONIT MECS Pro', 'diaper_sensor', '/model-images/c7a8992a69d659ef06e853f6befecd42.jpg'
-FROM suppliers s WHERE s.name = 'MONIT'
-ON DUPLICATE KEY UPDATE commercial_name = 'MONIT MECS Pro', device_type = 'diaper_sensor',
-    image_path = '/model-images/c7a8992a69d659ef06e853f6befecd42.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'RD-V1', 'W01', 'radar', '/model-images/2a87616691f4878b9ac4f8cfd816a615.jpg'
-FROM suppliers s WHERE s.name = 'Qinglanst'
-ON DUPLICATE KEY UPDATE commercial_name = 'W01', device_type = 'radar',
-    image_path = '/model-images/2a87616691f4878b9ac4f8cfd816a615.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'L08 Pro', 'R05', 'watch', '/model-images/019cb6bcc40ef15ffe98a2f4ca1d2679.jpg'
-FROM suppliers s WHERE s.name = 'Vivistar'
-ON DUPLICATE KEY UPDATE commercial_name = 'R05', device_type = 'watch',
-    image_path = '/model-images/019cb6bcc40ef15ffe98a2f4ca1d2679.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'VL16P', 'R04', 'watch', '/model-images/45465accf3d7b8c10279225d089cf227.jpg'
-FROM suppliers s WHERE s.name = 'Vivistar'
-ON DUPLICATE KEY UPDATE commercial_name = 'R04', device_type = 'watch',
-    image_path = '/model-images/45465accf3d7b8c10279225d089cf227.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'VL17', 'R03', 'watch', '/model-images/c27707e761813389512c25a4050a3b85.jpg'
-FROM suppliers s WHERE s.name = 'Vivistar'
-ON DUPLICATE KEY UPDATE commercial_name = 'R03', device_type = 'watch',
-    image_path = '/model-images/c27707e761813389512c25a4050a3b85.jpg';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'W812', 'W812', 'ncs', ''
-FROM suppliers s WHERE s.name = 'Voerka'
-ON DUPLICATE KEY UPDATE commercial_name = 'W812', device_type = 'ncs';
-
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'HW20PRO', 'HW20PRO', 'watch', '/model-images/eed091a62f83e3ef03c7090ce09ea262.jpg'
-FROM suppliers s WHERE s.name = 'Wonlex'
-ON DUPLICATE KEY UPDATE commercial_name = 'HW20PRO', device_type = 'watch',
-    image_path = '/model-images/eed091a62f83e3ef03c7090ce09ea262.jpg';
+SELECT s.id, m.internal_model, m.commercial_name, m.device_type, m.image_path
+FROM suppliers s JOIN (
+    SELECT '4P Touch' AS supplier, 'D41' AS internal_model, 'D41' AS commercial_name,
+           'watch' AS device_type, '/model-images/9201181e4f07060bd5ded5e48ca8e20a.jpg' AS image_path
+    UNION ALL SELECT '4P Touch',  'D44S',             'R05',                        'watch',         '/model-images/be4e5160e602a993f519011e6c9f796c.jpg'
+    UNION ALL SELECT '4P Touch',  'D45 Pro',          'D45 Pro',                    'watch',         '/model-images/4a088f59242d03d7023d5e51d4da8e49.jpg'
+    UNION ALL SELECT '4P Touch',  'D46',              'R04',                        'watch',         '/model-images/1347f078cd3c213a48495d8f1a366713.jpg'
+    UNION ALL SELECT '4P Touch',  'Y6M',              'Y6M',                        'watch',         '/model-images/9648d481eb3381148ea91c84aba2687c.jpg'
+    UNION ALL SELECT '4P Touch',  'Y6S',              'R03',                        'watch',         '/model-images/3d48c42e589923177a1ac3ed147758e0.jpg'
+    UNION ALL SELECT 'MOKO',      'MKGW3',            'MOKOSmart MKGW3',            'gateway',       '/model-images/45bee5a0028156faa71ff5c6c081b6d7.jpg'
+    UNION ALL SELECT 'MOKO',      'MKGW4',            'MOKOSmart MKGW4',            'gateway',       '/model-images/3bbccf9f4d8e4830480adf834cdfd278.jpg'
+    UNION ALL SELECT 'MOKO',      'MKGW-mini 03-20D', 'MOKOSmart MKGW-mini 03-20D', 'gateway',       '/model-images/a8b0f419d117411508270b342869add0.jpg'
+    UNION ALL SELECT 'MOKO',      'W6B',              'MOKO W6B',                   'bracelet',      '/model-images/78888c5376784c64ca05b691c4686ecd.jpg'
+    UNION ALL SELECT 'MOKO',      'W6',               'MOKO W6',                    'bracelet',      '/model-images/78888c5376784c64ca05b691c4686ecd.jpg'
+    UNION ALL SELECT 'MONIT',     'MECS-PRO',         'MONIT MECS Pro',             'diaper_sensor', '/model-images/c7a8992a69d659ef06e853f6befecd42.jpg'
+    UNION ALL SELECT 'Qinglanst', 'RD-V1',            'W01',                        'radar',         '/model-images/2a87616691f4878b9ac4f8cfd816a615.jpg'
+    UNION ALL SELECT 'Vivistar',  'L08 Pro',          'R05',                        'watch',         '/model-images/019cb6bcc40ef15ffe98a2f4ca1d2679.jpg'
+    UNION ALL SELECT 'Vivistar',  'VL16P',            'R04',                        'watch',         '/model-images/45465accf3d7b8c10279225d089cf227.jpg'
+    UNION ALL SELECT 'Vivistar',  'VL17',             'R03',                        'watch',         '/model-images/c27707e761813389512c25a4050a3b85.jpg'
+    UNION ALL SELECT 'Voerka',    'W812',             'W812',                       'ncs',           ''
+    UNION ALL SELECT 'Wonlex',    'HW20PRO',          'HW20PRO',                    'watch',         '/model-images/eed091a62f83e3ef03c7090ce09ea262.jpg'
+) m ON m.supplier = s.name
+ON DUPLICATE KEY UPDATE
+    commercial_name = VALUES(commercial_name),
+    device_type = VALUES(device_type),
+    image_path = IF(VALUES(image_path) = '', models.image_path, VALUES(image_path));
 
 INSERT IGNORE INTO supplier_device_types (supplier_id, device_type)
 SELECT s.id, t.device_type FROM suppliers s JOIN (
