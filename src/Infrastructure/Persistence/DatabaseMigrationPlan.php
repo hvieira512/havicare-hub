@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
-use Hub\Infrastructure\Persistence\Migration\CatalogAlarmProximityAndHelpCall;
-use Hub\Infrastructure\Persistence\Migration\CatalogMkgwMiniModel;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 
 /**
@@ -21,13 +19,15 @@ use Hub\Infrastructure\Persistence\Migration\Migration;
  */
 final class DatabaseMigrationPlan
 {
-    /** @return list<Migration> */
+    /**
+     * Vazio: as duas bases que existem estão em dia, e o que as migrações punham lá uma base
+     * nova alcança pela baseline.
+     *
+     * @return list<Migration>
+     */
     public function migrations(): array
     {
-        return [
-            new CatalogAlarmProximityAndHelpCall(),
-            new CatalogMkgwMiniModel(),
-        ];
+        return [];
     }
 
     /** @return list<string> */
