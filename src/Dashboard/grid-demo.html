@@ -8,56 +8,13 @@
 
 <link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.min.css">
 <link rel="stylesheet" href="/assets/vendor/fontawesome/css/all.min.css">
-<link rel="stylesheet" href="/assets/vendor/tabulator/tabulator_bootstrap5.min.css">
 <link rel="stylesheet" href="/assets/css/base.css">
 
 <style>
-/* Só o que o tema do Tabulator não sabe da paleta da casa. As variáveis são as do
-   `base.css`, para o claro e o escuro seguirem a dashboard sem duas listas de cores. */
+/* O `themeQuartz` trata-se a si próprio; daqui vai só o que é da página. */
 body { min-height: 100vh; }
 
 .demo-shell { max-width: 1500px; }
-
-.tabulator {
-    background: var(--bs-body-bg);
-    border-color: var(--bs-border-color);
-}
-
-.tabulator .tabulator-header,
-.tabulator .tabulator-header .tabulator-col,
-.tabulator .tabulator-footer {
-    background: var(--bs-tertiary-bg);
-    color: var(--bs-body-color);
-    border-color: var(--bs-border-color);
-}
-
-.tabulator-row,
-.tabulator-row.tabulator-row-even {
-    background: var(--bs-body-bg);
-    color: var(--bs-body-color);
-}
-
-.tabulator-row:hover { background: var(--bs-tertiary-bg) !important; }
-
-.tabulator .tabulator-header .tabulator-col .tabulator-header-filter input,
-.tabulator .tabulator-header .tabulator-col .tabulator-header-filter select {
-    background: var(--bs-body-bg);
-    color: var(--bs-body-color);
-    border: 1px solid var(--bs-border-color);
-    border-radius: .25rem;
-}
-
-.tabulator-menu, .tabulator-edit-list {
-    background: var(--bs-body-bg);
-    color: var(--bs-body-color);
-    border-color: var(--bs-border-color);
-}
-
-.tabulator-edit-list .tabulator-edit-list-item.active,
-.tabulator-edit-list .tabulator-edit-list-item:hover {
-    background: var(--bs-primary-bg-subtle);
-    color: var(--bs-body-color);
-}
 
 #grid { height: 62vh; }
 
@@ -123,7 +80,7 @@ body { min-height: 100vh; }
         <div id="grid" class="border rounded"></div>
 
         <!--
-            O paginador do projeto, e não o do Tabulator. A marcação é a que o
+            O paginador do projeto, e não o da biblioteca. A marcação é a que o
             `components/pagination.php` produz, escrita à mão porque esta página é HTML e não
             PHP; quem a desenha e quem resolve o clique continuam a ser o `pagination.js`.
 
@@ -158,7 +115,7 @@ body { min-height: 100vh; }
 </div>
 
 <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="/assets/vendor/tabulator/tabulator.min.js"></script>
+<script src="/assets/vendor/ag-grid/ag-grid-community.min.js"></script>
 <script type="module">
 import { createDeviceGrid, columnToggleItems } from "/dashboard/grid.js";
 import { renderPagination, resolvePaginationPage } from "/dashboard/pagination.js";
@@ -180,7 +137,7 @@ const els = {
 };
 
 let currentPagination = null;
-
+let grid = null;
 let token = "";
 
 function showError(message) {
@@ -215,13 +172,14 @@ async function start() {
 
     // O primeiro pedido serve para duas coisas: traz a primeira página e traz o descritor
     // de colunas com que a grelha inteira é construída.
-    const first = await api("/api/devices?" + query({ page: 1, limit: 15 }));
-    logLine(`GET /api/devices?page=1&limit=15 → ${first.columns.length} colunas descritas`);
+    const first = await api("/api/devices?" + query({ page: 1, limit: 1 }));
+    logLine(`GET /api/devices?page=1&limit=1 → ${first.columns.length} colunas descritas`);
 
-    const grid = createDeviceGrid({
-        element: "#grid",
+    grid = createDeviceGrid({
+        element: document.getElementById("grid"),
         columns: first.columns,
         pageSize: Number(els.pageSize.value) || 20,
+        dark: document.documentElement.getAttribute("data-bs-theme") === "dark",
         load: async (params) => {
             const search = query(params);
             logLine(`GET /api/devices?${search}`);
@@ -268,19 +226,24 @@ async function start() {
 
     els.pageSize.addEventListener("change", () => grid.setPageSize(Number(els.pageSize.value) || 20));
 
-    grid.table.on("tableBuilt", () => {
-        els.columnsBtn.disabled = false;
-        els.columnsMenu.innerHTML = "";
-        for (const item of columnToggleItems(grid.table)) {
-            const li = document.createElement("li");
-            li.innerHTML = `<label class="dropdown-item d-flex gap-2 align-items-center mb-0">
-                <input type="checkbox" class="form-check-input mt-0" ${item.visible ? "checked" : ""}>
-                <span></span></label>`;
-            li.querySelector("span").textContent = item.title;
-            li.querySelector("input").addEventListener("change", item.toggle);
-            els.columnsMenu.appendChild(li);
-        }
-    });
+    // O menu de colunas: no Community esconder e mostrar é da API, e o painel lateral que o
+    // Enterprise traz seria só esta lista já desenhada.
+    els.columnsBtn.disabled = false;
+    els.columnsMenu.innerHTML = "";
+    for (const item of columnToggleItems(grid.api)) {
+        const li = document.createElement("li");
+        li.innerHTML = `<label class="dropdown-item d-flex gap-2 align-items-center mb-0">
+            <input type="checkbox" class="form-check-input mt-0" ${item.visible ? "checked" : ""}>
+            <span></span></label>`;
+        li.querySelector("span").textContent = item.title;
+        li.querySelector("input").addEventListener("change", item.toggle);
+        els.columnsMenu.appendChild(li);
+    }
+
+    await grid.start();
+
+    // Numa página de demonstração vale a pena poder mexer-lhe da consola.
+    window.grid = grid;
 
     els.login.classList.add("d-none");
     els.panel.classList.remove("d-none");
@@ -306,9 +269,11 @@ els.login.addEventListener("submit", async (event) => {
 });
 
 els.themeBtn.addEventListener("click", () => {
-    const dark = document.documentElement.getAttribute("data-bs-theme") === "dark";
-    document.documentElement.setAttribute("data-bs-theme", dark ? "light" : "dark");
-    els.themeBtn.querySelector("i").className = dark ? "fa-solid fa-moon" : "fa-solid fa-sun";
+    const dark = document.documentElement.getAttribute("data-bs-theme") !== "dark";
+    document.documentElement.setAttribute("data-bs-theme", dark ? "dark" : "light");
+    els.themeBtn.querySelector("i").className = dark ? "fa-solid fa-sun" : "fa-solid fa-moon";
+    // O `themeQuartz` não lê os tokens do Bootstrap: recebe as cores de novo.
+    grid?.setDark(dark);
 });
 
 document.documentElement.setAttribute("data-bs-theme", "dark");

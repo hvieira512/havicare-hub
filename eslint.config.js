@@ -25,7 +25,7 @@ export default [
                 ...globals.node,
                 bootstrap: "readonly",
                 Swal: "readonly",
-                Tabulator: "readonly",
+                agGrid: "readonly",
             },
         },
         rules: {
