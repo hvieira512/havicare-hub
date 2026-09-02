@@ -121,6 +121,34 @@ body { min-height: 100vh; }
             <span><i class="fa-solid fa-arrows-left-right me-1"></i>Arrasta o cabeçalho para mover, a borda para redimensionar</span>
         </div>
         <div id="grid" class="border rounded"></div>
+
+        <!--
+            O paginador do projeto, e não o do Tabulator. A marcação é a que o
+            `components/pagination.php` produz, escrita à mão porque esta página é HTML e não
+            PHP; quem a desenha e quem resolve o clique continuam a ser o `pagination.js`.
+
+            Três colunas em vez das duas do componente: com o "por página" à direita, os
+            números ficam ao centro em vez de encostados a ele.
+        -->
+        <div id="gridPagination" class="d-none mt-1">
+            <div class="row align-items-center g-2">
+                <div class="col-12 col-md-4">
+                    <span id="gridPaginationSummary" class="small text-secondary"></span>
+                </div>
+                <div class="col-12 col-md-4 d-flex justify-content-center">
+                    <nav aria-label="Paginação">
+                        <ul id="gridPaginationControls" class="pagination pagination-sm mb-0 gap-1 flex-wrap justify-content-center"></ul>
+                    </nav>
+                </div>
+                <div class="col-12 col-md-4 d-flex justify-content-md-end align-items-center gap-2">
+                    <label for="gridPageSize" class="section-label mb-0">Por página</label>
+                    <select id="gridPageSize" class="form-select form-select-sm w-auto">
+                        <option>10</option><option selected>20</option><option>30</option><option>50</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <details>
             <summary class="small text-secondary">Pedidos que a grelha fez ao servidor</summary>
             <pre class="request-log text-secondary mt-2 mb-0" id="log"></pre>
@@ -133,6 +161,7 @@ body { min-height: 100vh; }
 <script src="/assets/vendor/tabulator/tabulator.min.js"></script>
 <script type="module">
 import { createDeviceGrid, columnToggleItems } from "/dashboard/grid.js";
+import { renderPagination, resolvePaginationPage } from "/dashboard/pagination.js";
 
 const els = {
     login: document.getElementById("login"),
@@ -144,7 +173,13 @@ const els = {
     columnsBtn: document.getElementById("columnsBtn"),
     columnsMenu: document.getElementById("columnsMenu"),
     themeBtn: document.getElementById("themeBtn"),
+    pagination: document.getElementById("gridPagination"),
+    paginationSummary: document.getElementById("gridPaginationSummary"),
+    paginationControls: document.getElementById("gridPaginationControls"),
+    pageSize: document.getElementById("gridPageSize"),
 };
+
+let currentPagination = null;
 
 let token = "";
 
@@ -183,13 +218,25 @@ async function start() {
     const first = await api("/api/devices?" + query({ page: 1, limit: 15 }));
     logLine(`GET /api/devices?page=1&limit=15 → ${first.columns.length} colunas descritas`);
 
-    const table = createDeviceGrid({
+    const grid = createDeviceGrid({
         element: "#grid",
         columns: first.columns,
+        pageSize: Number(els.pageSize.value) || 20,
         load: async (params) => {
             const search = query(params);
             logLine(`GET /api/devices?${search}`);
             return api("/api/devices?" + search);
+        },
+        // O paginador do projeto, desenhado com o que a API respondeu.
+        onPage: (pagination) => {
+            currentPagination = pagination;
+            renderPagination({
+                pagination,
+                rootEl: els.pagination,
+                summaryEl: els.paginationSummary,
+                controlsEl: els.paginationControls,
+                actionPrefix: "gridPage",
+            });
         },
         // A linha inteira, e não o campo sozinho: o `PUT` substitui o registo, e mandar só
         // o campo apagava os outros. Um `PATCH` por campo é conversa a seguir.
@@ -212,10 +259,19 @@ async function start() {
         onError: (error) => showError(`Não foi possível gravar: ${error.message}`),
     });
 
-    table.on("tableBuilt", () => {
+    els.paginationControls.addEventListener("click", (event) => {
+        const next = resolvePaginationPage(event, currentPagination, "gridPage");
+        if (next !== null && next !== currentPagination?.page) {
+            grid.goToPage(next);
+        }
+    });
+
+    els.pageSize.addEventListener("change", () => grid.setPageSize(Number(els.pageSize.value) || 20));
+
+    grid.table.on("tableBuilt", () => {
         els.columnsBtn.disabled = false;
         els.columnsMenu.innerHTML = "";
-        for (const item of columnToggleItems(table)) {
+        for (const item of columnToggleItems(grid.table)) {
             const li = document.createElement("li");
             li.innerHTML = `<label class="dropdown-item d-flex gap-2 align-items-center mb-0">
                 <input type="checkbox" class="form-check-input mt-0" ${item.visible ? "checked" : ""}>

@@ -123,8 +123,12 @@ function requestParams(columns, page, size, sorters = [], filters = []) {
  * linha inteira depois de uma célula mudar. A linha inteira e não o campo sozinho porque o
  * `PUT` substitui o registo: mandar só o campo apagava os outros.
  */
-export function createDeviceGrid({ element, columns, load, save, onError }) {
-    const definitions = columns.map(toTabulatorColumn);
+export function createDeviceGrid({ element, columns, load, save, onPage, onError, pageSize = 20 }) {
+    // A paginação é a do projeto -- o `renderPagination` do `pagination.js` --, e não a que
+    // o Tabulator traz: um paginador diferente em cada listagem é uma dashboard incoerente.
+    // Daí a página viver aqui, e não dentro dele.
+    let page = 1;
+    let limit = pageSize;
 
     const table = new Tabulator(element, {
         layout: "fitColumns",
@@ -133,32 +137,42 @@ export function createDeviceGrid({ element, columns, load, save, onError }) {
         movableColumns: true,
         columnHeaderSortMulti: true,
         resizableColumnGuide: true,
-        columns: definitions,
+        columns: columns.map(toTabulatorColumn),
         index: "imei",
 
         // O servidor manda em tudo o que estreita ou reordena a lista.
         sortMode: "remote",
         filterMode: "remote",
-        pagination: true,
-        paginationMode: "remote",
-        paginationSize: 15,
-        paginationSizeSelector: [10, 15, 25, 50],
-        paginationCounter: "rows",
+        pagination: false,
 
         ajaxURL: "/api/devices",
         ajaxRequestFunc: async (_url, _config, params) => {
             const response = await load(requestParams(
                 columns,
-                params.page || 1,
-                params.size || 15,
+                page,
+                limit,
                 params.sort || [],
                 params.filter || [],
             ));
 
-            // O Tabulator espera `last_page`; a API chama-lhe `total_pages`.
-            return { data: response.data || [], last_page: response.pagination?.total_pages || 1 };
+            // Ordenar ou filtrar muda o conjunto, e a página 4 do anterior não é a mesma.
+            const pagination = response.pagination || {};
+            if ((pagination.page ?? 1) !== page) {
+                page = pagination.page ?? 1;
+            }
+            onPage?.(pagination);
+
+            return response.data || [];
         },
     });
+
+    // Reordenar ou filtrar volta à primeira página. Sem isto, quem estivesse na página 3 e
+    // filtrasse pedia a página 3 de uma lista que passou a ter duas.
+    const backToFirstPage = () => {
+        page = 1;
+    };
+    table.on("dataSorting", backToFirstPage);
+    table.on("dataFiltering", backToFirstPage);
 
     table.on("cellEdited", async (cell) => {
         try {
@@ -169,7 +183,23 @@ export function createDeviceGrid({ element, columns, load, save, onError }) {
         }
     });
 
-    return table;
+    return {
+        table,
+        goToPage(next) {
+            page = next;
+            return table.setData();
+        },
+        /** Mudar quantas linhas por página volta ao princípio: a página 3 era de outra lista. */
+        setPageSize(size) {
+            limit = size;
+            page = 1;
+            return table.setData();
+        },
+        /** Ordenar e filtrar recomeçam na primeira página, pela mesma razão. */
+        resetPage() {
+            page = 1;
+        },
+    };
 }
 
 /** O menu de escolher que colunas se vêem, construído do que a grelha tem. */
