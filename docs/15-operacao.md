@@ -202,6 +202,17 @@ whitelist — ver o [multi-inquilino](07-multi-inquilino.md).
 MKScannerPro lhe estiver ligada. A aplicação tem de estar encerrada antes de se
 diagnosticar uma avaria.
 
+**Cópias de segurança.** A cópia da base de dados corre às 03:30 e roda sozinha.
+Uma falha do temporizador é silenciosa, e o que a denuncia é o número de
+ficheiros guardados deixar de crescer:
+
+```bash
+systemctl list-timers havicare-hub-backup.timer
+ls -lh /var/backups/havicare_hub
+```
+
+Ver as [cópias de segurança](18-backups.md).
+
 ## 7. Ambiente de desenvolvimento local
 
 ```bash
@@ -230,6 +241,7 @@ comandos para equipamento em serviço.
 | [`CLAUDE.md`](../CLAUDE.md) | As regras de trabalho e de segurança operacional |
 | `Makefile` | `update`, `restart`, `status`, `journal`, e os alvos locais |
 | `bin/migrate.php` | O passo explícito de esquema |
+| `bin/backup-db.sh` | A cópia diária da base de dados — ver o [capítulo 18](18-backups.md) |
 | `bin/dev.sh` | O vigia de ficheiros do contentor |
 | `src/Runtime/StartupBanner.php` | O resumo de arranque |
 | `src/Runtime/CrashWatch.php` | A deteção de paragem suja |
