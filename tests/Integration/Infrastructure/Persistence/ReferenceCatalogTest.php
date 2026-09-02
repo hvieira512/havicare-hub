@@ -33,6 +33,61 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         self::assertSame('Chamada de ajuda', $labels['ncs:help_call'] ?? null);
     }
 
+    /**
+     * A ordem dentro de uma secção é alfabética pela etiqueta, que é o que quem lê tem à
+     * frente. Antes era um inteiro escolhido à mão e guardado na base, invisível no ecrã: a
+     * lista tinha uma ordem que não se explicava por nada do que lá estava.
+     *
+     * A ordem das secções não vem daqui -- é uma lista fixa na consulta -- e continua igual.
+     */
+    public function testCapabilitiesComeBackAlphabeticalWithinTheirSection(): void
+    {
+        $capabilities = new \Hub\Api\Repository\GenericCapabilityRepository(
+            $this->createDashboardDatabase()->pdo(),
+        );
+
+        $labels = array_values(array_map(
+            static fn(array $row): string => (string)$row['label'],
+            array_filter(
+                $capabilities->all('watch'),
+                static fn(array $row): bool => $row['section'] === 'telemetry',
+            ),
+        ));
+
+        $sorted = $labels;
+        usort($sorted, static fn(string $left, string $right): int => strcmp(
+            iconv('UTF-8', 'ASCII//TRANSLIT', mb_strtolower($left, 'UTF-8')) ?: $left,
+            iconv('UTF-8', 'ASCII//TRANSLIT', mb_strtolower($right, 'UTF-8')) ?: $right,
+        ));
+
+        self::assertSame($sorted, $labels, 'a telemetria de um relógio sai fora de ordem');
+        self::assertSame('Atividade (passos)', $labels[0] ?? null);
+        // Em bytes o "VFC" vinha antes da "Versão", por a maiúscula pesar menos que a
+        // minúscula. É o caso que distingue ordem portuguesa de ordem de tabela ASCII.
+        self::assertGreaterThan(
+            array_search('Versão do firmware', $labels, true),
+            array_search('VFC', $labels, true),
+        );
+    }
+
+    /** A ordem das secções é escolhida, e não alfabética: a telemetria vem antes da saúde. */
+    public function testSectionsKeepTheirDeliberateOrder(): void
+    {
+        $capabilities = new \Hub\Api\Repository\GenericCapabilityRepository(
+            $this->createDashboardDatabase()->pdo(),
+        );
+
+        $sections = array_values(array_unique(array_map(
+            static fn(array $row): string => (string)$row['section'],
+            $capabilities->all('watch'),
+        )));
+
+        self::assertSame(
+            ['telemetry', 'health', 'contacts', 'alarms', 'settings_system'],
+            $sections,
+        );
+    }
+
     public function testTheCatalogueHasNoCapabilityTheHubCannotServe(): void
     {
         // O tempo saiu do catálogo quando se percebeu que nenhum protocolo o entrega.

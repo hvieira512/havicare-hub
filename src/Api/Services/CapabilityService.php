@@ -50,7 +50,6 @@ class CapabilityService
             'sectionLabel' => CapabilityCatalog::sections()[$section] ?? $section,
             'key' => (string)($row['capability_key'] ?? ''),
             'label' => (string)($row['label'] ?? ''),
-            'sortOrder' => (int)($row['sort_order'] ?? 0),
             'isTelemetry' => (bool)($row['is_telemetry'] ?? false),
             'isConfigurable' => (bool)($row['is_configurable'] ?? false),
             'isRequestable' => (bool)($row['is_requestable'] ?? false),

@@ -16,20 +16,20 @@ namespace Hub\Domain\Capability\Definition;
 final class RadarCapabilityDefinitions
 {
     /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
+     * @return list<array{deviceType: string, section: string, key: string, label: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     public static function all(): array
     {
         return [
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'heart_rate', 'label' => 'Frequência cardíaca', 'sortOrder' => 10, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Frequência respiratória', 'sortOrder' => 20, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'sleep_state', 'label' => 'Estado do sono', 'sortOrder' => 30, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'presence', 'label' => 'Presença', 'sortOrder' => 40, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'position_minute_stats', 'label' => 'Estatísticas de posições por minuto', 'sortOrder' => 60, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'vitals_minute_stats', 'label' => 'Estatísticas de sinais vitais por minuto', 'sortOrder' => 70, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'alarms', 'key' => 'fall', 'label' => 'Queda', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
-            ['deviceType' => 'radar', 'section' => 'alarms', 'key' => 'vitals_alarm', 'label' => 'Alarme de sinais vitais', 'sortOrder' => 20, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
-            ['deviceType' => 'radar', 'section' => 'alarms', 'key' => 'presence_event', 'label' => 'Entradas e saídas', 'sortOrder' => 30, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'heart_rate', 'label' => 'Frequência cardíaca', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Frequência respiratória', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'sleep_state', 'label' => 'Estado do sono', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'presence', 'label' => 'Presença', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'position_minute_stats', 'label' => 'Estatísticas de posições por minuto', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'vitals_minute_stats', 'label' => 'Estatísticas de sinais vitais por minuto', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'alarms', 'key' => 'fall', 'label' => 'Queda', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
+            ['deviceType' => 'radar', 'section' => 'alarms', 'key' => 'vitals_alarm', 'label' => 'Alarme de sinais vitais', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
+            ['deviceType' => 'radar', 'section' => 'alarms', 'key' => 'presence_event', 'label' => 'Entradas e saídas', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
         ];
     }
 }

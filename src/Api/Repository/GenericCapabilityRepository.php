@@ -15,6 +15,26 @@ final class GenericCapabilityRepository
     {
     }
 
+    /**
+     * A chave por que uma etiqueta se ordena: sem caixa e sem acentos, que é como o
+     * `utf8mb4_unicode_ci` da consulta as compara.
+     *
+     * Comparar os bytes em cru punha as maiúsculas antes das minúsculas -- o "VFC" aparecia
+     * antes de "Versão do firmware" --, e comparar com o `intl` obrigava a extensão que a
+     * imagem não traz. Isto acompanha o SQL sem depender de nenhuma.
+     */
+    private static function sortKey(string $label): string
+    {
+        return strtr(mb_strtolower($label, 'UTF-8'), [
+            'á' => 'a', 'à' => 'a', 'â' => 'a', 'ã' => 'a',
+            'é' => 'e', 'ê' => 'e',
+            'í' => 'i',
+            'ó' => 'o', 'ô' => 'o', 'õ' => 'o',
+            'ú' => 'u',
+            'ç' => 'c',
+        ]);
+    }
+
     // Memo permanente: o único escritor destas linhas é o semeador, noutro processo.
     public function all(?string $deviceType = null): array
     {
@@ -28,20 +48,20 @@ final class GenericCapabilityRepository
     {
         if ($deviceType === null || trim($deviceType) === '') {
             $rows = TimestampFormatter::normalizeRows($this->pdo
-                ->query('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, sort_order, created_at, updated_at FROM capabilities ORDER BY FIELD(device_type, \'watch\', \'ncs\', \'radar\'), FIELD(section, \'telemetry\', \'health\', \'contacts\', \'alarms\', \'settings_system\'), sort_order, capability_key')
+                ->query('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, created_at, updated_at FROM capabilities ORDER BY FIELD(device_type, \'watch\', \'ncs\', \'radar\'), FIELD(section, \'telemetry\', \'health\', \'contacts\', \'alarms\', \'settings_system\'), label, capability_key')
                 ->fetchAll());
 
             return $this->appendMissingDefinitions($rows, null);
         }
 
-        $stmt = $this->pdo->prepare('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, sort_order, created_at, updated_at FROM capabilities WHERE device_type = ? ORDER BY FIELD(section, \'telemetry\', \'health\', \'contacts\', \'alarms\', \'settings_system\'), sort_order, capability_key');
+        $stmt = $this->pdo->prepare('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, created_at, updated_at FROM capabilities WHERE device_type = ? ORDER BY FIELD(section, \'telemetry\', \'health\', \'contacts\', \'alarms\', \'settings_system\'), label, capability_key');
         $stmt->execute([$deviceType]);
         return $this->appendMissingDefinitions(TimestampFormatter::normalizeRows($stmt->fetchAll()), $deviceType);
     }
 
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, sort_order, created_at, updated_at FROM capabilities WHERE id = ?');
+        $stmt = $this->pdo->prepare('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, created_at, updated_at FROM capabilities WHERE id = ?');
         $stmt->execute([$id]);
 
         $row = $stmt->fetch();
@@ -117,7 +137,6 @@ final class GenericCapabilityRepository
                 'is_configurable' => (bool)($definition['isConfigurable'] ?? false),
                 'is_requestable' => (bool)($definition['isRequestable'] ?? false),
                 'is_event' => (bool)($definition['isEvent'] ?? false),
-                'sort_order' => (int)($definition['sortOrder'] ?? 0),
                 'created_at' => null,
                 'updated_at' => null,
             ];
@@ -147,13 +166,17 @@ final class GenericCapabilityRepository
                 return $sectionIndex($leftSection) <=> $sectionIndex($rightSection);
             }
 
-            $leftSort = (int)($left['sort_order'] ?? 0);
-            $rightSort = (int)($right['sort_order'] ?? 0);
-            if ($leftSort !== $rightSort) {
-                return $leftSort <=> $rightSort;
-            }
+            // Pela etiqueta, que é o que quem lê tem à frente: a ordem da lista explica-se
+            // pela própria lista. A chave desempata para duas etiquetas iguais não trocarem
+            // de lugar entre pedidos.
+            $comparison = strcmp(
+                self::sortKey((string)($left['label'] ?? '')),
+                self::sortKey((string)($right['label'] ?? '')),
+            );
 
-            return strcmp((string)($left['capability_key'] ?? ''), (string)($right['capability_key'] ?? ''));
+            return $comparison !== 0
+                ? $comparison
+                : strcmp((string)($left['capability_key'] ?? ''), (string)($right['capability_key'] ?? ''));
         });
 
         return $filtered;

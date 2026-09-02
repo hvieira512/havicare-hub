@@ -120,16 +120,15 @@ final class ReferenceCatalogSeeder
         $insert = $pdo->prepare('
             INSERT INTO capabilities (
                 device_type, section, capability_key, label,
-                is_telemetry, is_configurable, is_requestable, sort_order
+                is_telemetry, is_configurable, is_requestable
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 section = VALUES(section),
                 label = VALUES(label),
                 is_telemetry = VALUES(is_telemetry),
                 is_configurable = VALUES(is_configurable),
-                is_requestable = VALUES(is_requestable),
-                sort_order = VALUES(sort_order)
+                is_requestable = VALUES(is_requestable)
         ');
         foreach (CapabilityCatalog::definitions() as $definition) {
             $insert->execute([
@@ -140,7 +139,6 @@ final class ReferenceCatalogSeeder
                 !empty($definition['isTelemetry']) ? 1 : 0,
                 !empty($definition['isConfigurable']) ? 1 : 0,
                 !empty($definition['isRequestable']) ? 1 : 0,
-                (int)$definition['sortOrder'],
             ]);
         }
     }

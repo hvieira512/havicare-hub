@@ -11,12 +11,12 @@ final class CapabilityCatalogTest extends TestCase
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [69, '5f3eddcbc4587b4023b658e19ef5e3facbf2345a0541392dca0c0eb20895624a'],
-            'ncs' => [1, 'ebaa7eb59bae21e06cca634f62cb572b11545e9bb576fedb1f5ca34b0e59b10e'],
-            'radar' => [9, '8e53e4ec25c3f8b9cdf8f9b70187c8e9496138f6badc199993ac4b5d5c972891'],
-            'gateway' => [3, '0da2bdcb67a191f32fdf9ae47f0e9b9339bd49dd026d4d41e616b52ed430c07a'],
-            'diaper_sensor' => [7, 'ef9933274166c1dc96c6c8fba99f6548a63e2266f17cf04e5fda8ae6103e825e'],
-            'bracelet' => [4, '14ea62ddbe524d40dc80014858a53444d90f17c5e464089dac6da4d5809c9834'],
+            'watch' => [69, 'd3c4bfbe9b84ff7a55aa9e3bb7531cb592ba523e04d9b222b4b8b02d71de2d5d'],
+            'ncs' => [1, '213f35a9295bacacfdaa5570451707a23ee59416ebc3ac1de062f1b6ca7685a4'],
+            'radar' => [9, '45dfaa71313e4da275fca1da9536b826bf0fe6a442cf462d3d2534db1499fa65'],
+            'gateway' => [3, '044f4b1de47b562638442dc3fc8be22b3ab76043721211a47f478ee68124a91f'],
+            'diaper_sensor' => [7, '1aabeb619dd84c1e60cb25bc6d43fe88ea8b3b708365ad38f39a3c13bf5c4fd2'],
+            'bracelet' => [4, '40b4ef6a67ffc5abf2eee29201049ddcd20546a284bc4d31ea7bb9d8ca08108e'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim
@@ -56,7 +56,6 @@ final class CapabilityCatalogTest extends TestCase
                 self::assertArrayHasKey($definition['section'], CapabilityCatalog::sections());
                 self::assertNotSame('', trim($definition['key']));
                 self::assertNotSame('', trim($definition['label']));
-                self::assertIsInt($definition['sortOrder']);
                 self::assertIsBool($definition['isTelemetry']);
                 self::assertIsBool($definition['isConfigurable']);
                 self::assertIsBool($definition['isRequestable']);

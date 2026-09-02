@@ -47,7 +47,7 @@ final class CapabilityCatalog
     }
 
     /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
+     * @return list<array{deviceType: string, section: string, key: string, label: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     public static function definitions(): array
     {
@@ -85,7 +85,7 @@ final class CapabilityCatalog
     }
 
     /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
+     * @return list<array{deviceType: string, section: string, key: string, label: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     public static function definitionsForDeviceType(string $deviceType): array
     {

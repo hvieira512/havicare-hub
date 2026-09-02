@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
+use Hub\Infrastructure\Persistence\Migration\DropCapabilitySortOrder;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 
 /**
@@ -19,15 +20,12 @@ use Hub\Infrastructure\Persistence\Migration\Migration;
  */
 final class DatabaseMigrationPlan
 {
-    /**
-     * Vazio: as duas bases que existem estão em dia, e o que as migrações punham lá uma base
-     * nova alcança pela baseline.
-     *
-     * @return list<Migration>
-     */
+    /** @return list<Migration> */
     public function migrations(): array
     {
-        return [];
+        return [
+            new DropCapabilitySortOrder(),
+        ];
     }
 
     /** @return list<string> */

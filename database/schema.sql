@@ -42,11 +42,10 @@ CREATE TABLE IF NOT EXISTS capabilities (
     is_telemetry TINYINT(1) NOT NULL DEFAULT 0,
     is_configurable TINYINT(1) NOT NULL DEFAULT 0,
     is_requestable TINYINT(1) NOT NULL DEFAULT 0,
-    sort_order INT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_capabilities_device_type_key (device_type, capability_key),
-    KEY idx_capabilities_device_type_section_order (device_type, section, sort_order)
+    KEY idx_capabilities_device_type_section_label (device_type, section, label)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS model_capabilities (
@@ -67,7 +66,6 @@ CREATE TABLE IF NOT EXISTS whitelist (
     supplier VARCHAR(191) NOT NULL,
     model VARCHAR(191) NOT NULL,
     device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet') NOT NULL DEFAULT 'watch',
-    -- Sem cliente associado são NULL as duas, nunca uma sem a outra.
     license_id INT UNSIGNED NULL DEFAULT NULL,
     sim_number VARCHAR(64) NOT NULL DEFAULT '',
     device_id VARCHAR(191) NOT NULL DEFAULT '',

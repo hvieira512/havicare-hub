@@ -10,12 +10,12 @@ final class NcsCapabilityDefinitions
      * catálogo ficava à espera de um evento que nunca chegava. A pulseira MOKO, que também
      * tem botão, já usava `help_call` nos dois sítios.
      *
-     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
+     * @return list<array{deviceType: string, section: string, key: string, label: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     public static function all(): array
     {
         return [
-            ['deviceType' => 'ncs', 'section' => 'alarms', 'key' => 'help_call', 'label' => 'Chamada de ajuda', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
+            ['deviceType' => 'ncs', 'section' => 'alarms', 'key' => 'help_call', 'label' => 'Chamada de ajuda', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
         ];
     }
 }

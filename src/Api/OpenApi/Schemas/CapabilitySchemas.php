@@ -35,7 +35,6 @@ final class CapabilitySchemas
                     'sectionLabel' => ['type' => 'string', 'example' => 'Telemetria'],
                     'key' => ['type' => 'string', 'example' => 'heart_rate'],
                     'label' => ['type' => 'string', 'example' => 'Heart rate telemetry'],
-                    'sortOrder' => ['type' => 'integer', 'example' => 20],
                     'isTelemetry' => ['type' => 'boolean', 'example' => true],
                     'isConfigurable' => ['type' => 'boolean', 'example' => false],
                     'isRequestable' => ['type' => 'boolean', 'example' => true],
