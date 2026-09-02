@@ -64,7 +64,15 @@ sujos do hub — e o seletor de tema.
 | Catálogo | Fornecedores, modelos e imagens, e as capacidades de cada modelo |
 | Capacidades | O catálogo genérico, por tipo de dispositivo |
 | Licenças | Empresas, com as licenças lá dentro |
-| Utilizadores API | Contas e papéis |
+| Utilizadores API | Contas e papéis, em tabela de dados |
+
+Os três primeiros são árvores: o que os organiza — o tipo, o fornecedor, a
+empresa — **é** a estrutura, e por isso não levam filtros nem ordenação por
+cima dela. Os **Utilizadores API** são uma lista plana e por isso são uma
+tabela: ordena-se por coluna, filtra-se pelo cabeçalho e edita-se a célula com
+duplo clique, tudo servido pelo `columns` que a API devolve. É a única tabela de
+dados da dashboard, e o `dashboard/grid.js` é o único módulo que conhece a
+biblioteca que a desenha.
 
 Registar e editar são caixas **separadas**, e não a mesma a mudar de forma: um
 registo pede a identidade e pouco mais, ao passo que a edição dá acesso às

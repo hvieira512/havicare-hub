@@ -215,6 +215,38 @@ os menus a partir dele, sem os ter escritos à mão.
 
 Filtros de lista aceitam as duas grafias: `?k[]=a&k[]=b` e `?k=a,b`.
 
+### Colunas que se descrevem
+
+Algumas listagens acrescentam um `columns` ao envelope, e o `GET /api/users` é a
+primeira. Cada entrada diz o que se pode fazer àquela coluna, e nada sobre como
+ela se desenha — o nome visível é de quem constrói a interface.
+
+```json
+{ "field": "role", "sortable": true, "editable": true,
+  "filter": { "type": "select", "param": "role", "multiple": false,
+              "options": [ { "value": "hub_admin", "count": 4 } ] } }
+```
+
+| Campo | O que diz |
+|---|---|
+| `sortable` | A coluna pode entrar no `sort` |
+| `editable` | O pedido de escrita aceita este campo |
+| `filter` | `null`, `{"type":"text"}` ou `{"type":"select"}` com as opções contadas |
+
+Nada disto é escrito à mão: o `sortable` sai das colunas por que a listagem se
+deixa ordenar, o `editable` do construtor do pedido de escrita, e as contagens
+da própria consulta. Uma coluna nova passa a ordenar-se e a filtrar-se sem
+ninguém tocar no cliente.
+
+Cada faceta é contada **sem o seu próprio filtro**: escolher um valor continua a
+mostrar os outros, com o número de linhas que cada um daria. Num conjunto
+fechado, um valor que os dados não têm sai com `0` em vez de desaparecer — senão
+ficava inalcançável.
+
+O `sort` aceita colunas separadas por vírgula, pela ordem de precedência, com o
+sentido escrito por extenso: `?sort=role:desc,username:asc`. Sem sentido, é
+ascendente.
+
 ### Detalhe de um dispositivo
 
 `GET /api/devices/{imei}` é a resposta mais rica da API:

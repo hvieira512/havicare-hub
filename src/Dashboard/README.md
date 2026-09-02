@@ -99,7 +99,10 @@ dashboard/
 ├── format.js               esc(), datas, e as etiquetas por chave
 ├── html.js                 html`` e raw(): a marcação escapa por omissão
 ├── widgets.js              os pedaços de HTML que mais do que um ecrã desenha
+├── components/             uma peça de interface por ficheiro, quando cresce para além de um HTML
+│   └── state-badge.js      a pastilha de estado: ponto ou ícone, rótulo e tom
 ├── telemetry-cards.js      o catálogo dos cartões de telemetria: ícone, cor e corpo por tipo
+├── grid.js                 a tabela de dados dos Utilizadores API, do descritor que a API devolve
 ├── pagination.js           o paginador das listagens
 ├── phone.js                o campo de telefone com indicativo
 ├── storage.js              as chaves e os acessos ao localStorage
@@ -241,7 +244,9 @@ regra nova, a resposta é uma capacidade nova em PHP.
 | uma chamada nova à API | `api/<recurso>.js`, exportada em `api/index.js` |
 | uma pergunta sobre tipos de dispositivo, modelos ou licenças | `domain.js` |
 | HTML que dois ecrãs desenham | `widgets.js` |
+| uma peça de interface com regras próprias — tons, variantes, opções | `components/<nome>.js`, e não mais uma função no `widgets.js` |
 | HTML que um ecrã desenha | o ficheiro desse ecrã |
+| uma listagem plana que se ordena e filtra por coluna | uma grelha com o `grid.js`, alimentada pelo `columns` da API |
 | um handler de clique | ao lado do módulo que desenha o que ele trata |
 | um campo novo de configuração | `devices/config/inputs.js` + `readers.js` |
 | uma configuração que o hub aplica sem downlink | nada de especial no frontend: é a capacidade em PHP que se marca com `HubAppliedCapability` |

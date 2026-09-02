@@ -4,10 +4,10 @@
 
 | Suite | Onde | Ficheiros | Precisa de |
 |---|---|---|---|
-| Unitários (PHP) | `tests/Unit/` | 84 | nada |
-| Integração (PHP) | `tests/Integration/` | 27 | MySQL e Redis |
-| Frontend (Node) | `tests/Frontend/` | 37 | nada |
-| Cenários (shell) | `tests/scenarios/` | 6 | a pilha Docker inteira |
+| Unitários (PHP) | `tests/Unit/` | 88 | nada |
+| Integração (PHP) | `tests/Integration/` | 29 | MySQL e Redis |
+| Frontend (Node) | `tests/Frontend/` | 44 | nada |
+| Cenários (shell) | `tests/scenarios/` | 5 | a pilha Docker inteira |
 
 ```bash
 composer test:unit          # ~6 s
