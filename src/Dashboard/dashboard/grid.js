@@ -147,6 +147,129 @@ function toColumnDef(column) {
     return definition;
 }
 
+/**
+ * A engrenagem que vive no cabeçalho da tabela.
+ *
+ * É uma coluna fixa à direita, sem conteúdo nas células, porque o menu que o AG Grid põe em
+ * cada cabeçalho é Enterprise. Assim o botão acompanha a tabela quando ela rola de lado, em
+ * vez de flutuar por cima dela.
+ */
+class SettingsHeader {
+    init(params) {
+        this.button = document.createElement("button");
+        this.button.type = "button";
+        this.button.className = "btn btn-link p-0 border-0 ag-grid-settings-button";
+        this.button.title = "Opções da tabela";
+        this.button.setAttribute("aria-label", "Opções da tabela");
+        this.button.setAttribute("aria-haspopup", "true");
+        this.button.innerHTML = "<i class=\"fa-solid fa-gear\"></i>";
+        this.button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            params.onOpen(this.button);
+        });
+    }
+
+    getGui() {
+        return this.button;
+    }
+
+    refresh() {
+        return true;
+    }
+}
+
+/** O painel que a engrenagem abre: as colunas, e o que mais se pode fazer à tabela. */
+function buildSettingsPanel(api, host, defaultState) {
+    const panel = document.createElement("div");
+    panel.className = "ag-grid-settings-panel card shadow d-none";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-label", "Opções da tabela");
+
+    const action = (icon, text, run) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "dropdown-item d-flex align-items-center gap-2 rounded";
+        button.innerHTML = `<i class="fa-solid ${icon} text-secondary"></i><span></span>`;
+        button.querySelector("span").textContent = text;
+        button.addEventListener("click", run);
+        return button;
+    };
+
+    function render() {
+        panel.innerHTML = "";
+
+        const title = document.createElement("div");
+        title.className = "px-3 pt-2 pb-1 section-label";
+        title.textContent = "Colunas";
+        panel.appendChild(title);
+
+        const list = document.createElement("div");
+        list.className = "ag-grid-settings-columns px-2";
+        for (const item of columnToggleItems(api)) {
+            const row = document.createElement("label");
+            row.className = "dropdown-item d-flex align-items-center gap-2 rounded mb-0";
+            row.innerHTML = `<input type="checkbox" class="form-check-input mt-0" ${item.visible ? "checked" : ""}><span></span>`;
+            row.querySelector("span").textContent = item.title;
+            row.querySelector("input").addEventListener("change", item.toggle);
+            list.appendChild(row);
+        }
+        panel.appendChild(list);
+
+        panel.appendChild(Object.assign(document.createElement("hr"), { className: "my-2" }));
+
+        const actions = document.createElement("div");
+        actions.className = "px-2 pb-2";
+        actions.append(
+            action("fa-arrows-left-right-to-line", "Ajustar larguras ao conteúdo", () => api.autoSizeAllColumns()),
+            action("fa-filter-circle-xmark", "Limpar filtros", () => {
+                api.setFilterModel(null);
+                for (const select of host.querySelectorAll(".ag-header-cell select")) {
+                    select.value = "";
+                }
+            }),
+            action("fa-arrow-down-a-z", "Limpar ordenação", () => {
+                api.applyColumnState({ defaultState: { sort: null } });
+            }),
+            action("fa-rotate-left", "Repor colunas", () => {
+                api.applyColumnState({ state: defaultState, applyOrder: true });
+                render();
+            }),
+        );
+        panel.appendChild(actions);
+    }
+
+    /** Aberto pelo botão, fechado por um clique fora ou pelo Escape. */
+    const close = () => panel.classList.add("d-none");
+    document.addEventListener("click", (event) => {
+        if (!panel.contains(event.target)) {
+            close();
+        }
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            close();
+        }
+    });
+
+    return {
+        element: panel,
+        toggle(anchor) {
+            if (!panel.classList.contains("d-none")) {
+                close();
+                return;
+            }
+            render();
+            panel.classList.remove("d-none");
+            // Alinhado pela direita do botão, e dentro da grelha para rolar com ela.
+            const host_ = anchor.closest(".ag-root-wrapper") || host;
+            const box = anchor.getBoundingClientRect();
+            const frame = host_.getBoundingClientRect();
+            panel.style.top = `${box.bottom - frame.top + 4}px`;
+            panel.style.right = `${frame.right - box.right}px`;
+        },
+    };
+}
+
 /** As cores do tema, que o AG Grid não lê dos tokens do Bootstrap por si. */
 const THEME_PARAMS = {
     dark: {
@@ -224,9 +347,28 @@ export function createDeviceGrid({ element, columns, load, save, onPage, onError
         void refresh().catch((error) => onError?.(error));
     };
 
+    let settings = null;
+
+    // A coluna da engrenagem: fixa à direita, estreita e sem conteúdo. Não vem do descritor
+    // porque não é um campo do dispositivo -- é o menu da própria tabela.
+    const settingsColumn = {
+        colId: "__settings",
+        headerComponent: SettingsHeader,
+        headerComponentParams: { onOpen: (anchor) => settings?.toggle(anchor) },
+        pinned: "right",
+        width: 46,
+        minWidth: 46,
+        maxWidth: 46,
+        resizable: false,
+        sortable: false,
+        suppressMovable: true,
+        lockPosition: "right",
+        valueGetter: () => "",
+    };
+
     const api = agGrid.createGrid(element, {
         theme: themeFor(dark),
-        columnDefs: columns.map(toColumnDef),
+        columnDefs: [...columns.map(toColumnDef), settingsColumn],
         rowData: [],
         // O servidor manda em tudo o que estreita ou reordena a lista.
         pagination: false,
@@ -247,6 +389,8 @@ export function createDeviceGrid({ element, columns, load, save, onPage, onError
         },
         onGridReady: () => {
             ready = true;
+            settings = buildSettingsPanel(api, element, api.getColumnState());
+            element.querySelector(".ag-root-wrapper")?.appendChild(settings.element);
         },
     });
 

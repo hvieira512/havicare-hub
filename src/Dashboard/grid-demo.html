@@ -18,6 +18,28 @@ body { min-height: 100vh; }
 
 #grid { height: 62vh; }
 
+/* A engrenagem no cabeçalho e o painel que ela abre. O AG Grid não os traz: o menu de
+   cabeçalho dele é Enterprise. */
+.ag-grid-settings-button {
+    color: inherit;
+    opacity: .75;
+    line-height: 1;
+}
+
+.ag-grid-settings-button:hover,
+.ag-grid-settings-button:focus-visible { opacity: 1; }
+
+.ag-grid-settings-panel {
+    position: absolute;
+    z-index: 5;
+    min-width: 16rem;
+    max-height: 22rem;
+    overflow-y: auto;
+    padding-block: .25rem;
+}
+
+.ag-grid-settings-columns { max-height: 11rem; overflow-y: auto; }
+
 .request-log {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: .78rem;
@@ -39,18 +61,9 @@ body { min-height: 100vh; }
                 escritos aqui. Ordenar, filtrar e paginar acontecem no servidor.
             </p>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <div class="dropdown">
-                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
-                        data-bs-toggle="dropdown" data-bs-auto-close="outside" id="columnsBtn" disabled>
-                    <i class="fa-solid fa-table-columns me-1"></i>Colunas
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end p-2" id="columnsMenu"></ul>
-            </div>
-            <button class="btn btn-outline-secondary btn-sm" id="themeBtn" title="Alternar tema">
-                <i class="fa-solid fa-moon"></i>
-            </button>
-        </div>
+        <button class="btn btn-outline-secondary btn-sm" id="themeBtn" title="Alternar tema">
+            <i class="fa-solid fa-moon"></i>
+        </button>
     </header>
 
     <div class="alert alert-danger d-none" id="error" role="alert"></div>
@@ -76,6 +89,7 @@ body { min-height: 100vh; }
             <span><i class="fa-solid fa-arrow-down-a-z me-1"></i>Shift+clique num segundo cabeçalho ordena por duas colunas</span>
             <span><i class="fa-solid fa-pen me-1"></i>Duplo clique numa célula edita e grava na API</span>
             <span><i class="fa-solid fa-arrows-left-right me-1"></i>Arrasta o cabeçalho para mover, a borda para redimensionar</span>
+            <span><i class="fa-solid fa-gear me-1"></i>A engrenagem à direita do cabeçalho escolhe colunas e mais opções</span>
         </div>
         <div id="grid" class="border rounded"></div>
 
@@ -117,7 +131,7 @@ body { min-height: 100vh; }
 <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="/assets/vendor/ag-grid/ag-grid-community.min.js"></script>
 <script type="module">
-import { createDeviceGrid, columnToggleItems } from "/dashboard/grid.js";
+import { createDeviceGrid } from "/dashboard/grid.js";
 import { renderPagination, resolvePaginationPage } from "/dashboard/pagination.js";
 
 const els = {
@@ -127,8 +141,6 @@ const els = {
     panel: document.getElementById("gridPanel"),
     error: document.getElementById("error"),
     log: document.getElementById("log"),
-    columnsBtn: document.getElementById("columnsBtn"),
-    columnsMenu: document.getElementById("columnsMenu"),
     themeBtn: document.getElementById("themeBtn"),
     pagination: document.getElementById("gridPagination"),
     paginationSummary: document.getElementById("gridPaginationSummary"),
@@ -225,20 +237,6 @@ async function start() {
     });
 
     els.pageSize.addEventListener("change", () => grid.setPageSize(Number(els.pageSize.value) || 20));
-
-    // O menu de colunas: no Community esconder e mostrar é da API, e o painel lateral que o
-    // Enterprise traz seria só esta lista já desenhada.
-    els.columnsBtn.disabled = false;
-    els.columnsMenu.innerHTML = "";
-    for (const item of columnToggleItems(grid.api)) {
-        const li = document.createElement("li");
-        li.innerHTML = `<label class="dropdown-item d-flex gap-2 align-items-center mb-0">
-            <input type="checkbox" class="form-check-input mt-0" ${item.visible ? "checked" : ""}>
-            <span></span></label>`;
-        li.querySelector("span").textContent = item.title;
-        li.querySelector("input").addEventListener("change", item.toggle);
-        els.columnsMenu.appendChild(li);
-    }
 
     await grid.start();
 
