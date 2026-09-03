@@ -131,12 +131,40 @@ class AuthService
         ];
     }
 
+    /**
+     * Um hash de referência, para uma tentativa contra uma conta que não existe custar o mesmo
+     * que uma contra uma que existe.
+     *
+     * É gerado e não escrito à mão de propósito: assim acompanha o custo que o
+     * `PASSWORD_DEFAULT` tiver na altura, em vez de ficar preso ao que era no dia em que a
+     * linha foi escrita -- e um custo menor aqui reabria o oráculo.
+     */
+    private ?string $referenceHash = null;
+
+    private function referenceHash(): string
+    {
+        return $this->referenceHash ??= password_hash('', PASSWORD_DEFAULT);
+    }
+
     private function identityForCredentials(string $username, string $password): ?array
     {
         $user = $this->db->apiUsers->findByUsername($username);
+        $storedHash = is_array($user) ? (string)($user['password_hash'] ?? '') : '';
+
+        // A verificação corre **sempre**, e sempre uma vez, aconteça o que acontecer a seguir.
+        //
+        // Medido antes: uma tentativa contra uma conta real custava ~175 ms de bcrypt e uma
+        // contra uma conta inexistente 0,5 ms, porque o `&&` fazia curto-circuito antes do
+        // `password_verify` quando não havia hash. Essa diferença de ~350× dizia a quem
+        // perguntasse que contas existem, sem ser preciso acertar em nenhuma password. E o
+        // curto-circuito ia mais longe do que isso: uma conta desactivada, ou um
+        // `license_client` mal ligado, também respondiam depressa -- e portanto também se
+        // distinguiam de uma conta saudável pelo relógio.
+        $passwordMatches = password_verify($password, $storedHash !== '' ? $storedHash : $this->referenceHash());
+
         if (is_array($user)) {
             $enabled = ((int)($user['enabled'] ?? 0)) === 1;
-            $hash = (string)($user['password_hash'] ?? '');
+            $hash = $storedHash;
             $role = trim((string)($user['role'] ?? ''));
             $licenseId = $role === ApiAuthContext::ROLE_LICENSE_CLIENT
                 ? DeviceMetadata::normalizeLicenseId((string)($user['license_id'] ?? ''))
@@ -147,7 +175,7 @@ class AuthService
 
             $tenantIsValid = $role !== ApiAuthContext::ROLE_LICENSE_CLIENT
                 || ($licenseId > 0 && $licenseRefId > 0 && $companyId > 0 && $company !== '');
-            if ($enabled && $tenantIsValid && $hash !== '' && password_verify($password, $hash) && in_array($role, ApiAuthContext::roles(), true)) {
+            if ($enabled && $tenantIsValid && $hash !== '' && $passwordMatches && in_array($role, ApiAuthContext::roles(), true)) {
                 return [
                     'userId' => (int)($user['id'] ?? 0),
                     'username' => (string)($user['username'] ?? $username),
