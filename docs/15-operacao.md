@@ -170,7 +170,7 @@ servidor é idêntica à do repositório.
 | `config/logrotate/havicare-hub` | `/etc/logrotate.d/havicare-hub` |
 | `config/nftables/havicare-hub.nft` | `/etc/sysconfig/nftables.conf` |
 | `config/systemd/watchdog.conf` | `…/havicare-hub*.service.d/watchdog.conf` |
-| `config/systemd/ev-loop-dev.conf` | `…/havicare-hub-dev.service.d/ev-loop.conf` |
+| `config/systemd/ev-loop.conf` | `…/havicare-hub*.service.d/ev-loop.conf` |
 | `config/systemd/limit-nofile.conf` | `…/havicare-hub*.service.d/limit-nofile.conf` |
 
 Os três drop-ins do systemd têm cada um o seu próprio cabeçalho a explicar o que
@@ -239,7 +239,7 @@ php -d extension=ev -r 'require "vendor/autoload.php";
 > O pacote instala `/etc/php.d/40-ev.ini`, carregado por **todos** os processos
 > PHP da máquina. Com ele activo, a instância de produção troca de loop no
 > próximo reinício, qualquer que seja o motivo. O
-> `config/systemd/ev-loop-dev.conf` existe para evitar isso: desactiva-se o ini
+>  `config/systemd/ev-loop.conf` existe para evitar isso: desactiva-se o ini
 > global e carrega-se a extensão pela linha de comando de uma unit só.
 
 ### Reiniciar um processo que não morreu
