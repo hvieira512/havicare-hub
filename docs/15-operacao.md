@@ -161,14 +161,21 @@ liga um erro 500 a uma linha do log.
 
 ## 5. Configuração da máquina
 
-Dois ficheiros de configuração do sistema pertencem ao hub e estão versionados em
-`config/`, para que a perda da máquina não leve consigo o que estava montado nela.
-A cópia no servidor é idêntica à do repositório.
+A configuração do sistema que pertence ao hub está versionada em `config/`, para
+que a perda da máquina não leve consigo o que estava montado nela. A cópia no
+servidor é idêntica à do repositório.
 
 | Ficheiro versionado | Destino na máquina |
 |---|---|
 | `config/logrotate/havicare-hub` | `/etc/logrotate.d/havicare-hub` |
 | `config/nftables/havicare-hub.nft` | `/etc/sysconfig/nftables.conf` |
+| `config/systemd/watchdog.conf` | `…/havicare-hub*.service.d/watchdog.conf` |
+| `config/systemd/ev-loop-dev.conf` | `…/havicare-hub-dev.service.d/ev-loop.conf` |
+| `config/systemd/limit-nofile.conf` | `…/havicare-hub*.service.d/limit-nofile.conf` |
+
+Os três drop-ins do systemd têm cada um o seu próprio cabeçalho a explicar o que
+resolve e o que exige; os dois últimos **só se instalam juntos**, e só depois de
+uma extensão de event loop, pelas razões da secção seguinte.
 
 ```bash
 sudo cp config/logrotate/havicare-hub    /etc/logrotate.d/havicare-hub
@@ -198,6 +205,82 @@ por ser residencial e mudar. Um túnel dispensa-a por completo:
 ```bash
 ssh -L 3306:127.0.0.1:3306 hub-prod
 ```
+
+### O event loop, e o teto que ele impõe
+
+O ReactPHP escolhe a melhor implementação de loop entre as extensões instaladas.
+Sem nenhuma, cai no `StreamSelectLoop`, que é `stream_select()` — o `select(2)` do
+sistema, com o `FD_SETSIZE` fixo em **1024** no Linux. É um limite da
+implementação, e nenhum `LimitNOFILE` o levanta. O `StartupBanner` imprime a
+implementação escolhida no arranque, porque instalar uma extensão troca o loop
+sem deixar rasto em código.
+
+Esse teto é partilhado por tudo o que o processo aceita: as ligações TCP dos
+relógios, os sockets MQTT, os pedidos HTTP e cada ligação aberta ao
+`/api/stream`. Medido a abrir streams em rampa, o que acontece ao passar dos 1024
+é isto:
+
+- O `stream_select()` começa a avisar `You MUST recompile PHP with a larger value
+  of FD_SETSIZE`, **uma vez por iteração do loop** — e o loop itera milhares de
+  vezes por segundo. Numa ocorrência, o journald registou **3 161 543 mensagens
+  suprimidas em cerca de 18 segundos**.
+- O processo deixa de servir. Na primeira ocorrência ficou vivo e mudo, com os
+  descritores nunca libertados e o systemd a reportar `active (running)`; noutra
+  saiu com `status=255`.
+
+Instalar o `php-pecl-ev` remove o teto: o loop passa a `ExtEvLoop`, que usa epoll.
+Confirma-se assim, e a resposta tem de dizer `ExtEvLoop`:
+
+```bash
+php -d extension=ev -r 'require "vendor/autoload.php";
+    echo get_class(React\EventLoop\Loop::get()), PHP_EOL;'
+```
+
+> O pacote instala `/etc/php.d/40-ev.ini`, carregado por **todos** os processos
+> PHP da máquina. Com ele activo, a instância de produção troca de loop no
+> próximo reinício, qualquer que seja o motivo. O
+> `config/systemd/ev-loop-dev.conf` existe para evitar isso: desactiva-se o ini
+> global e carrega-se a extensão pela linha de comando de uma unit só.
+
+### Reiniciar um processo que não morreu
+
+O `Restart=always` das units reage ao processo **terminar**, e o modo de falha
+acima não termina nada. Daí o `config/systemd/watchdog.conf`, que resolve duas
+coisas distintas.
+
+**`WatchdogSec=60s` com `NotifyAccess=main`.** O `SystemdWatchdog` manda
+`WATCHDOG=1` de um temporizador do event loop, e é isso que o torna útil: o ping
+**só sai se o loop estiver a girar**, pelo que é prova de vivacidade e não de
+existência. Verificado com um `SIGSTOP` ao processo — vivo, loop parado:
+
+```text
+Watchdog timeout (limit 1min)!
+Killing process 979108 (php) with signal SIGABRT.
+Failed with result 'watchdog'.
+Scheduled restart job, restart counter is at 2.
+```
+
+Sessenta segundos do último ping ao kill, de pé cinco segundos depois. O
+`NotifyAccess=main` com `Type=simple` é deliberado: o systemd vigia os pings sem
+exigir um `READY=1` no arranque, pelo que um defeito na implementação faz o
+watchdog não funcionar em vez de o serviço ser declarado como não tendo arrancado.
+
+O SIGABRT deixa um core dump — 4,1 MB comprimidos para um processo de 143 MB, com
+a retenção de três dias que o systemd traz de origem. Vale mais como diagnóstico
+do que custa em disco, e por isso fica.
+
+**A janela do `StartLimit`.** Os valores de omissão são `StartLimitBurst=5` em dez
+segundos: um processo que morra logo e repetidamente — um `.env` mal formado, uma
+extensão que deixou de carregar depois de uma subida de PHP, o MySQL ainda a
+arrancar — faz o systemd desistir e deixar o serviço **morto**. A janela passa a
+cinco minutos com backoff exponencial, o que aguenta uma dependência lenta a
+recuperar e continua a desistir de uma falha permanente, que é o que a torna
+visível no `systemctl status`.
+
+> As chaves `StartLimitIntervalSec` e `StartLimitBurst` vivem na secção `[Unit]`.
+> Postas em `[Service]`, o systemd escreve `Unknown key … ignoring` no journal e
+> segue com os valores de omissão — a mesma falha silenciosa que estas linhas
+> existem para fechar.
 
 ## 6. Funcionalidades configuráveis
 
