@@ -51,8 +51,14 @@ if ($user === '' || $password === '') {
 }
 
 $loop = Loop::get();
-// Sem tempo limite: um stream é uma resposta que nunca acaba, e o cliente não a pode cortar.
-$browser = (new Browser())->withTimeout(false);
+$browser = (new Browser())
+    // Sem tempo limite: um stream é uma resposta que nunca acaba, e o cliente não a pode
+    // cortar.
+    ->withTimeout(false)
+    // Por omissão o `Browser` rejeita a promessa em qualquer resposta que não seja 2xx, e um
+    // `503` do teto chegava aqui como erro de ligação -- contado como falha quando é o
+    // servidor a funcionar como devia. Assim as respostas resolvem e o estado é lido.
+    ->withRejectErrorResponse(false);
 
 $state = [
     'open' => 0,
