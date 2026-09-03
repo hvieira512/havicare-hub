@@ -147,4 +147,48 @@ final class CapabilityCatalogTest extends TestCase
             ]),
         );
     }
+
+    /**
+     * O `isTelemetry` e a secção dizem a mesma coisa, e têm de continuar a dizê-la.
+     *
+     * Cada definição declara as duas ao lado uma da outra, e nas 93 que existem coincidem
+     * sempre -- o `is_telemetry` da base de dados é, na prática, `section = 'telemetry'`. Uma
+     * definição que as separasse não daria erro em sítio nenhum: o `ModelCapabilityRepository`
+     * filtra por `is_telemetry`, o ecrã das capacidades lê `isTelemetry`, e a capacidade
+     * aparecia numa secção a dizer que era telemetria ou o contrário.
+     *
+     * Vale mais prender a coincidência aqui do que remover a repetição de 93 declarações: a
+     * redundância é legível, e é a divergência que faz mal.
+     */
+    public function testTelemetryFlagAndSectionCannotDisagree(): void
+    {
+        $divergentes = [];
+        foreach (CapabilityCatalog::definitions() as $definition) {
+            $naSecção = $definition['section'] === 'telemetry';
+            if ($naSecção !== $definition['isTelemetry']) {
+                $divergentes[] = sprintf(
+                    '%s:%s (section=%s, isTelemetry=%s)',
+                    $definition['deviceType'],
+                    $definition['key'],
+                    $definition['section'],
+                    $definition['isTelemetry'] ? 'true' : 'false',
+                );
+            }
+        }
+
+        self::assertSame([], $divergentes, 'isTelemetry tem de ser verdadeiro exactamente na secção telemetry');
+    }
+
+    /** Uma capacidade de telemetria não é configurável: são os dois lados do mesmo aparelho. */
+    public function testTelemetryIsNeverConfigurable(): void
+    {
+        $configuráveis = [];
+        foreach (CapabilityCatalog::definitions() as $definition) {
+            if ($definition['isTelemetry'] && $definition['isConfigurable']) {
+                $configuráveis[] = $definition['deviceType'] . ':' . $definition['key'];
+            }
+        }
+
+        self::assertSame([], $configuráveis);
+    }
 }

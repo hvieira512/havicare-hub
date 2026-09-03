@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Infrastructure\Persistence;
 
+use Hub\Domain\DeviceMetadata;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
@@ -55,6 +56,50 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
                 "As chaves estrangeiras de {$table} diferem entre o schema.sql e as migrações"
             );
         }
+    }
+
+    /**
+     * O `device_type` é um `ENUM` declarado em quatro tabelas, e acrescentar um tipo são
+     * quatro `ALTER TABLE` que têm de concordar.
+     *
+     * A discordância não dá erro: uma `whitelist` que aceite `bracelet` e um `capabilities`
+     * que não o conheça deixam o dispositivo registado e sem capacidade nenhuma, calados. O
+     * quinto sítio é o `DeviceMetadata`, em código, e é o que a lista abaixo compara.
+     */
+    public function testTheDeviceTypeEnumAgreesEverywhereItIsDeclared(): void
+    {
+        $pdo = $this->createDashboardDatabase()->pdo();
+        $tables = ['capabilities', 'models', 'supplier_device_types', 'whitelist'];
+        $reference = DeviceMetadata::deviceTypes();
+
+        foreach ($tables as $table) {
+            $column = null;
+            foreach ($this->columnStructure($pdo, $table) as $row) {
+                if (($row['COLUMN_NAME'] ?? null) === 'device_type') {
+                    $column = (string)$row['COLUMN_TYPE'];
+                }
+            }
+
+            self::assertNotNull($column, "a tabela {$table} devia declarar a coluna device_type");
+            self::assertSame(
+                $reference,
+                $this->enumValues($column),
+                "o ENUM de {$table} divergiu da lista do DeviceMetadata",
+            );
+        }
+    }
+
+    /** @return list<string> */
+    private function enumValues(string $columnType): array
+    {
+        if (preg_match("/^enum\((.*)\)$/i", $columnType, $matches) !== 1) {
+            self::fail("a coluna device_type devia ser um ENUM, e é {$columnType}");
+        }
+
+        return array_map(
+            static fn(string $value): string => trim($value, "'"),
+            explode(',', $matches[1])
+        );
     }
 
     public function testTheDroppedDiaperTableStaysDropped(): void
