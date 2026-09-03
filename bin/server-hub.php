@@ -23,6 +23,7 @@ use Hub\Runtime\DashboardServerFactory;
 use Hub\Runtime\HubServices;
 use Hub\Runtime\MaintenanceScheduler;
 use Hub\Runtime\StartupBanner;
+use Hub\Runtime\SystemdWatchdog;
 use React\EventLoop\Loop;
 
 try {
@@ -151,6 +152,12 @@ try {
 
 $runner->scheduleTicks();
 MaintenanceScheduler::schedule($loop, $services, $config['dashboard']);
-StartupBanner::log($config, $services->mqttBridge, $enabledIngresses);
+
+// O sinal de vida para o systemd, que sai de um temporizador deste loop e por isso só é
+// enviado enquanto ele girar. Fora do systemd devolve `null` e não faz nada.
+$watchdog = SystemdWatchdog::fromEnvironment();
+$watchdog?->attach($loop);
+
+StartupBanner::log($config, $services->mqttBridge, $enabledIngresses, $watchdog);
 
 $loop->run();

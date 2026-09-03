@@ -13,8 +13,12 @@ final class StartupBanner
      * @param array<string, mixed> $config the full hub config
      * @param list<string> $enabledIngresses keys of the suppliers that were started
      */
-    public static function log(array $config, HubMqttBridge $mqttBridge, array $enabledIngresses): void
-    {
+    public static function log(
+        array $config,
+        HubMqttBridge $mqttBridge,
+        array $enabledIngresses,
+        ?SystemdWatchdog $watchdog = null,
+    ): void {
         $log = Logger::channel('hub');
 
         $log->info('=== Havicare Hub ===');
@@ -32,6 +36,12 @@ final class StartupBanner
             $loop,
             str_contains($loop, 'StreamSelect') ? ' (select: teto de 1024 descritores)' : ' (epoll)',
         ));
+
+        // Silêncio aqui significa que o systemd não está a vigiar, e é a diferença entre um
+        // processo pendurado ser reiniciado em segundos ou ficar vivo e calado.
+        $log->info($watchdog === null
+            ? 'Watchdog: desligado (sem WatchdogSec na unit)'
+            : sprintf('Watchdog: ping a cada %.1fs', $watchdog->pingIntervalSeconds()));
 
         $log->info("Dashboard: http://{$config['dashboard']['host']}:{$config['dashboard']['port']}/dashboard");
         $log->info("TCP ingress: tcp://{$config['tcp_ingress']['host']}:{$config['tcp_ingress']['port']}");
