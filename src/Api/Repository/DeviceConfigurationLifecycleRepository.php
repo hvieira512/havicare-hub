@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Api\Repository;
 
 use Hub\Api\Configuration\VoiceDataMarker;
+use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
 final class DeviceConfigurationLifecycleRepository
@@ -28,7 +29,7 @@ final class DeviceConfigurationLifecycleRepository
         array $nativeRows,
         array $operations,
     ): array {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $now = gmdate('Y-m-d H:i:s');
         $changeId = bin2hex(random_bytes(16));
         $this->pdo->beginTransaction();
         try {
@@ -44,7 +45,7 @@ final class DeviceConfigurationLifecycleRepository
             $supersede = $this->pdo->prepare("
                 UPDATE device_configuration_changes
                 SET sync_status = 'superseded', superseded_at = ?, updated_at = ?
-                WHERE imei = ? AND config_key = ? AND superseded_at = ''
+                WHERE imei = ? AND config_key = ? AND superseded_at IS NULL
             ");
             $supersede->execute([$now, $now, $imei, $genericKey]);
             $supersedeOps = $this->pdo->prepare("
@@ -84,7 +85,7 @@ final class DeviceConfigurationLifecycleRepository
                     desired_payload, reported_payload, desired_revision,
                     current_change_id, confirmation_mode, last_status, last_error,
                     last_command_id, desired_updated_at, reported_at, applied_at
-                ) VALUES (?, ?, ?, ?, ?, ?, \'{}\', ?, ?, ?, ?, \'\', ?, ?, \'\', \'\')
+                ) VALUES (?, ?, ?, ?, ?, ?, \'{}\', ?, ?, ?, ?, \'\', ?, ?, NULL, NULL)
                 ON DUPLICATE KEY UPDATE
                     protocol = VALUES(protocol),
                     command = VALUES(command), desired_payload = VALUES(desired_payload),
@@ -137,7 +138,7 @@ final class DeviceConfigurationLifecycleRepository
 
     public function updateOperation(string $operationId, string $status, string $error = ''): bool
     {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $now = gmdate('Y-m-d H:i:s');
         $stmt = $this->pdo->prepare('
             UPDATE device_configuration_operations operation_row
             JOIN device_configuration_changes change_row ON change_row.change_id = operation_row.change_id
@@ -147,7 +148,7 @@ final class DeviceConfigurationLifecycleRepository
                 operation_row.sent_at = IF(? = \'waiting\', ?, operation_row.sent_at),
                 operation_row.acknowledged_at = IF(? = \'acked\', ?, operation_row.acknowledged_at)
             WHERE operation_row.operation_id = ?
-              AND change_row.superseded_at = \'\'
+              AND change_row.superseded_at IS NULL
         ');
         $stmt->execute([$status, $error, $now, $status, $status, $now, $status, $now, $operationId]);
         if ($stmt->rowCount() === 0) {
@@ -163,7 +164,7 @@ final class DeviceConfigurationLifecycleRepository
             SELECT COUNT(*)
             FROM device_configuration_operations operation_row
             JOIN device_configuration_changes change_row ON change_row.change_id = operation_row.change_id
-            WHERE operation_row.operation_id = ? AND change_row.superseded_at = \'\'
+            WHERE operation_row.operation_id = ? AND change_row.superseded_at IS NULL
         ');
         $stmt->execute([$operationId]);
         return (int)$stmt->fetchColumn() > 0;
@@ -174,7 +175,7 @@ final class DeviceConfigurationLifecycleRepository
     {
         $stmt = $this->pdo->prepare("
             SELECT * FROM device_configuration_changes
-            WHERE imei = ? AND superseded_at = ''
+            WHERE imei = ? AND superseded_at IS NULL
             ORDER BY config_key
         ");
         $stmt->execute([$imei]);
@@ -183,6 +184,12 @@ final class DeviceConfigurationLifecycleRepository
             $change['desired_payload'] = $this->decode((string)$change['desired_payload']);
             $change['effective_payload'] = $change['effective_payload'] === null
                 ? null : $this->decode((string)$change['effective_payload']);
+            // As colunas são `DATETIME NULL`; a API fala ISO com `Z`, e diz "ainda não" com
+            // cadeia vazia. A conversão é aqui, na fronteira.
+            $change = TimestampFormatter::isoColumns(
+                $change,
+                ['created_at', 'updated_at', 'confirmed_at', 'superseded_at']
+            );
             $change['operations'] = $this->operations((string)$change['change_id']);
             $changes[] = $change;
         }
@@ -199,7 +206,14 @@ final class DeviceConfigurationLifecycleRepository
             WHERE change_id = ? ORDER BY sequence_number
         ');
         $stmt->execute([$changeId]);
-        return $stmt->fetchAll();
+
+        return array_map(
+            static fn(array $row): array => TimestampFormatter::isoColumns(
+                $row,
+                ['created_at', 'updated_at', 'sent_at', 'acknowledged_at']
+            ),
+            $stmt->fetchAll()
+        );
     }
 
     private function refreshChangeForOperation(string $operationId): void
@@ -223,13 +237,13 @@ final class DeviceConfigurationLifecycleRepository
         } elseif ($statuses !== [] && count(array_unique($statuses)) === 1 && $statuses[0] === 'acked') {
             $sync = in_array('ack_only', $modes, true) ? 'confirmation_unavailable' : 'confirmed';
         }
-        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $now = gmdate('Y-m-d H:i:s');
         $confirm = $sync === 'confirmed';
         $update = $this->pdo->prepare('
             UPDATE device_configuration_changes
             SET sync_status = ?, effective_payload = IF(?, desired_payload, effective_payload),
                 confirmed_at = IF(?, ?, confirmed_at), updated_at = ?
-            WHERE change_id = ? AND superseded_at = \'\'
+            WHERE change_id = ? AND superseded_at IS NULL
         ');
         $update->execute([$sync, $confirm ? 1 : 0, $confirm ? 1 : 0, $now, $now, $changeId]);
         $rows = $this->pdo->prepare('

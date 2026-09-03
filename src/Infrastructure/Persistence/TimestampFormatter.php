@@ -21,6 +21,61 @@ final class TimestampFormatter
     }
 
     /**
+     * Como o `toIso`, mas a ausência continua ausência.
+     *
+     * O `toIso` devolve o instante actual quando não lhe dão nada, o que serve para colunas
+     * `NOT NULL` mas mentia num `applied_at` por aplicar. As colunas do ciclo de vida da
+     * configuração são `DATETIME NULL`, e a API diz "ainda não" com cadeia vazia.
+     */
+    public static function toIsoOrEmpty(mixed $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        $dateTime = self::parse(is_string($value) ? $value : null);
+
+        return $dateTime === null
+            ? ''
+            : $dateTime->setTimezone(new DateTimeZone('UTC'))->format(self::ISO_FORMAT);
+    }
+
+    /**
+     * O que se escreve numa coluna `DATETIME`: o formato do MariaDB, ou `NULL`.
+     *
+     * O `''` que o código usava para "ainda não" passa aqui a `NULL`, que é o que a coluna
+     * agora aceita -- e o que faz o `WHERE ... IS NULL` significar "esta é a corrente".
+     */
+    public static function toDatabase(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $dateTime = self::parse(is_string($value) ? $value : null);
+
+        return $dateTime === null ? null : $dateTime->format(self::DB_FORMAT);
+    }
+
+    /**
+     * Converte para ISO as colunas de instante que a linha tenha, deixando as ausentes vazias.
+     *
+     * @param array<string, mixed> $row
+     * @param list<string> $columns
+     * @return array<string, mixed>
+     */
+    public static function isoColumns(array $row, array $columns): array
+    {
+        foreach ($columns as $column) {
+            if (array_key_exists($column, $row)) {
+                $row[$column] = self::toIsoOrEmpty($row[$column]);
+            }
+        }
+
+        return $row;
+    }
+
+    /**
      * @param array<string, mixed> $row
      * @return array<string, mixed>
      */

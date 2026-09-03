@@ -36,7 +36,10 @@ final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
                 change_id, imei, config_key, desired_revision, desired_payload,
                 sync_status, created_at, updated_at
             ) VALUES (?, ?, ?, 1, ?, ?, ?, ?)
-        ')->execute(['change-1', self::IMEI, 'alarm_clock', '{}', 'confirmed', '', '']);
+        ')->execute([
+            'change-1', self::IMEI, 'alarm_clock', '{}', 'confirmed',
+            '2026-08-01 09:00:00', '2026-08-01 09:00:00',
+        ]);
 
         $pdo->prepare('
             INSERT INTO device_configuration_operations (
@@ -46,7 +49,7 @@ final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
         ')->execute([
             'operation-1', 'change-1', 'REMIND', 'REMIND',
-            'vivistar-iw', 'execution_ack', 'acked', '', '',
+            'vivistar-iw', 'execution_ack', 'acked', '2026-08-01 09:00:00', '2026-08-01 09:00:00',
         ]);
 
         $pdo->prepare('

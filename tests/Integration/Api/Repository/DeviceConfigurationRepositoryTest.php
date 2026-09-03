@@ -98,11 +98,11 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
         ');
         $insert->execute([
             '868017032159118', 'sos_contacts', 'sosNumber1', 'four-p-touch', 'SOS1',
-            '{"phone":"123456789"}', '{}', 'acked', 'old', '2026-07-01T08:00:00Z', '', '2026-07-01T08:00:01Z',
+            '{"phone":"123456789"}', '{}', 'acked', 'old', '2026-07-01 08:00:00', null, '2026-07-01 08:00:01',
         ]);
         $insert->execute([
             '868017032159118', 'sosNumber1', 'sosNumber1', 'four-p-touch', 'SOS1',
-            '{"phone":""}', '{}', 'acked', 'new', '2026-07-02T08:00:00Z', '', '2026-07-02T08:00:01Z',
+            '{"phone":""}', '{}', 'acked', 'new', '2026-07-02 08:00:00', null, '2026-07-02 08:00:01',
         ]);
 
         $rows = $this->repository->allForImei('868017032159118');
@@ -125,12 +125,12 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
         $insert->execute([
             '868705080304889', 'phonebook', 'familyNumber', 'wonlex-json',
             'familyNumber', '{"contacts":[{"name":"Hugo","phone":"+351938854803"}]}', '{}',
-            'acked', 'phonebook-command', '2026-07-30T15:44:10Z', '', '2026-07-30T15:44:10Z',
+            'acked', 'phonebook-command', '2026-07-30 15:44:10', null, '2026-07-30 15:44:10',
         ]);
         $insert->execute([
             '868705080304889', 'sos_contacts', 'familyNumber', 'wonlex-json',
             'familyNumber', '{"contacts":[{"name":"Hugo","phone":"938854803","areaCode":"351"}]}', '{}',
-            'acked', 'sos-command', '2026-07-30T15:44:15Z', '', '2026-07-30T15:44:16Z',
+            'acked', 'sos-command', '2026-07-30 15:44:15', null, '2026-07-30 15:44:16',
         ]);
 
         $rows = $this->repository->allForImei('868705080304889');

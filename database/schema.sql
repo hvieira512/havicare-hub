@@ -105,9 +105,11 @@ CREATE TABLE IF NOT EXISTS device_configurations (
     last_status VARCHAR(32) NOT NULL DEFAULT '',
     last_error VARCHAR(64) NOT NULL DEFAULT '',
     last_command_id VARCHAR(64) NOT NULL DEFAULT '',
-    desired_updated_at VARCHAR(32) NOT NULL DEFAULT '',
-    reported_at VARCHAR(32) NOT NULL DEFAULT '',
-    applied_at VARCHAR(32) NOT NULL DEFAULT '',
+    -- Instantes em `DATETIME NULL`: a ausência é `NULL` e não a cadeia vazia, que era o
+    -- segundo vocabulário para "ainda não" neste esquema. A API continua a falar ISO.
+    desired_updated_at DATETIME NULL DEFAULT NULL,
+    reported_at DATETIME NULL DEFAULT NULL,
+    applied_at DATETIME NULL DEFAULT NULL,
     PRIMARY KEY (imei, config_key, native_key),
     -- Sem o `imei` à frente: a confirmação procura pelo `current_change_id` sozinho.
     KEY idx_device_config_change (current_change_id)
@@ -121,10 +123,11 @@ CREATE TABLE IF NOT EXISTS device_configuration_changes (
     desired_payload LONGTEXT NOT NULL,
     effective_payload LONGTEXT NULL,
     sync_status VARCHAR(32) NOT NULL DEFAULT 'pending_delivery',
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL,
-    confirmed_at VARCHAR(32) NOT NULL DEFAULT '',
-    superseded_at VARCHAR(32) NOT NULL DEFAULT '',
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    confirmed_at DATETIME NULL DEFAULT NULL,
+    -- `NULL` é "esta é a alteração corrente", e é o que a condição procura.
+    superseded_at DATETIME NULL DEFAULT NULL,
     UNIQUE KEY uq_configuration_change_revision (imei, config_key, desired_revision),
     KEY idx_configuration_change_current (imei, config_key, superseded_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -141,10 +144,10 @@ CREATE TABLE IF NOT EXISTS device_configuration_operations (
     error_code VARCHAR(64) NOT NULL DEFAULT '',
     attempts INT UNSIGNED NOT NULL DEFAULT 0,
     max_attempts INT UNSIGNED NOT NULL DEFAULT 3,
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL,
-    sent_at VARCHAR(32) NOT NULL DEFAULT '',
-    acknowledged_at VARCHAR(32) NOT NULL DEFAULT '',
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    sent_at DATETIME NULL DEFAULT NULL,
+    acknowledged_at DATETIME NULL DEFAULT NULL,
     sequence_number INT UNSIGNED NOT NULL DEFAULT 0,
     -- A única leitura da tabela: as operações de uma alteração, por ordem. Não há
     -- despachante a consultá-la por estado -- a entrega vive na fila do Redis.

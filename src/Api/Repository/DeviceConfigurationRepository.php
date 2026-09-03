@@ -3,6 +3,7 @@
 namespace Hub\Api\Repository;
 
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
 final class DeviceConfigurationRepository
@@ -64,7 +65,7 @@ final class DeviceConfigurationRepository
     ): void {
         $nativeKey = $this->normalizeNativeKey(trim($protocol), trim($key));
         $key = $this->normalizeConfigKey($nativeKey);
-        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $now = gmdate('Y-m-d H:i:s');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
         if ($this->exists($imei, $key, $nativeKey)) {
             $stmt = $this->pdo->prepare('
@@ -90,7 +91,7 @@ final class DeviceConfigurationRepository
     {
         $nativeKey = trim($key);
         $key = $this->normalizeConfigKey($nativeKey);
-        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $now = gmdate('Y-m-d H:i:s');
         $stmt = $this->pdo->prepare("
             UPDATE device_configurations
             SET last_status = ?, last_command_id = ?,
@@ -109,7 +110,7 @@ final class DeviceConfigurationRepository
     ): void {
         $nativeKey = $this->normalizeNativeKey(trim($protocol), trim($key));
         $key = $this->normalizeConfigKey($nativeKey);
-        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $now = gmdate('Y-m-d H:i:s');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
         if ($this->exists($imei, $key, $nativeKey)) {
             $stmt = $this->pdo->prepare('
@@ -165,12 +166,20 @@ final class DeviceConfigurationRepository
         };
     }
 
+    /**
+     * As colunas de instante são `DATETIME NULL` e saem daqui em ISO com `Z`, ou vazias.
+     *
+     * A conversão acontece **antes** da desduplicação e da ordenação, de propósito: o
+     * `isNewerRow` e o `usort` comparam texto, e assim continuam a ver exactamente o mesmo
+     * que viam quando a coluna era texto. O ISO ordena lexicograficamente, e a ausência
+     * continua a ser a cadeia vazia, que ordena primeiro.
+     */
     private function normalizeRow(array $row): array
     {
         $row['desired_payload'] = json_decode((string)($row['desired_payload'] ?? '{}'), true) ?: [];
         $row['reported_payload'] = json_decode((string)($row['reported_payload'] ?? '{}'), true) ?: [];
 
-        return $row;
+        return TimestampFormatter::isoColumns($row, ['desired_updated_at', 'reported_at', 'applied_at']);
     }
 
     private function isNewerRow(array $candidate, array $existing): bool

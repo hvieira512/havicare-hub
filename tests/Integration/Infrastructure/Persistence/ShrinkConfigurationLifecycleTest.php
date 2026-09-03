@@ -49,7 +49,7 @@ final class ShrinkConfigurationLifecycleTest extends MysqlDashboardTestCase
             ) VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?)
         ')->execute([
             $changeId, '861728087060467', 'medication_reminders', $desired, $effective,
-            'confirmed', '2026-08-04T07:58:44Z', '2026-08-04T07:58:44Z',
+            'confirmed', '2026-08-04 07:58:44', '2026-08-04 07:58:44',
         ]);
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
+use Hub\Infrastructure\Persistence\Migration\ConfigurationTimestampsToDatetime;
 use Hub\Infrastructure\Persistence\Migration\DropApiUserLicenseNumber;
 use Hub\Infrastructure\Persistence\Migration\DropCapabilityTelemetryFlag;
 use Hub\Infrastructure\Persistence\Migration\DropConfigurationSupplierAndModel;
@@ -35,6 +36,7 @@ final class DatabaseMigrationPlan
             new DropUnreadLifecycleColumns(),
             new DropCapabilityTelemetryFlag(),
             new DropApiUserLicenseNumber(),
+            new ConfigurationTimestampsToDatetime(),
         ];
     }
 
