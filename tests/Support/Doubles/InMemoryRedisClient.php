@@ -96,6 +96,9 @@ final class InMemoryRedisClient implements ClientInterface
             'get' => $this->get((string)$arguments[0]),
             'del' => $this->del($arguments[0]),
             'incr' => $this->incr((string)$arguments[0]),
+            // O `expire` é fiel o suficiente sendo inerte: quem o usa põe a janela na própria
+            // chave, e o prazo serve só para o Redis a sério não guardar janelas passadas.
+            'expire' => 1,
             default => throw new \BadMethodCallException("Redis method {$method} is not implemented"),
         };
     }

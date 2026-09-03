@@ -4,6 +4,7 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Auth\ApiTokenStore;
+use Hub\Api\Auth\LoginThrottle;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Domain\DeviceMetadata;
@@ -16,6 +17,7 @@ class AuthService
         private ApiDataAccess $db,
         private int $tokenTtlSeconds = 3600,
         private int $refreshTokenTtlSeconds = 2592000,
+        private ?LoginThrottle $throttle = null,
     ) {
     }
 
@@ -38,10 +40,12 @@ class AuthService
         return ['data' => $this->tokens->issueStreamTicket($auth, self::STREAM_TICKET_TTL_SECONDS)];
     }
 
-    public function login(array $payload, string $requestId = ''): array
+    public function login(array $payload, string $requestId = '', string $remoteAddress = ''): array
     {
         $refreshToken = trim((string)($payload['refresh_token'] ?? ''));
         if ($refreshToken !== '') {
+            // A renovação não passa pelo teto: não chama `password_verify`, e travá-la punia o
+            // cliente que se porta bem -- o que guarda o par e renova em vez de reautenticar.
             return $this->refresh($refreshToken, $requestId);
         }
 
@@ -55,6 +59,18 @@ class AuthService
                 'reason' => 'missing_credentials',
             ]);
             return ApiError::invalidRequest('username and password are required')->toArray();
+        }
+
+        // O teto vem antes da verificação, e é isso que o torna útil: o custo que ele existe
+        // para travar -- 146 ms de loop bloqueado -- é pago por qualquer tentativa, acerte ou
+        // falhe. Verificado depois, já não travava nada.
+        if ($this->throttle !== null && !$this->throttle->allows($remoteAddress, $username)) {
+            Logger::channel('api')->warning('API login throttled', [
+                'request_id' => $requestId,
+                'username' => $username,
+                'error_code' => 'too_many_attempts',
+            ]);
+            return ApiError::tooManyAttempts()->toArray();
         }
 
         $identity = $this->identityForCredentials($username, $password);

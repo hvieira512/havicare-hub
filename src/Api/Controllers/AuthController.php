@@ -29,7 +29,13 @@ final class AuthController
 
         return $this->json->result($payload === null
             ? ApiError::invalidJson()->toArray()
-            : $this->service->login($payload, RequestContext::requestId($request)));
+            : $this->service->login(
+                $payload,
+                RequestContext::requestId($request),
+                // A mesma origem que o registo de pedidos usa, para as duas linhas falarem do
+                // mesmo endereço.
+                (string)($request->getServerParams()['REMOTE_ADDR'] ?? ''),
+            ));
     }
 
     /** O único erro daqui é o `forbidden`, e o 403 vem dele em vez de escrito à mão. */
