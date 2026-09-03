@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
+use Hub\Infrastructure\Persistence\Migration\DropApiUserLicenseNumber;
+use Hub\Infrastructure\Persistence\Migration\DropCapabilityTelemetryFlag;
 use Hub\Infrastructure\Persistence\Migration\DropConfigurationSupplierAndModel;
 use Hub\Infrastructure\Persistence\Migration\DropSupplierDeviceTypes;
 use Hub\Infrastructure\Persistence\Migration\DropUnreadLifecycleColumns;
@@ -31,6 +33,8 @@ final class DatabaseMigrationPlan
             new DropSupplierDeviceTypes(),
             new DropConfigurationSupplierAndModel(),
             new DropUnreadLifecycleColumns(),
+            new DropCapabilityTelemetryFlag(),
+            new DropApiUserLicenseNumber(),
         ];
     }
 

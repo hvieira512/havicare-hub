@@ -36,42 +36,45 @@ final class ApiUserRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
-    public function create(string $username, string $passwordHash, string $role, int $licenseId, bool $enabled, ?int $licenseRefId = null): int
+    /**
+     * A licença entra só pelo `licenseRefId`.
+     *
+     * Havia aqui um `licenseId` a par, gravado numa coluna própria. Era o mesmo número que a
+     * linha de `licenses` apontada já continha, e o `resolveLicense()` do serviço derivava os
+     * dois da mesma linha -- pelo que nunca podiam divergir por este caminho, e um deles era
+     * sempre supérfluo. Fica a referência, que é a que desambigua duas empresas com o mesmo
+     * número de licença.
+     */
+    public function create(string $username, string $passwordHash, string $role, bool $enabled, ?int $licenseRefId = null): int
     {
         $stmt = $this->pdo->prepare('
-            INSERT INTO api_users (username, password_hash, role, license_id, license_ref_id, enabled)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO api_users (username, password_hash, role, license_ref_id, enabled)
+            VALUES (?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$username, $passwordHash, $role, self::storedLicenseId($licenseId), $licenseRefId, $enabled ? 1 : 0]);
+        $stmt->execute([$username, $passwordHash, $role, $licenseRefId, $enabled ? 1 : 0]);
 
         return (int)$this->pdo->lastInsertId();
     }
 
-    public function update(int $id, string $username, string $role, int $licenseId, bool $enabled, ?string $passwordHash = null, ?int $licenseRefId = null): bool
+    public function update(int $id, string $username, string $role, bool $enabled, ?string $passwordHash = null, ?int $licenseRefId = null): bool
     {
         if ($passwordHash !== null) {
             $stmt = $this->pdo->prepare('
                 UPDATE api_users
-                SET username = ?, password_hash = ?, role = ?, license_id = ?, license_ref_id = ?, enabled = ?
+                SET username = ?, password_hash = ?, role = ?, license_ref_id = ?, enabled = ?
                 WHERE id = ?
             ');
-            $stmt->execute([$username, $passwordHash, $role, self::storedLicenseId($licenseId), $licenseRefId, $enabled ? 1 : 0, $id]);
+            $stmt->execute([$username, $passwordHash, $role, $licenseRefId, $enabled ? 1 : 0, $id]);
         } else {
             $stmt = $this->pdo->prepare('
                 UPDATE api_users
-                SET username = ?, role = ?, license_id = ?, license_ref_id = ?, enabled = ?
+                SET username = ?, role = ?, license_ref_id = ?, enabled = ?
                 WHERE id = ?
             ');
-            $stmt->execute([$username, $role, self::storedLicenseId($licenseId), $licenseRefId, $enabled ? 1 : 0, $id]);
+            $stmt->execute([$username, $role, $licenseRefId, $enabled ? 1 : 0, $id]);
         }
 
         return $stmt->rowCount() > 0;
-    }
-
-    /** Um `hub_admin` não tem licença, e a ausência é NULL na tabela como já é no `license_ref_id`. */
-    private static function storedLicenseId(int $licenseId): ?int
-    {
-        return $licenseId === 0 ? null : $licenseId;
     }
 
     public function delete(int $id): void
@@ -92,8 +95,10 @@ final class ApiUserRepository
     {
         $password = $includePasswordHash ? ', u.password_hash' : '';
 
+        // O `license_id` sai da licença apontada, e não de uma coluna própria: é o mesmo
+        // número, por um caminho onde não pode desencontrar-se da referência.
         return "
-            SELECT u.id, u.username{$password}, u.role, u.license_id, u.license_ref_id,
+            SELECT u.id, u.username{$password}, u.role, l.license_id, u.license_ref_id,
                    u.enabled, u.created_at, u.updated_at,
                    l.company_id, c.name AS company_name, l.name AS license_name
             FROM api_users u

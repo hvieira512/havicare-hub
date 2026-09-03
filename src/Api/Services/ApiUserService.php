@@ -78,7 +78,6 @@ class ApiUserService
             $request->username,
             password_hash($request->password, PASSWORD_DEFAULT),
             $request->role,
-            (int)$license['licenseId'],
             $request->enabled,
             $license['licenseRefId'],
         );
@@ -117,7 +116,6 @@ class ApiUserService
             $id,
             $request->username,
             $request->role,
-            (int)$license['licenseId'],
             $request->enabled,
             $passwordHash,
             $license['licenseRefId'],
@@ -144,12 +142,12 @@ class ApiUserService
      *
      * Um `hub_admin` não tem licença, e é aqui que os dois campos voltam a zero.
      *
-     * @return array{licenseId: int, licenseRefId: int|null}|array{error: array<string, mixed>}
+     * @return array{licenseRefId: int|null}|array{error: array<string, mixed>}
      */
     private function resolveLicense(ApiUserWriteRequest $request): array
     {
         if (!$request->isLicenseClient()) {
-            return ['licenseId' => 0, 'licenseRefId' => null];
+            return ['licenseRefId' => null];
         }
 
         $licenseRefId = $request->licenseRefId ?? 0;
@@ -162,9 +160,6 @@ class ApiUserService
             return ApiError::invalidLicense()->toArray();
         }
 
-        return [
-            'licenseId' => DeviceMetadata::normalizeLicenseId((string)$license['license_id']),
-            'licenseRefId' => (int)$license['id'],
-        ];
+        return ['licenseRefId' => (int)$license['id']];
     }
 }

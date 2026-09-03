@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS capabilities (
     section ENUM('telemetry', 'health', 'contacts', 'alarms', 'settings_system') NOT NULL,
     capability_key VARCHAR(191) NOT NULL,
     label VARCHAR(191) NOT NULL,
-    is_telemetry TINYINT(1) NOT NULL DEFAULT 0,
+    -- Sem `is_telemetry`: era `section = 'telemetry'` escrito outra vez, e é assim que a
+    -- consulta o calcula. As outras duas bandeiras não são redutíveis à secção.
     is_configurable TINYINT(1) NOT NULL DEFAULT 0,
     is_requestable TINYINT(1) NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -177,14 +178,14 @@ CREATE TABLE IF NOT EXISTS api_users (
     username VARCHAR(191) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('hub_admin', 'license_client') NOT NULL,
-    -- Um `hub_admin` não tem licença: NULL, como o `license_ref_id` ao lado.
-    license_id INT UNSIGNED NULL DEFAULT NULL,
+    -- A licença é só a referência. Um `hub_admin` não tem: NULL. O número da licença sai da
+    -- linha apontada, e não de uma cópia que se pudesse desencontrar dela -- é ele que decide
+    -- o âmbito do inquilino, onde NULL não é "desconhecido" mas "sem filtro".
     license_ref_id BIGINT UNSIGNED NULL,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY idx_api_users_license_ref (license_ref_id),
-    KEY idx_api_users_role_license (role, license_id),
     CONSTRAINT fk_api_users_license_ref FOREIGN KEY (license_ref_id) REFERENCES licenses(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

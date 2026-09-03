@@ -48,20 +48,20 @@ final class GenericCapabilityRepository
     {
         if ($deviceType === null || trim($deviceType) === '') {
             $rows = TimestampFormatter::normalizeRows($this->pdo
-                ->query('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, created_at, updated_at FROM capabilities ORDER BY FIELD(device_type, \'watch\', \'ncs\', \'radar\'), FIELD(section, \'telemetry\', \'health\', \'contacts\', \'alarms\', \'settings_system\'), label, capability_key')
+                ->query('SELECT id, device_type, section, capability_key, label, (section = \'telemetry\') AS is_telemetry, is_configurable, is_requestable, created_at, updated_at FROM capabilities ORDER BY FIELD(device_type, \'watch\', \'ncs\', \'radar\'), FIELD(section, \'telemetry\', \'health\', \'contacts\', \'alarms\', \'settings_system\'), label, capability_key')
                 ->fetchAll());
 
             return $this->appendMissingDefinitions($rows, null);
         }
 
-        $stmt = $this->pdo->prepare('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, created_at, updated_at FROM capabilities WHERE device_type = ? ORDER BY FIELD(section, \'telemetry\', \'health\', \'contacts\', \'alarms\', \'settings_system\'), label, capability_key');
+        $stmt = $this->pdo->prepare('SELECT id, device_type, section, capability_key, label, (section = \'telemetry\') AS is_telemetry, is_configurable, is_requestable, created_at, updated_at FROM capabilities WHERE device_type = ? ORDER BY FIELD(section, \'telemetry\', \'health\', \'contacts\', \'alarms\', \'settings_system\'), label, capability_key');
         $stmt->execute([$deviceType]);
         return $this->appendMissingDefinitions(TimestampFormatter::normalizeRows($stmt->fetchAll()), $deviceType);
     }
 
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, created_at, updated_at FROM capabilities WHERE id = ?');
+        $stmt = $this->pdo->prepare('SELECT id, device_type, section, capability_key, label, (section = \'telemetry\') AS is_telemetry, is_configurable, is_requestable, created_at, updated_at FROM capabilities WHERE id = ?');
         $stmt->execute([$id]);
 
         $row = $stmt->fetch();
@@ -133,7 +133,8 @@ final class GenericCapabilityRepository
                 'section' => (string)($definition['section'] ?? ''),
                 'capability_key' => $key,
                 'label' => (string)($definition['label'] ?? $key),
-                'is_telemetry' => (bool)($definition['isTelemetry'] ?? false),
+                // Derivado da secção, como na base: um sítio só a decidir o que é telemetria.
+                'is_telemetry' => ($definition['section'] ?? '') === 'telemetry',
                 'is_configurable' => (bool)($definition['isConfigurable'] ?? false),
                 'is_requestable' => (bool)($definition['isRequestable'] ?? false),
                 'is_event' => (bool)($definition['isEvent'] ?? false),

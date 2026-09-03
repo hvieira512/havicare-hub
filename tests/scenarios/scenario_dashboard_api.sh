@@ -37,9 +37,9 @@ $db = Hub\Api\Repository\ApiDataAccess::fromDatabase(
 $existing = $db->apiUsers->findByUsername("admin");
 $hash = password_hash("secret", PASSWORD_DEFAULT);
 if (is_array($existing)) {
-    $db->apiUsers->update((int)$existing["id"], "admin", "hub_admin", 0, true, $hash);
+    $db->apiUsers->update((int)$existing["id"], "admin", "hub_admin", true, $hash);
 } else {
-    $db->apiUsers->create("admin", $hash, "hub_admin", 0, true);
+    $db->apiUsers->create("admin", $hash, "hub_admin", true);
 }
 '
 

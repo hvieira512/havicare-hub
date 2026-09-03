@@ -25,6 +25,40 @@ final class CapabilitiesApiTest extends MysqlDashboardTestCase
         self::assertContains('heart_rate', array_column($response['data'], 'key'));
     }
 
+    /**
+     * O `isTelemetry` da resposta acompanha a secção, venha ele de uma coluna ou de um
+     * cálculo.
+     *
+     * O ecrã das capacidades usa este campo para decidir o que mostra, e ele deixou de ser
+     * uma coluna para passar a `section = 'telemetry'` na consulta. Este caso prende o
+     * resultado dos dois lados: verdadeiro na telemetria e falso fora dela.
+     */
+    public function testTelemetryFlagFollowsTheSection(): void
+    {
+        $api = $this->makeApi();
+
+        $porChave = [];
+        foreach ($api->list('deviceType=watch')['data'] ?? [] as $row) {
+            $porChave[(string)($row['key'] ?? '')] = $row;
+        }
+
+        self::assertArrayHasKey('heart_rate', $porChave);
+        self::assertSame('telemetry', $porChave['heart_rate']['section'] ?? null);
+        self::assertTrue($porChave['heart_rate']['isTelemetry'] ?? false);
+
+        self::assertArrayHasKey('alarm_clock', $porChave);
+        self::assertSame('alarms', $porChave['alarm_clock']['section'] ?? null);
+        self::assertFalse($porChave['alarm_clock']['isTelemetry'] ?? true);
+
+        foreach ($porChave as $key => $row) {
+            self::assertSame(
+                ($row['section'] ?? '') === 'telemetry',
+                (bool)($row['isTelemetry'] ?? false),
+                "o isTelemetry de {$key} não acompanha a secção",
+            );
+        }
+    }
+
     public function testShowReturnsCapabilityDetail(): void
     {
         $api = $this->makeApi();

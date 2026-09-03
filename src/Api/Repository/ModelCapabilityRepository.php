@@ -78,7 +78,7 @@ final class ModelCapabilityRepository
      */
     private function requestableFeaturesForModelIdFiltered(int $modelId, bool $telemetryOnly): array
     {
-        $telemetryCondition = $telemetryOnly ? 'AND c.is_telemetry = 1' : '';
+        $telemetryCondition = $telemetryOnly ? "AND c.section = 'telemetry'" : '';
         $stmt = $this->pdo->prepare('
             SELECT c.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
             FROM model_capabilities mc
@@ -124,7 +124,7 @@ final class ModelCapabilityRepository
             JOIN capabilities c ON c.id = mc.capability_id
             WHERE mc.model_id = ?
               AND mc.enabled = 1
-              AND c.is_telemetry = 1
+              AND c.section = \'telemetry\'
         ');
         $rows->execute([$modelId]);
 

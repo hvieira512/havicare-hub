@@ -94,13 +94,12 @@ final class ReferenceCatalogSeeder
         $insert = $pdo->prepare('
             INSERT INTO capabilities (
                 device_type, section, capability_key, label,
-                is_telemetry, is_configurable, is_requestable
+                is_configurable, is_requestable
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 section = VALUES(section),
                 label = VALUES(label),
-                is_telemetry = VALUES(is_telemetry),
                 is_configurable = VALUES(is_configurable),
                 is_requestable = VALUES(is_requestable)
         ');
@@ -110,7 +109,6 @@ final class ReferenceCatalogSeeder
                 (string)$definition['section'],
                 (string)$definition['key'],
                 (string)$definition['label'],
-                !empty($definition['isTelemetry']) ? 1 : 0,
                 !empty($definition['isConfigurable']) ? 1 : 0,
                 !empty($definition['isRequestable']) ? 1 : 0,
             ]);
