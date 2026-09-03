@@ -65,22 +65,11 @@ final class DeviceMetadata
         ];
     }
 
-    /**
-     * Os tipos de dispositivo, pela ordem em que o `ENUM` os declara nas quatro tabelas que
-     * o repetem. Um teste compara as cinco declarações, porque divergirem é uma falha calada.
-     *
-     * @return list<string>
-     */
-    public static function deviceTypes(): array
-    {
-        return ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet'];
-    }
-
     public static function normalizeDeviceType(string $deviceType): string
     {
         $normalized = strtolower(trim($deviceType));
 
-        return in_array($normalized, self::deviceTypes(), true) ? $normalized : 'watch';
+        return in_array($normalized, DeviceTypeCatalog::keys(), true) ? $normalized : 'watch';
     }
 
     /**

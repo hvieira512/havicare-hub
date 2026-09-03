@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Infrastructure\Persistence;
 
-use Hub\Domain\DeviceMetadata;
+use Hub\Domain\DeviceTypeCatalog;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
@@ -59,18 +59,20 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O `device_type` é um `ENUM` declarado em quatro tabelas, e acrescentar um tipo são
-     * quatro `ALTER TABLE` que têm de concordar.
+     * O `device_type` é um `ENUM` declarado em três tabelas, e acrescentar um tipo são três
+     * `ALTER TABLE` que têm de concordar.
      *
      * A discordância não dá erro: uma `whitelist` que aceite `bracelet` e um `capabilities`
-     * que não o conheça deixam o dispositivo registado e sem capacidade nenhuma, calados. O
-     * quinto sítio é o `DeviceMetadata`, em código, e é o que a lista abaixo compara.
+     * que não o conheça deixam o dispositivo registado e sem capacidade nenhuma, calados.
+     *
+     * O sítio a que as três têm de obedecer é o `config/device-types.json`, que o
+     * `DeviceTypeCatalog` serve e que o frontend também lê.
      */
     public function testTheDeviceTypeEnumAgreesEverywhereItIsDeclared(): void
     {
         $pdo = $this->createDashboardDatabase()->pdo();
-        $tables = ['capabilities', 'models', 'supplier_device_types', 'whitelist'];
-        $reference = DeviceMetadata::deviceTypes();
+        $tables = ['capabilities', 'models', 'whitelist'];
+        $reference = DeviceTypeCatalog::keys();
 
         foreach ($tables as $table) {
             $column = null;
@@ -84,7 +86,7 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
             self::assertSame(
                 $reference,
                 $this->enumValues($column),
-                "o ENUM de {$table} divergiu da lista do DeviceMetadata",
+                "o ENUM de {$table} divergiu do config/device-types.json",
             );
         }
     }

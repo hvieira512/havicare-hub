@@ -67,17 +67,7 @@ ON DUPLICATE KEY UPDATE
     device_type = VALUES(device_type),
     image_path = IF(VALUES(image_path) = '', models.image_path, VALUES(image_path));
 
-INSERT IGNORE INTO supplier_device_types (supplier_id, device_type)
-SELECT s.id, t.device_type FROM suppliers s JOIN (
-    SELECT '4P Touch' AS name, 'watch' AS device_type
-    UNION ALL SELECT 'Vivistar', 'watch'
-    UNION ALL SELECT 'Wonlex', 'watch'
-    UNION ALL SELECT 'Voerka', 'ncs'
-    UNION ALL SELECT 'Qinglanst', 'radar'
-    UNION ALL SELECT 'MOKO', 'gateway'
-    UNION ALL SELECT 'MOKO', 'bracelet'
-    UNION ALL SELECT 'MONIT', 'diaper_sensor'
-) t ON t.name = s.name;
+-- Os pares fornecedor x tipo de dispositivo não se semeiam: saem dos modelos acima.
 
 -- Um dispositivo sem dono tem `NULL` nas duas colunas, e não o `0` e o `'null'`.
 --

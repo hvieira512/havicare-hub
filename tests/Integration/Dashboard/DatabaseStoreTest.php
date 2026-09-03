@@ -213,7 +213,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
 
         $pdo->exec("DELETE FROM model_capabilities WHERE model_id IN (SELECT id FROM models WHERE device_type = 'radar')");
         $pdo->exec("DELETE FROM whitelist WHERE supplier = 'Qinglanst' OR device_type = 'radar'");
-        $pdo->exec("DELETE FROM supplier_device_types WHERE device_type = 'radar'");
         $pdo->exec("DELETE FROM capabilities WHERE device_type = 'radar'");
         $pdo->exec("DELETE FROM models WHERE device_type = 'radar'");
         $pdo->exec("DELETE FROM suppliers WHERE name = 'Qinglanst'");
@@ -263,20 +262,29 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertFalse($db->models->existsForDifferentId((int)$model['id'], (int)$supplier['id'], 'VIVISTAR-PRO'));
     }
 
-    public function testModelWritesBackfillSupplierDeviceTypes(): void
+    /** Os pares fornecedor x tipo saem dos modelos, e por isso acompanham-nos nos dois sentidos. */
+    public function testSupplierDeviceTypesFollowTheCatalogedModels(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $supplier = $db->suppliers->findByName('Wonlex');
         self::assertIsArray($supplier);
+        $wonlexMakesRadar = static fn (array $rows): bool => array_filter(
+            $rows,
+            static fn (array $row): bool => ($row['supplier'] ?? '') === 'Wonlex' && ($row['device_type'] ?? '') === 'radar'
+        ) !== [];
+
+        self::assertFalse($wonlexMakesRadar($db->models->supplierDeviceTypes()));
 
         $db->models->add((int)$supplier['id'], 'RADAR-1', 'Radar 1', 'radar');
+        self::assertTrue($wonlexMakesRadar($db->models->supplierDeviceTypes()));
 
-        $rows = array_values(array_filter(
-            $db->supplierDeviceTypes->all(),
-            static fn (array $row): bool => ($row['supplier'] ?? '') === 'Wonlex' && ($row['device_type'] ?? '') === 'radar'
-        ));
-
-        self::assertNotEmpty($rows);
+        $model = $db->models->find('Wonlex', 'RADAR-1');
+        self::assertIsArray($model);
+        $db->models->delete((int)$model['id']);
+        self::assertFalse(
+            $wonlexMakesRadar($db->models->supplierDeviceTypes()),
+            'apagado o único radar, o par tem de desaparecer com ele',
+        );
     }
 
     public function testTimestampColumnsAreAutoPopulatedAndReturnedAsIso8601(): void

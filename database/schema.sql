@@ -23,15 +23,8 @@ CREATE TABLE IF NOT EXISTS models (
     CONSTRAINT fk_models_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS supplier_device_types (
-    supplier_id BIGINT UNSIGNED NOT NULL,
-    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet') NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (supplier_id, device_type),
-    KEY idx_supplier_device_types_device_type (device_type, supplier_id),
-    CONSTRAINT fk_supplier_device_types_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Não há tabela de pares fornecedor x tipo de dispositivo: a pergunta responde-se com um
+-- `SELECT DISTINCT` sobre a `models`, que é a origem. Ver `ModelRepository::supplierDeviceTypes()`.
 
 CREATE TABLE IF NOT EXISTS capabilities (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,

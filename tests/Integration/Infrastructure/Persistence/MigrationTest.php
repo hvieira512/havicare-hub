@@ -81,8 +81,11 @@ final class MigrationTest extends MysqlDashboardTestCase
     public function testAFreshlyMigratedDatabaseSatisfiesTheGuard(): void
     {
         $pdo = $this->createDashboardDatabase()->pdo();
-        $planned = (new DatabaseMigrationPlan())->versions();
 
+        // Comparados como conjuntos: a ordem do plano é a de execução, e nada obriga a que
+        // ela coincida com a alfabética do registo. O que se afirma é que ficou tudo lá.
+        $planned = (new DatabaseMigrationPlan())->versions();
+        sort($planned);
         $recorded = array_map('strval', $pdo
             ->query('SELECT version FROM schema_migrations ORDER BY version')
             ->fetchAll(\PDO::FETCH_COLUMN));

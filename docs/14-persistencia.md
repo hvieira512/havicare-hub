@@ -13,12 +13,11 @@ A persistência assenta em duas bases de dados com funções distintas:
 histórico — ver a
 secção 3.
 
-## 1. MySQL — as 16 tabelas
+## 1. MySQL — as 15 tabelas
 
 ```mermaid
 erDiagram
     suppliers ||--o{ models : "tem"
-    suppliers ||--o{ supplier_device_types : "fabrica"
     models ||--o{ model_capabilities : "suporta"
     capabilities ||--o{ model_capabilities : "é suportada por"
     companies ||--o{ licenses : "tem"
@@ -34,7 +33,6 @@ erDiagram
 |---|---|
 | `suppliers` | Os sete fornecedores. Nome único |
 | `models` | Modelo interno, nome comercial, tipo de dispositivo, imagem |
-| `supplier_device_types` | Que tipos cada fornecedor fabrica |
 | `capabilities` | O catálogo genérico: chave, secção, e as bandeiras de telemetria, configurável e pedível |
 | `model_capabilities` | Que capacidades cada modelo tem, com a possibilidade de sobrepor |
 
@@ -117,7 +115,16 @@ desfaz escolhas de um administrador.
 > começa por desistir quando a tabela está vazia: numa base nova não há nada a
 > trazer a dia, e a linha de base trata do assunto.
 
-Há hoje **uma** migração, `2026_09_03_shrink_configuration_lifecycle`. Larga as
+Há hoje **duas** migrações.
+
+A `2026_09_03_drop_supplier_device_types` larga a tabela que respondia a «que
+fornecedores fazem cada tipo de dispositivo». A pergunta responde-se com um
+`SELECT DISTINCT` sobre a `models`, que é a origem — ver
+`ModelRepository::supplierDeviceTypes()`. A tabela era escrita num sítio só e
+apenas a inserir, pelo que apagar o último modelo de um tipo, ou mudar-lhe o
+tipo, deixava lá o par a afirmar o contrário.
+
+A `2026_09_03_shrink_configuration_lifecycle` larga as
 três colunas de `device_configuration_operations` que eram escritas e nunca
 lidas — `command_bytes`, `expected_reply_types` e `retry_delay_seconds` —, larga
 os cinco índices que nenhuma consulta podia usar, repõe dois deles pela ordem em
@@ -204,7 +211,7 @@ integram a primeira contagem sem pertencerem ao hub.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `database/schema.sql` | A linha de base — as 16 tabelas |
+| `database/schema.sql` | A linha de base — as 15 tabelas |
 | `database/seed.sql` · `bin/seed-inventory.php` | O inventário de exemplo |
 | `src/Infrastructure/Persistence/DatabaseMigrator.php` | Esquema, migrações, catálogo |
 | `src/Api/Configuration/VoiceDataMarker.php` | A marca do áudio, no histórico e na resposta |

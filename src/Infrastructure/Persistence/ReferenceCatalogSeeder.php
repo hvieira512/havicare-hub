@@ -26,22 +26,10 @@ final class ReferenceCatalogSeeder
         ['MOKO', 'W6', 'MOKO W6', 'bracelet', ''],
     ];
 
-    private const SUPPLIER_DEVICE_TYPES = [
-        ['Wonlex', 'watch'],
-        ['Vivistar', 'watch'],
-        ['4P Touch', 'watch'],
-        ['Voerka', 'ncs'],
-        ['Qinglanst', 'radar'],
-        ['MOKO', 'gateway'],
-        ['MONIT', 'diaper_sensor'],
-        ['MOKO', 'bracelet'],
-    ];
-
     public function seedReferenceData(PDO $pdo): void
     {
         $this->seedSuppliersAndModels($pdo);
         $this->seedCompanies($pdo);
-        $this->seedSupplierDeviceTypes($pdo);
         $this->seedCapabilities($pdo);
     }
 
@@ -98,20 +86,6 @@ final class ReferenceCatalogSeeder
                 VALUES (?, 1001, ?)
             ');
             $license->execute([$companyId, 'gucc.dev']);
-        }
-    }
-
-    private function seedSupplierDeviceTypes(PDO $pdo): void
-    {
-        $nameToId = $pdo
-            ->query("SELECT name, id FROM suppliers WHERE name IN ('" . implode("','", self::SUPPLIERS) . "')")
-            ->fetchAll(PDO::FETCH_KEY_PAIR);
-        $insert = $pdo->prepare('INSERT IGNORE INTO supplier_device_types (supplier_id, device_type) VALUES (?, ?)');
-        foreach (self::SUPPLIER_DEVICE_TYPES as [$supplierName, $deviceType]) {
-            $supplierId = (int)($nameToId[$supplierName] ?? 0);
-            if ($supplierId > 0) {
-                $insert->execute([$supplierId, $deviceType]);
-            }
         }
     }
 

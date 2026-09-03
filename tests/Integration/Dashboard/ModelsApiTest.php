@@ -201,7 +201,55 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame('http://localhost:8081/model-images/example.jpg', $model['image'] ?? null);
     }
 
-    public function testFiltersListDeviceTypesAndSuppliersFromAssociationTable(): void
+    /**
+     * A lista de fornecedores por tipo sai dos modelos catalogados, e não de uma tabela à
+     * parte que era mantida à mão.
+     *
+     * A `supplier_device_types` só era escrita pelo `ModelRepository`, e só a inserir: apagar
+     * o último relógio de um fornecedor, ou mudar-lhe o tipo, deixava lá o par a afirmar que
+     * ele ainda fazia relógios. Este caso reproduz esse par.
+     */
+    public function testFiltersStopListingASupplierWhenItsLastModelOfThatTypeIsDeleted(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $suppliersOfRadar = function () use ($api): array {
+            $groups = array_values(array_filter(
+                $api->filters()['data'] ?? [],
+                static fn (array $group): bool => ($group['deviceType'] ?? '') === 'radar'
+            ));
+
+            return array_values(array_map(
+                static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
+                $groups[0]['suppliers'] ?? []
+            ));
+        };
+
+        self::assertSame(['Qinglanst'], $suppliersOfRadar());
+
+        // A Voerka só tem um NCS catalogado. Passa a ter um radar, e depois deixa de ter.
+        $voerka = $db->suppliers->findByName('Voerka');
+        self::assertIsArray($voerka);
+        $created = $api->create([
+            'supplier_id' => (int)$voerka['id'],
+            'internalModel' => 'R1 Teste',
+            'commercialName' => 'Radar de teste',
+            'deviceType' => 'radar',
+        ]);
+        self::assertArrayNotHasKey('error', $created, json_encode($created));
+        self::assertSame(['Qinglanst', 'Voerka'], $suppliersOfRadar());
+
+        $model = $db->models->find('Voerka', 'R1 Teste');
+        self::assertIsArray($model);
+        $api->delete((int)$model['id']);
+
+        self::assertSame(
+            ['Qinglanst'],
+            $suppliersOfRadar(),
+            'sem nenhum modelo de radar, a Voerka não devia continuar entre os radares',
+        );
+    }
+
+    public function testFiltersListDeviceTypesAndSuppliersFromTheCatalogedModels(): void
     {
         [$api] = $this->makeApi();
 

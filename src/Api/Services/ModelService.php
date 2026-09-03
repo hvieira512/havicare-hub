@@ -150,7 +150,7 @@ class ModelService
             ];
         }
 
-        foreach ($this->db->supplierDeviceTypes->all() as $row) {
+        foreach ($this->db->models->supplierDeviceTypes() as $row) {
             $deviceType = DeviceMetadata::normalizeDeviceType((string)($row['device_type'] ?? 'watch'));
             if (!isset($groups[$deviceType])) {
                 continue;

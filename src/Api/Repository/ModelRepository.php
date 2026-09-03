@@ -66,7 +66,6 @@ final class ModelRepository
             ');
             $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $storedImagePath]);
             $this->rows = null;
-            $this->ensureSupplierDeviceType($supplierId, $deviceType);
             return;
         }
 
@@ -77,7 +76,6 @@ final class ModelRepository
         ');
         $stmt->execute([$commercialName, $deviceType, $storedImagePath, $supplierId, $internalModel]);
         $this->rows = null;
-        $this->ensureSupplierDeviceType($supplierId, $deviceType);
     }
 
     public function update(int $id, int $supplierId, string $internalModel, string $commercialName, string $deviceType, ?string $imagePath = null): bool
@@ -91,7 +89,6 @@ final class ModelRepository
         $stmt = $this->pdo->prepare('UPDATE models SET supplier_id = ?, internal_model = ?, commercial_name = ?, device_type = ?, image_path = ? WHERE id = ?');
         $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $storedImagePath, $id]);
         $this->rows = null;
-        $this->ensureSupplierDeviceType($supplierId, $deviceType);
 
         return $stmt->rowCount() > 0;
     }
@@ -129,13 +126,27 @@ final class ModelRepository
         return $stmt->fetch() ?: null;
     }
 
-    private function ensureSupplierDeviceType(int $supplierId, string $deviceType): void
+    /**
+     * Que fornecedores fazem cada tipo de dispositivo, tirado dos modelos catalogados.
+     *
+     * Havia uma tabela `supplier_device_types` para isto, escrita só a inserir e só pelos
+     * caminhos daqui. Apagar o último relógio de um fornecedor, ou mudar-lhe o tipo, deixava
+     * lá o par a afirmar que ele ainda fazia relógios. Derivado não pode divergir.
+     *
+     * @return list<array{supplier_id: int, supplier: string, device_type: string}>
+     */
+    public function supplierDeviceTypes(): array
     {
-        $stmt = $this->pdo->prepare('
-            INSERT INTO supplier_device_types (supplier_id, device_type)
-            VALUES (?, ?)
-            ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP
-        ');
-        $stmt->execute([$supplierId, $deviceType]);
+        return $this->pdo
+            ->query("
+                SELECT DISTINCT
+                    m.supplier_id,
+                    s.name AS supplier,
+                    m.device_type
+                FROM models m
+                INNER JOIN suppliers s ON s.id = m.supplier_id
+                ORDER BY FIELD(m.device_type, 'watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet'), s.name
+            ")
+            ->fetchAll();
     }
 }
