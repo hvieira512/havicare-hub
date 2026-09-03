@@ -255,7 +255,9 @@ final class WhitelistRepository
         }
 
         if ($companyScope !== null && trim($companyScope) !== '') {
-            $clauses[] = 'LOWER(w.company) = LOWER(?)';
+            // Sem `LOWER()` dos dois lados: a coluna é `utf8mb4_unicode_ci` e já compara sem
+            // distinguir maiúsculas, e a função punha o `idx_whitelist_company` a varrer.
+            $clauses[] = 'w.company = ?';
             $params[] = trim($companyScope);
         }
 

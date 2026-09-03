@@ -55,8 +55,9 @@ CREATE TABLE IF NOT EXISTS model_capabilities (
     is_requestable TINYINT(1) NULL DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    -- A chave primária serve as buscas por modelo; um índice só com `model_id` era o seu
+    -- prefixo exacto. O `capability_id` tem o índice que a chave estrangeira cria.
     PRIMARY KEY (model_id, capability_id),
-    KEY idx_model_capabilities_model (model_id),
     CONSTRAINT fk_model_capabilities_model_v2 FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE,
     CONSTRAINT fk_model_capabilities_capability_v2 FOREIGN KEY (capability_id) REFERENCES capabilities(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -73,7 +74,9 @@ CREATE TABLE IF NOT EXISTS whitelist (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY idx_whitelist_supplier_model (supplier, model),
-    KEY idx_whitelist_device_type_license (device_type, license_id),
+    -- A licença à cabeça: o âmbito do inquilino filtra por ela sozinha, e com o
+    -- `device_type` à frente o optimizador não conseguia procurar.
+    KEY idx_whitelist_license_device_type (license_id, device_type),
     KEY idx_whitelist_company (company),
     KEY idx_whitelist_device_id (device_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -111,7 +114,8 @@ CREATE TABLE IF NOT EXISTS device_configurations (
     reported_at VARCHAR(32) NOT NULL DEFAULT '',
     applied_at VARCHAR(32) NOT NULL DEFAULT '',
     PRIMARY KEY (imei, config_key, native_key),
-    KEY idx_device_config_current_change (imei, current_change_id)
+    -- Sem o `imei` à frente: a confirmação procura pelo `current_change_id` sozinho.
+    KEY idx_device_config_change (current_change_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS device_configuration_changes (
@@ -138,21 +142,19 @@ CREATE TABLE IF NOT EXISTS device_configuration_operations (
     native_key VARCHAR(191) NOT NULL,
     native_type VARCHAR(191) NOT NULL,
     protocol VARCHAR(64) NOT NULL,
-    command_bytes LONGTEXT NOT NULL,
-    expected_reply_types LONGTEXT NOT NULL,
     confirmation_mode VARCHAR(32) NOT NULL DEFAULT 'execution_ack',
     delivery_status VARCHAR(32) NOT NULL DEFAULT 'created',
     error_code VARCHAR(64) NOT NULL DEFAULT '',
     attempts INT UNSIGNED NOT NULL DEFAULT 0,
     max_attempts INT UNSIGNED NOT NULL DEFAULT 3,
-    retry_delay_seconds INT UNSIGNED NOT NULL DEFAULT 60,
     created_at VARCHAR(32) NOT NULL,
     updated_at VARCHAR(32) NOT NULL,
     sent_at VARCHAR(32) NOT NULL DEFAULT '',
     acknowledged_at VARCHAR(32) NOT NULL DEFAULT '',
     sequence_number INT UNSIGNED NOT NULL DEFAULT 0,
+    -- A única leitura da tabela: as operações de uma alteração, por ordem. Não há
+    -- despachante a consultá-la por estado -- a entrega vive na fila do Redis.
     KEY idx_configuration_operation_change (change_id, sequence_number),
-    KEY idx_configuration_operation_dispatch (delivery_status, updated_at),
     CONSTRAINT fk_configuration_operation_change FOREIGN KEY (change_id)
         REFERENCES device_configuration_changes(change_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -171,8 +173,9 @@ CREATE TABLE IF NOT EXISTS licenses (
     name VARCHAR(191) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    -- A chave única começa pelo `company_id` e satisfaz a chave estrangeira; um índice só
+    -- com essa coluna era o seu prefixo exacto.
     UNIQUE KEY uq_licenses_company_license (company_id, license_id),
-    KEY idx_licenses_company_id (company_id),
     CONSTRAINT fk_licenses_company FOREIGN KEY (company_id) REFERENCES companies(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -222,6 +225,7 @@ CREATE TABLE IF NOT EXISTS private_radio_map_access_points (
     source ENUM('learned', 'manual') NOT NULL DEFAULT 'learned',
     conflicted TINYINT(1) NOT NULL DEFAULT 0,
     first_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    KEY idx_private_radio_map_usable (conflicted, last_seen_at)
+    last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    -- Sem índice secundário: a única consulta é `WHERE bssid_hash IN (…)`, que usa a chave
+    -- primária, e o `conflicted` é filtrado em PHP.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

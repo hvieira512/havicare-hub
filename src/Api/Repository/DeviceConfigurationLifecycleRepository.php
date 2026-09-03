@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Hub\Api\Repository;
 
+use Hub\Api\Configuration\VoiceDataMarker;
 use PDO;
 
 final class DeviceConfigurationLifecycleRepository
 {
+    private VoiceDataMarker $voiceDataMarker;
+
     public function __construct(private PDO $pdo)
     {
+        $this->voiceDataMarker = new VoiceDataMarker();
     }
 
     /**
@@ -64,7 +68,9 @@ final class DeviceConfigurationLifecycleRepository
                 $imei,
                 $genericKey,
                 $revision,
-                $this->encode($desired),
+                // O histórico leva a marca do áudio e não o áudio: quem lê uma revisão quer
+                // saber o que mudou. O estado corrente, abaixo, guarda-o por inteiro.
+                $this->encode($this->voiceDataMarker->mark($desired)),
                 $operations === [] ? 'confirmed' : 'pending_delivery',
                 $now,
                 $now,
@@ -96,12 +102,14 @@ final class DeviceConfigurationLifecycleRepository
                 ]);
             }
 
+            // Sem os bytes do comando: quem os entrega é a fila `hub:downlink` do Redis, e
+            // aqui fica o registo do que foi pedido e como correu.
             $insertOperation = $this->pdo->prepare('
                 INSERT INTO device_configuration_operations (
                     operation_id, change_id, imei, config_key, native_key, native_type,
-                    protocol, command_bytes, expected_reply_types, confirmation_mode,
+                    protocol, confirmation_mode,
                     delivery_status, created_at, updated_at, sequence_number
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'created\', ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'created\', ?, ?, ?)
             ');
             foreach ($operations as $index => &$operation) {
                 $operation['changeId'] = $changeId;
@@ -110,8 +118,6 @@ final class DeviceConfigurationLifecycleRepository
                 $insertOperation->execute([
                     $operation['operationId'], $changeId, $imei, $genericKey,
                     $operation['nativeKey'], $operation['nativeType'], $operation['protocol'],
-                    base64_encode((string)$operation['bytes']),
-                    $this->encode((array)$operation['expectedReplyTypes']),
                     $operation['confirmationMode'], $now, $now, $index,
                 ]);
             }

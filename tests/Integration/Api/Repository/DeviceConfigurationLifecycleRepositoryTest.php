@@ -115,4 +115,100 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         self::assertNull($current['effective_payload']);
         self::assertSame('retry_exhausted', $current['operations'][0]['error_code']);
     }
+
+    /**
+     * O histórico guarda que houve gravação, não a gravação.
+     *
+     * Um aviso de medicação de 42 s são 978 KB de base64, e o histórico guardava uma cópia
+     * por revisão -- eram 69% da base de produção. O estado corrente mantém o áudio porque é
+     * a base de fusão de uma alteração parcial: sem ele, mudar só a hora apagava a voz do
+     * relógio.
+     */
+    public function testTheHistoryKeepsTheMarkerAndTheCurrentStateKeepsTheAudio(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $db = ApiDataAccess::fromDatabase($database);
+        $audio = "ID3\x03\x00\x00\x00\x00\x00\x00" . "\xFF\xFB\x90\x64" . str_repeat("\x00", 4000);
+        $voiceData = base64_encode($audio);
+        $desired = [
+            'reminderSettings' => [['time' => '09:00', 'enabled' => true]],
+            'reminderText' => 'Comprimido',
+            'voiceData' => $voiceData,
+            'voiceMimeType' => 'audio/mpeg',
+        ];
+
+        $db->configurationLifecycle->stage(
+            '861728087056333',
+            'medication_reminders',
+            $desired,
+            [[
+                'nativeKey' => 'takePills',
+                'protocol' => 'four-p-touch',
+                'supplier' => '4P Touch',
+                'model' => 'D41',
+                'command' => 'TAKEPILLS',
+                'payload' => $desired,
+                'confirmationMode' => 'execution_ack',
+                'operationId' => 'op-pills',
+            ]],
+            [[
+                'operationId' => 'op-pills',
+                'nativeKey' => 'takePills',
+                'nativeType' => 'TAKEPILLS',
+                'protocol' => 'four-p-touch',
+                'bytes' => '[3G*2808706046*15E5F*TAKEPILLS,09:00-1-1,1]',
+                'expectedReplyTypes' => ['TAKEPILLS'],
+                'confirmationMode' => 'execution_ack',
+                'label' => 'Aviso de medicação',
+            ]],
+        );
+
+        $history = $db->configurationLifecycle->currentForImei('861728087056333')[0]['desired_payload'];
+        self::assertArrayNotHasKey('voiceData', $history);
+        self::assertTrue($history['voiceDataAvailable']);
+        self::assertSame(strlen($audio), $history['voiceDataBytes']);
+        self::assertSame('Comprimido', $history['reminderText']);
+
+        $stored = $db->deviceConfigurations->allForImei('861728087056333')[0]['desired_payload'];
+        self::assertSame($voiceData, $stored['voiceData']);
+    }
+
+    /** Ao confirmar, o `effective_payload` copia o desejado -- que já é a marca. */
+    public function testTheConfirmedHistoryDoesNotResurrectTheAudio(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $db = ApiDataAccess::fromDatabase($database);
+        $desired = ['voiceData' => base64_encode(str_repeat('a', 3000)), 'reminderText' => 'X'];
+
+        $db->configurationLifecycle->stage(
+            '861728087056333',
+            'medication_reminders',
+            $desired,
+            [[
+                'nativeKey' => 'takePills',
+                'protocol' => 'four-p-touch',
+                'supplier' => '4P Touch',
+                'model' => 'D41',
+                'command' => 'TAKEPILLS',
+                'payload' => $desired,
+                'confirmationMode' => 'execution_ack',
+                'operationId' => 'op-pills',
+            ]],
+            [[
+                'operationId' => 'op-pills',
+                'nativeKey' => 'takePills',
+                'nativeType' => 'TAKEPILLS',
+                'protocol' => 'four-p-touch',
+                'bytes' => '[3G*2808706046*15E5F*TAKEPILLS,09:00-1-1,1]',
+                'expectedReplyTypes' => ['TAKEPILLS'],
+                'confirmationMode' => 'execution_ack',
+                'label' => 'Aviso de medicação',
+            ]],
+        );
+        self::assertTrue($db->configurationLifecycle->updateOperation('op-pills', 'acked'));
+
+        $effective = $db->configurationLifecycle->currentForImei('861728087056333')[0]['effective_payload'];
+        self::assertArrayNotHasKey('voiceData', $effective);
+        self::assertTrue($effective['voiceDataAvailable']);
+    }
 }

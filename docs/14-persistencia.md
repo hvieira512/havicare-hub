@@ -53,9 +53,25 @@ erDiagram
 |---|---|
 | `device_configurations` | Estado atual por dispositivo e capacidade: desejado, reportado, revisões |
 | `device_configuration_changes` | Uma linha por pedido de alteração, com o seu estado |
-| `device_configuration_operations` | Os comandos concretos, com bytes, tentativas e entrega |
+| `device_configuration_operations` | Que comandos foram construídos, com tentativas e erro |
 
 Ver o [capítulo da configuração](10-configuracao-de-dispositivos.md).
+
+**As operações não guardam os bytes do comando.** A entrega faz-se pela fila
+`hub:downlink` do Redis, com TTL, e é lá que residem os bytes que saem no fio. A
+tabela é um registo do que foi pedido e de como correu, e é lida apenas por
+`change_id` — não existe despachante a consultá-la por estado.
+
+**O histórico guarda a marca do áudio e não o áudio.** O aviso de medicação da 4P
+Touch transporta a gravação em base64, e um ficheiro de 42 s ocupa 978 KB. Uma
+cópia por revisão representava 69% da base de produção. As linhas de
+`device_configuration_changes` conservam `voiceDataAvailable` e `voiceDataBytes`,
+que é o vocabulário que a API já usava para o mesmo efeito.
+
+A gravação permanece em `device_configurations`, porque essa tabela é a base de
+fusão de uma alteração parcial: sem ela, uma alteração que mude apenas a hora do
+aviso apagaria a voz do relógio. É também a cópia mais reduzida — uma linha por
+dispositivo e capacidade, substituída e não acumulada.
 
 ### Resto
 
@@ -101,10 +117,16 @@ desfaz escolhas de um administrador.
 > começa por desistir quando a tabela está vazia: numa base nova não há nada a
 > trazer a dia, e a linha de base trata do assunto.
 
-Há hoje **uma** migração, `2026_09_01_catalog_alarm_proximity_help_call`. Traz o
-catálogo de capacidades ao que o código declara: renomeia `ncs:pager_call` para
-`help_call` preservando o `id` — e com ele as ligações por modelo —, dá linha ao
-`alarm` e à `proximity`, e liga-as aos modelos cujo protocolo as suporta.
+Há hoje **uma** migração, `2026_09_03_shrink_configuration_lifecycle`. Larga as
+três colunas de `device_configuration_operations` que eram escritas e nunca
+lidas — `command_bytes`, `expected_reply_types` e `retry_delay_seconds` —, larga
+os cinco índices que nenhuma consulta podia usar, repõe dois deles pela ordem em
+que são procurados, e converte os `desired_payload` e `effective_payload` que já
+existiam para a marca do áudio.
+
+A conversão dos dados recorre ao `VoiceDataMarker`, que é o mesmo código que
+escreve as linhas novas. As linhas antigas e as novas não podem, por isso,
+divergir de forma.
 
 O inventário de exemplo — 26 dispositivos, licenças, imagens — é `bin/seed-inventory.php`
 e está **fora** do plano de migrações de propósito: senão cada teste de integração
@@ -185,6 +207,7 @@ integram a primeira contagem sem pertencerem ao hub.
 | `database/schema.sql` | A linha de base — as 16 tabelas |
 | `database/seed.sql` · `bin/seed-inventory.php` | O inventário de exemplo |
 | `src/Infrastructure/Persistence/DatabaseMigrator.php` | Esquema, migrações, catálogo |
+| `src/Api/Configuration/VoiceDataMarker.php` | A marca do áudio, no histórico e na resposta |
 | `src/Infrastructure/Persistence/DatabaseSchemaGuard.php` | Recusa arrancar atrasado |
 | `src/Infrastructure/Persistence/ReferenceCatalogSeeder.php` | Fornecedores, modelos e capacidades |
 | `src/Api/Repository/` | Um repositório por assunto |

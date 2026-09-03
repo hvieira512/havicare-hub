@@ -38,6 +38,27 @@ final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
         self::assertNotNull($db->whitelist->get('861265061009822'));
     }
 
+    /**
+     * O âmbito por empresa ignora maiúsculas, e é a colação que o garante.
+     *
+     * A condição comparava `LOWER(w.company) = LOWER(?)`. A coluna é `utf8mb4_unicode_ci`,
+     * que já compara sem distinguir maiúsculas, e a função só impedia o uso do
+     * `idx_whitelist_company` -- o `EXPLAIN` passava de `ref` a varrimento do índice. Este
+     * caso prende o comportamento que sobra sem ela.
+     */
+    public function testTheCompanyScopeIgnoresLetterCase(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        $db->whitelist->register('861265061009823', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'havicare');
+
+        foreach (['hitcare', 'HITCARE', 'HitCare'] as $scope) {
+            $page = $db->whitelist->listPage([], 1, 50, null, $scope);
+            self::assertSame(1, $page['total'], "o âmbito '{$scope}' devia trazer um dispositivo");
+            self::assertSame('861265061009822', $page['items'][0]['imei'] ?? null);
+        }
+    }
+
     public function testDatabaseBackedWhitelistObservesChangesMadeByAnotherProcess(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
