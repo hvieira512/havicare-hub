@@ -81,7 +81,7 @@ com as instâncias de desenvolvimento e produção estão no
 | | |
 |---|---|
 | [14 — Persistência](14-persistencia.md) | Esquema relacional e espaços de chaves no Redis |
-| [15 — Operação](15-operacao.md) | Instâncias, publicação, registo e verificações |
+| [15 — Operação](15-operacao.md) | Instâncias, publicação, registo, configuração da máquina e verificações |
 | [16 — Testes](16-testes.md) | Suites de teste e integração contínua |
 | [18 — Cópias de segurança](18-backups.md) | O que se copia, a rotação, a instalação e o restauro |
 | [99 — Notas de arquitetura](99-notas-de-arquitetura.md) | Questões em aberto e decisões pendentes |

@@ -1,0 +1,25 @@
+#!/usr/sbin/nft -f
+# Fecha o 3306 a internet. O MariaDB escuta em 0.0.0.0 e estava a apanhar milhares de
+# tentativas de autenticacao contra root e admin; passam so o localhost e o IP de quem
+# administra.
+#
+# A politica e `accept` de proposito: esta tabela filtra o 3306 e mais nada. Nao toca no
+# SSH da porta 1983, na ingestao TCP do 8080, nas dashboards nem no nginx -- uma politica
+# `drop` obrigaria a enumerar tudo isso e um esquecimento tirava a maquina da rede.
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority filter; policy accept;
+
+        iif lo accept
+
+        # O IP de quem administra. E a unica linha a rever ao instalar noutra maquina ou
+        # quando o endereco mudar -- e residencial, e muda. Quem preferir nao depender
+        # dele usa um tunel: ssh -L 3306:127.0.0.1:3306 hub-prod
+        tcp dport 3306 ip saddr 2.83.14.236 accept
+
+        tcp dport 3306 drop
+    }
+}

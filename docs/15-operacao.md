@@ -159,7 +159,47 @@ liga um erro 500 a uma linha do log.
 > está sujeita ao regime aplicável a dados clínicos e não ao de registos de
 > aplicação.
 
-## 5. Funcionalidades configuráveis
+## 5. Configuração da máquina
+
+Dois ficheiros de configuração do sistema pertencem ao hub e estão versionados em
+`config/`, para que a perda da máquina não leve consigo o que estava montado nela.
+A cópia no servidor é idêntica à do repositório.
+
+| Ficheiro versionado | Destino na máquina |
+|---|---|
+| `config/logrotate/havicare-hub` | `/etc/logrotate.d/havicare-hub` |
+| `config/nftables/havicare-hub.nft` | `/etc/sysconfig/nftables.conf` |
+
+```bash
+sudo cp config/logrotate/havicare-hub    /etc/logrotate.d/havicare-hub
+sudo cp config/nftables/havicare-hub.nft /etc/sysconfig/nftables.conf
+sudo nft -f /etc/sysconfig/nftables.conf
+sudo systemctl enable --now nftables
+```
+
+**A rotação dos registos** limita os dois canais por tamanho e não por calendário,
+porque é o volume que cresce sem parar. O padrão `/opt/havicare-hub*/var/log/`
+cobre as duas instâncias: sem o asterisco, a de desenvolvimento crescia sem
+limite — chegou aos 47 MB num único ficheiro. O `copytruncate` é obrigatório,
+porque o processo mantém os descritores abertos e o Monolog não os reabre.
+
+**A firewall** fecha o porto 3306 à internet. O MariaDB escuta em `0.0.0.0` e
+estava a receber milhares de tentativas de autenticação contra `root` e `admin`;
+passam apenas o localhost e o endereço de quem administra.
+
+> A política da tabela é `accept` e existe uma única regra de recusa, para o 3306.
+> Uma política de recusa obrigaria a enumerar o SSH da porta 1983, a ingestão TCP
+> do 8080, as dashboards e o nginx — e um esquecimento nessa lista tirava os
+> dispositivos da rede.
+
+A linha do endereço do administrador é a única a rever ao instalar noutra máquina,
+por ser residencial e mudar. Um túnel dispensa-a por completo:
+
+```bash
+ssh -L 3306:127.0.0.1:3306 hub-prod
+```
+
+## 6. Funcionalidades configuráveis
 
 | Variável | Omissão | O que controla |
 |---|---|---|
@@ -172,7 +212,7 @@ liga um erro 500 a uma linha do log.
 | `MQTT_TLS_ENABLED` | `false` | TLS para o broker |
 | `REDIS_PREFIX` | *(vazio)* | O que permite duas instâncias |
 
-## 6. Verificações que valem a pena
+## 7. Verificações que valem a pena
 
 **Isolamento das instâncias.** Contar as chaves dos dois lados antes e depois de
 uma alteração:
@@ -213,7 +253,7 @@ ls -lh /var/backups/havicare_hub
 
 Ver as [cópias de segurança](18-backups.md).
 
-## 7. Ambiente de desenvolvimento local
+## 8. Ambiente de desenvolvimento local
 
 ```bash
 cp .env.example .env
@@ -242,6 +282,8 @@ comandos para equipamento em serviço.
 | `Makefile` | `update`, `restart`, `status`, `journal`, e os alvos locais |
 | `bin/migrate.php` | O passo explícito de esquema |
 | `bin/backup-db.sh` | A cópia diária da base de dados — ver o [capítulo 18](18-backups.md) |
+| `config/logrotate/havicare-hub` | A rotação dos registos das duas instâncias |
+| `config/nftables/havicare-hub.nft` | A firewall que fecha o porto 3306 |
 | `bin/dev.sh` | O vigia de ficheiros do contentor |
 | `src/Runtime/StartupBanner.php` | O resumo de arranque |
 | `src/Runtime/CrashWatch.php` | A deteção de paragem suja |

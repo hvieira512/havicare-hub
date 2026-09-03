@@ -117,7 +117,6 @@ novas:
 
 ## Coisas para fazer amanhã
 
-- Investigar novo gateway MOKO, parece uma coisa ligada à tomada.
-- Ver como fazer backups da base de dados de produção do hub
 - Fix ao Gateway W812 NCS, Chamada de Enfermeira, ir ao PC do quarto da D. Alice
 - Ver onde fica a lógica se existe deteção de fuga gateway <-> pulseira
+- Testar havicare e hitcare API relógios
