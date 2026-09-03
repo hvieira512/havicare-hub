@@ -71,12 +71,24 @@ final class StreamController
 
         $company = trim((string)$auth->company);
         $licenseId = (int)$auth->licenseId;
+
+        // Um administrador não tem inquilino próprio, mas pode nomear um. O âmbito dele seria
+        // o sistema inteiro, e disso não há implementação -- o fanout é indexado por âmbito e
+        // não tem wildcard --, mas recusá-lo por completo era uma restrição sem contrapartida:
+        // ele já lê os dispositivos desse inquilino por todas as outras rotas. Nomeado, o
+        // âmbito fica tão limitado como o de um cliente, e é uma subscrição só.
+        //
+        // Para o `license_client` os parâmetros não existem: o âmbito sai do token e nada no
+        // pedido o pode alargar.
+        if ($auth->isAdmin()) {
+            parse_str((string)$request->getUri()->getQuery(), $params);
+            $company = trim((string)($params['company'] ?? ''));
+            $licenseId = (int)($params['licenseId'] ?? 0);
+        }
+
         if ($company === '' || $licenseId <= 0) {
-            // Um administrador não tem inquilino, e o âmbito dele seria o sistema inteiro --
-            // que é justamente o caso patológico deste stream. Quem quer isto é um
-            // `license_client`.
             return $this->json->result(ApiError::invalidRequest(
-                'This stream requires a license client; a hub admin has no tenant scope'
+                'This stream requires a license client, or a hub admin naming company and licenseId'
             )->toArray());
         }
 

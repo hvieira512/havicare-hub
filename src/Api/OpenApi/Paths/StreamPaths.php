@@ -23,9 +23,13 @@ final class StreamPaths
                     'summary' => 'Stream this tenant\'s device messages as server-sent events',
                     'description' => <<<'TEXT'
                         Delivers every message the hub publishes for the caller's own company and
-                        licence, as `text/event-stream`. The scope comes from the token and cannot
-                        be widened by any parameter, so a licence client only ever receives its own
-                        devices.
+                        licence, as `text/event-stream`. For a licence client the scope comes from
+                        the token and cannot be widened by any parameter, so it only ever receives
+                        its own devices.
+
+                        A hub admin has no tenant of its own and must name one, with `company` and
+                        `licenseId`. There is no system-wide stream: the scope is always exactly one
+                        tenant.
 
                         Each event name is the channel (`telemetry`, `events`, `status`). The `data`
                         line is one JSON object per message: the fields that live in the MQTT topic
@@ -49,6 +53,16 @@ final class StreamPaths
                             'default' => 'telemetry,events,status',
                             'example' => 'telemetry,events',
                             'description' => 'Comma-separated subset of the served channels. Narrowing this is how a client avoids paying for traffic it does not read.',
+                        ]),
+                        Parameters::query('company', [
+                            'type' => 'string',
+                            'example' => 'hitcare',
+                            'description' => 'Hub admins only: the tenant to stream. Ignored for a licence client, whose scope comes from the token.',
+                        ]),
+                        Parameters::query('licenseId', [
+                            'type' => 'integer',
+                            'example' => 1001,
+                            'description' => 'Hub admins only: the licence to stream, alongside `company`.',
                         ]),
                     ],
                     'responses' => Responses::map(

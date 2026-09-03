@@ -194,6 +194,81 @@ final class DashboardTenantStreamTest extends DashboardHttpTestCase
         $first->getBody()->close();
     }
 
+    /**
+     * Um administrador abre o stream de um inquilino nomeando-o.
+     *
+     * O âmbito de um `hub_admin` seria o sistema inteiro, e disso não há implementação: o
+     * fanout é indexado por âmbito e não tem wildcard. Mas recusar o admin por completo era
+     * uma restrição sem contrapartida -- ele já pode ler os dispositivos desse inquilino por
+     * todas as outras rotas. Nomeando a empresa e a licença, o âmbito fica tão limitado como
+     * o de um cliente, e é uma subscrição só.
+     */
+    public function testAnAdminOpensTheStreamOfANamedTenant(): void
+    {
+        [$server, , , $messages] = $this->makeServerWithDatabase();
+        $admin = $this->loginToken($server, 'admin', 'secret');
+
+        $response = $this->openStream($server, $admin, '&company=hitcare&licenseId=1001');
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+
+        $frames = $this->collect($response, static function () use ($messages): void {
+            $messages->dispatch(
+                MessageFanout::scope('hitcare', 1001, 'telemetry'),
+                'havicare-hub/hitcare/1001/diaper_sensor/eec5000202f9/telemetry',
+                '{"type":"diaper_moisture_level","data":{"levelPercent":12}}',
+            );
+            // A empresa ao lado não entra, mesmo com o admin a abrir.
+            $messages->dispatch(
+                MessageFanout::scope('otherCare', 1001, 'telemetry'),
+                'havicare-hub/othercare/1001/watch/999999999999999/telemetry',
+                '{"type":"heart_rate","data":{"bpm":41}}',
+            );
+        });
+
+        self::assertStringContainsString('diaper_moisture_level', $frames);
+        self::assertStringNotContainsString('999999999999999', $frames);
+        $response->getBody()->close();
+    }
+
+    /** Sem nomear o inquilino, o admin continua a ser recusado: não há stream do sistema todo. */
+    public function testAnAdminWithoutATenantIsStillRefused(): void
+    {
+        [$server] = $this->makeServerWithDatabase();
+        $admin = $this->loginToken($server, 'admin', 'secret');
+
+        $response = $this->openStream($server, $admin);
+
+        self::assertSame(400, $response->getStatusCode());
+        self::assertStringContainsString('license client', (string)$response->getBody());
+    }
+
+    /** O cliente de licença não pode nomear outro inquilino: o parâmetro não alarga nada. */
+    public function testALicenseClientCannotNameAnotherTenant(): void
+    {
+        [$server, , , $messages] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+
+        $response = $this->openStream($server, $token, '&company=otherCare&licenseId=2002');
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+
+        $frames = $this->collect($response, static function () use ($messages): void {
+            $messages->dispatch(
+                MessageFanout::scope('otherCare', 2002, 'telemetry'),
+                'havicare-hub/othercare/2002/watch/861265061009833/telemetry',
+                '{"type":"heart_rate","data":{"bpm":42}}',
+            );
+            $messages->dispatch(
+                MessageFanout::scope('hitcare', 1001, 'telemetry'),
+                'havicare-hub/hitcare/1001/watch/861265061009822/telemetry',
+                '{"type":"heart_rate","data":{"bpm":74}}',
+            );
+        });
+
+        self::assertStringContainsString('"bpm":74', $frames, 'o cliente continua a ver o seu');
+        self::assertStringNotContainsString('"bpm":42', $frames, 'e o parâmetro não lhe deu o alheio');
+        $response->getBody()->close();
+    }
+
     /** Sem credencial não abre: o stream de inquilino não é uma porta lateral. */
     public function testAStreamWithoutACredentialIsRejected(): void
     {
