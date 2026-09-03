@@ -250,10 +250,43 @@ da implementação e não do sistema operativo: nenhum `LimitNOFILE` o levanta.
 > dos relógios, que vive no mesmo processo.
 
 Daí o valor por omissão de **400**, que deixa cerca de 600 descritores para tudo
-o resto e nunca chega perto do ponto de ruptura. Subir isto passa por instalar
-uma extensão de loop primeiro — `config/systemd/limit-nofile.conf` descreve o
-caminho. Com epoll em vez de `select`, o teto passa a ser o orçamento de memória
-e os ~2000 tornam-se realistas.
+o resto e nunca chega perto do ponto de ruptura. É o valor certo para uma
+instalação sem extensão de loop, que é o caso por omissão.
+
+### Com uma extensão de loop, o teto desaparece
+
+Instalar o `php-pecl-ev` faz o ReactPHP escolher o `ExtEvLoop`, que usa epoll e
+não tem o limite do `FD_SETSIZE`. O `StartupBanner` imprime a implementação
+escolhida no arranque, precisamente porque a troca não deixa rasto em código.
+`config/systemd/ev-loop-dev.conf` mostra como carregá-la numa instância só, o que
+importa porque o pacote instala um ini global.
+
+Medido na instância de desenvolvimento com epoll, seis inquilinos a abrir 500
+streams cada — **3000 ligações simultâneas**:
+
+| | em repouso | com 3000 ligações |
+|---|---|---|
+| Descritores | 19 | **3023**, estáveis |
+| Latência do loop | 1,33 ms | **0,37 – 0,65 ms** |
+| Porta de ingestão dos relógios | 1,7 ms | **1,7 – 8,7 ms** |
+| RSS | 46 MB | 172 MB (**~42 KB por ligação**) |
+| Recusas · falhas | — | **0 · 0** |
+
+A latência do loop **melhorou**, e não é um erro de leitura: o `select` percorre
+um bitmap proporcional ao número de descritores vigiados, e por isso degradava-se
+com a carga — a 417 ligações media 0,6 a 10 ms, com picos regulares. O epoll é
+plano.
+
+A entrega também não abranda. O inquilino mais movimentado recebeu 288 150 frames
+em 60 segundos distribuídos por 500 ligações, o que dá **9,6 frames por segundo
+por ligação** contra os 10,15 medidos numa ligação sozinha — a mesma coisa, dentro
+da variação natural dos aparelhos. No total foram ~624 000 frames e ~355 MB
+dispersos em 60 segundos.
+
+Com epoll, portanto, o teto volta a ser o orçamento de memória, e os 2000 do
+cálculo acima tornam-se realistas — a 42 KB por ligação, 4000 custariam ~170 MB.
+Sobe-se por `DASHBOARD_MAX_OPEN_STREAMS`, e não mexendo no valor por omissão, que
+tem de continuar seguro para quem não tenha a extensão.
 
 O teto por utilizador é, na prática, **por inquilino**: uma licença tem uma
 conta, e todos os ecrãs desse cliente entram por ela. Está a 25% do global, de
