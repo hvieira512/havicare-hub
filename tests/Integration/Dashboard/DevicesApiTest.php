@@ -280,8 +280,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861265061009822',
             'call_whitelist',
             'vivistar',
-            'Vivistar',
-            'L08 Pro',
             'CALL_WHITELIST',
             ['fields' => ['|+351922222222', '|+351933333333']]
         );
@@ -289,8 +287,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861265061009822',
             'whitelist_enabled',
             'vivistar',
-            'Vivistar',
-            'L08 Pro',
             'WHITELIST_ENABLED',
             ['enabled' => true]
         );
@@ -298,8 +294,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861265061009822',
             'devicePassword',
             'four-p-touch',
-            'Vivistar',
-            'L08 Pro',
             'PASSWORD',
             ['password' => '2468']
         );
@@ -449,8 +443,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861728087060467',
             'sosNumber1',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'SOS1',
             ['phone' => '+351938854803']
         );
@@ -458,8 +450,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861728087060467',
             'sosNumber2',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'SOS2',
             ['phone' => '+351938854807']
         );
@@ -497,8 +487,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '637507597567372',
             'whitelistGroup1',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'WHITELIST1',
             ['numbers' => ['111', '222', '333', '444', '555']]
         );
@@ -506,8 +494,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '637507597567372',
             'whitelistGroup2',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'WHITELIST2',
             ['numbers' => ['666', '777', '', '', '']]
         );
@@ -536,8 +522,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '637507597567372',
             'call_whitelist',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'WHITELIST1',
             [
                 'contacts' => [
@@ -594,8 +578,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $imei,
             'familyNumber',
             'wonlex-json',
-            'Wonlex',
-            'HW20PRO',
             'familyNumber',
             ['contacts' => $contacts]
         );
@@ -603,8 +585,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $imei,
             'alarmClock',
             'wonlex-json',
-            'Wonlex',
-            'HW20PRO',
             'alarmClock',
             ['items' => [[
                 'label' => 'Medicine',
@@ -617,8 +597,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $imei,
             'SOSNumber',
             'wonlex-json',
-            'Wonlex',
-            'HW20PRO',
             'SOSNumber',
             ['contacts' => [[
                 'sosNumberId' => '8c67b51b',
@@ -631,8 +609,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $imei,
             'wonlexCallInLimitSwitch',
             'wonlex-json',
-            'Wonlex',
-            'HW20PRO',
             'deviceConfig',
             ['switchState' => true]
         );
@@ -707,8 +683,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $imei,
             'wonlexFallWarnSwitch',
             'wonlex-json',
-            'Wonlex',
-            'HW20PRO',
             'deviceConfig',
             ['switchState' => true],
             'acked'
@@ -807,8 +781,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861728087060467',
             'uploadInterval',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'UPLOAD',
             ['intervalSeconds' => 300]
         );
@@ -816,8 +788,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861728087060467',
             'sosSmsAlerts',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'SOSSMS',
             ['enabled' => false]
         );
@@ -825,8 +795,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861728087060467',
             'lowBatterySmsAlerts',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'LOWBAT',
             ['enabled' => false]
         );
@@ -834,8 +802,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861728087060467',
             'fallDownAlert',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'FALLDOWN',
             ['enabled' => true, 'callCenterOnFall' => false]
         );
@@ -843,8 +809,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861728087060467',
             'healthAutoMeasurement',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'HEALTHAUTOSET',
             ['enabled' => true, 'intervalMinutes' => 10]
         );
@@ -852,8 +816,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861728087060467',
             'sleepTime',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'SLEEPTIME',
             ['range' => '21:10-07:30']
         );
@@ -861,8 +823,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861728087060467',
             'bodyTemperatureInterval',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'bodytemp',
             ['enabled' => true, 'intervalHours' => 2]
         );
@@ -870,8 +830,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861728087060467',
             'languageTimezone',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'LZ',
             ['language' => 3, 'timeZone' => '0']
         );
@@ -924,8 +882,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '864293000000333',
             'fallDownSensitivity',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'LSSET',
             [
                 'sensitivityLevel' => 4,
@@ -956,8 +912,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '868017032159118',
             'takePills',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'TAKEPILLS',
             [
                 'reminderSettings' => '11:25-1-3-1010101',
@@ -1010,8 +964,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '868017032159118',
             'takePills',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'TAKEPILLS',
             [
                 'reminderSettings' => '11:25-1-3-1010101',
@@ -1050,8 +1002,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '868017032159118',
             'takePills',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'TAKEPILLS',
             [
                 'reminderSettings' => '11:25-1-2-14:30-0-1-18:00-1-3-1010101',
@@ -1090,8 +1040,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861265061009822',
             'reminders',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'BP85',
             [
                 'items' => [
@@ -1169,8 +1117,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '868017032159118',
             'alarmClock',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'REMIND',
             [
                 'alarms' => [
@@ -1350,8 +1296,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861265061009822',
             'fallDetection',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'BP76',
             ['enabled' => true],
             'waiting',
@@ -1464,8 +1408,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861265061009822',
             'reminders',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'BP85',
             [
                 'items' => [
@@ -1656,8 +1598,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861265061009822',
             'fallDetection',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'BP76',
             ['enabled' => true],
             'waiting',
@@ -1683,8 +1623,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861265061009822',
             'autoHealthMeasurement',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'BP86',
             ['enabled' => true, 'intervalMinutes' => 30],
             'acked',
@@ -1694,8 +1632,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861265061009822',
             'autoHealthMeasurement',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'AP86',
             [
                 'type' => 'device_config',
@@ -1776,8 +1712,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861265061009822',
             'fallDetection',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'BP76',
             ['enabled' => false]
         );
@@ -1785,8 +1719,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '861265061009822',
             'call_whitelist',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'BP14',
             ['contacts' => [['name' => 'Bruno', 'phone' => '+351922222222']]]
         );
@@ -1894,8 +1826,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             '868017032159118',
             'takePills',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'TAKEPILLS',
             [
                 'reminderSettings' => '11:25-1-3-1010101',

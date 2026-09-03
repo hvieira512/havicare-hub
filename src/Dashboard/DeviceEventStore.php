@@ -34,13 +34,10 @@ final class DeviceEventStore
         });
 
         if ($this->projection !== null && $list === 'telemetry' && ($payload['type'] ?? '') === 'device_config') {
-            $device = isset($payload['device']) && is_array($payload['device']) ? $payload['device'] : [];
             $source = isset($payload['source']) && is_array($payload['source']) ? $payload['source'] : [];
             $this->projection->saveReported(
                 $imei,
                 (string)($source['protocol'] ?? ''),
-                (string)($device['supplier'] ?? ''),
-                (string)($device['model'] ?? ''),
                 (string)($source['nativeType'] ?? 'device_config'),
                 $payload
             );

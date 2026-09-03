@@ -57,8 +57,6 @@ final class DeviceConfigurationRepository
         string $imei,
         string $key,
         string $protocol,
-        string $supplier,
-        string $model,
         string $command,
         array $payload,
         string $status = '',
@@ -71,21 +69,21 @@ final class DeviceConfigurationRepository
         if ($this->exists($imei, $key, $nativeKey)) {
             $stmt = $this->pdo->prepare('
                 UPDATE device_configurations
-                SET protocol = ?, supplier = ?, model = ?, command = ?, desired_payload = ?, last_status = ?, last_command_id = ?, desired_updated_at = ?
+                SET protocol = ?, command = ?, desired_payload = ?, last_status = ?, last_command_id = ?, desired_updated_at = ?
                 WHERE imei = ? AND config_key = ? AND native_key = ?
             ');
-            $stmt->execute([$protocol, $supplier, $model, $command, $encoded, $status, $commandId, $now, $imei, $key, $nativeKey]);
+            $stmt->execute([$protocol, $command, $encoded, $status, $commandId, $now, $imei, $key, $nativeKey]);
             return;
         }
 
         $stmt = $this->pdo->prepare('
             INSERT INTO device_configurations (
-                imei, config_key, native_key, protocol, supplier, model, command, desired_payload, reported_payload,
+                imei, config_key, native_key, protocol, command, desired_payload, reported_payload,
                 last_status, last_command_id, desired_updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$imei, $key, $nativeKey, $protocol, $supplier, $model, $command, $encoded, '{}', $status, $commandId, $now]);
+        $stmt->execute([$imei, $key, $nativeKey, $protocol, $command, $encoded, '{}', $status, $commandId, $now]);
     }
 
     public function markApplyStatus(string $imei, string $key, string $status, string $commandId = ''): void
@@ -106,8 +104,6 @@ final class DeviceConfigurationRepository
         string $imei,
         string $key,
         string $protocol,
-        string $supplier,
-        string $model,
         string $command,
         array $payload
     ): void {
@@ -118,20 +114,20 @@ final class DeviceConfigurationRepository
         if ($this->exists($imei, $key, $nativeKey)) {
             $stmt = $this->pdo->prepare('
                 UPDATE device_configurations
-                SET protocol = ?, supplier = ?, model = ?, command = ?, reported_payload = ?, reported_at = ?
+                SET protocol = ?, command = ?, reported_payload = ?, reported_at = ?
                 WHERE imei = ? AND config_key = ? AND native_key = ?
             ');
-            $stmt->execute([$protocol, $supplier, $model, $command, $encoded, $now, $imei, $key, $nativeKey]);
+            $stmt->execute([$protocol, $command, $encoded, $now, $imei, $key, $nativeKey]);
             return;
         }
 
         $stmt = $this->pdo->prepare('
             INSERT INTO device_configurations (
-                imei, config_key, native_key, protocol, supplier, model, command, desired_payload, reported_payload, reported_at
+                imei, config_key, native_key, protocol, command, desired_payload, reported_payload, reported_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$imei, $key, $nativeKey, $protocol, $supplier, $model, $command, '{}', $encoded, $now]);
+        $stmt->execute([$imei, $key, $nativeKey, $protocol, $command, '{}', $encoded, $now]);
     }
 
     private function exists(string $imei, string $key, string $nativeKey): bool

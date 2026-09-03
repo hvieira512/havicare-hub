@@ -76,15 +76,17 @@ final class DeviceConfigurationLifecycleRepository
                 $now,
             ]);
 
+            // Sem o fornecedor nem o modelo: o dono do IMEI é a `whitelist`, e uma cópia aqui
+            // chegou a declarar dois modelos para o mesmo aparelho.
             $upsert = $this->pdo->prepare('
                 INSERT INTO device_configurations (
-                    imei, config_key, native_key, protocol, supplier, model, command,
+                    imei, config_key, native_key, protocol, command,
                     desired_payload, reported_payload, desired_revision, confirmed_revision,
                     current_change_id, confirmation_mode, last_status, last_error,
                     last_command_id, desired_updated_at, reported_at, applied_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'{}\', ?, 0, ?, ?, ?, \'\', ?, ?, \'\', \'\')
+                ) VALUES (?, ?, ?, ?, ?, ?, \'{}\', ?, 0, ?, ?, ?, \'\', ?, ?, \'\', \'\')
                 ON DUPLICATE KEY UPDATE
-                    protocol = VALUES(protocol), supplier = VALUES(supplier), model = VALUES(model),
+                    protocol = VALUES(protocol),
                     command = VALUES(command), desired_payload = VALUES(desired_payload),
                     desired_revision = VALUES(desired_revision), current_change_id = VALUES(current_change_id),
                     confirmation_mode = VALUES(confirmation_mode), last_status = VALUES(last_status),
@@ -94,7 +96,7 @@ final class DeviceConfigurationLifecycleRepository
             foreach ($nativeRows as $row) {
                 $upsert->execute([
                     $imei, $genericKey, (string)$row['nativeKey'], (string)$row['protocol'],
-                    (string)$row['supplier'], (string)$row['model'], (string)$row['command'],
+                    (string)$row['command'],
                     $this->encode((array)$row['payload']), $revision, $changeId,
                     (string)$row['confirmationMode'],
                     $operations === [] ? 'acked' : 'created',

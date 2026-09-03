@@ -24,8 +24,6 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
             '861265061009822',
             'fallDetection',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'BP76',
             ['enabled' => false]
         );
@@ -43,8 +41,6 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
             '861265061009822',
             'whitelistSwitch',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'BP84',
             ['enabled' => true]
         );
@@ -62,8 +58,6 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
             '861265061009822',
             'alarm_clock',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'BP85',
             ['items' => []]
         );
@@ -81,8 +75,6 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
             '868017032159118',
             'sosNumber1',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'SOS1',
             ['phone' => '123456789']
         );
@@ -98,18 +90,18 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
     {
         $insert = $this->pdo->prepare('
             INSERT INTO device_configurations (
-                imei, config_key, native_key, protocol, supplier, model, command,
+                imei, config_key, native_key, protocol, command,
                 desired_payload, reported_payload, last_status, last_command_id,
                 desired_updated_at, reported_at, applied_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $insert->execute([
-            '868017032159118', 'sos_contacts', 'sosNumber1', 'four-p-touch', '4P Touch', 'D46', 'SOS1',
+            '868017032159118', 'sos_contacts', 'sosNumber1', 'four-p-touch', 'SOS1',
             '{"phone":"123456789"}', '{}', 'acked', 'old', '2026-07-01T08:00:00Z', '', '2026-07-01T08:00:01Z',
         ]);
         $insert->execute([
-            '868017032159118', 'sosNumber1', 'sosNumber1', 'four-p-touch', '4P Touch', 'D46', 'SOS1',
+            '868017032159118', 'sosNumber1', 'sosNumber1', 'four-p-touch', 'SOS1',
             '{"phone":""}', '{}', 'acked', 'new', '2026-07-02T08:00:00Z', '', '2026-07-02T08:00:01Z',
         ]);
 
@@ -124,19 +116,19 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
     {
         $insert = $this->pdo->prepare('
             INSERT INTO device_configurations (
-                imei, config_key, native_key, protocol, supplier, model, command,
+                imei, config_key, native_key, protocol, command,
                 desired_payload, reported_payload, last_status, last_command_id,
                 desired_updated_at, reported_at, applied_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $insert->execute([
-            '868705080304889', 'phonebook', 'familyNumber', 'wonlex-json', 'Wonlex', 'HW20PRO',
+            '868705080304889', 'phonebook', 'familyNumber', 'wonlex-json',
             'familyNumber', '{"contacts":[{"name":"Hugo","phone":"+351938854803"}]}', '{}',
             'acked', 'phonebook-command', '2026-07-30T15:44:10Z', '', '2026-07-30T15:44:10Z',
         ]);
         $insert->execute([
-            '868705080304889', 'sos_contacts', 'familyNumber', 'wonlex-json', 'Wonlex', 'HW20PRO',
+            '868705080304889', 'sos_contacts', 'familyNumber', 'wonlex-json',
             'familyNumber', '{"contacts":[{"name":"Hugo","phone":"938854803","areaCode":"351"}]}', '{}',
             'acked', 'sos-command', '2026-07-30T15:44:15Z', '', '2026-07-30T15:44:16Z',
         ]);

@@ -115,7 +115,12 @@ desfaz escolhas de um administrador.
 > começa por desistir quando a tabela está vazia: numa base nova não há nada a
 > trazer a dia, e a linha de base trata do assunto.
 
-Há hoje **duas** migrações.
+Há hoje **três** migrações.
+
+A `2026_09_03_drop_configuration_supplier_and_model` larga o `supplier` e o
+`model` da `device_configurations`. Eram cópia do que a `whitelist` diz sobre o
+IMEI, escritas em três caminhos e lidas em nenhum, e a cópia divergiu: as linhas
+órfãs do IMEI `000060060298220` declaravam dois modelos para o mesmo aparelho.
 
 A `2026_09_03_drop_supplier_device_types` larga a tabela que respondia a «que
 fornecedores fazem cada tipo de dispositivo». A pergunta responde-se com um

@@ -17,8 +17,6 @@ final class DeviceConfigurationProjection
     public function saveReported(
         string $imei,
         string $protocol,
-        string $supplier,
-        string $model,
         string $nativeType,
         array $payload
     ): void {
@@ -36,8 +34,6 @@ final class DeviceConfigurationProjection
             $imei,
             $key,
             $protocol,
-            $supplier,
-            $model,
             $nativeType,
             $payload
         );

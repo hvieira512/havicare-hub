@@ -91,8 +91,8 @@ CREATE TABLE IF NOT EXISTS device_configurations (
     config_key VARCHAR(191) NOT NULL,
     native_key VARCHAR(191) NOT NULL,
     protocol VARCHAR(64) NOT NULL,
-    supplier VARCHAR(191) NOT NULL DEFAULT '',
-    model VARCHAR(191) NOT NULL DEFAULT '',
+    -- Sem fornecedor nem modelo: o dono do IMEI é a `whitelist`. A cópia que aqui existia
+    -- chegou a declarar dois modelos para o mesmo aparelho.
     command VARCHAR(191) NOT NULL DEFAULT '',
     desired_payload LONGTEXT NOT NULL,
     reported_payload LONGTEXT NOT NULL,

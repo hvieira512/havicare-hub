@@ -34,8 +34,6 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
             '861265061009822',
             'call_whitelist',
             'vivistar',
-            'Vivistar',
-            'L08 Pro',
             'CALL_WHITELIST',
             ['fields' => ['|+351922222222']]
         );
@@ -43,8 +41,6 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
             '861265061009822',
             'whitelist_enabled',
             'vivistar',
-            'Vivistar',
-            'L08 Pro',
             'WHITELIST_ENABLED',
             ['enabled' => true]
         );
@@ -52,8 +48,6 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
             '861265061009822',
             'devicePassword',
             'four-p-touch',
-            'Vivistar',
-            'L08 Pro',
             'PASSWORD',
             ['password' => '2468']
         );
@@ -185,8 +179,6 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
             '868017032159118',
             'takePills',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'TAKEPILLS',
             [
                 'reminderSettings' => '11:25-1-3-1010101',
@@ -247,8 +239,6 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
             '868017032159118',
             'takePills',
             'four-p-touch',
-            '4P Touch',
-            'D46',
             'TAKEPILLS',
             [
                 'reminderSettings' => '11:25-1-2-14:30-0-1-18:00-1-3-1010101',

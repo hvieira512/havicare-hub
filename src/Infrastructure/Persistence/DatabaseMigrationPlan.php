@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
+use Hub\Infrastructure\Persistence\Migration\DropConfigurationSupplierAndModel;
 use Hub\Infrastructure\Persistence\Migration\DropSupplierDeviceTypes;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\ShrinkConfigurationLifecycle;
@@ -27,6 +28,7 @@ final class DatabaseMigrationPlan
         return [
             new ShrinkConfigurationLifecycle(),
             new DropSupplierDeviceTypes(),
+            new DropConfigurationSupplierAndModel(),
         ];
     }
 

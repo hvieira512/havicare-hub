@@ -330,8 +330,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
             '861265061009822',
             'fallDetection',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'BP76',
             ['enabled' => true],
             'queued',
@@ -341,8 +339,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
             '861265061009822',
             'fallDetection',
             'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
             'AP76',
             ['data' => ['fields' => ['1']]]
         );
