@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Infrastructure\Persistence;
 
 use Hub\Domain\DeviceTypeCatalog;
+use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
@@ -59,49 +60,47 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O `device_type` é um `ENUM` declarado em três tabelas, e acrescentar um tipo são três
-     * `ALTER TABLE` que têm de concordar.
+     * O `device_type` deixou de ser um `ENUM` repetido em três tabelas e passou a referência
+     * para a `device_types`, cujo conteúdo vem do `config/device-types.json`.
      *
-     * A discordância não dá erro: uma `whitelist` que aceite `bracelet` e um `capabilities`
-     * que não o conheça deixam o dispositivo registado e sem capacidade nenhuma, calados.
-     *
-     * O sítio a que as três têm de obedecer é o `config/device-types.json`, que o
-     * `DeviceTypeCatalog` serve e que o frontend também lê.
+     * O que este caso prende é o que sobra por prender: a tabela tem de reproduzir o ficheiro
+     * -- o `DeviceTypeCatalog` é servido ao frontend, e uma linha a mais ou a menos aqui
+     * deixava passar um tipo que o ecrã não conhece --, e as três chaves estrangeiras têm de
+     * existir, senão a integridade que substituiu o `ENUM` não existe.
      */
-    public function testTheDeviceTypeEnumAgreesEverywhereItIsDeclared(): void
+    public function testEveryDeviceTypeColumnPointsAtTheCatalogTable(): void
     {
         $pdo = $this->createDashboardDatabase()->pdo();
-        $tables = ['capabilities', 'models', 'whitelist'];
-        $reference = DeviceTypeCatalog::keys();
 
-        foreach ($tables as $table) {
-            $column = null;
-            foreach ($this->columnStructure($pdo, $table) as $row) {
-                if (($row['COLUMN_NAME'] ?? null) === 'device_type') {
-                    $column = (string)$row['COLUMN_TYPE'];
-                }
-            }
+        $stored = $pdo->query('SELECT device_type FROM device_types ORDER BY device_type')
+            ->fetchAll(PDO::FETCH_COLUMN);
+        $expected = DeviceTypeCatalog::keys();
+        sort($expected);
+        self::assertSame($expected, $stored, 'a device_types tem de reproduzir o device-types.json');
 
-            self::assertNotNull($column, "a tabela {$table} devia declarar a coluna device_type");
+        foreach (['capabilities', 'models', 'whitelist'] as $table) {
+            $stmt = $pdo->prepare('
+                SELECT COUNT(*) FROM information_schema.key_column_usage
+                WHERE table_schema = DATABASE() AND table_name = ?
+                  AND column_name = ? AND referenced_table_name = ?
+            ');
+            $stmt->execute([$table, 'device_type', 'device_types']);
             self::assertSame(
-                $reference,
-                $this->enumValues($column),
-                "o ENUM de {$table} divergiu do config/device-types.json",
+                1,
+                (int)$stmt->fetchColumn(),
+                "o {$table}.device_type devia referenciar a device_types",
             );
         }
     }
 
-    /** @return list<string> */
-    private function enumValues(string $columnType): array
+    /** A chave estrangeira recusa um tipo que a tabela não conheça. */
+    public function testADeviceTypeOutsideTheCatalogIsRefused(): void
     {
-        if (preg_match("/^enum\((.*)\)$/i", $columnType, $matches) !== 1) {
-            self::fail("a coluna device_type devia ser um ENUM, e é {$columnType}");
-        }
+        $pdo = $this->createDashboardDatabase()->pdo();
 
-        return array_map(
-            static fn(string $value): string => trim($value, "'"),
-            explode(',', $matches[1])
-        );
+        $this->expectException(\PDOException::class);
+        $pdo->prepare('INSERT INTO whitelist (imei, supplier, model, device_type) VALUES (?, ?, ?, ?)')
+            ->execute(['999999999999999', 'Vivistar', 'L08 Pro', 'torradeira']);
     }
 
     public function testTheDroppedDiaperTableStaysDropped(): void

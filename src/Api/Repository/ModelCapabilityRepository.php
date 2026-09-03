@@ -29,13 +29,12 @@ final class ModelCapabilityRepository
     private function loadEnabledFeaturesForModelId(int $modelId): array
     {
         $stmt = $this->pdo->prepare('
-            SELECT c.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
+            SELECT mc.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
             FROM model_capabilities mc
-            JOIN capabilities c ON c.id = mc.capability_id
             JOIN models m ON m.id = mc.model_id
             JOIN suppliers s ON s.id = m.supplier_id
             WHERE mc.model_id = ? AND mc.enabled = 1
-            ORDER BY c.capability_key
+            ORDER BY mc.capability_key
         ');
         $stmt->execute([$modelId]);
 
@@ -80,16 +79,16 @@ final class ModelCapabilityRepository
     {
         $telemetryCondition = $telemetryOnly ? "AND c.section = 'telemetry'" : '';
         $stmt = $this->pdo->prepare('
-            SELECT c.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
+            SELECT mc.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
             FROM model_capabilities mc
-            JOIN capabilities c ON c.id = mc.capability_id
+            JOIN capabilities c ON c.device_type = mc.device_type AND c.capability_key = mc.capability_key
             JOIN models m ON m.id = mc.model_id
             JOIN suppliers s ON s.id = m.supplier_id
             WHERE mc.model_id = ?
               AND mc.enabled = 1
               AND COALESCE(mc.is_requestable, c.is_requestable) = 1
               ' . $telemetryCondition . '
-            ORDER BY c.capability_key
+            ORDER BY mc.capability_key
         ');
         $stmt->execute([$modelId]);
 
@@ -116,12 +115,12 @@ final class ModelCapabilityRepository
      */
     public function replaceTelemetryRequestabilityForModelId(int $modelId, array $capabilityIds): void
     {
-        $capabilityIds = $this->normalizeCapabilityIds($modelId, $capabilityIds);
-        $selected = array_fill_keys($capabilityIds, true);
+        $capabilityKeys = $this->normalizeCapabilityKeys($modelId, $capabilityIds);
+        $selected = array_fill_keys($capabilityKeys, true);
         $rows = $this->pdo->prepare('
-            SELECT mc.capability_id, c.is_requestable AS catalog_requestable
+            SELECT mc.device_type, mc.capability_key, c.is_requestable AS catalog_requestable
             FROM model_capabilities mc
-            JOIN capabilities c ON c.id = mc.capability_id
+            JOIN capabilities c ON c.device_type = mc.device_type AND c.capability_key = mc.capability_key
             WHERE mc.model_id = ?
               AND mc.enabled = 1
               AND c.section = \'telemetry\'
@@ -131,13 +130,13 @@ final class ModelCapabilityRepository
         $update = $this->pdo->prepare('
             UPDATE model_capabilities
             SET is_requestable = ?
-            WHERE model_id = ? AND capability_id = ?
+            WHERE model_id = ? AND device_type = ? AND capability_key = ?
         ');
         foreach ($rows->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
-            $id = (int)($row['capability_id'] ?? 0);
+            $key = (string)($row['capability_key'] ?? '');
             $catalogRequestable = (bool)($row['catalog_requestable'] ?? false);
-            $override = $catalogRequestable ? (isset($selected[$id]) ? 1 : 0) : null;
-            $update->execute([$override, $modelId, $id]);
+            $override = $catalogRequestable ? (isset($selected[$key]) ? 1 : 0) : null;
+            $update->execute([$override, $modelId, (string)($row['device_type'] ?? ''), $key]);
         }
 
         $this->enabledFeatures = [];
@@ -156,13 +155,12 @@ final class ModelCapabilityRepository
 
         $placeholders = implode(',', array_fill(0, count($modelIds), '?'));
         $stmt = $this->pdo->prepare("
-            SELECT mc.model_id, c.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
+            SELECT mc.model_id, mc.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
             FROM model_capabilities mc
-            JOIN capabilities c ON c.id = mc.capability_id
             JOIN models m ON m.id = mc.model_id
             JOIN suppliers s ON s.id = m.supplier_id
             WHERE mc.enabled = 1 AND mc.model_id IN ($placeholders)
-            ORDER BY mc.model_id, c.capability_key
+            ORDER BY mc.model_id, mc.capability_key
         ");
         $stmt->execute($modelIds);
 
@@ -196,20 +194,21 @@ final class ModelCapabilityRepository
      */
     public function replaceForModelId(int $modelId, array $capabilityIds): void
     {
-        $capabilityIds = $this->normalizeCapabilityIds($modelId, $capabilityIds);
+        $capabilityKeys = $this->normalizeCapabilityKeys($modelId, $capabilityIds);
+        $deviceType = $this->modelContextForModelId($modelId)['device_type'];
 
         $this->pdo->beginTransaction();
         $disable = $this->pdo->prepare('UPDATE model_capabilities SET enabled = 0 WHERE model_id = ?');
         $disable->execute([$modelId]);
 
-        if ($capabilityIds !== []) {
+        if ($capabilityKeys !== []) {
             $insert = $this->pdo->prepare('
-                INSERT INTO model_capabilities (model_id, capability_id, enabled)
-                VALUES (?, ?, 1)
+                INSERT INTO model_capabilities (model_id, device_type, capability_key, enabled)
+                VALUES (?, ?, ?, 1)
                 ON DUPLICATE KEY UPDATE enabled = 1
             ');
-            foreach ($capabilityIds as $capabilityId) {
-                $insert->execute([$modelId, $capabilityId]);
+            foreach ($capabilityKeys as $capabilityKey) {
+                $insert->execute([$modelId, $deviceType, $capabilityKey]);
             }
         }
 
@@ -219,11 +218,19 @@ final class ModelCapabilityRepository
 
     /**
      * @param list<int|string> $capabilityIds
-     * @return list<int>
+     * As chaves que este modelo pode ter, a partir do que o chamador pediu.
+     *
+     * O contrato aceita as duas formas -- a chave, ou o `capabilities.id` que a API expõe --,
+     * e o que sai é sempre a chave, que é o que a ligação passou a guardar. O que não esteja
+     * no template do modelo é descartado, como sempre foi.
+     *
+     * @param list<int|string> $capabilityIds
+     * @return list<string>
      */
-    private function normalizeCapabilityIds(int $modelId, array $capabilityIds): array
+    private function normalizeCapabilityKeys(int $modelId, array $capabilityIds): array
     {
         $allowed = $this->allowedCapabilityIdsForModelId($modelId);
+        $keyById = array_flip($allowed['keys']);
         $normalized = [];
         foreach ($capabilityIds as $capabilityId) {
             if (is_string($capabilityId) && !ctype_digit($capabilityId)) {
@@ -231,16 +238,15 @@ final class ModelCapabilityRepository
                 if ($key === '' || !isset($allowed['keys'][$key])) {
                     continue;
                 }
-                $value = $allowed['keys'][$key];
-                $normalized[$value] = $value;
+                $normalized[$key] = $key;
                 continue;
             }
 
             $value = (int)$capabilityId;
-            if ($value <= 0 || !isset($allowed['ids'][$value])) {
+            if ($value <= 0 || !isset($keyById[$value])) {
                 continue;
             }
-            $normalized[$value] = $value;
+            $normalized[$keyById[$value]] = $keyById[$value];
         }
 
         return array_values($normalized);

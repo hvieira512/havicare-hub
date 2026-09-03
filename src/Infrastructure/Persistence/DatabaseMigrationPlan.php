@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\ConfigurationTimestampsToDatetime;
+use Hub\Infrastructure\Persistence\Migration\DeviceTypesTable;
 use Hub\Infrastructure\Persistence\Migration\DropApiUserLicenseNumber;
 use Hub\Infrastructure\Persistence\Migration\DropCapabilityTelemetryFlag;
 use Hub\Infrastructure\Persistence\Migration\DropConfigurationSupplierAndModel;
 use Hub\Infrastructure\Persistence\Migration\DropSupplierDeviceTypes;
 use Hub\Infrastructure\Persistence\Migration\DropUnreadLifecycleColumns;
 use Hub\Infrastructure\Persistence\Migration\Migration;
+use Hub\Infrastructure\Persistence\Migration\ModelCapabilitiesByNaturalKey;
 use Hub\Infrastructure\Persistence\Migration\ShrinkConfigurationLifecycle;
+use Hub\Infrastructure\Persistence\Migration\ShrinkLegacyVarchar191;
 
 /**
  * As migrações posteriores à baseline, que é o `database/schema.sql` mais o catálogo que o
@@ -37,6 +40,9 @@ final class DatabaseMigrationPlan
             new DropCapabilityTelemetryFlag(),
             new DropApiUserLicenseNumber(),
             new ConfigurationTimestampsToDatetime(),
+            new DeviceTypesTable(),
+            new ShrinkLegacyVarchar191(),
+            new ModelCapabilitiesByNaturalKey(),
         ];
     }
 

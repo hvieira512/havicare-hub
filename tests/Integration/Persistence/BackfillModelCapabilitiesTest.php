@@ -39,9 +39,8 @@ final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
     private function capabilities(PDO $pdo, int $modelId): array
     {
         $stmt = $pdo->prepare('
-            SELECT c.capability_key, mc.enabled
+            SELECT mc.capability_key, mc.enabled
             FROM model_capabilities mc
-            JOIN capabilities c ON c.id = mc.capability_id
             WHERE mc.model_id = ?
         ');
         $stmt->execute([$modelId]);
@@ -57,11 +56,8 @@ final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
     public function testAModelGainsACapabilityItsProtocolSupports(): void
     {
         [$pdo, $modelId] = $this->vivistarWatch();
-        $pdo->prepare('
-            DELETE mc FROM model_capabilities mc
-            JOIN capabilities c ON c.id = mc.capability_id
-            WHERE mc.model_id = ? AND c.capability_key = ?
-        ')->execute([$modelId, 'fall_sensitivity']);
+        $pdo->prepare('DELETE FROM model_capabilities WHERE model_id = ? AND capability_key = ?')
+            ->execute([$modelId, 'fall_sensitivity']);
         self::assertArrayNotHasKey('fall_sensitivity', $this->capabilities($pdo, $modelId));
 
         $this->fillGaps($pdo);
@@ -73,12 +69,8 @@ final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
     public function testACapabilitySwitchedOffByHandStaysOff(): void
     {
         [$pdo, $modelId] = $this->vivistarWatch();
-        $pdo->prepare('
-            UPDATE model_capabilities mc
-            JOIN capabilities c ON c.id = mc.capability_id
-            SET mc.enabled = 0
-            WHERE mc.model_id = ? AND c.capability_key = ?
-        ')->execute([$modelId, 'blood_pressure']);
+        $pdo->prepare('UPDATE model_capabilities SET enabled = 0 WHERE model_id = ? AND capability_key = ?')
+            ->execute([$modelId, 'blood_pressure']);
         self::assertSame(0, $this->capabilities($pdo, $modelId)['blood_pressure'] ?? null);
 
         $this->fillGaps($pdo);

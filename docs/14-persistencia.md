@@ -13,11 +13,14 @@ A persistência assenta em duas bases de dados com funções distintas:
 histórico — ver a
 secção 3.
 
-## 1. MySQL — as 15 tabelas
+## 1. MySQL — as 16 tabelas
 
 ```mermaid
 erDiagram
     suppliers ||--o{ models : "tem"
+    device_types ||--o{ models : "tipifica"
+    device_types ||--o{ capabilities : "tipifica"
+    device_types ||--o{ whitelist : "tipifica"
     models ||--o{ model_capabilities : "suporta"
     capabilities ||--o{ model_capabilities : "é suportada por"
     companies ||--o{ licenses : "tem"
@@ -31,10 +34,28 @@ erDiagram
 
 | Tabela | Guarda |
 |---|---|
+| `device_types` | Os tipos de dispositivo. Conteúdo vindo do `config/device-types.json` |
 | `suppliers` | Os sete fornecedores. Nome único |
 | `models` | Modelo interno, nome comercial, tipo de dispositivo, imagem |
-| `capabilities` | O catálogo genérico: chave, secção, e as bandeiras de telemetria, configurável e pedível |
+| `capabilities` | O catálogo genérico: chave, secção, e as bandeiras de configurável e pedível |
 | `model_capabilities` | Que capacidades cada modelo tem, com a possibilidade de sobrepor |
+
+**O tipo de dispositivo tem uma tabela e três chaves estrangeiras.** Era um
+`ENUM` repetido em `whitelist`, `models` e `capabilities`, e acrescentar um tipo
+eram três `ALTER TABLE` que tinham de concordar — a discordância não produzia
+erro, produzia um dispositivo registado e sem capacidade alguma. O conteúdo vem
+do `config/device-types.json`, que o frontend também lê, e o semeador mantém a
+tabela igual ao ficheiro.
+
+**A `model_capabilities` refere a capacidade pelo par natural**, e não pelo
+`capabilities.id`. O identificador de substituição não era falado pelo código:
+todas as leituras juntavam a `capabilities` apenas para o traduzir de volta à
+chave. Com `ON UPDATE CASCADE`, renomear uma capacidade leva as ligações consigo.
+O `capabilities.id` permanece como identificador exposto pela API.
+
+**O `is_telemetry` deixou de ser coluna.** Coincidia com `section = 'telemetry'`
+nas 93 linhas do catálogo, e é assim que a consulta o calcula; o campo
+`isTelemetry` da API mantém-se.
 
 ### Registo — o que temos e de quem é
 
@@ -115,7 +136,24 @@ desfaz escolhas de um administrador.
 > começa por desistir quando a tabela está vazia: numa base nova não há nada a
 > trazer a dia, e a linha de base trata do assunto.
 
-Há hoje **três** migrações.
+Há hoje **nove** migrações. As seis de 4 de setembro fecham a auditoria ao
+esquema:
+
+| Migração | O que faz |
+|---|---|
+| `drop_unread_lifecycle_columns` | Larga o `imei` e o `config_key` das operações, que copiavam a alteração, e o `confirmed_revision`, escrito e nunca lido |
+| `drop_capability_telemetry_flag` | Larga o `is_telemetry`, que repetia a secção |
+| `drop_api_user_license_number` | Larga o `api_users.license_id`, que repetia o número da licença apontada |
+| `configuration_timestamps_to_datetime` | Converte os onze instantes de texto para `DATETIME`, e a cadeia vazia para `NULL` |
+| `device_types_table` | Dá aos tipos de dispositivo uma tabela e três chaves estrangeiras |
+| `shrink_legacy_varchar_191` | Encurta as vinte e quatro colunas em `VARCHAR(191)` |
+| `model_capabilities_by_natural_key` | Aponta as ligações ao par `(device_type, capability_key)` |
+
+Cada uma verifica antes de converter e desiste em vez de perder informação: uma
+coluna que discorde da origem, um valor que não seja ISO-8601, um texto que não
+caiba na largura nova.
+
+As três de 3 de setembro:
 
 A `2026_09_03_drop_configuration_supplier_and_model` larga o `supplier` e o
 `model` da `device_configurations`. Eram cópia do que a `whitelist` diz sobre o
@@ -216,7 +254,7 @@ integram a primeira contagem sem pertencerem ao hub.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `database/schema.sql` | A linha de base — as 15 tabelas |
+| `database/schema.sql` | A linha de base — as 16 tabelas |
 | `database/seed.sql` · `bin/seed-inventory.php` | O inventário de exemplo |
 | `src/Infrastructure/Persistence/DatabaseMigrator.php` | Esquema, migrações, catálogo |
 | `src/Api/Configuration/VoiceDataMarker.php` | A marca do áudio, no histórico e na resposta |

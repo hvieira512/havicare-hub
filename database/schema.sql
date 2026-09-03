@@ -1,11 +1,23 @@
 CREATE TABLE IF NOT EXISTS schema_migrations (
-    version VARCHAR(191) NOT NULL PRIMARY KEY,
+    version VARCHAR(96) NOT NULL PRIMARY KEY,
     applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Os tipos de dispositivo, num sítio só.
+--
+-- Eram um `ENUM` repetido em três tabelas, e acrescentar um tipo eram três `ALTER TABLE` que
+-- tinham de concordar -- a discordância não dava erro, dava um dispositivo registado e sem
+-- capacidade nenhuma. O conteúdo vem do `config/device-types.json`, que o `DeviceTypeCatalog`
+-- serve e que o frontend também lê; esta tabela existe para as chaves estrangeiras terem
+-- destino, e o semeador mantém-na igual ao ficheiro.
+CREATE TABLE IF NOT EXISTS device_types (
+    device_type VARCHAR(32) NOT NULL PRIMARY KEY,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS suppliers (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(191) NOT NULL UNIQUE,
+    name VARCHAR(96) NOT NULL UNIQUE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -13,14 +25,18 @@ CREATE TABLE IF NOT EXISTS suppliers (
 CREATE TABLE IF NOT EXISTS models (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     supplier_id BIGINT UNSIGNED NOT NULL,
-    internal_model VARCHAR(191) NOT NULL,
-    commercial_name VARCHAR(191) NOT NULL,
-    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet') NOT NULL DEFAULT 'watch',
+    internal_model VARCHAR(96) NOT NULL,
+    commercial_name VARCHAR(96) NOT NULL,
+    device_type VARCHAR(32) NOT NULL DEFAULT 'watch',
     image_path VARCHAR(255) NOT NULL DEFAULT '',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_models_supplier_internal_model (supplier_id, internal_model),
-    CONSTRAINT fk_models_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    -- O índice existe para a chave estrangeira ter onde assentar; sem ele o MariaDB cria um
+    -- com o nome da restrição.
+    KEY idx_models_device_type (device_type),
+    CONSTRAINT fk_models_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+    CONSTRAINT fk_models_device_type FOREIGN KEY (device_type) REFERENCES device_types(device_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Não há tabela de pares fornecedor x tipo de dispositivo: a pergunta responde-se com um
@@ -28,43 +44,56 @@ CREATE TABLE IF NOT EXISTS models (
 
 CREATE TABLE IF NOT EXISTS capabilities (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet') NOT NULL DEFAULT 'watch',
+    device_type VARCHAR(32) NOT NULL DEFAULT 'watch',
     section ENUM('telemetry', 'health', 'contacts', 'alarms', 'settings_system') NOT NULL,
-    capability_key VARCHAR(191) NOT NULL,
-    label VARCHAR(191) NOT NULL,
+    capability_key VARCHAR(64) NOT NULL,
+    label VARCHAR(96) NOT NULL,
     -- Sem `is_telemetry`: era `section = 'telemetry'` escrito outra vez, e é assim que a
     -- consulta o calcula. As outras duas bandeiras não são redutíveis à secção.
     is_configurable TINYINT(1) NOT NULL DEFAULT 0,
     is_requestable TINYINT(1) NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    -- A chave única começa pelo `device_type` e serve a chave estrangeira sem índice extra.
     UNIQUE KEY uq_capabilities_device_type_key (device_type, capability_key),
-    KEY idx_capabilities_device_type_section_label (device_type, section, label)
+    KEY idx_capabilities_device_type_section_label (device_type, section, label),
+    CONSTRAINT fk_capabilities_device_type FOREIGN KEY (device_type) REFERENCES device_types(device_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- A ligação modelo x capacidade, pelo par natural.
+--
+-- Referenciava o `capabilities.id`, que o código nunca fala: todas as leituras juntavam a
+-- `capabilities` só para traduzir o id de volta à chave, e todas as escritas faziam a
+-- tradução inversa antes. Renomear uma capacidade obrigava a preservar o `id` à mão, ou as
+-- ligações desapareciam por cascata -- agora é o `ON UPDATE CASCADE` que as leva.
+--
+-- O `capabilities.id` fica onde estava: é o identificador que a API expõe.
 CREATE TABLE IF NOT EXISTS model_capabilities (
     model_id BIGINT UNSIGNED NOT NULL,
-    capability_id BIGINT UNSIGNED NOT NULL,
+    device_type VARCHAR(32) NOT NULL,
+    capability_key VARCHAR(64) NOT NULL,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
     is_requestable TINYINT(1) NULL DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    -- A chave primária serve as buscas por modelo; um índice só com `model_id` era o seu
-    -- prefixo exacto. O `capability_id` tem o índice que a chave estrangeira cria.
-    PRIMARY KEY (model_id, capability_id),
+    PRIMARY KEY (model_id, device_type, capability_key),
+    -- A chave primária não começa pelo par, e a chave estrangeira precisa de um índice que
+    -- comece.
+    KEY idx_model_capabilities_capability (device_type, capability_key),
     CONSTRAINT fk_model_capabilities_model_v2 FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE,
-    CONSTRAINT fk_model_capabilities_capability_v2 FOREIGN KEY (capability_id) REFERENCES capabilities(id) ON DELETE CASCADE
+    CONSTRAINT fk_model_capabilities_capability_v3 FOREIGN KEY (device_type, capability_key)
+        REFERENCES capabilities(device_type, capability_key) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS whitelist (
     imei VARCHAR(64) NOT NULL PRIMARY KEY,
-    supplier VARCHAR(191) NOT NULL,
-    model VARCHAR(191) NOT NULL,
-    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet') NOT NULL DEFAULT 'watch',
+    supplier VARCHAR(96) NOT NULL,
+    model VARCHAR(96) NOT NULL,
+    device_type VARCHAR(32) NOT NULL DEFAULT 'watch',
     license_id INT UNSIGNED NULL DEFAULT NULL,
     sim_number VARCHAR(64) NOT NULL DEFAULT '',
-    device_id VARCHAR(191) NOT NULL DEFAULT '',
-    company VARCHAR(191) NULL DEFAULT NULL,
+    device_id VARCHAR(96) NOT NULL DEFAULT '',
+    company VARCHAR(96) NULL DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY idx_whitelist_supplier_model (supplier, model),
@@ -72,7 +101,10 @@ CREATE TABLE IF NOT EXISTS whitelist (
     -- `device_type` à frente o optimizador não conseguia procurar.
     KEY idx_whitelist_license_device_type (license_id, device_type),
     KEY idx_whitelist_company (company),
-    KEY idx_whitelist_device_id (device_id)
+    KEY idx_whitelist_device_id (device_id),
+    -- Nenhum dos índices acima começa pelo `device_type`, e a chave estrangeira precisa de um.
+    KEY idx_whitelist_device_type (device_type),
+    CONSTRAINT fk_whitelist_device_type FOREIGN KEY (device_type) REFERENCES device_types(device_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS gateway_device_links (
@@ -89,12 +121,12 @@ CREATE TABLE IF NOT EXISTS gateway_device_links (
 
 CREATE TABLE IF NOT EXISTS device_configurations (
     imei VARCHAR(64) NOT NULL,
-    config_key VARCHAR(191) NOT NULL,
-    native_key VARCHAR(191) NOT NULL,
+    config_key VARCHAR(64) NOT NULL,
+    native_key VARCHAR(64) NOT NULL,
     protocol VARCHAR(64) NOT NULL,
     -- Sem fornecedor nem modelo: o dono do IMEI é a `whitelist`. A cópia que aqui existia
     -- chegou a declarar dois modelos para o mesmo aparelho.
-    command VARCHAR(191) NOT NULL DEFAULT '',
+    command VARCHAR(64) NOT NULL DEFAULT '',
     desired_payload LONGTEXT NOT NULL,
     reported_payload LONGTEXT NOT NULL,
     -- Sem `confirmed_revision`: quem responde "este dispositivo está atrasado?" é o
@@ -118,7 +150,7 @@ CREATE TABLE IF NOT EXISTS device_configurations (
 CREATE TABLE IF NOT EXISTS device_configuration_changes (
     change_id VARCHAR(64) NOT NULL PRIMARY KEY,
     imei VARCHAR(64) NOT NULL,
-    config_key VARCHAR(191) NOT NULL,
+    config_key VARCHAR(64) NOT NULL,
     desired_revision BIGINT UNSIGNED NOT NULL,
     desired_payload LONGTEXT NOT NULL,
     effective_payload LONGTEXT NULL,
@@ -136,8 +168,8 @@ CREATE TABLE IF NOT EXISTS device_configuration_operations (
     operation_id VARCHAR(64) NOT NULL PRIMARY KEY,
     change_id VARCHAR(64) NOT NULL,
     -- Sem `imei` nem `config_key`: são da alteração, e a chave estrangeira dá o caminho.
-    native_key VARCHAR(191) NOT NULL,
-    native_type VARCHAR(191) NOT NULL,
+    native_key VARCHAR(64) NOT NULL,
+    native_type VARCHAR(64) NOT NULL,
     protocol VARCHAR(64) NOT NULL,
     confirmation_mode VARCHAR(32) NOT NULL DEFAULT 'execution_ack',
     delivery_status VARCHAR(32) NOT NULL DEFAULT 'created',
@@ -158,7 +190,7 @@ CREATE TABLE IF NOT EXISTS device_configuration_operations (
 
 CREATE TABLE IF NOT EXISTS companies (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(191) NOT NULL UNIQUE,
+    name VARCHAR(96) NOT NULL UNIQUE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -167,7 +199,7 @@ CREATE TABLE IF NOT EXISTS licenses (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     company_id BIGINT UNSIGNED NOT NULL,
     license_id INT UNSIGNED NOT NULL,
-    name VARCHAR(191) NOT NULL,
+    name VARCHAR(96) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     -- A chave única começa pelo `company_id` e satisfaz a chave estrangeira; um índice só
@@ -178,7 +210,7 @@ CREATE TABLE IF NOT EXISTS licenses (
 
 CREATE TABLE IF NOT EXISTS api_users (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(191) NOT NULL UNIQUE,
+    username VARCHAR(96) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('hub_admin', 'license_client') NOT NULL,
     -- A licença é só a referência. Um `hub_admin` não tem: NULL. O número da licença sai da
@@ -197,13 +229,13 @@ CREATE TABLE IF NOT EXISTS dashboard_notifications (
     type VARCHAR(64) NOT NULL,
     imei VARCHAR(64) NOT NULL,
     protocol VARCHAR(64) NOT NULL DEFAULT '',
-    model VARCHAR(191) NOT NULL DEFAULT '',
-    ident VARCHAR(191) NOT NULL DEFAULT '',
+    model VARCHAR(96) NOT NULL DEFAULT '',
+    ident VARCHAR(96) NOT NULL DEFAULT '',
     -- O dono, quando o protocolo o diz: o tópico do radar traz a licença, um MAC não traz
     -- nada. As duas juntas ou nenhuma.
     license_id INT UNSIGNED NULL DEFAULT NULL,
-    company VARCHAR(191) NULL DEFAULT NULL,
-    reason VARCHAR(191) NOT NULL DEFAULT '',
+    company VARCHAR(96) NULL DEFAULT NULL,
+    reason VARCHAR(96) NOT NULL DEFAULT '',
     occurrence_count INT UNSIGNED NOT NULL DEFAULT 1,
     first_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

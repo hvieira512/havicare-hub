@@ -125,13 +125,10 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($model);
 
-        $capabilityStmt = $pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
-        $capabilityStmt->execute(['watch', 'phonebook']);
-        $phonebookCapabilityId = (int)($capabilityStmt->fetchColumn() ?: 0);
-        self::assertGreaterThan(0, $phonebookCapabilityId);
-
-        $insert = $pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
-        $insert->execute([(int)$model['id'], $phonebookCapabilityId]);
+        $insert = $pdo->prepare('
+            INSERT INTO model_capabilities (model_id, device_type, capability_key, enabled) VALUES (?, ?, ?, 1)
+        ');
+        $insert->execute([(int)$model['id'], 'watch', 'phonebook']);
 
         self::assertNotContains(
             'phonebook',
@@ -150,16 +147,15 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($model);
 
-        $capabilityStmt = $pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
-        $capabilityStmt->execute(['watch', 'ecg']);
-        $invalidCapabilityId = (int)($capabilityStmt->fetchColumn() ?: 0);
-        self::assertGreaterThan(0, $invalidCapabilityId);
+        $insert = $pdo->prepare('
+            INSERT INTO model_capabilities (model_id, device_type, capability_key, enabled) VALUES (?, ?, ?, 1)
+        ');
+        $insert->execute([(int)$model['id'], 'watch', 'ecg']);
 
-        $insert = $pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
-        $insert->execute([(int)$model['id'], $invalidCapabilityId]);
-
-        $stored = $pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
-        $stored->execute([(int)$model['id'], $invalidCapabilityId]);
+        $stored = $pdo->prepare('
+            SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND device_type = ? AND capability_key = ?
+        ');
+        $stored->execute([(int)$model['id'], 'watch', 'ecg']);
         self::assertSame(1, (int)$stored->fetchColumn());
 
         $normalizedDatabase = $this->reopenDashboardDatabase($this->databaseName($pdo));
@@ -167,11 +163,42 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $normalizedModel = $normalizedDb->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($normalizedModel);
 
-        $stored = $normalizedDatabase->pdo()->prepare(
-            'SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?'
-        );
-        $stored->execute([(int)$normalizedModel['id'], $invalidCapabilityId]);
+        $stored = $normalizedDatabase->pdo()->prepare('
+            SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND device_type = ? AND capability_key = ?
+        ');
+        $stored->execute([(int)$normalizedModel['id'], 'watch', 'ecg']);
         self::assertSame(1, (int)$stored->fetchColumn());
+    }
+
+    /**
+     * Renomear uma capacidade leva as ligações por modelo atrás.
+     *
+     * A `model_capabilities` referenciava o `capabilities.id`, e por isso um `UPDATE` à chave
+     * não lhe tocava -- quem renomeasse tinha de preservar o id à mão, ou as ligações
+     * desapareciam. Agora a chave estrangeira é o par natural, com `ON UPDATE CASCADE`, e é a
+     * base que as leva.
+     */
+    public function testRenamingACapabilityCarriesItsModelLinks(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $pdo = $database->pdo();
+        $db = ApiDataAccess::fromDatabase($database);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+        self::assertIsArray($model);
+
+        $ligacoes = $pdo->prepare('
+            SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_key = ?
+        ');
+        $ligacoes->execute([(int)$model['id'], 'heart_rate']);
+        self::assertSame(1, (int)$ligacoes->fetchColumn(), 'o L08 Pro devia ter o heart_rate ligado');
+
+        $pdo->prepare("UPDATE capabilities SET capability_key = ? WHERE device_type = 'watch' AND capability_key = ?")
+            ->execute(['pulse_rate', 'heart_rate']);
+
+        $ligacoes->execute([(int)$model['id'], 'pulse_rate']);
+        self::assertSame(1, (int)$ligacoes->fetchColumn(), 'a ligação devia ter seguido o nome novo');
+        $ligacoes->execute([(int)$model['id'], 'heart_rate']);
+        self::assertSame(0, (int)$ligacoes->fetchColumn(), 'e não devia ter ficado nenhuma com o antigo');
     }
 
     public function testRestartPreservesCustomizedFourPTouchModelCapabilities(): void
@@ -182,16 +209,15 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
         self::assertIsArray($model);
 
-        $capabilityStmt = $pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
-        $capabilityStmt->execute(['watch', 'ecg']);
-        $invalidCapabilityId = (int)($capabilityStmt->fetchColumn() ?: 0);
-        self::assertGreaterThan(0, $invalidCapabilityId);
+        $insert = $pdo->prepare('
+            INSERT INTO model_capabilities (model_id, device_type, capability_key, enabled) VALUES (?, ?, ?, 1)
+        ');
+        $insert->execute([(int)$model['id'], 'watch', 'ecg']);
 
-        $insert = $pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
-        $insert->execute([(int)$model['id'], $invalidCapabilityId]);
-
-        $stored = $pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
-        $stored->execute([(int)$model['id'], $invalidCapabilityId]);
+        $stored = $pdo->prepare('
+            SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND device_type = ? AND capability_key = ?
+        ');
+        $stored->execute([(int)$model['id'], 'watch', 'ecg']);
         self::assertSame(1, (int)$stored->fetchColumn());
 
         $normalizedDatabase = $this->reopenDashboardDatabase($this->databaseName($pdo));
@@ -199,10 +225,10 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $normalizedModel = $normalizedDb->models->find('4P Touch', 'D46');
         self::assertIsArray($normalizedModel);
 
-        $stored = $normalizedDatabase->pdo()->prepare(
-            'SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?'
-        );
-        $stored->execute([(int)$normalizedModel['id'], $invalidCapabilityId]);
+        $stored = $normalizedDatabase->pdo()->prepare('
+            SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND device_type = ? AND capability_key = ?
+        ');
+        $stored->execute([(int)$normalizedModel['id'], 'watch', 'ecg']);
         self::assertSame(1, (int)$stored->fetchColumn());
     }
 

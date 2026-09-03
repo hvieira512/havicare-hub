@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence;
 
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\DeviceTypeCatalog;
 use Hub\Domain\SupplierCapabilityTemplate;
 use PDO;
 
@@ -28,9 +29,22 @@ final class ReferenceCatalogSeeder
 
     public function seedReferenceData(PDO $pdo): void
     {
+        $this->seedDeviceTypes($pdo);
         $this->seedSuppliersAndModels($pdo);
         $this->seedCompanies($pdo);
         $this->seedCapabilities($pdo);
+    }
+
+    /**
+     * A `device_types` é o destino das chaves estrangeiras, e o `config/device-types.json` é
+     * a origem. Vem primeiro que tudo: sem ela, nem um modelo nem uma capacidade entram.
+     */
+    private function seedDeviceTypes(PDO $pdo): void
+    {
+        $insert = $pdo->prepare('INSERT IGNORE INTO device_types (device_type) VALUES (?)');
+        foreach (DeviceTypeCatalog::keys() as $deviceType) {
+            $insert->execute([$deviceType]);
+        }
     }
 
     public function seedMissingModelCapabilities(PDO $pdo): void
@@ -129,14 +143,15 @@ final class ReferenceCatalogSeeder
             FROM models m
             JOIN suppliers s ON s.id = m.supplier_id
         ')->fetchAll(PDO::FETCH_ASSOC);
-        $existing = $pdo->prepare('
-            SELECT c.capability_key
-            FROM model_capabilities mc
-            JOIN capabilities c ON c.id = mc.capability_id
-            WHERE mc.model_id = ?
+        $existing = $pdo->prepare('SELECT capability_key FROM model_capabilities WHERE model_id = ?');
+        // A capacidade tem de existir no catálogo: a chave estrangeira recusa o resto.
+        $capability = $pdo->prepare('
+            SELECT COUNT(*) FROM capabilities WHERE device_type = ? AND capability_key = ?
         ');
-        $capability = $pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
-        $insert = $pdo->prepare('INSERT IGNORE INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
+        $insert = $pdo->prepare('
+            INSERT IGNORE INTO model_capabilities (model_id, device_type, capability_key, enabled)
+            VALUES (?, ?, ?, 1)
+        ');
 
         foreach ($models as $model) {
             $modelId = (int)$model['id'];
@@ -154,9 +169,8 @@ final class ReferenceCatalogSeeder
                     continue;
                 }
                 $capability->execute([(string)$model['device_type'], $key]);
-                $capabilityId = (int)($capability->fetchColumn() ?: 0);
-                if ($capabilityId > 0) {
-                    $insert->execute([$modelId, $capabilityId]);
+                if ((int)$capability->fetchColumn() > 0) {
+                    $insert->execute([$modelId, (string)$model['device_type'], $key]);
                 }
             }
         }
