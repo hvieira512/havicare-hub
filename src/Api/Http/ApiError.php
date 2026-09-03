@@ -63,7 +63,14 @@ final class ApiError
         'user_exists' => 409,
         // O nome de empresa repetido, que o `TenancyPaths` documenta como 409.
         'duplicate' => 409,
+        // 429 e não 503: aqui a culpa é de quem pede, e o cliente tem de saber que foi o seu
+        // ritmo que o travou -- não uma falta de lugar no servidor.
+        'too_many_attempts' => 429,
         'server_error' => 500,
+        // 503 e não 429: o pedido é legítimo e o cliente não fez nada de mais -- o que falta é
+        // lugar no processo. Um `Retry-After` faria sentido, e o 429 diria a culpa a quem não
+        // a tem.
+        'too_many_streams' => 503,
     ];
 
     /**
@@ -290,6 +297,26 @@ final class ApiError
     public static function serverError(): self
     {
         return new self('server_error', 'Internal server error');
+    }
+
+    /**
+     * Uma ligação de eventos é um pedido que nunca termina, e o limitador de concorrência
+     * larga o seu lugar assim que a resposta é devolvida. Sem este teto, o número de streams
+     * abertos não tinha limite nenhum, e o real eram os descritores de ficheiro do processo.
+     */
+    public static function tooManyStreams(): self
+    {
+        return new self('too_many_streams', 'Too many open streams; close one and retry');
+    }
+
+    /**
+     * O login é a única rota pública que verifica uma password, e o bcrypt a custo 12 bloqueia
+     * o event loop 146 ms por tentativa -- acerte ou falhe. Sem teto, sete tentativas por
+     * segundo paravam o processo que também serve a ingestão dos relógios.
+     */
+    public static function tooManyAttempts(): self
+    {
+        return new self('too_many_attempts', 'Too many authentication attempts; slow down and retry');
     }
 
     public static function deviceAlreadyAssociated(): self

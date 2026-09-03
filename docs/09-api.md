@@ -84,13 +84,61 @@ pertence a um URL.
 normal e passado na query:
 
 ```http
-POST /api/auth/stream-ticket     →  { "ticket": "…" }
+POST /api/auth/stream-ticket     →  { "data": { "ticket": "…" } }
 GET  /api/devices/{imei}/stream?ticket=…
 ```
 
 O bilhete é eliminado **antes** de a ligação ser servida, o que o restringe a
 uma única utilização. Herda o âmbito de acesso de quem o solicitou, pelo que não
 amplia privilégios.
+
+O bilhete existe **apenas** para o `EventSource`. O resolvedor de credenciais
+verifica o cabeçalho `Authorization` primeiro e só recorre ao `?ticket=` quando
+não há cabeçalho; um cliente que possa definir cabeçalhos — `fetch()` com
+leitura do corpo, um consumidor de servidor, uma aplicação móvel — envia o
+`Bearer` normal e dispensa o bilhete.
+
+### Tetos de tentativas
+
+O login é a única rota pública que verifica uma password, e tem de o ser: não se
+apresenta um token antes de o ter. O `password_verify` é síncrono, está a custo
+12, e corre no mesmo *event loop* que serve a ingestão TCP dos relógios — cada
+tentativa bloqueia o processo inteiro, **acerte ou falhe**. Quem ataca não
+precisa de adivinhar a password; precisa apenas de obrigar o hub a verificar.
+
+Medido na instância de desenvolvimento, com um utilizador real e password
+errada: **172 a 187 ms por tentativa**. Cinco sondas lançadas durante uma dessas
+tentativas mostram a assinatura de um loop bloqueado — uma delas espera os
+mesmos ~180 ms, e as restantes respondem em 0,3 ms depois de ele libertar. A 175
+ms, **5,7 tentativas por segundo saturam o loop a 100%**.
+
+> **Uma tentativa com utilizador inexistente custa 0,5 ms**, porque o `&&` em
+> `AuthService` faz curto-circuito antes do `password_verify` quando não há
+> hash. A diferença de ~350× é um oráculo de enumeração de utilizadores: dá para
+> descobrir que contas existem só pelo tempo de resposta. Os tetos abaixo limitam
+> quantas tentativas se fazem, mas não igualam os dois tempos. Fechar o oráculo
+> — verificar contra um hash fixo quando o utilizador não existe — torna *todas*
+> as tentativas caras, e por isso só é seguro fazê-lo com os tetos já em vigor.
+
+Daí três tetos por janela, verificados **antes** da verificação da password, cada
+um a fechar uma porta que os outros deixam aberta:
+
+| Teto | Omissão | Fecha |
+|---|---|---|
+| `DASHBOARD_LOGIN_MAX_PER_ADDRESS` | 20 / 60 s | O atacante único, que é o caso comum |
+| `DASHBOARD_LOGIN_MAX_PER_USERNAME` | 10 / 300 s | As tentativas distribuídas contra uma conta só |
+| `DASHBOARD_LOGIN_MAX_GLOBAL` | 10 / 10 s | O tempo de loop gasto em bcrypt, independentemente de quantos endereços o atacante tenha |
+
+A 175 ms por tentativa, o teto global de 10 por 10 s deixa o pior caso em cerca
+de **18% do loop** — e é o único dos três que resiste a quem rode endereços.
+
+Excedido qualquer um deles, a resposta é `429 too_many_attempts`. Um corpo mal
+formado não conta: não custa bcrypt nenhum.
+
+A **renovação com `refresh_token` não passa por estes tetos** — não chama
+`password_verify`, e é uma leitura ao Redis e duas escritas. É por isso que uma
+aplicação deve guardar o par e renovar, em vez de voltar a autenticar a cada
+carregamento de página.
 
 ### Modo sem autenticação
 
@@ -102,12 +150,13 @@ administrador e nada é verificado. **É só para desenvolvimento local.**
 | Papel | Alcance |
 |---|---|
 | `hub_admin` | Tudo. É o único que entra na dashboard |
-| `license_client` | Nove rotas, e só os dispositivos do seu par empresa+licença |
+| `license_client` | Dez rotas, e só os dispositivos do seu par empresa+licença |
 
-As nove rotas do `license_client`:
+As dez rotas do `license_client`:
 
 ```text
 POST   /api/auth/stream-ticket
+GET    /api/stream
 GET    /api/devices
 GET    /api/devices/{imei}
 GET    /api/devices/{imei}/stream
@@ -126,7 +175,7 @@ Um `license_client` mal ligado — sem licença, sem empresa, ou com referência
 inconsistentes — **não autentica de todo**. Ver o
 [capítulo do multi-inquilino](07-multi-inquilino.md).
 
-## 3. As 50 rotas
+## 3. As 51 rotas
 
 **P** = pública · **LC** = admin e `license_client` · **A** = só `hub_admin`
 
@@ -136,6 +185,68 @@ inconsistentes — **não autentica de todo**. Ver o
 |---|---|---|---|
 | POST | `/api/auth/login` | Autentica ou roda o par de tokens | **P** |
 | POST | `/api/auth/stream-ticket` | Bilhete de uso único para o stream | **LC** |
+
+### O stream do inquilino
+
+| | Rota | O que faz | |
+|---|---|---|---|
+| GET | `/api/stream` | Tudo o que o MQTT leva da própria empresa e licença | **LC** |
+
+É a via pela qual uma aplicação externa lê em tempo real sem ter uma credencial
+de broker no código do cliente. O âmbito é composto a partir do token e **não há
+parâmetro que o alargue**: a chave de encaminhamento é `empresa/licença/canal`,
+e uma mensagem só chega a quem está registado sob a sua própria chave. Não
+existe caminho onde uma mensagem de outro inquilino seja considerada e depois
+recusada — nunca é procurada.
+
+Cada mensagem é um evento cujo nome é o canal. A linha `data` é um objeto JSON
+por mensagem: os campos que no MQTT vivem no tópico são devolvidos à raiz, e o
+`payload` é byte a byte o mesmo documento publicado no MQTT — quem já tem código
+escrito contra o MQTT reutiliza a desserialização que tem.
+
+```text
+event: telemetry
+data: {"topic":"havicare-hub/hitcare/1001/watch/861265061009822/telemetry",
+       "company":"hitcare","licenseId":1001,"deviceType":"watch",
+       "deviceId":"861265061009822","channel":"telemetry",
+       "payload":{ … idêntico ao MQTT … }}
+```
+
+Os canais servidos são `telemetry`, `events` e `status`, e o parâmetro
+`?channels=` estreita a escolha — é aí que se poupa largura de banda. O `raw`
+**não** é servido: é o canal de depuração de um aparelho concreto, e uma
+mangueira de inquilino é o pior sítio para o entregar.
+
+Três limites a conhecer. Não há histórico nem retidos: uma ligação nova não
+recebe o passado, e o estado inicial vem do `GET /api/devices`, já recortado
+pelo mesmo âmbito — abrir o stream primeiro e listar depois, para não perder o
+intervalo. Não há `id:`, e portanto não há retoma por `Last-Event-ID`: prometê-la
+implicaria um buffer de reposição que não existe. E um cliente que deixe de ler
+acumula até um limite, ponto em que a ligação **fecha com um evento
+`overflow`** — perder um `event` em silêncio é pior do que uma religação.
+
+O número de ligações abertas tem teto, global e por utilizador
+(`DASHBOARD_MAX_OPEN_STREAMS`, `DASHBOARD_MAX_OPEN_STREAMS_PER_USER`); excedido,
+a resposta é `503 too_many_streams`. Um `hub_admin` não tem inquilino e por isso
+não abre esta rota: o âmbito dele seria o sistema inteiro, que é justamente o
+caso que o teto existe para evitar.
+
+Os tetos saem de uma medição. Uma ligação inerte custa **~15 KB** de heap, e uma
+com a fila cheia **~111 KB** — ou seja **~128 KB** de pior caso. O teto global de
+2000 orça, portanto, cerca de **256 MB**. O
+[`DashboardStreamMemoryTest`](../tests/Integration/Dashboard/DashboardStreamMemoryTest.php)
+prende os dois números, para que uma alteração que engorde uma ligação não mova o
+teto sem ninguém dar por isso.
+
+O teto por utilizador é, na prática, **por inquilino**: uma licença tem uma
+conta, e todos os ecrãs desse cliente entram por ela. Está a 25% do global, de
+forma a um inquilino grande poder crescer sem conseguir esfomear os outros.
+
+> O `LimitNOFILE` flexível de omissão do systemd é **1024**. Com ele, os
+> descritores de ficheiro esgotam-se muito antes de qualquer destes tetos, e o
+> processo deixa de aceitar ligações — incluindo as dos relógios, que partilham o
+> processo. Uma instalação que sirva estes números precisa de o subir; 8192 chega
+> com folga.
 
 ### Dispositivos
 
@@ -195,8 +306,9 @@ imagem do modelo no mesmo pedido.
 | DELETE | `/api/notifications/{id}` | **A** |
 | GET | `/api/openapi.json` · `/api/docs` | **P** |
 
-**50 rotas.** Duas são internas (`/api/openapi.json` e `/api/docs` descrevem-se
-a si próprias), o que dá as **48 operações** documentadas na especificação.
+**51 rotas**, que dão **49 operações** na especificação. As duas que faltam são o
+`/api/auth/stream-ticket` e o `/api/devices/{imei}/stream`, excluídas por
+decisão — ver a [secção 6](#rotas-excluídas-da-especificação).
 
 ## 4. Formas de resposta
 
@@ -379,10 +491,15 @@ Todas as operações declaram **500**, e as não públicas declaram adicionalmen
 ### Rotas excluídas da especificação
 
 As rotas `/api/auth/stream-ticket` e `/api/devices/{imei}/stream` estão
-excluídas por decisão: o formato do stream não oferece garantia de estabilidade.
-Um teste verifica a correspondência nos dois sentidos — todas as rotas constam
-da especificação, com estas duas exceções declaradas, e todas as operações da
-especificação correspondem a rotas existentes.
+excluídas por decisão: servem a dashboard, e o formato do stream por dispositivo
+não oferece garantia de estabilidade. Um teste verifica a correspondência nos
+dois sentidos — todas as rotas constam da especificação, com estas duas exceções
+declaradas, e todas as operações da especificação correspondem a rotas
+existentes.
+
+O `/api/stream` **não** é uma dessas exceções, e a diferença é deliberada: é
+superfície de integração pública, e por isso o envelope dos seus eventos está
+declarado na especificação como o de qualquer outra rota.
 
 ## 7. Transporte
 
@@ -400,7 +517,7 @@ especificação correspondem a rotas existentes.
 |---|---|
 | `src/Api/ApiKernel.php` | Despacho, identidade, `ETag`, erros não apanhados |
 | `src/Api/Routing/ApiRouter.php` · `ApiRoute.php` | Encaminhamento |
-| `src/Api/Routes/*.php` | As 50 rotas, agrupadas por assunto |
+| `src/Api/Routes/*.php` | As 51 rotas, agrupadas por assunto |
 | `src/Api/Auth/ApiTokenStore.php` | Os três tipos de token |
 | `src/Api/Auth/RouteAccessPolicy.php` | As nove rotas do `license_client` |
 | `src/Api/Auth/ApiAuthContext.php` | `canAccessTenant()` |

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\HubMqttBridge;
+use Hub\Device\MessageFanout;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
 
@@ -149,6 +150,117 @@ final class HubMqttBridgeTest extends TestCase
             'hitcare/0/watch/861265061009822/telemetry',
             $bridge->deviceTopic('hitcare', 0, 'watch', '861265061009822', 'telemetry'),
         );
+    }
+
+    /**
+     * A derivação para os streams acontece no mesmo sítio onde a mensagem é publicada, e
+     * leva o payload já serializado -- o mesmo que vai para o fio, sem segunda codificação.
+     */
+    public function testPublishingFansOutUnderTheScopeOfTheDeviceThatSentIt(): void
+    {
+        $fanout = new MessageFanout();
+        $bridge = new HubMqttBridge(new FakeMqttPublisher(), 'havicare-hub', null, $fanout);
+
+        $received = [];
+        $fanout->subscribe(
+            'hitcare/1001/telemetry',
+            static function (string $topic, string $json) use (&$received): void {
+                $received[] = [$topic, $json];
+            }
+        );
+
+        $bridge->publishTelemetry('861265061009822', ['type' => 'heart_rate'], 'watch', 1001, 'hitcare');
+
+        self::assertCount(1, $received);
+        self::assertSame('havicare-hub/hitcare/1001/watch/861265061009822/telemetry', $received[0][0]);
+        self::assertSame('{"type":"heart_rate"}', $received[0][1]);
+    }
+
+    /**
+     * A licença 1001 do hitcare e a 1001 do havicare são clientes diferentes, e por isso a
+     * chave de encaminhamento é o par empresa+licença. Se fosse só o número, este ouvinte
+     * recebia dados de outro cliente.
+     */
+    public function testTheSameLicenceNumberInAnotherCompanyIsADifferentScope(): void
+    {
+        $fanout = new MessageFanout();
+        $bridge = new HubMqttBridge(new FakeMqttPublisher(), 'havicare-hub', null, $fanout);
+
+        $delivered = 0;
+        $fanout->subscribe('hitcare/1001/telemetry', static function () use (&$delivered): void {
+            $delivered++;
+        });
+
+        $bridge->publishTelemetry('861265061009833', ['type' => 'heart_rate'], 'watch', 1001, 'otherCare');
+
+        self::assertSame(0, $delivered);
+    }
+
+    /** Cada canal é a sua própria chave: quem só quer eventos não paga a telemetria. */
+    public function testEachChannelIsItsOwnKey(): void
+    {
+        $fanout = new MessageFanout();
+        $bridge = new HubMqttBridge(new FakeMqttPublisher(), 'havicare-hub', null, $fanout);
+
+        $events = 0;
+        $fanout->subscribe('hitcare/1001/events', static function () use (&$events): void {
+            $events++;
+        });
+
+        $bridge->publishTelemetry('861265061009822', ['type' => 'heart_rate'], 'watch', 1001, 'hitcare');
+        self::assertSame(0, $events);
+
+        $bridge->publishEvent('861265061009822', ['type' => 'sos'], 'watch', 1001, 'hitcare');
+        self::assertSame(1, $events);
+    }
+
+    /** Um dispositivo sem dono publica sob `null/0`, que é um âmbito que nenhum token produz. */
+    public function testAnOwnerlessDeviceLandsOnAScopeNoTenantCanHold(): void
+    {
+        $fanout = new MessageFanout();
+        $bridge = new HubMqttBridge(new FakeMqttPublisher(), 'havicare-hub', null, $fanout);
+
+        $seen = [];
+        $fanout->subscribe('null/0/raw', static function (string $topic) use (&$seen): void {
+            $seen[] = $topic;
+        });
+
+        $bridge->publishRaw('861265061009844', ['direction' => 'uplink']);
+
+        self::assertSame(['havicare-hub/null/0/watch/861265061009844/raw'], $seen);
+    }
+
+    /** Sem ninguém à escuta, publicar não custa mais do que uma procura falhada. */
+    public function testPublishingWithNoListenersIsHarmless(): void
+    {
+        $fanout = new MessageFanout();
+        $bridge = new HubMqttBridge(new FakeMqttPublisher(), 'havicare-hub', null, $fanout);
+
+        $bridge->publishTelemetry('861265061009822', ['type' => 'heart_rate'], 'watch', 1001, 'hitcare');
+
+        self::assertSame(0, $fanout->listenerCount());
+    }
+
+    /** O `unsubscribe` devolvido tem de largar o ouvinte, ou uma ligação fechada continua a receber. */
+    public function testUnsubscribingReleasesTheListener(): void
+    {
+        $fanout = new MessageFanout();
+        $bridge = new HubMqttBridge(new FakeMqttPublisher(), 'havicare-hub', null, $fanout);
+
+        $delivered = 0;
+        $unsubscribe = $fanout->subscribe('hitcare/1001/telemetry', static function () use (&$delivered): void {
+            $delivered++;
+        });
+
+        $bridge->publishTelemetry('861265061009822', ['type' => 'heart_rate'], 'watch', 1001, 'hitcare');
+        self::assertSame(1, $delivered);
+        self::assertSame(1, $fanout->listenerCount());
+
+        $unsubscribe();
+        self::assertSame(0, $fanout->listenerCount());
+
+        $bridge->publishTelemetry('861265061009822', ['type' => 'heart_rate'], 'watch', 1001, 'hitcare');
+        self::assertSame(1, $delivered, 'depois de largar o ouvinte não pode chegar mais nada');
     }
 }
 

@@ -47,6 +47,8 @@ final class ApiErrorTest extends TestCase
             'unauthorized' => [fn(): ApiError => ApiError::unauthorized(), 'unauthorized', 'Unauthorized', 401],
             'routeNotFound' => [fn(): ApiError => ApiError::routeNotFound(), 'not_found', 'Not found', 404],
             'serverError' => [fn(): ApiError => ApiError::serverError(), 'server_error', 'Internal server error', 500],
+            'tooManyStreams' => [fn(): ApiError => ApiError::tooManyStreams(), 'too_many_streams', 'Too many open streams; close one and retry', 503],
+            'tooManyAttempts' => [fn(): ApiError => ApiError::tooManyAttempts(), 'too_many_attempts', 'Too many authentication attempts; slow down and retry', 429],
             'deviceAlreadyAssociated' => [fn(): ApiError => ApiError::deviceAlreadyAssociated(), 'device_already_associated', 'Device is already associated', 400],
             'invalidAssociation' => [fn(): ApiError => ApiError::invalidAssociation(), 'invalid_association', 'company and licenseId do not match a registered license', 400],
             'invalidCredentials' => [fn(): ApiError => ApiError::invalidCredentials(), 'invalid_credentials', 'Invalid credentials', 401],

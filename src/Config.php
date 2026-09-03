@@ -4,7 +4,7 @@ namespace Hub;
 
 /**
  * @phpstan-type TcpIngressConfig array{host: string, port: int}
- * @phpstan-type DashboardConfig array{host: string, port: int, api_auth_required: bool, api_token_ttl_seconds: int, api_refresh_token_ttl_seconds: int, history_limit: int, command_timeout_seconds: int, device_idle_timeout_seconds: int}
+ * @phpstan-type DashboardConfig array{host: string, port: int, api_auth_required: bool, api_token_ttl_seconds: int, api_refresh_token_ttl_seconds: int, history_limit: int, command_timeout_seconds: int, device_idle_timeout_seconds: int, max_open_streams: int, max_open_streams_per_user: int, login_max_per_address: int, login_max_per_username: int, login_max_global: int}
  * @phpstan-type HubRuntimeConfig array{downlink_queue_ttl_seconds: int, whitelist_file: string}
  * @phpstan-type LocationResolutionConfig array{enabled: bool, endpoint: string, user_agent: string, timeout_seconds: float, max_accuracy_meters: float, cache_ttl_seconds: int, failure_cache_ttl_seconds: int, max_concurrency: int, max_queue: int, circuit_failure_threshold: int, circuit_open_seconds: int, rate_limit_open_seconds: int, radio_map_enabled: bool, radio_map_hash_key: string, radio_map_minimum_matches: int, radio_map_maximum_learning_accuracy_meters: float, radio_map_default_gps_accuracy_meters: float, radio_map_minimum_satellites: int, radio_map_maximum_observation_distance_meters: float, radio_map_cluster_radius_meters: float, radio_map_cache_ttl_seconds: int}
  * @phpstan-type NcsConfig array{enabled: bool, topic_filter: string}
@@ -73,6 +73,35 @@ class Config
                 'history_limit' => (int)(getenv('DASHBOARD_HISTORY_LIMIT') ?: 100),
                 'command_timeout_seconds' => (int)(getenv('DASHBOARD_COMMAND_TIMEOUT_SECONDS') ?: 3600),
                 'device_idle_timeout_seconds' => (int)(getenv('DASHBOARD_DEVICE_IDLE_TIMEOUT_SECONDS') ?: 1800),
+                // Uma ligação de eventos é um pedido que nunca termina, e o limitador de
+                // concorrência larga o seu lugar assim que a resposta sai. Sem estes tetos o
+                // número de streams abertos não tinha limite algum.
+                //
+                // Os valores saem de uma medição, não de um gosto: uma ligação inerte custa
+                // ~15 KB de heap e uma com a fila cheia ~111 KB, o que dá ~128 KB de pior
+                // caso. O teto global a 2000 orça, portanto, ~256 MB numa máquina com 15,7 GB
+                // -- ver o `DashboardStreamMemoryTest`, que prende os dois números.
+                //
+                // O teto por utilizador é, na prática, por **inquilino**: uma licença tem uma
+                // conta, e por isso todos os ecrãs de um cliente entram por ela. A 25% do
+                // global, um inquilino grande cresce sem conseguir esfomear os outros.
+                //
+                // Atenção ao `LimitNOFILE`: o limite flexível de omissão do systemd é 1024, e
+                // com ele os descritores esgotam-se antes de qualquer destes tetos. Uma unit
+                // que sirva estes números precisa dele bem acima -- 8192 chega com folga.
+                'max_open_streams' => max(1, (int)(getenv('DASHBOARD_MAX_OPEN_STREAMS') ?: 2000)),
+                'max_open_streams_per_user' => max(1, (int)(getenv('DASHBOARD_MAX_OPEN_STREAMS_PER_USER') ?: 500)),
+                // O login é a única rota pública que verifica uma password, e o bcrypt a custo
+                // 12 bloqueia o event loop inteiro. Medido na instância de desenvolvimento com
+                // um utilizador real e password errada: 172 a 187 ms por tentativa, com uma
+                // sonda concorrente a esperar exactamente esse tempo contra 0,3 ms em repouso.
+                // A 175 ms, 5,7 tentativas por segundo saturam o loop a 100%.
+                //
+                // O teto global é o que fixa quanto desse tempo se gasta, por mais endereços
+                // que o atacante tenha: 10 por 10 s deixa o pior caso em ~18% do loop.
+                'login_max_per_address' => max(1, (int)(getenv('DASHBOARD_LOGIN_MAX_PER_ADDRESS') ?: 20)),
+                'login_max_per_username' => max(1, (int)(getenv('DASHBOARD_LOGIN_MAX_PER_USERNAME') ?: 10)),
+                'login_max_global' => max(1, (int)(getenv('DASHBOARD_LOGIN_MAX_GLOBAL') ?: 10)),
             ],
             'hub' => [
                 'downlink_queue_ttl_seconds' => $downlinkQueueTtl,

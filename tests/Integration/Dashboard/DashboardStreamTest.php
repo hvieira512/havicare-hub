@@ -304,7 +304,10 @@ final class DashboardStreamTest extends DashboardHttpTestCase
             }
         });
 
-        $loop->addTimer(0.2, static function () use (&$frame, $body, $loop): void {
+        // O prazo tem de ser cancelado quando o frame chega primeiro. O loop é um singleton
+        // partilhado pela suite: um temporizador que sobrevive a este método fica armado e já
+        // fora de prazo, e mata o `run()` do teste seguinte antes de ele publicar.
+        $timeout = $loop->addTimer(0.2, static function () use ($body, $loop): void {
             if (method_exists($body, 'close')) {
                 $body->close();
             }
@@ -312,6 +315,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         });
 
         $loop->run();
+        $loop->cancelTimer($timeout);
 
         return $frame;
     }

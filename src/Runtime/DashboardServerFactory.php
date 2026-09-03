@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Runtime;
 
 use Hub\Api\Auth\ApiTokenStore;
+use Hub\Api\Auth\LoginThrottle;
 use Hub\Api\Http\CorsPolicy;
 use Hub\Api\Http\Middleware\ApiRequestLogger;
 use Hub\Api\Http\Middleware\CorsMiddleware;
@@ -38,6 +39,17 @@ final class DashboardServerFactory
             (bool)$dashboardConfig['api_auth_required'],
             (int)$dashboardConfig['api_token_ttl_seconds'],
             (int)$dashboardConfig['api_refresh_token_ttl_seconds'],
+            // O fan-out vem do bridge de propósito: é o mesmo objecto que a ingestão usa para
+            // publicar, e por isso não há duas instâncias possíveis.
+            $services->mqttBridge->messages(),
+            (int)$dashboardConfig['max_open_streams'],
+            (int)$dashboardConfig['max_open_streams_per_user'],
+            new LoginThrottle(
+                $services->redis,
+                maxPerAddress: (int)$dashboardConfig['login_max_per_address'],
+                maxPerUsername: (int)$dashboardConfig['login_max_per_username'],
+                maxGlobal: (int)$dashboardConfig['login_max_global'],
+            ),
         );
         // O construtor já não escreve no Redis: quem serve é que semeia, e só aqui.
         $dashboard->warmUp();

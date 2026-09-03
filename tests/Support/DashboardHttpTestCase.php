@@ -4,9 +4,11 @@ namespace Tests\Support;
 
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Auth\ApiTokenStore;
+use Hub\Api\Auth\LoginThrottle;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Dashboard\DashboardStore;
+use Hub\Device\MessageFanout;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
@@ -76,15 +78,23 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
      * Devolve a cadeia inteira, e não só a dashboard: o CORS e o registo do `/api/` são
      * middleware, e é a `DashboardServerFactory` que os monta -- aqui como em produção.
      *
-     * @return array{0: callable, 1: ApiDataAccess, 2: DashboardStore}
+     * O `MessageFanout` vem no quarto lugar por ser o que a ingestão usa para anunciar uma
+     * publicação: um teste que queira exercitar um stream de inquilino publica através dele.
+     *
+     * @return array{0: callable, 1: ApiDataAccess, 2: DashboardStore, 3: MessageFanout}
      */
     protected function makeServerWithDatabase(
         ?\Hub\Device\DeviceHubServer $hub = null,
         ?PendingDownlinkQueue $queue = null,
         bool $apiAuthRequired = true,
         int $apiTokenTtlSeconds = 3600,
-        int $apiRefreshTokenTtlSeconds = 2592000
+        int $apiRefreshTokenTtlSeconds = 2592000,
+        ?MessageFanout $messages = null,
+        int $maxOpenStreams = 200,
+        int $maxOpenStreamsPerUser = 5,
+        ?LoginThrottle $loginThrottle = null
     ): array {
+        $messages ??= new MessageFanout();
         $redis = new InMemoryRedisClient();
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $hitcareId = $db->companies->create('hitcare');
@@ -116,11 +126,15 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
             $db,
             $apiAuthRequired,
             $apiTokenTtlSeconds,
-            $apiRefreshTokenTtlSeconds
+            $apiRefreshTokenTtlSeconds,
+            $messages,
+            $maxOpenStreams,
+            $maxOpenStreamsPerUser,
+            $loginThrottle
         );
         $dashboard->warmUp();
 
-        return [DashboardServerFactory::handler($dashboard), $db, $store];
+        return [DashboardServerFactory::handler($dashboard), $db, $store, $messages];
     }
 
     protected function loginToken(callable $server, string $username, string $password): string

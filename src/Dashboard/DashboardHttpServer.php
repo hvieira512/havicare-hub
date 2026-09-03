@@ -4,6 +4,7 @@ namespace Hub\Dashboard;
 
 use Hub\Api\ApiKernel;
 use Hub\Api\Auth\ApiTokenStore;
+use Hub\Api\Auth\LoginThrottle;
 use Hub\Api\Services\ApiUserService;
 use Hub\Api\Services\AuthService;
 use Hub\Api\Services\CapabilityService;
@@ -18,6 +19,7 @@ use Hub\Api\Services\ProtocolService;
 use Hub\Api\Services\SupplierService;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Device\DeviceHubServer;
+use Hub\Device\MessageFanout;
 use Hub\Registry\Whitelist;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
@@ -44,6 +46,13 @@ final class DashboardHttpServer
         bool $apiAuthRequired = true,
         private int $apiTokenTtlSeconds = 3600,
         private int $apiRefreshTokenTtlSeconds = 2592000,
+        // A mesma instância que a ingestão usa para anunciar uma publicação. Quando falta, o
+        // stream de inquilino existe e nunca recebe nada -- o que é o que os testes que não
+        // se ocupam dele querem.
+        private ?MessageFanout $messages = null,
+        private int $maxOpenStreams = 200,
+        private int $maxOpenStreamsPerUser = 5,
+        private ?LoginThrottle $loginThrottle = null,
     ) {
         $this->apiAuthRequired = $apiAuthRequired;
 
@@ -57,7 +66,13 @@ final class DashboardHttpServer
         );
         $this->apiKernel = new ApiKernel(
             $this->apiAuthRequired,
-            new AuthService($this->tokens, $this->db, $this->apiTokenTtlSeconds, $this->apiRefreshTokenTtlSeconds),
+            new AuthService(
+                $this->tokens,
+                $this->db,
+                $this->apiTokenTtlSeconds,
+                $this->apiRefreshTokenTtlSeconds,
+                $this->loginThrottle,
+            ),
             $deviceService,
             new ModelService($this->db),
             new CapabilityService($this->db),
@@ -76,6 +91,9 @@ final class DashboardHttpServer
             new \Hub\Api\Http\HtmlResponder(),
             new \Hub\Api\Auth\BearerTokenResolver($this->tokens),
             new \Hub\Api\Auth\RouteAccessPolicy(),
+            $this->messages ?? new MessageFanout(),
+            $this->maxOpenStreams,
+            $this->maxOpenStreamsPerUser,
         );
     }
 

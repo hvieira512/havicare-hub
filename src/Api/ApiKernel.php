@@ -12,6 +12,8 @@ use Hub\Api\Controllers\DashboardNotificationController;
 use Hub\Api\Controllers\LicenseController;
 use Hub\Api\Controllers\ModelController;
 use Hub\Api\Controllers\ProtocolController;
+use Hub\Api\Controllers\StreamController;
+use Hub\Device\MessageFanout;
 use Hub\Api\Controllers\SupplierController;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Auth\BearerTokenResolver;
@@ -75,7 +77,11 @@ final class ApiKernel
         private HtmlResponder $html,
         private BearerTokenResolver $bearerTokenResolver,
         private RouteAccessPolicy $routeAccessPolicy,
+        private ?MessageFanout $messages = null,
+        private int $maxOpenStreams = 200,
+        private int $maxOpenStreamsPerUser = 5,
     ) {
+        $this->messages ??= new MessageFanout();
         $this->router = new ApiRouter($this->apiRoutes());
     }
 
@@ -145,11 +151,20 @@ final class ApiKernel
         $licenses = new LicenseController($this->licenses, $this->json);
         $protocols = new ProtocolController($this->protocols, $this->json);
         $notifications = new DashboardNotificationController($this->notifications, $this->json);
+        // Construído uma vez, como os restantes: os tetos de ligações abertas são estado deste
+        // controlador, e um por pedido não contava nada.
+        $stream = new StreamController(
+            $this->messages,
+            $this->json,
+            $this->maxOpenStreams,
+            $this->maxOpenStreamsPerUser,
+        );
         $json = fn(array $payload, int $status = 200): Response => $this->json->respond($payload, $status);
         $html = fn(string $body): Response => $this->html->respond($body);
 
         return [
             ...((require __DIR__ . '/Routes/AuthRoutes.php')($auth)),
+            ...((require __DIR__ . '/Routes/StreamRoutes.php')($stream)),
             ...((require __DIR__ . '/Routes/DeviceRoutes.php')($devices)),
             ...((require __DIR__ . '/Routes/ModelRoutes.php')($models)),
             ...((require __DIR__ . '/Routes/CapabilityRoutes.php')($capabilities)),

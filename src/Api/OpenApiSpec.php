@@ -5,6 +5,7 @@ namespace Hub\Api;
 use Hub\Api\OpenApi\Paths\CapabilityPaths;
 use Hub\Api\OpenApi\Paths\CatalogPaths;
 use Hub\Api\OpenApi\Paths\DevicePaths;
+use Hub\Api\OpenApi\Paths\StreamPaths;
 use Hub\Api\OpenApi\Paths\SystemPaths;
 use Hub\Api\OpenApi\Paths\TenancyPaths;
 use Hub\Api\OpenApi\Responses;
@@ -54,6 +55,7 @@ class OpenApiSpec
                 CatalogPaths::paths(),
                 CapabilityPaths::paths(),
                 TenancyPaths::paths(),
+                StreamPaths::paths(),
             )),
             'components' => [
                 'securitySchemes' => [

@@ -15,17 +15,41 @@ class HubMqttBridge
     private string $topicPrefix;
     /** @var null|callable(): MqttClient */
     private $reconnectPublisher;
+    private MessageFanout $messages;
 
-    public function __construct(MqttClient $publisher, string $topicPrefix = '', ?callable $reconnectPublisher = null)
-    {
+    public function __construct(
+        MqttClient $publisher,
+        string $topicPrefix = '',
+        ?callable $reconnectPublisher = null,
+        ?MessageFanout $messages = null,
+    ) {
         $this->publisher = $publisher;
         $this->topicPrefix = trim($topicPrefix, '/');
         $this->reconnectPublisher = $reconnectPublisher;
+        $this->messages = $messages ?? new MessageFanout();
+    }
+
+    /**
+     * Quem serve os streams pede-o aqui, e não a uma raiz de composição.
+     *
+     * A instância tem de ser a mesma dos dois lados, e é o grafo de objectos que o garante: a
+     * ingestão e o servidor HTTP partilham este bridge, portanto partilham este fan-out. Uma
+     * segunda instância em qualquer sítio não falhava nenhum teste -- ficava só calada.
+     */
+    public function messages(): MessageFanout
+    {
+        return $this->messages;
     }
 
     public function publishRaw(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
     {
-        $this->publish($this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'raw')), $payload);
+        $this->publish(
+            $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'raw')),
+            $payload,
+            $company,
+            $licenseId,
+            'raw',
+        );
     }
 
     public function publishStatus(
@@ -41,6 +65,9 @@ class HubMqttBridge
         $this->publish(
             $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'status')),
             $payload,
+            $company,
+            $licenseId,
+            'status',
             $retain,
             MqttClient::QOS_AT_LEAST_ONCE,
         );
@@ -48,19 +75,47 @@ class HubMqttBridge
 
     public function publishEvent(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
     {
-        $this->publish($this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'events')), $payload, false, MqttClient::QOS_AT_LEAST_ONCE);
+        $this->publish(
+            $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'events')),
+            $payload,
+            $company,
+            $licenseId,
+            'events',
+            false,
+            MqttClient::QOS_AT_LEAST_ONCE,
+        );
     }
 
     public function publishTelemetry(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
     {
-        $this->publish($this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'telemetry')), $payload);
+        $this->publish(
+            $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'telemetry')),
+            $payload,
+            $company,
+            $licenseId,
+            'telemetry',
+        );
     }
 
-    private function publish(string $topic, array $payload, bool $retain = false, int $qualityOfService = MqttClient::QOS_AT_MOST_ONCE): void
-    {
+    private function publish(
+        string $topic,
+        array $payload,
+        string $company,
+        int $licenseId,
+        string $channel,
+        bool $retain = false,
+        int $qualityOfService = MqttClient::QOS_AT_MOST_ONCE,
+    ): void {
         $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
             throw new \RuntimeException('Failed to encode MQTT payload');
+        }
+
+        // A derivação para os streams vem antes do fio: a mensagem já está em memória, e por
+        // isso nada tem de a voltar a ler do broker. O `hasListeners()` guarda a composição
+        // da chave, que de outro modo se pagava por mensagem sem ninguém à escuta.
+        if ($this->messages->hasListeners()) {
+            $this->messages->dispatch(MessageFanout::scope($company, $licenseId, $channel), $topic, $json);
         }
 
         try {
