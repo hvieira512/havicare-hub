@@ -95,10 +95,12 @@ final class DashboardStreamMemoryTest extends DashboardHttpTestCase
         gc_collect_cycles();
         $perConnection = (memory_get_usage() - $before) / self::CONNECTIONS;
 
-        // Medido: 111 KB, que são os 256 frames da fila a ~440 bytes cada. É este o número que
-        // dimensiona o teto de ligações -- 2000 × ~128 KB de pior caso dão ~256 MB de
-        // orçamento. O limite está a 192 KB para não passar a ser um teste sobre o tamanho do
-        // payload.
+        // Medido: 111 KB, que são os 256 frames da fila a ~440 bytes cada. Com os ~15 KB da
+        // ligação inerte, dá ~128 KB de pior caso -- e é isso que diz que a memória **não** é
+        // o que limita o teto de ligações: 400 × 128 KB são 51 MB. O que limita é o
+        // `FD_SETSIZE` de 1024 do `select()`, e está explicado no `Config.php`.
+        //
+        // O limite está a 192 KB para não passar a ser um teste sobre o tamanho do payload.
         self::assertLessThan(
             192 * 1024,
             $perConnection,

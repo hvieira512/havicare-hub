@@ -231,22 +231,33 @@ a resposta é `503 too_many_streams`. Um `hub_admin` não tem inquilino e por is
 não abre esta rota: o âmbito dele seria o sistema inteiro, que é justamente o
 caso que o teto existe para evitar.
 
-Os tetos saem de uma medição. Uma ligação inerte custa **~15 KB** de heap, e uma
-com a fila cheia **~111 KB** — ou seja **~128 KB** de pior caso. O teto global de
-2000 orça, portanto, cerca de **256 MB**. O
+Os tetos saem de uma medição, e o que os manda **não é a memória**. Uma ligação
+inerte custa ~15 KB de heap e uma com a fila cheia ~111 KB — a 2000 ligações
+seriam ~256 MB numa máquina com 15,7 GB, o que é folgado. O
 [`DashboardStreamMemoryTest`](../tests/Integration/Dashboard/DashboardStreamMemoryTest.php)
-prende os dois números, para que uma alteração que engorde uma ligação não mova o
-teto sem ninguém dar por isso.
+prende esses dois números.
+
+O que manda é o **event loop**. Sem as extensões `ev`, `event` ou `uv`
+instaladas, o ReactPHP usa o `StreamSelectLoop`, que é `stream_select()` — o
+`select(2)` do sistema, com o `FD_SETSIZE` fixo em **1024** no Linux. É um limite
+da implementação e não do sistema operativo: nenhum `LimitNOFILE` o levanta.
+
+> Medido a abrir streams em rampa contra a instância de desenvolvimento: aos
+> **1025 descritores** o processo **deixa de servir tudo**. A API passa a não
+> responder, os descritores não são libertados nem depois de os clientes
+> fecharem, e o processo **não morre** — pelo que o `Restart=always` não o
+> recupera e é preciso reiniciar à mão. O teto é partilhado com a ingestão TCP
+> dos relógios, que vive no mesmo processo.
+
+Daí o valor por omissão de **400**, que deixa cerca de 600 descritores para tudo
+o resto e nunca chega perto do ponto de ruptura. Subir isto passa por instalar
+uma extensão de loop primeiro — `config/systemd/limit-nofile.conf` descreve o
+caminho. Com epoll em vez de `select`, o teto passa a ser o orçamento de memória
+e os ~2000 tornam-se realistas.
 
 O teto por utilizador é, na prática, **por inquilino**: uma licença tem uma
 conta, e todos os ecrãs desse cliente entram por ela. Está a 25% do global, de
 forma a um inquilino grande poder crescer sem conseguir esfomear os outros.
-
-> O `LimitNOFILE` flexível de omissão do systemd é **1024**. Com ele, os
-> descritores de ficheiro esgotam-se muito antes de qualquer destes tetos, e o
-> processo deixa de aceitar ligações — incluindo as dos relógios, que partilham o
-> processo. Uma instalação que sirva estes números precisa de o subir; 8192 chega
-> com folga.
 
 ### Dispositivos
 

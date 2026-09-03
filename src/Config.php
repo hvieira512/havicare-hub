@@ -77,20 +77,26 @@ class Config
                 // concorrência larga o seu lugar assim que a resposta sai. Sem estes tetos o
                 // número de streams abertos não tinha limite algum.
                 //
-                // Os valores saem de uma medição, não de um gosto: uma ligação inerte custa
-                // ~15 KB de heap e uma com a fila cheia ~111 KB, o que dá ~128 KB de pior
-                // caso. O teto global a 2000 orça, portanto, ~256 MB numa máquina com 15,7 GB
-                // -- ver o `DashboardStreamMemoryTest`, que prende os dois números.
+                // O teto NÃO é a memória. Medido, uma ligação custa ~15 KB de heap inerte e
+                // ~111 KB com a fila cheia, o que a 2000 ligações daria ~256 MB numa máquina
+                // com 15,7 GB -- folgado. O que manda é outra coisa.
+                //
+                // Sem as extensões `ev`, `event` ou `uv`, o ReactPHP usa o `StreamSelectLoop`,
+                // que é `select(2)` com o `FD_SETSIZE` fixo em 1024. Medido em dev: aos 1025
+                // descritores o processo **deixa de servir tudo**, não morre, e o
+                // `Restart=always` não o recupera. Esse teto é partilhado com a ingestão TCP
+                // dos relógios, os sockets MQTT e os pedidos HTTP, que vivem no mesmo
+                // processo.
+                //
+                // Daí 400: deixa ~600 descritores para todo o resto e nunca chega perto do
+                // ponto em que o loop se parte. Ver `config/systemd/limit-nofile.conf` para o
+                // caminho de subida, que passa por instalar uma extensão de loop primeiro.
                 //
                 // O teto por utilizador é, na prática, por **inquilino**: uma licença tem uma
                 // conta, e por isso todos os ecrãs de um cliente entram por ela. A 25% do
                 // global, um inquilino grande cresce sem conseguir esfomear os outros.
-                //
-                // Atenção ao `LimitNOFILE`: o limite flexível de omissão do systemd é 1024, e
-                // com ele os descritores esgotam-se antes de qualquer destes tetos. Uma unit
-                // que sirva estes números precisa dele bem acima -- 8192 chega com folga.
-                'max_open_streams' => max(1, (int)(getenv('DASHBOARD_MAX_OPEN_STREAMS') ?: 2000)),
-                'max_open_streams_per_user' => max(1, (int)(getenv('DASHBOARD_MAX_OPEN_STREAMS_PER_USER') ?: 500)),
+                'max_open_streams' => max(1, (int)(getenv('DASHBOARD_MAX_OPEN_STREAMS') ?: 400)),
+                'max_open_streams_per_user' => max(1, (int)(getenv('DASHBOARD_MAX_OPEN_STREAMS_PER_USER') ?: 100)),
                 // O login é a única rota pública que verifica uma password, e o bcrypt a custo
                 // 12 bloqueia o event loop inteiro. Medido na instância de desenvolvimento com
                 // um utilizador real e password errada: 172 a 187 ms por tentativa, com uma
