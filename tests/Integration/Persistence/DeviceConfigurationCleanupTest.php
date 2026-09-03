@@ -40,12 +40,12 @@ final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
 
         $pdo->prepare('
             INSERT INTO device_configuration_operations (
-                operation_id, change_id, imei, config_key, native_key, native_type,
+                operation_id, change_id, native_key, native_type,
                 protocol, confirmation_mode,
                 delivery_status, created_at, updated_at, sequence_number
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
         ')->execute([
-            'operation-1', 'change-1', self::IMEI, 'alarm_clock', 'REMIND', 'REMIND',
+            'operation-1', 'change-1', 'REMIND', 'REMIND',
             'vivistar-iw', 'execution_ack', 'acked', '', '',
         ]);
 
@@ -58,18 +58,27 @@ final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
         return $pdo;
     }
 
-    /** @return array<string, int> */
+    /**
+     * As operações já não têm `imei` -- é da alteração --, por isso contam-se pelo `JOIN`,
+     * que é o mesmo caminho que o código usa.
+     *
+     * @return array<string, int>
+     */
     private function rowCounts(PDO $pdo): array
     {
         $counts = [];
         foreach (
             [
-            'device_configurations',
-            'device_configuration_changes',
-            'device_configuration_operations',
-            ] as $table
+            'device_configurations' => 'SELECT COUNT(*) FROM device_configurations WHERE imei = ?',
+            'device_configuration_changes' => 'SELECT COUNT(*) FROM device_configuration_changes WHERE imei = ?',
+            'device_configuration_operations' => '
+                SELECT COUNT(*) FROM device_configuration_operations o
+                JOIN device_configuration_changes c ON c.change_id = o.change_id
+                WHERE c.imei = ?
+            ',
+            ] as $table => $sql
         ) {
-            $statement = $pdo->prepare("SELECT COUNT(*) FROM `{$table}` WHERE imei = ?");
+            $statement = $pdo->prepare($sql);
             $statement->execute([self::IMEI]);
             $counts[$table] = (int)$statement->fetchColumn();
         }

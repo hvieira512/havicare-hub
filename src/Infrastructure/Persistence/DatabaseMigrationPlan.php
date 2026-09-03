@@ -6,6 +6,7 @@ namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\DropConfigurationSupplierAndModel;
 use Hub\Infrastructure\Persistence\Migration\DropSupplierDeviceTypes;
+use Hub\Infrastructure\Persistence\Migration\DropUnreadLifecycleColumns;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\ShrinkConfigurationLifecycle;
 
@@ -29,6 +30,7 @@ final class DatabaseMigrationPlan
             new ShrinkConfigurationLifecycle(),
             new DropSupplierDeviceTypes(),
             new DropConfigurationSupplierAndModel(),
+            new DropUnreadLifecycleColumns(),
         ];
     }
 

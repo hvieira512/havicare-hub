@@ -70,7 +70,8 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
 
         $stored = $db->deviceConfigurations->allForImei('861728087056333');
         self::assertSame(2, (int)$stored[0]['desired_revision']);
-        self::assertSame(2, (int)$stored[0]['confirmed_revision']);
+        // Sem `confirmed_revision`: quem diz que a alteração aterrou é o `sync_status` da
+        // alteração, afirmado acima, mais o `last_status` e o `applied_at` desta linha.
         self::assertSame('confirmed', $stored[0]['last_status']);
         self::assertNotSame('', $stored[0]['applied_at']);
     }

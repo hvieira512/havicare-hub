@@ -81,10 +81,10 @@ final class DeviceConfigurationLifecycleRepository
             $upsert = $this->pdo->prepare('
                 INSERT INTO device_configurations (
                     imei, config_key, native_key, protocol, command,
-                    desired_payload, reported_payload, desired_revision, confirmed_revision,
+                    desired_payload, reported_payload, desired_revision,
                     current_change_id, confirmation_mode, last_status, last_error,
                     last_command_id, desired_updated_at, reported_at, applied_at
-                ) VALUES (?, ?, ?, ?, ?, ?, \'{}\', ?, 0, ?, ?, ?, \'\', ?, ?, \'\', \'\')
+                ) VALUES (?, ?, ?, ?, ?, ?, \'{}\', ?, ?, ?, ?, \'\', ?, ?, \'\', \'\')
                 ON DUPLICATE KEY UPDATE
                     protocol = VALUES(protocol),
                     command = VALUES(command), desired_payload = VALUES(desired_payload),
@@ -105,20 +105,21 @@ final class DeviceConfigurationLifecycleRepository
             }
 
             // Sem os bytes do comando: quem os entrega é a fila `hub:downlink` do Redis, e
-            // aqui fica o registo do que foi pedido e como correu.
+            // aqui fica o registo do que foi pedido e como correu. Sem o `imei` nem o
+            // `config_key`: são da alteração, e a chave estrangeira dá o caminho.
             $insertOperation = $this->pdo->prepare('
                 INSERT INTO device_configuration_operations (
-                    operation_id, change_id, imei, config_key, native_key, native_type,
+                    operation_id, change_id, native_key, native_type,
                     protocol, confirmation_mode,
                     delivery_status, created_at, updated_at, sequence_number
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'created\', ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, \'created\', ?, ?, ?)
             ');
             foreach ($operations as $index => &$operation) {
                 $operation['changeId'] = $changeId;
                 $operation['desiredRevision'] = $revision;
                 $operation['configKey'] = $genericKey;
                 $insertOperation->execute([
-                    $operation['operationId'], $changeId, $imei, $genericKey,
+                    $operation['operationId'], $changeId,
                     $operation['nativeKey'], $operation['nativeType'], $operation['protocol'],
                     $operation['confirmationMode'], $now, $now, $index,
                 ]);
@@ -234,7 +235,6 @@ final class DeviceConfigurationLifecycleRepository
         $rows = $this->pdo->prepare('
             UPDATE device_configurations
             SET last_status = ?, last_error = ?,
-                confirmed_revision = IF(?, desired_revision, confirmed_revision),
                 applied_at = IF(?, ?, applied_at)
             WHERE current_change_id = ?
         ');
@@ -245,7 +245,7 @@ final class DeviceConfigurationLifecycleRepository
                 break;
             }
         }
-        $rows->execute([$sync, $error, $confirm ? 1 : 0, $confirm ? 1 : 0, $now, $changeId]);
+        $rows->execute([$sync, $error, $confirm ? 1 : 0, $now, $changeId]);
     }
 
     private function encode(array $value): string

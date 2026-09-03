@@ -96,8 +96,9 @@ CREATE TABLE IF NOT EXISTS device_configurations (
     command VARCHAR(191) NOT NULL DEFAULT '',
     desired_payload LONGTEXT NOT NULL,
     reported_payload LONGTEXT NOT NULL,
+    -- Sem `confirmed_revision`: quem responde "este dispositivo está atrasado?" é o
+    -- `sync_status` da alteração, e a coluna era escrita e nunca lida.
     desired_revision BIGINT UNSIGNED NOT NULL DEFAULT 0,
-    confirmed_revision BIGINT UNSIGNED NOT NULL DEFAULT 0,
     current_change_id VARCHAR(64) NOT NULL DEFAULT '',
     confirmation_mode VARCHAR(32) NOT NULL DEFAULT 'execution_ack',
     last_status VARCHAR(32) NOT NULL DEFAULT '',
@@ -130,8 +131,7 @@ CREATE TABLE IF NOT EXISTS device_configuration_changes (
 CREATE TABLE IF NOT EXISTS device_configuration_operations (
     operation_id VARCHAR(64) NOT NULL PRIMARY KEY,
     change_id VARCHAR(64) NOT NULL,
-    imei VARCHAR(64) NOT NULL,
-    config_key VARCHAR(191) NOT NULL,
+    -- Sem `imei` nem `config_key`: são da alteração, e a chave estrangeira dá o caminho.
     native_key VARCHAR(191) NOT NULL,
     native_type VARCHAR(191) NOT NULL,
     protocol VARCHAR(64) NOT NULL,
@@ -205,7 +205,9 @@ CREATE TABLE IF NOT EXISTS dashboard_notifications (
     last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     read_at DATETIME NULL DEFAULT NULL,
     UNIQUE KEY uq_dashboard_notifications_identity (type, imei, protocol),
-    KEY idx_dashboard_notifications_unread (read_at, last_seen_at),
+    -- Só o `read_at`: a contagem de não lidas não ordena, e a listagem ordenada usa o
+    -- índice ao lado.
+    KEY idx_dashboard_notifications_unread (read_at),
     KEY idx_dashboard_notifications_latest (last_seen_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
