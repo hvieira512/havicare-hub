@@ -18,6 +18,21 @@ final class StartupBanner
         $log = Logger::channel('hub');
 
         $log->info('=== Havicare Hub ===');
+
+        // A implementação do event loop não vem de configuração nossa: o ReactPHP escolhe a
+        // melhor das extensões instaladas, e cai no `StreamSelectLoop` quando não há nenhuma.
+        // Isso importa e muito -- o `StreamSelectLoop` é `select(2)`, preso nos 1024
+        // descritores, e ultrapassá-los faz o processo deixar de servir sem morrer. Instalar
+        // uma extensão troca o loop em silêncio, sem uma linha de diferença no repositório, e
+        // por isso a escolha fica registada aqui: dentro de meses, é isto que diz com o que se
+        // estava a correr.
+        $loop = get_class(\React\EventLoop\Loop::get());
+        $log->info(sprintf(
+            'Event loop: %s%s',
+            $loop,
+            str_contains($loop, 'StreamSelect') ? ' (select: teto de 1024 descritores)' : ' (epoll)',
+        ));
+
         $log->info("Dashboard: http://{$config['dashboard']['host']}:{$config['dashboard']['port']}/dashboard");
         $log->info("TCP ingress: tcp://{$config['tcp_ingress']['host']}:{$config['tcp_ingress']['port']}");
         $log->info(sprintf(
