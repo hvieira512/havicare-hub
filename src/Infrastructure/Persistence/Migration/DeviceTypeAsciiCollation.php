@@ -71,7 +71,10 @@ final class DeviceTypeAsciiCollation implements Migration
 
     public function up(PDO $pdo): void
     {
-        if ($this->collation($pdo, 'device_types') === 'ascii_bin') {
+        // A sentinela olha para as cinco colunas, e não para uma. O `schema.sql` cria a
+        // `device_types` já em `ascii_bin`, e decidir por ela deixava as outras quatro em
+        // `utf8mb4` -- convertidas em silêncio só na metade que não faltava.
+        if (!$this->needsConversion($pdo)) {
             return;
         }
 
@@ -110,6 +113,24 @@ final class DeviceTypeAsciiCollation implements Migration
                 );
             }
         }
+    }
+
+    private function needsConversion(PDO $pdo): bool
+    {
+        foreach (array_keys(self::COLUMNS) as $table) {
+            if ($this->collation($pdo, $table) !== 'ascii_bin') {
+                return true;
+            }
+        }
+
+        // As chaves só nascem depois das colunas, e uma que falte é trabalho a meio.
+        foreach (self::CONSTRAINTS as $table => [$name]) {
+            if (!$this->hasConstraint($pdo, $table, $name)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function collation(PDO $pdo, string $table): string

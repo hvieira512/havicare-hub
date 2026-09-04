@@ -56,7 +56,11 @@ final class DeviceTypesTable implements Migration
             }
 
             $constraint = "fk_{$table}_device_type";
-            if (!$this->hasConstraint($pdo, $table, $constraint)) {
+            // Uma chave estrangeira exige colação igual nos dois lados. Numa base que venha do
+            // estado `ENUM`, o `schema.sql` já criou a `device_types` em `ascii_bin` e esta
+            // coluna ainda está em `utf8mb4`: a chave fica para a migração da colação, que
+            // converte as cinco e reconstrói as quatro.
+            if (!$this->hasConstraint($pdo, $table, $constraint) && $this->collationsMatch($pdo, $table)) {
                 $pdo->exec("
                     ALTER TABLE {$table}
                     ADD CONSTRAINT {$constraint} FOREIGN KEY (device_type)
@@ -91,6 +95,22 @@ final class DeviceTypesTable implements Migration
         $stmt->execute([$table, 'device_type']);
 
         return $stmt->fetchColumn() === 'enum';
+    }
+
+    private function collationsMatch(PDO $pdo, string $table): bool
+    {
+        return $this->collation($pdo, $table) === $this->collation($pdo, 'device_types');
+    }
+
+    private function collation(PDO $pdo, string $table): string
+    {
+        $stmt = $pdo->prepare('
+            SELECT collation_name FROM information_schema.columns
+            WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?
+        ');
+        $stmt->execute([$table, 'device_type']);
+
+        return (string)$stmt->fetchColumn();
     }
 
     private function hasIndex(PDO $pdo, string $table, string $index): bool
