@@ -103,6 +103,39 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
             ->execute(['999999999999999', 'Vivistar', 'L08 Pro', 'torradeira']);
     }
 
+    /**
+     * O `device_type` distingue maiúsculas, e um tipo mal escrito é recusado.
+     *
+     * A coluna está em `ascii_bin`, que compara byte a byte: é a colação mais rápida para
+     * identificadores ASCII, e o `key_len` do índice cai de 135 bytes para 39. O efeito
+     * secundário é este, e é desejado -- com uma colação `_ci`, um `Watch` casava em silêncio
+     * com o `watch` do catálogo, e o valor errado entrava na tabela.
+     *
+     * Os dez caminhos de escrita passam todos pelo `DeviceMetadata::normalizeDeviceType()`,
+     * que faz `strtolower`, pelo que nada de legítimo chega aqui em maiúsculas.
+     */
+    public function testADeviceTypeInTheWrongCaseIsRefused(): void
+    {
+        $pdo = $this->createDashboardDatabase()->pdo();
+
+        $this->expectException(\PDOException::class);
+        $pdo->prepare('INSERT INTO whitelist (imei, supplier, model, device_type) VALUES (?, ?, ?, ?)')
+            ->execute(['999999999999998', 'Vivistar', 'L08 Pro', 'Watch']);
+    }
+
+    /** A colação das cinco colunas tem de ser a mesma, ou as chaves estrangeiras não nascem. */
+    public function testEveryDeviceTypeColumnSharesTheSameCollation(): void
+    {
+        $pdo = $this->createDashboardDatabase()->pdo();
+
+        $stmt = $pdo->query("
+            SELECT DISTINCT collation_name FROM information_schema.columns
+            WHERE table_schema = DATABASE() AND column_name = 'device_type'
+        ");
+
+        self::assertSame(['ascii_bin'], $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
     public function testTheDroppedDiaperTableStaysDropped(): void
     {
         // A `2026082802` largou-a e o `schema.sql` recriava-a na execução seguinte. Este

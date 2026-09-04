@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\ConfigurationTimestampsToDatetime;
+use Hub\Infrastructure\Persistence\Migration\DeviceTypeAsciiCollation;
 use Hub\Infrastructure\Persistence\Migration\DeviceTypesTable;
 use Hub\Infrastructure\Persistence\Migration\DropApiUserLicenseNumber;
 use Hub\Infrastructure\Persistence\Migration\DropCapabilityTelemetryFlag;
@@ -43,6 +44,7 @@ final class DatabaseMigrationPlan
             new DeviceTypesTable(),
             new ShrinkLegacyVarchar191(),
             new ModelCapabilitiesByNaturalKey(),
+            new DeviceTypeAsciiCollation(),
         ];
     }
 
