@@ -77,7 +77,6 @@ function renderSelection() {
     els.requestCardsCard?.classList.toggle("d-none", !state.selectedDetail);
     if (!state.selectedDetail) {
         els.requestGrid.innerHTML = "";
-        els.ncsEventCardCount.textContent = "";
         els.ncsEventGrid.innerHTML = "";
         els.ncsEventSection.classList.add("d-none");
         return;
@@ -126,7 +125,6 @@ function renderSelection() {
     if (deviceType === "ncs") {
         renderNcsEventCards(alarmEvents);
     } else {
-        els.ncsEventCardCount.textContent = "";
         els.ncsEventGrid.innerHTML = "";
         els.ncsEventSection.classList.add("d-none");
     }
@@ -712,7 +710,11 @@ function renderRequestCards(
                 )
                 .join("")
         : "";
-    els.requestGrid.innerHTML = falls + helpCalls + cards || html`<div class="col-12">${raw(emptyPanel("Não há pedidos disponíveis para este dispositivo."))}</div>`;
+    // Um W812 não aceita pedido nenhum, e o cartão vazio a dizê-lo ocupava a coluna com uma
+    // grelha que nunca teria mosaicos. Sem nada para mostrar, a secção não existe.
+    const grid = falls + helpCalls + cards;
+    els.requestCardsCard?.classList.toggle("d-none", grid === "");
+    els.requestGrid.innerHTML = grid;
     refreshTooltips(els.requestGrid);
 }
 
@@ -764,34 +766,26 @@ function renderNcsEventCards(rows = []) {
         .filter(Boolean)
         .sort((left, right) => eventTime(right.latest) - eventTime(left.latest));
 
+    // Sem cartões a secção não aparece, e por isso não há estado vazio para desenhar.
     els.ncsEventSection.classList.toggle("d-none", cards.length === 0);
-    els.ncsEventCardCount.textContent = cards.length
-        ? `${cards.length} eventos`
-        : "";
-    els.ncsEventGrid.innerHTML = cards.length
-        ? cards.map(renderNcsEventCard).join("")
-        : html`<div class="col-12">${raw(emptyPanel("Ainda não há eventos NCS recebidos."))}</div>`;
+    els.ncsEventGrid.innerHTML = cards.map(renderNcsEventCard).join("");
 }
 
+/**
+ * Mesma forma dos mosaicos de telemetria -- nome, valor, detalhe -- e não um corpo próprio
+ * com duas linhas de texto corrido: o que aconteceu titula, o comando é o valor, e a hora
+ * fica no detalhe.
+ */
 function renderNcsEventCard({ type, latest }) {
     const content = uplinkCardContent(type, latest.data || {});
     const timestamp = when(latest.occurredAt || latest.recordedAt) || "hora desconhecida";
-    const pagerId =
-        latest.data && typeof latest.data === "object"
-            ? String(latest.data.pagerId || "")
-            : "";
-
-    const pagerLine = pagerId
-        ? html`<div class="small text-secondary">Pager: ${pagerId}</div>`
-        : "";
 
     return telemetryCard({
         icon: content.icon,
         title: content.value,
+        value: content.rowValue || "",
+        details: html`Último evento: ${timestamp}`,
         tone: cardTone(type),
-        body: html`
-        <div class="small text-secondary mt-2">Último evento: ${timestamp}</div>
-        ${raw(pagerLine)}`,
     });
 }
 

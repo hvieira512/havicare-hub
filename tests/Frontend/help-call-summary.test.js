@@ -12,13 +12,32 @@ const call = (pressType, occurredAt) => ({
     data: { pressType, triggerCount: 10, presses: 1 },
 });
 
+const W6B_MODES = ["single", "double", "long"];
+
 test("a device that never called for help gets no card", () => {
-    assert.equal(helpCallSummaryCard([]), "");
-    assert.equal(helpCallSummaryCard([{ type: "battery", data: { percent: 90 } }]), "");
+    assert.equal(helpCallSummaryCard([], W6B_MODES), "");
+    assert.equal(
+        helpCallSummaryCard([{ type: "battery", data: { percent: 90 } }], W6B_MODES),
+        "",
+    );
+});
+
+test("a protocol that declares no press modes gets no card", () => {
+    // O W812 da Voerka chama por botão de comando e não por modo de toque: o cartão dos
+    // toques desenhava três colunas a dizer "nunca" ao lado dos eventos que mostram a
+    // chamada verdadeira. Sem modos declarados não há resumo por modo.
+    const ncsCall = {
+        type: "help_call",
+        occurredAt: "2026-09-04T11:45:16Z",
+        data: { pagerId: "348319" },
+    };
+
+    assert.equal(helpCallSummaryCard([ncsCall]), "");
+    assert.equal(helpCallSummaryCard([ncsCall], []), "");
 });
 
 test("every press mode is listed, including ones never used", () => {
-    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
+    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")], W6B_MODES);
 
     assert.match(html, /Toque simples/);
     assert.match(html, /Toque duplo/);
@@ -55,7 +74,7 @@ test("only the most recent call of each mode is shown", () => {
         call("single", "2026-08-10T12:20:00Z"),
         call("single", "2026-08-10T12:26:49Z"),
         call("double", "2026-08-10T12:26:18Z"),
-    ]);
+    ], W6B_MODES);
 
     // Afirmado sobre a hora em ISO e não sobre a hora local desenhada, que depende do fuso
     // da máquina.
@@ -69,13 +88,13 @@ test("order of the events does not matter", () => {
     const older = call("long", "2026-08-10T09:00:00Z");
 
     assert.equal(
-        helpCallSummaryCard([newest, older]),
-        helpCallSummaryCard([older, newest]),
+        helpCallSummaryCard([newest, older], W6B_MODES),
+        helpCallSummaryCard([older, newest], W6B_MODES),
     );
 });
 
 test("unknown press types are ignored rather than rendered raw", () => {
-    const html = helpCallSummaryCard([call("inactivity", "2026-08-10T12:26:49Z")]);
+    const html = helpCallSummaryCard([call("inactivity", "2026-08-10T12:26:49Z")], W6B_MODES);
 
     // A inactividade é descodificada mas nunca dá alarme, de propósito.
     assert.doesNotMatch(html, /inactivity/);
@@ -83,7 +102,7 @@ test("unknown press types are ignored rather than rendered raw", () => {
 });
 
 test("the card states no alarm status, only when each press last happened", () => {
-    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
+    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")], W6B_MODES);
 
     // O dispositivo não nos consegue dizer que uma chamada foi cancelada, e por isso o cartão
     // não pode sugerir um alarme activo nem limpo.
@@ -92,14 +111,14 @@ test("the card states no alarm status, only when each press last happened", () =
 });
 
 test("the modes lay out as three columns that stack on small viewports", () => {
-    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
+    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")], W6B_MODES);
 
     assert.match(html, /class="row g-2"/);
     assert.equal(html.match(/class="col-12 col-md-4"/g).length, 3);
 });
 
 test("each mode carries its own icon", () => {
-    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
+    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")], W6B_MODES);
 
     for (const icon of ["fa-1", "fa-2", "fa-stopwatch"]) {
         assert.match(html, new RegExp(`fa-solid ${icon} `));
@@ -107,7 +126,7 @@ test("each mode carries its own icon", () => {
 });
 
 test("a mode that has fired carries a tooltip with the exact timestamp", () => {
-    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
+    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")], W6B_MODES);
 
     assert.match(html, /data-bs-toggle="tooltip"/);
     // A hora desenhada depende da locale, e por isso só se afirma a presença dela.
@@ -117,7 +136,7 @@ test("a mode that has fired carries a tooltip with the exact timestamp", () => {
 });
 
 test("a mode that never fired has no tooltip, having no timestamp to show", () => {
-    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
+    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")], W6B_MODES);
 
     // Uma chamada, e por isso exactamente uma das três colunas responde ao rato.
     assert.equal(html.match(/data-bs-toggle="tooltip"/g).length, 1);
@@ -127,7 +146,7 @@ test("a mode that never fired has no tooltip, having no timestamp to show", () =
 test("payload rows wrapped by the store are unwrapped", () => {
     const html = helpCallSummaryCard([
         { payload: call("double", "2026-08-10T12:26:18Z") },
-    ]);
+    ], W6B_MODES);
 
     assert.match(html, /Toque duplo/);
     assert.equal(html.match(/help-call-never/g).length, 2);

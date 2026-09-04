@@ -202,7 +202,7 @@ const UPLINK_CARD_RENDERERS = {
                 : capabilityLabel("motion"),
         details: compactDetails(data, ["xMg", "yMg", "zMg"]),
     }),
-    reset: () => ncsPagerContent("reset"),
+    reset: (data) => ncsPagerContent("reset", data),
     "device.connected": () => ({ value: "Ligado" }),
     "device.disconnected": () => ({ value: "Desligado" }),
 };
@@ -358,11 +358,11 @@ export function uplinkCardContent(type, data, meta = {}) {
     return { icon: cardIcon(type), ...rendered };
 }
 
-// Uma pulseira W6B diz que tipo de toque foi; um pager NCS não.
+// Uma pulseira W6B diz que tipo de toque foi; um pager NCS diz que comando foi.
 
 /** Os modos que um dispositivo emite vêm do backend; este cartão desenha os que lhe derem. */
 function helpCallContent(data) {
-    const base = ncsPagerContent("help_call");
+    const base = ncsPagerContent("help_call", data);
     const pressType = PRESS_TYPE_LABEL[String(data?.pressType || "")];
 
     return pressType === undefined
@@ -370,10 +370,18 @@ function helpCallContent(data) {
         : { ...base, value: `${base.value} (${pressType})` };
 }
 
-function ncsPagerContent(type) {
+/**
+ * O `rowValue` leva o comando porque o nome da linha já diz o que aconteceu, e sem ele a
+ * coluna do valor repetia "Chamada de ajuda" ao lado de "Chamada de ajuda".
+ */
+function ncsPagerContent(type, data) {
     const value = NCS_PAGER_EVENT_VALUE[type] || capabilityLabel(type);
     const icon = NCS_PAGER_EVENT_ICON[type] || "fa-bell";
-    return { icon, value };
+    const pagerId = String(data?.pagerId || "");
+
+    return pagerId === ""
+        ? { icon, value }
+        : { icon, value, rowValue: `Pager ${pagerId}` };
 }
 
 // As interfaces que o `Hub\Ingress\Mqtt\Moko\GatewayNormalizer` emite.

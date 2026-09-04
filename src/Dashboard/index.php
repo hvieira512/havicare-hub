@@ -188,7 +188,10 @@ require_once __DIR__ . '/components/modal.php';
                     </div>
                     <div class="card d-none" id="ncsEventSection">
                         <div class="card-body">
-                            <?= section_header('Eventos NCS recentes', 'ncsEventCardCount') ?>
+                            <?php /* Sem contador: a secção mostra o último de cada género, e
+                                   * são dois. Um número ao lado de dois mosaicos visíveis não
+                                   * conta nada, e contava os géneros e não os eventos. */ ?>
+                            <?= section_header('Eventos NCS recentes') ?>
                             <div class="row g-3" id="ncsEventGrid"></div>
                         </div>
                     </div>
