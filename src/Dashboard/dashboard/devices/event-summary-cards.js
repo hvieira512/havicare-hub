@@ -10,9 +10,6 @@ import { DETECTION_TYPE_LABEL, PRESS_TYPE_LABEL } from "../domain.js";
  * aquele tem um cartão por tipo de telemetria, estes leem o histórico inteiro e resumem-no.
  */
 
-/** Os modos que se mostram quando o protocolo não diz quais são os seus. */
-const DEFAULT_PRESS_MODES = ["single", "double", "long"];
-
 // O que separa os modos é quantos toques, ou quanto dura um, e é isso que o ícone diz.
 const HELP_CALL_PRESS_ICON = {
     single: "fa-1",
@@ -27,8 +24,15 @@ const HELP_CALL_PRESS_MODES = ["single", "double", "triple", "long"];
 /**
  * A última chamada de ajuda por modo de toque. A pulseira só anuncia enquanto está em alarme,
  * por isso não há como saber que uma chamada foi cancelada -- reporta-se quando aconteceu.
+ *
+ * Sem modos declarados não há cartão: quem chama por botão de comando, como o W812, não tem
+ * por onde se resumir, e três colunas a dizer "nunca" só repetiam os eventos já listados.
  */
 export function helpCallSummaryCard(events = [], pressModes = []) {
+    if (pressModes.length === 0) {
+        return "";
+    }
+
     const calls = (Array.isArray(events) ? events : [])
         .map(rowPayload)
         .filter((payload) => String(payload?.type || "") === "help_call");
@@ -52,8 +56,7 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
     }
 
     // Três lado a lado num ecrã grande, empilhadas no telemóvel.
-    const modes = pressModes.length > 0 ? pressModes : DEFAULT_PRESS_MODES;
-    const columns = modes.map((mode) => {
+    const columns = pressModes.map((mode) => {
         const call = latest[mode];
         // A etiqueta partilhada lê-se como sufixo ("... (toque simples)"); aqui titula uma
         // coluna, por isso vai capitalizada.
