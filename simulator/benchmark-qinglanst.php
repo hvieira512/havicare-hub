@@ -59,11 +59,17 @@ $redisHost = (string)($options['redis-host'] ?? ($redisConfig['host'] ?? '127.0.
 $redisPort = (int)($options['redis-port'] ?? ($redisConfig['port'] ?? 6379));
 $redisPass = (string)($options['redis-pass'] ?? ($redisConfig['password'] ?? ''));
 
-$redis = new RedisClient(HubServices::redisParameters([
-    'host' => $redisHost,
-    'port' => $redisPort,
-    'password' => $redisPass,
-]));
+// O segundo argumento é o que aplica o prefixo da instância. Sem ele, um benchmark corrido a
+// partir de `/opt/havicare-hub-dev` escrevia em cima das chaves da produção: o prefixo é opção
+// do cliente Predis, e não algo que cada store acrescente ao nome.
+$redis = new RedisClient(
+    HubServices::redisParameters([
+        'host' => $redisHost,
+        'port' => $redisPort,
+        'password' => $redisPass,
+    ]),
+    HubServices::redisOptions($redisConfig)
+);
 $dashboardStore = new DashboardStore($redis, $historyLimit, 'hub:dashboard:benchmark:qinglanst');
 $writePolicy = new DashboardWritePolicy(
     max(0, (int)($options['seen-min-ms'] ?? 5000)),

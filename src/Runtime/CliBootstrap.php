@@ -22,7 +22,7 @@ final class CliBootstrap
         $config = Config::load()->all();
 
         if ($validate) {
-            (new HubConfigurationValidator())->validate($config);
+            (new HubConfigurationValidator())->validate($config, $projectRoot);
         }
 
         return $config;

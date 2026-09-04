@@ -15,7 +15,10 @@ export RADIO_MAP_HASH_KEY="scenario-private-radio-map-hmac-key"
 docker compose up -d --force-recreate --remove-orphans mosquitto hub >/dev/null
 wait_for_mosquitto
 start_mqtt_subscriber
-docker compose exec -T redis sh -lc "redis-cli --scan --pattern 'hub:location:*' | xargs -r redis-cli del >/dev/null"
+# O padrão leva o prefixo da instância. Hoje isto só alcança o contentor local, mas a linha é
+# destrutiva e copia-se com facilidade: apontada a um Redis de servidor sem o prefixo, apagava a
+# cache de localização e o estado dos disjuntores da produção.
+docker compose exec -T redis sh -lc "redis-cli --scan --pattern '${REDIS_PREFIX:-}hub:location:*' | xargs -r redis-cli del >/dev/null"
 docker compose exec -T hub php -r 'require "vendor/autoload.php"; $pdo=(new Hub\Infrastructure\Persistence\DashboardDatabase(Hub\Config::load()->all()["database"]))->pdo(); $pdo->exec("DELETE FROM private_radio_map_access_points");'
 
 docker compose exec -T hub sh -lc "rm -f /tmp/beacondb-requests.log /tmp/beacondb-mock.log"
@@ -191,7 +194,7 @@ if [ "$REQUEST_COUNT_AFTER_PRIVATE" != "$REQUEST_COUNT_BEFORE_PRIVATE" ]; then
   scenario_fail "radio_map_priority_failure" "hub contacted BeaconDB despite a trusted private radio-map match"
 fi
 
-CACHE_KEYS="$(docker compose exec -T redis redis-cli --scan --pattern 'hub:location:resolution:*' | tr -d '\r')"
+CACHE_KEYS="$(docker compose exec -T redis redis-cli --scan --pattern "${REDIS_PREFIX:-}hub:location:resolution:*" | tr -d '\r')"
 if [ -z "$CACHE_KEYS" ]; then
   scenario_fail "cache_failure" "hub did not persist the successful radio evidence resolution in Redis"
 fi

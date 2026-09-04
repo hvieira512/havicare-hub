@@ -16,6 +16,41 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
 {
     private const DEVICE = 'fbd87c59ba8b';
 
+    /**
+     * A raiz das chaves deste teste. **Não começa por `hub:`** de propósito: o `REDIS_HOST` do
+     * ambiente pode apontar para o Redis de produção, e uma raiz dentro de `hub:` misturava-se
+     * com as chaves reais do hub -- que não têm prazo de validade e ficariam lá para sempre.
+     */
+    private const KEY_ROOT = 'test:dashboard-store-updates';
+
+    /** @var list<RedisClient> */
+    private array $clients = [];
+
+    /** @var list<string> */
+    private array $roots = [];
+
+    protected function tearDown(): void
+    {
+        // Cada corrida criava uma raiz nova e nunca a limpava. Apagar é do teste, e não de
+        // quem depois encontra o lixo.
+        foreach ($this->clients as $index => $redis) {
+            $root = $this->roots[$index] ?? '';
+            if ($root === '') {
+                continue;
+            }
+
+            $keys = $redis->keys($root . '*');
+            if ($keys !== []) {
+                $redis->del($keys);
+            }
+        }
+
+        $this->clients = [];
+        $this->roots = [];
+
+        parent::tearDown();
+    }
+
     private function store(): DashboardStore
     {
         $redis = new RedisClient([
@@ -29,7 +64,11 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
             self::markTestSkipped('Needs a reachable Redis: ' . $e->getMessage());
         }
 
-        return new DashboardStore($redis, 100, 'hub:test:' . bin2hex(random_bytes(4)));
+        $root = self::KEY_ROOT . ':' . bin2hex(random_bytes(4));
+        $this->clients[] = $redis;
+        $this->roots[] = $root;
+
+        return new DashboardStore($redis, 100, $root);
     }
 
     /** @return array{DashboardStore, callable(): int} */
