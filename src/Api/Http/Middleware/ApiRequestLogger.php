@@ -75,7 +75,6 @@ final class ApiRequestLogger
         ApiLogContext $context
     ): void {
         $query = $this->sanitizeLogQuery($request->getUri()->getQuery());
-        $serverParams = $request->getServerParams();
         $status = $response->getStatusCode();
         $level = $status >= 500 ? 'error' : ($status >= 400 ? 'warning' : 'info');
         $path = $request->getUri()->getPath();
@@ -90,7 +89,7 @@ final class ApiRequestLogger
             'route' => $context->route,
             'status' => $status,
             'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000),
-            'remote_ip' => (string)($serverParams['REMOTE_ADDR'] ?? ''),
+            'remote_ip' => RequestContext::clientAddress($request),
             'user_agent' => $request->getHeaderLine('User-Agent'),
             'auth_state' => $context->authState,
             'username' => $auth?->username,

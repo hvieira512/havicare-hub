@@ -34,7 +34,7 @@ final class AuthController
                 RequestContext::requestId($request),
                 // A mesma origem que o registo de pedidos usa, para as duas linhas falarem do
                 // mesmo endereço.
-                (string)($request->getServerParams()['REMOTE_ADDR'] ?? ''),
+                RequestContext::clientAddress($request),
             ));
     }
 
