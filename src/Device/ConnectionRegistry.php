@@ -47,6 +47,16 @@ class ConnectionRegistry
         $current = $this->get($connection) ?? $this->open($connection);
         $session = $current->authenticate($identity, $supplier, $model, $commercialName, $deviceType, $licenseId, $company);
 
+        // Um relógio celular reconecta num socket novo antes de o antigo fechar -- muda de IP
+        // ou de célula e deixa o TCP anterior por fechar. Encerra-se aqui a ligação órfã do
+        // mesmo IMEI, em vez de a deixar expirar por inactividade: a expiração publicaria um
+        // `device.disconnected` para um dispositivo que acabou de ficar online nesta ligação.
+        $previous = $this->deviceMap[$identity->imei] ?? null;
+        if ($previous !== null && $previous !== $connection) {
+            $this->close($previous);
+            $previous->close();
+        }
+
         $this->sessions[$connection->resourceId] = $session;
         $this->deviceMap[$identity->imei] = $connection;
         $this->lastActivityAt[$connection->resourceId] = time();

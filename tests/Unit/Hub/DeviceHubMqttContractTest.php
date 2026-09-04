@@ -410,6 +410,43 @@ final class DeviceHubMqttContractTest extends TestCase
         ], $mqtt->events[1][1]['command']);
     }
 
+    /**
+     * Um relógio celular reconecta num socket novo antes de o antigo fechar. A ligação nova
+     * ficar online não pode arrastar um `device.disconnected` da anterior: o consumidor -- a
+     * dashboard, o `/api/stream`, o MQTT -- veria o relógio a desligar-se logo a seguir a ligar.
+     */
+    public function testReconnectDoesNotEmitADisconnectForTheSupersededSession(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+
+        $first = new ContractFakeConnection(5);
+        $hub->onOpen($first);
+        $hub->onMessage($first, 'IWAP00865028000000308#');
+
+        // A primeira sessão envelhece, e só então o relógio reconecta noutro socket.
+        sleep(2);
+        $second = new ContractFakeConnection(6);
+        $hub->onOpen($second);
+        $hub->onMessage($second, 'IWAP00865028000000308#');
+
+        // A varredura de inactividade corre com a antiga já com 2 s e a nova acabada de chegar.
+        // Sem o fecho na reautenticação, a antiga expirava aqui e publicava um disconnect para
+        // o IMEI que a nova acabou de pôr online.
+        $hub->expireIdleConnections(1);
+
+        $disconnects = array_filter(
+            $mqtt->events,
+            static fn(array $event): bool => ($event[1]['type'] ?? '') === 'device.disconnected'
+        );
+        self::assertSame([], $disconnects, 'a reconexão não gera um disconnect espúrio');
+        self::assertTrue($first->closed, 'o socket anterior é fechado na hora, não deixado a expirar');
+
+        // E o downlink continua a chegar ao relógio vivo -- vai para a ligação nova.
+        self::assertTrue($hub->sendDownlink('865028000000308', 'IWBPXY,865028000000308,080835#'));
+        self::assertNotEmpty($second->sent, 'a ligação activa recebe o comando');
+    }
+
     public function testVivistarOnlineDownlinkPublishesCommandMetadata(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
