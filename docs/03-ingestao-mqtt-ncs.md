@@ -39,7 +39,7 @@ Os tópicos de origem têm esta forma:
 
 | Segmento | Significado |
 |---|---|
-| `{âmbito}` | Agrupamento do lado da Voerka. O hub lê-o e preserva-o no `raw`, mas não decide nada com ele |
+| `{âmbito}` | Agrupamento do lado da Voerka, configurável no gateway. O hub preserva-o no `raw` e, quando é um número, aproveita-o como pista da licença ao notificar um aparelho desconhecido — nada mais depende dele |
 | `{origem}` | O identificador do aparelho no protocolo Voerka |
 | `{género}` | `status`, `events`, `attrs` ou `answer` |
 | `{nome do estado}` | Só para `status`; obrigatório, e o único tratado é `online` |
@@ -75,6 +75,15 @@ Duas exigências distinguem esta ingestão das restantes:
   registados sem atribuição, um NCS sem licença é tratado como não autorizado. O
   registo usa `deviceType: "ncs"`, o IMEI canónico como chave e o valor de
   `from` na coluna `device_id`.
+
+A licença nunca é lida do tópico para atribuir dados. Configurar o gateway com o
+número da licença no `{âmbito}` — `/voerka/1001/devices/…` — serve apenas para a
+notificação de aparelho desconhecido a levar consigo, e a dashboard a
+pré-selecionar no assistente de registo. É o mesmo tratamento que o
+`radar/{licenseId}/{uid}` do Qinglanst recebe, e pela mesma razão: o tópico é
+escrito por quem publica no broker, e por isso não é autoridade sobre a que
+cliente pertencem os dados. Um âmbito que não seja um número — o `0` do manual,
+ou um nome — deixa a notificação sem licença, como sempre esteve.
 
 ## 3. O que sai
 
