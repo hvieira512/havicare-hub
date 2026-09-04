@@ -43,9 +43,9 @@ final class StreamPaths
                         `Last-Event-ID` would promise a replay buffer that does not exist. Fetch the
                         current state from `GET /api/devices` after opening the stream.
 
-                        `EventSource` cannot set headers; those clients pass a single-use ticket from
-                        `POST /api/auth/stream-ticket` as `?ticket=`. Any client that can set headers
-                        should send `Authorization` instead and skip the ticket entirely.
+                        The credential goes in the `Authorization` header, and only there. The browser
+                        `EventSource` cannot set headers and therefore cannot open this stream; read it
+                        with `fetch` and a `ReadableStream`, which can.
                         TEXT,
                     'parameters' => [
                         Parameters::query('channels', [

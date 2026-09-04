@@ -131,7 +131,7 @@ dashboard/
 │   ├── gateway-signal.js   o RSSI de cada par (dispositivo, gateway)
 │   ├── device-card.js      o cartão de um dispositivo, e o seu esqueleto
 │   ├── event-summary-cards.js  a última chamada de ajuda e a última queda
-│   ├── stream.js           o EventSource que traz os eventos em directo
+│   ├── stream.js           o stream que traz os eventos em directo
 │   ├── config/             o separador de configurações de um dispositivo
 │   │   ├── index.js        desenha a raiz e as secções
 │   │   ├── panel.js        gravar, refrescar, e o estado de cada bloco

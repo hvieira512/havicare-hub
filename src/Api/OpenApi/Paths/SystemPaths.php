@@ -44,9 +44,6 @@ final class SystemPaths
                     ),
                 ],
             ],
-            // O `/api/auth/stream-ticket` não está aqui de propósito: existe só para a
-            // dashboard abrir o seu stream, que também não é público. Ver a lista de rotas
-            // internas no `OpenApiSpecRoutesTest`.
         ];
     }
 

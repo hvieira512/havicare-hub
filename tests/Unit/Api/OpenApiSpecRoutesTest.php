@@ -17,13 +17,12 @@ final class OpenApiSpecRoutesTest extends TestCase
     private const ROUTES_DIR = __DIR__ . '/../../../src/Api/Routes';
 
     /**
-     * Rotas que existem e não se documentam. O stream serve a dashboard e não tem o
-     * compromisso de estabilidade do resto da API; o bilhete existe só para o abrir.
+     * Rotas que existem e não se documentam. O stream por aparelho serve a dashboard e não
+     * tem o compromisso de estabilidade do resto da API; quem integra usa o `/api/stream`.
      *
      * @var list<string>
      */
     private const INTERNAL_ROUTES = [
-        '/api/auth/stream-ticket',
         '/api/devices/{imei}/stream',
     ];
 

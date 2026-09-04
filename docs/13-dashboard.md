@@ -85,8 +85,12 @@ O detalhe de um dispositivo abre um stream de eventos do servidor contra
 `GET /api/devices/{imei}/stream`, com um cursor incremental: um `snapshot`
 inicial e depois `update` a cada novidade.
 
-Como o `EventSource` não deixa definir cabeçalhos, a autenticação é o bilhete de
-uso único descrito no [capítulo da API](09-api.md).
+O stream é lido com `fetch` e um `ReadableStream`, e não com `EventSource`: a
+credencial vai no cabeçalho `Authorization`, que o `EventSource` não deixa
+definir. O cliente separa os frames pela linha em branco que os delimita e
+guarda o resto do buffer, porque um frame pode chegar partido entre dois pedaços
+da resposta. Uma ligação que caia é retomada com recuo exponencial, e o recuo só
+volta a zero quando um frame é efetivamente entregue.
 
 ## 5. Sessão
 

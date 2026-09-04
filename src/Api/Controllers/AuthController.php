@@ -37,10 +37,4 @@ final class AuthController
                 (string)($request->getServerParams()['REMOTE_ADDR'] ?? ''),
             ));
     }
-
-    /** O único erro daqui é o `forbidden`, e o 403 vem dele em vez de escrito à mão. */
-    public function streamTicket(ServerRequestInterface $request): Response
-    {
-        return $this->json->result($this->service->streamTicket(RequestContext::auth($request)));
-    }
 }

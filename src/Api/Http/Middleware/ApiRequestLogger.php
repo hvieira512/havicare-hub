@@ -211,11 +211,6 @@ final class ApiRequestLogger
             || str_ends_with($normalized, '_secret')
             || $normalized === 'authorization'
             || $normalized === 'api_key'
-            // O bilhete do stream viaja no URL, e o URL é exactamente o campo que se regista
-            // aqui. Já vem gasto quando esta linha se escreve -- o registo corre depois da
-            // resposta, e o bilhete queima-se ao ser lido --, mas uma credencial em claro num
-            // ficheiro de registo não se justifica por ser de curta duração.
-            || $normalized === 'ticket'
         ) {
             return true;
         }

@@ -114,14 +114,10 @@ final class DashboardStreamMemoryTest extends DashboardHttpTestCase
 
     private function open(callable $server, string $token): ResponseInterface
     {
-        $ticket = $server(
-            (new ServerRequest('POST', '/api/auth/stream-ticket'))
+        $response = $server(
+            (new ServerRequest('GET', '/api/stream'))
                 ->withHeader('Authorization', 'Bearer ' . $token)
         );
-        $value = (string)(json_decode((string)$ticket->getBody(), true)['data']['ticket'] ?? '');
-        self::assertNotSame('', $value);
-
-        $response = $server(new ServerRequest('GET', '/api/stream?ticket=' . rawurlencode($value)));
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
 
         return $response;

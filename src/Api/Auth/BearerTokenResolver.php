@@ -10,24 +10,17 @@ final class BearerTokenResolver
     {
     }
 
+    /**
+     * A credencial vem no cabeçalho, e só no cabeçalho: nenhum parâmetro do URL autentica,
+     * porque um URL fica escrito no registo de qualquer proxy e no histórico do browser.
+     */
     public function resolve(ServerRequestInterface $request): ?ApiAuthContext
     {
         $header = $request->getHeaderLine('Authorization');
-        if (preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
-            return $this->tokens->context((string)$matches[1]);
-        }
-
-        parse_str((string)$request->getUri()->getQuery(), $params);
-
-        // O `EventSource` não deixa pôr cabeçalhos, e a credencial de um stream tem de vir no
-        // URL -- onde fica no registo de qualquer proxy e no histórico do browser. O bilhete
-        // vale segundos e uma ligação só, e é o único parâmetro aceite: o token de acesso
-        // vale uma hora e serve a API toda.
-        $ticket = trim((string)($params['ticket'] ?? ''));
-        if ($ticket === '') {
+        if (!preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
             return null;
         }
 
-        return $this->tokens->consumeStreamTicket($ticket);
+        return $this->tokens->context((string)$matches[1]);
     }
 }

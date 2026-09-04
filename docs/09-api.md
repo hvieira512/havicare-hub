@@ -37,16 +37,15 @@ A validade corresponde ao TTL da chave no Redis. Não existe assinatura a
 verificar nem data de expiração a comparar: a expiração da chave elimina o
 token.
 
-### Três tipos
+### Dois tipos
 
 | Tipo | Para que serve | Validade |
 |---|---|---|
 | `access` | Chamar a API | 1 hora |
 | `refresh` | Obter um par novo | 30 dias |
-| `stream` | Abrir **uma** ligação de eventos | 30 segundos |
 
 Configuráveis por `DASHBOARD_API_TOKEN_TTL_SECONDS` e
-`DASHBOARD_API_REFRESH_TOKEN_TTL_SECONDS`. O bilhete de stream é fixo.
+`DASHBOARD_API_REFRESH_TOKEN_TTL_SECONDS`.
 
 **Um `refresh` não abre a API.** A verificação recusa qualquer token que não
 seja do tipo `access` — mesmo válido, mesmo do utilizador certo.
@@ -73,30 +72,15 @@ Depois, em cada pedido:
 Authorization: Bearer <access_token>
 ```
 
-O `access_token` em *query string* **foi removido**. Sobrevivia em logs de
-servidores intermédios e em históricos de navegador, e uma credencial não
-pertence a um URL.
+A credencial vai no cabeçalho, e **só** no cabeçalho. Nenhum parâmetro de
+*query string* autentica, em nenhuma rota, incluindo os streams: uma credencial
+num URL sobrevive nos logs de servidores intermédios e no histórico do
+navegador, e não pertence lá.
 
-### O bilhete de stream
-
-`EventSource` não deixa definir cabeçalhos, e por isso o stream não pode levar
-`Authorization`. A solução é um bilhete de **uso único**, pedido com o token
-normal e passado na query:
-
-```http
-POST /api/auth/stream-ticket     →  { "data": { "ticket": "…" } }
-GET  /api/devices/{imei}/stream?ticket=…
-```
-
-O bilhete é eliminado **antes** de a ligação ser servida, o que o restringe a
-uma única utilização. Herda o âmbito de acesso de quem o solicitou, pelo que não
-amplia privilégios.
-
-O bilhete existe **apenas** para o `EventSource`. O resolvedor de credenciais
-verifica o cabeçalho `Authorization` primeiro e só recorre ao `?ticket=` quando
-não há cabeçalho; um cliente que possa definir cabeçalhos — `fetch()` com
-leitura do corpo, um consumidor de servidor, uma aplicação móvel — envia o
-`Bearer` normal e dispensa o bilhete.
+Isto inclui os streams de eventos. O `EventSource` do navegador não deixa
+definir cabeçalhos e por isso **não serve** para os abrir; um stream lê-se com
+`fetch()` e um `ReadableStream`, que deixa — ver o
+[capítulo 13](13-dashboard.md) para o padrão de leitura que a dashboard usa.
 
 ### Tetos de tentativas
 
@@ -150,12 +134,11 @@ administrador e nada é verificado. **É só para desenvolvimento local.**
 | Papel | Alcance |
 |---|---|
 | `hub_admin` | Tudo. É o único que entra na dashboard |
-| `license_client` | Dez rotas, e só os dispositivos do seu par empresa+licença |
+| `license_client` | Nove rotas, e só os dispositivos do seu par empresa+licença |
 
-As dez rotas do `license_client`:
+As nove rotas do `license_client`:
 
 ```text
-POST   /api/auth/stream-ticket
 GET    /api/stream
 GET    /api/devices
 GET    /api/devices/{imei}
@@ -175,7 +158,7 @@ Um `license_client` mal ligado — sem licença, sem empresa, ou com referência
 inconsistentes — **não autentica de todo**. Ver o
 [capítulo do multi-inquilino](07-multi-inquilino.md).
 
-## 3. As 51 rotas
+## 3. As 50 rotas
 
 **P** = pública · **LC** = admin e `license_client` · **A** = só `hub_admin`
 
@@ -184,7 +167,6 @@ inconsistentes — **não autentica de todo**. Ver o
 | | Rota | O que faz | |
 |---|---|---|---|
 | POST | `/api/auth/login` | Autentica ou roda o par de tokens | **P** |
-| POST | `/api/auth/stream-ticket` | Bilhete de uso único para o stream | **LC** |
 
 ### O stream do inquilino
 
@@ -350,9 +332,9 @@ imagem do modelo no mesmo pedido.
 | DELETE | `/api/notifications/{id}` | **A** |
 | GET | `/api/openapi.json` · `/api/docs` | **P** |
 
-**51 rotas**, que dão **49 operações** na especificação. As duas que faltam são o
-`/api/auth/stream-ticket` e o `/api/devices/{imei}/stream`, excluídas por
-decisão — ver a [secção 6](#rotas-excluídas-da-especificação).
+**50 rotas**, que dão **49 operações** na especificação. A que falta é o
+`/api/devices/{imei}/stream`, excluído por decisão — ver a
+[secção 6](#rotas-excluídas-da-especificação).
 
 ## 4. Formas de resposta
 
@@ -534,12 +516,11 @@ Todas as operações declaram **500**, e as não públicas declaram adicionalmen
 
 ### Rotas excluídas da especificação
 
-As rotas `/api/auth/stream-ticket` e `/api/devices/{imei}/stream` estão
-excluídas por decisão: servem a dashboard, e o formato do stream por dispositivo
-não oferece garantia de estabilidade. Um teste verifica a correspondência nos
-dois sentidos — todas as rotas constam da especificação, com estas duas exceções
-declaradas, e todas as operações da especificação correspondem a rotas
-existentes.
+A rota `/api/devices/{imei}/stream` está excluída por decisão: serve a
+dashboard, e o formato do stream por dispositivo não oferece garantia de
+estabilidade. Um teste verifica a correspondência nos dois sentidos — todas as
+rotas constam da especificação, com esta exceção declarada, e todas as operações
+da especificação correspondem a rotas existentes.
 
 O `/api/stream` **não** é uma dessas exceções, e a diferença é deliberada: é
 superfície de integração pública, e por isso o envelope dos seus eventos está
@@ -561,7 +542,7 @@ declarado na especificação como o de qualquer outra rota.
 |---|---|
 | `src/Api/ApiKernel.php` | Despacho, identidade, `ETag`, erros não apanhados |
 | `src/Api/Routing/ApiRouter.php` · `ApiRoute.php` | Encaminhamento |
-| `src/Api/Routes/*.php` | As 51 rotas, agrupadas por assunto |
+| `src/Api/Routes/*.php` | As 50 rotas, agrupadas por assunto |
 | `src/Api/Auth/ApiTokenStore.php` | Os três tipos de token |
 | `src/Api/Auth/RouteAccessPolicy.php` | As nove rotas do `license_client` |
 | `src/Api/Auth/ApiAuthContext.php` | `canAccessTenant()` |

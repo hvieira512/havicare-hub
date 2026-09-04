@@ -8,9 +8,6 @@ final class RouteAccessPolicy
      * @var list<string>
      */
     private array $licenseClientAllowed = [
-        // O cliente de licença abre streams, e por isso tem de poder pedir o bilhete que os
-        // abre. O bilhete herda o âmbito de quem o pediu, e portanto não amplia nada.
-        'POST /api/auth/stream-ticket',
         // O stream do próprio inquilino. O âmbito sai do token, e por isso esta rota não tem
         // como servir outra empresa ou outra licença que não a de quem a abre.
         'GET /api/stream',

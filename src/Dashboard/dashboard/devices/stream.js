@@ -1,17 +1,17 @@
 import { setSelectedDetailRecent, state } from "../state.js";
-import { getStreamTicket } from "../api/auth.js";
+import { authHeaders } from "../api/http.js";
 
 let onRenderSelection = () => {};
 let onCommandsUpdated = () => {};
-let eventSource = null;
+let abortController = null;
 let currentImei = "";
 let streamLive = false;
 let reconnectTimer = null;
 let reconnectAttempt = 0;
 let connectGeneration = 0;
 
-// O `EventSource` religa-se sozinho em `CONNECTING`; estes atrasos cobrem o `CLOSED`, que é
-// terminal. O tecto evita que um servidor em baixo leve um pedido por segundo por dashboard.
+// O `fetch` não religa sozinho. O tecto evita que um servidor em baixo leve um pedido por
+// segundo por cada dashboard aberta.
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30000;
 
@@ -62,36 +62,104 @@ export function connectDeviceStream(imei) {
         return;
     }
 
-    // Pedir o bilhete é uma ida ao servidor, e no meio dela pode trocar-se de dispositivo:
-    // só abre o stream quem ainda for a tentativa actual.
+    // Abrir o stream é assíncrono, e no meio pode trocar-se de dispositivo: só serve quem
+    // ainda for a tentativa actual.
     connectGeneration += 1;
     void openStream(imei, connectGeneration);
 }
 
+/**
+ * Abre o stream com a credencial no cabeçalho, como todas as outras chamadas da dashboard.
+ *
+ * O `fetch` obriga a cortar os frames à mão, mas dá acesso ao estado da resposta: um 401, um
+ * 404 e um `503 too_many_streams` pedem tratamento diferente e o `EventSource` não os
+ * distinguia.
+ */
 async function openStream(imei, generation) {
-    const url = new URL(
-        `/api/devices/${encodeURIComponent(imei)}/stream`,
-        window.location.origin,
-    );
+    const url = `/api/devices/${encodeURIComponent(imei)}/stream`;
+    const controller = new AbortController();
+    abortController = controller;
 
-    const ticket = await streamTicket();
-    if (generation !== connectGeneration || currentImei !== imei) {
+    try {
+        const response = await fetch(url, {
+            headers: { ...authHeaders(), Accept: "text/event-stream" },
+            signal: controller.signal,
+        });
+        // Trocou-se de dispositivo enquanto isto viajava: o corpo desta resposta tem de ser
+        // largado, ou fica um stream a servir para ninguém do outro lado.
+        if (generation !== connectGeneration || currentImei !== imei) {
+            controller.abort();
+            return;
+        }
+        if (!response.ok || !response.body) {
+            scheduleReconnect();
+            return;
+        }
+
+        streamLive = true;
+        await readFrames(response.body, generation, imei);
+    } catch (error) {
+        // Um `abort()` nosso não é falha: foi o `closeDeviceStream` a fechar de propósito.
+        if (controller.signal.aborted) {
+            return;
+        }
+    }
+
+    if (generation === connectGeneration && currentImei === imei) {
+        streamLive = false;
+        scheduleReconnect();
+    }
+}
+
+/**
+ * Lê o corpo e corta-o em frames SSE, guardando o pedaço incompleto para o chunk seguinte.
+ *
+ * O `snapshot` traz até cem entradas de telemetria e cem de eventos, pelo que um frame partido
+ * entre chunks é o caso normal. Descartar o resto do buffer truncava o histórico no ecrã sem
+ * dar erro.
+ */
+async function readFrames(body, generation, imei) {
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    for (;;) {
+        const { value, done } = await reader.read();
+        if (done || generation !== connectGeneration || currentImei !== imei) {
+            return;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
+        for (const frame of parts) {
+            dispatchFrame(frame);
+        }
+    }
+}
+
+/** Um frame são linhas: o `event:` dá o nome, o `data:` o corpo, e `:` sozinho é keep-alive. */
+function dispatchFrame(frame) {
+    let type = "message";
+    const data = [];
+    for (const line of frame.split("\n")) {
+        if (line.startsWith(":")) {
+            continue;
+        }
+        if (line.startsWith("event:")) {
+            type = line.slice(6).trim();
+        } else if (line.startsWith("data:")) {
+            data.push(line.slice(5).trim());
+        }
+    }
+
+    if (data.length === 0) {
+        // Só keep-alive: prova a ligação e mais nada.
+        streamLive = true;
         return;
     }
-    if (ticket !== "") {
-        url.searchParams.set("ticket", ticket);
-    }
 
-    eventSource = new EventSource(url);
-    eventSource.addEventListener("open", handleStreamOpen);
-    eventSource.addEventListener("snapshot", handleStreamUpdate);
-    eventSource.addEventListener("update", handleStreamUpdate);
-    eventSource.onerror = function () {
-        if (eventSource?.readyState === EventSource.CLOSED) {
-            closeDeviceStream();
-            scheduleReconnect();
-        }
-    };
+    handleStreamUpdate({ type, data: data.join("\n") });
 }
 
 export function disconnectDeviceStream() {
@@ -106,9 +174,9 @@ function closeDeviceStream() {
         window.clearTimeout(reconnectTimer);
         reconnectTimer = null;
     }
-    if (eventSource) {
-        eventSource.close();
-        eventSource = null;
+    if (abortController) {
+        abortController.abort();
+        abortController = null;
     }
 }
 
@@ -138,23 +206,10 @@ function scheduleReconnect() {
 }
 
 /**
- * O bilhete que abre o stream, ou vazio quando não há autenticação. Uma falha aqui não trava
- * a ligação: o pedido segue, o servidor responde 401, e a religação trata do resto.
+ * A espera acumulada só se apaga quando o stream **entrega**, e não quando abre. Um servidor
+ * que aceita e fecha logo devolve 200, e repor o contador aí anulava o recuo.
  */
-async function streamTicket() {
-    if (
-        document.body.dataset.dashboardAuthRequired !== "true" &&
-        !window.hubDashboardApiToken?.access_token
-    ) {
-        return "";
-    }
-
-    const result = await getStreamTicket();
-
-    return String(result?.data?.ticket || "");
-}
-
-function handleStreamOpen() {
+function markStreamServed() {
     streamLive = true;
     reconnectAttempt = 0;
 }
@@ -197,8 +252,8 @@ function mergeRecent(previous, data, isSnapshot) {
 }
 
 function handleStreamUpdate(event) {
-    // Uma entrega prova a ligação mesmo que o `open` se tenha perdido.
-    streamLive = true;
+    // Uma entrega é a prova de que a ligação serve, e é ela que apaga a espera acumulada.
+    markStreamServed();
     const data = JSON.parse(event.data);
     if (!state.selectedDetail) return;
 

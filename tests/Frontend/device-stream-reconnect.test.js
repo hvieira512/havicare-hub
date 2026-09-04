@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import "./support/browser-env.js";
+import { installStreamHarness } from "./support/device-stream-harness.js";
 
 /**
  * O stream do dispositivo é o único caminho por onde a telemetria, os eventos e os comandos
@@ -10,175 +11,119 @@ import "./support/browser-env.js";
  * Antes, um `EventSource` que fechasse fazia `close()` e ficava por ali. O resultado era o
  * histórico congelado no ecrã, sem erro nenhum à vista, até alguém trocar de dispositivo ou
  * o token ser renovado. Estes testes prendem a religação.
+ *
+ * Com `fetch` em vez de `EventSource`, o fim do corpo é o que assinala a queda -- e ao
+ * contrário do `onerror`, traz o estado da resposta consigo.
  */
 
-// O jsdom não traz `EventSource`, e por isso instala-se um que a instrumentação consegue
-// conduzir: abrir, entregar, e fechar como o browser fecha.
-class FakeEventSource {
-    static CONNECTING = 0;
-    static OPEN = 1;
-    static CLOSED = 2;
-    static instances = [];
-
-    constructor(url) {
-        this.url = String(url);
-        this.readyState = FakeEventSource.CONNECTING;
-        this.listeners = {};
-        this.onerror = null;
-        this.closed = false;
-        FakeEventSource.instances.push(this);
-    }
-
-    addEventListener(type, handler) {
-        (this.listeners[type] ||= []).push(handler);
-    }
-
-    close() {
-        this.closed = true;
-        this.readyState = FakeEventSource.CLOSED;
-    }
-
-    emit(type, data) {
-        this.readyState = FakeEventSource.OPEN;
-        for (const handler of this.listeners[type] || []) {
-            // O `type` vai junto porque é por ele que o cliente distingue um instantâneo, que
-            // substitui o histórico, de uma actualização, que se junta ao que já lá está.
-            handler(data === undefined ? { type } : { type, data: JSON.stringify(data) });
-        }
-    }
-
-    /** Como o browser desiste: o estado passa a terminal e só depois é que o erro sai. */
-    fail() {
-        this.readyState = FakeEventSource.CLOSED;
-        this.onerror?.();
-    }
-}
-
-// O módulo agenda com `window.setTimeout`, e por isso é essa a função que se substitui --
-// os temporizadores do node não lhe tocam.
-const scheduled = [];
-window.setTimeout = (callback, delay) => {
-    scheduled.push({ callback, delay });
-    return scheduled.length;
-};
-window.clearTimeout = (handle) => {
-    const entry = scheduled[handle - 1];
-    if (entry) entry.cancelled = true;
-};
-
-globalThis.EventSource = FakeEventSource;
-
-// A ligação passou a pedir um bilhete ao servidor antes de abrir o stream, e por isso deixou
-// de ser síncrona: o `fetch` é servido aqui e os testes esperam um tique pelo `EventSource`.
-let issuedTickets = 0;
-globalThis.fetch = async () => {
-    issuedTickets += 1;
-    return {
-        ok: true,
-        status: 200,
-        headers: { get: () => "application/json" },
-        text: async () => JSON.stringify({ data: { ticket: `bilhete-${issuedTickets}`, expires_in: 30 } }),
-    };
-};
-
-/** Deixa correr as microtarefas do pedido do bilhete. O `setTimeout` aqui é o do node. */
-const tick = () => new Promise((resolve) => {
-    setTimeout(resolve, 0);
-});
+const harness = installStreamHarness();
 
 const stream = await import("../../src/Dashboard/dashboard/devices/stream.js");
 
 const reset = () => {
-    FakeEventSource.instances.length = 0;
-    scheduled.length = 0;
+    harness.reset();
     delete document.body.dataset.dashboardAuthRequired;
     window.hubDashboardApiToken = null;
     stream.initDeviceStream({ renderSelection: () => {} });
     stream.disconnectDeviceStream();
-    FakeEventSource.instances.length = 0;
-    scheduled.length = 0;
+    harness.reset();
 };
 
-/** Corre o último temporizador por correr, como o relógio faria. */
-const runPendingTimer = async () => {
-    const pending = scheduled.filter((entry) => !entry.cancelled && !entry.done);
-    const entry = pending[pending.length - 1];
-    assert.ok(entry, "esperava-se uma religação agendada");
-    entry.done = true;
-    entry.callback();
-    // A religação volta a pedir bilhete, e por isso também espera um tique.
-    await tick();
-    return entry;
-};
-
-/** Liga e espera pelo bilhete, que é o que o `connectDeviceStream` faz antes de abrir. */
+/** Liga e espera que o stream abra, que é assíncrono. */
 const connect = async (imei) => {
     stream.connectDeviceStream(imei);
-    await tick();
+    await harness.settle();
 };
+
+/** Um corpo de frame vazio: aqui o que interessa é a entrega ter acontecido, não o conteúdo. */
+const frame = () => ({ telemetry: [], events: [], commands: [], limit: 100 });
 
 test("um stream aberto conta como vivo", async () => {
     reset();
     await connect("111");
-    assert.equal(FakeEventSource.instances.length, 1);
-    FakeEventSource.instances[0].emit("open");
-    assert.equal(stream.isDeviceStreamLive(), true);
+
+    assert.equal(harness.streams.length, 1);
+    assert.equal(stream.isDeviceStreamLive(), true, "a resposta 200 já prova a ligação");
 });
 
-test("a credencial que vai no URL é o bilhete, e não o token de acesso", async () => {
+test("a credencial vai no cabeçalho e nada vai no URL", async () => {
     reset();
     document.body.dataset.dashboardAuthRequired = "true";
     window.hubDashboardApiToken = { access_token: "token-de-uma-hora" };
 
     await connect("999");
 
-    const url = FakeEventSource.instances[0].url;
-    assert.match(url, /ticket=bilhete-/, "o bilhete tem de ir no URL");
+    const request = harness.requests.at(-1);
+    assert.equal(request.options.headers.Authorization, "Bearer token-de-uma-hora");
     assert.ok(
-        !url.includes("token-de-uma-hora"),
-        "o token de acesso não pode aparecer no URL: fica no registo de qualquer proxy",
+        !request.url.includes("token-de-uma-hora"),
+        "o token não pode aparecer no URL: fica no registo de qualquer proxy",
+    );
+    assert.ok(!request.url.includes("ticket"), "e já não há bilhete nenhum a pedir");
+    assert.equal(
+        harness.requests.filter((entry) => entry.url.includes("stream-ticket")).length,
+        0,
     );
 });
 
-test("um stream fechado religa-se em vez de desistir", async () => {
+test("o servidor a fechar o corpo religa em vez de desistir", async () => {
     reset();
     await connect("222");
-    FakeEventSource.instances[0].emit("open");
-    FakeEventSource.instances[0].fail();
+    harness.streams[0].end();
+    await harness.settle();
 
     assert.equal(stream.isDeviceStreamLive(), false, "fechado não é vivo");
-    const timer = await runPendingTimer();
+    const timer = await harness.runPendingTimer();
     assert.equal(timer.delay, 1000, "a primeira tentativa é ao fim de um segundo");
-    assert.equal(FakeEventSource.instances.length, 2, "abriu-se um stream novo");
-    assert.ok(
-        FakeEventSource.instances[1].url.includes("222"),
-        "religou-se ao mesmo dispositivo",
-    );
+    assert.equal(harness.streams.length, 2, "abriu-se um stream novo");
+    assert.ok(harness.requests.at(-1).url.includes("222"), "religou-se ao mesmo dispositivo");
+});
+
+test("uma recusa do servidor religa, e o estado dela é visível", async () => {
+    reset();
+    // O `503 too_many_streams` era indistinguível de um 404 no `onerror` do `EventSource`.
+    harness.refuseWith(503);
+    await connect("223");
+
+    assert.equal(harness.streams.length, 0, "não se abriu stream nenhum");
+    assert.equal(stream.isDeviceStreamLive(), false);
+    const timer = await harness.runPendingTimer();
+    assert.equal(timer.delay, 1000);
 });
 
 test("falhas seguidas afastam as tentativas", async () => {
     reset();
     await connect("333");
-    FakeEventSource.instances[0].fail();
-    assert.equal((await runPendingTimer()).delay, 1000);
+    harness.streams[0].end();
+    await harness.settle();
+    assert.equal((await harness.runPendingTimer()).delay, 1000);
 
-    FakeEventSource.instances[1].fail();
-    assert.equal((await runPendingTimer()).delay, 2000);
+    harness.streams[1].end();
+    await harness.settle();
+    assert.equal((await harness.runPendingTimer()).delay, 2000);
 
-    FakeEventSource.instances[2].fail();
-    assert.equal((await runPendingTimer()).delay, 4000);
+    harness.streams[2].end();
+    await harness.settle();
+    assert.equal((await harness.runPendingTimer()).delay, 4000);
 });
 
 test("uma entrega bem sucedida volta a pôr a espera no início", async () => {
     reset();
+    harness.refuseWith(503);
     await connect("444");
-    FakeEventSource.instances[0].fail();
-    await runPendingTimer();
+    assert.equal((await harness.runPendingTimer()).delay, 1000);
 
-    FakeEventSource.instances[1].emit("open");
-    FakeEventSource.instances[1].fail();
+    // A segunda tentativa abre **e entrega**; é a entrega que apaga a espera acumulada, não
+    // o simples facto de a ligação ter sido aceite.
+    harness.accept();
+    await harness.runPendingTimer();
+    harness.streams.at(-1).emit("snapshot", frame());
+    await harness.settle();
+    harness.streams.at(-1).end();
+    await harness.settle();
+
     assert.equal(
-        (await runPendingTimer()).delay,
+        (await harness.runPendingTimer()).delay,
         1000,
         "a espera acumulada não se aplica a uma ligação que chegou a servir",
     );
@@ -188,22 +133,24 @@ test("largar o dispositivo não deixa religação pendente", async () => {
     reset();
     await connect("555");
     stream.disconnectDeviceStream();
-    FakeEventSource.instances[0].fail();
+    harness.streams[0].end();
+    await harness.settle();
 
-    const pending = scheduled.filter((entry) => !entry.cancelled && !entry.done);
+    const pending = harness.scheduled.filter((entry) => !entry.cancelled && !entry.done);
     assert.deepEqual(pending, [], "sem dispositivo escolhido não há nada a religar");
 });
 
-test("trocar de dispositivo enquanto o bilhete não chegou não abre o stream errado", async () => {
+test("trocar de dispositivo antes de o stream abrir não abre o errado", async () => {
     reset();
-    // Duas ligações sem esperar pela primeira: a resposta do primeiro bilhete chega depois
-    // de o utilizador já ter escolhido outro dispositivo.
+    // Duas ligações sem esperar pela primeira: a resposta da primeira chega depois de o
+    // utilizador já ter escolhido outro dispositivo.
     stream.connectDeviceStream("aaa");
     stream.connectDeviceStream("bbb");
-    await tick();
+    await harness.settle();
 
-    assert.equal(FakeEventSource.instances.length, 1, "só a tentativa actual pode abrir");
-    assert.ok(FakeEventSource.instances[0].url.includes("bbb"));
+    const servindo = harness.streams.filter((entry) => !entry.closed);
+    assert.equal(servindo.length, 1, "só a tentativa actual pode ficar a servir");
+    assert.ok(harness.requests.at(-1).url.includes("bbb"));
 });
 
 /** O `document.hidden` do jsdom é só de leitura, e por isso substitui-se a propriedade. */
@@ -218,44 +165,40 @@ const setHidden = (hidden) => {
 test("esconder o separador fecha o stream", async () => {
     reset();
     await connect("777");
-    FakeEventSource.instances[0].emit("open");
     assert.equal(stream.isDeviceStreamLive(), true);
 
     setHidden(true);
+    await harness.settle();
 
-    assert.equal(FakeEventSource.instances[0].closed, true, "o stream tem de fechar");
     assert.equal(stream.isDeviceStreamLive(), false);
-    const pending = scheduled.filter((entry) => !entry.cancelled && !entry.done);
+    const pending = harness.scheduled.filter((entry) => !entry.cancelled && !entry.done);
     assert.deepEqual(pending, [], "esconder não é falhar: não se agenda religação");
     setHidden(false);
-    await tick();
+    await harness.settle();
 });
 
 test("voltar ao separador religa ao mesmo dispositivo", async () => {
     reset();
     await connect("888");
-    FakeEventSource.instances[0].emit("open");
     setHidden(true);
+    await harness.settle();
     setHidden(false);
-    await tick();
+    await harness.settle();
 
-    assert.equal(FakeEventSource.instances.length, 2, "abriu-se um stream novo");
-    assert.ok(
-        FakeEventSource.instances[1].url.includes("888"),
-        "religou-se ao mesmo dispositivo",
-    );
+    assert.equal(harness.streams.length, 2, "abriu-se um stream novo");
+    assert.ok(harness.requests.at(-1).url.includes("888"), "religou-se ao mesmo dispositivo");
 });
 
 test("sem dispositivo escolhido a visibilidade não abre nada", async () => {
     reset();
     setHidden(false);
-    await tick();
-    assert.deepEqual(FakeEventSource.instances, []);
+    await harness.settle();
+    assert.deepEqual(harness.streams, []);
     setHidden(true);
-    await tick();
-    assert.deepEqual(FakeEventSource.instances, []);
+    await harness.settle();
+    assert.deepEqual(harness.streams, []);
     setHidden(false);
-    await tick();
+    await harness.settle();
 });
 
 test("sem credencial não se insiste", async () => {
@@ -265,8 +208,9 @@ test("sem credencial não se insiste", async () => {
     await connect("666");
 
     window.hubDashboardApiToken = null;
-    FakeEventSource.instances[0].fail();
+    harness.streams[0].end();
+    await harness.settle();
 
-    const pending = scheduled.filter((entry) => !entry.cancelled && !entry.done);
+    const pending = harness.scheduled.filter((entry) => !entry.cancelled && !entry.done);
     assert.deepEqual(pending, [], "sem token a religação só produzia 401 em série");
 });

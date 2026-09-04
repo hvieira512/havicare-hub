@@ -279,24 +279,12 @@ final class DashboardTenantStreamTest extends DashboardHttpTestCase
 
     private function openStream(callable $server, string $token, string $extra = ''): ResponseInterface
     {
-        return $server(new ServerRequest(
-            'GET',
-            '/api/stream?ticket=' . rawurlencode($this->streamTicket($server, $token)) . $extra
-        ));
-    }
+        $query = ltrim($extra, '&');
 
-    private function streamTicket(callable $server, string $token): string
-    {
-        $response = $server(
-            (new ServerRequest('POST', '/api/auth/stream-ticket'))
+        return $server(
+            (new ServerRequest('GET', '/api/stream' . ($query === '' ? '' : '?' . $query)))
                 ->withHeader('Authorization', 'Bearer ' . $token)
         );
-        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
-
-        $ticket = (string)(json_decode((string)$response->getBody(), true)['data']['ticket'] ?? '');
-        self::assertNotSame('', $ticket);
-
-        return $ticket;
     }
 
     /**

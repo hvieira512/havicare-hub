@@ -17,10 +17,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         [$server, , $store] = $this->makeServerWithDatabase();
         $token = $this->loginToken($server, 'admin', 'secret');
 
-        $response = $server(new ServerRequest(
-            'GET',
-            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($this->streamTicket($server, $token))
-        ));
+        $response = $this->openDeviceStream($server, '861265061009822', $token);
         self::assertSame(200, $response->getStatusCode());
 
         // Um stream tem um ouvinte só.
@@ -60,10 +57,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         [$server, , $store] = $this->makeServerWithDatabase();
         $token = $this->loginToken($server, 'admin', 'secret');
 
-        $response = $server(new ServerRequest(
-            'GET',
-            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($this->streamTicket($server, $token))
-        ));
+        $response = $this->openDeviceStream($server, '861265061009822', $token);
         self::assertSame(200, $response->getStatusCode());
         self::assertSame(1, $store->updates()->listenerCount());
 
@@ -90,11 +84,8 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         self::assertSame(0, $store->updates()->listenerCount());
     }
 
-    /**
-     * O `EventSource` não deixa pôr cabeçalhos, e a credencial viaja no URL -- onde fica no
-     * registo de acessos de qualquer proxy. Daí o bilhete valer segundos e queimar-se.
-     */
-    public function testAStreamTicketOpensOneStreamAndIsThenSpent(): void
+    /** A rota do bilhete de stream não existe: a credencial vai no cabeçalho, e só lá. */
+    public function testTheStreamTicketRouteIsGone(): void
     {
         [$server] = $this->makeServerWithDatabase();
         $token = $this->loginToken($server, 'admin', 'secret');
@@ -103,26 +94,10 @@ final class DashboardStreamTest extends DashboardHttpTestCase
             (new ServerRequest('POST', '/api/auth/stream-ticket'))
                 ->withHeader('Authorization', 'Bearer ' . $token)
         );
-        self::assertSame(200, $minted->getStatusCode());
-
-        $ticket = (string)(json_decode((string)$minted->getBody(), true)['data']['ticket'] ?? '');
-        self::assertNotSame('', $ticket);
-
-        $opened = $server(new ServerRequest(
-            'GET',
-            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($ticket)
-        ));
-        self::assertSame(200, $opened->getStatusCode(), 'o bilhete devia abrir o stream');
-        $opened->getBody()->close();
-
-        $reused = $server(new ServerRequest(
-            'GET',
-            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($ticket)
-        ));
-        self::assertSame(401, $reused->getStatusCode(), 'um bilhete gasto não abre nada');
+        self::assertSame(404, $minted->getStatusCode(), (string)$minted->getBody());
     }
 
-    /** Sem credencial nenhuma continua a não abrir: o bilhete não é uma porta lateral. */
+    /** Sem credencial nenhuma não abre. */
     public function testAStreamWithoutACredentialIsStillRejected(): void
     {
         [$server] = $this->makeServerWithDatabase();
@@ -148,6 +123,13 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         ));
         self::assertSame(401, $viaQuery->getStatusCode(), 'o URL deixou de ser um sítio para credenciais');
 
+        // O `?ticket=` era o único parâmetro que o resolvedor lia. Já não lê nenhum.
+        $viaTicketParameter = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822/stream?ticket=' . str_repeat('a', 64)
+        ));
+        self::assertSame(401, $viaTicketParameter->getStatusCode());
+
         $viaQueryOnANormalRoute = $server(new ServerRequest(
             'GET',
             '/api/devices?access_token=' . rawurlencode($token)
@@ -158,6 +140,11 @@ final class DashboardStreamTest extends DashboardHttpTestCase
             (new ServerRequest('GET', '/api/devices'))->withHeader('Authorization', 'Bearer ' . $token)
         );
         self::assertSame(200, $viaHeader->getStatusCode(), 'no cabeçalho continua a valer');
+
+        // Recusar não basta: o URL é um campo do registo, e um token que lá vá sai rasurado.
+        $log = $this->apiLogContents();
+        self::assertStringContainsString('"query":"access_token=********"', $log);
+        self::assertStringNotContainsString($token, $log);
     }
 
     /**
@@ -170,10 +157,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         [$server, , $store] = $this->makeServerWithDatabase();
         $token = $this->loginToken($server, 'admin', 'secret');
 
-        $response = $server(new ServerRequest(
-            'GET',
-            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($this->streamTicket($server, $token))
-        ));
+        $response = $this->openDeviceStream($server, '861265061009822', $token);
         self::assertSame(200, $response->getStatusCode());
 
         $body = $response->getBody();
@@ -261,10 +245,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         self::assertSame(200, $requestResponse->getStatusCode(), (string)$requestResponse->getBody());
         self::assertSame('heart_rate', $requestBody['feature'] ?? null);
 
-        $streamResponse = $server(new ServerRequest(
-            'GET',
-            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($this->streamTicket($server, $token))
-        ));
+        $streamResponse = $this->openDeviceStream($server, '861265061009822', $token);
         self::assertSame(200, $streamResponse->getStatusCode());
         self::assertSame('text/event-stream', $streamResponse->getHeaderLine('Content-Type'));
 
@@ -276,18 +257,11 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         self::assertSame('BPXL', $snapshot['commands'][0]['requestId'] ?? null);
         self::assertArrayNotHasKey('actions', $snapshot);
 
-        $otherStream = $server(new ServerRequest(
-            'GET',
-            '/api/devices/861265061009833/stream?ticket=' . rawurlencode($this->streamTicket($server, $token))
-        ));
+        $otherStream = $this->openDeviceStream($server, '861265061009833', $token);
         self::assertSame(404, $otherStream->getStatusCode(), (string)$otherStream->getBody());
 
-        $log = $this->apiLogContents();
-        // O bilhete viaja no URL, e o URL é o campo que aqui se regista. Já vem gasto quando
-        // a linha se escreve, mas uma credencial em claro num ficheiro de registo não se
-        // justifica por ser de curta duração.
-        self::assertStringContainsString('"query":"ticket=********"', $log);
-        self::assertDoesNotMatchRegularExpression('/"query":"ticket=[0-9a-f]{64}"/', $log);
+        // A credencial vai no cabeçalho, que não se regista. Nenhum token em claro no ficheiro.
+        self::assertStringNotContainsString($token, $this->apiLogContents());
     }
 
     private function readSseFrame(\Psr\Http\Message\ResponseInterface $response): string
@@ -364,23 +338,14 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         self::fail('SSE frame did not contain a data line.');
     }
 
-    /**
-     * Um bilhete para abrir um stream.
-     *
-     * Emite-se um por ligação de propósito: o bilhete queima-se ao ser lido, e reaproveitar
-     * um entre dois streams era testar uma coisa que o servidor não permite.
-     */
-    private function streamTicket(callable $server, string $token): string
-    {
-        $response = $server(
-            (new ServerRequest('POST', '/api/auth/stream-ticket'))
+    private function openDeviceStream(
+        callable $server,
+        string $imei,
+        string $token
+    ): \Psr\Http\Message\ResponseInterface {
+        return $server(
+            (new ServerRequest('GET', '/api/devices/' . $imei . '/stream'))
                 ->withHeader('Authorization', 'Bearer ' . $token)
         );
-        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
-
-        $ticket = (string)(json_decode((string)$response->getBody(), true)['data']['ticket'] ?? '');
-        self::assertNotSame('', $ticket);
-
-        return $ticket;
     }
 }
