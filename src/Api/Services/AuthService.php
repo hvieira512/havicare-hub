@@ -114,6 +114,73 @@ class AuthService
     }
 
     /**
+     * Emite um token de inquilino a pedido de um administrador.
+     *
+     * Serve para a plataforma de um cliente entregar credenciais do hub às aplicações dela sem
+     * ter de guardar uma password por inquilino: pede com a conta de administrador que já usa,
+     * e o que recebe é um token que só vê o par nomeado.
+     *
+     * O que sai é sempre mais fraco do que aquilo com que se pediu, e é isso que torna a rota
+     * segura. Fechá-la a não-administradores é trabalho do `RouteAccessPolicy`, que abre ao
+     * `license_client` apenas a lista de rotas do inquilino e nega o resto -- por isso aqui
+     * não há verificação de papel nenhuma a repetir.
+     *
+     * Não há teto de tentativas porque não há password para verificar: quem chega aqui já
+     * apresentou um token válido, e a emissão são duas leituras e duas escritas no Redis.
+     */
+    public function licenseToken(array $payload, string $requestId = ''): array
+    {
+        $company = DeviceMetadata::normalizeCompany(trim((string)($payload['company'] ?? '')));
+        $licenseId = DeviceMetadata::normalizeLicenseId((string)($payload['licenseId'] ?? ''));
+
+        if ($company === 'null' || $licenseId <= 0) {
+            return ApiError::invalidRequest('company and licenseId are required')->toArray();
+        }
+
+        // As duas metades respondem separadamente: uma empresa conhecida sem aquela licença é
+        // o engano provável -- o inquilino ainda não foi criado no hub -- e dizê-lo poupa a
+        // quem integra a adivinhação.
+        $companyRow = $this->db->companies->findByName($company);
+        if ($companyRow === null) {
+            return ApiError::companyNotFound()->toArray();
+        }
+
+        $license = $this->db->licenses->findByCompanyAndLicense((int)$companyRow['id'], $licenseId);
+        if ($license === null) {
+            return ApiError::licenseNotFound()->toArray();
+        }
+
+        // O nome sai do par e não de quem emitiu. O tecto de streams simultâneos conta por
+        // `username`, e com o nome do administrador os inquilinos todos partilhavam um balde
+        // -- o primeiro a abrir cem ligações fechava a porta aos outros.
+        $username = $company . '/' . $licenseId;
+
+        Logger::channel('api')->info('API license token issued', [
+            'request_id' => $requestId,
+            'username' => $username,
+            'role' => ApiAuthContext::ROLE_LICENSE_CLIENT,
+            'license_id' => $licenseId,
+        ]);
+
+        return [
+            'status' => 'ok',
+            'token' => $this->tokens->issueTokenPair(
+                $username,
+                ApiAuthContext::ROLE_LICENSE_CLIENT,
+                $this->tokenTtlSeconds,
+                $this->refreshTokenTtlSeconds,
+                // Sem `userId`: não há linha em `api_users` por trás deste token, e inventar
+                // uma referência fazia-o parecer uma conta que ninguém pode desactivar.
+                null,
+                $licenseId,
+                (int)$license['id'],
+                (int)$companyRow['id'],
+                $company,
+            ),
+        ];
+    }
+
+    /**
      * Um hash de referência, para uma tentativa contra uma conta que não existe custar o mesmo
      * que uma contra uma que existe.
      *

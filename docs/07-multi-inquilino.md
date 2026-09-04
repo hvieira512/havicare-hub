@@ -179,6 +179,13 @@ Um utilizador `license_client` mal ligado — sem licença, sem empresa, ou com
 referências inconsistentes — **não autentica de todo**. É deliberado: mais vale
 não entrar do que entrar e ver o que não é seu.
 
+Nem todo o `license_client` tem conta. Um administrador emite um token de
+inquilino pelo `POST /api/auth/license-token`, sem linha em `api_users` por
+trás: é o que permite à plataforma de um cliente dar credenciais às aplicações
+dela sem guardar uma password por inquilino. O âmbito do token é o mesmo, e as
+verificações por linha não distinguem os dois — o que muda é que um token
+emitido não se desactiva, expira.
+
 Os detalhes estão no [capítulo da API](09-api.md).
 
 ## Implementação

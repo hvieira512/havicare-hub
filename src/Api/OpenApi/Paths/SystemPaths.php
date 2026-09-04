@@ -44,6 +44,35 @@ final class SystemPaths
                     ),
                 ],
             ],
+            '/api/auth/license-token' => [
+                'post' => [
+                    'tags' => ['System'],
+                    'summary' => 'Issue a license_client token for a named tenant',
+                    'description' => 'Administrator only. Returns a token pair scoped to the named '
+                        . 'company and licence, so a tenant platform can hand credentials to its own '
+                        . 'applications without storing one password per tenant. The issued token is '
+                        . 'always weaker than the one used to request it, and renews through '
+                        . '/api/auth/login like any other.',
+                    'requestBody' => Requests::inline([
+                        'type' => 'object',
+                        'required' => ['company', 'licenseId'],
+                        'properties' => [
+                            'company' => ['type' => 'string', 'example' => 'hitcare'],
+                            'licenseId' => ['type' => 'integer', 'example' => 1001],
+                        ],
+                    ]),
+                    // As duas metades do par respondem separadamente: a empresa conhecida sem
+                    // aquela licença é o engano provável, e um `invalid_request` genérico não
+                    // dizia qual delas falhou.
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Bearer and refresh tokens issued', 'AuthTokenResponse')],
+                        'invalid_request',
+                        'forbidden',
+                        'company_not_found',
+                        'license_not_found',
+                    ),
+                ],
+            ],
         ];
     }
 

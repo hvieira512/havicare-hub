@@ -37,4 +37,14 @@ final class AuthController
                 (string)($request->getServerParams()['REMOTE_ADDR'] ?? ''),
             ));
     }
+
+    /** Só administradores chegam aqui: o `RouteAccessPolicy` nega esta rota a toda a gente. */
+    public function licenseToken(ServerRequestInterface $request): Response
+    {
+        $payload = RequestContext::jsonBody($request);
+
+        return $this->json->result($payload === null
+            ? ApiError::invalidJson()->toArray()
+            : $this->service->licenseToken($payload, RequestContext::requestId($request)));
+    }
 }

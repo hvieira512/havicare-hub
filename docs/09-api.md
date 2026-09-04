@@ -82,6 +82,40 @@ definir cabeçalhos e por isso **não serve** para os abrir; um stream lê-se co
 `fetch()` e um `ReadableStream`, que deixa — ver o
 [capítulo 13](13-dashboard.md) para o padrão de leitura que a dashboard usa.
 
+### Emitir um token para um inquilino
+
+Um administrador obtém um par de tokens de `license_client` sem conhecer a
+password do inquilino:
+
+```http
+POST /api/auth/license-token
+{ "company": "hitcare", "licenseId": 1001 }
+```
+
+A resposta tem a forma do login, com `role` a `license_client` e o âmbito do par
+nomeado. Daí em diante o token é indistinguível de um obtido com credenciais
+próprias: renova-se pelo `/api/auth/login` com o `refresh_token`, e obedece às
+mesmas nove rotas.
+
+Existe para as plataformas dos clientes deixarem de precisar de uma credencial
+do hub por inquilino. A plataforma pede com a conta de administrador que já usa
+para o inventário, e entrega às suas aplicações um token que só vê aquela
+licença — em vez de guardar, e ter de rodar, uma password por cliente.
+
+**O que sai é sempre mais fraco do que aquilo com que se pediu.** É atenuação, e
+nunca escalada: um `license_client` que chame esta rota recebe `403`, mesmo que
+peça exactamente a licença que já tem. O que fecha a rota é o papel de quem
+chama, e não a comparação entre o que pede e o que já possui.
+
+O `username` do token emitido é o par — `hitcare/1001` — e não o do
+administrador. O teto de streams simultâneos conta por `username`, e com o nome
+de quem emitiu os inquilinos todos partilhariam um balde: o primeiro a abrir cem
+ligações fechava a porta aos restantes.
+
+Não há utilizador em `api_users` por trás de um token destes. A consequência é
+que não se desactiva uma conta para o cortar — corta-se deixando de o emitir, e
+o que já foi emitido vive o que lhe restar do prazo.
+
 ### Tetos de tentativas
 
 O login é a única rota pública que verifica uma password, e tem de o ser: não se
@@ -158,7 +192,7 @@ Um `license_client` mal ligado — sem licença, sem empresa, ou com referência
 inconsistentes — **não autentica de todo**. Ver o
 [capítulo do multi-inquilino](07-multi-inquilino.md).
 
-## 3. As 50 rotas
+## 3. As 51 rotas
 
 **P** = pública · **LC** = admin e `license_client` · **A** = só `hub_admin`
 
@@ -167,6 +201,7 @@ inconsistentes — **não autentica de todo**. Ver o
 | | Rota | O que faz | |
 |---|---|---|---|
 | POST | `/api/auth/login` | Autentica ou roda o par de tokens | **P** |
+| POST | `/api/auth/license-token` | Emite um par de tokens para um inquilino nomeado | **A** |
 
 ### O stream do inquilino
 
@@ -332,7 +367,7 @@ imagem do modelo no mesmo pedido.
 | DELETE | `/api/notifications/{id}` | **A** |
 | GET | `/api/openapi.json` · `/api/docs` | **P** |
 
-**50 rotas**, que dão **49 operações** na especificação. A que falta é o
+**51 rotas**, que dão **50 operações** na especificação. A que falta é o
 `/api/devices/{imei}/stream`, excluído por decisão — ver a
 [secção 6](#rotas-excluídas-da-especificação).
 
@@ -542,7 +577,7 @@ declarado na especificação como o de qualquer outra rota.
 |---|---|
 | `src/Api/ApiKernel.php` | Despacho, identidade, `ETag`, erros não apanhados |
 | `src/Api/Routing/ApiRouter.php` · `ApiRoute.php` | Encaminhamento |
-| `src/Api/Routes/*.php` | As 50 rotas, agrupadas por assunto |
+| `src/Api/Routes/*.php` | As 51 rotas, agrupadas por assunto |
 | `src/Api/Auth/ApiTokenStore.php` | Os três tipos de token |
 | `src/Api/Auth/RouteAccessPolicy.php` | As nove rotas do `license_client` |
 | `src/Api/Auth/ApiAuthContext.php` | `canAccessTenant()` |
