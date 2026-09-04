@@ -4,14 +4,37 @@ namespace Hub\Command\Configuration\Payload;
 
 final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 {
+    /**
+     * O tecto do áudio aceite, antes de ser descodificado.
+     *
+     * A conversão corre o `ffmpeg` num subprocesso síncrono, dentro do event loop que também
+     * serve a ingestão e a dashboard. Sem tecto, o corpo de 6 MB que a API aceita chegava lá
+     * como ~4,5 MB de bytes escolhidos por quem chama.
+     *
+     * É generoso de propósito: a dashboard grava em opus e não limita a duração, portanto uma
+     * gravação de vários minutos tem de continuar a passar -- o `ffmpeg` já a corta aos 15
+     * segundos na saída. Dois mebibytes são muito mais do que qualquer lembrete real.
+     */
+    private const MAX_VOICE_AUDIO_BYTES = 2 * 1024 * 1024;
+
+    /** O resultado da sonda ao `ffmpeg`, que não muda enquanto o processo viver. */
+    private static ?bool $voiceTranscodingSupport = null;
+
     public static function supportsVoiceTranscoding(): bool
     {
+        // Sem memória, cada lembrete com voz lançava três subprocessos em vez de um: a procura
+        // do binário, a lista de codificadores, e só depois a conversão.
+        if (self::$voiceTranscodingSupport !== null) {
+            return self::$voiceTranscodingSupport;
+        }
+
         if (!self::commandExists('ffmpeg')) {
-            return false;
+            return self::$voiceTranscodingSupport = false;
         }
 
         [$exitCode, $output] = self::runProcess(['ffmpeg', '-hide_banner', '-encoders']);
-        return $exitCode === 0 && str_contains($output, 'libopencore_amrnb');
+
+        return self::$voiceTranscodingSupport = ($exitCode === 0 && str_contains($output, 'libopencore_amrnb'));
     }
 
     public static function build(string $key, array $payload): array
@@ -133,6 +156,13 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
                     $detectedMimeType = $meta;
                 }
             }
+        }
+
+        // O tecto testa-se **antes** de descodificar: o objectivo é não materializar em memória,
+        // nem escrever em disco, nem entregar ao `ffmpeg`, um corpo que já se sabe grande de mais.
+        if ((int)(strlen($voiceData) * 3 / 4) > self::MAX_VOICE_AUDIO_BYTES) {
+            $limit = (int)(self::MAX_VOICE_AUDIO_BYTES / 1024);
+            throw new \InvalidArgumentException("voiceData must not exceed {$limit} KiB of audio");
         }
 
         $binary = base64_decode($voiceData, true);
