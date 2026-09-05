@@ -224,8 +224,11 @@ trazer.
 O campo `direction` assume `uplink` ou `downlink`, uma vez que os comandos
 enviados são igualmente publicados neste canal.
 
-**Todas as mensagens recebidas são publicadas em `raw`**, incluindo as que o hub
-não interpreta. Este canal garante a preservação integral dos dados de origem.
+**Cada mensagem de um dispositivo autorizado é publicada em `raw`**, antes da
+deduplicação e incluindo as que o hub não interpreta — relógios, NCS, gateways,
+radares e os aparelhos retransmitidos por um gateway (pulseiras e sensor de
+fralda). Um dispositivo que o hub ignora, por não estar na whitelist, não chega a
+este canal.
 
 ## 7. Tópicos subscritos
 

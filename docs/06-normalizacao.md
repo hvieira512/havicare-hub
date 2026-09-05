@@ -253,13 +253,14 @@ O `FeatureNormalizer` determina o que a plataforma **normaliza**. O
 suportar**, e é este que a API devolve em `capabilities` e que a dashboard
 apresenta na matriz por modelo.
 
-São listas distintas. Duas capacidades publicadas são **deliberadamente**
+São listas distintas. Três capacidades publicadas são **deliberadamente**
 excluídas do catálogo:
 
 | `type` publicado | Fundamento da exclusão |
 |---|---|
 | `heartbeat` | Sinal de vida, não medição. Excluído também do histórico da dashboard |
 | `device_config` | Confirmação de uma configuração, não leitura |
+| `reset` | Reinício de um botão do NCS (códigos 0–2), acontecimento e não medição |
 
 As capacidades `alarm` e `proximity` foram acrescentadas ao catálogo em setembro
 de 2026, corrigindo duas omissões: o catálogo declarava a `fall_detection`, que

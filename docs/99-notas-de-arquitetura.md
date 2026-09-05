@@ -70,20 +70,6 @@ Fica registado por constituir uma decisão de arquitetura e não uma omissão.
 
 ---
 
-## 5. Não há cópias de segurança das bases de dados
-
-**O que é.** O servidor não guarda nenhum `mysqldump` periódico das duas bases.
-
-**Porque importa.** A produção tem o inventário de dispositivos, as licenças, as
-contas da API e o histórico de configurações. Nada disso se reconstrói a partir
-dos aparelhos.
-
-**Estado.** Reconhecido. A estratégia está por definir, e o ponto que a torna
-menos trivial do que parece é a expiração: uma cópia periódica sem política de
-retenção enche o disco do servidor que é suposto proteger.
-
----
-
 ## Divergências corrigidas
 
 Registo das divergências já resolvidas, para não voltarem a ser reportadas como
@@ -112,9 +98,4 @@ novas:
 | Os cenários recriavam o contentor de desenvolvimento e nunca o repunham                         | correm em projeto compose próprio — [capítulo 16](16-testes.md)          |
 | O `composer.json` aceitava PHP 8.1, versão que nunca foi testada                                | passou a `^8.4`                                                          |
 | O IMEI por omissão do simulador não existia no inventário semeado                               | corrigido no `Makefile`                                                  |
-
---
-
-## Coisas para fazer amanhã
-
-- Testar havicare e hitcare API relógios
+| A nota dizia não haver cópias de segurança das bases; passaram a existir, com rotação e temporizador | corrigido no [capítulo 18](18-backups.md)                           |

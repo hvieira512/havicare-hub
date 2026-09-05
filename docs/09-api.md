@@ -244,9 +244,10 @@ acumula até um limite, ponto em que a ligação **fecha com um evento
 
 O número de ligações abertas tem teto, global e por utilizador
 (`DASHBOARD_MAX_OPEN_STREAMS`, `DASHBOARD_MAX_OPEN_STREAMS_PER_USER`); excedido,
-a resposta é `503 too_many_streams`. Um `hub_admin` não tem inquilino e por isso
-não abre esta rota: o âmbito dele seria o sistema inteiro, que é justamente o
-caso que o teto existe para evitar.
+a resposta é `503 too_many_streams`. Um `hub_admin` não tem inquilino próprio,
+mas pode nomear um: com `company` e `licenseId` na query abre o stream desse
+inquilino, com âmbito tão limitado como o de um cliente; sem eles a resposta é
+`400`. O âmbito de sistema inteiro não tem implementação.
 
 Os tetos saem de uma medição, e o que os manda **não é a memória**. Uma ligação
 inerte custa ~15 KB de heap e uma com a fila cheia ~111 KB — a 2000 ligações
@@ -378,10 +379,12 @@ imagem do modelo no mesmo pedido.
 ```json
 {
   "data": [ … ],
-  "pagination": { "limit": 25, "page": 1, "total_pages": 4, "total": 87 },
+  "pagination": { "limit": 20, "page": 1, "total_pages": 5, "total": 87 },
   "filters": { "applied": { … }, "available": { … } }
 }
 ```
+
+O `limit` por omissão é **20**, com uma exceção: o `/api/devices` usa **5**.
 
 O `filters.available` diz que valores fazem sentido pedir — a dashboard constrói
 os menus a partir dele, sem os ter escritos à mão.
