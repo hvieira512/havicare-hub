@@ -136,7 +136,7 @@ desfaz escolhas de um administrador.
 > começa por desistir quando a tabela está vazia: numa base nova não há nada a
 > trazer a dia, e a linha de base trata do assunto.
 
-Há hoje **nove** migrações. As seis de 4 de setembro fecham a auditoria ao
+Há hoje **onze** migrações. As oito de 4 de setembro fecham a auditoria ao
 esquema:
 
 | Migração | O que faz |
@@ -148,6 +148,7 @@ esquema:
 | `device_types_table` | Dá aos tipos de dispositivo uma tabela e três chaves estrangeiras |
 | `shrink_legacy_varchar_191` | Encurta as vinte e quatro colunas em `VARCHAR(191)` |
 | `model_capabilities_by_natural_key` | Aponta as ligações ao par `(device_type, capability_key)` |
+| `device_type_ascii_collation` | Converge as cinco colunas `device_type` para `ascii_bin`, reconstruindo as chaves estrangeiras que nelas assentam |
 
 Cada uma verifica antes de converter e desiste em vez de perder informação: uma
 coluna que discorde da origem, um valor que não seja ISO-8601, um texto que não

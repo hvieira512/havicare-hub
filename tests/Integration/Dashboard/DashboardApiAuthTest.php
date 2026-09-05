@@ -299,7 +299,7 @@ final class DashboardApiAuthTest extends DashboardHttpTestCase
     {
         $spec = \Hub\Api\OpenApiSpec::get();
 
-        self::assertSame(['bearerAuth' => ['type' => 'http', 'scheme' => 'bearer', 'bearerFormat' => 'JWT', 'description' => 'Use the bearer token returned by /api/auth/login.']], $spec['components']['securitySchemes'] ?? null);
+        self::assertSame(['bearerAuth' => ['type' => 'http', 'scheme' => 'bearer', 'description' => 'Use the bearer token returned by /api/auth/login.']], $spec['components']['securitySchemes'] ?? null);
         self::assertSame([['bearerAuth' => []]], $spec['security'] ?? null);
         self::assertSame([], $spec['paths']['/api/auth/login']['post']['security'] ?? null);
         self::assertArrayNotHasKey('/api/auth/refresh', $spec['paths']);

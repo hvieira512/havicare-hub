@@ -466,9 +466,11 @@ mais curta de escrever.
 | **403** | `forbidden` |
 | **404** | `association_not_found`, `capability_not_found`, `company_not_found`, `discovery_not_found`, `license_not_found`, `model_not_found`, `not_found`, `notification_not_found`, `protocol_not_found`, `supplier_not_found`, `user_not_found` |
 | **409** | `device_exists`, `model_exists`, `user_exists`, `duplicate` |
+| **429** | `too_many_attempts` |
 | **500** | `server_error` |
+| **503** | `too_many_streams` |
 
-São **39 códigos**. Um código não declarado responde com 400.
+São **41 códigos**. Um código não declarado responde com 400.
 
 Duas distinções relevantes:
 
@@ -581,7 +583,7 @@ declarado na especificação como o de qualquer outra rota.
 | `src/Api/Auth/ApiTokenStore.php` | Os três tipos de token |
 | `src/Api/Auth/RouteAccessPolicy.php` | As nove rotas do `license_client` |
 | `src/Api/Auth/ApiAuthContext.php` | `canAccessTenant()` |
-| `src/Api/Http/ApiError.php` | Os 39 códigos e o mapa de estados |
+| `src/Api/Http/ApiError.php` | Os 41 códigos e o mapa de estados |
 | `src/Api/Http/JsonResponder.php` | O estado sai do código do erro |
 | `src/Api/Request/RequestBinder.php` | Corpo → objeto validado |
 | `src/Api/OpenApi/SchemaFromRequest.php` | Restrições → esquema |

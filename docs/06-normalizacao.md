@@ -75,7 +75,7 @@ e `source`, como um `device.connected`, que só leva a identidade.
 
 | Campo | Notas |
 |---|---|
-| `type` | O nome da capacidade. A secção 3 lista as vinte |
+| `type` | O nome da capacidade. A secção 3 lista as reconhecidas pelo `FeatureNormalizer` e as dos ingestores MQTT |
 | `occurredAt` | UTC, RFC 3339, **ao segundo**. É o relógio do **hub** no momento de publicar, não o do aparelho |
 | `device.id` | Identidade canónica — a mesma que vai no tópico |
 | `device.supplier` · `device.model` | O que a whitelist diz. Omitidos se vazios |

@@ -62,7 +62,6 @@ class OpenApiSpec
                     'bearerAuth' => [
                         'type' => 'http',
                         'scheme' => 'bearer',
-                        'bearerFormat' => 'JWT',
                         'description' => 'Use the bearer token returned by /api/auth/login.',
                     ],
                 ],

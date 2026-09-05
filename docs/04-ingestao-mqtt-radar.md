@@ -202,8 +202,7 @@ broker ou para a interface, e nada no código impedia esse registo.
 |---|---|
 | `src/Ingress/Mqtt/Qinglanst/Topic.php` | `radar/{licenca}/{uid}` |
 | `src/Ingress/Mqtt/Qinglanst/Bridge.php` | Subscreve, identifica, publica |
-| `src/Ingress/Mqtt/Qinglanst/PayloadDecoder.php` | Os quatro formatos binários |
-| `src/Ingress/Mqtt/Qinglanst/RadarValueMapper.php` | Códigos numéricos para nomes |
+| `src/Ingress/Mqtt/Qinglanst/PayloadDecoder.php` | Os quatro formatos binários, e os códigos numéricos para nomes |
 | `src/Ingress/Mqtt/Qinglanst/MessageNormalizer.php` | Telemetria, limiares e eventos |
 | `src/Ingress/Mqtt/Qinglanst/DashboardWritePolicy.php` | Os dois travões |
 | `src/Ingress/Mqtt/Qinglanst/IngestStats.php` | O resumo periódico |
