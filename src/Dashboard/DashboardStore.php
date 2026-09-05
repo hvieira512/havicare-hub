@@ -4,6 +4,7 @@ namespace Hub\Dashboard;
 
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Command\DeviceConfigurationCatalog;
+use Hub\Log\Logger;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use Predis\ClientInterface;
 
@@ -257,7 +258,12 @@ final class DashboardStore implements DashboardStoreContract
                     foreach (DeviceConfigurationCatalog::commandPayloads('wonlex-json', $key, $payload) as $built) {
                         $configurations[] = $built;
                     }
-                } catch (\Throwable) {
+                } catch (\Throwable $e) {
+                    Logger::channel('hub')->warning('Skipped unbuildable Wonlex configuration', [
+                        'imei' => $imei,
+                        'key' => $key,
+                        'error' => $e->getMessage(),
+                    ]);
                     continue;
                 }
             }

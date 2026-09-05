@@ -20,6 +20,7 @@ use Hub\Api\Services\SupplierService;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Device\DeviceHubServer;
 use Hub\Device\MessageFanout;
+use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
@@ -141,7 +142,12 @@ final class DashboardHttpServer
                     return $this->staticFile($file, $request);
                 }
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error('Dashboard request failed', [
+                'method' => $method,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
             return $this->json([
                 'error' => ['code' => 'server_error', 'message' => 'Internal server error'],
             ], 500);
