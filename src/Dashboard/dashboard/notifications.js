@@ -92,10 +92,10 @@ const render = () => {
         return html`
             <div class="list-group-item px-3 py-3${unreadClass}">
                 <div class="d-flex align-items-start gap-2">
-                    <button class="btn border-0 bg-transparent text-start p-0 flex-grow-1 min-width-0" type="button" data-notification-id="${Number(notification.id) || 0}">
+                    <button class="btn border-0 bg-transparent text-start p-0 flex-grow-1 min-w-0" type="button" data-notification-id="${Number(notification.id) || 0}">
                         <span class="d-flex align-items-start gap-2">
                             <i class="fa-solid ${kind.icon} text-danger mt-1" aria-hidden="true"></i>
-                            <span class="min-width-0 flex-grow-1">
+                            <span class="min-w-0 flex-grow-1">
                                 <span class="d-block fw-semibold">${kind.title}</span>
                                 ${raw(deviceLine)}
                                 ${raw(detailsLine)}

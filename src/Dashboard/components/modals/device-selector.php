@@ -70,7 +70,7 @@ $footer = (string) ob_get_clean();
 
 ob_start();
 ?>
-<div class="flex-grow-1 min-width-0">
+<div class="flex-grow-1 min-w-0">
     <h2 class="modal-title h5 mb-0">Escolher dispositivo</h2>
     <div id="deviceSelectorSummary" class="small text-secondary"></div>
 </div>

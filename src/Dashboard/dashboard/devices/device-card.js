@@ -34,7 +34,7 @@ export function deviceCard(device, selected) {
         <span class="device-card-thumb">${raw(image)}</span>
         ${raw(onlineBadge(device.online))}
         <span class="device-card-identity">
-            <span class="min-width-0">
+            <span class="min-w-0">
                 <span class="device-card-imei d-block text-truncate">${device.imei}</span>
                 <span class="device-card-meta d-block text-truncate">${meta}</span>
             </span>
@@ -62,7 +62,7 @@ export function deviceCardSkeletonList(pageSize) {
         <span class="device-card-thumb placeholder"></span>
         <span class="placeholder device-card-skeleton-pill"></span>
         <span class="device-card-identity">
-            <span class="min-width-0 w-100">
+            <span class="min-w-0 w-100">
                 <span class="placeholder d-block col-7 mb-1"></span>
                 <span class="placeholder d-block col-4"></span>
             </span>

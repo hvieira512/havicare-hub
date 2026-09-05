@@ -83,9 +83,11 @@ final class MonitNormalizer
     }
 
     /**
-     * Índice 0-100 de quanta humidade o sensor vê. **Não é uma percentagem física** e não
-     * pode ser apresentada como tal -- ver `docs/17-sensor-de-fralda.md` §2 para a derivação
-     * e para os dois invariantes que o `MonitMoistureIndexTest` prova.
+     * Índice 0-100 de quanta humidade o sensor vê, construído por bandas de estado -- não é uma
+     * medição física de enchimento nem comparável entre sensores diferentes. Ver
+     * `docs/17-sensor-de-fralda.md` §2 para a derivação e para os dois invariantes que o
+     * `MonitMoistureIndexTest` prova. Como a interface o apresenta -- com `%`, por decisão de
+     * UI -- é assunto dela.
      *
      * @param list<int> $deltas delta por canal, já normalizado contra a linha de base
      */
