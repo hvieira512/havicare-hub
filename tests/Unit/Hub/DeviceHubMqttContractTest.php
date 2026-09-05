@@ -70,8 +70,25 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('865028000000999', $mqtt->statuses[0][0]);
         self::assertSame('error', $mqtt->statuses[0][1]['state']);
         self::assertSame('device_not_authorized', $mqtt->statuses[0][1]['error']['code']);
+        // Uma recusa é um acontecimento, não um estado: o `error` não fica retido, senão o
+        // próximo subscritor recebia a rejeição de um aparelho que já nem está a tentar ligar.
+        self::assertFalse($mqtt->statuses[0][2], 'o status de erro da rejeição não é retido');
         self::assertSame('device.rejected', $mqtt->events[0][1]['type']);
         self::assertSame('device_not_authorized', $mqtt->events[0][1]['error']['code']);
+    }
+
+    /** O contraste: um `online`/`offline` é estado, e esse fica retido. */
+    public function testOnlineStatusIsRetained(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+        $connection = new ContractFakeConnection(2);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, 'IWAP00865028000000308#');
+
+        self::assertSame('online', $mqtt->statuses[0][1]['state']);
+        self::assertTrue($mqtt->statuses[0][2], 'o online fica retido');
     }
 
     public function testNotificationPersistenceFailureDoesNotInterruptDeviceRejection(): void

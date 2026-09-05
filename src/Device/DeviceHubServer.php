@@ -220,11 +220,6 @@ class DeviceHubServer
         }
     }
 
-    public function isOnline(string $imei): bool
-    {
-        return $this->connections->isOnline($imei);
-    }
-
     public function expireIdleConnections(int $idleSeconds): void
     {
         foreach ($this->connections->expireIdleConnections($idleSeconds) as $session) {
@@ -416,7 +411,10 @@ class DeviceHubServer
 
         $error = $this->errorPayload($reason);
         try {
-            $this->mqtt->publishStatus($identity->imei, RawPayload::status($identity->imei, '', '', 'error', $error));
+            // `retain: false` -- uma recusa é um acontecimento, não um estado. Retida, ficava
+            // no tópico `status` e o próximo subscritor recebia a rejeição de um aparelho que
+            // já nem está a tentar ligar.
+            $this->mqtt->publishStatus($identity->imei, RawPayload::status($identity->imei, '', '', 'error', $error), false);
             $this->mqtt->publishEvent($identity->imei, RawPayload::event($identity->imei, '', '', 'device.rejected', $error));
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $identity->imei, $e);
