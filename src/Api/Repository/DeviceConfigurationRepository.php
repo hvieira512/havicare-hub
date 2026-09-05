@@ -112,23 +112,21 @@ final class DeviceConfigurationRepository
         $key = $this->normalizeConfigKey($nativeKey);
         $now = gmdate('Y-m-d H:i:s');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
-        if ($this->exists($imei, $key, $nativeKey)) {
-            $stmt = $this->pdo->prepare('
-                UPDATE device_configurations
-                SET protocol = ?, command = ?, reported_payload = ?, reported_at = ?
-                WHERE imei = ? AND config_key = ? AND native_key = ?
-            ');
-            $stmt->execute([$protocol, $command, $encoded, $now, $imei, $key, $nativeKey]);
-            return;
-        }
 
+        // Um só comando em vez de contar-e-decidir: a chave primária (imei, config_key,
+        // native_key) resolve o conflito, e o desejado fica intacto por não entrar no UPDATE.
         $stmt = $this->pdo->prepare('
             INSERT INTO device_configurations (
                 imei, config_key, native_key, protocol, command, desired_payload, reported_payload, reported_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, \'{}\', ?, ?)
+            ON DUPLICATE KEY UPDATE
+                protocol = VALUES(protocol),
+                command = VALUES(command),
+                reported_payload = VALUES(reported_payload),
+                reported_at = VALUES(reported_at)
         ');
-        $stmt->execute([$imei, $key, $nativeKey, $protocol, $command, '{}', $encoded, $now]);
+        $stmt->execute([$imei, $key, $nativeKey, $protocol, $command, $encoded, $now]);
     }
 
     private function exists(string $imei, string $key, string $nativeKey): bool

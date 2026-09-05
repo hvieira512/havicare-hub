@@ -52,6 +52,20 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
         self::assertSame(['enabled' => true], $rows[0]['reported_payload'] ?? null);
     }
 
+    public function testSaveReportedUpsertsOntoAnExistingDesiredRow(): void
+    {
+        $imei = '861265061009822';
+        $this->repository->saveDesired($imei, 'fallDetection', 'vivistar-iw', 'BP76', ['enabled' => false]);
+        $this->repository->saveReported($imei, 'fallDetection', 'vivistar-iw', 'BP76', ['enabled' => true]);
+
+        $rows = $this->repository->allForImei($imei);
+
+        // Um só registo: o reportado escreve por cima do desejado, não ao lado.
+        self::assertCount(1, $rows);
+        self::assertSame(['enabled' => false], $rows[0]['desired_payload'] ?? null, 'o desejado deve manter-se');
+        self::assertSame(['enabled' => true], $rows[0]['reported_payload'] ?? null, 'o reportado deve actualizar');
+    }
+
     public function testGenericAlarmClockKeyUsesProtocolNativeIdentity(): void
     {
         $this->repository->saveDesired(
