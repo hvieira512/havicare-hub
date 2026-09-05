@@ -37,6 +37,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     private array $gatewayLastSeenAt = [];
     /** @var array<string, float> */
     private array $lastRelayedRawAt = [];
+    /** A manutenção corre no máximo uma vez a cada tantos segundos, e não a cada tique. */
+    private const MAINTENANCE_INTERVAL_SECONDS = 5.0;
+    private float $lastMaintenanceAt = 0.0;
     private \Closure $clock;
 
     public function __construct(
@@ -93,6 +96,24 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     public function tick(float $timeout = 0.01): void
     {
         parent::tick($timeout);
+        $this->runDueMaintenance();
+    }
+
+    /**
+     * Expira gateways parados e pares silenciosos, no máximo uma vez por janela.
+     *
+     * Impõe limiares de 180 e 30 segundos, e não tem nada que correr a cada tique de 50 ms --
+     * o `expireStaleProximity` varre todos os pares, e a 20 vezes por segundo era desperdício.
+     * O `loopOnce` continua a correr a cada tique, que é onde o MQTT é drenado; só isto sai
+     * para uma janela. Público para os testes o exercerem sem o `loopOnce` do tique.
+     */
+    public function runDueMaintenance(): void
+    {
+        $now = (float)($this->clock)();
+        if ($now - $this->lastMaintenanceAt < self::MAINTENANCE_INTERVAL_SECONDS) {
+            return;
+        }
+        $this->lastMaintenanceAt = $now;
         $this->expireIdleGateways();
         $this->expireStaleProximity();
     }

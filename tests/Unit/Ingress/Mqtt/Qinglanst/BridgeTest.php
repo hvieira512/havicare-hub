@@ -44,6 +44,27 @@ final class BridgeTest extends TestCase
         $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
     }
 
+    /**
+     * A notificação de um radar desconhecido é estrangulada: um radar por registar publica
+     * ~20 mensagens por segundo, e sem travão era uma escrita ao MySQL por cada, a reabrir o
+     * aviso que o operador nunca conseguia marcar como lido.
+     */
+    public function testUnregisteredRadarNotificationIsThrottled(): void
+    {
+        $dashboardStore = $this->createMock(DashboardStoreContract::class);
+        // Duas mensagens seguidas do mesmo radar desconhecido, um só registo.
+        $dashboardStore->expects(self::once())->method('recordRejectedDevice');
+        $bridge = new Bridge(
+            new FakeMqttSubscriber(),
+            IngressFixtures::whitelist(),
+            new RecordingHubMqttBridge(),
+            dashboardStore: $dashboardStore,
+        );
+
+        $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
+        $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
+    }
+
     public function testPublishesUsingCanonicalWhitelistKeyAndNotTheUpstreamRadarUid(): void
     {
         $mqttBridge = new RecordingHubMqttBridge();

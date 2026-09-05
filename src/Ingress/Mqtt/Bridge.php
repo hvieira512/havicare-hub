@@ -13,10 +13,16 @@ abstract class Bridge implements MqttIngress
 {
     use ReconnectsOnLoopFailure;
 
+    /** Um aviso de aparelho não registado por identidade e por esta janela, e não por mensagem. */
+    private const UNAUTHORIZED_RECORD_INTERVAL_SECONDS = 60;
+
     private MqttClient $subscriber;
 
     /** @var null|callable(): MqttClient */
     private $reconnectSubscriber;
+
+    /** @var array<string, int> */
+    private array $lastUnauthorizedAt = [];
 
     public function __construct(
         MqttClient $subscriber,
@@ -66,6 +72,15 @@ abstract class Bridge implements MqttIngress
         int $licenseId = 0,
         ?string $company = null,
     ): void {
+        // Um aparelho não registado que insiste -- um radar publica ~20 msg/s -- não pode dar
+        // uma escrita ao MySQL por mensagem. O aviso regista-se uma vez por identidade e janela.
+        $now = time();
+        $last = $this->lastUnauthorizedAt[$identity] ?? null;
+        if ($last !== null && ($now - $last) < self::UNAUTHORIZED_RECORD_INTERVAL_SECONDS) {
+            return;
+        }
+        $this->lastUnauthorizedAt[$identity] = $now;
+
         try {
             $this->dashboardStore?->recordRejectedDevice(
                 $identity,

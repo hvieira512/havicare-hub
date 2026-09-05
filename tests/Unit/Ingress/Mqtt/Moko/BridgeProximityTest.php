@@ -217,4 +217,57 @@ final class BridgeProximityTest extends TestCase
 
         self::assertSame([], $this->proximity($mqtt->telemetry));
     }
+
+    /**
+     * A manutenção -- expirar gateways parados e pares silenciosos -- impõe limiares de 180 e
+     * 30 segundos, e não tem de correr a cada tique de 50 ms. O `runDueMaintenance` estrangula-a
+     * a uma vez por janela; o `loopOnce` do tique continua a drenar o MQTT vinte vezes por
+     * segundo. Prova-se pelo efeito: um par silenciado só é reportado `unknown` quando a janela
+     * deixa a manutenção correr.
+     */
+    public function testMaintenanceIsThrottledToOncePerWindow(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = new Bridge(
+            new FakeMqttSubscriber(),
+            IngressFixtures::whitelist([
+                self::GATEWAY => IngressFixtures::gateway('MKGW3'),
+                self::BRACELET => IngressFixtures::bracelet('W6B'),
+            ]),
+            $mqtt,
+            IngressFixtures::links(),
+            new ArrayObservationStateStore(),
+            dashboardStore: new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard:maint'),
+            clock: fn(): float => $this->now,
+            proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 2),
+        );
+
+        // Um par ouvido, depois calado; a manutenção corre e reporta-o `unknown`.
+        $this->deliver($bridge, $this->scanPayload(['rssi' => -52]));
+        $this->now = 1003.0;
+        $bridge->runDueMaintenance();
+
+        // Re-ouvido e calado de novo, mas dentro da mesma janela de manutenção: repetir a
+        // manutenção não o volta a expirar, porque está estrangulada.
+        $this->deliver($bridge, $this->scanPayload(['rssi' => -52]));
+        $this->now = 1006.0;
+        $bridge->runDueMaintenance();
+        $bridge->runDueMaintenance();
+
+        $unknowns = $this->unknownCount($mqtt);
+        self::assertSame(1, $unknowns, 'dentro da janela, a manutenção não corre outra vez');
+
+        // Passada a janela, corre e reporta o segundo silêncio.
+        $this->now = 1012.0;
+        $bridge->runDueMaintenance();
+        self::assertSame(2, $this->unknownCount($mqtt), 'passada a janela, a manutenção corre');
+    }
+
+    private function unknownCount(RecordingHubMqttBridge $mqtt): int
+    {
+        return count(array_filter(
+            $this->proximity($mqtt->telemetry),
+            static fn (array $p): bool => ($p['payload']['data']['state'] ?? '') === 'unknown',
+        ));
+    }
 }

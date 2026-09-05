@@ -211,9 +211,14 @@ A mensagem original, com contexto suficiente para a reconstruir:
 }
 ```
 
-`encoding` vale `text` ou `base64` — o hub decide olhando para os bytes. Quando
-o protocolo é descodificável, `payload` traz o objeto já interpretado e o
-original vai em `debug.encoded`, em base64.
+`encoding` diz em que forma vem o `payload`, e depende do caminho de ingestão. Na
+ingestão TCP dos relógios vale `text` ou `base64` — o hub decide olhando para os
+bytes —, e quando o protocolo é descodificável o `payload` traz o objeto já
+interpretado, com o original em `debug.encoded`, em base64. Nos gateways MOKO vale
+`json`, quando a trama chega em JSON e o `payload` é o objeto, ou `binary`, quando
+chega em bytes e o `payload` é a sua representação em hexadecimal. Os campos
+`encoding` e `size` são do caminho TCP; o `raw` dos ingressos MQTT pode não os
+trazer.
 
 O campo `direction` assume `uplink` ou `downlink`, uma vez que os comandos
 enviados são igualmente publicados neste canal.
