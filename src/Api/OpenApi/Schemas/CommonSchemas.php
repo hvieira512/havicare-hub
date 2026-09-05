@@ -146,6 +146,14 @@ final class CommonSchemas
                         'properties' => [
                             'code' => ['type' => 'string', 'example' => 'invalid_request'],
                             'message' => ['type' => 'string', 'example' => 'Validation failed'],
+                            'fields' => [
+                                'type' => 'object',
+                                'description' => 'Per-field validation messages, present only when there are field errors.',
+                            ],
+                            'requestId' => [
+                                'type' => 'string',
+                                'description' => 'Present on server errors; ties the response to the log line.',
+                            ],
                         ],
                     ],
                 ],

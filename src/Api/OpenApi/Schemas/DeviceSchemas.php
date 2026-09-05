@@ -71,6 +71,16 @@ final class DeviceSchemas
                     ],
                     'configurationSync' => Responses::ref('ConfigurationSync'),
                     'capabilities' => Responses::ref('DeviceCapabilitiesMatrix'),
+                    'enabledCapabilityKeys' => [
+                        'type' => 'array',
+                        'items' => ['type' => 'string'],
+                        'description' => 'Capability keys enabled for the device model, or the protocol defaults when no model is known.',
+                    ],
+                    'linkedDevices' => [
+                        'type' => 'array',
+                        'description' => 'Devices linked to this one through a gateway, each with rssiDbm and signalSeenAt.',
+                        'items' => ['type' => 'object'],
+                    ],
                 ],
             ],
             // O `imei` é obrigatório a criar e herdado do endereço a actualizar, e é a única

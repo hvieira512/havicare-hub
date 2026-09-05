@@ -56,6 +56,23 @@ final class OpenApiSpecSchemasTest extends TestCase
     }
 
     /**
+     * Um esquema que promete menos do que a resposta devolve engana quem gera tipos a partir
+     * da spec. Estes campos existem no serviço desde sempre; o portão prende-os ao esquema.
+     */
+    public function testDetailAndErrorSchemasDeclareEveryReturnedField(): void
+    {
+        $schemas = OpenApiSpec::get()['components']['schemas'] ?? [];
+
+        $detail = array_keys($schemas['DeviceDetailResponse']['properties'] ?? []);
+        self::assertContains('enabledCapabilityKeys', $detail);
+        self::assertContains('linkedDevices', $detail);
+
+        $error = array_keys($schemas['ErrorResponse']['properties']['error']['properties'] ?? []);
+        self::assertContains('fields', $error);
+        self::assertContains('requestId', $error);
+    }
+
+    /**
      * @return list<string> schema names referenced anywhere in the document
      */
     private function referencedSchemas(array $spec): array
