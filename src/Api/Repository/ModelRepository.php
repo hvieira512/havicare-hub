@@ -11,6 +11,9 @@ final class ModelRepository
     /** @var list<array<string, mixed>>|null */
     private ?array $rows = null;
 
+    /** @var array<string, array<string, mixed>>|null Índice fornecedor\0modelo em minúsculas. */
+    private ?array $index = null;
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -25,18 +28,30 @@ final class ModelRepository
 
     public function find(string $supplier, string $internalModel): ?array
     {
-        $supplier = mb_strtolower($supplier);
-        $internalModel = mb_strtolower($internalModel);
-        foreach ($this->all() as $row) {
-            if (
-                mb_strtolower((string)($row['supplier'] ?? '')) === $supplier
-                && mb_strtolower((string)($row['internal_model'] ?? '')) === $internalModel
-            ) {
-                return $row;
-            }
+        return $this->index()[self::modelKey($supplier, $internalModel)] ?? null;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function index(): array
+    {
+        if ($this->index !== null) {
+            return $this->index;
         }
 
-        return null;
+        $this->index = [];
+        foreach ($this->all() as $row) {
+            // A primeira linha vence, como o varrimento linear devolvia a primeira que casava.
+            $this->index[self::modelKey((string)($row['supplier'] ?? ''), (string)($row['internal_model'] ?? ''))] ??= $row;
+        }
+
+        return $this->index;
+    }
+
+    private static function modelKey(string $supplier, string $internalModel): string
+    {
+        return mb_strtolower($supplier) . "\0" . mb_strtolower($internalModel);
     }
 
     public function findById(int $id): ?array
@@ -65,7 +80,7 @@ final class ModelRepository
                 VALUES (?, ?, ?, ?, ?)
             ');
             $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $storedImagePath]);
-            $this->rows = null;
+            $this->rows = $this->index = null;
             return;
         }
 
@@ -75,7 +90,7 @@ final class ModelRepository
             WHERE supplier_id = ? AND lower(internal_model) = lower(?)
         ');
         $stmt->execute([$commercialName, $deviceType, $storedImagePath, $supplierId, $internalModel]);
-        $this->rows = null;
+        $this->rows = $this->index = null;
     }
 
     public function update(int $id, int $supplierId, string $internalModel, string $commercialName, string $deviceType, ?string $imagePath = null): bool
@@ -88,7 +103,7 @@ final class ModelRepository
         $storedImagePath = $imagePath ?? (string)($existing['image_path'] ?? '');
         $stmt = $this->pdo->prepare('UPDATE models SET supplier_id = ?, internal_model = ?, commercial_name = ?, device_type = ?, image_path = ? WHERE id = ?');
         $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $storedImagePath, $id]);
-        $this->rows = null;
+        $this->rows = $this->index = null;
 
         return $stmt->rowCount() > 0;
     }
@@ -115,7 +130,7 @@ final class ModelRepository
     {
         $stmt = $this->pdo->prepare('DELETE FROM models WHERE id = ?');
         $stmt->execute([$id]);
-        $this->rows = null;
+        $this->rows = $this->index = null;
     }
 
     private function findBySupplierId(int $supplierId, string $internalModel): ?array

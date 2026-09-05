@@ -51,19 +51,30 @@ final class DeviceEventStore
      */
     public function recent(string $imei, string $list, int $sinceSeq = 0): array
     {
-        $entries = array_values(array_filter(array_map(
-            static fn (string $raw): ?array => json_decode($raw, true) ?: null,
-            $this->redis->lrange($this->deviceListKey($imei, $list), 0, $this->limit - 1)
-        ), 'is_array'));
+        $raw = $this->redis->lrange($this->deviceListKey($imei, $list), 0, $this->limit - 1);
 
         if ($sinceSeq <= 0) {
-            return $entries;
+            return array_values(array_filter(array_map(
+                static fn (string $line): ?array => json_decode($line, true) ?: null,
+                $raw
+            ), 'is_array'));
         }
 
-        return array_values(array_filter(
-            $entries,
-            static fn (array $entry): bool => (int)($entry['seq'] ?? 0) > $sinceSeq
-        ));
+        // A lista é monótona — a mais nova à cabeça —, por isso na primeira entrada com
+        // seq <= cursor tudo o que vem depois já é anterior: pára aí, sem descodificar o resto.
+        $entries = [];
+        foreach ($raw as $line) {
+            $entry = json_decode($line, true);
+            if (!is_array($entry)) {
+                continue;
+            }
+            if ((int)($entry['seq'] ?? 0) <= $sinceSeq) {
+                break;
+            }
+            $entries[] = $entry;
+        }
+
+        return $entries;
     }
 
     /** O número de ordem da entrada mais recente, que é o cursor a devolver ao cliente. */
