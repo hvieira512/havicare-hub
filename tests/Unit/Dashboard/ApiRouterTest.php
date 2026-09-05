@@ -38,4 +38,44 @@ final class ApiRouterTest extends TestCase
         self::assertNull($router->match('GET', '/api/suppliers/10'));
         self::assertNull($router->match('DELETE', '/api/suppliers/abc'));
     }
+
+    /**
+     * O HTTP exige que um recurso que aceita GET aceita HEAD. As rotas do hub são todas GET,
+     * e um HEAD -- de um health check ou de uma sonda que confirma a existência antes de
+     * descarregar -- casa a rota GET equivalente em vez de dar 404.
+     */
+    public function testHeadFallsBackToTheGetRoute(): void
+    {
+        $router = new ApiRouter([
+            new ApiRoute('GET', '/api/devices/{imei}', static fn(): string => 'device'),
+        ]);
+
+        $match = $router->match('HEAD', '/api/devices/865028000000308');
+        self::assertNotNull($match);
+        self::assertSame(['imei' => '865028000000308'], $match['parameters']);
+    }
+
+    /** Um HEAD explícito ganha ao fallback: quem declarar a rota HEAD é ela que responde. */
+    public function testAnExplicitHeadRouteWins(): void
+    {
+        $router = new ApiRouter([
+            new ApiRoute('GET', '/api/thing', static fn(): string => 'get'),
+            new ApiRoute('HEAD', '/api/thing', static fn(): string => 'head'),
+        ]);
+
+        $match = $router->match('HEAD', '/api/thing');
+        self::assertNotNull($match);
+        self::assertSame('head', ($match['route']->handler())([], null));
+    }
+
+    /** O fallback é só de HEAD para GET: um POST em falta continua sem rota. */
+    public function testHeadFallbackDoesNotLeakToOtherMethods(): void
+    {
+        $router = new ApiRouter([
+            new ApiRoute('GET', '/api/thing', static fn(): string => 'get'),
+        ]);
+
+        self::assertNull($router->match('POST', '/api/thing'));
+        self::assertNull($router->match('HEAD', '/api/missing'));
+    }
 }

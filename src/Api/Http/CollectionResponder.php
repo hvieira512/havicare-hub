@@ -20,8 +20,10 @@ final class CollectionResponder
                 'total' => $total,
             ],
             'filters' => [
-                'applied' => $appliedFilters,
-                'available' => $availableFilters,
+                // Um array vazio serializa como `[]`; o esquema declara estes dois como objecto.
+                // A conversão garante `{}` mesmo nas listagens sem filtros (companies, suppliers).
+                'applied' => $appliedFilters === [] ? (object)[] : $appliedFilters,
+                'available' => $availableFilters === [] ? (object)[] : $availableFilters,
             ],
         ];
     }
