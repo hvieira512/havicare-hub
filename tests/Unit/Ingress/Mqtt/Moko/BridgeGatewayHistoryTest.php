@@ -101,6 +101,41 @@ final class BridgeGatewayHistoryTest extends TestCase
         self::assertSame([], $store->recent(self::GATEWAY, 'raw'));
     }
 
+    /**
+     * A observação de um aparelho retransmitido fica no histórico **dele**, para debugging.
+     * É no do aparelho e não no do gateway de propósito: guardá-la no gateway afogava as
+     * tramas de estado, e cada aparelho tem a sua própria janela de cem.
+     */
+    public function testTheObservationIsKeptInTheRelayedDeviceHistory(): void
+    {
+        [$bridge, , $store] = $this->bridge();
+
+        $this->deliver($bridge, $this->scanPayload());
+
+        $raw = $store->recent(self::BRACELET, 'raw');
+        self::assertNotSame([], $raw, 'o aparelho retransmitido guarda o seu raw');
+        self::assertSame('uplink', $raw[0]['direction'] ?? null);
+        // O original preservado: o MAC e a bateria crua que o gateway reportou.
+        self::assertStringContainsString(self::BRACELET, json_encode($raw[0]['debug']['payload'] ?? []));
+    }
+
+    /**
+     * O raw do aparelho retransmitido é amostrado para o histórico, como o do radar: muitas
+     * observações por segundo afogariam a janela e somariam escritas. No MQTT saem todas.
+     */
+    public function testTheRelayedRawIsSampledForTheHistory(): void
+    {
+        [$bridge, $mqtt, $store] = $this->bridge();
+
+        $this->deliver($bridge, $this->scanPayload());
+        $this->deliver($bridge, $this->scanPayload());
+
+        self::assertCount(1, $store->recent(self::BRACELET, 'raw'), 'o histórico do aparelho leva uma amostra');
+        // Mas as duas observações saem no MQTT -- o debugging ao vivo vê tudo.
+        $braceletRaw = array_filter($mqtt->raw, static fn (array $r): bool => $r['imei'] === self::BRACELET);
+        self::assertCount(2, $braceletRaw, 'no MQTT saem as duas');
+    }
+
     public function testAStatusFrameIsKeptInTheGatewayHistory(): void
     {
         [$bridge, , $store] = $this->bridge();
@@ -137,7 +172,9 @@ final class BridgeGatewayHistoryTest extends TestCase
         $this->deliver($bridge, $this->statusPayload());
         $this->deliver($bridge, $this->scanPayload());
 
-        self::assertCount(2, $mqtt->raw);
+        // Três: o raw do gateway na trama de estado, e no scan o raw do gateway mais o raw da
+        // observação da pulseira retransmitida.
+        self::assertCount(3, $mqtt->raw);
     }
 
     /** E o relatório de scan continua a ser despachado para o dispositivo retransmitido. */

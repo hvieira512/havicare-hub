@@ -135,6 +135,32 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $company = (string)($device['company'] ?? 'null');
         $nowMs = (int) floor(microtime(true) * 1000);
 
+        // O radar fala directamente por MQTT: a trama que chega é a mensagem original dele, e
+        // um radar registado publica-a em `raw` para debugging, como o relógio e o NCS já fazem.
+        $raw = [
+            'direction' => 'uplink',
+            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
+            'device' => [
+                'id' => $deviceKey,
+                'supplier' => (string)$device['supplier'],
+                'model' => (string)$device['model'],
+                'commercialName' => (string)($device['commercialName'] ?? ''),
+            ],
+            'data' => $upstreamPayload,
+            'debug' => [
+                'protocol' => 'qinglanst-radar',
+                'transport' => 'mqtt',
+                'encoding' => 'json',
+                'payload' => $upstreamPayload,
+                'sourceTopic' => $topic,
+            ],
+        ];
+        // O MQTT leva tudo -- é o debugging ao vivo; o histórico da dashboard leva uma amostra.
+        $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
+        if ($this->dashboardStore !== null && $this->dashboardWritePolicy->shouldStoreRaw($deviceKey, $nowMs)) {
+            $this->dashboardStore->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        }
+
         $redisSeenDuration = 0;
         if ($this->dashboardStore !== null && $this->dashboardWritePolicy->shouldUpdateSeen($deviceKey, $nowMs)) {
             $redisSeenStart = hrtime(true);

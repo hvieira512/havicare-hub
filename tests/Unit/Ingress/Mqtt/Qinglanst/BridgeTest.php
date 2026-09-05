@@ -87,6 +87,44 @@ final class BridgeTest extends TestCase
     }
 
     /**
+     * Um radar registado publica o `raw` da mensagem, para debugging -- fala directamente por
+     * MQTT, portanto a trama que chega é a mensagem original dele, tal como o relógio e o NCS.
+     */
+    public function testARegisteredRadarPublishesTheRawMessage(): void
+    {
+        $mqttBridge = new RecordingHubMqttBridge();
+        $bridge = new Bridge(
+            new FakeMqttSubscriber(),
+            IngressFixtures::whitelist([
+                'radar-canonical-1' => IngressFixtures::radar() + ['deviceId' => 'radar-topic-uid'],
+            ]),
+            $mqttBridge,
+            decoder: new \Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder(),
+            normalizer: new \Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer(),
+        );
+
+        $bridge->handleReceivedMessage(
+            'radar/1001/radar-topic-uid',
+            json_encode([
+                'payload' => [
+                    'deviceCode' => 'radar-topic-uid',
+                    'posstatics' => base64_encode($this->bytes([
+                        0x01, 0x02, 0x03, 0x00, 0x2A, 0x05, 0x06, 0x07, 0x08, 0x09, 0x01, 0, 0, 0, 0, 0,
+                    ])),
+                ],
+            ], JSON_THROW_ON_ERROR)
+        );
+
+        self::assertNotEmpty($mqttBridge->raw, 'o radar publica raw');
+        $raw = $mqttBridge->raw[0];
+        self::assertSame('radar-canonical-1', $raw['imei'], 'o raw vai na chave canónica, não no uid do tópico');
+        self::assertSame('uplink', $raw['payload']['direction']);
+        self::assertSame('qinglanst-radar', $raw['payload']['debug']['protocol']);
+        // O original preservado: o deviceCode que chegou no payload MQTT tem de estar lá.
+        self::assertStringContainsString('radar-topic-uid', json_encode($raw['payload']['debug']['payload']));
+    }
+
+    /**
      * @param list<int> $bytes
      */
     private function bytes(array $bytes): string

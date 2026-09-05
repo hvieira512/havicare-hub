@@ -48,4 +48,31 @@ final class DashboardWritePolicyTest extends TestCase
         self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'positions', 0));
         self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'positions', 1));
     }
+
+    /**
+     * O raw do radar é amostrado para o histórico: um radar publica muitas mensagens por
+     * segundo, e guardá-las todas afogava a janela e somava escritas ao caminho quente. No
+     * MQTT continua a sair tudo -- é só o histórico da dashboard que leva uma amostra.
+     */
+    public function testRawIsSampledForTheHistory(): void
+    {
+        $policy = new DashboardWritePolicy(rawHistorySampleMs: 30000);
+
+        self::assertTrue($policy->shouldStoreRaw('radar-1', 0), 'a primeira vai para o histórico');
+        self::assertFalse($policy->shouldStoreRaw('radar-1', 5000), 'dentro da janela, não');
+        self::assertFalse($policy->shouldStoreRaw('radar-1', 29999), 'ainda dentro da janela');
+        self::assertTrue($policy->shouldStoreRaw('radar-1', 30000), 'passada a janela, vai');
+    }
+
+    /** A janela do raw é por dispositivo, e desliga-se com o intervalo a zero. */
+    public function testRawSamplingIsPerDeviceAndCanBeDisabled(): void
+    {
+        $policy = new DashboardWritePolicy(rawHistorySampleMs: 30000);
+        self::assertTrue($policy->shouldStoreRaw('radar-1', 0));
+        self::assertTrue($policy->shouldStoreRaw('radar-2', 0), 'outro radar não é calado pelo primeiro');
+
+        $off = new DashboardWritePolicy(rawHistorySampleMs: 0);
+        self::assertTrue($off->shouldStoreRaw('radar-1', 0));
+        self::assertTrue($off->shouldStoreRaw('radar-1', 1), 'com a amostragem a zero, tudo vai');
+    }
 }

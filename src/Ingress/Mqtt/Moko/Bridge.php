@@ -35,6 +35,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     private array $onlineGateways = [];
     /** @var array<string, float> */
     private array $gatewayLastSeenAt = [];
+    /** @var array<string, float> */
+    private array $lastRelayedRawAt = [];
     private \Closure $clock;
 
     public function __construct(
@@ -50,6 +52,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         private readonly int $dedupeTtlSeconds = 5,
         private readonly int $telemetryRefreshSeconds = 60,
         private readonly int $gatewayIdleTimeoutSeconds = 180,
+        private readonly int $rawHistorySampleSeconds = 30,
         private readonly ?MessageDecoder $messageDecoder = null,
         private readonly ?MonitMecsProDecoder $monitDecoder = null,
         private readonly ?MonitNormalizer $monitNormalizer = null,
@@ -217,23 +220,78 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     {
         $monit = ($this->monitDecoder ?? new MonitMecsProDecoder())->decode($observation);
         if ($monit !== null) {
-            $this->handleMonitObservation($gateway, $monit);
+            $this->handleMonitObservation($gateway, $monit, $observation);
             return;
         }
 
         $w6b = ($this->w6bDecoder ?? new W6bDecoder())->decode($observation);
         if ($w6b !== null) {
-            $this->handleW6bObservation($gateway, $w6b);
+            $this->handleW6bObservation($gateway, $w6b, $observation);
             return;
         }
 
         $w6 = ($this->w6Decoder ?? new W6Decoder())->decode($observation);
         if ($w6 !== null) {
-            $this->handleW6Observation($gateway, $w6);
+            $this->handleW6Observation($gateway, $w6, $observation);
             return;
         }
 
         $this->recordUnclaimedSighting($gateway, $observation);
+    }
+
+    /**
+     * Guarda a observação crua no histórico do aparelho retransmitido, para debugging.
+     *
+     * No histórico **dele** e não do gateway de propósito: as observações são de alta
+     * frequência e afogariam as tramas de estado do gateway; a lista `raw` do aparelho é
+     * dedicada, portanto não expulsa a sua própria telemetria. Só para aparelhos já
+     * autorizados -- o `$device` chega resolvido e ligado a este gateway.
+     *
+     * @param array<string, mixed> $device @param array<string, mixed> $gateway
+     * @param array<string, mixed> $observation
+     */
+    private function recordRelayedRaw(array $device, array $gateway, string $protocol, array $observation): void
+    {
+        $deviceKey = (string)$device['imei'];
+        $deviceType = (string)$device['deviceType'];
+        $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
+        $company = (string)($device['company'] ?? 'null');
+        $raw = [
+            'direction' => 'uplink',
+            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
+            'device' => $this->device($device),
+            'data' => $observation,
+            'debug' => [
+                'protocol' => $protocol,
+                'transport' => 'ble_gateway',
+                'encoding' => 'json',
+                'payload' => $observation,
+                'gatewayId' => (string)$gateway['imei'],
+            ],
+        ];
+        // O MQTT leva todas as observações -- é o debugging ao vivo; o histórico da dashboard
+        // leva uma amostra por dispositivo, para não afogar a janela nem somar escritas.
+        $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
+        if ($this->dashboardStore !== null && $this->shouldStoreRelayedRaw($deviceKey)) {
+            $this->dashboardStore->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        }
+    }
+
+    private function shouldStoreRelayedRaw(string $deviceKey): bool
+    {
+        $now = (float)($this->clock)();
+        if ($this->rawHistorySampleSeconds <= 0) {
+            $this->lastRelayedRawAt[$deviceKey] = $now;
+            return true;
+        }
+
+        $last = $this->lastRelayedRawAt[$deviceKey] ?? null;
+        if ($last !== null && ($now - $last) < $this->rawHistorySampleSeconds) {
+            return false;
+        }
+
+        $this->lastRelayedRawAt[$deviceKey] = $now;
+        return true;
     }
 
     /**
@@ -263,6 +321,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return;
         }
 
+        // Um aparelho registado cujo anúncio nenhum decoder leu; o raw ajuda a perceber porquê.
+        $this->recordRelayedRaw($device, $gateway, $protocol, $observation);
         $this->recordSignal($device, $gateway, $protocol, $observation['rssi']);
     }
 
@@ -318,13 +378,14 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
      *
      * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
      */
-    private function handleW6bObservation(array $gateway, array $decoded): void
+    private function handleW6bObservation(array $gateway, array $decoded, array $observation): void
     {
         $deviceKey = (string)$decoded['mac'];
         $device = $this->linkedDevice($gateway, $deviceKey, 'bracelet', 'moko-w6b');
         if ($device === null) {
             return;
         }
+        $this->recordRelayedRaw($device, $gateway, 'moko-w6b', $observation);
 
         $previousTriggerCount = null;
         if (isset($decoded['alarm']['pressMode'], $decoded['alarm']['triggerCount'])) {
@@ -375,14 +436,16 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
      * primeiro avistamento de um modo dá o alarme, os seguintes calam-se até a janela fechar.
      *
      * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
+     * @param array<string, mixed> $observation
      */
-    private function handleW6Observation(array $gateway, array $decoded): void
+    private function handleW6Observation(array $gateway, array $decoded, array $observation): void
     {
         $deviceKey = (string)$decoded['mac'];
         $device = $this->linkedDevice($gateway, $deviceKey, 'bracelet', 'moko-w6', 'W6');
         if ($device === null) {
             return;
         }
+        $this->recordRelayedRaw($device, $gateway, 'moko-w6', $observation);
 
         $pressMode = (string)($decoded['alarm']['pressMode'] ?? '');
         if (
@@ -501,14 +564,18 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         }
     }
 
-    /** @param array<string, mixed> $gateway @param array<string, mixed> $decoded */
-    private function handleMonitObservation(array $gateway, array $decoded): void
+    /**
+     * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
+     * @param array<string, mixed> $observation
+     */
+    private function handleMonitObservation(array $gateway, array $decoded, array $observation): void
     {
         $sensorKey = (string)$decoded['mac'];
         $sensor = $this->linkedDevice($gateway, $sensorKey, 'diaper_sensor', 'monit-mecs-pro-ble');
         if ($sensor === null) {
             return;
         }
+        $this->recordRelayedRaw($sensor, $gateway, 'monit-mecs-pro-ble', $observation);
         if (!$this->state->acceptObservation($sensorKey, hash('sha256', (string)$decoded['raw20']), $this->dedupeTtlSeconds)) {
             return;
         }

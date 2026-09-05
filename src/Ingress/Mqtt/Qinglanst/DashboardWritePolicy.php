@@ -8,10 +8,13 @@ final class DashboardWritePolicy
     private array $lastSeenMs = [];
     /** @var array<string, int> */
     private array $lastTelemetryMs = [];
+    /** @var array<string, int> */
+    private array $lastRawMs = [];
 
     public function __construct(
         private readonly int $deviceSeenMinIntervalMs = 5000,
         private readonly int $positionHistorySampleMs = 1000,
+        private readonly int $rawHistorySampleMs = 30000,
     ) {
     }
 
@@ -51,6 +54,27 @@ final class DashboardWritePolicy
         }
 
         $this->lastTelemetryMs[$key] = $nowMs;
+        return true;
+    }
+
+    /**
+     * O raw vai para o histórico no máximo uma vez por janela, por dispositivo. Um radar
+     * publica muitas mensagens por segundo; no MQTT saem todas, mas o histórico da dashboard
+     * leva só uma amostra, para não se afogar nem somar escritas ao caminho quente.
+     */
+    public function shouldStoreRaw(string $deviceKey, int $nowMs): bool
+    {
+        if ($this->rawHistorySampleMs <= 0) {
+            $this->lastRawMs[$deviceKey] = $nowMs;
+            return true;
+        }
+
+        $last = $this->lastRawMs[$deviceKey] ?? null;
+        if ($last !== null && ($nowMs - $last) < $this->rawHistorySampleMs) {
+            return false;
+        }
+
+        $this->lastRawMs[$deviceKey] = $nowMs;
         return true;
     }
 }

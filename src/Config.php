@@ -146,6 +146,7 @@ class Config
                 'dedupe_ttl_seconds' => max(1, (int)(getenv('MOKO_GATEWAY_DEDUPE_TTL_SECONDS') ?: 5)),
                 'telemetry_refresh_seconds' => max(1, (int)(getenv('MOKO_GATEWAY_TELEMETRY_REFRESH_SECONDS') ?: 60)),
                 'idle_timeout_seconds' => max(10, (int)(getenv('MOKO_GATEWAY_IDLE_TIMEOUT_SECONDS') ?: 180)),
+                'raw_history_sample_seconds' => max(0, (int)(getenv('MOKO_GATEWAY_RAW_HISTORY_SAMPLE_SECONDS') ?: 30)),
             ],
             'qinglanst' => [
                 'enabled' => in_array(strtolower(trim((string)(getenv('QINGLANST_ENABLED') ?: 'false'))), ['1', 'true', 'yes', 'on'], true),
@@ -157,6 +158,7 @@ class Config
                 'client_id_prefix' => getenv('QINGLANST_CLIENT_ID_PREFIX') ?: 'qinglanst-radar',
                 'dashboard_seen_min_interval_ms' => max(0, (int)(getenv('QINGLANST_DASHBOARD_SEEN_MIN_INTERVAL_MS') ?: 5000)),
                 'position_history_sample_ms' => max(0, (int)(getenv('QINGLANST_POSITION_HISTORY_SAMPLE_MS') ?: 1000)),
+                'raw_history_sample_ms' => max(0, (int)(getenv('QINGLANST_RAW_HISTORY_SAMPLE_MS') ?: 30000)),
                 'stats_flush_seconds' => max(1, (int)(getenv('QINGLANST_STATS_FLUSH_SECONDS') ?: 300)),
             ],
             'mqtt' => [

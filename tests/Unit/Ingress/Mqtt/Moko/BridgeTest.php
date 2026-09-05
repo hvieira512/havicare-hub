@@ -31,7 +31,10 @@ final class BridgeTest extends TestCase
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/d48c49f7909c/raw', $payload);
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/d48c49f7909c/raw', $payload);
 
-        self::assertCount(2, $mqtt->raw);
+        // Quatro: cada scan gera o raw do gateway e o raw da observação do sensor. O raw sai
+        // antes do dedup -- para debugging, o registo cru mostra tudo o que chegou, incluindo
+        // a mensagem repetida que a telemetria normalizada deduplica.
+        self::assertCount(4, $mqtt->raw);
         // A proximidade é reportada uma vez por avistamento aceite, à frente da telemetria
         // normalizada; a mensagem repetida é deduplicada antes dela.
         self::assertSame(['proximity', 'battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition'], array_column($mqtt->telemetry, 'type'));
