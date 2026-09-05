@@ -6,6 +6,9 @@ use Predis\ClientInterface;
 
 final class RedisObservationStateStore implements ObservationStateStore
 {
+    /** O estado da condição persiste enquanto o dispositivo reportar; um dia de folga chega. */
+    private const CONDITION_TTL_SECONDS = 86400;
+
     public function __construct(
         private ClientInterface $redis,
         private string $prefix = 'hub:moko',
@@ -33,7 +36,14 @@ final class RedisObservationStateStore implements ObservationStateStore
         if (is_array($stored) && ($stored['fingerprint'] ?? '') === $fingerprint && $now - (int)($stored['publishedAt'] ?? 0) < max(1, $refreshSeconds)) {
             return false;
         }
-        $this->redis->set($key, json_encode(['fingerprint' => $fingerprint, 'publishedAt' => $now], JSON_THROW_ON_ERROR));
+        // A chave só é consultada dentro da janela de refrescamento; o prazo é várias vezes essa
+        // janela, para expirar bem depois de deixar de ser útil e não virar telemetria repetida.
+        $this->redis->set(
+            $key,
+            json_encode(['fingerprint' => $fingerprint, 'publishedAt' => $now], JSON_THROW_ON_ERROR),
+            'EX',
+            max($refreshSeconds * 4, 3600)
+        );
         return true;
     }
 
@@ -42,7 +52,7 @@ final class RedisObservationStateStore implements ObservationStateStore
     {
         $key = "{$this->prefix}:condition:{$deviceKey}";
         $previous = $this->redis->get($key);
-        $this->redis->set($key, $condition);
+        $this->redis->set($key, $condition, 'EX', self::CONDITION_TTL_SECONDS);
         $known = is_string($previous) && $previous !== '';
         if ($known && $previous === $condition) {
             return null;

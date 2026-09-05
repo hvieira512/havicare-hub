@@ -221,11 +221,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return $resolved;
         }
 
-        $resolved = $this->whitelist->resolve($deviceUid, 'qinglanst-radar', $deviceUid);
-        if ($resolved !== null) {
-            return $resolved;
-        }
-
         // A licença é o que o UID não diz, e o tópico é `radar/{licenseId}/{uid}`. Sem ela,
         // quem lê a notificação não sabe a que licença registar o radar que apareceu --
         // e é o único campo do assistente que não se deduz do protocolo.

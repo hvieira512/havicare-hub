@@ -93,6 +93,7 @@ final class InMemoryRedisClient implements ClientInterface
             'zrem' => $this->zrem((string)$arguments[0], $arguments[1]),
             'zrangebyscore' => $this->zrangebyscore((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
             'setex' => $this->setex((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
+            'set' => $this->set($arguments),
             'get' => $this->get((string)$arguments[0]),
             'del' => $this->del($arguments[0]),
             'incr' => $this->incr((string)$arguments[0]),
@@ -274,6 +275,46 @@ final class InMemoryRedisClient implements ClientInterface
         $this->stringExpiresAt[$key] = time() + max(1, $seconds);
 
         return 'OK';
+    }
+
+    /**
+     * O `set` do Predis com as opções variádicas que o hub usa: `EX <segundos>` e `NX`.
+     *
+     * @param array<int, mixed> $arguments
+     */
+    private function set(array $arguments): ?string
+    {
+        $key = (string)$arguments[0];
+        $value = (string)$arguments[1];
+        $ttl = null;
+        $onlyIfAbsent = false;
+        for ($i = 2, $n = count($arguments); $i < $n; $i++) {
+            $option = strtoupper((string)$arguments[$i]);
+            if ($option === 'EX' && isset($arguments[$i + 1])) {
+                $ttl = (int)$arguments[++$i];
+            } elseif ($option === 'NX') {
+                $onlyIfAbsent = true;
+            }
+        }
+
+        if ($onlyIfAbsent && $this->get($key) !== null) {
+            return null;
+        }
+
+        $this->strings[$key] = $value;
+        if ($ttl !== null) {
+            $this->stringExpiresAt[$key] = time() + max(1, $ttl);
+        } else {
+            unset($this->stringExpiresAt[$key]);
+        }
+
+        return 'OK';
+    }
+
+    /** Segundos até uma chave expirar, ou null se não tem prazo. Para os testes verificarem o TTL. */
+    public function ttlFor(string $key): ?int
+    {
+        return isset($this->stringExpiresAt[$key]) ? $this->stringExpiresAt[$key] - time() : null;
     }
 
     private function get(string $key): ?string
