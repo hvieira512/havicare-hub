@@ -2,6 +2,8 @@
 
 namespace Hub\Device;
 
+use Hub\Protocol\Adapter\FourPTouchAdapter;
+
 final class DeviceEventDecoder
 {
     /**
@@ -239,12 +241,12 @@ final class DeviceEventDecoder
 
     private function isFourPTouchPosition(string $nativeType): bool
     {
-        return in_array($nativeType, ['UD', 'UD2', 'UD_WCDMA', 'UD_LTE'], true);
+        return in_array($nativeType, FourPTouchAdapter::LOCATION_FRAME_TYPES, true);
     }
 
     private function isFourPTouchAlarm(string $nativeType): bool
     {
-        return in_array($nativeType, ['AL', 'AL_WCDMA', 'AL_LTE'], true);
+        return in_array($nativeType, FourPTouchAdapter::ALARM_FRAME_TYPES, true);
     }
 
     private function event(string $feature, string $nativeType, array $payload, array $extra = []): ?array

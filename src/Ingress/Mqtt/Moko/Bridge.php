@@ -428,28 +428,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $previousTriggerCount,
         );
 
-        $deviceType = (string)$device['deviceType'];
-        $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
-        $company = (string)($device['company'] ?? 'null');
-        $this->dashboardStore?->deviceSeen($deviceKey, [
-            'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
-            'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
-            'protocol' => 'moko-w6b', 'transport' => 'ble_gateway', 'online' => '1',
-        ]);
-        $this->recordSignal($device, $gateway, 'moko-w6b', $decoded['rssiDbm'] ?? null);
-
-        foreach ($normalized['telemetry'] as $capability => $telemetry) {
-            if (!$this->state->shouldPublish($deviceKey, $capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
-                continue;
-            }
-            $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
-        }
-
-        foreach ($normalized['events'] as $event) {
-            $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
-        }
+        $this->publishRelayedTelemetry($device, $gateway, 'moko-w6b', $normalized, $decoded['rssiDbm'] ?? null);
+        $this->publishRelayedEvents($device, $gateway, $normalized['events']);
     }
 
     /**
@@ -482,25 +462,53 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $normalized = ($this->w6Normalizer ?? new W6Normalizer())
             ->normalize($decoded, $device, (string)$gateway['imei']);
 
+        $this->publishRelayedTelemetry($device, $gateway, 'moko-w6', $normalized, $decoded['rssiDbm'] ?? null);
+        $this->publishRelayedEvents($device, $gateway, $normalized['events']);
+    }
+
+    /**
+     * O que os três aparelhos retransmitidos publicam da mesma maneira: marca-o visto,
+     * reporta o sinal, e publica a telemetria estrangulada por capacidade. Os eventos ficam
+     * a cargo de cada um -- o MONIT tem a sua transição própria.
+     *
+     * @param array<string, mixed> $device @param array<string, mixed> $gateway
+     * @param array{telemetry: array<string, mixed>} $normalized
+     */
+    private function publishRelayedTelemetry(array $device, array $gateway, string $protocol, array $normalized, mixed $rssiDbm): void
+    {
+        $deviceKey = (string)$device['imei'];
         $deviceType = (string)$device['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
         $this->dashboardStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
-            'protocol' => 'moko-w6', 'transport' => 'ble_gateway', 'online' => '1',
+            'protocol' => $protocol, 'transport' => 'ble_gateway', 'online' => '1',
         ]);
-        $this->recordSignal($device, $gateway, 'moko-w6', $decoded['rssiDbm'] ?? null);
+        $this->recordSignal($device, $gateway, $protocol, $rssiDbm);
 
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
-            if (!$this->state->shouldPublish($deviceKey, $capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
+            if (!$this->state->shouldPublish($deviceKey, (string)$capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
                 continue;
             }
             $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
             $this->dashboardStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
+    }
 
-        foreach ($normalized['events'] as $event) {
+    /**
+     * Publica os eventos de um aparelho retransmitido no MQTT e no histórico dele.
+     *
+     * @param array<string, mixed> $device @param array<string, mixed> $gateway
+     * @param list<array<string, mixed>> $events
+     */
+    private function publishRelayedEvents(array $device, array $gateway, array $events): void
+    {
+        $deviceKey = (string)$device['imei'];
+        $deviceType = (string)$device['deviceType'];
+        $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
+        $company = (string)($device['company'] ?? 'null');
+        foreach ($events as $event) {
             $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
             $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
@@ -607,22 +615,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $sensitivity = $this->diaperSensitivity?->forDevice($sensorKey) ?? DiaperSensitivity::normal();
         $normalized = ($this->monitNormalizer ?? new MonitNormalizer())
             ->normalize($decoded, $sensor, (string)$gateway['imei'], $sensitivity);
-        $deviceType = (string)$sensor['deviceType'];
-        $licenseId = DeviceMetadata::normalizeLicenseId($sensor['licenseId'] ?? 0);
-        $company = (string)($sensor['company'] ?? 'null');
-        $this->dashboardStore?->deviceSeen($sensorKey, [
-            'supplier' => (string)$sensor['supplier'], 'model' => (string)$sensor['model'],
-            'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
-            'protocol' => 'monit-mecs-pro-ble', 'transport' => 'ble_gateway', 'online' => '1',
-        ]);
-        $this->recordSignal($sensor, $gateway, 'monit-mecs-pro-ble', $decoded['rssiDbm'] ?? null);
-        foreach ($normalized['telemetry'] as $capability => $telemetry) {
-            if (!$this->state->shouldPublish($sensorKey, $capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
-                continue;
-            }
-            $this->mqttBridge->publishTelemetry($sensorKey, $telemetry, $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($sensorKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
-        }
+        $this->publishRelayedTelemetry($sensor, $gateway, 'monit-mecs-pro-ble', $normalized, $decoded['rssiDbm'] ?? null);
 
         // A sensibilidade entra no valor guardado e não na chave: apertá-la numa fralda já
         // suja tem de contar como transição e dar alarme.
@@ -641,18 +634,14 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
                 'device' => $this->device($sensor), 'data' => ['previousState' => $previous],
                 'source' => ['protocol' => 'monit-mecs-pro-ble', 'gatewayId' => (string)$gateway['imei']],
             ];
-            $this->mqttBridge->publishEvent($sensorKey, $event, $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($sensorKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->publishRelayedEvents($sensor, $gateway, [$event]);
         }
     }
 
     /** @param array<string, mixed> $device @return array<string, mixed> */
     private function enrich(array $device): array
     {
-        if (($device['commercialName'] ?? '') === '') {
-            $device['commercialName'] = $this->commercialModelResolver?->resolveCommercialName((string)$device['supplier'], (string)$device['model']) ?? '';
-        }
-        return $device;
+        return $this->enrichWithCommercialName($device, $this->commercialModelResolver);
     }
 
     /** @param array<string, mixed> $device */

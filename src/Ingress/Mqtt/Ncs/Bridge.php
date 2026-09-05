@@ -126,24 +126,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string, commercialName?: string} $device
-     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string, commercialName?: string}
+     * @param array<string, mixed> $device
+     * @return array<string, mixed>
      */
     private function enrichDevice(array $device): array
     {
-        if (($device['commercialName'] ?? '') !== '') {
-            return $device;
-        }
-
-        $commercialName = $this->commercialModelResolver?->resolveCommercialName(
-            (string)($device['supplier'] ?? ''),
-            (string)($device['model'] ?? '')
-        ) ?? '';
-
-        if ($commercialName !== '') {
-            $device['commercialName'] = $commercialName;
-        }
-
-        return $device;
+        return $this->enrichWithCommercialName($device, $this->commercialModelResolver);
     }
 }

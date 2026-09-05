@@ -3,6 +3,7 @@
 namespace Hub\Ingress\Mqtt;
 
 use Hub\Dashboard\DashboardStoreContract;
+use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Log\Logger;
 use Hub\Mqtt\ReconnectsOnLoopFailure;
@@ -96,6 +97,31 @@ abstract class Bridge implements MqttIngress
                 "Failed to record rejected device identity={$identity}: {$e->getMessage()}"
             );
         }
+    }
+
+    /**
+     * Acrescenta o nome comercial ao dispositivo, quando o resolvedor o conhece e ele ainda
+     * não o traz. Comum aos três ingressos MQTT, que subscrevem o mesmo resolvedor.
+     *
+     * @param array<string, mixed> $device
+     * @return array<string, mixed>
+     */
+    protected function enrichWithCommercialName(array $device, ?CommercialModelResolver $resolver): array
+    {
+        if (($device['commercialName'] ?? '') !== '') {
+            return $device;
+        }
+
+        $commercialName = $resolver?->resolveCommercialName(
+            (string)($device['supplier'] ?? ''),
+            (string)($device['model'] ?? '')
+        ) ?? '';
+
+        if ($commercialName !== '') {
+            $device['commercialName'] = $commercialName;
+        }
+
+        return $device;
     }
 
     private function subscribe(): void

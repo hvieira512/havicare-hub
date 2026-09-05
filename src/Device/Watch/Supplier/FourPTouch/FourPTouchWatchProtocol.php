@@ -5,6 +5,7 @@ namespace Hub\Device\Watch\Supplier\FourPTouch;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
+use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Device\Watch\AbstractWatchProtocol;
 use Hub\Device\Watch\WatchResponse;
 
@@ -46,7 +47,7 @@ final class FourPTouchWatchProtocol extends AbstractWatchProtocol
             return [];
         }
 
-        if (in_array($type, ['AL', 'AL_WCDMA', 'AL_LTE'], true)) {
+        if (in_array($type, FourPTouchAdapter::ALARM_FRAME_TYPES, true)) {
             return [];
         }
 

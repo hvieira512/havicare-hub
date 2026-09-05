@@ -4,6 +4,14 @@ namespace Hub\Protocol\Adapter;
 
 class FourPTouchAdapter implements DeviceAdapterInterface
 {
+    /**
+     * Os tipos de trama de posição e de alarme do 4P Touch, por rede. Um `_LTE` novo entra
+     * aqui uma vez, e não em cada sítio que os enumera -- falhar um deixava a trama a chegar
+     * em `raw` sem virar telemetria, em silêncio.
+     */
+    public const LOCATION_FRAME_TYPES = ['UD', 'UD2', 'UD_WCDMA', 'UD_LTE'];
+    public const ALARM_FRAME_TYPES = ['AL', 'AL_WCDMA', 'AL_LTE'];
+
     public function protocol(): string
     {
         return 'four-p-touch';
@@ -318,12 +326,12 @@ class FourPTouchAdapter implements DeviceAdapterInterface
 
     private function isPositionType(string $type): bool
     {
-        return in_array($type, ['UD', 'UD2', 'UD_WCDMA', 'UD_LTE'], true);
+        return in_array($type, self::LOCATION_FRAME_TYPES, true);
     }
 
     private function isAlarmType(string $type): bool
     {
-        return in_array($type, ['AL', 'AL_WCDMA', 'AL_LTE'], true);
+        return in_array($type, self::ALARM_FRAME_TYPES, true);
     }
 
     private function networkTypeFromType(string $type): ?string
