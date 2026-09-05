@@ -29,6 +29,13 @@ final class ConfigurationSyncStatus
         'response_timeout',
     ];
 
+    private PublicConfigurationValue $publicForm;
+
+    public function __construct()
+    {
+        $this->publicForm = new PublicConfigurationValue();
+    }
+
     /**
      * As capacidades que o dispositivo não confirmou, agrupadas por secção e chave.
      *
@@ -86,7 +93,7 @@ final class ConfigurationSyncStatus
                 if (is_array($value) && array_key_exists('supported', $value) && !array_key_exists('value', $value)) {
                     continue;
                 }
-                $flattened["{$section}.{$key}"] = $this->publicConfigurationValueForGenericKey(
+                $flattened["{$section}.{$key}"] = $this->publicForm->forGenericKey(
                     $protocol,
                     $key,
                     $this->extractCapabilityValue($value)
@@ -191,120 +198,5 @@ final class ConfigurationSyncStatus
         }
 
         return $value;
-    }
-
-    private function publicConfigurationValueForGenericKey(string $protocol, string $genericKey, mixed $value): mixed
-    {
-        return match ($genericKey) {
-            'sos_contacts' => is_array($value)
-                ? $this->stringifyPhoneList($value)
-                : [],
-            'call_whitelist' => is_array($value)
-                ? $this->stringifyCallWhitelistValue($protocol, $value)
-                : $value,
-            default => $value,
-        };
-    }
-
-    /**
-     * O Vivistar guarda as entradas da whitelist como contactos com nome; todos os outros
-     * protocolos comparam números de telefone simples.
-     *
-     * @param array<string|int, mixed> $value
-     */
-    private function stringifyCallWhitelistValue(string $protocol, array $value): mixed
-    {
-        if ($protocol === 'vivistar-iw') {
-            $normalize = self::normalizePublicContactItem(...);
-            if (array_key_exists('contacts', $value) && is_array($value['contacts'])) {
-                return array_values(array_filter(array_map(
-                    $normalize,
-                    $value['contacts']
-                )));
-            }
-
-            if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
-                return array_values(array_filter(array_map(
-                    static fn(mixed $phone): ?array => $normalize(['phone' => $phone]),
-                    $value['numbers']
-                )));
-            }
-
-            if (array_is_list($value)) {
-                if ($value !== [] && is_array($value[0] ?? null)) {
-                    return array_values(array_filter(array_map(
-                        $normalize,
-                        $value
-                    )));
-                }
-
-                return array_values(array_filter(array_map(
-                    static fn(mixed $phone): ?array => $normalize(['phone' => $phone]),
-                    $value
-                )));
-            }
-
-            return $value;
-        }
-
-        if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
-            return self::stringList($value['numbers']);
-        }
-
-        if (array_key_exists('contacts', $value) && is_array($value['contacts'])) {
-            return self::stringList(array_map(
-                static fn(mixed $contact): string => self::normalizePublicContactPhone($contact),
-                $value['contacts']
-            ));
-        }
-
-        if (!array_is_list($value)) {
-            if (array_key_exists('phone', $value)) {
-                return self::stringList([(string)$value['phone']]);
-            }
-
-            return $value;
-        }
-
-        if ($value !== [] && is_array($value[0] ?? null)) {
-            return self::stringList(array_map(
-                static fn(mixed $contact): string => self::normalizePublicContactPhone($contact),
-                $value
-            ));
-        }
-
-        return self::stringList($value);
-    }
-
-    /**
-     * @return array{name: string, phone: string}|null
-     */
-    private static function normalizePublicContactItem(mixed $item): ?array
-    {
-        if (!is_array($item)) {
-            $phone = trim((string)$item);
-            if ($phone === '') {
-                return null;
-            }
-
-            return ['name' => '', 'phone' => $phone];
-        }
-
-        $name = trim((string)($item['name'] ?? ''));
-        $phone = trim((string)($item['phone'] ?? ''));
-        if ($phone === '') {
-            return null;
-        }
-
-        return ['name' => $name, 'phone' => $phone];
-    }
-
-    private static function normalizePublicContactPhone(mixed $item): string
-    {
-        if (is_array($item)) {
-            return trim((string)($item['phone'] ?? ''));
-        }
-
-        return trim((string)$item);
     }
 }
