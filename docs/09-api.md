@@ -433,6 +433,8 @@ ascendente.
 | `effectiveConfigurations` | Os que o aparelho **confirmou** |
 | `configurationSync` | A convergência entre os dois, com revisões e operações |
 | `configuration` | Contadores de resumo |
+| `enabledCapabilityKeys` | As chaves de capacidade activas para o modelo, ou as do protocolo quando não há modelo |
+| `linkedDevices` | Os aparelhos ligados a este por um gateway, com `rssiDbm` e `signalSeenAt` |
 
 O campo **`capabilities` reflete o que o modelo suporta**, e não o que está
 armazenado ou confirmado pelo dispositivo. Um dispositivo recém-registado

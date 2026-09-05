@@ -122,9 +122,10 @@ havicare-hub/hitcare/1001/watch/861265061009822/# um dispositivo, todos os canai
 
 Este canal transporta duas coisas diferentes: o **ciclo de vida** de um
 dispositivo, que descreve a ligação, e os **acontecimentos de domínio**, que
-descrevem o que aconteceu a uma pessoa. Os primeiros levam apenas `type`,
-`occurredAt` e `device`; os segundos acrescentam `data` e `source`, com a mesma
-forma da telemetria.
+descrevem o que aconteceu a uma pessoa. Os primeiros levam `type`, `occurredAt` e
+`device`, e ainda, quando se aplica, um objecto `command` — nos `device.downlink.*`,
+com o comando que saiu ou ficou em fila — ou um `error`. Os segundos acrescentam
+`data` e `source`, com a mesma forma da telemetria.
 
 ### Eventos de ciclo de vida
 

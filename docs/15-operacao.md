@@ -79,10 +79,13 @@ precisa do seu próprio espaço:
 | Desenvolvimento | `havicare-hub-dev` | `health-mqtt-dev` | `qinglanst-radar-dev` |
 | Máquina local | `havicare-hub-{nome}` | `{nome}` | `{nome}-radar` |
 
-> **A produção não declara os identificadores dela**; usa os valores por omissão
-> do `src/Config.php`. Funciona, mas a identidade dela no broker está implícita
-> num literal de código — convém não mexer nesses valores sem os declarar
-> primeiro no `.env` da produção.
+> **O prefixo de tópicos é obrigatório no `.env` da produção.** A omissão de
+> `MQTT_TOPIC_PREFIX` no `src/Config.php` é **vazia**, e com ela o hub publicaria
+> em `hitcare/1001/…` sem raiz, deixando de casar com os subscritores. A produção
+> declara `MQTT_TOPIC_PREFIX=havicare-hub`. Já os dois identificadores de cliente
+> — `health-mqtt` e `qinglanst-radar` — têm omissão igual à tabela e podem não ser
+> declarados; ainda assim, convém não mexer nesses literais de código sem os
+> declarar primeiro no `.env`.
 
 ## 2. Publicar
 

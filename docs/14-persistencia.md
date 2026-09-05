@@ -44,8 +44,10 @@ erDiagram
 `ENUM` repetido em `whitelist`, `models` e `capabilities`, e acrescentar um tipo
 eram três `ALTER TABLE` que tinham de concordar — a discordância não produzia
 erro, produzia um dispositivo registado e sem capacidade alguma. O conteúdo vem
-do `config/device-types.json`, que o frontend também lê, e o semeador mantém a
-tabela igual ao ficheiro.
+do `config/device-types.json`, que o frontend também lê. O semeador só o aplica
+numa base vazia — corre apenas quando a tabela `capabilities` está a zero —, por
+isso acrescentar um tipo ao ficheiro num hub em serviço não chega à tabela sem
+uma migração dedicada.
 
 **A `model_capabilities` refere a capacidade pelo par natural**, e não pelo
 `capabilities.id`. O identificador de substituição não era falado pelo código:
