@@ -18,6 +18,10 @@ use PDO;
  */
 final class DiaperSensitivityRepository implements DiaperSensitivityLookup
 {
+    // Teto do cache. A chave é o sensor, limitado pelo inventário, mas o teto fecha a porta a
+    // um crescimento patológico num processo de longa vida.
+    private const MAX_CACHED = 10000;
+
     /** @var array<string, array{settings: array{pollutionRange: int, pollutionValue: int}, loadedAt: int}> */
     private array $cache = [];
 
@@ -51,6 +55,9 @@ final class DiaperSensitivityRepository implements DiaperSensitivityLookup
                 'pollutionValue' => (int)$payload['pollutionValue'],
             ]
             : DiaperSensitivity::normal();
+        if (!isset($this->cache[$sensorKey]) && count($this->cache) >= self::MAX_CACHED) {
+            unset($this->cache[array_key_first($this->cache)]);
+        }
         $this->cache[$sensorKey] = ['settings' => $settings, 'loadedAt' => time()];
 
         return $settings;

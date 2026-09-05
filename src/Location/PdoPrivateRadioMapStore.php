@@ -8,6 +8,10 @@ use PDO;
 
 final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
 {
+    // Teto do cache: a chave é o hash do BSSID, e sem limite cresce com cada ponto de acesso
+    // distinto que o processo de longa vida chega a ver.
+    private const MAX_CACHED = 10000;
+
     /** @var array<string, array{expiresAt: float, entry: ?array}> */
     private array $cache = [];
 
@@ -64,6 +68,9 @@ final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
 
         $expiresAt = $now + max(0, $this->cacheTtlSeconds);
         foreach ($missing as $hash) {
+            if (!isset($this->cache[$hash]) && count($this->cache) >= self::MAX_CACHED) {
+                unset($this->cache[array_key_first($this->cache)]);
+            }
             $this->cache[$hash] = ['expiresAt' => $expiresAt, 'entry' => $loaded[$hash] ?? null];
         }
 

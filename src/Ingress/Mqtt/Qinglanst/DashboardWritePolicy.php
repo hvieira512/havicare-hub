@@ -4,6 +4,10 @@ namespace Hub\Ingress\Mqtt\Qinglanst;
 
 final class DashboardWritePolicy
 {
+    // Teto por mapa: sem ele, cada dispositivo distinto deixa uma marca que nunca sai, e o
+    // processo de ingestão não reinicia. A mais antiga é descartada quando é ultrapassado.
+    private const MAX_TRACKED = 10000;
+
     /** @var array<string, int> */
     private array $lastSeenMs = [];
     /** @var array<string, int> */
@@ -21,7 +25,7 @@ final class DashboardWritePolicy
     public function shouldUpdateSeen(string $deviceKey, int $nowMs): bool
     {
         if ($this->deviceSeenMinIntervalMs <= 0) {
-            $this->lastSeenMs[$deviceKey] = $nowMs;
+            $this->remember($this->lastSeenMs, $deviceKey, $nowMs);
             return true;
         }
 
@@ -30,7 +34,7 @@ final class DashboardWritePolicy
             return false;
         }
 
-        $this->lastSeenMs[$deviceKey] = $nowMs;
+        $this->remember($this->lastSeenMs, $deviceKey, $nowMs);
         return true;
     }
 
@@ -42,18 +46,18 @@ final class DashboardWritePolicy
      */
     public function shouldStoreTelemetry(string $deviceKey, string $capability, int $nowMs): bool
     {
+        $key = $deviceKey . '|' . $capability;
         if ($capability !== 'positions' || $this->positionHistorySampleMs <= 0) {
-            $this->lastTelemetryMs[$deviceKey . '|' . $capability] = $nowMs;
+            $this->remember($this->lastTelemetryMs, $key, $nowMs);
             return true;
         }
 
-        $key = $deviceKey . '|' . $capability;
         $last = $this->lastTelemetryMs[$key] ?? null;
         if ($last !== null && ($nowMs - $last) < $this->positionHistorySampleMs) {
             return false;
         }
 
-        $this->lastTelemetryMs[$key] = $nowMs;
+        $this->remember($this->lastTelemetryMs, $key, $nowMs);
         return true;
     }
 
@@ -65,7 +69,7 @@ final class DashboardWritePolicy
     public function shouldStoreRaw(string $deviceKey, int $nowMs): bool
     {
         if ($this->rawHistorySampleMs <= 0) {
-            $this->lastRawMs[$deviceKey] = $nowMs;
+            $this->remember($this->lastRawMs, $deviceKey, $nowMs);
             return true;
         }
 
@@ -74,7 +78,19 @@ final class DashboardWritePolicy
             return false;
         }
 
-        $this->lastRawMs[$deviceKey] = $nowMs;
+        $this->remember($this->lastRawMs, $deviceKey, $nowMs);
         return true;
+    }
+
+    /**
+     * @param array<string, int> $map
+     */
+    private function remember(array &$map, string $key, int $nowMs): void
+    {
+        if (!isset($map[$key]) && count($map) >= self::MAX_TRACKED) {
+            // A inserção mantém a ordem, por isso a primeira chave é a mais antiga.
+            unset($map[array_key_first($map)]);
+        }
+        $map[$key] = $nowMs;
     }
 }

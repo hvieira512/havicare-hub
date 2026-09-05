@@ -10,6 +10,10 @@ use PDO;
 
 final class GatewayDeviceLinkRepository implements GatewayDeviceLinkLookup
 {
+    // Teto do cache. A chave é o par gateway|aparelho, limitado pelo inventário, mas o teto
+    // fecha a porta a um crescimento patológico num processo de longa vida.
+    private const MAX_CACHED = 10000;
+
     /** @var array<string, array{enabled: bool, loadedAt: int}> */
     private array $authorizationCache = [];
 
@@ -28,6 +32,9 @@ final class GatewayDeviceLinkRepository implements GatewayDeviceLinkLookup
         $stmt = $this->pdo->prepare('SELECT enabled FROM gateway_device_links WHERE gateway_device_key = ? AND linked_device_key = ?');
         $stmt->execute([$gatewayDeviceKey, $linkedDeviceKey]);
         $enabled = (int)($stmt->fetchColumn() ?: 0) === 1;
+        if (!isset($this->authorizationCache[$cacheKey]) && count($this->authorizationCache) >= self::MAX_CACHED) {
+            unset($this->authorizationCache[array_key_first($this->authorizationCache)]);
+        }
         $this->authorizationCache[$cacheKey] = ['enabled' => $enabled, 'loadedAt' => time()];
         return $enabled;
     }
