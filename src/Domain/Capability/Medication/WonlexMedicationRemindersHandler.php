@@ -5,7 +5,7 @@ namespace Hub\Domain\Capability\Medication;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Wonlex strategy for medication reminders.
+ * Estratégia do Wonlex para os lembretes de medicação.
  */
 final class WonlexMedicationRemindersHandler implements MedicationRemindersHandler
 {
@@ -65,10 +65,5 @@ final class WonlexMedicationRemindersHandler implements MedicationRemindersHandl
             'value' => $value,
             '_meta' => $meta,
         ];
-    }
-
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return $key;
     }
 }

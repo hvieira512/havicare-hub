@@ -145,9 +145,4 @@ final class CapabilityRegistry
             ? $incoming
             : $this->contract($genericKey)->merge($existing, $incoming);
     }
-
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return $this->contract($key)->resolveConfigKey($protocol, $key);
-    }
 }

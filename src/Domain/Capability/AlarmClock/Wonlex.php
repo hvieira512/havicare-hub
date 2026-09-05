@@ -119,9 +119,4 @@ final class Wonlex implements AlarmClockHandler
     {
         return ['value' => $value, '_meta' => $this->meta($meta)];
     }
-
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return $key === 'alarm_clock' ? 'alarmClock' : $key;
-    }
 }

@@ -3,7 +3,7 @@
 namespace Hub\Domain\Capability\AlarmClock;
 
 /**
- * Shared helpers used by alarm_clock handlers.
+ * Ajudantes partilhados pelos handlers do `alarm_clock`.
  */
 trait AlarmClockHelpers
 {

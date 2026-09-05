@@ -3,7 +3,6 @@
 namespace Hub\Domain\Capability\AlarmClock;
 
 use Hub\Domain\Capability\CapabilityContract;
-use Hub\Command\DeviceConfigurationCatalog;
 
 /**
  * O contrato da capacidade `alarm_clock`.
@@ -130,18 +129,5 @@ final class AlarmClockCapability implements CapabilityContract
             'value' => $this->fromNative($protocol, $nativeKey, is_array($value) ? $value : []),
             '_meta' => $this->meta($protocol, $meta),
         ];
-    }
-
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        if ($key !== 'alarm_clock') {
-            return $key;
-        }
-
-        $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $key);
-
-        return $entry !== null && trim((string)($entry['key'] ?? '')) !== ''
-            ? (string)$entry['key']
-            : null;
     }
 }

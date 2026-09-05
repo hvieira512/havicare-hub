@@ -95,14 +95,6 @@ final class GenericCapability implements CapabilityContract
         return ['value' => $value, '_meta' => $meta];
     }
 
-    /**
-     * O traço devolve a chave genérica tal e qual; aqui só vale se o catálogo do protocolo a
-     * conhecer, senão não há linha de configuração nenhuma para lá pôr.
-     */
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return DeviceConfigurationCatalog::configForProtocol($protocol, $key) !== null ? $key : null;
-    }
 
     // ------------------------------------------------------------------
     // vivistar-iw

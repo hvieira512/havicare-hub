@@ -67,10 +67,4 @@ interface CapabilityContract
 
     /** Constrói a entrada completa da capacidade, para a resposta da API. */
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array;
-
-    /**
-     * A chave de configuração específica do protocolo, usada na camada de persistência e de
-     * transporte. Não é a chave pública da API, que continua a ser o nome genérico.
-     */
-    public function resolveConfigKey(string $protocol, string $key): ?string;
 }

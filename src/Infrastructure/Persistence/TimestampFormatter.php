@@ -41,23 +41,6 @@ final class TimestampFormatter
     }
 
     /**
-     * O que se escreve numa coluna `DATETIME`: o formato do MariaDB, ou `NULL`.
-     *
-     * O `''` que o código usava para "ainda não" passa aqui a `NULL`, que é o que a coluna
-     * agora aceita -- e o que faz o `WHERE ... IS NULL` significar "esta é a corrente".
-     */
-    public static function toDatabase(mixed $value): ?string
-    {
-        if ($value === null) {
-            return null;
-        }
-
-        $dateTime = self::parse(is_string($value) ? $value : null);
-
-        return $dateTime === null ? null : $dateTime->format(self::DB_FORMAT);
-    }
-
-    /**
      * Converte para ISO as colunas de instante que a linha tenha, deixando as ausentes vazias.
      *
      * @param array<string, mixed> $row

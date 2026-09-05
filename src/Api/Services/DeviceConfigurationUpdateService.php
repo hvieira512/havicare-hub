@@ -207,12 +207,6 @@ final class DeviceConfigurationUpdateService
     }
 
     /**
-     * @param array<string, mixed> $payload
-     * @param array<string, mixed> $metadata
-     * @param array<string, mixed> $device
-     * @return array<string, mixed>
-     */
-    /**
      * Guarda o valor de uma capacidade que não viaja, e dá-a por aplicada.
      *
      * A chave nativa é a genérica: não há comando nativo nenhum de que ela seja tradução,

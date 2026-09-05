@@ -3,10 +3,10 @@
 namespace Hub\Domain\Capability\AlarmClock;
 
 /**
- * 4P Touch alarm_clock handler.
+ * Handler do `alarm_clock` do 4P Touch.
  *
- * Native key: 'alarmClock'
- * Native shape: { alarmClock: { alarms: [{time, enabled, mode, custom}] } }
+ * Chave nativa: 'alarmClock'
+ * Forma nativa: { alarmClock: { alarms: [{time, enabled, mode, custom}] } }
  */
 final class FourPTouch implements AlarmClockHandler
 {
@@ -81,7 +81,7 @@ final class FourPTouch implements AlarmClockHandler
     }
 
     // ------------------------------------------------------------------
-    // Native input normalization
+    // Normalização da entrada nativa
     // ------------------------------------------------------------------
 
     private function normalizeInput(mixed $desired): array
@@ -177,7 +177,7 @@ final class FourPTouch implements AlarmClockHandler
     }
 
     // ------------------------------------------------------------------
-    // Time / day normalization
+    // Normalização de hora / dia
     // ------------------------------------------------------------------
 
     private function normalizeTime(string $value): string
@@ -250,7 +250,7 @@ final class FourPTouch implements AlarmClockHandler
     }
 
     // ------------------------------------------------------------------
-    // String parsing
+    // Parsing de string
     // ------------------------------------------------------------------
 
     /** @return list<array{time: string, enabled: bool, mode: int, custom: string}> */
@@ -297,7 +297,7 @@ final class FourPTouch implements AlarmClockHandler
     }
 
     // ------------------------------------------------------------------
-    // Native → Public
+    // Nativo → Público
     // ------------------------------------------------------------------
 
     public static function publicItem(mixed $item): array

@@ -97,11 +97,6 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
         ];
     }
 
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return $key;
-    }
-
     /**
      * @return list<array{time: string, enabled: bool, frequency: int, custom: string}>
      */

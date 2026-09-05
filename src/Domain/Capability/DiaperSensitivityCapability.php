@@ -101,11 +101,6 @@ final class DiaperSensitivityCapability implements
         ];
     }
 
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return $key;
-    }
-
     /** Rejeita um par fora das gamas que a app da MONIT aceita. */
     public function sanitizeInput(string $protocol, mixed $value): mixed
     {

@@ -96,14 +96,3 @@ function paginationActionPrefix(paginationKey) {
         }[paginationKey] || ""
     );
 }
-
-/** Abre ou fecha um `collapse` do Bootstrap sem depender do botão que o comanda. */
-export function toggleCollapse(element, show) {
-    if (!element || typeof bootstrap === "undefined") return;
-    const instance = bootstrap.Collapse.getOrCreateInstance(element, { toggle: false });
-    if (show) {
-        instance.show();
-    } else {
-        instance.hide();
-    }
-}

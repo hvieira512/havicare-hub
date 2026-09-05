@@ -258,10 +258,6 @@ export const rowPayload = (row) =>
 
 /**
  * As pessoas que o radar vê são numeradas a partir de zero, e ninguém conta assim.
- *
- * Subiu para aqui quando o segundo ecrã passou a precisar dela -- é a regra 2 do README:
- * um módulo que só uma funcionalidade usa vive dentro dela, e sobe quando aparecer o segundo
- * consumidor.
  */
 export const displayPersonIndex = (value) => {
     const index = Number(value);

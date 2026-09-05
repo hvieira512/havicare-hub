@@ -301,13 +301,8 @@ class ModelService
         $enabledCapabilities = $fields['enabled_capabilities'];
         $requestableCapabilities = $fields['requestable_capabilities'];
 
-        // O par repetido responde 409, como no actualizar. A base já o recusava pela chave
-        // única `uq_models_supplier_internal_model`, mas ninguém perguntava antes: a excepção
-        // do PDO subia até ao kernel e o cliente levava com um 500 a dizer
-        // `server_error` -- para uma recusa que é previsível e tem código próprio.
-        //
-        // Antes de `storeModelImage()` de propósito: verificar depois deixava a imagem
-        // escrita em disco sem modelo nenhum a que pertencer.
+        // O par repetido responde 409, e não deixa a excepção da chave única virar um 500.
+        // Antes do `storeModelImage()` para não deixar a imagem em disco sem modelo a que pertencer.
         if ($this->db->models->exists($supplierId, $internalModel)) {
             return ApiError::modelExists()->toArray();
         }

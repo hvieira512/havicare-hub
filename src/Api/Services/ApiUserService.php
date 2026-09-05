@@ -2,7 +2,6 @@
 
 namespace Hub\Api\Services;
 
-use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\ApiUserColumns;
@@ -11,7 +10,6 @@ use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Api\Request\ApiUserWriteRequest;
 use Hub\Api\Request\RequestBinder;
-use Hub\Domain\DeviceMetadata;
 
 class ApiUserService
 {

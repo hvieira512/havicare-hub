@@ -197,20 +197,4 @@ trait CapabilityHelpers
 
         return $normalized;
     }
-
-    /**
-     * A chave de configuração do protocolo é, por omissão, a chave genérica.
-     *
-     * Seis das sete capacidades que implementam o `CapabilityContract` devolviam exactamente
-     * isto, palavra por palavra. Quem precisa de outra coisa declara o método e ganha ao
-     * traço: é o que fazem o `AlarmClockCapability`, que só traduz a chave do despertador, e
-     * o `AlarmClock\Wonlex`, que traduz `alarm_clock` em `alarmClock`.
-     *
-     * Fica aqui e não como uma interface partida em duas: o problema não era a interface
-     * declarar demais, era o mesmo corpo estar escrito sete vezes.
-     */
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return $key;
-    }
 }

@@ -11,8 +11,7 @@ final class CommonSchemas
 {
     /**
      * O envelope de colecção paginada que todos os endpoints de listagem usam.
-     */
-    /**
+     *
      * O `$withColumns` é opcional porque só algumas listagens se descrevem a si próprias:
      * pô-lo em todas documentava um campo que a maioria não devolve.
      */

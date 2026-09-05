@@ -52,16 +52,6 @@ final class ReferenceCatalogSeeder
         $this->seedModelCapabilities($pdo);
     }
 
-    /**
-     * Só o catálogo de capacidades, para uma migração o trazer a dia sem repor o resto -- que
-     * numa base existente faria voltar o que alguém apagou no separador Catálogo. As
-     * `capabilities` não têm esse risco: a API não as deixa criar nem apagar.
-     */
-    public function syncCapabilityCatalog(PDO $pdo): void
-    {
-        $this->seedCapabilities($pdo);
-    }
-
     private function seedSuppliersAndModels(PDO $pdo): void
     {
         $supplier = $pdo->prepare('INSERT IGNORE INTO suppliers (name) VALUES (?)');

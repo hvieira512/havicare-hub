@@ -110,30 +110,6 @@ class Whitelist
         }
     }
 
-    public function update(
-        string $imei,
-        string $supplier,
-        string $model,
-        string $deviceType = 'watch',
-        int|string $licenseId = 0,
-        string $simNumber = '',
-        string $deviceId = '',
-        string $company = 'null',
-    ): bool {
-        if ($this->getMetadata($imei) === null) {
-            return false;
-        }
-        $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
-        $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
-        $company = DeviceMetadata::normalizeCompany($company);
-        $this->devices[$imei] = new DeviceMetadata($supplier, $model, $deviceType, $licenseId, $company, $simNumber, $deviceId);
-        $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
-        if ($this->db === null) {
-            $this->saveFile();
-        }
-        return true;
-    }
-
     public function updateAssociation(string $imei, string $company, int|string $licenseId): bool
     {
         $current = $this->getMetadata($imei);
@@ -161,13 +137,8 @@ class Whitelist
     }
 
     /**
-     * O `licenseId` é `int`, e sempre foi: quem o escreve é o `normalizeLicenseId`, que
-     * devolve `int`. O bloco dizia `string` e ninguém dava por isso porque a forma do array
-     * era inferida por aproximação; com os campos a virem de um objecto com tipo, a mentira
-     * deixou de passar.
-     *
-     * Continua a devolver array e não `DeviceMetadata` porque acrescenta o `imei` à mistura,
-     * e o `imei` é a chave do mapa e não um campo da entrada.
+     * Devolve um array, e não um `DeviceMetadata`, porque acrescenta o `imei` -- que é a chave
+     * do mapa, não um campo da entrada.
      *
      * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company: string, simNumber: string, deviceId: string}|null
      */

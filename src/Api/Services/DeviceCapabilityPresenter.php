@@ -500,11 +500,6 @@ final class DeviceCapabilityPresenter
     }
 
     /**
-     * @param array<string|int, mixed> $value
-     * @return mixed
-     */
-
-    /**
      * @param array<string, mixed> $metaData
      * @return array<string, mixed>
      */

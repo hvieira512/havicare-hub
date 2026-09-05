@@ -80,10 +80,6 @@ final class DeviceConfigurationQueryService
     /**
      * @param array<string|int, mixed> $value
      */
-
-    /**
-     * @param array<string|int, mixed> $value
-     */
     private function stringifyCallWhitelist(string $protocol, array $value): mixed
     {
         $items = $value['contacts'] ?? $value['numbers'] ?? $value;

@@ -3,10 +3,10 @@
 namespace Hub\Domain\Capability\AlarmClock;
 
 /**
- * Vivistar / Wonlex alarm_clock handler.
+ * Handler do `alarm_clock` do Vivistar / Wonlex.
  *
- * Native key: 'reminders'
- * Native shape: { reminders: { masterEnabled: bool, items: [{time, days, enabled, type}] } }
+ * Chave nativa: 'reminders'
+ * Forma nativa: { reminders: { masterEnabled: bool, items: [{time, days, enabled, type}] } }
  */
 final class Vivistar implements AlarmClockHandler
 {
@@ -116,7 +116,7 @@ final class Vivistar implements AlarmClockHandler
     }
 
     // ------------------------------------------------------------------
-    // Normalization
+    // Normalização
     // ------------------------------------------------------------------
 
     private static function normalizeItemForNative(mixed $item): array

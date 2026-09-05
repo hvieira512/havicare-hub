@@ -5,7 +5,7 @@ namespace Hub\Domain\Capability\Contacts;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Shared helpers for 4P Touch contact capabilities.
+ * Ajudantes partilhados pelas capacidades de contactos do 4P Touch.
  */
 trait FourPTouchContactSupport
 {
