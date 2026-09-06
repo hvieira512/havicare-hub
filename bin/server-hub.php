@@ -155,6 +155,17 @@ try {
 $runner->scheduleTicks();
 MaintenanceScheduler::schedule($loop, $services, $config['dashboard']);
 
+// Drena os PUBACK do publicador MQTT. Cada `status`/`event` QoS 1 fica pendente até ser
+// confirmado; sem alguém a correr o loop do publicador, a fila enche até o cliente rebentar
+// e perder mensagens. Um segundo chega para a manter drenada ao ritmo real de publicação.
+$loop->addPeriodicTimer(1.0, static function () use ($services): void {
+    try {
+        $services->mqttBridge->drainPublisher();
+    } catch (\Throwable $e) {
+        Logger::channel('hub')->error('MQTT publisher drain failed: ' . $e->getMessage());
+    }
+});
+
 // O sinal de vida para o systemd, que sai de um temporizador deste loop e por isso só é
 // enviado enquanto ele girar. Fora do systemd devolve `null` e não faz nada.
 $watchdog = SystemdWatchdog::fromEnvironment();

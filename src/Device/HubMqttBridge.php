@@ -171,6 +171,25 @@ class HubMqttBridge
         Logger::channel($channel)->error("MQTT publish failed for IMEI=$imei: {$e->getMessage()}");
     }
 
+    /**
+     * Processa os PUBACK pendentes do publicador. Sem isto, cada publicação QoS 1 -- os
+     * `status` e os `events` -- deixa um `PublishedMessage` à espera para sempre; aos 65 535
+     * o cliente rebenta, é lido como queda, reconecta e perde os pendentes. Corrido de um
+     * temporizador do loop, mantém a fila drenada e o keepalive vivo. Não bloqueia: o
+     * `loopOnce` lê só o que já está no socket.
+     */
+    public function drainPublisher(): void
+    {
+        try {
+            $this->publisher->loopOnce(microtime(true), false);
+        } catch (\Throwable $e) {
+            if ($this->reconnectPublisher === null) {
+                throw $e;
+            }
+            $this->reconnect();
+        }
+    }
+
     private function reconnect(): void
     {
         try {
