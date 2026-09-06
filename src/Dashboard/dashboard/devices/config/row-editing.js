@@ -27,7 +27,6 @@ const REPEAT_ROW_KINDS = {
     alarm_clock: { keepLast: true },
     fourPTouchAlarm: {
         render: (index) => fourPTouchAlarmRow({ time: "", enabled: true, mode: 1, custom: "" }, index),
-        after: syncFourPTouchAlarmRows,
     },
     wonlexMedicationPlan: {
         render: (index) => wonlexMedicationPlanRow({}, index),
@@ -68,6 +67,7 @@ export function appendRepeatRow(section, kind) {
     }
 
     spec.after?.(section);
+    syncAddButton(section, kind);
 }
 
 export function removeRepeatRow(button) {
@@ -84,6 +84,7 @@ export function removeRepeatRow(button) {
     }
 
     spec.after?.(section);
+    syncAddButton(section, kind);
 }
 
 /**
@@ -144,10 +145,6 @@ function syncAddButton(section, kind) {
         list.querySelectorAll(`[data-repeat-row="${kind}"]`).length >= limit;
 }
 
-function syncFourPTouchAlarmRows(section) {
-    syncAddButton(section, "fourPTouchAlarm");
-}
-
 /** Os lembretes levam o seu número em cinco sítios, e removê-los desalinha-os todos. */
 function syncTakePillsRows(section) {
     const list = section?.querySelector("[data-repeat-list=\"takePillsReminder\"]");
@@ -168,7 +165,6 @@ function syncTakePillsRows(section) {
         }
     });
 
-    syncAddButton(section, "takePillsReminder");
     syncTakePillsCustomVisibility(section);
 }
 
