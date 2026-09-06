@@ -801,7 +801,7 @@ export function contactsInput(entry, desired, meta = {}) {
         <div>
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <label class="form-label-sm mb-0">Contactos</label>
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="contacts">Adicionar</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="contacts" ${rows.length >= limit ? "disabled" : ""}>Adicionar</button>
             </div>
             <div class="small text-secondary mb-2">${limit} contactos máximos</div>
             <div class="vstack gap-2" data-repeat-list="contacts" data-repeat-limit="${limit}"${isPhonebookLike && nameMaxLengthValue > 0 ? ` data-phonebook-name-max-length="${esc(String(nameMaxLengthValue))}"` : ""}${isPhonebookLike && phoneMaxLengthValue > 0 ? ` data-phonebook-phone-max-length="${esc(String(phoneMaxLengthValue))}"` : ""}>
@@ -852,7 +852,7 @@ function phoneRepeaterInput(entry, desired, options) {
         <div class="vstack gap-3">
             <div class="d-flex justify-content-between align-items-center gap-2">
                 <label class="form-label-sm mb-0">${esc(label)}</label>
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="${esc(kind)}">${esc(emptyLabel)}</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="${esc(kind)}" ${rows.length >= limit ? "disabled" : ""}>${esc(emptyLabel)}</button>
             </div>
             ${helpText !== "" ? `<div class="small text-secondary">${esc(helpText)}</div>` : ""}
             <div class="vstack gap-2" data-repeat-list="${esc(kind)}" data-repeat-limit="${limit}">
