@@ -23,11 +23,21 @@ final class DashboardDatabase
             (string)($config['name'] ?? 'havicare_hub'),
             $charset,
         );
-        $this->pdo = new PDO($dsn, (string)($config['username'] ?? ''), (string)($config['password'] ?? ''), [
+        $username = (string)($config['username'] ?? '');
+        $password = (string)($config['password'] ?? '');
+        $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
-        $this->pdo->exec("SET time_zone = '+00:00'");
+            // Limita a espera numa ligação morta em vez de bloquear o event loop sem fim.
+            PDO::ATTR_TIMEOUT => (int)($config['timeout_seconds'] ?? 5),
+        ];
+
+        // A ligação real vive dentro do ReconnectingPdo e é refeita quando o MySQL a larga.
+        $this->pdo = new ReconnectingPdo(static function () use ($dsn, $username, $password, $options): PDO {
+            $pdo = new PDO($dsn, $username, $password, $options);
+            $pdo->exec("SET time_zone = '+00:00'");
+            return $pdo;
+        });
     }
 
     public function pdo(): PDO
