@@ -132,9 +132,11 @@ function resetRowFields(row) {
 }
 
 /** O botão de acrescentar apaga-se no limite. */
-function syncAddButton(section, kind, action) {
+function syncAddButton(section, kind) {
     const list = section?.querySelector(`[data-repeat-list="${kind}"]`);
-    const addButton = section?.querySelector(`[data-action="${action}"]`);
+    // O botão é `addRepeatRow` distinguido pelo `data-repeat-kind`; procurar um `data-action`
+    // com o nome do tipo não casava com nada, e o sync saía sempre sem tocar no botão.
+    const addButton = section?.querySelector(`[data-action="addRepeatRow"][data-repeat-kind="${kind}"]`);
     if (!list || !addButton) return;
 
     const limit = parseInt(list.dataset.repeatLimit || "", 10);
@@ -143,7 +145,7 @@ function syncAddButton(section, kind, action) {
 }
 
 function syncFourPTouchAlarmRows(section) {
-    syncAddButton(section, "fourPTouchAlarm", "addFourPTouchAlarmRow");
+    syncAddButton(section, "fourPTouchAlarm");
 }
 
 /** Os lembretes levam o seu número em cinco sítios, e removê-los desalinha-os todos. */
@@ -166,7 +168,7 @@ function syncTakePillsRows(section) {
         }
     });
 
-    syncAddButton(section, "takePillsReminder", "addTakePillsReminder");
+    syncAddButton(section, "takePillsReminder");
     syncTakePillsCustomVisibility(section);
 }
 
