@@ -206,14 +206,14 @@ final class DashboardHttpServer
             return new Response(304, ['Cache-Control' => 'no-cache', 'ETag' => $etag]);
         }
 
-        return new Response(200, $headers, $this->assetContents($path));
+        // A cache do corpo é indexada pelo ETag: um ficheiro alterado debaixo do processo muda
+        // o ETag e o corpo servido acompanha-o, em vez de ficar preso aos bytes velhos.
+        return new Response(200, $headers, $this->assetContents($path, $path . $etag));
     }
 
-    // O ficheiro não muda debaixo do processo: em produção o `make update` reinicia-o e
-    // em desenvolvimento o vigia reinicia-o.
-    private function assetContents(string $path): string
+    private function assetContents(string $path, ?string $cacheKey = null): string
     {
-        return $this->assetCache[$path] ??= (string)file_get_contents($path);
+        return $this->assetCache[$cacheKey ?? $path] ??= (string)file_get_contents($path);
     }
 
     private function publicAssetPath(string $requestPath): ?string
