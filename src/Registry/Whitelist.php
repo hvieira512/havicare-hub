@@ -155,10 +155,17 @@ class Whitelist
         }
 
         if ($protocol === 'four-p-touch') {
+            // Restringe ao tipo, como os ramos `ncs` e `radar`: o `deviceId` de um 4P Touch
+            // é dedutível do IMEI, e sem isto um frame de relógio autenticava-se como um
+            // radar ou NCS que partilhasse o alias.
             if ($this->db !== null) {
-                return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias));
+                return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias, 'watch'));
             }
             foreach ($this->devices as $canonicalImei => $metadata) {
+                if ($metadata->deviceType !== 'watch') {
+                    continue;
+                }
+
                 if ($metadata->deviceId !== $alias) {
                     continue;
                 }
