@@ -91,8 +91,12 @@ class AuthService
 
     private function refresh(string $refreshToken, string $requestId = ''): array
     {
-        $token = $this->tokens->refreshAccessToken($refreshToken, $this->tokenTtlSeconds, $this->refreshTokenTtlSeconds);
-        if ($token === null) {
+        // Consome o token de renovação primeiro -- é de uso único -- e só depois revalida. Um
+        // utilizador desactivado, apagado ou com o papel mudado não renova, e o token gasta-se
+        // na mesma, por isso uma renovação recusada não fica a poder repetir-se.
+        $context = $this->tokens->consumeRefreshToken($refreshToken);
+        $identity = $context !== null ? $this->identityForRefresh($context) : null;
+        if ($identity === null) {
             Logger::channel('api')->warning('API token refresh rejected', [
                 'request_id' => $requestId,
                 'error_code' => 'invalid_refresh_token',
@@ -100,6 +104,18 @@ class AuthService
 
             return ApiError::invalidRefreshToken()->toArray();
         }
+
+        $token = $this->tokens->issueTokenPair(
+            (string)$identity['username'],
+            (string)$identity['role'],
+            $this->tokenTtlSeconds,
+            $this->refreshTokenTtlSeconds,
+            $identity['userId'],
+            $identity['licenseId'],
+            $identity['licenseRefId'],
+            $identity['companyId'],
+            $identity['company'],
+        );
 
         Logger::channel('api')->info('API token refreshed', [
             'request_id' => $requestId,
@@ -111,6 +127,42 @@ class AuthService
             'status' => 'ok',
             'token' => $token,
         ];
+    }
+
+    /**
+     * A identidade com que se renova sai de `api_users`, relida agora, e não do que o token
+     * guardou. Assim um utilizador desactivado, apagado ou com o papel mudado deixa de renovar,
+     * e um `licenseRefId` ou nome de empresa alterado propaga-se ao token novo.
+     *
+     * Sem `userId` não há linha a reler -- é um token de inquilino emitido por um administrador,
+     * que por desenho não corresponde a nenhuma conta. Esse segue com o contexto que trazia.
+     */
+    private function identityForRefresh(ApiAuthContext $context): ?array
+    {
+        if ($context->userId === null || $context->userId <= 0) {
+            return [
+                'userId' => null,
+                'username' => $context->username,
+                'role' => $context->role,
+                'licenseId' => $context->licenseId,
+                'licenseRefId' => $context->licenseRefId,
+                'companyId' => $context->companyId,
+                'company' => $context->company,
+            ];
+        }
+
+        $user = $this->db->apiUsers->findById($context->userId);
+        if (!is_array($user)) {
+            return null;
+        }
+
+        $identity = $this->identityFromUserRow($user);
+        // O papel a mudar obriga a reautenticar: um token não muda de privilégios por baixo.
+        if ($identity === null || $identity['role'] !== $context->role) {
+            return null;
+        }
+
+        return $identity;
     }
 
     /**
@@ -211,32 +263,45 @@ class AuthService
         // distinguiam de uma conta saudável pelo relógio.
         $passwordMatches = password_verify($password, $storedHash !== '' ? $storedHash : $this->referenceHash());
 
-        if (is_array($user)) {
-            $enabled = ((int)($user['enabled'] ?? 0)) === 1;
-            $hash = $storedHash;
-            $role = trim((string)($user['role'] ?? ''));
-            $licenseId = $role === ApiAuthContext::ROLE_LICENSE_CLIENT
-                ? DeviceMetadata::normalizeLicenseId((string)($user['license_id'] ?? ''))
-                : null;
-            $licenseRefId = $role === ApiAuthContext::ROLE_LICENSE_CLIENT ? (int)($user['license_ref_id'] ?? 0) : null;
-            $companyId = $role === ApiAuthContext::ROLE_LICENSE_CLIENT ? (int)($user['company_id'] ?? 0) : null;
-            $company = $role === ApiAuthContext::ROLE_LICENSE_CLIENT ? trim((string)($user['company_name'] ?? '')) : null;
-
-            $tenantIsValid = $role !== ApiAuthContext::ROLE_LICENSE_CLIENT
-                || ($licenseId > 0 && $licenseRefId > 0 && $companyId > 0 && $company !== '');
-            if ($enabled && $tenantIsValid && $hash !== '' && $passwordMatches && in_array($role, ApiAuthContext::roles(), true)) {
-                return [
-                    'userId' => (int)($user['id'] ?? 0),
-                    'username' => (string)($user['username'] ?? $username),
-                    'role' => $role,
-                    'licenseId' => $licenseId,
-                    'licenseRefId' => $licenseRefId,
-                    'companyId' => $companyId,
-                    'company' => $company,
-                ];
-            }
+        if (!is_array($user) || $storedHash === '' || !$passwordMatches) {
+            return null;
         }
 
-        return null;
+        return $this->identityFromUserRow($user);
+    }
+
+    /**
+     * A linha de `api_users` transformada na identidade que emite um token, ou `null` se a conta
+     * não serve: desactivada, com um papel que não existe, ou um inquilino sem licença completa.
+     *
+     * É o mesmo molde no login e na renovação -- as duas têm de aceitar exactamente as mesmas
+     * contas, e uma regra escrita duas vezes divergiria.
+     */
+    private function identityFromUserRow(array $user): ?array
+    {
+        $enabled = ((int)($user['enabled'] ?? 0)) === 1;
+        $role = trim((string)($user['role'] ?? ''));
+        $licenseId = $role === ApiAuthContext::ROLE_LICENSE_CLIENT
+            ? DeviceMetadata::normalizeLicenseId((string)($user['license_id'] ?? ''))
+            : null;
+        $licenseRefId = $role === ApiAuthContext::ROLE_LICENSE_CLIENT ? (int)($user['license_ref_id'] ?? 0) : null;
+        $companyId = $role === ApiAuthContext::ROLE_LICENSE_CLIENT ? (int)($user['company_id'] ?? 0) : null;
+        $company = $role === ApiAuthContext::ROLE_LICENSE_CLIENT ? trim((string)($user['company_name'] ?? '')) : null;
+
+        $tenantIsValid = $role !== ApiAuthContext::ROLE_LICENSE_CLIENT
+            || ($licenseId > 0 && $licenseRefId > 0 && $companyId > 0 && $company !== '');
+        if (!$enabled || !$tenantIsValid || !in_array($role, ApiAuthContext::roles(), true)) {
+            return null;
+        }
+
+        return [
+            'userId' => (int)($user['id'] ?? 0),
+            'username' => (string)($user['username'] ?? ''),
+            'role' => $role,
+            'licenseId' => $licenseId,
+            'licenseRefId' => $licenseRefId,
+            'companyId' => $companyId,
+            'company' => $company,
+        ];
     }
 }

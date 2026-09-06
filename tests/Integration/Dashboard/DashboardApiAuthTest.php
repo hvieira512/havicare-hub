@@ -328,4 +328,76 @@ final class DashboardApiAuthTest extends DashboardHttpTestCase
         $dashboardResponse = $server(new ServerRequest('GET', '/dashboard'));
         self::assertSame(200, $dashboardResponse->getStatusCode());
     }
+
+    /**
+     * A renovação relê o utilizador: desativado depois de a sessão abrir, deixa de renovar.
+     *
+     * Antes, o refresh reconstruía o contexto a partir do que estava guardado e nunca tocava em
+     * `api_users` -- um utilizador desativado renovava indefinidamente, um por mês, enquanto o
+     * token de renovação vivesse.
+     */
+    public function testApiRefreshRejectsAfterUserDisabled(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+
+        $login = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['username' => 'admin', 'password' => 'secret'], JSON_THROW_ON_ERROR)
+        ));
+        self::assertSame(200, $login->getStatusCode(), (string)$login->getBody());
+        $refreshToken = (string)(json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR)['token']['refresh_token'] ?? '');
+        self::assertNotSame('', $refreshToken);
+
+        $admin = $db->apiUsers->findByUsername('admin');
+        self::assertIsArray($admin);
+        $db->apiUsers->update((int)$admin['id'], 'admin', 'hub_admin', false);
+
+        $refresh = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['refresh_token' => $refreshToken], JSON_THROW_ON_ERROR)
+        ));
+
+        self::assertSame(401, $refresh->getStatusCode(), (string)$refresh->getBody());
+        self::assertSame(
+            'invalid_refresh_token',
+            json_decode((string)$refresh->getBody(), true, 512, JSON_THROW_ON_ERROR)['error']['code'] ?? null
+        );
+    }
+
+    /** Um utilizador apagado também deixa de renovar: sem linha em `api_users`, não há contexto. */
+    public function testApiRefreshRejectsAfterUserDeleted(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+
+        $login = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['username' => 'tenant', 'password' => 'tenant-secret'], JSON_THROW_ON_ERROR)
+        ));
+        self::assertSame(200, $login->getStatusCode(), (string)$login->getBody());
+        $refreshToken = (string)(json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR)['token']['refresh_token'] ?? '');
+        self::assertNotSame('', $refreshToken);
+
+        $tenant = $db->apiUsers->findByUsername('tenant');
+        self::assertIsArray($tenant);
+        $db->apiUsers->delete((int)$tenant['id']);
+
+        $refresh = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['refresh_token' => $refreshToken], JSON_THROW_ON_ERROR)
+        ));
+
+        self::assertSame(401, $refresh->getStatusCode(), (string)$refresh->getBody());
+        self::assertSame(
+            'invalid_refresh_token',
+            json_decode((string)$refresh->getBody(), true, 512, JSON_THROW_ON_ERROR)['error']['code'] ?? null
+        );
+    }
 }

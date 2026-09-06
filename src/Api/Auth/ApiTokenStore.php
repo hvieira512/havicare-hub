@@ -83,7 +83,14 @@ final class ApiTokenStore
         return $access;
     }
 
-    public function refreshAccessToken(string $refreshToken, int $accessTtlSeconds, int $refreshTtlSeconds): ?array
+    /**
+     * Valida um token de renovação e consome-o -- é de uso único, e a rotação apaga-o aqui.
+     *
+     * Devolve só o contexto que trazia; reler o utilizador em `api_users` e reemitir é de quem
+     * chama, porque este store não conhece a base de dados. Um segundo uso do mesmo token já
+     * não encontra nada e devolve `null`.
+     */
+    public function consumeRefreshToken(string $refreshToken): ?ApiAuthContext
     {
         $payload = $this->payload($refreshToken);
         if (!is_array($payload) || ($payload['tokenType'] ?? null) !== self::TOKEN_TYPE_REFRESH) {
@@ -97,17 +104,7 @@ final class ApiTokenStore
 
         $this->redis->del($this->key(trim($refreshToken)));
 
-        return $this->issueTokenPair(
-            $context->username,
-            $context->role,
-            $accessTtlSeconds,
-            $refreshTtlSeconds,
-            $context->userId,
-            $context->licenseId,
-            $context->licenseRefId,
-            $context->companyId,
-            $context->company,
-        );
+        return $context;
     }
 
     public function context(string $token): ?ApiAuthContext

@@ -25,14 +25,28 @@ final class ApiTokenStoreTest extends TestCase
 
         self::assertNull($store->context($pair['access_token']));
 
-        $newPair = $store->refreshAccessToken($pair['refresh_token'], 60, 60);
+        $context = $store->consumeRefreshToken($pair['refresh_token']);
+        self::assertInstanceOf(ApiAuthContext::class, $context);
+        self::assertSame('admin', $context->username);
 
-        self::assertIsArray($newPair);
+        $newPair = $store->issueTokenPair(
+            $context->username,
+            $context->role,
+            60,
+            60,
+            $context->userId,
+            $context->licenseId,
+            $context->licenseRefId,
+            $context->companyId,
+            $context->company,
+        );
+
         self::assertSame('admin', $newPair['username']);
         self::assertNotSame($pair['access_token'], $newPair['access_token']);
         self::assertNotSame($pair['refresh_token'], $newPair['refresh_token']);
         self::assertInstanceOf(ApiAuthContext::class, $store->context($newPair['access_token']));
-        self::assertNull($store->refreshAccessToken($pair['refresh_token'], 60, 60));
+        // Consumido: uma segunda renovação com o mesmo token de renovação já não devolve nada.
+        self::assertNull($store->consumeRefreshToken($pair['refresh_token']));
     }
 
     /** Um token de acesso expirado não abre nada, e o portador não é o de renovação. */
