@@ -21,12 +21,14 @@ final class DeviceConfigurationQueryService
     }
 
     /**
+     * @param list<array<string, mixed>>|null $rows As linhas já lidas, para o detalhe não repetir
+     *   a mesma consulta três vezes por pedido. Sem elas, lê-as.
      * @return array<string, mixed>
      */
-    public function current(string $imei, string $protocol): array
+    public function current(string $imei, string $protocol, ?array $rows = null): array
     {
         $configurations = [];
-        foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
+        foreach ($rows ?? $this->db->deviceConfigurations->allForImei($imei) as $row) {
             $desired = $row['desired_payload'];
             if (!is_array($desired) || $desired === []) {
                 continue;

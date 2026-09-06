@@ -216,7 +216,7 @@ class DeviceService
                 'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
                 'stored' => count($configRows),
             ],
-            'configurations' => $this->configuration($imei),
+            'configurations' => $this->configuration($imei, null, $configRows),
             'effectiveConfigurations' => $lifecycle['effectiveConfigurations'],
             'configurationSync' => $lifecycle['configurationSync'],
             'capabilities' => $this->capabilities->deviceCapabilities($modelRow, $protocol, $configRows),
@@ -312,7 +312,11 @@ class DeviceService
         return $this->featureRequests->commandStatus($id, $auth);
     }
 
-    public function configuration(string $imei, ?ApiAuthContext $auth = null): array
+    /**
+     * @param list<array<string, mixed>>|null $configRows As linhas já lidas pelo chamador, para
+     *   não repetir a consulta. O detalhe passa-as; os chamadores diretos deixam-nas a `null`.
+     */
+    public function configuration(string $imei, ?ApiAuthContext $auth = null, ?array $configRows = null): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
             return ApiError::deviceNotFound()->toArray();
@@ -321,7 +325,7 @@ class DeviceService
         $device = $this->directory->deviceSnapshot($imei);
         $metadata = $this->whitelist->getMetadata($imei);
         $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel((string)($device['supplier'] ?? $metadata?->supplier ?? ''), (string)($device['model'] ?? $metadata?->model ?? '')));
-        return $this->configurationQueries->current($imei, $protocol);
+        return $this->configurationQueries->current($imei, $protocol, $configRows);
     }
 
     public function updateConfigurations(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
@@ -674,7 +678,7 @@ class DeviceService
         // As linhas escritas antes do ciclo de vida continuam legíveis até o próximo PATCH
         // lhes criar a primeira revisão.
         $legacyPending = $this->pendingConfiguration($model, $protocol, $configRows);
-        $desired = $this->configuration($imei);
+        $desired = $this->configuration($imei, null, $configRows);
         foreach ($desired as $key => $value) {
             $section = CapabilityCatalog::sectionForCapabilityKey((string)$key) ?? 'settings_system';
             if (isset($entries[$section][$key])) {
