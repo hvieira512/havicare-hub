@@ -3,6 +3,24 @@ import { authHeaders } from "../api/http.js";
 
 let onRenderSelection = () => {};
 let onCommandsUpdated = () => {};
+let renderFramePending = false;
+
+/**
+ * Coalesce os renders do stream: um radar publica várias mensagens por segundo, e uma rajada
+ * (um instantâneo com o histórico atrás) redesenhava o detalhe por inteiro uma vez por cada.
+ * Guardado atrás de um `requestAnimationFrame` já agendado, a rajada dá um render só.
+ */
+function scheduleSelectionRender() {
+    if (renderFramePending) {
+        return;
+    }
+    renderFramePending = true;
+    const raf = globalThis.requestAnimationFrame || ((callback) => setTimeout(callback, 16));
+    raf(() => {
+        renderFramePending = false;
+        onRenderSelection();
+    });
+}
 let abortController = null;
 let currentImei = "";
 let streamLive = false;
@@ -261,5 +279,5 @@ function handleStreamUpdate(event) {
         mergeRecent(state.selectedDetail.recent, data, event.type === "snapshot"),
     );
     onCommandsUpdated(currentImei, data.commands || []);
-    onRenderSelection();
+    scheduleSelectionRender();
 }

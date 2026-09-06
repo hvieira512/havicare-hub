@@ -217,9 +217,15 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         });
     }
 
-    els.selectedDevicePreview.innerHTML = image
-        ? html`<img src="${image}" class="object-fit-contain" alt="${model || device.imei}" style="max-width:56px;max-height:56px;">`
-        : "<i class=\"fa-solid fa-microchip fa-xl text-secondary\"></i>";
+    // A imagem do modelo é estável, mas o render corre a cada mensagem do stream: recriar o
+    // `<img>` fazia o browser recarregá-lo e piscar. Só se refaz quando muda.
+    const previewKey = image || "__none__";
+    if (els.selectedDevicePreview.dataset.previewKey !== previewKey) {
+        els.selectedDevicePreview.dataset.previewKey = previewKey;
+        els.selectedDevicePreview.innerHTML = image
+            ? html`<img src="${image}" class="object-fit-contain" alt="${model || device.imei}" style="max-width:56px;max-height:56px;">`
+            : "<i class=\"fa-solid fa-microchip fa-xl text-secondary\"></i>";
+    }
     els.selectedDeviceTitle.textContent = device.imei;
     // O estado é a primeira coisa que se pergunta sobre um dispositivo, e por isso vem
     // antes do identificador.
