@@ -37,9 +37,9 @@ protocolos. O hub implementa-os uma vez e publica o resultado num envelope
 }
 ```
 
-O campo `data.bpm` é produzido a partir de sete designações distintas conforme o
-firmware de origem — `heartRate`, `hr`, `bpm`, `pulse`, `value`, `data` e
-`date`.
+O campo `data.bpm` é produzido a partir de oito designações distintas conforme o
+firmware de origem — `heartRate`, `heart_rate`, `hr`, `bpm`, `pulse`, `value`,
+`data` e `date`.
 
 ## Arquitetura
 

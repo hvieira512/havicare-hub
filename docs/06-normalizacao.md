@@ -107,8 +107,8 @@ firmware.
 ## 3. Capacidades
 
 As vinte capacidades reconhecidas pelo `FeatureNormalizer`. **O contrato
-anterior documentava doze** — as oito restantes já eram publicadas, sem
-sido escritas.
+anterior documentava doze** — as oito restantes já eram publicadas, sem nunca
+terem sido documentadas.
 
 Campos ausentes são **omitidos**, nunca preenchidos com `null` ou zero. Uma
 leitura que não se consegue normalizar não produz evento nenhum.

@@ -197,7 +197,7 @@ publicado dezenas de vezes por minuto.
 | Mecanismo | Função | Âmbito | Omissão |
 |---|---|---|---|
 | **De-duplicação** | O mesmo anúncio, byte a byte, ouvido outra vez é descartado | sensor de fralda | 5 s |
-| **Refrescamento** | Suprime telemetria de conteúdo idêntico até decorrer este período, findo o qual volta a ser publicada | toda a telemetria | 60 s |
+| **Refrescamento** | Suprime telemetria de conteúdo idêntico até decorrer este período, findo o qual volta a ser publicada | aparelhos MOKO | 60 s |
 | **Inatividade do gateway** | Transição para `offline`, com `status` retido | gateways | 180 s |
 
 O refrescamento tem âmbito **por gateway** e não por dispositivo. Com âmbito por
