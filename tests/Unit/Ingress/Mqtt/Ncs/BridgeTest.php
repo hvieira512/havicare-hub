@@ -76,4 +76,37 @@ final class BridgeTest extends TestCase
             '{"from":"bea6c3dd8e02"}'
         );
     }
+
+    /**
+     * O caminho feliz do bridge só estava coberto pelo cenário que precisa da pilha Docker
+     * inteira; os testes unitários eram só de rejeição. Isto prende um NCS registado a publicar.
+     */
+    public function testRegisteredNcsPublishesTheHelpCallEvent(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = new Bridge(
+            new FakeMqttSubscriber(),
+            IngressFixtures::whitelist([
+                'gw-001' => IngressFixtures::device('Voerka', 'W812', 'ncs'),
+            ]),
+            $mqtt,
+        );
+
+        $bridge->handleReceivedMessage(
+            '/voerka/1001/devices/gw-001/events',
+            json_encode([
+                'from' => 'gw-001',
+                'type' => 6,
+                'timestamp' => 372315009,
+                'payload' => ['id' => '482929', 'key' => '8', 'code' => 4000, 'result' => 1],
+            ], JSON_THROW_ON_ERROR)
+        );
+
+        // O raw sai sempre, e o evento é um help_call com o pagerId.
+        self::assertCount(1, $mqtt->raw);
+        self::assertCount(1, $mqtt->events);
+        self::assertSame('gw-001', $mqtt->events[0]['imei']);
+        self::assertSame('help_call', $mqtt->events[0]['payload']['type'] ?? null);
+        self::assertSame('482929', $mqtt->events[0]['payload']['data']['pagerId'] ?? null);
+    }
 }

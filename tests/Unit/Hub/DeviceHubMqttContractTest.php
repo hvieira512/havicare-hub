@@ -112,6 +112,35 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertCount(1, $mqtt->events);
     }
 
+    /**
+     * O par de desligamento não tinha uma única asserção: um refactor podia deixar de publicar
+     * o `offline` ou o `device.disconnected` e a suite ficava verde. Isto prende os dois.
+     */
+    public function testDisconnectPublishesRetainedOfflineStatusAndDisconnectedEvent(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+        $connection = new ContractFakeConnection(7);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, 'IWAP00865028000000308#');
+        $hub->onClose($connection);
+
+        // O `online` e depois o `offline`, ambos estado, ambos retidos.
+        self::assertCount(2, $mqtt->statuses);
+        self::assertSame('online', $mqtt->statuses[0][1]['state']);
+        self::assertSame('865028000000308', $mqtt->statuses[1][0]);
+        self::assertSame('offline', $mqtt->statuses[1][1]['state']);
+        self::assertTrue($mqtt->statuses[1][2], 'o offline é estado e fica retido');
+
+        $disconnected = array_values(array_filter(
+            $mqtt->events,
+            static fn (array $event): bool => ($event[1]['type'] ?? '') === 'device.disconnected'
+        ));
+        self::assertCount(1, $disconnected, 'o desligamento publica um device.disconnected');
+        self::assertSame('865028000000308', $disconnected[0][0]);
+    }
+
     public function testOfflineDownlinkPublishesDroppedEvent(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
