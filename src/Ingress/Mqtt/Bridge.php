@@ -108,10 +108,8 @@ abstract class Bridge implements MqttIngress
      */
     protected function enrichWithCommercialName(array $device, ?CommercialModelResolver $resolver): array
     {
-        if (($device['commercialName'] ?? '') !== '') {
-            return $device;
-        }
-
+        // A resolução corre por mensagem, mas assenta num lookup O(1) no índice em memória do
+        // ModelRepository, invalidado quando um modelo muda -- não justifica um memo à parte.
         $commercialName = $resolver?->resolveCommercialName(
             (string)($device['supplier'] ?? ''),
             (string)($device['model'] ?? '')
