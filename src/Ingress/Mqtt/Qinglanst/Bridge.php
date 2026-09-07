@@ -28,6 +28,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         ?IngestStats $stats = null,
         ?DashboardWritePolicy $dashboardWritePolicy = null,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
+        ?\Hub\Registry\Denylist $denylist = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -37,6 +38,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             sourceName: 'qinglanst-radar',
             reconnectSubscriber: $reconnectSubscriber,
             dashboardStore: $dashboardStore,
+            denylist: $denylist,
         );
         $this->decoder = $decoder;
         $this->normalizer = $normalizer;

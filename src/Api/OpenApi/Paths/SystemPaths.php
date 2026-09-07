@@ -13,7 +13,7 @@ final class SystemPaths
 {
     public static function paths(): array
     {
-        return array_merge(self::auth(), self::notifications(), self::documentation());
+        return array_merge(self::auth(), self::notifications(), self::denylist(), self::documentation());
     }
 
     private static function auth(): array
@@ -118,6 +118,87 @@ final class SystemPaths
                         ['200' => Responses::json('Notification deleted', 'DashboardNotificationReadResponse')],
                         'invalid_request',
                         'notification_not_found',
+                    ),
+                ],
+            ],
+        ];
+    }
+
+    private static function denylist(): array
+    {
+        return [
+            '/api/denylist' => [
+                'get' => [
+                    'tags' => ['Notifications'],
+                    'summary' => 'List blocked device identities',
+                    'description' => 'Administrator only.',
+                    'responses' => [
+                        '200' => Responses::content('Blocked device identities', [
+                            'type' => 'object',
+                            'properties' => [
+                                'data' => [
+                                    'type' => 'array',
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'identity' => ['type' => 'string'],
+                                            'protocol' => ['type' => 'string'],
+                                            'note' => ['type' => 'string', 'nullable' => true],
+                                            'created_by' => ['type' => 'string'],
+                                            'created_at' => ['type' => 'string'],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ]),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Notifications'],
+                    'summary' => 'Block a device identity',
+                    'description' => 'Administrator only. Silences an unregistered device at the '
+                        . 'source -- no dashboard notification, no MQTT event -- and clears any '
+                        . 'notifications it already raised.',
+                    'requestBody' => Requests::inline([
+                        'type' => 'object',
+                        'required' => ['identity'],
+                        'properties' => [
+                            'identity' => ['type' => 'string', 'example' => '357000000000123'],
+                            'protocol' => ['type' => 'string', 'example' => 'four-p-touch'],
+                            'note' => ['type' => 'string'],
+                        ],
+                    ]),
+                    'responses' => Responses::map(
+                        ['200' => Responses::content('Identity blocked', [
+                            'type' => 'object',
+                            'properties' => [
+                                'status' => ['type' => 'string', 'example' => 'ok'],
+                                'identity' => ['type' => 'string'],
+                                'clearedNotifications' => ['type' => 'integer'],
+                            ],
+                        ])],
+                        'invalid_request',
+                    ),
+                ],
+            ],
+            '/api/denylist/{identity}' => [
+                'delete' => [
+                    'tags' => ['Notifications'],
+                    'summary' => 'Unblock a device identity',
+                    'description' => 'Administrator only.',
+                    'parameters' => [
+                        Parameters::pathSchema('identity', ['type' => 'string']),
+                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::content('Identity unblocked', [
+                            'type' => 'object',
+                            'properties' => [
+                                'status' => ['type' => 'string', 'example' => 'ok'],
+                                'identity' => ['type' => 'string'],
+                            ],
+                        ])],
+                        'invalid_request',
+                        'denylist_not_found',
                     ),
                 ],
             ],

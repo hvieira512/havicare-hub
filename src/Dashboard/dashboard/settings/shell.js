@@ -33,6 +33,7 @@ export function activateSettingsSection(section) {
             models: els.settingsModelsTabBtn,
             capabilities: els.settingsCapabilitiesTabBtn,
             company: els.settingsCompanyTabBtn,
+            denylist: els.settingsDenylistTabBtn,
             apiUsers: els.settingsApiUsersTabBtn,
         }[section] || els.settingsModelsTabBtn;
     bootstrap.Tab.getOrCreateInstance(button).show();

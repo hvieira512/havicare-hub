@@ -7,6 +7,7 @@ use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Log\Logger;
 use Hub\Mqtt\ReconnectsOnLoopFailure;
+use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
 
@@ -33,6 +34,7 @@ abstract class Bridge implements MqttIngress
         protected readonly ?string $sourceName = null,
         ?callable $reconnectSubscriber = null,
         protected readonly ?DashboardStoreContract $dashboardStore = null,
+        protected readonly ?Denylist $denylist = null,
     ) {
         $this->subscriber = $subscriber;
         $this->reconnectSubscriber = $reconnectSubscriber;
@@ -73,6 +75,12 @@ abstract class Bridge implements MqttIngress
         int $licenseId = 0,
         ?string $company = null,
     ): void {
+        // Bloqueado de propósito: cala-se na fonte, sem notificação nem sequer a escrita do
+        // estrangulamento em memória.
+        if ($this->denylist?->contains($identity)) {
+            return;
+        }
+
         // Um aparelho não registado que insiste -- um radar publica ~20 msg/s -- não pode dar
         // uma escrita ao MySQL por mensagem. O aviso regista-se uma vez por identidade e janela.
         $now = time();

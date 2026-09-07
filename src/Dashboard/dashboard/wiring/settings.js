@@ -36,6 +36,10 @@ import {
     newCompany,
 } from "../settings/companies.js";
 import {
+    handleDenylistListClick,
+    loadSettingsDenylistSection,
+} from "../settings/denylist.js";
+import {
     backToModelList,
     handleModelsListSearchInput,
     loadSettingsModelsSection,
@@ -68,6 +72,7 @@ export function bindSettingsEvents(context) {
     bindCapabilities();
     bindApiUsers();
     bindCompanies();
+    bindDenylist();
 }
 
 /** Cada aba carrega a sua secção da primeira vez que é aberta, e não antes. */
@@ -94,6 +99,12 @@ function bindTabs() {
         state.settingsModal.section = "company";
         if (!state.settingsModal.sectionLoaded.company) {
             void loadSettingsCompanySection();
+        }
+    });
+    els.settingsDenylistTabBtn.addEventListener("shown.bs.tab", () => {
+        state.settingsModal.section = "denylist";
+        if (!state.settingsModal.sectionLoaded.denylist) {
+            void loadSettingsDenylistSection();
         }
     });
 }
@@ -190,6 +201,10 @@ function bindCompanies() {
             loadSettingsCompanySection(page),
         ),
     );
+}
+
+function bindDenylist() {
+    els.denylistListBody.addEventListener("click", handleDenylistListClick);
 }
 
 function handleModelImageChange() {

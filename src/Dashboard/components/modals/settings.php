@@ -17,6 +17,7 @@ ob_start();
                 <button class="nav-link active text-start d-flex align-items-center justify-content-between gap-2" id="settingsModelsTabBtn" data-bs-toggle="pill" data-bs-target="#settingsModelsPane" type="button" role="tab" aria-controls="settingsModelsPane" aria-selected="true">Catálogo<span class="settings-nav-count d-none" id="settingsModelsCount"></span></button>
                 <button class="nav-link text-start" id="settingsCapabilitiesTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCapabilitiesPane" type="button" role="tab" aria-controls="settingsCapabilitiesPane" aria-selected="false">Capacidades</button>
                 <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsCompanyTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCompanyPane" type="button" role="tab" aria-controls="settingsCompanyPane" aria-selected="false">Licenças<span class="settings-nav-count d-none" id="settingsCompanyCount"></span></button>
+                <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsDenylistTabBtn" data-bs-toggle="pill" data-bs-target="#settingsDenylistPane" type="button" role="tab" aria-controls="settingsDenylistPane" aria-selected="false">Denylist<span class="settings-nav-count d-none" id="settingsDenylistCount"></span></button>
                 <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsApiUsersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsApiUsersPane" type="button" role="tab" aria-controls="settingsApiUsersPane" aria-selected="false">Utilizadores API<span class="settings-nav-count d-none" id="settingsApiUsersCount"></span></button>
             </div>
         </div>
@@ -186,6 +187,13 @@ ob_start();
                     ) ?>
                     <div id="companyListBody" class="mb-4"></div>
                     <?= pagination_component('settingsCompanyPagination') ?>
+                </div>
+                <div class="tab-pane fade h-100" id="settingsDenylistPane" role="tabpanel" aria-labelledby="settingsDenylistTabBtn">
+                    <?php /* Aparelhos estranhos bloqueados de propósito. Não se acrescenta daqui --
+                           * o «Bloquear» está na notificação --, só se desbloqueia. Ver
+                           * `settings/denylist.js`. */ ?>
+                    <?= tab_pane_header('Denylist', 'denylistTabSummary') ?>
+                    <div id="denylistListBody" class="mb-4"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">
                     <?php /* Sem formulário à parte: criar abre um rascunho no topo da lista e editar

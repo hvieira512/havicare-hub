@@ -9,6 +9,7 @@ use Hub\Api\Controllers\CapabilityDiscoveryController;
 use Hub\Api\Controllers\CompanyController;
 use Hub\Api\Controllers\DeviceController;
 use Hub\Api\Controllers\DashboardNotificationController;
+use Hub\Api\Controllers\DenylistController;
 use Hub\Api\Controllers\LicenseController;
 use Hub\Api\Controllers\ModelController;
 use Hub\Api\Controllers\ProtocolController;
@@ -32,6 +33,7 @@ use Hub\Api\Services\CapabilityDiscoveryService;
 use Hub\Api\Services\CompanyService;
 use Hub\Api\Services\DeviceService;
 use Hub\Api\Services\DashboardNotificationService;
+use Hub\Api\Services\DenylistService;
 use Hub\Api\Services\LicenseService;
 use Hub\Api\Services\ModelService;
 use Hub\Api\Services\ProtocolService;
@@ -73,6 +75,7 @@ final class ApiKernel
         private LicenseService $licenses,
         private ProtocolService $protocols,
         private DashboardNotificationService $notifications,
+        private DenylistService $denylist,
         private JsonResponder $json,
         private HtmlResponder $html,
         private BearerTokenResolver $bearerTokenResolver,
@@ -151,6 +154,7 @@ final class ApiKernel
         $licenses = new LicenseController($this->licenses, $this->json);
         $protocols = new ProtocolController($this->protocols, $this->json);
         $notifications = new DashboardNotificationController($this->notifications, $this->json);
+        $denylist = new DenylistController($this->denylist, $this->json);
         // Construído uma vez, como os restantes: os tetos de ligações abertas são estado deste
         // controlador, e um por pedido não contava nada.
         $stream = new StreamController(
@@ -175,6 +179,7 @@ final class ApiKernel
             ...((require __DIR__ . '/Routes/LicenseRoutes.php')($licenses)),
             ...((require __DIR__ . '/Routes/ProtocolRoutes.php')($protocols)),
             ...((require __DIR__ . '/Routes/DashboardNotificationRoutes.php')($notifications)),
+            ...((require __DIR__ . '/Routes/DenylistRoutes.php')($denylist)),
             ...((require __DIR__ . '/Routes/SystemRoutes.php')($json, $html)),
         ];
     }

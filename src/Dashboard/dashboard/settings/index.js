@@ -7,6 +7,7 @@ import {
 } from "./shell.js";
 import { initSettingsApiUsers, loadSettingsApiUsersSection } from "./api-users.js";
 import { initSettingsCompanies, loadSettingsCompanySection } from "./companies.js";
+import { initSettingsDenylist, loadSettingsDenylistSection } from "./denylist.js";
 import {
     initSettingsCapabilities,
     loadSettingsCapabilitiesSection,
@@ -25,6 +26,7 @@ export function initSettings(context) {
     initSettingsShell(context);
     initSettingsApiUsers(context);
     initSettingsCompanies(context);
+    initSettingsDenylist(context);
     initSettingsCapabilities(context);
     initSettingsModels(context);
 }
@@ -41,6 +43,7 @@ export async function loadSettingsModal(
         modelFilters: false,
         capabilities: false,
         company: false,
+        denylist: false,
         apiUsers: false,
     };
     state.settingsModal.modelCatalog = [];
@@ -67,6 +70,7 @@ export async function loadSettingsModal(
         models: loadSettingsModelsSection,
         capabilities: loadSettingsCapabilitiesSection,
         company: loadSettingsCompanySection,
+        denylist: loadSettingsDenylistSection,
         apiUsers: loadSettingsApiUsersSection,
     }[section];
     if (load) void load();

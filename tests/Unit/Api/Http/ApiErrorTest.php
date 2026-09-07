@@ -31,6 +31,7 @@ final class ApiErrorTest extends TestCase
             'modelNotFound' => [fn(): ApiError => ApiError::modelNotFound(), 'model_not_found', 'Model not found', 404],
             'modelNotFoundForSupplier' => [fn(): ApiError => ApiError::modelNotFoundForSupplier(), 'model_not_found', 'Model does not exist for this supplier', 404],
             'companyNotFound' => [fn(): ApiError => ApiError::companyNotFound(), 'company_not_found', 'Company not found', 404],
+            'denylistNotFound' => [fn(): ApiError => ApiError::denylistNotFound(), 'denylist_not_found', 'Denylist entry not found', 404],
             'licenseNotFound' => [fn(): ApiError => ApiError::licenseNotFound(), 'license_not_found', 'License not found', 404],
             'capabilityNotFound' => [fn(): ApiError => ApiError::capabilityNotFound(), 'capability_not_found', 'Capability not found', 404],
             'discoveryNotFound' => [fn(): ApiError => ApiError::discoveryNotFound(), 'discovery_not_found', 'Discovery run not found', 404],

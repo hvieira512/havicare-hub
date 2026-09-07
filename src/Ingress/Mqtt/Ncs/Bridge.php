@@ -19,6 +19,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         ?\Hub\Dashboard\DashboardStoreContract $dashboardStore = null,
         ?MessageNormalizer $normalizer = null,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
+        ?\Hub\Registry\Denylist $denylist = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -28,6 +29,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             sourceName: 'ncs',
             reconnectSubscriber: $reconnectSubscriber,
             dashboardStore: $dashboardStore,
+            denylist: $denylist,
         );
         $this->normalizer = $normalizer;
         $this->commercialModelResolver = $commercialModelResolver;

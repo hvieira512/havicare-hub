@@ -6,6 +6,7 @@ use Hub\Log\Logger;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Protocol\AdapterRegistry;
+use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\Device\Watch\WatchMessage;
 use Hub\Device\Watch\WatchProtocolRegistry;
@@ -23,6 +24,7 @@ class DeviceHubServer
     private ?DashboardStoreContract $dashboardStore;
     private int $downlinkQueueTtlSeconds;
     private ?LocationTelemetryEnricherContract $locationTelemetryEnricher;
+    private ?Denylist $denylist;
 
     public function __construct(
         Whitelist $whitelist,
@@ -36,8 +38,10 @@ class DeviceHubServer
         ?DashboardStoreContract $dashboardStore = null,
         int $downlinkQueueTtlSeconds = 300,
         ?LocationTelemetryEnricherContract $locationTelemetryEnricher = null,
+        ?Denylist $denylist = null,
     ) {
         $this->whitelist = $whitelist;
+        $this->denylist = $denylist;
         $this->connections = $connections ?? new ConnectionRegistry();
         $this->authorizer = $authorizer ?? new DeviceAuthorizer($whitelist, $commercialModelResolver);
         $this->mqtt = $mqtt;
@@ -393,6 +397,13 @@ class DeviceHubServer
 
     private function reject(ConnectionInterface $conn, DeviceIdentity $identity, string $reason): void
     {
+        // Bloqueado de propósito: fecha-se em silêncio, sem notificação na dashboard nem
+        // estado/evento no broker. O socket fecha na mesma.
+        if ($this->denylist?->contains($identity->imei) || $this->denylist?->contains($identity->ident)) {
+            $conn->close();
+            return;
+        }
+
         if ($reason === 'device_not_authorized') {
             try {
                 $this->dashboardStore?->recordRejectedDevice(

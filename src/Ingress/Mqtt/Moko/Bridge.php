@@ -67,6 +67,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         ?callable $clock = null,
         private readonly ?ProximityTracker $proximityTracker = null,
         private readonly ?DiaperSensitivityLookup $diaperSensitivity = null,
+        ?\Hub\Registry\Denylist $denylist = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -76,6 +77,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             sourceName: 'moko-gateway',
             reconnectSubscriber: $reconnectSubscriber,
             dashboardStore: $dashboardStore,
+            denylist: $denylist,
         );
         $this->links = $links;
         $this->state = $state;

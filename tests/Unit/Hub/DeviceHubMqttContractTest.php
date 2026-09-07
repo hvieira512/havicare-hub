@@ -9,6 +9,7 @@ use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Protocol\Adapter\WonlexAdapter;
+use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\Device\ConnectionInterface;
 use Hub\Dashboard\DashboardStoreContract;
@@ -75,6 +76,35 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertFalse($mqtt->statuses[0][2], 'o status de erro da rejeição não é retido');
         self::assertSame('device.rejected', $mqtt->events[0][1]['type']);
         self::assertSame('device_not_authorized', $mqtt->events[0][1]['error']['code']);
+    }
+
+    /**
+     * Um relógio na denylist é rejeitado em silêncio: fecha-se a ligação, mas sem notificação
+     * na dashboard e sem estado/evento no broker. É o «não quero mesmo que apareça».
+     */
+    public function testDenylistedDeviceIsRejectedSilently(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $store = $this->createMock(DashboardStoreContract::class);
+        $store->expects(self::never())->method('recordRejectedDevice');
+
+        $denylist = new Denylist();
+        $denylist->block('865028000000999');
+
+        $hub = new DeviceHubServer(
+            $this->whitelist,
+            $mqtt,
+            dashboardStore: $store,
+            denylist: $denylist,
+        );
+        $connection = new ContractFakeConnection(1);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, 'IWAP00865028000000999#');
+
+        self::assertTrue($connection->closed, 'a ligação fecha na mesma');
+        self::assertCount(0, $mqtt->statuses, 'sem estado no broker');
+        self::assertCount(0, $mqtt->events, 'sem evento no broker');
     }
 
     /** O contraste: um `online`/`offline` é estado, e esse fica retido. */

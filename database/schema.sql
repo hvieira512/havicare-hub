@@ -253,6 +253,18 @@ CREATE TABLE IF NOT EXISTS dashboard_notifications (
     KEY idx_dashboard_notifications_latest (last_seen_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Identidades a ignorar de propósito: um aparelho estranho que fala connosco e que não
+-- queremos registar nem voltar a ver no sino. Consultada só no caminho de rejeição, para
+-- calar a notificação na fonte. `identity` é o que o aparelho anuncia (IMEI, MAC ou uid), a
+-- mesma largura da `whitelist.imei`.
+CREATE TABLE IF NOT EXISTS denylist (
+    identity VARCHAR(64) NOT NULL PRIMARY KEY,
+    protocol VARCHAR(64) NOT NULL DEFAULT '',
+    note VARCHAR(255) NULL DEFAULT NULL,
+    created_by VARCHAR(96) NOT NULL DEFAULT '',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS private_radio_map_access_points (
     bssid_hash CHAR(64) NOT NULL PRIMARY KEY,
     latitude DECIMAL(10,7) NOT NULL,

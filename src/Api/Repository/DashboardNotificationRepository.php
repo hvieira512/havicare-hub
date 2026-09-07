@@ -101,6 +101,15 @@ final class DashboardNotificationRepository
         return $stmt->rowCount() > 0;
     }
 
+    /** Apaga todas as notificações de um IMEI -- usado ao bloquear, para calar o aparelho de vez. */
+    public function deleteByImei(string $imei): int
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM dashboard_notifications WHERE imei = ?');
+        $stmt->execute([$imei]);
+
+        return $stmt->rowCount();
+    }
+
     /**
      * @param array<string, mixed> $row
      * @return array<string, mixed>

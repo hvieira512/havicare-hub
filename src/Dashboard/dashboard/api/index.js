@@ -17,6 +17,11 @@ export {
     markNotificationsRead,
 } from "./notifications.js";
 export {
+    blockDevice,
+    getDenylist,
+    unblockDevice,
+} from "./denylist.js";
+export {
     createCompany,
     deleteCompany,
     getCompanies,

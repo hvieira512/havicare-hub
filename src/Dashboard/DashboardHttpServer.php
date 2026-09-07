@@ -88,6 +88,7 @@ final class DashboardHttpServer
             new LicenseService($this->db),
             new ProtocolService(),
             new DashboardNotificationService($this->db),
+            new \Hub\Api\Services\DenylistService($this->db),
             new \Hub\Api\Http\JsonResponder(),
             new \Hub\Api\Http\HtmlResponder(),
             new \Hub\Api\Auth\BearerTokenResolver($this->tokens),

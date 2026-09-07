@@ -1,4 +1,5 @@
 import {
+    blockDevice,
     deleteNotification,
     getNotifications,
     markNotificationsRead,
@@ -88,6 +89,12 @@ const render = () => {
         const deviceLine = kind.showsDevice
             ? html`<span class="d-block font-monospace small text-break">${notification.imei}</span>`
             : "";
+        // Só um dispositivo com identidade se pode bloquear -- calá-lo de vez em vez de só o dispensar.
+        const blockButton = kind.showsDevice
+            ? html`<button class="btn btn-sm btn-outline-secondary flex-shrink-0" type="button" data-notification-block="${Number(notification.id) || 0}" title="Bloquear dispositivo" aria-label="Bloquear dispositivo">
+                        <i class="fa-solid fa-ban" aria-hidden="true"></i>
+                    </button>`
+            : "";
 
         return html`
             <div class="list-group-item px-3 py-3${unreadClass}">
@@ -106,6 +113,7 @@ const render = () => {
                             </span>
                         </span>
                     </button>
+                    ${raw(blockButton)}
                     <button class="btn btn-sm btn-outline-danger flex-shrink-0" type="button" data-notification-dismiss="${Number(notification.id) || 0}" title="Eliminar notificação" aria-label="Eliminar notificação">
                         <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
                     </button>
@@ -187,6 +195,26 @@ const dismissNotification = async (id, button) => {
     renderBadge(result?.unreadCount);
 };
 
+const blockDeviceAction = async (notification, button) => {
+    button.disabled = true;
+    const original = button.innerHTML;
+    button.innerHTML = "<span class=\"spinner-border spinner-border-sm\" aria-hidden=\"true\"></span>";
+    const result = await blockDevice(notification.imei, notification.protocol || "");
+    if (result?.error) {
+        button.disabled = false;
+        button.innerHTML = original;
+        toast(
+            "error",
+            "Não foi possível bloquear o dispositivo",
+            result.error.message || "Por favor, volte a tentar.",
+        );
+        return;
+    }
+
+    // O bloqueio limpou as notificações deste aparelho no servidor; recarregar reflete-o.
+    await load();
+};
+
 const handleNotificationClick = (event) => {
     const dismissButton = event.target.closest("[data-notification-dismiss]");
     if (dismissButton) {
@@ -195,6 +223,20 @@ const handleNotificationClick = (event) => {
         const id = Number(dismissButton.dataset.notificationDismiss);
         if (Number.isInteger(id) && id > 0) {
             void dismissNotification(id, dismissButton);
+        }
+        return;
+    }
+
+    const blockButton = event.target.closest("[data-notification-block]");
+    if (blockButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        const id = Number(blockButton.dataset.notificationBlock);
+        const notification = notifications.find(
+            (candidate) => Number(candidate.id) === id,
+        );
+        if (notification) {
+            void blockDeviceAction(notification, blockButton);
         }
         return;
     }

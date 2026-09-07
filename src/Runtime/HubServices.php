@@ -15,6 +15,7 @@ use Hub\Infrastructure\Persistence\DashboardDatabase;
 use Hub\Location\LocationEnricherFactory;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Mqtt\ConnectionFactory;
+use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
 use Predis\Client as RedisClient;
@@ -34,6 +35,7 @@ final class HubServices
         public readonly ApiDataAccess $dataAccess,
         public readonly ClientInterface $redis,
         public readonly Whitelist $whitelist,
+        public readonly Denylist $denylist,
         public readonly PendingDownlinkQueue $downlinkQueue,
         public readonly DashboardStore $dashboardStore,
         public readonly CommercialModelResolver $commercialModelResolver,
@@ -57,6 +59,7 @@ final class HubServices
 
         $whitelistFile = trim((string)$config['hub']['whitelist_file']);
         $whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null, $dataAccess->whitelist);
+        $denylist = new Denylist($dataAccess->denylist);
 
         $dashboardStore = new DashboardStore($redis, (int)$config['dashboard']['history_limit']);
         $dashboardStore->setDataAccess($dataAccess);
@@ -84,6 +87,7 @@ final class HubServices
             dashboardStore: $dashboardStore,
             downlinkQueueTtlSeconds: (int)$config['hub']['downlink_queue_ttl_seconds'],
             locationTelemetryEnricher: $locationEnricher,
+            denylist: $denylist,
         );
 
         return new self(
@@ -91,6 +95,7 @@ final class HubServices
             $dataAccess,
             $redis,
             $whitelist,
+            $denylist,
             $downlinkQueue,
             $dashboardStore,
             $commercialModelResolver,

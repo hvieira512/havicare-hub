@@ -20,6 +20,7 @@ final class ApiDataAccess
         public readonly DashboardNotificationRepository $dashboardNotifications,
         public readonly GatewayDeviceLinkRepository $gatewayDeviceLinks,
         public readonly DiaperSensitivityRepository $diaperSensitivity,
+        public readonly DenylistRepository $denylist,
     ) {
     }
 
@@ -41,6 +42,7 @@ final class ApiDataAccess
             new DashboardNotificationRepository($pdo),
             new GatewayDeviceLinkRepository($pdo),
             new DiaperSensitivityRepository($pdo),
+            new DenylistRepository($pdo),
         );
     }
 }

@@ -6,6 +6,7 @@ namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Ingress\Mqtt\Qinglanst\Bridge;
+use Hub\Registry\Denylist;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
@@ -62,6 +63,30 @@ final class BridgeTest extends TestCase
         );
 
         $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
+        $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
+    }
+
+    /**
+     * Um radar na denylist é ignorado na fonte: nem notificação, nem escrita. É o «não quero
+     * mesmo que apareça» -- cala o sino em definitivo, ao contrário do estrangulamento, que só
+     * espaça.
+     */
+    public function testDenylistedRadarProducesNoNotification(): void
+    {
+        $dashboardStore = $this->createMock(DashboardStoreContract::class);
+        $dashboardStore->expects(self::never())->method('recordRejectedDevice');
+
+        $denylist = new Denylist();
+        $denylist->block('9D8A3204F853');
+
+        $bridge = new Bridge(
+            new FakeMqttSubscriber(),
+            IngressFixtures::whitelist(),
+            new RecordingHubMqttBridge(),
+            dashboardStore: $dashboardStore,
+            denylist: $denylist,
+        );
+
         $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
     }
 

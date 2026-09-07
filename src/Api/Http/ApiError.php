@@ -50,6 +50,7 @@ final class ApiError
         'association_not_found' => 404,
         'capability_not_found' => 404,
         'company_not_found' => 404,
+        'denylist_not_found' => 404,
         'discovery_not_found' => 404,
         'license_not_found' => 404,
         'model_not_found' => 404,
@@ -230,6 +231,11 @@ final class ApiError
     public static function notificationNotFound(): self
     {
         return new self('notification_not_found', 'Notification not found');
+    }
+
+    public static function denylistNotFound(): self
+    {
+        return new self('denylist_not_found', 'Denylist entry not found');
     }
 
     public static function supplierNotFound(): self

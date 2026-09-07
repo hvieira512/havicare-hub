@@ -77,6 +77,7 @@ if ($config['ncs']['enabled']) {
             $reconnect,
             $services->dashboardStore,
             commercialModelResolver: $services->commercialModelResolver,
+            denylist: $services->denylist,
         ),
     ));
     $enabledIngresses[] = 'ncs';
@@ -102,6 +103,7 @@ if ($config['moko']['enabled']) {
             (int)$config['moko']['idle_timeout_seconds'],
             (int)$config['moko']['raw_history_sample_seconds'],
             diaperSensitivity: $services->dataAccess->diaperSensitivity,
+            denylist: $services->denylist,
         ),
     ));
     $enabledIngresses[] = 'moko';
@@ -132,6 +134,7 @@ if ($config['qinglanst']['enabled']) {
                 (int)$config['qinglanst']['raw_history_sample_ms'],
             ),
             commercialModelResolver: $services->commercialModelResolver,
+            denylist: $services->denylist,
         ),
     ));
     $enabledIngresses[] = 'qinglanst';
