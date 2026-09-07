@@ -316,5 +316,5 @@ conteúdo se altere.
 | `src/Ingress/Mqtt/Moko/RedisObservationStateStore.php` | De-duplicação, refrescamento, transições |
 
 Os manuais do fabricante estão em
-[`fornecedores/gateways/`](fornecedores/gateways/), com as notas de campo em
-[`MKGW4 payloads — hex vs JSON.md`](fornecedores/gateways/MKGW4%20payloads%20—%20hex%20vs%20JSON.md).
+[`fornecedores/MOKO/`](fornecedores/MOKO/), com as notas de campo em
+[`MKGW4 payloads — hex vs JSON.md`](fornecedores/MOKO/MKGW4%20payloads%20—%20hex%20vs%20JSON.md).

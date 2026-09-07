@@ -92,7 +92,7 @@ com as instâncias de desenvolvimento e produção estão no
 
 Os manuais e as folhas de especificação originais estão em
 [`fornecedores/`](fornecedores/) — Voerka, Wonlex, VIVISTAR e 4P Touch — e em
-[`fornecedores/gateways/`](fornecedores/gateways/) para os equipamentos MOKO,
+[`fornecedores/MOKO/`](fornecedores/MOKO/) para os equipamentos MOKO,
 incluindo a análise de tramas em
-[`MKGW4 payloads — hex vs JSON.md`](fornecedores/gateways/MKGW4%20payloads%20—%20hex%20vs%20JSON.md).
+[`MKGW4 payloads — hex vs JSON.md`](fornecedores/MOKO/MKGW4%20payloads%20—%20hex%20vs%20JSON.md).
 Constituem a fonte primária para o que não estiver coberto nesta documentação.
