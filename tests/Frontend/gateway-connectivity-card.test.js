@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e esse
 // caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
-import { renderRequestCardShell } from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { renderRequestCardShell } from "../../src/Dashboard/dashboard/request-card.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
 // O nome de uma capacidade vem do catálogo do tipo do dispositivo escolhido, e não de um

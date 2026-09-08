@@ -24,12 +24,11 @@ import { deviceLicenseHtml, filterChips } from "../widgets.js";
 import { onlineBadge } from "../components/state-badge.js";
 import {
     cardTone,
-    telemetryCard,
-    renderRequestCardShell,
-    requestCardContent,
     statusBadge,
     uplinkCardContent,
 } from "../telemetry-cards.js";
+import { telemetryCard } from "../card-shell.js";
+import { renderRequestCardShell, requestCardContent } from "../request-card.js";
 import { fallSummaryCard, helpCallSummaryCard } from "./event-summary-cards.js";
 import { activityTable } from "./activity-table.js";
 import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";

@@ -7,10 +7,8 @@ import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { html, raw } from "../../src/Dashboard/dashboard/html.js";
 import { deviceLicenseHtml } from "../../src/Dashboard/dashboard/widgets.js";
-import {
-    telemetryCard,
-    uplinkCardContent,
-} from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { uplinkCardContent } from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { telemetryCard } from "../../src/Dashboard/dashboard/card-shell.js";
 
 /* ---------- a template tag ---------- */
 

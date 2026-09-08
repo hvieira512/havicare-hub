@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
-import { telemetryCard, uplinkCardContent } from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { uplinkCardContent } from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { telemetryCard } from "../../src/Dashboard/dashboard/card-shell.js";
 
 /**
  * Os cartões do radar. A frequência cardíaca e a respiratória não aparecem aqui de propósito:
