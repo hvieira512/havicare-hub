@@ -88,8 +88,8 @@ function licenseViewRow(license) {
                 <span class="text-truncate">${license.name || "sem nome"}</span>
             </div>
             <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                <button class="btn btn-outline-secondary btn-sm" data-action="editLicense" data-id="${license.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn btn-outline-danger btn-sm" data-id="${license.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn btn-outline-secondary btn-sm" data-action="editLicense" data-id="${license.id}" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                <button class="btn btn-outline-danger btn-sm" data-id="${license.id}" data-action="deleteLicense" title="Apagar" aria-label="Apagar"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
             </div>
         </div>`;
 }
@@ -125,8 +125,8 @@ function companyHeaderView(company, owned) {
             <div class="d-flex align-items-center gap-2">
                 ${raw(stateBadge(`${owned.length} ${owned.length === 1 ? "licença" : "licenças"}`, "secondary"))}
                 <button class="btn btn-outline-secondary btn-sm" data-action="newLicenseForCompany" data-company-id="${company.id}" title="Nova licença" aria-label="Nova licença nesta empresa"><i class="fa-solid fa-plus"></i></button>
-                <button class="btn btn-outline-secondary btn-sm" data-action="editCompany" data-id="${company.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn btn-outline-danger btn-sm" data-id="${company.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn btn-outline-secondary btn-sm" data-action="editCompany" data-id="${company.id}" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                <button class="btn btn-outline-danger btn-sm" data-id="${company.id}" data-action="deleteCompany" title="Apagar" aria-label="Apagar"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
             </div>
         </div>`;
 }

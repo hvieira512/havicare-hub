@@ -33,7 +33,7 @@ import {
 import { fallSummaryCard, helpCallSummaryCard } from "./event-summary-cards.js";
 import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";
 import { renderPagination } from "../pagination.js";
-import { clearStorageKey, saveTextStorage } from "../storage.js";
+import { SELECTED_DEVICE_STORAGE_KEY, clearStorageKey, saveTextStorage } from "../storage.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { gatewaySignalRows } from "./gateway-signal.js";
 
@@ -943,12 +943,12 @@ async function requestTelemetryFeature(feature) {
 
 function saveSelectedDeviceToStorage() {
     if (state.selectedImei) {
-        saveTextStorage("hub-dashboard-selected-device", state.selectedImei);
+        saveTextStorage(SELECTED_DEVICE_STORAGE_KEY, state.selectedImei);
     }
 }
 
 function clearSelectedDeviceFromStorage() {
-    clearStorageKey("hub-dashboard-selected-device");
+    clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
 }
 
 export {

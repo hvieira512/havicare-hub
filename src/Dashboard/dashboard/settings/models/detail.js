@@ -20,7 +20,8 @@ import {
     modelDeviceType,
     modelInternalName,
 } from "../../domain.js";
-import { CAPABILITY_SECTION_ICONS, loadCapabilityCatalog } from "../capabilities.js";
+import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
+import { loadCapabilityCatalog } from "../capabilities.js";
 import { getSettingsModelsRuntime, modelsCarousel } from "./shell.js";
 import { backToModelList } from "./list.js";
 

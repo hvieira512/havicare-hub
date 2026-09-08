@@ -6,6 +6,19 @@ import { state } from "./state.js";
 import { capabilityLabelByKey, normalizeDeviceType } from "./domain.js";
 
 /**
+ * O ícone de cada secção de capacidades. Vive aqui, no módulo partilhado das capacidades, e
+ * não numa pasta de funcionalidade: tanto as definições como a configuração de dispositivo o
+ * usam, e uma pasta não importa da outra.
+ */
+export const CAPABILITY_SECTION_ICONS = {
+    telemetry: "fa-chart-line",
+    health: "fa-heart-pulse",
+    contacts: "fa-address-book",
+    alarms: "fa-bell",
+    settings_system: "fa-gear",
+};
+
+/**
  * O catálogo de capacidades de cada tipo de dispositivo, e o nome por que se chama cada uma.
  *
  * O nome vem na `label` do `/api/capabilities`, que sai das definições em PHP e da base de

@@ -3,7 +3,7 @@ import { emptyPanel } from "../../widgets.js";
 import { stateBadge } from "../../components/state-badge.js";
 // Os mesmos cinco ícones do catálogo de capacidades: as secções são as mesmas, e um separador
 // com outro ícone para a mesma secção lia-se como sendo outra coisa.
-import { CAPABILITY_SECTION_ICONS } from "../../settings/capabilities.js";
+import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
 import { takePillsInput, takePillsReminderGroup } from "./four-p-touch-take-pills.js";
 import {
     defaultWonlexMedicationPlan,

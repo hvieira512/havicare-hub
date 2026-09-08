@@ -39,7 +39,7 @@
                                         <?= section_header('Ligações ao servidor') ?>
                                         <div id="connectionTimeline"></div>
                                     </section>
-                                    <div class="card-section row g-0 flex-grow-1" style="min-height:0">
+                                    <div class="card-section row g-0 flex-grow-1 min-h-0">
                                         <?php /* `min-h-0` nas duas colunas: um item de flex não encolhe abaixo do
                                                * conteúdo, e sem isto a lista empurrava a coluna, a coluna empurrava
                                                * o cartão e o `overflow-auto` da lista nunca tinha o que rolar. */ ?>

@@ -5,7 +5,7 @@ import { state } from "../state.js";
 import { html, raw } from "../html.js";
 import { renderButtonGroup, renderDeviceTypeTiles, sectionStrip } from "../widgets.js";
 import { cardIcon } from "../telemetry-cards.js";
-import { ensureCapabilityCatalog, ensureModelTemplate } from "../capability-catalog.js";
+import { CAPABILITY_SECTION_ICONS, ensureCapabilityCatalog, ensureModelTemplate } from "../capability-catalog.js";
 import {
     capabilitiesGroupedBySection,
     deviceTypeOptions,
@@ -250,14 +250,6 @@ function renderCapabilitiesCatalogSection() {
  * Cinco secções irmãs, cinco ícones -- e uma cor só: cores diferentes leem-se como
  * gravidades diferentes, e o vermelho dos alarmes lia-se como erro em vez de categoria.
  */
-export const CAPABILITY_SECTION_ICONS = {
-    telemetry: "fa-chart-line",
-    health: "fa-heart-pulse",
-    contacts: "fa-address-book",
-    alarms: "fa-bell",
-    settings_system: "fa-gear",
-};
-
 /**
  * O ícone de uma capacidade no catálogo. O mapa dos cartões de pedido cobre sobretudo
  * telemetria; fora disso o recurso é o ícone da secção, porque catorze círculos iguais numa

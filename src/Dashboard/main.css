@@ -319,6 +319,7 @@
     height: 30px;
     width: auto;
     display: block;
+    filter: invert(100%);
 }
 
 .dashboard-notifications-menu {
@@ -423,10 +424,6 @@
         flex: none;
         white-space: nowrap;
     }
-}
-
-.navbar-brand img {
-    filter: invert(100%);
 }
 
 /* ===== assistente de adicionar dispositivo ===== */
