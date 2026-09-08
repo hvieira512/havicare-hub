@@ -11,7 +11,7 @@ final class CapabilityCatalogTest extends TestCase
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [69, 'd3c4bfbe9b84ff7a55aa9e3bb7531cb592ba523e04d9b222b4b8b02d71de2d5d'],
+            'watch' => [69, 'eb9417770fbd4ed1f850f517dd0899d1ba2a6c3a5281a8ac0bf80255d40155e5'],
             'ncs' => [1, '213f35a9295bacacfdaa5570451707a23ee59416ebc3ac1de062f1b6ca7685a4'],
             'radar' => [9, '45dfaa71313e4da275fca1da9536b826bf0fe6a442cf462d3d2534db1499fa65'],
             'gateway' => [3, '044f4b1de47b562638442dc3fc8be22b3ab76043721211a47f478ee68124a91f'],
@@ -75,6 +75,19 @@ final class CapabilityCatalogTest extends TestCase
             self::assertTrue($definitions[$key]['isRequestable']);
         }
         self::assertArrayNotHasKey('weather_data', $definitions);
+    }
+
+    public function testMonitorNumberIsARequestableActionAndNotAContactSetting(): void
+    {
+        $definitions = [];
+        foreach (CapabilityCatalog::definitionsForDeviceType('watch') as $definition) {
+            $definitions[$definition['key']] = $definition;
+        }
+
+        // O relógio liga para o número no instante em que recebe o MONITOR, tal como no CALL.
+        self::assertFalse($definitions['monitor_number']['isConfigurable']);
+        self::assertTrue($definitions['monitor_number']['isRequestable']);
+        self::assertSame('settings_system', $definitions['monitor_number']['section']);
     }
 
     public function testWonlexSystemReportsAreNotAdvertisedAsTelemetry(): void

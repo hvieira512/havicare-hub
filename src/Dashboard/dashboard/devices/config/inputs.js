@@ -52,6 +52,23 @@ export function makeCallInput(entry, desired) {
         </div>`;
 }
 
+export function voiceMonitorInput(entry, desired) {
+    return `
+        <div>
+            <div class="alert alert-warning alert-compact mb-3">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                O relógio liga de imediato para este número e abre o microfone, sem mostrar
+                nada a quem o traz no pulso. Não fica guardado como contacto.
+            </div>
+            <label class="form-label-sm">Número de telefone</label>
+            ${renderPhoneControl({
+                value: String(desired.phone || ""),
+                configField: "phone",
+                placeholder: "+351912345678",
+            })}
+        </div>`;
+}
+
 export function resetActionInput(_entry, _desired) {
     return `
         <div>

@@ -10,6 +10,7 @@ use Hub\Infrastructure\Persistence\Migration\DeviceTypesTable;
 use Hub\Infrastructure\Persistence\Migration\DropApiUserLicenseNumber;
 use Hub\Infrastructure\Persistence\Migration\DropCapabilityTelemetryFlag;
 use Hub\Infrastructure\Persistence\Migration\DropConfigurationSupplierAndModel;
+use Hub\Infrastructure\Persistence\Migration\DropMonitorNumberConfigurations;
 use Hub\Infrastructure\Persistence\Migration\DropSupplierDeviceTypes;
 use Hub\Infrastructure\Persistence\Migration\DropUnreadLifecycleColumns;
 use Hub\Infrastructure\Persistence\Migration\Migration;
@@ -45,6 +46,7 @@ final class DatabaseMigrationPlan
             new ShrinkLegacyVarchar191(),
             new ModelCapabilitiesByNaturalKey(),
             new DeviceTypeAsciiCollation(),
+            new DropMonitorNumberConfigurations(),
         ];
     }
 

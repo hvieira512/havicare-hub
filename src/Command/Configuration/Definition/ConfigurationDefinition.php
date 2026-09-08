@@ -21,7 +21,9 @@ final class ConfigurationDefinition
             'key' => $key,
             'command' => $command,
             'label' => $label,
-            'kind' => 'config',
+            // Transiente e acção são a mesma coisa: o que a `PATCH` recusa é o que a
+            // `/requests` aceita. Declarar as duas em separado deixava-as discordar.
+            'kind' => $transient ? 'request' : 'config',
             'risk' => 'normal',
             'input' => $input,
             'fields' => $fields,

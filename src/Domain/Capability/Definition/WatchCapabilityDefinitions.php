@@ -48,7 +48,6 @@ final class WatchCapabilityDefinitions
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'push_message', 'label' => 'Enviar mensagem para o relógio', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'call_whitelist', 'label' => 'Lista branca', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'whitelist_enabled', 'label' => 'Lista branca ativa', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'monitor_number', 'label' => 'Número de monitorização', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'sos_contacts', 'label' => 'Contactos SOS', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             // O alarme disparado, e não um dos interruptores que o configuram. Sai em
             // `events` a partir do `AP10` da Vivistar e dos `AL*` da 4P Touch.
@@ -74,6 +73,9 @@ final class WatchCapabilityDefinitions
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'location_reporting_interval', 'label' => 'Intervalo de envio da localização', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'sound_profile', 'label' => 'Perfil de som', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'make_call', 'label' => 'Efetuar chamada', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            // Ação, e não contacto: o relógio liga para o número mal recebe o comando, em
+            // escuta silenciosa. Não há forma de o gravar sem disparar a chamada.
+            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'monitor_number', 'label' => 'Número de monitorização', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'reset_device', 'label' => 'Repor dispositivo', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'restart_device', 'label' => 'Reiniciar dispositivo', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'power_off', 'label' => 'Desligar dispositivo', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],

@@ -36,6 +36,7 @@ import {
     timeRangeInput,
     timeRangesInput,
     toggleInput,
+    voiceMonitorInput,
     wonlexBloodPressureWarningInput,
     wonlexHeartRateRangeInput,
     wonlexMedicationPlansInput,
@@ -166,6 +167,7 @@ const CONFIG_INPUT_RENDERERS = {
     text: (entry, desired) => textInput(entry, desired),
     pushMessage: (_entry, desired) => pushMessageInput(_entry, desired),
     makeCall: (entry, desired) => makeCallInput(entry, desired),
+    voiceMonitor: (entry, desired) => voiceMonitorInput(entry, desired),
     resetAction: (entry, desired) => resetActionInput(entry, desired),
     requestAction: (entry) => requestActionInput(entry),
     intervalToggle: (entry, desired) => intervalToggleInput(entry, desired),
@@ -221,6 +223,7 @@ const CONFIG_INPUT_READERS = {
     },
     pushMessage: (section) => ({ message: readText(section, "message") }),
     makeCall: (section) => ({ phone: readPhone(section, "phone") }),
+    voiceMonitor: (section) => ({ phone: readPhone(section, "phone") }),
     resetAction: () => ({}),
     requestAction: () => ({}),
     intervalToggle: (section) => ({

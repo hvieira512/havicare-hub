@@ -1477,4 +1477,26 @@ final class DeviceConfigurationCatalogTest extends TestCase
     ): void {
         self::assertSame($message, DeviceConfigurationCatalog::validate($protocol, $key, $desired));
     }
+
+    /**
+     * Uma entrada transiente é uma acção, e o catálogo tem de a anunciar como tal: é a
+     * `/requests` que a aceita, e a `PATCH` das configurações recusa-a.
+     */
+    public function testTransientEntriesAreAnnouncedAsRequestsAndTheRestAsConfig(): void
+    {
+        $transientSeen = 0;
+        foreach (['four-p-touch', 'vivistar-iw', 'wonlex-json'] as $protocol) {
+            foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
+                $transient = ($entry['transient'] ?? false) === true;
+                $transientSeen += $transient ? 1 : 0;
+                self::assertSame(
+                    $transient ? 'request' : 'config',
+                    (string)($entry['kind'] ?? ''),
+                    $protocol . '/' . (string)($entry['key'] ?? '')
+                );
+            }
+        }
+
+        self::assertGreaterThan(0, $transientSeen, 'sem entradas transientes o teste não afirma nada');
+    }
 }

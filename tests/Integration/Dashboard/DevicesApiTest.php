@@ -1484,6 +1484,32 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('numbers must not contain repeated values', $response['error']['message'] ?? null);
     }
 
+    public function testFourPTouchMonitorNumberIsNotAcceptedAsConfiguration(): void
+    {
+        // O MONITOR faz o relógio ligar de imediato para o número, em escuta silenciosa.
+        // Não há forma de o gravar sem disparar a chamada, logo não é configuração.
+        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
+        $hub->expects(self::never())->method('submitDownlink');
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+        self::assertIsArray($model);
+        $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['monitor_number']);
+
+        $response = $api->updateConfigurations('861728087060467', [
+            'configurations' => [
+                'monitor_number' => ['phone' => '+351938854803'],
+            ],
+        ]);
+
+        self::assertSame('invalid_config', $response['error']['code'] ?? null);
+        self::assertSame(
+            'monitorNumber is a transient action and must be requested via /requests',
+            $response['error']['message'] ?? null
+        );
+        self::assertSame([], $db->deviceConfigurations->allForImei('861728087060467'));
+    }
+
     public function testFourPTouchSosContactsRejectsMoreThanThreeNumbers(): void
     {
         $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
