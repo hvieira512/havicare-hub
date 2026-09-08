@@ -1,5 +1,6 @@
 import {
     clearDashboardApiToken,
+    getDashboardApiToken,
     refreshAccessToken,
     setDashboardApiToken,
 } from "../api/http.js";
@@ -84,7 +85,7 @@ const clearTimers = () => {
 };
 
 const showTimeoutWarning = () => {
-    if (warningVisible || !window.hubDashboardApiToken?.access_token) {
+    if (warningVisible || !getDashboardApiToken()?.access_token) {
         return;
     }
     const remainingMs = Math.max(0, lastActivityAt + LOGOUT_AFTER_MS - Date.now());
@@ -212,7 +213,7 @@ const scheduleIdleTimers = () => {
 };
 
 const registerActivity = (force = false) => {
-    if (!window.hubDashboardApiToken?.access_token) return;
+    if (!getDashboardApiToken()?.access_token) return;
     if (warningVisible && !force) return;
     const now = Date.now();
     lastActivityAt = now;
@@ -233,7 +234,7 @@ const bindActivityTracking = () => {
         if (
             document.visibilityState !== "visible" ||
             !authRequired() ||
-            !window.hubDashboardApiToken?.access_token
+            !getDashboardApiToken()?.access_token
         ) {
             return;
         }
@@ -321,7 +322,7 @@ const restoreSession = async () => {
         }
     }
 
-    storeToken(window.hubDashboardApiToken);
+    storeToken(getDashboardApiToken());
     scheduleIdleTimers();
     await startDashboard();
 };
@@ -333,8 +334,8 @@ export async function initializeDashboardSession(startAuthenticatedDashboard) {
     loginForm?.addEventListener("submit", login);
     logoutButton?.addEventListener("click", () => logout(""));
     window.addEventListener("hub-dashboard-api-token-updated", () => {
-        storeToken(window.hubDashboardApiToken);
-        renderAuthenticatedUsername(window.hubDashboardApiToken);
+        storeToken(getDashboardApiToken());
+        renderAuthenticatedUsername(getDashboardApiToken());
     });
     window.addEventListener("hub-dashboard-auth-required", () => {
         logout("A sessão expirou. Inicie sessão novamente.");

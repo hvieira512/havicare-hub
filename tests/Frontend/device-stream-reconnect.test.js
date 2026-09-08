@@ -19,11 +19,12 @@ import { installStreamHarness } from "./support/device-stream-harness.js";
 const harness = installStreamHarness();
 
 const stream = await import("../../src/Dashboard/dashboard/devices/stream.js");
+const { setDashboardApiToken, clearDashboardApiToken } = await import("../../src/Dashboard/dashboard/api/http.js");
 
 const reset = () => {
     harness.reset();
     delete document.body.dataset.dashboardAuthRequired;
-    window.hubDashboardApiToken = null;
+    clearDashboardApiToken();
     stream.initDeviceStream({ renderSelection: () => {} });
     stream.disconnectDeviceStream();
     harness.reset();
@@ -49,7 +50,7 @@ test("um stream aberto conta como vivo", async () => {
 test("a credencial vai no cabeçalho e nada vai no URL", async () => {
     reset();
     document.body.dataset.dashboardAuthRequired = "true";
-    window.hubDashboardApiToken = { access_token: "token-de-uma-hora" };
+    setDashboardApiToken({ access_token: "token-de-uma-hora" });
 
     await connect("999");
 
@@ -204,10 +205,10 @@ test("sem dispositivo escolhido a visibilidade não abre nada", async () => {
 test("sem credencial não se insiste", async () => {
     reset();
     document.body.dataset.dashboardAuthRequired = "true";
-    window.hubDashboardApiToken = { access_token: "t" };
+    setDashboardApiToken({ access_token: "t" });
     await connect("666");
 
-    window.hubDashboardApiToken = null;
+    clearDashboardApiToken();
     harness.streams[0].end();
     await harness.settle();
 

@@ -271,7 +271,6 @@ require_once __DIR__ . '/components/modal.php';
     </div>
 
     <script>
-        window.hubDashboardApiToken = null;
         <?php /* O descritor dos tipos vem daqui e não de um endpoint: o formulário precisa
                * dele à primeira pintura, e uma chamada assíncrona só traria uma ordem de
                * carregamento para gerir. A fonte é o `DeviceTypeCatalog`, em PHP. */ ?>

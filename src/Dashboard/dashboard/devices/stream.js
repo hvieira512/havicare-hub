@@ -1,5 +1,5 @@
 import { setSelectedDetailRecent, state } from "../state.js";
-import { authHeaders } from "../api/http.js";
+import { authHeaders, getDashboardApiToken } from "../api/http.js";
 
 let onRenderSelection = () => {};
 let onCommandsUpdated = () => {};
@@ -57,7 +57,7 @@ function handleVisibilityChange() {
 
     if (
         document.body.dataset.dashboardAuthRequired === "true" &&
-        !window.hubDashboardApiToken?.access_token
+        !getDashboardApiToken()?.access_token
     ) {
         return;
     }
@@ -208,7 +208,7 @@ function scheduleReconnect() {
     }
     if (
         document.body.dataset.dashboardAuthRequired === "true" &&
-        !window.hubDashboardApiToken?.access_token
+        !getDashboardApiToken()?.access_token
     ) {
         return;
     }
@@ -238,7 +238,7 @@ function handleTokenUpdated() {
     }
     if (
         document.body.dataset.dashboardAuthRequired === "true" &&
-        !window.hubDashboardApiToken?.access_token
+        !getDashboardApiToken()?.access_token
     ) {
         closeDeviceStream();
         return;

@@ -31,6 +31,7 @@ for (const name of [
     "localStorage",
     "sessionStorage",
     "HTMLElement",
+    "Event",
     "CustomEvent",
     "CSS",
 ]) {

@@ -1,6 +1,7 @@
 import {
     blockDevice,
     deleteNotification,
+    getDashboardApiToken,
     getNotifications,
     markNotificationsRead,
 } from "./api/index.js";
@@ -125,7 +126,7 @@ const render = () => {
 const load = async () => {
     if (
         document.body.dataset.dashboardAuthRequired === "true" &&
-        !window.hubDashboardApiToken?.access_token
+        !getDashboardApiToken()?.access_token
     ) {
         return false;
     }

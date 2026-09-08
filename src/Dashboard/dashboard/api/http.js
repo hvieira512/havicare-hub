@@ -1,5 +1,10 @@
+// O token da API vive aqui, no dono das escritas, e não num global no `window`: todos os
+// leitores são módulos e importam o getter. O `set`/`clear` avisam a app pelo evento.
+let apiToken = null;
+export const getDashboardApiToken = () => apiToken;
+
 export const authHeaders = () => {
-    const token = window.hubDashboardApiToken?.access_token || "";
+    const token = apiToken?.access_token || "";
     return token === "" ? {} : { Authorization: `Bearer ${token}` };
 };
 
@@ -17,7 +22,7 @@ const emitAuthRequired = () => {
 };
 
 export const setDashboardApiToken = (token) => {
-    window.hubDashboardApiToken = token;
+    apiToken = token;
     emitTokenUpdated();
     scheduleTokenRefresh();
 };
@@ -27,7 +32,7 @@ export const clearDashboardApiToken = () => {
         window.clearTimeout(tokenRefreshTimer);
         tokenRefreshTimer = null;
     }
-    window.hubDashboardApiToken = null;
+    apiToken = null;
     emitTokenUpdated();
 };
 
@@ -37,8 +42,8 @@ const scheduleTokenRefresh = (delayOverrideMs = null) => {
         tokenRefreshTimer = null;
     }
 
-    const expiresAt = window.hubDashboardApiToken?.expires_at;
-    const token = window.hubDashboardApiToken?.access_token || "";
+    const expiresAt = apiToken?.expires_at;
+    const token = apiToken?.access_token || "";
     if (token === "" || typeof expiresAt !== "string" || expiresAt === "") {
         return;
     }
@@ -115,7 +120,7 @@ export const refreshAccessToken = async () => {
         return tokenRefreshInFlight;
     }
 
-    const refreshToken = window.hubDashboardApiToken?.refresh_token || "";
+    const refreshToken = apiToken?.refresh_token || "";
     if (refreshToken === "") {
         return null;
     }
@@ -137,7 +142,7 @@ export const refreshAccessToken = async () => {
             // Repete abaixo enquanto o token de acesso actual continuar válido.
         }
 
-        const expiresAt = window.hubDashboardApiToken?.expires_at;
+        const expiresAt = apiToken?.expires_at;
         const expiresAtMs = typeof expiresAt === "string" ? Date.parse(expiresAt) : Number.NaN;
         if (Number.isFinite(expiresAtMs) && expiresAtMs > Date.now()) {
             const retryDelay = Math.min(TOKEN_REFRESH_RETRY_MS, Math.max(1000, expiresAtMs - Date.now() - 5000));

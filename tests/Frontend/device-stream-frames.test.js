@@ -77,6 +77,7 @@ const drena = async () => {
 
 const { state, setSelectedDetail } = await import("../../src/Dashboard/dashboard/state.js");
 const stream = await import("../../src/Dashboard/dashboard/devices/stream.js");
+const { setDashboardApiToken } = await import("../../src/Dashboard/dashboard/api/http.js");
 
 const row = (seq) => ({ seq, type: "heart_rate", value: 60 + seq });
 
@@ -86,7 +87,7 @@ const abre = async (imei, chunks) => {
     proximosChunks = chunks;
     proximaResposta = { ok: true, status: 200 };
     document.body.dataset.dashboardAuthRequired = "true";
-    window.hubDashboardApiToken = { access_token: "token-de-acesso" };
+    setDashboardApiToken({ access_token: "token-de-acesso" });
     stream.initDeviceStream({ renderSelection: () => {} });
     setSelectedDetail({ device: { imei } });
     stream.connectDeviceStream(imei);
@@ -170,7 +171,7 @@ test("um stream recusado agenda uma religação", async () => {
     scheduled.length = 0;
     proximaResposta = { ok: false, status: 503 };
     document.body.dataset.dashboardAuthRequired = "true";
-    window.hubDashboardApiToken = { access_token: "token-de-acesso" };
+    setDashboardApiToken({ access_token: "token-de-acesso" });
     stream.initDeviceStream({ renderSelection: () => {} });
     setSelectedDetail({ device: { imei: "555" } });
     stream.connectDeviceStream("555");

@@ -6,7 +6,7 @@
  * regra que mantém o grafo de módulos sem ciclos. Os ouvintes vivem no `wiring/`, que é raiz
  * de composição na mesma, dividida por área.
  */
-import { getDevice as apiGetDevice } from "./api/index.js";
+import { getDashboardApiToken, getDevice as apiGetDevice } from "./api/index.js";
 import { refreshSelectedDetail, setDeviceFilters, state } from "./state.js";
 import { cacheElements } from "./dom.js";
 import { bindDeviceEvents } from "./wiring/devices.js";
@@ -123,7 +123,7 @@ export async function startDashboard() {
 function refreshSelectedDevice() {
     if (
         document.body.dataset.dashboardAuthRequired === "true" &&
-        !window.hubDashboardApiToken?.access_token
+        !getDashboardApiToken()?.access_token
     ) {
         return;
     }

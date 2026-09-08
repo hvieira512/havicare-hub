@@ -44,7 +44,6 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         // Nenhum recurso vem de fora: é o que cai se alguém voltar a colar uma etiqueta de CDN.
         self::assertDoesNotMatchRegularExpression('#(?:src|href)="(?:https?:)?//#', $first);
         self::assertStringContainsString('data-dashboard-auth-required="true"', $first);
-        self::assertStringContainsString('window.hubDashboardApiToken = null;', $first);
         self::assertSame($first, $second);
     }
 
