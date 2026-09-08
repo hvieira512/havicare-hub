@@ -4,8 +4,10 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initDeviceDetailView, renderTelemetryList, toggleActivityRow } =
+const { initDeviceDetailView, renderTelemetryList } =
     await import("../../src/Dashboard/dashboard/devices/detail.js");
+const { toggleActivityRow } =
+    await import("../../src/Dashboard/dashboard/devices/activity-table.js");
 
 /**
  * A altura de uma linha da lista de actividade, e a gaveta que a abre.

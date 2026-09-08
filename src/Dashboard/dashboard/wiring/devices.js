@@ -40,9 +40,9 @@ import {
     clearDetailFilters,
     removeDetailFilter,
     requestTelemetryFeature,
-    toggleActivityRow,
     updateDetailFilterDraft,
 } from "../devices/detail.js";
+import { toggleActivityRow } from "../devices/activity-table.js";
 import { DEVICE_CARD_ACTION } from "../devices/device-card.js";
 import { editWizardAnswered } from "../devices/edit-wizard.js";
 import {
