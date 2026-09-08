@@ -272,7 +272,13 @@ function mergeRecent(previous, data, isSnapshot) {
 function handleStreamUpdate(event) {
     // Uma entrega é a prova de que a ligação serve, e é ela que apaga a espera acumulada.
     markStreamServed();
-    const data = JSON.parse(event.data);
+    let data;
+    try {
+        data = JSON.parse(event.data);
+    } catch {
+        // Um frame partido no fio salta-se; não derruba o stream nem se perde o resto do corpo.
+        return;
+    }
     if (!state.selectedDetail) return;
 
     setSelectedDetailRecent(

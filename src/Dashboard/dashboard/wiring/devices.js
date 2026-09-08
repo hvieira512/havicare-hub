@@ -30,6 +30,7 @@ import {
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
     handleDevicePaginationClick,
+    loadSummary,
     openDeviceSelector,
     selectDevice,
 } from "../devices/list.js";
@@ -279,6 +280,7 @@ function handleDeviceListClick(event) {
     // A acção vem do módulo do cartão em vez de ser a string repetida aqui: quem muda a
     // marcação muda o ouvinte no mesmo sítio.
     if (action === DEVICE_CARD_ACTION) selectDevice(imei);
+    else if (action === "retryDeviceList") void loadSummary();
 }
 
 function handleRequestGridClick(event) {

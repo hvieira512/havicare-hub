@@ -84,6 +84,7 @@ async function fetchSummary() {
     ]);
     state.summary = {
         devices: devicesResponse.data || [],
+        devicesError: devicesResponse.error || null,
         models: state.summary.models || [],
         devicePagination: devicesResponse.pagination || {
             limit: state.deviceListPageSize,
@@ -213,10 +214,25 @@ function renderDeviceSelector() {
     renderDeviceFilterControls();
     renderDeviceSelectorSummary();
 
-    els.deviceList.innerHTML = state.summary.devices.length
-        ? state.summary.devices.map(renderDeviceCard).join("")
-        : emptyPanel("Não há dispositivos para o filtro selecionado.");
+    els.deviceList.innerHTML = deviceListBody(state.summary);
     renderDevicePagination(state.summary.devicePagination);
+}
+
+/**
+ * O corpo da lista: os cartões, ou -- na falta deles -- a distinção entre um filtro sem
+ * resultados e uma falha a carregar, que não se podem ler como a mesma coisa.
+ */
+export function deviceListBody(summary) {
+    if (summary.devices.length) {
+        return summary.devices.map(renderDeviceCard).join("");
+    }
+    if (summary.devicesError) {
+        return html`<div class="text-danger py-3 text-center d-flex flex-column align-items-center gap-2">
+            <span>Não foi possível carregar os dispositivos.</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="retryDeviceList">Tentar de novo</button>
+        </div>`;
+    }
+    return emptyPanel("Não há dispositivos para o filtro selecionado.");
 }
 
 function renderDeviceSelectorSummary() {

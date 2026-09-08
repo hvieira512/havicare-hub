@@ -193,3 +193,18 @@ test("o fim do corpo agenda uma religação", async () => {
         "o servidor a fechar o stream devia agendar uma nova tentativa",
     );
 });
+
+test("um frame malformado é saltado e não derruba os seguintes", async () => {
+    const snapshot = frame("snapshot", { telemetry: [row(1)], events: [], commands: [], limit: 100 });
+    // Um `data:` com JSON inválido -- o que um byte perdido no fio produz.
+    const lixo = "event: update\ndata: {isto nao e json\n\n";
+    const update = frame("update", { telemetry: [row(2)], events: [], commands: [], limit: 100 });
+
+    await abre("777", [snapshot + lixo + update]);
+
+    assert.deepEqual(
+        state.selectedDetail.recent.telemetry,
+        [row(2), row(1)],
+        "o frame válido a seguir ao lixo devia na mesma ser aplicado",
+    );
+});
