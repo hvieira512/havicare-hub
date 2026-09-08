@@ -43,7 +43,7 @@ const renderAuthenticatedUsername = (token) => {
     authenticatedUsername.textContent = String(token?.username || "Administrador");
 };
 
-const validAdminToken = (token) => {
+export const validAdminToken = (token) => {
     if (!token || typeof token !== "object" || token.role !== ADMIN_ROLE) {
         return false;
     }
@@ -65,7 +65,7 @@ const storeToken = (token) => {
     sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(token));
 };
 
-const restoreToken = () => {
+export const restoreToken = () => {
     try {
         const token = JSON.parse(sessionStorage.getItem(TOKEN_STORAGE_KEY) || "null");
         return validAdminToken(token) ? token : null;
@@ -264,10 +264,14 @@ const login = async (event) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password }),
         });
-        const payload = await response.json();
+        const payload = await response.json().catch(() => null);
         const token = payload?.token;
         if (!response.ok || !token?.access_token) {
-            toast("danger", "Utilizador ou palavra-passe inválidos.");
+            // Um 5xx (ou uma página não-JSON de um proxy) foi contactado e falhou: não é
+            // credencial errada, e dizê-lo assim enganava.
+            toast("danger", response.status >= 500
+                ? "O Hub respondeu com um erro. Volte a tentar."
+                : "Utilizador ou palavra-passe inválidos.");
             return;
         }
         if (token.role !== ADMIN_ROLE) {
