@@ -108,6 +108,7 @@ dashboard/
 ├── storage.js              as chaves e os acessos ao localStorage
 ├── tooltips.js             re-atar os tooltips do Bootstrap depois de um render
 ├── notifications.js        o sino da barra (funcionalidade de um ficheiro)
+├── observability.js        o handler global de erros: o que falha sem catch deixa rasto
 │
 ├── api/                    um ficheiro por recurso; o único sítio com fetch
 │   ├── http.js             requestJson(), formRequest(), withQuery() e o token
@@ -120,6 +121,7 @@ dashboard/
 ├── devices/                o ecrã principal
 │   ├── list.js             a coluna da esquerda: lista, busca, paginação, modal de escolha
 │   ├── detail.js           a coluna da direita: eventos, pedidos, cartões, filtros do painel
+│   ├── activity-table.js   a tabela genérica de atividade (telemetria e pedidos): linhas e gaveta
 │   ├── filters.js          os filtros da lista e os paginadores dos dois painéis
 │   ├── device-modal.js     o modal de um dispositivo
 │   ├── create-wizard.js    o assistente de adicionar: perguntas, grelhas, e a criação
@@ -256,8 +258,8 @@ regra nova, a resposta é uma capacidade nova em PHP.
 ## A rede de segurança
 
 ```bash
-npx eslint src/Dashboard/dashboard tests/Frontend --max-warnings 0
-npm test                       # 198 testes em tests/Frontend/
+npm run lint                   # eslint sobre main.js, dashboard/, assets/js/ e tests/Frontend
+npm test                       # ~380 testes em tests/Frontend/
 composer test:unit             # inclui os testes que lêem estes ficheiros como texto
 ```
 
@@ -280,8 +282,9 @@ correcção é apontar o teste ao ficheiro novo.
   formulário do outro slide, o formulário volta à lista depois de gravar. Resolvem-se em
   tempo de chamada e não quebram nada; parti-los obrigava a um registo de callbacks que
   custa mais do que resolve. É o único ciclo do grafo.
-- **`devices/config/inputs.js` e `telemetry-cards.js` passam das mil linhas.** Partir por
-  tamanho, sem uma linha que os separe de verdade, só espalha. A linha que os separa é a
+- **`devices/config/inputs.js` passa das mil linhas** (o `telemetry-cards.js` já encolheu
+  por baixo delas, e o `detail.js` largou a tabela de atividade para o seu módulo). Partir
+  por tamanho, sem uma linha que os separe de verdade, só espalha. A linha que os separa é a
   regra 4: são o sítio onde tudo o que é do mesmo *género* se acumulou, e encolhem por
   atrito à medida que cada widget novo nasce junto do seu CSS e do seu ouvinte.
 - **O CSS está dividido por área**, em cinco ficheiros: `assets/css/base.css` (tokens e

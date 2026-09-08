@@ -37,7 +37,7 @@ o browser carrega os módulos tal como estão no repositório.
 | | |
 |---|---|
 | Página | `src/Dashboard/index.php` gera o HTML |
-| Comportamento | ~72 módulos em `src/Dashboard/dashboard/` |
+| Comportamento | ~74 módulos em `src/Dashboard/dashboard/` |
 | Estilo | Bootstrap, mais quatro folhas próprias. A ordem no `<head>` **é** a cascata |
 | Dependências | Bootstrap, Font Awesome, SweetAlert2 e Swagger UI, todas guardadas no repositório |
 
@@ -89,8 +89,9 @@ O stream é lido com `fetch` e um `ReadableStream`, e não com `EventSource`: a
 credencial vai no cabeçalho `Authorization`, que o `EventSource` não deixa
 definir. O cliente separa os frames pela linha em branco que os delimita e
 guarda o resto do buffer, porque um frame pode chegar partido entre dois pedaços
-da resposta. Uma ligação que caia é retomada com recuo exponencial, e o recuo só
-volta a zero quando um frame é efetivamente entregue.
+da resposta. Um frame com JSON inválido salta-se e a leitura segue, em vez de
+derrubar a ligação e perder o resto do corpo. Uma ligação que caia é retomada com
+recuo exponencial, e o recuo só volta a zero quando um frame é efetivamente entregue.
 
 ## 5. Sessão
 
