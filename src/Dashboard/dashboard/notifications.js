@@ -146,6 +146,23 @@ const load = async () => {
     return true;
 };
 
+/**
+ * O poll de fundo só precisa da contagem para a pastilha. Puxar as 20 e repintar a lista
+ * escondida a cada 15 s era desperdício; a lista só se refaz quando o menu abre.
+ */
+const refreshBadge = async () => {
+    if (
+        document.body.dataset.dashboardAuthRequired === "true" &&
+        !getDashboardApiToken()?.access_token
+    ) {
+        return;
+    }
+    const result = await getNotifications(1);
+    if (!result?.error) {
+        renderBadge(result?.unreadCount);
+    }
+};
+
 const handleDropdownShown = async () => {
     if (!await load()) {
         return;
@@ -283,7 +300,7 @@ export function initNotifications({ els, openAddDevice }) {
         void load();
     });
     window.setInterval(() => {
-        void load();
+        void refreshBadge();
     }, POLL_INTERVAL_MS);
     void load();
 }

@@ -55,11 +55,9 @@ const ALARM_EVENT_TYPES = new Set([
 ]);
 
 let els;
-let loadDeviceFn = async () => false;
 
 function initDeviceDetailView(context) {
     els = context.els;
-    loadDeviceFn = context.loadDevice || loadDeviceFn;
 }
 
 function renderSelection() {
@@ -416,7 +414,16 @@ function clearDetailFilters() {
  * A pesquisa não espera pelo "Aplicar". Os selects de data e tipo têm botão porque uma
  * data a meio de ser escrita não é uma data; um texto a meio já é um prefixo útil.
  */
+let detailSearchTimer = null;
+
+// A pesquisa filtra a cada tecla, mas o render é pesado -- lista, cartões e tooltips; espera-se
+// que a escrita pare, como já faz a lista de dispositivos.
 function applyDetailSearch() {
+    clearTimeout(detailSearchTimer);
+    detailSearchTimer = setTimeout(applyDetailSearchNow, 150);
+}
+
+function applyDetailSearchNow() {
     state.detailFilters = {
         ...state.detailFilters,
         q: els.detailSearch.value,
@@ -932,9 +939,8 @@ async function requestTelemetryFeature(feature) {
     try {
         const result = await apiRequestFeature(state.selectedImei, feature);
         if (result.error) toast("error", apiError(result));
-        if (state.selectedImei && typeof loadDeviceFn === "function") {
-            await loadDeviceFn(state.selectedImei);
-        }
+        // O comando novo chega pela via do stream (onCommandsUpdated); não se relê o
+        // dispositivo -- e derrubar o stream para um snapshot completo era o custo a evitar.
     } finally {
         state.loadingCommands.delete(feature);
         renderSelection();
