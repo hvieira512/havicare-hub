@@ -22,33 +22,27 @@ require_once __DIR__ . '/components/modal.php';
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.svg">
     <link rel="icon" type="image/svg+xml" sizes="32x32" href="/assets/logo.svg">
     <link rel="icon" type="image/svg+xml" sizes="16x16" href="/assets/logo.svg">
-    <!-- Antes das folhas e antes de qualquer módulo: o tema tem de estar posto na primeira
-         pintura, senão a página abre clara e escurece à frente de quem está a olhar. É a
-         única razão para ter JavaScript aqui em cima, e por isso não faz mais nada. A chave
-         é a mesma do `storage.js`, escrita à mão porque aqui ainda não há módulos. -->
-    <script>
-        (function () {
-            try {
-                var stored = localStorage.getItem("hub-dashboard-theme");
-                var dark = stored === "dark"
-                    || (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-                document.documentElement.setAttribute("data-bs-theme", dark ? "dark" : "light");
-            } catch (e) {
-                document.documentElement.setAttribute("data-bs-theme", "light");
-            }
-        })();
-    </script>
-    <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
-    <link href="/assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
-    <link href="/assets/vendor/sweetalert2/bootstrap-5.min.css" rel="stylesheet">
-    <!-- A ordem é a da folha única de onde estes saíram: sem build, a cascata é a ordem
-         destas etiquetas, e várias regras contam com vir depois das que anulam. O
-         `main.css` fica no fim porque ficou com a cauda do ficheiro original. -->
-    <link href="/assets/css/base.css" rel="stylesheet">
-    <link href="/assets/css/shell.css" rel="stylesheet">
-    <link href="/assets/css/device.css" rel="stylesheet">
-    <link href="/assets/css/login.css" rel="stylesheet">
-    <link href="main.css" rel="stylesheet">
+    <!-- O tema antes da primeira pintura: script clássico e sem defer, no <head> antes das
+         folhas, para pôr o data-bs-theme antes de o CSS carregar. Ver assets/js/theme-init.js. -->
+    <script src="/assets/js/theme-init.js"></script>
+    <?php
+    /* A ordem é a cascata: sem build, uma folha vale pela ordem da etiqueta, e várias regras
+     * contam com vir depois das que anulam. Os de terceiros primeiro, os nossos por cima, e o
+     * `main.css` no fim porque ficou com a cauda do ficheiro original. */
+    $stylesheets = [
+        '/assets/vendor/bootstrap/bootstrap.min.css',
+        '/assets/vendor/fontawesome/css/all.min.css',
+        '/assets/vendor/sweetalert2/bootstrap-5.min.css',
+        '/assets/css/base.css',
+        '/assets/css/shell.css',
+        '/assets/css/device.css',
+        '/assets/css/login.css',
+        'main.css',
+    ];
+    ?>
+    <?php foreach ($stylesheets as $stylesheet): ?>
+    <link href="<?= $stylesheet ?>" rel="stylesheet">
+    <?php endforeach; ?>
 </head>
 
 <body class="bg-body-tertiary" data-dashboard-auth-required="<?= $dashboardApiAuthRequired ? 'true' : 'false' ?>">

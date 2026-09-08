@@ -44,6 +44,9 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         // Nenhum recurso vem de fora: é o que cai se alguém voltar a colar uma etiqueta de CDN.
         self::assertDoesNotMatchRegularExpression('#(?:src|href)="(?:https?:)?//#', $first);
         self::assertStringContainsString('data-dashboard-auth-required="true"', $first);
+        // O tema carrega antes das folhas: se a etiqueta desaparecer, a página abre com o
+        // tema errado e corrige-se à frente de quem olha.
+        self::assertStringContainsString('<script src="/assets/js/theme-init.js"></script>', $first);
         self::assertSame($first, $second);
     }
 
@@ -62,6 +65,10 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         $logo = $server(new ServerRequest('GET', '/assets/logo.svg'));
         self::assertSame(200, $logo->getStatusCode());
         self::assertSame('image/svg+xml', $logo->getHeaderLine('Content-Type'));
+
+        $themeInit = $server(new ServerRequest('GET', '/assets/js/theme-init.js'));
+        self::assertSame(200, $themeInit->getStatusCode());
+        self::assertSame('application/javascript', $themeInit->getHeaderLine('Content-Type'));
     }
 
     public function testOwnAssetsRevalidateWhileVendorAssetsAreImmutable(): void

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "eslint src/Dashboard/main.js src/Dashboard/dashboard tests/Frontend",
+    "lint": "eslint src/Dashboard/main.js src/Dashboard/dashboard src/Dashboard/assets/js tests/Frontend",
     "test": "node --test tests/Frontend/*.test.js"
   },
   "devDependencies": {
