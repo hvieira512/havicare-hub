@@ -1,4 +1,8 @@
-        <?php /* A barra de topo do painel: tema, notificações e o menu do utilizador. */ ?>
+        <?php
+        // A barra de topo: tema, notificações e o menu do utilizador. O `$dashboardApiAuthRequired`
+        // é o contrato do partial, como no index.php: sem quem o inclua, assume acesso protegido.
+        $dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
+        ?>
         <nav class="navbar dashboard-navbar">
             <div class="container-fluid">
                 <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>

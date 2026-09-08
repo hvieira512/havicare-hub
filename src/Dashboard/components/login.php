@@ -1,4 +1,5 @@
 <?php
+
 /* O ecrã de entrada, num componente próprio como os modais, para o index.php ficar só com o
  * shell da app. Escondido por omissão; o session.js mostra-o quando o acesso pede sessão. */
 ?>

@@ -177,16 +177,7 @@ final class DeviceEventDecoder
             'accuracyMeters' => null,
             'baseStations' => $baseStations,
             'wifi' => $wifi,
-        ], static fn (mixed $value): bool => $value !== null && $value !== ''), [
-            'source' => 'vivistar-ap02',
-            'raw' => $payload['raw'] ?? '',
-            'fields' => $fields,
-            'replyFlag' => $this->intField($fields[1] ?? null),
-            'baseCount' => $this->intField($fields[2] ?? null),
-            'wifiCount' => $this->intField($fields[6] ?? null),
-            'baseStations' => $baseStations,
-            'wifi' => $wifi,
-        ]);
+        ], static fn (mixed $value): bool => $value !== null && $value !== ''));
     }
 
     private function decodeFourPTouch(string $nativeType, array $payload): array

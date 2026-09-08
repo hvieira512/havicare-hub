@@ -40,7 +40,7 @@ require_once __DIR__ . '/components/modal.php';
         'main.css',
     ];
     ?>
-    <?php foreach ($stylesheets as $stylesheet): ?>
+    <?php foreach ($stylesheets as $stylesheet) : ?>
     <link href="<?= $stylesheet ?>" rel="stylesheet">
     <?php endforeach; ?>
 </head>
