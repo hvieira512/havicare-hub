@@ -12,7 +12,6 @@ import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 import {
     commandLabel,
     eventTime,
-    fieldLabel,
     rowPayload,
     when,
     whenShort,
@@ -294,11 +293,16 @@ function filterDetailItems(items) {
     });
 }
 
-/** O que a linha mostra, em minúsculas: o tipo e o valor formatado. */
+/**
+ * O que a linha mostra, em minúsculas: o tipo e o valor formatado.
+ *
+ * A etiqueta é a mesma que a linha e o select do tipo apresentam -- português, vinda do
+ * catálogo. A chave em inglês fica ao lado, porque quem opera o hub procura por ela.
+ */
 function detailItemHaystack(item) {
     const itemType = detailItemType(item);
     const content = uplinkCardContent(itemType, item.payload?.data || {});
-    return `${itemType} ${fieldLabel(itemType)} ${content?.value ?? ""}`.toLowerCase();
+    return `${itemType} ${telemetryFilterLabel(itemType)} ${content?.value ?? ""}`.toLowerCase();
 }
 
 function detailFilterTypesFromItems(items) {
@@ -442,9 +446,11 @@ function removeDetailFilter(key) {
     renderSelection();
 }
 
-/** As pastilhas do que está aplicado, na linha abaixo da pesquisa. */
-function renderDetailActiveFilters() {
-    const { from, to, type, q } = state.detailFilters;
+/**
+ * O que cada pastilha diz. A do tipo leva a mesma etiqueta do select que a escolheu: aplicar
+ * um filtro em português e vê-lo voltar em inglês era a mesma coisa dita de duas maneiras.
+ */
+function detailFilterChipLabels({ from, to, type, q }) {
     const labels = [];
     if (from || to) {
         labels.push({
@@ -453,11 +459,18 @@ function renderDetailActiveFilters() {
         });
     }
     if (type && type !== "all") {
-        labels.push({ key: "type", label: fieldLabel(type) || type });
+        labels.push({ key: "type", label: telemetryFilterLabel(type) });
     }
     if (String(q || "").trim() !== "") {
         labels.push({ key: "q", label: `"${q.trim()}"` });
     }
+
+    return labels;
+}
+
+/** As pastilhas do que está aplicado, na linha abaixo da pesquisa. */
+function renderDetailActiveFilters() {
+    const labels = detailFilterChipLabels(state.detailFilters);
 
     els.detailActiveFilters.innerHTML = filterChips(labels, "removeDetailFilter");
     els.detailFilterCount.textContent = labels.length ? String(labels.length) : "";
@@ -841,6 +854,7 @@ export {
     clearDetailFilters,
     removeDetailFilter,
     clearSelectedDeviceFromStorage,
+    detailFilterChipLabels,
     initDeviceDetailView,
     filterDetailItems,
     renderDownlinkRequests,
