@@ -1,6 +1,6 @@
-import { requestJson, withQuery } from "./http.js";
+import { requestJson } from "./http.js";
 
-export const getDevices = (params = {}) => requestJson(withQuery("/api/devices", params));
+export const getDevices = (params = {}) => requestJson("/api/devices", { query: params });
 export const getDevice = (imei) => requestJson(`/api/devices/${encodeURIComponent(imei)}`);
 export const createDeviceLink = (gatewayImei, linkedImei) => requestJson(
     `/api/devices/${encodeURIComponent(gatewayImei)}/links/${encodeURIComponent(linkedImei)}`,

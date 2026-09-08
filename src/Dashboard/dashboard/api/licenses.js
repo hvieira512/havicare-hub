@@ -1,6 +1,6 @@
-import { requestJson, withQuery } from "./http.js";
+import { requestJson } from "./http.js";
 
-export const getLicenses = (params = {}) => requestJson(withQuery("/api/licenses", params));
+export const getLicenses = (params = {}) => requestJson("/api/licenses", { query: params });
 export const saveLicense = (id, body) => requestJson(id ? `/api/licenses/${encodeURIComponent(id)}` : "/api/licenses", {
     method: id ? "PUT" : "POST",
     body: JSON.stringify(body),

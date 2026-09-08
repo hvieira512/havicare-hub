@@ -111,7 +111,7 @@ dashboard/
 ├── observability.js        o handler global de erros: o que falha sem catch deixa rasto
 │
 ├── api/                    um ficheiro por recurso; o único sítio com fetch
-│   ├── http.js             requestJson(), formRequest(), withQuery() e o token
+│   ├── http.js             requestJson() (com query opcional), formRequest() e o token
 │   ├── auth.js             o bilhete de vida curta que abre o stream
 │   ├── index.js            o barril que o resto importa
 │   └── devices.js  models.js  licenses.js  companies.js  users.js  …

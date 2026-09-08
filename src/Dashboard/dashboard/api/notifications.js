@@ -1,7 +1,7 @@
-import { requestJson, withQuery } from "./http.js";
+import { requestJson } from "./http.js";
 
 export const getNotifications = (limit = 20) =>
-    requestJson(withQuery("/api/notifications", { limit }));
+    requestJson("/api/notifications", { query: { limit } });
 
 export const markNotificationsRead = (ids) =>
     requestJson("/api/notifications/read", {

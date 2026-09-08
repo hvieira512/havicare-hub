@@ -159,7 +159,7 @@ export const refreshAccessToken = async () => {
     return tokenRefreshInFlight;
 };
 
-export const requestJson = (url, options = {}) => requestWithAuthRetry(url, Object.assign({}, options, {
+export const requestJson = (url, { query, ...options } = {}) => requestWithAuthRetry(query ? withQuery(url, query) : url, Object.assign({}, options, {
     headers: Object.assign({ "Content-Type": "application/json" }, options.headers || {}),
 }))
     .then(parseJsonResponse)
@@ -171,7 +171,9 @@ export const formRequest = (url, formData, options = {}) => requestWithAuthRetry
 
 scheduleTokenRefresh();
 
-export const withQuery = (url, params = {}) => {
+// Interno ao http.js: os query params entram pelo `requestJson(url, { query })`, e não como
+// uma composição repetida em cada chamada.
+const withQuery = (url, params = {}) => {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
         if (value === undefined || value === null || value === "") return;

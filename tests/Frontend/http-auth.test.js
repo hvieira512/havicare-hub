@@ -9,7 +9,6 @@ window.setTimeout = () => 0;
 window.clearTimeout = () => {};
 
 const {
-    withQuery,
     authHeaders,
     setDashboardApiToken,
     clearDashboardApiToken,
@@ -24,14 +23,21 @@ const jsonResponse = (status, body) => ({
     headers: { get: () => "application/json" },
 });
 
-test("withQuery serializa arrays como chave[] e ignora nulos e vazios", () => {
-    const url = withQuery("/api/x", { a: 1, b: "", c: null, d: ["p", "q"], e: undefined });
+test("requestJson serializa o query como chave[] e ignora nulos e vazios", async () => {
+    clearDashboardApiToken();
+    let calledUrl = "";
+    globalThis.fetch = async (url) => {
+        calledUrl = String(url);
+        return jsonResponse(200, { ok: true });
+    };
 
-    assert.match(url, /(?:\?|&)a=1(?:&|$)/);
-    assert.match(url, /d%5B%5D=p&d%5B%5D=q/);
-    assert.doesNotMatch(url, /(?:\?|&)b=/);
-    assert.doesNotMatch(url, /(?:\?|&)c=/);
-    assert.doesNotMatch(url, /(?:\?|&)e=/);
+    await requestJson("/api/x", { query: { a: 1, b: "", c: null, d: ["p", "q"], e: undefined } });
+
+    assert.match(calledUrl, /(?:\?|&)a=1(?:&|$)/);
+    assert.match(calledUrl, /d%5B%5D=p&d%5B%5D=q/);
+    assert.doesNotMatch(calledUrl, /(?:\?|&)b=/);
+    assert.doesNotMatch(calledUrl, /(?:\?|&)c=/);
+    assert.doesNotMatch(calledUrl, /(?:\?|&)e=/);
 });
 
 test("authHeaders traz o Bearer só quando há token", () => {

@@ -1,6 +1,6 @@
-import { requestJson, withQuery } from "./http.js";
+import { requestJson } from "./http.js";
 
-export const getCompanies = (params = {}) => requestJson(withQuery("/api/companies", params));
+export const getCompanies = (params = {}) => requestJson("/api/companies", { query: params });
 export const createCompany = (name) => requestJson("/api/companies", {
     method: "POST",
     body: JSON.stringify({ name }),
