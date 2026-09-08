@@ -47,7 +47,6 @@ final class DeviceEventDecoderTest extends TestCase
         );
 
         self::assertSame([100, 98, 97], array_column(array_column($events, 'value'), 'bpm'));
-        self::assertSame(1648111390075, $events[0]['extra']['measuredAt']);
     }
 
     public function testDecodesWonlexBreathingTemperatureSleepAndDeviceState(): void
@@ -117,9 +116,6 @@ final class DeviceEventDecoderTest extends TestCase
                 ['durationMinutes' => 580.5, 'type' => 'light_sleep'],
             ],
         ], $events[0]['value']);
-        self::assertSame(136860420, $events[0]['extra']['startTime'] ?? null);
-        self::assertSame(172800420, $events[0]['extra']['endTime'] ?? null);
-        self::assertCount(2, $events[0]['extra']['dataList'] ?? []);
     }
 
     public function testLeavesUnsupportedWonlexReportsInTheRawStreamOnly(): void
@@ -551,10 +547,6 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertCount(4, $events[0]['value']['wifiAccessPoints']);
         self::assertSame(-117, $events[0]['value']['baseStations'][0]['signalStrengthDbm']);
         self::assertSame(-44, $events[0]['value']['wifiAccessPoints'][0]['signalStrengthDbm']);
-        self::assertSame('vivistar-ap02', $events[0]['extra']['sourceRaw']);
-        self::assertSame(0, $events[0]['extra']['replyFlag']);
-        self::assertSame(1, $events[0]['extra']['baseCount']);
-        self::assertSame(4, $events[0]['extra']['wifiCount']);
     }
 
     public function testDecodesVivistarAp01IntoLocationEvent(): void
@@ -628,10 +620,9 @@ final class DeviceEventDecoderTest extends TestCase
         );
 
         self::assertSame(['alarm', 'location', 'battery'], array_column($events, 'feature'));
-        self::assertSame('fall', $events[0]['value']['code']);
-        self::assertTrue($events[0]['value']['fall']);
-        self::assertFalse($events[0]['value']['wearingNotice']);
-        self::assertSame('06', $events[0]['extra']['rawCode']);
+        self::assertSame('fall', $events[0]['value']['reason']);
+        self::assertArrayNotHasKey('code', $events[0]['value']);
+        self::assertArrayNotHasKey('fall', $events[0]['value']);
         self::assertTrue($events[1]['value']['hasCoordinates']);
         self::assertSame(22.549676666666667, $events[1]['value']['lat']);
         self::assertSame(114.08225833333333, $events[1]['value']['lon']);
@@ -694,7 +685,6 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertCount(1, $events);
         self::assertSame('temperature', $events[0]['feature']);
         self::assertSame(36.7, $events[0]['value']['bodyCelsius']);
-        self::assertSame(1, $events[0]['extra']['measureType']);
     }
 
     public function testDecodesFourPTouchPositionIntoLocationActivityAndBattery(): void
@@ -782,13 +772,60 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertFalse($events[0]['value']['hasCoordinates']);
         self::assertArrayNotHasKey('lat', $events[0]['value']);
         self::assertArrayNotHasKey('lon', $events[0]['value']);
-        self::assertSame('fall', $events[1]['value']['code']);
-        self::assertTrue($events[1]['value']['fall']);
-        self::assertSame('00200000', $events[1]['extra']['rawCode']);
-        self::assertSame('lbs_wifi', $events[0]['extra']['sourceRaw']);
-        self::assertSame('LTE', $events[1]['extra']['networkType']);
+        self::assertSame('fall', $events[1]['value']['reason']);
+        self::assertArrayNotHasKey('code', $events[1]['value']);
         self::assertSame('13011', $events[0]['value']['lac']);
         self::assertSame(44, $events[2]['value']['percent']);
+    }
+
+    public function testFourPTouchAlarmEmitsOneEventPerActiveReason(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('four-p-touch'),
+            [
+                'type' => 'AL_LTE',
+                'data' => [
+                    'gpsValid' => false,
+                    'lat' => 0.0,
+                    'lon' => 0.0,
+                    'batteryPercent' => 44,
+                    'networkType' => 'LTE',
+                    'alarmCode' => '00030000',
+                    'sos' => true,
+                    'lowBattery' => true,
+                    'fall' => false,
+                ],
+            ]
+        );
+
+        $alarms = array_values(array_filter($events, static fn (array $event): bool => $event['feature'] === 'alarm'));
+        self::assertCount(2, $alarms);
+        self::assertSame(['sos', 'low_battery'], array_column(array_column($alarms, 'value'), 'reason'));
+        self::assertArrayNotHasKey('code', $alarms[0]['value']);
+        self::assertArrayNotHasKey('sos', $alarms[0]['value']);
+    }
+
+    public function testFourPTouchAlarmWithNoActiveReasonEmitsNoAlarmEvent(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('four-p-touch'),
+            [
+                'type' => 'AL_LTE',
+                'data' => [
+                    'gpsValid' => false,
+                    'lat' => 0.0,
+                    'lon' => 0.0,
+                    'batteryPercent' => 44,
+                    'networkType' => 'LTE',
+                    'alarmCode' => '00000000',
+                    'sos' => false,
+                    'lowBattery' => false,
+                    'fall' => false,
+                ],
+            ]
+        );
+
+        self::assertSame([], array_values(array_filter($events, static fn (array $event): bool => $event['feature'] === 'alarm')));
     }
 
     public function testSkipsUnknownNativePackets(): void

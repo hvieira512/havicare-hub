@@ -262,9 +262,11 @@ Vivistar um código numérico, a 4P Touch uma máscara de bits.
 | Cerca virtual | — | `0x00040000` / `0x00080000` |
 | Frequência cardíaca anormal | — | `0x00400000` |
 
-Ambos são normalizados na capacidade `alarm`, com `sos`, `lowBattery`, `fall` e
-`wearingNotice` como valores booleanos e o código original preservado em
-`data.code`. O `code` só aparece quando **exatamente um** motivo está ativo.
+Ambos são normalizados na capacidade `alarm`, cada motivo ativo num evento
+próprio com um único `data.reason` (`sos`, `low_battery`, `fall`,
+`watch_removed`, `geofence_exit`, `geofence_entry`, `abnormal_heart_rate`). Uma
+máscara do 4P Touch com vários bits produz vários eventos `alarm`; a zero,
+nenhum.
 
 **O alarme sai no canal `events`, a QoS 1**, e não em `telemetry`. É um
 acontecimento e não uma medição, e a garantia de entrega é a mesma que a de uma

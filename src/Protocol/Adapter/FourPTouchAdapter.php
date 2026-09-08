@@ -141,6 +141,9 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         if ($this->isPositionType($type) || $this->isAlarmType($type)) {
             $this->enrichPosition($type, $fields, $data);
             if ($this->isAlarmType($type)) {
+                // O campo[15] é o mesmo em posição e em alarme; só no frame `AL` é
+                // que conta como código de alarme e alimenta a decodificação dos bits.
+                $data['alarmCode'] = isset($fields[15]) ? strtoupper((string) $fields[15]) : null;
                 $this->enrichAlarm($data);
             }
             return;
@@ -216,7 +219,6 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         $data['batteryPercent'] = $this->int($fields[12] ?? null);
         $data['steps'] = $this->int($fields[13] ?? null);
         $data['tumblingCount'] = $this->int($fields[14] ?? null);
-        $data['alarmCode'] = isset($fields[15]) ? strtoupper((string) $fields[15]) : null;
         $data['baseStationCount'] = $fields[16] ?? null;
         $data['connectedBaseStationCount'] = $this->int($fields[17] ?? null);
         $data['networkType'] = $this->networkTypeFromType($type);
@@ -224,8 +226,10 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         $data['mnc'] = isset($fields[19]) ? (string) $fields[19] : null;
 
         if ($statusBits !== null) {
+            // Só o estado (os 16 bits baixos). Os bits de alarme (os 16 altos)
+            // decodificam-se apenas no frame `AL`, para não fabricar um alarme a
+            // partir de um status periódico.
             $this->applyStatusBits($statusBits, $data);
-            $this->enrichAlarm($data);
         }
 
         $cursor = 20;

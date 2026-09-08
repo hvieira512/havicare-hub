@@ -175,12 +175,6 @@ const UPLINK_CARD_RENDERERS = {
     alarm: (data) => ({
         icon: "fa-triangle-exclamation",
         value: alarmValue(data),
-        details: compactDetails(data, [
-            "code",
-            "lowBattery",
-            "fall",
-            "wearingNotice",
-        ]),
     }),
     sleep: () => ({ value: "Dados de sono" }),
     ecg: () => ({ value: "Dados de ECG" }),
@@ -243,11 +237,16 @@ const BATTERY_CHARGING_STATE_LABEL = {
     0: "Não está a carregar",
 };
 
-const ALARM_VALUE_BY_PRIORITY = [
-    ["sos", "SOS"],
-    ["fall", "Queda detetada"],
-    ["lowBattery", "Bateria fraca"],
-];
+// O alarme traz um só motivo; a etiqueta é a única coisa que o cartão mostra.
+const ALARM_REASON_LABEL = {
+    sos: "SOS",
+    low_battery: "Bateria fraca",
+    fall: "Queda detetada",
+    watch_removed: "Relógio removido",
+    geofence_exit: "Saiu da zona segura",
+    geofence_entry: "Entrou na zona segura",
+    abnormal_heart_rate: "Frequência cardíaca anormal",
+};
 
 function commandFeature(command) {
     if (command.feature) return command.feature;
@@ -901,10 +900,7 @@ export function statusBadge(status) {
 }
 
 function alarmValue(data) {
-    for (const [key, label] of ALARM_VALUE_BY_PRIORITY) {
-        if (data[key]) return label;
-    }
-    return "Alarme";
+    return ALARM_REASON_LABEL[data?.reason] ?? "Alarme";
 }
 
 function compactDetails(data, keys) {

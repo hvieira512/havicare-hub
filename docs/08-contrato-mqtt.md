@@ -150,7 +150,7 @@ Os `dropped` levam `error.code`, que vale `device_offline` ou `queue_unavailable
 | `change_required` | Sensor de fralda |
 | `fall` · `vitals_alarm` · `presence_event` | Radar |
 
-Um alarme de relógio leva em `data` o motivo, e vai acompanhado de uma
+Um alarme de relógio leva em `data` um único `reason`, e vai acompanhado de uma
 `location` no canal `telemetry` com `data.reportKind: "alarm"` — a posição
 pertence à telemetria, e é esse campo que volta a ligar as duas metades do mesmo
 acontecimento:
@@ -160,13 +160,16 @@ acontecimento:
   "type": "alarm",
   "occurredAt": "2026-09-01T10:35:10Z",
   "device": { "id": "861265061009822", "supplier": "Vivistar", "model": "L08 Pro" },
-  "data": { "code": "sos", "sos": true, "lowBattery": false, "fall": false, "wearingNotice": false },
+  "data": { "reason": "sos" },
   "source": { "protocol": "vivistar-iw", "nativeType": "AP10" }
 }
 ```
 
-O `code` só está presente quando **exatamente um** motivo está ativo; com mais
-do que um, valem os campos booleanos.
+Cada alarme tem **um** motivo. Um aparelho pode reportar vários em simultâneo — a
+trama do 4P Touch é uma máscara de bits —, e nesse caso saem **vários eventos
+`alarm`**, um por motivo, com o mesmo `occurredAt`. Os motivos são `sos`,
+`low_battery`, `fall`, `watch_removed`, `geofence_exit`, `geofence_entry` e
+`abnormal_heart_rate`.
 
 ## 5. `status`
 

@@ -23,7 +23,6 @@ final class FeatureNormalizer
             'device_state' => self::deviceState($payload),
             'heartbeat' => self::heartbeat($payload),
             'location' => self::location($payload),
-            'alarm' => self::alarm($payload),
             'device_config' => self::deviceConfig($payload),
             'firmware_version' => self::firmwareVersion($payload),
             'device_status' => self::deviceStatus($payload),
@@ -421,22 +420,39 @@ final class FeatureNormalizer
         return 'cell';
     }
 
-    private static function alarm(array $payload): array
+    /**
+     * Os motivos de alarme ativos, na ordem canónica. O relógio pode reportar
+     * vários em simultâneo (a máscara do 4P Touch), e cada um vira um evento
+     * próprio; máscara a zero devolve lista vazia, e não há alarme.
+     *
+     * @return list<string>
+     */
+    public static function alarmReasons(array $payload): array
     {
-        $sos = isset($payload['sos']) ? (bool)$payload['sos'] : null;
-        $lowBattery = isset($payload['lowBattery']) ? (bool)$payload['lowBattery'] : null;
-        $fall = isset($payload['fall']) ? (bool)$payload['fall'] : null;
-        $wearingNotice = isset($payload['wearingNotice'])
-            ? (bool)$payload['wearingNotice']
-            : (isset($payload['removeAlarm']) ? (bool)$payload['removeAlarm'] : null);
+        $reasons = [];
+        if (!empty($payload['sos'])) {
+            $reasons[] = 'sos';
+        }
+        if (!empty($payload['lowBattery'])) {
+            $reasons[] = 'low_battery';
+        }
+        if (!empty($payload['fall'])) {
+            $reasons[] = 'fall';
+        }
+        if (!empty($payload['wearingNotice']) || !empty($payload['removeAlarm'])) {
+            $reasons[] = 'watch_removed';
+        }
+        if (!empty($payload['outFenceAlarm'])) {
+            $reasons[] = 'geofence_exit';
+        }
+        if (!empty($payload['inFenceAlarm'])) {
+            $reasons[] = 'geofence_entry';
+        }
+        if (!empty($payload['abnormalHeartRateAlarm'])) {
+            $reasons[] = 'abnormal_heart_rate';
+        }
 
-        return array_filter([
-            'code' => self::normalizeAlarmCode($sos, $lowBattery, $fall, $wearingNotice),
-            'sos' => $sos,
-            'lowBattery' => $lowBattery,
-            'fall' => $fall,
-            'wearingNotice' => $wearingNotice,
-        ], static fn (mixed $value): bool => $value !== null);
+        return $reasons;
     }
 
     private static function deviceConfig(array $payload): array
@@ -519,18 +535,6 @@ final class FeatureNormalizer
     private static function stringOrNull(mixed $value): ?string
     {
         return $value === null || $value === '' ? null : (string)$value;
-    }
-
-    private static function normalizeAlarmCode(?bool $sos, ?bool $lowBattery, ?bool $fall, ?bool $wearingNotice): ?string
-    {
-        $flags = array_filter([
-            'sos' => $sos === true,
-            'low_battery' => $lowBattery === true,
-            'fall' => $fall === true,
-            'wearing_notice' => $wearingNotice === true,
-        ]);
-
-        return count($flags) === 1 ? array_key_first($flags) : null;
     }
 
     /**

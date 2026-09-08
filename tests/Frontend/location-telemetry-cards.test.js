@@ -173,14 +173,9 @@ test("na lista cronológica não aparece a idade: a hora já tem coluna própria
     assert.equal(content.details, "1 antena · 1 rede WiFi");
 });
 
-test("um booleano num cartão sai em português", () => {
-    // Saía titleizado do inglês: "Queda: False", "Bateria fraca: False".
-    const content = uplinkCardContent("alarm", {
-        code: "sos",
-        fall: false,
-        lowBattery: true,
-    });
+test("o alarme mostra o motivo em português", () => {
+    // O envelope traz um só motivo em snake_case; o cartão dá-lhe a etiqueta.
+    const content = uplinkCardContent("alarm", { reason: "low_battery" });
 
-    assert.match(content.details, /Queda: Não/);
-    assert.match(content.details, /Bateria fraca: Sim/);
+    assert.equal(content.value, "Bateria fraca");
 });

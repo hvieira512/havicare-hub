@@ -47,21 +47,21 @@ final class DeviceEventDecoder
             'upBS' => [$this->event('blood_sugar', $nativeType, $payload)],
             'upBodyTemperature' => [$this->event('temperature', $nativeType, $payload)],
             'upBreathe' => [$this->event('breath_rate', $nativeType, $payload)],
-            'upECG' => [$this->event('ecg', $nativeType, $payload, $payload)],
-            'upHRV' => [$this->event('hrv', $nativeType, $payload, $payload)],
-            'upPPG' => [$this->event('ppg', $nativeType, $payload, $payload)],
-            'upRR' => [$this->event('rr_interval', $nativeType, $payload, $payload)],
+            'upECG' => [$this->event('ecg', $nativeType, $payload)],
+            'upHRV' => [$this->event('hrv', $nativeType, $payload)],
+            'upPPG' => [$this->event('ppg', $nativeType, $payload)],
+            'upRR' => [$this->event('rr_interval', $nativeType, $payload)],
             'upBattery' => [$this->event('battery', $nativeType, $payload)],
             'heartbeat' => array_values(array_filter([
-                $this->event('heartbeat', $nativeType, $payload, $payload),
-                $this->event('battery', $nativeType, $payload, $payload),
+                $this->event('heartbeat', $nativeType, $payload),
+                $this->event('battery', $nativeType, $payload),
             ])),
-            'upLocation' => [$this->locationEvent($nativeType, $payload, $payload)],
-            'upStep', 'upKcal', 'upDistance', 'upTodayActivity', 'upRun', 'upWalk' => [$this->event('activity', $nativeType, $payload, $payload)],
-            'upSleep' => [$this->event('sleep', $nativeType, $payload, $payload)],
-            'upDeviceConfig' => [$this->event('device_config', $nativeType, $payload, $payload)],
-            'upShutdown' => [$this->event('device_state', $nativeType, ['state' => 'shutdown'] + $payload, $payload)],
-            'upReset' => [$this->event('device_state', $nativeType, ['state' => 'factory_reset'] + $payload, $payload)],
+            'upLocation' => [$this->locationEvent($nativeType, $payload)],
+            'upStep', 'upKcal', 'upDistance', 'upTodayActivity', 'upRun', 'upWalk' => [$this->event('activity', $nativeType, $payload)],
+            'upSleep' => [$this->event('sleep', $nativeType, $payload)],
+            'upDeviceConfig' => [$this->event('device_config', $nativeType, $payload)],
+            'upShutdown' => [$this->event('device_state', $nativeType, ['state' => 'shutdown'] + $payload)],
+            'upReset' => [$this->event('device_state', $nativeType, ['state' => 'factory_reset'] + $payload)],
             'upBatch' => $this->decodeWonlexBatch($nativeType, $payload),
             default => [],
         };
@@ -77,11 +77,11 @@ final class DeviceEventDecoder
                 $events[] = $this->event('heart_rate', $nativeType, $payload);
             }
             if (isset($payload['bp']) && is_string($payload['bp'])) {
-                $events[] = $this->event('blood_pressure', $nativeType, ['data' => $payload['bp']], $payload);
+                $events[] = $this->event('blood_pressure', $nativeType, ['data' => $payload['bp']]);
                 $events[] = $this->heartRateFromBloodPressure($nativeType, ['data' => $payload['bp']]);
             }
             if (isset($payload['bo'])) {
-                $events[] = $this->event('blood_oxygen', $nativeType, ['spo2' => $payload['bo']], $payload);
+                $events[] = $this->event('blood_oxygen', $nativeType, ['spo2' => $payload['bo']]);
             }
             return array_values(array_filter($events, 'is_array'));
         }
@@ -102,21 +102,17 @@ final class DeviceEventDecoder
                 'data' => trim((string)$measurement),
                 'measuredAt' => isset($times[$index]) && is_numeric($times[$index]) ? (int)$times[$index] : null,
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
-            $extra = $payload;
-            if (isset($sample['measuredAt'])) {
-                $extra['measuredAt'] = $sample['measuredAt'];
-            }
             if ($dataType === 'upHeartRate') {
-                $events[] = $this->event('heart_rate', $nativeType, $sample, $extra);
+                $events[] = $this->event('heart_rate', $nativeType, $sample);
             } elseif ($dataType === 'upBP') {
-                $events[] = $this->event('blood_pressure', $nativeType, $sample, $extra);
+                $events[] = $this->event('blood_pressure', $nativeType, $sample);
                 $events[] = $this->heartRateFromBloodPressure($nativeType, $sample);
             } elseif ($dataType === 'upBO') {
-                $events[] = $this->event('blood_oxygen', $nativeType, $sample, $extra);
+                $events[] = $this->event('blood_oxygen', $nativeType, $sample);
             } elseif ($dataType === 'upBodyTemperature') {
-                $events[] = $this->event('temperature', $nativeType, $sample, $extra);
+                $events[] = $this->event('temperature', $nativeType, $sample);
             } elseif ($dataType === 'upBreathe') {
-                $events[] = $this->event('breath_rate', $nativeType, $sample, $extra);
+                $events[] = $this->event('breath_rate', $nativeType, $sample);
             }
         }
 
@@ -126,7 +122,7 @@ final class DeviceEventDecoder
     private function decodeVivistar(string $nativeType, array $payload): array
     {
         return match ($nativeType) {
-            'AP01' => [$this->locationEvent($nativeType, $payload, $payload)],
+            'AP01' => [$this->locationEvent($nativeType, $payload)],
             'AP02' => [$this->decodeVivistarAp02($payload)],
             'AP49' => [$this->event('heart_rate', $nativeType, $payload)],
             'APHT' => [
@@ -144,26 +140,19 @@ final class DeviceEventDecoder
                 $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null]),
             ],
             'AP10' => array_values(array_filter([
-                $this->event('alarm', $nativeType, $payload, $this->only($payload, [
-                    'alarmCode',
-                    'lat', 'lon', 'gpsValid', 'speed', 'direction', 'gsmSignal', 'satelliteCount',
-                    'battery', 'mcc', 'mnc', 'lac', 'cellId', 'language',
-                    'replyAddressRequested', 'mobileLinkRequested', 'wifiRaw', 'date', 'timeUtc',
-                ])),
-                $this->locationEvent($nativeType, $payload, $this->only($payload, [
-                    'battery', 'language',
-                ])),
+                ...$this->alarmEvents($nativeType, $payload),
+                $this->locationEvent($nativeType, $payload),
                 $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null]),
             ])),
             'AP03' => [
-                $this->event('heartbeat', $nativeType, $payload, $payload),
+                $this->event('heartbeat', $nativeType, $payload),
                 $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null]),
                 $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
             ],
             'AP12', 'AP14', 'AP28', 'AP33', 'AP40',
             'AP76', 'AP77', 'AP84', 'AP85', 'AP86',
             'APJZ', 'AP43' => [
-                $this->event('device_config', $nativeType, $payload, $payload),
+                $this->event('device_config', $nativeType, $payload),
             ],
             'AP16', 'AP87', 'APXL', 'APXY', 'APXT', 'APXZ' => [],
             default => [],
@@ -204,7 +193,7 @@ final class DeviceEventDecoder
     {
         return match (true) {
             $nativeType === 'LK' => array_values(array_filter([
-                $this->event('heartbeat', $nativeType, $payload, $payload),
+                $this->event('heartbeat', $nativeType, $payload),
                 $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
                 $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),
@@ -213,28 +202,24 @@ final class DeviceEventDecoder
                 $this->event('heart_rate', $nativeType, $payload),
             ],
             $nativeType === 'oxygen' => [
-                $this->event('blood_oxygen', $nativeType, $payload, $payload),
+                $this->event('blood_oxygen', $nativeType, $payload),
             ],
             $nativeType === 'btemp2' => [
-                $this->event('temperature', $nativeType, $payload, $payload),
+                $this->event('temperature', $nativeType, $payload),
             ],
             $this->isFourPTouchPosition($nativeType) => array_values(array_filter([
-                $this->locationEvent($nativeType, $payload, $payload),
+                $this->locationEvent($nativeType, $payload),
                 $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
                 $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),
             $this->isFourPTouchAlarm($nativeType) => array_values(array_filter([
-                $this->locationEvent($nativeType, $payload, $payload),
-                $this->event('alarm', $nativeType, $payload, $this->only($payload, [
-                    'alarmCode',
-                    'lat', 'lon', 'gpsValid', 'speed', 'direction', 'gsmSignal', 'satellites',
-                    'batteryPercent', 'mcc', 'mnc', 'lac', 'cellId', 'networkType',
-                ])),
+                $this->locationEvent($nativeType, $payload),
+                ...$this->alarmEvents($nativeType, $payload),
                 $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),
-            $nativeType === 'CONFIG', $nativeType === 'TAKEPILLS' => [$this->event('device_config', $nativeType, $payload, $payload)],
-            $nativeType === 'VERNO' => [$this->event('firmware_version', $nativeType, $payload, $payload)],
-            $nativeType === 'TS' => [$this->event('device_status', $nativeType, $payload, $payload)],
+            $nativeType === 'CONFIG', $nativeType === 'TAKEPILLS' => [$this->event('device_config', $nativeType, $payload)],
+            $nativeType === 'VERNO' => [$this->event('firmware_version', $nativeType, $payload)],
+            $nativeType === 'TS' => [$this->event('device_status', $nativeType, $payload)],
             default => [],
         };
     }
@@ -249,7 +234,7 @@ final class DeviceEventDecoder
         return in_array($nativeType, FourPTouchAdapter::ALARM_FRAME_TYPES, true);
     }
 
-    private function event(string $feature, string $nativeType, array $payload, array $extra = []): ?array
+    private function event(string $feature, string $nativeType, array $payload): ?array
     {
         $value = FeatureNormalizer::normalize($feature, $payload);
         if ($value === []) {
@@ -260,11 +245,28 @@ final class DeviceEventDecoder
             'feature' => $feature,
             'nativeType' => $nativeType,
             'value' => $value,
-            'extra' => $this->extra($extra, $value),
         ], static fn (mixed $field): bool => $field !== []);
     }
 
-    private function locationEvent(string $nativeType, array $payload, array $extra = []): ?array
+    /**
+     * Um evento `alarm` por motivo ativo — vários bits da máscara do 4P Touch
+     * dão vários eventos; máscara a zero não dá nenhum.
+     *
+     * @return list<array{feature: string, nativeType: string, value: array{reason: string}}>
+     */
+    private function alarmEvents(string $nativeType, array $payload): array
+    {
+        return array_map(
+            static fn (string $reason): array => [
+                'feature' => 'alarm',
+                'nativeType' => $nativeType,
+                'value' => ['reason' => $reason],
+            ],
+            FeatureNormalizer::alarmReasons($payload)
+        );
+    }
+
+    private function locationEvent(string $nativeType, array $payload): ?array
     {
         $payload['radioType'] = $payload['radioType'] ?? $payload['networkType'] ?? match ($nativeType) {
             'UD', 'UD2', 'AL' => 'gsm',
@@ -284,7 +286,7 @@ final class DeviceEventDecoder
             default => null,
         };
 
-        return $this->event('location', $nativeType, $payload, $extra);
+        return $this->event('location', $nativeType, $payload);
     }
 
     private function heartRateFromBloodPressure(string $nativeType, array $payload): ?array
@@ -301,62 +303,6 @@ final class DeviceEventDecoder
         return $this->event('heart_rate', $nativeType, [
             'pulse' => $pulse,
         ]);
-    }
-
-    private function extra(array $payload, array $value): array
-    {
-        $extra = [];
-        $normalizedAliases = [
-            'configAck' => 'ack',
-            'configs' => 'settings',
-            'temperature' => 'temperatureCelsius',
-            'temp' => 'temperatureCelsius',
-            'lowTemp' => 'lowCelsius',
-            'lowTemperature' => 'lowCelsius',
-            'highTemp' => 'highCelsius',
-            'highTemperature' => 'highCelsius',
-            'humidity' => 'humidityPercent',
-            'wifi' => 'wifiAccessPoints',
-            'baseStation' => 'baseStations',
-            'workingMode' => 'workMode',
-            'battery' => 'batteryPercent',
-            'batteryLevel' => 'batteryPercent',
-            'rollsFrequency' => 'rollFrequency',
-            'fortification' => 'fortificationState',
-            'removeAlarm' => 'wearingNotice',
-        ];
-        foreach ($payload as $key => $field) {
-            if ($key === 'source') {
-                $rawSource = is_string($field) ? trim($field) : '';
-                $normalizedSource = is_string($value['source'] ?? null) ? trim((string)$value['source']) : '';
-                if ($rawSource !== '' && $normalizedSource !== '' && $rawSource !== $normalizedSource) {
-                    $extra['sourceRaw'] = $rawSource;
-                }
-                continue;
-            }
-            if ($key === 'alarmCode') {
-                if ($field !== null && $field !== '') {
-                    $extra['rawCode'] = (string)$field;
-                }
-                continue;
-            }
-            if (isset($normalizedAliases[$key]) && array_key_exists($normalizedAliases[$key], $value)) {
-                continue;
-            }
-            if (!is_string($key) || array_key_exists($key, $value) || $key === 'fields' || $key === 'raw') {
-                continue;
-            }
-            if ($field !== null && $field !== '') {
-                $extra[$key] = $field;
-            }
-        }
-
-        return $extra;
-    }
-
-    private function only(array $payload, array $keys): array
-    {
-        return array_intersect_key($payload, array_flip($keys));
     }
 
     /**

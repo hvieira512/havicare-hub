@@ -451,9 +451,6 @@ final class DeviceHubMqttContractTest extends TestCase
         ], $sleep['data']);
         self::assertArrayNotHasKey('startTime', $sleep['data']);
         self::assertArrayNotHasKey('endTime', $sleep['data']);
-        self::assertSame(136860420, $sleep['extra']['startTime']);
-        self::assertSame(172800420, $sleep['extra']['endTime']);
-        self::assertCount(2, $sleep['extra']['dataList']);
     }
 
     public function testOnlineDownlinkPublishesCommandMetadata(): void
@@ -649,8 +646,8 @@ final class DeviceHubMqttContractTest extends TestCase
 
         $alarms = $byType($mqtt->events, 'alarm');
         self::assertCount(1, $alarms);
-        self::assertSame('fall', $alarms[0][1]['data']['code']);
-        self::assertTrue($alarms[0][1]['data']['fall']);
+        self::assertSame('fall', $alarms[0][1]['data']['reason']);
+        self::assertArrayNotHasKey('code', $alarms[0][1]['data']);
         self::assertSame('AP10', $alarms[0][1]['source']['nativeType']);
         self::assertArrayNotHasKey('schemaVersion', $alarms[0][1]);
 

@@ -97,7 +97,11 @@ final class FourPTouchAdapterTest extends TestCase
         self::assertSame(15.5, $payload['data']['accuracy']);
         self::assertCount(1, $payload['data']['baseStations']);
         self::assertTrue($payload['data']['staticState']);
-        self::assertTrue($payload['data']['sos']);
+        // Uma trama de posição traz o campo de estado (os 16 bits baixos), mas os bits
+        // de alarme (os 16 altos) são assunto do frame `AL`, e não se decodificam aqui.
+        self::assertArrayNotHasKey('sos', $payload['data']);
+        self::assertArrayNotHasKey('fall', $payload['data']);
+        self::assertArrayNotHasKey('alarmCode', $payload['data']);
     }
 
     public function testDecodeIncomingParsesAlarmWithWifiPayload(): void

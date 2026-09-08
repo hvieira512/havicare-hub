@@ -68,8 +68,7 @@ e `source`, como um `device.connected`, que só leva a identidade.
     "commercialName": "Vivistar L08 Pro"
   },
   "data": { "bpm": 74 },
-  "source": { "protocol": "vivistar-iw", "nativeType": "AP49" },
-  "extra": { "raw": "IWAP49,74#" }
+  "source": { "protocol": "vivistar-iw", "nativeType": "AP49" }
 }
 ```
 
@@ -85,24 +84,14 @@ e `source`, como um `device.connected`, que só leva a identidade.
 | `source.nativeType` | O tipo original do fabricante: `AP49`, `upHeartRate`, `UD_LTE`, `LK`, `heartbreath`… |
 | `source.gatewayId` · `source.rssiDbm` | Só em BLE: que gateway ouviu, e com que força |
 | `source.topic` | Só no radar: o tópico de origem |
-| `extra` | Campos do fabricante preservados de propósito, fora da forma partilhada |
 
 ### Campo `occurredAt`
 
 Regista o instante da publicação e **não** o da medição. Os anúncios BLE não
 transportam data, e um relógio que esteve sem cobertura transmite lotes com
-registos antigos. O instante indicado pelo dispositivo, quando existe, é
-preservado em `extra.measuredAt`.
-
-### Campo `extra`
-
-Os campos transmitidos pelo fabricante que não têm correspondência na forma
-partilhada são preservados neste campo. Um campo sem utilização atual pode ser
-determinante para interpretar uma leitura anómala num momento em que o `raw`
-correspondente já não esteja disponível.
-
-**O conteúdo de `extra` não constitui contrato** e varia com as versões de
-firmware.
+registos antigos. O instante indicado pelo dispositivo, quando existe, fica na
+mensagem original do canal `raw`; se vier a ser necessário na forma normalizada,
+promove-se a um campo próprio do `data`.
 
 ## 3. Capacidades
 
@@ -149,7 +138,7 @@ leitura que não se consegue normalizar não produz evento nenhum.
 | `device_status` | `deviceTime` |
 | `firmware_version` | `version` |
 | `device_config` | `status`, `ack`, `settings` |
-| `alarm` | `code`, `sos`, `lowBattery`, `fall`, `wearingNotice` |
+| `alarm` | `reason` |
 | `location` | ver a secção 4 |
 
 ### Só de alguns tipos de aparelho
