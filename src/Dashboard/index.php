@@ -70,9 +70,8 @@ require_once __DIR__ . '/components/modal.php';
     <script type="application/json" id="hub-device-types"><?= \Hub\Domain\DeviceTypeCatalog::asJson() ?></script>
     <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
-    <?php /* As grelhas do modal das definições. Não é módulo: expõe-se em `agGrid` global,
-             e o `dashboard/grid.js` conta com ele já carregado. */ ?>
-    <script src="/assets/vendor/ag-grid/ag-grid-community.min.js"></script>
+    <?php /* O AG Grid (2 MB) não vem aqui: o `dashboard/grid.js` carrega-o à primeira grelha,
+             e a maioria das sessões nunca abre as definições. */ ?>
     <script type="module" src="main.js"></script>
 </body>
 

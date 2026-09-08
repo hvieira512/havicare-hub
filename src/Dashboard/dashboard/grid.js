@@ -18,6 +18,33 @@
  */
 const labelFor = (labels, value) => labels[value] ?? String(value ?? "");
 
+let agGridLoad = null;
+
+/**
+ * O AG Grid são 2 MB, e só a secção de utilizadores da API precisa dele. Em vez de o
+ * `index.php` o carregar em todas as sessões, carrega-se aqui à primeira grelha. Uma vez só:
+ * chamadas seguintes esperam a mesma carga, e um erro deixa tentar de novo.
+ */
+export function ensureAgGrid() {
+    if (globalThis.agGrid) {
+        return Promise.resolve();
+    }
+    if (agGridLoad) {
+        return agGridLoad;
+    }
+    agGridLoad = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "/assets/vendor/ag-grid/ag-grid-community.min.js";
+        script.addEventListener("load", () => resolve());
+        script.addEventListener("error", () => {
+            agGridLoad = null;
+            reject(new Error("Não foi possível carregar o AG Grid."));
+        });
+        document.head.appendChild(script);
+    });
+    return agGridLoad;
+}
+
 /**
  * Os módulos do AG Grid, registados uma vez só.
  *

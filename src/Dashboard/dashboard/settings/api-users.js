@@ -12,7 +12,7 @@ import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination, resolvePaginationPage } from "../pagination.js";
 import { editorOf, focusEditor } from "./row-editor.js";
-import { createGrid } from "../grid.js";
+import { createGrid, ensureAgGrid } from "../grid.js";
 
 /**
  * Os utilizadores da API, numa grelha. As colunas, o que se ordena, o que se filtra e o que
@@ -152,9 +152,11 @@ export async function loadSettingsApiUsersSection(page = 1) {
 
         // O primeiro pedido traz o descritor com que a grelha é construída. As licenças são
         // só do formulário de criar, e vêm da cache partilhada.
+        // O AG Grid carrega-se em paralelo com o primeiro pedido: só aqui faz falta.
         const [first, loaded] = await Promise.all([
             fetchApiUsers({ page: 1, limit: 1 }),
             ensureLicensesLoaded(),
+            ensureAgGrid(),
         ]);
         licenses = loaded ?? [];
 
