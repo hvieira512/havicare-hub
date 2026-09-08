@@ -7,8 +7,8 @@ namespace Hub\Domain;
  * `sim` diz se há número de SIM, e `gatewayLinks` se é retransmitido por um gateway.
  *
  * A tabela vive num JSON e não neste ficheiro porque os dois lados precisam dela: o PHP
- * serve-a em `window.hubDeviceTypes`, e os testes do frontend, que correm sem PHP, lêem o
- * mesmo ficheiro.
+ * serve-a numa ilha JSON `#hub-device-types`, e os testes do frontend, que correm sem PHP,
+ * lêem o mesmo ficheiro.
  */
 final class DeviceTypeCatalog
 {

@@ -15,12 +15,14 @@ const dom = new JSDOM("<!doctype html><body></body>", { url: "http://localhost/"
 // O descritor dos tipos que o `index.php` serve em produção. Lê-se o mesmo ficheiro que o
 // PHP lê, e não uma cópia aqui: uma cópia acabava por divergir daquilo que os testes existem
 // para verificar.
-dom.window.hubDeviceTypes = JSON.parse(
-    readFileSync(
-        fileURLToPath(new URL("../../../config/device-types.json", import.meta.url)),
-        "utf8",
-    ),
+const deviceTypesIsland = dom.window.document.createElement("script");
+deviceTypesIsland.type = "application/json";
+deviceTypesIsland.id = "hub-device-types";
+deviceTypesIsland.textContent = readFileSync(
+    fileURLToPath(new URL("../../../config/device-types.json", import.meta.url)),
+    "utf8",
 );
+dom.window.document.body.appendChild(deviceTypesIsland);
 
 // O node define alguns destes como só-leitura no `globalThis`, e por isso a atribuição passa
 // pelo `defineProperty` em vez de ser directa.

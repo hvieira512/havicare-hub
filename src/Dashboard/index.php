@@ -55,175 +55,11 @@ require_once __DIR__ . '/components/modal.php';
     <?php require __DIR__ . '/components/login.php'; ?>
 
     <div id="dashboardApp" class="<?= $dashboardApiAuthRequired ? 'd-none' : '' ?>"<?= $dashboardApiAuthRequired ? ' hidden' : '' ?>>
-        <nav class="navbar dashboard-navbar">
-            <div class="container-fluid">
-                <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>
-                <div class="d-flex align-items-center gap-2">
-                    <button id="dashboardThemeBtn" class="btn btn-sm btn-dark" type="button" aria-pressed="false" aria-label="Mudar para o tema escuro" title="Mudar para o tema escuro">
-                        <?= icon('fa-moon', 'fs-5 fa-fw') ?>
-                    </button>
-                    <div id="dashboardNotificationsDropdown" class="dropdown">
-                        <button id="dashboardNotificationsBtn" class="btn btn-sm btn-dark position-relative" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Notificações" title="Notificações">
-                            <?= icon('fa-bell', 'fs-5') ?>
-                            <span id="dashboardNotificationsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger d-none">0</span>
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-end shadow dashboard-notifications-menu p-0">
-                            <div class="d-flex align-items-center justify-content-between border-bottom px-3 py-2">
-                                <span class="fw-semibold">Notificações</span>
-                                <span id="dashboardNotificationsSummary" class="small text-secondary"></span>
-                            </div>
-                            <div id="dashboardNotificationsList" class="dashboard-notifications-list list-group list-group-flush overflow-auto">
-                                <div class="list-group-item text-center text-secondary small p-4">A carregar...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-dark dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <?= icon('fa-circle-user', 'fs-5') ?>
-                            <span id="dashboardAuthenticatedUsername">Administrador</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow">
-                            <li>
-                                <button id="manageSettingsBtn" class="dropdown-item" type="button"><?= icon('fa-sliders', 'me-2') ?>Definições</button>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li>
-                                <button id="dashboardLogoutBtn" class="dropdown-item text-danger<?= $dashboardApiAuthRequired ? '' : ' d-none' ?>" type="button"><?= icon('fa-arrow-right-from-bracket', 'me-2') ?>Sair</button>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </nav>
+        <?php require __DIR__ . '/components/navbar.php'; ?>
         <main class="container-fluid py-3 dashboard-main">
             <div class="row g-3">
-                <aside id="deviceColumn" class="col-12 col-lg-4 d-flex flex-column gap-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-                                <span class="section-label">Dispositivo</span>
-                                <div class="d-flex align-items-center gap-2">
-                                        <button id="openDeviceSelectorBtn" class="btn btn-sm btn-primary" type="button">
-                                            <i class="fa-solid fa-list me-1"></i>
-                                            Escolher
-                                        </button>
-                                    <button id="addDeviceBtn" class="btn btn-sm btn-outline-secondary" type="button" title="Adicionar dispositivo" aria-label="Adicionar dispositivo"><?= icon('fa-plus') ?></button>
-                                </div>
-                            </div>
-                            <div id="deviceSelectionEmptyState" class="text-center text-secondary py-5">
-                                <?= icon('fa-tablet-screen-button', 'fs-1 opacity-25') ?>
-                                <h1 class="h5 mt-3">Selecione um dispositivo</h1>
-                                <p class="small mb-3">Escolha um dispositivo para ver o resumo operacional, pedir dados e analisar a atividade recente.</p>
-                                <button id="emptyStateSelectDeviceBtn" class="btn btn-primary" type="button"><?= icon('fa-list', 'me-1') ?>Escolher dispositivo</button>
-                            </div>
-                            <div id="selectedDevicePanel" class="d-none">
-                                <?php /* O `card-body` ja da 16px em volta; isto so separa do
-                                       * cabecalho com o "Escolher". Em telefone chega
-                                       * metade, e os botoes de 44px ja afastam por si. */ ?>
-                                <div class="d-flex align-items-start gap-3 pt-2 pt-sm-3">
-                                    <div id="selectedDevicePreview" class="selected-device-preview"></div>
-                                    <div class="min-w-0 flex-grow-1">
-                                        <div class="mb-1" id="selectedDeviceBadge"></div>
-                                        <h1 class="h4 mb-1 text-break tabular-nums lh-sm" id="selectedDeviceTitle"></h1>
-                                        <div id="selectedDeviceMeta" class="text-secondary small"></div>
-                                    </div>
-                                </div>
-                                <?php /* Cada separador leva 32px -- 16 de margem mais 16 de
-                                       * padding -- e são dois. Em telefone valem metade. */ ?>
-                                <dl id="selectedDeviceFacts" class="selected-device-facts row g-2 g-sm-3 mb-0 border-top mt-2 pt-2 mt-sm-3 pt-sm-3"></dl>
-                                <div class="border-top mt-2 pt-2 mt-sm-3 pt-sm-3 d-flex justify-content-end">
-                                    <button id="selectedDeviceEditBtn" class="btn btn-sm btn-outline-secondary" type="button"><?= icon('fa-pen', 'me-1') ?>Editar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <?php /* Em telefone a moldura de fora desaparece: os mosaicos já são
-                           * cartões, e cartão dentro de cartão gastava 32px de largura numa
-                           * moldura que não separa nada. O padding e as goteiras saem por
-                           * utilitário; a borda e o fundo precisam da regra `.card-flush-sm`
-                           * no CSS, porque o Bootstrap não tem `border-sm` nem `bg-sm-*`. */ ?>
-                    <div class="card card-flush-sm" id="requestCardsCard">
-                        <div class="card-body p-0 p-sm-3">
-                            <div class="row g-2 g-sm-3" id="requestGrid"></div>
-                        </div>
-                    </div>
-                    <div class="card d-none" id="ncsEventSection">
-                        <div class="card-body">
-                            <?php /* Sem contador: a secção mostra o último de cada género, e
-                                   * são dois. Um número ao lado de dois mosaicos visíveis não
-                                   * conta nada, e contava os géneros e não os eventos. */ ?>
-                            <?= section_header('Eventos NCS recentes') ?>
-                            <div class="row g-3" id="ncsEventGrid"></div>
-                        </div>
-                    </div>
-                </aside>
-                <section id="detailColumn" class="col-12 col-lg-8">
-                    <div class="card h-100">
-                        <div class="card-body d-flex flex-column min-h-0">
-                            <div id="deviceDetail" class="d-none device-detail-open">
-                                <div id="detailFiltersPanel">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <?= search_input('detailSearch', 'Procurar na atividade', 'flex-grow-1') ?>
-                                        <?= filter_toggle_button('detailFiltersCollapse', 'detailFilterCount', 'flex-shrink-0') ?>
-                                    </div>
-                                    <div id="detailActiveFiltersRow" class="d-flex flex-wrap align-items-center gap-2 mt-2 d-none">
-                                        <div id="detailActiveFilters" class="d-flex flex-wrap gap-2"></div>
-                                        <button id="clearDetailFiltersBtn" class="btn btn-link btn-sm p-0 text-decoration-none text-secondary small d-none" type="button">Limpar</button>
-                                    </div>
-                                    <div class="collapse" id="detailFiltersCollapse">
-                                        <div class="row g-2 align-items-end pt-3">
-                                            <div class="col-auto">
-                                                <label for="detailFilterFrom" class="section-label d-block mb-1">De</label>
-                                                <input type="datetime-local" id="detailFilterFrom" class="form-control form-control-sm">
-                                            </div>
-                                            <div class="col-auto">
-                                                <label for="detailFilterTo" class="section-label d-block mb-1">Até</label>
-                                                <input type="datetime-local" id="detailFilterTo" class="form-control form-control-sm">
-                                            </div>
-                                            <div class="col-auto">
-                                                <label for="detailFilterType" class="section-label d-block mb-1">Tipo</label>
-                                                <select id="detailFilterType" class="form-select form-select-sm">
-                                                    <option value="all">Todos</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-auto">
-                                                <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check', 'me-1') ?>Aplicar</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="device-detail-stack d-flex flex-column">
-                                    <section id="connectionSection" class="card-section flex-shrink-0">
-                                        <?= section_header('Ligações ao servidor') ?>
-                                        <div id="connectionTimeline"></div>
-                                    </section>
-                                    <div class="card-section row g-0 flex-grow-1" style="min-height:0">
-                                        <?php /* `min-h-0` nas duas colunas: um item de flex não encolhe abaixo do
-                                               * conteúdo, e sem isto a lista empurrava a coluna, a coluna empurrava
-                                               * o cartão e o `overflow-auto` da lista nunca tinha o que rolar. */ ?>
-                                        <div class="col-12 col-xl-6 d-flex flex-column min-h-0 pe-xl-4">
-                                            <?= section_header('Eventos recebidos', 'telemetryCount', true) ?>
-                                            <?php /* O paginador fica entre o título e a lista: em baixo era empurrado
-                                                   * para o fundo da coluna pelo `flex-grow-1` da lista, e numa página
-                                                   * com poucas linhas ficava a metros do conteúdo que pagina.
-                                                   *
-                                                   * Sem resumo: o total já está na pastilha ao lado do título. */ ?>
-                                            <?= pagination_component('telemetryPager', 'mb-2', false) ?>
-                                            <div id="telemetryList" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
-                                        </div>
-                                        <div class="col-12 col-xl-6 d-flex flex-column min-h-0 border-start-xl ps-xl-4 mt-4 mt-xl-0">
-                                            <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount', true) ?>
-                                            <?= pagination_component('downlinkPager', 'mb-2', false) ?>
-                                            <div id="downlinkRequests" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+                <?php require __DIR__ . '/components/device-column.php'; ?>
+                <?php require __DIR__ . '/components/detail-column.php'; ?>
             </div>
         </main>
 
@@ -233,12 +69,11 @@ require_once __DIR__ . '/components/modal.php';
         <?php require __DIR__ . '/components/modals/device-selector.php'; ?>
     </div>
 
-    <script>
-        <?php /* O descritor dos tipos vem daqui e não de um endpoint: o formulário precisa
-               * dele à primeira pintura, e uma chamada assíncrona só traria uma ordem de
-               * carregamento para gerir. A fonte é o `DeviceTypeCatalog`, em PHP. */ ?>
-        window.hubDeviceTypes = <?= \Hub\Domain\DeviceTypeCatalog::asJson() ?>;
-    </script>
+    <?php /* O descritor dos tipos vem daqui e não de um endpoint: o formulário precisa dele
+           * à primeira pintura, e uma chamada assíncrona só traria uma ordem de carregamento
+           * para gerir. É dado e não código -- uma ilha JSON que o `domain.js` lê. A fonte é
+           * o `DeviceTypeCatalog`, em PHP. */ ?>
+    <script type="application/json" id="hub-device-types"><?= \Hub\Domain\DeviceTypeCatalog::asJson() ?></script>
     <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
     <?php /* As grelhas do modal das definições. Não é módulo: expõe-se em `agGrid` global,

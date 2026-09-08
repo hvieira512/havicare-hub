@@ -1,15 +1,16 @@
 /**
  * O que cada tipo de dispositivo tem. A tabela vive no `DeviceTypeCatalog`, em PHP, e o
- * `index.php` serve-a em `window.hubDeviceTypes`.
+ * `index.php` serve-a numa ilha JSON `#hub-device-types`.
  *
  * Faltando ela, este módulo recusa carregar. Um valor por omissão vazio não dava erro nenhum
  * -- dava um formulário sem tipos e um `normalizeDeviceType` que devolvia sempre "watch",
  * que se lê como problema de dados quando é de fiação.
  */
-const DEVICE_TYPES = globalThis.window?.hubDeviceTypes;
+const deviceTypesIsland = globalThis.document?.getElementById("hub-device-types");
+const DEVICE_TYPES = deviceTypesIsland ? JSON.parse(deviceTypesIsland.textContent) : null;
 if (!DEVICE_TYPES || Object.keys(DEVICE_TYPES).length === 0) {
     throw new Error(
-        "window.hubDeviceTypes está vazio ou não foi definido: o index.php serve-o a partir do DeviceTypeCatalog",
+        "A ilha de dados #hub-device-types está vazia ou não existe: o index.php serve-a a partir do DeviceTypeCatalog",
     );
 }
 
