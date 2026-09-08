@@ -116,7 +116,7 @@ async function openStream(imei, generation) {
 
         streamLive = true;
         await readFrames(response.body, generation, imei);
-    } catch (error) {
+    } catch {
         // Um `abort()` nosso não é falha: foi o `closeDeviceStream` a fechar de propósito.
         if (controller.signal.aborted) {
             return;
