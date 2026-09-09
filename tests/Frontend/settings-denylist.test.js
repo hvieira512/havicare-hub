@@ -69,15 +69,20 @@ test("desbloquear chama o DELETE da API e tira a linha", async () => {
     assert.ok(deleteCall, "chamou o DELETE da denylist");
     assert.match(deleteCall.url, /\/api\/denylist\/357000000000123/);
     assert.doesNotMatch(els.denylistListBody.innerHTML, /357000000000123/);
-    assert.match(els.denylistListBody.innerHTML, /Sem aparelhos bloqueados/);
+    assert.match(els.denylistListBody.innerHTML, /notificação/i);
 });
 
-test("uma lista vazia diz que não há bloqueados", async () => {
+/**
+ * Um painel vazio que só diz que está vazio não responde à pergunta de quem lá chegou. Este é
+ * o único separador onde não se faz nada -- bloquear é gesto da notificação --, e era também
+ * o único que não o dizia.
+ */
+test("uma lista vazia diz de onde vêm os bloqueios em vez de só dizer que não há", async () => {
     const els = setupDom();
     globalThis.fetch = async () => jsonResponse({ data: [] });
 
     await loadSettingsDenylistSection();
 
-    assert.match(els.denylistListBody.innerHTML, /Sem aparelhos bloqueados/);
+    assert.match(els.denylistListBody.innerHTML, /notificação/i);
     assert.match(els.denylistTabSummary.textContent, /0 aparelhos bloqueados/);
 });

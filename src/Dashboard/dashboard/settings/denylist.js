@@ -20,7 +20,7 @@ export async function loadSettingsDenylistSection() {
     const result = await getDenylist();
     if (result?.error) {
         els.denylistListBody.innerHTML =
-            "<div class=\"text-center text-danger small p-4\">Não foi possível carregar a denylist.</div>";
+            "<div class=\"text-center text-danger small p-4\">Não foi possível carregar a lista de bloqueados.</div>";
         return;
     }
     current = Array.isArray(result?.data) ? result.data : [];
@@ -57,8 +57,10 @@ function renderDenylistSection() {
     }
     setSettingsNavCount("Denylist", total);
 
+    // O vazio diz de onde vêm os bloqueios em vez de repetir que não há nenhum: é o único
+    // separador onde não se faz nada, e era o único que não o explicava.
     els.denylistListBody.innerHTML = total === 0
-        ? "<div class=\"text-center text-secondary small p-4\">Sem aparelhos bloqueados.</div>"
+        ? "<div class=\"text-center text-secondary small p-4\">Um aparelho bloqueia-se a partir da notificação de «Dispositivo não autorizado». Os bloqueados aparecem aqui.</div>"
         : current.map(denylistRow).join("");
 }
 

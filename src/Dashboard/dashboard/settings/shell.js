@@ -74,9 +74,12 @@ export function setSettingsNavCount(key, total) {
     // inicializado.
     const element = els?.[`settings${key}Count`];
     if (!element) return;
-    const known = Number.isFinite(Number(total));
-    element.textContent = known ? String(total) : "";
-    element.classList.toggle("d-none", !known);
+    // A zero esconde-se como quando não se sabe: um «0» ao lado do nome não diz nada que a
+    // lista vazia não diga já, e chama a atenção para o separador que não tem nada.
+    const count = Number(total);
+    const shows = Number.isFinite(count) && count > 0;
+    element.textContent = shows ? String(count) : "";
+    element.classList.toggle("d-none", !shows);
 }
 
 export function handleSettingsPaginationClick(event, paginationKey, loadFn) {

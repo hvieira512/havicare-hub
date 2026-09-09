@@ -6,7 +6,7 @@ $settingsTabs = [
     ['key' => 'Models', 'label' => 'Catálogo', 'icon' => 'fa-microchip', 'count' => true],
     ['key' => 'Capabilities', 'label' => 'Capacidades', 'icon' => 'fa-list-check', 'count' => false],
     ['key' => 'Company', 'label' => 'Licenças', 'icon' => 'fa-building', 'count' => true],
-    ['key' => 'Denylist', 'label' => 'Denylist', 'icon' => 'fa-ban', 'count' => true],
+    ['key' => 'Denylist', 'label' => 'Bloqueados', 'icon' => 'fa-ban', 'count' => true],
     ['key' => 'ApiUsers', 'label' => 'Utilizadores API', 'icon' => 'fa-key', 'count' => true],
 ];
 
@@ -185,7 +185,7 @@ ob_start();
                 </div>
                 <div class="tab-pane fade h-100" id="settingsDenylistPane" role="tabpanel" aria-labelledby="settingsDenylistTabBtn">
                     <?php /* Só se desbloqueia daqui; bloquear é o botão da notificação. */ ?>
-                    <?= tab_pane_header('Denylist', 'denylistTabSummary') ?>
+                    <?= tab_pane_header('Aparelhos bloqueados', 'denylistTabSummary') ?>
                     <div id="denylistListBody" class="mb-4"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">

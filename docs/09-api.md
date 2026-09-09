@@ -316,7 +316,7 @@ forma a um inquilino grande poder crescer sem conseguir esfomear os outros.
 |---|---|---|---|
 | GET | `/api/devices` | Lista paginada e filtrada | **LC** |
 | GET | `/api/devices/{imei}` | Detalhe completo — ver a secção 4 | **LC** |
-| GET | `/api/devices/{imei}/stream` | Eventos em tempo real (SSE) | **LC** |
+| GET | `/api/devices/{imei}/stream` | Eventos em tempo real (SSE) — fora da especificação, ver «Rotas excluídas» | **LC** |
 | POST | `/api/devices/{imei}/requests` | Pede uma medição por capacidade genérica | **LC** |
 | PATCH | `/api/devices/{imei}/configurations` | Altera configurações | **LC** |
 | PATCH | `/api/devices/{imei}/association` | Atribui a empresa+licença | **LC** |
