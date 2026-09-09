@@ -18,6 +18,20 @@
  */
 const labelFor = (labels, value) => labels[value] ?? String(value ?? "");
 
+/**
+ * O que a biblioteca escreve por sua conta.
+ *
+ * São só duas chaves porque só duas chegam ao utilizador: o menu de filtro por coluna está
+ * suprimido, a paginação é a do projeto, e o texto de «sem linhas» vem do `emptyMessage`. O
+ * resto do dicionário do AG Grid ficaria aqui a envelhecer sem nunca aparecer no ecrã.
+ *
+ * A biblioteca escreve o nome da coluna antes da etiqueta -- «Utilizador campo de filtro».
+ */
+export const GRID_LOCALE = {
+    ariaFilterInput: "campo de filtro",
+    ariaFilterMenuOpen: "Abrir menu de filtro",
+};
+
 let agGridLoad = null;
 
 /**
@@ -103,7 +117,7 @@ export class ServerSelectFloatingFilter {
         // As classes do Bootstrap, e não as do AG Grid: é o mesmo `form-select` do resto da
         // plataforma, e assim o filtro parece-se com os outros campos da dashboard.
         this.select.className = "form-select form-select-sm";
-        this.select.setAttribute("aria-label", `Filtrar ${params.colDef?.headerName ?? ""}`);
+        this.select.setAttribute("aria-label", `Filtrar ${params.headerName ?? ""}`.trim());
         this.setOptions(params.options ?? []);
 
         this.select.addEventListener("change", () => {
@@ -148,10 +162,11 @@ export class ServerSelectFloatingFilter {
 }
 
 /** Uma coluna do descritor na forma que o AG Grid entende. */
-function toColumnDef(column, { titles, labels, renderers, register }) {
+export function toColumnDef(column, { titles, labels, renderers, register }) {
+    const headerName = titles[column.field] ?? column.field;
     const definition = {
         field: column.field,
-        headerName: titles[column.field] ?? column.field,
+        headerName,
         sortable: column.sortable === true,
         editable: column.editable === true,
         resizable: true,
@@ -186,8 +201,14 @@ function toColumnDef(column, { titles, labels, renderers, register }) {
         definition.floatingFilter = true;
         definition.suppressHeaderMenuButton = true;
         // Pelo canal do AG Grid e não por uma chave inventada no `colDef`: o que se põe
-        // fora deste objecto não chega ao componente.
-        definition.floatingFilterComponentParams = { options: filter.options ?? [], labels, register };
+        // fora deste objecto não chega ao componente. O nome da coluna vai por aqui porque
+        // o `colDef` que o componente recebe não o traz, e a etiqueta ficava «Filtrar ».
+        definition.floatingFilterComponentParams = {
+            options: filter.options ?? [],
+            labels,
+            register,
+            headerName,
+        };
     }
 
     return definition;
@@ -465,6 +486,7 @@ export function createGrid({
 
     const api = agGrid.createGrid(element, {
         theme: themeFor(dark),
+        localeText: GRID_LOCALE,
         columnDefs: [
             ...columns.map((column) => toColumnDef(column, {
                 titles: columnTitles,
