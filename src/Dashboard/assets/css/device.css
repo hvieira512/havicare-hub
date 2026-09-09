@@ -741,6 +741,16 @@
     border-radius: 1rem;
 }
 
+/* Pela mesma razão que a pastilha: sem texto e sem medida, a barra do «há 8d» ficava um
+   quadrado de 1em em vez de uma linha. A largura é a de «sem registo», que é o mais comprido
+   dos três que ali aparecem. */
+.device-card-skeleton-when {
+    width: 3.75rem;
+    height: .6875rem;
+    border-radius: .2rem;
+    margin-inline-start: .125rem;
+}
+
 /* As linhas enchem a moldura, em vez de serem um bloco no topo com espaco vazio por baixo.
    `flex: 1` estica a caixa até à paginação e `overflow: hidden` corta as que não cabem, o
    que deixa o número de linhas ser generoso sem medir a altura da moldura em JavaScript. */
@@ -780,8 +790,34 @@
 
 /* A pastilha ocupa o que o seu texto ocupa. Como item de grelha esticava a largura da
    coluna, e "LIGADO" ficava com a mesma medida de "DESLIGADO". */
-.device-card > .state-badge {
-    justify-self: start;
+.device-card-state > .state-badge {
+    align-self: start;
+}
+
+/* A pastilha responde «está a falar agora?»; a linha por baixo dela responde «desde quando?».
+   A coluna já tinha a largura, e só a pastilha lá dentro. */
+.device-card-state {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .1875rem;
+    min-width: 0;
+}
+
+.device-card-when {
+    font-size: .6875rem;
+    line-height: 1.2;
+    color: var(--bs-secondary-color);
+    font-variant-numeric: tabular-nums;
+    padding-inline-start: .125rem;
+}
+
+/* «Sem registo» não leva cor de alarme. São dezoito dos quarenta e nove, e filtrando por
+   desligados ficavam dezoito linhas vermelhas em coluna -- onde tudo é vermelho, nada é. A
+   palavra já se distingue de uma data, e não é um erro: é um aparelho registado que o hub
+   ainda não ouviu. O itálico chega para dizer que ali não está uma medida de tempo. */
+.device-card-when.never {
+    font-style: italic;
 }
 
 /* Os dois campos são células da grelha do cartão, e não uma célula com dois campos dentro:

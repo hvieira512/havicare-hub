@@ -70,3 +70,35 @@ test("o esqueleto usa as classes do cartão a sério, para a lista não saltar",
         assert.ok(skeleton.includes(cls), `o esqueleto devia usar a classe ${cls}`);
     }
 });
+
+/**
+ * «Desligado» tapava três situações diferentes: o aparelho que nunca falou desde que foi
+ * registado -- dezoito dos quarenta e nove da instância --, o que está calado há uma semana,
+ * e o que se desligou há nove minutos. A pastilha continua a responder «está a falar
+ * agora?», que é sim ou não; a linha por baixo dela responde «desde quando?».
+ */
+test("o cartão diz quando o aparelho falou pela última vez", () => {
+    const markup = deviceCard(
+        { ...device, online: false, lastSeenAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString() },
+        false,
+    );
+
+    assert.match(markup, /device-card-when/);
+    assert.match(markup, /há 3h/);
+});
+
+test("um aparelho que nunca falou di-lo, em vez de uma data que não existe", () => {
+    const markup = deviceCard({ ...device, online: false, lastSeenAt: null }, false);
+
+    assert.match(markup, /sem registo/i);
+    // O `ago()` devolveria «nunca» para um valor vazio, que se lê como um facto sobre o
+    // aparelho e não sobre o que o hub sabe dele.
+    assert.doesNotMatch(markup, />nunca</);
+});
+
+test("a linha não empurra o resto do cartão: vive na coluna da pastilha", () => {
+    const markup = deviceCard({ ...device, lastSeenAt: new Date().toISOString() }, false);
+    const state = markup.split("device-card-state")[1] || "";
+
+    assert.match(state.split("</span>").slice(0, 6).join("</span>"), /device-card-when/);
+});
