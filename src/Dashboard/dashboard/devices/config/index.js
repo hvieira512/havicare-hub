@@ -507,6 +507,34 @@ function capabilityDefinitionForKey(capabilityCatalog, capabilityKey) {
     ) || null;
 }
 
+/** O prazo na unidade em que é redondo: 300 são cinco minutos, e 90 são noventa segundos. */
+function queueDeadline(seconds) {
+    for (const [size, one, many] of [[3600, "1 hora", "horas"], [60, "1 minuto", "minutos"]]) {
+        if (seconds % size !== 0) continue;
+        const count = seconds / size;
+        return count === 1 ? one : `${count} ${many}`;
+    }
+    return `${seconds} segundos`;
+}
+
+/**
+ * O aviso de que o aparelho não está a ouvir.
+ *
+ * O painel apresentava os blocos e os «Enviar» de um aparelho desligado exactamente como os
+ * de um ligado. O comando não se perde -- o `submitDownlink` mete-o em fila quando não há
+ * ligação --, mas a fila tem prazo, e nada disso estava no ecrã.
+ */
+export function offlineQueueNotice(online, ttlSeconds) {
+    if (online) return "";
+
+    const seconds = Math.max(0, Number(ttlSeconds) || 0);
+    const deadline = seconds > 0
+        ? ` Ao fim de ${queueDeadline(seconds)} sem ligação, é descartado.`
+        : "";
+
+    return `Este dispositivo está desligado. O que enviar fica em fila e sai quando ele voltar.${deadline}`;
+}
+
 export function renderDeviceConfigurationRoot(context) {
     const {
         protocol,
@@ -522,6 +550,8 @@ export function renderDeviceConfigurationRoot(context) {
         uiByKey = {},
         actionDeliveries = {},
         quietWhenEmpty = false,
+        online = true,
+        queueTtlSeconds = 0,
     } = context;
     if (!protocol) {
         return emptyPanel(
@@ -560,6 +590,8 @@ export function renderDeviceConfigurationRoot(context) {
         group.label = group.entries[0]?.sectionLabel || titleize(group.key);
     }
 
+    const offlineNotice = offlineQueueNotice(online, queueTtlSeconds);
+
     return `
         <div class="vstack gap-3">
             <div class="d-flex justify-content-between align-items-start gap-3">
@@ -568,6 +600,13 @@ export function renderDeviceConfigurationRoot(context) {
                     <div class="small text-secondary">${supplier || model ? `${esc(supplier)} ${esc(model)}` : ""}</div>
                 </div>
             </div>
+            ${offlineNotice === ""
+                ? ""
+                : `
+            <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 small mb-0" role="status">
+                <i class="fa-solid fa-clock mt-1" aria-hidden="true"></i>
+                <span>${esc(offlineNotice)}</span>
+            </div>`}
             <div class="nav nav-underline flex-wrap gap-3" role="tablist">
                 ${groups
                     .map(

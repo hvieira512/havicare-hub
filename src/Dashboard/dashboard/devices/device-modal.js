@@ -177,6 +177,7 @@ export async function editDevice(imei, supplier, model) {
         configUi: {},
         errorMessage: "",
         loading: true,
+        online: true,
     };
     setDeviceFormError("");
     clearInvalid(els.deviceForm);
@@ -235,6 +236,7 @@ export async function editDevice(imei, supplier, model) {
         state.deviceModal.configurationSync = detail.configurationSync || { entries: {} };
         state.deviceModal.capabilities = detail.capabilities || {};
         state.deviceModal.enabledCapabilityKeys = detail.enabledCapabilityKeys || [];
+        state.deviceModal.online = Boolean(device.online);
         renderDeviceModalIdentity(device, deviceModel, deviceType);
     } finally {
         if (!licensesLoaded && state.deviceModal.errorMessage === "") {

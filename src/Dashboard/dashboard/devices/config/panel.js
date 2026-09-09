@@ -496,6 +496,8 @@ export function renderDeviceConfigurationModal() {
         model: state.deviceModal.model,
         activeCategory: state.deviceModal.activeCategory,
         disabled: !state.deviceModal.protocol,
+        online: state.deviceModal.online,
+        queueTtlSeconds: Number(document.body.dataset.downlinkQueueTtl) || 0,
     });
     resetPhoneControls(els.deviceConfigRoot);
     captureConfigSectionPristine();

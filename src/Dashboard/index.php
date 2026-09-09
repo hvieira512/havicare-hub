@@ -7,6 +7,7 @@ require_once __DIR__ . '/components/helpers.php';
 // Fornecido pelo `DashboardHttpServer::page()`, que faz `require` deste ficheiro. Declarado
 // aqui para o template dizer o seu próprio contrato em vez de assumir quem o chama.
 $dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
+$downlinkQueueTtlSeconds = $downlinkQueueTtlSeconds ?? 300;
 require_once __DIR__ . '/components/listing.php';
 require_once __DIR__ . '/components/pagination.php';
 require_once __DIR__ . '/components/modal.php';
@@ -45,7 +46,7 @@ require_once __DIR__ . '/components/modal.php';
     <?php endforeach; ?>
 </head>
 
-<body class="bg-body-tertiary" data-dashboard-auth-required="<?= $dashboardApiAuthRequired ? 'true' : 'false' ?>">
+<body class="bg-body-tertiary" data-dashboard-auth-required="<?= $dashboardApiAuthRequired ? 'true' : 'false' ?>" data-downlink-queue-ttl="<?= (int)$downlinkQueueTtlSeconds ?>">
     <?php require __DIR__ . '/components/login.php'; ?>
 
     <div id="dashboardApp" class="<?= $dashboardApiAuthRequired ? 'd-none' : '' ?>"<?= $dashboardApiAuthRequired ? ' hidden' : '' ?>>

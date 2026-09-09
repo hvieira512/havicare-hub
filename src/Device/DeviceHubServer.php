@@ -58,6 +58,12 @@ class DeviceHubServer
         $this->locationTelemetryEnricher = $locationTelemetryEnricher;
     }
 
+    /** Quanto tempo um comando espera em fila por um aparelho que não está ligado. */
+    public function downlinkQueueTtlSeconds(): int
+    {
+        return $this->downlinkQueueTtlSeconds;
+    }
+
     public function onOpen(ConnectionInterface $conn): void
     {
         $this->connections->open($conn);

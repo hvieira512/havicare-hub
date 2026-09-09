@@ -81,6 +81,9 @@ export const state = {
         configUi: {},
         errorMessage: "",
         loading: false,
+        // Enquanto o detalhe não chega, assume-se ligado: o aviso de fila aparece quando se
+        // souber que não está, e não por não se saber ainda.
+        online: true,
     },
     modelModalSuppliers: [],
     modelModal: {

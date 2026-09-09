@@ -170,6 +170,7 @@ final class DashboardHttpServer
     private function page(): string
     {
         $dashboardApiAuthRequired = $this->apiAuthRequired;
+        $downlinkQueueTtlSeconds = $this->hub->downlinkQueueTtlSeconds();
 
         ob_start();
         require __DIR__ . '/index.php';
