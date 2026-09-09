@@ -176,27 +176,53 @@ async function openDeviceSelector() {
     await loadSummary();
 }
 
+const repeatMarkup = (count, markup) => Array.from({ length: count }, () => markup).join("");
+
+/**
+ * As três colunas de filtro sem afirmarem nada.
+ *
+ * Serve as duas situações em que não se sabe o que lá deve estar: a espera e a falha. Dizer
+ * «não há licenças» em qualquer delas é afirmar uma ausência que ninguém mediu, e lê-se como
+ * resposta quando é a falta de uma.
+ */
+function renderDeviceFilterSkeleton() {
+    els.deviceTypeFilter.innerHTML = `
+        <div class="placeholder-wave device-type-grid">
+        ${repeatMarkup(
+            6,
+            // As mesmas classes da pastilha a sério: a altura vem do mesmo CSS, e a grelha
+            // não salta quando os dados chegam.
+            `<div class="device-type-tile" aria-hidden="true">
+                <span class="device-type-tile-icon"><i class="fa-solid fa-square placeholder"></i></span>
+                <span class="device-type-tile-name placeholder col-7">&nbsp;</span>
+                <span class="count-number placeholder col-5">&nbsp;</span>
+            </div>`,
+        )}
+        </div>`;
+
+    for (const el of [els.deviceSupplierFilter, els.deviceLicenseFilter]) {
+        el.innerHTML = `
+            <div class="placeholder-wave">
+            ${repeatMarkup(
+                3,
+                // A barra vai dentro do `filter-option-name` e não por cima dele: a altura da
+                // linha vem do mesmo CSS da opção a sério, e a largura fica a de um nome.
+                `<div class="filter-option" aria-hidden="true">
+                    <span class="filter-option-box"></span>
+                    <span class="filter-option-name"><span class="placeholder col-6">&nbsp;</span></span>
+                </div>`,
+            )}
+            </div>`;
+    }
+}
+
 /**
  * O esqueleto da lista e dos filtros. Cada linha é o cartão a sério com barras no lugar do
  * texto, para a lista não saltar quando os dados chegam.
  */
 function renderDeviceSelectorSkeleton() {
-    const repeat = (count, markup) => Array.from({ length: count }, () => markup).join("");
-
     els.deviceList.innerHTML = deviceCardSkeletonList(state.deviceListPageSize);
-
-    for (const el of [els.deviceSupplierFilter, els.deviceLicenseFilter]) {
-        el.innerHTML = `
-            <div class="placeholder-wave">
-            ${repeat(
-                3,
-                `<div class="filter-option" aria-hidden="true">
-                    <span class="filter-option-box"></span>
-                    <span class="placeholder col-6"></span>
-                </div>`,
-            )}
-            </div>`;
-    }
+    renderDeviceFilterSkeleton();
 }
 
 function isDeviceSelectorOpen() {
@@ -211,7 +237,11 @@ function renderDeviceSelector() {
     if (els.deviceListSearch) {
         els.deviceListSearch.value = state.deviceSearchQuery;
     }
-    renderDeviceFilterControls();
+    // Uma falha diz-se uma vez, na lista, que é onde o utilizador está. As colunas que
+    // dependem da mesma resposta ficam em esqueleto em vez de anunciarem vazio.
+    if (state.summary.devicesError) renderDeviceFilterSkeleton();
+    else renderDeviceFilterControls();
+
     renderDeviceSelectorSummary();
 
     els.deviceList.innerHTML = deviceListBody(state.summary);
@@ -292,7 +322,10 @@ export function deviceListEmptyState(filters, query) {
 
 function renderDeviceSelectorSummary() {
     if (!els.deviceSelectorSummary) return;
-    const { total, online } = state.summary.deviceTotals || { total: 0, online: 0 };
+    // Uma contagem da resposta anterior ao lado de um erro lê-se como se ainda valesse.
+    const { total, online } = state.summary.devicesError
+        ? { total: 0, online: 0 }
+        : state.summary.deviceTotals || { total: 0, online: 0 };
     els.deviceSelectorSummary.textContent = total
         ? `${total} ${total === 1 ? "dispositivo" : "dispositivos"} · ${online} ligado${online === 1 ? "" : "s"}`
         : "";

@@ -16,6 +16,7 @@ import {
 function setUpSelector() {
     document.body.innerHTML = `
         <div id="deviceList" class="device-card-list"></div>
+        <div id="deviceTypeFilter"></div>
         <div id="deviceSupplierFilter"></div>
         <div id="deviceModelFilter"></div>
         <div id="deviceLicenseFilter"></div>`;
@@ -23,6 +24,7 @@ function setUpSelector() {
     const byId = (id) => document.getElementById(id);
     const els = {
         deviceList: byId("deviceList"),
+        deviceTypeFilter: byId("deviceTypeFilter"),
         deviceSupplierFilter: byId("deviceSupplierFilter"),
         deviceModelFilter: byId("deviceModelFilter"),
         deviceLicenseFilter: byId("deviceLicenseFilter"),
@@ -32,7 +34,13 @@ function setUpSelector() {
     globalThis.fetch = () => new Promise(() => {});
     initDeviceList({
         els,
-        ui: { deviceSelectorModal: { show: () => { shown = true; } } },
+        ui: {
+            deviceSelectorModal: {
+                show: () => {
+                    shown = true;
+                },
+            },
+        },
         services: {},
     });
 
@@ -45,10 +53,14 @@ test("o modal aparece antes de a lista chegar, com esqueleto no lugar dela", asy
     void openDeviceSelector();
 
     assert.equal(wasShown(), true);
-    assert.ok(els.deviceList.querySelectorAll(".device-card-skeleton").length > 0);
+    assert.ok(
+        els.deviceList.querySelectorAll(".device-card-skeleton").length > 0,
+    );
     assert.equal(els.deviceList.getAttribute("aria-busy"), "true");
     // Os filtros não ficam uma coluna vazia enquanto se espera.
-    assert.ok(els.deviceSupplierFilter.querySelectorAll(".placeholder").length > 0);
+    assert.ok(
+        els.deviceSupplierFilter.querySelectorAll(".placeholder").length > 0,
+    );
 });
 
 test("o esqueleto tem a geometria do cartão, para a lista não saltar quando chega", async () => {
@@ -67,5 +79,9 @@ test("o esqueleto tem a geometria do cartão, para a lista não saltar quando ch
     // a moldura mais alta leva.
     const rows = els.deviceList.querySelectorAll(".device-card-skeleton");
     assert.equal(rows.length, 12);
-    assert.ok(els.deviceList.querySelector(".device-card-skeleton-list.placeholder-wave"));
+    assert.ok(
+        els.deviceList.querySelector(
+            ".device-card-skeleton-list.placeholder-wave",
+        ),
+    );
 });
