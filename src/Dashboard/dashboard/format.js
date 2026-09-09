@@ -238,6 +238,9 @@ export const commandLabel = (command) =>
         HRV: "VFC",
         PPG: "PPG",
         "RR interval": "Intervalo RR",
+        Battery: "Bateria",
+        "Blood glucose": "Glicemia",
+        Stress: "Stress",
         "Heart rate and blood pressure":
             "Frequência cardíaca e tensão arterial",
     })[command.label] ||

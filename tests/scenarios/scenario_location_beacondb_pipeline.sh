@@ -14,6 +14,7 @@ export RADIO_MAP_HASH_KEY="scenario-private-radio-map-hmac-key"
 
 docker compose up -d --force-recreate --remove-orphans mosquitto hub >/dev/null
 wait_for_mosquitto
+wait_for_hub_tcp
 start_mqtt_subscriber
 # O padrão leva o prefixo da instância. Hoje isto só alcança o contentor local, mas a linha é
 # destrutiva e copia-se com facilidade: apontada a um Redis de servidor sem o prefixo, apagava a

@@ -49,9 +49,9 @@ test("MONIT moisture takes the full row and renders one column per channel", () 
         maximumDelta: 28,
     });
 
-    // Um mosaico de linha inteira é `col-12` e mais nada: os outros são `col-12 col-lg-6`,
-    // que é linha toda por omissão e metade só em ecrã grande.
-    assert.match(html, /class="col-12"/);
+    // Um mosaico de linha inteira atravessa a grelha; os outros são uma célula dela, e é o
+    // contentor que decide quantas caberam.
+    assert.match(html, /class="telemetry-card-wide"/);
     assert.equal(html.match(/class="diaper-channel"/g).length, 3);
     assert.match(html, /fa-droplet/);
     assert.doesNotMatch(html, /data-action="requestFeature"/);

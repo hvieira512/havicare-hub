@@ -130,6 +130,20 @@ class HubMqttBridge
         }
     }
 
+    /**
+     * Entrega uma instrução a um gateway, no espaço de tópicos por onde ele já fala.
+     *
+     * Não passa pelo prefixo da instância: um gateway publica e escuta no espaço fixo com que
+     * foi provisionado, e é lá que tem de encontrar o que lhe é dirigido. Quem cria comandos
+     * continua a ser só a API REST -- isto é a entrega, o equivalente ao socket de um relógio.
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function publishGatewayCommand(string $topic, array $payload): void
+    {
+        $this->publish($topic, $payload, 'null', 0, 'cmd', false, MqttClient::QOS_AT_LEAST_ONCE);
+    }
+
     public function topic(string $topic): string
     {
         $topic = trim($topic, '/');

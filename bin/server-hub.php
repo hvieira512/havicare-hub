@@ -8,6 +8,7 @@ require __DIR__ . '/../vendor/autoload.php';
 use Hub\Device\HubTcpIngress;
 use Hub\Ingress\Mqtt\IngressRunner;
 use Hub\Ingress\Mqtt\Moko\Bridge as MokoBridge;
+use Hub\Ingress\Mqtt\Veepoo\Bridge as VeepooBridge;
 use Hub\Ingress\Mqtt\Moko\RedisObservationStateStore;
 use Hub\Ingress\Mqtt\Ncs\Bridge as NcsBridge;
 use Hub\Ingress\Mqtt\Qinglanst\Bridge as QinglanstBridge;
@@ -107,6 +108,27 @@ if ($config['moko']['enabled']) {
         ),
     ));
     $enabledIngresses[] = 'moko';
+}
+
+// Pulseiras Veepoo entregues por um gateway BLE. Partilha o tópico do MOKO de propósito: os
+// gateways publicam todos em `.../gw/{mac}/raw`, e cada ingestão reclama só o que sabe ler.
+if ($config['moko']['enabled']) {
+    $veepooTopicFilter = trim((string)$config['moko']['topic_filter']);
+    $runner->add('Veepoo bracelet ingress', $subscribers->bind(
+        'veepoo-sub',
+        $veepooTopicFilter,
+        fn ($subscriber, $reconnect) => new VeepooBridge(
+            $subscriber,
+            $services->whitelist,
+            $services->mqttBridge,
+            $services->dataAccess->gatewayDeviceLinks,
+            $services->downlinkQueue,
+            $veepooTopicFilter,
+            $reconnect,
+            $services->dashboardStore,
+        ),
+    ));
+    $enabledIngresses[] = 'veepoo';
 }
 
 if ($config['qinglanst']['enabled']) {

@@ -43,7 +43,10 @@
                                         <?php /* `min-h-0` nas duas colunas: um item de flex não encolhe abaixo do
                                                * conteúdo, e sem isto a lista empurrava a coluna, a coluna empurrava
                                                * o cartão e o `overflow-auto` da lista nunca tinha o que rolar. */ ?>
-                                        <div class="col-12 col-xl-6 d-flex flex-column min-h-0 pe-xl-4">
+                                        <?php /* O `col-xl-6` e o `pe-xl-4` saem e voltam pelo
+                                               * `renderDownlinkRequests`: sem pedidos, os
+                                               * eventos ficam com a linha toda. */ ?>
+                                        <div id="telemetryColumn" class="col-12 col-xl-6 d-flex flex-column min-h-0 pe-xl-4">
                                             <?= section_header('Eventos recebidos', 'telemetryCount', true) ?>
                                             <?php /* O paginador fica entre o título e a lista: em baixo era empurrado
                                                    * para o fundo da coluna pelo `flex-grow-1` da lista, e numa página
@@ -53,7 +56,7 @@
                                             <?= pagination_component('telemetryPager', 'mb-2', false) ?>
                                             <div id="telemetryList" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
                                         </div>
-                                        <div class="col-12 col-xl-6 d-flex flex-column min-h-0 border-start-xl ps-xl-4 mt-4 mt-xl-0">
+                                        <div id="downlinkColumn" class="col-12 col-xl-6 d-flex flex-column min-h-0 border-start-xl ps-xl-4 mt-4 mt-xl-0">
                                             <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount', true) ?>
                                             <?= pagination_component('downlinkPager', 'mb-2', false) ?>
                                             <div id="downlinkRequests" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>

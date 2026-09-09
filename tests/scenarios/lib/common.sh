@@ -125,6 +125,23 @@ wait_for_mosquitto() {
   scenario_fail "stream_failure" "mosquitto did not become ready"
 }
 
+# O contentor arrancar não é o hub estar a ouvir: entre um e outro correm migrações, abrem-se
+# as subscrições MQTT e só então o socket. Quem se ligue antes disso leva «connection
+# refused» e o cenário falha por uma razão que nada tem a ver com o que está a testar --
+# tanto mais quanto mais ingressos o hub tiver para levantar.
+wait_for_hub_tcp() {
+  local probe='$s=@fsockopen("127.0.0.1", 9000, $e, $m, 1); if ($s) { fclose($s); exit(0); } exit(1);'
+
+  for _ in $(seq 1 40); do
+    if docker compose exec -T hub php -r "$probe" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  scenario_fail "routing_failure" "hub TCP listener did not become ready"
+}
+
 start_mqtt_subscriber() {
   if [ -z "${MQTT_SMOKE_USERNAME:-}" ] || [ -z "${MQTT_SMOKE_PASSWORD:-}" ]; then
     scenario_fail "stream_failure" "MQTT_SMOKE_USERNAME/MQTT_SMOKE_PASSWORD are required"

@@ -20,16 +20,7 @@ docker compose up -d --force-recreate --remove-orphans mosquitto redis hub >/dev
 wait_for_mosquitto
 start_mqtt_subscriber
 
-for _ in $(seq 1 40); do
-  if docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1", 9000, $e, $m, 1); if ($s) { fclose($s); exit(0); } exit(1);' >/dev/null 2>&1; then
-    break
-  fi
-  sleep 1
-done
-
-if ! docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1", 9000, $e, $m, 1); if ($s) { fclose($s); exit(0); } exit(1);' >/dev/null 2>&1; then
-  scenario_fail "routing_failure" "hub TCP listener did not become ready"
-fi
+wait_for_hub_tcp
 
 wait_for_dashboard
 api_token="$(scenario_api_token)"

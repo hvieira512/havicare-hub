@@ -6,8 +6,12 @@ import "./support/browser-env.js";
 const { renderPagination } = await import("../../src/Dashboard/dashboard/pagination.js");
 
 /**
- * O paginador partilhado. Desenha uma página por botão: o resumo saiu da linha e o
- * paginador ficou centrado com a largura toda para si, portanto cabem lá todas.
+ * O paginador partilhado. Desenha uma janela de páginas com um número fixo de lugares: uma
+ * página por botão dava catorze botões em duzentos eventos, que quebravam para duas filas e
+ * mudavam a altura da lista, e cresciam sem limite com o histórico.
+ *
+ * O que estes testes prendem é a largura constante. Um paginador com sete lugares na página 1
+ * e nove na página 7 muda de tamanho debaixo do rato de quem carregou nele.
  */
 
 function render(pagination) {
@@ -29,18 +33,44 @@ function render(pagination) {
 const numbers = (controls) =>
     [...controls.querySelectorAll("[data-action='telemetryPageGo']")].map((b) => b.dataset.page);
 
-test("desenha uma página por botão, sem saltos", () => {
-    const { controls } = render({ total: 167, total_pages: 14, page: 1, limit: 12 });
+const labels = (controls) =>
+    [...controls.querySelectorAll(".page-link")].slice(1, -1).map((el) => el.textContent);
 
-    assert.deepEqual(numbers(controls), ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"]);
+test("a janela tem os mesmos lugares em qualquer página", () => {
+    const slots = [1, 4, 5, 7, 10, 11, 14].map(
+        (page) =>
+            render({ total: 167, total_pages: 14, page, limit: 12 }).controls.querySelectorAll("li")
+                .length,
+    );
+
+    // Sete lugares mais as duas setas, e o mesmo número em todas as páginas.
+    assert.deepEqual(slots, [9, 9, 9, 9, 9, 9, 9]);
 });
 
-test("não há reticências nenhumas", () => {
-    const { controls } = render({ total: 200, total_pages: 17, page: 9, limit: 12 });
+test("as reticências marcam o que ficou de fora, e as pontas estão sempre lá", () => {
+    const page = (n) => labels(render({ total: 200, total_pages: 17, page: n, limit: 12 }).controls);
 
-    assert.equal(controls.querySelectorAll("span.page-link").length, 0);
+    assert.deepEqual(page(1), ["1", "2", "3", "4", "5", "…", "17"]);
+    assert.deepEqual(page(9), ["1", "…", "8", "9", "10", "…", "17"]);
+    assert.deepEqual(page(17), ["1", "…", "13", "14", "15", "16", "17"]);
+});
+
+test("com poucas páginas mostram-se todas, sem reticências", () => {
+    const { controls } = render({ total: 60, total_pages: 5, page: 3, limit: 12 });
+
+    assert.deepEqual(numbers(controls), ["1", "2", "3", "4", "5"]);
     assert.equal(controls.textContent.includes("…"), false);
-    assert.equal(numbers(controls).length, 17);
+});
+
+test("as reticências não respondem ao clique", () => {
+    const { controls } = render({ total: 200, total_pages: 17, page: 9, limit: 12 });
+    const gaps = [...controls.querySelectorAll("li")].filter((li) => li.textContent === "…");
+
+    assert.equal(gaps.length, 2);
+    for (const gap of gaps) {
+        assert.equal(gap.classList.contains("disabled"), true);
+        assert.equal(gap.querySelector("[data-action]"), null);
+    }
 });
 
 test("sem elemento de resumo, desenha na mesma", () => {
@@ -49,7 +79,7 @@ test("sem elemento de resumo, desenha na mesma", () => {
     const { root, controls } = render({ total: 167, total_pages: 14, page: 1, limit: 12 });
 
     assert.equal(root.classList.contains("d-none"), false);
-    assert.equal(numbers(controls).length, 14);
+    assert.deepEqual(numbers(controls), ["1", "2", "3", "4", "5", "14"]);
 });
 
 test("com tudo numa página esconde-se, sem tropeçar no resumo que não existe", () => {

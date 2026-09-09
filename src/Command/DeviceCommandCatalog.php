@@ -32,6 +32,7 @@ final class DeviceCommandCatalog
             'wonlex-json' => self::wonlexCommands(),
             'vivistar-iw' => self::vivistarCommands(),
             'four-p-touch' => self::fourPTouchCommands(),
+            'veepoo-ble' => self::veepooCommands(),
             default => [],
         };
     }
@@ -94,6 +95,9 @@ final class DeviceCommandCatalog
             'wonlex-json' => self::buildWonlex($imei, $command, $payload, $context),
             'vivistar-iw' => self::buildVivistar($imei, $command, $entry, $payload),
             'four-p-touch' => self::buildFourPTouch($imei, $command, $entry, $payload, $context),
+            // Não há trama a montar: o destinatário é o gateway, e o que ele precisa é do
+            // nome da operação para chamar o SDK. Os bytes em fila são esse nome.
+            'veepoo-ble' => $command,
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };
     }
@@ -144,6 +148,44 @@ final class DeviceCommandCatalog
     /**
      * @return array<int, array<string, mixed>>
      */
+    /**
+     * Medições a pedido de uma pulseira Veepoo.
+     *
+     * Ao contrário dos relógios, aqui o comando não viaja para o aparelho: vai para o gateway
+     * que tem a sessão BLE, e é ele que chama o SDK. Por isso o `command` é o nome da operação
+     * na ponte, e não uma trama.
+     *
+     * Não há `location`: a MF91 não tem GPS. Também não há pedido de HRV, PPG nem intervalos
+     * R-R -- o firmware calcula-os nos blocos que acumula sozinho e não os mede a pedido.
+     *
+     * Cada uma destas foi confirmada contra a pulseira: o pedido sai, o aparelho mede e o
+     * valor volta. A tensão é a mais lenta -- cerca de meio minuto -- e é servida pela
+     * «tensão universal» do SDK, e não pelo comando de tensão personalizada, que apesar do
+     * nome só define valores e responde sempre com zeros.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function veepooCommands(): array
+    {
+        return [
+            ['id' => 'measureHeartRate', 'command' => 'measure.heartRate.start', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['heart_rate']],
+            ['id' => 'measureBloodPressure', 'command' => 'measure.bloodPressure.start', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['blood_pressure']],
+            ['id' => 'measureOxygen', 'command' => 'measure.oxygen.start', 'label' => 'Blood oxygen', 'icon' => 'fa-droplet', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['blood_oxygen']],
+            ['id' => 'measureBloodGlucose', 'command' => 'measure.bloodGlucose.start', 'label' => 'Blood glucose', 'icon' => 'fa-vial', 'kind' => 'request', 'feature' => 'blood_sugar', 'expectedReplyTypes' => ['blood_sugar']],
+            // A única fonte de temperatura corporal: o histórico só guarda a da pele.
+            ['id' => 'measureTemperature', 'command' => 'measure.temperature.start', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['temperature']],
+            ['id' => 'measureStress', 'command' => 'measure.stress.start', 'label' => 'Stress', 'icon' => 'fa-gauge-high', 'kind' => 'request', 'feature' => 'stress', 'expectedReplyTypes' => ['stress']],
+            // A bateria é o único pedido que não depende do sensor ótico: responde sempre,
+            // e em menos de um segundo.
+            ['id' => 'readBattery', 'command' => 'read.battery', 'label' => 'Battery', 'icon' => 'fa-battery-half', 'kind' => 'request', 'feature' => 'battery', 'expectedReplyTypes' => ['battery']],
+            // O ECG arranca e transmite, mas exige que quem a usa encoste o dedo ao elétrodo:
+            // sem isso o aparelho envia dezenas de tramas com `wearNotPass` e tudo a zero.
+            // Fica no catálogo porque é assim em qualquer pulseira com ECG, e a falha de
+            // contacto é reportada em vez de o pedido ficar pendurado.
+            ['id' => 'measureEcg', 'command' => 'measure.ecg.start', 'label' => 'ECG', 'icon' => 'fa-wave-square', 'kind' => 'request', 'feature' => 'ecg', 'expectedReplyTypes' => ['ecg']],
+        ];
+    }
+
     private static function wonlexCommands(): array
     {
         return [

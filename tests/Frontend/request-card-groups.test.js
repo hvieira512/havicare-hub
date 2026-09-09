@@ -63,3 +63,34 @@ test("a faixa com o nome do grupo só existe quando há mais do que um grupo", (
     assert.match(accompanied, /section-label[^>]*>Telemetria</);
     assert.match(accompanied, /count-chip">1</);
 });
+
+/**
+ * Um mosaico sem leitura fica com o ícone e o título e mais nada. O lugar do valor vazio, ao
+ * lado dos irmãos que têm um, já se lê como ausência de leitura, e uma etiqueta a dizê-lo
+ * repetia o que o vazio diz -- multiplicada pelos mosaicos vazios que o ecrã tiver.
+ */
+test("um mosaico sem leitura não leva etiqueta a dizê-lo", () => {
+    const [group] = telemetryRequestCards({ heart_rate: supported() });
+
+    const html = renderRequestCardGroup(group, [], false, []);
+
+    // O catálogo de capacidades não está carregado aqui, e por isso o nome vem do
+    // `humanizeCapabilityKey`. O que importa é que só o nome lá está.
+    assert.match(html, /telemetry-card-title">Heart Rate</);
+    assert.doesNotMatch(html, /telemetry-card-value/);
+    assert.doesNotMatch(html, /telemetry-row-details/);
+});
+
+test("com leitura, o mosaico mostra o valor", () => {
+    const [group] = telemetryRequestCards({ heart_rate: supported() });
+    const reading = {
+        type: "heart_rate",
+        occurredAt: "2026-08-25T10:15:00Z",
+        data: { bpm: 72 },
+    };
+
+    const html = renderRequestCardGroup(group, [reading], false, []);
+
+    assert.match(html, /72 bpm/);
+    assert.match(html, /telemetry-card-value/);
+});

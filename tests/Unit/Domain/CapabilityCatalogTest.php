@@ -16,7 +16,10 @@ final class CapabilityCatalogTest extends TestCase
             'radar' => [9, '45dfaa71313e4da275fca1da9536b826bf0fe6a442cf462d3d2534db1499fa65'],
             'gateway' => [3, '044f4b1de47b562638442dc3fc8be22b3ab76043721211a47f478ee68124a91f'],
             'diaper_sensor' => [7, '1aabeb619dd84c1e60cb25bc6d43fe88ea8b3b708365ad38f39a3c13bf5c4fd2'],
-            'bracelet' => [4, '40b4ef6a67ffc5abf2eee29201049ddcd20546a284bc4d31ea7bb9d8ca08108e'],
+            // De 4 para 28 com a Veepoo MF91: as W6/W6B só anunciam bateria, movimento,
+            // proximidade e botão, mas uma pulseira com sessão GATT entrega dezasseis
+            // grandezas e aceita seis interruptores de medição autónoma.
+            'bracelet' => [32, 'e0339e6d8a28207f563822130de2f46816750db03526b4cc0bc7c835e0428564'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

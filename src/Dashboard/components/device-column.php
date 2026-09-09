@@ -46,7 +46,7 @@
                            * no CSS, porque o Bootstrap não tem `border-sm` nem `bg-sm-*`. */ ?>
                     <div class="card card-flush-sm" id="requestCardsCard">
                         <div class="card-body p-0 p-sm-3">
-                            <div class="row g-2 g-sm-3" id="requestGrid"></div>
+                            <div class="d-grid telemetry-card-grid gap-2 gap-sm-3" id="requestGrid"></div>
                         </div>
                     </div>
                     <div class="card d-none" id="ncsEventSection">
@@ -55,7 +55,7 @@
                                    * são dois. Um número ao lado de dois mosaicos visíveis não
                                    * conta nada, e contava os géneros e não os eventos. */ ?>
                             <?= section_header('Eventos NCS recentes') ?>
-                            <div class="row g-3" id="ncsEventGrid"></div>
+                            <div class="d-grid telemetry-card-grid gap-3" id="ncsEventGrid"></div>
                         </div>
                     </div>
                 </aside>

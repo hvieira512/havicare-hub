@@ -45,6 +45,14 @@ final class ProtocolRegistry
                 'deviceType' => 'radar',
                 'supportsConfigCatalog' => false,
             ],
+            // A pulseira aceita downlink de verdade: a sessão GATT é bidirecional e o
+            // firmware confirma cada escrita. É o que a distingue das W6/W6B, que só
+            // anunciam e nada recebem.
+            'veepoo-ble' => [
+                'label' => 'Veepoo',
+                'deviceType' => 'bracelet',
+                'supportsConfigCatalog' => true,
+            ],
             'moko-mkgw3' => [
                 'label' => 'MOKO',
                 'deviceType' => 'gateway',

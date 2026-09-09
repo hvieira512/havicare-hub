@@ -84,6 +84,18 @@ final class RecordingHubMqttBridge extends HubMqttBridge
         ];
     }
 
+    /**
+     * O que foi entregue ao canal de comandos de um gateway.
+     *
+     * @var list<array{topic: string, payload: array<string, mixed>}>
+     */
+    public array $gatewayCommands = [];
+
+    public function publishGatewayCommand(string $topic, array $payload): void
+    {
+        $this->gatewayCommands[] = ['topic' => $topic, 'payload' => $payload];
+    }
+
     public function clearRetainedStatus(string $company, int $licenseId, string $deviceType, string $imei): void
     {
         $this->clearedRetainedStatus[] = compact('company', 'licenseId', 'deviceType', 'imei');

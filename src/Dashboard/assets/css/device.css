@@ -810,6 +810,14 @@
     object-fit: contain;
 }
 
+/* A chapa acompanha a fotografia no escuro -- ver o comentário das chapas pequenas no
+   `main.css`. Só onde há fotografia, e o esqueleto fica de fora: a barra dele pinta-se com
+   `currentcolor`. */
+[data-bs-theme="dark"] .device-card-thumb:not(.placeholder):has(img) {
+    background: #fff;
+    filter: brightness(.84);
+}
+
 .device-card.offline .device-card-thumb { opacity: .5; }
 .device-card.offline .device-card-imei { color: var(--bs-secondary-color); }
 
@@ -908,11 +916,40 @@
     }
 }
 
+/* A grelha dos mosaicos mede-se pelo contentor e não pela largura do ecrã. Com `col-lg-6`,
+   dois mosaicos dentro da coluna `col-lg-4` do ecrã davam 190px cada, e o título ficava com
+   43px: "Frequência cardíaca" lia-se em quatro linhas, FREQUÊN/CIA/CARDÍAC/A. Com `auto-fit`
+   a segunda coluna só aparece quando há 14rem para ela -- é o padrão que o `.gateway-picker`
+   do `main.css` já usa, e 14rem é a medida em que a palavra mais comprida do catálogo
+   ("CONFIGURAÇÃO", 93px) cabe ao lado do ícone, do aviãozinho e das goteiras.
+
+   As goteiras vêm dos utilitários `gap-*` do Bootstrap, nos contentores. */
+.telemetry-card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+/* Um item de grelha não encolhe abaixo do conteúdo por omissão, e um nome comprido esticava
+   a coluna toda em vez de se cortar. */
+.telemetry-card-cell {
+    min-width: 0;
+}
+
+/* O `span: 12` da casca: o mosaico que pede a linha toda. */
+.telemetry-card-wide {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
 /* O nome quebra em duas linhas em vez de ser truncado: a 375px, com dois mosaicos por linha,
    "Oxigénio no sangue" ficava "Oxigénio no sa" e o `title` que o completava era uma tooltip
-   a dizer o que já estava escrito no ecrã. */
+   a dizer o que já estava escrito no ecrã.
+
+   Quebra entre palavras e nunca dentro de uma: o `word-wrap: break-word` que o `.card` do
+   Bootstrap herda a tudo o que está dentro dele serve texto corrido, e não uma etiqueta de
+   duas palavras. */
 .telemetry-card-title {
     line-height: 1.3;
+    overflow-wrap: normal;
 }
 
 /* A leitura mais recente, sob o nome da categoria, na cor da categoria. */

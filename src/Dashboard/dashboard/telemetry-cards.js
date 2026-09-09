@@ -25,6 +25,10 @@ const CARD_STYLE = {
     blood_pressure: ["fa-stethoscope", "danger"],
     blood_oxygen: ["fa-droplet", "info"],
     blood_sugar: ["fa-vial", "warning"],
+    // Os outros dois analitos do sangue ficam na família do açúcar: o mesmo tom, e um frasco
+    // para cada um em vez do genérico.
+    uric_acid: ["fa-flask", "warning"],
+    blood_lipids: ["fa-vials", "warning"],
     temperature: ["fa-temperature-half", "warning"],
     battery: ["fa-battery-three-quarters", "success"],
     connectivity: ["fa-wifi", "info"],
@@ -33,12 +37,20 @@ const CARD_STYLE = {
     diaper_moisture_level: ["fa-percent", "info"],
     diaper_condition: ["fa-baby", "warning"],
     activity: ["fa-person-walking", "primary"],
+    // Um índice e um gasto metabólico são medidas de bem-estar e não gravidades: ficam no
+    // azul da casa, como a atividade e o sono, e não no vermelho nem no âmbar.
+    stress: ["fa-face-grimace", "primary"],
+    // `fa-fire` e não `fa-fire-flame-simple`: a chama simples é uma gota, e o mosaico do MET
+    // fica ao lado do oxigénio no sangue, que já é uma gota.
+    met: ["fa-fire", "primary"],
     location: ["fa-location-dot", "success"],
     sleep: ["fa-bed", "primary"],
     sleep_state: ["fa-bed", "primary"],
+    sleep_apnea: ["fa-bed-pulse", "warning"],
     presence: ["fa-location-crosshairs", "success"],
     ecg: ["fa-wave-square", "danger"],
     hrv: ["fa-chart-line", "danger"],
+    cardiac_load: ["fa-heart-circle-bolt", "danger"],
     breath_rate: ["fa-lungs", "info"],
     ppg: ["fa-circle-nodes", ""],
     rr_interval: ["fa-stopwatch", "info"],
@@ -103,8 +115,46 @@ const UPLINK_CARD_RENDERERS = {
     blood_sugar: (data) => ({
         value: `${data.glucoseMgDl ?? "-"} mg/dL`,
     }),
+    // Nem toda a temperatura é corporal: uma pulseira que só amostre a pele ao longo do dia
+    // manda `skinCelsius`, e mostrar "-" escondia uma leitura que existe.
     temperature: (data) => ({
-        value: `${data.bodyCelsius ?? "-"} °C`,
+        value:
+            data.bodyCelsius != null
+                ? `${data.bodyCelsius} °C`
+                : data.skinCelsius != null
+                    ? `${data.skinCelsius} °C na pele`
+                    : "-",
+    }),
+    stress: (data) => ({
+        value: data?.score != null ? `${data.score}` : capabilityLabel("stress"),
+    }),
+    // Equivalentes metabólicos: 1 é o gasto em repouso, e por isso o número vale por si.
+    met: (data) => ({
+        value: data?.value != null ? `${data.value} MET` : capabilityLabel("met"),
+    }),
+    cardiac_load: (data) => ({
+        value: data?.value != null ? `${data.value}` : capabilityLabel("cardiac_load"),
+    }),
+    sleep_apnea: (data) => ({
+        value:
+            data?.episodes != null
+                ? `${data.episodes} episódios`
+                : capabilityLabel("sleep_apnea"),
+        details: compactDetails(data, ["hypoxiaSeconds"]),
+    }),
+    uric_acid: (data) => ({
+        value: data?.umolPerL != null ? `${data.umolPerL} µmol/L` : capabilityLabel("uric_acid"),
+    }),
+    blood_lipids: (data) => ({
+        value:
+            data?.totalCholesterolMmolPerL != null
+                ? `${data.totalCholesterolMmolPerL} mmol/L`
+                : capabilityLabel("blood_lipids"),
+        details: compactDetails(data, [
+            "triglyceridesMmolPerL",
+            "hdlMmolPerL",
+            "ldlMmolPerL",
+        ]),
     }),
     battery: (data) => ({
         value:
@@ -161,15 +211,23 @@ const UPLINK_CARD_RENDERERS = {
     }),
     sleep: () => ({ value: "Dados de sono" }),
     ecg: () => ({ value: "Dados de ECG" }),
-    hrv: () => ({ value: "Dados de VFC" }),
+    // A VFC é um escalar em milissegundos e não uma série: anunciá-la como "Dados de VFC"
+    // escondia o número que já vinha na mensagem.
+    hrv: (data) => ({
+        value:
+            data?.milliseconds != null
+                ? `${data.milliseconds} ms`
+                : capabilityLabel("hrv"),
+    }),
     // Um escalar, ao contrário do sono, do ECG e da PPG, que são séries e se anunciam.
     breath_rate: (data) => ({
         value: `${data.breathsPerMinute ?? "-"} rpm`,
     }),
     ppg: () => ({ value: "Dados de PPG" }),
+    // Chegam em lote: o que cabe no cartão é quantos são e a média, que é o inverso da
+    // frequência cardíaca e portanto o número que denuncia uma leitura absurda.
     rr_interval: (data) => ({
-        value: "Intervalo RR",
-        details: compactDetails(data, ["intervalMs"]),
+        value: rrIntervalValue(data),
     }),
     help_call: (data) => helpCallContent(data),
     motion: (data) => ({
@@ -247,6 +305,27 @@ export function uplinkCardContent(type, data, meta = {}) {
 // Uma pulseira W6B diz que tipo de toque foi; um pager NCS diz que comando foi.
 
 /** Os modos que um dispositivo emite vêm do backend; este cartão desenha os que lhe derem. */
+/**
+ * Os intervalos R-R chegam em lote e sem instante próprio, e por isso não há um valor
+ * único para mostrar. A média é o que permite conferir a leitura de relance: o seu inverso
+ * é a frequência cardíaca, e um lote absurdo salta à vista sem abrir a mensagem.
+ */
+function rrIntervalValue(data) {
+    const intervals = (data?.intervals || [])
+        .map((entry) => entry?.milliseconds)
+        .filter((value) => typeof value === "number");
+
+    if (intervals.length === 0) {
+        return capabilityLabel("rr_interval");
+    }
+
+    const mean = Math.round(
+        intervals.reduce((sum, value) => sum + value, 0) / intervals.length,
+    );
+
+    return `${intervals.length} × ${mean} ms`;
+}
+
 function helpCallContent(data) {
     const base = ncsPagerContent("help_call", data);
     const pressType = PRESS_TYPE_LABEL[String(data?.pressType || "")];

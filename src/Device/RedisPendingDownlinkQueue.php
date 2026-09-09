@@ -110,13 +110,21 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
         if ($operationId !== '') {
             return 'operation:' . hash('sha256', $operationId);
         }
+
+        // O valor faz parte da identidade. Há comandos que só se distinguem por ele -- mandar
+        // a pulseira vibrar e mandá-la parar são ambos `config:find_device` --, e sem o
+        // incluir a ordem de parar era engolida como repetição da de começar.
+        $value = is_array($command) && isset($command['payload'])
+            ? '|' . json_encode($command['payload'], JSON_THROW_ON_ERROR)
+            : '';
+
         $nativeType = is_array($command) ? (string)($command['nativeType'] ?? '') : '';
         if ($nativeType !== '') {
             $protocol = is_array($command) ? (string)($command['protocol'] ?? 'unknown') : 'unknown';
-            return 'command:' . hash('sha256', $protocol . ':' . $nativeType);
+            return 'command:' . hash('sha256', $protocol . ':' . $nativeType . $value);
         }
 
-        return 'raw:' . hash('sha256', $bytes);
+        return 'raw:' . hash('sha256', $bytes . $value);
     }
 
     private function indexKey(string $imei): string

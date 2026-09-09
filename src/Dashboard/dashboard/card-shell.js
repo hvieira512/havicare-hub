@@ -52,13 +52,14 @@ export function telemetryCard({
         ? html`<div class="telemetry-card-value tabular-nums text-break">${value}</div>`
         : "";
 
-    // Linha toda por omissão, metade só em ecrã grande.
-    const columns = span === 12 ? "col-12" : `col-12 col-lg-${span}`;
+    // A célula mede-se pelo contentor e não pela largura do ecrã: a grelha só abre uma
+    // segunda coluna quando há 14rem para ela. Ver `.telemetry-card-grid` no `device.css`.
+    const cell = span === 12 ? "telemetry-card-wide" : "telemetry-card-cell";
 
     // O corpo é uma coluna só para separar a linha do ícone do corpo que alguns mosaicos
     // trazem -- a barra de humidade da fralda, por exemplo.
     return html`
-    <div class="${columns}">
+    <div class="${cell}">
         <${tag}${raw(attrs)}>
             <div class="card-body p-3 d-flex flex-column gap-3">
                 <div class="d-flex align-items-center gap-2 gap-sm-3">

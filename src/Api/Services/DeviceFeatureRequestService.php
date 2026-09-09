@@ -182,7 +182,13 @@ final class DeviceFeatureRequestService
                 'deviceId' => $metadata !== null ? $metadata->deviceId : (string)($device['deviceId'] ?? ''),
             ]);
             $id = bin2hex(random_bytes(8));
-            $status = $this->hub->submitDownlink($imei, $bytes);
+            // O valor segue com o comando: uma acção como «procurar a pulseira» distingue-se
+            // de «deixar de a procurar» só por ele, e os protocolos que entregam a um gateway
+            // mandam o nome da operação e mais nada.
+            $status = $this->hub->submitDownlink($imei, $bytes, [
+                'command' => $command,
+                'payload' => $payload,
+            ]);
             $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $nativeKey) ?? [];
             $expectedReplyTypes = $entry['expectedReplyTypes'] ?? [];
             $record = [

@@ -647,13 +647,13 @@ function renderRequestCardGroup(
     }
 
     return html`
-        <div class="col-12">
+        <div class="telemetry-card-wide">
         <div class="border rounded-3 p-3">
         <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="section-label">${group.label || "Pedidos"}</div>
         <span class="count-chip">${group.cards.length}</span>
         </div>
-        <div class="row g-3">${raw(cards)}</div>
+        <div class="d-grid telemetry-card-grid gap-3">${raw(cards)}</div>
         </div>
         </div>`;
 }
@@ -694,6 +694,15 @@ function renderNcsEventCard({ type, latest }) {
 
 function renderDownlinkRequests(commands) {
     els.downlinkRequestCount.textContent = commands.length ? String(commands.length) : "";
+
+    // A maioria dos aparelhos -- radares, gateways, medidores de fralda -- não recebe pedido
+    // nenhum, e metade do painel dizia permanentemente que não havia pedidos enquanto a lista
+    // ao lado cortava "Alarme de sinais vit..." numa coluna de 34%. Sem pedidos, os eventos
+    // ficam com a linha toda; com eles, volta a divisão a meio.
+    const hasRequests = commands.length > 0;
+    els.downlinkColumn?.classList.toggle("d-none", !hasRequests);
+    els.telemetryColumn?.classList.toggle("col-xl-6", hasRequests);
+    els.telemetryColumn?.classList.toggle("pe-xl-4", hasRequests);
 
     // Paginado como os eventos recebidos: sem páginas, os pedidos antigos ficam atrás de
     // um scroll interno que ninguém vê.

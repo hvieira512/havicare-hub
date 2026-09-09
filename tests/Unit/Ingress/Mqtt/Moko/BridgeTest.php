@@ -22,6 +22,21 @@ final class BridgeTest extends TestCase
     private const ADV_DATA = '0201041aff5900021535c80410418015dc8200410418415dc8200202f9c3';
     private const MKGW4_HEARTBEAT = 'ef3004c5e390f30bce00400000046a759cd8010007464444204c54450200011203000210740400060002000200000500010006000f38363130373630383232333235313107000400000998';
 
+    public function testIgnoresPayloadThatDeclaresAnotherIngressAsItsSource(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+
+        // O espaço de tópicos dos gateways é partilhado: um gateway BLE que conduza sessões
+        // GATT publica no mesmo `.../gw/{mac}/raw`. A mensagem é válida -- só não é MOKO.
+        $this->bridge($mqtt, true)->handleReceivedMessage(
+            'havicare-hub/null/0/gw/d48c49f7909c/raw',
+            json_encode(['source' => 'veepoo-node', 'kind' => 'daily_block', 'device' => ['mac' => 'dba376003185']]) ?: '',
+        );
+
+        self::assertSame([], $mqtt->raw);
+        self::assertSame([], $mqtt->telemetry);
+    }
+
     public function testAuthorizedLinkedSensorPublishesIndependentTelemetryAndDeduplicatesReplay(): void
     {
         $mqtt = new RecordingHubMqttBridge();

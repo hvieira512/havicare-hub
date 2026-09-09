@@ -3,6 +3,7 @@
 namespace Hub\Ingress\Mqtt\Moko;
 
 use Hub\Domain\DeviceMetadata;
+use Hub\Domain\DeviceProtocol;
 use Hub\Device\CommercialModelResolver;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
@@ -95,6 +96,23 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         return $this->proximity ??= $this->proximityTracker ?? new ProximityTracker();
     }
 
+    /**
+     * Diz se a mensagem se identifica como sendo de outra ingestão.
+     *
+     * O critério é a presença do campo `source`: as tramas MOKO, quer em JSON quer em TLV,
+     * nunca o trazem, portanto vê-lo é prova bastante de que a mensagem tem outro dono.
+     */
+    private static function declaresForeignSource(string $payload): bool
+    {
+        if (!str_contains($payload, '"source"')) {
+            return false;
+        }
+
+        $decoded = json_decode($payload, true);
+
+        return is_array($decoded) && is_string($decoded['source'] ?? null) && $decoded['source'] !== '';
+    }
+
     public function tick(float $timeout = 0.01): void
     {
         parent::tick($timeout);
@@ -145,6 +163,14 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $parsedTopic = Topic::parse($topic);
         if ($parsedTopic === null) {
             Logger::channel('hub')->warning("Ignoring unsupported MOKO gateway topic {$topic}");
+            return;
+        }
+
+        // O espaço `.../gw/{mac}/raw` é partilhado por todos os gateways, e nem todos são
+        // MOKO: um gateway BLE que conduza sessões GATT publica aqui na mesma. Quem se
+        // identifica com outra origem não é para ler, e recusá-lo em silêncio evita encher o
+        // log com avisos sobre mensagens que estão correctas -- só não são nossas.
+        if (self::declaresForeignSource($payload)) {
             return;
         }
 
@@ -350,17 +376,23 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * O tipo sozinho não chega: uma pulseira tanto é W6 como W6B, e é o modelo que as separa.
+     * O tipo sozinho não chega: uma pulseira tanto é W6 como W6B, e nem sequer é
+     * necessariamente MOKO -- um gateway MOKO vê tudo o que anuncia à sua volta, e a MF91 da
+     * Wonlex fala Veepoo. Quem sabe isto é o `DeviceProtocol`, que resolve pelo par
+     * fornecedor/modelo; o tipo fica como último recurso, para um modelo que ele não conheça.
      *
      * @param array<string, mixed> $device
      */
     private function relayedProtocol(array $device): string
     {
-        if (strtoupper((string)($device['model'] ?? '')) === 'W6') {
-            return 'moko-w6';
-        }
+        $protocol = DeviceProtocol::forModel(
+            (string)($device['supplier'] ?? ''),
+            (string)($device['model'] ?? ''),
+        );
 
-        return self::RELAYED_PROTOCOLS[(string)($device['deviceType'] ?? '')] ?? 'moko-gateway';
+        return $protocol !== ''
+            ? $protocol
+            : (self::RELAYED_PROTOCOLS[(string)($device['deviceType'] ?? '')] ?? 'moko-gateway');
     }
 
     /**

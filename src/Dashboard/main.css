@@ -16,6 +16,11 @@
    que aqui não pode acontecer. */
 .showcase-preview {
     min-height: 280px;
+}
+
+/* Só com fotografia. Sem ela não há branco a que encostar, e a chapa clara ficava uma laje
+   com o ícone de reserva -- que é claro -- a desaparecer lá dentro. */
+.showcase-preview:has(img) {
     background-color: #fff;
 }
 
@@ -74,6 +79,26 @@
 .selected-device-preview img {
     max-width: 56px;
     max-height: 56px;
+}
+
+/* As chapas pequenas das fotografias, no escuro. As fotografias dos modelos vêm em JPEG
+   sobre branco, e uma chapa escura por baixo deixa aparecer esse rectângulo lá dentro -- era
+   a coisa mais brilhante do ecrã, dezassete vezes na árvore do catálogo. A chapa passa a ser
+   a cor da fotografia e as duas descem de brilho juntas, que é o que o `.showcase-preview`
+   acima já faz e pela mesma razão: uma chapa acinzentada faria reaparecer o rectângulo.
+
+   Só onde há fotografia: sem ela a chapa fica com o ícone de reserva, que é claro e
+   desaparecia sobre o branco. Aí serve o tom escuro do `tertiary-bg` que já lá estava. */
+[data-bs-theme="dark"] .modal-device-thumb:has(img),
+[data-bs-theme="dark"] .selected-device-preview:has(img),
+[data-bs-theme="dark"] .gateway-card-thumb:has(img),
+[data-bs-theme="dark"] .wizard-card-thumb:has(img) {
+    background: #fff;
+    filter: brightness(.84);
+}
+
+[data-bs-theme="dark"] .wizard-card-thumb:has(img) {
+    border-radius: .5rem;
 }
 
 .gateway-picker {
@@ -358,8 +383,14 @@
     padding: 0;
 }
 
+/* O mesmo tecto de leitura do ecrã principal: o modal continua de ecrã inteiro, e é o
+   conteúdo que para. A 3399px uma linha da árvore do catálogo media 2739px, com o nome do
+   modelo numa ponta e o chevron na outra. Ver o `--content-max` no `base.css`. */
 #settingsModal .modal-body>.settings-modal-shell {
     min-height: 100%;
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
 }
 
 /* O Bootstrap não tem utilitário de altura por breakpoint -- não existe `h-lg-100` --, por

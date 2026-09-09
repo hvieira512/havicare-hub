@@ -160,7 +160,9 @@ export function renderRequestCardShell(
                 occurredAt: lastTelemetry.occurredAt || lastTelemetry.recordedAt,
             })
         : null;
-    // Sem leitura não há valor: o título já diz o nome da capacidade.
+    // Sem leitura não há valor, e o mosaico não leva etiqueta nenhuma a dizê-lo: o lugar do
+    // valor vazio, ao lado dos irmãos que têm um, já se lê como ausência de leitura. Escrevê-lo
+    // por palavras era repetir o que o vazio diz, multiplicado pelos mosaicos vazios do ecrã.
     const lastValue = lastContent ? lastContent.value : "";
     // Um ícone tirado da leitura vence o estático: um gateway com fios não mostra Wi-Fi.
     const icon = command.icon || lastContent?.icon || card.icon;

@@ -5,11 +5,13 @@ declare(strict_types=1);
 ob_start();
 ?>
 <?php /* Quem rola é a coluna do conteúdo, e não o corpo inteiro: com o corpo a rolar, a
-       * coluna das abas esticava até à altura do conteúdo e o `align-self` centrava-as
-       * fora do ecrã. */ ?>
+       * coluna das abas esticava até à altura do conteúdo e saía do ecrã.
+       *
+       * Os separadores alinham ao topo: centrados, "Geral" e "Configurações" apareciam
+       * abaixo do formulário que comandam. */ ?>
 <div class="device-modal-shell h-100">
     <div class="row g-4 h-100">
-        <div class="col-12 col-lg-2 align-self-lg-center">
+        <div class="col-12 col-lg-2">
             <div class="nav nav-pills flex-row flex-lg-column flex-nowrap gap-2 w-100" id="deviceModalNav" role="tablist">
                 <button class="nav-link active text-start d-flex align-items-center gap-2" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
                     <?= icon('fa-address-card', 'fa-fw') ?>Geral

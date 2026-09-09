@@ -21,6 +21,7 @@ final class BridgeUnclaimedSightingTest extends TestCase
     private const GATEWAY = 'd48c49f7909c';
     private const W6 = 'fa05c2c70fc6';
     private const W6B = 'fbd87c59ba8b';
+    private const MF91 = '9f69c4866e6c';
     private const STRANGER = 'aabbccddeeff';
 
     /** @return array{0: Bridge, 1: RecordingHubMqttBridge} */
@@ -34,6 +35,7 @@ final class BridgeUnclaimedSightingTest extends TestCase
                 self::GATEWAY => IngressFixtures::gateway('MKGW3'),
                 self::W6 => IngressFixtures::bracelet('W6'),
                 self::W6B => IngressFixtures::bracelet('W6B'),
+                self::MF91 => IngressFixtures::device('Wonlex', 'MF91', 'bracelet'),
             ]),
             $mqtt,
             IngressFixtures::links(),
@@ -105,6 +107,24 @@ final class BridgeUnclaimedSightingTest extends TestCase
 
         $proximity = $this->proximity($mqtt->telemetry);
         self::assertSame('moko-w6', $proximity[0]['payload']['source']['protocol']);
+    }
+
+    /**
+     * Um gateway MOKO vê tudo o que anuncia à volta, incluindo pulseiras de outra marca.
+     *
+     * A MF91 fala Veepoo e nenhum decoder MOKO lhe toca, mas está registada e o RSSI é
+     * medido na mesma -- e é por aqui que ela cai. Etiquetá-la pelo tipo dava-lhe o
+     * protocolo da W6B, e um cliente que o lesse iria descodificar tramas Veepoo com o
+     * formato de um botão MOKO.
+     */
+    public function testABraceletOfAnotherSupplierKeepsItsOwnProtocol(): void
+    {
+        [$bridge, $mqtt] = $this->bridge();
+
+        $this->deliver($bridge, $this->unclaimedPayload(['mac' => self::MF91]));
+
+        $proximity = $this->proximity($mqtt->telemetry);
+        self::assertSame('veepoo-ble', $proximity[0]['payload']['source']['protocol']);
     }
 
     /** Um beacon qualquer que passe continua a não ser assunto nosso. */

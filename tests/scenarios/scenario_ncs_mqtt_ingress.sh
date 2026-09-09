@@ -16,16 +16,7 @@ docker compose up -d --force-recreate --remove-orphans mosquitto hub >/dev/null
 wait_for_mosquitto
 start_mqtt_subscriber
 
-for _ in $(seq 1 40); do
-  if docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1", 9000, $e, $m, 1); if ($s) { fclose($s); exit(0); } exit(1);' >/dev/null 2>&1; then
-    break
-  fi
-  sleep 1
-done
-
-if ! docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1", 9000, $e, $m, 1); if ($s) { fclose($s); exit(0); } exit(1);' >/dev/null 2>&1; then
-  scenario_fail "routing_failure" "hub TCP listener did not become ready"
-fi
+wait_for_hub_tcp
 
 sleep 2
 docker compose exec -T mosquitto sh -lc "printf '%s' '$EVENT_PAYLOAD' >/tmp/ncs-event.json && mosquitto_pub -q 1 -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t '/voerka/1001/devices/bea6c3dd8e02/events' -f /tmp/ncs-event.json"

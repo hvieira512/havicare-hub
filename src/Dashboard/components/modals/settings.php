@@ -9,8 +9,11 @@ ob_start();
        * da 8px contra 8px, `p-lg-3` com `g-lg-4` da 16 contra 12. Ter padding zero em
        * telefone, como estava no CSS, deixava a linha 24px mais larga que o modal. */ ?>
 <div class="settings-modal-shell d-flex flex-column h-100 p-2 p-lg-3">
-    <div class="row g-3 g-lg-4 h-100 align-items-lg-center">
-        <div class="col-12 col-lg-2 d-flex align-items-lg-center h-100">
+    <?php /* Os separadores alinham ao topo, e não ao meio da coluna: centrados numa coluna
+           * de 700px, "Geral" e "Configurações" apareciam abaixo do formulário que comandam,
+           * com 250px de vazio acima e abaixo. */ ?>
+    <div class="row g-3 g-lg-4 h-100">
+        <div class="col-12 col-lg-2 d-flex h-100">
             <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap justify-content-lg-start gap-2 w-100" id="settingsModalNav" role="tablist">
                 <?php /* Os identificadores mantem o nome `Models`: a seccao e a dos modelos, e as
                        * chaves atravessam o `dom.js`, o `bootstrap.js` e o estado. */ ?>

@@ -373,7 +373,9 @@ function updateDevicePreview() {
 export async function syncDeviceModalContext(loadCatalog = false) {
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
-    const protocol = supplierProtocol(supplier, state.deviceTypeSuppliersModels);
+    // Com o modelo: a Wonlex vende relógios TCP e a pulseira MF91, que é BLE, e sem ele o
+    // painel mostrava a esta o catálogo daqueles.
+    const protocol = supplierProtocol(supplier, state.deviceTypeSuppliersModels, model);
     state.deviceModal.supplier = supplier;
     state.deviceModal.model = model;
     state.deviceModal.protocol = protocol;

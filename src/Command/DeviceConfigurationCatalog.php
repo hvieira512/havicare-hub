@@ -4,6 +4,7 @@ namespace Hub\Command;
 
 use Hub\Command\Configuration\Definition\FourPTouchConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\MonitConfigurationDefinitions;
+use Hub\Command\Configuration\Definition\VeepooConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\VivistarConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\WonlexConfigurationDefinitions;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
@@ -28,6 +29,7 @@ final class DeviceConfigurationCatalog
             'vivistar-iw' => VivistarConfigurationDefinitions::all(),
             'four-p-touch' => FourPTouchConfigurationDefinitions::all(),
             'monit-mecs-pro-ble' => MonitConfigurationDefinitions::all(),
+            'veepoo-ble' => VeepooConfigurationDefinitions::all(),
             default => [],
         };
 
@@ -124,6 +126,10 @@ final class DeviceConfigurationCatalog
                 'wonlex-json' => WonlexPayloadBuilder::build($key, $item),
                 'vivistar-iw' => VivistarPayloadBuilder::build($key, $item),
                 'four-p-touch' => FourPTouchPayloadBuilder::build($key, $item),
+                // Sem construtor: a pulseira não recebe uma trama montada pelo hub, recebe o
+                // nome da operação e o valor. Quem os transforma em bytes é o SDK, dentro do
+                // gateway. Inventar aqui uma forma nativa obrigava a desfazê-la do outro lado.
+                'veepoo-ble' => $item,
                 default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
             },
         ], $payloads);

@@ -8,7 +8,9 @@ final class DeviceProtocol
      * Os fornecedores cujos modelos não partilham um protocolo só.
      *
      * A MOKO vende gateways e pulseiras, e por isso resolver só pelo fornecedor dava a uma
-     * W6B o protocolo de gateway do MKGW3. As chaves vêm em minúsculas.
+     * W6B o protocolo de gateway do MKGW3. A Wonlex tem o mesmo problema pelo outro lado:
+     * vende relógios que falam TCP e a MF91, que é BLE e não entende uma única trama do
+     * protocolo dos relógios. As chaves vêm em minúsculas.
      *
      * @var array<string, array<string, string>>
      */
@@ -18,6 +20,9 @@ final class DeviceProtocol
             'mkgw4' => 'moko-mkgw4',
             'w6b' => 'moko-w6b',
             'w6' => 'moko-w6',
+        ],
+        'wonlex' => [
+            'mf91' => 'veepoo-ble',
         ],
     ];
 

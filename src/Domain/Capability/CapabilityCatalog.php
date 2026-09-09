@@ -150,6 +150,41 @@ final class CapabilityCatalog
     public static function telemetryKeysForProtocol(string $protocol): array
     {
         return match ($protocol) {
+            // Tudo o que a pulseira entrega nos blocos diários mais o que responde a pedido.
+            // Sem `location`: não tem GPS. Sem `motion` nem `proximity`: essas nascem do
+            // avistamento por um gateway que escuta, e esta fala por sessão.
+            'veepoo-ble' => [
+                'battery',
+                'activity',
+                'heart_rate',
+                'blood_pressure',
+                'blood_oxygen',
+                'temperature',
+                'breath_rate',
+                'sleep',
+                'ecg',
+                'hrv',
+                'ppg',
+                'rr_interval',
+                'blood_sugar',
+                'stress',
+                'met',
+                'blood_lipids',
+                'uric_acid',
+                'sleep_apnea',
+                'cardiac_load',
+                // Configuração: o que a pulseira mede sozinha ao longo do dia.
+                'heart_rate_continuous',
+                'blood_pressure_trend',
+                'temperature_continuous',
+                'hrv_continuous',
+                'blood_sugar_continuous',
+                'blood_lipids_continuous',
+                'stress_continuous',
+                'sleep_monitoring',
+                'blood_oxygen_alert',
+                'find_device',
+            ],
             'wonlex-json' => [
                 'battery',
                 'activity',
@@ -328,6 +363,19 @@ final class CapabilityCatalog
             'wonlexContinuousTempSwitch' => 'temperature_continuous',
             'wonlexStepTarget' => 'step_goal',
             'wonlexSleepIntervalOrSwitch' => 'sleep_monitoring',
+            // Protocolos cujo comando é a própria chave genérica: o `veepoo-ble` não monta
+            // tramas no hub -- manda o nome da operação ao gateway, que tem a sessão BLE.
+            // Aí o nativo e o genérico são a mesma coisa e a tradução é a identidade.
+            'heart_rate_continuous',
+            'blood_pressure_trend',
+            'temperature_continuous',
+            'hrv_continuous',
+            'blood_sugar_continuous',
+            'blood_lipids_continuous',
+            'stress_continuous',
+            'sleep_monitoring',
+            'blood_oxygen_alert',
+            'find_device' => $key,
             'bloodPressureCalibration' => 'blood_pressure_calibration',
             'wonlexStepInterval' => 'step_reporting_interval',
             'locationInterval' => 'location_reporting_interval',

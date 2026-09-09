@@ -12,11 +12,17 @@
     min-height: 100dvh;
 }
 
+/* O tecto de leitura entra aqui e não no `container-fluid`: a moldura -- a barra de
+   navegação e o fundo -- continua de ponta a ponta, e é o conteúdo que para. Ver o
+   `--content-max` no `base.css`. */
 .dashboard-main {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
     min-height: 0;
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
 }
 
 .dashboard-main > .row {
@@ -60,6 +66,15 @@
        que o `border-color` que separa as linhas lá dentro -- que é a relação que se queria.
        Vindo do token, vira sozinho quando o tema virar. */
     --bs-card-border-color: var(--bs-secondary-bg);
+}
+
+/* No escuro o `secondary-bg` fica *por baixo* da superfície do cartão, e uma moldura entre a
+   página e o cartão dilui a aresta em vez de a marcar. A relação que se espelha é a do claro
+   -- moldura mais suave que as divisórias de dentro --, e no escuro isso é um degrau curto
+   acima do cartão: 1,10 para 1 contra ele e 1,36 contra a página, contra os 1,10 que a
+   moldura antiga dava dos dois lados. */
+[data-bs-theme="dark"] .card {
+    --bs-card-border-color: #202b42;
 }
 
 /* Um filho pertence ao cabecalho acima dele, e le-se indentado sob ele. A linha vertical e
@@ -152,6 +167,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* A chapa acompanha a fotografia no escuro -- ver o comentário das chapas pequenas no
+   `main.css`. Aqui a chapa não existia, e o raio é o que a torna uma chapa e não um
+   rectângulo branco do tamanho exacto da imagem. */
+[data-bs-theme="dark"] .catalog-model-image:has(img) {
+    background: #fff;
+    border-radius: .375rem;
+    filter: brightness(.84);
 }
 
 .catalog-caret {

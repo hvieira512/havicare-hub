@@ -49,6 +49,14 @@
     width: 148px;
 }
 
+/* O `logo.svg` é preto de uma cor só, e no escuro a marca ficava preto sobre preto -- a
+   assinatura debaixo do «HUB» desaparecia por completo. Inverte-se, como a badge da coluna
+   de atmosfera e a da barra de navegação já fazem, e pela mesma razão. Este é o único ecrã
+   sem botão de tema para contornar o problema. */
+[data-bs-theme="dark"] .dashboard-login-brand img {
+    filter: invert(100%);
+}
+
 .dashboard-login-submit {
     min-height: 2.75rem;
     font-size: var(--fs-body);

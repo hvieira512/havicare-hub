@@ -85,11 +85,27 @@ export function licenseDisplayLabel(
     return name !== "" ? `${name} (${normalized})` : normalized;
 }
 
-export function supplierProtocol(supplier, models = []) {
-    const existing = (models || []).find(
-        (model) => model.supplier === supplier && model.protocol,
+/**
+ * O protocolo de um aparelho, pelo fornecedor e pelo modelo.
+ *
+ * Um fornecedor pode vender coisas que falam protocolos diferentes: os relógios da Wonlex
+ * falam TCP e a pulseira MF91 da mesma marca fala BLE. Sem o modelo, ganhava o primeiro da
+ * lista, e o painel de configurações da pulseira mostrava o catálogo dos relógios.
+ *
+ * O modelo é opcional: onde ele não se conhece -- o assistente de registo, antes de o
+ * escolher -- continua a valer o primeiro do fornecedor, que é o que lá estava.
+ */
+export function supplierProtocol(supplier, models = [], model = "") {
+    const ofSupplier = (models || []).filter(
+        (entry) => entry.supplier === supplier && entry.protocol,
     );
-    return existing?.protocol || "";
+
+    const wanted = String(model || "").trim();
+    const exact = wanted === ""
+        ? null
+        : ofSupplier.find((entry) => modelInternalName(entry) === wanted);
+
+    return (exact ?? ofSupplier[0])?.protocol || "";
 }
 
 export function modelInternalName(model) {

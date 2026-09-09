@@ -286,6 +286,10 @@ final class DeviceConfigurationUpdateService
                 'nativeType' => $command,
                 'protocol' => $protocol,
                 'bytes' => $bytes,
+                // O valor desejado segue com a operação. Há protocolos em que os bytes já o
+                // levam dentro, mas os que entregam a um gateway mandam só o nome do comando
+                // -- e sem isto o gateway não sabia se era para ligar ou desligar.
+                'payload' => $commandPayload['payload'],
                 'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
                 'confirmationMode' => $confirmationMode,
                 'label' => (string)($entry['label'] ?? $nativeKey),
@@ -319,6 +323,8 @@ final class DeviceConfigurationUpdateService
             'operationId' => $id,
             'changeId' => (string)$operation['changeId'],
             'genericConfigKey' => (string)$operation['configKey'],
+            'command' => (string)$operation['nativeType'],
+            'payload' => $operation['payload'] ?? null,
         ]);
         $status = $status === 'sent' ? 'waiting' : $status;
         $error = in_array($status, ['dropped', 'failed'], true) ? 'delivery_failed' : '';
