@@ -59,6 +59,72 @@ const renderBadge = (count) => {
         : `${normalized} ${normalized === 1 ? "não lida" : "não lidas"}`;
 };
 
+/**
+ * Uma notificação e o que se pode fazer com ela.
+ *
+ * As acções estão por ordem do que se quer fazer: um aparelho estranho que aparece aqui é,
+ * na maioria dos casos, um que se quer registar. O «Registar» leva o nome escrito porque é a
+ * saída normal; os outros dois são ícones, e o vermelho está no que cala o aparelho de vez e
+ * não no que dispensa um aviso.
+ */
+export function notificationRow(notification) {
+    const id = Number(notification.id) || 0;
+    const attempts = Number(notification.occurrenceCount) || 1;
+    const kind = notificationType(notification.type);
+    // A licença ganha ao modelo e à identidade: quando o hub a sabe, é a informação que
+    // falta a quem vai registar o dispositivo. A identidade já é a linha de cima.
+    const details = kind.showsDevice
+        ? [
+                notification.protocol,
+                Number(notification.licenseId) > 0
+                    ? `licença ${notification.licenseId}`
+                    : notification.model || notification.ident,
+            ].filter(Boolean).join(" · ")
+        // Para o hub, a razão é a notícia: diz qual foi o processo que caiu e quando
+        // tinha arrancado.
+        : String(notification.reason || "");
+    const unreadClass = notification.readAt
+        ? ""
+        : " list-group-item-primary";
+    const detailsLine = details === ""
+        ? ""
+        : html`<span class="d-block small text-secondary text-break">${details}</span>`;
+    const deviceLine = kind.showsDevice
+        ? html`<span class="d-block font-monospace small text-break">${notification.imei}</span>`
+        : "";
+    // Só um aparelho com identidade se regista ou se cala; um aviso do próprio hub dispensa-se.
+    const deviceActions = kind.showsDevice
+        ? html`<button class="btn btn-sm btn-outline-primary flex-shrink-0" type="button" data-notification-register="${id}" title="Registar dispositivo">
+                    <i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Registar
+                </button>
+                <button class="btn btn-sm btn-outline-danger flex-shrink-0" type="button" data-notification-block="${id}" title="Bloquear dispositivo" aria-label="Bloquear dispositivo">
+                    <i class="fa-solid fa-ban" aria-hidden="true"></i>
+                </button>`
+        : "";
+
+    return html`
+        <div class="list-group-item px-3 py-3${unreadClass}">
+            <div class="d-flex align-items-start gap-2">
+                <i class="fa-solid ${kind.icon} text-danger mt-1 flex-shrink-0" aria-hidden="true"></i>
+                <div class="min-w-0 flex-grow-1">
+                    <span class="d-block fw-semibold">${kind.title}</span>
+                    ${raw(deviceLine)}
+                    ${raw(detailsLine)}
+                    <span class="d-flex justify-content-between gap-2 small text-secondary mt-1">
+                        <span>${kind.count(attempts)}</span>
+                        <span>${ago(notification.lastSeenAt)}</span>
+                    </span>
+                    <div class="d-flex gap-2 mt-2">
+                        ${raw(deviceActions)}
+                        <button class="btn btn-sm btn-outline-secondary flex-shrink-0 ms-auto" type="button" data-notification-dismiss="${id}" title="Eliminar notificação" aria-label="Eliminar notificação">
+                            <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+}
+
 const render = () => {
     if (notifications.length === 0) {
         elements.list.innerHTML =
@@ -66,61 +132,7 @@ const render = () => {
         return;
     }
 
-    elements.list.innerHTML = notifications.map((notification) => {
-        const attempts = Number(notification.occurrenceCount) || 1;
-        const kind = notificationType(notification.type);
-        // A licença ganha ao modelo e à identidade: quando o hub a sabe, é a informação que
-        // falta a quem vai registar o dispositivo. A identidade já é a linha de cima.
-        const details = kind.showsDevice
-            ? [
-                    notification.protocol,
-                    Number(notification.licenseId) > 0
-                        ? `licença ${notification.licenseId}`
-                        : notification.model || notification.ident,
-                ].filter(Boolean).join(" · ")
-            // Para o hub, a razão é a notícia: diz qual foi o processo que caiu e quando
-            // tinha arrancado.
-            : String(notification.reason || "");
-        const unreadClass = notification.readAt
-            ? ""
-            : " list-group-item-primary";
-        const detailsLine = details === ""
-            ? ""
-            : html`<span class="d-block small text-secondary text-break">${details}</span>`;
-        const deviceLine = kind.showsDevice
-            ? html`<span class="d-block font-monospace small text-break">${notification.imei}</span>`
-            : "";
-        // Só um dispositivo com identidade se pode bloquear -- calá-lo de vez em vez de só o dispensar.
-        const blockButton = kind.showsDevice
-            ? html`<button class="btn btn-sm btn-outline-secondary flex-shrink-0" type="button" data-notification-block="${Number(notification.id) || 0}" title="Bloquear dispositivo" aria-label="Bloquear dispositivo">
-                        <i class="fa-solid fa-ban" aria-hidden="true"></i>
-                    </button>`
-            : "";
-
-        return html`
-            <div class="list-group-item px-3 py-3${unreadClass}">
-                <div class="d-flex align-items-start gap-2">
-                    <button class="btn border-0 bg-transparent text-start p-0 flex-grow-1 min-w-0" type="button" data-notification-id="${Number(notification.id) || 0}">
-                        <span class="d-flex align-items-start gap-2">
-                            <i class="fa-solid ${kind.icon} text-danger mt-1" aria-hidden="true"></i>
-                            <span class="min-w-0 flex-grow-1">
-                                <span class="d-block fw-semibold">${kind.title}</span>
-                                ${raw(deviceLine)}
-                                ${raw(detailsLine)}
-                                <span class="d-flex justify-content-between gap-2 small text-secondary mt-1">
-                                    <span>${kind.count(attempts)}</span>
-                                    <span>${ago(notification.lastSeenAt)}</span>
-                                </span>
-                            </span>
-                        </span>
-                    </button>
-                    ${raw(blockButton)}
-                    <button class="btn btn-sm btn-outline-danger flex-shrink-0" type="button" data-notification-dismiss="${Number(notification.id) || 0}" title="Eliminar notificação" aria-label="Eliminar notificação">
-                        <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
-                    </button>
-                </div>
-            </div>`;
-    }).join("");
+    elements.list.innerHTML = notifications.map(notificationRow).join("");
 };
 
 const load = async () => {
@@ -241,48 +253,38 @@ const blockDeviceAction = async (notification, button) => {
     await load();
 };
 
-const handleNotificationClick = (event) => {
-    const dismissButton = event.target.closest("[data-notification-dismiss]");
-    if (dismissButton) {
-        event.preventDefault();
-        event.stopPropagation();
-        const id = Number(dismissButton.dataset.notificationDismiss);
-        if (Number.isInteger(id) && id > 0) {
-            void dismissNotification(id, dismissButton);
-        }
-        return;
-    }
-
-    const blockButton = event.target.closest("[data-notification-block]");
-    if (blockButton) {
-        event.preventDefault();
-        event.stopPropagation();
-        const id = Number(blockButton.dataset.notificationBlock);
-        const notification = notifications.find(
-            (candidate) => Number(candidate.id) === id,
-        );
-        if (notification) {
-            void blockDeviceAction(notification, blockButton);
-        }
-        return;
-    }
-
-    const item = event.target.closest("[data-notification-id]");
-    if (!item) {
-        return;
-    }
-
-    const notification = notifications.find(
-        (candidate) => Number(candidate.id) === Number(item.dataset.notificationId),
-    );
-    if (!notification) {
-        return;
-    }
-
+const registerDeviceAction = (notification) => {
     bootstrap.Dropdown.getOrCreateInstance(
         elements.dropdown.querySelector("[data-bs-toggle=\"dropdown\"]"),
     ).hide();
     void addDevice(notification);
+};
+
+const handleNotificationClick = (event) => {
+    const button = event.target.closest(
+        "[data-notification-dismiss], [data-notification-block], [data-notification-register]",
+    );
+    if (!button) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const { notificationDismiss, notificationBlock, notificationRegister } = button.dataset;
+    const id = Number(notificationDismiss ?? notificationBlock ?? notificationRegister);
+    if (!Number.isInteger(id) || id <= 0) return;
+
+    if (notificationDismiss !== undefined) {
+        void dismissNotification(id, button);
+        return;
+    }
+
+    const notification = notifications.find(
+        (candidate) => Number(candidate.id) === id,
+    );
+    if (!notification) return;
+
+    if (notificationBlock !== undefined) void blockDeviceAction(notification, button);
+    else registerDeviceAction(notification);
 };
 
 export function initNotifications({ els, openAddDevice }) {
