@@ -97,7 +97,7 @@ export function notificationRow(notification) {
         ? html`<button class="btn btn-sm btn-outline-primary flex-shrink-0" type="button" data-notification-register="${id}" title="Registar dispositivo">
                     <i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Registar
                 </button>
-                <button class="btn btn-sm btn-outline-danger flex-shrink-0" type="button" data-notification-block="${id}" title="Bloquear dispositivo" aria-label="Bloquear dispositivo">
+                <button class="btn btn-sm btn-outline-danger btn-quiet-danger flex-shrink-0" type="button" data-notification-block="${id}" title="Bloquear dispositivo" aria-label="Bloquear dispositivo">
                     <i class="fa-solid fa-ban" aria-hidden="true"></i>
                 </button>`
         : "";

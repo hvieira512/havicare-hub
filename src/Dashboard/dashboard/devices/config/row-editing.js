@@ -217,7 +217,7 @@ function createContactRow(section) {
                 <div class="flex-grow-1">
                     ${renderPhoneControl({ repeatField: "phone", placeholder: "Telefone", maxLength: phoneMaxLength })}
                 </div>
-                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeRepeatRow">-</button>
+                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">-</button>
             </div>
         </div>`;
     resetPhoneControls(wrapper);

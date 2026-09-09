@@ -839,7 +839,7 @@ export function contactsInput(entry, desired, meta = {}) {
                                         maxLength: phoneMaxLengthValue,
                                     })}
                                 </div>
-                                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeRepeatRow">-</button>
+                                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">-</button>
                             </div>
                         </div>
                     </div>
@@ -886,7 +886,7 @@ function phoneRepeaterInput(entry, desired, options) {
                             })}
                         </div>
                         <div class="col-auto">
-                            <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeRepeatRow">-</button>
+                            <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">-</button>
                         </div>
                     </div>
                 `,
@@ -989,7 +989,7 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
         <div class="border rounded p-3 bg-body" data-repeat-row="wonlexMedicationPlan">
             <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
                 <div class="fw-semibold">Medicamento <span data-medication-plan-number>${index + 1}</span></div>
-                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeRepeatRow" title="Remover medicamento" aria-label="Remover medicamento">
+                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover medicamento" aria-label="Remover medicamento">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             </div>
@@ -1161,7 +1161,7 @@ export function fourPTouchAlarmRow(alarm, index) {
                     </div>
                 </div>
                 <div class="col-12 d-flex justify-content-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeRepeatRow" title="Remover alarme" aria-label="Remover alarme">
+                    <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover alarme" aria-label="Remover alarme">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
@@ -1287,7 +1287,7 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                     </div>
                 </div>
                 <div class="col-12 col-lg-1 d-flex justify-content-lg-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm mt-lg-4" data-action="removeRepeatRow" title="Remover" aria-label="Remover">
+                    <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm mt-lg-4" data-action="removeRepeatRow" title="Remover" aria-label="Remover">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>

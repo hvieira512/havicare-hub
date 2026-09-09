@@ -98,7 +98,7 @@ function actionsCell(params) {
         <div class="d-flex justify-content-end gap-1">
         <button type="button" class="btn btn-outline-secondary btn-sm" data-action="changeApiUserPassword" data-id="${user.id}" title="Mudar password" aria-label="Mudar password"><i class="fa-solid fa-key"></i></button>
         <button type="button" class="btn btn-outline-secondary btn-sm" data-action="toggleApiUser" data-id="${user.id}" title="${enabled ? "Desativar" : "Ativar"}" aria-label="${enabled ? "Desativar" : "Ativar"}"><i class="fa-solid ${enabled ? "fa-pause" : "fa-play"}"></i></button>
-        <button type="button" class="btn btn-outline-danger btn-sm" data-action="deleteApiUser" data-id="${user.id}" title="Apagar" aria-label="Apagar"><i class="fa-solid fa-trash"></i></button>
+        <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="deleteApiUser" data-id="${user.id}" title="Apagar" aria-label="Apagar"><i class="fa-solid fa-trash"></i></button>
         </div>`;
 }
 

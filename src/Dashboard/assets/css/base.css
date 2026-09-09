@@ -384,6 +384,16 @@ body[data-swal2-theme] {
     --bs-btn-disabled-border-color: var(--bs-border-color);
 }
 
+/* O destrutivo que se repete por linha. Oito lixos vermelhos ao mesmo tempo faziam do que se
+   faz raramente o elemento mais chamativo do painel, ao lado dos lápis neutros do que se faz
+   muitas vezes -- e onde tudo é vermelho, nada é. Em repouso é um botão discreto como os
+   outros; o vermelho volta ao ser apontado ou focado, que é quando a acção está em causa. O
+   que aparece uma vez -- o «Eliminar» do dispositivo, o «Apagar modelo» -- não leva isto. */
+.btn-quiet-danger {
+    --bs-btn-color: var(--bs-secondary-color);
+    --bs-btn-border-color: var(--bs-border-color);
+}
+
 .form-check-input:checked,
 .form-check-input[type="checkbox"]:indeterminate {
     background-color: var(--brand);
