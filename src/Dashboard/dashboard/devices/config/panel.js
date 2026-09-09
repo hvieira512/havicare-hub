@@ -80,6 +80,32 @@ export function changedConfigGroupEntries(group) {
     return changed;
 }
 
+/**
+ * Quantas alterações à configuração estão escritas no ecrã e por enviar ao aparelho.
+ *
+ * Conta só o que alguém editou. Uma acção é sempre um pedido novo, e uma definição que o
+ * aparelho ainda não recebeu está por enviar sem ninguém lhe ter tocado: avisar por causa
+ * delas era avisar em todos os relógios, todas as vezes, e um aviso que aparece sempre
+ * deixa de se ler.
+ */
+export function unsentConfigChanges(root) {
+    const edited = (element) => {
+        if (!("configPristine" in element.dataset)) return false;
+        try {
+            return JSON.stringify(readConfigPayload(element)) !== element.dataset.configPristine;
+        } catch {
+            return false;
+        }
+    };
+
+    const sections = [...root.querySelectorAll("[data-config-section]")]
+        .filter((section) => section.dataset.configTransient !== "1" && edited(section));
+    const rows = [...root.querySelectorAll("[data-config-group] [data-config-row]")]
+        .filter(edited);
+
+    return sections.length + rows.length;
+}
+
 /** Acende o «Enviar alterações» do grupo e diz quantas são. */
 export function syncConfigGroupDirty(group) {
     const button = group.querySelector("[data-action=\"saveConfigGroup\"]");
