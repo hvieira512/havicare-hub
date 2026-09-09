@@ -1,31 +1,23 @@
 <?php
 
-declare(strict_types=1);
+/* `d-flex` e `d-none` juntas nas Configurações: o `d-none` do Bootstrap vem depois na folha e
+ * ganha enquanto lá estiver; o JS que a tira deixa o `d-flex` a valer, e sem ele o botão
+ * voltava a `inline-block` e o ícone descolava do texto. */
+$deviceTabs = [
+    ['key' => 'General', 'label' => 'Geral', 'icon' => 'fa-address-card', 'extra' => ''],
+    ['key' => 'Config', 'label' => 'Configurações', 'icon' => 'fa-sliders', 'extra' => ' d-none'],
+];
 
 ob_start();
 ?>
-<?php /* Quem rola é a coluna do conteúdo, e não o corpo inteiro: com o corpo a rolar, a
-       * coluna das abas esticava até à altura do conteúdo e saía do ecrã.
-       *
-       * Os separadores alinham ao topo: centrados, "Geral" e "Configurações" apareciam
-       * abaixo do formulário que comandam. */ ?>
 <div class="device-modal-shell h-100">
     <div class="row g-4 h-100">
-        <div class="col-12 col-lg-2">
+        <div class="col-12 col-lg-2 d-flex align-items-lg-center">
             <div class="nav nav-pills flex-row flex-lg-column flex-nowrap gap-2 w-100" id="deviceModalNav" role="tablist">
-                <button class="nav-link active text-start d-flex align-items-center gap-2" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
-                    <?= icon('fa-address-card', 'fa-fw') ?>Geral
-                </button>
-                <?php /* `fa-sliders` e não `fa-gear`: o `fa-gear` é o ícone da secção "Sistema",
-                       * que é um dos separadores lá dentro. O mesmo ícone para o todo e para
-                       * uma das partes lia-se como sendo a mesma coisa. */ ?>
-                <?php /* `d-flex` e `d-none` juntas: o `d-none` do Bootstrap vem depois na folha
-                       * e ganha enquanto lá estiver, e o JS que a tira deixa o `d-flex` a
-                       * valer -- sem ele o botão voltava a `inline-block` e o ícone descolava
-                       * do texto. */ ?>
-                <button class="nav-link text-start d-flex d-none align-items-center gap-2" id="deviceConfigTabBtn" data-bs-toggle="pill" data-bs-target="#deviceConfigPane" type="button" role="tab" aria-controls="deviceConfigPane" aria-selected="false">
-                    <?= icon('fa-sliders', 'fa-fw') ?>Configurações
-                </button>
+                <?php foreach ($deviceTabs as $index => $tab) : ?>
+                    <?php $pane = 'device' . $tab['key'] . 'Pane'; ?>
+                <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex<?= $tab['extra'] ?> align-items-center gap-2" id="device<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?></button>
+                <?php endforeach; ?>
             </div>
         </div>
         <div class="col-12 col-lg-10 h-100 overflow-auto">
@@ -34,8 +26,6 @@ ob_start();
                     <form id="deviceForm" class="row g-4">
                         <div class="col-lg-8 order-lg-1">
                             <div class="d-flex flex-column gap-4">
-                                <?php /* A mesma trilha do assistente de adicionar: as respostas ja dadas
-                                       * em etiquetas, e cada uma um botao para voltar aquela pergunta. */ ?>
                                 <div class="wizard-trail" id="deviceTrail" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="2"></div>
 
                                 <div class="wizard-ask" id="deviceStep1">
@@ -56,8 +46,7 @@ ob_start();
                                     <p data-device-question="none" class="text-secondary small mb-0">Toque numa etiqueta acima para alterar uma resposta.</p>
                                 </div>
 
-                                <?php /* A empresa e a licença são duas colunas na base de dados, mas uma
-                                       * só escolha no ecrã: a árvore escreve as duas aqui. */ ?>
+                                <?php /* Duas colunas na base de dados, uma só escolha no ecrã. */ ?>
                                 <input type="hidden" id="deviceCompany" value="">
                                 <input type="hidden" id="deviceLicenseId" value="0">
 
@@ -90,8 +79,6 @@ ob_start();
                                 </div>
 
                                 <div id="deviceFormError" class="small text-danger d-none"></div>
-                                <?php /* Só a saída da pergunta de classificação: guardar e eliminar
-                                       * estão no rodapé, ao lado do fechar. */ ?>
                                 <div class="d-flex justify-content-end gap-2">
                                     <button type="button" class="btn btn-outline-secondary d-none" id="deviceNextBtn"><?= icon('fa-arrow-left', 'me-2') ?>Manter o que estava</button>
                                 </div>
@@ -112,8 +99,7 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-// Uma zona de acções só. O `me-auto` empurra o destrutivo para longe das outras duas, que é
-// o que o separa sem lhe dar uma cor que grite.
+// O `me-auto` afasta o destrutivo das outras duas sem lhe dar uma cor que grite.
 $footer = '<button type="button" class="btn btn-outline-danger d-none me-auto" id="deleteDeviceBtn">'
     . icon('fa-trash', 'me-1') . 'Eliminar</button>'
     . '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>'
@@ -123,7 +109,17 @@ $header = '<div class="modal-device-identity" id="deviceModalIdentity">'
     . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'
     . '</div>';
 
-// `h-100` no conteúdo para a altura ser a do ecrã e não a do separador aberto, senão a caixa
-// mudava de tamanho a cada troca. `overflow-hidden` no corpo para o rolamento que o
-// `modal-dialog-scrollable` lhe põe se transferir para a coluna do conteúdo.
-render_modal('deviceModal', 'Editar dispositivo', $body, $footer, 'modal-xl modal-fullscreen-md-down modal-dialog-scrollable', $header, 'overflow-hidden', 'h-100');
+render_modal(
+    id: 'deviceModal',
+    title: 'Editar dispositivo',
+    body: $body,
+    footer: $footer,
+    size: 'xl',
+    fullscreenBelow: 'md',
+    scrollable: true,
+    headerHtml: $header,
+    // O rolamento passa do corpo para a coluna do conteúdo, e o `h-100` faz a caixa medir
+    // sempre a altura toda em vez da altura do separador aberto.
+    bodyClass: 'overflow-hidden',
+    contentClass: 'h-100',
+);

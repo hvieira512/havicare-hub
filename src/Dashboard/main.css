@@ -355,26 +355,6 @@
     max-height: min(28rem, calc(100vh - 8rem));
 }
 
-/* O encaixe de 1rem é para ecrã largo, onde a moldura separa o modal do que está por trás.
-   Num telefone não há "por trás" nenhum que valha 16px de cada lado, e o
-   `.modal-fullscreen` do Bootstrap já põe o modal de bordo a bordo -- por isso a regra
-   começa em `sm` em vez de existir e ser anulada logo a seguir. */
-@media (min-width: 576px) {
-    #deviceModal .modal-dialog.modal-fullscreen,
-    #settingsModal .modal-dialog.modal-fullscreen {
-        margin: 1rem;
-        width: calc(100vw - 2rem);
-        max-width: none;
-        height: calc(100% - 2rem);
-    }
-}
-
-/* O modal de definições é de ecrã inteiro: é um painel de administração com cinco listas, e
-   não um formulário. */
-#settingsModal .modal-dialog.modal-fullscreen .modal-content {
-    height: 100%;
-}
-
 #settingsModal .modal-body {
     display: flex;
     flex-direction: column;
@@ -386,24 +366,37 @@
 /* O mesmo tecto de leitura do ecrã principal: o modal continua de ecrã inteiro, e é o
    conteúdo que para. A 3399px uma linha da árvore do catálogo media 2739px, com o nome do
    modelo numa ponta e o chevron na outra. Ver o `--content-max` no `base.css`. */
+/* Altura estável, como o `.device-selector-body`: sem ela o diálogo media o separador aberto
+   e saltava a cada troca, e o Catálogo com dezanove modelos contra a Denylist vazia são dois
+   modais de alturas diferentes. Quem rola é cada painel por dentro. */
 #settingsModal .modal-body>.settings-modal-shell {
-    min-height: 100%;
+    height: clamp(26rem, 68vh, 46rem);
     width: 100%;
     max-width: var(--content-max);
     margin-inline: auto;
 }
 
-/* O Bootstrap não tem utilitário de altura por breakpoint -- não existe `h-lg-100` --, por
-   isso este é um dos poucos sítios onde a marcação não chega. */
-@media (max-width: 575.98px) {
+/* Com a altura fixa no invólucro, quem rola é o painel e não o diálogo. */
+.settings-modal-shell .tab-content {
+    min-height: 0;
+    overflow-y: auto;
+}
 
-    /* O `h-100` das folhas e do conteúdo estica o separador à altura toda do modal de ecrã
-       inteiro, e sete fornecedores deixam meio ecrã em branco por baixo da tabela. Em
-       telefone cada folha mede o que o seu conteúdo mede. */
+/* O Bootstrap não tem utilitário de altura por breakpoint -- não existe `h-lg-100` --, por
+   isso este é um dos poucos sítios onde a marcação não chega.
+   O limite acompanha o `modal-fullscreen-lg-down`: abaixo dele o diálogo é o ecrã todo, e
+   uma altura fixa lá dentro deixava metade do ecrã em branco. */
+@media (max-width: 991.98px) {
+
+    /* Cada folha mede o que o seu conteúdo mede, e quem rola é o corpo do modal. */
     .settings-modal-shell,
     .settings-modal-shell .tab-content,
     .settings-modal-shell .tab-pane {
         height: auto !important;
+    }
+
+    .settings-modal-shell .tab-content {
+        overflow-y: visible;
     }
 }
 
@@ -550,6 +543,19 @@
 
 .wizard-stage:has(.wizard-art.d-none) {
     grid-template-columns: minmax(0, 1fr);
+}
+
+/* Altura reservada pela pergunta mais alta da classificação. Medidas as quatro no mesmo
+   ecrã: tipo 212px, fornecedor 60, modelos 394, licença 337. Sem isto o diálogo encolhia ao
+   responder -- entre o tipo e o fornecedor o rodapé subia 149px -- e o clique seguinte caía
+   no fundo do diálogo, que fecha o assistente com as respostas todas lá dentro.
+
+   Só a partir de `md`: abaixo disso o diálogo é o ecrã inteiro, o rodapé está preso em baixo
+   e não há salto nenhum para evitar -- só quatrocentos pixéis de vazio a ganhar. */
+@media (min-width: 48rem) {
+    .wizard-stage {
+        min-height: 24.75rem;
+    }
 }
 
 @media (max-width: 41.75rem) {

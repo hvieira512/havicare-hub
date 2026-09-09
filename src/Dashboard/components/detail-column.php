@@ -1,4 +1,23 @@
-                <?php /* A coluna direita: o detalhe do dispositivo -- filtros, ligações, telemetria e pedidos. */ ?>
+                <?php
+                $activityPanels = [
+                    [
+                        'column' => 'telemetryColumn',
+                        'title' => 'Eventos recebidos',
+                        'countId' => 'telemetryCount',
+                        'pager' => 'telemetryPager',
+                        'list' => 'telemetryList',
+                        'spacing' => 'pe-xl-4',
+                    ],
+                    [
+                        'column' => 'downlinkColumn',
+                        'title' => 'Pedidos ao dispositivo',
+                        'countId' => 'downlinkRequestCount',
+                        'pager' => 'downlinkPager',
+                        'list' => 'downlinkRequests',
+                        'spacing' => 'border-start-xl ps-xl-4 mt-4 mt-xl-0',
+                    ],
+                ];
+                ?>
                 <section id="detailColumn" class="col-12 col-lg-8">
                     <div class="card h-100">
                         <div class="card-body d-flex flex-column min-h-0">
@@ -39,28 +58,16 @@
                                         <?= section_header('Ligações ao servidor') ?>
                                         <div id="connectionTimeline"></div>
                                     </section>
+                                    <?php /* O `col-xl-6` e o espaçamento da coluna dos eventos saem e voltam pelo
+                                           * `renderDownlinkRequests`: sem pedidos, ela fica com a linha toda. */ ?>
                                     <div class="card-section row g-0 flex-grow-1 min-h-0">
-                                        <?php /* `min-h-0` nas duas colunas: um item de flex não encolhe abaixo do
-                                               * conteúdo, e sem isto a lista empurrava a coluna, a coluna empurrava
-                                               * o cartão e o `overflow-auto` da lista nunca tinha o que rolar. */ ?>
-                                        <?php /* O `col-xl-6` e o `pe-xl-4` saem e voltam pelo
-                                               * `renderDownlinkRequests`: sem pedidos, os
-                                               * eventos ficam com a linha toda. */ ?>
-                                        <div id="telemetryColumn" class="col-12 col-xl-6 d-flex flex-column min-h-0 pe-xl-4">
-                                            <?= section_header('Eventos recebidos', 'telemetryCount', true) ?>
-                                            <?php /* O paginador fica entre o título e a lista: em baixo era empurrado
-                                                   * para o fundo da coluna pelo `flex-grow-1` da lista, e numa página
-                                                   * com poucas linhas ficava a metros do conteúdo que pagina.
-                                                   *
-                                                   * Sem resumo: o total já está na pastilha ao lado do título. */ ?>
-                                            <?= pagination_component('telemetryPager', 'mb-2', false) ?>
-                                            <div id="telemetryList" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
+                                        <?php foreach ($activityPanels as $panel) : ?>
+                                        <div id="<?= $panel['column'] ?>" class="col-12 col-xl-6 d-flex flex-column min-h-0 <?= $panel['spacing'] ?>">
+                                            <?= section_header($panel['title'], $panel['countId'], true) ?>
+                                            <?= pagination_component($panel['pager'], 'mb-2', false) ?>
+                                            <div id="<?= $panel['list'] ?>" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
                                         </div>
-                                        <div id="downlinkColumn" class="col-12 col-xl-6 d-flex flex-column min-h-0 border-start-xl ps-xl-4 mt-4 mt-xl-0">
-                                            <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount', true) ?>
-                                            <?= pagination_component('downlinkPager', 'mb-2', false) ?>
-                                            <div id="downlinkRequests" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
-                                        </div>
+                                        <?php endforeach; ?>
                                     </div>
                                 </div>
                             </div>

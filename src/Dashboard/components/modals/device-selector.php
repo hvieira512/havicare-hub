@@ -1,6 +1,10 @@
 <?php
 
-declare(strict_types=1);
+$onlineFilters = [
+    ['id' => 'deviceOnlineAll', 'value' => 'all', 'label' => 'Todos'],
+    ['id' => 'deviceOnlineOn', 'value' => 'online', 'label' => 'Ligados'],
+    ['id' => 'deviceOnlineOff', 'value' => 'offline', 'label' => 'Desligados'],
+];
 
 ob_start();
 ?>
@@ -22,12 +26,10 @@ ob_start();
         <div class="d-flex flex-column">
             <span class="section-label d-block mb-2">Estado</span>
             <div class="btn-group w-100" role="group" aria-label="Estado de ligação">
-                <input type="radio" class="btn-check" name="deviceOnlineFilter" id="deviceOnlineAll" value="all" autocomplete="off" checked>
-                <label class="btn btn-sm btn-outline-secondary" for="deviceOnlineAll">Todos</label>
-                <input type="radio" class="btn-check" name="deviceOnlineFilter" id="deviceOnlineOn" value="online" autocomplete="off">
-                <label class="btn btn-sm btn-outline-secondary" for="deviceOnlineOn">Ligados</label>
-                <input type="radio" class="btn-check" name="deviceOnlineFilter" id="deviceOnlineOff" value="offline" autocomplete="off">
-                <label class="btn btn-sm btn-outline-secondary" for="deviceOnlineOff">Desligados</label>
+                <?php foreach ($onlineFilters as $index => $filter) : ?>
+                <input type="radio" class="btn-check" name="deviceOnlineFilter" id="<?= $filter['id'] ?>" value="<?= $filter['value'] ?>" autocomplete="off"<?= $index === 0 ? ' checked' : '' ?>>
+                <label class="btn btn-sm btn-outline-secondary" for="<?= $filter['id'] ?>"><?= h($filter['label']) ?></label>
+                <?php endforeach; ?>
             </div>
         </div>
 
@@ -35,15 +37,8 @@ ob_start();
 
         <?= filter_group('Licença', 'deviceLicenseFilterCount', 'deviceLicenseFilter', 'filter-list') ?>
 
-        <?php /* "Modelo" e não "Fornecedor": o fornecedor é o agrupador, e o que se escolhe
-               * aqui é o modelo -- como no grupo acima, onde o cabeçalho diz "Licença" e a
-               * empresa é quem agrupa. Os `id` continuam a dizer `supplier` porque é o
-               * fornecedor que está no primeiro nível e é essa a chave do filtro.
-               *
-               * Os modelos vivem dentro do fornecedor a que pertencem. Eram dois grupos, e o
-               * de baixo precisava de procura própria porque a lista de todos os modelos
-               * juntos era comprida; debaixo do fornecedor são poucos e a procura deixou de
-               * fazer falta. */ ?>
+        <?php /* Diz "Modelo" e os `id` dizem `supplier`: o fornecedor é o agrupador e a chave
+               * do filtro, o modelo é o que se escolhe. */ ?>
         <?= filter_group('Modelo', 'deviceSupplierFilterCount', 'deviceSupplierFilter', 'filter-list') ?>
     </aside>
 
@@ -78,12 +73,13 @@ ob_start();
 $headerHtml = (string) ob_get_clean();
 
 render_modal(
-    'deviceSelectorModal',
-    'Escolher dispositivo',
-    $body,
-    $footer,
-    'modal-xl modal-fullscreen-lg-down',
-    $headerHtml,
+    id: 'deviceSelectorModal',
+    title: 'Escolher dispositivo',
+    body: $body,
+    footer: $footer,
+    size: 'xl',
+    fullscreenBelow: 'lg',
+    headerHtml: $headerHtml,
     // Sem padding no corpo: são as colunas que o trazem, e assim chegam às bordas dele.
-    'p-0'
+    bodyClass: 'p-0',
 );

@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 ob_start();
 ?>
 <div class="d-flex flex-column gap-4">
@@ -22,4 +20,15 @@ $footer = '<button type="button" class="btn btn-outline-secondary" id="wizardBac
     . '<button type="button" class="btn btn-primary" id="wizardNextBtn">Seguinte'
     . icon('fa-arrow-right', 'ms-2') . '</button>';
 
-render_modal('deviceWizardModal', 'Adicionar dispositivo', $body, $footer, 'modal-lg modal-fullscreen-md-down');
+/* Encostado ao topo: centrado, o rodapé subia até 167px de uma pergunta para a outra e o
+ * clique seguinte caía no fundo do diálogo, fechando o assistente com as respostas dentro. */
+render_modal(
+    id: 'deviceWizardModal',
+    title: 'Adicionar dispositivo',
+    body: $body,
+    footer: $footer,
+    size: 'lg',
+    fullscreenBelow: 'md',
+    centered: false,
+    staticBackdrop: true,
+);

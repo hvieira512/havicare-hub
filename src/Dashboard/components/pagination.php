@@ -1,18 +1,7 @@
 <?php
 
-declare(strict_types=1);
-
 require_once __DIR__ . '/helpers.php';
 
-/**
- * O paginador partilhado por todas as listagens.
- *
- * `$spacing` porque o componente aparece com folgas opostas conforme esteja acima ou abaixo
- * da lista. `$withSummary` porque o "1–12 de 100" só diz alguma coisa onde mais nada o diga --
- * nos painéis do dispositivo o total já está numa pastilha ao lado do título.
- *
- * Sem resumo o paginador centra-se, por ser a única coisa na linha.
- */
 function pagination_component(
     string $idPrefix,
     string $spacing = 'mt-3',

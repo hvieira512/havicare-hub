@@ -1,34 +1,30 @@
 <?php
 
-declare(strict_types=1);
+/* A chave é o nome que atravessa o `dom.js`, o `bootstrap.js` e o estado: `Models` é a do
+ * catálogo e não se renomeia por causa da etiqueta. `count` diz se a aba tem pastilha. */
+$settingsTabs = [
+    ['key' => 'Models', 'label' => 'Catálogo', 'icon' => 'fa-microchip', 'count' => true],
+    ['key' => 'Capabilities', 'label' => 'Capacidades', 'icon' => 'fa-list-check', 'count' => false],
+    ['key' => 'Company', 'label' => 'Licenças', 'icon' => 'fa-building', 'count' => true],
+    ['key' => 'Denylist', 'label' => 'Denylist', 'icon' => 'fa-ban', 'count' => true],
+    ['key' => 'ApiUsers', 'label' => 'Utilizadores API', 'icon' => 'fa-key', 'count' => true],
+];
 
 ob_start();
 ?>
-<?php /* O padding e a goteira andam a par: a `row` do Bootstrap tem margens negativas de
-       * metade da goteira e conta com o padding do pai para as absorver. `p-2` com `g-3`
-       * da 8px contra 8px, `p-lg-3` com `g-lg-4` da 16 contra 12. Ter padding zero em
-       * telefone, como estava no CSS, deixava a linha 24px mais larga que o modal. */ ?>
-<div class="settings-modal-shell d-flex flex-column h-100 p-2 p-lg-3">
-    <?php /* Os separadores alinham ao topo, e não ao meio da coluna: centrados numa coluna
-           * de 700px, "Geral" e "Configurações" apareciam abaixo do formulário que comandam,
-           * com 250px de vazio acima e abaixo. */ ?>
-    <div class="row g-3 g-lg-4 h-100">
-        <div class="col-12 col-lg-2 d-flex h-100">
-            <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap justify-content-lg-start gap-2 w-100" id="settingsModalNav" role="tablist">
-                <?php /* Os identificadores mantem o nome `Models`: a seccao e a dos modelos, e as
-                       * chaves atravessam o `dom.js`, o `bootstrap.js` e o estado. */ ?>
-                <button class="nav-link active text-start d-flex align-items-center justify-content-between gap-2" id="settingsModelsTabBtn" data-bs-toggle="pill" data-bs-target="#settingsModelsPane" type="button" role="tab" aria-controls="settingsModelsPane" aria-selected="true">Catálogo<span class="settings-nav-count d-none" id="settingsModelsCount"></span></button>
-                <button class="nav-link text-start" id="settingsCapabilitiesTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCapabilitiesPane" type="button" role="tab" aria-controls="settingsCapabilitiesPane" aria-selected="false">Capacidades</button>
-                <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsCompanyTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCompanyPane" type="button" role="tab" aria-controls="settingsCompanyPane" aria-selected="false">Licenças<span class="settings-nav-count d-none" id="settingsCompanyCount"></span></button>
-                <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsDenylistTabBtn" data-bs-toggle="pill" data-bs-target="#settingsDenylistPane" type="button" role="tab" aria-controls="settingsDenylistPane" aria-selected="false">Denylist<span class="settings-nav-count d-none" id="settingsDenylistCount"></span></button>
-                <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsApiUsersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsApiUsersPane" type="button" role="tab" aria-controls="settingsApiUsersPane" aria-selected="false">Utilizadores API<span class="settings-nav-count d-none" id="settingsApiUsersCount"></span></button>
+<div class="settings-modal-shell d-flex flex-column p-2 p-lg-3">
+    <div class="row g-3 g-lg-4 h-100 min-h-0">
+        <div class="col-12 col-lg-3 d-flex align-items-lg-center h-100">
+            <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" id="settingsModalNav" role="tablist">
+                <?php foreach ($settingsTabs as $index => $tab) : ?>
+                    <?php $pane = 'settings' . $tab['key'] . 'Pane'; ?>
+                <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex align-items-center gap-2" id="settings<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?><?= $tab['count'] ? '<span class="settings-nav-count d-none ms-auto" id="settings' . $tab['key'] . 'Count"></span>' : '' ?></button>
+                <?php endforeach; ?>
             </div>
         </div>
-        <div class="col-12 col-lg-10 d-flex flex-column h-100">
+        <div class="col-12 col-lg-9 d-flex flex-column min-h-0 h-100">
             <div class="tab-content flex-grow-1">
                 <div class="tab-pane fade show active h-100" id="settingsModelsPane" role="tabpanel" aria-labelledby="settingsModelsTabBtn">
-                    <?php /* So aparece dentro do formulario e da ficha. No "Novo modelo" e a unica
-                           * saida: o botao ao lado e um "Cancelar" que limpa sem navegar. */ ?>
                     <nav aria-label="breadcrumb" id="modelsBreadcrumb" class="d-none">
                         <ol class="breadcrumb mb-3">
                             <li class="breadcrumb-item" id="modelsBreadcrumbModels">Catálogo</li>
@@ -45,9 +41,6 @@ ob_start();
                                     '<button type="button" class="btn btn-primary btn-sm" id="modelsNewModelBtn">' . icon('fa-plus', 'me-1') . 'Novo modelo</button>'
                                 ) ?>
                                 <?= search_input('modelsListSearch', 'Procurar modelo, fornecedor ou tipo', 'mt-3') ?>
-                                <?php /* O tipo e o fornecedor SÃO a árvore, por isso não há filtros por cima
-                                       * dela; e a árvore vem inteira numa chamada, por isso não há paginação
-                                       * -- um grupo cortado entre páginas é a pior das duas leituras. */ ?>
                                 <div id="modelCatalog" class="mt-3"></div>
                             </div>
                             <div class="carousel-item">
@@ -115,8 +108,8 @@ ob_start();
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2 mt-3">
-                                            <?php /* As mesmas classes que o `components/state-badge.js` monta: esta pastilha
-                                                   * nunca é redesenhada, só se esconde, e por isso vive aqui à mão. */ ?>
+                                            <?php /* As mesmas classes que o `state-badge.js` monta: esta nunca é
+                                                   * redesenhada, só escondida, e por isso vive aqui à mão. */ ?>
                                             <span class="state-badge badge rounded-pill d-inline-flex align-items-center gap-1 text-uppercase fw-semibold lh-sm px-2 bg-secondary-subtle text-body-secondary" id="modelDetailDirtyState"><span class="state-badge-dot rounded-circle d-inline-block"></span>Sem alterações</span>
                                             <button type="button" class="btn btn-primary btn-sm d-none" id="modelDetailSaveBtn"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
                                             <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="modelDetailResetBtn">Descartar</button>
@@ -160,12 +153,14 @@ ob_start();
                         <div class="small text-secondary" id="capabilitySupplierSummary"></div>
                     </div>
                     <?= search_input('capabilityCatalogSearch', 'Procurar capacidade ou chave') ?>
+                    <?php /* Sete contra cinco: a quatro, o grupo do fornecedor parte de linha e
+                           * perde os cantos, deixando de se ler como um controlo só. */ ?>
                     <div class="row g-3 py-3">
-                        <div class="col-md-8">
+                        <div class="col-md-7">
                             <div class="section-label mb-1">Tipo de dispositivo</div>
                             <div id="capabilityDeviceTypeButtons" class="device-type-grid is-wide" role="group"></div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-5">
                             <div class="section-label mb-1">Fornecedor</div>
                             <div id="capabilitySupplierButtons" class="btn-group flex-wrap" role="group"></div>
                         </div>
@@ -178,9 +173,6 @@ ob_start();
                     <div id="capabilityCatalogViewer" class="vstack gap-3"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsCompanyPane" role="tabpanel" aria-labelledby="settingsCompanyTabBtn">
-                    <?php /* Sem formulários à parte: uma empresa ou uma licença abre-se na própria
-                           * linha, e uma licença nova nasce dentro da empresa em que se carregou
-                           * no `+`. Ver `settings/companies.js`. */ ?>
                     <?= tab_pane_header(
                         'Licenças',
                         'companiesTabSummary',
@@ -192,15 +184,11 @@ ob_start();
                     <?= pagination_component('settingsCompanyPagination') ?>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsDenylistPane" role="tabpanel" aria-labelledby="settingsDenylistTabBtn">
-                    <?php /* Aparelhos estranhos bloqueados de propósito. Não se acrescenta daqui --
-                           * o «Bloquear» está na notificação --, só se desbloqueia. Ver
-                           * `settings/denylist.js`. */ ?>
+                    <?php /* Só se desbloqueia daqui; bloquear é o botão da notificação. */ ?>
                     <?= tab_pane_header('Denylist', 'denylistTabSummary') ?>
                     <div id="denylistListBody" class="mb-4"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">
-                    <?php /* Sem formulário à parte: criar abre um rascunho no topo da lista e editar
-                           * transforma a linha que se tocou. Ver `settings/api-users.js`. */ ?>
                     <?= tab_pane_header(
                         'Utilizadores API',
                         'apiUsersTabSummary',
@@ -208,8 +196,7 @@ ob_start();
                         . ' data-action="newApiUser">'
                         . icon('fa-plus', 'me-1') . 'Novo utilizador</button>'
                     ) ?>
-                    <?php /* O invólucro apanha os cliques dos dois: o formulário de criar e as
-                           * acções que a grelha desenha em cada linha. */ ?>
+                    <?php /* O invólucro apanha os cliques do formulário e os da grelha. */ ?>
                     <div id="apiUserList">
                         <div id="apiUserCreateRow"></div>
                         <div id="apiUserGrid" class="settings-grid"></div>
@@ -225,4 +212,11 @@ $body = (string) ob_get_clean();
 
 $footer = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>';
 
-render_modal('settingsModal', 'Definições', $body, $footer, 'modal-fullscreen');
+render_modal(
+    id: 'settingsModal',
+    title: 'Definições',
+    body: $body,
+    footer: $footer,
+    size: 'xl',
+    fullscreenBelow: 'lg',
+);

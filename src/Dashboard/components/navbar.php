@@ -1,6 +1,5 @@
         <?php
-        // A barra de topo: tema, notificações e o menu do utilizador. O `$dashboardApiAuthRequired`
-        // é o contrato do partial, como no index.php: sem quem o inclua, assume acesso protegido.
+        // O contrato do partial, como no index.php: sem quem o inclua, assume acesso protegido.
         $dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
         ?>
         <nav class="navbar dashboard-navbar">
