@@ -286,6 +286,7 @@ function handleDeviceListClick(event) {
     // marcação muda o ouvinte no mesmo sítio.
     if (action === DEVICE_CARD_ACTION) selectDevice(imei);
     else if (action === "retryDeviceList") void loadSummary();
+    else if (action === "clearDeviceFilters") void clearDeviceFilters();
 }
 
 function handleRequestGridClick(event) {

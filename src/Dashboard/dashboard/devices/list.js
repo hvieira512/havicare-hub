@@ -232,7 +232,62 @@ export function deviceListBody(summary) {
             <button type="button" class="btn btn-sm btn-outline-secondary" data-action="retryDeviceList">Tentar de novo</button>
         </div>`;
     }
-    return emptyPanel("Não há dispositivos para o filtro selecionado.");
+    const empty = deviceListEmptyState(state.deviceFilters, state.deviceSearchQuery);
+    if (!empty.canClear) {
+        return emptyPanel(empty.message);
+    }
+
+    return html`<div class="text-secondary py-3 text-center d-flex flex-column align-items-center gap-2">
+        <span>${empty.message}</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="clearDeviceFilters">Limpar filtros</button>
+    </div>`;
+}
+
+/** Como se chama cada grupo de filtro no meio de uma frase. */
+const FILTER_GROUP_LABEL = {
+    deviceType: "tipo",
+    supplier: "modelo",
+    model: "modelo",
+    license: "licença",
+};
+
+/**
+ * O que dizer quando a lista sai vazia.
+ *
+ * Os filtros persistem entre sessões, e um deles esquecido faz uma procura pelo IMEI exacto
+ * responder «não há dispositivos» -- que se lê como «esse aparelho não existe». O vazio tem de
+ * dizer o que o está a causar e trazer consigo o botão que o desfaz.
+ */
+export function deviceListEmptyState(filters, query) {
+    const search = String(query || "").trim();
+    // O `online` é booleano e não uma string: `true` são os ligados, `false` os desligados, e
+    // `null` é não filtrar por estado.
+    const groups = [];
+    if (filters.online === true) groups.push("ligados");
+    if (filters.online === false) groups.push("desligados");
+    for (const [key, label] of Object.entries(FILTER_GROUP_LABEL)) {
+        if ((filters[key] || []).length > 0 && !groups.includes(label)) {
+            groups.push(label);
+        }
+    }
+
+    if (groups.length === 0) {
+        return {
+            canClear: false,
+            message: search === ""
+                ? "Não há dispositivos registados."
+                : `Nenhum dispositivo corresponde a «${search}».`,
+        };
+    }
+
+    const applied = groups.join(", ");
+
+    return {
+        canClear: true,
+        message: search === ""
+            ? `Nenhum dispositivo passa os filtros aplicados (${applied}).`
+            : `Nenhum dispositivo corresponde a «${search}» entre os que os filtros deixam ver (${applied}).`,
+    };
 }
 
 function renderDeviceSelectorSummary() {
