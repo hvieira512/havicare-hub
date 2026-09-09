@@ -17,6 +17,7 @@ import {
 } from "../devices/config/handlers.js";
 import {
     renderDeviceConfigurationModal,
+    syncConfigGroupDirty,
     syncConfigSectionDirty,
 } from "../devices/config/panel.js";
 import {
@@ -203,6 +204,10 @@ function bindConfigPanel() {
             handle(event);
             const section = event.target.closest("[data-config-section]");
             if (section) syncConfigSectionDirty(section);
+            // Os interruptores agrupados não vivem numa secção: a conta das alterações é do
+            // grupo, e é o rodapé dele que acende.
+            const group = event.target.closest("[data-config-group]");
+            if (group) syncConfigGroupDirty(group);
         });
     }
     els.deviceConfigRoot.addEventListener(

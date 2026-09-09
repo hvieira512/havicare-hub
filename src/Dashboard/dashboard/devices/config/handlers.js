@@ -4,6 +4,8 @@ import {
     dismissConfigFeedback,
     renderDeviceConfigurationModal,
     saveDeviceConfiguration,
+    saveDeviceConfigurationGroup,
+    syncConfigGroupDirty,
 } from "./panel.js";
 import {
     appendRepeatRow,
@@ -37,11 +39,26 @@ export function handleDeviceConfigClick(event) {
         return;
     }
 
+    // Os interruptores agrupados enviam-se em conjunto: uma alteração por linha, um comando
+    // por linha alterada, e um só pedido.
+    const group = button.closest("[data-config-group]");
+    if (group && button.dataset.action === "saveConfigGroup") {
+        void saveDeviceConfigurationGroup(group);
+        return;
+    }
+    if (group && button.dataset.action === "resetConfigGroup") {
+        resetConfigGroup(group);
+        syncConfigGroupDirty(group);
+        return;
+    }
+
     const section = button.closest("[data-config-section]");
     if (!section) return;
 
     if (button.dataset.action === "saveConfig") {
-        void saveDeviceConfiguration(section);
+        // Os verbos de uma acção trazem o valor no próprio botão; o «Enviar» normal não traz
+        // nenhum e o cartão continua a ler os seus campos.
+        void saveDeviceConfiguration(section, button.dataset.actionValue || "");
         return;
     }
 
@@ -295,4 +312,24 @@ export function handleConfigFeedbackClosed(event) {
     if (!alertEl) return;
 
     dismissConfigFeedback(alertEl.dataset.configFeedbackKey || "");
+}
+
+/**
+ * Devolve as linhas do grupo ao valor com que foram desenhadas.
+ *
+ * O `type="reset"` de um formulário não serve aqui: as linhas não estão num formulário, e o
+ * valor a repor é o que veio do hub e não o do atributo `checked` do HTML.
+ */
+function resetConfigGroup(group) {
+    for (const row of group.querySelectorAll("[data-config-row]")) {
+        let pristine;
+        try {
+            pristine = JSON.parse(row.dataset.configPristine || "{}");
+        } catch {
+            continue;
+        }
+        for (const input of row.querySelectorAll("input[type=\"checkbox\"][data-config-field]")) {
+            input.checked = pristine[input.dataset.configField] === true;
+        }
+    }
 }

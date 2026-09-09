@@ -75,6 +75,9 @@ export const state = {
         configurationSync: { entries: {} },
         capabilities: {},
         enabledCapabilityKeys: [],
+        // Estado do último pedido de cada acção, que não é uma configuração guardada e por
+        // isso não vive no `configurationSync`.
+        actionDeliveries: {},
         configUi: {},
         errorMessage: "",
         loading: false,

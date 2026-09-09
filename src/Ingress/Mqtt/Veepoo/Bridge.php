@@ -9,6 +9,7 @@ use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\RawPayload;
 use Hub\Domain\GatewayDeviceLinkLookup;
+use Hub\Ingress\Mqtt\Moko\ObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\Topic;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
@@ -43,6 +44,15 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     private const FAILURE_REPEAT_SECONDS = 60;
 
     /**
+     * Quanto tempo um bloco fica reconhecido como já publicado.
+     *
+     * Tem de exceder a janela que o gateway consegue reproduzir: o `RETENTION_DAYS` dele, três
+     * dias por omissão, mais o dia corrente. Cinco dias dá folga sem a memória pesar -- são
+     * 288 blocos por dia e por pulseira, e cada um é uma chave curta com prazo.
+     */
+    private const REPLAY_TTL_SECONDS = 5 * 86400;
+
+    /**
      * Quando cada par aparelho/motivo foi relatado pela última vez.
      *
      * @var array<string, int>
@@ -64,6 +74,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         HubMqttBridge $mqttBridge,
         private readonly GatewayDeviceLinkLookup $links,
         private readonly ?PendingDownlinkQueue $downlinks,
+        private readonly ObservationStateStore $state,
         string $topicFilter,
         ?callable $reconnectSubscriber = null,
         ?DashboardStoreContract $dashboardStore = null,
@@ -174,6 +185,15 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         ];
 
         foreach ($this->blocks($message['payload'] ?? null) as $block) {
+            // A pulseira reproduz o histórico por desenho -- não empurra nada, e o gateway
+            // relê o dia corrente de cinco em cinco minutos e os dias retidos a cada arranque.
+            // Um bloco igual a um que já saiu é a mesma medição, com o mesmo instante, e não
+            // uma leitura nova: republicá-lo enchia o MQTT de repetições que quem integra não
+            // distingue das boas, e expulsava do histórico da dashboard o que era real.
+            if (!$this->state->acceptObservation($deviceKey, self::blockFingerprint($block), self::REPLAY_TTL_SECONDS)) {
+                continue;
+            }
+
             $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;
             foreach ($this->normalizer->normalize($block, $identity, (string)$gateway['imei'], $offset) as $telemetry) {
                 $this->emitTelemetry($deviceKey, $telemetry, $licenseId, $company);
@@ -715,6 +735,20 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $base = preg_replace('#/\+/raw$#', '', trim($this->topicFilter, '/')) ?? '';
 
         return $base . '/' . $gatewayKey . '/cmd';
+    }
+
+    /**
+     * O que identifica um bloco é tudo o que ele traz, e não só o `date`.
+     *
+     * O bloco do intervalo a decorrer chega incompleto e é preenchido na leitura seguinte.
+     * Pela data sozinha, a primeira versão congelava-o e os minutos que faltavam nunca
+     * chegavam a sair.
+     *
+     * @param array<string, mixed> $block
+     */
+    private static function blockFingerprint(array $block): string
+    {
+        return hash('sha256', json_encode($block, JSON_THROW_ON_ERROR));
     }
 
     /**

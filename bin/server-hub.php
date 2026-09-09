@@ -123,6 +123,10 @@ if ($config['moko']['enabled']) {
             $services->mqttBridge,
             $services->dataAccess->gatewayDeviceLinks,
             $services->downlinkQueue,
+            // A mesma porta que trava os anúncios repetidos do MOKO trava aqui os blocos que
+            // o gateway relê. Em Redis e não em memória: a releitura maior é a do arranque do
+            // gateway, e um hub reiniciado teria esquecido tudo o que ela vai repetir.
+            new RedisObservationStateStore($services->redis),
             $veepooTopicFilter,
             $reconnect,
             $services->dashboardStore,

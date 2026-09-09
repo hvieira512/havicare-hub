@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
 use Hub\Dashboard\DashboardStoreContract;
+use Hub\Ingress\Mqtt\Moko\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\Bridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
@@ -261,6 +262,7 @@ final class BridgeMeasurementTest extends TestCase
             $mqtt,
             IngressFixtures::links(true),
             null,
+            new ArrayObservationStateStore(),
             'havicare-hub/null/0/gw/+/raw',
             null,
             $store,

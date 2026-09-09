@@ -646,15 +646,17 @@ function renderRequestCardGroup(
         return cards;
     }
 
+    // O rótulo separa os grupos sem os meter dentro de outra caixa. A caixa com borda e
+    // enchimento custava trinta e quatro pixéis de largura, e a grelha precisa de 464 numa
+    // coluna que tem 481: com ela, os mosaicos caíam de dois por linha para um -- e só nos
+    // aparelhos com mais do que um grupo, que são os únicos que a mostram.
     return html`
         <div class="telemetry-card-wide">
-        <div class="border rounded-3 p-3">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="section-label">${group.label || "Pedidos"}</div>
         <span class="count-chip">${group.cards.length}</span>
         </div>
         <div class="d-grid telemetry-card-grid gap-3">${raw(cards)}</div>
-        </div>
         </div>`;
 }
 

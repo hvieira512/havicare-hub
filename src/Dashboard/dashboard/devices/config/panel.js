@@ -36,13 +36,114 @@ export function dismissConfigFeedback(key) {
     clearConfigFeedback(key);
 }
 
-export async function saveDeviceConfiguration(section) {
+/**
+ * O valor que um verbo de acção envia.
+ *
+ * Um botão que diz «Parar» não tem formulário para ler: o que vai enviar está no próprio
+ * botão. Devolve `null` para tudo o resto, que continua a ler os campos do cartão.
+ */
+export function configActionPayload(section, actionValue) {
+    if (actionValue !== "on" && actionValue !== "off") return null;
+
+    const field = section.dataset.configActionField || "enabled";
+    return { [field]: actionValue === "on" };
+}
+
+/**
+ * As linhas de um grupo cujo valor difere do que estava desenhado.
+ *
+ * Só o que mudou é que viaja: enviar as oito de uma vez transformava uma alteração num lote
+ * de oito comandos para a pulseira executar um a um, e o aparelho serve um de cada vez.
+ *
+ * @returns {Object<string, object>} chave da definição => valor a enviar
+ */
+export function changedConfigGroupEntries(group) {
+    const changed = {};
+    for (const row of group.querySelectorAll("[data-config-row]")) {
+        const key = row.dataset.configKey || "";
+        if (!key) continue;
+
+        let payload;
+        try {
+            payload = readConfigPayload(row);
+        } catch {
+            continue;
+        }
+
+        const pristine = row.dataset.configPristine ?? "";
+        const neverSent = row.dataset.configStored === "0";
+        if (neverSent || JSON.stringify(payload) !== pristine) {
+            changed[key] = payload;
+        }
+    }
+
+    return changed;
+}
+
+/** Acende o «Enviar alterações» do grupo e diz quantas são. */
+export function syncConfigGroupDirty(group) {
+    const button = group.querySelector("[data-action=\"saveConfigGroup\"]");
+    const status = group.querySelector("[data-config-group-status]");
+    if (!button || button.dataset.configPhase !== "idle") return;
+
+    const pending = changedConfigGroupEntries(group);
+    const count = Object.keys(pending).length;
+    button.disabled = count === 0;
+    button.classList.toggle("btn-primary", count > 0);
+    button.classList.toggle("btn-outline-secondary", count === 0);
+
+    // «Alterações» só quando alguém alterou. Linhas que nunca chegaram ao aparelho estão por
+    // enviar sem ninguém lhes ter tocado, e dizer-lhes alterações era mentir sobre a origem.
+    const edited = Object.keys(pending).some((key) => {
+        const row = group.querySelector(`[data-config-row][data-config-key="${key}"]`);
+        return row?.dataset.configStored !== "0";
+    });
+
+    if (status) {
+        status.textContent = count === 0
+            ? "Tudo enviado ao dispositivo"
+            : edited
+                ? `${count} ${count === 1 ? "alteração" : "alterações"} por enviar`
+                : `${count} ${count === 1 ? "definição nunca enviada" : "definições nunca enviadas"} ao dispositivo`;
+    }
+}
+
+export async function saveDeviceConfigurationGroup(group) {
+    const changed = changedConfigGroupEntries(group);
+    if (Object.keys(changed).length === 0) return;
+
+    const button = group.querySelector("[data-action=\"saveConfigGroup\"]");
+    if (button) {
+        button.dataset.configPhase = "submitting";
+        button.disabled = true;
+    }
+
+    try {
+        const result = await apiSaveConfiguration(state.deviceModal.imei, { configurations: changed });
+        if (result.error) {
+            toast("error", result.error.message || "Não foi possível enviar as alterações");
+            return;
+        }
+
+        state.deviceModal.configurations = result.configurations || state.deviceModal.configurations;
+        state.deviceModal.configurationSync = result.configurationSync || state.deviceModal.configurationSync;
+        state.deviceModal.capabilities = result.capabilities || state.deviceModal.capabilities;
+        toast("success", "Alterações enviadas. A aguardar confirmação do dispositivo.");
+    } catch (error) {
+        toast("error", error instanceof Error ? error.message : "Não foi possível enviar as alterações");
+    } finally {
+        if (button) button.dataset.configPhase = "idle";
+        renderDeviceConfigurationModal();
+    }
+}
+
+export async function saveDeviceConfiguration(section, actionValue = "") {
     const key = section.dataset.configKey || "";
     if (!key) return;
 
     let payload;
     try {
-        payload = readConfigPayload(section);
+        payload = configActionPayload(section, actionValue) ?? readConfigPayload(section);
     } catch (error) {
         toast("error", error instanceof Error ? error.message : "Configuração inválida");
         return;
@@ -74,6 +175,15 @@ export async function saveDeviceConfiguration(section) {
             });
             renderDeviceConfigurationModal();
             return;
+        }
+
+        if (isTransientAction) {
+            // O pedido disparado guarda o seu estado: é o que a pastilha do cartão mostra até
+            // o dispositivo confirmar ou falhar.
+            const command = (result.commands || [])[0] || null;
+            state.deviceModal.actionDeliveries[capabilityKey] = command
+                ? { status: deliveryStatusFromCommand(command.status), error: String(command.error || "") }
+                : null;
         }
 
         if (!isTransientAction) {
@@ -114,6 +224,23 @@ export async function saveDeviceConfiguration(section) {
     }
 }
 
+/**
+ * O estado de entrega correspondente ao estado de um comando.
+ *
+ * É a mesma tradução para configurações e para acções: ambas viajam pela mesma fila e o
+ * operador não tem por que ler dois vocabulários para a mesma coisa.
+ */
+export function deliveryStatusFromCommand(commandStatus, confirmationMode = "") {
+    const status = String(commandStatus || "");
+    if (["failed", "dropped"].includes(status)) return "failed";
+    if (status === "acked") {
+        return String(confirmationMode) === "ack_only" ? "confirmation_unavailable" : "confirmed";
+    }
+    if (status === "queued") return "pending_delivery";
+    if (["waiting", "sent"].includes(status)) return "awaiting_ack";
+    return "";
+}
+
 export function syncDeviceModalCommandStates(imei, commands) {
     if (String(state.deviceModal.imei || "") !== String(imei || "")) {
         return;
@@ -136,15 +263,8 @@ export function syncDeviceModalCommandStates(imei, commands) {
             }
 
             const commandStatus = String(command.status || "");
-            const nextStatus = ["failed", "dropped"].includes(commandStatus)
-                ? "failed"
-                : commandStatus === "acked"
-                    ? (String(operation?.confirmationMode || "") === "ack_only"
-                            ? "confirmation_unavailable"
-                            : "confirmed")
-                    : ["queued", "waiting", "sent"].includes(commandStatus)
-                            ? (commandStatus === "queued" ? "pending_delivery" : "awaiting_ack")
-                            : String(delivery.status || "");
+            const nextStatus = deliveryStatusFromCommand(commandStatus, operation?.confirmationMode) ||
+                String(delivery.status || "");
             const nextError = ["failed", "dropped"].includes(commandStatus)
                 ? String(command.lastError || command.error || commandStatus)
                 : "";
@@ -300,6 +420,7 @@ export function renderDeviceConfigurationModal() {
         configurationSync: state.deviceModal.configurationSync,
         capabilities: state.deviceModal.capabilities,
         uiByKey: state.deviceModal.configUi,
+        actionDeliveries: state.deviceModal.actionDeliveries,
         supplier: state.deviceModal.supplier,
         model: state.deviceModal.model,
         activeCategory: state.deviceModal.activeCategory,
@@ -307,6 +428,11 @@ export function renderDeviceConfigurationModal() {
     });
     resetPhoneControls(els.deviceConfigRoot);
     captureConfigSectionPristine();
+    // O rodapé de um grupo tem de dizer a verdade ao ser desenhado, e não só quando alguém
+    // mexe num interruptor: se nada foi ainda enviado ao aparelho, é isso que está lá.
+    for (const group of els.deviceConfigRoot.querySelectorAll("[data-config-group]")) {
+        syncConfigGroupDirty(group);
+    }
     armConfigFeedbackAutoClose();
 }
 
@@ -328,7 +454,10 @@ function captureConfigSectionPristine() {
     }
 }
 
-/** Acende o "Enviar" do bloco quando o valor difere do que estava desenhado. */
+/**
+ * Acende o "Enviar" do bloco quando o valor difere do que estava desenhado, ou quando não há
+ * valor nenhum -- uma acção sem parâmetros envia-se tal como está.
+ */
 export function syncConfigSectionDirty(section) {
     const button = section.querySelector("[data-action=\"saveConfig\"]");
     // Só o estado inactivo é que se gere por diferença: a enviar, enviado ou falhado, o
@@ -336,9 +465,26 @@ export function syncConfigSectionDirty(section) {
     if (!button || button.dataset.configPhase !== "idle") return;
     if (!("configPristine" in section.dataset)) return;
 
+    // Duas situações em que não há diferença nenhuma a medir, e enviar continua a fazer
+    // sentido. Uma acção é sempre um pedido novo -- mandar a pulseira vibrar outra vez, ou
+    // mandá-la parar. E uma definição que o aparelho ainda não recebeu mostra o valor por
+    // omissão do catálogo, não o que lá está: comparando-o consigo próprio o botão ficava
+    // apagado, e a primeira configuração não tinha caminho nenhum para sair do ecrã.
+    const neverSent = section.dataset.configStored === "0";
+    if (section.dataset.configTransient === "1" || neverSent) {
+        button.classList.add("btn-primary");
+        button.classList.remove("btn-outline-secondary");
+        button.disabled = false;
+        return;
+    }
+
     let dirty = true;
     try {
-        dirty = JSON.stringify(readConfigPayload(section)) !== section.dataset.configPristine;
+        const payload = readConfigPayload(section);
+        // Sem parâmetros não há valor para comparar: o payload é vazio antes e depois, e por
+        // diferença o botão ficava desactivado. Um payload vazio é o payload final.
+        dirty = Object.keys(payload).length === 0 ||
+            JSON.stringify(payload) !== section.dataset.configPristine;
     } catch {
         dirty = true;
     }

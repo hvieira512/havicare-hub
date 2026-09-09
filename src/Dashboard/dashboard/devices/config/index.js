@@ -407,17 +407,6 @@ const CONFIG_INPUT_HELP = {
     wonlexMedicationPlans: () => "Formulário guiado para medicamento, dose, período e horários.",
 };
 
-const CONFIG_INPUT_LABEL = {
-    requestAction: "Ação",
-    soundProfile: "Perfil de som",
-    alarm_clock: "Alarmes",
-    sos_contacts: "Contactos SOS",
-    call_whitelist: "Lista branca",
-    whitelist_enabled: "Lista branca ativa",
-    phonebook: "Lista telefónica",
-    wonlexMedicationPlans: "Plano de medicação",
-};
-
 function groupedCatalog(catalog) {
     const groups = [];
     const index = new Map();
@@ -531,6 +520,7 @@ export function renderDeviceConfigurationRoot(context) {
         disabled = false,
         activeCategory = "",
         uiByKey = {},
+        actionDeliveries = {},
         quietWhenEmpty = false,
     } = context;
     if (!protocol) {
@@ -596,28 +586,38 @@ export function renderDeviceConfigurationRoot(context) {
                     .map(
                         (group) => `
                     <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}" data-config-category-pane="${esc(group.key)}">
-                        ${group.entries.map((entry) => {
-                            const row = entry.requestOnly
-                                ? null
-                                : resolveConfigRow(entry, rowsByKey);
-                            const stored = entry.requestOnly
-                                ? null
-                                : resolveConfigStored(entry, rowsByKey);
-                            const delivery = entry.requestOnly
-                                ? null
-                                : resolveConfigDelivery(entry, configurationSync);
-                            const uiState = uiByKey[entry.key] || null;
-                            return renderConfigSection(
-                                protocol,
-                                entry,
-                                row,
-                                capabilities,
-                                disabled,
-                                uiState,
-                                stored,
-                                delivery,
-                                rowsByKey,
-                            );
+                        ${configRuns(group.entries).map((run) => {
+                            if (run.grouped) {
+                                return renderConfigToggleGroup(protocol, run.entries, {
+                                    rowsByKey, capabilities, disabled, uiByKey, configurationSync,
+                                });
+                            }
+                            return run.entries.map((entry) => {
+                                const row = entry.requestOnly
+                                    ? null
+                                    : resolveConfigRow(entry, rowsByKey);
+                                const stored = entry.requestOnly
+                                    ? null
+                                    : resolveConfigStored(entry, rowsByKey);
+                                // Uma acção não tem entrada no `configurationSync` -- não é
+                                // uma configuração guardada. O estado que ela tem é o do
+                                // último pedido que disparou.
+                                const delivery = entry.requestOnly
+                                    ? actionDeliveries[entry.capabilityKey || entry.key] || null
+                                    : resolveConfigDelivery(entry, configurationSync);
+                                const uiState = uiByKey[entry.key] || null;
+                                return renderConfigSection(
+                                    protocol,
+                                    entry,
+                                    row,
+                                    capabilities,
+                                    disabled,
+                                    uiState,
+                                    stored,
+                                    delivery,
+                                    rowsByKey,
+                                );
+                            }).join("");
                         }).join("")}
                     </div>
                 `,
@@ -627,7 +627,96 @@ export function renderDeviceConfigurationRoot(context) {
         </div>`;
 }
 
-function renderConfigSection(
+/**
+ * Um interruptor que se guarda, e não uma acção nem um campo composto.
+ *
+ * É o único caso em que uma linha diz tudo o que há a dizer: um nome, o que faz, e ligado ou
+ * desligado. Tudo o resto -- alarmes, agendas, listas, intervalos -- precisa do espaço do
+ * cartão, e agrupá-lo espremia-o.
+ */
+function isPlainToggle(entry) {
+    return entry.input === "toggle" &&
+        entry.transient !== true &&
+        entry.requestOnly !== true;
+}
+
+/**
+ * As entradas por ordem, com as corridas de interruptores marcadas para agrupar.
+ *
+ * Corridas e não «todos os interruptores da secção»: a ordem do catálogo é editorial, e
+ * juntar interruptores que estão separados por um alarme trocava-a por uma arrumação que o
+ * autor do catálogo não pediu.
+ *
+ * Um interruptor sozinho também é uma corrida. Deixá-lo como cartão dava-lhe quatro linhas
+ * de altura para um bit, que é o problema que isto existe para resolver -- e punha dois
+ * desenhos diferentes na mesma lista, conforme a definição tivesse ou não vizinhas.
+ *
+ * @returns {Array<{grouped: boolean, entries: Array<object>}>}
+ */
+function configRuns(entries) {
+    const runs = [];
+    for (const entry of entries) {
+        const grouped = isPlainToggle(entry);
+        const last = runs[runs.length - 1];
+        if (last && last.grouped === grouped) {
+            last.entries.push(entry);
+            continue;
+        }
+        runs.push({ grouped, entries: [entry] });
+    }
+
+    return runs;
+}
+
+function renderConfigToggleGroup(protocol, entries, ctx) {
+    const { rowsByKey, capabilities, disabled, uiByKey, configurationSync } = ctx;
+
+    const rows = entries.map((entry) => {
+        const capability = capabilityForEntry(entry, capabilities);
+        const desired = normalizeDesired(entry, resolveConfigRow(entry, rowsByKey), capability ? extractCapabilityValue(capability) : null, protocol);
+        const field = entry.fields?.[0] || "enabled";
+        const on = desired[field] !== false;
+        const stored = resolveConfigStored(entry, rowsByKey);
+        const delivery = resolveConfigDelivery(entry, configurationSync);
+        const deliveryMeta = configurationDeliveryMeta(stored, delivery);
+        const help = configHelp(entry);
+        const uiState = uiByKey[entry.key] || null;
+        const busy = uiState?.phase === "submitting";
+
+        return `
+            <div class="d-flex align-items-center gap-3 px-3 py-2 border-bottom" data-config-row
+                 data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"
+                 data-config-input="toggle" data-config-stored="${stored ? "1" : "0"}"
+                 data-config-protocol="${esc(protocol)}"
+                 data-config-pristine='${esc(JSON.stringify({ [field]: on }))}'>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
+                    ${help ? `<div class="small text-secondary">${esc(help)}</div>` : ""}
+                </div>
+                ${stateBadge(deliveryMeta.label, deliveryMeta.tone)}
+                <div class="form-check form-switch m-0">
+                    <input class="form-check-input" type="checkbox" role="switch"
+                           data-config-field="${esc(field)}" ${on ? "checked" : ""}
+                           ${disabled || busy ? "disabled" : ""}
+                           aria-label="${esc(entry.label || entry.key)}">
+                </div>
+            </div>`;
+    }).join("");
+
+    return `
+        <section class="border rounded-3 mb-3" data-config-group data-config-protocol="${esc(protocol)}">
+            ${rows}
+            <div class="d-flex align-items-center justify-content-between gap-3 px-3 py-2 bg-body-tertiary rounded-bottom-3">
+                <span class="small text-secondary" data-config-group-status>Sem alterações por enviar</span>
+                <span class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="resetConfigGroup" ${disabled ? "disabled" : ""}>Repor</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="saveConfigGroup" data-config-phase="idle" disabled>Enviar alterações</button>
+                </span>
+            </div>
+        </section>`;
+}
+
+export function renderConfigSection(
     protocol,
     entry,
     row,
@@ -646,9 +735,18 @@ function renderConfigSection(
         phonebookContacts: relatedConfigurations.phonebook || [],
     };
     const help = configHelp(entry);
+    // Uma acção com dois sentidos mostra os dois verbos em vez de um interruptor e um
+    // «Enviar»: o botão passa a dizer o que vai acontecer, e parar deixa de ser uma
+    // descoberta. Sem verbos declarados, o cartão fica como estava.
+    const verbs = configActionVerbs(entry);
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
-    const showConfigurationBadge = !entry.requestOnly;
-    const deliveryMeta = configurationDeliveryMeta(isStored, delivery);
+    // Uma acção não tem valor guardado, mas o pedido que ela dispara tem estado: em fila, à
+    // espera, confirmado ou falhado. Sem o mostrar, quem carrega no botão fica sem saber se a
+    // ordem chegou sequer a sair do hub.
+    const showConfigurationBadge = !entry.requestOnly || delivery !== null;
+    // «Padrão» quer dizer que o hub ainda não guardou valor nenhum, e uma acção nunca guarda:
+    // o que ela tem é o estado do último pedido, e é esse que a pastilha mostra.
+    const deliveryMeta = configurationDeliveryMeta(isStored || (entry.requestOnly === true && delivery !== null), delivery);
     // Sem comando nativo, o hub aplica-a sozinho, e então não há vocabulário de protocolo
     // para mostrar: o comando não existe, e o tipo de campo sozinho é ruído.
     const hideNativeCommand = (entry.configKind === "capability" && entry.key === "alarm_clock") ||
@@ -665,14 +763,13 @@ function renderConfigSection(
     const phonebookMetaAttrs = isPhonebookLike
         ? `${phonebookNameMaxLength > 0 ? ` data-phonebook-name-max-length="${esc(String(phonebookNameMaxLength))}"` : ""}${phonebookPhoneMaxLength > 0 ? ` data-phonebook-phone-max-length="${esc(String(phonebookPhoneMaxLength))}"` : ""}`
         : "";
-    const details = [
-        hideNativeCommand ? "" : (entry.command || ""),
-        hideNativeCommand ? "" : configInputLabel(entry.input || "json"),
-        help || "",
-    ].filter((part) => part !== "");
+    // O cartão diz o que a definição faz, e mais nada. O nome do comando e o tipo de campo
+    // são vocabulário de protocolo: servem os registos e as ferramentas de diagnóstico, não
+    // quem gere dispositivos, e estavam a ser a única coisa que se lia em cada cartão.
+    const details = [help || ""].filter((part) => part !== "");
 
     return `
-        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""}>
+        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""}>
             <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
                 <div>
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
@@ -684,16 +781,44 @@ function renderConfigSection(
             </div>
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}
             <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? "data-config-disabled=\"1\"" : ""}>
-                ${renderConfigInputs(entry, desired, { ...meta, protocol })}
+                ${verbs.length > 0 ? "" : renderConfigInputs(entry, desired, { ...meta, protocol })}
                 <div class="d-flex justify-content-end gap-2 mt-3">
-                    ${renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand)}
+                    ${verbs.length > 0
+                        ? renderConfigActionVerbs(verbs, disabled)
+                        : `${renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand)}
                     <button type="reset" class="btn btn-outline-secondary btn-sm" title="Repor" aria-label="Repor" ${disabled ? "disabled" : ""}>
                         <i class="fa-solid fa-rotate-left"></i>
-                    </button>
+                    </button>`}
                 </div>
             </form>
             ${renderConfigFeedback(entry.key, uiState)}
         </section>`;
+}
+
+/**
+ * Os verbos de uma acção com dois sentidos, na ordem em que se lêem.
+ *
+ * Só para acções: uma definição guarda-se, e por isso o que ela precisa é do interruptor com
+ * o estado desejado, não de dois botões que disparam.
+ *
+ * @returns {Array<{value: string, label: string}>}
+ */
+function configActionVerbs(entry) {
+    if (entry.transient !== true) return [];
+
+    const actions = entry.actions || null;
+    if (!actions || typeof actions !== "object") return [];
+
+    return ["on", "off"]
+        .filter((value) => String(actions[value] || "").trim() !== "")
+        .map((value) => ({ value, label: String(actions[value]).trim() }));
+}
+
+function renderConfigActionVerbs(verbs, disabled) {
+    return verbs.map((verb, index) => `
+        <button type="button" class="btn btn-sm ${index === 0 ? "btn-primary" : "btn-outline-secondary"}"
+                data-action="saveConfig" data-action-value="${esc(verb.value)}"
+                data-config-phase="idle" ${disabled ? "disabled" : ""}>${esc(verb.label)}</button>`).join("");
 }
 
 function renderConfigActionButton(key, row, uiState, disabled = false, appliedByHub = false) {
@@ -893,16 +1018,19 @@ function renderConfigurationDeliveryNotice(meta, delivery) {
 }
 
 function configHelp(entry) {
+    // A legenda declarada na definição descreve *esta* definição; a tabela por tipo de campo
+    // só sabe falar da forma do campo. Quando existe, é a que serve quem está a decidir.
+    const declared = String(entry.help || "").trim();
+    if (declared !== "") {
+        return declared;
+    }
+
     const input = entry.input || "json";
     const key = entry.key || "";
     if (CONFIG_INPUT_HELP[input]) {
         return CONFIG_INPUT_HELP[input](entry);
     }
     return CONFIG_INPUT_HELP[key]?.(entry) || "";
-}
-
-function configInputLabel(input) {
-    return CONFIG_INPUT_LABEL[input] || titleize(input);
 }
 
 function readWonlexMedicationPlans(section) {
