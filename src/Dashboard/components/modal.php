@@ -19,8 +19,7 @@ function render_modal(
     bool $staticBackdrop = false,
     string $headerHtml = '',
     string $bodyClass = '',
-    string $contentClass = '',
-    string $dialogClass = ''
+    string $contentClass = ''
 ): void {
     $dialog = array_filter([
         'modal-dialog',
@@ -28,7 +27,6 @@ function render_modal(
         $scrollable ? 'modal-dialog-scrollable' : '',
         $size !== '' ? "modal-{$size}" : '',
         $fullscreenBelow !== null ? "modal-fullscreen-{$fullscreenBelow}-down" : '',
-        $dialogClass,
     ]);
 
     // O Bootstrap lê estes dois do próprio elemento ao criar a instância; sem eles, um clique
