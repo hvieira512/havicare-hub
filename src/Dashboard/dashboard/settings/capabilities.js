@@ -23,6 +23,40 @@ import {
  */
 let els;
 
+/**
+ * O que entra no catálogo.
+ *
+ * Uma acção -- desligar, reiniciar, encontrar -- não é telemetria, nem configuração, nem
+ * evento, e sem este quarto termo sete capacidades do relógio desapareciam do ecrã enquanto o
+ * cabeçalho continuava a contá-las.
+ */
+export function showsInCatalog(entry) {
+    return Boolean(
+        entry.isTelemetry ||
+        entry.isConfigurable ||
+        entry.isEvent ||
+        entry.isRequestable,
+    );
+}
+
+/**
+ * O que se diz de uma capacidade à direita do nome.
+ *
+ * «Solicitável» é pedir uma leitura. Uma capacidade que só se pode pedir e não é telemetria
+ * nem definição não devolve leitura nenhuma: é uma acção, e mandar o relógio desligar-se não
+ * é o mesmo gesto que pedir-lhe a frequência cardíaca.
+ */
+export function capabilityFacts(entry) {
+    if (entry.isRequestable && !entry.isTelemetry && !entry.isConfigurable) {
+        return ["Ação"];
+    }
+
+    return [
+        entry.isConfigurable ? "Configurável" : null,
+        entry.isRequestable ? "Solicitável" : null,
+    ].filter(Boolean);
+}
+
 async function initSettingsCapabilities(context) {
     els = context.els;
 }
@@ -143,12 +177,7 @@ function renderCapabilitiesCatalogSection() {
     const visibleSections = sections
         .map(({ section, label, entries }) => {
             const visibleEntries = entries
-                .filter(
-                    (entry) =>
-                        entry.isTelemetry ||
-                        entry.isConfigurable ||
-                        entry.isEvent,
-                )
+                .filter(showsInCatalog)
                 .filter((entry) => matchesCapabilityQuery(entry))
                 // As que o fornecedor não declara ficam na lista: saber que uma capacidade
                 // existe para o tipo e que este fornecedor não a traz é a pergunta que se
@@ -187,10 +216,7 @@ function renderCapabilitiesCatalogSection() {
             const rows = entries
                 .map((entry) => {
                     const facts = entry.supported
-                        ? [
-                                entry.isConfigurable ? "Configurável" : null,
-                                entry.isRequestable ? "Solicitável" : null,
-                            ].filter(Boolean)
+                        ? capabilityFacts(entry)
                         : [supplierName ? `não oferecido pela ${supplierName}` : "não oferecido"];
                     // Numera o que é suportado, para o último número da secção dizer
                     // quantas capacidades o dispositivo tem de facto.
