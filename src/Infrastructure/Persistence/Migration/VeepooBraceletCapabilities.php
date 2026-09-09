@@ -21,9 +21,10 @@ use PDO;
  * medida sempre e chega nos blocos, enquanto o interruptor é o alarme. Passa a chamar-se
  * `blood_oxygen_alert`, que é o nome que o hub já dá à mesma coisa nos relógios.
  *
- * As linhas de configuração já gravadas para as duas chaves que desaparecem vão com elas: sem
- * isto a dashboard continuava a mostrá-las como aplicadas, sob um nome que o hub deixou de
- * saber traduzir.
+ * As linhas de configuração já gravadas para as duas chaves que desaparecem vão com elas --
+ * mas só as das pulseiras. Sem isto a dashboard continuava a mostrá-las como aplicadas, sob um
+ * nome que o hub deixou de saber traduzir; e apagando-as por chave, sem dizer de que
+ * aparelhos, levava também as dos relógios, onde as duas são reais.
  */
 final class VeepooBraceletCapabilities implements Migration
 {
@@ -94,7 +95,13 @@ final class VeepooBraceletCapabilities implements Migration
 
         $placeholders = implode(', ', array_fill(0, count(self::REMOVED), '?'));
         $deletions = [
-            "DELETE FROM device_configurations WHERE config_key IN ($placeholders)",
+            // Pelo tipo do aparelho, e não só pela chave: o `device_configurations` é indexado
+            // por IMEI e chave, sem coluna de tipo, e as duas chaves existem também nos
+            // relógios -- onde são reais. Sem esta junção, apagava a configuração guardada de
+            // catorze relógios com deteção de queda.
+            "DELETE dc FROM device_configurations dc
+               JOIN whitelist w ON w.imei = dc.imei
+              WHERE w.device_type = 'bracelet' AND dc.config_key IN ($placeholders)",
             "DELETE FROM model_capabilities WHERE device_type = 'bracelet' AND capability_key IN ($placeholders)",
             "DELETE FROM capabilities WHERE device_type = 'bracelet' AND capability_key IN ($placeholders)",
         ];
