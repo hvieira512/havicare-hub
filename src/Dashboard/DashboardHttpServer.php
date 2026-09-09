@@ -37,6 +37,10 @@ final class DashboardHttpServer
     // `newInstanceWithoutConstructor()` -- como fazem os testes dos recursos estáticos --
     // continua a lê-la sem fatal, e o `page()` dispensa o `isset()`.
     private bool $apiAuthRequired = true;
+    /* Com valor por omissão e não promovida no construtor: a página desenha-se sem o servidor
+     * montado -- é o que o teste dos componentes faz -- e uma propriedade promovida ficaria
+     * por inicializar nesse caminho. */
+    private int $downlinkQueueTtlSeconds = 300;
 
     public function __construct(
         private DashboardStore $store,
@@ -56,6 +60,7 @@ final class DashboardHttpServer
         private ?LoginThrottle $loginThrottle = null,
     ) {
         $this->apiAuthRequired = $apiAuthRequired;
+        $this->downlinkQueueTtlSeconds = $hub->downlinkQueueTtlSeconds();
 
         // O store anuncia as suas próprias escritas, e por isso o stream tem de subscrever
         // esse notificador exacto, e não um seu.
@@ -170,7 +175,7 @@ final class DashboardHttpServer
     private function page(): string
     {
         $dashboardApiAuthRequired = $this->apiAuthRequired;
-        $downlinkQueueTtlSeconds = $this->hub->downlinkQueueTtlSeconds();
+        $downlinkQueueTtlSeconds = $this->downlinkQueueTtlSeconds;
 
         ob_start();
         require __DIR__ . '/index.php';
