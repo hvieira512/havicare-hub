@@ -22,14 +22,19 @@ export function toast(type, title, text = "") {
     });
 }
 
-/** Devolve a promessa do SweetAlert: quem chama tem de esperar pelo `isConfirmed`. */
-export function confirmDestructive(title, text = "") {
+/**
+ * Devolve a promessa do SweetAlert: quem chama tem de esperar pelo `isConfirmed`.
+ *
+ * O botão diz o verbo da acção -- desligar um relógio não é apagá-lo, e um botão vermelho a
+ * dizer «Apagar» sobre uma caixa que pergunta outra coisa faz hesitar quem lê.
+ */
+export function confirmDestructive(title, text = "", confirmText = "Apagar") {
     return Swal.fire({
         icon: "warning",
         titleText: title,
         text,
         showCancelButton: true,
-        confirmButtonText: "Apagar",
+        confirmButtonText: confirmText,
         cancelButtonText: "Cancelar",
         confirmButtonColor: "#dc3545",
         reverseButtons: true,

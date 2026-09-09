@@ -215,11 +215,63 @@ async function saveCompanyRow(button) {
     await reloadCompanies();
 }
 
+/**
+ * O que a caixa diz antes de apagar.
+ *
+ * «Apagar licença?» não responde a nada a quem tem catorze na lista, e o que fica para trás
+ * não estava escrito em lado nenhum: apagar a linha não apaga os dispositivos, deixa-os com
+ * um número de licença que já não se resolve.
+ */
+export function licenseDeletePrompt(license, deviceCount) {
+    const name = license.name ? ` — ${license.name}` : "";
+    return {
+        title: `Apagar a licença ${license.license_id}${name}?`,
+        text: deviceCount > 0
+            ? `${deviceCount} ${deviceCount === 1 ? "dispositivo fica" : "dispositivos ficam"} com uma licença que já não existe.`
+            : "Não há dispositivos a usá-la.",
+    };
+}
+
+export function companyDeletePrompt(company, licenseCount, deviceCount) {
+    const licenses = licenseCount === 0
+        ? "Não tem licenças."
+        : `Apaga também ${licenseCount === 1 ? "a licença dela" : `as ${licenseCount} licenças dela`}.`;
+    const devices = deviceCount > 0
+        ? ` ${deviceCount} ${deviceCount === 1 ? "dispositivo fica" : "dispositivos ficam"} com uma licença que já não existe.`
+        : "";
+
+    return { title: `Apagar a empresa ${company.name}?`, text: licenses + devices };
+}
+
+/** As contagens do filtro de licenças, que já estão em memória desde que a lista carregou. */
+function deviceCountsByCompany() {
+    return state.summary.deviceFilterCounts?.license?.companies || [];
+}
+
+function deviceCountForCompany(name) {
+    const entry = deviceCountsByCompany().find((row) => String(row.company) === String(name));
+    return Number(entry?.count || 0);
+}
+
+function deviceCountForLicense(licenseId) {
+    for (const company of deviceCountsByCompany()) {
+        for (const license of company.licenses || []) {
+            if (String(license.licenseId) === String(licenseId)) return Number(license.count || 0);
+        }
+    }
+    return 0;
+}
+
 async function deleteCompany(id) {
-    const { isConfirmed } = await confirmDestructive(
-        "Apagar empresa?",
-        "Todas as licenças associadas serão apagadas.",
+    const company = currentCompanies.find((row) => Number(row.id) === Number(id));
+    if (!company) return;
+
+    const prompt = companyDeletePrompt(
+        company,
+        currentLicenses.filter((license) => Number(license.company_id) === Number(id)).length,
+        deviceCountForCompany(company.name),
     );
+    const { isConfirmed } = await confirmDestructive(prompt.title, prompt.text);
     if (!isConfirmed) return;
     const result = await apiDeleteCompany(id);
     if (result.error) {
@@ -254,7 +306,11 @@ async function saveLicenseRow(button) {
 }
 
 async function deleteLicense(id) {
-    const { isConfirmed } = await confirmDestructive("Apagar licença?");
+    const license = currentLicenses.find((row) => Number(row.id) === Number(id));
+    if (!license) return;
+
+    const prompt = licenseDeletePrompt(license, deviceCountForLicense(license.license_id));
+    const { isConfirmed } = await confirmDestructive(prompt.title, prompt.text);
     if (!isConfirmed) return;
     const result = await apiDeleteLicense(id);
     if (result.error) {

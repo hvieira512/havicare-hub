@@ -264,12 +264,15 @@ async function changeApiUserPassword(user) {
     toast("success", "Password alterada");
 }
 
-export async function deleteApiUser(id) {
-    const { isConfirmed } = await confirmDestructive("Apagar utilizador API?");
+export async function deleteApiUser(user) {
+    const { isConfirmed } = await confirmDestructive(
+        `Apagar o utilizador ${user.username}?`,
+        "Perde o acesso à API assim que for apagado.",
+    );
     if (!isConfirmed) {
         return;
     }
-    const result = await apiDeleteApiUser(id);
+    const result = await apiDeleteApiUser(user.id);
     if (result.error) {
         toast("error", apiError(result));
         return;
@@ -376,7 +379,7 @@ export function handleApiUserListClick(event) {
         saveApiUserRow: () => run(createApiUser(button)),
         changeApiUserPassword: () => user && run(changeApiUserPassword(user)),
         toggleApiUser: () => user && run(toggleApiUser(user)),
-        deleteApiUser: () => user && run(deleteApiUser(user.id)),
+        deleteApiUser: () => user && run(deleteApiUser(user)),
     };
     actions[button.dataset.action]?.();
 }

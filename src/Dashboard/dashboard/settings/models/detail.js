@@ -244,14 +244,17 @@ async function renderModelDetailDeleteHint(model) {
         : total === 0
             ? "Nenhum dispositivo usa este modelo."
             : `${total} ${total === 1 ? "dispositivo usa" : "dispositivos usam"} o ${internal}.` +
-                " Apagar o modelo deixa-os sem template de capacidades.";
+                ` Apagar o modelo deixa-${total === 1 ? "o" : "os"} sem template de capacidades.`;
 }
 
 async function deleteCurrentModel() {
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) return;
+    // A dica ao lado do botão já traz a conta dos dispositivos afectados: é a mesma frase.
+    const { els } = getSettingsModelsRuntime();
     const { isConfirmed } = await confirmDestructive(
-        `Tem a certeza que deseja apagar o modelo "${modelCommercialName(model)}"?`,
+        `Apagar o modelo ${modelCommercialName(model)}?`,
+        els.modelDetailDeleteHint?.textContent || "",
     );
     if (!isConfirmed) return;
 

@@ -7,7 +7,7 @@ import {
 } from "./api/index.js";
 import { ago } from "./format.js";
 import { html, raw } from "./html.js";
-import { toast } from "./dialogs.js";
+import { confirmDestructive, toast } from "./dialogs.js";
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -214,6 +214,14 @@ const dismissNotification = async (id, button) => {
 };
 
 const blockDeviceAction = async (notification, button) => {
+    // O botão está a um clique do «dispensar», e o que faz não se parece nada com ele.
+    const { isConfirmed } = await confirmDestructive(
+        `Bloquear o dispositivo ${notification.imei}?`,
+        "O que enviar deixa de ser aceite, e as notificações dele são apagadas.",
+        "Bloquear",
+    );
+    if (!isConfirmed) return;
+
     button.disabled = true;
     const original = button.innerHTML;
     button.innerHTML = "<span class=\"spinner-border spinner-border-sm\" aria-hidden=\"true\"></span>";

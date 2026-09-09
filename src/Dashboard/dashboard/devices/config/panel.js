@@ -8,7 +8,7 @@ import {
     renderDeviceConfigurationRoot,
 } from "./index.js";
 import { emptyPanel } from "../../widgets.js";
-import { toast } from "../../dialogs.js";
+import { confirmDestructive, toast } from "../../dialogs.js";
 import { resetPhoneControls } from "../../phone.js";
 import { state } from "../../state.js";
 
@@ -137,9 +137,54 @@ export async function saveDeviceConfigurationGroup(group) {
     }
 }
 
+/**
+ * Os comandos que o utilizador não desfaz a partir daqui: o aparelho fica desligado até
+ * alguém lhe chegar ao botão, perde o que estava a fazer, ou liga a um número sem que quem
+ * o usa dê por isso. O `find_device` e os restantes não estão aqui de propósito -- pedir
+ * confirmação para tudo ensina a carregar em «Sim» sem ler.
+ */
+const restartPrompt = (imei) => ({
+    title: `Reiniciar o dispositivo ${imei}?`,
+    text: "Fica sem comunicar enquanto arranca.",
+    confirmText: "Reiniciar",
+});
+
+const DANGEROUS_COMMANDS = {
+    power_off: (imei) => ({
+        title: `Desligar o dispositivo ${imei}?`,
+        text: "Deixa de comunicar, e só volta a ligar no botão do próprio aparelho.",
+        confirmText: "Desligar",
+    }),
+    reset_device: restartPrompt,
+    restart_device: restartPrompt,
+    monitor_number: (imei) => ({
+        title: "Ligar para o número de monitorização?",
+        text: `O dispositivo ${imei} liga em escuta silenciosa, sem avisar quem o traz.`,
+        confirmText: "Ligar",
+    }),
+};
+
+export function dangerousCommandPrompt(capabilityKey, imei) {
+    return DANGEROUS_COMMANDS[capabilityKey]?.(imei) || null;
+}
+
 export async function saveDeviceConfiguration(section, actionValue = "") {
     const key = section.dataset.configKey || "";
     if (!key) return;
+
+    // Antes de tudo o resto: cancelar não pode deixar o cartão em «a enviar».
+    const prompt = dangerousCommandPrompt(
+        section.dataset.capabilityKey || key,
+        state.deviceModal.imei,
+    );
+    if (prompt) {
+        const { isConfirmed } = await confirmDestructive(
+            prompt.title,
+            prompt.text,
+            prompt.confirmText,
+        );
+        if (!isConfirmed) return;
+    }
 
     let payload;
     try {
