@@ -1,9 +1,12 @@
 <?php
 
+/* O ponto é o mesmo do `state-badge`, na cor do mesmo estado: o filtro e as pastilhas das
+ * linhas passam a falar a mesma língua. A forma continua a ser a de um botão -- dar-lhes
+ * aspecto de pastilha convidava a clicar nas pastilhas das linhas, que não se clicam. */
 $onlineFilters = [
-    ['id' => 'deviceOnlineAll', 'value' => 'all', 'label' => 'Todos'],
-    ['id' => 'deviceOnlineOn', 'value' => 'online', 'label' => 'Ligados'],
-    ['id' => 'deviceOnlineOff', 'value' => 'offline', 'label' => 'Desligados'],
+    ['id' => 'deviceOnlineAll', 'value' => 'all', 'label' => 'Todos', 'dot' => ''],
+    ['id' => 'deviceOnlineOn', 'value' => 'online', 'label' => 'Ligados', 'dot' => 'text-success'],
+    ['id' => 'deviceOnlineOff', 'value' => 'offline', 'label' => 'Desligados', 'dot' => 'text-body-secondary'],
 ];
 
 ob_start();
@@ -28,7 +31,7 @@ ob_start();
             <div class="btn-group w-100" role="group" aria-label="Estado de ligação">
                 <?php foreach ($onlineFilters as $index => $filter) : ?>
                 <input type="radio" class="btn-check" name="deviceOnlineFilter" id="<?= $filter['id'] ?>" value="<?= $filter['value'] ?>" autocomplete="off"<?= $index === 0 ? ' checked' : '' ?>>
-                <label class="btn btn-sm btn-outline-secondary" for="<?= $filter['id'] ?>"><?= h($filter['label']) ?></label>
+                <label class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center gap-1" for="<?= $filter['id'] ?>"><?= $filter['dot'] === '' ? '' : '<span class="state-badge-dot rounded-circle d-inline-block ' . $filter['dot'] . '" aria-hidden="true"></span>' ?><?= h($filter['label']) ?></label>
                 <?php endforeach; ?>
             </div>
         </div>
