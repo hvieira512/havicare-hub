@@ -20,8 +20,9 @@ $footer = '<button type="button" class="btn btn-outline-secondary" id="wizardBac
     . '<button type="button" class="btn btn-primary" id="wizardNextBtn">Seguinte'
     . icon('fa-arrow-right', 'ms-2') . '</button>';
 
-/* Encostado ao topo: centrado, o rodapé subia até 167px de uma pergunta para a outra e o
- * clique seguinte caía no fundo do diálogo, fechando o assistente com as respostas dentro. */
+/* O `wizard-stage` reserva a altura da pergunta mais alta, e por isso o diálogo mede o mesmo
+ * nas quatro: centrado, fica no sítio e o rodapé não se mexe. Era isso que o encostar ao topo
+ * resolvia antes de a altura ser reservada. */
 render_modal(
     id: 'deviceWizardModal',
     title: 'Adicionar dispositivo',
@@ -29,6 +30,5 @@ render_modal(
     footer: $footer,
     size: 'lg',
     fullscreenBelow: 'md',
-    centered: false,
     staticBackdrop: true,
 );

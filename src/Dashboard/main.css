@@ -545,19 +545,6 @@
     grid-template-columns: minmax(0, 1fr);
 }
 
-/* Altura reservada pela pergunta mais alta da classificação. Medidas as quatro no mesmo
-   ecrã: tipo 212px, fornecedor 60, modelos 394, licença 337. Sem isto o diálogo encolhia ao
-   responder -- entre o tipo e o fornecedor o rodapé subia 149px -- e o clique seguinte caía
-   no fundo do diálogo, que fecha o assistente com as respostas todas lá dentro.
-
-   Só a partir de `md`: abaixo disso o diálogo é o ecrã inteiro, o rodapé está preso em baixo
-   e não há salto nenhum para evitar -- só quatrocentos pixéis de vazio a ganhar. */
-@media (min-width: 48rem) {
-    .wizard-stage {
-        min-height: 24.75rem;
-    }
-}
-
 @media (max-width: 41.75rem) {
     .wizard-stage { grid-template-columns: minmax(0, 1fr); }
 }
