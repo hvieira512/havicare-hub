@@ -75,6 +75,7 @@ import {
 } from "../widgets.js";
 import { onlineBadge } from "../components/state-badge.js";
 import {
+    blankDeviceModal,
     clearSelection,
     selectImei,
     state,
@@ -151,34 +152,15 @@ export async function editDevice(imei, supplier, model) {
     els.deviceImei.value = imei;
     els.deviceImei.dataset.originalImei = imei;
     resetConfigUiState();
-    state.deviceModal = {
+    state.deviceModal = blankDeviceModal({
         mode: "edit",
         activeTab,
-        activeCategory: "",
         imei,
         originalImei: imei,
-        deviceType: "watch",
-        licenseId: "0",
-        simNumber: "",
-        deviceId: "",
-        linkedGatewayKeys: [],
-        selectedGatewayKeys: [],
-        gatewayOptions: [],
         supplier,
         model,
-        protocol: "",
-        catalog: [],
-        capabilityCatalog: [],
-        catalogLoading: false,
-        configurations: [],
-        configurationSync: { entries: {} },
-        capabilities: {},
-        enabledCapabilityKeys: [],
-        configUi: {},
-        errorMessage: "",
         loading: true,
-        online: true,
-    };
+    });
     setDeviceFormError("");
     clearInvalid(els.deviceForm);
     els.deviceConfigTabBtn?.classList.remove("d-none");

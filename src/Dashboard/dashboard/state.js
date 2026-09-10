@@ -1,3 +1,44 @@
+/**
+ * O modal de dispositivo em branco. O `editDevice` substitui o estado inteiro, e enquanto
+ * repetia esta forma à mão as duas divergiam em silêncio.
+ */
+export function blankDeviceModal(overrides = {}) {
+    return {
+        mode: "create",
+        activeTab: "general",
+        activeCategory: "",
+        imei: "",
+        originalImei: "",
+        deviceType: "watch",
+        licenseId: "0",
+        simNumber: "",
+        deviceId: "",
+        linkedGatewayKeys: [],
+        selectedGatewayKeys: [],
+        gatewayOptions: [],
+        supplier: "",
+        model: "",
+        protocol: "",
+        catalog: [],
+        capabilityCatalog: [],
+        catalogLoading: false,
+        configurations: [],
+        configurationSync: { entries: {} },
+        capabilities: {},
+        enabledCapabilityKeys: [],
+        // Estado do último pedido de cada acção, que não é uma configuração guardada e por
+        // isso não vive no `configurationSync`.
+        actionDeliveries: {},
+        configUi: {},
+        errorMessage: "",
+        loading: false,
+        // Enquanto o detalhe não chega, assume-se ligado: o aviso de fila aparece quando se
+        // souber que não está, e não por não se saber ainda.
+        online: true,
+        ...overrides,
+    };
+}
+
 export const state = {
     // Gateways registados, para o assistente de adicionar oferecer os elegíveis.
     wizardGateways: [],
@@ -52,39 +93,7 @@ export const state = {
     selectedDetail: null,
     // Com cache, e aqui e não no `settingsModal` porque a coluna de detalhe também o lê.
     capabilityCatalogByType: {},
-    deviceModal: {
-        mode: "create",
-        activeTab: "general",
-        activeCategory: "",
-        imei: "",
-        originalImei: "",
-        deviceType: "watch",
-        licenseId: "0",
-        simNumber: "",
-        deviceId: "",
-        linkedGatewayKeys: [],
-        selectedGatewayKeys: [],
-        gatewayOptions: [],
-        supplier: "",
-        model: "",
-        protocol: "",
-        catalog: [],
-        capabilityCatalog: [],
-        catalogLoading: false,
-        configurations: [],
-        configurationSync: { entries: {} },
-        capabilities: {},
-        enabledCapabilityKeys: [],
-        // Estado do último pedido de cada acção, que não é uma configuração guardada e por
-        // isso não vive no `configurationSync`.
-        actionDeliveries: {},
-        configUi: {},
-        errorMessage: "",
-        loading: false,
-        // Enquanto o detalhe não chega, assume-se ligado: o aviso de fila aparece quando se
-        // souber que não está, e não por não se saber ainda.
-        online: true,
-    },
+    deviceModal: blankDeviceModal(),
     modelModalSuppliers: [],
     modelModal: {
         capabilities: [],
@@ -158,12 +167,15 @@ export function clearSelection() {
     state.detailFiltersDraft = { from: "", to: "", type: "all", q: "" };
 }
 
+const clampPage = (page, totalPages) =>
+    Math.min(Math.max(1, page), Math.max(1, totalPages));
+
 export function setTelemetryPage(page, totalPages) {
-    state.telemetryPage = Math.min(Math.max(1, page), Math.max(1, totalPages));
+    state.telemetryPage = clampPage(page, totalPages);
 }
 
 export function setDownlinkPage(page, totalPages) {
-    state.downlinkPage = Math.min(Math.max(1, page), Math.max(1, totalPages));
+    state.downlinkPage = clampPage(page, totalPages);
 }
 
 /** O catálogo achatado de tipos×fornecedores×modelos, como veio da resposta. */
