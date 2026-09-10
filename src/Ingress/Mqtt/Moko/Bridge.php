@@ -152,8 +152,17 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $company = (string)($gateway['company'] ?? 'null');
             $status = RawPayload::status($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'offline', null, (string)($gateway['commercialName'] ?? ''));
             $event = RawPayload::event($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'device.disconnected', null, null, (string)($gateway['commercialName'] ?? ''));
-            $this->mqttBridge->publishStatus($deviceKey, $status, true, $deviceType, $licenseId, $company);
-            $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
+
+            // Uma publicação que não passa não leva consigo os gateways seguintes; e o
+            // gateway só sai da lista depois de o `offline` ter saído, para se retentar.
+            try {
+                $this->mqttBridge->publishStatus($deviceKey, $status, true, $deviceType, $licenseId, $company);
+                $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
+            } catch (\Throwable $e) {
+                $this->mqttBridge->logPublishFailure('hub', $deviceKey, $e);
+                continue;
+            }
+
             $this->dashboardStore?->deviceOffline($deviceKey);
             $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
             unset($this->onlineGateways[$deviceKey], $this->gatewayLastSeenAt[$deviceKey]);
@@ -619,12 +628,16 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             if ($device === null || $gateway === null) {
                 continue;
             }
-            $this->publishProximity(
-                $this->enrich($device),
-                $gateway,
-                $this->relayedProtocol($device),
-                ['state' => 'unknown', 'samples' => 0],
-            );
+            try {
+                $this->publishProximity(
+                    $this->enrich($device),
+                    $gateway,
+                    $this->relayedProtocol($device),
+                    ['state' => 'unknown', 'samples' => 0],
+                );
+            } catch (\Throwable $e) {
+                $this->mqttBridge->logPublishFailure('hub', (string)$pair['deviceKey'], $e);
+            }
         }
     }
 

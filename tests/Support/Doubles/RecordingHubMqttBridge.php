@@ -12,7 +12,7 @@ use Hub\Device\HubMqttBridge;
  * Cada publicação é registada na mesma forma, para uma alteração às assinaturas do
  * `HubMqttBridge` só ter de ser reflectida aqui e não numa cópia por teste.
  */
-final class RecordingHubMqttBridge extends HubMqttBridge
+class RecordingHubMqttBridge extends HubMqttBridge
 {
     /** @var list<array{company: string, licenseId: int, deviceType: string, imei: string}> */
     public array $clearedRetainedStatus = [];
