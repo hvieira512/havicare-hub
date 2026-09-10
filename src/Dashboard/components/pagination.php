@@ -10,7 +10,7 @@ function pagination_component(
     $rootId = h($idPrefix);
     $summaryId = h($idPrefix . 'Summary');
     $controlsId = h($idPrefix . 'Controls');
-    $spacing = h($spacing);
+    $spacing = h(trim('d-none ' . $spacing));
 
     $summary = $withSummary
         ? "<span id=\"{$summaryId}\" class=\"small text-secondary\"></span>"
@@ -18,7 +18,7 @@ function pagination_component(
     $row = $withSummary ? 'justify-content-between' : 'justify-content-center';
 
     return <<<HTML
-<div id="{$rootId}" class="d-none {$spacing}">
+<div id="{$rootId}" class="{$spacing}">
     <div class="d-flex {$row} align-items-center gap-2 flex-wrap">
         {$summary}
         <nav aria-label="Paginação">

@@ -18,7 +18,7 @@ function section_header(
     string $spacing = 'mb-2'
 ): string {
     if ($counterId !== null && $chip) {
-        return '<div class="d-flex align-items-center gap-2 ' . h($spacing) . '">'
+        return '<div class="' . h(trim('d-flex align-items-center gap-2 ' . $spacing)) . '">'
             . '<span class="section-label">' . h($title) . '</span>'
             . '<span class="count-chip' . ($counterHidden ? ' d-none' : '') . '" id="' . h($counterId) . '"></span>'
             . '</div>';
