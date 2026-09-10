@@ -430,6 +430,7 @@
 .wizard-trail {
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-wrap: wrap;
     gap: .4rem;
     min-height: 1.9rem;

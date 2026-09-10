@@ -410,7 +410,7 @@ function applyFourPTouchDeviceIdUi() {
         const derived = deriveFourPTouchDeviceId(els.deviceImei.value.trim());
         els.deviceDeviceId.value = derived;
         els.deviceDeviceId.readOnly = true;
-        els.deviceDeviceIdLabel.textContent = "Device ID";
+        els.deviceDeviceIdLabel.textContent = "ID do dispositivo";
         els.deviceDeviceIdHelp.textContent =
             "Derivado automaticamente do IMEI para 4P Touch.";
         els.deviceDeviceId.placeholder = "Derivado do IMEI";
@@ -458,7 +458,7 @@ export async function saveDevice() {
         }
     } else {
         if (!deviceId) {
-            markInvalid(els.deviceDeviceId, "O Device ID é obrigatório");
+            markInvalid(els.deviceDeviceId, "O ID do dispositivo é obrigatório");
             return;
         }
         imei = deviceId;

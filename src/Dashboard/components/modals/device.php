@@ -52,7 +52,7 @@ ob_start();
 
                                 <div class="wizard-ask" id="deviceStep2">
                                     <div id="deviceDeviceIdRow" class="d-none">
-                                        <label for="deviceDeviceId" class="form-label-sm" id="deviceDeviceIdLabel">Device ID</label>
+                                        <label for="deviceDeviceId" class="form-label-sm" id="deviceDeviceIdLabel">ID do dispositivo</label>
                                         <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
                                         <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
                                     </div>
@@ -79,8 +79,13 @@ ob_start();
                                 </div>
 
                                 <div id="deviceFormError" class="small text-danger d-none"></div>
-                                <div class="d-flex justify-content-end gap-2">
-                                    <button type="button" class="btn btn-outline-secondary d-none" id="deviceNextBtn"><?= icon('fa-arrow-left', 'me-2') ?>Manter o que estava</button>
+                                <?php /* Guardar e Eliminar vivem aqui e não no rodapé: gravam o
+                                        que está neste separador, e nas Configurações cada bloco
+                                        tem o seu «Enviar». O `me-auto` afasta o destrutivo. */ ?>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" class="btn btn-outline-danger d-none me-auto" id="deleteDeviceBtn"><?= icon('fa-trash', 'me-1') ?>Eliminar</button>
+                                    <button type="button" class="btn btn-outline-secondary d-none ms-auto" id="deviceNextBtn"><?= icon('fa-arrow-left', 'me-2') ?>Manter o que estava</button>
+                                    <button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>
                                 </div>
                             </div>
                         </div>
@@ -99,11 +104,7 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-// O `me-auto` afasta o destrutivo das outras duas sem lhe dar uma cor que grite.
-$footer = '<button type="button" class="btn btn-outline-danger d-none me-auto" id="deleteDeviceBtn">'
-    . icon('fa-trash', 'me-1') . 'Eliminar</button>'
-    . '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>'
-    . '<button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>';
+$footer = '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
 
 $header = '<div class="modal-device-identity" id="deviceModalIdentity">'
     . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'

@@ -130,32 +130,15 @@ function bindDeviceForm() {
     els.deviceModelButtons.addEventListener("click", handleDeviceModelClick);
     els.deviceGeneralTabBtn.addEventListener("shown.bs.tab", () => {
         state.deviceModal.activeTab = "general";
-        syncSaveDeviceButton();
     });
     els.deviceConfigTabBtn.addEventListener("shown.bs.tab", () => {
         state.deviceModal.activeTab = "config";
-        syncSaveDeviceButton();
         void (async () => {
             await ensureDeviceConfigurationCatalogLoaded();
             renderDeviceConfigurationModal();
         })();
     });
     bindUnsentConfigGuard();
-}
-
-/**
- * O botão do rodapé diz o que faz no separador em que se está.
- *
- * O `saveDevice()` grava identidade, licença e gateways -- nada de configurações. Em cima do
- * separador «Configurações», onde cada bloco tem o seu «Enviar», era o botão mais
- * proeminente da caixa a prometer gravar o que estava à vista. Passa a nomear o separador de
- * onde vêm os dados que grava, e cede o azul cheio ao «Enviar» que envia mesmo.
- */
-function syncSaveDeviceButton() {
-    const onConfig = state.deviceModal.activeTab === "config";
-    els.saveDeviceBtn.textContent = onConfig ? "Guardar dados gerais" : "Guardar dispositivo";
-    els.saveDeviceBtn.classList.toggle("btn-primary", !onConfig);
-    els.saveDeviceBtn.classList.toggle("btn-outline-primary", onConfig);
 }
 
 /** Fechar com configuração escrita e por enviar deitava-a fora em silêncio. */

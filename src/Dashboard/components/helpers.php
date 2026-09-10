@@ -14,10 +14,11 @@ function section_header(
     string $title,
     ?string $counterId = null,
     bool $chip = false,
-    bool $counterHidden = false
+    bool $counterHidden = false,
+    string $spacing = 'mb-2'
 ): string {
     if ($counterId !== null && $chip) {
-        return '<div class="d-flex align-items-center gap-2 mb-2">'
+        return '<div class="d-flex align-items-center gap-2 ' . h($spacing) . '">'
             . '<span class="section-label">' . h($title) . '</span>'
             . '<span class="count-chip' . ($counterHidden ? ' d-none' : '') . '" id="' . h($counterId) . '"></span>'
             . '</div>';

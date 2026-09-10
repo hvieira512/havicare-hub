@@ -14,9 +14,9 @@
         "label": "NCS",
         "identity": {
             "field": "deviceId",
-            "label": "Device ID (MAC)",
-            "help": "MAC address do dispositivo NCS (ex.: bea6c3dd8e02). Obrigatório.",
-            "placeholder": "MAC address (ex.: bea6c3dd8e02)"
+            "label": "MAC",
+            "help": "Endereço MAC do dispositivo NCS, sem separadores (12 caracteres hexadecimais).",
+            "placeholder": "bea6c3dd8e02"
         },
         "sim": false,
         "gatewayLinks": false
@@ -25,9 +25,9 @@
         "label": "Radar",
         "identity": {
             "field": "deviceId",
-            "label": "Device ID",
-            "help": "Identificador do dispositivo radar no protocolo.",
-            "placeholder": "ID do dispositivo"
+            "label": "ID do dispositivo",
+            "help": "Identificador do radar no protocolo.",
+            "placeholder": "414d74184cbf"
         },
         "sim": false,
         "gatewayLinks": false

@@ -50,6 +50,47 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         self::assertSame($first, $second);
     }
 
+    /**
+     * O `saveDevice()` grava identidade, licença e gateways -- nada de configurações. No
+     * rodapé do modal era o botão mais proeminente da caixa a prometer gravar o que estivesse
+     * à vista, incluindo o separador das configurações, onde cada bloco tem o seu «Enviar».
+     */
+    public function testDeviceModalKeepsGeneralTabActionsInsideTheGeneralTab(): void
+    {
+        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+        $page = (new \ReflectionMethod(DashboardHttpServer::class, 'page'))->invoke($server);
+
+        $generalPane = self::sliceBetween($page, 'id="deviceGeneralPane"', 'id="deviceConfigPane"');
+        self::assertStringContainsString('id="saveDeviceBtn"', $generalPane);
+        self::assertStringContainsString('id="deleteDeviceBtn"', $generalPane);
+
+        $footer = self::sliceBetween($page, 'id="deviceGeneralPane"', 'id="deviceWizardModal"');
+        $footer = substr($footer, (int) strpos($footer, 'modal-footer'));
+        self::assertStringNotContainsString('id="saveDeviceBtn"', $footer);
+        self::assertStringNotContainsString('id="deleteDeviceBtn"', $footer);
+        self::assertStringContainsString('Fechar', $footer);
+    }
+
+    /** As etiquetas que o utilizador lê são portuguesas; o nome do campo no fio não muda. */
+    public function testDeviceModalLabelsAreWrittenInPortuguese(): void
+    {
+        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+        $page = (new \ReflectionMethod(DashboardHttpServer::class, 'page'))->invoke($server);
+
+        self::assertStringNotContainsString('>Device ID<', $page);
+        self::assertStringContainsString('>ID do dispositivo<', $page);
+    }
+
+    private static function sliceBetween(string $haystack, string $from, string $to): string
+    {
+        $start = strpos($haystack, $from);
+        $end = strpos($haystack, $to, $start === false ? 0 : $start);
+        self::assertIsInt($start, "não encontrei {$from}");
+        self::assertIsInt($end, "não encontrei {$to}");
+
+        return substr($haystack, $start, $end - $start);
+    }
+
     public function testDashboardOnlyServesExplicitPublicAssets(): void
     {
         $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();

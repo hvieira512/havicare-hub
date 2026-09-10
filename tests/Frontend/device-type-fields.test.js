@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 // Tem de vir antes dos modulos do dashboard: o api/http.js toca em window ao carregar.
 import "./support/browser-env.js";
-import { deviceTypeFields } from "../../src/Dashboard/dashboard/domain.js";
+import { deviceTypeFields, deviceTypeOptions } from "../../src/Dashboard/dashboard/domain.js";
 
 /**
  * REDE DE SEGURANCA, escrita antes de tocar no modal.
@@ -62,20 +62,19 @@ test("só o medidor de fraldas e a pulseira ligam a gateways", () => {
 });
 
 test("o rótulo, a ajuda e o placeholder da identidade por tipo", () => {
-    // Copiado literalmente do renderDeviceTypeSelector antes da mudanca.
     const expected = {
         watch: {
             label: "IMEI",
         },
         ncs: {
-            label: "Device ID (MAC)",
-            help: "MAC address do dispositivo NCS (ex.: bea6c3dd8e02). Obrigatório.",
-            placeholder: "MAC address (ex.: bea6c3dd8e02)",
+            label: "MAC",
+            help: "Endereço MAC do dispositivo NCS, sem separadores (12 caracteres hexadecimais).",
+            placeholder: "bea6c3dd8e02",
         },
         radar: {
-            label: "Device ID",
-            help: "Identificador do dispositivo radar no protocolo.",
-            placeholder: "ID do dispositivo",
+            label: "ID do dispositivo",
+            help: "Identificador do radar no protocolo.",
+            placeholder: "414d74184cbf",
         },
         gateway: {
             label: "MAC",
@@ -101,6 +100,17 @@ test("o rótulo, a ajuda e o placeholder da identidade por tipo", () => {
             assert.equal(identity.help, wanted.help, `ajuda de ${type}`);
             assert.equal(identity.placeholder, wanted.placeholder, `placeholder de ${type}`);
         }
+    }
+});
+
+/** O que se lê é português; o nome do campo no fio é que não muda. */
+test("nenhum rótulo, ajuda ou placeholder do catálogo está em inglês", () => {
+    for (const { value: type } of deviceTypeOptions) {
+        const { identity } = deviceTypeFields(type);
+        const lido = [identity.label, identity.help, identity.placeholder].join(" ");
+
+        assert.doesNotMatch(lido, /\bdevice\b|\bID\b(?! do)|\baddress\b/i, `texto de ${type}`);
+        assert.equal(identity.field === "imei" || identity.field === "deviceId", true);
     }
 });
 

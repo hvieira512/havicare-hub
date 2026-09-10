@@ -63,8 +63,13 @@
                                     <div class="card-section row g-0 flex-grow-1 min-h-0">
                                         <?php foreach ($activityPanels as $panel) : ?>
                                         <div id="<?= $panel['column'] ?>" class="col-12 col-xl-6 d-flex flex-column min-h-0 <?= $panel['spacing'] ?>">
-                                            <?= section_header($panel['title'], $panel['countId'], true) ?>
-                                            <?= pagination_component($panel['pager'], 'mb-2', false) ?>
+                                            <?php /* O paginador na linha do título, do lado
+                                                    oposto: são os controlos da lista que vem
+                                                    a seguir, e não uma segunda cabeçalho. */ ?>
+                                            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                                <?= section_header($panel['title'], $panel['countId'], true, false, '') ?>
+                                                <?= pagination_component($panel['pager'], '', false) ?>
+                                            </div>
                                             <div id="<?= $panel['list'] ?>" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
                                         </div>
                                         <?php endforeach; ?>
