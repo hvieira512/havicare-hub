@@ -130,6 +130,25 @@ abstract class Bridge implements MqttIngress
         return $device;
     }
 
+    /**
+     * Se um gateway e um aparelho retransmitido pertencem ao mesmo cliente.
+     *
+     * A ligação entre os dois é editável na dashboard, e um engano ali não pode bastar para a
+     * telemetria de um cliente sair debaixo de outro: a ligação diz que o gateway *ouve* o
+     * aparelho, isto diz que pode *falar* por ele.
+     *
+     * O `'null'` é a sentinela de sem dono, e vale dos dois lados -- dois aparelhos sem
+     * cliente são o mesmo não-cliente, e não dois clientes diferentes.
+     *
+     * @param array<string, mixed> $gateway
+     * @param array<string, mixed> $device
+     */
+    protected function sameTenant(array $gateway, array $device): bool
+    {
+        return (string)($gateway['company'] ?? 'null') === (string)($device['company'] ?? 'null')
+            && (string)($gateway['licenseId'] ?? '') === (string)($device['licenseId'] ?? '');
+    }
+
     private function subscribe(): void
     {
         $this->subscriber->subscribe($this->topicFilter, function (string $topic, string $payload): void {
