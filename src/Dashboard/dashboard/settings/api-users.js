@@ -242,7 +242,7 @@ async function saveUser(user, changes = {}) {
 }
 
 /** Lançar o erro é o que faz a grelha repor o valor antigo da célula. */
-export async function saveEditedCell(user, field) {
+async function saveEditedCell(user, field) {
     await saveUser(user);
     // A empresa e a licença seguem o perfil, e quem lhes mexeu foi o servidor.
     if (field === "role") {
