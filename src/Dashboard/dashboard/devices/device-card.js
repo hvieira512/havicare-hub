@@ -15,6 +15,10 @@ import { ago } from "../format.js";
 /** O `data-action` que o cartão escreve, e que o ouvinte delegado procura. */
 export const DEVICE_CARD_ACTION = "select";
 
+/** Repetem-se no cartão e no bloco da licença, que os recebe por parâmetro. */
+const DEVICE_CARD_FIELD_VALUE = "d-block min-w-0 text-truncate lh-sm";
+const DEVICE_CARD_WHEN = "device-card-when text-secondary tabular-nums lh-sm";
+
 /** Quantas linhas de esqueleto no máximo: a moldura mais alta leva doze cartões. */
 const SKELETON_MAX_ROWS = 12;
 
@@ -57,19 +61,19 @@ const sharedPrefixHtml = (prefix) =>
 /** A coluna fica vazia quando o aparelho não tem SIM: um traço não diz mais do que nada. */
 const simNumberHtml = (simNumber) =>
     simNumber
-        ? html`<span class="device-card-field-value tabular-nums">${simNumber}</span>`
+        ? html`<span class="${DEVICE_CARD_FIELD_VALUE} tabular-nums">${simNumber}</span>`
         : "";
 
 /** Sem data é «sem registo», e não «nunca»: o hub registou o aparelho e ainda não o ouviu. */
 function lastSeenLine(lastSeenAt) {
     return lastSeenAt
-        ? html`<span class="device-card-when">${ago(lastSeenAt)}</span>`
-        : "<span class=\"device-card-when never\">sem registo</span>";
+        ? html`<span class="${DEVICE_CARD_WHEN}">${ago(lastSeenAt)}</span>`
+        : `<span class="${DEVICE_CARD_WHEN} fst-italic">sem registo</span>`;
 }
 
 export function deviceCard(device, selected, siblings = []) {
     const image = device.image
-        ? html`<img src="${device.image}" alt="${device.model || device.imei}">`
+        ? html`<img class="mw-100 mh-100 object-fit-contain" src="${device.image}" alt="${device.model || device.imei}">`
         : "<i class=\"fa-solid fa-microchip\"></i>";
     const { prefix, suffix } = imeiEmphasis(device.imei, siblings);
     const meta = [
@@ -80,24 +84,24 @@ export function deviceCard(device, selected, siblings = []) {
         .join(" · ");
 
     return html`
-        <button type="button" class="device-card${selected ? " selected" : ""}${device.online ? "" : " offline"}"
+        <button type="button" class="device-card d-grid w-100 text-start${selected ? " selected" : ""}${device.online ? "" : " offline"}"
             data-imei="${device.imei}" data-action="${DEVICE_CARD_ACTION}"${raw(selected ? " aria-current=\"true\"" : "")}>
-        <span class="device-card-thumb">${raw(image)}</span>
-        <span class="device-card-state">
+        <span class="device-card-thumb d-grid overflow-hidden rounded-3 flex-shrink-0">${raw(image)}</span>
+        <span class="device-card-state d-flex flex-column align-items-start gap-1 min-w-0">
             ${raw(onlineBadge(device.online, "align-self-start"))}
             ${raw(lastSeenLine(device.lastSeenAt))}
         </span>
         <span class="device-card-identity">
             <span class="min-w-0">
-                <span class="device-card-imei d-block text-truncate">${raw(sharedPrefixHtml(prefix))}${suffix}</span>
-                <span class="device-card-meta d-block text-truncate">${meta}</span>
+                <span class="device-card-imei d-block text-truncate fw-semibold lh-sm tabular-nums">${raw(sharedPrefixHtml(prefix))}${suffix}</span>
+                <span class="device-card-meta d-block text-truncate text-secondary lh-sm">${meta}</span>
             </span>
         </span>
         <span class="device-card-fields">
             <span class="device-card-field">
                 ${raw(deviceLicenseBlock(device, {
-                    valueClass: "device-card-field-value",
-                    noteClass: "device-card-field-note text-truncate",
+                    valueClass: DEVICE_CARD_FIELD_VALUE,
+                    noteClass: "device-card-field-note d-block text-truncate text-secondary lh-sm",
                 }))}
             </span>
             <span class="device-card-field">
@@ -113,11 +117,11 @@ export function deviceCard(device, selected, siblings = []) {
  */
 export function deviceCardSkeletonList(pageSize) {
     const row = `
-        <div class="device-card device-card-skeleton" aria-hidden="true">
-        <span class="device-card-thumb placeholder"></span>
-        <span class="device-card-state">
-            <span class="placeholder device-card-skeleton-pill"></span>
-            <span class="placeholder device-card-skeleton-when"></span>
+        <div class="device-card device-card-skeleton d-grid w-100 text-start" aria-hidden="true">
+        <span class="device-card-thumb placeholder d-grid overflow-hidden rounded-3 flex-shrink-0"></span>
+        <span class="device-card-state d-flex flex-column align-items-start gap-1 min-w-0">
+            <span class="placeholder device-card-skeleton-pill rounded-4"></span>
+            <span class="placeholder device-card-skeleton-when rounded-1"></span>
         </span>
         <span class="device-card-identity">
             <span class="min-w-0 w-100">
@@ -133,7 +137,7 @@ export function deviceCardSkeletonList(pageSize) {
     const rows = Math.min(pageSize, SKELETON_MAX_ROWS);
 
     return `
-        <div class="device-card-skeleton-list placeholder-wave">
+        <div class="device-card-skeleton-list placeholder-wave d-flex flex-column gap-2 flex-fill min-h-0 overflow-hidden">
         ${Array.from({ length: rows }, () => row).join("")}
         </div>`;
 }

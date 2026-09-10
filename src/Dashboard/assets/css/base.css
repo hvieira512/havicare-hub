@@ -213,16 +213,9 @@ body[data-swal2-theme] {
     outline: 0;
 }
 
-/* A coluna da engrenagem não tem conteúdo: as células não desenham nada. */
-.grid-settings-cell {
-    border: 0 !important;
-    background: transparent !important;
-}
-
 .grid-settings-button {
     color: var(--bs-body-color);
     opacity: .65;
-    line-height: 1;
 }
 
 .grid-settings-button:hover,
@@ -234,7 +227,6 @@ body[data-swal2-theme] {
 /* O painel da engrenagem é um `dropdown-menu`, posicionado à mão dentro da grelha. Uma área
    de scroll só: com a lista de colunas a rolar por dentro havia duas barras encaixadas. */
 .grid-settings {
-    position: absolute;
     z-index: 5;
     min-width: 15rem;
     max-height: min(28rem, 60vh);

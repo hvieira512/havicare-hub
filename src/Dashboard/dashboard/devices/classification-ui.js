@@ -77,8 +77,8 @@ export function licensePickerHtml(tree, selected = null) {
     for (const group of tree || []) {
         if ((group.licenses || []).length === 0) continue;
         rows.push(
-            `<div class="license-picker-company">${esc(companyLabel(group.company))}</div>`,
-            `<div class="filter-branch">${group.licenses
+            `<div class="license-picker-company fw-medium text-secondary">${esc(companyLabel(group.company))}</div>`,
+            `<div class="filter-branch position-relative d-flex flex-column">${group.licenses
                 .map((license) =>
                     licenseRow({
                         company: group.company,
@@ -94,14 +94,14 @@ export function licensePickerHtml(tree, selected = null) {
         );
     }
 
-    return `<div class="filter-list license-picker" role="radiogroup" aria-label="Licença">
+    return `<div class="filter-list license-picker d-flex flex-column" role="radiogroup" aria-label="Licença">
         ${rows.join("")}
     </div>`;
 }
 
 function licenseRow({ company, licenseId, label, selected, nested = false }) {
     const classes = [
-        "filter-option",
+        "filter-option d-flex align-items-center text-start rounded-2",
         nested ? "filter-option-nested" : "",
         selected ? "selected" : "",
     ]
@@ -112,8 +112,8 @@ function licenseRow({ company, licenseId, label, selected, nested = false }) {
         <button type="button" role="radio" aria-checked="${selected ? "true" : "false"}"
             class="${classes}" data-license-pick
             data-license-company="${esc(company)}" data-license-id="${esc(licenseId)}">
-            <span class="filter-option-box"><i class="fa-solid fa-check"></i></span>
-            <span class="filter-option-name">${esc(label)}</span>
+            <span class="filter-option-box d-grid flex-shrink-0"><i class="fa-solid fa-check"></i></span>
+            <span class="flex-fill min-w-0 text-truncate">${esc(label)}</span>
         </button>`;
 }
 
@@ -129,6 +129,9 @@ export function licenseBadgeValue(owner, tree = []) {
 }
 
 /* ---------- a trilha ---------- */
+
+/** A etiqueta por cima do valor: lado a lado, três respostas com nomes compridos não cabem. */
+const WIZARD_BADGE = "wizard-badge d-inline-flex flex-column align-items-start justify-content-center fw-medium text-start rounded-3";
 
 /**
  * A trilha: as perguntas da classificação em fila, e o passo no fim da linha. Uma
@@ -148,21 +151,21 @@ export function wizardTrailHtml({
         .map((question, index) => {
             const badge = answered.get(question.key);
             const sep = index > 0
-                ? "<i class=\"fa-solid fa-caret-right wizard-trail-sep\"></i>"
+                ? "<i class=\"fa-solid fa-caret-right wizard-trail-sep text-secondary\"></i>"
                 : "";
             if (badge) {
                 return `${sep}
-            <button type="button" class="wizard-badge" data-wizard-reopen="${esc(badge.key)}"
+            <button type="button" class="${WIZARD_BADGE}" data-wizard-reopen="${esc(badge.key)}"
                 title="Voltar a esta pergunta">
-                <span class="wizard-badge-key">${esc(badge.label)}</span>${esc(String(badge.value))}
+                <span class="wizard-badge-key text-nowrap lh-sm">${esc(badge.label)}</span>${esc(String(badge.value))}
             </button>`;
             }
             const pendingClass = question.key === currentKey
-                ? "wizard-badge wizard-badge-now"
-                : "wizard-badge wizard-badge-pending";
+                ? `${WIZARD_BADGE} wizard-badge-now`
+                : `${WIZARD_BADGE} wizard-badge-pending`;
             return `${sep}
             <span class="${pendingClass}">
-                <span class="wizard-badge-key">${esc(question.label)}</span>
+                <span class="wizard-badge-key text-nowrap lh-sm">${esc(question.label)}</span>
             </span>`;
         })
         .join("") +
@@ -170,7 +173,7 @@ export function wizardTrailHtml({
         // coisa nenhuma -- as etiquetas são o que ele é, e "Passo 2 de 2" anunciava uma
         // sequência que ninguém começou.
         (steps.length
-            ? `<span class="wizard-trail-step">Passo ${step} de ${steps.length} · ${esc(steps[step - 1] || "")}</span>`
+            ? `<span class="wizard-trail-step ms-auto text-secondary text-nowrap">Passo ${step} de ${steps.length} · ${esc(steps[step - 1] || "")}</span>`
             : "");
 }
 
@@ -183,15 +186,15 @@ export function wizardTrailHtml({
  */
 export function cardGrid(label, cards) {
     return `
-        <div class="wizard-card-grid" role="group" aria-label="${esc(label)}">
+        <div class="wizard-card-grid d-grid gap-2" role="group" aria-label="${esc(label)}">
             ${cards
                 .map(
                     (card) => `
-                <button type="button" class="wizard-card${card.selected ? " selected" : ""}"
+                <button type="button" class="wizard-card d-flex flex-column align-items-center gap-2 text-center rounded-3${card.selected ? " selected" : ""}"
                     ${card.selected ? "aria-pressed=\"true\"" : ""} ${card.attrs}>
                     ${card.visual}
-                    <span class="wizard-card-label">${esc(card.label)}</span>
-                    ${card.sub ? `<span class="wizard-card-sub">${esc(card.sub)}</span>` : ""}
+                    <span class="wizard-card-label fw-medium lh-sm">${esc(card.label)}</span>
+                    ${card.sub ? `<span class="wizard-card-sub text-secondary">${esc(card.sub)}</span>` : ""}
                 </button>`,
                 )
                 .join("")}
@@ -210,7 +213,7 @@ export function deviceTypeCardsHtml({ attrsFor, selected = "", countFor = null }
             return {
                 attrs: attrsFor(option.value),
                 selected: option.value === selected,
-                visual: `<i class="fa-solid ${esc(deviceTypeIcon(option.value))} wizard-card-icon"></i>`,
+                visual: `<i class="fa-solid ${esc(deviceTypeIcon(option.value))} wizard-card-icon text-secondary"></i>`,
                 label: option.label,
                 sub: count === null
                     ? ""
@@ -233,7 +236,7 @@ export function modelCardsHtml({ models, attrsFor, selected = "" }) {
             return {
                 attrs: attrsFor(internal),
                 selected: internal === selected,
-                visual: `<span class="wizard-card-thumb">${modelPreviewHtml(model, internal)}</span>`,
+                visual: `<span class="wizard-card-thumb d-flex align-items-center justify-content-center w-100">${modelPreviewHtml(model, internal)}</span>`,
                 label: commercial || internal,
                 sub: commercial && commercial !== internal ? internal : "",
             };

@@ -3,11 +3,11 @@
 ob_start();
 ?>
 <div class="d-flex flex-column gap-4">
-    <div class="wizard-trail" id="wizardTrail" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="1"></div>
+    <div class="wizard-trail d-flex align-items-center justify-content-center flex-wrap gap-2 border-bottom" id="wizardTrail" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="1"></div>
 
-    <div class="wizard-stage">
+    <div class="wizard-stage d-grid gap-4 align-items-start">
         <div class="wizard-ask" id="wizardAsk"></div>
-        <div class="wizard-art d-none" id="wizardArt"></div>
+        <div class="wizard-art d-none border rounded-3 bg-body-tertiary p-3 gap-2" id="wizardArt"></div>
     </div>
 
     <div class="alert alert-danger py-2 px-3 small mb-0 d-none" id="wizardError" role="alert"></div>

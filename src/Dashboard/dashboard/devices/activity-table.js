@@ -85,13 +85,13 @@ function activityRow({
     timeTitle = "",
 }, panelId) {
     const subLine = sub
-        ? html`<span class="telemetry-row-details fw-normal d-block text-truncate"${raw(subTitle ? html` title="${subTitle}"` : "")}>${raw(sub)}</span>`
+        ? html`<span class="telemetry-row-details text-secondary lh-sm fw-normal d-block text-truncate"${raw(subTitle ? html` title="${subTitle}"` : "")}>${raw(sub)}</span>`
         : "";
     // As pastilhas não se cortam a meio: já vêm limitadas na origem, e o que sobra do lado
     // direito esconde-se. O texto corta-se com reticências, como o nome na coluna ao lado.
     const detailClass = detailKind === "chips"
-        ? "telemetry-row-details d-flex gap-1 overflow-hidden"
-        : "telemetry-row-details d-block text-truncate";
+        ? "telemetry-row-details text-secondary lh-sm d-flex gap-1 overflow-hidden"
+        : "telemetry-row-details text-secondary lh-sm d-block text-truncate";
     const detailLine = detail
         ? html`<span class="${detailClass}"${raw(detailTitle ? html` title="${detailTitle}"` : "")}>${raw(detail)}</span>`
         : "";
@@ -102,7 +102,7 @@ function activityRow({
         ? raw(html` class="telemetry-row-openable" role="button" tabindex="0" aria-expanded="${isOpen ? "true" : "false"}" aria-controls="${panelId}" data-row-toggle="${panelId}" data-row-key="${key}"`)
         : raw("");
     const caret = openable
-        ? raw(html`<i class="fa-solid fa-chevron-down telemetry-row-caret ms-2" aria-hidden="true"></i>`)
+        ? raw(html`<i class="fa-solid fa-chevron-down telemetry-row-caret text-secondary ms-2" aria-hidden="true"></i>`)
         : raw("");
     const panel = openable
         ? html`<tr id="${panelId}" class="telemetry-row-panel${isOpen ? "" : " d-none"}">
@@ -113,18 +113,18 @@ function activityRow({
     return html`
         <tr${rowAttrs}>
         <td>
-            <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${tone}` : ""}">
+            <span class="telemetry-row-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-3${tone ? ` telemetry-card-tone-${tone}` : ""}">
                 <i class="fa-solid ${icon}"></i>
             </span>
         </td>
         <td class="fw-medium">
-            <span class="telemetry-row-stack">
+            <span class="telemetry-row-stack d-flex flex-column justify-content-center min-w-0">
                 <span class="d-block text-truncate" title="${nameTitle || name}">${name}</span>
                 ${raw(subLine)}
             </span>
         </td>
         <td class="tabular-nums"${raw(valueTitle ? html` title="${valueTitle}"` : "")}>
-            <span class="telemetry-row-stack">
+            <span class="telemetry-row-stack d-flex flex-column justify-content-center min-w-0">
                 <span class="d-block text-truncate">${raw(value)}</span>
                 ${raw(detailLine)}
             </span>

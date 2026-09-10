@@ -225,7 +225,7 @@ class SettingsHeader {
     init(params) {
         this.button = document.createElement("button");
         this.button.type = "button";
-        this.button.className = "btn btn-link p-0 border-0 grid-settings-button";
+        this.button.className = "btn btn-link p-0 border-0 lh-1 grid-settings-button";
         this.button.title = "Opções da tabela";
         this.button.setAttribute("aria-label", "Opções da tabela");
         this.button.setAttribute("aria-haspopup", "true");
@@ -481,7 +481,7 @@ export function createGrid({
         suppressMovable: true,
         lockPosition: "right",
         valueGetter: () => "",
-        cellClass: "grid-settings-cell",
+        cellClass: "border-0 bg-transparent",
     };
 
     const api = agGrid.createGrid(element, {

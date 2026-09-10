@@ -59,7 +59,7 @@ export function makeCallInput(entry, desired) {
 export function voiceMonitorInput(entry, desired) {
     return `
         <div>
-            <div class="alert alert-warning alert-compact mb-3">
+            <div class="alert alert-warning small py-2 px-3 mb-3">
                 <i class="fa-solid fa-triangle-exclamation me-2"></i>
                 O relógio liga de imediato para este número e abre o microfone, sem mostrar
                 nada a quem o traz no pulso. Não fica guardado como contacto.
@@ -76,7 +76,7 @@ export function voiceMonitorInput(entry, desired) {
 export function resetActionInput(_entry, _desired) {
     return `
         <div>
-            <div class="alert alert-warning alert-compact mb-3">
+            <div class="alert alert-warning small py-2 px-3 mb-3">
                 <i class="fa-solid fa-triangle-exclamation me-2"></i>
                 Esta ação é enviada imediatamente para o dispositivo e não pode ser desfeita.
             </div>
@@ -86,7 +86,7 @@ export function resetActionInput(_entry, _desired) {
 export function requestActionInput(entry) {
     return `
         <div>
-            <div class="alert alert-info alert-compact mb-3">
+            <div class="alert alert-info small py-2 px-3 mb-3">
                 <i class="fa-solid fa-circle-info me-2"></i>
                 ${esc(entry.label || "Ação")} é enviada sem parâmetros adicionais.
             </div>

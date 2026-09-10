@@ -30,7 +30,7 @@ export function field(label, control, { help = "", cls = "", required = false } 
 export function sectionStrip(sections, action, activeKey = "") {
     return sections
         .map(({ key, label, count, icon = "" }) => html`
-        <button type="button" class="capability-section-chip${key === activeKey ? " selected" : ""}"
+        <button type="button" class="capability-section-chip d-inline-flex align-items-center flex-shrink-0 rounded-pill text-nowrap${key === activeKey ? " selected" : ""}"
             data-action="${action}" data-section="${key}">
             ${raw(icon ? html`<i class="fa-solid ${icon}"></i>` : "")}${label}<span class="count count-number" data-section-count>${count}</span>
         </button>`)
@@ -132,18 +132,18 @@ export function renderDeviceTypeTiles(
                 ? html` data-filter-key="${filterKey}" data-filter-value="${value}"`
                 : "";
             const check = multiple
-                ? "<span class=\"device-type-tile-check\"><i class=\"fa-solid fa-check\"></i></span>"
+                ? "<span class=\"device-type-tile-check position-absolute d-grid\"><i class=\"fa-solid fa-check\"></i></span>"
                 : "";
             const countChip = counts
                 ? html`<span class="count-number">${count === 0 ? "nenhum" : count}</span>`
                 : "";
             return html`
-            <button type="button" class="device-type-tile${on ? " selected" : ""}"
+            <button type="button" class="device-type-tile position-relative d-flex flex-column align-items-center gap-1 w-100 text-center rounded-3${on ? " selected" : ""}"
                 data-action="${action}" data-value="${value}"${raw(filterAttrs)}
                 ${count === 0 && !on ? "disabled" : ""} aria-pressed="${on ? "true" : "false"}">
             ${raw(check)}
-            <span class="device-type-tile-icon"><i class="fa-solid ${deviceTypeIcon(value)}"></i></span>
-            <span class="device-type-tile-name">${deviceTypeLabel(value)}</span>
+            <span class="device-type-tile-icon lh-1"><i class="fa-solid ${deviceTypeIcon(value)}"></i></span>
+            <span class="device-type-tile-name fw-semibold lh-sm">${deviceTypeLabel(value)}</span>
             ${raw(countChip)}
             </button>`;
         })
@@ -159,9 +159,9 @@ export function filterChips(labels, action) {
     return labels
         .map(
             (item) => html`
-        <span class="filter-chip">
+        <span class="filter-chip d-inline-flex align-items-center fw-semibold text-uppercase text-nowrap rounded-pill bg-body-secondary text-secondary">
             <span>${item.label}</span>
-            <button type="button" class="filter-chip-remove" data-action="${action}"
+            <button type="button" class="filter-chip-remove d-flex align-items-center justify-content-center p-0 border-0 rounded-circle" data-action="${action}"
                 data-filter-key="${item.key}" aria-label="Remover filtro ${item.label}">
                 <i class="fa-solid fa-xmark"></i>
             </button>

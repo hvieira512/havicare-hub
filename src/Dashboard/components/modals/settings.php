@@ -18,7 +18,7 @@ ob_start();
             <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" id="settingsModalNav" role="tablist">
                 <?php foreach ($settingsTabs as $index => $tab) : ?>
                     <?php $pane = 'settings' . $tab['key'] . 'Pane'; ?>
-                <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex align-items-center gap-2" id="settings<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?><?= $tab['count'] ? '<span class="settings-nav-count d-none ms-auto" id="settings' . $tab['key'] . 'Count"></span>' : '' ?></button>
+                <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex align-items-center gap-2" id="settings<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?><?= $tab['count'] ? '<span class="settings-nav-count d-none ms-auto flex-shrink-0 px-1 rounded-pill fw-semibold text-center tabular-nums" id="settings' . $tab['key'] . 'Count"></span>' : '' ?></button>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -58,7 +58,7 @@ ob_start();
                                         <div class="vstack gap-3 h-100">
                                             <div>
                                                 <div class="form-label">Tipo de dispositivo</div>
-                                                <div id="modelDeviceTypeButtons" class="device-type-grid is-wide" role="group"></div>
+                                                <div id="modelDeviceTypeButtons" class="device-type-grid is-wide d-grid gap-2" role="group"></div>
                                             </div>
                                             <div>
                                                 <div class="form-label">Fornecedor</div>
@@ -158,7 +158,7 @@ ob_start();
                     <div class="row g-3 py-3">
                         <div class="col-md-7">
                             <div class="section-label mb-1">Tipo de dispositivo</div>
-                            <div id="capabilityDeviceTypeButtons" class="device-type-grid is-wide" role="group"></div>
+                            <div id="capabilityDeviceTypeButtons" class="device-type-grid is-wide d-grid gap-2" role="group"></div>
                         </div>
                         <div class="col-md-5">
                             <div class="section-label mb-1">Fornecedor</div>
@@ -169,7 +169,7 @@ ob_start();
                         <?= icon('fa-sliders', 'fs-1 opacity-25') ?>
                         <div class="mt-2">Sem capacidades generalizadas definidas para este tipo de dispositivo.</div>
                     </div>
-                    <div id="capabilityCatalogSectionNav" class="capability-section-nav" role="group" aria-label="Secções do catálogo"></div>
+                    <div id="capabilityCatalogSectionNav" class="capability-section-nav position-sticky top-0 z-2 d-flex overflow-x-auto py-2 mb-1 bg-body" role="group" aria-label="Secções do catálogo"></div>
                     <div id="capabilityCatalogViewer" class="vstack gap-3"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsCompanyPane" role="tabpanel" aria-labelledby="settingsCompanyTabBtn">
@@ -219,4 +219,5 @@ render_modal(
     footer: $footer,
     size: 'xl',
     fullscreenBelow: 'lg',
+    bodyClass: 'd-flex flex-column overflow-auto min-h-0 p-0',
 );

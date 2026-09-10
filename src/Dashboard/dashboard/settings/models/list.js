@@ -62,8 +62,8 @@ function modelRow(model, { showOrigin = false } = {}) {
         : (internal && internal !== commercial ? esc(internal) : "");
 
     return `
-        <div class="tree-row tree-row-nested catalog-model" data-action="modelCapabilities" data-id="${esc(model.id)}" role="button" tabindex="0">
-        <span class="catalog-model-image flex-shrink-0">${modelImageHtml(model, 28)}</span>
+        <div class="tree-row tree-row-nested catalog-model position-relative d-flex align-items-center" data-action="modelCapabilities" data-id="${esc(model.id)}" role="button" tabindex="0">
+        <span class="catalog-model-image flex-shrink-0 d-flex align-items-center justify-content-center">${modelImageHtml(model, 28)}</span>
         <span class="flex-grow-1 min-w-0">
         <span class="d-block text-truncate fw-semibold">${esc(commercial)}</span>
         ${subtitle ? `<span class="section-label d-block text-truncate">${subtitle}</span>` : ""}
@@ -77,12 +77,12 @@ function supplierNode(group, supplier) {
     const id = `catalogSupplier-${slug(group.deviceType)}-${slug(supplier.name)}`;
 
     return `
-        <div class="tree-row">
+        <div class="tree-row position-relative d-flex align-items-center">
         <button type="button" class="btn btn-link p-0 text-decoration-none text-body d-flex align-items-center gap-2 flex-grow-1 min-w-0 text-start"
             data-bs-toggle="collapse" data-bs-target="#${id}" aria-expanded="true" aria-controls="${id}">
         <i class="fa-solid fa-chevron-down catalog-caret" aria-hidden="true"></i>
         <span class="fw-semibold text-truncate">${esc(supplier.name)}</span>
-        <span class="count-chip count-chip-strong">${models.length}</span>
+        <span class="count-chip count-chip-strong fw-semibold px-2 rounded-pill tabular-nums">${models.length}</span>
         </button>
         </div>
         <div class="collapse show" id="${id}">

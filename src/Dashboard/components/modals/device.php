@@ -26,7 +26,7 @@ ob_start();
                     <form id="deviceForm" class="row g-4">
                         <div class="col-lg-8 order-lg-1">
                             <div class="d-flex flex-column gap-4">
-                                <div class="wizard-trail" id="deviceTrail" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="2"></div>
+                                <div class="wizard-trail d-flex align-items-center justify-content-center flex-wrap gap-2 border-bottom" id="deviceTrail" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="2"></div>
 
                                 <div class="wizard-ask" id="deviceStep1">
                                     <div data-device-question="type">
@@ -106,7 +106,7 @@ $body = (string) ob_get_clean();
 
 $footer = '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
 
-$header = '<div class="modal-device-identity" id="deviceModalIdentity">'
+$header = '<div class="modal-device-identity d-flex align-items-center min-w-0 flex-fill" id="deviceModalIdentity">'
     . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'
     . '</div>';
 

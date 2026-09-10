@@ -39,7 +39,7 @@ function denylistRow(entry) {
         ? ""
         : html`<span class="d-block small text-secondary">${who}</span>`;
     return html`
-        <div class="tree-row justify-content-between">
+        <div class="tree-row position-relative d-flex align-items-center justify-content-between">
             <div class="min-w-0">
                 <span class="d-block font-monospace text-break">${entry.identity}</span>
                 ${raw(metaLine)}

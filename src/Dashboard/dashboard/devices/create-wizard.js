@@ -173,8 +173,8 @@ function renderArt() {
     const info = findModelInfo(chosen.supplier, chosen.model, state.deviceTypeSuppliersModels);
     els.wizardArt.innerHTML = `
         ${modelPreviewHtml(info, chosen.model)}
-        <div class="wizard-art-name">${esc(chosen.supplier)} ${esc(chosen.model)}</div>
-        <div class="wizard-art-sub">${esc(deviceTypeLabel(answers.type))}</div>`;
+        <div class="wizard-art-name fw-semibold text-center">${esc(chosen.supplier)} ${esc(chosen.model)}</div>
+        <div class="wizard-art-sub text-secondary text-center">${esc(deviceTypeLabel(answers.type))}</div>`;
 }
 
 /**
@@ -314,7 +314,7 @@ function renderIdentity(answers) {
                                     ),
                                 )
                                 .join("")
-                        : "<div class=\"gateway-picker-empty\">Nenhum gateway nesta empresa e licença.</div>"}
+                        : "<div class=\"gateway-picker-empty small text-secondary\">Nenhum gateway nesta empresa e licença.</div>"}
                 </div>
                 <div class="form-text">Só os selecionados podem reportar dados deste sensor.</div>
                </div>`

@@ -26,7 +26,7 @@ export function telemetryCard({
     const tag = clickable ? "button" : "div";
     const toneClass = tone ? ` telemetry-card-tone-${tone}` : "";
     const attrs = clickable
-        ? html` type="button" class="card h-100 telemetry-card-action text-start${toneClass}" data-action="requestFeature" data-feature="${feature}"${pending ? " disabled" : ""}`
+        ? html` type="button" class="card h-100 w-100 telemetry-card-action text-start${toneClass}" data-action="requestFeature" data-feature="${feature}"${pending ? " disabled" : ""}`
         : html` class="card h-100${toneClass}"`;
     // A pastilha leva a sua linha: num mosaico estreito não cabe ao lado do ícone e do nome.
     const state = stateLabel
@@ -46,15 +46,15 @@ export function telemetryCard({
     // Fora da linha do ícone, para ter a largura toda do cartão.
     const detailsTitleAttr = detailsTitle ? html` title="${detailsTitle}"` : "";
     const detailsHtml = details
-        ? html`<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details"${raw(detailsTitleAttr)}>${raw(details)}</div>`
+        ? html`<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details text-secondary lh-sm"${raw(detailsTitleAttr)}>${raw(details)}</div>`
         : "";
     const valueHtml = value
-        ? html`<div class="telemetry-card-value tabular-nums text-break">${value}</div>`
+        ? html`<div class="telemetry-card-value fw-semibold lh-sm tabular-nums text-break">${value}</div>`
         : "";
 
     // A célula mede-se pelo contentor e não pela largura do ecrã: a grelha só abre uma
     // segunda coluna quando há 14rem para ela. Ver `.telemetry-card-grid` no `device.css`.
-    const cell = span === 12 ? "telemetry-card-wide" : "min-w-0";
+    const cell = span === 12 ? "telemetry-card-wide min-w-0" : "min-w-0";
 
     // O corpo é uma coluna só para separar a linha do ícone do corpo que alguns mosaicos
     // trazem -- a barra de humidade da fralda, por exemplo.
@@ -63,11 +63,11 @@ export function telemetryCard({
         <${tag}${raw(attrs)}>
             <div class="card-body p-3 d-flex flex-column gap-3">
                 <div class="d-flex align-items-center gap-2 gap-sm-3">
-                    <div class="telemetry-card-icon">
+                    <div class="telemetry-card-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">
                         <i class="fa-solid ${icon}"></i>
                     </div>
                     <div class="flex-grow-1 min-w-0">
-                        <div class="telemetry-card-title">${title}</div>
+                        <div class="telemetry-card-title text-uppercase fw-normal text-secondary lh-sm">${title}</div>
                             ${raw(valueHtml)}
                         </div>
                         ${raw(requestHint)}

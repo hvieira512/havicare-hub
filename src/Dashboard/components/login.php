@@ -21,18 +21,18 @@ $loginFields = [
 ?>
 <section id="dashboardLogin" class="dashboard-login row g-0 min-vh-100 d-none" hidden>
     <div class="dashboard-login-atmosphere col-md-4 d-none d-md-block min-vh-100 position-relative overflow-hidden" aria-hidden="true">
-        <div class="dashboard-login-orbit"></div>
+        <div class="dashboard-login-orbit position-absolute top-50 start-50 translate-middle rounded-circle"></div>
         <?php foreach (['one', 'two'] as $signal) : ?>
-        <div class="dashboard-login-signal dashboard-login-signal-<?= $signal ?>"></div>
+        <div class="dashboard-login-signal dashboard-login-signal-<?= $signal ?> position-absolute rounded-circle"></div>
         <?php endforeach; ?>
-        <span class="dashboard-login-badge"><img src="/assets/logo.svg" alt="hitHUB"></span>
-        <div class="dashboard-login-mark">
-            <span class="dashboard-login-signature">HUB / OPERATIONS</span>
-            <p class="dashboard-login-pitch">Ingestão, decisão e reencaminhamento de telemetria de dispositivos de saúde.</p>
+        <span class="dashboard-login-badge position-absolute"><img class="d-block" src="/assets/logo.svg" alt="hitHUB"></span>
+        <div class="dashboard-login-mark position-absolute">
+            <span class="dashboard-login-signature d-block fw-semibold text-uppercase mb-2">HUB / OPERATIONS</span>
+            <p class="dashboard-login-pitch m-0">Ingestão, decisão e reencaminhamento de telemetria de dispositivos de saúde.</p>
         </div>
     </div>
-    <div class="dashboard-login-panel col-12 col-md-8 min-vh-100 d-flex flex-column justify-content-center position-relative px-4 px-lg-5 py-5">
-        <div class="dashboard-login-form-column">
+    <div class="dashboard-login-panel col-12 col-md-8 min-vh-100 d-flex flex-column justify-content-center position-relative z-1 px-4 px-lg-5 py-5">
+        <div class="dashboard-login-form-column w-100 mx-auto">
             <div class="dashboard-login-brand mb-4">
                 <img src="/assets/logo.svg" alt="hitHUB">
             </div>
@@ -45,9 +45,9 @@ $loginFields = [
                     <input id="<?= $field['id'] ?>" name="<?= $field['name'] ?>" class="form-control" type="<?= $field['type'] ?>" autocomplete="<?= $field['autocomplete'] ?>" required<?= $field['autofocus'] ? ' autofocus' : '' ?>>
                 </div>
                 <?php endforeach; ?>
-                <button id="dashboardLoginSubmit" class="btn btn-primary btn-lg dashboard-login-submit w-100 mt-2" type="submit">
+                <button id="dashboardLoginSubmit" class="btn btn-primary btn-lg dashboard-login-submit fw-semibold w-100 mt-2" type="submit">
                     <span class="dashboard-login-submit-label">Entrar</span>
-                    <span class="dashboard-login-submit-loading d-none">
+                    <span class="dashboard-login-submit-loading d-none align-items-center justify-content-center gap-2">
                         <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                         <span>A entrar…</span>
                     </span>

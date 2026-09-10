@@ -253,7 +253,7 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
     ].filter((part) => part !== "");
 
     els.deviceModalIdentity.innerHTML = html`
-        <span class="modal-device-thumb">${raw(modelImageHtml(deviceModel, 26))}</span>
+        <span class="modal-device-thumb d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">${raw(modelImageHtml(deviceModel, 26))}</span>
         <span class="min-w-0">
             <span class="d-flex align-items-center gap-2 flex-wrap">
                 <h5 class="modal-title mb-0 tabular-nums" id="deviceModalLabel">${imei}</h5>

@@ -658,10 +658,10 @@ function renderRequestCardGroup(
     // coluna que tem 481: com ela, os mosaicos caíam de dois por linha para um -- e só nos
     // aparelhos com mais do que um grupo, que são os únicos que a mostram.
     return html`
-        <div class="telemetry-card-wide">
+        <div class="telemetry-card-wide min-w-0">
         <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="section-label">${group.label || "Pedidos"}</div>
-        <span class="count-chip">${group.cards.length}</span>
+        <span class="count-chip fw-semibold px-2 rounded-pill tabular-nums">${group.cards.length}</span>
         </div>
         <div class="d-grid telemetry-card-grid gap-3">${raw(cards)}</div>
         </div>`;
@@ -817,18 +817,18 @@ function connectionTimelineHtml(events) {
     const dots = points
         .map((point) => {
             const label = point.connected ? "Ligado" : "Desligado";
-            return html`<span class="connection-timeline-dot${point.connected ? "" : " off"}"
+            return html`<span class="connection-timeline-dot position-absolute rounded-circle${point.connected ? "" : " off"}"
                         style="left:${((point.time - first) / span) * 100}%"
                         title="${label} em ${when(point.at)}"></span>`;
         })
         .join("");
 
     return html`
-        <div class="connection-timeline">
-            <div class="connection-timeline-track"></div>
+        <div class="connection-timeline position-relative">
+            <div class="connection-timeline-track position-absolute start-0 end-0"></div>
             ${raw(dots)}
         </div>
-        <div class="connection-timeline-scale">
+        <div class="connection-timeline-scale d-flex justify-content-between gap-2 text-secondary tabular-nums">
             <span>${when(points[0].at)}</span>
             <span>${when(points[points.length - 1].at)}</span>
         </div>`;

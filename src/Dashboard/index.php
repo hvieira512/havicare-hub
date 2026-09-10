@@ -50,8 +50,8 @@ require_once __DIR__ . '/components/modal.php';
 
     <div id="dashboardApp" class="<?= $dashboardApiAuthRequired ? 'd-none' : '' ?>"<?= $dashboardApiAuthRequired ? ' hidden' : '' ?>>
         <?php require __DIR__ . '/components/navbar.php'; ?>
-        <main class="container-fluid py-3 dashboard-main">
-            <div class="row g-3">
+        <main class="container-fluid py-3 dashboard-main d-flex flex-column flex-fill min-h-0 w-100 mx-auto">
+            <div class="row g-3 flex-fill">
                 <?php require __DIR__ . '/components/device-column.php'; ?>
                 <?php require __DIR__ . '/components/detail-column.php'; ?>
             </div>

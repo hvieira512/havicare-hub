@@ -187,7 +187,7 @@ const repeatMarkup = (count, markup) => Array.from({ length: count }, () => mark
  */
 function renderDeviceFilterSkeleton() {
     els.deviceTypeFilter.innerHTML = `
-        <div class="placeholder-wave device-type-grid">
+        <div class="placeholder-wave device-type-grid d-grid gap-2">
         ${repeatMarkup(
             6,
             // As mesmas classes da pastilha a sério: a altura vem do mesmo CSS, e a grelha
@@ -205,11 +205,11 @@ function renderDeviceFilterSkeleton() {
             <div class="placeholder-wave">
             ${repeatMarkup(
                 3,
-                // A barra vai dentro do `filter-option-name` e não por cima dele: a altura da
-                // linha vem do mesmo CSS da opção a sério, e a largura fica a de um nome.
-                `<div class="filter-option" aria-hidden="true">
-                    <span class="filter-option-box"></span>
-                    <span class="filter-option-name"><span class="placeholder col-6">&nbsp;</span></span>
+                // A barra vai dentro do nome e não por cima dele: a altura da linha vem do
+                // mesmo CSS da opção a sério, e a largura fica a de um nome.
+                `<div class="filter-option d-flex align-items-center text-start rounded-2" aria-hidden="true">
+                    <span class="filter-option-box d-grid flex-shrink-0"></span>
+                    <span class="flex-fill min-w-0 text-truncate"><span class="placeholder col-6">&nbsp;</span></span>
                 </div>`,
             )}
             </div>`;
@@ -372,7 +372,7 @@ function renderDeviceTypeFilter() {
 
 function filterOptionMarkup({ key, value, label, count, selected, partial = false, nested = false }) {
     const classes = [
-        "filter-option",
+        "filter-option d-flex align-items-center text-start rounded-2",
         nested ? "filter-option-nested" : "",
         selected ? "selected" : "",
         partial ? "partial" : "",
@@ -383,8 +383,8 @@ function filterOptionMarkup({ key, value, label, count, selected, partial = fals
     return html`
         <button type="button" class="${classes}" data-action="toggleDeviceFilter"
             data-filter-key="${key}" data-filter-value="${value}" aria-pressed="${selected ? "true" : "false"}">
-        <span class="filter-option-box"><i class="fa-solid ${partial && !selected ? "fa-minus" : "fa-check"}"></i></span>
-        <span class="filter-option-name">${label}</span>
+        <span class="filter-option-box d-grid flex-shrink-0"><i class="fa-solid ${partial && !selected ? "fa-minus" : "fa-check"}"></i></span>
+        <span class="flex-fill min-w-0 text-truncate">${label}</span>
         <span class="count-number flex-shrink-0">${count}</span>
         </button>`;
 }
@@ -437,7 +437,7 @@ function renderDeviceSupplierFilter() {
             })
             .join("");
 
-        rows.push(html`<div class="filter-branch">${raw(branch)}</div>`);
+        rows.push(html`<div class="filter-branch position-relative d-flex flex-column">${raw(branch)}</div>`);
     }
 
     els.deviceSupplierFilter.innerHTML = rows.length
@@ -506,7 +506,7 @@ function renderDeviceLicenseFilter() {
             })
             .join("");
 
-        rows.push(html`<div class="filter-branch">${raw(branch)}</div>`);
+        rows.push(html`<div class="filter-branch position-relative d-flex flex-column">${raw(branch)}</div>`);
     }
 
     els.deviceLicenseFilter.innerHTML = rows.length

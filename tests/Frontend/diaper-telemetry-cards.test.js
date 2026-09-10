@@ -51,8 +51,8 @@ test("MONIT moisture takes the full row and renders one column per channel", () 
 
     // Um mosaico de linha inteira atravessa a grelha; os outros são uma célula dela, e é o
     // contentor que decide quantas caberam.
-    assert.match(html, /class="telemetry-card-wide"/);
-    assert.equal(html.match(/class="diaper-channel"/g).length, 3);
+    assert.match(html, /class="telemetry-card-wide[ "]/);
+    assert.equal(html.match(/class="diaper-channel[ "]/g).length, 3);
     assert.match(html, /fa-droplet/);
     assert.doesNotMatch(html, /data-action="requestFeature"/);
 });

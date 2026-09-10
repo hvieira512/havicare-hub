@@ -61,7 +61,7 @@ test("a faixa com o nome do grupo só existe quando há mais do que um grupo", (
 
     const accompanied = renderRequestCardGroup(group, [], true, []);
     assert.match(accompanied, /section-label[^>]*>Telemetria</);
-    assert.match(accompanied, /count-chip">1</);
+    assert.match(accompanied, /count-chip[^>]*>1</);
 });
 
 /**
@@ -76,7 +76,7 @@ test("um mosaico sem leitura não leva etiqueta a dizê-lo", () => {
 
     // O catálogo de capacidades não está carregado aqui, e por isso o nome vem do
     // `humanizeCapabilityKey`. O que importa é que só o nome lá está.
-    assert.match(html, /telemetry-card-title">Heart Rate</);
+    assert.match(html, /telemetry-card-title[^>]*>Heart Rate</);
     assert.doesNotMatch(html, /telemetry-card-value/);
     assert.doesNotMatch(html, /telemetry-row-details/);
 });

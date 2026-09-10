@@ -19,7 +19,7 @@
                             </div>
                             <div id="selectedDevicePanel" class="d-none">
                                 <div class="d-flex align-items-start gap-3 pt-2 pt-sm-3">
-                                    <div id="selectedDevicePreview" class="selected-device-preview"></div>
+                                    <div id="selectedDevicePreview" class="selected-device-preview d-flex align-items-center justify-content-center flex-shrink-0 text-center rounded-4"></div>
                                     <div class="min-w-0 flex-grow-1">
                                         <div class="mb-1" id="selectedDeviceBadge"></div>
                                         <h1 class="h4 mb-1 text-break tabular-nums lh-sm" id="selectedDeviceTitle"></h1>
@@ -35,7 +35,9 @@
                     </div>
                     <?php /* `card-flush-sm`: em telefone a moldura de fora desaparece, porque o
                            * Bootstrap não tem `border-sm` nem `bg-sm-*`. */ ?>
-                    <div class="card card-flush-sm" id="requestCardsCard">
+                    <?php /* O cartão dos mosaicos absorve o resto da coluna: o da identidade
+                           * tem a altura dos factos que mostra. */ ?>
+                    <div class="card card-flush-sm flex-fill" id="requestCardsCard">
                         <div class="card-body p-0 p-sm-3">
                             <div class="d-grid telemetry-card-grid gap-2 gap-sm-3" id="requestGrid"></div>
                         </div>

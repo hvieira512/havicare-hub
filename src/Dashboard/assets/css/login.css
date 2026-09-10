@@ -31,7 +31,6 @@
 .dashboard-login-panel {
     background: var(--login-surface);
     box-shadow: -1.5rem 0 4rem var(--login-panel-shadow);
-    z-index: 1;
 }
 
 /* O branco do campo é o do corpo da página: é a mesma relação -- campo claro sobre
@@ -53,15 +52,9 @@
 .dashboard-login-submit {
     min-height: 2.75rem;
     font-size: var(--fs-body);
-    font-weight: 600;
 }
 
-.dashboard-login-submit-loading {
-    align-items: center;
-    justify-content: center;
-    gap: .55rem;
-}
-
+/* O `d-flex` não serve: é do mesmo peso que o `d-none` que a esconde, e ganhava-lhe. */
 .dashboard-login-submit-loading:not(.d-none) {
     display: inline-flex;
 }
@@ -85,7 +78,6 @@
 /* A marca no canto superior esquerdo do painel escuro, como na maqueta. O logo e escuro,
    por isso inverte-se, como ja acontece na barra de navegacao. */
 .dashboard-login-badge {
-    position: absolute;
     left: 3rem;
     top: 2.5rem;
 }
@@ -93,14 +85,12 @@
 .dashboard-login-badge img {
     height: 24px;
     width: auto;
-    display: block;
     filter: invert(100%);
     opacity: .9;
 }
 
 /* A assinatura e a frase, no canto inferior esquerdo. Estavam a direita e sem frase. */
 .dashboard-login-mark {
-    position: absolute;
     left: 3rem;
     right: 3rem;
     bottom: 2.5rem;
@@ -108,38 +98,25 @@
 }
 
 .dashboard-login-signature {
-    display: block;
     color: rgba(var(--login-ink-rgb), .45);
     font-size: var(--fs-label);
-    font-weight: 600;
     letter-spacing: .22em;
-    text-transform: uppercase;
-    margin-bottom: .625rem;
 }
 
 .dashboard-login-pitch {
-    margin: 0;
     color: rgba(var(--login-ink-rgb), .8);
-    font-size: var(--fs-body);
     line-height: 1.6;
 }
 
 /* Uma medida fixa para o formulario, em vez da largura que a coluna der. */
 .dashboard-login-form-column {
-    width: 100%;
     max-width: 22.5rem;
-    margin: 0 auto;
 }
 
 .dashboard-login-orbit {
-    position: absolute;
     width: min(46vw, 660px);
     aspect-ratio: 1;
-    top: 50%;
-    left: 50%;
     border: 1px solid rgba(var(--login-accent-rgb), .34);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
 }
 
 .dashboard-login-orbit::before,
@@ -160,10 +137,8 @@
 }
 
 .dashboard-login-signal {
-    position: absolute;
     width: 13px;
     height: 13px;
-    border-radius: 50%;
     background: var(--login-accent);
     box-shadow: 0 0 0 10px rgba(var(--login-accent-rgb), .08), 0 0 2rem var(--login-accent);
     animation: signal-pulse 2.4s ease-in-out infinite;

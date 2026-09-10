@@ -447,12 +447,12 @@ function diaperMoistureBody(data) {
             const height = Math.min(100, (delta / scaleDelta) * 100);
             const tooltip = `Canal ${index} · delta ${delta} (base ${channel?.baseline ?? "-"}, leitura ${channel?.value ?? "-"})`;
 
-            return html`<div class="diaper-channel" title="${tooltip}">
-<div class="diaper-channel-value diaper-channel-value--${band}">${delta}</div>
-<div class="diaper-channel-track">
+            return html`<div class="diaper-channel d-flex flex-column min-w-0" title="${tooltip}">
+<div class="diaper-channel-value diaper-channel-value--${band} text-center fw-semibold tabular-nums lh-sm">${delta}</div>
+<div class="diaper-channel-track position-relative d-flex align-items-end overflow-hidden">
 <div class="diaper-channel-fill diaper-channel-fill--${band}" style="height:${height}%"></div>
 </div>
-<div class="diaper-channel-index">${index}</div>
+<div class="diaper-channel-index text-center tabular-nums lh-sm">${index}</div>
 </div>`;
         })
         .join("");

@@ -20,7 +20,7 @@ function section_header(
     if ($counterId !== null && $chip) {
         return '<div class="' . h(trim('d-flex align-items-center gap-2 ' . $spacing)) . '">'
             . '<span class="section-label">' . h($title) . '</span>'
-            . '<span class="count-chip' . ($counterHidden ? ' d-none' : '') . '" id="' . h($counterId) . '"></span>'
+            . '<span class="count-chip fw-semibold px-2 rounded-pill tabular-nums' . ($counterHidden ? ' d-none' : '') . '" id="' . h($counterId) . '"></span>'
             . '</div>';
     }
 
@@ -50,7 +50,7 @@ function filter_toggle_button(string $targetId, string $countId, string $extraCl
         . ' data-bs-toggle="collapse" data-bs-target="#' . h($targetId) . '"'
         . ' aria-expanded="false" aria-controls="' . h($targetId) . '">'
         . icon('fa-sliders') . 'Filtros'
-        . '<span id="' . h($countId) . '" class="count-chip count-chip-strong d-none"></span>'
+        . '<span id="' . h($countId) . '" class="count-chip count-chip-strong fw-semibold px-2 rounded-pill tabular-nums d-none"></span>'
         . '</button>';
 }
 

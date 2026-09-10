@@ -2,6 +2,12 @@
    É o último `<link>` da página: `/main.css` é rota fixa do servidor e há testes que o lêem
    pelo nome, por isso ficou com a cauda da folha original em vez de mudar de nome. */
 
+/* `.75rem` não é um degrau do Bootstrap: entre `gap-2` e `gap-3` há quatro pixéis para
+   qualquer dos lados. */
+.modal-device-identity {
+    gap: .75rem;
+}
+
 /* A chapa da fotografia é clara nos dois temas de propósito: as imagens vêm com fundo
    branco, e sobre uma superfície escura liam-se como um rectângulo a flutuar. Não é
    `bg-body-tertiary` porque essa vira com o tema. */
@@ -26,23 +32,11 @@
     max-height: 260px;
 }
 
-/* A identidade do que se esta a editar, no cabecalho do modal. */
-.modal-device-identity {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    min-width: 0;
-    flex: 1;
-}
-
+/* O fundo fica aqui: no escuro a chapa passa a branca, e um `bg-*` na marcação
+   ganharia-lhe pelo `!important`. */
 .modal-device-thumb {
     width: 40px;
     height: 40px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: .625rem;
     background: var(--bs-tertiary-bg);
 }
 
@@ -52,17 +46,10 @@
     max-height: 26px;
 }
 
-
 .selected-device-preview {
     width: 72px;
     height: 72px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 1rem;
     background: var(--bs-tertiary-bg);
-    flex-shrink: 0;
 }
 
 .selected-device-preview img {
@@ -92,22 +79,17 @@
     overflow-y: auto;
 }
 
-/* A mesma lista vazia de gateways aparece no assistente e no modal de edição, e estava
-   escrita de duas maneiras: uma preta e normal, a outra cinzenta e pequena. O aspecto passa
-   a viver aqui, e os dois sítios escrevem só a classe. */
+/* A linha toda da grelha: o Bootstrap não tem utilitário de `grid-column`. */
 .gateway-picker-empty {
     grid-column: 1 / -1;
-    margin-bottom: 0;
-    color: var(--bs-secondary-color);
-    font-size: .875em;
 }
 
+/* A borda e o fundo ficam aqui: os estados abaixo trocam-nos, e um utilitário do Bootstrap
+   traz `!important` e ganharia a todos eles. O `.75rem` também, que não é degrau do
+   Bootstrap. */
 .gateway-card {
-    display: flex;
-    align-items: center;
     gap: .75rem;
-    margin: 0;
-    padding: .5rem .75rem;
+    padding-inline: .75rem;
     border: 1px solid var(--bs-border-color);
     border-radius: .75rem;
     background: var(--bs-body-bg);
@@ -137,13 +119,7 @@
 .gateway-card-thumb {
     width: 48px;
     height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: .5rem;
     background: var(--bs-tertiary-bg);
-    flex-shrink: 0;
-    overflow: hidden;
 }
 
 /* As fotografias dos modelos já vêm sobre branco; o tom só existe para dar superfície ao
@@ -155,44 +131,23 @@
 .gateway-card-thumb img {
     max-width: 44px;
     max-height: 44px;
-    object-fit: contain;
     mix-blend-mode: multiply;
 }
 
 .gateway-card-thumb-icon {
     width: 24px;
     height: 24px;
-    color: var(--bs-secondary-color);
-}
-
-.gateway-card-mac {
-    display: block;
-    font-weight: 600;
-    font-size: var(--fs-body);
-    line-height: 1.3;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .gateway-card-model {
-    display: block;
     font-size: var(--fs-sm);
-    line-height: 1.3;
-    color: var(--bs-secondary-color);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 /* A contagem de barras cheias diz a leitura tão bem como a cor, para se ler sem percepção
    de tom. O dBm exacto vive na tooltip. */
 .signal-meter {
-    display: inline-flex;
-    align-items: flex-end;
     gap: 2px;
     height: 1rem;
-    flex-shrink: 0;
     cursor: help;
 }
 
@@ -241,19 +196,12 @@
 }
 
 .diaper-channel {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
     gap: .2rem;
-    min-width: 0;
 }
 
+/* A cor é do estado do canal: as duas variantes abaixo trocam-na. */
 .diaper-channel-value {
-    text-align: center;
     font-size: var(--fs-sm);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.2;
     color: var(--bs-secondary-color);
 }
 
@@ -266,13 +214,9 @@
 }
 
 .diaper-channel-track {
-    position: relative;
     height: 64px;
     border-radius: .35rem;
     background: var(--bs-tertiary-bg);
-    display: flex;
-    align-items: flex-end;
-    overflow: hidden;
 }
 
 /* O limiar de "precisa de muda", para se ver quais as barras que o passaram. */
@@ -305,11 +249,8 @@
 }
 
 .diaper-channel-index {
-    text-align: center;
     font-size: var(--fs-label);
-    line-height: 1.2;
     color: var(--bs-secondary-color);
-    font-variant-numeric: tabular-nums;
 }
 
 .navbar-brand img {
@@ -325,14 +266,6 @@
 
 .dashboard-notifications-list {
     max-height: min(28rem, calc(100vh - 8rem));
-}
-
-#settingsModal .modal-body {
-    display: flex;
-    flex-direction: column;
-    overflow: auto;
-    min-height: 0;
-    padding: 0;
 }
 
 /* O mesmo tecto de leitura do ecrã principal: o modal continua de ecrã inteiro, e é o
@@ -373,16 +306,10 @@
 /* A contagem de cada secção no menu das definições. No separador activo o fundo é do próprio
    branco a 20%, para não abrir um terceiro tom dentro do navy. */
 .settings-nav-count {
-    flex: none;
     min-width: 1.5rem;
-    padding: 0 .375rem;
-    border-radius: 20px;
     background: var(--bs-tertiary-bg);
     color: var(--bs-secondary-color);
     font-size: var(--fs-label);
-    font-weight: 600;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
 }
 
 .nav-pills .nav-link.active .settings-nav-count {
@@ -428,36 +355,24 @@
    pergunta respondida, o que faz o ecrã nunca acumular controlos -- e cada uma é um botão
    para voltar àquela pergunta. */
 .wizard-trail {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: .4rem;
     min-height: 1.9rem;
     padding-bottom: .875rem;
-    border-bottom: 1px solid var(--bs-border-color);
 }
 
 /* A etiqueta por cima do valor, e não ao lado: lado a lado, três respostas com nomes
    compridos não cabem na linha e a terceira cai sozinha para baixo. Empilhadas, cada badge
    mede o mais largo dos seus dois textos e as três cabem. */
+/* A borda e o fundo ficam aqui, que os estados abaixo os trocam. */
 .wizard-trail .wizard-badge {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
     gap: .05rem;
     min-height: 2.5rem;
     font-size: var(--fs-sm);
-    font-weight: 500;
     padding: .25rem .7rem;
     border: 1px solid transparent;
-    border-radius: .625rem;
     background: var(--bs-primary-bg-subtle);
     color: var(--bs-emphasis-color);
     animation: wizard-badge-in .32s cubic-bezier(.2, .8, .3, 1) both;
     cursor: pointer;
-    text-align: left;
 }
 
 .wizard-trail .wizard-badge:hover,
@@ -482,20 +397,8 @@
     color: var(--bs-secondary-color);
 }
 
-.wizard-trail .wizard-badge-key {
-    white-space: nowrap;
-    line-height: 1.2;
-}
-
-.wizard-trail .wizard-trail-step {
-    margin-left: auto;
-    font-size: var(--fs-sm);
-    color: var(--bs-secondary-color);
-    white-space: nowrap;
-}
-
+.wizard-trail .wizard-trail-step,
 .wizard-trail .wizard-trail-sep {
-    color: var(--bs-secondary-color);
     font-size: var(--fs-sm);
 }
 
@@ -506,10 +409,7 @@
 
 /* A pergunta activa a esquerda, a imagem do modelo a direita quando ja se sabe qual e. */
 .wizard-stage {
-    display: grid;
     grid-template-columns: minmax(0, 1fr) 13rem;
-    gap: 1.5rem;
-    align-items: start;
 }
 
 .wizard-stage:has(.wizard-art.d-none) {
@@ -532,16 +432,13 @@
     to { opacity: 1; transform: none; }
 }
 
+/* O `display` fica aqui: o `d-none` que a esconde é do mesmo peso que um `d-flex` e um
+   utilitário do Bootstrap ganharia-lhe. */
 .wizard-art {
-    border: 1px solid var(--bs-border-color);
-    border-radius: .625rem;
-    background: var(--bs-tertiary-bg);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: .6rem;
-    padding: 1.1rem;
     min-height: 11rem;
     animation: wizard-art-in .48s cubic-bezier(.2, .7, .3, 1) both .1s;
 }
@@ -553,14 +450,10 @@
 
 .wizard-art .wizard-art-name {
     font-size: var(--fs-sm);
-    font-weight: 600;
-    text-align: center;
 }
 
 .wizard-art .wizard-art-sub {
     font-size: var(--fs-label);
-    color: var(--bs-secondary-color);
-    text-align: center;
 }
 
 @keyframes wizard-art-in {
@@ -571,25 +464,18 @@
 /* A grelha de escolhas em cards, partilhada pelo tipo de dispositivo e pelo modelo: um
    leva ícone, o outro leva a fotografia, e o resto da forma é o mesmo. */
 .wizard-card-grid {
-    display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: .625rem;
 }
 
 @media (max-width: 34rem) {
     .wizard-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* A borda e o fundo ficam aqui, que os estados abaixo os trocam. */
 .wizard-card {
     border: 1px solid var(--bs-border-color);
-    border-radius: .625rem;
     background: var(--bs-body-bg);
     padding: .9rem .7rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .45rem;
-    text-align: center;
     cursor: pointer;
     transition: border-color .15s ease, background-color .15s ease, transform .15s ease;
 }
@@ -613,35 +499,26 @@
 
 .wizard-card-icon {
     font-size: var(--fs-xl);
-    color: var(--bs-secondary-color);
 }
 
 /* A miniatura tem altura fixa para os cards de uma linha ficarem alinhados mesmo com
    fotografias de proporcoes diferentes. */
 .wizard-card-thumb {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
     height: 3.75rem;
 }
 
 .wizard-card-thumb img {
     max-width: 100%;
     max-height: 100%;
-    object-fit: contain;
 }
 
 .wizard-card-label {
     font-size: var(--fs-sm);
-    font-weight: 500;
-    line-height: 1.3;
 }
 
 /* O modelo interno, ou a contagem de modelos de um tipo. */
 .wizard-card-sub {
     font-size: var(--fs-label);
-    color: var(--bs-secondary-color);
 }
 
 /* ===== pastilha de estado ===== */

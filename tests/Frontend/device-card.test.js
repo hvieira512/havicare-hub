@@ -33,7 +33,7 @@ test("o cartão emite a acção que o ouvinte delegado procura", () => {
 
 test("o cartão escolhido marca-se para o leitor de ecrã e para o olho", () => {
     assert.match(deviceCard(device, true), /aria-current="true"/);
-    assert.match(deviceCard(device, true), /class="device-card selected/);
+    assert.match(deviceCard(device, true), /class="device-card [^"]* selected/);
     assert.ok(!deviceCard(device, false).includes("aria-current"));
 });
 
@@ -56,7 +56,7 @@ test("um campo do dispositivo com marcação sai inerte", () => {
 });
 
 test("o esqueleto não passa do tecto de linhas", () => {
-    const rows = (markup) => markup.split("device-card-skeleton\"").length - 1;
+    const rows = (markup) => markup.split("device-card-skeleton ").length - 1;
 
     assert.equal(rows(deviceCardSkeletonList(5)), 5);
     // Doze é o tecto: a moldura mais alta não mostra mais do que isso.

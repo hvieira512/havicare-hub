@@ -224,11 +224,11 @@ function renderCapabilitiesCatalogSection() {
                         ? String(++index).padStart(2, "0")
                         : "—";
                     return html`
-                <div class="capability-row${entry.supported ? "" : " is-unsupported"}">
-                    <span class="capability-index" aria-hidden="true">${number}</span>
+                <div class="capability-row d-grid border rounded-2${entry.supported ? "" : " is-unsupported"}">
+                    <span class="capability-index fw-bold lh-1 text-end tabular-nums" aria-hidden="true">${number}</span>
                     <span class="d-flex justify-content-center text-secondary"><i class="fa-solid ${capabilityIcon(entry, section)}"></i></span>
-                    <span class="capability-name">${entry.label || humanizeCapabilityKey(entry.key)}</span>
-                    <span class="capability-facts">${facts.join(" · ")}</span>
+                    <span class="fw-semibold min-w-0">${entry.label || humanizeCapabilityKey(entry.key)}</span>
+                    <span class="capability-facts text-secondary">${facts.join(" · ")}</span>
                 </div>`;
                 })
                 .join("");

@@ -884,7 +884,7 @@ function renderConfigFeedback(key, uiState) {
     const tone = uiState.feedback.tone === "danger" ? "danger" : "success";
 
     return `
-        <div class="alert alert-${tone} alert-compact alert-dismissible fade show mt-3 mb-0" role="alert" data-config-feedback-key="${esc(key)}">
+        <div class="alert alert-${tone} alert-dismissible fade show small py-2 px-3 mt-3 mb-0" role="alert" data-config-feedback-key="${esc(key)}">
             ${esc(uiState.feedback.message)}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
         </div>`;
@@ -1049,7 +1049,7 @@ function renderConfigurationDeliveryNotice(meta, delivery) {
     const error = String(delivery?.error || "");
     const errorMessage = CONFIGURATION_FAILURE_LABELS[error] || "";
     return `
-        <div class="alert alert-${esc(meta.tone)} alert-compact mt-3 mb-0" role="status">
+        <div class="alert alert-${esc(meta.tone)} small py-2 px-3 mt-3 mb-0" role="status">
             <i class="fa-solid fa-circle-info me-2"></i>${esc(meta.message)}
             ${errorMessage ? `<span class="d-block mt-1">${esc(errorMessage)}</span>` : ""}
         </div>`;

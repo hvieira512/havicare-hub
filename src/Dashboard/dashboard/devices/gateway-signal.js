@@ -65,7 +65,7 @@ export function signalMeter(signal) {
         .map((bar) => `<span class="signal-meter-bar${bar <= band.bars ? " signal-meter-bar-on" : ""}"></span>`)
         .join("");
 
-    return `<span class="signal-meter text-${band.tone}" data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${esc(title)}" aria-label="${esc(title)}" role="img" tabindex="0">${bars}</span>`;
+    return `<span class="signal-meter d-inline-flex align-items-end flex-shrink-0 text-${band.tone}" data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${esc(title)}" aria-label="${esc(title)}" role="img" tabindex="0">${bars}</span>`;
 }
 
 /**

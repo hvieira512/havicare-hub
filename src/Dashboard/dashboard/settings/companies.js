@@ -82,7 +82,7 @@ async function reloadLicenses() {
 
 function licenseViewRow(license) {
     return html`
-        <div class="tree-row justify-content-between">
+        <div class="tree-row position-relative d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2 min-w-0">
                 <span class="section-label tabular-nums" style="letter-spacing:0">ID ${license.license_id}</span>
                 <span class="text-truncate">${license.name || "sem nome"}</span>
@@ -100,7 +100,7 @@ function licenseViewRow(license) {
  */
 function licenseEditorRow(license, companyId) {
     return html`
-        <div class="tree-row" data-editor="license" data-id="${license?.id || ""}" data-company-id="${companyId}">
+        <div class="tree-row position-relative d-flex align-items-center" data-editor="license" data-id="${license?.id || ""}" data-company-id="${companyId}">
             <div class="d-flex align-items-end gap-2 flex-wrap w-100">
                 <div style="width:8rem">
                     <label class="section-label d-block mb-1" for="licenseRowId">ID da licença</label>

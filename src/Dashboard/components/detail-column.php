@@ -53,14 +53,14 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="device-detail-stack d-flex flex-column">
-                                    <section id="connectionSection" class="card-section flex-shrink-0">
+                                <div class="d-flex flex-column flex-fill min-h-0">
+                                    <section id="connectionSection" class="card-section mt-3 pt-3 border-top flex-shrink-0">
                                         <?= section_header('Ligações ao servidor') ?>
                                         <div id="connectionTimeline"></div>
                                     </section>
                                     <?php /* O `col-xl-6` e o espaçamento da coluna dos eventos saem e voltam pelo
                                            * `renderDownlinkRequests`: sem pedidos, ela fica com a linha toda. */ ?>
-                                    <div class="card-section row g-0 flex-grow-1 min-h-0">
+                                    <div class="card-section mt-3 pt-3 border-top row g-0 flex-grow-1 min-h-0">
                                         <?php foreach ($activityPanels as $panel) : ?>
                                         <div id="<?= $panel['column'] ?>" class="col-12 col-xl-6 d-flex flex-column min-h-0 <?= $panel['spacing'] ?>">
                                             <?php /* O paginador na linha do título, do lado

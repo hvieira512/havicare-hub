@@ -77,7 +77,7 @@ function setGatewayLinksDisabled(disabled) {
     }
 }
 
-const GATEWAY_THUMB_PLACEHOLDER = `<svg class="gateway-card-thumb-icon" viewBox="0 0 24 24" fill="none"
+const GATEWAY_THUMB_PLACEHOLDER = `<svg class="gateway-card-thumb-icon text-secondary" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <rect x="2.5" y="13.5" width="19" height="7" rx="1.75"></rect>
     <path d="M6 17h.01M9.5 17h5"></path>
@@ -93,15 +93,15 @@ export function gatewayCardMarkup(gateway, checked, signal = null) {
     const model = String(gateway.model || "").trim();
     const image = String(gateway.image || "").trim();
     const thumb = image
-        ? `<img src="${esc(image)}" alt="" loading="lazy" decoding="async">`
+        ? `<img class="object-fit-contain" src="${esc(image)}" alt="" loading="lazy" decoding="async">`
         : GATEWAY_THUMB_PLACEHOLDER;
 
-    return `<label class="gateway-card">
+    return `<label class="gateway-card d-flex align-items-center m-0 py-2">
         <input class="form-check-input gateway-card-check flex-shrink-0 m-0" type="checkbox" data-gateway-key="${esc(key)}"${checked ? " checked" : ""}>
-        <span class="gateway-card-thumb">${thumb}</span>
+        <span class="gateway-card-thumb d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden rounded-3">${thumb}</span>
         <span class="min-w-0">
-            <span class="gateway-card-mac">${esc(key)}</span>
-            <span class="gateway-card-model">${esc(model || "Modelo desconhecido")}</span>
+            <span class="d-block fw-semibold text-truncate lh-sm">${esc(key)}</span>
+            <span class="gateway-card-model d-block text-secondary text-truncate lh-sm">${esc(model || "Modelo desconhecido")}</span>
         </span>
         ${signalMeter(signal)}
     </label>`;
@@ -139,7 +139,7 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
     disposeTooltips(list);
     if (gateways.length === 0) {
         list.innerHTML = emptyText
-            ? `<p class="gateway-picker-empty">${esc(emptyText)}</p>`
+            ? `<p class="gateway-picker-empty mb-0 small text-secondary">${esc(emptyText)}</p>`
             : "";
     } else {
         const signals = signalsForEditedDevice();

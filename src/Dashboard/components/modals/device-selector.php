@@ -15,11 +15,11 @@ ob_start();
     <div class="col-12 d-lg-none p-3 pb-0">
         <?= filter_toggle_button('deviceFilterPanel', 'deviceFilterCountMobile') ?>
     </div>
-    <aside id="deviceFilterPanel" class="col-12 col-lg-4 p-3 device-filter-column collapse d-lg-block">
+    <aside id="deviceFilterPanel" class="col-12 col-lg-4 p-3 device-filter-column collapse d-lg-block bg-body-tertiary">
         <div class="d-flex align-items-center justify-content-between gap-2">
             <div class="d-flex align-items-center gap-2">
                 <span class="section-label">Filtros</span>
-                <span id="deviceFilterCount" class="count-chip count-chip-strong d-none"></span>
+                <span id="deviceFilterCount" class="count-chip count-chip-strong fw-semibold px-2 rounded-pill tabular-nums d-none"></span>
             </div>
             <button id="clearDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary d-none" type="button">
                 <?= icon('fa-filter-circle-xmark', 'me-1') ?>Limpar
@@ -36,13 +36,13 @@ ob_start();
             </div>
         </div>
 
-        <?= filter_group('Tipo', 'deviceTypeFilterCount', 'deviceTypeFilter', 'device-type-grid') ?>
+        <?= filter_group('Tipo', 'deviceTypeFilterCount', 'deviceTypeFilter', 'device-type-grid d-grid gap-2') ?>
 
-        <?= filter_group('Licença', 'deviceLicenseFilterCount', 'deviceLicenseFilter', 'filter-list') ?>
+        <?= filter_group('Licença', 'deviceLicenseFilterCount', 'deviceLicenseFilter', 'filter-list d-flex flex-column') ?>
 
         <?php /* Diz "Modelo" e os `id` dizem `supplier`: o fornecedor é o agrupador e a chave
                * do filtro, o modelo é o que se escolhe. */ ?>
-        <?= filter_group('Modelo', 'deviceSupplierFilterCount', 'deviceSupplierFilter', 'filter-list') ?>
+        <?= filter_group('Modelo', 'deviceSupplierFilterCount', 'deviceSupplierFilter', 'filter-list d-flex flex-column') ?>
     </aside>
 
     <section class="col-12 col-lg-8 p-3 device-list-column">
