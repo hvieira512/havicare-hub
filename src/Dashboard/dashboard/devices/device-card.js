@@ -1,5 +1,5 @@
 import { html, raw } from "../html.js";
-import { deviceLicenseHtml } from "../widgets.js";
+import { deviceLicenseBlock } from "../components/device-license.js";
 import { onlineBadge } from "../components/state-badge.js";
 import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 import { ago } from "../format.js";
@@ -18,30 +18,60 @@ export const DEVICE_CARD_ACTION = "select";
 /** Quantas linhas de esqueleto no máximo: a moldura mais alta leva doze cartões. */
 const SKELETON_MAX_ROWS = 12;
 
+/** Quantos caracteres duas cadeias partilham desde o princípio. */
+function commonPrefixLength(a, b) {
+    const limit = Math.min(a.length, b.length);
+    let i = 0;
+    while (i < limit && a[i] === b[i]) i += 1;
+    return i;
+}
+
+/** Abaixo disto o prefixo comum é coincidência, e esbatê-lo é ruído. */
+const MIN_SHARED = 3;
+/** O mínimo que fica a cheio, mesmo entre dois que só diferem no último dígito. */
+const MIN_SUFFIX = 4;
+
 /**
- * Desde quando é que o aparelho está como está.
+ * Divide um identificador no prefixo que os vizinhos da lista partilham e no resto.
  *
- * A pastilha responde «está a falar agora?», que é sim ou não; isto responde «desde quando?».
- * Sem esta linha, «Desligado» dizia a mesma coisa sobre um relógio que se desligou há nove
- * minutos, um gateway calado há uma semana e um aparelho que nunca falou desde que foi
- * registado -- e o do meio é o mais grave dos três.
- *
- * Sem data não se escreve «nunca», que se lê como um facto sobre o aparelho: «sem registo»
- * diz o que se passa, que é o hub tê-lo registado e ainda não o ter ouvido. E não há limite
- * a partir do qual a linha muda de cor: quanto tempo é demasiado depende do aparelho -- um
- * radar fala de segundos a segundos, um relógio passa a noite quieto --, e o tempo decorrido
- * é um facto que dispensa esse juízo.
+ * @returns {{prefix: string, suffix: string}}
  */
+export function imeiEmphasis(imei, others) {
+    const value = String(imei || "");
+    const shared = others.reduce(
+        (longest, other) => (String(other) === value
+            ? longest
+            : Math.max(longest, commonPrefixLength(value, String(other)))),
+        0,
+    );
+    const dim = Math.min(shared, Math.max(0, value.length - MIN_SUFFIX));
+
+    return dim < MIN_SHARED
+        ? { prefix: "", suffix: value }
+        : { prefix: value.slice(0, dim), suffix: value.slice(dim) };
+}
+
+const sharedPrefixHtml = (prefix) =>
+    prefix === "" ? "" : html`<span class="text-body-secondary">${prefix}</span>`;
+
+/** A coluna fica vazia quando o aparelho não tem SIM: um traço não diz mais do que nada. */
+const simNumberHtml = (simNumber) =>
+    simNumber
+        ? html`<span class="device-card-field-value tabular-nums">${simNumber}</span>`
+        : "";
+
+/** Sem data é «sem registo», e não «nunca»: o hub registou o aparelho e ainda não o ouviu. */
 function lastSeenLine(lastSeenAt) {
     return lastSeenAt
         ? html`<span class="device-card-when">${ago(lastSeenAt)}</span>`
         : "<span class=\"device-card-when never\">sem registo</span>";
 }
 
-export function deviceCard(device, selected) {
+export function deviceCard(device, selected, siblings = []) {
     const image = device.image
         ? html`<img src="${device.image}" alt="${device.model || device.imei}">`
         : "<i class=\"fa-solid fa-microchip\"></i>";
+    const { prefix, suffix } = imeiEmphasis(device.imei, siblings);
     const meta = [
         deviceTypeLabel(normalizeDeviceType(device.deviceType)),
         [device.supplier, device.model].filter(Boolean).join(" "),
@@ -59,18 +89,16 @@ export function deviceCard(device, selected) {
         </span>
         <span class="device-card-identity">
             <span class="min-w-0">
-                <span class="device-card-imei d-block text-truncate">${device.imei}</span>
+                <span class="device-card-imei d-block text-truncate">${raw(sharedPrefixHtml(prefix))}${suffix}</span>
                 <span class="device-card-meta d-block text-truncate">${meta}</span>
             </span>
         </span>
         <span class="device-card-fields">
             <span class="device-card-field">
-                <span class="device-card-field-label">Licença</span>
-                ${raw(deviceLicenseHtml(device, "device-card-field-value"))}
+                ${raw(deviceLicenseBlock(device))}
             </span>
             <span class="device-card-field">
-                <span class="device-card-field-label">SIM</span>
-                <span class="device-card-field-value${device.simNumber ? " tabular-nums" : " empty"}">${device.simNumber || "—"}</span>
+                ${raw(simNumberHtml(device.simNumber))}
             </span>
         </span>
         </button>`;

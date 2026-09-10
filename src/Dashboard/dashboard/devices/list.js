@@ -331,12 +331,13 @@ function renderDeviceSelectorSummary() {
         : "";
 }
 
-/**
- * Um dispositivo por linha. A foto, o estado e o IMEI ficam à esquerda, e a atribuição em
- * campos de largura fixa à direita, na mesma abcissa.
- */
-function renderDeviceCard(device) {
-    return deviceCard(device, state.selectedImei === device.imei);
+/** Os vizinhos são os da mesma página: é com esses que o identificador se confunde. */
+function renderDeviceCard(device, _index, all) {
+    return deviceCard(
+        device,
+        state.selectedImei === device.imei,
+        all.map((other) => other.imei),
+    );
 }
 
 function renderDevicePagination(pagination) {

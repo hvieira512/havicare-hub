@@ -71,12 +71,7 @@ test("o esqueleto usa as classes do cartão a sério, para a lista não saltar",
     }
 });
 
-/**
- * «Desligado» tapava três situações diferentes: o aparelho que nunca falou desde que foi
- * registado -- dezoito dos quarenta e nove da instância --, o que está calado há uma semana,
- * e o que se desligou há nove minutos. A pastilha continua a responder «está a falar
- * agora?», que é sim ou não; a linha por baixo dela responde «desde quando?».
- */
+/** A pastilha diz se está a falar agora; a linha por baixo diz desde quando. */
 test("o cartão diz quando o aparelho falou pela última vez", () => {
     const markup = deviceCard(
         { ...device, online: false, lastSeenAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString() },
@@ -101,4 +96,13 @@ test("a linha não empurra o resto do cartão: vive na coluna da pastilha", () =
     const state = markup.split("device-card-state")[1] || "";
 
     assert.match(state.split("</span>").slice(0, 6).join("</span>"), /device-card-when/);
+});
+
+/** Sem SIM a coluna fica vazia: um traço não diz mais do que nada. */
+test("o número do SIM aparece se existir, e nada aparece se não", () => {
+    assert.match(deviceCard(device, false), /\+351912345678/);
+
+    const semSim = deviceCard({ ...device, simNumber: "" }, false);
+    assert.doesNotMatch(semSim, /—/);
+    assert.doesNotMatch(semSim, /SIM/);
 });
