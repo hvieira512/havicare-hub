@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Mqtt;
 
 use Hub\Log\Logger;
+use PhpMqtt\Client\Exceptions\DataTransferException;
 use PhpMqtt\Client\MqttClient;
 
 /**
@@ -23,9 +24,14 @@ trait ReconnectsOnLoopFailure
     /** Quanto tempo uma ligação tem de durar para o recuo a considerar resolvida. */
     private const STABLE_CONNECTION_SECONDS = 60;
 
+    /** Quanto tempo se tolera um socket de saída cheio antes de o dar por morto. */
+    private const WRITE_FAILURE_TOLERANCE_SECONDS = 15;
+
     private float $nextReconnectAt = 0.0;
     private float $connectedSince = 0.0;
     private int $reconnectDelay = 2;
+    private float $writeFailingSince = 0.0;
+    private float $lastWriteFailureAt = 0.0;
 
     /** Marcado por quem subscreve, que é o momento a partir do qual se conta a duração. */
     private function markConnected(): void
@@ -48,6 +54,10 @@ trait ReconnectsOnLoopFailure
             return;
         }
 
+        if ($this->toleratesWriteFailure($failure, $now)) {
+            return;
+        }
+
         if ($this->connectedSince > 0.0 && ($now - $this->connectedSince) >= self::STABLE_CONNECTION_SECONDS) {
             $this->reconnectDelay = 2;
         }
@@ -65,5 +75,35 @@ trait ReconnectsOnLoopFailure
         } catch (\Throwable $reconnectError) {
             Logger::channel('hub')->error("{$label} reconnect failed: {$reconnectError->getMessage()}");
         }
+    }
+
+    /**
+     * Uma escrita que não passa não é uma ligação perdida.
+     *
+     * O socket é não-bloqueante e a biblioteca lê qualquer escrita parcial como queda -- com o
+     * buffer de saída cheio, um PINGREQ de dois bytes devolve zero e chega para isso. Reconectar
+     * ali descarta a mensagem numa ligação que está viva; a seguinte passa, porque o broker
+     * entretanto leu. Só uma série que não pára é que denuncia um socket morto sem o dizer.
+     */
+    private function toleratesWriteFailure(\Throwable $failure, float $now): bool
+    {
+        if ($failure->getCode() !== DataTransferException::EXCEPTION_TX_DATA) {
+            $this->writeFailingSince = 0.0;
+            return false;
+        }
+
+        $isNewSeries = $this->writeFailingSince === 0.0
+            || ($now - $this->lastWriteFailureAt) > self::WRITE_FAILURE_TOLERANCE_SECONDS;
+        if ($isNewSeries) {
+            $this->writeFailingSince = $now;
+        }
+        $this->lastWriteFailureAt = $now;
+
+        if (($now - $this->writeFailingSince) < self::WRITE_FAILURE_TOLERANCE_SECONDS) {
+            return true;
+        }
+
+        $this->writeFailingSince = 0.0;
+        return false;
     }
 }
