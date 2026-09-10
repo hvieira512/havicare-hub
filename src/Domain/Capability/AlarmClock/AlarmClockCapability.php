@@ -115,14 +115,6 @@ final class AlarmClockCapability implements CapabilityContract
         return $meta;
     }
 
-    public function merge(mixed $existing, mixed $incoming): mixed
-    {
-        $existingList = is_array($existing) ? array_values($existing) : [];
-        $incomingList = is_array($incoming) ? array_values($incoming) : [];
-
-        return array_values(array_merge($existingList, $incomingList));
-    }
-
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
         return [

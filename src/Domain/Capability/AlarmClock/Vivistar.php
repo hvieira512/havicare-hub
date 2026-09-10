@@ -50,21 +50,7 @@ final class Vivistar implements AlarmClockHandler
 
     public function fromNative(array $desired): array
     {
-        $items = $desired['items'] ?? $desired['alarms'] ?? $desired;
-        if (!is_array($items)) {
-            return [];
-        }
-        if (!array_is_list($items)) {
-            $items = [$items];
-        }
-        if ($items !== [] && is_array($items[0] ?? null) && array_key_exists('recurrence', $items[0])) {
-            return array_values($items);
-        }
-
-        return array_values(array_filter(
-            array_map(static fn(mixed $item): array => self::publicItem($item), $items),
-            static fn(array $item): bool => $item !== [],
-        ));
+        return self::publicItemList($desired, ['items', 'alarms'], self::publicItem(...));
     }
 
     public function defaultValue(): mixed
@@ -97,14 +83,6 @@ final class Vivistar implements AlarmClockHandler
         $meta['recurrence'] = ['options' => $recurrenceOptions];
 
         return $meta;
-    }
-
-    public function merge(mixed $existing, mixed $incoming): mixed
-    {
-        $existingList = is_array($existing) ? array_values($existing) : [];
-        $incomingList = is_array($incoming) ? array_values($incoming) : [];
-
-        return array_values(array_merge($existingList, $incomingList));
     }
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
