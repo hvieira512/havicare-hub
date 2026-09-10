@@ -64,9 +64,9 @@
                                         <?php foreach ($activityPanels as $panel) : ?>
                                         <div id="<?= $panel['column'] ?>" class="col-12 col-xl-6 d-flex flex-column min-h-0 <?= $panel['spacing'] ?>">
                                             <?php /* O paginador na linha do título, do lado
-                                                    oposto: são os controlos da lista que vem
-                                                    a seguir, e não uma segunda cabeçalho. */ ?>
-                                            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                                    oposto. Num telefone não cabe ao lado do
+                                                    título e desce para baixo dele. */ ?>
+                                            <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2 mb-2">
                                                 <?= section_header($panel['title'], $panel['countId'], true, false, '') ?>
                                                 <?= pagination_component($panel['pager'], '', false) ?>
                                             </div>

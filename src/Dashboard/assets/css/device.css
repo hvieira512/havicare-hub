@@ -158,11 +158,19 @@
         width: auto;
     }
 
+    /* O valor debaixo do nome, e não a atravessar a linha até à hora: assim a linha mede
+       duas linhas de texto em vez de três. */
     .telemetry-table > tbody > tr > td:nth-child(3) {
-        grid-column: 2 / -1;
+        grid-column: 2;
         grid-row: 2;
         padding: .125rem 0 0 0;
         width: auto;
+    }
+
+    /* A altura de duas linhas serve a coluna estreita do ecrã grande, onde os detalhes vão ao
+       lado do valor. Aqui os detalhes já têm linha própria, e o mínimo era só vazio. */
+    .telemetry-row-stack {
+        min-height: 0;
     }
 }
 
