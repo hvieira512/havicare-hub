@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { parseFragment } from "./support/dom.js";
 import {
     takePillsInput,
     takePillsReminderGroup,
@@ -20,14 +21,21 @@ test("4P Touch medication UI escapes values and respects the reminder limit", ()
     assert.match(html, /data-action="addRepeatRow" data-repeat-kind="takePillsReminder" disabled/);
 });
 
-test("4P Touch custom-frequency reminder renders the custom field", () => {
+/** A máscara `0111110` tem o domingo na posição 0: são segunda a sexta. */
+test("4P Touch custom-frequency reminder marca os dias da máscara, e não a máscara", () => {
     const html = takePillsReminderGroup(
         { time: "09:30", enabled: true, frequency: 3, custom: "0111110" },
         0,
         [{ value: 3, label: "Personalizado" }],
     );
+    const root = parseFragment(html);
 
     assert.match(html, /data-takepills-custom-wrapper="0"/);
     assert.doesNotMatch(html, /data-takepills-custom-wrapper="0"[^>]*d-none/);
-    assert.match(html, /value="0111110"/);
+    assert.deepEqual(
+        Array.from(root.querySelectorAll("[data-weekday]:checked")).map((i) => i.value),
+        ["1", "2", "3", "4", "5"],
+    );
+    // A máscara deixou de andar na marcação: quem a escrevia à mão passa a carregar em dias.
+    assert.doesNotMatch(html, /value="0111110"/);
 });

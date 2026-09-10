@@ -1,4 +1,9 @@
 import { esc } from "../../format.js";
+import {
+    fourPTouchMaskToWeekdays,
+    weekdayPicker,
+    weekdaysToFourPTouchMask,
+} from "./alarm-fields.js";
 
 export function takePillsInput(desired, meta = {}) {
     const reminderText = String(desired.reminderText || "");
@@ -24,10 +29,13 @@ export function takePillsInput(desired, meta = {}) {
 export function takePillsReminderGroup(settings, index, frequencyOptions) {
     const frequency = parseInt(String(settings.frequency ?? 1), 10) || 1;
     return `<div class="border rounded p-3 bg-body" data-repeat-row="takePillsReminder" data-takepills-reminder-group="${index}"><div class="d-flex justify-content-between align-items-center gap-2 mb-2"><span class="small fw-semibold" data-takepills-reminder-number>Lembrete ${index + 1}</span><button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" aria-label="Remover lembrete"><i class="fa-solid fa-trash-can"></i></button></div><div class="row g-3 align-items-end">
-        <div class="col-md-3"><label class="form-label-sm">Hora</label><input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-takepills-field="reminderTime" data-takepills-index="${index}" value="${esc(settings.time)}"></div>
+        <div class="col-md-3"><label class="form-label-sm required">Hora</label><input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-takepills-field="reminderTime" data-takepills-index="${index}" value="${esc(settings.time)}" required></div>
         <div class="col-md-3"><label class="form-label-sm d-block">Estado</label><div class="form-check form-switch mt-2"><input class="form-check-input" type="checkbox" role="switch" data-takepills-field="reminderEnabled" data-takepills-index="${index}" ${settings.enabled ? "checked" : ""}><label class="form-check-label" data-switch-label data-switch-on="Ligado" data-switch-off="Desligado">${settings.enabled ? "Ligado" : "Desligado"}</label></div></div>
-        <div class="col-md-2"><label class="form-label-sm">Frequência</label><select class="form-select" data-takepills-field="reminderFrequency" data-takepills-index="${index}" data-takepills-frequency>${frequencyOptions.map((option) => `<option value="${esc(String(option.value))}" ${parseInt(String(option.value), 10) === frequency ? "selected" : ""}>${esc(String(option.label))}</option>`).join("")}</select></div>
-        <div class="col-md-4 ${frequency === 3 ? "" : "d-none"}" data-takepills-custom-wrapper="${index}"><label class="form-label-sm">Custom</label><input class="form-control" type="text" inputmode="numeric" maxlength="7" pattern="[01]{7}" placeholder="0111110" data-takepills-field="reminderCustom" data-takepills-index="${index}" value="${esc(settings.custom)}"></div></div></div>`;
+        <div class="col-md-6"><label class="form-label-sm required">Recorrência</label><div class="btn-group w-100" role="group" aria-label="Recorrência do lembrete">${frequencyOptions.map((option) => {
+            const inputId = `takepills-${index}-freq-${option.value}`;
+            return `<input class="btn-check" type="radio" name="takepills-${index}-freq" id="${esc(inputId)}" value="${esc(String(option.value))}" data-takepills-field="reminderFrequency" data-takepills-index="${index}" data-takepills-frequency ${parseInt(String(option.value), 10) === frequency ? "checked" : ""}><label class="btn btn-outline-secondary btn-sm" for="${esc(inputId)}">${esc(String(option.label))}</label>`;
+        }).join("")}</div></div>
+        <div class="col-12 ${frequency === 3 ? "" : "d-none"}" data-takepills-custom-wrapper="${index}">${weekdayPicker(fourPTouchMaskToWeekdays(settings.custom), `takepills-${index}`)}</div></div></div>`;
 }
 
 function normalizeVoiceEnabled(desired, hasVoiceData) {
@@ -50,7 +58,12 @@ function normalizeReminder(item) {
         const parts = item.split("-");
         return { time: String(parts[0] ?? "08:00"), enabled: boolValue(parts[1] ?? true, true), frequency: parseInt(String(parts[2] ?? 1), 10) || 1, custom: String(parts.slice(3).join("-") ?? "") };
     }
-    return { time: String(item.time ?? item.reminderTime ?? "08:00"), enabled: boolValue(item.enabled ?? item.switchState, true), frequency: parseInt(String(item.frequency ?? item.frequencies ?? 1), 10) || 1, custom: String(item.custom ?? item.reminderCustom ?? "") };
+    // A `recurrence` é a forma pública, a mesma que os alarmes usam; a máscara é a nativa.
+    const custom = Array.isArray(item.recurrence?.days)
+        ? weekdaysToFourPTouchMask(item.recurrence.days)
+        : String(item.custom ?? item.reminderCustom ?? "");
+
+    return { time: String(item.time ?? item.reminderTime ?? "08:00"), enabled: boolValue(item.enabled ?? item.switchState, true), frequency: parseInt(String(item.frequency ?? item.frequencies ?? 1), 10) || 1, custom };
 }
 
 function parseReminderString(value) {

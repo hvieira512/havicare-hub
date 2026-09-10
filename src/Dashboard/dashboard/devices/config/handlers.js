@@ -282,7 +282,7 @@ function syncFourPTouchAlarmCustomVisibility(row) {
     }
 
     const mode = parseInt(
-        String(row.querySelector("[data-fourptouch-field=\"mode\"]")?.value ?? "1"),
+        String(row.querySelector("[data-fourptouch-field=\"mode\"]:checked")?.value ?? "1"),
         10,
     ) || 1;
     const custom = row.querySelector("[data-fourptouch-custom-wrapper]");

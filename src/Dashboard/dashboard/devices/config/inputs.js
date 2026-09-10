@@ -2,14 +2,18 @@ import { esc, fieldLabel } from "../../format.js";
 import { field } from "../../widgets.js";
 import { renderPhoneControl } from "../../phone.js";
 import { protocolPhonebookConstraints } from "./protocol-catalog.js";
-import { formatFourPTouchAlarmTime, normalizeAlarmClockRecurrenceKind } from "./alarm-fields.js";
+import {
+    formatFourPTouchAlarmTime,
+    fourPTouchMaskToWeekdays,
+    normalizeAlarmClockRecurrenceKind,
+    weekdayPicker,
+} from "./alarm-fields.js";
 import {
     WONLEX_MEDICATION_PERIODS,
     boolValue,
     defaultAlarmClockItem,
     defaultWonlexMedicationPlan,
     formatReminderTime,
-    isFourPTouchAlarmDaySelected,
     normalizeAlarmClockDaySelection,
     normalizeAlarmClockItems,
     normalizeFourPTouchAlarmDays,
@@ -937,7 +941,7 @@ export function alarmsInput(desired, meta = {}) {
     return `
         <div class="vstack gap-3">
             <div class="small text-secondary">
-                Até ${esc(String(limit))} alarmes. A recorrência personalizada usa uma máscara de 7 dias, de Segunda a Domingo.
+                Até ${esc(String(limit))} alarmes. A recorrência personalizada usa dias de Segunda a Domingo.
             </div>
             <div class="d-flex justify-content-end">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="fourPTouchAlarm" ${rows.length >= limit ? "disabled" : ""}>Adicionar item</button>
@@ -1086,15 +1090,6 @@ export function fourPTouchAlarmRow(alarm, index) {
     const mode = parseInt(String(alarm.mode ?? 1), 10) || 1;
     const customVisible = mode === 3;
     const rowId = nextUid("fourptouch-alarm");
-    const dayButtons = [
-        { value: "0", label: "Dom" },
-        { value: "1", label: "Seg" },
-        { value: "2", label: "Ter" },
-        { value: "3", label: "Qua" },
-        { value: "4", label: "Qui" },
-        { value: "5", label: "Sex" },
-        { value: "6", label: "Sáb" },
-    ];
 
     const modeOptions = [
         { value: 1, label: "Uma vez" },
@@ -1102,15 +1097,18 @@ export function fourPTouchAlarmRow(alarm, index) {
         { value: 3, label: "Personalizado" },
     ];
 
-    const customDays = normalizeFourPTouchAlarmDays(alarm.custom || "");
+    // Da máscara do protocolo para a semana que se lê: a posição 0 é o domingo.
+    const customDays = fourPTouchMaskToWeekdays(
+        normalizeFourPTouchAlarmDays(alarm.custom || ""),
+    );
 
     return `
         <div class="border rounded p-3 bg-body" data-repeat-row="fourPTouchAlarm" data-fourptouch-alarm-row="${index}">
             <div class="row g-3 align-items-end">
                 ${field(
                     "Hora",
-                    `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-fourptouch-field="time" value="${esc(formatFourPTouchAlarmTime(alarm.time))}">`,
-                    { cls: "col-sm-6 col-lg-2" },
+                    `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-fourptouch-field="time" value="${esc(formatFourPTouchAlarmTime(alarm.time))}" required>`,
+                    { cls: "col-sm-6 col-lg-2", required: true },
                 )}
                 <div class="col-sm-6 col-lg-2">
                     <div class="form-check form-switch mt-4">
@@ -1119,36 +1117,30 @@ export function fourPTouchAlarmRow(alarm, index) {
                     </div>
                 </div>
                 ${field(
-                    "Modo",
-                    `<select class="form-select" data-config-field="mode" data-fourptouch-field="mode">
+                    "Recorrência",
+                    `<div class="btn-group w-100" role="group" aria-label="Recorrência do alarme">
                         ${modeOptions
-                            .map(
-                                (option) => `
-                            <option value="${option.value}" ${option.value === mode ? "selected" : ""}>${esc(option.label)}</option>
-                        `,
-                            )
-                            .join("")}
-                    </select>`,
-                    { cls: "col-12 col-lg-3" },
-                )}
-                <div class="col-12 col-lg-5 ${customVisible ? "" : "d-none"}" data-fourptouch-custom-wrapper>
-                    <label class="form-label-sm">Dias personalizados</label>
-                    <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias personalizados">
-                        ${dayButtons
-                            .map(
-                                (day) => `
+                            .map((option) => {
+                                const inputId = `${rowId}-mode-${option.value}`;
+                                return `
                             <input
                                 class="btn-check"
-                                type="checkbox"
-                                id="${rowId}-day-${day.value}"
-                                data-fourptouch-day="customDays"
-                                value="${day.value}"
-                                ${isFourPTouchAlarmDaySelected(customDays, day.value) ? "checked" : ""}>
-                            <label class="btn btn-outline-secondary btn-sm" for="${rowId}-day-${day.value}">${day.label}</label>
-                        `,
-                            )
+                                type="radio"
+                                name="${rowId}-mode"
+                                id="${inputId}"
+                                value="${option.value}"
+                                data-config-field="mode"
+                                data-fourptouch-field="mode"
+                                ${option.value === mode ? "checked" : ""}>
+                            <label class="btn btn-outline-secondary btn-sm" for="${inputId}">${esc(option.label)}</label>
+                        `;
+                            })
                             .join("")}
-                    </div>
+                    </div>`,
+                    { cls: "col-12 col-lg-7", required: true },
+                )}
+                <div class="col-12 ${customVisible ? "" : "d-none"}" data-fourptouch-custom-wrapper>
+                    ${weekdayPicker(customDays, rowId)}
                 </div>
                 <div class="col-12 d-flex justify-content-end">
                     <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover alarme" aria-label="Remover alarme">
@@ -1180,16 +1172,6 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                 { value: "daily", label: "Todos os dias" },
                 { value: "custom", label: "Personalizado" },
             ];
-    const dayButtons = [
-        { value: "1", label: "Seg" },
-        { value: "2", label: "Ter" },
-        { value: "3", label: "Qua" },
-        { value: "4", label: "Qui" },
-        { value: "5", label: "Sex" },
-        { value: "6", label: "Sáb" },
-        { value: "7", label: "Dom" },
-    ];
-
     return `
         <div class="border rounded p-3 bg-body" data-repeat-row="alarm_clock">
             <div class="row g-3 align-items-end">
@@ -1257,27 +1239,11 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                     </div>`,
                     { cls: `col-12 col-lg-${hasTypeSelector ? "3" : "4"}`, required: true },
                 )}
-                <div class="col-12 col-lg-3 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
-                    <label class="form-label-sm required">Dias personalizados</label>
-                    <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias personalizados">
-                        ${dayButtons
-                            .map(
-                                (day) => `
-                            <input
-                                class="btn-check"
-                                type="checkbox"
-                                id="${rowId}-day-${day.value}"
-                                data-alarm-clock-day="customDays"
-                                value="${day.value}"
-                                ${dayMask.includes(day.value) ? "checked" : ""}>
-                            <label class="btn btn-outline-secondary btn-sm" for="${rowId}-day-${day.value}">${day.label}</label>
-                        `,
-                            )
-                            .join("")}
-                    </div>
+                <div class="col-12 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
+                    ${weekdayPicker(dayMask, rowId)}
                 </div>
-                <div class="col-12 col-lg-1 d-flex justify-content-lg-end">
-                    <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm mt-lg-4" data-action="removeRepeatRow" title="Remover" aria-label="Remover">
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover" aria-label="Remover">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>

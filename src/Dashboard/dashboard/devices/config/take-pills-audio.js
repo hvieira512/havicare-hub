@@ -82,7 +82,7 @@ export async function loadTakePillsAudio(section, file) {
 export function syncTakePillsCustomVisibility(section) {
     section.querySelectorAll("[data-takepills-reminder-group]").forEach((group) => {
         const index = group.dataset.takepillsReminderGroup;
-        const frequency = parseInt(group.querySelector("[data-takepills-field=\"reminderFrequency\"]")?.value ?? "1", 10) || 1;
+        const frequency = parseInt(group.querySelector("[data-takepills-field=\"reminderFrequency\"]:checked")?.value ?? "1", 10) || 1;
         section.querySelector(`[data-takepills-custom-wrapper="${index}"]`)?.classList.toggle("d-none", frequency !== 3);
     });
 }

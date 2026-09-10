@@ -1,4 +1,8 @@
-import { formatFourPTouchAlarmTime, normalizeAlarmClockRecurrenceKind } from "./alarm-fields.js";
+import {
+    formatFourPTouchAlarmTime,
+    normalizeAlarmClockRecurrenceKind,
+    weekdaysToFourPTouchMask,
+} from "./alarm-fields.js";
 
 export const WONLEX_MEDICATION_PERIODS = [
     { index: 0, key: "Morning", label: "Manhã", defaultTime: "08:00" },
@@ -148,7 +152,17 @@ function parseFourPTouchAlarmString(value) {
     };
 }
 
+/**
+ * A máscara nativa do 4P Touch, venha uma lista de dias de 1 a 7 ou já a máscara.
+ *
+ * É aqui que o domingo passa da posição 7, que é a que se lê, para a posição 0, que é a que o
+ * protocolo escreve. Fora daqui ninguém precisa de saber onde ele fica.
+ */
 export function normalizeFourPTouchAlarmDays(value) {
+    if (Array.isArray(value)) {
+        return weekdaysToFourPTouchMask(value);
+    }
+
     const raw = String(value || "").trim();
     if (raw === "") {
         return "";
@@ -158,24 +172,7 @@ export function normalizeFourPTouchAlarmDays(value) {
         return raw;
     }
 
-    const selected = new Set(raw.replace(/[^0-6]/g, "").split(""));
-    return ["0", "1", "2", "3", "4", "5", "6"]
-        .map((day) => (selected.has(day) ? "1" : "0"))
-        .join("");
-}
-
-export function isFourPTouchAlarmDaySelected(mask, day) {
-    const normalizedMask = String(mask || "").trim();
-    const index = parseInt(String(day || ""), 10);
-    if (!Number.isFinite(index) || index < 0 || index > 6) {
-        return false;
-    }
-
-    if (/^[01]{7}$/.test(normalizedMask)) {
-        return normalizedMask.charAt(index) === "1";
-    }
-
-    return false;
+    return weekdaysToFourPTouchMask(raw.replace(/[^1-7]/g, "").split(""));
 }
 
 export function normalizeAlarmClockItems(desired) {

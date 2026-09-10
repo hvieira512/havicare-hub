@@ -4,8 +4,8 @@ import { protocolPhonebookConstraints } from "./protocol-catalog.js";
 import {
     formatFourPTouchAlarmTime,
     normalizeAlarmClockRecurrenceKind,
-    readAlarmClockDays,
     readFourPTouchAlarmDays,
+    readWeekdays,
 } from "./alarm-fields.js";
 
 /**
@@ -197,7 +197,7 @@ export function readAlarmClock(section) {
             }
 
             if (item.recurrence.kind === "custom") {
-                const days = readAlarmClockDays(row);
+                const days = readWeekdays(row);
                 item.recurrence.days = days;
                 if (!Array.isArray(days) || days.length === 0) {
                     throw new Error("Selecione pelo menos um dia para a recorrência personalizada");
@@ -221,11 +221,12 @@ export function readTakePills(section) {
     const voiceMimeType = readText(section, "voiceMimeType");
 
     const reminderSettings = groups.map((group) => {
+        // `:checked` porque a recorrência é um grupo de rádios, como no bloco dos alarmes.
         const frequency =
             parseInt(
                 String(
                     group.querySelector(
-                        "[data-takepills-field=\"reminderFrequency\"]",
+                        "[data-takepills-field=\"reminderFrequency\"]:checked",
                     )?.value ?? "1",
                 ),
                 10,
@@ -240,12 +241,7 @@ export function readTakePills(section) {
                         "[data-takepills-field=\"reminderEnabled\"]",
                     )?.checked || false,
             frequency,
-            custom:
-                    frequency === 3
-                        ? group.querySelector(
-                            "[data-takepills-field=\"reminderCustom\"]",
-                        )?.value || ""
-                        : "",
+            custom: frequency === 3 ? readFourPTouchAlarmDays(group) : "",
         };
     });
 
@@ -270,8 +266,9 @@ export function readTakePills(section) {
 export function readFourPTouchAlarms(section) {
     return Array.from(section.querySelectorAll("[data-fourptouch-alarm-row]"))
         .map((row) => {
+            // `:checked` porque o modo é um grupo de rádios: sem isso vinha sempre o primeiro.
             const mode = parseInt(
-                String(row.querySelector("[data-fourptouch-field=\"mode\"]")?.value || "1"),
+                String(row.querySelector("[data-fourptouch-field=\"mode\"]:checked")?.value || "1"),
                 10,
             ) || 1;
             const alarm = {
