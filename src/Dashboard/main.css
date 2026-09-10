@@ -1,19 +1,10 @@
 /* ===== modais, definições e assistente =====
-   O que vive dentro dos modais: editar dispositivo, o painel de definições e o assistente de
-   adicionar. Com eles ficam as peças que lhes cresceram ao lado -- o medidor de sinal, a
-   tira da fralda, o menu de notificações e a pastilha de estado de um bloco.
+   É o último `<link>` da página: `/main.css` é rota fixa do servidor e há testes que o lêem
+   pelo nome, por isso ficou com a cauda da folha original em vez de mudar de nome. */
 
-   É o último `<link>` da página e não o primeiro: `/main.css` é uma rota fixa do servidor e
-   há testes que lêem este ficheiro pelo nome, por isso ficou com a cauda da folha original
-   em vez de mudar de nome. O resto está em `assets/css/`, carregado antes deste. */
-
-/* A chapa onde a fotografia do produto assenta.
-   As fotografias dos modelos vêm com o fundo branco lá dentro, e por isso no tema escuro
-   apareciam como um rectângulo branco a flutuar sobre a superfície escura -- que se lê como
-   um erro e não como uma fotografia. A chapa é clara nos dois temas de propósito: assim o
-   branco da imagem encosta a um branco que ali devia estar, e o que se vê é uma fotografia
-   numa moldura. Não é `bg-body-tertiary` porque essa vira com o tema, que é exactamente o
-   que aqui não pode acontecer. */
+/* A chapa da fotografia é clara nos dois temas de propósito: as imagens vêm com fundo
+   branco, e sobre uma superfície escura liam-se como um rectângulo a flutuar. Não é
+   `bg-body-tertiary` porque essa vira com o tema. */
 .showcase-preview {
     min-height: 280px;
 }
@@ -24,10 +15,8 @@
     background-color: #fff;
 }
 
-/* No escuro a chapa não muda de cor -- baixa de brilho com a fotografia em cima dela. Os dois
-   descem juntos, e por isso o rebordo branco da imagem continua a não se ver; o que muda é
-   deixar de ser um farol no meio de uma página escura. Uma chapa acinzentada em vez desta
-   fazia reaparecer o rectângulo, que é o que se queria tirar. */
+/* No escuro a chapa não muda de cor: baixa de brilho com a fotografia, para os dois
+   descerem juntos. Acinzentá-la fazia reaparecer o rectângulo. */
 [data-bs-theme="dark"] .showcase-preview {
     filter: brightness(.84);
 }
@@ -81,14 +70,8 @@
     max-height: 56px;
 }
 
-/* As chapas pequenas das fotografias, no escuro. As fotografias dos modelos vêm em JPEG
-   sobre branco, e uma chapa escura por baixo deixa aparecer esse rectângulo lá dentro -- era
-   a coisa mais brilhante do ecrã, dezassete vezes na árvore do catálogo. A chapa passa a ser
-   a cor da fotografia e as duas descem de brilho juntas, que é o que o `.showcase-preview`
-   acima já faz e pela mesma razão: uma chapa acinzentada faria reaparecer o rectângulo.
-
-   Só onde há fotografia: sem ela a chapa fica com o ícone de reserva, que é claro e
-   desaparecia sobre o branco. Aí serve o tom escuro do `tertiary-bg` que já lá estava. */
+/* As chapas pequenas, pela mesma razão do `.showcase-preview` acima. Só onde há fotografia:
+   sem ela fica o ícone de reserva, que é claro e desaparecia sobre o branco. */
 [data-bs-theme="dark"] .modal-device-thumb:has(img),
 [data-bs-theme="dark"] .selected-device-preview:has(img),
 [data-bs-theme="dark"] .gateway-card-thumb:has(img),
@@ -206,11 +189,8 @@
     white-space: nowrap;
 }
 
-/*
- * A intensidade de sinal em quatro barras crescentes. A contagem de barras cheias diz a
- * leitura tão bem como a cor, para o medidor continuar legível sem percepção de tom, e o
- * dBm exacto vive na tooltip.
- */
+/* A contagem de barras cheias diz a leitura tão bem como a cor, para se ler sem percepção
+   de tom. O dBm exacto vive na tooltip. */
 .signal-meter {
     display: inline-flex;
     align-items: flex-end;
@@ -236,10 +216,8 @@
 .signal-meter-bar:nth-child(3) { height: 75%; }
 .signal-meter-bar:nth-child(4) { height: 100%; }
 
-/* Os três estados de humidade têm cor própria porque nenhuma das do Bootstrap os diz: seco,
-   húmido e molhado é uma escala do domínio, não um `info`/`warning`/`danger`. Ficam em
-   tokens e não escritas nas cinco regras que as usam, para o azul da barra e o azul do
-   número não poderem passar a dizer coisas diferentes. */
+/* Seco, húmido e molhado é uma escala do domínio e não um `info`/`warning`/`danger`. Em
+   tokens para o azul da barra e o do número não poderem divergir. */
 :root {
     --moisture-dry: #cbd5e1;
     --moisture-damp: #93c5fd;
@@ -248,10 +226,8 @@
     --moisture-wet-text: #1e3a8a;
 }
 
-/* No escuro a escala inverte-se de direcção mas não de sentido: no claro, mais humidade é
-   azul mais carregado; aqui é azul mais aceso. O que se lê continua a ser "quanto mais
-   forte, mais molhado", que é o que a barra tem de dizer. O seco deixa de ser um cinzento
-   claro e passa a ser um degrau acima do fundo da barra, senão lê-se como cheio. */
+/* No escuro a escala inverte de direcção mas não de sentido: mais forte continua a ser mais
+   molhado. O seco sobe um degrau acima do fundo da barra, senão lê-se como cheio. */
 [data-bs-theme="dark"] {
     --moisture-dry: #2c3850;
     --moisture-damp: #3b82f6;
@@ -382,10 +358,8 @@
     overflow-y: auto;
 }
 
-/* O Bootstrap não tem utilitário de altura por breakpoint -- não existe `h-lg-100` --, por
-   isso este é um dos poucos sítios onde a marcação não chega.
-   O limite acompanha o `modal-fullscreen-lg-down`: abaixo dele o diálogo é o ecrã todo, e
-   uma altura fixa lá dentro deixava metade do ecrã em branco. */
+/* Não existe `h-lg-100`. O limite acompanha o `modal-fullscreen-lg-down`: abaixo dele o
+   diálogo é o ecrã todo, e uma altura fixa deixava metade em branco. */
 @media (max-width: 991.98px) {
 
     /* Cada folha mede o que o seu conteúdo mede, e quem rola é o corpo do modal. */
@@ -675,13 +649,9 @@
 
 /* ===== pastilha de estado ===== */
 
-/* O estado vive no bloco e não no separador: umas configurações viajam para o
-   dispositivo e podem ficar pendentes, outras valem de imediato. Nomear separadores por essa
-   diferença era nomear pela implementação.
-
-   A pastilha é o `badge` do Bootstrap com as utilitárias `bg-*-subtle` e `text-*-emphasis`,
-   montada no `components/state-badge.js`. Sobra aqui o ponto, para que o Bootstrap não tem
-   medida. A leitura não pode depender da cor, e por isso o rótulo diz sempre o estado. */
+/* A pastilha é o `badge` do Bootstrap com `bg-*-subtle` e `text-*-emphasis`, montada no
+   `components/state-badge.js`; sobra aqui o ponto, para que não há medida. O rótulo diz
+   sempre o estado, para a leitura não depender da cor. */
 .state-badge-dot {
     width: 6px;
     height: 6px;

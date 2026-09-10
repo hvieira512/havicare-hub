@@ -1,8 +1,6 @@
 /* ===== dispositivos =====
-   Tudo o que mostra dispositivos: o painel de detalhe, as duas tabelas de telemetria, o
-   modal de escolha com os seus filtros, a lista de cartões, o catálogo de capacidades e os
-   mosaicos de telemetria. As media queries ficam ao lado das regras que anulam -- várias
-   dependem de vir depois delas, porque uma media query não acrescenta especificidade. */
+   As media queries ficam ao lado das regras que anulam: uma media query não acrescenta
+   especificidade, e quem ganha é quem vier mais abaixo. */
 
 /* O painel de detalhe enche o cartão, para as duas listas terem altura para crescer. Não se
    usa `d-flex` aqui porque o `d-none` que o esconde é do mesmo peso e perdia. */
@@ -25,10 +23,8 @@
     }
 }
 
-/* As duas listas do painel de detalhe -- eventos recebidos e pedidos ao dispositivo.
-   O `table-sm` do Bootstrap aperta as linhas a .25rem, e uma pastilha de 26px dentro de uma
-   linha de 8px de altura útil toca na de cima e na de baixo. A última linha não leva
-   divisória: por baixo dela vem logo o contorno do cartão ou o paginador. */
+/* O `table-sm` aperta as linhas a .25rem e uma pastilha de 26px toca nas vizinhas. A última
+   linha não leva divisória: por baixo dela vem logo o contorno do cartão. */
 .telemetry-table > :not(caption) > * > * {
     /* .5rem e não .625rem: dois pixéis por lado numa lista de quinze linhas são trinta
        pixéis de altura que a lista ganha, e a pastilha de 26px continua a ter folga. */
@@ -44,11 +40,8 @@
     padding-right: 0;
 }
 
-/* Uma linha por evento, sempre a mesma altura. Metade dos tipos declara detalhes e a outra
-   metade não, e com esses detalhes numa segunda linha a lista alternava entre alturas
-   conforme o tipo de cada evento. Os detalhes vão a seguir ao valor, na mesma
-   linha, e o que não cabe corta-se com reticências. O texto completo fica no `title` da
-   célula. */
+/* Os detalhes vão na mesma linha do valor e o que não cabe corta-se; o texto completo fica
+   no `title`. Numa segunda linha, a lista alternava de altura conforme o tipo do evento. */
 .telemetry-table {
     table-layout: fixed;
 }
@@ -75,10 +68,8 @@
     overflow: visible;
 }
 
-/* Metade dos tipos declara detalhes e a outra metade não, e a segunda linha de uns fazia a
-   lista alternar entre duas alturas. A altura de duas linhas fica reservada aqui, no
-   contentor, e não numa linha vazia: assim uma linha sem detalhes centra o valor no meio da
-   altura reservada em vez de o encostar ao topo. */
+/* A altura de duas linhas fica no contentor e não numa linha vazia: sem detalhes, o valor
+   centra-se em vez de encostar ao topo. */
 .telemetry-row-stack {
     display: flex;
     flex-direction: column;
@@ -124,14 +115,9 @@
     white-space: normal;
 }
 
-/* Num telefone as quatro colunas dividem os ~310px úteis do cartão entre nome, valor e
-   hora, e o nome ainda leva uma largura fixa no próprio `td`. A linha passa a duas: o
-   ícone, o nome e a hora em cima, o valor com a largura toda em baixo. Serve as duas
-   tabelas do painel, os eventos recebidos e os pedidos ao dispositivo.
+/* No telefone a linha passa a duas: ícone, nome e hora em cima, valor em baixo.
 
-   TEM de vir depois das regras que anula. Uma media query não acrescenta especificidade: o
-   `width: auto` daqui e o `width: 34%` do nome têm a mesma, e quem ganha é quem vier mais
-   abaixo no ficheiro. */
+   TEM de vir depois das regras que anula -- mesma especificidade, ganha quem vier abaixo. */
 @media (max-width: 575.98px) {
     .telemetry-table > tbody > tr {
         display: grid;
@@ -279,10 +265,8 @@
     transition: border-color .12s ease, background-color .12s ease;
 }
 
-/* O tom da categoria a acender, e não o cinzento. Escrever `--bs-primary-border-subtle` e
-   `--bs-tertiary-bg` por cima do tom punha um mosaico de bateria verde e um de frequência
-   cardíaca vermelho os dois cinzentos sob o rato -- a cor que o
-   identificava desaparecia exactamente no momento em que se ia clicar nele. */
+/* O tom da categoria a acender, e não o cinzento: escrever os tokens genéricos por cima
+   apagava a cor que identifica o mosaico no momento em que se ia clicar nele. */
 .telemetry-card-action:hover:not(:disabled),
 .telemetry-card-action:focus-visible {
     border-color: var(--tone-fg, var(--bs-primary));
@@ -327,20 +311,10 @@
 
 /* ===== escolher dispositivo ===== */
 
-/* O modal tem altura fixa: com a altura a vir do conteúdo, cada filtro aplicado colapsava a
-   caixa de dez linhas para uma debaixo do rato, e o botão que se ia clicar mudava de sítio
-   no momento do clique. Aqui a lista rola dentro de uma moldura que não se mexe.
-
-   A altura é uma fracção do ecrã e não um número de pixéis, para não ser mais alta do que o
-   ecrã em portáteis pequenos. */
-/* Altura definida e não um mínimo com um máximo: uma coluna só sabe onde rolar se a altura
-   do pai for um comprimento resolvido, e com `min-height`/`max-height` a altura continua a
-   vir do conteúdo -- a lista cresce 1132px dentro de uma moldura de 691 e transborda por
-   baixo do rodapé em vez de rolar.
-
-   Os limites do `clamp` são os dois lados do problema: o mínimo garante que a caixa não
-   colapsa quando um filtro deixa um dispositivo, e o máximo evita um modal absurdamente alto
-   num ecrã grande. */
+/* Altura fixa: vinda do conteúdo, cada filtro aplicado colapsava a caixa debaixo do rato. É
+   uma fracção do ecrã e não pixéis, para não passar a altura de um portátil pequeno. */
+/* Altura definida e não `min-height`/`max-height`: uma coluna só sabe onde rolar se a altura
+   do pai for um comprimento resolvido, senão transborda em vez de rolar. */
 .device-selector-body {
     height: clamp(26rem, 62vh, 46rem);
 }
@@ -364,10 +338,8 @@
     background: var(--bs-tertiary-bg);
 }
 
-/* A coluna e um `collapse`, para os filtros se esconderem atras de um botao no telefone. A
-   partir de lg tem de estar sempre aberta, e o `d-lg-block` do Bootstrap fa-lo com um
-   `display: block !important` que apagava a coluna flex daqui. Este `!important` existe para
-   responder a esse, e não por preguiça de especificidade. */
+/* O `d-lg-block` do Bootstrap traz `display: block !important` e apagava a coluna flex: este
+   `!important` responde a esse, e não é preguiça de especificidade. */
 @media (min-width: 992px) {
     .device-filter-column.collapse {
         display: flex !important;
@@ -697,13 +669,8 @@
 }
 
 /* ===== cartão de dispositivo =====
-   A marcação e o esqueleto deste bloco vivem em `dashboard/devices/device-card.js`, e mudam
-   com ele. O estilo fica aqui e não ao lado do módulo porque sem passo de compilação um
-   ficheiro de estilo por widget é um pedido HTTP por widget -- ver a regra 4 do README.
-
-   Um dispositivo por linha, e a linha toda. Cada campo cai sempre na mesma abcissa e a lista
-   lê-se a descer por coluna, como uma tabela -- mas cada dispositivo continua a ser um
-   objecto com contorno próprio, e não uma linha de grelha. */
+   A marcação vive em `dashboard/devices/device-card.js`. Cada campo cai na mesma abcissa e a
+   lista lê-se a descer por coluna, mas cada dispositivo tem contorno próprio. */
 .device-card {
     display: grid;
     grid-template-columns: 40px 104px minmax(0, 1fr) 11.75rem 7rem;
@@ -812,18 +779,14 @@
     padding-inline-start: .125rem;
 }
 
-/* «Sem registo» não leva cor de alarme. São dezoito dos quarenta e nove, e filtrando por
-   desligados ficavam dezoito linhas vermelhas em coluna -- onde tudo é vermelho, nada é. A
-   palavra já se distingue de uma data, e não é um erro: é um aparelho registado que o hub
-   ainda não ouviu. O itálico chega para dizer que ali não está uma medida de tempo. */
+/* «Sem registo» não é um erro e não leva cor de alarme: o itálico chega para dizer que ali
+   não está uma medida de tempo. */
 .device-card-when.never {
     font-style: italic;
 }
 
-/* Os dois campos são células da grelha do cartão, e não uma célula com dois campos dentro:
-   como contentor, empilhava a licença sobre o SIM numa coluna só e perdia o alinhamento a
-   descer, que é a razão de ser desta grelha. O `display: contents` promove-os a itens da
-   grelha de cima; em telefone volta a ser um contentor, com a sua própria grelha. */
+/* O `display: contents` promove os dois campos a itens da grelha do cartão: como contentor,
+   empilhava-os numa coluna e perdia o alinhamento a descer. No telefone volta a contentor. */
 .device-card-fields {
     display: contents;
 }
@@ -901,10 +864,8 @@
 .license-empty,
 .device-card-field-value.empty { color: var(--bs-secondary-color); }
 
-/* Num telefone as cinco colunas não cabem, mas o cartão continua uma grelha e não uma
-   coluna: a miniatura fica à esquerda com a pastilha e o identificador ao lado dela, e os
-   campos de atribuição passam a uma fila por baixo da divisória. Em coluna simples a
-   miniatura ficava numa linha sozinha e a pastilha esticava à largura do cartão. */
+/* No telefone as cinco colunas não cabem, mas continua grelha e não coluna: em coluna
+   simples a miniatura ficava sozinha numa linha e a pastilha esticava à largura toda. */
 @media (max-width: 767.98px) {
     .device-card {
         grid-template-columns: 40px minmax(0, 1fr);
@@ -946,14 +907,8 @@
     }
 }
 
-/* A grelha dos mosaicos mede-se pelo contentor e não pela largura do ecrã. Com `col-lg-6`,
-   dois mosaicos dentro da coluna `col-lg-4` do ecrã davam 190px cada, e o título ficava com
-   43px: "Frequência cardíaca" lia-se em quatro linhas, FREQUÊN/CIA/CARDÍAC/A. Com `auto-fit`
-   a segunda coluna só aparece quando há 14rem para ela -- é o padrão que o `.gateway-picker`
-   do `main.css` já usa, e 14rem é a medida em que a palavra mais comprida do catálogo
-   ("CONFIGURAÇÃO", 93px) cabe ao lado do ícone, do aviãozinho e das goteiras.
-
-   As goteiras vêm dos utilitários `gap-*` do Bootstrap, nos contentores. */
+/* Mede-se pelo contentor e não pelo ecrã: com `auto-fit`, a segunda coluna só aparece
+   quando há 14rem para ela, que é o que a palavra mais comprida do catálogo pede. */
 .telemetry-card-grid {
     grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
 }
@@ -970,13 +925,8 @@
     min-width: 0;
 }
 
-/* O nome quebra em duas linhas em vez de ser truncado: a 375px, com dois mosaicos por linha,
-   "Oxigénio no sangue" ficava "Oxigénio no sa" e o `title` que o completava era uma tooltip
-   a dizer o que já estava escrito no ecrã.
-
-   Quebra entre palavras e nunca dentro de uma: o `word-wrap: break-word` que o `.card` do
-   Bootstrap herda a tudo o que está dentro dele serve texto corrido, e não uma etiqueta de
-   duas palavras. */
+/* O nome quebra em vez de ser truncado, e entre palavras: o `word-wrap: break-word` que o
+   `.card` do Bootstrap herda serve texto corrido, não uma etiqueta de duas palavras. */
 .telemetry-card-title {
     line-height: 1.3;
     overflow-wrap: normal;
@@ -1029,10 +979,8 @@
     border-color: var(--tone-border);
 }
 
-/* A etiqueta em maiúsculas é o único cabeçalho de secção dentro de um cartão: o título do
-   ecrã não pode competir com um h5 em cada bloco. Uma medida só para os quatro sítios onde
-   aparece -- os factos do dispositivo, a chave da badge da trilha, o nome do passo do
-   assistente e a pastilha de estado. */
+/* O cabeçalho de secção dentro de um cartão: o título do ecrã não pode competir com um h5
+   em cada bloco. */
 .section-label,
 .selected-device-facts dt,
 .wizard-trail .wizard-badge-key {

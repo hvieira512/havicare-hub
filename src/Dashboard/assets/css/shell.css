@@ -1,8 +1,6 @@
 /* ===== moldura e primitivas =====
-   A armação da página -- colunas, barra de navegação, cartão -- e as peças que qualquer
-   ecrã usa: linhas de árvore, pastilhas de contagem, divisórias de cartão, pastilhas de
-   filtro. Uma regra entra aqui quando serve mais do que uma área; se só serve uma, vive no
-   ficheiro dessa área. */
+   A armação da página e as peças que qualquer ecrã usa. Uma regra entra aqui quando serve
+   mais do que uma área; se só serve uma, vive no ficheiro dessa área. */
 
 /* As duas colunas do ecrã principal chegam ao fundo, para as duas listas terem espaço para
    crescer. `min-height` e não `height`: quando o conteúdo passa do ecrã, a página cresce. */
@@ -68,21 +66,14 @@
     --bs-card-border-color: var(--bs-secondary-bg);
 }
 
-/* No escuro o `secondary-bg` fica *por baixo* da superfície do cartão, e uma moldura entre a
-   página e o cartão dilui a aresta em vez de a marcar. A relação que se espelha é a do claro
-   -- moldura mais suave que as divisórias de dentro --, e no escuro isso é um degrau curto
-   acima do cartão: 1,10 para 1 contra ele e 1,36 contra a página, contra os 1,10 que a
-   moldura antiga dava dos dois lados. */
+/* No escuro o `secondary-bg` fica por baixo da superfície do cartão e dilui a aresta em vez
+   de a marcar: a moldura passa a um degrau curto acima dele. */
 [data-bs-theme="dark"] .card {
     --bs-card-border-color: #202b42;
 }
 
-/* Um filho pertence ao cabecalho acima dele, e le-se indentado sob ele. A linha vertical e
-   o que diz que pertence, sem precisar de uma segunda tabela a dizer o mesmo.
-
-   Serve as licenças dentro de uma empresa e o catálogo -- fornecedores dentro de um tipo,
-   modelos dentro de um fornecedor. As margens negativas são para a linha atravessar o
-   cartão de lado a lado, e valem o `p-3` do `card-body` que os dois usam. */
+/* A linha vertical é o que diz que um filho pertence ao cabeçalho acima. As margens
+   negativas valem o `p-3` do `card-body`, para a linha atravessar o cartão de lado a lado. */
 .tree-row {
     margin: .75rem -1rem 0;
     padding: .75rem 1rem 0 2rem;
@@ -199,33 +190,21 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Um filho de flex não encolhe abaixo do seu conteúdo sem isto, e o `text-truncate` do irmão
-   ao lado nunca chega a cortar nada -- é a linha que transborda em vez de encolher.
-   Escrevia-se `min-w-0` em dez sítios da marcação e a classe não existia em lado nenhum:
-   nem no Bootstrap 5.3, que não traz utilitário de `min-width`, nem aqui. */
+/* Sem isto um filho de flex não encolhe abaixo do conteúdo, e o `text-truncate` do irmão
+   nunca corta -- transborda. O Bootstrap não traz utilitário de `min-width`. */
 .min-w-0 {
     min-width: 0;
 }
 
-/* O mesmo para a altura, e pela mesma razão. Um item de flex tem `min-height: auto`, que o
-   impede de encolher abaixo do conteúdo: uma lista alta empurrava a coluna, a coluna
-   empurrava o cartão, e o `overflow-auto` da lista nunca chegava a ter o que rolar porque
-   nada acima dela limitava a altura. O Bootstrap não traz utilitário para isto. */
+/* O mesmo para a altura: com `min-height: auto` uma lista alta empurra a coluna e o
+   `overflow-auto` nunca chega a ter o que rolar. O Bootstrap também não traz utilitário. */
 .min-h-0 {
     min-height: 0;
 }
 
-/* Os botões do paginador medem o que o número mede, e por isso o "1" ficava a 22px ao lado
-   do "13" a 31px -- treze caixas de larguras diferentes numa linha lêem-se como desalinhadas.
-   Com uma medida mínima igual para todos, todos medem o mesmo.
-
-   A medida é a do "13" com o padding apertado (`px-1`, do Bootstrap): a partir daí é ele que
-   manda e os de um dígito igualam-no. A 2rem os quinze botões de treze páginas não cabiam na
-   coluna e a seta seguinte partia sozinha para uma segunda linha.
-
-   O que não há é utilitário de largura: os do Bootstrap são só percentagens (`w-25` a
-   `w-100`), e o `flex-fill` é `flex: 1 1 auto`, que reparte o espaço livre mas mantém a base
-   de cada um diferente. Daí esta linha ser nossa. */
+/* Sem medida mínima os botões medem o que o número mede, e treze caixas de larguras
+   diferentes lêem-se desalinhadas. A medida é a do "13" com `px-1`. O Bootstrap só tem
+   utilitários de largura em percentagem, e o `flex-fill` mantém a base de cada um. */
 .pagination .page-link {
     min-width: 1.5rem;
 }

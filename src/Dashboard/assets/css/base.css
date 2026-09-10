@@ -1,7 +1,6 @@
 /* ===== base =====
-   Tipos de letra, tokens do tema e as sobreposições aos componentes do Bootstrap. É o
-   primeiro da cadeia porque todos os outros contam com estas variáveis já definidas: uma
-   regra só entra aqui se valer para a página toda. */
+   Tipos de letra, tokens do tema e sobreposições ao Bootstrap. É o primeiro da cadeia: os
+   outros contam com estas variáveis definidas. */
 
 @font-face {
     font-family: 'Poppins';
@@ -36,16 +35,7 @@
 }
 
 /* ===== a paleta da marca =====
-   O navy estava escrito 24 vezes, e as suas sombras mais 10. Mudar a cor da marca era um
-   find-and-replace por 34 sítios, e bastava falhar um para ficar um botão de outra cor.
-
-   Fica aqui em cima e sozinha porque é a identidade, não o tema: o bloco de baixo é que a
-   liga aos nomes do Bootstrap. Um tema escuro reescreve estas nove linhas e o resto do
-   ficheiro -- e do projecto -- não muda uma vírgula.
-
-   O `#070e28` juntou-se ao `#070d26`: dois em sete e dois em quarenta de diferença num canal
-   é meia unidade de ΔE, e o olho separa a partir de duas. Eram a mesma cor escrita duas
-   vezes, e uma paleta com um tom a menos é um tom a menos para espelhar no escuro. */
+   A identidade, e não o tema: é o bloco de baixo que a liga aos nomes do Bootstrap. */
 :root {
     --brand: #0b163f;
     --brand-rgb: 11, 22, 63;
@@ -53,40 +43,23 @@
     --brand-active: #08102d;
     --brand-emphasis: #070d26;
     --brand-emphasis-rgb: 7, 13, 38;
-    /* Os subtis são o navy diluído e não um cinzento: o `#d5d8e1` que aqui estava tinha
-       perdido o azul pelo caminho, e uma linha seleccionada ficava cinzenta ao lado de um
-       botão navy. Estes mantêm o tom e só lhe tiram saturação. */
+    /* Os subtis são o navy diluído e não um cinzento: mantêm o tom, tiram saturação. */
     --brand-subtle: #dde3f0;
     --brand-subtle-hover: #d0d8ea;
     --brand-subtle-active: #c3cde4;
     --brand-subtle-border: #b3bfda;
-    /* A superfície da marca: a barra de navegação e mais nada.
-       Separada do `--brand` porque as duas coisas divergem no escuro. O `--brand` é o que
-       reage ao toque -- botões, links, o que está seleccionado -- e no escuro tem de subir de
-       luminosidade para se ver. Uma barra que suba com ele deixa de ser a barra da marca e
-       passa a ser uma faixa azul viva no topo da página. */
+    /* A barra de navegação e mais nada. Separada do `--brand` porque divergem no escuro: o
+       `--brand` sobe de luminosidade para se ver, e a barra que suba com ele vira faixa. */
     --brand-bar: #0b163f;
-    /* O texto que assenta sobre o navy. Um nome e não `#fff`, porque no escuro deixa de o ser.
-       O par em RGB é para as camadas translúcidas da barra de navegação, que são tons desta
-       cor e não do branco: seguem-na sozinhas quando ela mudar. */
+    /* O texto sobre o navy, por nome e não `#fff`: no escuro deixa de o ser. O par em RGB
+       serve as camadas translúcidas da barra, que são tons desta cor e não do branco. */
     --brand-on: #fff;
     --brand-on-rgb: 255, 255, 255;
 }
 
 /* ===== o mesmo navy, no escuro =====
-   O Bootstrap 5.3 já vira os seus próprios tokens em `[data-bs-theme="dark"]`, e como quase
-   tudo neste projecto pede a cor por `var(--bs-*)`, quase tudo vira sozinho. O que faltava
-   era isto: nove valores da marca escritos à mão, que no escuro ficavam onde estavam.
-   Esta é a razão de terem virado tokens primeiro.
-
-   O navy sobe de luminosidade: a #0b163f um botão desaparecia contra o fundo escuro. A
-   ênfase faz o contrário e passa a ser o tom claro -- é o que o Bootstrap faz aos seus
-   `-text-emphasis`, porque no escuro quem realça é a luz e não a sombra.
-
-   O quanto sobe não é gosto: a barra de navegação é este navy sobre o corpo da página, e a
-   #2c4a8f a diferença entre os dois era de 1,8 para 1 -- a barra desaparecia como banda. A
-   #3a5eb0 são 2,5 para 1 contra o corpo e 6,2 para 1 para o texto branco que assenta nela,
-   que é o equilíbrio entre ver-se a barra e ler-se o que lá está dentro. */
+   O navy sobe de luminosidade -- a `#0b163f` um botão desaparecia contra o fundo -- e a
+   ênfase passa a ser o tom claro, como nos `-text-emphasis` do Bootstrap. */
 [data-bs-theme="dark"] {
     --brand: #3f6fe0;
     --brand-rgb: 63, 111, 224;
@@ -98,31 +71,15 @@
     --brand-subtle-hover: #1c2a4a;
     --brand-subtle-active: #223257;
     --brand-subtle-border: #2b3b63;
-    /* A barra desce em vez de subir. No claro é o navy sobre uma página clara; no escuro
-       continua a ser navy, e é a página que se afunda por baixo dela. Contra o corpo dá 1,14
-       para 1 -- o mesmo degrau que separa um cartão do fundo -- e 16,8 para 1 para o branco
-       que assenta nela. Antes subia até `#3a5eb0` e lia-se como uma barra azul genérica em
-       cima de uma aplicação cinzenta. */
+    /* A barra desce em vez de subir: continua navy, e é a página que se afunda por baixo. */
     --brand-bar: #131d33;
 }
 
 /* ===== as superfícies do escuro =====
-   O tema escuro do Bootstrap é cinzento neutro, e o da marca é navy: a aplicação lia-se como
-   duas peças de sítios diferentes -- um corpo cinzento com uma faixa azul colada em cima.
-   Estes cinco valores puxam as superfícies para a mesma família da marca, tirando saturação
-   em vez de tirando o tom.
+   Puxam as superfícies para a família da marca, tirando saturação em vez do tom.
 
-   Os degraus entre elas são de 1,10 e 1,12 para 1, que é o mesmo que separa o cartão branco
-   do corpo `#f4f5f7` no tema claro: a mesma leitura de profundidade nos dois temas, e não uma
-   hierarquia mais rasa no escuro. O texto assenta a 15,8 para 1 e o texto suave a 7,7.
-
-   A ordem importa e esteve invertida. O `<body>` veste `bg-body-tertiary`, ou seja pede a
-   superfície *terciária* e não o `body-bg`, e um cartão pede o `body-bg`. No claro isso dá o
-   cartão branco sobre a página cinzenta, que é o que se queria; no escuro dava o contrário --
-   a página era a mais clara das três e o cartão afundava-se nela, com a barra de navegação a
-   1,08 para 1 contra a página em vez dos 1,14 que o `--brand-bar` acima assume. Os dois
-   valores estão trocados desde então: o terciário é o chão e o `body-bg` é o plano elevado
-   onde assentam os cartões, os modais e os campos. */
+   A ordem importa: o `<body>` veste `bg-body-tertiary` e um cartão pede o `body-bg`, logo o
+   terciário é o chão e o `body-bg` o plano elevado. Trocá-los afunda o cartão na página. */
 [data-bs-theme="dark"] {
     --bs-body-bg: #1a2438;
     --bs-body-bg-rgb: 26, 36, 56;
@@ -140,13 +97,8 @@
 }
 
 /* ===== o SweetAlert =====
-   O tema `bootstrap-5` do próprio SweetAlert dá-lhe a forma -- os raios, os espaços e os
-   botões do Bootstrap. As cores é que não: traz as do Bootstrap de fábrica, e o azul
-   `#0d6efd` não é o navy da casa. Estas seis linhas são a paleta, e seguem o tema porque
-   pedem os tokens que já viram no escuro.
-
-   O selector leva o `body` à frente para ganhar ao ficheiro do tema, que declara o mesmo no
-   mesmo sítio; o atributo é posto pelo `theme.js`. */
+   O tema `bootstrap-5` dá-lhe a forma mas traz as cores de fábrica. O `body` à frente do
+   selector é para ganhar ao ficheiro do tema, que declara o mesmo no mesmo sítio. */
 body[data-swal2-theme] {
     --swal2-background: var(--bs-body-bg);
     --swal2-color: var(--bs-body-color);
@@ -158,15 +110,8 @@ body[data-swal2-theme] {
 }
 
 /* ===== a escala tipográfica =====
-   Dezanove tamanhos de letra, quase todos medidos a régua sobre uma maqueta: 12,48px, 12,5px,
-   12,8px e 13px viviam em quatro regras vizinhas, e não há olho que os separe. O que a
-   diferença fazia era obrigar a inventar um número novo a cada regra que se escrevia.
-
-   Seis degraus. O `--fs-body` é o próprio `--bs-body-font-size` e não uma cópia dele, que
-   ficaria para trás no dia em que o corpo do texto mudar; os outros cinco são passos à volta
-   dele. Os extremos existem por uma razão concreta e não por simetria: o `--fs-micro` é o
-   visto dentro de uma caixa de 14px, o `--fs-xl` é o ícone do cartão do assistente. Escolher
-   um tamanho passa a ser escolher um papel. */
+   Seis degraus, para escolher um tamanho ser escolher um papel. O `--fs-body` é o próprio
+   `--bs-body-font-size` e não uma cópia, que ficaria para trás quando ele mudar. */
 :root {
     --fs-micro: .625rem;
     --fs-label: .6875rem;
@@ -177,16 +122,8 @@ body[data-swal2-theme] {
 }
 
 /* ===== o tecto de leitura =====
-   O monitor onde a dashboard é usada tem 3399px, e nada limitava a largura: a caixa de
-   procura da atividade media 2064px, uma linha da árvore do catálogo 2739px com o nome do
-   modelo numa ponta e o chevron na outra, e o paginador centrava-se a trezentos pixéis da
-   lista que pagina.
-
-   100rem porque é acima do que qualquer janela realista mede -- a 1359px, que é a maior das
-   duas larguras verificadas, nada encolhe -- e porque a 1600px a coluna da atividade fica com
-   1050px, medida em que as colunas fixas da `.telemetry-table` ainda se lêem de uma ponta à
-   outra numa linha. A moldura continua `container-fluid`: o que se limita é o conteúdo, e a
-   barra de navegação e o fundo vão de ponta a ponta como antes. */
+   Limita-se o conteúdo e não a moldura: a barra de navegação e o fundo continuam de ponta a
+   ponta. O monitor onde isto corre tem 3399px e uma linha do catálogo media 2739. */
 :root {
     --content-max: 100rem;
 }
@@ -206,12 +143,9 @@ body[data-swal2-theme] {
     --bs-focus-ring-color: rgba(var(--brand-rgb), .25);
 }
 
-/* O `.text-secondary` do Bootstrap 5.3 não lê o `--bs-secondary-color` que as superfícies
-   acima definem: lê o `--bs-secondary-rgb`, que é a *cor de tema* «secondary» e vale
-   `#6c757d` nos dois temas. Os 67 sítios que pedem esta classe querem texto suave, e no
-   escuro recebiam um cinzento neutro a 4,09 para 1 -- de outra família e abaixo do mínimo --
-   ao lado do `.section-label`, que pede o token e assenta a 7,6. Aponta-se a classe ao token
-   em vez de se trocarem os 67 sítios; o `!important` é o que a regra do Bootstrap já traz. */
+/* O `.text-secondary` do Bootstrap lê o `--bs-secondary-rgb`, fixo nos dois temas, e não o
+   `--bs-secondary-color` das superfícies acima. Aponta-se a classe ao token em vez de se
+   trocarem os 67 sítios que a pedem; o `!important` é o que a regra do Bootstrap já traz. */
 .text-secondary {
     color: var(--bs-secondary-color) !important;
 }
@@ -233,16 +167,11 @@ body[data-swal2-theme] {
 }
 
 /* ===== as grelhas =====
-   O `themeQuartz` do AG Grid veste-se a si próprio; daqui vai só o que ele não sabe da
-   plataforma. A linha de filtros usa os campos do Bootstrap, e as folgas dele à volta deles
-   têm de sair. */
+   O `themeQuartz` do AG Grid veste-se a si próprio; daqui vai só o que ele não sabe. */
 /* A altura é do `domLayout: "autoHeight"` do AG Grid, que pede a das linhas que tem. */
 
-/*
- * O AG Grid centra o texto de uma célula dando-lhe a altura da linha como `line-height`.
- * Um desenho próprio -- a pastilha de estado, os botões da linha -- herda-a: cresce até
- * transbordar a linha, e assenta na linha de base em vez de ficar ao centro.
- */
+/* O AG Grid centra o texto da célula dando-lhe a altura da linha como `line-height`, e um
+   desenho próprio herda-a: cresce até transbordar. */
 .settings-grid .ag-cell {
     display: flex;
     align-items: center;
@@ -322,13 +251,10 @@ body[data-swal2-theme] {
 }
 
 /* ===== a base do telemóvel =====
-   As únicas coisas desta página que os utilitários do Bootstrap não sabem fazer: não há
-   `fs-sm-*` nem tamanho de botão por breakpoint. Todo o resto está na marcação, onde se vê
-   ao lado do elemento a que se aplica. */
+   Só o que os utilitários não fazem: não há `fs-sm-*` nem tamanho de botão por breakpoint. */
 @media (max-width: 575.98px) {
-    /* Um campo com menos de 16px faz o Safari do iPhone dar zoom à página ao focar, e não
-       volta atrás. O par com `input-group-sm` está cá porque o Bootstrap serve esse caso
-       com dois selectores, e ganharia ao de um só. */
+    /* Menos de 16px faz o Safari do iPhone dar zoom ao focar, e não volta atrás. O par com
+       `input-group-sm` está cá porque o Bootstrap serve esse caso com dois selectores. */
     .form-control,
     .form-select,
     .input-group-sm > .form-control,
@@ -366,10 +292,8 @@ body[data-swal2-theme] {
     --bs-btn-disabled-border-color: var(--brand);
 }
 
-/* O botão discreto da casa -- «Editar», «Filtros», «Enviar», os lápis das listagens: 43
-   sítios. De fábrica traz o `#6c757d` fixo do Bootstrap em qualquer tema, o que no escuro
-   dava 4,09 para 1 na etiqueta e no contorno. Passa a pedir os tokens das superfícies, e o
-   estado activo troca o preenchimento cheio de fábrica por um realce da mesma família. */
+/* O botão discreto da casa. De fábrica traz o `#6c757d` fixo em qualquer tema; passa a pedir
+   os tokens das superfícies, e o activo troca o preenchimento cheio por um realce. */
 .btn-outline-secondary {
     --bs-btn-color: var(--bs-secondary-color);
     --bs-btn-border-color: var(--bs-border-color);
@@ -384,11 +308,8 @@ body[data-swal2-theme] {
     --bs-btn-disabled-border-color: var(--bs-border-color);
 }
 
-/* O destrutivo que se repete por linha. Oito lixos vermelhos ao mesmo tempo faziam do que se
-   faz raramente o elemento mais chamativo do painel, ao lado dos lápis neutros do que se faz
-   muitas vezes -- e onde tudo é vermelho, nada é. Em repouso é um botão discreto como os
-   outros; o vermelho volta ao ser apontado ou focado, que é quando a acção está em causa. O
-   que aparece uma vez -- o «Eliminar» do dispositivo, o «Apagar modelo» -- não leva isto. */
+/* O destrutivo que se repete por linha: neutro em repouso, vermelho ao ser apontado ou
+   focado. O que aparece uma vez no ecrã não leva isto. */
 .btn-quiet-danger {
     --bs-btn-color: var(--bs-secondary-color);
     --bs-btn-border-color: var(--bs-border-color);
@@ -404,12 +325,9 @@ body[data-swal2-theme] {
     --bs-nav-pills-link-active-bg: var(--brand);
 }
 
-/* Um separador em repouso é texto, não uma ligação. O `--bs-nav-link-color` do Bootstrap vem
-   do `--bs-link-color`, que é o `--brand`, e o `--brand` faz dois papéis: tinta no claro
-   (`#0b163f`, que se lê como texto quase preto) e acento no escuro (`#3f6fe0`, que tinha de
-   subir para se ver). O mesmo menu ficava assim texto num tema e uma lista de hiperligações
-   azuis a 4,16 para 1 no outro. Os separadores pedem tinta; o activo continua a pedir a
-   marca, pelo `.nav-pills .nav-link.active`, que é mais específico do que isto. */
+/* Um separador em repouso é texto, não uma ligação. O `--bs-nav-link-color` vem do
+   `--brand`, que no escuro é acento e fazia do menu uma lista de hiperligações azuis. O
+   activo continua a pedir a marca, pelo `.nav-pills .nav-link.active`. */
 .nav-pills .nav-link {
     --bs-nav-link-color: var(--bs-body-color);
     --bs-nav-link-hover-color: var(--bs-emphasis-color);

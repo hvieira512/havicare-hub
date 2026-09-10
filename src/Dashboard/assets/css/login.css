@@ -1,17 +1,12 @@
 /* ===== entrada =====
-   O ecrã de autenticação e mais nada: o painel escuro, a órbita, a marca e o formulário.
-   É o único bloco da página que ninguém mais partilha, e por isso é o mais fácil de manter
-   à parte -- uma regra `dashboard-login-*` só existe aqui. */
+   O ecrã de autenticação e mais nada: uma regra `dashboard-login-*` só existe aqui. */
 
 /* O cinzento claro da maqueta é a superfície deste ecrã, e estava escrito duas vezes.
    O painel da esquerda não leva par escuro: já é escuro nos dois temas, de propósito. */
 :root {
     --login-surface: #f4f5f7;
-    /* O painel da esquerda é escuro nos dois temas, e por isso estes tons não viram: são a
-       identidade e não o tema. Ficam em nomes na mesma, porque estavam escritos como
-       literais -- e o ciano em que estavam (`#74c0fc` e `#0dcaf0`) não era cor nenhuma desta
-       marca. A órbita é agora o navy aclarado, o mesmo `--brand-emphasis` que o tema escuro
-       usa para realçar. */
+    /* O painel da esquerda é escuro nos dois temas: estes tons são a identidade e não o
+       tema, e por isso não viram. */
     --login-panel-from: rgba(7, 13, 38, .96);
     --login-panel-to: rgba(11, 22, 63, .92);
     --login-accent: #7ea2f5;
@@ -49,10 +44,8 @@
     width: 148px;
 }
 
-/* O `logo.svg` é preto de uma cor só, e no escuro a marca ficava preto sobre preto -- a
-   assinatura debaixo do «HUB» desaparecia por completo. Inverte-se, como a badge da coluna
-   de atmosfera e a da barra de navegação já fazem, e pela mesma razão. Este é o único ecrã
-   sem botão de tema para contornar o problema. */
+/* O `logo.svg` é preto de uma cor só e no escuro ficava preto sobre preto. Este é o único
+   ecrã sem botão de tema para contornar o problema. */
 [data-bs-theme="dark"] .dashboard-login-brand img {
     filter: invert(100%);
 }

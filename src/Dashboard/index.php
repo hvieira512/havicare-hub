@@ -28,8 +28,7 @@ require_once __DIR__ . '/components/modal.php';
     <script src="/assets/js/theme-init.js"></script>
     <?php
     /* A ordem é a cascata: sem build, uma folha vale pela ordem da etiqueta, e várias regras
-     * contam com vir depois das que anulam. Os de terceiros primeiro, os nossos por cima, e o
-     * `main.css` no fim porque ficou com a cauda do ficheiro original. */
+     * contam com vir depois das que anulam. */
     $stylesheets = [
         '/assets/vendor/bootstrap/bootstrap.min.css',
         '/assets/vendor/fontawesome/css/all.min.css',
@@ -64,10 +63,8 @@ require_once __DIR__ . '/components/modal.php';
         <?php require __DIR__ . '/components/modals/device-selector.php'; ?>
     </div>
 
-    <?php /* O descritor dos tipos vem daqui e não de um endpoint: o formulário precisa dele
-           * à primeira pintura, e uma chamada assíncrona só traria uma ordem de carregamento
-           * para gerir. É dado e não código -- uma ilha JSON que o `domain.js` lê. A fonte é
-           * o `DeviceTypeCatalog`, em PHP. */ ?>
+    <?php /* O descritor dos tipos vem daqui e não de um endpoint: o formulário precisa dele à
+           * primeira pintura. A fonte é o `DeviceTypeCatalog`, em PHP. */ ?>
     <script type="application/json" id="hub-device-types"><?= \Hub\Domain\DeviceTypeCatalog::asJson() ?></script>
     <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>

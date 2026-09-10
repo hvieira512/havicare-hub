@@ -5,15 +5,11 @@ declare(strict_types=1);
 namespace Hub\Dashboard;
 
 /**
- * Diz aos streams abertos que o histórico de um dispositivo mudou.
+ * Diz aos streams abertos que o histórico de um dispositivo mudou. A ingestão e o servidor
+ * HTTP partilham processo, e por isso a escrita anuncia-se em vez de ser sondada.
  *
- * A ingestão e o servidor HTTP da dashboard partilham um processo e um `DashboardStore`, e
- * por isso uma escrita pode ser anunciada directamente, em vez de cada stream reler o Redis
- * num temporizador para a descobrir.
- *
- * Aos ouvintes só se diz *qual* o dispositivo que mudou, nunca o quê: o stream continua a
- * ler o estado autoritativo por si, e por isso uma notificação perdida ou duplicada custa
- * uma leitura a mais e não um payload errado.
+ * Diz-se qual o dispositivo, nunca o quê: o stream relê o estado autoritativo, e assim uma
+ * notificação perdida ou duplicada custa uma leitura a mais e não um payload errado.
  */
 class DeviceUpdateNotifier
 {

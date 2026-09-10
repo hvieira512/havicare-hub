@@ -1,11 +1,8 @@
 <?php
 
 /**
- * A casca de um modal. Cada opção é uma coisa só, e chama-se pelo nome nos quatro sítios que
- * a usam -- o que aqui estava era uma string de classes onde o `scrollable` viajava escondido
- * ao lado do tamanho, e não se sabia o que fazia sem abrir esta função.
- *
- * `$headerHtml` substitui o título quando o cabeçalho é mais do que uma linha de texto.
+ * A casca de um modal. O `$headerHtml` substitui o título quando o cabeçalho é mais do que
+ * uma linha de texto.
  */
 function render_modal(
     string $id,
