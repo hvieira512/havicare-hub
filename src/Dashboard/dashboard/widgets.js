@@ -1,9 +1,5 @@
 import { html, raw } from "./html.js";
-import {
-    deviceTypeLabel,
-    normalizeDeviceType,
-    normalizeLicenseId,
-} from "./domain.js";
+import { deviceTypeLabel, normalizeDeviceType } from "./domain.js";
 
 /**
  * As peças de interface que não pertencem a um ecrã em particular: a atribuição de um
@@ -11,21 +7,6 @@ import {
  * de filtro e o estado vazio. Os cartões de telemetria estão no `telemetry-cards.js`, e a
  * pastilha de estado no `components/state-badge.js`.
  */
-
-/**
- * A atribuição de um dispositivo, num campo só. Duas formas e não quatro, porque as duas
- * andam sempre juntas: `empresa · número`, ou "Sem licença".
- */
-export function deviceLicenseHtml(device, valueClass = "") {
-    const company = String(device.company || "").trim();
-    const licenseId = normalizeLicenseId(device.licenseId);
-    if (company === "" || company.toLowerCase() === "null" || licenseId === "0") {
-        return html`<span class="${`${valueClass} license-empty`.trim()}">Sem licença</span>`;
-    }
-
-    const attribute = valueClass ? html` class="${valueClass}"` : "";
-    return html`<span${raw(attribute)}>${company}<span class="license-separator">·</span><span class="license-number">${licenseId}</span></span>`;
-}
 
 /**
  * Uma etiqueta com o seu controlo. O controlo entra como HTML já pronto e passa pelo

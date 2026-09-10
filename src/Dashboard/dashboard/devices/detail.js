@@ -19,7 +19,8 @@ import {
 import { html, raw } from "../html.js";
 import { capabilityLabel } from "../capability-catalog.js";
 import { apiError, toast } from "../dialogs.js";
-import { deviceLicenseHtml, filterChips } from "../widgets.js";
+import { filterChips } from "../widgets.js";
+import { deviceLicenseBlock } from "../components/device-license.js";
 import { onlineBadge } from "../components/state-badge.js";
 import {
     cardTone,
@@ -194,7 +195,13 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         normalizeDeviceType(deviceModel?.deviceType || "watch"),
     );
     const facts = [
-        { label: "Licença", html: deviceLicenseHtml(device) },
+        {
+            label: "Licença",
+            html: deviceLicenseBlock(device, {
+                valueClass: "d-block",
+                noteClass: "d-block small text-body-secondary",
+            }),
+        },
         {
             label: "Última ligação",
             value: when(device.lastSeenAt) || "Sem registo",

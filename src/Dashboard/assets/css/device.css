@@ -755,12 +755,6 @@
     background: var(--bs-primary-bg-subtle);
 }
 
-/* A pastilha ocupa o que o seu texto ocupa. Como item de grelha esticava a largura da
-   coluna, e "LIGADO" ficava com a mesma medida de "DESLIGADO". */
-.device-card-state > .state-badge {
-    align-self: start;
-}
-
 /* A pastilha responde «está a falar agora?»; a linha por baixo dela responde «desde quando?».
    A coluna já tinha a largura, e só a pastilha lá dentro. */
 .device-card-state {
@@ -861,9 +855,6 @@
     padding: 0 1px;
 }
 
-.license-empty,
-.device-card-field-value.empty { color: var(--bs-secondary-color); }
-
 /* No telefone as cinco colunas não cabem, mas continua grelha e não coluna: em coluna
    simples a miniatura ficava sozinha numa linha e a pastilha esticava à largura toda. */
 @media (max-width: 767.98px) {
@@ -911,12 +902,6 @@
    quando há 14rem para ela, que é o que a palavra mais comprida do catálogo pede. */
 .telemetry-card-grid {
     grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-}
-
-/* Um item de grelha não encolhe abaixo do conteúdo por omissão, e um nome comprido esticava
-   a coluna toda em vez de se cortar. */
-.telemetry-card-cell {
-    min-width: 0;
 }
 
 /* O `span: 12` da casca: o mosaico que pede a linha toda. */

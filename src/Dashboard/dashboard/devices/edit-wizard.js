@@ -40,7 +40,7 @@ export function initEditWizard(context) {
  * Prepara o modal para um dispositivo. Abre no passo 2 e não no 1: o que se costuma vir
  * alterar é o número de série, o SIM ou os gateways, e a classificação já está feita.
  */
-export function resetEditWizard(groups = []) {
+export function resetEditWizard(groups) {
     licenseGroups = groups;
     step = 2;
     openQuestion = null;

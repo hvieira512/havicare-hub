@@ -99,7 +99,7 @@ export function gatewayCardMarkup(gateway, checked, signal = null) {
     return `<label class="gateway-card">
         <input class="form-check-input gateway-card-check flex-shrink-0 m-0" type="checkbox" data-gateway-key="${esc(key)}"${checked ? " checked" : ""}>
         <span class="gateway-card-thumb">${thumb}</span>
-        <span class="gateway-card-text">
+        <span class="min-w-0">
             <span class="gateway-card-mac">${esc(key)}</span>
             <span class="gateway-card-model">${esc(model || "Modelo desconhecido")}</span>
         </span>

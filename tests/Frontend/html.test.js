@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { html, raw } from "../../src/Dashboard/dashboard/html.js";
-import { deviceLicenseHtml } from "../../src/Dashboard/dashboard/widgets.js";
+import { deviceLicenseBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/telemetry-cards.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/card-shell.js";
 
@@ -64,7 +64,7 @@ test("o resultado é texto, que é o que os construtores de marcação já devol
 
 test("um nome de empresa com marcação sai inerte do cartão da licença", () => {
     const root = parseFragment(
-        deviceLicenseHtml({
+        deviceLicenseBlock({
             company: "<img src=x onerror=alert(1)>",
             licenseId: 1001,
         }),

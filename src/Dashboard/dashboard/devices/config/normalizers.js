@@ -26,7 +26,7 @@ export function normalizeWonlexMedicationPlans(desired) {
         : [];
 }
 
-export function normalizeWonlexMedicationPlan(plan = {}) {
+export function normalizeWonlexMedicationPlan(plan) {
     const drugTime = plan.drugTime && typeof plan.drugTime === "object"
         ? plan.drugTime
         : {};

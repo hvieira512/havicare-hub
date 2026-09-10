@@ -35,6 +35,8 @@ export const when = (value) => {
     return new Date(parsed).toLocaleString("pt-PT");
 };
 
+const SHORT_DATE = { day: "2-digit", month: "2-digit" };
+
 /**
  * A hora de uma linha de lista: dia, mês e hora, sem ano. A coluna é a última de quatro em
  * meio painel, e a janela de filtro começa por omissão a sete dias.
@@ -44,7 +46,7 @@ export const whenShort = (value) => {
     const parsed = Date.parse(value);
     if (Number.isNaN(parsed)) return String(value);
     const date = new Date(parsed);
-    return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}, ${date.toLocaleTimeString("pt-PT")}`;
+    return `${date.toLocaleDateString("pt-PT", SHORT_DATE)}, ${date.toLocaleTimeString("pt-PT")}`;
 };
 
 export const fieldLabel = (key) =>

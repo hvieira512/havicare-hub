@@ -18,7 +18,7 @@ import { deviceTypeIcon, modelPreviewHtml } from "../widgets.js";
  * As licenças agrupadas pela empresa que as detém. A `/api/licenses` já vem ordenada por
  * empresa e traz o nome em cada linha: agrupar é só partir a lista onde o nome muda.
  */
-export function licenseTree(licenses = []) {
+export function licenseTree(licenses) {
     const groups = new Map();
     for (const license of licenses) {
         const company = String(license.company_name ?? license.companyName ?? "");

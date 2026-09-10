@@ -265,6 +265,10 @@ export function diaperSensitivityInput(desired, meta = {}) {
         </div>`;
 }
 
+/** Um campo numérico de configuração. Dezasseis sítios repetiam esta linha e a sua escapagem. */
+const numberField = (configField, value, { min = 0, max = "", step = 1 } = {}) =>
+    `<input class="form-control" type="number" min="${min}"${max === "" ? "" : ` max="${max}"`} step="${step}" data-config-field="${esc(configField)}" value="${esc(String(value))}">`;
+
 export function numberInput(entry, desired) {
     const key = entry.fields?.[0] || "value";
     const isWonlexMeasurementInterval =
@@ -272,7 +276,7 @@ export function numberInput(entry, desired) {
     const value = desired[key] ?? (isWonlexMeasurementInterval ? 60 : 0);
     return field(
         fieldLabel(key),
-        `<input class="form-control" type="number" min="0" step="1" data-config-field="${esc(key)}" value="${esc(String(value))}">`,
+        numberField(key, value),
         {
             help: isWonlexMeasurementInterval
                 ? "Periodicidade de envio desta medição, em minutos. Use 0 para desativar."
@@ -312,10 +316,10 @@ export function pushMessageInput(_entry, desired) {
 export function intervalToggleInput(entry, desired) {
     return `
         <div class="row g-3">
-            <div class="col-md-4">${enabledSwitch(desired)}</div>
+            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
             ${field(
                 "Intervalo (minutos)",
-                `<input class="form-control" type="number" min="0" step="1" data-config-field="intervalMinutes" value="${esc(String(desired.intervalMinutes ?? 60))}">`,
+                numberField("intervalMinutes", desired.intervalMinutes ?? 60),
                 { cls: "col-md-8" },
             )}
         </div>`;
@@ -324,24 +328,26 @@ export function intervalToggleInput(entry, desired) {
 export function intervalHoursToggleInput(desired) {
     return `
         <div class="row g-3">
-            <div class="col-md-4">${enabledSwitch(desired)}</div>
+            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
             ${field(
                 "Intervalo (horas)",
-                `<input class="form-control" type="number" min="1" max="12" step="1" data-config-field="intervalHours" value="${esc(String(desired.intervalHours ?? 2))}">`,
+                numberField("intervalHours", desired.intervalHours ?? 2, { min: 1, max: 12 }),
                 { cls: "col-md-8" },
             )}
         </div>`;
 }
 
-/** O interruptor de ligado ao lado de um campo com etiqueta, alinhado por baixo com ele. */
-function enabledSwitch(desired) {
-    const enabled = boolValue(desired.enabled, true);
+/** O interruptor de ligado. O `mt-4` alinha-o por baixo de um campo com etiqueta ao lado. */
+function enabledSwitch(enabled, cls = "") {
     return `
-        <div class="form-check form-switch mt-4">
+        <div class="form-check form-switch${cls ? ` ${cls}` : ""}">
             <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
             <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
         </div>`;
 }
+
+/** Os painéis Wonlex trazem o estado em `enabled` ou em `switchState`, conforme a geração. */
+const wonlexEnabled = (desired) => boolValue(desired.enabled ?? desired.switchState, true);
 
 export function workingModeInput(desired) {
     const mode = parseInt(String(desired.mode ?? 1), 10) || 1;
@@ -414,7 +420,7 @@ export function workingModeInput(desired) {
                 <div class="row g-3">
                     ${field(
                         "Intervalo de envio (segundos)",
-                        `<input class="form-control" type="number" min="30" step="1" data-config-field="intervalSeconds" value="${esc(String(intervalSeconds))}">`,
+                        numberField("intervalSeconds", intervalSeconds, { min: 30 }),
                         { cls: "col-md-6" },
                     )}
                     <div class="col-md-6">
@@ -433,34 +439,30 @@ export function bloodPressureInput(desired) {
         <div class="row g-3">
             ${field(
                 "Sistólica",
-                `<input class="form-control" type="number" min="0" step="1" data-config-field="systolic" value="${esc(String(desired.systolic ?? 120))}">`,
+                numberField("systolic", desired.systolic ?? 120),
                 { cls: "col-md-6" },
             )}
             ${field(
                 "Diastólica",
-                `<input class="form-control" type="number" min="0" step="1" data-config-field="diastolic" value="${esc(String(desired.diastolic ?? 80))}">`,
+                numberField("diastolic", desired.diastolic ?? 80),
                 { cls: "col-md-6" },
             )}
         </div>`;
 }
 
 export function wonlexBloodPressureWarningInput(desired) {
-    const enabled = boolValue(desired.enabled ?? desired.switchState, true);
     return `
         <div class="vstack gap-3">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
-                <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
-            </div>
+            ${enabledSwitch(wonlexEnabled(desired))}
             <div class="row g-3">
                 ${field(
                     "Sistólica máxima",
-                    `<input class="form-control" type="number" min="0" step="1" data-config-field="hpWarn" value="${esc(String(desired.hpWarn ?? 135))}">`,
+                    numberField("hpWarn", desired.hpWarn ?? 135),
                     { cls: "col-md-6" },
                 )}
                 ${field(
                     "Diastólica máxima",
-                    `<input class="form-control" type="number" min="0" step="1" data-config-field="LPWarn" value="${esc(String(desired.LPWarn ?? 90))}">`,
+                    numberField("LPWarn", desired.LPWarn ?? 90),
                     { cls: "col-md-6" },
                 )}
             </div>
@@ -605,13 +607,9 @@ export function timeRangeInput(desired) {
 }
 
 export function wonlexSleepSettingsInput(desired) {
-    const enabled = boolValue(desired.enabled ?? desired.switchState, true);
     return `
         <div class="vstack gap-3">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
-                <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
-            </div>
+            ${enabledSwitch(wonlexEnabled(desired))}
             <div class="row g-3">
                 ${field(
                     "Início (HHmmss)",
@@ -625,7 +623,7 @@ export function wonlexSleepSettingsInput(desired) {
                 )}
                 ${field(
                     "Meta (minutos)",
-                    `<input class="form-control" type="number" min="0" step="1" data-config-field="sleepTarget" value="${esc(String(desired.sleepTarget ?? 480))}">`,
+                    numberField("sleepTarget", desired.sleepTarget ?? 480),
                     { cls: "col-md-4" },
                 )}
             </div>
@@ -633,7 +631,6 @@ export function wonlexSleepSettingsInput(desired) {
 }
 
 export function wonlexReminderThresholdInput(entry, desired) {
-    const enabled = boolValue(desired.enabled ?? desired.switchState, true);
     const valueField = (entry.fields || []).includes("RemindValue")
         ? "RemindValue"
         : "reminderValue";
@@ -644,33 +641,26 @@ export function wonlexReminderThresholdInput(entry, desired) {
         90;
     return `
         <div class="vstack gap-3">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
-                <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
-            </div>
+            ${enabledSwitch(wonlexEnabled(desired))}
             ${field(
                 fieldLabel(valueField),
-                `<input class="form-control" type="number" min="0" step="1" data-config-field="${esc(valueField)}" value="${esc(String(value))}">`,
+                numberField(valueField, value),
             )}
         </div>`;
 }
 
 export function wonlexHeartRateRangeInput(desired) {
-    const enabled = boolValue(desired.enabled ?? desired.switchState, true);
     const exerciseEnabled = boolValue(
         desired.exerciseEnabled ?? desired.exerciseSwitchState,
         true,
     );
     return `
         <div class="vstack gap-3">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
-                <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
-            </div>
+            ${enabledSwitch(wonlexEnabled(desired))}
             <div class="row g-3">
                 ${field(
                     "Limite principal",
-                    `<input class="form-control" type="number" min="0" step="1" data-config-field="remindValue" value="${esc(String(desired.remindValue ?? 120))}">`,
+                    numberField("remindValue", desired.remindValue ?? 120),
                     { cls: "col-md-6" },
                 )}
                 <div class="col-md-6">
@@ -681,17 +671,17 @@ export function wonlexHeartRateRangeInput(desired) {
                 </div>
                 ${field(
                     "Mínimo exercício",
-                    `<input class="form-control" type="number" min="0" step="1" data-config-field="exerciseHRMin" value="${esc(String(desired.exerciseHRMin ?? 100))}">`,
+                    numberField("exerciseHRMin", desired.exerciseHRMin ?? 100),
                     { cls: "col-md-4" },
                 )}
                 ${field(
                     "Máximo exercício",
-                    `<input class="form-control" type="number" min="0" step="1" data-config-field="exerciseHRMax" value="${esc(String(desired.exerciseHRMax ?? 140))}">`,
+                    numberField("exerciseHRMax", desired.exerciseHRMax ?? 140),
                     { cls: "col-md-4" },
                 )}
                 ${field(
                     "Alerta em exercício",
-                    `<input class="form-control" type="number" min="0" step="1" data-config-field="exerciseRemindValue" value="${esc(String(desired.exerciseRemindValue ?? 140))}">`,
+                    numberField("exerciseRemindValue", desired.exerciseRemindValue ?? 140),
                     { cls: "col-md-4" },
                 )}
             </div>

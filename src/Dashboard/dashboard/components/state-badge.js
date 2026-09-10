@@ -58,6 +58,10 @@ export function stateBadge(label, tone = "secondary", options = "") {
 }
 
 /** Ligado ou desligado: a mesma expressão em três ecrãs, com um parâmetro só. */
-export function onlineBadge(online) {
-    return stateBadge(online ? "Ligado" : "Desligado", online ? "success" : "secondary");
+export function onlineBadge(online, options = "") {
+    return stateBadge(
+        online ? "Ligado" : "Desligado",
+        online ? "success" : "secondary",
+        options,
+    );
 }

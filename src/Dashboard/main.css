@@ -165,10 +165,6 @@
     color: var(--bs-secondary-color);
 }
 
-.gateway-card-text {
-    min-width: 0;
-}
-
 .gateway-card-mac {
     display: block;
     font-weight: 600;

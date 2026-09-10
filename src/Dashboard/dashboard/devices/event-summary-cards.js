@@ -108,7 +108,7 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
  *
  * Ninguém está a olhar para o ecrã no instante em que alguém cai; o que fica é o registo.
  */
-export function fallSummaryCard(events = []) {
+export function fallSummaryCard(events) {
     const falls = (Array.isArray(events) ? events : [])
         .map(rowPayload)
         .filter((payload) => String(payload?.type || "") === "fall")

@@ -54,7 +54,7 @@ export function telemetryCard({
 
     // A célula mede-se pelo contentor e não pela largura do ecrã: a grelha só abre uma
     // segunda coluna quando há 14rem para ela. Ver `.telemetry-card-grid` no `device.css`.
-    const cell = span === 12 ? "telemetry-card-wide" : "telemetry-card-cell";
+    const cell = span === 12 ? "telemetry-card-wide" : "min-w-0";
 
     // O corpo é uma coluna só para separar a linha do ícone do corpo que alguns mosaicos
     // trazem -- a barra de humidade da fralda, por exemplo.

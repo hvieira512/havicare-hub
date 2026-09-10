@@ -234,7 +234,7 @@ function capabilitySectionLabel(section, catalog = []) {
     return label || humanizeCapabilityKey(section);
 }
 
-export function capabilitiesGroupedBySection(catalog = []) {
+export function capabilitiesGroupedBySection(catalog) {
     const grouped = new Map();
     for (const entry of catalog || []) {
         const section = String(entry.section || "").trim();

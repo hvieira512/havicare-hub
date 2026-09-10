@@ -1,6 +1,6 @@
 const normalizeKey = (value) => String(value || "").trim().toLowerCase();
 
-export function gatewayKeysFromLinks(links = []) {
+export function gatewayKeysFromLinks(links) {
     return [...new Set(
         (Array.isArray(links) ? links : [])
             .filter((link) => String(link?.deviceType || "") === "gateway")

@@ -84,7 +84,7 @@ export function deviceCard(device, selected, siblings = []) {
             data-imei="${device.imei}" data-action="${DEVICE_CARD_ACTION}"${raw(selected ? " aria-current=\"true\"" : "")}>
         <span class="device-card-thumb">${raw(image)}</span>
         <span class="device-card-state">
-            ${raw(onlineBadge(device.online))}
+            ${raw(onlineBadge(device.online, "align-self-start"))}
             ${raw(lastSeenLine(device.lastSeenAt))}
         </span>
         <span class="device-card-identity">
@@ -95,7 +95,10 @@ export function deviceCard(device, selected, siblings = []) {
         </span>
         <span class="device-card-fields">
             <span class="device-card-field">
-                ${raw(deviceLicenseBlock(device))}
+                ${raw(deviceLicenseBlock(device, {
+                    valueClass: "device-card-field-value",
+                    noteClass: "device-card-field-note text-truncate",
+                }))}
             </span>
             <span class="device-card-field">
                 ${raw(simNumberHtml(device.simNumber))}

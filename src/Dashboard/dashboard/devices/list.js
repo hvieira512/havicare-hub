@@ -3,7 +3,7 @@ import {
     getDevices as apiGetDevices,
     getProtocols as apiGetProtocols,
 } from "../api/index.js";
-import { getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels } from "../api/models.js";
+import { getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels } from "../api/index.js";
 import { ensureCapabilityCatalog } from "../capability-catalog.js";
 import { ensureLicensesLoaded } from "../licenses.js";
 import {

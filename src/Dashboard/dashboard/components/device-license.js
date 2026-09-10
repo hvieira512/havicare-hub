@@ -5,13 +5,15 @@ import { normalizeLicenseId } from "../domain.js";
  * A licença de um aparelho: o nome em cima, a empresa e o número em baixo.
  *
  * A empresa fica porque o mesmo sítio pode ter licença em duas empresas, e só o nome deixava
- * as duas linhas indistinguíveis.
+ * as duas linhas indistinguíveis. As classes são de quem chama: o cartão trunca numa coluna
+ * estreita, o painel de detalhe quebra.
  */
-export function deviceLicenseBlock(device) {
+export function deviceLicenseBlock(device, { valueClass = "", noteClass = "" } = {}) {
     const company = String(device.company || "").trim();
     const licenseId = normalizeLicenseId(device.licenseId);
+
     if (company === "" || company.toLowerCase() === "null" || licenseId === "0") {
-        return html`<span class="device-card-field-value empty">Sem licença</span>`;
+        return html`<span class="${`${valueClass} text-body-secondary`.trim()}">Sem licença</span>`;
     }
 
     const name = String(device.licenseName || "").trim();
@@ -21,5 +23,5 @@ export function deviceLicenseBlock(device) {
         ? html`<span class="license-number">${licenseId}</span>`
         : html`${company}<span class="license-separator">·</span><span class="license-number">${licenseId}</span>`;
 
-    return html`<span class="device-card-field-value">${heading}</span><span class="device-card-field-note text-truncate">${raw(owner)}</span>`;
+    return html`<span class="${valueClass}">${heading}</span><span class="${noteClass}">${raw(owner)}</span>`;
 }

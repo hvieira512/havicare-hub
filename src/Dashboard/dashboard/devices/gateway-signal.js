@@ -72,7 +72,7 @@ export function signalMeter(signal) {
  * Uma linha por ligação, para o par a que o RSSI pertence ficar à vista. As que nunca foram
  * ouvidas ficam listadas com um travessão: a ausência de sinal é informação.
  */
-export function gatewaySignalRows(linkedDevices = []) {
+export function gatewaySignalRows(linkedDevices) {
     if (!linkedDevices.length) return "";
 
     return `<ul class="list-unstyled mb-0 small">${linkedDevices
