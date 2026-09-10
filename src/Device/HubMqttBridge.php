@@ -3,10 +3,13 @@
 namespace Hub\Device;
 
 use Hub\Log\Logger;
+use Hub\Mqtt\ReconnectsOnLoopFailure;
 use PhpMqtt\Client\MqttClient;
 
 class HubMqttBridge
 {
+    use ReconnectsOnLoopFailure;
+
     private const DEFAULT_COMPANY = 'null';
     private const DEFAULT_LICENSE_ID = 0;
     private const DEFAULT_DEVICE_TYPE = 'watch';
@@ -125,7 +128,7 @@ class HubMqttBridge
                 throw $e;
             }
 
-            $this->reconnect();
+            $this->reconnect($e);
             $this->publisher->publish($topic, $json, $qualityOfService, $retain);
         }
     }
@@ -175,7 +178,7 @@ class HubMqttBridge
                 throw $e;
             }
 
-            $this->reconnect();
+            $this->reconnect($e);
             $this->publisher->publish($topic, '', MqttClient::QOS_AT_LEAST_ONCE, true);
         }
     }
@@ -200,20 +203,28 @@ class HubMqttBridge
             if ($this->reconnectPublisher === null) {
                 throw $e;
             }
-            $this->reconnect();
+            $this->reconnect($e);
         }
     }
 
-    private function reconnect(): void
+    private function reconnect(\Throwable $failure): void
     {
-        try {
-            if ($this->publisher->isConnected()) {
-                $this->publisher->disconnect();
-            }
-        } catch (\Throwable) {
-        }
+        $this->reconnectAfterLoopFailure(
+            $failure,
+            'MQTT publisher',
+            function (): void {
+                try {
+                    if ($this->publisher->isConnected()) {
+                        $this->publisher->disconnect();
+                    }
+                } catch (\Throwable) {
+                }
 
-        Logger::channel('hub')->warning('MQTT publisher connection lost; reconnecting');
-        $this->publisher = ($this->reconnectPublisher)();
+                $this->publisher = ($this->reconnectPublisher)();
+            },
+            function (): void {
+                $this->markConnected();
+            },
+        );
     }
 }
