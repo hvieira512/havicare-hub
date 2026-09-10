@@ -100,6 +100,32 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
         self::assertCount(0, $message->responses);
     }
 
+    /**
+     * O `commandMetadata` do Wonlex vinha do `AbstractWatchProtocol` por herança, mas estava
+     * também copiado à letra na subclasse. Isto prende o resultado para a cópia poder sair.
+     */
+    public function testWonlexCommandMetadataParsesTheDownlinkBytes(): void
+    {
+        $protocol = new WonlexWatchProtocol(new WonlexAdapter(), new DeviceEventDecoder());
+
+        self::assertSame([
+            'nativeType' => 'locationInterval',
+            'protocol' => 'wonlex-json',
+            'ident' => 234567,
+        ], $protocol->commandMetadata($this->wonlexFrame([
+            'type' => 'locationInterval',
+            'ident' => 234567,
+            'data' => ['intervalTime' => 300],
+        ])));
+    }
+
+    public function testWonlexCommandMetadataRejectsBytesItCannotDecode(): void
+    {
+        $protocol = new WonlexWatchProtocol(new WonlexAdapter(), new DeviceEventDecoder());
+
+        self::assertNull($protocol->commandMetadata('nada disto é uma trama'));
+    }
+
     private function wonlexFrame(array $payload): string
     {
         return (new WonlexAdapter())->encodeOutgoing($payload);

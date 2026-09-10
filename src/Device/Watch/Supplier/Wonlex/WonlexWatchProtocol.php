@@ -202,22 +202,6 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
         return implode('/', [$total, $totals['deepSleep'], $totals['lightSleep'], $totals['sober']]);
     }
 
-    public function commandMetadata(string $bytes): ?array
-    {
-        $decoded = $this->decodeIncoming($bytes);
-        if (!is_array($decoded)) {
-            return null;
-        }
-
-        $metadata = array_filter([
-            'nativeType' => (string)($decoded['type'] ?? ''),
-            'protocol' => $this->protocol(),
-            'ident' => $decoded['ident'] ?? null,
-        ], static fn (mixed $value): bool => $value !== null && $value !== '');
-
-        return $metadata !== [] ? $metadata : null;
-    }
-
     private function replyIdent(mixed $value): int
     {
         if (is_int($value) && $value > 0) {
