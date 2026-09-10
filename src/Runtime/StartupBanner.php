@@ -57,18 +57,30 @@ final class StartupBanner
             $log->info("MQTT {$label} topics: " . $mqttBridge->topic('{company}/{licenseId}/watch/{deviceKey}/' . $channel));
         }
 
+        // A terceira coluna é a secção de onde sai o filtro, e não se deduz da chave: a
+        // ingestão Veepoo lê o mesmo espaço de tópicos dos gateways que o MOKO, e não tem
+        // secção própria. Enquanto a chave servia de índice à configuração, acrescentar aqui
+        // uma linha para ela dava índice indefinido no arranque.
         $descriptions = [
             'ncs' => [
                 'NCS ingress topics',
                 '{company}/{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}',
+                'ncs',
             ],
             'moko' => [
                 'MOKO MKGW3 ingress topics',
                 '{company}/{licenseId}/gateway/{gatewayMac}/{raw|status|events|telemetry}',
+                'moko',
+            ],
+            'veepoo' => [
+                'Veepoo bracelet ingress topics',
+                '{company}/{licenseId}/bracelet/{deviceKey}/{raw|status|events|telemetry}',
+                'moko',
             ],
             'qinglanst' => [
                 'Qinglanst radar ingress',
                 '{company}/{licenseId}/radar/{deviceKey}/{telemetry|events}',
+                'qinglanst',
             ],
         ];
 
@@ -77,8 +89,8 @@ final class StartupBanner
                 continue;
             }
 
-            [$label, $target] = $descriptions[$key];
-            $filter = trim((string)$config[$key]['topic_filter']);
+            [$label, $target, $configSection] = $descriptions[$key];
+            $filter = trim((string)$config[$configSection]['topic_filter']);
             $log->info("{$label}: {$filter} -> " . $mqttBridge->topic($target));
         }
     }
