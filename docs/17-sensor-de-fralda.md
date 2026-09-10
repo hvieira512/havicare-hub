@@ -261,17 +261,17 @@ A password do broker não está escrita aqui de propósito; exportá-la como
 
 ```sh
 # Tudo, o mais cru possível
-mosquitto_sub -h 88.99.104.197 -p 1883 -u health-hub -P "$MQTT_PASSWORD" \
+mosquitto_sub -h mqtt.havicare.com -p 1883 -u health-hub -P "$MQTT_PASSWORD" \
   -t 'havicare-hub/+/+/diaper_sensor/#' -v
 
 # Só o estado da fralda, uma linha por leitura
-mosquitto_sub -h 88.99.104.197 -p 1883 -u health-hub -P "$MQTT_PASSWORD" \
+mosquitto_sub -h mqtt.havicare.com -p 1883 -u health-hub -P "$MQTT_PASSWORD" \
   -t 'havicare-hub/+/+/diaper_sensor/+/telemetry' \
   | jq -rc 'select(.type == "diaper_condition")
             | [.occurredAt, .device.id, .data.state] | @tsv'
 
 # Que capacidades estão a chegar, e com que frequência
-mosquitto_sub -h 88.99.104.197 -p 1883 -u health-hub -P "$MQTT_PASSWORD" \
+mosquitto_sub -h mqtt.havicare.com -p 1883 -u health-hub -P "$MQTT_PASSWORD" \
   -t 'havicare-hub/+/+/diaper_sensor/+/telemetry' -W 120 \
   | jq -r .type | sort | uniq -c
 ```

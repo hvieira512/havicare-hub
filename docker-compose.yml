@@ -85,7 +85,7 @@ services:
       # aponta para um broker remoto e o arranque parecia partido. Mas apontar ao broker
       # remoto é o que faz aparecer os gateways, os medidores de fraldas, as pulseiras e
       # os radares em localhost, por isso fica um nome próprio para pedir isso de propósito
-      # -- HUB_MQTT_HOST=88.99.104.197 -- em vez de acontecer por acidente.
+      # -- HUB_MQTT_HOST=mqtt.havicare.com -- em vez de acontecer por acidente.
       MQTT_HOST: ${HUB_MQTT_HOST:-mosquitto}
       MQTT_PORT: ${HUB_MQTT_PORT:-1883}
       MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX:-}
