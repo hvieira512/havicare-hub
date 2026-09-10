@@ -14,7 +14,6 @@ use Hub\Device\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\DeviceMetadata;
 use Hub\Log\Logger;
-use Hub\Registry\Whitelist;
 
 /**
  * Pedir a um dispositivo que faça algo: pedidos de telemetria e acções de capacidades, os
@@ -27,7 +26,6 @@ final class DeviceFeatureRequestService
 {
     public function __construct(
         private DashboardStoreContract $store,
-        private Whitelist $whitelist,
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
         private CapabilityRegistry $capabilityRegistry,
@@ -62,14 +60,9 @@ final class DeviceFeatureRequestService
             return ApiError::invalidRequest('feature is required')->toArray();
         }
 
-        $device = $this->directory->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei);
-        $supplier = (string)($device['supplier'] ?? $metadata?->supplier ?? '');
-        $model = (string)($device['model'] ?? $metadata?->model ?? '');
-        $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel($supplier, $model));
-        $modelRow = $this->directory->modelForSupplierAndName($supplier, $model);
+        $identity = $this->directory->identify($imei);
 
-        $telemetrySupport = $this->capabilities->telemetryCapabilities($modelRow, $protocol);
+        $telemetrySupport = $this->capabilities->telemetryCapabilities($identity->modelRow, $identity->protocol);
         if (!($telemetrySupport[$feature]['supported'] ?? false)) {
             Logger::channel('api')->warning('API telemetry request rejected', [
                 'request_id' => $requestId,
@@ -89,7 +82,7 @@ final class DeviceFeatureRequestService
             return ApiError::featureNotRequestable()->toArray();
         }
 
-        $result = $this->sendFeatureCommands($imei, $protocol, $feature, $metadata, $device);
+        $result = $this->sendFeatureCommands($imei, $identity->protocol, $feature, $identity->metadata, $identity->device);
         Logger::channel('api')->info('API telemetry request processed', [
             'request_id' => $requestId,
             'imei' => $imei,
@@ -136,14 +129,10 @@ final class DeviceFeatureRequestService
             return ApiError::invalidRequest('capability is required')->toArray();
         }
 
-        $device = $this->directory->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei);
-        $supplier = (string)($device['supplier'] ?? $metadata?->supplier ?? '');
-        $model = (string)($device['model'] ?? $metadata?->model ?? '');
-        $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel($supplier, $model));
-        $modelRow = $this->directory->modelForSupplierAndName($supplier, $model);
-        $enabled = array_flip($modelRow !== null
-            ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
+        $identity = $this->directory->identify($imei);
+        $protocol = $identity->protocol;
+        $enabled = array_flip($identity->modelRow !== null
+            ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($identity->modelRow['id'] ?? 0))
             : CapabilityCatalog::keysForProtocol($protocol));
 
         if (!isset($enabled[$capability])) {
@@ -179,7 +168,9 @@ final class DeviceFeatureRequestService
             $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $nativeKey, $payload);
             $command = $commandPayload['command'];
             $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload'], [
-                'deviceId' => $metadata !== null ? $metadata->deviceId : (string)($device['deviceId'] ?? ''),
+                'deviceId' => $identity->metadata !== null
+                    ? $identity->metadata->deviceId
+                    : (string)($identity->device['deviceId'] ?? ''),
             ]);
             $id = bin2hex(random_bytes(8));
             // O valor segue com o comando: uma acção como «procurar a pulseira» distingue-se

@@ -77,7 +77,6 @@ class DeviceService
         $this->directory = $directory ?? new DeviceDirectory($this->store, $this->whitelist, $this->db);
         $this->featureRequests = $featureRequests ?? new DeviceFeatureRequestService(
             $this->store,
-            $this->whitelist,
             $this->hub,
             $this->db,
             $this->capabilityRegistry,
@@ -349,21 +348,16 @@ class DeviceService
             return ApiError::invalidRequest('configurations object is required')->toArray();
         }
 
-        $device = $this->directory->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei);
-        $supplier = (string)($device['supplier'] ?? $metadata?->supplier ?? '');
-        $model = (string)($device['model'] ?? $metadata?->model ?? '');
-        $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel($supplier, $model));
-        $modelRow = $this->directory->modelForSupplierAndName($supplier, $model);
+        $identity = $this->directory->identify($imei);
         $update = $this->configurationUpdates->update(
             $imei,
             $payload['configurations'],
-            $supplier,
-            $model,
-            $protocol,
-            $modelRow,
-            $metadata?->toArray() ?? [],
-            $device,
+            $identity->supplier,
+            $identity->model,
+            $identity->protocol,
+            $identity->modelRow,
+            $identity->metadata?->toArray() ?? [],
+            $identity->device,
             $requestId,
         );
         if (isset($update['error'])) {

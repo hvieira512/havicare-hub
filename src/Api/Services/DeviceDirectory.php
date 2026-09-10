@@ -46,6 +46,28 @@ final class DeviceDirectory
         return $derived !== '' ? $derived : $deviceId;
     }
 
+    /**
+     * A precedência entre as duas fontes que sabem quem um aparelho é: o instantâneo da
+     * dashboard primeiro, a whitelist a seguir. Um aparelho registado que ainda não falou só
+     * existe na segunda, e por isso nenhuma delas chega sozinha.
+     */
+    public function identify(string $imei): DeviceIdentity
+    {
+        $device = $this->deviceSnapshot($imei);
+        $metadata = $this->whitelist->getMetadata($imei);
+        $supplier = (string)($device['supplier'] ?? $metadata?->supplier ?? '');
+        $model = (string)($device['model'] ?? $metadata?->model ?? '');
+
+        return new DeviceIdentity(
+            $device,
+            $metadata,
+            $supplier,
+            $model,
+            (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model)),
+            $this->modelForSupplierAndName($supplier, $model),
+        );
+    }
+
     public function modelForDevice(array $device): ?array
     {
         return $this->modelForSupplierAndName((string)($device['supplier'] ?? ''), (string)($device['model'] ?? ''));
