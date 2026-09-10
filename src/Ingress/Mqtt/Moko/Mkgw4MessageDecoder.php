@@ -2,6 +2,8 @@
 
 namespace Hub\Ingress\Mqtt\Moko;
 
+use Hub\Ingress\Mqtt\Gateway\Topic;
+
 final class Mkgw4MessageDecoder implements MessageDecoder
 {
     private const SUPPORTED_MESSAGES = ['3004', '3089', '30a0', '30b2'];

@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Ingress\Mqtt\Moko;
+namespace Hub\Ingress\Mqtt\Gateway;
 
 final class ArrayObservationStateStore implements ObservationStateStore
 {

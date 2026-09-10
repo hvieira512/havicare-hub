@@ -9,8 +9,8 @@ use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\RawPayload;
 use Hub\Domain\GatewayDeviceLinkLookup;
-use Hub\Ingress\Mqtt\Moko\ObservationStateStore;
-use Hub\Ingress\Mqtt\Moko\Topic;
+use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
+use Hub\Ingress\Mqtt\Gateway\Topic;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
@@ -117,8 +117,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         // nem atravessa a fronteira entre clientes.
         if (
             !$this->links->isEnabled((string)$gateway['imei'], (string)$device['imei'])
-            || (string)($gateway['company'] ?? 'null') !== (string)($device['company'] ?? 'null')
-            || (string)$gateway['licenseId'] !== (string)$device['licenseId']
+            || !$this->sameTenant($gateway, $device)
         ) {
             Logger::channel('hub')->warning(
                 "Ignoring unlinked veepoo device={$mac} gateway={$gateway['imei']}"

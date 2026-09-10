@@ -8,6 +8,8 @@ use Hub\Device\CommercialModelResolver;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
 use Hub\Domain\GatewayDeviceLinkLookup;
+use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
+use Hub\Ingress\Mqtt\Gateway\Topic;
 use Hub\Log\Logger;
 use Hub\Device\RawPayload;
 
@@ -416,8 +418,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
         if (
             !$this->links->isEnabled((string)$gateway['imei'], (string)$device['imei'])
-            || (string)($gateway['company'] ?? 'null') !== (string)($device['company'] ?? 'null')
-            || (string)$gateway['licenseId'] !== (string)$device['licenseId']
+            || !$this->sameTenant($gateway, $device)
         ) {
             Logger::channel('hub')->warning(
                 "Ignoring unlinked {$protocol} device={$deviceKey} gateway={$gateway['imei']}"

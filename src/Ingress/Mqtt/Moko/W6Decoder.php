@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
+use Hub\Ingress\Mqtt\Gateway\Topic;
+
 /**
  * Reconhece uma MOKO W6 retransmitida por um gateway.
  *

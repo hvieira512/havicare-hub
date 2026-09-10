@@ -6,7 +6,7 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
-use Hub\Ingress\Mqtt\Moko\ArrayObservationStateStore;
+use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\Bridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;

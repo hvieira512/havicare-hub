@@ -1,7 +1,14 @@
 <?php
 
-namespace Hub\Ingress\Mqtt\Moko;
+namespace Hub\Ingress\Mqtt\Gateway;
 
+/**
+ * Se uma observação já foi vista antes, com prazo.
+ *
+ * Serve qualquer gateway que repita: o MOKO relê o mesmo anúncio enquanto o aparelho o
+ * emitir, e o nó Veepoo relê o histórico do dia a cada ciclo. O que muda é a impressão
+ * digital e o prazo, não a pergunta.
+ */
 interface ObservationStateStore
 {
     public function acceptObservation(string $deviceKey, string $fingerprint, int $ttlSeconds): bool;

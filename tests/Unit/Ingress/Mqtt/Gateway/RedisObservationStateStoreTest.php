@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Ingress\Mqtt\Moko;
+namespace Tests\Unit\Ingress\Mqtt\Gateway;
 
-use Hub\Ingress\Mqtt\Moko\RedisObservationStateStore;
+use Hub\Ingress\Mqtt\Gateway\RedisObservationStateStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
 /**
- * O estado de observação do MOKO vive em Redis, e as suas chaves têm de expirar.
+ * O estado de observação dos gateways vive em Redis, e as suas chaves têm de expirar.
  *
  * O espaço de chaves é dispositivo × capacidade × gateway (para o `last`) e dispositivo (para
  * o `condition`); sem prazo, uma etiqueta que muda de gateway ou desaparece deixa a sua chave

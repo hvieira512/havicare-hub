@@ -10,7 +10,7 @@ use Hub\Ingress\Mqtt\Moko\Mkgw4MessageDecoder;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Ingress\Mqtt\Moko\MonitMecsProDecoder;
 use Hub\Ingress\Mqtt\Moko\MonitNormalizer;
-use Hub\Ingress\Mqtt\Moko\Topic;
+use Hub\Ingress\Mqtt\Gateway\Topic;
 use Hub\Ingress\Mqtt\Moko\W6bDecoder;
 use PHPUnit\Framework\TestCase;
 

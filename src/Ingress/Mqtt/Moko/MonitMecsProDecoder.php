@@ -2,6 +2,8 @@
 
 namespace Hub\Ingress\Mqtt\Moko;
 
+use Hub\Ingress\Mqtt\Gateway\Topic;
+
 final class MonitMecsProDecoder
 {
     /**

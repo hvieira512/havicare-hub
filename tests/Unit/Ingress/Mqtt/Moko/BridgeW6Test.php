@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Dashboard\DashboardStoreContract;
-use Hub\Ingress\Mqtt\Moko\ArrayObservationStateStore;
+use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\Bridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;

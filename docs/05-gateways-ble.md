@@ -302,7 +302,7 @@ conteúdo se altere.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Ingress/Mqtt/Moko/Topic.php` | `…/gw/{mac}/raw` e a forma canónica de um MAC |
+| `src/Ingress/Mqtt/Gateway/Topic.php` | `…/gw/{mac}/raw` e a forma canónica de um MAC |
 | `src/Ingress/Mqtt/Moko/Bridge.php` | O centro: identidade, ligações, travões, publicação |
 | `src/Ingress/Mqtt/Moko/MokoMessageDecoder.php` | Seleção entre os formatos MKGW3 e MKGW4 |
 | `src/Ingress/Mqtt/Moko/Mkgw3MessageDecoder.php` | JSON |
@@ -313,7 +313,11 @@ conteúdo se altere.
 | `src/Ingress/Mqtt/Moko/W6bDecoder.php` · `W6Decoder.php` | As duas pulseiras |
 | `src/Ingress/Mqtt/Moko/BraceletTelemetry.php` | Bateria e movimento, comuns às duas |
 | `src/Ingress/Mqtt/Moko/ProximityTracker.php` | A janela de RSSI |
-| `src/Ingress/Mqtt/Moko/RedisObservationStateStore.php` | De-duplicação, refrescamento, transições |
+| `src/Ingress/Mqtt/Gateway/RedisObservationStateStore.php` | De-duplicação, refrescamento, transições |
+
+As duas em `Gateway/` não são MOKO: o espaço de tópicos `gw/{mac}/raw` é do hub, e
+o estado de observação serve qualquer gateway que repita — o MOKO relê o anúncio,
+o nó Veepoo relê o histórico do dia.
 
 Os manuais do fabricante estão em
 [`fornecedores/MOKO/`](fornecedores/MOKO/), com as notas de campo em

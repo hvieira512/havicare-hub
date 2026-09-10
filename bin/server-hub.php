@@ -9,7 +9,7 @@ use Hub\Device\HubTcpIngress;
 use Hub\Ingress\Mqtt\IngressRunner;
 use Hub\Ingress\Mqtt\Moko\Bridge as MokoBridge;
 use Hub\Ingress\Mqtt\Veepoo\Bridge as VeepooBridge;
-use Hub\Ingress\Mqtt\Moko\RedisObservationStateStore;
+use Hub\Ingress\Mqtt\Gateway\RedisObservationStateStore;
 use Hub\Ingress\Mqtt\Ncs\Bridge as NcsBridge;
 use Hub\Ingress\Mqtt\Qinglanst\Bridge as QinglanstBridge;
 use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy as QinglanstDashboardWritePolicy;
@@ -84,18 +84,21 @@ if ($config['ncs']['enabled']) {
     $enabledIngresses[] = 'ncs';
 }
 
+// Uma variável só para as duas ingestões de gateway: são o mesmo espaço de tópicos de
+// propósito, e dois cálculos separados podiam divergir sem ninguém dar por isso.
+$gatewayTopicFilter = trim((string)$config['moko']['topic_filter']);
+
 if ($config['moko']['enabled']) {
-    $mokoTopicFilter = trim((string)$config['moko']['topic_filter']);
     $runner->add('MOKO gateway ingress', $subscribers->bind(
         'moko-sub',
-        $mokoTopicFilter,
+        $gatewayTopicFilter,
         fn ($subscriber, $reconnect) => new MokoBridge(
             $subscriber,
             $services->whitelist,
             $services->mqttBridge,
             $services->dataAccess->gatewayDeviceLinks,
             new RedisObservationStateStore($services->redis),
-            $mokoTopicFilter,
+            $gatewayTopicFilter,
             $reconnect,
             $services->dashboardStore,
             $services->commercialModelResolver,
@@ -113,10 +116,9 @@ if ($config['moko']['enabled']) {
 // Pulseiras Veepoo entregues por um gateway BLE. Partilha o tópico do MOKO de propósito: os
 // gateways publicam todos em `.../gw/{mac}/raw`, e cada ingestão reclama só o que sabe ler.
 if ($config['moko']['enabled']) {
-    $veepooTopicFilter = trim((string)$config['moko']['topic_filter']);
     $runner->add('Veepoo bracelet ingress', $subscribers->bind(
         'veepoo-sub',
-        $veepooTopicFilter,
+        $gatewayTopicFilter,
         fn ($subscriber, $reconnect) => new VeepooBridge(
             $subscriber,
             $services->whitelist,
@@ -127,7 +129,7 @@ if ($config['moko']['enabled']) {
             // o gateway relê. Em Redis e não em memória: a releitura maior é a do arranque do
             // gateway, e um hub reiniciado teria esquecido tudo o que ela vai repetir.
             new RedisObservationStateStore($services->redis),
-            $veepooTopicFilter,
+            $gatewayTopicFilter,
             $reconnect,
             $services->dashboardStore,
         ),

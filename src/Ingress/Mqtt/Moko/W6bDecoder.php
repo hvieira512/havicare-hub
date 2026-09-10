@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
+use Hub\Ingress\Mqtt\Gateway\Topic;
+
 /**
  * Descodifica as observações de uma MOKO W6B (BXP-B / "MK Button") retransmitidas por um
  * gateway.
