@@ -137,8 +137,14 @@ com o comando que saiu ou ficou em fila — ou um `error`. Os segundos acrescent
 | `device.downlink.sent` | Um comando saiu para o aparelho |
 | `device.downlink.queued` | O aparelho estava offline; o comando ficou em fila |
 | `device.downlink.dropped` | O comando não foi entregue nem guardado |
+| `device.measurement_failed` | Pulseira — uma medição pedida não produziu valor, e o aparelho disse porquê |
 
 Os `dropped` levam `error.code`, que vale `device_offline` ou `queue_unavailable`.
+
+O `measurement_failed` leva `error.reason`, que vale `not_worn` quando a deteção de uso
+não passou, `low_battery` e `sensor_fault` quando é o firmware a recusar, e `no_signal`
+quando o traçado saiu todo a zeros. A mesma queixa do mesmo aparelho fica calada durante
+um minuto, para uma medição que insiste não encher o histórico.
 
 ### Eventos de domínio
 

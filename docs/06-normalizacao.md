@@ -81,7 +81,7 @@ e `source`, como um `device.connected`, que só leva a identidade.
 | `device.commercialName` | Do catálogo de modelos. Omitido quando o modelo não está lá |
 | `data` | A forma partilhada da capacidade |
 | `source.protocol` | Quem descodificou: `vivistar-iw`, `wonlex-json`, `four-p-touch`, `voerka-ncs`, `qinglanst-radar`, `moko-mkgw3`, `moko-mkgw4`, `monit-mecs-pro-ble`, `moko-w6`, `moko-w6b` |
-| `source.nativeType` | O tipo original do fabricante: `AP49`, `upHeartRate`, `UD_LTE`, `LK`, `heartbreath`… |
+| `source.nativeType` | O tipo original do fabricante: `AP49`, `upHeartRate`, `UD_LTE`, `LK`, `heartbreath`… Nas pulseiras Veepoo é `type-{n}`, o número com que o fabricante numera os seus retornos, ou `daily_block`, `session`, `battery` e `ecg_wave` para o que não tem número |
 | `source.gatewayId` · `source.rssiDbm` | Só em BLE: que gateway ouviu, e com que força |
 | `source.topic` | Só no radar: o tópico de origem |
 
@@ -140,7 +140,7 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 |---|---|
 | `activity` | `steps`, `distanceMeters`, `distanceKm`, `caloriesKcal`, `exerciseSeconds`, `standMinutes` — **o acumulado do dia**, e não um incremento |
 | `sleep` | `startTime`, `endTime`, `isAccumulative`, `totalDurationMinutes`, `timingValid`, `segments[]` |
-| `battery` | `percent`, `chargingState`, `batteryType` |
+| `battery` | `percent`, `chargingState`, `batteryType`, `lowBattery` — este último só das pulseiras, e é o firmware a dizê-lo, não um limiar nosso sobre a percentagem |
 | `heartbeat` | `status`, `steps`, `gsmSignal`, `satelliteCount`, `batteryPercent`, `chargingState`, `batteryType`, `rollFrequency`, `remainingSpace`, `fortificationState`, `workMode` |
 | `device_state` | `state`, `resetStatus`, `reason` |
 | `device_status` | `deviceTime` |
@@ -164,6 +164,7 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `uric_acid` | pulseira | `umolPerL` |
 | `sleep_apnea` | pulseira | `episodes`, `hypoxiaSeconds` — contagens do bloco, e não leituras por minuto |
 | `cardiac_load` | pulseira | `value` — sem unidade nem escala documentadas pelo fabricante |
+| `find_device` | pulseira | `state`: `searching`, `stopped` ou `timed_out`. A pulseira desiste sozinha ao fim de cerca de um minuto, e é `timed_out` que o diz |
 | `body_composition` | pulseira | `bmi`, `bodyFatPercent`, `fatMassKg`, `leanMassKg`, `musclePercent`, `muscleMassKg`, `subcutaneousFatPercent`, `bodyWaterPercent`, `waterMassKg`, `skeletalMusclePercent`, `boneMassKg`, `proteinPercent`, `proteinMassKg`, `basalMetabolicRateKcal` |
 | `motion` | pulseira | `xMg`, `yMg`, `zMg`, `magnitudeMg` |
 | `proximity` | pulseira, sensor de fralda | `gatewayId`, `state`, `rssiDbm`, `rssiMaxDbm`, `rssiMedianDbm`, `rssiMinDbm`, `samples`, `windowSeconds` |

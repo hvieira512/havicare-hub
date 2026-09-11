@@ -671,7 +671,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
                 'supplier' => (string)($device['supplier'] ?? ''),
                 'model' => (string)($device['model'] ?? ''),
             ],
-            'source' => ['protocol' => 'veepoo-ble', 'nativeType' => 'measurement', 'gatewayId' => $gatewayKey],
+            // O tipo do fabricante e não a espécie de mensagem: `measurement` cobria nove
+            // tipos e não dizia qual, e é por ele que se vai à documentação da Veepoo.
+            'source' => ['protocol' => 'veepoo-ble', 'nativeType' => "type-{$sdkType}", 'gatewayId' => $gatewayKey],
             'data' => $data,
         ], $licenseId, $company);
     }
