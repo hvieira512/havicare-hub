@@ -6,6 +6,7 @@ import {
     saveDeviceConfiguration,
     saveDeviceConfigurationGroup,
     syncConfigGroupDirty,
+    syncConfigSectionDirty,
 } from "./panel.js";
 import {
     appendRepeatRow,
@@ -76,6 +77,8 @@ export function handleDeviceConfigClick(event) {
 
     if (button.dataset.action === "removeRepeatRow") {
         removeRepeatRow(button);
+        // O botão sai do DOM com a linha, e o ouvinte lá fora já não lhe encontra a secção.
+        syncConfigSectionDirty(section);
         return;
     }
 
