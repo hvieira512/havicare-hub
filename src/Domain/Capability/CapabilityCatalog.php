@@ -164,7 +164,9 @@ final class CapabilityCatalog
                 'sleep',
                 'ecg',
                 'hrv',
-                'ppg',
+                // Sem `ppg`: a MF91 não exporta onda nenhuma. O que a app do fabricante
+                // chama `ppgs` são as cinco frequências de pulso do bloco -- o mesmo
+                // `pulseReat` que já sai como `heart_rate`.
                 'rr_interval',
                 'blood_sugar',
                 'stress',

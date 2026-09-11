@@ -39,8 +39,39 @@ final class VeepooWearStateAndBodyComposition implements Migration
      * O acumulado do dia é o que `activity` sempre significou nos relógios, onde o `steps` do
      * aparelho é um contador desde a meia-noite. Dois nomes para a mesma grandeza obrigavam
      * quem integra a tratar por duas coisas o que é uma só.
+     *
      */
     private const REMOVED = ['activity_daily'];
+
+    /**
+     * O `ppg` perde a ligação aos modelos Veepoo, mas continua a existir para pulseiras.
+     *
+     * Esta não exporta onda nenhuma: o SDK do fabricante não expõe leitura de PPG, o caminho
+     * de dados crus que ele documenta é personalização de outro projeto e não responde aqui,
+     * e o micro-exame -- por onde a onda sairia -- devolve vazio. O que a app chama `ppgs` são
+     * as cinco frequências de pulso do bloco, que já saem como `heart_rate`. A capacidade fica
+     * no catálogo porque outra pulseira pode tê-la a sério.
+     */
+    private const UNLINKED = ['ppg'];
+
+    /**
+     * Capacidades que a MF91 tinha ligadas a zero e que o hub publica todos os dias.
+     *
+     * A MF91 entrou nas bases pelo painel e não pelo semeador, e ficou com o catálogo a dizer
+     * que não as suporta -- a API respondia isso a quem perguntasse, enquanto a telemetria
+     * delas saía na mesma. Todas foram conferidas contra a app do fabricante.
+     *
+     * A `sleep_apnea` e a `cardiac_load` ficam desligadas de propósito: dependem de se dormir
+     * com a pulseira e nunca se viu uma trama delas.
+     */
+    private const ENABLED = [
+        'blood_lipids',
+        'uric_acid',
+        'met',
+        'stress',
+        'wear_state',
+        'body_composition',
+    ];
 
     public function version(): string
     {
@@ -82,6 +113,51 @@ final class VeepooWearStateAndBodyComposition implements Migration
         foreach ($deletions as $sql) {
             $pdo->prepare($sql)->execute(self::REMOVED);
         }
+
+        // Pelos modelos que têm as outras chaves deste protocolo, que é como o seeder os
+        // reconhece -- assim uma pulseira de outra marca com PPG a sério não é afetada.
+        $unlink = $pdo->prepare("
+            DELETE FROM model_capabilities
+             WHERE device_type = 'bracelet' AND capability_key = ?
+               AND model_id IN (
+                   SELECT model_id FROM (
+                       SELECT model_id FROM model_capabilities
+                        WHERE device_type = 'bracelet' AND capability_key = 'heart_rate_continuous'
+                   ) AS veepoo
+               )
+        ");
+        foreach (self::UNLINKED as $key) {
+            $unlink->execute([$key]);
+        }
+
+        $enable = $pdo->prepare("
+            UPDATE model_capabilities SET enabled = 1
+             WHERE device_type = 'bracelet' AND capability_key = ?
+               AND model_id IN (
+                   SELECT model_id FROM (
+                       SELECT model_id FROM model_capabilities
+                        WHERE device_type = 'bracelet' AND capability_key = 'heart_rate_continuous'
+                   ) AS veepoo
+               )
+        ");
+        foreach (self::ENABLED as $key) {
+            $enable->execute([$key]);
+        }
+
+        // O acumulado do dia tinha um `is_requestable` a zero no modelo, que ganha ao da
+        // capacidade por causa do `COALESCE` -- e a API respondia que não se podia pedir.
+        $pdo->exec("
+            UPDATE model_capabilities mc
+              JOIN models m ON m.id = mc.model_id
+               SET mc.is_requestable = NULL
+             WHERE mc.device_type = 'bracelet' AND mc.capability_key = 'activity'
+               AND m.id IN (
+                   SELECT model_id FROM (
+                       SELECT model_id FROM model_capabilities
+                        WHERE device_type = 'bracelet' AND capability_key = 'heart_rate_continuous'
+                   ) AS veepoo
+               )
+        ");
 
         // O acumulado do dia passa a poder ser pedido: é um contador que a pulseira já tem, e
         // responde no instante como a bateria.
