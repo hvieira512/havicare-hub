@@ -344,6 +344,9 @@ final class DeviceConfigurationUpdateService
             'confirmationMode' => $operation['confirmationMode'],
             'expectedReplyTypes' => $operation['expectedReplyTypes'],
             'retryable' => true,
+            // Guardado para a repetição o poder reenviar: nos protocolos que entregam a um
+            // gateway, os bytes são só o nome da operação e o valor viaja ao lado.
+            'payload' => $operation['payload'] ?? null,
             'bytes' => $operation['bytes'],
             'attempts' => 1,
             'maxAttempts' => 3,

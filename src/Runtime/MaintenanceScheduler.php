@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Runtime;
 
+use Hub\Device\DownlinkRetryContext;
 use React\EventLoop\LoopInterface;
 
 /**
@@ -33,8 +34,10 @@ final class MaintenanceScheduler
                     self::COMMAND_RETRY_AFTER_SECONDS,
                     $commandTimeout,
                     self::COMMAND_MAX_ATTEMPTS,
+                    // O contexto volta com a repetição. Sem ele, o comando reentra na fila
+                    // sem o valor que o gateway precisa de executar.
                     static fn (string $imei, string $bytes, array $command): string
-                        => $hubServer->submitDownlink($imei, $bytes)
+                        => $hubServer->submitDownlink($imei, $bytes, DownlinkRetryContext::forCommand($command))
                 );
                 $store->expireWaitingCommands($commandTimeout);
                 $store->expireStaleDevices($deviceIdleTimeout);
