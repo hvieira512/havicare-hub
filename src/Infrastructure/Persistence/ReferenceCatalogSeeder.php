@@ -25,6 +25,7 @@ final class ReferenceCatalogSeeder
         ['MONIT', 'MECS-PRO', 'MONIT MECS Pro', 'diaper_sensor', ''],
         ['MOKO', 'W6B', 'MOKO W6B', 'bracelet', ''],
         ['MOKO', 'W6', 'MOKO W6', 'bracelet', ''],
+        ['Wonlex', 'MF91', 'MF91', 'bracelet', ''],
     ];
 
     public function seedReferenceData(PDO $pdo): void

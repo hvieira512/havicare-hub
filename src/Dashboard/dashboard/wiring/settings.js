@@ -52,6 +52,7 @@ import {
 } from "../settings/models/form.js";
 import {
     deleteCurrentModel,
+    handleModelDetailImageChange,
     resetModelDetailFields,
     saveCapabilities,
     saveModelDetail,
@@ -137,6 +138,10 @@ function bindModels() {
     els.modelDetailResetBtn.addEventListener("click", resetModelDetailFields);
     els.modelDetailFields.addEventListener("input", syncModelDetailDirty);
     els.modelDetailFields.addEventListener("change", syncModelDetailDirty);
+    els.modelDetailImageInput.addEventListener(
+        "change",
+        handleModelDetailImageChange,
+    );
     els.modelDetailDeleteBtn.addEventListener("click", () => {
         void deleteCurrentModel();
     });

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
+use Hub\Infrastructure\Persistence\Migration\CatalogMf91Model;
 use Hub\Infrastructure\Persistence\Migration\ConfigurationTimestampsToDatetime;
 use Hub\Infrastructure\Persistence\Migration\DeviceTypeAsciiCollation;
 use Hub\Infrastructure\Persistence\Migration\DeviceTypesTable;
@@ -49,6 +50,7 @@ final class DatabaseMigrationPlan
             new DeviceTypeAsciiCollation(),
             new DropMonitorNumberConfigurations(),
             new VeepooBraceletCapabilities(),
+            new CatalogMf91Model(),
         ];
     }
 

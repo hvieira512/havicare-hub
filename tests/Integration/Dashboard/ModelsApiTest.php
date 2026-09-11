@@ -283,7 +283,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[4]['suppliers'] ?? []
         )));
-        self::assertSame(['MOKO'], array_values(array_map(
+        self::assertSame(['MOKO', 'Wonlex'], array_values(array_map(
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[5]['suppliers'] ?? []
         )));
@@ -519,6 +519,18 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame('gateway', (string)$model['device_type']);
         // Fala o JSON do MKGW3, e por isso não tem protocolo próprio.
         self::assertSame('moko-mkgw3', DeviceProtocol::forModel('MOKO', (string)$model['internal_model']));
+    }
+
+    public function testTheMf91IsInTheCatalogAsAWonlexBracelet(): void
+    {
+        [, $db] = $this->makeApi();
+
+        $model = $db->models->find('Wonlex', 'MF91');
+
+        self::assertIsArray($model);
+        self::assertSame('bracelet', (string)$model['device_type']);
+        // A Wonlex vende relógios TCP, e esta pulseira fala BLE.
+        self::assertSame('veepoo-ble', DeviceProtocol::forModel('Wonlex', (string)$model['internal_model']));
     }
 
     private function makeApi(): array

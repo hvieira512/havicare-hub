@@ -116,10 +116,13 @@ ob_start();
                                         </div>
                                     </div>
                                     <div class="col-lg-4">
-                                        <div id="modelDetailImage" class="showcase-preview border rounded d-flex align-items-center justify-content-center p-3 h-100">
-                                            <div class="text-center text-secondary w-100">
-                                                <?= icon('fa-microchip', 'fs-1 opacity-50') ?>
-                                                <div class="small mt-2" id="modelDetailName">Modelo</div>
+                                        <div class="showcase-preview border rounded d-flex align-items-center justify-content-center p-3 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
+                                            <input type="file" id="modelDetailImageInput" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
+                                            <div id="modelDetailImage" class="text-center w-100">
+                                                <div class="text-secondary">
+                                                    <?= icon('fa-microchip', 'fs-1 opacity-50') ?>
+                                                    <div class="small mt-2" id="modelDetailName">Modelo</div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

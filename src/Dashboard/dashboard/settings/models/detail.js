@@ -6,7 +6,11 @@ import {
     saveModel as apiSaveModel,
 } from "../../api/index.js";
 import { ensureModelTemplate } from "../../capability-catalog.js";
-import { invalidateDeviceTypeSuppliersModels, state } from "../../state.js";
+import {
+    invalidateDeviceTypeSuppliersModels,
+    setModelPreviewObjectUrl,
+    state,
+} from "../../state.js";
 import { html, raw } from "../../html.js";
 import { apiError, confirmDestructive, toast } from "../../dialogs.js";
 import { clearInvalid, markInvalid } from "../../validation.js";
@@ -90,6 +94,7 @@ async function openModelDetail(modelId) {
 function renderModelDetailInfo(model) {
     const { els } = getSettingsModelsRuntime();
     const label = modelCommercialName(model);
+    if (els.modelDetailImageInput) els.modelDetailImageInput.value = "";
     els.modelDetailImage.innerHTML = modelPreviewHtml(model, label);
     els.modelDetailName.textContent = label;
 
@@ -151,7 +156,21 @@ function readModelDetailFields() {
         internalModel: String(els.modelDetailInternalModel?.value || "").trim(),
         supplier: String(els.modelDetailSupplierSelect?.value || ""),
         deviceType: String(els.modelDetailDeviceType?.value || ""),
+        image: String(els.modelDetailImageInput?.files?.[0]?.name || ""),
     };
+}
+
+/** A imagem escolhida é mais um campo alterado da identidade, e grava com ela. */
+function handleModelDetailImageChange() {
+    const { els } = getSettingsModelsRuntime();
+    const model = state.settingsModal.currentCapabilitiesModel;
+    const file = els.modelDetailImageInput?.files?.[0];
+    setModelPreviewObjectUrl(file ? URL.createObjectURL(file) : null);
+    els.modelDetailImage.innerHTML = modelPreviewHtml(
+        file ? { ...model, image: state.modelPreviewObjectUrl } : model,
+        modelCommercialName(model),
+    );
+    syncModelDetailDirty();
 }
 
 /** O "Guardar" aparece por diferença: sem alteração não há botão para premir. */
@@ -176,7 +195,8 @@ function resetModelDetailFields() {
     els.modelDetailInternalModel.value = pristine.internalModel;
     els.modelDetailSupplierSelect.value = pristine.supplier;
     els.modelDetailDeviceType.value = pristine.deviceType;
-    syncModelDetailDirty();
+    if (els.modelDetailImageInput) els.modelDetailImageInput.value = "";
+    handleModelDetailImageChange();
 }
 
 async function saveModelDetail() {
@@ -202,6 +222,10 @@ async function saveModelDetail() {
     body.append("commercialName", fields.commercialName);
     body.append("deviceType", fields.deviceType);
     body.append("protocol", String(model.protocol || ""));
+    const image = els.modelDetailImageInput?.files?.[0];
+    if (image) {
+        body.append("image", image);
+    }
 
     const result = await apiSaveModel(model.id, body);
     if (result.error) {
@@ -212,6 +236,7 @@ async function saveModelDetail() {
     // O PUT responde `{status: "ok"}`: o modelo actualizado é o que se acabou de enviar.
     const saved = {
         ...model,
+        image: image ? state.modelPreviewObjectUrl : model.image,
         supplier_id: supplier?.id ?? model.supplier_id,
         supplier: fields.supplier,
         internalModel: fields.internalModel,
@@ -524,8 +549,10 @@ async function saveCapabilities() {
 export {
     capabilityRowsDependOnSelection,
     deleteCurrentModel,
+    handleModelDetailImageChange,
     openModelDetail,
     renderCapabilitiesSection,
+    renderModelDetailInfo,
     resetModelDetailFields,
     saveCapabilities,
     saveModelDetail,

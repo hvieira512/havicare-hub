@@ -61,6 +61,7 @@ FROM suppliers s JOIN (
     UNION ALL SELECT 'Vivistar',  'VL17',             'R03',                        'watch',         '/model-images/c27707e761813389512c25a4050a3b85.jpg'
     UNION ALL SELECT 'Voerka',    'W812',             'W812',                       'ncs',           ''
     UNION ALL SELECT 'Wonlex',    'HW20PRO',          'HW20PRO',                    'watch',         '/model-images/eed091a62f83e3ef03c7090ce09ea262.jpg'
+    UNION ALL SELECT 'Wonlex',    'MF91',             'MF91',                       'bracelet',      '/model-images/4d62bc6aac04e660f06f1de7d0ab6a4f.jpg'
 ) m ON m.supplier = s.name
 ON DUPLICATE KEY UPDATE
     commercial_name = VALUES(commercial_name),
