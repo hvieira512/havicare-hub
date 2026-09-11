@@ -115,8 +115,9 @@ if ($config['moko']['enabled']) {
 
 // Pulseiras Veepoo entregues por um gateway BLE. Partilha o tópico do MOKO de propósito: os
 // gateways publicam todos em `.../gw/{mac}/raw`, e cada ingestão reclama só o que sabe ler.
+$veepooIngress = null;
 if ($config['moko']['enabled']) {
-    $runner->add('Veepoo bracelet ingress', $subscribers->bind(
+    $veepooIngress = $subscribers->bind(
         'veepoo-sub',
         $gatewayTopicFilter,
         fn ($subscriber, $reconnect) => new VeepooBridge(
@@ -133,7 +134,8 @@ if ($config['moko']['enabled']) {
             $reconnect,
             $services->dashboardStore,
         ),
-    ));
+    );
+    $runner->add('Veepoo bracelet ingress', $veepooIngress);
     $enabledIngresses[] = 'veepoo';
 }
 
@@ -196,6 +198,19 @@ $loop->addPeriodicTimer(1.0, static function () use ($services): void {
         Logger::channel('hub')->error('MQTT publisher drain failed: ' . $e->getMessage());
     }
 });
+
+// Entrega às pulseiras Veepoo o que o ecrã ou a API põem em fila. O gateway fica subscrito
+// ao seu tópico de comandos, por isso não há razão para esperar pelo anúncio de sessão
+// seguinte -- que chega de 30 em 30 s, mais do que a pulseira leva a desistir de vibrar.
+if ($veepooIngress instanceof VeepooBridge) {
+    $loop->addPeriodicTimer(1.0, static function () use ($veepooIngress): void {
+        try {
+            $veepooIngress->dispatchQueued();
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error('Veepoo queued dispatch failed: ' . $e->getMessage());
+        }
+    });
+}
 
 // O sinal de vida para o systemd, que sai de um temporizador deste loop e por isso só é
 // enviado enquanto ele girar. Fora do systemd devolve `null` e não faz nada.

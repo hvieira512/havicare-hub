@@ -173,6 +173,10 @@ final class CapabilityCatalog
                 'uric_acid',
                 'sleep_apnea',
                 'cardiac_load',
+                'wear_state',
+                'body_composition',
+                'activity_daily',
+                'firmware_version',
                 // Configuração: o que a pulseira mede sozinha ao longo do dia.
                 'heart_rate_continuous',
                 'blood_pressure_trend',

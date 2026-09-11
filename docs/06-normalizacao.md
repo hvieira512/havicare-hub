@@ -124,13 +124,13 @@ leitura que não se consegue normalizar não produz evento nenhum.
 |---|---|
 | `ecg` · `ppg` | `samples[]`, `frequencyHz`, `collectionId`, `startedAt`, `packetStatus`, `block` |
 | `hrv` | `milliseconds` |
-| `rr_interval` | `intervals[{timestamp, milliseconds}]`, `frequencyHz`, `collectionId` |
+| `rr_interval` | `intervals[{timestamp, milliseconds}]`, `frequencyHz`, `collectionId`, `samplingIntervalSeconds` |
 
 ### Atividade e estado
 
 | `type` | `data` |
 |---|---|
-| `activity` | `steps`, `distanceMeters`, `distanceKm`, `caloriesKcal`, `exerciseSeconds`, `standMinutes` |
+| `activity` | `steps`, `distanceMeters`, `distanceKm`, `caloriesKcal`, `exerciseSeconds`, `exerciseAmount`, `standMinutes` |
 | `sleep` | `startTime`, `endTime`, `isAccumulative`, `totalDurationMinutes`, `timingValid`, `segments[]` |
 | `battery` | `percent`, `chargingState`, `batteryType` |
 | `heartbeat` | `status`, `steps`, `gsmSignal`, `satelliteCount`, `batteryPercent`, `chargingState`, `batteryType`, `rollFrequency`, `remainingSpace`, `fortificationState`, `workMode` |
@@ -148,6 +148,9 @@ leitura que não se consegue normalizar não produz evento nenhum.
 | `presence` | radar | `count`, `people[]` |
 | `sleep_state` | radar | `state` |
 | `position_minute_stats` · `vitals_minute_stats` | radar | resumos por minuto |
+| `activity_daily` | pulseira | `steps`, `distanceMeters`, `caloriesKcal` — o acumulado do dia, contado pela pulseira. Não somar com `activity`, que é o de cada bloco de cinco minutos |
+| `wear_state` | pulseira | `state`: `worn` ou `not_worn` |
+| `body_composition` | pulseira | `bmi`, `bodyFatPercent`, `fatMassKg`, `leanMassKg`, `musclePercent`, `muscleMassKg`, `subcutaneousFatPercent`, `bodyWaterPercent`, `waterMassKg`, `skeletalMusclePercent`, `boneMassKg`, `proteinPercent`, `proteinMassKg`, `basalMetabolicRateKcal` |
 | `motion` | pulseira | `xMg`, `yMg`, `zMg`, `magnitudeMg` |
 | `proximity` | pulseira, sensor de fralda | `gatewayId`, `state`, `rssiDbm`, `rssiMaxDbm`, `rssiMedianDbm`, `rssiMinDbm`, `samples`, `windowSeconds` |
 | `connectivity` | gateway | `interface`, `networkType`, `signalQuality`, `signalStrengthDbm` |

@@ -40,7 +40,7 @@ final class BridgeMeasurementTest extends TestCase
                 'temperatura',
                 ['sdkType' => 6, 'bodyTemperature' => 36.2, 'bodySurfaceTemperature' => 33.5],
                 'temperature',
-                ['bodyCelsius' => 36.2, 'skinCelsius' => 33.5],
+                ['bodyCelsius' => 36.2, 'surfaceCelsius' => 33.5],
             ],
             'stress' => ['stress', ['sdkType' => 58, 'pressure' => 23], 'stress', ['score' => 23]],
             'tensão' => [
@@ -49,7 +49,58 @@ final class BridgeMeasurementTest extends TestCase
                 'blood_pressure',
                 ['systolicMmHg' => 101, 'diastolicMmHg' => 74],
             ],
+            // O estado de quem a manda vibrar. Fecha o pedido: é o `expectedReplyTypes` do
+            // comando, e sem ele o registo ficava à espera de uma resposta que já tinha vindo.
+            'a procurar' => ['a procurar', ['sdkType' => 17, 'value' => 'search'], 'find_device', ['state' => 'searching']],
+            'parada' => ['parada', ['sdkType' => 17, 'value' => 'find'], 'find_device', ['state' => 'stopped']],
+            'desistiu' => ['desistiu', ['sdkType' => 17, 'value' => 'timeout'], 'find_device', ['state' => 'timed_out']],
+            // O total do dia, que a pulseira conta ela própria. Os blocos de cinco minutos
+            // são somas com atraso; esta leitura é a que a app mostra no ecrã principal, e as
+            // calorias vêm em décimas como nos blocos -- 146 são 14,6 kcal.
+            'totais do dia' => [
+                'totais do dia',
+                ['sdkType' => 9, 'step' => 216, 'calorie' => 146, 'distance' => 187, 'day' => 'today'],
+                'activity_daily',
+                ['steps' => 216, 'distanceMeters' => 187, 'caloriesKcal' => 14.6],
+            ],
+            // Medição real feita na app do fabricante, conferida no ecrã dela valor a valor.
+            // Os nomes do hub levam a unidade; os do fabricante não distinguem percentagem
+            // de quilos, e `muscleRate` ao lado de `muscleMass` obriga a adivinhar.
+            'composição corporal' => [
+                'composição corporal',
+                // Em texto, que é como o SDK os entrega -- foi assim que chegaram do aparelho.
+                [
+                    'sdkType' => 32,
+                    'BMI' => '28.9', 'bodyFatPercentage' => '31.9', 'fatMass' => '30.3', 'leanBodyMass' => '64.6',
+                    'muscleRate' => '58.0', 'muscleMass' => '55.1', 'subcutaneousFat' => '22.4',
+                    'bodyMoisture' => '54.5', 'waterContent' => '51.7', 'skeletalMuscleRate' => '33.5',
+                    'boneMass' => '2.9', 'proportionOfProtein' => '12.4', 'proteinAmount' => '11.8',
+                    'basalMetabolicRate' => '2235.5',
+                ],
+                'body_composition',
+                [
+                    'bmi' => 28.9, 'bodyFatPercent' => 31.9, 'fatMassKg' => 30.3, 'leanMassKg' => 64.6,
+                    'musclePercent' => 58.0, 'muscleMassKg' => 55.1, 'subcutaneousFatPercent' => 22.4,
+                    'bodyWaterPercent' => 54.5, 'waterMassKg' => 51.7, 'skeletalMusclePercent' => 33.5,
+                    'boneMassKg' => 2.9, 'proteinPercent' => 12.4, 'proteinMassKg' => 11.8,
+                    'basalMetabolicRateKcal' => 2235.5,
+                ],
+            ],
         ];
+    }
+
+    /** Enquanto mede, a pulseira repete a trama com zeros; zero não é composição nenhuma. */
+    public function testBodyCompositionInProgressIsNotPublished(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::message([
+            'sdkType' => 32, 'BMI' => 0, 'bodyFatPercentage' => 0, 'basalMetabolicRate' => 0,
+        ]));
+
+        self::assertSame([], array_values(array_filter(
+            $mqtt->telemetry,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'body_composition',
+        )));
     }
 
     /**

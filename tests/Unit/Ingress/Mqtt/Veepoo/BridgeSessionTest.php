@@ -99,6 +99,32 @@ final class BridgeSessionTest extends TestCase
         );
     }
 
+    /**
+     * A pulseira diz a versão em cada sessão, e a sessão repete-se a cada batimento.
+     *
+     * Publicá-la de trinta em trinta segundos era ruído; não a publicar de todo deixava o hub
+     * sem saber que firmware está no pulso, que é o que distingue duas pulseiras iguais.
+     */
+    public function testTheFirmwareVersionIsPublishedOnceAndAgainWhenItChanges(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.73.01.00-5966'));
+        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.73.01.00-5966'));
+        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.74.00.00-5966'));
+
+        $versions = array_map(
+            static fn(array $e): mixed => $e['payload']['data']['version'] ?? null,
+            array_values(array_filter(
+                $mqtt->telemetry,
+                static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'firmware_version',
+            )),
+        );
+
+        self::assertSame(['02.73.01.00-5966', '02.74.00.00-5966'], $versions);
+    }
+
     /** @return list<array<string, mixed>> */
     private static function eventsOfType(RecordingHubMqttBridge $mqtt, string $type): array
     {
@@ -108,12 +134,12 @@ final class BridgeSessionTest extends TestCase
         ));
     }
 
-    private static function session(bool $authenticated): string
+    private static function session(bool $authenticated, ?string $firmware = null): string
     {
         return json_encode([
             'source' => 'veepoo-node',
             'kind' => 'session',
-            'device' => ['mac' => self::BRACELET],
+            'device' => array_filter(['mac' => self::BRACELET, 'firmware' => $firmware]),
             'payload' => ['authenticated' => $authenticated],
         ], JSON_THROW_ON_ERROR);
     }

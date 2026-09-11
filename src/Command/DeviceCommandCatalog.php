@@ -172,12 +172,17 @@ final class DeviceCommandCatalog
             ['id' => 'measureBloodPressure', 'command' => 'measure.bloodPressure.start', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['blood_pressure']],
             ['id' => 'measureOxygen', 'command' => 'measure.oxygen.start', 'label' => 'Blood oxygen', 'icon' => 'fa-droplet', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['blood_oxygen']],
             ['id' => 'measureBloodGlucose', 'command' => 'measure.bloodGlucose.start', 'label' => 'Blood glucose', 'icon' => 'fa-vial', 'kind' => 'request', 'feature' => 'blood_sugar', 'expectedReplyTypes' => ['blood_sugar']],
-            // A única fonte de temperatura corporal: o histórico só guarda a da pele.
             ['id' => 'measureTemperature', 'command' => 'measure.temperature.start', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['temperature']],
+            // Mede-se pelos elétrodos do ECG e exige o dedo encostado, como ele. Leva cerca
+            // de meio minuto e devolve catorze grandezas de uma vez.
+            ['id' => 'measureBodyComposition', 'command' => 'measure.bodyComposition.start', 'label' => 'Body composition', 'icon' => 'fa-weight-scale', 'kind' => 'request', 'feature' => 'body_composition', 'expectedReplyTypes' => ['body_composition']],
             ['id' => 'measureStress', 'command' => 'measure.stress.start', 'label' => 'Stress', 'icon' => 'fa-gauge-high', 'kind' => 'request', 'feature' => 'stress', 'expectedReplyTypes' => ['stress']],
             // A bateria é o único pedido que não depende do sensor ótico: responde sempre,
             // e em menos de um segundo.
             ['id' => 'readBattery', 'command' => 'read.battery', 'label' => 'Battery', 'icon' => 'fa-battery-half', 'kind' => 'request', 'feature' => 'battery', 'expectedReplyTypes' => ['battery']],
+            // Os totais do dia respondem no instante, como a bateria: são um contador que a
+            // pulseira já tem, e não uma medição a fazer.
+            ['id' => 'readDailyTotals', 'command' => 'read.dailyTotals', 'label' => 'Daily totals', 'icon' => 'fa-shoe-prints', 'kind' => 'request', 'feature' => 'activity_daily', 'expectedReplyTypes' => ['activity_daily']],
             // O ECG arranca e transmite, mas exige que quem a usa encoste o dedo ao elétrodo:
             // sem isso o aparelho envia dezenas de tramas com `wearNotPass` e tudo a zero.
             // Fica no catálogo porque é assim em qualquer pulseira com ECG, e a falha de

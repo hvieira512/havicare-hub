@@ -33,6 +33,24 @@ final class DailyBlockNormalizer
      */
     public const MMOL_PER_L_TO_MG_PER_DL = 18.016;
 
+    /**
+     * De quantos em quantos segundos o bloco guarda um intervalo R-R.
+     *
+     * São cinquenta lugares a cobrir os trezentos segundos do bloco, e o modo de teste do
+     * fabricante chama `RR2Per6Second` ao campo equivalente.
+     */
+    private const RR_SLOT_SECONDS = 6;
+
+    /**
+     * O código de uso que significa «detecção passou».
+     *
+     * O javadoc chama ao campo «bits de bandeira de uso» e não publica a tabela. Em capturas
+     * de dois dias apareceram quatro valores: `0` sempre que há leitura ótica, e `1`, `2` e
+     * `6` sempre que não há nenhuma -- a pulseira a ser calçada, pousada na secretária, e a
+     * noite inteira fora do pulso. A regra é a bandeira a zero, não cada código de per si.
+     */
+    private const WEAR_OK = 0;
+
     /** Grandezas por minuto: chave no bloco => [type do hub, campo em data]. */
     private const PER_MINUTE = [
         'pulseReat' => ['heart_rate', 'bpm'],
@@ -80,9 +98,12 @@ final class DailyBlockNormalizer
             $out[] = $envelope('blood_pressure', 0, $pressure);
         }
 
-        $intervals = $this->rrIntervals($block['rr50'] ?? null);
+        $intervals = $this->rrIntervals($block['rr50'] ?? null, $start);
         if ($intervals !== []) {
-            $out[] = $envelope('rr_interval', 0, ['intervals' => $intervals]);
+            $out[] = $envelope('rr_interval', 0, [
+                'intervals' => $intervals,
+                'samplingIntervalSeconds' => self::RR_SLOT_SECONDS,
+            ]);
         }
 
         // O oxigénio vem num objeto com as leituras e os derivados de apneia; só as leituras
@@ -150,6 +171,11 @@ final class DailyBlockNormalizer
             $out[] = $envelope('activity', 0, $activity);
         }
 
+        $wear = $this->wearState($block['step'] ?? null);
+        if ($wear !== null) {
+            $out[] = $envelope('wear_state', 0, $wear);
+        }
+
         return $out;
     }
 
@@ -188,11 +214,14 @@ final class DailyBlockNormalizer
      *
      * @return list<array{milliseconds: int}>
      */
-    private function rrIntervals(mixed $values): array
+    private function rrIntervals(mixed $values, int $start): array
     {
         $out = [];
-        foreach (self::readings($values) as $value) {
-            $out[] = ['milliseconds' => $value * 10];
+        foreach (self::readings($values) as $slot => $value) {
+            $out[] = [
+                'timestamp' => gmdate('Y-m-d\TH:i:s\Z', $start + ($slot * self::RR_SLOT_SECONDS)),
+                'milliseconds' => $value * 10,
+            ];
         }
 
         return $out;
@@ -308,21 +337,13 @@ final class DailyBlockNormalizer
     }
 
     /**
-     * Temperatura do bloco -- que é da pele, e não do corpo.
+     * Temperatura do bloco: corporal e de superfície, como o firmware as rotula.
      *
-     * Ao contrário das grandezas óticas, esta vem em texto decimal e o sentinela de «não
-     * medido» é `0.0`.
+     * Vem em texto decimal e o sentinela de «não medido» é `0.0` em ambas. Os nomes são os
+     * dos relógios -- o contrato já tinha `bodyCelsius` e `surfaceCelsius`, e a pulseira não
+     * tem razão para inventar outros.
      *
-     * O firmware chama `bodyTemperature` ao primeiro dos dois valores, e não é. Uma medição a
-     * pedido feita na mesma pulseira, no mesmo minuto, devolveu 36,0 °C de corpo e 33,2 °C de
-     * superfície, enquanto o bloco desse instante trazia 33,5 e 26,8: o que ele rotula de
-     * corporal coincide com a superfície da medição, e o segundo valor é mais frio ainda --
-     * o sensor a ler o ar, não a pessoa. A temperatura corporal só existe quando é pedida,
-     * e é por isso que chega pelo `Bridge` e não por aqui.
-     *
-     * Publicá-la como `bodyCelsius` mostraria trinta e três graus a quem está de boa saúde.
-     *
-     * @return array{skinCelsius: float}|null
+     * @return array{bodyCelsius?: float, surfaceCelsius?: float}|null
      */
     private function temperature(mixed $temperature): ?array
     {
@@ -330,9 +351,12 @@ final class DailyBlockNormalizer
             return null;
         }
 
-        $skin = self::celsius($temperature['bodyTemperature'] ?? null);
+        $data = array_filter([
+            'bodyCelsius' => self::celsius($temperature['bodyTemperature'] ?? null),
+            'surfaceCelsius' => self::celsius($temperature['bodySurfaceTemperature'] ?? null),
+        ], static fn(?float $v): bool => $v !== null);
 
-        return $skin === null ? null : ['skinCelsius' => $skin];
+        return $data === [] ? null : $data;
     }
 
     /** Aceita texto ou número, e trata `0.0` como ausência de leitura. */
@@ -378,8 +402,27 @@ final class DailyBlockNormalizer
         return array_filter([
             'steps' => $step['stepCount'],
             'distanceMeters' => is_int($step['distance'] ?? null) ? $step['distance'] : null,
-            'caloriesKcal' => is_int($step['calorie'] ?? null) ? $step['calorie'] : null,
+            // Em décimas de kcal: a pulseira reporta 25 onde a app do fabricante mostra 2,5,
+            // e o dia inteiro soma 99 nos blocos contra 9,9 kcal no ecrã dela.
+            'caloriesKcal' => is_int($step['calorie'] ?? null) ? round($step['calorie'] / 10, 1) : null,
+            // A quantidade de movimento não tem unidade -- é um contador do acelerómetro.
+            // É o que separa um bloco parado de um bloco sem ninguém lá.
+            'exerciseAmount' => is_int($step['amountOfExercise'] ?? null) ? $step['amountOfExercise'] : null,
         ], static fn(mixed $value): bool => $value !== null);
+    }
+
+    /**
+     * Se a pulseira estava a ser usada durante o bloco.
+     *
+     * @return array{state: string}|null
+     */
+    private function wearState(mixed $step): ?array
+    {
+        if (!is_array($step) || !is_int($step['wear'] ?? null)) {
+            return null;
+        }
+
+        return ['state' => $step['wear'] === self::WEAR_OK ? 'worn' : 'not_worn'];
     }
 
     /**

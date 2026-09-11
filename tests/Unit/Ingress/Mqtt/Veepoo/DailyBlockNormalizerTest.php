@@ -45,10 +45,10 @@ final class DailyBlockNormalizerTest extends TestCase
 
         self::assertSame(['systolicMmHg' => 118, 'diastolicMmHg' => 76], $byType['blood_pressure']);
         // Zero passos é uma leitura verdadeira, ao contrário de zero batimentos.
-        self::assertSame(['steps' => 0, 'distanceMeters' => 0, 'caloriesKcal' => 0], $byType['activity']);
+        self::assertSame(['steps' => 0, 'distanceMeters' => 0, 'caloriesKcal' => 0.0], $byType['activity']);
     }
 
-    public function testEmptyBlockFromAnUnwornBandProducesNothingButActivity(): void
+    public function testEmptyBlockFromAnUnwornBandProducesOnlyActivityAndWearState(): void
     {
         // Captura real da MF91 pousada na secretária.
         $out = (new DailyBlockNormalizer())->normalize([
@@ -62,7 +62,8 @@ final class DailyBlockNormalizerTest extends TestCase
             'bloodPressure' => ['bloodPressureHigh' => 0, 'bloodPressureLow' => 0],
         ], self::DEVICE, 'bef341903987');
 
-        self::assertSame(['activity'], array_column($out, 'type'));
+        self::assertSame(['activity', 'wear_state'], array_column($out, 'type'));
+        self::assertSame(['state' => 'not_worn'], self::ofType($out, 'wear_state')[0]['data']);
     }
 
     public function testRrIntervalsCarryTheBlockTimestamp(): void
@@ -79,14 +80,113 @@ final class DailyBlockNormalizerTest extends TestCase
             $byType[$e['type']][] = $e;
         }
 
-        // Os cinquenta R-R vão numa mensagem só: são uma amostra dentro do bloco e a posição
-        // na lista não diz o instante, por isso partilham o carimbo do bloco.
+        // Os cinquenta R-R vão numa mensagem só, e a posição na lista é o instante: são
+        // cinquenta lugares a cobrir os cinco minutos do bloco, um de seis em seis segundos.
+        // O fabricante chama `RR2Per6Second` ao campo equivalente do modo de teste.
         self::assertCount(1, $byType['rr_interval']);
         self::assertSame('2026-09-09T03:20:00Z', $byType['rr_interval'][0]['occurredAt']);
         self::assertSame(
-            ['intervals' => [['milliseconds' => 810], ['milliseconds' => 790]]],
+            [
+                'intervals' => [
+                    ['timestamp' => '2026-09-09T03:20:00Z', 'milliseconds' => 810],
+                    ['timestamp' => '2026-09-09T03:20:12Z', 'milliseconds' => 790],
+                ],
+                'samplingIntervalSeconds' => 6,
+            ],
             $byType['rr_interval'][0]['data'],
         );
+    }
+
+    /**
+     * A pulseira diz em cada bloco se estava a ser usada, e isso é telemetria por si.
+     *
+     * Sem ela, um bloco de zeros por estar na mesinha de cabeceira é indistinguível de um
+     * bloco de zeros de alguém sentado -- e são a mesma leitura com significados opostos.
+     * O javadoc do fabricante chama-lhe bits de bandeira e não documenta a tabela; num dia
+     * inteiro de captura só apareceram `0` com a pulseira ao pulso e `6` com ela fora dele.
+     */
+    public function testWearStateIsPublishedForEveryBlock(): void
+    {
+        $worn = (new DailyBlockNormalizer())->normalize(
+            ['date' => '2026-09-09-09-40', 'step' => ['stepCount' => 37, 'wear' => 0]],
+            self::DEVICE,
+            'bef341903987',
+        );
+        $off = (new DailyBlockNormalizer())->normalize(
+            ['date' => '2026-09-09-03-20', 'step' => ['stepCount' => 0, 'wear' => 6]],
+            self::DEVICE,
+            'bef341903987',
+        );
+
+        self::assertSame(['state' => 'worn'], self::ofType($worn, 'wear_state')[0]['data']);
+        self::assertSame(['state' => 'not_worn'], self::ofType($off, 'wear_state')[0]['data']);
+    }
+
+    /**
+     * A bandeira a zero é a única que diz «ao pulso»; os outros códigos são razões.
+     *
+     * `1` apanhou-se nos dois blocos em que a pulseira estava a ser calçada, entre um `6` de
+     * noite inteira fora do pulso e o `0` do bloco seguinte, já com movimento. `2` veio de
+     * uma captura anterior com ela pousada na secretária. Nenhum deles traz leitura ótica.
+     */
+    public function testEveryNonZeroWearFlagMeansNotWorn(): void
+    {
+        foreach ([1, 2, 6] as $flag) {
+            $out = (new DailyBlockNormalizer())->normalize(
+                ['date' => '2026-09-09-09-40', 'step' => ['stepCount' => 0, 'wear' => $flag]],
+                self::DEVICE,
+                'bef341903987',
+            );
+
+            self::assertSame(['state' => 'not_worn'], self::ofType($out, 'wear_state')[0]['data'], "wear={$flag}");
+        }
+    }
+
+    /**
+     * A quantidade de movimento é o que distingue os zeros uns dos outros.
+     *
+     * Num bloco com zero passos a pulseira reportou 60 de `amountOfExercise` -- alguém a
+     * mexer os braços a uma secretária. Publicar só os passos dava um bloco morto.
+     */
+    public function testActivityCarriesTheExerciseAmount(): void
+    {
+        $out = (new DailyBlockNormalizer())->normalize(
+            ['date' => '2026-09-09-10-40', 'step' => ['stepCount' => 0, 'amountOfExercise' => 60, 'distance' => 0, 'calorie' => 0]],
+            self::DEVICE,
+            'bef341903987',
+        );
+
+        self::assertSame(
+            ['steps' => 0, 'distanceMeters' => 0, 'caloriesKcal' => 0.0, 'exerciseAmount' => 60],
+            self::ofType($out, 'activity')[0]['data'],
+        );
+    }
+
+    /**
+     * As calorias do bloco vêm em décimas, e o nome do campo do hub diz kcal.
+     *
+     * A pulseira reportou 25 no bloco das 09:40 e a app do fabricante guardou `calValue=2.5`
+     * para o mesmo instante; o dia inteiro soma 99 nos blocos e 9,9 kcal no ecrã dela.
+     * Publicar o inteiro em cru multiplicava por dez o gasto de quem quer que fosse.
+     */
+    public function testBlockCaloriesAreTenths(): void
+    {
+        $out = (new DailyBlockNormalizer())->normalize(
+            ['date' => '2026-09-09-09-40', 'step' => ['stepCount' => 37, 'distance' => 32, 'calorie' => 25]],
+            self::DEVICE,
+            'bef341903987',
+        );
+
+        self::assertSame(
+            ['steps' => 37, 'distanceMeters' => 32, 'caloriesKcal' => 2.5],
+            self::ofType($out, 'activity')[0]['data'],
+        );
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function ofType(array $out, string $type): array
+    {
+        return array_values(array_filter($out, static fn(array $e): bool => $e['type'] === $type));
     }
 
     /**
@@ -142,24 +242,34 @@ final class DailyBlockNormalizerTest extends TestCase
     }
 
     /**
-     * O bloco não traz temperatura corporal, por mais que o campo se chame assim.
+     * O bloco traz os dois valores, e são o que os nomes dizem.
      *
-     * Uma medição a pedido na mesma pulseira e no mesmo minuto devolveu 36,0 °C de corpo e
-     * 33,2 °C de superfície; o bloco, para o mesmo instante, traz 33,5 e 26,8. O valor que
-     * ele rotula de corporal é o da pele, e o outro é mais frio ainda. Publicar 33,5 °C como
-     * temperatura do corpo mostraria hipotermia grave a quem está bem.
+     * Captura da MF91 ao pulso: 36,2 °C e 34,0 °C às 09:40, 36,6 e 35,0 às 10:40 -- e a app
+     * do fabricante mostra 36,2 °C como temperatura corporal nesse mesmo minuto. Os nomes
+     * são os dos relógios, que é onde o contrato já os tinha.
      */
-    public function testBlockTemperatureIsReportedAsSkinAndNotAsBody(): void
+    public function testBlockTemperatureCarriesBodyAndSurface(): void
     {
-        // Captura real da MF91 ao pulso, às 09:40.
         $out = (new DailyBlockNormalizer())->normalize(
-            ['date' => '2026-09-09-09-40', 'bodyTemperature' => ['bodyTemperature' => '33.4', 'bodySurfaceTemperature' => '24.8']],
+            ['date' => '2026-09-09-09-40', 'bodyTemperature' => ['bodyTemperature' => '36.2', 'bodySurfaceTemperature' => '34.0']],
             self::DEVICE,
             'bef341903987',
         );
 
         self::assertSame('temperature', $out[0]['type']);
-        self::assertSame(['skinCelsius' => 33.4], $out[0]['data']);
+        self::assertSame(['bodyCelsius' => 36.2, 'surfaceCelsius' => 34.0], $out[0]['data']);
+    }
+
+    /** Um dos dois pode faltar, e o sentinela é `0.0` em ambos. */
+    public function testTemperatureKeepsWhicheverValueWasMeasured(): void
+    {
+        $out = (new DailyBlockNormalizer())->normalize(
+            ['date' => '2026-09-09-09-45', 'bodyTemperature' => ['bodyTemperature' => '36.4', 'bodySurfaceTemperature' => '0.0']],
+            self::DEVICE,
+            'bef341903987',
+        );
+
+        self::assertSame(['bodyCelsius' => 36.4], $out[0]['data']);
     }
 
     public function testUnmeasuredTemperatureIsDiscarded(): void
