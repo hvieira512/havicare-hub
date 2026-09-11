@@ -54,6 +54,22 @@ export const fieldLabel = (key) =>
         distanceMeters: "Distância",
         caloriesKcal: "Calorias",
         exerciseSeconds: "Exercício (s)",
+        // A pulseira conta movimento sem unidade: é um índice do acelerómetro, não segundos.
+        exerciseAmount: "Movimento",
+        bmi: "IMC",
+        bodyFatPercent: "Gordura",
+        fatMassKg: "Massa gorda",
+        leanMassKg: "Massa magra",
+        musclePercent: "Músculo",
+        muscleMassKg: "Massa muscular",
+        subcutaneousFatPercent: "Gordura subcutânea",
+        bodyWaterPercent: "Água",
+        waterMassKg: "Massa de água",
+        skeletalMusclePercent: "Músculo esquelético",
+        boneMassKg: "Massa óssea",
+        proteinPercent: "Proteína",
+        proteinMassKg: "Massa proteica",
+        basalMetabolicRateKcal: "Metabolismo basal",
         standMinutes: "Tempo em pé (min)",
         source: "Origem",
         gpsValid: "GPS válido",
@@ -209,11 +225,40 @@ const FIELD_VALUE_LABELS = {
 // é o `state`, e o `sleepState` do `vitals_minute_stats`.
 FIELD_VALUE_LABELS.sleepState = FIELD_VALUE_LABELS.sleep_state;
 
+/**
+ * A unidade vive no nome do campo, por contrato. Quem lê o ecrã não vê o nome, vê o rótulo em
+ * português -- e "Distância: 187" não diz se são metros ou quilómetros.
+ */
+const FIELD_UNIT = {
+    distanceMeters: "m",
+    distanceKm: "km",
+    caloriesKcal: "kcal",
+    exerciseSeconds: "s",
+    standMinutes: "min",
+    basalMetabolicRateKcal: "kcal",
+    fatMassKg: "kg",
+    leanMassKg: "kg",
+    muscleMassKg: "kg",
+    waterMassKg: "kg",
+    boneMassKg: "kg",
+    proteinMassKg: "kg",
+    bodyFatPercent: "%",
+    musclePercent: "%",
+    subcutaneousFatPercent: "%",
+    bodyWaterPercent: "%",
+    skeletalMusclePercent: "%",
+    proteinPercent: "%",
+};
+
 export const fieldValue = (key, value) => {
     if (value === undefined || value === null || value === "") return "-";
 
     // Um booleano, que sem isto sai titleizado do inglês: "Queda: False".
     if (typeof value === "boolean") return value ? "Sim" : "Não";
+
+    if (typeof value === "number" && FIELD_UNIT[key]) {
+        return `${value} ${FIELD_UNIT[key]}`;
+    }
 
     const raw = String(value);
     const translated = FIELD_VALUE_LABELS[key]?.[raw];

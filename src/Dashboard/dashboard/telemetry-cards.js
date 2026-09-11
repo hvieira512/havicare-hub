@@ -37,6 +37,9 @@ const CARD_STYLE = {
     diaper_moisture_level: ["fa-percent", "info"],
     diaper_condition: ["fa-baby", "warning"],
     activity: ["fa-person-walking", "primary"],
+    activity_daily: ["fa-shoe-prints", "primary"],
+    wear_state: ["fa-hand-sparkles", "primary"],
+    body_composition: ["fa-weight-scale", "primary"],
     // Um índice e um gasto metabólico são medidas de bem-estar e não gravidades: ficam no
     // azul da casa, como a atividade e o sono, e não no vermelho nem no âmbar.
     stress: ["fa-face-grimace", "primary"],
@@ -115,14 +118,13 @@ const UPLINK_CARD_RENDERERS = {
     blood_sugar: (data) => ({
         value: `${data.glucoseMgDl ?? "-"} mg/dL`,
     }),
-    // Nem toda a temperatura é corporal: uma pulseira que só amostre a pele ao longo do dia
-    // manda `skinCelsius`, e mostrar "-" escondia uma leitura que existe.
+    // Nem toda a leitura traz a corporal: há aparelhos que só amostram a superfície.
     temperature: (data) => ({
         value:
             data.bodyCelsius != null
                 ? `${data.bodyCelsius} °C`
-                : data.skinCelsius != null
-                    ? `${data.skinCelsius} °C na pele`
+                : data.surfaceCelsius != null
+                    ? `${data.surfaceCelsius} °C na pele`
                     : "-",
     }),
     stress: (data) => ({
@@ -154,6 +156,24 @@ const UPLINK_CARD_RENDERERS = {
             "triglyceridesMmolPerL",
             "hdlMmolPerL",
             "ldlMmolPerL",
+        ]),
+    }),
+    activity_daily: (data) => ({
+        value: `${data?.steps ?? 0} passos`,
+        details: compactDetails(data, ["distanceMeters", "caloriesKcal"]),
+    }),
+    wear_state: (data) => ({
+        value:
+            { worn: "Ao pulso", not_worn: "Fora do pulso" }[data?.state] ??
+            capabilityLabel("wear_state"),
+    }),
+    // O IMC é o número que resume a medição; o resto cabe nos detalhes.
+    body_composition: (data) => ({
+        value: data?.bmi != null ? `${data.bmi} IMC` : capabilityLabel("body_composition"),
+        details: compactDetails(data, [
+            "bodyFatPercent",
+            "musclePercent",
+            "basalMetabolicRateKcal",
         ]),
     }),
     battery: (data) => ({
@@ -197,6 +217,8 @@ const UPLINK_CARD_RENDERERS = {
         details: compactDetails(data, [
             "distanceMeters",
             "caloriesKcal",
+            // Numa pulseira ao pulso de quem está sentado é o único campo que não é zero.
+            "exerciseAmount",
             "exerciseSeconds",
             "standMinutes",
         ]),
