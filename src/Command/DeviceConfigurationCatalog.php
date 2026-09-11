@@ -8,6 +8,7 @@ use Hub\Command\Configuration\Definition\VeepooConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\VivistarConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\WonlexConfigurationDefinitions;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
+use Hub\Command\Configuration\Payload\VeepooPayloadBuilder;
 use Hub\Command\Configuration\Payload\VivistarPayloadBuilder;
 use Hub\Command\Configuration\Payload\WonlexPayloadBuilder;
 use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
@@ -126,10 +127,10 @@ final class DeviceConfigurationCatalog
                 'wonlex-json' => WonlexPayloadBuilder::build($key, $item),
                 'vivistar-iw' => VivistarPayloadBuilder::build($key, $item),
                 'four-p-touch' => FourPTouchPayloadBuilder::build($key, $item),
-                // Sem construtor: a pulseira não recebe uma trama montada pelo hub, recebe o
-                // nome da operação e o valor. Quem os transforma em bytes é o SDK, dentro do
-                // gateway. Inventar aqui uma forma nativa obrigava a desfazê-la do outro lado.
-                'veepoo-ble' => $item,
+                // O construtor da pulseira valida mas não monta trama nenhuma: quem a monta é
+                // o SDK dentro do gateway, e o payload chega lá genérico. Inventar aqui uma
+                // forma nativa obrigava a desfazê-la do outro lado.
+                'veepoo-ble' => VeepooPayloadBuilder::build($key, $item),
                 default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
             },
         ], $payloads);

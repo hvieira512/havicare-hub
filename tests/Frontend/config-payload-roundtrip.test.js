@@ -126,6 +126,43 @@ test("defaults are readable payloads for every input type the renderer knows", (
     }
 });
 
+test("a window is split into two time fields and joined back", () => {
+    // As horas são desenhadas separadas para o navegador não deixar escrever uma que não
+    // existe, mas o que vai para o aparelho é o par junto.
+    const entry = { input: "windowToggle", key: "blood_oxygen_window", fields: ["enabled", "range"] };
+
+    assert.deepEqual(
+        roundTrip(entry, { enabled: true, range: "22:00-08:00" }),
+        { enabled: true, range: "22:00-08:00" },
+    );
+});
+
+test("heart rate thresholds survive the round trip", () => {
+    const entry = {
+        input: "heartRateThresholds",
+        key: "heart_rate_alert",
+        fields: ["enabled", "maxBpm", "minBpm"],
+    };
+
+    assert.deepEqual(
+        roundTrip(entry, { enabled: true, maxBpm: 150, minBpm: 50 }),
+        { enabled: true, maxBpm: 150, minBpm: 50 },
+    );
+});
+
+test("personal information survives the round trip", () => {
+    const entry = {
+        input: "personalInfo",
+        key: "personal_info",
+        fields: ["heightCm", "weightKg", "age", "sex", "stepGoal", "sleepGoalMinutes"],
+    };
+    const desired = {
+        heightCm: 181, weightKg: 78, age: 29, sex: "male", stepGoal: 10000, sleepGoalMinutes: 450,
+    };
+
+    assert.deepEqual(roundTrip(entry, desired), desired);
+});
+
 test("a list keeps its numbers and honours the entry limit", () => {
     const entry = { input: "list", key: "numbers", limit: 2 };
 

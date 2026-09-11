@@ -277,10 +277,15 @@ export function numberInput(entry, desired) {
     const key = entry.fields?.[0] || "value";
     const isWonlexMeasurementInterval =
         entry.command === "deviceMeasuringFrequency" && key === "interval";
-    const value = desired[key] ?? (isWonlexMeasurementInterval ? 60 : 0);
+    // A escala vem da definição quando ela a declara -- o tom de pele vai de 1 a 6, e partir
+    // de zero oferecia um valor que o aparelho recusa.
+    const { min = 0, max = "", label = "" } = entry.options ?? {};
+    const value = desired[key] ?? (isWonlexMeasurementInterval ? 60 : min);
     return field(
-        fieldLabel(key),
-        numberField(key, value),
+        // O nome do campo vem do protocolo e está em inglês. Quando a definição traz uma
+        // etiqueta, é ela que se mostra.
+        label || fieldLabel(key),
+        numberField(key, value, { min, max }),
         {
             help: isWonlexMeasurementInterval
                 ? "Periodicidade de envio desta medição, em minutos. Use 0 para desativar."
@@ -338,6 +343,58 @@ export function intervalHoursToggleInput(desired) {
                 numberField("intervalHours", desired.intervalHours ?? 2, { min: 1, max: 12 }),
                 { cls: "col-md-8" },
             )}
+        </div>`;
+}
+
+/**
+ * A janela horária em que o aparelho mede.
+ *
+ * As horas são dois `input type="time"`, e não texto: o navegador já não deixa escrever uma
+ * hora que não existe, e o par volta a juntar-se em `HH:MM-HH:MM` na leitura.
+ */
+export function windowToggleInput(_entry, desired) {
+    const [start = "22:00", end = "08:00"] = String(desired.range ?? "22:00-08:00").split("-");
+    return `
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
+            ${field("Início", `<input class="form-control" type="time" data-config-field="rangeStart" value="${esc(start)}">`, { cls: "col-md-4" })}
+            ${field("Fim", `<input class="form-control" type="time" data-config-field="rangeEnd" value="${esc(end)}">`, { cls: "col-md-4" })}
+        </div>`;
+}
+
+/** Os limiares que o aparelho avalia sobre a medição dele. */
+export function heartRateThresholdsInput(_entry, desired) {
+    return `
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
+            ${field("Máximo (bpm)", numberField("maxBpm", desired.maxBpm ?? 150, { min: 40, max: 220 }), { cls: "col-md-4" })}
+            ${field("Mínimo (bpm)", numberField("minBpm", desired.minBpm ?? 50, { min: 30, max: 200 }), { cls: "col-md-4" })}
+        </div>`;
+}
+
+/**
+ * O corpo com que a pulseira calcula.
+ *
+ * Não identifica quem a usa: alimenta as fórmulas das calorias e da composição corporal, que
+ * sem isto correm sobre valores de fábrica.
+ */
+export function personalInfoInput(_entry, desired) {
+    const sex = desired.sex === "male" ? "male" : "female";
+    return `
+        <div class="row g-3">
+            ${field("Altura (cm)", numberField("heightCm", desired.heightCm ?? 170, { min: 50, max: 250 }), { cls: "col-md-4" })}
+            ${field("Peso (kg)", numberField("weightKg", desired.weightKg ?? 70, { min: 10, max: 300 }), { cls: "col-md-4" })}
+            ${field("Idade", numberField("age", desired.age ?? 40, { min: 1, max: 120 }), { cls: "col-md-4" })}
+            ${field(
+                "Sexo",
+                `<select class="form-select" data-config-field="sex">
+                    <option value="female"${sex === "female" ? " selected" : ""}>Feminino</option>
+                    <option value="male"${sex === "male" ? " selected" : ""}>Masculino</option>
+                </select>`,
+                { cls: "col-md-4" },
+            )}
+            ${field("Meta de passos", numberField("stepGoal", desired.stepGoal ?? 8000, { min: 100, max: 100000, step: 100 }), { cls: "col-md-4" })}
+            ${field("Meta de sono (min)", numberField("sleepGoalMinutes", desired.sleepGoalMinutes ?? 480, { min: 60, max: 900, step: 15 }), { cls: "col-md-4" })}
         </div>`;
 }
 

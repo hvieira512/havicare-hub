@@ -23,13 +23,42 @@ final class ConfigurationInputDefaults
 
         return match ($input) {
             'toggle' => [($field(0) ?: 'enabled') => true],
-            'number' => [($field(0) ?: 'value') => 0],
+            // Zero só serve quando está dentro da escala: um tom de pele vai de 1 a 6, e o
+            // formulário partia de um valor que o aparelho recusa.
+            'number' => [($field(0) ?: 'value') => (int)($entry['options']['min'] ?? 0)],
             'phone' => [($field(0) ?: 'phone') => ''],
             'text' => [($field(0) ?: 'value') => ''],
             'pushMessage' => ['message' => ''],
             'makeCall' => ['phone' => ''],
             'resetAction', 'requestAction' => [],
             'intervalToggle' => ['enabled' => true, 'intervalMinutes' => 60],
+            // A janela é sempre acompanhada de um número quando a definição o declara: o
+            // intervalo de um lembrete, o brilho do ecrã. O nome do campo vem da definição, e
+            // o ponto de partida também -- um lembrete para beber água a partir das 22:00 de
+            // cinco em cinco minutos é um formulário que ninguém quer gravar como está.
+            'windowToggle' => (static function () use ($entry): array {
+                $default = $entry['options']['default'] ?? [];
+                $payload = [
+                    'enabled' => (bool)($default['enabled'] ?? true),
+                    'range' => (string)($default['range'] ?? '22:00-08:00'),
+                ];
+                $number = $entry['options']['number']['field'] ?? null;
+                if ($number !== null) {
+                    $payload[(string)$number] = (int)($default[(string)$number]
+                        ?? $entry['options']['number']['min'] ?? 1);
+                }
+
+                return $payload;
+            })(),
+            'heartRateThresholds' => ['enabled' => true, 'maxBpm' => 150, 'minBpm' => 50],
+            'personalInfo' => [
+                'heightCm' => 170,
+                'weightKg' => 70,
+                'age' => 40,
+                'sex' => 'female',
+                'stepGoal' => 8000,
+                'sleepGoalMinutes' => 480,
+            ],
             'intervalHoursToggle' => ['enabled' => true, 'intervalHours' => 2],
             'workingMode' => ['mode' => 1],
             'bloodPressure' => ['systolic' => 120, 'diastolic' => 80],

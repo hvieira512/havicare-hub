@@ -11,6 +11,7 @@ import {
     WONLEX_MEDICATION_PERIODS,
 } from "./normalizers.js";
 import {
+    heartRateThresholdsInput,
     alarmClockInput,
     alarmsInput,
     bloodPressureInput,
@@ -26,6 +27,7 @@ import {
     listInput,
     makeCallInput,
     numberInput,
+    personalInfoInput,
     phoneInput,
     pushMessageInput,
     requestActionInput,
@@ -37,6 +39,7 @@ import {
     timeRangesInput,
     toggleInput,
     voiceMonitorInput,
+    windowToggleInput,
     wonlexBloodPressureWarningInput,
     wonlexHeartRateRangeInput,
     wonlexMedicationPlansInput,
@@ -181,6 +184,9 @@ const CONFIG_INPUT_RENDERERS = {
     fallSensitivityLevels: (_entry, desired) => fallSensitivityLevelsInput(desired),
     timeRanges: timeRangesInput,
     timeRange: (_entry, desired) => timeRangeInput(desired),
+    windowToggle: windowToggleInput,
+    personalInfo: personalInfoInput,
+    heartRateThresholds: heartRateThresholdsInput,
     wonlexSleepSettings: (_entry, desired) => wonlexSleepSettingsInput(desired),
     wonlexReminderThreshold: wonlexReminderThresholdInput,
     wonlexHeartRateRange: (_entry, desired) => wonlexHeartRateRangeInput(desired),
@@ -277,6 +283,24 @@ const CONFIG_INPUT_READERS = {
     },
     timeRanges: (section) => ({ ranges: readTextArray(section, "ranges") }),
     timeRange: (section) => ({ range: readText(section, "range") }),
+    // As horas voltam a juntar-se no formato que o construtor valida.
+    windowToggle: (section) => ({
+        enabled: readCheckbox(section, "enabled"),
+        range: `${readText(section, "rangeStart")}-${readText(section, "rangeEnd")}`,
+    }),
+    heartRateThresholds: (section) => ({
+        enabled: readCheckbox(section, "enabled"),
+        maxBpm: readNumber(section, "maxBpm"),
+        minBpm: readNumber(section, "minBpm"),
+    }),
+    personalInfo: (section) => ({
+        heightCm: readNumber(section, "heightCm"),
+        weightKg: readNumber(section, "weightKg"),
+        age: readNumber(section, "age"),
+        sex: readText(section, "sex"),
+        stepGoal: readNumber(section, "stepGoal"),
+        sleepGoalMinutes: readNumber(section, "sleepGoalMinutes"),
+    }),
     wonlexSleepSettings: (section) => ({
         enabled: readCheckbox(section, "enabled"),
         sleepStartTime: readText(section, "sleepStartTime"),

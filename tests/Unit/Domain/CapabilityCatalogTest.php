@@ -21,7 +21,12 @@ final class CapabilityCatalogTest extends TestCase
             // grandezas e aceita seis interruptores de medição autónoma. E 36 desde que a
             // pulseira passou a dizer se está ao pulso, a medir composição corporal, a contar
             // os passos de cada bloco à parte do acumulado do dia, e a versão que traz.
-            'bracelet' => [36, 'ae8506060bfa83067d981cee745edb4718df30eb304c21081dcd43ed86a04fc5'],
+            // São 40 desde que se deixou de a configurar só por interruptores: a janela em
+            // que mede o oxigénio, os limiares do alerta de frequência cardíaca, e as duas
+            // calibrações que entram nas contas do aparelho -- tom de pele e dados do corpo.
+            // Os alarmes, os lembretes e as unidades existem na pulseira e ficaram de fora:
+            // não alteram nenhuma leitura.
+            'bracelet' => [40, '53409c1aa884947cc2b4bfab7a565e63099f38deea6a5902366960615e15ebfc'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

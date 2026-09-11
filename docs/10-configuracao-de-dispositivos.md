@@ -245,7 +245,69 @@ POST   /api/capability-discovery/{id}/apply   aplica ao modelo
 O rascunho fica guardado até alguém decidir aplicá-lo. É deliberado: descobrir é
 observar, aplicar é uma decisão de administração.
 
-## 6. Sensibilidade do sensor de fralda
+## 6. Configuração de uma pulseira
+
+A pulseira difere do relógio em dois pontos que se notam aqui.
+
+O primeiro é que **grande parte do que ela mede depende de estar configurada para
+o fazer**. Um relógio que não mede é um relógio a quem ninguém pediu nada; uma
+pulseira que não mede pode estar apenas com a monitorização desligada, e o
+resultado é uma série vazia indistinguível de uma avaria. A janela do oxigénio de
+dia inteiro é o caso exemplar: com a monitorização ligada mas a janela a
+`00:00–00:00`, o aparelho responde sempre um registo de zeros.
+
+O segundo é que a tradução para a forma do fabricante **não acontece no hub**.
+O payload viaja genérico até ao gateway que detém a sessão BLE, e é o SDK que lá
+corre que monta as tramas. O construtor do hub valida, e só isso:
+
+| Entrada | Campos | Configurações que a usam |
+|---|---|---|
+| `toggle` | `enabled` | As nove monitorizações do comando `0xB8` |
+| `windowToggle` | `enabled`, `range` | Oxigénio de dia inteiro |
+| `heartRateThresholds` | `enabled`, `maxBpm`, `minBpm` | Alerta de frequência cardíaca |
+| `number` | `level` | Tom de pele |
+| `personalInfo` | altura, peso, idade, sexo e as duas metas | Dados para cálculo |
+
+A janela é escrita como `HH:MM-HH:MM`, o mesmo formato do `timeRange` dos
+relógios, e apresentada como dois campos de hora para não se poder escrever uma
+que não existe.
+
+### O que fica de fora, e porquê
+
+A pulseira deixa configurar bastante mais do que isto: alarmes, oito lembretes
+com janela e intervalo próprios, o ecrã que acende ao levantar o pulso, o sistema
+de unidades. **Nada disso altera uma leitura.** É comportamento de relógio de
+pulso, e não de sensor.
+
+O critério é esse: o hub configura o que o aparelho **mede** e como **calcula**.
+Uma configuração que não muda telemetria não pertence a uma API de integração de
+saúde — é ruído para quem integra, e mais uma superfície para manter.
+
+O **tom de pele** e os **dados para cálculo** não são preferências de quem usa a
+pulseira: entram nas contas do aparelho. O tom de pele regula a potência do LED do
+sensor ótico, de que saem a frequência cardíaca, o oxigénio, a variabilidade, a
+tensão e o stress; a altura, o peso, a idade e o sexo entram no cálculo das
+calorias e da composição corporal. Configurados a valores de fábrica, a telemetria
+sai calibrada para um corpo que não é o de ninguém.
+
+A confirmação **relê o aparelho**. O `command_result` do gateway sai só depois de
+a leitura devolver o que foi pedido; quando não devolve, o gateway não confirma e
+a operação segue o caminho normal de quem não teve resposta — repetição e, no
+fim, expiração.
+
+Esta distinção não é teórica. Confirmar a execução dava por aplicada uma
+configuração que o aparelho tinha aceitado e ignorado, que é pior do que a dar
+por falhada: o estado desejado e o estado em vigor divergiam com os dois a
+dizerem-se iguais.
+
+> Ficou registado, para quem lá volte: a escrita dos lembretes do comando `0xE7`
+> é recusada pela MF91 através do SDK do fabricante. A trama sai correta, o
+> aparelho responde, e mantém os valores que já tinha — a leitura devolve `01` no
+> byte de estado e a escrita devolve `00`. A aplicação do fabricante consegue
+> alterá-los, portanto é limitação do SDK e não do aparelho. Não foi perseguida
+> porque estes lembretes não alteram nenhuma medição.
+
+## 7. Sensibilidade do sensor de fralda
 
 O único caso em que uma configuração **não viaja para o aparelho**. O sensor
 MONIT não aceita comandos; a sensibilidade é aplicada pelo hub, do lado de cá, ao

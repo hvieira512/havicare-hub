@@ -90,6 +90,21 @@ final class BraceletCapabilityDefinitions
             // blocos. Este interruptor é o despertar por hipoxia, e o hub já chama
             // `blood_oxygen_alert` à mesma coisa nos relógios.
             ['deviceType' => 'bracelet', 'section' => 'alarms', 'key' => 'blood_oxygen_alert', 'label' => 'Alerta de oxigénio no sangue', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            // As configurações que levam valores, e não só um interruptor. Só entram as que
+            // mudam o que o aparelho mede ou como calcula: alarmes, lembretes, brilho do ecrã
+            // e unidades são comportamento de relógio de pulso e não alteram uma leitura.
+            //
+            // A janela do oxigénio é a que desbloqueia a série de dia inteiro: com a
+            // monitorização ligada mas a janela a `00:00-00:00`, o aparelho responde sempre
+            // um registo de zeros.
+            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'blood_oxygen_window', 'label' => 'Oxigénio de dia inteiro', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            // Estas duas não são preferências de quem usa a pulseira: entram nas contas dela.
+            // O tom de pele regula a potência do LED de que sai todo o sinal ótico, e o corpo
+            // é o que ela usa para calorias e composição corporal.
+            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'skin_tone', 'label' => 'Tom de pele', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'personal_info', 'label' => 'Dados para cálculo', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            // Os limiares são avaliados pelo aparelho sobre a medição dele.
+            ['deviceType' => 'bracelet', 'section' => 'alarms', 'key' => 'heart_rate_alert', 'label' => 'Alerta de frequência cardíaca', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             // Faz a pulseira vibrar até alguém a encontrar. Não é configurável porque não há
             // estado a guardar -- pede-se, e pede-se outra vez para parar.
             ['deviceType' => 'bracelet', 'section' => 'settings_system', 'key' => 'find_device', 'label' => 'Encontrar dispositivo', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
