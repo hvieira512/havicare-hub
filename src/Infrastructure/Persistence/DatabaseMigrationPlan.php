@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
+use Hub\Infrastructure\Persistence\Migration\BraceletCatalogFromCode;
 use Hub\Infrastructure\Persistence\Migration\CatalogMf91Model;
 use Hub\Infrastructure\Persistence\Migration\ConfigurationTimestampsToDatetime;
 use Hub\Infrastructure\Persistence\Migration\DeviceTypeAsciiCollation;
@@ -55,6 +56,7 @@ final class DatabaseMigrationPlan
             new VeepooWearStateAndBodyComposition(),
             new CatalogMf91Model(),
             new VeepooParameterisedConfigurations(),
+            new BraceletCatalogFromCode(),
         ];
     }
 
