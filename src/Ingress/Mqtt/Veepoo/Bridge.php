@@ -97,13 +97,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
      */
     private array $unhandledKinds = [];
 
-    /**
-     * A última versão de firmware publicada por aparelho.
-     *
-     * @var array<string, string>
-     */
-    private array $firmware = [];
-
     private readonly DailyBlockNormalizer $normalizer;
 
     public function __construct(
@@ -563,10 +556,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * A versão de firmware, publicada quando muda.
+     * A versão de firmware, tal como a sessão a traz.
      *
-     * Vem em cada sessão, e a sessão repete-se a cada batimento: publicá-la sempre era ruído.
-     * Não a publicar de todo deixava o hub sem saber que firmware está no pulso.
+     * Sai em cada sessão, mesmo repetida. Guardar a anterior para só publicar a mudança era
+     * o hub a decidir o que vale a pena dizer -- e essa é a comparação de quem integra, que
+     * tem o valor que leu da vez passada.
      *
      * @param array<string, mixed> $device
      */
@@ -578,11 +572,10 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         int $licenseId,
         string $company,
     ): void {
-        if ($firmware === '' || ($this->firmware[$deviceKey] ?? null) === $firmware) {
+        if ($firmware === '') {
             return;
         }
 
-        $this->firmware[$deviceKey] = $firmware;
         $this->emitTelemetry($deviceKey, [
             'type' => 'firmware_version',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),

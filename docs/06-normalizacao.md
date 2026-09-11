@@ -104,6 +104,12 @@ saíram no MQTT antes de aparecerem aqui.
 Campos ausentes são **omitidos**, nunca preenchidos com `null` ou zero. Uma
 leitura que não se consegue normalizar não produz evento nenhum.
 
+**Cada leitura que o aparelho entrega produz o seu evento**, mesmo quando é igual
+à anterior. O hub não guarda o valor anterior para decidir se vale a pena dizê-lo:
+essa comparação é de quem integra, que tem o que leu da vez passada. Colapsar
+repetições mudaria o significado do silêncio — deixaria de se distinguir «não
+mudou» de «não houve leitura».
+
 Um nome só por grandeza. A unidade vive no nome do campo, e quando o tipo já a
 nomeia — `met` — o campo não a repete. Duas capacidades cujos nomes só se
 distingam por um sufixo são um sinal de que uma delas já tem nome noutro sítio:

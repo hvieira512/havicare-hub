@@ -100,12 +100,13 @@ final class BridgeSessionTest extends TestCase
     }
 
     /**
-     * A pulseira diz a versão em cada sessão, e a sessão repete-se a cada batimento.
+     * A versão sai em cada sessão, mesmo repetida.
      *
-     * Publicá-la de trinta em trinta segundos era ruído; não a publicar de todo deixava o hub
-     * sem saber que firmware está no pulso, que é o que distingue duas pulseiras iguais.
+     * A pulseira di-la a cada batimento, e o hub publica o que recebe: comparar com a
+     * anterior para decidir se vale a pena é a conta de quem integra, que tem o valor que
+     * leu da vez passada.
      */
-    public function testTheFirmwareVersionIsPublishedOnceAndAgainWhenItChanges(): void
+    public function testTheFirmwareVersionIsPublishedOnEverySession(): void
     {
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
@@ -122,7 +123,11 @@ final class BridgeSessionTest extends TestCase
             )),
         );
 
-        self::assertSame(['02.73.01.00-5966', '02.74.00.00-5966'], $versions);
+        self::assertSame([
+            '02.73.01.00-5966',
+            '02.73.01.00-5966',
+            '02.74.00.00-5966',
+        ], $versions);
     }
 
     /** @return list<array<string, mixed>> */
