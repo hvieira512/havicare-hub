@@ -273,7 +273,9 @@ final class BridgeMeasurementTest extends TestCase
         self::assertCount(1, $shown);
         self::assertArrayNotHasKey('samples', $shown[0]['data']);
         self::assertSame(4, $shown[0]['data']['sampleCount']);
-        self::assertSame(500, $shown[0]['data']['samplingHz']);
+        // `frequencyHz` e não `samplingHz`: é o nome que o contrato e os relógios usam para a
+        // mesma coisa, e dois nomes obrigavam quem integra a tratar por dois o que é um.
+        self::assertSame(500, $shown[0]['data']['frequencyHz']);
     }
 
     /** Um traçado vazio não é um exame: é uma medição que não chegou a produzir sinal. */

@@ -95,12 +95,20 @@ promove-se a um campo próprio do `data`.
 
 ## 3. Capacidades
 
-As vinte capacidades reconhecidas pelo `FeatureNormalizer`. **O contrato
-anterior documentava doze** — as oito restantes já eram publicadas, sem nunca
-terem sido documentadas.
+As capacidades reconhecidas pelo `FeatureNormalizer`, que serve os relógios, e as
+que o caminho das pulseiras Veepoo acrescenta. **O contrato já documentou doze e
+publicava vinte**, e o mesmo voltou a acontecer com as pulseiras: seis tipos
+— `met`, `stress`, `blood_lipids`, `uric_acid`, `sleep_apnea` e `cardiac_load` —
+saíram no MQTT antes de aparecerem aqui.
 
 Campos ausentes são **omitidos**, nunca preenchidos com `null` ou zero. Uma
 leitura que não se consegue normalizar não produz evento nenhum.
+
+Um nome só por grandeza. A unidade vive no nome do campo, e quando o tipo já a
+nomeia — `met` — o campo não a repete. Duas capacidades cujos nomes só se
+distingam por um sufixo são um sinal de que uma delas já tem nome noutro sítio:
+o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
+`steps` com a janela no próprio valor.
 
 ### Sinais vitais
 
@@ -124,7 +132,7 @@ leitura que não se consegue normalizar não produz evento nenhum.
 |---|---|
 | `ecg` · `ppg` | `samples[]`, `frequencyHz`, `collectionId`, `startedAt`, `packetStatus`, `block` |
 | `hrv` | `milliseconds` |
-| `rr_interval` | `intervals[{timestamp, milliseconds}]`, `frequencyHz`, `collectionId`, `samplingIntervalSeconds` |
+| `rr_interval` | `intervals[{timestamp, milliseconds}]`, `frequencyHz`, `collectionId` |
 
 ### Atividade e estado
 
@@ -150,6 +158,12 @@ leitura que não se consegue normalizar não produz evento nenhum.
 | `position_minute_stats` · `vitals_minute_stats` | radar | resumos por minuto |
 | `steps` | pulseira | `count`, `periodSeconds` — quantos passos naquela janela. O acumulado do dia é `activity` |
 | `wear_state` | pulseira | `state`: `worn` ou `not_worn` |
+| `met` | pulseira | `value` — equivalentes metabólicos, com uma casa decimal. O nome do tipo é a unidade |
+| `stress` | pulseira | `score` — inteiro, como o fabricante o reporta e a app o mostra |
+| `blood_lipids` | pulseira | `totalCholesterolMmolPerL`, `triglyceridesMmolPerL`, `hdlMmolPerL`, `ldlMmolPerL` |
+| `uric_acid` | pulseira | `umolPerL` |
+| `sleep_apnea` | pulseira | `episodes`, `hypoxiaSeconds` — contagens do bloco, e não leituras por minuto |
+| `cardiac_load` | pulseira | `value` — sem unidade nem escala documentadas pelo fabricante |
 | `body_composition` | pulseira | `bmi`, `bodyFatPercent`, `fatMassKg`, `leanMassKg`, `musclePercent`, `muscleMassKg`, `subcutaneousFatPercent`, `bodyWaterPercent`, `waterMassKg`, `skeletalMusclePercent`, `boneMassKg`, `proteinPercent`, `proteinMassKg`, `basalMetabolicRateKcal` |
 | `motion` | pulseira | `xMg`, `yMg`, `zMg`, `magnitudeMg` |
 | `proximity` | pulseira, sensor de fralda | `gatewayId`, `state`, `rssiDbm`, `rssiMaxDbm`, `rssiMedianDbm`, `rssiMinDbm`, `samples`, `windowSeconds` |

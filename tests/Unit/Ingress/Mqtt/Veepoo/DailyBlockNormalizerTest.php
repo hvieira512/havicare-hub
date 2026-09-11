@@ -83,6 +83,9 @@ final class DailyBlockNormalizerTest extends TestCase
         // Os cinquenta R-R vão numa mensagem só, e a posição na lista é o instante: são
         // cinquenta lugares a cobrir os cinco minutos do bloco, um de seis em seis segundos.
         // O fabricante chama `RR2Per6Second` ao campo equivalente do modo de teste.
+        //
+        // A cadência não leva campo próprio: sai dos instantes, e dizê-la duas vezes era
+        // arriscar que um dia discordassem.
         self::assertCount(1, $byType['rr_interval']);
         self::assertSame('2026-09-09T03:20:00Z', $byType['rr_interval'][0]['occurredAt']);
         self::assertSame(
@@ -91,7 +94,6 @@ final class DailyBlockNormalizerTest extends TestCase
                     ['timestamp' => '2026-09-09T03:20:00Z', 'milliseconds' => 810],
                     ['timestamp' => '2026-09-09T03:20:12Z', 'milliseconds' => 790],
                 ],
-                'samplingIntervalSeconds' => 6,
             ],
             $byType['rr_interval'][0]['data'],
         );

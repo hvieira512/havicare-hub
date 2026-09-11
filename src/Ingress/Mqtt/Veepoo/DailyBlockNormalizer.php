@@ -103,10 +103,9 @@ final class DailyBlockNormalizer
 
         $intervals = $this->rrIntervals($block['rr50'] ?? null, $start);
         if ($intervals !== []) {
-            $out[] = $envelope('rr_interval', 0, [
-                'intervals' => $intervals,
-                'samplingIntervalSeconds' => self::RR_SLOT_SECONDS,
-            ]);
+            // A cadência sai dos instantes de cada intervalo; um campo à parte a repeti-la
+            // era mais uma coisa a poder discordar de si mesma.
+            $out[] = $envelope('rr_interval', 0, ['intervals' => $intervals]);
         }
 
         // O oxigénio vem num objeto com as leituras e os derivados de apneia; só as leituras

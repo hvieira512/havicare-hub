@@ -699,7 +699,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return;
         }
 
-        $samplingHz = is_int($payload['samplingHz'] ?? null) ? $payload['samplingHz'] : null;
+        // `frequencyHz` é o nome do contrato, o mesmo que os relógios usam para a onda deles.
+        $frequencyHz = is_int($payload['samplingHz'] ?? null) ? $payload['samplingHz'] : null;
 
         $this->emitTelemetry($deviceKey, [
             'type' => 'ecg',
@@ -711,7 +712,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             ],
             'source' => ['protocol' => 'veepoo-ble', 'nativeType' => 'ecg_wave', 'gatewayId' => $gatewayKey],
             'data' => array_filter(
-                ['samples' => $samples, 'samplingHz' => $samplingHz],
+                ['samples' => $samples, 'frequencyHz' => $frequencyHz],
                 static fn(mixed $v): bool => $v !== null,
             ),
         ], $licenseId, $company);
