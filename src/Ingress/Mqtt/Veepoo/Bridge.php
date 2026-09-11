@@ -786,11 +786,13 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Os totais do dia, contados pela própria pulseira.
+     * O acumulado do dia, contado pela própria pulseira.
      *
-     * Tipo à parte porque não é a mesma coisa que o `activity` dos blocos: aquele é o que se
-     * andou em cinco minutos e este é o acumulado do dia. Somar os dois contava tudo duas
-     * vezes. As calorias vêm em décimas, como nos blocos.
+     * É o mesmo que `activity` significa nos relógios -- o contador de passos, distância e
+     * calorias desde a meia-noite -- e por isso leva o mesmo nome. O que se andou em cada
+     * cinco minutos é outra grandeza e sai dos blocos como `steps`.
+     *
+     * As calorias vêm em décimas: 146 são as 14,6 kcal que a app mostra no ecrã principal.
      *
      * @param array<string, mixed> $payload
      * @return array{0: string, 1: array<string, float|int>}|null
@@ -802,7 +804,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return null;
         }
 
-        return ['activity_daily', array_filter([
+        return ['activity', array_filter([
             'steps' => $steps,
             'distanceMeters' => is_int($payload['distance'] ?? null) ? $payload['distance'] : null,
             'caloriesKcal' => is_int($payload['calorie'] ?? null) ? round($payload['calorie'] / 10, 1) : null,

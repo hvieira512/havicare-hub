@@ -175,7 +175,7 @@ final class CapabilityCatalog
                 'cardiac_load',
                 'wear_state',
                 'body_composition',
-                'activity_daily',
+                'steps',
                 'firmware_version',
                 // Configuração: o que a pulseira mede sozinha ao longo do dia.
                 'heart_rate_continuous',

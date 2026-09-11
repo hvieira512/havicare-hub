@@ -18,8 +18,10 @@ use PDO;
  * A composição corporal mede-se pelos elétrodos do ECG e devolve catorze grandezas de uma
  * vez. A app do fabricante já a oferecia e o hub não a conhecia de todo.
  *
- * E o total do dia, que a pulseira conta sozinha: o `activity` dos blocos é o que se andou em
- * cinco minutos, e quem quisesse os passos de hoje tinha de somar duzentos e oitenta e oito.
+ * E os passos de cada bloco de cinco minutos, separados do acumulado do dia: o `activity` é o
+ * contador desde a meia-noite, como nos relógios, e o `steps` diz quando os passos foram
+ * dados. A distância e as calorias do bloco não entram porque não são medições -- são os
+ * passos vezes uma constante.
  */
 final class VeepooWearStateAndBodyComposition implements Migration
 {
@@ -27,9 +29,18 @@ final class VeepooWearStateAndBodyComposition implements Migration
     private const ADDED = [
         ['wear_state', 'Estado de uso', false],
         ['body_composition', 'Composição corporal', true],
-        ['activity_daily', 'Total do dia', true],
+        ['steps', 'Passos', false],
         ['firmware_version', 'Versão de firmware', false],
     ];
+
+    /**
+     * O que se chamou `activity_daily` antes de se perceber que era `activity`.
+     *
+     * O acumulado do dia é o que `activity` sempre significou nos relógios, onde o `steps` do
+     * aparelho é um contador desde a meia-noite. Dois nomes para a mesma grandeza obrigavam
+     * quem integra a tratar por duas coisas o que é uma só.
+     */
+    private const REMOVED = ['activity_daily'];
 
     public function version(): string
     {
@@ -63,8 +74,23 @@ final class VeepooWearStateAndBodyComposition implements Migration
             $link->execute([$key]);
         }
 
-        // Os rótulos já semeados ficam no que eram, e o do `activity` passou a dizer a janela
-        // -- sem isto o ecrã punha «Atividade: 0 passos» ao lado de «Total do dia: 216».
+        $placeholders = implode(', ', array_fill(0, count(self::REMOVED), '?'));
+        $deletions = [
+            "DELETE FROM model_capabilities WHERE device_type = 'bracelet' AND capability_key IN ($placeholders)",
+            "DELETE FROM capabilities WHERE device_type = 'bracelet' AND capability_key IN ($placeholders)",
+        ];
+        foreach ($deletions as $sql) {
+            $pdo->prepare($sql)->execute(self::REMOVED);
+        }
+
+        // O acumulado do dia passa a poder ser pedido: é um contador que a pulseira já tem, e
+        // responde no instante como a bateria.
+        $pdo->exec("
+            UPDATE capabilities SET is_requestable = 1
+            WHERE device_type = 'bracelet' AND capability_key = 'activity'
+        ");
+
+        // Os rótulos já semeados ficam no que eram, e o catálogo em código mudou-os.
         $label = $pdo->prepare("
             UPDATE capabilities SET label = ?
             WHERE device_type = 'bracelet' AND capability_key = ? AND label <> ?

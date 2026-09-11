@@ -37,7 +37,7 @@ const CARD_STYLE = {
     diaper_moisture_level: ["fa-percent", "info"],
     diaper_condition: ["fa-baby", "warning"],
     activity: ["fa-person-walking", "primary"],
-    activity_daily: ["fa-shoe-prints", "primary"],
+    steps: ["fa-shoe-prints", "primary"],
     wear_state: ["fa-hand-sparkles", "primary"],
     body_composition: ["fa-weight-scale", "primary"],
     // Um índice e um gasto metabólico são medidas de bem-estar e não gravidades: ficam no
@@ -158,9 +158,9 @@ const UPLINK_CARD_RENDERERS = {
             "ldlMmolPerL",
         ]),
     }),
-    activity_daily: (data) => ({
-        value: `${data?.steps ?? 0} passos`,
-        details: compactDetails(data, ["distanceMeters", "caloriesKcal"]),
+    steps: (data) => ({
+        value: `${data?.count ?? 0} passos`,
+        details: compactDetails(data, ["periodSeconds"]),
     }),
     wear_state: (data) => ({
         value:
@@ -217,8 +217,6 @@ const UPLINK_CARD_RENDERERS = {
         details: compactDetails(data, [
             "distanceMeters",
             "caloriesKcal",
-            // Numa pulseira ao pulso de quem está sentado é o único campo que não é zero.
-            "exerciseAmount",
             "exerciseSeconds",
             "standMinutes",
         ]),

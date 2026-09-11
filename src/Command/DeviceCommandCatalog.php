@@ -180,9 +180,9 @@ final class DeviceCommandCatalog
             // A bateria é o único pedido que não depende do sensor ótico: responde sempre,
             // e em menos de um segundo.
             ['id' => 'readBattery', 'command' => 'read.battery', 'label' => 'Battery', 'icon' => 'fa-battery-half', 'kind' => 'request', 'feature' => 'battery', 'expectedReplyTypes' => ['battery']],
-            // Os totais do dia respondem no instante, como a bateria: são um contador que a
+            // O acumulado do dia responde no instante, como a bateria: é um contador que a
             // pulseira já tem, e não uma medição a fazer.
-            ['id' => 'readDailyTotals', 'command' => 'read.dailyTotals', 'label' => 'Daily totals', 'icon' => 'fa-shoe-prints', 'kind' => 'request', 'feature' => 'activity_daily', 'expectedReplyTypes' => ['activity_daily']],
+            ['id' => 'readDailyTotals', 'command' => 'read.dailyTotals', 'label' => 'Daily totals', 'icon' => 'fa-shoe-prints', 'kind' => 'request', 'feature' => 'activity', 'expectedReplyTypes' => ['activity']],
             // O ECG arranca e transmite, mas exige que quem a usa encoste o dedo ao elétrodo:
             // sem isso o aparelho envia dezenas de tramas com `wearNotPass` e tudo a zero.
             // Fica no catálogo porque é assim em qualquer pulseira com ECG, e a falha de

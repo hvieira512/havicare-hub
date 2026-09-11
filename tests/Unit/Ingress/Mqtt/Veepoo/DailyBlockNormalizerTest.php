@@ -45,10 +45,10 @@ final class DailyBlockNormalizerTest extends TestCase
 
         self::assertSame(['systolicMmHg' => 118, 'diastolicMmHg' => 76], $byType['blood_pressure']);
         // Zero passos é uma leitura verdadeira, ao contrário de zero batimentos.
-        self::assertSame(['steps' => 0, 'distanceMeters' => 0, 'caloriesKcal' => 0.0], $byType['activity']);
+        self::assertSame(['count' => 0, 'periodSeconds' => 300], $byType['steps']);
     }
 
-    public function testEmptyBlockFromAnUnwornBandProducesOnlyActivityAndWearState(): void
+    public function testEmptyBlockFromAnUnwornBandProducesOnlyStepsAndWearState(): void
     {
         // Captura real da MF91 pousada na secretária.
         $out = (new DailyBlockNormalizer())->normalize([
@@ -62,7 +62,7 @@ final class DailyBlockNormalizerTest extends TestCase
             'bloodPressure' => ['bloodPressureHigh' => 0, 'bloodPressureLow' => 0],
         ], self::DEVICE, 'bef341903987');
 
-        self::assertSame(['activity', 'wear_state'], array_column($out, 'type'));
+        self::assertSame(['steps', 'wear_state'], array_column($out, 'type'));
         self::assertSame(['state' => 'not_worn'], self::ofType($out, 'wear_state')[0]['data']);
     }
 
@@ -143,33 +143,16 @@ final class DailyBlockNormalizerTest extends TestCase
     }
 
     /**
-     * A quantidade de movimento é o que distingue os zeros uns dos outros.
+     * O bloco conta passos numa janela, e é só isso que ele mede.
      *
-     * Num bloco com zero passos a pulseira reportou 60 de `amountOfExercise` -- alguém a
-     * mexer os braços a uma secretária. Publicar só os passos dava um bloco morto.
-     */
-    public function testActivityCarriesTheExerciseAmount(): void
-    {
-        $out = (new DailyBlockNormalizer())->normalize(
-            ['date' => '2026-09-09-10-40', 'step' => ['stepCount' => 0, 'amountOfExercise' => 60, 'distance' => 0, 'calorie' => 0]],
-            self::DEVICE,
-            'bef341903987',
-        );
-
-        self::assertSame(
-            ['steps' => 0, 'distanceMeters' => 0, 'caloriesKcal' => 0.0, 'exerciseAmount' => 60],
-            self::ofType($out, 'activity')[0]['data'],
-        );
-    }
-
-    /**
-     * As calorias do bloco vêm em décimas, e o nome do campo do hub diz kcal.
+     * A distância e as calorias do bloco são o número de passos vezes uma constante -- em
+     * quatrocentos e dezasseis blocos capturados, 0,86 m e 0,067 kcal por passo, e zero
+     * sempre que os passos são zero. Publicá-las era dizer a mesma medição três vezes.
      *
-     * A pulseira reportou 25 no bloco das 09:40 e a app do fabricante guardou `calValue=2.5`
-     * para o mesmo instante; o dia inteiro soma 99 nos blocos e 9,9 kcal no ecrã dela.
-     * Publicar o inteiro em cru multiplicava por dez o gasto de quem quer que fosse.
+     * O acumulado do dia é outra coisa e tem tipo próprio: aqui vai o que se andou nestes
+     * cinco minutos, e a janela viaja com o valor para ninguém ter de a adivinhar.
      */
-    public function testBlockCaloriesAreTenths(): void
+    public function testABlockCountsStepsOverItsWindow(): void
     {
         $out = (new DailyBlockNormalizer())->normalize(
             ['date' => '2026-09-09-09-40', 'step' => ['stepCount' => 37, 'distance' => 32, 'calorie' => 25]],
@@ -177,10 +160,21 @@ final class DailyBlockNormalizerTest extends TestCase
             'bef341903987',
         );
 
-        self::assertSame(
-            ['steps' => 37, 'distanceMeters' => 32, 'caloriesKcal' => 2.5],
-            self::ofType($out, 'activity')[0]['data'],
+        self::assertSame(['count' => 37, 'periodSeconds' => 300], self::ofType($out, 'steps')[0]['data']);
+        self::assertSame([], self::ofType($out, 'activity'));
+    }
+
+    /** Zero passos é uma leitura verdadeira; o bloco sem contagem nenhuma é que não é. */
+    public function testABlockWithoutAStepCountProducesNoSteps(): void
+    {
+        $out = (new DailyBlockNormalizer())->normalize(
+            ['date' => '2026-09-09-09-40', 'step' => ['wear' => 0]],
+            self::DEVICE,
+            'bef341903987',
         );
+
+        self::assertSame([], self::ofType($out, 'steps'));
+        self::assertSame(['state' => 'worn'], self::ofType($out, 'wear_state')[0]['data']);
     }
 
     /** @return list<array<string, mixed>> */

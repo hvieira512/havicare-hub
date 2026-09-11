@@ -19,9 +19,9 @@ final class CapabilityCatalogTest extends TestCase
             // De 4 para 28 com a Veepoo MF91: as W6/W6B só anunciam bateria, movimento,
             // proximidade e botão, mas uma pulseira com sessão GATT entrega dezasseis
             // grandezas e aceita seis interruptores de medição autónoma. E 36 desde que a
-            // pulseira passou a dizer se está ao pulso, a medir composição corporal, a
-            // entregar o total do dia que ela própria conta e a versão que traz no pulso.
-            'bracelet' => [36, '1245234e271ce7f227e33cb8fc3debf9a12fc962560310a6233174971f435af8'],
+            // pulseira passou a dizer se está ao pulso, a medir composição corporal, a contar
+            // os passos de cada bloco à parte do acumulado do dia, e a versão que traz.
+            'bracelet' => [36, 'ae8506060bfa83067d981cee745edb4718df30eb304c21081dcd43ed86a04fc5'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

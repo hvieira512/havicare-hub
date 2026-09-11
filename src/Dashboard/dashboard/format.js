@@ -54,8 +54,7 @@ export const fieldLabel = (key) =>
         distanceMeters: "Distância",
         caloriesKcal: "Calorias",
         exerciseSeconds: "Exercício (s)",
-        // A pulseira conta movimento sem unidade: é um índice do acelerómetro, não segundos.
-        exerciseAmount: "Movimento",
+        periodSeconds: "Janela",
         bmi: "IMC",
         bodyFatPercent: "Gordura",
         fatMassKg: "Massa gorda",
@@ -234,6 +233,7 @@ const FIELD_UNIT = {
     distanceKm: "km",
     caloriesKcal: "kcal",
     exerciseSeconds: "s",
+    periodSeconds: "s",
     standMinutes: "min",
     basalMetabolicRateKcal: "kcal",
     fatMassKg: "kg",

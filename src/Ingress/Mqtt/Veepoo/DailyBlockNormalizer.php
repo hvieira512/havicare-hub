@@ -41,6 +41,9 @@ final class DailyBlockNormalizer
      */
     private const RR_SLOT_SECONDS = 6;
 
+    /** Quanto tempo cobre um bloco. */
+    private const BLOCK_SECONDS = 300;
+
     /**
      * O código de uso que significa «detecção passou».
      *
@@ -166,9 +169,9 @@ final class DailyBlockNormalizer
             $out[] = $envelope('temperature', 0, $temperature);
         }
 
-        $activity = $this->activity($block['step'] ?? null);
-        if ($activity !== null) {
-            $out[] = $envelope('activity', 0, $activity);
+        $steps = $this->steps($block['step'] ?? null);
+        if ($steps !== null) {
+            $out[] = $envelope('steps', 0, $steps);
         }
 
         $wear = $this->wearState($block['step'] ?? null);
@@ -388,27 +391,30 @@ final class DailyBlockNormalizer
     }
 
     /**
-     * Ao contrário das grandezas vitais, zero passos é uma leitura verdadeira. O bloco só é
-     * descartado quando não traz sequer a contagem.
+     * Quantos passos naquela janela de cinco minutos.
      *
-     * @return array<string, int|float>|null
+     * Zero passos é uma leitura verdadeira, ao contrário de zero batimentos; o que se
+     * descarta é o bloco que não traz sequer a contagem.
+     *
+     * A distância e as calorias do bloco ficam de fora porque não são medições: em
+     * quatrocentos e dezasseis blocos capturados são sempre os passos vezes uma constante --
+     * 0,86 m e 0,067 kcal por passo -- e zero sempre que os passos são zero. O acumulado do
+     * dia, esse, é contado pela pulseira e chega pelo `Bridge` como `activity`.
+     *
+     * A `amountOfExercise` também fica: é um contador do acelerómetro sem unidade nem escala
+     * documentada, que a app do fabricante não mostra em lado nenhum. O movimento com unidade
+     * é o `met`, que cobre vinte e um dos vinte e cinco blocos em que ela é diferente de zero
+     * e nunca aparece sem ela.
+     *
+     * @return array{count: int, periodSeconds: int}|null
      */
-    private function activity(mixed $step): ?array
+    private function steps(mixed $step): ?array
     {
-        if (!is_array($step) || !isset($step['stepCount']) || !is_int($step['stepCount'])) {
+        if (!is_array($step) || !is_int($step['stepCount'] ?? null)) {
             return null;
         }
 
-        return array_filter([
-            'steps' => $step['stepCount'],
-            'distanceMeters' => is_int($step['distance'] ?? null) ? $step['distance'] : null,
-            // Em décimas de kcal: a pulseira reporta 25 onde a app do fabricante mostra 2,5,
-            // e o dia inteiro soma 99 nos blocos contra 9,9 kcal no ecrã dela.
-            'caloriesKcal' => is_int($step['calorie'] ?? null) ? round($step['calorie'] / 10, 1) : null,
-            // A quantidade de movimento não tem unidade -- é um contador do acelerómetro.
-            // É o que separa um bloco parado de um bloco sem ninguém lá.
-            'exerciseAmount' => is_int($step['amountOfExercise'] ?? null) ? $step['amountOfExercise'] : null,
-        ], static fn(mixed $value): bool => $value !== null);
+        return ['count' => $step['stepCount'], 'periodSeconds' => self::BLOCK_SECONDS];
     }
 
     /**

@@ -130,7 +130,7 @@ leitura que não se consegue normalizar não produz evento nenhum.
 
 | `type` | `data` |
 |---|---|
-| `activity` | `steps`, `distanceMeters`, `distanceKm`, `caloriesKcal`, `exerciseSeconds`, `exerciseAmount`, `standMinutes` |
+| `activity` | `steps`, `distanceMeters`, `distanceKm`, `caloriesKcal`, `exerciseSeconds`, `standMinutes` — **o acumulado do dia**, e não um incremento |
 | `sleep` | `startTime`, `endTime`, `isAccumulative`, `totalDurationMinutes`, `timingValid`, `segments[]` |
 | `battery` | `percent`, `chargingState`, `batteryType` |
 | `heartbeat` | `status`, `steps`, `gsmSignal`, `satelliteCount`, `batteryPercent`, `chargingState`, `batteryType`, `rollFrequency`, `remainingSpace`, `fortificationState`, `workMode` |
@@ -148,7 +148,7 @@ leitura que não se consegue normalizar não produz evento nenhum.
 | `presence` | radar | `count`, `people[]` |
 | `sleep_state` | radar | `state` |
 | `position_minute_stats` · `vitals_minute_stats` | radar | resumos por minuto |
-| `activity_daily` | pulseira | `steps`, `distanceMeters`, `caloriesKcal` — o acumulado do dia, contado pela pulseira. Não somar com `activity`, que é o de cada bloco de cinco minutos |
+| `steps` | pulseira | `count`, `periodSeconds` — quantos passos naquela janela. O acumulado do dia é `activity` |
 | `wear_state` | pulseira | `state`: `worn` ou `not_worn` |
 | `body_composition` | pulseira | `bmi`, `bodyFatPercent`, `fatMassKg`, `leanMassKg`, `musclePercent`, `muscleMassKg`, `subcutaneousFatPercent`, `bodyWaterPercent`, `waterMassKg`, `skeletalMusclePercent`, `boneMassKg`, `proteinPercent`, `proteinMassKg`, `basalMetabolicRateKcal` |
 | `motion` | pulseira | `xMg`, `yMg`, `zMg`, `magnitudeMg` |

@@ -54,13 +54,12 @@ final class BridgeMeasurementTest extends TestCase
             'a procurar' => ['a procurar', ['sdkType' => 17, 'value' => 'search'], 'find_device', ['state' => 'searching']],
             'parada' => ['parada', ['sdkType' => 17, 'value' => 'find'], 'find_device', ['state' => 'stopped']],
             'desistiu' => ['desistiu', ['sdkType' => 17, 'value' => 'timeout'], 'find_device', ['state' => 'timed_out']],
-            // O total do dia, que a pulseira conta ela própria. Os blocos de cinco minutos
-            // são somas com atraso; esta leitura é a que a app mostra no ecrã principal, e as
-            // calorias vêm em décimas como nos blocos -- 146 são 14,6 kcal.
+            // O acumulado do dia, que é o que `activity` significa nos relógios. A app mostra
+            // estes três números no ecrã principal, e as calorias vêm em décimas.
             'totais do dia' => [
                 'totais do dia',
                 ['sdkType' => 9, 'step' => 216, 'calorie' => 146, 'distance' => 187, 'day' => 'today'],
-                'activity_daily',
+                'activity',
                 ['steps' => 216, 'distanceMeters' => 187, 'caloriesKcal' => 14.6],
             ],
             // Medição real feita na app do fabricante, conferida no ecrã dela valor a valor.

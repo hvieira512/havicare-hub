@@ -53,9 +53,11 @@ final class BraceletCapabilityDefinitions
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Frequência respiratória', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'ppg', 'label' => 'PPG', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'sleep', 'label' => 'Sono', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            // O rótulo diz a janela: ao lado do total do dia, «Atividade: 0 passos» e «Total
-            // do dia: 216 passos» liam-se como uma contradição em vez de duas escalas.
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'activity', 'label' => 'Atividade (5 min)', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            // O acumulado do dia, como nos relógios: lá o `steps` do aparelho é um contador
+            // desde a meia-noite, e é o mesmo que a pulseira dá quando lhe perguntam.
+            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'activity', 'label' => 'Atividade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
+            // E os passos de cada bloco de cinco minutos, que é quando eles foram dados.
+            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'steps', 'label' => 'Passos', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
 
             // Derivados que a pulseira calcula sozinha e entrega nos blocos diários. Nenhum é
             // pedível: não há comando que os mande medir, saem do que já foi medido.
@@ -68,9 +70,6 @@ final class BraceletCapabilityDefinitions
             // A pulseira diz em cada bloco se estava ao pulso. Sem isto, um bloco de zeros
             // por estar na mesinha é igual a um bloco de zeros de quem está sentado.
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'wear_state', 'label' => 'Estado de uso', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            // O acumulado do dia, contado pela pulseira. Distinto do `activity`, que é o que
-            // se andou em cinco minutos: somar os dois contava tudo duas vezes.
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'activity_daily', 'label' => 'Total do dia', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             // A pulseira diz a versão em cada sessão; sem isto não havia onde a guardar.
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'firmware_version', 'label' => 'Versão de firmware', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'body_composition', 'label' => 'Composição corporal', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
