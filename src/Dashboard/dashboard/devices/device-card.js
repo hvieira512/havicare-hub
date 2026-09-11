@@ -117,7 +117,7 @@ export function deviceCard(device, selected, siblings = []) {
  */
 export function deviceCardSkeletonList(pageSize) {
     const row = `
-        <div class="device-card device-card-skeleton d-grid w-100 text-start" aria-hidden="true">
+        <div class="device-card device-card-skeleton d-grid w-100 text-start pe-none" aria-hidden="true">
         <span class="device-card-thumb placeholder d-grid overflow-hidden rounded-3 flex-shrink-0"></span>
         <span class="device-card-state d-flex flex-column align-items-start gap-1 min-w-0">
             <span class="placeholder device-card-skeleton-pill rounded-4"></span>

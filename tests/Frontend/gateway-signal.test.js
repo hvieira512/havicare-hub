@@ -80,15 +80,15 @@ test("the meter carries the reading as a tooltip and an aria-label", () => {
     assert.match(html, /data-bs-toggle="tooltip"/);
     assert.match(html, /data-bs-title="Bom · -64 dBm"/);
     assert.match(html, /aria-label="Bom · -64 dBm"/);
-    // Três de quatro barras cheias, nesta banda.
-    assert.equal((html.match(/signal-meter-bar-on/g) || []).length, 3);
+    // Três de quatro barras cheias, nesta banda: a cheia é a que leva `opacity-100`.
+    assert.equal((html.match(/opacity-100/g) || []).length, 3);
     assert.match(html, /text-success/);
 });
 
 test("the meter renders empty bars rather than nothing when unheard", () => {
     const html = signalMeter(null);
 
-    assert.equal((html.match(/signal-meter-bar-on/g) || []).length, 0);
+    assert.equal((html.match(/opacity-100/g) || []).length, 0);
     assert.equal((html.match(/signal-meter-bar/g) || []).length, 4);
     assert.match(html, /Sem sinal/);
 });

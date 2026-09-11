@@ -202,14 +202,12 @@
 }
 
 .connection-timeline-track {
-    top: 50%;
     height: 2px;
     background: var(--bs-secondary-color);
     opacity: .45;
 }
 
 .connection-timeline-dot {
-    top: 50%;
     width: 10px;
     height: 10px;
     margin: -5px 0 0 -5px;
@@ -576,12 +574,8 @@
     background: var(--bs-border-color);
 }
 
-/* O mesmo desenho dos filtros, mas de escolha única: a marca é redonda para não prometer
-   que se podem marcar várias, e a empresa é só o cabeçalho do grupo. */
-.license-picker .filter-option-box {
-    border-radius: 50%;
-}
-
+/* O mesmo desenho dos filtros, mas de escolha única: a marca leva `rounded-circle` na
+   marcação, para não prometer que se podem marcar várias. A empresa é só o cabeçalho. */
 .license-picker-company {
     padding: .5rem .4375rem .125rem 1.875rem;
 }
@@ -607,7 +601,6 @@
    dava a entender que se podia escolher um dispositivo que ainda não chegou. */
 .device-card-skeleton {
     cursor: default;
-    pointer-events: none;
 }
 
 /* A miniatura empresta a medida e o raio ao esqueleto, mas o fundo dela e o da caixa vazia da

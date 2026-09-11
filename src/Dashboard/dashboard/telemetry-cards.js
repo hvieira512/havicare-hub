@@ -450,7 +450,7 @@ function diaperMoistureBody(data) {
             return html`<div class="diaper-channel d-flex flex-column min-w-0" title="${tooltip}">
 <div class="diaper-channel-value diaper-channel-value--${band} text-center fw-semibold tabular-nums lh-sm">${delta}</div>
 <div class="diaper-channel-track position-relative d-flex align-items-end overflow-hidden">
-<div class="diaper-channel-fill diaper-channel-fill--${band}" style="height:${height}%"></div>
+<div class="diaper-channel-fill diaper-channel-fill--${band} w-100" style="height:${height}%"></div>
 </div>
 <div class="diaper-channel-index text-center tabular-nums lh-sm">${index}</div>
 </div>`;
@@ -463,7 +463,7 @@ function diaperMoistureBody(data) {
     const thresholdOffset = (wetDelta / scaleDelta) * 100;
 
     return html`<div class="diaper-moisture mt-3">
-<div class="diaper-strip" style="--diaper-threshold:${thresholdOffset}%">${raw(columns)}</div>
+<div class="diaper-strip d-grid align-items-end" style="--diaper-threshold:${thresholdOffset}%">${raw(columns)}</div>
 <div class="border-top pt-2 small text-secondary mt-2">
 Máx. <strong class="text-body">${maximum}</strong> · <strong class="text-body">${affected}</strong> de ${required} canais acima do limiar (${wetDelta})
 </div>

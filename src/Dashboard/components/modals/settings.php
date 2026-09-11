@@ -12,7 +12,7 @@ $settingsTabs = [
 
 ob_start();
 ?>
-<div class="settings-modal-shell d-flex flex-column p-2 p-lg-3">
+<div class="settings-modal-shell d-flex flex-column w-100 p-2 p-lg-3">
     <div class="row g-3 g-lg-4 h-100 min-h-0">
         <div class="col-12 col-lg-3 d-flex align-items-lg-center h-100">
             <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" id="settingsModalNav" role="tablist">

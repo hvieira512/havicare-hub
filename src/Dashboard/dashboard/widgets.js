@@ -63,7 +63,7 @@ export function modelPreviewHtml(modelInfo, label = "Modelo") {
         modelInfo?.model ||
         label;
     return modelInfo?.image
-        ? html`<img src="${modelInfo.image}" class="object-fit-contain" alt="${imageLabel}">`
+        ? html`<img src="${modelInfo.image}" class="object-fit-contain mw-100" alt="${imageLabel}">`
         : html`<div class="text-center text-secondary"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${label}</div></div>`;
 }
 

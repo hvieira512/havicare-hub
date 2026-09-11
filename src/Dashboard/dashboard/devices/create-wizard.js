@@ -302,7 +302,7 @@ function renderIdentity(answers) {
         ${fields.gatewayLinks
             ? `<div>
                 <label class="form-label-sm">Gateways autorizados</label>
-                <div class="gateway-picker">
+                <div class="gateway-picker d-grid gap-2 overflow-y-auto">
                     ${gateways.length
                         ? gateways
                                 .map((gateway) =>

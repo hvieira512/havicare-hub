@@ -84,7 +84,6 @@
 
 .dashboard-login-badge img {
     height: 24px;
-    width: auto;
     filter: invert(100%);
     opacity: .9;
 }

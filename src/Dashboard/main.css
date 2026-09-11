@@ -28,7 +28,6 @@
 }
 
 .showcase-preview img {
-    max-width: 100%;
     max-height: 260px;
 }
 
@@ -72,11 +71,8 @@
 }
 
 .gateway-picker {
-    display: grid;
     grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-    gap: .5rem;
     max-height: 18rem;
-    overflow-y: auto;
 }
 
 /* A linha toda da grelha: o Bootstrap não tem utilitário de `grid-column`. */
@@ -151,21 +147,13 @@
     cursor: help;
 }
 
+/* A barra apagada; as cheias levam `opacity-100` na marcação. */
 .signal-meter-bar {
     width: 3px;
     border-radius: 1px;
     background-color: currentColor;
     opacity: .2;
 }
-
-.signal-meter-bar-on {
-    opacity: 1;
-}
-
-.signal-meter-bar:nth-child(1) { height: 25%; }
-.signal-meter-bar:nth-child(2) { height: 50%; }
-.signal-meter-bar:nth-child(3) { height: 75%; }
-.signal-meter-bar:nth-child(4) { height: 100%; }
 
 /* Seco, húmido e molhado é uma escala do domínio e não um `info`/`warning`/`danger`. Em
    tokens para o azul da barra e o do número não poderem divergir. */
@@ -188,11 +176,9 @@
 }
 
 .diaper-strip {
-    display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
     gap: .35rem;
-    align-items: end;
 }
 
 .diaper-channel {
@@ -234,7 +220,6 @@
 /* No min-height: a dry channel reading 0 must paint nothing at all, otherwise
    an empty strip still looks faintly wet. */
 .diaper-channel-fill {
-    width: 100%;
     border-radius: .35rem .35rem 0 0;
     background: var(--moisture-dry);
     transition: height .2s ease-in-out;
@@ -255,8 +240,6 @@
 
 .navbar-brand img {
     height: 30px;
-    width: auto;
-    display: block;
     filter: invert(100%);
 }
 
@@ -276,7 +259,6 @@
    modais de alturas diferentes. Quem rola é cada painel por dentro. */
 #settingsModal .modal-body>.settings-modal-shell {
     height: clamp(26rem, 68vh, 46rem);
-    width: 100%;
     max-width: var(--content-max);
     margin-inline: auto;
 }
@@ -444,7 +426,6 @@
 }
 
 .wizard-art img {
-    max-width: 100%;
     max-height: 7rem;
 }
 
@@ -508,7 +489,6 @@
 }
 
 .wizard-card-thumb img {
-    max-width: 100%;
     max-height: 100%;
 }
 

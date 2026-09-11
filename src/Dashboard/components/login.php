@@ -25,7 +25,7 @@ $loginFields = [
         <?php foreach (['one', 'two'] as $signal) : ?>
         <div class="dashboard-login-signal dashboard-login-signal-<?= $signal ?> position-absolute rounded-circle"></div>
         <?php endforeach; ?>
-        <span class="dashboard-login-badge position-absolute"><img class="d-block" src="/assets/logo.svg" alt="hitHUB"></span>
+        <span class="dashboard-login-badge position-absolute"><img class="d-block w-auto" src="/assets/logo.svg" alt="hitHUB"></span>
         <div class="dashboard-login-mark position-absolute">
             <span class="dashboard-login-signature d-block fw-semibold text-uppercase mb-2">HUB / OPERATIONS</span>
             <p class="dashboard-login-pitch m-0">Ingestão, decisão e reencaminhamento de telemetria de dispositivos de saúde.</p>

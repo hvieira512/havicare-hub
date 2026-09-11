@@ -112,7 +112,7 @@ function licenseRow({ company, licenseId, label, selected, nested = false }) {
         <button type="button" role="radio" aria-checked="${selected ? "true" : "false"}"
             class="${classes}" data-license-pick
             data-license-company="${esc(company)}" data-license-id="${esc(licenseId)}">
-            <span class="filter-option-box d-grid flex-shrink-0"><i class="fa-solid fa-check"></i></span>
+            <span class="filter-option-box d-grid flex-shrink-0 rounded-circle"><i class="fa-solid fa-check"></i></span>
             <span class="flex-fill min-w-0 text-truncate">${esc(label)}</span>
         </button>`;
 }

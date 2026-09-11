@@ -69,7 +69,7 @@ ob_start();
                                             <span class="form-label-sm mb-0">Gateways autorizados</span>
                                             <span class="badge text-bg-primary rounded-pill" id="deviceGatewayLinksCount">0</span>
                                         </div>
-                                        <div class="gateway-picker mt-1" id="deviceGatewayLinksList" role="group" aria-label="Gateways autorizados" aria-describedby="deviceGatewayLinksHelp"></div>
+                                        <div class="gateway-picker d-grid gap-2 overflow-y-auto mt-1" id="deviceGatewayLinksList" role="group" aria-label="Gateways autorizados" aria-describedby="deviceGatewayLinksHelp"></div>
                                         <div class="d-flex gap-2 mt-2">
                                             <button type="button" class="btn btn-sm btn-outline-primary" id="deviceGatewayLinksSelectAllBtn">Selecionar todos</button>
                                             <button type="button" class="btn btn-sm btn-outline-secondary" id="deviceGatewayLinksClearBtn">Limpar</button>

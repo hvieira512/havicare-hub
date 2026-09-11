@@ -27,7 +27,7 @@ test("modelImageHtml devolve sempre marcação, nunca um valor falso", () => {
 test("a pré-visualização grande não fixa tamanho: quem manda é o contentor", () => {
     const html = modelPreviewHtml(withImage, "HW20PRO");
 
-    assert.match(html, /^<img src="\/assets\/models\/hw20pro\.png" class="object-fit-contain"/);
+    assert.match(html, /^<img src="\/assets\/models\/hw20pro\.png" class="object-fit-contain mw-100"/);
     assert.doesNotMatch(html, /style=/);
 });
 

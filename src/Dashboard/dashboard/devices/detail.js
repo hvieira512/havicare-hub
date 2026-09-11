@@ -817,7 +817,7 @@ function connectionTimelineHtml(events) {
     const dots = points
         .map((point) => {
             const label = point.connected ? "Ligado" : "Desligado";
-            return html`<span class="connection-timeline-dot position-absolute rounded-circle${point.connected ? "" : " off"}"
+            return html`<span class="connection-timeline-dot position-absolute top-50 rounded-circle${point.connected ? "" : " off"}"
                         style="left:${((point.time - first) / span) * 100}%"
                         title="${label} em ${when(point.at)}"></span>`;
         })
@@ -825,7 +825,7 @@ function connectionTimelineHtml(events) {
 
     return html`
         <div class="connection-timeline position-relative">
-            <div class="connection-timeline-track position-absolute start-0 end-0"></div>
+            <div class="connection-timeline-track position-absolute top-50 start-0 end-0"></div>
             ${raw(dots)}
         </div>
         <div class="connection-timeline-scale d-flex justify-content-between gap-2 text-secondary tabular-nums">

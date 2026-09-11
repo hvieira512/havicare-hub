@@ -4,7 +4,7 @@
         ?>
         <nav class="navbar dashboard-navbar">
             <div class="container-fluid">
-                <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>
+                <span class="navbar-brand"><img class="d-block w-auto" src="/assets/logo.svg" alt="hitHUB"></span>
                 <div class="d-flex align-items-center gap-2">
                     <button id="dashboardThemeBtn" class="btn btn-sm btn-dark" type="button" aria-pressed="false" aria-label="Mudar para o tema escuro" title="Mudar para o tema escuro">
                         <?= icon('fa-moon', 'fs-5 fa-fw') ?>

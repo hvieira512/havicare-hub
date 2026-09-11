@@ -248,7 +248,7 @@ class SettingsHeader {
 /** O painel que a engrenagem abre: as colunas, e o que mais se pode fazer à tabela. */
 export function buildSettingsPanel(api, host, defaultState) {
     const panel = document.createElement("div");
-    panel.className = "grid-settings dropdown-menu d-none";
+    panel.className = "grid-settings dropdown-menu overflow-y-auto d-none";
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-label", "Opções da tabela");
 

@@ -61,8 +61,9 @@ export function signalLabel(signal) {
 export function signalMeter(signal) {
     const band = signalBand(signal);
     const title = signalLabel(signal);
+    // A altura de cada barra é `h-25` a `h-100`, por ordem.
     const bars = [1, 2, 3, 4]
-        .map((bar) => `<span class="signal-meter-bar${bar <= band.bars ? " signal-meter-bar-on" : ""}"></span>`)
+        .map((bar) => `<span class="signal-meter-bar h-${bar * 25}${bar <= band.bars ? " opacity-100" : ""}"></span>`)
         .join("");
 
     return `<span class="signal-meter d-inline-flex align-items-end flex-shrink-0 text-${band.tone}" data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${esc(title)}" aria-label="${esc(title)}" role="img" tabindex="0">${bars}</span>`;
