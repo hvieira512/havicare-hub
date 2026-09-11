@@ -419,6 +419,10 @@ final class DailyBlockNormalizer
     /**
      * Se a pulseira estava a ser usada durante o bloco.
      *
+     * Sai em cada bloco, mesmo quando é igual ao anterior. Colapsar repetições parece
+     * poupança e é decisão de quem integra: o hub entrega o que o aparelho mediu naquela
+     * janela, e quem consome compara com o que leu da vez anterior se lhe interessar.
+     *
      * @return array{state: string}|null
      */
     private function wearState(mixed $step): ?array

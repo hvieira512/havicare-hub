@@ -123,6 +123,14 @@ final class BridgeMeasurementTest extends TestCase
 
         self::assertCount(1, $telemetry);
         self::assertSame($expected, $telemetry[0]['payload']['data']);
+
+        // O `nativeType` é, por contrato, o tipo original do fabricante. `measurement` cobria
+        // nove tipos diferentes e não dizia qual, e é por ele que quem integra vai à
+        // documentação da Veepoo procurar o que recebeu.
+        self::assertSame(
+            'type-' . $payload['sdkType'],
+            $telemetry[0]['payload']['source']['nativeType'],
+        );
     }
 
     /**

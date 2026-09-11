@@ -157,7 +157,7 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `sleep_state` | radar | `state` |
 | `position_minute_stats` · `vitals_minute_stats` | radar | resumos por minuto |
 | `steps` | pulseira | `count`, `periodSeconds` — quantos passos naquela janela. O acumulado do dia é `activity` |
-| `wear_state` | pulseira | `state`: `worn` ou `not_worn` |
+| `wear_state` | pulseira | `state`: `worn` ou `not_worn`, em cada bloco |
 | `met` | pulseira | `value` — equivalentes metabólicos, com uma casa decimal. O nome do tipo é a unidade |
 | `stress` | pulseira | `score` — inteiro, como o fabricante o reporta e a app o mostra |
 | `blood_lipids` | pulseira | `totalCholesterolMmolPerL`, `triglyceridesMmolPerL`, `hdlMmolPerL`, `ldlMmolPerL` |

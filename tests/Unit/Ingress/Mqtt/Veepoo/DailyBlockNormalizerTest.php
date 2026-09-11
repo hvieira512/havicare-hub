@@ -107,7 +107,7 @@ final class DailyBlockNormalizerTest extends TestCase
      * O javadoc do fabricante chama-lhe bits de bandeira e não documenta a tabela; num dia
      * inteiro de captura só apareceram `0` com a pulseira ao pulso e `6` com ela fora dele.
      */
-    public function testWearStateIsPublishedForEveryBlock(): void
+    public function testWearStateSaysWhetherTheBandWasOnTheWrist(): void
     {
         $worn = (new DailyBlockNormalizer())->normalize(
             ['date' => '2026-09-09-09-40', 'step' => ['stepCount' => 37, 'wear' => 0]],
@@ -122,6 +122,37 @@ final class DailyBlockNormalizerTest extends TestCase
 
         self::assertSame(['state' => 'worn'], self::ofType($worn, 'wear_state')[0]['data']);
         self::assertSame(['state' => 'not_worn'], self::ofType($off, 'wear_state')[0]['data']);
+    }
+
+    /**
+     * Cada bloco traz o seu estado de uso, mesmo quando é igual ao anterior.
+     *
+     * Colapsar repetições era o hub a decidir o que vale a pena dizer, e a mudar o
+     * significado do silêncio: deixava de se distinguir «não mudou» de «não houve leitura».
+     * Quem consome é que compara com o que leu da vez anterior.
+     */
+    public function testEveryBlockCarriesItsOwnWearState(): void
+    {
+        $n = new DailyBlockNormalizer();
+        $states = [];
+        foreach ([['08-50', 6], ['08-55', 1], ['09-00', 1], ['09-05', 0], ['09-10', 0]] as [$at, $flag]) {
+            $out = $n->normalize(
+                ['date' => "2026-09-09-{$at}", 'step' => ['stepCount' => 0, 'wear' => $flag]],
+                self::DEVICE,
+                'bef341903987',
+            );
+            foreach (self::ofType($out, 'wear_state') as $e) {
+                $states[] = substr($e['occurredAt'], 11, 5) . ' ' . $e['data']['state'];
+            }
+        }
+
+        self::assertSame([
+            '08:50 not_worn',
+            '08:55 not_worn',
+            '09:00 not_worn',
+            '09:05 worn',
+            '09:10 worn',
+        ], $states);
     }
 
     /**
