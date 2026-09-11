@@ -645,8 +645,19 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return;
         }
 
-        $measurement = self::measurement((int)($payload['sdkType'] ?? 0), $payload);
+        $sdkType = (int)($payload['sdkType'] ?? 0);
+        $measurement = self::measurement($sdkType, $payload);
         if ($measurement === null) {
+            // Um tipo do SDK que ninguém reclama sai daqui tão calado como saía um `kind`, e
+            // pela mesma razão se diz uma vez por espécie e por aparelho.
+            $seenKey = $deviceKey . '|sdk:' . $sdkType;
+            if ($sdkType !== 0 && !isset($this->unhandledKinds[$seenKey])) {
+                $this->unhandledKinds[$seenKey] = true;
+                Logger::channel('hub')->warning(
+                    "Veepoo tipo do SDK sem normalização: {$sdkType} de {$deviceKey}"
+                );
+            }
+
             return;
         }
 
