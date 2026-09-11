@@ -583,6 +583,49 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertStringStartsWith("#!AMR\n", $payload['payload']['fields'][3] ?? '');
     }
 
+    public function testFourPTouchTakePillsWithVoiceIsQueuedForAWatchThatIsNotConnected(): void
+    {
+        if (!\Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder::supportsVoiceTranscoding()) {
+            self::markTestSkipped('ffmpeg with AMR-NB support is not available');
+        }
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $queue = new \Hub\Device\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
+        $hub = new DeviceHubServer($this->whitelist, $mqtt, downlinkQueue: $queue);
+
+        $payload = \Hub\Command\DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
+            'reminderSettings' => [
+                'time' => '11:25',
+                'enabled' => true,
+                'frequency' => 3,
+                'custom' => '1010101',
+            ],
+            'number' => 3,
+            'reminderText' => 'meds',
+            'voiceData' => 'data:audio/wav;base64,' . WavFixture::silenceBase64(),
+            'voiceMimeType' => 'audio/wav',
+        ]);
+        $bytes = \Hub\Command\DeviceCommandCatalog::buildDownlink(
+            'four-p-touch',
+            '7597567372',
+            $payload['command'],
+            $payload['payload'],
+            ['deviceId' => '']
+        );
+
+        $status = $hub->submitDownlink('637507597567372', $bytes, [
+            'operationId' => 'bb7b0f4c1d5f4f2f9d1a6b0c3e8d7a55',
+            'command' => 'TAKEPILLS',
+            'payload' => $payload['payload'],
+        ]);
+
+        self::assertSame('queued', $status);
+        $pending = $queue->pendingFor('637507597567372');
+        self::assertCount(1, $pending);
+        self::assertSame($bytes, $pending[0]->bytes);
+        self::assertSame('device.downlink.queued', $mqtt->events[0][1]['type']);
+        self::assertNotFalse(json_encode($mqtt->events[0][1]));
+    }
+
     public function testFourPTouchRejectedTakePillsReplyIsPassedToCommandLifecycle(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();

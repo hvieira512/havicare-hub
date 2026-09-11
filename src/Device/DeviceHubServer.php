@@ -207,7 +207,7 @@ class DeviceHubServer
         }
 
         $metadata = $this->authorizer->metadataFor($imei);
-        $command = array_merge($this->commandMetadata($bytes) ?? [], $context ?? []);
+        $command = self::withoutBinaryValues(array_merge($this->commandMetadata($bytes) ?? [], $context ?? []));
         $commercialName = (string)($metadata['commercialName'] ?? '');
 
         try {
@@ -654,6 +654,26 @@ class DeviceHubServer
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $session->imei, $e);
         }
+    }
+
+    /**
+     * Os bytes vão em base64 à parte; binário nos metadados só rebenta o `json_encode` da
+     * fila e do evento. É o caso do AMR de um lembrete com voz.
+     *
+     * @param array<array-key, mixed> $metadata
+     * @return array<array-key, mixed>
+     */
+    private static function withoutBinaryValues(array $metadata): array
+    {
+        foreach ($metadata as $key => $value) {
+            if (is_array($value)) {
+                $metadata[$key] = self::withoutBinaryValues($value);
+            } elseif (is_string($value) && preg_match('//u', $value) !== 1) {
+                $metadata[$key] = '';
+            }
+        }
+
+        return $metadata;
     }
 
     private function errorPayload(string $code): array
