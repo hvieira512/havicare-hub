@@ -1454,9 +1454,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ]);
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertCount(1, $submitted);
+        self::assertCount(3, $submitted);
         self::assertSame('861728087060467', $submitted[0]['imei']);
         self::assertStringContainsString('SOS1,+351938854803', $submitted[0]['bytes']);
+        self::assertStringContainsString('SOS2', $submitted[1]['bytes']);
+        self::assertStringContainsString('SOS3', $submitted[2]['bytes']);
         self::assertSame(
             ['phone' => '+351938854803'],
             $db->deviceConfigurations->allForImei('861728087060467')[0]['desired_payload'] ?? null
@@ -2242,11 +2244,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ],
         ]);
 
+        // A gravação inicial já deixou os slots 2 e 3 vazios, e limpar só tem de mexer no 1.
+        self::assertSame('[3G*1703215911*0004*SOS2]', $submitted[1]['bytes'] ?? null);
+        self::assertSame('[3G*1703215911*0004*SOS3]', $submitted[2]['bytes'] ?? null);
         self::assertSame('ok', $cleared['status'] ?? null);
-        self::assertCount(3, $cleared['results'][0]['operations'] ?? []);
-        self::assertSame('[3G*1703215911*0004*SOS1]', $submitted[1]['bytes'] ?? null);
-        self::assertSame('[3G*1703215911*0004*SOS2]', $submitted[2]['bytes'] ?? null);
-        self::assertSame('[3G*1703215911*0004*SOS3]', $submitted[3]['bytes'] ?? null);
+        self::assertCount(1, $cleared['results'][0]['operations'] ?? []);
+        self::assertSame('[3G*1703215911*0004*SOS1]', $submitted[3]['bytes'] ?? null);
 
         $detail = $api->show('868017032159118');
         self::assertSame([], $detail['configurations']['sos_contacts'] ?? null);

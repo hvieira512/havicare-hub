@@ -77,34 +77,19 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
     }
 
     /**
+     * Os três slots vão sempre, e os que sobram vão vazios: cada um é uma chave nativa
+     * própria, e a que ficasse de fora guardava o número anterior.
+     *
      * @param list<string> $numbers
      * @return array<string, array<string, mixed>>
      */
     private function split(array $numbers): array
     {
-        if ($numbers === []) {
-            return $this->emptySplit();
-        }
-
         $updates = [];
-        foreach (array_slice($numbers, 0, self::LIMIT) as $index => $phone) {
-            if (trim($phone) !== '') {
-                $updates['sosNumber' . ($index + 1)] = ['phone' => $phone];
-            }
+        foreach (range(1, self::LIMIT) as $slot) {
+            $updates['sosNumber' . $slot] = ['phone' => $numbers[$slot - 1] ?? ''];
         }
 
         return $updates;
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function emptySplit(): array
-    {
-        return [
-            'sosNumber1' => ['phone' => ''],
-            'sosNumber2' => ['phone' => ''],
-            'sosNumber3' => ['phone' => ''],
-        ];
     }
 }
