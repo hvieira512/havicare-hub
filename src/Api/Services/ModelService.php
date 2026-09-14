@@ -14,20 +14,16 @@ use Hub\Domain\DeviceProtocol;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\SupplierCapabilityTemplate;
-use Psr\Http\Message\UploadedFileInterface;
 
 class ModelService
 {
-    private const MODEL_IMAGE_DIR = __DIR__ . '/../../../var/dashboard/model-images';
-    private const MODEL_IMAGE_ROUTE = '/model-images';
-    private const MAX_MODEL_IMAGE_BYTES = 5 * 1024 * 1024;
-    private const MAX_MODEL_IMAGE_DIMENSION = 640;
     private const DEFAULT_COLLECTION_LIMIT = 20;
 
     private CollectionQuery $query;
     private CollectionResponder $collection;
     private ModelImageUrl $imageUrl;
     private RequestBinder $binder;
+    private ModelImageStore $images;
 
     public function __construct(
         private ApiDataAccess $db,
@@ -35,11 +31,13 @@ class ModelService
         ?CollectionResponder $collection = null,
         ?ModelImageUrl $imageUrl = null,
         ?RequestBinder $binder = null,
+        ?ModelImageStore $images = null,
     ) {
         $this->query = $query ?? new CollectionQuery();
         $this->collection = $collection ?? new CollectionResponder();
         $this->imageUrl = $imageUrl ?? new ModelImageUrl();
         $this->binder = $binder ?? new RequestBinder();
+        $this->images = $images ?? new ModelImageStore();
     }
 
     public function list(string $query = '', string $baseUrl = ''): array
@@ -307,7 +305,7 @@ class ModelService
             return ApiError::modelExists()->toArray();
         }
 
-        $imagePath = $this->storeModelImage($imageUpload);
+        $imagePath = $this->images->store($imageUpload);
         if (is_array($imagePath)) {
             return $imagePath;
         }
@@ -330,7 +328,7 @@ class ModelService
             }
         }
         if (is_string($imagePath) && $previousImagePath !== null && $previousImagePath !== $imagePath) {
-            $this->deleteStoredModelImage($previousImagePath);
+            $this->images->delete($previousImagePath);
         }
 
         return ['status' => 'ok'];
@@ -357,7 +355,7 @@ class ModelService
             return ApiError::modelExists()->toArray();
         }
 
-        $imagePath = $this->storeModelImage($imageUpload);
+        $imagePath = $this->images->store($imageUpload);
         if (is_array($imagePath)) {
             return $imagePath;
         }
@@ -368,7 +366,7 @@ class ModelService
             $this->db->modelCapabilities->replaceTelemetryRequestabilityForModelId($id, $requestableCapabilities);
         }
         if (is_string($imagePath)) {
-            $this->deleteStoredModelImage((string)($current['image_path'] ?? ''));
+            $this->images->delete((string)($current['image_path'] ?? ''));
         }
 
         return ['status' => 'ok'];
@@ -379,73 +377,12 @@ class ModelService
         $model = $this->db->models->findById($id);
         $this->db->models->delete($id);
         if (is_array($model)) {
-            $this->deleteStoredModelImage((string)($model['image_path'] ?? ''));
+            $this->images->delete((string)($model['image_path'] ?? ''));
         }
 
         return ['status' => 'ok'];
     }
 
-    /**
-     * O array é sempre um erro do `ApiError`, cuja forma passou a poder trazer o detalhe por
-     * campo além do código e da mensagem.
-     *
-     * @return string|array{error: array<string, mixed>}|null
-     */
-    public function storeModelImage(mixed $upload): string|array|null
-    {
-        if (!$upload instanceof UploadedFileInterface || $upload->getError() === UPLOAD_ERR_NO_FILE) {
-            return null;
-        }
-        if ($upload->getError() !== UPLOAD_ERR_OK) {
-            return ApiError::uploadFailed()->toArray();
-        }
-        if (($upload->getSize() ?? 0) > self::MAX_MODEL_IMAGE_BYTES) {
-            return ApiError::imageTooLarge()->toArray();
-        }
-        if (!function_exists('imagecreatefromstring')) {
-            return ApiError::gdMissing()->toArray();
-        }
-        if (!function_exists('imagejpeg')) {
-            return ApiError::gdJpegMissing()->toArray();
-        }
-
-        $stream = $upload->getStream();
-        if ($stream->isSeekable()) {
-            $stream->rewind();
-        }
-        $bytes = $stream->getContents();
-        if ($bytes === '') {
-            return null;
-        }
-
-        $source = @\imagecreatefromstring($this->stripPngColorProfiles($bytes));
-        if ($source === false) {
-            return ApiError::invalidImage()->toArray();
-        }
-
-        $width = \imagesx($source);
-        $height = \imagesy($source);
-        $scale = min(1, self::MAX_MODEL_IMAGE_DIMENSION / max($width, $height));
-        $targetWidth = max(1, (int)round($width * $scale));
-        $targetHeight = max(1, (int)round($height * $scale));
-        $target = \imagecreatetruecolor($targetWidth, $targetHeight);
-        $white = \imagecolorallocate($target, 255, 255, 255);
-        \imagefill($target, 0, 0, $white);
-        \imagecopyresampled($target, $source, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
-
-        if (!is_dir(self::MODEL_IMAGE_DIR)) {
-            mkdir(self::MODEL_IMAGE_DIR, 0755, true);
-        }
-        $filename = bin2hex(random_bytes(16)) . '.jpg';
-        $path = self::MODEL_IMAGE_DIR . '/' . $filename;
-        $saved = \imagejpeg($target, $path, 78);
-
-        if (!$saved) {
-            return ApiError::imageSaveFailed()->toArray();
-        }
-
-        return self::MODEL_IMAGE_ROUTE . '/' . $filename;
-    }
 
     private function modelFields(array $decoded, string $mode, ?int $modelId = null): array
     {
@@ -582,51 +519,6 @@ class ModelService
         return array_keys($normalized);
     }
 
-    private function stripPngColorProfiles(string $bytes): string
-    {
-        $signature = "\x89PNG\r\n\x1a\n";
-        if (!str_starts_with($bytes, $signature)) {
-            return $bytes;
-        }
-
-        $offset = strlen($signature);
-        $length = strlen($bytes);
-        $clean = $signature;
-        $removed = false;
-
-        while ($offset + 12 <= $length) {
-            $chunkLength = unpack('N', substr($bytes, $offset, 4))[1];
-            $chunkEnd = $offset + 12 + $chunkLength;
-            if ($chunkLength < 0 || $chunkEnd > $length) {
-                return $bytes;
-            }
-
-            $chunkType = substr($bytes, $offset + 4, 4);
-            if ($chunkType !== 'iCCP') {
-                $clean .= substr($bytes, $offset, 12 + $chunkLength);
-            } else {
-                $removed = true;
-            }
-
-            $offset = $chunkEnd;
-            if ($chunkType === 'IEND') {
-                break;
-            }
-        }
-
-        return $removed ? $clean : $bytes;
-    }
-
-    private function deleteStoredModelImage(string $imagePath): void
-    {
-        if (preg_match('#^' . self::MODEL_IMAGE_ROUTE . '/([a-f0-9]{32}\.jpg)$#', $imagePath, $matches) !== 1) {
-            return;
-        }
-        $path = self::MODEL_IMAGE_DIR . '/' . $matches[1];
-        if (is_file($path)) {
-            unlink($path);
-        }
-    }
 
     /**
      * @param list<string> $keys

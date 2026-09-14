@@ -65,6 +65,7 @@ final class ApiErrorTest extends TestCase
             'gdMissing' => [fn(): ApiError => ApiError::gdMissing(), 'gd_missing', 'PHP GD extension is required to compress model images', 400],
             'gdJpegMissing' => [fn(): ApiError => ApiError::gdJpegMissing(), 'gd_jpeg_missing', 'PHP GD JPEG support is required to save compressed model images', 400],
             'invalidImage' => [fn(): ApiError => ApiError::invalidImage(), 'invalid_image', 'Model image must be a valid image file', 400],
+            'imageDimensionsTooLarge' => [fn(): ApiError => ApiError::imageDimensionsTooLarge(), 'image_dimensions_too_large', 'Model image must be 25 megapixels or smaller', 400],
             'imageSaveFailed' => [fn(): ApiError => ApiError::imageSaveFailed(), 'image_save_failed', 'Could not save model image', 400],
         ];
     }

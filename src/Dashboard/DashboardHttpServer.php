@@ -14,6 +14,7 @@ use Hub\Api\Services\CompanyService;
 use Hub\Api\Services\DeviceService;
 use Hub\Api\Services\DashboardNotificationService;
 use Hub\Api\Services\LicenseService;
+use Hub\Api\Services\ModelImageStore;
 use Hub\Api\Services\ModelService;
 use Hub\Api\Services\ProtocolService;
 use Hub\Api\Services\SupplierService;
@@ -27,8 +28,7 @@ use React\Http\Message\Response;
 
 final class DashboardHttpServer
 {
-    private const MODEL_IMAGE_DIR = __DIR__ . '/../../var/dashboard/model-images';
-    private const MODEL_IMAGE_ROUTE = '/model-images';
+    private const MODEL_IMAGE_ROUTE = ModelImageStore::ROUTE;
     private const PUBLIC_ASSET_EXTENSIONS = ['css', 'ico', 'jpeg', 'jpg', 'js', 'png', 'svg', 'woff2'];
     private ApiKernel $apiKernel;
     /** @var array<string, string> */
@@ -279,7 +279,7 @@ final class DashboardHttpServer
 
     private function modelImage(string $filename): Response
     {
-        $path = self::MODEL_IMAGE_DIR . '/' . $filename;
+        $path = ModelImageStore::pathFor($filename);
         if (!is_file($path)) {
             return $this->json(['error' => ['code' => 'not_found', 'message' => 'Not found']], 404);
         }

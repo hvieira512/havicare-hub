@@ -28,6 +28,7 @@ final class CatalogPaths
         'invalid_requestable_capability',
         'upload_failed',
         'image_too_large',
+        'image_dimensions_too_large',
         'gd_missing',
         'gd_jpeg_missing',
         'invalid_image',

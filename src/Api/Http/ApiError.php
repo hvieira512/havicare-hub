@@ -36,6 +36,7 @@ final class ApiError
         'invalid_requestable_capability' => 400,
         'upload_failed' => 400,
         'image_too_large' => 400,
+        'image_dimensions_too_large' => 400,
         'gd_missing' => 400,
         'gd_jpeg_missing' => 400,
         'invalid_image' => 400,
@@ -403,6 +404,16 @@ final class ApiError
     public static function invalidImage(): self
     {
         return new self('invalid_image', 'Model image must be a valid image file');
+    }
+
+    /**
+     * Separado do `image_too_large`, que fala do ficheiro: este fala do que ele custa a abrir.
+     * Um PNG de poucos KB pode declarar centenas de megapíxeis, e quem integra não percebia
+     * porque é que uma imagem «pequena» era recusada por tamanho.
+     */
+    public static function imageDimensionsTooLarge(): self
+    {
+        return new self('image_dimensions_too_large', 'Model image must be 25 megapixels or smaller');
     }
 
     public static function imageSaveFailed(): self
