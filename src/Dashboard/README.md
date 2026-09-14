@@ -104,7 +104,10 @@ dashboard/
 ├── widgets.js              os pedaços de HTML que mais do que um ecrã desenha
 ├── components/             uma peça de interface por ficheiro, quando cresce para além de um HTML
 │   └── state-badge.js      a pastilha de estado: ponto ou ícone, rótulo e tom
-├── telemetry-cards.js      o catálogo dos cartões de telemetria: ícone, cor e corpo por tipo
+├── telemetry-cards.js      o catálogo dos cartões: ícone, cor e corpo por tipo
+├── cards/                  as famílias de cartões de um aparelho só
+│   ├── shared.js               o resumo compacto que mais do que uma usa
+│   ├── radar.js · diaper.js · gateway.js · ncs.js · location.js
 ├── grid.js                 a tabela de dados dos Utilizadores API, do descritor que a API devolve
 ├── pagination.js           o paginador das listagens
 ├── phone.js                o campo de telefone com indicativo
@@ -295,10 +298,13 @@ correcção é apontar o teste ao ficheiro novo.
   paralelos indexados pela mesma chave e alinhados à mão: uma entrada em falta não dava erro,
   dava um campo genérico ou um payload vazio. Um descritor sem `defaults` é agora uma
   ausência visível, e algumas estão anotadas como tal.
-- **O `telemetry-cards.js` continua grande.** Partir por tamanho, sem uma linha que os separe
-  de verdade, só espalha. A linha que o separa é a regra 4: é o sítio onde tudo o que é do
-  mesmo *género* se acumulou, e encolhe por atrito à medida que cada widget novo nasce junto
-  do seu CSS e do seu ouvinte.
+- **As famílias de cartões que só existem num aparelho vivem em `cards/`** -- radar, fralda,
+  gateway, NCS e localização. A linha não é o tamanho: uma postura ou uma contagem de pessoas
+  não existe num relógio. O eixo do *tipo de dispositivo* não serviria, e foi testado -- a
+  frequência cardíaca sai de relógio, radar e pulseira, e a bateria de quatro tipos.
+- **O que fica no `telemetry-cards.js` é o registo e as primitivas**, que são genuinamente uma
+  coisa só: o mapa dos cartões por tipo, o ícone, o tom e a badge de estado. Partir isso por
+  tamanho só espalharia.
 - **O CSS está dividido por área**, em cinco ficheiros: `assets/css/base.css` (tokens e
   fontes), `shell.css` (moldura, navbar, cartões), `device.css` (o ecrã do dispositivo),
   `login.css`, e o `main.css` fica com os modais. A ordem no `<head>` é essa, e é a

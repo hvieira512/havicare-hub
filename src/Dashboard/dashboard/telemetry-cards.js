@@ -1,12 +1,20 @@
+import { fieldLabel, fieldValue, titleize } from "./format.js";
+import { DETECTION_TYPE_LABEL } from "./domain.js";
+import { html } from "./html.js";
+import { compactDetails } from "./cards/shared.js";
+import { connectivityIcon, connectivityValue } from "./cards/gateway.js";
+import { diaperMoistureBody, diaperMoistureRowValue } from "./cards/diaper.js";
+import { helpCallContent, ncsPagerContent } from "./cards/ncs.js";
+import { locationDetails, locationValue } from "./cards/location.js";
 import {
-    ago,
-    displayPersonIndex,
-    fieldLabel,
-    fieldValue,
-    titleize,
-} from "./format.js";
-import { DETECTION_TYPE_LABEL, PRESS_TYPE_LABEL } from "./domain.js";
-import { html, raw } from "./html.js";
+    presenceDetails,
+    presenceDetailsTitle,
+    presenceValue,
+    radarPositionMinuteStatsDetails,
+    radarPositionMinuteStatsValue,
+    radarVitalsMinuteStatsDetails,
+    radarVitalsMinuteStatsValue,
+} from "./cards/radar.js";
 import { capabilityLabel } from "./capability-catalog.js";
 import { stateBadge } from "./components/state-badge.js";
 
@@ -283,16 +291,6 @@ const STATUS_BADGE_LABEL = {
     unknown: "desconhecido",
 };
 
-const NCS_PAGER_EVENT_VALUE = {
-    help_call: "Chamada de ajuda",
-    reset: "Cancelado",
-};
-
-const NCS_PAGER_EVENT_ICON = {
-    help_call: "fa-triangle-exclamation",
-    reset: "fa-bell-slash",
-};
-
 const BATTERY_CHARGING_STATE_LABEL = {
     1: "A carregar",
     0: "Não está a carregar",
@@ -346,378 +344,11 @@ function rrIntervalValue(data) {
     return `${intervals.length} × ${mean} ms`;
 }
 
-function helpCallContent(data) {
-    const base = ncsPagerContent("help_call", data);
-    const pressType = PRESS_TYPE_LABEL[String(data?.pressType || "")];
-
-    return pressType === undefined
-        ? base
-        : { ...base, value: `${base.value} (${pressType})` };
-}
-
-/**
- * O `rowValue` leva o comando porque o nome da linha já diz o que aconteceu, e sem ele a
- * coluna do valor repetia "Chamada de ajuda" ao lado de "Chamada de ajuda".
- */
-function ncsPagerContent(type, data) {
-    const value = NCS_PAGER_EVENT_VALUE[type] || capabilityLabel(type);
-    const icon = NCS_PAGER_EVENT_ICON[type] || "fa-bell";
-    const pagerId = String(data?.pagerId || "");
-
-    return pagerId === ""
-        ? { icon, value }
-        : { icon, value, rowValue: `Pager ${pagerId}` };
-}
-
-// As interfaces que o `Hub\Ingress\Mqtt\Moko\GatewayNormalizer` emite.
-const CONNECTIVITY_INTERFACE_LABELS = {
-    wifi: "Wi-Fi",
-    ethernet: "Ethernet",
-    ethernet_wifi: "Ethernet + Wi-Fi",
-    cellular: "Rede móvel",
-};
-
-const CONNECTIVITY_INTERFACE_ICONS = {
-    wifi: "fa-wifi",
-    ethernet: "fa-ethernet",
-    ethernet_wifi: "fa-network-wired",
-    cellular: "fa-tower-cell",
-};
-
-function connectivityIcon(data) {
-    return (
-        CONNECTIVITY_INTERFACE_ICONS[String(data?.interface || "").trim()] ||
-        "fa-wifi"
-    );
-}
-
-function connectivityValue(data) {
-    const parts = [];
-    const iface = String(data?.interface || "").trim();
-    if (iface !== "") {
-        parts.push(CONNECTIVITY_INTERFACE_LABELS[iface] || titleize(iface));
-    }
-
-    const networkType = String(data?.networkType || "").trim();
-    if (networkType !== "") {
-        parts.push(networkType);
-    }
-
-    // Um gateway com fios não reporta RSSI e 0 dBm é leitura legítima: testar contra null.
-    const dbm = data?.signalStrengthDbm;
-    if (
-        dbm !== null &&
-        dbm !== undefined &&
-        dbm !== "" &&
-        Number.isFinite(Number(dbm))
-    ) {
-        parts.push(`${Number(dbm)} dBm`);
-    }
-
-    return parts.length > 0
-        ? parts.join(" · ")
-        : capabilityLabel("connectivity");
-}
-
-// O limiar vem no payload, por sensor; 12 é o preset normal, para leituras sem o campo.
-const DIAPER_WET_DELTA_FALLBACK = 12;
-
-function diaperWetDelta(data) {
-    const wetDelta = Number(data?.wetDelta);
-    return Number.isFinite(wetDelta) && wetDelta > 0
-        ? wetDelta
-        : DIAPER_WET_DELTA_FALLBACK;
-}
-
-/** Quantos canais molhados obrigam a muda. Sem o campo, conta sobre o total de canais. */
-function diaperRequiredChannels(data, channelCount) {
-    const required = Number(data?.requiredChannelCount);
-    return Number.isFinite(required) && required > 0 ? required : channelCount;
-}
-
-// Espelha o `DiaperSensitivity::cleanMaxDelta`: a divisão por 4 tem de ser igual dos dois
-// lados, senão a tira pinta de âmbar um canal que o cartão ao lado conta como seco.
-function diaperDampDelta(wetDelta) {
-    return Math.floor(wetDelta / 4) + 1;
-}
-
-function diaperMoistureBand(delta, wetDelta) {
-    if (delta >= wetDelta) return "wet";
-    if (delta >= diaperDampDelta(wetDelta)) return "damp";
-    return "dry";
-}
-
-function diaperMoistureBody(data) {
-    const channels = Array.isArray(data?.channels) ? data.channels : [];
-    if (channels.length === 0) {
-        return "";
-    }
-
-    const wetDelta = diaperWetDelta(data);
-    // Os deltas são de 6 bits, mas a decisão está no limiar: escalar à gama toda achatava
-    // todas as leituras reais, por isso a tira escala ao dobro do limiar e corta aí.
-    const scaleDelta = wetDelta * 2;
-
-    const columns = channels
-        .map((channel, position) => {
-            // As bases diferem uma ordem de grandeza entre canais: só o delta é comparável.
-            const delta = Math.max(0, Number(channel?.delta ?? 0) || 0);
-            const index = channel?.index ?? position + 1;
-            const band = diaperMoistureBand(delta, wetDelta);
-            const height = Math.min(100, (delta / scaleDelta) * 100);
-            const tooltip = `Canal ${index} · delta ${delta} (base ${channel?.baseline ?? "-"}, leitura ${channel?.value ?? "-"})`;
-
-            return html`<div class="diaper-channel d-flex flex-column min-w-0" title="${tooltip}">
-<div class="diaper-channel-value diaper-channel-value--${band} text-center fw-semibold tabular-nums lh-sm">${delta}</div>
-<div class="diaper-channel-track position-relative d-flex align-items-end overflow-hidden">
-<div class="diaper-channel-fill diaper-channel-fill--${band} w-100" style="height:${height}%"></div>
-</div>
-<div class="diaper-channel-index text-center tabular-nums lh-sm">${index}</div>
-</div>`;
-        })
-        .join("");
-
-    const maximum = Math.max(0, Number(data?.maximumDelta ?? 0) || 0);
-    const affected = Math.max(0, Number(data?.affectedChannelCount ?? 0) || 0);
-    const required = diaperRequiredChannels(data, channels.length);
-    const thresholdOffset = (wetDelta / scaleDelta) * 100;
-
-    return html`<div class="diaper-moisture mt-3">
-<div class="diaper-strip d-grid align-items-end" style="--diaper-threshold:${thresholdOffset}%">${raw(columns)}</div>
-<div class="border-top pt-2 small text-secondary mt-2">
-Máx. <strong class="text-body">${maximum}</strong> · <strong class="text-body">${affected}</strong> de ${required} canais acima do limiar (${wetDelta})
-</div>
-</div>`;
-}
-
-/** Numa linha só cabe o que a tira resume: o delta mais alto e quantos passaram o limiar. */
-function diaperMoistureRowValue(data) {
-    const channels = Array.isArray(data?.channels) ? data.channels : [];
-    if (channels.length === 0) {
-        return "";
-    }
-
-    const maximum = Math.max(0, Number(data?.maximumDelta ?? 0) || 0);
-    const affected = Math.max(0, Number(data?.affectedChannelCount ?? 0) || 0);
-    return `máx. ${maximum} · ${affected} de ${diaperRequiredChannels(data, channels.length)} acima do limiar`;
-}
-
 function batteryDetails(data) {
     if (BATTERY_CHARGING_STATE_LABEL[data.chargingState]) {
         return BATTERY_CHARGING_STATE_LABEL[data.chargingState];
     }
     return compactDetails(data, ["batteryType"]);
-}
-
-/**
- * Lê o `lat`/`lon` e não o `hasCoordinates`, que falta nos eventos antigos do Redis. O par
- * 0,0 é como os protocolos dizem "sem fixo".
- */
-export function locationCoordinates(data) {
-    const lat = Number(data?.lat);
-    const lon = Number(data?.lon);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-    if (lat === 0 && lon === 0) return null;
-    return { lat, lon };
-}
-
-/**
- * Onde está, ou um travessão: o slot grande responde a uma pergunta só, e sem posição não
- * há resposta. Cinco decimais são ~1 m, a precisão do melhor fixo do mapa de rádio.
- */
-function locationValue(data) {
-    const fix = locationCoordinates(data);
-    return fix ? `${fix.lat.toFixed(5)}, ${fix.lon.toFixed(5)}` : "—";
-}
-
-/**
- * Como se obteve a posição: GPS, ou rádio, e não a origem crua. `cell`, `wifi` e
- * `cell_wifi` são todos triangulação, e o que os distingue do GPS é a proveniência.
- */
-function locationFixLabel(data) {
-    const source = String(data?.source || "").toLowerCase();
-    if (source === "") return "";
-    return source === "gps" ? "GPS" : "Rádio";
-}
-
-function locationAccuracy(data) {
-    const meters = Number(data?.accuracyMeters);
-    if (!Number.isFinite(meters) || meters <= 0) return "";
-    return `±${Math.max(1, Math.round(meters))} m`;
-}
-
-/**
- * A prova de rádio de uma leitura que não deu posição. Sem antenas nem redes é outra falha:
- * o aparelho reportou e não viu nada, o que aponta para ele e não para a cobertura.
- */
-function locationRadioEvidence(data) {
-    const cells = Array.isArray(data?.baseStations)
-        ? data.baseStations.length
-        : 0;
-    const wifi = Array.isArray(data?.wifiAccessPoints)
-        ? data.wifiAccessPoints.length
-        : 0;
-    if (cells === 0 && wifi === 0) return "Sem dados de rádio";
-
-    return [
-        cells ? `${cells} ${cells === 1 ? "antena" : "antenas"}` : "",
-        wifi ? `${wifi} ${wifi === 1 ? "rede WiFi" : "redes WiFi"}` : "",
-    ]
-        .filter(Boolean)
-        .join(" · ");
-}
-
-/**
- * Com posição, como e com que precisão; sem posição, com que evidência se tentou. A idade só
- * aparece no mosaico -- na lista cronológica a hora já tem coluna.
- */
-function locationDetails(data, meta = {}) {
-    const parts = locationCoordinates(data)
-        ? [locationFixLabel(data), locationAccuracy(data)]
-        : [locationRadioEvidence(data)];
-
-    return [...parts, meta?.occurredAt ? ago(meta.occurredAt) : ""]
-        .filter(Boolean)
-        .map((part) => html`${part}`)
-        .join(" · ");
-}
-
-/**
- * Quantas pessoas o radar vê. O `count` vem do hub e não se conta o array aqui: um radar
- * que não vê ninguém está a funcionar, e diz "Ninguém" e não "Sem leituras".
- */
-function presenceValue(data) {
-    const count = Number(data?.count ?? 0) || 0;
-    if (count === 0) {
-        return "Ninguém";
-    }
-
-    return `${count} pessoa${count === 1 ? "" : "s"}`;
-}
-
-/**
- * O ícone diz a categoria e o tom a gravidade. A etiqueta vive no
- * `FIELD_VALUE_LABELS.posture` do `format.js`.
- */
-const POSTURE_STYLE = {
-    standing: { icon: "fa-person", tone: "success" },
-    walking: { icon: "fa-person-walking", tone: "success" },
-    confirmed_sitting_up_bed: { icon: "fa-bed", tone: "success" },
-    lying_down: { icon: "fa-bed", tone: "info" },
-    sitting_up_bed: { icon: "fa-bed", tone: "info" },
-    suspected_sitting_up_bed: { icon: "fa-bed", tone: "warning" },
-    squatting: { icon: "fa-chair", tone: "warning" },
-    suspected_sitting_on_ground: { icon: "fa-chair", tone: "warning" },
-    suspected_fall: { icon: "fa-triangle-exclamation", tone: "warning" },
-    confirmed_sitting_on_ground: { icon: "fa-chair", tone: "danger" },
-    fall_confirmation: { icon: "fa-triangle-exclamation", tone: "danger" },
-    initialization: { icon: "fa-question", tone: "secondary" },
-    unknown: { icon: "fa-question", tone: "secondary" },
-};
-
-/** A pastilha é um `badge` do Bootstrap com o par de utilitários subtis do tom. */
-const CHIP_CLASS =
-    "badge rounded-pill fw-normal d-inline-flex align-items-center gap-1";
-
-/**
- * Uma postura como pastilha. A enumeração vem do payload e vai parar a um `class`, por isso
- * sai escapada: um estado novo do firmware não pode escrever atributos.
- */
-function postureChip(posture) {
-    const style = POSTURE_STYLE[String(posture)] || POSTURE_STYLE.unknown;
-    const tone = style.tone;
-    const label = fieldValue("posture", posture);
-
-    return html`<span class="${CHIP_CLASS} bg-${tone}-subtle text-${tone}-emphasis" title="${label}"><i class="fa-solid ${style.icon}" aria-hidden="true"></i>${label}</span>`;
-}
-
-/** Quantas pastilhas cabem antes de o mosaico crescer de mais. */
-const PRESENCE_CHIP_LIMIT = 3;
-
-/**
- * A postura de cada pessoa, em pastilhas. As coordenadas ficam na tooltip: num mosaico
- * estreito enchiam a linha, e não significam nada sem uma planta da divisão.
- */
-function presenceDetails(data) {
-    const people = Array.isArray(data?.people) ? data.people : [];
-    const chips = people
-        .slice(0, PRESENCE_CHIP_LIMIT)
-        .map((person) => postureChip(person?.posture));
-    const hidden = people.length - chips.length;
-
-    if (hidden > 0) {
-        chips.push(
-            html`<span class="${CHIP_CLASS} bg-secondary-subtle text-secondary-emphasis">+${hidden}</span>`,
-        );
-    }
-
-    return chips.join("");
-}
-
-/**
- * As pessoas todas, com onde estão, sem corte: é aqui que as coordenadas e a quarta pessoa
- * em diante existem, para quem esteja a comparar com a especificação do fabricante.
- */
-function presenceDetailsTitle(data) {
-    const people = Array.isArray(data?.people) ? data.people : [];
-
-    return people
-        .map((person, index) => {
-            const personIndex = displayPersonIndex(
-                person?.personIndex ?? index,
-            );
-            const posture = fieldValue("posture", person?.posture);
-            const x = dataPointValue(person?.xPositionDm);
-            const y = dataPointValue(person?.yPositionDm);
-            const z = dataPointValue(person?.zPositionCm);
-            return `Pessoa ${personIndex}: ${posture} · x ${x} dm · y ${y} dm · z ${z} cm`;
-        })
-        .join(" · ");
-}
-
-function radarPositionMinuteStatsValue(data) {
-    const people = dataPointValue(data?.people);
-    const distance = dataPointValue(data?.walkingDistance);
-    if (people === "-" && distance === "-") {
-        return "Sem leituras";
-    }
-
-    return `${people !== "-" ? `${people} pessoas` : "-"} · ${distance !== "-" ? `${distance} m` : "-"}`;
-}
-
-function radarPositionMinuteStatsDetails(data) {
-    return compactDetails(data, [
-        "walkingTimeS",
-        "meditationTimeS",
-        "inBedTimeS",
-        "standingTimeS",
-        "multiplayerTimeS",
-        "breathingActive",
-    ]);
-}
-
-function radarVitalsMinuteStatsValue(data) {
-    const heartRate = dataPointValue(data?.avgHeartRate);
-    const breathing = dataPointValue(data?.avgBreathing);
-    if (heartRate === "-" && breathing === "-") {
-        return "Sem leituras";
-    }
-
-    return `${heartRate !== "-" ? `${heartRate} bpm` : "-"} · ${breathing !== "-" ? `${breathing} rpm` : "-"}`;
-}
-
-function radarVitalsMinuteStatsDetails(data) {
-    return compactDetails(data, [
-        "breathingStatus",
-        "heartRateStatus",
-        "vitalSignsStatus",
-    ]);
-}
-
-function dataPointValue(value) {
-    return value === undefined || value === null || value === ""
-        ? "-"
-        : String(value);
 }
 
 /** A cor da categoria, para o ícone. Sem entrada na tabela, o ícone fica neutro. */
@@ -734,21 +365,6 @@ export function statusBadge(status) {
 
 function alarmValue(data) {
     return ALARM_REASON_LABEL[data?.reason] ?? "Alarme";
-}
-
-function compactDetails(data, keys) {
-    return (
-        keys
-            .filter(
-                (key) =>
-                    data[key] !== undefined &&
-                    data[key] !== null &&
-                    data[key] !== "",
-            )
-            // O `fieldValue` traduz enumerações; sem ele saía "Estado do sono: awake".
-            .map((key) => html`${fieldLabel(key)}: ${fieldValue(key, data[key])}`)
-            .join(" · ")
-    );
 }
 
 function detectionValue(data) {

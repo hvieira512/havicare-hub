@@ -1,7 +1,8 @@
 import { eventTime, rowPayload } from "./format.js";
 import { capabilityLabel } from "./capability-catalog.js";
 import { telemetryCard } from "./card-shell.js";
-import { cardIcon, cardTone, uplinkCardContent, locationCoordinates } from "./telemetry-cards.js";
+import { cardIcon, cardTone, uplinkCardContent } from "./telemetry-cards.js";
+import { locationCoordinates } from "./cards/location.js";
 
 /**
  * O cartão de pedido (downlink): o que se *pede* a um dispositivo, com a última leitura da
