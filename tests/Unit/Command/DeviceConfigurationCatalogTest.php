@@ -1268,21 +1268,64 @@ final class DeviceConfigurationCatalogTest extends TestCase
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'phonebook', [
             'contacts' => [['phone' => '123456789', 'name' => 'Ana']],
         ]);
-        self::assertSame('PHB', $payload['command']);
-        self::assertSame(['fields' => ['123456789', '0041006E0061']], $payload['payload']);
-    }
-
-    public function testFourPTouchPhonebookAllowsEmptyContacts(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'phonebook', [
-            'contacts' => [],
-        ]);
-
-        self::assertSame('PHB', $payload['command']);
-        self::assertSame(['fields' => []], $payload['payload']);
+        self::assertSame('PHBX2', $payload['command']);
+        self::assertSame(['fields' => ['1', '0041006E0061', '123456789']], $payload['payload']);
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertSame('[3G*8800000015*0003*PHB]', $wire);
+        self::assertSame('[3G*8800000015*001E*PHBX2,1,0041006E0061,123456789]', $wire);
+    }
+
+    public function testFourPTouchPhonebookClearingRemovesEveryStoredIndex(): void
+    {
+        $payloads = DeviceConfigurationCatalog::commandPayloads(
+            'four-p-touch',
+            'phonebook',
+            ['contacts' => []],
+            ['previousContacts' => [
+                1 => ['name' => 'Ana', 'phone' => '123456789'],
+                2 => ['name' => 'Rui', 'phone' => '987654321'],
+            ]],
+        );
+
+        self::assertSame(
+            [
+                ['command' => 'DPHBX', 'payload' => ['fields' => ['1']]],
+                ['command' => 'DPHBX', 'payload' => ['fields' => ['2']]],
+            ],
+            $payloads,
+            'limpar a lista remove cada índice guardado, um comando por contacto'
+        );
+    }
+
+    public function testFourPTouchPhonebookWithNothingToChangeEmitsNoCommand(): void
+    {
+        self::assertSame(
+            [],
+            DeviceConfigurationCatalog::commandPayloads('four-p-touch', 'phonebook', ['contacts' => []]),
+            'uma lista vazia num aparelho sem contactos não tem nada para entregar'
+        );
+    }
+
+    public function testFourPTouchPhonebookEmitsDeltaCommands(): void
+    {
+        $hugo = ['name' => 'Hugo', 'phone' => '+351938854803'];
+        $ricardo = ['name' => 'Ricardo', 'phone' => '+351965401976'];
+
+        $payloads = DeviceConfigurationCatalog::commandPayloads(
+            'four-p-touch',
+            'phonebook',
+            ['contacts' => [$hugo, $ricardo]],
+            [
+                'phonebookCommand' => 'PHBX2',
+                'previousContacts' => [1 => $hugo, 2 => $ricardo, 3 => ['name' => 'Ana', 'phone' => '+351911111111']],
+            ],
+        );
+
+        self::assertSame(
+            [['command' => 'DPHBX', 'payload' => ['fields' => ['3']]]],
+            $payloads,
+            'remover um contacto emite a remoção do índice, e não a lista inteira'
+        );
     }
 
     public function testFourPTouchSoundProfileBuildsNativeFields(): void
@@ -1426,16 +1469,12 @@ final class DeviceConfigurationCatalogTest extends TestCase
             ]],
             'alarms must not contain more than 3 items',
         ];
-        yield '4P Touch with a sixth contact' => [
-            'four-p-touch', 'phonebook', ['contacts' => [
-                ['phone' => '1', 'name' => 'A'],
-                ['phone' => '2', 'name' => 'B'],
-                ['phone' => '3', 'name' => 'C'],
-                ['phone' => '4', 'name' => 'D'],
-                ['phone' => '5', 'name' => 'E'],
-                ['phone' => '6', 'name' => 'F'],
-            ]],
-            'contacts must not contain more than 5 items',
+        yield '4P Touch past the hundredth contact' => [
+            'four-p-touch', 'phonebook', ['contacts' => array_map(
+                static fn(int $i): array => ['phone' => (string)(910000000 + $i), 'name' => "C{$i}"],
+                range(1, 101)
+            )],
+            'contacts must not exceed 100 items',
         ];
         yield '4P Touch contact phone over twenty characters' => [
             'four-p-touch', 'phonebook', ['contacts' => [
@@ -1448,12 +1487,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
                 ['phone' => '+3519☃', 'name' => 'Ana'],
             ]],
             'phone must contain ASCII characters only',
-        ];
-        yield '4P Touch contact name over ten characters' => [
-            'four-p-touch', 'phonebook', ['contacts' => [
-                ['phone' => '123456789', 'name' => 'ABCDEFGHIJK'],
-            ]],
-            'name must not exceed 10 Unicode characters',
         ];
         yield '4P Touch sound profile outside the vendor range' => [
             'four-p-touch', 'sound_profile', ['mode' => 0],

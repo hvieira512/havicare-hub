@@ -90,7 +90,7 @@ final class CapabilityRegistryTest extends TestCase
         self::assertSame('Rodr', $native['familyNumber']['contacts'][0]['name'] ?? null);
     }
 
-    public function testFourPTouchPhonebookTruncatesUnicodeNamesToDeclaredLimit(): void
+    public function testFourPTouchPhonebookKeepsNamesTheDeviceAccepts(): void
     {
         $registry = new CapabilityRegistry();
         $native = $registry->toNative('four-p-touch', 'phonebook', [
@@ -100,7 +100,11 @@ final class CapabilityRegistryTest extends TestCase
             ]],
         ]);
 
-        self::assertSame('Áéíóú12345', $native['phonebook']['contacts'][0]['name'] ?? null);
+        self::assertSame(
+            'Áéíóú123456',
+            $native['phonebook']['contacts'][0]['name'] ?? null,
+            'o PHBX2 não tem limite de nome, e truncar em silêncio escondia a diferença'
+        );
     }
 
     public function testWonlexSwitchFieldsAreNormalizedBidirectionally(): void

@@ -75,7 +75,7 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 7, 'label' => 'Dom'],
                 ],
             ]),
-            $entry('phonebook', 'PHB', 'Lista telefónica', 'contacts', ['contacts'], ['PHB', 'PHB2'], 'contacts', 55, 5),
+            $entry('phonebook', 'PHBX2', 'Lista telefónica', 'contacts', ['contacts'], ['PHBX2', 'DPHBX', 'PHB', 'PHB2'], 'contacts', 55, 100),
             $entry('profile', 'profile', 'Perfil de som', 'soundProfile', ['mode'], ['profile'], 'system', 55, null, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Vibração e toque'],

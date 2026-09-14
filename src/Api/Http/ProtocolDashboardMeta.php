@@ -67,7 +67,9 @@ final class ProtocolDashboardMeta
                 ],
                 'fieldConstraints' => [
                     'phonebook' => [
-                        'name' => ['maxLength' => 10],
+                        // O `PHBX2` não limita o nome. O zero diz «sem limite» a quem desenha
+                        // o campo, e é o que evita cortar em silêncio o que o utilizador escreve.
+                        'name' => ['maxLength' => 0],
                         'phone' => ['maxLength' => 20, 'asciiOnly' => true],
                         'allowPartialRows' => true,
                     ],

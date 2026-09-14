@@ -37,6 +37,32 @@ final class ConfigurationSyncStatus
     }
 
     /**
+     * Quanto de uma capacidade entregue em vários comandos é que o aparelho já confirmou.
+     *
+     * A lista telefónica do 4P Touch é o caso que obriga a isto: cada contacto viaja no seu
+     * próprio comando, e «não convergida» sozinho não distinguia um contacto por confirmar de
+     * cinco. Quem só entrega um comando não tem nada para detalhar, e recebe `null`.
+     *
+     * @param list<array<string, mixed>> $operations
+     * @return array{confirmed: int, total: int}|null
+     */
+    public static function operationDetail(array $operations): ?array
+    {
+        if (count($operations) < 2) {
+            return null;
+        }
+
+        $confirmed = 0;
+        foreach ($operations as $operation) {
+            if ((string)($operation['deliveryStatus'] ?? '') === 'acked') {
+                $confirmed++;
+            }
+        }
+
+        return ['confirmed' => $confirmed, 'total' => count($operations)];
+    }
+
+    /**
      * As capacidades que o dispositivo não confirmou, agrupadas por secção e chave.
      *
      * @param array<string, mixed> $desiredCapabilities

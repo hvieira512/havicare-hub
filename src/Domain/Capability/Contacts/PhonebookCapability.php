@@ -2,6 +2,7 @@
 
 namespace Hub\Domain\Capability\Contacts;
 
+use Hub\Command\Configuration\Payload\FourPTouchPhonebookDelta;
 use Hub\Domain\Capability\CapabilityContract;
 use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityInputSanitizer;
@@ -105,7 +106,9 @@ final class PhonebookCapability implements CapabilityContract, CapabilityInputSa
         }
 
         if (array_key_exists('contacts', $desired) && is_array($desired['contacts'])) {
-            return self::requireListValue($desired['contacts'], 'contacts');
+            // A forma nativa do 4P Touch vem indexada pelo endereço do contacto no aparelho.
+            // O índice é assunto do hub, e não sai na resposta.
+            return self::requireListValue(array_values($desired['contacts']), 'contacts');
         }
 
         if (array_is_list($desired)) {
@@ -123,9 +126,14 @@ final class PhonebookCapability implements CapabilityContract, CapabilityInputSa
     public function meta(string $protocol, array $accumulatedMeta = []): array
     {
         $meta = $accumulatedMeta;
-        $meta['limit'] = max((int)($meta['limit'] ?? 0), $protocol === 'wonlex-json' ? 10 : 5);
+        $meta['limit'] = max(
+            (int)($meta['limit'] ?? 0),
+            $protocol === 'wonlex-json' ? 10 : FourPTouchPhonebookDelta::MAX_CONTACTS
+        );
+        // O `PHBX2` não impõe limite de nome. Um `maxLength` nulo diz isso a quem desenha o
+        // ecrã, e desliga a truncatura do `sanitizeInput`.
         $meta['name'] = array_merge(
-            ['maxLength' => $protocol === 'wonlex-json' ? WonlexContactCodec::NAME_MAX_LENGTH : 10],
+            ['maxLength' => $protocol === 'wonlex-json' ? WonlexContactCodec::NAME_MAX_LENGTH : null],
             is_array($meta['name'] ?? null) ? $meta['name'] : []
         );
         $meta['phone'] = array_merge(

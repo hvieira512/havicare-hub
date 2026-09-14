@@ -8,6 +8,7 @@ use Hub\Command\Configuration\Definition\VeepooConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\VivistarConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\WonlexConfigurationDefinitions;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
+use Hub\Command\Configuration\Payload\FourPTouchPhonebookDelta;
 use Hub\Command\Configuration\Payload\VeepooPayloadBuilder;
 use Hub\Command\Configuration\Payload\VivistarPayloadBuilder;
 use Hub\Command\Configuration\Payload\WonlexPayloadBuilder;
@@ -73,6 +74,14 @@ final class DeviceConfigurationCatalog
             }
         }
 
+        // Uma configuração que se entrega em vários comandos declara-os todos nos tipos de
+        // resposta esperados. Sem isto, só o primeiro deles teria trama para montar.
+        foreach (self::configsForProtocol($protocol) as $entry) {
+            if (in_array($command, (array)($entry['expectedReplyTypes'] ?? []), true)) {
+                return $entry;
+            }
+        }
+
         return null;
     }
 
@@ -95,12 +104,32 @@ final class DeviceConfigurationCatalog
      *
      * @return list<array{command: string, payload: array<string, mixed>}>
      */
-    public static function commandPayloads(string $protocol, string $key, array $payload): array
-    {
+    public static function commandPayloads(
+        string $protocol,
+        string $key,
+        array $payload,
+        array $context = []
+    ): array {
         $key = self::resolvePublicKeyAlias($protocol, $key);
         $entry = self::configForProtocol($protocol, $key);
         if ($entry === null) {
             throw new \InvalidArgumentException("Unsupported {$protocol} configuration {$key}");
+        }
+
+        // A lista telefónica endereçada por índice é o único caso em que os comandos de uma
+        // configuração diferem entre si: uns removem, outros escrevem. O comando deixa de vir
+        // da entrada e passa a vir de cada item.
+        if ($protocol === 'four-p-touch' && $key === 'phonebook') {
+            return array_map(
+                static fn(array $command): array => [
+                    'command' => $command['command'],
+                    'payload' => ['fields' => $command['fields']],
+                ],
+                FourPTouchPhonebookDelta::commands(
+                    is_array($context['previousContacts'] ?? null) ? $context['previousContacts'] : [],
+                    FourPTouchPayloadBuilder::phonebookContacts($payload),
+                )
+            );
         }
 
         $payloads = [$payload];

@@ -424,8 +424,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
         );
         self::assertArrayHasKey('phonebook', $response['capabilities']['contacts'] ?? []);
-        self::assertSame(5, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
-        self::assertSame(10, $response['capabilities']['contacts']['phonebook']['_meta']['name']['maxLength'] ?? null);
+        self::assertSame(100, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
+        self::assertNull(
+            $response['capabilities']['contacts']['phonebook']['_meta']['name']['maxLength'] ?? null,
+            'o PHBX2 não limita o nome: a API não anuncia limite nenhum para ele'
+        );
         self::assertSame(20, $response['capabilities']['contacts']['phonebook']['_meta']['phone']['maxLength'] ?? null);
         self::assertTrue($response['capabilities']['contacts']['phonebook']['_meta']['phone']['asciiOnly'] ?? false);
         self::assertSame([], $response['capabilities']['contacts']['phonebook']['value'] ?? null);
@@ -2125,12 +2128,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertStringContainsString(
-            'PHB,123456789,004100420043004400450046004700480049004A',
-            $submitted[0]['bytes']
+            'PHBX2,1,004100420043004400450046004700480049004A004B,123456789',
+            $submitted[0]['bytes'],
+            'o nome vai inteiro: o PHBX2 não tem o limite de dez caracteres do PHB'
         );
         self::assertSame(
-            ['contacts' => [['name' => 'ABCDEFGHIJ', 'phone' => '123456789']]],
-            $db->deviceConfigurations->allForImei('868017032159118')[0]['desired_payload'] ?? null
+            ['contacts' => [1 => ['name' => 'ABCDEFGHIJK', 'phone' => '123456789']]],
+            $db->deviceConfigurations->allForImei('868017032159118')[0]['desired_payload'] ?? null,
+            'a forma nativa guarda o índice, que é o endereço do contacto no aparelho'
         );
     }
 
@@ -2154,9 +2159,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('phonebook', $response['results'][0]['key'] ?? null);
-        self::assertCount(1, $submitted);
-        self::assertSame('868017032159118', $submitted[0]['imei']);
-        self::assertStringContainsString('PHB', $submitted[0]['bytes']);
+        self::assertSame(
+            [],
+            $submitted,
+            'limpar uma lista que o aparelho não tem não é nada para entregar'
+        );
         self::assertSame(
             ['contacts' => []],
             $db->deviceConfigurations->allForImei('868017032159118')[0]['desired_payload'] ?? null

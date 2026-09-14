@@ -477,6 +477,32 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return $fields;
     }
 
+    /**
+     * Os contactos desejados, validados e sem o limite de nome do `PHB`.
+     *
+     * @param array<string, mixed> $payload
+     * @return list<array{name: string, phone: string}>
+     */
+    public static function phonebookContacts(array $payload): array
+    {
+        if (!array_key_exists('contacts', $payload) || !is_array($payload['contacts'])) {
+            throw new \InvalidArgumentException('contacts must be an array');
+        }
+
+        $contacts = [];
+        foreach ($payload['contacts'] as $contact) {
+            if (!is_array($contact)) {
+                throw new \InvalidArgumentException('each contact must be an object');
+            }
+            $contacts[] = [
+                'name' => self::requiredString($contact['name'] ?? null, 'name'),
+                'phone' => self::phonebookPhone($contact['phone'] ?? null),
+            ];
+        }
+
+        return $contacts;
+    }
+
     private static function phonebookPhone(mixed $value): string
     {
         $phone = self::requiredString($value, 'phone');

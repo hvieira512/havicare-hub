@@ -200,7 +200,7 @@ function isFourPTouchPhonebookSection(section) {
 function createContactRow(section) {
     const phonebook = isFourPTouchPhonebookSection(section);
     const nameMaxLength = parseInt(
-        section?.dataset.phonebookNameMaxLength || (phonebook ? "10" : "0"), 10,
+        section?.dataset.phonebookNameMaxLength || "0", 10,
     ) || 0;
     const phoneMaxLength = parseInt(
         section?.dataset.phonebookPhoneMaxLength || (phonebook ? "20" : "0"), 10,

@@ -4,6 +4,8 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
+use Hub\Command\Configuration\Payload\FourPTouchPhonebookDelta;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Dashboard\DashboardStoreContract;
@@ -134,6 +136,20 @@ final class DeviceConfigurationUpdateService
                 }
 
                 $nativeUpdates = $this->capabilities->toNative($protocol, $genericKey, $payload);
+
+                // A lista telefónica do 4P Touch guarda-se indexada, porque o índice é o
+                // endereço do contacto no aparelho e é dele que sai o delta da alteração
+                // seguinte. A forma pública continua a ser a lista, sem índices.
+                $commandContext = [];
+                if ($protocol === 'four-p-touch' && is_array($nativeUpdates['phonebook'] ?? null)) {
+                    $stored = $currentByKey['phonebook']['desired_payload']['contacts'] ?? [];
+                    $previousContacts = is_array($stored) ? $stored : [];
+                    $commandContext['previousContacts'] = $previousContacts;
+                    $nativeUpdates['phonebook'] = ['contacts' => FourPTouchPhonebookDelta::indexed(
+                        $previousContacts,
+                        FourPTouchPayloadBuilder::phonebookContacts($nativeUpdates['phonebook'])
+                    )];
+                }
             } catch (\InvalidArgumentException $e) {
                 return $this->reject($requestId, $imei, $genericKey, $e->getMessage());
             }
@@ -162,7 +178,8 @@ final class DeviceConfigurationUpdateService
                     $model,
                     $protocol,
                     $metadata,
-                    $device
+                    $device,
+                    $commandContext
                 );
                 if (isset($prepared['error'])) {
                     Logger::channel('api')->warning('API device configuration rejected', [
@@ -253,6 +270,7 @@ final class DeviceConfigurationUpdateService
         string $protocol,
         array $metadata,
         array $device,
+        array $commandContext = [],
     ): array {
         if ($protocol === '') {
             return ApiError::unknownProtocol('Device protocol could not be resolved')->toArray();
@@ -274,7 +292,7 @@ final class DeviceConfigurationUpdateService
             ?? ($protocol === 'vivistar-iw' && $nativeKey === 'deviceMeasuringFrequency'
                 ? 'ack_only'
                 : 'execution_ack'));
-        foreach (DeviceConfigurationCatalog::commandPayloads($protocol, $nativeKey, $payload) as $commandPayload) {
+        foreach (DeviceConfigurationCatalog::commandPayloads($protocol, $nativeKey, $payload, $commandContext) as $commandPayload) {
             $command = $commandPayload['command'];
             $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload'], [
                 'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),

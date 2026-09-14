@@ -23,7 +23,11 @@ final class ProtocolDashboardMetaTest extends TestCase
 
         self::assertSame('Contactos SOS', $dashboard['groupedCapabilities']['sos_contacts']['label']);
         self::assertSame(10, $dashboard['groupedCapabilities']['call_whitelist']['limit']);
-        self::assertSame(10, $dashboard['fieldConstraints']['phonebook']['name']['maxLength']);
+        self::assertSame(
+            0,
+            $dashboard['fieldConstraints']['phonebook']['name']['maxLength'],
+            'o PHBX2 não limita o nome, e o zero é o que desliga o corte no campo'
+        );
         self::assertSame(20, $dashboard['fieldConstraints']['phonebook']['phone']['maxLength']);
     }
 

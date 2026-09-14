@@ -2,6 +2,7 @@
 
 namespace Hub\Dashboard;
 
+use Hub\Command\Configuration\Payload\FourPTouchPhonebookFallback;
 use Hub\Command\DeviceCommandCatalog;
 use Predis\ClientInterface;
 
@@ -161,6 +162,72 @@ final class DeviceCommandStore
                 $updated['lastError'] = 'delivery_failed';
                 $this->recordCommand($imei, (string)$command['id'], $updated);
             }
+
+            $this->fallBackToLegacyPhonebook($imei, $dispatch);
+        }
+    }
+
+    /**
+     * Um 4P Touch que não confirmou uma única escrita indexada não fala o comando novo, e a
+     * lista telefónica é reenviada na forma antiga. As escritas que ficaram por confirmar
+     * passam a `superseded`, senão o recuo repetia-se a cada passagem.
+     */
+    private function fallBackToLegacyPhonebook(string $imei, callable $dispatch): void
+    {
+        $phonebook = array_values(array_filter(
+            $this->commands($imei),
+            static fn(array $command): bool => (string)($command['protocol'] ?? '') === 'four-p-touch'
+                && (string)($command['nativeKey'] ?? '') === 'phonebook'
+        ));
+        if (!FourPTouchPhonebookFallback::shouldFallBack($phonebook)) {
+            return;
+        }
+
+        $deviceId = '';
+        foreach ($phonebook as $command) {
+            if (preg_match('/^\[3G\*(\d{10})\*/', DeviceCommandRecord::wireBytes($command), $matches) === 1) {
+                $deviceId = $matches[1];
+                break;
+            }
+        }
+        if ($deviceId === '') {
+            return;
+        }
+
+        $template = $phonebook[0];
+        $contacts = FourPTouchPhonebookFallback::contactsFromCommands($phonebook);
+        foreach (FourPTouchPhonebookFallback::commands($contacts) as $legacy) {
+            $payload = ['fields' => $legacy['fields']];
+            $bytes = DeviceCommandCatalog::buildDownlink(
+                'four-p-touch',
+                $imei,
+                $legacy['command'],
+                $payload,
+                ['deviceId' => $deviceId]
+            );
+            $id = bin2hex(random_bytes(16));
+            $record = array_merge($template, [
+                'id' => $id,
+                'operationId' => '',
+                'nativeType' => $legacy['command'],
+                'payload' => $payload,
+                'bytes' => $bytes,
+                'attempts' => 1,
+                'status' => (string)$dispatch($imei, $bytes, $template) === 'sent' ? 'waiting' : 'queued',
+                'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+                'error' => '',
+                'lastError' => '',
+            ]);
+            unset($record['bytesEncoding'], $record['ackedAt'], $record['failedAt']);
+            $this->recordCommand($imei, $id, $record);
+        }
+
+        foreach ($phonebook as $command) {
+            $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
+                'status' => 'superseded',
+                'error' => '',
+                'lastError' => '',
+            ]));
         }
     }
 

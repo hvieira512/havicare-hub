@@ -264,7 +264,10 @@ final class DeviceSchemas
                     'failedCount' => ['type' => 'integer'],
                     'entries' => [
                         'type' => 'object',
-                        'description' => 'Lifecycle entries grouped by capability section and generic key.',
+                        'description' => 'Lifecycle entries grouped by capability section and generic key. '
+                            . 'An entry delivered in more than one device command also carries '
+                            . '`detail: {confirmed, total}`, counting how many of them the device has '
+                            . 'acknowledged. Absent when the capability travels in a single command.',
                     ],
                 ],
             ],

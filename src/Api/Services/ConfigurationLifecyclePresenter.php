@@ -75,7 +75,7 @@ final class ConfigurationLifecyclePresenter
                 );
                 $effective[$key] = $effectiveValue;
             }
-            $entries[$section][$key] = [
+            $entry = [
                 'status' => (string)$change['sync_status'],
                 'changeId' => (string)$change['change_id'],
                 'desiredRevision' => (int)$change['desired_revision'],
@@ -86,6 +86,11 @@ final class ConfigurationLifecyclePresenter
                 'confirmedAt' => (string)$change['confirmed_at'],
                 'operations' => $operations,
             ];
+            $detail = ConfigurationSyncStatus::operationDetail($operations);
+            if ($detail !== null) {
+                $entry['detail'] = $detail;
+            }
+            $entries[$section][$key] = $entry;
         }
 
         // As linhas escritas antes do ciclo de vida continuam legíveis até o próximo PATCH
