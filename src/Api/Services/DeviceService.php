@@ -33,6 +33,7 @@ class DeviceService
     private DeviceCapabilityPresenter $capabilities;
     private ConfigurationSyncStatus $configurationSync;
     private DeviceDirectory $directory;
+    private ConfigurationLifecyclePresenter $lifecyclePresenter;
     private DeviceFeatureRequestService $featureRequests;
     private RequestBinder $binder;
 
@@ -75,6 +76,11 @@ class DeviceService
         $this->capabilities = $capabilities ?? new DeviceCapabilityPresenter($this->capabilityRegistry, $this->db);
         $this->configurationSync = $configurationSync ?? new ConfigurationSyncStatus();
         $this->directory = $directory ?? new DeviceDirectory($this->store, $this->whitelist, $this->db);
+        $this->lifecyclePresenter = new ConfigurationLifecyclePresenter(
+            $this->db->configurationLifecycle,
+            $this->capabilities,
+            $this->configurationSync,
+        );
         $this->featureRequests = $featureRequests ?? new DeviceFeatureRequestService(
             $this->store,
             $this->hub,
@@ -206,7 +212,13 @@ class DeviceService
         $device = array_diff_key($device, array_flip([
             'supplier', 'model', 'deviceType', 'protocol', 'transport', 'lastConnectionId',
         ]));
-        $lifecycle = $this->configurationLifecycle($imei, $modelRow, $protocol, $configRows);
+        $lifecycle = $this->lifecyclePresenter->present(
+            $imei,
+            $modelRow,
+            $protocol,
+            $configRows,
+            $this->configuration($imei, null, $configRows),
+        );
 
         return $this->responseCompactor->compact([
             'device' => $device,
@@ -430,39 +442,26 @@ class DeviceService
 
     public function update(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
+        $audit = new DeviceWriteAudit($imei, $requestId);
+
         if (
             isset($payload['configurations'])
             || isset($payload['configs'])
             || isset($payload['capabilities'])
         ) {
-            Logger::channel('api')->warning('API device update rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_request',
-                'reason' => 'configuration_payload_not_allowed_on_metadata_endpoint',
-            ]);
-            return ApiError::invalidRequest('Use /api/devices/{imei}/configurations for device configurations')->toArray();
+            return $audit->reject(
+                ApiError::invalidRequest('Use /api/devices/{imei}/configurations for device configurations'),
+                'configuration_payload_not_allowed_on_metadata_endpoint',
+            );
         }
 
         if ($auth !== null && !$auth->isAdmin()) {
-            Logger::channel('api')->warning('API device update rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'forbidden',
-                'reason' => 'metadata_update_requires_admin',
-            ]);
-            return ApiError::forbidden()->toArray();
+            return $audit->reject(ApiError::forbidden(), 'metadata_update_requires_admin');
         }
 
         $request = $this->binder->bind($payload, DeviceWriteRequest::class, coerceStrings: true);
         if (is_array($request)) {
-            Logger::channel('api')->warning('API device update rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => $request['error']['code'] ?? 'invalid_request',
-                'reason' => 'missing_required_metadata_fields',
-            ]);
-            return $request;
+            return $audit->rejectValidated($request, 'missing_required_metadata_fields');
         }
 
         // Ausente é o do endereço; vazio é uma recusa. Daí o campo ser anulável e o
@@ -477,30 +476,16 @@ class DeviceService
         $deviceId = trim($request->deviceId);
         $company = DeviceMetadata::normalizeCompany($request->company);
         if ($newImei === '') {
-            Logger::channel('api')->warning('API device update rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_request',
-                'reason' => 'missing_required_metadata_fields',
-            ]);
-            return ApiError::invalidRequest('imei, supplier, and model are required')->toArray();
+            return $audit->reject(
+                ApiError::invalidRequest('imei, supplier, and model are required'),
+                'missing_required_metadata_fields',
+            );
         }
         if ($modelRecord === null) {
-            Logger::channel('api')->warning('API device update rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'model_not_found',
-            ]);
-            return ApiError::modelNotFoundForSupplier()->toArray();
+            return $audit->reject(ApiError::modelNotFoundForSupplier());
         }
         if ($newImei !== $imei && $this->whitelist->getMetadata($newImei) !== null) {
-            Logger::channel('api')->warning('API device update rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'new_imei' => $newImei,
-                'error_code' => 'device_exists',
-            ]);
-            return ApiError::deviceExists()->toArray();
+            return $audit->reject(ApiError::deviceExists(), extra: ['new_imei' => $newImei]);
         }
         // O dispositivo pode estar a sair de um cliente, a mudar de tipo ou a mudar de IMEI,
         // e cada uma dessas deixa um estado retido no tópico antigo.
@@ -607,172 +592,5 @@ class DeviceService
             // uma diferença sem ter de adivinhar o limite do servidor.
             'limit' => $this->store->historyLimit(),
         ];
-    }
-
-    /**
-     * @param list<array<string,mixed>> $configRows
-     * @return array{effectiveConfigurations:array<string,mixed>,configurationSync:array<string,mixed>}
-     */
-    private function configurationLifecycle(
-        string $imei,
-        ?array $model,
-        string $protocol,
-        array $configRows
-    ): array {
-        $changes = $this->db->configurationLifecycle->currentForImei($imei);
-        $entries = [];
-        $effective = [];
-        foreach ($changes as $change) {
-            $key = (string)$change['config_key'];
-            $section = CapabilityCatalog::sectionForCapabilityKey($key) ?? 'settings_system';
-            $operations = array_map(static fn(array $operation): array => [
-                'operationId' => (string)$operation['operation_id'],
-                'nativeKey' => (string)$operation['native_key'],
-                'command' => (string)$operation['native_type'],
-                'confirmationMode' => (string)$operation['confirmation_mode'],
-                'deliveryStatus' => (string)$operation['delivery_status'],
-                'error' => (string)$operation['error_code'],
-                'attempts' => (int)$operation['attempts'],
-                'maxAttempts' => (int)$operation['max_attempts'],
-                'updatedAt' => (string)$operation['updated_at'],
-            ], (array)$change['operations']);
-            $nativeKey = (string)($operations[0]['nativeKey'] ?? '');
-            $desiredValue = $change['desired_payload'];
-            if (is_array($desiredValue)) {
-                $desiredValue = $this->capabilities->normalizeCapabilityValue(
-                    $protocol,
-                    $key,
-                    $nativeKey,
-                    $desiredValue
-                );
-            }
-            $effectiveValue = $change['effective_payload'];
-            if (is_array($effectiveValue)) {
-                $effectiveValue = $this->capabilities->normalizeCapabilityValue(
-                    $protocol,
-                    $key,
-                    $nativeKey,
-                    $effectiveValue
-                );
-                $effective[$key] = $effectiveValue;
-            }
-            $entries[$section][$key] = [
-                'status' => (string)$change['sync_status'],
-                'changeId' => (string)$change['change_id'],
-                'desiredRevision' => (int)$change['desired_revision'],
-                'desired' => $desiredValue,
-                'effective' => $effectiveValue,
-                'hasUnconfirmedChanges' => (string)$change['sync_status'] !== 'confirmed',
-                'desiredUpdatedAt' => (string)$change['created_at'],
-                'confirmedAt' => (string)$change['confirmed_at'],
-                'operations' => $operations,
-            ];
-        }
-
-        // As linhas escritas antes do ciclo de vida continuam legíveis até o próximo PATCH
-        // lhes criar a primeira revisão.
-        $legacyPending = $this->pendingConfiguration($model, $protocol, $configRows);
-        $desired = $this->configuration($imei, null, $configRows);
-        foreach ($desired as $key => $value) {
-            $section = CapabilityCatalog::sectionForCapabilityKey((string)$key) ?? 'settings_system';
-            if (isset($entries[$section][$key])) {
-                continue;
-            }
-            $pending = $legacyPending[$section][$key] ?? null;
-            $status = is_array($pending) ? (string)($pending['status'] ?? 'awaiting_confirmation') : 'confirmed';
-            $legacyEffective = $status === 'confirmed' || $status === 'applied' ? $value : null;
-            if ($legacyEffective !== null) {
-                $effective[$key] = $legacyEffective;
-            }
-            $entries[$section][$key] = [
-                'status' => $status === 'applied' ? 'confirmed' : $status,
-                'changeId' => '',
-                'desiredRevision' => 0,
-                'desired' => $value,
-                'effective' => $legacyEffective,
-                'hasUnconfirmedChanges' => $legacyEffective === null,
-                'operations' => [],
-            ];
-        }
-
-        $flat = [];
-        foreach ($entries as $section) {
-            array_push($flat, ...array_values($section));
-        }
-        $pendingCount = count(array_filter($flat, static fn(array $entry): bool =>
-            !in_array($entry['status'], ['confirmed', 'failed'], true)));
-        $failedCount = count(array_filter($flat, static fn(array $entry): bool =>
-            $entry['status'] === 'failed'));
-
-        return [
-            'effectiveConfigurations' => $effective,
-            'configurationSync' => [
-                'status' => $failedCount > 0 ? 'failed' : ($pendingCount > 0 ? 'pending' : 'confirmed'),
-                'hasUnconfirmedChanges' => $pendingCount > 0 || $failedCount > 0,
-                'pendingCount' => $pendingCount,
-                'failedCount' => $failedCount,
-                'entries' => $entries,
-            ],
-        ];
-    }
-
-    private function pendingConfiguration(?array $model, string $protocol, array $configRows): array
-    {
-        $desiredCapabilities = $this->capabilities->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'desired_payload', false);
-        $reportedCapabilities = $this->capabilities->deviceCapabilitiesFromPayloadKey(
-            $model,
-            $protocol,
-            $this->configurationValueReportRows($configRows),
-            'reported_payload',
-            false
-        );
-        return $this->configurationSync->pendingEntries(
-            $protocol,
-            $desiredCapabilities,
-            $reportedCapabilities,
-            $configRows,
-        );
-    }
-
-    /**
-     * As confirmações de entrega ficam no `reported_payload` para continuarem
-     * inspeccionáveis, mas não são valores reportados e não se comparam com o pretendido.
-     *
-     * @param list<array<string, mixed>> $configRows
-     * @return list<array<string, mixed>>
-     */
-    private function configurationValueReportRows(array $configRows): array
-    {
-        return array_map(function (array $row): array {
-            $reported = is_array($row['reported_payload'] ?? null)
-                ? $row['reported_payload']
-                : [];
-            if ($this->isAcknowledgementOnlyConfigurationReport($reported)) {
-                $row['reported_payload'] = [];
-            }
-
-            return $row;
-        }, $configRows);
-    }
-
-    /**
-     * @param array<string, mixed> $reported
-     */
-    private function isAcknowledgementOnlyConfigurationReport(array $reported): bool
-    {
-        if ((string)($reported['type'] ?? '') !== 'device_config') {
-            return false;
-        }
-
-        $data = $reported['data'] ?? null;
-        if (!is_array($data) || array_diff(array_keys($data), ['status']) !== []) {
-            return false;
-        }
-
-        return in_array(strtolower(trim((string)($data['status'] ?? ''))), [
-            'ok',
-            'success',
-            'acked',
-        ], true);
     }
 }
