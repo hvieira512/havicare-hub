@@ -3,7 +3,6 @@
 namespace Hub\Ingress\Mqtt\Moko;
 
 use Hub\Domain\DeviceMetadata;
-use Hub\Domain\DeviceProtocol;
 use Hub\Device\CommercialModelResolver;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
@@ -11,16 +10,9 @@ use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Ingress\Mqtt\Gateway\Topic;
 use Hub\Log\Logger;
-use Hub\Device\RawPayload;
 
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 {
-    /** Como cada tipo retransmitido reporta, para quando não há observação de onde o ler. */
-    private const RELAYED_PROTOCOLS = [
-        'bracelet' => 'moko-w6b',
-        'diaper_sensor' => 'monit-mecs-pro-ble',
-    ];
-
     /** Relatórios de scan, e não estado do gateway. 3070 é MKGW3; 30a0 e 30b2 são MKGW4. */
     private const SCAN_MESSAGE_IDS = ['3070', '30a0', '30b2'];
     // O modelo desempata as pulseiras: ver `relayedProtocol()`.
@@ -34,12 +26,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
      */
     private const W6_PRESS_WINDOW_SECONDS = 35;
 
-    /** @var array<string, array<string, mixed>> */
-    private array $onlineGateways = [];
-    /** @var array<string, float> */
-    private array $gatewayLastSeenAt = [];
-    /** @var array<string, float> */
-    private array $lastRelayedRawAt = [];
     /** A manutenção corre no máximo uma vez a cada tantos segundos, e não a cada tique. */
     private const MAINTENANCE_INTERVAL_SECONDS = 5.0;
     private float $lastMaintenanceAt = 0.0;
@@ -84,18 +70,24 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         );
         $this->links = $links;
         $this->state = $state;
+        $this->relay = new RelayPublisher(
+            $mqttBridge,
+            $dashboardStore,
+            $state,
+            $whitelist,
+            $commercialModelResolver,
+            $telemetryRefreshSeconds,
+            $rawHistorySampleSeconds,
+            $proximityTracker,
+            $clock,
+        );
+        $this->gateways = new GatewayPresence($mqttBridge, $dashboardStore, $gatewayIdleTimeoutSeconds, $clock);
     }
 
     private readonly GatewayDeviceLinkLookup $links;
     private readonly ObservationStateStore $state;
-
-    /** Guardado, ao contrário dos decoders acima: leva a janela de amostras. */
-    private ?ProximityTracker $proximity = null;
-
-    private function proximity(): ProximityTracker
-    {
-        return $this->proximity ??= $this->proximityTracker ?? new ProximityTracker();
-    }
+    private readonly RelayPublisher $relay;
+    private readonly GatewayPresence $gateways;
 
     /**
      * Diz se a mensagem se identifica como sendo de outra ingestão.
@@ -139,33 +131,16 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $this->expireStaleProximity();
     }
 
+    /** Público para os testes o exercerem sem esperar pela janela de manutenção. */
     public function expireIdleGateways(): void
     {
-        $now = $this->clockNow();
-        foreach ($this->onlineGateways as $deviceKey => $gateway) {
-            if ($now - ($this->gatewayLastSeenAt[$deviceKey] ?? $now) < $this->gatewayIdleTimeoutSeconds) {
-                continue;
-            }
-            $deviceType = (string)$gateway['deviceType'];
-            $licenseId = DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0);
-            $company = (string)($gateway['company'] ?? 'null');
-            $status = RawPayload::status($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'offline', null, (string)($gateway['commercialName'] ?? ''));
-            $event = RawPayload::event($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'device.disconnected', null, null, (string)($gateway['commercialName'] ?? ''));
+        $this->gateways->expireIdle();
+    }
 
-            // Uma publicação que não passa não leva consigo os gateways seguintes; e o
-            // gateway só sai da lista depois de o `offline` ter saído, para se retentar.
-            try {
-                $this->mqttBridge->publishStatus($deviceKey, $status, true, $deviceType, $licenseId, $company);
-                $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
-            } catch (\Throwable $e) {
-                $this->mqttBridge->logPublishFailure('hub', $deviceKey, $e);
-                continue;
-            }
-
-            $this->dashboardStore?->deviceOffline($deviceKey);
-            $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
-            unset($this->onlineGateways[$deviceKey], $this->gatewayLastSeenAt[$deviceKey]);
-        }
+    /** Idem: um par que se calou é reportado uma vez, e o teste quer provocá-lo. */
+    public function expireStaleProximity(): void
+    {
+        $this->relay->expireStaleProximity();
     }
 
     protected function handleMessage(string $topic, string $payload): void
@@ -223,13 +198,13 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $deviceType = (string)$gateway['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0);
         $company = (string)($gateway['company'] ?? 'null');
-        $this->gatewayLastSeenAt[$deviceKey] = $this->clockNow();
+        $this->gateways->touch($deviceKey);
         $protocol = (string)($decoded['protocol'] ?? 'moko-gateway');
         $encoding = (string)($decoded['encoding'] ?? 'unknown');
         $raw = [
             'direction' => 'uplink',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => $this->device($gateway),
+            'device' => RelayPublisher::describe($gateway),
             'data' => $decoded,
             'debug' => [
                 'protocol' => $protocol,
@@ -259,14 +234,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $this->dashboardStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
 
-        if (!isset($this->onlineGateways[$deviceKey])) {
-            $this->onlineGateways[$deviceKey] = $gateway;
-            $status = RawPayload::status($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'online', null, (string)($gateway['commercialName'] ?? ''));
-            $event = RawPayload::event($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'device.connected', null, null, (string)($gateway['commercialName'] ?? ''));
-            $this->mqttBridge->publishStatus($deviceKey, $status, true, $deviceType, $licenseId, $company);
-            $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
-        }
+        $this->gateways->markOnline($gateway);
     }
 
     /**
@@ -299,61 +267,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Guarda a observação crua no histórico do aparelho retransmitido, para debugging.
-     *
-     * No histórico **dele** e não do gateway de propósito: as observações são de alta
-     * frequência e afogariam as tramas de estado do gateway; a lista `raw` do aparelho é
-     * dedicada, portanto não expulsa a sua própria telemetria. Só para aparelhos já
-     * autorizados -- o `$device` chega resolvido e ligado a este gateway.
-     *
-     * @param array<string, mixed> $device @param array<string, mixed> $gateway
-     * @param array<string, mixed> $observation
-     */
-    private function recordRelayedRaw(array $device, array $gateway, string $protocol, array $observation): void
-    {
-        $deviceKey = (string)$device['imei'];
-        $deviceType = (string)$device['deviceType'];
-        $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
-        $company = (string)($device['company'] ?? 'null');
-        $raw = [
-            'direction' => 'uplink',
-            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => $this->device($device),
-            'data' => $observation,
-            'debug' => [
-                'protocol' => $protocol,
-                'transport' => 'ble_gateway',
-                'encoding' => 'json',
-                'payload' => $observation,
-                'gatewayId' => (string)$gateway['imei'],
-            ],
-        ];
-        // O MQTT leva todas as observações -- é o debugging ao vivo; o histórico da dashboard
-        // leva uma amostra por dispositivo, para não afogar a janela nem somar escritas.
-        $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
-        if ($this->dashboardStore !== null && $this->shouldStoreRelayedRaw($deviceKey)) {
-            $this->dashboardStore->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
-        }
-    }
-
-    private function shouldStoreRelayedRaw(string $deviceKey): bool
-    {
-        $now = (float)$this->clockNow();
-        if ($this->rawHistorySampleSeconds <= 0) {
-            $this->lastRelayedRawAt[$deviceKey] = $now;
-            return true;
-        }
-
-        $last = $this->lastRelayedRawAt[$deviceKey] ?? null;
-        if ($last !== null && ($now - $last) < $this->rawHistorySampleSeconds) {
-            return false;
-        }
-
-        $this->lastRelayedRawAt[$deviceKey] = $now;
-        return true;
-    }
-
-    /**
      * O sinal de um avistamento que nenhum decoder reclamou. O RSSI é medido pelo gateway e
      * existe quer se saiba ler o anúncio, quer não -- descartá-lo perdia amostras.
      *
@@ -370,39 +283,19 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
         $known = $this->whitelist->resolve($mac);
         $deviceType = (string)($known['deviceType'] ?? '');
-        if ($known === null || !isset(self::RELAYED_PROTOCOLS[$deviceType])) {
+        if ($known === null || !RelayPublisher::relays($deviceType)) {
             return;
         }
 
-        $protocol = $this->relayedProtocol($known);
+        $protocol = RelayPublisher::relayedProtocol($known);
         $device = $this->linkedDevice($gateway, $mac, $deviceType, $protocol);
         if ($device === null) {
             return;
         }
 
         // Um aparelho registado cujo anúncio nenhum decoder leu; o raw ajuda a perceber porquê.
-        $this->recordRelayedRaw($device, $gateway, $protocol, $observation);
-        $this->recordSignal($device, $gateway, $protocol, $observation['rssi']);
-    }
-
-    /**
-     * O tipo sozinho não chega: uma pulseira tanto é W6 como W6B, e nem sequer é
-     * necessariamente MOKO -- um gateway MOKO vê tudo o que anuncia à sua volta, e a MF91 da
-     * Wonlex fala Veepoo. Quem sabe isto é o `DeviceProtocol`, que resolve pelo par
-     * fornecedor/modelo; o tipo fica como último recurso, para um modelo que ele não conheça.
-     *
-     * @param array<string, mixed> $device
-     */
-    private function relayedProtocol(array $device): string
-    {
-        $protocol = DeviceProtocol::forModel(
-            (string)($device['supplier'] ?? ''),
-            (string)($device['model'] ?? ''),
-        );
-
-        return $protocol !== ''
-            ? $protocol
-            : (self::RELAYED_PROTOCOLS[(string)($device['deviceType'] ?? '')] ?? 'moko-gateway');
+        $this->relay->recordRaw($device, $gateway, $protocol, $observation);
+        $this->relay->recordSignal($device, $gateway, $protocol, $observation['rssi']);
     }
 
     /**
@@ -449,7 +342,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         if ($device === null) {
             return;
         }
-        $this->recordRelayedRaw($device, $gateway, 'moko-w6b', $observation);
+        $this->relay->recordRaw($device, $gateway, 'moko-w6b', $observation);
 
         $previousTriggerCount = null;
         if (isset($decoded['alarm']['pressMode'], $decoded['alarm']['triggerCount'])) {
@@ -471,8 +364,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $previousTriggerCount,
         );
 
-        $this->publishRelayedTelemetry($device, $gateway, 'moko-w6b', $normalized, $decoded['rssiDbm'] ?? null);
-        $this->publishRelayedEvents($device, $gateway, $normalized['events']);
+        $this->relay->publishTelemetry($device, $gateway, 'moko-w6b', $normalized, $decoded['rssiDbm'] ?? null);
+        $this->relay->publishEvents($device, $gateway, $normalized['events']);
     }
 
     /**
@@ -489,7 +382,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         if ($device === null) {
             return;
         }
-        $this->recordRelayedRaw($device, $gateway, 'moko-w6', $observation);
+        $this->relay->recordRaw($device, $gateway, 'moko-w6', $observation);
 
         $pressMode = (string)($decoded['alarm']['pressMode'] ?? '');
         if (
@@ -505,139 +398,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $normalized = ($this->w6Normalizer ?? new W6Normalizer())
             ->normalize($decoded, $device, (string)$gateway['imei']);
 
-        $this->publishRelayedTelemetry($device, $gateway, 'moko-w6', $normalized, $decoded['rssiDbm'] ?? null);
-        $this->publishRelayedEvents($device, $gateway, $normalized['events']);
-    }
-
-    /**
-     * O que os três aparelhos retransmitidos publicam da mesma maneira: marca-o visto,
-     * reporta o sinal, e publica a telemetria estrangulada por capacidade. Os eventos ficam
-     * a cargo de cada um -- o MONIT tem a sua transição própria.
-     *
-     * @param array<string, mixed> $device @param array<string, mixed> $gateway
-     * @param array{telemetry: array<string, mixed>} $normalized
-     */
-    private function publishRelayedTelemetry(array $device, array $gateway, string $protocol, array $normalized, mixed $rssiDbm): void
-    {
-        $deviceKey = (string)$device['imei'];
-        $deviceType = (string)$device['deviceType'];
-        $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
-        $company = (string)($device['company'] ?? 'null');
-        $this->dashboardStore?->deviceSeen($deviceKey, [
-            'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
-            'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
-            'protocol' => $protocol, 'transport' => 'ble_gateway', 'online' => '1',
-        ]);
-        $this->recordSignal($device, $gateway, $protocol, $rssiDbm);
-
-        foreach ($normalized['telemetry'] as $capability => $telemetry) {
-            if (!$this->state->shouldPublish($deviceKey, (string)$capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
-                continue;
-            }
-            $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
-        }
-    }
-
-    /**
-     * Publica os eventos de um aparelho retransmitido no MQTT e no histórico dele.
-     *
-     * @param array<string, mixed> $device @param array<string, mixed> $gateway
-     * @param list<array<string, mixed>> $events
-     */
-    private function publishRelayedEvents(array $device, array $gateway, array $events): void
-    {
-        $deviceKey = (string)$device['imei'];
-        $deviceType = (string)$device['deviceType'];
-        $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
-        $company = (string)($device['company'] ?? 'null');
-        foreach ($events as $event) {
-            $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
-        }
-    }
-
-    /**
-     * O sinal entre um dispositivo retransmitido e o gateway que o ouviu.
-     *
-     * Publicado por avistamento, fora do `shouldPublish()`: esse compara os dados de
-     * telemetria, e o sinal mexe-se quando as leituras não mexem. Não entra no histórico do
-     * dispositivo, que a quarenta avistamentos por minuto ficaria só com isto.
-     *
-     * @param array<string, mixed> $device o dispositivo retransmitido, já autorizado
-     * @param array<string, mixed> $gateway
-     */
-    private function recordSignal(array $device, array $gateway, string $protocol, mixed $rssiDbm): void
-    {
-        $deviceKey = (string)$device['imei'];
-        $gatewayKey = (string)$gateway['imei'];
-        $this->dashboardStore?->recordGatewaySighting(
-            $deviceKey,
-            $gatewayKey,
-            is_numeric($rssiDbm) ? (int)$rssiDbm : null,
-        );
-        if (!is_numeric($rssiDbm)) {
-            return;
-        }
-
-        $this->publishProximity(
-            $device,
-            $gateway,
-            $protocol,
-            $this->proximity()->record($deviceKey, $gatewayKey, (int)$rssiDbm, $this->clockNow()),
-        );
-    }
-
-    /**
-     * @param array<string, mixed> $device
-     * @param array<string, mixed> $gateway
-     * @param array<string, mixed> $data
-     */
-    private function publishProximity(array $device, array $gateway, string $protocol, array $data): void
-    {
-        $this->mqttBridge->publishTelemetry(
-            (string)$device['imei'],
-            [
-                'type' => 'proximity',
-                'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                'device' => $this->device($device),
-                'data' => ['gatewayId' => (string)$gateway['imei']] + $data,
-                'source' => array_filter([
-                    'protocol' => $protocol,
-                    'nativeType' => 'manufacturer_data',
-                    'gatewayId' => (string)$gateway['imei'],
-                    'rssiDbm' => $data['rssiDbm'] ?? null,
-                ], static fn(mixed $value): bool => $value !== null),
-            ],
-            (string)$device['deviceType'],
-            DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0),
-            (string)($device['company'] ?? 'null'),
-        );
-    }
-
-    /**
-     * Diz ao cliente quando um par se calou. `unknown` não é `far`: fora de alcance, bateria
-     * descarregada e gateway offline são indistinguíveis. Reportado uma vez por par.
-     */
-    public function expireStaleProximity(): void
-    {
-        foreach ($this->proximity()->takeStale($this->clockNow()) as $pair) {
-            $device = $this->whitelist->resolve($pair['deviceKey']);
-            $gateway = $this->whitelist->resolve($pair['gatewayKey']);
-            if ($device === null || $gateway === null) {
-                continue;
-            }
-            try {
-                $this->publishProximity(
-                    $this->enrich($device),
-                    $gateway,
-                    $this->relayedProtocol($device),
-                    ['state' => 'unknown', 'samples' => 0],
-                );
-            } catch (\Throwable $e) {
-                $this->mqttBridge->logPublishFailure('hub', (string)$pair['deviceKey'], $e);
-            }
-        }
+        $this->relay->publishTelemetry($device, $gateway, 'moko-w6', $normalized, $decoded['rssiDbm'] ?? null);
+        $this->relay->publishEvents($device, $gateway, $normalized['events']);
     }
 
     /**
@@ -651,7 +413,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         if ($sensor === null) {
             return;
         }
-        $this->recordRelayedRaw($sensor, $gateway, 'monit-mecs-pro-ble', $observation);
+        $this->relay->recordRaw($sensor, $gateway, 'monit-mecs-pro-ble', $observation);
         if (!$this->state->acceptObservation($sensorKey, hash('sha256', (string)$decoded['raw20']), $this->dedupeTtlSeconds)) {
             return;
         }
@@ -662,7 +424,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $sensitivity = $this->diaperSensitivity?->forDevice($sensorKey) ?? DiaperSensitivity::normal();
         $normalized = ($this->monitNormalizer ?? new MonitNormalizer())
             ->normalize($decoded, $sensor, (string)$gateway['imei'], $sensitivity);
-        $this->publishRelayedTelemetry($sensor, $gateway, 'monit-mecs-pro-ble', $normalized, $decoded['rssiDbm'] ?? null);
+        $this->relay->publishTelemetry($sensor, $gateway, 'monit-mecs-pro-ble', $normalized, $decoded['rssiDbm'] ?? null);
 
         // A sensibilidade entra no valor guardado e não na chave: apertá-la numa fralda já
         // suja tem de contar como transição e dar alarme.
@@ -678,10 +440,10 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $previous = is_string($stored) ? explode('@', $stored, 2)[0] : null;
             $event = [
                 'type' => 'change_required', 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                'device' => $this->device($sensor), 'data' => ['previousState' => $previous],
+                'device' => RelayPublisher::describe($sensor), 'data' => ['previousState' => $previous],
                 'source' => ['protocol' => 'monit-mecs-pro-ble', 'gatewayId' => (string)$gateway['imei']],
             ];
-            $this->publishRelayedEvents($sensor, $gateway, [$event]);
+            $this->relay->publishEvents($sensor, $gateway, [$event]);
         }
     }
 
@@ -689,14 +451,5 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     private function enrich(array $device): array
     {
         return $this->enrichWithCommercialName($device, $this->commercialModelResolver);
-    }
-
-    /** @param array<string, mixed> $device */
-    private function device(array $device): array
-    {
-        return array_filter([
-            'id' => (string)$device['imei'], 'supplier' => (string)($device['supplier'] ?? ''),
-            'model' => (string)($device['model'] ?? ''), 'commercialName' => (string)($device['commercialName'] ?? ''),
-        ], static fn(string $value): bool => $value !== '');
     }
 }
