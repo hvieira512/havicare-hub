@@ -23,6 +23,15 @@ final class InventorySeeder
     private const IMAGE_SOURCE = __DIR__ . '/../../../database/seed-model-images';
     private const IMAGE_TARGET = __DIR__ . '/../../../var/dashboard/model-images';
 
+    private string $imageSource;
+    private string $imageTarget;
+
+    public function __construct(?string $imageSource = null, ?string $imageTarget = null)
+    {
+        $this->imageSource = $imageSource ?? self::IMAGE_SOURCE;
+        $this->imageTarget = $imageTarget ?? self::IMAGE_TARGET;
+    }
+
     /**
      * Devolve false quando já havia inventário e não fez nada.
      *
@@ -31,6 +40,10 @@ final class InventorySeeder
      */
     public function seed(PDO $pdo): bool
     {
+        // Fora da guarda do inventário: as imagens são um passo idempotente, e prendê-las à
+        // primeira semeadura deixa no repositório as que entraram depois dela.
+        $this->copyMissingModelImages();
+
         if ($this->hasInventory($pdo)) {
             return false;
         }
@@ -46,8 +59,6 @@ final class InventorySeeder
         // nada lhes deu um template e os cartões ficariam vazios.
         (new ReferenceCatalogSeeder())->seedMissingModelCapabilities($pdo);
 
-        $this->copyModelImages();
-
         return true;
     }
 
@@ -56,22 +67,26 @@ final class InventorySeeder
         return (int)$pdo->query('SELECT COUNT(*) FROM whitelist')->fetchColumn() > 0;
     }
 
-    private function copyModelImages(): void
+    /** Devolve quantas copiou. */
+    public function copyMissingModelImages(): int
     {
-        if (!is_dir(self::IMAGE_SOURCE)) {
-            return;
+        if (!is_dir($this->imageSource)) {
+            return 0;
         }
 
-        if (!is_dir(self::IMAGE_TARGET) && !mkdir(self::IMAGE_TARGET, 0o775, true) && !is_dir(self::IMAGE_TARGET)) {
-            throw new \RuntimeException('could not create ' . self::IMAGE_TARGET);
+        if (!is_dir($this->imageTarget) && !mkdir($this->imageTarget, 0o775, true) && !is_dir($this->imageTarget)) {
+            throw new \RuntimeException('could not create ' . $this->imageTarget);
         }
 
-        foreach (glob(self::IMAGE_SOURCE . '/*.jpg') ?: [] as $image) {
-            $target = self::IMAGE_TARGET . '/' . basename($image);
+        $copied = 0;
+        foreach (glob($this->imageSource . '/*.jpg') ?: [] as $image) {
+            $target = $this->imageTarget . '/' . basename($image);
             // Nunca substituir uma imagem que o painel ja tenha trocado.
-            if (!file_exists($target)) {
-                copy($image, $target);
+            if (!file_exists($target) && copy($image, $target)) {
+                $copied++;
             }
         }
+
+        return $copied;
     }
 }

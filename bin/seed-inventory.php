@@ -20,8 +20,11 @@ use Hub\Runtime\CliBootstrap;
 $config = CliBootstrap::config(__DIR__ . '/..');
 $database = CliBootstrap::database($config, assertSchema: false);
 
-$seeded = (new InventorySeeder())->seed($database->pdo());
+$seeder = new InventorySeeder();
+$copiedImages = $seeder->copyMissingModelImages();
+$seeded = $seeder->seed($database->pdo());
 
 fwrite(STDOUT, $seeded
     ? "Device inventory seeded.\n"
     : "Device inventory already present, nothing to seed.\n");
+fwrite(STDOUT, sprintf("Model images copied: %d.\n", $copiedImages));
