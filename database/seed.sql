@@ -32,7 +32,12 @@ INSERT INTO licenses (company_id, license_id, name)
 SELECT c.id, l.license_id, l.name FROM companies c JOIN (
     SELECT 'havicare' AS company, 1 AS license_id, 'hc.dev' AS name
     UNION ALL SELECT 'havicare', 22, 'hc2.dev'
+    UNION ALL SELECT 'havicare', 24, 'besenior.havicare'
+    UNION ALL SELECT 'havicare', 25, 'demo.havicare'
     UNION ALL SELECT 'hitcare', 1001, 'gucc.dev'
+    UNION ALL SELECT 'hitcare', 2004, 'gerpi.cvp-chelvas'
+    UNION ALL SELECT 'hitcare', 2051, 'gerpi1.emeis-pt'
+    UNION ALL SELECT 'hitcare', 2103, 'gerpi1.casabrancaresidencial'
 ) l ON l.company = c.name
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
@@ -126,23 +131,20 @@ INSERT IGNORE INTO gateway_device_links (gateway_device_key, linked_device_key, 
 UPDATE model_capabilities mc
 JOIN models m ON m.id = mc.model_id
 JOIN suppliers s ON s.id = m.supplier_id
-JOIN capabilities c ON c.id = mc.capability_id
 SET mc.is_requestable = 1
 WHERE s.name = 'Wonlex' AND m.internal_model = 'HW20PRO'
-  AND c.capability_key IN ('breath_rate', 'heart_rate', 'location', 'temperature');
+  AND mc.capability_key IN ('breath_rate', 'heart_rate', 'location', 'temperature');
 
 UPDATE model_capabilities mc
 JOIN models m ON m.id = mc.model_id
 JOIN suppliers s ON s.id = m.supplier_id
-JOIN capabilities c ON c.id = mc.capability_id
 SET mc.is_requestable = 0
 WHERE s.name = 'Wonlex' AND m.internal_model = 'HW20PRO'
-  AND c.capability_key IN ('ecg', 'hrv', 'ppg', 'rr_interval');
+  AND mc.capability_key IN ('ecg', 'hrv', 'ppg', 'rr_interval');
 
 UPDATE model_capabilities mc
 JOIN models m ON m.id = mc.model_id
 JOIN suppliers s ON s.id = m.supplier_id
-JOIN capabilities c ON c.id = mc.capability_id
 SET mc.enabled = 0
 WHERE s.name = 'Wonlex' AND m.internal_model = 'HW20PRO'
-  AND c.capability_key IN ('breath_rate', 'temperature');
+  AND mc.capability_key IN ('breath_rate', 'temperature');
