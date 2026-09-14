@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Hub\Runtime;
 
+use Hub\Log\Logger;
+use React\EventLoop\LoopInterface;
+
 /**
  * Diz se o arranque anterior terminou de repente. O `Restart=always` levanta o processo em
  * milissegundos, e sem isto uma queda só deixava rasto no `journalctl`, onde ninguém olha.
@@ -16,6 +19,41 @@ final class CrashWatch
 {
     public function __construct(private string $markerPath)
     {
+    }
+
+    /**
+     * Toma posse do arranque, relata a queda anterior e liga o desligar limpo ao loop.
+     *
+     * Uma queda tem de chegar a alguém. O `Restart=always` levanta o processo em
+     * milissegundos e a única prova ficava no `journalctl`; a notificação aparece no sino da
+     * dashboard, que é onde se está a olhar. Repetições incrementam o contador e voltam a
+     * pô-la por ler.
+     */
+    public static function attach(LoopInterface $loop, HubServices $services, string $markerPath): self
+    {
+        $watch = new self($markerPath);
+
+        $uncleanShutdown = $watch->claimBoot();
+        if ($uncleanShutdown !== null) {
+            Logger::channel('hub')->error("Previous run ended abruptly: {$uncleanShutdown}");
+            $services->dataAccess->dashboardNotifications->record(
+                'hub_unclean_restart',
+                'hub',
+                '',
+                '',
+                (string)gethostname(),
+                $uncleanShutdown,
+            );
+        }
+
+        foreach ([SIGTERM, SIGINT] as $signal) {
+            $loop->addSignal($signal, static function () use ($watch, $loop): void {
+                $watch->markCleanShutdown();
+                $loop->stop();
+            });
+        }
+
+        return $watch;
     }
 
     /**

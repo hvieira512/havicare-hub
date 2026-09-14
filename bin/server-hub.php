@@ -6,15 +6,7 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 use Hub\Device\HubTcpIngress;
-use Hub\Ingress\Mqtt\IngressRunner;
-use Hub\Ingress\Mqtt\Moko\Bridge as MokoBridge;
-use Hub\Ingress\Mqtt\Veepoo\Bridge as VeepooBridge;
-use Hub\Ingress\Mqtt\Gateway\RedisObservationStateStore;
-use Hub\Ingress\Mqtt\Ncs\Bridge as NcsBridge;
-use Hub\Ingress\Mqtt\Qinglanst\Bridge as QinglanstBridge;
-use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy as QinglanstDashboardWritePolicy;
-use Hub\Ingress\Mqtt\Qinglanst\IngestStats as QinglanstIngestStats;
-use Hub\Ingress\Mqtt\SubscriberFactory;
+use Hub\Ingress\Mqtt\MqttIngressFactory;
 use Hub\Log\Logger;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
@@ -38,137 +30,9 @@ try {
 $services = HubServices::boot($config, $hubConnections);
 $loop = Loop::get();
 
-// Uma queda tem de chegar a alguém. O `Restart=always` levanta o processo em milissegundos e
-// a única prova ficava no `journalctl`; a notificação aparece no sino da dashboard, que é
-// onde se está a olhar. Repetições incrementam o contador e voltam a pô-la por ler.
-$crashWatch = new CrashWatch(__DIR__ . '/../var/run/hub-boot.marker');
-$uncleanShutdown = $crashWatch->claimBoot();
-if ($uncleanShutdown !== null) {
-    Logger::channel('hub')->error("Previous run ended abruptly: {$uncleanShutdown}");
-    $services->dataAccess->dashboardNotifications->record(
-        'hub_unclean_restart',
-        'hub',
-        '',
-        '',
-        (string)gethostname(),
-        $uncleanShutdown,
-    );
-}
+CrashWatch::attach($loop, $services, __DIR__ . '/../var/run/hub-boot.marker');
 
-foreach ([SIGTERM, SIGINT] as $signal) {
-    $loop->addSignal($signal, static function () use ($crashWatch, $loop): void {
-        $crashWatch->markCleanShutdown();
-        $loop->stop();
-    });
-}
-$subscribers = new SubscriberFactory($hubConnections);
-$runner = new IngressRunner($loop);
-$enabledIngresses = [];
-
-if ($config['ncs']['enabled']) {
-    $ncsTopicFilter = trim((string)$config['ncs']['topic_filter']);
-    $runner->add('NCS ingress', $subscribers->bind(
-        'ncs-sub',
-        $ncsTopicFilter,
-        fn ($subscriber, $reconnect) => new NcsBridge(
-            $subscriber,
-            $services->whitelist,
-            $services->mqttBridge,
-            $ncsTopicFilter,
-            $reconnect,
-            $services->dashboardStore,
-            commercialModelResolver: $services->commercialModelResolver,
-            denylist: $services->denylist,
-        ),
-    ));
-    $enabledIngresses[] = 'ncs';
-}
-
-// Uma variável só para as duas ingestões de gateway: são o mesmo espaço de tópicos de
-// propósito, e dois cálculos separados podiam divergir sem ninguém dar por isso.
-$gatewayTopicFilter = trim((string)$config['moko']['topic_filter']);
-
-if ($config['moko']['enabled']) {
-    $runner->add('MOKO gateway ingress', $subscribers->bind(
-        'moko-sub',
-        $gatewayTopicFilter,
-        fn ($subscriber, $reconnect) => new MokoBridge(
-            $subscriber,
-            $services->whitelist,
-            $services->mqttBridge,
-            $services->dataAccess->gatewayDeviceLinks,
-            new RedisObservationStateStore($services->redis),
-            $gatewayTopicFilter,
-            $reconnect,
-            $services->dashboardStore,
-            $services->commercialModelResolver,
-            (int)$config['moko']['dedupe_ttl_seconds'],
-            (int)$config['moko']['telemetry_refresh_seconds'],
-            (int)$config['moko']['idle_timeout_seconds'],
-            (int)$config['moko']['raw_history_sample_seconds'],
-            diaperSensitivity: $services->dataAccess->diaperSensitivity,
-            denylist: $services->denylist,
-        ),
-    ));
-    $enabledIngresses[] = 'moko';
-}
-
-// Pulseiras Veepoo entregues por um gateway BLE. Partilha o tópico do MOKO de propósito: os
-// gateways publicam todos em `.../gw/{mac}/raw`, e cada ingestão reclama só o que sabe ler.
-$veepooIngress = null;
-if ($config['moko']['enabled']) {
-    $veepooIngress = $subscribers->bind(
-        'veepoo-sub',
-        $gatewayTopicFilter,
-        fn ($subscriber, $reconnect) => new VeepooBridge(
-            $subscriber,
-            $services->whitelist,
-            $services->mqttBridge,
-            $services->dataAccess->gatewayDeviceLinks,
-            $services->downlinkQueue,
-            // A mesma porta que trava os anúncios repetidos do MOKO trava aqui os blocos que
-            // o gateway relê. Em Redis e não em memória: a releitura maior é a do arranque do
-            // gateway, e um hub reiniciado teria esquecido tudo o que ela vai repetir.
-            new RedisObservationStateStore($services->redis),
-            $gatewayTopicFilter,
-            $reconnect,
-            $services->dashboardStore,
-        ),
-    );
-    $runner->add('Veepoo bracelet ingress', $veepooIngress);
-    $enabledIngresses[] = 'veepoo';
-}
-
-if ($config['qinglanst']['enabled']) {
-    $qinglanstTopicFilter = trim((string)$config['qinglanst']['topic_filter']);
-    $qinglanstSubscribers = new SubscriberFactory(
-        new ConnectionFactory(BrokerSettings::fromQinglanstConfig($config['qinglanst'])),
-    );
-    $runner->add('Qinglanst ingress', $qinglanstSubscribers->bind(
-        'sub',
-        $qinglanstTopicFilter,
-        fn ($subscriber, $reconnect) => new QinglanstBridge(
-            $subscriber,
-            $services->whitelist,
-            $services->mqttBridge,
-            $qinglanstTopicFilter,
-            $reconnect,
-            $services->dashboardStore,
-            stats: new QinglanstIngestStats(
-                $qinglanstTopicFilter,
-                (int)$config['qinglanst']['stats_flush_seconds'],
-            ),
-            dashboardWritePolicy: new QinglanstDashboardWritePolicy(
-                (int)$config['qinglanst']['dashboard_seen_min_interval_ms'],
-                (int)$config['qinglanst']['position_history_sample_ms'],
-                (int)$config['qinglanst']['raw_history_sample_ms'],
-            ),
-            commercialModelResolver: $services->commercialModelResolver,
-            denylist: $services->denylist,
-        ),
-    ));
-    $enabledIngresses[] = 'qinglanst';
-}
+$runner = MqttIngressFactory::build($config, $services, $hubConnections, $loop);
 
 new HubTcpIngress(
     $services->hubServer,
@@ -185,6 +49,8 @@ try {
     exit(1);
 }
 
+// Conduz o loop de cada ingestão, e drena a fila das que têm o que entregar -- as pulseiras
+// servidas por gateway, cujo comando não pode esperar pelo anúncio de sessão seguinte.
 $runner->scheduleTicks();
 MaintenanceScheduler::schedule($loop, $services, $config['dashboard']);
 
@@ -199,24 +65,11 @@ $loop->addPeriodicTimer(1.0, static function () use ($services): void {
     }
 });
 
-// Entrega às pulseiras Veepoo o que o ecrã ou a API põem em fila. O gateway fica subscrito
-// ao seu tópico de comandos, por isso não há razão para esperar pelo anúncio de sessão
-// seguinte -- que chega de 30 em 30 s, mais do que a pulseira leva a desistir de vibrar.
-if ($veepooIngress instanceof VeepooBridge) {
-    $loop->addPeriodicTimer(1.0, static function () use ($veepooIngress): void {
-        try {
-            $veepooIngress->dispatchQueued();
-        } catch (\Throwable $e) {
-            Logger::channel('hub')->error('Veepoo queued dispatch failed: ' . $e->getMessage());
-        }
-    });
-}
-
 // O sinal de vida para o systemd, que sai de um temporizador deste loop e por isso só é
 // enviado enquanto ele girar. Fora do systemd devolve `null` e não faz nada.
 $watchdog = SystemdWatchdog::fromEnvironment();
 $watchdog?->attach($loop);
 
-StartupBanner::log($config, $services->mqttBridge, $enabledIngresses, $watchdog);
+StartupBanner::log($config, $services->mqttBridge, $runner->keys(), $watchdog);
 
 $loop->run();

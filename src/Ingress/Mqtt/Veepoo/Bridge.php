@@ -22,7 +22,7 @@ use PhpMqtt\Client\MqttClient;
  * repete um anúncio: conduziu uma sessão GATT autenticada e traz o que a pulseira lhe deu já
  * estruturado pelo SDK do fabricante. O que falta é dar-lhe os nomes do hub.
  */
-final class Bridge extends \Hub\Ingress\Mqtt\Bridge
+final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt\DispatchesQueued
 {
     /** Intervalo válido documentado pelo fabricante; fora dele o firmware devolve sentinelas. */
     private const HEART_RATE_MIN = 30;
