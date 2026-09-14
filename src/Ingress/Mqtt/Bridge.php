@@ -26,6 +26,10 @@ abstract class Bridge implements MqttIngress
     /** @var array<string, int> */
     private array $lastUnauthorizedAt = [];
 
+    private int $lastUnauthorizedPruneAt = 0;
+
+    private \Closure $clock;
+
     public function __construct(
         MqttClient $subscriber,
         protected readonly Whitelist $whitelist,
@@ -35,9 +39,23 @@ abstract class Bridge implements MqttIngress
         ?callable $reconnectSubscriber = null,
         protected readonly ?DashboardStoreContract $dashboardStore = null,
         protected readonly ?Denylist $denylist = null,
+        ?callable $clock = null,
     ) {
         $this->subscriber = $subscriber;
         $this->reconnectSubscriber = $reconnectSubscriber;
+        $this->clock = $clock !== null ? \Closure::fromCallable($clock) : static fn(): float => microtime(true);
+    }
+
+    /**
+     * O relógio do ingress, em segundos com fracção.
+     *
+     * Vive na base e não em cada subclasse porque o travão dos avisos aqui em cima também
+     * precisa dele, e dois relógios no mesmo objecto são dois relógios que um teste pode
+     * adiantar em desacordo.
+     */
+    protected function clockNow(): float
+    {
+        return (float)($this->clock)();
     }
 
     abstract protected function handleMessage(string $topic, string $payload): void;
@@ -83,7 +101,8 @@ abstract class Bridge implements MqttIngress
 
         // Um aparelho não registado que insiste -- um radar publica ~20 msg/s -- não pode dar
         // uma escrita ao MySQL por mensagem. O aviso regista-se uma vez por identidade e janela.
-        $now = time();
+        $now = (int)$this->clockNow();
+        $this->forgetExpiredUnauthorized($now);
         $last = $this->lastUnauthorizedAt[$identity] ?? null;
         if ($last !== null && ($now - $last) < self::UNAUTHORIZED_RECORD_INTERVAL_SECONDS) {
             return;
@@ -104,6 +123,31 @@ abstract class Bridge implements MqttIngress
             Logger::channel('hub')->error(
                 "Failed to record rejected device identity={$identity}: {$e->getMessage()}"
             );
+        }
+    }
+
+    /**
+     * Esquece as identidades que já saíram da janela do travão.
+     *
+     * As identidades chegam do tópico -- o MAC do gateway, o UID do radar -- e o processo
+     * corre meses. Sem isto, o mapa acompanha o número de identidades que alguma vez
+     * apareceram em vez do número que está a aparecer agora.
+     *
+     * Não custa comportamento: uma entrada fora da janela já deixava passar o aviso seguinte,
+     * portanto apagá-la é o mesmo que mantê-la. E corre uma vez por janela e não por
+     * mensagem, porque o varrimento é linear e isto está no caminho da ingestão.
+     */
+    private function forgetExpiredUnauthorized(int $now): void
+    {
+        if (($now - $this->lastUnauthorizedPruneAt) < self::UNAUTHORIZED_RECORD_INTERVAL_SECONDS) {
+            return;
+        }
+        $this->lastUnauthorizedPruneAt = $now;
+
+        foreach ($this->lastUnauthorizedAt as $identity => $at) {
+            if (($now - $at) >= self::UNAUTHORIZED_RECORD_INTERVAL_SECONDS) {
+                unset($this->lastUnauthorizedAt[$identity]);
+            }
         }
     }
 

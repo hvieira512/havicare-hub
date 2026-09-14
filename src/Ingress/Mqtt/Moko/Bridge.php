@@ -43,7 +43,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     /** A manutenção corre no máximo uma vez a cada tantos segundos, e não a cada tique. */
     private const MAINTENANCE_INTERVAL_SECONDS = 5.0;
     private float $lastMaintenanceAt = 0.0;
-    private \Closure $clock;
 
     public function __construct(
         \PhpMqtt\Client\MqttClient $subscriber,
@@ -81,10 +80,10 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             reconnectSubscriber: $reconnectSubscriber,
             dashboardStore: $dashboardStore,
             denylist: $denylist,
+            clock: $clock,
         );
         $this->links = $links;
         $this->state = $state;
-        $this->clock = $clock !== null ? \Closure::fromCallable($clock) : static fn(): float => microtime(true);
     }
 
     private readonly GatewayDeviceLinkLookup $links;
@@ -131,7 +130,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
      */
     public function runDueMaintenance(): void
     {
-        $now = (float)($this->clock)();
+        $now = (float)$this->clockNow();
         if ($now - $this->lastMaintenanceAt < self::MAINTENANCE_INTERVAL_SECONDS) {
             return;
         }
@@ -142,7 +141,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
     public function expireIdleGateways(): void
     {
-        $now = ($this->clock)();
+        $now = $this->clockNow();
         foreach ($this->onlineGateways as $deviceKey => $gateway) {
             if ($now - ($this->gatewayLastSeenAt[$deviceKey] ?? $now) < $this->gatewayIdleTimeoutSeconds) {
                 continue;
@@ -224,7 +223,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $deviceType = (string)$gateway['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0);
         $company = (string)($gateway['company'] ?? 'null');
-        $this->gatewayLastSeenAt[$deviceKey] = ($this->clock)();
+        $this->gatewayLastSeenAt[$deviceKey] = $this->clockNow();
         $protocol = (string)($decoded['protocol'] ?? 'moko-gateway');
         $encoding = (string)($decoded['encoding'] ?? 'unknown');
         $raw = [
@@ -339,7 +338,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
     private function shouldStoreRelayedRaw(string $deviceKey): bool
     {
-        $now = (float)($this->clock)();
+        $now = (float)$this->clockNow();
         if ($this->rawHistorySampleSeconds <= 0) {
             $this->lastRelayedRawAt[$deviceKey] = $now;
             return true;
@@ -585,7 +584,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $device,
             $gateway,
             $protocol,
-            $this->proximity()->record($deviceKey, $gatewayKey, (int)$rssiDbm, ($this->clock)()),
+            $this->proximity()->record($deviceKey, $gatewayKey, (int)$rssiDbm, $this->clockNow()),
         );
     }
 
@@ -622,7 +621,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
      */
     public function expireStaleProximity(): void
     {
-        foreach ($this->proximity()->takeStale(($this->clock)()) as $pair) {
+        foreach ($this->proximity()->takeStale($this->clockNow()) as $pair) {
             $device = $this->whitelist->resolve($pair['deviceKey']);
             $gateway = $this->whitelist->resolve($pair['gatewayKey']);
             if ($device === null || $gateway === null) {
