@@ -9,7 +9,7 @@ namespace Hub;
  * @phpstan-type LocationResolutionConfig array{enabled: bool, endpoint: string, user_agent: string, timeout_seconds: float, max_accuracy_meters: float, cache_ttl_seconds: int, failure_cache_ttl_seconds: int, max_concurrency: int, max_queue: int, circuit_failure_threshold: int, circuit_open_seconds: int, rate_limit_open_seconds: int, radio_map_enabled: bool, radio_map_hash_key: string, radio_map_minimum_matches: int, radio_map_maximum_learning_accuracy_meters: float, radio_map_default_gps_accuracy_meters: float, radio_map_minimum_satellites: int, radio_map_maximum_observation_distance_meters: float, radio_map_cluster_radius_meters: float, radio_map_cache_ttl_seconds: int}
  * @phpstan-type NcsConfig array{enabled: bool, topic_filter: string}
  * @phpstan-type MokoConfig array{enabled: bool, topic_filter: string, dedupe_ttl_seconds: int, telemetry_refresh_seconds: int, idle_timeout_seconds: int}
- * @phpstan-type QinglanstConfig array{enabled: bool, host: string, port: int, username: string, password: string, topic_filter: string, client_id_prefix: string, dashboard_seen_min_interval_ms: int, position_history_sample_ms: int, stats_flush_seconds: int}
+ * @phpstan-type QinglanstConfig array{enabled: bool, host: string, port: int, username: string, password: string, topic_filter: string, client_id_prefix: string, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string, dashboard_seen_min_interval_ms: int, position_history_sample_ms: int, stats_flush_seconds: int}
  * @phpstan-type MqttConfig array{host: string, port: int, username: string, password: string, topic_prefix: string, client_id_prefix: string, keepalive: int, timeout: float, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string}
  * @phpstan-type RedisConfig array{host: string, port: int, password: string}
  * @phpstan-type DatabaseConfig array{driver: string, host: string, port: int, name: string, username: string, password: string, charset: string}
@@ -32,6 +32,13 @@ class Config
         $mqttTlsEnabled = in_array($mqttTlsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $mqttTlsVerifyPeerRaw = strtolower(trim((string)(getenv('MQTT_TLS_VERIFY_PEER') ?: 'true')));
         $mqttTlsVerifyPeer = in_array($mqttTlsVerifyPeerRaw, ['1', 'true', 'yes', 'on'], true);
+        // O radar publica no mesmo broker que o hub, e por isso herda a postura de TLS dele.
+        // O `QINGLANST_MQTT_TLS_ENABLED` existe para o dia em que deixarem de ser o mesmo
+        // servidor -- até lá, esquecer de o pôr não deixa a segunda sessão em texto simples.
+        $qinglanstTlsRaw = trim((string)(getenv('QINGLANST_MQTT_TLS_ENABLED') ?: ''));
+        $qinglanstTlsEnabled = $qinglanstTlsRaw === ''
+            ? $mqttTlsEnabled
+            : in_array(strtolower($qinglanstTlsRaw), ['1', 'true', 'yes', 'on'], true);
         $dashboardApiAuthRequiredRaw = strtolower(trim((string)(getenv('DASHBOARD_API_AUTH_REQUIRED') ?: 'true')));
         $dashboardApiAuthRequired = in_array($dashboardApiAuthRequiredRaw, ['1', 'true', 'yes', 'on'], true);
         $downlinkQueueTtlRaw = getenv('DOWNLINK_QUEUE_TTL_SECONDS');
@@ -156,6 +163,11 @@ class Config
                 'password' => getenv('QINGLANST_MQTT_PASSWORD') ?: '',
                 'topic_filter' => getenv('QINGLANST_TOPIC_FILTER') ?: 'radar/1001/#',
                 'client_id_prefix' => getenv('QINGLANST_CLIENT_ID_PREFIX') ?: 'qinglanst-radar',
+                'tls_enabled' => $qinglanstTlsEnabled,
+                'tls_verify_peer' => $mqttTlsVerifyPeer,
+                'tls_ca_file' => getenv('MQTT_TLS_CA_FILE') ?: '',
+                'tls_cert_file' => getenv('MQTT_TLS_CERT_FILE') ?: '',
+                'tls_key_file' => getenv('MQTT_TLS_KEY_FILE') ?: '',
                 'dashboard_seen_min_interval_ms' => max(0, (int)(getenv('QINGLANST_DASHBOARD_SEEN_MIN_INTERVAL_MS') ?: 5000)),
                 'position_history_sample_ms' => max(0, (int)(getenv('QINGLANST_POSITION_HISTORY_SAMPLE_MS') ?: 1000)),
                 'raw_history_sample_ms' => max(0, (int)(getenv('QINGLANST_RAW_HISTORY_SAMPLE_MS') ?: 30000)),

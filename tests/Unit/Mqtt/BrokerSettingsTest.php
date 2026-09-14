@@ -83,7 +83,8 @@ final class BrokerSettingsTest extends TestCase
         BrokerSettings::fromHubConfig($this->hubConfig(['host' => '  ']));
     }
 
-    public function testQinglanstUsesPlainTcpWithFixedTimeouts(): void
+    /** Sem secção de TLS configurada, a ligação é em texto simples -- como qualquer outra. */
+    public function testQinglanstDefaultsToPlainTcpWithFixedTimeouts(): void
     {
         $settings = BrokerSettings::fromQinglanstConfig([
             'host' => 'radar.internal',
@@ -101,6 +102,30 @@ final class BrokerSettingsTest extends TestCase
         self::assertSame(5, $settings->connectTimeout);
         self::assertSame(5, $settings->socketTimeout);
         self::assertFalse($settings->tlsEnabled);
+    }
+
+    /**
+     * O radar publica no mesmo broker que o hub -- o `QINGLANST_MQTT_HOST` e o `MQTT_HOST`
+     * apontam ambos para o mesmo servidor, e o que os separa são os tópicos e as credenciais.
+     *
+     * Enquanto se acreditou que eram dois brokers, esta ligação nunca ter TLS lia-se como uma
+     * diferença legítima entre um servidor nosso e um de terceiros. Não é: ligar o TLS no hub
+     * deixava a subscrição do radar em texto simples contra o mesmo servidor, a mandar
+     * utilizador e password pelo fio.
+     */
+    public function testQinglanstHonoursTheTlsItIsGiven(): void
+    {
+        $settings = BrokerSettings::fromQinglanstConfig([
+            'host' => 'mqtt.example.com',
+            'port' => 8883,
+            'tls_enabled' => true,
+            'tls_verify_peer' => true,
+            'tls_ca_file' => '/etc/ssl/ca.pem',
+        ]);
+
+        self::assertTrue($settings->tlsEnabled, 'o radar partilha o broker do hub e tem de poder partilhar o TLS');
+        self::assertTrue($settings->tlsVerifyPeer);
+        self::assertSame('/etc/ssl/ca.pem', $settings->tlsCaFile);
     }
 
     public function testRejectsEmptyQinglanstHost(): void

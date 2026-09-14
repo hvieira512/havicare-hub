@@ -16,7 +16,7 @@ distintos:
 | Vivistar   | TCP                     | Texto delimitado por `#`                                                       |
 | 4P Touch   | TCP                     | Texto delimitado por parênteses retos, com identificador próprio de 10 dígitos |
 | Voerka     | MQTT                    | JSON                                                                           |
-| Qinglanst  | MQTT _(broker próprio)_ | JSON com corpo binário em base64                                               |
+| Qinglanst  | MQTT _(tópicos próprios)_ | JSON com corpo binário em base64                                             |
 | MOKO       | MQTT                    | JSON (MKGW3) ou binário tipo-comprimento-valor (MKGW4)                         |
 | MONIT      | BLE via gateway         | Anúncio de 20 bytes com campos de 6 bits                                       |
 
@@ -62,7 +62,7 @@ flowchart LR
 
   W -->|TCP, protocolo nativo| HUB
   N -->|MQTT| HUB
-  R -->|MQTT, broker próprio| HUB
+  R -->|MQTT, tópicos próprios| HUB
   B -.->|anúncio BLE| G
   G -->|MQTT| HUB
 
@@ -84,7 +84,7 @@ aplicações que integram.
 | --------------------- | ----------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Relógio               | TCP                     | Wonlex, Vivistar, 4P Touch | Frequência cardíaca, pressão arterial, oxigénio no sangue, glicemia, temperatura, frequência respiratória, ECG, VFC, PPG, intervalo RR, sono, atividade, bateria, localização, alarmes |
 | Chamada de enfermagem | MQTT                    | Voerka W812                | Chamadas de ajuda e estado de ligação                                                                                                                                                  |
-| Radar                 | MQTT _(broker próprio)_ | Qinglanst                  | Presença e posição sem câmara, frequência cardíaca e respiratória, estado de sono, deteção de queda                                                                                    |
+| Radar                 | MQTT _(tópicos próprios)_ | Qinglanst                  | Presença e posição sem câmara, frequência cardíaca e respiratória, estado de sono, deteção de queda                                                                                    |
 | Gateway               | MQTT                    | MOKO MKGW3, MKGW4          | Conectividade, bateria, localização; retransmite os anúncios BLE que recebe                                                                                                            |
 | Pulseira              | BLE via gateway         | MOKO W6, W6B               | Botão de ajuda, movimento, bateria                                                                                                                                                     |
 | Sensor de fralda      | BLE via gateway         | MONIT MECS-PRO             | Humidade por canal, índice de humidade, estado, bateria                                                                                                                                |

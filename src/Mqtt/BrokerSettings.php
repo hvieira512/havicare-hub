@@ -7,9 +7,13 @@ namespace Hub\Mqtt;
 /**
  * Os parâmetros de ligação de um broker MQTT.
  *
- * O hub fala com dois: o seu (com TLS, configurado pelas `MQTT_*`) e o broker de radares da
- * Qinglanst (TCP simples, tempos fixos). Os dois são descritos por este objecto, para o
- * código de ligação ter uma fonte só.
+ * O hub abre duas sessões: a sua, configurada pelas `MQTT_*`, e a da ingestão dos radares
+ * Qinglanst, que tem outras credenciais, outro identificador de cliente e tempos fixos.
+ *
+ * Duas sessões e não dois servidores: o `QINGLANST_MQTT_HOST` e o `MQTT_HOST` apontam para o
+ * mesmo broker, e o que as separa são os tópicos. É por isso que as duas partilham a postura
+ * de TLS por omissão -- e é por se ter acreditado no contrário que a segunda esteve incapaz
+ * de a acompanhar.
  */
 final class BrokerSettings
 {
@@ -63,9 +67,13 @@ final class BrokerSettings
     }
 
     /**
-     * O broker dos radares é TCP simples, com keepalive e tempos fixos. Num construtor
-     * nomeado, isso fica uma diferença de configuração em vez de uma segunda cópia do código
-     * de ligação.
+     * A ligação de ingestão dos radares: keepalive e tempos fixos, e o resto vindo da
+     * configuração como em qualquer outra.
+     *
+     * O TLS vem daqui e não está preso a `false`. O radar publica no mesmo servidor que o hub
+     * -- o `QINGLANST_MQTT_HOST` e o `MQTT_HOST` apontam para o mesmo sítio, e o que os separa
+     * são os tópicos e as credenciais. Uma segunda sessão para o mesmo broker incapaz de subir
+     * para TLS mandava utilizador e password em claro no dia em que a primeira subisse.
      *
      * @param array<string, mixed> $qinglanstConfig the `qinglanst` section of the hub config
      */
@@ -85,6 +93,11 @@ final class BrokerSettings
             60,
             5,
             5,
+            (bool)($qinglanstConfig['tls_enabled'] ?? false),
+            (bool)($qinglanstConfig['tls_verify_peer'] ?? true),
+            (string)($qinglanstConfig['tls_ca_file'] ?? ''),
+            (string)($qinglanstConfig['tls_cert_file'] ?? ''),
+            (string)($qinglanstConfig['tls_key_file'] ?? ''),
         );
     }
 
