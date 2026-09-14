@@ -9,8 +9,16 @@ import {
     normalizeAlarmClockDaySelection,
     normalizeAlarmClockItems,
 } from "../normalizers.js";
-import { contactsInput } from "./generic.js";
+import { contactsInput, toggleInput } from "./generic.js";
 import { enabledSwitch, nextUid, numberField } from "./shared.js";
+import {
+    readAlarmClock,
+    readCheckbox,
+    readContacts,
+    readNumber,
+    readText,
+    readUniquePhoneArray,
+} from "../readers.js";
 
 /**
  * Os campos das capacidades genéricas do hub -- alarmes, contactos SOS, lista branca, dados
@@ -396,3 +404,110 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
             </div>
         </div>`;
 }
+
+/**
+ * Os descritores dos campos de capacidade genérica.
+ *
+ * Cada tipo de campo declara aqui as suas quatro faces juntas -- desenhar, ler de volta, o
+ * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
+ * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
+ */
+export const INPUTS = {
+    diaperSensitivity: {
+        render: (_entry, desired, meta) => diaperSensitivityInput(desired, meta),
+        read: (section) => ({
+            pollutionRange: readNumber(section, "pollutionRange"),
+            pollutionValue: readNumber(section, "pollutionValue"),
+        }),
+        // Sem `defaults`: abre vazio. Não é decisão desta camada qual seria o valor plausível.
+    },
+    bloodPressure: {
+        render: (_entry, desired) => bloodPressureInput(desired),
+        read: (section) => ({
+            systolic: readNumber(section, "systolic"),
+            diastolic: readNumber(section, "diastolic"),
+        }),
+        defaults: () => ({ systolic: 120, diastolic: 80 }),
+    },
+    windowToggle: {
+        render: windowToggleInput,
+        // As horas voltam a juntar-se no formato que o construtor valida.
+        read: (section) => ({
+            enabled: readCheckbox(section, "enabled"),
+            range: `${readText(section, "rangeStart")}-${readText(section, "rangeEnd")}`,
+        }),
+        // Sem `defaults`: abre vazio. Não é decisão desta camada qual seria o valor plausível.
+    },
+    personalInfo: {
+        render: personalInfoInput,
+        read: (section) => ({
+            heightCm: readNumber(section, "heightCm"),
+            weightKg: readNumber(section, "weightKg"),
+            age: readNumber(section, "age"),
+            sex: readText(section, "sex"),
+            stepGoal: readNumber(section, "stepGoal"),
+            sleepGoalMinutes: readNumber(section, "sleepGoalMinutes"),
+        }),
+        // Sem `defaults`: abre vazio. Não é decisão desta camada qual seria o valor plausível.
+    },
+    heartRateThresholds: {
+        render: heartRateThresholdsInput,
+        read: (section) => ({
+            enabled: readCheckbox(section, "enabled"),
+            maxBpm: readNumber(section, "maxBpm"),
+            minBpm: readNumber(section, "minBpm"),
+        }),
+        // Sem `defaults`: abre vazio. Não é decisão desta camada qual seria o valor plausível.
+    },
+    sos_contacts: {
+        render: sosContactsInput,
+        read: (section) => {
+            const selector = section.querySelectorAll("[data-sos-contact-phone]");
+            if (selector.length > 0) {
+                return Array.from(selector)
+                    .filter((input) => input.checked)
+                    .map((input) => String(input.value || "").trim())
+                    .filter(Boolean);
+            }
+            const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
+            return readUniquePhoneArray(section, "numbers", "Contactos SOS").slice(0, limit);
+        },
+        defaults: () => [],
+        help: () => "",
+    },
+    call_whitelist: {
+        render: callWhitelistInput,
+        read: (section) => {
+            const limit = parseInt(section.dataset.configLimit || "10", 10) || 10;
+            if ((section.dataset.configProtocol || "") === "vivistar-iw") {
+                return { contacts: readContacts(section).slice(0, limit) };
+            }
+            return readUniquePhoneArray(section, "numbers", "Lista branca").slice(0, limit);
+        },
+        defaults: (entry, protocol) => protocol === "vivistar-iw"
+            ? { contacts: [{ name: "", phone: "" }] }
+            : ["", "", "", "", "", "", "", "", "", ""],
+        help: () => "",
+    },
+    whitelist_enabled: {
+        render: (entry, desired) =>
+            toggleInput({ ...entry, fields: ["enabled"] }, desired),
+        read: (section) => ({
+            enabled: readCheckbox(section, "enabled"),
+        }),
+        defaults: () => ({ enabled: true }),
+        help: () => "ativa ou desativa a lista branca",
+    },
+    phonebook: {
+        render: contactsInput,
+        read: (section) => ({ contacts: readContacts(section) }),
+        defaults: () => ({ contacts: [] }),
+        help: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
+    },
+    alarm_clock: {
+        render: (_entry, desired, meta) => alarmClockInput(desired, meta),
+        read: (section) => readAlarmClock(section),
+        defaults: () => ({ items: [] }),
+        help: () => "Até 3 alarmes com recorrência e tipo, quando suportado.",
+    },
+};

@@ -4,6 +4,15 @@ import { renderPhoneControl } from "../../../phone.js";
 import { protocolPhonebookConstraints } from "../protocol-catalog.js";
 import { boolValue } from "../normalizers.js";
 import { enabledSwitch, numberField } from "./shared.js";
+import {
+    firstFieldName,
+    readCheckbox,
+    readContacts,
+    readNumber,
+    readPhone,
+    readPhoneArray,
+    readText,
+} from "../readers.js";
 
 /**
  * Os campos que mais do que um fornecedor declara: interruptores, números, texto, telefones e
@@ -189,3 +198,85 @@ export function contactsInput(entry, desired, meta = {}) {
             </div>
         </div>`;
 }
+
+/**
+ * Os descritores dos campos partilhados.
+ *
+ * Cada tipo de campo declara aqui as suas quatro faces juntas -- desenhar, ler de volta, o
+ * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
+ * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
+ */
+export const INPUTS = {
+    toggle: {
+        render: (entry, desired, meta) => toggleInput(entry, desired, meta?.protocol),
+        read: (section) => {
+            const field = firstFieldName(section);
+            return { [field]: readCheckbox(section, field) };
+        },
+        defaults: (entry, protocol) => ({
+            [protocol === "wonlex-json" && entry.fields?.[0] === "switchState"
+                ? "enabled"
+                : entry.fields?.[0] || "value"]: true,
+        }),
+    },
+    number: {
+        render: numberInput,
+        read: (section) => {
+            const field = firstFieldName(section);
+            return { [field]: readNumber(section, field) };
+        },
+        defaults: (entry) => ({ [entry.fields?.[0] || "value"]: 0 }),
+    },
+    phone: {
+        render: phoneInput,
+        read: (section) => {
+            const field = firstFieldName(section);
+            return { [field]: readPhone(section, field) };
+        },
+        defaults: (entry) => ({ [entry.fields?.[0] || "value"]: "" }),
+    },
+    text: {
+        render: textInput,
+        read: (section) => {
+            const field = firstFieldName(section);
+            return { [field]: readText(section, field) };
+        },
+        defaults: (entry) => ({ [entry.fields?.[0] || "value"]: "" }),
+    },
+    pushMessage: {
+        render: pushMessageInput,
+        read: (section) => ({ message: readText(section, "message") }),
+    },
+    intervalToggle: {
+        render: intervalToggleInput,
+        read: (section) => ({
+            enabled: readCheckbox(section, "enabled"),
+            intervalMinutes: readNumber(section, "intervalMinutes"),
+        }),
+        defaults: () => ({ enabled: true, intervalMinutes: 60 }),
+    },
+    requestAction: {
+        render: requestActionInput,
+        read: () => ({}),
+        help: () => "sem parâmetros",
+    },
+    resetAction: {
+        render: resetActionInput,
+        read: () => ({}),
+    },
+    list: {
+        render: (entry, desired) => listInput(entry, desired, "numbers", entry.label || "Lista"),
+        read: (section) => {
+            const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
+            return { numbers: readPhoneArray(section, "numbers").slice(0, limit) };
+        },
+        defaults: () => ({ numbers: ["", "", ""] }),
+        help: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
+    },
+    contacts: {
+        render: contactsInput,
+        read: (section) => ({ contacts: readContacts(section) }),
+        defaults: () => ({ contacts: [{ name: "", phone: "" }] }),
+        help: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
+    },
+};

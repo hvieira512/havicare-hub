@@ -3,11 +3,17 @@ import { field } from "../../../widgets.js";
 import {
     WONLEX_MEDICATION_PERIODS,
     boolValue,
+    numericValue,
     defaultWonlexMedicationPlan,
     normalizeWonlexMedicationPlan,
     normalizeWonlexMedicationPlans,
 } from "../normalizers.js";
 import { enabledSwitch, nextUid, numberField } from "./shared.js";
+import {
+    readCheckbox,
+    readNumber,
+    readText,
+} from "../readers.js";
 
 /**
  * Os campos que só a Wonlex declara.
@@ -254,3 +260,150 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
             </div>
         </div>`;
 }
+
+function readWonlexMedicationPlans(section) {
+    const plans = Array.from(
+        section.querySelectorAll("[data-repeat-row=\"wonlexMedicationPlan\"]"),
+    ).map((row, index) => {
+        const value = (field) => String(
+            row.querySelector(`[data-medication-field="${field}"]`)?.value || "",
+        ).trim();
+        const drugName = value("drugName");
+        const start = value("drugStartTime");
+        const end = value("drugEndTime");
+        if (drugName === "") {
+            throw new Error(`Medicamento ${index + 1}: indique o nome`);
+        }
+        if (start === "" || end === "") {
+            throw new Error(`Medicamento ${index + 1}: indique as datas inicial e final`);
+        }
+        if (end < start) {
+            throw new Error(`Medicamento ${index + 1}: a data final não pode ser anterior à inicial`);
+        }
+
+        const selected = Array.from(
+            row.querySelectorAll("[data-medication-period]:checked"),
+        ).map((input) => parseInt(String(input.value), 10));
+        if (selected.length === 0) {
+            throw new Error(`Medicamento ${index + 1}: selecione pelo menos um período`);
+        }
+
+        const alarmClock = {};
+        for (const periodIndex of selected) {
+            const period = WONLEX_MEDICATION_PERIODS.find(
+                (candidate) => candidate.index === periodIndex,
+            );
+            const time = String(
+                row.querySelector(`[data-medication-period-time="${periodIndex}"]`)?.value || "",
+            ).trim();
+            if (!period || time === "") {
+                throw new Error(`Medicamento ${index + 1}: indique a hora de cada período selecionado`);
+            }
+            alarmClock[period.key] = time;
+        }
+
+        const dose = numericValue(value("drugDose"), 0);
+        const interval = numericValue(value("drugInterval"), -1);
+        if (dose < 0 || interval < 0) {
+            throw new Error(`Medicamento ${index + 1}: dose e intervalo não podem ser negativos`);
+        }
+
+        return {
+            drugType: parseInt(value("drugType"), 10) || 0,
+            drugName,
+            drugDose: dose,
+            drugUnit: value("drugUnit") || "5",
+            drugStartTime: start,
+            drugEndTime: end,
+            drugInterval: interval,
+            drugTime: {
+                alarmClock,
+                checkboxes: selected,
+                radio: parseInt(String(
+                    row.querySelector("[data-medication-field=\"mealTiming\"]:checked")?.value || "0",
+                ), 10) === 1
+                    ? 1
+                    : 0,
+            },
+        };
+    });
+
+    return { plans };
+}
+
+/**
+ * Os descritores dos campos da Wonlex.
+ *
+ * Cada tipo de campo declara aqui as suas quatro faces juntas -- desenhar, ler de volta, o
+ * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
+ * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
+ */
+export const INPUTS = {
+    wonlexBloodPressureWarning: {
+        render: (_entry, desired) =>
+            wonlexBloodPressureWarningInput(desired),
+        read: (section) => ({
+            // O formulário oferece um limiar sistólico e um diastólico, que é o que a
+            // configuração `BPEarlyWarning` da Wonlex leva: ler um valor só perdia os dois.
+            enabled: readCheckbox(section, "enabled"),
+            hpWarn: readNumber(section, "hpWarn"),
+            LPWarn: readNumber(section, "LPWarn"),
+        }),
+        defaults: () => ({ enabled: true, hpWarn: 135, LPWarn: 90 }),
+    },
+    wonlexSleepSettings: {
+        render: (_entry, desired) => wonlexSleepSettingsInput(desired),
+        read: (section) => ({
+            enabled: readCheckbox(section, "enabled"),
+            sleepStartTime: readText(section, "sleepStartTime"),
+            sleepEndTime: readText(section, "sleepEndTime"),
+            sleepTarget: readNumber(section, "sleepTarget"),
+        }),
+        defaults: () => ({
+            enabled: true,
+            sleepStartTime: "220000",
+            sleepEndTime: "100000",
+            sleepTarget: 480,
+        }),
+    },
+    wonlexReminderThreshold: {
+        render: wonlexReminderThresholdInput,
+        read: (section) => {
+            const valueField = section.querySelector(
+                "[data-config-field=\"RemindValue\"]",
+            )
+                ? "RemindValue"
+                : "reminderValue";
+            return {
+                enabled: readCheckbox(section, "enabled"),
+                [valueField]: readNumber(section, valueField),
+            };
+        },
+        defaults: () => ({ enabled: true, reminderValue: 90 }),
+    },
+    wonlexHeartRateRange: {
+        render: (_entry, desired) => wonlexHeartRateRangeInput(desired),
+        read: (section) => ({
+            enabled: readCheckbox(section, "enabled"),
+            remindValue: readNumber(section, "remindValue"),
+            exerciseEnabled: readCheckbox(section, "exerciseEnabled"),
+            exerciseHRMin: readNumber(section, "exerciseHRMin"),
+            exerciseHRMax: readNumber(section, "exerciseHRMax"),
+            exerciseRemindValue: readNumber(section, "exerciseRemindValue"),
+        }),
+        defaults: () => ({
+            enabled: true,
+            remindValue: 120,
+            exerciseEnabled: true,
+            exerciseHRMin: 100,
+            exerciseHRMax: 140,
+            exerciseRemindValue: 140,
+        }),
+    },
+    wonlexMedicationPlans: {
+        render: (_entry, desired) => wonlexMedicationPlansInput(desired),
+        read: (section) => readWonlexMedicationPlans(section),
+        defaults: () => ({ plans: [defaultWonlexMedicationPlan()] }),
+        help: () => "Formulário guiado para medicamento, dose, período e horários.",
+    },
+};

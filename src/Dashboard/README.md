@@ -37,8 +37,8 @@ São só estas, e explicam onde cada ficheiro está:
    que quase todos atravessam duas ou três e a regra 1 proíbe-os de se conhecerem.
 
 4. **Um widget novo nasce no seu próprio módulo, ao lado da funcionalidade que o usa.**
-   Não se acrescenta ao `inputs.js` nem ao `telemetry-cards.js`. O `devices/device-card.js`
-   é o exemplo a seguir.
+   Não se acrescenta ao `telemetry-cards.js`. O `devices/device-card.js` é o exemplo a
+   seguir.
 
 Cada pasta com mais do que um ficheiro repete a regra 3 à sua escala: `settings/index.js`
 é o único que conhece as quatro secções do modal, e `settings/shell.js` é o que todas
@@ -51,11 +51,14 @@ Um cartão de dispositivo estava espalhado por quatro sítios: a marcação numa
 Mudar um widget obrigava a abrir quatro ficheiros, e nada dizia que os quatro pedaços
 eram a mesma coisa.
 
-É também a razão de os ficheiros grandes serem grandes. O `inputs.js` com mil e
-trezentas linhas e o `telemetry-cards.js` com mil e cento e trinta não estão mal
-escritos: são o sítio onde tudo o que é *do mesmo género* se acumulou, porque não havia
+É também a razão de os ficheiros grandes serem grandes. O `telemetry-cards.js` não está
+mal escrito: é o sítio onde tudo o que é *do mesmo género* se acumulou, porque não havia
 sítio nenhum para o que é *da mesma funcionalidade*. Organizar por camada em vez de por
 funcionalidade dá exactamente isto.
+
+O antigo `config/inputs.js`, com mil e trezentas linhas, foi o primeiro a sair daí: partiu-se
+por fornecedor em `config/inputs/`, e a linha que os separa não é o tamanho -- é o que cada
+protocolo declara nas definições em `src/Command/Configuration/Definition/`.
 
 O `devices/device-card.js` é o primeiro feito assim, e mostra até onde a regra vai. Juntou
 o que se podia juntar sem pagar por isso: a marcação e o esqueleto ficam no mesmo módulo,
@@ -138,8 +141,13 @@ dashboard/
 │   │   ├── index.js        desenha a raiz e as secções
 │   │   ├── panel.js        gravar, refrescar, e o estado de cada bloco
 │   │   ├── handlers.js     os eventos delegados na raiz do painel
-│   │   ├── inputs.js       um renderer por tipo de campo
-│   │   ├── readers.js      o inverso: lê o payload de volta do DOM
+│   │   ├── inputs/         um descritor por tipo de campo, agrupado por fornecedor
+│   │   │   ├── index.js        junta os cinco grupos num registo só
+│   │   │   ├── shared.js       o contador de ids, o campo numérico, o interruptor
+│   │   │   ├── generic.js      o que mais do que um fornecedor declara
+│   │   │   ├── capability.js   alarmes, contactos SOS, lista branca, dados pessoais
+│   │   │   ├── four-p-touch.js · vivistar.js · wonlex.js
+│   │   ├── readers.js      as primitivas que lêem o payload de volta do DOM
 │   │   ├── normalizers.js  as formas que os protocolos usam
 │   │   ├── row-editing.js  adicionar e remover linhas (contactos, alarmes, planos)
 │   │   ├── protocol-catalog.js  o que cada protocolo aceita
@@ -250,7 +258,7 @@ regra nova, a resposta é uma capacidade nova em PHP.
 | HTML que um ecrã desenha | o ficheiro desse ecrã |
 | uma listagem plana que se ordena e filtra por coluna | uma grelha com o `grid.js`, alimentada pelo `columns` da API |
 | um handler de clique | ao lado do módulo que desenha o que ele trata |
-| um campo novo de configuração | `devices/config/inputs.js` + `readers.js` |
+| um campo novo de configuração | um descritor em `devices/config/inputs/<grupo>.js` |
 | uma configuração que o hub aplica sem downlink | nada de especial no frontend: é a capacidade em PHP que se marca com `HubAppliedCapability` |
 | um ecrã novo nas definições | `settings/<nome>.js`, ligado no `settings/index.js` |
 | estado que sobrevive a um render | `state.js`, no sub-objeto do ecrã |
@@ -282,11 +290,15 @@ correcção é apontar o teste ao ficheiro novo.
   formulário do outro slide, o formulário volta à lista depois de gravar. Resolvem-se em
   tempo de chamada e não quebram nada; parti-los obrigava a um registo de callbacks que
   custa mais do que resolve. É o único ciclo do grafo.
-- **`devices/config/inputs.js` passa das mil linhas** (o `telemetry-cards.js` já encolheu
-  por baixo delas, e o `detail.js` largou a tabela de atividade para o seu módulo). Partir
-  por tamanho, sem uma linha que os separe de verdade, só espalha. A linha que os separa é a
-  regra 4: são o sítio onde tudo o que é do mesmo *género* se acumulou, e encolhem por
-  atrito à medida que cada widget novo nasce junto do seu CSS e do seu ouvinte.
+- **Um tipo de campo de configuração declara as suas quatro faces num descritor só** --
+  `render`, `read`, `defaults` e `help`, em `devices/config/inputs/`. Eram quatro mapas
+  paralelos indexados pela mesma chave e alinhados à mão: uma entrada em falta não dava erro,
+  dava um campo genérico ou um payload vazio. Um descritor sem `defaults` é agora uma
+  ausência visível, e algumas estão anotadas como tal.
+- **O `telemetry-cards.js` continua grande.** Partir por tamanho, sem uma linha que os separe
+  de verdade, só espalha. A linha que o separa é a regra 4: é o sítio onde tudo o que é do
+  mesmo *género* se acumulou, e encolhe por atrito à medida que cada widget novo nasce junto
+  do seu CSS e do seu ouvinte.
 - **O CSS está dividido por área**, em cinco ficheiros: `assets/css/base.css` (tokens e
   fontes), `shell.css` (moldura, navbar, cartões), `device.css` (o ecrã do dispositivo),
   `login.css`, e o `main.css` fica com os modais. A ordem no `<head>` é essa, e é a

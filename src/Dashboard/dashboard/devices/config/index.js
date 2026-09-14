@@ -4,70 +4,9 @@ import { stateBadge } from "../../components/state-badge.js";
 // Os mesmos cinco ícones do catálogo de capacidades: as secções são as mesmas, e um separador
 // com outro ícone para a mesma secção lia-se como sendo outra coisa.
 import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
-import { takePillsInput, takePillsReminderGroup } from "./four-p-touch-take-pills.js";
-import {
-    defaultWonlexMedicationPlan,
-    numericValue,
-    WONLEX_MEDICATION_PERIODS,
-} from "./normalizers.js";
-import {
-    contactsInput,
-    intervalToggleInput,
-    listInput,
-    numberInput,
-    phoneInput,
-    pushMessageInput,
-    requestActionInput,
-    resetActionInput,
-    textInput,
-    toggleInput,
-} from "./inputs/generic.js";
-import {
-    alarmClockInput,
-    bloodPressureInput,
-    callWhitelistInput,
-    diaperSensitivityInput,
-    heartRateThresholdsInput,
-    personalInfoInput,
-    sosContactsInput,
-    windowToggleInput,
-} from "./inputs/capability.js";
-import {
-    alarmsInput,
-    dualToggleInput,
-    fallSensitivityLevelsInput,
-    intervalHoursToggleInput,
-    languageTimezoneInput,
-    makeCallInput,
-    soundProfileInput,
-    timeRangeInput,
-    timeRangesInput,
-    voiceMonitorInput,
-} from "./inputs/four-p-touch.js";
-import { fallSensitivityInput, workingModeInput } from "./inputs/vivistar.js";
-import {
-    wonlexBloodPressureWarningInput,
-    wonlexHeartRateRangeInput,
-    wonlexMedicationPlansInput,
-    wonlexReminderThresholdInput,
-    wonlexSleepSettingsInput,
-} from "./inputs/wonlex.js";
-import {
-    firstFieldName,
-    readAlarmClock,
-    readCheckbox,
-    readContacts,
-    readFourPTouchAlarms,
-    readJson,
-    readNumber,
-    readPhone,
-    readPhoneArray,
-    readTakePills,
-    readText,
-    readTextArray,
-    readUniquePhoneArray,
-    jsonInput,
-} from "./readers.js";
+import { takePillsReminderGroup } from "./four-p-touch-take-pills.js";
+import { CONFIG_INPUTS } from "./inputs/index.js";
+import { jsonInput, readJson } from "./readers.js";
 import {
     catalogForProtocol,
     protocolFieldConstraints,
@@ -164,275 +103,6 @@ const CONFIGURATION_FAILURE_LABELS = {
     delivery_failed: "Não foi possível entregar o comando ao dispositivo.",
     dropped: "O comando foi descartado antes de ser entregue.",
     failed: "O dispositivo não confirmou a aplicação do valor.",
-};
-
-const CONFIG_INPUT_RENDERERS = {
-    toggle: (entry, desired, meta) => toggleInput(entry, desired, meta?.protocol),
-    fallSensitivity: (_entry, desired) => fallSensitivityInput(desired),
-    diaperSensitivity: (_entry, desired, meta) => diaperSensitivityInput(desired, meta),
-    number: numberInput,
-    phone: phoneInput,
-    text: textInput,
-    pushMessage: pushMessageInput,
-    makeCall: makeCallInput,
-    voiceMonitor: voiceMonitorInput,
-    resetAction: resetActionInput,
-    requestAction: requestActionInput,
-    intervalToggle: intervalToggleInput,
-    intervalHoursToggle: (_entry, desired) => intervalHoursToggleInput(desired),
-    workingMode: (_entry, desired) => workingModeInput(desired),
-    bloodPressure: (_entry, desired) => bloodPressureInput(desired),
-    wonlexBloodPressureWarning: (_entry, desired) =>
-        wonlexBloodPressureWarningInput(desired),
-    languageTimezone: (_entry, desired) => languageTimezoneInput(desired),
-    dualToggle: (_entry, desired) => dualToggleInput(desired),
-    fallSensitivityLevels: (_entry, desired) => fallSensitivityLevelsInput(desired),
-    timeRanges: timeRangesInput,
-    timeRange: (_entry, desired) => timeRangeInput(desired),
-    windowToggle: windowToggleInput,
-    personalInfo: personalInfoInput,
-    heartRateThresholds: heartRateThresholdsInput,
-    wonlexSleepSettings: (_entry, desired) => wonlexSleepSettingsInput(desired),
-    wonlexReminderThreshold: wonlexReminderThresholdInput,
-    wonlexHeartRateRange: (_entry, desired) => wonlexHeartRateRangeInput(desired),
-    list: (entry, desired) => listInput(entry, desired, "numbers", entry.label || "Lista"),
-    sos_contacts: sosContactsInput,
-    call_whitelist: callWhitelistInput,
-    whitelist_enabled: (entry, desired) =>
-        toggleInput({ ...entry, fields: ["enabled"] }, desired),
-    phonebook: contactsInput,
-    contacts: contactsInput,
-    alarm_clock: (_entry, desired, meta) => alarmClockInput(desired, meta),
-    alarms: (_entry, desired, meta) => alarmsInput(desired, meta),
-    takePills: (_entry, desired, meta) => takePillsInput(desired, meta),
-    wonlexMedicationPlans: (_entry, desired) => wonlexMedicationPlansInput(desired),
-    soundProfile: (_entry, desired) => soundProfileInput(desired),
-};
-
-const CONFIG_INPUT_READERS = {
-    toggle: (section) => {
-        const field = firstFieldName(section);
-        return { [field]: readCheckbox(section, field) };
-    },
-    fallSensitivity: (section) => ({ sensitivity: readNumber(section, "sensitivity") }),
-    diaperSensitivity: (section) => ({
-        pollutionRange: readNumber(section, "pollutionRange"),
-        pollutionValue: readNumber(section, "pollutionValue"),
-    }),
-    number: (section) => {
-        const field = firstFieldName(section);
-        return { [field]: readNumber(section, field) };
-    },
-    phone: (section) => {
-        const field = firstFieldName(section);
-        return { [field]: readPhone(section, field) };
-    },
-    text: (section) => {
-        const field = firstFieldName(section);
-        return { [field]: readText(section, field) };
-    },
-    pushMessage: (section) => ({ message: readText(section, "message") }),
-    makeCall: (section) => ({ phone: readPhone(section, "phone") }),
-    voiceMonitor: (section) => ({ phone: readPhone(section, "phone") }),
-    resetAction: () => ({}),
-    requestAction: () => ({}),
-    intervalToggle: (section) => ({
-        enabled: readCheckbox(section, "enabled"),
-        intervalMinutes: readNumber(section, "intervalMinutes"),
-    }),
-    intervalHoursToggle: (section) => ({
-        enabled: readCheckbox(section, "enabled"),
-        intervalHours: readNumber(section, "intervalHours"),
-    }),
-    workingMode: (section) => {
-        const mode = readNumber(section, "mode");
-        const payload = { mode };
-        if (mode === 8) {
-            payload.intervalSeconds = readNumber(section, "intervalSeconds");
-            payload.gpsEnabled = readCheckbox(section, "gpsEnabled");
-        }
-        return payload;
-    },
-    bloodPressure: (section) => ({
-        systolic: readNumber(section, "systolic"),
-        diastolic: readNumber(section, "diastolic"),
-    }),
-    wonlexBloodPressureWarning: (section) => ({
-        // O formulário oferece um limiar sistólico e um diastólico, que é o que a
-        // configuração `BPEarlyWarning` da Wonlex leva: ler um valor só perdia os dois.
-        enabled: readCheckbox(section, "enabled"),
-        hpWarn: readNumber(section, "hpWarn"),
-        LPWarn: readNumber(section, "LPWarn"),
-    }),
-    languageTimezone: (section) => {
-        const value = readText(section, "preset");
-        const [language, timeZone] = value.split("|", 2);
-        return {
-            language: parseInt(language, 10),
-            timeZone: String(timeZone || "0"),
-        };
-    },
-    dualToggle: (section) => ({
-        enabled: readCheckbox(section, "enabled"),
-        callCenterOnFall: readCheckbox(section, "callCenterOnFall"),
-    }),
-    fallSensitivityLevels: (section) => {
-        const levels = readNumber(section, "levels");
-        if (![6, 8].includes(levels)) {
-            throw new Error("Selecione a escala de sensibilidade suportada pelo firmware (6 ou 8 níveis).");
-        }
-        return {
-            sensitivity: readNumber(section, "sensitivity"),
-            levels,
-        };
-    },
-    timeRanges: (section) => ({ ranges: readTextArray(section, "ranges") }),
-    timeRange: (section) => ({ range: readText(section, "range") }),
-    // As horas voltam a juntar-se no formato que o construtor valida.
-    windowToggle: (section) => ({
-        enabled: readCheckbox(section, "enabled"),
-        range: `${readText(section, "rangeStart")}-${readText(section, "rangeEnd")}`,
-    }),
-    heartRateThresholds: (section) => ({
-        enabled: readCheckbox(section, "enabled"),
-        maxBpm: readNumber(section, "maxBpm"),
-        minBpm: readNumber(section, "minBpm"),
-    }),
-    personalInfo: (section) => ({
-        heightCm: readNumber(section, "heightCm"),
-        weightKg: readNumber(section, "weightKg"),
-        age: readNumber(section, "age"),
-        sex: readText(section, "sex"),
-        stepGoal: readNumber(section, "stepGoal"),
-        sleepGoalMinutes: readNumber(section, "sleepGoalMinutes"),
-    }),
-    wonlexSleepSettings: (section) => ({
-        enabled: readCheckbox(section, "enabled"),
-        sleepStartTime: readText(section, "sleepStartTime"),
-        sleepEndTime: readText(section, "sleepEndTime"),
-        sleepTarget: readNumber(section, "sleepTarget"),
-    }),
-    wonlexReminderThreshold: (section) => {
-        const valueField = section.querySelector(
-            "[data-config-field=\"RemindValue\"]",
-        )
-            ? "RemindValue"
-            : "reminderValue";
-        return {
-            enabled: readCheckbox(section, "enabled"),
-            [valueField]: readNumber(section, valueField),
-        };
-    },
-    wonlexHeartRateRange: (section) => ({
-        enabled: readCheckbox(section, "enabled"),
-        remindValue: readNumber(section, "remindValue"),
-        exerciseEnabled: readCheckbox(section, "exerciseEnabled"),
-        exerciseHRMin: readNumber(section, "exerciseHRMin"),
-        exerciseHRMax: readNumber(section, "exerciseHRMax"),
-        exerciseRemindValue: readNumber(section, "exerciseRemindValue"),
-    }),
-    list: (section) => {
-        const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
-        return { numbers: readPhoneArray(section, "numbers").slice(0, limit) };
-    },
-    sos_contacts: (section) => {
-        const selector = section.querySelectorAll("[data-sos-contact-phone]");
-        if (selector.length > 0) {
-            return Array.from(selector)
-                .filter((input) => input.checked)
-                .map((input) => String(input.value || "").trim())
-                .filter(Boolean);
-        }
-        const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
-        return readUniquePhoneArray(section, "numbers", "Contactos SOS").slice(0, limit);
-    },
-    call_whitelist: (section) => {
-        const limit = parseInt(section.dataset.configLimit || "10", 10) || 10;
-        if ((section.dataset.configProtocol || "") === "vivistar-iw") {
-            return { contacts: readContacts(section).slice(0, limit) };
-        }
-        return readUniquePhoneArray(section, "numbers", "Lista branca").slice(0, limit);
-    },
-    whitelist_enabled: (section) => ({
-        enabled: readCheckbox(section, "enabled"),
-    }),
-    phonebook: (section) => ({ contacts: readContacts(section) }),
-    contacts: (section) => ({ contacts: readContacts(section) }),
-    alarm_clock: (section) => readAlarmClock(section),
-    alarms: (section) => ({ alarms: readFourPTouchAlarms(section) }),
-    takePills: (section) => readTakePills(section),
-    wonlexMedicationPlans: (section) => readWonlexMedicationPlans(section),
-    soundProfile: (section) => ({ mode: readNumber(section, "mode") }),
-};
-
-const CONFIG_INPUT_DEFAULTS = {
-    toggle: (entry, protocol) => ({
-        [protocol === "wonlex-json" && entry.fields?.[0] === "switchState"
-            ? "enabled"
-            : entry.fields?.[0] || "value"]: true,
-    }),
-    fallSensitivity: () => ({ sensitivity: 2 }),
-    number: (entry) => ({ [entry.fields?.[0] || "value"]: 0 }),
-    phone: (entry) => ({ [entry.fields?.[0] || "value"]: "" }),
-    text: (entry) => ({ [entry.fields?.[0] || "value"]: "" }),
-    intervalToggle: () => ({ enabled: true, intervalMinutes: 60 }),
-    intervalHoursToggle: () => ({ enabled: true, intervalHours: 2 }),
-    workingMode: () => ({ mode: 1 }),
-    bloodPressure: () => ({ systolic: 120, diastolic: 80 }),
-    wonlexBloodPressureWarning: () => ({ enabled: true, hpWarn: 135, LPWarn: 90 }),
-    languageTimezone: () => ({ preset: "0|0" }),
-    dualToggle: () => ({ enabled: true, callCenterOnFall: false }),
-    fallSensitivityLevels: () => ({ sensitivity: 5, levels: 8 }),
-    timeRanges: () => ({ ranges: ["08:10-09:30"] }),
-    timeRange: () => ({ range: "21:10-07:30" }),
-    wonlexSleepSettings: () => ({
-        enabled: true,
-        sleepStartTime: "220000",
-        sleepEndTime: "100000",
-        sleepTarget: 480,
-    }),
-    wonlexReminderThreshold: () => ({ enabled: true, reminderValue: 90 }),
-    wonlexHeartRateRange: () => ({
-        enabled: true,
-        remindValue: 120,
-        exerciseEnabled: true,
-        exerciseHRMin: 100,
-        exerciseHRMax: 140,
-        exerciseRemindValue: 140,
-    }),
-    list: () => ({ numbers: ["", "", ""] }),
-    sos_contacts: () => [],
-    call_whitelist: (entry, protocol) => protocol === "vivistar-iw"
-        ? { contacts: [{ name: "", phone: "" }] }
-        : ["", "", "", "", "", "", "", "", "", ""],
-    whitelist_enabled: () => ({ enabled: true }),
-    phonebook: () => ({ contacts: [] }),
-    contacts: () => ({ contacts: [{ name: "", phone: "" }] }),
-    alarm_clock: () => ({ items: [] }),
-    alarms: () => ({ alarms: [] }),
-    takePills: () => ({
-        reminderSettings: [],
-        number: 0,
-        reminderText: "",
-        voiceData: "",
-        voiceMimeType: "audio/webm",
-    }),
-    wonlexMedicationPlans: () => ({ plans: [defaultWonlexMedicationPlan()] }),
-    soundProfile: () => ({ mode: 1 }),
-};
-
-const CONFIG_INPUT_HELP = {
-    list: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
-    contacts: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
-    alarm_clock: () => "Até 3 alarmes com recorrência e tipo, quando suportado.",
-    alarms: () => "até 3 alarmes",
-    requestAction: () => "sem parâmetros",
-    soundProfile: () => "4 modos",
-    whitelist_enabled: () => "ativa ou desativa a lista branca",
-    phonebook: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
-    sos_contacts: () => "",
-    call_whitelist: () => "",
-    wonlexMedicationPlans: () => "Formulário guiado para medicamento, dose, período e horários.",
 };
 
 function groupedCatalog(catalog) {
@@ -928,17 +598,17 @@ function configButtonState(_row, uiState) {
 
 export function renderConfigInputs(entry, desired, meta = {}) {
     const input = entry.input || "json";
-    return CONFIG_INPUT_RENDERERS[input]?.(entry, desired, meta) || jsonInput(desired);
+    return CONFIG_INPUTS[input]?.render?.(entry, desired, meta) || jsonInput(desired);
 }
 
 export function readConfigPayload(section) {
     const input = section.dataset.configInput || "json";
-    return CONFIG_INPUT_READERS[input]?.(section) || readJson(section);
+    return CONFIG_INPUTS[input]?.read?.(section) || readJson(section);
 }
 
 export function defaultConfigPayload(entry, protocol = "") {
     const input = entry.input || "json";
-    return CONFIG_INPUT_DEFAULTS[input]?.(entry, protocol) || {};
+    return CONFIG_INPUTS[input]?.defaults?.(entry, protocol) || {};
 }
 
 function normalizeDesired(entry, desired, capabilityDesired = null, protocol = "") {
@@ -984,6 +654,12 @@ function resolveConfigRow(entry, rowsByKey) {
     return rowsByKey[entry.key] || null;
 }
 
+/**
+ * Se já há valor guardado para esta entrada.
+ *
+ * O `configKeys` existe para as definições que o hub escreve em mais do que uma linha nativa:
+ * basta uma delas ter valor. A chave própria é testada primeiro porque é o caso comum.
+ */
 function resolveConfigStored(entry, rowsByKey) {
     if (Object.keys(rowsByKey[entry.key] || {}).length > 0) {
         return true;
@@ -992,7 +668,7 @@ function resolveConfigStored(entry, rowsByKey) {
         return entry.configKeys.some((key) => Object.keys(rowsByKey[key] || {}).length > 0);
     }
 
-    return Object.keys(rowsByKey[entry.key] || {}).length > 0;
+    return false;
 }
 
 function resolveConfigDelivery(entry, configurationSync) {
@@ -1094,80 +770,10 @@ function configHelp(entry) {
 
     const input = entry.input || "json";
     const key = entry.key || "";
-    if (CONFIG_INPUT_HELP[input]) {
-        return CONFIG_INPUT_HELP[input](entry);
+    if (CONFIG_INPUTS[input]?.help) {
+        return CONFIG_INPUTS[input].help(entry);
     }
-    return CONFIG_INPUT_HELP[key]?.(entry) || "";
-}
-
-function readWonlexMedicationPlans(section) {
-    const plans = Array.from(
-        section.querySelectorAll("[data-repeat-row=\"wonlexMedicationPlan\"]"),
-    ).map((row, index) => {
-        const value = (field) => String(
-            row.querySelector(`[data-medication-field="${field}"]`)?.value || "",
-        ).trim();
-        const drugName = value("drugName");
-        const start = value("drugStartTime");
-        const end = value("drugEndTime");
-        if (drugName === "") {
-            throw new Error(`Medicamento ${index + 1}: indique o nome`);
-        }
-        if (start === "" || end === "") {
-            throw new Error(`Medicamento ${index + 1}: indique as datas inicial e final`);
-        }
-        if (end < start) {
-            throw new Error(`Medicamento ${index + 1}: a data final não pode ser anterior à inicial`);
-        }
-
-        const selected = Array.from(
-            row.querySelectorAll("[data-medication-period]:checked"),
-        ).map((input) => parseInt(String(input.value), 10));
-        if (selected.length === 0) {
-            throw new Error(`Medicamento ${index + 1}: selecione pelo menos um período`);
-        }
-
-        const alarmClock = {};
-        for (const periodIndex of selected) {
-            const period = WONLEX_MEDICATION_PERIODS.find(
-                (candidate) => candidate.index === periodIndex,
-            );
-            const time = String(
-                row.querySelector(`[data-medication-period-time="${periodIndex}"]`)?.value || "",
-            ).trim();
-            if (!period || time === "") {
-                throw new Error(`Medicamento ${index + 1}: indique a hora de cada período selecionado`);
-            }
-            alarmClock[period.key] = time;
-        }
-
-        const dose = numericValue(value("drugDose"), 0);
-        const interval = numericValue(value("drugInterval"), -1);
-        if (dose < 0 || interval < 0) {
-            throw new Error(`Medicamento ${index + 1}: dose e intervalo não podem ser negativos`);
-        }
-
-        return {
-            drugType: parseInt(value("drugType"), 10) || 0,
-            drugName,
-            drugDose: dose,
-            drugUnit: value("drugUnit") || "5",
-            drugStartTime: start,
-            drugEndTime: end,
-            drugInterval: interval,
-            drugTime: {
-                alarmClock,
-                checkboxes: selected,
-                radio: parseInt(String(
-                    row.querySelector("[data-medication-field=\"mealTiming\"]:checked")?.value || "0",
-                ), 10) === 1
-                    ? 1
-                    : 0,
-            },
-        };
-    });
-
-    return { plans };
+    return CONFIG_INPUTS[key]?.help?.(entry) || "";
 }
 
 function capabilityForEntry(entry, capabilities) {

@@ -2,6 +2,10 @@ import { esc } from "../../../format.js";
 import { field } from "../../../widgets.js";
 import { boolValue } from "../normalizers.js";
 import { numberField } from "./shared.js";
+import {
+    readCheckbox,
+    readNumber,
+} from "../readers.js";
 
 /**
  * Os campos que só o Vivistar declara: a sensibilidade de queda e o modo de funcionamento,
@@ -148,3 +152,31 @@ export function workingModeInput(desired) {
             </div>
         </div>`;
 }
+
+/**
+ * Os descritores dos campos do Vivistar.
+ *
+ * Cada tipo de campo declara aqui as suas quatro faces juntas -- desenhar, ler de volta, o
+ * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
+ * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
+ */
+export const INPUTS = {
+    fallSensitivity: {
+        render: (_entry, desired) => fallSensitivityInput(desired),
+        read: (section) => ({ sensitivity: readNumber(section, "sensitivity") }),
+        defaults: () => ({ sensitivity: 2 }),
+    },
+    workingMode: {
+        render: (_entry, desired) => workingModeInput(desired),
+        read: (section) => {
+            const mode = readNumber(section, "mode");
+            const payload = { mode };
+            if (mode === 8) {
+                payload.intervalSeconds = readNumber(section, "intervalSeconds");
+                payload.gpsEnabled = readCheckbox(section, "gpsEnabled");
+            }
+            return payload;
+        },
+        defaults: () => ({ mode: 1 }),
+    },
+};

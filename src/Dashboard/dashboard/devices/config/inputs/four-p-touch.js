@@ -11,7 +11,17 @@ import {
     normalizeFourPTouchAlarmDays,
     normalizeFourPTouchAlarms,
 } from "../normalizers.js";
+import { takePillsInput } from "../four-p-touch-take-pills.js";
 import { enabledSwitch, nextUid, numberField } from "./shared.js";
+import {
+    readCheckbox,
+    readFourPTouchAlarms,
+    readNumber,
+    readPhone,
+    readTakePills,
+    readText,
+    readTextArray,
+} from "../readers.js";
 
 /**
  * Os campos que só o 4P Touch declara: o perfil de som, os alarmes do relógio, as janelas
@@ -366,3 +376,97 @@ export function fourPTouchAlarmRow(alarm, index) {
             </div>
         </div>`;
 }
+
+/**
+ * Os descritores dos campos do 4P Touch.
+ *
+ * Cada tipo de campo declara aqui as suas quatro faces juntas -- desenhar, ler de volta, o
+ * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
+ * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
+ */
+export const INPUTS = {
+    makeCall: {
+        render: makeCallInput,
+        read: (section) => ({ phone: readPhone(section, "phone") }),
+    },
+    voiceMonitor: {
+        render: voiceMonitorInput,
+        read: (section) => ({ phone: readPhone(section, "phone") }),
+    },
+    soundProfile: {
+        render: (_entry, desired) => soundProfileInput(desired),
+        read: (section) => ({ mode: readNumber(section, "mode") }),
+        defaults: () => ({ mode: 1 }),
+        help: () => "4 modos",
+    },
+    intervalHoursToggle: {
+        render: (_entry, desired) => intervalHoursToggleInput(desired),
+        read: (section) => ({
+            enabled: readCheckbox(section, "enabled"),
+            intervalHours: readNumber(section, "intervalHours"),
+        }),
+        defaults: () => ({ enabled: true, intervalHours: 2 }),
+    },
+    languageTimezone: {
+        render: (_entry, desired) => languageTimezoneInput(desired),
+        read: (section) => {
+            const value = readText(section, "preset");
+            const [language, timeZone] = value.split("|", 2);
+            return {
+                language: parseInt(language, 10),
+                timeZone: String(timeZone || "0"),
+            };
+        },
+        defaults: () => ({ preset: "0|0" }),
+    },
+    dualToggle: {
+        render: (_entry, desired) => dualToggleInput(desired),
+        read: (section) => ({
+            enabled: readCheckbox(section, "enabled"),
+            callCenterOnFall: readCheckbox(section, "callCenterOnFall"),
+        }),
+        defaults: () => ({ enabled: true, callCenterOnFall: false }),
+    },
+    fallSensitivityLevels: {
+        render: (_entry, desired) => fallSensitivityLevelsInput(desired),
+        read: (section) => {
+            const levels = readNumber(section, "levels");
+            if (![6, 8].includes(levels)) {
+                throw new Error("Selecione a escala de sensibilidade suportada pelo firmware (6 ou 8 níveis).");
+            }
+            return {
+                sensitivity: readNumber(section, "sensitivity"),
+                levels,
+            };
+        },
+        defaults: () => ({ sensitivity: 5, levels: 8 }),
+    },
+    timeRanges: {
+        render: timeRangesInput,
+        read: (section) => ({ ranges: readTextArray(section, "ranges") }),
+        defaults: () => ({ ranges: ["08:10-09:30"] }),
+    },
+    timeRange: {
+        render: (_entry, desired) => timeRangeInput(desired),
+        read: (section) => ({ range: readText(section, "range") }),
+        // As horas voltam a juntar-se no formato que o construtor valida.,
+        defaults: () => ({ range: "21:10-07:30" }),
+    },
+    alarms: {
+        render: (_entry, desired, meta) => alarmsInput(desired, meta),
+        read: (section) => ({ alarms: readFourPTouchAlarms(section) }),
+        defaults: () => ({ alarms: [] }),
+        help: () => "até 3 alarmes",
+    },
+    takePills: {
+        render: (_entry, desired, meta) => takePillsInput(desired, meta),
+        read: (section) => readTakePills(section),
+        defaults: () => ({
+            reminderSettings: [],
+            number: 0,
+            reminderText: "",
+            voiceData: "",
+            voiceMimeType: "audio/webm",
+        }),
+    },
+};
