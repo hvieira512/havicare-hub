@@ -30,6 +30,63 @@ final class FourPTouchPhonebookDelta
     }
 
     /**
+     * A reescrita total, para quando o estado do aparelho e o do hub divergiram.
+     *
+     * Não há comando de leitura no protocolo, portanto o hub nunca observa o que lá está: um
+     * contacto escrito por fora — pela aplicação do fabricante, ou à mão — fica invisível e
+     * nenhuma remoção lhe toca. A única forma de o apagar é varrer os índices todos.
+     *
+     * É caro de propósito. Serve de reparação, e não do caminho normal.
+     *
+     * @param list<array<string, mixed>> $desired
+     * @return list<array{command: string, fields: list<string>}>
+     */
+    public static function resyncCommands(array $desired): array
+    {
+        $escritas = self::commands([], $desired);
+        $ocupados = [];
+        foreach ($escritas as $escrita) {
+            $ocupados[(int)$escrita['fields'][0]] = true;
+        }
+
+        $commands = [];
+        for ($index = 1; $index <= self::MAX_CONTACTS; $index++) {
+            if (!isset($ocupados[$index])) {
+                $commands[] = ['command' => 'DPHBX', 'fields' => [(string)$index]];
+            }
+        }
+
+        return array_merge($commands, $escritas);
+    }
+
+    /**
+     * O estado anterior em que o delta pode assentar.
+     *
+     * Só descreve o aparelho se a última entrega tiver sido confirmada. Depois de uma falha
+     * não se sabe que escritas chegaram, e assumir que chegaram todas era pior do que
+     * reescrever: a alteração seguinte não produzia comandos nenhuns e dava-se por aplicada
+     * uma lista que o aparelho nunca recebeu.
+     *
+     * Uma lista escrita antes de os índices existirem tem chaves 0..n, que são posições e não
+     * endereços no aparelho, e também não serve de base.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function trustedPrevious(mixed $stored, string $lastStatus): array
+    {
+        $entregue = !in_array(
+            $lastStatus,
+            ['created', 'failed', 'retry_exhausted', 'response_timeout', 'dropped'],
+            true
+        );
+        if (!$entregue || !is_array($stored) || array_is_list($stored)) {
+            return [];
+        }
+
+        return $stored;
+    }
+
+    /**
      * A atribuição de índices que fica no aparelho depois de os comandos passarem. É o que
      * o hub guarda, e o que serve de estado anterior à alteração seguinte.
      *

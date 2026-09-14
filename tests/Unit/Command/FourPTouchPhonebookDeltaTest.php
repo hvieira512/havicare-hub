@@ -126,6 +126,73 @@ final class FourPTouchPhonebookDeltaTest extends TestCase
         );
     }
 
+    public function testStateFromAFailedDeliveryIsNotTrusted(): void
+    {
+        $guardado = [1 => self::HUGO, 2 => self::RICARDO];
+
+        self::assertSame(
+            $guardado,
+            FourPTouchPhonebookDelta::trustedPrevious($guardado, 'confirmed'),
+            'uma entrega confirmada é a base do delta seguinte'
+        );
+
+        foreach (['failed', 'retry_exhausted', 'response_timeout', 'created'] as $estado) {
+            self::assertSame(
+                [],
+                FourPTouchPhonebookDelta::trustedPrevious($guardado, $estado),
+                "o estado guardado não descreve o aparelho depois de {$estado}"
+            );
+        }
+    }
+
+    public function testAfterAFailedDeliveryTheWholeListIsWrittenAgain(): void
+    {
+        $guardado = [1 => self::HUGO, 2 => self::RICARDO];
+
+        $commands = FourPTouchPhonebookDelta::commands(
+            FourPTouchPhonebookDelta::trustedPrevious($guardado, 'failed'),
+            [self::HUGO, self::RICARDO],
+        );
+
+        self::assertSame(
+            ['PHBX2', 'PHBX2'],
+            array_column($commands, 'command'),
+            'reenviar a mesma lista depois de uma falha tem de voltar a escrever, e não dar zero comandos'
+        );
+    }
+
+    public function testAResyncSweepsEveryIndexItIsNotAboutToWrite(): void
+    {
+        $commands = FourPTouchPhonebookDelta::resyncCommands([self::HUGO, self::RICARDO]);
+
+        $removidos = array_values(array_filter(
+            $commands,
+            static fn(array $c): bool => $c['command'] === 'DPHBX'
+        ));
+        $escritos = array_values(array_filter(
+            $commands,
+            static fn(array $c): bool => $c['command'] === 'PHBX2'
+        ));
+
+        self::assertCount(FourPTouchPhonebookDelta::MAX_CONTACTS - 2, $removidos);
+        self::assertSame('3', $removidos[0]['fields'][0], 'os índices 1 e 2 vão ser escritos, e não se apagam');
+        self::assertSame('100', $removidos[count($removidos) - 1]['fields'][0]);
+        self::assertSame(
+            [['1', '004800750067006F', '+351938854803'], ['2', '005200690063006100720064006F', '+351965401976']],
+            array_column($escritos, 'fields'),
+            'a lista desejada é reescrita de raiz, a partir do índice 1'
+        );
+        self::assertSame('DPHBX', $commands[0]['command'], 'as remoções saem antes das escritas');
+    }
+
+    public function testAResyncOfAnEmptyListClearsTheDeviceWhole(): void
+    {
+        $commands = FourPTouchPhonebookDelta::resyncCommands([]);
+
+        self::assertCount(FourPTouchPhonebookDelta::MAX_CONTACTS, $commands);
+        self::assertSame(['DPHBX'], array_unique(array_column($commands, 'command')));
+    }
+
     public function testMoreContactsThanTheDeviceHoldsIsRejected(): void
     {
         $desired = [];

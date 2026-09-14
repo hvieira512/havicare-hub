@@ -120,15 +120,22 @@ final class DeviceConfigurationCatalog
         // configuração diferem entre si: uns removem, outros escrevem. O comando deixa de vir
         // da entrada e passa a vir de cada item.
         if ($protocol === 'four-p-touch' && $key === 'phonebook') {
+            $contacts = FourPTouchPayloadBuilder::phonebookContacts($payload);
+            // A reparação não olha ao que o hub julga que lá está: varre e reescreve. É o
+            // único caminho para apagar um contacto que entrou fora da API.
+            $commands = ($context['resync'] ?? false) === true
+                ? FourPTouchPhonebookDelta::resyncCommands($contacts)
+                : FourPTouchPhonebookDelta::commands(
+                    is_array($context['previousContacts'] ?? null) ? $context['previousContacts'] : [],
+                    $contacts
+                );
+
             return array_map(
                 static fn(array $command): array => [
                     'command' => $command['command'],
                     'payload' => ['fields' => $command['fields']],
                 ],
-                FourPTouchPhonebookDelta::commands(
-                    is_array($context['previousContacts'] ?? null) ? $context['previousContacts'] : [],
-                    FourPTouchPayloadBuilder::phonebookContacts($payload),
-                )
+                $commands
             );
         }
 

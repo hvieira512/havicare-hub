@@ -140,10 +140,15 @@ final class DeviceConfigurationUpdateService
                 // A lista telefónica do 4P Touch guarda-se indexada, porque o índice é o
                 // endereço do contacto no aparelho e é dele que sai o delta da alteração
                 // seguinte. A forma pública continua a ser a lista, sem índices.
-                $commandContext = [];
+                // Uma ordem, não um valor: consome-se aqui e não chega ao que fica guardado,
+                // seja qual for o protocolo.
+                $commandContext = ['resync' => ($payload['resync'] ?? false) === true];
+                unset($payload['resync']);
                 if ($protocol === 'four-p-touch' && is_array($nativeUpdates['phonebook'] ?? null)) {
-                    $stored = $currentByKey['phonebook']['desired_payload']['contacts'] ?? [];
-                    $previousContacts = is_array($stored) ? $stored : [];
+                    $previousContacts = FourPTouchPhonebookDelta::trustedPrevious(
+                        $currentByKey['phonebook']['desired_payload']['contacts'] ?? null,
+                        (string)($currentByKey['phonebook']['last_status'] ?? '')
+                    );
                     $commandContext['previousContacts'] = $previousContacts;
                     $nativeUpdates['phonebook'] = ['contacts' => FourPTouchPhonebookDelta::indexed(
                         $previousContacts,

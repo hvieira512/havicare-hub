@@ -1328,6 +1328,30 @@ final class DeviceConfigurationCatalogTest extends TestCase
         );
     }
 
+    public function testFourPTouchPhonebookResyncSweepsTheDeviceBeforeWriting(): void
+    {
+        $hugo = ['name' => 'Hugo', 'phone' => '+351938854803'];
+
+        $payloads = DeviceConfigurationCatalog::commandPayloads(
+            'four-p-touch',
+            'phonebook',
+            ['contacts' => [$hugo]],
+            ['previousContacts' => [1 => $hugo], 'resync' => true],
+        );
+
+        $comandos = array_column($payloads, 'command');
+        self::assertSame('DPHBX', $comandos[0], 'a reparação varre antes de escrever');
+        self::assertCount(
+            100,
+            $payloads,
+            'sem o resync este pedido não daria comando nenhum, porque nada mudou'
+        );
+        self::assertSame(
+            ['command' => 'PHBX2', 'payload' => ['fields' => ['1', '004800750067006F', '+351938854803']]],
+            $payloads[99]
+        );
+    }
+
     public function testFourPTouchSoundProfileBuildsNativeFields(): void
     {
         $vibrateAndRing = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 1]);

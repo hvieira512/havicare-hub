@@ -227,11 +227,11 @@ final class CapabilitySchemas
         return [
             'PhonebookConfiguration' => [
                 'type' => 'object',
-                'description' => 'Payload accepted under configurations.phonebook for Wonlex and 4P Touch. Send only generic name and international phone fields; native IDs, area codes and SOS flags are managed by the hub. Wonlex accepts up to 10 contacts and stores the first 4 characters of each name; 4P Touch accepts up to 5 contacts and stores the first 10 characters. An empty array clears the phonebook.',
+                'description' => 'Payload accepted under configurations.phonebook for Wonlex and 4P Touch. Send only generic name and international phone fields; native IDs, area codes and SOS flags are managed by the hub. Wonlex accepts up to 10 contacts and stores the first 4 characters of each name; 4P Touch accepts up to 100 contacts and does not truncate names. The per-model limits are published in the phonebook capability metadata. An empty array clears the phonebook.',
                 'properties' => [
                     'contacts' => [
                         'type' => 'array',
-                        'maxItems' => 10,
+                        'maxItems' => 100,
                         'items' => [
                             'type' => 'object',
                             'required' => ['phone', 'name'],
@@ -243,10 +243,18 @@ final class CapabilitySchemas
                                 ],
                                 'name' => [
                                     'type' => 'string',
-                                    'description' => 'Unicode string. The hub truncates it to the supplier limit exposed in the phonebook capability metadata.',
+                                    'description' => 'Unicode string. Truncated only where the capability metadata publishes a name.maxLength; a null maxLength means the device imposes none.',
                                 ],
                             ],
                         ],
+                    ],
+                    'resync' => [
+                        'type' => 'boolean',
+                        'description' => '4P Touch repair. The hub cannot read the phonebook back from the watch, '
+                            . 'so a contact written outside this API stays invisible to it and no removal reaches it. '
+                            . 'With resync the hub stops trusting its own record: it clears every address on the device '
+                            . 'and writes the list again. Expensive — one command per address — and meant for repair, '
+                            . 'not for routine updates. Not stored: it describes this request, not the desired state.',
                     ],
                 ],
                 'required' => ['contacts'],
