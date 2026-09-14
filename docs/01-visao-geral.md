@@ -22,7 +22,7 @@ flowchart TB
       TCP["HubTcpIngress<br/><small>socket TCP</small>"]
       NCS["Ingestão NCS"]
       MOKO["Ingestão MOKO"]
-      RAD["Ingestão radar<br/><small>broker próprio</small>"]
+      RAD["Ingestão radar<br/><small>sessão própria</small>"]
     end
 
     CORE["DeviceHubServer<br/><small>identidade · autorização · sessão</small>"]
@@ -101,20 +101,25 @@ Implementada em `bin/server-hub.php`, por esta ordem:
 | 1 | Leitura do `.env` e carregamento e **validação** da configuração | fatal |
 | 2 | Ligação ao broker MQTT do hub | fatal |
 | 3 | `HubServices::boot()` — MySQL, Redis, whitelist, ponte MQTT, fila de downlink | fatal |
-| 4 | `CrashWatch` — um marcador persistente indica terminação anómala da execução anterior e gera notificação na dashboard | continua |
-| 5 | Registo dos sinais `SIGTERM` e `SIGINT` para terminação controlada | — |
-| 6 | Ingestão NCS, condicionada a `NCS_ENABLED` | — |
-| 7 | Ingestão MOKO, condicionada a `MOKO_GATEWAY_ENABLED` | — |
-| 8 | Ingestão Qinglanst, condicionada a `QINGLANST_ENABLED`, em ligação e broker próprios | — |
-| 9 | Abertura do socket TCP | — |
-| 10 | Abertura do servidor HTTP da dashboard e da API | — |
-| 11 | Início das subscrições MQTT | **fatal** |
-| 12 | Agendamento dos ciclos MQTT, a cada 0,05 s | — |
-| 13 | Agendamento da manutenção, a cada 10 s | — |
-| 14 | Registo do resumo de arranque e entrada no event loop | — |
+| 4 | `CrashWatch::attach()` — um marcador persistente indica terminação anómala da execução anterior e gera notificação na dashboard; regista também os sinais `SIGTERM` e `SIGINT` para terminação controlada | continua |
+| 5 | `MqttIngressFactory::build()` — monta as ingestões que a configuração liga: NCS (`NCS_ENABLED`), MOKO e Veepoo (ambas em `MOKO_GATEWAY_ENABLED`, que partilham o espaço de tópicos), e Qinglanst (`QINGLANST_ENABLED`, em sessão própria) | — |
+| 6 | Abertura do socket TCP | — |
+| 7 | Abertura do servidor HTTP da dashboard e da API | — |
+| 8 | Início das subscrições MQTT | **fatal** |
+| 9 | Agendamento dos ciclos MQTT, a cada 0,05 s, e da entrega das filas, a cada 1 s | — |
+| 10 | Agendamento da manutenção, a cada 10 s | — |
+| 11 | Registo do resumo de arranque e entrada no event loop | — |
 
-O passo 11 é fatal por decisão: um processo em execução sem subscrições ativas
+O passo 8 é fatal por decisão: um processo em execução sem subscrições ativas
 apresenta-se operacional sem receber dados.
+
+A ingestão do Qinglanst abre **sessão** própria e não fala com outro servidor: o
+`QINGLANST_MQTT_HOST` e o `MQTT_HOST` apontam para o mesmo broker, e o que as
+separa são os tópicos, as credenciais e o identificador de cliente.
+
+O passo 9 entrega o que estiver em fila para quem declarar a interface
+`DispatchesQueued` — hoje só as pulseiras Veepoo, cujo comando não pode esperar
+pelo anúncio de sessão seguinte.
 
 ### Manutenção periódica
 

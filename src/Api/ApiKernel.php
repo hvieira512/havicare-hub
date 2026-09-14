@@ -217,42 +217,7 @@ final class ApiKernel
         }
         $request = $request->withAttribute(RequestContext::ATTR_ROUTE_PATTERN, $match['route']->pattern());
 
-        $handler = $match['route']->handler();
-        return $this->invokeHandler($handler, $match['parameters'], $request);
-    }
-
-    private function invokeHandler(callable $handler, array $parameters, ServerRequestInterface $request): mixed
-    {
-        $reflection = is_array($handler)
-            ? new \ReflectionMethod($handler[0], $handler[1])
-            : new \ReflectionFunction(\Closure::fromCallable($handler));
-        $count = $reflection->getNumberOfParameters();
-        if ($count === 0) {
-            return $handler();
-        }
-        if ($count === 1) {
-            $parameter = $reflection->getParameters()[0] ?? null;
-            $arg = $parameter !== null && $this->expectsRequest($parameter) ? $request : $parameters;
-
-            return $handler($arg);
-        }
-
-        return $handler($parameters, $request);
-    }
-
-    private function expectsRequest(\ReflectionParameter $parameter): bool
-    {
-        $type = $parameter->getType();
-        if (!$type instanceof \ReflectionNamedType) {
-            return false;
-        }
-
-        $name = $type->getName();
-        if ($name === ServerRequestInterface::class) {
-            return true;
-        }
-
-        return is_a($name, ServerRequestInterface::class, true);
+        return $match['route']->invoke($match['parameters'], $request);
     }
 
     private function isPublicApiPath(string $path): bool
