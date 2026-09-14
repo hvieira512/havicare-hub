@@ -390,6 +390,16 @@
     color: var(--bs-primary);
 }
 
+.capability-filter-row {
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .capability-filter-row {
+        grid-template-columns: 7fr 5fr;
+    }
+}
+
 /* A secção é um destino de scroll, e o desvio é a altura da tira, para o cabeçalho não
    ficar debaixo dela ao chegar. */
 .capability-catalog-section {

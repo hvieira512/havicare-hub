@@ -158,12 +158,12 @@ ob_start();
                     <?= search_input('capabilityCatalogSearch', 'Procurar capacidade ou chave') ?>
                     <?php /* Sete contra cinco: a quatro, o grupo do fornecedor parte de linha e
                            * perde os cantos, deixando de se ler como um controlo só. */ ?>
-                    <div class="row g-3 py-3">
-                        <div class="col-md-7">
+                    <div class="capability-filter-row d-grid gap-3 py-3">
+                        <div>
                             <div class="section-label mb-1">Tipo de dispositivo</div>
                             <div id="capabilityDeviceTypeButtons" class="device-type-grid is-wide d-grid gap-2" role="group"></div>
                         </div>
-                        <div class="col-md-5">
+                        <div>
                             <div class="section-label mb-1">Fornecedor</div>
                             <div id="capabilitySupplierButtons" class="btn-group flex-wrap" role="group"></div>
                         </div>
