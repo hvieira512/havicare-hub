@@ -95,6 +95,46 @@ final class BridgeQueuedDispatchTest extends TestCase
         self::assertSame([], $mqtt->gatewayCommands);
     }
 
+    /**
+     * Uma publicação que estoira não pode consumir a janela de repetição.
+     *
+     * O travão marcava a chave como entregue *ao ser perguntado* se ela era devida, e a
+     * pergunta vinha antes da publicação. Um gateway inalcançável naquele instante deixava a
+     * ordem calada trinta segundos sem nunca ter saído -- e o único sinal era a ausência de
+     * uma vibração que alguém pediu.
+     */
+    public function testACommandWhosePublishFailsIsRetriedOnTheNextTick(): void
+    {
+        $queue = self::queue();
+        $mqtt = new class extends RecordingHubMqttBridge {
+            public bool $failing = true;
+
+            public function publishGatewayCommand(string $topic, array $payload): void
+            {
+                if ($this->failing) {
+                    throw new \RuntimeException('gateway unreachable');
+                }
+                parent::publishGatewayCommand($topic, $payload);
+            }
+        };
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
+        $queue->push('config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]]);
+
+        try {
+            $bridge->dispatchQueued();
+        } catch (\RuntimeException) {
+            // O runner engole-a; aqui só interessa o que ficou marcado.
+        }
+        self::assertSame([], $mqtt->gatewayCommands, 'a primeira tentativa não chegou a sair');
+
+        $mqtt->failing = false;
+        $bridge->dispatchQueued();
+
+        self::assertCount(1, $mqtt->gatewayCommands, 'a ordem que nunca saiu tem de voltar a ser tentada');
+    }
+
     private static function queue(): PendingDownlinkQueue
     {
         return new class implements PendingDownlinkQueue {

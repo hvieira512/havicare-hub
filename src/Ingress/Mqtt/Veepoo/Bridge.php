@@ -7,7 +7,7 @@ namespace Hub\Ingress\Mqtt\Veepoo;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
-use Hub\Device\RawPayload;
+use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Ingress\Mqtt\Gateway\Topic;
@@ -24,10 +24,6 @@ use PhpMqtt\Client\MqttClient;
  */
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt\DispatchesQueued
 {
-    /** Intervalo válido documentado pelo fabricante; fora dele o firmware devolve sentinelas. */
-    private const HEART_RATE_MIN = 30;
-    private const HEART_RATE_MAX = 250;
-
     /**
      * Estados que o aparelho reporta durante uma medição, e o que significam para o pedido.
      *
@@ -40,17 +36,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         'wrongfulValue' => 'sensor_fault',
     ];
 
-    /** Quanto tempo a mesma queixa do mesmo aparelho fica calada depois de relatada. */
-    private const FAILURE_REPEAT_SECONDS = 60;
-
-    /**
-     * Quanto tempo um comando entregue e não confirmado espera antes de ser repetido.
-     *
-     * O gateway ignora a mesma chave durante minutos para não executar duas vezes a mesma
-     * entrega, por isso repeti-la a cada volta do temporizador não o acordaria -- só encheria
-     * o tópico. A repetição serve para o caso de a entrega se ter perdido.
-     */
-    private const RESEND_SECONDS = 30;
+    /** O nome deste protocolo no contrato, que vai no `source` de tudo o que sai daqui. */
+    private const PROTOCOL = 'veepoo-ble';
 
     /**
      * Quanto tempo um bloco fica reconhecido como já publicado.
@@ -62,33 +49,12 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     private const REPLAY_TTL_SECONDS = 5 * 86400;
 
     /**
-     * Quando cada par aparelho/motivo foi relatado pela última vez.
-     *
-     * @var array<string, int>
-     */
-    private array $lastFailureAt = [];
-
-    /**
-     * Se cada pulseira estava alcançável da última vez que o gateway falou dela.
-     *
-     * @var array<string, bool>
-     */
-    private array $online = [];
-
-    /**
      * Por que gateway está cada pulseira com sessão aberta, para lhe entregar o que chegar
      * à fila entretanto.
      *
      * @var array<string, string>
      */
     private array $sessionGateway = [];
-
-    /**
-     * Quando cada comando em fila foi entregue pela última vez.
-     *
-     * @var array<string, int>
-     */
-    private array $sentAt = [];
 
     /**
      * Espécies de mensagem já relatadas como não normalizadas, por aparelho.
@@ -99,12 +65,18 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
 
     private readonly DailyBlockNormalizer $normalizer;
 
+    private readonly DownlinkDispatcher $downlinkDispatcher;
+
+    private readonly BraceletPresence $presence;
+
+    private readonly MeasurementFailureReporter $failures;
+
     public function __construct(
         MqttClient $subscriber,
         Whitelist $whitelist,
         HubMqttBridge $mqttBridge,
         private readonly GatewayDeviceLinkLookup $links,
-        private readonly ?PendingDownlinkQueue $downlinks,
+        ?PendingDownlinkQueue $downlinks,
         private readonly ObservationStateStore $state,
         string $topicFilter,
         ?callable $reconnectSubscriber = null,
@@ -121,6 +93,29 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             $dashboardStore,
         );
         $this->normalizer = $normalizer ?? new DailyBlockNormalizer();
+        $this->downlinkDispatcher = new DownlinkDispatcher(
+            $downlinks,
+            $mqttBridge,
+            $dashboardStore,
+            $topicFilter,
+        );
+        $this->presence = new BraceletPresence($mqttBridge, $dashboardStore);
+        $this->failures = new MeasurementFailureReporter($mqttBridge, $dashboardStore);
+    }
+
+    /**
+     * Entrega o que esteja em fila às pulseiras com sessão aberta.
+     *
+     * O gateway fica subscrito ao tópico de comandos enquanto correr, e por isso a pulseira é
+     * alcançável entre sessões. Chamado por um temporizador do `IngressRunner`: sem isto uma
+     * ordem dada no ecrã esperava pelo anúncio de sessão seguinte -- até 30 s, mais do que a
+     * pulseira leva a desistir de vibrar.
+     */
+    public function dispatchQueued(): void
+    {
+        foreach ($this->sessionGateway as $deviceKey => $gatewayKey) {
+            $this->downlinkDispatcher->dispatchPending($deviceKey, $gatewayKey);
+        }
     }
 
     protected function handleMessage(string $topic, string $payload): void
@@ -170,11 +165,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             // existir: o gateway avisa da perda em vez de emudecer.
             if (($message['payload']['authenticated'] ?? true) === false) {
                 unset($this->sessionGateway[$deviceKey]);
-                $this->markOffline($deviceKey, $device, $licenseId, $company);
+                $this->presence->markOffline($deviceKey, $device, $licenseId, $company);
                 return;
             }
 
-            $this->markOnline($deviceKey, $device, $licenseId, $company);
+            $this->presence->markOnline($deviceKey, $device, $licenseId, $company);
             $this->publishFirmware(
                 (string)($message['device']['firmware'] ?? ''),
                 $deviceKey,
@@ -184,7 +179,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
                 $company,
             );
             $this->sessionGateway[$deviceKey] = (string)$gateway['imei'];
-            $this->dispatchPending($deviceKey, (string)$gateway['imei']);
+            $this->downlinkDispatcher->dispatchPending($deviceKey, (string)$gateway['imei']);
             return;
         }
 
@@ -210,7 +205,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         }
 
         if (($message['kind'] ?? null) === 'command_result') {
-            $this->resolvePending($deviceKey, (string)($message['payload']['dedupeKey'] ?? ''));
+            $this->downlinkDispatcher->resolvePending($deviceKey, (string)($message['payload']['dedupeKey'] ?? ''));
             return;
         }
 
@@ -260,86 +255,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
      * a caixa, que tem a sessão BLE. A criação continua a ser exclusiva da API REST -- isto é
      * entrega, o equivalente ao socket por onde um relógio recebe os seus.
      */
-    /**
-     * Entrega o que esteja em fila às pulseiras com sessão aberta.
-     *
-     * O gateway fica subscrito ao tópico de comandos enquanto correr, e por isso a pulseira
-     * é alcançável entre sessões. Chamado por um temporizador do loop: sem isto uma ordem
-     * dada no ecrã esperava pelo anúncio de sessão seguinte -- até 30 s, mais do que a
-     * pulseira leva a desistir de vibrar.
-     */
-    public function dispatchQueued(): void
-    {
-        foreach ($this->sessionGateway as $deviceKey => $gatewayKey) {
-            $this->dispatchPending($deviceKey, $gatewayKey);
-        }
-    }
-
-    /** Se já passou o intervalo de repetição desde a última entrega desta chave. */
-    private function dueForSending(string $dedupeKey): bool
-    {
-        $now = time();
-        foreach ($this->sentAt as $key => $at) {
-            if ($now - $at >= self::RESEND_SECONDS) {
-                unset($this->sentAt[$key]);
-            }
-        }
-
-        if (isset($this->sentAt[$dedupeKey])) {
-            return false;
-        }
-
-        $this->sentAt[$dedupeKey] = $now;
-
-        return true;
-    }
-
-    private function dispatchPending(string $deviceKey, string $gatewayKey): void
-    {
-        if ($this->downlinks === null) {
-            return;
-        }
-
-        foreach ($this->downlinks->pendingFor($deviceKey) as $downlink) {
-            // Para este protocolo os bytes em fila são o próprio nome da operação: quem os
-            // monta é o `DeviceCommandCatalog`, que aqui não tem trama que construir.
-            $command = $downlink->command ?? [];
-            $operation = (string)($command['command'] ?? $downlink->bytes);
-            if ($operation === '') {
-                continue;
-            }
-
-            if (!$this->dueForSending($downlink->dedupeKey)) {
-                continue;
-            }
-
-            $this->mqttBridge->publishGatewayCommand($this->commandTopicFor($gatewayKey), [
-                'deviceId' => $deviceKey,
-                'operation' => $operation,
-                // O nome da operação diz o que fazer e não com que valor. Sem isto, desligar
-                // um interruptor chegava ao gateway indistinguível de o ligar, e uma ordem de
-                // parar -- como a de deixar de procurar a pulseira -- não existia de todo.
-                'payload' => $command['payload'] ?? null,
-                'dedupeKey' => $downlink->dedupeKey,
-                'commandId' => $command['id'] ?? null,
-                'expiresAt' => $downlink->expiresAt,
-            ]);
-
-            // Fica em fila de propósito. Entregar não é executar: se o gateway não chegar a
-            // correr o comando, a sessão seguinte volta a recebê-lo, e o TTL da política é
-            // que decide quando deixa de fazer sentido. Sai da fila em `resolvePending`,
-            // quando a caixa confirma -- caso contrário perdia-se em silêncio.
-            $this->dashboardStore?->markLatestCommand($deviceKey, $operation, [
-                'status' => 'waiting',
-                'sentAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            ]);
-
-            Logger::channel('hub')->info(
-                "Veepoo downlink {$operation} entregue ao gateway {$gatewayKey} para {$deviceKey}"
-            );
-        }
-    }
-
     /**
      * Publica telemetria no MQTT e no histórico da dashboard.
      *
@@ -414,103 +329,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         return false;
     }
 
-    /**
-     * Marca a pulseira como online.
-     *
-     * Ao contrário de um relógio, ela não mantém ligação: está online enquanto um gateway
-     * tiver sessão aberta. O estado é publicado retido, para que quem subscreva a seguir o
-     * receba sem esperar pela próxima ronda.
-     *
-     * @param array<string, mixed> $device
-     */
-    private function markOnline(string $deviceKey, array $device, int $licenseId, string $company): void
-    {
-        $supplier = (string)($device['supplier'] ?? '');
-        $model = (string)($device['model'] ?? '');
-        $commercial = (string)($device['commercialName'] ?? '');
-        $wasOnline = $this->online[$deviceKey] ?? false;
-        $this->online[$deviceKey] = true;
-
-        // É isto que a dashboard e a API leem para dizer se o aparelho está online. Sem
-        // esta linha o estado sai no MQTT e mais nada, e o ecrã continua a dizer offline.
-        $this->dashboardStore?->deviceSeen($deviceKey, [
-            'supplier' => $supplier,
-            'model' => $model,
-            'deviceType' => 'bracelet',
-            'licenseId' => $licenseId,
-            'company' => $company,
-            'protocol' => 'veepoo-ble',
-            'transport' => 'ble_gateway',
-            'online' => '1',
-        ]);
-
-        $status = RawPayload::status($deviceKey, $supplier, $model, 'online', null, $commercial);
-        $this->mqttBridge->publishStatus($deviceKey, $status, true, 'bracelet', $licenseId, $company);
-
-        // O estado é retido e vale a cada anúncio; o acontecimento é da transição. Repetir
-        // «Ligado» a cada batimento enchia o histórico e escondia o instante em que a
-        // pulseira se ligou de facto.
-        if ($wasOnline) {
-            return;
-        }
-
-        $this->announce($deviceKey, $device, $licenseId, $company, 'device.connected');
-    }
-
-    /**
-     * A ligação BLE caiu: a pulseira afastou-se, ficou sem bateria ou foi desligada.
-     *
-     * Sem isto o ecrã continuava a mostrá-la ligada até o varrimento de aparelhos parados
-     * dar por ela, o que é bastante depois de já não haver ninguém a quem entregar um
-     * comando -- e a fila de espera continuaria a ser drenada contra um aparelho ausente.
-     *
-     * @param array<string, mixed> $device
-     */
-    private function markOffline(string $deviceKey, array $device, int $licenseId, string $company): void
-    {
-        if (($this->online[$deviceKey] ?? false) === false) {
-            return;
-        }
-        $this->online[$deviceKey] = false;
-
-        $this->dashboardStore?->deviceOffline($deviceKey);
-
-        $status = RawPayload::status(
-            $deviceKey,
-            (string)($device['supplier'] ?? ''),
-            (string)($device['model'] ?? ''),
-            'offline',
-            null,
-            (string)($device['commercialName'] ?? ''),
-        );
-        $this->mqttBridge->publishStatus($deviceKey, $status, true, 'bracelet', $licenseId, $company);
-
-        $this->announce($deviceKey, $device, $licenseId, $company, 'device.disconnected');
-    }
-
-    /**
-     * Publica um acontecimento de ligação no MQTT e no histórico do aparelho.
-     *
-     * @param array<string, mixed> $device
-     */
-    private function announce(string $deviceKey, array $device, int $licenseId, string $company, string $type): void
-    {
-        $event = RawPayload::event(
-            $deviceKey,
-            (string)($device['supplier'] ?? ''),
-            (string)($device['model'] ?? ''),
-            $type,
-            null,
-            null,
-            (string)($device['commercialName'] ?? ''),
-        );
-
-        $this->mqttBridge->publishEvent($deviceKey, $event, 'bracelet', $licenseId, $company);
-        $this->dashboardStore?->append($deviceKey, 'events', $event + [
-            'deviceType' => 'bracelet',
-            'licenseId' => $licenseId,
-        ]);
-    }
 
     /**
      * Percentagem de bateria da pulseira.
@@ -539,20 +357,18 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             return;
         }
 
-        $this->emitTelemetry($deviceKey, [
-            'type' => 'battery',
-            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => [
-                'id' => $deviceKey,
-                'supplier' => (string)($device['supplier'] ?? ''),
-                'model' => (string)($device['model'] ?? ''),
-            ],
-            'source' => ['protocol' => 'veepoo-ble', 'nativeType' => 'battery', 'gatewayId' => $gatewayKey],
-            'data' => array_filter([
+        $this->emitTelemetry($deviceKey, TelemetryEnvelope::for(
+            'battery',
+            $deviceKey,
+            $device,
+            self::PROTOCOL,
+            'battery',
+            array_filter([
                 'percent' => $percent,
                 'lowBattery' => ($payload['VPDeviceElectricTypeIsLowVoltage'] ?? null) === 'lowVoltage' ? true : null,
             ], static fn(mixed $v): bool => $v !== null),
-        ], $licenseId, $company);
+            $gatewayKey,
+        ), $licenseId, $company);
     }
 
     /**
@@ -576,17 +392,15 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             return;
         }
 
-        $this->emitTelemetry($deviceKey, [
-            'type' => 'firmware_version',
-            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => [
-                'id' => $deviceKey,
-                'supplier' => (string)($device['supplier'] ?? ''),
-                'model' => (string)($device['model'] ?? ''),
-            ],
-            'source' => ['protocol' => 'veepoo-ble', 'nativeType' => 'session', 'gatewayId' => $gatewayKey],
-            'data' => ['version' => $firmware],
-        ], $licenseId, $company);
+        $this->emitTelemetry($deviceKey, TelemetryEnvelope::for(
+            'firmware_version',
+            $deviceKey,
+            $device,
+            self::PROTOCOL,
+            'session',
+            ['version' => $firmware],
+            $gatewayKey,
+        ), $licenseId, $company);
     }
 
     /**
@@ -616,7 +430,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         // de ver, porque explicam um pedido que nunca se cumpre.
         $detection = (string)($payload['deviceDetectionInfo'] ?? '');
         if (isset(self::DETECTION_FAILURES[$detection])) {
-            $this->reportMeasurementFailure($deviceKey, $device, $licenseId, $company, self::DETECTION_FAILURES[$detection]);
+            $this->failures->report($deviceKey, $device, $licenseId, $company, self::DETECTION_FAILURES[$detection]);
             return;
         }
 
@@ -634,12 +448,12 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         // O ECG usa um campo próprio: exige o dedo no elétrodo e não só a pulseira no pulso,
         // e por isso falha com `wearNotPass` mesmo com a pulseira bem colocada.
         if (($payload['notWear'] ?? false) === true || ($payload['wearStatus'] ?? '') === 'wearNotPass') {
-            $this->reportMeasurementFailure($deviceKey, $device, $licenseId, $company, 'not_worn');
+            $this->failures->report($deviceKey, $device, $licenseId, $company, 'not_worn');
             return;
         }
 
         $sdkType = (int)($payload['sdkType'] ?? 0);
-        $measurement = self::measurement($sdkType, $payload);
+        $measurement = MeasurementNormalizer::forSdkType($sdkType, $payload);
         if ($measurement === null) {
             // Um tipo do SDK que ninguém reclama sai daqui tão calado como saía um `kind`, e
             // pela mesma razão se diz uma vez por espécie e por aparelho.
@@ -656,19 +470,17 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
 
         [$type, $data] = $measurement;
 
-        $this->emitTelemetry($deviceKey, [
-            'type' => $type,
-            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => [
-                'id' => $deviceKey,
-                'supplier' => (string)($device['supplier'] ?? ''),
-                'model' => (string)($device['model'] ?? ''),
-            ],
+        $this->emitTelemetry($deviceKey, TelemetryEnvelope::for(
+            $type,
+            $deviceKey,
+            $device,
+            self::PROTOCOL,
             // O tipo do fabricante e não a espécie de mensagem: `measurement` cobria nove
             // tipos e não dizia qual, e é por ele que se vai à documentação da Veepoo.
-            'source' => ['protocol' => 'veepoo-ble', 'nativeType' => "type-{$sdkType}", 'gatewayId' => $gatewayKey],
-            'data' => $data,
-        ], $licenseId, $company);
+            "type-{$sdkType}",
+            $data,
+            $gatewayKey,
+        ), $licenseId, $company);
     }
 
     /**
@@ -701,272 +513,28 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         }
 
         if (count(array_filter($samples, static fn(int|float $v): bool => $v !== 0)) === 0) {
-            $this->reportMeasurementFailure($deviceKey, $device, $licenseId, $company, 'no_signal');
+            $this->failures->report($deviceKey, $device, $licenseId, $company, 'no_signal');
             return;
         }
 
         // `frequencyHz` é o nome do contrato, o mesmo que os relógios usam para a onda deles.
         $frequencyHz = is_int($payload['samplingHz'] ?? null) ? $payload['samplingHz'] : null;
 
-        $this->emitTelemetry($deviceKey, [
-            'type' => 'ecg',
-            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => [
-                'id' => $deviceKey,
-                'supplier' => (string)($device['supplier'] ?? ''),
-                'model' => (string)($device['model'] ?? ''),
-            ],
-            'source' => ['protocol' => 'veepoo-ble', 'nativeType' => 'ecg_wave', 'gatewayId' => $gatewayKey],
-            'data' => array_filter(
+        $this->emitTelemetry($deviceKey, TelemetryEnvelope::for(
+            'ecg',
+            $deviceKey,
+            $device,
+            self::PROTOCOL,
+            'ecg_wave',
+            array_filter(
                 ['samples' => $samples, 'frequencyHz' => $frequencyHz],
                 static fn(mixed $v): bool => $v !== null,
             ),
-        ], $licenseId, $company);
+            $gatewayKey,
+        ), $licenseId, $company);
     }
 
-    /**
-     * Traduz uma medição ao vivo para o tipo e os campos do hub, ou `null` se não houver
-     * leitura que publicar.
-     *
-     * O tipo do SDK é que diz qual é a grandeza -- 51 frequência cardíaca, 31 oxigénio, 22
-     * glicemia, 6 temperatura, 58 stress, 18 e 28 tensão. Enquanto a medição decorre o
-     * firmware repete a mesma trama com o valor a zero, e por isso cada grandeza tem de dizer
-     * o que é uma leitura válida: publicar o zero dava uma saturação de 0% a meio de uma
-     * medição que estava a correr bem.
-     *
-     * @param array<string, mixed> $payload
-     * @return array{0: string, 1: array<string, float|int>}|null
-     */
-    private static function measurement(int $sdkType, array $payload): ?array
-    {
-        return match ($sdkType) {
-            // O fabricante documenta o intervalo válido e manda filtrar o resto: fora dele o
-            // firmware devolve sentinelas -- `0` enquanto procura, `1` quando desiste.
-            51 => self::withinRange($payload['heartRate'] ?? null, self::HEART_RATE_MIN, self::HEART_RATE_MAX) === null
-                ? null
-                : ['heart_rate', ['bpm' => (int)$payload['heartRate']]],
-            31 => self::withinRange($payload['bloodOxygen'] ?? null, 1, 100) === null
-                ? null
-                : ['blood_oxygen', ['spo2Percent' => (int)$payload['bloodOxygen']]],
-            // A pulseira reporta em mmol/L e o hub publica em mg/dL, tal como no histórico.
-            22 => ($glucose = self::positive($payload['bloodGlucose'] ?? null)) === null
-                ? null
-                : ['blood_sugar', ['glucoseMgDl' => round($glucose * DailyBlockNormalizer::MMOL_PER_L_TO_MG_PER_DL, 1)]],
-            6 => ($body = self::positive($payload['bodyTemperature'] ?? null)) === null
-                ? null
-                : ['temperature', array_filter([
-                    'bodyCelsius' => round($body, 1),
-                    'surfaceCelsius' => ($skin = self::positive($payload['bodySurfaceTemperature'] ?? null)) === null
-                        ? null
-                        : round($skin, 1),
-                ], static fn(mixed $v): bool => $v !== null)],
-            58 => self::withinRange($payload['pressure'] ?? null, 1, 100) === null
-                ? null
-                : ['stress', ['score' => (int)$payload['pressure']]],
-            18, 28 => self::bloodPressureReading($payload),
-            32 => self::bodyComposition($payload),
-            9 => self::dailyActivity($payload),
-            17 => self::findDeviceState($payload),
-            default => null,
-        };
-    }
 
-    /**
-     * O estado de quem manda a pulseira vibrar.
-     *
-     * `timeout` é ela a desistir sozinha ao fim de cerca de um minuto, e é a única maneira de
-     * saber que parou sem ninguém lhe ter pedido.
-     *
-     * @param array<string, mixed> $payload
-     * @return array{0: string, 1: array<string, string>}|null
-     */
-    private static function findDeviceState(array $payload): ?array
-    {
-        $state = match ($payload['value'] ?? null) {
-            'search' => 'searching',
-            'find' => 'stopped',
-            'timeout' => 'timed_out',
-            default => null,
-        };
-
-        return $state === null ? null : ['find_device', ['state' => $state]];
-    }
-
-    /**
-     * O acumulado do dia, contado pela própria pulseira.
-     *
-     * É o mesmo que `activity` significa nos relógios -- o contador de passos, distância e
-     * calorias desde a meia-noite -- e por isso leva o mesmo nome. O que se andou em cada
-     * cinco minutos é outra grandeza e sai dos blocos como `steps`.
-     *
-     * As calorias vêm em décimas: 146 são as 14,6 kcal que a app mostra no ecrã principal.
-     *
-     * @param array<string, mixed> $payload
-     * @return array{0: string, 1: array<string, float|int>}|null
-     */
-    private static function dailyActivity(array $payload): ?array
-    {
-        $steps = $payload['step'] ?? null;
-        if (!is_int($steps) || $steps < 0) {
-            return null;
-        }
-
-        return ['activity', array_filter([
-            'steps' => $steps,
-            'distanceMeters' => is_int($payload['distance'] ?? null) ? $payload['distance'] : null,
-            'caloriesKcal' => is_int($payload['calorie'] ?? null) ? round($payload['calorie'] / 10, 1) : null,
-        ], static fn(mixed $v): bool => $v !== null)];
-    }
-
-    /**
-     * Composição corporal, medida pelos elétrodos do ECG.
-     *
-     * Os nomes do fabricante não distinguem percentagem de quilos -- `muscleRate` e
-     * `muscleMass` são a mesma palavra com sufixos que não dizem a unidade. Os do hub dizem.
-     *
-     * @param array<string, mixed> $payload
-     * @return array{0: string, 1: array<string, float>}|null
-     */
-    private static function bodyComposition(array $payload): ?array
-    {
-        $fields = [
-            'BMI' => 'bmi',
-            'bodyFatPercentage' => 'bodyFatPercent',
-            'fatMass' => 'fatMassKg',
-            'leanBodyMass' => 'leanMassKg',
-            'muscleRate' => 'musclePercent',
-            'muscleMass' => 'muscleMassKg',
-            'subcutaneousFat' => 'subcutaneousFatPercent',
-            'bodyMoisture' => 'bodyWaterPercent',
-            'waterContent' => 'waterMassKg',
-            'skeletalMuscleRate' => 'skeletalMusclePercent',
-            'boneMass' => 'boneMassKg',
-            'proportionOfProtein' => 'proteinPercent',
-            'proteinAmount' => 'proteinMassKg',
-            'basalMetabolicRate' => 'basalMetabolicRateKcal',
-        ];
-
-        $data = [];
-        foreach ($fields as $source => $target) {
-            $value = self::positive($payload[$source] ?? null);
-            if ($value !== null) {
-                $data[$target] = $value;
-            }
-        }
-
-        // Enquanto mede, a trama repete-se com tudo a zero. Sem o IMC não há resultado.
-        return isset($data['bmi']) ? ['body_composition', $data] : null;
-    }
-
-    /** @param array<string, mixed> $payload @return array{0: string, 1: array<string, int>}|null */
-    private static function bloodPressureReading(array $payload): ?array
-    {
-        $high = self::withinRange($payload['bloodPressureHigh'] ?? null, 1, 300);
-        $low = self::withinRange($payload['bloodPressureLow'] ?? null, 1, 300);
-
-        return $high === null || $low === null
-            ? null
-            : ['blood_pressure', ['systolicMmHg' => (int)$high, 'diastolicMmHg' => (int)$low]];
-    }
-
-    /** O valor, ou `null` se não for número ou cair fora do intervalo plausível. */
-    private static function withinRange(mixed $value, int $min, int $max): int|float|null
-    {
-        return (is_int($value) || is_float($value)) && $value >= $min && $value <= $max ? $value : null;
-    }
-
-    /** O valor, ou `null` se não for um número acima de zero -- o sentinela de «sem leitura». */
-    private static function positive(mixed $value): ?float
-    {
-        if (!is_int($value) && !is_float($value) && !is_string($value)) {
-            return null;
-        }
-
-        return (float)$value > 0.0 ? (float)$value : null;
-    }
-
-    /**
-     * Diz porque é que uma medição não produziu valor.
-     *
-     * É um acontecimento e não telemetria: não há nada a registar, há uma razão a mostrar.
-     *
-     * @param array<string, mixed> $device
-     */
-    private function reportMeasurementFailure(
-        string $deviceKey,
-        array $device,
-        int $licenseId,
-        string $company,
-        string $reason,
-    ): void {
-        // Uma medição falhada não é um acontecimento por trama. O ECG manda dezenas seguidas
-        // com a mesma queixa enquanto o dedo não está no elétrodo, e relatar cada uma
-        // afogava o histórico do aparelho no aviso em vez de o mostrar.
-        $key = $deviceKey . '|' . $reason;
-        $now = time();
-        if ($now - ($this->lastFailureAt[$key] ?? 0) < self::FAILURE_REPEAT_SECONDS) {
-            return;
-        }
-        $this->lastFailureAt[$key] = $now;
-
-        // O motivo vai em `error` e não em `command`: descreve porque é que a medição não
-        // saiu, e não o comando que a pediu -- que aqui nem sequer se conhece.
-        $event = RawPayload::event(
-            $deviceKey,
-            (string)($device['supplier'] ?? ''),
-            (string)($device['model'] ?? ''),
-            'device.measurement_failed',
-            ['reason' => $reason],
-            null,
-            (string)($device['commercialName'] ?? ''),
-        );
-
-        $this->mqttBridge->publishEvent($deviceKey, $event, 'bracelet', $licenseId, $company);
-        $this->dashboardStore?->append($deviceKey, 'events', $event + [
-            'deviceType' => 'bracelet',
-            'licenseId' => $licenseId,
-        ]);
-    }
-
-    /** Tira da fila o comando que o gateway confirmou ter executado. */
-    private function resolvePending(string $deviceKey, string $dedupeKey): void
-    {
-        if ($this->downlinks === null || $dedupeKey === '') {
-            return;
-        }
-
-        foreach ($this->downlinks->pendingFor($deviceKey) as $downlink) {
-            if ($downlink->dedupeKey !== $dedupeKey) {
-                continue;
-            }
-
-            $this->downlinks->remove($downlink);
-            // Confirmado é caso encerrado: a chave sai do travão de repetição para que a
-            // ordem seguinte -- mandar vibrar outra vez, por exemplo -- saia na hora.
-            unset($this->sentAt[$dedupeKey]);
-            $operation = (string)(($downlink->command['command'] ?? null) ?? $downlink->bytes);
-            if ($operation !== '') {
-                $this->dashboardStore?->markLatestCommand($deviceKey, $operation, [
-                    'status' => 'acked',
-                    'ackedAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                ]);
-            }
-
-            Logger::channel('hub')->info("Veepoo downlink {$dedupeKey} confirmado por {$deviceKey}");
-            return;
-        }
-    }
-
-    /**
-     * O canal de comandos vive ao lado do de entrada, no mesmo espaço fixo do gateway:
-     * `.../gw/{mac}/raw` para o que sobe, `.../gw/{mac}/cmd` para o que desce.
-     */
-    private function commandTopicFor(string $gatewayKey): string
-    {
-        $base = preg_replace('#/\+/raw$#', '', trim($this->topicFilter, '/')) ?? '';
-
-        return $base . '/' . $gatewayKey . '/cmd';
-    }
 
     /**
      * O que identifica um bloco é tudo o que ele traz, e não só o `date`.
