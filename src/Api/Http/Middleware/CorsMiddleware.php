@@ -19,15 +19,15 @@ final class CorsMiddleware
         // antes sequer de olhar para o caminho, e é por isso que o `OPTIONS` nunca apareceu
         // no canal `api`. Mantém-se assim ao ficar acima do `ApiRequestLogger`.
         if (strtoupper($request->getMethod()) === 'OPTIONS') {
-            return $this->cors->apply(new Response(204));
+            return $this->cors->apply(new Response(204), $request);
         }
 
         $response = $next($request);
 
         // Uma regra só, sem excepções por caminho: antes o `/api/` e os erros JSON da
         // dashboard levavam os cabeçalhos e os recursos estáticos não. Agora levam-nos
-        // também -- são públicos e servidos sem credenciais, e `*` não abre nada que um
-        // pedido directo já não abrisse.
-        return $response instanceof ResponseInterface ? $this->cors->apply($response) : $response;
+        // também -- são públicos e servidos sem credenciais, e a política aberta não abre
+        // nada que um pedido directo já não abrisse.
+        return $response instanceof ResponseInterface ? $this->cors->apply($response, $request) : $response;
     }
 }

@@ -274,8 +274,12 @@ final class StreamController
             'channel' => $channel,
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 
+        // A trama monta-se por concatenação, e não por desserializar e voltar a serializar: é
+        // a mesma string que foi para o fio, byte a byte. Isso obriga o envelope a acabar em
+        // `}` com pelo menos um campo lá dentro -- com o `{}` que o recurso de erro punha
+        // aqui, o `substr` deixava um `{` solto e saía `{,"payload":...}`, que não é JSON.
         if ($envelope === false) {
-            $envelope = '{}';
+            $envelope = json_encode(['channel' => $channel], JSON_INVALID_UTF8_SUBSTITUTE) ?: '{"channel":""}';
         }
 
         return "event: {$channel}\ndata: " . substr($envelope, 0, -1) . ',"payload":' . $json . "}\n\n";

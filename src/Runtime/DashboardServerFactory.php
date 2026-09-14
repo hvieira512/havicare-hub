@@ -59,7 +59,7 @@ final class DashboardServerFactory
             new LimitConcurrentRequestsMiddleware(self::MAX_CONCURRENT_REQUESTS),
             new RequestBodyBufferMiddleware(self::BODY_BUFFER_BYTES),
             new RequestBodyParserMiddleware(self::BODY_PARSE_BYTES),
-            self::handler($dashboard),
+            self::handler($dashboard, $dashboardConfig['cors_allowed_origins'] ?? []),
         );
 
         $host = $dashboardConfig['host'];
@@ -74,10 +74,12 @@ final class DashboardServerFactory
      *
      * A ordem importa: o CORS responde ao preflight e devolve sem descer, e é por isso que o
      * `OPTIONS` nunca chegou -- nem chega -- ao canal `api`.
+     *
+     * @param list<string> $allowedOrigins vazio mantém a política aberta
      */
-    public static function handler(DashboardHttpServer $dashboard): callable
+    public static function handler(DashboardHttpServer $dashboard, array $allowedOrigins = []): callable
     {
-        $cors = new CorsMiddleware(new CorsPolicy());
+        $cors = new CorsMiddleware(new CorsPolicy($allowedOrigins));
         $log = new ApiRequestLogger();
 
         return static fn(ServerRequestInterface $request): mixed => $cors(
