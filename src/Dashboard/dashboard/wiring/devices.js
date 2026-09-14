@@ -38,13 +38,15 @@ import {
     selectDevice,
 } from "../devices/list.js";
 import {
+    requestTelemetryFeature,
+} from "../devices/detail.js";
+import {
     applyDetailFilters,
     applyDetailSearch,
     clearDetailFilters,
     removeDetailFilter,
-    requestTelemetryFeature,
     updateDetailFilterDraft,
-} from "../devices/detail.js";
+} from "../devices/detail-filters.js";
 import { toggleActivityRow } from "../devices/activity-table.js";
 import { DEVICE_CARD_ACTION } from "../devices/device-card.js";
 import { editWizardAnswered } from "../devices/edit-wizard.js";

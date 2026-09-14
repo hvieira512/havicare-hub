@@ -5,7 +5,7 @@ import "./support/browser-env.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { detailFilterChipLabels, filterDetailItems } =
-    await import("../../src/Dashboard/dashboard/devices/detail.js");
+    await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
 
 /**
  * A actividade fala português em todo o lado menos onde interessa.

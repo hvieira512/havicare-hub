@@ -13,11 +13,10 @@ import {
 import { resolvePaginationPage } from "../pagination.js";
 import { loadSummary, normalizeFilterValue } from "./list.js";
 import {
-    allDetailItems,
-    filterDetailItems,
     renderDownlinkRequests,
     renderTelemetryList,
 } from "./detail.js";
+import { allDetailItems, filterDetailItems } from "./detail-filters.js";
 
 /**
  * Os filtros da listagem de dispositivos e os paginadores dos dois painéis do escolhido.
