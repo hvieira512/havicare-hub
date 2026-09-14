@@ -107,6 +107,25 @@ final class FourPTouchPhonebookDeltaTest extends TestCase
         );
     }
 
+    public function testStateWrittenBeforeIndicesExistedIsTreatedAsUnknown(): void
+    {
+        // Uma linha guardada pelo PHB é uma lista simples, e as suas chaves 0 e 1 não são
+        // índices do aparelho. Tomá-las por índices escrevia no índice 0, fora da gama.
+        $commands = FourPTouchPhonebookDelta::commands(
+            [self::HUGO, self::RICARDO],
+            [self::HUGO, self::RICARDO],
+        );
+
+        self::assertSame(
+            [
+                ['command' => 'PHBX2', 'fields' => ['1', '004800750067006F', '+351938854803']],
+                ['command' => 'PHBX2', 'fields' => ['2', '005200690063006100720064006F', '+351965401976']],
+            ],
+            $commands,
+            'sem índices de confiança, reescreve-se a lista inteira a partir do índice 1'
+        );
+    }
+
     public function testMoreContactsThanTheDeviceHoldsIsRejected(): void
     {
         $desired = [];

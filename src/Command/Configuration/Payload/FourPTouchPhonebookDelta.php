@@ -49,6 +49,13 @@ final class FourPTouchPhonebookDelta
      */
     private static function resolve(array $previous, array $desired): array
     {
+        // Uma lista escrita antes de os índices existirem tem chaves 0..n, que são posições e
+        // não endereços no aparelho. Tomá-las por índices escrevia no índice 0, fora da gama
+        // que o comando aceita — sem índices de confiança, reescreve-se tudo de raiz.
+        if (array_is_list($previous)) {
+            $previous = [];
+        }
+
         $byPhone = [];
         foreach ($previous as $index => $contact) {
             $byPhone[(string)($contact['phone'] ?? '')] = (int)$index;
