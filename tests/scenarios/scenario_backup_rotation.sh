@@ -29,8 +29,15 @@ for day in $(perl -e '
     touch "$WORK_DIR/$DB-$day.sql.gz"
 done
 
-newest="$(find "$WORK_DIR" -name "$DB-*.sql.gz" | sort -r | head -n 1)"
-oldest="$(find "$WORK_DIR" -name "$DB-*.sql.gz" | sort | head -n 1)"
+# As pontas saem por expansão e não por `| head -n 1`.
+#
+# Com o `pipefail` deste ficheiro, `sort | head -n 1` é uma corrida: o `head` fecha o tubo
+# assim que tem a linha, o `sort` leva SIGPIPE e sai 141, e o cenário falha ou não conforme
+# quem chegar primeiro. Com 401 ficheiros acontecia de vez em quando -- o suficiente para
+# pôr em causa uma suite que estava boa.
+backups="$(find "$WORK_DIR" -name "$DB-*.sql.gz" | sort)"
+oldest="${backups%%$'\n'*}"
+newest="${backups##*$'\n'}"
 
 DB_NAME="$DB" BACKUP_DIR="$WORK_DIR" "$ROOT_DIR/bin/backup-db.sh" rotate
 
