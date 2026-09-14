@@ -52,6 +52,21 @@ final class StartupBanner
             $config['hub']['downlink_queue_ttl_seconds'],
         ));
 
+        // Com que identidade cada ligação se apresenta ao broker.
+        //
+        // Dois hubs com o mesmo identificador expulsam-se em ciclo, e cada expulsão tira a
+        // ingestão do ar até a reconexão acabar. Produção usa os valores por omissão, por isso
+        // qualquer clone que não os sobreponha bate-se com ela -- e nos dois lados o log só
+        // dizia «connection lost», que é o sintoma. Aqui fica a causa, à vista no arranque.
+        $log->info(sprintf(
+            'MQTT client id: %s-*',
+            trim((string)($config['mqtt']['client_id_prefix'] ?? '')),
+        ));
+        $qinglanstPrefix = trim((string)($config['qinglanst']['client_id_prefix'] ?? ''));
+        if ($qinglanstPrefix !== '') {
+            $log->info("Qinglanst client id: {$qinglanstPrefix}-*");
+        }
+
         foreach (['status', 'events', 'raw', 'telemetry'] as $channel) {
             $label = $channel === 'events' ? 'event' : $channel;
             $log->info("MQTT {$label} topics: " . $mqttBridge->topic('{company}/{licenseId}/watch/{deviceKey}/' . $channel));
