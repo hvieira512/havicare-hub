@@ -1,0 +1,191 @@
+import { esc, fieldLabel } from "../../../format.js";
+import { field } from "../../../widgets.js";
+import { renderPhoneControl } from "../../../phone.js";
+import { protocolPhonebookConstraints } from "../protocol-catalog.js";
+import { boolValue } from "../normalizers.js";
+import { enabledSwitch, numberField } from "./shared.js";
+
+/**
+ * Os campos que mais do que um fornecedor declara: interruptores, números, texto, telefones e
+ * listas de contactos. Um campo aqui é desenhado da mesma maneira venha de onde vier -- o que
+ * muda entre protocolos é o nome nativo, e disso trata a definição, não o desenho.
+ */
+
+export function toggleInput(entry, desired, protocol = "") {
+    const nativeField = entry.fields?.[0] || "enabled";
+    const field =
+        protocol === "wonlex-json" && nativeField === "switchState"
+            ? "enabled"
+            : nativeField;
+    const checked = boolValue(desired[field] ?? desired[nativeField], true);
+    return `
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" data-config-field="${esc(field)}" ${checked ? "checked" : ""}>
+            <label class="form-check-label" data-switch-label>${checked ? "Ligado" : "Desligado"}</label>
+        </div>`;
+}
+
+export function numberInput(entry, desired) {
+    const key = entry.fields?.[0] || "value";
+    const isWonlexMeasurementInterval =
+        entry.command === "deviceMeasuringFrequency" && key === "interval";
+    // A escala vem da definição quando ela a declara -- o tom de pele vai de 1 a 6, e partir
+    // de zero oferecia um valor que o aparelho recusa.
+    const { min = 0, max = "", label = "" } = entry.options ?? {};
+    const value = desired[key] ?? (isWonlexMeasurementInterval ? 60 : min);
+    return field(
+        // O nome do campo vem do protocolo e está em inglês. Quando a definição traz uma
+        // etiqueta, é ela que se mostra.
+        label || fieldLabel(key),
+        numberField(key, value, { min, max }),
+        {
+            help: isWonlexMeasurementInterval
+                ? "Periodicidade de envio desta medição, em minutos. Use 0 para desativar."
+                : "",
+        },
+    );
+}
+
+export function phoneInput(entry, desired) {
+    const key = entry.fields?.[0] || "phone";
+    return field(
+        fieldLabel(key),
+        renderPhoneControl({
+            value: String(desired[key] || ""),
+            configField: key,
+            placeholder: entry.label || fieldLabel(key),
+        }),
+    );
+}
+
+export function textInput(entry, desired) {
+    const key = entry.fields?.[0] || "value";
+    return field(
+        fieldLabel(key),
+        `<input class="form-control" type="text" data-config-field="${esc(key)}" value="${esc(String(desired[key] ?? ""))}">`,
+    );
+}
+
+export function pushMessageInput(_entry, desired) {
+    return field(
+        "Mensagem",
+        `<input class="form-control" type="text" data-config-field="message" value="${esc(String(desired.message ?? ""))}" placeholder="Mensagem a mostrar no relógio">`,
+        { help: "Envia uma mensagem imediata para o relógio. Não fica guardada como configuração desejada." },
+    );
+}
+
+export function intervalToggleInput(entry, desired) {
+    return `
+        <div class="row g-3">
+            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
+            ${field(
+                "Intervalo (minutos)",
+                numberField("intervalMinutes", desired.intervalMinutes ?? 60),
+                { cls: "col-md-8" },
+            )}
+        </div>`;
+}
+
+export function resetActionInput(_entry, _desired) {
+    return `
+        <div>
+            <div class="alert alert-warning small py-2 px-3 mb-3">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                Esta ação é enviada imediatamente para o dispositivo e não pode ser desfeita.
+            </div>
+        </div>`;
+}
+
+export function requestActionInput(entry) {
+    return `
+        <div>
+            <div class="alert alert-info small py-2 px-3 mb-3">
+                <i class="fa-solid fa-circle-info me-2"></i>
+                ${esc(entry.label || "Ação")} é enviada sem parâmetros adicionais.
+            </div>
+        </div>`;
+}
+
+export function listInput(entry, desired, key, label) {
+    const limit = Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3);
+    const values = Array.isArray(desired[key]) ? desired[key] : [];
+    const rows = Array.from(
+        { length: limit },
+        (_, index) => values[index] ?? "",
+    );
+    return `
+        <div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label-sm mb-0">${esc(label)}</label>
+                <span class="small text-secondary">${limit} itens</span>
+            </div>
+            <div class="vstack gap-2">
+                ${rows
+                    .map(
+                        (value, index) => `
+                    ${renderPhoneControl({
+                        value,
+                        configField: key,
+                        placeholder: `${label} ${index + 1}`,
+                    })}
+                `,
+                    )
+                    .join("")}
+            </div>
+        </div>`;
+}
+
+export function contactsInput(entry, desired, meta = {}) {
+    const limit = Math.max(1, parseInt(String(meta.limit ?? entry.limit ?? 10), 10) || 10);
+    const contacts = Array.isArray(desired)
+        ? desired
+        : Array.isArray(desired.contacts)
+            ? desired.contacts
+            : [];
+    const rows = contacts.length ? contacts.slice(0, limit) : [{}];
+    const phonebookConstraints = protocolPhonebookConstraints(meta.protocol || "");
+    const isPhonebookLike = String(entry.key || "") === "phonebook" || String(entry.key || "") === "call_whitelist";
+    const nameMaxLengthValue = Math.max(
+        0,
+        parseInt(String(meta.name?.maxLength ?? phonebookConstraints.name?.maxLength ?? 0), 10) || 0,
+    );
+    const phoneMaxLengthValue = Math.max(
+        0,
+        parseInt(String(meta.phone?.maxLength ?? phonebookConstraints.phone?.maxLength ?? 0), 10) || 0,
+    );
+    const nameMaxLength = nameMaxLengthValue > 0 ? ` maxlength="${esc(String(nameMaxLengthValue))}"` : "";
+    return `
+        <div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label-sm mb-0">Contactos</label>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="contacts" ${rows.length >= limit ? "disabled" : ""}>Adicionar</button>
+            </div>
+            <div class="small text-secondary mb-2">${limit} contactos máximos</div>
+            <div class="vstack gap-2" data-repeat-list="contacts" data-repeat-limit="${limit}"${isPhonebookLike && nameMaxLengthValue > 0 ? ` data-phonebook-name-max-length="${esc(String(nameMaxLengthValue))}"` : ""}${isPhonebookLike && phoneMaxLengthValue > 0 ? ` data-phonebook-phone-max-length="${esc(String(phoneMaxLengthValue))}"` : ""}>
+                ${rows
+                    .map(
+                        (contact, index) => `
+                    <div class="row g-2 align-items-end" data-repeat-row="contacts">
+                        <div class="col-md-6">
+                            <input class="form-control" type="text" placeholder="Nome ${index + 1}" data-repeat-field="name"${nameMaxLength} value="${esc(String(contact.name || ""))}">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2">
+                                <div class="flex-grow-1">
+                                    ${renderPhoneControl({
+                                        value: String(contact.phone || ""),
+                                        repeatField: "phone",
+                                        placeholder: `Telefone ${index + 1}`,
+                                        maxLength: phoneMaxLengthValue,
+                                    })}
+                                </div>
+                                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">-</button>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                    )
+                    .join("")}
+            </div>
+        </div>`;
+}

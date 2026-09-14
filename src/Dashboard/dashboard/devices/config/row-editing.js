@@ -1,6 +1,7 @@
 import { renderPhoneControl, resetPhoneControls } from "../../phone.js";
 import { takePillsReminderGroup } from "./index.js";
-import { fourPTouchAlarmRow, wonlexMedicationPlanRow } from "./inputs.js";
+import { fourPTouchAlarmRow } from "./inputs/four-p-touch.js";
+import { wonlexMedicationPlanRow } from "./inputs/wonlex.js";
 import { syncTakePillsCustomVisibility } from "./take-pills-audio.js";
 
 /**

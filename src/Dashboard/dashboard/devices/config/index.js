@@ -11,42 +11,47 @@ import {
     WONLEX_MEDICATION_PERIODS,
 } from "./normalizers.js";
 import {
-    heartRateThresholdsInput,
-    alarmClockInput,
-    alarmsInput,
-    bloodPressureInput,
-    callWhitelistInput,
     contactsInput,
-    dualToggleInput,
-    diaperSensitivityInput,
-    fallSensitivityInput,
-    fallSensitivityLevelsInput,
-    intervalHoursToggleInput,
     intervalToggleInput,
-    languageTimezoneInput,
     listInput,
-    makeCallInput,
     numberInput,
-    personalInfoInput,
     phoneInput,
     pushMessageInput,
     requestActionInput,
     resetActionInput,
-    sosContactsInput,
-    soundProfileInput,
     textInput,
+    toggleInput,
+} from "./inputs/generic.js";
+import {
+    alarmClockInput,
+    bloodPressureInput,
+    callWhitelistInput,
+    diaperSensitivityInput,
+    heartRateThresholdsInput,
+    personalInfoInput,
+    sosContactsInput,
+    windowToggleInput,
+} from "./inputs/capability.js";
+import {
+    alarmsInput,
+    dualToggleInput,
+    fallSensitivityLevelsInput,
+    intervalHoursToggleInput,
+    languageTimezoneInput,
+    makeCallInput,
+    soundProfileInput,
     timeRangeInput,
     timeRangesInput,
-    toggleInput,
     voiceMonitorInput,
-    windowToggleInput,
+} from "./inputs/four-p-touch.js";
+import { fallSensitivityInput, workingModeInput } from "./inputs/vivistar.js";
+import {
     wonlexBloodPressureWarningInput,
     wonlexHeartRateRangeInput,
     wonlexMedicationPlansInput,
     wonlexReminderThresholdInput,
     wonlexSleepSettingsInput,
-    workingModeInput,
-} from "./inputs.js";
+} from "./inputs/wonlex.js";
 import {
     firstFieldName,
     readAlarmClock,

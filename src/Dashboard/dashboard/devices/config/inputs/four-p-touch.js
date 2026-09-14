@@ -1,0 +1,368 @@
+import { esc } from "../../../format.js";
+import { field } from "../../../widgets.js";
+import { renderPhoneControl } from "../../../phone.js";
+import {
+    formatFourPTouchAlarmTime,
+    fourPTouchMaskToWeekdays,
+    weekdayPicker,
+} from "../alarm-fields.js";
+import {
+    boolValue,
+    normalizeFourPTouchAlarmDays,
+    normalizeFourPTouchAlarms,
+} from "../normalizers.js";
+import { enabledSwitch, nextUid, numberField } from "./shared.js";
+
+/**
+ * Os campos que só o 4P Touch declara: o perfil de som, os alarmes do relógio, as janelas
+ * horárias, o idioma com fuso, a chamada e a escuta.
+ */
+
+export function makeCallInput(entry, desired) {
+    return `
+        <div>
+            <label class="form-label-sm">Número de telefone</label>
+            <div class="d-flex gap-2">
+                <div class="flex-grow-1">
+                    ${renderPhoneControl({
+                        value: String(desired.phone || ""),
+                        configField: "phone",
+                        placeholder: "+351912345678",
+                    })}
+                </div>
+            </div>
+            <div class="form-text">Envia um comando para o relógio fazer uma chamada para o número indicado.</div>
+        </div>`;
+}
+
+export function voiceMonitorInput(entry, desired) {
+    return `
+        <div>
+            <div class="alert alert-warning small py-2 px-3 mb-3">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                O relógio liga de imediato para este número e abre o microfone, sem mostrar
+                nada a quem o traz no pulso. Não fica guardado como contacto.
+            </div>
+            <label class="form-label-sm">Número de telefone</label>
+            ${renderPhoneControl({
+                value: String(desired.phone || ""),
+                configField: "phone",
+                placeholder: "+351912345678",
+            })}
+        </div>`;
+}
+
+export function soundProfileInput(desired) {
+    const current = parseInt(String(desired.mode ?? 1), 10) || 1;
+    const options = [
+        {
+            value: 1,
+            label: "Vibração e toque",
+            icon: "fa-volume-high",
+            className: "btn-outline-primary",
+        },
+        {
+            value: 2,
+            label: "Só toque",
+            icon: "fa-bell",
+            className: "btn-outline-secondary",
+        },
+        {
+            value: 3,
+            label: "Só vibração",
+            icon: "fa-mobile-screen-button",
+            className: "btn-outline-warning",
+        },
+        {
+            value: 4,
+            label: "Silêncio",
+            icon: "fa-volume-xmark",
+            className: "btn-outline-danger",
+        },
+    ];
+
+    return `
+        <div class="vstack gap-2">
+            <div class="small text-secondary">Escolha o perfil de som do dispositivo.</div>
+            <div class="row row-cols-2 g-2" role="radiogroup" aria-label="Perfil de som">
+                ${options
+                    .map(
+                        (option) => `
+                    <div class="col">
+                        <input
+                            class="btn-check"
+                            type="radio"
+                            name="soundProfile"
+                            id="soundProfile${option.value}"
+                            data-config-field="mode"
+                            value="${option.value}"
+                            ${option.value === current ? "checked" : ""}>
+                        <label class="btn ${option.className} w-100 h-100 text-start d-flex align-items-center gap-2 py-3 px-3" for="soundProfile${option.value}">
+                            <i class="fa-solid ${option.icon}"></i>
+                            <span class="small fw-semibold">${esc(option.label)}</span>
+                        </label>
+                    </div>
+                `,
+                    )
+                    .join("")}
+            </div>
+        </div>`;
+}
+
+export function intervalHoursToggleInput(desired) {
+    return `
+        <div class="row g-3">
+            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
+            ${field(
+                "Intervalo (horas)",
+                numberField("intervalHours", desired.intervalHours ?? 2, { min: 1, max: 12 }),
+                { cls: "col-md-8" },
+            )}
+        </div>`;
+}
+
+/**
+ * A janela horária em que o aparelho mede.
+ *
+ * As horas são dois `input type="time"`, e não texto: o navegador já não deixa escrever uma
+ * hora que não existe, e o par volta a juntar-se em `HH:MM-HH:MM` na leitura.
+ */
+
+const languageTimezonePresetOptions = [
+    { language: 0, timeZone: "0", label: "English (UTC+0)" },
+    { language: 1, timeZone: "8", label: "简体中文 (UTC+8)" },
+    { language: 3, timeZone: "1", label: "Português (UTC+1)" },
+    { language: 4, timeZone: "1", label: "Español (UTC+1)" },
+    { language: 5, timeZone: "1", label: "Deutsch (UTC+1)" },
+    { language: 10, timeZone: "1", label: "Français (UTC+1)" },
+];
+
+export function languageTimezoneInput(desired) {
+    const preset = languageTimezonePresetOptions.find(
+        (option) =>
+            String(desired.language ?? 3) === String(option.language) &&
+            String(desired.timeZone ?? "0") === String(option.timeZone),
+    ) || languageTimezonePresetOptions[0];
+
+    return `
+        <div class="vstack gap-2">
+            <label class="form-label-sm">Idioma e fuso horário</label>
+            <select class="form-select" data-config-field="preset">
+                ${languageTimezonePresetOptions
+                    .map(
+                        (option) => `
+                        <option value="${option.language}|${esc(String(option.timeZone))}" ${
+                            option.language === preset.language &&
+                            String(option.timeZone) === String(preset.timeZone)
+                                ? "selected"
+                                : ""
+                        }>${esc(option.label)}</option>
+                    `,
+                    )
+                    .join("")}
+            </select>
+            <div class="form-text">Escolha a combinação suportada pelo dispositivo.</div>
+        </div>`;
+}
+
+export function dualToggleInput(desired) {
+    const enabled = boolValue(desired.enabled, true);
+    const callCenterOnFall = boolValue(desired.callCenterOnFall, false);
+    return `
+        <div class="vstack gap-3">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
+                <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="callCenterOnFall" ${callCenterOnFall ? "checked" : ""}>
+                <label class="form-check-label" data-switch-label data-switch-on="Liga para o centro" data-switch-off="Não liga para o centro">${callCenterOnFall ? "Liga para o centro" : "Não liga para o centro"}</label>
+            </div>
+        </div>`;
+}
+
+export function fallSensitivityLevelsInput(desired) {
+    const sensitivityLevel =
+        parseInt(String(desired.sensitivity ?? 5), 10) || 5;
+    const parsedTotalLevels = parseInt(String(desired.levels ?? ""), 10);
+    const totalLevels = [6, 8].includes(parsedTotalLevels)
+        ? parsedTotalLevels
+        : 8;
+
+    const levels = [
+        { label: "Máxima", icon: "fa-bolt", btnClass: "btn-outline-danger" },
+        { label: "Muito Alta", icon: "fa-circle-exclamation", btnClass: "btn-outline-danger" },
+        { label: "Alta", icon: "fa-triangle-exclamation", btnClass: "btn-outline-warning" },
+        { label: "Moderada", icon: "fa-equals", btnClass: "btn-outline-warning" },
+        { label: "Baixa", icon: "fa-arrow-down", btnClass: "btn-outline-primary" },
+        { label: "Muito Baixa", icon: "fa-angles-down", btnClass: "btn-outline-primary" },
+        { label: "Quase Mínima", icon: "fa-feather", btnClass: "btn-outline-secondary" },
+        { label: "Mínima", icon: "fa-snowflake", btnClass: "btn-outline-secondary" },
+    ];
+
+    return `
+        <div class="row g-3">
+            <div class="col-12 col-md-9">
+                <label class="form-label-sm">Nível de sensibilidade</label>
+                <input type="hidden" data-config-field="sensitivity" value="${esc(String(sensitivityLevel))}">
+                <div class="d-flex flex-wrap gap-1 w-100 sens-level-group" role="group" aria-label="Nível de sensibilidade" data-config-choice-group="sensitivity">
+                    ${levels
+                        .map(
+                            ({ label, icon, btnClass }, i) => {
+                                const level = i + 1;
+                                return `
+                        <button
+                            type="button"
+                            class="btn ${btnClass} sens-level-btn d-flex flex-column align-items-center justify-content-center ${level === sensitivityLevel ? "active" : ""} ${level > totalLevels ? "d-none" : ""}"
+                            style="flex: 1 0 0; min-width: 4rem; min-height: 4rem"
+                            data-action="selectConfigChoice"
+                            data-config-field="sensitivity"
+                            data-config-value="${level}"
+                            aria-pressed="${level === sensitivityLevel ? "true" : "false"}"
+                            ${level > totalLevels ? "disabled" : ""}>
+                            <div class="d-flex align-items-center gap-1 fw-medium">
+                                <i class="fa-solid ${icon}"></i>
+                                <span>${level}</span>
+                            </div>
+                            <div class="small opacity-75">${label}</div>
+                        </button>
+                    `;
+                            },
+                        )
+                        .join("")}
+                </div>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label-sm">Escala do firmware</label>
+                <select class="form-select" data-config-field="levels" data-action="fallTotalLevels" required>
+                    <option value="" ${totalLevels === null ? "selected" : ""} disabled>Selecione…</option>
+                    <option value="6" ${totalLevels === 6 ? "selected" : ""}>6 níveis</option>
+                    <option value="8" ${totalLevels === 8 ? "selected" : ""}>8 níveis</option>
+                </select>
+                <div class="form-text">Escolha a escala indicada para o firmware deste dispositivo.</div>
+            </div>
+        </div>`;
+}
+
+export function timeRangesInput(entry, desired) {
+    const limit = Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3);
+    const ranges = Array.isArray(desired.ranges) ? desired.ranges : [];
+    const values = Array.from(
+        { length: limit },
+        (_, index) => ranges[index] ?? "",
+    );
+    return `
+        <div class="vstack gap-2">
+            <div class="small text-secondary">Formato HH:MM-HH:MM. Envie pelo menos um intervalo.</div>
+            ${values
+                .map(
+                    (value, index) => `
+                <div>
+                    <label class="form-label-sm">Intervalo ${index + 1}</label>
+                    <input class="form-control" type="text" data-config-field="ranges" value="${esc(String(value))}" placeholder="08:10-09:30">
+                </div>
+            `,
+                )
+                .join("")}
+        </div>`;
+}
+
+export function timeRangeInput(desired) {
+    return field(
+        "Intervalo",
+        `<input class="form-control" type="text" data-config-field="range" value="${esc(String(desired.range ?? "21:10-07:30"))}" placeholder="21:10-07:30">`,
+    );
+}
+
+export function alarmsInput(desired, meta = {}) {
+    const alarms = normalizeFourPTouchAlarms(desired);
+    const limit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
+    if (alarms.length === 0) {
+        alarms.push({
+            time: "",
+            enabled: true,
+            mode: 1,
+            custom: "",
+        });
+    }
+
+    const rows = alarms.slice(0, limit);
+
+    return `
+        <div class="vstack gap-3">
+            <div class="small text-secondary">
+                Até ${esc(String(limit))} alarmes. A recorrência personalizada usa dias de Segunda a Domingo.
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="fourPTouchAlarm" ${rows.length >= limit ? "disabled" : ""}>Adicionar item</button>
+            </div>
+            <div class="vstack gap-2" data-repeat-list="fourPTouchAlarm" data-repeat-limit="${esc(String(limit))}">
+                ${rows.map((alarm, index) => fourPTouchAlarmRow(alarm, index)).join("")}
+            </div>
+        </div>`;
+}
+
+export function fourPTouchAlarmRow(alarm, index) {
+    const mode = parseInt(String(alarm.mode ?? 1), 10) || 1;
+    const customVisible = mode === 3;
+    const rowId = nextUid("fourptouch-alarm");
+
+    const modeOptions = [
+        { value: 1, label: "Uma vez" },
+        { value: 2, label: "Todos os dias" },
+        { value: 3, label: "Personalizado" },
+    ];
+
+    // Da máscara do protocolo para a semana que se lê: a posição 0 é o domingo.
+    const customDays = fourPTouchMaskToWeekdays(
+        normalizeFourPTouchAlarmDays(alarm.custom || ""),
+    );
+
+    return `
+        <div class="border rounded p-3 bg-body" data-repeat-row="fourPTouchAlarm" data-fourptouch-alarm-row="${index}">
+            <div class="row g-3 align-items-end">
+                ${field(
+                    "Hora",
+                    `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-fourptouch-field="time" value="${esc(formatFourPTouchAlarmTime(alarm.time))}" required>`,
+                    { cls: "col-sm-6 col-lg-2", required: true },
+                )}
+                <div class="col-sm-6 col-lg-2">
+                    <div class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" role="switch" data-fourptouch-field="enabled" ${boolValue(alarm.enabled, true) ? "checked" : ""}>
+                        <label class="form-check-label" data-switch-label>${boolValue(alarm.enabled, true) ? "Ligado" : "Desligado"}</label>
+                    </div>
+                </div>
+                ${field(
+                    "Recorrência",
+                    `<div class="btn-group w-100" role="group" aria-label="Recorrência do alarme">
+                        ${modeOptions
+                            .map((option) => {
+                                const inputId = `${rowId}-mode-${option.value}`;
+                                return `
+                            <input
+                                class="btn-check"
+                                type="radio"
+                                name="${rowId}-mode"
+                                id="${inputId}"
+                                value="${option.value}"
+                                data-config-field="mode"
+                                data-fourptouch-field="mode"
+                                ${option.value === mode ? "checked" : ""}>
+                            <label class="btn btn-outline-secondary btn-sm" for="${inputId}">${esc(option.label)}</label>
+                        `;
+                            })
+                            .join("")}
+                    </div>`,
+                    { cls: "col-12 col-lg-7", required: true },
+                )}
+                <div class="col-12 ${customVisible ? "" : "d-none"}" data-fourptouch-custom-wrapper>
+                    ${weekdayPicker(customDays, rowId)}
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover alarme" aria-label="Remover alarme">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
+        </div>`;
+}
