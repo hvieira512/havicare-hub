@@ -201,7 +201,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             !$this->links->isEnabled((string)$gateway['imei'], (string)$device['imei'])
             || !$this->sameTenant($gateway, $device)
         ) {
-            Logger::channel('hub')->warning(
+            $this->warnRepeatedly(
+                "unlinked:{$mac}:{$gateway['imei']}",
                 "Ignoring unlinked veepoo device={$mac} gateway={$gateway['imei']}"
             );
             return;

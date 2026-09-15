@@ -18,6 +18,9 @@ abstract class Bridge implements MqttIngress
     /** Um aviso de aparelho não registado por identidade e por esta janela, e não por mensagem. */
     private const UNAUTHORIZED_RECORD_INTERVAL_SECONDS = 60;
 
+    /** E o mesmo para as queixas que se repetem a cada trama. */
+    private const REPEATED_WARNING_INTERVAL_SECONDS = 60;
+
     private MqttClient $subscriber;
 
     /** @var null|callable(): MqttClient */
@@ -25,6 +28,13 @@ abstract class Bridge implements MqttIngress
 
     /** @var array<string, int> */
     private array $lastUnauthorizedAt = [];
+
+    /**
+     * Quando cada queixa repetida foi escrita pela última vez.
+     *
+     * @var array<string, int>
+     */
+    private array $lastWarnedAt = [];
 
     private int $lastUnauthorizedPruneAt = 0;
 
@@ -59,6 +69,34 @@ abstract class Bridge implements MqttIngress
     }
 
     abstract protected function handleMessage(string $topic, string $payload): void;
+
+    /**
+     * Escreve um aviso uma vez por assunto e por janela.
+     *
+     * Há queixas que se repetem a cada trama porque a causa se repete a cada trama: um gateway
+     * no terreno anuncia tudo o que o rodeia, e o hub recusa o que não lhe está ligado -- uma
+     * linha por segundo, por par. Dizê-lo uma vez por janela é o que faz do diário uma
+     * ferramenta de diagnóstico em vez de um despejo.
+     *
+     * O `$subject` é o que se considera a mesma queixa: o par aparelho/gateway, e não a
+     * mensagem, que traz valores que mudam.
+     */
+    protected function warnRepeatedly(string $subject, string $message): void
+    {
+        $now = (int)$this->clockNow();
+        foreach ($this->lastWarnedAt as $key => $at) {
+            if (($now - $at) >= self::REPEATED_WARNING_INTERVAL_SECONDS) {
+                unset($this->lastWarnedAt[$key]);
+            }
+        }
+
+        if (isset($this->lastWarnedAt[$subject])) {
+            return;
+        }
+
+        $this->lastWarnedAt[$subject] = $now;
+        Logger::channel('hub')->warning($message);
+    }
 
     public function start(): void
     {
