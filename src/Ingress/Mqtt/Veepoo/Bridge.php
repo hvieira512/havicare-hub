@@ -99,6 +99,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         ?callable $reconnectSubscriber = null,
         ?DashboardStoreContract $dashboardStore = null,
         ?DailyBlockNormalizer $normalizer = null,
+        private readonly int $telemetryRefreshSeconds = 60,
     ) {
         parent::__construct(
             $subscriber,
@@ -558,7 +559,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
 
         [$type, $data] = $measurement;
 
-        $this->emitTelemetry($deviceKey, TelemetryEnvelope::for(
+        $telemetry = TelemetryEnvelope::for(
             $type,
             $deviceKey,
             $device,
@@ -568,7 +569,18 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             "type-{$sdkType}",
             $data,
             $gatewayKey,
-        ), $licenseId, $company);
+        );
+
+        // Enquanto mede, o firmware repete a mesma trama uma vez por segundo até lhe mandarem
+        // parar -- e o gateway espera quarenta e cinco. Um toque no botão dava trinta e duas
+        // vezes o mesmo batimento, num histórico que guarda cem entradas. É o mesmo travão
+        // que trava os anúncios repetidos de um gateway MOKO, e pela mesma razão: repetir o
+        // que não mudou não é informação nova.
+        if (!$this->state->shouldPublish($deviceKey, $type, $telemetry, $this->telemetryRefreshSeconds, $gatewayKey)) {
+            return;
+        }
+
+        $this->emitTelemetry($deviceKey, $telemetry, $licenseId, $company);
     }
 
     /**

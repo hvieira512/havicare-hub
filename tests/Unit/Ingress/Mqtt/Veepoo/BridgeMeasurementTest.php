@@ -300,6 +300,74 @@ final class BridgeMeasurementTest extends TestCase
         self::assertSame([], $mqtt->telemetry);
     }
 
+    /**
+     * Um pedido é uma leitura, e não trinta e duas.
+     *
+     * Enquanto mede, o firmware repete a mesma trama uma vez por segundo até lhe mandarem
+     * parar -- e o gateway espera quarenta e cinco. Um toque no botão enchia o histórico do
+     * aparelho com trinta e duas vezes o mesmo batimento, num histórico que guarda cem
+     * entradas: um terço do que se sabe sobre a pulseira gasto numa medição só.
+     *
+     * É o mesmo travão que trava os anúncios repetidos de um gateway MOKO, e pela mesma
+     * razão: repetir o que não mudou não é informação nova.
+     */
+    public function testRepeatingTheSameReadingWhileMeasuringPublishesItOnce(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        for ($i = 0; $i < 32; $i++) {
+            $bridge->handleReceivedMessage(self::TOPIC, self::message(['sdkType' => 51, 'heartRate' => 87]));
+        }
+
+        self::assertCount(1, self::ofType($mqtt, 'heart_rate'));
+    }
+
+    /** Um valor diferente é uma leitura diferente, e essa passa. */
+    public function testAChangedReadingIsPublishedAgain(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        foreach ([86, 86, 87, 87, 87] as $bpm) {
+            $bridge->handleReceivedMessage(self::TOPIC, self::message(['sdkType' => 51, 'heartRate' => $bpm]));
+        }
+
+        self::assertSame(
+            [86, 87],
+            array_map(
+                static fn(array $e): int => $e['payload']['data']['bpm'],
+                self::ofType($mqtt, 'heart_rate'),
+            ),
+        );
+    }
+
+    /**
+     * E o travão é por grandeza: uma saturação não cala um batimento.
+     */
+    public function testTheBrakeIsPerCapability(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::message(['sdkType' => 51, 'heartRate' => 87]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::message(['sdkType' => 31, 'bloodOxygen' => 87]));
+
+        self::assertCount(1, self::ofType($mqtt, 'heart_rate'));
+        self::assertCount(1, self::ofType($mqtt, 'blood_oxygen'));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function ofType(RecordingHubMqttBridge $mqtt, string $type): array
+    {
+        return array_values(array_filter(
+            $mqtt->telemetry,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === $type,
+        ));
+    }
+
     /** @param array<string, mixed> $payload */
     private static function message(array $payload): string
     {

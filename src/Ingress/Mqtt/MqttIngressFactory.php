@@ -144,6 +144,10 @@ final class MqttIngressFactory
                 $topicFilter,
                 $reconnect,
                 $services->dashboardStore,
+                null,
+                // O mesmo intervalo do MOKO, porque é o mesmo problema: enquanto mede, a
+                // pulseira repete a leitura uma vez por segundo.
+                (int)$config['moko']['telemetry_refresh_seconds'],
             ),
         );
     }

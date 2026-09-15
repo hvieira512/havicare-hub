@@ -222,6 +222,11 @@ A respiração e a velocidade da onda de pulso vêm nas tramas e **não são
 publicadas**: vieram a zero nas trinta e quatro tramas do exame, do princípio ao
 fim.
 
+Enquanto mede, o firmware repete a mesma trama uma vez por segundo até lhe
+mandarem parar — e o gateway espera quarenta e cinco. O hub publica uma leitura
+por valor e não uma por trama, com o mesmo travão que trava os anúncios
+repetidos de um gateway MOKO (`MOKO_GATEWAY_TELEMETRY_REFRESH_SECONDS`).
+
 Uma medição que corre e não produz trama nenhuma é uma falha e não um sucesso.
 O gateway di-lo no `command_result`, e o hub fecha o pedido com a razão
 `no_response` em vez de o dar por cumprido — sem isso o pedido ficava
