@@ -87,17 +87,17 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
     {
         $this->repository->saveDesired(
             '868017032159118',
-            'sosNumber1',
+            'sosContacts',
             'four-p-touch',
-            'SOS1',
-            ['phone' => '123456789']
+            'SOS',
+            ['numbers' => ['123456789', '', '']]
         );
 
         $rows = $this->repository->allForImei('868017032159118');
 
         self::assertCount(1, $rows);
         self::assertSame('sos_contacts', $rows[0]['config_key'] ?? null);
-        self::assertSame('sosNumber1', $rows[0]['native_key'] ?? null);
+        self::assertSame('sosContacts', $rows[0]['native_key'] ?? null);
     }
 
     public function testAllForImeiIgnoresOlderDuplicateNativeSlot(): void
@@ -111,18 +111,18 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $insert->execute([
-            '868017032159118', 'sos_contacts', 'sosNumber1', 'four-p-touch', 'SOS1',
-            '{"phone":"123456789"}', '{}', 'acked', 'old', '2026-07-01 08:00:00', null, '2026-07-01 08:00:01',
+            '868017032159118', 'sos_contacts', 'sosContacts', 'four-p-touch', 'SOS',
+            '{"numbers":["123456789","",""]}', '{}', 'acked', 'old', '2026-07-01 08:00:00', null, '2026-07-01 08:00:01',
         ]);
         $insert->execute([
-            '868017032159118', 'sosNumber1', 'sosNumber1', 'four-p-touch', 'SOS1',
-            '{"phone":""}', '{}', 'acked', 'new', '2026-07-02 08:00:00', null, '2026-07-02 08:00:01',
+            '868017032159118', 'sosContacts', 'sosContacts', 'four-p-touch', 'SOS',
+            '{"numbers":["","",""]}', '{}', 'acked', 'new', '2026-07-02 08:00:00', null, '2026-07-02 08:00:01',
         ]);
 
         $rows = $this->repository->allForImei('868017032159118');
 
         self::assertCount(1, $rows);
-        self::assertSame(['phone' => ''], $rows[0]['desired_payload'] ?? null);
+        self::assertSame(['numbers' => ['', '', '']], $rows[0]['desired_payload'] ?? null);
         self::assertSame('new', $rows[0]['last_command_id'] ?? null);
     }
 

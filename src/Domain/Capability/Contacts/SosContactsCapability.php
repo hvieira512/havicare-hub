@@ -86,10 +86,6 @@ final class SosContactsCapability implements CapabilityContract
                 $desired['contacts']
             ));
         }
-        if ($nativeKey === 'sosNumber1' || $nativeKey === 'sosNumber2' || $nativeKey === 'sosNumber3') {
-            return $this->fourPTouch->fromNative($desired);
-        }
-
         return [];
     }
 

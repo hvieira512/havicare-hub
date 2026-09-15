@@ -10,9 +10,7 @@ final class FourPTouchConfigurationDefinitions
 
         return [
             $entry('uploadInterval', 'UPLOAD', 'Intervalo de localização', 'number', ['intervalSeconds'], ['UPLOAD'], 'intervals', 10),
-            $entry('sosNumber1', 'SOS1', 'SOS 1', 'phone', ['phone'], ['SOS1'], 'contacts', 10),
-            $entry('sosNumber2', 'SOS2', 'SOS 2', 'phone', ['phone'], ['SOS2'], 'contacts', 20),
-            $entry('sosNumber3', 'SOS3', 'SOS 3', 'phone', ['phone'], ['SOS3'], 'contacts', 30),
+            $entry('sosContacts', 'SOS', 'Contactos SOS', 'list', ['numbers'], ['SOS'], 'contacts', 10, 3),
             $entry('whitelistGroup1', 'WHITELIST1', 'Lista branca 1-5', 'list', ['numbers'], ['WHITELIST1'], 'contacts', 40, 5),
             $entry('whitelistGroup2', 'WHITELIST2', 'Lista branca 6-10', 'list', ['numbers'], ['WHITELIST2'], 'contacts', 50, 5),
             $entry('devicePassword', 'PW', 'Palavra-passe do dispositivo', 'text', ['password'], ['PW'], 'system', 10),

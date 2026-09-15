@@ -35,11 +35,7 @@ final class FourPTouchContactHandlersTest extends TestCase
         $capability = new SosContactsCapability();
 
         self::assertSame(
-            [
-                'sosNumber1' => ['phone' => '111111111'],
-                'sosNumber2' => ['phone' => ''],
-                'sosNumber3' => ['phone' => ''],
-            ],
+            ['sosContacts' => ['numbers' => ['111111111', '', '']]],
             $capability->toNative('four-p-touch', ['111111111']),
         );
     }

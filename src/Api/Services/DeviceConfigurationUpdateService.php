@@ -418,7 +418,7 @@ final class DeviceConfigurationUpdateService
         if ($key === '') {
             return null;
         }
-        if (in_array($key, ['whitelistGroup1', 'whitelistGroup2', 'sosNumber1', 'sosNumber2', 'sosNumber3'], true)) {
+        if (in_array($key, ['whitelistGroup1', 'whitelistGroup2'], true)) {
             return $key;
         }
 

@@ -17,7 +17,7 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
 
     public function nativeKey(): string
     {
-        return 'sosNumber1';
+        return 'sosContacts';
     }
 
     public function toNative(mixed $value): array
@@ -33,7 +33,7 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
             ));
         }
 
-        return $this->split($numbers);
+        return $this->slots($numbers);
     }
 
     public function fromNative(array $desired): mixed
@@ -77,19 +77,14 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
     }
 
     /**
-     * Os três slots vão sempre, e os que sobram vão vazios: cada um é uma chave nativa
-     * própria, e a que ficasse de fora guardava o número anterior.
+     * Os três slots vão sempre, e os que sobram vão vazios: o comando substitui a lista
+     * inteira, e o slot que ficasse de fora guardava o número anterior.
      *
      * @param list<string> $numbers
      * @return array<string, array<string, mixed>>
      */
-    private function split(array $numbers): array
+    private function slots(array $numbers): array
     {
-        $updates = [];
-        foreach (range(1, self::LIMIT) as $slot) {
-            $updates['sosNumber' . $slot] = ['phone' => $numbers[$slot - 1] ?? ''];
-        }
-
-        return $updates;
+        return ['sosContacts' => ['numbers' => array_pad($numbers, self::LIMIT, '')]];
     }
 }

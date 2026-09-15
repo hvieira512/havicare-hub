@@ -50,7 +50,7 @@ final class FourPTouchGenericHandler
         return match (trim($key)) {
             'alarmClock', 'reminders' => 'alarm_clock',
             'takePills' => 'medication_reminders',
-            'sosContacts', 'sosNumber1', 'sosNumber2', 'sosNumber3' => 'sos_contacts',
+            'sosContacts' => 'sos_contacts',
             'rejectUnknownCalls', 'whitelistSwitch' => 'whitelist_enabled',
             'whitelistGroup1', 'whitelistGroup2' => 'call_whitelist',
             'fallDownSensitivity' => 'fall_sensitivity',

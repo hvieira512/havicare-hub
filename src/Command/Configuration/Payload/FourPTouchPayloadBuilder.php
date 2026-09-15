@@ -45,7 +45,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 
         $fields = match ($key) {
             'uploadInterval' => [self::rangeInt($payload['intervalSeconds'] ?? null, 60, 65535, 'intervalSeconds')],
-            'sosNumber1', 'sosNumber2', 'sosNumber3' => self::sosPhoneFields($payload['phone'] ?? null),
+            'sosContacts' => self::sosNumbers($payload['numbers'] ?? []),
             'monitorNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
             'whitelistGroup1', 'whitelistGroup2' => self::stringList($payload['numbers'] ?? [], 5, 'numbers'),
             'devicePassword' => [self::requiredString($payload['password'] ?? null, 'password')],
@@ -527,26 +527,29 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     }
 
     /**
+     * Os três campos vão sempre, e um slot sem número vai vazio: o comando substitui a lista
+     * inteira, e o campo que ficasse de fora guardava o número anterior.
+     *
      * @return list<string>
      */
-    private static function sosPhoneFields(mixed $value): array
+    private static function sosNumbers(mixed $value): array
     {
-        if (is_array($value)) {
-            throw new \InvalidArgumentException('phone must be a string');
-        }
+        return array_map(
+            static function (string $phone): string {
+                if ($phone === '') {
+                    return '';
+                }
+                if (strlen($phone) > 20) {
+                    throw new \InvalidArgumentException('numbers must not exceed 20 ASCII characters');
+                }
+                if (!preg_match('/^[\x00-\x7F]+$/', $phone)) {
+                    throw new \InvalidArgumentException('numbers must contain ASCII characters only');
+                }
 
-        $phone = trim((string)$value);
-        if ($phone === '') {
-            return [];
-        }
-        if (strlen($phone) > 20) {
-            throw new \InvalidArgumentException('phone must not exceed 20 ASCII characters');
-        }
-        if (!preg_match('/^[\x00-\x7F]+$/', $phone)) {
-            throw new \InvalidArgumentException('phone must contain ASCII characters only');
-        }
-
-        return [$phone];
+                return $phone;
+            },
+            self::stringList($value, 3, 'numbers')
+        );
     }
 
     private static function unicodeLength(string $value): int
