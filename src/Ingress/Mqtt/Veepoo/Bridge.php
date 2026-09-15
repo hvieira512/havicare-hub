@@ -42,6 +42,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     /** O tipo com que o firmware fala do ECG, tanto no estado ao vivo como na onda. */
     private const ECG_SDK_TYPE = 42;
 
+    /** O que o gateway diz quando a medição correu e a pulseira não respondeu nada. */
+    private const SILENT_OUTCOME = 'no_response';
+
     /**
      * Quanto tempo um bloco fica reconhecido como já publicado.
      *
@@ -235,6 +238,23 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         }
 
         if (($message['kind'] ?? null) === 'command_result') {
+            // Executar não é medir. O gateway confirma o que correu, e diz quando a pulseira
+            // não devolveu coisa nenhuma -- nem valor nem razão. Sem isto o pedido saía da
+            // fila como cumprido e ficava no ecrã «confirmado» e vazio, que é a ambiguidade
+            // que o relatório de falhas existe para eliminar.
+            if ((string)($message['payload']['outcome'] ?? '') === self::SILENT_OUTCOME) {
+                $this->fail(
+                    $deviceKey,
+                    $device,
+                    $licenseId,
+                    $company,
+                    self::SILENT_OUTCOME,
+                    (string)($message['payload']['operation'] ?? '') ?: null,
+                );
+
+                return;
+            }
+
             $this->downlinkDispatcher->resolvePending($deviceKey, (string)($message['payload']['dedupeKey'] ?? ''));
             return;
         }

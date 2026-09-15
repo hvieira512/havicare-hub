@@ -144,6 +144,94 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame('not_worn', $failed[0][1]['error']);
     }
 
+    /**
+     * Uma medição que correu e não produziu trama nenhuma é uma falha, e não um sucesso.
+     *
+     * O gateway executa o comando, espera os quarenta e cinco segundos e confirma -- porque
+     * de facto o executou. Se a pulseira não respondeu coisa nenhuma, nem valor nem razão, o
+     * pedido ficava «confirmado» e vazio no ecrã, que é a ambiguidade que o relatório de
+     * falhas existe para eliminar: confirmado passava a querer dizer «o gateway mandou» em
+     * vez de «a pulseira mediu».
+     */
+    public function testAMeasurementThatCameBackSilentIsReportedAsAFailure(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('measure.heartRate.start');
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', 'no_response'));
+
+        self::assertSame([], $queue->operations(), 'o pedido não pode ficar em fila');
+
+        $failures = array_values(array_filter(
+            $mqtt->events,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
+        ));
+
+        self::assertCount(1, $failures);
+        self::assertSame(['reason' => 'no_response'], $failures[0]['payload']['error']);
+    }
+
+    /** Uma execução com resposta continua a ser um sucesso, e sai da fila calada. */
+    public function testAMeasurementThatAnsweredIsNotReportedAsAFailure(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('measure.heartRate.start');
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+
+        self::assertSame([], $queue->operations());
+        self::assertSame([], array_filter(
+            $mqtt->events,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
+        ));
+    }
+
+    /**
+     * Uma confirmação de um gateway antigo, sem o campo, continua a valer como sucesso: o
+     * silêncio tem de ser dito, não presumido.
+     */
+    public function testAConfirmationWithoutTheFieldIsStillASuccess(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('config:find_device');
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
+            'source' => 'veepoo-node',
+            'kind' => 'command_result',
+            'device' => ['mac' => self::BRACELET],
+            'payload' => ['dedupeKey' => 'config:find_device-key', 'operation' => 'config:find_device'],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame([], $queue->operations());
+        self::assertSame([], array_filter(
+            $mqtt->events,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
+        ));
+    }
+
+    private static function confirmation(string $operation, ?string $outcome): string
+    {
+        return json_encode([
+            'source' => 'veepoo-node',
+            'kind' => 'command_result',
+            'device' => ['mac' => self::BRACELET],
+            'payload' => array_filter([
+                'dedupeKey' => $operation . '-key',
+                'operation' => $operation,
+                'outcome' => $outcome,
+            ], static fn(mixed $v): bool => $v !== null),
+        ], JSON_THROW_ON_ERROR);
+    }
+
     /** @param array<string, mixed> $payload */
     private static function measurement(array $payload): string
     {

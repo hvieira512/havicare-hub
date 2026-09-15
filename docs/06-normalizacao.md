@@ -222,6 +222,12 @@ A respiração e a velocidade da onda de pulso vêm nas tramas e **não são
 publicadas**: vieram a zero nas trinta e quatro tramas do exame, do princípio ao
 fim.
 
+Uma medição que corre e não produz trama nenhuma é uma falha e não um sucesso.
+O gateway di-lo no `command_result`, e o hub fecha o pedido com a razão
+`no_response` em vez de o dar por cumprido — sem isso o pedido ficava
+«confirmado» e vazio no ecrã, que é o silêncio que o relatório de falhas existe
+para eliminar.
+
 ### O sono da pulseira
 
 A pulseira não reporta o sono como os relógios. Guarda três noites já
