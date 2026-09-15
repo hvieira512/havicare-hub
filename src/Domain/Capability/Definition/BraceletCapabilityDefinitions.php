@@ -41,11 +41,6 @@ final class BraceletCapabilityDefinitions
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'blood_oxygen', 'label' => 'Oxigénio no sangue', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'blood_sugar', 'label' => 'Glicemia', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'ecg', 'label' => 'ECG', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-
-            // A temperatura mede-se sozinha e chega nos blocos diários com valores reais, mas
-            // o comando de medição a pedido responde sempre com carga vazia -- dez respostas,
-            // zero conteúdo, nem sequer um estado de erro. Fica como telemetria e não como
-            // pedido: o dado existe, o botão é que não teria o que devolver.
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'temperature', 'label' => 'Temperatura', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
 
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'hrv', 'label' => 'HRV', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
