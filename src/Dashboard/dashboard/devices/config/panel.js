@@ -118,8 +118,9 @@ export function syncConfigGroupDirty(group) {
     button.classList.toggle("btn-primary", count > 0);
     button.classList.toggle("btn-outline-secondary", count === 0);
 
-    // «Alterações» só quando alguém alterou. Linhas que nunca chegaram ao aparelho estão por
-    // enviar sem ninguém lhes ter tocado, e dizer-lhes alterações era mentir sobre a origem.
+    // «Alterações» só quando alguém alterou. As definições sem valor guardado no hub entram
+    // na conta sem ninguém lhes ter tocado -- o botão tem de as poder enviar pela primeira
+    // vez --, e chamar-lhes alterações era mentir sobre a origem.
     const edited = Object.keys(pending).some((key) => {
         const row = group.querySelector(`[data-config-row][data-config-key="${key}"]`);
         return row?.dataset.configStored !== "0";
@@ -134,7 +135,13 @@ export function syncConfigGroupDirty(group) {
             ? "Sem alterações por enviar"
             : edited
                 ? `${count} ${count === 1 ? "alteração" : "alterações"} por enviar`
-                : `${count} ${count === 1 ? "definição nunca enviada" : "definições nunca enviadas"} ao dispositivo`;
+                // «No valor padrão» e não «nunca enviada ao dispositivo»: o que sabemos é que o
+                // hub nunca guardou valor nenhum, que é o que a pastilha de cada cartão já
+                // chama «Padrão». Sobre o aparelho não sabemos nada -- ele tem sempre um
+                // valor, de fábrica ou posto pela app do fabricante, e ler ali que nunca
+                // recebeu nada leva a concluir que o alarme está desligado quando pode não
+                // estar.
+                : `${count} ${count === 1 ? "definição" : "definições"} no valor padrão, por enviar`;
     }
 }
 
