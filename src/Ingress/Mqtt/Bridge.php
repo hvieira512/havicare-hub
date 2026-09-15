@@ -131,6 +131,13 @@ abstract class Bridge implements MqttIngress
         int $licenseId = 0,
         ?string $company = null,
     ): void {
+        // Uma trama sem identidade não é um aparelho por autorizar -- é uma mensagem
+        // malformada, e não há nada que quem opera possa fazer com ela. Registá-la dava uma
+        // notificação no sino com um botão «Registar» sem nada para registar.
+        if ($identity === '') {
+            return;
+        }
+
         // Bloqueado de propósito: cala-se na fonte, sem notificação nem sequer a escrita do
         // estrangulamento em memória.
         if ($this->denylist?->contains($identity)) {
