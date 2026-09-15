@@ -6,6 +6,7 @@ namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\VeepooSleepOnDemand;
+use Hub\Infrastructure\Persistence\Migration\VeepooSleepQuality;
 
 /**
  * As migrações posteriores à baseline, que é o `database/schema.sql` mais o catálogo que o
@@ -24,6 +25,9 @@ final class DatabaseMigrationPlan
     public function migrations(): array
     {
         return [
+            // Ambas de hoje e ainda por aplicar nas duas bases: a primeira dá a capacidade
+            // das pontuações do sono, a segunda torna o sono pedível.
+            new VeepooSleepQuality(),
             new VeepooSleepOnDemand(),
         ];
     }
