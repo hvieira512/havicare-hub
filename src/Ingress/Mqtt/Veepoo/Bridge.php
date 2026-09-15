@@ -39,6 +39,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     /** O nome deste protocolo no contrato, que vai no `source` de tudo o que sai daqui. */
     private const PROTOCOL = 'veepoo-ble';
 
+    /** O tipo com que o firmware fala do ECG, tanto no estado ao vivo como na onda. */
+    private const ECG_SDK_TYPE = 42;
+
     /**
      * Quanto tempo um bloco fica reconhecido como já publicado.
      *
@@ -483,6 +486,14 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         }
 
         $sdkType = (int)($payload['sdkType'] ?? 0);
+
+        // O ECG ao vivo manda uma trama por segundo com o estado da medição. Não é telemetria
+        // por si -- são trinta e quatro por exame, e enchiam o histórico com o decorrer em vez
+        // do resultado. O que elas mediram sai uma vez, com a onda.
+        if ($sdkType === self::ECG_SDK_TYPE) {
+            return;
+        }
+
         $measurement = MeasurementNormalizer::forSdkType($sdkType, $payload);
         if ($measurement === null) {
             // Um tipo do SDK que ninguém reclama sai daqui tão calado como saía um `kind`, e
@@ -550,6 +561,15 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         // `frequencyHz` é o nome do contrato, o mesmo que os relógios usam para a onda deles.
         $frequencyHz = is_int($payload['samplingHz'] ?? null) ? $payload['samplingHz'] : null;
 
+        // O que o exame mediu vem com ele, e não em telemetria à parte: um ECG é um exame, e
+        // a frequência cardíaca que ele apurou não é a mesma coisa que a leitura solta do
+        // sensor ótico -- separá-las punha duas grandezas com o mesmo nome a discordar.
+        $status = is_array($payload['status'] ?? null) ? $payload['status'] : [];
+        $measured = MeasurementNormalizer::ecgSummary(array_values(array_filter(
+            $status,
+            static fn(mixed $frame): bool => is_array($frame),
+        )));
+
         $this->emitTelemetry($deviceKey, TelemetryEnvelope::for(
             'ecg',
             $deviceKey,
@@ -559,7 +579,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             array_filter(
                 ['samples' => $samples, 'frequencyHz' => $frequencyHz],
                 static fn(mixed $v): bool => $v !== null,
-            ),
+            ) + $measured,
             $gatewayKey,
         ), $licenseId, $company);
     }

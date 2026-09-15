@@ -74,6 +74,64 @@ final class MeasurementNormalizer
     }
 
     /**
+     * O que um exame de ECG mediu, resumido das tramas de estado que o acompanharam.
+     *
+     * O fabricante documenta um relatório final que se lê do aparelho por id (secção 9.28.5),
+     * mas neste firmware ele não existe: os quatro tipos de id devolvem `dataId: 0`. Estas
+     * tramas, uma por segundo, são o único resumo possível.
+     *
+     * A mediana e não a média: numa medição real vieram um QTc de 712 ms e um HRV de 8 ms no
+     * meio de valores na casa dos 120 -- artefactos do algoritmo a falhar um complexo, que a
+     * média deixaria entrar no resultado. Os primeiros segundos vêm com a trama inteira a
+     * zeros enquanto o sinal assenta, e o `--` é o sentinela de «sem leitura» do firmware.
+     *
+     * A respiração e a velocidade da onda de pulso não entram: vieram a zero nas trinta e
+     * quatro tramas do exame, do princípio ao fim, e publicá-las dava uma respiração de zero
+     * ciclos por minuto a quem estava a respirar.
+     *
+     * @param list<array<string, mixed>> $status
+     * @return array<string, int>
+     */
+    public static function ecgSummary(array $status): array
+    {
+        // Intervalos plausíveis para um adulto. O QTc normal anda entre 350 e 450 ms; acima
+        // de 600 não é uma leitura, é o algoritmo a enganar-se.
+        $fields = [
+            'HR2PerMinute' => ['heartRateBpm', self::HEART_RATE_MIN, self::HEART_RATE_MAX, 1],
+            'Hrv' => ['hrvMilliseconds', 1, 500, 1],
+            'QTC' => ['qtcMilliseconds', 200, 600, 1],
+            // Em unidades de dez milissegundos, como nos blocos diários: 100 são os 1000 ms
+            // de um coração a sessenta batimentos.
+            'RR1PerSecond' => ['rrIntervalMilliseconds', 24, 200, 10],
+        ];
+
+        $out = [];
+        foreach ($fields as $source => [$name, $min, $max, $scale]) {
+            $values = [];
+            foreach ($status as $frame) {
+                $value = self::withinRange($frame[$source] ?? null, $min, $max);
+                if ($value !== null) {
+                    $values[] = (int)$value;
+                }
+            }
+
+            if ($values !== []) {
+                $out[$name] = self::median($values) * $scale;
+            }
+        }
+
+        return $out;
+    }
+
+    /** @param list<int> $values */
+    private static function median(array $values): int
+    {
+        sort($values);
+
+        return $values[intdiv(count($values), 2)];
+    }
+
+    /**
      * O pedido que mandou fazer esta medição, pelo tipo do SDK.
      *
      * É a tabela do `forSdkType` vista do outro lado, e vive ao lado dela pela mesma razão: o

@@ -169,6 +169,7 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `blood_lipids` | pulseira | `totalCholesterolMmolPerL`, `triglyceridesMmolPerL`, `hdlMmolPerL`, `ldlMmolPerL` |
 | `uric_acid` | pulseira | `umolPerL` |
 | `sleep_apnea` | pulseira | `episodes`, `hypoxiaSeconds` — contagens do bloco, e não leituras por minuto |
+| `ecg` | pulseira | `samples`, `frequencyHz` e, nas pulseiras, `heartRateBpm`, `hrvMilliseconds`, `qtcMilliseconds`, `rrIntervalMilliseconds` — o que o exame apurou, junto com o traçado |
 | `sleep_quality` | pulseira | `qualityStars`, `deepSleepScore`, `efficiencyScore`, `fallAsleepScore`, `durationScore`, `nightWakingScore`, `insomniaScore`, `awakeningCount`, `firstDeepSleepMinutes`, `nightAwakeMinutes`, `returnToDeepSleepMeanMinutes` — as pontuações que o firmware atribui à noite |
 | `cardiac_load` | pulseira | `value` — sem unidade nem escala documentadas pelo fabricante |
 | `find_device` | pulseira | `state`: `searching`, `stopped` ou `timed_out`. A pulseira desiste sozinha ao fim de cerca de um minuto, e é `timed_out` que o diz |
@@ -196,6 +197,30 @@ Os tipos de segmento são unificados em `deep_sleep`, `light_sleep`, `rem` e
 `awake`, independentemente da designação de origem. A pulseira acrescenta
 `insomnia`, que o firmware distingue de `awake`: um é estar deitado sem dormir,
 o outro é ter-se levantado.
+
+### O ECG da pulseira
+
+O fabricante documenta um relatório final do exame — média de frequência
+cardíaca, respiração, HRV e morfologia do traçado — que se lê do aparelho por
+id. **Neste firmware esse relatório não existe:** os quatro tipos de id
+documentados devolvem todos `dataId: 0`, e a informação de doença é, de
+qualquer maneira, conteúdo pago que sem contrato vem a zeros.
+
+O que há são as tramas de estado, uma por segundo durante a medição. O gateway
+recolhe-as e entrega-as com a onda, e o hub resume-as para dentro do mesmo
+envelope: um exame é um exame, e a frequência cardíaca que ele apurou não é a
+mesma coisa que a leitura solta do sensor ótico.
+
+O resumo é a **mediana** e não a média. Numa medição real vieram um QTc de
+712 ms e um HRV de 8 ms no meio de valores na casa dos 120 — o algoritmo a
+falhar um complexo, que uma média deixaria entrar no resultado. Os primeiros
+segundos trazem a trama inteira a zeros enquanto o sinal assenta, e o `--` é o
+sentinela de «sem leitura» do firmware. Com um número par de leituras fica a de
+cima das duas do meio, que é um valor medido e não uma média que ninguém leu.
+
+A respiração e a velocidade da onda de pulso vêm nas tramas e **não são
+publicadas**: vieram a zero nas trinta e quatro tramas do exame, do princípio ao
+fim.
 
 ### O sono da pulseira
 
