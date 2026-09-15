@@ -72,6 +72,14 @@ trait ReconnectsOnLoopFailure
             // Sem repor o recuo aqui: e o `markConnected` do `resubscribe` que marca o
             // instante a partir do qual se sabe se a ligacao durou.
             $resubscribe();
+            // Dizer que voltou é metade da informação. Sem esta linha, um dia com vinte
+            // quedas por hora e vinte recuperações lê-se igual a um dia em que a ligação caiu
+            // de madrugada e nunca mais voltou: a mesma parede de avisos, sem nada a fechá-los.
+            Logger::channel('hub')->info(sprintf(
+                '%s reconnected after %.1fs down',
+                $label,
+                microtime(true) - $now,
+            ));
         } catch (\Throwable $reconnectError) {
             Logger::channel('hub')->error("{$label} reconnect failed: {$reconnectError->getMessage()}");
         }
