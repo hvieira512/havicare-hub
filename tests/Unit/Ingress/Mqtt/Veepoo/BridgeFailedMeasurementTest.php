@@ -277,6 +277,61 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame(['reason' => 'no_reading'], $failures[0]['payload']['error']);
     }
 
+    /**
+     * Um pedido morre uma vez, e com a razão certa.
+     *
+     * A pulseira diz `notWear` a meio da medição e o pedido fecha-se aí. A confirmação do
+     * gateway chega a seguir -- ele executou o comando -- e encontrava o pedido sem leitura
+     * nenhuma à espera, dando-o por falhado outra vez, agora por `no_reading`. Medido contra
+     * a pulseira: dois acontecimentos para o mesmo toque no botão, e o segundo a apontar para
+     * o sensor quando o problema era o pulso.
+     */
+    public function testARequestThatAlreadyFailedIsNotFailedAgainByTheConfirmation(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('measure.heartRate.start');
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+
+        $failures = array_values(array_filter(
+            $mqtt->events,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
+        ));
+
+        self::assertCount(1, $failures);
+        self::assertSame(['reason' => 'not_worn'], $failures[0]['payload']['error']);
+    }
+
+    /** E o pedido seguinte volta a poder falhar por si. */
+    public function testTheNextRequestCanFailOnItsOwn(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('measure.heartRate.start');
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+
+        $queue->add('measure.heartRate.start');
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+
+        $reasons = array_map(
+            static fn(array $e): mixed => $e['payload']['error']['reason'] ?? null,
+            array_values(array_filter(
+                $mqtt->events,
+                static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
+            )),
+        );
+
+        self::assertSame(['not_worn', 'no_reading'], $reasons);
+    }
+
     private static function confirmation(string $operation, ?string $outcome): string
     {
         return json_encode([

@@ -92,6 +92,19 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     private array $settling = [];
 
     /**
+     * Pedidos já encerrados com a razão pela qual falharam, à espera da confirmação.
+     *
+     * A pulseira diz `notWear` a meio da medição e o pedido morre aí. A confirmação chega a
+     * seguir -- o gateway executou o comando -- e encontrava-o sem leitura nenhuma à espera,
+     * dando-o por falhado outra vez e agora por não ter dado valor. Eram dois acontecimentos
+     * para o mesmo toque no botão, e o segundo apontava para o sensor quando o problema era
+     * o pulso.
+     *
+     * @var array<string, array<string, float>>
+     */
+    private array $closed = [];
+
+    /**
      * A última versão de firmware que foi parar ao histórico de cada aparelho.
      *
      * Em memória e não em Redis: um hub reiniciado volta a guardar uma entrada, que é uma por
@@ -286,6 +299,13 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             // gateway confirma porque viu tramas a chegar -- mas quem sabe o que conta como
             // leitura é este lado, e daqui não saiu nenhuma.
             if (str_starts_with($operation, 'measure.')) {
+                // Já morreu, e com a razão certa: a confirmação não o mata segunda vez.
+                if (isset($this->closed[$deviceKey][$operation])) {
+                    unset($this->closed[$deviceKey][$operation], $this->settling[$deviceKey][$operation]);
+
+                    return;
+                }
+
                 $settled = $this->settling[$deviceKey][$operation] ?? null;
                 unset($this->settling[$deviceKey][$operation]);
                 if ($settled === null && $operation !== MeasurementNormalizer::ECG_OPERATION) {
@@ -714,6 +734,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         $this->failures->report($deviceKey, $device, $licenseId, $company, $reason);
         if ($operation !== null) {
             $this->downlinkDispatcher->failPending($deviceKey, $operation, $reason);
+            $this->closed[$deviceKey][$operation] = $this->clockNow();
+            unset($this->settling[$deviceKey][$operation]);
         }
     }
 
@@ -726,6 +748,17 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     private function releaseSettled(): void
     {
         $now = $this->clockNow();
+
+        // Uma confirmação que nunca chega não pode deixar um pedido marcado como morto para
+        // sempre: o seguinte tem de poder falhar por si.
+        foreach ($this->closed as $deviceKey => $operations) {
+            foreach ($operations as $operation => $at) {
+                if ($now - $at >= self::READING_HOLD_SECONDS) {
+                    unset($this->closed[$deviceKey][$operation]);
+                }
+            }
+        }
+
         foreach ($this->settling as $deviceKey => $operations) {
             foreach ($operations as $operation => $settled) {
                 if ($now - $settled['at'] < self::READING_HOLD_SECONDS) {
