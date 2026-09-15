@@ -7,6 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\Bridge;
+use Hub\Ingress\Mqtt\Veepoo\MeasurementNormalizer;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -114,7 +115,15 @@ final class BridgeMeasurementTest extends TestCase
         array $expected,
     ): void {
         $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::message($payload));
+        $bridge = $this->bridge($mqtt);
+        $bridge->handleReceivedMessage(self::TOPIC, self::message($payload));
+
+        // Uma medição sai quando o pedido que a mandou fazer se fecha; uma leitura
+        // instantânea não tem pedido a fechar e já saiu.
+        $operation = MeasurementNormalizer::operationForSdkType((int)$payload['sdkType']);
+        if ($operation !== null) {
+            $bridge->handleReceivedMessage(self::TOPIC, self::confirmation($operation));
+        }
 
         $telemetry = array_values(array_filter(
             $mqtt->telemetry,
@@ -301,61 +310,86 @@ final class BridgeMeasurementTest extends TestCase
     }
 
     /**
-     * Um pedido é uma leitura, e não trinta e duas.
+     * Um pedido é uma leitura: a que o aparelho deu por boa no fim.
      *
-     * Enquanto mede, o firmware repete a mesma trama uma vez por segundo até lhe mandarem
-     * parar -- e o gateway espera quarenta e cinco. Um toque no botão enchia o histórico do
-     * aparelho com trinta e duas vezes o mesmo batimento, num histórico que guarda cem
-     * entradas: um terço do que se sabe sobre a pulseira gasto numa medição só.
-     *
-     * É o mesmo travão que trava os anúncios repetidos de um gateway MOKO, e pela mesma
-     * razão: repetir o que não mudou não é informação nova.
+     * Medido numa pulseira real, ao pulso: um só pedido de frequência cardíaca deu dezanove
+     * leituras entre 79 e 97, porque o firmware repete a trama uma vez por segundo enquanto
+     * mede e o coração não está parado. Travar só o que se repete igual não chega -- é a
+     * medição a assentar, e o resultado é o valor com que ela assentou.
      */
-    public function testRepeatingTheSameReadingWhileMeasuringPublishesItOnce(): void
+    public function testAMeasurementYieldsTheValueItSettledOn(): void
     {
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        for ($i = 0; $i < 32; $i++) {
-            $bridge->handleReceivedMessage(self::TOPIC, self::message(['sdkType' => 51, 'heartRate' => 87]));
-        }
-
-        self::assertCount(1, self::ofType($mqtt, 'heart_rate'));
-    }
-
-    /** Um valor diferente é uma leitura diferente, e essa passa. */
-    public function testAChangedReadingIsPublishedAgain(): void
-    {
-        $mqtt = new RecordingHubMqttBridge();
-        $bridge = $this->bridge($mqtt);
-
-        foreach ([86, 86, 87, 87, 87] as $bpm) {
+        foreach ([0, 79, 85, 90, 91, 90] as $bpm) {
             $bridge->handleReceivedMessage(self::TOPIC, self::message(['sdkType' => 51, 'heartRate' => $bpm]));
         }
 
-        self::assertSame(
-            [86, 87],
-            array_map(
-                static fn(array $e): int => $e['payload']['data']['bpm'],
-                self::ofType($mqtt, 'heart_rate'),
-            ),
-        );
+        self::assertSame([], $mqtt->telemetry, 'enquanto mede, a medição ainda não é um resultado');
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start'));
+
+        $readings = self::ofType($mqtt, 'heart_rate');
+        self::assertCount(1, $readings);
+        self::assertSame(90, $readings[0]['payload']['data']['bpm']);
     }
 
     /**
-     * E o travão é por grandeza: uma saturação não cala um batimento.
+     * Uma leitura instantânea não espera por confirmação nenhuma.
+     *
+     * Os totais do dia e o estado de quem manda a pulseira vibrar são contadores que o
+     * firmware já tem: respondem numa trama e não têm medição a assentar.
      */
-    public function testTheBrakeIsPerCapability(): void
+    public function testAnInstantReadIsPublishedAtOnce(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $bridge = $this->bridge($mqtt);
+        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::message([
+            'sdkType' => 9, 'step' => 216, 'calorie' => 146, 'distance' => 187, 'day' => 'today',
+        ]));
 
-        $bridge->handleReceivedMessage(self::TOPIC, self::message(['sdkType' => 51, 'heartRate' => 87]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::message(['sdkType' => 31, 'bloodOxygen' => 87]));
-
-        self::assertCount(1, self::ofType($mqtt, 'heart_rate'));
-        self::assertCount(1, self::ofType($mqtt, 'blood_oxygen'));
+        self::assertCount(1, self::ofType($mqtt, 'activity'));
     }
+
+    /**
+     * Uma confirmação perdida não pode levar a leitura com ela.
+     *
+     * O valor foi medido; se a caixa morrer entre a última trama e a confirmação, ele tem de
+     * sair na mesma. O prazo é mais longo do que qualquer medição desta pulseira -- a mais
+     * lenta, a composição corporal, leva dois minutos.
+     */
+    public function testAReadingIsNotLostWhenTheConfirmationNeverArrives(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $now = 1000;
+        $bridge = $this->bridge($mqtt, clock: static function () use (&$now): float {
+            return (float)$now;
+        });
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::message(['sdkType' => 51, 'heartRate' => 90]));
+        $bridge->dispatchQueued();
+        self::assertSame([], $mqtt->telemetry);
+
+        $now += 200;
+        $bridge->dispatchQueued();
+
+        $readings = self::ofType($mqtt, 'heart_rate');
+        self::assertCount(1, $readings);
+        self::assertSame(90, $readings[0]['payload']['data']['bpm']);
+    }
+
+    private static function confirmation(string $operation): string
+    {
+        return json_encode([
+            'source' => 'veepoo-node',
+            'kind' => 'command_result',
+            'device' => ['mac' => self::BRACELET],
+            'payload' => ['dedupeKey' => $operation . '-key', 'operation' => $operation],
+        ], JSON_THROW_ON_ERROR);
+    }
+
+
+
 
     /**
      * @return list<array<string, mixed>>
@@ -379,8 +413,11 @@ final class BridgeMeasurementTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt, ?DashboardStoreContract $store = null): Bridge
-    {
+    private function bridge(
+        RecordingHubMqttBridge $mqtt,
+        ?DashboardStoreContract $store = null,
+        ?callable $clock = null,
+    ): Bridge {
         return new Bridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
@@ -394,6 +431,7 @@ final class BridgeMeasurementTest extends TestCase
             'havicare-hub/null/0/gw/+/raw',
             null,
             $store,
+            clock: $clock,
         );
     }
 }

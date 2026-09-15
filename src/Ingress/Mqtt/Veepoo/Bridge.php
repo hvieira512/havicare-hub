@@ -70,14 +70,26 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     private array $unhandledKinds = [];
 
     /**
-     * Que pedidos de medição já produziram uma leitura, por aparelho.
+     * Quanto tempo uma leitura espera pela confirmação antes de sair sozinha.
      *
-     * Sai daqui quando o gateway confirma o comando: é aí que se pergunta se houve valor, e
-     * a resposta não vale para o pedido seguinte.
-     *
-     * @var array<string, array<string, true>>
+     * Mais do que qualquer medição desta pulseira: a mais lenta, a composição corporal, leva
+     * dois minutos. O prazo existe para uma confirmação perdida não levar com ela um valor
+     * que o aparelho chegou a medir.
      */
-    private array $answered = [];
+    private const READING_HOLD_SECONDS = 180;
+
+    /**
+     * A leitura mais recente de cada pedido em curso, por aparelho.
+     *
+     * Enquanto mede, o firmware manda uma trama por segundo e o valor anda: um só pedido de
+     * frequência cardíaca, numa pulseira ao pulso, deu dezanove leituras entre 79 e 97. Isso
+     * é a medição a assentar, e o resultado é o valor com que ela assentou -- o mesmo que a
+     * app do fabricante mostra. Publicar o caminho todo enchia o histórico do aparelho com o
+     * decorrer de uma medição em vez do que ela deu.
+     *
+     * @var array<string, array<string, array{at: float, telemetry: array<string, mixed>, licenseId: int, company: string}>>
+     */
+    private array $settling = [];
 
     /**
      * A última versão de firmware que foi parar ao histórico de cada aparelho.
@@ -109,7 +121,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         ?callable $reconnectSubscriber = null,
         ?DashboardStoreContract $dashboardStore = null,
         ?DailyBlockNormalizer $normalizer = null,
-        private readonly int $telemetryRefreshSeconds = 60,
+        ?callable $clock = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -119,6 +131,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             'veepoo',
             $reconnectSubscriber,
             $dashboardStore,
+            clock: $clock,
         );
         $this->normalizer = $normalizer ?? new DailyBlockNormalizer();
         $this->downlinkDispatcher = new DownlinkDispatcher(
@@ -144,6 +157,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         foreach ($this->sessionGateway as $deviceKey => $gatewayKey) {
             $this->downlinkDispatcher->dispatchPending($deviceKey, $gatewayKey);
         }
+
+        $this->releaseSettled();
     }
 
     protected function handleMessage(string $topic, string $payload): void
@@ -270,10 +285,17 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             // Responder não é medir. A pulseira fora do pulso responde a tudo com zeros, e o
             // gateway confirma porque viu tramas a chegar -- mas quem sabe o que conta como
             // leitura é este lado, e daqui não saiu nenhuma.
-            if (str_starts_with($operation, 'measure.') && !$this->takeAnswered($deviceKey, $operation)) {
-                $this->fail($deviceKey, $device, $licenseId, $company, 'no_reading', $operation);
+            if (str_starts_with($operation, 'measure.')) {
+                $settled = $this->settling[$deviceKey][$operation] ?? null;
+                unset($this->settling[$deviceKey][$operation]);
+                if ($settled === null && $operation !== MeasurementNormalizer::ECG_OPERATION) {
+                    $this->fail($deviceKey, $device, $licenseId, $company, 'no_reading', $operation);
 
-                return;
+                    return;
+                }
+                if ($settled !== null) {
+                    $this->emitTelemetry($deviceKey, $settled['telemetry'], $licenseId, $company);
+                }
             }
 
             $this->downlinkDispatcher->resolvePending($deviceKey, (string)($message['payload']['dedupeKey'] ?? ''));
@@ -579,10 +601,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
 
         [$type, $data] = $measurement;
 
-        // Antes do travão de repetições: a leitura existiu, mesmo que se cale por ser igual à
-        // anterior. Calar não é não ter medido.
-        $this->markAnswered($deviceKey, MeasurementNormalizer::operationForSdkType($sdkType));
-
         $telemetry = TelemetryEnvelope::for(
             $type,
             $deviceKey,
@@ -595,16 +613,22 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             $gatewayKey,
         );
 
-        // Enquanto mede, o firmware repete a mesma trama uma vez por segundo até lhe mandarem
-        // parar -- e o gateway espera quarenta e cinco. Um toque no botão dava trinta e duas
-        // vezes o mesmo batimento, num histórico que guarda cem entradas. É o mesmo travão
-        // que trava os anúncios repetidos de um gateway MOKO, e pela mesma razão: repetir o
-        // que não mudou não é informação nova.
-        if (!$this->state->shouldPublish($deviceKey, $type, $telemetry, $this->telemetryRefreshSeconds, $gatewayKey)) {
+        // Uma leitura instantânea não tem medição a assentar: os totais do dia e o estado de
+        // quem manda a pulseira vibrar são contadores que o firmware já tem, e respondem numa
+        // trama só.
+        $operation = MeasurementNormalizer::operationForSdkType($sdkType);
+        if ($operation === null) {
+            $this->emitTelemetry($deviceKey, $telemetry, $licenseId, $company);
+
             return;
         }
 
-        $this->emitTelemetry($deviceKey, $telemetry, $licenseId, $company);
+        $this->settling[$deviceKey][$operation] = [
+            'at' => $this->clockNow(),
+            'telemetry' => $telemetry,
+            'licenseId' => $licenseId,
+            'company' => $company,
+        ];
     }
 
     /**
@@ -640,8 +664,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             $this->fail($deviceKey, $device, $licenseId, $company, 'no_signal', MeasurementNormalizer::ECG_OPERATION);
             return;
         }
-
-        $this->markAnswered($deviceKey, MeasurementNormalizer::ECG_OPERATION);
 
         // `frequencyHz` é o nome do contrato, o mesmo que os relógios usam para a onda deles.
         $frequencyHz = is_int($payload['samplingHz'] ?? null) ? $payload['samplingHz'] : null;
@@ -695,21 +717,24 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         }
     }
 
-    /** Regista que um pedido produziu leitura. */
-    private function markAnswered(string $deviceKey, ?string $operation): void
+    /**
+     * Publica as leituras cuja confirmação nunca chegou.
+     *
+     * O valor foi medido; se a caixa morrer entre a última trama e a confirmação, ele tem de
+     * sair na mesma. Corre no mesmo temporizador que entrega a fila.
+     */
+    private function releaseSettled(): void
     {
-        if ($operation !== null) {
-            $this->answered[$deviceKey][$operation] = true;
+        $now = $this->clockNow();
+        foreach ($this->settling as $deviceKey => $operations) {
+            foreach ($operations as $operation => $settled) {
+                if ($now - $settled['at'] < self::READING_HOLD_SECONDS) {
+                    continue;
+                }
+                unset($this->settling[$deviceKey][$operation]);
+                $this->emitTelemetry($deviceKey, $settled['telemetry'], $settled['licenseId'], $settled['company']);
+            }
         }
-    }
-
-    /** Se um pedido produziu leitura, e esquece-o: a resposta não vale para o seguinte. */
-    private function takeAnswered(string $deviceKey, string $operation): bool
-    {
-        $answered = isset($this->answered[$deviceKey][$operation]);
-        unset($this->answered[$deviceKey][$operation]);
-
-        return $answered;
     }
 
     /**

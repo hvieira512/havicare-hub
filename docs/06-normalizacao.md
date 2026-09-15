@@ -222,10 +222,17 @@ A respiração e a velocidade da onda de pulso vêm nas tramas e **não são
 publicadas**: vieram a zero nas trinta e quatro tramas do exame, do princípio ao
 fim.
 
-Enquanto mede, o firmware repete a mesma trama uma vez por segundo até lhe
-mandarem parar — e o gateway espera quarenta e cinco. O hub publica uma leitura
-por valor e não uma por trama, com o mesmo travão que trava os anúncios
-repetidos de um gateway MOKO (`MOKO_GATEWAY_TELEMETRY_REFRESH_SECONDS`).
+Um pedido de medição dá **uma** leitura: a que o aparelho deu por boa no fim.
+Enquanto mede, o firmware manda uma trama por segundo e o valor anda — um só
+pedido de frequência cardíaca, numa pulseira ao pulso, deu dezanove leituras
+entre 79 e 97. Isso é a medição a assentar, e o resultado é o valor com que ela
+assentou, que é o mesmo que a app do fabricante mostra; o caminho todo continua
+a sair no `raw`.
+
+A leitura sai quando o gateway confirma o comando, ou por prazo se a confirmação
+se perder — o valor foi medido e não pode ir-se com ela. As leituras
+instantâneas, os totais do dia e o estado de quem manda a pulseira vibrar, saem
+na hora: são contadores que o firmware já tem, sem medição a assentar.
 
 Uma medição pode correr sem produzir nada, e há duas maneiras de isso acontecer.
 A pulseira não diz nada — o gateway conta as tramas e reporta `no_response` —,
