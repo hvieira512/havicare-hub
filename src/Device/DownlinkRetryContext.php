@@ -15,6 +15,9 @@ final class DownlinkRetryContext
 {
     /** Os campos do registo do comando que voltam a ser precisos na fila. */
     private const CARRIED = [
+        // O identificador do pedido, que é por onde o gateway sabe que isto é a mesma ordem
+        // e não alguém a carregar outra vez no botão.
+        'id' => 'id',
         'operationId' => 'operationId',
         'changeId' => 'changeId',
         'genericConfigKey' => 'genericConfigKey',

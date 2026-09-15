@@ -135,6 +135,29 @@ final class BridgeQueuedDispatchTest extends TestCase
         self::assertCount(1, $mqtt->gatewayCommands, 'a ordem que nunca saiu tem de voltar a ser tentada');
     }
 
+    /**
+     * O identificador do pedido vai no fio, e é por ele que o gateway sabe que uma reentrega
+     * é a mesma ordem.
+     *
+     * O hub repete o que está à espera de confirmação de sessenta em sessenta segundos, e
+     * cada repetição volta à fila com um prazo novo. Sem este campo, o gateway só tinha o
+     * prazo para se orientar e executava a mesma medição outra vez a cada repetição.
+     */
+    public function testTheRequestIdentityTravelsToTheGateway(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = self::queue();
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
+        $queue->push('measure.heartRate.start', ['id' => 'a1b2c3d4']);
+        $bridge->dispatchQueued();
+
+        self::assertCount(1, $mqtt->gatewayCommands);
+        self::assertSame('a1b2c3d4', $mqtt->gatewayCommands[0]['payload']['commandId']);
+        self::assertSame('measure.heartRate.start', $mqtt->gatewayCommands[0]['payload']['operation']);
+    }
+
     private static function queue(): PendingDownlinkQueue
     {
         return new class implements PendingDownlinkQueue {

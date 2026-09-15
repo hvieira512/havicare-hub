@@ -343,6 +343,7 @@ final class DeviceConfigurationUpdateService
             return ['nativeKey' => $operation['nativeKey'], 'command' => $operation['nativeType'], 'deliveryStatus' => 'superseded', 'lastCommandId' => $id];
         }
         $status = $this->hub->submitDownlink($imei, (string)$operation['bytes'], [
+            'id' => $id,
             'operationId' => $id,
             'changeId' => (string)$operation['changeId'],
             'genericConfigKey' => (string)$operation['configKey'],

@@ -33,6 +33,23 @@ final class DownlinkRetryContextTest extends TestCase
     }
 
     /**
+     * A repetição é o mesmo pedido, e leva o mesmo identificador.
+     *
+     * É por ele que o gateway distingue uma reentrega de alguém a carregar outra vez no
+     * botão. Sem o carregar, cada repetição chegava lá como pedido novo e a pulseira media
+     * de novo -- de sessenta em sessenta segundos, três vezes por pedido.
+     */
+    public function testTheRequestKeepsItsIdentityAcrossRetries(): void
+    {
+        $context = DownlinkRetryContext::forCommand([
+            'id' => 'a1b2c3d4',
+            'nativeType' => 'measure.heartRate.start',
+        ]);
+
+        self::assertSame('a1b2c3d4', $context['id']);
+    }
+
+    /**
      * A chave de de-duplicação sai do identificador da operação, e sem ele uma repetição
      * entra na fila como comando novo em vez de substituir o que lá está.
      */

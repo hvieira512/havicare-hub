@@ -177,6 +177,7 @@ final class DeviceFeatureRequestService
             // de «deixar de a procurar» só por ele, e os protocolos que entregam a um gateway
             // mandam o nome da operação e mais nada.
             $status = $this->hub->submitDownlink($imei, $bytes, [
+                'id' => $id,
                 'command' => $command,
                 'payload' => $payload,
             ]);
@@ -244,7 +245,12 @@ final class DeviceFeatureRequestService
                 'deviceId' => $metadata !== null ? $metadata->deviceId : (string)($device['deviceId'] ?? ''),
             ]);
             $id = bin2hex(random_bytes(8));
-            $status = $this->hub->submitDownlink($imei, $bytes);
+            // O identificador viaja com o pedido: é por ele que o gateway distingue uma
+            // reentrega -- que o hub faz de sessenta em sessenta segundos enquanto espera
+            // confirmação -- de alguém a carregar no botão outra vez. Não entra na chave de
+            // de-duplicação da fila, que continua a dizer *o que* está em fila e não quem o
+            // pediu.
+            $status = $this->hub->submitDownlink($imei, $bytes, ['id' => $id]);
             $requestedAt = time();
             $record = [
                 'status' => $status,
