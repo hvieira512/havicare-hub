@@ -47,7 +47,7 @@ final class BraceletCapabilityDefinitions
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'rr_interval', 'label' => 'Intervalo R-R', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Frequência respiratória', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'ppg', 'label' => 'PPG', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'sleep', 'label' => 'Sono', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'sleep', 'label' => 'Sono', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             // As pontuações que o firmware atribui à noite. São um juízo sobre a medição e
             // não a medição, e por isso não cabem no `sleep`, que é o mesmo contrato dos
             // relógios -- nenhum deles pontua o sono.

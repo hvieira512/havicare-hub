@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\Migration;
+use Hub\Infrastructure\Persistence\Migration\VeepooSleepOnDemand;
 
 /**
  * As migrações posteriores à baseline, que é o `database/schema.sql` mais o catálogo que o
@@ -22,7 +23,9 @@ final class DatabaseMigrationPlan
     /** @return list<Migration> */
     public function migrations(): array
     {
-        return [];
+        return [
+            new VeepooSleepOnDemand(),
+        ];
     }
 
     /** @return list<string> */

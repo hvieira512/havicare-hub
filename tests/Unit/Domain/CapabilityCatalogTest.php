@@ -27,8 +27,10 @@ final class CapabilityCatalogTest extends TestCase
             // Os alarmes, os lembretes e as unidades existem na pulseira e ficaram de fora:
             // não alteram nenhuma leitura. E 41 desde que o relatório de sono do firmware
             // deixou de se perder: as pontuações que ele atribui à noite saem à parte do
-            // `sleep`, que é o contrato partilhado com os relógios e não pontua nada.
-            'bracelet' => [41, '1826fc3c4323ba2149d012e764deff9e923308076390730538b363c4516441d2'],
+            // `sleep`, que é o contrato partilhado com os relógios e não pontua nada. O sono
+            // passou também a poder ser pedido: é a única grandeza sem outro caminho, e a
+            // pulseira responde ao pedido a qualquer momento.
+            'bracelet' => [41, '0547e452c225b1f7b2498fc00c4a23183402eb71723d0695c28e17d1eb7f53a9'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

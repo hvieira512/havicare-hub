@@ -180,6 +180,11 @@ final class DeviceCommandCatalog
             // A bateria é o único pedido que não depende do sensor ótico: responde sempre,
             // e em menos de um segundo.
             ['id' => 'readBattery', 'command' => 'read.battery', 'label' => 'Battery', 'icon' => 'fa-battery-half', 'kind' => 'request', 'feature' => 'battery', 'expectedReplyTypes' => ['battery']],
+            // O registo de sono é a única grandeza sem outro caminho: os blocos de cinco
+            // minutos são relidos sozinhos, ele entrava uma vez só, no arranque do gateway.
+            // É uma leitura e não uma medição -- a pulseira já o tem calculado, e não ter
+            // dormido não é falha dela.
+            ['id' => 'readSleep', 'command' => 'read.sleep', 'label' => 'Sleep', 'icon' => 'fa-bed', 'kind' => 'request', 'feature' => 'sleep', 'expectedReplyTypes' => ['sleep', 'sleep_quality']],
             // O acumulado do dia responde no instante, como a bateria: é um contador que a
             // pulseira já tem, e não uma medição a fazer.
             ['id' => 'readDailyTotals', 'command' => 'read.dailyTotals', 'label' => 'Daily totals', 'icon' => 'fa-shoe-prints', 'kind' => 'request', 'feature' => 'activity', 'expectedReplyTypes' => ['activity']],
