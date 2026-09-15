@@ -125,9 +125,13 @@ export function syncConfigGroupDirty(group) {
         return row?.dataset.configStored !== "0";
     });
 
+    // «Sem alterações por enviar» e não «tudo enviado ao dispositivo»: o que se conta aqui são
+    // edições por submeter, e zero delas não diz nada sobre entrega -- o hub pode ter tudo em
+    // fila e o aparelho não ter recebido nada. Quem fala de entrega é a pastilha de cada
+    // cartão, que é quem sabe.
     if (status) {
         status.textContent = count === 0
-            ? "Tudo enviado ao dispositivo"
+            ? "Sem alterações por enviar"
             : edited
                 ? `${count} ${count === 1 ? "alteração" : "alterações"} por enviar`
                 : `${count} ${count === 1 ? "definição nunca enviada" : "definições nunca enviadas"} ao dispositivo`;
@@ -154,7 +158,10 @@ export async function saveDeviceConfigurationGroup(group) {
         state.deviceModal.configurations = result.configurations || state.deviceModal.configurations;
         state.deviceModal.configurationSync = result.configurationSync || state.deviceModal.configurationSync;
         state.deviceModal.capabilities = result.capabilities || state.deviceModal.capabilities;
-        toast("success", "Alterações enviadas. A aguardar confirmação do dispositivo.");
+        // Um aviso de agregado aponta, não repete: as alterações são de vários cartões e a
+        // pastilha de cada um conta o que lhe aconteceu. E guardadas no Hub é o que de facto
+        // aconteceu -- a entrega ao aparelho pode nem ter começado.
+        toast("success", "Alterações guardadas no Hub. A entrega ao dispositivo aparece em cada cartão.");
     } catch (error) {
         toast("error", error instanceof Error ? error.message : "Não foi possível enviar as alterações");
     } finally {
