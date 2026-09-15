@@ -13,6 +13,7 @@ use Hub\Infrastructure\Persistence\Migration\DropApiUserLicenseNumber;
 use Hub\Infrastructure\Persistence\Migration\DropCapabilityTelemetryFlag;
 use Hub\Infrastructure\Persistence\Migration\DropConfigurationSupplierAndModel;
 use Hub\Infrastructure\Persistence\Migration\DropMonitorNumberConfigurations;
+use Hub\Infrastructure\Persistence\Migration\FoldFourPTouchSosSlots;
 use Hub\Infrastructure\Persistence\Migration\VeepooBraceletCapabilities;
 use Hub\Infrastructure\Persistence\Migration\VeepooParameterisedConfigurations;
 use Hub\Infrastructure\Persistence\Migration\VeepooSleepQuality;
@@ -59,6 +60,7 @@ final class DatabaseMigrationPlan
             new VeepooParameterisedConfigurations(),
             new VeepooSleepQuality(),
             new BraceletCatalogFromCode(),
+            new FoldFourPTouchSosSlots(),
         ];
     }
 
