@@ -266,15 +266,11 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
                 result.capabilities || state.deviceModal.capabilities;
         }
 
-        setConfigUi(key, {
-            phase: "sent",
-            feedback: {
-                tone: "success",
-                message: isTransientAction
-                    ? "Pedido enviado ao dispositivo."
-                    : "Valor guardado no Hub e enviado. A aguardar confirmação do dispositivo.",
-            },
-        });
+        // Sem mensagem: quem conta o que aconteceu ao pedido é a pastilha do cartão, que o
+        // acompanha até ao fim. O clique fica acusado pelo botão, que este `phase` desactiva.
+        // A `feedback` é limpa de propósito -- senão um erro anterior ficava por baixo de um
+        // envio que correu bem.
+        setConfigUi(key, { phase: "sent", feedback: null });
         renderDeviceConfigurationModal();
         transitionConfigPhase(key, "sent", 1200, () => {
             clearConfigUiPhase(key, "sent");

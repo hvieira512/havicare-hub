@@ -575,15 +575,25 @@ function renderConfigActionButton(key, row, uiState, disabled = false, appliedBy
         </button>`;
 }
 
+/**
+ * A caixa de mensagem do cartão, que é para o que a pastilha não sabe dizer.
+ *
+ * Só falhas. A pastilha conta a história de um pedido do princípio ao fim -- em envio, a
+ * aguardar, aplicado, falhou -- e vai mudando com ela; uma caixa de sucesso congelava um
+ * instante e ficava até alguém a fechar, a dizer «enviado» por cima de um pedido já aplicado.
+ * E contradizia a barra do mesmo cartão, que dizia, correctamente, que o hub ainda só o tinha
+ * em fila.
+ *
+ * Uma falha é outra coisa: um pedido que nem chega a criar comando não tem pastilha nenhuma, e
+ * sem isto o clique morria em silêncio.
+ */
 function renderConfigFeedback(key, uiState) {
-    if (!uiState?.feedback?.message) {
+    if (!uiState?.feedback?.message || uiState.feedback.tone !== "danger") {
         return "";
     }
 
-    const tone = uiState.feedback.tone === "danger" ? "danger" : "success";
-
     return `
-        <div class="alert alert-${tone} alert-dismissible fade show small py-2 px-3 mt-3 mb-0" role="alert" data-config-feedback-key="${esc(key)}">
+        <div class="alert alert-danger alert-dismissible fade show small py-2 px-3 mt-3 mb-0" role="alert" data-config-feedback-key="${esc(key)}">
             ${esc(uiState.feedback.message)}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
         </div>`;
