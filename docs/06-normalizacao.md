@@ -227,11 +227,13 @@ mandarem parar — e o gateway espera quarenta e cinco. O hub publica uma leitur
 por valor e não uma por trama, com o mesmo travão que trava os anúncios
 repetidos de um gateway MOKO (`MOKO_GATEWAY_TELEMETRY_REFRESH_SECONDS`).
 
-Uma medição que corre e não produz trama nenhuma é uma falha e não um sucesso.
-O gateway di-lo no `command_result`, e o hub fecha o pedido com a razão
-`no_response` em vez de o dar por cumprido — sem isso o pedido ficava
-«confirmado» e vazio no ecrã, que é o silêncio que o relatório de falhas existe
-para eliminar.
+Uma medição pode correr sem produzir nada, e há duas maneiras de isso acontecer.
+A pulseira não diz nada — o gateway conta as tramas e reporta `no_response` —,
+ou responde a tudo com zeros, que é o firmware a dizer que nunca fixou o sinal:
+aí só este lado sabe, porque é aqui que se decide o que conta como leitura, e a
+razão é `no_reading`. Nos dois casos o pedido fecha-se com a razão em vez de ser
+dado por cumprido; sem isso ficava «confirmado» e vazio no ecrã, e confirmado
+passava a querer dizer «o gateway mandou» em vez de «a pulseira mediu».
 
 ### O sono da pulseira
 

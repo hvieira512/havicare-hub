@@ -174,24 +174,6 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame(['reason' => 'no_response'], $failures[0]['payload']['error']);
     }
 
-    /** Uma execução com resposta continua a ser um sucesso, e sai da fila calada. */
-    public function testAMeasurementThatAnsweredIsNotReportedAsAFailure(): void
-    {
-        $mqtt = new RecordingHubMqttBridge();
-        $queue = new FakeQueue();
-        $queue->add('measure.heartRate.start');
-        $bridge = $this->bridge($mqtt, $queue);
-
-        $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
-
-        self::assertSame([], $queue->operations());
-        self::assertSame([], array_filter(
-            $mqtt->events,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
-        ));
-    }
-
     /**
      * Uma confirmação de um gateway antigo, sem o campo, continua a valer como sucesso: o
      * silêncio tem de ser dito, não presumido.
@@ -216,6 +198,83 @@ final class BridgeFailedMeasurementTest extends TestCase
             $mqtt->events,
             static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
         ));
+    }
+
+    /**
+     * Responder não é medir, como executar não é responder.
+     *
+     * A pulseira fora do pulso responde às trinta e duas tramas com tudo a zero -- o
+     * firmware a dizer que ainda não fixou o sinal, e que nunca fixa. O gateway vê tramas a
+     * chegar e confirma o comando; o hub, que é quem sabe o que conta como leitura, não
+     * publicou nenhuma. Sem isto o pedido morria «confirmado» e vazio, que é a mesma
+     * ambiguidade por outra porta.
+     */
+    public function testAMeasurementThatNeverProducedAReadingIsReportedAsAFailure(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('measure.heartRate.start');
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        for ($i = 0; $i < 5; $i++) {
+            $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 0]));
+        }
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+
+        self::assertSame([], $queue->operations());
+
+        $failures = array_values(array_filter(
+            $mqtt->events,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
+        ));
+        self::assertCount(1, $failures);
+        self::assertSame(['reason' => 'no_reading'], $failures[0]['payload']['error']);
+    }
+
+    /** Com valor, a confirmação é uma confirmação. */
+    public function testAMeasurementThatProducedAReadingIsConfirmed(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('measure.heartRate.start');
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 0]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+
+        self::assertSame([], $queue->operations());
+        self::assertSame([], array_filter(
+            $mqtt->events,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
+        ));
+    }
+
+    /**
+     * E a leitura de um pedido não conta para o seguinte: cada um tem de dar o seu valor.
+     */
+    public function testTheReadingOfOneRequestDoesNotVouchForTheNext(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('measure.heartRate.start');
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+
+        $queue->add('measure.heartRate.start');
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+
+        $failures = array_values(array_filter(
+            $mqtt->events,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
+        ));
+        self::assertCount(1, $failures);
+        self::assertSame(['reason' => 'no_reading'], $failures[0]['payload']['error']);
     }
 
     private static function confirmation(string $operation, ?string $outcome): string

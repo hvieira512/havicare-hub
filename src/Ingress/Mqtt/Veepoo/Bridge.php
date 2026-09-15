@@ -70,6 +70,16 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     private array $unhandledKinds = [];
 
     /**
+     * Que pedidos de medição já produziram uma leitura, por aparelho.
+     *
+     * Sai daqui quando o gateway confirma o comando: é aí que se pergunta se houve valor, e
+     * a resposta não vale para o pedido seguinte.
+     *
+     * @var array<string, array<string, true>>
+     */
+    private array $answered = [];
+
+    /**
      * A última versão de firmware que foi parar ao histórico de cada aparelho.
      *
      * Em memória e não em Redis: um hub reiniciado volta a guardar uma entrada, que é uma por
@@ -252,6 +262,16 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
                     self::SILENT_OUTCOME,
                     (string)($message['payload']['operation'] ?? '') ?: null,
                 );
+
+                return;
+            }
+
+            $operation = (string)($message['payload']['operation'] ?? '');
+            // Responder não é medir. A pulseira fora do pulso responde a tudo com zeros, e o
+            // gateway confirma porque viu tramas a chegar -- mas quem sabe o que conta como
+            // leitura é este lado, e daqui não saiu nenhuma.
+            if (str_starts_with($operation, 'measure.') && !$this->takeAnswered($deviceKey, $operation)) {
+                $this->fail($deviceKey, $device, $licenseId, $company, 'no_reading', $operation);
 
                 return;
             }
@@ -559,6 +579,10 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
 
         [$type, $data] = $measurement;
 
+        // Antes do travão de repetições: a leitura existiu, mesmo que se cale por ser igual à
+        // anterior. Calar não é não ter medido.
+        $this->markAnswered($deviceKey, MeasurementNormalizer::operationForSdkType($sdkType));
+
         $telemetry = TelemetryEnvelope::for(
             $type,
             $deviceKey,
@@ -617,6 +641,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             return;
         }
 
+        $this->markAnswered($deviceKey, MeasurementNormalizer::ECG_OPERATION);
+
         // `frequencyHz` é o nome do contrato, o mesmo que os relógios usam para a onda deles.
         $frequencyHz = is_int($payload['samplingHz'] ?? null) ? $payload['samplingHz'] : null;
 
@@ -667,6 +693,23 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         if ($operation !== null) {
             $this->downlinkDispatcher->failPending($deviceKey, $operation, $reason);
         }
+    }
+
+    /** Regista que um pedido produziu leitura. */
+    private function markAnswered(string $deviceKey, ?string $operation): void
+    {
+        if ($operation !== null) {
+            $this->answered[$deviceKey][$operation] = true;
+        }
+    }
+
+    /** Se um pedido produziu leitura, e esquece-o: a resposta não vale para o seguinte. */
+    private function takeAnswered(string $deviceKey, string $operation): bool
+    {
+        $answered = isset($this->answered[$deviceKey][$operation]);
+        unset($this->answered[$deviceKey][$operation]);
+
+        return $answered;
     }
 
     /**
