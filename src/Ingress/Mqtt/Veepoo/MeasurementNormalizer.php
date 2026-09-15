@@ -16,6 +16,12 @@ namespace Hub\Ingress\Mqtt\Veepoo;
  */
 final class MeasurementNormalizer
 {
+    /**
+     * O pedido do ECG, que a onda também precisa de nomear: ela chega por `ecg_wave` e não
+     * traz tipo do SDK nenhum, mas quem a mandou fazer é sempre este.
+     */
+    public const ECG_OPERATION = 'measure.ecg.start';
+
     /** Intervalo válido documentado pelo fabricante; fora dele o firmware devolve sentinelas. */
     private const HEART_RATE_MIN = 30;
     private const HEART_RATE_MAX = 250;
@@ -63,6 +69,31 @@ final class MeasurementNormalizer
             32 => self::bodyComposition($payload),
             9 => self::dailyActivity($payload),
             17 => self::findDeviceState($payload),
+            default => null,
+        };
+    }
+
+    /**
+     * O pedido que mandou fazer esta medição, pelo tipo do SDK.
+     *
+     * É a tabela do `forSdkType` vista do outro lado, e vive ao lado dela pela mesma razão: o
+     * tipo do SDK é o único identificador que a resposta traz, e sem ele uma medição que falha
+     * não sabe dizer qual dos pedidos em fila é que morreu com ela.
+     *
+     * Só as medições. Os totais do dia e a procura da pulseira respondem sempre, e por isso
+     * nunca precisam de ser encerradas por falha.
+     */
+    public static function operationForSdkType(int $sdkType): ?string
+    {
+        return match ($sdkType) {
+            51 => 'measure.heartRate.start',
+            31 => 'measure.oxygen.start',
+            22 => 'measure.bloodGlucose.start',
+            6 => 'measure.temperature.start',
+            58 => 'measure.stress.start',
+            18, 28 => 'measure.bloodPressure.start',
+            32 => 'measure.bodyComposition.start',
+            42 => self::ECG_OPERATION,
             default => null,
         };
     }

@@ -6,6 +6,7 @@ namespace Hub\Ingress\Mqtt\Veepoo;
 
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Device\HubMqttBridge;
+use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Log\Logger;
 
@@ -52,10 +53,8 @@ final class DownlinkDispatcher
         $this->forgetExpiredSends();
 
         foreach ($this->downlinks->pendingFor($deviceKey) as $downlink) {
-            // Para este protocolo os bytes em fila são o próprio nome da operação: quem os
-            // monta é o `DeviceCommandCatalog`, que aqui não tem trama que construir.
             $command = $downlink->command ?? [];
-            $operation = (string)($command['command'] ?? $downlink->bytes);
+            $operation = self::operationOf($downlink);
             if ($operation === '' || !$this->dueForSending($downlink->dedupeKey)) {
                 continue;
             }
@@ -107,7 +106,7 @@ final class DownlinkDispatcher
             // Confirmado é caso encerrado: a chave sai do travão de repetição para que a
             // ordem seguinte -- mandar vibrar outra vez, por exemplo -- saia na hora.
             unset($this->sentAt[$dedupeKey]);
-            $operation = (string)(($downlink->command['command'] ?? null) ?? $downlink->bytes);
+            $operation = self::operationOf($downlink);
             if ($operation !== '') {
                 $this->dashboardStore?->markLatestCommand($deviceKey, $operation, [
                     'status' => 'acked',
@@ -118,6 +117,53 @@ final class DownlinkDispatcher
             Logger::channel('hub')->info("Veepoo downlink {$dedupeKey} confirmado por {$deviceKey}");
             return;
         }
+    }
+
+    /**
+     * Fecha o pedido que a pulseira não consegue cumprir.
+     *
+     * O acontecimento de falha diz a razão, mas dizer não é encerrar: sem isto o comando
+     * ficava em fila a ser reentregue até expirar, e a pulseira repetia de dez em dez minutos
+     * uma medição que já se sabia que não ia dar valor. Uma pulseira fora do pulso gastou
+     * assim três pontos de bateria numa manhã.
+     *
+     * Só o pedido daquela grandeza. As outras medições em fila não sabem nada sobre esta, e
+     * uma falha de contacto no ECG não diz nada sobre a leitura da bateria.
+     */
+    public function failPending(string $deviceKey, string $operation, string $reason): void
+    {
+        if ($this->downlinks === null || $operation === '') {
+            return;
+        }
+
+        foreach ($this->downlinks->pendingFor($deviceKey) as $downlink) {
+            if (self::operationOf($downlink) !== $operation) {
+                continue;
+            }
+
+            $this->downlinks->remove($downlink);
+            unset($this->sentAt[$downlink->dedupeKey]);
+            $this->dashboardStore?->markLatestCommand($deviceKey, $operation, [
+                'status' => 'failed',
+                'error' => $reason,
+                'failedAt' => gmdate('Y-m-d\TH:i:s\Z'),
+            ]);
+
+            Logger::channel('hub')->info(
+                "Veepoo downlink {$operation} de {$deviceKey} encerrado por {$reason}"
+            );
+        }
+    }
+
+    /**
+     * O nome da operação de um comando em fila.
+     *
+     * Para este protocolo os bytes em fila são o próprio nome, e o `command` só existe quando
+     * a ordem leva valor -- uma configuração. As duas formas convivem na mesma fila.
+     */
+    private static function operationOf(PendingDownlink $downlink): string
+    {
+        return (string)(($downlink->command['command'] ?? null) ?? $downlink->bytes);
     }
 
     /** Se esta chave já saiu há pouco. Pergunta e mais nada -- quem marca é o `markSent`. */

@@ -430,7 +430,14 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         // de ver, porque explicam um pedido que nunca se cumpre.
         $detection = (string)($payload['deviceDetectionInfo'] ?? '');
         if (isset(self::DETECTION_FAILURES[$detection])) {
-            $this->failures->report($deviceKey, $device, $licenseId, $company, self::DETECTION_FAILURES[$detection]);
+            $this->fail(
+                $deviceKey,
+                $device,
+                $licenseId,
+                $company,
+                self::DETECTION_FAILURES[$detection],
+                MeasurementNormalizer::operationForSdkType((int)($payload['sdkType'] ?? 0)),
+            );
             return;
         }
 
@@ -448,7 +455,14 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         // O ECG usa um campo próprio: exige o dedo no elétrodo e não só a pulseira no pulso,
         // e por isso falha com `wearNotPass` mesmo com a pulseira bem colocada.
         if (($payload['notWear'] ?? false) === true || ($payload['wearStatus'] ?? '') === 'wearNotPass') {
-            $this->failures->report($deviceKey, $device, $licenseId, $company, 'not_worn');
+            $this->fail(
+                $deviceKey,
+                $device,
+                $licenseId,
+                $company,
+                'not_worn',
+                MeasurementNormalizer::operationForSdkType((int)($payload['sdkType'] ?? 0)),
+            );
             return;
         }
 
@@ -513,7 +527,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         }
 
         if (count(array_filter($samples, static fn(int|float $v): bool => $v !== 0)) === 0) {
-            $this->failures->report($deviceKey, $device, $licenseId, $company, 'no_signal');
+            $this->fail($deviceKey, $device, $licenseId, $company, 'no_signal', MeasurementNormalizer::ECG_OPERATION);
             return;
         }
 
@@ -535,6 +549,30 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     }
 
 
+
+    /**
+     * Diz porque é que a medição não saiu, e encerra o pedido que a mandou fazer.
+     *
+     * As duas coisas andam juntas: o acontecimento é para quem opera ver a razão, e tirar o
+     * comando da fila é o que impede a pulseira de repetir dez minutos depois uma medição que
+     * já se sabe que não dá valor. Publicar só o primeiro deixava o pedido a insistir contra
+     * uma pulseira fora do pulso até expirar.
+     *
+     * @param array<string, mixed> $device
+     */
+    private function fail(
+        string $deviceKey,
+        array $device,
+        int $licenseId,
+        string $company,
+        string $reason,
+        ?string $operation,
+    ): void {
+        $this->failures->report($deviceKey, $device, $licenseId, $company, $reason);
+        if ($operation !== null) {
+            $this->downlinkDispatcher->failPending($deviceKey, $operation, $reason);
+        }
+    }
 
     /**
      * O que identifica um bloco é tudo o que ele traz, e não só o `date`.
