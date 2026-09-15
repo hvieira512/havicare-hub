@@ -66,6 +66,17 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
      */
     private array $unhandledKinds = [];
 
+    /**
+     * A última versão de firmware que foi parar ao histórico de cada aparelho.
+     *
+     * Em memória e não em Redis: um hub reiniciado volta a guardar uma entrada, que é uma por
+     * arranque e não uma por batimento. Guardá-la fora custava uma leitura por sessão para
+     * poupar uma linha de cem em cem.
+     *
+     * @var array<string, string>
+     */
+    private array $lastFirmwareShown = [];
+
     private readonly DailyBlockNormalizer $normalizer;
 
     private readonly DownlinkDispatcher $downlinkDispatcher;
@@ -291,7 +302,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         // pulseira produz 288 blocos de cinco minutos por dia, e os que não trazem nada
         // esgotavam a lista em horas -- exactamente o que já acontecia com os relatórios de
         // varrimento. No MQTT continua a sair tudo; quem arquiva é quem integra.
-        if (!self::worthShowing($telemetry)) {
+        if (!$this->worthShowing($deviceKey, $telemetry)) {
             return;
         }
 
@@ -327,15 +338,31 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     /**
      * Se uma leitura tem valor de consulta.
      *
-     * Um bloco de atividade a zeros é o que uma pulseira pousada produz de cinco em cinco
-     * minutos: não é uma medição, é ausência dela. Tudo o resto passa, incluindo bateria e
-     * sinais vitais, mesmo repetidos -- aí a repetição é a informação.
+     * Dois casos, e os dois são ausência de informação e não informação. Um bloco de atividade
+     * a zeros é o que uma pulseira pousada produz de cinco em cinco minutos. E a versão de
+     * firmware repetida é a sessão a bater de trinta em trinta segundos: numa hora enchia as
+     * cem entradas do histórico e expulsava dele todas as medições.
+     *
+     * Tudo o resto passa, incluindo bateria e sinais vitais, mesmo repetidos -- aí a repetição
+     * é a informação.
      *
      * @param array<string, mixed> $telemetry
      */
-    private static function worthShowing(array $telemetry): bool
+    private function worthShowing(string $deviceKey, array $telemetry): bool
     {
-        if (($telemetry['type'] ?? '') !== 'activity') {
+        $type = (string)($telemetry['type'] ?? '');
+
+        if ($type === 'firmware_version') {
+            $version = (string)($telemetry['data']['version'] ?? '');
+            if (($this->lastFirmwareShown[$deviceKey] ?? null) === $version) {
+                return false;
+            }
+            $this->lastFirmwareShown[$deviceKey] = $version;
+
+            return true;
+        }
+
+        if ($type !== 'activity') {
             return true;
         }
 

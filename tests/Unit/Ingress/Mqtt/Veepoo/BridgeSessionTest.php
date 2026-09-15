@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
+use Hub\Dashboard\DashboardStoreContract;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\Bridge;
@@ -130,6 +131,45 @@ final class BridgeSessionTest extends TestCase
         ], $versions);
     }
 
+    /**
+     * O histórico de consulta guarda a versão quando ela muda, e não a cada batimento.
+     *
+     * A sessão repete-se de trinta em trinta segundos enquanto a ligação BLE durar, e com ela
+     * a versão de firmware. No MQTT isso é de propósito -- quem integra compara com o que leu
+     * da vez passada. No histórico da dashboard, que guarda cem entradas por aparelho, era uma
+     * hora a expulsar tudo o resto: cem entradas iguais, e nem uma medição à vista.
+     */
+    public function testTheDashboardKeepsTheFirmwareOnlyWhenItChanges(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $appended = [];
+        $store = $this->createMock(DashboardStoreContract::class);
+        $store->method('append')->willReturnCallback(
+            static function (string $imei, string $list, array $payload) use (&$appended): void {
+                $appended[] = $payload;
+            }
+        );
+        $bridge = $this->bridge($mqtt, null, $store);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.73.01.00-5966'));
+        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.73.01.00-5966'));
+        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.73.01.00-5966'));
+        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.74.00.00-5966'));
+
+        $shown = array_values(array_map(
+            static fn(array $e): mixed => $e['data']['version'] ?? null,
+            array_filter($appended, static fn(array $e): bool => ($e['type'] ?? null) === 'firmware_version'),
+        ));
+
+        self::assertSame(['02.73.01.00-5966', '02.74.00.00-5966'], $shown);
+
+        // E no MQTT continuam a sair as quatro: essa comparação é de quem integra.
+        self::assertCount(4, array_filter(
+            $mqtt->telemetry,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'firmware_version',
+        ));
+    }
+
     /** @return list<array<string, mixed>> */
     private static function eventsOfType(RecordingHubMqttBridge $mqtt, string $type): array
     {
@@ -149,8 +189,11 @@ final class BridgeSessionTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt, ?PendingDownlinkQueue $queue = null): Bridge
-    {
+    private function bridge(
+        RecordingHubMqttBridge $mqtt,
+        ?PendingDownlinkQueue $queue = null,
+        ?DashboardStoreContract $store = null,
+    ): Bridge {
         return new Bridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
@@ -162,6 +205,8 @@ final class BridgeSessionTest extends TestCase
             $queue,
             new ArrayObservationStateStore(),
             'havicare-hub/null/0/gw/+/raw',
+            null,
+            $store,
         );
     }
 }
