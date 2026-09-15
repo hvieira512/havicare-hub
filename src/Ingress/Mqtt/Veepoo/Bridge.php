@@ -204,6 +204,22 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             return;
         }
 
+        // O registo de sono chega em espécie própria: é o relatório de uma noite, já calculado
+        // pelo firmware, e não uma sequência de leituras como os blocos de cinco minutos.
+        if (($message['kind'] ?? null) === 'sleep') {
+            $identity = [
+                'id' => $deviceKey,
+                'supplier' => (string)($device['supplier'] ?? ''),
+                'model' => (string)($device['model'] ?? ''),
+            ];
+            $payload = $message['payload'] ?? null;
+            foreach (SleepNormalizer::normalize(is_array($payload) ? $payload : [], $identity, (string)$gateway['imei']) as $telemetry) {
+                $this->emitTelemetry($deviceKey, $telemetry, $licenseId, $company);
+            }
+
+            return;
+        }
+
         if (($message['kind'] ?? null) === 'command_result') {
             $this->downlinkDispatcher->resolvePending($deviceKey, (string)($message['payload']['dedupeKey'] ?? ''));
             return;

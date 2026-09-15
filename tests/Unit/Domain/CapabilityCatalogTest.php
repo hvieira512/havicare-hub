@@ -25,8 +25,10 @@ final class CapabilityCatalogTest extends TestCase
             // que mede o oxigénio, os limiares do alerta de frequência cardíaca, e as duas
             // calibrações que entram nas contas do aparelho -- tom de pele e dados do corpo.
             // Os alarmes, os lembretes e as unidades existem na pulseira e ficaram de fora:
-            // não alteram nenhuma leitura.
-            'bracelet' => [40, '53409c1aa884947cc2b4bfab7a565e63099f38deea6a5902366960615e15ebfc'],
+            // não alteram nenhuma leitura. E 41 desde que o relatório de sono do firmware
+            // deixou de se perder: as pontuações que ele atribui à noite saem à parte do
+            // `sleep`, que é o contrato partilhado com os relógios e não pontua nada.
+            'bracelet' => [41, '1826fc3c4323ba2149d012e764deff9e923308076390730538b363c4516441d2'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

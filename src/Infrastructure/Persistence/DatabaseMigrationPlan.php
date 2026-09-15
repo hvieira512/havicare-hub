@@ -15,6 +15,7 @@ use Hub\Infrastructure\Persistence\Migration\DropConfigurationSupplierAndModel;
 use Hub\Infrastructure\Persistence\Migration\DropMonitorNumberConfigurations;
 use Hub\Infrastructure\Persistence\Migration\VeepooBraceletCapabilities;
 use Hub\Infrastructure\Persistence\Migration\VeepooParameterisedConfigurations;
+use Hub\Infrastructure\Persistence\Migration\VeepooSleepQuality;
 use Hub\Infrastructure\Persistence\Migration\VeepooWearStateAndBodyComposition;
 use Hub\Infrastructure\Persistence\Migration\DropSupplierDeviceTypes;
 use Hub\Infrastructure\Persistence\Migration\DropUnreadLifecycleColumns;
@@ -56,6 +57,7 @@ final class DatabaseMigrationPlan
             new VeepooWearStateAndBodyComposition(),
             new CatalogMf91Model(),
             new VeepooParameterisedConfigurations(),
+            new VeepooSleepQuality(),
             new BraceletCatalogFromCode(),
         ];
     }

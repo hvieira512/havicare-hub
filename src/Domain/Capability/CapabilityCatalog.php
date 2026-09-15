@@ -162,6 +162,7 @@ final class CapabilityCatalog
                 'temperature',
                 'breath_rate',
                 'sleep',
+                'sleep_quality',
                 'ecg',
                 'hrv',
                 // Sem `ppg`: a MF91 não exporta onda nenhuma. O que a app do fabricante

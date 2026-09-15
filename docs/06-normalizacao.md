@@ -169,6 +169,7 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `blood_lipids` | pulseira | `totalCholesterolMmolPerL`, `triglyceridesMmolPerL`, `hdlMmolPerL`, `ldlMmolPerL` |
 | `uric_acid` | pulseira | `umolPerL` |
 | `sleep_apnea` | pulseira | `episodes`, `hypoxiaSeconds` — contagens do bloco, e não leituras por minuto |
+| `sleep_quality` | pulseira | `qualityStars`, `deepSleepScore`, `efficiencyScore`, `fallAsleepScore`, `durationScore`, `nightWakingScore`, `insomniaScore`, `awakeningCount`, `firstDeepSleepMinutes`, `nightAwakeMinutes`, `returnToDeepSleepMeanMinutes` — as pontuações que o firmware atribui à noite |
 | `cardiac_load` | pulseira | `value` — sem unidade nem escala documentadas pelo fabricante |
 | `find_device` | pulseira | `state`: `searching`, `stopped` ou `timed_out`. A pulseira desiste sozinha ao fim de cerca de um minuto, e é `timed_out` que o diz |
 | `body_composition` | pulseira | `bmi`, `bodyFatPercent`, `fatMassKg`, `leanMassKg`, `musclePercent`, `muscleMassKg`, `subcutaneousFatPercent`, `bodyWaterPercent`, `waterMassKg`, `skeletalMusclePercent`, `boneMassKg`, `proteinPercent`, `proteinMassKg`, `basalMetabolicRateKcal` |
@@ -192,7 +193,33 @@ durações corretas e instantes inválidos conserva utilidade analítica; instan
 inválidos apresentados como válidos não.
 
 Os tipos de segmento são unificados em `deep_sleep`, `light_sleep`, `rem` e
-`awake`, independentemente da designação de origem.
+`awake`, independentemente da designação de origem. A pulseira acrescenta
+`insomnia`, que o firmware distingue de `awake`: um é estar deitado sem dormir,
+o outro é ter-se levantado.
+
+### O sono da pulseira
+
+A pulseira não reporta o sono como os relógios. Guarda três noites já
+calculadas pelo firmware e reproduz cada uma quando lhe pedem, com uma curva de
+um caractere por intervalo — `0` profundo, `1` leve, `2` REM, `3` insónia, `4`
+acordado — e os totais de cada fase à parte.
+
+Os segmentos saem da curva, e a duração de cada intervalo é a noite a dividir
+pelo número deles: o fabricante não a declara, e fixá-la em cinco minutos punha
+a curva a discordar dos instantes que a própria trama traz. Quando os instantes
+não são de confiar, os segmentos passam a ser os três totais — sem `startTime`
+nem `endTime`, mas com as durações de pé.
+
+O firmware data a noite com mês, dia, hora e minuto, sem ano. O ano é o da
+leitura, recuado um se isso puser a noite no futuro — sem o que o sono de 31 de
+dezembro lido a 1 de janeiro ficava onze meses à frente.
+
+As sete pontuações saem como `sleep_quality` e não dentro do `sleep`: são um
+juízo sobre a medição e não a medição, e nenhum relógio pontua o sono. Os nomes
+do hub dizem o que medem, ao contrário dos do fabricante — `nightScore` é a
+pontuação das idas à casa de banho (`nightWakingScore`), `nightTotalTime` é
+quanto tempo se esteve levantado (`nightAwakeMinutes`), e `sleepQuality` conta de
+0 a 4 onde a app mostra uma a cinco estrelas (`qualityStars`, 1 a 5).
 
 ## 4. Capacidade `location`
 

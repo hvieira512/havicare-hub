@@ -53,6 +53,10 @@ final class BraceletCapabilityDefinitions
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Frequência respiratória', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'ppg', 'label' => 'PPG', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'sleep', 'label' => 'Sono', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            // As pontuações que o firmware atribui à noite. São um juízo sobre a medição e
+            // não a medição, e por isso não cabem no `sleep`, que é o mesmo contrato dos
+            // relógios -- nenhum deles pontua o sono.
+            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'sleep_quality', 'label' => 'Qualidade do sono', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             // O acumulado do dia, como nos relógios: lá o `steps` do aparelho é um contador
             // desde a meia-noite, e é o mesmo que a pulseira dá quando lhe perguntam.
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'activity', 'label' => 'Atividade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
