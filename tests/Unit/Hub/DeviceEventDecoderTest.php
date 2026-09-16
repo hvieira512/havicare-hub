@@ -72,6 +72,10 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame('deep_sleep', $sleep[0]['value']['segments'][0]['type']);
         self::assertSame(90, $sleep[0]['value']['totalDurationMinutes']);
         self::assertTrue($sleep[0]['value']['timingValid']);
+        self::assertSame('2022-05-22T14:00:00Z', $sleep[0]['value']['startTime']);
+        self::assertSame('2022-05-23T02:00:00Z', $sleep[0]['value']['endTime']);
+        self::assertSame('2022-05-22T14:00:00Z', $sleep[0]['value']['segments'][0]['startTime']);
+        self::assertSame('2022-05-22T14:30:00Z', $sleep[0]['value']['segments'][0]['endTime']);
         self::assertSame('shutdown', $shutdown[0]['value']['state']);
     }
 

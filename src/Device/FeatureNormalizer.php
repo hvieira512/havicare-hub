@@ -154,8 +154,8 @@ final class FeatureNormalizer
                 $timingValid = $timingValid && $segmentTimingValid;
 
                 $normalized = array_filter([
-                    'startTime' => $segmentTimingValid ? $segmentStart : null,
-                    'endTime' => $segmentTimingValid ? $segmentEnd : null,
+                    'startTime' => $segmentTimingValid ? self::instantFromMilliseconds($segmentStart) : null,
+                    'endTime' => $segmentTimingValid ? self::instantFromMilliseconds($segmentEnd) : null,
                     'durationMinutes' => $duration,
                     'type' => self::normalizeSleepType($segment['sleepType'] ?? $segment['sleeptype'] ?? $segment['type'] ?? null),
                 ], static fn (mixed $value): bool => $value !== null);
@@ -174,8 +174,8 @@ final class FeatureNormalizer
         $isAccumulative = self::boolLike(self::first($payload, ['isAccumulative', 'IsAccumulative']));
 
         return array_filter([
-            'startTime' => $startTime,
-            'endTime' => $endTime,
+            'startTime' => self::instantFromMilliseconds($startTime),
+            'endTime' => self::instantFromMilliseconds($endTime),
             'isAccumulative' => $isAccumulative,
             'totalDurationMinutes' => $hasDuration ? self::number($totalDurationMinutes) : null,
             'timingValid' => $timingValid,
@@ -189,6 +189,17 @@ final class FeatureNormalizer
         $end = self::validEpochMilliseconds($end);
 
         return $start !== null && $end !== null && $end >= $start;
+    }
+
+    /**
+     * O instante como o contrato o mostra: ISO-8601 em UTC, como o `occurredAt`.
+     *
+     * A conta interna fica em milissegundos -- é neles que as fronteiras e as durações se
+     * verificam -- e só a saída muda de forma.
+     */
+    private static function instantFromMilliseconds(?int $milliseconds): ?string
+    {
+        return $milliseconds === null ? null : gmdate('Y-m-d\TH:i:s\Z', intdiv($milliseconds, 1000));
     }
 
     private static function validEpochMilliseconds(mixed $value): ?int

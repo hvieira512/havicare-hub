@@ -39,8 +39,8 @@ final class SleepNormalizerTest extends TestCase
         self::assertNotNull($out, 'a noite tem de produzir um registo de sono');
 
         self::assertSame('sleep', $out['type']);
-        self::assertSame('2026-09-14T23:10:00Z', gmdate('Y-m-d\TH:i:s\Z', (int)($out['data']['startTime'] / 1000)));
-        self::assertSame('2026-09-15T07:30:00Z', gmdate('Y-m-d\TH:i:s\Z', (int)($out['data']['endTime'] / 1000)));
+        self::assertSame('2026-09-14T23:10:00Z', $out['data']['startTime']);
+        self::assertSame('2026-09-15T07:30:00Z', $out['data']['endTime']);
         self::assertTrue($out['data']['timingValid']);
         self::assertSame(480, $out['data']['totalDurationMinutes']);
     }
@@ -126,7 +126,7 @@ final class SleepNormalizerTest extends TestCase
      */
     public function testTheScoresBecomeTheirOwnCapability(): void
     {
-        $out = self::ofType(SleepNormalizer::normalize(self::night(), self::DEVICE, self::GATEWAY, self::NOW), 'sleep_quality');
+        $out = self::ofType(SleepNormalizer::normalize(self::night(), self::DEVICE, self::GATEWAY, 0, self::NOW), 'sleep_quality');
 
         self::assertSame([
             'qualityStars' => 4,
@@ -146,7 +146,7 @@ final class SleepNormalizerTest extends TestCase
     /** Uma trama sem nada dentro não é uma noite de zero horas: não é noite nenhuma. */
     public function testAnEmptyRecordProducesNothing(): void
     {
-        self::assertSame([], SleepNormalizer::normalize([], self::DEVICE, self::GATEWAY, self::NOW));
+        self::assertSame([], SleepNormalizer::normalize([], self::DEVICE, self::GATEWAY, 0, self::NOW));
     }
 
     /**
@@ -180,13 +180,14 @@ final class SleepNormalizerTest extends TestCase
                 self::night(fallAsleep: '12-31-23-10', exitSleep: '01-01-07-30'),
                 self::DEVICE,
                 self::GATEWAY,
+                0,
                 1798794000,
             ),
             'sleep',
         );
 
-        self::assertSame('2026-12-31T23:10:00Z', gmdate('Y-m-d\TH:i:s\Z', (int)($out['data']['startTime'] / 1000)));
-        self::assertSame('2027-01-01T07:30:00Z', gmdate('Y-m-d\TH:i:s\Z', (int)($out['data']['endTime'] / 1000)));
+        self::assertSame('2026-12-31T23:10:00Z', $out['data']['startTime']);
+        self::assertSame('2027-01-01T07:30:00Z', $out['data']['endTime']);
     }
 
     /**
@@ -229,7 +230,7 @@ final class SleepNormalizerTest extends TestCase
     private static function sleep(array $content): array
     {
         return self::ofType(
-            SleepNormalizer::normalize($content, self::DEVICE, self::GATEWAY, self::NOW),
+            SleepNormalizer::normalize($content, self::DEVICE, self::GATEWAY, 0, self::NOW),
             'sleep',
         );
     }

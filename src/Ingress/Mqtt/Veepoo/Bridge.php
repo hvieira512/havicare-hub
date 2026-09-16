@@ -270,7 +270,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
                 'model' => (string)($device['model'] ?? ''),
             ];
             $payload = $message['payload'] ?? null;
-            foreach (SleepNormalizer::normalize(is_array($payload) ? $payload : [], $identity, (string)$gateway['imei']) as $telemetry) {
+            // Os instantes da noite vêm no relógio da pulseira; é este desvio que os põe em UTC.
+            $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;
+            foreach (SleepNormalizer::normalize(is_array($payload) ? $payload : [], $identity, (string)$gateway['imei'], $offset) as $telemetry) {
                 $this->emitTelemetry($deviceKey, $telemetry, $licenseId, $company);
             }
 

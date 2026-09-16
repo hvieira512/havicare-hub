@@ -55,8 +55,13 @@ final class SleepNormalizer
      * @param array<string, mixed> $device  identidade já resolvida pelo hub
      * @return list<array<string, mixed>>   envelopes de telemetria, prontos a publicar
      */
-    public static function normalize(array $content, array $device, string $gatewayId, ?int $now = null): array
-    {
+    public static function normalize(
+        array $content,
+        array $device,
+        string $gatewayId,
+        int $tzOffsetMinutes = 0,
+        ?int $now = null,
+    ): array {
         $envelope = static fn(string $type, array $data): array => [
             'type' => $type,
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
@@ -72,17 +77,40 @@ final class SleepNormalizer
         ];
 
         $out = [];
-        $sleep = self::night($content, $now ?? time());
-        if ($sleep !== null) {
-            $out[] = $envelope('sleep', $sleep);
-        }
+        foreach (self::nights($content) as $record) {
+            $sleep = self::night($record, $now ?? time(), $tzOffsetMinutes);
+            if ($sleep !== null) {
+                $out[] = $envelope('sleep', $sleep);
+            }
 
-        $quality = self::quality($content);
-        if ($quality !== []) {
-            $out[] = $envelope('sleep_quality', $quality);
+            $quality = self::quality($record);
+            if ($quality !== []) {
+                $out[] = $envelope('sleep_quality', $quality);
+            }
         }
 
         return $out;
+    }
+
+    /**
+     * As noites que a trama traz.
+     *
+     * A pulseira responde a um dia por pedido, mas embrulha a resposta numa lista e o gateway
+     * entrega-a como veio. Um registo solto continua a ser aceite: é a forma que a
+     * documentação do fabricante mostra.
+     *
+     * @param array<mixed> $content
+     * @return list<array<string, mixed>>
+     */
+    private static function nights(array $content): array
+    {
+        if ($content === []) {
+            return [];
+        }
+
+        return array_is_list($content)
+            ? array_values(array_filter($content, is_array(...)))
+            : [$content];
     }
 
     /**
@@ -91,11 +119,11 @@ final class SleepNormalizer
      * @param array<string, mixed> $content
      * @return array<string, mixed>|null
      */
-    private static function night(array $content, int $now): ?array
+    private static function night(array $content, int $now, int $tzOffsetMinutes): ?array
     {
         $total = self::minutes($content['sleepTotalTime'] ?? null);
-        $start = self::instant($content['fallAsleepTime'] ?? null, $now);
-        $end = self::instant($content['exitSleepTime'] ?? null, $now);
+        $start = self::instant($content['fallAsleepTime'] ?? null, $now, $tzOffsetMinutes);
+        $end = self::instant($content['exitSleepTime'] ?? null, $now, $tzOffsetMinutes);
 
         // A mesma regra dos relógios: o fim tem de vir depois do começo, senão os dois
         // instantes caem e fica a dizer-se que não são de confiar.
@@ -106,15 +134,15 @@ final class SleepNormalizer
         }
 
         $segments = $timingValid
-            ? self::curveSegments((string)($content['sleepCurve'] ?? ''), $start, $end)
+            ? self::curveSegments(self::curveSlots($content['sleepCurve'] ?? null), $start, $end)
             : [];
         if ($segments === []) {
             $segments = self::totalSegments($content);
         }
 
         $night = array_filter([
-            'startTime' => $start === null ? null : $start * 1000,
-            'endTime' => $end === null ? null : $end * 1000,
+            'startTime' => $start === null ? null : self::instantFromSeconds($start),
+            'endTime' => $end === null ? null : self::instantFromSeconds($end),
             'totalDurationMinutes' => $total,
             'timingValid' => $timingValid,
             'segments' => $segments === [] ? null : $segments,
@@ -125,18 +153,38 @@ final class SleepNormalizer
     }
 
     /**
+     * A curva como lista de valores, um por intervalo.
+     *
+     * A pulseira envia-a em inteiros; a documentação do fabricante mostra-a como cadeia de
+     * caracteres. Aceitam-se as duas formas aqui, para o resto do código não ter de saber qual
+     * delas veio.
+     *
+     * @return list<string>
+     */
+    private static function curveSlots(mixed $curve): array
+    {
+        if (is_array($curve)) {
+            return array_values(array_map(static fn(mixed $v): string => (string)$v, $curve));
+        }
+
+        return is_string($curve) && $curve !== '' ? str_split($curve) : [];
+    }
+
+    /**
      * Os troços da noite, tirados da curva.
      *
-     * Um caractere por intervalo, e intervalos seguidos do mesmo valor são um troço só. A
-     * duração de cada intervalo sai das fronteiras da noite a dividir pelo número deles: o
-     * fabricante não a declara, e assumir cinco minutos punha a curva a discordar dos
-     * instantes que a própria trama traz.
+     * Um valor por intervalo, e intervalos seguidos do mesmo valor são um troço só. A duração
+     * de cada intervalo sai das fronteiras da noite a dividir pelo número deles: o fabricante
+     * não a declara, e assumir cinco minutos punha a curva a discordar dos instantes que a
+     * própria trama traz. Na MF91 a conta dá um minuto, e as contagens de cada valor somam os
+     * troços que o firmware declara à parte.
      *
+     * @param list<string> $curve
      * @return list<array<string, mixed>>
      */
-    private static function curveSegments(string $curve, int $start, int $end): array
+    private static function curveSegments(array $curve, int $start, int $end): array
     {
-        $slots = strlen($curve);
+        $slots = count($curve);
         if ($slots === 0) {
             return [];
         }
@@ -154,8 +202,8 @@ final class SleepNormalizer
                 $segmentStart = $start + (int)round($from * $seconds);
                 $segmentEnd = $start + (int)round($i * $seconds);
                 $out[] = [
-                    'startTime' => $segmentStart * 1000,
-                    'endTime' => $segmentEnd * 1000,
+                    'startTime' => self::instantFromSeconds($segmentStart),
+                    'endTime' => self::instantFromSeconds($segmentEnd),
                     'durationMinutes' => (int)round(($segmentEnd - $segmentStart) / 60),
                     'type' => $type,
                 ];
@@ -219,6 +267,14 @@ final class SleepNormalizer
     }
 
     /**
+     * O instante como o contrato o mostra: ISO-8601 em UTC, como o `occurredAt`.
+     */
+    private static function instantFromSeconds(int $seconds): string
+    {
+        return gmdate('Y-m-d\TH:i:s\Z', $seconds);
+    }
+
+    /**
      * O instante que o firmware datou com mês, dia, hora e minuto -- e mais nada.
      *
      * O ano vem de quando o registo foi lido: a pulseira guarda três noites, por isso a data
@@ -228,7 +284,7 @@ final class SleepNormalizer
      * Quatro partes que não sirvam como data devolvem `null`, e é assim que um formato
      * diferente do esperado se denuncia em vez de virar um instante inventado.
      */
-    private static function instant(mixed $value, int $now): ?int
+    private static function instant(mixed $value, int $now, int $tzOffsetMinutes): ?int
     {
         if (!is_string($value) || !preg_match('/^(\d{2})-(\d{2})-(\d{2})-(\d{2})$/', $value, $m)) {
             return null;
@@ -240,14 +296,24 @@ final class SleepNormalizer
         }
 
         $year = (int)gmdate('Y', $now);
+        // A pulseira escreve a hora do relógio dela; o hub publica em UTC.
+        $offset = $tzOffsetMinutes * 60;
         $at = gmmktime($hour, $minute, 0, $month, $day, $year);
         if ($at === false) {
             return null;
         }
 
+        $at -= $offset;
+
         // Uma folga de um dia: o gateway lê o registo depois de a noite acabar, mas os
         // relógios do aparelho e do servidor não estão ao segundo um do outro.
-        return $at > $now + 86400 ? gmmktime($hour, $minute, 0, $month, $day, $year - 1) ?: null : $at;
+        if ($at <= $now + 86400) {
+            return $at;
+        }
+
+        $earlier = gmmktime($hour, $minute, 0, $month, $day, $year - 1);
+
+        return $earlier === false ? null : $earlier - $offset;
     }
 
     /** Uma duração em minutos, ou `null` se o campo não trouxer uma. */

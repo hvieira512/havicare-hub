@@ -93,6 +93,11 @@ registos antigos. O instante indicado pelo dispositivo, quando existe, fica na
 mensagem original do canal `raw`; se vier a ser necessário na forma normalizada,
 promove-se a um campo próprio do `data`.
 
+Um instante promovido ao `data` sai na mesma forma do `occurredAt` — UTC, RFC
+3339, ao segundo — e é o relógio do aparelho e não o do hub. É o caso do
+`startTime` e do `endTime` do sono. Um instante em número não entra no contrato:
+obriga quem integra a adivinhar a unidade, e o nome do campo não a diz.
+
 ## 3. Capacidades
 
 As capacidades reconhecidas pelo `FeatureNormalizer`, que serve os relógios, e as
@@ -187,6 +192,10 @@ reporta o resultado dessa validação, que exige: instantes compreendidos entre
 2000 e 2100, fim posterior ao início, contenção de cada segmento no intervalo
 exterior, e concordância entre a duração declarada e as fronteiras, com
 tolerância de um minuto.
+
+A validação corre sobre milissegundos, que é a unidade em que os relógios os
+entregam; publicados, os instantes da noite e de cada segmento são datas RFC
+3339 em UTC.
 
 Em caso de reprovação, os instantes são **removidos** e `timingValid` assume o
 valor `false`, mantendo-se os segmentos e a duração total. Um registo com
