@@ -156,6 +156,48 @@ export const fieldLabel = (key) =>
         key: "Tecla",
         lastEvent: "Último evento",
         personIndex: "Pessoa",
+        // O sono: as pontuações do firmware. Os nomes dizem o que medem e não o que o
+        // fabricante lhes chama -- `nightScore` é a pontuação das idas à casa de banho.
+        qualityStars: "Estrelas",
+        deepSleepScore: "Pontuação do sono profundo",
+        efficiencyScore: "Pontuação de eficiência",
+        fallAsleepScore: "Pontuação do adormecer",
+        durationScore: "Pontuação da duração",
+        nightWakingScore: "Pontuação das idas à casa de banho",
+        insomniaScore: "Pontuação de insónia",
+        awakeningCount: "Despertares",
+        firstDeepSleepMinutes: "Primeiro sono profundo",
+        nightAwakeMinutes: "Tempo levantado",
+        returnToDeepSleepMeanMinutes: "Média até voltar ao sono profundo",
+        totalDurationMinutes: "Duração",
+        timingValid: "Instantes de confiança",
+        // As grandezas que chegam com o nome do contrato. A unidade vive no nome do campo e
+        // sai no `FIELD_UNIT`; aqui fica só o que se mede.
+        bpm: "Frequência cardíaca",
+        breathsPerMinute: "Frequência respiratória",
+        spo2Percent: "Oxigénio no sangue",
+        systolicMmHg: "Sistólica",
+        diastolicMmHg: "Diastólica",
+        surfaceCelsius: "Temperatura da superfície",
+        environmentCelsius: "Temperatura ambiente",
+        umolPerL: "Concentração",
+        totalCholesterolMmolPerL: "Colesterol total",
+        triglyceridesMmolPerL: "Triglicéridos",
+        hdlMmolPerL: "HDL",
+        ldlMmolPerL: "LDL",
+        milliseconds: "Milissegundos",
+        durationMinutes: "Duração",
+        startTime: "Início",
+        endTime: "Fim",
+        segments: "Troços",
+        intervals: "Intervalos",
+        timestamp: "Instante",
+        version: "Versão",
+        type: "Tipo",
+        state: "Estado",
+        value: "Valor",
+        count: "Contagem",
+        score: "Pontuação",
     })[key] || titleize(key);
 
 /**
@@ -248,6 +290,24 @@ const FIELD_UNIT = {
     bodyWaterPercent: "%",
     skeletalMusclePercent: "%",
     proteinPercent: "%",
+    firstDeepSleepMinutes: "min",
+    nightAwakeMinutes: "min",
+    returnToDeepSleepMeanMinutes: "min",
+    totalDurationMinutes: "min",
+    durationMinutes: "min",
+    bpm: "bpm",
+    breathsPerMinute: "rpm",
+    spo2Percent: "%",
+    systolicMmHg: "mmHg",
+    diastolicMmHg: "mmHg",
+    surfaceCelsius: "°C",
+    environmentCelsius: "°C",
+    umolPerL: "µmol/L",
+    totalCholesterolMmolPerL: "mmol/L",
+    triglyceridesMmolPerL: "mmol/L",
+    hdlMmolPerL: "mmol/L",
+    ldlMmolPerL: "mmol/L",
+    milliseconds: "ms",
 };
 
 export const fieldValue = (key, value) => {
@@ -281,6 +341,11 @@ export const commandLabel = (command) =>
         "Breath rate": "Frequência respiratória",
         Location: "Localização",
         "Sleep data": "Sono",
+        Sleep: "Sono",
+        "Daily totals": "Totais do dia",
+        "Body composition": "Composição corporal",
+        "Firmware version": "Versão de firmware",
+        "Device status": "Estado do dispositivo",
         ECG: "ECG",
         HRV: "VFC",
         PPG: "PPG",
@@ -293,6 +358,27 @@ export const commandLabel = (command) =>
     })[command.label] ||
     command.label ||
     command.command;
+
+/**
+ * Por que razão um pedido falhou, em português.
+ *
+ * O hub manda um código -- `no_response`, `not_worn` -- e a tradução é deste lado, como a das
+ * enumerações. Um código que não esteja aqui aparece como veio: esconder um motivo novo era
+ * pior do que mostrá-lo em inglês.
+ */
+export const commandError = (code) =>
+    ({
+        no_response: "O aparelho não respondeu",
+        not_worn: "A pulseira não estava ao pulso",
+        low_battery: "Bateria fraca para medir",
+        sensor_fault: "Leitura inválida do sensor",
+        response_timeout: "Sem resposta dentro do prazo",
+        delivery_failed: "Não foi possível entregar",
+        device_rejected: "O aparelho recusou",
+        retry_exhausted: "Tentativas esgotadas",
+        never_reported: "O aparelho nunca o reportou",
+        diverged: "O aparelho tem outro valor",
+    })[String(code ?? "")] || String(code ?? "");
 
 export const eventTime = (payload) => {
     const time = Date.parse(payload?.occurredAt || payload?.recordedAt || "");

@@ -6,6 +6,7 @@ import { connectivityIcon, connectivityValue } from "./cards/gateway.js";
 import { diaperMoistureBody, diaperMoistureRowValue } from "./cards/diaper.js";
 import { helpCallContent, ncsPagerContent } from "./cards/ncs.js";
 import { locationDetails, locationValue } from "./cards/location.js";
+import { sleepDetails, sleepQualityValue, sleepValue } from "./cards/sleep.js";
 import {
     presenceDetails,
     presenceDetailsTitle,
@@ -237,7 +238,27 @@ const UPLINK_CARD_RENDERERS = {
         icon: "fa-triangle-exclamation",
         value: alarmValue(data),
     }),
-    sleep: () => ({ value: "Dados de sono" }),
+    sleep: (data) => ({
+        value: sleepValue(data),
+        details: sleepDetails(data),
+    }),
+    // As pontuações são um juízo sobre a noite: o cartão mostra a nota, e a gaveta como ela
+    // se decompõe.
+    sleep_quality: (data) => ({
+        value: sleepQualityValue(data),
+        details: compactDetails(data, [
+            "efficiencyScore",
+            "fallAsleepScore",
+            "durationScore",
+            "deepSleepScore",
+            "nightWakingScore",
+            "insomniaScore",
+            "awakeningCount",
+            "firstDeepSleepMinutes",
+            "nightAwakeMinutes",
+            "returnToDeepSleepMeanMinutes",
+        ]),
+    }),
     ecg: () => ({ value: "Dados de ECG" }),
     // A VFC é um escalar em milissegundos e não uma série: anunciá-la como "Dados de VFC"
     // escondia o número que já vinha na mensagem.

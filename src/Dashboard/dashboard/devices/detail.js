@@ -9,6 +9,7 @@ import {
 } from "../state.js";
 import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 import {
+    commandError,
     commandLabel,
     eventTime,
     rowPayload,
@@ -489,7 +490,7 @@ function downlinkActivityRow(command) {
         : command.sentAt
             ? `Enviado ${when(command.sentAt)}`
             : expectedReplies(command);
-    const note = command.error || "";
+    const note = commandError(command.error);
 
     return {
         icon: requestCardContent(feature).icon,
