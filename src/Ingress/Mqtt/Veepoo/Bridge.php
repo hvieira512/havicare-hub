@@ -70,41 +70,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     private array $unhandledKinds = [];
 
     /**
-     * Quanto tempo uma leitura espera pela confirmação antes de sair sozinha.
-     *
-     * Mais do que qualquer medição desta pulseira: a mais lenta, a composição corporal, leva
-     * dois minutos. O prazo existe para uma confirmação perdida não levar com ela um valor
-     * que o aparelho chegou a medir.
-     */
-    private const READING_HOLD_SECONDS = 180;
-
-    /**
-     * A leitura mais recente de cada pedido em curso, por aparelho.
-     *
-     * Enquanto mede, o firmware manda uma trama por segundo e o valor anda: um só pedido de
-     * frequência cardíaca, numa pulseira ao pulso, deu dezanove leituras entre 79 e 97. Isso
-     * é a medição a assentar, e o resultado é o valor com que ela assentou -- o mesmo que a
-     * app do fabricante mostra. Publicar o caminho todo enchia o histórico do aparelho com o
-     * decorrer de uma medição em vez do que ela deu.
-     *
-     * @var array<string, array<string, array{at: float, telemetry: array<string, mixed>, licenseId: int, company: string}>>
-     */
-    private array $settling = [];
-
-    /**
-     * Pedidos já encerrados com a razão pela qual falharam, à espera da confirmação.
-     *
-     * A pulseira diz `notWear` a meio da medição e o pedido morre aí. A confirmação chega a
-     * seguir -- o gateway executou o comando -- e encontrava-o sem leitura nenhuma à espera,
-     * dando-o por falhado outra vez e agora por não ter dado valor. Eram dois acontecimentos
-     * para o mesmo toque no botão, e o segundo apontava para o sensor quando o problema era
-     * o pulso.
-     *
-     * @var array<string, array<string, float>>
-     */
-    private array $closed = [];
-
-    /**
      * A última versão de firmware que foi parar ao histórico de cada aparelho.
      *
      * Em memória e não em Redis: um hub reiniciado volta a guardar uma entrada, que é uma por
@@ -122,6 +87,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     private readonly BraceletPresence $presence;
 
     private readonly MeasurementFailureReporter $failures;
+
+    private readonly SettlingReadings $readings;
 
     public function __construct(
         MqttClient $subscriber,
@@ -155,6 +122,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         );
         $this->presence = new BraceletPresence($mqttBridge, $dashboardStore);
         $this->failures = new MeasurementFailureReporter($mqttBridge, $dashboardStore);
+        $this->readings = new SettlingReadings(fn(): float => $this->clockNow());
     }
 
     /**
@@ -171,7 +139,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             $this->downlinkDispatcher->dispatchPending($deviceKey, $gatewayKey);
         }
 
-        $this->releaseSettled();
+        foreach ($this->readings->release() as $due) {
+            $this->emitTelemetry($due['deviceKey'], $due['telemetry'], $due['licenseId'], $due['company']);
+        }
     }
 
     protected function handleMessage(string $topic, string $payload): void
@@ -303,21 +273,18 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             // leitura é este lado, e daqui não saiu nenhuma.
             if (str_starts_with($operation, 'measure.')) {
                 // Já morreu, e com a razão certa: a confirmação não o mata segunda vez.
-                if (isset($this->closed[$deviceKey][$operation])) {
-                    unset($this->closed[$deviceKey][$operation], $this->settling[$deviceKey][$operation]);
-
+                if ($this->readings->discardConfirmation($deviceKey, $operation)) {
                     return;
                 }
 
-                $settled = $this->settling[$deviceKey][$operation] ?? null;
-                unset($this->settling[$deviceKey][$operation]);
+                $settled = $this->readings->takeSettled($deviceKey, $operation);
                 if ($settled === null && $operation !== MeasurementNormalizer::ECG_OPERATION) {
                     $this->fail($deviceKey, $device, $licenseId, $company, 'no_reading', $operation);
 
                     return;
                 }
                 if ($settled !== null) {
-                    $this->emitTelemetry($deviceKey, $settled['telemetry'], $licenseId, $company);
+                    $this->emitTelemetry($deviceKey, $settled, $licenseId, $company);
                 }
             }
 
@@ -646,12 +613,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             return;
         }
 
-        $this->settling[$deviceKey][$operation] = [
-            'at' => $this->clockNow(),
-            'telemetry' => $telemetry,
-            'licenseId' => $licenseId,
-            'company' => $company,
-        ];
+        $this->readings->hold($deviceKey, $operation, $telemetry, $licenseId, $company);
     }
 
     /**
@@ -737,39 +699,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         $this->failures->report($deviceKey, $device, $licenseId, $company, $reason);
         if ($operation !== null) {
             $this->downlinkDispatcher->failPending($deviceKey, $operation, $reason);
-            $this->closed[$deviceKey][$operation] = $this->clockNow();
-            unset($this->settling[$deviceKey][$operation]);
-        }
-    }
-
-    /**
-     * Publica as leituras cuja confirmação nunca chegou.
-     *
-     * O valor foi medido; se a caixa morrer entre a última trama e a confirmação, ele tem de
-     * sair na mesma. Corre no mesmo temporizador que entrega a fila.
-     */
-    private function releaseSettled(): void
-    {
-        $now = $this->clockNow();
-
-        // Uma confirmação que nunca chega não pode deixar um pedido marcado como morto para
-        // sempre: o seguinte tem de poder falhar por si.
-        foreach ($this->closed as $deviceKey => $operations) {
-            foreach ($operations as $operation => $at) {
-                if ($now - $at >= self::READING_HOLD_SECONDS) {
-                    unset($this->closed[$deviceKey][$operation]);
-                }
-            }
-        }
-
-        foreach ($this->settling as $deviceKey => $operations) {
-            foreach ($operations as $operation => $settled) {
-                if ($now - $settled['at'] < self::READING_HOLD_SECONDS) {
-                    continue;
-                }
-                unset($this->settling[$deviceKey][$operation]);
-                $this->emitTelemetry($deviceKey, $settled['telemetry'], $settled['licenseId'], $settled['company']);
-            }
+            $this->readings->close($deviceKey, $operation);
         }
     }
 

@@ -332,6 +332,98 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame(['not_worn', 'no_reading'], $reasons);
     }
 
+    /**
+     * Um ECG que apanhou sinal não é uma medição sem leitura.
+     *
+     * A onda sai pelo seu próprio caminho -- chega em `ecg_wave` e não em tramas de medição --
+     * e por isso não há nada a assentar quando a confirmação chega. Sem a excepção, todo o
+     * exame bem-sucedido aparecia no histórico do aparelho como `no_reading`.
+     */
+    public function testAnEcgThatCaughtSignalIsNotReportedAsAFailure(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('measure.ecg.start');
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
+            'source' => 'veepoo-node',
+            'kind' => 'ecg_wave',
+            'device' => ['mac' => self::BRACELET],
+            'payload' => ['samples' => [12, -4, 33, 128, -71], 'samplingHz' => 500],
+        ], JSON_THROW_ON_ERROR));
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.ecg.start', null));
+
+        self::assertSame([], $queue->operations());
+        self::assertSame([], array_filter(
+            $mqtt->events,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
+        ));
+    }
+
+    /**
+     * A marca de pedido encerrado tem prazo.
+     *
+     * A confirmação que a consome pode nunca chegar -- a caixa morre, o gateway reinicia -- e
+     * sem prazo o pedido seguinte da mesma medição herdava o perdão do anterior e falhava em
+     * silêncio.
+     */
+    public function testTheMarkOfADeadRequestExpires(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('measure.heartRate.start');
+        $now = 1000;
+        $bridge = $this->bridge($mqtt, $queue, clock: static function () use (&$now): float {
+            return (float)$now;
+        });
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
+
+        $now += 200;
+        $bridge->dispatchQueued();
+
+        $queue->add('measure.heartRate.start');
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+
+        $reasons = array_map(
+            static fn(array $e): mixed => $e['payload']['error']['reason'] ?? null,
+            array_values(array_filter(
+                $mqtt->events,
+                static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'device.measurement_failed',
+            )),
+        );
+
+        self::assertSame(['not_worn', 'no_reading'], $reasons);
+    }
+
+    /**
+     * O pedido morto ganha à leitura que chegou depois dele.
+     *
+     * A pulseira sai do pulso a meio, o pedido fecha-se, e as tramas seguintes ainda trazem um
+     * valor -- medido com o sensor a apanhar o ar. Publicá-lo era dar por resultado do pedido
+     * uma leitura tirada depois de ele já ter morrido.
+     */
+    public function testADeadRequestOutranksTheReadingThatCameAfterIt(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('measure.heartRate.start');
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'notWear' => true]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::measurement(['sdkType' => 51, 'heartRate' => 87]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::confirmation('measure.heartRate.start', null));
+
+        self::assertSame([], array_filter(
+            $mqtt->telemetry,
+            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'heart_rate',
+        ));
+    }
+
     private static function confirmation(string $operation, ?string $outcome): string
     {
         return json_encode([
@@ -371,6 +463,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         RecordingHubMqttBridge $mqtt,
         PendingDownlinkQueue $queue,
         ?DashboardStoreContract $store = null,
+        ?callable $clock = null,
     ): Bridge {
         return new Bridge(
             new FakeMqttSubscriber(),
@@ -385,6 +478,7 @@ final class BridgeFailedMeasurementTest extends TestCase
             'havicare-hub/null/0/gw/+/raw',
             null,
             $store,
+            clock: $clock,
         );
     }
 }
