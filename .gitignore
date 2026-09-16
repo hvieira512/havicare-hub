@@ -17,6 +17,10 @@
 /config/mosquitto.passwd
 /config/mosquitto.acl
 
+# O fabricante do dispensador imprimiu na documentação um company_code e um
+# company_secret que autenticam mesmo no backend dele, e este repositório é público.
+docs/pill-dispensor/Device Settings API documentation_20251104144422.pdf
+
 # Local databases and dumps
 *.sql.gz
 *.dump
