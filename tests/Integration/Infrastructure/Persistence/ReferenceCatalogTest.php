@@ -31,6 +31,9 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         self::assertSame('Frequência cardíaca', $labels['watch:heart_rate'] ?? null);
         self::assertSame('Presença', $labels['radar:presence'] ?? null);
         self::assertSame('Chamada de ajuda', $labels['ncs:help_call'] ?? null);
+        // A mesma grandeza não muda de nome com o aparelho: o relógio já lhe chamava VFC.
+        self::assertSame('VFC', $labels['bracelet:hrv'] ?? null);
+        self::assertSame('VFC', $labels['watch:hrv'] ?? null);
     }
 
     /**

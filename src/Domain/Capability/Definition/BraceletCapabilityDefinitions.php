@@ -43,7 +43,7 @@ final class BraceletCapabilityDefinitions
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'ecg', 'label' => 'ECG', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'temperature', 'label' => 'Temperatura', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
 
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'hrv', 'label' => 'HRV', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'hrv', 'label' => 'VFC', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'rr_interval', 'label' => 'Intervalo R-R', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Frequência respiratória', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'ppg', 'label' => 'PPG', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],

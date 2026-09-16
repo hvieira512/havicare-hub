@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
+use Hub\Infrastructure\Persistence\Migration\BraceletHrvLabel;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\VeepooSleepOnDemand;
 use Hub\Infrastructure\Persistence\Migration\VeepooSleepQuality;
@@ -29,6 +30,7 @@ final class DatabaseMigrationPlan
             // das pontuações do sono, a segunda torna o sono pedível.
             new VeepooSleepQuality(),
             new VeepooSleepOnDemand(),
+            new BraceletHrvLabel(),
         ];
     }
 

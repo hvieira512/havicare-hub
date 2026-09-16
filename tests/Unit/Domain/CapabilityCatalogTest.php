@@ -30,7 +30,7 @@ final class CapabilityCatalogTest extends TestCase
             // `sleep`, que é o contrato partilhado com os relógios e não pontua nada. O sono
             // passou também a poder ser pedido: é a única grandeza sem outro caminho, e a
             // pulseira responde ao pedido a qualquer momento.
-            'bracelet' => [41, '0547e452c225b1f7b2498fc00c4a23183402eb71723d0695c28e17d1eb7f53a9'],
+            'bracelet' => [41, 'c24b1c638090a697db262e4159d9b57acc2632480af274cb8c98e1b4f2ef57bd'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim
