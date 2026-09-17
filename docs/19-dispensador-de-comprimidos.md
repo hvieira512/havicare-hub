@@ -243,6 +243,16 @@ como etiqueta, nunca como timestamp.
 **As datas vazias vêm a `0000-00-00`.** É a data-zero do MySQL, devolvida quando
 o plano é sempre válido. Parte qualquer conversão ingénua.
 
+**Gravar um alarme reescreve o plano inteiro.** Num ensaio, configurar um único
+alarme pela aplicação do fabricante baixou o número de células cheias de 28 para
+2, sem que nada o pedisse. O `set_alarm` e o `set_plan` são endpoints distintos,
+mas o que os une é o `plan_id`: quem grava um alarme está a gravar o plano a que
+ele pertence.
+
+Uma edição de alarme feita pelo hub tem de reenviar o `ceil_used` corrente, lido
+antes pelo `get_plan`. Enviar só o alarme apaga a contagem de células — e a
+contagem de células é o que o aparelho usa para saber quando parar de dispensar.
+
 **O sinal é mais fino do que o documentado.** A API descreve `wifi` e `gsm` como
 `0-4`, mas a aplicação mostra um valor em dB. Se o número em cru estiver
 disponível, é melhor telemetria do que a documentada.
