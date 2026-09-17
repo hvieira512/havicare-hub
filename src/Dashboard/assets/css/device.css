@@ -24,7 +24,6 @@
     /* .5rem e não .625rem: dois pixéis por lado numa lista de quinze linhas são trinta
        pixéis de altura que a lista ganha, e a pastilha de 26px continua a ter folga. */
     padding: .5rem .75rem .5rem 0;
-    background: transparent;
 }
 
 .telemetry-table > tbody > tr:last-child > * {
@@ -35,8 +34,9 @@
     padding-right: 0;
 }
 
-/* Os detalhes vão na mesma linha do valor e o que não cabe corta-se; o texto completo fica
-   no `title`. Numa segunda linha, a lista alternava de altura conforme o tipo do evento. */
+/* As colunas não medem pelo conteúdo: o que não cabe corta-se com o `text-truncate` de cada
+   linha de texto, e o texto completo fica no `title`. Sem largura fixa, a lista alternava de
+   altura conforme o tipo do evento. */
 .telemetry-table {
     table-layout: fixed;
 }
@@ -50,16 +50,13 @@
 
 .telemetry-table > tbody > tr > td:nth-child(2) {
     width: 34%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
-/* A hora mede o que a hora precisa e nunca se corta: é a coluna que se usa para comparar
-   dois eventos, e "25/08, 12:47:5..." não serve para comparar nada. */
+/* A hora mede o que a hora precisa e nunca se corta -- o `text-nowrap` da célula trata disso,
+   e é a coluna que se usa para comparar dois eventos. O `overflow` visível é para a seta da
+   linha que abre não ser cortada pela borda da coluna. */
 .telemetry-table > tbody > tr > td:nth-child(4) {
     width: 7.5rem;
-    white-space: nowrap;
     overflow: visible;
 }
 
