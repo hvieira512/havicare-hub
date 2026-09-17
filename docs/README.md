@@ -75,6 +75,7 @@ com as instâncias de desenvolvimento e produção estão no
 | [12 — Localização sem GPS](12-localizacao-sem-gps.md) | Mapa de rádio privado, cache e BeaconDB |
 | [13 — Dashboard](13-dashboard.md) | Funcionalidades e relação com a API |
 | [17 — Sensor de fralda](17-sensor-de-fralda.md) | Capacidades, derivação do estado, sensibilidade e contrato congelado |
+| [19 — Dispensador de comprimidos](19-dispensador-de-comprimidos.md) | Zayata M228: API do fabricante, capacidades e armadilhas. Ainda por integrar |
 
 ### Infraestrutura
 

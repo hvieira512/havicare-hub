@@ -70,6 +70,38 @@ Fica registado por constituir uma decisão de arquitetura e não uma omissão.
 
 ---
 
+## 5. A ingestão do dispensador de comprimidos não tem transporte decidido
+
+**O que é.** O fabricante do Zayata M228 oferece dois modelos de integração. No
+primeiro, o aparelho fala com a cloud dele e nós falamos com essa cloud por HTTPS,
+recebendo eventos num callback nosso. No segundo, o aparelho liga-se por TCP
+directamente ao hub, como já fazem os relógios. O fabricante **recomenda o
+segundo**, por os dados de medicação deixarem de atravessar um servidor na China.
+
+**Porque está em aberto.** Só o primeiro está documentado. A especificação do
+protocolo TCP do segundo nunca nos foi entregue, e sem ela não é implementável. O
+[capítulo 19](19-dispensador-de-comprimidos.md) descreve os dois.
+
+**Porque importa.** A escolha muda a camada de entrada por inteiro — uma rota HTTP
+com o seu cliente e o seu callback, contra um descodificador sobre o socket TCP
+que já existe. Muda também o perfil de risco: no primeiro modelo a
+disponibilidade da cloud do fabricante é uma dependência nossa, e há um callback
+sem autenticação definida a proteger.
+
+**Decisão.** Aguardar a especificação antes de escrever a ingestão. O que não
+depende dela — o contrato das capacidades, a declaração no `CapabilityCatalog`, o
+cartão da dashboard e a superfície de configuração — pode avançar, porque a
+semântica de uma toma não muda com o transporte.
+
+**Dependências do fabricante.** Além da especificação: credenciais de produção
+para a nossa empresa; autenticação e política de repetição do callback; o APN
+`internetm2m` gravado de fábrica nas unidades vendidas para Portugal, sem o qual
+os cartões M2M não anexam; firmware com português, se existir; o manual do M228,
+que não é público; e como se activa o botão de emergência, que hoje não produz
+evento nenhum do lado do parceiro.
+
+---
+
 ## Divergências corrigidas
 
 Registo das divergências já resolvidas, para não voltarem a ser reportadas como
