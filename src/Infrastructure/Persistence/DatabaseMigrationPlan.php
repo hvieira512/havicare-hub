@@ -6,6 +6,8 @@ namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\BraceletHrvLabel;
 use Hub\Infrastructure\Persistence\Migration\Migration;
+use Hub\Infrastructure\Persistence\Migration\RadarApiCredentials;
+use Hub\Infrastructure\Persistence\Migration\RadarLayouts;
 use Hub\Infrastructure\Persistence\Migration\VeepooSleepOnDemand;
 use Hub\Infrastructure\Persistence\Migration\VeepooSleepQuality;
 
@@ -31,6 +33,8 @@ final class DatabaseMigrationPlan
             new VeepooSleepQuality(),
             new VeepooSleepOnDemand(),
             new BraceletHrvLabel(),
+            new RadarApiCredentials(),
+            new RadarLayouts(),
         ];
     }
 

@@ -15,6 +15,14 @@ import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
+import {
+    EDITOR_KIND as RADAR_EDITOR_KIND,
+    clearRadarCredentials,
+    forgetRadarCredentials,
+    loadRadarCredentials,
+    radarCredentialsEditorRow,
+    submitRadarCredentials,
+} from "./radar-credentials.js";
 
 /**
  * O separador das licenças, com as licenças de cada empresa dentro dela.
@@ -88,6 +96,7 @@ function licenseViewRow(license) {
                 <span class="text-truncate">${license.name || "sem nome"}</span>
             </div>
             <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <button class="btn btn-outline-secondary btn-sm" data-action="editRadarCredentials" data-id="${license.id}" title="Cloud dos radares" aria-label="Credenciais da cloud dos radares"><i class="fa-solid fa-satellite-dish" aria-hidden="true"></i></button>
                 <button class="btn btn-outline-secondary btn-sm" data-action="editLicense" data-id="${license.id}" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
                 <button class="btn btn-outline-danger btn-quiet-danger btn-sm" data-id="${license.id}" data-action="deleteLicense" title="Apagar" aria-label="Apagar"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
             </div>
@@ -150,9 +159,15 @@ function companyCard(company) {
         (license) => String(license.company_id) === String(company.id),
     );
     const rows = owned
-        .map((license) => (editor.at("license", license.id)
-            ? licenseEditorRow(license, company.id)
-            : licenseViewRow(license)))
+        .map((license) => {
+            if (editor.at("license", license.id)) return licenseEditorRow(license, company.id);
+            // A linha das credenciais abre por baixo da licença a que pertence, e não no
+            // lugar dela: o que se está a configurar continua à vista.
+            if (editor.at(RADAR_EDITOR_KIND, license.id)) {
+                return licenseViewRow(license) + radarCredentialsEditorRow(license);
+            }
+            return licenseViewRow(license);
+        })
         .join("");
     // O rascunho de uma licença nova nasce no fim das da empresa em que se carregou no `+`.
     const draft = editor.at("license") && editor.open.companyId === String(company.id)
@@ -305,6 +320,51 @@ async function saveLicenseRow(button) {
     await reloadLicenses();
 }
 
+/* ---------- as credenciais da cloud dos radares ---------- */
+
+async function openRadarCredentials(licenseRefId) {
+    const result = await loadRadarCredentials(licenseRefId);
+    if (result.error) {
+        toast("error", apiError(result));
+        return;
+    }
+    editor.edit(RADAR_EDITOR_KIND, licenseRefId);
+}
+
+async function saveRadarCredentialsRow(button) {
+    const row = editorOf(button, RADAR_EDITOR_KIND);
+    if (!row) return;
+
+    const result = await submitRadarCredentials(row);
+    if (result === null) return;
+    if (result.error) {
+        toast("error", apiError(result));
+        return;
+    }
+    clearRadarCredentials();
+    editor.reset();
+    renderCompanySection();
+    toast("success", "Credenciais guardadas");
+}
+
+async function forgetRadarCredentialsFor(licenseRefId) {
+    const license = currentLicenses.find((row) => Number(row.id) === Number(licenseRefId));
+    const { isConfirmed } = await confirmDestructive(
+        `Esquecer as credenciais da licença ${license?.license_id ?? licenseRefId}?`,
+        "Os radares desta licença deixam de sincronizar a planta até alguém as voltar a pôr.",
+    );
+    if (!isConfirmed) return;
+
+    const result = await forgetRadarCredentials(licenseRefId);
+    if (result.error) {
+        toast("error", apiError(result));
+        return;
+    }
+    clearRadarCredentials();
+    editor.reset();
+    renderCompanySection();
+}
+
 async function deleteLicense(id) {
     const license = currentLicenses.find((row) => Number(row.id) === Number(id));
     if (!license) return;
@@ -327,6 +387,9 @@ export function handleCompanyListClick(event) {
     const actions = {
         editCompany: () => editor.edit("company", button.dataset.id),
         editLicense: () => editor.edit("license", button.dataset.id),
+        editRadarCredentials: () => void openRadarCredentials(button.dataset.id),
+        saveRadarCredentialsRow: () => void saveRadarCredentialsRow(button),
+        forgetRadarCredentials: () => void forgetRadarCredentialsFor(button.dataset.id),
         newLicenseForCompany: () => editor.draft("license", { companyId: button.dataset.companyId }),
         cancelEdit: () => editor.cancel(),
         saveCompanyRow: () => void saveCompanyRow(button),

@@ -49,6 +49,12 @@ import {
 } from "../devices/detail-filters.js";
 import { toggleActivityRow } from "../devices/activity-table.js";
 import { DEVICE_CARD_ACTION } from "../devices/device-card.js";
+import {
+    closeRadarMap,
+    openRadarMap,
+    resizeRadarMap,
+    syncRadarMap,
+} from "../devices/radar-map-modal.js";
 import { editWizardAnswered } from "../devices/edit-wizard.js";
 import {
     editDevice,
@@ -78,6 +84,21 @@ export function bindDeviceEvents(context) {
     bindListAndFilters();
     bindDetail();
     bindConfigPanel();
+    bindRadarMap();
+}
+
+/**
+ * A planta da divisão de um radar.
+ *
+ * O `shown` é preciso porque o Konva mede o contentor ao montar a tela, e antes de o modal
+ * abrir ele tem largura zero -- a planta nascia num canto.
+ */
+function bindRadarMap() {
+    els.radarMapSyncBtn?.addEventListener("click", () => void syncRadarMap());
+    const root = document.getElementById("radarMapModal");
+    root?.addEventListener("shown.bs.modal", () => resizeRadarMap());
+    root?.addEventListener("hidden.bs.modal", () => closeRadarMap());
+    globalThis.addEventListener("resize", () => resizeRadarMap());
 }
 
 /** Os botões que abrem o assistente e o selector, e o atalho de editar o escolhido. */
@@ -321,6 +342,15 @@ function handleDeviceListClick(event) {
 }
 
 function handleRequestGridClick(event) {
-    const button = event.target.closest("[data-action=\"requestFeature\"]");
-    if (button) requestTelemetryFeature(String(button.dataset.feature || ""));
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+
+    if (button.dataset.action === "requestFeature") {
+        requestTelemetryFeature(String(button.dataset.feature || ""));
+        return;
+    }
+    // O cartão da presença abre a planta da divisão do radar escolhido.
+    if (button.dataset.action === "openRadarMap") {
+        void openRadarMap(String(state.selectedDetail?.device?.imei || ""));
+    }
 }

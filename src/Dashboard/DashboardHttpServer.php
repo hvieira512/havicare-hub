@@ -14,6 +14,7 @@ use Hub\Api\Services\CompanyService;
 use Hub\Api\Services\DeviceService;
 use Hub\Api\Services\DashboardNotificationService;
 use Hub\Api\Services\LicenseService;
+use Hub\Api\Services\RadarCredentialsService;
 use Hub\Api\Services\ModelImageStore;
 use Hub\Api\Services\ModelService;
 use Hub\Api\Services\ProtocolService;
@@ -24,7 +25,13 @@ use Hub\Device\MessageFanout;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
 use Psr\Http\Message\ServerRequestInterface;
+use Hub\Api\Services\RadarLayoutService;
+use Hub\Ingress\Http\Qinglanst\LayoutParser;
+use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
+use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
+use React\Http\Browser;
 use React\Http\Message\Response;
+use React\Promise\PromiseInterface;
 
 final class DashboardHttpServer
 {
@@ -41,6 +48,9 @@ final class DashboardHttpServer
      * montado -- é o que o teste dos componentes faz -- e uma propriedade promovida ficaria
      * por inicializar nesse caminho. */
     private int $downlinkQueueTtlSeconds = 300;
+    /* Com valor por omissão pela mesma razão das duas acima: a página desenha-se sem o
+     * servidor montado. Vazia, o amCharts desenha o logótipo dele em cada gráfico. */
+    private string $amchartsLicense = '';
 
     public function __construct(
         private DashboardStore $store,
@@ -58,7 +68,19 @@ final class DashboardHttpServer
         private int $maxOpenStreams = 200,
         private int $maxOpenStreamsPerUser = 5,
         private ?LoginThrottle $loginThrottle = null,
+        // A mesma instância que o processo do hub monta. Quando falta, monta-se uma daqui: a
+        // sincronização só acontece quando alguém carrega no botão, e até lá não custa nada.
+        ?RadarLayoutSync $radarLayoutSync = null,
+        string $amchartsLicense = '',
     ) {
+        $this->amchartsLicense = $amchartsLicense;
+        $radarLayoutSync ??= new RadarLayoutSync(
+            new QinglanstApiClient(new Browser()),
+            new LayoutParser(),
+            $this->db->radarLayouts,
+            $this->db->radarCredentials,
+            $this->db->whitelist,
+        );
         $this->apiAuthRequired = $apiAuthRequired;
         $this->downlinkQueueTtlSeconds = $hub->downlinkQueueTtlSeconds();
 
@@ -91,6 +113,8 @@ final class DashboardHttpServer
             new ApiUserService($this->db),
             new CompanyService($this->db),
             new LicenseService($this->db),
+            new RadarCredentialsService($this->db),
+            new RadarLayoutService($this->db, $radarLayoutSync),
             new ProtocolService(),
             new DashboardNotificationService($this->db),
             new \Hub\Api\Services\DenylistService($this->db),
@@ -124,7 +148,8 @@ final class DashboardHttpServer
         }
     }
 
-    public function __invoke(ServerRequestInterface $request): Response
+    /** Uma rota que espera por um serviço de terceiros devolve a promessa, e o React drena-a. */
+    public function __invoke(ServerRequestInterface $request): Response|PromiseInterface
     {
         $method = strtoupper($request->getMethod());
         $path = $request->getUri()->getPath();
@@ -176,6 +201,7 @@ final class DashboardHttpServer
     {
         $dashboardApiAuthRequired = $this->apiAuthRequired;
         $downlinkQueueTtlSeconds = $this->downlinkQueueTtlSeconds;
+        $amchartsLicense = $this->amchartsLicense;
 
         ob_start();
         require __DIR__ . '/index.php';

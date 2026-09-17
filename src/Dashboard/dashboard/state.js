@@ -94,6 +94,9 @@ export const state = {
     // Com cache, e aqui e não no `settingsModal` porque a coluna de detalhe também o lê.
     capabilityCatalogByType: {},
     deviceModal: blankDeviceModal(),
+    // A planta do radar que está aberta. O `imei` diz de quem é, e não se lê do detalhe: o
+    // modal sobrevive a uma troca de dispositivo na lista de trás.
+    radarMap: { imei: "", layout: null },
     modelModalSuppliers: [],
     modelModal: {
         capabilities: [],
@@ -108,6 +111,9 @@ export const state = {
         // As licenças, uma vez por sessão: são a árvore do filtro, a do assistente e as
         // opções de três formulários. Quem as muda limpa-as.
         licenses: [],
+        // As credenciais do radar da licença que está aberta, sem os segredos -- a API não os
+        // devolve. Sobrevivem ao render da árvore enquanto a linha estiver aberta.
+        radarCredentials: null,
         capabilityDeviceType: "",
         capabilityCatalog: [],
         // A secção do catálogo para onde a tira de pastilhas levou, para o realce sobreviver

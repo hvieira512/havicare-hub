@@ -61,11 +61,15 @@ require_once __DIR__ . '/components/modal.php';
         <?php require __DIR__ . '/components/modals/device-wizard.php'; ?>
         <?php require __DIR__ . '/components/modals/settings.php'; ?>
         <?php require __DIR__ . '/components/modals/device-selector.php'; ?>
+        <?php require __DIR__ . '/components/modals/radar-map.php'; ?>
     </div>
 
     <?php /* O descritor dos tipos vem daqui e não de um endpoint: o formulário precisa dele à
            * primeira pintura. A fonte é o `DeviceTypeCatalog`, em PHP. */ ?>
     <script type="application/json" id="hub-device-types"><?= \Hub\Domain\DeviceTypeCatalog::asJson() ?></script>
+    <?php /* A licença do amCharts, para os gráficos dos sinais vitais de um radar. Vem daqui
+           * porque é configuração do servidor, e fica vazia quando ninguém a definiu. */ ?>
+    <script type="application/json" id="hub-amcharts-license"><?= json_encode($amchartsLicense ?? '') ?></script>
     <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
     <?php /* O AG Grid (2 MB) não vem aqui: o `dashboard/grid.js` carrega-o à primeira grelha,

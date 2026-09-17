@@ -29,6 +29,7 @@ import {
 import { telemetryCard } from "../card-shell.js";
 import { renderRequestCardShell, requestCardContent } from "../request-card.js";
 import { fallSummaryCard, helpCallSummaryCard } from "./event-summary-cards.js";
+import { onRadarPresence } from "./radar-map-modal.js";
 import { activityTable } from "./activity-table.js";
 import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";
 import { renderPagination } from "../pagination.js";
@@ -122,6 +123,9 @@ function renderSelection() {
     }
     renderDownlinkRequests(commands);
     renderConnectionTimeline(connectionEvents);
+    // A planta aberta acompanha o stream: as posições que acabaram de chegar são as mesmas
+    // que o mosaico da presença acabou de desenhar.
+    onRadarPresence(device.imei);
 }
 
 const TELEMETRY_REQUEST_GROUPS = [

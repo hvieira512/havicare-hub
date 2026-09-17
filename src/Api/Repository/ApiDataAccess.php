@@ -21,6 +21,8 @@ final class ApiDataAccess
         public readonly GatewayDeviceLinkRepository $gatewayDeviceLinks,
         public readonly DiaperSensitivityRepository $diaperSensitivity,
         public readonly DenylistRepository $denylist,
+        public readonly RadarApiCredentialsRepository $radarCredentials,
+        public readonly RadarLayoutRepository $radarLayouts,
     ) {
     }
 
@@ -43,6 +45,8 @@ final class ApiDataAccess
             new GatewayDeviceLinkRepository($pdo),
             new DiaperSensitivityRepository($pdo),
             new DenylistRepository($pdo),
+            new RadarApiCredentialsRepository($pdo),
+            new RadarLayoutRepository($pdo),
         );
     }
 }

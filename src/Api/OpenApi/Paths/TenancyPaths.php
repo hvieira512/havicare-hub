@@ -194,6 +194,39 @@ final class TenancyPaths
                     ),
                 ],
             ],
+            // O acesso à cloud do fabricante dos radares é de cada licença: com a conta de
+            // uma, os radares das outras respondem que estão offline mesmo a publicar.
+            '/api/licenses/{id}/radar-credentials' => [
+                'get' => [
+                    'tags' => ['Licenses'],
+                    'summary' => 'Show radar cloud credentials for a license',
+                    'parameters' => [$id],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Radar credentials, without the secrets', 'RadarCredentialsResponse')],
+                        'license_not_found',
+                    ),
+                ],
+                'put' => [
+                    'tags' => ['Licenses'],
+                    'summary' => 'Store radar cloud credentials for a license',
+                    'parameters' => [$id],
+                    'requestBody' => Requests::json('RadarCredentialsWriteRequest'),
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Radar credentials stored', 'StatusResponse')],
+                        'invalid_request',
+                        'license_not_found',
+                    ),
+                ],
+                'delete' => [
+                    'tags' => ['Licenses'],
+                    'summary' => 'Forget radar cloud credentials for a license',
+                    'parameters' => [$id],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Radar credentials forgotten', 'StatusResponse')],
+                        'license_not_found',
+                    ),
+                ],
+            ],
         ];
     }
 }

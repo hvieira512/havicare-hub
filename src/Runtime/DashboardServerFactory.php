@@ -50,6 +50,8 @@ final class DashboardServerFactory
                 maxPerUsername: (int)$dashboardConfig['login_max_per_username'],
                 maxGlobal: (int)$dashboardConfig['login_max_global'],
             ),
+            $services->radarLayoutSync,
+            (string)($dashboardConfig['amcharts_license'] ?? ''),
         );
         // O construtor já não escreve no Redis: quem serve é que semeia, e só aqui.
         $dashboard->warmUp();

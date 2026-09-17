@@ -16,17 +16,21 @@ export function telemetryCard({
     detailsTitle = "",
     body = "",
     feature = "",
+    // Um cartão que abre alguma coisa em vez de pedir uma medição -- a presença abre a planta
+    // da divisão. É o `data-action` que o ouvinte delegado da coluna resolve.
+    action = "",
     pending = false,
     stateLabel = "",
     stateTone = "",
     tone = "",
 }) {
-    // Quando há um feature para pedir, é o cartão inteiro o botão.
-    const clickable = feature !== "";
+    // Quando há um feature para pedir ou uma acção própria, é o cartão inteiro o botão.
+    const clickable = feature !== "" || action !== "";
     const tag = clickable ? "button" : "div";
     const toneClass = tone ? ` telemetry-card-tone-${tone}` : "";
+    const featureAttr = feature ? html` data-feature="${feature}"` : "";
     const attrs = clickable
-        ? html` type="button" class="card h-100 w-100 telemetry-card-action text-start${toneClass}" data-action="requestFeature" data-feature="${feature}"${pending ? " disabled" : ""}`
+        ? html` type="button" class="card h-100 w-100 telemetry-card-action text-start${toneClass}" data-action="${action || "requestFeature"}"${raw(featureAttr)}${pending ? " disabled" : ""}`
         : html` class="card h-100${toneClass}"`;
     // A pastilha leva a sua linha: num mosaico estreito não cabe ao lado do ícone e do nome.
     const state = stateLabel
@@ -40,7 +44,7 @@ export function telemetryCard({
     // diz em que estado está. Um mosaico que não se pode pedir não tem nada ali.
     const requestHint =
         clickable && !stateLabel
-            ? "<span class=\"telemetry-card-hint flex-shrink-0\" aria-hidden=\"true\"><i class=\"fa-solid fa-paper-plane\"></i></span>"
+            ? `<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid ${action ? "fa-up-right-and-down-left-from-center" : "fa-paper-plane"}"></i></span>`
             : "";
 
     // Fora da linha do ícone, para ter a largura toda do cartão.

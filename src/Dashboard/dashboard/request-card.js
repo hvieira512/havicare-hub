@@ -195,6 +195,9 @@ export function renderRequestCardShell(
         body: bodyHtml,
         // O que não responde ao clique não deve parecer que responde.
         feature: requestable ? type : "",
+        // A presença abre a planta da divisão. É o cartão que já diz quantas pessoas lá
+        // estão, e a presença só existe em radares -- não é preciso perguntar pelo tipo.
+        action: type === "presence" ? "openRadarMap" : "",
         pending: requestable && loading,
         stateLabel: loading ? "a pedir" : requestState?.label || "",
         stateTone: loading ? "warning" : requestState?.tone || "",

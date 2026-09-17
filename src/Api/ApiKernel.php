@@ -11,6 +11,8 @@ use Hub\Api\Controllers\DeviceController;
 use Hub\Api\Controllers\DashboardNotificationController;
 use Hub\Api\Controllers\DenylistController;
 use Hub\Api\Controllers\LicenseController;
+use Hub\Api\Controllers\RadarCredentialsController;
+use Hub\Api\Controllers\RadarLayoutController;
 use Hub\Api\Controllers\ModelController;
 use Hub\Api\Controllers\ProtocolController;
 use Hub\Api\Controllers\StreamController;
@@ -35,12 +37,15 @@ use Hub\Api\Services\DeviceService;
 use Hub\Api\Services\DashboardNotificationService;
 use Hub\Api\Services\DenylistService;
 use Hub\Api\Services\LicenseService;
+use Hub\Api\Services\RadarCredentialsService;
+use Hub\Api\Services\RadarLayoutService;
 use Hub\Api\Services\ModelService;
 use Hub\Api\Services\ProtocolService;
 use Hub\Api\Services\SupplierService;
 use Hub\Log\Logger;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
+use React\Promise\PromiseInterface;
 
 final class ApiKernel
 {
@@ -73,6 +78,8 @@ final class ApiKernel
         private ApiUserService $apiUsers,
         private CompanyService $company,
         private LicenseService $licenses,
+        private RadarCredentialsService $radarCredentials,
+        private RadarLayoutService $radarLayouts,
         private ProtocolService $protocols,
         private DashboardNotificationService $notifications,
         private DenylistService $denylist,
@@ -94,7 +101,7 @@ final class ApiKernel
      * registo e a política de acesso à rota, e separá-la obrigava a correr o encaminhamento
      * duas vezes -- num middleware para saber a rota e aqui para a despachar.
      */
-    public function handle(ServerRequestInterface $request): Response
+    public function handle(ServerRequestInterface $request): Response|PromiseInterface
     {
         $method = strtoupper($request->getMethod());
         $path = $request->getUri()->getPath();
@@ -118,24 +125,51 @@ final class ApiKernel
             $request = $request->withAttribute(RequestContext::ATTR_ROUTE_PATTERN, $routePattern);
         }
 
+        $fail = fn(\Throwable $e): Response => $this->unhandled($e, $requestId, $method, $path, $routePattern, $logContext, $authContext);
+
         try {
             $response = $this->dispatch($request, $authContext, $match);
+
+            // Uma rota que fala com um serviço de terceiros devolve a promessa em vez de
+            // esperar por ele: o processo tem um event loop só, e a ingestão TCP e o MQTT
+            // param enquanto alguém aqui bloqueia. O que vem a seguir -- o `ETag` dos
+            // catálogos e o registo do que rebenta -- é o mesmo nos dois caminhos.
+            if ($response instanceof PromiseInterface) {
+                return $response->then(
+                    fn(Response $resolved): Response => $this->revalidatedCatalogResponse($request, $resolved, $method, $routePattern),
+                    static fn(mixed $error): Response => $fail($error instanceof \Throwable ? $error : new \RuntimeException((string)$error)),
+                );
+            }
+
             return $this->revalidatedCatalogResponse($request, $response, $method, $routePattern);
         } catch (\Throwable $e) {
-            Logger::channel('api')->error('Unhandled API exception', [
-                'request_id' => $requestId,
-                'method' => $method,
-                'path' => $path,
-                'route' => $routePattern,
-                'exception' => $e::class,
-                'message' => $e->getMessage(),
-            ]);
-            $logContext?->describe($routePattern, $authContext, 'error');
-            $error = ApiError::serverError()->toArray();
-            $error['error']['requestId'] = $requestId;
-
-            return $this->json->result($error);
+            return $fail($e);
         }
+    }
+
+    /** O 500 com rasto: o cliente leva o `requestId` e o journal leva o resto. */
+    private function unhandled(
+        \Throwable $e,
+        string $requestId,
+        string $method,
+        string $path,
+        ?string $routePattern,
+        ?ApiLogContext $logContext,
+        ?ApiAuthContext $authContext,
+    ): Response {
+        Logger::channel('api')->error('Unhandled API exception', [
+            'request_id' => $requestId,
+            'method' => $method,
+            'path' => $path,
+            'route' => $routePattern,
+            'exception' => $e::class,
+            'message' => $e->getMessage(),
+        ]);
+        $logContext?->describe($routePattern, $authContext, 'error');
+        $error = ApiError::serverError()->toArray();
+        $error['error']['requestId'] = $requestId;
+
+        return $this->json->result($error);
     }
 
     /**
@@ -152,6 +186,8 @@ final class ApiKernel
         $apiUsers = new ApiUserController($this->apiUsers, $this->json);
         $company = new CompanyController($this->company, $this->json);
         $licenses = new LicenseController($this->licenses, $this->json);
+        $radarCredentials = new RadarCredentialsController($this->radarCredentials, $this->json);
+        $radarLayouts = new RadarLayoutController($this->radarLayouts, $this->json);
         $protocols = new ProtocolController($this->protocols, $this->json);
         $notifications = new DashboardNotificationController($this->notifications, $this->json);
         $denylist = new DenylistController($this->denylist, $this->json);
@@ -177,6 +213,8 @@ final class ApiKernel
             ...((require __DIR__ . '/Routes/ApiUserRoutes.php')($apiUsers)),
             ...((require __DIR__ . '/Routes/CompanyRoutes.php')($company)),
             ...((require __DIR__ . '/Routes/LicenseRoutes.php')($licenses)),
+            ...((require __DIR__ . '/Routes/RadarCredentialsRoutes.php')($radarCredentials)),
+            ...((require __DIR__ . '/Routes/RadarLayoutRoutes.php')($radarLayouts)),
             ...((require __DIR__ . '/Routes/ProtocolRoutes.php')($protocols)),
             ...((require __DIR__ . '/Routes/DashboardNotificationRoutes.php')($notifications)),
             ...((require __DIR__ . '/Routes/DenylistRoutes.php')($denylist)),
@@ -201,7 +239,7 @@ final class ApiKernel
         return ['context' => $context, 'state' => 'bearer'];
     }
 
-    private function dispatch(ServerRequestInterface $request, ?ApiAuthContext $authContext, ?array $match = null): Response
+    private function dispatch(ServerRequestInterface $request, ?ApiAuthContext $authContext, ?array $match = null): Response|PromiseInterface
     {
         $match = $match ?? $this->router->match(strtoupper($request->getMethod()), $request->getUri()->getPath());
         if ($match === null) {

@@ -798,6 +798,57 @@
     color: var(--tone-fg, var(--bs-secondary-color));
 }
 
+/* ===== a planta da divisão de um radar =====
+   Ver `devices/radar-map-modal.js`, `radar-scene.js` e `radar-vitals.js`. */
+
+/* Mais largo do que o `modal-xl`: são duas colunas com uma planta de uma divisão numa e dois
+   gráficos na outra, e ao `modal-xl` a divisão ficava com metade da altura que precisa. O
+   `min()` com `vw` é o que impede isto de passar do ecrã num portátil. */
+#radarMapModal .modal-dialog {
+    --bs-modal-width: min(1680px, 96vw);
+}
+
+/* A divisão precisa de altura para se ler: a escala é uniforme nos dois eixos, e um contentor
+   baixo encolhe a planta inteira em vez de a achatar.
+
+   Num telemóvel é ao contrário: a largura é que manda, e as 32rem do ecrã grande deixavam a
+   planta no meio de trezentos pixéis de nada -- um quarto tem tipicamente uma proporção de
+   3:2, portanto a 310px de largura não passa dos 200 de altura. */
+.radar-map-canvas {
+    min-height: 16rem;
+}
+
+@media (min-width: 768px) {
+    .radar-map-canvas {
+        min-height: 32rem;
+    }
+}
+
+/* A faixa do estado do sono. Não cresce com a coluna -- é contexto e não uma leitura --, mas
+   tem chão: a 2rem parecia uma etiqueta esquecida por cima dos dois cartões. */
+.radar-sleep-state {
+    min-height: 4.5rem;
+}
+
+/* O azulejo do ícone de um sinal vital: o mesmo tamanho e raio do `.telemetry-card-icon`, mas
+   no tom da categoria em vez de cinzento -- aqui só há dois cartões, e a cor distingue-os em
+   vez de disputar com o estado. */
+.radar-vital-icon {
+    width: 36px;
+    height: 36px;
+}
+
+/* O chão de um gráfico de sinal vital: daí para cima cresce com o cartão, que por sua vez
+   acompanha a altura da planta ao lado. Sem eixos não precisa de mais -- o que se lê nele é a
+   forma da linha, e os números estão no cabeçalho.
+
+   A tela é montada depois de o modal abrir, no `shown.bs.modal`: o amCharts mede o contentor
+   uma vez, e antes disso o modal ainda não tem tamanho nenhum -- o gráfico ficava com altura
+   zero e a linha colada ao topo. Ver `resizeVitals` no `devices/radar-vitals.js`. */
+.radar-vital-chart {
+    min-height: 6rem;
+}
+
 /* O nome quebra entre palavras: o `word-wrap: break-word` que o `.card` herda serve texto
    corrido, não uma etiqueta de duas palavras. */
 .telemetry-card-title {

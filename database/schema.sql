@@ -214,6 +214,76 @@ CREATE TABLE IF NOT EXISTS licenses (
     CONSTRAINT fk_licenses_company FOREIGN KEY (company_id) REFERENCES companies(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- As credenciais da cloud do fabricante dos radares, uma linha por licença.
+--
+-- Não há conta que veja a frota toda: com a conta de uma licença, os radares das outras
+-- respondem `777` -- "dispositivo offline" -- mesmo quando estão a publicar telemetria nesse
+-- minuto. Nem o endereço base é comum, que é o que a coluna `base_url` diz.
+--
+-- A referência é a da licença e não uma cópia do número dela, como no `api_users`.
+CREATE TABLE IF NOT EXISTS radar_api_credentials (
+    license_ref_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+    base_url VARCHAR(255) NOT NULL,
+    username VARCHAR(96) NOT NULL,
+    -- Reversíveis por necessidade: servem para fazer login no fornecedor. A defesa é não
+    -- saírem -- nem pela API, nem para a dashboard, que só recebe se estão preenchidas.
+    password VARCHAR(255) NOT NULL,
+    app_id VARCHAR(96) NOT NULL,
+    app_secret VARCHAR(255) NOT NULL,
+    -- O token do fornecedor dura uma hora e a resposta traz o de renovação. Fica na base e
+    -- não em ficheiro: são duas instâncias do hub na mesma máquina, e um ficheiro de um
+    -- processo só não lhes serve às duas.
+    access_token VARCHAR(512) NOT NULL DEFAULT '',
+    refresh_token VARCHAR(512) NOT NULL DEFAULT '',
+    token_expires_at DATETIME NULL DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_radar_api_credentials_license FOREIGN KEY (license_ref_id)
+        REFERENCES licenses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- A divisão onde um radar está montado, em decímetros relativos a ele -- que está sempre na
+-- origem. Uma linha por radar: o que o fabricante devolve é o layout de agora, e o hub não
+-- reproduz o passado.
+--
+-- O `source_payload` guarda a resposta tal como veio. É o que permite reprocessar no dia em
+-- que o fabricante mudar de forma sem avisar, e a resposta dele já é inconsistente hoje: o
+-- `declare_area_name` chega em lista ou em objeto conforme as chaves das áreas sejam seguidas
+-- ou tenham buracos.
+CREATE TABLE IF NOT EXISTS radar_layouts (
+    imei VARCHAR(64) NOT NULL PRIMARY KEY,
+    room_x_min_dm SMALLINT NOT NULL,
+    room_y_min_dm SMALLINT NOT NULL,
+    room_x_max_dm SMALLINT NOT NULL,
+    room_y_max_dm SMALLINT NOT NULL,
+    source_payload LONGTEXT NOT NULL,
+    fetched_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_radar_layouts_device FOREIGN KEY (imei)
+        REFERENCES whitelist(imei) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- As áreas declaradas no aparelho: camas, portas, zonas de alarme. São caixas e não polígonos
+-- -- as 73 áreas dos radares em produção são todas caixas alinhadas aos eixos --, e 30 delas
+-- ficam fora do retângulo da sala, pelo que os limites do desenho têm de cobrir as duas coisas.
+--
+-- A `area_key` é a chave do fabricante, e é também o `regionId` que a telemetria de presença
+-- reporta: é por ela que se sabe em que cama está quem lá está. O `area_type` fica no número
+-- do fabricante; a enumeração inglesa nasce na fronteira da API.
+CREATE TABLE IF NOT EXISTS radar_layout_areas (
+    imei VARCHAR(64) NOT NULL,
+    area_key TINYINT UNSIGNED NOT NULL,
+    area_type TINYINT UNSIGNED NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    x_min_dm SMALLINT NOT NULL,
+    y_min_dm SMALLINT NOT NULL,
+    x_max_dm SMALLINT NOT NULL,
+    y_max_dm SMALLINT NOT NULL,
+    PRIMARY KEY (imei, area_key),
+    CONSTRAINT fk_radar_layout_areas_layout FOREIGN KEY (imei)
+        REFERENCES radar_layouts(imei) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS api_users (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(96) NOT NULL UNIQUE,

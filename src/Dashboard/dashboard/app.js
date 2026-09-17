@@ -38,6 +38,7 @@ import {
     refreshGatewayOptions,
 } from "./devices/gateway-links-ui.js";
 import { initNotifications } from "./notifications.js";
+import { initRadarMapModal } from "./devices/radar-map-modal.js";
 import { initSettings } from "./settings/index.js";
 import { initSettingsClickHandlers } from "./settings/clicks.js";
 
@@ -49,6 +50,7 @@ let deviceModal = null;
 let deviceWizardModal = null;
 let deviceSelectorModal = null;
 let settingsModal = null;
+let radarMapModal = null;
 
 export async function startDashboard() {
     els = cacheElements();
@@ -64,9 +66,13 @@ export async function startDashboard() {
     settingsModal = new bootstrap.Modal(
         document.getElementById("settingsModal"),
     );
-    const ui = { deviceModal, deviceSelectorModal, settingsModal };
+    radarMapModal = new bootstrap.Modal(
+        document.getElementById("radarMapModal"),
+    );
+    const ui = { deviceModal, deviceSelectorModal, settingsModal, radarMapModal };
 
     initDeviceModal({ els, deviceModal, deviceSelectorModal, settingsModal });
+    initRadarMapModal({ els, modals: { radarMap: radarMapModal } });
     initEditWizard({
         els,
         // A autorização de um gateway é por empresa e licença: mudar de licença muda quais

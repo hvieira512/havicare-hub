@@ -6,6 +6,7 @@ use Hub\Api\OpenApi\SchemaFromRequest;
 use Hub\Api\Request\ApiUserWriteRequest;
 use Hub\Api\Request\CompanyWriteRequest;
 use Hub\Api\Request\LicenseWriteRequest;
+use Hub\Api\Request\RadarCredentialsWriteRequest;
 
 /**
  * Utilizadores da API, empresas e licenças.
@@ -92,6 +93,29 @@ final class TenancySchemas
                 [LicenseWriteRequest::GROUP_CREATE],
             ),
             'LicenseUpdateRequest' => SchemaFromRequest::schema(LicenseWriteRequest::class),
+            // Os segredos entram e não voltam a sair: a resposta diz se estão preenchidos e
+            // mais nada. O `create` exige-os, porque metade das credenciais nunca autentica.
+            'RadarCredentialsResponse' => [
+                'type' => 'object',
+                'properties' => [
+                    'data' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'configured' => ['type' => 'boolean', 'example' => true],
+                            'baseUrl' => ['type' => 'string', 'example' => 'https://radarconsole.com/prod-api'],
+                            'username' => ['type' => 'string', 'example' => 'casabranca'],
+                            'appId' => ['type' => 'string'],
+                            'hasPassword' => ['type' => 'boolean', 'example' => true],
+                            'hasAppSecret' => ['type' => 'boolean', 'example' => true],
+                            'updatedAt' => ['type' => 'string', 'nullable' => true],
+                        ],
+                    ],
+                ],
+            ],
+            'RadarCredentialsWriteRequest' => SchemaFromRequest::schema(
+                RadarCredentialsWriteRequest::class,
+                [RadarCredentialsWriteRequest::GROUP_CREATE],
+            ),
         ];
     }
 }

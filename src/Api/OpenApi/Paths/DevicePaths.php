@@ -114,6 +114,31 @@ final class DevicePaths
                     ),
                 ],
             ],
+            // A planta da divisão onde o radar está montado. O `sync` vai à cloud do
+            // fabricante, e é o único caminho por onde isso acontece: não há relógio atrás.
+            '/api/devices/{imei}/radar-layout' => [
+                'get' => [
+                    'tags' => [self::TAG],
+                    'summary' => 'Show the stored room layout of a radar',
+                    'parameters' => [$imei],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Room layout, empty when never synced', 'RadarLayoutResponse')],
+                        'not_found',
+                    ),
+                ],
+            ],
+            '/api/devices/{imei}/radar-layout/sync' => [
+                'post' => [
+                    'tags' => [self::TAG],
+                    'summary' => 'Fetch the room layout from the manufacturer cloud',
+                    'parameters' => [$imei],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Sync outcome and the resulting layout', 'RadarLayoutSyncResponse')],
+                        'invalid_request',
+                        'not_found',
+                    ),
+                ],
+            ],
             '/api/devices/{imei}/links' => [
                 'get' => [
                     'tags' => [self::TAG],

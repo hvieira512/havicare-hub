@@ -25,6 +25,11 @@ export default [
                 ...globals.node,
                 bootstrap: "readonly",
                 Swal: "readonly",
+                // Carregados a pedido pelo modal da planta do radar, e não no `<head>`.
+                Konva: "readonly",
+                am5: "readonly",
+                am5xy: "readonly",
+                am5themes_Animated: "readonly",
                 agGrid: "readonly",
             },
         },

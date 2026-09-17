@@ -153,6 +153,65 @@ final class DeviceSchemas
                     'linkedDeviceKey' => ['type' => 'string', 'example' => 'eec5000202f9'],
                 ],
             ],
+            // Tudo em decímetros, relativos ao radar, que está sempre na origem. As áreas
+            // podem cair fora da sala, e caem: 30 das 73 em produção.
+            'RadarLayoutResponse' => [
+                'type' => 'object',
+                'properties' => [
+                    'data' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'configured' => ['type' => 'boolean', 'example' => true],
+                            'room' => [
+                                'type' => 'object',
+                                'nullable' => true,
+                                'properties' => [
+                                    'x_min_dm' => ['type' => 'integer', 'example' => -30],
+                                    'y_min_dm' => ['type' => 'integer', 'example' => -8],
+                                    'x_max_dm' => ['type' => 'integer', 'example' => 30],
+                                    'y_max_dm' => ['type' => 'integer', 'example' => 20],
+                                ],
+                            ],
+                            'areas' => [
+                                'type' => 'array',
+                                'items' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        // A chave do fabricante, e também o `regionId` que a
+                                        // telemetria de presença reporta.
+                                        'key' => ['type' => 'integer', 'example' => 0],
+                                        'type' => ['type' => 'integer', 'example' => 5],
+                                        'name' => ['type' => 'string', 'example' => 'Cama 1'],
+                                        'x_min_dm' => ['type' => 'integer', 'example' => -20],
+                                        'y_min_dm' => ['type' => 'integer', 'example' => -8],
+                                        'x_max_dm' => ['type' => 'integer', 'example' => -11],
+                                        'y_max_dm' => ['type' => 'integer', 'example' => 12],
+                                    ],
+                                ],
+                            ],
+                            'fetchedAt' => ['type' => 'string', 'nullable' => true],
+                        ],
+                    ],
+                ],
+            ],
+            'RadarLayoutSyncResponse' => [
+                'type' => 'object',
+                'properties' => [
+                    'data' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'synced' => ['type' => 'integer', 'example' => 1],
+                            'skipped' => ['type' => 'integer', 'example' => 0],
+                            'failed' => ['type' => 'integer', 'example' => 0],
+                            // O código do fabricante tal como veio: `777` quer dizer que a
+                            // cloud não conhece aquele aparelho, e isso não se adivinha.
+                            'codes' => ['type' => 'object', 'additionalProperties' => ['type' => 'integer']],
+                            'error' => ['type' => 'string', 'nullable' => true],
+                            'layout' => ['type' => 'object', 'nullable' => true],
+                        ],
+                    ],
+                ],
+            ],
         ];
     }
 

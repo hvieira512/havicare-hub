@@ -1,4 +1,5 @@
 import { displayPersonIndex, fieldValue } from "../format.js";
+import { postureStyle } from "../domain.js";
 import { html } from "../html.js";
 import { compactDetails } from "./shared.js";
 
@@ -23,26 +24,6 @@ export function presenceValue(data) {
     return `${count} pessoa${count === 1 ? "" : "s"}`;
 }
 
-/**
- * O ícone diz a categoria e o tom a gravidade. A etiqueta vive no
- * `FIELD_VALUE_LABELS.posture` do `format.js`.
- */
-const POSTURE_STYLE = {
-    standing: { icon: "fa-person", tone: "success" },
-    walking: { icon: "fa-person-walking", tone: "success" },
-    confirmed_sitting_up_bed: { icon: "fa-bed", tone: "success" },
-    lying_down: { icon: "fa-bed", tone: "info" },
-    sitting_up_bed: { icon: "fa-bed", tone: "info" },
-    suspected_sitting_up_bed: { icon: "fa-bed", tone: "warning" },
-    squatting: { icon: "fa-chair", tone: "warning" },
-    suspected_sitting_on_ground: { icon: "fa-chair", tone: "warning" },
-    suspected_fall: { icon: "fa-triangle-exclamation", tone: "warning" },
-    confirmed_sitting_on_ground: { icon: "fa-chair", tone: "danger" },
-    fall_confirmation: { icon: "fa-triangle-exclamation", tone: "danger" },
-    initialization: { icon: "fa-question", tone: "secondary" },
-    unknown: { icon: "fa-question", tone: "secondary" },
-};
-
 /** A pastilha é um `badge` do Bootstrap com o par de utilitários subtis do tom. */
 const CHIP_CLASS =
     "badge rounded-pill fw-normal d-inline-flex align-items-center gap-1";
@@ -52,7 +33,7 @@ const CHIP_CLASS =
  * sai escapada: um estado novo do firmware não pode escrever atributos.
  */
 function postureChip(posture) {
-    const style = POSTURE_STYLE[String(posture)] || POSTURE_STYLE.unknown;
+    const style = postureStyle(posture);
     const tone = style.tone;
     const label = fieldValue("posture", posture);
 

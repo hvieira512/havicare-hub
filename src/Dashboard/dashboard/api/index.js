@@ -23,6 +23,10 @@ export const saveConfiguration = (imei, payload) =>
         method: "PATCH",
         body: JSON.stringify(payload),
     });
+export const getRadarLayout = (imei) => requestJson(`/api/devices/${id(imei)}/radar-layout`);
+// Vai à cloud do fabricante, e é o único caminho por onde isso acontece.
+export const syncRadarLayout = (imei) =>
+    requestJson(`/api/devices/${id(imei)}/radar-layout/sync`, { method: "POST" });
 export const requestFeature = (imei, feature) =>
     requestJson(`/api/devices/${id(imei)}/requests`, {
         method: "POST",
@@ -81,6 +85,15 @@ export const saveLicense = (licenseId, body) =>
     });
 export const deleteLicense = (licenseId) =>
     requestJson(`/api/licenses/${id(licenseId)}`, { method: "DELETE" });
+export const getRadarCredentials = (licenseId) =>
+    requestJson(`/api/licenses/${id(licenseId)}/radar-credentials`);
+export const saveRadarCredentials = (licenseId, body) =>
+    requestJson(`/api/licenses/${id(licenseId)}/radar-credentials`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+    });
+export const forgetRadarCredentials = (licenseId) =>
+    requestJson(`/api/licenses/${id(licenseId)}/radar-credentials`, { method: "DELETE" });
 
 /* ---------- utilizadores da API ---------- */
 

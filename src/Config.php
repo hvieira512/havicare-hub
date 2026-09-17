@@ -78,6 +78,10 @@ class Config
                 'api_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_TOKEN_TTL_SECONDS') ?: 3600),
                 'api_refresh_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_REFRESH_TOKEN_TTL_SECONDS') ?: 2592000),
                 'history_limit' => (int)(getenv('DASHBOARD_HISTORY_LIMIT') ?: 100),
+                // A licença do amCharts, que desenha os sinais vitais de um radar. Sem ela a
+                // biblioteca põe o logótipo dela em cima de cada gráfico; é a mesma chave que
+                // o gucc usa, e não vive no repositório.
+                'amcharts_license' => (string)(getenv('AMCHARTS_LICENSE') ?: ''),
                 // Vazio mantém a política aberta, que é o que a API sempre teve e continua a
                 // ser seguro enquanto a autenticação for `Bearer` em cabeçalho e não cookie.
                 'cors_allowed_origins' => array_values(array_filter(array_map(
@@ -178,6 +182,9 @@ class Config
                 'position_history_sample_ms' => max(0, (int)(getenv('QINGLANST_POSITION_HISTORY_SAMPLE_MS') ?: 1000)),
                 'raw_history_sample_ms' => max(0, (int)(getenv('QINGLANST_RAW_HISTORY_SAMPLE_MS') ?: 30000)),
                 'stats_flush_seconds' => max(1, (int)(getenv('QINGLANST_STATS_FLUSH_SECONDS') ?: 300)),
+                // Quanto se espera pela cloud do fabricante ao sincronizar uma planta. A
+                // sincronização acontece a pedido e mais nada: não há relógio nenhum atrás.
+                'layout_sync_timeout_seconds' => max(1, (int)(getenv('QINGLANST_LAYOUT_SYNC_TIMEOUT_SECONDS') ?: 15)),
             ],
             'mqtt' => [
                 'host' => getenv('MQTT_HOST') ?: '',

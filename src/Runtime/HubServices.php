@@ -12,9 +12,13 @@ use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Infrastructure\Persistence\DashboardDatabase;
+use Hub\Ingress\Http\Qinglanst\LayoutParser;
+use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
+use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
 use Hub\Location\LocationEnricherFactory;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Mqtt\ConnectionFactory;
+use React\Http\Browser;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
@@ -42,6 +46,7 @@ final class HubServices
         public readonly HubMqttBridge $mqttBridge,
         public readonly DeviceHubServer $hubServer,
         public readonly ?LocationTelemetryEnricherContract $locationEnricher,
+        public readonly RadarLayoutSync $radarLayoutSync,
     ) {
     }
 
@@ -90,6 +95,17 @@ final class HubServices
             denylist: $denylist,
         );
 
+        $radarLayoutSync = new RadarLayoutSync(
+            new QinglanstApiClient(
+                new Browser(),
+                (float)$config['qinglanst']['layout_sync_timeout_seconds'],
+            ),
+            new LayoutParser(),
+            $dataAccess->radarLayouts,
+            $dataAccess->radarCredentials,
+            $dataAccess->whitelist,
+        );
+
         return new self(
             $database,
             $dataAccess,
@@ -102,6 +118,7 @@ final class HubServices
             $mqttBridge,
             $hubServer,
             $locationEnricher,
+            $radarLayoutSync,
         );
     }
 
