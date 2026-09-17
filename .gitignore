@@ -36,6 +36,12 @@ docs/pill-dispensor/Device Settings API documentation_20251104144422.pdf
 # Docker/local override files
 docker-compose.override.yml
 
+# Os worktrees que o Claude Code cria para correr agentes em paralelo, e as definições
+# locais de quem trabalha aqui. O `settings.local.json` já está no ignore global de algumas
+# máquinas; aqui vale para todas, porque o repositório viaja e a configuração pessoal não.
+.claude/worktrees/
+.claude/settings.local.json
+
 # OS and editor files
 .DS_Store
 ._*
