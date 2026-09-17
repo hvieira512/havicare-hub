@@ -157,6 +157,27 @@
         width: auto;
     }
 
+    /* A linha aberta tem uma célula só, e as faixas da grelha acima punham-na na do ícone:
+       trinta e quatro pixéis, com duas letras por linha. Aqui a faixa é uma e vai de ponta
+       a ponta. */
+    .telemetry-table > tbody > tr.telemetry-row-panel {
+        grid-template-columns: minmax(0, 1fr);
+        padding-top: 0;
+    }
+
+    /* O recuo até onde começa o nome perde-se com a regra que zera o preenchimento das
+       células nesta largura, e é ele que faz o texto ler-se como parte da linha de cima. */
+    .telemetry-table > tbody > tr.telemetry-row-panel > td {
+        padding-left: 2.125rem;
+    }
+
+    /* A divisória fica no fim do conjunto e não entre a linha e o que ela abre, senão os dois
+       leem-se como eventos diferentes. */
+    .telemetry-table > tbody > tr.telemetry-row-openable[aria-expanded="true"] {
+        padding-bottom: 0;
+        border-bottom: 0;
+    }
+
     /* A altura de duas linhas serve a coluna estreita do ecrã grande, onde os detalhes vão ao
        lado do valor. Aqui os detalhes já têm linha própria, e o mínimo era só vazio. */
     .telemetry-row-stack {
