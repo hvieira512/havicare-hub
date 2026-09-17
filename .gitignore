@@ -48,6 +48,7 @@ docker-compose.override.yml
 Thumbs.db
 .idea/
 .vscode/
+.obsidian/
 *.swp
 *.swo
 
