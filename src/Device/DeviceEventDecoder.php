@@ -29,6 +29,7 @@ final class DeviceEventDecoder
             'wonlex-json' => $this->decodeWonlex($nativeType, $payload),
             'vivistar-iw' => $this->decodeVivistar($nativeType, $payload),
             'four-p-touch' => $this->decodeFourPTouch($nativeType, $payload),
+            'zayata-m228' => $this->decodePillDispenser($nativeType, $payload),
             default => [],
         };
 
@@ -223,6 +224,154 @@ final class DeviceEventDecoder
     private function isFourPTouchAlarm(string $nativeType): bool
     {
         return in_array($nativeType, FourPTouchAdapter::ALARM_FRAME_TYPES, true);
+    }
+
+    /**
+     * O dispensador M228 traz o corpo já descodificado num mapa de TAGs TFLV. O evento
+     * `0x03` é uma toma; os restantes pacotes carregam estado. Ao contrário dos relógios,
+     * a normalização não passa pela FeatureNormalizer: os valores lêem-se por TAG, com o
+     * tipo que a especificação define para cada uma.
+     */
+    private function decodePillDispenser(string $nativeType, array $payload): array
+    {
+        $tlv = isset($payload['tlv']) && is_array($payload['tlv']) ? $payload['tlv'] : [];
+
+        if ($nativeType === 'event') {
+            $intake = $this->pillMedicationIntake($nativeType, $tlv);
+            return $intake === null ? [] : [$intake];
+        }
+
+        return $this->pillStatusEvents($nativeType, $tlv);
+    }
+
+    private function pillMedicationIntake(string $nativeType, array $tlv): ?array
+    {
+        $slot = $this->tlvU8($tlv, 0xC201);
+        $value = array_filter([
+            'alarmSlot' => $slot === null ? null : $slot + 1,
+            'scheduledAt' => $this->tlvString($tlv, 0xC202),
+            'takenAt' => $this->tlvString($tlv, 0xC203),
+            'cellNumber' => $this->tlvU8($tlv, 0xC204),
+            'method' => match ($this->tlvU8($tlv, 0xC205)) {
+                0 => 'on_time',
+                1 => 'early',
+                2 => 'late',
+                default => null,
+            },
+            'result' => match ($this->tlvU8($tlv, 0xC206)) {
+                0 => 'on_time',
+                1 => 'late',
+                2 => 'abnormal',
+                3 => 'missed',
+                default => null,
+            },
+        ], static fn (mixed $field): bool => $field !== null);
+
+        return $value === [] ? null : ['feature' => 'medication_intake', 'nativeType' => $nativeType, 'value' => $value];
+    }
+
+    /**
+     * @return list<array{feature: string, nativeType: string, value: array}>
+     */
+    private function pillStatusEvents(string $nativeType, array $tlv): array
+    {
+        $events = [];
+
+        $battery = array_filter([
+            'percent' => $this->tlvU8($tlv, 0x8103),
+            'chargingState' => match ($this->tlvU8($tlv, 0x8104)) {
+                0 => 'normal',
+                1 => 'full',
+                2 => 'low',
+                3 => 'charging',
+                4 => 'absent',
+                default => null,
+            },
+        ], static fn (mixed $field): bool => $field !== null);
+        if ($battery !== []) {
+            $events[] = ['feature' => 'battery', 'nativeType' => $nativeType, 'value' => $battery];
+        }
+
+        // A temperatura é INT8S e a humidade INT8U -- um byte cada, e não dois como o sinal.
+        $temperature = $this->tlvI8($tlv, 0x810E);
+        if ($temperature !== null) {
+            $events[] = ['feature' => 'temperature', 'nativeType' => $nativeType, 'value' => ['environmentCelsius' => $temperature]];
+        }
+
+        $humidity = $this->tlvU8($tlv, 0x810F);
+        if ($humidity !== null) {
+            $events[] = ['feature' => 'humidity', 'nativeType' => $nativeType, 'value' => ['humidityPercent' => $humidity]];
+        }
+
+        $level = match ($this->tlvU8($tlv, 0x8101)) {
+            0 => 'ok',
+            1 => 'low',
+            2 => 'empty',
+            default => null,
+        };
+        if ($level !== null) {
+            $events[] = ['feature' => 'medication_level', 'nativeType' => $nativeType, 'value' => ['level' => $level]];
+        }
+
+        $cells = array_filter([
+            'remaining' => $this->tlvU8($tlv, 0x811D),
+            'total' => $this->tlvU8($tlv, 0x811B),
+            'current' => $this->tlvU8($tlv, 0x811A),
+        ], static fn (mixed $field): bool => $field !== null);
+        if ($cells !== []) {
+            $events[] = ['feature' => 'cells_remaining', 'nativeType' => $nativeType, 'value' => $cells];
+        }
+
+        // O sinal viaja no device_status, à maneira dos relógios, e não numa capacidade própria.
+        $signal = array_filter([
+            'wifiSignalDbm' => $this->tlvI16($tlv, 0x810A),
+            'gsmSignalDbm' => $this->tlvI16($tlv, 0x810B),
+        ], static fn (mixed $field): bool => $field !== null);
+        if ($signal !== []) {
+            $events[] = ['feature' => 'device_status', 'nativeType' => $nativeType, 'value' => $signal];
+        }
+
+        foreach ([0x8121 => 'rotation', 0x8122 => 'tray_reset', 0x8123 => 'pusher', 0x8124 => 'cell_door', 0x8125 => 'keys'] as $tag => $fault) {
+            $state = $this->tlvU8($tlv, $tag);
+            if ($state !== null && $state !== 0) {
+                $events[] = ['feature' => 'device_fault', 'nativeType' => $nativeType, 'value' => ['fault' => $fault]];
+            }
+        }
+
+        $emergency = $this->tlvU8($tlv, 0x8112);
+        if ($emergency !== null && $emergency !== 0) {
+            $events[] = ['feature' => 'help_call', 'nativeType' => $nativeType, 'value' => ['state' => 'in_progress']];
+        }
+
+        return $events;
+    }
+
+    /** @param array<int, array{value?: string}> $tlv */
+    private function tlvU8(array $tlv, int $tag): ?int
+    {
+        $value = $tlv[$tag]['value'] ?? null;
+        return is_string($value) && $value !== '' ? ord($value[0]) : null;
+    }
+
+    /** @param array<int, array{value?: string}> $tlv */
+    private function tlvI8(array $tlv, int $tag): ?int
+    {
+        $value = $tlv[$tag]['value'] ?? null;
+        return is_string($value) && $value !== '' ? unpack('c', $value[0])[1] : null;
+    }
+
+    /** @param array<int, array{value?: string}> $tlv */
+    private function tlvI16(array $tlv, int $tag): ?int
+    {
+        $value = $tlv[$tag]['value'] ?? null;
+        return is_string($value) && strlen($value) >= 2 ? unpack('s', substr($value, 0, 2))[1] : null;
+    }
+
+    /** @param array<int, array{value?: string}> $tlv */
+    private function tlvString(array $tlv, int $tag): ?string
+    {
+        $value = $tlv[$tag]['value'] ?? null;
+        return is_string($value) && $value !== '' ? rtrim($value, "\0") : null;
     }
 
     private function event(string $feature, string $nativeType, array $payload): ?array

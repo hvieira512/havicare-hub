@@ -64,5 +64,16 @@
         },
         "sim": false,
         "gatewayLinks": true
+    },
+    "pill_dispenser": {
+        "label": "Dispensador de comprimidos",
+        "identity": {
+            "field": "deviceId",
+            "label": "ID do dispositivo",
+            "help": "MAC ou IMEI descodificado do número de dispositivo de 64 bits da trama.",
+            "placeholder": "aabbccddeeff"
+        },
+        "sim": true,
+        "gatewayLinks": false
     }
 }

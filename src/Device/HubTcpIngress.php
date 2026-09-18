@@ -53,7 +53,8 @@ class HubTcpIngress
             $packet = substr($this->buffers[$resourceId], 0, $packetLength);
             $this->buffers[$resourceId] = substr($this->buffers[$resourceId], $packetLength);
             if ($packet !== '' && trim($packet) !== '') {
-                $this->hubServer->onMessage($client, $this->isWonlexFrame($packet) ? $packet : trim($packet));
+                $binaryFrame = $this->isWonlexFrame($packet) || $this->isPillFrame($packet);
+                $this->hubServer->onMessage($client, $binaryFrame ? $packet : trim($packet));
                 if (!isset($this->buffers[$resourceId])) {
                     return;
                 }
@@ -76,6 +77,19 @@ class HubTcpIngress
             $header = unpack('nstart/nlength', substr($buffer, 0, 4));
             $length = (int)($header['length'] ?? 0);
             $packetLength = 4 + $length;
+
+            return strlen($buffer) >= $packetLength ? $packetLength : null;
+        }
+
+        if ($this->isPillFrameStart($buffer)) {
+            if (strlen($buffer) < 3) {
+                return null;
+            }
+
+            // Length conta de Status ao fim dos dados; a trama é 0xAA + Length(2) + dados + CRC(2).
+            // Ordem do anfitrião: little-endian ('v'), ao contrário do 'n' do Wonlex.
+            $length = (int)(unpack('vlength', substr($buffer, 1, 2))['length'] ?? 0);
+            $packetLength = 3 + $length + 2;
 
             return strlen($buffer) >= $packetLength ? $packetLength : null;
         }
@@ -103,5 +117,17 @@ class HubTcpIngress
     private function isWonlexFrameStart(string $buffer): bool
     {
         return strlen($buffer) >= 2 && substr($buffer, 0, 2) === "\xFC\xAF";
+    }
+
+    private function isPillFrame(string $packet): bool
+    {
+        return $this->isPillFrameStart($packet)
+            && strlen($packet) >= 3
+            && strlen($packet) === 3 + (int)(unpack('vlength', substr($packet, 1, 2))['length'] ?? -1) + 2;
+    }
+
+    private function isPillFrameStart(string $buffer): bool
+    {
+        return strlen($buffer) >= 1 && $buffer[0] === "\xAA";
     }
 }

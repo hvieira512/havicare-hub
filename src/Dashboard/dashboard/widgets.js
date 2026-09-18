@@ -94,6 +94,7 @@ const DEVICE_TYPE_ICON = {
     diaper_sensor: "fa-droplet",
     bracelet: "fa-ring",
     ncs: "fa-bell-concierge",
+    pill_dispenser: "fa-pills",
 };
 
 export function deviceTypeIcon(deviceType) {

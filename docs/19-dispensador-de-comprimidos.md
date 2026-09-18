@@ -3,8 +3,9 @@
 ## Âmbito
 
 O Zayata/ZoomCare M228 é um dispensador automático de comprimidos com prato
-rotativo e ligação celular. **Ainda não está integrado no hub**, e este capítulo
-não descreve código que exista.
+rotativo e ligação celular. **O caminho de subida já está implementado**: o hub
+descodifica as tramas TCP do aparelho e publica-as como telemetria e eventos. O
+que ainda não existe é o caminho de descida — comandos e plano de medicação.
 
 Descreve o que está estabelecido sobre o aparelho, o que foi verificado contra a
 API e a aplicação do fabricante, e as armadilhas que a integração vai encontrar.
@@ -13,9 +14,15 @@ foi obtida do aparelho, da aplicação deles e de chamadas à API — e perder-s
 
 A decisão de transporte está tomada e registada nas
 [notas de arquitetura](99-notas-de-arquitetura.md): o aparelho liga-se por TCP
-directamente ao hub. As secções 3 a 5 descrevem esse protocolo; as secções 6 e 7
-descrevem a alternativa por cloud, que fica documentada por ter sido a única via
-disponível durante o levantamento e por ser o que a aplicação do fabricante usa.
+directamente ao hub. As secções 3 a 5 descrevem esse protocolo e a 6 o que o hub
+já faz com ele; as secções 7 e 8 descrevem a alternativa por cloud, que fica
+documentada por ter sido a única via disponível durante o levantamento e por ser
+o que a aplicação do fabricante usa.
+
+> As tabelas das secções 4 e 5 são as do **tipo de dispositivo `0x02`**. A
+> especificação traz também as do tipo `0x01`, com os mesmos números de TAG a
+> significarem outra coisa — ler a tabela errada dá um descodificador que compila
+> e mente.
 
 ## 1. O aparelho
 
@@ -220,9 +227,9 @@ ao hub.
 | `0x8109` | alimentação DC | |
 | `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **valor real, não barras** |
 | `0x810C` / `0x810D` | nível de sinal | a escala grosseira |
-| `0x810E` / `0x810F` | **temperatura e humidade** | °C de −40 a 120, %RH de 0 a 100 |
+| `0x810E` / `0x810F` | **temperatura e humidade** | INT8S de −40 a 120 °C, INT8U de 0 a 100 %RH — **um byte cada**, ao contrário do sinal, que é INT16S |
 | `0x8112` | chamada de emergência | `0` normal · `1` em curso |
-| `0x811A` / `0x811B` / `0x811D` | célula actual, total e restantes | |
+| `0x811A` / `0x811B` / `0x811D` | célula actual, total e restantes | o `0x811B` é a **capacidade do prato**, não quantas vão carregadas — essas são a configuração `0x101C` |
 | `0x8121`–`0x8125` | falhas | rotação, reset do prato, empurrador, porta da célula, teclas |
 | `0x8131`–`0x8139` | estado de cada um dos nove alarmes | |
 | `0x8102` / `0x8106` / `0x8107` | bloqueio de criança, copo, fecho do prato | |
@@ -252,16 +259,68 @@ REST eram um único `rotate`, aqui vêm discriminadas em cinco.
 
 ### Controlo
 
-`0xA001` reiniciar · `0xA002` reposição de fábrica · `0xA004` novo registo ·
-`0xA101` calibrar relógio · `0xA102` silenciar · `0xA103` repor o prato ·
-`0xA123` toma antecipada · `0xA124` rodar para uma célula indicada · `0xA125`
-pausa da medicação.
+`0xA001` reiniciar · `0xA002` reposição de fábrica · `0xA003` cancelar
+sincronização forçada · `0xA004` novo registo · `0xA101` calibrar relógio ·
+`0xA102` silenciar · `0xA103` repor o prato · `0xA123` toma antecipada.
+
+A lista acaba aqui. O `0xA124` (rodar para uma célula indicada) e o `0xA125`
+(pausa da medicação) **existem só no tipo de dispositivo `0x01`** e não estão
+disponíveis no M228 — uma versão anterior deste capítulo atribuía-lhos por erro.
 
 E, com relevo para a operação: `0xA011` intervalo de heartbeat, **`0xA021` IP do
 servidor, `0xA022` domínio e `0xA023` porta**. O aparelho pode ser reapontado
 para outro servidor pelo próprio protocolo.
 
-## 6. A API de parceiro (Case 1)
+## 6. O que o hub já faz com isto
+
+O aparelho entra pela mesma porta TCP dos relógios. O protocolo chama-se
+`zayata-m228` e o tipo de dispositivo é `pill_dispenser`.
+
+**Identidade.** O `Device number` de 64 bits é descodificado para um MAC (doze
+hexadecimais) ou um IMEI (quinze dígitos), e é esse valor que a whitelist tem de
+ter. O número de série `89-` da aplicação não entra em lado nenhum.
+
+**Enquadramento.** O `HubTcpIngress` reconhece a trama pelo `0xAA` e mede-a pelo
+campo `Length`; um pacote binário não é aparado, ao contrário dos protocolos de
+texto. O adaptador valida o CRC antes de aceitar o que quer que seja, o que é o
+que impede um `0xAA` perdido numa dessincronização de passar por trama.
+
+**O que sai.** Cada TAG vira uma capacidade genérica:
+
+| TAG | Capacidade | Campos |
+|---|---|---|
+| `0xC201`–`0xC206` | `medication_intake` | `alarmSlot`, `scheduledAt`, `takenAt`, `cellNumber`, `method`, `result` |
+| `0x8103` / `0x8104` | `battery` | `percent`, `chargingState` |
+| `0x8101` | `medication_level` | `level`: `ok` · `low` · `empty` |
+| `0x811A` / `0x811B` / `0x811D` | `cells_remaining` | `current`, `total`, `remaining` |
+| `0x810E` | `temperature` | `environmentCelsius` |
+| `0x810F` | `humidity` | `humidityPercent` |
+| `0x810A` / `0x810B` | `device_status` | `wifiSignalDbm`, `gsmSignalDbm` |
+| `0x8121`–`0x8125` | `device_fault` | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
+| `0x8112` | `help_call` | `state` |
+
+A `medication_intake`, a `device_fault` e a `help_call` saem pelo canal `events`,
+a QoS 1, como os alarmes dos relógios — uma toma falhada não se pode perder. O
+resto sai por `telemetry`.
+
+O sinal viaja dentro do `device_status` e não numa capacidade própria, que é como
+os relógios já o fazem. A `help_call` é a mesma chave do NCS e da pulseira.
+
+**As respostas.** Registo, heartbeat, evento e notificação são confirmados com o
+mesmo tipo mais o bit alto (`0x81`–`0x84`), corpo vazio e estado `0x00`, ecoando
+o número de série e a identidade. O **bit 1** do `Flag` dispensa a resposta.
+
+**O que falta.** Todo o caminho de descida: ler e escrever configuração (`0x05`,
+`0x06`), consultar estado (`0x07`), controlar (`0x08`) e o plano dos nove
+alarmes. Enquanto não existir, o dispensador não declara capacidades
+configuráveis — declará-las sem downlink era prometer um botão que não faz nada.
+
+**Onde está.** `src/Protocol/Adapter/PillDispenserAdapter.php` (a trama),
+`src/Device/DeviceEventDecoder.php` (as TAGs), o protocolo de sessão em
+`src/Device/Watch/Supplier/Zayata/`, e as capacidades em
+`src/Domain/Capability/Definition/PillDispenserCapabilityDefinitions.php`.
+
+## 7. A API de parceiro (Case 1)
 
 Fica documentada por ser o que a aplicação do fabricante usa e por ter sido a
 única via disponível durante o levantamento.
@@ -334,7 +393,7 @@ associado · `611` **aparelho desligado** · `612` falha ao configurar · `701`
 
 Um endpoint desconhecido responde `{"code":-1,"msg":"API does not exist"}`.
 
-## 7. O callback (Case 1)
+## 8. O callback (Case 1)
 
 Fornecemos um URL; a cloud deles faz POST. Respondemos `{"code":200}`.
 
@@ -354,7 +413,7 @@ Três lacunas, e são parte da razão para preferir o Case 2:
 
 Não existe evento de emergência: o callback só tem os tipos 1 e 2.
 
-## 8. Capacidades do aparelho
+## 9. Capacidades do aparelho
 
 **Medicação.** Nove alarmes por dia pelo protocolo TCP, seis pela API REST. Em
 ambos os casos são slots fixos: não se criam nem se apagam, activam-se e
@@ -393,7 +452,7 @@ Está desligado na unidade de ensaio, e o manual explica porquê:
 **É um serviço pago.** Activá-lo é conversa comercial com o fabricante, não de
 configuração.
 
-## 9. Armadilhas confirmadas
+## 10. Armadilhas confirmadas
 
 **A telemetria não se lê com o aparelho desligado.** Pela API REST, o
 `get_information` devolve `611` em vez de valores em cache. O hub tem de guardar
@@ -431,7 +490,7 @@ confirmar no M228, a disponibilidade do servidor passa a ser crítica para a
 função clínica, e não apenas para a telemetria — o que, no Case 2, passa a
 depender de nós.
 
-## 10. O que a aplicação expõe e a API de parceiro não
+## 11. O que a aplicação expõe e a API de parceiro não
 
 A aplicação usa uma API própria, em `/Home/Device/*` e `/Home/User/*`, com cerca
 de cinquenta rotas contra as vinte e uma da API de parceiro. Alguns campos só lá
@@ -447,7 +506,7 @@ A associação de um aparelho a contas de consumidor vive nessa API, e é
 independente da associação feita pela API de parceiro. Um aparelho comprado e
 configurado na aplicação tem de ser libertado antes de poder ser gerido por nós.
 
-## 11. Em aberto
+## 12. Em aberto
 
 O que continua a depender do fabricante está nas
 [notas de arquitetura](99-notas-de-arquitetura.md).

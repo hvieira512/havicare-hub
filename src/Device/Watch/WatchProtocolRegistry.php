@@ -5,11 +5,13 @@ namespace Hub\Device\Watch;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
+use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Device\Watch\Supplier\FourPTouch\FourPTouchWatchProtocol;
 use Hub\Device\Watch\Supplier\Vivistar\VivistarWatchProtocol;
 use Hub\Device\Watch\Supplier\Wonlex\WonlexWatchProtocol;
+use Hub\Device\Watch\Supplier\Zayata\PillDispenserWatchProtocol;
 
 final class WatchProtocolRegistry
 {
@@ -33,6 +35,7 @@ final class WatchProtocolRegistry
         ));
         $this->register(new VivistarWatchProtocol($adapters->get('vivistar-iw') ?? new VivistarAdapter(), $eventDecoder));
         $this->register(new FourPTouchWatchProtocol($adapters->get('four-p-touch') ?? new FourPTouchAdapter(), $eventDecoder));
+        $this->register(new PillDispenserWatchProtocol($adapters->get('zayata-m228') ?? new PillDispenserAdapter(), $eventDecoder));
     }
 
     public function register(WatchProtocolInterface $protocol): void

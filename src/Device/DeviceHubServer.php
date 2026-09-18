@@ -375,9 +375,10 @@ class DeviceHubServer
             $company = $this->currentCompany($session->imei, $session->company);
             $type = $event['type'] ?? null;
 
-            // O alarme sai por `events`, a QoS 1. A `location` do mesmo frame fica em
-            // `telemetry`, com `reportKind: "alarm"` a ligar as duas.
-            $channel = $type === 'alarm' ? 'events' : 'telemetry';
+            // Os eventos saem por `events`, a QoS 1: o alarme do relógio e, do dispensador, a
+            // toma, a avaria e a chamada de ajuda — não se podem perder. A `location` do mesmo
+            // frame fica em `telemetry`, com `reportKind: "alarm"` a ligar as duas.
+            $channel = in_array($type, ['alarm', 'medication_intake', 'device_fault', 'help_call'], true) ? 'events' : 'telemetry';
             if ($channel === 'events') {
                 $this->mqtt->publishEvent($session->imei, $event, $session->deviceType, $licenseId, $company);
             } else {

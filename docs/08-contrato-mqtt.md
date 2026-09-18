@@ -151,10 +151,11 @@ um minuto, para uma medição que insiste não encher o histórico.
 | `type` | Origem |
 |---|---|
 | `alarm` | Relógio — SOS, queda, bateria fraca ou aviso de uso |
-| `help_call` | Pulseira e NCS |
+| `help_call` | Pulseira, NCS e dispensador de comprimidos |
 | `reset` | NCS |
 | `change_required` | Sensor de fralda |
 | `fall` · `vitals_alarm` · `presence_event` | Radar |
+| `medication_intake` · `device_fault` | Dispensador de comprimidos |
 
 Um alarme de relógio leva em `data` um único `reason`, e vai acompanhado de uma
 `location` no canal `telemetry` com `data.reportKind: "alarm"` — a posição

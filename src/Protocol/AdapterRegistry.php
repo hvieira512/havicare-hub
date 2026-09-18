@@ -4,6 +4,7 @@ namespace Hub\Protocol;
 
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
+use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\Protocol\Adapter\VeepooAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
@@ -20,6 +21,7 @@ class AdapterRegistry
         $this->register(new VivistarAdapter());
         $this->register(new FourPTouchAdapter());
         $this->register(new VeepooAdapter());
+        $this->register(new PillDispenserAdapter());
     }
 
     public function register(DeviceAdapterInterface $adapter): void

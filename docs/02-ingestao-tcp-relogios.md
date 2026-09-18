@@ -2,13 +2,17 @@
 
 ## Âmbito
 
-Os relógios são os únicos dispositivos que estabelecem ligação ao hub. Abrem um
-socket TCP e mantêm-no aberto por períodos prolongados, transmitindo telemetria
-e sinais de vida periódicos. As restantes ingestões recebem mensagens já
-delimitadas pelo transporte MQTT; nesta, os dados chegam como um fluxo contínuo
-de bytes, e a delimitação das mensagens é responsabilidade do hub.
+Os relógios são os dispositivos que estabelecem ligação ao hub — e, desde que o
+dispensador de comprimidos passou a entrar por aqui, deixaram de ser os únicos.
+Abrem um socket TCP e mantêm-no aberto por períodos prolongados, transmitindo
+telemetria e sinais de vida periódicos. As restantes ingestões recebem mensagens
+já delimitadas pelo transporte MQTT; nesta, os dados chegam como um fluxo
+contínuo de bytes, e a delimitação das mensagens é responsabilidade do hub.
 
-Três fabricantes utilizam protocolos incompatíveis sobre a mesma porta.
+Quatro fabricantes utilizam protocolos incompatíveis sobre a mesma porta. Este
+capítulo descreve os três dos relógios; o quarto, o dispensador Zayata, tem o seu
+próprio [capítulo 19](19-dispensador-de-comprimidos.md) e partilha daqui apenas o
+socket e a delimitação.
 
 ```mermaid
 flowchart LR
@@ -37,11 +41,17 @@ flowchart TB
   D --> E{"Buffer tem<br/>4 + comprimento?"}
   E -->|não| W
   E -->|sim| F["Cortar a trama Wonlex<br/><small>intacta, sem trim</small>"]
-  B -->|não| G["Procurar <code>#</code> e <code>]</code>"]
+  B -->|não| K{"Começa por<br/><code>AA</code>?"}
+  K -->|sim| L["Ler o comprimento<br/>dos bytes 2-3"]
+  L --> M{"Buffer tem<br/>3 + comprimento + 2?"}
+  M -->|não| W
+  M -->|sim| N["Cortar a trama do dispensador<br/><small>intacta, sem trim</small>"]
+  K -->|não| G["Procurar <code>#</code> e <code>]</code>"]
   G --> H{"Algum<br/>encontrado?"}
   H -->|não| W
   H -->|sim| I["Cortar no primeiro dos dois<br/><small>com trim</small>"]
   F --> J["Entregar ao DeviceHubServer"]
+  N --> J
   I --> J
   J --> A
 ```
@@ -51,12 +61,23 @@ Duas famílias:
 | Família | Início | Fim | Quem |
 |---|---|---|---|
 | **Binária** | `0xFC 0xAF` | Comprimento declarado nos dois bytes seguintes | Wonlex |
+| **Binária** | `0xAA` | Comprimento nos dois bytes seguintes, mais dois de CRC | Dispensador Zayata ([capítulo 19](19-dispensador-de-comprimidos.md)) |
 | **Textual** | *(não delimitado)* | Primeira ocorrência de `#` ou `]` | Vivistar (`#`), 4P Touch (`]`) |
 
 A trama binária é entregue **sem alterações**; a textual é entregue após
 `trim()`. A distinção é necessária porque o corpo JSON da Wonlex pode conter os
 caracteres `#` e `]`, razão pela qual o comprimento declarado é avaliado antes
-da procura de delimitadores.
+da procura de delimitadores. Pela mesma razão a trama do dispensador não é
+aparada: `0x09`, `0x0A` e `0x20` são bytes legítimos no meio dela.
+
+O comprimento do dispensador conta-se ao contrário do da Wonlex: o campo cobre
+de `Status` ao fim dos dados, e por isso a trama mede **3 + comprimento + 2**, os
+dois últimos do CRC. E os dois inteiros lêem-se em ordem do anfitrião
+(little-endian), não na da rede — é `unpack('v')` e não `unpack('n')`.
+
+> O prefixo `0xAA` é de um byte só, e portanto menos resistente a colisões do que
+> o `0xFC 0xAF`. Quem rejeita uma trama falsa é o CRC, validado no adaptador
+> antes de o pacote ser aceite.
 
 **Limite de buffer.** Um buffer que atinja 65535 bytes sem produzir uma mensagem
 é descartado na íntegra, com registo de aviso. Sem este limite, uma ligação que

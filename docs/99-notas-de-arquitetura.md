@@ -81,6 +81,10 @@ directamente ao hub, como já fazem os relógios.
 protocolo em Setembro de 2026. O [capítulo 19](19-dispensador-de-comprimidos.md)
 descreve-o.
 
+O caminho de subida já está construído: o hub descodifica as tramas, publica a
+toma e o estado, e confirma cada pacote. Falta o de descida — configuração,
+controlo e o plano dos nove alarmes.
+
 **Porquê.** O segundo modelo ganha em todas as dimensões que se mediram. Os
 eventos de medicação trazem instante absoluto em ISO-8601, contra um `HH:MM` sem
 data nem fuso no callback. Expõe nove alarmes em vez de seis, e telemetria que a

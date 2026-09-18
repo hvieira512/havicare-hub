@@ -154,7 +154,7 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `battery` | `percent`, `chargingState`, `batteryType`, `lowBattery` — este último só das pulseiras, e é o firmware a dizê-lo, não um limiar nosso sobre a percentagem |
 | `heartbeat` | `status`, `steps`, `gsmSignal`, `satelliteCount`, `batteryPercent`, `chargingState`, `batteryType`, `rollFrequency`, `remainingSpace`, `fortificationState`, `workMode` |
 | `device_state` | `state`, `resetStatus`, `reason` |
-| `device_status` | `deviceTime` |
+| `device_status` | `deviceTime` e, no dispensador, `wifiSignalDbm` e `gsmSignalDbm` — o sinal viaja aqui, como o `gsmSignal` do `heartbeat`, e não numa capacidade própria |
 | `firmware_version` | `version` |
 | `device_config` | `status`, `ack`, `settings` |
 | `alarm` | `reason` |
@@ -183,6 +183,12 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `proximity` | pulseira, sensor de fralda | `gatewayId`, `state`, `rssiDbm`, `rssiMaxDbm`, `rssiMedianDbm`, `rssiMinDbm`, `samples`, `windowSeconds` |
 | `connectivity` | gateway | `interface`, `networkType`, `signalQuality`, `signalStrengthDbm` |
 | `diaper_moisture` · `diaper_moisture_level` · `diaper_condition` | sensor de fralda | ver o [capítulo 17](17-sensor-de-fralda.md) |
+| `medication_intake` | dispensador | `alarmSlot` (1–9), `scheduledAt`, `takenAt`, `cellNumber`, `method`: `on_time` · `early` · `late`, `result`: `on_time` · `late` · `abnormal` · `missed` |
+| `medication_level` | dispensador | `level`: `ok` · `low` · `empty` |
+| `cells_remaining` | dispensador | `current`, `total`, `remaining` — o `total` é a capacidade do prato, não quantas células vão carregadas |
+| `humidity` | dispensador | `humidityPercent` — a humidade do ar onde a caixa está, e não a da fralda |
+| `device_fault` | dispensador | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
+| `help_call` | pulseira, NCS, dispensador | `state` |
 
 ### Capacidade `sleep`
 
