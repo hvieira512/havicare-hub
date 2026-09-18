@@ -91,6 +91,58 @@ final class PillDispenserDownlinkTest extends TestCase
         self::assertSame("\x00", $quiet[0x1055]['value']);
     }
 
+    public function testEachDispenseSwitchIsItsOwnConfiguration(): void
+    {
+        // Dois interruptores independentes, e por isso duas definições: a dashboard agrupa
+        // interruptores em linhas compactas, e um bloco com dois lá dentro fugia ao padrão.
+        $early = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'earlyRetrieval', ['enabled' => true]),
+            0x06,
+        );
+        self::assertSame("\x01", $early[0x100D]['value']);
+
+        $lock = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'childLock', ['enabled' => false]),
+            0x06,
+        );
+        self::assertSame("\x00", $lock[0x100C]['value']);
+    }
+
+    public function testThePlanPeriodIsWrittenAsSixIntegersAndASwitch(): void
+    {
+        // A intenção é uma data; o nativo são ano, mês e dia em TAGs separadas. O ano é
+        // INT16U e não cabe num byte.
+        $tlv = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'medicationPeriod', [
+                'enabled' => true,
+                'startDate' => '2026-09-18',
+                'endDate' => '2026-12-31',
+            ]),
+            0x06,
+        );
+
+        self::assertSame(2026, unpack('v', $tlv[0x1004]['value'])[1]);
+        self::assertSame("\x09", $tlv[0x1005]['value']);
+        self::assertSame("\x12", $tlv[0x1006]['value']);
+        self::assertSame(2026, unpack('v', $tlv[0x1007]['value'])[1]);
+        self::assertSame("\x0C", $tlv[0x1008]['value']);
+        self::assertSame("\x1F", $tlv[0x1009]['value']);
+        self::assertSame("\x01", $tlv[0x100A]['value']);
+    }
+
+    public function testAPlanWithoutAPeriodTurnsTheSwitchOff(): void
+    {
+        // Sem período, o plano vale sempre — e é o interruptor que o diz, não datas a zero.
+        $tlv = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'medicationPeriod', [
+                'enabled' => false,
+            ]),
+            0x06,
+        );
+
+        self::assertSame("\x00", $tlv[0x100A]['value']);
+    }
+
     public function testTheTimeZoneIsSignedBecauseItGoesWest(): void
     {
         $tlv = $this->decode(

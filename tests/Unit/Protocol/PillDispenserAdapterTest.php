@@ -106,6 +106,30 @@ final class PillDispenserAdapterTest extends TestCase
         self::assertTrue($decode(0x06)['waivesReply']);
     }
 
+    public function testEveryPacketTypeHasAName(): void
+    {
+        $adapter = new PillDispenserAdapter();
+        $name = static function (int $packetType) use ($adapter): string {
+            $decoded = $adapter->decodeIncoming($adapter->encodeOutgoing([
+                'packetType' => $packetType,
+                'mac' => 'AABBCCDDEEFF',
+            ]));
+            self::assertIsArray($decoded);
+
+            return $decoded['type'];
+        };
+
+        // Os que o aparelho envia.
+        self::assertSame('register', $name(0x01));
+        self::assertSame('event', $name(0x03));
+        // E os que o hub envia, que saem nos metadados do comando em fila: sem nome, a
+        // dashboard mostrava "unknown" ao lado de uma configuração que ela própria gravou.
+        self::assertSame('read_config', $name(0x05));
+        self::assertSame('write_config', $name(0x06));
+        self::assertSame('read_status', $name(0x07));
+        self::assertSame('control', $name(0x08));
+    }
+
     public function testDecodesMedicationEventTlv(): void
     {
         $adapter = new PillDispenserAdapter();

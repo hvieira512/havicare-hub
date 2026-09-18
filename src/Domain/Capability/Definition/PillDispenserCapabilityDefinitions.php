@@ -25,7 +25,9 @@ final class PillDispenserCapabilityDefinitions
 
             // O que se configura. O plano reaproveita a chave que os relógios já usam.
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'medication_reminders', 'label' => 'Plano de medicação', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'dispense_mode', 'label' => 'Modo de dispensa', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'medication_period', 'label' => 'Período do plano', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'early_dispense', 'label' => 'Toma antecipada', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'child_lock', 'label' => 'Bloqueio de criança', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'sound_profile', 'label' => 'Som', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'do_not_disturb', 'label' => 'Não incomodar', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'language_timezone', 'label' => 'Idioma e fuso horário', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],

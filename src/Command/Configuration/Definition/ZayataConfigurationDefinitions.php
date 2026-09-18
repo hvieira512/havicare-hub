@@ -33,20 +33,25 @@ final class ZayataConfigurationDefinitions
                 . ' fora é desligado, para não sobrar nada de um plano anterior.',
             ),
             ConfigurationDefinition::make(
-                'dispense_mode',
-                'dispenseMode',
-                'Modo de dispensa',
-                'pillDispenserDispenseMode',
-                ['earlyRetrieval', 'childLock'],
-                ['dispenseMode'],
+                'medication_period',
+                'medicationPeriod',
+                'Período do plano',
+                'pillDispenserPeriod',
+                ['enabled', 'startDate', 'endDate'],
+                ['medicationPeriod'],
                 'health',
-                20,
+                15,
                 null,
                 null,
                 false,
-                'A toma antecipada deixa o utente levantar antes da hora; o bloqueio de criança'
-                . ' protege o prato.',
+                'Entre que datas o plano vale. Desligado, os alarmes tocam sempre. O aparelho'
+                . ' não sabe dias da semana — só "todos os dias, neste intervalo".',
             ),
+            // Dois interruptores independentes, e por isso duas definições: a dashboard
+            // agrupa interruptores seguidos em linhas compactas, com a pastilha e o switch
+            // à direita. Um bloco só com os dois lá dentro fugia a esse padrão.
+            self::toggle('early_dispense', 'earlyRetrieval', 'Toma antecipada', 20, 'Deixa o utente levantar a medicação antes da hora marcada.'),
+            self::toggle('child_lock', 'childLock', 'Bloqueio de criança', 21, 'Tranca o prato para não ser aberto por quem não deve.'),
             ConfigurationDefinition::make(
                 'sound_profile',
                 'soundProfile',
@@ -91,6 +96,24 @@ final class ZayataConfigurationDefinitions
             self::action('restart_device', 'restartDevice', 'Reiniciar', 'system', 60),
             self::action('reset_device', 'factoryReset', 'Reposição de fábrica', 'system', 70),
         ];
+    }
+
+    private static function toggle(string $key, string $command, string $label, int $order, string $help): array
+    {
+        return ConfigurationDefinition::make(
+            $key,
+            $command,
+            $label,
+            'toggle',
+            ['enabled'],
+            [$command],
+            'health',
+            $order,
+            null,
+            null,
+            false,
+            $help,
+        );
     }
 
     private static function action(string $key, string $command, string $label, string $category, int $order): array

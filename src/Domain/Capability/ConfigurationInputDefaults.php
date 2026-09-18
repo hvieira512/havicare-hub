@@ -64,6 +64,8 @@ final class ConfigurationInputDefaults
             // alarmes desligados, que é um estado legítimo e não um formulário por preencher.
             'pillDispenserAlarms' => ['plans' => []],
             'pillDispenserSound' => ['volume' => 2, 'ringtone' => 0],
+            // Sem período por omissão: o plano vale sempre até alguém dizer o contrário.
+            'pillDispenserPeriod' => ['enabled' => false, 'startDate' => '', 'endDate' => ''],
             'pillDispenserQuietHours' => [
                 'enabled' => false,
                 'startHour' => 22,

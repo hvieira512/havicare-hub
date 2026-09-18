@@ -322,10 +322,9 @@ final class DeviceCommandCatalog
 
         $tlv = match ($command) {
             'medicationPlan' => self::pillMedicationPlan($payload),
-            'dispenseMode' => [
-                0x100C => ['value' => self::pillBool($payload['childLock'] ?? false)],
-                0x100D => ['value' => self::pillBool($payload['earlyRetrieval'] ?? false)],
-            ],
+            'medicationPeriod' => self::pillMedicationPeriod($payload),
+            'childLock' => [0x100C => ['value' => self::pillBool($payload['enabled'] ?? false)]],
+            'earlyRetrieval' => [0x100D => ['value' => self::pillBool($payload['enabled'] ?? false)]],
             'soundProfile' => [
                 0x1012 => ['value' => self::pillByte($payload['ringtone'] ?? 0)],
                 0x1013 => ['value' => self::pillByte($payload['volume'] ?? 0)],
@@ -371,6 +370,41 @@ final class DeviceCommandCatalog
         }
 
         return $tlv;
+    }
+
+    /**
+     * O período em que o plano vale. O aparelho só sabe "todos os dias entre duas datas":
+     * não tem dias da semana nem repetição. Sem período, é o interruptor que fica a zero —
+     * e não datas a zero, que o aparelho leria como um intervalo real.
+     *
+     * @return array<int, array{value: string}>
+     */
+    private static function pillMedicationPeriod(array $payload): array
+    {
+        $enabled = ($payload['enabled'] ?? false) === true;
+        $start = self::pillDateParts($payload['startDate'] ?? null);
+        $end = self::pillDateParts($payload['endDate'] ?? null);
+
+        return [
+            // O ano é INT16U: não cabe num byte.
+            0x1004 => ['value' => pack('v', $start['year'])],
+            0x1005 => ['value' => self::pillByte($start['month'], 12)],
+            0x1006 => ['value' => self::pillByte($start['day'], 31)],
+            0x1007 => ['value' => pack('v', $end['year'])],
+            0x1008 => ['value' => self::pillByte($end['month'], 12)],
+            0x1009 => ['value' => self::pillByte($end['day'], 31)],
+            0x100A => ['value' => self::pillBool($enabled)],
+        ];
+    }
+
+    /** @return array{year: int, month: int, day: int} */
+    private static function pillDateParts(mixed $date): array
+    {
+        if (!is_string($date) || preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', trim($date), $parts) !== 1) {
+            return ['year' => 0, 'month' => 0, 'day' => 0];
+        }
+
+        return ['year' => (int)$parts[1], 'month' => (int)$parts[2], 'day' => (int)$parts[3]];
     }
 
     /** @param array<int, array{value: string}> $tlv */

@@ -228,6 +228,7 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     private static function packetTypeName(int $packetType): string
     {
         return match ($packetType) {
+            // Do aparelho para o hub.
             0x01 => 'register',
             0x02 => 'heartbeat',
             0x03 => 'event',
@@ -236,6 +237,16 @@ class PillDispenserAdapter implements DeviceAdapterInterface
             0x82 => 'heartbeat_ack',
             0x83 => 'event_ack',
             0x84 => 'change_ack',
+            // Do hub para o aparelho. Saem nos metadados do comando em fila, e por isso
+            // precisam de nome tanto como os de subida.
+            0x05 => 'read_config',
+            0x06 => 'write_config',
+            0x07 => 'read_status',
+            0x08 => 'control',
+            0x85 => 'read_config_ack',
+            0x86 => 'write_config_ack',
+            0x87 => 'read_status_ack',
+            0x88 => 'control_ack',
             default => 'unknown',
         };
     }

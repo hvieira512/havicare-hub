@@ -414,7 +414,9 @@ final class CapabilityCatalog
             // O dispensador declara as definições já pela chave genérica; o nativo é o
             // `command`, que é o que monta a trama.
             'medication_reminders',
-            'dispense_mode',
+            'medication_period',
+            'early_dispense',
+            'child_lock',
             'sound_profile',
             'do_not_disturb',
             'language_timezone',

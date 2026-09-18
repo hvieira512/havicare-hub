@@ -53,23 +53,43 @@ test("o não incomodar desenha a janela inteira", () => {
     }
 });
 
-test("o modo de dispensa tem os dois interruptores separados", () => {
-    const html = CONFIG_INPUTS.pillDispenserDispenseMode.render(
-        entry(["earlyRetrieval", "childLock"]),
-        { earlyRetrieval: true, childLock: false },
+test("os interruptores do dispensador usam o campo padrão e não um bespoke", () => {
+    // A toma antecipada e o bloqueio de criança são duas definições `toggle`, para caírem
+    // no agrupamento compacto que a dashboard já faz aos interruptores seguidos.
+    assert.equal(CONFIG_INPUTS.pillDispenserDispenseMode, undefined);
+    assert.equal(typeof CONFIG_INPUTS.toggle.render, "function");
+});
+
+test("o período do plano desenha as duas datas e o interruptor", () => {
+    const html = CONFIG_INPUTS.pillDispenserPeriod.render(
+        entry(["enabled", "startDate", "endDate"]),
+        { enabled: true, startDate: "2026-09-18", endDate: "2026-12-31" },
     );
 
-    assert.match(html, /data-config-field="earlyRetrieval"/);
-    assert.match(html, /data-config-field="childLock"/);
+    assert.match(html, /type="date"[^>]*data-config-field="startDate"/);
+    assert.match(html, /data-config-field="endDate"/);
+    assert.match(html, /2026-12-31/);
+    // Sem período é um estado legítimo, e não um formulário por preencher.
+    assert.deepEqual(CONFIG_INPUTS.pillDispenserPeriod.defaults(), {
+        enabled: false,
+        startDate: "",
+        endDate: "",
+    });
+});
+
+test("o plano de medicação não repete o rótulo que o cartão já mostra", () => {
+    const html = alarms.render(entry(["plans"]), { plans: [] });
+
+    assert.doesNotMatch(html, /Plano de medicação/);
 });
 
 test("todos os campos do dispensador declaram as quatro faces", () => {
     for (const name of [
         "pillDispenserAlarms",
+        "pillDispenserPeriod",
         "pillDispenserSound",
         "pillDispenserQuietHours",
         "pillDispenserRegion",
-        "pillDispenserDispenseMode",
     ]) {
         const input = CONFIG_INPUTS[name];
         assert.ok(input, `${name} não está registado`);

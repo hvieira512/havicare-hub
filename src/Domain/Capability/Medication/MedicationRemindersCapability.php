@@ -16,13 +16,16 @@ final class MedicationRemindersCapability implements CapabilityContract
 {
     private MedicationRemindersHandler $wonlex;
     private MedicationRemindersHandler $fourPTouch;
+    private MedicationRemindersHandler $pillDispenser;
 
     public function __construct(
         ?MedicationRemindersHandler $wonlex = null,
         ?MedicationRemindersHandler $fourPTouch = null,
+        ?MedicationRemindersHandler $pillDispenser = null,
     ) {
         $this->wonlex = $wonlex ?? new WonlexMedicationRemindersHandler();
         $this->fourPTouch = $fourPTouch ?? new FourPTouchMedicationRemindersHandler();
+        $this->pillDispenser = $pillDispenser ?? new PillDispenserMedicationRemindersHandler();
     }
 
     public function key(): string
@@ -42,7 +45,7 @@ final class MedicationRemindersCapability implements CapabilityContract
 
     public function supportedProtocols(): array
     {
-        return ['wonlex-json', 'four-p-touch'];
+        return ['wonlex-json', 'four-p-touch', 'zayata-m228'];
     }
 
     public function toNative(string $protocol, mixed $value): array
@@ -50,15 +53,18 @@ final class MedicationRemindersCapability implements CapabilityContract
         return match ($protocol) {
             'wonlex-json' => $this->wonlex->toNative($value),
             'four-p-touch' => $this->fourPTouch->toNative($value),
+            'zayata-m228' => $this->pillDispenser->toNative($value),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for medication_reminders"),
         };
     }
 
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
-        return $protocol === 'wonlex-json'
-            ? $this->wonlex->fromNative($desired)
-            : $this->fourPTouch->fromNative($desired);
+        return match ($protocol) {
+            'wonlex-json' => $this->wonlex->fromNative($desired),
+            'zayata-m228' => $this->pillDispenser->fromNative($desired),
+            default => $this->fourPTouch->fromNative($desired),
+        };
     }
 
     public function defaultValue(string $protocol): mixed
@@ -66,6 +72,7 @@ final class MedicationRemindersCapability implements CapabilityContract
         return match ($protocol) {
             'wonlex-json' => $this->wonlex->defaultValue(),
             'four-p-touch' => $this->fourPTouch->defaultValue(),
+            'zayata-m228' => $this->pillDispenser->defaultValue(),
             default => [],
         };
     }
@@ -75,6 +82,7 @@ final class MedicationRemindersCapability implements CapabilityContract
         return match ($protocol) {
             'wonlex-json' => $this->wonlex->meta($accumulatedMeta),
             'four-p-touch' => $this->fourPTouch->meta($accumulatedMeta),
+            'zayata-m228' => $this->pillDispenser->meta($accumulatedMeta),
             default => $accumulatedMeta,
         };
     }
@@ -91,6 +99,7 @@ final class MedicationRemindersCapability implements CapabilityContract
         return match ($protocol) {
             'wonlex-json' => $this->wonlex->responseEntry($protocol, $nativeKey, $value, $meta),
             'four-p-touch' => $this->fourPTouch->responseEntry($protocol, $nativeKey, $value, $meta),
+            'zayata-m228' => $this->pillDispenser->responseEntry($protocol, $nativeKey, $value, $meta),
             default => ['value' => $value, '_meta' => $meta],
         };
     }

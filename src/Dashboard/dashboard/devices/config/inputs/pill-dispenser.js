@@ -2,7 +2,7 @@ import { esc, fieldLabel } from "../../../format.js";
 import { field } from "../../../widgets.js";
 import { html, raw } from "../../../html.js";
 import { enabledSwitch, numberField } from "./shared.js";
-import { readCheckbox, readNumber } from "../readers.js";
+import { readCheckbox, readNumber, readText } from "../readers.js";
 
 /**
  * Os campos do dispensador de comprimidos.
@@ -15,40 +15,36 @@ import { readCheckbox, readNumber } from "../readers.js";
 /** O aparelho tem nove, e o formulário mostra os nove. */
 const SLOTS = 9;
 
-const slotRow = (index, plan) => {
+const slotCell = (index, plan) => {
     const hour = plan?.hour ?? 0;
     const minute = plan?.minute ?? 0;
     const enabled = plan ? plan.enabled !== false : false;
 
     return html`
-        <div class="d-flex align-items-end gap-2 mb-2" data-alarm-slot="${String(index)}">
-            <div class="text-secondary small" style="min-width:4.5rem">Alarme ${String(index + 1)}</div>
-            <div style="max-width:6rem">
+        <div class="col">
+            <div class="d-flex align-items-center gap-2 border rounded-3 px-2 py-1" data-alarm-slot="${String(index)}">
+                <div class="form-check form-switch m-0">
+                    <input class="form-check-input" type="checkbox" role="switch"
+                        aria-label="Alarme ${String(index + 1)}"
+                        data-config-field="enabled-${String(index)}" ${raw(enabled ? "checked" : "")}>
+                </div>
+                <div class="text-secondary small flex-shrink-0">${String(index + 1)}</div>
                 ${raw(numberField(`hour-${index}`, hour, { min: 0, max: 23 }))}
-            </div>
-            <div class="text-secondary">:</div>
-            <div style="max-width:6rem">
+                <div class="text-secondary">:</div>
                 ${raw(numberField(`minute-${index}`, minute, { min: 0, max: 59 }))}
-            </div>
-            <div class="form-check form-switch ms-2">
-                <input class="form-check-input" type="checkbox" role="switch"
-                    data-config-field="enabled-${String(index)}" ${raw(enabled ? "checked" : "")}>
             </div>
         </div>`;
 };
 
+/**
+ * Sem rótulo próprio: o cartão da configuração já mostra "Plano de medicação" por cima, e
+ * repeti-lo dava o mesmo texto duas vezes seguidas.
+ */
 function alarmsInput(entry, desired) {
     const plans = Array.isArray(desired?.plans) ? desired.plans : [];
-    const rows = Array.from({ length: SLOTS }, (_, index) => slotRow(index, plans[index]));
+    const cells = Array.from({ length: SLOTS }, (_, index) => slotCell(index, plans[index]));
 
-    return field(
-        "Plano de medicação",
-        rows.join(""),
-        {
-            help: "Os nove alarmes do aparelho. O plano é enviado inteiro — um alarme" +
-                " desligado aqui fica desligado lá.",
-        },
-    );
+    return html`<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-2">${raw(cells.join(""))}</div>`;
 }
 
 /**
@@ -81,7 +77,24 @@ const numbers = (specs) => (entry, desired) =>
 const readNumbers = (names) => (section) =>
     Object.fromEntries(names.map((name) => [name, readNumber(section, name)]));
 
+const dateField = (name, value) =>
+    html`<input class="form-control" type="date" data-config-field="${esc(name)}" value="${esc(String(value ?? ""))}">`;
+
 export const INPUTS = {
+    pillDispenserPeriod: {
+        render: (entry, desired) =>
+            enabledSwitch(Boolean(desired?.enabled)) +
+            html`<div class="row row-cols-1 row-cols-sm-2 g-2 mt-1">
+                <div class="col">${raw(field("Início", dateField("startDate", desired?.startDate)))}</div>
+                <div class="col">${raw(field("Fim", dateField("endDate", desired?.endDate)))}</div>
+            </div>`,
+        read: (section) => ({
+            enabled: readCheckbox(section, "enabled"),
+            startDate: readText(section, "startDate"),
+            endDate: readText(section, "endDate"),
+        }),
+        defaults: () => ({ enabled: false, startDate: "", endDate: "" }),
+    },
     pillDispenserAlarms: {
         render: alarmsInput,
         read: readAlarms,
@@ -125,28 +138,5 @@ export const INPUTS = {
         ]),
         read: readNumbers(["language", "timezoneMinutes"]),
         defaults: () => ({ language: 0, timezoneMinutes: 0 }),
-    },
-    pillDispenserDispenseMode: {
-        render: (entry, desired) =>
-            [
-                ["earlyRetrieval", "Toma antecipada", "Deixa levantar antes da hora."],
-                ["childLock", "Bloqueio de criança", "Protege o prato."],
-            ]
-                .map(([name, label, help]) =>
-                    field(
-                        label,
-                        html`<div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch"
-                                data-config-field="${esc(name)}" ${raw(desired?.[name] ? "checked" : "")}>
-                        </div>`,
-                        { help },
-                    ),
-                )
-                .join(""),
-        read: (section) => ({
-            earlyRetrieval: readCheckbox(section, "earlyRetrieval"),
-            childLock: readCheckbox(section, "childLock"),
-        }),
-        defaults: () => ({ earlyRetrieval: false, childLock: false }),
     },
 };

@@ -20,12 +20,16 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
     {
         return match ($key) {
             'medication_reminders' => ['plans' => self::plans($payload['plans'] ?? [])],
+            'medication_period' => [
+                'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
+                'startDate' => self::date($payload['startDate'] ?? '', 'startDate'),
+                'endDate' => self::date($payload['endDate'] ?? '', 'endDate'),
+            ],
             // Os valores em falta caem no que o aparelho traz de fábrica, e não em erro: o
             // painel pede o payload por omissão antes de alguém escolher seja o que for, e
             // um por omissão que não passa na própria validação não é um por omissão.
-            'dispense_mode' => [
-                'earlyRetrieval' => (bool)self::boolInt($payload['earlyRetrieval'] ?? false, 'earlyRetrieval'),
-                'childLock' => (bool)self::boolInt($payload['childLock'] ?? false, 'childLock'),
+            'early_dispense', 'child_lock' => [
+                'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
             ],
             'sound_profile' => [
                 // Cinco níveis de volume e cinco toques, como o aparelho os numera.
@@ -48,6 +52,27 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             // As acções não levam payload: o que as distingue é o comando.
             default => [],
         };
+    }
+
+    /**
+     * Uma data em `AAAA-MM-DD`, ou vazio. Vazio é legítimo: quer dizer "sem período", e é o
+     * interruptor que o diz ao aparelho.
+     */
+    private static function date(mixed $value, string $field): string
+    {
+        $date = is_string($value) ? trim($value) : '';
+        if ($date === '') {
+            return '';
+        }
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) !== 1) {
+            throw new \InvalidArgumentException("{$field} must be a date as YYYY-MM-DD");
+        }
+        [$year, $month, $day] = array_map('intval', explode('-', $date));
+        if (!checkdate($month, $day, $year)) {
+            throw new \InvalidArgumentException("{$field} is not a real date");
+        }
+
+        return $date;
     }
 
     /**
