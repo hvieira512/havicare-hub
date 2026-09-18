@@ -96,6 +96,11 @@ final class ZayataConfigurationDefinitions
                 // Parte de Lisboa no inverno, e não da ponta da lista.
                 0,
             ),
+            // As leituras. Sem elas o hub sabe o que *pediu* ao aparelho e não o que ele
+            // *tem* — e a especificação manda ler os parâmetros no primeiro registo.
+            self::action('sync_configuration', 'readConfiguration', 'Sincronizar configuração', 'system', 5),
+            self::action('device_status', 'readStatus', 'Atualizar estado', 'system', 6),
+
             // As acções. O relógio calibra-se à mão porque num ensaio um alarme das 12:55
             // ficou registado às 11:45.
             self::action('dispense_now', 'dispenseNow', 'Dispensar agora', 'system', 20),

@@ -241,6 +241,15 @@ final class DeviceEventDecoder
             return $intake === null ? [] : [$intake];
         }
 
+        // A resposta a uma leitura ou a uma escrita de configuração traz o corpo pedido já
+        // preenchido, e o resultado de cada TAG nos bits de estado do Flag.
+        if ($nativeType === 'read_config_ack' || $nativeType === 'write_config_ack') {
+            $configuration = $this->pillConfiguration($nativeType, $tlv);
+            return $configuration === null ? [] : [$configuration];
+        }
+
+        // Tudo o resto -- heartbeat, registo, notificação e a resposta à consulta de estado --
+        // traz as mesmas TAGs de estado, e por isso passa pelo mesmo caminho.
         return $this->pillStatusEvents($nativeType, $tlv);
     }
 
@@ -268,6 +277,89 @@ final class DeviceEventDecoder
         ], static fn (mixed $field): bool => $field !== null);
 
         return $value === [] ? null : ['feature' => 'medication_intake', 'nativeType' => $nativeType, 'value' => $value];
+    }
+
+    /**
+     * A configuração que o aparelho diz ter.
+     *
+     * Sai como `device_config`, que é o que os relógios já usam para o mesmo — a confirmação
+     * de uma configuração, e não uma leitura. Fica de fora do catálogo de capacidades pela
+     * razão registada nas notas de arquitetura.
+     */
+    private function pillConfiguration(string $nativeType, array $tlv): ?array
+    {
+        // Só os alarmes ligados: os outros seriam nove linhas a dizer "00:00 desligado".
+        $plans = [];
+        for ($slot = 0; $slot < 9; $slot++) {
+            if ($this->tlvU8($tlv, 0x1041 + $slot) !== 1) {
+                continue;
+            }
+            $plans[] = [
+                'slot' => $slot + 1,
+                'hour' => $this->tlvU8($tlv, 0x1021 + $slot) ?? 0,
+                'minute' => $this->tlvU8($tlv, 0x1031 + $slot) ?? 0,
+            ];
+        }
+
+        // O estado no Flag: `000` é sucesso, e tudo o resto é a TAG a ser recusada.
+        $refused = [];
+        foreach ($tlv as $tag => $entry) {
+            if ((int)($entry['state'] ?? 0) !== 0) {
+                $refused[] = sprintf('0x%04X', $tag);
+            }
+        }
+
+        $value = array_filter([
+            'plans' => $plans !== [] ? $plans : null,
+            'period' => $this->pillPeriod($tlv),
+            'volume' => $this->tlvU8($tlv, 0x1013),
+            'ringtone' => $this->tlvU8($tlv, 0x1012),
+            'language' => $this->tlvU8($tlv, 0x1001),
+            'timeZone' => $this->tlvI16($tlv, 0x1015),
+            'childLock' => $this->pillFlag($tlv, 0x100C),
+            'earlyRetrieval' => $this->pillFlag($tlv, 0x100D),
+            'refusedTags' => $refused !== [] ? $refused : null,
+        ], static fn (mixed $field): bool => $field !== null);
+
+        return $value === [] ? null : ['feature' => 'device_config', 'nativeType' => $nativeType, 'value' => $value];
+    }
+
+    /** @param array<int, array{value?: string}> $tlv */
+    private function pillFlag(array $tlv, int $tag): ?bool
+    {
+        $value = $this->tlvU8($tlv, $tag);
+        return $value === null ? null : $value === 1;
+    }
+
+    /**
+     * O período em que o plano vale, das seis TAGs de data mais o interruptor.
+     *
+     * @param array<int, array{value?: string}> $tlv
+     * @return array{enabled: bool, startDate?: string, endDate?: string}|null
+     */
+    private function pillPeriod(array $tlv): ?array
+    {
+        $enabled = $this->tlvU8($tlv, 0x100A);
+        if ($enabled === null) {
+            return null;
+        }
+
+        $date = function (int $yearTag, int $monthTag, int $dayTag) use ($tlv): ?string {
+            $year = $this->tlvI16($tlv, $yearTag);
+            $month = $this->tlvU8($tlv, $monthTag);
+            $day = $this->tlvU8($tlv, $dayTag);
+            if ($year === null || $month === null || $day === null || !checkdate($month, $day, $year)) {
+                return null;
+            }
+
+            return sprintf('%04d-%02d-%02d', $year, $month, $day);
+        };
+
+        return array_filter([
+            'enabled' => $enabled === 1,
+            'startDate' => $date(0x1004, 0x1005, 0x1006),
+            'endDate' => $date(0x1007, 0x1008, 0x1009),
+        ], static fn (mixed $field): bool => $field !== null);
     }
 
     /**

@@ -327,10 +327,23 @@ E as acções, em pacote `0x08`: `dispense_now` (`0xA123`), `calibrate_clock`
 (`0xA101`), `mute_alarm` (`0xA102`), `reset_tray` (`0xA103`), `restart_device`
 (`0xA001`) e `reset_device` (`0xA002`).
 
-**O que falta.** Ler a configuração de volta do aparelho (`0x05`) e consultar
-estado a pedido (`0x07`): por agora o hub escreve e o aparelho confirma no
-estado do TFLV, mas a reconciliação lê o que o heartbeat traz e não o que se
-pergunta.
+**Perguntar em vez de assumir.** O `0x05` lê a configuração e o `0x07` o estado.
+Nos dois, o corpo leva as TAGs pedidas com o **valor a zeros no comprimento da
+TAG** — é esse espaço que o aparelho preenche —, e a resposta devolve o mesmo
+corpo com os valores e com o resultado de cada TAG nos bits de estado do `Flag`.
+
+A resposta ao `0x05` sai como `device_config`, que é o que os relógios já usam
+para a confirmação de uma configuração. A resposta ao `0x07` passa pelo mesmo
+caminho do heartbeat: traz as mesmas TAGs de estado, e ter dois caminhos era ter
+duas verdades. As duas leituras são acções na dashboard — «Sincronizar
+configuração» e «Atualizar estado» —, e não correm sozinhas.
+
+**O que falta.** Ligar a resposta `0x86` ao ciclo de vida da configuração. Ela já
+é descodificada e já diz que TAGs foram recusadas, mas o hub ainda não a usa para
+marcar uma configuração como confirmada: uma escrita fica em «em envio» até o
+aparelho a reportar noutra leitura. A especificação também recomenda ler os
+parâmetros no primeiro registo, o que não é feito — é comportamento automático, e
+essa é uma decisão de quem opera.
 
 **Onde está.** `src/Protocol/Adapter/PillDispenserAdapter.php` (a trama),
 `src/Device/DeviceEventDecoder.php` (as TAGs), o protocolo de sessão em

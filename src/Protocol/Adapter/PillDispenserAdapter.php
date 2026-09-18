@@ -159,6 +159,62 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     }
 
     /**
+     * O comprimento do valor de cada TAG, em bytes.
+     *
+     * Existe por causa da leitura: num pedido `0x05` ou `0x07` o valor vai a zeros **com o
+     * comprimento da TAG**, e não vazio — é esse espaço que o aparelho preenche na resposta.
+     * Uma TAG que falte aqui é pedida como um byte, que é o tamanho da maioria.
+     *
+     * @var array<int, int>
+     */
+    private const TAG_LENGTH = [
+        // Configuração: o ano do período e o fuso são os únicos de dois bytes.
+        0x1004 => 2, 0x1007 => 2, 0x1015 => 2, 0x1063 => 2,
+        // Estado: a força do sinal, que vem em dBm reais.
+        0x810A => 2, 0x810B => 2,
+    ];
+
+    /** As TAGs de configuração que o hub sabe ler e escrever. */
+    public const CONFIGURATION_TAGS = [
+        0x1001, 0x1015,                                     // idioma e fuso
+        0x1004, 0x1005, 0x1006, 0x1007, 0x1008, 0x1009, 0x100A, // período do plano
+        0x100C, 0x100D,                                     // bloqueio de criança, toma antecipada
+        0x1012, 0x1013,                                     // toque e volume
+        0x1021, 0x1022, 0x1023, 0x1024, 0x1025, 0x1026, 0x1027, 0x1028, 0x1029, // horas
+        0x1031, 0x1032, 0x1033, 0x1034, 0x1035, 0x1036, 0x1037, 0x1038, 0x1039, // minutos
+        0x1041, 0x1042, 0x1043, 0x1044, 0x1045, 0x1046, 0x1047, 0x1048, 0x1049, // interruptores
+        0x1051, 0x1052, 0x1053, 0x1054, 0x1055,             // não incomodar
+    ];
+
+    /** As TAGs de estado que o hub sabe ler. */
+    public const STATUS_TAGS = [
+        0x8101,                     // nível de medicação
+        0x8103, 0x8104,             // bateria
+        0x810A, 0x810B,             // sinal WiFi e GSM
+        0x810E, 0x810F,             // temperatura e humidade
+        0x8112,                     // chamada de emergência
+        0x811A, 0x811B, 0x811D,     // compartimentos
+        0x8121, 0x8122, 0x8123, 0x8124, 0x8125, // avarias
+    ];
+
+    /**
+     * O corpo de um pedido de leitura: as TAGs pedidas, cada uma com o valor a zeros no seu
+     * comprimento.
+     *
+     * @param list<int> $tags
+     * @return array<int, array{value: string}>
+     */
+    public static function readRequestTlv(array $tags): array
+    {
+        $tlv = [];
+        foreach ($tags as $tag) {
+            $tlv[$tag] = ['value' => str_repeat("\x00", self::TAG_LENGTH[$tag] ?? 1)];
+        }
+
+        return $tlv;
+    }
+
+    /**
      * A identidade tal como a whitelist a guarda, de volta ao inteiro de 64 bits. Quinze
      * dígitos são um IMEI; doze hexadecimais são um MAC.
      */

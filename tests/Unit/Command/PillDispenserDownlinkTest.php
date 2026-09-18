@@ -200,6 +200,42 @@ final class PillDispenserDownlinkTest extends TestCase
         self::assertSame('860123456789012', $decoded['imei']);
     }
 
+    public function testReadingConfigurationAsksForTheTagsWithRoomForTheAnswer(): void
+    {
+        // A especificação é explícita: no pedido de leitura, o valor vai a zeros **com o
+        // comprimento da TAG**, e não vazio. O aparelho devolve o mesmo corpo preenchido.
+        $tlv = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'readConfiguration', []),
+            0x05,
+        );
+
+        // Um byte para as horas dos alarmes...
+        self::assertSame("\x00", $tlv[0x1021]['value']);
+        self::assertSame("\x00", $tlv[0x1041]['value']);
+        // ...e dois para o que é INT16: o ano do período e o fuso.
+        self::assertSame("\x00\x00", $tlv[0x1004]['value']);
+        self::assertSame("\x00\x00", $tlv[0x1015]['value']);
+        // Os nove alarmes inteiros, e não só o primeiro.
+        self::assertArrayHasKey(0x1029, $tlv);
+        self::assertArrayHasKey(0x1049, $tlv);
+    }
+
+    public function testQueryingStatusAsksForTheStatusTagsAndNotTheConfigurationOnes(): void
+    {
+        $tlv = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'readStatus', []),
+            0x07,
+        );
+
+        self::assertSame("\x00", $tlv[0x8101]['value'], 'nível de medicação, um byte');
+        self::assertSame("\x00", $tlv[0x810E]['value'], 'temperatura é INT8S');
+        self::assertSame("\x00\x00", $tlv[0x810A]['value'], 'o sinal é INT16S');
+        self::assertArrayHasKey(0x8112, $tlv);
+        self::assertArrayHasKey(0x811D, $tlv);
+        // Uma consulta de estado não pergunta por configuração.
+        self::assertArrayNotHasKey(0x1021, $tlv);
+    }
+
     public function testAnUnknownCommandIsRefused(): void
     {
         $this->expectException(\InvalidArgumentException::class);

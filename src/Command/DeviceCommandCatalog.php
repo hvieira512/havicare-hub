@@ -320,6 +320,15 @@ final class DeviceCommandCatalog
             return self::pillFrame($imei, 0x08, [$control => ['value' => "\x01"]]);
         }
 
+        // As leituras. O aparelho devolve o mesmo corpo preenchido, com o resultado de cada
+        // TAG no estado do Flag -- é assim que se sabe o que ele tem, em vez de se assumir.
+        if ($command === 'readConfiguration') {
+            return self::pillFrame($imei, 0x05, PillDispenserAdapter::readRequestTlv(PillDispenserAdapter::CONFIGURATION_TAGS));
+        }
+        if ($command === 'readStatus') {
+            return self::pillFrame($imei, 0x07, PillDispenserAdapter::readRequestTlv(PillDispenserAdapter::STATUS_TAGS));
+        }
+
         $tlv = match ($command) {
             'medicationPlan' => self::pillMedicationPlan($payload),
             'medicationPeriod' => self::pillMedicationPeriod($payload),

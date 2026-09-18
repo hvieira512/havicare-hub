@@ -74,6 +74,88 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertSame(['remaining' => 16, 'total' => 28, 'current' => 12], $byFeature['cells_remaining']);
     }
 
+    public function testTheConfigurationReadBackBecomesADeviceConfigEvent(): void
+    {
+        // A resposta ao `0x05` traz o corpo pedido já preenchido. Sem a ler, o hub saberia o
+        // que pediu ao aparelho e nunca o que ele tem.
+        $decoded = $this->decode([
+            'packetType' => 0x85,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [
+                0x1021 => ['value' => "\x08"],          // alarme 1 às 08:30, ligado
+                0x1031 => ['value' => "\x1E"],
+                0x1041 => ['value' => "\x01"],
+                0x1042 => ['value' => "\x00"],          // alarme 2 desligado
+                0x1013 => ['value' => "\x01"],          // volume médio
+                0x1012 => ['value' => "\x02"],          // toque 2
+                0x1001 => ['value' => "\x01"],          // inglês
+                0x1015 => ['value' => pack('s', 100)],  // Lisboa no verão
+                0x100C => ['value' => "\x01"],          // bloqueio de criança ligado
+                0x100D => ['value' => "\x00"],
+            ],
+        ]);
+
+        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
+
+        self::assertCount(1, $events);
+        self::assertSame('device_config', $events[0]['feature']);
+        $value = $events[0]['value'];
+        self::assertSame(1, $value['volume']);
+        self::assertSame(2, $value['ringtone']);
+        self::assertSame(1, $value['language']);
+        self::assertSame(100, $value['timeZone']);
+        self::assertTrue($value['childLock']);
+        self::assertFalse($value['earlyRetrieval']);
+        // O plano volta só com os alarmes que estão ligados: os outros nove menos um seriam
+        // ruído a dizer "00:00 desligado".
+        self::assertSame([['slot' => 1, 'hour' => 8, 'minute' => 30]], $value['plans']);
+    }
+
+    public function testAStatusQueryAnswerIsReadLikeAHeartbeat(): void
+    {
+        // A resposta ao `0x07` traz as mesmas TAGs de estado que o heartbeat, e por isso é
+        // lida pelo mesmo caminho -- ter dois seria ter duas verdades.
+        $decoded = $this->decode([
+            'packetType' => 0x87,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [
+                0x8103 => ['value' => "\x50"],
+                0x810E => ['value' => pack('c', 21)],
+            ],
+        ]);
+
+        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
+        $byFeature = [];
+        foreach ($events as $event) {
+            $byFeature[$event['feature']] = $event['value'];
+        }
+
+        self::assertSame(['percent' => 80], $byFeature['battery']);
+        self::assertSame(['environmentCelsius' => 21], $byFeature['temperature']);
+    }
+
+    public function testARefusedWriteIsVisibleInTheAnswer(): void
+    {
+        // O aparelho responde ao `0x06` com o mesmo corpo e o resultado de cada TAG nos bits
+        // de estado do Flag. Um valor recusado ficava calado se ninguém os lesse.
+        $adapter = new PillDispenserAdapter();
+        $frame = $adapter->encodeOutgoing([
+            'packetType' => 0x86,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [
+                0x1021 => ['value' => "\x08", 'state' => 0],
+                0x1031 => ['value' => "\x1E", 'state' => 4],
+            ],
+        ]);
+        $decoded = $adapter->decodeIncoming($frame);
+        self::assertIsArray($decoded);
+
+        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
+
+        self::assertSame('device_config', $events[0]['feature']);
+        self::assertSame(['0x1031'], $events[0]['value']['refusedTags']);
+    }
+
     public function testFaultAndEmergencyBecomeEvents(): void
     {
         $decoded = $this->decode([

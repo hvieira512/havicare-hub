@@ -422,6 +422,9 @@ final class CapabilityCatalog
             'do_not_disturb',
             'device_language',
             'time_zone',
+            'sync_configuration',
+            // Pedir o estado é uma acção sobre a mesma capacidade que o publica.
+            'device_status',
             'dispense_now',
             'calibrate_clock',
             'mute_alarm',
