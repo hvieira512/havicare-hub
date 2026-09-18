@@ -283,8 +283,8 @@ Para as outras instâncias, o mesmo broker com o prefixo correspondente — ver 
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Ingress/Mqtt/Moko/MonitMecsProDecoder.php` | O anúncio BLE, lido bit a bit |
-| `src/Ingress/Mqtt/Moko/MonitNormalizer.php` | Os canais, a derivação do estado e do nível |
+| `src/Ingress/Mqtt/Monit/MonitMecsProDecoder.php` | O anúncio BLE, lido bit a bit |
+| `src/Ingress/Mqtt/Monit/MonitNormalizer.php` | Os canais, a derivação do estado e do nível |
 | `src/Domain/DiaperSensitivity.php` | Os limiares, os perfis e o máximo de seco derivado |
 | `src/Domain/DiaperSensitivityLookup.php` | O valor em vigor para cada sensor |
 | `src/Domain/Capability/DiaperSensitivityCapability.php` | A capacidade, na API |

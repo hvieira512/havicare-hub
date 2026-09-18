@@ -21,6 +21,23 @@ final class FourPTouchWatchProtocol extends AbstractWatchProtocol
     /**
      * @return array<int, WatchResponse>
      */
+    /**
+     * O `TAKEPILLS` é a única trama do 4P Touch que confirma uma configuração, e di-lo num
+     * campo próprio: `1` aceitou, `0` recusou, e o resto é o aparelho a não se pronunciar.
+     */
+    public function replyAccepted(array $decoded): ?bool
+    {
+        if (($decoded['type'] ?? null) !== 'TAKEPILLS') {
+            return null;
+        }
+
+        return match ((string)($decoded['data']['configAck'] ?? '')) {
+            '1' => true,
+            '0' => false,
+            default => null,
+        };
+    }
+
     protected function responsesForDecoded(DeviceSession $session, array $decoded): array
     {
         $type = (string)($decoded['type'] ?? '');

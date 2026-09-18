@@ -308,8 +308,8 @@ conteúdo se altere.
 | `src/Ingress/Mqtt/Moko/Mkgw3MessageDecoder.php` | JSON |
 | `src/Ingress/Mqtt/Moko/Mkgw4MessageDecoder.php` | Binário TLV |
 | `src/Ingress/Mqtt/Moko/GatewayNormalizer.php` | Telemetria do próprio gateway |
-| `src/Ingress/Mqtt/Moko/MonitMecsProDecoder.php` | Os 20 bytes do sensor de fralda |
-| `src/Ingress/Mqtt/Moko/MonitNormalizer.php` | Humidade, índice e estado |
+| `src/Ingress/Mqtt/Monit/MonitMecsProDecoder.php` | Os 20 bytes do sensor de fralda |
+| `src/Ingress/Mqtt/Monit/MonitNormalizer.php` | Humidade, índice e estado |
 | `src/Ingress/Mqtt/Moko/W6bDecoder.php` · `W6Decoder.php` | As duas pulseiras |
 | `src/Ingress/Mqtt/Moko/BraceletTelemetry.php` | Bateria e movimento, comuns às duas |
 | `src/Ingress/Mqtt/Moko/ProximityTracker.php` | A janela de RSSI |

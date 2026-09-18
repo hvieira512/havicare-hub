@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Ingress\Mqtt\Moko;
+namespace Hub\Ingress\Mqtt\Monit;
 
 use Hub\Domain\DiaperSensitivity;
 

@@ -330,21 +330,14 @@ class DeviceHubServer
             return;
         }
 
-        $replyAccepted = null;
-        if ($session->protocol === 'four-p-touch' && ($message->decoded['type'] ?? null) === 'TAKEPILLS') {
-            $configAck = (string)($message->decoded['data']['configAck'] ?? '');
-            $replyAccepted = match ($configAck) {
-                '1' => true,
-                '0' => false,
-                default => null,
-            };
-        }
+        // Se a trama confirma uma configuração é conhecimento do protocolo: aqui serve-se
+        // tudo o que fala TCP, e um `if` por fornecedor neste sítio cresce com a frota.
         $this->dashboardStore?->markCommandReply(
             $session->imei,
             (string)($message->decoded['type'] ?? ''),
             $message->decoded['ident'] ?? null,
             (string)($message->decoded['ref'] ?? ''),
-            $replyAccepted,
+            $protocol->replyAccepted($message->decoded),
         );
 
         foreach ($message->telemetry as $event) {

@@ -102,7 +102,7 @@ Implementada em `bin/server-hub.php`, por esta ordem:
 | 2 | Ligação ao broker MQTT do hub | fatal |
 | 3 | `HubServices::boot()` — MySQL, Redis, whitelist, ponte MQTT, fila de downlink | fatal |
 | 4 | `CrashWatch::attach()` — um marcador persistente indica terminação anómala da execução anterior e gera notificação na dashboard; regista também os sinais `SIGTERM` e `SIGINT` para terminação controlada | continua |
-| 5 | `MqttIngressFactory::build()` — monta as ingestões que a configuração liga: NCS (`NCS_ENABLED`), MOKO e Veepoo (ambas em `MOKO_GATEWAY_ENABLED`, que partilham o espaço de tópicos), e Qinglanst (`QINGLANST_ENABLED`, em sessão própria) | — |
+| 5 | `MqttIngressFactory::build()` — monta as ingestões que a configuração liga: NCS (`NCS_ENABLED`), MOKO e Veepoo (ambas em `GATEWAY_ENABLED`, porque partilham o espaço de tópicos dos gateways), e Qinglanst (`QINGLANST_ENABLED`, em sessão própria) | — |
 | 6 | Abertura do socket TCP | — |
 | 7 | Abertura do servidor HTTP da dashboard e da API | — |
 | 8 | Início das subscrições MQTT | **fatal** |

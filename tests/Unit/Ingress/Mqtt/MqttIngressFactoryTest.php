@@ -44,7 +44,7 @@ final class MqttIngressFactoryTest extends TestCase
     public function testTheMokoSwitchAlsoGovernsTheVeepooIngress(): void
     {
         $config = self::config();
-        $config['moko']['enabled'] = false;
+        $config['gateway']['enabled'] = false;
 
         $runner = MqttIngressFactory::build(
             $config,
@@ -54,7 +54,7 @@ final class MqttIngressFactoryTest extends TestCase
         );
 
         self::assertNotContains('veepoo', $runner->keys());
-        self::assertNotContains('moko', $runner->keys());
+        self::assertNotContains('gateway', $runner->keys());
     }
 
     /** @return array<string, mixed> */
@@ -62,7 +62,7 @@ final class MqttIngressFactoryTest extends TestCase
     {
         return [
             'ncs' => ['enabled' => false, 'topic_filter' => '/voerka/#'],
-            'moko' => [
+            'gateway' => [
                 'enabled' => false,
                 'topic_filter' => 'havicare-hub/null/0/gw/+/raw',
                 'dedupe_ttl_seconds' => 5,

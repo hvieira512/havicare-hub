@@ -73,24 +73,24 @@ final class StartupBanner
         }
 
         // A terceira coluna é a secção de onde sai o filtro, e não se deduz da chave: a
-        // ingestão Veepoo lê o mesmo espaço de tópicos dos gateways que o MOKO, e não tem
-        // secção própria. Enquanto a chave servia de índice à configuração, acrescentar aqui
-        // uma linha para ela dava índice indefinido no arranque.
+        // ingestão Veepoo lê o mesmo espaço de tópicos dos gateways, e não tem secção
+        // própria. Enquanto a chave servia de índice à configuração, acrescentar aqui uma
+        // linha para ela dava índice indefinido no arranque.
         $descriptions = [
             'ncs' => [
                 'NCS ingress topics',
                 '{company}/{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}',
                 'ncs',
             ],
-            'moko' => [
-                'MOKO MKGW3 ingress topics',
+            'gateway' => [
+                'Gateway ingress topics',
                 '{company}/{licenseId}/gateway/{gatewayMac}/{raw|status|events|telemetry}',
-                'moko',
+                'gateway',
             ],
             'veepoo' => [
                 'Veepoo bracelet ingress topics',
                 '{company}/{licenseId}/bracelet/{deviceKey}/{raw|status|events|telemetry}',
-                'moko',
+                'gateway',
             ],
             'qinglanst' => [
                 'Qinglanst radar ingress',

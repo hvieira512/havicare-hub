@@ -42,8 +42,8 @@ final class MqttIngressFactory
 
         // Uma variável só para as duas ingestões de gateway: são o mesmo espaço de tópicos de
         // propósito, e dois cálculos separados podiam divergir sem ninguém dar por isso.
-        $gatewayTopicFilter = trim((string)$config['moko']['topic_filter']);
-        $runner->add('MOKO gateway ingress', self::moko($config, $services, $subscribers, $gatewayTopicFilter), 'moko');
+        $gatewayTopicFilter = trim((string)$config['gateway']['topic_filter']);
+        $runner->add('MOKO gateway ingress', self::moko($config, $services, $subscribers, $gatewayTopicFilter), 'gateway');
         $runner->add('Veepoo bracelet ingress', self::veepoo($config, $services, $subscribers, $gatewayTopicFilter), 'veepoo');
 
         $runner->add('Qinglanst ingress', self::qinglanst($config, $services), 'qinglanst');
@@ -83,7 +83,7 @@ final class MqttIngressFactory
         SubscriberFactory $subscribers,
         string $topicFilter,
     ): ?MqttIngress {
-        if (!$config['moko']['enabled']) {
+        if (!$config['gateway']['enabled']) {
             return null;
         }
 
@@ -100,10 +100,10 @@ final class MqttIngressFactory
                 $reconnect,
                 $services->dashboardStore,
                 $services->commercialModelResolver,
-                (int)$config['moko']['dedupe_ttl_seconds'],
-                (int)$config['moko']['telemetry_refresh_seconds'],
-                (int)$config['moko']['idle_timeout_seconds'],
-                (int)$config['moko']['raw_history_sample_seconds'],
+                (int)$config['gateway']['dedupe_ttl_seconds'],
+                (int)$config['gateway']['telemetry_refresh_seconds'],
+                (int)$config['gateway']['idle_timeout_seconds'],
+                (int)$config['gateway']['raw_history_sample_seconds'],
                 diaperSensitivity: $services->dataAccess->diaperSensitivity,
                 denylist: $services->denylist,
             ),
@@ -123,7 +123,7 @@ final class MqttIngressFactory
         SubscriberFactory $subscribers,
         string $topicFilter,
     ): ?MqttIngress {
-        if (!$config['moko']['enabled']) {
+        if (!$config['gateway']['enabled']) {
             return null;
         }
 

@@ -291,7 +291,7 @@ visível no `systemctl status`.
 |---|---|---|
 | `DASHBOARD_API_AUTH_REQUIRED` | `true` | **A autenticação inteira.** A `false`, tudo é administrador anónimo |
 | `NCS_ENABLED` | `true` | Ingestão Voerka |
-| `MOKO_GATEWAY_ENABLED` | `true` | Ingestão de gateways e BLE |
+| `GATEWAY_ENABLED` | `true` | Ingestão de gateways e do que eles retransmitem por BLE. Chamava-se `MOKO_GATEWAY_ENABLED`, e esse nome continua a ser lido |
 | `QINGLANST_ENABLED` | **`false`** | Ingestão de radares |
 | `LOCATION_RESOLUTION_ENABLED` | `true` | Localização sem GPS |
 | `RADIO_MAP_ENABLED` | `true` | Mapa privado — **desliga-se sozinho** sem `RADIO_MAP_HASH_KEY` |

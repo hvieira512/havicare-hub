@@ -8,12 +8,12 @@ namespace Hub;
  * @phpstan-type HubRuntimeConfig array{downlink_queue_ttl_seconds: int, whitelist_file: string}
  * @phpstan-type LocationResolutionConfig array{enabled: bool, endpoint: string, user_agent: string, timeout_seconds: float, max_accuracy_meters: float, cache_ttl_seconds: int, failure_cache_ttl_seconds: int, max_concurrency: int, max_queue: int, circuit_failure_threshold: int, circuit_open_seconds: int, rate_limit_open_seconds: int, radio_map_enabled: bool, radio_map_hash_key: string, radio_map_minimum_matches: int, radio_map_maximum_learning_accuracy_meters: float, radio_map_default_gps_accuracy_meters: float, radio_map_minimum_satellites: int, radio_map_maximum_observation_distance_meters: float, radio_map_cluster_radius_meters: float, radio_map_cache_ttl_seconds: int}
  * @phpstan-type NcsConfig array{enabled: bool, topic_filter: string}
- * @phpstan-type MokoConfig array{enabled: bool, topic_filter: string, dedupe_ttl_seconds: int, telemetry_refresh_seconds: int, idle_timeout_seconds: int}
+ * @phpstan-type GatewayConfig array{enabled: bool, topic_filter: string, dedupe_ttl_seconds: int, telemetry_refresh_seconds: int, idle_timeout_seconds: int}
  * @phpstan-type QinglanstConfig array{enabled: bool, host: string, port: int, username: string, password: string, topic_filter: string, client_id_prefix: string, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string, dashboard_seen_min_interval_ms: int, position_history_sample_ms: int, stats_flush_seconds: int}
  * @phpstan-type MqttConfig array{host: string, port: int, username: string, password: string, topic_prefix: string, client_id_prefix: string, keepalive: int, timeout: float, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string}
  * @phpstan-type RedisConfig array{host: string, port: int, password: string}
  * @phpstan-type DatabaseConfig array{driver: string, host: string, port: int, name: string, username: string, password: string, charset: string}
- * @phpstan-type HubConfig array{tcp_ingress: TcpIngressConfig, dashboard: DashboardConfig, hub: HubRuntimeConfig, location_resolution: LocationResolutionConfig, ncs: NcsConfig, moko: MokoConfig, qinglanst: QinglanstConfig, mqtt: MqttConfig, redis: RedisConfig, database: DatabaseConfig}
+ * @phpstan-type HubConfig array{tcp_ingress: TcpIngressConfig, dashboard: DashboardConfig, hub: HubRuntimeConfig, location_resolution: LocationResolutionConfig, ncs: NcsConfig, gateway: GatewayConfig, qinglanst: QinglanstConfig, mqtt: MqttConfig, redis: RedisConfig, database: DatabaseConfig}
  */
 class Config
 {
@@ -24,6 +24,25 @@ class Config
     public function __construct(array $data)
     {
         $this->data = $data;
+    }
+
+    /**
+     * Uma definição da ingestão de gateways, pelo nome novo ou pelo antigo.
+     *
+     * As duas máquinas têm `MOKO_GATEWAY_*` no `.env`, e deixar de as ler era desligar os
+     * gateways no arranque seguinte -- em silêncio, porque um filtro de tópicos vazio não dá
+     * erro, dá uma ingestão que não recebe nada.
+     */
+    private static function gatewayEnv(string $suffix, string $default): string
+    {
+        foreach (["GATEWAY_{$suffix}", "MOKO_GATEWAY_{$suffix}"] as $name) {
+            $value = getenv($name);
+            if ($value !== false && trim((string)$value) !== '') {
+                return (string)$value;
+            }
+        }
+
+        return $default;
     }
 
     public static function load(): self
@@ -157,13 +176,17 @@ class Config
                 'enabled' => !in_array(strtolower(trim((string)(getenv('NCS_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),
                 'topic_filter' => getenv('NCS_TOPIC_FILTER') ?: '/voerka/#',
             ],
-            'moko' => [
-                'enabled' => !in_array(strtolower(trim((string)(getenv('MOKO_GATEWAY_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),
-                'topic_filter' => getenv('MOKO_GATEWAY_TOPIC_FILTER') ?: 'havicare-hub/null/0/gw/+/raw',
-                'dedupe_ttl_seconds' => max(1, (int)(getenv('MOKO_GATEWAY_DEDUPE_TTL_SECONDS') ?: 5)),
-                'telemetry_refresh_seconds' => max(1, (int)(getenv('MOKO_GATEWAY_TELEMETRY_REFRESH_SECONDS') ?: 60)),
-                'idle_timeout_seconds' => max(10, (int)(getenv('MOKO_GATEWAY_IDLE_TIMEOUT_SECONDS') ?: 180)),
-                'raw_history_sample_seconds' => max(0, (int)(getenv('MOKO_GATEWAY_RAW_HISTORY_SAMPLE_SECONDS') ?: 30)),
+            // A ingestão de gateways, e não a de um fornecedor: o espaço de tópicos `.../gw/`
+            // é do hub, e mais do que uma ingestão o lê -- a do MOKO e a das pulseiras
+            // Veepoo, que o gateway retransmite. Chamar-lhe `moko` fazia a segunda parecer
+            // refém da primeira, quando o que ela segue é o gateway.
+            'gateway' => [
+                'enabled' => !in_array(strtolower(trim((string)self::gatewayEnv('ENABLED', 'true'))), ['0', 'false', 'no', 'off'], true),
+                'topic_filter' => self::gatewayEnv('TOPIC_FILTER', 'havicare-hub/null/0/gw/+/raw'),
+                'dedupe_ttl_seconds' => max(1, (int)self::gatewayEnv('DEDUPE_TTL_SECONDS', '5')),
+                'telemetry_refresh_seconds' => max(1, (int)self::gatewayEnv('TELEMETRY_REFRESH_SECONDS', '60')),
+                'idle_timeout_seconds' => max(10, (int)self::gatewayEnv('IDLE_TIMEOUT_SECONDS', '180')),
+                'raw_history_sample_seconds' => max(0, (int)self::gatewayEnv('RAW_HISTORY_SAMPLE_SECONDS', '30')),
             ],
             'qinglanst' => [
                 'enabled' => in_array(strtolower(trim((string)(getenv('QINGLANST_ENABLED') ?: 'false'))), ['1', 'true', 'yes', 'on'], true),

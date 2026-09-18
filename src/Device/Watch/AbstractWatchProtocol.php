@@ -54,6 +54,15 @@ abstract class AbstractWatchProtocol implements WatchProtocolInterface
         );
     }
 
+    /**
+     * Por omissão, nenhuma trama comenta configuração. Quem tiver uma confirmação no
+     * protocolo sobrepõe-se.
+     */
+    public function replyAccepted(array $decoded): ?bool
+    {
+        return null;
+    }
+
     public function commandMetadata(string $bytes): ?array
     {
         $decoded = $this->decodeIncoming($bytes);

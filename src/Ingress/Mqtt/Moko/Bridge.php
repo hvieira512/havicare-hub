@@ -2,6 +2,9 @@
 
 namespace Hub\Ingress\Mqtt\Moko;
 
+use Hub\Ingress\Mqtt\Monit\MonitMecsProDecoder;
+use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
+
 use Hub\Domain\DeviceMetadata;
 use Hub\Device\CommercialModelResolver;
 use Hub\Domain\DiaperSensitivity;

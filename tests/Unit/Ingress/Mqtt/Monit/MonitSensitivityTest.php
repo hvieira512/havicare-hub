@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Ingress\Mqtt\Moko;
+namespace Tests\Unit\Ingress\Mqtt\Monit;
 
 use Hub\Domain\DiaperSensitivity;
-use Hub\Ingress\Mqtt\Moko\MonitNormalizer;
+use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
 use PHPUnit\Framework\TestCase;
 
 /**

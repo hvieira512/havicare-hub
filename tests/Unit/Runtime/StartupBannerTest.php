@@ -60,7 +60,7 @@ final class StartupBannerTest extends TestCase
 
     public function testTheVeepooIngressReportsTheGatewayTopicFilter(): void
     {
-        $output = $this->banner(['moko', 'veepoo']);
+        $output = $this->banner(['gateway', 'veepoo']);
 
         self::assertStringContainsString(
             'Veepoo bracelet ingress topics: havicare-hub/null/0/gw/+/raw',
@@ -113,7 +113,7 @@ final class StartupBannerTest extends TestCase
             'redis' => ['host' => '127.0.0.1', 'port' => 6379],
             'hub' => ['downlink_queue_ttl_seconds' => 3600],
             'ncs' => ['topic_filter' => '/voerka/#'],
-            'moko' => ['topic_filter' => 'havicare-hub/null/0/gw/+/raw'],
+            'gateway' => ['topic_filter' => 'havicare-hub/null/0/gw/+/raw'],
             'qinglanst' => ['topic_filter' => 'radar/+/+', 'client_id_prefix' => 'qinglanst-radar'],
             'mqtt' => ['client_id_prefix' => 'health-mqtt'],
         ];
