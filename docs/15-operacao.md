@@ -324,6 +324,27 @@ journalctl -u mosquitto | grep "already connected"
 no `license_id`. O texto `'null'` e o `0` só valem em memória e no ficheiro da
 whitelist — ver o [multi-inquilino](07-multi-inquilino.md).
 
+**Copiar linhas entre bases.** As colunas `id` são auto-incremento e **não
+coincidem entre bases**. A mesma licença `2103` é `id 9` na base local e `id 19`
+na de produção; copiar uma linha com o `license_ref_id` tal como está atribui-a à
+licença que por acaso tenha esse número do outro lado — que num sistema
+multi-inquilino é entregar dados de um cliente a outro.
+
+A resolução faz-se sempre pelo `license_id`, que é o número real da licença, e
+nunca pelo `id`:
+
+```sql
+SELECT id, license_id, name FROM licenses WHERE license_id IN (…);
+```
+
+E confirma-se depois pelo lado de lá, com um `join` que mostre a que licença a
+linha ficou mesmo ligada — não basta ver que a inserção correu:
+
+```sql
+SELECT c.license_ref_id, l.license_id, l.name
+FROM radar_api_credentials c JOIN licenses l ON l.id = c.license_ref_id;
+```
+
 **Gateways MOKO.** Um MKGW4 **suspende a publicação** enquanto a aplicação
 MKScannerPro lhe estiver ligada. A aplicação tem de estar encerrada antes de se
 diagnosticar uma avaria.
