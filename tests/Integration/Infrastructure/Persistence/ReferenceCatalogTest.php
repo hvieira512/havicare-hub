@@ -142,13 +142,24 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
 
         $expected = [
             'battery',
+            'calibrate_clock',
             'cells_remaining',
             'device_fault',
             'device_status',
+            'dispense_mode',
+            'dispense_now',
+            'do_not_disturb',
             'help_call',
             'humidity',
+            'language_timezone',
             'medication_intake',
             'medication_level',
+            'medication_reminders',
+            'mute_alarm',
+            'reset_device',
+            'reset_tray',
+            'restart_device',
+            'sound_profile',
             'temperature',
         ];
 
@@ -159,13 +170,22 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Nenhuma é configurável: enquanto não houver downlink, um interruptor na dashboard
-        // era um botão que não faz nada.
+        // Cinco configuráveis e seis pedíveis. Uma acção pede-se e não se configura, e por
+        // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
+        self::assertSame(
+            ['5', '6'],
+            array_map('strval', $pdo->query("
+                SELECT
+                    SUM(is_configurable = 1) AS configuraveis,
+                    SUM(is_requestable = 1) AS pediveis
+                FROM capabilities WHERE device_type = 'pill_dispenser'
+            ")->fetch(\PDO::FETCH_NUM))
+        );
         self::assertSame(
             0,
             (int)$pdo->query("
                 SELECT COUNT(*) FROM capabilities
-                WHERE device_type = 'pill_dispenser' AND (is_configurable = 1 OR is_requestable = 1)
+                WHERE device_type = 'pill_dispenser' AND is_configurable = 1 AND is_requestable = 1
             ")->fetchColumn()
         );
 

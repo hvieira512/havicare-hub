@@ -411,6 +411,19 @@ final class CapabilityCatalog
             // A chave nativa é a genérica: não há comando nativo de que esta seja tradução,
             // porque o hub aplica-a sozinho.
             'diaper_sensitivity' => 'diaper_sensitivity',
+            // O dispensador declara as definições já pela chave genérica; o nativo é o
+            // `command`, que é o que monta a trama.
+            'medication_reminders',
+            'dispense_mode',
+            'sound_profile',
+            'do_not_disturb',
+            'language_timezone',
+            'dispense_now',
+            'calibrate_clock',
+            'mute_alarm',
+            'reset_tray',
+            'restart_device',
+            'reset_device' => $key,
             default => null,
         };
     }

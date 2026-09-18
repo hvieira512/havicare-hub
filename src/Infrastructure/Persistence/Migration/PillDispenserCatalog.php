@@ -43,8 +43,7 @@ final class PillDispenserCatalog implements Migration
             FROM suppliers WHERE name = 'Zayata'
         ");
 
-        // Só telemetria e eventos. Nenhuma é configurável nem pedível enquanto não existir o
-        // caminho de descida -- um interruptor sem downlink é um botão que não faz nada.
+        // Telemetria, eventos, o que se configura e o que se pede.
         $pdo->exec("
             INSERT INTO capabilities (device_type, section, capability_key, label, is_configurable, is_requestable)
             VALUES
@@ -56,7 +55,18 @@ final class PillDispenserCatalog implements Migration
                 ('pill_dispenser', 'telemetry', 'device_status', 'Estado do dispositivo', 0, 0),
                 ('pill_dispenser', 'alarms', 'medication_intake', 'Toma de medicação', 0, 0),
                 ('pill_dispenser', 'alarms', 'device_fault', 'Avaria', 0, 0),
-                ('pill_dispenser', 'alarms', 'help_call', 'Chamada de ajuda', 0, 0)
+                ('pill_dispenser', 'alarms', 'help_call', 'Chamada de ajuda', 0, 0),
+                ('pill_dispenser', 'health', 'medication_reminders', 'Plano de medicação', 1, 0),
+                ('pill_dispenser', 'health', 'dispense_mode', 'Modo de dispensa', 1, 0),
+                ('pill_dispenser', 'settings_system', 'sound_profile', 'Som', 1, 0),
+                ('pill_dispenser', 'settings_system', 'do_not_disturb', 'Não incomodar', 1, 0),
+                ('pill_dispenser', 'settings_system', 'language_timezone', 'Idioma e fuso horário', 1, 0),
+                ('pill_dispenser', 'health', 'dispense_now', 'Dispensar agora', 0, 1),
+                ('pill_dispenser', 'alarms', 'mute_alarm', 'Silenciar', 0, 1),
+                ('pill_dispenser', 'settings_system', 'calibrate_clock', 'Calibrar relógio', 0, 1),
+                ('pill_dispenser', 'settings_system', 'reset_tray', 'Repor o prato', 0, 1),
+                ('pill_dispenser', 'settings_system', 'restart_device', 'Reiniciar', 0, 1),
+                ('pill_dispenser', 'settings_system', 'reset_device', 'Reposição de fábrica', 0, 1)
             ON DUPLICATE KEY UPDATE
                 section = VALUES(section),
                 label = VALUES(label),

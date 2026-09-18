@@ -158,6 +158,17 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         return ['kind' => 'unknown', 'id' => ''];
     }
 
+    /**
+     * A identidade tal como a whitelist a guarda, de volta ao inteiro de 64 bits. Quinze
+     * dígitos são um IMEI; doze hexadecimais são um MAC.
+     */
+    public static function deviceNumberFor(string $id): int
+    {
+        $id = trim($id);
+
+        return self::encodeDeviceNumber($id, preg_match('/^\d{15}$/', $id) === 1 ? 'imei' : 'mac');
+    }
+
     public static function encodeDeviceNumber(string $id, string $kind): int
     {
         if ($kind === 'imei') {

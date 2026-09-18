@@ -7,11 +7,13 @@ use Hub\Command\Configuration\Definition\MonitConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\VeepooConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\VivistarConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\WonlexConfigurationDefinitions;
+use Hub\Command\Configuration\Definition\ZayataConfigurationDefinitions;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookDelta;
 use Hub\Command\Configuration\Payload\VeepooPayloadBuilder;
 use Hub\Command\Configuration\Payload\VivistarPayloadBuilder;
 use Hub\Command\Configuration\Payload\WonlexPayloadBuilder;
+use Hub\Command\Configuration\Payload\ZayataPayloadBuilder;
 use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 
 final class DeviceConfigurationCatalog
@@ -32,6 +34,7 @@ final class DeviceConfigurationCatalog
             'four-p-touch' => FourPTouchConfigurationDefinitions::all(),
             'monit-mecs-pro-ble' => MonitConfigurationDefinitions::all(),
             'veepoo-ble' => VeepooConfigurationDefinitions::all(),
+            'zayata-m228' => ZayataConfigurationDefinitions::all(),
             default => [],
         };
 
@@ -167,6 +170,7 @@ final class DeviceConfigurationCatalog
                 // o SDK dentro do gateway, e o payload chega lá genérico. Inventar aqui uma
                 // forma nativa obrigava a desfazê-la do outro lado.
                 'veepoo-ble' => VeepooPayloadBuilder::build($key, $item),
+                'zayata-m228' => ZayataPayloadBuilder::build($key, $item),
                 default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
             },
         ], $payloads);

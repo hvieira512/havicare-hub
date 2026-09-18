@@ -3,6 +3,7 @@
 namespace Hub\Command;
 
 use Hub\Protocol\Adapter\FourPTouchAdapter;
+use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
 
@@ -98,6 +99,7 @@ final class DeviceCommandCatalog
             // Não há trama a montar: o destinatário é o gateway, e o que ele precisa é do
             // nome da operação para chamar o SDK. Os bytes em fila são esse nome.
             'veepoo-ble' => $command,
+            'zayata-m228' => self::buildPillDispenser($imei, $command, $payload),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };
     }
@@ -294,6 +296,108 @@ final class DeviceCommandCatalog
             'oneTime' => 30,
             'collectionLogo' => (string)random_int(10000000, 99999999),
         ];
+    }
+
+    /**
+     * A descida do dispensador M228.
+     *
+     * A configuração vai num pacote `0x06` e o controlo num `0x08`, ambos com o corpo em
+     * TFLV. O que distingue os dois não é o conteúdo mas o tipo de pacote: escrever uma TAG
+     * de controlo num pacote de configuração não faz nada.
+     */
+    private static function buildPillDispenser(string $imei, string $command, array $payload = []): string
+    {
+        $control = [
+            'restartDevice' => 0xA001,
+            'factoryReset' => 0xA002,
+            'calibrateClock' => 0xA101,
+            'muteAlarm' => 0xA102,
+            'resetTray' => 0xA103,
+            'dispenseNow' => 0xA123,
+        ][$command] ?? null;
+
+        if ($control !== null) {
+            return self::pillFrame($imei, 0x08, [$control => ['value' => "\x01"]]);
+        }
+
+        $tlv = match ($command) {
+            'medicationPlan' => self::pillMedicationPlan($payload),
+            'dispenseMode' => [
+                0x100C => ['value' => self::pillBool($payload['childLock'] ?? false)],
+                0x100D => ['value' => self::pillBool($payload['earlyRetrieval'] ?? false)],
+            ],
+            'soundProfile' => [
+                0x1012 => ['value' => self::pillByte($payload['ringtone'] ?? 0)],
+                0x1013 => ['value' => self::pillByte($payload['volume'] ?? 0)],
+            ],
+            'doNotDisturb' => [
+                0x1051 => ['value' => self::pillBool($payload['enabled'] ?? false)],
+                0x1052 => ['value' => self::pillByte($payload['startHour'] ?? 0, 23)],
+                0x1053 => ['value' => self::pillByte($payload['startMinute'] ?? 0, 59)],
+                0x1054 => ['value' => self::pillByte($payload['endHour'] ?? 0, 23)],
+                0x1055 => ['value' => self::pillByte($payload['endMinute'] ?? 0, 59)],
+            ],
+            'languageTimezone' => [
+                0x1001 => ['value' => self::pillByte($payload['language'] ?? 0)],
+                // INT16S: a oeste de Greenwich o desvio é negativo.
+                0x1015 => ['value' => pack('s', (int)($payload['timezoneMinutes'] ?? 0))],
+            ],
+            default => throw new \InvalidArgumentException("Unsupported zayata-m228 command {$command}"),
+        };
+
+        return self::pillFrame($imei, 0x06, $tlv);
+    }
+
+    /**
+     * Os nove alarmes, sempre os nove. O aparelho não os cria nem apaga, e um slot que o
+     * plano não use tem de ser desligado explicitamente: senão ficava a tocar o que lá
+     * estivesse de um plano anterior.
+     *
+     * @return array<int, array{value: string}>
+     */
+    private static function pillMedicationPlan(array $payload): array
+    {
+        $plans = array_values(array_filter($payload['plans'] ?? [], 'is_array'));
+        if (count($plans) > 9) {
+            throw new \InvalidArgumentException('o M228 tem nove alarmes, e o plano traz ' . count($plans));
+        }
+
+        $tlv = [];
+        for ($slot = 0; $slot < 9; $slot++) {
+            $plan = $plans[$slot] ?? null;
+            $tlv[0x1021 + $slot] = ['value' => self::pillByte($plan['hour'] ?? 0, 23)];
+            $tlv[0x1031 + $slot] = ['value' => self::pillByte($plan['minute'] ?? 0, 59)];
+            $tlv[0x1041 + $slot] = ['value' => self::pillBool($plan !== null && ($plan['enabled'] ?? true))];
+        }
+
+        return $tlv;
+    }
+
+    /** @param array<int, array{value: string}> $tlv */
+    private static function pillFrame(string $imei, int $packetType, array $tlv): string
+    {
+        $adapter = new PillDispenserAdapter();
+
+        return $adapter->encodeOutgoing([
+            'packetType' => $packetType,
+            'deviceNumber' => PillDispenserAdapter::deviceNumberFor($imei),
+            'tlv' => $tlv,
+        ]);
+    }
+
+    private static function pillByte(mixed $value, int $max = 255): string
+    {
+        $number = (int)$value;
+        if ($number < 0 || $number > $max) {
+            throw new \InvalidArgumentException("valor {$number} fora da gama 0-{$max}");
+        }
+
+        return chr($number);
+    }
+
+    private static function pillBool(mixed $value): string
+    {
+        return chr($value ? 1 : 0);
     }
 
     private static function buildVivistar(string $imei, string $command, array $entry, array $payload = []): string

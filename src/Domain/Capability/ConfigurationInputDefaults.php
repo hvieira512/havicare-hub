@@ -60,6 +60,19 @@ final class ConfigurationInputDefaults
                 'sleepGoalMinutes' => 480,
             ],
             'intervalHoursToggle' => ['enabled' => true, 'intervalHours' => 2],
+            // O dispensador. O plano parte vazio de propósito: vazio quer dizer os nove
+            // alarmes desligados, que é um estado legítimo e não um formulário por preencher.
+            'pillDispenserAlarms' => ['plans' => []],
+            'pillDispenserSound' => ['volume' => 2, 'ringtone' => 0],
+            'pillDispenserQuietHours' => [
+                'enabled' => false,
+                'startHour' => 22,
+                'startMinute' => 0,
+                'endHour' => 7,
+                'endMinute' => 0,
+            ],
+            'pillDispenserRegion' => ['language' => 0, 'timezoneMinutes' => 0],
+            'pillDispenserDispenseMode' => ['earlyRetrieval' => false, 'childLock' => false],
             'workingMode' => ['mode' => 1],
             'bloodPressure' => ['systolic' => 120, 'diastolic' => 80],
             // O `BPEarlyWarning` leva um limiar sistólico e um diastólico, e o construtor de

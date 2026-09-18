@@ -3,6 +3,7 @@
 namespace Hub\Api\Repository;
 
 use Hub\Domain\DeviceProtocol;
+use Hub\Domain\DeviceTypeCatalog;
 use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
@@ -152,6 +153,14 @@ final class ModelRepository
      */
     public function supplierDeviceTypes(): array
     {
+        // A ordem vem do catálogo e não de uma lista escrita aqui: um tipo acrescentado ao
+        // `device-types.json` ficava fora do `FIELD()` e ordenava-se à frente de todos, que
+        // é o que o zero devolvido por um `FIELD()` sem correspondência faz.
+        $order = implode(', ', array_map(
+            static fn(string $deviceType): string => "'" . $deviceType . "'",
+            array_filter(DeviceTypeCatalog::keys(), static fn(string $key): bool => preg_match('/^[a-z_]+$/', $key) === 1),
+        ));
+
         return $this->pdo
             ->query("
                 SELECT DISTINCT
@@ -160,7 +169,7 @@ final class ModelRepository
                     m.device_type
                 FROM models m
                 INNER JOIN suppliers s ON s.id = m.supplier_id
-                ORDER BY FIELD(m.device_type, 'watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet'), s.name
+                ORDER BY FIELD(m.device_type, {$order}), s.name
             ")
             ->fetchAll();
     }

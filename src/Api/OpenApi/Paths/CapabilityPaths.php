@@ -5,6 +5,7 @@ namespace Hub\Api\OpenApi\Paths;
 use Hub\Api\OpenApi\Parameters;
 use Hub\Api\OpenApi\Requests;
 use Hub\Api\OpenApi\Responses;
+use Hub\Domain\DeviceTypeCatalog;
 
 /**
  * O catálogo de capacidades por tipo de dispositivo, e as descobertas de capacidades.
@@ -24,9 +25,11 @@ final class CapabilityPaths
                     'tags' => ['Capabilities'],
                     'summary' => 'List device-type capability catalog',
                     'parameters' => [
+                        // Do catálogo e não de uma lista à mão: um tipo novo entrava no hub e
+                        // ficava de fora do contrato publicado, que é onde ninguém repara.
                         Parameters::query('deviceType', [
                             'type' => 'string',
-                            'enum' => ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet'],
+                            'enum' => DeviceTypeCatalog::keys(),
                         ]),
                     ],
                     'responses' => [

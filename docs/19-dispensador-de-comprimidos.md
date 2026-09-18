@@ -310,10 +310,27 @@ os relógios já o fazem. A `help_call` é a mesma chave do NCS e da pulseira.
 mesmo tipo mais o bit alto (`0x81`–`0x84`), corpo vazio e estado `0x00`, ecoando
 o número de série e a identidade. O **bit 1** do `Flag` dispensa a resposta.
 
-**O que falta.** Todo o caminho de descida: ler e escrever configuração (`0x05`,
-`0x06`), consultar estado (`0x07`), controlar (`0x08`) e o plano dos nove
-alarmes. Enquanto não existir, o dispensador não declara capacidades
-configuráveis — declará-las sem downlink era prometer um botão que não faz nada.
+**O que se configura.** A escrita de configuração sai num pacote `0x06` e o
+controlo num `0x08`, ambos com o corpo em TFLV. O que os distingue não é o
+conteúdo mas o tipo de pacote: escrever uma TAG de controlo num pacote de
+configuração não faz nada.
+
+| Capacidade | TAGs | Notas |
+|---|---|---|
+| `medication_reminders` | `0x1021`–`0x1049` | **os nove alarmes de cada vez.** Os slots que o plano não usa são desligados de propósito — o aparelho tem nove fixos, e um que sobrasse de um plano anterior continuava a tocar |
+| `dispense_mode` | `0x100C` / `0x100D` | bloqueio de criança e toma antecipada |
+| `sound_profile` | `0x1012` / `0x1013` | tipo de toque e volume |
+| `do_not_disturb` | `0x1051`–`0x1055` | interruptor e janela |
+| `language_timezone` | `0x1001` / `0x1015` | o fuso é INT16S: a oeste é negativo |
+
+E as acções, em pacote `0x08`: `dispense_now` (`0xA123`), `calibrate_clock`
+(`0xA101`), `mute_alarm` (`0xA102`), `reset_tray` (`0xA103`), `restart_device`
+(`0xA001`) e `reset_device` (`0xA002`).
+
+**O que falta.** Ler a configuração de volta do aparelho (`0x05`) e consultar
+estado a pedido (`0x07`): por agora o hub escreve e o aparelho confirma no
+estado do TFLV, mas a reconciliação lê o que o heartbeat traz e não o que se
+pergunta.
 
 **Onde está.** `src/Protocol/Adapter/PillDispenserAdapter.php` (a trama),
 `src/Device/DeviceEventDecoder.php` (as TAGs), o protocolo de sessão em

@@ -31,10 +31,10 @@ final class CapabilityCatalogTest extends TestCase
             // passou também a poder ser pedido: é a única grandeza sem outro caminho, e a
             // pulseira responde ao pedido a qualquer momento.
             'bracelet' => [41, 'c24b1c638090a697db262e4159d9b57acc2632480af274cb8c98e1b4f2ef57bd'],
-            // O dispensador M228 declara só o que descodifica por TCP: seis grandezas de
-            // telemetria e três eventos (toma, avaria, chamada de ajuda). O plano e os
-            // comandos, que pedem downlink, ainda não são capacidades.
-            'pill_dispenser' => [9, '62c2a97953608a0684de9f9bf71c178470321d50c909e13d4abb2ce96823d014'],
+            // O dispensador M228: seis grandezas de telemetria, três eventos (toma, avaria,
+            // chamada de ajuda), cinco configurações e seis acções. Foram 9 enquanto só
+            // existia a subida; a descida trouxe as outras onze.
+            'pill_dispenser' => [20, '577488789bccddda6f977b8484a84b8f878f997dedc9bf11a2857cd2136c45f5'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

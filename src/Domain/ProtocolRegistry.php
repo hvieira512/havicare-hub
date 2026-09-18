@@ -81,12 +81,10 @@ final class ProtocolRegistry
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => false,
             ],
-            // Sem catálogo de configuração para já: entra por descodificação de telemetria e
-            // eventos. O downlink de comandos e de plano é uma camada posterior.
             'zayata-m228' => [
                 'label' => 'Zayata',
                 'deviceType' => 'pill_dispenser',
-                'supportsConfigCatalog' => false,
+                'supportsConfigCatalog' => true,
             ],
         ];
     }

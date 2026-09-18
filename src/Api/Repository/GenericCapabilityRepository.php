@@ -3,6 +3,7 @@
 namespace Hub\Api\Repository;
 
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\DeviceTypeCatalog;
 use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
@@ -144,7 +145,9 @@ final class GenericCapabilityRepository
         }
 
         usort($filtered, static function (array $left, array $right): int {
-            $deviceTypeOrder = ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet'];
+            // Do catálogo: uma lista à mão deixava um tipo novo a ordenar como se não
+            // existisse, no topo e sem se perceber porquê.
+            $deviceTypeOrder = DeviceTypeCatalog::keys();
             $sectionOrder = ['telemetry', 'health', 'contacts', 'alarms', 'settings_system'];
             $deviceIndex = static function (string $deviceType) use ($deviceTypeOrder): int {
                 $index = array_search($deviceType, $deviceTypeOrder, true);

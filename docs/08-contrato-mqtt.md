@@ -18,7 +18,7 @@ invariavelmente esta forma:
 | `{prefixo}` | A instância. `havicare-hub` em produção, `havicare-hub-dev` em desenvolvimento | `havicare-hub` |
 | `{empresa}` | Nome do cliente, **sempre em minúsculas**. O texto `null` quando não tem dono | `hitcare` |
 | `{licenca}` | Número da licença. `0` quando não tem dono | `1001` |
-| `{tipo}` | `watch`, `ncs`, `radar`, `gateway`, `diaper_sensor`, `bracelet` | `watch` |
+| `{tipo}` | `watch`, `ncs`, `radar`, `gateway`, `diaper_sensor`, `bracelet`, `pill_dispenser` | `watch` |
 | `{dispositivo}` | Identidade canónica — a mesma que vai em `device.id` | `861265061009822` |
 | `{canal}` | `raw`, `status`, `events`, `telemetry` | `telemetry` |
 
