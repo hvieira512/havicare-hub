@@ -9,7 +9,6 @@ const PHONE_COUNTRIES = [
         minLength: 9,
         maxLength: 9,
         groups: [3, 3, 3],
-        sample: "912 345 678",
     },
     {
         code: "ES",
@@ -19,7 +18,6 @@ const PHONE_COUNTRIES = [
         minLength: 9,
         maxLength: 9,
         groups: [3, 3, 3],
-        sample: "612 345 678",
     },
     {
         code: "FR",
@@ -29,7 +27,6 @@ const PHONE_COUNTRIES = [
         minLength: 9,
         maxLength: 9,
         groups: [1, 2, 2, 2, 2],
-        sample: "6 12 34 56 78",
     },
     {
         code: "IT",
@@ -39,7 +36,6 @@ const PHONE_COUNTRIES = [
         minLength: 9,
         maxLength: 10,
         groups: [3, 3, 4],
-        sample: "312 345 6789",
     },
     {
         code: "DE",
@@ -49,7 +45,6 @@ const PHONE_COUNTRIES = [
         minLength: 10,
         maxLength: 11,
         groups: [3, 3, 4, 4],
-        sample: "151 234 56789",
     },
     {
         code: "GB",
@@ -59,7 +54,6 @@ const PHONE_COUNTRIES = [
         minLength: 10,
         maxLength: 10,
         groups: [4, 3, 3],
-        sample: "7911 123 456",
     },
 ];
 
@@ -102,7 +96,7 @@ export function renderPhoneControl({
                     autocomplete="tel-national"
                     ${normalizedMaxLength > 0 ? `maxlength="${esc(String(normalizedMaxLength))}"` : ""}
                     data-phone-local
-                    placeholder="${esc(placeholderForCountry(country.code, placeholder))}"
+                    placeholder="${esc(placeholder)}"
                     value="${esc(formatLocalNumber(country.code, parsed.localDigits))}">
             </div>
             <div class="invalid-feedback d-none" data-phone-feedback></div>
@@ -155,10 +149,6 @@ export function syncPhoneControl(target) {
     input.value = formatLocalNumber(
         countryCode,
         phoneDigits(input.value || ""),
-    );
-    input.placeholder = placeholderForCountry(
-        countryCode,
-        input.placeholder || "Número",
     );
     clearPhoneControlError(control);
 }
@@ -241,11 +231,6 @@ function phoneCountry(code) {
         PHONE_COUNTRIES.find((country) => country.code === code) ||
         PHONE_COUNTRIES[0]
     );
-}
-
-function placeholderForCountry(code, fallback) {
-    const country = phoneCountry(code);
-    return country.sample || fallback;
 }
 
 function formatLocalNumber(code, digits) {
