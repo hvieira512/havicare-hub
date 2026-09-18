@@ -21,7 +21,7 @@ import {
 } from "../readers.js";
 
 /**
- * Os campos das capacidades genéricas do hub -- alarmes, contactos SOS, lista de chamadas autorizadas, dados
+ * Os campos das capacidades genéricas do hub -- alarmes, contactos SOS, lista branca, dados
  * pessoais, sensibilidade da fralda.
  *
  * Não pertencem a nenhum fornecedor: são a forma que o hub dá a uma capacidade, e cada
@@ -208,7 +208,7 @@ export function callWhitelistInput(entry, desired, meta = {}) {
     return phoneRepeaterInput(entry, desired, {
         kind: "call_whitelist",
         limit: Math.max(1, parseInt(String(entry.limit ?? 10), 10) || 10),
-        label: "Lista de chamadas autorizadas",
+        label: "Lista branca",
         emptyLabel: "Adicionar número",
         placeholderPrefix: "Número",
         helpText: "Até 10 números permitidos.",
@@ -482,7 +482,7 @@ export const INPUTS = {
             if ((section.dataset.configProtocol || "") === "vivistar-iw") {
                 return { contacts: readContacts(section).slice(0, limit) };
             }
-            return readUniquePhoneArray(section, "numbers", "Lista de chamadas autorizadas").slice(0, limit);
+            return readUniquePhoneArray(section, "numbers", "Lista branca").slice(0, limit);
         },
         defaults: (entry, protocol) => protocol === "vivistar-iw"
             ? { contacts: [{ name: "", phone: "" }] }
@@ -496,7 +496,7 @@ export const INPUTS = {
             enabled: readCheckbox(section, "enabled"),
         }),
         defaults: () => ({ enabled: true }),
-        help: () => "ativa ou desativa a lista de chamadas autorizadas",
+        help: () => "ativa ou desativa a lista branca",
     },
     phonebook: {
         render: contactsInput,

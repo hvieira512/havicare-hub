@@ -57,11 +57,11 @@ final class ProtocolDashboardMeta
                         'limit' => 3,
                     ],
                     'call_whitelist' => [
-                        'label' => 'Lista de chamadas autorizadas',
+                        'label' => 'Lista branca',
                         'limit' => 10,
                     ],
                     'whitelist_enabled' => [
-                        'label' => 'Restringir chamadas recebidas',
+                        'label' => 'Lista branca ativa',
                         'limit' => 0,
                     ],
                 ],
