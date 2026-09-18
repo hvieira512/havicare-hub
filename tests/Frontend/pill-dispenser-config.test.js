@@ -26,20 +26,13 @@ test("o plano parte vazio sem rebentar", () => {
     assert.deepEqual(alarms.defaults(entry(["plans"])), { plans: [] });
 });
 
-test("o som e o fuso trazem os campos que o aparelho precisa", () => {
-    const sound = CONFIG_INPUTS.pillDispenserSound.render(
-        entry(["volume", "ringtone"]),
-        { volume: 3, ringtone: 1 },
-    );
-    assert.match(sound, /data-config-field="volume"/);
-    assert.match(sound, /data-config-field="ringtone"/);
-
-    const region = CONFIG_INPUTS.pillDispenserRegion.render(
-        entry(["language", "timezoneMinutes"]),
-        { language: 0, timezoneMinutes: 60 },
-    );
-    assert.match(region, /data-config-field="timezoneMinutes"/);
-    assert.match(region, /value="60"/);
+test("o som, o idioma e o fuso são escolhas e não números soltos", () => {
+    // Estes quatro eram números sem significado no ecrã. Passaram a usar o campo de escolha
+    // genérico, com os valores e os rótulos que a especificação define.
+    for (const name of ["pillDispenserSound", "pillDispenserRegion"]) {
+        assert.equal(CONFIG_INPUTS[name], undefined, `${name} devia ter desaparecido`);
+    }
+    assert.equal(typeof CONFIG_INPUTS.select.render, "function");
 });
 
 test("o não incomodar desenha a janela inteira", () => {
@@ -87,9 +80,7 @@ test("todos os campos do dispensador declaram as quatro faces", () => {
     for (const name of [
         "pillDispenserAlarms",
         "pillDispenserPeriod",
-        "pillDispenserSound",
         "pillDispenserQuietHours",
-        "pillDispenserRegion",
     ]) {
         const input = CONFIG_INPUTS[name];
         assert.ok(input, `${name} não está registado`);

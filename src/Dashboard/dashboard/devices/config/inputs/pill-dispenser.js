@@ -100,15 +100,6 @@ export const INPUTS = {
         read: readAlarms,
         defaults: () => ({ plans: [] }),
     },
-    pillDispenserSound: {
-        // Cinco níveis em cada, como o aparelho os numera.
-        render: numbers([
-            { name: "volume", min: 0, max: 4, label: "Volume" },
-            { name: "ringtone", min: 0, max: 4, label: "Tipo de toque" },
-        ]),
-        read: readNumbers(["volume", "ringtone"]),
-        defaults: () => ({ volume: 2, ringtone: 0 }),
-    },
     pillDispenserQuietHours: {
         render: (entry, desired) =>
             enabledSwitch(Boolean(desired?.enabled)) +
@@ -129,14 +120,5 @@ export const INPUTS = {
             endHour: 7,
             endMinute: 0,
         }),
-    },
-    pillDispenserRegion: {
-        render: numbers([
-            { name: "language", min: 0, max: 20, label: "Idioma" },
-            // Com sinal: os fusos a oeste de Greenwich são negativos.
-            { name: "timezoneMinutes", min: -720, max: 840, label: "Fuso horário (minutos)" },
-        ]),
-        read: readNumbers(["language", "timezoneMinutes"]),
-        defaults: () => ({ language: 0, timezoneMinutes: 0 }),
     },
 };

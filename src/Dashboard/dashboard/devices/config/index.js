@@ -387,13 +387,13 @@ export function renderConfigSection(
     // que é o oposto do que o `justify-content-between` promete.
     return `
         <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""}>
-            <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
+            <div class="d-flex align-items-start justify-content-between gap-2">
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
                     ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
                 </div>
                 ${showConfigurationBadge
-                    ? stateBadge(deliveryMeta.label, deliveryMeta.tone)
+                    ? `<div class="flex-shrink-0">${stateBadge(deliveryMeta.label, deliveryMeta.tone)}</div>`
                     : ""}
             </div>
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}

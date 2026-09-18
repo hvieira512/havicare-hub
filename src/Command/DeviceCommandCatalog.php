@@ -325,10 +325,9 @@ final class DeviceCommandCatalog
             'medicationPeriod' => self::pillMedicationPeriod($payload),
             'childLock' => [0x100C => ['value' => self::pillBool($payload['enabled'] ?? false)]],
             'earlyRetrieval' => [0x100D => ['value' => self::pillBool($payload['enabled'] ?? false)]],
-            'soundProfile' => [
-                0x1012 => ['value' => self::pillByte($payload['ringtone'] ?? 0)],
-                0x1013 => ['value' => self::pillByte($payload['volume'] ?? 0)],
-            ],
+            'alarmRingtone' => [0x1012 => ['value' => self::pillByte($payload['ringtone'] ?? 0, 4)]],
+            // 0 é o mais alto e 3 é silêncio, ao contrário do que o nome faz esperar.
+            'alarmVolume' => [0x1013 => ['value' => self::pillByte($payload['volume'] ?? 0, 3)]],
             'doNotDisturb' => [
                 0x1051 => ['value' => self::pillBool($payload['enabled'] ?? false)],
                 0x1052 => ['value' => self::pillByte($payload['startHour'] ?? 0, 23)],
@@ -336,11 +335,9 @@ final class DeviceCommandCatalog
                 0x1054 => ['value' => self::pillByte($payload['endHour'] ?? 0, 23)],
                 0x1055 => ['value' => self::pillByte($payload['endMinute'] ?? 0, 59)],
             ],
-            'languageTimezone' => [
-                0x1001 => ['value' => self::pillByte($payload['language'] ?? 0)],
-                // INT16S: a oeste de Greenwich o desvio é negativo.
-                0x1015 => ['value' => pack('s', (int)($payload['timezoneMinutes'] ?? 0))],
-            ],
+            'deviceLanguage' => [0x1001 => ['value' => self::pillByte($payload['language'] ?? 0, 1)]],
+            // INT16S em HHMM: `+100` é uma hora à frente, e a oeste o sinal é negativo.
+            'timeZone' => [0x1015 => ['value' => pack('s', (int)($payload['timeZone'] ?? 0))]],
             default => throw new \InvalidArgumentException("Unsupported zayata-m228 command {$command}"),
         };
 

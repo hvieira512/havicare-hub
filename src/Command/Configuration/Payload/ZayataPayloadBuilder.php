@@ -31,11 +31,10 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             'early_dispense', 'child_lock' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
             ],
-            'sound_profile' => [
-                // Cinco níveis de volume e cinco toques, como o aparelho os numera.
-                'volume' => self::zeroBasedRangeInt($payload['volume'] ?? 2, 0, 4, 'volume'),
-                'ringtone' => self::zeroBasedRangeInt($payload['ringtone'] ?? 0, 0, 4, 'ringtone'),
-            ],
+            // As gamas são as da especificação: quatro níveis de volume, em que 0 é o mais
+            // alto e 3 é silêncio, e cinco toques a contar com o «nenhum».
+            'alarm_volume' => ['volume' => self::zeroBasedRangeInt($payload['volume'] ?? 0, 0, 3, 'volume')],
+            'alarm_ringtone' => ['ringtone' => self::zeroBasedRangeInt($payload['ringtone'] ?? 0, 0, 4, 'ringtone')],
             'do_not_disturb' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
                 'startHour' => self::zeroBasedRangeInt($payload['startHour'] ?? 22, 0, 23, 'startHour'),
@@ -43,12 +42,11 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
                 'endHour' => self::zeroBasedRangeInt($payload['endHour'] ?? 7, 0, 23, 'endHour'),
                 'endMinute' => self::zeroBasedRangeInt($payload['endMinute'] ?? 0, 0, 59, 'endMinute'),
             ],
-            'language_timezone' => [
-                'language' => self::zeroBasedRangeInt($payload['language'] ?? 0, 0, 20, 'language'),
-                // Em minutos, e com sinal: Lisboa no inverno é 0, no verão 60, e os fusos a
-                // oeste são negativos. A gama é a dos fusos que existem.
-                'timezoneMinutes' => self::zeroBasedRangeInt($payload['timezoneMinutes'] ?? 0, -720, 840, 'timezoneMinutes'),
-            ],
+            // Duas línguas e mais nada: a de fábrica e o inglês.
+            'device_language' => ['language' => self::zeroBasedRangeInt($payload['language'] ?? 0, 0, 1, 'language')],
+            // HHMM com sinal, e não minutos: `+100` é uma hora à frente. A gama é a da
+            // especificação, de −1200 a +1400.
+            'time_zone' => ['timeZone' => self::zeroBasedRangeInt($payload['timeZone'] ?? 0, -1200, 1400, 'timeZone')],
             // As acções não levam payload: o que as distingue é o comando.
             default => [],
         };

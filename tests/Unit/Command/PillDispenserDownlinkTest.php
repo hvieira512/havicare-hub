@@ -64,15 +64,18 @@ final class PillDispenserDownlinkTest extends TestCase
 
     public function testSoundAndDoNotDisturbAreWrittenAsConfiguration(): void
     {
-        $sound = $this->decode(
-            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'soundProfile', [
-                'volume' => 3,
-                'ringtone' => 2,
-            ]),
+        // Volume e toque são enumerações independentes, cada uma com o seu comando.
+        $volume = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'alarmVolume', ['volume' => 3]),
             0x06,
         );
-        self::assertSame("\x02", $sound[0x1012]['value']);
-        self::assertSame("\x03", $sound[0x1013]['value']);
+        self::assertSame("\x03", $volume[0x1013]['value'], '3 é silêncio, e não o volume mais alto');
+
+        $ringtone = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'alarmRingtone', ['ringtone' => 2]),
+            0x06,
+        );
+        self::assertSame("\x02", $ringtone[0x1012]['value']);
 
         $quiet = $this->decode(
             DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'doNotDisturb', [
@@ -143,18 +146,26 @@ final class PillDispenserDownlinkTest extends TestCase
         self::assertSame("\x00", $tlv[0x100A]['value']);
     }
 
-    public function testTheTimeZoneIsSignedBecauseItGoesWest(): void
+    public function testTheTimeZoneIsSignedAndInHoursAndMinutes(): void
     {
-        $tlv = $this->decode(
-            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'languageTimezone', [
-                'language' => 1,
-                'timezoneMinutes' => -60,
-            ]),
+        $language = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'deviceLanguage', ['language' => 1]),
             0x06,
         );
+        self::assertSame("\x01", $language[0x1001]['value']);
 
-        self::assertSame("\x01", $tlv[0x1001]['value']);
-        self::assertSame(-60, unpack('s', $tlv[0x1015]['value'])[1]);
+        // HHMM e não minutos: -100 é uma hora atrás, e não cem minutos.
+        $zone = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'timeZone', ['timeZone' => -100]),
+            0x06,
+        );
+        self::assertSame(-100, unpack('s', $zone[0x1015]['value'])[1]);
+
+        $lisbonSummer = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'timeZone', ['timeZone' => 100]),
+            0x06,
+        );
+        self::assertSame(100, unpack('s', $lisbonSummer[0x1015]['value'])[1]);
     }
 
     public function testControlsTravelAsControlPacketsAndNotAsConfiguration(): void

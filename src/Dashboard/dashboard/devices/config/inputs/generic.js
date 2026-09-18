@@ -206,7 +206,64 @@ export function contactsInput(entry, desired, meta = {}) {
  * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
  * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
  */
+/**
+ * As opções que a definição declara para um campo, já normalizadas.
+ *
+ * O catálogo traz `options: { campo: [{value, label}] }`, que é o mesmo formato que a
+ * sensibilidade de queda dos relógios usava no seu campo próprio.
+ */
+function selectOptions(entry) {
+    const name = entry.fields?.[0] || "value";
+    const options = Array.isArray(entry.options?.[name]) ? entry.options[name] : [];
+    // A definição pode dizer de onde parte. Sem isso seria a primeira da lista, que numa
+    // lista ordenada por valor — os fusos horários — é a ponta e não o meio.
+    const declared = entry.options?.default;
+
+    return {
+        name,
+        options,
+        fallback: String(declared ?? options[0]?.value ?? ""),
+    };
+}
+
+/**
+ * Um valor escolhido de uma lista, com o significado à vista.
+ *
+ * Existe porque cada fornecedor trazia o seu campo para fazer isto -- e sem um genérico, uma
+ * definição com `options` caía num número solto: o utilizador via "2" sem saber que 2 é
+ * "Baixo", e o significado ficava só na cabeça de quem escreveu o adaptador.
+ */
+export function selectInput(entry, desired) {
+    const { name, options, fallback } = selectOptions(entry);
+    const current = String(desired?.[name] ?? fallback);
+    const choices = options
+        .map((option) => {
+            const value = String(option.value);
+            return `<option value="${esc(value)}"${value === current ? " selected" : ""}>${esc(String(option.label ?? value))}</option>`;
+        })
+        .join("");
+
+    // Sem rótulo: o cartão da configuração já mostra o nome por cima, e um rótulo aqui
+    // repetia-o — ou, pior, mostrava o nome do campo do protocolo, que está em inglês.
+    return `<select class="form-select" data-config-field="${esc(name)}">${choices}</select>`;
+}
+
 export const INPUTS = {
+    select: {
+        render: selectInput,
+        read: (section) => {
+            const node = section.querySelector("select[data-config-field]");
+            if (!node) return {};
+            const raw = String(node.value ?? "");
+            // Os valores do protocolo são inteiros; só um que não pareça número é que passa
+            // como texto.
+            return { [node.dataset.configField]: raw !== "" && !Number.isNaN(Number(raw)) ? Number(raw) : raw };
+        },
+        defaults: (entry) => {
+            const { name, options } = selectOptions(entry);
+            return { [name]: entry.options?.default ?? options[0]?.value ?? 0 };
+        },
+    },
     toggle: {
         render: (entry, desired, meta) => toggleInput(entry, desired, meta?.protocol),
         read: (section) => {

@@ -141,18 +141,20 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         $pdo = $database->pdo();
 
         $expected = [
+            'alarm_ringtone',
+            'alarm_volume',
             'battery',
             'calibrate_clock',
             'cells_remaining',
             'child_lock',
             'device_fault',
+            'device_language',
             'device_status',
             'dispense_now',
             'do_not_disturb',
             'early_dispense',
             'help_call',
             'humidity',
-            'language_timezone',
             'medication_intake',
             'medication_level',
             'medication_period',
@@ -161,8 +163,8 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'reset_device',
             'reset_tray',
             'restart_device',
-            'sound_profile',
             'temperature',
+            'time_zone',
         ];
 
         self::assertSame(
@@ -172,10 +174,10 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Sete configuráveis e seis pedíveis. Uma acção pede-se e não se configura, e por
+        // Nove configuráveis e seis pedíveis. Uma acção pede-se e não se configura, e por
         // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
         self::assertSame(
-            ['7', '6'],
+            ['9', '6'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

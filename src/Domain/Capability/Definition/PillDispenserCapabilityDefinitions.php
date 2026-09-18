@@ -28,9 +28,11 @@ final class PillDispenserCapabilityDefinitions
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'medication_period', 'label' => 'Período do plano', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'early_dispense', 'label' => 'Toma antecipada', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'child_lock', 'label' => 'Bloqueio de criança', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'sound_profile', 'label' => 'Som', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'do_not_disturb', 'label' => 'Não incomodar', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'language_timezone', 'label' => 'Idioma e fuso horário', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'alarm_volume', 'label' => 'Volume', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'alarm_ringtone', 'label' => 'Tipo de toque', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'do_not_disturb', 'label' => 'Não incomodar', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'device_language', 'label' => 'Idioma', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'time_zone', 'label' => 'Fuso horário', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
 
             // O que se pede. Uma acção pede-se, não se configura.
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'dispense_now', 'label' => 'Dispensar agora', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],

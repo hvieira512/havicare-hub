@@ -26,6 +26,18 @@ final class ConfigurationInputDefaults
             // Zero só serve quando está dentro da escala: um tom de pele vai de 1 a 6, e o
             // formulário partia de um valor que o aparelho recusa.
             'number' => [($field(0) ?: 'value') => (int)($entry['options']['min'] ?? 0)],
+            // A primeira opção que a definição declara: é a que o `select` mostra escolhida
+            // antes de alguém mexer, e um número inventado aqui podia nem existir na lista.
+            'select' => (static function () use ($entry, $field): array {
+                $name = $field(0) ?: 'value';
+                $options = $entry['options'][$name] ?? [];
+                // A definição pode dizer de onde parte; senão é a primeira da lista, que numa
+                // lista ordenada por valor é a ponta e não o meio.
+                $default = $entry['options']['default']
+                    ?? (is_array($options) && $options !== [] ? ($options[0]['value'] ?? 0) : 0);
+
+                return [$name => $default];
+            })(),
             'phone' => [($field(0) ?: 'phone') => ''],
             'text' => [($field(0) ?: 'value') => ''],
             'pushMessage' => ['message' => ''],
@@ -63,7 +75,6 @@ final class ConfigurationInputDefaults
             // O dispensador. O plano parte vazio de propósito: vazio quer dizer os nove
             // alarmes desligados, que é um estado legítimo e não um formulário por preencher.
             'pillDispenserAlarms' => ['plans' => []],
-            'pillDispenserSound' => ['volume' => 2, 'ringtone' => 0],
             // Sem período por omissão: o plano vale sempre até alguém dizer o contrário.
             'pillDispenserPeriod' => ['enabled' => false, 'startDate' => '', 'endDate' => ''],
             'pillDispenserQuietHours' => [
@@ -73,7 +84,6 @@ final class ConfigurationInputDefaults
                 'endHour' => 7,
                 'endMinute' => 0,
             ],
-            'pillDispenserRegion' => ['language' => 0, 'timezoneMinutes' => 0],
             'pillDispenserDispenseMode' => ['earlyRetrieval' => false, 'childLock' => false],
             'workingMode' => ['mode' => 1],
             'bloodPressure' => ['systolic' => 120, 'diastolic' => 80],
