@@ -11,8 +11,8 @@ final class FourPTouchConfigurationDefinitions
         return [
             $entry('uploadInterval', 'UPLOAD', 'Intervalo de localização', 'number', ['intervalSeconds'], ['UPLOAD'], 'intervals', 10),
             $entry('sosContacts', 'SOS', 'Contactos SOS', 'list', ['numbers'], ['SOS'], 'contacts', 10, 3),
-            $entry('whitelistGroup1', 'WHITELIST1', 'Lista branca 1-5', 'list', ['numbers'], ['WHITELIST1'], 'contacts', 40, 5),
-            $entry('whitelistGroup2', 'WHITELIST2', 'Lista branca 6-10', 'list', ['numbers'], ['WHITELIST2'], 'contacts', 50, 5),
+            $entry('whitelistGroup1', 'WHITELIST1', 'Lista de chamadas autorizadas 1-5', 'list', ['numbers'], ['WHITELIST1'], 'contacts', 40, 5),
+            $entry('whitelistGroup2', 'WHITELIST2', 'Lista de chamadas autorizadas 6-10', 'list', ['numbers'], ['WHITELIST2'], 'contacts', 50, 5),
             $entry('devicePassword', 'PW', 'Palavra-passe do dispositivo', 'text', ['password'], ['PW'], 'system', 10),
             $entry('languageTimezone', 'LZ', 'Idioma e fuso horário', 'languageTimezone', ['language', 'timeZone'], ['LZ'], 'system', 20),
             $entry('sosSmsAlerts', 'SOSSMS', 'SMS em alarme SOS', 'toggle', ['enabled'], ['SOSSMS'], 'alerts', 10),
@@ -49,7 +49,7 @@ final class FourPTouchConfigurationDefinitions
             $entry('bodyTemperatureInterval', 'bodytemp', 'Temperatura periódica', 'intervalHoursToggle', ['enabled', 'intervalHours'], ['bodytemp'], 'health', 40),
             $entry('makeCall', 'CALL', 'Fazer chamada', 'makeCall', ['phone'], ['CALL'], 'system', 5, transient: true),
             $entry('monitorNumber', 'MONITOR', 'Número de monitorização', 'voiceMonitor', ['phone'], ['MONITOR'], 'system', 5, transient: true),
-            $entry('centerNumber', 'CENTER', 'Número central', 'phone', ['phone'], ['CENTER'], 'contacts', 5),
+            $entry('centerNumber', 'CENTER', 'Número da central', 'phone', ['phone'], ['CENTER'], 'contacts', 5),
             $entry('pushMessage', 'MESSAGE', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], ['MESSAGE'], 'system', 5, transient: true),
             $entry('resetCommand', 'RESET', 'Reiniciar dispositivo', 'resetAction', [], ['RESET'], 'system', 5, transient: true),
             $entry('powerOffCommand', 'POWEROFF', 'Desligar dispositivo', 'resetAction', [], ['POWEROFF'], 'system', 5, transient: true),
@@ -82,7 +82,7 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 4, 'label' => 'Silêncio'],
                 ],
             ]),
-            $entry('rejectUnknownCalls', 'DEVREFUSEPHONESWITCH', 'Lista branca ativa', 'toggle', ['enabled'], ['DEVREFUSEPHONESWITCH'], 'contacts', 35),
+            $entry('rejectUnknownCalls', 'DEVREFUSEPHONESWITCH', 'Restringir chamadas recebidas', 'toggle', ['enabled'], ['DEVREFUSEPHONESWITCH'], 'contacts', 35),
         ];
     }
 }
