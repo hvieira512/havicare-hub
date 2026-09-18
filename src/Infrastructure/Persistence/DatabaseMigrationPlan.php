@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
-use Hub\Infrastructure\Persistence\Migration\BraceletHrvLabel;
 use Hub\Infrastructure\Persistence\Migration\Migration;
-use Hub\Infrastructure\Persistence\Migration\RadarApiCredentials;
-use Hub\Infrastructure\Persistence\Migration\RadarLayouts;
-use Hub\Infrastructure\Persistence\Migration\VeepooSleepOnDemand;
-use Hub\Infrastructure\Persistence\Migration\VeepooSleepQuality;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalog;
 
 /**
  * As migrações posteriores à baseline, que é o `database/schema.sql` mais o catálogo que o
@@ -28,13 +24,9 @@ final class DatabaseMigrationPlan
     public function migrations(): array
     {
         return [
-            // Ambas de hoje e ainda por aplicar nas duas bases: a primeira dá a capacidade
-            // das pontuações do sono, a segunda torna o sono pedível.
-            new VeepooSleepQuality(),
-            new VeepooSleepOnDemand(),
-            new BraceletHrvLabel(),
-            new RadarApiCredentials(),
-            new RadarLayouts(),
+            // O dispensador de comprimidos é um tipo de dispositivo novo, e as duas bases já
+            // existiam quando ele chegou.
+            new PillDispenserCatalog(),
         ];
     }
 

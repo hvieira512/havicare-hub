@@ -130,6 +130,52 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         self::assertContains('gateway_device_links', $pdo->query('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN));
     }
 
+    /**
+     * O dispensador entrou depois das duas bases existirem, e por isso tem duas origens que
+     * têm de dar no mesmo: o seeder, numa base nova, e a migração, nas que já cá estavam.
+     * Isto afirma a primeira.
+     */
+    public function testThePillDispenserCatalogueIsComplete(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $pdo = $database->pdo();
+
+        $expected = [
+            'battery',
+            'cells_remaining',
+            'device_fault',
+            'device_status',
+            'help_call',
+            'humidity',
+            'medication_intake',
+            'medication_level',
+            'temperature',
+        ];
+
+        self::assertSame(
+            $expected,
+            array_values(array_unique(array_map('strval', $pdo->query(
+                "SELECT capability_key FROM capabilities WHERE device_type = 'pill_dispenser' ORDER BY capability_key"
+            )->fetchAll(\PDO::FETCH_COLUMN))))
+        );
+
+        // Nenhuma é configurável: enquanto não houver downlink, um interruptor na dashboard
+        // era um botão que não faz nada.
+        self::assertSame(
+            0,
+            (int)$pdo->query("
+                SELECT COUNT(*) FROM capabilities
+                WHERE device_type = 'pill_dispenser' AND (is_configurable = 1 OR is_requestable = 1)
+            ")->fetchColumn()
+        );
+
+        $db = ApiDataAccess::fromDatabase($database);
+        $dispenser = $db->models->find('Zayata', 'M228');
+        self::assertIsArray($dispenser);
+        self::assertSame('pill_dispenser', $dispenser['device_type']);
+        self::assertSame($expected, $db->modelCapabilities->enabledFeaturesForModelId((int)$dispenser['id']));
+    }
+
     public function testEachModelTemplateMatchesWhatTheHardwareHas(): void
     {
         $database = $this->createDashboardDatabase();

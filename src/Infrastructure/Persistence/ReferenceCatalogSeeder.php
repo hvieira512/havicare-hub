@@ -11,7 +11,7 @@ use PDO;
 
 final class ReferenceCatalogSeeder
 {
-    private const SUPPLIERS = ['Wonlex', 'Vivistar', '4P Touch', 'Voerka', 'Qinglanst', 'MOKO', 'MONIT'];
+    private const SUPPLIERS = ['Wonlex', 'Vivistar', '4P Touch', 'Voerka', 'Qinglanst', 'MOKO', 'MONIT', 'Zayata'];
 
     private const MODELS = [
         ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', ''],
@@ -26,6 +26,7 @@ final class ReferenceCatalogSeeder
         ['MOKO', 'W6B', 'MOKO W6B', 'bracelet', ''],
         ['MOKO', 'W6', 'MOKO W6', 'bracelet', ''],
         ['Wonlex', 'MF91', 'MF91', 'bracelet', ''],
+        ['Zayata', 'M228', 'Zayata M228', 'pill_dispenser', ''],
     ];
 
     public function seedReferenceData(PDO $pdo): void
