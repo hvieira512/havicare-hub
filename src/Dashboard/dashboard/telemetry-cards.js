@@ -69,6 +69,11 @@ const CARD_STYLE = {
     "device.connected": ["fa-plug-circle-check", "success"],
     "device.disconnected": ["fa-plug-circle-xmark", "danger"],
     help_call: ["fa-triangle-exclamation", "danger"],
+    medication_intake: ["fa-pills", "primary"],
+    device_fault: ["fa-triangle-exclamation", "warning"],
+    medication_level: ["fa-prescription-bottle-medical", "info"],
+    cells_remaining: ["fa-table-cells", "info"],
+    humidity: ["fa-droplet", "info"],
     reset: ["fa-bell-slash", "warning"],
     unknown: ["fa-bell", ""],
 };
@@ -127,14 +132,37 @@ const UPLINK_CARD_RENDERERS = {
     blood_sugar: (data) => ({
         value: `${data.glucoseMgDl ?? "-"} mg/dL`,
     }),
-    // Nem toda a leitura traz a corporal: há aparelhos que só amostram a superfície.
+    // Nem toda a leitura traz a corporal: há aparelhos que só amostram a superfície, e o
+    // dispensador mede a divisão onde está em vez de medir alguém.
     temperature: (data) => ({
         value:
             data.bodyCelsius != null
                 ? `${data.bodyCelsius} °C`
                 : data.surfaceCelsius != null
                     ? `${data.surfaceCelsius} °C na pele`
-                    : "-",
+                    : data.environmentCelsius != null
+                        ? `${data.environmentCelsius} °C`
+                        : "-",
+    }),
+    humidity: (data) => ({
+        value: data.humidityPercent != null ? `${data.humidityPercent}%` : "-",
+    }),
+    medication_level: (data) => ({
+        value: fieldValue("level", data.level),
+    }),
+    // Quantas doses faltam, que é a pergunta que se faz a um dispensador; o total é o
+    // denominador que lhe dá escala.
+    cells_remaining: (data) => ({
+        value: data.remaining != null && data.total != null
+            ? `${data.remaining} de ${data.total}`
+            : `${data.remaining ?? "-"}`,
+    }),
+    // O que interessa numa toma é como ela acabou, e numa avaria é qual foi.
+    medication_intake: (data) => ({
+        value: fieldValue("result", data.result),
+    }),
+    device_fault: (data) => ({
+        value: fieldValue("fault", data.fault),
     }),
     stress: (data) => ({
         value: data?.score != null ? `${data.score}` : capabilityLabel("stress"),

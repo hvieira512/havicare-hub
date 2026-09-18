@@ -41,6 +41,8 @@ const ALARM_EVENT_TYPES = new Set([
     "fall",
     "vitals_alarm",
     "presence_event",
+    "medication_intake",
+    "device_fault",
 ]);
 
 export function allDetailItems() {

@@ -35,9 +35,11 @@ final class PillDispenserCatalog implements Migration
 
         $pdo->exec("INSERT IGNORE INTO device_types (device_type) VALUES ('pill_dispenser')");
         $pdo->exec("INSERT IGNORE INTO suppliers (name) VALUES ('Zayata')");
+        // O nome comercial não repete o fornecedor: a dashboard já o mostra ao lado, e
+        // "Zayata Zayata M228" era o que saía no cabeçalho do aparelho.
         $pdo->exec("
             INSERT IGNORE INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-            SELECT id, 'M228', 'Zayata M228', 'pill_dispenser', ''
+            SELECT id, 'M228', 'M228', 'pill_dispenser', ''
             FROM suppliers WHERE name = 'Zayata'
         ");
 

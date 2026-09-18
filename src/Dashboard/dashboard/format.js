@@ -107,6 +107,20 @@ export const fieldLabel = (key) =>
         lowCelsius: "Mínima",
         highCelsius: "Máxima",
         humidityPercent: "Humidade",
+        // Dispensador de comprimidos.
+        remaining: "Restantes",
+        total: "Total",
+        current: "Atual",
+        level: "Nível",
+        wifiSignalDbm: "Sinal WiFi",
+        gsmSignalDbm: "Sinal GSM",
+        alarmSlot: "Alarme",
+        cellNumber: "Compartimento",
+        scheduledAt: "Hora prevista",
+        takenAt: "Hora da toma",
+        method: "Método",
+        result: "Resultado",
+        fault: "Avaria",
         people: "Pessoas",
         breathing: "Respiração",
         sleep_state: "Estado do sono",
@@ -209,6 +223,35 @@ export const fieldLabel = (key) =>
  * diferentes conforme se fale de uma frequência cardíaca ou de um nível de bateria.
  */
 const FIELD_VALUE_LABELS = {
+    // Dispensador de comprimidos: o resultado da toma, como o aparelho a classifica.
+    result: {
+        on_time: "A horas",
+        late: "Tardia",
+        abnormal: "Anormal",
+        missed: "Falhada",
+    },
+    method: {
+        on_time: "A horas",
+        early: "Antecipada",
+        late: "Atrasada",
+    },
+    level: {
+        ok: "Normal",
+        low: "A acabar",
+        empty: "Sem medicação",
+    },
+    fault: {
+        rotation: "Rotação do prato",
+        tray_reset: "Reposição do prato",
+        pusher: "Empurrador",
+        cell_door: "Porta do compartimento",
+        keys: "Teclas",
+    },
+    // O `state` é partilhado por várias capacidades, e por isso só entra aqui o valor que
+    // ainda não tinha tradução; os outros continuam a passar pelo `titleize`.
+    state: {
+        in_progress: "Em curso",
+    },
     sleep_state: {
         awake: "Acordado",
         light_sleep: "Sono leve",
@@ -302,6 +345,9 @@ const FIELD_UNIT = {
     diastolicMmHg: "mmHg",
     surfaceCelsius: "°C",
     environmentCelsius: "°C",
+    humidityPercent: "%",
+    wifiSignalDbm: "dBm",
+    gsmSignalDbm: "dBm",
     umolPerL: "µmol/L",
     totalCholesterolMmolPerL: "mmol/L",
     triglyceridesMmolPerL: "mmol/L",

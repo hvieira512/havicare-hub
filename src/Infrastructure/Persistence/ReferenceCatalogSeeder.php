@@ -26,7 +26,8 @@ final class ReferenceCatalogSeeder
         ['MOKO', 'W6B', 'MOKO W6B', 'bracelet', ''],
         ['MOKO', 'W6', 'MOKO W6', 'bracelet', ''],
         ['Wonlex', 'MF91', 'MF91', 'bracelet', ''],
-        ['Zayata', 'M228', 'Zayata M228', 'pill_dispenser', ''],
+        // O nome comercial não repete o fornecedor: a dashboard já o mostra ao lado.
+        ['Zayata', 'M228', 'M228', 'pill_dispenser', ''],
     ];
 
     public function seedReferenceData(PDO $pdo): void

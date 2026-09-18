@@ -173,6 +173,8 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         $dispenser = $db->models->find('Zayata', 'M228');
         self::assertIsArray($dispenser);
         self::assertSame('pill_dispenser', $dispenser['device_type']);
+        // O nome comercial não repete o fornecedor, que a dashboard já mostra ao lado.
+        self::assertSame('M228', $dispenser['commercial_name']);
         self::assertSame($expected, $db->modelCapabilities->enabledFeaturesForModelId((int)$dispenser['id']));
     }
 
