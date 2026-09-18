@@ -46,8 +46,8 @@ final class WatchCapabilityDefinitions
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'blood_pressure_calibration', 'label' => 'Calibração da pressão arterial', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'phonebook', 'label' => 'Lista telefónica', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'push_message', 'label' => 'Enviar mensagem para o relógio', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'call_whitelist', 'label' => 'Lista branca', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'whitelist_enabled', 'label' => 'Lista branca ativa', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'call_whitelist', 'label' => 'Lista de chamadas autorizadas', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'whitelist_enabled', 'label' => 'Restringir chamadas recebidas', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'sos_contacts', 'label' => 'Contactos SOS', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             // O alarme disparado, e não um dos interruptores que o configuram. Sai em
             // `events` a partir do `AP10` da Vivistar e dos `AL*` da 4P Touch.
@@ -80,7 +80,7 @@ final class WatchCapabilityDefinitions
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'restart_device', 'label' => 'Reiniciar dispositivo', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'power_off', 'label' => 'Desligar dispositivo', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'find_device', 'label' => 'Encontrar dispositivo', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'center_number', 'label' => 'Número central', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'center_number', 'label' => 'Número da central', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'step_reporting_interval', 'label' => 'Intervalo de envio dos passos', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'pedometer_schedule', 'label' => 'Horário do pedómetro', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
         ];
