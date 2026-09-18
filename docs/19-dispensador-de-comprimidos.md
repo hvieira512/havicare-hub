@@ -7,76 +7,264 @@ rotativo e ligação celular. **Ainda não está integrado no hub**, e este cap�
 não descreve código que exista.
 
 Descreve o que está estabelecido sobre o aparelho, o que foi verificado contra a
-API real do fabricante, e as armadilhas que a integração vai encontrar. Existe
-porque metade desta matéria não consta de documento nenhum do fornecedor — foi
-obtida do aparelho, da aplicação deles e de chamadas à API — e perder-se-ia.
+API e a aplicação do fabricante, e as armadilhas que a integração vai encontrar.
+Existe porque parte desta matéria não consta de documento nenhum do fornecedor —
+foi obtida do aparelho, da aplicação deles e de chamadas à API — e perder-se-ia.
 
-A decisão de transporte continua em aberto e está na secção 2. As questões que
-dependem do fornecedor estão reunidas na secção 9.
+A decisão de transporte está tomada e registada nas
+[notas de arquitetura](99-notas-de-arquitetura.md): o aparelho liga-se por TCP
+directamente ao hub. As secções 3 a 5 descrevem esse protocolo; as secções 6 e 7
+descrevem a alternativa por cloud, que fica documentada por ter sido a única via
+disponível durante o levantamento e por ser o que a aplicação do fabricante usa.
 
 ## 1. O aparelho
 
 | | |
 |---|---|
-| Modelo | M228 |
-| Células | 28, em prato rotativo |
-| Ligação | 4G com SIM. Há variantes só-WiFi na mesma família |
-| Interface | ecrã LCD, botões A/B/C, tecla de função, altifalante |
+| Modelo | M228 / M228A |
+| Células | 28, em prato rotativo removível |
+| Ligação | 4G Cat1 com SIM. Há variantes só-WiFi na mesma família |
+| Interface | ecrã, **painel táctil** que bloqueia por inactividade, altifalante |
+| Sensores | temperatura e humidade |
+| Fecho | chave física no prato |
 | Alimentação | bateria com carregador |
 | Firmware da unidade de ensaio | 5.2 |
 | Número de série | prefixo `89-`, dezoito dígitos |
 
-O prefixo do número de série não corresponde ao dos exemplos da documentação,
-que usam `5a-` e `d3-`. Se identifica o modelo, ainda não está confirmado.
+O prefixo do número de série não corresponde ao dos exemplos da documentação da
+API, que usam `5a-` e `d3-`. Se identifica o modelo, ainda não está confirmado.
 
 A aplicação do fabricante reutiliza os ecrãs do modelo M126 para o M228 — todas
-as *activities* se chamam `M126*`, e as ilustrações de ajuda mostram um aparelho
-que não é este. **As instruções da aplicação não descrevem a unidade que temos.**
+as *activities* se chamam `M126*`, e as ilustrações de ajuda mostram botões
+físicos A/B/C que **este aparelho não tem**. As instruções da aplicação não
+descrevem a unidade que temos; o manual do M228A, sim.
+
+### Modo de dispensa
+
+O aparelho tem dois comportamentos à hora da toma, e a escolha muda o que "toma"
+significa:
+
+- **Button** — o comprimido só cai depois de o utente carregar.
+- **Auto** — cai sozinho.
+
+A toma antecipada tem quatro modos: desligada, livre, protegida por bloqueio de
+criança, ou com dupla confirmação.
 
 ## 2. Como fala
 
-O fabricante oferece dois modelos de integração, e recomenda o segundo.
+O fabricante oferece dois modelos de integração e recomenda o segundo, que é o
+adoptado.
 
 ```mermaid
 flowchart LR
-  subgraph c1["Case 1 — documentado"]
+  subgraph c1["Case 1 — alternativa"]
     D1["Aparelho"] -->|TCP| Z1["Cloud ZoomCare"]
     Z1 <-->|"REST + callback"| H1["Hub"]
   end
-  subgraph c2["Case 2 — recomendado, sem especificação"]
+  subgraph c2["Case 2 — adoptado"]
     D2["Aparelho"] -->|TCP| H2["Hub"]
   end
 ```
 
-**Case 1** é o que a documentação cobre: o aparelho fala com a cloud deles, e nós
-falamos com essa cloud por HTTPS, recebendo eventos num callback nosso.
-
-**Case 2** é o que eles recomendam, por razões de RGPD — no Case 1, dados de
-medicação de utentes portugueses atravessam um servidor na China. O aparelho
-ligar-se-ia por TCP directamente ao hub, como já fazem os relógios descritos na
+No **Case 1** o aparelho fala com a cloud do fabricante e nós falamos com essa
+cloud por HTTPS, recebendo eventos num callback nosso. No **Case 2** o aparelho
+liga-se por TCP directamente ao hub, como já fazem os relógios descritos na
 [ingestão TCP](02-ingestao-tcp-relogios.md).
 
-**A especificação do Case 2 não nos foi entregue.** Os dois documentos que
-existem em [`pill-dispensor/`](pill-dispensor/) descrevem a API REST, que é o
-Case 1. Enquanto não chegar, o Case 2 não é implementável.
+O Case 2 ganha em todas as dimensões que importam — eventos com instante
+absoluto, nove alarmes em vez de seis, telemetria que a API REST não expõe, sem
+cloud intermédia e sem dados clínicos a atravessar um servidor na China. O
+fabricante reaponta o aparelho para o nosso endereço a pedido, e o próprio
+protocolo permite fazê-lo por comando.
 
 O BLE tem um único papel, e não é o nosso: provisionar credenciais de WiFi na
 primeira utilização, por **BluFi** (protocolo da Espressif, ESP32, só 2,4 GHz).
 Numa unidade que anda por 4G, não se usa.
 
-### O APN é gravado de fábrica
+### O cartão SIM tem de ser Cat1
 
-O aparelho traz o APN programado pelo fabricante e **não o expõe em nenhum
-menu**. Nas unidades destinadas a Portugal vem `internet`, que é o APN de consumo
-da MEO.
+O modem é **4G Cat1**. Os cartões M2M são **CatM**, uma tecnologia de rádio
+diferente, e por isso **não funcionam** — não é questão de configuração.
 
-Um cartão M2M da MEO exige `internetm2m` e por isso **nunca anexa**. Foi o que
-aconteceu na unidade de ensaio: só ligou com um cartão de consumo. Para uma
-instalação a sério isto não escala — ou o fabricante grava `internetm2m` nas
-unidades que nos vende, ou a frota leva cartões não-M2M, o que é decisão de
-contrato.
+Na unidade de ensaio, um cartão M2M da MEO nunca anexou e só um cartão de consumo
+a pôs online. O APN também vem gravado de fábrica e não é alterável no aparelho,
+mas isso é secundário: mesmo com o APN certo, um cartão CatM não ligaria.
 
-## 3. A API de parceiro (Case 1)
+Para uma instalação a sério, a escolha de operador tem de recair sobre cartões
+compatíveis com Cat1. O fabricante forneceu a lista dos que suporta. É decisão de
+contrato, não técnica.
+
+## 3. O protocolo TCP
+
+Especificado em
+[`Network_Equipment_Communication_Protocol_V1.0_M2_Series_EN.docx`](pill-dispensor/).
+É um protocolo binário maduro, com vinte e seis revisões desde 2017.
+
+Suporta TCP, UDP e HTTP, com TCP preferido. Em HTTP o `content-type` é
+`application/octet-stream`.
+
+### Enquadramento
+
+| Campo | Tipo | Bytes | Conteúdo |
+|---|---|---|---|
+| Header | INT8U | 1 | fixo `0xAA` |
+| Length | INT16U | 2 | de `Status` ao fim dos dados |
+| Status | INT8U | 1 | resultado do pacote |
+| Version | INT8U | 1 | fixo `0x01` |
+| Serial number | INT16U | 2 | incrementa por pacote, 0–65535 |
+| Subserial / Subpacket total | INT8U | 1+1 | fragmentação |
+| Flag | INT8U | 1 | bit1 dispensa resposta, bit2 cifra AES128-CFB |
+| Device type | INT8U | 1 | `0x02` para a série M2 |
+| Device number | INT64U | 8 | identidade, ver abaixo |
+| Packet type | INT8U | 1 | ver tabela |
+| Application data | ARRAY | 0–1400 | TFLV |
+| Check code | INT16U | 2 | CRC16 |
+
+**A ordem de bytes é a do anfitrião**, não a da rede — o que é invulgar e fácil
+de errar.
+
+O **CRC16** é o de MODBUS: polinómio `0xA001` reflectido, valor inicial `0xFFFF`,
+calculado de `Length` ao fim dos dados. O anexo do documento traz a
+implementação em C.
+
+### Identidade
+
+O `Device number` de 64 bits codifica **MAC ou IMEI**, e não o número de série
+que a aplicação mostra:
+
+- bits 63–62: `00` MAC, `01` IMEI
+- bits 61–60: reservados, a zero
+- bits 59–0: o identificador. O IMEI vai em BCD 8421
+
+É este valor que a whitelist do hub tem de reconhecer. A relação entre ele e o
+`device_sn` com prefixo `89-` que a aplicação mostra ainda não está estabelecida.
+
+### Corpo em TFLV
+
+Os dados de todos os pacotes são uma sequência de estruturas TFLV:
+
+| Campo | Bytes | Conteúdo |
+|---|---|---|
+| Tag | 2 | o parâmetro |
+| Flag | 1 | bits 0–4 tipo de dados, bits 5–7 estado |
+| Length | 1 | comprimento do valor |
+| Value | 0–255 | o valor |
+
+Sendo auto-descritivo, o descodificador é uma tabela de TAGs e não um analisador
+por mensagem.
+
+O campo de estado no `Flag` é o que traz o resultado de uma escrita: `000`
+sucesso, `001` TAG inválida, `010` tipo inválido, `011` comprimento não
+corresponde, `100` valor ilegal, `101` operação falhou.
+
+### Tipos de pacote
+
+| Tipo | Resposta | Quem envia | O quê |
+|---|---|---|---|
+| `0x01` | `0x81` | aparelho | registo |
+| `0x02` | `0x82` | aparelho | heartbeat, pode levar estado |
+| `0x03` | `0x83` | aparelho | **evento** |
+| `0x04` | `0x84` | aparelho | notificação de alteração |
+| `0x05` | `0x85` | hub | ler configuração |
+| `0x06` | `0x86` | hub | escrever configuração |
+| `0x07` | `0x87` | hub | consultar estado |
+| `0x08` | `0x88` | hub | controlo |
+| `0x0A`–`0x0D` | `0x8A`–`0x8D` | hub | descobrir que parâmetros o aparelho suporta |
+| `0x0E`, `0x0F` | `0x8E`, `0x8F` | hub | actualização de firmware |
+
+O aparelho regista-se logo após ligar. Se já existir ligação para o mesmo
+`Device number`, o servidor **fecha a anterior** e fica com a nova. Na primeira
+vez que um aparelho se regista, cabe ao servidor ler-lhe os parâmetros para
+sincronizar.
+
+Os pacotes `0x0A` a `0x0D` permitem perguntar ao aparelho que parâmetros de
+configuração, estado, controlo e evento ele suporta — o que evita ter de manter
+uma tabela por modelo.
+
+## 4. Os eventos de medicação
+
+São o coração da integração e chegam em pacotes `0x03`.
+
+| TAG | Campo | Tipo | Valores |
+|---|---|---|---|
+| `0xC201` | identificador do alarme | INT8U | 0–8, para os alarmes 1 a 9 |
+| `0xC202` | hora prevista | STRING | `2001-01-02T20:05:04` |
+| `0xC203` | hora da toma | STRING | `2001-01-02T20:05:04` |
+| `0xC204` | número da célula | INT8U | 0–28 |
+| `0xC205` | método | INT8U | `0` a horas · `1` antecipada · `2` atrasada |
+| `0xC206` | resultado | INT8U | ver abaixo |
+
+O resultado tem **quatro** estados, um a mais do que o callback da cloud:
+
+| | |
+|---|---|
+| `0` | tomada a horas |
+| `1` | tomada tarde, depois do aviso |
+| `2` | **tomada anormal — depois de já ter sido dada como falhada** |
+| `3` | falhada |
+
+**As duas horas são ISO-8601 completas.** É a diferença mais importante face ao
+Case 1, onde o callback só traz `HH:MM` sem data nem fuso.
+
+## 5. Parâmetros do tipo de dispositivo `0x02`
+
+O anexo do protocolo define a tabela completa. O que se segue é o que interessa
+ao hub.
+
+### Estado
+
+| TAG | O quê | Notas |
+|---|---|---|
+| `0x8101` | medicação | `0` normal · `1` a acabar · `2` sem medicação |
+| `0x8103` / `0x8104` | bateria | nível, e estado `0` normal · `1` cheia · `2` fraca · `3` a carregar · `4` sem bateria |
+| `0x8109` | alimentação DC | |
+| `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **valor real, não barras** |
+| `0x810C` / `0x810D` | nível de sinal | a escala grosseira |
+| `0x810E` / `0x810F` | **temperatura e humidade** | °C de −40 a 120, %RH de 0 a 100 |
+| `0x8112` | chamada de emergência | `0` normal · `1` em curso |
+| `0x811A` / `0x811B` / `0x811D` | célula actual, total e restantes | |
+| `0x8121`–`0x8125` | falhas | rotação, reset do prato, empurrador, porta da célula, teclas |
+| `0x8131`–`0x8139` | estado de cada um dos nove alarmes | |
+| `0x8102` / `0x8106` / `0x8107` | bloqueio de criança, copo, fecho do prato | |
+
+A temperatura e a humidade **não existem na API REST**. As falhas, que na API
+REST eram um único `rotate`, aqui vêm discriminadas em cinco.
+
+### Configuração
+
+| TAG | O quê |
+|---|---|
+| `0x1001`–`0x1003` | idioma, formato de data, formato de hora |
+| `0x1004`–`0x100A` | período de validade dos alarmes e respectivo interruptor |
+| `0x100B`–`0x100E` | som das teclas, bloqueio de criança, toma antecipada, **chamada de emergência** |
+| `0x1012` / `0x1013` | tipo de toque e volume |
+| `0x1014` / `0x1015` | calibração automática de relógio, fuso horário |
+| `0x1017` / `0x1018` / `0x1019` | aviso de atraso, tempo até falha, dispensa em falha |
+| `0x101A` / `0x101C` / `0x101D` | célula actual, células carregadas, aviso de poucas células |
+| `0x1021`–`0x1029` | **hora de cada um dos nove alarmes** |
+| `0x1031`–`0x1039` | minuto de cada alarme |
+| `0x1041`–`0x1049` | interruptor de cada alarme |
+| `0x1051`–`0x1055` | não incomodar: interruptor e janela |
+| `0x1063` | pausa do toque |
+| `0x8004` / `0x800B` | intervalo de heartbeat, tempo de permanência online |
+
+**São nove alarmes, não seis.** A API REST só expõe seis.
+
+### Controlo
+
+`0xA001` reiniciar · `0xA002` reposição de fábrica · `0xA004` novo registo ·
+`0xA101` calibrar relógio · `0xA102` silenciar · `0xA103` repor o prato ·
+`0xA123` toma antecipada · `0xA124` rodar para uma célula indicada · `0xA125`
+pausa da medicação.
+
+E, com relevo para a operação: `0xA011` intervalo de heartbeat, **`0xA021` IP do
+servidor, `0xA022` domínio e `0xA023` porta**. O aparelho pode ser reapontado
+para outro servidor pelo próprio protocolo.
+
+## 6. A API de parceiro (Case 1)
+
+Fica documentada por ser o que a aplicação do fabricante usa e por ter sido a
+única via disponível durante o levantamento.
 
 Base de teste: `https://api-en-test.zoomcare.tech/index.php?s=/Company/CommonApi`
 Base de produção: `https://api-en.zoomcare.tech/…`
@@ -119,9 +307,7 @@ secção de resposta está elidida no PDF.
 | `get_medication_record` | histórico, `{count, list}` | sim |
 
 O `get_medication_record` **não consta da documentação** e foi encontrado por
-sondagem. Aceita `start_date`, `end_date`, `page` e `limit`. É a única forma de
-reconciliar tomas depois de uma falha, e por isso importa: sem ele, um callback
-perdido é um evento perdido para sempre.
+sondagem. Aceita `start_date`, `end_date`, `page` e `limit`.
 
 ### Escrita
 
@@ -135,9 +321,8 @@ Configuração: `set_time_format`, `set_date_format`, `set_voice`, `unfazed`,
 `set_omitting`, `set_time_out`, `set_language`, `set_timezone`.
 
 **As escritas falham com `611` quando o aparelho está desligado, e não ficam em
-fila.** Qualquer configuração que o hub aplique precisa de reconciliação, à
-maneira do que está descrito na
-[configuração de dispositivos](10-configuracao-de-dispositivos.md).
+fila.** Qualquer configuração precisa de reconciliação, à maneira do que está
+descrito na [configuração de dispositivos](10-configuracao-de-dispositivos.md).
 
 ### Códigos
 
@@ -149,7 +334,7 @@ associado · `611` **aparelho desligado** · `612` falha ao configurar · `701`
 
 Um endpoint desconhecido responde `{"code":-1,"msg":"API does not exist"}`.
 
-## 4. O callback
+## 7. O callback (Case 1)
 
 Fornecemos um URL; a cloud deles faz POST. Respondemos `{"code":200}`.
 
@@ -158,90 +343,74 @@ Fornecemos um URL; a cloud deles faz POST. Respondemos `{"code":200}`.
 | `1` estado | `device_sn`, `status` | `1` desligado, `2` avaria, `3` tampa aberta |
 | `2` medicação | `device_sn`, `alarm_id`, `status`, `take_time` | `0` a tocar, `1` a horas, `2` em atraso, `3` esquecida |
 
-Três lacunas, e a primeira é de segurança:
+Três lacunas, e são parte da razão para preferir o Case 2:
 
 - **Não há autenticação definida.** A documentação diz apenas que o parceiro
-  fornece o endereço. Quem souber o URL injecta tomas falsas. Antes de produção
-  tem de haver segredo no caminho, assinatura ou lista de endereços.
+  fornece o endereço. Quem souber o URL injecta tomas falsas.
 - **Não traz instante absoluto.** O `take_time` é `"12:00"` — sem data e sem
-  fuso. Ver a secção 7.
+  fuso.
 - **Não traz o medicamento**, só o `alarm_id`, que obriga a cruzar com o
   `get_plan` — e esse pode ter mudado entretanto.
 
 Não existe evento de emergência: o callback só tem os tipos 1 e 2.
 
-## 5. Capacidades do aparelho
+## 8. Capacidades do aparelho
 
-**Medicação.** Até **seis alarmes por dia**, em slots fixos. Não se criam nem se
-apagam: o `get_plan` devolve sempre os seis, com `alarm_id` atribuído, e
-configura-se um slot livre. O `status` de um alarme é `0` inicial, `1` válido ou
-`2` inválido — desactivar é pôr a `2`.
+**Medicação.** Nove alarmes por dia pelo protocolo TCP, seis pela API REST. Em
+ambos os casos são slots fixos: não se criam nem se apagam, activam-se e
+desactivam-se.
 
-Cada alarme leva uma lista de medicamentos com nome e quantidade, em texto livre,
-sem catálogo nem dosagem estruturada.
+Pela API REST, cada alarme leva uma lista de medicamentos com nome e quantidade,
+em texto livre, sem catálogo nem dosagem estruturada. O protocolo TCP não carrega
+nomes de medicamentos — trata de horas, células e resultados.
 
-**Dispensa.** O prato avança uma célula por toma, em sequência. O
-`ceil_used` declara quantas células foram cheias; o `ceil_remaining` quantas
-faltam.
+**Dispensa.** O prato avança uma célula por toma, em sequência. O número de
+células carregadas é o que o aparelho usa para saber quando parar.
 
-**Registo.** Cada toma fica como a horas, em atraso ou esquecida, e a aplicação
-deriva daí uma percentagem de adesão.
+**Registo.** Cada toma fica como a horas, tardia, anormal ou falhada.
 
-**Estado.** Ligado, bateria em estado e percentagem, alimentação, sinal, tampa
-aberta, falha de rotação, versão de firmware, célula actual.
+**Estado.** O que a secção 5 enumera.
 
 ### O que não faz
 
 - **A medicação é igual todos os dias.** Os alarmes repetem-se dentro do período
   de validade; não há forma de dizer que numa terça-feira leva outra coisa.
 - **Não sabe quem tomou**, nem se a pessoa ingeriu — apenas que a célula foi
-  dispensada.
-- **Não fala português.** O `set_language` oferece chinês e inglês.
+  dispensada, e em modo *Button* que alguém carregou.
+- **Não fala português** de origem. O fabricante instala firmware com voz e texto
+  em português, mas **só de fábrica**.
 
 ### SOS
 
-O aparelho tem botão de emergência e anuncia "Emergency call" ao ser premido. A
-funcionalidade existe na plataforma do fabricante — notifica administrador e
-supervisor, e liga para um número configurado — mas **está desligada na conta**,
-não é configurável em lado nenhum da aplicação, e **não tem evento no callback**.
+O aparelho tem botão de emergência e anuncia "Emergency call" ao ser premido. No
+protocolo existe como configuração (`0x100E`) e estado (`0x8112`).
 
-Hoje, um SOS neste aparelho não chega a ninguém.
+Está desligado na unidade de ensaio, e o manual explica porquê:
 
-## 6. Configurações e domínios
+> *"The [Emergency Call] function is supported in some versions... requires the
+> payment of a certain service fee."*
 
-| Definição | Valores | Endpoint |
-|---|---|---|
-| Formato de data | `0` yy-mm-dd · `1` dd-mm-yy · `2` mm-dd-yy | `set_date_format` |
-| Formato de hora | `0` 24 h · `1` 12 h | `set_time_format` |
-| Volume | `1` máximo · `2` médio · `3` mínimo · `4` mudo | `set_voice` |
-| Idioma | `1` chinês · `2` inglês | `set_language` |
-| Fuso | `+0100`, `-0600` | `set_timezone` |
-| Não incomodar | ligado/desligado e janela em 24 h | `unfazed` |
-| Lembrete de atraso | 5 a 120 min, múltiplo de 5 | `set_time_out` |
-| Lembrete de falha | 10 a 240 min, múltiplo de 10 | `set_omitting` |
-| Células cheias | 1 a `device_ceil_amount` | `set_plan` |
-| Período de validade | intervalo de datas, ou sempre válido | `set_plan` |
+**É um serviço pago.** Activá-lo é conversa comercial com o fabricante, não de
+configuração.
 
-A documentação descreve o volume de duas maneiras diferentes — `1 Max, 2 Mid,
-3 Min, 4 Mute` no `get_information` e `1 High, 2 low, 3 Low, 4 Mute` no
-`set_voice`. A aplicação mostra quatro opções, *High*, *Medium*, *Low* e *Mute*,
-o que resolve a contradição a favor da primeira.
+## 9. Armadilhas confirmadas
 
-## 7. Armadilhas confirmadas
-
-**A telemetria não se lê com o aparelho desligado.** O `get_information` devolve
-`611`, não devolve valores em cache. O hub tem de guardar o último valor
-conhecido, ou a dashboard perde bateria e sinal sempre que a caixa adormecer.
+**A telemetria não se lê com o aparelho desligado.** Pela API REST, o
+`get_information` devolve `611` em vez de valores em cache. O hub tem de guardar
+o último valor conhecido, ou a dashboard perde bateria e sinal sempre que a caixa
+adormecer.
 
 **O relógio do aparelho não é de confiar.** Num ensaio, um alarme marcado para as
 12:55 ficou registado como cumprido "a horas" às **11:45**. A discrepância não foi
-explicada, e o aparelho tem uma função de calibração de relógio — que existe
-precisamente porque deriva. Como o callback só traz `HH:MM`, sem data e sem fuso,
-**a ingestão tem de carimbar o instante na recepção** e tratar a hora reportada
-como etiqueta, nunca como timestamp.
+explicada. O protocolo tem calibração automática (`0x1014`) e manual (`0xA101`),
+que existem precisamente porque o relógio deriva — e o hub deve usá-las.
 
-**As datas vazias vêm a `0000-00-00`.** É a data-zero do MySQL, devolvida quando
-o plano é sempre válido. Parte qualquer conversão ingénua.
+No Case 1, como o callback só traz `HH:MM`, a ingestão teria de carimbar o
+instante na recepção. No Case 2 o problema não se põe: os eventos trazem
+`0xC202` e `0xC203` em ISO-8601.
+
+**A ordem de bytes do protocolo é a do anfitrião**, não a da rede. É o contrário
+do habitual e é fácil de errar num descodificador.
 
 **Gravar um alarme reescreve o plano inteiro.** Num ensaio, configurar um único
 alarme pela aplicação do fabricante baixou o número de células cheias de 28 para
@@ -253,16 +422,16 @@ Uma edição de alarme feita pelo hub tem de reenviar o `ceil_used` corrente, li
 antes pelo `get_plan`. Enviar só o alarme apaga a contagem de células — e a
 contagem de células é o que o aparelho usa para saber quando parar de dispensar.
 
-**O sinal é mais fino do que o documentado.** A API descreve `wifi` e `gsm` como
-`0-4`, mas a aplicação mostra um valor em dB. Se o número em cru estiver
-disponível, é melhor telemetria do que a documentada.
+**As datas vazias vêm a `0000-00-00`** na API REST. É a data-zero do MySQL,
+devolvida quando o plano é sempre válido, e parte qualquer conversão ingénua.
 
 **A dispensação suspende-se sem rede.** A aplicação do fabricante contém a
 mensagem *"Network disconnected, medication dispensing has been paused"*. Se se
-confirmar no M228, a disponibilidade da cloud do fabricante passa a ser crítica
-para a função clínica, e não apenas para a telemetria.
+confirmar no M228, a disponibilidade do servidor passa a ser crítica para a
+função clínica, e não apenas para a telemetria — o que, no Case 2, passa a
+depender de nós.
 
-## 8. O que a aplicação expõe e a API de parceiro não
+## 10. O que a aplicação expõe e a API de parceiro não
 
 A aplicação usa uma API própria, em `/Home/Device/*` e `/Home/User/*`, com cerca
 de cinquenta rotas contra as vinte e uma da API de parceiro. Alguns campos só lá
@@ -272,16 +441,13 @@ existem:
 |---|---|
 | `Remarks` | texto livre por alarme |
 | Fotografia | imagem por medicamento |
-| Toque | `Bell1` e seguintes |
-| Calibração de relógio | acerto manual |
 | Supervisor | terceiro papel, além de administrador e convidado |
 
 A associação de um aparelho a contas de consumidor vive nessa API, e é
 independente da associação feita pela API de parceiro. Um aparelho comprado e
 configurado na aplicação tem de ser libertado antes de poder ser gerido por nós.
 
-## 9. Em aberto
+## 11. Em aberto
 
-A decisão de transporte e o que dela depende estão nas
-[notas de arquitetura](99-notas-de-arquitetura.md), com as restantes dependências
-do fabricante.
+O que continua a depender do fabricante está nas
+[notas de arquitetura](99-notas-de-arquitetura.md).

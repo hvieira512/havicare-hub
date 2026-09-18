@@ -70,35 +70,49 @@ Fica registado por constituir uma decisão de arquitetura e não uma omissão.
 
 ---
 
-## 5. A ingestão do dispensador de comprimidos não tem transporte decidido
+## 5. O dispensador de comprimidos entra por TCP, não pela cloud do fabricante
 
 **O que é.** O fabricante do Zayata M228 oferece dois modelos de integração. No
 primeiro, o aparelho fala com a cloud dele e nós falamos com essa cloud por HTTPS,
 recebendo eventos num callback nosso. No segundo, o aparelho liga-se por TCP
-directamente ao hub, como já fazem os relógios. O fabricante **recomenda o
-segundo**, por os dados de medicação deixarem de atravessar um servidor na China.
+directamente ao hub, como já fazem os relógios.
 
-**Porque está em aberto.** Só o primeiro está documentado. A especificação do
-protocolo TCP do segundo nunca nos foi entregue, e sem ela não é implementável. O
-[capítulo 19](19-dispensador-de-comprimidos.md) descreve os dois.
+**Decisão: o segundo.** O fabricante recomendou-o e entregou a especificação do
+protocolo em Setembro de 2026. O [capítulo 19](19-dispensador-de-comprimidos.md)
+descreve-o.
 
-**Porque importa.** A escolha muda a camada de entrada por inteiro — uma rota HTTP
-com o seu cliente e o seu callback, contra um descodificador sobre o socket TCP
-que já existe. Muda também o perfil de risco: no primeiro modelo a
-disponibilidade da cloud do fabricante é uma dependência nossa, e há um callback
-sem autenticação definida a proteger.
+**Porquê.** O segundo modelo ganha em todas as dimensões que se mediram. Os
+eventos de medicação trazem instante absoluto em ISO-8601, contra um `HH:MM` sem
+data nem fuso no callback. Expõe nove alarmes em vez de seis, e telemetria que a
+API REST não tem de todo — temperatura, humidade, e cinco falhas discriminadas
+onde a API dá uma. Dispensa um callback público que a documentação do fabricante
+deixa **sem autenticação nenhuma**. E não faz atravessar dados clínicos de
+utentes portugueses por um servidor na China, que foi a razão pela qual o próprio
+fabricante o recomendou.
 
-**Decisão.** Aguardar a especificação antes de escrever a ingestão. O que não
-depende dela — o contrato das capacidades, a declaração no `CapabilityCatalog`, o
-cartão da dashboard e a superfície de configuração — pode avançar, porque a
-semântica de uma toma não muda com o transporte.
+A camada de entrada também é a que já existe: um descodificador sobre o socket
+TCP, à maneira dos [relógios](02-ingestao-tcp-relogios.md), em vez de uma rota
+HTTP com cliente e callback próprios.
 
-**Dependências do fabricante.** Além da especificação: credenciais de produção
-para a nossa empresa; autenticação e política de repetição do callback; o APN
-`internetm2m` gravado de fábrica nas unidades vendidas para Portugal, sem o qual
-os cartões M2M não anexam; firmware com português, se existir; o manual do M228,
-que não é público; e como se activa o botão de emergência, que hoje não produz
-evento nenhum do lado do parceiro.
+**O que a decisão traz consigo.** A disponibilidade do serviço passa a ser nossa:
+a aplicação do fabricante sugere que a dispensação se suspende quando o aparelho
+perde a rede, pelo que uma indisponibilidade do hub deixa de ser um problema de
+telemetria e passa a ser de função clínica. Falta confirmar se é mesmo assim no
+M228.
+
+**O que continua a depender do fabricante.**
+
+1. **Cartões SIM Cat1.** O modem é 4G Cat1 e os cartões M2M são CatM — não é
+   configuração, é tecnologia de rádio incompatível. A escolha de operador é
+   decisão de contrato, a partir da lista que o fabricante forneceu.
+2. **Firmware com português.** Existe, mas só é instalável de fábrica, o que o
+   torna uma condição de encomenda e não uma actualização.
+3. **A chamada de emergência é um serviço pago.** Existe no protocolo, está
+   desligada, e activá-la é conversa comercial.
+4. **A correspondência entre identidades.** O protocolo identifica o aparelho por
+   um inteiro de 64 bits com MAC ou IMEI; a aplicação mostra um número de série
+   com prefixo `89-`. A relação entre os dois ainda não está estabelecida, e é
+   dela que depende a entrada na whitelist.
 
 ---
 
