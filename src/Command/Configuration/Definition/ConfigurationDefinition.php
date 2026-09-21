@@ -18,6 +18,7 @@ final class ConfigurationDefinition
         bool $transient = false,
         string $help = '',
         ?array $actions = null,
+        string $confirm = '',
     ): array {
         $entry = [
             'key' => $key,
@@ -26,7 +27,9 @@ final class ConfigurationDefinition
             // Transiente e acção são a mesma coisa: o que a `PATCH` recusa é o que a
             // `/requests` aceita. Declarar as duas em separado deixava-as discordar.
             'kind' => $transient ? 'request' : 'config',
-            'risk' => 'normal',
+            // Derivado da confirmação, e não declarado à parte: uma acção que precisa de ser
+            // confirmada é destrutiva, e dois campos independentes acabam a discordar.
+            'risk' => $confirm === '' ? 'normal' : 'destructive',
             'input' => $input,
             'fields' => $fields,
             'expectedReplyTypes' => $expectedReplyTypes,
@@ -53,6 +56,13 @@ final class ConfigurationDefinition
         // ecrã só sabe oferecer um interruptor e um «Enviar», que não diz o que vai acontecer.
         if ($actions !== null) {
             $entry['actions'] = $actions;
+        }
+        // O que o utilizador está a autorizar, na linguagem do que acontece ao aparelho neste
+        // protocolo. A mesma capacidade não quer dizer o mesmo em todos: o `reset_device` da
+        // Wonlex repõe de fábrica e o do 4P Touch reinicia. Quem escolhe a frase pela chave
+        // da capacidade acaba a prometer um reinício a quem está a apagar o aparelho.
+        if ($confirm !== '') {
+            $entry['confirm'] = $confirm;
         }
 
         return $entry;

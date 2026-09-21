@@ -113,7 +113,7 @@ final class ZayataConfigurationDefinitions
             self::action('calibrate_clock', 'calibrateClock', 'Calibrar relógio', 'system', 30),
             self::action('mute_alarm', 'muteAlarm', 'Silenciar', 'system', 40),
             self::action('reset_tray', 'resetTray', 'Repor o prato', 'system', 50),
-            self::action('restart_device', 'restartDevice', 'Reiniciar', 'system', 60),
+            self::action('restart_device', 'restartDevice', 'Reiniciar', 'system', 60, 'O dispensador fica sem comunicar enquanto arranca. Uma toma agendada para esse minuto não é dispensada.'),
             // A reposição de fábrica não entra. O aparelho só aponta para o hub porque o
             // fornecedor lhe mandou essa configuração, e uma reposição devolve-o ao servidor
             // dele: perde-se o controlo do aparelho e recuperá-lo depende de outra pessoa,
@@ -233,8 +233,14 @@ final class ZayataConfigurationDefinitions
         );
     }
 
-    private static function action(string $key, string $command, string $label, string $category, int $order): array
-    {
+    private static function action(
+        string $key,
+        string $command,
+        string $label,
+        string $category,
+        int $order,
+        string $confirm = '',
+    ): array {
         return ConfigurationDefinition::make(
             $key,
             $command,
@@ -244,9 +250,8 @@ final class ZayataConfigurationDefinitions
             self::replyTo($command),
             $category,
             $order,
-            null,
-            null,
-            true,
+            transient: true,
+            confirm: $confirm,
         );
     }
 }

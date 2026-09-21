@@ -178,34 +178,28 @@ export async function saveDeviceConfigurationGroup(group) {
 }
 
 /**
- * Os comandos que o utilizador não desfaz a partir daqui: o aparelho fica desligado até
- * alguém lhe chegar ao botão, perde o que estava a fazer, ou liga a um número sem que quem
- * o usa dê por isso. O `find_device` e os restantes não estão aqui de propósito -- pedir
- * confirmação para tudo ensina a carregar em «Sim» sem ler.
+ * A caixa de uma acção que o utilizador não desfaz a partir daqui.
+ *
+ * A frase vem da definição do protocolo, e não de uma tabela indexada pela capacidade: a
+ * mesma chave não quer dizer o mesmo em todo o lado -- o `reset_device` da Wonlex repõe o
+ * relógio de fábrica e o do 4P Touch reinicia-o. Uma tabela por chave prometia um reinício a
+ * quem estava a devolver o aparelho ao servidor do fornecedor.
+ *
+ * Uma definição sem frase declarada não leva caixa: pedir confirmação para tudo ensina a
+ * carregar em «Sim» sem ler.
  */
-const restartPrompt = (imei) => ({
-    title: `Reiniciar o dispositivo ${imei}?`,
-    text: "Fica sem comunicar enquanto arranca.",
-    confirmText: "Reiniciar",
-});
+export function dangerousCommandPrompt(section, imei) {
+    const text = String(section?.dataset?.configConfirm || "");
+    if (text === "") {
+        return null;
+    }
 
-const DANGEROUS_COMMANDS = {
-    power_off: (imei) => ({
-        title: `Desligar o dispositivo ${imei}?`,
-        text: "Deixa de comunicar, e só volta a ligar no botão do próprio aparelho.",
-        confirmText: "Desligar",
-    }),
-    reset_device: restartPrompt,
-    restart_device: restartPrompt,
-    monitor_number: (imei) => ({
-        title: "Ligar para o número de monitorização?",
-        text: `O dispositivo ${imei} liga em escuta silenciosa, sem avisar quem o traz.`,
-        confirmText: "Ligar",
-    }),
-};
-
-export function dangerousCommandPrompt(capabilityKey, imei) {
-    return DANGEROUS_COMMANDS[capabilityKey]?.(imei) || null;
+    const label = String(section?.dataset?.configLabel || "");
+    return {
+        title: `${label} — ${imei}?`,
+        text,
+        confirmText: label,
+    };
 }
 
 export async function saveDeviceConfiguration(section, actionValue = "") {
@@ -213,10 +207,7 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
     if (!key) return;
 
     // Antes de tudo o resto: cancelar não pode deixar o cartão em «a enviar».
-    const prompt = dangerousCommandPrompt(
-        section.dataset.capabilityKey || key,
-        state.deviceModal.imei,
-    );
+    const prompt = dangerousCommandPrompt(section, state.deviceModal.imei);
     if (prompt) {
         const { isConfirmed } = await confirmDestructive(
             prompt.title,

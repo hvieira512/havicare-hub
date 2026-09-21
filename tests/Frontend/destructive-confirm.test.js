@@ -47,6 +47,9 @@ const { companyDeletePrompt, licenseDeletePrompt } = await import(
 const { dangerousCommandPrompt, saveDeviceConfiguration } = await import(
     "../../src/Dashboard/dashboard/devices/config/panel.js",
 );
+const { renderConfigSection } = await import(
+    "../../src/Dashboard/dashboard/devices/config/index.js",
+);
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 
 test("cancelar a confirmação não chega a chamar a API", async () => {
@@ -98,18 +101,84 @@ test("a caixa de apagar uma empresa diz o nome e as licenças que leva com ela",
     assert.match(prompt.text, /41 dispositivos/);
 });
 
+/**
+ * Uma secção como o painel a desenha. O que a caixa diz sai dos atributos que a definição
+ * do protocolo lá pôs, e não de uma tabela indexada pela chave da capacidade.
+ */
+const sectionFor = ({ key, label, confirm = "" }) => {
+    const section = document.createElement("div");
+    section.dataset.configSection = "settings_system";
+    section.dataset.configKey = key;
+    section.dataset.capabilityKey = key;
+    section.dataset.configLabel = label;
+    section.dataset.configTransient = "1";
+    if (confirm !== "") {
+        section.dataset.configConfirm = confirm;
+    }
+    return section;
+};
+
 test("os comandos que não se desfazem têm caixa, e os inofensivos não", () => {
     const imei = "351266770073676";
+    const powerOff = sectionFor({
+        key: "power_off",
+        label: "Desligar dispositivo",
+        confirm: "O relógio desliga-se e só volta a ligar no botão do próprio aparelho.",
+    });
 
-    assert.match(dangerousCommandPrompt("power_off", imei).title, /Desligar/);
-    assert.match(dangerousCommandPrompt("power_off", imei).title, new RegExp(imei));
-    assert.equal(dangerousCommandPrompt("power_off", imei).confirmText, "Desligar");
-    assert.ok(dangerousCommandPrompt("reset_device", imei));
-    assert.ok(dangerousCommandPrompt("restart_device", imei));
-    assert.ok(dangerousCommandPrompt("monitor_number", imei));
+    assert.match(dangerousCommandPrompt(powerOff, imei).title, /Desligar/);
+    assert.match(dangerousCommandPrompt(powerOff, imei).title, new RegExp(imei));
+    assert.equal(dangerousCommandPrompt(powerOff, imei).confirmText, "Desligar dispositivo");
+    assert.match(dangerousCommandPrompt(powerOff, imei).text, /botão do próprio aparelho/);
 
-    assert.equal(dangerousCommandPrompt("find_device", imei), null);
-    assert.equal(dangerousCommandPrompt("center_number", imei), null);
+    const findDevice = sectionFor({ key: "find_device", label: "Encontrar dispositivo" });
+    assert.equal(dangerousCommandPrompt(findDevice, imei), null);
+});
+
+/**
+ * O caso que motivou isto: a mesma capacidade `reset_device` é uma reposição de fábrica na
+ * Wonlex e um reinício no 4P Touch, e a caixa escolhida pela chave prometia um reinício a
+ * quem estava a devolver o relógio ao servidor do fornecedor.
+ */
+test("a caixa da reposição de fábrica não promete um reinício", () => {
+    const section = sectionFor({
+        key: "reset_device",
+        label: "Reposição de fábrica",
+        confirm: "Repõe o relógio ao estado de fábrica. Volta a apontar para o servidor do fornecedor e o hub deixa de o comandar até alguém de lá o voltar a configurar.",
+    });
+
+    const prompt = dangerousCommandPrompt(section, "868705080304889");
+
+    assert.match(prompt.text, /fábrica/);
+    assert.doesNotMatch(prompt.text, /arranca/);
+});
+
+test("o cartão leva consigo a frase que a definição declarou", () => {
+    const html = renderConfigSection("wonlex-json", {
+        key: "resetCommand",
+        capabilityKey: "reset_device",
+        label: "Reposição de fábrica",
+        input: "resetAction",
+        fields: [],
+        transient: true,
+        confirm: "Repõe o relógio ao estado de fábrica.",
+    }, null);
+
+    assert.match(html, /data-config-confirm="Repõe o relógio ao estado de fábrica\."/);
+    assert.match(html, /data-config-label="Reposição de fábrica"/);
+});
+
+test("uma definição sem frase não leva atributo de confirmação", () => {
+    const html = renderConfigSection("wonlex-json", {
+        key: "findDeviceCommand",
+        capabilityKey: "find_device",
+        label: "Encontrar dispositivo",
+        input: "requestAction",
+        fields: [],
+        transient: true,
+    }, null);
+
+    assert.doesNotMatch(html, /data-config-confirm/);
 });
 
 test("cancelar a caixa de desligar não envia o comando ao relógio", async () => {
@@ -117,11 +186,11 @@ test("cancelar a caixa de desligar não envia o comando ao relógio", async () =
     answer = { isConfirmed: false, dismiss: "cancel" };
     state.deviceModal.imei = "351266770073676";
 
-    const section = document.createElement("div");
-    section.dataset.configSection = "settings_system";
-    section.dataset.configKey = "power_off";
-    section.dataset.capabilityKey = "power_off";
-    section.dataset.configTransient = "1";
+    const section = sectionFor({
+        key: "power_off",
+        label: "Desligar dispositivo",
+        confirm: "O relógio desliga-se e só volta a ligar no botão do próprio aparelho.",
+    });
 
     await saveDeviceConfiguration(section, "1");
 
