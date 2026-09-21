@@ -178,6 +178,43 @@ final class PillDispenserNormalizationTest extends TestCase
     }
 
     /** @param array<string, mixed> $payload */
+    /**
+     * Uma TAG que o aparelho recusa não tem valor nenhum, e o que lá está é o que nós lhe
+     * mandámos de volta.
+     *
+     * O M228 de produção é a variante 4G e não tem WiFi: respondeu ao `0x07` com o `0x810A`
+     * em `001`, «TAG inválida», e o hub publicou `wifiSignalDbm: 0`. Um zero é uma leitura
+     * plausível -- ninguém desconfia dele -- e estávamos a inventá-lo. Vale para todas as
+     * TAGs: o estado no Flag diz se há valor, e sem isso lê-se o eco do pedido.
+     */
+    public function testARefusedTagIsNotReadAsAValue(): void
+    {
+        $decoded = $this->decode([
+            'packetType' => 0x07 | 0x80,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [
+                0x8103 => ['value' => "\x63", 'state' => 0],             // bateria, 99%
+                0x810A => ['value' => "\x00\x00", 'state' => 1],         // WiFi: recusada
+                0x810B => ['value' => "\x18\x00", 'state' => 0],         // GSM
+                0x810E => ['value' => "\x1B", 'state' => 0],             // 27 °C
+                0x810F => ['value' => "\x00", 'state' => 1],             // humidade: recusada
+            ],
+        ]);
+
+        $events = [];
+        foreach ((new DeviceEventDecoder())->decode($this->session(), $decoded) as $event) {
+            $events[$event['feature']] = $event['value'];
+        }
+
+        self::assertSame(['environmentCelsius' => 27], $events['temperature'] ?? null);
+        self::assertArrayNotHasKey('humidity', $events, 'uma TAG recusada não vira telemetria');
+        self::assertArrayNotHasKey(
+            'wifiSignalDbm',
+            $events['device_status'] ?? [],
+            'o sinal WiFi foi recusado e não pode aparecer como zero',
+        );
+    }
+
     private function decode(array $payload): array
     {
         $adapter = new PillDispenserAdapter();

@@ -439,31 +439,55 @@ final class DeviceEventDecoder
     }
 
     /** @param array<int, array{value?: string}> $tlv */
+    /**
+     * O valor de uma TAG, ou `null` quando não há valor nenhum a ler.
+     *
+     * O estado nos bits 5--7 do Flag é o que distingue uma leitura de um eco: numa resposta a
+     * um pedido, uma TAG que o aparelho recuse volta com os bytes que nós lhe mandámos --
+     * zeros -- e um estado diferente de `000`. O M228 de produção é a variante 4G e não tem
+     * WiFi: recusava o `0x810A` e o hub publicava `wifiSignalDbm: 0`, que é um valor
+     * plausível de que ninguém desconfia.
+     *
+     * @param array<int, array{value?: string, state?: int}> $tlv
+     */
+    private function tlvValue(array $tlv, int $tag): ?string
+    {
+        $entry = $tlv[$tag] ?? null;
+        if (!is_array($entry) || (int)($entry['state'] ?? 0) !== 0) {
+            return null;
+        }
+
+        $value = $entry['value'] ?? null;
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /** @param array<int, array{value?: string, state?: int}> $tlv */
     private function tlvU8(array $tlv, int $tag): ?int
     {
-        $value = $tlv[$tag]['value'] ?? null;
-        return is_string($value) && $value !== '' ? ord($value[0]) : null;
+        $value = $this->tlvValue($tlv, $tag);
+        return $value === null ? null : ord($value[0]);
     }
 
-    /** @param array<int, array{value?: string}> $tlv */
+    /** @param array<int, array{value?: string, state?: int}> $tlv */
     private function tlvI8(array $tlv, int $tag): ?int
     {
-        $value = $tlv[$tag]['value'] ?? null;
-        return is_string($value) && $value !== '' ? unpack('c', $value[0])[1] : null;
+        $value = $this->tlvValue($tlv, $tag);
+        return $value === null ? null : unpack('c', $value[0])[1];
     }
 
-    /** @param array<int, array{value?: string}> $tlv */
+    /** @param array<int, array{value?: string, state?: int}> $tlv */
     private function tlvI16(array $tlv, int $tag): ?int
     {
-        $value = $tlv[$tag]['value'] ?? null;
-        return is_string($value) && strlen($value) >= 2 ? unpack('s', substr($value, 0, 2))[1] : null;
+        $value = $this->tlvValue($tlv, $tag);
+        return $value === null || strlen($value) < 2 ? null : unpack('s', substr($value, 0, 2))[1];
     }
 
-    /** @param array<int, array{value?: string}> $tlv */
+    /** @param array<int, array{value?: string, state?: int}> $tlv */
     private function tlvString(array $tlv, int $tag): ?string
     {
-        $value = $tlv[$tag]['value'] ?? null;
-        return is_string($value) && $value !== '' ? rtrim($value, "\0") : null;
+        $value = $this->tlvValue($tlv, $tag);
+        return $value === null ? null : rtrim($value, "\0");
     }
 
     private function event(string $feature, string $nativeType, array $payload): ?array
