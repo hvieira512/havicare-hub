@@ -242,4 +242,78 @@ final class PillDispenserDownlinkTest extends TestCase
 
         DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'naoExiste', []);
     }
+
+    /**
+     * Cada TFLV declara o tipo do parâmetro nos bits 0--4 do Flag, e o aparelho recusa com
+     * «tipo de parâmetro inválido» tudo o que lhe chegue como `UNKONW`.
+     *
+     * Isto não se via a construir e descodificar a trama connosco próprios: o `packTlv` e o
+     * `parseTlv` concordavam no zero e o round-trip fechava. Foi o M228 real que discordou --
+     * devolveu as vinte e sete TAGs de um plano com estado `010`. Por isso os tipos esperados
+     * estão aqui escritos à mão, da tabela «TAG Definition - Device Type 02», e não lidos da
+     * tabela do adaptador: um teste que se sirva da mesma fonte que o código não prova nada.
+     */
+    public function testEveryDownlinkTagDeclaresTheParameterTypeTheSpecRequires(): void
+    {
+        $int8u = 2;
+        $excepções = [
+            0x1004 => 4, 0x1007 => 4,   // ano de início e de fim do período, INT16U
+            0x1015 => 3,                // fuso horário, INT16S
+            0x810A => 3, 0x810B => 3,   // sinal WiFi e GSM, INT16S
+            0x810E => 1,                // temperatura, INT8S
+            0xA101 => 11,               // calibração do relógio, STRING
+        ];
+
+        $errados = [];
+        foreach (self::everyCommand() as [$comando, $payload]) {
+            $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, $comando, $payload);
+            $decoded = (new PillDispenserAdapter())->decodeIncoming($frame);
+            self::assertIsArray($decoded, $comando);
+
+            foreach ($decoded['tlv'] as $tag => $entry) {
+                $esperado = $excepções[$tag] ?? $int8u;
+                if ($entry['type'] !== $esperado) {
+                    $errados[] = sprintf(
+                        '%s/0x%04X: tipo %d, esperado %d',
+                        $comando,
+                        $tag,
+                        $entry['type'],
+                        $esperado,
+                    );
+                }
+            }
+        }
+
+        self::assertSame([], $errados);
+    }
+
+    /** @return list<array{0: string, 1: array<string, mixed>}> */
+    private static function everyCommand(): array
+    {
+        return [
+            ['medicationPlan', ['plans' => [['hour' => 8, 'minute' => 30, 'enabled' => true]]]],
+            ['medicationPeriod', ['enabled' => true, 'start' => '2026-01-01', 'end' => '2026-12-31']],
+            ['childLock', ['enabled' => true]],
+            ['earlyRetrieval', ['enabled' => false]],
+            ['alarmRingtone', ['ringtone' => 2]],
+            ['alarmVolume', ['volume' => 1]],
+            ['deviceLanguage', ['language' => 1]],
+            ['timeZone', ['timeZone' => 100]],
+            ['doNotDisturb', [
+                'enabled' => true,
+                'startHour' => 22,
+                'startMinute' => 0,
+                'endHour' => 7,
+                'endMinute' => 0,
+            ]],
+            ['restartDevice', []],
+            ['factoryReset', []],
+            ['calibrateClock', []],
+            ['muteAlarm', []],
+            ['resetTray', []],
+            ['dispenseNow', []],
+            ['readConfiguration', []],
+            ['readStatus', []],
+        ];
+    }
 }

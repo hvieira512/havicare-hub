@@ -158,21 +158,78 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         return ['kind' => 'unknown', 'id' => ''];
     }
 
+    public const T_INT8S = 1;
+    public const T_INT8U = 2;
+    public const T_INT16S = 3;
+    public const T_INT16U = 4;
+    public const T_INT32U = 6;
+    public const T_STRING = 11;
+
     /**
-     * O comprimento do valor de cada TAG, em bytes.
+     * O tipo declarado de cada TAG, da tabela «TAG Definition - Device Type 02».
      *
-     * Existe por causa da leitura: num pedido `0x05` ou `0x07` o valor vai a zeros **com o
-     * comprimento da TAG**, e não vazio — é esse espaço que o aparelho preenche na resposta.
-     * Uma TAG que falte aqui é pedida como um byte, que é o tamanho da maioria.
+     * O tipo vai nos bits 0--4 do Flag de cada TFLV e não é decorativo: uma TAG que chegue ao
+     * aparelho como `UNKONW` volta recusada com «tipo de parâmetro inválido», e o pedido
+     * inteiro não produz nada. Daqui sai também o comprimento com que uma leitura pede o
+     * valor, que antes vivia numa segunda lista à parte.
      *
-     * @var array<int, int>
+     * @var array<int, list<int>>
      */
-    private const TAG_LENGTH = [
-        // Configuração: o ano do período e o fuso são os únicos de dois bytes.
-        0x1004 => 2, 0x1007 => 2, 0x1015 => 2, 0x1063 => 2,
-        // Estado: a força do sinal, que vem em dBm reais.
-        0x810A => 2, 0x810B => 2,
+    private const TAGS_BY_TYPE = [
+        self::T_INT8S => [
+            0x810E,
+        ],
+        self::T_INT8U => [
+            0x1001, 0x1002, 0x1003, 0x1005, 0x1006, 0x1008, 0x1009, 0x100A, 0x100B, 0x100C, 0x100D,
+            0x100E, 0x1012, 0x1013, 0x1014, 0x1019, 0x101A, 0x101C, 0x101D, 0x1021, 0x1022, 0x1023,
+            0x1024, 0x1025, 0x1026, 0x1027, 0x1028, 0x1029, 0x1031, 0x1032, 0x1033, 0x1034, 0x1035,
+            0x1036, 0x1037, 0x1038, 0x1039, 0x1041, 0x1042, 0x1043, 0x1044, 0x1045, 0x1046, 0x1047,
+            0x1048, 0x1049, 0x1051, 0x1052, 0x1053, 0x1054, 0x1055, 0x8005, 0x8007, 0x8008, 0x800A,
+            0x8101, 0x8102, 0x8103, 0x8104, 0x8105, 0x8106, 0x8107, 0x8109, 0x810C, 0x810D, 0x810F,
+            0x8111, 0x8112, 0x811A, 0x811B, 0x811D, 0x8121, 0x8122, 0x8123, 0x8124, 0x8125, 0x8131,
+            0x8132, 0x8133, 0x8134, 0x8135, 0x8136, 0x8137, 0x8138, 0x8139, 0xA001, 0xA002, 0xA003,
+            0xA004, 0xA102, 0xA103, 0xA123, 0xC001, 0xC201, 0xC204, 0xC205, 0xC206,
+        ],
+        self::T_INT16S => [
+            0x1015, 0x810A, 0x810B,
+        ],
+        self::T_INT16U => [
+            0x1004, 0x1007, 0x1063, 0x8002, 0x8003, 0x8004, 0x8006, 0x800B, 0xA011, 0xA012, 0xA023,
+        ],
+        self::T_INT32U => [
+            0x1017, 0x1018, 0x8081, 0x8082,
+        ],
+        self::T_STRING => [
+            0x8009, 0xA021, 0xA022, 0xA101, 0xC202, 0xC203,
+        ],
     ];
+
+    /** Quantos bytes ocupa o valor de cada tipo. O `STRING` não tem comprimento fixo. */
+    private const TYPE_BYTES = [
+        self::T_INT8S => 1,
+        self::T_INT8U => 1,
+        self::T_INT16S => 2,
+        self::T_INT16U => 2,
+        self::T_INT32U => 4,
+    ];
+
+    /**
+     * O tipo com que uma TAG tem de ser enviada.
+     *
+     * Rebenta em vez de assumir: uma TAG por declarar chegava ao aparelho como `UNKONW` e era
+     * recusada em silêncio do lado de cá, que é exactamente o defeito que isto existe para
+     * não repetir.
+     */
+    public static function parameterType(int $tag): int
+    {
+        foreach (self::TAGS_BY_TYPE as $type => $tags) {
+            if (in_array($tag, $tags, true)) {
+                return $type;
+            }
+        }
+
+        throw new \InvalidArgumentException(sprintf('TAG 0x%04X sem tipo declarado na especificação', $tag));
+    }
 
     /** As TAGs de configuração que o hub sabe ler e escrever. */
     public const CONFIGURATION_TAGS = [
@@ -198,8 +255,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     ];
 
     /**
-     * O corpo de um pedido de leitura: as TAGs pedidas, cada uma com o valor a zeros no seu
-     * comprimento.
+     * O corpo de um pedido de leitura: as TAGs pedidas, cada uma com o valor a zeros no
+     * comprimento do seu tipo — é esse espaço que o aparelho preenche na resposta.
      *
      * @param list<int> $tags
      * @return array<int, array{value: string}>
@@ -208,7 +265,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     {
         $tlv = [];
         foreach ($tags as $tag) {
-            $tlv[$tag] = ['value' => str_repeat("\x00", self::TAG_LENGTH[$tag] ?? 1)];
+            $bytes = self::TYPE_BYTES[self::parameterType($tag)] ?? 1;
+            $tlv[$tag] = ['value' => str_repeat("\x00", $bytes)];
         }
 
         return $tlv;
@@ -274,7 +332,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         $out = '';
         foreach ($tlv as $tag => $entry) {
             $value = (string)($entry['value'] ?? '');
-            $flag = (($entry['type'] ?? 0) & 0x1F) | ((($entry['state'] ?? 0) & 0x07) << 5);
+            $type = $entry['type'] ?? self::parameterType($tag);
+            $flag = ($type & 0x1F) | ((($entry['state'] ?? 0) & 0x07) << 5);
             $out .= pack('v', $tag) . pack('C', $flag) . pack('C', strlen($value)) . $value;
         }
 

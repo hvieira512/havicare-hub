@@ -164,6 +164,19 @@ O campo de estado no `Flag` é o que traz o resultado de uma escrita: `000`
 sucesso, `001` TAG inválida, `010` tipo inválido, `011` comprimento não
 corresponde, `100` valor ilegal, `101` operação falhou.
 
+> **O tipo de dados não é opcional.** Os bits 0–4 declaram o tipo do valor —
+> `00001` INT8S, `00010` INT8U, `00011` INT16S, `00100` INT16U, `00110` INT32U,
+> `01011` STRING — e uma TAG que chegue ao aparelho como `00000` (`UNKONW`)
+> volta com o estado `010` e não produz nada. O tipo de cada TAG está na tabela
+> «TAG Definition - Device Type 02» da especificação, e o hub guarda-a no
+> `PillDispenserAdapter::TAGS_BY_TYPE`; é de lá que sai também o comprimento com
+> que uma leitura pede o valor.
+>
+> Isto passou despercebido até o primeiro M228 real se ligar: a suite constrói a
+> trama e descodifica-a com o mesmo código, que concordava consigo próprio no
+> zero. O aparelho devolveu as vinte e sete TAGs de um plano de medicação
+> recusadas, todas com `010`.
+
 ### Tipos de pacote
 
 | Tipo | Resposta | Quem envia | O quê |

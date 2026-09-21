@@ -307,10 +307,17 @@ final class DeviceCommandCatalog
      */
     private static function buildPillDispenser(string $imei, string $command, array $payload = []): string
     {
+        // A calibração leva a hora a que o aparelho se deve pôr, e não um interruptor: é a
+        // única TAG de controlo que é STRING.
+        if ($command === 'calibrateClock') {
+            return self::pillFrame($imei, 0x08, [
+                0xA101 => ['value' => gmdate('Y-m-d\TH:i:s')],
+            ]);
+        }
+
         $control = [
             'restartDevice' => 0xA001,
             'factoryReset' => 0xA002,
-            'calibrateClock' => 0xA101,
             'muteAlarm' => 0xA102,
             'resetTray' => 0xA103,
             'dispenseNow' => 0xA123,
