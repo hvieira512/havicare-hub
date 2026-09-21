@@ -15,8 +15,7 @@ test("os nove alarmes são desenhados, ocupados ou não", () => {
     // Nove linhas: o aparelho tem nove slots fixos e mostra-os todos, senão não há como
     // ligar o décimo — que não existe — nem desligar um que ficou de um plano anterior.
     assert.equal((html.match(/data-alarm-slot/g) || []).length, 9);
-    assert.match(html, /value="8"/);
-    assert.match(html, /value="30"/);
+    assert.match(html, /value="08:30"/);
 });
 
 test("o plano parte vazio sem rebentar", () => {
@@ -41,9 +40,12 @@ test("o não incomodar desenha a janela inteira", () => {
         { enabled: true, startHour: 22, startMinute: 0, endHour: 7, endMinute: 30 },
     );
 
-    for (const f of ["startHour", "startMinute", "endHour", "endMinute"]) {
+    // Dois seletores de horas, e não quatro caixas de número: a janela lê-se de uma vez.
+    for (const f of ["start", "end"]) {
         assert.match(html, new RegExp(`data-config-field="${f}"`));
     }
+    assert.match(html, /value="22:00"/);
+    assert.match(html, /value="07:30"/);
 });
 
 test("os interruptores do dispensador usam o campo padrão e não um bespoke", () => {
