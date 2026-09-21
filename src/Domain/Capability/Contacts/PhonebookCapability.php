@@ -36,28 +36,38 @@ final class PhonebookCapability implements CapabilityContract, CapabilityInputSa
         return false;
     }
 
+    /**
+     * O nome de fio da lista em cada protocolo, e a única fonte de quem é suportado.
+     *
+     * @var array<string, string>
+     */
+    private const NATIVE_KEY = [
+        'wonlex-json' => 'familyNumber',
+        'four-p-touch' => 'phonebook',
+    ];
+
     public function supportedProtocols(): array
     {
-        return ['wonlex-json', 'four-p-touch'];
+        return array_keys(self::NATIVE_KEY);
     }
 
     public function toNative(string $protocol, mixed $value): array
     {
+        // O protocolo decide-se antes de se tocar no valor. O `match` abaixo fica só para o
+        // que difere mesmo: a Wonlex funde os números SOS na lista, os outros não.
+        $nativeKey = self::NATIVE_KEY[$protocol]
+            ?? throw new \InvalidArgumentException("Unsupported protocol {$protocol} for phonebook");
+
         $value = $this->sanitizeInput($protocol, $value);
         $contacts = is_array($value) && array_key_exists('contacts', $value) ? $value['contacts'] : $value;
 
-        return match ($protocol) {
-            'wonlex-json' => [
-                'familyNumber' => ['contacts' => $this->wonlexContacts(
-                    $contacts,
-                    is_array($value) ? ($value['sosNumbers'] ?? []) : []
-                )],
-            ],
-            'four-p-touch' => [
-                'phonebook' => ['contacts' => self::requireListValue($contacts, 'contacts')],
-            ],
-            default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for phonebook"),
-        };
+        return [$nativeKey => ['contacts' => match ($protocol) {
+            'wonlex-json' => $this->wonlexContacts(
+                $contacts,
+                is_array($value) ? ($value['sosNumbers'] ?? []) : []
+            ),
+            default => self::requireListValue($contacts, 'contacts'),
+        }]];
     }
 
     public function sanitizeInput(string $protocol, mixed $value): mixed

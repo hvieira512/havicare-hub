@@ -43,19 +43,29 @@ final class CallWhitelistCapability implements CapabilityContract
         return true;
     }
 
+    /**
+     * Os protocolos servidos, numa fonte só, para o anúncio não poder discordar do despacho.
+     *
+     * @var list<string>
+     */
+    private const PROTOCOLS = ['vivistar-iw', 'four-p-touch'];
+
     public function supportedProtocols(): array
     {
-        return ['vivistar-iw', 'four-p-touch'];
+        return self::PROTOCOLS;
     }
 
     public function toNative(string $protocol, mixed $value): array
     {
+        if (!in_array($protocol, self::PROTOCOLS, true)) {
+            throw new \InvalidArgumentException("Unsupported protocol {$protocol} for call_whitelist");
+        }
+
         return match ($protocol) {
             // O payload nativo guardado fica estruturado: quem serializa os contactos como
             // `UTF-16BE(nome)|telefone` para o BP14 é só o construtor de payloads Vivistar.
             'vivistar-iw' => ['call_whitelist' => ['contacts' => self::normalizeContactsList($value)]],
-            'four-p-touch' => $this->fourPTouch->toNative($value),
-            default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for call_whitelist"),
+            default => $this->fourPTouch->toNative($value),
         };
     }
 

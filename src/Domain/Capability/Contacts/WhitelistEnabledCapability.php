@@ -33,31 +33,31 @@ final class WhitelistEnabledCapability implements CapabilityContract
         return true;
     }
 
+    /**
+     * O nome de fio do interruptor em cada protocolo, e o campo que o transporta.
+     *
+     * Um protocolo novo é uma linha, e o `supportedProtocols` sai daqui para não poder
+     * anunciar o que o despacho recusa.
+     *
+     * @var array<string, array{0: string, 1: string}>
+     */
+    private const NATIVE = [
+        'vivistar-iw' => ['whitelist_enabled', 'enabled'],
+        'wonlex-json' => ['wonlexCallInLimitSwitch', 'switchState'],
+        'four-p-touch' => ['rejectUnknownCalls', 'enabled'],
+    ];
+
     public function supportedProtocols(): array
     {
-        return ['vivistar-iw', 'wonlex-json', 'four-p-touch'];
+        return array_keys(self::NATIVE);
     }
 
     public function toNative(string $protocol, mixed $value): array
     {
-        return match ($protocol) {
-            'vivistar-iw' => [
-                'whitelist_enabled' => [
-                    'enabled' => self::requireBoolLikeField($value, 'enabled'),
-                ],
-            ],
-            'wonlex-json' => [
-                'wonlexCallInLimitSwitch' => [
-                    'switchState' => self::requireBoolLikeField($value, 'enabled'),
-                ],
-            ],
-            'four-p-touch' => [
-                'rejectUnknownCalls' => [
-                    'enabled' => self::requireBoolLikeField($value, 'enabled'),
-                ],
-            ],
-            default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for whitelist_enabled"),
-        };
+        [$nativeKey, $field] = self::NATIVE[$protocol]
+            ?? throw new \InvalidArgumentException("Unsupported protocol {$protocol} for whitelist_enabled");
+
+        return [$nativeKey => [$field => self::requireBoolLikeField($value, 'enabled')]];
     }
 
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed

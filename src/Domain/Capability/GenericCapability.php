@@ -54,12 +54,19 @@ final class GenericCapability implements CapabilityContract
      */
     public function toNative(string $protocol, mixed $value): array
     {
+        // Sem recusa por omissão: esta é a capacidade de quem não tem contrato próprio, e
+        // anuncia todos os protocolos. Recusar os que não traduz era anunciar o que não servia
+        // -- foi assim que dezasseis configurações do dispensador M228 rebentaram ao serem
+        // gravadas, com a suite toda verde.
+        //
+        // Quem traduz nomes está aqui. Para o resto, o nome nativo é a própria chave genérica,
+        // que é a convenção com que os fornecedores mais recentes declaram o catálogo, e um
+        // fornecedor novo não tem de tocar neste ficheiro.
         return match ($protocol) {
             'vivistar-iw' => $this->vivistarToNative($value),
             'wonlex-json' => $this->wonlexGenericToNative($value),
             'four-p-touch' => $this->fourPTouch->toNative($this->genericKey, $value),
-            'veepoo-ble', 'zayata-m228' => $this->passThroughToNative($value),
-            default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
+            default => $this->passThroughToNative($value),
         };
     }
 

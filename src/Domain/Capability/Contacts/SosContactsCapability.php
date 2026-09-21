@@ -41,21 +41,36 @@ final class SosContactsCapability implements CapabilityContract
         return true;
     }
 
+    /**
+     * Os protocolos servidos, numa fonte só.
+     *
+     * A forma nativa difere de mais para caber numa tabela -- um constrói a lista à mão, outro
+     * funde-a com a lista telefónica, o terceiro tem tratador próprio --, mas quem é servido
+     * não tem de estar escrito em dois sítios.
+     *
+     * @var list<string>
+     */
+    private const PROTOCOLS = ['vivistar-iw', 'wonlex-json', 'four-p-touch'];
+
     public function supportedProtocols(): array
     {
-        return ['vivistar-iw', 'wonlex-json', 'four-p-touch'];
+        return self::PROTOCOLS;
     }
 
     public function toNative(string $protocol, mixed $value): array
     {
+        if (!in_array($protocol, self::PROTOCOLS, true)) {
+            throw new \InvalidArgumentException("Unsupported protocol {$protocol} for sos_contacts");
+        }
+
         $numbers = is_array($value) && array_key_exists('numbers', $value)
             ? $value['numbers']
             : $value;
+
         return match ($protocol) {
             'vivistar-iw' => ['sosContacts' => ['numbers' => self::requireUniqueStringListValue($numbers, 'numbers')]],
             'wonlex-json' => $this->wonlexNative($value),
-            'four-p-touch' => $this->fourPTouch->toNative($value),
-            default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for sos_contacts"),
+            default => $this->fourPTouch->toNative($value),
         };
     }
 
