@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# As duas verificações rápidas do `composer test`, antes de o commit existir.
+#
+# São as que não precisam de base de dados, de Redis nem de contentores, e correm
+# em poucos segundos: o phpcs sobre o PHP e o eslint sobre o JavaScript da
+# dashboard. As outras cinco -- phpstan e as quatro suites -- ficam de fora de
+# propósito, porque os cenários levantam contentores e um `git commit` que demora
+# minutos deixa de ser usado.
+#
+# Isto não substitui o `composer test` antes de empurrar. Existe porque em
+# 2026-09-21 uma linha em branco num bloco de `use` manteve o CI vermelho durante
+# dez horas e meia, com onze commits a irem para produção por cima: o phpcs
+# apanha-a em dois segundos, e ninguém correu o phpcs.
+#
+# Para saltar num commit intermédio: `git commit --no-verify`.
+
+set -e
+
+raiz=$(git rev-parse --show-toplevel)
+cd "$raiz"
+
+if [ -x vendor/bin/phpcs ]; then
+    if ! vendor/bin/phpcs src tests simulator bin; then
+        echo ""
+        echo "pre-commit: o estilo do PHP não passa. 'composer style:fix' corrige a maioria."
+        exit 1
+    fi
+fi
+
+if [ -x node_modules/.bin/eslint ]; then
+    if ! npm run lint --silent; then
+        echo ""
+        echo "pre-commit: o eslint não passa."
+        exit 1
+    fi
+fi

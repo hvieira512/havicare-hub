@@ -97,6 +97,26 @@ ou corrigir texto.
 
 As quatro suites e o que cada uma cobre estão no [capítulo 16](docs/16-testes.md).
 
+## A verificação é o `composer test`
+
+São **sete** coisas: `style` (phpcs), `analyse` (phpstan), `lint:frontend`
+(eslint), `test:unit`, `test:integration`, `test:frontend` e `test:scenarios`.
+Correr o `phpunit`, o `npm test` e o `phpstan` à mão parece equivalente e não é —
+deixa de fora o phpcs, o eslint e os cenários.
+
+Depois do push confirma-se com `gh run list`. É mais barato do que a suite e
+apanha o que a máquina local não apanha: o CI corre em PHP 8.4 **e** 8.5.
+
+> Em setembro de 2026 uma linha em branco num bloco de `use` manteve o CI
+> vermelho dez horas e meia, com onze commits a irem para produção por cima. O
+> phpcs apanha-a em dois segundos e ninguém correu o phpcs.
+
+O `.githooks/pre-commit` corre as duas verificações rápidas — phpcs e eslint — e
+fica ligado sozinho, porque o `composer install` aponta o `core.hooksPath` para
+lá. As outras cinco ficam de fora: os cenários levantam contentores, e um
+`git commit` que demora minutos deixa de ser usado. Num commit intermédio,
+`git commit --no-verify`.
+
 ## Trabalho em paralelo
 
 Vários agentes a modificar ficheiros ao mesmo tempo reescrevem-se uns aos outros.
