@@ -1,10 +1,10 @@
 <?php
 
-namespace Hub\Device\Watch\Supplier\Zayata;
+namespace Hub\Device\Tcp\Supplier\Zayata;
 
 use Hub\Device\DeviceSession;
-use Hub\Device\Watch\AbstractWatchProtocol;
-use Hub\Device\Watch\WatchResponse;
+use Hub\Device\Tcp\AbstractTcpProtocol;
+use Hub\Device\Tcp\TcpResponse;
 
 /**
  * O dispensador M228 espera que o servidor confirme cada pacote de subida: registo `0x01`,
@@ -12,7 +12,7 @@ use Hub\Device\Watch\WatchResponse;
  * bit alto (`0x81`–`0x84`), ecoando a identidade e o número de série do pacote recebido. O
  * bit 1 do Flag dispensa a resposta.
  */
-final class PillDispenserWatchProtocol extends AbstractWatchProtocol
+final class PillDispenserTcpProtocol extends AbstractTcpProtocol
 {
     private const ACKNOWLEDGED_TYPES = ['register', 'heartbeat', 'event', 'change'];
 
@@ -62,7 +62,7 @@ final class PillDispenserWatchProtocol extends AbstractWatchProtocol
     }
 
     /**
-     * @return array<int, WatchResponse>
+     * @return array<int, TcpResponse>
      */
     protected function responsesForDecoded(DeviceSession $session, array $decoded): array
     {
@@ -78,6 +78,6 @@ final class PillDispenserWatchProtocol extends AbstractWatchProtocol
             'status' => 0,
         ]);
 
-        return [new WatchResponse($ack)];
+        return [new TcpResponse($ack)];
     }
 }

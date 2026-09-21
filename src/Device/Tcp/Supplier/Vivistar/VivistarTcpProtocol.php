@@ -1,14 +1,14 @@
 <?php
 
-namespace Hub\Device\Watch\Supplier\Vivistar;
+namespace Hub\Device\Tcp\Supplier\Vivistar;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
-use Hub\Device\Watch\AbstractWatchProtocol;
-use Hub\Device\Watch\WatchResponse;
+use Hub\Device\Tcp\AbstractTcpProtocol;
+use Hub\Device\Tcp\TcpResponse;
 
-final class VivistarWatchProtocol extends AbstractWatchProtocol
+final class VivistarTcpProtocol extends AbstractTcpProtocol
 {
     public function __construct(
         DeviceAdapterInterface $adapter,
@@ -18,14 +18,14 @@ final class VivistarWatchProtocol extends AbstractWatchProtocol
     }
 
     /**
-     * @return array<int, WatchResponse>
+     * @return array<int, TcpResponse>
      */
     protected function responsesForDecoded(DeviceSession $session, array $decoded): array
     {
         $type = (string)($decoded['type'] ?? '');
 
         if ($type === 'login') {
-            return [new WatchResponse($this->encodeOutgoing(['type' => 'login_ok']))];
+            return [new TcpResponse($this->encodeOutgoing(['type' => 'login_ok']))];
         }
 
         $ack = match ($type) {
@@ -41,7 +41,7 @@ final class VivistarWatchProtocol extends AbstractWatchProtocol
             default => null,
         };
 
-        return $ack !== null ? [new WatchResponse($ack)] : [];
+        return $ack !== null ? [new TcpResponse($ack)] : [];
     }
 
     public function commandMetadata(string $bytes): ?array

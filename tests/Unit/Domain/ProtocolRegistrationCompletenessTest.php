@@ -9,12 +9,12 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Protocol\AdapterRegistry;
-use Hub\Device\Watch\WatchProtocolRegistry;
+use Hub\Device\Tcp\TcpProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Um protocolo é uma convenção espalhada por cinco registos independentes -- o
- * `AdapterRegistry`, o `WatchProtocolRegistry`, o `ProtocolRegistry`, o
+ * `AdapterRegistry`, o `TcpProtocolRegistry`, o `ProtocolRegistry`, o
  * `DeviceConfigurationCatalog` e o `CapabilityRegistry` --, e nada os liga: um fornecedor
  * registado em quatro dos cinco compila, passa no PHPStan e falha num caminho só.
  *
@@ -23,7 +23,7 @@ use PHPUnit\Framework\TestCase;
 final class ProtocolRegistrationCompletenessTest extends TestCase
 {
     /** @return list<string> */
-    private static function watchProtocols(): array
+    private static function tcpProtocols(): array
     {
         $watch = [];
         foreach (ProtocolRegistry::all() as $protocol => $meta) {
@@ -40,7 +40,7 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
         // Uma âncora, para as asserções abaixo não passarem por a lista ter ficado vazia.
         self::assertSame(
             ['wonlex-json', 'vivistar-iw', 'four-p-touch'],
-            self::watchProtocols()
+            self::tcpProtocols()
         );
     }
 
@@ -49,7 +49,7 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
     {
         $adapters = new AdapterRegistry();
 
-        foreach (self::watchProtocols() as $protocol) {
+        foreach (self::tcpProtocols() as $protocol) {
             self::assertNotNull(
                 $adapters->get($protocol),
                 "O protocolo `{$protocol}` está declarado no ProtocolRegistry mas não tem adaptador."
@@ -60,12 +60,12 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
     /** Sem protocolo de sessão, o dispositivo nunca chega a autenticar-se. */
     public function testEveryWatchProtocolHasASessionProtocol(): void
     {
-        $sessions = new WatchProtocolRegistry();
+        $sessions = new TcpProtocolRegistry();
 
-        foreach (self::watchProtocols() as $protocol) {
+        foreach (self::tcpProtocols() as $protocol) {
             self::assertNotNull(
                 $sessions->get($protocol),
-                "O protocolo `{$protocol}` não tem entrada no WatchProtocolRegistry."
+                "O protocolo `{$protocol}` não tem entrada no TcpProtocolRegistry."
             );
         }
     }
@@ -83,7 +83,7 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
             );
         }
 
-        foreach (array_keys((new WatchProtocolRegistry())->all()) as $protocol) {
+        foreach (array_keys((new TcpProtocolRegistry())->all()) as $protocol) {
             self::assertTrue(
                 ProtocolRegistry::exists((string)$protocol),
                 "O protocolo de sessão `{$protocol}` não está declarado no ProtocolRegistry."

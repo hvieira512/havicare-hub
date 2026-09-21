@@ -1,13 +1,13 @@
 <?php
 
-namespace Hub\Device\Watch;
+namespace Hub\Device\Tcp;
 
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
 
-interface WatchProtocolInterface extends DeviceAdapterInterface
+interface TcpProtocolInterface extends DeviceAdapterInterface
 {
-    public function handleIncoming(DeviceSession $session, string $raw): ?WatchMessage;
+    public function handleIncoming(DeviceSession $session, string $raw): ?TcpMessage;
 
     /**
      * Se esta trama é o aparelho a dizer que aceitou ou recusou uma configuração.

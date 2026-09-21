@@ -1,8 +1,8 @@
 <?php
 
-namespace Hub\Device\Watch;
+namespace Hub\Device\Tcp;
 
-final class WatchResponse
+final class TcpResponse
 {
     public function __construct(
         public readonly string $bytes,

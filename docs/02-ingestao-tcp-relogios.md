@@ -318,6 +318,7 @@ pelo prefixo do parâmetro `--model` ou impostos por `--protocol`. O protocolo
 | `src/Device/DeviceAuthorizer.php` | Decisão de autorização |
 | `src/Protocol/AdapterRegistry.php` | Deteção do protocolo |
 | `src/Protocol/Adapter/{Wonlex,Vivistar,FourPTouch}Adapter.php` | Codificação e descodificação de tramas |
-| `src/Device/Watch/Supplier/*/` | Respostas e confirmações por fornecedor |
+| `src/Device/Tcp/TcpProtocolRegistry.php` | Os protocolos que falam TCP, pelo nome do protocolo |
+| `src/Device/Tcp/Supplier/*/` | Respostas e confirmações por fornecedor |
 | `src/Device/DeviceEventDecoder.php` | Correspondência entre tipo nativo e capacidades |
 | `src/Device/ConnectionRegistry.php` | Ligações abertas e expiração por inatividade |

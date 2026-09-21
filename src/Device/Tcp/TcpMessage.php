@@ -1,13 +1,13 @@
 <?php
 
-namespace Hub\Device\Watch;
+namespace Hub\Device\Tcp;
 
-final class WatchMessage
+final class TcpMessage
 {
     /**
      * @param array<string, mixed> $decoded
      * @param array<int, array<string, mixed>> $telemetry
-     * @param array<int, WatchResponse> $responses
+     * @param array<int, TcpResponse> $responses
      */
     public function __construct(
         public readonly array $decoded,

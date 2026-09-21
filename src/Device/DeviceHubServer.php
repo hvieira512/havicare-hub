@@ -8,9 +8,9 @@ use Hub\Dashboard\DashboardStoreContract;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
-use Hub\Device\Watch\WatchMessage;
-use Hub\Device\Watch\WatchProtocolRegistry;
-use Hub\Device\Watch\WatchResponse;
+use Hub\Device\Tcp\TcpMessage;
+use Hub\Device\Tcp\TcpProtocolRegistry;
+use Hub\Device\Tcp\TcpResponse;
 
 class DeviceHubServer
 {
@@ -18,7 +18,7 @@ class DeviceHubServer
     private ConnectionRegistry $connections;
     private DeviceAuthorizer $authorizer;
     private DeviceIdentityExtractor $identityExtractor;
-    private WatchProtocolRegistry $watchProtocols;
+    private TcpProtocolRegistry $tcpProtocols;
     private HubMqttBridge $mqtt;
     private ?PendingDownlinkQueue $downlinkQueue;
     private ?DashboardStoreContract $dashboardStore;
@@ -48,7 +48,7 @@ class DeviceHubServer
         $this->dashboardStore = $dashboardStore;
         $adapters = new AdapterRegistry();
         $this->identityExtractor = $identityExtractor ?? new DeviceIdentityExtractor($adapters);
-        $this->watchProtocols = new WatchProtocolRegistry(
+        $this->tcpProtocols = new TcpProtocolRegistry(
             $adapters,
             $eventDecoder ?? new DeviceEventDecoder(),
             fn (DeviceSession $session): array => $this->wonlexState($session)
@@ -320,13 +320,13 @@ class DeviceHubServer
             $this->mqtt->logPublishFailure('hub', $session->imei, $e);
         }
 
-        $protocol = $this->watchProtocols->get($session->protocol);
+        $protocol = $this->tcpProtocols->get($session->protocol);
         if ($protocol === null) {
             return;
         }
 
         $message = $protocol->handleIncoming($session, $raw);
-        if (!($message instanceof WatchMessage)) {
+        if (!($message instanceof TcpMessage)) {
             return;
         }
 
@@ -357,7 +357,7 @@ class DeviceHubServer
         }
 
         foreach ($message->responses as $response) {
-            $this->sendWatchResponse($session, $response, $conn, $connectionId);
+            $this->sendTcpResponse($session, $response, $conn, $connectionId);
         }
     }
 
@@ -627,10 +627,10 @@ class DeviceHubServer
 
     private function commandMetadata(string $bytes, ?string $protocol = null): ?array
     {
-        return $this->watchProtocols->commandMetadata($bytes, $protocol);
+        return $this->tcpProtocols->commandMetadata($bytes, $protocol);
     }
 
-    private function sendWatchResponse(DeviceSession $session, WatchResponse $response, ConnectionInterface $conn, string $connectionId): void
+    private function sendTcpResponse(DeviceSession $session, TcpResponse $response, ConnectionInterface $conn, string $connectionId): void
     {
         $conn->send($response->bytes);
         if ($response->publishRaw !== true) {

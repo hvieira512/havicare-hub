@@ -378,7 +378,7 @@ essa é uma decisão de quem opera.
 
 **Onde está.** `src/Protocol/Adapter/PillDispenserAdapter.php` (a trama),
 `src/Device/DeviceEventDecoder.php` (as TAGs), o protocolo de sessão em
-`src/Device/Watch/Supplier/Zayata/`, e as capacidades em
+`src/Device/Tcp/Supplier/Zayata/`, e as capacidades em
 `src/Domain/Capability/Definition/PillDispenserCapabilityDefinitions.php`.
 
 ## 7. A API de parceiro (Case 1)

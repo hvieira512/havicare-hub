@@ -1,13 +1,13 @@
 <?php
 
-namespace Hub\Device\Watch;
+namespace Hub\Device\Tcp;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceEventPayloadBuilder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
 
-abstract class AbstractWatchProtocol implements WatchProtocolInterface
+abstract class AbstractTcpProtocol implements TcpProtocolInterface
 {
     public function __construct(
         protected readonly DeviceAdapterInterface $adapter,
@@ -35,7 +35,7 @@ abstract class AbstractWatchProtocol implements WatchProtocolInterface
         return $this->adapter->encodeOutgoing($payload, $context);
     }
 
-    public function handleIncoming(DeviceSession $session, string $raw): ?WatchMessage
+    public function handleIncoming(DeviceSession $session, string $raw): ?TcpMessage
     {
         $decoded = $this->decodeIncoming($raw, ['session' => $session->identityContext()]);
         if (!is_array($decoded)) {
@@ -47,7 +47,7 @@ abstract class AbstractWatchProtocol implements WatchProtocolInterface
             $telemetry[] = DeviceEventPayloadBuilder::decoded($session, $event);
         }
 
-        return new WatchMessage(
+        return new TcpMessage(
             decoded: $decoded,
             telemetry: $telemetry,
             responses: $this->responsesForDecoded($session, $decoded),
@@ -80,7 +80,7 @@ abstract class AbstractWatchProtocol implements WatchProtocolInterface
     }
 
     /**
-     * @return array<int, WatchResponse>
+     * @return array<int, TcpResponse>
      */
     abstract protected function responsesForDecoded(DeviceSession $session, array $decoded): array;
 }

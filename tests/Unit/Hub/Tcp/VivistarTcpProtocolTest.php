@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Hub\Watch;
+namespace Tests\Unit\Hub\Tcp;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\VivistarAdapter;
-use Hub\Device\Watch\Supplier\Vivistar\VivistarWatchProtocol;
+use Hub\Device\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
 use PHPUnit\Framework\TestCase;
 
-final class VivistarWatchProtocolTest extends TestCase
+final class VivistarTcpProtocolTest extends TestCase
 {
     public function testHandleIncomingBuildsTelemetryAndUploadAck(): void
     {
-        $protocol = new VivistarWatchProtocol(new VivistarAdapter(), new DeviceEventDecoder());
+        $protocol = new VivistarTcpProtocol(new VivistarAdapter(), new DeviceEventDecoder());
         $session = $this->session('865028000000308');
 
         $message = $protocol->handleIncoming($session, 'IWAP49,72#');
@@ -28,7 +28,7 @@ final class VivistarWatchProtocolTest extends TestCase
 
     public function testCommandMetadataParsesVivistarDownlinkBytes(): void
     {
-        $protocol = new VivistarWatchProtocol(new VivistarAdapter(), new DeviceEventDecoder());
+        $protocol = new VivistarTcpProtocol(new VivistarAdapter(), new DeviceEventDecoder());
 
         self::assertSame([
             'nativeType' => 'BPXY',

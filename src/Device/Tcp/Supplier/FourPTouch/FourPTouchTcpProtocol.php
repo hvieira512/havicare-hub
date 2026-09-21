@@ -1,15 +1,15 @@
 <?php
 
-namespace Hub\Device\Watch\Supplier\FourPTouch;
+namespace Hub\Device\Tcp\Supplier\FourPTouch;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
-use Hub\Device\Watch\AbstractWatchProtocol;
-use Hub\Device\Watch\WatchResponse;
+use Hub\Device\Tcp\AbstractTcpProtocol;
+use Hub\Device\Tcp\TcpResponse;
 
-final class FourPTouchWatchProtocol extends AbstractWatchProtocol
+final class FourPTouchTcpProtocol extends AbstractTcpProtocol
 {
     public function __construct(
         DeviceAdapterInterface $adapter,
@@ -19,7 +19,7 @@ final class FourPTouchWatchProtocol extends AbstractWatchProtocol
     }
 
     /**
-     * @return array<int, WatchResponse>
+     * @return array<int, TcpResponse>
      */
     /**
      * O `TAKEPILLS` é a única trama do 4P Touch que confirma uma configuração, e di-lo num
@@ -46,7 +46,7 @@ final class FourPTouchWatchProtocol extends AbstractWatchProtocol
             return [];
         }
 
-        return [new WatchResponse($this->encodeOutgoing([
+        return [new TcpResponse($this->encodeOutgoing([
             'type' => $type,
             'imei' => $decoded['ident'] ?? $session->imei,
             'deviceId' => $decoded['ident'] ?? $session->imei,

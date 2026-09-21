@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Hub\Watch;
+namespace Tests\Unit\Hub\Tcp;
 
 use Hub\Device\DeviceEventDecoder;
-use Hub\Device\Watch\Supplier\FourPTouch\FourPTouchWatchProtocol;
-use Hub\Device\Watch\Supplier\Vivistar\VivistarWatchProtocol;
-use Hub\Device\Watch\Supplier\Zayata\PillDispenserWatchProtocol;
+use Hub\Device\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
+use Hub\Device\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
+use Hub\Device\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
@@ -24,9 +24,9 @@ use PHPUnit\Framework\TestCase;
  */
 final class ConfigurationReplyAcceptanceTest extends TestCase
 {
-    private function fourPTouch(): FourPTouchWatchProtocol
+    private function fourPTouch(): FourPTouchTcpProtocol
     {
-        return new FourPTouchWatchProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
+        return new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
     }
 
     public function testTheFourPTouchReadsTheAcknowledgementOfAPillReminder(): void
@@ -50,8 +50,8 @@ final class ConfigurationReplyAcceptanceTest extends TestCase
 
     public function testOtherProtocolsDoNotClaimAnAnswerTheyNeverGave(): void
     {
-        $vivistar = new VivistarWatchProtocol(new VivistarAdapter(), new DeviceEventDecoder());
-        $dispenser = new PillDispenserWatchProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
+        $vivistar = new VivistarTcpProtocol(new VivistarAdapter(), new DeviceEventDecoder());
+        $dispenser = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
 
         self::assertNull($vivistar->replyAccepted(['type' => 'AP01', 'data' => ['configAck' => '1']]));
         self::assertNull($dispenser->replyAccepted(['type' => 'write_config_ack', 'tlv' => []]));

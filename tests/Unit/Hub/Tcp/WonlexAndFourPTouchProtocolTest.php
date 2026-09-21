@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Hub\Watch;
+namespace Tests\Unit\Hub\Tcp;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
-use Hub\Device\Watch\Supplier\FourPTouch\FourPTouchWatchProtocol;
-use Hub\Device\Watch\Supplier\Wonlex\WonlexWatchProtocol;
+use Hub\Device\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
+use Hub\Device\Tcp\Supplier\Wonlex\WonlexTcpProtocol;
 use PHPUnit\Framework\TestCase;
 
 final class WonlexAndFourPTouchProtocolTest extends TestCase
 {
     public function testWonlexLoginAndHeartbeatBuildResponses(): void
     {
-        $protocol = new WonlexWatchProtocol(new WonlexAdapter(), new DeviceEventDecoder());
+        $protocol = new WonlexTcpProtocol(new WonlexAdapter(), new DeviceEventDecoder());
         $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '868705080300697', 'wonlex-json');
 
         $login = $protocol->handleIncoming($session, $this->wonlexFrame(['type' => 'login', 'ident' => 614377, 'imei' => '868705080300697']));
@@ -30,7 +30,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
 
     public function testWonlexDeviceRequestsReceiveSpecificDownlinksWithSameIdent(): void
     {
-        $protocol = new WonlexWatchProtocol(
+        $protocol = new WonlexTcpProtocol(
             new WonlexAdapter(),
             new DeviceEventDecoder(),
             static fn(): array => [
@@ -67,7 +67,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
 
     public function testFourPTouchProducesProtocolAck(): void
     {
-        $protocol = new FourPTouchWatchProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
+        $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
         $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '637507597567372', 'four-p-touch');
 
         $message = $protocol->handleIncoming($session, '[3G*7597567372*000D*LK,50,100,100]');
@@ -79,7 +79,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
 
     public function testFourPTouchFirmwareVersionDoesNotProduceProtocolAck(): void
     {
-        $protocol = new FourPTouchWatchProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
+        $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
         $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '637507597567372', 'four-p-touch');
 
         $message = $protocol->handleIncoming($session, '[3G*7597567372*000C*VERNO,ABC123]');
@@ -90,7 +90,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
 
     public function testFourPTouchDeviceStatusDoesNotProduceProtocolAck(): void
     {
-        $protocol = new FourPTouchWatchProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
+        $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
         $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '637507597567372', 'four-p-touch');
 
         $message = $protocol->handleIncoming($session, '[3G*7597567372*0002*TS]');
@@ -101,12 +101,12 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     }
 
     /**
-     * O `commandMetadata` do Wonlex vinha do `AbstractWatchProtocol` por herança, mas estava
+     * O `commandMetadata` do Wonlex vinha do `AbstractTcpProtocol` por herança, mas estava
      * também copiado à letra na subclasse. Isto prende o resultado para a cópia poder sair.
      */
     public function testWonlexCommandMetadataParsesTheDownlinkBytes(): void
     {
-        $protocol = new WonlexWatchProtocol(new WonlexAdapter(), new DeviceEventDecoder());
+        $protocol = new WonlexTcpProtocol(new WonlexAdapter(), new DeviceEventDecoder());
 
         self::assertSame([
             'nativeType' => 'locationInterval',
@@ -121,7 +121,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
 
     public function testWonlexCommandMetadataRejectsBytesItCannotDecode(): void
     {
-        $protocol = new WonlexWatchProtocol(new WonlexAdapter(), new DeviceEventDecoder());
+        $protocol = new WonlexTcpProtocol(new WonlexAdapter(), new DeviceEventDecoder());
 
         self::assertNull($protocol->commandMetadata('nada disto é uma trama'));
     }

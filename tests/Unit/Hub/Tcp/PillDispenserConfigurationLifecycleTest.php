@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Hub\Watch;
+namespace Tests\Unit\Hub\Tcp;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Device\DeviceEventDecoder;
-use Hub\Device\Watch\Supplier\Zayata\PillDispenserWatchProtocol;
+use Hub\Device\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
@@ -24,9 +24,9 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
 {
     private const IMEI = '869243062262262';
 
-    private function protocol(): PillDispenserWatchProtocol
+    private function protocol(): PillDispenserTcpProtocol
     {
-        return new PillDispenserWatchProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
+        return new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder());
     }
 
     /** @return array<string, mixed> */

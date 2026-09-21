@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Hub\Watch;
+namespace Tests\Unit\Hub\Tcp;
 
-use Hub\Device\Watch\WatchProtocolRegistry;
+use Hub\Device\Tcp\TcpProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
-final class WatchProtocolRegistryTest extends TestCase
+final class TcpProtocolRegistryTest extends TestCase
 {
     public function testCommandMetadataUsesSupplierSpecificFallbacks(): void
     {
-        $registry = new WatchProtocolRegistry();
+        $registry = new TcpProtocolRegistry();
 
         self::assertSame([
             'nativeType' => 'BPXY',

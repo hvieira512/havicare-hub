@@ -1,14 +1,14 @@
 <?php
 
-namespace Hub\Device\Watch\Supplier\Wonlex;
+namespace Hub\Device\Tcp\Supplier\Wonlex;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
-use Hub\Device\Watch\AbstractWatchProtocol;
-use Hub\Device\Watch\WatchResponse;
+use Hub\Device\Tcp\AbstractTcpProtocol;
+use Hub\Device\Tcp\TcpResponse;
 
-final class WonlexWatchProtocol extends AbstractWatchProtocol
+final class WonlexTcpProtocol extends AbstractTcpProtocol
 {
     /** @var callable(DeviceSession): array<string, mixed>|null */
     private $stateProvider;
@@ -23,7 +23,7 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
     }
 
     /**
-     * @return array<int, WatchResponse>
+     * @return array<int, TcpResponse>
      */
     protected function responsesForDecoded(DeviceSession $session, array $decoded): array
     {
@@ -33,7 +33,7 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
         $state = $this->state($session);
 
         if ($type === 'login') {
-            $responses[] = new WatchResponse($this->encodeOutgoing([
+            $responses[] = new TcpResponse($this->encodeOutgoing([
                 'type' => 'login',
                 'ident' => $this->replyIdent($decoded['ident'] ?? null),
                 'ref' => 's:reply',
@@ -50,7 +50,7 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
         }
 
         if ($type === 'heartbeat') {
-            $responses[] = new WatchResponse($this->encodeOutgoing([
+            $responses[] = new TcpResponse($this->encodeOutgoing([
                 'type' => 'heartbeat',
                 'ident' => $this->replyIdent($decoded['ident'] ?? null),
                 'ref' => 's:reply',
@@ -86,7 +86,7 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
                 'value' => $this->sleepSummary($sleep),
             ], $ident, $timestamp)];
         }
-        $responses[] = new WatchResponse($this->encodeOutgoing([
+        $responses[] = new TcpResponse($this->encodeOutgoing([
             'type' => $type,
             'ident' => $ident,
             'ref' => 's:reply',
@@ -118,8 +118,8 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
         array $data,
         int $ident,
         int $timestamp
-    ): WatchResponse {
-        return new WatchResponse($this->encodeOutgoing([
+    ): TcpResponse {
+        return new TcpResponse($this->encodeOutgoing([
             'type' => $type,
             'ident' => $ident,
             'ref' => 's:down',
@@ -134,7 +134,7 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
     }
 
     /**
-     * @return list<WatchResponse>
+     * @return list<TcpResponse>
      */
     private function configurationSyncResponses(
         DeviceSession $session,
