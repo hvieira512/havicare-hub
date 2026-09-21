@@ -62,7 +62,7 @@ final class ZayataConfigurationDefinitions
                 [1, 'Médio'],
                 [2, 'Baixo'],
                 [3, 'Silêncio'],
-            ], input: 'buttonGroup'),
+            ], input: 'volumeScale'),
             self::choice('alarm_ringtone', 'alarmRingtone', 'Tipo de toque', 'alerts', 11, 'ringtone', [
                 [0, 'Nenhum'],
                 [1, 'Toque 1'],

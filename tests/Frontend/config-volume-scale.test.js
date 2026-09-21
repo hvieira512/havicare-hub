@@ -6,11 +6,13 @@ import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inpu
 import { parseFragment } from "./support/dom.js";
 
 /**
- * Uma escolha curta com significado mostra-se toda de uma vez.
+ * Uma escolha curta com significado mostra-se toda de uma vez, e à largura do cartão.
  *
- * O volume do dispensador tem quatro posições e a escala está invertida -- `0` é o mais alto e
- * `3` é silêncio. Numa lista fechada vê-se uma opção de cada vez e a escala não se lê; num
- * grupo de botões vêem-se as quatro lado a lado, pela ordem em que existem.
+ * O volume do dispensador tem quatro posições e a escala está invertida -- `0` é o mais alto
+ * e `3` é silêncio. Numa lista fechada vê-se uma opção de cada vez e a escala não se lê; num
+ * grupo espremido a um canto também não. À largura do cartão, com um ícone por posição,
+ * vêem-se as quatro pela ordem em que existem -- que é a forma que a sensibilidade de queda
+ * e o perfil de som já usavam.
  */
 
 const entry = {
@@ -26,7 +28,7 @@ const entry = {
     },
 };
 
-const render = (desired) => parseFragment(CONFIG_INPUTS.buttonGroup.render(entry, desired));
+const render = (desired) => parseFragment(CONFIG_INPUTS.volumeScale.render(entry, desired));
 
 test("desenha um botão por opção, com o rótulo à vista", () => {
     const root = render({ volume: 1 });
@@ -35,6 +37,18 @@ test("desenha um botão por opção, com o rótulo à vista", () => {
         [...root.querySelectorAll("label")].map((el) => el.textContent.trim()),
         ["Alto", "Médio", "Baixo", "Silêncio"],
     );
+});
+
+test("a escala ocupa a largura do cartão", () => {
+    const group = render({ volume: 0 }).querySelector(".btn-group");
+
+    assert.ok(group.classList.contains("w-100"));
+});
+
+test("cada posição tem o seu ícone", () => {
+    const root = render({ volume: 0 });
+
+    assert.equal(root.querySelectorAll("label i.fa-solid").length, 4);
 });
 
 test("a opção escolhida é a que fica marcada", () => {
@@ -55,7 +69,7 @@ test("sem valor escolhido parte do que a definição declara", () => {
 test("o valor volta como número, que é o que a TAG leva", () => {
     const root = render({ volume: 3 });
 
-    assert.deepEqual(CONFIG_INPUTS.buttonGroup.read(root), { volume: 3 });
+    assert.deepEqual(CONFIG_INPUTS.volumeScale.read(root), { volume: 3 });
 });
 
 test("os botões do mesmo cartão não se misturam com os de outro", () => {
