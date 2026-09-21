@@ -296,7 +296,7 @@ function renderIdentity(answers) {
             ? `<div>
                 <label class="form-label-sm" for="wizardSim">Número do SIM</label>
                 <input type="text" class="form-control" id="wizardSim" data-wizard-sim
-                    placeholder="+351 9xx xxx xxx" value="${esc(answers.sim || "")}">
+                    value="${esc(answers.sim || "")}">
                </div>`
             : ""}
         ${fields.gatewayLinks

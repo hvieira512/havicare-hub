@@ -184,7 +184,6 @@ export function contactsInput(entry, desired, meta = {}) {
                                     ${renderPhoneControl({
                                         value: String(contact.phone || ""),
                                         repeatField: "phone",
-                                        placeholder: `Telefone ${index + 1}`,
                                         maxLength: phoneMaxLengthValue,
                                     })}
                                 </div>

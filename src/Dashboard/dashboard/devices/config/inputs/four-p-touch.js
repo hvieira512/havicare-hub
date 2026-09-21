@@ -37,7 +37,6 @@ export function makeCallInput(entry, desired) {
                     ${renderPhoneControl({
                         value: String(desired.phone || ""),
                         configField: "phone",
-                        placeholder: "+351912345678",
                     })}
                 </div>
             </div>
@@ -57,7 +56,6 @@ export function voiceMonitorInput(entry, desired) {
             ${renderPhoneControl({
                 value: String(desired.phone || ""),
                 configField: "phone",
-                placeholder: "+351912345678",
             })}
         </div>`;
 }

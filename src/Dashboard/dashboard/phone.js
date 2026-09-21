@@ -59,11 +59,17 @@ const PHONE_COUNTRIES = [
 
 const DEFAULT_COUNTRY = "PT";
 
+/**
+ * O campo do número não leva placeholder.
+ *
+ * Levava um número real com indicativo, e um número cinzento dentro de um campo vazio lê-se
+ * como um número já lá escrito. O que o campo é já se percebe do seletor de país ao lado e do
+ * rótulo por cima.
+ */
 export function renderPhoneControl({
     value = "",
     configField = "",
     repeatField = "",
-    placeholder = "Número",
     maxLength = 0,
 } = {}) {
     const parsed = parseStoredPhone(value);
@@ -96,7 +102,6 @@ export function renderPhoneControl({
                     autocomplete="tel-national"
                     ${normalizedMaxLength > 0 ? `maxlength="${esc(String(normalizedMaxLength))}"` : ""}
                     data-phone-local
-                    placeholder="${esc(placeholder)}"
                     value="${esc(formatLocalNumber(country.code, parsed.localDigits))}">
             </div>
             <div class="invalid-feedback d-none" data-phone-feedback></div>
