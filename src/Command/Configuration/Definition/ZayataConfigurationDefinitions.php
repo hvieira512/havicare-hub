@@ -100,6 +100,7 @@ final class ZayataConfigurationDefinitions
             // *tem* — e a especificação manda ler os parâmetros no primeiro registo.
             self::action('sync_configuration', 'readConfiguration', 'Sincronizar configuração', 'system', 5),
             self::action('device_status', 'readStatus', 'Atualizar estado', 'system', 6),
+            self::action('disable_encryption', 'disableEncryption', 'Desligar cifra de dados', 'system', 7),
 
             // As acções. O relógio calibra-se à mão porque num ensaio um alarme das 12:55
             // ficou registado às 11:45.

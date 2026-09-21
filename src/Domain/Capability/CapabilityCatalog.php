@@ -423,6 +423,7 @@ final class CapabilityCatalog
             'device_language',
             'time_zone',
             'sync_configuration',
+            'disable_encryption',
             // Pedir o estado é uma acção sobre a mesma capacidade que o publica.
             'device_status',
             'dispense_now',

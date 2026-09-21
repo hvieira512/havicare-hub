@@ -244,6 +244,22 @@ final class PillDispenserDownlinkTest extends TestCase
     }
 
     /**
+     * O M228 sai de fábrica a cifrar o corpo dos pacotes que envia, e a especificação nunca
+     * diz a chave. Sem isto o hub recebe um heartbeat por minuto que não consegue ler: o
+     * cabeçalho lê-se, o corpo é texto cifrado, e não há telemetria nenhuma.
+     */
+    public function testDisablingEncryptionWritesTheParameterThatTurnsItOff(): void
+    {
+        $tlv = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'disableEncryption', []),
+            0x06,
+        );
+
+        self::assertSame("\x00", $tlv[0x8005]['value'], '0 é «não cifrar»');
+        self::assertSame(PillDispenserAdapter::T_INT8U, $tlv[0x8005]['type']);
+    }
+
+    /**
      * Cada TFLV declara o tipo do parâmetro nos bits 0--4 do Flag, e o aparelho recusa com
      * «tipo de parâmetro inválido» tudo o que lhe chegue como `UNKONW`.
      *
@@ -306,6 +322,7 @@ final class PillDispenserDownlinkTest extends TestCase
                 'endHour' => 7,
                 'endMinute' => 0,
             ]],
+            ['disableEncryption', []],
             ['restartDevice', []],
             ['factoryReset', []],
             ['calibrateClock', []],

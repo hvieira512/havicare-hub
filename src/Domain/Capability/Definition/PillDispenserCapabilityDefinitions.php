@@ -38,6 +38,9 @@ final class PillDispenserCapabilityDefinitions
 
             // O que se pede. Uma acção pede-se, não se configura.
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'sync_configuration', 'label' => 'Sincronizar configuração', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            // O aparelho cifra o que envia até lhe dizerem que não, e a especificação não dá
+            // a chave: sem isto o hub recebe heartbeats ilegíveis e telemetria nenhuma.
+            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'disable_encryption', 'label' => 'Desligar cifra de dados', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'dispense_now', 'label' => 'Dispensar agora', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'mute_alarm', 'label' => 'Silenciar', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'calibrate_clock', 'label' => 'Calibrar relógio', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],

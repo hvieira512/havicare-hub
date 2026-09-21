@@ -130,6 +130,17 @@ Suporta TCP, UDP e HTTP, com TCP preferido. Em HTTP o `content-type` é
 **A ordem de bytes é a do anfitrião**, não a da rede — o que é invulgar e fácil
 de errar.
 
+> **O aparelho chega a cifrar, e a especificação não dá a chave.** O primeiro
+> M228 real ligou-se a mandar um heartbeat por minuto com o **bit 2 do `Flag`**
+> ligado: cabeçalho legível, identidade correcta, CRC válido — e o corpo em
+> AES128-CFB, que o hub não sabe abrir. O resultado é uma dashboard com todos os
+> cartões de telemetria vazios, sem um único erro em lado nenhum.
+>
+> Não é preciso chave para resolver: o `0x8005` (*Data Encryption*) é um
+> parâmetro de configuração escrevível, `0` desliga, e é o que a acção **Desligar
+> cifra de dados** escreve num `0x06`. Num aparelho novo é a primeira coisa a
+> fazer, antes de se esperar telemetria nenhuma.
+
 O **CRC16** é o de MODBUS: polinómio `0xA001` reflectido, valor inicial `0xFFFF`,
 calculado de `Length` ao fim dos dados. O anexo do documento traz a
 implementação em C.

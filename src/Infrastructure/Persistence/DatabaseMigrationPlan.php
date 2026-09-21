@@ -6,6 +6,7 @@ namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalog;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserEncryptionSwitch;
 
 /**
  * As migrações posteriores à baseline, que é o `database/schema.sql` mais o catálogo que o
@@ -27,6 +28,8 @@ final class DatabaseMigrationPlan
             // O dispensador de comprimidos é um tipo de dispositivo novo, e as duas bases já
             // existiam quando ele chegou.
             new PillDispenserCatalog(),
+            // O primeiro M228 real mostrou que ele chega a cifrar o que envia.
+            new PillDispenserEncryptionSwitch(),
         ];
     }
 
