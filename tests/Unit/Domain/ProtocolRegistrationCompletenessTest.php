@@ -7,6 +7,7 @@ namespace Tests\Unit\Domain;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
+use Hub\Domain\Capability\ConfigurationInputDefaults;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Device\Tcp\TcpProtocolRegistry;
@@ -169,5 +170,61 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
         }
 
         self::assertGreaterThan(0, $checked, 'Nenhuma capacidade foi verificada -- a varredura falhou.');
+    }
+
+    /**
+     * O sexto registo: o contrato da capacidade tem de conhecer o protocolo que a declara.
+     *
+     * Um protocolo que declare uma configuração no seu catálogo e não esteja no `match` do
+     * contrato correspondente compila, passa no PHPStan e passa em todos os outros testes. O
+     * ecrã desenha-se, o utilizador escolhe o valor, carrega em Enviar -- e só aí rebenta com
+     * `Unsupported`. Aconteceu duas vezes: dezasseis das dezassete configurações do
+     * dispensador M228, e o «não perturbar» dos relógios 4P Touch.
+     *
+     * Distinguem-se duas recusas pelo início da mensagem. `Unsupported` é o protocolo não
+     * estar ligado ao contrato, e é sempre um defeito. Tudo o resto -- «message is required»,
+     * «phone is required» -- é a validação a fazer o seu trabalho sobre um valor por omissão
+     * que é legitimamente incompleto: uma mensagem de texto não tem valor por omissão que se
+     * possa enviar, e ninguém espera que tenha.
+     */
+    public function testEveryDeclaredConfigurationReachesItsCapabilityContract(): void
+    {
+        $registry = new CapabilityRegistry();
+        $porLigar = [];
+        $verificadas = 0;
+
+        foreach (array_keys(ProtocolRegistry::all()) as $protocol) {
+            foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
+                $nativeKey = trim((string)($entry['key'] ?? ''));
+                $genericKey = CapabilityCatalog::mapConfigurationKey($nativeKey);
+                if ($genericKey === null) {
+                    continue;
+                }
+
+                // A API só aceita chaves que sejam mesmo capacidades configuráveis, e recusa
+                // as outras antes de chegar ao contrato. Verificar o que ela nunca lhe entrega
+                // dava falsos positivos.
+                $section = CapabilityCatalog::sectionForCapabilityKey($genericKey);
+                if ($section === null || $section === 'telemetry') {
+                    continue;
+                }
+
+                $verificadas++;
+                try {
+                    $registry->toNative(
+                        $protocol,
+                        $genericKey,
+                        ConfigurationInputDefaults::forEntry($entry),
+                    );
+                } catch (\Throwable $e) {
+                    if (str_starts_with($e->getMessage(), 'Unsupported')) {
+                        $porLigar[] = "{$protocol} / {$genericKey}: {$e->getMessage()}";
+                    }
+                }
+            }
+        }
+
+        self::assertGreaterThan(0, $verificadas, 'Nenhuma configuração foi verificada -- a varredura falhou.');
+        self::assertSame([], $porLigar);
     }
 }
