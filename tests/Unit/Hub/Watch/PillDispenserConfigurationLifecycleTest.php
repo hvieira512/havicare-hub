@@ -113,6 +113,30 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
         self::assertFalse($protocol->replyAccepted($this->decodeFrame($recusado)));
     }
 
+    /**
+     * Numa leitura, uma TAG recusada é informação e não uma falha.
+     *
+     * O M228 de produção é a variante 4G e não tem WiFi: responde ao `0x07` com tudo o resto
+     * preenchido e o `0x810A` em `001`. A leitura correu bem -- trouxe bateria, temperatura,
+     * humidade e células --, e marcá-la como recusada punha «o aparelho recusou» num pedido
+     * que devolveu toda a telemetria que havia para devolver.
+     */
+    public function testAReadThatAnswersIsAcceptedEvenComARefusedTag(): void
+    {
+        $protocol = $this->protocol();
+
+        $leitura = (new PillDispenserAdapter())->encodeOutgoing([
+            'imei' => self::IMEI,
+            'packetType' => 0x87,
+            'tlv' => [
+                0x8103 => ['value' => "\x63", 'state' => 0],
+                0x810A => ['value' => "\x00\x00", 'state' => 1],
+            ],
+        ]);
+
+        self::assertTrue($protocol->replyAccepted($this->decodeFrame($leitura)));
+    }
+
     public function testAFrameThatDoesNotCommentOnConfigurationSaysNothing(): void
     {
         $protocol = $this->protocol();

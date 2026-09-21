@@ -16,25 +16,39 @@ final class PillDispenserWatchProtocol extends AbstractWatchProtocol
 {
     private const ACKNOWLEDGED_TYPES = ['register', 'heartbeat', 'event', 'change'];
 
-    /** As respostas que comentam alguma coisa que o hub pediu. */
-    private const REPLY_TYPES = ['write_config_ack', 'read_config_ack', 'read_status_ack', 'control_ack'];
+    /** As respostas a uma escrita, em que o estado de cada TAG diz se ela pegou. */
+    private const WRITE_REPLIES = ['write_config_ack', 'control_ack'];
+
+    /** As respostas a uma leitura, que trazem valores em vez de aplicarem algum. */
+    private const READ_REPLIES = ['read_config_ack', 'read_status_ack'];
 
     /**
-     * O resultado de uma escrita vem por TAG, nos bits 5--7 do Flag de cada TFLV: `000` é
-     * sucesso e o resto é uma recusa com motivo. Uma só TAG recusada chega para a escrita
-     * inteira não ter feito o que se pediu.
+     * O resultado vem por TAG, nos bits 5--7 do Flag de cada TFLV: `000` é sucesso e o resto
+     * é uma recusa com motivo.
+     *
+     * Numa **escrita**, uma só TAG recusada chega para não ter feito o que se pediu. Numa
+     * **leitura** não: o aparelho responde com tudo o que tem, e uma TAG que ele não suporta
+     * é informação sobre esse parâmetro, não uma falha do pedido. O M228 de produção é a
+     * variante 4G e não tem WiFi -- recusa o `0x810A` em todas as consultas de estado, e
+     * tratar isso como recusa punha «o aparelho recusou» numa leitura que trouxe a bateria, a
+     * temperatura, a humidade e as células todas.
      *
      * Um corpo vazio é `null` e não recusa: `null` é «não disse». É o que devolvem os pacotes
-     * que o aparelho envia por sua iniciativa, que não comentam configuração nenhuma.
+     * que o aparelho envia por sua iniciativa, que não comentam nada que lhe tenha sido pedido.
      */
     public function replyAccepted(array $decoded): ?bool
     {
-        if (!in_array((string)($decoded['type'] ?? ''), self::REPLY_TYPES, true)) {
+        $type = (string)($decoded['type'] ?? '');
+        $tlv = $decoded['tlv'] ?? [];
+        if (!is_array($tlv) || $tlv === []) {
             return null;
         }
 
-        $tlv = $decoded['tlv'] ?? [];
-        if (!is_array($tlv) || $tlv === []) {
+        if (in_array($type, self::READ_REPLIES, true)) {
+            return true;
+        }
+
+        if (!in_array($type, self::WRITE_REPLIES, true)) {
             return null;
         }
 
