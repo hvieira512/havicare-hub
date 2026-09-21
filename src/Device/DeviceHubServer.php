@@ -129,14 +129,14 @@ class DeviceHubServer
                 null,
                 $command,
                 $commercialName
-            ), $session?->deviceType ?? 'watch', $licenseId, $company);
+            ), $this->currentDeviceType($imei, $session?->deviceType), $licenseId, $company);
             $this->recordDownlinkEvent(
                 $imei,
                 $session?->supplier ?? '',
                 $session?->model ?? '',
                 'device.downlink.sent',
                 $bytes,
-                $session?->deviceType ?? 'watch',
+                $this->currentDeviceType($imei, $session?->deviceType),
                 $licenseId,
                 $command,
                 $commercialName
@@ -497,7 +497,7 @@ class DeviceHubServer
         }
     }
 
-    private function publishStatus(string $imei, string $supplier, string $model, string $state, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null', string $commercialName = ''): void
+    private function publishStatus(string $imei, string $supplier, string $model, string $state, string $deviceType, int $licenseId = 0, string $company = 'null', string $commercialName = ''): void
     {
         try {
             $this->mqtt->publishStatus($imei, RawPayload::status($imei, $supplier, $model, $state, null, $commercialName), true, $deviceType, $licenseId, $company);
@@ -519,7 +519,7 @@ class DeviceHubServer
         }
     }
 
-    private function publishEvent(string $imei, string $supplier, string $model, string $type, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null', string $commercialName = ''): void
+    private function publishEvent(string $imei, string $supplier, string $model, string $type, string $deviceType, int $licenseId = 0, string $company = 'null', string $commercialName = ''): void
     {
         try {
             $this->mqtt->publishEvent($imei, RawPayload::event($imei, $supplier, $model, $type, null, null, $commercialName), $deviceType, $licenseId, $company);
@@ -561,8 +561,8 @@ class DeviceHubServer
         string $supplier,
         string $model,
         string $type,
-        ?array $command = null,
-        string $deviceType = 'watch',
+        ?array $command,
+        string $deviceType,
         int $licenseId = 0,
         string $commercialName = ''
     ): void {
@@ -578,7 +578,7 @@ class DeviceHubServer
         string $model,
         string $type,
         string $bytes,
-        string $deviceType = 'watch',
+        string $deviceType,
         int $licenseId = 0,
         ?array $command = null,
         string $commercialName = ''
@@ -608,6 +608,21 @@ class DeviceHubServer
         $metadata = $this->authorizer->metadataFor($imei);
         $commercialName = (string)($metadata['commercialName'] ?? '');
         return $commercialName !== '' ? $commercialName : $fallback;
+    }
+
+    /**
+     * O tipo de aparelho sai da whitelist, e não de um valor por omissão.
+     *
+     * Um tipo assumido aqui não dá erro: dá telemetria publicada no tópico errado, e quem
+     * consome o contrato recebe um dispensador de comprimidos debaixo de `/watch/` e acredita.
+     * Quem não está na whitelist não chega a ter sessão, por isso há sempre metadados.
+     */
+    private function currentDeviceType(string $imei, ?string $fallback = null): string
+    {
+        $metadata = $this->authorizer->metadataFor($imei);
+        $deviceType = (string)($metadata['deviceType'] ?? '');
+
+        return $deviceType !== '' ? $deviceType : (string)$fallback;
     }
 
     private function wonlexState(DeviceSession $session): array

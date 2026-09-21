@@ -16,7 +16,11 @@ class DeviceSession
         public readonly string $supplier = '',
         public readonly string $model = '',
         public readonly string $commercialName = '',
-        public readonly string $deviceType = 'watch',
+        // Sem valor por omissão que seja um tipo real: uma sessão por autenticar não sabe o
+        // que está do outro lado, e adivinhar «watch» punha um dispensador de comprimidos a
+        // publicar no tópico dos relógios sem dar erro nenhum. O tipo chega no `authenticate`,
+        // vindo da whitelist.
+        public readonly string $deviceType = '',
         public readonly int $licenseId = 0,
         public readonly string $company = 'null',
     ) {
@@ -47,7 +51,7 @@ class DeviceSession
         string $supplier,
         string $model,
         string $commercialName = '',
-        string $deviceType = 'watch',
+        string $deviceType = '',
         int $licenseId = 0,
         string $company = 'null',
     ): self {
