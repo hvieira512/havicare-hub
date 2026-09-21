@@ -196,6 +196,8 @@ final class CatalogSchemas
                     // Presente só nas destrutivas: o que a acção faz ao aparelho neste
                     // protocolo, que é o que a confirmação tem de mostrar.
                     'confirm' => ['type' => 'string', 'nullable' => true, 'example' => 'O relógio fica sem comunicar enquanto arranca.'],
+                    // Só onde o rótulo é um nome e não serve de botão.
+                    'verb' => ['type' => 'string', 'nullable' => true, 'example' => 'Repor de fábrica'],
                     'input' => ['type' => 'string', 'example' => 'toggle'],
                     'fields' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['enabled']],
                     'expectedReplyTypes' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['AP76']],

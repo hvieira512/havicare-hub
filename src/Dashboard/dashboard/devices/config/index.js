@@ -427,7 +427,7 @@ export function renderConfigSection(
                 badge: showConfigurationBadge ? stateBadge(deliveryMeta.label, deliveryMeta.tone) : "",
                 actions: verbs.length > 0
                     ? renderConfigActionVerbs(verbs, disabled)
-                    : renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== ""),
+                    : renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "", String(entry.verb || entry.label || "")),
             })}
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}`}
             ${renderConfigFeedback(entry.key, uiState)}
@@ -460,13 +460,17 @@ function renderConfigActionVerbs(verbs, disabled) {
                 data-config-phase="idle" ${disabled ? "disabled" : ""}>${esc(verb.label)}</button>`).join("");
 }
 
-function renderConfigActionButton(key, row, uiState, disabled = false, appliedByHub = false, destructive = false) {
+function renderConfigActionButton(key, row, uiState, disabled = false, appliedByHub = false, destructive = false, verb = "") {
     const state = configButtonState(row, uiState);
+    // Uma acção diz no botão o que vai fazer. Quase sempre é o próprio rótulo, que já é a
+    // frase do verbo; onde o rótulo é um nome, a definição declara o verbo.
     // "Guardar" e não "Enviar" quando não há nada a caminho do dispositivo: o botão não deve
     // prometer um envio que não acontece.
-    const idleLabel = appliedByHub
-        ? "Guardar"
-        : (["pushMessage", "push_message"].includes(key) ? "Enviar mensagem" : "Enviar");
+    const idleLabel = verb !== ""
+        ? verb
+        : appliedByHub
+            ? "Guardar"
+            : (["pushMessage", "push_message"].includes(key) ? "Enviar mensagem" : "Enviar");
     const isDisabled =
         disabled || ["submitting", "sent", "queued", "waiting"].includes(state);
     const meta = CONFIG_ACTION_BUTTON_META[state] || CONFIG_ACTION_BUTTON_META.idle;

@@ -42,7 +42,7 @@ final class WonlexConfigurationDefinitions
             $entry('familyNumber', 'familyNumber', 'Contactos familiares', 'contacts', ['contacts'], ['familyNumber'], 'contacts', 5, 10),
             $entry('SOSNumber', 'SOSNumber', 'Números SOS', 'list', ['numbers'], ['SOSNumber'], 'contacts', 10, 10),
             $entry('dnMedicationPlan', 'dnMedicationPlan', 'Plano de medicação', 'wonlexMedicationPlans', ['plans'], ['dnMedicationPlan'], 'health', 10),
-            $entry('resetCommand', 'reset', 'Reposição de fábrica', 'action', [], ['reset'], 'system', 110, transient: true, confirm: 'Repõe o relógio ao estado de fábrica. Volta a apontar para o servidor do fornecedor e o hub deixa de o comandar até alguém de lá o voltar a configurar.'),
+            $entry('resetCommand', 'reset', 'Reposição de fábrica', 'action', [], ['reset'], 'system', 110, transient: true, confirm: 'Repõe o relógio ao estado de fábrica. Volta a apontar para o servidor do fornecedor e o hub deixa de o comandar até alguém de lá o voltar a configurar.', verb: 'Repor de fábrica'),
             $entry('restartCommand', 'restart', 'Reiniciar dispositivo', 'action', [], ['restart'], 'system', 120, transient: true, confirm: 'O relógio fica sem comunicar enquanto arranca.'),
             $entry('powerOffCommand', 'powerOff', 'Desligar dispositivo', 'action', [], ['powerOff'], 'system', 130, transient: true, confirm: 'O relógio desliga-se e só volta a ligar no botão do próprio aparelho.'),
             $entry('findDeviceCommand', 'find', 'Encontrar dispositivo', 'action', [], ['find'], 'system', 140, null, null, true),

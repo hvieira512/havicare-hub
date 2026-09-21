@@ -62,6 +62,34 @@ test("o botão de enviar fica na linha do título", () => {
     );
 });
 
+test("o botão diz o que a acção faz, e não «Enviar»", () => {
+    const button = sectionOf(FIND_DEVICE).querySelector("[data-action=\"saveConfig\"]");
+
+    assert.equal(button.textContent.trim(), "Encontrar dispositivo");
+});
+
+/**
+ * Quase todos os rótulos já são a frase do verbo -- «Calibrar relógio», «Dispensar agora».
+ * Onde o rótulo é um nome, a definição declara o verbo, porque «Reposição de fábrica» num
+ * botão não diz o que o clique vai fazer.
+ */
+test("um rótulo que é um nome leva o verbo declarado na definição", () => {
+    const section = sectionOf({
+        key: "resetCommand",
+        capabilityKey: "reset_device",
+        label: "Reposição de fábrica",
+        verb: "Repor de fábrica",
+        input: "action",
+        fields: [],
+        transient: true,
+        confirm: "Repõe o relógio ao estado de fábrica.",
+    });
+
+    const button = section.querySelector("[data-action=\"saveConfig\"]");
+    assert.equal(button.textContent.trim(), "Repor de fábrica");
+    assert.match(section.querySelector(".fw-semibold").textContent, /Reposição de fábrica/);
+});
+
 test("uma acção destrutiva pinta-se de perigo, e continua assim depois de sincronizar", () => {
     const section = sectionOf(POWER_OFF);
     const button = section.querySelector("[data-action=\"saveConfig\"]");

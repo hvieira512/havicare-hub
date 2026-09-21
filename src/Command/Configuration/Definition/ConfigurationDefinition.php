@@ -19,6 +19,7 @@ final class ConfigurationDefinition
         string $help = '',
         ?array $actions = null,
         string $confirm = '',
+        string $verb = '',
     ): array {
         $entry = [
             'key' => $key,
@@ -63,6 +64,12 @@ final class ConfigurationDefinition
         // da capacidade acaba a prometer um reinício a quem está a apagar o aparelho.
         if ($confirm !== '') {
             $entry['confirm'] = $confirm;
+        }
+        // O que o botão de uma acção diz. Quase todos os rótulos já são a frase do verbo --
+        // «Calibrar relógio», «Dispensar agora» --, e só se declara onde o rótulo é um nome:
+        // «Reposição de fábrica» num botão não diz o que o clique faz.
+        if ($verb !== '') {
+            $entry['verb'] = $verb;
         }
 
         return $entry;
