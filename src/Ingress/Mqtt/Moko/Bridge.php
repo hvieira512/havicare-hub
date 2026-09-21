@@ -2,9 +2,6 @@
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\Ingress\Mqtt\Monit\MonitMecsProDecoder;
-use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
-
 use Hub\Domain\DeviceMetadata;
 use Hub\Device\CommercialModelResolver;
 use Hub\Domain\DiaperSensitivity;
@@ -12,6 +9,8 @@ use Hub\Domain\DiaperSensitivityLookup;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Ingress\Mqtt\Gateway\Topic;
+use Hub\Ingress\Mqtt\Monit\MonitMecsProDecoder;
+use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
 use Hub\Log\Logger;
 
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge
