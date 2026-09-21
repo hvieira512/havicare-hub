@@ -58,21 +58,22 @@ final class GenericCapability implements CapabilityContract
             'vivistar-iw' => $this->vivistarToNative($value),
             'wonlex-json' => $this->wonlexGenericToNative($value),
             'four-p-touch' => $this->fourPTouch->toNative($this->genericKey, $value),
-            'veepoo-ble' => $this->veepooToNative($value),
+            'veepoo-ble', 'zayata-m228' => $this->passThroughToNative($value),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };
     }
 
     /**
-     * Numa pulseira Veepoo o nativo é a própria chave genérica.
+     * Os protocolos cujo nome nativo é a própria chave genérica.
      *
-     * Quem monta a trama é o gateway que tem a sessão BLE, e o que lhe chega é o nome da
-     * operação e o valor. Não há tradução de nomes a fazer aqui -- traduzir para um nome
-     * nativo inventado só obrigaria a destraduzir do outro lado.
+     * Quem monta a trama recebe o nome da operação e o valor -- o gateway com a sessão BLE nas
+     * pulseiras Veepoo, o `DeviceCommandCatalog` no dispensador. Sem nomes de fabricante pelo
+     * meio não há tradução a fazer, e inventar um nome nativo só obrigava a destraduzi-lo do
+     * outro lado.
      *
      * @return array<string, array<string, mixed>>
      */
-    private function veepooToNative(mixed $value): array
+    private function passThroughToNative(mixed $value): array
     {
         return [$this->genericKey => self::requireObjectValue($value, $this->genericKey)];
     }
