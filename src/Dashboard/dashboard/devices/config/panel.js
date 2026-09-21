@@ -555,8 +555,11 @@ export function syncConfigSectionDirty(section) {
     // apagava, deixando a configuração sem caminho para sair a não ser mexendo-lhe no valor.
     // O que falhou foi a entrega, não o valor, e repeti-la é a única coisa que faz sentido.
     const deliveryFailed = section.dataset.configDelivery === "failed";
+    // A cor do botão aceso. Uma acção que pede confirmação continua a vermelho: o peso dela
+    // está aqui, e não numa faixa de aviso, e não pode ser apagado por um sincronismo.
+    const active = section.dataset.configConfirm ? "btn-outline-danger" : "btn-primary";
     if (section.dataset.configTransient === "1" || neverSent || deliveryFailed) {
-        button.classList.add("btn-primary");
+        button.classList.add(active);
         button.classList.remove("btn-outline-secondary");
         button.disabled = false;
         return;
@@ -573,7 +576,7 @@ export function syncConfigSectionDirty(section) {
         dirty = true;
     }
 
-    button.classList.toggle("btn-primary", dirty);
+    button.classList.toggle(active, dirty);
     button.classList.toggle("btn-outline-secondary", !dirty);
     button.disabled = !dirty;
 }

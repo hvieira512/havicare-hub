@@ -64,8 +64,7 @@ test("an empty text field reads back as an empty string, not undefined", () => {
 });
 
 test("action inputs carry no payload", () => {
-    assert.deepEqual(roundTrip({ input: "resetAction", key: "reset" }, {}), {});
-    assert.deepEqual(roundTrip({ input: "requestAction", key: "ask" }, {}), {});
+    assert.deepEqual(roundTrip({ input: "action", key: "reset" }, {}), {});
 });
 
 test("interval toggle keeps both of its fields together", () => {

@@ -42,10 +42,10 @@ final class WonlexConfigurationDefinitions
             $entry('familyNumber', 'familyNumber', 'Contactos familiares', 'contacts', ['contacts'], ['familyNumber'], 'contacts', 5, 10),
             $entry('SOSNumber', 'SOSNumber', 'Números SOS', 'list', ['numbers'], ['SOSNumber'], 'contacts', 10, 10),
             $entry('dnMedicationPlan', 'dnMedicationPlan', 'Plano de medicação', 'wonlexMedicationPlans', ['plans'], ['dnMedicationPlan'], 'health', 10),
-            $entry('resetCommand', 'reset', 'Reposição de fábrica', 'resetAction', [], ['reset'], 'system', 110, transient: true, confirm: 'Repõe o relógio ao estado de fábrica. Volta a apontar para o servidor do fornecedor e o hub deixa de o comandar até alguém de lá o voltar a configurar.'),
-            $entry('restartCommand', 'restart', 'Reiniciar dispositivo', 'resetAction', [], ['restart'], 'system', 120, transient: true, confirm: 'O relógio fica sem comunicar enquanto arranca.'),
-            $entry('powerOffCommand', 'powerOff', 'Desligar dispositivo', 'resetAction', [], ['powerOff'], 'system', 130, transient: true, confirm: 'O relógio desliga-se e só volta a ligar no botão do próprio aparelho.'),
-            $entry('findDeviceCommand', 'find', 'Encontrar dispositivo', 'requestAction', [], ['find'], 'system', 140, null, null, true),
+            $entry('resetCommand', 'reset', 'Reposição de fábrica', 'action', [], ['reset'], 'system', 110, transient: true, confirm: 'Repõe o relógio ao estado de fábrica. Volta a apontar para o servidor do fornecedor e o hub deixa de o comandar até alguém de lá o voltar a configurar.'),
+            $entry('restartCommand', 'restart', 'Reiniciar dispositivo', 'action', [], ['restart'], 'system', 120, transient: true, confirm: 'O relógio fica sem comunicar enquanto arranca.'),
+            $entry('powerOffCommand', 'powerOff', 'Desligar dispositivo', 'action', [], ['powerOff'], 'system', 130, transient: true, confirm: 'O relógio desliga-se e só volta a ligar no botão do próprio aparelho.'),
+            $entry('findDeviceCommand', 'find', 'Encontrar dispositivo', 'action', [], ['find'], 'system', 140, null, null, true),
             // A Wonlex documenta o `msgNotice` como notificação de sentido único e não define
             // resposta nenhuma do dispositivo para ele.
             $entry('pushMessage', 'msgNotice', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], [], 'system', 145, null, null, true),

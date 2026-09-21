@@ -51,12 +51,12 @@ final class FourPTouchConfigurationDefinitions
             $entry('monitorNumber', 'MONITOR', 'Número de monitorização', 'voiceMonitor', ['phone'], ['MONITOR'], 'system', 5, transient: true, confirm: 'O relógio liga de imediato para este número e abre o microfone, sem mostrar nada a quem o traz no pulso.'),
             $entry('centerNumber', 'CENTER', 'Número da central', 'phone', ['phone'], ['CENTER'], 'contacts', 5),
             $entry('pushMessage', 'MESSAGE', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], ['MESSAGE'], 'system', 5, transient: true),
-            $entry('resetCommand', 'RESET', 'Reiniciar dispositivo', 'resetAction', [], ['RESET'], 'system', 5, transient: true, confirm: 'O relógio fica sem comunicar enquanto arranca.'),
-            $entry('powerOffCommand', 'POWEROFF', 'Desligar dispositivo', 'resetAction', [], ['POWEROFF'], 'system', 5, transient: true, confirm: 'O relógio desliga-se e só volta a ligar no botão do próprio aparelho.'),
-            $entry('findDeviceCommand', 'FIND', 'Localizar dispositivo', 'resetAction', [], ['FIND'], 'system', 5, transient: true),
+            $entry('resetCommand', 'RESET', 'Reiniciar dispositivo', 'action', [], ['RESET'], 'system', 5, transient: true, confirm: 'O relógio fica sem comunicar enquanto arranca.'),
+            $entry('powerOffCommand', 'POWEROFF', 'Desligar dispositivo', 'action', [], ['POWEROFF'], 'system', 5, transient: true, confirm: 'O relógio desliga-se e só volta a ligar no botão do próprio aparelho.'),
+            $entry('findDeviceCommand', 'FIND', 'Localizar dispositivo', 'action', [], ['FIND'], 'system', 5, transient: true),
             $entry('doNotDisturb', 'SILENCETIME', 'Não perturbar', 'toggle', ['enabled'], ['SILENCETIME'], 'system', 60),
-            $entry('firmwareVersion', 'VERNO', 'Versão de firmware', 'requestAction', [], ['VERNO'], 'system', 5, transient: true),
-            $entry('deviceStatus', 'TS', 'Estado do dispositivo', 'requestAction', [], ['TS'], 'system', 5, transient: true),
+            $entry('firmwareVersion', 'VERNO', 'Versão de firmware', 'action', [], ['VERNO'], 'system', 5, transient: true),
+            $entry('deviceStatus', 'TS', 'Estado do dispositivo', 'action', [], ['TS'], 'system', 5, transient: true),
             $entry('alarmClock', 'REMIND', 'Alarmes', 'alarms', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Uma vez'],

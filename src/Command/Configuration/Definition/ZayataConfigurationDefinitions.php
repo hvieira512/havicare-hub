@@ -245,7 +245,7 @@ final class ZayataConfigurationDefinitions
             $key,
             $command,
             $label,
-            'requestAction',
+            'action',
             [],
             self::replyTo($command),
             $category,

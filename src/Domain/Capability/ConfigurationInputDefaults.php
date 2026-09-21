@@ -42,7 +42,7 @@ final class ConfigurationInputDefaults
             'text' => [($field(0) ?: 'value') => ''],
             'pushMessage' => ['message' => ''],
             'makeCall' => ['phone' => ''],
-            'resetAction', 'requestAction' => [],
+            'action' => [],
             'intervalToggle' => ['enabled' => true, 'intervalMinutes' => 60],
             // A janela é sempre acompanhada de um número quando a definição o declara: o
             // intervalo de um lembrete, o brilho do ecrã. O nome do campo vem da definição, e

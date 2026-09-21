@@ -35,7 +35,7 @@ test("uma capacidade de telemetria pedível aparece em Sistema", () => {
             capabilityKey: "device_status",
             command: "readStatus",
             label: "Atualizar estado",
-            input: "requestAction",
+            input: "action",
             fields: [],
             category: "system",
             transient: true,

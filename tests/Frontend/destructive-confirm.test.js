@@ -158,7 +158,7 @@ test("o cartão leva consigo a frase que a definição declarou", () => {
         key: "resetCommand",
         capabilityKey: "reset_device",
         label: "Reposição de fábrica",
-        input: "resetAction",
+        input: "action",
         fields: [],
         transient: true,
         confirm: "Repõe o relógio ao estado de fábrica.",
@@ -173,7 +173,7 @@ test("uma definição sem frase não leva atributo de confirmação", () => {
         key: "findDeviceCommand",
         capabilityKey: "find_device",
         label: "Encontrar dispositivo",
-        input: "requestAction",
+        input: "action",
         fields: [],
         transient: true,
     }, null);

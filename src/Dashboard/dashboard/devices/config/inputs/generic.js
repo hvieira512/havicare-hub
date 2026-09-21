@@ -95,26 +95,6 @@ export function intervalToggleInput(entry, desired) {
         </div>`;
 }
 
-export function resetActionInput(_entry, _desired) {
-    return `
-        <div>
-            <div class="alert alert-warning small py-2 px-3 mb-3">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i>
-                Esta ação é enviada imediatamente para o dispositivo e não pode ser desfeita.
-            </div>
-        </div>`;
-}
-
-export function requestActionInput(entry) {
-    return `
-        <div>
-            <div class="alert alert-info small py-2 px-3 mb-3">
-                <i class="fa-solid fa-circle-info me-2"></i>
-                ${esc(entry.label || "Ação")} é enviada sem parâmetros adicionais.
-            </div>
-        </div>`;
-}
-
 export function listInput(entry, desired, key, label) {
     const limit = Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3);
     const values = Array.isArray(desired[key]) ? desired[key] : [];
@@ -353,13 +333,9 @@ export const INPUTS = {
         }),
         defaults: () => ({ enabled: true, intervalMinutes: 60 }),
     },
-    requestAction: {
-        render: requestActionInput,
-        read: () => ({}),
-        help: () => "sem parâmetros",
-    },
-    resetAction: {
-        render: resetActionInput,
+    // Uma acção não tem campo nenhum: o que se envia é o próprio pedido. Sem `render`, o
+    // cartão sabe que pode desenhar a versão de uma linha.
+    action: {
         read: () => ({}),
     },
     list: {

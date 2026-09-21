@@ -1,5 +1,6 @@
 import { esc } from "../../format.js";
 import { emptyPanel } from "../../widgets.js";
+import { settingRow } from "../../components/setting-row.js";
 import { stateBadge } from "../../components/state-badge.js";
 // Os mesmos cinco ícones do catálogo de capacidades: as secções são as mesmas, e um separador
 // com outro ícone para a mesma secção lia-se como sendo outra coisa.
@@ -385,12 +386,19 @@ export function renderConfigSection(
     // destrutivas o trazem, e é a presença dele que decide se há caixa.
     const confirmText = String(entry.confirm || "");
     const confirmAttrs = confirmText === "" ? "" : ` data-config-confirm="${esc(confirmText)}"`;
+    // Um descritor conhecido que não declara `render` não tem campos para desenhar, e o
+    // cartão dele cabe numa linha. Um tipo que o registo não conhece cai no editor de JSON,
+    // que continua a ser um formulário.
+    const descriptor = CONFIG_INPUTS[entry.input || "json"];
+    const drawsFields = !descriptor || typeof descriptor.render === "function";
 
     // O bloco do título leva `min-w-0` para encolher em vez de empurrar a pastilha de estado
     // para a linha de baixo: com uma descrição comprida ela saltava para o canto esquerdo,
     // que é o oposto do que o `justify-content-between` promete.
     return `
         <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-label="${esc(entry.label || entry.key)}"${confirmAttrs}${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
+            ${drawsFields
+                ? `
             <div class="d-flex align-items-start justify-content-between gap-2">
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
@@ -406,12 +414,22 @@ export function renderConfigSection(
                 <div class="d-flex justify-content-end gap-2 mt-3">
                     ${verbs.length > 0
                         ? renderConfigActionVerbs(verbs, disabled)
-                        : `${renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand)}
+                        : `${renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "")}
                     <button type="reset" class="btn btn-outline-secondary btn-sm" title="Repor" aria-label="Repor" ${disabled ? "disabled" : ""}>
                         <i class="fa-solid fa-rotate-left"></i>
                     </button>`}
                 </div>
-            </form>
+            </form>`
+                : `
+            ${settingRow({
+                title: entry.label || entry.key,
+                note: details.join(" · "),
+                badge: showConfigurationBadge ? stateBadge(deliveryMeta.label, deliveryMeta.tone) : "",
+                actions: verbs.length > 0
+                    ? renderConfigActionVerbs(verbs, disabled)
+                    : renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== ""),
+            })}
+            ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}`}
             ${renderConfigFeedback(entry.key, uiState)}
         </section>`;
 }
@@ -442,7 +460,7 @@ function renderConfigActionVerbs(verbs, disabled) {
                 data-config-phase="idle" ${disabled ? "disabled" : ""}>${esc(verb.label)}</button>`).join("");
 }
 
-function renderConfigActionButton(key, row, uiState, disabled = false, appliedByHub = false) {
+function renderConfigActionButton(key, row, uiState, disabled = false, appliedByHub = false, destructive = false) {
     const state = configButtonState(row, uiState);
     // "Guardar" e não "Enviar" quando não há nada a caminho do dispositivo: o botão não deve
     // prometer um envio que não acontece.
@@ -452,9 +470,13 @@ function renderConfigActionButton(key, row, uiState, disabled = false, appliedBy
     const isDisabled =
         disabled || ["submitting", "sent", "queued", "waiting"].includes(state);
     const meta = CONFIG_ACTION_BUTTON_META[state] || CONFIG_ACTION_BUTTON_META.idle;
+    // O peso de uma acção que não se desfaz fica no botão, e não numa faixa de aviso sempre
+    // acesa por cima dele. A partir do clique a fase manda na cor: ela conta o que aconteceu
+    // ao pedido, que é outra coisa.
+    const className = state === "idle" && destructive ? "btn-outline-danger" : meta.className;
 
     return `
-        <button type="button" class="btn ${meta.className} btn-sm" data-action="saveConfig" data-config-key="${esc(key)}" data-config-phase="${esc(state)}" ${isDisabled ? "disabled" : ""}>
+        <button type="button" class="btn ${className} btn-sm" data-action="saveConfig" data-config-key="${esc(key)}" data-config-phase="${esc(state)}" ${isDisabled ? "disabled" : ""}>
             <i class="fa-solid ${meta.icon} me-2"></i>${state === "idle" ? esc(idleLabel) : esc(meta.label)}
         </button>`;
 }
@@ -491,8 +513,14 @@ function configButtonState(_row, uiState) {
 }
 
 export function renderConfigInputs(entry, desired, meta = {}) {
-    const input = entry.input || "json";
-    return CONFIG_INPUTS[input]?.render?.(entry, desired, meta) || jsonInput(desired);
+    // Perguntado ao descritor e não ao resultado: um renderizador que devolva vazio de
+    // propósito -- uma acção, que não tem campos -- caía no editor de JSON.
+    const descriptor = CONFIG_INPUTS[entry.input || "json"];
+    if (!descriptor) {
+        return jsonInput(desired);
+    }
+
+    return descriptor.render ? descriptor.render(entry, desired, meta) : "";
 }
 
 export function readConfigPayload(section) {
@@ -602,9 +630,14 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
                 notice.outerHTML = noticeHtml;
             }
         } else if (noticeHtml !== "") {
-            section
-                .querySelector("[data-config-form]")
-                ?.insertAdjacentHTML("beforebegin", noticeHtml);
+            // Um cartão de acção não tem formulário -- não tem campos --, e aí o aviso vai
+            // para o fim, que é onde o desenho o põe.
+            const form = section.querySelector("[data-config-form]");
+            if (form) {
+                form.insertAdjacentHTML("beforebegin", noticeHtml);
+            } else {
+                section.insertAdjacentHTML("beforeend", noticeHtml);
+            }
         }
 
         // O estado de entrega decide se o «Enviar» pode voltar a acender: uma configuração
