@@ -70,8 +70,7 @@ final class PillDispenserCatalog implements Migration
                 ('pill_dispenser', 'alarms', 'mute_alarm', 'Silenciar', 0, 1),
                 ('pill_dispenser', 'settings_system', 'calibrate_clock', 'Calibrar relógio', 0, 1),
                 ('pill_dispenser', 'settings_system', 'reset_tray', 'Repor o prato', 0, 1),
-                ('pill_dispenser', 'settings_system', 'restart_device', 'Reiniciar', 0, 1),
-                ('pill_dispenser', 'settings_system', 'reset_device', 'Reposição de fábrica', 0, 1)
+                ('pill_dispenser', 'settings_system', 'restart_device', 'Reiniciar', 0, 1)
             ON DUPLICATE KEY UPDATE
                 section = VALUES(section),
                 label = VALUES(label),

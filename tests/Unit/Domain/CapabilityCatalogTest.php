@@ -34,12 +34,13 @@ final class CapabilityCatalogTest extends TestCase
             // pulseira responde ao pedido a qualquer momento.
             'bracelet' => [41, 'c24b1c638090a697db262e4159d9b57acc2632480af274cb8c98e1b4f2ef57bd'],
             // O dispensador M228: seis grandezas de telemetria, três eventos (toma, avaria,
-            // chamada de ajuda), nove configurações e nove acções. Foram 9 enquanto só
-            // existia a subida. Cada enumeração é uma configuração própria -- volume e toque
-            // não são a mesma escolha -- e o `device_status` é pedível desde que o `0x07`
-            // passou a perguntar o estado em vez de se esperar pelo heartbeat. A nona acção
-            // desliga a cifra, sem a qual o aparelho manda heartbeats que ninguém lê.
-            'pill_dispenser' => [26, 'ed49e2b1950a93afe499303b5fd877a466cde2ca5e581f66099412d027b6d6ce'],
+            // chamada de ajuda), nove configurações e oito acções. Cada enumeração é uma
+            // configuração própria -- volume e toque não são a mesma escolha -- e o
+            // `device_status` é pedível desde que o `0x07` passou a perguntar o estado em vez
+            // de se esperar pelo heartbeat. Uma das acções desliga a cifra, sem a qual o
+            // aparelho manda heartbeats que ninguém lê. A reposição de fábrica não está cá:
+            // devolvia o aparelho ao servidor do fornecedor.
+            'pill_dispenser' => [25, 'eb3410c686d69800a3d61543e68c86f7a5a7379e8003c477f6e7f5b11e129f12'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

@@ -161,7 +161,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'medication_period',
             'medication_reminders',
             'mute_alarm',
-            'reset_device',
+            // A reposição de fábrica não entra: devolvia o aparelho ao servidor do fornecedor.
             'reset_tray',
             'restart_device',
             'sync_configuration',
@@ -176,10 +176,10 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Nove configuráveis e nove pedíveis. Uma acção pede-se e não se configura, e por
+        // Nove configuráveis e oito pedíveis. Uma acção pede-se e não se configura, e por
         // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
         self::assertSame(
-            ['9', '9'],
+            ['9', '8'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

@@ -415,9 +415,20 @@ final class DeviceEventDecoder
         }
 
         // O sinal viaja no device_status, à maneira dos relógios, e não numa capacidade própria.
+        //
+        // O `signalLevel` é o que a dashboard mostra: a especificação declara-o de 0 a 3 e é
+        // uma contagem de barras sem ambiguidade. O `gsmSignalDbm` fica ao lado porque é a
+        // leitura fina, mas a unidade não está declarada em lado nenhum do documento -- há
+        // dezoito notas de unidade lá dentro e nenhuma neste campo.
         $signal = array_filter([
             'wifiSignalDbm' => $this->tlvI16($tlv, 0x810A),
             'gsmSignalDbm' => $this->tlvI16($tlv, 0x810B),
+            'signalLevel' => $this->tlvU8($tlv, 0x810D),
+            'childLockEngaged' => match ($this->tlvU8($tlv, 0x8102)) {
+                0 => false,
+                1 => true,
+                default => null,
+            },
         ], static fn (mixed $field): bool => $field !== null);
         if ($signal !== []) {
             $events[] = ['feature' => 'device_status', 'nativeType' => $nativeType, 'value' => $signal];

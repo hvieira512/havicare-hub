@@ -170,9 +170,9 @@ final class PillDispenserDownlinkTest extends TestCase
 
     public function testControlsTravelAsControlPacketsAndNotAsConfiguration(): void
     {
+        // Sem a reposição de fábrica (`0xA002`): não é um comando que o hub monte.
         $controls = [
             'restartDevice' => 0xA001,
-            'factoryReset' => 0xA002,
             'calibrateClock' => 0xA101,
             'muteAlarm' => 0xA102,
             'resetTray' => 0xA103,
@@ -324,7 +324,6 @@ final class PillDispenserDownlinkTest extends TestCase
             ]],
             ['disableEncryption', []],
             ['restartDevice', []],
-            ['factoryReset', []],
             ['calibrateClock', []],
             ['muteAlarm', []],
             ['resetTray', []],

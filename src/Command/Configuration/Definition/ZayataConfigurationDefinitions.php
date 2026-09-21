@@ -111,7 +111,10 @@ final class ZayataConfigurationDefinitions
             self::action('mute_alarm', 'muteAlarm', 'Silenciar', 'system', 40),
             self::action('reset_tray', 'resetTray', 'Repor o prato', 'system', 50),
             self::action('restart_device', 'restartDevice', 'Reiniciar', 'system', 60),
-            self::action('reset_device', 'factoryReset', 'Reposição de fábrica', 'system', 70),
+            // A reposição de fábrica não entra. O aparelho só aponta para o hub porque o
+            // fornecedor lhe mandou essa configuração, e uma reposição devolve-o ao servidor
+            // dele: perde-se o controlo do aparelho e recuperá-lo depende de outra pessoa,
+            // noutro fuso horário. Não há nada que ela resolva que justifique o botão.
         ];
     }
 
@@ -132,7 +135,7 @@ final class ZayataConfigurationDefinitions
             'readConfiguration' => 'read_config_ack',
             'readStatus' => 'read_status_ack',
             'dispenseNow', 'calibrateClock', 'muteAlarm',
-            'resetTray', 'restartDevice', 'factoryReset' => 'control_ack',
+            'resetTray', 'restartDevice' => 'control_ack',
             default => 'write_config_ack',
         }];
     }

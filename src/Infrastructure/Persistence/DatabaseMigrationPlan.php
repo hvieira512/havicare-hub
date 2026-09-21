@@ -7,6 +7,7 @@ namespace Hub\Infrastructure\Persistence;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalog;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserEncryptionSwitch;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutFactoryReset;
 
 /**
  * As migrações posteriores à baseline, que é o `database/schema.sql` mais o catálogo que o
@@ -30,6 +31,8 @@ final class DatabaseMigrationPlan
             new PillDispenserCatalog(),
             // O primeiro M228 real mostrou que ele chega a cifrar o que envia.
             new PillDispenserEncryptionSwitch(),
+            // E que a reposição de fábrica não devia estar ao alcance de um clique.
+            new PillDispenserWithoutFactoryReset(),
         ];
     }
 

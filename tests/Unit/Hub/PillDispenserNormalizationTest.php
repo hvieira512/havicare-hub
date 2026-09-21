@@ -179,6 +179,53 @@ final class PillDispenserNormalizationTest extends TestCase
 
     /** @param array<string, mixed> $payload */
     /**
+     * O nível do sinal e o estado do bloqueio são leituras que o aparelho tem e nós não
+     * pedíamos.
+     *
+     * O `0x810B` é a força do sinal e a especificação não declara unidade nenhuma -- tem
+     * dezoito notas de unidade e nenhuma nesse campo --, o que torna o nome `gsmSignalDbm`
+     * uma afirmação sem fonte. O `0x810D` é o nível, declarado de 0 a 3, e esse não tem
+     * ambiguidade: é uma contagem de barras. O `0x8102` diz se o prato está trancado segundo
+     * o próprio aparelho, que é a única forma de confirmar que uma escrita ao `0x100C` pegou.
+     */
+    public function testTheStatusQueryBringsSignalLevelAndLockState(): void
+    {
+        $decoded = $this->decode([
+            'packetType' => 0x07 | 0x80,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [
+                0x8102 => ['value' => "\x00", 'state' => 0],       // destrancado
+                0x810B => ['value' => "\x19\x00", 'state' => 0],   // 25
+                0x810D => ['value' => "\x03", 'state' => 0],       // três barras
+            ],
+        ]);
+
+        $events = [];
+        foreach ((new DeviceEventDecoder())->decode($this->session(), $decoded) as $event) {
+            $events[$event['feature']] = $event['value'];
+        }
+
+        self::assertSame([
+            'gsmSignalDbm' => 25,
+            'signalLevel' => 3,
+            'childLockEngaged' => false,
+        ], $events['device_status'] ?? null);
+    }
+
+    public function testTheLockStateComesBackAsATrueWhenEngaged(): void
+    {
+        $decoded = $this->decode([
+            'packetType' => 0x07 | 0x80,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [0x8102 => ['value' => "\x01", 'state' => 0]],
+        ]);
+
+        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
+
+        self::assertSame(['childLockEngaged' => true], $events[0]['value']);
+    }
+
+    /**
      * Uma TAG que o aparelho recusa não tem valor nenhum, e o que lá está é o que nós lhe
      * mandámos de volta.
      *

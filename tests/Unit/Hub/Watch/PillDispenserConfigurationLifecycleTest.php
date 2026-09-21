@@ -67,7 +67,6 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
             'mute_alarm' => 'control_ack',
             'reset_tray' => 'control_ack',
             'restart_device' => 'control_ack',
-            'reset_device' => 'control_ack',
         ];
 
         $actual = [];

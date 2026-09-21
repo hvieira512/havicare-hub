@@ -246,8 +246,10 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     /** As TAGs de estado que o hub sabe ler. */
     public const STATUS_TAGS = [
         0x8101,                     // nível de medicação
+        0x8102,                     // estado do bloqueio de criança, como o aparelho o vê
         0x8103, 0x8104,             // bateria
-        0x810A, 0x810B,             // sinal WiFi e GSM
+        0x810A, 0x810B,             // sinal WiFi e GSM, em unidade que a spec não declara
+        0x810D,                     // nível do sinal GSM: 0 a 3, e esse está documentado
         0x810E, 0x810F,             // temperatura e humidade
         0x8112,                     // chamada de emergência
         0x811A, 0x811B, 0x811D,     // compartimentos

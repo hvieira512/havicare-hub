@@ -348,8 +348,15 @@ configuração não faz nada.
 | `language_timezone` | `0x1001` / `0x1015` | o fuso é INT16S: a oeste é negativo |
 
 E as acções, em pacote `0x08`: `dispense_now` (`0xA123`), `calibrate_clock`
-(`0xA101`), `mute_alarm` (`0xA102`), `reset_tray` (`0xA103`), `restart_device`
-(`0xA001`) e `reset_device` (`0xA002`).
+(`0xA101`), `mute_alarm` (`0xA102`), `reset_tray` (`0xA103`) e `restart_device`
+(`0xA001`).
+
+> **A reposição de fábrica (`0xA002`) existe no protocolo e o hub não a expõe.**
+> O aparelho só aponta para o hub porque o fornecedor lhe mandou essa
+> configuração; uma reposição devolve-o ao servidor dele, e recuperá-lo obriga a
+> pedir a outra pessoa que a volte a empurrar. Não há do nosso lado nada que ela
+> resolva, e um clique enganado custava o aparelho. Nos relógios a mesma acção
+> continua a existir, porque lá é recuperável.
 
 **Perguntar em vez de assumir.** O `0x05` lê a configuração e o `0x07` o estado.
 Nos dois, o corpo leva as TAGs pedidas com o **valor a zeros no comprimento da

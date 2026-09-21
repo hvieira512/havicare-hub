@@ -46,7 +46,8 @@ final class PillDispenserCapabilityDefinitions
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'calibrate_clock', 'label' => 'Calibrar relógio', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'reset_tray', 'label' => 'Repor o prato', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'restart_device', 'label' => 'Reiniciar', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'reset_device', 'label' => 'Reposição de fábrica', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            // A reposição de fábrica (`0xA002`) não é anunciada: devolve o aparelho ao
+            // servidor do fornecedor e perde-se o controlo dele daqui.
         ];
     }
 }

@@ -315,9 +315,10 @@ final class DeviceCommandCatalog
             ]);
         }
 
+        // O `0xA002`, reposição de fábrica, não está aqui de propósito: devolveria o aparelho
+        // ao servidor do fornecedor, e daqui não há como o trazer de volta.
         $control = [
             'restartDevice' => 0xA001,
-            'factoryReset' => 0xA002,
             'muteAlarm' => 0xA102,
             'resetTray' => 0xA103,
             'dispenseNow' => 0xA123,
