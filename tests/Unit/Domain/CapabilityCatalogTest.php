@@ -11,7 +11,9 @@ final class CapabilityCatalogTest extends TestCase
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [69, 'eb9417770fbd4ed1f850f517dd0899d1ba2a6c3a5281a8ac0bf80255d40155e5'],
+            // Três rótulos de contactos passaram a dizer o que fazem: a «lista branca» é a
+            // lista de chamadas autorizadas, e o interruptor dela restringe as recebidas.
+            'watch' => [69, '7886530a01fe8b83f158ecfccb597bcb952f63edd2b4ec05441543ac97f76295'],
             'ncs' => [1, '213f35a9295bacacfdaa5570451707a23ee59416ebc3ac1de062f1b6ca7685a4'],
             'radar' => [9, '45dfaa71313e4da275fca1da9536b826bf0fe6a442cf462d3d2534db1499fa65'],
             'gateway' => [3, '044f4b1de47b562638442dc3fc8be22b3ab76043721211a47f478ee68124a91f'],
