@@ -1,8 +1,8 @@
-import { esc, fieldLabel } from "../../../format.js";
+import { esc } from "../../../format.js";
 import { field } from "../../../widgets.js";
 import { html, raw } from "../../../html.js";
-import { enabledSwitch, numberField } from "./shared.js";
-import { readCheckbox, readNumber, readText } from "../readers.js";
+import { enabledSwitch } from "./shared.js";
+import { readCheckbox, readText } from "../readers.js";
 
 /**
  * Os campos do dispensador de comprimidos.
@@ -15,9 +15,32 @@ import { readCheckbox, readNumber, readText } from "../readers.js";
 /** O aparelho tem nove, e o formulário mostra os nove. */
 const SLOTS = 9;
 
+/**
+ * O M228 devolve `24` e `60` nos alarmes que nunca foram definidos. Não são uma hora: são o
+ * sentinela dele, e desenhá-los à letra punha «24:60» no ecrã.
+ */
+const UNSET_HOUR = 24;
+const UNSET_MINUTE = 60;
+
+const pad = (value) => String(value).padStart(2, "0");
+
+/** `HH:MM` para o seletor, ou vazio quando não há hora nenhuma para mostrar. */
+const toTimeValue = (hour, minute) =>
+    hour === undefined || hour === null || hour >= UNSET_HOUR || minute >= UNSET_MINUTE
+        ? ""
+        : `${pad(hour)}:${pad(minute)}`;
+
+/** De `HH:MM` de volta a hora e minuto, que é o que as TAGs do aparelho levam. */
+const fromTimeValue = (value) => {
+    const [hour, minute] = String(value ?? "").split(":");
+    return { hour: Number(hour) || 0, minute: Number(minute) || 0 };
+};
+
+const timeField = (configField, hour, minute) =>
+    html`<input class="form-control" type="time" data-config-field="${esc(configField)}"
+        value="${esc(toTimeValue(hour, minute))}">`;
+
 const slotCell = (index, plan) => {
-    const hour = plan?.hour ?? 0;
-    const minute = plan?.minute ?? 0;
     const enabled = plan ? plan.enabled !== false : false;
 
     return html`
@@ -29,9 +52,7 @@ const slotCell = (index, plan) => {
                         data-config-field="enabled-${String(index)}" ${raw(enabled ? "checked" : "")}>
                 </div>
                 <div class="text-secondary small flex-shrink-0">${String(index + 1)}</div>
-                ${raw(numberField(`hour-${index}`, hour, { min: 0, max: 23 }))}
-                <div class="text-secondary">:</div>
-                ${raw(numberField(`minute-${index}`, minute, { min: 0, max: 59 }))}
+                ${raw(timeField(`time-${index}`, plan?.hour, plan?.minute))}
             </div>
         </div>`;
 };
@@ -55,27 +76,13 @@ function readAlarms(section) {
     const plans = [];
     for (let index = 0; index < SLOTS; index++) {
         const enabled = readCheckbox(section, `enabled-${index}`);
-        const hour = readNumber(section, `hour-${index}`) || 0;
-        const minute = readNumber(section, `minute-${index}`) || 0;
+        const { hour, minute } = fromTimeValue(readText(section, `time-${index}`));
         if (!enabled && hour === 0 && minute === 0) continue;
         plans.push({ hour, minute, enabled });
     }
 
     return { plans };
 }
-
-const numbers = (specs) => (entry, desired) =>
-    specs
-        .map(({ name, min, max, label }) =>
-            field(
-                label || fieldLabel(name),
-                numberField(name, desired?.[name] ?? min, { min, max }),
-            ),
-        )
-        .join("");
-
-const readNumbers = (names) => (section) =>
-    Object.fromEntries(names.map((name) => [name, readNumber(section, name)]));
 
 const dateField = (name, value) =>
     html`<input class="form-control" type="date" data-config-field="${esc(name)}" value="${esc(String(value ?? ""))}">`;
@@ -103,16 +110,22 @@ export const INPUTS = {
     pillDispenserQuietHours: {
         render: (entry, desired) =>
             enabledSwitch(Boolean(desired?.enabled)) +
-            numbers([
-                { name: "startHour", min: 0, max: 23, label: "Hora de início" },
-                { name: "startMinute", min: 0, max: 59, label: "Minuto de início" },
-                { name: "endHour", min: 0, max: 23, label: "Hora de fim" },
-                { name: "endMinute", min: 0, max: 59, label: "Minuto de fim" },
-            ])(entry, desired),
-        read: (section) => ({
-            enabled: readCheckbox(section, "enabled"),
-            ...readNumbers(["startHour", "startMinute", "endHour", "endMinute"])(section),
-        }),
+            html`<div class="row row-cols-1 row-cols-sm-2 g-2 mt-1">
+                <div class="col">${raw(field("Início", timeField("start", desired?.startHour, desired?.startMinute)))}</div>
+                <div class="col">${raw(field("Fim", timeField("end", desired?.endHour, desired?.endMinute)))}</div>
+            </div>`,
+        read: (section) => {
+            const start = fromTimeValue(readText(section, "start"));
+            const end = fromTimeValue(readText(section, "end"));
+
+            return {
+                enabled: readCheckbox(section, "enabled"),
+                startHour: start.hour,
+                startMinute: start.minute,
+                endHour: end.hour,
+                endMinute: end.minute,
+            };
+        },
         defaults: () => ({
             enabled: false,
             startHour: 22,

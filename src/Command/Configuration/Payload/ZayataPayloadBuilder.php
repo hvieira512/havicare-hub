@@ -20,11 +20,7 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
     {
         return match ($key) {
             'medication_reminders' => ['plans' => self::plans($payload['plans'] ?? [])],
-            'medication_period' => [
-                'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
-                'startDate' => self::date($payload['startDate'] ?? '', 'startDate'),
-                'endDate' => self::date($payload['endDate'] ?? '', 'endDate'),
-            ],
+            'medication_period' => self::period($payload),
             // Os valores em falta caem no que o aparelho traz de fábrica, e não em erro: o
             // painel pede o payload por omissão antes de alguém escolher seja o que for, e
             // um por omissão que não passa na própria validação não é um por omissão.
@@ -50,6 +46,33 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             // As acções não levam payload: o que as distingue é o comando.
             default => [],
         };
+    }
+
+    /**
+     * O intervalo em que o plano vale.
+     *
+     * O aparelho leva as duas datas em TAGs separadas e aceita-as sem reclamar da ordem. Um
+     * intervalo ao contrário passava, e o que saía era um plano que nunca chega a valer, sem
+     * erro em lado nenhum -- os alarmes simplesmente não tocavam.
+     *
+     * @param array<string, mixed> $payload
+     * @return array{enabled: bool, startDate: string, endDate: string}
+     */
+    private static function period(array $payload): array
+    {
+        $start = self::date($payload['startDate'] ?? '', 'startDate');
+        $end = self::date($payload['endDate'] ?? '', 'endDate');
+
+        // Metade preenchida não tem ordem a comparar: vazio é «sem período».
+        if ($start !== '' && $end !== '' && $end < $start) {
+            throw new \InvalidArgumentException('endDate must not be before startDate');
+        }
+
+        return [
+            'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
+            'startDate' => $start,
+            'endDate' => $end,
+        ];
     }
 
     /**

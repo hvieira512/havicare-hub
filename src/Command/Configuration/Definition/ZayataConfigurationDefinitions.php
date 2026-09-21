@@ -55,12 +55,14 @@ final class ZayataConfigurationDefinitions
             // O volume é uma enumeração e não uma escala: na especificação, 0 é o mais alto
             // e 3 é silêncio. Um número solto no ecrã dizia exactamente o contrário a quem o
             // lesse.
+            // Num grupo de botões e não numa lista fechada: são quatro posições e a ordem é
+            // que diz que a escala está invertida. Uma de cada vez escondia isso.
             self::choice('alarm_volume', 'alarmVolume', 'Volume', 'alerts', 10, 'volume', [
                 [0, 'Alto'],
                 [1, 'Médio'],
                 [2, 'Baixo'],
                 [3, 'Silêncio'],
-            ]),
+            ], input: 'buttonGroup'),
             self::choice('alarm_ringtone', 'alarmRingtone', 'Tipo de toque', 'alerts', 11, 'ringtone', [
                 [0, 'Nenhum'],
                 [1, 'Toque 1'],
@@ -151,6 +153,7 @@ final class ZayataConfigurationDefinitions
         array $choices,
         string $help = '',
         ?int $default = null,
+        string $input = 'select',
     ): array {
         $options = [$field => array_map(
             static fn(array $choice): array => ['value' => $choice[0], 'label' => $choice[1]],
@@ -164,7 +167,7 @@ final class ZayataConfigurationDefinitions
             $key,
             $command,
             $label,
-            'select',
+            $input,
             [$field],
             self::replyTo($command),
             $category,

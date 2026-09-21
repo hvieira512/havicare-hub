@@ -3,7 +3,7 @@ import { field } from "../../../widgets.js";
 import { renderPhoneControl } from "../../../phone.js";
 import { protocolPhonebookConstraints } from "../protocol-catalog.js";
 import { boolValue } from "../normalizers.js";
-import { enabledSwitch, numberField } from "./shared.js";
+import { enabledSwitch, nextUid, numberField } from "./shared.js";
 import {
     firstFieldName,
     readCheckbox,
@@ -248,7 +248,49 @@ export function selectInput(entry, desired) {
     return `<select class="form-select" data-config-field="${esc(name)}">${choices}</select>`;
 }
 
+/**
+ * A mesma escolha, mas toda à vista.
+ *
+ * Serve as enumerações curtas em que a ordem diz alguma coisa -- o volume do dispensador tem
+ * quatro posições e a escala está invertida, `0` é o mais alto. Numa lista fechada vê-se uma
+ * de cada vez e a escala não se lê. O nome é único por grupo porque dois grupos na mesma
+ * página com o mesmo nome comportam-se como um só.
+ */
+export function buttonGroupInput(entry, desired) {
+    const { name, options, fallback } = selectOptions(entry);
+    const current = String(desired?.[name] ?? fallback);
+    const group = nextUid(`cfg-${name}`);
+
+    const buttons = options
+        .map((option) => {
+            const value = String(option.value);
+            const id = `${group}-${value}`;
+            return `<input type="radio" class="btn-check" name="${esc(group)}" id="${esc(id)}"
+                    value="${esc(value)}" data-config-field="${esc(name)}"${value === current ? " checked" : ""}>
+                <label class="btn btn-outline-secondary" for="${esc(id)}">${esc(String(option.label ?? value))}</label>`;
+        })
+        .join("");
+
+    return `<div class="btn-group flex-wrap" role="group">${buttons}</div>`;
+}
+
 export const INPUTS = {
+    buttonGroup: {
+        render: buttonGroupInput,
+        read: (section) => {
+            const node = section.querySelector("input[type=radio][data-config-field]:checked");
+            if (!node) return {};
+            const value = String(node.value ?? "");
+            return {
+                [node.dataset.configField]:
+                    value !== "" && !Number.isNaN(Number(value)) ? Number(value) : value,
+            };
+        },
+        defaults: (entry) => {
+            const { name, options } = selectOptions(entry);
+            return { [name]: entry.options?.default ?? options[0]?.value ?? 0 };
+        },
+    },
     select: {
         render: selectInput,
         read: (section) => {

@@ -115,11 +115,19 @@ function assignCapabilitySection(entry, capabilityCatalog) {
         capabilityCatalog,
         capabilityKey,
     );
-    const section = String(definition?.section || "");
-    if (
-        (!definition?.isConfigurable && !definition?.isRequestable) ||
-        !CONFIG_SECTION_ORDER.includes(section)
-    ) {
+    if (!definition?.isConfigurable && !definition?.isRequestable) {
+        return null;
+    }
+
+    // Uma grandeza que também se pede -- o `device_status`, que pergunta ao aparelho o estado
+    // em vez de se esperar pelo próximo relatório -- vive na secção `telemetry`, que não é
+    // uma secção de configuração. Pedi-la é uma acção sobre o aparelho, e é em Sistema que
+    // ela cabe; sem isto ficava declarada como pedível e sem nenhum botão que a pedisse.
+    const declared = String(definition.section || "");
+    const section = CONFIG_SECTION_ORDER.includes(declared)
+        ? declared
+        : (definition.isRequestable ? "settings_system" : "");
+    if (section === "") {
         return null;
     }
 
