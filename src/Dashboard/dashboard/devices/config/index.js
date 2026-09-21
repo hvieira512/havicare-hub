@@ -386,7 +386,7 @@ export function renderConfigSection(
     // para a linha de baixo: com uma descrição comprida ela saltava para o canto esquerdo,
     // que é o oposto do que o `justify-content-between` promete.
     return `
-        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""}>
+        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
             <div class="d-flex align-items-start justify-content-between gap-2">
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
@@ -602,6 +602,13 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
                 .querySelector("[data-config-form]")
                 ?.insertAdjacentHTML("beforebegin", noticeHtml);
         }
+
+        // O estado de entrega decide se o «Enviar» pode voltar a acender: uma configuração
+        // que falhe enquanto o ecrã está aberto tem de ficar reenviável sem se lhe mexer no
+        // valor, tal como uma que já lá estivesse falhada ao desenhar. Quem reacende o botão
+        // é quem chama -- o `panel.js` já importa deste ficheiro, e importá-lo de volta para
+        // isto fechava um ciclo.
+        section.dataset.configDelivery = String(delivery?.status || "");
     }
 }
 

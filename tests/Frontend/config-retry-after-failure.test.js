@@ -1,0 +1,53 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import "./support/browser-env.js";
+import { syncConfigSectionDirty } from "../../src/Dashboard/dashboard/devices/config/panel.js";
+import { parseFragment } from "./support/dom.js";
+
+/**
+ * Uma configuração cuja entrega falhou tem de poder ser reenviada.
+ *
+ * O «Enviar» de um cartão acende-se por diferença: só quando o valor no ecrã difere do que
+ * está guardado. Há duas excepções -- uma acção, que é sempre um pedido novo, e uma definição
+ * que o aparelho nunca recebeu. Faltava a terceira, e é a que dói: uma definição **guardada**
+ * cuja entrega falhou mostra o valor guardado, coincide consigo própria, e o botão apaga-se.
+ * Fica sem caminho nenhum para sair do ecrã a não ser mexer-lhe no valor.
+ *
+ * Aconteceu com quatro configurações do M228 ao mesmo tempo, presas duas horas em «tentativas
+ * esgotadas». O valor estava certo no hub; o que faltava era voltar a mandá-lo.
+ */
+
+const section = ({ stored = "1", delivery = "", pristine = { volume: 1 }, value = 1 } = {}) =>
+    parseFragment(`
+        <section data-config-section data-config-input="select" data-config-key="alarm_volume"
+                 data-config-stored="${stored}"
+                 ${delivery ? `data-config-delivery="${delivery}"` : ""}
+                 data-config-pristine='${JSON.stringify(pristine)}'>
+            <select data-config-field="volume">
+                <option value="1" ${value === 1 ? "selected" : ""}>Médio</option>
+                <option value="2" ${value === 2 ? "selected" : ""}>Baixo</option>
+            </select>
+            <button data-action="saveConfig" data-config-phase="idle" disabled>Enviar</button>
+        </section>`).querySelector("[data-config-section]");
+
+const enviarEstaVivo = (el) => {
+    syncConfigSectionDirty(el);
+    return !el.querySelector("[data-action=\"saveConfig\"]").disabled;
+};
+
+test("sem alterações e sem falha, não há nada para enviar", () => {
+    assert.equal(enviarEstaVivo(section()), false);
+});
+
+test("com o valor alterado, envia-se", () => {
+    assert.equal(enviarEstaVivo(section({ value: 2 })), true);
+});
+
+test("uma entrega falhada pode ser repetida sem se mexer no valor", () => {
+    assert.equal(enviarEstaVivo(section({ delivery: "failed" })), true);
+});
+
+test("uma definição nunca enviada continua a poder sair do ecrã", () => {
+    assert.equal(enviarEstaVivo(section({ stored: "0" })), true);
+});

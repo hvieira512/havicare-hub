@@ -372,6 +372,11 @@ export function syncDeviceModalCommandStates(imei, commands) {
             els.deviceConfigRoot,
             state.deviceModal.configurationSync,
         );
+        // Uma entrega que acaba de falhar volta a tornar a configuração enviável, sem se lhe
+        // mexer no valor: é a mesma regra de quem desenha o cartão de raiz.
+        for (const section of els.deviceConfigRoot.querySelectorAll("[data-config-section]")) {
+            syncConfigSectionDirty(section);
+        }
     }
 }
 
@@ -554,7 +559,12 @@ export function syncConfigSectionDirty(section) {
     // omissão do catálogo, não o que lá está: comparando-o consigo próprio o botão ficava
     // apagado, e a primeira configuração não tinha caminho nenhum para sair do ecrã.
     const neverSent = section.dataset.configStored === "0";
-    if (section.dataset.configTransient === "1" || neverSent) {
+    // A terceira situação: a entrega falhou. O valor está guardado e é o que está no ecrã, por
+    // isso não há diferença nenhuma a medir -- e era precisamente por não haver que o botão se
+    // apagava, deixando a configuração sem caminho para sair a não ser mexendo-lhe no valor.
+    // O que falhou foi a entrega, não o valor, e repeti-la é a única coisa que faz sentido.
+    const deliveryFailed = section.dataset.configDelivery === "failed";
+    if (section.dataset.configTransient === "1" || neverSent || deliveryFailed) {
         button.classList.add("btn-primary");
         button.classList.remove("btn-outline-secondary");
         button.disabled = false;
