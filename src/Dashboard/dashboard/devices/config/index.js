@@ -1,4 +1,4 @@
-import { esc } from "../../format.js";
+import { esc, fieldUnit } from "../../format.js";
 import { emptyPanel } from "../../widgets.js";
 import { settingRow } from "../../components/setting-row.js";
 import { stateBadge } from "../../components/state-badge.js";
@@ -391,6 +391,9 @@ export function renderConfigSection(
     // que continua a ser um formulário.
     const descriptor = CONFIG_INPUTS[entry.input || "json"];
     const drawsFields = !descriptor || typeof descriptor.render === "function";
+    const control = drawsFields ? "" : renderConfigControl(entry, desired, { ...meta, protocol });
+    // O verbo é das acções. Uma definição guarda-se, e o que o botão dela faz é enviá-la.
+    const verb = drawsFields || control !== "" ? "" : String(entry.verb || entry.label || "");
 
     // O bloco do título leva `min-w-0` para encolher em vez de empurrar a pastilha de estado
     // para a linha de baixo: com uma descrição comprida ela saltava para o canto esquerdo,
@@ -425,9 +428,11 @@ export function renderConfigSection(
                 title: entry.label || entry.key,
                 note: details.join(" · "),
                 badge: showConfigurationBadge ? stateBadge(deliveryMeta.label, deliveryMeta.tone) : "",
+                control,
+                unit: control === "" ? "" : fieldUnit(entry.fields?.[0] || ""),
                 actions: verbs.length > 0
                     ? renderConfigActionVerbs(verbs, disabled)
-                    : renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "", String(entry.verb || entry.label || "")),
+                    : renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "", verb),
             })}
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}`}
             ${renderConfigFeedback(entry.key, uiState)}
@@ -524,7 +529,17 @@ export function renderConfigInputs(entry, desired, meta = {}) {
         return jsonInput(desired);
     }
 
-    return descriptor.render ? descriptor.render(entry, desired, meta) : "";
+    return descriptor.render
+        ? descriptor.render(entry, desired, meta)
+        : renderConfigControl(entry, desired, meta);
+}
+
+/**
+ * O controlo nu de uma definição de campo estreito -- sem rótulo e sem linha de ajuda --
+ * para o cartão que o põe na linha do título. Vazio para tudo o resto.
+ */
+export function renderConfigControl(entry, desired, meta = {}) {
+    return CONFIG_INPUTS[entry.input || "json"]?.control?.(entry, desired, meta) || "";
 }
 
 export function readConfigPayload(section) {

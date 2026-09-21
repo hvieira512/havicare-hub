@@ -34,25 +34,20 @@ export function toggleInput(entry, desired, protocol = "") {
         </div>`;
 }
 
-export function numberInput(entry, desired) {
+/**
+ * Um número, sem rótulo: quem o nomeia é o título do cartão, e a unidade vai ao lado do
+ * campo. O `aria-label` guarda o nome para quem não vê a linha.
+ */
+export function numberControl(entry, desired) {
     const key = entry.fields?.[0] || "value";
-    const isWonlexMeasurementInterval =
-        entry.command === "deviceMeasuringFrequency" && key === "interval";
     // A escala vem da definição quando ela a declara -- o tom de pele vai de 1 a 6, e partir
     // de zero oferecia um valor que o aparelho recusa.
-    const { min = 0, max = "", label = "" } = entry.options ?? {};
-    const value = desired[key] ?? (isWonlexMeasurementInterval ? 60 : min);
-    return field(
-        // O nome do campo vem do protocolo e está em inglês. Quando a definição traz uma
-        // etiqueta, é ela que se mostra.
-        label || fieldLabel(key),
-        numberField(key, value, { min, max }),
-        {
-            help: isWonlexMeasurementInterval
-                ? "Periodicidade de envio desta medição, em minutos. Use 0 para desativar."
-                : "",
-        },
-    );
+    const { min = 0, max = "" } = entry.options ?? {};
+    return numberField(key, desired[key] ?? min, {
+        min,
+        max,
+        ariaLabel: entry.label || fieldLabel(key),
+    });
 }
 
 export function phoneInput(entry, desired) {
@@ -271,7 +266,7 @@ export const INPUTS = {
         },
     },
     select: {
-        render: selectInput,
+        control: selectInput,
         read: (section) => {
             const node = section.querySelector("select[data-config-field]");
             if (!node) return {};
@@ -298,12 +293,16 @@ export const INPUTS = {
         }),
     },
     number: {
-        render: numberInput,
+        control: numberControl,
         read: (section) => {
             const field = firstFieldName(section);
             return { [field]: readNumber(section, field) };
         },
-        defaults: (entry) => ({ [entry.fields?.[0] || "value"]: 0 }),
+        // Parte de onde a escala parte: um campo que vai de 1 a 6 aberto em zero oferece um
+        // valor que o aparelho recusa.
+        defaults: (entry) => ({
+            [entry.fields?.[0] || "value"]: entry.options?.default ?? entry.options?.min ?? 0,
+        }),
     },
     phone: {
         render: phoneInput,

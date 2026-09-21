@@ -13,8 +13,12 @@ export function nextUid(prefix) {
     return `${prefix}-${uidCounter}`;
 }
 
-export const numberField = (configField, value, { min = 0, max = "", step = 1 } = {}) =>
-    `<input class="form-control" type="number" min="${min}"${max === "" ? "" : ` max="${max}"`} step="${step}" data-config-field="${esc(configField)}" value="${esc(String(value))}">`;
+/**
+ * O `ariaLabel` serve os cartões que não desenham rótulo visível: o nome da definição está
+ * no título da linha, e um campo sem nome nenhum não se lê a um leitor de ecrã.
+ */
+export const numberField = (configField, value, { min = 0, max = "", step = 1, ariaLabel = "" } = {}) =>
+    `<input class="form-control" type="number" min="${min}"${max === "" ? "" : ` max="${max}"`} step="${step}" data-config-field="${esc(configField)}"${ariaLabel === "" ? "" : ` aria-label="${esc(ariaLabel)}"`} value="${esc(String(value))}">`;
 
 export function enabledSwitch(enabled, cls = "") {
     return `

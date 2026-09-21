@@ -29,13 +29,13 @@ const VOLUME = [
 
 test("o campo de escolha existe como genérico", () => {
     assert.ok(select, "o `select` tem de estar registado nos campos genéricos");
-    assert.equal(typeof select.render, "function");
+    assert.equal(typeof select.control, "function");
     assert.equal(typeof select.read, "function");
     assert.equal(typeof select.defaults, "function");
 });
 
 test("desenha cada opção com o seu rótulo, e não o número cru", () => {
-    const html = select.render(entry("volume", VOLUME), { volume: 2 });
+    const html = select.control(entry("volume", VOLUME), { volume: 2 });
 
     assert.match(html, /<select[^>]*data-config-field="volume"/);
     for (const { label } of VOLUME) {
@@ -44,7 +44,7 @@ test("desenha cada opção com o seu rótulo, e não o número cru", () => {
 });
 
 test("a opção guardada vem escolhida", () => {
-    const html = select.render(entry("volume", VOLUME), { volume: 2 });
+    const html = select.control(entry("volume", VOLUME), { volume: 2 });
 
     assert.match(html, /value="2"\s+selected/);
     assert.doesNotMatch(html, /value="0"\s+selected/);
@@ -65,17 +65,17 @@ test("a definição pode dizer de onde parte, e não a ponta da lista", () => {
     zones.options.default = 0;
 
     assert.deepEqual(select.defaults(zones), { timeZone: 0 });
-    assert.match(select.render(zones, {}), /value="0"\s+selected/);
+    assert.match(select.control(zones, {}), /value="0"\s+selected/);
 });
 
 test("não repete o rótulo que o cartão já mostra", () => {
-    const html = select.render(entry("volume", VOLUME), { volume: 1 });
+    const html = select.control(entry("volume", VOLUME), { volume: 1 });
 
     assert.doesNotMatch(html, /<label/);
 });
 
 test("uma definição sem opções não rebenta", () => {
-    const html = select.render({ fields: ["volume"] }, {});
+    const html = select.control({ fields: ["volume"] }, {});
 
     assert.match(html, /<select/);
 });

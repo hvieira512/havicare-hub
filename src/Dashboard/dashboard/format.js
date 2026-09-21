@@ -219,6 +219,13 @@ export const fieldLabel = (key) =>
     })[key] || titleize(key);
 
 /**
+ * A unidade que o rótulo de um campo carrega entre parênteses: de «Intervalo (min)» sai
+ * «min». Serve os cartões que põem o controlo na linha do título, onde o rótulo desaparece
+ * por repetir o nome da definição -- a unidade é a parte dele que não se pode perder.
+ */
+export const fieldUnit = (key) => fieldLabel(key).match(/\(([^)]+)\)\s*$/)?.[1] ?? "";
+
+/**
  * O valor de um campo cujo conteúdo é uma enumeração, em português. O `fieldLabel` acima
  * traduz o nome do campo; isto traduz o que lá está dentro, porque o hub envia enumerações
  * -- `awake`, `lying_down` -- e a tradução é deste lado.
