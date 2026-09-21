@@ -424,12 +424,23 @@ final class DeviceCommandCatalog
     }
 
     /** @param array<int, array{value: string}> $tlv */
+    /**
+     * O número de série de cada trama de descida, que o aparelho ecoa na resposta.
+     *
+     * É por ele que se sabe a qual dos pedidos pendentes uma resposta pertence. Todas a zero,
+     * duas escritas ao mesmo tempo ficavam indistinguíveis e a primeira resposta fechava a
+     * errada. Começa em 1 porque o zero é o que a trama tem quando ninguém lhe mexeu.
+     */
+    private static int $pillSerial = 0;
+
     private static function pillFrame(string $imei, int $packetType, array $tlv): string
     {
         $adapter = new PillDispenserAdapter();
+        self::$pillSerial = self::$pillSerial % 65535 + 1;
 
         return $adapter->encodeOutgoing([
             'packetType' => $packetType,
+            'serial' => self::$pillSerial,
             'deviceNumber' => PillDispenserAdapter::deviceNumberFor($imei),
             'tlv' => $tlv,
         ]);

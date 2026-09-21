@@ -23,7 +23,7 @@ final class ZayataConfigurationDefinitions
                 'Plano de medicação',
                 'pillDispenserAlarms',
                 ['plans'],
-                ['medicationPlan'],
+                self::replyTo('medicationPlan'),
                 'health',
                 10,
                 9,
@@ -38,7 +38,7 @@ final class ZayataConfigurationDefinitions
                 'Período do plano',
                 'pillDispenserPeriod',
                 ['enabled', 'startDate', 'endDate'],
-                ['medicationPeriod'],
+                self::replyTo('medicationPeriod'),
                 'health',
                 15,
                 null,
@@ -74,7 +74,7 @@ final class ZayataConfigurationDefinitions
                 'Não incomodar',
                 'pillDispenserQuietHours',
                 ['enabled', 'startHour', 'startMinute', 'endHour', 'endMinute'],
-                ['doNotDisturb'],
+                self::replyTo('doNotDisturb'),
                 'alerts',
                 20,
             ),
@@ -114,6 +114,28 @@ final class ZayataConfigurationDefinitions
     }
 
     /**
+     * A resposta que um comando espera é a do seu tipo de pacote, e não o nome dele.
+     *
+     * É a diferença entre este protocolo e os outros: o M2 responde a um `0x06` com
+     * `write_config_ack` seja qual for a TAG que ele levou, e por isso o valor por omissão --
+     * uma resposta com o nome do comando -- nunca casava. O resultado era a dashboard a dar
+     * «falhou, tentativas esgotadas» em configurações que o aparelho tinha aceitado, e o hub
+     * a reenviá-las de minuto a minuto.
+     *
+     * @return list<string>
+     */
+    private static function replyTo(string $command): array
+    {
+        return [match ($command) {
+            'readConfiguration' => 'read_config_ack',
+            'readStatus' => 'read_status_ack',
+            'dispenseNow', 'calibrateClock', 'muteAlarm',
+            'resetTray', 'restartDevice', 'factoryReset' => 'control_ack',
+            default => 'write_config_ack',
+        }];
+    }
+
+    /**
      * Uma escolha de uma lista, com o significado à vista. O aparelho recebe o número; quem
      * configura vê o que ele quer dizer.
      *
@@ -144,7 +166,7 @@ final class ZayataConfigurationDefinitions
             $label,
             'select',
             [$field],
-            [$command],
+            self::replyTo($command),
             $category,
             $order,
             null,
@@ -192,7 +214,7 @@ final class ZayataConfigurationDefinitions
             $label,
             'toggle',
             ['enabled'],
-            [$command],
+            self::replyTo($command),
             'health',
             $order,
             null,
@@ -210,7 +232,7 @@ final class ZayataConfigurationDefinitions
             $label,
             'requestAction',
             [],
-            [$command],
+            self::replyTo($command),
             $category,
             $order,
             null,
