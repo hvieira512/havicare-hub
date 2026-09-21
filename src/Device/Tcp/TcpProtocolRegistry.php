@@ -16,9 +16,8 @@ use Hub\Device\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 /**
  * Os protocolos que falam TCP com o hub, indexados pelo nome do protocolo.
  *
- * Chamou-se «watch» enquanto os relógios eram os únicos aparelhos a ligar-se à porta TCP. O
- * dispensador M228 passou a ser o segundo, e o nome deixou de descrever o que a camada faz: o
- * que estes quatro têm em comum não é serem relógios, é entrarem pelo mesmo socket.
+ * O que estes quatro têm em comum não é o tipo de dispositivo -- três são relógios e um é um
+ * dispensador de comprimidos -- é entrarem pelo mesmo socket.
  */
 final class TcpProtocolRegistry
 {

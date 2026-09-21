@@ -17,7 +17,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     public function testWonlexLoginAndHeartbeatBuildResponses(): void
     {
         $protocol = new WonlexTcpProtocol(new WonlexAdapter(), new DeviceEventDecoder());
-        $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '868705080300697', 'wonlex-json');
+        $session = new DeviceSession(new TcpFakeConnection(), 'tcp', true, '868705080300697', 'wonlex-json');
 
         $login = $protocol->handleIncoming($session, $this->wonlexFrame(['type' => 'login', 'ident' => 614377, 'imei' => '868705080300697']));
         $heartbeat = $protocol->handleIncoming($session, $this->wonlexFrame(['type' => 'heartbeat', 'ident' => 614377, 'imei' => '868705080300697', 'data' => ['batteryLevel' => 90]]));
@@ -47,7 +47,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
                 ],
             ]
         );
-        $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '868705080300697', 'wonlex-json');
+        $session = new DeviceSession(new TcpFakeConnection(), 'tcp', true, '868705080300697', 'wonlex-json');
         $adapter = new WonlexAdapter();
 
         $config = $protocol->handleIncoming($session, $this->wonlexFrame([
@@ -68,7 +68,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     public function testFourPTouchProducesProtocolAck(): void
     {
         $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
-        $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '637507597567372', 'four-p-touch');
+        $session = new DeviceSession(new TcpFakeConnection(), 'tcp', true, '637507597567372', 'four-p-touch');
 
         $message = $protocol->handleIncoming($session, '[3G*7597567372*000D*LK,50,100,100]');
 
@@ -80,7 +80,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     public function testFourPTouchFirmwareVersionDoesNotProduceProtocolAck(): void
     {
         $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
-        $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '637507597567372', 'four-p-touch');
+        $session = new DeviceSession(new TcpFakeConnection(), 'tcp', true, '637507597567372', 'four-p-touch');
 
         $message = $protocol->handleIncoming($session, '[3G*7597567372*000C*VERNO,ABC123]');
 
@@ -91,7 +91,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     public function testFourPTouchDeviceStatusDoesNotProduceProtocolAck(): void
     {
         $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
-        $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '637507597567372', 'four-p-touch');
+        $session = new DeviceSession(new TcpFakeConnection(), 'tcp', true, '637507597567372', 'four-p-touch');
 
         $message = $protocol->handleIncoming($session, '[3G*7597567372*0002*TS]');
 
@@ -132,7 +132,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     }
 }
 
-final class WatchFakeConnection implements \Hub\Device\ConnectionInterface
+final class TcpFakeConnection implements \Hub\Device\ConnectionInterface
 {
     public int $resourceId = 1;
 

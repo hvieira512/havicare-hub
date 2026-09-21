@@ -22,8 +22,16 @@ use PHPUnit\Framework\TestCase;
  */
 final class ProtocolRegistrationCompletenessTest extends TestCase
 {
-    /** @return list<string> */
-    private static function tcpProtocols(): array
+    /**
+     * Os protocolos do tipo de dispositivo `watch`, e só esses.
+     *
+     * Filtra por tipo de dispositivo e não por transporte, e por isso o dispensador -- que
+     * fala TCP como eles -- fica de fora. Quem quiser todos os que entram pelo socket tem o
+     * `testEveryTcpProtocolIsCompletelyRegistered` mais abaixo.
+     *
+     * @return list<string>
+     */
+    private static function watchProtocols(): array
     {
         $watch = [];
         foreach (ProtocolRegistry::all() as $protocol => $meta) {
@@ -40,7 +48,7 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
         // Uma âncora, para as asserções abaixo não passarem por a lista ter ficado vazia.
         self::assertSame(
             ['wonlex-json', 'vivistar-iw', 'four-p-touch'],
-            self::tcpProtocols()
+            self::watchProtocols()
         );
     }
 
@@ -49,7 +57,7 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
     {
         $adapters = new AdapterRegistry();
 
-        foreach (self::tcpProtocols() as $protocol) {
+        foreach (self::watchProtocols() as $protocol) {
             self::assertNotNull(
                 $adapters->get($protocol),
                 "O protocolo `{$protocol}` está declarado no ProtocolRegistry mas não tem adaptador."
@@ -62,10 +70,38 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
     {
         $sessions = new TcpProtocolRegistry();
 
-        foreach (self::tcpProtocols() as $protocol) {
+        foreach (self::watchProtocols() as $protocol) {
             self::assertNotNull(
                 $sessions->get($protocol),
                 "O protocolo `{$protocol}` não tem entrada no TcpProtocolRegistry."
+            );
+        }
+    }
+
+    /**
+     * O mesmo, para tudo o que entra pelo socket e não só para os relógios.
+     *
+     * As asserções acima filtram por tipo de dispositivo `watch`, que era a única coisa a
+     * falar TCP quando foram escritas. O dispensador M228 passou a ser a segunda e ficava de
+     * fora: tinha entrada no registo das sessões e ninguém verificava que também tinha
+     * adaptador e metadados. Parte-se do registo das sessões, que é a lista de quem
+     * efectivamente fala pelo socket.
+     */
+    public function testEveryTcpProtocolIsCompletelyRegistered(): void
+    {
+        $adapters = new AdapterRegistry();
+        $protocols = array_map('strval', array_keys((new TcpProtocolRegistry())->all()));
+
+        self::assertContains('zayata-m228', $protocols, 'o dispensador fala TCP e tem de estar aqui');
+
+        foreach ($protocols as $protocol) {
+            self::assertNotNull(
+                $adapters->get($protocol),
+                "O protocolo `{$protocol}` fala TCP mas não tem adaptador."
+            );
+            self::assertTrue(
+                ProtocolRegistry::exists($protocol),
+                "O protocolo `{$protocol}` fala TCP mas não está declarado no ProtocolRegistry."
             );
         }
     }
