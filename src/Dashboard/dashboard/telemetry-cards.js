@@ -72,6 +72,7 @@ const CARD_STYLE = {
     medication_intake: ["fa-pills", "primary"],
     device_fault: ["fa-triangle-exclamation", "warning"],
     medication_level: ["fa-prescription-bottle-medical", "info"],
+    medication_alarm_status: ["fa-clock-rotate-left", "primary"],
     cells_remaining: ["fa-table-cells", "info"],
     humidity: ["fa-droplet", "info"],
     reset: ["fa-bell-slash", "warning"],
@@ -161,6 +162,7 @@ const UPLINK_CARD_RENDERERS = {
     medication_intake: (data) => ({
         value: fieldValue("result", data.result),
     }),
+    medication_alarm_status: (data) => medicationAlarmContent(data),
     device_fault: (data) => ({
         value: fieldValue("fault", data.fault),
     }),
@@ -370,6 +372,37 @@ export function uplinkCardContent(type, data, meta = {}) {
 }
 
 // Uma pulseira W6B diz que tipo de toque foi; um pager NCS diz que comando foi.
+
+/**
+ * O estado dos nove alarmes do dispensador.
+ *
+ * Uma toma falhada é o que faz alguém olhar para o cartão, e por isso ganha o valor
+ * principal; sem falhas, o que vale é quantas foram tomadas. Nos detalhes entram só os
+ * alarmes vivos: nove linhas de «Sem toma marcada» não são detalhe nenhum.
+ */
+function medicationAlarmContent(data) {
+    const alarms = Array.isArray(data?.alarms) ? data.alarms : [];
+    const missed = Number(data?.missedCount ?? 0);
+    const taken = Number(data?.takenCount ?? 0);
+
+    let value = "Sem tomas registadas";
+    if (missed > 0) {
+        value = `${missed} ${missed === 1 ? "falhada" : "falhadas"}`;
+    } else if (taken > 0) {
+        value = `${taken} ${taken === 1 ? "tomada" : "tomadas"}`;
+    }
+
+    return {
+        value,
+        details: alarms
+            .filter((entry) => entry?.state && entry.state !== "idle")
+            .map(
+                (entry) =>
+                    html`${fieldLabel("alarm")} ${entry.alarm}: ${fieldValue("state", entry.state)}`,
+            )
+            .join(" · "),
+    };
+}
 
 /** Os modos que um dispositivo emite vêm do backend; este cartão desenha os que lhe derem. */
 /**

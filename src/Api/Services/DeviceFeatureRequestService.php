@@ -171,6 +171,9 @@ final class DeviceFeatureRequestService
                 'deviceId' => $identity->metadata !== null
                     ? $identity->metadata->deviceId
                     : (string)($identity->device['deviceId'] ?? ''),
+                // Calibrar o relógio precisa de saber a que horas o aparelho se deve pôr, e
+                // isso é hora local: o fuso que o hub tem guardado para ele.
+                'timeZone' => $this->storedTimeZone($imei),
             ]);
             $id = bin2hex(random_bytes(8));
             // O valor segue com o comando: uma acção como «procurar a pulseira» distingue-se
@@ -312,6 +315,29 @@ final class DeviceFeatureRequestService
                 'lastError' => '',
             ]));
         }
+    }
+
+    /**
+     * O fuso que o hub tem guardado para o aparelho, em HHMM como a TAG `0x1015` o declara.
+     *
+     * Só a calibração do relógio precisa disto, e precisa mesmo: a hora que se manda ao
+     * aparelho é local, e sem fuso ele fica atrasado pelo desvio todo.
+     */
+    private function storedTimeZone(string $imei): ?int
+    {
+        foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
+            if (trim((string)($row['config_key'] ?? '')) !== 'time_zone') {
+                continue;
+            }
+
+            $value = $row['desired'] ?? $row['reported'] ?? null;
+            $zone = is_array($value) ? ($value['timeZone'] ?? null) : $value;
+            if (is_numeric($zone)) {
+                return (int)$zone;
+            }
+        }
+
+        return null;
     }
 
     public function commandStatus(string $id, ?ApiAuthContext $auth = null): array

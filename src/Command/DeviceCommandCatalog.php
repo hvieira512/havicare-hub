@@ -99,7 +99,7 @@ final class DeviceCommandCatalog
             // Não há trama a montar: o destinatário é o gateway, e o que ele precisa é do
             // nome da operação para chamar o SDK. Os bytes em fila são esse nome.
             'veepoo-ble' => $command,
-            'zayata-m228' => self::buildPillDispenser($imei, $command, $payload),
+            'zayata-m228' => self::buildPillDispenser($imei, $command, $payload, $context),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };
     }
@@ -305,13 +305,13 @@ final class DeviceCommandCatalog
      * TFLV. O que distingue os dois não é o conteúdo mas o tipo de pacote: escrever uma TAG
      * de controlo num pacote de configuração não faz nada.
      */
-    private static function buildPillDispenser(string $imei, string $command, array $payload = []): string
+    private static function buildPillDispenser(string $imei, string $command, array $payload = [], array $context = []): string
     {
         // A calibração leva a hora a que o aparelho se deve pôr, e não um interruptor: é a
         // única TAG de controlo que é STRING.
         if ($command === 'calibrateClock') {
             return self::pillFrame($imei, 0x08, [
-                0xA101 => ['value' => gmdate('Y-m-d\TH:i:s')],
+                0xA101 => ['value' => self::pillLocalTime($context['timeZone'] ?? null)],
             ]);
         }
 
@@ -442,6 +442,28 @@ final class DeviceCommandCatalog
             'deviceNumber' => PillDispenserAdapter::deviceNumberFor($imei),
             'tlv' => $tlv,
         ]);
+    }
+
+    /**
+     * A hora a que o aparelho se deve pôr, no fuso dele.
+     *
+     * A TAG `0xA101` leva uma string sem marca de fuso e o M228 toma-a à letra: é a hora que
+     * passa a mostrar no ecrã, e é nessa escala que os nove alarmes disparam. Mandar UTC
+     * deixava-o uma hora atrasado em Lisboa no verão, com os alarmes todos a tocar uma hora
+     * depois do que a dashboard mostrava.
+     *
+     * O fuso vem na mesma unidade da TAG `0x1015`: INT16S em HHMM, `+100` é uma hora à
+     * frente. Sem fuso conhecido fica UTC, que é errado por um valor conhecido em vez de por
+     * um valor inventado.
+     */
+    private static function pillLocalTime(mixed $timeZone): string
+    {
+        $hhmm = (int)$timeZone;
+        $minutes = intdiv($hhmm, 100) * 60 + $hhmm % 100;
+
+        return (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
+            ->modify(sprintf('%+d minutes', $minutes))
+            ->format('Y-m-d\TH:i:s');
     }
 
     private static function pillByte(mixed $value, int $max = 255): string
