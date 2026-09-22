@@ -1,4 +1,4 @@
-import { requestJson } from "../../api/http.js";
+import { getProtocolConfigCatalog } from "../../api/index.js";
 import { state } from "../../state.js";
 
 /**
@@ -35,9 +35,7 @@ export async function catalogForProtocol(protocol) {
     }
 
     protocolCatalogRequests[protocol] = (async () => {
-        const response = await requestJson(
-            `/api/protocols/${encodeURIComponent(protocol)}/config-catalog`,
-        );
+        const response = await getProtocolConfigCatalog(protocol);
         const catalog = Array.isArray(response.data) ? response.data : [];
         state.protocolCatalogs[protocol] = catalog;
         return catalog;

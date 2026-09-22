@@ -66,6 +66,8 @@ export const saveModel = (modelId, body) =>
 export const deleteModel = (modelId) => requestJson(`/api/models/${id(modelId)}`, { method: "DELETE" });
 export const getSuppliers = (params = {}) => requestJson("/api/suppliers", { query: params });
 export const getProtocols = () => requestJson("/api/protocols");
+export const getProtocolConfigCatalog = (protocol) =>
+    requestJson(`/api/protocols/${id(protocol)}/config-catalog`);
 export const getCapabilities = (params = {}) => requestJson("/api/capabilities", { query: params });
 
 /* ---------- empresas e licenças ---------- */
