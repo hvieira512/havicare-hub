@@ -67,15 +67,14 @@ export function modelPreviewHtml(modelInfo, label = "Modelo") {
         : html`<div class="text-center text-secondary"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${label}</div></div>`;
 }
 
-export function renderButtonGroup(
-    container,
+export function buttonGroup(
     items,
     selected,
     action,
     valueKey = "value",
     labelKey = "label",
 ) {
-    container.innerHTML = items.length
+    return items.length
         ? items
                 .map((item) => {
                     const value = String(item[valueKey] ?? "");
@@ -105,8 +104,7 @@ export function deviceTypeIcon(deviceType) {
  * O mosaico de tipos de dispositivo. O `multiple` separa o filtro da escolha única, e decide
  * que atributos saem. As contagens são opcionais: ao criar um modelo não há o que contar.
  */
-export function renderDeviceTypeTiles(
-    container,
+export function deviceTypeTiles(
     options,
     {
         selected = [],
@@ -120,7 +118,7 @@ export function renderDeviceTypeTiles(
         .filter((value) => value !== null && value !== undefined && value !== "")
         .map((value) => normalizeDeviceType(String(value)));
 
-    container.innerHTML = options
+    return options
         .map((option) => {
             const value = normalizeDeviceType(
                 typeof option === "string" ? option : option.value,

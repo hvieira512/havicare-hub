@@ -10,7 +10,7 @@ import {
 import { esc } from "../../format.js";
 import { apiError, toast } from "../../dialogs.js";
 import { clearInvalid, markInvalid } from "../../validation.js";
-import { renderButtonGroup, renderDeviceTypeTiles } from "../../widgets.js";
+import { buttonGroup, deviceTypeTiles } from "../../widgets.js";
 import {
     deviceTypeLabel,
     deviceTypeOptions,
@@ -59,8 +59,7 @@ function renderModelSupplierButtons(selectedSupplierId) {
     const deviceType = normalizeDeviceType(
         els.modelForm?.dataset.deviceType || "watch",
     );
-    renderButtonGroup(
-        els.modelSupplierButtons,
+    els.modelSupplierButtons.innerHTML = buttonGroup(
         modelSupplierOptions(deviceType),
         String(selectedSupplierId),
         "selectModelSupplier",
@@ -69,7 +68,7 @@ function renderModelSupplierButtons(selectedSupplierId) {
 
 function renderModelDeviceTypeButtons(selectedDeviceType) {
     const { els } = getSettingsModelsRuntime();
-    renderDeviceTypeTiles(els.modelDeviceTypeButtons, deviceTypeOptions, {
+    els.modelDeviceTypeButtons.innerHTML = deviceTypeTiles(deviceTypeOptions, {
         selected: selectedDeviceType,
         action: "selectModelDeviceType",
     });

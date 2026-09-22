@@ -17,7 +17,7 @@ import {
     setSelectedDetail,
 } from "../state.js";
 import { html, raw } from "../html.js";
-import { emptyPanel, renderDeviceTypeTiles } from "../widgets.js";
+import { deviceTypeTiles, emptyPanel } from "../widgets.js";
 import { deviceCard, deviceCardSkeletonList } from "./device-card.js";
 import { renderPagination, resolvePaginationPage } from "../pagination.js";
 import {
@@ -363,7 +363,7 @@ function renderDeviceTypeFilter() {
         ]),
     );
 
-    renderDeviceTypeTiles(els.deviceTypeFilter, deviceTypeOptions, {
+    els.deviceTypeFilter.innerHTML = deviceTypeTiles(deviceTypeOptions, {
         selected: state.deviceFilters.deviceType,
         multiple: true,
         counts,

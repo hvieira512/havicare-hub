@@ -3,7 +3,7 @@ import {
 } from "../api/index.js";
 import { state } from "../state.js";
 import { html, raw } from "../html.js";
-import { renderButtonGroup, renderDeviceTypeTiles, sectionStrip } from "../widgets.js";
+import { buttonGroup, deviceTypeTiles, sectionStrip } from "../widgets.js";
 import { cardIcon } from "../telemetry-cards.js";
 import { CAPABILITY_SECTION_ICONS, ensureCapabilityCatalog, ensureModelTemplate } from "../capability-catalog.js";
 import {
@@ -153,7 +153,7 @@ async function selectCapabilitySupplier(supplierId) {
 }
 
 function renderCapabilitiesCatalogSection() {
-    renderDeviceTypeTiles(els.capabilityDeviceTypeButtons, deviceTypeOptions, {
+    els.capabilityDeviceTypeButtons.innerHTML = deviceTypeTiles(deviceTypeOptions, {
         selected: state.settingsModal.capabilityDeviceType || "watch",
         action: "selectCapabilityDeviceType",
     });
@@ -341,8 +341,7 @@ function renderCapabilitySupplierButtons() {
         ...suppliers.map((s) => ({ value: String(s.id), label: s.name })),
     ];
 
-    renderButtonGroup(
-        els.capabilitySupplierButtons,
+    els.capabilitySupplierButtons.innerHTML = buttonGroup(
         items,
         selected,
         "selectCapabilitySupplier",
