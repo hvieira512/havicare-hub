@@ -194,6 +194,8 @@ final class PillDispenserNormalizationTest extends TestCase
             'mac' => 'AABBCCDDEEFF',
             'tlv' => [
                 0x8102 => ['value' => "\x00", 'state' => 0],       // destrancado
+                // O aparelho manda a magnitude; o sinal é nosso, porque um sinal recebido é
+                // sempre negativo e o fornecedor confirmou-o.
                 0x810B => ['value' => "\x19\x00", 'state' => 0],   // 25
                 0x810D => ['value' => "\x03", 'state' => 0],       // três barras
             ],
@@ -205,7 +207,7 @@ final class PillDispenserNormalizationTest extends TestCase
         }
 
         self::assertSame([
-            'gsmSignalDbm' => 25,
+            'gsmSignalDbm' => -25,
             'signalLevel' => 3,
             'childLockEngaged' => false,
         ], $events['device_status'] ?? null);

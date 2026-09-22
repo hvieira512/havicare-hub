@@ -66,9 +66,14 @@ class PillDispenserAdapter implements DeviceAdapterInterface
 
         $identity = self::decodeDeviceNumber($deviceNumber);
         $type = self::packetTypeName($packetType);
-        $tlv = self::parseTlv($appData);
+
+        $encrypted = ($flag & 0x04) === 0x04;
+        $plain = $encrypted ? self::decryptAppData($appData, $deviceNumber) : $appData;
+        $tlv = $plain === null ? [] : self::parseTlv($plain);
 
         return [
+            'encrypted' => $encrypted,
+            'decrypted' => !$encrypted || $plain !== null,
             'type' => $type,
             'packetType' => $packetType,
             'imei' => $identity['id'],
@@ -360,6 +365,76 @@ class PillDispenserAdapter implements DeviceAdapterInterface
 
         return $out;
     }
+
+    /**
+     * O corpo de uma trama que o aparelho cifrou, ou `null` se não abrir.
+     *
+     * O M228 cifra em AES128-CFB tudo o que envia por iniciativa própria — o heartbeat, as
+     * notificações, e o evento de toma de medicação, que é a funcionalidade central. As
+     * respostas aos nossos pedidos vêm em claro, e é por isso que a configuração sempre
+     * funcionou enquanto a telemetria não chegava.
+     *
+     * A chave e o IV são a mesma coisa: o Device Number escrito como string hexadecimal de
+     * dezasseis caracteres, que é exactamente o comprimento de uma chave AES-128. O
+     * fornecedor descreveu-o como «both the key and the random IV are based on the device's
+     * Device Number», e a leitura confirmou-se contra tramas reais.
+     *
+     * Tentam-se as duas caixas. Um Device Number que codifica um IMEI é só dígitos e a caixa
+     * não se nota; um que codifique um MAC leva letras, e não há aqui nenhum aparelho desses
+     * para decidir qual delas o firmware usa.
+     */
+    private static function decryptAppData(string $appData, int $deviceNumber): ?string
+    {
+        if ($appData === '') {
+            return $appData;
+        }
+
+        $hex = sprintf('%016X', $deviceNumber);
+        foreach ([$hex, strtolower($hex)] as $key) {
+            $plain = openssl_decrypt(
+                $appData,
+                'aes-128-cfb',
+                $key,
+                OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING,
+                $key,
+            );
+            if (is_string($plain) && self::closesAsTlv($plain)) {
+                return $plain;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Se um corpo decifrado é mesmo TFLV.
+     *
+     * Sem esta verificação, uma decifra falhada devolvia ruído que o `parseTlv` lia como
+     * TAGs inventadas, e o hub publicava telemetria fabricada com identidade correcta e CRC
+     * válido — a pior falha calada que este protocolo permite.
+     */
+    private static function closesAsTlv(string $body): bool
+    {
+        $offset = 0;
+        $length = strlen($body);
+
+        while ($offset + 4 <= $length) {
+            $tag = unpack('v', substr($body, $offset, 2))[1];
+            if (!in_array($tag >> 8, self::TAG_FAMILIES, true)) {
+                return false;
+            }
+            $valueLength = ord($body[$offset + 3]);
+            if ($valueLength === 0) {
+                return false;
+            }
+            $offset += 4 + $valueLength;
+        }
+
+        return $offset === $length && $length > 0;
+    }
+
+    /** Os bytes altos das TAGs que a especificação declara. */
+    private const TAG_FAMILIES = [0x10, 0x80, 0x81, 0xA0, 0xA1, 0xC2];
 
     private static function packetTypeName(int $packetType): string
     {

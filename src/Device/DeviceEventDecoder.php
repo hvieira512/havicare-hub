@@ -418,11 +418,15 @@ final class DeviceEventDecoder
         //
         // O `signalLevel` é o que a dashboard mostra: a especificação declara-o de 0 a 3 e é
         // uma contagem de barras sem ambiguidade. O `gsmSignalDbm` fica ao lado porque é a
-        // leitura fina, mas a unidade não está declarada em lado nenhum do documento -- há
-        // dezoito notas de unidade lá dentro e nenhuma neste campo.
+        // leitura fina.
+        //
+        // O aparelho reporta a magnitude e o sinal vai por nossa conta: o fornecedor
+        // confirmou a unidade em dBm e, perante um valor positivo, respondeu «treat it as a
+        // negative value». Um sinal recebido é sempre negativo, e publicar `25 dBm` era
+        // publicar a potência de um emissor.
         $signal = array_filter([
-            'wifiSignalDbm' => $this->tlvI16($tlv, 0x810A),
-            'gsmSignalDbm' => $this->tlvI16($tlv, 0x810B),
+            'wifiSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810A)),
+            'gsmSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810B)),
             'signalLevel' => $this->tlvU8($tlv, 0x810D),
             'childLockEngaged' => match ($this->tlvU8($tlv, 0x8102)) {
                 0 => false,
@@ -452,6 +456,17 @@ final class DeviceEventDecoder
         }
 
         return $events;
+    }
+
+    /**
+     * A força de sinal em dBm, que é sempre negativa.
+     *
+     * O aparelho manda a magnitude sem sinal. Um valor que já venha negativo fica como está,
+     * para o dia em que um firmware o mandar com o sinal certo.
+     */
+    private static function pillNegativeSignal(?int $value): ?int
+    {
+        return $value === null ? null : -abs($value);
     }
 
     /**
