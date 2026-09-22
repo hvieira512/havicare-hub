@@ -58,6 +58,15 @@ function capabilitySections(enabled) {
         .filter(Boolean);
 }
 
+/** Quantas destas estão ligadas: é o número da pastilha de cada secção. */
+const activeCount = (entries, enabled) =>
+    (entries || []).filter((feature) => enabled.has(feature)).length;
+
+/** O resumo do topo é a soma das pastilhas todas, e tem de dar o mesmo que elas. */
+const capabilitySummaryText = (sections, enabled) =>
+    `${sections.reduce((total, item) => total + activeCount(item.entries, enabled), 0)}` +
+    `/${sections.reduce((total, item) => total + item.entries.length, 0)} ativos`;
+
 /**
  * Acerta no sítio em vez de redesenhar a secção, que tirava o foco ao interruptor acabado de
  * premir. Sem template do fornecedor a linha desaparece ao desligar, e aí quem chama redesenha.
@@ -84,17 +93,14 @@ function syncCapabilitySwitches(feature) {
     }
 
     const sections = capabilitySections(enabled);
-    const countOf = (entries) => entries.filter((key) => enabled.has(key)).length;
 
-    els.capabilitySummary.textContent =
-        `${sections.reduce((total, item) => total + countOf(item.entries), 0)}` +
-        `/${sections.reduce((total, item) => total + item.entries.length, 0)} ativos`;
+    els.capabilitySummary.textContent = capabilitySummaryText(sections, enabled);
 
     for (const { section, entries } of sections) {
         const badge = els.capabilitySectionNav.querySelector(
             `[data-section="${CSS.escape(section)}"] [data-section-count]`,
         );
-        if (badge) badge.textContent = String(countOf(entries));
+        if (badge) badge.textContent = String(activeCount(entries, enabled));
     }
 
     const visible = sections.find(
@@ -102,7 +108,8 @@ function syncCapabilitySwitches(feature) {
     );
     const groupCount = els.capabilityGroups.querySelector("[data-section-count]");
     if (visible && groupCount) {
-        groupCount.textContent = `${countOf(visible.entries)}/${visible.entries.length} ativos`;
+        groupCount.textContent =
+            `${activeCount(visible.entries, enabled)}/${visible.entries.length} ativos`;
     }
 }
 
@@ -206,16 +213,7 @@ function renderCapabilitiesSection() {
 
     const sections = capabilitySections(enabled);
 
-    const totalCapabilities = sections.reduce(
-        (count, item) => count + item.entries.length,
-        0,
-    );
-    const activeCapabilities = sections.reduce(
-        (count, item) =>
-            count + item.entries.filter((feature) => enabled.has(feature)).length,
-        0,
-    );
-    els.capabilitySummary.textContent = `${activeCapabilities}/${totalCapabilities} ativos`;
+    els.capabilitySummary.textContent = capabilitySummaryText(sections, enabled);
 
     let activeSection = state.settingsModal.activeCapabilitySection;
     if (!activeSection || !sections.some((s) => s.section === activeSection)) {
@@ -227,7 +225,7 @@ function renderCapabilitiesSection() {
         sections.map(({ section, label, entries }) => ({
             key: section,
             label,
-            count: (entries || []).filter((feature) => enabled.has(feature)).length,
+            count: activeCount(entries, enabled),
             icon: CAPABILITY_SECTION_ICONS[section] || "fa-gear",
         })),
         "jumpCapabilitySection",
