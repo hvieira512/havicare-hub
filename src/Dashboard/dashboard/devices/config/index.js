@@ -8,6 +8,7 @@ import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
 import { configCatalogSections } from "./catalog-model.js";
 import { takePillsReminderGroup } from "./four-p-touch-take-pills.js";
 import { CONFIG_INPUTS } from "./inputs/index.js";
+import { toggleField, toggleValue } from "./inputs/generic.js";
 import { jsonInput, readJson } from "./readers.js";
 import {
     catalogForProtocol,
@@ -340,8 +341,8 @@ function renderConfigGroup(protocol, entries, ctx) {
         const capability = capabilityForEntry(entry, capabilities);
         const desired = normalizeDesired(entry, resolveConfigRow(entry, rowsByKey), capability ? extractCapabilityValue(capability) : null, protocol);
         const isToggle = isPlainToggle(entry);
-        const field = entry.fields?.[0] || "enabled";
-        const on = desired[field] !== false;
+        const field = toggleField(entry, protocol);
+        const on = toggleValue(entry, desired, protocol);
         const stored = resolveConfigStored(entry, rowsByKey);
         const delivery = resolveConfigDelivery(entry, configurationSync);
         const deliveryMeta = configurationDeliveryMeta(stored, delivery);
@@ -598,7 +599,7 @@ export function renderConfigInputs(entry, desired, meta = {}) {
  * O controlo nu de uma definição de campo estreito -- sem rótulo e sem linha de ajuda --
  * para o cartão que o põe na linha do título. Vazio para tudo o resto.
  */
-export function renderConfigControl(entry, desired, meta = {}) {
+function renderConfigControl(entry, desired, meta = {}) {
     return CONFIG_INPUTS[entry.input || "json"]?.control?.(entry, desired, meta) || "";
 }
 

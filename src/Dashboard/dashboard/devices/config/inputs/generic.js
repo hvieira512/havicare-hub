@@ -18,13 +18,29 @@ import {
  * muda entre protocolos é o nome nativo, e disso trata a definição, não o desenho.
  */
 
-export function toggleInput(entry, desired, protocol = "") {
+/**
+ * O nome do campo no valor guardado, que nem sempre é o nome nativo da definição.
+ *
+ * A Wonlex declara `switchState` e o hub entrega `enabled`: o `wonlexFromNative` renomeia e
+ * apaga o original. Quem procurasse o nome nativo não encontrava nada e desenhava o
+ * interruptor ligado, fosse qual fosse o valor guardado.
+ */
+export function toggleField(entry, protocol = "") {
     const nativeField = entry.fields?.[0] || "enabled";
-    const field =
-        protocol === "wonlex-json" && nativeField === "switchState"
-            ? "enabled"
-            : nativeField;
-    const checked = boolValue(desired[field] ?? desired[nativeField], true);
+    return protocol === "wonlex-json" && nativeField === "switchState"
+        ? "enabled"
+        : nativeField;
+}
+
+/** Sem valor guardado nasce ligado, que é como o aparelho vem de fábrica. */
+export function toggleValue(entry, desired, protocol = "") {
+    const nativeField = entry.fields?.[0] || "enabled";
+    return boolValue(desired[toggleField(entry, protocol)] ?? desired[nativeField], true);
+}
+
+export function toggleInput(entry, desired, protocol = "") {
+    const field = toggleField(entry, protocol);
+    const checked = toggleValue(entry, desired, protocol);
     return `
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" data-config-field="${esc(field)}" ${checked ? "checked" : ""}>
@@ -36,7 +52,7 @@ export function toggleInput(entry, desired, protocol = "") {
  * Um número, sem rótulo: quem o nomeia é o título do cartão, e a unidade vai ao lado do
  * campo. O `aria-label` guarda o nome para quem não vê a linha.
  */
-export function numberControl(entry, desired) {
+function numberControl(entry, desired) {
     const key = entry.fields?.[0] || "value";
     // A escala vem da definição quando ela a declara -- o tom de pele vai de 1 a 6, e partir
     // de zero oferecia um valor que o aparelho recusa.
@@ -48,7 +64,7 @@ export function numberControl(entry, desired) {
     });
 }
 
-export function phoneInput(entry, desired) {
+function phoneInput(entry, desired) {
     const key = entry.fields?.[0] || "phone";
     return field(
         fieldLabel(key),
@@ -60,7 +76,7 @@ export function phoneInput(entry, desired) {
     );
 }
 
-export function textInput(entry, desired) {
+function textInput(entry, desired) {
     const key = entry.fields?.[0] || "value";
     return field(
         fieldLabel(key),
@@ -68,7 +84,7 @@ export function textInput(entry, desired) {
     );
 }
 
-export function pushMessageInput(_entry, desired) {
+function pushMessageInput(_entry, desired) {
     return field(
         "Mensagem",
         `<input class="form-control" type="text" data-config-field="message" value="${esc(String(desired.message ?? ""))}" placeholder="Mensagem a mostrar no relógio">`,
@@ -76,7 +92,7 @@ export function pushMessageInput(_entry, desired) {
     );
 }
 
-export function intervalToggleInput(entry, desired) {
+function intervalToggleInput(entry, desired) {
     return `
         <div class="row g-3">
             <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
@@ -176,7 +192,7 @@ export function selectOptions(entry) {
  * definição com `options` caía num número solto: o utilizador via "2" sem saber que 2 é
  * "Baixo", e o significado ficava só na cabeça de quem escreveu o adaptador.
  */
-export function selectInput(entry, desired) {
+function selectInput(entry, desired) {
     const { name, options, fallback } = selectOptions(entry);
     const current = String(desired?.[name] ?? fallback);
     const choices = options
