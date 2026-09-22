@@ -375,12 +375,28 @@ final class DeviceCommandCatalog
             throw new \InvalidArgumentException('o M228 tem nove alarmes, e o plano traz ' . count($plans));
         }
 
+        // Cada plano diz em que alarme fica. Sem isso, o enésimo plano da lista caía no
+        // enésimo alarme: quem escolhesse o 5 na dashboard via-o chegar ao 3, por cima do que
+        // lá estivesse. Um plano guardado antes disto não traz slot e continua a valer por
+        // posição, que é a única leitura que dele se pode fazer.
+        $bySlot = [];
+        foreach ($plans as $position => $plan) {
+            $slot = isset($plan['slot']) ? (int)$plan['slot'] : $position + 1;
+            if ($slot < 1 || $slot > 9) {
+                throw new \InvalidArgumentException("o M228 tem nove alarmes, e o plano pede o {$slot}");
+            }
+            if (isset($bySlot[$slot])) {
+                throw new \InvalidArgumentException("dois planos para o alarme {$slot}");
+            }
+            $bySlot[$slot] = $plan;
+        }
+
         $tlv = [];
-        for ($slot = 0; $slot < 9; $slot++) {
-            $plan = $plans[$slot] ?? null;
-            $tlv[0x1021 + $slot] = ['value' => self::pillByte($plan['hour'] ?? 0, 23)];
-            $tlv[0x1031 + $slot] = ['value' => self::pillByte($plan['minute'] ?? 0, 59)];
-            $tlv[0x1041 + $slot] = ['value' => self::pillBool($plan !== null && ($plan['enabled'] ?? true))];
+        for ($offset = 0; $offset < 9; $offset++) {
+            $plan = $bySlot[$offset + 1] ?? null;
+            $tlv[0x1021 + $offset] = ['value' => self::pillByte($plan['hour'] ?? 0, 23)];
+            $tlv[0x1031 + $offset] = ['value' => self::pillByte($plan['minute'] ?? 0, 59)];
+            $tlv[0x1041 + $offset] = ['value' => self::pillBool($plan !== null && ($plan['enabled'] ?? true))];
         }
 
         return $tlv;

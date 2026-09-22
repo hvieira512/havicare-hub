@@ -63,7 +63,14 @@ const slotCell = (index, plan) => {
  */
 function alarmsInput(entry, desired) {
     const plans = Array.isArray(desired?.plans) ? desired.plans : [];
-    const cells = Array.from({ length: SLOTS }, (_, index) => slotCell(index, plans[index]));
+    // Pelo número do alarme, não pela posição na lista: um plano só do alarme 5 aparecia na
+    // primeira caixa, e o utilizador via um número que não era o dele.
+    const bySlot = new Map(
+        plans.map((plan, position) => [Number(plan?.slot ?? position + 1), plan]),
+    );
+    const cells = Array.from({ length: SLOTS }, (_, index) =>
+        slotCell(index, bySlot.get(index + 1)),
+    );
 
     return html`<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-2">${raw(cells.join(""))}</div>`;
 }
@@ -71,6 +78,9 @@ function alarmsInput(entry, desired) {
 /**
  * Lê os nove slots de volta, e deixa cair os desligados que não têm hora: o que vai para o
  * aparelho é a lista dos que ficam, e o resto é desligado por omissão.
+ *
+ * Cada plano leva o número do alarme em que fica. Sem ele a lista compactava-se e o enésimo
+ * plano caía no enésimo alarme: escolher o 5 escrevia no 3, por cima do que lá estivesse.
  */
 function readAlarms(section) {
     const plans = [];
@@ -78,7 +88,7 @@ function readAlarms(section) {
         const enabled = readCheckbox(section, `enabled-${index}`);
         const { hour, minute } = fromTimeValue(readText(section, `time-${index}`));
         if (!enabled && hour === 0 && minute === 0) continue;
-        plans.push({ hour, minute, enabled });
+        plans.push({ slot: index + 1, hour, minute, enabled });
     }
 
     return { plans };

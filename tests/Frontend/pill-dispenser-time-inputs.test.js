@@ -63,10 +63,12 @@ test("um alarme ligado volta com a hora que se escolheu", () => {
         plans: [{ hour: 8, minute: 30, enabled: true }, { hour: 20, minute: 5, enabled: true }],
     });
 
+    // O `slot` é o número do alarme e não a posição: sem ele, o enésimo plano caía no
+    // enésimo alarme e escolher o 5 escrevia no 3.
     assert.deepEqual(INPUTS.pillDispenserAlarms.read(root), {
         plans: [
-            { hour: 8, minute: 30, enabled: true },
-            { hour: 20, minute: 5, enabled: true },
+            { slot: 1, hour: 8, minute: 30, enabled: true },
+            { slot: 2, hour: 20, minute: 5, enabled: true },
         ],
     });
 });
