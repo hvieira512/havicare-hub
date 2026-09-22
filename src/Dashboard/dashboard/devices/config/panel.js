@@ -71,7 +71,13 @@ export function changedConfigGroupEntries(group) {
         }
 
         const pristine = row.dataset.configPristine ?? "";
-        const neverSent = row.dataset.configStored === "0";
+        // Uma linha que o aparelho nunca recebeu viaja sem ninguém lhe ter tocado, porque o
+        // grupo é o único caminho para a primeira gravação. Isso só vale para o interruptor,
+        // cujo padrão -- ligado -- é uma escolha a sério. O padrão de um número é zero, e num
+        // intervalo de medição zero quer dizer desactivar: um clique desligava as dez
+        // medições de uma vez a quem só queria configurar uma.
+        const neverSent = row.dataset.configStored === "0" &&
+            row.dataset.configInput === "toggle";
         if (neverSent || JSON.stringify(payload) !== pristine) {
             changed[key] = payload;
         }

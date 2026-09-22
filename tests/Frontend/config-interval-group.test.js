@@ -112,6 +112,44 @@ test("só viaja a linha que alguém mexeu", () => {
     });
 });
 
+/**
+ * Num relógio que nunca teve as medições configuradas, o rodapé dizia «10 definições no
+ * valor padrão, por enviar» e o botão ficava aceso. O valor padrão de um intervalo é `0`, e
+ * `0` desactiva -- um clique desligava as dez medições de uma vez, sem ninguém ter escrito
+ * um número. Em cartões, o mesmo enganado custava um clique por medição; em grupo, custa as
+ * dez.
+ */
+test("um grupo de campos nunca enviados não envia nada sem alguém escrever um valor", () => {
+    const group = render(INTERVALOS).querySelector("[data-config-group]");
+
+    assert.deepEqual(changedConfigGroupEntries(group), {});
+
+    const [primeira] = group.querySelectorAll("[data-config-row] input[type=\"number\"]");
+    primeira.value = "30";
+
+    assert.deepEqual(changedConfigGroupEntries(group), {
+        heart_rate_measurement_interval: { interval: 30 },
+    });
+});
+
+test("um grupo de interruptores nunca enviados continua a poder ser enviado", () => {
+    // O padrão de um interruptor é uma escolha a sério -- ligado --, e o grupo é o único
+    // caminho para a primeira gravação. É a diferença que justifica as duas regras.
+    const toggles = ["fall_detection", "sos_sms"].map((key) => ({
+        key,
+        capabilityKey: key,
+        command: "deviceConfig",
+        label: key,
+        input: "toggle",
+        fields: ["switchState"],
+        category: "health",
+    }));
+
+    const group = render(toggles).querySelector("[data-config-group]");
+
+    assert.equal(Object.keys(changedConfigGroupEntries(group)).length, 2);
+});
+
 test("números de comandos diferentes continuam a ser cartões separados", () => {
     const root = render([
         interval("heart_rate_measurement_interval", "Intervalo de frequência cardíaca"),

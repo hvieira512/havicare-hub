@@ -289,7 +289,7 @@ regra nova, a resposta é uma capacidade nova em PHP.
 
 ```bash
 npm run lint                   # eslint sobre main.js, dashboard/, assets/js/ e tests/Frontend
-npm test                       # 92 ficheiros em tests/Frontend/
+npm test                       # 93 ficheiros em tests/Frontend/
 composer test:unit             # inclui os testes que lêem estes ficheiros como texto
 ```
 
@@ -299,11 +299,9 @@ Dois valem por si:
   não resolver. Um nome importado que ninguém exporta deita a dashboard abaixo com uma
   página em branco, e nenhum `node --check` o apanha. O mesmo teste falha se um módulo
   ficar órfão, isto é, inalcançável a partir do `main.js`.
-- **O `no-unused-vars` do eslint** apanha um import que ficou para trás depois de mover
-  código, mas só como aviso: o `npm run lint` corre **sem** `--max-warnings 0`, e por isso
-  um import órfão passa o gate. Ao mover código, correr
-  `npx eslint src/Dashboard/dashboard tests/Frontend --max-warnings 0` à mão. Quem apanha um
-  import **partido** é o `node --test`, que falha logo a carregar.
+- **O `no-unused-vars` do eslint** é aviso e não erro, mas o `npm run lint` corre com
+  `--max-warnings 0`: é o que apanha um import que ficou para trás depois de mover código.
+  Quem apanha um import **partido** é o `node --test`, que falha logo a carregar.
 
 Vários testes em `tests/Unit/Dashboard/` lêem estes ficheiros **como texto** e afirmam que
 certas linhas lá estão. Mover uma função entre ficheiros parte-os -- é de propósito, e a

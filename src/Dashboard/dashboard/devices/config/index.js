@@ -256,19 +256,6 @@ function isPlainToggle(entry) {
 }
 
 /**
- * As entradas por ordem, com as corridas de interruptores marcadas para agrupar.
- *
- * Corridas e não «todos os interruptores da secção»: a ordem do catálogo é editorial, e
- * juntar interruptores que estão separados por um alarme trocava-a por uma arrumação que o
- * autor do catálogo não pediu.
- *
- * Um interruptor sozinho também é uma corrida. Deixá-lo como cartão dava-lhe quatro linhas
- * de altura para um bit, que é o problema que isto existe para resolver -- e punha dois
- * desenhos diferentes na mesma lista, conforme a definição tivesse ou não vizinhas.
- *
- * @returns {Array<{grouped: boolean, entries: Array<object>}>}
- */
-/**
  * A mesma definição repetida para grandezas diferentes: o mesmo comando nativo e a mesma
  * legenda declarada.
  *
@@ -291,6 +278,15 @@ function configRunKind(entry) {
     return "";
 }
 
+/**
+ * As entradas por ordem, com as corridas marcadas para agrupar.
+ *
+ * Corridas e não «todos os interruptores da secção»: a ordem do catálogo é editorial, e
+ * juntar interruptores separados por um alarme trocava-a por uma arrumação que o autor do
+ * catálogo não pediu.
+ *
+ * @returns {Array<{kind: string, grouped: boolean, entries: Array<object>}>}
+ */
 function configRuns(entries) {
     const runs = [];
     for (const entry of entries) {
@@ -327,7 +323,9 @@ function unitOf(entry) {
  */
 function readConfigEntryValue(entry, desired) {
     const field = entry.fields?.[0] || "value";
-    return { [field]: Number(desired?.[field] ?? 0) };
+    // O mesmo recuo do controlo: quem desenha parte do mínimo declarado, e a fotografia tem
+    // de partir de lá também.
+    return { [field]: Number(desired?.[field] ?? entry.options?.min ?? 0) };
 }
 
 function renderConfigGroup(protocol, entries, ctx) {
@@ -711,11 +709,12 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
                 notice.outerHTML = noticeHtml;
             }
         } else if (noticeHtml !== "") {
-            // Um cartão de acção não tem formulário -- não tem campos --, e aí o aviso vai
-            // para o fim, que é onde o desenho o põe.
-            const form = section.querySelector("[data-config-form]");
-            if (form) {
-                form.insertAdjacentHTML("beforebegin", noticeHtml);
+            // Antes do formulário, ou -- num cartão de acção, que não tem campos nem
+            // formulário -- antes da caixa de falha. É onde o desenho o põe de origem, e as
+            // duas ordens têm de coincidir.
+            const anchor = section.querySelector("[data-config-form], [data-config-feedback-key]");
+            if (anchor) {
+                anchor.insertAdjacentHTML("beforebegin", noticeHtml);
             } else {
                 section.insertAdjacentHTML("beforeend", noticeHtml);
             }

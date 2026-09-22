@@ -107,12 +107,12 @@ const dateField = (name, value) =>
  * M228 é um altifalante cheio, e declarar nomes de ícones nas definições em PHP era pôr
  * apresentação no sítio errado.
  */
-const VOLUME_STEPS = [
-    { icon: "fa-volume-high", tone: "primary" },
-    { icon: "fa-volume-low", tone: "secondary" },
-    { icon: "fa-volume-off", tone: "warning" },
-    { icon: "fa-volume-xmark", tone: "danger" },
-];
+const VOLUME_STEPS = {
+    0: { icon: "fa-volume-high", tone: "primary" },
+    1: { icon: "fa-volume-low", tone: "secondary" },
+    2: { icon: "fa-volume-off", tone: "warning" },
+    3: { icon: "fa-volume-xmark", tone: "danger" },
+};
 
 function volumeScale(entry, desired) {
     const { name, options, fallback } = selectOptions(entry);
@@ -122,7 +122,9 @@ function volumeScale(entry, desired) {
         field: name,
         value: desired?.[name] ?? fallback,
         label: entry.label || "Volume",
-        options: options.map((option, index) => ({ ...option, ...(VOLUME_STEPS[index] || {}) })),
+        // Por valor e não por posição: reordenar a lista na definição trocava os ícones, e o
+        // silêncio ficava com um altifalante cheio sem nada a denunciá-lo.
+        options: options.map((option) => ({ ...option, ...(VOLUME_STEPS[option.value] || {}) })),
     });
 }
 
