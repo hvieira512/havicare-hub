@@ -18,9 +18,8 @@ import {
 /**
  * Os campos que só a Wonlex declara.
  *
- * São doze dos quarenta tipos de campo e valiam cerca de um terço do antigo `inputs.js`. A
- * Wonlex empacota quase tudo em `deviceConfig` e `deviceMeasuringFrequency`, e por isso cada
- * limiar precisa do seu próprio formulário em vez de um campo numérico solto.
+ * A Wonlex empacota quase tudo em `deviceConfig` e `deviceMeasuringFrequency`, e por isso
+ * cada limiar precisa do seu próprio formulário em vez de um campo numérico solto.
  */
 
 /** Os painéis Wonlex trazem o estado em `enabled` ou em `switchState`, conforme a geração. */
