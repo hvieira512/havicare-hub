@@ -155,18 +155,29 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'early_dispense',
             'help_call',
             'humidity',
+            'loaded_cells',
             // A toma lê-se por aqui sem a chave de cifra: o `medication_intake` é o evento
             // rico e chega cifrado, este é o estado dos nove alarmes e chega em claro.
             'medication_alarm_status',
             'medication_intake',
             'medication_level',
+            'medication_pause',
             'medication_period',
             'medication_reminders',
             'mute_alarm',
-            // Duas acções não entram: a reposição de fábrica, que devolvia o aparelho ao
-            // servidor do fornecedor, e desligar a cifra, que o firmware recusa sempre.
+            // Três acções não entram: a reposição de fábrica, que devolvia o aparelho ao
+            // servidor do fornecedor, desligar a cifra, que o firmware recusa sempre, e mudar
+            // o servidor a que ele se liga, que é a única que nos pode fazer perdê-lo.
             'reset_tray',
             'restart_device',
+            'retrieval_timeout',
+            'retrieval_warning',
+            'rotate_to_cell',
+            // Uma por família: o aparelho separa configuração, estado e controlo, e cada
+            // pergunta é um pacote próprio.
+            'supported_configuration',
+            'supported_control',
+            'supported_status',
             'sync_configuration',
             'temperature',
             'time_zone',
@@ -179,10 +190,10 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Nove configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por
+        // Catorze configuráveis e dez pedíveis. Uma acção pede-se e não se configura, e por
         // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
         self::assertSame(
-            ['9', '7'],
+            ['14', '10'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

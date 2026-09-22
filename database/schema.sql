@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS models (
     internal_model VARCHAR(96) NOT NULL,
     commercial_name VARCHAR(96) NOT NULL,
     device_type VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'watch',
+    -- Só o nome do ficheiro. A rota por onde ele se serve é constante e vive no código, no
+    -- `ModelImageStore::ROUTE`: repeti-la em cada linha obrigava a um `UPDATE` a toda a
+    -- tabela para a mudar, e deixava a coluna aceitar caminhos inconsistentes.
     image_path VARCHAR(255) NOT NULL DEFAULT '',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

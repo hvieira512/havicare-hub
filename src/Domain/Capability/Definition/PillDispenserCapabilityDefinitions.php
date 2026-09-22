@@ -42,6 +42,18 @@ final class PillDispenserCapabilityDefinitions
 
             // O que se pede. Uma acção pede-se, não se configura.
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'sync_configuration', 'label' => 'Sincronizar configuração', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            // O que o firmware anuncia servir. Não é um valor que se escolha, é o que o
+            // aparelho sabe fazer — e é o que evita manter uma tabela por modelo.
+            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'supported_configuration', 'label' => 'Parâmetros de configuração', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'supported_status', 'label' => 'Parâmetros de estado', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'supported_control', 'label' => 'Parâmetros de controlo', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            // Os dois tempos decidem se uma dose por tomar chega a alguém como alerta, e as
+            // células carregadas são o que permite ao aparelho avisar que está a acabar.
+            ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'retrieval_warning', 'label' => 'Avisar de atraso ao fim de', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'retrieval_timeout', 'label' => 'Dar como falhada ao fim de', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'loaded_cells', 'label' => 'Compartimentos carregados', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'rotate_to_cell', 'label' => 'Rodar até ao compartimento', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'medication_pause', 'label' => 'Pausar medicação', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'dispense_now', 'label' => 'Dispensar agora', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'mute_alarm', 'label' => 'Silenciar', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'calibrate_clock', 'label' => 'Calibrar relógio', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],

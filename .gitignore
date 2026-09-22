@@ -54,3 +54,7 @@ Thumbs.db
 
 # Ficheiros de bloqueio que o Word cria ao abrir um documento em docs/fornecedores
 ~$*
+
+# Rascunhos e notas de trabalho, que não são do projecto
+notes.md
+temp.md

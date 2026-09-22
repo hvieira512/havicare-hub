@@ -23,16 +23,46 @@ final class DeviceConfigurationProjection
         if ($this->db === null) {
             return;
         }
-        $key = $nativeType;
+
+        // Uma leitura que traz várias configurações de uma vez guarda-se uma a uma. Resolver
+        // a chave pelo tipo da resposta serve quando cada resposta confirma uma configuração
+        // -- é assim nos relógios --, mas o dispensador responde ao `0x05` com todas, e o
+        // bloco inteiro ficava debaixo de uma chave só.
+        $settings = $payload['data']['settings'] ?? null;
+        if (is_array($settings) && $settings !== []) {
+            foreach ($settings as $settingKey => $value) {
+                if (!is_array($value)) {
+                    continue;
+                }
+                $this->db->deviceConfigurations->saveReported(
+                    $imei,
+                    (string)$settingKey,
+                    $protocol,
+                    $nativeType,
+                    ['type' => 'device_config', 'data' => $value] + $payload,
+                );
+            }
+
+            return;
+        }
+
+        // Um tipo de resposta que identifica **uma** configuração nomeia-a. Um que várias
+        // declarem não nomeia nenhuma: ficar pela primeira do catálogo era escolher à sorte, e
+        // o valor de uma escrita ia parar à linha de outra configuração qualquer, que passava
+        // a mostrar um reportado que nunca foi dela. Melhor não guardar do que guardar errado.
+        $candidatas = [];
         foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
             if (in_array($nativeType, $entry['expectedReplyTypes'] ?? [], true)) {
-                $key = (string)$entry['key'];
-                break;
+                $candidatas[(string)$entry['key']] = true;
             }
         }
+        if (count($candidatas) !== 1) {
+            return;
+        }
+
         $this->db->deviceConfigurations->saveReported(
             $imei,
-            $key,
+            (string)array_key_first($candidatas),
             $protocol,
             $nativeType,
             $payload

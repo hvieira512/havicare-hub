@@ -98,16 +98,21 @@ final class PillDispenserNormalizationTest extends TestCase
 
         self::assertCount(1, $events);
         self::assertSame('device_config', $events[0]['feature']);
-        $value = $events[0]['value'];
-        self::assertSame(1, $value['volume']);
-        self::assertSame(2, $value['ringtone']);
-        self::assertSame(1, $value['language']);
-        self::assertSame(100, $value['timeZone']);
-        self::assertTrue($value['childLock']);
-        self::assertFalse($value['earlyRetrieval']);
+        // Cada configuração volta pela chave do contrato e com a forma com que é enviada: é o
+        // que permite guardá-la como reportada e compará-la com o desejado sem traduzir.
+        $settings = $events[0]['value']['settings'];
+        self::assertSame(['volume' => 1], $settings['alarm_volume']);
+        self::assertSame(['ringtone' => 2], $settings['alarm_ringtone']);
+        self::assertSame(['language' => 1], $settings['device_language']);
+        self::assertSame(['timeZone' => 100], $settings['time_zone']);
+        self::assertSame(['enabled' => true], $settings['child_lock']);
+        self::assertSame(['enabled' => false], $settings['early_dispense']);
         // O plano volta só com os alarmes que estão ligados: os outros nove menos um seriam
         // ruído a dizer "00:00 desligado".
-        self::assertSame([['slot' => 1, 'hour' => 8, 'minute' => 30]], $value['plans']);
+        self::assertSame(
+            ['plans' => [['slot' => 1, 'hour' => 8, 'minute' => 30, 'enabled' => true]]],
+            $settings['medication_reminders'],
+        );
     }
 
     public function testAStatusQueryAnswerIsReadLikeAHeartbeat(): void
@@ -194,6 +199,8 @@ final class PillDispenserNormalizationTest extends TestCase
             'mac' => 'AABBCCDDEEFF',
             'tlv' => [
                 0x8102 => ['value' => "\x00", 'state' => 0],       // destrancado
+                // O aparelho manda a magnitude; o sinal é nosso, porque um sinal recebido é
+                // sempre negativo e o fornecedor confirmou-o.
                 0x810B => ['value' => "\x19\x00", 'state' => 0],   // 25
                 0x810D => ['value' => "\x03", 'state' => 0],       // três barras
             ],
@@ -205,7 +212,7 @@ final class PillDispenserNormalizationTest extends TestCase
         }
 
         self::assertSame([
-            'gsmSignalDbm' => 25,
+            'gsmSignalDbm' => -25,
             'signalLevel' => 3,
             'childLockEngaged' => false,
         ], $events['device_status'] ?? null);

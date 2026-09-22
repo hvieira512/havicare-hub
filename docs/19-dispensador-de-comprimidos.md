@@ -136,23 +136,26 @@ de errar.
 > AES128-CFB, que o hub não sabe abrir. O resultado é uma dashboard com todos os
 > cartões de telemetria vazios, sem um único erro em lado nenhum.
 >
-> O `0x8005` (*Data Encryption*) aparece na tabela dos parâmetros de
-> configuração, e daí saiu a leitura de que bastava escrever-lhe `0` para a
-> desligar sem precisar de chave. **Não basta.** O fornecedor respondeu que
-> «`0x8005` cannot be set», e que tanto a chave como os números aleatórios são
-> derivados da codificação do próprio aparelho: ou ele cifra tudo o que envia por
-> iniciativa própria, ou não cifra nada, e não é deste lado que isso se escolhe.
-> O hub deixou de expor a acção, porque era um botão que o firmware recusa
-> sempre.
+> **A chave é o Device Number.** O fornecedor descreveu-a assim: «both the key
+> and the random IV are based on the device's Device Number». São a mesma coisa,
+> e são o Device Number escrito como **string hexadecimal de dezasseis
+> caracteres** — o número de 64 bits `0x4869243062262262` dá a chave
+> `4869243062262262`, que são exactamente os 16 bytes de uma chave AES-128. O
+> hub decifra sozinho, sem precisar de nada do fornecedor.
 >
-> A fronteira, essa, é nítida e reproduzível: as **respostas aos nossos pedidos**
-> (`0x85`, `0x86`, `0x87`, `0x88`) chegam em claro, e só o que o aparelho manda
-> por iniciativa própria (`0x02` heartbeat, `0x03` evento, `0x04` notificação)
-> vem cifrado. É por isso que a configuração toda funciona e a telemetria
-> espontânea — incluindo o **evento de toma de medicação**, que é a
-> funcionalidade central — continua ilegível. Desbloqueá-la depende do
-> fornecedor: desligar a cifra na plataforma dele, ou dizer como a chave é
-> derivada.
+> A fronteira é nítida: as **respostas aos nossos pedidos** (`0x85`, `0x86`,
+> `0x87`, `0x88`) chegam em claro, e só o que o aparelho manda por iniciativa
+> própria (`0x02` heartbeat, `0x03` evento, `0x04` notificação) vem cifrado. Era
+> por isso que a configuração funcionava enquanto a telemetria não chegava.
+>
+> Uma decifra que não dê TFVL válido é rejeitada e a trama fica marcada como não
+> aberta. Sem isso, ruído passava por TAGs inventadas e o hub publicava
+> telemetria fabricada, com identidade correcta e CRC válido — a falha calada que
+> este protocolo torna fácil.
+>
+> O `0x8005` (*Data Encryption*) aparece na tabela dos parâmetros de
+> configuração, mas o fornecedor respondeu que «`0x8005` cannot be set»: não há
+> como desligar a cifra, e o hub não expõe a acção. Já não é preciso.
 
 O **CRC16** é o de MODBUS: polinómio `0xA001` reflectido, valor inicial `0xFFFF`,
 calculado de `Length` ao fim dos dados. O anexo do documento traz a
@@ -229,6 +232,12 @@ uma tabela por modelo.
 
 São o coração da integração e chegam em pacotes `0x03`.
 
+> **O aparelho apaga o evento assim que o confirmamos.** O fornecedor foi
+> explícito: «once the server confirms receipt of this data, the device deletes
+> the local copy; as a result, this information cannot be retrieved». Não há
+> segunda oportunidade nem histórico a pedir — um `0x83` enviado sobre um evento
+> que o hub não conseguiu guardar perde a toma para sempre.
+
 | TAG | Campo | Tipo | Valores |
 |---|---|---|---|
 | `0xC201` | identificador do alarme | INT8U | 0–8, para os alarmes 1 a 9 |
@@ -261,19 +270,30 @@ ao hub.
 |---|---|---|
 | `0x8101` | medicação | `0` normal · `1` a acabar · `2` sem medicação |
 | `0x8103` / `0x8104` | bateria | nível, e estado `0` normal · `1` cheia · `2` fraca · `3` a carregar · `4` sem bateria |
-| `0x8109` | alimentação DC | |
-| `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **dBm, confirmado pelo fornecedor**, não barras |
+| `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
+| `0x8105` / `0x8106` | identificador do prato, tensão baixa de bateria | **ambas *deprecated* na especificação** |
+| `0x8107` | tampa | `0` fechada · `1` aberta |
+| `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
+| `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **dBm**, e o aparelho manda a magnitude: o sinal negativo é posto pelo hub |
 | `0x810C` / `0x810D` | nível de sinal | a escala grosseira |
 | `0x810E` / `0x810F` | **temperatura e humidade** | INT8S de −40 a 120 °C, INT8U de 0 a 100 %RH — **um byte cada**, ao contrário do sinal, que é INT16S |
+| `0x8111` | alarme de temperatura/humidade | `0` normal · `1` em alarme — é o juízo que o aparelho faz sobre os dois anteriores |
 | `0x8112` | chamada de emergência | `0` normal · `1` em curso |
 | `0x811A` / `0x811B` / `0x811D` | célula actual, total e restantes | o `0x811B` é a **capacidade do prato**, não quantas vão carregadas — essas são a configuração `0x101C` |
 | `0x8121`–`0x8125` | falhas | rotação, reset do prato, empurrador, porta da célula, teclas |
 | `0x8131`–`0x8139` | **estado de toma de cada um dos nove alarmes** | `0` nada · `1` a preparar · `2` à espera · `4` tempo esgotado · `6` **falhada** · `7` **tomada** |
-| `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
-| `0x8107` | tampa | `0` fechada · `1` aberta |
-| `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
-| `0x8111` | alarme de temperatura/humidade | `0` normal · `1` em alarme |
-| `0x8105` / `0x8106` | identificador do prato, tensão baixa de bateria | **ambas *deprecated* na especificação** |
+
+> **«Tomada» não quer sempre dizer «tomada à hora».** Uma dispensa manual — o
+> comando `0xA004` ou o botão verde do aparelho — consome a dose do **próximo
+> alarme marcado** e dá-o como tomado, mesmo que a hora dele ainda esteja longe.
+> Observou-se com o aparelho na mesa: um «Dispensar agora» às 13:10:50 marcou como
+> tomado o alarme das 20:00, e dezasseis segundos depois chegou uma notificação
+> `0x04` a dizê-lo. O compartimento actual avançou e os restantes desceram um.
+>
+> As notificações `0x04` trazem **só o que mudou** — um alarme, não os nove. É por
+> isso que uma leitura vinda de uma notificação traz a lista incompleta, e só um
+> `0x07` dá o estado dos nove de uma vez, e só nessa leitura é que as contagens de
+> tomadas e falhadas são totais.
 
 A temperatura e a humidade **não existem na API REST**. As falhas, que na API
 REST eram um único `rotate`, aqui vêm discriminadas em cinco.

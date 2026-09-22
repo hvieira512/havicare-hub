@@ -307,11 +307,35 @@ final class DeviceCommandCatalog
      */
     private static function buildPillDispenser(string $imei, string $command, array $payload = [], array $context = []): string
     {
+        // Perguntar que parâmetros o firmware serve, em vez de adivinhar por recusa. O pedido
+        // não leva corpo: o tipo do pacote é a pergunta toda.
+        $discovery = [
+            'discoverParametersConfiguration' => 0x0A,
+            'discoverParametersStatus' => 0x0B,
+            'discoverParametersControl' => 0x0C,
+        ];
+        if (isset($discovery[$command])) {
+            return self::pillFrame($imei, $discovery[$command], []);
+        }
+
         // A calibração leva a hora a que o aparelho se deve pôr, e não um interruptor: é a
         // única TAG de controlo que é STRING.
         if ($command === 'calibrateClock') {
             return self::pillFrame($imei, 0x08, [
                 0xA101 => ['value' => self::pillLocalTime($context['timeZone'] ?? null)],
+            ]);
+        }
+
+        // Ordens de controlo que levam um valor, e não um interruptor. O prato tem 28
+        // compartimentos; a pausa conta-se em minutos e `0` é «voltar ao normal».
+        if ($command === 'rotateToCell') {
+            return self::pillFrame($imei, 0x08, [
+                0xA124 => ['value' => self::pillByte($payload['cell'] ?? 0, 28)],
+            ]);
+        }
+        if ($command === 'medicationPause') {
+            return self::pillFrame($imei, 0x08, [
+                0xA125 => ['value' => self::pillByte($payload['minutes'] ?? 0, 255)],
             ]);
         }
 
@@ -353,6 +377,13 @@ final class DeviceCommandCatalog
                 0x1055 => ['value' => self::pillByte($payload['endMinute'] ?? 0, 59)],
             ],
             'deviceLanguage' => [0x1001 => ['value' => self::pillByte($payload['language'] ?? 0, 1)]],
+            // Os dois tempos da toma viajam em segundos e expõem-se em minutos: quem marca
+            // uma janela de medicação pensa em minutos, e converter é trabalho do hub.
+            'retrievalWarning' => [0x1017 => ['value' => self::pillSeconds($payload['minutes'] ?? 0)]],
+            'retrievalTimeout' => [0x1018 => ['value' => self::pillSeconds($payload['minutes'] ?? 0)]],
+            // Quantos compartimentos vão carregados. É o que permite ao aparelho avisar que
+            // está a acabar, e não se confunde com a capacidade do prato.
+            'loadedCells' => [0x101C => ['value' => self::pillByte($payload['cells'] ?? 0, 28)]],
             // INT16S em HHMM: `+100` é uma hora à frente, e a oeste o sinal é negativo.
             'timeZone' => [0x1015 => ['value' => pack('s', (int)($payload['timeZone'] ?? 0))]],
             default => throw new \InvalidArgumentException("Unsupported zayata-m228 command {$command}"),
@@ -480,6 +511,21 @@ final class DeviceCommandCatalog
         return (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
             ->modify(sprintf('%+d minutes', $minutes))
             ->format('Y-m-d\TH:i:s');
+    }
+
+    /**
+     * Minutos para os segundos que o aparelho quer, em INT32U.
+     *
+     * O tecto é o da especificação: 86400 segundos, que são as vinte e quatro horas de um dia.
+     */
+    private static function pillSeconds(mixed $minutes): string
+    {
+        $number = (int)$minutes;
+        if ($number < 0 || $number * 60 > 86400) {
+            throw new \InvalidArgumentException("{$number} minutos fora da gama 0-1440");
+        }
+
+        return pack('V', $number * 60);
     }
 
     private static function pillByte(mixed $value, int $max = 255): string

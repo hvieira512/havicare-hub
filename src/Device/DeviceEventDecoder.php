@@ -241,6 +241,13 @@ final class DeviceEventDecoder
             return $intake === null ? [] : [$intake];
         }
 
+        // A resposta à descoberta não traz TFLV nenhum: traz a lista de TAGs que o firmware
+        // serve. É o que acaba com o adivinhar-por-recusa quando chega um modelo novo.
+        $discovered = $this->pillSupportedParameters($nativeType, $payload);
+        if ($discovered !== null) {
+            return [$discovered];
+        }
+
         // A resposta a uma leitura ou a uma escrita de configuração traz o corpo pedido já
         // preenchido, e o resultado de cada TAG nos bits de estado do Flag.
         if ($nativeType === 'read_config_ack' || $nativeType === 'write_config_ack') {
@@ -251,6 +258,45 @@ final class DeviceEventDecoder
         // Tudo o resto -- heartbeat, registo, notificação e a resposta à consulta de estado --
         // traz as mesmas TAGs de estado, e por isso passa pelo mesmo caminho.
         return $this->pillStatusEvents($nativeType, $tlv);
+    }
+
+    /**
+     * As TAGs que o firmware anuncia, em resposta a um `0x0A`, `0x0B` ou `0x0C`.
+     *
+     * Sai como uma capacidade própria e não como configuração: não é um valor que se escolha,
+     * é o que o aparelho sabe fazer. Quem integra o hub passa a poder perguntar-lhe isso em
+     * vez de manter uma tabela por modelo.
+     *
+     * @param array<string, mixed> $payload
+     * @return array{feature: string, nativeType: string, value: array<string, mixed>}|null
+     */
+    private function pillSupportedParameters(string $nativeType, array $payload): ?array
+    {
+        // Pela chave com que a capacidade é declarada, e não por um nome inventado aqui: o
+        // catálogo declara as três, e publicar um `supported_parameters` que não existe em
+        // lado nenhum era a falha calada de sempre — quem integra subscreve o nome declarado
+        // e nunca recebe nada.
+        $feature = match ($nativeType) {
+            'discover_config_ack' => 'supported_configuration',
+            'discover_status_ack' => 'supported_status',
+            'discover_control_ack' => 'supported_control',
+            default => null,
+        };
+        $tags = $payload['supportedTags'] ?? null;
+        if ($feature === null || !is_array($tags)) {
+            return null;
+        }
+
+        return [
+            'feature' => $feature,
+            'nativeType' => $nativeType,
+            'value' => [
+                'count' => count($tags),
+                // Em hexadecimal, que é como a especificação as nomeia: `4098` não se procura
+                // num documento onde está escrito `0x1002`.
+                'tags' => array_map(static fn (int $tag): string => sprintf('0x%04X', $tag), $tags),
+            ],
+        ];
     }
 
     private function pillMedicationIntake(string $nativeType, array $tlv): ?array
@@ -288,16 +334,28 @@ final class DeviceEventDecoder
      */
     private function pillConfiguration(string $nativeType, array $tlv): ?array
     {
-        // Só os alarmes ligados: os outros seriam nove linhas a dizer "00:00 desligado".
+        // Só os alarmes ligados: os outros seriam nove linhas a dizer "00:00 desligado". O
+        // número do alarme vai junto, senão o terceiro voltava como se fosse o segundo.
         $plans = [];
-        for ($slot = 0; $slot < 9; $slot++) {
-            if ($this->tlvU8($tlv, 0x1041 + $slot) !== 1) {
+        // Se a trama falou dos interruptores, ela diz o plano inteiro — mesmo que o plano
+        // inteiro sejam nove alarmes desligados. Sem esta distinção, desligar os nove não
+        // publicava plano nenhum e a dashboard continuava a mostrar o plano antigo como
+        // reportado, para sempre.
+        $planReported = false;
+        for ($offset = 0; $offset < 9; $offset++) {
+            $enabled = $this->tlvU8($tlv, 0x1041 + $offset);
+            if ($enabled === null) {
+                continue;
+            }
+            $planReported = true;
+            if ($enabled !== 1) {
                 continue;
             }
             $plans[] = [
-                'slot' => $slot + 1,
-                'hour' => $this->tlvU8($tlv, 0x1021 + $slot) ?? 0,
-                'minute' => $this->tlvU8($tlv, 0x1031 + $slot) ?? 0,
+                'slot' => $offset + 1,
+                'hour' => $this->tlvU8($tlv, 0x1021 + $offset) ?? 0,
+                'minute' => $this->tlvU8($tlv, 0x1031 + $offset) ?? 0,
+                'enabled' => true,
             ];
         }
 
@@ -309,15 +367,27 @@ final class DeviceEventDecoder
             }
         }
 
+        // Pela chave do contrato e com a forma com que a configuração é enviada. É o que
+        // permite guardar cada uma como reportada e desenhá-la com o mesmo componente que
+        // desenha o desejado, sem traduzir nada pelo meio.
+        $settings = array_filter([
+            'medication_reminders' => $planReported ? ['plans' => $plans] : null,
+            'medication_period' => $this->pillPeriod($tlv),
+            'do_not_disturb' => $this->pillQuietHours($tlv),
+            'alarm_volume' => $this->pillField($tlv, 0x1013, 'volume'),
+            'alarm_ringtone' => $this->pillField($tlv, 0x1012, 'ringtone'),
+            'device_language' => $this->pillField($tlv, 0x1001, 'language'),
+            'time_zone' => ($zone = $this->tlvI16($tlv, 0x1015)) === null ? null : ['timeZone' => $zone],
+            'child_lock' => $this->pillSwitch($tlv, 0x100C),
+            'early_dispense' => $this->pillSwitch($tlv, 0x100D),
+            // Os dois tempos viajam em segundos e mostram-se em minutos, como são enviados.
+            'retrieval_warning' => $this->pillMinutes($tlv, 0x1017),
+            'retrieval_timeout' => $this->pillMinutes($tlv, 0x1018),
+            'loaded_cells' => $this->pillField($tlv, 0x101C, 'cells'),
+        ], static fn (mixed $field): bool => $field !== null);
+
         $value = array_filter([
-            'plans' => $plans !== [] ? $plans : null,
-            'period' => $this->pillPeriod($tlv),
-            'volume' => $this->tlvU8($tlv, 0x1013),
-            'ringtone' => $this->tlvU8($tlv, 0x1012),
-            'language' => $this->tlvU8($tlv, 0x1001),
-            'timeZone' => $this->tlvI16($tlv, 0x1015),
-            'childLock' => $this->pillFlag($tlv, 0x100C),
-            'earlyRetrieval' => $this->pillFlag($tlv, 0x100D),
+            'settings' => $settings !== [] ? $settings : null,
             'refusedTags' => $refused !== [] ? $refused : null,
         ], static fn (mixed $field): bool => $field !== null);
 
@@ -329,6 +399,91 @@ final class DeviceEventDecoder
     {
         $value = $this->tlvU8($tlv, $tag);
         return $value === null ? null : $value === 1;
+    }
+
+    /**
+     * Um número solto embrulhado no nome com que é enviado.
+     *
+     * @param array<int, array{value?: string}> $tlv
+     * @return array<string, int>|null
+     */
+    private function pillField(array $tlv, int $tag, string $field): ?array
+    {
+        $value = $this->tlvU8($tlv, $tag);
+
+        return $value === null ? null : [$field => $value];
+    }
+
+    /**
+     * Um tempo que o aparelho conta em segundos, na unidade em que é configurado.
+     *
+     * @param array<int, array{value?: string, state?: int}> $tlv
+     * @return array{minutes: int}|null
+     */
+    private function pillMinutes(array $tlv, int $tag): ?array
+    {
+        $value = $this->tlvValue($tlv, $tag);
+        if ($value === null || strlen($value) < 4) {
+            return null;
+        }
+
+        return ['minutes' => intdiv(unpack('V', substr($value, 0, 4))[1], 60)];
+    }
+
+    /**
+     * @param array<int, array{value?: string}> $tlv
+     * @return array{enabled: bool}|null
+     */
+    private function pillSwitch(array $tlv, int $tag): ?array
+    {
+        $value = $this->pillFlag($tlv, $tag);
+
+        return $value === null ? null : ['enabled' => $value];
+    }
+
+    /**
+     * O ICCID do cartão SIM, sem o enchimento do BCD.
+     *
+     * Um ICCID de comprimento ímpar traz um `F` no fim: é o meio byte que sobra, e não faz
+     * parte do número. Quem copie o valor com ele para procurar o cartão não o encontra.
+     *
+     * @param array<int, array{value?: string, state?: int}> $tlv
+     */
+    private function pillSimCcid(array $tlv): ?string
+    {
+        $value = $this->tlvValue($tlv, 0x8009);
+        if ($value === null) {
+            return null;
+        }
+
+        $ccid = rtrim(trim($value), 'Ff');
+
+        return $ccid === '' ? null : $ccid;
+    }
+
+    /**
+     * A janela de «não incomodar», das quatro TAGs de hora mais o interruptor.
+     *
+     * Era a única configuração que se escrevia e nunca se lia de volta: o hub não tinha
+     * maneira nenhuma de saber o que estava lá dentro.
+     *
+     * @param array<int, array{value?: string}> $tlv
+     * @return array{enabled: bool, startHour: int, startMinute: int, endHour: int, endMinute: int}|null
+     */
+    private function pillQuietHours(array $tlv): ?array
+    {
+        $enabled = $this->pillFlag($tlv, 0x1051);
+        if ($enabled === null) {
+            return null;
+        }
+
+        return [
+            'enabled' => $enabled,
+            'startHour' => $this->tlvU8($tlv, 0x1052) ?? 0,
+            'startMinute' => $this->tlvU8($tlv, 0x1053) ?? 0,
+            'endHour' => $this->tlvU8($tlv, 0x1054) ?? 0,
+            'endMinute' => $this->tlvU8($tlv, 0x1055) ?? 0,
+        ];
     }
 
     /**
@@ -418,17 +573,23 @@ final class DeviceEventDecoder
         //
         // O `signalLevel` é o que a dashboard mostra: a especificação declara-o de 0 a 3 e é
         // uma contagem de barras sem ambiguidade. O `gsmSignalDbm` fica ao lado porque é a
-        // leitura fina, mas a unidade não está declarada em lado nenhum do documento -- há
-        // dezoito notas de unidade lá dentro e nenhuma neste campo.
+        // leitura fina.
+        //
+        // O aparelho reporta a magnitude e o sinal vai por nossa conta: o fornecedor
+        // confirmou a unidade em dBm e, perante um valor positivo, respondeu «treat it as a
+        // negative value». Um sinal recebido é sempre negativo, e publicar `25 dBm` era
+        // publicar a potência de um emissor.
         $signal = array_filter([
-            'wifiSignalDbm' => $this->tlvI16($tlv, 0x810A),
-            'gsmSignalDbm' => $this->tlvI16($tlv, 0x810B),
+            'wifiSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810A)),
+            'gsmSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810B)),
             'signalLevel' => $this->tlvU8($tlv, 0x810D),
-            'childLockEngaged' => match ($this->tlvU8($tlv, 0x8102)) {
-                0 => false,
-                1 => true,
-                default => null,
-            },
+            'childLockEngaged' => $this->pillFlag($tlv, 0x8102),
+            // O que o aparelho diz de si e não havia outra maneira de saber: a tampa aberta,
+            // a corrente em falta, e o juízo que ele faz sobre a temperatura e a humidade.
+            'lidOpen' => $this->pillFlag($tlv, 0x8107),
+            'mainsPowered' => $this->pillFlag($tlv, 0x8109),
+            'environmentAlarm' => $this->pillFlag($tlv, 0x8111),
+            'simCcid' => $this->pillSimCcid($tlv),
         ], static fn (mixed $field): bool => $field !== null);
         if ($signal !== []) {
             $events[] = ['feature' => 'device_status', 'nativeType' => $nativeType, 'value' => $signal];
@@ -446,12 +607,26 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'help_call', 'nativeType' => $nativeType, 'value' => ['state' => 'in_progress']];
         }
 
-        $alarms = $this->pillAlarmStatus($tlv);
+        // Só a resposta à consulta de estado pergunta pelos nove alarmes. O heartbeat e as
+        // notificações trazem o que o aparelho quis dizer, e contá-los como totais punha «1
+        // tomada» por cima de um cartão que dizia duas falhas.
+        $alarms = $this->pillAlarmStatus($tlv, $nativeType === 'read_status_ack');
         if ($alarms !== null) {
             $events[] = ['feature' => 'medication_alarm_status', 'nativeType' => $nativeType, 'value' => $alarms];
         }
 
         return $events;
+    }
+
+    /**
+     * A força de sinal em dBm, que é sempre negativa.
+     *
+     * O aparelho manda a magnitude sem sinal. Um valor que já venha negativo fica como está,
+     * para o dia em que um firmware o mandar com o sinal certo.
+     */
+    private static function pillNegativeSignal(?int $value): ?int
+    {
+        return $value === null ? null : -abs($value);
     }
 
     /**
@@ -463,12 +638,14 @@ final class DeviceEventDecoder
      * vem sempre legível.
      *
      * As contagens vão à frente porque são o que o cartão mostra: quantas tomas falharam é a
-     * pergunta, e a lista por alarme é o detalhe.
+     * pergunta, e a lista por alarme é o detalhe. Mas só saem quando a trama **perguntou
+     * pelos nove** — uma notificação traz o alarme que mudou e mais nada, e contar sobre ela
+     * dava um total que não é total nenhum.
      *
      * @param array<int, array{value?: string, state?: int}> $tlv
-     * @return array{takenCount: int, missedCount: int, alarms: list<array{alarm: int, state: string}>}|null
+     * @return array<string, mixed>|null
      */
-    private function pillAlarmStatus(array $tlv): ?array
+    private function pillAlarmStatus(array $tlv, bool $complete): ?array
     {
         $alarms = [];
         $taken = 0;
@@ -493,9 +670,13 @@ final class DeviceEventDecoder
             $alarms[] = ['alarm' => $alarm, 'state' => $state];
         }
 
-        return $alarms === []
-            ? null
-            : ['takenCount' => $taken, 'missedCount' => $missed, 'alarms' => $alarms];
+        if ($alarms === []) {
+            return null;
+        }
+
+        return $complete
+            ? ['takenCount' => $taken, 'missedCount' => $missed, 'complete' => true, 'alarms' => $alarms]
+            : ['complete' => false, 'alarms' => $alarms];
     }
 
     /**

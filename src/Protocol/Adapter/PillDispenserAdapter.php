@@ -66,9 +66,25 @@ class PillDispenserAdapter implements DeviceAdapterInterface
 
         $identity = self::decodeDeviceNumber($deviceNumber);
         $type = self::packetTypeName($packetType);
-        $tlv = self::parseTlv($appData);
+
+        $encrypted = ($flag & 0x04) === 0x04;
+        $plain = $encrypted ? self::decryptAppData($appData, $deviceNumber) : $appData;
+
+        // A resposta à descoberta de parâmetros não é TFLV: é uma lista de TAGs coladas. Lê-la
+        // como TFLV dava TAGs inventadas -- o `0xA002` aparecia como `0x02A0`.
+        //
+        // E uma lista que não se entenda também não vira TFLV. Ler esses bytes como TLV dava
+        // telemetria inventada com identidade correcta e CRC válido, que é a falha calada que
+        // este protocolo torna fácil; um `0x8B` de um firmware com famílias que não listamos
+        // chegava para a provocar.
+        $isDiscovery = self::isDiscoveryReply($packetType);
+        $discovered = $isDiscovery ? self::parseTagList($plain ?? '') : null;
+        $tlv = $plain === null || $isDiscovery ? [] : self::parseTlv($plain);
 
         return [
+            'encrypted' => $encrypted,
+            'decrypted' => !$encrypted || $plain !== null,
+            'supportedTags' => $discovered,
             'type' => $type,
             'packetType' => $packetType,
             'imei' => $identity['id'],
@@ -82,7 +98,7 @@ class PillDispenserAdapter implements DeviceAdapterInterface
             // marca cifra AES128-CFB. A lógica de ACK vive na camada de protocolo, não aqui.
             'waivesReply' => ($flag & 0x02) === 0x02,
             'tlv' => $tlv,
-            'data' => ['idKind' => $identity['kind'], 'tlv' => $tlv],
+            'data' => ['idKind' => $identity['kind'], 'tlv' => $tlv, 'supportedTags' => $discovered],
             'timestamp' => $this->now(),
         ];
     }
@@ -188,7 +204,7 @@ class PillDispenserAdapter implements DeviceAdapterInterface
             0x8101, 0x8102, 0x8103, 0x8104, 0x8105, 0x8106, 0x8107, 0x8109, 0x810C, 0x810D, 0x810F,
             0x8111, 0x8112, 0x811A, 0x811B, 0x811D, 0x8121, 0x8122, 0x8123, 0x8124, 0x8125, 0x8131,
             0x8132, 0x8133, 0x8134, 0x8135, 0x8136, 0x8137, 0x8138, 0x8139, 0xA001, 0xA002, 0xA003,
-            0xA004, 0xA102, 0xA103, 0xA123, 0xC001, 0xC201, 0xC204, 0xC205, 0xC206,
+            0xA004, 0xA102, 0xA103, 0xA123, 0xA124, 0xA125, 0xC001, 0xC201, 0xC204, 0xC205, 0xC206,
         ],
         self::T_INT16S => [
             0x1015, 0x810A, 0x810B,
@@ -238,6 +254,7 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     /** As TAGs de configuração que o hub sabe ler e escrever. */
     public const CONFIGURATION_TAGS = [
         0x1001, 0x1015,                                     // idioma e fuso
+        0x1017, 0x1018, 0x101C,                             // avisar de atraso, dar como falhada, células carregadas
         0x1004, 0x1005, 0x1006, 0x1007, 0x1008, 0x1009, 0x100A, // período do plano
         0x100C, 0x100D,                                     // bloqueio de criança, toma antecipada
         0x1012, 0x1013,                                     // toque e volume
@@ -255,6 +272,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         0x810A, 0x810B,             // sinal WiFi e GSM em dBm, unidade que o fornecedor confirmou
         0x810D,                     // nível do sinal GSM: 0 a 3, e esse está documentado
         0x810E, 0x810F,             // temperatura e humidade
+        0x8009,                     // CCID do cartão SIM, STRING de 20 bytes
+        0x8107, 0x8109, 0x8111,     // tampa, alimentação DC, alarme de temperatura/humidade
         0x8112,                     // chamada de emergência
         0x811A, 0x811B, 0x811D,     // compartimentos
         // O estado de toma de cada um dos nove alarmes. É a única leitura da toma que chega
@@ -361,6 +380,116 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         return $out;
     }
 
+    /**
+     * O corpo de uma trama que o aparelho cifrou, ou `null` se não abrir.
+     *
+     * O M228 cifra em AES128-CFB tudo o que envia por iniciativa própria — o heartbeat, as
+     * notificações, e o evento de toma de medicação, que é a funcionalidade central. As
+     * respostas aos nossos pedidos vêm em claro, e é por isso que a configuração sempre
+     * funcionou enquanto a telemetria não chegava.
+     *
+     * A chave e o IV são a mesma coisa: o Device Number escrito como string hexadecimal de
+     * dezasseis caracteres, que é exactamente o comprimento de uma chave AES-128. O
+     * fornecedor descreveu-o como «both the key and the random IV are based on the device's
+     * Device Number», e a leitura confirmou-se contra tramas reais.
+     *
+     * Tentam-se as duas caixas. Um Device Number que codifica um IMEI é só dígitos e a caixa
+     * não se nota; um que codifique um MAC leva letras, e não há aqui nenhum aparelho desses
+     * para decidir qual delas o firmware usa.
+     */
+    private static function decryptAppData(string $appData, int $deviceNumber): ?string
+    {
+        if ($appData === '') {
+            return $appData;
+        }
+
+        $hex = sprintf('%016X', $deviceNumber);
+        foreach ([$hex, strtolower($hex)] as $key) {
+            $plain = openssl_decrypt(
+                $appData,
+                'aes-128-cfb',
+                $key,
+                OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING,
+                $key,
+            );
+            if (is_string($plain) && self::closesAsTlv($plain)) {
+                return $plain;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Se um corpo decifrado é mesmo TFLV.
+     *
+     * Sem esta verificação, uma decifra falhada devolvia ruído que o `parseTlv` lia como
+     * TAGs inventadas, e o hub publicava telemetria fabricada com identidade correcta e CRC
+     * válido — a pior falha calada que este protocolo permite.
+     */
+    private static function closesAsTlv(string $body): bool
+    {
+        $offset = 0;
+        $length = strlen($body);
+
+        while ($offset + 4 <= $length) {
+            $tag = unpack('v', substr($body, $offset, 2))[1];
+            if (!in_array($tag >> 8, self::TAG_FAMILIES, true)) {
+                return false;
+            }
+            $valueLength = ord($body[$offset + 3]);
+            if ($valueLength === 0) {
+                return false;
+            }
+            $offset += 4 + $valueLength;
+        }
+
+        return $offset === $length && $length > 0;
+    }
+
+    /** Os bytes altos das TAGs que a especificação declara. */
+    private const TAG_FAMILIES = [0x10, 0x80, 0x81, 0xA0, 0xA1, 0xC2];
+
+    /**
+     * Só as três que o hub sabe nomear. O `0x8D` estava aqui dentro e fazia fechar como
+     * aceite qualquer operação pendente, enquanto o descodificador o via como `unknown` e não
+     * publicava nada.
+     */
+    private static function isDiscoveryReply(int $packetType): bool
+    {
+        return $packetType >= 0x8A && $packetType <= 0x8C;
+    }
+
+    /**
+     * A lista de TAGs de uma resposta à descoberta, na ordem do anfitrião.
+     *
+     * Um corpo vazio é uma lista vazia e não uma falha: é o que responde um firmware que não
+     * serve nenhum parâmetro daquela família, e o pedido tem de fechar na mesma. Devolver
+     * `null` aqui deixava-o para sempre à espera, a repetir-se de minuto a minuto.
+     *
+     * @return list<int>|null
+     */
+    private static function parseTagList(string $body): ?array
+    {
+        if ($body === '') {
+            return [];
+        }
+        if (strlen($body) % 2 !== 0) {
+            return null;
+        }
+
+        $tags = [];
+        foreach (str_split($body, 2) as $pair) {
+            $tag = unpack('v', $pair)[1];
+            if (!in_array($tag >> 8, self::TAG_FAMILIES, true)) {
+                return null;
+            }
+            $tags[] = $tag;
+        }
+
+        return $tags;
+    }
+
     private static function packetTypeName(int $packetType): string
     {
         return match ($packetType) {
@@ -383,6 +512,13 @@ class PillDispenserAdapter implements DeviceAdapterInterface
             0x86 => 'write_config_ack',
             0x87 => 'read_status_ack',
             0x88 => 'control_ack',
+            // A descoberta de parâmetros: perguntar ao aparelho que TAGs ele serve.
+            0x0A => 'discover_config',
+            0x0B => 'discover_status',
+            0x0C => 'discover_control',
+            0x8A => 'discover_config_ack',
+            0x8B => 'discover_status_ack',
+            0x8C => 'discover_control_ack',
             default => 'unknown',
         };
     }

@@ -34,14 +34,16 @@ final class CapabilityCatalogTest extends TestCase
             // pulseira responde ao pedido a qualquer momento.
             'bracelet' => [41, 'c24b1c638090a697db262e4159d9b57acc2632480af274cb8c98e1b4f2ef57bd'],
             // O dispensador M228: sete grandezas de telemetria, três eventos (toma, avaria,
-            // chamada de ajuda), nove configurações e sete acções. Cada enumeração é uma
+            // chamada de ajuda), catorze configurações e dez acções. Cada enumeração é uma
             // configuração própria -- volume e toque não são a mesma escolha -- e o
             // `device_status` é pedível desde que o `0x07` passou a perguntar o estado em vez
             // de se esperar pelo heartbeat. A sétima grandeza é o estado dos nove alarmes, que
-            // é como a toma de medicação se lê sem a chave de cifra. Duas acções não estão cá:
-            // a reposição de fábrica, que devolvia o aparelho ao servidor do fornecedor, e
-            // desligar a cifra, que o fornecedor confirmou que o firmware recusa sempre.
-            'pill_dispenser' => [25, 'c3e30db4f7c813f6366ee10789104452f72147ef24db1bf249568782c0398e7d'],
+            // é como a toma de medicação se lia antes de a cifra abrir. Três das acções
+            // perguntam ao aparelho que parâmetros ele serve, uma por família. Três não estão
+            // cá: a reposição de fábrica, que devolvia o aparelho ao servidor do fornecedor,
+            // desligar a cifra, que o firmware recusa sempre, e mudar o servidor a que ele se
+            // liga, que é a única ordem que nos pode fazer perder o aparelho.
+            'pill_dispenser' => [33, '00e3c624bd79f5bcf289e00f3a3977829b241ff1c1c46c6684ff872ab90a4125'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

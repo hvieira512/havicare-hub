@@ -92,3 +92,19 @@ test("com tudo parado o cartão diz que não há tomas, e em português", () => 
     assert.doesNotMatch(rendered, /TakenCount|MissedCount|Alarms/);
     assert.match(rendered, /Sem tomas/);
 });
+
+/**
+ * Uma notificação traz o alarme que mudou, e o cartão não pode fingir que conta os nove.
+ *
+ * Rotulá-la «1 tomada» apagava do ecrã as falhas que a leitura completa anterior mostrava.
+ */
+test("uma leitura parcial diz-se parcial, e não conta totais", () => {
+    const rendered = card({
+        complete: false,
+        alarms: [{ alarm: 3, state: "taken" }],
+    });
+
+    assert.match(rendered, /Alarme 3: Tomada/);
+    assert.match(rendered, /parcial/i);
+    assert.doesNotMatch(rendered, /1 tomada\b/);
+});

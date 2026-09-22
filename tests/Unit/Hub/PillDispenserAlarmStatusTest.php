@@ -32,9 +32,12 @@ final class PillDispenserAlarmStatusTest extends TestCase
             0x8136 => "\x01",   // alarme 6: a preparar
         ]);
 
+        // `complete` diz que a trama perguntou pelos nove: só aí é que as contagens são
+        // totais. Uma notificação traz o alarme que mudou e não conta nada.
         self::assertSame([
             'takenCount' => 1,
             'missedCount' => 1,
+            'complete' => true,
             'alarms' => [
                 ['alarm' => 1, 'state' => 'taken'],
                 ['alarm' => 2, 'state' => 'waiting'],
@@ -97,6 +100,8 @@ final class PillDispenserAlarmStatusTest extends TestCase
             $entries[$tag] = is_array($item) ? $item : ['value' => $item];
         }
 
+        // O estado da leitura viaja nos bits 5--7 do Flag de cada TLV, e por isso vai na
+        // própria trama: não há nada a remendar depois de descodificar.
         $decoded = (new PillDispenserAdapter())->decodeIncoming(
             (new PillDispenserAdapter())->encodeOutgoing([
                 'packetType' => 0x87,
@@ -105,12 +110,6 @@ final class PillDispenserAlarmStatusTest extends TestCase
                 'tlv' => $entries,
             ])
         );
-        // O codificador não leva o estado da leitura, que só existe na resposta do aparelho.
-        foreach ($entries as $tag => $item) {
-            if (isset($item['state'])) {
-                $decoded['tlv'][$tag]['state'] = $item['state'];
-            }
-        }
 
         $byFeature = [];
         foreach ((new DeviceEventDecoder())->decode($this->session(), $decoded) as $event) {

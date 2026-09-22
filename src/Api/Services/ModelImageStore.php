@@ -104,7 +104,9 @@ final class ModelImageStore
             return ApiError::imageSaveFailed()->toArray();
         }
 
-        return self::ROUTE . '/' . $filename;
+        // O nome e mais nada: a rota por onde o ficheiro se serve é constante e vive aqui, e
+        // repeti-la em cada linha da base obrigava a um `UPDATE` a toda a tabela para a mudar.
+        return $filename;
     }
 
     private function stripPngColorProfiles(string $bytes): string
@@ -148,12 +150,18 @@ final class ModelImageStore
         return self::DIR . '/' . $filename;
     }
 
-    public function delete(string $imagePath): void
+    /**
+     * O nome do ficheiro, e não um caminho: é o que a base guarda.
+     *
+     * A forma continua a ser verificada antes de tocar no disco. Aqui não é sobre limpar a
+     * base -- é sobre não deixar que um nome vindo de fora escolha que ficheiro apagar.
+     */
+    public function delete(string $filename): void
     {
-        if (preg_match('#^' . self::ROUTE . '/([a-f0-9]{32}\.jpg)$#', $imagePath, $matches) !== 1) {
+        if (preg_match('#^[a-f0-9]{32}\.jpg$#', trim($filename)) !== 1) {
             return;
         }
-        $path = self::pathFor($matches[1]);
+        $path = self::pathFor(trim($filename));
         if (is_file($path)) {
             unlink($path);
         }
