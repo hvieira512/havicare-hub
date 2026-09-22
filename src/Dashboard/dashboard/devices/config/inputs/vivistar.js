@@ -153,6 +153,14 @@ function workingModeInput(desired) {
         </div>`;
 }
 
+/** O intervalo e o GPS só se escolhem no modo 8, que é o personalizado. */
+export function syncWorkingModeExtra(section, mode) {
+    const extra = section.querySelector("[data-working-mode-extra]");
+    if (!extra) return;
+
+    extra.classList.toggle("d-none", String(mode) !== "8");
+}
+
 /**
  * Os descritores dos campos do Vivistar.
  *

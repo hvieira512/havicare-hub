@@ -242,6 +242,45 @@ function fallSensitivityLevelsInput(desired) {
         </div>`;
 }
 
+/**
+ * A escala do firmware manda nos botões: os níveis acima dela saem da vista, e um valor que
+ * ficasse fora da escala volta a um nível que ainda existe.
+ */
+export function syncFallSensitivityLevels(section, levels) {
+    const totalLevels = parseInt(levels, 10);
+    const buttons = section.querySelectorAll(
+        "[data-config-choice-group=\"sensitivity\"] .sens-level-btn",
+    );
+    const currentInput = section.querySelector(
+        "[data-config-field=\"sensitivity\"]",
+    );
+    buttons.forEach((button, index) => {
+        const visible = index + 1 <= totalLevels;
+        button.classList.toggle("d-none", !visible);
+        button.disabled = !visible;
+    });
+
+    // Com a escala por escolher o `totalLevels` é `NaN`, e nenhuma comparação é verdadeira:
+    // os botões ficam todos escondidos e o valor fica como está.
+    if (!(parseInt(currentInput?.value, 10) > totalLevels)) {
+        return;
+    }
+
+    const firstEnabled = Array.from(buttons).find(
+        (button) => !button.classList.contains("d-none") && !button.disabled,
+    );
+    if (!firstEnabled) return;
+
+    currentInput.value = String(
+        parseInt(firstEnabled.dataset.configValue || "1", 10) || 1,
+    );
+    buttons.forEach((button) => {
+        const selected = button.dataset.configValue === currentInput.value;
+        button.classList.toggle("active", selected);
+        button.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
+}
+
 function timeRangesInput(entry, desired) {
     const limit = Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3);
     const ranges = Array.isArray(desired.ranges) ? desired.ranges : [];
