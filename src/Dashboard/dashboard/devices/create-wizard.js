@@ -4,6 +4,7 @@ import {
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
 import { ensureLicensesLoaded } from "../licenses.js";
+import { toast } from "../dialogs.js";
 import { esc } from "../format.js";
 import { state } from "../state.js";
 import { field } from "../components/form-field.js";
@@ -508,8 +509,13 @@ async function loadWizardGateways() {
 /**
  * Cria o dispositivo e, se for retransmitido, autoriza os gateways escolhidos. Devolve a
  * mensagem de erro ou null: o erro desenha-se no lugar do assistente.
+ *
+ * São duas escritas em sequência, e a segunda pode falhar com a primeira já feita. A partir
+ * daí o dispositivo existe e não há como o desfazer daqui: o assistente fecha-se na mesma e
+ * o que faltou diz-se por aviso. Deixá-lo aberto oferecia um «Criar» que só podia dar 409, e
+ * a mensagem seguinte contradizia a que estava no ecrã.
  */
-async function createDeviceFromWizard(answers) {
+export async function createDeviceFromWizard(answers) {
     const fields = deviceTypeFields(answers.type);
     const identity = String(answers.identity || "").trim();
     const byImei = fields.identity.field === "imei";
@@ -532,14 +538,23 @@ async function createDeviceFromWizard(answers) {
             : result.error.message || result.error.code;
     }
 
+    const unauthorized = [];
     for (const gatewayKey of answers.gateways || []) {
         const linked = await apiCreateDeviceLink(gatewayKey, identity);
         if (linked?.error) {
-            return `Dispositivo criado, mas não foi possível autorizar o gateway ${gatewayKey}.`;
+            unauthorized.push(gatewayKey);
         }
     }
 
     wizardModal.hide();
     await loadSummary();
+    if (unauthorized.length > 0) {
+        // Autoriza-se no modal de edição, que é onde os gateways de um dispositivo se mexem.
+        toast(
+            "warning",
+            "Dispositivo criado, com gateways por autorizar",
+            `Ficou por autorizar: ${unauthorized.join(", ")}. Pode fazê-lo em Editar.`,
+        );
+    }
     return null;
 }
