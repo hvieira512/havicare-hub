@@ -2,7 +2,6 @@ import { esc } from "../../format.js";
 import { normalizePhoneControl } from "../../phone.js";
 import { protocolPhonebookConstraints } from "./protocol-catalog.js";
 import {
-    formatFourPTouchAlarmTime,
     normalizeAlarmClockRecurrenceKind,
     readFourPTouchAlarmDays,
     readWeekdays,
@@ -261,34 +260,6 @@ export function readTakePills(section) {
     }
 
     return payload;
-}
-
-export function readFourPTouchAlarms(section) {
-    return Array.from(section.querySelectorAll("[data-fourptouch-alarm-row]"))
-        .map((row) => {
-            // `:checked` porque o modo é um grupo de rádios: sem isso vinha sempre o primeiro.
-            const mode = parseInt(
-                String(row.querySelector("[data-fourptouch-field=\"mode\"]:checked")?.value || "1"),
-                10,
-            ) || 1;
-            const alarm = {
-                time: formatFourPTouchAlarmTime(
-                    row.querySelector("[data-fourptouch-field=\"time\"]")?.value || "",
-                ),
-                enabled:
-                    row.querySelector("[data-fourptouch-field=\"enabled\"]")?.checked ||
-                    false,
-                mode,
-                custom: mode === 3 ? readFourPTouchAlarmDays(row) : "",
-            };
-
-            if (mode === 3 && alarm.custom === "0000000") {
-                throw new Error("Selecione pelo menos um dia para o alarme personalizado");
-            }
-
-            return alarm;
-        })
-        .filter((alarm) => alarm.time !== "");
 }
 
 export function jsonInput(desired) {

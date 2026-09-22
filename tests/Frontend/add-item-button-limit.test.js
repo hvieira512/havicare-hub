@@ -15,22 +15,22 @@ import {
  * -- corre para qualquer tipo repetível --, por isso vale também para os `keepLast` (contactos
  * SOS, whitelist) que nunca tiveram sync nenhum.
  */
-test("the add-item button tracks the limit for a rendered kind (fourPTouchAlarm)", () => {
+test("the add-item button tracks the limit for a rendered kind (wonlexMedicationPlan)", () => {
     const dom = new JSDOM(
         `<!doctype html><body>
             <div data-config-section>
-                <button data-action="addRepeatRow" data-repeat-kind="fourPTouchAlarm">Adicionar item</button>
-                <div data-repeat-list="fourPTouchAlarm" data-repeat-limit="2"></div>
+                <button data-action="addRepeatRow" data-repeat-kind="wonlexMedicationPlan">Adicionar item</button>
+                <div data-repeat-list="wonlexMedicationPlan" data-repeat-limit="2"></div>
             </div>
         </body>`,
     );
     const section = dom.window.document.querySelector("[data-config-section]");
     const button = section.querySelector("[data-action=\"addRepeatRow\"]");
 
-    appendRepeatRow(section, "fourPTouchAlarm");
+    appendRepeatRow(section, "wonlexMedicationPlan");
     assert.equal(button.disabled, false, "abaixo do limite o botão fica ligado");
 
-    appendRepeatRow(section, "fourPTouchAlarm");
+    appendRepeatRow(section, "wonlexMedicationPlan");
     assert.equal(button.disabled, true, "no limite o botão desativa");
 
     const removeButton = section.querySelector("[data-action=\"removeRepeatRow\"]");

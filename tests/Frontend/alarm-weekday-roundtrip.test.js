@@ -55,34 +55,6 @@ for (const { dia, nome } of DIAS) {
     });
 }
 
-/* ---------- o 4P Touch: alarmes ---------- */
-
-const ENTRADA_ALARMES = { input: "alarms", key: "alarms" };
-
-for (const { dia, nome } of DIAS) {
-    test(`alarms escreve a ${nome} na posição certa da máscara`, () => {
-        const alarmes = desenhaELe(
-            ENTRADA_ALARMES,
-            { alarms: [{ time: "07:45", enabled: true, mode: 3, recurrence: { kind: "custom", days: [dia] } }] },
-            { limit: 3 },
-        );
-
-        assert.equal(alarmes.alarms[0].custom, mascaraFourPTouch(dia), nome);
-    });
-}
-
-for (const { dia, nome } of DIAS) {
-    test(`alarms lê a máscara da ${nome} de volta como ${nome}`, () => {
-        const alarmes = desenhaELe(
-            ENTRADA_ALARMES,
-            { alarms: [{ time: "07:45", enabled: true, mode: 3, custom: mascaraFourPTouch(dia) }] },
-            { limit: 3 },
-        );
-
-        assert.equal(alarmes.alarms[0].custom, mascaraFourPTouch(dia), nome);
-    });
-}
-
 /* ---------- o 4P Touch: lembrete de comprimidos ---------- */
 
 const ENTRADA_COMPRIMIDOS = { input: "takePills", key: "take_pills" };
@@ -106,49 +78,33 @@ for (const { dia, nome } of DIAS) {
 
 /* ---------- a semana toda, e o dia que ninguém escolheu ---------- */
 
-test("os sete dias marcados de uma vez enchem a máscara do 4P Touch", () => {
+test("os sete dias marcados de uma vez ficam todos na recorrência", () => {
     const alarmes = desenhaELe(
-        ENTRADA_ALARMES,
-        {
-            alarms: [{
-                time: "07:45",
-                enabled: true,
-                mode: 3,
-                recurrence: { kind: "custom", days: [1, 2, 3, 4, 5, 6, 7] },
-            }],
-        },
+        ENTRADA_PARTILHADA,
+        { items: [{ time: "08:30", enabled: true, recurrence: { kind: "custom", days: [1, 2, 3, 4, 5, 6, 7] } }] },
         { limit: 3 },
     );
 
-    assert.equal(alarmes.alarms[0].custom, "1111111");
+    assert.deepEqual(alarmes.items[0].recurrence.days, [1, 2, 3, 4, 5, 6, 7]);
 });
 
-test("a semana de trabalho do 4P Touch deixa o sábado e o domingo a zero", () => {
+test("a semana de trabalho deixa o sábado e o domingo de fora", () => {
     const alarmes = desenhaELe(
-        ENTRADA_ALARMES,
-        {
-            alarms: [{
-                time: "07:45",
-                enabled: true,
-                mode: 3,
-                recurrence: { kind: "custom", days: [1, 2, 3, 4, 5] },
-            }],
-        },
+        ENTRADA_PARTILHADA,
+        { items: [{ time: "08:30", enabled: true, recurrence: { kind: "custom", days: [1, 2, 3, 4, 5] } }] },
         { limit: 3 },
     );
 
-    // Posição 0 é o domingo, posição 6 é o sábado: os dois ficam de fora.
-    assert.equal(alarmes.alarms[0].custom, "0111110");
+    assert.deepEqual(alarmes.items[0].recurrence.days, [1, 2, 3, 4, 5]);
 });
 
 test("nenhum dia marcado numa recorrência personalizada é recusado, não gravado a zeros", () => {
-    for (const [entrada, desired] of [
-        [ENTRADA_ALARMES, { alarms: [{ time: "07:45", enabled: true, mode: 3, custom: "" }] }],
-        [
+    assert.throws(
+        () => desenhaELe(
             ENTRADA_PARTILHADA,
             { items: [{ time: "08:30", enabled: true, recurrence: { kind: "custom", days: [] } }] },
-        ],
-    ]) {
-        assert.throws(() => desenhaELe(entrada, desired, { limit: 3 }), /pelo menos um dia/i);
-    }
+            { limit: 3 },
+        ),
+        /pelo menos um dia/i,
+    );
 });

@@ -7,10 +7,8 @@ import { enabledSwitch, numberField } from "./shared.js";
 import {
     firstFieldName,
     readCheckbox,
-    readContacts,
     readNumber,
     readPhone,
-    readPhoneArray,
     readText,
 } from "../readers.js";
 
@@ -87,35 +85,6 @@ export function intervalToggleInput(entry, desired) {
                 numberField("intervalMinutes", desired.intervalMinutes ?? 60),
                 { cls: "col-md-8" },
             )}
-        </div>`;
-}
-
-export function listInput(entry, desired, key, label) {
-    const limit = Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3);
-    const values = Array.isArray(desired[key]) ? desired[key] : [];
-    const rows = Array.from(
-        { length: limit },
-        (_, index) => values[index] ?? "",
-    );
-    return `
-        <div>
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="form-label-sm mb-0">${esc(label)}</label>
-                <span class="small text-secondary">${limit} itens</span>
-            </div>
-            <div class="vstack gap-2">
-                ${rows
-                    .map(
-                        (value, index) => `
-                    ${renderPhoneControl({
-                        value,
-                        configField: key,
-                        placeholder: `${label} ${index + 1}`,
-                    })}
-                `,
-                    )
-                    .join("")}
-            </div>
         </div>`;
 }
 
@@ -294,20 +263,5 @@ export const INPUTS = {
     // cartão sabe que pode desenhar a versão de uma linha.
     action: {
         read: () => ({}),
-    },
-    list: {
-        render: (entry, desired) => listInput(entry, desired, "numbers", entry.label || "Lista"),
-        read: (section) => {
-            const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
-            return { numbers: readPhoneArray(section, "numbers").slice(0, limit) };
-        },
-        defaults: () => ({ numbers: ["", "", ""] }),
-        help: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
-    },
-    contacts: {
-        render: contactsInput,
-        read: (section) => ({ contacts: readContacts(section) }),
-        defaults: () => ({ contacts: [{ name: "", phone: "" }] }),
-        help: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
     },
 };

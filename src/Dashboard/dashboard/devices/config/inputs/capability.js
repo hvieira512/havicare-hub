@@ -79,24 +79,6 @@ export function diaperSensitivityInput(desired, meta = {}) {
         </div>`;
 }
 
-/** Um campo numérico de configuração. Dezasseis sítios repetiam esta linha e a sua escapagem. */
-
-export function bloodPressureInput(desired) {
-    return `
-        <div class="row g-3">
-            ${field(
-                "Sistólica",
-                numberField("systolic", desired.systolic ?? 120),
-                { cls: "col-md-6" },
-            )}
-            ${field(
-                "Diastólica",
-                numberField("diastolic", desired.diastolic ?? 80),
-                { cls: "col-md-6" },
-            )}
-        </div>`;
-}
-
 export function windowToggleInput(_entry, desired) {
     const [start = "22:00", end = "08:00"] = String(desired.range ?? "22:00-08:00").split("-");
     return `
@@ -420,14 +402,6 @@ export const INPUTS = {
             pollutionValue: readNumber(section, "pollutionValue"),
         }),
         // Sem `defaults`: abre vazio. Não é decisão desta camada qual seria o valor plausível.
-    },
-    bloodPressure: {
-        render: (_entry, desired) => bloodPressureInput(desired),
-        read: (section) => ({
-            systolic: readNumber(section, "systolic"),
-            diastolic: readNumber(section, "diastolic"),
-        }),
-        defaults: () => ({ systolic: 120, diastolic: 80 }),
     },
     windowToggle: {
         render: windowToggleInput,

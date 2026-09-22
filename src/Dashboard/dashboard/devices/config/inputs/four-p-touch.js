@@ -1,21 +1,11 @@
 import { esc } from "../../../format.js";
 import { field } from "../../../widgets.js";
 import { renderPhoneControl } from "../../../phone.js";
-import {
-    formatFourPTouchAlarmTime,
-    fourPTouchMaskToWeekdays,
-    weekdayPicker,
-} from "../alarm-fields.js";
-import {
-    boolValue,
-    normalizeFourPTouchAlarmDays,
-    normalizeFourPTouchAlarms,
-} from "../normalizers.js";
+import { boolValue } from "../normalizers.js";
 import { takePillsInput } from "../four-p-touch-take-pills.js";
-import { enabledSwitch, nextUid, numberField } from "./shared.js";
+import { enabledSwitch, numberField } from "./shared.js";
 import {
     readCheckbox,
-    readFourPTouchAlarms,
     readNumber,
     readPhone,
     readTakePills,
@@ -282,99 +272,6 @@ export function timeRangeInput(desired) {
     );
 }
 
-export function alarmsInput(desired, meta = {}) {
-    const alarms = normalizeFourPTouchAlarms(desired);
-    const limit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
-    if (alarms.length === 0) {
-        alarms.push({
-            time: "",
-            enabled: true,
-            mode: 1,
-            custom: "",
-        });
-    }
-
-    const rows = alarms.slice(0, limit);
-
-    return `
-        <div class="vstack gap-3">
-            <div class="small text-secondary">
-                Até ${esc(String(limit))} alarmes. A recorrência personalizada usa dias de Segunda a Domingo.
-            </div>
-            <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="fourPTouchAlarm" ${rows.length >= limit ? "disabled" : ""}>Adicionar item</button>
-            </div>
-            <div class="vstack gap-2" data-repeat-list="fourPTouchAlarm" data-repeat-limit="${esc(String(limit))}">
-                ${rows.map((alarm, index) => fourPTouchAlarmRow(alarm, index)).join("")}
-            </div>
-        </div>`;
-}
-
-export function fourPTouchAlarmRow(alarm, index) {
-    const mode = parseInt(String(alarm.mode ?? 1), 10) || 1;
-    const customVisible = mode === 3;
-    const rowId = nextUid("fourptouch-alarm");
-
-    const modeOptions = [
-        { value: 1, label: "Uma vez" },
-        { value: 2, label: "Todos os dias" },
-        { value: 3, label: "Personalizado" },
-    ];
-
-    // Da máscara do protocolo para a semana que se lê: a posição 0 é o domingo.
-    const customDays = fourPTouchMaskToWeekdays(
-        normalizeFourPTouchAlarmDays(alarm.custom || ""),
-    );
-
-    return `
-        <div class="border rounded p-3 bg-body" data-repeat-row="fourPTouchAlarm" data-fourptouch-alarm-row="${index}">
-            <div class="row g-3 align-items-end">
-                ${field(
-                    "Hora",
-                    `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-fourptouch-field="time" value="${esc(formatFourPTouchAlarmTime(alarm.time))}" required>`,
-                    { cls: "col-sm-6 col-lg-2", required: true },
-                )}
-                <div class="col-sm-6 col-lg-2">
-                    <div class="form-check form-switch mt-4">
-                        <input class="form-check-input" type="checkbox" role="switch" data-fourptouch-field="enabled" ${boolValue(alarm.enabled, true) ? "checked" : ""}>
-                        <label class="form-check-label" data-switch-label>${boolValue(alarm.enabled, true) ? "Ligado" : "Desligado"}</label>
-                    </div>
-                </div>
-                ${field(
-                    "Recorrência",
-                    `<div class="btn-group w-100" role="group" aria-label="Recorrência do alarme">
-                        ${modeOptions
-                            .map((option) => {
-                                const inputId = `${rowId}-mode-${option.value}`;
-                                return `
-                            <input
-                                class="btn-check"
-                                type="radio"
-                                name="${rowId}-mode"
-                                id="${inputId}"
-                                value="${option.value}"
-                                data-config-field="mode"
-                                data-fourptouch-field="mode"
-                                ${option.value === mode ? "checked" : ""}>
-                            <label class="btn btn-outline-secondary btn-sm" for="${inputId}">${esc(option.label)}</label>
-                        `;
-                            })
-                            .join("")}
-                    </div>`,
-                    { cls: "col-12 col-lg-7", required: true },
-                )}
-                <div class="col-12 ${customVisible ? "" : "d-none"}" data-fourptouch-custom-wrapper>
-                    ${weekdayPicker(customDays, rowId)}
-                </div>
-                <div class="col-12 d-flex justify-content-end">
-                    <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover alarme" aria-label="Remover alarme">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            </div>
-        </div>`;
-}
-
 /**
  * Os descritores dos campos do 4P Touch.
  *
@@ -449,12 +346,6 @@ export const INPUTS = {
         read: (section) => ({ range: readText(section, "range") }),
         // As horas voltam a juntar-se no formato que o construtor valida.,
         defaults: () => ({ range: "21:10-07:30" }),
-    },
-    alarms: {
-        render: (_entry, desired, meta) => alarmsInput(desired, meta),
-        read: (section) => ({ alarms: readFourPTouchAlarms(section) }),
-        defaults: () => ({ alarms: [] }),
-        help: () => "até 3 alarmes",
     },
     takePills: {
         render: (_entry, desired, meta) => takePillsInput(desired, meta),

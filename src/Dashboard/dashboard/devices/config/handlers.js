@@ -204,10 +204,6 @@ export function handleDeviceConfigChange(event) {
                 String(event.target.value) !== "8",
             );
         }
-        const alarmRow = event.target.closest("[data-fourptouch-alarm-row]");
-        if (alarmRow) {
-            syncFourPTouchAlarmCustomVisibility(alarmRow);
-        }
     }
 
     if (event.target.matches("[data-alarm-clock-field=\"recurrenceKind\"]")) {
@@ -276,21 +272,6 @@ export function handleDeviceConfigInput(event) {
 
     if (event.target.matches("[data-time-format=\"24h\"]")) {
         normalizeTwentyFourHourTimeInput(event.target);
-    }
-}
-
-function syncFourPTouchAlarmCustomVisibility(row) {
-    if (!row) {
-        return;
-    }
-
-    const mode = parseInt(
-        String(row.querySelector("[data-fourptouch-field=\"mode\"]:checked")?.value ?? "1"),
-        10,
-    ) || 1;
-    const custom = row.querySelector("[data-fourptouch-custom-wrapper]");
-    if (custom) {
-        custom.classList.toggle("d-none", mode !== 3);
     }
 }
 

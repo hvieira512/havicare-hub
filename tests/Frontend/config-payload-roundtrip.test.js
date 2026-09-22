@@ -162,15 +162,6 @@ test("personal information survives the round trip", () => {
     assert.deepEqual(roundTrip(entry, desired), desired);
 });
 
-test("a list keeps its numbers and honours the entry limit", () => {
-    const entry = { input: "list", key: "numbers", limit: 2 };
-
-    assert.deepEqual(
-        roundTrip(entry, { numbers: ["912345678", "913333333", "914444444"] }),
-        { numbers: ["+351912345678", "+351913333333"] },
-    );
-});
-
 test("SOS contacts reject duplicates rather than silently collapsing them", () => {
     // Dois números iguais pareciam aceites mas deixavam um slot sem uso.
     assert.throws(
@@ -184,7 +175,7 @@ test("SOS contacts reject duplicates rather than silently collapsing them", () =
 
 test("contacts survive the round trip as name and phone pairs", () => {
     const payload = roundTrip(
-        { input: "contacts", key: "phonebook" },
+        { input: "phonebook", key: "phonebook" },
         { contacts: [{ name: "Ana", phone: "912345678" }] },
     );
 
@@ -194,7 +185,7 @@ test("contacts survive the round trip as name and phone pairs", () => {
 test("a contact missing its phone is rejected rather than half-saved", () => {
     assert.throws(
         () => roundTrip(
-            { input: "contacts", key: "phonebook" },
+            { input: "phonebook", key: "phonebook" },
             { contacts: [{ name: "Ana", phone: "" }] },
         ),
         /obrigat/,
