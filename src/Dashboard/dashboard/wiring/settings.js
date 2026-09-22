@@ -47,15 +47,17 @@ import {
 } from "../settings/models/form.js";
 import {
     deleteCurrentModel,
-    handleCapabilityGroupsChange,
     handleModelDetailImageChange,
     handleModelListClick,
-    jumpCapabilitySection,
     resetModelDetailFields,
-    saveCapabilities,
     saveModelDetail,
     syncModelDetailDirty,
 } from "../settings/models/detail.js";
+import {
+    handleCapabilityGroupsChange,
+    jumpCapabilitySection,
+    saveCapabilities,
+} from "../settings/models/capabilities-editor.js";
 
 let els;
 
