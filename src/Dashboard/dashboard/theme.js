@@ -28,6 +28,11 @@ export function preferredTheme() {
     return systemPrefersDark() ? DARK : LIGHT;
 }
 
+/** O tema que está no ecrã agora, para quem desenha fora do CSS e não o herda. */
+export function isDarkTheme() {
+    return document.documentElement.getAttribute("data-bs-theme") === DARK;
+}
+
 export function applyTheme(theme) {
     const resolved = theme === DARK ? DARK : LIGHT;
     document.documentElement.setAttribute("data-bs-theme", resolved);
@@ -64,7 +69,7 @@ export function initializeTheme() {
     applyTheme(preferredTheme());
 
     document.getElementById("dashboardThemeBtn")?.addEventListener("click", () => {
-        const next = document.documentElement.getAttribute("data-bs-theme") === DARK ? LIGHT : DARK;
+        const next = isDarkTheme() ? LIGHT : DARK;
         saveTextStorage(THEME_STORAGE_KEY, next);
         applyTheme(next);
     });
