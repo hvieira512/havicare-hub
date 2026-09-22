@@ -6,7 +6,7 @@
 |---|---|---|---|
 | Unitários (PHP) | `tests/Unit/` | 90 | nada |
 | Integração (PHP) | `tests/Integration/` | 35 | MySQL e Redis |
-| Frontend (Node) | `tests/Frontend/` | 45 | nada |
+| Frontend (Node) | `tests/Frontend/` | 92 | nada |
 | Cenários (shell) | `tests/scenarios/` | 6 | a pilha Docker inteira |
 
 ```bash
@@ -71,7 +71,7 @@ a base de dados de raiz a cada corrida.
 |---|---|
 | **PHPStan** | Nível 4, sobre `src/` e `bin/`. O nível 4 liga as regras de código morto e de condição impossível — é o que apanha uma propriedade não declarada ou um ramo que nunca corre |
 | **PHPCS** | PSR-12, menos o limite de comprimento de linha |
-| **ESLint** | Configuração plana, com estilo próprio. Corre com zero avisos tolerados |
+| **ESLint** | Configuração plana, com estilo próprio. Os erros falham o gate; os avisos **não** — o `npm run lint` corre sem `--max-warnings 0`, e um import órfão passa |
 
 Cada exclusão está justificada no respetivo ficheiro de configuração, com dados
 quantitativos. Uma exclusão em particular não foi aplicada: a regra que assinala

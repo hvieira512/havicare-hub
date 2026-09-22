@@ -36,9 +36,20 @@ São só estas, e explicam onde cada ficheiro está:
    precisamente por isso que os ouvintes vivem lá e não dentro das funcionalidades, já
    que quase todos atravessam duas ou três e a regra 1 proíbe-os de se conhecerem.
 
-4. **Um widget novo nasce no seu próprio módulo, ao lado da funcionalidade que o usa.**
-   Não se acrescenta ao `telemetry-cards.js`. O `devices/device-card.js` é o exemplo a
-   seguir.
+4. **Uma peça de interface nasce em `components/` se for pura e mais do que uma área a
+   desenhar; nasce ao lado da funcionalidade se só ela a desenhar.** Pura é: recebe dados,
+   devolve uma string de HTML, não toca em nenhum elemento, não guarda estado e não conhece
+   nenhuma biblioteca. O `components/device-license.js` é o primeiro caso; o
+   `devices/device-card.js` é o segundo -- só a lista o desenha, e sobe a `components/` no
+   dia em que aparecer o segundo consumidor, que é a regra 2 aplicada a peças de interface.
+
+   Um widget que escreve no elemento que recebeu, que abre um modal ou que fala com o
+   Bootstrap **não é um componente**: ou é parte da funcionalidade, ou é um módulo da raiz,
+   como o `pagination.js`, o `phone.js`, o `dialogs.js`, o `tooltips.js` e o `grid.js`. A
+   fronteira é essa, e não o tamanho.
+
+   E em nenhum dos casos se acrescenta ao fundo de um ficheiro que já existe só por ser do
+   mesmo género. Foi assim que os cartões de telemetria chegaram a seiscentas linhas.
 
 Cada pasta com mais do que um ficheiro repete a regra 3 à sua escala: `settings/index.js`
 é o único que conhece as quatro secções do modal, e `settings/shell.js` é o que todas
@@ -51,8 +62,8 @@ Um cartão de dispositivo estava espalhado por quatro sítios: a marcação numa
 Mudar um widget obrigava a abrir quatro ficheiros, e nada dizia que os quatro pedaços
 eram a mesma coisa.
 
-É também a razão de os ficheiros grandes serem grandes. O `telemetry-cards.js` não está
-mal escrito: é o sítio onde tudo o que é *do mesmo género* se acumulou, porque não havia
+É também a razão de os ficheiros grandes serem grandes. O `components/cards/telemetry.js`
+não está mal escrito: é o sítio onde tudo o que é *do mesmo género* se acumulou, porque não havia
 sítio nenhum para o que é *da mesma funcionalidade*. Organizar por camada em vez de por
 funcionalidade dá exactamente isto.
 
@@ -79,12 +90,12 @@ A regra não pede uma migração. Pede que o próximo widget nasça no sítio ce
 ficheiros grandes encolham por atrito, à medida que se passa por eles.
 
 O `devices/event-summary-cards.js` é o segundo, e mostra como é o atrito na prática. A
-última chamada de ajuda e a última queda estavam no `telemetry-cards.js` só por serem
+última chamada de ajuda e a última queda estavam no catálogo dos cartões só por serem
 cartões: o resto daquele ficheiro é um cartão por *tipo de telemetria*, com uma tabela a
 mapear tipo em ícone e corpo, enquanto estes dois lêem o histórico inteiro e resumem-no.
 Ao saírem, o que era partilhado subiu em vez de vir atrás -- o `displayPersonIndex` para o
 `format.js`, as tabelas de nomes para o `domain.js` --, que é a regra 2 a funcionar. O
-`telemetry-cards.js` ficou com menos 170 linhas.
+catálogo ficou com menos 170 linhas.
 
 ## A árvore
 
@@ -101,13 +112,22 @@ dashboard/
 ├── domain.js               o vocabulário: tipos de dispositivo, modelos, fornecedores, licenças
 ├── format.js               esc(), datas, e as etiquetas por chave
 ├── html.js                 html`` e raw(): a marcação escapa por omissão
-├── widgets.js              os pedaços de HTML que mais do que um ecrã desenha
-├── components/             uma peça de interface por ficheiro, quando cresce para além de um HTML
-│   └── state-badge.js      a pastilha de estado: ponto ou ícone, rótulo e tom
-├── telemetry-cards.js      o catálogo dos cartões: ícone, cor e corpo por tipo
-├── cards/                  as famílias de cartões de um aparelho só
-│   ├── shared.js               o resumo compacto que mais do que uma usa
-│   ├── radar.js · diaper.js · gateway.js · ncs.js · location.js
+├── components/             uma peça de interface por ficheiro: recebe dados, devolve HTML
+│   ├── state-badge.js      a pastilha de estado: ponto ou ícone, rótulo e tom
+│   ├── device-license.js   a empresa e a licença de um dispositivo, ou «Sem licença»
+│   ├── form-field.js       etiqueta, controlo e linha de ajuda
+│   ├── setting-row.js      uma definição numa linha: nome, pastilha, controlo e acções
+│   ├── segmented-scale.js  uma escala curta com todas as posições à vista
+│   ├── button-group.js     uma escolha única em botões
+│   ├── device-type-tiles.js  o mosaico de tipos de dispositivo, e o ícone de cada um
+│   ├── chips.js            as pastilhas de secção e as de filtro aplicado
+│   ├── empty-panel.js      o estado vazio de um painel, em texto
+│   └── cards/              os cartões de telemetria, que são um bloco fechado
+│       ├── telemetry.js        o catálogo: ícone, cor e corpo por tipo
+│       ├── shell.js            a moldura de um cartão
+│       ├── request.js          o cartão de um pedido ao dispositivo
+│       ├── shared.js           o resumo compacto que mais do que uma família usa
+│       └── radar.js · diaper.js · gateway.js · ncs.js · location.js · sleep.js
 ├── grid.js                 a tabela de dados dos Utilizadores API, do descritor que a API devolve
 ├── pagination.js           o paginador das listagens
 ├── phone.js                o campo de telefone com indicativo
@@ -256,8 +276,7 @@ regra nova, a resposta é uma capacidade nova em PHP.
 |---|---|
 | uma chamada nova à API | `api/<recurso>.js`, exportada em `api/index.js` |
 | uma pergunta sobre tipos de dispositivo, modelos ou licenças | `domain.js` |
-| HTML que dois ecrãs desenham | `widgets.js` |
-| uma peça de interface com regras próprias — tons, variantes, opções | `components/<nome>.js`, e não mais uma função no `widgets.js` |
+| HTML puro que dois ecrãs desenham | `components/<nome>.js`, um ficheiro por peça |
 | HTML que um ecrã desenha | o ficheiro desse ecrã |
 | uma listagem plana que se ordena e filtra por coluna | uma grelha com o `grid.js`, alimentada pelo `columns` da API |
 | um handler de clique | ao lado do módulo que desenha o que ele trata |
@@ -270,7 +289,7 @@ regra nova, a resposta é uma capacidade nova em PHP.
 
 ```bash
 npm run lint                   # eslint sobre main.js, dashboard/, assets/js/ e tests/Frontend
-npm test                       # ~380 testes em tests/Frontend/
+npm test                       # 92 ficheiros em tests/Frontend/
 composer test:unit             # inclui os testes que lêem estes ficheiros como texto
 ```
 
@@ -280,8 +299,11 @@ Dois valem por si:
   não resolver. Um nome importado que ninguém exporta deita a dashboard abaixo com uma
   página em branco, e nenhum `node --check` o apanha. O mesmo teste falha se um módulo
   ficar órfão, isto é, inalcançável a partir do `main.js`.
-- **O `no-unused-vars` do eslint** é aviso e não erro, mas corre com `--max-warnings 0`:
-  é o que apanha um import que ficou para trás depois de mover código.
+- **O `no-unused-vars` do eslint** apanha um import que ficou para trás depois de mover
+  código, mas só como aviso: o `npm run lint` corre **sem** `--max-warnings 0`, e por isso
+  um import órfão passa o gate. Ao mover código, correr
+  `npx eslint src/Dashboard/dashboard tests/Frontend --max-warnings 0` à mão. Quem apanha um
+  import **partido** é o `node --test`, que falha logo a carregar.
 
 Vários testes em `tests/Unit/Dashboard/` lêem estes ficheiros **como texto** e afirmam que
 certas linhas lá estão. Mover uma função entre ficheiros parte-os -- é de propósito, e a
@@ -302,7 +324,7 @@ correcção é apontar o teste ao ficheiro novo.
   gateway, NCS e localização. A linha não é o tamanho: uma postura ou uma contagem de pessoas
   não existe num relógio. O eixo do *tipo de dispositivo* não serviria, e foi testado -- a
   frequência cardíaca sai de relógio, radar e pulseira, e a bateria de quatro tipos.
-- **O que fica no `telemetry-cards.js` é o registo e as primitivas**, que são genuinamente uma
+- **O que fica no `components/cards/telemetry.js` é o registo e as primitivas**, que são genuinamente uma
   coisa só: o mapa dos cartões por tipo, o ícone, o tom e a badge de estado. Partir isso por
   tamanho só espalharia.
 - **O CSS está dividido por área**, em cinco ficheiros: `assets/css/base.css` (tokens e

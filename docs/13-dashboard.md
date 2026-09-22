@@ -37,7 +37,7 @@ o browser carrega os módulos tal como estão no repositório.
 | | |
 |---|---|
 | Página | `src/Dashboard/index.php` gera o HTML |
-| Comportamento | ~74 módulos em `src/Dashboard/dashboard/` |
+| Comportamento | ~94 módulos em `src/Dashboard/dashboard/` |
 | Estilo | Bootstrap, mais quatro folhas próprias. A ordem no `<head>` **é** a cascata |
 | Dependências | Bootstrap, Font Awesome, SweetAlert2 e Swagger UI, todas guardadas no repositório |
 
@@ -143,6 +143,7 @@ As dependências de terceiros levam cache de um ano; o resto revalida por `ETag`
 | `src/Dashboard/DashboardHttpServer.php` | Encaminhamento não-API, ficheiros estáticos, cache |
 | `src/Dashboard/index.php` | A casca da página |
 | `src/Dashboard/dashboard/api/` | O único sítio que fala HTTP |
+| `src/Dashboard/dashboard/components/` | As peças de interface puras, uma por ficheiro |
 | `src/Dashboard/dashboard/auth/session.js` | Tokens, inatividade, renovação |
 | `src/Dashboard/DashboardStore.php` | O estado em Redis que a interface lê |
 | `src/Runtime/DashboardServerFactory.php` | Servidor, limites, CORS e registo |
