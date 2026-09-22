@@ -198,7 +198,15 @@ final class DashboardHttpServer
 
     private function html(string $body): Response
     {
-        return new Response(200, ['Content-Type' => 'text/html; charset=utf-8'], $body);
+        // A página é quem diz que versão dos módulos carregar, e por isso é a única peça que
+        // não pode ficar guardada: guardada, apontava para a versão anterior e o deploy não
+        // chegava a quem já lá tinha estado. Dizê-lo é preciso -- sem cabeçalho nenhum, a
+        // decisão fica ao critério de quem estiver pelo meio.
+        return new Response(
+            200,
+            ['Content-Type' => 'text/html; charset=utf-8', 'Cache-Control' => 'no-cache'],
+            $body
+        );
     }
 
     private function page(): string
@@ -206,10 +214,71 @@ final class DashboardHttpServer
         $dashboardApiAuthRequired = $this->apiAuthRequired;
         $downlinkQueueTtlSeconds = $this->downlinkQueueTtlSeconds;
         $amchartsLicense = $this->amchartsLicense;
+        $assetVersion = $this->assetVersion();
 
         ob_start();
         require __DIR__ . '/index.php';
         return (string) ob_get_clean();
+    }
+
+    /**
+     * A impressão digital do conjunto de ficheiros que servimos com `no-cache`.
+     *
+     * Vai no caminho, e não numa etiqueta de revalidação, porque pelo meio pode estar quem
+     * não obedeça ao `no-cache` -- a Cloudflare à frente do hub reescreve-o para quatro horas
+     * de cache no browser. Com o conjunto no URL, um deploy muda todos os endereços de uma
+     * vez e nenhuma cópia velha chega a ser pedida; sem isso, um arranque pode misturar
+     * módulos de duas versões, e um módulo velho não conhece nem os caminhos nem os
+     * descritores da nova.
+     *
+     * Não se guarda entre pedidos: o processo é longo, e um ficheiro alterado por baixo dele
+     * -- o que acontece a cada gravação no hub local -- tem de mudar a versão logo, ou o
+     * `immutable` que a acompanha prendia o browser à cópia antiga.
+     */
+    private function assetVersion(): string
+    {
+        $parts = array_map(
+            static fn(string $path): string => self::assetFingerprint(__DIR__ . '/' . $path),
+            ['main.js', 'main.css', 'dashboard', 'assets/css', 'assets/js'],
+        );
+
+        return hash('xxh128', implode('|', $parts));
+    }
+
+    /** O caminho, a data e o tamanho de cada ficheiro: muda ao acrescentar, apagar ou alterar. */
+    private static function assetFingerprint(string $root): string
+    {
+        if (is_file($root)) {
+            return sprintf('%x-%x', (int)filemtime($root), (int)filesize($root));
+        }
+        if (!is_dir($root)) {
+            return '';
+        }
+
+        $entries = [];
+        $tree = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS)
+        );
+        foreach ($tree as $file) {
+            if (!$file instanceof \SplFileInfo || !$file->isFile()) {
+                continue;
+            }
+            $entries[] = sprintf(
+                '%s|%x|%x',
+                substr($file->getPathname(), strlen($root)),
+                $file->getMTime(),
+                $file->getSize(),
+            );
+        }
+        sort($entries);
+
+        return hash('xxh128', implode("\n", $entries));
+    }
+
+    /** Um caminho com impressão digital serve o mesmo ficheiro que o caminho nu. */
+    private static function withoutAssetVersion(string $requestPath): string
+    {
+        return (string)preg_replace('#^/v/[0-9a-f]{6,64}/#', '/', $requestPath, 1);
     }
 
     private function staticFile(string $path, ServerRequestInterface $request): Response
@@ -235,19 +304,27 @@ final class DashboardHttpServer
             ? ['Content-Encoding' => 'gzip', 'Vary' => 'Accept-Encoding']
             : ['Vary' => 'Accept-Encoding'];
 
-        // O caminho dos recursos de terceiros muda quando eles mudam; o nosso não tem
-        // impressão digital no URL, e por isso leva `ETag` em vez de `immutable`.
-        if (str_contains($path, '/assets/vendor/') || str_contains($path, '/assets/fonts/')) {
+        // O corpo comprimido é outro corpo, e por isso leva sufixo no ETag: partilhar a
+        // etiqueta entregava a variante errada a quem revalidasse com a outra.
+        //
+        // A etiqueta calcula-se sempre, mesmo onde não vai no cabeçalho: é ela que indexa a
+        // cache do corpo, e sem isso um ficheiro alterado debaixo do processo -- cada gravação
+        // no hub local -- ficaria a servir os bytes velhos do endereço novo.
+        $etag = sprintf('"%x-%x%s"', (int)filemtime($path), (int)filesize($path), $gzip ? '-gz' : '');
+
+        // Guarda-se para sempre o que não pode mudar debaixo do URL por onde foi pedido: os
+        // recursos de terceiros, cujo caminho muda quando eles mudam, e o que a página pediu
+        // com a impressão digital do conjunto. O resto revalida pelo ETag.
+        $requestPath = $request->getUri()->getPath();
+        $fingerprinted = $requestPath !== self::withoutAssetVersion($requestPath);
+        if ($fingerprinted || str_contains($path, '/assets/vendor/') || str_contains($path, '/assets/fonts/')) {
             return new Response(
                 200,
                 ['Content-Type' => $mime, 'Cache-Control' => 'public, max-age=31536000, immutable'] + $encoding,
-                $this->assetContents($path, $gzip ? $path . '.gz' : null, $gzip)
+                $this->assetContents($path, $path . $etag, $gzip)
             );
         }
 
-        // O corpo comprimido é outro corpo, e por isso leva sufixo no ETag: partilhar a
-        // etiqueta entregava a variante errada a quem revalidasse com a outra.
-        $etag = sprintf('"%x-%x%s"', (int)filemtime($path), (int)filesize($path), $gzip ? '-gz' : '');
         $headers = ['Content-Type' => $mime, 'Cache-Control' => 'no-cache', 'ETag' => $etag] + $encoding;
         if ($request->getHeaderLine('If-None-Match') === $etag) {
             return new Response(304, ['Cache-Control' => 'no-cache', 'ETag' => $etag] + $encoding);
@@ -271,6 +348,10 @@ final class DashboardHttpServer
         if (str_contains($requestPath, "\0") || str_contains($requestPath, '\\')) {
             return null;
         }
+
+        // A versão é um endereço e não uma pasta: tira-se aqui, antes das rotas, e o que
+        // sobra passa pelas mesmas verificações de sempre.
+        $requestPath = self::withoutAssetVersion($requestPath);
 
         // Rotas nomeadas, uma a uma. O `html` fica fora das extensões públicas de propósito:
         // acrescentá-lo serviria qualquer ficheiro HTML de dentro de `assets/`.

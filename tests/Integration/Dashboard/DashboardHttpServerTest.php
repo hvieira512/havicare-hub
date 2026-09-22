@@ -27,7 +27,12 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
 
         self::assertIsString($first);
         self::assertStringContainsString('id="telemetryPager"', $first);
-        self::assertStringContainsString('type="module" src="main.js"', $first);
+        // O ponto de entrada leva a impressão digital do conjunto, e os `import` relativos
+        // herdam-na: é o que impede um arranque de misturar módulos de duas versões.
+        self::assertMatchesRegularExpression(
+            '#type="module" src="/v/[0-9a-f]{6,64}/main\.js"#',
+            $first,
+        );
         self::assertStringContainsString('id="deviceSelectorModal"', $first);
         // Adicionar e editar são dois modais, e a página inclui os dois.
         self::assertStringContainsString('id="deviceWizardModal"', $first);
@@ -43,7 +48,10 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         self::assertStringContainsString('data-dashboard-auth-required="true"', $first);
         // O tema carrega antes das folhas: se a etiqueta desaparecer, a página abre com o
         // tema errado e corrige-se à frente de quem olha.
-        self::assertStringContainsString('<script src="/assets/js/theme-init.js"></script>', $first);
+        self::assertMatchesRegularExpression(
+            '#<script src="/v/[0-9a-f]{6,64}/assets/js/theme-init\.js"></script>#',
+            $first,
+        );
         self::assertSame($first, $second);
     }
 

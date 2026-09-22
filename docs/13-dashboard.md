@@ -133,7 +133,20 @@ O acesso a ficheiros é restringido em quatro camadas: prefixos permitidos,
 rejeição de `..` e de bytes nulos, confirmação de que o caminho resolvido fica
 dentro da raiz, e uma lista de extensões aceites.
 
-As dependências de terceiros levam cache de um ano; o resto revalida por `ETag`.
+Os nossos ficheiros são pedidos por um caminho com a impressão digital do
+conjunto — `/v/<versão>/main.js` —, e os `import` relativos herdam-na, o que põe
+o grafo inteiro numa versão só sem haver passo de compilação. Esses levam cache
+de um ano, tal como as dependências de terceiros; quem for pedido sem versão no
+caminho revalida por `ETag`, e a página nunca se guarda, porque é ela que diz
+qual é a versão a carregar.
+
+A impressão digital vai no caminho e não numa etiqueta de revalidação porque
+pelo meio pode estar quem não obedeça ao `no-cache`: a Cloudflare à frente do hub
+reescreve-o para quatro horas de cache no browser. Sem versão no URL, um deploy
+que mova ficheiros deixa o browser a misturar módulos de duas versões — um
+módulo antigo a importar um caminho que já não existe rebenta o `import()` do
+arranque, e um módulo antigo a desenhar um catálogo novo cai no editor de JSON
+genérico por não conhecer o descritor que lhe chega.
 
 ## Implementação
 

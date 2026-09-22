@@ -8,6 +8,17 @@ require_once __DIR__ . '/components/helpers.php';
 // aqui para o template dizer o seu próprio contrato em vez de assumir quem o chama.
 $dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
 $downlinkQueueTtlSeconds = $downlinkQueueTtlSeconds ?? 300;
+$assetVersion = $assetVersion ?? '';
+
+/* Os nossos ficheiros levam a impressão digital do conjunto no caminho, e os `import`
+ * relativos herdam-na sem haver passo de compilação. Os de terceiros ficam de fora: já têm
+ * versão própria no caminho, e arrastá-los obrigava a puxá-los outra vez a cada deploy. */
+$asset = static function (string $path) use ($assetVersion): string {
+    $path = '/' . ltrim($path, '/');
+    return $assetVersion === '' || str_starts_with($path, '/assets/vendor/')
+        ? $path
+        : '/v/' . $assetVersion . $path;
+};
 require_once __DIR__ . '/components/listing.php';
 require_once __DIR__ . '/components/pagination.php';
 require_once __DIR__ . '/components/modal.php';
@@ -25,7 +36,7 @@ require_once __DIR__ . '/components/modal.php';
     <link rel="icon" type="image/svg+xml" sizes="16x16" href="/assets/logo.svg">
     <!-- O tema antes da primeira pintura: script clássico e sem defer, no <head> antes das
          folhas, para pôr o data-bs-theme antes de o CSS carregar. Ver assets/js/theme-init.js. -->
-    <script src="/assets/js/theme-init.js"></script>
+    <script src="<?= $asset('/assets/js/theme-init.js') ?>"></script>
     <?php
     /* A ordem é a cascata: sem build, uma folha vale pela ordem da etiqueta, e várias regras
      * contam com vir depois das que anulam. */
@@ -41,7 +52,7 @@ require_once __DIR__ . '/components/modal.php';
     ];
     ?>
     <?php foreach ($stylesheets as $stylesheet) : ?>
-    <link href="<?= $stylesheet ?>" rel="stylesheet">
+    <link href="<?= $asset($stylesheet) ?>" rel="stylesheet">
     <?php endforeach; ?>
 </head>
 
@@ -74,7 +85,7 @@ require_once __DIR__ . '/components/modal.php';
     <script src="/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
     <?php /* O AG Grid (2 MB) não vem aqui: o `dashboard/grid.js` carrega-o à primeira grelha,
              e a maioria das sessões nunca abre as definições. */ ?>
-    <script type="module" src="main.js"></script>
+    <script type="module" src="<?= $asset('main.js') ?>"></script>
 </body>
 
 </html>
