@@ -118,10 +118,26 @@ export async function startDashboard() {
         renderSelection();
     }
 
-    // Isto relê o registo do dispositivo -- estado de ligação, modelo, configuração -- e não
-    // o histórico: o `recent` preserva-se de propósito porque só o stream o traz, e é o
-    // `stream.js` que garante que ele volta a ligar-se quando cai.
-    setInterval(refreshSelectedDevice, DEVICE_REFRESH_MS);
+    startSelectedDevicePolling();
+}
+
+/**
+ * Relê o registo do dispositivo -- estado de ligação, modelo, configuração -- e não o
+ * histórico: o `recent` preserva-se de propósito porque só o stream o traz, e é o `stream.js`
+ * que garante que ele volta a ligar-se quando cai.
+ *
+ * Um separador escondido não sonda, como o `stream.js` também não. Ao voltar relê-se já: meio
+ * minuto a mostrar o dispositivo como ele estava é pior do que o pedido que se poupou.
+ */
+export function startSelectedDevicePolling() {
+    const refreshWhenVisible = () => {
+        if (!document.hidden) {
+            refreshSelectedDevice();
+        }
+    };
+
+    setInterval(refreshWhenVisible, DEVICE_REFRESH_MS);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
 }
 
 function refreshSelectedDevice() {
