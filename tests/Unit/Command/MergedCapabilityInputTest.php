@@ -6,6 +6,7 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\Capability\ConfigurationInputDefaults;
 use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
@@ -52,5 +53,32 @@ final class MergedCapabilityInputTest extends TestCase
         }
 
         self::assertSame([], $erradas);
+    }
+
+    /**
+     * O nome do campo é lido em dois sítios -- aqui, para desenhar, e na tabela de payloads
+     * por omissão, para semear o formulário. Renomeá-lo num e esquecer o outro não parte
+     * nada à vista: o formulário abre vazio em vez de abrir com as linhas por preencher.
+     */
+    public function testMergedCapabilitiesKeepTheirSeedPayload(): void
+    {
+        $vazias = [];
+
+        foreach (ProtocolRegistry::protocolsWithConfigCatalog() as $protocol) {
+            foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
+                $key = (string)($entry['key'] ?? '');
+                $capability = CapabilityCatalog::mapConfigurationKey($key);
+                // Os alarmes abrem sem linhas de propósito: quem os desenha parte de zero.
+                if (!in_array($capability, self::FUNDIDAS, true) || $capability === 'alarm_clock') {
+                    continue;
+                }
+
+                if (ConfigurationInputDefaults::forEntry($entry) === []) {
+                    $vazias[] = $protocol . '/' . $key;
+                }
+            }
+        }
+
+        self::assertSame([], $vazias, 'estas abrem o formulário vazio em vez de o semear');
     }
 }

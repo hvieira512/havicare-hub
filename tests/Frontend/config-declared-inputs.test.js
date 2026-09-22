@@ -11,11 +11,8 @@ import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inpu
  * Um tipo que o registo não conhece não rebenta: degrada para o editor de JSON em cru, na
  * cara de quem gere dispositivos. Apagar um renderizador, ou escrever o nome com um erro,
  * passava as quatro suites e só se via no ecrã.
- *
- * As cinco capacidades abaixo são a excepção: para elas o painel ignora o `input` declarado
- * e usa o nome da capacidade, porque o hub funde várias entradas nativas num cartão só.
- * Estão aqui pelo nome para que uma sexta tenha de passar por este teste.
  */
+
 /**
  * O `json` é o recuo declarado de propósito por duas entradas da Wonlex que o painel nem
  * chega a mostrar -- não têm capacidade associada. É o único nome sem renderizador próprio.
