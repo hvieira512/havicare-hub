@@ -617,8 +617,12 @@ function handleDevicePaginationClick(event) {
 async function selectDevice(imei) {
     selectImei(imei);
     saveSelectedDeviceToStorage();
-    const loaded = await loadDevice(imei);
-    if (loaded) {
+    await loadDevice(imei);
+    // O que fecha o selector é a escolha ter vingado, e não esta leitura ter sido a última a
+    // escrever: o `loadDevice` devolve falso tanto quando falha como quando outra leitura o
+    // ultrapassa, e a listagem relê o dispositivo escolhido assim que a resposta dela chega.
+    // Uma falha tira a selecção, e aí o selector fica aberto para se escolher outro.
+    if (state.selectedImei === imei) {
         ui.deviceSelectorModal?.hide();
     }
 }
