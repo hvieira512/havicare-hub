@@ -159,7 +159,16 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
     updateGatewayLinkSelection();
 }
 
+/**
+ * A empresa e a licença lêem-se antes do pedido e filtram a resposta, por isso só a última
+ * escolha pode desenhar. Trocar de licença duas vezes depressa punha no ecrã os gateways da
+ * licença anterior, e marcar um ligava o sensor a um gateway de outro cliente.
+ */
+let gatewayOptionsGeneration = 0;
+
 export async function refreshGatewayOptions(selectedKeys = null) {
+    gatewayOptionsGeneration += 1;
+    const generation = gatewayOptionsGeneration;
     if (!els.deviceGatewayLinksRow || !els.deviceGatewayLinksList) return;
 
     const deviceType = normalizeDeviceType(
@@ -197,6 +206,9 @@ export async function refreshGatewayOptions(selectedKeys = null) {
         company,
         licenseId,
     });
+    if (generation !== gatewayOptionsGeneration) {
+        return;
+    }
     if (response?.error) {
         renderGatewayOptions(
             preserved.map((imei) => ({ imei })),
