@@ -90,6 +90,22 @@ async function openModelDetail(modelId) {
     modelsCarousel()?.to(2);
 }
 
+/**
+ * Um clique numa folha do catálogo abre a ficha do modelo. A linha é um `div` com
+ * `role="button"` e não um `<button>`, porque leva dentro a imagem, dois nomes e a seta, que
+ * herdariam o reset de tipografia do Bootstrap -- em troca, o teclado é tratado à mão.
+ */
+function handleModelListClick(event) {
+    const row = event.target.closest("[data-action=\"modelCapabilities\"]");
+    if (!row) return;
+    if (event.type === "keydown") {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        // O espaço numa linha accionável rola a página se ninguém o travar.
+        event.preventDefault();
+    }
+    void openModelDetail(parseInt(row.dataset.id));
+}
+
 /* ---------- a identidade ---------- */
 
 function renderModelDetailInfo(model) {
@@ -388,6 +404,64 @@ function capabilityRowsDependOnSelection() {
     return (state.settingsModal.capabilityModelTemplateKeys || []).length === 0;
 }
 
+/**
+ * Os dois interruptores de uma linha, num ouvinte só delegado na raiz das secções. Desligar o
+ * suporte desliga o pedido com ele: pedir uma leitura que o modelo não oferece não é estado
+ * que se possa guardar.
+ */
+function handleCapabilityGroupsChange(event) {
+    const checkbox = event.target.closest([
+        "[data-action=\"toggleCapabilitySupport\"]",
+        "[data-action=\"toggleCapabilityRequestability\"]",
+    ].join(","));
+    if (!checkbox) return;
+
+    const feature = String(checkbox.dataset.feature || "");
+    if (!feature) return;
+
+    const enabled = new Set(
+        state.settingsModal.capabilityEnabledCapabilities || [],
+    );
+    const requestable = new Set(
+        state.settingsModal.capabilityRequestableCapabilities || [],
+    );
+    if (checkbox.dataset.action === "toggleCapabilitySupport") {
+        if (checkbox.checked) {
+            enabled.add(feature);
+        } else {
+            enabled.delete(feature);
+            requestable.delete(feature);
+        }
+    } else {
+        if (checkbox.checked && enabled.has(feature)) {
+            requestable.add(feature);
+        } else {
+            requestable.delete(feature);
+        }
+    }
+    state.settingsModal.capabilityEnabledCapabilities = [...enabled];
+    state.settingsModal.capabilityRequestableCapabilities = [...requestable];
+    if (capabilityRowsDependOnSelection()) {
+        renderCapabilitiesSection();
+        return;
+    }
+    syncCapabilitySwitches(feature);
+}
+
+/** A tira da ficha troca a secção à vista, e por isso redesenha em vez de deslocar. */
+function jumpCapabilitySection(event) {
+    const button = event.target.closest(
+        "[data-action=\"jumpCapabilitySection\"]",
+    );
+    if (!button) return;
+
+    const section = button.dataset.section;
+    if (!section) return;
+
+    state.settingsModal.activeCapabilitySection = section;
+    renderCapabilitiesSection();
+}
+
 function renderCapabilitiesSection() {
     const { els } = getSettingsModelsRuntime();
     const model = state.settingsModal.currentCapabilitiesModel;
@@ -548,15 +622,14 @@ async function saveCapabilities() {
 }
 
 export {
-    capabilityRowsDependOnSelection,
     deleteCurrentModel,
+    handleCapabilityGroupsChange,
     handleModelDetailImageChange,
-    openModelDetail,
-    renderCapabilitiesSection,
+    handleModelListClick,
+    jumpCapabilitySection,
     renderModelDetailInfo,
     resetModelDetailFields,
     saveCapabilities,
     saveModelDetail,
-    syncCapabilitySwitches,
     syncModelDetailDirty,
 };

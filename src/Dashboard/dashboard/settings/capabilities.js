@@ -135,6 +135,14 @@ async function loadSettingsCapabilitiesSection(
     renderCapabilitiesCatalogSection();
 }
 
+function handleCapabilityDeviceTypeClick(event) {
+    const button = event.target.closest(
+        "[data-action=\"selectCapabilityDeviceType\"]",
+    );
+    if (!button) return;
+    void loadSettingsCapabilitiesSection(button.dataset.value);
+}
+
 function handleCapabilitySupplierClick(event) {
     const button = event.target.closest(
         "[data-action=\"selectCapabilitySupplier\"]",
@@ -315,6 +323,32 @@ function renderCapabilityCatalogSectionNav(sections) {
         : "";
 }
 
+/**
+ * Uma pastilha desloca a lista até à secção e não filtra: o catálogo fica todo numa
+ * superfície, que é o que serve para auditar um fornecedor de ponta a ponta.
+ */
+function scrollCapabilityCatalogSection(event) {
+    const chip = event.target.closest(
+        "[data-action=\"scrollCapabilityCatalogSection\"]",
+    );
+    if (!chip) return;
+
+    const target = document.getElementById(chip.dataset.section || "");
+    if (!target) return;
+
+    state.settingsModal.activeCapabilityCatalogSection = chip.dataset.section || "";
+    els.capabilityCatalogSectionNav
+        .querySelectorAll(".capability-section-chip")
+        .forEach((other) => other.classList.toggle("selected", other === chip));
+
+    target.scrollIntoView({
+        block: "start",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+    });
+}
+
 function handleCapabilityCatalogSearch() {
     state.settingsModal.capabilityQuery = els.capabilityCatalogSearch.value;
     renderCapabilitiesCatalogSection();
@@ -374,6 +408,8 @@ export {
     loadCapabilityCatalog,
     initSettingsCapabilities,
     loadSettingsCapabilitiesSection,
+    handleCapabilityDeviceTypeClick,
     handleCapabilitySupplierClick,
     handleCapabilityCatalogSearch,
+    scrollCapabilityCatalogSection,
 };

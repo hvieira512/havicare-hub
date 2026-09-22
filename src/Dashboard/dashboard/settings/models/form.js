@@ -149,6 +149,20 @@ function selectModelDeviceType(deviceType) {
     void refreshNewModelCapabilityTemplate();
 }
 
+/* ---------- os cliques, delegados na raiz de cada grupo de botões ---------- */
+
+function handleModelSupplierClick(event) {
+    const button = event.target.closest("[data-action=\"selectModelSupplier\"]");
+    if (button) selectModelSupplier(button.dataset.value);
+}
+
+function handleModelDeviceTypeClick(event) {
+    const button = event.target.closest(
+        "[data-action=\"selectModelDeviceType\"]",
+    );
+    if (button) selectModelDeviceType(button.dataset.value);
+}
+
 /** Abre o slide do formulário, com o template do fornecedor já carregado. */
 async function openNewModelForm() {
     if (!state.settingsModal.sectionLoaded.modelFilters) {
@@ -273,11 +287,11 @@ async function saveModel() {
 }
 
 export {
+    handleModelDeviceTypeClick,
+    handleModelSupplierClick,
     openNewModelForm,
     refreshNewModelCapabilityTemplate,
     resetModelForm,
     saveModel,
-    selectModelDeviceType,
-    selectModelSupplier,
     updateModelProtocolAndPreview,
 };

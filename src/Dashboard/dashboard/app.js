@@ -40,7 +40,6 @@ import {
 import { initNotifications } from "./notifications.js";
 import { initRadarMapModal } from "./devices/radar-map-modal.js";
 import { initSettings } from "./settings/index.js";
-import { initSettingsClickHandlers } from "./settings/clicks.js";
 
 /** De quanto em quanto tempo se relê o dispositivo escolhido. Ver a nota no `startDashboard`. */
 const DEVICE_REFRESH_MS = 30000;
@@ -80,7 +79,6 @@ export async function startDashboard() {
         onLicenseChange: () => void refreshGatewayOptions([]),
     });
     initCreateWizard({ els, wizardModal: deviceWizardModal });
-    initSettingsClickHandlers({ els });
     initDeviceList({ els, ui });
     initSettings({ els, ui });
     initDeviceStream({
