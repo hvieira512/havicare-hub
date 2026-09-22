@@ -27,11 +27,7 @@ import {
 import { renderSelection } from "./devices/detail.js";
 import { initDeviceStream } from "./devices/stream.js";
 import { initEditWizard } from "./devices/edit-wizard.js";
-import { initDeviceModal } from "./devices/device-modal.js";
-import {
-    initDeviceConfigPanel,
-    syncDeviceModalCommandStates,
-} from "./devices/config/panel.js";
+import { configPanelIfLoaded, initDeviceModal } from "./devices/device-modal.js";
 import { initCreateWizard, openWizard } from "./devices/create-wizard.js";
 import {
     initGatewayLinksUi,
@@ -54,7 +50,6 @@ let radarMapModal = null;
 export async function startDashboard() {
     els = cacheElements();
     initGatewayLinksUi({ els });
-    initDeviceConfigPanel({ els });
     deviceModal = new bootstrap.Modal(document.getElementById("deviceModal"));
     deviceWizardModal = new bootstrap.Modal(
         document.getElementById("deviceWizardModal"),
@@ -83,7 +78,10 @@ export async function startDashboard() {
     initSettings({ els, ui });
     initDeviceStream({
         renderSelection,
-        onCommandsUpdated: syncDeviceModalCommandStates,
+        // O stream corre sempre, e o painel de configurações só existe depois de alguém
+        // abrir o separador: enquanto não existir não há entregas desenhadas para acertar.
+        onCommandsUpdated: (imei, commands) =>
+            configPanelIfLoaded()?.panel.syncDeviceModalCommandStates(imei, commands),
     });
     initNotifications({
         els,
