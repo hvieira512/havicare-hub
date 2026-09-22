@@ -18,7 +18,7 @@ import {
     loadJsonStorage,
     loadTextStorage,
 } from "./storage.js";
-import { storedFilterList } from "./devices/filters.js";
+import { storedFilterList } from "./devices/list-filters.js";
 import {
     ensureProtocolsLoaded,
     initDeviceList,

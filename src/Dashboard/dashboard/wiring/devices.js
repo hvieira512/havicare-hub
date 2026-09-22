@@ -26,7 +26,7 @@ import {
     clearDeviceFilters,
     handleDeviceFilterClick,
     handleDeviceOnlineFilterChange,
-} from "../devices/filters.js";
+} from "../devices/list-filters.js";
 import {
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
