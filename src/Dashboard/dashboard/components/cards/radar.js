@@ -1,5 +1,5 @@
 import { displayPersonIndex, fieldValue } from "../../format.js";
-import { postureStyle } from "../../domain.js";
+import { postureStyle } from "../../radar-style.js";
 import { html } from "../../html.js";
 import { compactDetails } from "./shared.js";
 

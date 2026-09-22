@@ -2,7 +2,7 @@ import {
     getRadarLayout as apiGetRadarLayout,
     syncRadarLayout as apiSyncRadarLayout,
 } from "../api/index.js";
-import { areaTypeStyle } from "../domain.js";
+import { areaTypeStyle } from "../radar-style.js";
 import { esc, when } from "../format.js";
 import { html } from "../html.js";
 import { apiError, toast } from "../dialogs.js";

@@ -1,4 +1,4 @@
-import { areaTypeStyle, postureStyle } from "../domain.js";
+import { areaTypeStyle, postureStyle } from "../radar-style.js";
 import { fieldValue } from "../format.js";
 
 /**
