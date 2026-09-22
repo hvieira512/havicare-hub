@@ -56,16 +56,16 @@ test("um 401 que sobrevive ao refresh pede autenticação", async () => {
             ? response(200, JSON.stringify({ token: { access_token: "novo", refresh_token: "r2" } }))
             : response(401, JSON.stringify({ error: { code: "unauthorized" } }));
 
-    let pedidas = 0;
-    const ouvir = () => {
-        pedidas += 1;
+    let authPrompts = 0;
+    const onAuthRequired = () => {
+        authPrompts += 1;
     };
-    window.addEventListener("hub-dashboard-auth-required", ouvir);
+    window.addEventListener("hub-dashboard-auth-required", onAuthRequired);
 
     await requestJson("/api/devices");
-    window.removeEventListener("hub-dashboard-auth-required", ouvir);
+    window.removeEventListener("hub-dashboard-auth-required", onAuthRequired);
 
-    assert.equal(pedidas, 1, "devia ter pedido autenticação uma vez");
+    assert.equal(authPrompts, 1, "devia ter pedido autenticação uma vez");
     clearDashboardApiToken();
 });
 

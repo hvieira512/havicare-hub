@@ -57,32 +57,32 @@ test("um interruptor guardado como desligado desenha-se desligado", () => {
         wonlexContinuousTempSwitch: { enabled: true },
     });
 
-    const [fc, temperatura] = rowsOf(root);
-    assert.equal(fc.checked, false, "está desligado no hub");
-    assert.equal(temperatura.checked, true);
+    const [heartRate, temperature] = rowsOf(root);
+    assert.equal(heartRate.checked, false, "está desligado no hub");
+    assert.equal(temperature.checked, true);
 });
 
 /** A fotografia tem de bater certo com o desenho, ou o rodapé conta alterações que não há. */
 test("a fotografia do valor acompanha o que o interruptor mostra", () => {
-    const [fc] = rowsOf(render({
+    const [heartRate] = rowsOf(render({
         wonlexContinuousHRSwitch: { enabled: false },
     }));
 
-    assert.equal(JSON.parse(fc.pristine).enabled, false);
+    assert.equal(JSON.parse(heartRate.pristine).enabled, false);
 });
 
 /** Sem valor guardado o interruptor nasce ligado, que é o que o aparelho traz de fábrica. */
 test("sem valor guardado o interruptor fica ligado", () => {
-    const [fc] = rowsOf(render({}));
+    const [heartRate] = rowsOf(render({}));
 
-    assert.equal(fc.checked, true);
+    assert.equal(heartRate.checked, true);
 });
 
 /** Um zero é desligado tanto como um `false` -- a Wonlex manda os dois. */
 test("um zero guardado lê-se como desligado", () => {
-    const [fc] = rowsOf(render({
+    const [heartRate] = rowsOf(render({
         wonlexContinuousHRSwitch: { enabled: 0 },
     }));
 
-    assert.equal(fc.checked, false);
+    assert.equal(heartRate.checked, false);
 });

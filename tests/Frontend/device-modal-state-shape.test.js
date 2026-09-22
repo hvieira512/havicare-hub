@@ -25,22 +25,22 @@ test("o `actionDeliveries` é um mapa em que se pode escrever", () => {
 });
 
 test("cada chamada traz mapas próprios, e não os do estado a correr", () => {
-    const primeiro = blankDeviceModal();
-    const segundo = blankDeviceModal();
+    const first = blankDeviceModal();
+    const second = blankDeviceModal();
 
-    primeiro.actionDeliveries.x = 1;
-    primeiro.configurationSync.entries.y = 2;
+    first.actionDeliveries.x = 1;
+    first.configurationSync.entries.y = 2;
 
-    assert.deepEqual(segundo.actionDeliveries, {});
-    assert.deepEqual(segundo.configurationSync.entries, {});
+    assert.deepEqual(second.actionDeliveries, {});
+    assert.deepEqual(second.configurationSync.entries, {});
     assert.deepEqual(state.deviceModal.actionDeliveries, {});
 });
 
 test("o que o chamador traz ganha ao valor em branco", () => {
-    const editar = blankDeviceModal({ mode: "edit", imei: "861265061009822", loading: true });
+    const edited = blankDeviceModal({ mode: "edit", imei: "861265061009822", loading: true });
 
-    assert.equal(editar.mode, "edit");
-    assert.equal(editar.imei, "861265061009822");
-    assert.equal(editar.loading, true);
-    assert.equal(editar.deviceType, "watch");
+    assert.equal(edited.mode, "edit");
+    assert.equal(edited.imei, "861265061009822");
+    assert.equal(edited.loading, true);
+    assert.equal(edited.deviceType, "watch");
 });

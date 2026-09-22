@@ -65,15 +65,15 @@ test("abrir o selector volta à primeira página", async () => {
 test("o pedido da abertura vai sem pesquisa", async () => {
     state.deviceSearchQuery = "VL17";
     const urls = [];
-    const anterior = globalThis.fetch;
+    const originalFetch = globalThis.fetch;
     globalThis.fetch = async (url, options) => {
         urls.push(String(url));
-        return anterior(url, options);
+        return originalFetch(url, options);
     };
 
     await openDeviceSelector();
 
-    const listagem = urls.find((url) => url.startsWith("/api/devices?") || url === "/api/devices");
-    assert.ok(listagem, "devia ter pedido a listagem");
-    assert.doesNotMatch(listagem, /VL17/);
+    const listUrl = urls.find((url) => url.startsWith("/api/devices?") || url === "/api/devices");
+    assert.ok(listUrl, "devia ter pedido a listagem");
+    assert.doesNotMatch(listUrl, /VL17/);
 });

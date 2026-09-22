@@ -60,25 +60,25 @@ const render = (catalog) => parseFragment(renderDeviceConfigurationRoot({
 
 test("os interruptores seguidos passam a linhas de um só cartão", () => {
     const root = render(CATALOG);
-    const grupos = root.querySelectorAll("[data-config-group]");
+    const groups = root.querySelectorAll("[data-config-group]");
 
-    assert.equal(grupos.length, 1, "os três interruptores deviam dar um grupo");
-    assert.equal(grupos[0].querySelectorAll("[data-config-row]").length, 3);
+    assert.equal(groups.length, 1, "os três interruptores deviam dar um grupo");
+    assert.equal(groups[0].querySelectorAll("[data-config-row]").length, 3);
 });
 
 test("o grupo tem uma acção só, e não uma por definição", () => {
-    const grupo = render(CATALOG).querySelector("[data-config-group]");
+    const group = render(CATALOG).querySelector("[data-config-group]");
 
-    assert.equal(grupo.querySelectorAll("[data-action=\"saveConfigGroup\"]").length, 1);
-    assert.equal(grupo.querySelectorAll("[data-action=\"saveConfig\"]").length, 0);
+    assert.equal(group.querySelectorAll("[data-action=\"saveConfigGroup\"]").length, 1);
+    assert.equal(group.querySelectorAll("[data-action=\"saveConfig\"]").length, 0);
 });
 
 test("o que não é interruptor continua a ser cartão", () => {
     const root = render(CATALOG);
-    const cartoes = [...root.querySelectorAll("[data-config-section]")]
+    const cards = [...root.querySelectorAll("[data-config-section]")]
         .map((s) => s.dataset.configKey);
 
-    assert.deepEqual(cartoes, ["auto_vitals_interval"]);
+    assert.deepEqual(cards, ["auto_vitals_interval"]);
 });
 
 /** Uma acção dispara; agrupá-la com definições que se guardam misturava duas coisas. */
@@ -99,7 +99,7 @@ test("uma acção transitória não entra no grupo", () => {
  * alteração num lote de oito comandos para a pulseira executar um a um.
  */
 test("o grupo envia só as linhas alteradas", () => {
-    const grupo = parseFragment(`
+    const group = parseFragment(`
         <div data-config-group>
             <div data-config-row data-config-key="a" data-config-input="toggle" data-config-pristine='{"enabled":true}'>
                 <input type="checkbox" data-config-field="enabled" checked>
@@ -109,7 +109,7 @@ test("o grupo envia só as linhas alteradas", () => {
             </div>
         </div>`).firstElementChild;
 
-    assert.deepEqual(changedConfigGroupEntries(grupo), { b: { enabled: false } });
+    assert.deepEqual(changedConfigGroupEntries(group), { b: { enabled: false } });
 });
 
 /**
