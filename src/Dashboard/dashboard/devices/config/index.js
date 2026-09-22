@@ -203,7 +203,7 @@ export function renderDeviceConfigurationRoot(context) {
                     <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}" data-config-category-pane="${esc(group.key)}">
                         ${configRuns(group.entries).map((run) => {
                             if (run.grouped) {
-                                return renderConfigToggleGroup(protocol, run.entries, {
+                                return renderConfigGroup(protocol, run.entries, {
                                     rowsByKey, capabilities, disabled, uiByKey, configurationSync,
                                 });
                             }
@@ -268,58 +268,120 @@ function isPlainToggle(entry) {
  *
  * @returns {Array<{grouped: boolean, entries: Array<object>}>}
  */
+/**
+ * A mesma definição repetida para grandezas diferentes: o mesmo comando nativo e a mesma
+ * legenda declarada.
+ *
+ * É o que distingue as dez medições da Wonlex de dois números que por acaso ficaram
+ * vizinhos. A chave inclui o comando e a legenda de propósito -- agrupar por tipo de campo
+ * juntava o limiar de bateria com o intervalo de localização, que não têm nada a ver.
+ */
+function isRepeatedField(entry) {
+    return entry.input === "number" &&
+        entry.transient !== true &&
+        entry.requestOnly !== true &&
+        (entry.fields?.length ?? 0) === 1 &&
+        String(entry.help || "").trim() !== "";
+}
+
+/** A assinatura de uma entrada para efeitos de agrupamento. Vazia quando fica cartão. */
+function configRunKind(entry) {
+    if (isPlainToggle(entry)) return "toggle";
+    if (isRepeatedField(entry)) return `field:${entry.command}:${entry.help}`;
+    return "";
+}
+
 function configRuns(entries) {
     const runs = [];
     for (const entry of entries) {
-        const grouped = isPlainToggle(entry);
+        const kind = configRunKind(entry);
         const last = runs[runs.length - 1];
-        if (last && last.grouped === grouped) {
+        if (last && last.kind === kind && kind !== "") {
             last.entries.push(entry);
             continue;
         }
-        runs.push({ grouped, entries: [entry] });
+        runs.push({ kind, entries: [entry] });
     }
 
-    return runs;
+    // Um interruptor sozinho continua a agrupar -- em cartão gastava quatro linhas para um
+    // bit. Um campo sozinho não: o cartão magro dele já é uma linha, e um grupo de um só
+    // acrescentava um cabeçalho e um rodapé para a mesma coisa.
+    return runs.map((run) => ({
+        ...run,
+        grouped: run.kind === "toggle" || (run.kind.startsWith("field:") && run.entries.length > 1),
+    }));
 }
 
-function renderConfigToggleGroup(protocol, entries, ctx) {
+/** A unidade ao lado do campo de uma linha, quando o nome nativo a declara. */
+function unitOf(entry) {
+    const unit = fieldUnit(entry.fields?.[0] || "");
+    return unit === "" ? "" : `<span class="small text-secondary flex-shrink-0">${esc(unit)}</span>`;
+}
+
+/**
+ * O valor de uma linha na forma em que o leitor do campo o devolve.
+ *
+ * Tem de bater certo ao caractere com o `readConfigPayload`, porque é contra ele que a
+ * fotografia é comparada: um `"0"` onde o leitor devolve `0` contava uma alteração a quem
+ * não tinha mexido em nada.
+ */
+function readConfigEntryValue(entry, desired) {
+    const field = entry.fields?.[0] || "value";
+    return { [field]: Number(desired?.[field] ?? 0) };
+}
+
+function renderConfigGroup(protocol, entries, ctx) {
     const { rowsByKey, capabilities, disabled, uiByKey, configurationSync } = ctx;
+    // Numa corrida de campos repetidos a legenda é a mesma nas dez, e sobe ao cabeçalho: dita
+    // por linha, era a única coisa que se lia dez vezes seguidas.
+    const shared = entries.length > 1 && entries.every((entry) => configHelp(entry) === configHelp(entries[0]))
+        ? configHelp(entries[0])
+        : "";
 
     const rows = entries.map((entry) => {
         const capability = capabilityForEntry(entry, capabilities);
         const desired = normalizeDesired(entry, resolveConfigRow(entry, rowsByKey), capability ? extractCapabilityValue(capability) : null, protocol);
+        const isToggle = isPlainToggle(entry);
         const field = entry.fields?.[0] || "enabled";
         const on = desired[field] !== false;
         const stored = resolveConfigStored(entry, rowsByKey);
         const delivery = resolveConfigDelivery(entry, configurationSync);
         const deliveryMeta = configurationDeliveryMeta(stored, delivery);
-        const help = configHelp(entry);
+        const help = shared === "" ? configHelp(entry) : "";
         const uiState = uiByKey[entry.key] || null;
         const busy = uiState?.phase === "submitting";
+        const control = isToggle
+            ? `<div class="form-check form-switch m-0">
+                    <input class="form-check-input" type="checkbox" role="switch"
+                           data-config-field="${esc(field)}" ${on ? "checked" : ""}
+                           ${disabled || busy ? "disabled" : ""}
+                           aria-label="${esc(entry.label || entry.key)}">
+                </div>`
+            : renderConfigControl(entry, desired, { protocol });
+        // A fotografia do valor tem de bater certo com o que o leitor devolve, ou o rodapé
+        // conta uma alteração a quem não mexeu em nada.
+        const pristine = isToggle ? { [field]: on } : readConfigEntryValue(entry, desired);
 
         return `
             <div class="d-flex align-items-center gap-3 px-3 py-2 border-bottom" data-config-row
                  data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"
-                 data-config-input="toggle" data-config-stored="${stored ? "1" : "0"}"
+                 data-config-input="${esc(isToggle ? "toggle" : entry.input || "json")}" data-config-stored="${stored ? "1" : "0"}"
                  data-config-protocol="${esc(protocol)}"
-                 data-config-pristine='${esc(JSON.stringify({ [field]: on }))}'>
+                 data-config-pristine='${esc(JSON.stringify(pristine))}'>
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
                     ${help ? `<div class="small text-secondary">${esc(help)}</div>` : ""}
                 </div>
                 ${stateBadge(deliveryMeta.label, deliveryMeta.tone)}
-                <div class="form-check form-switch m-0">
-                    <input class="form-check-input" type="checkbox" role="switch"
-                           data-config-field="${esc(field)}" ${on ? "checked" : ""}
-                           ${disabled || busy ? "disabled" : ""}
-                           aria-label="${esc(entry.label || entry.key)}">
-                </div>
+                ${isToggle ? control : `<div class="d-flex align-items-center gap-2">${control}${unitOf(entry)}</div>`}
             </div>`;
     }).join("");
 
     return `
         <section class="border rounded-3 mb-3" data-config-group data-config-protocol="${esc(protocol)}">
+            ${shared === ""
+                ? ""
+                : `<div class="px-3 py-2 border-bottom small text-secondary">${esc(shared)}</div>`}
             ${rows}
             <div class="d-flex align-items-center justify-content-between gap-3 px-3 py-2 bg-body-tertiary rounded-bottom-3">
                 <span class="small text-secondary" data-config-group-status>Sem alterações por enviar</span>

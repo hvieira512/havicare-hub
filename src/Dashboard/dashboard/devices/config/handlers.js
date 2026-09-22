@@ -331,8 +331,13 @@ function resetConfigGroup(group) {
         } catch {
             continue;
         }
-        for (const input of row.querySelectorAll("input[type=\"checkbox\"][data-config-field]")) {
-            input.checked = pristine[input.dataset.configField] === true;
+        for (const input of row.querySelectorAll("[data-config-field]")) {
+            const value = pristine[input.dataset.configField];
+            if (input.type === "checkbox") {
+                input.checked = value === true;
+                continue;
+            }
+            input.value = value ?? "";
         }
     }
 }

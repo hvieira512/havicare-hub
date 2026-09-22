@@ -11,16 +11,16 @@ final class WonlexConfigurationDefinitions
         return [
             $entry('locationInterval', 'locationInterval', 'Intervalo de localização', 'number', ['intervalTime'], ['locationInterval'], 'intervals', 10),
             $entry('deviceMeasuringFrequency', 'deviceMeasuringFrequency', 'Frequência de medições', 'json', ['configs'], ['deviceMeasuringFrequency'], 'intervals', 90),
-            $entry('wonlexHeartRateInterval', 'deviceMeasuringFrequency', 'Intervalo de frequência cardíaca', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 10),
-            $entry('wonlexBPInterval', 'deviceMeasuringFrequency', 'Intervalo de tensão arterial', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 20),
-            $entry('wonlexBOInterval', 'deviceMeasuringFrequency', 'Intervalo de oxigénio no sangue', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 30),
-            $entry('wonlexBodyTemperatureInterval', 'deviceMeasuringFrequency', 'Intervalo de temperatura', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 40),
-            $entry('wonlexStepInterval', 'deviceMeasuringFrequency', 'Intervalo de passos', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 50),
-            $entry('wonlexBreatheInterval', 'deviceMeasuringFrequency', 'Intervalo de frequência respiratória', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 60),
-            $entry('wonlexECGInterval', 'deviceMeasuringFrequency', 'Intervalo de ECG', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 70),
-            $entry('wonlexHRVInterval', 'deviceMeasuringFrequency', 'Intervalo de VFC', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 80),
-            $entry('wonlexPPGInterval', 'deviceMeasuringFrequency', 'Intervalo de PPG', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 90),
-            $entry('wonlexRRInterval', 'deviceMeasuringFrequency', 'Intervalo de RR', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 100),
+            self::measurementInterval('wonlexHeartRateInterval', 'Intervalo de frequência cardíaca', 10),
+            self::measurementInterval('wonlexBPInterval', 'Intervalo de tensão arterial', 20),
+            self::measurementInterval('wonlexBOInterval', 'Intervalo de oxigénio no sangue', 30),
+            self::measurementInterval('wonlexBodyTemperatureInterval', 'Intervalo de temperatura', 40),
+            self::measurementInterval('wonlexStepInterval', 'Intervalo de passos', 50),
+            self::measurementInterval('wonlexBreatheInterval', 'Intervalo de frequência respiratória', 60),
+            self::measurementInterval('wonlexECGInterval', 'Intervalo de ECG', 70),
+            self::measurementInterval('wonlexHRVInterval', 'Intervalo de VFC', 80),
+            self::measurementInterval('wonlexPPGInterval', 'Intervalo de PPG', 90),
+            self::measurementInterval('wonlexRRInterval', 'Intervalo de RR', 100),
             $entry('deviceConfig', 'deviceConfig', 'Configuração do dispositivo', 'json', ['configs'], ['deviceConfig'], 'system', 90),
             $entry('wonlexStepTarget', 'deviceConfig', 'Meta de passos', 'number', ['steps'], ['deviceConfig'], 'health', 10),
             $entry('wonlexContinuousBOCheck', 'deviceConfig', 'Oxigénio contínuo em repouso', 'toggle', ['switchState'], ['deviceConfig'], 'health', 20),
@@ -51,4 +51,29 @@ final class WonlexConfigurationDefinitions
             $entry('pushMessage', 'msgNotice', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], [], 'system', 145, null, null, true),
         ];
     }
+
+    /**
+     * Uma das grandezas cuja periodicidade de envio se configura.
+     *
+     * São dez, com o mesmo comando nativo e a mesma legenda -- é a mesma decisão repetida
+     * para grandezas diferentes, e a dashboard agrupa-as por reconhecer essa forma. A frase
+     * vive aqui, uma vez, e não dez vezes no ecrã.
+     */
+    private static function measurementInterval(string $key, string $label, int $order): array
+    {
+        return ConfigurationDefinition::make(
+            $key,
+            'deviceMeasuringFrequency',
+            $label,
+            'number',
+            ['interval'],
+            ['deviceMeasuringFrequency'],
+            'measurements',
+            $order,
+            help: self::MEASUREMENT_HELP,
+        );
+    }
+
+    private const MEASUREMENT_HELP =
+        'Periodicidade de envio desta medição, em minutos. Use 0 para desativar.';
 }
