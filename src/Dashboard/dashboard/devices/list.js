@@ -68,7 +68,16 @@ async function loadSummary() {
     }
 }
 
+/**
+ * Só a última listagem pedida pode escrever a lista e o paginador. A pesquisa espera 250 ms
+ * antes de pedir, mas um clique na paginação ou num filtro não espera por nada, e duas
+ * respostas trocadas deixavam no ecrã a página que não foi pedida.
+ */
+let summaryGeneration = 0;
+
 async function fetchSummary() {
+    summaryGeneration += 1;
+    const generation = summaryGeneration;
     const { online } = state.deviceFilters;
     const [devicesResponse] = await Promise.all([
         apiGetDevices({
@@ -83,6 +92,9 @@ async function fetchSummary() {
         }),
         ensureLicensesLoaded(),
     ]);
+    if (generation !== summaryGeneration) {
+        return;
+    }
     state.summary = {
         devices: devicesResponse.data || [],
         devicesError: devicesResponse.error || null,
