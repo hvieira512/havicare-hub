@@ -41,6 +41,18 @@ test("o rótulo do campo desaparece", () => {
     assert.equal(sectionOf(LOCATION_INTERVAL).querySelectorAll("label").length, 0);
 });
 
+/**
+ * O intervalo de localização da Wonlex viaja em `intervalTime`, que não estava na tabela de
+ * nomes: o cartão ficava com uma caixa de número e nada ao lado, enquanto o cartão
+ * equivalente do 4P Touch mostrava `s`. A mesma definição, dois protocolos, e só um dizia a
+ * unidade. O protocolo diz segundos, e que zero desliga.
+ */
+test("o intervalo de localização da Wonlex diz a unidade", () => {
+    const section = sectionOf(LOCATION_INTERVAL);
+
+    assert.match(section.textContent, /\bs\b/);
+});
+
 test("a unidade que o rótulo carregava fica ao lado do controlo", () => {
     const section = sectionOf({
         key: "wonlexHeartRateInterval",

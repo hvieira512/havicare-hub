@@ -145,6 +145,8 @@ export const fieldLabel = (key) =>
         ack: "ACK",
         settings: "Definições",
         intervalSeconds: "Intervalo (s)",
+        // A Wonlex manda o intervalo de localização em segundos, e zero desliga-o.
+        intervalTime: "Intervalo (s)",
         intervalMinutes: "Intervalo (min)",
         interval: "Intervalo (min)",
         password: "Palavra-passe",

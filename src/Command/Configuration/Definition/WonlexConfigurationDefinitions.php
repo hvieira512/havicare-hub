@@ -9,7 +9,7 @@ final class WonlexConfigurationDefinitions
         $entry = ConfigurationDefinition::make(...);
 
         return [
-            $entry('locationInterval', 'locationInterval', 'Intervalo de localização', 'number', ['intervalTime'], ['locationInterval'], 'intervals', 10),
+            $entry('locationInterval', 'locationInterval', 'Intervalo de localização', 'number', ['intervalTime'], ['locationInterval'], 'intervals', 10, help: 'De quanto em quanto tempo o relógio envia a posição, em segundos. Use 0 para desativar.'),
             $entry('deviceMeasuringFrequency', 'deviceMeasuringFrequency', 'Frequência de medições', 'json', ['configs'], ['deviceMeasuringFrequency'], 'intervals', 90),
             self::measurementInterval('wonlexHeartRateInterval', 'Intervalo de frequência cardíaca', 10),
             self::measurementInterval('wonlexBPInterval', 'Intervalo de tensão arterial', 20),
