@@ -309,8 +309,14 @@ export function initNotifications({ els, openAddDevice }) {
     window.addEventListener("hub-dashboard-api-token-updated", () => {
         void load();
     });
-    window.setInterval(() => {
-        void refreshBadge();
-    }, POLL_INTERVAL_MS);
+    // Um separador escondido não sonda, como o `devices/stream.js` também não. Ao voltar
+    // relê-se já, senão o crachá ficava até 15 segundos a mostrar uma contagem velha.
+    const refreshBadgeWhenVisible = () => {
+        if (!document.hidden) {
+            void refreshBadge();
+        }
+    };
+    window.setInterval(refreshBadgeWhenVisible, POLL_INTERVAL_MS);
+    document.addEventListener("visibilitychange", refreshBadgeWhenVisible);
     void load();
 }
