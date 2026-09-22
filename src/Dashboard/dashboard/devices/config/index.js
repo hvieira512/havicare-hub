@@ -150,7 +150,7 @@ export function renderDeviceConfigurationRoot(context) {
                 ${groups
                     .map(
                         (group) => `
-                    <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}" data-config-category-pane="${esc(group.key)}">
+                    <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}">
                         ${configRuns(group.entries).map((run) => {
                             if (run.grouped) {
                                 return renderConfigGroup(protocol, run.entries, {
@@ -427,7 +427,7 @@ export function renderConfigSection(
                     : ""}
             </div>
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}
-            <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? "data-config-disabled=\"1\"" : ""}>
+            <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}">
                 ${verbs.length > 0 ? "" : renderConfigInputs(entry, desired, { ...meta, protocol })}
                 <div class="d-flex justify-content-end gap-2 mt-3">
                     ${verbs.length > 0

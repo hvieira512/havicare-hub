@@ -106,10 +106,10 @@ function workingModeInput(desired) {
     ];
 
     return `
-        <div class="vstack gap-3" data-working-mode-root>
+        <div class="vstack gap-3">
             <div>
                 <label class="form-label-sm">Modo</label>
-                <div class="row g-2" data-working-mode-select>
+                <div class="row g-2">
                     ${options
                         .map(
                             (option) => `

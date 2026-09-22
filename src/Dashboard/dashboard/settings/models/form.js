@@ -290,7 +290,6 @@ export {
     handleModelDeviceTypeClick,
     handleModelSupplierClick,
     openNewModelForm,
-    refreshNewModelCapabilityTemplate,
     resetModelForm,
     saveModel,
     updateModelProtocolAndPreview,

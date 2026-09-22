@@ -6,9 +6,9 @@ import { installErrorReporting } from "./dashboard/observability.js";
 installErrorReporting();
 
 /**
- * O grafo da dashboard -- 72 módulos ES, 512 KB de JavaScript -- só serve depois de
- * autenticar, e quem fica parado no formulário de entrada não o paga. Carrega-se uma vez só,
- * dê a ordem o clique no login ou a sessão que já estava guardada.
+ * O grafo da dashboard só serve depois de autenticar, e quem fica parado no formulário de
+ * entrada não o paga: são 7 módulos e 30 KB até ao login, contra os 74 e 515 KB que o login
+ * manda vir. Carrega-se uma vez só, dê a ordem o clique ou a sessão que já estava guardada.
  *
  * Uma carga que falhe não se recupera aqui: o browser guarda no mapa de módulos a falha por
  * URL, e um segundo `import()` do mesmo especificador resolve para a entrada nula sem voltar
