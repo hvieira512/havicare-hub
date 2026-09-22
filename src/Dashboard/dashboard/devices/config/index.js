@@ -11,7 +11,6 @@ import {
 // com outro ícone para a mesma secção lia-se como sendo outra coisa.
 import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
 import { configCatalogSections } from "./catalog-model.js";
-import { takePillsReminderGroup } from "./four-p-touch-take-pills.js";
 import { CONFIG_INPUTS } from "./inputs/index.js";
 import { toggleField, toggleValue } from "./inputs/generic.js";
 import { jsonInput, readJson } from "./readers.js";
@@ -20,7 +19,8 @@ import {
     protocolFieldConstraints,
 } from "./protocol-catalog.js";
 
-export { takePillsReminderGroup, catalogForProtocol };
+// O `device-modal.js` chega ao catálogo por aqui, que é a porta do painel tardio.
+export { catalogForProtocol };
 
 const CONFIG_ACTION_BUTTON_META = {
     idle: {
