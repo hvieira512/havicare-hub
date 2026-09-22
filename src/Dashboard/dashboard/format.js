@@ -121,6 +121,10 @@ export const fieldLabel = (key) =>
         method: "Método",
         result: "Resultado",
         fault: "Avaria",
+        alarm: "Alarme",
+        alarms: "Alarmes",
+        takenCount: "Tomadas",
+        missedCount: "Falhadas",
         people: "Pessoas",
         breathing: "Respiração",
         sleep_state: "Estado do sono",
@@ -251,6 +255,13 @@ const FIELD_VALUE_LABELS = {
     // ainda não tinha tradução; os outros continuam a passar pelo `titleize`.
     state: {
         in_progress: "Em curso",
+        // O estado de cada alarme do dispensador, como o aparelho o classifica.
+        idle: "Sem toma marcada",
+        preparing: "A preparar",
+        waiting: "À espera da toma",
+        timed_out: "Tempo esgotado",
+        missed: "Toma falhada",
+        taken: "Tomada",
     },
     sleep_state: {
         awake: "Acordado",

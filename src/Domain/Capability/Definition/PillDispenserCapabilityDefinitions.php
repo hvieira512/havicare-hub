@@ -20,6 +20,10 @@ final class PillDispenserCapabilityDefinitions
             // própria. Pedível: o `0x07` pergunta ao aparelho o estado que ele tem agora, em
             // vez de se esperar pelo próximo heartbeat.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'device_status', 'label' => 'Estado do dispositivo', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
+            // O estado de toma dos nove alarmes: a única leitura da toma que chega em claro,
+            // porque o `0x03` que traz a hora e a célula vem cifrado. Não é pedível à parte —
+            // viaja no mesmo `0x07` que o «Atualizar estado» já manda.
+            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'medication_alarm_status', 'label' => 'Estado dos alarmes', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'medication_intake', 'label' => 'Toma de medicação', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'device_fault', 'label' => 'Avaria', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             // A mesma chave do NCS e da pulseira: o botão de emergência é uma chamada de ajuda.

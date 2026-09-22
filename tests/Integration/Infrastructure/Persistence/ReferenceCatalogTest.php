@@ -155,6 +155,9 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'early_dispense',
             'help_call',
             'humidity',
+            // A toma lê-se por aqui sem a chave de cifra: o `medication_intake` é o evento
+            // rico e chega cifrado, este é o estado dos nove alarmes e chega em claro.
+            'medication_alarm_status',
             'medication_intake',
             'medication_level',
             'medication_period',

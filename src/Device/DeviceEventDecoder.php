@@ -446,10 +446,58 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'help_call', 'nativeType' => $nativeType, 'value' => ['state' => 'in_progress']];
         }
 
+        $alarms = $this->pillAlarmStatus($tlv);
+        if ($alarms !== null) {
+            $events[] = ['feature' => 'medication_alarm_status', 'nativeType' => $nativeType, 'value' => $alarms];
+        }
+
         return $events;
     }
 
-    /** @param array<int, array{value?: string}> $tlv */
+    /**
+     * O estado de toma dos nove alarmes, ou `null` quando nenhum reporta.
+     *
+     * É a leitura da toma que chega em claro. O evento `0x03` traz a hora prevista, a hora
+     * real e a célula, mas o aparelho cifra tudo o que envia por iniciativa própria e a chave
+     * sai da codificação dele; estas TAGs pedem-se num `0x07` e a resposta a um pedido nosso
+     * vem sempre legível.
+     *
+     * As contagens vão à frente porque são o que o cartão mostra: quantas tomas falharam é a
+     * pergunta, e a lista por alarme é o detalhe.
+     *
+     * @param array<int, array{value?: string, state?: int}> $tlv
+     * @return array{takenCount: int, missedCount: int, alarms: list<array{alarm: int, state: string}>}|null
+     */
+    private function pillAlarmStatus(array $tlv): ?array
+    {
+        $alarms = [];
+        $taken = 0;
+        $missed = 0;
+
+        foreach (range(1, 9) as $alarm) {
+            $state = match ($this->tlvU8($tlv, 0x8130 + $alarm)) {
+                0 => 'idle',
+                1 => 'preparing',
+                2 => 'waiting',
+                4 => 'timed_out',
+                6 => 'missed',
+                7 => 'taken',
+                default => null,
+            };
+            if ($state === null) {
+                continue;
+            }
+
+            $taken += $state === 'taken' ? 1 : 0;
+            $missed += $state === 'missed' ? 1 : 0;
+            $alarms[] = ['alarm' => $alarm, 'state' => $state];
+        }
+
+        return $alarms === []
+            ? null
+            : ['takenCount' => $taken, 'missedCount' => $missed, 'alarms' => $alarms];
+    }
+
     /**
      * O valor de uma TAG, ou `null` quando não há valor nenhum a ler.
      *

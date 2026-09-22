@@ -268,8 +268,12 @@ ao hub.
 | `0x8112` | chamada de emergência | `0` normal · `1` em curso |
 | `0x811A` / `0x811B` / `0x811D` | célula actual, total e restantes | o `0x811B` é a **capacidade do prato**, não quantas vão carregadas — essas são a configuração `0x101C` |
 | `0x8121`–`0x8125` | falhas | rotação, reset do prato, empurrador, porta da célula, teclas |
-| `0x8131`–`0x8139` | estado de cada um dos nove alarmes | |
-| `0x8102` / `0x8106` / `0x8107` | bloqueio de criança, copo, fecho do prato | |
+| `0x8131`–`0x8139` | **estado de toma de cada um dos nove alarmes** | `0` nada · `1` a preparar · `2` à espera · `4` tempo esgotado · `6` **falhada** · `7` **tomada** |
+| `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
+| `0x8107` | tampa | `0` fechada · `1` aberta |
+| `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
+| `0x8111` | alarme de temperatura/humidade | `0` normal · `1` em alarme |
+| `0x8105` / `0x8106` | identificador do prato, tensão baixa de bateria | **ambas *deprecated* na especificação** |
 
 A temperatura e a humidade **não existem na API REST**. As falhas, que na API
 REST eram um único `rotate`, aqui vêm discriminadas em cinco.
@@ -333,6 +337,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x810E` | `temperature` | `environmentCelsius` |
 | `0x810F` | `humidity` | `humidityPercent` |
 | `0x810A` / `0x810B` | `device_status` | `wifiSignalDbm`, `gsmSignalDbm` |
+| `0x8131`–`0x8139` | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` |
 | `0x8121`–`0x8125` | `device_fault` | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
 | `0x8112` | `help_call` | `state` |
 

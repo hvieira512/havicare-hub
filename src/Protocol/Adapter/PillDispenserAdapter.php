@@ -253,6 +253,9 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         0x810E, 0x810F,             // temperatura e humidade
         0x8112,                     // chamada de emergência
         0x811A, 0x811B, 0x811D,     // compartimentos
+        // O estado de toma de cada um dos nove alarmes. É a única leitura da toma que chega
+        // em claro: o evento `0x03` é mais rico e vem cifrado.
+        0x8131, 0x8132, 0x8133, 0x8134, 0x8135, 0x8136, 0x8137, 0x8138, 0x8139,
         0x8121, 0x8122, 0x8123, 0x8124, 0x8125, // avarias
     ];
 

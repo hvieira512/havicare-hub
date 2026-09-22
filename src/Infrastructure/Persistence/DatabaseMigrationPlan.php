@@ -6,6 +6,7 @@ namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalog;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserAlarmStatus;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutEncryptionSwitch;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutFactoryReset;
 
@@ -34,6 +35,8 @@ final class DatabaseMigrationPlan
             new PillDispenserWithoutFactoryReset(),
             // E o fornecedor confirmou que a cifra não se desliga por configuração.
             new PillDispenserWithoutEncryptionSwitch(),
+            // A toma de medicação passa a ler-se pelo estado dos alarmes, que vem em claro.
+            new PillDispenserAlarmStatus(),
         ];
     }
 

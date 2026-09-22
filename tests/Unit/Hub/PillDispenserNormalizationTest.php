@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\Device\ConnectionInterface;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
@@ -284,25 +283,5 @@ final class PillDispenserNormalizationTest extends TestCase
             'Zayata M228',
             'pill_dispenser',
         );
-    }
-}
-
-final class PillFakeConnection implements ConnectionInterface
-{
-    public int $resourceId = 1;
-
-    public function remoteAddress(): ?string
-    {
-        return null;
-    }
-
-    public function send(string $data): static
-    {
-        return $this;
-    }
-
-    public function close(): static
-    {
-        return $this;
     }
 }
