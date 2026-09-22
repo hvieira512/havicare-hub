@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 // esse caminho passa pelo api/http.js, que toca em window ao carregar.
 import "./support/browser-env.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
-import { renderRequestCardShell } from "../../src/Dashboard/dashboard/components/cards/request.js";
+import { requestCardShell } from "../../src/Dashboard/dashboard/components/cards/request.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
 state.capabilityCatalogByType.watch = [{ key: "location", label: "Localização" }];
@@ -25,7 +25,7 @@ const minutesAgo = (minutes) =>
     new Date(Date.now() - minutes * 60_000).toISOString();
 
 const locationCard = (reports) =>
-    renderRequestCardShell(
+    requestCardShell(
         { feature: "location", requestable: false },
         false,
         reports.map(({ data, minutes = 2 }) => ({

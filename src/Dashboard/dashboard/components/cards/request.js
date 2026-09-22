@@ -112,7 +112,7 @@ function requestTelemetryTypes(type) {
     return [type];
 }
 
-export function renderRequestCardShell(
+export function requestCardShell(
     command,
     loading,
     telemetry = [],

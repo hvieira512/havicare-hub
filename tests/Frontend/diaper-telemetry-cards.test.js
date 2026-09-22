@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
 // esse caminho passa pelo api/http.js, que toca em window ao carregar.
 import "./support/browser-env.js";
-import { renderRequestCardShell } from "../../src/Dashboard/dashboard/components/cards/request.js";
+import { requestCardShell } from "../../src/Dashboard/dashboard/components/cards/request.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
 // O nome de uma capacidade vem do catálogo do tipo do dispositivo escolhido, e não de um
@@ -24,14 +24,14 @@ const channel = (index, delta, baseline = 1) => ({
     delta,
 });
 
-const moistureCard = (data) => renderRequestCardShell(
+const moistureCard = (data) => requestCardShell(
     { feature: "diaper_moisture", requestable: false },
     false,
     [{ type: "diaper_moisture", occurredAt: "2026-08-06T13:00:00Z", data }],
 );
 
 test("MONIT condition renders as a status card without a request button", () => {
-    const html = renderRequestCardShell(
+    const html = requestCardShell(
         { feature: "diaper_condition", requestable: false },
         false,
         [{ type: "diaper_condition", occurredAt: "2026-08-06T13:00:00Z", data: { state: "clean" } }],
@@ -149,7 +149,7 @@ test("MONIT moisture exposes the baseline and raw reading per channel", () => {
 test("MONIT moisture shows the level index as its value, from the message that carries it", () => {
     // O índice é capacidade própria e chega menos vezes do que os canais: o cartão junta a
     // leitura mais recente de cada tipo, senão a dos canais apagava o número.
-    const html = renderRequestCardShell(
+    const html = requestCardShell(
         { feature: "diaper_moisture", requestable: false },
         false,
         [

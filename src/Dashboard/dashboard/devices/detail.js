@@ -27,7 +27,7 @@ import {
     uplinkCardContent,
 } from "../components/cards/telemetry.js";
 import { telemetryCard } from "../components/cards/shell.js";
-import { renderRequestCardShell, requestCardContent } from "../components/cards/request.js";
+import { requestCardShell, requestCardContent } from "../components/cards/request.js";
 import { fallSummaryCard, helpCallSummaryCard } from "./event-summary-cards.js";
 import { onRadarPresence } from "./radar-map-modal.js";
 import { activityTable } from "./activity-table.js";
@@ -387,7 +387,7 @@ function renderRequestCardGroup(
 ) {
     const cards = group.cards
         .map((command) =>
-            renderRequestCardShell(
+            requestCardShell(
                 command,
                 state.loadingCommands.has(
                     String(
