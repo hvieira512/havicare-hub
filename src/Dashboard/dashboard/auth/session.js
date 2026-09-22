@@ -186,10 +186,13 @@ const startDashboard = async () => {
         } catch {
             // A aplicação não chegou a arrancar -- o grafo dela entra por `import()` e esse
             // pedido pode falhar. Sem voltar ao ecrã de entrada ficava um `#app` vazio à
-            // frente de um formulário escondido, e o convite a tentar de novo era falso:
-            // não havia onde carregar.
+            // frente de um formulário escondido, e nada em que carregar.
+            //
+            // A mensagem pede para recarregar e não para tentar de novo: o browser guarda a
+            // falha no mapa de módulos por URL, e outro `import()` do mesmo especificador nem
+            // chega a voltar à rede. Só um documento novo é que a desfaz.
             dashboardStarted = false;
-            showLogin("Não foi possível carregar a aplicação. Volte a tentar.");
+            showLogin("Não foi possível carregar a aplicação. Recarregue a página.");
         }
     }
 };

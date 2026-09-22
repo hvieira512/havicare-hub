@@ -6,17 +6,17 @@ import { installErrorReporting } from "./dashboard/observability.js";
 installErrorReporting();
 
 /**
- * O grafo da dashboard -- 92 módulos ES, 720 KB de JavaScript -- só serve depois de
+ * O grafo da dashboard -- 72 módulos ES, 512 KB de JavaScript -- só serve depois de
  * autenticar, e quem fica parado no formulário de entrada não o paga. Carrega-se uma vez só,
  * dê a ordem o clique no login ou a sessão que já estava guardada.
+ *
+ * Uma carga que falhe não se recupera aqui: o browser guarda no mapa de módulos a falha por
+ * URL, e um segundo `import()` do mesmo especificador resolve para a entrada nula sem voltar
+ * à rede -- medido contra o hub local, duas tentativas e um só pedido. Quem trata da falha é
+ * o `session.js`, que devolve o ecrã de entrada e pede para recarregar a página.
  */
 let dashboardApp = null;
-const loadDashboardApp = () => (dashboardApp ??= import("./dashboard/app.js").catch((error) => {
-    // Uma promessa rejeitada não é nullish: sem isto ficava em cache, e toda a tentativa
-    // seguinte devolvia a mesma falha sem voltar a pedir nada ao servidor.
-    dashboardApp = null;
-    throw error;
-}));
+const loadDashboardApp = () => (dashboardApp ??= import("./dashboard/app.js"));
 
 document.addEventListener("DOMContentLoaded", () => {
     // O tema antes da sessão: o `<head>` já pintou a página na cor certa, e o que falta aqui

@@ -153,8 +153,15 @@ function bindDeviceForm() {
     bindUnsentConfigGuard();
 }
 
-/** A acção do botão que volta a pedir o painel depois de a carga falhar. */
-const CONFIG_RETRY_ACTION = "retryConfigPanel";
+/**
+ * A acção do botão que dá a saída depois de a carga do painel falhar.
+ *
+ * Recarrega a página, e não pede o módulo outra vez: o browser guarda no mapa de módulos a
+ * falha por URL, e um segundo `import()` do mesmo especificador resolve para a entrada nula
+ * **sem voltar à rede**. Medido contra o hub local -- duas tentativas, um só pedido. Um botão
+ * que pedisse outra vez prometia uma recuperação que não acontece.
+ */
+const CONFIG_RETRY_ACTION = "reloadForConfigPanel";
 
 /**
  * Abrir o separador é o que manda vir o painel de configurações.
@@ -174,7 +181,7 @@ async function openConfigPanel() {
         // Sem isto a raiz ficava com a frase da espera para sempre, e sem caminho de volta.
         els.deviceConfigRoot.innerHTML = html`<div class="text-secondary py-3">
             Não foi possível carregar as configurações.
-            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" data-action="${CONFIG_RETRY_ACTION}">Tentar de novo</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" data-action="${CONFIG_RETRY_ACTION}">Recarregar a página</button>
         </div>`;
         return;
     }
@@ -268,7 +275,7 @@ function bindDetail() {
 function bindConfigPanel() {
     els.deviceConfigRoot.addEventListener("click", (event) => {
         if (event.target.closest(`[data-action="${CONFIG_RETRY_ACTION}"]`)) {
-            void openConfigPanel();
+            window.location.reload();
         }
     });
 
