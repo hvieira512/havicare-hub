@@ -6,7 +6,7 @@ namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalog;
-use Hub\Infrastructure\Persistence\Migration\PillDispenserEncryptionSwitch;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutEncryptionSwitch;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutFactoryReset;
 
 /**
@@ -29,10 +29,11 @@ final class DatabaseMigrationPlan
             // O dispensador de comprimidos é um tipo de dispositivo novo, e as duas bases já
             // existiam quando ele chegou.
             new PillDispenserCatalog(),
-            // O primeiro M228 real mostrou que ele chega a cifrar o que envia.
-            new PillDispenserEncryptionSwitch(),
-            // E que a reposição de fábrica não devia estar ao alcance de um clique.
+            // O primeiro M228 real mostrou que a reposição de fábrica não devia estar ao
+            // alcance de um clique.
             new PillDispenserWithoutFactoryReset(),
+            // E o fornecedor confirmou que a cifra não se desliga por configuração.
+            new PillDispenserWithoutEncryptionSwitch(),
         ];
     }
 

@@ -117,6 +117,25 @@ lá. As outras cinco ficam de fora: os cenários levantam contentores, e um
 `git commit` que demora minutos deixa de ser usado. Num commit intermédio,
 `git commit --no-verify`.
 
+## Uma migração nova aplica-se logo
+
+Acrescentar uma migração ao `DatabaseMigrationPlan` não chega: o
+`DatabaseSchemaGuard` recusa arrancar enquanto a versão não estiver na tabela
+`schema_migrations`, e o hub local fica em ciclo de crash a dizer *«Database
+migrations are pending»*. Aplica-se **na mesma alteração em que se escreve a
+migração**, não quando o contentor reclamar.
+
+No hub local, das duas maneiras:
+
+- `docker compose up -d --force-recreate hub` — o `command` do serviço corre o
+  [`bin/migrate.php`](bin/migrate.php) ao arranque, e é a forma normal, porque
+  também recarrega o código.
+- `php bin/migrate.php` — quando só falta a base de dados e o código já está
+  onde deve estar.
+
+No servidor, o `make update` já a corre; o que não se faz é assumir que sim sem
+confirmar `journalctl -u havicare-hub-dev` a seguir.
+
 ## Trabalho em paralelo
 
 Vários agentes a modificar ficheiros ao mesmo tempo reescrevem-se uns aos outros.

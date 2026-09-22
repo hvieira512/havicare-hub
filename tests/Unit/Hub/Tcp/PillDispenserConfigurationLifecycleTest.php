@@ -59,7 +59,6 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
             'child_lock' => 'write_config_ack',
             'device_language' => 'write_config_ack',
             'time_zone' => 'write_config_ack',
-            'disable_encryption' => 'write_config_ack',
             'sync_configuration' => 'read_config_ack',
             'device_status' => 'read_status_ack',
             'dispense_now' => 'control_ack',

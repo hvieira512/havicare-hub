@@ -353,9 +353,6 @@ final class DeviceCommandCatalog
                 0x1055 => ['value' => self::pillByte($payload['endMinute'] ?? 0, 59)],
             ],
             'deviceLanguage' => [0x1001 => ['value' => self::pillByte($payload['language'] ?? 0, 1)]],
-            // O aparelho sai de fábrica a cifrar o que envia, e a especificação não dá a
-            // chave: sem isto o hub recebe heartbeats que não consegue ler.
-            'disableEncryption' => [0x8005 => ['value' => "\x00"]],
             // INT16S em HHMM: `+100` é uma hora à frente, e a oeste o sinal é negativo.
             'timeZone' => [0x1015 => ['value' => pack('s', (int)($payload['timeZone'] ?? 0))]],
             default => throw new \InvalidArgumentException("Unsupported zayata-m228 command {$command}"),

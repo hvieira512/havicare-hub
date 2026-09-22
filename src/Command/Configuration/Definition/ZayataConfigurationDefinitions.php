@@ -102,7 +102,10 @@ final class ZayataConfigurationDefinitions
             // *tem* — e a especificação manda ler os parâmetros no primeiro registo.
             self::action('sync_configuration', 'readConfiguration', 'Sincronizar configuração', 'system', 5),
             self::action('device_status', 'readStatus', 'Atualizar estado', 'system', 6),
-            self::action('disable_encryption', 'disableEncryption', 'Desligar cifra de dados', 'system', 7),
+            // Desligar a cifra também não entra: o `0x8005` aparece na tabela dos parâmetros
+            // escrevíveis, mas o fornecedor respondeu que o aparelho o recusa e que a chave sai
+            // da codificação dele — ou cifra tudo o que envia, ou não cifra nada, e a decisão
+            // não é deste lado. O botão só prometia uma saída que o firmware não tem.
 
             // As acções. O relógio calibra-se à mão porque num ensaio um alarme das 12:55
             // ficou registado às 11:45.

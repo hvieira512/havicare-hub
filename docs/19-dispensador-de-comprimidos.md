@@ -136,10 +136,23 @@ de errar.
 > AES128-CFB, que o hub não sabe abrir. O resultado é uma dashboard com todos os
 > cartões de telemetria vazios, sem um único erro em lado nenhum.
 >
-> Não é preciso chave para resolver: o `0x8005` (*Data Encryption*) é um
-> parâmetro de configuração escrevível, `0` desliga, e é o que a acção **Desligar
-> cifra de dados** escreve num `0x06`. Num aparelho novo é a primeira coisa a
-> fazer, antes de se esperar telemetria nenhuma.
+> O `0x8005` (*Data Encryption*) aparece na tabela dos parâmetros de
+> configuração, e daí saiu a leitura de que bastava escrever-lhe `0` para a
+> desligar sem precisar de chave. **Não basta.** O fornecedor respondeu que
+> «`0x8005` cannot be set», e que tanto a chave como os números aleatórios são
+> derivados da codificação do próprio aparelho: ou ele cifra tudo o que envia por
+> iniciativa própria, ou não cifra nada, e não é deste lado que isso se escolhe.
+> O hub deixou de expor a acção, porque era um botão que o firmware recusa
+> sempre.
+>
+> A fronteira, essa, é nítida e reproduzível: as **respostas aos nossos pedidos**
+> (`0x85`, `0x86`, `0x87`, `0x88`) chegam em claro, e só o que o aparelho manda
+> por iniciativa própria (`0x02` heartbeat, `0x03` evento, `0x04` notificação)
+> vem cifrado. É por isso que a configuração toda funciona e a telemetria
+> espontânea — incluindo o **evento de toma de medicação**, que é a
+> funcionalidade central — continua ilegível. Desbloqueá-la depende do
+> fornecedor: desligar a cifra na plataforma dele, ou dizer como a chave é
+> derivada.
 
 O **CRC16** é o de MODBUS: polinómio `0xA001` reflectido, valor inicial `0xFFFF`,
 calculado de `Length` ao fim dos dados. O anexo do documento traz a
@@ -249,7 +262,7 @@ ao hub.
 | `0x8101` | medicação | `0` normal · `1` a acabar · `2` sem medicação |
 | `0x8103` / `0x8104` | bateria | nível, e estado `0` normal · `1` cheia · `2` fraca · `3` a carregar · `4` sem bateria |
 | `0x8109` | alimentação DC | |
-| `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **valor real, não barras** |
+| `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **dBm, confirmado pelo fornecedor**, não barras |
 | `0x810C` / `0x810D` | nível de sinal | a escala grosseira |
 | `0x810E` / `0x810F` | **temperatura e humidade** | INT8S de −40 a 120 °C, INT8U de 0 a 100 %RH — **um byte cada**, ao contrário do sinal, que é INT16S |
 | `0x8112` | chamada de emergência | `0` normal · `1` em curso |

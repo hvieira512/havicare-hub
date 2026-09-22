@@ -150,7 +150,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'device_fault',
             'device_language',
             'device_status',
-            'disable_encryption',
             'dispense_now',
             'do_not_disturb',
             'early_dispense',
@@ -161,7 +160,8 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'medication_period',
             'medication_reminders',
             'mute_alarm',
-            // A reposição de fábrica não entra: devolvia o aparelho ao servidor do fornecedor.
+            // Duas acções não entram: a reposição de fábrica, que devolvia o aparelho ao
+            // servidor do fornecedor, e desligar a cifra, que o firmware recusa sempre.
             'reset_tray',
             'restart_device',
             'sync_configuration',
@@ -176,10 +176,10 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Nove configuráveis e oito pedíveis. Uma acção pede-se e não se configura, e por
+        // Nove configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por
         // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
         self::assertSame(
-            ['9', '8'],
+            ['9', '7'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,
