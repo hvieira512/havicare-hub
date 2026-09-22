@@ -570,10 +570,7 @@ function renderDeviceSimNumberField(value = "") {
         return;
     }
 
-    els.deviceSimNumberRoot.innerHTML = renderPhoneControl({
-        value,
-        placeholder: "Número do SIM",
-    });
+    els.deviceSimNumberRoot.innerHTML = renderPhoneControl({ value });
     resetPhoneControls(els.deviceSimNumberRoot);
 }
 

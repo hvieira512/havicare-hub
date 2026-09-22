@@ -176,7 +176,6 @@ function sosContactsInput(entry, desired, meta = {}) {
         limit: Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3),
         label: "Contactos SOS",
         emptyLabel: "Adicionar contacto SOS",
-        placeholderPrefix: "SOS",
         helpText: "Até 3 números. A ordem define a posição nos comandos SOS do dispositivo.",
         phoneMaxLength,
     });
@@ -192,7 +191,6 @@ function callWhitelistInput(entry, desired, meta = {}) {
         limit: Math.max(1, parseInt(String(entry.limit ?? 10), 10) || 10),
         label: "Lista de chamadas autorizadas",
         emptyLabel: "Adicionar número",
-        placeholderPrefix: "Número",
         helpText: "Até 10 números permitidos.",
     });
 }
@@ -209,7 +207,6 @@ function phoneRepeaterInput(entry, desired, options) {
     const label = String(options.label || entry.label || "Lista");
     const helpText = String(options.helpText || "");
     const emptyLabel = String(options.emptyLabel || "Adicionar");
-    const placeholderPrefix = String(options.placeholderPrefix || label);
     const phoneMaxLength = Math.max(0, parseInt(String(options.phoneMaxLength ?? 0), 10) || 0);
 
     return `
@@ -228,7 +225,6 @@ function phoneRepeaterInput(entry, desired, options) {
                             ${renderPhoneControl({
                                 value: String(value || ""),
                                 configField: "numbers",
-                                placeholder: `${placeholderPrefix} ${index + 1}`,
                                 maxLength: phoneMaxLength,
                             })}
                         </div>

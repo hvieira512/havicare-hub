@@ -71,7 +71,6 @@ function phoneInput(entry, desired) {
         renderPhoneControl({
             value: String(desired[key] || ""),
             configField: key,
-            placeholder: entry.label || fieldLabel(key),
         }),
     );
 }
