@@ -3,29 +3,38 @@ import { rowPayload, when } from "../format.js";
 import { html } from "../html.js";
 import {
     resetDetailFiltersDraft,
+    setDownlinkPage,
+    setTelemetryPage,
     state,
     updateDetailFiltersDraft,
 } from "../state.js";
+import { resolvePaginationPage } from "../pagination.js";
 import { uplinkCardContent } from "../components/cards/telemetry.js";
 import { filterChips } from "../components/chips.js";
 
 /**
- * Os filtros do histórico de um dispositivo: a janela de datas, o tipo e a pesquisa.
+ * Os filtros do histórico de um dispositivo -- a janela de datas, o tipo e a pesquisa -- e os
+ * paginadores dos dois painéis que eles reduzem.
  *
- * Saíram do `detail.js` porque não desenham o ecrã -- reduzem uma lista e dizem que pastilhas
- * mostrar. O que os liga ao ecrã é um `onChange`, entregue no arranque, e não um import de
+ * Saíram do `detail.js` porque não desenham o ecrã: reduzem uma lista, dizem que pastilhas
+ * mostrar e escolhem que página dela se vê. Tudo o que volta a desenhar entra pelo contexto
+ * do arranque -- o `onChange` e os dois renderizadores dos painéis -- e não por um import de
  * volta: o grafo de módulos da dashboard não tem ciclos e não é aqui que ganha o primeiro.
  *
- * Não confundir com o `devices/filters.js`, que filtra a *listagem* de dispositivos. Estes
- * filtram o que um dispositivo já reportou.
+ * Não confundir com o `devices/list-filters.js`, que filtra a *listagem* de dispositivos.
+ * Estes filtram o que um dispositivo já reportou.
  */
 
 let els;
 let onChange = () => {};
+let renderDownlinkRequests = () => {};
+let renderTelemetryList = () => {};
 
 export function initDetailFilters(context) {
     els = context.els;
     onChange = context.onChange;
+    renderDownlinkRequests = context.renderDownlinkRequests;
+    renderTelemetryList = context.renderTelemetryList;
 }
 
 const DETAIL_ITEM_TYPES = {
@@ -294,5 +303,53 @@ export function updateDetailFilterDraft() {
         to: els.detailFilterTo.value,
         type: els.detailFilterType.value,
         q: state.detailFilters.q,
+    });
+}
+
+/**
+ * Um clique num paginador de um painel do detalhe.
+ *
+ * Os dois painéis paginam do lado do cliente sobre o que os filtros deixaram passar, e por
+ * isso a conta das páginas é feita aqui e não vem da API. O que os distingue é só o que cada
+ * um deixa passar, o tamanho da página e onde escreve o resultado.
+ */
+function paginateDetailPanel(event, { belongsToPanel, pageSize, page, actionPrefix, setPage, render }) {
+    if (!state.selectedDetail) return;
+
+    const rows = filterDetailItems(allDetailItems())
+        .filter(belongsToPanel)
+        .map((item) => item.raw);
+    const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+    const nextPage = resolvePaginationPage(
+        event,
+        { page, total_pages: totalPages },
+        actionPrefix,
+        `${actionPrefix}PageGo`,
+    );
+    if (nextPage === null) return;
+
+    setPage(nextPage, totalPages);
+    render(rows);
+}
+
+export function handleDownlinkPagerClick(event) {
+    paginateDetailPanel(event, {
+        belongsToPanel: (item) => item._source === "command",
+        pageSize: state.downlinkPageSize,
+        page: state.downlinkPage,
+        actionPrefix: "downlink",
+        setPage: setDownlinkPage,
+        render: renderDownlinkRequests,
+    });
+}
+
+export function handleTelemetryPagerClick(event) {
+    paginateDetailPanel(event, {
+        belongsToPanel: (item) => ["telemetry", "event"].includes(item._source),
+        pageSize: state.telemetryPageSize,
+        page: state.telemetryPage,
+        actionPrefix: "telemetry",
+        setPage: setTelemetryPage,
+        render: renderTelemetryList,
     });
 }

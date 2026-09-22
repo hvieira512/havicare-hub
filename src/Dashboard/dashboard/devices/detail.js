@@ -50,9 +50,14 @@ let els;
 
 function initDeviceDetailView(context) {
     els = context.els;
-    // O re-render entra por aqui e não por um import de volta: os filtros reduzem a lista, o
-    // ecrã é que a desenha, e o grafo de módulos fica sem ciclos.
-    initDetailFilters({ els, onChange: renderSelection });
+    // Tudo o que redesenha entra por aqui e não por um import de volta: os filtros reduzem a
+    // lista e paginam-na, o ecrã é que a desenha, e o grafo de módulos fica sem ciclos.
+    initDetailFilters({
+        els,
+        onChange: renderSelection,
+        renderDownlinkRequests,
+        renderTelemetryList,
+    });
 }
 
 function renderSelection() {

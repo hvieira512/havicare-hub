@@ -1,29 +1,16 @@
-import {
-    changeDeviceFilter,
-    setDeviceFilters,
-    setDownlinkPage,
-    setTelemetryPage,
-    state,
-} from "../state.js";
+import { changeDeviceFilter, setDeviceFilters, state } from "../state.js";
 import {
     FILTERS_STORAGE_KEY,
     clearStorageKey,
     saveJsonStorage,
 } from "../storage.js";
-import { resolvePaginationPage } from "../pagination.js";
 import { loadSummary, normalizeFilterValue } from "./list.js";
-import {
-    renderDownlinkRequests,
-    renderTelemetryList,
-} from "./detail.js";
-import { allDetailItems, filterDetailItems } from "./detail-filters.js";
 
 /**
- * Os filtros da listagem de dispositivos e os paginadores dos dois painéis do escolhido.
- *
- * Estão juntos porque partilham a mesma ideia: leem o estado, mexem-lhe, e voltam a pedir
- * a lista -- nenhum deles constrói marcação.
+ * O que cada clique nos filtros da listagem faz: mexe no estado, guarda-o e volta a pedir a
+ * lista. A marcação das colunas é do `list.js`.
  */
+
 /**
  * Marcar ou desmarcar um valor de filtro. Nada marcado quer dizer tudo, e por isso não há
  * opção "Todos": desmarcar o último valor é o que a repõe.
@@ -146,48 +133,4 @@ export async function clearDeviceFilters() {
     });
     clearStorageKey(FILTERS_STORAGE_KEY);
     await loadSummary();
-}
-
-export function handleDownlinkPagerClick(event) {
-    if (!state.selectedDetail) return;
-
-    const commands = filterDetailItems(allDetailItems())
-        .filter((item) => item._source === "command")
-        .map((item) => item.raw);
-    const totalPages = Math.max(
-        1,
-        Math.ceil(commands.length / state.downlinkPageSize),
-    );
-    const nextPage = resolvePaginationPage(
-        event,
-        { page: state.downlinkPage, total_pages: totalPages },
-        "downlink",
-        "downlinkPageGo",
-    );
-    if (nextPage === null) return;
-
-    setDownlinkPage(nextPage, totalPages);
-    renderDownlinkRequests(commands);
-}
-
-export function handleTelemetryPagerClick(event) {
-    if (!state.selectedDetail) return;
-
-    const telemetryRows = filterDetailItems(allDetailItems())
-        .filter((item) => ["telemetry", "event"].includes(item._source))
-        .map((item) => item.raw);
-    const totalPages = Math.max(
-        1,
-        Math.ceil(telemetryRows.length / state.telemetryPageSize),
-    );
-    const nextPage = resolvePaginationPage(
-        event,
-        { page: state.telemetryPage, total_pages: totalPages },
-        "telemetry",
-        "telemetryPageGo",
-    );
-    if (nextPage === null) return;
-
-    setTelemetryPage(nextPage, totalPages);
-    renderTelemetryList(telemetryRows);
 }
