@@ -12,10 +12,8 @@ import { confirmDestructive, toast } from "./dialogs.js";
 const POLL_INTERVAL_MS = 15_000;
 
 /**
- * O `type` já vinha na resposta e o cartão ignorava-o: escrevia sempre "Dispositivo não
- * autorizado", que era o único tipo que existia. Passou a haver um segundo -- o hub avisa
- * aqui quando se reiniciou sozinho --, e um aviso de queda do processo com o título de um
- * dispositivo não autorizado não diz nada a ninguém.
+ * Cada `type` traz o seu título e o seu ícone: um aviso de que o hub se reiniciou sozinho,
+ * com o título de um dispositivo não autorizado, não diz nada a ninguém.
  *
  * O identificador só se mostra quando é de facto um dispositivo; para o hub, o que interessa
  * é a razão.

@@ -233,6 +233,9 @@ function renderCapabilitiesCatalogSection() {
                     const number = entry.supported
                         ? String(++index).padStart(2, "0")
                         : "—";
+                    // Os ícones das secções irmãs vão todos na mesma cor: cores diferentes
+                    // leem-se como gravidades diferentes, e o vermelho numa secção de
+                    // alarmes lê-se como erro em vez de categoria.
                     return html`
                 <div class="capability-row d-grid border rounded-2${entry.supported ? "" : " is-unsupported"}">
                     <span class="capability-index fw-bold lh-1 text-end tabular-nums" aria-hidden="true">${number}</span>
@@ -282,10 +285,6 @@ function renderCapabilitiesCatalogSection() {
     renderCapabilityCatalogSectionNav(visibleSections);
 }
 
-/**
- * Cinco secções irmãs, cinco ícones -- e uma cor só: cores diferentes leem-se como
- * gravidades diferentes, e o vermelho dos alarmes lia-se como erro em vez de categoria.
- */
 /**
  * O ícone de uma capacidade no catálogo. O mapa dos cartões de pedido cobre sobretudo
  * telemetria; fora disso o recurso é o ícone da secção, porque catorze círculos iguais numa

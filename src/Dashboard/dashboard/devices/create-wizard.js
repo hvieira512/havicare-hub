@@ -48,7 +48,6 @@ let licenseGroups = [];
 
 const STEPS = ["Classificação", "Este aparelho"];
 
-/** Cada pergunta sabe quando está respondida, que badges produz e o que invalida. */
 /** A pergunta do passo 2 não entra: a trilha é a classificação, o passo 2 é este aparelho. */
 const TRAIL_QUESTIONS = [
     { key: "type", label: "Tipo" },
@@ -56,6 +55,7 @@ const TRAIL_QUESTIONS = [
     { key: "owner", label: "Licença" },
 ];
 
+/** Cada pergunta sabe quando está respondida, que badges produz e o que invalida. */
 const QUESTIONS = [
     {
         key: "type",
@@ -145,7 +145,6 @@ function render() {
     renderFooter();
 }
 
-/** A trilha, com o passo no fim da linha. Cada badge é um botão para a sua pergunta. */
 /**
  * As três perguntas da classificação estão sempre na trilha: uma pendente esbatida diz o
  * que vem a seguir, a activa fica contornada, a respondida é um botão para voltar a ela.
@@ -216,8 +215,10 @@ function answerAndRender(key, value) {
     render();
 }
 
-/** No passo 1 só se chega aqui pelo "Anterior", e o que há para fazer é na trilha. */
-/** Um passo intermédio sem nada por perguntar: a trilha é o único sítio onde há que fazer. */
+/**
+ * Um passo intermédio sem nada por perguntar -- no passo 1 só se chega aqui pelo "Anterior":
+ * a trilha é o único sítio onde há que fazer.
+ */
 function renderStepDone() {
     return `<p class="text-secondary small mb-0">
         Toque numa etiqueta acima para alterar uma resposta.

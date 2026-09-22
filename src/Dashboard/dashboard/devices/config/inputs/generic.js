@@ -192,13 +192,6 @@ export function createContactRow(section) {
 }
 
 /**
- * Os descritores dos campos partilhados.
- *
- * Cada tipo de campo declara aqui as suas quatro faces juntas -- desenhar, ler de volta, o
- * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
- * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
- */
-/**
  * As opções que a definição declara para um campo, já normalizadas.
  *
  * O catálogo traz `options: { campo: [{value, label}] }`, que é o mesmo formato que a

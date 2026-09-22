@@ -27,13 +27,11 @@ import {
 /**
  * O separador das licenças, com as licenças de cada empresa dentro dela.
  *
- * A edição acontece na própria linha. Antes eram dois formulários escondidos: o das empresas
- * no topo do painel e o das licenças no fundo, a seguir à paginação -- carregar no lápis de
- * uma licença abria uma tira sem título lá em baixo, longe da linha de onde se veio e igual
- * à de criar. Agora a linha que se toca é a que se transforma.
+ * A linha que se toca é a que se transforma: um formulário à parte ficaria longe da linha de
+ * onde se veio, e sem título nenhum seria igual ao de criar.
  *
- * A empresa deixou de ser uma pergunta do formulário da licença: uma licença nasce dentro da
- * empresa em que se carregou no `+`, e a posição na árvore é que a diz.
+ * A empresa não é uma pergunta do formulário da licença: uma licença nasce dentro da empresa
+ * em que se carregou no `+`, e a posição na árvore é que a diz.
  */
 let els;
 // A página de empresas que está à vista, para uma alteração numa licença a poder redesenhar
