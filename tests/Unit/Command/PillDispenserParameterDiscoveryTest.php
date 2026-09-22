@@ -71,9 +71,10 @@ final class PillDispenserParameterDiscoveryTest extends TestCase
         $decoded = (new PillDispenserAdapter())->decodeIncoming((string)hex2bin(self::CONTROL_REPLY));
         $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
 
+        // Pela chave com que a capacidade é declarada no catálogo: um nome publicado que
+        // ninguém declara é um nome que ninguém recebe.
         self::assertCount(1, $events);
-        self::assertSame('supported_parameters', $events[0]['feature']);
-        self::assertSame('control', $events[0]['value']['scope']);
+        self::assertSame('supported_control', $events[0]['feature']);
         self::assertSame(12, $events[0]['value']['count']);
         self::assertContains('0xA002', $events[0]['value']['tags']);
     }

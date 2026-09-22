@@ -72,8 +72,14 @@ class PillDispenserAdapter implements DeviceAdapterInterface
 
         // A resposta à descoberta de parâmetros não é TFLV: é uma lista de TAGs coladas. Lê-la
         // como TFLV dava TAGs inventadas -- o `0xA002` aparecia como `0x02A0`.
-        $discovered = self::isDiscoveryReply($packetType) ? self::parseTagList($plain ?? '') : null;
-        $tlv = $plain === null || $discovered !== null ? [] : self::parseTlv($plain);
+        //
+        // E uma lista que não se entenda também não vira TFLV. Ler esses bytes como TLV dava
+        // telemetria inventada com identidade correcta e CRC válido, que é a falha calada que
+        // este protocolo torna fácil; um `0x8B` de um firmware com famílias que não listamos
+        // chegava para a provocar.
+        $isDiscovery = self::isDiscoveryReply($packetType);
+        $discovered = $isDiscovery ? self::parseTagList($plain ?? '') : null;
+        $tlv = $plain === null || $isDiscovery ? [] : self::parseTlv($plain);
 
         return [
             'encrypted' => $encrypted,
@@ -443,19 +449,31 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     /** Os bytes altos das TAGs que a especificação declara. */
     private const TAG_FAMILIES = [0x10, 0x80, 0x81, 0xA0, 0xA1, 0xC2];
 
+    /**
+     * Só as três que o hub sabe nomear. O `0x8D` estava aqui dentro e fazia fechar como
+     * aceite qualquer operação pendente, enquanto o descodificador o via como `unknown` e não
+     * publicava nada.
+     */
     private static function isDiscoveryReply(int $packetType): bool
     {
-        return $packetType >= 0x8A && $packetType <= 0x8D;
+        return $packetType >= 0x8A && $packetType <= 0x8C;
     }
 
     /**
      * A lista de TAGs de uma resposta à descoberta, na ordem do anfitrião.
      *
+     * Um corpo vazio é uma lista vazia e não uma falha: é o que responde um firmware que não
+     * serve nenhum parâmetro daquela família, e o pedido tem de fechar na mesma. Devolver
+     * `null` aqui deixava-o para sempre à espera, a repetir-se de minuto a minuto.
+     *
      * @return list<int>|null
      */
     private static function parseTagList(string $body): ?array
     {
-        if ($body === '' || strlen($body) % 2 !== 0) {
+        if ($body === '') {
+            return [];
+        }
+        if (strlen($body) % 2 !== 0) {
             return null;
         }
 

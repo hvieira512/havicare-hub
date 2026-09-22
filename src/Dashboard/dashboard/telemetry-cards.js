@@ -163,6 +163,7 @@ const UPLINK_CARD_RENDERERS = {
         value: fieldValue("result", data.result),
     }),
     medication_alarm_status: (data) => medicationAlarmContent(data),
+    device_status: (data) => deviceStatusContent(data),
     device_fault: (data) => ({
         value: fieldValue("fault", data.fault),
     }),
@@ -374,6 +375,37 @@ export function uplinkCardContent(type, data, meta = {}) {
 // Uma pulseira W6B diz que tipo de toque foi; um pager NCS diz que comando foi.
 
 /**
+ * O estado do aparelho, que no dispensador traz oito campos.
+ *
+ * O cartão genérico mostra os quatro primeiros e cala o resto: o sinal e o bloqueio de criança
+ * enchiam a quota, e a tampa, a corrente, o alarme de ambiente e o CCID do SIM nunca chegavam
+ * ao ecrã. O sinal fica como valor principal porque é o que se lê de relance; o resto é
+ * detalhe, e só entra o que o aparelho reportou.
+ */
+function deviceStatusContent(data) {
+    const detalhes = [
+        "childLockEngaged",
+        "lidOpen",
+        "mainsPowered",
+        "environmentAlarm",
+        "simCcid",
+        "wifiSignalDbm",
+    ].filter((key) => data?.[key] !== undefined && data[key] !== null);
+
+    const sinal = data?.gsmSignalDbm;
+
+    return {
+        value:
+            sinal != null
+                ? `${sinal} dBm`
+                : data?.signalLevel != null
+                    ? `${data.signalLevel} de 3`
+                    : capabilityLabel("device_status"),
+        details: compactDetails(data, detalhes),
+    };
+}
+
+/**
  * O estado dos nove alarmes do dispensador.
  *
  * Uma toma falhada é o que faz alguém olhar para o cartão, e por isso ganha o valor
@@ -382,6 +414,19 @@ export function uplinkCardContent(type, data, meta = {}) {
  */
 function medicationAlarmContent(data) {
     const alarms = Array.isArray(data?.alarms) ? data.alarms : [];
+    const vivos = alarms.filter((entry) => entry?.state && entry.state !== "idle");
+
+    // Só uma leitura completa conta totais. Uma notificação traz o alarme que mudou, e
+    // rotulá-lo «1 tomada» apagava do ecrã as falhas que a leitura anterior mostrava.
+    if (data?.complete === false) {
+        return {
+            value: vivos.length === 1
+                ? `${fieldLabel("alarm")} ${vivos[0].alarm}: ${fieldValue("state", vivos[0].state)}`
+                : "Alteração de alarme",
+            details: "Leitura parcial — pedir o estado para ver os nove",
+        };
+    }
+
     const missed = Number(data?.missedCount ?? 0);
     const taken = Number(data?.takenCount ?? 0);
 
@@ -394,8 +439,7 @@ function medicationAlarmContent(data) {
 
     return {
         value,
-        details: alarms
-            .filter((entry) => entry?.state && entry.state !== "idle")
+        details: vivos
             .map(
                 (entry) =>
                     html`${fieldLabel("alarm")} ${entry.alarm}: ${fieldValue("state", entry.state)}`,

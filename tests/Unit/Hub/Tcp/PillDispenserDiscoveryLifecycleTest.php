@@ -40,19 +40,13 @@ final class PillDispenserDiscoveryLifecycleTest extends TestCase
     }
 
     /**
-     * Uma resposta sem TAGs nenhumas não é uma recusa: é um firmware que não serve aquela
-     * família. O pedido fecha à mesma, senão ficava a repetir-se para sempre.
+     * O caso do corpo vazio vive no `PillDispenserDiscoveryDecodingTest`, onde a trama é
+     * montada e descodificada pelo adaptador.
+     *
+     * Estava aqui, com o `supportedTags` construído à mão — uma forma que o adaptador nunca
+     * produzia, porque um corpo vazio devolvia `null`. O teste passava e o caminho real ficava
+     * partido: era o defeito que ele dizia cobrir.
      */
-    public function testAnEmptyAnswerStillClosesTheRequest(): void
-    {
-        self::assertTrue(
-            $this->protocol()->replyAccepted([
-                'type' => 'discover_status_ack',
-                'tlv' => [],
-                'supportedTags' => [],
-            ]),
-        );
-    }
 
     /** O que o aparelho manda por sua iniciativa continua a não comentar pedido nenhum. */
     public function testASpontaneousPacketStillSaysNothing(): void

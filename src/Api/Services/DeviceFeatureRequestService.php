@@ -158,6 +158,11 @@ final class DeviceFeatureRequestService
             return ApiError::invalidConfig($e->getMessage())->toArray();
         }
 
+        // Fora do ciclo: só a calibração do relógio o usa, e lá dentro cada comando pagava uma
+        // leitura de todas as configurações do aparelho.
+        $timeZone = null;
+        $zoneRead = false;
+
         $commands = [];
         foreach ($nativeUpdates as $nativeKey => $payload) {
             $error = DeviceConfigurationCatalog::validate($protocol, $nativeKey, $payload);
@@ -167,13 +172,17 @@ final class DeviceFeatureRequestService
 
             $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $nativeKey, $payload);
             $command = $commandPayload['command'];
+            if (!$zoneRead) {
+                $timeZone = $this->storedTimeZone($imei);
+                $zoneRead = true;
+            }
             $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload'], [
                 'deviceId' => $identity->metadata !== null
                     ? $identity->metadata->deviceId
                     : (string)($identity->device['deviceId'] ?? ''),
                 // Calibrar o relógio precisa de saber a que horas o aparelho se deve pôr, e
                 // isso é hora local: o fuso que o hub tem guardado para ele.
-                'timeZone' => $this->storedTimeZone($imei),
+                'timeZone' => $timeZone,
             ]);
             $id = bin2hex(random_bytes(8));
             // O valor segue com o comando: uma acção como «procurar a pulseira» distingue-se
@@ -330,7 +339,16 @@ final class DeviceFeatureRequestService
                 continue;
             }
 
-            foreach ([$row['reported_payload'] ?? null, $row['desired_payload'] ?? null] as $payload) {
+            // Um valor reportado fica debaixo de `data` — é a forma com que a projeção guarda
+            // qualquer leitura. Só o desejado é um mapa simples, e ler só esse deixava a
+            // calibração em UTC num aparelho cujo fuso nunca tenha sido escrito por aqui.
+            $reported = $row['reported_payload'] ?? null;
+            $candidates = [
+                is_array($reported) ? ($reported['data'] ?? null) : null,
+                $reported,
+                $row['desired_payload'] ?? null,
+            ];
+            foreach ($candidates as $payload) {
                 $zone = is_array($payload) ? ($payload['timeZone'] ?? null) : null;
                 if (is_numeric($zone)) {
                     return (int)$zone;

@@ -86,6 +86,29 @@ final class PillDispenserReportedConfigurationTest extends TestCase
         ], $settings['do_not_disturb']);
     }
 
+    /**
+     * Nove alarmes desligados é um plano, e tem de ser publicado como tal.
+     *
+     * A lista só saía quando havia pelo menos um alarme ligado. Desligar os nove não publicava
+     * plano nenhum, a projeção não tocava na linha, e a dashboard continuava a mostrar o plano
+     * antigo como reportado — para sempre.
+     */
+    public function testTurningEveryAlarmOffIsAlsoAPlan(): void
+    {
+        $tlv = [];
+        foreach (range(0, 8) as $offset) {
+            $tlv[0x1041 + $offset] = "\x00";
+        }
+
+        self::assertSame(['plans' => []], $this->readConfiguration($tlv)['medication_reminders'] ?? null);
+    }
+
+    /** Uma trama que não fala dos alarmes não diz nada sobre o plano. */
+    public function testAFrameWithoutTheAlarmSwitchesSaysNothingAboutThePlan(): void
+    {
+        self::assertArrayNotHasKey('medication_reminders', $this->readConfiguration([0x1013 => "\x02"]));
+    }
+
     /** Uma TAG que o aparelho recusa não pode voltar como valor: é o que não sabemos. */
     public function testARefusedTagDoesNotBecomeAValue(): void
     {

@@ -270,10 +270,14 @@ ao hub.
 |---|---|---|
 | `0x8101` | medicação | `0` normal · `1` a acabar · `2` sem medicação |
 | `0x8103` / `0x8104` | bateria | nível, e estado `0` normal · `1` cheia · `2` fraca · `3` a carregar · `4` sem bateria |
-| `0x8109` | alimentação DC | |
+| `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
+| `0x8105` / `0x8106` | identificador do prato, tensão baixa de bateria | **ambas *deprecated* na especificação** |
+| `0x8107` | tampa | `0` fechada · `1` aberta |
+| `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
 | `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **dBm**, e o aparelho manda a magnitude: o sinal negativo é posto pelo hub |
 | `0x810C` / `0x810D` | nível de sinal | a escala grosseira |
 | `0x810E` / `0x810F` | **temperatura e humidade** | INT8S de −40 a 120 °C, INT8U de 0 a 100 %RH — **um byte cada**, ao contrário do sinal, que é INT16S |
+| `0x8111` | alarme de temperatura/humidade | `0` normal · `1` em alarme — é o juízo que o aparelho faz sobre os dois anteriores |
 | `0x8112` | chamada de emergência | `0` normal · `1` em curso |
 | `0x811A` / `0x811B` / `0x811D` | célula actual, total e restantes | o `0x811B` é a **capacidade do prato**, não quantas vão carregadas — essas são a configuração `0x101C` |
 | `0x8121`–`0x8125` | falhas | rotação, reset do prato, empurrador, porta da célula, teclas |
@@ -288,12 +292,8 @@ ao hub.
 >
 > As notificações `0x04` trazem **só o que mudou** — um alarme, não os nove. É por
 > isso que uma leitura vinda de uma notificação traz a lista incompleta, e só um
-> `0x07` dá o estado dos nove de uma vez.
-| `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
-| `0x8107` | tampa | `0` fechada · `1` aberta |
-| `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
-| `0x8111` | alarme de temperatura/humidade | `0` normal · `1` em alarme |
-| `0x8105` / `0x8106` | identificador do prato, tensão baixa de bateria | **ambas *deprecated* na especificação** |
+> `0x07` dá o estado dos nove de uma vez, e só nessa leitura é que as contagens de
+> tomadas e falhadas são totais.
 
 A temperatura e a humidade **não existem na API REST**. As falhas, que na API
 REST eram um único `rotate`, aqui vêm discriminadas em cinco.

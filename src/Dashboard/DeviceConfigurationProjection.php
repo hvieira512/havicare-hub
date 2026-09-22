@@ -46,16 +46,23 @@ final class DeviceConfigurationProjection
             return;
         }
 
-        $key = $nativeType;
+        // Um tipo de resposta que identifica **uma** configuração nomeia-a. Um que várias
+        // declarem não nomeia nenhuma: ficar pela primeira do catálogo era escolher à sorte, e
+        // o valor de uma escrita ia parar à linha de outra configuração qualquer, que passava
+        // a mostrar um reportado que nunca foi dela. Melhor não guardar do que guardar errado.
+        $candidatas = [];
         foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
             if (in_array($nativeType, $entry['expectedReplyTypes'] ?? [], true)) {
-                $key = (string)$entry['key'];
-                break;
+                $candidatas[(string)$entry['key']] = true;
             }
         }
+        if (count($candidatas) !== 1) {
+            return;
+        }
+
         $this->db->deviceConfigurations->saveReported(
             $imei,
-            $key,
+            (string)array_key_first($candidatas),
             $protocol,
             $nativeType,
             $payload

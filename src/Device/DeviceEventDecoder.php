@@ -272,22 +272,25 @@ final class DeviceEventDecoder
      */
     private function pillSupportedParameters(string $nativeType, array $payload): ?array
     {
-        $scope = match ($nativeType) {
-            'discover_config_ack' => 'configuration',
-            'discover_status_ack' => 'status',
-            'discover_control_ack' => 'control',
+        // Pela chave com que a capacidade é declarada, e não por um nome inventado aqui: o
+        // catálogo declara as três, e publicar um `supported_parameters` que não existe em
+        // lado nenhum era a falha calada de sempre — quem integra subscreve o nome declarado
+        // e nunca recebe nada.
+        $feature = match ($nativeType) {
+            'discover_config_ack' => 'supported_configuration',
+            'discover_status_ack' => 'supported_status',
+            'discover_control_ack' => 'supported_control',
             default => null,
         };
         $tags = $payload['supportedTags'] ?? null;
-        if ($scope === null || !is_array($tags) || $tags === []) {
+        if ($feature === null || !is_array($tags)) {
             return null;
         }
 
         return [
-            'feature' => 'supported_parameters',
+            'feature' => $feature,
             'nativeType' => $nativeType,
             'value' => [
-                'scope' => $scope,
                 'count' => count($tags),
                 // Em hexadecimal, que é como a especificação as nomeia: `4098` não se procura
                 // num documento onde está escrito `0x1002`.
@@ -334,8 +337,18 @@ final class DeviceEventDecoder
         // Só os alarmes ligados: os outros seriam nove linhas a dizer "00:00 desligado". O
         // número do alarme vai junto, senão o terceiro voltava como se fosse o segundo.
         $plans = [];
+        // Se a trama falou dos interruptores, ela diz o plano inteiro — mesmo que o plano
+        // inteiro sejam nove alarmes desligados. Sem esta distinção, desligar os nove não
+        // publicava plano nenhum e a dashboard continuava a mostrar o plano antigo como
+        // reportado, para sempre.
+        $planReported = false;
         for ($offset = 0; $offset < 9; $offset++) {
-            if ($this->tlvU8($tlv, 0x1041 + $offset) !== 1) {
+            $enabled = $this->tlvU8($tlv, 0x1041 + $offset);
+            if ($enabled === null) {
+                continue;
+            }
+            $planReported = true;
+            if ($enabled !== 1) {
                 continue;
             }
             $plans[] = [
@@ -358,7 +371,7 @@ final class DeviceEventDecoder
         // permite guardar cada uma como reportada e desenhá-la com o mesmo componente que
         // desenha o desejado, sem traduzir nada pelo meio.
         $settings = array_filter([
-            'medication_reminders' => $plans !== [] ? ['plans' => $plans] : null,
+            'medication_reminders' => $planReported ? ['plans' => $plans] : null,
             'medication_period' => $this->pillPeriod($tlv),
             'do_not_disturb' => $this->pillQuietHours($tlv),
             'alarm_volume' => $this->pillField($tlv, 0x1013, 'volume'),
@@ -574,7 +587,10 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'help_call', 'nativeType' => $nativeType, 'value' => ['state' => 'in_progress']];
         }
 
-        $alarms = $this->pillAlarmStatus($tlv);
+        // Só a resposta à consulta de estado pergunta pelos nove alarmes. O heartbeat e as
+        // notificações trazem o que o aparelho quis dizer, e contá-los como totais punha «1
+        // tomada» por cima de um cartão que dizia duas falhas.
+        $alarms = $this->pillAlarmStatus($tlv, $nativeType === 'read_status_ack');
         if ($alarms !== null) {
             $events[] = ['feature' => 'medication_alarm_status', 'nativeType' => $nativeType, 'value' => $alarms];
         }
@@ -602,12 +618,14 @@ final class DeviceEventDecoder
      * vem sempre legível.
      *
      * As contagens vão à frente porque são o que o cartão mostra: quantas tomas falharam é a
-     * pergunta, e a lista por alarme é o detalhe.
+     * pergunta, e a lista por alarme é o detalhe. Mas só saem quando a trama **perguntou
+     * pelos nove** — uma notificação traz o alarme que mudou e mais nada, e contar sobre ela
+     * dava um total que não é total nenhum.
      *
      * @param array<int, array{value?: string, state?: int}> $tlv
-     * @return array{takenCount: int, missedCount: int, alarms: list<array{alarm: int, state: string}>}|null
+     * @return array<string, mixed>|null
      */
-    private function pillAlarmStatus(array $tlv): ?array
+    private function pillAlarmStatus(array $tlv, bool $complete): ?array
     {
         $alarms = [];
         $taken = 0;
@@ -632,9 +650,13 @@ final class DeviceEventDecoder
             $alarms[] = ['alarm' => $alarm, 'state' => $state];
         }
 
-        return $alarms === []
-            ? null
-            : ['takenCount' => $taken, 'missedCount' => $missed, 'alarms' => $alarms];
+        if ($alarms === []) {
+            return null;
+        }
+
+        return $complete
+            ? ['takenCount' => $taken, 'missedCount' => $missed, 'complete' => true, 'alarms' => $alarms]
+            : ['complete' => false, 'alarms' => $alarms];
     }
 
     /**

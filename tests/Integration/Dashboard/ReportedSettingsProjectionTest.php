@@ -44,12 +44,12 @@ final class ReportedSettingsProjectionTest extends MysqlDashboardTestCase
     }
 
     /**
-     * Sem mapa de configurações, o comportamento antigo fica de pé: uma linha só.
+     * Sem mapa de configurações, o caminho antigo continua a valer — e a recusar-se a
+     * adivinhar.
      *
-     * É o dos relógios — uma resposta confirma uma configuração, e a chave sai do tipo dela.
-     * Que chave é essa, quando várias declaram o mesmo tipo de resposta, é uma escolha
-     * arbitrária que este caminho sempre teve; o que aqui se prende é que continua a ser uma
-     * e não várias, para o caminho novo não ficar a escrever por cima do antigo.
+     * No dispensador, nove configurações declaram o `write_config_ack`: o tipo não nomeia
+     * nenhuma, e nada se guarda. A regra está no `AmbiguousReplyTypeTest`; aqui prende-se só
+     * que o caminho novo não ficou a escrever por cima do antigo.
      */
     public function testAPayloadWithoutSettingsKeepsTheOldBehaviour(): void
     {
@@ -64,7 +64,7 @@ final class ReportedSettingsProjectionTest extends MysqlDashboardTestCase
             'data' => ['status' => 'ok'],
         ]);
 
-        self::assertCount(1, $this->reportedByKey($db, '869243062262999'));
+        self::assertCount(0, $this->reportedByKey($db, '869243062262999'));
     }
 
     /** @return array<string, mixed> */
