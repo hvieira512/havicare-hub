@@ -4,9 +4,9 @@
 
 | Suite | Onde | Ficheiros | Precisa de |
 |---|---|---|---|
-| Unitários (PHP) | `tests/Unit/` | 153 | nada |
+| Unitários (PHP) | `tests/Unit/` | 157 | nada |
 | Integração (PHP) | `tests/Integration/` | 38 | MySQL e Redis |
-| Frontend (Node) | `tests/Frontend/` | 93 | nada |
+| Frontend (Node) | `tests/Frontend/` | 96 | nada |
 | Cenários (shell) | `tests/scenarios/` | 6 | a pilha Docker inteira |
 
 ```bash

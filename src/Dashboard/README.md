@@ -45,8 +45,12 @@ São só estas, e explicam onde cada ficheiro está:
 
    Um widget que escreve no elemento que recebeu, que abre um modal ou que fala com o
    Bootstrap **não é um componente**: ou é parte da funcionalidade, ou é um módulo da raiz,
-   como o `pagination.js`, o `phone.js`, o `dialogs.js`, o `tooltips.js` e o `grid.js`. A
-   fronteira é essa, e não o tamanho.
+   como o `phone.js`, o `dialogs.js`, o `tooltips.js` e o `grid.js`. A fronteira é essa, e
+   não o tamanho.
+
+   Quando um módulo destes tem os dois lados, separam-se: o `components/pagination.js`
+   devolve os botões e o `pagination.js` da raiz é que os escreve nos três elementos do
+   painel. A janela de sete lugares passou a testar-se sozinha, sem um documento à volta.
 
    E em nenhum dos casos se acrescenta ao fundo de um ficheiro que já existe só por ser do
    mesmo género. Foi assim que os cartões de telemetria chegaram a seiscentas linhas.
@@ -122,6 +126,7 @@ dashboard/
 │   ├── device-type-tiles.js  o mosaico de tipos de dispositivo, e o ícone de cada um
 │   ├── chips.js            as pastilhas de secção e as de filtro aplicado
 │   ├── empty-panel.js      o estado vazio de um painel, em texto
+│   ├── pagination.js       os botões do paginador: as setas e a janela de sete lugares
 │   └── cards/              os cartões de telemetria, que são um bloco fechado
 │       ├── telemetry.js        o catálogo: ícone, cor e corpo por tipo
 │       ├── shell.js            a moldura de um cartão
@@ -129,7 +134,7 @@ dashboard/
 │       ├── shared.js           o resumo compacto que mais do que uma família usa
 │       └── radar.js · diaper.js · gateway.js · ncs.js · location.js · sleep.js
 ├── grid.js                 a tabela de dados dos Utilizadores API, do descritor que a API devolve
-├── pagination.js           o paginador das listagens
+├── pagination.js           escreve o paginador no painel, e resolve a página de um clique
 ├── phone.js                o campo de telefone com indicativo
 ├── storage.js              as chaves e os acessos ao localStorage
 ├── tooltips.js             re-atar os tooltips do Bootstrap depois de um render
@@ -289,7 +294,7 @@ regra nova, a resposta é uma capacidade nova em PHP.
 
 ```bash
 npm run lint                   # eslint sobre main.js, dashboard/, assets/js/ e tests/Frontend
-npm test                       # 93 ficheiros em tests/Frontend/
+npm test                       # 96 ficheiros em tests/Frontend/
 composer test:unit             # inclui os testes que lêem estes ficheiros como texto
 ```
 
