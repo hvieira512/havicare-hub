@@ -19,10 +19,10 @@ const ITEMS = [
 
 test("o item escolhido destaca-se dos outros", () => {
     const root = parseFragment(buttonGroup(ITEMS, "radar", "pickType"));
-    const [relogio, radar] = root.querySelectorAll("button");
+    const [watch, radar] = root.querySelectorAll("button");
 
     assert.ok(radar.classList.contains("btn-primary"));
-    assert.ok(relogio.classList.contains("btn-outline-primary"));
+    assert.ok(watch.classList.contains("btn-outline-primary"));
     assert.equal(radar.dataset.action, "pickType");
     assert.equal(radar.dataset.value, "radar");
 });
@@ -38,8 +38,8 @@ test("as chaves do valor e do rótulo podem ser outras", () => {
     const root = parseFragment(
         buttonGroup([{ id: "a", nome: "Primeiro" }], "a", "pickType", "id", "nome"),
     );
-    const botao = root.querySelector("button");
+    const button = root.querySelector("button");
 
-    assert.equal(botao.dataset.value, "a");
-    assert.equal(botao.textContent.trim(), "Primeiro");
+    assert.equal(button.dataset.value, "a");
+    assert.equal(button.textContent.trim(), "Primeiro");
 });

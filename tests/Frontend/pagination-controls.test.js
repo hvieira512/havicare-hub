@@ -12,7 +12,7 @@ import { paginationControls } from "../../src/Dashboard/dashboard/components/pag
  * tamanho debaixo do rato de quem carregou nele. A regra é do componente e testava-se só
  * através de um `jsdom` e de três elementos a fingir de painel.
  */
-const janela = (page, totalPages) =>
+const pageWindow = (page, totalPages) =>
     [...parseFragment(paginationControls({
         pagination: { page, total_pages: totalPages },
         actionPrefix: "devices",
@@ -21,22 +21,22 @@ const janela = (page, totalPages) =>
         .map((li) => li.textContent.trim());
 
 test("com poucas páginas mostra-as todas, sem reticências", () => {
-    assert.deepEqual(janela(2, 5), ["1", "2", "3", "4", "5"]);
+    assert.deepEqual(pageWindow(2, 5), ["1", "2", "3", "4", "5"]);
 });
 
 test("a janela tem sempre sete lugares quando há páginas que cheguem", () => {
     for (const page of [1, 4, 10, 47, 50]) {
-        assert.equal(janela(page, 50).length, 7, `página ${page}`);
+        assert.equal(pageWindow(page, 50).length, 7, `página ${page}`);
     }
 });
 
 test("no meio, a página actual fica ao centro entre duas reticências", () => {
-    assert.deepEqual(janela(10, 50), ["1", "…", "9", "10", "11", "…", "50"]);
+    assert.deepEqual(pageWindow(10, 50), ["1", "…", "9", "10", "11", "…", "50"]);
 });
 
 test("junto às pontas a vizinhança encosta-se, e não sobra lugar por preencher", () => {
-    assert.deepEqual(janela(2, 50), ["1", "2", "3", "4", "5", "…", "50"]);
-    assert.deepEqual(janela(49, 50), ["1", "…", "46", "47", "48", "49", "50"]);
+    assert.deepEqual(pageWindow(2, 50), ["1", "2", "3", "4", "5", "…", "50"]);
+    assert.deepEqual(pageWindow(49, 50), ["1", "…", "46", "47", "48", "49", "50"]);
 });
 
 test("a página actual anuncia-se a quem não vê o destaque", () => {
@@ -49,18 +49,18 @@ test("a página actual anuncia-se a quem não vê o destaque", () => {
 });
 
 test("as setas travam nas pontas", () => {
-    const primeira = parseFragment(paginationControls({
+    const firstPage = parseFragment(paginationControls({
         pagination: { page: 1, total_pages: 9 },
         actionPrefix: "devices",
     }));
-    const ultima = parseFragment(paginationControls({
+    const lastPage = parseFragment(paginationControls({
         pagination: { page: 9, total_pages: 9 },
         actionPrefix: "devices",
     }));
 
-    assert.equal(primeira.querySelector("[data-action=\"devicesPrev\"]").disabled, true);
-    assert.equal(primeira.querySelector("[data-action=\"devicesNext\"]").disabled, false);
-    assert.equal(ultima.querySelector("[data-action=\"devicesNext\"]").disabled, true);
+    assert.equal(firstPage.querySelector("[data-action=\"devicesPrev\"]").disabled, true);
+    assert.equal(firstPage.querySelector("[data-action=\"devicesNext\"]").disabled, false);
+    assert.equal(lastPage.querySelector("[data-action=\"devicesNext\"]").disabled, true);
 });
 
 test("uma página só não tem controlos nenhuns", () => {

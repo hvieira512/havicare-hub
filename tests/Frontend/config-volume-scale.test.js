@@ -73,11 +73,11 @@ test("o valor volta como número, que é o que a TAG leva", () => {
 });
 
 test("os botões do mesmo cartão não se misturam com os de outro", () => {
-    const um = render({ volume: 0 });
-    const outro = render({ volume: 0 });
-    const nome = (root) => root.querySelector("input[type=radio]").getAttribute("name");
+    const first = render({ volume: 0 });
+    const second = render({ volume: 0 });
+    const groupName = (root) => root.querySelector("input[type=radio]").getAttribute("name");
 
     // Sem nomes distintos, dois grupos na mesma página comportavam-se como um só e escolher
     // num desmarcava o outro.
-    assert.notEqual(nome(um), nome(outro));
+    assert.notEqual(groupName(first), groupName(second));
 });

@@ -31,18 +31,18 @@ test("sem contagens não sai pastilha de contagem", () => {
 
 test("um tipo sem nenhum dispositivo e não escolhido não se pode carregar", () => {
     const root = tiles(OPTIONS, { counts: { watch: 3, radar: 0, gateway: 1 } });
-    const [relogio, radar] = root.querySelectorAll("button");
+    const [watch, radar] = root.querySelectorAll("button");
 
     assert.equal(radar.disabled, true);
-    assert.equal(relogio.disabled, false);
+    assert.equal(watch.disabled, false);
     assert.match(radar.textContent, /nenhum/);
 });
 
 test("em modo de filtro cada mosaico leva a chave e o valor do filtro", () => {
     const root = tiles(OPTIONS, { multiple: true, filterKey: "deviceType" });
-    const primeiro = root.querySelector("button");
+    const firstTile = root.querySelector("button");
 
-    assert.equal(primeiro.dataset.filterKey, "deviceType");
-    assert.equal(primeiro.dataset.filterValue, "watch");
+    assert.equal(firstTile.dataset.filterKey, "deviceType");
+    assert.equal(firstTile.dataset.filterValue, "watch");
     assert.ok(root.querySelector(".device-type-tile-check"), "o modo múltiplo mostra a marca de visto");
 });

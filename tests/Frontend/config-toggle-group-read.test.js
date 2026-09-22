@@ -15,9 +15,9 @@ import { parseFragment } from "./support/dom.js";
  * configura parecia que o aparelho ignorava a ordem.
  */
 
-const grupo = (linhas) => parseFragment(`
+const toggleGroup = (rows) => parseFragment(`
     <section data-config-group data-config-protocol="zayata-m228">
-        ${linhas.map(({ key, on, stored }) => `
+        ${rows.map(({ key, on, stored }) => `
             <div data-config-row data-config-key="${key}" data-config-input="toggle"
                  data-config-stored="${stored ? "1" : "0"}"
                  data-config-pristine='${JSON.stringify({ enabled: stored })}'>
@@ -26,7 +26,7 @@ const grupo = (linhas) => parseFragment(`
     </section>`).querySelector("[data-config-group]");
 
 test("desligar um interruptor envia esse e não o vizinho", () => {
-    const group = grupo([
+    const group = toggleGroup([
         { key: "early_dispense", on: true, stored: true },
         { key: "child_lock", on: false, stored: true },
     ]);
@@ -37,7 +37,7 @@ test("desligar um interruptor envia esse e não o vizinho", () => {
 });
 
 test("com os dois alterados, cada um leva o seu valor", () => {
-    const group = grupo([
+    const group = toggleGroup([
         { key: "early_dispense", on: false, stored: true },
         { key: "child_lock", on: true, stored: false },
     ]);
@@ -49,7 +49,7 @@ test("com os dois alterados, cada um leva o seu valor", () => {
 });
 
 test("sem alterações não se envia nada", () => {
-    const group = grupo([
+    const group = toggleGroup([
         { key: "early_dispense", on: true, stored: true },
         { key: "child_lock", on: true, stored: true },
     ]);

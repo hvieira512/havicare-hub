@@ -16,7 +16,7 @@ import { changedConfigGroupEntries } from "../../src/Dashboard/dashboard/devices
  * mesmo comando nativo e a mesma legenda. Duas definições de número com comandos diferentes
  * continuam a ser dois cartões, e é isso que a segunda metade deste ficheiro prende.
  */
-const AJUDA = "Periodicidade de envio desta medição, em minutos. Use 0 para desativar.";
+const HELP = "Periodicidade de envio desta medição, em minutos. Use 0 para desativar.";
 
 const interval = (key, label) => ({
     key,
@@ -26,7 +26,7 @@ const interval = (key, label) => ({
     input: "number",
     fields: ["interval"],
     category: "health",
-    help: AJUDA,
+    help: HELP,
 });
 
 const CAPABILITIES = (keys) => keys.map((key) => ({
@@ -53,14 +53,14 @@ const renderWith = (catalog, configurations) => parseFragment(renderDeviceConfig
 
 const render = (catalog) => renderWith(catalog, {});
 
-const INTERVALOS = [
+const INTERVALS = [
     interval("heart_rate_measurement_interval", "Intervalo de frequência cardíaca"),
     interval("blood_pressure_measurement_interval", "Intervalo de tensão arterial"),
     interval("spo2_measurement_interval", "Intervalo de oxigénio no sangue"),
 ];
 
 test("as medições repetidas ficam num cartão só", () => {
-    const root = render(INTERVALOS);
+    const root = render(INTERVALS);
 
     assert.equal(root.querySelectorAll("[data-config-group]").length, 1);
     assert.equal(root.querySelectorAll("[data-config-row]").length, 3);
@@ -68,24 +68,24 @@ test("as medições repetidas ficam num cartão só", () => {
 });
 
 test("a frase de ajuda é dita uma vez, e não uma por medição", () => {
-    const ocorrencias = render(INTERVALOS).textContent.split(AJUDA).length - 1;
+    const occurrences = render(INTERVALS).textContent.split(HELP).length - 1;
 
-    assert.equal(ocorrencias, 1);
+    assert.equal(occurrences, 1);
 });
 
 test("um envio para as três, e não três", () => {
-    const root = render(INTERVALOS);
+    const root = render(INTERVALS);
 
     assert.equal(root.querySelectorAll("[data-action=\"saveConfigGroup\"]").length, 1);
     assert.equal(root.querySelectorAll("[data-action=\"saveConfig\"]").length, 0);
 });
 
 test("cada linha continua a ter o seu campo e a sua pastilha de entrega", () => {
-    const linhas = [...render(INTERVALOS).querySelectorAll("[data-config-row]")];
+    const rows = [...render(INTERVALS).querySelectorAll("[data-config-row]")];
 
-    for (const linha of linhas) {
-        assert.ok(linha.querySelector("input[type=\"number\"]"), "a linha devia ter o campo");
-        assert.ok(linha.querySelector(".state-badge"), "a linha devia ter a pastilha");
+    for (const row of rows) {
+        assert.ok(row.querySelector("input[type=\"number\"]"), "a linha devia ter o campo");
+        assert.ok(row.querySelector(".state-badge"), "a linha devia ter a pastilha");
     }
 });
 
@@ -97,15 +97,15 @@ test("cada linha continua a ter o seu campo e a sua pastilha de entrega", () => 
 test("só viaja a linha que alguém mexeu", () => {
     // Com valor guardado: sem ele, todas contam como por enviar, que é outra regra e já tem
     // teste próprio.
-    const guardadas = Object.fromEntries(
-        INTERVALOS.map((entry) => [entry.key, { interval: 0 }]),
+    const stored = Object.fromEntries(
+        INTERVALS.map((entry) => [entry.key, { interval: 0 }]),
     );
-    const group = renderWith(INTERVALOS, guardadas).querySelector("[data-config-group]");
+    const group = renderWith(INTERVALS, stored).querySelector("[data-config-group]");
 
     assert.deepEqual(changedConfigGroupEntries(group), {});
 
-    const [primeira] = group.querySelectorAll("[data-config-row] input[type=\"number\"]");
-    primeira.value = "15";
+    const [firstRow] = group.querySelectorAll("[data-config-row] input[type=\"number\"]");
+    firstRow.value = "15";
 
     assert.deepEqual(changedConfigGroupEntries(group), {
         heart_rate_measurement_interval: { interval: 15 },
@@ -120,12 +120,12 @@ test("só viaja a linha que alguém mexeu", () => {
  * dez.
  */
 test("um grupo de campos nunca enviados não envia nada sem alguém escrever um valor", () => {
-    const group = render(INTERVALOS).querySelector("[data-config-group]");
+    const group = render(INTERVALS).querySelector("[data-config-group]");
 
     assert.deepEqual(changedConfigGroupEntries(group), {});
 
-    const [primeira] = group.querySelectorAll("[data-config-row] input[type=\"number\"]");
-    primeira.value = "30";
+    const [firstRow] = group.querySelectorAll("[data-config-row] input[type=\"number\"]");
+    firstRow.value = "30";
 
     assert.deepEqual(changedConfigGroupEntries(group), {
         heart_rate_measurement_interval: { interval: 30 },
