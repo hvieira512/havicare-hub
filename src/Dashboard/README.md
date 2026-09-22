@@ -186,7 +186,6 @@ dashboard/
 └── settings/               o modal de definições
     ├── index.js            a raiz de composição do modal: conhece as quatro secções
     ├── shell.js            o que as secções partilham: menu, contagens, paginação, separadores
-    ├── clicks.js           os cliques delegados de todas as secções
     ├── capabilities.js     o separador Capacidades: o catálogo por tipo de dispositivo
     ├── companies.js        o separador Licenças: empresas com as suas licenças dentro
     ├── api-users.js        o separador Utilizadores API
