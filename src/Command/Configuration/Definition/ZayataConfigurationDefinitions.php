@@ -52,6 +52,44 @@ final class ZayataConfigurationDefinitions
             // à direita. Um bloco só com os dois lá dentro fugia a esse padrão.
             self::toggle('early_dispense', 'earlyRetrieval', 'Toma antecipada', 20, 'Deixa o utente levantar a medicação antes da hora marcada.'),
             self::toggle('child_lock', 'childLock', 'Bloqueio de criança', 21, 'Tranca o prato para não ser aberto por quem não deve.'),
+            // Os dois tempos decidem se uma dose por tomar chega a alguém como alerta ou fica
+            // em silêncio, e até agora só se mudavam por script.
+            self::number(
+                'retrieval_warning',
+                'retrievalWarning',
+                'Avisar de atraso ao fim de',
+                'health',
+                30,
+                'minutes',
+                0,
+                1440,
+                'Minutos',
+                'Quanto tempo o aparelho espera, depois de o alarme tocar, antes de marcar a toma como atrasada. De fábrica são 30 minutos.',
+            ),
+            self::number(
+                'retrieval_timeout',
+                'retrievalTimeout',
+                'Dar como falhada ao fim de',
+                'health',
+                31,
+                'minutes',
+                0,
+                1440,
+                'Minutos',
+                'Quanto tempo espera antes de desistir e dar a toma como falhada. É esta que faz a dose contar como perdida. De fábrica são 60 minutos, e tem de ser maior do que o aviso de atraso.',
+            ),
+            self::number(
+                'loaded_cells',
+                'loadedCells',
+                'Compartimentos carregados',
+                'health',
+                32,
+                'cells',
+                0,
+                28,
+                'Compartimentos',
+                'Quantos dos 28 compartimentos foram carregados com medicação. É por este número que o aparelho sabe avisar que está a acabar — não se confunde com a capacidade do prato, que é sempre 28.',
+            ),
             // O volume é uma enumeração e não uma escala: na especificação, 0 é o mais alto
             // e 3 é silêncio. Um número solto no ecrã dizia exactamente o contrário a quem o
             // lesse.
@@ -116,6 +154,31 @@ final class ZayataConfigurationDefinitions
             // As acções. O relógio calibra-se à mão porque num ensaio um alarme das 12:55
             // ficou registado às 11:45.
             self::action('dispense_now', 'dispenseNow', 'Dispensar agora', 'system', 20),
+            // Duas ordens de controlo que levam um valor, e não um interruptor.
+            self::number(
+                'rotate_to_cell',
+                'rotateToCell',
+                'Rodar até ao compartimento',
+                'system',
+                21,
+                'cell',
+                0,
+                28,
+                'Compartimento',
+                'Roda o prato até ao compartimento indicado, sem dispensar nada. Serve para carregar ou inspecionar um compartimento em particular. Zero não roda.',
+            ),
+            self::number(
+                'medication_pause',
+                'medicationPause',
+                'Pausar medicação',
+                'system',
+                22,
+                'minutes',
+                0,
+                255,
+                'Minutos',
+                'Suspende a dispensa durante os minutos indicados — para uma ida ao hospital ou uma consulta. Zero volta ao normal.',
+            ),
             self::action('calibrate_clock', 'calibrateClock', 'Calibrar relógio', 'system', 30),
             self::action('mute_alarm', 'muteAlarm', 'Silenciar', 'system', 40),
             self::action('reset_tray', 'resetTray', 'Repor o prato', 'system', 50),
@@ -222,6 +285,40 @@ final class ZayataConfigurationDefinitions
                 default => $label,
             }];
         }, $offsets);
+    }
+
+    /**
+     * Um número com gama, e a etiqueta e a ajuda que dizem o que ele significa.
+     *
+     * A ajuda não é decoração: metade destas definições tem um nome que não se explica a si
+     * próprio, e sem uma frase quem opera a dashboard fica a adivinhar.
+     */
+    private static function number(
+        string $key,
+        string $command,
+        string $label,
+        string $category,
+        int $order,
+        string $field,
+        int $min,
+        int $max,
+        string $fieldLabel,
+        string $help,
+    ): array {
+        return ConfigurationDefinition::make(
+            $key,
+            $command,
+            $label,
+            'number',
+            [$field],
+            self::replyTo($command),
+            $category,
+            $order,
+            null,
+            ['min' => $min, 'max' => $max, 'label' => $fieldLabel],
+            false,
+            $help,
+        );
     }
 
     private static function toggle(string $key, string $command, string $label, int $order, string $help): array

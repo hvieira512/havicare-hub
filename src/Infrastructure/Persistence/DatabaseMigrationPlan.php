@@ -11,6 +11,7 @@ use Hub\Infrastructure\Persistence\Migration\ModelImageFilenameOnly;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserImage;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserParameterDiscovery;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserReportedConfigurationCleanup;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserRetrievalSettings;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutEncryptionSwitch;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutFactoryReset;
 
@@ -49,6 +50,8 @@ final class DatabaseMigrationPlan
             new PillDispenserImage(),
             // A imagem de um modelo passa a ser guardada pelo nome, sem a rota que é código.
             new ModelImageFilenameOnly(),
+            // E os tempos da toma deixam de se mudar por script.
+            new PillDispenserRetrievalSettings(),
         ];
     }
 

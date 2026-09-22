@@ -380,6 +380,10 @@ final class DeviceEventDecoder
             'time_zone' => ($zone = $this->tlvI16($tlv, 0x1015)) === null ? null : ['timeZone' => $zone],
             'child_lock' => $this->pillSwitch($tlv, 0x100C),
             'early_dispense' => $this->pillSwitch($tlv, 0x100D),
+            // Os dois tempos viajam em segundos e mostram-se em minutos, como são enviados.
+            'retrieval_warning' => $this->pillMinutes($tlv, 0x1017),
+            'retrieval_timeout' => $this->pillMinutes($tlv, 0x1018),
+            'loaded_cells' => $this->pillField($tlv, 0x101C, 'cells'),
         ], static fn (mixed $field): bool => $field !== null);
 
         $value = array_filter([
@@ -408,6 +412,22 @@ final class DeviceEventDecoder
         $value = $this->tlvU8($tlv, $tag);
 
         return $value === null ? null : [$field => $value];
+    }
+
+    /**
+     * Um tempo que o aparelho conta em segundos, na unidade em que é configurado.
+     *
+     * @param array<int, array{value?: string, state?: int}> $tlv
+     * @return array{minutes: int}|null
+     */
+    private function pillMinutes(array $tlv, int $tag): ?array
+    {
+        $value = $this->tlvValue($tlv, $tag);
+        if ($value === null || strlen($value) < 4) {
+            return null;
+        }
+
+        return ['minutes' => intdiv(unpack('V', substr($value, 0, 4))[1], 60)];
     }
 
     /**
