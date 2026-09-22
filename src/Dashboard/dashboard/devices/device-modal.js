@@ -48,6 +48,7 @@ import {
     modelInternalName,
     modelsForSupplierAndType,
     normalizeDeviceType,
+    supplierModelLabel,
     supplierProtocol,
     suppliersForDeviceType,
 } from "../domain.js";
@@ -246,7 +247,7 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
     const online = Boolean(device?.online);
     const meta = [
         deviceTypeLabel(normalizeDeviceType(deviceType)),
-        [supplier, commercial].filter((part) => part !== "").join(" "),
+        supplierModelLabel(supplier, commercial),
         licenseId !== "0" && licenseId !== ""
             ? `${company} / ${licenseId}`
             : company,

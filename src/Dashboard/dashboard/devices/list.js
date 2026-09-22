@@ -171,6 +171,13 @@ async function ensureProtocolsLoaded(force = false) {
  */
 async function openDeviceSelector() {
     ui.deviceSelectorModal?.show();
+    // A pesquisa não sobrevive ao fecho. Reabrir logo a seguir a escolher um dispositivo
+    // mostrava esse e mais nenhum, com as pastilhas de tipo todas a dizer «nenhum» -- lê-se
+    // como se a frota tivesse desaparecido. Os filtros ficam: esses são escolha guardada.
+    clearTimeout(deviceSearchTimer);
+    state.deviceSearchQuery = "";
+    if (els.deviceListSearch) els.deviceListSearch.value = "";
+    resetDeviceListPage();
     if (!els.deviceList.childElementCount) {
         renderDeviceSelectorSkeleton();
     }

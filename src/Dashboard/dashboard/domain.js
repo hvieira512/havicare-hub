@@ -154,6 +154,25 @@ export function modelDisplayName(supplier, model, models = []) {
     return info ? modelCommercialName(info) : model;
 }
 
+/**
+ * O fornecedor à frente do nome comercial, sem o dizer duas vezes.
+ *
+ * Seis dos vinte modelos da frota já o trazem no nome -- «MONIT MECS Pro», «MOKOSmart
+ * MKGW3» --, e juntá-los em cru dava «MONIT MONIT MECS Pro» no cabeçalho do modal. Basta
+ * comparar o início: os fornecedores do catálogo são nomes de marca distintos, e nenhum é
+ * prefixo de outro.
+ */
+export function supplierModelLabel(supplier, commercial) {
+    const brand = String(supplier || "");
+    const name = String(commercial || "");
+    if (brand === "" || name === "") {
+        return brand || name;
+    }
+    return name.toLowerCase().startsWith(brand.toLowerCase())
+        ? name
+        : `${brand} ${name}`;
+}
+
 export function modelsForSupplierAndType(
     supplier,
     deviceType,
@@ -347,12 +366,4 @@ const AREA_TYPE_STYLE = {
 /** Um tipo que o fabricante acrescente fica cinzento e com o número à vista, em vez de sumir. */
 export function areaTypeStyle(type) {
     return AREA_TYPE_STYLE[Number(type)] || { label: `Tipo ${type}`, color: "#a9a9a9" };
-}
-
-/** A legenda da planta: os tipos conhecidos, mais o cinzento das outras regiões. */
-export function areaLegend() {
-    return [
-        ...Object.values(AREA_TYPE_STYLE),
-        { label: "Outras regiões", color: "#a9a9a9" },
-    ];
 }

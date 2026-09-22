@@ -62,10 +62,13 @@ const scheduleTokenRefresh = (delayOverrideMs = null) => {
     }, delayMs);
 };
 
+// A frase do browser é inglesa -- «Failed to fetch» no Chrome -- e esta é a mensagem que
+// mais aparece na dashboard, que é toda em português. O texto original fica no `detail`.
 const networkError = (error) => ({
     error: {
         code: "network_error",
-        message: error instanceof Error ? error.message : "Failed to fetch",
+        message: "Não foi possível falar com o servidor. Verifique a ligação.",
+        detail: error instanceof Error ? error.message : String(error),
     },
     _httpStatus: 0,
 });
@@ -73,7 +76,18 @@ const networkError = (error) => ({
 const parseJsonResponse = async (response) => {
     const raw = await response.text();
     if (raw.trim() === "") {
-        return { _httpStatus: response.status };
+        // Quem chama decide por `if (result?.error)`. Sem a chave, um 500 sem corpo lia-se
+        // como sucesso, e as caches de licenças e de capacidades guardavam a lista vazia.
+        if (response.ok) {
+            return { _httpStatus: response.status };
+        }
+        return {
+            error: {
+                code: "empty_body",
+                message: `O servidor respondeu ${response.status} sem corpo.`,
+            },
+            _httpStatus: response.status,
+        };
     }
 
     try {
@@ -107,7 +121,13 @@ const requestWithAuthRetry = async (url, options = {}) => {
 
     if (handleAuthExpiry(response)) {
         if (await refreshAccessToken()) {
-            return fetch(url, buildFetchOptions(options));
+            const retried = await fetch(url, buildFetchOptions(options));
+            // Um 401 com o token novo já não é um token velho: é a sessão a acabar. Sem
+            // isto, a dashboard mostrava um erro genérico e ficava sem pedir autenticação.
+            if (handleAuthExpiry(retried)) {
+                emitAuthRequired();
+            }
+            return retried;
         }
         emitAuthRequired();
     }

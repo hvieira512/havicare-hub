@@ -123,7 +123,7 @@ function detailFilterTypesFromItems(items) {
     );
 }
 
-export function detailItemType(item) {
+function detailItemType(item) {
     const p = item.payload;
     if (item._source === "command" && p.feature) return p.feature;
     const mapped = DETAIL_ITEM_TYPES[p.type];
@@ -186,14 +186,19 @@ function filterTypeOption(type) {
     return html`<option value="${type}">${telemetryFilterLabel(type)}</option>`;
 }
 
-export function telemetryFilterLabel(type) {
+function telemetryFilterLabel(type) {
     return capabilityLabel(type) || type;
 }
 
+/**
+ * O rascunho manda mesmo quando está vazio: um campo apagado é uma escolha, e com `||` caía
+ * no valor aplicado. Quem limpasse uma data via-a voltar à primeira mensagem do stream, e o
+ * «Aplicar» seguinte lia o campo já repovoado e reaplicava-a.
+ */
 export function syncDetailFilterControls() {
-    els.detailFilterFrom.value = state.detailFiltersDraft?.from || state.detailFilters.from;
-    els.detailFilterTo.value = state.detailFiltersDraft?.to || state.detailFilters.to;
-    els.detailFilterType.value = state.detailFiltersDraft?.type || state.detailFilters.type;
+    els.detailFilterFrom.value = state.detailFiltersDraft?.from ?? state.detailFilters.from;
+    els.detailFilterTo.value = state.detailFiltersDraft?.to ?? state.detailFilters.to;
+    els.detailFilterType.value = state.detailFiltersDraft?.type ?? state.detailFilters.type;
     renderDetailActiveFilters();
 }
 
@@ -272,7 +277,7 @@ export function detailFilterChipLabels({ from, to, type, q }) {
 }
 
 /** As pastilhas do que está aplicado, na linha abaixo da pesquisa. */
-export function renderDetailActiveFilters() {
+function renderDetailActiveFilters() {
     const labels = detailFilterChipLabels(state.detailFilters);
 
     els.detailActiveFilters.innerHTML = filterChips(labels, "removeDetailFilter");
