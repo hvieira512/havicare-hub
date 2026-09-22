@@ -36,7 +36,6 @@ const answersFor = (gateways) => ({
     gateways,
 });
 
-/** O `toast` fala com o SweetAlert, que não existe fora do browser. */
 const jsonResponse = (status, payload) => ({
     ok: status >= 200 && status < 300,
     status,
@@ -56,6 +55,7 @@ const emptyListing = jsonResponse(200, {
 beforeEach(() => {
     hidden = 0;
     warnings = [];
+    // O `toast` fala com o SweetAlert, que não existe fora do browser.
     globalThis.Swal = {
         fire: (options) => {
             warnings.push(options);
