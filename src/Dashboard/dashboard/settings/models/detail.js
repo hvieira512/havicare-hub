@@ -234,7 +234,6 @@ async function saveModelDetail() {
     body.append("internalModel", fields.internalModel);
     body.append("commercialName", fields.commercialName);
     body.append("deviceType", fields.deviceType);
-    body.append("protocol", String(model.protocol || ""));
     const image = els.modelDetailImageInput?.files?.[0];
     if (image) {
         body.append("image", image);

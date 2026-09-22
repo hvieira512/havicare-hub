@@ -309,7 +309,6 @@ async function saveCapabilities() {
     body.append("internalModel", String(modelInternalName(model)));
     body.append("commercialName", String(modelCommercialName(model)));
     body.append("deviceType", String(modelDeviceType(model)));
-    body.append("protocol", String(model.protocol || ""));
     body.append("capabilitiesConfigured", "1");
     for (const feature of state.settingsModal.capabilityEnabledCapabilities || []) {
         body.append("capabilities[]", String(feature));
