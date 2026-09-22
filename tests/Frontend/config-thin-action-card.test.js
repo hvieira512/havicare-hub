@@ -13,9 +13,12 @@ import { syncConfigSectionDirty } from "../../src/Dashboard/dashboard/devices/co
  * legenda «sem parâmetros» e um botão de repor que não tinha o que repor -- e ficava com a
  * altura de um formulário para uma palavra.
  */
+// O `command` entra porque as vinte e uma acções do catálogo o têm: sem ele o cartão toma-a
+// por uma definição que o hub aplica sozinho, e o botão diz «Guardar» em vez de «Enviar».
 const FIND_DEVICE = {
     key: "findDeviceCommand",
     capabilityKey: "find_device",
+    command: "find",
     label: "Encontrar dispositivo",
     input: "action",
     fields: [],
@@ -25,6 +28,7 @@ const FIND_DEVICE = {
 const POWER_OFF = {
     key: "powerOffCommand",
     capabilityKey: "power_off",
+    command: "powerOff",
     label: "Desligar dispositivo",
     input: "action",
     fields: [],
@@ -62,16 +66,10 @@ test("o botão de enviar fica na linha do título", () => {
     );
 });
 
-test("o botão diz o que a acção faz, e não «Enviar»", () => {
-    const button = sectionOf(FIND_DEVICE).querySelector("[data-action=\"saveConfig\"]");
-
-    assert.equal(button.textContent.trim(), "Encontrar dispositivo");
-});
-
 /**
- * Quase todos os rótulos já são a frase do verbo -- «Calibrar relógio», «Dispensar agora».
- * Onde o rótulo é um nome, a definição declara o verbo, porque «Reposição de fábrica» num
- * botão não diz o que o clique vai fazer.
+ * O que o botão diz por omissão está preso no `config-action-button-label.test.js`. Aqui
+ * prende-se o caso em que a definição declara o verbo, que é o que justifica o campo existir:
+ * «Reposição de fábrica» num botão não diz o que o clique vai fazer.
  */
 test("um rótulo que é um nome leva o verbo declarado na definição", () => {
     const section = sectionOf({

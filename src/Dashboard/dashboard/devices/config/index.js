@@ -403,7 +403,12 @@ export function renderConfigSection(
     const drawsFields = !descriptor || typeof descriptor.render === "function";
     const control = drawsFields ? "" : renderConfigControl(entry, desired, { ...meta, protocol });
     // O verbo é das acções. Uma definição guarda-se, e o que o botão dela faz é enviá-la.
-    const verb = drawsFields || control !== "" ? "" : String(entry.verb || entry.label || "");
+    //
+    // Sem verbo declarado o botão não repete o título: das vinte e uma acções do catálogo,
+    // vinte têm o rótulo como frase do verbo, e pô-lo também no botão dava a mesma frase
+    // duas vezes na mesma linha. Pior nas que são nomes -- «Versão de firmware», «Estado do
+    // dispositivo» --, onde o botão deixava de dizer o que o clique faz.
+    const verb = drawsFields || control !== "" ? "" : String(entry.verb || "");
 
     // O bloco do título leva `min-w-0` para encolher em vez de empurrar a pastilha de estado
     // para a linha de baixo: com uma descrição comprida ela saltava para o canto esquerdo,
@@ -477,8 +482,8 @@ function renderConfigActionVerbs(verbs, disabled) {
 
 function renderConfigActionButton(key, row, uiState, disabled = false, appliedByHub = false, destructive = false, verb = "") {
     const state = configButtonState(row, uiState);
-    // Uma acção diz no botão o que vai fazer. Quase sempre é o próprio rótulo, que já é a
-    // frase do verbo; onde o rótulo é um nome, a definição declara o verbo.
+    // O verbo só se declara onde vale a pena dizê-lo outra vez no botão -- a reposição de
+    // fábrica é o caso: o rótulo é um nome e o botão tem de dizer o que o clique faz.
     // "Guardar" e não "Enviar" quando não há nada a caminho do dispositivo: o botão não deve
     // prometer um envio que não acontece.
     const idleLabel = verb !== ""
