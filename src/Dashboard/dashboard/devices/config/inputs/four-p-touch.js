@@ -1,5 +1,5 @@
 import { esc } from "../../../format.js";
-import { field } from "../../../widgets.js";
+import { field } from "../../../components/form-field.js";
 import { renderPhoneControl } from "../../../phone.js";
 import { boolValue } from "../normalizers.js";
 import { takePillsInput } from "../four-p-touch-take-pills.js";

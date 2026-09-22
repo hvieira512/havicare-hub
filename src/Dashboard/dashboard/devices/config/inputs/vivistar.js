@@ -1,5 +1,5 @@
 import { esc } from "../../../format.js";
-import { field } from "../../../widgets.js";
+import { field } from "../../../components/form-field.js";
 import { boolValue } from "../normalizers.js";
 import { numberField } from "./shared.js";
 import {

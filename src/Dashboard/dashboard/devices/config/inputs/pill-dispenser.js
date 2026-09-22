@@ -1,5 +1,5 @@
 import { esc } from "../../../format.js";
-import { field } from "../../../widgets.js";
+import { field } from "../../../components/form-field.js";
 import { html, raw } from "../../../html.js";
 import { segmentedScale } from "../../../components/segmented-scale.js";
 import { enabledSwitch, nextUid } from "./shared.js";

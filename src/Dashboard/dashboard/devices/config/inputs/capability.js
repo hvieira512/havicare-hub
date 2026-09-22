@@ -1,5 +1,5 @@
 import { esc } from "../../../format.js";
-import { field } from "../../../widgets.js";
+import { field } from "../../../components/form-field.js";
 import { renderPhoneControl } from "../../../phone.js";
 import { normalizeAlarmClockRecurrenceKind, weekdayPicker } from "../alarm-fields.js";
 import {

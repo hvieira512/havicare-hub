@@ -1,5 +1,5 @@
 import { esc, fieldLabel } from "../../../format.js";
-import { field } from "../../../widgets.js";
+import { field } from "../../../components/form-field.js";
 import {
     WONLEX_MEDICATION_PERIODS,
     boolValue,

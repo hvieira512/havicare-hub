@@ -9,21 +9,6 @@ import { deviceTypeLabel, normalizeDeviceType } from "./domain.js";
  */
 
 /**
- * Uma etiqueta com o seu controlo. O controlo entra como HTML já pronto e passa pelo
- * `raw()`; a etiqueta e a ajuda entram como texto e saem escapadas.
- */
-export function field(label, control, { help = "", cls = "", required = false } = {}) {
-    const classAttribute = cls ? html` class="${cls}"` : "";
-    const helpLine = help ? html`<div class="form-text">${help}</div>` : "";
-    return html`
-        <div${raw(classAttribute)}>
-            <label class="form-label-sm${required ? " required" : ""}">${label}</label>
-            ${raw(control)}
-            ${raw(helpLine)}
-        </div>`;
-}
-
-/**
  * Uma tira de pastilhas de secção, cada uma com a sua contagem. A pastilha acesa vem do
  * estado e não do DOM, porque a tira é redesenhada.
  */

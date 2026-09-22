@@ -6,7 +6,8 @@ import {
 import { ensureLicensesLoaded } from "../licenses.js";
 import { esc } from "../format.js";
 import { state } from "../state.js";
-import { field, modelPreviewHtml } from "../widgets.js";
+import { field } from "../components/form-field.js";
+import { modelPreviewHtml } from "../widgets.js";
 import {
     deviceTypeFields,
     deviceTypeLabel,
