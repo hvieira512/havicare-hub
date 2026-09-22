@@ -6,7 +6,7 @@
 |---|---|---|---|
 | Unitários (PHP) | `tests/Unit/` | 158 | nada |
 | Integração (PHP) | `tests/Integration/` | 38 | MySQL e Redis |
-| Frontend (Node) | `tests/Frontend/` | 110 | nada |
+| Frontend (Node) | `tests/Frontend/` | 116 | nada |
 | Cenários (shell) | `tests/scenarios/` | 6 | a pilha Docker inteira |
 
 ```bash

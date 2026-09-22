@@ -150,10 +150,11 @@ dashboard/
 │
 ├── devices/                o ecrã principal
 │   ├── list.js             a coluna da esquerda: lista, busca, paginação, modal de escolha
+│   ├── list-filters.js     o painel de filtros da listagem: o que desenha e o que trata
 │   ├── detail.js           a coluna da direita: eventos, pedidos, cartões, filtros do painel
+│   ├── detail-filters.js   o que reduz o histórico de um dispositivo, e pagina os dois painéis
 │   ├── activity-table.js   a tabela genérica de atividade (telemetria e pedidos): linhas e gaveta
-│   ├── filters.js          os filtros da lista e os paginadores dos dois painéis
-│   ├── device-modal.js     o modal de um dispositivo
+│   ├── device-modal.js     o modal de um dispositivo, e a porta do painel de configurações
 │   ├── create-wizard.js    o assistente de adicionar: perguntas, grelhas, e a criação
 │   ├── edit-wizard.js      a mesma classificação, no modal de editar
 │   ├── wizard.js           o motor das perguntas (não é uma biblioteca: ~110 linhas)
@@ -293,7 +294,7 @@ regra nova, a resposta é uma capacidade nova em PHP.
 
 ```bash
 npm run lint                   # eslint sobre main.js, dashboard/, assets/js/ e tests/Frontend
-npm test                       # 110 ficheiros em tests/Frontend/
+npm test                       # 116 ficheiros em tests/Frontend/
 composer test:unit             # inclui os testes que lêem estes ficheiros como texto
 ```
 
@@ -302,9 +303,13 @@ Dois valem por si:
 - **`tests/Frontend/module-graph.test.js`** importa cada porta de entrada e falha se algum
   import não resolver. Um nome importado que ninguém exporta deita a dashboard abaixo com
   uma página em branco, e nenhum `node --check` o apanha. O mesmo teste falha se um módulo
-  ficar órfão. São **duas** portas e não uma: o `main.js` é o que o browser carrega, e o
-  `dashboard/app.js` entra por `import()` depois do login — segui-lo só pelos `from` deixava
-  de fora quase todo o grafo.
+  ficar órfão. São **quatro** portas e não uma, e cada uma está lá porque quem a traz,
+  traz-na por `import()`: o `main.js` é o que o browser carrega; o `dashboard/app.js` entra
+  depois do login; e o `devices/config/panel.js` e o `handlers.js` entram quando se abre o
+  separador de configurações. Segui-las só pelos `from` deixava de fora quase todo o grafo.
+
+  **Quem puser um `import()` novo acrescenta aqui a porta dele**, senão o que está por trás
+  deixa de ser verificado sem que nada o diga.
 - **O `no-unused-vars` do eslint** é aviso e não erro, mas o `npm run lint` corre com
   `--max-warnings 0`: é o que apanha um import que ficou para trás depois de mover código.
   Quem apanha um import **partido** é o `node --test`, que falha logo a carregar.
