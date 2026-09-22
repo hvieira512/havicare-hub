@@ -21,9 +21,9 @@ import {
 /**
  * O nome do campo no valor guardado, que nem sempre é o nome nativo da definição.
  *
- * A Wonlex declara `switchState` e o hub entrega `enabled`: o `wonlexFromNative` renomeia e
- * apaga o original. Quem procurasse o nome nativo não encontrava nada e desenhava o
- * interruptor ligado, fosse qual fosse o valor guardado.
+ * A Wonlex declara `switchState` e o hub entrega `enabled`: o `fromNative` da capacidade
+ * renomeia e apaga o original. Quem procurar o nome nativo não encontra nada e desenha o
+ * interruptor ligado, seja qual for o valor guardado.
  */
 export function toggleField(entry, protocol = "") {
     const nativeField = entry.fields?.[0] || "enabled";
