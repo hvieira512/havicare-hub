@@ -27,7 +27,7 @@ import {
 import { renderSelection } from "./devices/detail.js";
 import { initDeviceStream } from "./devices/stream.js";
 import { initEditWizard } from "./devices/edit-wizard.js";
-import { configPanelIfLoaded, initDeviceModal } from "./devices/device-modal.js";
+import { configPanelIfLoaded, initDeviceModal, loadConfigPanel } from "./devices/device-modal.js";
 import { initCreateWizard, openWizard } from "./devices/create-wizard.js";
 import {
     initGatewayLinksUi,
@@ -78,10 +78,23 @@ export async function startDashboard() {
     initSettings({ els, ui });
     initDeviceStream({
         renderSelection,
-        // O stream corre sempre, e o painel de configurações só existe depois de alguém
-        // abrir o separador: enquanto não existir não há entregas desenhadas para acertar.
-        onCommandsUpdated: (imei, commands) =>
-            configPanelIfLoaded()?.panel.syncDeviceModalCommandStates(imei, commands),
+        // O stream corre sempre e o painel de configurações só existe depois de alguém abrir
+        // o separador. Mas o que esta chamada faz não é só desenhar: escreve o estado de
+        // entrega de cada comando, e desistir dela deixava o painel a mostrar «Em fila» sobre
+        // um comando já confirmado até o modal ser reaberto. Com o modal aberto manda-se vir
+        // o painel; sem ele não há nada a que aplicar o estado, e o `editDevice` relê tudo.
+        onCommandsUpdated: (imei, commands) => {
+            const loaded = configPanelIfLoaded();
+            if (loaded) {
+                loaded.panel.syncDeviceModalCommandStates(imei, commands);
+                return;
+            }
+            // A mesma condição que o painel usa para decidir se a mensagem lhe diz respeito.
+            if (String(state.deviceModal.imei || "") !== String(imei || "")) return;
+            void loadConfigPanel()
+                .then(({ panel }) => panel.syncDeviceModalCommandStates(imei, commands))
+                .catch(() => {});
+        },
     });
     initNotifications({
         els,
