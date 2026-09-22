@@ -69,11 +69,16 @@ class PillDispenserAdapter implements DeviceAdapterInterface
 
         $encrypted = ($flag & 0x04) === 0x04;
         $plain = $encrypted ? self::decryptAppData($appData, $deviceNumber) : $appData;
-        $tlv = $plain === null ? [] : self::parseTlv($plain);
+
+        // A resposta à descoberta de parâmetros não é TFLV: é uma lista de TAGs coladas. Lê-la
+        // como TFLV dava TAGs inventadas -- o `0xA002` aparecia como `0x02A0`.
+        $discovered = self::isDiscoveryReply($packetType) ? self::parseTagList($plain ?? '') : null;
+        $tlv = $plain === null || $discovered !== null ? [] : self::parseTlv($plain);
 
         return [
             'encrypted' => $encrypted,
             'decrypted' => !$encrypted || $plain !== null,
+            'supportedTags' => $discovered,
             'type' => $type,
             'packetType' => $packetType,
             'imei' => $identity['id'],
@@ -87,7 +92,7 @@ class PillDispenserAdapter implements DeviceAdapterInterface
             // marca cifra AES128-CFB. A lógica de ACK vive na camada de protocolo, não aqui.
             'waivesReply' => ($flag & 0x02) === 0x02,
             'tlv' => $tlv,
-            'data' => ['idKind' => $identity['kind'], 'tlv' => $tlv],
+            'data' => ['idKind' => $identity['kind'], 'tlv' => $tlv, 'supportedTags' => $discovered],
             'timestamp' => $this->now(),
         ];
     }
@@ -438,6 +443,34 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     /** Os bytes altos das TAGs que a especificação declara. */
     private const TAG_FAMILIES = [0x10, 0x80, 0x81, 0xA0, 0xA1, 0xC2];
 
+    private static function isDiscoveryReply(int $packetType): bool
+    {
+        return $packetType >= 0x8A && $packetType <= 0x8D;
+    }
+
+    /**
+     * A lista de TAGs de uma resposta à descoberta, na ordem do anfitrião.
+     *
+     * @return list<int>|null
+     */
+    private static function parseTagList(string $body): ?array
+    {
+        if ($body === '' || strlen($body) % 2 !== 0) {
+            return null;
+        }
+
+        $tags = [];
+        foreach (str_split($body, 2) as $pair) {
+            $tag = unpack('v', $pair)[1];
+            if (!in_array($tag >> 8, self::TAG_FAMILIES, true)) {
+                return null;
+            }
+            $tags[] = $tag;
+        }
+
+        return $tags;
+    }
+
     private static function packetTypeName(int $packetType): string
     {
         return match ($packetType) {
@@ -460,6 +493,13 @@ class PillDispenserAdapter implements DeviceAdapterInterface
             0x86 => 'write_config_ack',
             0x87 => 'read_status_ack',
             0x88 => 'control_ack',
+            // A descoberta de parâmetros: perguntar ao aparelho que TAGs ele serve.
+            0x0A => 'discover_config',
+            0x0B => 'discover_status',
+            0x0C => 'discover_control',
+            0x8A => 'discover_config_ack',
+            0x8B => 'discover_status_ack',
+            0x8C => 'discover_control_ack',
             default => 'unknown',
         };
     }

@@ -241,6 +241,13 @@ final class DeviceEventDecoder
             return $intake === null ? [] : [$intake];
         }
 
+        // A resposta à descoberta não traz TFLV nenhum: traz a lista de TAGs que o firmware
+        // serve. É o que acaba com o adivinhar-por-recusa quando chega um modelo novo.
+        $discovered = $this->pillSupportedParameters($nativeType, $payload);
+        if ($discovered !== null) {
+            return [$discovered];
+        }
+
         // A resposta a uma leitura ou a uma escrita de configuração traz o corpo pedido já
         // preenchido, e o resultado de cada TAG nos bits de estado do Flag.
         if ($nativeType === 'read_config_ack' || $nativeType === 'write_config_ack') {
@@ -251,6 +258,42 @@ final class DeviceEventDecoder
         // Tudo o resto -- heartbeat, registo, notificação e a resposta à consulta de estado --
         // traz as mesmas TAGs de estado, e por isso passa pelo mesmo caminho.
         return $this->pillStatusEvents($nativeType, $tlv);
+    }
+
+    /**
+     * As TAGs que o firmware anuncia, em resposta a um `0x0A`, `0x0B` ou `0x0C`.
+     *
+     * Sai como uma capacidade própria e não como configuração: não é um valor que se escolha,
+     * é o que o aparelho sabe fazer. Quem integra o hub passa a poder perguntar-lhe isso em
+     * vez de manter uma tabela por modelo.
+     *
+     * @param array<string, mixed> $payload
+     * @return array{feature: string, nativeType: string, value: array<string, mixed>}|null
+     */
+    private function pillSupportedParameters(string $nativeType, array $payload): ?array
+    {
+        $scope = match ($nativeType) {
+            'discover_config_ack' => 'configuration',
+            'discover_status_ack' => 'status',
+            'discover_control_ack' => 'control',
+            default => null,
+        };
+        $tags = $payload['supportedTags'] ?? null;
+        if ($scope === null || !is_array($tags) || $tags === []) {
+            return null;
+        }
+
+        return [
+            'feature' => 'supported_parameters',
+            'nativeType' => $nativeType,
+            'value' => [
+                'scope' => $scope,
+                'count' => count($tags),
+                // Em hexadecimal, que é como a especificação as nomeia: `4098` não se procura
+                // num documento onde está escrito `0x1002`.
+                'tags' => array_map(static fn (int $tag): string => sprintf('0x%04X', $tag), $tags),
+            ],
+        ];
     }
 
     private function pillMedicationIntake(string $nativeType, array $tlv): ?array
@@ -363,6 +406,26 @@ final class DeviceEventDecoder
         $value = $this->pillFlag($tlv, $tag);
 
         return $value === null ? null : ['enabled' => $value];
+    }
+
+    /**
+     * O ICCID do cartão SIM, sem o enchimento do BCD.
+     *
+     * Um ICCID de comprimento ímpar traz um `F` no fim: é o meio byte que sobra, e não faz
+     * parte do número. Quem copie o valor com ele para procurar o cartão não o encontra.
+     *
+     * @param array<int, array{value?: string, state?: int}> $tlv
+     */
+    private function pillSimCcid(array $tlv): ?string
+    {
+        $value = $this->tlvValue($tlv, 0x8009);
+        if ($value === null) {
+            return null;
+        }
+
+        $ccid = rtrim(trim($value), 'Ff');
+
+        return $ccid === '' ? null : $ccid;
     }
 
     /**
@@ -493,7 +556,7 @@ final class DeviceEventDecoder
             'lidOpen' => $this->pillFlag($tlv, 0x8107),
             'mainsPowered' => $this->pillFlag($tlv, 0x8109),
             'environmentAlarm' => $this->pillFlag($tlv, 0x8111),
-            'simCcid' => $this->tlvValue($tlv, 0x8009),
+            'simCcid' => $this->pillSimCcid($tlv),
         ], static fn (mixed $field): bool => $field !== null);
         if ($signal !== []) {
             $events[] = ['feature' => 'device_status', 'nativeType' => $nativeType, 'value' => $signal];

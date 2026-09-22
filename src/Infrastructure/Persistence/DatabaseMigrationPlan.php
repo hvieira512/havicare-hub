@@ -7,6 +7,7 @@ namespace Hub\Infrastructure\Persistence;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalog;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserAlarmStatus;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserParameterDiscovery;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserReportedConfigurationCleanup;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutEncryptionSwitch;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutFactoryReset;
@@ -40,6 +41,8 @@ final class DatabaseMigrationPlan
             new PillDispenserAlarmStatus(),
             // E a configuração que o aparelho tem passa a ser guardada pela chave certa.
             new PillDispenserReportedConfigurationCleanup(),
+            // O aparelho passa a poder dizer que parâmetros serve, em vez de se adivinhar.
+            new PillDispenserParameterDiscovery(),
         ];
     }
 

@@ -167,6 +167,11 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // servidor do fornecedor, e desligar a cifra, que o firmware recusa sempre.
             'reset_tray',
             'restart_device',
+            // Uma por família: o aparelho separa configuração, estado e controlo, e cada
+            // pergunta é um pacote próprio.
+            'supported_configuration',
+            'supported_control',
+            'supported_status',
             'sync_configuration',
             'temperature',
             'time_zone',
@@ -179,10 +184,10 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Nove configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por
+        // Nove configuráveis e dez pedíveis. Uma acção pede-se e não se configura, e por
         // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
         self::assertSame(
-            ['9', '7'],
+            ['9', '10'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

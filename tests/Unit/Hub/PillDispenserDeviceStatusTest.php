@@ -55,6 +55,20 @@ final class PillDispenserDeviceStatusTest extends TestCase
         self::assertSame('8935101900123456789', $status['simCcid'] ?? null);
     }
 
+    /**
+     * Um ICCID de comprimento ímpar vem com um nibble de enchimento no fim.
+     *
+     * O cartão do aparelho de ensaio devolve `8935103211501958977F`: o `F` é o meio byte que
+     * sobra do BCD, não faz parte do número, e quem copie isto para procurar o SIM não o
+     * encontra.
+     */
+    public function testTheCcidPaddingNibbleIsDropped(): void
+    {
+        $status = $this->deviceStatus([0x8009 => "8935103211501958977F\x00"]);
+
+        self::assertSame('8935103211501958977', $status['simCcid'] ?? null);
+    }
+
     /** Uma TAG que o aparelho recusa não vira valor, que era como se publicava zero. */
     public function testARefusedTagIsNotPublished(): void
     {

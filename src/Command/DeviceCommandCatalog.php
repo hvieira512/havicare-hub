@@ -307,6 +307,17 @@ final class DeviceCommandCatalog
      */
     private static function buildPillDispenser(string $imei, string $command, array $payload = [], array $context = []): string
     {
+        // Perguntar que parâmetros o firmware serve, em vez de adivinhar por recusa. O pedido
+        // não leva corpo: o tipo do pacote é a pergunta toda.
+        $discovery = [
+            'discoverParametersConfiguration' => 0x0A,
+            'discoverParametersStatus' => 0x0B,
+            'discoverParametersControl' => 0x0C,
+        ];
+        if (isset($discovery[$command])) {
+            return self::pillFrame($imei, $discovery[$command], []);
+        }
+
         // A calibração leva a hora a que o aparelho se deve pôr, e não um interruptor: é a
         // única TAG de controlo que é STRING.
         if ($command === 'calibrateClock') {

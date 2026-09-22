@@ -102,6 +102,12 @@ final class ZayataConfigurationDefinitions
             // *tem* — e a especificação manda ler os parâmetros no primeiro registo.
             self::action('sync_configuration', 'readConfiguration', 'Sincronizar configuração', 'system', 5),
             self::action('device_status', 'readStatus', 'Atualizar estado', 'system', 6),
+            // Perguntar ao aparelho que parâmetros ele serve, em vez de adivinhar por recusa.
+            // São três porque o aparelho separa configuração, estado e controlo, e cada
+            // pergunta é um pacote próprio; um botão só cobria um terço da resposta.
+            self::action('supported_configuration', 'discoverParametersConfiguration', 'Parâmetros de configuração', 'system', 7),
+            self::action('supported_status', 'discoverParametersStatus', 'Parâmetros de estado', 'system', 8),
+            self::action('supported_control', 'discoverParametersControl', 'Parâmetros de controlo', 'system', 9),
             // Desligar a cifra também não entra: o `0x8005` aparece na tabela dos parâmetros
             // escrevíveis, mas o fornecedor respondeu que o aparelho o recusa e que a chave sai
             // da codificação dele — ou cifra tudo o que envia, ou não cifra nada, e a decisão
@@ -137,6 +143,9 @@ final class ZayataConfigurationDefinitions
         return [match ($command) {
             'readConfiguration' => 'read_config_ack',
             'readStatus' => 'read_status_ack',
+            'discoverParametersConfiguration' => 'discover_config_ack',
+            'discoverParametersStatus' => 'discover_status_ack',
+            'discoverParametersControl' => 'discover_control_ack',
             'dispenseNow', 'calibrateClock', 'muteAlarm',
             'resetTray', 'restartDevice' => 'control_ack',
             default => 'write_config_ack',

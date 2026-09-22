@@ -42,6 +42,11 @@ final class PillDispenserCapabilityDefinitions
 
             // O que se pede. Uma acção pede-se, não se configura.
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'sync_configuration', 'label' => 'Sincronizar configuração', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            // O que o firmware anuncia servir. Não é um valor que se escolha, é o que o
+            // aparelho sabe fazer — e é o que evita manter uma tabela por modelo.
+            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'supported_configuration', 'label' => 'Parâmetros de configuração', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'supported_status', 'label' => 'Parâmetros de estado', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'supported_control', 'label' => 'Parâmetros de controlo', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'dispense_now', 'label' => 'Dispensar agora', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'mute_alarm', 'label' => 'Silenciar', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'calibrate_clock', 'label' => 'Calibrar relógio', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
