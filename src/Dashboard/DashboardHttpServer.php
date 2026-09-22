@@ -37,9 +37,10 @@ final class DashboardHttpServer
 {
     private const MODEL_IMAGE_ROUTE = ModelImageStore::ROUTE;
     private const PUBLIC_ASSET_EXTENSIONS = ['css', 'ico', 'jpeg', 'jpg', 'js', 'png', 'svg', 'woff2'];
-    // Só texto: as imagens e o `woff2` já vêm comprimidos, e passá-los por gzip gasta CPU
-    // para não poupar fio nenhum.
-    private const COMPRESSIBLE_EXTENSIONS = ['css', 'html', 'js', 'svg'];
+    // Só texto, e só o que passa pelo `staticFile()`: as imagens e o `woff2` já vêm
+    // comprimidos, e passá-los por gzip gasta CPU para não poupar fio nenhum. A página fica
+    // de fora porque é o `html()` que a serve, e não este caminho.
+    private const COMPRESSIBLE_EXTENSIONS = ['css', 'js', 'svg'];
     private ApiKernel $apiKernel;
     /** @var array<string, string> */
     private array $assetCache = [];
