@@ -1,5 +1,5 @@
 import { esc, fieldUnit } from "../../format.js";
-import { emptyPanel } from "../../widgets.js";
+import { emptyPanel } from "../../components/empty-panel.js";
 import { settingRow } from "../../components/setting-row.js";
 import { stateBadge } from "../../components/state-badge.js";
 // Os mesmos cinco ícones do catálogo de capacidades: as secções são as mesmas, e um separador

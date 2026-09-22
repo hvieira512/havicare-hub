@@ -14,7 +14,8 @@ import {
 import { html, raw } from "../../html.js";
 import { apiError, confirmDestructive, toast } from "../../dialogs.js";
 import { clearInvalid, markInvalid } from "../../validation.js";
-import { modelPreviewHtml, sectionStrip } from "../../widgets.js";
+import { sectionStrip } from "../../components/chips.js";
+import { modelPreviewHtml } from "../../components/model-image.js";
 import {
     capabilitiesGroupedBySection,
     capabilityLabelByKey,

@@ -3,7 +3,9 @@ import {
 } from "../api/index.js";
 import { state } from "../state.js";
 import { html, raw } from "../html.js";
-import { buttonGroup, deviceTypeTiles, sectionStrip } from "../widgets.js";
+import { buttonGroup } from "../components/button-group.js";
+import { sectionStrip } from "../components/chips.js";
+import { deviceTypeTiles } from "../components/device-type-tiles.js";
 import { cardIcon } from "../telemetry-cards.js";
 import { CAPABILITY_SECTION_ICONS, ensureCapabilityCatalog, ensureModelTemplate } from "../capability-catalog.js";
 import {

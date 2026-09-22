@@ -72,7 +72,7 @@ import {
 import {
     modelImageHtml,
     modelPreviewHtml,
-} from "../widgets.js";
+} from "../components/model-image.js";
 import { onlineBadge } from "../components/state-badge.js";
 import {
     blankDeviceModal,

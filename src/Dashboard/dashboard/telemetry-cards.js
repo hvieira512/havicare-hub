@@ -19,7 +19,7 @@ import {
 import { capabilityLabel } from "./capability-catalog.js";
 import { stateBadge } from "./components/state-badge.js";
 
-/** Os cartões de telemetria. As peças genéricas de interface estão em `widgets.js`. */
+/** Os cartões de telemetria. As peças genéricas de interface estão em `components/`. */
 
 /**
  * O ícone e a cor de cada capacidade: `[ícone, tom]`. O nome vem do catálogo, pelo

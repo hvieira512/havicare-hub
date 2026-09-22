@@ -7,7 +7,7 @@ import {
     updateDetailFiltersDraft,
 } from "../state.js";
 import { uplinkCardContent } from "../telemetry-cards.js";
-import { filterChips } from "../widgets.js";
+import { filterChips } from "../components/chips.js";
 
 /**
  * Os filtros do histórico de um dispositivo: a janela de datas, o tipo e a pesquisa.

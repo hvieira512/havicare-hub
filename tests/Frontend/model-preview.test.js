@@ -5,7 +5,7 @@ import "./support/browser-env.js";
 import {
     modelImageHtml,
     modelPreviewHtml,
-} from "../../src/Dashboard/dashboard/widgets.js";
+} from "../../src/Dashboard/dashboard/components/model-image.js";
 
 const withImage = { commercialName: "HW20PRO", image: "/assets/models/hw20pro.png" };
 const withoutImage = { commercialName: "HW20PRO" };

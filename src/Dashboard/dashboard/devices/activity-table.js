@@ -1,5 +1,5 @@
 import { html, raw } from "../html.js";
-import { emptyPanel } from "../widgets.js";
+import { emptyPanel } from "../components/empty-panel.js";
 
 /**
  * A tabela genérica de atividade -- a de telemetria e a de pedidos usam-na igual. Recebe as

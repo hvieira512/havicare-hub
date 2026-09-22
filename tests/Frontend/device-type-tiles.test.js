@@ -3,7 +3,7 @@ import test from "node:test";
 
 import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
-import { deviceTypeTiles } from "../../src/Dashboard/dashboard/widgets.js";
+import { deviceTypeTiles } from "../../src/Dashboard/dashboard/components/device-type-tiles.js";
 
 /**
  * O mosaico de tipos de dispositivo, a devolver HTML em vez de o escrever no contentor.

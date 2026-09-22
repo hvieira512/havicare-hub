@@ -10,7 +10,8 @@ import {
 import { esc } from "../../format.js";
 import { apiError, toast } from "../../dialogs.js";
 import { clearInvalid, markInvalid } from "../../validation.js";
-import { buttonGroup, deviceTypeTiles } from "../../widgets.js";
+import { buttonGroup } from "../../components/button-group.js";
+import { deviceTypeTiles } from "../../components/device-type-tiles.js";
 import {
     deviceTypeLabel,
     deviceTypeOptions,

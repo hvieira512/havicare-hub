@@ -17,7 +17,8 @@ import {
     setSelectedDetail,
 } from "../state.js";
 import { html, raw } from "../html.js";
-import { deviceTypeTiles, emptyPanel } from "../widgets.js";
+import { deviceTypeTiles } from "../components/device-type-tiles.js";
+import { emptyPanel } from "../components/empty-panel.js";
 import { deviceCard, deviceCardSkeletonList } from "./device-card.js";
 import { renderPagination, resolvePaginationPage } from "../pagination.js";
 import {

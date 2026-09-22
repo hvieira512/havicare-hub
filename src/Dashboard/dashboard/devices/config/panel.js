@@ -7,7 +7,7 @@ import {
     readConfigPayload,
     renderDeviceConfigurationRoot,
 } from "./index.js";
-import { emptyPanel } from "../../widgets.js";
+import { emptyPanel } from "../../components/empty-panel.js";
 import { confirmDestructive, toast } from "../../dialogs.js";
 import { resetPhoneControls } from "../../phone.js";
 import { state } from "../../state.js";
