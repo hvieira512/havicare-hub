@@ -278,6 +278,17 @@ ao hub.
 | `0x811A` / `0x811B` / `0x811D` | célula actual, total e restantes | o `0x811B` é a **capacidade do prato**, não quantas vão carregadas — essas são a configuração `0x101C` |
 | `0x8121`–`0x8125` | falhas | rotação, reset do prato, empurrador, porta da célula, teclas |
 | `0x8131`–`0x8139` | **estado de toma de cada um dos nove alarmes** | `0` nada · `1` a preparar · `2` à espera · `4` tempo esgotado · `6` **falhada** · `7` **tomada** |
+
+> **«Tomada» não quer sempre dizer «tomada à hora».** Uma dispensa manual — o
+> comando `0xA004` ou o botão verde do aparelho — consome a dose do **próximo
+> alarme marcado** e dá-o como tomado, mesmo que a hora dele ainda esteja longe.
+> Observou-se com o aparelho na mesa: um «Dispensar agora» às 13:10:50 marcou como
+> tomado o alarme das 20:00, e dezasseis segundos depois chegou uma notificação
+> `0x04` a dizê-lo. O compartimento actual avançou e os restantes desceram um.
+>
+> As notificações `0x04` trazem **só o que mudou** — um alarme, não os nove. É por
+> isso que uma leitura vinda de uma notificação traz a lista incompleta, e só um
+> `0x07` dá o estado dos nove de uma vez.
 | `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
 | `0x8107` | tampa | `0` fechada · `1` aberta |
 | `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
