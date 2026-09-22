@@ -87,7 +87,7 @@ async function ensureCapabilityModelFilters() {
     state.settingsModal.sectionLoaded.modelFilters = true;
 }
 
-function resolveCapabilitySuppliersForDeviceType(deviceType) {
+function loadCapabilitySuppliersForDeviceType(deviceType) {
     const group = state.settingsModal.modelFilters.find(
         (g) => normalizeDeviceType(g.deviceType || "") === deviceType,
     );
@@ -124,7 +124,7 @@ async function loadSettingsCapabilitiesSection(
     }
     await loadCapabilityCatalog(normalized);
     await ensureCapabilityModelFilters();
-    resolveCapabilitySuppliersForDeviceType(normalized);
+    loadCapabilitySuppliersForDeviceType(normalized);
     if (state.settingsModal.capabilitySupplier) {
         await loadCapabilityTemplate(
             state.settingsModal.capabilitySupplier,

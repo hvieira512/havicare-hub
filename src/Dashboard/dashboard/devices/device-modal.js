@@ -377,7 +377,7 @@ export async function syncDeviceModalContext(loadCatalog = false) {
         state.deviceModal.deviceType,
     );
     state.deviceModal.licenseId = els.deviceLicenseId.value.trim() || "0";
-    state.deviceModal.simNumber = getDeviceSimNumberValue(false);
+    state.deviceModal.simNumber = deviceSimNumber();
     state.deviceModal.deviceId = els.deviceDeviceId?.value.trim() || "";
 }
 
@@ -467,7 +467,7 @@ export async function saveDevice() {
 
     if (fields.sim) {
         try {
-            simNumber = getDeviceSimNumberValue(true);
+            simNumber = deviceSimNumberOrThrow();
         } catch {
             // O próprio controlo do número já marca o campo e diz o que está errado.
             els.deviceSimNumberRoot
@@ -574,20 +574,24 @@ function renderDeviceSimNumberField(value = "") {
     resetPhoneControls(els.deviceSimNumberRoot);
 }
 
-function getDeviceSimNumberValue(strict = false) {
-    const control =
-        els.deviceSimNumberRoot?.querySelector("[data-phone-control]") || null;
-    if (!control) {
+/**
+ * O número do SIM tal como está no campo, ou vazio se ainda não for um número.
+ *
+ * Serve quem só quer espelhar o formulário no estado: um número a meio de ser escrito não é
+ * motivo para rebentar nada.
+ */
+function deviceSimNumber() {
+    try {
+        return deviceSimNumberOrThrow();
+    } catch {
         return "";
     }
+}
 
-    if (!strict) {
-        try {
-            return normalizePhoneControl(control);
-        } catch {
-            return "";
-        }
-    }
+/** O mesmo número, mas a gravar: aqui um número inválido tem de parar a gravação. */
+function deviceSimNumberOrThrow() {
+    const control =
+        els.deviceSimNumberRoot?.querySelector("[data-phone-control]") || null;
 
-    return normalizePhoneControl(control);
+    return control ? normalizePhoneControl(control) : "";
 }
