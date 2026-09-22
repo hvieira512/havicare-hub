@@ -4,6 +4,7 @@ import {
     weekdayPicker,
     weekdaysToFourPTouchMask,
 } from "./alarm-fields.js";
+import { boolValue } from "./normalizers.js";
 
 export function takePillsInput(desired, meta = {}) {
     const reminderText = String(desired.reminderText || "");
@@ -88,13 +89,4 @@ function frequencyOptionsFor(meta) {
     return Array.isArray(meta?.frequency?.options) && meta.frequency.options.length
         ? meta.frequency.options
         : [{ value: 1, label: "Uma vez" }, { value: 2, label: "Diariamente" }, { value: 3, label: "Personalizado" }];
-}
-
-function boolValue(value, fallback = false) {
-    if (typeof value === "boolean") return value;
-    if (typeof value === "number") return value !== 0;
-    const normalized = String(value ?? "").trim().toLowerCase();
-    if (["1", "true", "yes", "on"].includes(normalized)) return true;
-    if (["0", "false", "no", "off"].includes(normalized)) return false;
-    return fallback;
 }
