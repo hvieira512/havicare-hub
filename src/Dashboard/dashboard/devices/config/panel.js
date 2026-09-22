@@ -3,7 +3,10 @@ import {
     saveConfiguration as apiSaveConfiguration,
 } from "../../api/index.js";
 import {
+    deliveryStatusFromCommand,
     patchConfigurationDeliveryStates,
+} from "./delivery.js";
+import {
     readConfigPayload,
     renderDeviceConfigurationRoot,
 } from "./index.js";
@@ -300,23 +303,6 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
         });
         renderDeviceConfigurationModal();
     }
-}
-
-/**
- * O estado de entrega correspondente ao estado de um comando.
- *
- * É a mesma tradução para configurações e para acções: ambas viajam pela mesma fila e o
- * operador não tem por que ler dois vocabulários para a mesma coisa.
- */
-export function deliveryStatusFromCommand(commandStatus, confirmationMode = "") {
-    const status = String(commandStatus || "");
-    if (["failed", "dropped"].includes(status)) return "failed";
-    if (status === "acked") {
-        return String(confirmationMode) === "ack_only" ? "confirmation_unavailable" : "confirmed";
-    }
-    if (status === "queued") return "pending_delivery";
-    if (["waiting", "sent"].includes(status)) return "awaiting_ack";
-    return "";
 }
 
 export function syncDeviceModalCommandStates(imei, commands) {
