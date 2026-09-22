@@ -262,6 +262,7 @@ final class PillDispenserDownlinkTest extends TestCase
             0x1015 => 3,                // fuso horário, INT16S
             0x810A => 3, 0x810B => 3,   // sinal WiFi e GSM, INT16S
             0x810E => 1,                // temperatura, INT8S
+            0x8009 => 11,               // CCID do cartão SIM, STRING de 20
             0xA101 => 11,               // calibração do relógio, STRING
         ];
 

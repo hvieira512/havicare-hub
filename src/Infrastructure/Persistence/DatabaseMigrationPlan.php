@@ -7,6 +7,7 @@ namespace Hub\Infrastructure\Persistence;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalog;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserAlarmStatus;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserReportedConfigurationCleanup;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutEncryptionSwitch;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutFactoryReset;
 
@@ -37,6 +38,8 @@ final class DatabaseMigrationPlan
             new PillDispenserWithoutEncryptionSwitch(),
             // A toma de medicação passa a ler-se pelo estado dos alarmes, que vem em claro.
             new PillDispenserAlarmStatus(),
+            // E a configuração que o aparelho tem passa a ser guardada pela chave certa.
+            new PillDispenserReportedConfigurationCleanup(),
         ];
     }
 

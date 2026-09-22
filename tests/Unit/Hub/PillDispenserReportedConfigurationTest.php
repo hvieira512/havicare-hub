@@ -98,8 +98,6 @@ final class PillDispenserReportedConfigurationTest extends TestCase
                 0x1012 => ['value' => "\x00", 'state' => 1],   // TAG inválida
             ],
         ]));
-        // O codificador não leva o estado da leitura, que só existe na resposta do aparelho.
-        $decoded['tlv'][0x1012]['state'] = 1;
 
         $settings = $this->settingsOf($decoded);
 

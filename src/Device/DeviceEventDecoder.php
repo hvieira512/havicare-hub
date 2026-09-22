@@ -487,11 +487,13 @@ final class DeviceEventDecoder
             'wifiSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810A)),
             'gsmSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810B)),
             'signalLevel' => $this->tlvU8($tlv, 0x810D),
-            'childLockEngaged' => match ($this->tlvU8($tlv, 0x8102)) {
-                0 => false,
-                1 => true,
-                default => null,
-            },
+            'childLockEngaged' => $this->pillFlag($tlv, 0x8102),
+            // O que o aparelho diz de si e não havia outra maneira de saber: a tampa aberta,
+            // a corrente em falta, e o juízo que ele faz sobre a temperatura e a humidade.
+            'lidOpen' => $this->pillFlag($tlv, 0x8107),
+            'mainsPowered' => $this->pillFlag($tlv, 0x8109),
+            'environmentAlarm' => $this->pillFlag($tlv, 0x8111),
+            'simCcid' => $this->tlvValue($tlv, 0x8009),
         ], static fn (mixed $field): bool => $field !== null);
         if ($signal !== []) {
             $events[] = ['feature' => 'device_status', 'nativeType' => $nativeType, 'value' => $signal];

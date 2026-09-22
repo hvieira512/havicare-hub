@@ -260,6 +260,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         0x810A, 0x810B,             // sinal WiFi e GSM em dBm, unidade que o fornecedor confirmou
         0x810D,                     // nível do sinal GSM: 0 a 3, e esse está documentado
         0x810E, 0x810F,             // temperatura e humidade
+        0x8009,                     // CCID do cartão SIM, STRING de 20 bytes
+        0x8107, 0x8109, 0x8111,     // tampa, alimentação DC, alarme de temperatura/humidade
         0x8112,                     // chamada de emergência
         0x811A, 0x811B, 0x811D,     // compartimentos
         // O estado de toma de cada um dos nove alarmes. É a única leitura da toma que chega
