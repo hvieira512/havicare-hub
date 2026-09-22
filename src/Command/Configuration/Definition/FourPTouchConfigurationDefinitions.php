@@ -10,9 +10,9 @@ final class FourPTouchConfigurationDefinitions
 
         return [
             $entry('uploadInterval', 'UPLOAD', 'Intervalo de localização', 'number', ['intervalSeconds'], ['UPLOAD'], 'intervals', 10),
-            $entry('sosContacts', 'SOS', 'Contactos SOS', 'list', ['numbers'], ['SOS'], 'contacts', 10, 3),
-            $entry('whitelistGroup1', 'WHITELIST1', 'Lista de chamadas autorizadas 1-5', 'list', ['numbers'], ['WHITELIST1'], 'contacts', 40, 5),
-            $entry('whitelistGroup2', 'WHITELIST2', 'Lista de chamadas autorizadas 6-10', 'list', ['numbers'], ['WHITELIST2'], 'contacts', 50, 5),
+            $entry('sosContacts', 'SOS', 'Contactos SOS', 'sos_contacts', ['numbers'], ['SOS'], 'contacts', 10, 3),
+            $entry('whitelistGroup1', 'WHITELIST1', 'Lista de chamadas autorizadas 1-5', 'call_whitelist', ['numbers'], ['WHITELIST1'], 'contacts', 40, 5),
+            $entry('whitelistGroup2', 'WHITELIST2', 'Lista de chamadas autorizadas 6-10', 'call_whitelist', ['numbers'], ['WHITELIST2'], 'contacts', 50, 5),
             $entry('devicePassword', 'PW', 'Palavra-passe do dispositivo', 'text', ['password'], ['PW'], 'system', 10),
             $entry('languageTimezone', 'LZ', 'Idioma e fuso horário', 'languageTimezone', ['language', 'timeZone'], ['LZ'], 'system', 20),
             $entry('sosSmsAlerts', 'SOSSMS', 'SMS em alarme SOS', 'toggle', ['enabled'], ['SOSSMS'], 'alerts', 10),
@@ -57,7 +57,7 @@ final class FourPTouchConfigurationDefinitions
             $entry('doNotDisturb', 'SILENCETIME', 'Não perturbar', 'toggle', ['enabled'], ['SILENCETIME'], 'system', 60),
             $entry('firmwareVersion', 'VERNO', 'Versão de firmware', 'action', [], ['VERNO'], 'system', 5, transient: true),
             $entry('deviceStatus', 'TS', 'Estado do dispositivo', 'action', [], ['TS'], 'system', 5, transient: true),
-            $entry('alarmClock', 'REMIND', 'Alarmes', 'alarms', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
+            $entry('alarmClock', 'REMIND', 'Alarmes', 'alarm_clock', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Uma vez'],
                     ['value' => 2, 'label' => 'Todos os dias'],
@@ -73,7 +73,7 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 7, 'label' => 'Dom'],
                 ],
             ]),
-            $entry('phonebook', 'PHBX2', 'Lista telefónica', 'contacts', ['contacts'], ['PHBX2', 'DPHBX', 'PHB', 'PHB2'], 'contacts', 55, 100),
+            $entry('phonebook', 'PHBX2', 'Lista telefónica', 'phonebook', ['contacts'], ['PHBX2', 'DPHBX', 'PHB', 'PHB2'], 'contacts', 55, 100),
             $entry('profile', 'profile', 'Perfil de som', 'soundProfile', ['mode'], ['profile'], 'system', 55, null, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Vibração e toque'],
@@ -82,7 +82,7 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 4, 'label' => 'Silêncio'],
                 ],
             ]),
-            $entry('rejectUnknownCalls', 'DEVREFUSEPHONESWITCH', 'Restringir chamadas recebidas', 'toggle', ['enabled'], ['DEVREFUSEPHONESWITCH'], 'contacts', 35),
+            $entry('rejectUnknownCalls', 'DEVREFUSEPHONESWITCH', 'Restringir chamadas recebidas', 'whitelist_enabled', ['enabled'], ['DEVREFUSEPHONESWITCH'], 'contacts', 35),
         ];
     }
 }

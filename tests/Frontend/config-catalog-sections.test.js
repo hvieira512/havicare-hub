@@ -135,7 +135,7 @@ test("quem não é configurável nem pedível cai, e o pedível entra sem estado
     );
 });
 
-test("o alarm_clock traz rótulo, tipo de campo e espécie próprios, seja qual for o catálogo", () => {
+test("o alarm_clock traz rótulo, espécie e secção próprios, seja qual for o catálogo", () => {
     const root = render({
         protocol: "veepoo-ble",
         catalog: [{
@@ -143,7 +143,7 @@ test("o alarm_clock traz rótulo, tipo de campo e espécie próprios, seja qual 
             capabilityKey: "alarm_clock",
             command: "SETALARM",
             label: "Despertador 1",
-            input: "json",
+            input: "alarm_clock",
             category: "health",
         }],
         capabilityCatalog: [{

@@ -16,25 +16,11 @@ import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inpu
  * e usa o nome da capacidade, porque o hub funde várias entradas nativas num cartão só.
  * Estão aqui pelo nome para que uma sexta tenha de passar por este teste.
  */
-const SOBREPOSTAS = new Set([
-    "alarm_clock",
-    "phonebook",
-    "sos_contacts",
-    "call_whitelist",
-    "whitelist_enabled",
-]);
-
 /**
- * Os tipos que as definições declaram só para as capacidades sobrepostas, e que por isso
- * nunca chegam a ser escolhidos: a lista telefónica do 4P Touch diz `contacts`, os números
- * SOS dizem `list`, e os alarmes dizem `alarms`, `reminders` ou `json` conforme o
- * fornecedor. O painel ignora os quatro e desenha pelo nome da capacidade.
- *
- * Ficam nomeados para que o teste continue a apanhar um tipo novo escrito com um erro. Que
- * o catálogo da API publique um `input` que a dashboard não honra é outra conversa, e está
- * por resolver.
+ * O `json` é o recuo declarado de propósito por duas entradas da Wonlex que o painel nem
+ * chega a mostrar -- não têm capacidade associada. É o único nome sem renderizador próprio.
  */
-const DECLARADOS_MAS_IGNORADOS = new Set(["list", "contacts", "alarms", "reminders", "json"]);
+const RECUO = "json";
 
 const DEFINICOES = new URL("../../src/Command/Configuration/Definition/", import.meta.url);
 
@@ -75,31 +61,24 @@ test("as definições declaram tipos de campo que alguém desenha", () => {
     assert.ok(declarados.size > 10, "o leitor das definições não encontrou tipos suficientes");
 
     const orfaos = [...declarados].filter(
-        (tipo) => !CONFIG_INPUTS[tipo] &&
-            !SOBREPOSTAS.has(tipo) &&
-            !DECLARADOS_MAS_IGNORADOS.has(tipo),
+        (tipo) => !CONFIG_INPUTS[tipo] && tipo !== RECUO,
     );
 
     assert.deepEqual(orfaos, [], "estes tipos caem no editor de JSON em cru");
 });
 
-test("a tabela de sobreposição continua a ser as cinco conhecidas", () => {
+/**
+ * O painel desenha pelo `input` que vem do catálogo, e mais nada. Havia uma tabela de cinco
+ * capacidades em que ele ignorava o declarado e escolhia pelo nome da capacidade -- e por
+ * isso o catálogo publicava um tipo que ninguém honrava.
+ */
+test("o painel não tem tabela nenhuma a sobrepor o tipo declarado", () => {
     const fonte = readFileSync(
         new URL("../../src/Dashboard/dashboard/devices/config/catalog-model.js", import.meta.url),
         "utf8",
     );
-    const bloco = fonte.match(/const genericInputs = new Set\(\[([^\]]*)\]\)/)[1];
 
-    assert.deepEqual(
-        new Set([...bloco.matchAll(/"([^"]+)"/g)].map((m) => m[1])),
-        SOBREPOSTAS,
-    );
-});
-
-test("cada capacidade sobreposta tem o seu renderizador", () => {
-    for (const nome of SOBREPOSTAS) {
-        assert.ok(CONFIG_INPUTS[nome], `o painel escolhe ${nome}, e ninguém o desenha`);
-    }
+    assert.doesNotMatch(fonte, /genericInputs/);
 });
 
 test("nenhum renderizador registado ficou sem desenhar nem sem ler", () => {
