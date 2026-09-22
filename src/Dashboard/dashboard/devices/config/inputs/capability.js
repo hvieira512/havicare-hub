@@ -29,7 +29,7 @@ import {
  * escolhe pela chave de capacidade e não pelo `input` declarado.
  */
 
-export function diaperSensitivityInput(desired, meta = {}) {
+function diaperSensitivityInput(desired, meta = {}) {
     const presets = meta.presets || {};
     const bounds = meta.bounds || {};
     const [rangeMin, rangeMax] = bounds.pollutionRange || [2, 10];
@@ -79,7 +79,7 @@ export function diaperSensitivityInput(desired, meta = {}) {
         </div>`;
 }
 
-export function windowToggleInput(_entry, desired) {
+function windowToggleInput(_entry, desired) {
     const [start = "22:00", end = "08:00"] = String(desired.range ?? "22:00-08:00").split("-");
     return `
         <div class="row g-3 align-items-end">
@@ -91,7 +91,7 @@ export function windowToggleInput(_entry, desired) {
 
 /** Os limiares que o aparelho avalia sobre a medição dele. */
 
-export function heartRateThresholdsInput(_entry, desired) {
+function heartRateThresholdsInput(_entry, desired) {
     return `
         <div class="row g-3 align-items-end">
             <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
@@ -107,7 +107,7 @@ export function heartRateThresholdsInput(_entry, desired) {
  * sem isto correm sobre valores de fábrica.
  */
 
-export function personalInfoInput(_entry, desired) {
+function personalInfoInput(_entry, desired) {
     const sex = desired.sex === "male" ? "male" : "female";
     return `
         <div class="row g-3">
@@ -129,7 +129,7 @@ export function personalInfoInput(_entry, desired) {
 
 /** O interruptor de ligado. O `mt-4` alinha-o por baixo de um campo com etiqueta ao lado. */
 
-export function sosContactsInput(entry, desired, meta = {}) {
+function sosContactsInput(entry, desired, meta = {}) {
     if (meta.sourceCapability === "phonebook") {
         const selected = new Set(Array.isArray(desired) ? desired.map(String) : []);
         const contacts = Array.isArray(meta.phonebookContacts)
@@ -182,7 +182,7 @@ export function sosContactsInput(entry, desired, meta = {}) {
     });
 }
 
-export function callWhitelistInput(entry, desired, meta = {}) {
+function callWhitelistInput(entry, desired, meta = {}) {
     if ((meta.protocol || "") === "vivistar-iw") {
         return contactsInput(entry, desired, meta);
     }
@@ -243,7 +243,7 @@ function phoneRepeaterInput(entry, desired, options) {
         </div>`;
 }
 
-export function alarmClockInput(desired, meta = {}) {
+function alarmClockInput(desired, meta = {}) {
     const items = normalizeAlarmClockItems(desired);
     const limit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
     const typeOptions = Array.isArray(meta.type?.options) ? meta.type.options : [];

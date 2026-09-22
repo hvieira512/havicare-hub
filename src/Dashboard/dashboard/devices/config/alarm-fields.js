@@ -96,25 +96,6 @@ export function normalizeAlarmClockRecurrenceKind(value) {
     return "once";
 }
 
-export function formatFourPTouchAlarmTime(value) {
-    const raw = String(value || "").trim();
-    if (raw === "") {
-        return "";
-    }
-
-    const hhmm = raw.replace(/[^0-9]/g, "");
-    if (hhmm.length === 4) {
-        return `${hhmm.slice(0, 2)}:${hhmm.slice(2, 4)}`;
-    }
-
-    if (/^\d{1,2}:\d{2}$/.test(raw)) {
-        const [hour, minute] = raw.split(":");
-        return `${String(parseInt(hour, 10)).padStart(2, "0")}:${String(parseInt(minute, 10)).padStart(2, "0")}`;
-    }
-
-    return raw;
-}
-
 /** Os dias marcados, já na máscara que o 4P Touch espera. */
 export function readFourPTouchAlarmDays(row) {
     return weekdaysToFourPTouchMask(readWeekdays(row));

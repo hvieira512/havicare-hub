@@ -18,7 +18,7 @@ import {
  * horárias, o idioma com fuso, a chamada e a escuta.
  */
 
-export function makeCallInput(entry, desired) {
+function makeCallInput(entry, desired) {
     return `
         <div>
             <label class="form-label-sm">Número de telefone</label>
@@ -34,7 +34,7 @@ export function makeCallInput(entry, desired) {
         </div>`;
 }
 
-export function voiceMonitorInput(entry, desired) {
+function voiceMonitorInput(entry, desired) {
     return `
         <div>
             <div class="alert alert-warning small py-2 px-3 mb-3">
@@ -50,7 +50,7 @@ export function voiceMonitorInput(entry, desired) {
         </div>`;
 }
 
-export function soundProfileInput(desired) {
+function soundProfileInput(desired) {
     const current = parseInt(String(desired.mode ?? 1), 10) || 1;
     const options = [
         {
@@ -107,7 +107,7 @@ export function soundProfileInput(desired) {
         </div>`;
 }
 
-export function intervalHoursToggleInput(desired) {
+function intervalHoursToggleInput(desired) {
     return `
         <div class="row g-3">
             <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
@@ -135,7 +135,7 @@ const languageTimezonePresetOptions = [
     { language: 10, timeZone: "1", label: "Français (UTC+1)" },
 ];
 
-export function languageTimezoneInput(desired) {
+function languageTimezoneInput(desired) {
     const preset = languageTimezonePresetOptions.find(
         (option) =>
             String(desired.language ?? 3) === String(option.language) &&
@@ -163,7 +163,7 @@ export function languageTimezoneInput(desired) {
         </div>`;
 }
 
-export function dualToggleInput(desired) {
+function dualToggleInput(desired) {
     const enabled = boolValue(desired.enabled, true);
     const callCenterOnFall = boolValue(desired.callCenterOnFall, false);
     return `
@@ -179,7 +179,7 @@ export function dualToggleInput(desired) {
         </div>`;
 }
 
-export function fallSensitivityLevelsInput(desired) {
+function fallSensitivityLevelsInput(desired) {
     const sensitivityLevel =
         parseInt(String(desired.sensitivity ?? 5), 10) || 5;
     const parsedTotalLevels = parseInt(String(desired.levels ?? ""), 10);
@@ -242,7 +242,7 @@ export function fallSensitivityLevelsInput(desired) {
         </div>`;
 }
 
-export function timeRangesInput(entry, desired) {
+function timeRangesInput(entry, desired) {
     const limit = Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3);
     const ranges = Array.isArray(desired.ranges) ? desired.ranges : [];
     const values = Array.from(
@@ -265,7 +265,7 @@ export function timeRangesInput(entry, desired) {
         </div>`;
 }
 
-export function timeRangeInput(desired) {
+function timeRangeInput(desired) {
     return field(
         "Intervalo",
         `<input class="form-control" type="text" data-config-field="range" value="${esc(String(desired.range ?? "21:10-07:30"))}" placeholder="21:10-07:30">`,

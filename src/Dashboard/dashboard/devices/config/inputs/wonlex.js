@@ -26,7 +26,7 @@ import {
 /** Os painéis Wonlex trazem o estado em `enabled` ou em `switchState`, conforme a geração. */
 const wonlexEnabled = (desired) => boolValue(desired.enabled ?? desired.switchState, true);
 
-export function wonlexBloodPressureWarningInput(desired) {
+function wonlexBloodPressureWarningInput(desired) {
     return `
         <div class="vstack gap-3">
             ${enabledSwitch(wonlexEnabled(desired))}
@@ -45,7 +45,7 @@ export function wonlexBloodPressureWarningInput(desired) {
         </div>`;
 }
 
-export function wonlexSleepSettingsInput(desired) {
+function wonlexSleepSettingsInput(desired) {
     return `
         <div class="vstack gap-3">
             ${enabledSwitch(wonlexEnabled(desired))}
@@ -69,7 +69,7 @@ export function wonlexSleepSettingsInput(desired) {
         </div>`;
 }
 
-export function wonlexReminderThresholdInput(entry, desired) {
+function wonlexReminderThresholdInput(entry, desired) {
     const valueField = (entry.fields || []).includes("RemindValue")
         ? "RemindValue"
         : "reminderValue";
@@ -88,7 +88,7 @@ export function wonlexReminderThresholdInput(entry, desired) {
         </div>`;
 }
 
-export function wonlexHeartRateRangeInput(desired) {
+function wonlexHeartRateRangeInput(desired) {
     const exerciseEnabled = boolValue(
         desired.exerciseEnabled ?? desired.exerciseSwitchState,
         true,
@@ -127,7 +127,7 @@ export function wonlexHeartRateRangeInput(desired) {
         </div>`;
 }
 
-export function wonlexMedicationPlansInput(desired) {
+function wonlexMedicationPlansInput(desired) {
     const plans = normalizeWonlexMedicationPlans(desired);
     if (plans.length === 0) {
         plans.push(defaultWonlexMedicationPlan());

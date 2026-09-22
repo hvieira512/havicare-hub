@@ -57,7 +57,7 @@ export function readTextArray(section, field) {
         .filter(Boolean);
 }
 
-export function readPhoneArray(section, field) {
+function readPhoneArray(section, field) {
     return Array.from(
         section.querySelectorAll(
             `[data-phone-control][data-config-field="${CSS.escape(field)}"]`,
