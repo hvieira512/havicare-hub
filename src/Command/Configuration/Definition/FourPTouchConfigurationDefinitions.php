@@ -55,8 +55,10 @@ final class FourPTouchConfigurationDefinitions
             $entry('powerOffCommand', 'POWEROFF', 'Desligar dispositivo', 'action', [], ['POWEROFF'], 'system', 5, transient: true, confirm: 'O relógio desliga-se e só volta a ligar no botão do próprio aparelho.'),
             $entry('findDeviceCommand', 'FIND', 'Localizar dispositivo', 'action', [], ['FIND'], 'system', 5, transient: true),
             $entry('doNotDisturb', 'SILENCETIME', 'Não perturbar', 'toggle', ['enabled'], ['SILENCETIME'], 'system', 60),
-            $entry('firmwareVersion', 'VERNO', 'Versão de firmware', 'action', [], ['VERNO'], 'system', 5, transient: true),
-            $entry('deviceStatus', 'TS', 'Estado do dispositivo', 'action', [], ['TS'], 'system', 5, transient: true),
+            // Estas duas perguntam em vez de mandar, e o rótulo delas é um nome: sem o verbo
+            // o botão dizia «Enviar», que descreve mal o que o clique faz.
+            $entry('firmwareVersion', 'VERNO', 'Versão de firmware', 'action', [], ['VERNO'], 'system', 5, transient: true, verb: 'Consultar'),
+            $entry('deviceStatus', 'TS', 'Estado do dispositivo', 'action', [], ['TS'], 'system', 5, transient: true, verb: 'Consultar'),
             $entry('alarmClock', 'REMIND', 'Alarmes', 'alarm_clock', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Uma vez'],
