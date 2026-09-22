@@ -181,7 +181,16 @@ const startDashboard = async () => {
     }
     if (!dashboardStarted) {
         dashboardStarted = true;
-        await onAuthenticated();
+        try {
+            await onAuthenticated();
+        } catch {
+            // A aplicação não chegou a arrancar -- o grafo dela entra por `import()` e esse
+            // pedido pode falhar. Sem voltar ao ecrã de entrada ficava um `#app` vazio à
+            // frente de um formulário escondido, e o convite a tentar de novo era falso:
+            // não havia onde carregar.
+            dashboardStarted = false;
+            showLogin("Não foi possível carregar a aplicação. Volte a tentar.");
+        }
     }
 };
 

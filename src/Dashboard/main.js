@@ -11,7 +11,12 @@ installErrorReporting();
  * dê a ordem o clique no login ou a sessão que já estava guardada.
  */
 let dashboardApp = null;
-const loadDashboardApp = () => (dashboardApp ??= import("./dashboard/app.js"));
+const loadDashboardApp = () => (dashboardApp ??= import("./dashboard/app.js").catch((error) => {
+    // Uma promessa rejeitada não é nullish: sem isto ficava em cache, e toda a tentativa
+    // seguinte devolvia a mesma falha sem voltar a pedir nada ao servidor.
+    dashboardApp = null;
+    throw error;
+}));
 
 document.addEventListener("DOMContentLoaded", () => {
     // O tema antes da sessão: o `<head>` já pintou a página na cor certa, e o que falta aqui
