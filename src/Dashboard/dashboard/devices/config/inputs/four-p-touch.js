@@ -265,13 +265,15 @@ export function syncFallSensitivityLevels(section, levels) {
         return;
     }
 
-    const firstEnabled = Array.from(buttons).find(
+    // O maior que ainda existe, e não o primeiro à vista: o nível 1 é a sensibilidade
+    // **máxima**, e quem estava no 7 ou no 8 queria o oposto disso.
+    const lastEnabled = Array.from(buttons).findLast(
         (button) => !button.classList.contains("d-none") && !button.disabled,
     );
-    if (!firstEnabled) return;
+    if (!lastEnabled) return;
 
     currentInput.value = String(
-        parseInt(firstEnabled.dataset.configValue || "1", 10) || 1,
+        parseInt(lastEnabled.dataset.configValue || "1", 10) || 1,
     );
     buttons.forEach((button) => {
         const selected = button.dataset.configValue === currentInput.value;
