@@ -260,6 +260,35 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
         </div>`;
 }
 
+/** O número de cada medicamento é a sua posição na lista, e remover um a meio desalinha-os. */
+export function renumberWonlexMedicationPlans(section) {
+    section
+        ?.querySelectorAll("[data-repeat-row=\"wonlexMedicationPlan\"]")
+        .forEach((row, index) => {
+            const number = row.querySelector("[data-medication-plan-number]");
+            if (number) {
+                number.textContent = String(index + 1);
+            }
+        });
+}
+
+/**
+ * A hora de um período só se edita com o período escolhido, e nasce às 08:00 para não ficar
+ * vazia -- uma hora em branco é recusada na leitura.
+ */
+export function syncWonlexMedicationPeriod(checkbox) {
+    const row = checkbox.closest("[data-repeat-row=\"wonlexMedicationPlan\"]");
+    const periodTime = row?.querySelector(
+        `[data-medication-period-time="${checkbox.value}"]`,
+    );
+    if (!periodTime) return;
+
+    periodTime.disabled = !checkbox.checked;
+    if (checkbox.checked && String(periodTime.value || "") === "") {
+        periodTime.value = "08:00";
+    }
+}
+
 function readWonlexMedicationPlans(section) {
     const plans = Array.from(
         section.querySelectorAll("[data-repeat-row=\"wonlexMedicationPlan\"]"),

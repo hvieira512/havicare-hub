@@ -1,6 +1,6 @@
 import { esc, fieldLabel } from "../../../format.js";
 import { field } from "../../../components/form-field.js";
-import { renderPhoneControl } from "../../../phone.js";
+import { renderPhoneControl, resetPhoneControls } from "../../../phone.js";
 import { protocolPhonebookConstraints } from "../protocol-catalog.js";
 import { boolValue } from "../normalizers.js";
 import { enabledSwitch, numberField } from "./shared.js";
@@ -155,6 +155,40 @@ export function contactsInput(entry, desired, meta = {}) {
                     .join("")}
             </div>
         </div>`;
+}
+
+function isFourPTouchPhonebookSection(section) {
+    return String(section?.dataset?.configProtocol || "") === "four-p-touch" &&
+        String(section?.dataset?.configKey || "") === "phonebook";
+}
+
+/** A primeira linha de contactos, quando a lista veio vazia e não há de onde clonar. */
+export function createContactRow(section) {
+    const phonebook = isFourPTouchPhonebookSection(section);
+    const nameMaxLength = parseInt(
+        section?.dataset.phonebookNameMaxLength || "0", 10,
+    ) || 0;
+    const phoneMaxLength = parseInt(
+        section?.dataset.phonebookPhoneMaxLength || (phonebook ? "20" : "0"), 10,
+    ) || 0;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "row g-2 align-items-end";
+    wrapper.dataset.repeatRow = "contacts";
+    wrapper.innerHTML = `
+        <div class="col-md-6">
+            <input class="form-control" type="text" placeholder="Nome"${phonebook && nameMaxLength > 0 ? ` maxlength="${nameMaxLength}"` : ""} data-repeat-field="name">
+        </div>
+        <div class="col-md-6">
+            <div class="d-flex gap-2">
+                <div class="flex-grow-1">
+                    ${renderPhoneControl({ repeatField: "phone", maxLength: phoneMaxLength })}
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">-</button>
+            </div>
+        </div>`;
+    resetPhoneControls(wrapper);
+    return wrapper;
 }
 
 /**

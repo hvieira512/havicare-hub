@@ -8,11 +8,16 @@ import {
     syncConfigGroupDirty,
     syncConfigSectionDirty,
 } from "./panel.js";
+import { appendRepeatRow, removeRepeatRow } from "./row-editing.js";
+import { syncAlarmClockCustomVisibility } from "./inputs/capability.js";
+import { syncFallSensitivityLevels } from "./inputs/four-p-touch.js";
 import {
-    appendRepeatRow,
-    removeRepeatRow,
-    syncAlarmClockCustomVisibility,
-} from "./row-editing.js";
+    normalizeTwentyFourHourTimeInput,
+    syncSwitchLabel,
+    updateConfigChoice,
+} from "./inputs/shared.js";
+import { syncWorkingModeExtra } from "./inputs/vivistar.js";
+import { syncWonlexMedicationPeriod } from "./inputs/wonlex.js";
 import {
     clearTakePillsRecording,
     loadTakePillsAudio,
@@ -26,6 +31,9 @@ import {
  * Os handlers do painel de configuração de um dispositivo: três eventos delegados na raiz --
  * clique, `change` e `input` -- mais o fecho do aviso de resultado. Tudo o que precisam vem
  * do evento, e por isso este módulo não guarda `els` nenhum.
+ *
+ * O que fazem é encaminhar: descobrir de que campo é o evento e chamar quem o desenha. As
+ * regras de cada campo vivem com esse campo, e não aqui.
  */
 export function handleDeviceConfigClick(event) {
     const button = event.target.closest(
@@ -97,61 +105,6 @@ export function handleDeviceConfigClick(event) {
     }
 }
 
-/** Escreve cada campo do preset e recalcula qual dos botões fica aceso. */
-function applyConfigPreset(section, button) {
-    let preset;
-    try {
-        preset = JSON.parse(button.dataset.configPreset);
-    } catch {
-        return;
-    }
-
-    for (const [field, value] of Object.entries(preset || {})) {
-        const input = section.querySelector(`[data-config-field="${field}"]`);
-        if (input) input.value = String(value);
-    }
-
-    const group = button.closest("[data-config-choice-group]");
-    for (const choice of group?.querySelectorAll("[data-config-preset]") || []) {
-        const active = choice === button;
-        choice.classList.toggle("active", active);
-        choice.setAttribute("aria-pressed", active ? "true" : "false");
-    }
-}
-
-function updateConfigChoice(section, button) {
-    // Um preset preenche mais do que um campo de uma vez -- a sensibilidade das fraldas são
-    // dois inteiros --, e o botão carrega o par em vez de um valor só. O estado activo lê-se
-    // dos campos: nenhum preset activo já diz que os valores não são de nenhum deles.
-    if (button.dataset.configPreset) {
-        applyConfigPreset(section, button);
-        return;
-    }
-
-    const field = String(button.dataset.configField || "");
-    if (!field) return;
-
-    const value = String(button.dataset.configValue || "");
-    const input = section.querySelector(`[data-config-field="${field}"]`);
-    if (!input) return;
-
-    input.value = value;
-
-    const group = button.closest("[data-config-choice-group]");
-    if (!group) return;
-
-    const buttons = group.querySelectorAll(
-        "[data-action=\"selectConfigChoice\"]",
-    );
-    buttons.forEach((choice) => {
-        const selected =
-            String(choice.dataset.configField || "") === field &&
-            String(choice.dataset.configValue || "") === value;
-        choice.classList.toggle("active", selected);
-        choice.setAttribute("aria-pressed", selected ? "true" : "false");
-    });
-}
-
 export function handleDeviceConfigChange(event) {
     if (event.target.matches("[data-phone-country]")) {
         syncPhoneControl(event.target);
@@ -182,28 +135,11 @@ export function handleDeviceConfigChange(event) {
     }
 
     if (event.target.matches("[data-medication-period]")) {
-        const row = event.target.closest(
-            "[data-repeat-row=\"wonlexMedicationPlan\"]",
-        );
-        const periodTime = row?.querySelector(
-            `[data-medication-period-time="${event.target.value}"]`,
-        );
-        if (periodTime) {
-            periodTime.disabled = !event.target.checked;
-            if (event.target.checked && String(periodTime.value || "") === "") {
-                periodTime.value = "08:00";
-            }
-        }
+        syncWonlexMedicationPeriod(event.target);
     }
 
     if (event.target.matches("[data-config-field=\"mode\"]")) {
-        const extra = section.querySelector("[data-working-mode-extra]");
-        if (extra) {
-            extra.classList.toggle(
-                "d-none",
-                String(event.target.value) !== "8",
-            );
-        }
+        syncWorkingModeExtra(section, event.target.value);
     }
 
     if (event.target.matches("[data-alarm-clock-field=\"recurrenceKind\"]")) {
@@ -218,50 +154,11 @@ export function handleDeviceConfigChange(event) {
             ".form-check-input[type=\"checkbox\"][role=\"switch\"]",
         )
     ) {
-        const label = event.target.parentElement?.querySelector(
-            "[data-switch-label]",
-        );
-        if (label) {
-            label.textContent = event.target.checked
-                ? label.dataset.switchOn || "Ligado"
-                : label.dataset.switchOff || "Desligado";
-        }
+        syncSwitchLabel(event.target);
     }
 
     if (event.target.matches("[data-action=\"fallTotalLevels\"]")) {
-        const section = event.target.closest("[data-config-section]");
-        if (!section) return;
-        const total = parseInt(event.target.value, 10);
-        const btns = section.querySelectorAll(
-            "[data-config-choice-group=\"sensitivity\"] .sens-level-btn",
-        );
-        const currentInput = section.querySelector(
-            "[data-config-field=\"sensitivity\"]",
-        );
-        btns.forEach((btn, i) => {
-            const visible = i + 1 <= total;
-            btn.classList.toggle("d-none", !visible);
-            btn.disabled = !visible;
-        });
-        if (currentInput && parseInt(currentInput.value, 10) > total) {
-            const lastEnabled = Array.from(btns).find(
-                (btn) => !btn.classList.contains("d-none") && !btn.disabled,
-            );
-            if (lastEnabled) {
-                currentInput.value = String(
-                    parseInt(lastEnabled.dataset.configValue || "1", 10) || 1,
-                );
-                btns.forEach((btn) => {
-                    const selected =
-                        btn.dataset.configValue === currentInput.value;
-                    btn.classList.toggle("active", selected);
-                    btn.setAttribute(
-                        "aria-pressed",
-                        selected ? "true" : "false",
-                    );
-                });
-            }
-        }
+        syncFallSensitivityLevels(section, event.target.value);
     }
 }
 
@@ -273,22 +170,6 @@ export function handleDeviceConfigInput(event) {
     if (event.target.matches("[data-time-format=\"24h\"]")) {
         normalizeTwentyFourHourTimeInput(event.target);
     }
-}
-
-function normalizeTwentyFourHourTimeInput(input) {
-    if (!(input instanceof HTMLInputElement)) {
-        return;
-    }
-    const digits = String(input.value || "").replace(/[^0-9]/g, "").slice(0, 4);
-    if (digits.length === 0) {
-        input.value = "";
-        return;
-    }
-    if (digits.length <= 2) {
-        input.value = digits;
-        return;
-    }
-    input.value = `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
 export function handleConfigFeedbackClosed(event) {

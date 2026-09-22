@@ -1,15 +1,10 @@
 import { esc } from "../../format.js";
 import { normalizePhoneControl } from "../../phone.js";
 import { protocolPhonebookConstraints } from "./protocol-catalog.js";
-import {
-    normalizeAlarmClockRecurrenceKind,
-    readFourPTouchAlarmDays,
-    readWeekdays,
-} from "./alarm-fields.js";
 
 /**
- * Os leitores transformam uma secção de configuração desenhada no payload que vai para o
- * dispositivo.
+ * Os leitores que servem qualquer campo: transformam uma secção de configuração desenhada no
+ * payload que vai para o dispositivo. O que só um campo lê vive com esse campo.
  *
  * São a metade que toca no DOM, e a metade onde um erro é silencioso: um campo perdido
  * parece uma gravação com sucesso. A ida e volta está no `config-payload-roundtrip.test.js`.
@@ -151,115 +146,6 @@ function readContactPhone(row) {
 
 function unicodeLength(value) {
     return Array.from(String(value || "")).length;
-}
-
-export function readAlarmClock(section) {
-    const items = Array.from(
-        section.querySelectorAll("[data-repeat-row=\"alarm_clock\"]"),
-    )
-        .map((row) => {
-            const recurrenceKind = normalizeAlarmClockRecurrenceKind(
-                row.querySelector("[data-alarm-clock-field=\"recurrenceKind\"]:checked")?.value || "once",
-            );
-            const item = {
-                time: String(
-                    row.querySelector("[data-alarm-clock-field=\"time\"]")?.value || "",
-                ).trim(),
-                enabled:
-                    row.querySelector("[data-alarm-clock-field=\"enabled\"]")?.checked ||
-                    false,
-                recurrence: { kind: recurrenceKind },
-            };
-
-            const labelField = row.querySelector("[data-alarm-clock-field=\"label\"]");
-            if (labelField) {
-                const label = String(labelField.value || "").trim();
-                if (label !== "") {
-                    item.label = label;
-                }
-            }
-
-            const urlField = row.querySelector("[data-alarm-clock-field=\"url\"]");
-            if (urlField) {
-                const url = String(urlField.value || "").trim();
-                if (url !== "") {
-                    item.url = url;
-                }
-            }
-
-            const typeField = row.querySelector("[data-alarm-clock-field=\"type\"]:checked");
-            if (typeField) {
-                const type = parseInt(String(typeField.value || "1"), 10);
-                if (Number.isFinite(type)) {
-                    item.type = type;
-                }
-            }
-
-            if (item.recurrence.kind === "custom") {
-                const days = readWeekdays(row);
-                item.recurrence.days = days;
-                if (!Array.isArray(days) || days.length === 0) {
-                    throw new Error("Selecione pelo menos um dia para a recorrência personalizada");
-                }
-            }
-
-            return item;
-        })
-        .filter((item) => item.time !== "");
-
-    return { items };
-}
-
-export function readTakePills(section) {
-    const groups = Array.from(
-        section.querySelectorAll("[data-takepills-reminder-group]"),
-    );
-    const number = groups.length;
-    const voiceEnabled = readCheckbox(section, "voiceEnabled");
-    const voiceData = readText(section, "voiceData");
-    const voiceMimeType = readText(section, "voiceMimeType");
-
-    const reminderSettings = groups.map((group) => {
-        // `:checked` porque a recorrência é um grupo de rádios, como no bloco dos alarmes.
-        const frequency =
-            parseInt(
-                String(
-                    group.querySelector(
-                        "[data-takepills-field=\"reminderFrequency\"]:checked",
-                    )?.value ?? "1",
-                ),
-                10,
-            ) || 1;
-        return {
-            time:
-                    group.querySelector(
-                        "[data-takepills-field=\"reminderTime\"]",
-                    )?.value || "",
-            enabled:
-                    group.querySelector(
-                        "[data-takepills-field=\"reminderEnabled\"]",
-                    )?.checked || false,
-            frequency,
-            custom: frequency === 3 ? readFourPTouchAlarmDays(group) : "",
-        };
-    });
-
-    const payload = {
-        reminderSettings,
-        number,
-        reminderText: readText(section, "reminderText"),
-    };
-
-    if (voiceEnabled && voiceData !== "") {
-        payload.voiceData = voiceData;
-        if (voiceMimeType !== "") {
-            payload.voiceMimeType = voiceMimeType;
-        }
-    } else if (!voiceEnabled) {
-        payload.voiceData = "";
-    }
-
-    return payload;
 }
 
 export function jsonInput(desired) {

@@ -1,10 +1,13 @@
 import { esc } from "../../format.js";
 import {
     fourPTouchMaskToWeekdays,
+    readFourPTouchAlarmDays,
     weekdayPicker,
     weekdaysToFourPTouchMask,
 } from "./alarm-fields.js";
 import { boolValue } from "./normalizers.js";
+import { readCheckbox, readText } from "./readers.js";
+import { syncTakePillsCustomVisibility } from "./take-pills-audio.js";
 
 export function takePillsInput(desired, meta = {}) {
     const reminderText = String(desired.reminderText || "");
@@ -37,6 +40,81 @@ export function takePillsReminderGroup(settings, index, frequencyOptions) {
             return `<input class="btn-check" type="radio" name="takepills-${index}-freq" id="${esc(inputId)}" value="${esc(String(option.value))}" data-takepills-field="reminderFrequency" data-takepills-index="${index}" data-takepills-frequency ${parseInt(String(option.value), 10) === frequency ? "checked" : ""}><label class="btn btn-outline-secondary btn-sm" for="${esc(inputId)}">${esc(String(option.label))}</label>`;
         }).join("")}</div></div>
         <div class="col-12 ${frequency === 3 ? "" : "d-none"}" data-takepills-custom-wrapper="${index}">${weekdayPicker(fourPTouchMaskToWeekdays(settings.custom), `takepills-${index}`)}</div></div></div>`;
+}
+
+/** Os lembretes levam o seu número em cinco sítios, e removê-los desalinha-os todos. */
+export function syncTakePillsRows(section) {
+    const list = section?.querySelector("[data-repeat-list=\"takePillsReminder\"]");
+    if (!list) return;
+
+    list.querySelectorAll("[data-repeat-row=\"takePillsReminder\"]").forEach((row, index) => {
+        row.dataset.takepillsReminderGroup = String(index);
+        const number = row.querySelector("[data-takepills-reminder-number]");
+        if (number) {
+            number.textContent = `Lembrete ${index + 1}`;
+        }
+        row.querySelectorAll("[data-takepills-index]").forEach((field) => {
+            field.dataset.takepillsIndex = String(index);
+        });
+        const custom = row.querySelector("[data-takepills-custom-wrapper]");
+        if (custom) {
+            custom.dataset.takepillsCustomWrapper = String(index);
+        }
+    });
+
+    syncTakePillsCustomVisibility(section);
+}
+
+export function readTakePills(section) {
+    const groups = Array.from(
+        section.querySelectorAll("[data-takepills-reminder-group]"),
+    );
+    const number = groups.length;
+    const voiceEnabled = readCheckbox(section, "voiceEnabled");
+    const voiceData = readText(section, "voiceData");
+    const voiceMimeType = readText(section, "voiceMimeType");
+
+    const reminderSettings = groups.map((group) => {
+        // `:checked` porque a recorrência é um grupo de rádios, como no bloco dos alarmes.
+        const frequency =
+            parseInt(
+                String(
+                    group.querySelector(
+                        "[data-takepills-field=\"reminderFrequency\"]:checked",
+                    )?.value ?? "1",
+                ),
+                10,
+            ) || 1;
+        return {
+            time:
+                    group.querySelector(
+                        "[data-takepills-field=\"reminderTime\"]",
+                    )?.value || "",
+            enabled:
+                    group.querySelector(
+                        "[data-takepills-field=\"reminderEnabled\"]",
+                    )?.checked || false,
+            frequency,
+            custom: frequency === 3 ? readFourPTouchAlarmDays(group) : "",
+        };
+    });
+
+    const payload = {
+        reminderSettings,
+        number,
+        reminderText: readText(section, "reminderText"),
+    };
+
+    if (voiceEnabled && voiceData !== "") {
+        payload.voiceData = voiceData;
+        if (voiceMimeType !== "") {
+            payload.voiceMimeType = voiceMimeType;
+        }
+    } else if (!voiceEnabled) {
+        payload.voiceData = "";
+    }
+
+    return payload;
 }
 
 function normalizeVoiceEnabled(desired, hasVoiceData) {
