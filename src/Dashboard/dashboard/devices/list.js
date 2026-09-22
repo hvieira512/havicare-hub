@@ -611,8 +611,20 @@ async function selectDevice(imei) {
     }
 }
 
+/**
+ * Só a última leitura pedida pode escrever no ecrã. Duas respostas trocadas punham o detalhe
+ * de um dispositivo por baixo da identidade de outro, e o `refreshSelectedDevice` seguinte
+ * mantinha a telemetria errada lá. É o contador do `stream.js`, com a mesma razão de ser.
+ */
+let deviceLoadGeneration = 0;
+
 async function loadDevice(imei) {
+    deviceLoadGeneration += 1;
+    const generation = deviceLoadGeneration;
     const detail = await apiGetDevice(imei);
+    if (generation !== deviceLoadGeneration) {
+        return false;
+    }
     if (detail?.error) {
         if (state.selectedImei === imei) {
             disconnectDeviceStream();
@@ -622,12 +634,15 @@ async function loadDevice(imei) {
         renderSelectionDetail();
         return false;
     }
-    disconnectDeviceStream();
-    setSelectedDetail(detail);
-    resetDetailFiltersDraft();
     // Aqui porque é o único sítio por onde entra um dispositivo novo; nos redesenhos
     // seguintes a cache já está quente.
     await ensureCapabilityCatalog(detail.model?.deviceType || "watch");
+    if (generation !== deviceLoadGeneration) {
+        return false;
+    }
+    disconnectDeviceStream();
+    setSelectedDetail(detail);
+    resetDetailFiltersDraft();
     renderSelectionDetail();
     connectDeviceStream(imei);
     return true;
