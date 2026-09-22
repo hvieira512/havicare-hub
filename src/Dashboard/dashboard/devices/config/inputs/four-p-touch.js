@@ -2,13 +2,12 @@ import { esc } from "../../../format.js";
 import { field } from "../../../components/form-field.js";
 import { renderPhoneControl } from "../../../phone.js";
 import { boolValue } from "../normalizers.js";
-import { takePillsInput } from "../four-p-touch-take-pills.js";
+import { readTakePills, takePillsInput } from "../four-p-touch-take-pills.js";
 import { enabledSwitch, numberField } from "./shared.js";
 import {
     readCheckbox,
     readNumber,
     readPhone,
-    readTakePills,
     readText,
     readTextArray,
 } from "../readers.js";

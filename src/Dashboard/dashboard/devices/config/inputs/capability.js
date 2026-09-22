@@ -1,7 +1,11 @@
 import { esc } from "../../../format.js";
 import { field } from "../../../components/form-field.js";
 import { renderPhoneControl } from "../../../phone.js";
-import { normalizeAlarmClockRecurrenceKind, weekdayPicker } from "../alarm-fields.js";
+import {
+    normalizeAlarmClockRecurrenceKind,
+    readWeekdays,
+    weekdayPicker,
+} from "../alarm-fields.js";
 import {
     boolValue,
     defaultAlarmClockItem,
@@ -12,7 +16,6 @@ import {
 import { contactsInput, toggleInput } from "./generic.js";
 import { enabledSwitch, nextUid, numberField } from "./shared.js";
 import {
-    readAlarmClock,
     readCheckbox,
     readContacts,
     readNumber,
@@ -381,6 +384,64 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                     : ""}
             </div>
         </div>`;
+}
+
+/** Uma linha sem hora nunca chegou a ser preenchida, e por isso não vai no payload. */
+function readAlarmClock(section) {
+    const items = Array.from(
+        section.querySelectorAll("[data-repeat-row=\"alarm_clock\"]"),
+    )
+        .map((row) => {
+            const recurrenceKind = normalizeAlarmClockRecurrenceKind(
+                row.querySelector("[data-alarm-clock-field=\"recurrenceKind\"]:checked")?.value || "once",
+            );
+            const item = {
+                time: String(
+                    row.querySelector("[data-alarm-clock-field=\"time\"]")?.value || "",
+                ).trim(),
+                enabled:
+                    row.querySelector("[data-alarm-clock-field=\"enabled\"]")?.checked ||
+                    false,
+                recurrence: { kind: recurrenceKind },
+            };
+
+            const labelField = row.querySelector("[data-alarm-clock-field=\"label\"]");
+            if (labelField) {
+                const label = String(labelField.value || "").trim();
+                if (label !== "") {
+                    item.label = label;
+                }
+            }
+
+            const urlField = row.querySelector("[data-alarm-clock-field=\"url\"]");
+            if (urlField) {
+                const url = String(urlField.value || "").trim();
+                if (url !== "") {
+                    item.url = url;
+                }
+            }
+
+            const typeField = row.querySelector("[data-alarm-clock-field=\"type\"]:checked");
+            if (typeField) {
+                const type = parseInt(String(typeField.value || "1"), 10);
+                if (Number.isFinite(type)) {
+                    item.type = type;
+                }
+            }
+
+            if (item.recurrence.kind === "custom") {
+                const days = readWeekdays(row);
+                item.recurrence.days = days;
+                if (!Array.isArray(days) || days.length === 0) {
+                    throw new Error("Selecione pelo menos um dia para a recorrência personalizada");
+                }
+            }
+
+            return item;
+        })
+        .filter((item) => item.time !== "");
+
+    return { items };
 }
 
 /**
