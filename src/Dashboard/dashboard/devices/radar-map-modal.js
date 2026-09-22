@@ -124,8 +124,18 @@ function subtitle(imei, layout) {
     return `${esc(imei)} · ${width} × ${height} m · sincronizado ${when(layout.fetchedAt)}`;
 }
 
+/**
+ * A planta que se desenha é a do mapa que está aberto.
+ *
+ * Fechar antes de a resposta chegar punha o `scene` a `null`, e o `showLayout` construía uma
+ * cena nova dentro de um modal já fechado -- que ninguém destrói, porque quem a destruía já
+ * correu. É a mesma guarda das outras vistas assíncronas: a do `stream.js`, a do `list.js`.
+ */
 async function load(imei) {
     const response = await apiGetRadarLayout(imei);
+    if (state.radarMap.imei !== imei) {
+        return;
+    }
     if (response.error) {
         toast("error", apiError(response));
         return;
@@ -158,6 +168,11 @@ export async function openRadarMap(imei) {
         return;
     }
 
+    // As bibliotecas chegam da rede, e quem fechou entretanto não quer ver nada desenhado.
+    if (state.radarMap.imei !== imei) {
+        return;
+    }
+
     renderVitals(els, recentTelemetry());
     await load(imei);
 }
@@ -175,6 +190,11 @@ export async function syncRadarMap() {
         const response = await apiSyncRadarLayout(imei);
         if (response.error) {
             toast("error", apiError(response));
+            return;
+        }
+
+        // Sincronizar e fechar antes de a cloud responder desenhava numa planta já fechada.
+        if (state.radarMap.imei !== imei) {
             return;
         }
 
