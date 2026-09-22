@@ -52,3 +52,23 @@ test("cada data-action que as definições procuram é escrito por quem desenha"
 
     assert.deepEqual(orphans, [], "handlers à espera de um botão que ninguém escreve");
 });
+
+/**
+ * O sentido inverso. Um `data-action` num botão que ninguém procura não parte nada -- o botão
+ * até costuma funcionar, ligado pelo `id` --, mas anuncia um despacho delegado que não
+ * existe, e quem o procurar não encontra do outro lado.
+ *
+ * Só se varre o JS que constrói a dashboard: os `data-action` escritos em `tests/` são
+ * cenários, e não botões a sério.
+ */
+const PHP_ACTION = /data-action="([\w-]+)"/g;
+
+test("cada data-action escrito no modal é procurado por algum handler", () => {
+    const written = [...new Set([...markupSources.matchAll(PHP_ACTION)].map(([, action]) => action))];
+    assert.ok(written.length > 0, "nenhum botão encontrado -- a procura partiu-se");
+
+    const allHandlers = read(filesUnder(root("dashboard"), ".js"));
+    const unread = written.filter((action) => !allHandlers.includes(`[data-action=\\"${action}\\"]`));
+
+    assert.deepEqual(unread, [], "botões com um data-action que ninguém lê");
+});

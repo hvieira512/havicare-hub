@@ -181,8 +181,7 @@ ob_start();
                     <?= tab_pane_header(
                         'Licenças',
                         'companiesTabSummary',
-                        '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newCompanyBtn"'
-                        . ' data-action="newCompany">'
+                        '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newCompanyBtn">'
                         . icon('fa-plus', 'me-1') . 'Nova empresa</button>'
                     ) ?>
                     <div id="companyListBody" class="mb-4"></div>
@@ -197,8 +196,7 @@ ob_start();
                     <?= tab_pane_header(
                         'Utilizadores API',
                         'apiUsersTabSummary',
-                        '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newApiUserBtn"'
-                        . ' data-action="newApiUser">'
+                        '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newApiUserBtn">'
                         . icon('fa-plus', 'me-1') . 'Novo utilizador</button>'
                     ) ?>
                     <?php /* O invólucro apanha os cliques do formulário e os da grelha. */ ?>
