@@ -26,8 +26,9 @@ final class ReferenceCatalogSeeder
         ['MOKO', 'W6B', 'MOKO W6B', 'bracelet', ''],
         ['MOKO', 'W6', 'MOKO W6', 'bracelet', ''],
         ['Wonlex', 'MF91', 'MF91', 'bracelet', ''],
-        // O nome comercial não repete o fornecedor: a dashboard já o mostra ao lado.
-        ['Zayata', 'M228', 'M228', 'pill_dispenser', ''],
+        // O nome comercial não repete o fornecedor: a dashboard já o mostra ao lado. O
+        // ficheiro da imagem viaja em `database/seed-model-images`, como os outros.
+        ['Zayata', 'M228', 'M228', 'pill_dispenser', '464e9b90a30f30aee389cd9de5926977.jpg'],
     ];
 
     public function seedReferenceData(PDO $pdo): void

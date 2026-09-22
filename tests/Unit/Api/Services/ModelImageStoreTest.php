@@ -54,7 +54,8 @@ final class ModelImageStoreTest extends TestCase
         $result = (new ModelImageStore())->store($this->upload($png));
 
         self::assertIsString($result, 'uma imagem de 800x600 está muito abaixo do orçamento');
-        self::assertMatchesRegularExpression('#^/model-images/[a-f0-9]{32}\.jpg$#', $result);
+        // Só o nome do ficheiro: a rota por onde ele se serve é constante e vive no código.
+        self::assertMatchesRegularExpression('#^[a-f0-9]{32}\.jpg$#', $result);
 
         $stored = __DIR__ . '/../../../../var/dashboard/model-images/' . basename($result);
         if (is_file($stored)) {
@@ -84,7 +85,7 @@ final class ModelImageStoreTest extends TestCase
         $upload = new UploadedFile(Utils::streamFor($bytes), strlen($bytes), UPLOAD_ERR_OK, 'watch.png', 'image/png');
         $route = (new ModelImageStore())->store($upload);
         self::assertIsString($route);
-        self::assertMatchesRegularExpression('#^/model-images/[a-f0-9]{32}\.jpg$#', $route);
+        self::assertMatchesRegularExpression('#^[a-f0-9]{32}\.jpg$#', $route);
 
         $path = __DIR__ . '/../../../../var/dashboard/model-images/' . basename($route);
         try {
@@ -115,7 +116,7 @@ final class ModelImageStoreTest extends TestCase
         $upload = new UploadedFile(Utils::streamFor($bytes), strlen($bytes), UPLOAD_ERR_OK, 'watch.png', 'image/png');
         $route = (new ModelImageStore())->store($upload);
         self::assertIsString($route);
-        self::assertMatchesRegularExpression('#^/model-images/[a-f0-9]{32}\.jpg$#', $route);
+        self::assertMatchesRegularExpression('#^[a-f0-9]{32}\.jpg$#', $route);
 
         $path = __DIR__ . '/../../../../var/dashboard/model-images/' . basename($route);
         try {

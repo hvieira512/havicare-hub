@@ -48,25 +48,25 @@ INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, i
 SELECT s.id, m.internal_model, m.commercial_name, m.device_type, m.image_path
 FROM suppliers s JOIN (
     SELECT '4P Touch' AS supplier, 'D41' AS internal_model, 'D41' AS commercial_name,
-           'watch' AS device_type, '/model-images/9201181e4f07060bd5ded5e48ca8e20a.jpg' AS image_path
-    UNION ALL SELECT '4P Touch',  'D44S',             'R05',                        'watch',         '/model-images/be4e5160e602a993f519011e6c9f796c.jpg'
-    UNION ALL SELECT '4P Touch',  'D45 Pro',          'D45 Pro',                    'watch',         '/model-images/4a088f59242d03d7023d5e51d4da8e49.jpg'
-    UNION ALL SELECT '4P Touch',  'D46',              'R04',                        'watch',         '/model-images/1347f078cd3c213a48495d8f1a366713.jpg'
-    UNION ALL SELECT '4P Touch',  'Y6M',              'Y6M',                        'watch',         '/model-images/9648d481eb3381148ea91c84aba2687c.jpg'
-    UNION ALL SELECT '4P Touch',  'Y6S',              'R03',                        'watch',         '/model-images/3d48c42e589923177a1ac3ed147758e0.jpg'
-    UNION ALL SELECT 'MOKO',      'MKGW3',            'MOKOSmart MKGW3',            'gateway',       '/model-images/45bee5a0028156faa71ff5c6c081b6d7.jpg'
-    UNION ALL SELECT 'MOKO',      'MKGW4',            'MOKOSmart MKGW4',            'gateway',       '/model-images/3bbccf9f4d8e4830480adf834cdfd278.jpg'
-    UNION ALL SELECT 'MOKO',      'MKGW-mini 03-20D', 'MOKOSmart MKGW-mini 03-20D', 'gateway',       '/model-images/a8b0f419d117411508270b342869add0.jpg'
-    UNION ALL SELECT 'MOKO',      'W6B',              'MOKO W6B',                   'bracelet',      '/model-images/78888c5376784c64ca05b691c4686ecd.jpg'
-    UNION ALL SELECT 'MOKO',      'W6',               'MOKO W6',                    'bracelet',      '/model-images/78888c5376784c64ca05b691c4686ecd.jpg'
-    UNION ALL SELECT 'MONIT',     'MECS-PRO',         'MONIT MECS Pro',             'diaper_sensor', '/model-images/c7a8992a69d659ef06e853f6befecd42.jpg'
-    UNION ALL SELECT 'Qinglanst', 'RD-V1',            'W01',                        'radar',         '/model-images/2a87616691f4878b9ac4f8cfd816a615.jpg'
-    UNION ALL SELECT 'Vivistar',  'L08 Pro',          'R05',                        'watch',         '/model-images/019cb6bcc40ef15ffe98a2f4ca1d2679.jpg'
-    UNION ALL SELECT 'Vivistar',  'VL16P',            'R04',                        'watch',         '/model-images/45465accf3d7b8c10279225d089cf227.jpg'
-    UNION ALL SELECT 'Vivistar',  'VL17',             'R03',                        'watch',         '/model-images/c27707e761813389512c25a4050a3b85.jpg'
+           'watch' AS device_type, '9201181e4f07060bd5ded5e48ca8e20a.jpg' AS image_path
+    UNION ALL SELECT '4P Touch',  'D44S',             'R05',                        'watch',         'be4e5160e602a993f519011e6c9f796c.jpg'
+    UNION ALL SELECT '4P Touch',  'D45 Pro',          'D45 Pro',                    'watch',         '4a088f59242d03d7023d5e51d4da8e49.jpg'
+    UNION ALL SELECT '4P Touch',  'D46',              'R04',                        'watch',         '1347f078cd3c213a48495d8f1a366713.jpg'
+    UNION ALL SELECT '4P Touch',  'Y6M',              'Y6M',                        'watch',         '9648d481eb3381148ea91c84aba2687c.jpg'
+    UNION ALL SELECT '4P Touch',  'Y6S',              'R03',                        'watch',         '3d48c42e589923177a1ac3ed147758e0.jpg'
+    UNION ALL SELECT 'MOKO',      'MKGW3',            'MOKOSmart MKGW3',            'gateway',       '45bee5a0028156faa71ff5c6c081b6d7.jpg'
+    UNION ALL SELECT 'MOKO',      'MKGW4',            'MOKOSmart MKGW4',            'gateway',       '3bbccf9f4d8e4830480adf834cdfd278.jpg'
+    UNION ALL SELECT 'MOKO',      'MKGW-mini 03-20D', 'MOKOSmart MKGW-mini 03-20D', 'gateway',       'a8b0f419d117411508270b342869add0.jpg'
+    UNION ALL SELECT 'MOKO',      'W6B',              'MOKO W6B',                   'bracelet',      '78888c5376784c64ca05b691c4686ecd.jpg'
+    UNION ALL SELECT 'MOKO',      'W6',               'MOKO W6',                    'bracelet',      '78888c5376784c64ca05b691c4686ecd.jpg'
+    UNION ALL SELECT 'MONIT',     'MECS-PRO',         'MONIT MECS Pro',             'diaper_sensor', 'c7a8992a69d659ef06e853f6befecd42.jpg'
+    UNION ALL SELECT 'Qinglanst', 'RD-V1',            'W01',                        'radar',         '2a87616691f4878b9ac4f8cfd816a615.jpg'
+    UNION ALL SELECT 'Vivistar',  'L08 Pro',          'R05',                        'watch',         '019cb6bcc40ef15ffe98a2f4ca1d2679.jpg'
+    UNION ALL SELECT 'Vivistar',  'VL16P',            'R04',                        'watch',         '45465accf3d7b8c10279225d089cf227.jpg'
+    UNION ALL SELECT 'Vivistar',  'VL17',             'R03',                        'watch',         'c27707e761813389512c25a4050a3b85.jpg'
     UNION ALL SELECT 'Voerka',    'W812',             'W812',                       'ncs',           ''
-    UNION ALL SELECT 'Wonlex',    'HW20PRO',          'HW20PRO',                    'watch',         '/model-images/eed091a62f83e3ef03c7090ce09ea262.jpg'
-    UNION ALL SELECT 'Wonlex',    'MF91',             'MF91',                       'bracelet',      '/model-images/4d62bc6aac04e660f06f1de7d0ab6a4f.jpg'
+    UNION ALL SELECT 'Wonlex',    'HW20PRO',          'HW20PRO',                    'watch',         'eed091a62f83e3ef03c7090ce09ea262.jpg'
+    UNION ALL SELECT 'Wonlex',    'MF91',             'MF91',                       'bracelet',      '4d62bc6aac04e660f06f1de7d0ab6a4f.jpg'
 ) m ON m.supplier = s.name
 ON DUPLICATE KEY UPDATE
     commercial_name = VALUES(commercial_name),

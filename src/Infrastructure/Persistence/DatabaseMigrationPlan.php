@@ -7,6 +7,8 @@ namespace Hub\Infrastructure\Persistence;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalog;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserAlarmStatus;
+use Hub\Infrastructure\Persistence\Migration\ModelImageFilenameOnly;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserImage;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserParameterDiscovery;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserReportedConfigurationCleanup;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutEncryptionSwitch;
@@ -43,6 +45,10 @@ final class DatabaseMigrationPlan
             new PillDispenserReportedConfigurationCleanup(),
             // O aparelho passa a poder dizer que parâmetros serve, em vez de se adivinhar.
             new PillDispenserParameterDiscovery(),
+            // E o modelo ganha a fotografia que o fornecedor publica.
+            new PillDispenserImage(),
+            // A imagem de um modelo passa a ser guardada pelo nome, sem a rota que é código.
+            new ModelImageFilenameOnly(),
         ];
     }
 
