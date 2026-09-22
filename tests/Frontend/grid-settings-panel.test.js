@@ -10,82 +10,84 @@ const { buildSettingsPanel } = await import("../../src/Dashboard/dashboard/grid.
  * lista das colunas tira do documento o próprio botão que se carregou, e a partir daí o
  * `contains` do ouvinte de fecho responde que não -- o painel desaparecia por se lhe mexer.
  */
-function colunaFalsa(colId, headerName, visible = true) {
+function fakeColumn(colId, headerName, visible = true) {
     let shown = visible;
 
     return {
         getColId: () => colId,
         getColDef: () => ({ field: colId, headerName }),
         isVisible: () => shown,
-        setVisible: (next) => { shown = next; },
-    };
-}
-
-function grelhaFalsa() {
-    const columns = [colunaFalsa("company_name", "Empresa"), colunaFalsa("name", "Nome")];
-    const feito = [];
-
-    return {
-        columns,
-        feito,
-        api: {
-            getColumns: () => columns,
-            setColumnsVisible: (ids, visible) => {
-                columns.filter((c) => ids.includes(c.getColId())).forEach((c) => c.setVisible(visible));
-                feito.push(`visivel:${ids.join(",")}=${visible}`);
-            },
-            autoSizeAllColumns: () => feito.push("larguras"),
-            setFilterModel: () => feito.push("filtros"),
-            applyColumnState: () => feito.push("colunas"),
+        setVisible: (next) => {
+            shown = next;
         },
     };
 }
 
-function painelAberto() {
-    const grelha = grelhaFalsa();
+function fakeGrid() {
+    const columns = [fakeColumn("company_name", "Empresa"), fakeColumn("name", "Nome")];
+    const calls = [];
+
+    return {
+        columns,
+        calls,
+        api: {
+            getColumns: () => columns,
+            setColumnsVisible: (ids, visible) => {
+                columns.filter((c) => ids.includes(c.getColId())).forEach((c) => c.setVisible(visible));
+                calls.push(`visivel:${ids.join(",")}=${visible}`);
+            },
+            autoSizeAllColumns: () => calls.push("larguras"),
+            setFilterModel: () => calls.push("filtros"),
+            applyColumnState: () => calls.push("colunas"),
+        },
+    };
+}
+
+function openPanel() {
+    const grid = fakeGrid();
     const host = document.createElement("div");
     document.body.appendChild(host);
     const anchor = document.createElement("button");
     host.appendChild(anchor);
 
-    const painel = buildSettingsPanel(grelha.api, host, []);
-    host.appendChild(painel.element);
-    painel.toggle(anchor);
+    const panel = buildSettingsPanel(grid.api, host, []);
+    host.appendChild(panel.element);
+    panel.toggle(anchor);
 
-    return { ...grelha, painel, host };
+    return { ...grid, panel, host };
 }
 
-const aberto = (painel) => painel.element.classList.contains("show");
-const accao = (painel, texto) =>
-    [...painel.element.querySelectorAll("button.dropdown-item")]
-        .find((b) => b.textContent.trim() === texto);
+const isOpen = (panel) => panel.element.classList.contains("show");
+const actionNamed = (panel, label) =>
+    [...panel.element.querySelectorAll("button.dropdown-item")]
+        .find((b) => b.textContent.trim() === label);
 
 test("carregar numa acção do painel não o fecha", () => {
-    for (const texto of ["Ajustar larguras", "Limpar filtros", "Limpar ordenação", "Repor colunas"]) {
-        const { painel } = painelAberto();
+    for (const label of ["Ajustar larguras", "Limpar filtros", "Limpar ordenação", "Repor colunas"]) {
+        const { panel } = openPanel();
 
-        accao(painel, texto).dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+        actionNamed(panel, label).dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
 
-        assert.equal(aberto(painel), true, `o painel fechou-se ao carregar em "${texto}"`);
+        assert.equal(isOpen(panel), true, `o painel fechou-se ao carregar em "${label}"`);
     }
 });
 
 test("esconder uma coluna deixa o painel aberto e a caixa desmarcada", () => {
-    const { painel, feito } = painelAberto();
-    const caixa = painel.element.querySelector("input[type=checkbox]");
+    const { panel, calls } = openPanel();
+    const checkbox = panel.element.querySelector("input[type=checkbox]");
 
     // Um clique na etiqueta alterna a caixa e sobe até ao documento, que é onde o ouvinte
     // de fecho o vê.
-    caixa.closest("label").dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+    checkbox.closest("label").dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
 
-    assert.deepEqual(feito, ["visivel:company_name=false"]);
-    assert.equal(aberto(painel), true);
+    assert.deepEqual(calls, ["visivel:company_name=false"]);
+    assert.equal(isOpen(panel), true);
 });
 
 test("um clique fora fecha-o", () => {
-    const { painel } = painelAberto();
+    const { panel } = openPanel();
 
     document.body.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
 
-    assert.equal(aberto(painel), false);
+    assert.equal(isOpen(panel), false);
 });
