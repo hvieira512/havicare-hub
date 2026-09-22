@@ -25,9 +25,9 @@ import {
     cardTone,
     statusBadge,
     uplinkCardContent,
-} from "../telemetry-cards.js";
-import { telemetryCard } from "../card-shell.js";
-import { renderRequestCardShell, requestCardContent } from "../request-card.js";
+} from "../components/cards/telemetry.js";
+import { telemetryCard } from "../components/cards/shell.js";
+import { renderRequestCardShell, requestCardContent } from "../components/cards/request.js";
 import { fallSummaryCard, helpCallSummaryCard } from "./event-summary-cards.js";
 import { onRadarPresence } from "./radar-map-modal.js";
 import { activityTable } from "./activity-table.js";

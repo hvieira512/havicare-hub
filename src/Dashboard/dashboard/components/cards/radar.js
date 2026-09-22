@@ -1,6 +1,6 @@
-import { displayPersonIndex, fieldValue } from "../format.js";
-import { postureStyle } from "../domain.js";
-import { html } from "../html.js";
+import { displayPersonIndex, fieldValue } from "../../format.js";
+import { postureStyle } from "../../domain.js";
+import { html } from "../../html.js";
 import { compactDetails } from "./shared.js";
 
 /**

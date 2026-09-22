@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
 // esse caminho passa pelo api/http.js, que toca em window ao carregar.
 import "./support/browser-env.js";
-import { renderRequestCardShell } from "../../src/Dashboard/dashboard/request-card.js";
+import { renderRequestCardShell } from "../../src/Dashboard/dashboard/components/cards/request.js";
 import { fieldLabel, fieldValue } from "../../src/Dashboard/dashboard/format.js";
-import { cardIcon } from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { cardIcon } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 import { allDetailItems } from "../../src/Dashboard/dashboard/devices/detail-filters.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 

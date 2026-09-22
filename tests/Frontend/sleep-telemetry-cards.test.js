@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
-import { uplinkCardContent } from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 import { commandError, commandLabel, fieldLabel } from "../../src/Dashboard/dashboard/format.js";
 
 /**

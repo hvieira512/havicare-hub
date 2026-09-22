@@ -6,7 +6,7 @@ import { html, raw } from "../html.js";
 import { buttonGroup } from "../components/button-group.js";
 import { sectionStrip } from "../components/chips.js";
 import { deviceTypeTiles } from "../components/device-type-tiles.js";
-import { cardIcon } from "../telemetry-cards.js";
+import { cardIcon } from "../components/cards/telemetry.js";
 import { CAPABILITY_SECTION_ICONS, ensureCapabilityCatalog, ensureModelTemplate } from "../capability-catalog.js";
 import {
     capabilitiesGroupedBySection,

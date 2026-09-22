@@ -6,8 +6,9 @@ import { DETECTION_TYPE_LABEL, PRESS_TYPE_LABEL } from "../domain.js";
  * Os dois cartões que resumem o histórico de eventos: a última chamada de ajuda por modo de
  * toque, e a última queda que o radar viu.
  *
- * Estão à parte do `telemetry-cards.js` porque são widgets e não entradas de um catálogo --
- * aquele tem um cartão por tipo de telemetria, estes leem o histórico inteiro e resumem-no.
+ * Estão à parte do `components/cards/telemetry.js` porque são widgets e não entradas de um
+ * catálogo -- aquele tem um cartão por tipo de telemetria, estes leem o histórico inteiro e
+ * resumem-no. E ficam aqui, e não em `components/`, porque só a coluna de detalhe os desenha.
  */
 
 // O que separa os modos é quantos toques, ou quanto dura um, e é isso que o ícone diz.

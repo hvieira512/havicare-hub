@@ -6,7 +6,7 @@ import {
     state,
     updateDetailFiltersDraft,
 } from "../state.js";
-import { uplinkCardContent } from "../telemetry-cards.js";
+import { uplinkCardContent } from "../components/cards/telemetry.js";
 import { filterChips } from "../components/chips.js";
 
 /**

@@ -1,12 +1,12 @@
-import { fieldLabel, fieldValue, titleize } from "./format.js";
-import { DETECTION_TYPE_LABEL } from "./domain.js";
-import { html } from "./html.js";
-import { compactDetails } from "./cards/shared.js";
-import { connectivityIcon, connectivityValue } from "./cards/gateway.js";
-import { diaperMoistureBody, diaperMoistureRowValue } from "./cards/diaper.js";
-import { helpCallContent, ncsPagerContent } from "./cards/ncs.js";
-import { locationDetails, locationValue } from "./cards/location.js";
-import { sleepDetails, sleepQualityValue, sleepValue } from "./cards/sleep.js";
+import { fieldLabel, fieldValue, titleize } from "../../format.js";
+import { DETECTION_TYPE_LABEL } from "../../domain.js";
+import { html } from "../../html.js";
+import { compactDetails } from "./shared.js";
+import { connectivityIcon, connectivityValue } from "./gateway.js";
+import { diaperMoistureBody, diaperMoistureRowValue } from "./diaper.js";
+import { helpCallContent, ncsPagerContent } from "./ncs.js";
+import { locationDetails, locationValue } from "./location.js";
+import { sleepDetails, sleepQualityValue, sleepValue } from "./sleep.js";
 import {
     presenceDetails,
     presenceDetailsTitle,
@@ -15,9 +15,9 @@ import {
     radarPositionMinuteStatsValue,
     radarVitalsMinuteStatsDetails,
     radarVitalsMinuteStatsValue,
-} from "./cards/radar.js";
-import { capabilityLabel } from "./capability-catalog.js";
-import { stateBadge } from "./components/state-badge.js";
+} from "./radar.js";
+import { capabilityLabel } from "../../capability-catalog.js";
+import { stateBadge } from "../state-badge.js";
 
 /** Os cartões de telemetria. As peças genéricas de interface estão em `components/`. */
 
