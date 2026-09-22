@@ -4,7 +4,7 @@ import test from "node:test";
 // Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
 import "./support/browser-env.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
-import { deliveryStatusFromCommand } from "../../src/Dashboard/dashboard/devices/config/panel.js";
+import { deliveryStatusFromCommand } from "../../src/Dashboard/dashboard/devices/config/delivery.js";
 
 /**
  * Uma acção também tem estado, e o cartão tem de o dizer.
