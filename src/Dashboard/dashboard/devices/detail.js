@@ -307,9 +307,6 @@ function renderClientPager(prefix, totalRows, totalPages) {
     });
 }
 
-// A tabela genérica de atividade (linhas, gaveta e paginação de rolagem) vive no seu próprio
-// módulo -- a telemetria e os pedidos usam-na igual, e não tem nada do detalhe do dispositivo.
-
 function telemetryActivityRow(payload) {
     const type = payload?.type || "telemetry";
     const data =

@@ -371,8 +371,6 @@ export function uplinkCardContent(type, data, meta = {}) {
     return { icon: cardIcon(type), ...rendered };
 }
 
-// Uma pulseira W6B diz que tipo de toque foi; um pager NCS diz que comando foi.
-
 /**
  * O estado dos nove alarmes do dispensador.
  *
@@ -404,7 +402,6 @@ function medicationAlarmContent(data) {
     };
 }
 
-/** Os modos que um dispositivo emite vêm do backend; este cartão desenha os que lhe derem. */
 /**
  * Os intervalos R-R chegam em lote e sem instante próprio, e por isso não há um valor
  * único para mostrar. A média é o que permite conferir a leitura de relance: o seu inverso
