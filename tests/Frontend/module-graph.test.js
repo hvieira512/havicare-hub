@@ -21,13 +21,19 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const ENTRY = path.join(here, "../../src/Dashboard/main.js");
 const APP = path.join(here, "../../src/Dashboard/dashboard/app.js");
 const MODULE_ROOT = path.join(here, "../../src/Dashboard/dashboard");
+const CONFIG_PANEL = path.join(MODULE_ROOT, "devices/config/panel.js");
+const CONFIG_HANDLERS = path.join(MODULE_ROOT, "devices/config/handlers.js");
 
 /**
- * As portas de entrada do grafo. O `app.js` é nomeado à parte porque o `main.js` o traz por
- * `import()`: avaliar o `main.js` não liga nada do que está por trás dele, e sem o nomear
- * aqui um import partido lá dentro passava sem ninguém dar por ele.
+ * As portas de entrada do grafo. Cada uma está aqui porque quem a traz, traz-na por
+ * `import()`: avaliar quem chama não liga nada do que está por trás, e sem a nomear aqui um
+ * import partido lá dentro passava sem ninguém dar por ele.
+ *
+ * O `app.js` pendura-se no `main.js` assim; o painel de configurações pendura-se no
+ * `device-modal.js` pela mesma via, e os dois módulos abaixo são as suas duas portas -- entre
+ * elas alcançam o cluster inteiro.
  */
-const ENTRY_POINTS = [ENTRY, APP];
+const ENTRY_POINTS = [ENTRY, APP, CONFIG_PANEL, CONFIG_HANDLERS];
 
 for (const entry of ENTRY_POINTS) {
     test(`as ligações do grafo de módulos a partir do ${path.basename(entry)}`, async () => {
