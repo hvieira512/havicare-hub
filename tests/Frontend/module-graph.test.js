@@ -11,8 +11,11 @@ import { reachableFrom } from "./support/module-graph.js";
  * exporta derruba a dashboard numa página branca, e o `node --check` não o apanha porque cada
  * ficheiro é individualmente válido.
  *
- * Avaliá-los em node falha em globais como o `window` -- isso é esperado e ignorado. Só um
- * `SyntaxError` na ligação é um import genuinamente partido.
+ * Avaliá-los em node falha em globais como o `window` -- isso é esperado e ignorado. O que
+ * não se ignora são as duas formas de um import partido: um nome que ninguém exporta, que dá
+ * `SyntaxError`, e um caminho para um ficheiro que não existe, que dá `ERR_MODULE_NOT_FOUND`.
+ * A segunda é a que aparece ao mover ou apagar um módulo, que é precisamente quando isto é
+ * preciso.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ENTRY = path.join(here, "../../src/Dashboard/main.js");
@@ -31,9 +34,10 @@ for (const entry of ENTRY_POINTS) {
         try {
             await import(entry);
         } catch (error) {
-            assert.notEqual(
-                error.constructor.name,
-                "SyntaxError",
+            const broken = error.constructor.name === "SyntaxError" ||
+                error.code === "ERR_MODULE_NOT_FOUND";
+            assert.ok(
+                !broken,
                 `import partido no grafo do ${path.basename(entry)} -- ${error.message}`,
             );
         }
