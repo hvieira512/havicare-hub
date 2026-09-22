@@ -330,10 +330,11 @@ final class DeviceFeatureRequestService
                 continue;
             }
 
-            $value = $row['desired'] ?? $row['reported'] ?? null;
-            $zone = is_array($value) ? ($value['timeZone'] ?? null) : $value;
-            if (is_numeric($zone)) {
-                return (int)$zone;
+            foreach ([$row['reported_payload'] ?? null, $row['desired_payload'] ?? null] as $payload) {
+                $zone = is_array($payload) ? ($payload['timeZone'] ?? null) : null;
+                if (is_numeric($zone)) {
+                    return (int)$zone;
+                }
             }
         }
 

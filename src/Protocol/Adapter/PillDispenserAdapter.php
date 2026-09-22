@@ -211,6 +211,10 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         self::T_INT16S => 2,
         self::T_INT16U => 2,
         self::T_INT32U => 4,
+        // Todas as TAGs de texto da especificação são de 20 bytes, e o aparelho recusa com
+        // «comprimento» qualquer outra medida: a calibração do relógio saía com os 19 do
+        // texto e nunca chegou a ser aplicada.
+        self::T_STRING => 20,
     ];
 
     /**
@@ -324,7 +328,14 @@ class PillDispenserAdapter implements DeviceAdapterInterface
                 break;
             }
 
-            $out[$tag] = ['type' => $flag & 0x1F, 'state' => ($flag >> 5) & 0x07, 'value' => $value];
+            $type = $flag & 0x1F;
+            // O texto chega preenchido até aos 20 bytes; quem o lê quer a string e não o
+            // enchimento colado ao fim.
+            if ($type === self::T_STRING) {
+                $value = rtrim($value, "\x00");
+            }
+
+            $out[$tag] = ['type' => $type, 'state' => ($flag >> 5) & 0x07, 'value' => $value];
             $offset += 4 + $valueLength;
         }
 
@@ -338,6 +349,11 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         foreach ($tlv as $tag => $entry) {
             $value = (string)($entry['value'] ?? '');
             $type = $entry['type'] ?? self::parameterType($tag);
+            // O texto vai até ao comprimento que a especificação declara. O aparelho compara
+            // o campo Length com o que espera da TAG, e recusa com «comprimento» se diferir.
+            if ($type === self::T_STRING) {
+                $value = substr(str_pad($value, self::TYPE_BYTES[self::T_STRING], "\x00"), 0, self::TYPE_BYTES[self::T_STRING]);
+            }
             $flag = ($type & 0x1F) | ((($entry['state'] ?? 0) & 0x07) << 5);
             $out .= pack('v', $tag) . pack('C', $flag) . pack('C', strlen($value)) . $value;
         }
