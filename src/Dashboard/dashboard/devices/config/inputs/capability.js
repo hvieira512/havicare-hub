@@ -386,6 +386,18 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
         </div>`;
 }
 
+/** Os dias da semana só se escolhem na recorrência personalizada. */
+export function syncAlarmClockCustomVisibility(row) {
+    const customWrapper = row?.querySelector("[data-alarm-clock-custom-wrapper]");
+    if (!customWrapper) return;
+
+    const recurrence = row.querySelector("[data-alarm-clock-field=\"recurrenceKind\"]:checked");
+    customWrapper.classList.toggle(
+        "d-none",
+        String(recurrence?.value || "").trim().toLowerCase() !== "custom",
+    );
+}
+
 /** Uma linha sem hora nunca chegou a ser preenchida, e por isso não vai no payload. */
 function readAlarmClock(section) {
     const items = Array.from(

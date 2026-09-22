@@ -1,7 +1,14 @@
-import { renderPhoneControl, resetPhoneControls } from "../../phone.js";
-import { takePillsReminderGroup } from "./index.js";
-import { wonlexMedicationPlanRow } from "./inputs/wonlex.js";
-import { syncTakePillsCustomVisibility } from "./take-pills-audio.js";
+import { resetPhoneControls } from "../../phone.js";
+import {
+    syncTakePillsRows,
+    takePillsReminderGroup,
+} from "./four-p-touch-take-pills.js";
+import { syncAlarmClockCustomVisibility } from "./inputs/capability.js";
+import { createContactRow } from "./inputs/generic.js";
+import {
+    renumberWonlexMedicationPlans,
+    wonlexMedicationPlanRow,
+} from "./inputs/wonlex.js";
 
 /**
  * Acrescentar e remover as linhas repetíveis de uma secção de configuração.
@@ -9,6 +16,9 @@ import { syncTakePillsCustomVisibility } from "./take-pills-audio.js";
  * Um contrato só para as sete listas: `data-repeat-list="<tipo>"` no contentor,
  * `data-repeat-row="<tipo>"` em cada linha, e o limite opcional em `data-repeat-limit`. Não
  * toca no estado dos módulos da dashboard, o que o torna testável à parte.
+ *
+ * O que cada tipo de linha sabe de si -- desenhá-la, renumerá-la, mantê-la coerente -- vem do
+ * módulo do campo a que pertence, e é aqui declarado no `REPEAT_ROW_KINDS`.
  */
 
 /**
@@ -140,83 +150,4 @@ function syncAddButton(section, kind) {
     const limit = parseInt(list.dataset.repeatLimit || "", 10);
     addButton.disabled = Number.isFinite(limit) &&
         list.querySelectorAll(`[data-repeat-row="${kind}"]`).length >= limit;
-}
-
-/** Os lembretes levam o seu número em cinco sítios, e removê-los desalinha-os todos. */
-function syncTakePillsRows(section) {
-    const list = section?.querySelector("[data-repeat-list=\"takePillsReminder\"]");
-    if (!list) return;
-
-    list.querySelectorAll("[data-repeat-row=\"takePillsReminder\"]").forEach((row, index) => {
-        row.dataset.takepillsReminderGroup = String(index);
-        const number = row.querySelector("[data-takepills-reminder-number]");
-        if (number) {
-            number.textContent = `Lembrete ${index + 1}`;
-        }
-        row.querySelectorAll("[data-takepills-index]").forEach((field) => {
-            field.dataset.takepillsIndex = String(index);
-        });
-        const custom = row.querySelector("[data-takepills-custom-wrapper]");
-        if (custom) {
-            custom.dataset.takepillsCustomWrapper = String(index);
-        }
-    });
-
-    syncTakePillsCustomVisibility(section);
-}
-
-function renumberWonlexMedicationPlans(section) {
-    section
-        ?.querySelectorAll("[data-repeat-row=\"wonlexMedicationPlan\"]")
-        .forEach((row, index) => {
-            const number = row.querySelector("[data-medication-plan-number]");
-            if (number) {
-                number.textContent = String(index + 1);
-            }
-        });
-}
-
-export function syncAlarmClockCustomVisibility(row) {
-    const customWrapper = row?.querySelector("[data-alarm-clock-custom-wrapper]");
-    if (!customWrapper) return;
-
-    const recurrence = row.querySelector("[data-alarm-clock-field=\"recurrenceKind\"]:checked");
-    customWrapper.classList.toggle(
-        "d-none",
-        String(recurrence?.value || "").trim().toLowerCase() !== "custom",
-    );
-}
-
-function isFourPTouchPhonebookSection(section) {
-    return String(section?.dataset?.configProtocol || "") === "four-p-touch" &&
-        String(section?.dataset?.configKey || "") === "phonebook";
-}
-
-/** A primeira linha de contactos, quando a lista veio vazia e não há de onde clonar. */
-function createContactRow(section) {
-    const phonebook = isFourPTouchPhonebookSection(section);
-    const nameMaxLength = parseInt(
-        section?.dataset.phonebookNameMaxLength || "0", 10,
-    ) || 0;
-    const phoneMaxLength = parseInt(
-        section?.dataset.phonebookPhoneMaxLength || (phonebook ? "20" : "0"), 10,
-    ) || 0;
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "row g-2 align-items-end";
-    wrapper.dataset.repeatRow = "contacts";
-    wrapper.innerHTML = `
-        <div class="col-md-6">
-            <input class="form-control" type="text" placeholder="Nome"${phonebook && nameMaxLength > 0 ? ` maxlength="${nameMaxLength}"` : ""} data-repeat-field="name">
-        </div>
-        <div class="col-md-6">
-            <div class="d-flex gap-2">
-                <div class="flex-grow-1">
-                    ${renderPhoneControl({ repeatField: "phone", maxLength: phoneMaxLength })}
-                </div>
-                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">-</button>
-            </div>
-        </div>`;
-    resetPhoneControls(wrapper);
-    return wrapper;
 }

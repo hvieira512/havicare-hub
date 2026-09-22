@@ -8,11 +8,8 @@ import {
     syncConfigGroupDirty,
     syncConfigSectionDirty,
 } from "./panel.js";
-import {
-    appendRepeatRow,
-    removeRepeatRow,
-    syncAlarmClockCustomVisibility,
-} from "./row-editing.js";
+import { appendRepeatRow, removeRepeatRow } from "./row-editing.js";
+import { syncAlarmClockCustomVisibility } from "./inputs/capability.js";
 import { syncFallSensitivityLevels } from "./inputs/four-p-touch.js";
 import {
     normalizeTwentyFourHourTimeInput,

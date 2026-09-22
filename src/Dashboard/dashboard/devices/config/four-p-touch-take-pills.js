@@ -7,6 +7,7 @@ import {
 } from "./alarm-fields.js";
 import { boolValue } from "./normalizers.js";
 import { readCheckbox, readText } from "./readers.js";
+import { syncTakePillsCustomVisibility } from "./take-pills-audio.js";
 
 export function takePillsInput(desired, meta = {}) {
     const reminderText = String(desired.reminderText || "");
@@ -39,6 +40,29 @@ export function takePillsReminderGroup(settings, index, frequencyOptions) {
             return `<input class="btn-check" type="radio" name="takepills-${index}-freq" id="${esc(inputId)}" value="${esc(String(option.value))}" data-takepills-field="reminderFrequency" data-takepills-index="${index}" data-takepills-frequency ${parseInt(String(option.value), 10) === frequency ? "checked" : ""}><label class="btn btn-outline-secondary btn-sm" for="${esc(inputId)}">${esc(String(option.label))}</label>`;
         }).join("")}</div></div>
         <div class="col-12 ${frequency === 3 ? "" : "d-none"}" data-takepills-custom-wrapper="${index}">${weekdayPicker(fourPTouchMaskToWeekdays(settings.custom), `takepills-${index}`)}</div></div></div>`;
+}
+
+/** Os lembretes levam o seu número em cinco sítios, e removê-los desalinha-os todos. */
+export function syncTakePillsRows(section) {
+    const list = section?.querySelector("[data-repeat-list=\"takePillsReminder\"]");
+    if (!list) return;
+
+    list.querySelectorAll("[data-repeat-row=\"takePillsReminder\"]").forEach((row, index) => {
+        row.dataset.takepillsReminderGroup = String(index);
+        const number = row.querySelector("[data-takepills-reminder-number]");
+        if (number) {
+            number.textContent = `Lembrete ${index + 1}`;
+        }
+        row.querySelectorAll("[data-takepills-index]").forEach((field) => {
+            field.dataset.takepillsIndex = String(index);
+        });
+        const custom = row.querySelector("[data-takepills-custom-wrapper]");
+        if (custom) {
+            custom.dataset.takepillsCustomWrapper = String(index);
+        }
+    });
+
+    syncTakePillsCustomVisibility(section);
 }
 
 export function readTakePills(section) {
