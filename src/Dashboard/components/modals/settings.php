@@ -14,7 +14,9 @@ ob_start();
 ?>
 <div class="settings-modal-shell d-flex flex-column w-100 p-2 p-lg-3">
     <div class="row g-3 g-lg-4 h-100 min-h-0">
-        <div class="col-12 col-lg-3 d-flex align-items-lg-center h-100">
+        <?php // Ao topo e não ao centro, pela mesma razão do modal do dispositivo: centrado,
+              // o menu desloca-se conforme o separador escolhido e o botão foge do rato. ?>
+        <div class="col-12 col-lg-3 d-flex align-items-lg-start h-100">
             <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" id="settingsModalNav" role="tablist">
                 <?php foreach ($settingsTabs as $index => $tab) : ?>
                     <?php $pane = 'settings' . $tab['key'] . 'Pane'; ?>
@@ -179,8 +181,7 @@ ob_start();
                     <?= tab_pane_header(
                         'Licenças',
                         'companiesTabSummary',
-                        '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newCompanyBtn"'
-                        . ' data-action="newCompany">'
+                        '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newCompanyBtn">'
                         . icon('fa-plus', 'me-1') . 'Nova empresa</button>'
                     ) ?>
                     <div id="companyListBody" class="mb-4"></div>
@@ -195,8 +196,7 @@ ob_start();
                     <?= tab_pane_header(
                         'Utilizadores API',
                         'apiUsersTabSummary',
-                        '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newApiUserBtn"'
-                        . ' data-action="newApiUser">'
+                        '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newApiUserBtn">'
                         . icon('fa-plus', 'me-1') . 'Novo utilizador</button>'
                     ) ?>
                     <?php /* O invólucro apanha os cliques do formulário e os da grelha. */ ?>

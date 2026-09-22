@@ -13,6 +13,7 @@ import { setSettingsNavCount } from "./shell.js";
 import { renderPagination, resolvePaginationPage } from "../pagination.js";
 import { editorOf, focusEditor } from "./row-editor.js";
 import { createGrid, ensureAgGrid } from "../grid.js";
+import { isDarkTheme } from "../theme.js";
 
 /**
  * Os utilizadores da API, numa grelha. As colunas, o que se ordena, o que se filtra e o que
@@ -146,6 +147,10 @@ export async function loadSettingsApiUsersSection(page = 1) {
 
     try {
         if (grid !== null) {
+            // A grelha é criada uma vez e guarda o tema desse momento. Sem isto, trocar de
+            // tema com o modal fechado -- que é a única altura em que o botão do tema se
+            // alcança -- deixava-a na cor antiga ao reabrir.
+            grid.setDark(isDarkTheme());
             await grid.goToPage(page);
             return;
         }
@@ -163,7 +168,7 @@ export async function loadSettingsApiUsersSection(page = 1) {
         grid = createGrid({
             element: els.apiUserGrid,
             columns: first.columns,
-            dark: document.documentElement.getAttribute("data-bs-theme") === "dark",
+            dark: isDarkTheme(),
             columnTitles: COLUMN_TITLES,
             valueLabels: VALUE_LABELS,
             emptyMessage: "Nenhum utilizador para este filtro.",

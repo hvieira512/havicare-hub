@@ -442,9 +442,24 @@ export function createGrid({
     // Os `<select>` vivos do cabeçalho, por campo, para lhes dar as facetas de cada resposta.
     const selectFilters = new Map();
 
+    /**
+     * Só a última leitura pedida pode escrever a grelha.
+     *
+     * Dois cliques seguidos na paginação, ou filtrar e logo a seguir ordenar, põem dois
+     * pedidos no ar e nada os cancela. Com as respostas trocadas ficavam as linhas da página
+     * errada **e** o `page` interno errado -- e aí nem o clique seguinte endireitava, porque
+     * passava a contar a partir do número errado. É o contador do `stream.js` e do `list.js`.
+     */
+    let generation = 0;
+
     async function refresh() {
+        generation += 1;
+        const current = generation;
         const state = api.getColumnState();
         const response = await load(requestParams(columns, page, limit, state, api.getFilterModel()));
+        if (current !== generation) {
+            return;
+        }
         page = response.pagination?.page ?? page;
         api.setGridOption("rowData", response.data || []);
         for (const column of response.columns ?? []) {

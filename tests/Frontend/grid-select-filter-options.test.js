@@ -11,9 +11,9 @@ const { ServerSelectFloatingFilter } = await import("../../src/Dashboard/dashboa
  * com as do primeiro pedido faz o número mentir e esconde valores que entretanto passaram
  * a existir.
  */
-function filtroDe(options, labels = {}) {
-    const filtro = new ServerSelectFloatingFilter();
-    filtro.init({
+function filterWith(options, labels = {}) {
+    const filter = new ServerSelectFloatingFilter();
+    filter.init({
         options,
         labels,
         colDef: { headerName: "Empresa" },
@@ -21,24 +21,24 @@ function filtroDe(options, labels = {}) {
         api: { onFilterChanged: () => {} },
     });
 
-    return filtro;
+    return filter;
 }
 
-const textos = (filtro) => [...filtro.getGui().options].map((o) => o.textContent);
-const valores = (filtro) => [...filtro.getGui().options].map((o) => o.value);
+const optionTexts = (filter) => [...filter.getGui().options].map((o) => o.textContent);
+const optionValues = (filter) => [...filter.getGui().options].map((o) => o.value);
 
 test("as opções e as contagens vêm do descritor", () => {
-    const filtro = filtroDe([{ value: "havicare", count: 2 }, { value: "hitcare", count: 4 }]);
+    const filter = filterWith([{ value: "havicare", count: 2 }, { value: "hitcare", count: 4 }]);
 
-    assert.deepEqual(textos(filtro), ["Todos", "havicare (2)", "hitcare (4)"]);
+    assert.deepEqual(optionTexts(filter), ["Todos", "havicare (2)", "hitcare (4)"]);
 });
 
 test("uma resposta nova substitui as contagens antigas", () => {
-    const filtro = filtroDe([{ value: "havicare", count: 2 }, { value: "hitcare", count: 4 }]);
+    const filter = filterWith([{ value: "havicare", count: 2 }, { value: "hitcare", count: 4 }]);
 
-    filtro.setOptions([{ value: "hitcare", count: 3 }]);
+    filter.setOptions([{ value: "hitcare", count: 3 }]);
 
-    assert.deepEqual(textos(filtro), ["Todos", "hitcare (3)"]);
+    assert.deepEqual(optionTexts(filter), ["Todos", "hitcare (3)"]);
 });
 
 /**
@@ -46,24 +46,24 @@ test("uma resposta nova substitui as contagens antigas", () => {
  * esta regra o `<select>` saltava para "Todos" com o filtro ainda a estreitar a tabela.
  */
 test("o valor escolhido fica na lista mesmo quando o servidor deixa de o mandar", () => {
-    const filtro = filtroDe([{ value: "havicare", count: 2 }, { value: "hitcare", count: 4 }]);
-    filtro.onParentModelChanged({ value: "havicare" });
+    const filter = filterWith([{ value: "havicare", count: 2 }, { value: "hitcare", count: 4 }]);
+    filter.onParentModelChanged({ value: "havicare" });
 
-    filtro.setOptions([{ value: "hitcare", count: 3 }]);
+    filter.setOptions([{ value: "hitcare", count: 3 }]);
 
-    assert.deepEqual(textos(filtro), ["Todos", "havicare (0)", "hitcare (3)"]);
-    assert.equal(filtro.getGui().value, "havicare");
+    assert.deepEqual(optionTexts(filter), ["Todos", "havicare (0)", "hitcare (3)"]);
+    assert.equal(filter.getGui().value, "havicare");
 });
 
 test("as etiquetas traduzem o valor, e o valor continua a ser o que vai no pedido", () => {
-    const filtro = filtroDe([{ value: "watch", count: 10 }], { watch: "Relógio" });
+    const filter = filterWith([{ value: "watch", count: 10 }], { watch: "Relógio" });
 
-    assert.deepEqual(textos(filtro), ["Todos", "Relógio (10)"]);
-    assert.deepEqual(valores(filtro), ["", "watch"]);
+    assert.deepEqual(optionTexts(filter), ["Todos", "Relógio (10)"]);
+    assert.deepEqual(optionValues(filter), ["", "watch"]);
 });
 
 test("uma contagem ausente não desenha parênteses vazios", () => {
-    const filtro = filtroDe([{ value: "hitcare", count: null }]);
+    const filter = filterWith([{ value: "hitcare", count: null }]);
 
-    assert.deepEqual(textos(filtro), ["Todos", "hitcare"]);
+    assert.deepEqual(optionTexts(filter), ["Todos", "hitcare"]);
 });

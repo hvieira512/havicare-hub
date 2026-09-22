@@ -4,9 +4,9 @@
 
 | Suite | Onde | Ficheiros | Precisa de |
 |---|---|---|---|
-| Unitários (PHP) | `tests/Unit/` | 90 | nada |
-| Integração (PHP) | `tests/Integration/` | 35 | MySQL e Redis |
-| Frontend (Node) | `tests/Frontend/` | 45 | nada |
+| Unitários (PHP) | `tests/Unit/` | 158 | nada |
+| Integração (PHP) | `tests/Integration/` | 38 | MySQL e Redis |
+| Frontend (Node) | `tests/Frontend/` | 122 | nada |
 | Cenários (shell) | `tests/scenarios/` | 6 | a pilha Docker inteira |
 
 ```bash
@@ -71,7 +71,7 @@ a base de dados de raiz a cada corrida.
 |---|---|
 | **PHPStan** | Nível 4, sobre `src/` e `bin/`. O nível 4 liga as regras de código morto e de condição impossível — é o que apanha uma propriedade não declarada ou um ramo que nunca corre |
 | **PHPCS** | PSR-12, menos o limite de comprimento de linha |
-| **ESLint** | Configuração plana, com estilo próprio. Corre com zero avisos tolerados |
+| **ESLint** | Configuração plana, com estilo próprio. Corre com zero avisos tolerados, que é o que apanha um import órfão ao mover código |
 
 Cada exclusão está justificada no respetivo ficheiro de configuração, com dados
 quantitativos. Uma exclusão em particular não foi aplicada: a regra que assinala

@@ -11,18 +11,11 @@ import { esc } from "../format.js";
 import { loadSettingsModal } from "../settings/index.js";
 import { handleSettingsPaginationClick } from "../settings/shell.js";
 import {
-    handleCapabilityDeviceTypeClick,
-    handleCapabilityGroupsChange,
-    handleModelDeviceTypeClick,
-    handleModelListClick,
-    handleModelSupplierClick,
-    jumpCapabilitySection,
-    scrollCapabilityCatalogSection,
-} from "../settings/clicks.js";
-import {
     handleCapabilityCatalogSearch,
+    handleCapabilityDeviceTypeClick,
     handleCapabilitySupplierClick,
     loadSettingsCapabilitiesSection,
+    scrollCapabilityCatalogSection,
 } from "../settings/capabilities.js";
 import {
     handleApiUserListChange,
@@ -45,6 +38,8 @@ import {
     loadSettingsModelsSection,
 } from "../settings/models/list.js";
 import {
+    handleModelDeviceTypeClick,
+    handleModelSupplierClick,
     openNewModelForm,
     resetModelForm,
     saveModel,
@@ -53,11 +48,16 @@ import {
 import {
     deleteCurrentModel,
     handleModelDetailImageChange,
+    handleModelListClick,
     resetModelDetailFields,
-    saveCapabilities,
     saveModelDetail,
     syncModelDetailDirty,
 } from "../settings/models/detail.js";
+import {
+    handleCapabilityGroupsChange,
+    jumpCapabilitySection,
+    saveCapabilities,
+} from "../settings/models/capabilities-editor.js";
 
 let els;
 

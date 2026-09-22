@@ -12,8 +12,7 @@ import { parseFragment } from "./support/dom.js";
  * O botão acende por diferença entre o que o formulário tem e a fotografia tirada ao
  * desenhar. Uma acção como «Encontrar dispositivo» não tem campos: o payload é sempre vazio,
  * a diferença nunca existe, e o botão ficava desactivado para sempre -- a acção não tinha
- * caminho nenhum na interface. Vale para os dois desenhos sem parâmetros, o `requestAction`
- * e o `resetAction`.
+ * caminho nenhum na interface.
  */
 function section(
     input,
@@ -35,14 +34,12 @@ function section(
 const button = (root) => root.querySelector("[data-action=\"saveConfig\"]");
 
 test("uma acção sem parâmetros pode ser enviada", () => {
-    for (const input of ["requestAction", "resetAction"]) {
-        const root = section(input);
+    const root = section("action");
 
-        syncConfigSectionDirty(root);
+    syncConfigSectionDirty(root);
 
-        assert.equal(button(root).disabled, false, `${input} devia poder ser enviada`);
-        assert.ok(button(root).classList.contains("btn-primary"), `${input} devia acender`);
-    }
+    assert.equal(button(root).disabled, false);
+    assert.ok(button(root).classList.contains("btn-primary"));
 });
 
 test("uma configuração por mexer continua a não se poder enviar", () => {

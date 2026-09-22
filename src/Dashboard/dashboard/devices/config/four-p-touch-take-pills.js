@@ -1,9 +1,13 @@
 import { esc } from "../../format.js";
 import {
     fourPTouchMaskToWeekdays,
+    readFourPTouchAlarmDays,
     weekdayPicker,
     weekdaysToFourPTouchMask,
 } from "./alarm-fields.js";
+import { boolValue } from "./normalizers.js";
+import { readCheckbox, readText } from "./readers.js";
+import { syncTakePillsCustomVisibility } from "./take-pills-audio.js";
 
 export function takePillsInput(desired, meta = {}) {
     const reminderText = String(desired.reminderText || "");
@@ -33,9 +37,84 @@ export function takePillsReminderGroup(settings, index, frequencyOptions) {
         <div class="col-md-3"><label class="form-label-sm d-block">Estado</label><div class="form-check form-switch mt-2"><input class="form-check-input" type="checkbox" role="switch" data-takepills-field="reminderEnabled" data-takepills-index="${index}" ${settings.enabled ? "checked" : ""}><label class="form-check-label" data-switch-label data-switch-on="Ligado" data-switch-off="Desligado">${settings.enabled ? "Ligado" : "Desligado"}</label></div></div>
         <div class="col-md-6"><label class="form-label-sm required">Recorrência</label><div class="btn-group w-100" role="group" aria-label="Recorrência do lembrete">${frequencyOptions.map((option) => {
             const inputId = `takepills-${index}-freq-${option.value}`;
-            return `<input class="btn-check" type="radio" name="takepills-${index}-freq" id="${esc(inputId)}" value="${esc(String(option.value))}" data-takepills-field="reminderFrequency" data-takepills-index="${index}" data-takepills-frequency ${parseInt(String(option.value), 10) === frequency ? "checked" : ""}><label class="btn btn-outline-secondary btn-sm" for="${esc(inputId)}">${esc(String(option.label))}</label>`;
+            return `<input class="btn-check" type="radio" name="takepills-${index}-freq" id="${esc(inputId)}" value="${esc(String(option.value))}" data-takepills-field="reminderFrequency" data-takepills-index="${index}" ${parseInt(String(option.value), 10) === frequency ? "checked" : ""}><label class="btn btn-outline-secondary btn-sm" for="${esc(inputId)}">${esc(String(option.label))}</label>`;
         }).join("")}</div></div>
         <div class="col-12 ${frequency === 3 ? "" : "d-none"}" data-takepills-custom-wrapper="${index}">${weekdayPicker(fourPTouchMaskToWeekdays(settings.custom), `takepills-${index}`)}</div></div></div>`;
+}
+
+/** Os lembretes levam o seu número em cinco sítios, e removê-los desalinha-os todos. */
+export function syncTakePillsRows(section) {
+    const list = section?.querySelector("[data-repeat-list=\"takePillsReminder\"]");
+    if (!list) return;
+
+    list.querySelectorAll("[data-repeat-row=\"takePillsReminder\"]").forEach((row, index) => {
+        row.dataset.takepillsReminderGroup = String(index);
+        const number = row.querySelector("[data-takepills-reminder-number]");
+        if (number) {
+            number.textContent = `Lembrete ${index + 1}`;
+        }
+        row.querySelectorAll("[data-takepills-index]").forEach((field) => {
+            field.dataset.takepillsIndex = String(index);
+        });
+        const custom = row.querySelector("[data-takepills-custom-wrapper]");
+        if (custom) {
+            custom.dataset.takepillsCustomWrapper = String(index);
+        }
+    });
+
+    syncTakePillsCustomVisibility(section);
+}
+
+export function readTakePills(section) {
+    const groups = Array.from(
+        section.querySelectorAll("[data-takepills-reminder-group]"),
+    );
+    const number = groups.length;
+    const voiceEnabled = readCheckbox(section, "voiceEnabled");
+    const voiceData = readText(section, "voiceData");
+    const voiceMimeType = readText(section, "voiceMimeType");
+
+    const reminderSettings = groups.map((group) => {
+        // `:checked` porque a recorrência é um grupo de rádios, como no bloco dos alarmes.
+        const frequency =
+            parseInt(
+                String(
+                    group.querySelector(
+                        "[data-takepills-field=\"reminderFrequency\"]:checked",
+                    )?.value ?? "1",
+                ),
+                10,
+            ) || 1;
+        return {
+            time:
+                    group.querySelector(
+                        "[data-takepills-field=\"reminderTime\"]",
+                    )?.value || "",
+            enabled:
+                    group.querySelector(
+                        "[data-takepills-field=\"reminderEnabled\"]",
+                    )?.checked || false,
+            frequency,
+            custom: frequency === 3 ? readFourPTouchAlarmDays(group) : "",
+        };
+    });
+
+    const payload = {
+        reminderSettings,
+        number,
+        reminderText: readText(section, "reminderText"),
+    };
+
+    if (voiceEnabled && voiceData !== "") {
+        payload.voiceData = voiceData;
+        if (voiceMimeType !== "") {
+            payload.voiceMimeType = voiceMimeType;
+        }
+    } else if (!voiceEnabled) {
+        payload.voiceData = "";
+    }
+
+    return payload;
 }
 
 function normalizeVoiceEnabled(desired, hasVoiceData) {
@@ -88,13 +167,4 @@ function frequencyOptionsFor(meta) {
     return Array.isArray(meta?.frequency?.options) && meta.frequency.options.length
         ? meta.frequency.options
         : [{ value: 1, label: "Uma vez" }, { value: 2, label: "Diariamente" }, { value: 3, label: "Personalizado" }];
-}
-
-function boolValue(value, fallback = false) {
-    if (typeof value === "boolean") return value;
-    if (typeof value === "number") return value !== 0;
-    const normalized = String(value ?? "").trim().toLowerCase();
-    if (["1", "true", "yes", "on"].includes(normalized)) return true;
-    if (["0", "false", "no", "off"].includes(normalized)) return false;
-    return fallback;
 }

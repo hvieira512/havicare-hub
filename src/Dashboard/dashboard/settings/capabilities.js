@@ -3,8 +3,10 @@ import {
 } from "../api/index.js";
 import { state } from "../state.js";
 import { html, raw } from "../html.js";
-import { renderButtonGroup, renderDeviceTypeTiles, sectionStrip } from "../widgets.js";
-import { cardIcon } from "../telemetry-cards.js";
+import { buttonGroup } from "../components/button-group.js";
+import { sectionStrip } from "../components/chips.js";
+import { deviceTypeTiles } from "../components/device-type-tiles.js";
+import { cardIcon } from "../components/cards/telemetry.js";
 import { CAPABILITY_SECTION_ICONS, ensureCapabilityCatalog, ensureModelTemplate } from "../capability-catalog.js";
 import {
     capabilitiesGroupedBySection,
@@ -85,7 +87,7 @@ async function ensureCapabilityModelFilters() {
     state.settingsModal.sectionLoaded.modelFilters = true;
 }
 
-function resolveCapabilitySuppliersForDeviceType(deviceType) {
+function loadCapabilitySuppliersForDeviceType(deviceType) {
     const group = state.settingsModal.modelFilters.find(
         (g) => normalizeDeviceType(g.deviceType || "") === deviceType,
     );
@@ -122,7 +124,7 @@ async function loadSettingsCapabilitiesSection(
     }
     await loadCapabilityCatalog(normalized);
     await ensureCapabilityModelFilters();
-    resolveCapabilitySuppliersForDeviceType(normalized);
+    loadCapabilitySuppliersForDeviceType(normalized);
     if (state.settingsModal.capabilitySupplier) {
         await loadCapabilityTemplate(
             state.settingsModal.capabilitySupplier,
@@ -131,6 +133,14 @@ async function loadSettingsCapabilitiesSection(
     }
     state.settingsModal.sectionLoaded.capabilities = true;
     renderCapabilitiesCatalogSection();
+}
+
+function handleCapabilityDeviceTypeClick(event) {
+    const button = event.target.closest(
+        "[data-action=\"selectCapabilityDeviceType\"]",
+    );
+    if (!button) return;
+    void loadSettingsCapabilitiesSection(button.dataset.value);
 }
 
 function handleCapabilitySupplierClick(event) {
@@ -153,7 +163,7 @@ async function selectCapabilitySupplier(supplierId) {
 }
 
 function renderCapabilitiesCatalogSection() {
-    renderDeviceTypeTiles(els.capabilityDeviceTypeButtons, deviceTypeOptions, {
+    els.capabilityDeviceTypeButtons.innerHTML = deviceTypeTiles(deviceTypeOptions, {
         selected: state.settingsModal.capabilityDeviceType || "watch",
         action: "selectCapabilityDeviceType",
     });
@@ -223,6 +233,9 @@ function renderCapabilitiesCatalogSection() {
                     const number = entry.supported
                         ? String(++index).padStart(2, "0")
                         : "—";
+                    // Os ícones das secções irmãs vão todos na mesma cor: cores diferentes
+                    // leem-se como gravidades diferentes, e o vermelho numa secção de
+                    // alarmes lê-se como erro em vez de categoria.
                     return html`
                 <div class="capability-row d-grid border rounded-2${entry.supported ? "" : " is-unsupported"}">
                     <span class="capability-index fw-bold lh-1 text-end tabular-nums" aria-hidden="true">${number}</span>
@@ -273,10 +286,6 @@ function renderCapabilitiesCatalogSection() {
 }
 
 /**
- * Cinco secções irmãs, cinco ícones -- e uma cor só: cores diferentes leem-se como
- * gravidades diferentes, e o vermelho dos alarmes lia-se como erro em vez de categoria.
- */
-/**
  * O ícone de uma capacidade no catálogo. O mapa dos cartões de pedido cobre sobretudo
  * telemetria; fora disso o recurso é o ícone da secção, porque catorze círculos iguais numa
  * secção de alarmes dizem menos do que ícone nenhum.
@@ -313,6 +322,32 @@ function renderCapabilityCatalogSectionNav(sections) {
         : "";
 }
 
+/**
+ * Uma pastilha desloca a lista até à secção e não filtra: o catálogo fica todo numa
+ * superfície, que é o que serve para auditar um fornecedor de ponta a ponta.
+ */
+function scrollCapabilityCatalogSection(event) {
+    const chip = event.target.closest(
+        "[data-action=\"scrollCapabilityCatalogSection\"]",
+    );
+    if (!chip) return;
+
+    const target = document.getElementById(chip.dataset.section || "");
+    if (!target) return;
+
+    state.settingsModal.activeCapabilityCatalogSection = chip.dataset.section || "";
+    els.capabilityCatalogSectionNav
+        .querySelectorAll(".capability-section-chip")
+        .forEach((other) => other.classList.toggle("selected", other === chip));
+
+    target.scrollIntoView({
+        block: "start",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+    });
+}
+
 function handleCapabilityCatalogSearch() {
     state.settingsModal.capabilityQuery = els.capabilityCatalogSearch.value;
     renderCapabilitiesCatalogSection();
@@ -341,8 +376,7 @@ function renderCapabilitySupplierButtons() {
         ...suppliers.map((s) => ({ value: String(s.id), label: s.name })),
     ];
 
-    renderButtonGroup(
-        els.capabilitySupplierButtons,
+    els.capabilitySupplierButtons.innerHTML = buttonGroup(
         items,
         selected,
         "selectCapabilitySupplier",
@@ -373,6 +407,8 @@ export {
     loadCapabilityCatalog,
     initSettingsCapabilities,
     loadSettingsCapabilitiesSection,
+    handleCapabilityDeviceTypeClick,
     handleCapabilitySupplierClick,
     handleCapabilityCatalogSearch,
+    scrollCapabilityCatalogSection,
 };

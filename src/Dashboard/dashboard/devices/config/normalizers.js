@@ -1,8 +1,4 @@
-import {
-    formatFourPTouchAlarmTime,
-    normalizeAlarmClockRecurrenceKind,
-    weekdaysToFourPTouchMask,
-} from "./alarm-fields.js";
+import { normalizeAlarmClockRecurrenceKind } from "./alarm-fields.js";
 
 export const WONLEX_MEDICATION_PERIODS = [
     { index: 0, key: "Morning", label: "Manhã", defaultTime: "08:00" },
@@ -77,102 +73,6 @@ export function defaultWonlexMedicationPlan() {
             radio: 0,
         },
     });
-}
-
-export function normalizeFourPTouchAlarms(desired) {
-    const base = desired?.items ?? desired?.alarms ?? desired?.alarmClock ?? desired?.fields ?? desired;
-
-    if (Array.isArray(base)) {
-        if (base.length && typeof base[0] === "string") {
-            return base.map((item) => normalizeFourPTouchAlarmItem(item));
-        }
-
-        return base.map((item) => normalizeFourPTouchAlarmItem(item));
-    }
-
-    if (typeof base === "string" && base.trim() !== "") {
-        return base.split(",").map((item) => normalizeFourPTouchAlarmItem(item));
-    }
-
-    if (base && typeof base === "object") {
-        return [normalizeFourPTouchAlarmItem(base)];
-    }
-
-    return [];
-}
-
-function normalizeFourPTouchAlarmItem(item) {
-    if (typeof item === "string") {
-        return parseFourPTouchAlarmString(item);
-    }
-
-    if (!item || typeof item !== "object") {
-        return { time: "", enabled: true, mode: 1, custom: "" };
-    }
-
-    const recurrenceKind = String(item.recurrence?.kind ?? item.kind ?? "").trim().toLowerCase();
-    const mode = recurrenceKind
-        ? ({ once: 1, daily: 2, custom: 3 }[recurrenceKind] || 1)
-        : (parseInt(
-                String(item.mode ?? item.frequency ?? item.reminderFrequency ?? 1),
-                10,
-            ) || 1);
-
-    return {
-        time: formatFourPTouchAlarmTime(
-            item.time ?? item.alarmTime ?? item.reminderTime ?? "",
-        ),
-        enabled: boolValue(item.enabled ?? item.switchState, true),
-        mode: [1, 2, 3].includes(mode) ? mode : 1,
-        custom:
-            mode === 3
-                ? normalizeFourPTouchAlarmDays(
-                        item.recurrence?.days ?? item.custom ?? item.days ?? item.reminderCustom ?? "",
-                    )
-                : "",
-    };
-}
-
-function parseFourPTouchAlarmString(value) {
-    const parts = String(value || "").trim().split("-");
-    if (parts.length < 3) {
-        return { time: "", enabled: true, mode: 1, custom: "" };
-    }
-
-    const mode = parseInt(String(parts[2] || "1"), 10) || 1;
-
-    return {
-        time: formatFourPTouchAlarmTime(parts[0]),
-        enabled: boolValue(parts[1], true),
-        mode: [1, 2, 3].includes(mode) ? mode : 1,
-        custom:
-            mode === 3
-                ? normalizeFourPTouchAlarmDays(parts.slice(3).join("-"))
-                : "",
-    };
-}
-
-/**
- * A máscara nativa do 4P Touch, venha uma lista de dias de 1 a 7 ou já a máscara.
- *
- * É aqui que o domingo passa da posição 7, que é a que se lê, para a posição 0, que é a que o
- * protocolo escreve. Fora daqui ninguém precisa de saber onde ele fica.
- */
-export function normalizeFourPTouchAlarmDays(value) {
-    if (Array.isArray(value)) {
-        return weekdaysToFourPTouchMask(value);
-    }
-
-    const raw = String(value || "").trim();
-    if (raw === "") {
-        return "";
-    }
-
-    if (/^[01]{7}$/.test(raw)) {
-        return raw;
-    }
-
-    return weekdaysToFourPTouchMask(raw.replace(/[^1-7]/g, "").split(""));
 }
 
 export function normalizeAlarmClockItems(desired) {
@@ -254,11 +154,20 @@ export function normalizeAlarmClockDaySelection(value) {
         .filter(Boolean);
 }
 
+/** O `fallback` é o que fica quando o valor não decide nada -- e não «desligado». */
 export function boolValue(value, fallback = false) {
-    if (value === true || value === 1 || value === "1") {
+    if (typeof value === "boolean") {
+        return value;
+    }
+    // Há aparelhos que mandam o nível em vez do bit, e qualquer nível é estar ligado.
+    if (typeof value === "number") {
+        return value !== 0;
+    }
+    const text = String(value ?? "").trim().toLowerCase();
+    if (["1", "true", "yes", "on"].includes(text)) {
         return true;
     }
-    if (value === false || value === 0 || value === "0") {
+    if (["0", "false", "no", "off"].includes(text)) {
         return false;
     }
     return fallback;

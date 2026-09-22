@@ -9,26 +9,14 @@
 import { state } from "../state.js";
 import { syncPhoneControl } from "../phone.js";
 import { normalizeDeviceType } from "../domain.js";
-import {
-    handleConfigFeedbackClosed,
-    handleDeviceConfigChange,
-    handleDeviceConfigClick,
-    handleDeviceConfigInput,
-} from "../devices/config/handlers.js";
-import {
-    renderDeviceConfigurationModal,
-    syncConfigGroupDirty,
-    syncConfigSectionDirty,
-    unsentConfigChanges,
-} from "../devices/config/panel.js";
 import { confirmDestructive } from "../dialogs.js";
+import { emptyPanel } from "../components/empty-panel.js";
+import { html } from "../html.js";
 import {
     clearDeviceFilters,
     handleDeviceFilterClick,
     handleDeviceOnlineFilterChange,
-    handleDownlinkPagerClick,
-    handleTelemetryPagerClick,
-} from "../devices/filters.js";
+} from "../devices/list-filters.js";
 import {
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
@@ -44,6 +32,8 @@ import {
     applyDetailFilters,
     applyDetailSearch,
     clearDetailFilters,
+    handleDownlinkPagerClick,
+    handleTelemetryPagerClick,
     removeDetailFilter,
     updateDetailFilterDraft,
 } from "../devices/detail-filters.js";
@@ -57,9 +47,11 @@ import {
 } from "../devices/radar-map-modal.js";
 import { editWizardAnswered } from "../devices/edit-wizard.js";
 import {
+    configPanelIfLoaded,
     editDevice,
     ensureDeviceConfigurationCatalogLoaded,
     handleDeleteDeviceBtnClick,
+    loadConfigPanel,
     renderDeviceSelectors,
     renderDeviceTypeSelector,
     saveDevice,
@@ -156,12 +148,46 @@ function bindDeviceForm() {
     });
     els.deviceConfigTabBtn.addEventListener("shown.bs.tab", () => {
         state.deviceModal.activeTab = "config";
-        void (async () => {
-            await ensureDeviceConfigurationCatalogLoaded();
-            renderDeviceConfigurationModal();
-        })();
+        void openConfigPanel();
     });
     bindUnsentConfigGuard();
+}
+
+/**
+ * A acção do botão que dá a saída depois de a carga do painel falhar.
+ *
+ * Recarrega a página, e não pede o módulo outra vez: o browser guarda no mapa de módulos a
+ * falha por URL, e um segundo `import()` do mesmo especificador resolve para a entrada nula
+ * **sem voltar à rede**. Medido contra o hub local -- duas tentativas, um só pedido. Um botão
+ * que pedisse outra vez prometia uma recuperação que não acontece.
+ */
+const CONFIG_RETRY_ACTION = "reloadForConfigPanel";
+
+/**
+ * Abrir o separador é o que manda vir o painel de configurações.
+ *
+ * Entre o clique e o módulo chegar há rede pelo meio, e a raiz não pode ficar vazia: escreve
+ * a mesma frase que o painel escreve enquanto vai buscar o catálogo, para as duas esperas se
+ * lerem como uma só. Um esqueleto de barras seria afirmar uma forma que ainda não se sabe --
+ * o que o painel desenha depende do protocolo e do modelo.
+ */
+async function openConfigPanel() {
+    els.deviceConfigRoot.innerHTML = emptyPanel("A carregar configurações...");
+
+    let panel;
+    try {
+        ({ panel } = await loadConfigPanel());
+    } catch {
+        // Sem isto a raiz ficava com a frase da espera para sempre, e sem caminho de volta.
+        els.deviceConfigRoot.innerHTML = html`<div class="text-secondary py-3">
+            Não foi possível carregar as configurações.
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" data-action="${CONFIG_RETRY_ACTION}">Recarregar a página</button>
+        </div>`;
+        return;
+    }
+
+    await ensureDeviceConfigurationCatalogLoaded();
+    panel.renderDeviceConfigurationModal();
 }
 
 /** Fechar com configuração escrita e por enviar deitava-a fora em silêncio. */
@@ -174,7 +200,9 @@ function bindUnsentConfigGuard() {
             return;
         }
 
-        const pending = unsentConfigChanges(els.deviceConfigRoot);
+        // Painel por carregar é painel sem campos escritos: não há nada por enviar.
+        const pending = configPanelIfLoaded()
+            ?.panel.unsentConfigChanges(els.deviceConfigRoot) ?? 0;
         if (pending === 0) return;
 
         event.preventDefault();
@@ -245,27 +273,37 @@ function bindDetail() {
 }
 
 function bindConfigPanel() {
+    els.deviceConfigRoot.addEventListener("click", (event) => {
+        if (event.target.closest(`[data-action="${CONFIG_RETRY_ACTION}"]`)) {
+            window.location.reload();
+        }
+    });
+
     // Um ouvinte por evento, e não dois: o "Enviar" de cada bloco acende por diferença,
     // depois de quem trata o campo ter feito o seu trabalho.
-    for (const [type, handle] of [
-        ["click", handleDeviceConfigClick],
-        ["input", handleDeviceConfigInput],
-        ["change", handleDeviceConfigChange],
+    for (const [type, pick] of [
+        ["click", (handlers) => handlers.handleDeviceConfigClick],
+        ["input", (handlers) => handlers.handleDeviceConfigInput],
+        ["change", (handlers) => handlers.handleDeviceConfigChange],
     ]) {
         els.deviceConfigRoot.addEventListener(type, (event) => {
-            handle(event);
+            // Sem o painel carregado a raiz só tem a frase da espera ou a da falha, e não há
+            // controlo nenhum para tratar.
+            const loaded = configPanelIfLoaded();
+            if (!loaded) return;
+
+            pick(loaded.handlers)(event);
             const section = event.target.closest("[data-config-section]");
-            if (section) syncConfigSectionDirty(section);
+            if (section) loaded.panel.syncConfigSectionDirty(section);
             // Os interruptores agrupados não vivem numa secção: a conta das alterações é do
             // grupo, e é o rodapé dele que acende.
             const group = event.target.closest("[data-config-group]");
-            if (group) syncConfigGroupDirty(group);
+            if (group) loaded.panel.syncConfigGroupDirty(group);
         });
     }
-    els.deviceConfigRoot.addEventListener(
-        "closed.bs.alert",
-        handleConfigFeedbackClosed,
-    );
+    els.deviceConfigRoot.addEventListener("closed.bs.alert", (event) => {
+        configPanelIfLoaded()?.handlers.handleConfigFeedbackClosed(event);
+    });
 }
 
 function setAllGatewayLinks(checked) {
@@ -279,7 +317,7 @@ function setAllGatewayLinks(checked) {
 
 async function handleDeviceImeiInput() {
     await syncDeviceModalContext();
-    renderDeviceConfigurationModal();
+    configPanelIfLoaded()?.panel.renderDeviceConfigurationModal();
 }
 
 function handleDeviceFormInput(event) {

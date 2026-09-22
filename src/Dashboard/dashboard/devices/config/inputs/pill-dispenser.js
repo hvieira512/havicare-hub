@@ -1,7 +1,9 @@
 import { esc } from "../../../format.js";
-import { field } from "../../../widgets.js";
+import { field } from "../../../components/form-field.js";
 import { html, raw } from "../../../html.js";
-import { enabledSwitch } from "./shared.js";
+import { segmentedScale } from "../../../components/segmented-scale.js";
+import { enabledSwitch, nextUid } from "./shared.js";
+import { selectOptions } from "./generic.js";
 import { readCheckbox, readText } from "../readers.js";
 
 /**
@@ -97,7 +99,55 @@ function readAlarms(section) {
 const dateField = (name, value) =>
     html`<input class="form-control" type="date" data-config-field="${esc(name)}" value="${esc(String(value ?? ""))}">`;
 
+/**
+ * A escala do volume, do mais alto ao silêncio.
+ *
+ * Os valores e os rótulos vêm da definição, como em qualquer escolha; os ícones e os tons
+ * ficam aqui porque são deste aparelho. Uma escala genérica não tem como saber que o `0` do
+ * M228 é um altifalante cheio, e declarar nomes de ícones nas definições em PHP era pôr
+ * apresentação no sítio errado.
+ */
+const VOLUME_STEPS = {
+    0: { icon: "fa-volume-high", tone: "primary" },
+    1: { icon: "fa-volume-low", tone: "secondary" },
+    2: { icon: "fa-volume-off", tone: "warning" },
+    3: { icon: "fa-volume-xmark", tone: "danger" },
+};
+
+function volumeScale(entry, desired) {
+    const { name, options, fallback } = selectOptions(entry);
+
+    return segmentedScale({
+        name: nextUid(`cfg-${name}`),
+        field: name,
+        value: desired?.[name] ?? fallback,
+        label: entry.label || "Volume",
+        // Por valor e não por posição: reordenar a lista na definição trocava os ícones, e o
+        // silêncio ficava com um altifalante cheio sem nada a denunciá-lo.
+        options: options.map((option) => ({ ...option, ...(VOLUME_STEPS[option.value] || {}) })),
+    });
+}
+
 export const INPUTS = {
+    volumeScale: {
+        // `render` e não `control`: a escala ocupa a largura do cartão, por baixo do título,
+        // como a sensibilidade de queda. Espremida na linha do título, as quatro posições
+        // voltavam a ficar encostadas a um canto, que é o que isto existe para resolver.
+        render: volumeScale,
+        read: (section) => {
+            const node = section.querySelector("input[type=radio][data-config-field]:checked");
+            if (!node) return {};
+            const value = String(node.value ?? "");
+            return {
+                [node.dataset.configField]:
+                    value !== "" && !Number.isNaN(Number(value)) ? Number(value) : value,
+            };
+        },
+        defaults: (entry) => {
+            const { name, options } = selectOptions(entry);
+            return { [name]: entry.options?.default ?? options[0]?.value ?? 0 };
+        },
+    },
     pillDispenserPeriod: {
         render: (entry, desired) =>
             enabledSwitch(Boolean(desired?.enabled)) +

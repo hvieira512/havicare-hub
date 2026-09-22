@@ -1,48 +1,16 @@
-import { esc } from "./format.js";
+import { paginationControls } from "./components/pagination.js";
 
 /** O resumo das listagens servidas pela API, que dizem quantos registos existem em total. */
 const defaultSummary = (start, end, total) => `A mostrar de ${start} até ${end} | ${total}`;
 
-/** Quantos lugares tem a janela. Ímpar, para a página actual ficar ao centro. */
-const WINDOW_SLOTS = 7;
-
 /**
- * A janela de páginas: as duas pontas, a vizinhança da página actual, e reticências a marcar
- * o que ficou de fora (`null`). São sempre `WINDOW_SLOTS` lugares -- um paginador com sete
- * botões numa página e nove noutra muda de tamanho debaixo do rato de quem carregou nele.
- */
-function pageWindow(currentPage, totalPages) {
-    if (totalPages <= WINDOW_SLOTS) {
-        return Array.from({ length: totalPages }, (_, index) => index + 1);
-    }
-    // Junto às pontas a vizinhança encosta-se, para não sobrar um lugar por preencher.
-    if (currentPage <= 4) {
-        return [1, 2, 3, 4, 5, null, totalPages];
-    }
-    if (currentPage >= totalPages - 3) {
-        return [
-            1,
-            null,
-            totalPages - 4,
-            totalPages - 3,
-            totalPages - 2,
-            totalPages - 1,
-            totalPages,
-        ];
-    }
-    return [1, null, currentPage - 1, currentPage, currentPage + 1, null, totalPages];
-}
-
-/**
- * Os controlos de paginação, para as listagens da API e para as que paginam no cliente.
+ * Escreve o paginador nos três elementos que o compõem: o contentor, que se esconde quando
+ * não há para onde ir, o resumo e os controlos. Os botões vêm do componente; o que vive aqui
+ * é o que toca no DOM.
  *
- * `summary` existe porque as duas famílias dizem a mesma coisa de formas diferentes e
- * ambas estão certas: uma listagem servida em páginas anuncia-se por extenso, e os painéis
- * estreitos do dispositivo escolhido só têm largura para "1–12 de 30".
- *
- * `goAction` existe porque os handlers dos painéis do dispositivo estão registados em
- * `telemetryPageGo`/`downlinkPageGo` e não em `${actionPrefix}Go`. Com o valor por omissão
- * nesses dois sítios os botões numerados deixam de responder sem dar erro nenhum.
+ * `summary` existe porque as duas famílias de listagem dizem a mesma coisa de formas
+ * diferentes e ambas estão certas: uma listagem servida em páginas anuncia-se por extenso, e
+ * os painéis estreitos do dispositivo escolhido só têm largura para "1–12 de 30".
  */
 export function renderPagination({
     pagination,
@@ -54,12 +22,9 @@ export function renderPagination({
     summary = defaultSummary,
     goAction = `${actionPrefix}Go`,
 }) {
-    const total = pagination?.total ?? 0;
-    const totalPages = pagination?.total_pages ?? 1;
-    const currentPage = pagination?.page ?? 1;
-    const limit = pagination?.limit ?? defaultLimit;
+    const controls = paginationControls({ pagination, actionPrefix, goAction });
 
-    if (totalPages <= 1) {
+    if (controls === "") {
         rootEl.classList.add("d-none");
         // Sem resumo não há elemento nenhum: onde o total já vive numa pastilha ao lado do
         // título, repeti-lo aqui era escrever o mesmo número duas vezes no mesmo ecrã.
@@ -70,39 +35,19 @@ export function renderPagination({
         return;
     }
 
-    const pageStart = (currentPage - 1) * limit + 1;
-    const pageEnd = Math.min(total, currentPage * limit);
+    const total = pagination?.total ?? 0;
+    const currentPage = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? defaultLimit;
+
     rootEl.classList.remove("d-none");
     if (summaryEl) {
-        summaryEl.textContent = summary(pageStart, pageEnd, total);
+        summaryEl.textContent = summary(
+            (currentPage - 1) * limit + 1,
+            Math.min(total, currentPage * limit),
+            total,
+        );
     }
-    // O componente `pagination` do Bootstrap em vez de um `btn-group` de botões: dá o mesmo
-    // sem uma linha de CSS nosso -- cantos só nas pontas, a página actual preenchida, o
-    // travado esbatido -- e o `page-link` já traz o alvo de toque e o anel de foco.
-    const arrow = (action, icon, label, disabled) =>
-        `<li class="page-item${disabled ? " disabled" : ""}">` +
-        `<button type="button" class="page-link rounded ms-0" data-action="${esc(action)}" ${disabled ? "disabled" : ""}` +
-        ` aria-label="${esc(label)}"><i class="fa-solid ${icon}"></i></button></li>`;
-
-    // Um `span` e não um botão: as reticências não são um destino, e o `page-link` dá-lhes a
-    // mesma medida mínima dos números para o lugar não encolher quando lá está.
-    const gap =
-        "<li class=\"page-item disabled\">" +
-        "<span class=\"page-link rounded ms-0 px-1 text-center\" aria-hidden=\"true\">…</span></li>";
-
-    controlsEl.innerHTML = [
-        arrow(`${actionPrefix}Prev`, "fa-chevron-left", "Página anterior", currentPage <= 1),
-        ...pageWindow(currentPage, totalPages).map((page) => {
-            if (page === null) {
-                return gap;
-            }
-            const active = page === currentPage;
-            return `<li class="page-item${active ? " active" : ""}">` +
-                `<button type="button" class="page-link rounded ms-0 px-1 text-center" data-action="${esc(goAction)}" data-page="${page}"` +
-                `${active ? " aria-current=\"page\"" : ""}>${page}</button></li>`;
-        }),
-        arrow(`${actionPrefix}Next`, "fa-chevron-right", "Página seguinte", currentPage >= totalPages),
-    ].join("");
+    controlsEl.innerHTML = controls;
 }
 
 /** `goAction` acompanha o do `renderPagination`: os painéis do dispositivo não usam o padrão. */

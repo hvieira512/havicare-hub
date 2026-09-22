@@ -12,7 +12,10 @@ ob_start();
 ?>
 <div class="device-modal-shell h-100">
     <div class="row g-4 h-100">
-        <div class="col-12 col-lg-2 d-flex align-items-lg-center">
+        <?php // Ao topo e não ao centro: centrado, o menu muda de altura com o conteúdo do
+              // separador escolhido, e o botão em que se acabou de carregar foge de debaixo
+              // do rato. ?>
+        <div class="col-12 col-lg-2 d-flex align-items-lg-start">
             <div class="nav nav-pills flex-row flex-lg-column flex-nowrap gap-2 w-100" id="deviceModalNav" role="tablist">
                 <?php foreach ($deviceTabs as $index => $tab) : ?>
                     <?php $pane = 'device' . $tab['key'] . 'Pane'; ?>

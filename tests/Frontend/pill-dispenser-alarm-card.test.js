@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
 // esse caminho passa pelo api/http.js, que toca em window ao carregar.
 import "./support/browser-env.js";
-import { renderRequestCardShell } from "../../src/Dashboard/dashboard/request-card.js";
+import { requestCardShell } from "../../src/Dashboard/dashboard/components/cards/request.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
 state.capabilityCatalogByType.pill_dispenser = [
@@ -12,7 +12,7 @@ state.capabilityCatalogByType.pill_dispenser = [
 ];
 state.selectedDetail = { model: { deviceType: "pill_dispenser" } };
 
-const card = (data) => renderRequestCardShell(
+const card = (data) => requestCardShell(
     { feature: "medication_alarm_status", requestable: false },
     false,
     [{ type: "medication_alarm_status", occurredAt: "2026-09-22T09:38:34Z", data }],

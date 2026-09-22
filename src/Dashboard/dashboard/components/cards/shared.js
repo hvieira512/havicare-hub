@@ -1,5 +1,5 @@
-import { fieldLabel, fieldValue } from "../format.js";
-import { html } from "../html.js";
+import { fieldLabel, fieldValue } from "../../format.js";
+import { html } from "../../html.js";
 
 /**
  * O que mais do que uma família de cartões precisa.

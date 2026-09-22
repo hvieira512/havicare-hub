@@ -1,16 +1,14 @@
 import { esc, fieldLabel } from "../../../format.js";
-import { field } from "../../../widgets.js";
-import { renderPhoneControl } from "../../../phone.js";
+import { field } from "../../../components/form-field.js";
+import { renderPhoneControl, resetPhoneControls } from "../../../phone.js";
 import { protocolPhonebookConstraints } from "../protocol-catalog.js";
 import { boolValue } from "../normalizers.js";
-import { enabledSwitch, nextUid, numberField } from "./shared.js";
+import { enabledSwitch, numberField } from "./shared.js";
 import {
     firstFieldName,
     readCheckbox,
-    readContacts,
     readNumber,
     readPhone,
-    readPhoneArray,
     readText,
 } from "../readers.js";
 
@@ -20,13 +18,29 @@ import {
  * muda entre protocolos é o nome nativo, e disso trata a definição, não o desenho.
  */
 
-export function toggleInput(entry, desired, protocol = "") {
+/**
+ * O nome do campo no valor guardado, que nem sempre é o nome nativo da definição.
+ *
+ * A Wonlex declara `switchState` e o hub entrega `enabled`: o `fromNative` da capacidade
+ * renomeia e apaga o original. Quem procurar o nome nativo não encontra nada e desenha o
+ * interruptor ligado, seja qual for o valor guardado.
+ */
+export function toggleField(entry, protocol = "") {
     const nativeField = entry.fields?.[0] || "enabled";
-    const field =
-        protocol === "wonlex-json" && nativeField === "switchState"
-            ? "enabled"
-            : nativeField;
-    const checked = boolValue(desired[field] ?? desired[nativeField], true);
+    return protocol === "wonlex-json" && nativeField === "switchState"
+        ? "enabled"
+        : nativeField;
+}
+
+/** Sem valor guardado nasce ligado, que é como o aparelho vem de fábrica. */
+export function toggleValue(entry, desired, protocol = "") {
+    const nativeField = entry.fields?.[0] || "enabled";
+    return boolValue(desired[toggleField(entry, protocol)] ?? desired[nativeField], true);
+}
+
+export function toggleInput(entry, desired, protocol = "") {
+    const field = toggleField(entry, protocol);
+    const checked = toggleValue(entry, desired, protocol);
     return `
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" data-config-field="${esc(field)}" ${checked ? "checked" : ""}>
@@ -34,40 +48,34 @@ export function toggleInput(entry, desired, protocol = "") {
         </div>`;
 }
 
-export function numberInput(entry, desired) {
+/**
+ * Um número, sem rótulo: quem o nomeia é o título do cartão, e a unidade vai ao lado do
+ * campo. O `aria-label` guarda o nome para quem não vê a linha.
+ */
+function numberControl(entry, desired) {
     const key = entry.fields?.[0] || "value";
-    const isWonlexMeasurementInterval =
-        entry.command === "deviceMeasuringFrequency" && key === "interval";
     // A escala vem da definição quando ela a declara -- o tom de pele vai de 1 a 6, e partir
     // de zero oferecia um valor que o aparelho recusa.
-    const { min = 0, max = "", label = "" } = entry.options ?? {};
-    const value = desired[key] ?? (isWonlexMeasurementInterval ? 60 : min);
-    return field(
-        // O nome do campo vem do protocolo e está em inglês. Quando a definição traz uma
-        // etiqueta, é ela que se mostra.
-        label || fieldLabel(key),
-        numberField(key, value, { min, max }),
-        {
-            help: isWonlexMeasurementInterval
-                ? "Periodicidade de envio desta medição, em minutos. Use 0 para desativar."
-                : "",
-        },
-    );
+    const { min = 0, max = "" } = entry.options ?? {};
+    return numberField(key, desired[key] ?? min, {
+        min,
+        max,
+        ariaLabel: entry.label || fieldLabel(key),
+    });
 }
 
-export function phoneInput(entry, desired) {
+function phoneInput(entry, desired) {
     const key = entry.fields?.[0] || "phone";
     return field(
         fieldLabel(key),
         renderPhoneControl({
             value: String(desired[key] || ""),
             configField: key,
-            placeholder: entry.label || fieldLabel(key),
         }),
     );
 }
 
-export function textInput(entry, desired) {
+function textInput(entry, desired) {
     const key = entry.fields?.[0] || "value";
     return field(
         fieldLabel(key),
@@ -75,7 +83,7 @@ export function textInput(entry, desired) {
     );
 }
 
-export function pushMessageInput(_entry, desired) {
+function pushMessageInput(_entry, desired) {
     return field(
         "Mensagem",
         `<input class="form-control" type="text" data-config-field="message" value="${esc(String(desired.message ?? ""))}" placeholder="Mensagem a mostrar no relógio">`,
@@ -83,7 +91,7 @@ export function pushMessageInput(_entry, desired) {
     );
 }
 
-export function intervalToggleInput(entry, desired) {
+function intervalToggleInput(entry, desired) {
     return `
         <div class="row g-3">
             <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
@@ -92,55 +100,6 @@ export function intervalToggleInput(entry, desired) {
                 numberField("intervalMinutes", desired.intervalMinutes ?? 60),
                 { cls: "col-md-8" },
             )}
-        </div>`;
-}
-
-export function resetActionInput(_entry, _desired) {
-    return `
-        <div>
-            <div class="alert alert-warning small py-2 px-3 mb-3">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i>
-                Esta ação é enviada imediatamente para o dispositivo e não pode ser desfeita.
-            </div>
-        </div>`;
-}
-
-export function requestActionInput(entry) {
-    return `
-        <div>
-            <div class="alert alert-info small py-2 px-3 mb-3">
-                <i class="fa-solid fa-circle-info me-2"></i>
-                ${esc(entry.label || "Ação")} é enviada sem parâmetros adicionais.
-            </div>
-        </div>`;
-}
-
-export function listInput(entry, desired, key, label) {
-    const limit = Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3);
-    const values = Array.isArray(desired[key]) ? desired[key] : [];
-    const rows = Array.from(
-        { length: limit },
-        (_, index) => values[index] ?? "",
-    );
-    return `
-        <div>
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="form-label-sm mb-0">${esc(label)}</label>
-                <span class="small text-secondary">${limit} itens</span>
-            </div>
-            <div class="vstack gap-2">
-                ${rows
-                    .map(
-                        (value, index) => `
-                    ${renderPhoneControl({
-                        value,
-                        configField: key,
-                        placeholder: `${label} ${index + 1}`,
-                    })}
-                `,
-                    )
-                    .join("")}
-            </div>
         </div>`;
 }
 
@@ -198,20 +157,47 @@ export function contactsInput(entry, desired, meta = {}) {
         </div>`;
 }
 
-/**
- * Os descritores dos campos partilhados.
- *
- * Cada tipo de campo declara aqui as suas quatro faces juntas -- desenhar, ler de volta, o
- * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
- * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
- */
+function isFourPTouchPhonebookSection(section) {
+    return String(section?.dataset?.configProtocol || "") === "four-p-touch" &&
+        String(section?.dataset?.configKey || "") === "phonebook";
+}
+
+/** A primeira linha de contactos, quando a lista veio vazia e não há de onde clonar. */
+export function createContactRow(section) {
+    const phonebook = isFourPTouchPhonebookSection(section);
+    const nameMaxLength = parseInt(
+        section?.dataset.phonebookNameMaxLength || "0", 10,
+    ) || 0;
+    const phoneMaxLength = parseInt(
+        section?.dataset.phonebookPhoneMaxLength || (phonebook ? "20" : "0"), 10,
+    ) || 0;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "row g-2 align-items-end";
+    wrapper.dataset.repeatRow = "contacts";
+    wrapper.innerHTML = `
+        <div class="col-md-6">
+            <input class="form-control" type="text" placeholder="Nome"${phonebook && nameMaxLength > 0 ? ` maxlength="${nameMaxLength}"` : ""} data-repeat-field="name">
+        </div>
+        <div class="col-md-6">
+            <div class="d-flex gap-2">
+                <div class="flex-grow-1">
+                    ${renderPhoneControl({ repeatField: "phone", maxLength: phoneMaxLength })}
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">-</button>
+            </div>
+        </div>`;
+    resetPhoneControls(wrapper);
+    return wrapper;
+}
+
 /**
  * As opções que a definição declara para um campo, já normalizadas.
  *
  * O catálogo traz `options: { campo: [{value, label}] }`, que é o mesmo formato que a
  * sensibilidade de queda dos relógios usava no seu campo próprio.
  */
-function selectOptions(entry) {
+export function selectOptions(entry) {
     const name = entry.fields?.[0] || "value";
     const options = Array.isArray(entry.options?.[name]) ? entry.options[name] : [];
     // A definição pode dizer de onde parte. Sem isso seria a primeira da lista, que numa
@@ -232,7 +218,7 @@ function selectOptions(entry) {
  * definição com `options` caía num número solto: o utilizador via "2" sem saber que 2 é
  * "Baixo", e o significado ficava só na cabeça de quem escreveu o adaptador.
  */
-export function selectInput(entry, desired) {
+function selectInput(entry, desired) {
     const { name, options, fallback } = selectOptions(entry);
     const current = String(desired?.[name] ?? fallback);
     const choices = options
@@ -247,51 +233,9 @@ export function selectInput(entry, desired) {
     return `<select class="form-select" data-config-field="${esc(name)}">${choices}</select>`;
 }
 
-/**
- * A mesma escolha, mas toda à vista.
- *
- * Serve as enumerações curtas em que a ordem diz alguma coisa -- o volume do dispensador tem
- * quatro posições e a escala está invertida, `0` é o mais alto. Numa lista fechada vê-se uma
- * de cada vez e a escala não se lê. O nome é único por grupo porque dois grupos na mesma
- * página com o mesmo nome comportam-se como um só.
- */
-export function buttonGroupInput(entry, desired) {
-    const { name, options, fallback } = selectOptions(entry);
-    const current = String(desired?.[name] ?? fallback);
-    const group = nextUid(`cfg-${name}`);
-
-    const buttons = options
-        .map((option) => {
-            const value = String(option.value);
-            const id = `${group}-${value}`;
-            return `<input type="radio" class="btn-check" name="${esc(group)}" id="${esc(id)}"
-                    value="${esc(value)}" data-config-field="${esc(name)}"${value === current ? " checked" : ""}>
-                <label class="btn btn-outline-secondary" for="${esc(id)}">${esc(String(option.label ?? value))}</label>`;
-        })
-        .join("");
-
-    return `<div class="btn-group flex-wrap" role="group">${buttons}</div>`;
-}
-
 export const INPUTS = {
-    buttonGroup: {
-        render: buttonGroupInput,
-        read: (section) => {
-            const node = section.querySelector("input[type=radio][data-config-field]:checked");
-            if (!node) return {};
-            const value = String(node.value ?? "");
-            return {
-                [node.dataset.configField]:
-                    value !== "" && !Number.isNaN(Number(value)) ? Number(value) : value,
-            };
-        },
-        defaults: (entry) => {
-            const { name, options } = selectOptions(entry);
-            return { [name]: entry.options?.default ?? options[0]?.value ?? 0 };
-        },
-    },
     select: {
-        render: selectInput,
+        control: selectInput,
         read: (section) => {
             const node = section.querySelector("select[data-config-field]");
             if (!node) return {};
@@ -318,12 +262,16 @@ export const INPUTS = {
         }),
     },
     number: {
-        render: numberInput,
+        control: numberControl,
         read: (section) => {
             const field = firstFieldName(section);
             return { [field]: readNumber(section, field) };
         },
-        defaults: (entry) => ({ [entry.fields?.[0] || "value"]: 0 }),
+        // Parte de onde a escala parte: um campo que vai de 1 a 6 aberto em zero oferece um
+        // valor que o aparelho recusa.
+        defaults: (entry) => ({
+            [entry.fields?.[0] || "value"]: entry.options?.default ?? entry.options?.min ?? 0,
+        }),
     },
     phone: {
         render: phoneInput,
@@ -353,28 +301,9 @@ export const INPUTS = {
         }),
         defaults: () => ({ enabled: true, intervalMinutes: 60 }),
     },
-    requestAction: {
-        render: requestActionInput,
+    // Uma acção não tem campo nenhum: o que se envia é o próprio pedido. Sem `render`, o
+    // cartão sabe que pode desenhar a versão de uma linha.
+    action: {
         read: () => ({}),
-        help: () => "sem parâmetros",
-    },
-    resetAction: {
-        render: resetActionInput,
-        read: () => ({}),
-    },
-    list: {
-        render: (entry, desired) => listInput(entry, desired, "numbers", entry.label || "Lista"),
-        read: (section) => {
-            const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
-            return { numbers: readPhoneArray(section, "numbers").slice(0, limit) };
-        },
-        defaults: () => ({ numbers: ["", "", ""] }),
-        help: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
-    },
-    contacts: {
-        render: contactsInput,
-        read: (section) => ({ contacts: readContacts(section) }),
-        defaults: () => ({ contacts: [{ name: "", phone: "" }] }),
-        help: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
     },
 };

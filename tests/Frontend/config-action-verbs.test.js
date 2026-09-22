@@ -32,9 +32,9 @@ const buttons = (el) => [...el.querySelectorAll("[data-action=\"saveConfig\"]")]
     .map((b) => ({ texto: b.textContent.trim(), valor: b.dataset.actionValue }));
 
 test("os dois verbos aparecem como botões", () => {
-    const acoes = buttons(root(ACTION));
+    const actionButtons = buttons(root(ACTION));
 
-    assert.deepEqual(acoes, [
+    assert.deepEqual(actionButtons, [
         { texto: "Fazer vibrar", valor: "on" },
         { texto: "Parar", valor: "off" },
     ]);
@@ -46,9 +46,9 @@ test("não há interruptor a fingir que a acção tem estado guardado", () => {
 
 /** Uma acção sem verbos declarados continua a ser o que era. */
 test("sem verbos declarados, o cartão não muda", () => {
-    const semVerbos = { ...ACTION };
-    delete semVerbos.actions;
-    const el = root(semVerbos);
+    const withoutVerbs = { ...ACTION };
+    delete withoutVerbs.actions;
+    const el = root(withoutVerbs);
 
     assert.ok(el.querySelector("input[type=\"checkbox\"]"), "devia continuar a ter o interruptor");
     assert.deepEqual(buttons(el).map((b) => b.valor), [undefined]);
@@ -62,17 +62,17 @@ test("sem verbos declarados, o cartão não muda", () => {
  * de começar, que foi exactamente o que aconteceu quando o valor não viajava.
  */
 test("cada verbo envia o seu valor", () => {
-    const seccao = parseFragment(
+    const section = parseFragment(
         "<section data-config-section data-config-action-field=\"enabled\"></section>",
     ).firstElementChild;
 
-    assert.deepEqual(configActionPayload(seccao, "on"), { enabled: true });
-    assert.deepEqual(configActionPayload(seccao, "off"), { enabled: false });
+    assert.deepEqual(configActionPayload(section, "on"), { enabled: true });
+    assert.deepEqual(configActionPayload(section, "off"), { enabled: false });
 });
 
 /** O «Enviar» normal continua a ler os campos do cartão. */
 test("sem verbo, o valor vem do formulário como sempre", () => {
-    const seccao = parseFragment("<section data-config-section></section>").firstElementChild;
+    const section = parseFragment("<section data-config-section></section>").firstElementChild;
 
-    assert.equal(configActionPayload(seccao, ""), null);
+    assert.equal(configActionPayload(section, ""), null);
 });

@@ -153,16 +153,7 @@ function capabilityDefinitionForKey(capabilityCatalog, capabilityKey) {
 function normalizeConfigEntry(entry) {
     const capabilityKey = String(entry.capabilityKey || "");
     const key = capabilityKey || String(entry.key || "");
-    const genericInputs = new Set([
-        "alarm_clock",
-        "phonebook",
-        "sos_contacts",
-        "call_whitelist",
-        "whitelist_enabled",
-    ]);
-    const input = genericInputs.has(capabilityKey)
-        ? capabilityKey
-        : String(entry.input || "json");
+    const input = String(entry.input || "json");
     const label = capabilityKey === "alarm_clock"
         ? "Alarmes"
         : String(entry.label || key || "");

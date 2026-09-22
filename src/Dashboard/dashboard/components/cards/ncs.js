@@ -1,5 +1,5 @@
-import { capabilityLabel } from "../capability-catalog.js";
-import { PRESS_TYPE_LABEL } from "../domain.js";
+import { capabilityLabel } from "../../capability-catalog.js";
+import { PRESS_TYPE_LABEL } from "../../domain.js";
 
 /**
  * Os cartões da chamada de enfermagem Voerka: o pedido de ajuda e o pager.

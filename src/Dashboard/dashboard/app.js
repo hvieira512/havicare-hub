@@ -18,7 +18,7 @@ import {
     loadJsonStorage,
     loadTextStorage,
 } from "./storage.js";
-import { storedFilterList } from "./devices/filters.js";
+import { storedFilterList } from "./devices/list-filters.js";
 import {
     ensureProtocolsLoaded,
     initDeviceList,
@@ -27,11 +27,7 @@ import {
 import { renderSelection } from "./devices/detail.js";
 import { initDeviceStream } from "./devices/stream.js";
 import { initEditWizard } from "./devices/edit-wizard.js";
-import { initDeviceModal } from "./devices/device-modal.js";
-import {
-    initDeviceConfigPanel,
-    syncDeviceModalCommandStates,
-} from "./devices/config/panel.js";
+import { configPanelIfLoaded, initDeviceModal, loadConfigPanel } from "./devices/device-modal.js";
 import { initCreateWizard, openWizard } from "./devices/create-wizard.js";
 import {
     initGatewayLinksUi,
@@ -40,7 +36,6 @@ import {
 import { initNotifications } from "./notifications.js";
 import { initRadarMapModal } from "./devices/radar-map-modal.js";
 import { initSettings } from "./settings/index.js";
-import { initSettingsClickHandlers } from "./settings/clicks.js";
 
 /** De quanto em quanto tempo se relê o dispositivo escolhido. Ver a nota no `startDashboard`. */
 const DEVICE_REFRESH_MS = 30000;
@@ -55,7 +50,6 @@ let radarMapModal = null;
 export async function startDashboard() {
     els = cacheElements();
     initGatewayLinksUi({ els });
-    initDeviceConfigPanel({ els });
     deviceModal = new bootstrap.Modal(document.getElementById("deviceModal"));
     deviceWizardModal = new bootstrap.Modal(
         document.getElementById("deviceWizardModal"),
@@ -80,12 +74,27 @@ export async function startDashboard() {
         onLicenseChange: () => void refreshGatewayOptions([]),
     });
     initCreateWizard({ els, wizardModal: deviceWizardModal });
-    initSettingsClickHandlers({ els });
     initDeviceList({ els, ui });
     initSettings({ els, ui });
     initDeviceStream({
         renderSelection,
-        onCommandsUpdated: syncDeviceModalCommandStates,
+        // O stream corre sempre e o painel de configurações só existe depois de alguém abrir
+        // o separador. Mas o que esta chamada faz não é só desenhar: escreve o estado de
+        // entrega de cada comando, e desistir dela deixava o painel a mostrar «Em fila» sobre
+        // um comando já confirmado até o modal ser reaberto. Com o modal aberto manda-se vir
+        // o painel; sem ele não há nada a que aplicar o estado, e o `editDevice` relê tudo.
+        onCommandsUpdated: (imei, commands) => {
+            const loaded = configPanelIfLoaded();
+            if (loaded) {
+                loaded.panel.syncDeviceModalCommandStates(imei, commands);
+                return;
+            }
+            // A mesma condição que o painel usa para decidir se a mensagem lhe diz respeito.
+            if (String(state.deviceModal.imei || "") !== String(imei || "")) return;
+            void loadConfigPanel()
+                .then(({ panel }) => panel.syncDeviceModalCommandStates(imei, commands))
+                .catch(() => {});
+        },
     });
     initNotifications({
         els,
@@ -120,10 +129,26 @@ export async function startDashboard() {
         renderSelection();
     }
 
-    // Isto relê o registo do dispositivo -- estado de ligação, modelo, configuração -- e não
-    // o histórico: o `recent` preserva-se de propósito porque só o stream o traz, e é o
-    // `stream.js` que garante que ele volta a ligar-se quando cai.
-    setInterval(refreshSelectedDevice, DEVICE_REFRESH_MS);
+    startSelectedDevicePolling();
+}
+
+/**
+ * Relê o registo do dispositivo -- estado de ligação, modelo, configuração -- e não o
+ * histórico: o `recent` preserva-se de propósito porque só o stream o traz, e é o `stream.js`
+ * que garante que ele volta a ligar-se quando cai.
+ *
+ * Um separador escondido não sonda, como o `stream.js` também não. Ao voltar relê-se já: meio
+ * minuto a mostrar o dispositivo como ele estava é pior do que o pedido que se poupou.
+ */
+export function startSelectedDevicePolling() {
+    const refreshWhenVisible = () => {
+        if (!document.hidden) {
+            refreshSelectedDevice();
+        }
+    };
+
+    setInterval(refreshWhenVisible, DEVICE_REFRESH_MS);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
 }
 
 function refreshSelectedDevice() {

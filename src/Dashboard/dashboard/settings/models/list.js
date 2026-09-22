@@ -4,7 +4,8 @@ import {
 } from "../../api/index.js";
 import { state } from "../../state.js";
 import { esc } from "../../format.js";
-import { deviceTypeIcon, modelImageHtml } from "../../widgets.js";
+import { deviceTypeIcon } from "../../components/device-type-tiles.js";
+import { modelImageHtml } from "../../components/model-image.js";
 import { stateBadge } from "../../components/state-badge.js";
 import {
     deviceTypeLabel,

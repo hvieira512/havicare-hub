@@ -22,7 +22,7 @@ final class ConfigurationInputDefaults
         $field = static fn(int $index = 0): string => (string)($entry['fields'][$index] ?? '');
 
         return match ($input) {
-            'toggle' => [($field(0) ?: 'enabled') => true],
+            'toggle', 'whitelist_enabled' => [($field(0) ?: 'enabled') => true],
             // Zero só serve quando está dentro da escala: um tom de pele vai de 1 a 6, e o
             // formulário partia de um valor que o aparelho recusa.
             'number' => [($field(0) ?: 'value') => (int)($entry['options']['min'] ?? 0)],
@@ -42,7 +42,7 @@ final class ConfigurationInputDefaults
             'text' => [($field(0) ?: 'value') => ''],
             'pushMessage' => ['message' => ''],
             'makeCall' => ['phone' => ''],
-            'resetAction', 'requestAction' => [],
+            'action' => [],
             'intervalToggle' => ['enabled' => true, 'intervalMinutes' => 60],
             // A janela é sempre acompanhada de um número quando a definição o declara: o
             // intervalo de um lembrete, o brilho do ecrã. O nome do campo vem da definição, e
@@ -110,8 +110,13 @@ final class ConfigurationInputDefaults
                 'exerciseHRMax' => 140,
                 'exerciseRemindValue' => 140,
             ],
-            'list' => ['numbers' => array_fill(0, max(1, (int)($entry['limit'] ?? 3)), '')],
-            'contacts' => ['contacts' => [['name' => '', 'phone' => '']]],
+            // As capacidades que se servem como um cartão só declaram o campo desse cartão.
+            // A forma do payload não vem do nome delas: vem do campo nativo que o protocolo
+            // usa -- a lista branca do 4P Touch são números soltos, a da Vivistar são
+            // contactos com nome.
+            'sos_contacts', 'phonebook', 'call_whitelist' => $field(0) === 'numbers'
+                ? ['numbers' => array_fill(0, max(1, (int)($entry['limit'] ?? 3)), '')]
+                : ['contacts' => [['name' => '', 'phone' => '']]],
             'takePills' => [
                 'reminderSettings' => [
                     ['time' => '08:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],

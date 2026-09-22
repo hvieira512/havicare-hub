@@ -4,32 +4,51 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { reachableFrom } from "./support/module-graph.js";
+
 /**
  * Guarda contra um grafo de módulos ES partido: um nome que um módulo importa e nenhum
  * exporta derruba a dashboard numa página branca, e o `node --check` não o apanha porque cada
  * ficheiro é individualmente válido.
  *
- * Avaliá-los em node falha em globais como o `window` -- isso é esperado e ignorado. Só um
- * `SyntaxError` na ligação é um import genuinamente partido.
+ * Avaliá-los em node falha em globais como o `window` -- isso é esperado e ignorado. O que
+ * não se ignora são as duas formas de um import partido: um nome que ninguém exporta, que dá
+ * `SyntaxError`, e um caminho para um ficheiro que não existe, que dá `ERR_MODULE_NOT_FOUND`.
+ * A segunda é a que aparece ao mover ou apagar um módulo, que é precisamente quando isto é
+ * preciso.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ENTRY = path.join(here, "../../src/Dashboard/main.js");
+const APP = path.join(here, "../../src/Dashboard/dashboard/app.js");
 const MODULE_ROOT = path.join(here, "../../src/Dashboard/dashboard");
+const CONFIG_PANEL = path.join(MODULE_ROOT, "devices/config/panel.js");
+const CONFIG_HANDLERS = path.join(MODULE_ROOT, "devices/config/handlers.js");
 
-/** A porta de entrada do grafo: a dashboard entra toda pelo `main.js`. */
-const ENTRY_POINTS = [ENTRY];
+/**
+ * As portas de entrada do grafo. Cada uma está aqui porque quem a traz, traz-na por
+ * `import()`: avaliar quem chama não liga nada do que está por trás, e sem a nomear aqui um
+ * import partido lá dentro passava sem ninguém dar por ele.
+ *
+ * O `app.js` pendura-se no `main.js` assim; o painel de configurações pendura-se no
+ * `device-modal.js` pela mesma via, e os dois módulos abaixo são as suas duas portas -- entre
+ * elas alcançam o cluster inteiro.
+ */
+const ENTRY_POINTS = [ENTRY, APP, CONFIG_PANEL, CONFIG_HANDLERS];
 
-test("module graph links: main.js", async () => {
-    try {
-        await import(ENTRY);
-    } catch (error) {
-        assert.notEqual(
-            error.constructor.name,
-            "SyntaxError",
-            `broken import in the main.js graph -- ${error.message}`,
-        );
-    }
-});
+for (const entry of ENTRY_POINTS) {
+    test(`as ligações do grafo de módulos a partir do ${path.basename(entry)}`, async () => {
+        try {
+            await import(entry);
+        } catch (error) {
+            const broken = error.constructor.name === "SyntaxError" ||
+                error.code === "ERR_MODULE_NOT_FOUND";
+            assert.ok(
+                !broken,
+                `import partido no grafo do ${path.basename(entry)} -- ${error.message}`,
+            );
+        }
+    });
+}
 
 const listModules = (dir) =>
     fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -38,20 +57,8 @@ const listModules = (dir) =>
         return entry.name.endsWith(".js") ? [full] : [];
     });
 
-const reachableFrom = (entry, seen = new Set()) => {
-    if (seen.has(entry) || !fs.existsSync(entry)) return seen;
-    seen.add(entry);
-    const source = fs.readFileSync(entry, "utf8");
-    for (const [, specifier] of source.matchAll(/from\s+["']([^"']+)["']/g)) {
-        if (specifier.startsWith(".")) {
-            reachableFrom(path.resolve(path.dirname(entry), specifier), seen);
-        }
-    }
-    return seen;
-};
-
 test("every dashboard module is reachable from an entry point", () => {
-    const reachable = ENTRY_POINTS.reduce((seen, entry) => reachableFrom(entry, seen), new Set());
+    const reachable = reachableFrom(ENTRY_POINTS);
     const orphans = listModules(MODULE_ROOT).filter((file) => !reachable.has(file));
 
     // Um órfão é código morto ou um módulo que a verificação de ligação acima nunca vê -- e

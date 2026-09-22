@@ -1,8 +1,8 @@
-import { eventTime, rowPayload } from "./format.js";
-import { capabilityLabel } from "./capability-catalog.js";
-import { telemetryCard } from "./card-shell.js";
-import { cardIcon, cardTone, uplinkCardContent } from "./telemetry-cards.js";
-import { locationCoordinates } from "./cards/location.js";
+import { eventTime, rowPayload } from "../../format.js";
+import { capabilityLabel } from "../../capability-catalog.js";
+import { telemetryCard } from "./shell.js";
+import { cardIcon, cardTone, uplinkCardContent } from "./telemetry.js";
+import { locationCoordinates } from "./location.js";
 
 /**
  * O cartão de pedido (downlink): o que se *pede* a um dispositivo, com a última leitura da
@@ -112,7 +112,7 @@ function requestTelemetryTypes(type) {
     return [type];
 }
 
-export function renderRequestCardShell(
+export function requestCardShell(
     command,
     loading,
     telemetry = [],

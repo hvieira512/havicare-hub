@@ -1,5 +1,5 @@
-import { html, raw } from "./html.js";
-import { stateBadge } from "./components/state-badge.js";
+import { html, raw } from "../../html.js";
+import { stateBadge } from "../state-badge.js";
 
 /**
  * A casca de um cartão: o ícone, o título, e o corpo que quem chama traz. É só a moldura --

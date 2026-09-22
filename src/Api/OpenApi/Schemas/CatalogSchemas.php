@@ -192,7 +192,12 @@ final class CatalogSchemas
                     'command' => ['type' => 'string', 'example' => 'BP76'],
                     'label' => ['type' => 'string', 'example' => 'Deteção de queda'],
                     'kind' => ['type' => 'string', 'example' => 'config'],
-                    'risk' => ['type' => 'string', 'example' => 'normal'],
+                    'risk' => ['type' => 'string', 'enum' => ['normal', 'destructive'], 'example' => 'normal'],
+                    // Presente só nas destrutivas: o que a acção faz ao aparelho neste
+                    // protocolo, que é o que a confirmação tem de mostrar.
+                    'confirm' => ['type' => 'string', 'nullable' => true, 'example' => 'O relógio fica sem comunicar enquanto arranca.'],
+                    // Só onde o rótulo é um nome e não serve de botão.
+                    'verb' => ['type' => 'string', 'nullable' => true, 'example' => 'Repor de fábrica'],
                     'input' => ['type' => 'string', 'example' => 'toggle'],
                     'fields' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['enabled']],
                     'expectedReplyTypes' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['AP76']],

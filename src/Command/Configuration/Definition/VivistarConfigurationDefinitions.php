@@ -9,9 +9,9 @@ final class VivistarConfigurationDefinitions
         $entry = ConfigurationDefinition::make(...);
 
         return [
-            $entry('sosContacts', 'BP12', 'Contactos SOS', 'list', ['numbers'], ['AP12'], 'contacts', 10, 3),
-            $entry('call_whitelist', 'BP14', 'Lista de chamadas autorizadas', 'contacts', ['contacts'], ['AP14'], 'contacts', 20, 10),
-            $entry('whitelist_enabled', 'BP84', 'Restringir chamadas recebidas', 'toggle', ['enabled'], ['AP84'], 'contacts', 25),
+            $entry('sosContacts', 'BP12', 'Contactos SOS', 'sos_contacts', ['numbers'], ['AP12'], 'contacts', 10, 3),
+            $entry('call_whitelist', 'BP14', 'Lista de chamadas autorizadas', 'call_whitelist', ['contacts'], ['AP14'], 'contacts', 20, 10),
+            $entry('whitelist_enabled', 'BP84', 'Restringir chamadas recebidas', 'whitelist_enabled', ['enabled'], ['AP84'], 'contacts', 25),
             $entry('pushMessage', 'BP40', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], ['AP40'], 'system', 5, transient: true),
             $entry('workingMode', 'BP33', 'Modo de trabalho', 'workingMode', ['mode'], ['AP33'], 'system', 10, null, [
                 'mode' => [
@@ -32,7 +32,7 @@ final class VivistarConfigurationDefinitions
                     ['value' => 3, 'label' => 'Alta'],
                 ],
             ]),
-            $entry('reminders', 'BP85', 'Lembretes / Alarmes', 'reminders', ['masterEnabled', 'items'], ['AP85'], 'alerts', 30, null, [
+            $entry('reminders', 'BP85', 'Lembretes / Alarmes', 'alarm_clock', ['masterEnabled', 'items'], ['AP85'], 'alerts', 30, null, [
                 'days' => [
                     ['value' => 1, 'label' => 'Seg'],
                     ['value' => 2, 'label' => 'Ter'],

@@ -25,9 +25,9 @@ import {
     cardTone,
     statusBadge,
     uplinkCardContent,
-} from "../telemetry-cards.js";
-import { telemetryCard } from "../card-shell.js";
-import { renderRequestCardShell, requestCardContent } from "../request-card.js";
+} from "../components/cards/telemetry.js";
+import { telemetryCard } from "../components/cards/shell.js";
+import { requestCardShell, requestCardContent } from "../components/cards/request.js";
 import { fallSummaryCard, helpCallSummaryCard } from "./event-summary-cards.js";
 import { onRadarPresence } from "./radar-map-modal.js";
 import { activityTable } from "./activity-table.js";
@@ -50,9 +50,14 @@ let els;
 
 function initDeviceDetailView(context) {
     els = context.els;
-    // O re-render entra por aqui e não por um import de volta: os filtros reduzem a lista, o
-    // ecrã é que a desenha, e o grafo de módulos fica sem ciclos.
-    initDetailFilters({ els, onChange: renderSelection });
+    // Tudo o que redesenha entra por aqui e não por um import de volta: os filtros reduzem a
+    // lista e paginam-na, o ecrã é que a desenha, e o grafo de módulos fica sem ciclos.
+    initDetailFilters({
+        els,
+        onChange: renderSelection,
+        renderDownlinkRequests,
+        renderTelemetryList,
+    });
 }
 
 function renderSelection() {
@@ -302,9 +307,6 @@ function renderClientPager(prefix, totalRows, totalPages) {
     });
 }
 
-// A tabela genérica de atividade (linhas, gaveta e paginação de rolagem) vive no seu próprio
-// módulo -- a telemetria e os pedidos usam-na igual, e não tem nada do detalhe do dispositivo.
-
 function telemetryActivityRow(payload) {
     const type = payload?.type || "telemetry";
     const data =
@@ -387,7 +389,7 @@ function renderRequestCardGroup(
 ) {
     const cards = group.cards
         .map((command) =>
-            renderRequestCardShell(
+            requestCardShell(
                 command,
                 state.loadingCommands.has(
                     String(

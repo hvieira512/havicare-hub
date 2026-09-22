@@ -109,6 +109,12 @@ async function openStream(imei, generation) {
             controller.abort();
             return;
         }
+        // Uma credencial recusada não melhora com tentativas: religar dava uma dashboard a
+        // bater à porta com recuo exponencial em vez de pedir autenticação.
+        if (response.status === 401 || response.status === 403) {
+            window.dispatchEvent(new Event("hub-dashboard-auth-required"));
+            return;
+        }
         if (!response.ok || !response.body) {
             scheduleReconnect();
             return;

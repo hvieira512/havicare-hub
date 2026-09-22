@@ -1,7 +1,11 @@
 import { esc } from "../../../format.js";
-import { field } from "../../../widgets.js";
+import { field } from "../../../components/form-field.js";
 import { renderPhoneControl } from "../../../phone.js";
-import { normalizeAlarmClockRecurrenceKind, weekdayPicker } from "../alarm-fields.js";
+import {
+    normalizeAlarmClockRecurrenceKind,
+    readWeekdays,
+    weekdayPicker,
+} from "../alarm-fields.js";
 import {
     boolValue,
     defaultAlarmClockItem,
@@ -12,7 +16,6 @@ import {
 import { contactsInput, toggleInput } from "./generic.js";
 import { enabledSwitch, nextUid, numberField } from "./shared.js";
 import {
-    readAlarmClock,
     readCheckbox,
     readContacts,
     readNumber,
@@ -29,7 +32,7 @@ import {
  * escolhe pela chave de capacidade e não pelo `input` declarado.
  */
 
-export function diaperSensitivityInput(desired, meta = {}) {
+function diaperSensitivityInput(desired, meta = {}) {
     const presets = meta.presets || {};
     const bounds = meta.bounds || {};
     const [rangeMin, rangeMax] = bounds.pollutionRange || [2, 10];
@@ -79,25 +82,7 @@ export function diaperSensitivityInput(desired, meta = {}) {
         </div>`;
 }
 
-/** Um campo numérico de configuração. Dezasseis sítios repetiam esta linha e a sua escapagem. */
-
-export function bloodPressureInput(desired) {
-    return `
-        <div class="row g-3">
-            ${field(
-                "Sistólica",
-                numberField("systolic", desired.systolic ?? 120),
-                { cls: "col-md-6" },
-            )}
-            ${field(
-                "Diastólica",
-                numberField("diastolic", desired.diastolic ?? 80),
-                { cls: "col-md-6" },
-            )}
-        </div>`;
-}
-
-export function windowToggleInput(_entry, desired) {
+function windowToggleInput(_entry, desired) {
     const [start = "22:00", end = "08:00"] = String(desired.range ?? "22:00-08:00").split("-");
     return `
         <div class="row g-3 align-items-end">
@@ -109,7 +94,7 @@ export function windowToggleInput(_entry, desired) {
 
 /** Os limiares que o aparelho avalia sobre a medição dele. */
 
-export function heartRateThresholdsInput(_entry, desired) {
+function heartRateThresholdsInput(_entry, desired) {
     return `
         <div class="row g-3 align-items-end">
             <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
@@ -125,7 +110,7 @@ export function heartRateThresholdsInput(_entry, desired) {
  * sem isto correm sobre valores de fábrica.
  */
 
-export function personalInfoInput(_entry, desired) {
+function personalInfoInput(_entry, desired) {
     const sex = desired.sex === "male" ? "male" : "female";
     return `
         <div class="row g-3">
@@ -147,7 +132,7 @@ export function personalInfoInput(_entry, desired) {
 
 /** O interruptor de ligado. O `mt-4` alinha-o por baixo de um campo com etiqueta ao lado. */
 
-export function sosContactsInput(entry, desired, meta = {}) {
+function sosContactsInput(entry, desired, meta = {}) {
     if (meta.sourceCapability === "phonebook") {
         const selected = new Set(Array.isArray(desired) ? desired.map(String) : []);
         const contacts = Array.isArray(meta.phonebookContacts)
@@ -194,13 +179,12 @@ export function sosContactsInput(entry, desired, meta = {}) {
         limit: Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3),
         label: "Contactos SOS",
         emptyLabel: "Adicionar contacto SOS",
-        placeholderPrefix: "SOS",
         helpText: "Até 3 números. A ordem define a posição nos comandos SOS do dispositivo.",
         phoneMaxLength,
     });
 }
 
-export function callWhitelistInput(entry, desired, meta = {}) {
+function callWhitelistInput(entry, desired, meta = {}) {
     if ((meta.protocol || "") === "vivistar-iw") {
         return contactsInput(entry, desired, meta);
     }
@@ -210,7 +194,6 @@ export function callWhitelistInput(entry, desired, meta = {}) {
         limit: Math.max(1, parseInt(String(entry.limit ?? 10), 10) || 10),
         label: "Lista de chamadas autorizadas",
         emptyLabel: "Adicionar número",
-        placeholderPrefix: "Número",
         helpText: "Até 10 números permitidos.",
     });
 }
@@ -227,7 +210,6 @@ function phoneRepeaterInput(entry, desired, options) {
     const label = String(options.label || entry.label || "Lista");
     const helpText = String(options.helpText || "");
     const emptyLabel = String(options.emptyLabel || "Adicionar");
-    const placeholderPrefix = String(options.placeholderPrefix || label);
     const phoneMaxLength = Math.max(0, parseInt(String(options.phoneMaxLength ?? 0), 10) || 0);
 
     return `
@@ -246,7 +228,6 @@ function phoneRepeaterInput(entry, desired, options) {
                             ${renderPhoneControl({
                                 value: String(value || ""),
                                 configField: "numbers",
-                                placeholder: `${placeholderPrefix} ${index + 1}`,
                                 maxLength: phoneMaxLength,
                             })}
                         </div>
@@ -261,7 +242,7 @@ function phoneRepeaterInput(entry, desired, options) {
         </div>`;
 }
 
-export function alarmClockInput(desired, meta = {}) {
+function alarmClockInput(desired, meta = {}) {
     const items = normalizeAlarmClockItems(desired);
     const limit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
     const typeOptions = Array.isArray(meta.type?.options) ? meta.type.options : [];
@@ -405,6 +386,76 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
         </div>`;
 }
 
+/** Os dias da semana só se escolhem na recorrência personalizada. */
+export function syncAlarmClockCustomVisibility(row) {
+    const customWrapper = row?.querySelector("[data-alarm-clock-custom-wrapper]");
+    if (!customWrapper) return;
+
+    const recurrence = row.querySelector("[data-alarm-clock-field=\"recurrenceKind\"]:checked");
+    customWrapper.classList.toggle(
+        "d-none",
+        String(recurrence?.value || "").trim().toLowerCase() !== "custom",
+    );
+}
+
+/** Uma linha sem hora nunca chegou a ser preenchida, e por isso não vai no payload. */
+function readAlarmClock(section) {
+    const items = Array.from(
+        section.querySelectorAll("[data-repeat-row=\"alarm_clock\"]"),
+    )
+        .map((row) => {
+            const recurrenceKind = normalizeAlarmClockRecurrenceKind(
+                row.querySelector("[data-alarm-clock-field=\"recurrenceKind\"]:checked")?.value || "once",
+            );
+            const item = {
+                time: String(
+                    row.querySelector("[data-alarm-clock-field=\"time\"]")?.value || "",
+                ).trim(),
+                enabled:
+                    row.querySelector("[data-alarm-clock-field=\"enabled\"]")?.checked ||
+                    false,
+                recurrence: { kind: recurrenceKind },
+            };
+
+            const labelField = row.querySelector("[data-alarm-clock-field=\"label\"]");
+            if (labelField) {
+                const label = String(labelField.value || "").trim();
+                if (label !== "") {
+                    item.label = label;
+                }
+            }
+
+            const urlField = row.querySelector("[data-alarm-clock-field=\"url\"]");
+            if (urlField) {
+                const url = String(urlField.value || "").trim();
+                if (url !== "") {
+                    item.url = url;
+                }
+            }
+
+            const typeField = row.querySelector("[data-alarm-clock-field=\"type\"]:checked");
+            if (typeField) {
+                const type = parseInt(String(typeField.value || "1"), 10);
+                if (Number.isFinite(type)) {
+                    item.type = type;
+                }
+            }
+
+            if (item.recurrence.kind === "custom") {
+                const days = readWeekdays(row);
+                item.recurrence.days = days;
+                if (!Array.isArray(days) || days.length === 0) {
+                    throw new Error("Selecione pelo menos um dia para a recorrência personalizada");
+                }
+            }
+
+            return item;
+        })
+        .filter((item) => item.time !== "");
+
+    return { items };
+}
+
 /**
  * Os descritores dos campos de capacidade genérica.
  *
@@ -420,14 +471,6 @@ export const INPUTS = {
             pollutionValue: readNumber(section, "pollutionValue"),
         }),
         // Sem `defaults`: abre vazio. Não é decisão desta camada qual seria o valor plausível.
-    },
-    bloodPressure: {
-        render: (_entry, desired) => bloodPressureInput(desired),
-        read: (section) => ({
-            systolic: readNumber(section, "systolic"),
-            diastolic: readNumber(section, "diastolic"),
-        }),
-        defaults: () => ({ systolic: 120, diastolic: 80 }),
     },
     windowToggle: {
         render: windowToggleInput,

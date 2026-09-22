@@ -1,5 +1,5 @@
 import { esc, fieldLabel } from "../../../format.js";
-import { field } from "../../../widgets.js";
+import { field } from "../../../components/form-field.js";
 import {
     WONLEX_MEDICATION_PERIODS,
     boolValue,
@@ -18,15 +18,14 @@ import {
 /**
  * Os campos que só a Wonlex declara.
  *
- * São doze dos quarenta tipos de campo e valiam cerca de um terço do antigo `inputs.js`. A
- * Wonlex empacota quase tudo em `deviceConfig` e `deviceMeasuringFrequency`, e por isso cada
- * limiar precisa do seu próprio formulário em vez de um campo numérico solto.
+ * A Wonlex empacota quase tudo em `deviceConfig` e `deviceMeasuringFrequency`, e por isso
+ * cada limiar precisa do seu próprio formulário em vez de um campo numérico solto.
  */
 
 /** Os painéis Wonlex trazem o estado em `enabled` ou em `switchState`, conforme a geração. */
 const wonlexEnabled = (desired) => boolValue(desired.enabled ?? desired.switchState, true);
 
-export function wonlexBloodPressureWarningInput(desired) {
+function wonlexBloodPressureWarningInput(desired) {
     return `
         <div class="vstack gap-3">
             ${enabledSwitch(wonlexEnabled(desired))}
@@ -45,7 +44,7 @@ export function wonlexBloodPressureWarningInput(desired) {
         </div>`;
 }
 
-export function wonlexSleepSettingsInput(desired) {
+function wonlexSleepSettingsInput(desired) {
     return `
         <div class="vstack gap-3">
             ${enabledSwitch(wonlexEnabled(desired))}
@@ -69,7 +68,7 @@ export function wonlexSleepSettingsInput(desired) {
         </div>`;
 }
 
-export function wonlexReminderThresholdInput(entry, desired) {
+function wonlexReminderThresholdInput(entry, desired) {
     const valueField = (entry.fields || []).includes("RemindValue")
         ? "RemindValue"
         : "reminderValue";
@@ -88,7 +87,7 @@ export function wonlexReminderThresholdInput(entry, desired) {
         </div>`;
 }
 
-export function wonlexHeartRateRangeInput(desired) {
+function wonlexHeartRateRangeInput(desired) {
     const exerciseEnabled = boolValue(
         desired.exerciseEnabled ?? desired.exerciseSwitchState,
         true,
@@ -127,7 +126,7 @@ export function wonlexHeartRateRangeInput(desired) {
         </div>`;
 }
 
-export function wonlexMedicationPlansInput(desired) {
+function wonlexMedicationPlansInput(desired) {
     const plans = normalizeWonlexMedicationPlans(desired);
     if (plans.length === 0) {
         plans.push(defaultWonlexMedicationPlan());
@@ -259,6 +258,35 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                 </div>
             </div>
         </div>`;
+}
+
+/** O número de cada medicamento é a sua posição na lista, e remover um a meio desalinha-os. */
+export function renumberWonlexMedicationPlans(section) {
+    section
+        ?.querySelectorAll("[data-repeat-row=\"wonlexMedicationPlan\"]")
+        .forEach((row, index) => {
+            const number = row.querySelector("[data-medication-plan-number]");
+            if (number) {
+                number.textContent = String(index + 1);
+            }
+        });
+}
+
+/**
+ * A hora de um período só se edita com o período escolhido, e nasce às 08:00 para não ficar
+ * vazia -- uma hora em branco é recusada na leitura.
+ */
+export function syncWonlexMedicationPeriod(checkbox) {
+    const row = checkbox.closest("[data-repeat-row=\"wonlexMedicationPlan\"]");
+    const periodTime = row?.querySelector(
+        `[data-medication-period-time="${checkbox.value}"]`,
+    );
+    if (!periodTime) return;
+
+    periodTime.disabled = !checkbox.checked;
+    if (checkbox.checked && String(periodTime.value || "") === "") {
+        periodTime.value = "08:00";
+    }
 }
 
 function readWonlexMedicationPlans(section) {

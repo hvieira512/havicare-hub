@@ -22,11 +22,12 @@ final class ConfigurationDefaultPayloadTest extends TestCase
      * estão.
      */
     private const INPUTS_AWAITING_USER_INPUT = [
-        'contacts',
-        'list',
+        'call_whitelist',
         'makeCall',
         'phone',
+        'phonebook',
         'pushMessage',
+        'sos_contacts',
         'takePills',
         'text',
     ];

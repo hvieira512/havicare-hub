@@ -1,4 +1,4 @@
-import { html, raw } from "../html.js";
+import { html, raw } from "../../html.js";
 
 /**
  * Os cartões do sensor de fralda: humidade, bandas e canais afetados.

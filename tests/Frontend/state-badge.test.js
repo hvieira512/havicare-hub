@@ -43,10 +43,10 @@ test("a pastilha corrige o peso, a altura de linha e o padding do `badge`", () =
  * o peso de um alarme. Os outros tons já são os da plataforma e ficam como estão.
  */
 test("o tom neutro usa a cor suave do corpo, e não a de ênfase", () => {
-    const neutro = stateBadge("Desligado");
+    const neutral = stateBadge("Desligado");
 
-    assert.match(neutro, /class="[^"]*\btext-body-secondary\b/);
-    assert.doesNotMatch(neutro, /text-secondary-emphasis/);
+    assert.match(neutral, /class="[^"]*\btext-body-secondary\b/);
+    assert.doesNotMatch(neutral, /text-secondary-emphasis/);
     assert.match(stateBadge("Ativo", "success"), /class="[^"]*\btext-success-emphasis\b/);
 });
 

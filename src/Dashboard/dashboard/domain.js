@@ -154,6 +154,25 @@ export function modelDisplayName(supplier, model, models = []) {
     return info ? modelCommercialName(info) : model;
 }
 
+/**
+ * O fornecedor à frente do nome comercial, sem o dizer duas vezes.
+ *
+ * Seis dos vinte modelos da frota já o trazem no nome -- «MONIT MECS Pro», «MOKOSmart
+ * MKGW3» --, e juntá-los em cru dava «MONIT MONIT MECS Pro» no cabeçalho do modal. Basta
+ * comparar o início: os fornecedores do catálogo são nomes de marca distintos, e nenhum é
+ * prefixo de outro.
+ */
+export function supplierModelLabel(supplier, commercial) {
+    const brand = String(supplier || "");
+    const name = String(commercial || "");
+    if (brand === "" || name === "") {
+        return brand || name;
+    }
+    return name.toLowerCase().startsWith(brand.toLowerCase())
+        ? name
+        : `${brand} ${name}`;
+}
+
 export function modelsForSupplierAndType(
     supplier,
     deviceType,
@@ -285,74 +304,3 @@ export const DETECTION_TYPE_LABEL = {
     area_entry: "Entrou na área",
     area_exit: "Saiu da área",
 };
-
-/**
- * O tom de cada postura em hexadecimal, para quem desenha fora do CSS.
- *
- * A planta da divisão é uma tela e não marcação, e por isso não lhe chegam as classes do
- * Bootstrap. São os mesmos tons das pastilhas: uma pessoa deitada não pode ser azul no mapa e
- * verde no cartão que está ao lado dele no ecrã.
- */
-const TONE_HEX = {
-    success: "#198754",
-    info: "#0dcaf0",
-    warning: "#ffc107",
-    danger: "#dc3545",
-    secondary: "#6c757d",
-};
-
-/**
- * A postura de uma pessoa vista por um radar: o ícone, o tom e o glifo.
- *
- * O `icon` é a classe do Font Awesome para a marcação e o `glyph` é o mesmo ícone em ponto de
- * código, que é o que a tela precisa -- vêm em par de propósito, para o mapa e a pastilha não
- * poderem divergir. Os pontos de código são os do Font Awesome 6 Free que o hub serve; o
- * `` da antena é a versão livre do ícone do radar.
- *
- * A etiqueta não está aqui: vive no `FIELD_VALUE_LABELS.posture` do `format.js`.
- */
-const POSTURE_STYLE = {
-    standing: { icon: "fa-person", glyph: "", tone: "success" },
-    walking: { icon: "fa-person-walking", glyph: "", tone: "success" },
-    confirmed_sitting_up_bed: { icon: "fa-bed", glyph: "", tone: "success" },
-    lying_down: { icon: "fa-bed", glyph: "", tone: "info" },
-    sitting_up_bed: { icon: "fa-bed", glyph: "", tone: "info" },
-    suspected_sitting_up_bed: { icon: "fa-bed", glyph: "", tone: "warning" },
-    squatting: { icon: "fa-chair", glyph: "", tone: "warning" },
-    suspected_sitting_on_ground: { icon: "fa-chair", glyph: "", tone: "warning" },
-    suspected_fall: { icon: "fa-triangle-exclamation", glyph: "", tone: "warning" },
-    confirmed_sitting_on_ground: { icon: "fa-chair", glyph: "", tone: "danger" },
-    fall_confirmation: { icon: "fa-triangle-exclamation", glyph: "", tone: "danger" },
-    initialization: { icon: "fa-question", glyph: "?", tone: "secondary" },
-    unknown: { icon: "fa-question", glyph: "?", tone: "secondary" },
-};
-
-/** Uma postura que o firmware invente cai na desconhecida em vez de deixar o ecrã sem nada. */
-export function postureStyle(posture) {
-    const style = POSTURE_STYLE[String(posture)] || POSTURE_STYLE.unknown;
-
-    return { ...style, color: TONE_HEX[style.tone] };
-}
-
-/** As cores do fabricante para cada tipo de área declarada no aparelho. */
-const AREA_TYPE_STYLE = {
-    1: { label: "Personalizada", color: "#a9a9a9" },
-    2: { label: "Cama", color: "#20c997" },
-    3: { label: "Interferência", color: "#808080" },
-    4: { label: "Porta", color: "#ffa500" },
-    5: { label: "Cama de monitorização", color: "#32cd32" },
-    6: { label: "Região de alarme", color: "#ff4500" },
-};
-
-/** Um tipo que o fabricante acrescente fica cinzento e com o número à vista, em vez de sumir. */
-export function areaTypeStyle(type) {
-    return AREA_TYPE_STYLE[Number(type)] || { label: `Tipo ${type}`, color: "#a9a9a9" };
-}
-
-/** A legenda da planta: os tipos conhecidos, mais o cinzento das outras regiões. */
-export function areaLegend() {
-    return [
-        ...Object.values(AREA_TYPE_STYLE),
-        { label: "Outras regiões", color: "#a9a9a9" },
-    ];
-}

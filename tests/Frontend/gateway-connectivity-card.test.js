@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e esse
 // caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
-import { renderRequestCardShell } from "../../src/Dashboard/dashboard/request-card.js";
+import { requestCardShell } from "../../src/Dashboard/dashboard/components/cards/request.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
 // O nome de uma capacidade vem do catálogo do tipo do dispositivo escolhido, e não de um
@@ -15,7 +15,7 @@ state.capabilityCatalogByType.gateway = [
 ];
 state.selectedDetail = { model: { deviceType: "gateway" } };
 
-const connectivityCard = (data) => renderRequestCardShell(
+const connectivityCard = (data) => requestCardShell(
     { feature: "connectivity", requestable: false },
     false,
     [{ type: "connectivity", occurredAt: "2026-08-07T13:00:00Z", data }],
@@ -64,7 +64,7 @@ test("connectivity falls back to its label when the payload carries nothing", ()
 });
 
 test("connectivity is labelled in Portuguese, not titleized", () => {
-    const html = renderRequestCardShell({ feature: "connectivity", requestable: false }, false, []);
+    const html = requestCardShell({ feature: "connectivity", requestable: false }, false, []);
 
     assert.match(html, /Conectividade/);
     assert.doesNotMatch(html, /Connectivity/);

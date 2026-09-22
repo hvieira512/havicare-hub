@@ -1,5 +1,5 @@
-import { ago } from "../format.js";
-import { html } from "../html.js";
+import { ago } from "../../format.js";
+import { html } from "../../html.js";
 
 /**
  * Os cartões de localização: coordenadas, tipo de fix, precisão e a evidência rádio.

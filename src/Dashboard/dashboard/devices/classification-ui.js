@@ -6,7 +6,8 @@ import {
     modelCommercialName,
     modelInternalName,
 } from "../domain.js";
-import { deviceTypeIcon, modelPreviewHtml } from "../widgets.js";
+import { deviceTypeIcon } from "../components/device-type-tiles.js";
+import { modelPreviewHtml } from "../components/model-image.js";
 
 /**
  * A classificação de um dispositivo -- tipo, modelo e licença -- partilhada pelo assistente

@@ -19,13 +19,6 @@ import {
     showDeviceFields,
 } from "./edit-wizard.js";
 import {
-    catalogForProtocol,
-} from "./config/index.js";
-import {
-    renderDeviceConfigurationModal,
-    resetConfigUiState,
-} from "./config/panel.js";
-import {
     renderSelection,
 } from "./detail.js";
 import {
@@ -48,6 +41,7 @@ import {
     modelInternalName,
     modelsForSupplierAndType,
     normalizeDeviceType,
+    supplierModelLabel,
     supplierProtocol,
     suppliersForDeviceType,
 } from "../domain.js";
@@ -72,7 +66,7 @@ import {
 import {
     modelImageHtml,
     modelPreviewHtml,
-} from "../widgets.js";
+} from "../components/model-image.js";
 import { onlineBadge } from "../components/state-badge.js";
 import {
     blankDeviceModal,
@@ -94,6 +88,42 @@ import {
 
 let els;
 let deviceModal;
+
+/**
+ * O painel de configurações -- 20 módulos e 206 KB -- serve só o separador «Configurações»,
+ * e entra por `import()` na primeira vez que alguém o abre.
+ *
+ * Mora aqui, e não na raiz de composição, porque os dois lados que precisam dele já importam
+ * este módulo: assim o grafo tardio tem uma porta só.
+ */
+let configPanel = null;
+let loadedPanel = null;
+
+export function loadConfigPanel() {
+    return (configPanel ??= Promise.all([
+        import("./config/index.js"),
+        import("./config/panel.js"),
+        import("./config/handlers.js"),
+    ])
+        .then(([catalog, panel, handlers]) => {
+            // O painel guarda os elementos ao arrancar, como os outros módulos de vista. A
+            // memoização garante que isto corre uma vez só, por muitas aberturas que haja.
+            panel.initDeviceConfigPanel({ els });
+            loadedPanel = { catalog, panel, handlers };
+            return loadedPanel;
+        })
+        .catch((error) => {
+            // Uma promessa rejeitada não é nullish: sem a limpar ficava em cache, e toda a
+            // tentativa seguinte devolvia a mesma falha sem voltar a pedir nada ao servidor.
+            configPanel = null;
+            throw error;
+        }));
+}
+
+/** O painel se já cá estiver, sem o mandar vir. Para quem não tem por onde esperar. */
+export function configPanelIfLoaded() {
+    return loadedPanel;
+}
 
 export function initDeviceModal(context) {
     els = context.els;
@@ -151,7 +181,7 @@ export async function editDevice(imei, supplier, model) {
     const activeTab = activeDeviceModalTab();
     els.deviceImei.value = imei;
     els.deviceImei.dataset.originalImei = imei;
-    resetConfigUiState();
+    configPanelIfLoaded()?.panel.resetConfigUiState();
     state.deviceModal = blankDeviceModal({
         mode: "edit",
         activeTab,
@@ -227,7 +257,7 @@ export async function editDevice(imei, supplier, model) {
         state.deviceModal.loading = false;
         await syncDeviceModalContext();
         renderEditWizard();
-        renderDeviceConfigurationModal();
+        configPanelIfLoaded()?.panel.renderDeviceConfigurationModal();
     }
 }
 
@@ -246,7 +276,7 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
     const online = Boolean(device?.online);
     const meta = [
         deviceTypeLabel(normalizeDeviceType(deviceType)),
-        [supplier, commercial].filter((part) => part !== "").join(" "),
+        supplierModelLabel(supplier, commercial),
         licenseId !== "0" && licenseId !== ""
             ? `${company} / ${licenseId}`
             : company,
@@ -312,7 +342,7 @@ export async function renderDeviceSelectors(
     updateDevicePreview();
     renderEditWizard();
     await syncDeviceModalContext();
-    renderDeviceConfigurationModal();
+    configPanelIfLoaded()?.panel.renderDeviceConfigurationModal();
 }
 
 export function renderDeviceTypeSelector(selectedType = "watch") {
@@ -364,7 +394,8 @@ export async function syncDeviceModalContext(loadCatalog = false) {
     state.deviceModal.model = model;
     state.deviceModal.protocol = protocol;
     if (loadCatalog || state.deviceModal.activeTab === "config") {
-        state.deviceModal.catalog = await catalogForProtocol(protocol);
+        const { catalog } = await loadConfigPanel();
+        state.deviceModal.catalog = await catalog.catalogForProtocol(protocol);
     } else {
         state.deviceModal.catalog = state.protocolCatalogs[protocol] || [];
     }
@@ -376,7 +407,7 @@ export async function syncDeviceModalContext(loadCatalog = false) {
         state.deviceModal.deviceType,
     );
     state.deviceModal.licenseId = els.deviceLicenseId.value.trim() || "0";
-    state.deviceModal.simNumber = getDeviceSimNumberValue(false);
+    state.deviceModal.simNumber = deviceSimNumber();
     state.deviceModal.deviceId = els.deviceDeviceId?.value.trim() || "";
 }
 
@@ -388,7 +419,7 @@ export async function ensureDeviceConfigurationCatalogLoaded() {
     }
 
     state.deviceModal.catalogLoading = true;
-    renderDeviceConfigurationModal();
+    configPanelIfLoaded()?.panel.renderDeviceConfigurationModal();
     try {
         await syncDeviceModalContext(true);
     } finally {
@@ -466,7 +497,7 @@ export async function saveDevice() {
 
     if (fields.sim) {
         try {
-            simNumber = getDeviceSimNumberValue(true);
+            simNumber = deviceSimNumberOrThrow();
         } catch {
             // O próprio controlo do número já marca o campo e diz o que está errado.
             els.deviceSimNumberRoot
@@ -569,27 +600,28 @@ function renderDeviceSimNumberField(value = "") {
         return;
     }
 
-    els.deviceSimNumberRoot.innerHTML = renderPhoneControl({
-        value,
-        placeholder: "Número do SIM",
-    });
+    els.deviceSimNumberRoot.innerHTML = renderPhoneControl({ value });
     resetPhoneControls(els.deviceSimNumberRoot);
 }
 
-function getDeviceSimNumberValue(strict = false) {
-    const control =
-        els.deviceSimNumberRoot?.querySelector("[data-phone-control]") || null;
-    if (!control) {
+/**
+ * O número do SIM tal como está no campo, ou vazio se ainda não for um número.
+ *
+ * Serve quem só quer espelhar o formulário no estado: um número a meio de ser escrito não é
+ * motivo para rebentar nada.
+ */
+function deviceSimNumber() {
+    try {
+        return deviceSimNumberOrThrow();
+    } catch {
         return "";
     }
+}
 
-    if (!strict) {
-        try {
-            return normalizePhoneControl(control);
-        } catch {
-            return "";
-        }
-    }
+/** O mesmo número, mas a gravar: aqui um número inválido tem de parar a gravação. */
+function deviceSimNumberOrThrow() {
+    const control =
+        els.deviceSimNumberRoot?.querySelector("[data-phone-control]") || null;
 
-    return normalizePhoneControl(control);
+    return control ? normalizePhoneControl(control) : "";
 }

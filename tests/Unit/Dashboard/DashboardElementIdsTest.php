@@ -9,9 +9,10 @@ use PHPUnit\Framework\TestCase;
 /**
  * Prova que cada `els.qualquerCoisa` que o JavaScript lê existe mesmo na página.
  *
- * O `cacheElements()` devolve `undefined` para um `id` que não exista, e quase todos os
- * leitores se protegem com `?.` -- renomear um `id` num template não parte nada de visível: o
- * ouvinte deixa de ser ligado e o botão passa a não fazer nada, em silêncio.
+ * O `cacheElements()` devolve `undefined` para um `id` que não exista, e a maior parte dos
+ * leitores não se protege: renomear um `id` num template rebenta o arranque da dashboard e
+ * devolve o ecrã de entrada. Onde há `?.`, o botão fica calado em vez de rebentar -- o que é
+ * pior, porque ninguém dá por ele.
  *
  * Uma falha aqui é um `id` renomeado só de um lado, ou um `els.x` que ficou para trás.
  */

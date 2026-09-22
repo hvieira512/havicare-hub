@@ -10,7 +10,8 @@ import {
 import { esc } from "../../format.js";
 import { apiError, toast } from "../../dialogs.js";
 import { clearInvalid, markInvalid } from "../../validation.js";
-import { renderButtonGroup, renderDeviceTypeTiles } from "../../widgets.js";
+import { buttonGroup } from "../../components/button-group.js";
+import { deviceTypeTiles } from "../../components/device-type-tiles.js";
 import {
     deviceTypeLabel,
     deviceTypeOptions,
@@ -59,8 +60,7 @@ function renderModelSupplierButtons(selectedSupplierId) {
     const deviceType = normalizeDeviceType(
         els.modelForm?.dataset.deviceType || "watch",
     );
-    renderButtonGroup(
-        els.modelSupplierButtons,
+    els.modelSupplierButtons.innerHTML = buttonGroup(
         modelSupplierOptions(deviceType),
         String(selectedSupplierId),
         "selectModelSupplier",
@@ -69,7 +69,7 @@ function renderModelSupplierButtons(selectedSupplierId) {
 
 function renderModelDeviceTypeButtons(selectedDeviceType) {
     const { els } = getSettingsModelsRuntime();
-    renderDeviceTypeTiles(els.modelDeviceTypeButtons, deviceTypeOptions, {
+    els.modelDeviceTypeButtons.innerHTML = deviceTypeTiles(deviceTypeOptions, {
         selected: selectedDeviceType,
         action: "selectModelDeviceType",
     });
@@ -147,6 +147,20 @@ function selectModelDeviceType(deviceType) {
     state.modelModal.enabledCapabilities = [];
     renderModelDeviceTypeButtons(els.modelForm.dataset.deviceType);
     void refreshNewModelCapabilityTemplate();
+}
+
+/* ---------- os cliques, delegados na raiz de cada grupo de botões ---------- */
+
+function handleModelSupplierClick(event) {
+    const button = event.target.closest("[data-action=\"selectModelSupplier\"]");
+    if (button) selectModelSupplier(button.dataset.value);
+}
+
+function handleModelDeviceTypeClick(event) {
+    const button = event.target.closest(
+        "[data-action=\"selectModelDeviceType\"]",
+    );
+    if (button) selectModelDeviceType(button.dataset.value);
 }
 
 /** Abre o slide do formulário, com o template do fornecedor já carregado. */
@@ -273,11 +287,10 @@ async function saveModel() {
 }
 
 export {
+    handleModelDeviceTypeClick,
+    handleModelSupplierClick,
     openNewModelForm,
-    refreshNewModelCapabilityTemplate,
     resetModelForm,
     saveModel,
-    selectModelDeviceType,
-    selectModelSupplier,
     updateModelProtocolAndPreview,
 };

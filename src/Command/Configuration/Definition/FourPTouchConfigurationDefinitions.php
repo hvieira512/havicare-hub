@@ -10,9 +10,9 @@ final class FourPTouchConfigurationDefinitions
 
         return [
             $entry('uploadInterval', 'UPLOAD', 'Intervalo de localização', 'number', ['intervalSeconds'], ['UPLOAD'], 'intervals', 10),
-            $entry('sosContacts', 'SOS', 'Contactos SOS', 'list', ['numbers'], ['SOS'], 'contacts', 10, 3),
-            $entry('whitelistGroup1', 'WHITELIST1', 'Lista de chamadas autorizadas 1-5', 'list', ['numbers'], ['WHITELIST1'], 'contacts', 40, 5),
-            $entry('whitelistGroup2', 'WHITELIST2', 'Lista de chamadas autorizadas 6-10', 'list', ['numbers'], ['WHITELIST2'], 'contacts', 50, 5),
+            $entry('sosContacts', 'SOS', 'Contactos SOS', 'sos_contacts', ['numbers'], ['SOS'], 'contacts', 10, 3),
+            $entry('whitelistGroup1', 'WHITELIST1', 'Lista de chamadas autorizadas 1-5', 'call_whitelist', ['numbers'], ['WHITELIST1'], 'contacts', 40, 5),
+            $entry('whitelistGroup2', 'WHITELIST2', 'Lista de chamadas autorizadas 6-10', 'call_whitelist', ['numbers'], ['WHITELIST2'], 'contacts', 50, 5),
             $entry('devicePassword', 'PW', 'Palavra-passe do dispositivo', 'text', ['password'], ['PW'], 'system', 10),
             $entry('languageTimezone', 'LZ', 'Idioma e fuso horário', 'languageTimezone', ['language', 'timeZone'], ['LZ'], 'system', 20),
             $entry('sosSmsAlerts', 'SOSSMS', 'SMS em alarme SOS', 'toggle', ['enabled'], ['SOSSMS'], 'alerts', 10),
@@ -48,16 +48,18 @@ final class FourPTouchConfigurationDefinitions
             $entry('sleepTime', 'SLEEPTIME', 'Deteção de sono e rotação', 'timeRange', ['range'], ['SLEEPTIME'], 'health', 30),
             $entry('bodyTemperatureInterval', 'bodytemp', 'Temperatura periódica', 'intervalHoursToggle', ['enabled', 'intervalHours'], ['bodytemp'], 'health', 40),
             $entry('makeCall', 'CALL', 'Fazer chamada', 'makeCall', ['phone'], ['CALL'], 'system', 5, transient: true),
-            $entry('monitorNumber', 'MONITOR', 'Número de monitorização', 'voiceMonitor', ['phone'], ['MONITOR'], 'system', 5, transient: true),
+            $entry('monitorNumber', 'MONITOR', 'Número de monitorização', 'voiceMonitor', ['phone'], ['MONITOR'], 'system', 5, transient: true, confirm: 'O relógio liga de imediato para este número e abre o microfone, sem mostrar nada a quem o traz no pulso.'),
             $entry('centerNumber', 'CENTER', 'Número da central', 'phone', ['phone'], ['CENTER'], 'contacts', 5),
             $entry('pushMessage', 'MESSAGE', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], ['MESSAGE'], 'system', 5, transient: true),
-            $entry('resetCommand', 'RESET', 'Reiniciar dispositivo', 'resetAction', [], ['RESET'], 'system', 5, transient: true),
-            $entry('powerOffCommand', 'POWEROFF', 'Desligar dispositivo', 'resetAction', [], ['POWEROFF'], 'system', 5, transient: true),
-            $entry('findDeviceCommand', 'FIND', 'Localizar dispositivo', 'resetAction', [], ['FIND'], 'system', 5, transient: true),
+            $entry('resetCommand', 'RESET', 'Reiniciar dispositivo', 'action', [], ['RESET'], 'system', 5, transient: true, confirm: 'O relógio fica sem comunicar enquanto arranca.'),
+            $entry('powerOffCommand', 'POWEROFF', 'Desligar dispositivo', 'action', [], ['POWEROFF'], 'system', 5, transient: true, confirm: 'O relógio desliga-se e só volta a ligar no botão do próprio aparelho.'),
+            $entry('findDeviceCommand', 'FIND', 'Localizar dispositivo', 'action', [], ['FIND'], 'system', 5, transient: true),
             $entry('doNotDisturb', 'SILENCETIME', 'Não perturbar', 'toggle', ['enabled'], ['SILENCETIME'], 'system', 60),
-            $entry('firmwareVersion', 'VERNO', 'Versão de firmware', 'requestAction', [], ['VERNO'], 'system', 5, transient: true),
-            $entry('deviceStatus', 'TS', 'Estado do dispositivo', 'requestAction', [], ['TS'], 'system', 5, transient: true),
-            $entry('alarmClock', 'REMIND', 'Alarmes', 'alarms', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
+            // Estas duas perguntam em vez de mandar, e o rótulo delas é um nome: sem o verbo
+            // o botão dizia «Enviar», que descreve mal o que o clique faz.
+            $entry('firmwareVersion', 'VERNO', 'Versão de firmware', 'action', [], ['VERNO'], 'system', 5, transient: true, verb: 'Consultar'),
+            $entry('deviceStatus', 'TS', 'Estado do dispositivo', 'action', [], ['TS'], 'system', 5, transient: true, verb: 'Consultar'),
+            $entry('alarmClock', 'REMIND', 'Alarmes', 'alarm_clock', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Uma vez'],
                     ['value' => 2, 'label' => 'Todos os dias'],
@@ -73,7 +75,7 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 7, 'label' => 'Dom'],
                 ],
             ]),
-            $entry('phonebook', 'PHBX2', 'Lista telefónica', 'contacts', ['contacts'], ['PHBX2', 'DPHBX', 'PHB', 'PHB2'], 'contacts', 55, 100),
+            $entry('phonebook', 'PHBX2', 'Lista telefónica', 'phonebook', ['contacts'], ['PHBX2', 'DPHBX', 'PHB', 'PHB2'], 'contacts', 55, 100),
             $entry('profile', 'profile', 'Perfil de som', 'soundProfile', ['mode'], ['profile'], 'system', 55, null, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Vibração e toque'],
@@ -82,7 +84,7 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 4, 'label' => 'Silêncio'],
                 ],
             ]),
-            $entry('rejectUnknownCalls', 'DEVREFUSEPHONESWITCH', 'Restringir chamadas recebidas', 'toggle', ['enabled'], ['DEVREFUSEPHONESWITCH'], 'contacts', 35),
+            $entry('rejectUnknownCalls', 'DEVREFUSEPHONESWITCH', 'Restringir chamadas recebidas', 'whitelist_enabled', ['enabled'], ['DEVREFUSEPHONESWITCH'], 'contacts', 35),
         ];
     }
 }

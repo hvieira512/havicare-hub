@@ -9,18 +9,18 @@ final class WonlexConfigurationDefinitions
         $entry = ConfigurationDefinition::make(...);
 
         return [
-            $entry('locationInterval', 'locationInterval', 'Intervalo de localização', 'number', ['intervalTime'], ['locationInterval'], 'intervals', 10),
+            $entry('locationInterval', 'locationInterval', 'Intervalo de localização', 'number', ['intervalTime'], ['locationInterval'], 'intervals', 10, help: 'De quanto em quanto tempo o relógio envia a posição, em segundos. Use 0 para desativar.'),
             $entry('deviceMeasuringFrequency', 'deviceMeasuringFrequency', 'Frequência de medições', 'json', ['configs'], ['deviceMeasuringFrequency'], 'intervals', 90),
-            $entry('wonlexHeartRateInterval', 'deviceMeasuringFrequency', 'Intervalo de frequência cardíaca', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 10),
-            $entry('wonlexBPInterval', 'deviceMeasuringFrequency', 'Intervalo de tensão arterial', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 20),
-            $entry('wonlexBOInterval', 'deviceMeasuringFrequency', 'Intervalo de oxigénio no sangue', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 30),
-            $entry('wonlexBodyTemperatureInterval', 'deviceMeasuringFrequency', 'Intervalo de temperatura', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 40),
-            $entry('wonlexStepInterval', 'deviceMeasuringFrequency', 'Intervalo de passos', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 50),
-            $entry('wonlexBreatheInterval', 'deviceMeasuringFrequency', 'Intervalo de frequência respiratória', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 60),
-            $entry('wonlexECGInterval', 'deviceMeasuringFrequency', 'Intervalo de ECG', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 70),
-            $entry('wonlexHRVInterval', 'deviceMeasuringFrequency', 'Intervalo de VFC', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 80),
-            $entry('wonlexPPGInterval', 'deviceMeasuringFrequency', 'Intervalo de PPG', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 90),
-            $entry('wonlexRRInterval', 'deviceMeasuringFrequency', 'Intervalo de RR', 'number', ['interval'], ['deviceMeasuringFrequency'], 'measurements', 100),
+            self::measurementInterval('wonlexHeartRateInterval', 'Intervalo de frequência cardíaca', 10),
+            self::measurementInterval('wonlexBPInterval', 'Intervalo de tensão arterial', 20),
+            self::measurementInterval('wonlexBOInterval', 'Intervalo de oxigénio no sangue', 30),
+            self::measurementInterval('wonlexBodyTemperatureInterval', 'Intervalo de temperatura', 40),
+            self::measurementInterval('wonlexStepInterval', 'Intervalo de passos', 50),
+            self::measurementInterval('wonlexBreatheInterval', 'Intervalo de frequência respiratória', 60),
+            self::measurementInterval('wonlexECGInterval', 'Intervalo de ECG', 70),
+            self::measurementInterval('wonlexHRVInterval', 'Intervalo de VFC', 80),
+            self::measurementInterval('wonlexPPGInterval', 'Intervalo de PPG', 90),
+            self::measurementInterval('wonlexRRInterval', 'Intervalo de RR', 100),
             $entry('deviceConfig', 'deviceConfig', 'Configuração do dispositivo', 'json', ['configs'], ['deviceConfig'], 'system', 90),
             $entry('wonlexStepTarget', 'deviceConfig', 'Meta de passos', 'number', ['steps'], ['deviceConfig'], 'health', 10),
             $entry('wonlexContinuousBOCheck', 'deviceConfig', 'Oxigénio contínuo em repouso', 'toggle', ['switchState'], ['deviceConfig'], 'health', 20),
@@ -37,18 +37,43 @@ final class WonlexConfigurationDefinitions
             $entry('wonlexLowPower', 'deviceConfig', 'Limiar de bateria fraca', 'number', ['Battery'], ['deviceConfig'], 'alerts', 10),
             $entry('wonlexFallWarnSwitch', 'deviceConfig', 'Deteção de queda', 'toggle', ['switchState'], ['deviceConfig'], 'alerts', 20),
             $entry('wonlexSOSSwitch', 'deviceConfig', 'SMS SOS', 'toggle', ['switchState'], ['deviceConfig'], 'alerts', 30),
-            $entry('wonlexCallInLimitSwitch', 'deviceConfig', 'Restringir chamadas recebidas', 'toggle', ['switchState'], ['deviceConfig'], 'system', 20),
-            $entry('alarmClock', 'alarmClock', 'Alarmes', 'json', ['alarmClockList'], ['alarmClock'], 'alerts', 10, 10),
-            $entry('familyNumber', 'familyNumber', 'Contactos familiares', 'contacts', ['contacts'], ['familyNumber'], 'contacts', 5, 10),
-            $entry('SOSNumber', 'SOSNumber', 'Números SOS', 'list', ['numbers'], ['SOSNumber'], 'contacts', 10, 10),
+            $entry('wonlexCallInLimitSwitch', 'deviceConfig', 'Restringir chamadas recebidas', 'whitelist_enabled', ['switchState'], ['deviceConfig'], 'system', 20),
+            $entry('alarmClock', 'alarmClock', 'Alarmes', 'alarm_clock', ['alarmClockList'], ['alarmClock'], 'alerts', 10, 10),
+            $entry('familyNumber', 'familyNumber', 'Contactos familiares', 'phonebook', ['contacts'], ['familyNumber'], 'contacts', 5, 10),
+            $entry('SOSNumber', 'SOSNumber', 'Números SOS', 'sos_contacts', ['numbers'], ['SOSNumber'], 'contacts', 10, 10),
             $entry('dnMedicationPlan', 'dnMedicationPlan', 'Plano de medicação', 'wonlexMedicationPlans', ['plans'], ['dnMedicationPlan'], 'health', 10),
-            $entry('resetCommand', 'reset', 'Reposição de fábrica', 'resetAction', [], ['reset'], 'system', 110, null, null, true),
-            $entry('restartCommand', 'restart', 'Reiniciar dispositivo', 'resetAction', [], ['restart'], 'system', 120, null, null, true),
-            $entry('powerOffCommand', 'powerOff', 'Desligar dispositivo', 'resetAction', [], ['powerOff'], 'system', 130, null, null, true),
-            $entry('findDeviceCommand', 'find', 'Encontrar dispositivo', 'requestAction', [], ['find'], 'system', 140, null, null, true),
+            $entry('resetCommand', 'reset', 'Reposição de fábrica', 'action', [], ['reset'], 'system', 110, transient: true, confirm: 'Repõe o relógio ao estado de fábrica. Volta a apontar para o servidor do fornecedor e o hub deixa de o comandar até alguém de lá o voltar a configurar.', verb: 'Repor de fábrica'),
+            $entry('restartCommand', 'restart', 'Reiniciar dispositivo', 'action', [], ['restart'], 'system', 120, transient: true, confirm: 'O relógio fica sem comunicar enquanto arranca.'),
+            $entry('powerOffCommand', 'powerOff', 'Desligar dispositivo', 'action', [], ['powerOff'], 'system', 130, transient: true, confirm: 'O relógio desliga-se e só volta a ligar no botão do próprio aparelho.'),
+            $entry('findDeviceCommand', 'find', 'Encontrar dispositivo', 'action', [], ['find'], 'system', 140, transient: true),
             // A Wonlex documenta o `msgNotice` como notificação de sentido único e não define
             // resposta nenhuma do dispositivo para ele.
-            $entry('pushMessage', 'msgNotice', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], [], 'system', 145, null, null, true),
+            $entry('pushMessage', 'msgNotice', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], [], 'system', 145, transient: true),
         ];
     }
+
+    /**
+     * Uma das grandezas cuja periodicidade de envio se configura.
+     *
+     * São dez, com o mesmo comando nativo e a mesma legenda -- é a mesma decisão repetida
+     * para grandezas diferentes, e a dashboard agrupa-as por reconhecer essa forma. A frase
+     * vive aqui, uma vez, e não dez vezes no ecrã.
+     */
+    private static function measurementInterval(string $key, string $label, int $order): array
+    {
+        return ConfigurationDefinition::make(
+            $key,
+            'deviceMeasuringFrequency',
+            $label,
+            'number',
+            ['interval'],
+            ['deviceMeasuringFrequency'],
+            'measurements',
+            $order,
+            help: self::MEASUREMENT_HELP,
+        );
+    }
+
+    private const MEASUREMENT_HELP =
+        'Periodicidade de envio desta medição, em minutos. Use 0 para desativar.';
 }

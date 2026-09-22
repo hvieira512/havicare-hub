@@ -1,4 +1,4 @@
-import { html } from "../html.js";
+import { html } from "../../html.js";
 
 /**
  * Os cartões do sono: a noite e as pontuações que o firmware lhe atribui.

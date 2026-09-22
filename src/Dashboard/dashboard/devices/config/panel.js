@@ -3,11 +3,14 @@ import {
     saveConfiguration as apiSaveConfiguration,
 } from "../../api/index.js";
 import {
+    deliveryStatusFromCommand,
     patchConfigurationDeliveryStates,
+} from "./delivery.js";
+import {
     readConfigPayload,
     renderDeviceConfigurationRoot,
 } from "./index.js";
-import { emptyPanel } from "../../widgets.js";
+import { emptyPanel } from "../../components/empty-panel.js";
 import { confirmDestructive, toast } from "../../dialogs.js";
 import { resetPhoneControls } from "../../phone.js";
 import { state } from "../../state.js";
@@ -71,7 +74,13 @@ export function changedConfigGroupEntries(group) {
         }
 
         const pristine = row.dataset.configPristine ?? "";
-        const neverSent = row.dataset.configStored === "0";
+        // Uma linha que o aparelho nunca recebeu viaja sem ninguém lhe ter tocado, porque o
+        // grupo é o único caminho para a primeira gravação. Isso só vale para o interruptor,
+        // cujo padrão -- ligado -- é uma escolha a sério. O padrão de um número é zero, e num
+        // intervalo de medição zero quer dizer desactivar: um clique desligava as dez
+        // medições de uma vez a quem só queria configurar uma.
+        const neverSent = row.dataset.configStored === "0" &&
+            row.dataset.configInput === "toggle";
         if (neverSent || JSON.stringify(payload) !== pristine) {
             changed[key] = payload;
         }
@@ -178,34 +187,28 @@ export async function saveDeviceConfigurationGroup(group) {
 }
 
 /**
- * Os comandos que o utilizador não desfaz a partir daqui: o aparelho fica desligado até
- * alguém lhe chegar ao botão, perde o que estava a fazer, ou liga a um número sem que quem
- * o usa dê por isso. O `find_device` e os restantes não estão aqui de propósito -- pedir
- * confirmação para tudo ensina a carregar em «Sim» sem ler.
+ * A caixa de uma acção que o utilizador não desfaz a partir daqui.
+ *
+ * A frase vem da definição do protocolo, e não de uma tabela indexada pela capacidade: a
+ * mesma chave não quer dizer o mesmo em todo o lado -- o `reset_device` da Wonlex repõe o
+ * relógio de fábrica e o do 4P Touch reinicia-o. Uma tabela por chave prometia um reinício a
+ * quem estava a devolver o aparelho ao servidor do fornecedor.
+ *
+ * Uma definição sem frase declarada não leva caixa: pedir confirmação para tudo ensina a
+ * carregar em «Sim» sem ler.
  */
-const restartPrompt = (imei) => ({
-    title: `Reiniciar o dispositivo ${imei}?`,
-    text: "Fica sem comunicar enquanto arranca.",
-    confirmText: "Reiniciar",
-});
+export function dangerousCommandPrompt(section, imei) {
+    const text = String(section?.dataset?.configConfirm || "");
+    if (text === "") {
+        return null;
+    }
 
-const DANGEROUS_COMMANDS = {
-    power_off: (imei) => ({
-        title: `Desligar o dispositivo ${imei}?`,
-        text: "Deixa de comunicar, e só volta a ligar no botão do próprio aparelho.",
-        confirmText: "Desligar",
-    }),
-    reset_device: restartPrompt,
-    restart_device: restartPrompt,
-    monitor_number: (imei) => ({
-        title: "Ligar para o número de monitorização?",
-        text: `O dispositivo ${imei} liga em escuta silenciosa, sem avisar quem o traz.`,
-        confirmText: "Ligar",
-    }),
-};
-
-export function dangerousCommandPrompt(capabilityKey, imei) {
-    return DANGEROUS_COMMANDS[capabilityKey]?.(imei) || null;
+    const label = String(section?.dataset?.configLabel || "");
+    return {
+        title: `${label} — ${imei}?`,
+        text,
+        confirmText: label,
+    };
 }
 
 export async function saveDeviceConfiguration(section, actionValue = "") {
@@ -213,10 +216,7 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
     if (!key) return;
 
     // Antes de tudo o resto: cancelar não pode deixar o cartão em «a enviar».
-    const prompt = dangerousCommandPrompt(
-        section.dataset.capabilityKey || key,
-        state.deviceModal.imei,
-    );
+    const prompt = dangerousCommandPrompt(section, state.deviceModal.imei);
     if (prompt) {
         const { isConfirmed } = await confirmDestructive(
             prompt.title,
@@ -303,23 +303,6 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
         });
         renderDeviceConfigurationModal();
     }
-}
-
-/**
- * O estado de entrega correspondente ao estado de um comando.
- *
- * É a mesma tradução para configurações e para acções: ambas viajam pela mesma fila e o
- * operador não tem por que ler dois vocabulários para a mesma coisa.
- */
-export function deliveryStatusFromCommand(commandStatus, confirmationMode = "") {
-    const status = String(commandStatus || "");
-    if (["failed", "dropped"].includes(status)) return "failed";
-    if (status === "acked") {
-        return String(confirmationMode) === "ack_only" ? "confirmation_unavailable" : "confirmed";
-    }
-    if (status === "queued") return "pending_delivery";
-    if (["waiting", "sent"].includes(status)) return "awaiting_ack";
-    return "";
 }
 
 export function syncDeviceModalCommandStates(imei, commands) {
@@ -564,8 +547,11 @@ export function syncConfigSectionDirty(section) {
     // apagava, deixando a configuração sem caminho para sair a não ser mexendo-lhe no valor.
     // O que falhou foi a entrega, não o valor, e repeti-la é a única coisa que faz sentido.
     const deliveryFailed = section.dataset.configDelivery === "failed";
+    // A cor do botão aceso. Uma acção que pede confirmação continua a vermelho: o peso dela
+    // está aqui, e não numa faixa de aviso, e não pode ser apagado por um sincronismo.
+    const active = section.dataset.configConfirm ? "btn-outline-danger" : "btn-primary";
     if (section.dataset.configTransient === "1" || neverSent || deliveryFailed) {
-        button.classList.add("btn-primary");
+        button.classList.add(active);
         button.classList.remove("btn-outline-secondary");
         button.disabled = false;
         return;
@@ -582,7 +568,7 @@ export function syncConfigSectionDirty(section) {
         dirty = true;
     }
 
-    button.classList.toggle("btn-primary", dirty);
+    button.classList.toggle(active, dirty);
     button.classList.toggle("btn-outline-secondary", !dirty);
     button.disabled = !dirty;
 }

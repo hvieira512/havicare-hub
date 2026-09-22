@@ -37,6 +37,10 @@ final class DashboardHttpServer
 {
     private const MODEL_IMAGE_ROUTE = ModelImageStore::ROUTE;
     private const PUBLIC_ASSET_EXTENSIONS = ['css', 'ico', 'jpeg', 'jpg', 'js', 'png', 'svg', 'woff2'];
+    // Só texto, e só o que passa pelo `staticFile()`: as imagens e o `woff2` já vêm
+    // comprimidos, e passá-los por gzip gasta CPU para não poupar fio nenhum. A página fica
+    // de fora porque é o `html()` que a serve, e não este caminho.
+    private const COMPRESSIBLE_EXTENSIONS = ['css', 'js', 'svg'];
     private ApiKernel $apiKernel;
     /** @var array<string, string> */
     private array $assetCache = [];
@@ -223,30 +227,42 @@ final class DashboardHttpServer
             default => 'text/plain',
         };
 
+        // Quem não anuncia `gzip` recebe os bytes tal e qual. O `Vary` vai sempre, mesmo em
+        // cru: sem ele uma cache partilhada serve a variante errada ao pedido seguinte.
+        $gzip = in_array($ext, self::COMPRESSIBLE_EXTENSIONS, true)
+            && str_contains(strtolower($request->getHeaderLine('Accept-Encoding')), 'gzip');
+        $encoding = $gzip
+            ? ['Content-Encoding' => 'gzip', 'Vary' => 'Accept-Encoding']
+            : ['Vary' => 'Accept-Encoding'];
+
         // O caminho dos recursos de terceiros muda quando eles mudam; o nosso não tem
         // impressão digital no URL, e por isso leva `ETag` em vez de `immutable`.
         if (str_contains($path, '/assets/vendor/') || str_contains($path, '/assets/fonts/')) {
             return new Response(
                 200,
-                ['Content-Type' => $mime, 'Cache-Control' => 'public, max-age=31536000, immutable'],
-                $this->assetContents($path)
+                ['Content-Type' => $mime, 'Cache-Control' => 'public, max-age=31536000, immutable'] + $encoding,
+                $this->assetContents($path, $gzip ? $path . '.gz' : null, $gzip)
             );
         }
 
-        $etag = sprintf('"%x-%x"', (int)filemtime($path), (int)filesize($path));
-        $headers = ['Content-Type' => $mime, 'Cache-Control' => 'no-cache', 'ETag' => $etag];
+        // O corpo comprimido é outro corpo, e por isso leva sufixo no ETag: partilhar a
+        // etiqueta entregava a variante errada a quem revalidasse com a outra.
+        $etag = sprintf('"%x-%x%s"', (int)filemtime($path), (int)filesize($path), $gzip ? '-gz' : '');
+        $headers = ['Content-Type' => $mime, 'Cache-Control' => 'no-cache', 'ETag' => $etag] + $encoding;
         if ($request->getHeaderLine('If-None-Match') === $etag) {
-            return new Response(304, ['Cache-Control' => 'no-cache', 'ETag' => $etag]);
+            return new Response(304, ['Cache-Control' => 'no-cache', 'ETag' => $etag] + $encoding);
         }
 
         // A cache do corpo é indexada pelo ETag: um ficheiro alterado debaixo do processo muda
         // o ETag e o corpo servido acompanha-o, em vez de ficar preso aos bytes velhos.
-        return new Response(200, $headers, $this->assetContents($path, $path . $etag));
+        return new Response(200, $headers, $this->assetContents($path, $path . $etag, $gzip));
     }
 
-    private function assetContents(string $path, ?string $cacheKey = null): string
+    private function assetContents(string $path, ?string $cacheKey = null, bool $gzip = false): string
     {
-        return $this->assetCache[$cacheKey ?? $path] ??= (string)file_get_contents($path);
+        return $this->assetCache[$cacheKey ?? $path] ??= $gzip
+            ? (string)gzencode((string)file_get_contents($path), 6)
+            : (string)file_get_contents($path);
     }
 
     private function publicAssetPath(string $requestPath): ?string

@@ -1,5 +1,5 @@
 import { esc } from "../../../format.js";
-import { field } from "../../../widgets.js";
+import { field } from "../../../components/form-field.js";
 import { boolValue } from "../normalizers.js";
 import { numberField } from "./shared.js";
 import {
@@ -12,7 +12,7 @@ import {
  * que é o que decide o que o relógio mede e de quanto em quanto tempo.
  */
 
-export function fallSensitivityInput(desired) {
+function fallSensitivityInput(desired) {
     const current = parseInt(String(desired.sensitivity ?? 2), 10) || 2;
     const options = [
         {
@@ -68,7 +68,7 @@ export function fallSensitivityInput(desired) {
  * uma segunda cópia destas fronteiras.
  */
 
-export function workingModeInput(desired) {
+function workingModeInput(desired) {
     const mode = parseInt(String(desired.mode ?? 1), 10) || 1;
     const intervalSeconds = desired.intervalSeconds ?? 60;
     const gpsEnabled = boolValue(desired.gpsEnabled, true);
@@ -106,10 +106,10 @@ export function workingModeInput(desired) {
     ];
 
     return `
-        <div class="vstack gap-3" data-working-mode-root>
+        <div class="vstack gap-3">
             <div>
                 <label class="form-label-sm">Modo</label>
-                <div class="row g-2" data-working-mode-select>
+                <div class="row g-2">
                     ${options
                         .map(
                             (option) => `
@@ -151,6 +151,14 @@ export function workingModeInput(desired) {
                 </div>
             </div>
         </div>`;
+}
+
+/** O intervalo e o GPS só se escolhem no modo 8, que é o personalizado. */
+export function syncWorkingModeExtra(section, mode) {
+    const extra = section.querySelector("[data-working-mode-extra]");
+    if (!extra) return;
+
+    extra.classList.toggle("d-none", String(mode) !== "8");
 }
 
 /**

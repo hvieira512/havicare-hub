@@ -4,9 +4,11 @@ import {
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
 import { ensureLicensesLoaded } from "../licenses.js";
+import { toast } from "../dialogs.js";
 import { esc } from "../format.js";
 import { state } from "../state.js";
-import { field, modelPreviewHtml } from "../widgets.js";
+import { field } from "../components/form-field.js";
+import { modelPreviewHtml } from "../components/model-image.js";
 import {
     deviceTypeFields,
     deviceTypeLabel,
@@ -47,7 +49,6 @@ let licenseGroups = [];
 
 const STEPS = ["Classificação", "Este aparelho"];
 
-/** Cada pergunta sabe quando está respondida, que badges produz e o que invalida. */
 /** A pergunta do passo 2 não entra: a trilha é a classificação, o passo 2 é este aparelho. */
 const TRAIL_QUESTIONS = [
     { key: "type", label: "Tipo" },
@@ -55,6 +56,7 @@ const TRAIL_QUESTIONS = [
     { key: "owner", label: "Licença" },
 ];
 
+/** Cada pergunta sabe quando está respondida, que badges produz e o que invalida. */
 const QUESTIONS = [
     {
         key: "type",
@@ -144,7 +146,6 @@ function render() {
     renderFooter();
 }
 
-/** A trilha, com o passo no fim da linha. Cada badge é um botão para a sua pergunta. */
 /**
  * As três perguntas da classificação estão sempre na trilha: uma pendente esbatida diz o
  * que vem a seguir, a activa fica contornada, a respondida é um botão para voltar a ela.
@@ -215,8 +216,10 @@ function answerAndRender(key, value) {
     render();
 }
 
-/** No passo 1 só se chega aqui pelo "Anterior", e o que há para fazer é na trilha. */
-/** Um passo intermédio sem nada por perguntar: a trilha é o único sítio onde há que fazer. */
+/**
+ * Um passo intermédio sem nada por perguntar -- no passo 1 só se chega aqui pelo "Anterior":
+ * a trilha é o único sítio onde há que fazer.
+ */
 function renderStepDone() {
     return `<p class="text-secondary small mb-0">
         Toque numa etiqueta acima para alterar uma resposta.
@@ -506,8 +509,13 @@ async function loadWizardGateways() {
 /**
  * Cria o dispositivo e, se for retransmitido, autoriza os gateways escolhidos. Devolve a
  * mensagem de erro ou null: o erro desenha-se no lugar do assistente.
+ *
+ * São duas escritas em sequência, e a segunda pode falhar com a primeira já feita. A partir
+ * daí o dispositivo existe e não há como o desfazer daqui: o assistente fecha-se na mesma e
+ * o que faltou diz-se por aviso. Deixá-lo aberto oferecia um «Criar» que só podia dar 409, e
+ * a mensagem seguinte contradizia a que estava no ecrã.
  */
-async function createDeviceFromWizard(answers) {
+export async function createDeviceFromWizard(answers) {
     const fields = deviceTypeFields(answers.type);
     const identity = String(answers.identity || "").trim();
     const byImei = fields.identity.field === "imei";
@@ -530,14 +538,23 @@ async function createDeviceFromWizard(answers) {
             : result.error.message || result.error.code;
     }
 
+    const unauthorized = [];
     for (const gatewayKey of answers.gateways || []) {
         const linked = await apiCreateDeviceLink(gatewayKey, identity);
         if (linked?.error) {
-            return `Dispositivo criado, mas não foi possível autorizar o gateway ${gatewayKey}.`;
+            unauthorized.push(gatewayKey);
         }
     }
 
     wizardModal.hide();
     await loadSummary();
+    if (unauthorized.length > 0) {
+        // Autoriza-se no modal de edição, que é onde os gateways de um dispositivo se mexem.
+        toast(
+            "warning",
+            "Dispositivo criado, com gateways por autorizar",
+            `Ficou por autorizar: ${unauthorized.join(", ")}. Pode fazê-lo em Editar.`,
+        );
+    }
     return null;
 }

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
+import { setPrefersDark } from "./support/browser-env.js";
 
 const { applyTheme, initializeTheme, preferredTheme, DARK, LIGHT } =
     await import("../../src/Dashboard/dashboard/theme.js");
@@ -21,6 +21,7 @@ function mountButton() {
 
 function reset() {
     localStorage.clear();
+    setPrefersDark(false);
     document.documentElement.removeAttribute("data-bs-theme");
     document.body.removeAttribute("data-swal2-theme");
     document.body.innerHTML = "";
@@ -32,18 +33,27 @@ test("sem preferência guardada nem sistema escuro, abre no claro", () => {
     assert.equal(preferredTheme(), LIGHT);
 });
 
-test("a preferência guardada ganha à do sistema", () => {
+test("sem preferência guardada, segue-se a do sistema", () => {
     reset();
-    localStorage.setItem(THEME_STORAGE_KEY, DARK);
+    setPrefersDark(true);
 
     assert.equal(preferredTheme(), DARK);
 });
 
-test("um valor estragado no armazenamento não escolhe tema nenhum", () => {
+test("a preferência guardada ganha à do sistema", () => {
     reset();
-    localStorage.setItem(THEME_STORAGE_KEY, "arco-iris");
+    setPrefersDark(true);
+    localStorage.setItem(THEME_STORAGE_KEY, LIGHT);
 
     assert.equal(preferredTheme(), LIGHT);
+});
+
+test("um valor estragado no armazenamento não escolhe tema nenhum", () => {
+    reset();
+    setPrefersDark(true);
+    localStorage.setItem(THEME_STORAGE_KEY, "arco-iris");
+
+    assert.equal(preferredTheme(), DARK, "o estragado cai para o sistema, e não para o claro");
 });
 
 test("aplicar o tema escreve-o no elemento raiz", () => {

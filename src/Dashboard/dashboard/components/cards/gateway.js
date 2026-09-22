@@ -1,5 +1,5 @@
-import { capabilityLabel } from "../capability-catalog.js";
-import { titleize } from "../format.js";
+import { capabilityLabel } from "../../capability-catalog.js";
+import { titleize } from "../../format.js";
 
 /**
  * Os cartões do gateway: que interfaces tem, e por qual está a falar.

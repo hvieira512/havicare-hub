@@ -30,23 +30,23 @@ window.clearTimeout = (handle) => {
  * Um `fetch` que devolve o corpo aos pedaços que lhe derem, para se poder cortar um frame
  * exactamente onde dói.
  */
-const pedidos = [];
-let proximosChunks = [];
-let proximaResposta = { ok: true, status: 200 };
+const requests = [];
+let nextChunks = [];
+let nextResponse = { ok: true, status: 200 };
 
 globalThis.fetch = async (url, options = {}) => {
-    pedidos.push({ url: String(url), options });
+    requests.push({ url: String(url), options });
 
-    if (!proximaResposta.ok) {
+    if (!nextResponse.ok) {
         return {
             ok: false,
-            status: proximaResposta.status,
+            status: nextResponse.status,
             headers: { get: () => "application/json" },
             text: async () => JSON.stringify({ error: { code: "recusado" } }),
         };
     }
 
-    const chunks = [...proximosChunks];
+    const chunks = [...nextChunks];
 
     return {
         ok: true,
@@ -69,7 +69,7 @@ const tick = () => new Promise((resolve) => {
 });
 
 /** Deixa correr as leituras do corpo, que são várias microtarefas. */
-const drena = async () => {
+const drain = async () => {
     for (let i = 0; i < 12; i++) {
         await tick();
     }
@@ -81,20 +81,20 @@ const { setDashboardApiToken } = await import("../../src/Dashboard/dashboard/api
 
 const row = (seq) => ({ seq, type: "heart_rate", value: 60 + seq });
 
-const abre = async (imei, chunks) => {
-    pedidos.length = 0;
+const openStream = async (imei, chunks) => {
+    requests.length = 0;
     scheduled.length = 0;
-    proximosChunks = chunks;
-    proximaResposta = { ok: true, status: 200 };
+    nextChunks = chunks;
+    nextResponse = { ok: true, status: 200 };
     document.body.dataset.dashboardAuthRequired = "true";
     setDashboardApiToken({ access_token: "token-de-acesso" });
     stream.initDeviceStream({ renderSelection: () => {} });
     setSelectedDetail({ device: { imei } });
     stream.connectDeviceStream(imei);
-    await drena();
+    await drain();
 };
 
-const frame = (nome, dados) => `event: ${nome}\ndata: ${JSON.stringify(dados)}\n\n`;
+const frame = (name, data) => `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`;
 
 test("um frame partido entre dois chunks chega inteiro", async () => {
     const snapshot = frame("snapshot", {
@@ -104,9 +104,9 @@ test("um frame partido entre dois chunks chega inteiro", async () => {
         limit: 100,
     });
     // O corte cai a meio do JSON, que é o que acontece com um snapshot de cem entradas.
-    const corte = Math.floor(snapshot.length / 2);
+    const splitAt = Math.floor(snapshot.length / 2);
 
-    await abre("111", [snapshot.slice(0, corte), snapshot.slice(corte)]);
+    await openStream("111", [snapshot.slice(0, splitAt), snapshot.slice(splitAt)]);
 
     assert.deepEqual(
         state.selectedDetail.recent.telemetry,
@@ -129,7 +129,7 @@ test("dois frames no mesmo chunk são ambos entregues", async () => {
         limit: 100,
     });
 
-    await abre("222", [snapshot + update]);
+    await openStream("222", [snapshot + update]);
 
     assert.deepEqual(
         state.selectedDetail.recent.telemetry,
@@ -146,7 +146,7 @@ test("as linhas de keep-alive não contam como frames", async () => {
         limit: 100,
     });
 
-    await abre("333", [": keep-alive\n\n", snapshot, ": keep-alive\n\n"]);
+    await openStream("333", [": keep-alive\n\n", snapshot, ": keep-alive\n\n"]);
 
     // O que se prende é que os comentários não viram entregas: se contassem, o
     // `handleStreamUpdate` levava um `JSON.parse("")` e o snapshot não chegava.
@@ -154,28 +154,28 @@ test("as linhas de keep-alive não contam como frames", async () => {
 });
 
 test("a credencial vai no cabeçalho, e nada vai no URL", async () => {
-    await abre("444", [frame("snapshot", { telemetry: [], events: [], commands: [], limit: 100 })]);
+    await openStream("444", [frame("snapshot", { telemetry: [], events: [], commands: [], limit: 100 })]);
 
-    const pedido = pedidos.at(-1);
-    assert.match(pedido.url, /\/api\/devices\/444\/stream$/, "o URL não devia levar credencial");
-    assert.equal(pedido.options.headers.Authorization, "Bearer token-de-acesso");
+    const request = requests.at(-1);
+    assert.match(request.url, /\/api\/devices\/444\/stream$/, "o URL não devia levar credencial");
+    assert.equal(request.options.headers.Authorization, "Bearer token-de-acesso");
     assert.equal(
-        pedidos.filter((p) => p.url.includes("stream-ticket")).length,
+        requests.filter((p) => p.url.includes("stream-ticket")).length,
         0,
         "não se pede bilhete nenhum",
     );
 });
 
 test("um stream recusado agenda uma religação", async () => {
-    pedidos.length = 0;
+    requests.length = 0;
     scheduled.length = 0;
-    proximaResposta = { ok: false, status: 503 };
+    nextResponse = { ok: false, status: 503 };
     document.body.dataset.dashboardAuthRequired = "true";
     setDashboardApiToken({ access_token: "token-de-acesso" });
     stream.initDeviceStream({ renderSelection: () => {} });
     setSelectedDetail({ device: { imei: "555" } });
     stream.connectDeviceStream("555");
-    await drena();
+    await drain();
 
     assert.equal(stream.isDeviceStreamLive(), false);
     assert.ok(
@@ -185,7 +185,7 @@ test("um stream recusado agenda uma religação", async () => {
 });
 
 test("o fim do corpo agenda uma religação", async () => {
-    await abre("666", [frame("snapshot", { telemetry: [], events: [], commands: [], limit: 100 })]);
+    await openStream("666", [frame("snapshot", { telemetry: [], events: [], commands: [], limit: 100 })]);
 
     // O corpo fechou-se sozinho: o servidor desligou, e a dashboard não pode ficar parada.
     assert.ok(
@@ -197,10 +197,10 @@ test("o fim do corpo agenda uma religação", async () => {
 test("um frame malformado é saltado e não derruba os seguintes", async () => {
     const snapshot = frame("snapshot", { telemetry: [row(1)], events: [], commands: [], limit: 100 });
     // Um `data:` com JSON inválido -- o que um byte perdido no fio produz.
-    const lixo = "event: update\ndata: {isto nao e json\n\n";
+    const garbage = "event: update\ndata: {isto nao e json\n\n";
     const update = frame("update", { telemetry: [row(2)], events: [], commands: [], limit: 100 });
 
-    await abre("777", [snapshot + lixo + update]);
+    await openStream("777", [snapshot + garbage + update]);
 
     assert.deepEqual(
         state.selectedDetail.recent.telemetry,

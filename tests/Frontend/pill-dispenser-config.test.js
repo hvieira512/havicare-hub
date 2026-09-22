@@ -31,7 +31,7 @@ test("o som, o idioma e o fuso são escolhas e não números soltos", () => {
     for (const name of ["pillDispenserSound", "pillDispenserRegion"]) {
         assert.equal(CONFIG_INPUTS[name], undefined, `${name} devia ter desaparecido`);
     }
-    assert.equal(typeof CONFIG_INPUTS.select.render, "function");
+    assert.equal(typeof CONFIG_INPUTS.select.control, "function");
 });
 
 test("o não incomodar desenha a janela inteira", () => {

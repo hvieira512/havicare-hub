@@ -64,8 +64,7 @@ test("an empty text field reads back as an empty string, not undefined", () => {
 });
 
 test("action inputs carry no payload", () => {
-    assert.deepEqual(roundTrip({ input: "resetAction", key: "reset" }, {}), {});
-    assert.deepEqual(roundTrip({ input: "requestAction", key: "ask" }, {}), {});
+    assert.deepEqual(roundTrip({ input: "action", key: "reset" }, {}), {});
 });
 
 test("interval toggle keeps both of its fields together", () => {
@@ -114,15 +113,29 @@ test("an unknown input type falls back to the json reader rather than throwing",
     assert.equal(typeof payload, "object");
 });
 
-test("defaults are readable payloads for every input type the renderer knows", () => {
-    // Um valor por omissão que o leitor não consiga devolver enviava a coisa errada à
-    // primeira gravação de uma secção que ninguém tocou.
-    for (const input of ["toggle", "number", "text", "intervalToggle", "pushMessage"]) {
+/**
+ * O que o leitor devolve para um valor por omissão é o que vai para o aparelho na primeira
+ * gravação de uma secção que ninguém tocou. Afirmar que a leitura não estoira não chegava: um
+ * padrão lido de volta como outro valor qualquer passava na mesma.
+ *
+ * O `pushMessage` é o único que não devolve o que recebeu, e desvia-se para o lado certo -- o
+ * campo nasce vazio e lê-se `{message: ""}`, que é o payload de uma mensagem por escrever.
+ */
+const DEFAULT_ROUND_TRIPS = [
+    ["toggle", { enabled: true }],
+    ["number", { enabled: 0 }],
+    ["text", { enabled: "" }],
+    ["intervalToggle", { enabled: true, intervalMinutes: 60 }],
+    ["pushMessage", { message: "" }],
+];
+
+test("o valor por omissão de cada tipo de campo lê-se de volta como ele é", () => {
+    for (const [input, expected] of DEFAULT_ROUND_TRIPS) {
         const entry = { input, key: input, fields: ["enabled"] };
         const defaults = defaultConfigPayload(entry, "");
 
-        assert.equal(typeof defaults, "object", `${input} default should be an object`);
-        assert.doesNotThrow(() => roundTrip(entry, defaults), `${input} default should read back`);
+        assert.equal(typeof defaults, "object", `${input}: o valor por omissão é um objecto`);
+        assert.deepEqual(roundTrip(entry, defaults), expected, input);
     }
 });
 
@@ -163,15 +176,6 @@ test("personal information survives the round trip", () => {
     assert.deepEqual(roundTrip(entry, desired), desired);
 });
 
-test("a list keeps its numbers and honours the entry limit", () => {
-    const entry = { input: "list", key: "numbers", limit: 2 };
-
-    assert.deepEqual(
-        roundTrip(entry, { numbers: ["912345678", "913333333", "914444444"] }),
-        { numbers: ["+351912345678", "+351913333333"] },
-    );
-});
-
 test("SOS contacts reject duplicates rather than silently collapsing them", () => {
     // Dois números iguais pareciam aceites mas deixavam um slot sem uso.
     assert.throws(
@@ -185,7 +189,7 @@ test("SOS contacts reject duplicates rather than silently collapsing them", () =
 
 test("contacts survive the round trip as name and phone pairs", () => {
     const payload = roundTrip(
-        { input: "contacts", key: "phonebook" },
+        { input: "phonebook", key: "phonebook" },
         { contacts: [{ name: "Ana", phone: "912345678" }] },
     );
 
@@ -195,7 +199,7 @@ test("contacts survive the round trip as name and phone pairs", () => {
 test("a contact missing its phone is rejected rather than half-saved", () => {
     assert.throws(
         () => roundTrip(
-            { input: "contacts", key: "phonebook" },
+            { input: "phonebook", key: "phonebook" },
             { contacts: [{ name: "Ana", phone: "" }] },
         ),
         /obrigat/,
