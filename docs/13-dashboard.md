@@ -37,7 +37,7 @@ o browser carrega os módulos tal como estão no repositório.
 | | |
 |---|---|
 | Página | `src/Dashboard/index.php` gera o HTML |
-| Comportamento | ~94 módulos em `src/Dashboard/dashboard/` |
+| Comportamento | ~96 módulos em `src/Dashboard/dashboard/` |
 | Estilo | Bootstrap, mais quatro folhas próprias. A ordem no `<head>` **é** a cascata |
 | Dependências | Bootstrap, Font Awesome, SweetAlert2 e Swagger UI, todas guardadas no repositório |
 

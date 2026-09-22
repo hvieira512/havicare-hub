@@ -71,9 +71,9 @@ não está mal escrito: é o sítio onde tudo o que é *do mesmo género* se acu
 sítio nenhum para o que é *da mesma funcionalidade*. Organizar por camada em vez de por
 funcionalidade dá exactamente isto.
 
-O antigo `config/inputs.js`, com mil e trezentas linhas, foi o primeiro a sair daí: partiu-se
-por fornecedor em `config/inputs/`, e a linha que os separa não é o tamanho -- é o que cada
-protocolo declara nas definições em `src/Command/Configuration/Definition/`.
+É por isso que o `config/inputs/` está partido por fornecedor e não por tamanho: a linha que
+separa os grupos é o que cada protocolo declara nas definições em
+`src/Command/Configuration/Definition/`.
 
 O `devices/device-card.js` é o primeiro feito assim, e mostra até onde a regra vai. Juntou
 o que se podia juntar sem pagar por isso: a marcação e o esqueleto ficam no mesmo módulo,
@@ -114,6 +114,7 @@ dashboard/
 │   ── o núcleo partilhado: o que duas ou mais funcionalidades usam ──
 ├── state.js                o objeto de estado, um só, com um sub-objeto por ecrã
 ├── domain.js               o vocabulário: tipos de dispositivo, modelos, fornecedores, licenças
+├── radar-style.js          como se pinta o que um radar vê: posturas e tipos de área
 ├── format.js               esc(), datas, e as etiquetas por chave
 ├── html.js                 html`` e raw(): a marcação escapa por omissão
 ├── components/             uma peça de interface por ficheiro: recebe dados, devolve HTML
@@ -136,16 +137,14 @@ dashboard/
 ├── grid.js                 a tabela de dados dos Utilizadores API, do descritor que a API devolve
 ├── pagination.js           escreve o paginador no painel, e resolve a página de um clique
 ├── phone.js                o campo de telefone com indicativo
-├── storage.js              as chaves e os acessos ao localStorage
+├── storage.js              as chaves e os acessos ao localStorage e ao sessionStorage
 ├── tooltips.js             re-atar os tooltips do Bootstrap depois de um render
 ├── notifications.js        o sino da barra (funcionalidade de um ficheiro)
 ├── observability.js        o handler global de erros: o que falha sem catch deixa rasto
 │
-├── api/                    um ficheiro por recurso; o único sítio com fetch
+├── api/                    o único sítio com fetch
 │   ├── http.js             requestJson() (com query opcional), formRequest() e o token
-│   ├── auth.js             o bilhete de vida curta que abre o stream
-│   ├── index.js            o barril que o resto importa
-│   └── devices.js  models.js  licenses.js  companies.js  users.js  …
+│   └── index.js            um nome por endpoint, que é o que o resto importa
 │
 ├── auth/session.js         login, refresh do token, e o ecrã de entrada
 │
@@ -168,6 +167,7 @@ dashboard/
 │   ├── config/             o separador de configurações de um dispositivo
 │   │   ├── index.js        desenha a raiz e as secções
 │   │   ├── panel.js        gravar, refrescar, e o estado de cada bloco
+│   │   ├── delivery.js     o que aconteceu ao que se enviou: o estado e a frase de cada um
 │   │   ├── handlers.js     os eventos delegados na raiz do painel
 │   │   ├── inputs/         um descritor por tipo de campo, agrupado por fornecedor
 │   │   │   ├── index.js        junta os cinco grupos num registo só
@@ -293,16 +293,18 @@ regra nova, a resposta é uma capacidade nova em PHP.
 
 ```bash
 npm run lint                   # eslint sobre main.js, dashboard/, assets/js/ e tests/Frontend
-npm test                       # 96 ficheiros em tests/Frontend/
+npm test                       # 110 ficheiros em tests/Frontend/
 composer test:unit             # inclui os testes que lêem estes ficheiros como texto
 ```
 
 Dois valem por si:
 
-- **`tests/Frontend/module-graph.test.js`** importa o `main.js` e falha se algum import
-  não resolver. Um nome importado que ninguém exporta deita a dashboard abaixo com uma
-  página em branco, e nenhum `node --check` o apanha. O mesmo teste falha se um módulo
-  ficar órfão, isto é, inalcançável a partir do `main.js`.
+- **`tests/Frontend/module-graph.test.js`** importa cada porta de entrada e falha se algum
+  import não resolver. Um nome importado que ninguém exporta deita a dashboard abaixo com
+  uma página em branco, e nenhum `node --check` o apanha. O mesmo teste falha se um módulo
+  ficar órfão. São **duas** portas e não uma: o `main.js` é o que o browser carrega, e o
+  `dashboard/app.js` entra por `import()` depois do login — segui-lo só pelos `from` deixava
+  de fora quase todo o grafo.
 - **O `no-unused-vars` do eslint** é aviso e não erro, mas o `npm run lint` corre com
   `--max-warnings 0`: é o que apanha um import que ficou para trás depois de mover código.
   Quem apanha um import **partido** é o `node --test`, que falha logo a carregar.
