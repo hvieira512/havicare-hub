@@ -26,9 +26,7 @@ import {
     clearDeviceFilters,
     handleDeviceFilterClick,
     handleDeviceOnlineFilterChange,
-    handleDownlinkPagerClick,
-    handleTelemetryPagerClick,
-} from "../devices/filters.js";
+} from "../devices/list-filters.js";
 import {
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
@@ -44,6 +42,8 @@ import {
     applyDetailFilters,
     applyDetailSearch,
     clearDetailFilters,
+    handleDownlinkPagerClick,
+    handleTelemetryPagerClick,
     removeDetailFilter,
     updateDetailFilterDraft,
 } from "../devices/detail-filters.js";
