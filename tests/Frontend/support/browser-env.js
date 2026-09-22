@@ -24,6 +24,26 @@ deviceTypesIsland.textContent = readFileSync(
 );
 dom.window.document.body.appendChild(deviceTypesIsland);
 
+/**
+ * O `matchMedia`, que o jsdom não instala.
+ *
+ * Sem ele o `theme.js` cai sempre no claro por a função não existir, e não por o sistema
+ * preferir o claro: o ramo do sistema escuro ficava fora de qualquer teste, e um teste que
+ * afirmasse «abre no claro» passava pela razão errada. Este é conduzível por quem testa.
+ */
+let prefersDark = false;
+
+export function setPrefersDark(value) {
+    prefersDark = value === true;
+}
+
+dom.window.matchMedia = (query) => ({
+    media: String(query),
+    matches: String(query).includes("prefers-color-scheme: dark") && prefersDark,
+    addEventListener() {},
+    removeEventListener() {},
+});
+
 // O node define alguns destes como só-leitura no `globalThis`, e por isso a atribuição passa
 // pelo `defineProperty` em vez de ser directa.
 for (const name of [
