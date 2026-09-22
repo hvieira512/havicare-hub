@@ -288,16 +288,18 @@ final class DeviceEventDecoder
      */
     private function pillConfiguration(string $nativeType, array $tlv): ?array
     {
-        // Só os alarmes ligados: os outros seriam nove linhas a dizer "00:00 desligado".
+        // Só os alarmes ligados: os outros seriam nove linhas a dizer "00:00 desligado". O
+        // número do alarme vai junto, senão o terceiro voltava como se fosse o segundo.
         $plans = [];
-        for ($slot = 0; $slot < 9; $slot++) {
-            if ($this->tlvU8($tlv, 0x1041 + $slot) !== 1) {
+        for ($offset = 0; $offset < 9; $offset++) {
+            if ($this->tlvU8($tlv, 0x1041 + $offset) !== 1) {
                 continue;
             }
             $plans[] = [
-                'slot' => $slot + 1,
-                'hour' => $this->tlvU8($tlv, 0x1021 + $slot) ?? 0,
-                'minute' => $this->tlvU8($tlv, 0x1031 + $slot) ?? 0,
+                'slot' => $offset + 1,
+                'hour' => $this->tlvU8($tlv, 0x1021 + $offset) ?? 0,
+                'minute' => $this->tlvU8($tlv, 0x1031 + $offset) ?? 0,
+                'enabled' => true,
             ];
         }
 
@@ -309,15 +311,23 @@ final class DeviceEventDecoder
             }
         }
 
+        // Pela chave do contrato e com a forma com que a configuração é enviada. É o que
+        // permite guardar cada uma como reportada e desenhá-la com o mesmo componente que
+        // desenha o desejado, sem traduzir nada pelo meio.
+        $settings = array_filter([
+            'medication_reminders' => $plans !== [] ? ['plans' => $plans] : null,
+            'medication_period' => $this->pillPeriod($tlv),
+            'do_not_disturb' => $this->pillQuietHours($tlv),
+            'alarm_volume' => $this->pillField($tlv, 0x1013, 'volume'),
+            'alarm_ringtone' => $this->pillField($tlv, 0x1012, 'ringtone'),
+            'device_language' => $this->pillField($tlv, 0x1001, 'language'),
+            'time_zone' => ($zone = $this->tlvI16($tlv, 0x1015)) === null ? null : ['timeZone' => $zone],
+            'child_lock' => $this->pillSwitch($tlv, 0x100C),
+            'early_dispense' => $this->pillSwitch($tlv, 0x100D),
+        ], static fn (mixed $field): bool => $field !== null);
+
         $value = array_filter([
-            'plans' => $plans !== [] ? $plans : null,
-            'period' => $this->pillPeriod($tlv),
-            'volume' => $this->tlvU8($tlv, 0x1013),
-            'ringtone' => $this->tlvU8($tlv, 0x1012),
-            'language' => $this->tlvU8($tlv, 0x1001),
-            'timeZone' => $this->tlvI16($tlv, 0x1015),
-            'childLock' => $this->pillFlag($tlv, 0x100C),
-            'earlyRetrieval' => $this->pillFlag($tlv, 0x100D),
+            'settings' => $settings !== [] ? $settings : null,
             'refusedTags' => $refused !== [] ? $refused : null,
         ], static fn (mixed $field): bool => $field !== null);
 
@@ -329,6 +339,55 @@ final class DeviceEventDecoder
     {
         $value = $this->tlvU8($tlv, $tag);
         return $value === null ? null : $value === 1;
+    }
+
+    /**
+     * Um número solto embrulhado no nome com que é enviado.
+     *
+     * @param array<int, array{value?: string}> $tlv
+     * @return array<string, int>|null
+     */
+    private function pillField(array $tlv, int $tag, string $field): ?array
+    {
+        $value = $this->tlvU8($tlv, $tag);
+
+        return $value === null ? null : [$field => $value];
+    }
+
+    /**
+     * @param array<int, array{value?: string}> $tlv
+     * @return array{enabled: bool}|null
+     */
+    private function pillSwitch(array $tlv, int $tag): ?array
+    {
+        $value = $this->pillFlag($tlv, $tag);
+
+        return $value === null ? null : ['enabled' => $value];
+    }
+
+    /**
+     * A janela de «não incomodar», das quatro TAGs de hora mais o interruptor.
+     *
+     * Era a única configuração que se escrevia e nunca se lia de volta: o hub não tinha
+     * maneira nenhuma de saber o que estava lá dentro.
+     *
+     * @param array<int, array{value?: string}> $tlv
+     * @return array{enabled: bool, startHour: int, startMinute: int, endHour: int, endMinute: int}|null
+     */
+    private function pillQuietHours(array $tlv): ?array
+    {
+        $enabled = $this->pillFlag($tlv, 0x1051);
+        if ($enabled === null) {
+            return null;
+        }
+
+        return [
+            'enabled' => $enabled,
+            'startHour' => $this->tlvU8($tlv, 0x1052) ?? 0,
+            'startMinute' => $this->tlvU8($tlv, 0x1053) ?? 0,
+            'endHour' => $this->tlvU8($tlv, 0x1054) ?? 0,
+            'endMinute' => $this->tlvU8($tlv, 0x1055) ?? 0,
+        ];
     }
 
     /**
