@@ -294,7 +294,7 @@ regra nova, a resposta é uma capacidade nova em PHP.
 
 ```bash
 npm run lint                   # eslint sobre main.js, dashboard/, assets/js/ e tests/Frontend
-npm test                       # 116 ficheiros em tests/Frontend/
+npm test                       # 120 ficheiros em tests/Frontend/
 composer test:unit             # inclui os testes que lêem estes ficheiros como texto
 ```
 
