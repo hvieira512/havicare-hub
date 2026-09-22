@@ -5,9 +5,16 @@ import {
     setDashboardApiToken,
 } from "../api/http.js";
 import { toast } from "../dialogs.js";
+import {
+    clearSessionKey,
+    LAST_ACTIVITY_STORAGE_KEY,
+    loadJsonSession,
+    loadTextSession,
+    saveJsonSession,
+    saveTextSession,
+    TOKEN_STORAGE_KEY,
+} from "../storage.js";
 
-const TOKEN_STORAGE_KEY = "hub-dashboard-api-token";
-const LAST_ACTIVITY_STORAGE_KEY = "hub-dashboard-last-activity";
 const ADMIN_ROLE = "hub_admin";
 const WARNING_AFTER_MS = 15 * 60 * 1000;
 const LOGOUT_AFTER_MS = 20 * 60 * 1000;
@@ -59,19 +66,15 @@ export const validAdminToken = (token) => {
 
 const storeToken = (token) => {
     if (!validAdminToken(token)) {
-        sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+        clearSessionKey(TOKEN_STORAGE_KEY);
         return;
     }
-    sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(token));
+    saveJsonSession(TOKEN_STORAGE_KEY, token);
 };
 
 export const restoreToken = () => {
-    try {
-        const token = JSON.parse(sessionStorage.getItem(TOKEN_STORAGE_KEY) || "null");
-        return validAdminToken(token) ? token : null;
-    } catch {
-        return null;
-    }
+    const token = loadJsonSession(TOKEN_STORAGE_KEY);
+    return validAdminToken(token) ? token : null;
 };
 
 const clearTimers = () => {
@@ -185,8 +188,8 @@ const startDashboard = async () => {
 const logout = (message = "") => {
     clearTimers();
     hideTimeoutWarning();
-    sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-    sessionStorage.removeItem(LAST_ACTIVITY_STORAGE_KEY);
+    clearSessionKey(TOKEN_STORAGE_KEY);
+    clearSessionKey(LAST_ACTIVITY_STORAGE_KEY);
     clearDashboardApiToken();
     showLogin(message);
 };
@@ -220,7 +223,7 @@ const registerActivity = (force = false) => {
     hideTimeoutWarning();
     scheduleIdleTimers();
     if (now - lastActivityWriteAt >= ACTIVITY_WRITE_THROTTLE_MS) {
-        sessionStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, String(now));
+        saveTextSession(LAST_ACTIVITY_STORAGE_KEY, String(now));
         lastActivityWriteAt = now;
     }
 };
@@ -284,7 +287,7 @@ const login = async (event) => {
         storeToken(token);
         lastActivityAt = Date.now();
         lastActivityWriteAt = lastActivityAt;
-        sessionStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, String(lastActivityAt));
+        saveTextSession(LAST_ACTIVITY_STORAGE_KEY, String(lastActivityAt));
         scheduleIdleTimers();
         toast("success", "Autenticação concluída. Bem-vindo ao Hub.");
         await startDashboard();
@@ -302,7 +305,7 @@ const restoreSession = async () => {
         return;
     }
 
-    const storedActivity = Number(sessionStorage.getItem(LAST_ACTIVITY_STORAGE_KEY));
+    const storedActivity = Number(loadTextSession(LAST_ACTIVITY_STORAGE_KEY));
     lastActivityAt = Number.isFinite(storedActivity) && storedActivity > 0
         ? storedActivity
         : Date.now();
