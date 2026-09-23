@@ -100,6 +100,12 @@ const UPLINK_CARD_RENDERERS = {
     sleep_state: (data) => ({
         value: fieldValue("sleep_state", data?.state),
     }),
+    // Sem isto caía no genérico, que põe a etiqueta da capacidade no lugar do valor -- e em
+    // inglês, porque a etiqueta vem da chave. A forma varia com o fabricante: os relógios
+    // mandam texto livre, o dispensador manda dois bytes que saem em hexadecimal.
+    firmware_version: (data) => ({
+        value: String(data?.version ?? "").trim() || "—",
+    }),
     // O tipo específico vai no valor: "Queda" não distingue uma queda de alguém no chão.
     fall: (data) => ({
         icon: "fa-person-falling",
