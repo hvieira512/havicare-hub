@@ -13,7 +13,7 @@ A persistência assenta em duas bases de dados com funções distintas:
 histórico — ver a
 secção 3.
 
-## 1. MySQL — as 16 tabelas
+## 1. MySQL — as 20 tabelas
 
 ```mermaid
 erDiagram
@@ -35,7 +35,7 @@ erDiagram
 | Tabela | Guarda |
 |---|---|
 | `device_types` | Os tipos de dispositivo. Conteúdo vindo do `config/device-types.json` |
-| `suppliers` | Os sete fornecedores. Nome único |
+| `suppliers` | Os fornecedores. Nome único |
 | `models` | Modelo interno, nome comercial, tipo de dispositivo, imagem |
 | `capabilities` | O catálogo genérico: chave, secção, e as bandeiras de configurável e pedível |
 | `model_capabilities` | Que capacidades cada modelo tem, com a possibilidade de sobrepor |
@@ -99,8 +99,24 @@ dispositivo e capacidade, substituída e não acumulada.
 | Tabela | Guarda |
 |---|---|
 | `dashboard_notifications` | Recusas e avisos, com contagem de ocorrências e marca de lido |
+| `denylist` | As identidades cujas mensagens as ingestões MQTT deitam fora sem as olhar, por protocolo |
 | `private_radio_map_access_points` | O mapa de rádio. **Só resumos HMAC**, nunca endereços |
 | `schema_migrations` | Que versões já foram aplicadas |
+
+### Radar — o que o fornecedor sabe da divisão
+
+| Tabela | Guarda |
+|---|---|
+| `radar_api_credentials` | As credenciais da cloud do fabricante, **uma linha por licença**, mais o par de tokens que ela devolve |
+| `radar_layouts` | A planta da divisão de cada radar, em decímetros, como o fornecedor a serve |
+| `radar_layout_areas` | As áreas dentro dessa planta: chave, tipo, nome e os quatro cantos |
+
+**As credenciais do radar são reversíveis, e não há maneira de não o serem:**
+servem para fazer login no fornecedor, que espera a palavra-passe. A defesa não
+é a cifra, é a saída — não saem pela API, e a dashboard recebe apenas se estão
+ou não preenchidas. A [`RadarLayoutSync`](04-ingestao-mqtt-radar.md) é quem as
+usa, e os tokens ficam na base e não em ficheiro porque são duas instâncias do
+hub na mesma máquina.
 
 ### Ausências deliberadas de chave estrangeira
 
@@ -138,8 +154,20 @@ desfaz escolhas de um administrador.
 > começa por desistir quando a tabela está vazia: numa base nova não há nada a
 > trazer a dia, e a linha de base trata do assunto.
 
-Há hoje **onze** migrações. As oito de 4 de setembro fecham a auditoria ao
-esquema:
+Uma migração que já correu em toda a frota é **dobrada na linha de base** do
+`database/schema.sql` e sai do plano: uma base nova nasce com o resultado já
+feito, e o plano fica só com o que ainda falta aplicar algures. Foi o que
+aconteceu às onze de setembro de 2026, da auditoria ao esquema, e é por isso que
+não estão em `src/Infrastructure/Persistence/Migration/` — o que elas fizeram
+está descrito abaixo porque explica o esquema de hoje, não porque ainda corra.
+
+O plano em vigor é o `DatabaseMigrationPlan`, uma classe por versão. Hoje é
+quase todo do [dispensador de comprimidos](19-dispensador-de-comprimidos.md),
+que é o tipo de dispositivo mais recente.
+
+### O que a linha de base já traz feito
+
+As oito de 4 de setembro fecharam a auditoria ao esquema:
 
 | Migração | O que faz |
 |---|---|
@@ -152,30 +180,30 @@ esquema:
 | `model_capabilities_by_natural_key` | Aponta as ligações ao par `(device_type, capability_key)` |
 | `device_type_ascii_collation` | Converge as cinco colunas `device_type` para `ascii_bin`, reconstruindo as chaves estrangeiras que nelas assentam |
 
-Cada uma verifica antes de converter e desiste em vez de perder informação: uma
-coluna que discorde da origem, um valor que não seja ISO-8601, um texto que não
-caiba na largura nova.
+Cada uma verificava antes de converter e desistia em vez de perder informação:
+uma coluna que discordasse da origem, um valor que não fosse ISO-8601, um texto
+que não coubesse na largura nova.
 
-As três de 3 de setembro:
+E as três de 3 de setembro:
 
-A `2026_09_03_drop_configuration_supplier_and_model` larga o `supplier` e o
+A `2026_09_03_drop_configuration_supplier_and_model` largou o `supplier` e o
 `model` da `device_configurations`. Eram cópia do que a `whitelist` diz sobre o
 IMEI, escritas em três caminhos e lidas em nenhum, e a cópia divergiu: as linhas
 órfãs do IMEI `000060060298220` declaravam dois modelos para o mesmo aparelho.
 
-A `2026_09_03_drop_supplier_device_types` larga a tabela que respondia a «que
+A `2026_09_03_drop_supplier_device_types` largou a tabela que respondia a «que
 fornecedores fazem cada tipo de dispositivo». A pergunta responde-se com um
 `SELECT DISTINCT` sobre a `models`, que é a origem — ver
 `ModelRepository::supplierDeviceTypes()`. A tabela era escrita num sítio só e
 apenas a inserir, pelo que apagar o último modelo de um tipo, ou mudar-lhe o
 tipo, deixava lá o par a afirmar o contrário.
 
-A `2026_09_03_shrink_configuration_lifecycle` larga as
-três colunas de `device_configuration_operations` que eram escritas e nunca
-lidas — `command_bytes`, `expected_reply_types` e `retry_delay_seconds` —, larga
-os cinco índices que nenhuma consulta podia usar, repõe dois deles pela ordem em
-que são procurados, e converte os `desired_payload` e `effective_payload` que já
-existiam para a marca do áudio.
+A `2026_09_03_shrink_configuration_lifecycle` largou as três colunas de
+`device_configuration_operations` que eram escritas e nunca lidas —
+`command_bytes`, `expected_reply_types` e `retry_delay_seconds` —, largou os
+cinco índices que nenhuma consulta podia usar, repôs dois deles pela ordem em
+que são procurados, e converteu os `desired_payload` e `effective_payload` que
+já existiam para a marca do áudio.
 
 A conversão dos dados recorre ao `VoiceDataMarker`, que é o mesmo código que
 escreve as linhas novas. As linhas antigas e as novas não podem, por isso,
@@ -185,7 +213,7 @@ O inventário de exemplo — 26 dispositivos, licenças, imagens — é `bin/see
 e está **fora** do plano de migrações de propósito: senão cada teste de integração
 começava com 26 dispositivos lá dentro.
 
-## 3. Redis — os seis espaços de chaves
+## 3. Redis — os sete espaços de chaves
 
 | Prefixo | Guarda | Expira? |
 |---|---|---|
@@ -195,6 +223,7 @@ começava com 26 dispositivos lá dentro.
 | `hub:moko` | De-duplicação, refrescamento e transições de estado BLE | parcialmente |
 | `hub:location:circuit` | O estado do disjuntor | sim |
 | `hub:location:resolution` | Cache de resoluções de localização | sim, 24 h ou 60 s |
+| `hub:login-throttle` | Os contadores que travam as tentativas de autenticação, por endereço, por utilizador e global | sim, é a janela de cada teto |
 
 ### O histórico é limitado, não é um arquivo
 

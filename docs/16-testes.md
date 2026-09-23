@@ -126,7 +126,7 @@ regressão involuntária.
 | Teste | Invariante |
 |---|---|
 | `Unit/Database/SeedWhitelistTest` | O seed não grava [sentinelas de memória](07-multi-inquilino.md) na base de dados e nunca produz licença sem empresa |
-| `Unit/Runtime/RedisPrefixTest` | Os seis [espaços de chaves](14-persistencia.md) recebem o prefixo, e a ausência de prefixo preserva a chave |
+| `Unit/Runtime/RedisPrefixTest` | Os sete [espaços de chaves](14-persistencia.md) recebem o prefixo, e a ausência de prefixo preserva a chave |
 | `Unit/Api/OpenApiSpecRoutesTest` | Correspondência entre [rotas e especificação](09-api.md) nos dois sentidos, com duas exceções declaradas |
 | `Unit/Api/OpenApi/SchemaFromRequestTest` | Conjunto de restrições de validação traduzidas para o esquema |
 | `Unit/Dashboard/DashboardElementIdsTest` | Existência no HTML de cada elemento referenciado pelo [JavaScript](20-frontend-da-dashboard.md) |
