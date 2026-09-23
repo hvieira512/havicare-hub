@@ -147,7 +147,9 @@ sequenceDiagram
 
 As confirmações são fixas, uma por tipo: `AP01`→`IWBP01#`, `AP49`→`IWBP49#`,
 `APHT`→`IWBPHT#`, e assim por diante. Um tipo sem confirmação declarada não
-recebe resposta nenhuma.
+recebe resposta nenhuma. São nove: os oito da tabela da secção 5 mais o `APHD`,
+que o hub confirma com `IWBPHD#` e mais nada — nenhum descodificador o trata, e
+por isso só aparece no `raw`.
 
 ### 2.3 4P Touch — `four-p-touch`
 

@@ -292,5 +292,5 @@ publicado.
 | `src/Device/HubMqttBridge.php` | Compõe todos os tópicos e publica os quatro canais |
 | `src/Device/RawPayload.php` | As formas de `raw`, `status` e do ciclo de vida |
 | `src/Device/DeviceEventPayloadBuilder.php` | A forma de `telemetry` e dos alarmes |
-| `src/Device/DeviceHubServer.php` | A escolha do canal: `alarm` vai a `events`, o resto a `telemetry` |
+| `src/Device/DeviceHubServer.php` | A escolha do canal na ingestão TCP: `alarm`, `medication_intake`, `device_fault` e `help_call` vão a `events`, o resto a `telemetry` |
 | `src/Mqtt/BrokerSettings.php` · `ConnectionFactory.php` | Ligação, TLS, identificadores de cliente |
