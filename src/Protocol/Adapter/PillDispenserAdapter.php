@@ -181,6 +181,9 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     public const T_INT32U = 6;
     public const T_STRING = 11;
 
+    /** O M228 tem nove alarmes fixos, e é o protocolo que o fixa. */
+    public const ALARM_SLOTS = 9;
+
     /**
      * O tipo declarado de cada TAG, da tabela «TAG Definition - Device Type 02».
      *

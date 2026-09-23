@@ -3,6 +3,7 @@
 namespace Hub\Device;
 
 use Hub\Protocol\Adapter\FourPTouchAdapter;
+use Hub\Protocol\Adapter\PillDispenserAdapter;
 
 final class DeviceEventDecoder
 {
@@ -342,7 +343,7 @@ final class DeviceEventDecoder
         // publicava plano nenhum e a dashboard continuava a mostrar o plano antigo como
         // reportado, para sempre.
         $planReported = false;
-        for ($offset = 0; $offset < 9; $offset++) {
+        for ($offset = 0; $offset < PillDispenserAdapter::ALARM_SLOTS; $offset++) {
             $enabled = $this->tlvU8($tlv, 0x1041 + $offset);
             if ($enabled === null) {
                 continue;
@@ -654,7 +655,7 @@ final class DeviceEventDecoder
     private function pillDoseStates(array $tlv): array
     {
         $doses = [];
-        foreach (range(1, 9) as $alarm) {
+        foreach (range(1, PillDispenserAdapter::ALARM_SLOTS) as $alarm) {
             $state = match ($this->tlvU8($tlv, 0x8130 + $alarm)) {
                 0 => 'idle',
                 1 => 'preparing',

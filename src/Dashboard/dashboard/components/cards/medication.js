@@ -7,7 +7,7 @@ import { state } from "../../state.js";
  * identifica uma dose, e vem do plano de medicação; o número do alarme fica na legenda.
  */
 
-/** O aparelho tem nove alarmes fixos. Os que o plano não usa não são doses, são lugares. */
+/** Os nove do protocolo, em `PillDispenserAdapter::ALARM_SLOTS`. O frontend não os partilha. */
 const ALARM_SLOTS = 9;
 
 /** Três famílias de cor e não seis: o que correu bem, o que está a decorrer, e o que falhou. */

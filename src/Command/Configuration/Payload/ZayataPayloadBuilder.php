@@ -2,6 +2,8 @@
 
 namespace Hub\Command\Configuration\Payload;
 
+use Hub\Protocol\Adapter\PillDispenserAdapter;
+
 /**
  * Valida o que se configura num dispensador Zayata M228.
  *
@@ -13,9 +15,6 @@ namespace Hub\Command\Configuration\Payload;
  */
 final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
 {
-    /** O aparelho tem nove alarmes fixos. */
-    private const ALARM_SLOTS = 9;
-
     public static function build(string $key, array $payload): array
     {
         return match ($key) {
@@ -111,8 +110,8 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
         if (!is_array($plans)) {
             throw new \InvalidArgumentException('plans must be a list');
         }
-        if (count($plans) > self::ALARM_SLOTS) {
-            throw new \InvalidArgumentException('the M228 has ' . self::ALARM_SLOTS . ' alarms');
+        if (count($plans) > PillDispenserAdapter::ALARM_SLOTS) {
+            throw new \InvalidArgumentException('the M228 has ' . PillDispenserAdapter::ALARM_SLOTS . ' alarms');
         }
 
         $out = [];
@@ -124,7 +123,7 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             // plano pela posição, que é a única leitura que um plano antigo permite.
             $out[] = array_filter([
                 'slot' => isset($plan['slot'])
-                    ? self::zeroBasedRangeInt($plan['slot'], 1, self::ALARM_SLOTS, "plans[{$index}].slot")
+                    ? self::zeroBasedRangeInt($plan['slot'], 1, PillDispenserAdapter::ALARM_SLOTS, "plans[{$index}].slot")
                     : null,
                 'hour' => self::zeroBasedRangeInt($plan['hour'] ?? 0, 0, 23, "plans[{$index}].hour"),
                 'minute' => self::zeroBasedRangeInt($plan['minute'] ?? 0, 0, 59, "plans[{$index}].minute"),

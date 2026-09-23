@@ -419,7 +419,7 @@ final class DeviceCommandCatalog
     private static function pillMedicationPlan(array $payload): array
     {
         $plans = array_values(array_filter($payload['plans'] ?? [], 'is_array'));
-        if (count($plans) > 9) {
+        if (count($plans) > PillDispenserAdapter::ALARM_SLOTS) {
             throw new \InvalidArgumentException('o M228 tem nove alarmes, e o plano traz ' . count($plans));
         }
 
@@ -440,7 +440,7 @@ final class DeviceCommandCatalog
         }
 
         $tlv = [];
-        for ($offset = 0; $offset < 9; $offset++) {
+        for ($offset = 0; $offset < PillDispenserAdapter::ALARM_SLOTS; $offset++) {
             $plan = $bySlot[$offset + 1] ?? null;
             $tlv[0x1021 + $offset] = ['value' => self::pillByte($plan['hour'] ?? 0, 23)];
             $tlv[0x1031 + $offset] = ['value' => self::pillByte($plan['minute'] ?? 0, 59)];
