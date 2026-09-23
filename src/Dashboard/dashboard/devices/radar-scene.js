@@ -4,21 +4,9 @@ import { fieldValue } from "../format.js";
 /**
  * A planta da divisão de um radar, em Konva.
  *
- * Veio do `_js/radar/scene/radar-scene.js` do cliente, que é o mesmo desenho a correr há
- * meses: a mesma transformação de coordenadas, a mesma sala, as mesmas áreas tracejadas com o
- * preenchimento a 13%, o mesmo nó por pessoa -- círculo, ícone e etiqueta -- e a mesma
- * transição de 150 ms entre posições.
- *
- * Três coisas mudaram, e nenhuma é do desenho:
- *
- * 1. **A leitura das formas saiu.** O cliente recebe `"{-30,-8;30,-8;...}"` e desmonta a
- *    cadeia no browser; aqui isso acontece em PHP, no `LayoutParser`, e o que chega já são
- *    caixas em decímetros. Saíram com ela o `parseRectangle`, o `parseAreas`, o `reorderRect`
- *    e o `getAreaName`.
- * 2. **Os campos são os do hub** -- `xPositionDm` e `posture`, e não `x_position_dm` e
- *    `posture_state`. A sentinela `person_index === 88` também saiu: o
- *    `MessageNormalizer` já a filtra antes de a telemetria sair do hub.
- * 3. **O rasto não veio.** É do modo de reprodução do cliente, e o hub não tem nenhum.
+ * Portado do `_js/radar/scene/radar-scene.js` do cliente, com o mesmo desenho. As formas
+ * chegam já lidas pelo `LayoutParser` em PHP, os campos são os do hub (`xPositionDm`,
+ * `posture`), e o rasto do modo de reprodução não veio.
  */
 
 /** O ar entre a divisão e a borda da tela. */

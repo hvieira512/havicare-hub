@@ -4,12 +4,8 @@ import { loadTextStorage, saveTextStorage, THEME_STORAGE_KEY } from "./storage.j
  * O tema claro/escuro.
  *
  * Quem faz o trabalho é o Bootstrap 5.3: o `data-bs-theme` no `<html>` troca-lhe os tokens
- * todos, e como as folhas deste projecto pedem a cor por `var(--bs-*)` quase tudo vira
- * sozinho. O que é nosso -- o navy da marca, a escala de humidade, a superfície da entrada
- * -- tem o seu par no bloco `[data-bs-theme="dark"]` de cada ficheiro.
- *
- * Sem preferência guardada segue-se a do sistema. Guardada, ganha ela: quem carregou no
- * botão disse o que queria, e não é o sistema operativo que o desdiz.
+ * todos. O que é nosso tem o seu par no bloco `[data-bs-theme="dark"]` de cada ficheiro.
+ * Sem preferência guardada segue-se a do sistema; guardada, ganha ela.
  */
 
 export const LIGHT = "light";

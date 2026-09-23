@@ -3,8 +3,7 @@
  * cada funcionalidade pelo seu `init`, liga os ouvintes e repõe o que ficou da sessão.
  *
  * É o único sítio que conhece toda a gente, e uma funcionalidade nunca importa outra -- é essa
- * regra que mantém o grafo de módulos sem ciclos. Os ouvintes vivem no `wiring/`, que é raiz
- * de composição na mesma, dividida por área.
+ * regra que mantém o grafo de módulos sem ciclos.
  */
 import { getDashboardApiToken, getDevice as apiGetDevice } from "./api/index.js";
 import { refreshSelectedDetail, setDeviceFilters, state } from "./state.js";
@@ -78,11 +77,9 @@ export async function startDashboard() {
     initSettings({ els, ui });
     initDeviceStream({
         renderSelection,
-        // O stream corre sempre e o painel de configurações só existe depois de alguém abrir
-        // o separador. Mas o que esta chamada faz não é só desenhar: escreve o estado de
-        // entrega de cada comando, e desistir dela deixava o painel a mostrar «Em fila» sobre
-        // um comando já confirmado até o modal ser reaberto. Com o modal aberto manda-se vir
-        // o painel; sem ele não há nada a que aplicar o estado, e o `editDevice` relê tudo.
+        // Esta chamada não só desenha: escreve o estado de entrega de cada comando. Com o
+        // modal aberto manda-se vir o painel; sem ele não há nada a que aplicar o estado, e
+        // o `editDevice` relê tudo.
         onCommandsUpdated: (imei, commands) => {
             const loaded = configPanelIfLoaded();
             if (loaded) {
@@ -137,8 +134,7 @@ export async function startDashboard() {
  * histórico: o `recent` preserva-se de propósito porque só o stream o traz, e é o `stream.js`
  * que garante que ele volta a ligar-se quando cai.
  *
- * Um separador escondido não sonda, como o `stream.js` também não. Ao voltar relê-se já: meio
- * minuto a mostrar o dispositivo como ele estava é pior do que o pedido que se poupou.
+ * Um separador escondido não sonda, como o `stream.js` também não, e ao voltar relê-se já.
  */
 export function startSelectedDevicePolling() {
     const refreshWhenVisible = () => {

@@ -30,9 +30,7 @@ import {
 /**
  * Os handlers do painel de configuração de um dispositivo: três eventos delegados na raiz --
  * clique, `change` e `input` -- mais o fecho do aviso de resultado. Tudo o que precisam vem
- * do evento, e por isso este módulo não guarda `els` nenhum.
- *
- * O que fazem é encaminhar: descobrir de que campo é o evento e chamar quem o desenha. As
+ * do evento, e por isso este módulo não guarda `els` nenhum. O que fazem é encaminhar: as
  * regras de cada campo vivem com esse campo, e não aqui.
  */
 export function handleDeviceConfigClick(event) {

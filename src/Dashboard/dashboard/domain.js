@@ -2,9 +2,8 @@
  * O que cada tipo de dispositivo tem. A tabela vive no `DeviceTypeCatalog`, em PHP, e o
  * `index.php` serve-a numa ilha JSON `#hub-device-types`.
  *
- * Faltando ela, este módulo recusa carregar. Um valor por omissão vazio não dava erro nenhum
- * -- dava um formulário sem tipos e um `normalizeDeviceType` que devolvia sempre "watch",
- * que se lê como problema de dados quando é de fiação.
+ * Faltando ela, este módulo recusa carregar: um valor por omissão vazio dava um formulário
+ * sem tipos, que se lê como problema de dados quando é de fiação.
  */
 const deviceTypesIsland = globalThis.document?.getElementById("hub-device-types");
 const DEVICE_TYPES = deviceTypesIsland ? JSON.parse(deviceTypesIsland.textContent) : null;
@@ -89,11 +88,8 @@ export function licenseDisplayLabel(
  * O protocolo de um aparelho, pelo fornecedor e pelo modelo.
  *
  * Um fornecedor pode vender coisas que falam protocolos diferentes: os relógios da Wonlex
- * falam TCP e a pulseira MF91 da mesma marca fala BLE. Sem o modelo, ganhava o primeiro da
- * lista, e o painel de configurações da pulseira mostrava o catálogo dos relógios.
- *
- * O modelo é opcional: onde ele não se conhece -- o assistente de registo, antes de o
- * escolher -- continua a valer o primeiro do fornecedor, que é o que lá estava.
+ * falam TCP e a pulseira MF91 da mesma marca fala BLE. O modelo é opcional -- onde não se
+ * conhece continua a valer o primeiro do fornecedor.
  */
 export function supplierProtocol(supplier, models = [], model = "") {
     const ofSupplier = (models || []).filter(
@@ -157,10 +153,8 @@ export function modelDisplayName(supplier, model, models = []) {
 /**
  * O fornecedor à frente do nome comercial, sem o dizer duas vezes.
  *
- * Seis dos vinte modelos da frota já o trazem no nome -- «MONIT MECS Pro», «MOKOSmart
- * MKGW3» --, e juntá-los em cru dava «MONIT MONIT MECS Pro» no cabeçalho do modal. Basta
- * comparar o início: os fornecedores do catálogo são nomes de marca distintos, e nenhum é
- * prefixo de outro.
+ * Vários modelos da frota já o trazem no nome -- «MONIT MECS Pro» --, e juntá-los em cru dava
+ * «MONIT MONIT MECS Pro». Basta comparar o início: nenhum fornecedor é prefixo de outro.
  */
 export function supplierModelLabel(supplier, commercial) {
     const brand = String(supplier || "");

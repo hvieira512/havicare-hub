@@ -11,9 +11,8 @@ installErrorReporting();
  * manda vir. Carrega-se uma vez só, dê a ordem o clique ou a sessão que já estava guardada.
  *
  * Uma carga que falhe não se recupera aqui: o browser guarda no mapa de módulos a falha por
- * URL, e um segundo `import()` do mesmo especificador resolve para a entrada nula sem voltar
- * à rede -- medido contra o hub local, duas tentativas e um só pedido. Quem trata da falha é
- * o `session.js`, que devolve o ecrã de entrada e pede para recarregar a página.
+ * URL, e um segundo `import()` resolve para a entrada nula sem voltar à rede. Quem trata da
+ * falha é o `session.js`, que devolve o ecrã de entrada e pede para recarregar.
  */
 let dashboardApp = null;
 const loadDashboardApp = () => (dashboardApp ??= import("./dashboard/app.js"));

@@ -24,12 +24,8 @@ const TONE_HEX = {
  * A postura de uma pessoa vista por um radar: o ícone, o tom e o glifo.
  *
  * O `icon` é a classe do Font Awesome para a marcação e o `glyph` é o mesmo ícone em ponto de
- * código, que é o que a tela precisa -- vêm em par de propósito, para o mapa e a pastilha não
- * poderem divergir. Os pontos de código são os do Font Awesome 6 Free que o hub serve, e vão
- * escritos como escape: o caractere é da área de uso privado e num editor não se vê nada,
- * o que torna impossível rever ou procurar a linha em que está.
- *
- * A etiqueta não está aqui: vive no `FIELD_VALUE_LABELS.posture` do `format.js`.
+ * código, que é o que a tela precisa. Vão escritos como escape porque o caractere é da área
+ * de uso privado. A etiqueta vive no `FIELD_VALUE_LABELS.posture` do `format.js`.
  */
 const POSTURE_STYLE = {
     standing: { icon: "fa-person", glyph: "", tone: "success" },

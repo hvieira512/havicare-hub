@@ -6,13 +6,8 @@ import { stateBadge } from "../../components/state-badge.js";
  * guardar.
  *
  * Guardar no hub e aplicar no aparelho são dois momentos distintos, e podem estar separados
- * por dias -- um relógio desligado recebe em fila quando voltar. O estado de entrega é o que
- * conta essa segunda metade: em envio, à espera de resposta, aplicado, divergente, falhado.
- *
- * O vocabulário e a tradução de um comando para ele vivem juntos porque são a mesma coisa
- * vista de dois lados: o que o ecrã diz e o que a fila de comandos reporta. Separá-los deixava
- * o `acked` de um lado e o «Aplicado» do outro, e um estado novo passava a obrigar a acertar
- * dois ficheiros sem nada a prender que ficassem a par.
+ * por dias. O vocabulário e a tradução de um comando para ele vivem juntos porque são a mesma
+ * coisa vista de dois lados: o que o ecrã diz e o que a fila de comandos reporta.
  */
 
 const CONFIGURATION_DELIVERY_META = {

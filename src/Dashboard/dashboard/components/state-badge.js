@@ -4,12 +4,8 @@ import { html, raw } from "../html.js";
  * A pastilha de estado da plataforma: o ponto, o rótulo e um tom.
  *
  * É feita das classes do Bootstrap e não de CSS próprio. A altura de linha é fixada por
- * utilitário e não herdada, e é isso que a mantém do seu tamanho onde quer que caia -- dentro
- * de uma célula do AG Grid, que dá ao conteúdo a altura da linha, a versão da casa herdava-a
- * e transbordava.
- *
- * O fundo é subtil e o texto de ênfase: o mesmo par em toda a plataforma. A leitura nunca
- * pode depender da cor, e por isso o rótulo diz sempre qual é o estado.
+ * utilitário e não herdada, e é isso que a mantém do seu tamanho dentro de uma célula do AG
+ * Grid. A leitura nunca pode depender da cor, e por isso o rótulo diz sempre qual é o estado.
  */
 const TONES = ["primary", "secondary", "success", "warning", "danger", "info"];
 

@@ -224,16 +224,9 @@ final class DashboardHttpServer
     /**
      * A impressão digital do conjunto de ficheiros que servimos com `no-cache`.
      *
-     * Vai no caminho, e não numa etiqueta de revalidação, porque pelo meio pode estar quem
-     * não obedeça ao `no-cache` -- a Cloudflare à frente do hub reescreve-o para quatro horas
-     * de cache no browser. Com o conjunto no URL, um deploy muda todos os endereços de uma
-     * vez e nenhuma cópia velha chega a ser pedida; sem isso, um arranque pode misturar
-     * módulos de duas versões, e um módulo velho não conhece nem os caminhos nem os
-     * descritores da nova.
-     *
-     * Não se guarda entre pedidos: o processo é longo, e um ficheiro alterado por baixo dele
-     * -- o que acontece a cada gravação no hub local -- tem de mudar a versão logo, ou o
-     * `immutable` que a acompanha prendia o browser à cópia antiga.
+     * Vai no caminho, e não numa etiqueta de revalidação, porque a Cloudflare à frente do hub
+     * reescreve o `no-cache` para quatro horas de cache no browser. Não se guarda entre
+     * pedidos: um ficheiro alterado por baixo do processo tem de mudar a versão logo.
      */
     private function assetVersion(): string
     {
@@ -304,12 +297,9 @@ final class DashboardHttpServer
             ? ['Content-Encoding' => 'gzip', 'Vary' => 'Accept-Encoding']
             : ['Vary' => 'Accept-Encoding'];
 
-        // O corpo comprimido é outro corpo, e por isso leva sufixo no ETag: partilhar a
-        // etiqueta entregava a variante errada a quem revalidasse com a outra.
-        //
-        // A etiqueta calcula-se sempre, mesmo onde não vai no cabeçalho: é ela que indexa a
-        // cache do corpo, e sem isso um ficheiro alterado debaixo do processo -- cada gravação
-        // no hub local -- ficaria a servir os bytes velhos do endereço novo.
+        // O corpo comprimido é outro corpo, e por isso leva sufixo no ETag. A etiqueta
+        // calcula-se sempre, mesmo onde não vai no cabeçalho: é ela que indexa a cache do
+        // corpo.
         $etag = sprintf('"%x-%x%s"', (int)filemtime($path), (int)filesize($path), $gzip ? '-gz' : '');
 
         // Guarda-se para sempre o que não pode mudar debaixo do URL por onde foi pedido: os

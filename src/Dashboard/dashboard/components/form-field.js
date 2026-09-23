@@ -6,10 +6,8 @@ import { html, raw } from "../html.js";
  * O controlo entra como HTML já pronto e passa pelo `raw()`; a etiqueta e a ajuda entram
  * como texto e saem escapadas.
  *
- * Vive aqui e não no `devices/config/inputs/shared.js`, ao lado do `numberField` e do
- * `enabledSwitch`, porque não sabe nada de dispositivos nem de `data-config-*`: é o esqueleto
- * de um campo de formulário, e o assistente de criação desenha-o sem passar pelo painel de
- * configurações.
+ * Vive aqui e não no `devices/config/inputs/shared.js` porque não sabe nada de dispositivos
+ * nem de `data-config-*`: é o esqueleto de um campo de formulário.
  */
 export function field(label, control, { help = "", cls = "", required = false } = {}) {
     const classAttribute = cls ? html` class="${cls}"` : "";

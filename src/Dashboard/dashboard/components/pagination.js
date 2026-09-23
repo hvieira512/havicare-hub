@@ -34,13 +34,8 @@ function pageWindow(currentPage, totalPages) {
  * Os botões de um paginador: as duas setas e a janela de páginas entre elas. Vazio quando há
  * uma página só -- não há para onde ir, e um paginador de um botão é ruído.
  *
- * O componente `pagination` do Bootstrap em vez de um `btn-group`: dá o mesmo sem uma linha
- * de CSS nosso -- cantos só nas pontas, a página actual preenchida, o travado esbatido -- e
- * o `page-link` já traz o alvo de toque e o anel de foco.
- *
  * O `goAction` existe porque os painéis do dispositivo registam os handlers em
- * `telemetryPageGo`/`downlinkPageGo` e não em `${actionPrefix}Go`. Com o valor por omissão
- * nesses dois sítios, os botões numerados deixam de responder sem dar erro nenhum.
+ * `telemetryPageGo`/`downlinkPageGo` e não em `${actionPrefix}Go`.
  */
 export function paginationControls({
     pagination,

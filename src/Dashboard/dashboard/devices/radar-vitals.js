@@ -3,10 +3,8 @@ import { fieldValue } from "../format.js";
 /**
  * Os sinais vitais de um radar, ao lado da planta: o estado do sono e os dois gráficos.
  *
- * Os gráficos vieram do `live/info-panel.js` do hitCare -- `SmoothedXLineSeries` com eixo de
- * data ao segundo, o mesmo preenchimento a 20% por baixo da linha, e os mesmos limites de
- * escala. O que mudou foi a origem dos pontos: lá vêm de uma sondagem de segundo a segundo,
- * aqui do histórico que o stream já traz ao abrir e das leituras que chegam a seguir.
+ * Os gráficos vieram do `live/info-panel.js` do hitCare. O que mudou foi a origem dos pontos:
+ * aqui vêm do histórico que o stream traz ao abrir e das leituras que chegam a seguir.
  */
 
 const licenseIsland = globalThis.document?.getElementById("hub-amcharts-license");
@@ -15,10 +13,8 @@ const AMCHARTS_LICENSE = licenseIsland ? JSON.parse(licenseIsland.textContent) :
 /**
  * Cada sinal vital: onde está o valor no payload, e de que cor se desenha.
  *
- * Sem limites de escala. O hitCare fixa 40--180 batimentos, e numa pessoa entre 64 e 69 isso
- * deixa a linha colada ao fundo com dois terços do desenho a sobrar -- uma variação de cinco
- * batimentos desaparece. Aqui a escala segue os dados, e quem diz se o valor é normal são os
- * números ao lado e os alarmes que o hub já levanta.
+ * Sem limites de escala: fixá-los deixa a linha colada ao fundo e faz desaparecer variações
+ * de poucos batimentos. Quem diz se o valor é normal são os números ao lado e os alarmes.
  */
 const VITALS = {
     heart_rate: { field: "bpm", color: "#dc3545", unit: "bpm" },
@@ -29,11 +25,8 @@ const VITALS = {
  * O tom da faixa do estado do sono.
  *
  * Só tons do Bootstrap, e a escala vai escurecendo com a profundidade: acordado é verde, o
- * sono leve é o navy da casa e o profundo é o escuro. O `info` ficou de fora de propósito --
- * é um ciano que grita mais do que o resto do ecrã inteiro, e isto é contexto.
- *
- * O ícone acompanha: o olho para acordado, a lua para o sono leve e a cama para o profundo.
- * O que não se sabe fica cinzento e com a interrogação, em vez de fingir uma leitura.
+ * sono leve é o navy da casa e o profundo é o escuro. O ícone acompanha, e o que não se sabe
+ * fica cinzento e com a interrogação, em vez de fingir uma leitura.
  */
 const SLEEP_STATE = {
     awake: { tone: "success", icon: "fa-eye" },
