@@ -586,19 +586,8 @@ final class DeviceEventDecoder
             ];
         }
 
-        // A ligação à rede sai como `connectivity`, que é como os gateways já a publicam e
-        // como a dashboard já a desenha. Um formato só deste aparelho obrigava quem integra a
-        // conhecer mais um para ler a mesma grandeza.
-        //
-        // Fica a potência e não a contagem de barras: o `0x810D` vai de 0 a 3 e o
-        // `signalQuality` do contrato é o CSQ de 0 a 31, e enfiar um no outro dava um número
-        // que ninguém sabe interpretar. As barras são um arredondamento do dBm, que é o que
-        // se compara entre aparelhos.
-        //
-        // O aparelho reporta a magnitude e o sinal vai por nossa conta: o fornecedor
-        // confirmou a unidade em dBm e, perante um valor positivo, respondeu «treat it as a
-        // negative value». Um sinal recebido é sempre negativo, e publicar `25 dBm` era
-        // publicar a potência de um emissor.
+        // Sai como a `connectivity` dos gateways, em dBm. Não vai a contagem de barras do
+        // `0x810D`: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras vão de 0 a 3.
         $cellular = self::pillNegativeSignal($this->tlvI16($tlv, 0x810B));
         $wifi = self::pillNegativeSignal($this->tlvI16($tlv, 0x810A));
         if ($cellular !== null || $wifi !== null) {
@@ -631,11 +620,8 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'help_call', 'nativeType' => $nativeType, 'value' => ['state' => 'in_progress']];
         }
 
-        // Os mesmos bytes, dois caminhos, duas naturezas. A resposta ao `0x07` traz os nove e
-        // é uma leitura: o estado num instante, que se pediu. Tudo o resto traz o alarme que
-        // mudou e mais nada, e é um acontecimento -- que sai pelo canal com garantia de
-        // entrega, porque uma dose falhada não gera `medication_intake` nenhum e esta mudança
-        // de estado é o único sinal que dela existe.
+        // A resposta ao `0x07` traz os nove e é leitura; tudo o resto traz o alarme que mudou
+        // e é acontecimento, que sai pelo canal com garantia de entrega.
         $doses = $this->pillDoseStates($tlv);
         if ($doses === []) {
             return $events;
@@ -676,15 +662,8 @@ final class DeviceEventDecoder
     }
 
     /**
-     * O estado de toma de cada alarme que a trama reporta, na ordem dos alarmes.
-     *
-     * É a leitura da toma que chega em claro. O evento `0x03` traz a hora prevista, a hora
-     * real e a célula, mas o aparelho cifra tudo o que envia por iniciativa própria e a chave
-     * sai da codificação dele; estas TAGs pedem-se num `0x07` e a resposta a um pedido nosso
-     * vem sempre legível.
-     *
-     * Quantos vêm é que distingue os dois casos, e por isso quem chama é que decide o que
-     * fazer com eles: uma resposta ao `0x07` traz os nove, uma notificação traz um.
+     * O estado de toma de cada alarme que a trama reporta, na ordem dos alarmes. Quantos vêm
+     * é que distingue a leitura dos nove da notificação de um, e quem chama é que decide.
      *
      * @param array<int, array{value?: string, state?: int}> $tlv
      * @return list<array{alarm: int, state: string}>

@@ -3,26 +3,14 @@ import { html, raw } from "../../html.js";
 import { state } from "../../state.js";
 
 /**
- * A faixa do dia: as doses do dispensador, uma coluna cada, na ordem das horas.
- *
- * A primeira tentativa foi uma grelha 3×3 de números de alarme. A posição na grelha não queria
- * dizer nada — a linha 2 não é «a meio do dia» — e «alarme 5» não é vocabulário de ninguém. O
- * que identifica uma dose é a hora a que ela toca, e essa está no plano de medicação que o hub
- * já guarda; o número do alarme fica pequeno ao lado, para quando for preciso falar do
- * aparelho em vez de falar do dia.
- *
- * É a mesma decisão que a tira de canais da fralda: o corpo do cartão desenha, e o valor
- * continua a ser o número que se lê de longe.
+ * A faixa do dia: as doses do dispensador, uma coluna cada, na ordem das horas. A hora é o que
+ * identifica uma dose, e vem do plano de medicação; o número do alarme fica na legenda.
  */
 
 /** O aparelho tem nove alarmes fixos. Os que o plano não usa não são doses, são lugares. */
 const ALARM_SLOTS = 9;
 
-/**
- * A família de cor de cada estado. São três e não seis: o que interessa distinguir é o que
- * correu bem, o que está a acontecer, e o que falhou. Os estados intermédios do aparelho —
- * «a preparar» e «à espera» — são o mesmo para quem olha, e a legenda diz qual é.
- */
+/** Três famílias de cor e não seis: o que correu bem, o que está a decorrer, e o que falhou. */
 const DOSE_BAND = {
     taken: "taken",
     preparing: "pending",
@@ -32,11 +20,8 @@ const DOSE_BAND = {
 };
 
 /**
- * A hora a que cada alarme está marcado, tirada do plano que o aparelho confirmou ter.
- *
- * Do `effectiveConfigurations` e não do desejado: o desejado é o que lhe pedimos, e um plano
- * por confirmar punha no ecrã horas que o aparelho ainda não tem. Sem plano lido devolve um
- * mapa vazio, e a faixa cai para o número do alarme — que é o que ele garantidamente disse.
+ * A hora de cada alarme, do plano que o aparelho confirmou ter — do efectivo e não do
+ * desejado, que é o que lhe pedimos e ele pode ainda não ter.
  *
  * @returns {Map<number, string>}
  */

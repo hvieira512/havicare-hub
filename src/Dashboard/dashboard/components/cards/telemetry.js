@@ -1,6 +1,6 @@
 import { fieldLabel, fieldValue, titleize } from "../../format.js";
 import { DETECTION_TYPE_LABEL } from "../../domain.js";
-import { html } from "../../html.js";
+import { html, raw } from "../../html.js";
 import { compactDetails } from "./shared.js";
 import { connectivityIcon, connectivityValue } from "./gateway.js";
 import { diaperMoistureBody, diaperMoistureRowValue } from "./diaper.js";
@@ -421,20 +421,51 @@ function deviceConfigContent(data) {
         value: settings.length === 1
             ? capabilityLabel(settings[0][0])
             : `${settings.length} definições`,
-        details: settings
-            .map(([key, value]) => html`${capabilityLabel(key)}: ${settingSummary(value)}`)
-            .join(" · "),
+        details: settings.map(([key]) => capabilityLabel(key)).join(" · "),
+        span: 12,
+        body: reportedSettingsBody(settings),
     };
 }
 
+function reportedSettingsBody(settings) {
+    if (settings.length === 0) {
+        return "";
+    }
+
+    const rows = settings.map(([key, value]) => html`<div class="reported-setting d-flex justify-content-between gap-3" data-setting="${key}">
+<span class="text-secondary">${capabilityLabel(key)}</span>
+<span class="text-end">${settingSummary(key, value)}</span>
+</div>`).join("");
+
+    return html`<div class="reported-settings mt-3">${raw(rows)}</div>`;
+}
+
+const HOUR = (hour, minute) => `${String(hour ?? 0).padStart(2, "0")}:${String(minute ?? 0).padStart(2, "0")}`;
+
 /** O que uma definição reportada tem lá dentro, sem o nome do campo a repetir o da definição. */
-function settingSummary(value) {
+function settingSummary(key, value) {
     if (value === null || typeof value !== "object") {
         return fieldValue("value", value);
     }
 
+    // As duas compostas não se resumem campo a campo: uma lista de alarmes e um par de horas
+    // lêem-se como o que são.
+    if (key === "medication_reminders") {
+        const marked = (value.plans || [])
+            .filter((plan) => plan?.enabled !== false)
+            .map((plan) => HOUR(plan?.hour, plan?.minute))
+            .sort();
+        return marked.length === 0 ? "Sem alarmes marcados" : marked.join(" · ");
+    }
+    if (key === "do_not_disturb") {
+        const window = `${HOUR(value.startHour, value.startMinute)}–${HOUR(value.endHour, value.endMinute)}`;
+        return value.enabled === false ? `Desligado (${window})` : window;
+    }
+
     return Object.entries(value)
-        .map(([field, inner]) => fieldValue(field, inner))
+        .map(([field, inner]) => (inner !== null && typeof inner === "object"
+            ? `${fieldLabel(field)}: ${Object.values(inner).length}`
+            : fieldValue(field, inner)))
         .join(" · ");
 }
 

@@ -47,7 +47,7 @@ test("uma linha com mais do que um campo abre e arruma-os", () => {
         occurredAt: "2026-09-23T10:00:00Z",
     });
 
-    assert.match(row.expanded, /<br>/);
+    assert.match(row.expanded, /\n/);
     assert.match(row.expanded, /corrente/i);
 });
 
@@ -65,4 +65,15 @@ test("uma linha cujo resumo esconde alguma coisa abre", () => {
     });
 
     assert.notEqual(row.expanded, "");
+});
+
+/** A gaveta escapa o que recebe: marcação em texto aparecia à letra, `<br>` incluído. */
+test("a gaveta não recebe marcação", () => {
+    const row = telemetryActivityRow({
+        type: "battery",
+        data: { percent: 80, chargingState: "charging", mainsPowered: true },
+        occurredAt: "2026-09-23T10:00:00Z",
+    });
+
+    assert.doesNotMatch(row.expanded, /<br|&lt;/);
 });

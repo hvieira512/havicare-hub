@@ -104,9 +104,11 @@ function activityRow({
     const caret = openable
         ? raw(html`<i class="fa-solid fa-chevron-down telemetry-row-caret text-secondary ms-2" aria-hidden="true"></i>`)
         : raw("");
+    // Uma linha por campo. O texto chega simples e é escapado aqui, que é o que impede
+    // marcação de aparecer à letra no ecrã.
     const panel = openable
         ? html`<tr id="${panelId}" class="telemetry-row-panel${isOpen ? "" : " d-none"}">
-            <td colspan="4">${expanded}</td>
+            <td colspan="4">${raw(String(expanded).split("\n").map((line) => html`<div>${line}</div>`).join(""))}</td>
            </tr>`
         : "";
 

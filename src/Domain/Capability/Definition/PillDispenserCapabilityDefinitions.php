@@ -27,19 +27,9 @@ final class PillDispenserCapabilityDefinitions
             // só deste aparelho obrigava quem integra a conhecer mais um para ler a mesma
             // grandeza.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'connectivity', 'label' => 'Conectividade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            // Não há `device_status` nenhum: era uma capacidade que não publicava nada e
-            // existia só para ser o botão do `0x07`. Quem quisesse a temperatura tinha de
-            // saber que a ia buscar clicando numa coisa chamada «estado do dispositivo», e o
-            // cartão da temperatura ficava a olhar. A trama é uma só e enche sete leituras, e
-            // por isso são as sete que se pedem — o clique fica onde a pessoa está a olhar.
-            //
-            // O CCID do cartão SIM também não está aqui: é um identificador que nunca muda,
-            // ninguém o consulta na dashboard, e quem precise dele vai buscá-lo à ficha do
-            // dispositivo. O adaptador continua a descodificá-lo, mas descodificar e publicar
-            // são decisões separadas.
-            //
-            // O estado de toma dos nove alarmes: a única leitura da toma que chega em claro,
-            // porque o `0x03` que traz a hora e a célula vem cifrado.
+            // Sem `device_status` e sem CCID: cada leitura do `0x07` pede-se por si, e o CCID
+            // nunca muda. O estado dos nove alarmes é a única leitura da toma que chega em
+            // claro — o `0x03`, que traz a hora e a célula, vem cifrado.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'medication_alarm_status', 'label' => 'Estado dos alarmes', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'medication_intake', 'label' => 'Toma de medicação', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'device_fault', 'label' => 'Avaria', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
@@ -48,14 +38,8 @@ final class PillDispenserCapabilityDefinitions
             // ultrapassada. Como telemetria, enchia a lista com linhas a dizer «Dentro da
             // gama», que é o normal e que ninguém lê.
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'storage_environment', 'label' => 'Medicação mal conservada', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
-            // Uma dose que muda de estado. A leitura dos nove é o `medication_alarm_status`, e
-            // é telemetria porque é o retrato de um instante; isto é o que acontece entre dois
-            // retratos, e chega numa notificação `0x04` com um alarme e mais nada.
-            //
-            // A separação não é de arrumação. Uma dose falhada não gera `medication_intake`
-            // nenhum -- não houve toma a registar --, e o único sinal dela é esta mudança de
-            // estado. Enquanto viajava dentro da leitura, saía por telemetria, a QoS 0: o
-            // acontecimento mais importante do aparelho era o único que se podia perder.
+            // O que acontece entre dois retratos dos nove. É o único sinal de uma dose
+            // falhada: não houve toma, e por isso não há `medication_intake` nenhum.
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'medication_alarm_change', 'label' => 'Alteração de dose', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             // A mesma chave do NCS e da pulseira: o botão de emergência é uma chamada de ajuda.
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'help_call', 'label' => 'Chamada de ajuda', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],

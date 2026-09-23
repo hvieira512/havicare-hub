@@ -183,6 +183,20 @@
     flex: 1 1 0;
 }
 
+/* A configuração que o aparelho reporta: uma linha por definição, nome à esquerda. */
+.reported-settings {
+    font-size: var(--fs-sm);
+}
+
+.reported-setting {
+    padding: .2rem 0;
+    border-top: 1px solid var(--bs-border-color-translucent);
+}
+
+.reported-setting:first-child {
+    border-top: 0;
+}
+
 /* A faixa do dia: uma coluna por dose marcada, na ordem das horas. As colunas repartem a
    largura em partes iguais e embrulham quando não cabem — com cinco doses e o cartão a meia
    largura ficariam com quarenta pixéis cada, e por isso o cartão pede a linha inteira. */

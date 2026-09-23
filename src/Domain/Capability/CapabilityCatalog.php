@@ -87,16 +87,9 @@ final class CapabilityCatalog
     }
 
     /**
-     * Se uma capacidade é um acontecimento, e não uma leitura.
-     *
-     * É o que decide por que canal do MQTT ela sai: os acontecimentos vão por `events`, a
-     * QoS 1, e as leituras por `telemetry`, a QoS 0. A decisão vinha de uma lista escrita à
-     * mão dentro de quem publica, que já discordava do que as definições declaram -- e o que
-     * isso custava não era arrumação, era uma dose falhada a poder perder-se no caminho.
-     *
-     * Pela chave e não pelo par chave/aparelho: a `help_call` existe em quatro catálogos e é
-     * acontecimento nos quatro, e um teste prende essa concordância. Um tipo que o catálogo
-     * não conhece é leitura, que é o que sempre foi o caso por omissão.
+     * Se a capacidade é acontecimento — canal `events`, QoS 1 — ou leitura, `telemetry` a
+     * QoS 0. Pela chave e não pelo par chave/aparelho: um teste prende que a bandeira não
+     * discorda entre catálogos.
      */
     public static function isEventType(string $type): bool
     {

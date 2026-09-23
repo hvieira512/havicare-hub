@@ -40,16 +40,9 @@ final class DeviceCommandCatalog
     }
 
     /**
-     * O que o dispensador aceita como *pedido*, e é isso que o distingue do resto do
-     * catálogo dele: tudo o mais que ele faz — dispensar, calibrar, reiniciar, repor o prato —
-     * muda o aparelho, e um mosaico do ecrã principal dispara ao primeiro clique, sem
-     * confirmação e sem contexto. Esses ficam no modal, atrás de quem lá foi de propósito.
-     *
-     * O `0x07` é uma trama só e enche sete leituras, e por isso são sete os pedidos que a
-     * mandam. Havia em vez disso um `device_status` que não publicava nada e existia só para
-     * ser o botão: quem quisesse a temperatura tinha de saber que a ia buscar clicando numa
-     * coisa chamada «estado do dispositivo», e o mosaico da temperatura ficava a olhar. O
-     * clique passa a estar onde a pessoa está a olhar quando o quer.
+     * Só o que o dispensador serve como *pedido*: o `0x07`, que é uma trama só e enche sete
+     * leituras, e o `0x05`. O que muda o aparelho fica no modal, atrás de quem lá foi de
+     * propósito — um mosaico dispara ao primeiro clique, sem confirmação.
      *
      * @return list<array<string, mixed>>
      */

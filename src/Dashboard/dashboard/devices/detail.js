@@ -308,20 +308,17 @@ function renderClientPager(prefix, totalRows, totalPages) {
 }
 
 /**
- * A gaveta de uma linha, ou nada quando ela não teria o que mostrar.
- *
- * Os detalhes já vêm escapados pelo renderizador, e por isso o que aqui se faz é trocar o
- * separador pela quebra de linha -- reconstruí-los a partir do texto simples desfazia esse
- * escape.
+ * O que a gaveta de uma linha mostra, em texto simples e uma linha por campo. A gaveta escapa
+ * o que recebe, e por isso não pode levar marcação — um `<br>` aparecia à letra no ecrã.
  */
-function detailExpanded(card, detail) {
+function detailExpanded(card, plainDetail) {
     if (card.detailsTitle) {
         return card.detailsTitle;
     }
 
-    const fields = detail.split(" · ");
+    const fields = plainDetail.split(" · ");
 
-    return fields.length > 1 ? fields.join("<br>") : "";
+    return fields.length > 1 ? fields.join("\n") : "";
 }
 
 export function telemetryActivityRow(payload) {
@@ -348,16 +345,7 @@ export function telemetryActivityRow(payload) {
         detail,
         detailKind: card.detailsKind || "text",
         detailTitle: detailText,
-        // O que a linha aberta mostra, e só quando acrescenta alguma coisa ao que a fechada
-        // já diz. Mostrava o mesmo texto outra vez -- quem carregava via «Tampa aberta: Não ·
-        // Ligado à corrente: Sim» duas vezes, uma por cima da outra -- e a seta prometia mais
-        // do que tinha.
-        //
-        // Acrescenta em dois casos. Quando o renderizador declara um `detailsTitle`, a linha
-        // visível é um resumo e o que ficou de fora vive ali. E quando os detalhes são mais do
-        // que um campo: na linha vão todos seguidos numa corrida cortada ao fim da coluna, e
-        // abertos ficam um por linha, que é o que se consegue ler.
-        expanded: detailExpanded(card, detail),
+        expanded: detailExpanded(card, plainDetail),
         // O `seq` é monótono por dispositivo e lista. O IMEI vai na chave porque ele
         // recomeça em cada aparelho.
         key: `t:${state.selectedImei}:${payload?.seq ?? `${at}:${type}`}`,
