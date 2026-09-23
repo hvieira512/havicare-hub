@@ -1,5 +1,7 @@
 # 08 — Contrato MQTT
 
+## Âmbito
+
 Esta é a referência de quem integra. Descreve o que o hub **publica** — o MQTT é
 uma superfície de leitura, e o caminho para enviar comandos é a
 [API REST](09-api.md).

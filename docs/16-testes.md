@@ -1,5 +1,13 @@
 # 16 — Testes
 
+## Âmbito
+
+O que prende o comportamento do hub contra regressão: as quatro suites de teste
+e o que cada uma cobre, as três ferramentas de análise, e o portão da integração
+contínua. Uma funcionalidade começa pelo teste que falha, e a regra está no
+[`CLAUDE.md`](../CLAUDE.md); este capítulo descreve o que já existe para a
+sustentar.
+
 ## As quatro suites
 
 | Suite | Onde | Ficheiros | Precisa de |

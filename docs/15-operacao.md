@@ -1,5 +1,12 @@
 # 15 — Operação
 
+## Âmbito
+
+Como o hub está montado na máquina que o serve: as duas instâncias e o que as
+separa, o que acontece ao publicar uma versão nova, onde fica o registo, o que a
+máquina está configurada para garantir quando o processo morre, e as
+verificações que dizem se está tudo de pé.
+
 > **As regras de trabalho estão no [`CLAUDE.md`](../CLAUDE.md).** Este capítulo
 > explica como o sistema está montado; esse diz o que se pode e não se pode
 > fazer, e em que ordem.

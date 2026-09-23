@@ -283,6 +283,35 @@ ao hub.
 | `0x8121`–`0x8125` | falhas | rotação, reset do prato, empurrador, porta da célula, teclas |
 | `0x8131`–`0x8139` | **estado de toma de cada um dos nove alarmes** | `0` nada · `1` a preparar · `2` à espera · `4` tempo esgotado · `6` **falhada** · `7` **tomada** |
 
+### O que este firmware anuncia saber dizer
+
+A descoberta de parâmetros (`0x0B`) devolveu **43 TAGs de estado**, e são estas:
+
+```
+0x8002 0x8003 0x8004 0x8005 0x8006 0x8007 0x8008 0x8009 0x800A 0x800B
+0x8081 0x8082
+0x8101 0x8102 0x8103 0x8104 0x8105 0x8106 0x8107 0x8109 0x810B 0x810D
+0x810E 0x810F 0x8111 0x8112
+0x811A 0x811B 0x811D
+0x8121 0x8122 0x8123 0x8124 0x8125
+0x8131 0x8132 0x8133 0x8134 0x8135 0x8136 0x8137 0x8138 0x8139
+```
+
+Duas coisas que só a lista responde.
+
+**Não há compartimento de destino.** As únicas TAGs de célula são as três acima —
+actual, capacidade e restantes. O aparelho não diz para onde o prato vai a
+seguir, e quem quiser sabê-lo tem de o deduzir do próximo alarme marcado. O hub
+não o publica: seria um campo calculado por nós com cara de leitura dele.
+
+**O `0x810A` não está na lista**, nem o `0x810C`. É a confirmação, vinda do
+próprio aparelho, de que esta unidade é 4G e não tem rádio WiFi nenhum — só o
+`0x810B` e o `0x810D` respondem.
+
+O bloco `0x8002`–`0x800B` e o `0x8081`/`0x8082` são identidade e sistema, e o hub
+não os lê: o `0x8009` é o ICCID do cartão SIM, e o resto segue-o. O `0x8105` e o
+`0x8106` estão *deprecated* na própria especificação.
+
 > **«Tomada» não quer sempre dizer «tomada à hora».** Uma dispensa manual — o
 > comando `0xA004` ou o botão verde do aparelho — consome a dose do **próximo
 > alarme marcado** e dá-o como tomado, mesmo que a hora dele ainda esteja longe.
