@@ -40,6 +40,27 @@ final class DeviceCommandCatalog
     }
 
     /**
+     * O que se pergunta a um aparelho na primeira vez que ele se regista.
+     *
+     * A especificação da série M2 pede-o: sem isto as listas de TAGs suportadas são as que
+     * alguém escreveu à mão depois de uma descoberta única, e um firmware diferente recusa em
+     * silêncio o que lhe pedirmos a mais.
+     *
+     * @return list<string>
+     */
+    public static function firstRegistrationCommands(string $protocol): array
+    {
+        return match ($protocol) {
+            'zayata-m228' => [
+                'discoverParametersConfiguration',
+                'discoverParametersStatus',
+                'discoverParametersControl',
+            ],
+            default => [],
+        };
+    }
+
+    /**
      * Só o que o dispensador serve como *pedido*: o `0x07` e o `0x05`. O que muda o aparelho
      * fica no modal, porque um mosaico dispara ao primeiro clique e sem confirmação.
      *

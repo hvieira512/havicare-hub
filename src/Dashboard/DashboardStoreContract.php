@@ -41,6 +41,12 @@ interface DashboardStoreContract
     public function deviceSeen(string $imei, array $fields): void;
 
     /**
+     * Toma para si a descoberta de parâmetros de um aparelho, e devolve se foi esta chamada a
+     * tomá-la. Verdadeiro uma vez só, na primeira vez que o hub vê o aparelho.
+     */
+    public function claimParameterDiscovery(string $imei): bool;
+
+    /**
      * A intensidade de sinal pertence ao par (dispositivo, gateway), e por isso é registada
      * contra o dispositivo retransmitido e lida pelos dois lados da ligação.
      */

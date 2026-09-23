@@ -8,8 +8,8 @@ use Predis\ClientInterface;
 use Predis\Command\CommandInterface;
 
 /**
- * O substituto em memória do Predis, a cobrir o subconjunto de comandos que a dashboard
- * store actually issues.
+ * O substituto em memória do Predis, a cobrir o subconjunto de comandos que a store da
+ * dashboard usa.
  *
  * Num sítio só: em três cópias quase iguais, cada comando novo tinha de ser acrescentado três
  * vezes, e acrescentá-lo à lista de métodos mas não ao despachante falhava de uma forma que
@@ -82,6 +82,7 @@ final class InMemoryRedisClient implements ClientInterface
             'hmset' => $this->hmset((string)$arguments[0], $arguments[1]),
             'hgetall' => $this->hgetall((string)$arguments[0]),
             'hset' => $this->hset((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
+            'hsetnx' => $this->hsetnx((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
             'hdel' => $this->hdel((string)$arguments[0], $arguments[1]),
             'hget' => $this->hget((string)$arguments[0], (string)$arguments[1]),
             'hmget' => $this->hmget((string)$arguments[0], (array)$arguments[1]),
@@ -152,6 +153,17 @@ final class InMemoryRedisClient implements ClientInterface
         $this->hashes[$key][$field] = $value;
 
         return $exists ? 0 : 1;
+    }
+
+    /** Escreve só se o campo ainda não existir, e devolve 1 quando foi esta chamada a escrever. */
+    private function hsetnx(string $key, string $field, string $value): int
+    {
+        if (array_key_exists($field, $this->hashes[$key] ?? [])) {
+            return 0;
+        }
+        $this->hashes[$key][$field] = $value;
+
+        return 1;
     }
 
     private function hdel(string $key, $fields): int

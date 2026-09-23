@@ -2,6 +2,7 @@
 
 namespace Hub\Device;
 
+use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Log\Logger;
 use Hub\Location\LocationTelemetryEnricherContract;
@@ -302,6 +303,7 @@ class DeviceHubServer
 
         $this->handleAuthenticatedMessage($conn, $session, $raw, (string)$conn->resourceId);
         $this->flushPendingDownlinks($session);
+        $this->discoverParametersOnce($session);
 
         Logger::channel('hub')->info("Device online IMEI={$identity->imei} protocol={$identity->protocol}");
     }
@@ -434,6 +436,32 @@ class DeviceHubServer
 
         Logger::channel('hub')->warning("Device rejected IMEI={$identity->imei} reason=$reason");
         $conn->close();
+    }
+
+    /**
+     * Pergunta ao aparelho que parâmetros ele serve, na primeira vez que o hub o vê.
+     *
+     * Sem store não há onde guardar a marca, e então pergunta-se sempre: é o caso dos testes,
+     * e um aparelho a responder duas vezes à mesma pergunta não estraga nada.
+     */
+    private function discoverParametersOnce(DeviceSession $session): void
+    {
+        $commands = DeviceCommandCatalog::firstRegistrationCommands($session->protocol);
+        if ($commands === []) {
+            return;
+        }
+
+        if ($this->dashboardStore !== null && !$this->dashboardStore->claimParameterDiscovery($session->imei)) {
+            return;
+        }
+
+        foreach ($commands as $command) {
+            try {
+                $this->sendDownlink($session->imei, DeviceCommandCatalog::buildDownlink($session->protocol, $session->imei, $command));
+            } catch (\Throwable $e) {
+                Logger::channel('hub')->error("Failed to discover parameters for IMEI={$session->imei}: {$e->getMessage()}");
+            }
+        }
     }
 
     private function flushPendingDownlinks(DeviceSession $session): void
