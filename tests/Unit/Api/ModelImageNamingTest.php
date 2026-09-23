@@ -11,13 +11,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * A base de dados guarda o nome do ficheiro, e a rota vive no código.
  *
- * A coluna `image_path` guardava `/model-images/<ficheiro>.jpg`, com o mesmo prefixo repetido
- * em todas as linhas. Isso obriga um `UPDATE` a toda a tabela para mudar onde as imagens são
- * servidas, deixa a coluna aceitar caminhos inconsistentes, e obriga quem a lê a desmontá-la
- * para chegar ao ficheiro — que era o que a rotina de apagar já fazia à mão, com uma
- * expressão regular.
- *
- * O que varia por linha fica na linha; o que é igual em todas fica no código.
+ * Um prefixo `/model-images/` repetido em todas as linhas obriga a um `UPDATE` a toda a
+ * tabela para mudar onde as imagens são servidas, e obriga quem lê a desmontá-lo. O que varia
+ * por linha fica na linha; o que é igual em todas fica no código.
  */
 final class ModelImageNamingTest extends TestCase
 {

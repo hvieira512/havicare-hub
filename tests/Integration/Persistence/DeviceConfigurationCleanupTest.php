@@ -14,10 +14,8 @@ use Tests\Support\MysqlDashboardTestCase;
  * Sem isto, as linhas do ciclo de vida das configurações ficam para trás e um IMEI registado
  * outra vez herda os valores desejados do dono anterior.
  *
- * O teste passa pelo `unregister`, que é por onde um dispositivo sai do registo, e não por
- * um `DELETE` à mão: o que se garante é o comportamento do caminho, não a existência de
- * uma chave estrangeira -- que aqui seria um risco, porque a ingestão escreve
- * configurações reportadas sem passar pela whitelist.
+ * O teste passa pelo `unregister` e não por um `DELETE` à mão: o que se garante é o
+ * comportamento do caminho, não a existência de uma chave estrangeira.
  */
 final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
 {

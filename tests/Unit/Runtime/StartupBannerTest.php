@@ -44,11 +44,8 @@ final class StartupBannerTest extends TestCase
      * Os identificadores de cliente MQTT saem no arranque.
      *
      * Dois hubs com o mesmo identificador no mesmo broker expulsam-se em ciclo, e cada
-     * expulsão tira a ingestão do ar enquanto a reconexão não acaba. Foi o que aconteceu com
-     * o `qinglanst-radar`: produção usa o valor por omissão, um clone local também, e as duas
-     * bateram-se durante horas sem nada no arranque que dissesse com que identidade cada uma
-     * se apresentava. O `journalctl` de ambas dizia «connection lost», que é o sintoma e não
-     * a causa.
+     * expulsão tira a ingestão do ar. O `journalctl` de ambas diz «connection lost», que é o
+     * sintoma e não a causa.
      */
     public function testTheBannerNamesTheMqttClientIdentities(): void
     {

@@ -11,12 +11,8 @@ use PHPUnit\Framework\TestCase;
  * O tecto do áudio de voz do TAKEPILLS.
  *
  * A conversão para AMR corre o `ffmpeg` num subprocesso síncrono, dentro do event loop que
- * também serve a ingestão dos relógios e a dashboard. O corpo de um pedido da API aceita 6 MB,
- * o que dava ~4,5 MB de bytes escolhidos por quem chama entregues ao conversor, com tudo o
- * resto parado enquanto ele trabalha.
- *
- * Um lembrete são no máximo 15 segundos de áudio -- o próprio comando do `ffmpeg` corta aí --,
- * portanto o tecto não tira nada a ninguém e fecha a amplificação.
+ * também serve a ingestão e a dashboard. Um lembrete são no máximo 15 segundos de áudio -- o
+ * próprio comando do `ffmpeg` corta aí --, portanto o tecto não tira nada a ninguém.
  */
 final class FourPTouchVoiceDataLimitTest extends TestCase
 {

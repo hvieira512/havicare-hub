@@ -12,10 +12,8 @@ const { uplinkCardContent } = await import(
 /**
  * A faixa do dia: uma coluna por dose marcada, na ordem das horas.
  *
- * A primeira tentativa foi uma grelha 3×3 de números de alarme. A posição na grelha não queria
- * dizer nada -- a linha 2 não é «a meio do dia» -- e «alarme 5» não é vocabulário de ninguém.
- * O que identifica uma dose é a hora dela, e a hora está no plano de medicação que o hub já
- * guarda; o número do alarme fica pequeno ao lado, para quando for preciso falar do aparelho.
+ * O que identifica uma dose é a hora dela, que está no plano de medicação que o hub já guarda;
+ * o número do alarme fica pequeno ao lado, para quando for preciso falar do aparelho.
  *
  * Os slots por marcar colapsam num só: nove posições a dizer «Sem toma marcada» são nove
  * posições a dizer nada.

@@ -13,11 +13,8 @@ import {
 /**
  * A sensibilidade dos alertas de um medidor de fraldas, no painel de configuração.
  *
- * Teve tabela, três rotas e um módulo de frontend só para si, com um vocabulário próprio
- * -- "Aplicada no hub" -- para dizer o que a via genérica já diz com "Aplicado". Não era
- * uma capacidade porque o pipeline não sabia exprimir uma configuração que não viaja.
- *
- * Agora é um bloco de configuração como os outros. O que estes testes prendem é o que a
+ * É um bloco de configuração como os outros, desde que o pipeline passou a saber exprimir uma
+ * configuração que não viaja. O que estes testes prendem é o que a
  * mudança tinha de preservar: os três presets, os dois inteiros, e as gamas vindas do
  * servidor em vez de escritas aqui.
  */

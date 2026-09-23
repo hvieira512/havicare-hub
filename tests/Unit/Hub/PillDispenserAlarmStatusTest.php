@@ -12,12 +12,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * O estado de toma de cada um dos nove alarmes, que o aparelho diz em claro.
  *
- * O evento de toma (`0x03`) é a leitura rica -- traz a hora prevista, a hora real e a célula
- * -- e chega cifrado, porque o M228 cifra tudo o que envia por iniciativa própria e a chave
- * sai da codificação dele. As TAGs `0x8131`--`0x8139` respondem à mesma pergunta por outro
- * caminho: são estado, pedem-se num `0x07`, e a resposta a um pedido nosso vem sempre em
- * claro. Não dão a hora nem a célula, mas dizem se cada alarme foi tomado, falhado ou está à
- * espera, que é o que o produto precisa de mostrar.
+ * O evento de toma (`0x03`) é a leitura rica e chega cifrado. As TAGs `0x8131`--`0x8139`
+ * respondem à mesma pergunta por outro caminho: pedem-se num `0x07` e vêm em claro. Não dão a
+ * hora nem a célula, mas dizem se cada alarme foi tomado, falhado ou está à espera.
  */
 final class PillDispenserAlarmStatusTest extends TestCase
 {

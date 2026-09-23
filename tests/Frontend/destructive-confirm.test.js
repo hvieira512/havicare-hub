@@ -9,10 +9,8 @@ import "./support/browser-env.js";
  * promessa. Trocar um pelo outro sem esperar transforma um apagar guardado num apagar
  * directo, e é isso que estes testes trancam: cancelar não pode chegar à API.
  *
- * A segunda metade tranca o que a caixa diz. «Apagar licença?» não diz qual, e a pergunta
- * fica sem resposta possível para quem tem catorze; e desligar um relógio à distância não
- * tinha caixa nenhuma -- um clique enganado deixava o aparelho apagado até alguém lhe chegar
- * ao botão.
+ * A segunda metade tranca o que a caixa diz: «Apagar licença?» não diz qual, e quem tem
+ * catorze não tem como responder.
  */
 const calls = [];
 const confirmations = [];
