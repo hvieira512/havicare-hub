@@ -5,11 +5,8 @@ namespace Hub\Domain;
 /**
  * Os sete campos que descrevem um dispositivo na whitelist.
  *
- * A mesma leitura defensiva -- `deviceType` ou `device_type`, `licenseId` ou `license_id`,
- * um `(string)` e um `??` por campo -- estava espalhada por dezenas de sítios, porque a
- * whitelist entregava um array e cada consumidor tinha de voltar a adivinhar a forma. O
- * `fromArray()` faz essa leitura uma vez, na fronteira, e a partir daí os campos são
- * propriedades com tipo: quem os lê já não tem de os normalizar outra vez.
+ * O `fromArray()` faz a leitura defensiva -- `deviceType` ou `device_type`, `licenseId` ou
+ * `license_id` -- uma vez, na fronteira, e a partir daí os campos são propriedades com tipo.
  */
 final class DeviceMetadata
 {

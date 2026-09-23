@@ -5,11 +5,9 @@ namespace Hub\Command\Configuration\Payload;
 /**
  * Valida o que se configura num dispensador Zayata M228.
  *
- * Não monta a trama -- isso é do `DeviceCommandCatalog`, que conhece as TAGs. O que este
- * construtor faz é recusar aqui o que o aparelho recusaria lá: uma hora acima das 23, um
- * plano com mais alarmes do que os nove que ele tem, um fuso fora do mapa. O protocolo
- * responde a um valor ilegal com um estado no TFLV que ninguém está a ler ainda, e por isso
- * a validação tem de ser nossa.
+ * Não monta a trama -- isso é do `DeviceCommandCatalog`, que conhece as TAGs. Recusa aqui o
+ * que o aparelho recusaria lá: uma hora acima das 23, mais alarmes do que os nove que ele
+ * tem, um fuso fora do mapa.
  */
 final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
 {

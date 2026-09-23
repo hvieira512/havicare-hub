@@ -5,12 +5,9 @@ namespace Hub\Command\Configuration\Payload;
 /**
  * Traduz uma lista telefónica desejada nos comandos que a levam ao aparelho.
  *
- * O `PHBX2` endereça um contacto por índice, e o `DPHBX` remove um índice sem
- * renumerar os restantes. Por isso o hub é dono dos índices: guarda-os, nunca os
- * reatribui a um contacto que já lá está, e emite apenas o que mudou.
- *
- * O telefone é a identidade de um contacto. Mudar o nome mantém o índice; mudar
- * o número é outro contacto, e custa uma remoção mais uma escrita.
+ * O `PHBX2` endereça um contacto por índice e o `DPHBX` remove um índice sem renumerar os
+ * restantes, e por isso o hub é dono dos índices. O telefone é a identidade de um contacto:
+ * mudar o nome mantém o índice, mudar o número custa uma remoção mais uma escrita.
  */
 final class FourPTouchPhonebookDelta
 {
@@ -32,11 +29,8 @@ final class FourPTouchPhonebookDelta
     /**
      * A reescrita total, para quando o estado do aparelho e o do hub divergiram.
      *
-     * Não há comando de leitura no protocolo, portanto o hub nunca observa o que lá está: um
-     * contacto escrito por fora — pela aplicação do fabricante, ou à mão — fica invisível e
-     * nenhuma remoção lhe toca. A única forma de o apagar é varrer os índices todos.
-     *
-     * É caro de propósito. Serve de reparação, e não do caminho normal.
+     * Não há comando de leitura no protocolo, e a única forma de apagar um contacto escrito
+     * por fora é varrer os índices todos. É caro de propósito: serve de reparação.
      *
      * @param list<array<string, mixed>> $desired
      * @return list<array{command: string, fields: list<string>}>
@@ -62,13 +56,9 @@ final class FourPTouchPhonebookDelta
     /**
      * O estado anterior em que o delta pode assentar.
      *
-     * Só descreve o aparelho se a última entrega tiver sido confirmada. Depois de uma falha
-     * não se sabe que escritas chegaram, e assumir que chegaram todas era pior do que
-     * reescrever: a alteração seguinte não produzia comandos nenhuns e dava-se por aplicada
-     * uma lista que o aparelho nunca recebeu.
-     *
-     * Uma lista escrita antes de os índices existirem tem chaves 0..n, que são posições e não
-     * endereços no aparelho, e também não serve de base.
+     * Só descreve o aparelho se a última entrega tiver sido confirmada: depois de uma falha
+     * não se sabe que escritas chegaram. Uma lista escrita antes de os índices existirem tem
+     * chaves 0..n, que são posições e não endereços, e também não serve de base.
      *
      * @return array<int, array<string, mixed>>
      */

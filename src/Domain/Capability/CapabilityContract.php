@@ -43,9 +43,7 @@ interface CapabilityContract
      * genérica pública, para a resposta da API.
      *
      * Leva o protocolo pela mesma razão que o `toNative`: a mesma chave nativa quer dizer
-     * coisas diferentes em fornecedores diferentes -- a Wonlex e a 4P-Touch chamam as duas
-     * `alarmClock` a listas com formatos que não se parecem. Sem o protocolo, descodificar é
-     * adivinhar.
+     * coisas diferentes em fornecedores diferentes, e sem ele descodificar é adivinhar.
      */
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed;
 

@@ -8,12 +8,8 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
      * O tecto do áudio aceite, antes de ser descodificado.
      *
      * A conversão corre o `ffmpeg` num subprocesso síncrono, dentro do event loop que também
-     * serve a ingestão e a dashboard. Sem tecto, o corpo de 6 MB que a API aceita chegava lá
-     * como ~4,5 MB de bytes escolhidos por quem chama.
-     *
-     * É generoso de propósito: a dashboard grava em opus e não limita a duração, portanto uma
-     * gravação de vários minutos tem de continuar a passar -- o `ffmpeg` já a corta aos 15
-     * segundos na saída. Dois mebibytes são muito mais do que qualquer lembrete real.
+     * serve a ingestão e a dashboard. É generoso de propósito: a dashboard não limita a
+     * duração da gravação, e o `ffmpeg` já a corta aos 15 segundos na saída.
      */
     private const MAX_VOICE_AUDIO_BYTES = 2 * 1024 * 1024;
 

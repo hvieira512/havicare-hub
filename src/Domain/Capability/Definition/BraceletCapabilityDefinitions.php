@@ -6,15 +6,11 @@ final class BraceletCapabilityDefinitions
 {
     /**
      * O botão é uma capacidade só e não uma por modo de toque: os modos configuram-se no
-     * aparelho, e o tipo de toque viaja no payload do evento. Separá-los aqui punha três
-     * interruptores na matriz de capacidades para o que é uma funcionalidade física.
+     * aparelho, e o tipo de toque viaja no payload do evento.
      *
-     * Nem todas as pulseiras se limitam a anunciar. As W6 e W6B emitem para o ar e nada mais
-     * lhes pode ser pedido, mas as que falam por GATT autenticado -- a Veepoo MF91 é a
-     * primeira -- respondem a comandos, e seis das suas grandezas podem ser medidas a pedido.
-     * O que decide não é o tipo de aparelho mas o modelo, e é por isso que `is_requestable`
-     * também existe em `model_capabilities`: aqui declara-se o que é possível, lá o que cada
-     * modelo faz.
+     * O que decide se uma grandeza se pede não é o tipo de aparelho mas o modelo, e é por
+     * isso que `is_requestable` também existe em `model_capabilities`: aqui declara-se o que
+     * é possível, lá o que cada modelo faz.
      *
      * @return list<array{deviceType: string, section: string, key: string, label: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
@@ -92,10 +88,6 @@ final class BraceletCapabilityDefinitions
             // As configurações que levam valores, e não só um interruptor. Só entram as que
             // mudam o que o aparelho mede ou como calcula: alarmes, lembretes, brilho do ecrã
             // e unidades são comportamento de relógio de pulso e não alteram uma leitura.
-            //
-            // A janela do oxigénio é a que desbloqueia a série de dia inteiro: com a
-            // monitorização ligada mas a janela a `00:00-00:00`, o aparelho responde sempre
-            // um registo de zeros.
             ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'blood_oxygen_window', 'label' => 'Oxigénio de dia inteiro', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             // Estas duas não são preferências de quem usa a pulseira: entram nas contas dela.
             // O tom de pele regula a potência do LED de que sai todo o sinal ótico, e o corpo

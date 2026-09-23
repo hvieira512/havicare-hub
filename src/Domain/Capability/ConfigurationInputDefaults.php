@@ -6,9 +6,7 @@ namespace Hub\Domain\Capability;
  * O payload de que uma capacidade parte quando um dispositivo nunca guardou nenhum.
  *
  * Indexado pelo tipo de campo da entrada de configuração do protocolo, para a dashboard
- * desenhar um formulário utilizável em vez de um vazio. Num sítio só: o
- * `DeviceCapabilityPresenter` e o `CapabilityRegistry` traziam cada um a sua cópia desta
- * tabela, e as cópias já tinham divergido.
+ * desenhar um formulário utilizável em vez de um vazio.
  */
 final class ConfigurationInputDefaults
 {
