@@ -276,8 +276,10 @@ instalação sem extensão de loop, que é o caso por omissão.
 Instalar o `php-pecl-ev` faz o ReactPHP escolher o `ExtEvLoop`, que usa epoll e
 não tem o limite do `FD_SETSIZE`. O `StartupBanner` imprime a implementação
 escolhida no arranque, precisamente porque a troca não deixa rasto em código.
-`config/systemd/ev-loop-dev.conf` mostra como carregá-la numa instância só, o que
-importa porque o pacote instala um ini global.
+O `config/systemd/ev-loop.conf` mostra como
+carregá-la: o mesmo drop-in serve as duas units, e o que torna a troca uma
+decisão por instância é onde se instala — o pacote deixa um ini global que, se
+ficar activo, troca o loop de todos os processos PHP da máquina.
 
 Medido na instância de desenvolvimento com epoll, seis inquilinos a abrir 500
 streams cada — **3000 ligações simultâneas**:

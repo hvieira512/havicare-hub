@@ -130,7 +130,7 @@ dashboard/
 ├── wiring/                 os ouvintes, por área -- raiz de composição, como o app.js
 │   ├── devices.js          lista, filtros, modal, painel de configuração, detalhe
 │   └── settings.js         modelos, capacidades, utilizadores da API, empresas
-├── dom.js                  cacheElements(): os ~200 getElementById, num sítio só
+├── dom.js                  cacheElements(): todos os elementos com id, num objeto
 │
 │   ── o núcleo partilhado: o que duas ou mais funcionalidades usam ──
 ├── state.js                o objeto de estado, um só, com um sub-objeto por ecrã
@@ -273,7 +273,7 @@ Um `id` é o contrato entre os dois lados, e é atravessado à mão:
 ```
 components/modals/settings.php   <div id="capabilitySupplierButtons">
         ↓
-dashboard/dom.js                 capabilitySupplierButtons: document.getElementById(…)
+dashboard/dom.js                 cacheElements() apanha todo o [id] da página
         ↓
 dashboard/settings/capabilities.js   els.capabilitySupplierButtons.innerHTML = …
 ```
@@ -324,7 +324,7 @@ PHP.
 
 ```bash
 npm run lint                   # eslint sobre main.js, dashboard/, assets/js/ e tests/Frontend
-npm test                       # 122 ficheiros em tests/Frontend/
+npm test                       # ~130 ficheiros em tests/Frontend/
 composer test:unit             # inclui os testes que lêem estes ficheiros como texto
 ```
 

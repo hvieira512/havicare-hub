@@ -4,10 +4,10 @@
 
 | Suite | Onde | Ficheiros | Precisa de |
 |---|---|---|---|
-| Unitários (PHP) | `tests/Unit/` | 158 | nada |
-| Integração (PHP) | `tests/Integration/` | 38 | MySQL e Redis |
-| Frontend (Node) | `tests/Frontend/` | 122 | nada |
-| Cenários (shell) | `tests/scenarios/` | 6 | a pilha Docker inteira |
+| Unitários (PHP) | `tests/Unit/` | ~170 | nada |
+| Integração (PHP) | `tests/Integration/` | ~40 | MySQL e Redis |
+| Frontend (Node) | `tests/Frontend/` | ~130 | nada |
+| Cenários (shell) | `tests/scenarios/` | 6 | a pilha Docker inteira, menos um |
 
 ```bash
 composer test:unit          # ~6 s
@@ -40,11 +40,16 @@ JavaScript, impedindo a rutura silenciosa do contrato entre o PHP e o JS.
 
 | Cenário | Prova |
 |---|---|
+| `backup_rotation` | A [rotação das cópias](18-backups.md) guarda o que tem de guardar ao fim de 400 dias — é a única parte do backup que apaga ficheiros |
 | `hub_raw_mqtt_roundtrip` | Um [dispositivo TCP](02-ingestao-tcp-relogios.md) simulado chega ao [MQTT](08-contrato-mqtt.md), e um comando da API chega-lhe de volta |
 | `hub_downlink_queue` | Um [comando para um aparelho offline](11-comandos-e-downlink.md) fica em fila e é entregue quando ele volta |
 | `dashboard_api` | 401 sem token, login, listagem, [pedido de medição](09-api.md) |
 | `ncs_mqtt_ingress` | A [ingestão Voerka](03-ingestao-mqtt-ncs.md) |
 | `location_beacondb_pipeline` | A [resolução de localização](12-localizacao-sem-gps.md), com um servidor falso |
+
+O `backup_rotation` é a excepção à coluna «precisa de»: não levanta
+infraestrutura nenhuma, porque a rotação decide pelo nome do ficheiro e nomes
+bastam para a exercitar.
 
 Cada um tem 240 segundos e deixa os seus registos em `tests/artifacts/`, com
 retenção das 20 corridas mais recentes.
