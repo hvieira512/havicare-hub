@@ -151,6 +151,7 @@ acionamento é determinado pelo espaço que é emitido:
 | Espaço | Quando anuncia | O que significa |
 |---|---|---|
 | Aceleração | sempre | presença, movimento, bateria |
+| Telemetria (TLM) | sempre | **não é lido** — a bateria vem já na trama de aceleração |
 | Identidade | sempre | é esta pulseira |
 | `…0011` | 30 s após um toque simples | toque simples |
 | `…0012` | 30 s após um toque duplo | toque duplo |
