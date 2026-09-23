@@ -11,12 +11,8 @@ use Hub\Domain\Capability\CapabilityCatalog;
  * Reconcilia as duas eras de armazenamento de configuração num só retrato.
  *
  * As linhas escritas depois do ciclo de vida trazem revisões, estado de sincronização e as
- * operações que as tentaram entregar. As escritas antes dele não trazem nada disso, e
- * continuam legíveis até o próximo PATCH lhes criar a primeira revisão -- portanto as duas
- * têm de sair pela mesma porta, com a mesma forma, sem quem consome saber a diferença.
- *
- * São 160 linhas sobre um assunto só, e por isso saíram do `DeviceService`: a fachada decide
- * *quando* montar este retrato, e não *como*.
+ * operações que as tentaram entregar; as escritas antes dele não trazem nada disso. As duas
+ * têm de sair pela mesma porta e com a mesma forma, sem quem consome saber a diferença.
  */
 final class ConfigurationLifecyclePresenter
 {

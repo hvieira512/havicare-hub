@@ -11,13 +11,9 @@ use ReflectionParameter;
  * O que uma listagem deixa ordenar, filtrar e editar, dito à máquina que a consome em vez
  * de escrito de novo em cada cliente.
  *
- * Cada listagem declara-o uma vez, e nada aqui é uma lista à mão: o que se ordena vem do
- * mapa que o repositório usa no `ORDER BY`, o que se edita vem dos campos que o pedido de
- * escrita aceita, e as opções de escolha vêm das contagens que a própria listagem apurou.
- * Uma capacidade nova aparece no descritor por existir, e não por alguém se lembrar dela.
- *
- * Não leva etiquetas. O descritor descreve estrutura, e traduzir é trabalho de quem desenha
- * a interface -- a mesma regra que vale para os valores publicados em MQTT.
+ * Nada aqui é uma lista à mão: o que se ordena vem do mapa do `ORDER BY`, o que se edita vem
+ * dos campos que o pedido de escrita aceita, e as opções de escolha vêm das contagens que a
+ * listagem apurou. Não leva etiquetas -- traduzir é de quem desenha a interface.
  */
 final class CollectionColumns
 {

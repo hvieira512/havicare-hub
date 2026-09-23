@@ -39,10 +39,8 @@ final class ApiUserRepository
     /**
      * A licença entra só pelo `licenseRefId`.
      *
-     * Havia aqui um `licenseId` a par, gravado numa coluna própria. Era o mesmo número que a
-     * linha de `licenses` apontada já continha, e o `resolveLicense()` do serviço derivava os
-     * dois da mesma linha -- pelo que nunca podiam divergir por este caminho, e um deles era
-     * sempre supérfluo. Fica a referência, que é a que desambigua duas empresas com o mesmo
+     * O `licenseId` está na linha de `licenses` que a referência aponta, e por isso não se
+     * guarda a par. Fica a referência, que é a que desambigua duas empresas com o mesmo
      * número de licença.
      */
     public function create(string $username, string $passwordHash, string $role, bool $enabled, ?int $licenseRefId = null): int

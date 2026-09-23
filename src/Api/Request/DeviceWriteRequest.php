@@ -13,8 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * domínio e fica no serviço.
  *
  * O `imei` é o único campo cuja regra difere entre as duas rotas: a criar é obrigatório, a
- * actualizar vem do endereço. Daí o grupo, e daí ser anulável -- `null` é "não veio", que não
- * é o mesmo que "veio vazio".
+ * actualizar vem do endereço. Daí o grupo, e daí ser anulável.
  */
 final class DeviceWriteRequest
 {

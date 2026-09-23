@@ -9,31 +9,22 @@ use Predis\ClientInterface;
 /**
  * Os tetos de tentativas de autenticação.
  *
- * O `password_verify` está a custo 12 -- 145,6 ms medidos no servidor --, é síncrono, e corre
- * no mesmo event loop que serve a ingestão TCP dos relógios e a API. Cerca de sete tentativas
- * por segundo bastam para parar o processo inteiro, e o login é a **única** rota pública que
- * faz esse trabalho: tem de o ser, porque não se pode apresentar um token antes de o ter.
- *
- * O custo é pago quando a tentativa **falha**, e não só quando acerta. Quem ataca não precisa
- * de adivinhar a password -- precisa apenas de obrigar o hub a verificar.
+ * O `password_verify` está a custo 12 -- 145,6 ms no servidor --, é síncrono, e corre no mesmo
+ * event loop que serve a ingestão TCP e a API. O custo é pago quando a tentativa **falha**,
+ * e não só quando acerta.
  *
  * São três tetos porque cada um fecha uma porta que os outros deixam aberta:
  *
  * - **Por endereço** trava o atacante único, que é o caso comum.
- * - **Por utilizador** trava quem distribui as tentativas contra uma conta só, vindo de muitos
- *   endereços -- a forma que as credenciais recicladas de outra fuga costumam ter.
- * - **Global** é o que fixa o tempo de loop gasto em bcrypt, independentemente de quantos
- *   endereços o atacante tenha. Sem ele os outros dois são derrotados por rotação de IP.
+ * - **Por utilizador** trava quem distribui as tentativas contra uma conta só.
+ * - **Global** fixa o tempo de loop gasto em bcrypt, e sem ele os outros dois caem por
+ *   rotação de IP.
  *
- * A janela vive na chave, e por isso o `expire` serve apenas para o Redis não guardar
- * contadores de janelas que já passaram.
+ * A janela vive na chave, e o `expire` só serve para o Redis não guardar janelas passadas.
  *
- * ponytail: janela fixa, e portanto quem calhar numa fronteira consegue o dobro do orçamento
- * num intervalo curto -- com o teto global a 10 por 10 s, até 20 tentativas de uma vez, ou
- * ~3,5 s de loop. É o comportamento conhecido das janelas fixas e aqui é aceitável, porque o
- * pior caso é um atraso e não uma recusa. Se um dia interessar apertá-lo, o passo seguinte é
- * uma janela deslizante (contadores por sub-intervalo) e não um teto mais baixo, que castigava
- * o uso legítimo.
+ * ponytail: janela fixa, e quem calhar numa fronteira consegue o dobro do orçamento num
+ * intervalo curto. Aceitável, porque o pior caso é um atraso e não uma recusa; apertá-lo faz-se
+ * com uma janela deslizante (contadores por sub-intervalo), não com um teto mais baixo.
  */
 final class LoginThrottle
 {
@@ -54,9 +45,7 @@ final class LoginThrottle
      * Regista uma tentativa e diz se ela pode seguir para a verificação da password.
      *
      * Conta-se **antes** de verificar, e conta-se toda a tentativa: uma que acerte custa ao
-     * loop exactamente o mesmo que uma que falhe, e é o tempo de loop que estes tetos
-     * protegem. É também por isto que uma aplicação bem feita guarda o par de tokens e renova
-     * em vez de voltar a autenticar -- o caminho do `refresh_token` não passa por aqui.
+     * loop exactamente o mesmo que uma que falhe. O caminho do `refresh_token` não passa aqui.
      */
     public function allows(string $address, string $username): bool
     {
