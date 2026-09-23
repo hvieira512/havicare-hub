@@ -31,6 +31,22 @@ final class EventChannelComesFromTheCatalogueTest extends TestCase
         }
     }
 
+    /**
+     * O `device_state` dos relógios muda de canal, e isso é uma alteração de contrato.
+     *
+     * Está declarado como acontecimento desde sempre — é o relatório de sistema que o relógio
+     * manda quando alguma coisa nele muda —, mas a lista à mão não o incluía e ele saía por
+     * `telemetry`. Passar a `events` é a correcção; prende-se aqui porque quem subscrevesse
+     * `.../watch/+/telemetry` à espera dele deixa de o receber aí, e uma mudança destas não
+     * pode voltar a acontecer sem ninguém dar por ela.
+     *
+     * A tabela de alterações do [contrato MQTT](docs/08-contrato-mqtt.md) regista-a.
+     */
+    public function testTheWatchSystemReportMovedToTheEventChannel(): void
+    {
+        self::assertTrue(CapabilityCatalog::isEventType('device_state'));
+    }
+
     /** E o que é leitura não é. */
     public function testAReadingIsNotAnEvent(): void
     {

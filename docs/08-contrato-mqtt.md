@@ -56,6 +56,11 @@ licença é texto. Em memória, na base de dados e na API é sempre inteiro.
 A regra é uma só: **o que não se repete vai a QoS 1; o que a leitura seguinte
 substitui vai a QoS 0.**
 
+> **Quem decide em que canal cada capacidade sai é o `CapabilityCatalog`**, pela
+> bandeira `isEvent` da definição dela. Era uma lista escrita à mão dentro do
+> `DeviceHubServer`, e as duas fontes de verdade discordavam — o custo disso está
+> contado na tabela de alterações, no fim deste capítulo.
+
 - **`events` a QoS 1**, porque um pedido de socorro acontece uma vez e nada o
   repete. Em contrapartida, um consumidor tem de tolerar a **repetição**: a
   entrega pelo menos uma vez significa que o mesmo alarme pode chegar duas
@@ -271,6 +276,8 @@ As versões anteriores do contrato contêm as seguintes incorreções:
 | Doze capacidades de telemetria | Eram muitas mais já nessa altura, e continuam a crescer — a lista em vigor é a da [normalização](06-normalizacao.md) |
 | O envelope leva `schemaVersion` | O campo foi removido; ver abaixo |
 | Os alarmes dos relógios saem em `telemetry` | Saem em `events`, a QoS 1 |
+| O `device_state` dos relógios sai em `telemetry` | Sai em `events`, a QoS 1. Está declarado como acontecimento desde sempre; o que o mandava para o outro canal era a lista à mão que o `isEvent` substituiu |
+| O estado de toma dos alarmes do dispensador é sempre `medication_alarm_status` | A **leitura dos nove** continua a sê-lo, em `telemetry`; a **mudança de um** é `medication_alarm_change`, em `events` a QoS 1. Uma dose falhada não gera `medication_intake` nenhum, e esta mudança é o único sinal dela |
 | O radar publica com o `uid` do tópico de origem | Publica com o IMEI canónico, como as restantes ingestões |
 | Existe um tópico de downlink por MQTT | Foi removido; os comandos entram pela API REST |
 
@@ -294,5 +301,6 @@ publicado.
 | `src/Device/HubMqttBridge.php` | Compõe todos os tópicos e publica os quatro canais |
 | `src/Device/RawPayload.php` | As formas de `raw`, `status` e do ciclo de vida |
 | `src/Device/DeviceEventPayloadBuilder.php` | A forma de `telemetry` e dos alarmes |
-| `src/Device/DeviceHubServer.php` | A escolha do canal na ingestão TCP: `alarm`, `medication_intake`, `device_fault` e `help_call` vão a `events`, o resto a `telemetry` |
+| `src/Device/DeviceHubServer.php` | A escolha do canal na ingestão TCP, que pergunta ao `CapabilityCatalog::isEventType()` |
+| `src/Domain/Capability/CapabilityCatalog.php` | O `isEvent` de cada definição, que é quem decide o canal |
 | `src/Mqtt/BrokerSettings.php` · `ConnectionFactory.php` | Ligação, TLS, identificadores de cliente |
