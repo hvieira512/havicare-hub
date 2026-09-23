@@ -5,7 +5,7 @@
 A normalização constitui a função central da plataforma e o que a distingue de
 um encaminhador.
 
-Os dez protocolos suportados divergem em todos os aspetos da representação: na
+Os protocolos suportados divergem em todos os aspetos da representação: na
 designação dos campos, no tipo dos valores — a temperatura pode chegar em texto
 ou em número — e nas unidades, com a bateria expressa em percentagem ou em
 milivolts. A normalização converte todos numa forma única, comum a relógios,
