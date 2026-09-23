@@ -37,7 +37,7 @@ final class PillDispenserControlTagsAreServedTest extends TestCase
      *
      * @var list<int>
      */
-    private const SERVIDAS = [
+    private const SERVED_TAGS = [
         0xA001, 0xA002, 0xA003, 0xA004,
         0xA011, 0xA021, 0xA022, 0xA023,
         0xA101, 0xA102, 0xA103, 0xA123,
@@ -46,12 +46,12 @@ final class PillDispenserControlTagsAreServedTest extends TestCase
     public function testEveryControlTagTheHubCanSendIsOneTheDeviceServes(): void
     {
         $adapter = new PillDispenserAdapter();
-        $porServir = [];
+        $unserved = [];
 
         foreach (DeviceConfigurationCatalog::configsForProtocol('zayata-m228') as $entry) {
             $command = (string)$entry['command'];
             try {
-                $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', '869243062262262', $command, self::amostra($command));
+                $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', '869243062262262', $command, self::sample());
             } catch (\Throwable) {
                 // Comandos que precisam de um corpo que esta amostra não dá: o teste dos
                 // downlinks cobre-os, e o que aqui interessa é a família da TAG.
@@ -64,17 +64,22 @@ final class PillDispenserControlTagsAreServedTest extends TestCase
             }
 
             foreach (array_keys($decoded['tlv'] ?? []) as $tag) {
-                if (!in_array($tag, self::SERVIDAS, true)) {
-                    $porServir[] = sprintf('%s manda 0x%04X, que o aparelho não anuncia', $command, $tag);
+                if (!in_array($tag, self::SERVED_TAGS, true)) {
+                    $unserved[] = sprintf('%s manda 0x%04X, que o aparelho não anuncia', $command, $tag);
                 }
             }
         }
 
-        self::assertSame([], $porServir);
+        self::assertSame([], $unserved);
     }
 
-    /** @return array<string, mixed> */
-    private static function amostra(string $command): array
+    /**
+     * Um corpo genérico que sirva a todos os comandos: o que aqui se mede é a família da TAG
+     * que sai, e não o valor que ela leva.
+     *
+     * @return array<string, mixed>
+     */
+    private static function sample(): array
     {
         return [
             'cell' => 1,

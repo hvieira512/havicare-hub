@@ -174,6 +174,9 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // parâmetros não as anuncia.
             'retrieval_timeout',
             'retrieval_warning',
+            // O cartão SIM saiu de dentro do estado do dispositivo: uma coisa é uma leitura
+            // que muda ao minuto, outra é o cartão que lá está e não muda nunca.
+            'sim_card',
             // Uma por família: o aparelho separa configuração, estado e controlo, e cada
             // pergunta é um pacote próprio.
             'supported_configuration',

@@ -579,18 +579,35 @@ final class DeviceEventDecoder
         // confirmou a unidade em dBm e, perante um valor positivo, respondeu «treat it as a
         // negative value». Um sinal recebido é sempre negativo, e publicar `25 dBm` era
         // publicar a potência de um emissor.
+        // Só o que muda e interessa operar. O cartão SIM sai por capacidade própria — é
+        // identidade do aparelho e não uma leitura —, e o bloqueio de criança sai pelo valor
+        // reportado da configuração com o mesmo nome, para não haver duas verdades sobre ele.
         $signal = array_filter([
             'wifiSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810A)),
             'gsmSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810B)),
             'signalLevel' => $this->tlvU8($tlv, 0x810D),
-            'childLockEngaged' => $this->pillFlag($tlv, 0x8102),
             // O que o aparelho diz de si e não havia outra maneira de saber: a tampa aberta,
             // a corrente em falta, e o juízo que ele faz sobre a temperatura e a humidade.
             'lidOpen' => $this->pillFlag($tlv, 0x8107),
             'mainsPowered' => $this->pillFlag($tlv, 0x8109),
             'environmentAlarm' => $this->pillFlag($tlv, 0x8111),
-            'simCcid' => $this->pillSimCcid($tlv),
         ], static fn (mixed $field): bool => $field !== null);
+
+        $ccid = $this->pillSimCcid($tlv);
+        if ($ccid !== null) {
+            $events[] = ['feature' => 'sim_card', 'nativeType' => $nativeType, 'value' => ['ccid' => $ccid]];
+        }
+
+        // O estado do bloqueio de criança é o valor reportado da configuração, e não uma
+        // leitura ao lado dela: são a mesma coisa vista de dois ângulos.
+        $childLock = $this->pillSwitch($tlv, 0x8102);
+        if ($childLock !== null) {
+            $events[] = [
+                'feature' => 'device_config',
+                'nativeType' => $nativeType,
+                'value' => ['settings' => ['child_lock' => $childLock]],
+            ];
+        }
         if ($signal !== []) {
             $events[] = ['feature' => 'device_status', 'nativeType' => $nativeType, 'value' => $signal];
         }

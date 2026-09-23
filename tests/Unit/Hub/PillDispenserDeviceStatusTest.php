@@ -47,27 +47,13 @@ final class PillDispenserDeviceStatusTest extends TestCase
         self::assertSame(false, $this->deviceStatus([0x8111 => "\x00"])['environmentAlarm'] ?? null);
     }
 
-    /** Saber que SIM está dentro de cada aparelho poupa abrir a tampa para ver. */
-    public function testTheSimCcidIsPublished(): void
-    {
-        $status = $this->deviceStatus([0x8009 => "8935101900123456789\x00"]);
-
-        self::assertSame('8935101900123456789', $status['simCcid'] ?? null);
-    }
-
     /**
-     * Um ICCID de comprimento ímpar vem com um nibble de enchimento no fim.
+     * O cartão SIM tem capacidade própria, e o seu conteúdo está no
+     * `PillDispenserStatusSeparationTest`.
      *
-     * O cartão do aparelho de ensaio devolve `8935103211501958977F`: o `F` é o meio byte que
-     * sobra do BCD, não faz parte do número, e quem copie isto para procurar o SIM não o
-     * encontra.
+     * Estava aqui, dentro do estado do dispositivo, ao lado do sinal: uma coisa é uma leitura
+     * que muda ao minuto, outra é o cartão que está lá dentro e não muda nunca.
      */
-    public function testTheCcidPaddingNibbleIsDropped(): void
-    {
-        $status = $this->deviceStatus([0x8009 => "8935103211501958977F\x00"]);
-
-        self::assertSame('8935103211501958977', $status['simCcid'] ?? null);
-    }
 
     /** Uma TAG que o aparelho recusa não vira valor, que era como se publicava zero. */
     public function testARefusedTagIsNotPublished(): void

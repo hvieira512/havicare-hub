@@ -12,6 +12,7 @@ use Hub\Infrastructure\Persistence\Migration\PillDispenserImage;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserParameterDiscovery;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserReportedConfigurationCleanup;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserRetrievalSettings;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalogueTidyUp;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutUnservedControls;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutEncryptionSwitch;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutFactoryReset;
@@ -55,6 +56,8 @@ final class DatabaseMigrationPlan
             new PillDispenserRetrievalSettings(),
             // Duas dessas ordens este firmware não as serve, e o aparelho disse-o.
             new PillDispenserWithoutUnservedControls(),
+            // E o catálogo arruma-se para quem nunca viu o aparelho o conseguir administrar.
+            new PillDispenserCatalogueTidyUp(),
         ];
     }
 

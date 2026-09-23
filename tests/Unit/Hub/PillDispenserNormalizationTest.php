@@ -214,11 +214,17 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertSame([
             'gsmSignalDbm' => -25,
             'signalLevel' => 3,
-            'childLockEngaged' => false,
         ], $events['device_status'] ?? null);
     }
 
-    public function testTheLockStateComesBackAsATrueWhenEngaged(): void
+    /**
+     * O estado do bloqueio volta como valor reportado da configuração, e não ao lado dela.
+     *
+     * São a mesma coisa vista de dois ângulos -- o `0x100C` é o que se pede e o `0x8102` é o
+     * que o aparelho tem --, e publicá-lo também como telemetria dava duas verdades sem nada
+     * que as obrigasse a concordar.
+     */
+    public function testTheLockStateComesBackAsTheReportedConfiguration(): void
     {
         $decoded = $this->decode([
             'packetType' => 0x07 | 0x80,
@@ -228,7 +234,8 @@ final class PillDispenserNormalizationTest extends TestCase
 
         $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
 
-        self::assertSame(['childLockEngaged' => true], $events[0]['value']);
+        self::assertSame('device_config', $events[0]['feature']);
+        self::assertSame(['enabled' => true], $events[0]['value']['settings']['child_lock']);
     }
 
     /**

@@ -65,10 +65,10 @@ final class PillDispenserRetrievalSettingsTest extends TestCase
     /** E as três aparecem no catálogo, senão não há por onde as usar. */
     public function testTheyAreAllInTheCatalogue(): void
     {
-        $chaves = array_column(DeviceConfigurationCatalog::configsForProtocol('zayata-m228'), 'key');
+        $keys = array_column(DeviceConfigurationCatalog::configsForProtocol('zayata-m228'), 'key');
 
-        foreach (['retrieval_warning', 'retrieval_timeout', 'loaded_cells'] as $chave) {
-            self::assertContains($chave, $chaves, $chave);
+        foreach (['retrieval_warning', 'retrieval_timeout', 'loaded_cells'] as $key) {
+            self::assertContains($key, $keys, $key);
         }
     }
 
@@ -81,10 +81,10 @@ final class PillDispenserRetrievalSettingsTest extends TestCase
      */
     public function testTheOnesThisFirmwareRefusesAreNotOffered(): void
     {
-        $chaves = array_column(DeviceConfigurationCatalog::configsForProtocol('zayata-m228'), 'key');
+        $keys = array_column(DeviceConfigurationCatalog::configsForProtocol('zayata-m228'), 'key');
 
-        self::assertNotContains('rotate_to_cell', $chaves);
-        self::assertNotContains('medication_pause', $chaves);
+        self::assertNotContains('rotate_to_cell', $keys);
+        self::assertNotContains('medication_pause', $keys);
     }
 
     /**

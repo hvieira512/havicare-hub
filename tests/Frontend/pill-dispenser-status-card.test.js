@@ -12,21 +12,18 @@ import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/card
  * enchiam a quota, e a tampa, a corrente, o alarme de ambiente e o CCID do SIM — que foi o
  * trabalho todo de os ler — nunca chegavam ao ecrã.
  */
-test("a tampa, a corrente, o ambiente e o SIM aparecem nos detalhes", () => {
+test("a tampa, a corrente e o ambiente aparecem nos detalhes", () => {
     const { details } = uplinkCardContent("device_status", {
         gsmSignalDbm: -24,
         signalLevel: 3,
-        childLockEngaged: true,
         lidOpen: false,
         mainsPowered: true,
         environmentAlarm: false,
-        simCcid: "8935103211501958977",
     });
 
     assert.match(details, /Tampa aberta/);
     assert.match(details, /Ligado à corrente/);
     assert.match(details, /Ambiente fora da gama/);
-    assert.match(details, /CCID do SIM/);
 });
 
 /** O que se lê de relance é o sinal. */
@@ -58,4 +55,26 @@ test("um valor falso continua a ser um valor", () => {
     const { details } = uplinkCardContent("device_status", { lidOpen: false });
 
     assert.match(details, /Tampa aberta/);
+});
+
+/** O cartão SIM tem o número como valor: não é um detalhe do sinal. */
+test("o cartão SIM mostra o número", () => {
+    assert.equal(
+        uplinkCardContent("sim_card", { ccid: "8935103211501958977" }).value,
+        "8935103211501958977",
+    );
+});
+
+/** E o estado do dispositivo deixou de o levar lá dentro. */
+test("o estado do dispositivo já não leva o SIM nem o bloqueio", () => {
+    const { details } = uplinkCardContent("device_status", {
+        gsmSignalDbm: -24,
+        lidOpen: false,
+        simCcid: "8935103211501958977",
+        childLockEngaged: true,
+    });
+
+    assert.doesNotMatch(details, /CCID/);
+    assert.doesNotMatch(details, /[Bb]loqueio/);
+    assert.match(details, /Tampa/);
 });

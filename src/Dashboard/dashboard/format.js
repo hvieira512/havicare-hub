@@ -128,7 +128,7 @@ export const fieldLabel = (key) =>
         lidOpen: "Tampa aberta",
         mainsPowered: "Ligado à corrente",
         environmentAlarm: "Ambiente fora da gama",
-        simCcid: "CCID do SIM",
+        ccid: "CCID",
         people: "Pessoas",
         breathing: "Respiração",
         sleep_state: "Estado do sono",

@@ -100,14 +100,14 @@ final class ZayataConfigurationDefinitions
                 [1, 'Médio'],
                 [2, 'Baixo'],
                 [3, 'Silêncio'],
-            ], input: 'volumeScale'),
+            ], 'A que volume o alarme toca. Em silêncio não toca de todo — a pessoa não tem como saber que chegou a hora, e o hub continua a dar a dose como falhada.', input: 'volumeScale'),
             self::choice('alarm_ringtone', 'alarmRingtone', 'Tipo de toque', 'alerts', 11, 'ringtone', [
                 [0, 'Nenhum'],
                 [1, 'Toque 1'],
                 [2, 'Toque 2'],
                 [3, 'Toque 3'],
                 [4, 'Toque 4'],
-            ]),
+            ], 'Qual dos toques o aparelho usa para chamar a pessoa à hora da medicação.'),
             ConfigurationDefinition::make(
                 'do_not_disturb',
                 'doNotDisturb',
@@ -117,13 +117,17 @@ final class ZayataConfigurationDefinitions
                 self::replyTo('doNotDisturb'),
                 'alerts',
                 20,
+                null,
+                null,
+                false,
+                'Uma janela de horas em que o aparelho se cala. Os alarmes marcados para dentro dela continuam a dispensar — o que muda é só ele não tocar.',
             ),
             // Duas opções e mais nada: o aparelho só fala a língua de fábrica ou inglês. O
             // português existe, mas só instalado de origem — não é configurável.
-            self::choice('device_language', 'deviceLanguage', 'Idioma', 'system', 10, 'language', [
+            self::choice('device_language', 'deviceLanguage', 'Idioma do ecrã', 'system', 10, 'language', [
                 [0, 'Do aparelho'],
                 [1, 'Inglês'],
-            ]),
+            ], 'Em que língua o aparelho escreve no seu próprio ecrã. Não muda nada na dashboard. Só há estas duas: o português existe mas vem instalado de origem e não se configura.'),
             self::choice(
                 'time_zone',
                 'timeZone',
@@ -138,14 +142,49 @@ final class ZayataConfigurationDefinitions
             ),
             // As leituras. Sem elas o hub sabe o que *pediu* ao aparelho e não o que ele
             // *tem* — e a especificação manda ler os parâmetros no primeiro registo.
-            self::action('sync_configuration', 'readConfiguration', 'Sincronizar configuração', 'system', 5),
-            self::action('device_status', 'readStatus', 'Atualizar estado', 'system', 6),
+            self::action(
+                'sync_configuration',
+                'readConfiguration',
+                'Sincronizar configuração',
+                'system',
+                5,
+                'Pergunta ao aparelho que configurações ele tem lá dentro e mostra-as aqui. Não muda nada: serve para confirmar que o que está no ecrã é mesmo o que o aparelho ficou a ter.',
+            ),
+            self::action(
+                'device_status',
+                'readStatus',
+                'Atualizar estado',
+                'system',
+                6,
+                'Pede já as leituras todas — bateria, temperatura, sinal, compartimentos e o estado dos nove alarmes — em vez de esperar pelo sinal de vida do minuto seguinte. É o que preenche os cartões que o aparelho não manda sozinho.',
+            ),
             // Perguntar ao aparelho que parâmetros ele serve, em vez de adivinhar por recusa.
             // São três porque o aparelho separa configuração, estado e controlo, e cada
             // pergunta é um pacote próprio; um botão só cobria um terço da resposta.
-            self::action('supported_configuration', 'discoverParametersConfiguration', 'Parâmetros de configuração', 'system', 7),
-            self::action('supported_status', 'discoverParametersStatus', 'Parâmetros de estado', 'system', 8),
-            self::action('supported_control', 'discoverParametersControl', 'Parâmetros de controlo', 'system', 9),
+            self::action(
+                'supported_configuration',
+                'discoverParametersConfiguration',
+                'Que configurações este aparelho aceita',
+                'system',
+                7,
+                'Diagnóstico. Pergunta ao aparelho que definições o firmware dele sabe gravar. Só interessa quando entra um modelo ou uma versão nova: em vez de tentar cada uma e ler as recusas, pergunta-se-lhe de uma vez.',
+            ),
+            self::action(
+                'supported_status',
+                'discoverParametersStatus',
+                'Que leituras este aparelho sabe dar',
+                'system',
+                8,
+                'Diagnóstico. Pergunta que grandezas o firmware sabe reportar. Foi assim que se soube que esta unidade é 4G e não tem rádio WiFi nenhum.',
+            ),
+            self::action(
+                'supported_control',
+                'discoverParametersControl',
+                'Que ordens este aparelho obedece',
+                'system',
+                9,
+                'Diagnóstico. Pergunta que ordens o firmware aceita — dispensar, calibrar, reiniciar. Serve para não se oferecer um botão que o aparelho vai recusar.',
+            ),
             // Desligar a cifra também não entra: o `0x8005` aparece na tabela dos parâmetros
             // escrevíveis, mas o fornecedor respondeu que o aparelho o recusa e que a chave sai
             // da codificação dele — ou cifra tudo o que envia, ou não cifra nada, e a decisão
@@ -153,17 +192,57 @@ final class ZayataConfigurationDefinitions
 
             // As acções. O relógio calibra-se à mão porque num ensaio um alarme das 12:55
             // ficou registado às 11:45.
-            self::action('dispense_now', 'dispenseNow', 'Dispensar agora', 'system', 20),
+            // Em Saúde e não em Sistema: dispensar é um acto sobre a medicação do utente, e
+            // era o único sítio onde o catálogo de capacidades e as definições discordavam.
+            self::action(
+                'dispense_now',
+                'dispenseNow',
+                'Dispensar agora',
+                'health',
+                40,
+                'Roda o prato e empurra já o próximo compartimento, sem esperar pela hora. Consome a dose do próximo alarme marcado e dá-o como tomado — não é uma dose a mais.',
+                'Isto gasta a dose do próximo alarme e dá-a como tomada. Confirma?',
+            ),
             // Rodar até um compartimento (`0xA124`) e pausar a medicação (`0xA125`) não estão
             // aqui: a especificação descreve-as, mas este firmware recusa-as com «TAG
             // inválida» e a descoberta de parâmetros não as anuncia. Foram declaradas a
             // partir do documento sem se olhar para a resposta que o aparelho já tinha dado, e
             // o hub ficou a retentá-las de minuto a minuto. Quando um firmware as anunciar,
             // voltam — depois de lhe perguntar, e não antes.
-            self::action('calibrate_clock', 'calibrateClock', 'Calibrar relógio', 'system', 30),
-            self::action('mute_alarm', 'muteAlarm', 'Silenciar', 'system', 40),
-            self::action('reset_tray', 'resetTray', 'Repor o prato', 'system', 50),
-            self::action('restart_device', 'restartDevice', 'Reiniciar', 'system', 60, 'O dispensador fica sem comunicar enquanto arranca. Uma toma agendada para esse minuto não é dispensada.'),
+            self::action(
+                'calibrate_clock',
+                'calibrateClock',
+                'Acertar o relógio do aparelho',
+                'system',
+                30,
+                'Põe o relógio interno do aparelho à hora certa, no fuso configurado acima. Os nove alarmes disparam pela hora dele, e ele deriva: com o relógio atrasado, os comprimidos saem à hora errada sem nenhum erro em lado nenhum.',
+            ),
+            // Em Alarmes e não em Sistema: o que isto faz é calar um alarme que está a tocar.
+            self::action(
+                'mute_alarm',
+                'muteAlarm',
+                'Silenciar o alarme a tocar',
+                'alerts',
+                30,
+                'Cala o alarme que está a tocar neste momento. Não é um silenciar permanente — para isso há o volume e o «não incomodar» — e a dose continua por tomar.',
+            ),
+            self::action(
+                'reset_tray',
+                'resetTray',
+                'Repor o prato',
+                'system',
+                50,
+                'Manda o carrossel voltar à posição de origem e reassentar-se. Serve quando o prato ficou desalinhado — depois de alguém o forçar, de encravar, ou de se trocarem os compartimentos. O aparelho responde a dizer se conseguiu.',
+            ),
+            self::action(
+                'restart_device',
+                'restartDevice',
+                'Reiniciar',
+                'system',
+                60,
+                'Reinicia o aparelho. Não apaga configurações nem o plano de medicação. Fica sem comunicar enquanto arranca, e uma toma agendada para esse minuto não é dispensada.',
+                'O dispensador fica sem comunicar enquanto arranca. Uma toma agendada para esse minuto não é dispensada.',
+            ),
             // A reposição de fábrica não entra. O aparelho só aponta para o hub porque o
             // fornecedor lhe mandou essa configuração, e uma reposição devolve-o ao servidor
             // dele: perde-se o controlo do aparelho e recuperá-lo depende de outra pessoa,
@@ -320,12 +399,20 @@ final class ZayataConfigurationDefinitions
         );
     }
 
+    /**
+     * Uma acção leva sempre uma frase a dizer o que faz.
+     *
+     * Metade destes nomes não se explica a si própria — «Repor o prato», «Parâmetros de
+     * controlo», «Sincronizar configuração» — e quem opera a dashboard ficava a adivinhar o
+     * que ia acontecer ao aparelho ao carregar no botão.
+     */
     private static function action(
         string $key,
         string $command,
         string $label,
         string $category,
         int $order,
+        string $help,
         string $confirm = '',
     ): array {
         return ConfigurationDefinition::make(
@@ -338,6 +425,7 @@ final class ZayataConfigurationDefinitions
             $category,
             $order,
             transient: true,
+            help: $help,
             confirm: $confirm,
         );
     }

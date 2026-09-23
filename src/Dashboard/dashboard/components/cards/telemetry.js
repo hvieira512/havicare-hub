@@ -74,6 +74,7 @@ const CARD_STYLE = {
     medication_level: ["fa-prescription-bottle-medical", "info"],
     medication_alarm_status: ["fa-clock-rotate-left", "primary"],
     cells_remaining: ["fa-table-cells", "info"],
+    sim_card: ["fa-sim-card", "secondary"],
     humidity: ["fa-droplet", "info"],
     reset: ["fa-bell-slash", "warning"],
     unknown: ["fa-bell", ""],
@@ -164,6 +165,7 @@ const UPLINK_CARD_RENDERERS = {
     }),
     medication_alarm_status: (data) => medicationAlarmContent(data),
     device_status: (data) => deviceStatusContent(data),
+    sim_card: (data) => simCardContent(data),
     device_fault: (data) => ({
         value: fieldValue("fault", data.fault),
     }),
@@ -381,25 +383,31 @@ export function uplinkCardContent(type, data, meta = {}) {
  * detalhe, e só entra o que o aparelho reportou.
  */
 function deviceStatusContent(data) {
-    const detalhes = [
-        "childLockEngaged",
+    const details = [
         "lidOpen",
         "mainsPowered",
         "environmentAlarm",
-        "simCcid",
         "wifiSignalDbm",
     ].filter((key) => data?.[key] !== undefined && data[key] !== null);
 
-    const sinal = data?.gsmSignalDbm;
+    const signal = data?.gsmSignalDbm;
 
     return {
         value:
-            sinal != null
-                ? `${sinal} dBm`
+            signal != null
+                ? `${signal} dBm`
                 : data?.signalLevel != null
                     ? `${data.signalLevel} de 3`
                     : capabilityLabel("device_status"),
-        details: compactDetails(data, detalhes),
+        details: compactDetails(data, details),
+    };
+}
+
+/** O cartão que está lá dentro. O número é o valor, e não há detalhe nenhum a acrescentar. */
+function simCardContent(data) {
+    return {
+        value: String(data?.ccid || "").trim() || capabilityLabel("sim_card"),
+        details: "",
     };
 }
 
