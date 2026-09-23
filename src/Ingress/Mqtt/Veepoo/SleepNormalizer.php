@@ -7,19 +7,12 @@ namespace Hub\Ingress\Mqtt\Veepoo;
 /**
  * Traduz o registo de sono preciso da pulseira para os nomes do hub.
  *
- * A pulseira guarda três noites e reproduz cada uma quando lhe pedem. Ao contrário dos blocos
- * de cinco minutos, isto não é uma sequência de leituras: é o relatório de uma noite, já
- * calculado pelo firmware.
- *
- * Saem duas capacidades da mesma trama. O `sleep` é a noite -- quando começou, quando acabou,
- * e o que aconteceu pelo meio -- e é o mesmo contrato que os relógios já usam. O
- * `sleep_quality` são as pontuações que o firmware atribui à noite, que são um juízo sobre a
- * medição e não a medição.
+ * Não é uma sequência de leituras: é o relatório de uma noite, já calculado pelo firmware.
+ * Saem duas capacidades da mesma trama -- o `sleep` é a noite, e o `sleep_quality` são as
+ * pontuações que o firmware lhe atribui.
  *
  * Os significados vêm da documentação do fabricante (`VeepooUniAppSDK`, secção 9.4) e não dos
- * nomes dos campos, que enganam: `nightScore` é a pontuação das idas à casa de banho,
- * `nightTotalTime` é quanto tempo se esteve levantado, e `sleepQuality` vem 0-4 onde a app
- * mostra 1-5 estrelas.
+ * nomes dos campos, que enganam.
  */
 final class SleepNormalizer
 {
@@ -174,10 +167,8 @@ final class SleepNormalizer
      * Os troços da noite, tirados da curva.
      *
      * Um valor por intervalo, e intervalos seguidos do mesmo valor são um troço só. A duração
-     * de cada intervalo sai das fronteiras da noite a dividir pelo número deles: o fabricante
-     * não a declara, e assumir cinco minutos punha a curva a discordar dos instantes que a
-     * própria trama traz. Na MF91 a conta dá um minuto, e as contagens de cada valor somam os
-     * troços que o firmware declara à parte.
+     * de cada intervalo sai das fronteiras da noite a dividir pelo número deles, porque o
+     * fabricante não a declara.
      *
      * @param list<string> $curve
      * @return list<array<string, mixed>>
@@ -277,12 +268,8 @@ final class SleepNormalizer
     /**
      * O instante que o firmware datou com mês, dia, hora e minuto -- e mais nada.
      *
-     * O ano vem de quando o registo foi lido: a pulseira guarda três noites, por isso a data
-     * é sempre a mais recente que não esteja no futuro. Sem isto, o sono de 31 de dezembro
-     * lido a 1 de janeiro ficava onze meses à frente.
-     *
-     * Quatro partes que não sirvam como data devolvem `null`, e é assim que um formato
-     * diferente do esperado se denuncia em vez de virar um instante inventado.
+     * O ano vem de quando o registo foi lido: a data é sempre a mais recente que não esteja
+     * no futuro. Quatro partes que não sirvam como data devolvem `null`.
      */
     private static function instant(mixed $value, int $now, int $tzOffsetMinutes): ?int
     {

@@ -75,10 +75,8 @@ export function changedConfigGroupEntries(group) {
 
         const pristine = row.dataset.configPristine ?? "";
         // Uma linha que o aparelho nunca recebeu viaja sem ninguém lhe ter tocado, porque o
-        // grupo é o único caminho para a primeira gravação. Isso só vale para o interruptor,
-        // cujo padrão -- ligado -- é uma escolha a sério. O padrão de um número é zero, e num
-        // intervalo de medição zero quer dizer desactivar: um clique desligava as dez
-        // medições de uma vez a quem só queria configurar uma.
+        // grupo é o único caminho para a primeira gravação. Só vale para o interruptor: o
+        // padrão de um número é zero, e num intervalo de medição zero quer dizer desactivar.
         const neverSent = row.dataset.configStored === "0" &&
             row.dataset.configInput === "toggle";
         if (neverSent || JSON.stringify(payload) !== pristine) {
@@ -92,10 +90,8 @@ export function changedConfigGroupEntries(group) {
 /**
  * Quantas alterações à configuração estão escritas no ecrã e por enviar ao aparelho.
  *
- * Conta só o que alguém editou. Uma acção é sempre um pedido novo, e uma definição que o
- * aparelho ainda não recebeu está por enviar sem ninguém lhe ter tocado: avisar por causa
- * delas era avisar em todos os relógios, todas as vezes, e um aviso que aparece sempre
- * deixa de se ler.
+ * Conta só o que alguém editou: avisar por causa das que ninguém tocou era avisar em todos
+ * os relógios, todas as vezes.
  */
 export function unsentConfigChanges(root) {
     const edited = (element) => {
@@ -144,12 +140,9 @@ export function syncConfigGroupDirty(group) {
             ? "Sem alterações por enviar"
             : edited
                 ? `${count} ${count === 1 ? "alteração" : "alterações"} por enviar`
-                // «No valor padrão» e não «nunca enviada ao dispositivo»: o que sabemos é que o
-                // hub nunca guardou valor nenhum, que é o que a pastilha de cada cartão já
-                // chama «Padrão». Sobre o aparelho não sabemos nada -- ele tem sempre um
-                // valor, de fábrica ou posto pela app do fabricante, e ler ali que nunca
-                // recebeu nada leva a concluir que o alarme está desligado quando pode não
-                // estar.
+                // «No valor padrão» e não «nunca enviada ao dispositivo»: o que sabemos é que
+                // o hub nunca guardou valor nenhum. Sobre o aparelho não sabemos nada -- ele
+                // tem sempre um valor, de fábrica ou posto pela app do fabricante.
                 : `${count} ${count === 1 ? "definição" : "definições"} no valor padrão, por enviar`;
     }
 }
@@ -189,13 +182,9 @@ export async function saveDeviceConfigurationGroup(group) {
 /**
  * A caixa de uma acção que o utilizador não desfaz a partir daqui.
  *
- * A frase vem da definição do protocolo, e não de uma tabela indexada pela capacidade: a
- * mesma chave não quer dizer o mesmo em todo o lado -- o `reset_device` da Wonlex repõe o
- * relógio de fábrica e o do 4P Touch reinicia-o. Uma tabela por chave prometia um reinício a
- * quem estava a devolver o aparelho ao servidor do fornecedor.
- *
- * Uma definição sem frase declarada não leva caixa: pedir confirmação para tudo ensina a
- * carregar em «Sim» sem ler.
+ * A frase vem da definição do protocolo, e não de uma tabela indexada pela capacidade: o
+ * `reset_device` da Wonlex repõe o relógio de fábrica e o do 4P Touch reinicia-o. Sem frase
+ * declarada não leva caixa -- pedir confirmação para tudo ensina a carregar em «Sim» sem ler.
  */
 export function dangerousCommandPrompt(section, imei) {
     const text = String(section?.dataset?.configConfirm || "");
@@ -568,10 +557,8 @@ export function syncConfigSectionDirty(section) {
     if (!("configPristine" in section.dataset)) return;
 
     // Duas situações em que não há diferença nenhuma a medir, e enviar continua a fazer
-    // sentido. Uma acção é sempre um pedido novo -- mandar a pulseira vibrar outra vez, ou
-    // mandá-la parar. E uma definição que o aparelho ainda não recebeu mostra o valor por
-    // omissão do catálogo, não o que lá está: comparando-o consigo próprio o botão ficava
-    // apagado, e a primeira configuração não tinha caminho nenhum para sair do ecrã.
+    // sentido: uma acção é sempre um pedido novo, e uma definição que o aparelho ainda não
+    // recebeu mostra o valor por omissão do catálogo e não o que lá está.
     const neverSent = section.dataset.configStored === "0";
     // A terceira situação: a entrega falhou. O valor está guardado e é o que está no ecrã, por
     // isso não há diferença nenhuma a medir -- e era precisamente por não haver que o botão se

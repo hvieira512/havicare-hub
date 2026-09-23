@@ -129,9 +129,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
      * Entrega o que esteja em fila às pulseiras com sessão aberta.
      *
      * O gateway fica subscrito ao tópico de comandos enquanto correr, e por isso a pulseira é
-     * alcançável entre sessões. Chamado por um temporizador do `IngressRunner`: sem isto uma
-     * ordem dada no ecrã esperava pelo anúncio de sessão seguinte -- até 30 s, mais do que a
-     * pulseira leva a desistir de vibrar.
+     * alcançável entre sessões. Chamado por um temporizador do `IngressRunner`.
      */
     public function dispatchQueued(): void
     {
@@ -315,11 +313,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         ];
 
         foreach ($this->blocks($message['payload'] ?? null) as $block) {
-            // A pulseira reproduz o histórico por desenho -- não empurra nada, e o gateway
-            // relê o dia corrente de cinco em cinco minutos e os dias retidos a cada arranque.
-            // Um bloco igual a um que já saiu é a mesma medição, com o mesmo instante, e não
-            // uma leitura nova: republicá-lo enchia o MQTT de repetições que quem integra não
-            // distingue das boas, e expulsava do histórico da dashboard o que era real.
+            // A pulseira reproduz o histórico por desenho: o gateway relê o dia corrente de
+            // cinco em cinco minutos. Um bloco igual a um que já saiu é a mesma medição, com
+            // o mesmo instante, e não uma leitura nova.
             if (!$this->state->acceptObservation($deviceKey, self::blockFingerprint($block), self::REPLAY_TTL_SECONDS)) {
                 continue;
             }
@@ -335,15 +331,12 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
      * Entrega ao gateway o que estiver em fila para esta pulseira.
      *
      * Publica no canal de comandos do próprio gateway, e não no do aparelho: quem executa é
-     * a caixa, que tem a sessão BLE. A criação continua a ser exclusiva da API REST -- isto é
-     * entrega, o equivalente ao socket por onde um relógio recebe os seus.
+     * a caixa, que tem a sessão BLE. Isto é entrega, não criação.
      */
     /**
      * Publica telemetria no MQTT e no histórico da dashboard.
      *
      * São dois destinos e não um: o MQTT serve quem integra, a dashboard serve quem opera.
-     * Publicar só no primeiro deixa o aparelho a parecer mudo no ecrã, que foi exactamente o
-     * que aconteceu antes de isto existir.
      *
      * @param array<string, mixed> $telemetry
      */
@@ -391,13 +384,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     /**
      * Se uma leitura tem valor de consulta.
      *
-     * Dois casos, e os dois são ausência de informação e não informação. Um bloco de atividade
-     * a zeros é o que uma pulseira pousada produz de cinco em cinco minutos. E a versão de
-     * firmware repetida é a sessão a bater de trinta em trinta segundos: numa hora enchia as
-     * cem entradas do histórico e expulsava dele todas as medições.
-     *
-     * Tudo o resto passa, incluindo bateria e sinais vitais, mesmo repetidos -- aí a repetição
-     * é a informação.
+     * Dois casos, e os dois são ausência de informação: um bloco de atividade a zeros, e a
+     * versão de firmware repetida a cada anúncio de sessão. Tudo o resto passa, mesmo
+     * repetido -- aí a repetição é a informação.
      *
      * @param array<string, mixed> $telemetry
      */
@@ -547,12 +536,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             return;
         }
 
-        // A pulseira reporta explicitamente quando a deteção de uso falha. Sem isto o pedido
-        // ficava eternamente em fila e ninguém sabia porquê -- é o tipo de silêncio que faz um
-        // cuidador carregar no botão três vezes.
-        //
-        // O ECG usa um campo próprio: exige o dedo no elétrodo e não só a pulseira no pulso,
-        // e por isso falha com `wearNotPass` mesmo com a pulseira bem colocada.
+        // A pulseira reporta explicitamente quando a deteção de uso falha. O ECG usa um campo
+        // próprio: exige o dedo no elétrodo e não só a pulseira no pulso.
         if (($payload['notWear'] ?? false) === true || ($payload['wearStatus'] ?? '') === 'wearNotPass') {
             $this->fail(
                 $deviceKey,
@@ -619,10 +604,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
     /**
      * O traçado de um ECG.
      *
-     * A pulseira grava os trinta segundos peça haja sinal ou não: pousada numa mesa devolve
-     * dezasseis mil amostras a zero. Isso não é um exame -- é uma medição que não apanhou
-     * nada, e é assim que tem de aparecer, senão fica no histórico um ECG de quem nunca
-     * chegou a fazer nenhum.
+     * A pulseira grava os trinta segundos haja sinal ou não: pousada numa mesa devolve
+     * dezasseis mil amostras a zero, que é uma medição que não apanhou nada e não um exame.
      *
      * @param array<string, mixed>|null $payload
      * @param array<string, mixed> $device
@@ -682,9 +665,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
      * Diz porque é que a medição não saiu, e encerra o pedido que a mandou fazer.
      *
      * As duas coisas andam juntas: o acontecimento é para quem opera ver a razão, e tirar o
-     * comando da fila é o que impede a pulseira de repetir dez minutos depois uma medição que
-     * já se sabe que não dá valor. Publicar só o primeiro deixava o pedido a insistir contra
-     * uma pulseira fora do pulso até expirar.
+     * comando da fila é o que impede a pulseira de repetir uma medição que já se sabe falhada.
      *
      * @param array<string, mixed> $device
      */

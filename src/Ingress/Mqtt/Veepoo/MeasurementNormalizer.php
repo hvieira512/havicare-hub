@@ -7,12 +7,9 @@ namespace Hub\Ingress\Mqtt\Veepoo;
 /**
  * Traduz uma medição ao vivo da pulseira para o tipo e os campos do hub.
  *
- * Saiu da `Bridge` porque é uma tabela de tradução e mais nada: o tipo do SDK diz qual é a
- * grandeza, e cada grandeza diz o que conta como leitura válida. Não conhece MQTT, nem Redis,
- * nem gateway -- e por isso testa-se directamente, sem levantar um subscritor.
- *
- * A `DailyBlockNormalizer` faz o mesmo trabalho para o histórico que a pulseira reproduz; esta
- * faz o das medições pedidas por comando.
+ * É uma tabela de tradução e mais nada: o tipo do SDK diz qual é a grandeza, e cada grandeza
+ * diz o que conta como leitura válida. A `DailyBlockNormalizer` faz o mesmo para o histórico
+ * que a pulseira reproduz; esta faz o das medições pedidas por comando.
  */
 final class MeasurementNormalizer
 {
@@ -32,9 +29,8 @@ final class MeasurementNormalizer
      *
      * O tipo do SDK é que diz qual é a grandeza -- 51 frequência cardíaca, 31 oxigénio, 22
      * glicemia, 6 temperatura, 58 stress, 18 e 28 tensão. Enquanto a medição decorre o
-     * firmware repete a mesma trama com o valor a zero, e por isso cada grandeza tem de dizer
-     * o que é uma leitura válida: publicar o zero dava uma saturação de 0% a meio de uma
-     * medição que estava a correr bem.
+     * firmware repete a mesma trama com o valor a zero, e daí cada grandeza dizer o que é
+     * uma leitura válida.
      *
      * @param array<string, mixed> $payload
      * @return array{0: string, 1: array<string, float|int>}|null
@@ -76,18 +72,10 @@ final class MeasurementNormalizer
     /**
      * O que um exame de ECG mediu, resumido das tramas de estado que o acompanharam.
      *
-     * O fabricante documenta um relatório final que se lê do aparelho por id (secção 9.28.5),
-     * mas neste firmware ele não existe: os quatro tipos de id devolvem `dataId: 0`. Estas
-     * tramas, uma por segundo, são o único resumo possível.
-     *
-     * A mediana e não a média: numa medição real vieram um QTc de 712 ms e um HRV de 8 ms no
-     * meio de valores na casa dos 120 -- artefactos do algoritmo a falhar um complexo, que a
-     * média deixaria entrar no resultado. Os primeiros segundos vêm com a trama inteira a
-     * zeros enquanto o sinal assenta, e o `--` é o sentinela de «sem leitura» do firmware.
-     *
-     * A respiração e a velocidade da onda de pulso não entram: vieram a zero nas trinta e
-     * quatro tramas do exame, do princípio ao fim, e publicá-las dava uma respiração de zero
-     * ciclos por minuto a quem estava a respirar.
+     * O relatório final que o fabricante documenta (secção 9.28.5) não existe neste firmware,
+     * e estas tramas, uma por segundo, são o único resumo possível. A mediana e não a média,
+     * porque o algoritmo produz artefactos; o `--` é o sentinela de «sem leitura». A
+     * respiração e a velocidade da onda de pulso não entram: vêm sempre a zero.
      *
      * @param list<array<string, mixed>> $status
      * @return array<string, int>
@@ -134,12 +122,9 @@ final class MeasurementNormalizer
     /**
      * O pedido que mandou fazer esta medição, pelo tipo do SDK.
      *
-     * É a tabela do `forSdkType` vista do outro lado, e vive ao lado dela pela mesma razão: o
-     * tipo do SDK é o único identificador que a resposta traz, e sem ele uma medição que falha
-     * não sabe dizer qual dos pedidos em fila é que morreu com ela.
-     *
-     * Só as medições. Os totais do dia e a procura da pulseira respondem sempre, e por isso
-     * nunca precisam de ser encerradas por falha.
+     * É a tabela do `forSdkType` vista do outro lado: o tipo do SDK é o único identificador
+     * que a resposta traz. Só as medições -- os totais do dia e a procura da pulseira
+     * respondem sempre, e nunca precisam de ser encerradas por falha.
      */
     public static function operationForSdkType(int $sdkType): ?string
     {
@@ -180,11 +165,8 @@ final class MeasurementNormalizer
     /**
      * O acumulado do dia, contado pela própria pulseira.
      *
-     * É o mesmo que `activity` significa nos relógios -- o contador de passos, distância e
-     * calorias desde a meia-noite -- e por isso leva o mesmo nome. O que se andou em cada
-     * cinco minutos é outra grandeza e sai dos blocos como `steps`.
-     *
-     * As calorias vêm em décimas: 146 são as 14,6 kcal que a app mostra no ecrã principal.
+     * É o mesmo que `activity` significa nos relógios -- passos, distância e calorias desde a
+     * meia-noite. As calorias vêm em décimas: 146 são 14,6 kcal.
      *
      * @param array<string, mixed> $payload
      * @return array{0: string, 1: array<string, float|int>}|null
