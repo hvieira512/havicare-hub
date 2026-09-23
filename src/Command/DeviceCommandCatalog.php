@@ -396,15 +396,13 @@ final class DeviceCommandCatalog
                 0x1055 => ['value' => self::pillByte($payload['endMinute'] ?? 0, 59)],
             ],
             'deviceLanguage' => [0x1001 => ['value' => self::pillByte($payload['language'] ?? 0, 1)]],
-            // Os dois tempos da toma viajam em segundos e expõem-se em minutos: quem marca
-            // uma janela de medicação pensa em minutos, e converter é trabalho do hub.
+            // Em segundos no fio, em minutos na interface: converter é trabalho do hub.
             'retrievalWarning' => [0x1017 => ['value' => self::pillSeconds($payload['minutes'] ?? 0)]],
             'retrievalTimeout' => [0x1018 => ['value' => self::pillSeconds($payload['minutes'] ?? 0)]],
-            // Quantos compartimentos vão carregados. É o que permite ao aparelho avisar que
-            // está a acabar, e não se confunde com a capacidade do prato.
+            // Quantos vão carregados, que não é a capacidade do prato.
             'loadedCells' => [0x101C => ['value' => self::pillByte($payload['cells'] ?? 0, 28)]],
             // INT16S em HHMM: `+100` é uma hora à frente, e a oeste o sinal é negativo.
-            'timeZone' => [0x1015 => ['value' => pack('s', (int)($payload['timeZone'] ?? 0))]],
+            'timeZone' => [0x1015 => ['value' => self::pillTimeZone($payload['timeZone'] ?? 0)]],
             default => throw new \InvalidArgumentException("Unsupported zayata-m228 command {$command}"),
         };
 
@@ -545,6 +543,17 @@ final class DeviceCommandCatalog
         }
 
         return pack('V', $number * 60);
+    }
+
+    /** HHMM com sinal, na gama da especificação. Era o único limite que só o validador tinha. */
+    private static function pillTimeZone(mixed $value): string
+    {
+        $number = (int)$value;
+        if ($number < -1200 || $number > 1400) {
+            throw new \InvalidArgumentException("fuso {$number} fora da gama -1200 a 1400");
+        }
+
+        return pack('s', $number);
     }
 
     private static function pillByte(mixed $value, int $max = 255): string

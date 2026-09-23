@@ -504,10 +504,7 @@ final class DeviceEventDecoder
     {
         $events = [];
 
-        // A corrente viaja com a bateria: «ligado à corrente» e «a carregar» são a mesma
-        // pergunta feita de dois lados, e a dashboard já desenha a bateria com o estado de
-        // carga. Numa capacidade à parte, ficava a uma linha de distância da percentagem que
-        // a explica.
+        // A corrente viaja com a bateria: é a mesma pergunta feita de dois lados.
         $battery = array_filter([
             'percent' => $this->tlvU8($tlv, 0x8103),
             'chargingState' => match ($this->tlvU8($tlv, 0x8104)) {
@@ -535,11 +532,7 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'humidity', 'nativeType' => $nativeType, 'value' => ['humidityPercent' => $humidity]];
         }
 
-        // O nível de medicação viaja com a contagem de células, que é o mesmo facto com
-        // número: o `0x8101` é o juízo grosseiro do aparelho -- normal, a acabar, sem
-        // medicação -- e o `0x811D` é a contagem que lhe dá origem. Em cartões separados eram
-        // dois a dizer a mesma coisa, um deles sem número nenhum. Junto, é o juízo que diz que
-        // 4 de 28 já é pouco, e essa gama é do aparelho e não nossa.
+        // O `0x8101` é o juízo do aparelho sobre a contagem do `0x811D`: viaja como campo dela.
         $level = match ($this->tlvU8($tlv, 0x8101)) {
             0 => 'ok',
             1 => 'low',
@@ -547,11 +540,8 @@ final class DeviceEventDecoder
             default => null,
         };
 
-        // O `0x811B` conta posições e não compartimentos: a especificação numera o
-        // compartimento de 0 a 28, e a zero é a de repouso, onde o prato assenta e onde não
-        // vai medicação nenhuma. O aparelho reporta 29, a ficha dele diz 28, e é 28 que o
-        // contrato publica -- senão o cartão diz «de 29» ao lado de uma definição que só
-        // aceita 28.
+        // O `0x811B` conta posições: a zero é a de repouso e não leva medicação. O aparelho
+        // responde 29, e o contrato publica os 28 compartimentos.
         $capacity = $this->tlvU8($tlv, 0x811B);
         $cells = array_filter([
             'remaining' => $this->tlvU8($tlv, 0x811D),
@@ -563,21 +553,14 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'cells_remaining', 'nativeType' => $nativeType, 'value' => $cells];
         }
 
-        // A tampa aberta quer dizer que o prato está acessível -- alguém está a carregá-lo,
-        // ou ficou aberta por esquecimento. É um estado sobre que se age, e por isso tem
-        // cartão próprio em vez de ser um campo entre dois números de sinal.
+        // A tampa aberta quer dizer que o prato está acessível: é um estado sobre que se age.
         $lidOpen = $this->pillFlag($tlv, 0x8107);
         if ($lidOpen !== null) {
             $events[] = ['feature' => 'lid_state', 'nativeType' => $nativeType, 'value' => ['open' => $lidOpen]];
         }
 
-        // O `0x8111` é o juízo que o aparelho faz sobre a temperatura e a humidade que ele
-        // próprio mede: diz se a medicação está guardada dentro das condições que o
-        // fabricante dá como boas. Chamar-lhe «alarme de ambiente» não dizia isso a ninguém.
-        //
-        // Só sai quando dispara, como a avaria aqui ao lado: publicado a cada leitura, enchia
-        // a lista de eventos com linhas iguais a dizer «Dentro da gama», que é o normal e que
-        // ninguém lê.
+        // O juízo do aparelho sobre a temperatura e a humidade que ele mede. Só sai quando
+        // dispara, como a avaria aqui ao lado.
         if ($this->pillFlag($tlv, 0x8111) === true) {
             $events[] = [
                 'feature' => 'storage_environment',

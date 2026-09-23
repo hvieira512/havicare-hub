@@ -8,18 +8,8 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Por que canal do MQTT sai cada coisa, e de onde vem essa decisão.
- *
- * Vinha de uma lista escrita à mão dentro do `DeviceHubServer` --
- * `['alarm', 'medication_intake', 'device_fault', 'help_call']` por `events`, tudo o resto
- * por `telemetry`. O `isEvent` que cada definição declara não era lido por ninguém nesse
- * caminho, e as duas fontes de verdade já discordavam: o `storage_environment` foi declarado
- * alerta e continuava a sair por telemetria.
- *
- * O que isto custava não era arrumação. O `events` publica a QoS 1 e o `telemetry` a QoS 0, e
- * uma dose falhada -- que não gera `medication_intake` nenhum, porque não houve toma a
- * registar -- só se anuncia pela mudança de estado de um alarme. O evento mais importante que
- * o dispensador produz era o único que se podia perder.
+ * O canal do MQTT sai do `isEvent` do catálogo: acontecimentos por `events`, a QoS 1, leituras
+ * por `telemetry`, a QoS 0. Era uma lista escrita à mão que já discordava do catálogo.
  */
 final class EventChannelComesFromTheCatalogueTest extends TestCase
 {
@@ -32,15 +22,8 @@ final class EventChannelComesFromTheCatalogueTest extends TestCase
     }
 
     /**
-     * O `device_state` dos relógios muda de canal, e isso é uma alteração de contrato.
-     *
-     * Está declarado como acontecimento desde sempre — é o relatório de sistema que o relógio
-     * manda quando alguma coisa nele muda —, mas a lista à mão não o incluía e ele saía por
-     * `telemetry`. Passar a `events` é a correcção; prende-se aqui porque quem subscrevesse
-     * `.../watch/+/telemetry` à espera dele deixa de o receber aí, e uma mudança destas não
-     * pode voltar a acontecer sem ninguém dar por ela.
-     *
-     * A tabela de alterações do [contrato MQTT](docs/08-contrato-mqtt.md) regista-a.
+     * Alteração de contrato: quem subscrevia `.../watch/+/telemetry` à espera do relatório de
+     * sistema deixa de o receber aí. Registada na tabela do capítulo 8.
      */
     public function testTheWatchSystemReportMovedToTheEventChannel(): void
     {
@@ -55,12 +38,7 @@ final class EventChannelComesFromTheCatalogueTest extends TestCase
         }
     }
 
-    /**
-     * Uma dose falhada é um acontecimento e tem de sair pelo canal com garantia de entrega.
-     *
-     * Não há `medication_intake` quando ninguém toma a medicação: o único sinal é o alarme a
-     * mudar de estado numa notificação `0x04`.
-     */
+    /** Não há `medication_intake` numa dose falhada: esta mudança de estado é o único sinal. */
     public function testAMissedDoseTravelsAsAnEvent(): void
     {
         self::assertTrue(CapabilityCatalog::isEventType('medication_alarm_change'));
@@ -79,14 +57,7 @@ final class EventChannelComesFromTheCatalogueTest extends TestCase
         self::assertFalse(CapabilityCatalog::isEventType(''));
     }
 
-    /**
-     * A bandeira tem de concordar entre tipos de aparelho, senão a pergunta não se pode fazer
-     * só pela chave.
-     *
-     * A `help_call` existe em quatro catálogos e é acontecimento nos quatro. Uma chave que
-     * fosse evento num aparelho e leitura noutro obrigaria o canal a saber de que aparelho
-     * veio a mensagem, e a decisão deixaria de ser do catálogo.
-     */
+    /** Sem concordar entre aparelhos, a pergunta não se poderia fazer só pela chave. */
     public function testTheFlagCannotDisagreeBetweenDeviceTypes(): void
     {
         $seen = [];

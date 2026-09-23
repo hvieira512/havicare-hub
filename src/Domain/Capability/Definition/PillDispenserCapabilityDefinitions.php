@@ -12,20 +12,14 @@ final class PillDispenserCapabilityDefinitions
     {
         return [
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'battery', 'label' => 'Bateria', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            // O nível de medicação não tem capacidade própria: era o juízo grosseiro do
-            // aparelho — normal, a acabar, sem medicação — a dizer a mesma coisa que esta
-            // contagem, e sem número nenhum. Viaja como campo dela, que é onde acrescenta: é
-            // ele que diz que 4 de 28 já é pouco, e essa gama é do aparelho e não nossa.
+            // O nível de medicação viaja como campo desta: é o juízo do aparelho sobre a
+            // mesma contagem, e sozinho não trazia número nenhum.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'cells_remaining', 'label' => 'Células restantes', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'temperature', 'label' => 'Temperatura', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'humidity', 'label' => 'Humidade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            // A tampa do prato: aberta quer dizer que a medicação está acessível, e é um
-            // estado sobre que alguém age. Estava enfiada dentro do estado do dispositivo,
-            // entre dois números de sinal, onde ninguém a lia.
+            // Aberta quer dizer que a medicação está acessível: é um estado sobre que se age.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'lid_state', 'label' => 'Tampa', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            // A ligação à rede é a mesma `connectivity` que os gateways publicam: um formato
-            // só deste aparelho obrigava quem integra a conhecer mais um para ler a mesma
-            // grandeza.
+            // A mesma `connectivity` que os gateways publicam, e não um formato só deste.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'connectivity', 'label' => 'Conectividade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             // Sem `device_status` e sem CCID: cada leitura do `0x07` pede-se por si, e o CCID
             // nunca muda. O estado dos nove alarmes é a única leitura da toma que chega em
@@ -33,10 +27,8 @@ final class PillDispenserCapabilityDefinitions
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'medication_alarm_status', 'label' => 'Estado dos alarmes', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'medication_intake', 'label' => 'Toma de medicação', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'device_fault', 'label' => 'Avaria', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
-            // Um alerta e não uma leitura: o aparelho compara a temperatura e a humidade que
-            // mede com a gama que o fabricante dá como boa, e isto só fala quando ela é
-            // ultrapassada. Como telemetria, enchia a lista com linhas a dizer «Dentro da
-            // gama», que é o normal e que ninguém lê.
+            // Um alerta: o aparelho compara o que mede com a gama do fabricante e só fala
+            // quando ela é ultrapassada.
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'storage_environment', 'label' => 'Medicação mal conservada', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             // O que acontece entre dois retratos dos nove. É o único sinal de uma dose
             // falhada: não houve toma, e por isso não há `medication_intake` nenhum.

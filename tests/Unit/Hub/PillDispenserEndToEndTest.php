@@ -17,16 +17,8 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\LocalTcpPort;
 
 /**
- * Do socket ao canal do MQTT, com as tramas na forma em que o aparelho as manda.
- *
- * O que estava preso era cada degrau em separado: a decifra, a descodificação, a bandeira
- * `isEvent`. Nenhum teste os punha em fila, e por isso três coisas podiam falhar em silêncio
- * -- o hub publicaria nada, ou publicaria pelo canal errado, com identidade correcta e CRC
- * válido.
- *
- * As três que aqui se prendem: uma trama **cifrada**, que é a única forma em que o aparelho
- * envia por iniciativa própria; uma leitura a sair por `telemetry`; e a mudança de estado de
- * uma dose a sair por `events`, que é o único sinal que existe de uma dose falhada.
+ * Do socket ao canal do MQTT, com as tramas na forma em que o aparelho as manda -- cifradas.
+ * Cada degrau estava preso em separado, e nenhum teste os punha em fila.
  */
 final class PillDispenserEndToEndTest extends TestCase
 {
@@ -41,11 +33,7 @@ final class PillDispenserEndToEndTest extends TestCase
         ]);
     }
 
-    /**
-     * O evento de toma chega cifrado e sai por `events`.
-     *
-     * A chave e o IV são o Device Number em hexadecimal maiúsculo de dezasseis caracteres.
-     */
+    /** A chave e o IV são o Device Number em hexadecimal maiúsculo de dezasseis caracteres. */
     public function testAnEncryptedIntakeReachesTheEventChannel(): void
     {
         $mqtt = $this->exchange([
@@ -81,12 +69,7 @@ final class PillDispenserEndToEndTest extends TestCase
         self::assertSame([], $this->ofType($mqtt->events, 'temperature'));
     }
 
-    /**
-     * Uma dose falhada sai por `events`.
-     *
-     * Não há `medication_intake` quando ninguém toma a medicação, e por isso esta mudança de
-     * estado é o único sinal dela. Sair por `telemetry` era sair a QoS 0.
-     */
+    /** O único sinal de uma dose falhada: sair por `telemetry` era sair a QoS 0. */
     public function testAMissedDoseReachesTheEventChannel(): void
     {
         $mqtt = $this->exchange([
@@ -101,13 +84,7 @@ final class PillDispenserEndToEndTest extends TestCase
         self::assertSame([], $this->ofType($mqtt->telemetry, 'medication_alarm_change'));
     }
 
-    /**
-     * Um corpo que não abre não publica nada, e não publica lixo.
-     *
-     * Sem a guarda do TFLV, ruído passava por TAGs inventadas e o hub publicava telemetria
-     * fabricada -- com identidade correcta e CRC válido, que é a falha calada que este
-     * protocolo torna fácil.
-     */
+    /** Sem a guarda do TFLV, ruído passava por TAGs inventadas e virava telemetria fabricada. */
     public function testABodyThatDoesNotDecryptPublishesNothing(): void
     {
         $frame = $this->frame(0x02, 2, [0x8103 => "\x50"]);

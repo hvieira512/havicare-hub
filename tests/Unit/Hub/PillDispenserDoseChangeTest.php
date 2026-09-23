@@ -10,18 +10,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O retrato dos nove alarmes e a mudança de um são coisas diferentes.
- *
- * Os mesmos bytes -- as TAGs `0x8131`--`0x8139` -- chegam por dois caminhos com naturezas
- * opostas. A resposta ao `0x07` traz os nove e é uma **leitura**: o estado num instante, que
- * se pediu. A notificação `0x04` traz o alarme que mudou e mais nada, e é um
- * **acontecimento**: alguma coisa acabou de suceder.
- *
- * Viajavam ambos como `medication_alarm_status`, distinguidos por uma bandeira
- * `complete: false` -- um remendo a dizer «isto não é bem o que o nome diz». E o que isso
- * custava era concreto: uma dose falhada não gera `medication_intake` nenhum, porque não
- * houve toma a registar, e o único sinal dela é esta mudança de estado. Como telemetria, saía
- * a QoS 0.
+ * As TAGs `0x8131`--`0x8139` chegam por dois caminhos com naturezas opostas: no `0x07` são o
+ * retrato dos nove, numa notificação são o alarme que mudou. Duas capacidades, dois canais.
  */
 final class PillDispenserDoseChangeTest extends TestCase
 {
@@ -36,12 +26,7 @@ final class PillDispenserDoseChangeTest extends TestCase
         self::assertCount(2, $byFeature['medication_alarm_status']['alarms'] ?? []);
     }
 
-    /**
-     * A notificação passa a ser evento próprio, com o alarme e o estado novo.
-     *
-     * Sem contagens: uma notificação traz um alarme, e um total tirado de um alarme não é
-     * total nenhum -- era o que punha «1 tomada» por cima de um cartão que dizia duas falhas.
-     */
+    /** Sem contagens: um total tirado de um alarme não é total nenhum. */
     public function testANotificationIsADoseChange(): void
     {
         $byFeature = $this->decode(0x04, [0x8133 => "\x06"]);
@@ -71,14 +56,7 @@ final class PillDispenserDoseChangeTest extends TestCase
         );
     }
 
-    /**
-     * Uma notificação com mais do que um alarme dá um evento por alarme.
-     *
-     * Nunca se observou o aparelho a mandar dois, mas se mandar, dois acontecimentos numa
-     * mensagem obrigavam quem consome a desempacotar uma lista para ler um facto.
-     *
-     * @return void
-     */
+    /** Dois acontecimentos numa mensagem obrigavam quem consome a desempacotar uma lista. */
     public function testTwoChangesInOneNotificationAreTwoEvents(): void
     {
         $adapter = new PillDispenserAdapter();

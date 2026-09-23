@@ -10,28 +10,13 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Cada coisa na sua capacidade, e nas capacidades que o hub já tem.
- *
- * O `device_status` tinha virado uma gaveta: o sinal, a tampa, a corrente, o juízo sobre o
- * ambiente, o cartão SIM e o bloqueio de criança, tudo com a mesma etiqueta na lista de
- * eventos. Esvaziou-se, e o que resta dele é só o botão que pede o estado ao aparelho.
- *
- * Quatro regras decidiram para onde foi cada uma. O que o hub já sabe publicar publica-se
- * como ele já publica — o sinal é a `connectivity` dos gateways, e não um formato só deste
- * aparelho. O que é a mesma pergunta vista de dois lados fica junto — a corrente com a
- * bateria. O que é um alerta só fala quando dispara — o ambiente de armazenamento, como a
- * avaria já fazia. E o que não serve a ninguém não se publica — o CCID do cartão SIM.
+ * Para onde vai cada leitura do estado, e porquê: reutiliza-se a capacidade que o hub já tem,
+ * junta-se o que é a mesma pergunta, um alerta só fala quando dispara, e o que ninguém lê não
+ * se publica.
  */
 final class PillDispenserStatusSeparationTest extends TestCase
 {
-    /**
-     * O sinal é a `connectivity` que o hub já tem, e não uma forma só deste aparelho.
-     *
-     * Os gateways já publicam a ligação à rede assim — que interface, que tecnologia, e a
-     * potência em dBm —, e a dashboard já a desenha. Publicar `gsmSignalDbm` dentro de um
-     * `device_status` obrigava quem integra a conhecer mais um formato para ler a mesma
-     * grandeza, e não havia razão nenhuma para isso.
-     */
+    /** O sinal sai como a `connectivity` dos gateways, e não num formato só deste aparelho. */
     public function testTheSignalIsPublishedAsConnectivity(): void
     {
         $byFeature = $this->telemetry([
@@ -48,13 +33,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         self::assertArrayNotHasKey('device_status', $byFeature);
     }
 
-    /**
-     * Sem rádio móvel a ler, vale o WiFi.
-     *
-     * Esta unidade é 4G e não tem rádio WiFi nenhum — soube-se pela descoberta de parâmetros
-     * —, mas a série tem modelos que o têm, e a interface tem de dizer por onde o aparelho
-     * está mesmo a falar.
-     */
+    /** Esta unidade é 4G, mas a série tem modelos com WiFi e a interface tem de o dizer. */
     public function testAWifiOnlyUnitSaysSo(): void
     {
         self::assertSame(
@@ -63,13 +42,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         );
     }
 
-    /**
-     * A corrente entra na bateria, que é onde alguém a procura.
-     *
-     * «Ligado à corrente» e «a carregar» são a mesma pergunta feita de dois lados, e a
-     * dashboard já desenha a bateria com o estado de carga. Numa lista à parte, a corrente
-     * ficava a uma linha de distância da percentagem que a explica.
-     */
+    /** «Ligado à corrente» e «a carregar» são a mesma pergunta, e vivem no mesmo cartão. */
     public function testTheMainsSupplyTravelsWithTheBattery(): void
     {
         $battery = $this->telemetry([
@@ -83,14 +56,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         self::assertTrue($battery['mainsPowered'] ?? null);
     }
 
-    /**
-     * O nível de medicação junta-se às células restantes, que é o mesmo facto com número.
-     *
-     * O `0x8101` é o juízo grosseiro do aparelho — normal, a acabar, sem medicação — e o
-     * `0x811D` é a contagem que lhe dá origem. Dois cartões diziam a mesma coisa, um deles sem
-     * número nenhum. O juízo fica como campo da contagem, que é onde acrescenta: é ele que diz
-     * que 4 de 28 já é pouco, e essa gama é do aparelho e não nossa.
-     */
+    /** O `0x8101` é o juízo do aparelho sobre a contagem do `0x811D`: viaja como campo dela. */
     public function testTheMedicationLevelTravelsWithTheCellCount(): void
     {
         $byFeature = $this->telemetry([0x8101 => "\x02", 0x811D => "\x00", 0x811B => "\x1D"]);
@@ -111,26 +77,14 @@ final class PillDispenserStatusSeparationTest extends TestCase
         );
     }
 
-    /**
-     * A tampa é uma capacidade própria: é um estado físico sobre que alguém age.
-     *
-     * Uma tampa aberta quer dizer que o prato está acessível — alguém está a carregá-lo, ou
-     * ficou aberta por esquecimento. Enfiada entre dois números de sinal, não chamava
-     * ninguém.
-     */
+    /** A tampa aberta quer dizer que a medicação está acessível: é um estado sobre que se age. */
     public function testTheLidIsItsOwnCapability(): void
     {
         self::assertSame(['open' => true], $this->telemetry([0x8107 => "\x01"])['lid_state'] ?? null);
         self::assertSame(['open' => false], $this->telemetry([0x8107 => "\x00"])['lid_state'] ?? null);
     }
 
-    /**
-     * O ambiente de armazenamento é um alerta, e um alerta só se publica quando dispara.
-     *
-     * Publicado a cada leitura, enchia a lista de eventos com linhas iguais a dizer «Dentro
-     * da gama» — um estado que é o normal e que ninguém lê. É o mesmo tratamento que a avaria
-     * já tinha ao lado, no mesmo descodificador: só sai quando há alguma coisa a dizer.
-     */
+    /** Um alerta só se publica quando dispara, como a avaria aqui ao lado. */
     public function testTheStorageEnvironmentOnlySpeaksWhenItIsOutOfRange(): void
     {
         self::assertSame(
@@ -140,15 +94,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         self::assertArrayNotHasKey('storage_environment', $this->telemetry([0x8111 => "\x00"]));
     }
 
-    /**
-     * O cartão SIM não sai de todo.
-     *
-     * Primeiro foi separado do estado do dispositivo para capacidade própria, e o argumento
-     * estava certo — uma coisa é o sinal, outra é o cartão. A conclusão é que não é nenhuma
-     * das duas: o CCID é um identificador que nunca muda, ninguém o consulta na dashboard, e
-     * cada leitura de estado deixava mais uma linha na lista de eventos a repetir o mesmo
-     * número. O adaptador continua a descodificá-lo; o contrato não o publica.
-     */
+    /** O CCID nunca muda e ninguém o consulta: descodifica-se, não se publica. */
     public function testTheSimCardIsNotPublished(): void
     {
         $byFeature = $this->telemetry([0x8009 => "8935103211501958977F\x00", 0x810D => "\x03"]);
@@ -157,12 +103,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         self::assertArrayNotHasKey('simCcid', $byFeature['connectivity'] ?? []);
     }
 
-    /**
-     * O bloqueio de criança é uma configuração, e o que o aparelho reporta é o valor dela.
-     *
-     * Publicá-lo também como telemetria dava duas verdades sobre a mesma coisa, e nada as
-     * obrigava a concordar.
-     */
+    /** O bloqueio é uma configuração: o que o aparelho reporta é o valor dela, não telemetria. */
     public function testTheChildLockIsNotTelemetry(): void
     {
         $byFeature = $this->telemetry([0x8102 => "\x01", 0x810D => "\x03"]);
@@ -180,13 +121,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         self::assertArrayNotHasKey('device_status', $byFeature);
     }
 
-    /**
-     * Uma TAG que o aparelho recusa não vira valor, que era como se publicava zero.
-     *
-     * O estado da leitura viaja nos bits 5--7 do Flag, e a trama leva-o tal como o aparelho o
-     * manda: uma TAG recusada volta com os bytes que lhe mandámos, zeros. Sem olhar ao
-     * estado, uma tampa que o firmware não sabe reportar aparecia no ecrã como fechada.
-     */
+    /** Uma TAG recusada volta com os zeros que lhe mandámos: o estado no Flag é que decide. */
     public function testARefusedTagIsNotPublished(): void
     {
         $adapter = new PillDispenserAdapter();
