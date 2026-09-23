@@ -3,9 +3,10 @@
 ## Âmbito
 
 O Zayata/ZoomCare M228 é um dispensador automático de comprimidos com prato
-rotativo e ligação celular. **O caminho de subida já está implementado**: o hub
-descodifica as tramas TCP do aparelho e publica-as como telemetria e eventos. O
-que ainda não existe é o caminho de descida — comandos e plano de medicação.
+rotativo e ligação celular. **Os dois caminhos estão implementados**: o hub
+descodifica as tramas TCP do aparelho e publica-as como telemetria e eventos, e
+escreve-lhe a configuração, o plano de medicação e as ordens de controlo, com a
+resposta dele a fechar o ciclo de vida de cada escrita.
 
 Descreve o que está estabelecido sobre o aparelho, o que foi verificado contra a
 API e a aplicação do fabricante, e as armadilhas que a integração vai encontrar.
@@ -486,12 +487,11 @@ trama só.
 > comandos permite vários pedidos com a mesma trama nativa, que é o que resolve
 > isto sem inventar nada.
 
-**O que falta.** Ligar a resposta `0x86` ao ciclo de vida da configuração. Ela já
-é descodificada e já diz que TAGs foram recusadas, mas o hub ainda não a usa para
-marcar uma configuração como confirmada: uma escrita fica em «em envio» até o
-aparelho a reportar noutra leitura. A especificação também recomenda ler os
-parâmetros no primeiro registo, o que não é feito — é comportamento automático, e
-essa é uma decisão de quem opera.
+**O que falta.** A especificação recomenda ler os parâmetros no primeiro registo,
+o que não é feito — é comportamento automático, e essa é uma decisão de quem
+opera. A resposta `0x86` já fecha o ciclo de vida de uma escrita: uma
+configuração escrita fica em `confirmed` com `applied_at` quando o aparelho a
+reconhece.
 
 **Onde está.** `src/Protocol/Adapter/PillDispenserAdapter.php` (a trama),
 `src/Device/DeviceEventDecoder.php` (as TAGs), o protocolo de sessão em
