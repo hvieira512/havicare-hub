@@ -133,7 +133,7 @@ novas:
 | O `README.md` descrevia o hub como um encaminhador de bytes crus                                | reescrito                                                                |
 | A documentação dava os tópicos do NCS com quatro segmentos                                      | corrigido no [capítulo 03](03-ingestao-mqtt-ncs.md)                      |
 | O contrato prometia `pulseBpm` em `blood_pressure`, que nunca foi emitido                       | corrigido no [capítulo 06](06-normalizacao.md)                           |
-| O contrato documentava doze capacidades de telemetria; são vinte                                | corrigido no [capítulo 06](06-normalizacao.md)                           |
+| O contrato documentava doze capacidades de telemetria, e publicavam-se muitas mais              | corrigido no [capítulo 06](06-normalizacao.md)                           |
 | O `README` dizia que a integração contínua procurava "skipped" na saída; faz o contrário        | corrigido no [capítulo 16](16-testes.md)                                 |
 | O `README` dizia que a dashboard aceitava `license_client`; nunca aceitou                       | corrigido no [capítulo 13](13-dashboard.md)                              |
 | O `docs/` não era referenciado por nenhum ficheiro do repositório                               | corrigido                                                                |

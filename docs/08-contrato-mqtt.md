@@ -266,7 +266,7 @@ As versões anteriores do contrato contêm as seguintes incorreções:
 | NCS publica em `{licenca}/ncs/…` | Publica com cinco segmentos, como as restantes ingestões |
 | `blood_pressure` inclui `pulseBpm` | O campo não existe; o pulso é emitido como evento `heart_rate` autónomo |
 | `activity` não inclui `distanceKm` | O campo existe quando o dispositivo reporta quilómetros |
-| Doze capacidades de telemetria | São vinte — ver a [normalização](06-normalizacao.md) |
+| Doze capacidades de telemetria | Eram muitas mais já nessa altura, e continuam a crescer — a lista em vigor é a da [normalização](06-normalizacao.md) |
 | O envelope leva `schemaVersion` | O campo foi removido; ver abaixo |
 | Os alarmes dos relógios saem em `telemetry` | Saem em `events`, a QoS 1 |
 | O radar publica com o `uid` do tópico de origem | Publica com o IMEI canónico, como as restantes ingestões |

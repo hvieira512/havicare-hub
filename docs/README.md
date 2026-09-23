@@ -61,7 +61,7 @@ com as instâncias de desenvolvimento e produção estão no
 
 | | |
 |---|---|
-| [06 — Normalização](06-normalizacao.md) | Envelope de telemetria e as vinte capacidades canónicas |
+| [06 — Normalização](06-normalizacao.md) | Envelope de telemetria e o catálogo das capacidades canónicas |
 | [07 — Multi-inquilino](07-multi-inquilino.md) | Empresa e licença, whitelist e representação da ausência de dono |
 | [08 — Contrato MQTT](08-contrato-mqtt.md) | Tópicos publicados, qualidade de serviço e retenção |
 | [09 — API](09-api.md) | Rotas, autenticação, modelo de erros e especificação OpenAPI |

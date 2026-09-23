@@ -375,7 +375,7 @@ associa-as aos modelos cujo protocolo as suporta.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Device/FeatureNormalizer.php` | As vinte capacidades e as suas formas |
+| `src/Device/FeatureNormalizer.php` | As dezanove capacidades dos relógios e as suas formas |
 | `src/Device/DeviceEventDecoder.php` | Tipo nativo → capacidades, por protocolo |
 | `src/Device/DeviceEventPayloadBuilder.php` | Monta o envelope das medições e dos alarmes |
 | `src/Device/RawPayload.php` | Monta os envelopes de `raw`, `status` e ciclo de vida |
