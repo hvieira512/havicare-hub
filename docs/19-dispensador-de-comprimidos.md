@@ -309,9 +309,36 @@ não o publica: seria um campo calculado por nós com cara de leitura dele.
 próprio aparelho, de que esta unidade é 4G e não tem rádio WiFi nenhum — só o
 `0x810B` e o `0x810D` respondem.
 
-O bloco `0x8002`–`0x800B` e o `0x8081`/`0x8082` são identidade e sistema, e o hub
-não os lê: o `0x8009` é o ICCID do cartão SIM, e o resto segue-o. O `0x8105` e o
-`0x8106` estão *deprecated* na própria especificação.
+O `0x8105` e o `0x8106` estão *deprecated* na própria especificação.
+
+#### O bloco de sistema, lido ao aparelho
+
+O bloco `0x8002`–`0x800B` mais o `0x8081`/`0x8082` é identidade e transporte. O
+hub não o publica, mas em 2026-09-23 perguntou-se ao aparelho, uma vez, o que lá
+estava:
+
+| TAG | O quê | Valor |
+|---|---|---|
+| `0x8002` | versão | `1282` (`0x0502`); a especificação não diz como se lê o número |
+| `0x8003` | tamanho máximo do pacote | 300 bytes, dos 1400 que a especificação permite |
+| `0x8004` | intervalo de heartbeat | 60 s, que é o que se observa no fio |
+| `0x8006` | tempo de espera pela resposta | 60 s, a meio da gama 10–120 |
+| `0x8007` | retransmissões depois do tempo esgotado | 2 |
+| `0x8008` | sincronização de parâmetros | `0`, não forçada |
+| `0x800A` | ligação a utilizador | `0`, não obrigatória |
+| `0x800B` | tempo online antes de dormir | `0`, que na especificação quer dizer **nunca dorme** |
+| `0x8081` | funções extra | `4`, o bit 2 — a especificação só documenta o bit 0 (troca de servidor) e o bit 1 (OTA por Bluetooth) |
+| `0x8082` | número personalizado | `0` |
+
+Nada disto é normalizável: são parâmetros do transporte, ninguém age sobre eles,
+e o único que mudaria de valor ao longo da vida do aparelho — a versão — muda
+tão devagar que não paga um canal.
+
+**Estas TAGs lêem-se com o `0x07` e não com o `0x05`.** As `0x8xxx` são todas
+estado, mesmo as que parecem definições: um `0x05` com as dez voltou com as dez
+recusadas, todas com o estado `001`, «TAG inválida». É a mesma linha que a
+descoberta já dizia — o `0x0A` devolve 54 TAGs de configuração e nenhuma delas é
+do bloco de sistema.
 
 > **«Tomada» não quer sempre dizer «tomada à hora».** Uma dispensa manual — o
 > comando `0xA004` ou o botão verde do aparelho — consome a dose do **próximo
@@ -343,7 +370,7 @@ REST eram um único `rotate`, aqui vêm discriminadas em cinco.
 | `0x1031`–`0x1039` | minuto de cada alarme |
 | `0x1041`–`0x1049` | interruptor de cada alarme |
 | `0x1051`–`0x1055` | não incomodar: interruptor e janela |
-| `0x8004` / `0x800B` | intervalo de heartbeat, tempo de permanência online |
+| `0x8004` / `0x800B` | intervalo de heartbeat, tempo de permanência online — a especificação põe-nos aqui, mas o aparelho só os serve como estado |
 
 **São nove alarmes, não seis.** A API REST só expõe seis.
 
