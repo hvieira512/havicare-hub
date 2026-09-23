@@ -87,6 +87,33 @@ final class CapabilityCatalog
     }
 
     /**
+     * Se uma capacidade é um acontecimento, e não uma leitura.
+     *
+     * É o que decide por que canal do MQTT ela sai: os acontecimentos vão por `events`, a
+     * QoS 1, e as leituras por `telemetry`, a QoS 0. A decisão vinha de uma lista escrita à
+     * mão dentro de quem publica, que já discordava do que as definições declaram -- e o que
+     * isso custava não era arrumação, era uma dose falhada a poder perder-se no caminho.
+     *
+     * Pela chave e não pelo par chave/aparelho: a `help_call` existe em quatro catálogos e é
+     * acontecimento nos quatro, e um teste prende essa concordância. Um tipo que o catálogo
+     * não conhece é leitura, que é o que sempre foi o caso por omissão.
+     */
+    public static function isEventType(string $type): bool
+    {
+        static $events = null;
+        if ($events === null) {
+            $events = [];
+            foreach (self::definitions() as $definition) {
+                if (($definition['isEvent'] ?? false) === true) {
+                    $events[(string)$definition['key']] = true;
+                }
+            }
+        }
+
+        return isset($events[$type]);
+    }
+
+    /**
      * @return list<array{deviceType: string, section: string, key: string, label: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     public static function definitionsForDeviceType(string $deviceType): array
@@ -143,7 +170,7 @@ final class CapabilityCatalog
             'moko-w6b', 'moko-w6' => ['help_call'],
             'qinglanst-radar' => ['fall', 'vitals_alarm', 'presence_event'],
             // Eventos do dispensador: a toma, a avaria e o botão de emergência.
-            'zayata-m228' => ['medication_intake', 'device_fault', 'help_call', 'storage_environment'],
+            'zayata-m228' => ['medication_intake', 'device_fault', 'help_call', 'storage_environment', 'medication_alarm_change'],
             default => [],
         };
     }
@@ -249,7 +276,7 @@ final class CapabilityCatalog
             // aqui, o catálogo declarava-a e a matriz do modelo dava-a por não suportada.
             'monit-mecs-pro-ble' => ['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition', 'proximity'],
             'moko-w6b', 'moko-w6' => ['battery', 'motion', 'proximity'],
-            'zayata-m228' => ['battery', 'medication_level', 'cells_remaining', 'temperature', 'humidity', 'connectivity', 'lid_state', 'medication_alarm_status'],
+            'zayata-m228' => ['battery', 'cells_remaining', 'temperature', 'humidity', 'connectivity', 'lid_state', 'medication_alarm_status'],
             default => [],
         };
     }

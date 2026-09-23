@@ -175,36 +175,57 @@
     --moisture-wet-text: #93c5fd;
 }
 
-/* Os nove alarmes do dispensador: posições fixas, três a três, e a cor é o estado. Três em
-   vez de nove numa linha porque o cartão tem meia largura e um quadrado de 30px não se
-   carrega com o dedo. */
-.alarm-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: .35rem;
+/* A faixa do dia: uma coluna por dose marcada, na ordem das horas. As colunas repartem a
+   largura em partes iguais e embrulham quando não cabem — com cinco doses e o cartão a meia
+   largura ficariam com quarenta pixéis cada, e por isso o cartão pede a linha inteira. */
+.dose-strip {
+    grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+    gap: .4rem;
 }
 
-.alarm-slot {
-    aspect-ratio: 1;
-    font-size: var(--fs-sm);
-    font-weight: 600;
+.dose {
+    border-radius: .4rem;
+    padding: .5rem .4rem;
     background: var(--bs-tertiary-bg);
     color: var(--bs-secondary-color);
 }
 
-/* Um alarme sem toma marcada é o fundo: o que se procura na grelha é o que destoa dele. */
-.alarm-slot--taken {
+.dose-slot {
+    font-size: .6875rem;
+    line-height: 1.2;
+    min-height: 1.1em;
+    opacity: .75;
+}
+
+.dose-hour {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+}
+
+.dose-state { font-size: .6875rem; line-height: 1.2; }
+
+/* Uma dose sem nada marcado é o fundo: o que se procura na faixa é o que destoa dele. */
+.dose--taken {
     background: var(--bs-success-bg-subtle);
     color: var(--bs-success-text-emphasis);
 }
 
-.alarm-slot--pending {
+.dose--pending {
     background: var(--bs-warning-bg-subtle);
     color: var(--bs-warning-text-emphasis);
 }
 
-.alarm-slot--missed {
+.dose--missed {
     background: var(--bs-danger-bg-subtle);
     color: var(--bs-danger-text-emphasis);
+}
+
+/* Os lugares por marcar não são uma dose, e por isso não têm fundo: são um contorno. */
+.dose--free {
+    background: transparent;
+    border: 1px dashed var(--bs-border-color);
 }
 
 .diaper-strip {

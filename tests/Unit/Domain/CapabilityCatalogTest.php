@@ -51,7 +51,11 @@ final class CapabilityCatalogTest extends TestCase
             // que pede o estado. O sinal saiu para a `connectivity` que os gateways já usam, a
             // corrente juntou-se à bateria, a tampa ganhou cartão próprio, e o ambiente de
             // armazenamento virou alerta, ao lado da avaria, porque só fala quando dispara.
-            'pill_dispenser' => [34, 'a10d04a3e8fb8f3cfdafdb19d7e8be365fd29b1601ed7c740ca03ccef90948d6'],
+            // E o `medication_level` saiu: era o juízo grosseiro do aparelho a dizer o mesmo
+            // que a contagem de células, sem número nenhum — passou a campo dela. A mudança de
+            // estado de uma dose entrou como acontecimento próprio, porque é o único sinal de
+            // uma dose falhada e viajava dentro de uma leitura, pelo canal sem garantia.
+            'pill_dispenser' => [34, 'ae5955e6739c55ebf4da057ed609b5b07f5dc0f9343fb6a03a3b6402aa198524'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

@@ -12,7 +12,10 @@ final class PillDispenserCapabilityDefinitions
     {
         return [
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'battery', 'label' => 'Bateria', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'medication_level', 'label' => 'Nível de medicação', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            // O nível de medicação não tem capacidade própria: era o juízo grosseiro do
+            // aparelho — normal, a acabar, sem medicação — a dizer a mesma coisa que esta
+            // contagem, e sem número nenhum. Viaja como campo dela, que é onde acrescenta: é
+            // ele que diz que 4 de 28 já é pouco, e essa gama é do aparelho e não nossa.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'cells_remaining', 'label' => 'Células restantes', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'temperature', 'label' => 'Temperatura', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'humidity', 'label' => 'Humidade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
@@ -43,6 +46,15 @@ final class PillDispenserCapabilityDefinitions
             // ultrapassada. Como telemetria, enchia a lista com linhas a dizer «Dentro da
             // gama», que é o normal e que ninguém lê.
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'storage_environment', 'label' => 'Medicação mal conservada', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
+            // Uma dose que muda de estado. A leitura dos nove é o `medication_alarm_status`, e
+            // é telemetria porque é o retrato de um instante; isto é o que acontece entre dois
+            // retratos, e chega numa notificação `0x04` com um alarme e mais nada.
+            //
+            // A separação não é de arrumação. Uma dose falhada não gera `medication_intake`
+            // nenhum -- não houve toma a registar --, e o único sinal dela é esta mudança de
+            // estado. Enquanto viajava dentro da leitura, saía por telemetria, a QoS 0: o
+            // acontecimento mais importante do aparelho era o único que se podia perder.
+            ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'medication_alarm_change', 'label' => 'Alteração de dose', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             // A mesma chave do NCS e da pulseira: o botão de emergência é uma chamada de ajuda.
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'help_call', 'label' => 'Chamada de ajuda', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
 

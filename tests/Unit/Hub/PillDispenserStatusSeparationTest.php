@@ -84,6 +84,34 @@ final class PillDispenserStatusSeparationTest extends TestCase
     }
 
     /**
+     * O nível de medicação junta-se às células restantes, que é o mesmo facto com número.
+     *
+     * O `0x8101` é o juízo grosseiro do aparelho — normal, a acabar, sem medicação — e o
+     * `0x811D` é a contagem que lhe dá origem. Dois cartões diziam a mesma coisa, um deles sem
+     * número nenhum. O juízo fica como campo da contagem, que é onde acrescenta: é ele que diz
+     * que 4 de 28 já é pouco, e essa gama é do aparelho e não nossa.
+     */
+    public function testTheMedicationLevelTravelsWithTheCellCount(): void
+    {
+        $byFeature = $this->telemetry([0x8101 => "\x02", 0x811D => "\x00", 0x811B => "\x1D"]);
+
+        self::assertArrayNotHasKey('medication_level', $byFeature);
+        self::assertSame(
+            ['remaining' => 0, 'total' => 28, 'level' => 'empty'],
+            $byFeature['cells_remaining'] ?? null,
+        );
+    }
+
+    /** Sem contagem, o juízo do aparelho continua a valer por si. */
+    public function testTheLevelAloneIsStillPublished(): void
+    {
+        self::assertSame(
+            ['level' => 'low'],
+            $this->telemetry([0x8101 => "\x01"])['cells_remaining'] ?? null,
+        );
+    }
+
+    /**
      * A tampa é uma capacidade própria: é um estado físico sobre que alguém age.
      *
      * Uma tampa aberta quer dizer que o prato está acessível — alguém está a carregá-lo, ou

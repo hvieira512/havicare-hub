@@ -94,17 +94,24 @@ test("com tudo parado o cartão diz que não há tomas, e em português", () => 
 });
 
 /**
- * Uma notificação traz o alarme que mudou, e o cartão não pode fingir que conta os nove.
+ * A notificação de um alarme deixou de viajar dentro da leitura dos nove.
  *
- * Rotulá-la «1 tomada» apagava do ecrã as falhas que a leitura completa anterior mostrava.
+ * Vinha marcada com `complete: false` e o cartão tinha de a distinguir a tempo de não a
+ * rotular «1 tomada» -- o que apagava do ecrã as falhas que a leitura anterior mostrava. Agora
+ * é capacidade própria, e o cartão dos nove só recebe leituras dos nove.
  */
-test("uma leitura parcial diz-se parcial, e não conta totais", () => {
-    const rendered = card({
-        complete: false,
-        alarms: [{ alarm: 3, state: "taken" }],
-    });
+test("a mudança de uma dose é outra capacidade, e lê-se numa linha", () => {
+    const rendered = requestCardShell(
+        { feature: "medication_alarm_change", requestable: false },
+        false,
+        [{
+            type: "medication_alarm_change",
+            occurredAt: "2026-09-22T09:38:34Z",
+            data: { alarm: 3, state: "missed" },
+        }],
+    );
 
-    assert.match(rendered, /Alarme 3: Tomada/);
-    assert.match(rendered, /parcial/i);
-    assert.doesNotMatch(rendered, /1 tomada\b/);
+    assert.match(rendered, /Alarme 3/);
+    assert.match(rendered, /falhada/i);
+    assert.doesNotMatch(rendered, /\[object Object\]/);
 });

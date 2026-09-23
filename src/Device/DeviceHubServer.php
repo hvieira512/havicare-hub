@@ -2,6 +2,7 @@
 
 namespace Hub\Device;
 
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Log\Logger;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Dashboard\DashboardStoreContract;
@@ -368,10 +369,15 @@ class DeviceHubServer
             $company = $this->currentCompany($session->imei, $session->company);
             $type = $event['type'] ?? null;
 
-            // Os eventos saem por `events`, a QoS 1: o alarme do relógio e, do dispensador, a
-            // toma, a avaria e a chamada de ajuda — não se podem perder. A `location` do mesmo
-            // frame fica em `telemetry`, com `reportKind: "alarm"` a ligar as duas.
-            $channel = in_array($type, ['alarm', 'medication_intake', 'device_fault', 'help_call'], true) ? 'events' : 'telemetry';
+            // Os eventos saem por `events`, a QoS 1, e as leituras por `telemetry`, a QoS 0. A
+            // `location` do mesmo frame de um alarme fica em `telemetry`, com
+            // `reportKind: "alarm"` a ligar as duas.
+            //
+            // Quem decide é o catálogo, que já declara o `isEvent` em cada definição. Era uma
+            // lista escrita aqui, e as duas fontes de verdade discordavam: uma dose falhada só
+            // se anuncia pela mudança de estado de um alarme, e essa saía por telemetria --
+            // sem garantia de entrega, o acontecimento mais importante que este aparelho tem.
+            $channel = CapabilityCatalog::isEventType((string)$type) ? 'events' : 'telemetry';
             if ($channel === 'events') {
                 $this->mqtt->publishEvent($session->imei, $event, $session->deviceType, $licenseId, $company);
             } else {

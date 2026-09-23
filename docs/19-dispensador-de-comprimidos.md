@@ -352,23 +352,33 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 |---|---|---|
 | `0xC201`–`0xC206` | `medication_intake` | `alarmSlot`, `scheduledAt`, `takenAt`, `cellNumber`, `method`, `result` |
 | `0x8103` / `0x8104` / `0x8109` | `battery` | `percent`, `chargingState`, `mainsPowered` — a corrente vai com a bateria porque «ligado à corrente» e «a carregar» são a mesma pergunta |
-| `0x8101` | `medication_level` | `level`: `ok` · `low` · `empty` |
-| `0x811A` / `0x811B` / `0x811D` | `cells_remaining` | `current`, `total`, `remaining` |
+| `0x811A` / `0x811B` / `0x811D` / `0x8101` | `cells_remaining` | `current`, `total`, `remaining`, `level` (`ok` · `low` · `empty`) — o nível é o juízo do aparelho sobre a mesma contagem, e é ele que sabe que 4 de 28 já é pouco |
 | `0x810E` | `temperature` | `environmentCelsius` |
 | `0x810F` | `humidity` | `humidityPercent` |
 | `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |
 | `0x8107` | `lid_state` | `open` |
 | `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. **Só é publicado quando dispara**: como leitura, enchia o histórico com linhas a dizer que estava tudo bem |
-| `0x8131`–`0x8139` | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` |
+| `0x8131`–`0x8139` **num `0x87`** | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` — a leitura dos nove, que só a resposta ao `0x07` traz |
+| `0x8131`–`0x8139` **num `0x04`/`0x02`** | `medication_alarm_change` | `alarm`, `state` — o alarme que mudou, um evento por alarme |
 | `0x8121`–`0x8125` | `device_fault` | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
 | `0x8112` | `help_call` | `state` |
 
-A `medication_intake`, a `device_fault` e a `help_call` saem pelo canal `events`,
-a QoS 1, como os alarmes dos relógios — uma toma falhada não se pode perder. O
-resto sai por `telemetry`.
+**Por que canal sai cada coisa.** O que o `CapabilityCatalog` declara com
+`isEvent` sai por `events`, a QoS 1; o resto sai por `telemetry`, a QoS 0. A
+decisão vinha de uma lista escrita à mão dentro do `DeviceHubServer`, e as duas
+fontes de verdade discordavam.
 
-O sinal viaja dentro do `device_status` e não numa capacidade própria, que é como
-os relógios já o fazem. A `help_call` é a mesma chave do NCS e da pulseira.
+> **O que isso custava.** Uma dose falhada não gera `medication_intake` nenhum —
+> não houve toma a registar — e o único sinal dela é o alarme a passar a `missed`
+> numa notificação `0x04`. Enquanto isso viajava dentro do
+> `medication_alarm_status`, saía por telemetria: o acontecimento mais importante
+> que este aparelho produz era o único dos três que se podia perder.
+
+Daí a separação entre `medication_alarm_status` — a leitura dos nove, que se pede
+— e `medication_alarm_change`, o que aconteceu entre duas leituras.
+
+O sinal sai como `connectivity`, que é a capacidade genérica que os gateways já
+usam. A `help_call` é a mesma chave do NCS e da pulseira.
 
 **As respostas.** Registo, heartbeat, evento e notificação são confirmados com o
 mesmo tipo mais o bit alto (`0x81`–`0x84`), corpo vazio e estado `0x00`, ecoando

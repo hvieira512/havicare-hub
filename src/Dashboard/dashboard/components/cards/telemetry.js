@@ -4,7 +4,7 @@ import { html } from "../../html.js";
 import { compactDetails } from "./shared.js";
 import { connectivityIcon, connectivityValue } from "./gateway.js";
 import { diaperMoistureBody, diaperMoistureRowValue } from "./diaper.js";
-import { medicationAlarmGrid } from "./medication.js";
+import { doseLabel, medicationDoseStrip } from "./medication.js";
 import { helpCallContent, ncsPagerContent } from "./ncs.js";
 import { locationDetails, locationValue } from "./location.js";
 import { sleepDetails, sleepQualityValue, sleepValue } from "./sleep.js";
@@ -72,8 +72,8 @@ const CARD_STYLE = {
     help_call: ["fa-triangle-exclamation", "danger"],
     medication_intake: ["fa-pills", "primary"],
     device_fault: ["fa-triangle-exclamation", "warning"],
-    medication_level: ["fa-prescription-bottle-medical", "info"],
     medication_alarm_status: ["fa-clock-rotate-left", "primary"],
+    medication_alarm_change: ["fa-pills", "primary"],
     cells_remaining: ["fa-table-cells", "info"],
     lid_state: ["fa-box-open", "primary"],
     storage_environment: ["fa-triangle-exclamation", "danger"],
@@ -151,21 +151,30 @@ const UPLINK_CARD_RENDERERS = {
     humidity: (data) => ({
         value: data.humidityPercent != null ? `${data.humidityPercent}%` : "-",
     }),
-    medication_level: (data) => ({
-        value: fieldValue("level", data.level),
-    }),
     // Quantas doses faltam, que é a pergunta que se faz a um dispensador; o total é o
-    // denominador que lhe dá escala.
+    // denominador que lhe dá escala. O nível é o juízo do aparelho sobre esse mesmo número --
+    // é ele que sabe que 4 de 28 já é pouco -- e por isso vem como legenda e não como cartão
+    // à parte a dizer a mesma coisa sem número nenhum.
     cells_remaining: (data) => ({
         value: data.remaining != null && data.total != null
             ? `${data.remaining} de ${data.total}`
-            : `${data.remaining ?? "-"}`,
+            : data.remaining != null
+                ? `${data.remaining}`
+                : fieldValue("level", data.level),
+        details: data.remaining != null && data.level != null
+            ? fieldValue("level", data.level)
+            : "",
     }),
     // O que interessa numa toma é como ela acabou, e numa avaria é qual foi.
     medication_intake: (data) => ({
         value: fieldValue("result", data.result),
     }),
     medication_alarm_status: (data) => medicationAlarmContent(data),
+    // A mudança de uma dose: um acontecimento, e por isso lê-se numa linha. A hora identifica
+    // a dose melhor do que o número do alarme, que é vocabulário do aparelho e não do dia.
+    medication_alarm_change: (data) => ({
+        value: `${doseLabel(data?.alarm)}: ${fieldValue("state", data?.state)}`,
+    }),
     device_status: (data) => deviceStatusContent(data),
     device_config: (data) => deviceConfigContent(data),
     // O valor é o estado em que a coisa está, e não um «Sim» que obriga a reler o título
@@ -459,50 +468,32 @@ function deviceStatusContent(data) {
 }
 
 /**
- * O estado dos nove alarmes do dispensador.
+ * As doses do dia, tal como o aparelho as reporta numa leitura dos nove alarmes.
  *
  * Uma toma falhada é o que faz alguém olhar para o cartão, e por isso ganha o valor
- * principal; sem falhas, o que vale é quantas foram tomadas. O resto é a grelha: nove
- * posições fixas, uma por alarme, em que a cor diz o estado. Em texto eram linhas a mudar de
- * comprimento conforme o dia, e nenhuma posição estava sempre no mesmo sítio.
+ * principal; sem falhas, o que vale é quantas foram tomadas. O corpo é a faixa do dia, uma
+ * coluna por dose marcada, na ordem das horas.
  */
 function medicationAlarmContent(data) {
     const alarms = Array.isArray(data?.alarms) ? data.alarms : [];
     const live = alarms.filter((entry) => entry?.state && entry.state !== "idle");
-
-    // Só uma leitura completa conta totais e desenha a grelha. Uma notificação traz o alarme
-    // que mudou, e rotulá-la «1 tomada» apagava do ecrã as falhas que a leitura anterior
-    // mostrava -- desenhar a grelha com ela inventava os outros oito.
-    if (data?.complete === false) {
-        return {
-            value: live.length === 1
-                ? `${fieldLabel("alarm")} ${live[0].alarm}: ${fieldValue("state", live[0].state)}`
-                : "Alteração de alarme",
-            details: "Leitura parcial — pedir o estado para ver os nove",
-        };
-    }
-
     const missed = Number(data?.missedCount ?? 0);
     const taken = Number(data?.takenCount ?? 0);
 
-    let value = "Sem tomas registadas";
-    if (missed > 0) {
-        value = `${missed} ${missed === 1 ? "falhada" : "falhadas"}`;
-    } else if (taken > 0) {
-        value = `${taken} ${taken === 1 ? "tomada" : "tomadas"}`;
-    }
+    const counts = [
+        missed > 0 ? `${missed} ${missed === 1 ? "falhada" : "falhadas"}` : "",
+        taken > 0 ? `${taken} ${taken === 1 ? "tomada" : "tomadas"}` : "",
+    ].filter(Boolean);
 
     return {
-        value,
-        // Na linha da lista de actividade não há corpo que desenhar, e por isso os alarmes
-        // vivos continuam a ir em texto para os detalhes.
+        value: counts.length > 0 ? counts.join(" · ") : "Sem tomas registadas",
+        // Na linha da lista de actividade não há corpo que desenhar, e por isso as doses
+        // vivas continuam a ir em texto para os detalhes -- pela hora, como na faixa.
         details: live
-            .map(
-                (entry) =>
-                    html`${fieldLabel("alarm")} ${entry.alarm}: ${fieldValue("state", entry.state)}`,
-            )
+            .map((entry) => html`${doseLabel(entry.alarm)}: ${fieldValue("state", entry.state)}`)
             .join(" · "),
-        body: medicationAlarmGrid(alarms),
+        span: 12,
+        body: medicationDoseStrip(alarms),
     };
 }
 

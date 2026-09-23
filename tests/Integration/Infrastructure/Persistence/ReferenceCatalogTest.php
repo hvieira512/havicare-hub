@@ -163,11 +163,16 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // ninguém que o aparelho estava a avisar sobre a conservação da medicação.
             'lid_state',
             'loaded_cells',
+            // A mudança de estado de uma dose é acontecimento próprio: é o único sinal de uma
+            // dose falhada, e viajava dentro da leitura dos nove, pelo canal sem garantia de
+            // entrega.
+            'medication_alarm_change',
             // A toma lê-se por aqui sem a chave de cifra: o `medication_intake` é o evento
             // rico e chega cifrado, este é o estado dos nove alarmes e chega em claro.
             'medication_alarm_status',
             'medication_intake',
-            'medication_level',
+            // O `medication_level` não está cá: era o juízo grosseiro do aparelho a dizer o
+            // mesmo que a contagem de células, e sem número nenhum. É campo dela.
             'medication_period',
             'medication_reminders',
             'mute_alarm',

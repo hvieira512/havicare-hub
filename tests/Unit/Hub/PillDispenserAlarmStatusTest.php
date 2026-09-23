@@ -32,12 +32,11 @@ final class PillDispenserAlarmStatusTest extends TestCase
             0x8136 => "\x01",   // alarme 6: a preparar
         ]);
 
-        // `complete` diz que a trama perguntou pelos nove: só aí é que as contagens são
-        // totais. Uma notificação traz o alarme que mudou e não conta nada.
+        // As contagens são totais porque a trama perguntou pelos nove. Uma notificação traz o
+        // alarme que mudou e sai por outra capacidade, que não conta nada.
         self::assertSame([
             'takenCount' => 1,
             'missedCount' => 1,
-            'complete' => true,
             'alarms' => [
                 ['alarm' => 1, 'state' => 'taken'],
                 ['alarm' => 2, 'state' => 'waiting'],

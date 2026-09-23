@@ -535,15 +535,17 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'humidity', 'nativeType' => $nativeType, 'value' => ['humidityPercent' => $humidity]];
         }
 
+        // O nível de medicação viaja com a contagem de células, que é o mesmo facto com
+        // número: o `0x8101` é o juízo grosseiro do aparelho -- normal, a acabar, sem
+        // medicação -- e o `0x811D` é a contagem que lhe dá origem. Em cartões separados eram
+        // dois a dizer a mesma coisa, um deles sem número nenhum. Junto, é o juízo que diz que
+        // 4 de 28 já é pouco, e essa gama é do aparelho e não nossa.
         $level = match ($this->tlvU8($tlv, 0x8101)) {
             0 => 'ok',
             1 => 'low',
             2 => 'empty',
             default => null,
         };
-        if ($level !== null) {
-            $events[] = ['feature' => 'medication_level', 'nativeType' => $nativeType, 'value' => ['level' => $level]];
-        }
 
         // O `0x811B` conta posições e não compartimentos: a especificação numera o
         // compartimento de 0 a 28, e a zero é a de repouso, onde o prato assenta e onde não
@@ -555,6 +557,7 @@ final class DeviceEventDecoder
             'remaining' => $this->tlvU8($tlv, 0x811D),
             'total' => $capacity === null ? null : max(0, $capacity - 1),
             'current' => $this->tlvU8($tlv, 0x811A),
+            'level' => $level,
         ], static fn (mixed $field): bool => $field !== null);
         if ($cells !== []) {
             $events[] = ['feature' => 'cells_remaining', 'nativeType' => $nativeType, 'value' => $cells];
@@ -628,12 +631,34 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'help_call', 'nativeType' => $nativeType, 'value' => ['state' => 'in_progress']];
         }
 
-        // Só a resposta à consulta de estado pergunta pelos nove alarmes. O heartbeat e as
-        // notificações trazem o que o aparelho quis dizer, e contá-los como totais punha «1
-        // tomada» por cima de um cartão que dizia duas falhas.
-        $alarms = $this->pillAlarmStatus($tlv, $nativeType === 'read_status_ack');
-        if ($alarms !== null) {
-            $events[] = ['feature' => 'medication_alarm_status', 'nativeType' => $nativeType, 'value' => $alarms];
+        // Os mesmos bytes, dois caminhos, duas naturezas. A resposta ao `0x07` traz os nove e
+        // é uma leitura: o estado num instante, que se pediu. Tudo o resto traz o alarme que
+        // mudou e mais nada, e é um acontecimento -- que sai pelo canal com garantia de
+        // entrega, porque uma dose falhada não gera `medication_intake` nenhum e esta mudança
+        // de estado é o único sinal que dela existe.
+        $doses = $this->pillDoseStates($tlv);
+        if ($doses === []) {
+            return $events;
+        }
+
+        if ($nativeType === 'read_status_ack') {
+            $events[] = [
+                'feature' => 'medication_alarm_status',
+                'nativeType' => $nativeType,
+                'value' => [
+                    'takenCount' => count(array_filter($doses, static fn(array $d): bool => $d['state'] === 'taken')),
+                    'missedCount' => count(array_filter($doses, static fn(array $d): bool => $d['state'] === 'missed')),
+                    'alarms' => $doses,
+                ],
+            ];
+
+            return $events;
+        }
+
+        // Um evento por alarme: dois acontecimentos numa mensagem obrigavam quem consome a
+        // desempacotar uma lista para ler um facto.
+        foreach ($doses as $dose) {
+            $events[] = ['feature' => 'medication_alarm_change', 'nativeType' => $nativeType, 'value' => $dose];
         }
 
         return $events;
@@ -651,27 +676,22 @@ final class DeviceEventDecoder
     }
 
     /**
-     * O estado de toma dos nove alarmes, ou `null` quando nenhum reporta.
+     * O estado de toma de cada alarme que a trama reporta, na ordem dos alarmes.
      *
      * É a leitura da toma que chega em claro. O evento `0x03` traz a hora prevista, a hora
      * real e a célula, mas o aparelho cifra tudo o que envia por iniciativa própria e a chave
      * sai da codificação dele; estas TAGs pedem-se num `0x07` e a resposta a um pedido nosso
      * vem sempre legível.
      *
-     * As contagens vão à frente porque são o que o cartão mostra: quantas tomas falharam é a
-     * pergunta, e a lista por alarme é o detalhe. Mas só saem quando a trama **perguntou
-     * pelos nove** — uma notificação traz o alarme que mudou e mais nada, e contar sobre ela
-     * dava um total que não é total nenhum.
+     * Quantos vêm é que distingue os dois casos, e por isso quem chama é que decide o que
+     * fazer com eles: uma resposta ao `0x07` traz os nove, uma notificação traz um.
      *
      * @param array<int, array{value?: string, state?: int}> $tlv
-     * @return array<string, mixed>|null
+     * @return list<array{alarm: int, state: string}>
      */
-    private function pillAlarmStatus(array $tlv, bool $complete): ?array
+    private function pillDoseStates(array $tlv): array
     {
-        $alarms = [];
-        $taken = 0;
-        $missed = 0;
-
+        $doses = [];
         foreach (range(1, 9) as $alarm) {
             $state = match ($this->tlvU8($tlv, 0x8130 + $alarm)) {
                 0 => 'idle',
@@ -682,22 +702,12 @@ final class DeviceEventDecoder
                 7 => 'taken',
                 default => null,
             };
-            if ($state === null) {
-                continue;
+            if ($state !== null) {
+                $doses[] = ['alarm' => $alarm, 'state' => $state];
             }
-
-            $taken += $state === 'taken' ? 1 : 0;
-            $missed += $state === 'missed' ? 1 : 0;
-            $alarms[] = ['alarm' => $alarm, 'state' => $state];
         }
 
-        if ($alarms === []) {
-            return null;
-        }
-
-        return $complete
-            ? ['takenCount' => $taken, 'missedCount' => $missed, 'complete' => true, 'alarms' => $alarms]
-            : ['complete' => false, 'alarms' => $alarms];
+        return $doses;
     }
 
     /**

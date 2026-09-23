@@ -65,14 +65,14 @@ final class PillDispenserNormalizationTest extends TestCase
             $byFeature[$event['feature']] = $event['value'];
         }
 
-        self::assertSame(['level' => 'low'], $byFeature['medication_level']);
+        self::assertSame('low', $byFeature['cells_remaining']['level'] ?? null);
         self::assertSame(['percent' => 80, 'chargingState' => 'charging'], $byFeature['battery']);
         self::assertSame(['environmentCelsius' => -5], $byFeature['temperature']);
         self::assertSame(['humidityPercent' => 47], $byFeature['humidity']);
         // Com os dois rádios a reportar, a interface é aquela por onde ele está mesmo a
         // falar: nesta unidade é o móvel, e o WiFi nem sequer existe.
         self::assertSame(['interface' => 'cellular', 'signalStrengthDbm' => -85], $byFeature['connectivity']);
-        self::assertSame(['remaining' => 16, 'total' => 28, 'current' => 12], $byFeature['cells_remaining']);
+        self::assertSame(['remaining' => 16, 'total' => 28, 'current' => 12, 'level' => 'low'], $byFeature['cells_remaining']);
     }
 
     public function testTheConfigurationReadBackBecomesADeviceConfigEvent(): void
