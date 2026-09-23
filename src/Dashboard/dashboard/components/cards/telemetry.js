@@ -164,6 +164,7 @@ const UPLINK_CARD_RENDERERS = {
     }),
     medication_alarm_status: (data) => medicationAlarmContent(data),
     device_status: (data) => deviceStatusContent(data),
+    device_config: (data) => deviceConfigContent(data),
     device_fault: (data) => ({
         value: fieldValue("fault", data.fault),
     }),
@@ -373,12 +374,44 @@ export function uplinkCardContent(type, data, meta = {}) {
 }
 
 /**
- * O estado do aparelho, que no dispensador traz oito campos.
+ * O valor reportado de uma configuração.
+ *
+ * O `device_config` traz um mapa: a chave é a definição e o valor é o que o aparelho diz ter
+ * lá dentro. Sem isto caía no cartão genérico, que passa cada campo por `String()` -- o mapa
+ * saía como «Definições: [object Object]», que não diz nem que definição é nem em que estado
+ * ficou.
+ */
+function deviceConfigContent(data) {
+    const settings = Object.entries(data?.settings ?? {});
+
+    return {
+        value: settings.length === 1
+            ? capabilityLabel(settings[0][0])
+            : `${settings.length} definições`,
+        details: settings
+            .map(([key, value]) => html`${capabilityLabel(key)}: ${settingSummary(value)}`)
+            .join(" · "),
+    };
+}
+
+/** O que uma definição reportada tem lá dentro, sem o nome do campo a repetir o da definição. */
+function settingSummary(value) {
+    if (value === null || typeof value !== "object") {
+        return fieldValue("value", value);
+    }
+
+    return Object.entries(value)
+        .map(([field, inner]) => fieldValue(field, inner))
+        .join(" · ");
+}
+
+/**
+ * O estado do aparelho, que no dispensador traz seis campos.
  *
  * O cartão genérico mostra os quatro primeiros e cala o resto: o sinal e o bloqueio de criança
- * enchiam a quota, e a tampa, a corrente, o alarme de ambiente e o CCID do SIM nunca chegavam
- * ao ecrã. O sinal fica como valor principal porque é o que se lê de relance; o resto é
- * detalhe, e só entra o que o aparelho reportou.
+ * enchiam a quota, e a tampa, a corrente e o alarme de ambiente nunca chegavam ao ecrã. O
+ * sinal fica como valor principal porque é o que se lê de relance; o resto é detalhe, e só
+ * entra o que o aparelho reportou.
  */
 function deviceStatusContent(data) {
     const details = [
