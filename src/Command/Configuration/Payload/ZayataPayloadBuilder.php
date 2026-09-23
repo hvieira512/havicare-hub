@@ -38,6 +38,12 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
                 'endHour' => self::zeroBasedRangeInt($payload['endHour'] ?? 7, 0, 23, 'endHour'),
                 'endMinute' => self::zeroBasedRangeInt($payload['endMinute'] ?? 0, 0, 59, 'endMinute'),
             ],
+            // Os dois tempos da toma, em minutos. O limite é o do aparelho: 86400 segundos.
+            'retrieval_warning', 'retrieval_timeout' => [
+                'minutes' => self::zeroBasedRangeInt($payload['minutes'] ?? 0, 0, 1440, 'minutes'),
+            ],
+            // O prato tem 28 compartimentos, e carregados podem estar de nenhum a todos.
+            'loaded_cells' => ['cells' => self::zeroBasedRangeInt($payload['cells'] ?? 0, 0, 28, 'cells')],
             // Duas línguas e mais nada: a de fábrica e o inglês.
             'device_language' => ['language' => self::zeroBasedRangeInt($payload['language'] ?? 0, 0, 1, 'language')],
             // HHMM com sinal, e não minutos: `+100` é uma hora à frente. A gama é a da
@@ -98,7 +104,7 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
 
     /**
      * @param mixed $plans
-     * @return list<array{hour: int, minute: int, enabled: bool}>
+     * @return list<array{slot?: int, hour: int, minute: int, enabled: bool}>
      */
     private static function plans(mixed $plans): array
     {
@@ -114,11 +120,16 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             if (!is_array($plan)) {
                 throw new \InvalidArgumentException('plans items must be objects');
             }
-            $out[] = [
+            // O slot só viaja quando o plano o traz: sem ele, quem monta a trama coloca o
+            // plano pela posição, que é a única leitura que um plano antigo permite.
+            $out[] = array_filter([
+                'slot' => isset($plan['slot'])
+                    ? self::zeroBasedRangeInt($plan['slot'], 1, self::ALARM_SLOTS, "plans[{$index}].slot")
+                    : null,
                 'hour' => self::zeroBasedRangeInt($plan['hour'] ?? 0, 0, 23, "plans[{$index}].hour"),
                 'minute' => self::zeroBasedRangeInt($plan['minute'] ?? 0, 0, 59, "plans[{$index}].minute"),
                 'enabled' => (bool)self::boolInt($plan['enabled'] ?? true, "plans[{$index}].enabled"),
-            ];
+            ], static fn(mixed $field): bool => $field !== null);
         }
 
         return $out;
