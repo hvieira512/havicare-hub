@@ -491,6 +491,17 @@ final class DeviceEventDecoder
     {
         $events = [];
 
+        // Em hexadecimal, como a especificação nomeia tudo neste protocolo: ela não diz como
+        // se lê o número, e o decimal perdia a única estrutura visível nele.
+        $firmware = $this->tlvU16($tlv, 0x8002);
+        if ($firmware !== null) {
+            $events[] = [
+                'feature' => 'firmware_version',
+                'nativeType' => $nativeType,
+                'value' => ['version' => sprintf('0x%04X', $firmware)],
+            ];
+        }
+
         // A corrente viaja com a bateria: é a mesma pergunta feita de dois lados.
         $battery = array_filter([
             'percent' => $this->tlvU8($tlv, 0x8103),
@@ -696,6 +707,13 @@ final class DeviceEventDecoder
     {
         $value = $this->tlvValue($tlv, $tag);
         return $value === null || strlen($value) < 2 ? null : unpack('s', substr($value, 0, 2))[1];
+    }
+
+    /** @param array<int, array{value?: string, state?: int}> $tlv */
+    private function tlvU16(array $tlv, int $tag): ?int
+    {
+        $value = $this->tlvValue($tlv, $tag);
+        return $value === null || strlen($value) < 2 ? null : unpack('v', substr($value, 0, 2))[1];
     }
 
     /** @param array<int, array{value?: string, state?: int}> $tlv */

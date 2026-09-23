@@ -155,6 +155,8 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'dispense_now',
             'do_not_disturb',
             'early_dispense',
+            // Chega no pacote de registo, e por isso não é pedível como as outras leituras.
+            'firmware_version',
             'help_call',
             'humidity',
             // A tampa e o ambiente saíram de dentro do estado do dispositivo: uma tampa

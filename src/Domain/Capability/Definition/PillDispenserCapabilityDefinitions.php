@@ -21,6 +21,9 @@ final class PillDispenserCapabilityDefinitions
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'lid_state', 'label' => 'Tampa', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             // A mesma `connectivity` que os gateways publicam, e não um formato só deste.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'connectivity', 'label' => 'Conectividade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
+            // Chega no pacote de registo e em mais lado nenhum, e por isso não é pedível: a
+            // única altura em que muda é depois de uma actualização, que acaba em religar.
+            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'firmware_version', 'label' => 'Versão do firmware', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             // Sem `device_status` e sem CCID: cada leitura do `0x07` pede-se por si, e o CCID
             // nunca muda. O estado dos nove alarmes é a única leitura da toma que chega em
             // claro — o `0x03`, que traz a hora e a célula, vem cifrado.

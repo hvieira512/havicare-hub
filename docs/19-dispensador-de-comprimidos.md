@@ -311,11 +311,12 @@ próprio aparelho, de que esta unidade é 4G e não tem rádio WiFi nenhum — s
 
 O `0x8105` e o `0x8106` estão *deprecated* na própria especificação.
 
-#### O bloco de sistema, lido ao aparelho
+#### O bloco de sistema, que vem no registo
 
-O bloco `0x8002`–`0x800B` mais o `0x8081`/`0x8082` é identidade e transporte. O
-hub não o publica, mas em 2026-09-23 perguntou-se ao aparelho, uma vez, o que lá
-estava:
+O bloco `0x8002`–`0x800B` mais o `0x8081`/`0x8082` é identidade e transporte, e
+**o aparelho manda-o inteiro em cada pacote de registo `0x01`** — as doze TAGs,
+sem ninguém pedir. É por isso que o registo tem 112 bytes e o heartbeat 53. Os
+valores desta unidade, em 2026-09-23:
 
 | TAG | O quê | Valor |
 |---|---|---|
@@ -330,9 +331,16 @@ estava:
 | `0x8081` | funções extra | `4`, o bit 2 — a especificação só documenta o bit 0 (troca de servidor) e o bit 1 (OTA por Bluetooth) |
 | `0x8082` | número personalizado | `0` |
 
-Nada disto é normalizável: são parâmetros do transporte, ninguém age sobre eles,
-e o único que mudaria de valor ao longo da vida do aparelho — a versão — muda
-tão devagar que não paga um canal.
+Onze das doze ficam por publicar: são parâmetros do transporte e ninguém age
+sobre eles. A que sai é a **versão**, pela capacidade `firmware_version` que os
+relógios e as pulseiras já usam — é a única que muda ao longo da vida do
+aparelho, e é o que se quer saber quando um lote vem com firmware mau. Vai em
+hexadecimal, `0x0502`, porque a especificação não diz como se lê o número e o
+decimal `1282` esconderia a única estrutura visível nele.
+
+Não é pedível, ao contrário das outras leituras: só o registo a traz, e o registo
+é do aparelho. Um firmware novo chega sempre depois de um religar, e o religar
+traz um registo.
 
 **Estas TAGs lêem-se com o `0x07` e não com o `0x05`.** As `0x8xxx` são todas
 estado, mesmo as que parecem definições: um `0x05` com as dez voltou com as dez
@@ -444,6 +452,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x8131`–`0x8139` **num `0x04`/`0x02`** | `medication_alarm_change` | `alarm`, `state` — o alarme que mudou, um evento por alarme |
 | `0x8121`–`0x8125` | `device_fault` | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
 | `0x8112` | `help_call` | `state` |
+| `0x8002` **num `0x01`** | `firmware_version` | `version` — em hexadecimal, `0x0502`. Só o registo a traz, e por isso não é pedível |
 
 **Por que canal sai cada coisa.** O que o `CapabilityCatalog` declara com
 `isEvent` sai por `events`, a QoS 1; o resto sai por `telemetry`, a QoS 0. A
@@ -514,11 +523,25 @@ trama só.
 > comandos permite vários pedidos com a mesma trama nativa, que é o que resolve
 > isto sem inventar nada.
 
-**O que falta.** A especificação recomenda ler os parâmetros no primeiro registo,
-o que não é feito — é comportamento automático, e essa é uma decisão de quem
-opera. A resposta `0x86` já fecha o ciclo de vida de uma escrita: uma
-configuração escrita fica em `confirmed` com `applied_at` quando o aparelho a
-reconhece.
+**A descoberta no primeiro registo.** A especificação pede-a — *«If this is the
+Client's first registration, the Server should query the Client's parameter
+information for synchronization»* — e o hub fá-la: na primeira vez que vê um
+aparelho, manda-lhe o `0x0A`, o `0x0B` e o `0x0C` a seguir ao ACK do registo. As
+três respostas enchem os cartões «Que configurações este aparelho aceita», «Que
+leituras este aparelho sabe dar» e «Que ordens este aparelho obedece».
+
+É **uma vez por aparelho**, e a marca fica num campo do hash dele no Redis,
+escrito com `HSETNX`: decidir e marcar no mesmo passo evita que duas ligações a
+registarem-se ao mesmo tempo passem as duas pela guarda. Um aparelho que se
+religue dez vezes por dia não responde dez vezes à mesma pergunta.
+
+> As listas de TAGs continuam escritas no `PillDispenserAdapter`, e é delas que
+> sai o que o hub pede. O que a descoberta acrescenta é saber, por aparelho, o
+> que ele de facto serve — sem isso, um firmware diferente recusa em silêncio o
+> que lhe pedirmos a mais e o cartão fica vazio sem explicação.
+
+A resposta `0x86` fecha o ciclo de vida de uma escrita: uma configuração escrita
+fica em `confirmed` com `applied_at` quando o aparelho a reconhece.
 
 **Onde está.** `src/Protocol/Adapter/PillDispenserAdapter.php` (a trama),
 `src/Device/DeviceEventDecoder.php` (as TAGs), o protocolo de sessão em
