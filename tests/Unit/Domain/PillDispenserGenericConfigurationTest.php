@@ -15,9 +15,7 @@ use PHPUnit\Framework\TestCase;
  * protocolo. Um protocolo que ela não conheça rebenta na gravação com «Unsupported protocol»,
  * já depois de o formulário ter aparecido e de o utilizador ter carregado em Enviar.
  *
- * Percorre-se o catálogo inteiro em vez de uma configuração escolhida à mão: o defeito não era
- * de nenhuma delas em particular, era do protocolo não estar lá, e a próxima que se
- * acrescentar entra neste teste sozinha.
+ * Percorre-se o catálogo inteiro para que a configuração seguinte entre no teste sozinha.
  */
 final class PillDispenserGenericConfigurationTest extends TestCase
 {

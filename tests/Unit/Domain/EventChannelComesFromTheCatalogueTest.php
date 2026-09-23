@@ -10,16 +10,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * Por que canal do MQTT sai cada coisa, e de onde vem essa decisão.
  *
- * Vinha de uma lista escrita à mão dentro do `DeviceHubServer` --
- * `['alarm', 'medication_intake', 'device_fault', 'help_call']` por `events`, tudo o resto
- * por `telemetry`. O `isEvent` que cada definição declara não era lido por ninguém nesse
- * caminho, e as duas fontes de verdade já discordavam: o `storage_environment` foi declarado
- * alerta e continuava a sair por telemetria.
- *
- * O que isto custava não era arrumação. O `events` publica a QoS 1 e o `telemetry` a QoS 0, e
- * uma dose falhada -- que não gera `medication_intake` nenhum, porque não houve toma a
- * registar -- só se anuncia pela mudança de estado de um alarme. O evento mais importante que
- * o dispensador produz era o único que se podia perder.
+ * A decisão é do `isEvent` que cada definição declara, e não de uma lista escrita à mão no
+ * `DeviceHubServer`. Não é arrumação: o `events` publica a QoS 1 e o `telemetry` a QoS 0, e
+ * pelo canal errado uma dose falhada é um acontecimento que se pode perder.
  */
 final class EventChannelComesFromTheCatalogueTest extends TestCase
 {
@@ -34,13 +27,9 @@ final class EventChannelComesFromTheCatalogueTest extends TestCase
     /**
      * O `device_state` dos relógios muda de canal, e isso é uma alteração de contrato.
      *
-     * Está declarado como acontecimento desde sempre — é o relatório de sistema que o relógio
-     * manda quando alguma coisa nele muda —, mas a lista à mão não o incluía e ele saía por
-     * `telemetry`. Passar a `events` é a correcção; prende-se aqui porque quem subscrevesse
-     * `.../watch/+/telemetry` à espera dele deixa de o receber aí, e uma mudança destas não
-     * pode voltar a acontecer sem ninguém dar por ela.
-     *
-     * A tabela de alterações do [contrato MQTT](docs/08-contrato-mqtt.md) regista-a.
+     * Está declarado como acontecimento desde sempre, mas a lista à mão não o incluía e ele
+     * saía por `telemetry`. Prende-se aqui porque quem subscrevesse `.../watch/+/telemetry`
+     * deixa de o receber aí. A tabela do [contrato MQTT](docs/08-contrato-mqtt.md) regista-a.
      */
     public function testTheWatchSystemReportMovedToTheEventChannel(): void
     {
@@ -83,9 +72,8 @@ final class EventChannelComesFromTheCatalogueTest extends TestCase
      * A bandeira tem de concordar entre tipos de aparelho, senão a pergunta não se pode fazer
      * só pela chave.
      *
-     * A `help_call` existe em quatro catálogos e é acontecimento nos quatro. Uma chave que
-     * fosse evento num aparelho e leitura noutro obrigaria o canal a saber de que aparelho
-     * veio a mensagem, e a decisão deixaria de ser do catálogo.
+     * Uma chave que fosse evento num aparelho e leitura noutro obrigaria o canal a saber de
+     * que aparelho veio a mensagem, e a decisão deixaria de ser do catálogo.
      */
     public function testTheFlagCannotDisagreeBetweenDeviceTypes(): void
     {

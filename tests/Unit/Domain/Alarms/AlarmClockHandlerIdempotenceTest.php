@@ -12,9 +12,7 @@ use PHPUnit\Framework\TestCase;
  * Descodificar duas vezes tem de dar o mesmo que descodificar uma: o
  * `DeviceCapabilityPresenter` chama o `fromNative` sobre a linha guardada e outra vez quando
  * o `responseEntry` embrulha o que já normalizou, e à segunda o que chega já é a lista
- * pública.
- *
- * É uma propriedade dos três handlers e não de um, e por isso afirma-se sobre os três.
+ * pública. É uma propriedade dos três handlers e não de um.
  */
 final class AlarmClockHandlerIdempotenceTest extends TestCase
 {

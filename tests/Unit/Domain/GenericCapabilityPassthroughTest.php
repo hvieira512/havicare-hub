@@ -11,14 +11,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * A capacidade genérica serve todos os protocolos que anuncia, e ela anuncia todos.
  *
- * É o contrato de quem não tem contrato próprio, e por isso não declara restrição nenhuma. Mas
- * o despacho só conhecia cinco protocolos e recusava o resto -- ou seja, anunciava o que não
- * servia. Foi assim que dezasseis das dezassete configurações do dispensador M228 rebentaram
- * ao serem gravadas, em produção, depois de toda a suite passar.
- *
- * Quem traduz nomes continua a traduzir. Para os outros, o nome nativo é a própria chave
- * genérica -- é a convenção com que os fornecedores mais recentes declaram o catálogo -- e
- * passar o valor tal e qual é a resposta certa, não uma omissão.
+ * É o contrato de quem não tem contrato próprio, e por isso não declara restrição nenhuma.
+ * Quem traduz nomes continua a traduzir; para os outros, o nome nativo é a própria chave
+ * genérica e passar o valor tal e qual é a resposta certa, não uma omissão.
  */
 final class GenericCapabilityPassthroughTest extends TestCase
 {

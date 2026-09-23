@@ -9,10 +9,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * O descritor dos tipos de dispositivo, que o PHP e o JavaScript lêem do mesmo ficheiro.
  *
- * Estava escrito quatro vezes -- a lista em PHP e em `domain.js`, os tipos retransmitidos por
- * gateway em PHP e na mesma tabela do JS, e o `sim` na tabela do JS e outra vez como um
- * `deviceType !== "watch"` no `saveDevice`. O que se prende aqui é que voltou a haver uma
- * fonte só, e que a forma que os dois lados esperam se mantém.
+ * O que se prende aqui é que há uma fonte só, e que a forma que os dois lados esperam se
+ * mantém.
  */
 final class DeviceTypeCatalogTest extends TestCase
 {

@@ -17,9 +17,7 @@ use PHPUnit\Framework\TestCase;
  * Um protocolo é uma convenção espalhada por cinco registos independentes -- o
  * `AdapterRegistry`, o `TcpProtocolRegistry`, o `ProtocolRegistry`, o
  * `DeviceConfigurationCatalog` e o `CapabilityRegistry` --, e nada os liga: um fornecedor
- * registado em quatro dos cinco compila, passa no PHPStan e falha num caminho só.
- *
- * Este teste não remove o espalhamento, torna-o verificável.
+ * registado em quatro dos cinco compila e falha num caminho só.
  */
 final class ProtocolRegistrationCompletenessTest extends TestCase
 {
@@ -82,11 +80,8 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
     /**
      * O mesmo, para tudo o que entra pelo socket e não só para os relógios.
      *
-     * As asserções acima filtram por tipo de dispositivo `watch`, que era a única coisa a
-     * falar TCP quando foram escritas. O dispensador M228 passou a ser a segunda e ficava de
-     * fora: tinha entrada no registo das sessões e ninguém verificava que também tinha
-     * adaptador e metadados. Parte-se do registo das sessões, que é a lista de quem
-     * efectivamente fala pelo socket.
+     * As asserções acima filtram por tipo de dispositivo `watch`. Esta parte-se do registo
+     * das sessões, que é a lista de quem efectivamente fala pelo socket.
      */
     public function testEveryTcpProtocolIsCompletelyRegistered(): void
     {
@@ -175,17 +170,9 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
     /**
      * O sexto registo: o contrato da capacidade tem de conhecer o protocolo que a declara.
      *
-     * Um protocolo que declare uma configuração no seu catálogo e não esteja no `match` do
-     * contrato correspondente compila, passa no PHPStan e passa em todos os outros testes. O
-     * ecrã desenha-se, o utilizador escolhe o valor, carrega em Enviar -- e só aí rebenta com
-     * `Unsupported`. Aconteceu duas vezes: dezasseis das dezassete configurações do
-     * dispensador M228, e o «não perturbar» dos relógios 4P Touch.
-     *
-     * Distinguem-se duas recusas pelo início da mensagem. `Unsupported` é o protocolo não
-     * estar ligado ao contrato, e é sempre um defeito. Tudo o resto -- «message is required»,
-     * «phone is required» -- é a validação a fazer o seu trabalho sobre um valor por omissão
-     * que é legitimamente incompleto: uma mensagem de texto não tem valor por omissão que se
-     * possa enviar, e ninguém espera que tenha.
+     * Um protocolo em falta no `match` só rebenta ao carregar em Enviar. Distinguem-se duas
+     * recusas pelo início da mensagem: `Unsupported` é sempre um defeito, e tudo o resto é a
+     * validação a trabalhar sobre um valor por omissão incompleto.
      */
     public function testEveryDeclaredConfigurationReachesItsCapabilityContract(): void
     {
