@@ -258,9 +258,20 @@ function configRuns(entries) {
     }));
 }
 
-/** A unidade ao lado do campo de uma linha, quando o nome nativo a declara. */
+/**
+ * A unidade ao lado do campo.
+ *
+ * A definição ganha ao nome nativo: `minutes` não está na tabela de nomes e não deixava nada
+ * ao lado da caixa, enquanto a definição sempre soube que eram minutos. Só quando ela se cala
+ * é que se adivinha pelo campo -- de «Intervalo (min)» sobrevive o «min».
+ */
+function unitLabel(entry) {
+    return String(entry.options?.label ?? "").trim() || fieldUnit(entry.fields?.[0] || "");
+}
+
+/** A mesma unidade já desenhada, para a linha de um cartão estreito. */
 function unitOf(entry) {
-    const unit = fieldUnit(entry.fields?.[0] || "");
+    const unit = unitLabel(entry);
     return unit === "" ? "" : `<span class="small text-secondary flex-shrink-0">${esc(unit)}</span>`;
 }
 
@@ -444,7 +455,7 @@ export function renderConfigSection(
                 note: details.join(" · "),
                 badge: showConfigurationBadge ? stateBadge(deliveryMeta.label, deliveryMeta.tone) : "",
                 control,
-                unit: control === "" ? "" : fieldUnit(entry.fields?.[0] || ""),
+                unit: control === "" ? "" : unitLabel(entry),
                 actions: verbs.length > 0
                     ? renderConfigActionVerbs(verbs, disabled)
                     : renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "", verb),
