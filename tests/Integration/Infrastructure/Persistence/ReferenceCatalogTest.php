@@ -147,6 +147,9 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'calibrate_clock',
             'cells_remaining',
             'child_lock',
+            // A ligação à rede é a mesma capacidade genérica que os gateways publicam, e não
+            // um `device_status` com uma forma só deste aparelho.
+            'connectivity',
             'device_fault',
             'device_language',
             'device_status',

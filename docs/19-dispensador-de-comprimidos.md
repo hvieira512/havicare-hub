@@ -356,9 +356,9 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x811A` / `0x811B` / `0x811D` | `cells_remaining` | `current`, `total`, `remaining` |
 | `0x810E` | `temperature` | `environmentCelsius` |
 | `0x810F` | `humidity` | `humidityPercent` |
-| `0x810A` / `0x810B` / `0x810D` | `device_status` | `wifiSignalDbm`, `gsmSignalDbm`, `signalLevel` — a ligação à rede e mais nada |
+| `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |
 | `0x8107` | `lid_state` | `open` |
-| `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede |
+| `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. **Só é publicado quando dispara**: como leitura, enchia o histórico com linhas a dizer que estava tudo bem |
 | `0x8131`–`0x8139` | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` |
 | `0x8121`–`0x8125` | `device_fault` | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
 | `0x8112` | `help_call` | `state` |

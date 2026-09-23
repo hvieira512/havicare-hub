@@ -10,38 +10,57 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Cada coisa na sua capacidade, e o que não serve a ninguém não é capacidade nenhuma.
+ * Cada coisa na sua capacidade, e nas capacidades que o hub já tem.
  *
- * O `device_status` tinha virado uma gaveta. Lá dentro iam o sinal — que muda de minuto a
- * minuto e enche o histórico —, o número do cartão SIM, e o estado do bloqueio de criança,
- * que já é uma configuração com valor reportado. Na lista de eventos saíam todos com a mesma
- * etiqueta, «Estado do dispositivo».
+ * O `device_status` tinha virado uma gaveta: o sinal, a tampa, a corrente, o juízo sobre o
+ * ambiente, o cartão SIM e o bloqueio de criança, tudo com a mesma etiqueta na lista de
+ * eventos. Esvaziou-se, e o que resta dele é só o botão que pede o estado ao aparelho.
  *
- * A separação segue o que cada coisa é: o que muda ao minuto é telemetria, o que se configura
- * tem o seu valor reportado e não uma segunda verdade ao lado, e o CCID não é nem uma nem
- * outra — é um identificador que ninguém vai ler ali.
+ * Quatro regras decidiram para onde foi cada uma. O que o hub já sabe publicar publica-se
+ * como ele já publica — o sinal é a `connectivity` dos gateways, e não um formato só deste
+ * aparelho. O que é a mesma pergunta vista de dois lados fica junto — a corrente com a
+ * bateria. O que é um alerta só fala quando dispara — o ambiente de armazenamento, como a
+ * avaria já fazia. E o que não serve a ninguém não se publica — o CCID do cartão SIM.
  */
 final class PillDispenserStatusSeparationTest extends TestCase
 {
     /**
-     * O estado do dispositivo fica com o sinal e mais nada.
+     * O sinal é a `connectivity` que o hub já tem, e não uma forma só deste aparelho.
      *
-     * É a mesma arrumação que os relógios já têm: `device_status` é a ligação à rede, e a
-     * leitura fina em dBm vive ao lado da contagem de barras. Tudo o resto que lá estava
-     * dentro tinha um sítio melhor, e chegar ao ecrã como «Tampa aberta: Não · Ligado à
-     * corrente: Sim · Ambiente fora da gama: Não» era uma linha que ninguém lê.
+     * Os gateways já publicam a ligação à rede assim — que interface, que tecnologia, e a
+     * potência em dBm —, e a dashboard já a desenha. Publicar `gsmSignalDbm` dentro de um
+     * `device_status` obrigava quem integra a conhecer mais um formato para ler a mesma
+     * grandeza, e não havia razão nenhuma para isso.
      */
-    public function testDeviceStatusIsTheSignalAndNothingElse(): void
+    public function testTheSignalIsPublishedAsConnectivity(): void
     {
-        $status = $this->telemetry([
+        $byFeature = $this->telemetry([
             0x810B => pack('s', 25),
             0x810D => "\x03",
             0x8107 => "\x01",
             0x8109 => "\x01",
-            0x8111 => "\x00",
-        ])['device_status'] ?? [];
+        ]);
 
-        self::assertSame(['gsmSignalDbm' => -25, 'signalLevel' => 3], $status);
+        self::assertSame(
+            ['interface' => 'cellular', 'signalStrengthDbm' => -25],
+            $byFeature['connectivity'] ?? null,
+        );
+        self::assertArrayNotHasKey('device_status', $byFeature);
+    }
+
+    /**
+     * Sem rádio móvel a ler, vale o WiFi.
+     *
+     * Esta unidade é 4G e não tem rádio WiFi nenhum — soube-se pela descoberta de parâmetros
+     * —, mas a série tem modelos que o têm, e a interface tem de dizer por onde o aparelho
+     * está mesmo a falar.
+     */
+    public function testAWifiOnlyUnitSaysSo(): void
+    {
+        self::assertSame(
+            ['interface' => 'wifi', 'signalStrengthDbm' => -60],
+            $this->telemetry([0x810A => pack('s', 60)])['connectivity'] ?? null,
+        );
     }
 
     /**
@@ -78,22 +97,19 @@ final class PillDispenserStatusSeparationTest extends TestCase
     }
 
     /**
-     * O «ambiente fora da gama» é o juízo do aparelho sobre a temperatura e a humidade.
+     * O ambiente de armazenamento é um alerta, e um alerta só se publica quando dispara.
      *
-     * O nome não dizia isso a ninguém. É uma capacidade própria, com o nome do que mede: se
-     * a medicação está guardada dentro das condições que o fabricante dá como boas. As duas
-     * leituras que ele compara já têm cartão, e este é a conclusão delas.
+     * Publicado a cada leitura, enchia a lista de eventos com linhas iguais a dizer «Dentro
+     * da gama» — um estado que é o normal e que ninguém lê. É o mesmo tratamento que a avaria
+     * já tinha ao lado, no mesmo descodificador: só sai quando há alguma coisa a dizer.
      */
-    public function testTheStorageEnvironmentIsItsOwnCapability(): void
+    public function testTheStorageEnvironmentOnlySpeaksWhenItIsOutOfRange(): void
     {
         self::assertSame(
             ['outOfRange' => true],
             $this->telemetry([0x8111 => "\x01"])['storage_environment'] ?? null,
         );
-        self::assertSame(
-            ['outOfRange' => false],
-            $this->telemetry([0x8111 => "\x00"])['storage_environment'] ?? null,
-        );
+        self::assertArrayNotHasKey('storage_environment', $this->telemetry([0x8111 => "\x00"]));
     }
 
     /**
@@ -110,7 +126,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         $byFeature = $this->telemetry([0x8009 => "8935103211501958977F\x00", 0x810D => "\x03"]);
 
         self::assertArrayNotHasKey('sim_card', $byFeature);
-        self::assertArrayNotHasKey('simCcid', $byFeature['device_status'] ?? []);
+        self::assertArrayNotHasKey('simCcid', $byFeature['connectivity'] ?? []);
     }
 
     /**
@@ -123,7 +139,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
     {
         $byFeature = $this->telemetry([0x8102 => "\x01", 0x810D => "\x03"]);
 
-        self::assertArrayNotHasKey('childLockEngaged', $byFeature['device_status'] ?? []);
+        self::assertArrayNotHasKey('childLockEngaged', $byFeature['connectivity'] ?? []);
         self::assertSame(['enabled' => true], $byFeature['device_config']['settings']['child_lock'] ?? null);
     }
 
@@ -152,7 +168,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
             'mac' => 'AABBCCDDEEFF',
             'tlv' => [
                 0x8107 => ['value' => "\x00", 'state' => 1],
-                0x810D => ['value' => "\x03", 'state' => 0],
+                0x810B => ['value' => pack('s', 25), 'state' => 0],
             ],
         ]));
         foreach ((new DeviceEventDecoder())->decode($this->session(), $decoded) as $event) {
@@ -160,7 +176,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         }
 
         self::assertArrayNotHasKey('lid_state', $byFeature);
-        self::assertSame(3, $byFeature['device_status']['signalLevel'] ?? null);
+        self::assertSame(-25, $byFeature['connectivity']['signalStrengthDbm'] ?? null);
     }
 
     /**

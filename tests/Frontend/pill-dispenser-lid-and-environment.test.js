@@ -20,26 +20,17 @@ test("a tampa diz se está aberta ou fechada", () => {
     assert.equal(uplinkCardContent("lid_state", { open: false }).value, "Fechada");
 });
 
-test("o ambiente diz se está dentro ou fora da gama", () => {
-    assert.equal(
-        uplinkCardContent("storage_environment", { outOfRange: true }).value,
-        "Fora da gama",
-    );
-    assert.equal(
-        uplinkCardContent("storage_environment", { outOfRange: false }).value,
-        "Dentro da gama",
-    );
-});
-
 /**
- * O cartão do ambiente explica-se: é o juízo do aparelho sobre a temperatura e a humidade
- * que ele próprio mede, e sem isso continua a ser um estado sem causa visível.
+ * O ambiente é um alerta e só chega quando dispara, e por isso o valor diz o que aconteceu em
+ * vez de dizer em que estado se está — e não leva legenda fixa por baixo, que se repetia
+ * linha após linha sem nunca mudar.
  */
-test("o ambiente diz de onde tira a conclusão", () => {
-    const { details } = uplinkCardContent("storage_environment", { outOfRange: true });
+test("o ambiente diz o que aconteceu", () => {
+    const { value, details } = uplinkCardContent("storage_environment", { outOfRange: true });
 
-    assert.match(details, /[Tt]emperatura/);
-    assert.match(details, /[Hh]umidade/);
+    assert.match(value, /[Tt]emperatura/);
+    assert.match(value, /[Hh]umidade/);
+    assert.equal(details || "", "");
 });
 
 /** O estado do dispositivo fica com o sinal, e já não carrega o resto. */

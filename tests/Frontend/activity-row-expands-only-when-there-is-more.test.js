@@ -19,8 +19,8 @@ import { telemetryActivityRow } from "../../src/Dashboard/dashboard/devices/deta
  */
 test("uma linha que já diz tudo não abre", () => {
     const row = telemetryActivityRow({
-        type: "storage_environment",
-        data: { outOfRange: true },
+        type: "lid_state",
+        data: { open: true },
         occurredAt: "2026-09-23T10:00:00Z",
     });
 

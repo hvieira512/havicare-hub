@@ -33,7 +33,7 @@ final class CapabilityCatalogTest extends TestCase
             // passou também a poder ser pedido: é a única grandeza sem outro caminho, e a
             // pulseira responde ao pedido a qualquer momento.
             'bracelet' => [41, 'c24b1c638090a697db262e4159d9b57acc2632480af274cb8c98e1b4f2ef57bd'],
-            // O dispensador M228: nove grandezas de telemetria, três eventos (toma, avaria,
+            // O dispensador M228: oito grandezas de telemetria, três eventos (toma, avaria,
             // chamada de ajuda), doze configurações e dez acções. Cada enumeração é uma
             // configuração própria -- volume e toque não são a mesma escolha -- e o
             // `device_status` é pedível desde que o `0x07` passou a perguntar o estado em vez
@@ -47,10 +47,11 @@ final class CapabilityCatalogTest extends TestCase
             // mas este firmware recusa-as e a descoberta de parâmetros não as anuncia. O
             // cartão SIM também não: o CCID é um identificador que nunca muda e ninguém o
             // consulta na dashboard, e cada leitura de estado repetia-o na lista de eventos.
-            // São nove grandezas desde que o `device_status` deixou de ser uma gaveta: a
-            // tampa e o ambiente de armazenamento têm cartão próprio, a corrente juntou-se à
-            // bateria, e o que lá fica é o sinal.
-            'pill_dispenser' => [33, '4c741d015e4cba775b88fffceb2886d65f991d9bebcdee87500a160aac7fd762'],
+            // O `device_status` deixou de ser uma gaveta e já não publica nada -- é só o botão
+            // que pede o estado. O sinal saiu para a `connectivity` que os gateways já usam, a
+            // corrente juntou-se à bateria, a tampa ganhou cartão próprio, e o ambiente de
+            // armazenamento virou alerta, ao lado da avaria, porque só fala quando dispara.
+            'pill_dispenser' => [34, 'a10d04a3e8fb8f3cfdafdb19d7e8be365fd29b1601ed7c740ca03ccef90948d6'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

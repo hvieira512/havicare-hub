@@ -4,6 +4,7 @@ import { html } from "../../html.js";
 import { compactDetails } from "./shared.js";
 import { connectivityIcon, connectivityValue } from "./gateway.js";
 import { diaperMoistureBody, diaperMoistureRowValue } from "./diaper.js";
+import { medicationAlarmGrid } from "./medication.js";
 import { helpCallContent, ncsPagerContent } from "./ncs.js";
 import { locationDetails, locationValue } from "./location.js";
 import { sleepDetails, sleepQualityValue, sleepValue } from "./sleep.js";
@@ -75,7 +76,7 @@ const CARD_STYLE = {
     medication_alarm_status: ["fa-clock-rotate-left", "primary"],
     cells_remaining: ["fa-table-cells", "info"],
     lid_state: ["fa-box-open", "primary"],
-    storage_environment: ["fa-temperature-half", "warning"],
+    storage_environment: ["fa-triangle-exclamation", "danger"],
     humidity: ["fa-droplet", "info"],
     reset: ["fa-bell-slash", "warning"],
     unknown: ["fa-bell", ""],
@@ -173,15 +174,12 @@ const UPLINK_CARD_RENDERERS = {
         value: data?.open == null ? "-" : data.open ? "Aberta" : "Fechada",
         details: data?.open ? "O prato está acessível" : "",
     }),
-    storage_environment: (data) => ({
-        value: data?.outOfRange == null
-            ? "-"
-            : data.outOfRange
-                ? "Fora da gama"
-                : "Dentro da gama",
-        // Sem isto é um estado sem causa visível: o aparelho compara a temperatura e a
-        // humidade que ele próprio mede com a gama que o fabricante dá como boa.
-        details: "Temperatura e humidade, medidas pelo aparelho",
+    // Um alerta e não uma leitura: só chega quando dispara, e por isso o valor diz o que
+    // aconteceu em vez de dizer em que estado se está. A legenda fixa que aqui estava — «
+    // Temperatura e humidade, medidas pelo aparelho» — repetia-se linha após linha sem nunca
+    // mudar, que é o contrário de um detalhe.
+    storage_environment: () => ({
+        value: "Temperatura ou humidade fora da gama",
     }),
     device_fault: (data) => ({
         value: fieldValue("fault", data.fault),
@@ -464,19 +462,21 @@ function deviceStatusContent(data) {
  * O estado dos nove alarmes do dispensador.
  *
  * Uma toma falhada é o que faz alguém olhar para o cartão, e por isso ganha o valor
- * principal; sem falhas, o que vale é quantas foram tomadas. Nos detalhes entram só os
- * alarmes vivos: nove linhas de «Sem toma marcada» não são detalhe nenhum.
+ * principal; sem falhas, o que vale é quantas foram tomadas. O resto é a grelha: nove
+ * posições fixas, uma por alarme, em que a cor diz o estado. Em texto eram linhas a mudar de
+ * comprimento conforme o dia, e nenhuma posição estava sempre no mesmo sítio.
  */
 function medicationAlarmContent(data) {
     const alarms = Array.isArray(data?.alarms) ? data.alarms : [];
-    const vivos = alarms.filter((entry) => entry?.state && entry.state !== "idle");
+    const live = alarms.filter((entry) => entry?.state && entry.state !== "idle");
 
-    // Só uma leitura completa conta totais. Uma notificação traz o alarme que mudou, e
-    // rotulá-lo «1 tomada» apagava do ecrã as falhas que a leitura anterior mostrava.
+    // Só uma leitura completa conta totais e desenha a grelha. Uma notificação traz o alarme
+    // que mudou, e rotulá-la «1 tomada» apagava do ecrã as falhas que a leitura anterior
+    // mostrava -- desenhar a grelha com ela inventava os outros oito.
     if (data?.complete === false) {
         return {
-            value: vivos.length === 1
-                ? `${fieldLabel("alarm")} ${vivos[0].alarm}: ${fieldValue("state", vivos[0].state)}`
+            value: live.length === 1
+                ? `${fieldLabel("alarm")} ${live[0].alarm}: ${fieldValue("state", live[0].state)}`
                 : "Alteração de alarme",
             details: "Leitura parcial — pedir o estado para ver os nove",
         };
@@ -494,12 +494,15 @@ function medicationAlarmContent(data) {
 
     return {
         value,
-        details: vivos
+        // Na linha da lista de actividade não há corpo que desenhar, e por isso os alarmes
+        // vivos continuam a ir em texto para os detalhes.
+        details: live
             .map(
                 (entry) =>
                     html`${fieldLabel("alarm")} ${entry.alarm}: ${fieldValue("state", entry.state)}`,
             )
             .join(" · "),
+        body: medicationAlarmGrid(alarms),
     };
 }
 

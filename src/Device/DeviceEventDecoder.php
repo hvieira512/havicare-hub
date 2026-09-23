@@ -571,33 +571,39 @@ final class DeviceEventDecoder
         // O `0x8111` é o juízo que o aparelho faz sobre a temperatura e a humidade que ele
         // próprio mede: diz se a medicação está guardada dentro das condições que o
         // fabricante dá como boas. Chamar-lhe «alarme de ambiente» não dizia isso a ninguém.
-        $outOfRange = $this->pillFlag($tlv, 0x8111);
-        if ($outOfRange !== null) {
+        //
+        // Só sai quando dispara, como a avaria aqui ao lado: publicado a cada leitura, enchia
+        // a lista de eventos com linhas iguais a dizer «Dentro da gama», que é o normal e que
+        // ninguém lê.
+        if ($this->pillFlag($tlv, 0x8111) === true) {
             $events[] = [
                 'feature' => 'storage_environment',
                 'nativeType' => $nativeType,
-                'value' => ['outOfRange' => $outOfRange],
+                'value' => ['outOfRange' => true],
             ];
         }
 
-        // O sinal viaja no device_status, à maneira dos relógios, e não numa capacidade
-        // própria. É a ligação à rede e mais nada: o que ali estava misturado -- a tampa, a
-        // corrente, o juízo sobre o ambiente, o cartão SIM, o bloqueio de criança -- saiu
-        // cada um para o sítio onde alguém o procura.
+        // A ligação à rede sai como `connectivity`, que é como os gateways já a publicam e
+        // como a dashboard já a desenha. Um formato só deste aparelho obrigava quem integra a
+        // conhecer mais um para ler a mesma grandeza.
         //
-        // O `signalLevel` é o que a dashboard mostra: a especificação declara-o de 0 a 3 e é
-        // uma contagem de barras sem ambiguidade. O `gsmSignalDbm` fica ao lado porque é a
-        // leitura fina.
+        // Fica a potência e não a contagem de barras: o `0x810D` vai de 0 a 3 e o
+        // `signalQuality` do contrato é o CSQ de 0 a 31, e enfiar um no outro dava um número
+        // que ninguém sabe interpretar. As barras são um arredondamento do dBm, que é o que
+        // se compara entre aparelhos.
         //
         // O aparelho reporta a magnitude e o sinal vai por nossa conta: o fornecedor
         // confirmou a unidade em dBm e, perante um valor positivo, respondeu «treat it as a
         // negative value». Um sinal recebido é sempre negativo, e publicar `25 dBm` era
         // publicar a potência de um emissor.
-        $signal = array_filter([
-            'wifiSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810A)),
-            'gsmSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810B)),
-            'signalLevel' => $this->tlvU8($tlv, 0x810D),
-        ], static fn (mixed $field): bool => $field !== null);
+        $cellular = self::pillNegativeSignal($this->tlvI16($tlv, 0x810B));
+        $wifi = self::pillNegativeSignal($this->tlvI16($tlv, 0x810A));
+        if ($cellular !== null || $wifi !== null) {
+            $events[] = ['feature' => 'connectivity', 'nativeType' => $nativeType, 'value' => [
+                'interface' => $cellular !== null ? 'cellular' : 'wifi',
+                'signalStrengthDbm' => $cellular ?? $wifi,
+            ]];
+        }
 
         // O estado do bloqueio de criança é o valor reportado da configuração, e não uma
         // leitura ao lado dela: são a mesma coisa vista de dois ângulos.
@@ -608,9 +614,6 @@ final class DeviceEventDecoder
                 'nativeType' => $nativeType,
                 'value' => ['settings' => ['child_lock' => $childLock]],
             ];
-        }
-        if ($signal !== []) {
-            $events[] = ['feature' => 'device_status', 'nativeType' => $nativeType, 'value' => $signal];
         }
 
         foreach ([0x8121 => 'rotation', 0x8122 => 'tray_reset', 0x8123 => 'pusher', 0x8124 => 'cell_door', 0x8125 => 'keys'] as $tag => $fault) {

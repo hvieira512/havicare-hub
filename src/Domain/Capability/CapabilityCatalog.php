@@ -143,7 +143,7 @@ final class CapabilityCatalog
             'moko-w6b', 'moko-w6' => ['help_call'],
             'qinglanst-radar' => ['fall', 'vitals_alarm', 'presence_event'],
             // Eventos do dispensador: a toma, a avaria e o botão de emergência.
-            'zayata-m228' => ['medication_intake', 'device_fault', 'help_call'],
+            'zayata-m228' => ['medication_intake', 'device_fault', 'help_call', 'storage_environment'],
             default => [],
         };
     }
@@ -249,7 +249,7 @@ final class CapabilityCatalog
             // aqui, o catálogo declarava-a e a matriz do modelo dava-a por não suportada.
             'monit-mecs-pro-ble' => ['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition', 'proximity'],
             'moko-w6b', 'moko-w6' => ['battery', 'motion', 'proximity'],
-            'zayata-m228' => ['battery', 'medication_level', 'cells_remaining', 'temperature', 'humidity', 'device_status', 'lid_state', 'storage_environment', 'medication_alarm_status'],
+            'zayata-m228' => ['battery', 'medication_level', 'cells_remaining', 'temperature', 'humidity', 'connectivity', 'lid_state', 'medication_alarm_status'],
             default => [],
         };
     }

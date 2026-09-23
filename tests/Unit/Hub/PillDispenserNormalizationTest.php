@@ -69,7 +69,9 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertSame(['percent' => 80, 'chargingState' => 'charging'], $byFeature['battery']);
         self::assertSame(['environmentCelsius' => -5], $byFeature['temperature']);
         self::assertSame(['humidityPercent' => 47], $byFeature['humidity']);
-        self::assertSame(['wifiSignalDbm' => -60, 'gsmSignalDbm' => -85], $byFeature['device_status']);
+        // Com os dois rádios a reportar, a interface é aquela por onde ele está mesmo a
+        // falar: nesta unidade é o móvel, e o WiFi nem sequer existe.
+        self::assertSame(['interface' => 'cellular', 'signalStrengthDbm' => -85], $byFeature['connectivity']);
         self::assertSame(['remaining' => 16, 'total' => 28, 'current' => 12], $byFeature['cells_remaining']);
     }
 
@@ -183,16 +185,14 @@ final class PillDispenserNormalizationTest extends TestCase
 
     /** @param array<string, mixed> $payload */
     /**
-     * O nível do sinal e o estado do bloqueio são leituras que o aparelho tem e nós não
-     * pedíamos.
+     * A força do sinal sai como a `connectivity` que os gateways já publicam.
      *
-     * O `0x810B` é a força do sinal e a especificação não declara unidade nenhuma -- tem
-     * dezoito notas de unidade e nenhuma nesse campo --, o que torna o nome `gsmSignalDbm`
-     * uma afirmação sem fonte. O `0x810D` é o nível, declarado de 0 a 3, e esse não tem
-     * ambiguidade: é uma contagem de barras. O `0x8102` diz se o prato está trancado segundo
-     * o próprio aparelho, que é a única forma de confirmar que uma escrita ao `0x100C` pegou.
+     * O `0x810B` é a força do sinal, e o fornecedor confirmou a unidade em dBm e que a
+     * magnitude se lê negativa. Fica só ela: o `0x810D` é uma contagem de barras de 0 a 3, e
+     * o `signalQuality` do contrato é o CSQ de 0 a 31 -- enfiar um no outro dava um número
+     * que ninguém sabe interpretar, e as barras são um arredondamento do dBm.
      */
-    public function testTheStatusQueryBringsSignalLevelAndLockState(): void
+    public function testTheStatusQueryBringsTheSignalAsConnectivity(): void
     {
         $decoded = $this->decode([
             'packetType' => 0x07 | 0x80,
@@ -212,9 +212,9 @@ final class PillDispenserNormalizationTest extends TestCase
         }
 
         self::assertSame([
-            'gsmSignalDbm' => -25,
-            'signalLevel' => 3,
-        ], $events['device_status'] ?? null);
+            'interface' => 'cellular',
+            'signalStrengthDbm' => -25,
+        ], $events['connectivity'] ?? null);
     }
 
     /**
@@ -268,10 +268,11 @@ final class PillDispenserNormalizationTest extends TestCase
 
         self::assertSame(['environmentCelsius' => 27], $events['temperature'] ?? null);
         self::assertArrayNotHasKey('humidity', $events, 'uma TAG recusada não vira telemetria');
-        self::assertArrayNotHasKey(
-            'wifiSignalDbm',
-            $events['device_status'] ?? [],
-            'o sinal WiFi foi recusado e não pode aparecer como zero',
+        // O WiFi foi recusado e o móvel não: a ligação é a que respondeu, e o zero do eco não
+        // pode passar por uma leitura de 0 dBm.
+        self::assertSame(
+            ['interface' => 'cellular', 'signalStrengthDbm' => -24],
+            $events['connectivity'] ?? null,
         );
     }
 

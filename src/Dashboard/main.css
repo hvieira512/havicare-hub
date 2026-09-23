@@ -175,6 +175,38 @@
     --moisture-wet-text: #93c5fd;
 }
 
+/* Os nove alarmes do dispensador: posições fixas, três a três, e a cor é o estado. Três em
+   vez de nove numa linha porque o cartão tem meia largura e um quadrado de 30px não se
+   carrega com o dedo. */
+.alarm-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: .35rem;
+}
+
+.alarm-slot {
+    aspect-ratio: 1;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+}
+
+/* Um alarme sem toma marcada é o fundo: o que se procura na grelha é o que destoa dele. */
+.alarm-slot--taken {
+    background: var(--bs-success-bg-subtle);
+    color: var(--bs-success-text-emphasis);
+}
+
+.alarm-slot--pending {
+    background: var(--bs-warning-bg-subtle);
+    color: var(--bs-warning-text-emphasis);
+}
+
+.alarm-slot--missed {
+    background: var(--bs-danger-bg-subtle);
+    color: var(--bs-danger-text-emphasis);
+}
+
 .diaper-strip {
     grid-auto-flow: column;
     grid-auto-columns: 1fr;

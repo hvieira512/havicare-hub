@@ -13,6 +13,7 @@ use Hub\Infrastructure\Persistence\Migration\PillDispenserParameterDiscovery;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserReportedConfigurationCleanup;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserRetrievalSettings;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalogueTidyUp;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserGenericConnectivity;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserLidAndEnvironment;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutSimCard;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutUnservedControls;
@@ -62,6 +63,7 @@ final class DatabaseMigrationPlan
             new PillDispenserCatalogueTidyUp(),
             new PillDispenserWithoutSimCard(),
             new PillDispenserLidAndEnvironment(),
+            new PillDispenserGenericConnectivity(),
         ];
     }
 

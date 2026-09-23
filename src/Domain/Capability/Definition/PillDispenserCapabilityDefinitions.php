@@ -20,14 +20,13 @@ final class PillDispenserCapabilityDefinitions
             // estado sobre que alguém age. Estava enfiada dentro do estado do dispositivo,
             // entre dois números de sinal, onde ninguém a lia.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'lid_state', 'label' => 'Tampa', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            // O juízo que o aparelho faz sobre a temperatura e a humidade que ele próprio
-            // mede: diz se a medicação está guardada dentro das condições que o fabricante dá
-            // como boas. Chamava-se «alarme de ambiente», que não dizia isso a ninguém.
-            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'storage_environment', 'label' => 'Ambiente de armazenamento', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            // O sinal WiFi/GSM viaja aqui, à maneira dos relógios, e não numa capacidade
-            // própria — é a ligação à rede e mais nada. Pedível: o `0x07` pergunta ao
-            // aparelho o estado que ele tem agora, em vez de se esperar pelo próximo
-            // heartbeat, e é a resposta desse pedido que enche os cartões todos.
+            // A ligação à rede é a mesma `connectivity` que os gateways publicam: um formato
+            // só deste aparelho obrigava quem integra a conhecer mais um para ler a mesma
+            // grandeza.
+            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'connectivity', 'label' => 'Conectividade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            // O `device_status` não publica nada: é só o botão que pede ao aparelho o estado
+            // que ele tem agora, em vez de se esperar pelo próximo heartbeat. A resposta
+            // chega repartida pelas capacidades de cima, que é onde se lê.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'device_status', 'label' => 'Estado do dispositivo', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             // O CCID do cartão SIM não está aqui de propósito: é um identificador que nunca
             // muda, ninguém o consulta na dashboard, e quem precise dele vai buscá-lo à ficha
@@ -39,6 +38,11 @@ final class PillDispenserCapabilityDefinitions
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'medication_alarm_status', 'label' => 'Estado dos alarmes', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'medication_intake', 'label' => 'Toma de medicação', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'device_fault', 'label' => 'Avaria', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
+            // Um alerta e não uma leitura: o aparelho compara a temperatura e a humidade que
+            // mede com a gama que o fabricante dá como boa, e isto só fala quando ela é
+            // ultrapassada. Como telemetria, enchia a lista com linhas a dizer «Dentro da
+            // gama», que é o normal e que ninguém lê.
+            ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'storage_environment', 'label' => 'Medicação mal conservada', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             // A mesma chave do NCS e da pulseira: o botão de emergência é uma chamada de ajuda.
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'help_call', 'label' => 'Chamada de ajuda', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
 
