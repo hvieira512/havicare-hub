@@ -11,13 +11,9 @@ use Predis\Client as RedisClient;
 /**
  * O prefixo das chaves do Redis, que é o que permite dois hubs no mesmo servidor.
  *
- * As chaves do hub vivem sob `hub:`, e essa raiz já é partilhada com o reencaminhador -- que
- * lá tem as suas `hub:forward:*` e `hub:crm:target:*`. Uma segunda instância a escrever nas
- * mesmas chaves não daria erro nenhum: escreveria por cima do estado dos dispositivos da
- * primeira, e as sessões das duas dashboards misturavam-se.
- *
- * O prefixo vai no cliente e não em cada store de propósito. São seis espaços de chaves hoje,
- * e o sétimo que aparecesse nascia sem ele -- em silêncio, que é como estas coisas doem.
+ * As chaves do hub vivem sob `hub:`, e essa raiz já é partilhada com o reencaminhador. Uma
+ * segunda instância a escrever nas mesmas chaves não dava erro nenhum. O prefixo vai no
+ * cliente e não em cada store, senão o espaço de chaves seguinte nascia sem ele.
  */
 final class RedisPrefixTest extends TestCase
 {
@@ -84,16 +80,10 @@ final class RedisPrefixTest extends TestCase
     }
 
     /**
-     * O que faltava prender, e o que deixou passar duas fugas para a produção.
-     *
-     * Os testes acima provam o mecanismo do Predis com chaves escritas à mão. O que nenhum
-     * prendia era o passo anterior: **quem constrói o cliente tem de lhe dar as opções.** Um
-     * `new RedisClient($parametros)` sem o segundo argumento fica sem processador de prefixo e
-     * escreve na raiz da produção, e nada nesta suite dava por isso -- foi assim que o
-     * `benchmark-qinglanst.php` passou meses a escrever em `hub:dashboard:*`.
-     *
-     * Os testes ficam de fora de propósito: um teste pode querer o seu próprio espaço de
-     * chaves, fora de `hub:`, e aí o cliente cru é a escolha certa.
+     * O passo anterior ao mecanismo do Predis: **quem constrói o cliente tem de lhe dar as
+     * opções.** Um `new RedisClient($parametros)` sem o segundo argumento fica sem processador
+     * de prefixo e escreve na raiz da produção. Os testes ficam de fora de propósito -- um
+     * teste pode querer o seu próprio espaço de chaves, fora de `hub:`.
      */
     public function testEveryClientBuiltByTheApplicationReceivesTheOptions(): void
     {

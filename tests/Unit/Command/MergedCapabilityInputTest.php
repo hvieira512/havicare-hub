@@ -17,11 +17,9 @@ use PHPUnit\Framework\TestCase;
  * cinco números do 4P Touch dão um cartão de dez --, e por isso o editor não é o do campo
  * nativo: é um por capacidade, que sabe juntar e voltar a separar.
  *
- * A dashboard chegou a corrigir isto sozinha, com uma tabela destes cinco nomes que
- * substituía o campo declarado. Funcionava no ecrã e deixava o catálogo da API a publicar um
- * campo que ninguém honrava: a lista telefónica saía como `contacts`, os números SOS como
- * `list`, e os alarmes como `alarms`, `reminders` ou `json` conforme o fornecedor. Agora há
- * uma fonte só -- a definição --, e é este teste que a prende.
+ * Uma tabela de nomes no lado da dashboard funcionava no ecrã e deixava o catálogo da API a
+ * publicar um campo que ninguém honrava. Há uma fonte só -- a definição --, e é este teste
+ * que a prende.
  */
 final class MergedCapabilityInputTest extends TestCase
 {

@@ -14,15 +14,9 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 /**
  * O que um exame de ECG desta pulseira diz, além do traçado.
  *
- * O fabricante documenta um relatório final -- média de frequência cardíaca, respiração, HRV
- * e morfologia -- que se lê do aparelho por id. Neste firmware esse relatório não existe: os
- * quatro tipos de id documentados devolvem todos `dataId: 0`. O que há são as tramas de
- * estado, uma por segundo, que o gateway recolhe e entrega com a onda.
- *
- * Os valores destes testes são de uma medição real, com a pulseira ao pulso e o dedo no
- * elétrodo: 34 tramas, das quais algumas a zero enquanto o sinal assenta, um QTc de 712 ms
- * que nenhum coração tem, e um HRV de 8 ms no meio de valores na casa dos 120. A mediana é o
- * que sobrevive a isso; a média deixava o artefacto entrar no resultado.
+ * O relatório final que o fabricante documenta não existe neste firmware, e o que há são as
+ * tramas de estado, uma por segundo. Os valores destes testes são de uma medição real, com os
+ * artefactos que ela trouxe: a mediana sobrevive-lhes, a média deixava-os entrar.
  */
 final class EcgSummaryTest extends TestCase
 {

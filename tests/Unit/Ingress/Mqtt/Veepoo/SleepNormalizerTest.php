@@ -10,14 +10,10 @@ use PHPUnit\Framework\TestCase;
 /**
  * O registo de sono preciso, que a pulseira guarda três dias e reproduz quando lhe pedem.
  *
- * São duas coisas na mesma trama e saem como duas capacidades: o `sleep` é a noite — quando
- * começou, quando acabou, e o que aconteceu pelo meio —, e o `sleep_quality` são as
- * pontuações que o firmware calcula sobre ela. Juntá-las num tipo só obrigava quem integra a
- * distinguir uma medição de um juízo sobre ela.
- *
- * Os significados vêm da documentação do fabricante (secção 9.4 do `VeepooUniAppSDK`), e não
- * dos nomes dos campos: `nightScore` é a pontuação das idas à casa de banho, `insomniaCount`
- * é o número de despertares, e `sleepQuality` é 0-4 onde a app do fabricante mostra 1-5.
+ * São duas coisas na mesma trama e saem como duas capacidades: o `sleep` é a noite e o
+ * `sleep_quality` são as pontuações que o firmware calcula sobre ela. Os significados vêm da
+ * documentação do fabricante (secção 9.4 do `VeepooUniAppSDK`) e não dos nomes dos campos,
+ * que enganam.
  */
 final class SleepNormalizerTest extends TestCase
 {

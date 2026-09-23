@@ -11,15 +11,10 @@ use Tests\Support\MysqlDashboardTestCase;
 /**
  * Um tipo de resposta que várias configurações declaram não nomeia nenhuma.
  *
- * A projeção resolvia a chave percorrendo o catálogo e ficando pela **primeira** configuração
- * que declarasse aquele tipo de resposta. Num protocolo onde uma resposta confirma uma
- * configuração isso é exacto; no dispensador, onde nove configurações partilham o
- * `write_config_ack`, era escolher à sorte — e o valor de uma escrita ia parar à linha de
- * outra configuração qualquer, que passava a mostrar na dashboard um reportado que nunca foi
- * dela.
- *
- * Quando o tipo identifica exactamente uma configuração, nomeia-a. Quando identifica várias,
- * não nomeia nenhuma, e é melhor não guardar do que guardar na linha errada.
+ * Num protocolo onde uma resposta confirma uma configuração, ficar pela primeira do catálogo
+ * é exacto; no dispensador, onde nove partilham o `write_config_ack`, é escolher à sorte.
+ * Quando o tipo identifica várias, não nomeia nenhuma: é melhor não guardar do que guardar na
+ * linha errada.
  */
 final class AmbiguousReplyTypeTest extends MysqlDashboardTestCase
 {

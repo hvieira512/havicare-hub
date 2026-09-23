@@ -12,14 +12,9 @@ const { syncDeviceModalCommandStates } =
  * de entrega de cada comando no `configurationSync`, e o painel desenha-o a partir daí quando
  * é aberto.
  *
- * Com o painel a chegar por `import()`, desistir da mensagem enquanto ele não estivesse
- * carregado deixava o `configurationSync` velho: abrir o separador a seguir mostrava «Em
- * fila» sobre um comando que o aparelho já tinha confirmado, e não vinha mais evento nenhum
- * para esse comando. Só reabrindo o modal.
- *
- * O que se afirma aqui é o efeito no estado, que é o que se perdia. Quem decide chamar isto
- * -- o `onCommandsUpdated` do `app.js` -- não é exercitado: mora na raiz de composição e não
- * se levanta sem o documento inteiro.
+ * O que se afirma aqui é o efeito no estado. Quem decide chamar isto -- o `onCommandsUpdated`
+ * do `app.js` -- não é exercitado: mora na raiz de composição e não se levanta sem o
+ * documento inteiro.
  */
 const deliveryFor = (status, operationId) => ({
     status,

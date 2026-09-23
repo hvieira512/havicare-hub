@@ -14,13 +14,9 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
  * O travão que espaça os avisos de dispositivo não registado guarda uma entrada por
  * identidade, e essa entrada tem de acabar por sair.
  *
- * As identidades não são nossas: vêm do tópico -- o MAC do gateway no MOKO, o UID do radar no
- * Qinglanst. Cada uma que alguma vez publique deixa uma entrada, e o serviço corre com
- * `Restart=always` durante meses. Sem poda, a memória do processo segue o número de
- * identidades que alguma vez apareceram em vez do número que está a aparecer agora.
- *
- * Podar pelo tempo não custa comportamento nenhum: uma entrada mais velha do que a janela já
- * deixava passar o aviso seguinte, portanto esquecê-la é o mesmo que mantê-la.
+ * As identidades não são nossas: vêm do tópico, e o serviço corre meses. Podar pelo tempo não
+ * custa comportamento nenhum -- uma entrada mais velha do que a janela já deixava passar o
+ * aviso seguinte.
  */
 final class BridgeUnauthorizedThrottleTest extends TestCase
 {

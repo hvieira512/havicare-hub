@@ -12,19 +12,10 @@ use PHPUnit\Framework\TestCase;
 /**
  * O hub não manda ordens de controlo que este firmware não serve.
  *
- * A especificação do fornecedor descreve a série M2 inteira, e traz ordens que foram
- * acrescentadas em versões posteriores. Ler a especificação e declarar tudo o que lá está dá
- * botões que o aparelho recusa com «TAG inválida» — e o hub retenta-os de minuto a minuto até
- * desistir, com o cartão a mostrar uma falha que nunca vai deixar de acontecer.
- *
- * Aconteceu com o «Rodar até ao compartimento» (`0xA124`) e o «Pausar medicação» (`0xA125`):
- * foram declarados a partir do documento sem se confrontar com a resposta que o próprio
- * aparelho tinha dado no dia anterior. A lista abaixo é essa resposta — as doze TAGs de
- * controlo que o `0x0C` devolveu.
- *
- * O guarda está aqui e não numa verificação em tempo de execução porque a decisão é de
- * catálogo: o que se oferece na dashboard decide-se quando se escreve o catálogo, e é aí que
- * tem de rebentar.
+ * A especificação descreve a série M2 inteira, e declarar tudo o que lá está dá botões que
+ * este firmware recusa com «TAG inválida». A lista abaixo são as doze TAGs de controlo que o
+ * `0x0C` do aparelho de ensaio devolveu. O guarda está aqui e não em tempo de execução porque
+ * a decisão é de catálogo, e é aí que tem de rebentar.
  */
 final class PillDispenserControlTagsAreServedTest extends TestCase
 {

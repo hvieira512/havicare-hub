@@ -14,15 +14,9 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 /**
  * Um bloco que já saiu não volta a sair.
  *
- * A MF91 não empurra nada: guarda blocos de cinco minutos e só responde a quem lhe pergunta.
- * O gateway relê por isso o dia corrente de cinco em cinco minutos, e os dias retidos sempre
- * que arranca -- é o desenho, e é o único que o aparelho permite. O que daí resulta é o mesmo
- * bloco entregue ao hub vezes sem conta.
- *
- * Sem porta, cada entrega republica as mesmas medições, com o mesmo instante, no MQTT e no
- * histórico. Quem integra não distingue a repetição de uma leitura nova sem manter o índice
- * de tudo o que já viu, e no histórico da dashboard -- que guarda cem entradas -- as
- * repetições expulsam o que era real.
+ * A MF91 não empurra nada: guarda blocos de cinco minutos e só responde a quem lhe pergunta,
+ * e o gateway relê o dia corrente de cinco em cinco minutos. Sem porta, cada entrega
+ * republica as mesmas medições com o mesmo instante, no MQTT e no histórico.
  */
 final class BridgeDailyBlockReplayTest extends TestCase
 {
