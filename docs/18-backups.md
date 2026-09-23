@@ -31,10 +31,14 @@ Da base de dados de produção, o que não se recupera de mais lado nenhum:
 | `device_configurations` e as duas tabelas de alterações | O estado desejado e reportado de cada dispositivo |
 | `gateway_device_links` | Que dispositivos BLE cada gateway retransmite |
 | `private_radio_map_access_points` | O mapa de rádio, acumulado por observação |
+| `radar_api_credentials` | As credenciais da cloud do fabricante do radar, uma linha por licença. Recuperá-las obriga a pedi-las outra vez ao fornecedor |
+| `denylist` | As identidades postas de parte à mão, que voltariam todas a ser aceites |
 
 O catálogo — `suppliers`, `models`, `capabilities`, `model_capabilities` — é
-semeado pelo código e recupera-se com o `ReferenceCatalogSeeder`. Está incluído
-nas cópias por ser mais barato copiá-lo do que distingui-lo.
+semeado pelo código e recupera-se com o `ReferenceCatalogSeeder`. As plantas dos
+radares — `radar_layouts` e `radar_layout_areas` — voltam a sincronizar-se da
+cloud do fabricante. Ambos estão incluídos nas cópias por ser mais barato
+copiá-los do que distingui-los: o dump leva a base inteira.
 
 **Não existe tabela de telemetria.** A base muda ao ritmo a que uma pessoa
 regista um dispositivo ou pede uma alteração de configuração, e não ao ritmo das
