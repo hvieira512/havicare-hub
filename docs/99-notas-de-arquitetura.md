@@ -54,6 +54,32 @@ expulsão mútua em ciclo, com a ingestão a falhar de forma intermitente.
 Declará-los explicitamente no `.env` da produção remove o acoplamento. É uma
 alteração de configuração, não de código, e obriga a reiniciar o serviço.
 
+**E há uma armadilha por baixo desta: o identificador é cortado aos 23
+caracteres.** É o limite que o MQTT 3.1 fixa, e o `ConnectionFactory` aplica-o
+com um `substr` silencioso. O identificador completo é `{prefixo}-{sufixo}`, e
+os sufixos das ingestões são fixos — `ncs-sub`, `moko-sub`, `veepoo-sub` e
+`sub`. Um prefixo comprido faz o corte comer o sufixo **e a parte do prefixo que
+o tornava único**.
+
+Aconteceu: um `QINGLANST_CLIENT_ID_PREFIX=qinglanst-radar-local-hugo` tem 26
+caracteres e nunca chega inteiro ao broker — sai `qinglanst-radar-local-h`, e o
+`-hugo` que distinguia aquela máquina desaparece. Duas pilhas locais com
+prefixos diferentes mas o mesmo começo apresentam-se com o mesmo nome e
+expulsam-se uma à outra. O mosquitto do `mqtt-prod` registou seis dessas
+expulsões em 22 de setembro de 2026.
+
+A regra prática é por prefixo, porque cada um se junta a sufixos diferentes. O
+`MQTT_CLIENT_ID_PREFIX` serve três ingestões e o sufixo mais comprido é
+`-veepoo-sub`, com onze caracteres: **sobram doze**. O
+`QINGLANST_CLIENT_ID_PREFIX` só se junta a `-sub`, com quatro: sobram dezanove.
+
+O `health-mqtt` da produção tem onze e passa inteiro. O `health-mqtt-dev` tem
+quinze e é cortado nos sufixos mais longos — `health-mqtt-dev-veepoo-sub` sai
+como `health-mqtt-dev-veepoo-` — mas continua distinto da produção, porque
+diverge antes do corte. O perigo não é o corte em si: é escolher um prefixo que
+partilhe os primeiros 23 caracteres com outro, e nesse caso nada no log diz que
+foi isso que aconteceu.
+
 ---
 
 ## 4. Ausência de tabela de telemetria
