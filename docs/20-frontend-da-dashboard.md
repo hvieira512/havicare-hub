@@ -1,15 +1,23 @@
 # 20 — O frontend da dashboard
 
+## Âmbito
+
 Este capítulo é sobre **como o código do frontend está organizado**. O que a
 dashboard faz, e como se articula com as outras camadas, está no
 [capítulo 13](13-dashboard.md).
 
-A interface do hub: uma página só, servida em PHP, com o comportamento em módulos ES que
-o browser carrega tal como estão. **Não há build step** -- nem bundler, nem transpilador,
-nem `node_modules` em produção. Guardar um ficheiro e recarregar a página é o ciclo todo.
+A interface do hub: uma página só, servida em PHP, com o comportamento em
+módulos ES que o browser carrega tal como estão. **Não há build step** — nem
+bundler, nem transpilador, nem `node_modules` em produção. Guardar um ficheiro
+e recarregar a página é o ciclo todo.
 
 Bootstrap, Font Awesome, SweetAlert2 e o Swagger UI estão no repositório, em
-`assets/vendor/`, e são servidos por nós -- ver o `README.md` em `src/Dashboard/assets/vendor/`. O resto é nosso.
+`assets/vendor/`, e são servidos por nós — ver o `README.md` em
+`src/Dashboard/assets/vendor/`. O resto é nosso.
+
+Este capítulo não fecha com a tabela de implementação dos restantes: o mapa
+ficheiro a ficheiro é a árvore da secção 2, com uma linha por
+módulo, e uma tabela ao lado dela seria a mesma matéria escrita duas vezes.
 
 ```
 src/Dashboard/
@@ -23,89 +31,98 @@ src/Dashboard/
 └── *.php              o servidor HTTP da dashboard e os seus stores
 ```
 
-## As três regras
+## 1. As quatro regras
 
 São só estas, e explicam onde cada ficheiro está:
 
-1. **Uma funcionalidade nunca importa outra funcionalidade.** Pode importar `api/` e a
-   raiz de `dashboard/`. Se `devices/` e `settings/` precisam de se falar, é o `app.js`
-   que os apresenta.
+1. **Uma funcionalidade nunca importa outra funcionalidade.** Pode importar
+   `api/` e a raiz de `dashboard/`. Se `devices/` e `settings/` precisam de se
+   falar, é o `app.js` que os apresenta.
 2. **Um módulo que só uma funcionalidade usa vive dentro dela.** Sobe à raiz de
-   `dashboard/` quando aparecer o segundo consumidor -- e não antes.
-3. **Só a raiz de composição conhece toda a gente.** É o `app.js` mais o `wiring/`:
-   cacheia os elementos, cria os modais, entrega o `els` a cada funcionalidade e liga os
-   ouvintes. O `wiring/` existe porque o `app.js` tinha 567 linhas e quase noventa
-   ouvintes; dividi-lo por área moveu linhas, não acoplamento. Os módulos do `wiring/`
-   são raiz de composição como o `app.js` e podem importar de onde precisarem -- é
-   precisamente por isso que os ouvintes vivem lá e não dentro das funcionalidades, já
-   que quase todos atravessam duas ou três e a regra 1 proíbe-os de se conhecerem.
+   `dashboard/` quando aparecer o segundo consumidor — e não antes.
+3. **Só a raiz de composição conhece toda a gente.** É o `app.js` mais o
+   `wiring/`: cacheia os elementos, cria os modais, entrega o `els` a cada
+   funcionalidade e liga os ouvintes. O `wiring/` existe porque o `app.js`
+   tinha 567 linhas e quase noventa ouvintes; dividi-lo por área moveu linhas,
+   não acoplamento. Os módulos do `wiring/` são raiz de composição como o
+   `app.js` e podem importar de onde precisarem — é precisamente por isso que
+   os ouvintes vivem lá e não dentro das funcionalidades, já que quase todos
+   atravessam duas ou três e a regra 1 proíbe-os de se conhecerem.
 
-4. **Uma peça de interface nasce em `components/` se for pura e mais do que uma área a
-   desenhar; nasce ao lado da funcionalidade se só ela a desenhar.** Pura é: recebe dados,
-   devolve uma string de HTML, não toca em nenhum elemento, não guarda estado e não conhece
-   nenhuma biblioteca. O `components/device-license.js` é o primeiro caso; o
-   `devices/device-card.js` é o segundo -- só a lista o desenha, e sobe a `components/` no
-   dia em que aparecer o segundo consumidor, que é a regra 2 aplicada a peças de interface.
+4. **Uma peça de interface nasce em `components/` se for pura e mais do que uma
+   área a desenhar; nasce ao lado da funcionalidade se só ela a desenhar.**
+   Pura é: recebe dados, devolve uma string de HTML, não toca em nenhum
+   elemento, não guarda estado e não conhece nenhuma biblioteca. O
+   `components/device-license.js` é o primeiro caso; o `devices/device-card.js`
+   é o segundo — só a lista o desenha, e sobe a `components/` no dia em que
+   aparecer o segundo consumidor, que é a regra 2 aplicada a peças de
+   interface.
 
-   Um widget que escreve no elemento que recebeu, que abre um modal ou que fala com o
-   Bootstrap **não é um componente**: ou é parte da funcionalidade, ou é um módulo da raiz,
-   como o `phone.js`, o `dialogs.js`, o `tooltips.js` e o `grid.js`. A fronteira é essa, e
-   não o tamanho.
+   Um widget que escreve no elemento que recebeu, que abre um modal ou que fala
+   com o Bootstrap **não é um componente**: ou é parte da funcionalidade, ou é
+   um módulo da raiz, como o `phone.js`, o `dialogs.js`, o `tooltips.js` e o
+   `grid.js`. A fronteira é essa, e não o tamanho.
 
-   Quando um módulo destes tem os dois lados, separam-se: o `components/pagination.js`
-   devolve os botões e o `pagination.js` da raiz é que os escreve nos três elementos do
-   painel. A janela de sete lugares passou a testar-se sozinha, sem um documento à volta.
+   Quando um módulo destes tem os dois lados, separam-se: o
+   `components/pagination.js` devolve os botões e o `pagination.js` da raiz é
+   que os escreve nos três elementos do painel. A janela de sete lugares passou
+   a testar-se sozinha, sem um documento à volta.
 
-   E em nenhum dos casos se acrescenta ao fundo de um ficheiro que já existe só por ser do
-   mesmo género. Foi assim que os cartões de telemetria chegaram a seiscentas linhas.
+   E em nenhum dos casos se acrescenta ao fundo de um ficheiro que já existe só
+   por ser do mesmo género. Foi assim que os cartões de telemetria chegaram a
+   seiscentas linhas.
 
-Cada pasta com mais do que um ficheiro repete a regra 3 à sua escala: `settings/index.js`
-é o único que conhece as quatro secções do modal, e `settings/shell.js` é o que todas
-partilham sem conhecer nenhuma.
+Cada pasta com mais do que um ficheiro repete a regra 3 à sua escala:
+`settings/index.js` é o único que conhece as quatro secções do modal, e
+`settings/shell.js` é o que todas partilham sem conhecer nenhuma.
 
 ### Porque é que a regra 4 existe
 
-Um cartão de dispositivo estava espalhado por quatro sítios: a marcação numa função do
-`list.js`, o estilo no `main.css` global, o ouvinte no `wiring/`, e os dados no `state`.
-Mudar um widget obrigava a abrir quatro ficheiros, e nada dizia que os quatro pedaços
-eram a mesma coisa.
+Um cartão de dispositivo estava espalhado por quatro sítios: a marcação numa
+função do `list.js`, o estilo no `main.css` global, o ouvinte no `wiring/`, e
+os dados no `state`. Mudar um widget obrigava a abrir quatro ficheiros, e nada
+dizia que os quatro pedaços eram a mesma coisa.
 
-É também a razão de os ficheiros grandes serem grandes. O `components/cards/telemetry.js`
-não está mal escrito: é o sítio onde tudo o que é *do mesmo género* se acumulou, porque não havia
-sítio nenhum para o que é *da mesma funcionalidade*. Organizar por camada em vez de por
-funcionalidade dá exactamente isto.
+É também a razão de os ficheiros grandes serem grandes. O
+`components/cards/telemetry.js` não está mal escrito: é o sítio onde tudo o que
+é *do mesmo género* se acumulou, porque não havia sítio nenhum para o que é *da
+mesma funcionalidade*. Organizar por camada em vez de por funcionalidade dá
+exactamente isto.
 
-É por isso que o `config/inputs/` está partido por fornecedor e não por tamanho: a linha que
-separa os grupos é o que cada protocolo declara nas definições em
-`src/Command/Configuration/Definition/`.
+É por isso que o `config/inputs/` está partido por fornecedor e não por
+tamanho: a linha que separa os grupos é o que cada protocolo declara nas
+definições em `src/Command/Configuration/Definition/`.
 
-O `devices/device-card.js` é o primeiro feito assim, e mostra até onde a regra vai. Juntou
-o que se podia juntar sem pagar por isso: a marcação e o esqueleto ficam no mesmo módulo,
-porque têm de mudar juntos -- o esqueleto é o cartão com as mesmas classes e barras no lugar
-do texto, e é isso que impede a lista de saltar --, e o nome do `data-action` passa a ser
-exportado, para o ouvinte delegado do `wiring/` não repetir a string que a marcação escreve.
+O `devices/device-card.js` é o primeiro feito assim, e mostra até onde a regra
+vai. Juntou o que se podia juntar sem pagar por isso: a marcação e o esqueleto
+ficam no mesmo módulo, porque têm de mudar juntos — o esqueleto é o cartão com
+as mesmas classes e barras no lugar do texto, e é isso que impede a lista de
+saltar —, e o nome do `data-action` passa a ser exportado, para o ouvinte
+delegado do `wiring/` não repetir a string que a marcação escreve.
 
-**O CSS não vem.** Fica no bloco `.device-card*` do `assets/css/device.css`, marcado com um
-comentário que aponta para o módulo. Sem passo de compilação, um ficheiro de estilo por
-widget é um pedido HTTP por widget, e foi por isso que a divisão do CSS parou em cinco
-ficheiros por área. Co-locar o estilo custava mais do que resolvia.
+**O CSS não vem.** Fica no bloco `.device-card*` do `assets/css/device.css`,
+marcado com um comentário que aponta para o módulo. Sem passo de compilação, um
+ficheiro de estilo por widget é um pedido HTTP por widget, e foi por isso que a
+divisão do CSS parou em cinco ficheiros por área. Co-locar o estilo custava
+mais do que resolvia.
 
-E o ouvinte também não vem: continua delegado na raiz da lista, que é o padrão da casa --
-as opções são redesenhadas a cada resposta, e um ouvinte por cartão obrigava a religá-los
-todos de cada vez.
+E o ouvinte também não vem: continua delegado na raiz da lista, que é o padrão
+da casa — as opções são redesenhadas a cada resposta, e um ouvinte por cartão
+obrigava a religá-los todos de cada vez.
 
-A regra não pede uma migração. Pede que o próximo widget nasça no sítio certo, e que os
-ficheiros grandes encolham por atrito, à medida que se passa por eles.
+A regra não pede uma migração. Pede que o próximo widget nasça no sítio certo,
+e que os ficheiros grandes encolham por atrito, à medida que se passa por eles.
 
-O `devices/event-summary-cards.js` é o segundo, e mostra como é o atrito na prática. A
-última chamada de ajuda e a última queda estavam no catálogo dos cartões só por serem
-cartões: o resto daquele ficheiro é um cartão por *tipo de telemetria*, com uma tabela a
-mapear tipo em ícone e corpo, enquanto estes dois lêem o histórico inteiro e resumem-no.
-Ao saírem, o que era partilhado subiu em vez de vir atrás -- o `displayPersonIndex` para o
-`format.js`, as tabelas de nomes para o `domain.js` --, que é a regra 2 a funcionar. O
-catálogo ficou com menos 170 linhas.
+O `devices/event-summary-cards.js` é o segundo, e mostra como é o atrito na
+prática. A última chamada de ajuda e a última queda estavam no catálogo dos
+cartões só por serem cartões: o resto daquele ficheiro é um cartão por *tipo de
+telemetria*, com uma tabela a mapear tipo em ícone e corpo, enquanto estes dois
+lêem o histórico inteiro e resumem-no. Ao saírem, o que era partilhado subiu em
+vez de vir atrás — o `displayPersonIndex` para o `format.js`, as tabelas de
+nomes para o `domain.js` —, que é a regra 2 a funcionar. O catálogo ficou com
+menos 170 linhas.
 
-## A árvore
+## 2. A árvore
 
 ```
 dashboard/
@@ -201,13 +218,15 @@ dashboard/
         └── detail.js       slide 3: a ficha de um modelo e as suas capacidades
 ```
 
-## Como um ecrã está montado
+## 3. Como um ecrã está montado
 
-Todos seguem a mesma forma, e vale a pena reconhecê-la antes de abrir qualquer ficheiro.
+Todos seguem a mesma forma, e vale a pena reconhecê-la antes de abrir qualquer
+ficheiro.
 
-**O `els`.** `dom.js` corre uma vez e devolve um objeto com todos os elementos da página.
-O `app.js` entrega-o a cada módulo através de uma função `initX(context)`, que o guarda
-num `let els` do próprio módulo. Nenhum módulo faz `getElementById` por sua conta.
+**O `els`.** `dom.js` corre uma vez e devolve um objeto com todos os elementos
+da página. O `app.js` entrega-o a cada módulo através de uma função
+`initX(context)`, que o guarda num `let els` do próprio módulo. Nenhum módulo
+faz `getElementById` por sua conta.
 
 ```js
 let els;
@@ -216,18 +235,21 @@ export function initGatewayLinksUi(context) {
 }
 ```
 
-Um `id` que não exista dá `undefined`, e não um erro: renomeá-lo num template deixava o
-ouvinte por ligar e o botão a não fazer nada, em silêncio. O acoplamento entre os `id` do
-PHP e o JavaScript é o preço de não haver build, e não vai deixar de existir -- mas está
-verificado. O `tests/Unit/Dashboard/DashboardElementIdsTest.php` desenha a página a sério,
-com os modais e os auxiliares já corridos, e exige que cada `els.x` que o JavaScript lê
-exista mesmo.
+Um `id` que não exista dá `undefined`, e não um erro: renomeá-lo num template
+deixava o ouvinte por ligar e o botão a não fazer nada, em silêncio. O
+acoplamento entre os `id` do PHP e o JavaScript é o preço de não haver build, e
+não vai deixar de existir — mas está verificado. O
+`tests/Unit/Dashboard/DashboardElementIdsTest.php` desenha a página a sério,
+com os modais e os auxiliares já corridos, e exige que cada `els.x` que o
+JavaScript lê exista mesmo.
 
-**O estado.** Tudo o que sobrevive a um render está em `state.js`, com um sub-objeto por
-ecrã (`state.settingsModal`, `state.deviceModal`, `state.summary`). Não há estado
-duplicado em variáveis de módulo -- essas guardam só o `els` e coisas que não são dados.
+**O estado.** Tudo o que sobrevive a um render está em `state.js`, com um
+sub-objeto por ecrã (`state.settingsModal`, `state.deviceModal`,
+`state.summary`). Não há estado duplicado em variáveis de módulo — essas
+guardam só o `els` e coisas que não são dados.
 
-**Os eventos.** São delegados na raiz de cada zona e resolvidos por `data-action`:
+**Os eventos.** São delegados na raiz de cada zona e resolvidos por
+`data-action`:
 
 ```html
 <button data-action="selectCapabilitySupplier" data-value="3">Wonlex</button>
@@ -237,14 +259,14 @@ const button = event.target.closest('[data-action="selectCapabilitySupplier"]');
 if (button) selectCapabilitySupplier(button.dataset.value);
 ```
 
-Isto existe porque as listas são redesenhadas por `innerHTML` a cada resposta: atar um
-ouvinte a cada botão obrigava a religá-los todos de cada vez.
+Isto existe porque as listas são redesenhadas por `innerHTML` a cada resposta:
+atar um ouvinte a cada botão obrigava a religá-los todos de cada vez.
 
-**Os dados.** Só `api/` chama `fetch`. Toda a resposta tem a forma `{data, pagination}` ou
-`{error: {code, message}}`, e quem chama verifica `response.error` -- não há `throw` a
-atravessar camadas.
+**Os dados.** Só `api/` chama `fetch`. Toda a resposta tem a forma `{data,
+pagination}` ou `{error: {code, message}}`, e quem chama verifica
+`response.error` — não há `throw` a atravessar camadas.
 
-## Do PHP até ao JS
+## 4. Do PHP até ao JS
 
 Um `id` é o contrato entre os dois lados, e é atravessado à mão:
 
@@ -256,30 +278,34 @@ dashboard/dom.js                 capabilitySupplierButtons: document.getElementB
 dashboard/settings/capabilities.js   els.capabilitySupplierButtons.innerHTML = …
 ```
 
-Metade dos `id` nasce em argumentos de helpers PHP (`search_input('capabilityCatalogSearch', …)`),
-por isso um grep pelo `id="..."` não os encontra todos -- procura pelo nome sozinho.
-**Nada verifica que os dois lados concordam:** uma gralha dá `null` silencioso no `els`.
-Ao mexer num `id`, mexe-se nos três sítios.
+Metade dos `id` nasce em argumentos de helpers PHP
+(`search_input('capabilityCatalogSearch', …)`), por isso um grep pelo
+`id="..."` não os encontra todos — procura pelo nome sozinho. **Nada verifica
+que os dois lados concordam:** uma gralha dá `null` silencioso no `els`. Ao
+mexer num `id`, mexe-se nos três sítios.
 
-## Configurações que não viajam
+## 5. Configurações que não viajam
 
-Uma configuração é normalmente um downlink à espera de acontecer: vira comandos nativos,
-sai para o dispositivo, e o bloco mostra o estado da entrega. Nem todas -- a sensibilidade
-dos alertas de um medidor de fraldas não tem para onde ir, porque o sensor é um beacon BLE
-que só transmite, e o que ela muda é a regra com que o hub deriva o estado da fralda.
+Uma configuração é normalmente um downlink à espera de acontecer: vira comandos
+nativos, sai para o dispositivo, e o bloco mostra o estado da entrega. Nem
+todas — a sensibilidade dos alertas de um medidor de fraldas não tem para onde
+ir, porque o sensor é um beacon BLE que só transmite, e o que ela muda é a
+regra com que o hub deriva o estado da fralda.
 
-**O frontend não sabe disto, e é de propósito.** Quem decide é a capacidade em PHP, marcada
-com `HubAppliedCapability`: o `DeviceConfigurationUpdateService` guarda o valor e dá-o por
-aplicado sem comandos, o bloco recebe `command: ""` no catálogo, e o painel lê disso as duas
-únicas diferenças que se vêem -- o botão diz "Guardar" em vez de "Enviar", e não se mostra
-vocabulário de protocolo que não existe.
+**O frontend não sabe disto, e é de propósito.** Quem decide é a capacidade em
+PHP, marcada com `HubAppliedCapability`: o `DeviceConfigurationUpdateService`
+guarda o valor e dá-o por aplicado sem comandos, o bloco recebe `command: ""`
+no catálogo, e o painel lê disso as duas únicas diferenças que se vêem — o
+botão diz "Guardar" em vez de "Enviar", e não se mostra vocabulário de
+protocolo que não existe.
 
-Isto já teve um caminho paralelo no frontend: uma pasta `hub-rules/`, estado próprio,
-handlers próprios, e um estado de UI a dizer "Aplicada no hub" para exprimir o que a via
-genérica já dizia com "Aplicado". Se aparecer a tentação de repetir esse padrão para uma
-regra nova, a resposta é uma capacidade nova em PHP.
+Isto já teve um caminho paralelo no frontend: uma pasta `hub-rules/`, estado
+próprio, handlers próprios, e um estado de UI a dizer "Aplicada no hub" para
+exprimir o que a via genérica já dizia com "Aplicado". Se aparecer a tentação
+de repetir esse padrão para uma regra nova, a resposta é uma capacidade nova em
+PHP.
 
-## Onde ponho isto?
+## 6. Onde ponho isto?
 
 | o que estou a escrever | onde vai |
 |---|---|
@@ -294,7 +320,7 @@ regra nova, a resposta é uma capacidade nova em PHP.
 | um ecrã novo nas definições | `settings/<nome>.js`, ligado no `settings/index.js` |
 | estado que sobrevive a um render | `state.js`, no sub-objeto do ecrã |
 
-## A rede de segurança
+## 7. A rede de segurança
 
 ```bash
 npm run lint                   # eslint sobre main.js, dashboard/, assets/js/ e tests/Frontend
@@ -306,47 +332,54 @@ As quatro suites e o que cada uma cobre estão no [capítulo 16](16-testes.md).
 
 Dois valem por si:
 
-- **`tests/Frontend/module-graph.test.js`** importa cada porta de entrada e falha se algum
-  import não resolver. Um nome importado que ninguém exporta deita a dashboard abaixo com
-  uma página em branco, e nenhum `node --check` o apanha. O mesmo teste falha se um módulo
-  ficar órfão. São **quatro** portas e não uma, e cada uma está lá porque quem a traz,
-  traz-na por `import()`: o `main.js` é o que o browser carrega; o `dashboard/app.js` entra
-  depois do login; e o `devices/config/panel.js` e o `handlers.js` entram quando se abre o
-  separador de configurações. Segui-las só pelos `from` deixava de fora quase todo o grafo.
+- **`tests/Frontend/module-graph.test.js`** importa cada porta de entrada e
+  falha se algum import não resolver. Um nome importado que ninguém exporta
+  deita a dashboard abaixo com uma página em branco, e nenhum `node --check` o
+  apanha. O mesmo teste falha se um módulo ficar órfão. São **quatro** portas e
+  não uma, e cada uma está lá porque quem a traz, traz-na por `import()`: o
+  `main.js` é o que o browser carrega; o `dashboard/app.js` entra depois do
+  login; e o `devices/config/panel.js` e o `handlers.js` entram quando se abre
+  o separador de configurações. Segui-las só pelos `from` deixava de fora quase
+  todo o grafo.
 
-  **Quem puser um `import()` novo acrescenta aqui a porta dele**, senão o que está por trás
-  deixa de ser verificado sem que nada o diga.
-- **O `no-unused-vars` do eslint** é aviso e não erro, mas o `npm run lint` corre com
-  `--max-warnings 0`: é o que apanha um import que ficou para trás depois de mover código.
-  Quem apanha um import **partido** é o `node --test`, que falha logo a carregar.
+  **Quem puser um `import()` novo acrescenta aqui a porta dele**, senão o que
+  está por trás deixa de ser verificado sem que nada o diga.
+- **O `no-unused-vars` do eslint** é aviso e não erro, mas o `npm run lint`
+  corre com `--max-warnings 0`: é o que apanha um import que ficou para trás
+  depois de mover código. Quem apanha um import **partido** é o `node --test`,
+  que falha logo a carregar.
 
-Vários testes em `tests/Unit/Dashboard/` lêem estes ficheiros **como texto** e afirmam que
-certas linhas lá estão. Mover uma função entre ficheiros parte-os -- é de propósito, e a
-correcção é apontar o teste ao ficheiro novo.
+Vários testes em `tests/Unit/Dashboard/` lêem estes ficheiros **como texto** e
+afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-os —
+é de propósito, e a correcção é apontar o teste ao ficheiro novo.
 
-## O que ainda não está direito
+## 8. O que ainda não está direito
 
-- **`settings/models/list.js` e `form.js` importam-se um ao outro.** A lista repõe o
-  formulário do outro slide, o formulário volta à lista depois de gravar. Resolvem-se em
-  tempo de chamada e não quebram nada; parti-los obrigava a um registo de callbacks que
-  custa mais do que resolve. É o único ciclo do grafo.
-- **Um tipo de campo de configuração declara as suas quatro faces num descritor só** --
-  `render`, `read`, `defaults` e `help`, em `devices/config/inputs/`. Eram quatro mapas
-  paralelos indexados pela mesma chave e alinhados à mão: uma entrada em falta não dava erro,
-  dava um campo genérico ou um payload vazio. Um descritor sem `defaults` é agora uma
-  ausência visível, e algumas estão anotadas como tal.
-- **As famílias de cartões que só existem num aparelho vivem em `cards/`** -- radar, fralda,
-  gateway, NCS e localização. A linha não é o tamanho: uma postura ou uma contagem de pessoas
-  não existe num relógio. O eixo do *tipo de dispositivo* não serviria, e foi testado -- a
-  frequência cardíaca sai de relógio, radar e pulseira, e a bateria de quatro tipos.
-- **O que fica no `components/cards/telemetry.js` é o registo e as primitivas**, que são genuinamente uma
-  coisa só: o mapa dos cartões por tipo, o ícone, o tom e a badge de estado. Partir isso por
-  tamanho só espalharia.
-- **O CSS está dividido por área**, em cinco ficheiros: `assets/css/base.css` (tokens e
-  fontes), `shell.css` (moldura, navbar, cartões), `device.css` (o ecrã do dispositivo),
-  `login.css`, e o `main.css` fica com os modais. A ordem no `<head>` é essa, e é a
-  cascata original: cada ficheiro é uma fatia contígua do que era um só. O `main.css`
-  ficou em último e na raiz porque `/main.css` é uma rota fixa no
-  `DashboardHttpServer::publicAssetPath()` -- os ficheiros da raiz não são apanhados por
-  padrão, só o `/main.css` e o `/main.js`. Sem build, cada ficheiro é mais um pedido, e
-  por isso são cinco e não vinte.
+- **`settings/models/list.js` e `form.js` importam-se um ao outro.** A lista
+  repõe o formulário do outro slide, o formulário volta à lista depois de
+  gravar. Resolvem-se em tempo de chamada e não quebram nada; parti-los
+  obrigava a um registo de callbacks que custa mais do que resolve. É o único
+  ciclo do grafo.
+- **Um tipo de campo de configuração declara as suas quatro faces num descritor
+  só** — `render`, `read`, `defaults` e `help`, em `devices/config/inputs/`.
+  Eram quatro mapas paralelos indexados pela mesma chave e alinhados à mão: uma
+  entrada em falta não dava erro, dava um campo genérico ou um payload vazio.
+  Um descritor sem `defaults` é agora uma ausência visível, e algumas estão
+  anotadas como tal.
+- **As famílias de cartões que só existem num aparelho vivem em `cards/`** —
+  radar, fralda, gateway, NCS e localização. A linha não é o tamanho: uma
+  postura ou uma contagem de pessoas não existe num relógio. O eixo do *tipo de
+  dispositivo* não serviria, e foi testado — a frequência cardíaca sai de
+  relógio, radar e pulseira, e a bateria de quatro tipos.
+- **O que fica no `components/cards/telemetry.js` é o registo e as
+  primitivas**, que são genuinamente uma coisa só: o mapa dos cartões por tipo,
+  o ícone, o tom e a badge de estado. Partir isso por tamanho só espalharia.
+- **O CSS está dividido por área**, em cinco ficheiros: `assets/css/base.css`
+  (tokens e fontes), `shell.css` (moldura, navbar, cartões), `device.css` (o
+  ecrã do dispositivo), `login.css`, e o `main.css` fica com os modais. A ordem
+  no `<head>` é essa, e é a cascata original: cada ficheiro é uma fatia
+  contígua do que era um só. O `main.css` ficou em último e na raiz porque
+  `/main.css` é uma rota fixa no `DashboardHttpServer::publicAssetPath()` — os
+  ficheiros da raiz não são apanhados por padrão, só o `/main.css` e o
+  `/main.js`. Sem build, cada ficheiro é mais um pedido, e por isso são cinco e
+  não vinte.
