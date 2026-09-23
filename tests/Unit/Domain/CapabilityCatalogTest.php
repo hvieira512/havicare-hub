@@ -55,7 +55,10 @@ final class CapabilityCatalogTest extends TestCase
             // que a contagem de células, sem número nenhum — passou a campo dela. A mudança de
             // estado de uma dose entrou como acontecimento próprio, porque é o único sinal de
             // uma dose falhada e viajava dentro de uma leitura, pelo canal sem garantia.
-            'pill_dispenser' => [34, 'ae5955e6739c55ebf4da057ed609b5b07f5dc0f9343fb6a03a3b6402aa198524'],
+            // E o `device_status` saiu: era uma capacidade que não publicava nada e existia só
+            // para ser o botão do `0x07`. A trama enche sete leituras, e são essas sete que
+            // passam a pedir-se — o clique fica no mosaico que a pessoa está a olhar.
+            'pill_dispenser' => [33, 'ac5d8181f162a1d35532232e1d29fc9561b23bfaffa8a078fb884e65789fadb1'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

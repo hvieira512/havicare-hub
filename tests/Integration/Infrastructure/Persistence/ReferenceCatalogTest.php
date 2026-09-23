@@ -152,7 +152,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'connectivity',
             'device_fault',
             'device_language',
-            'device_status',
             'dispense_now',
             'do_not_disturb',
             'early_dispense',
@@ -206,10 +205,14 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Doze configuráveis e dez pedíveis. Uma acção pede-se e não se configura, e por
-        // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
+        // Doze configuráveis e dezasseis pedíveis. Uma acção pede-se e não se configura, e
+        // por isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
+        //
+        // São dezasseis e não dez porque as sete leituras que o `0x07` enche passaram a
+        // pedir-se cada uma por si, em vez de haver um botão único chamado «estado do
+        // dispositivo» que não publicava nada. A mesma trama nativa serve as sete.
         self::assertSame(
-            ['12', '10'],
+            ['12', '16'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

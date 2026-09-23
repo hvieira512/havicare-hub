@@ -37,12 +37,33 @@ final class PillDispenserRequestCardsTest extends TestCase
         return $requests;
     }
 
-    public function testReadingTheStatusAndTheConfigurationAreRequests(): void
+    /**
+     * Cada leitura que o `0x07` enche é pedível por si.
+     *
+     * Havia um `device_status` que não publicava nada e existia só para ser o botão: quem
+     * quisesse a temperatura tinha de saber que a ia buscar clicando numa coisa chamada
+     * «estado do dispositivo», e o cartão da temperatura ficava a olhar. A mesma trama serve
+     * sete leituras, e por isso são sete os pedidos — o mosaico de cada uma responde ao
+     * clique, que é onde a pessoa está a olhar quando o quer.
+     */
+    public function testEveryReadingTheStatusFramePullsIsRequestable(): void
     {
-        self::assertSame(
-            ['device_status', 'sync_configuration'],
-            array_keys($this->requests()),
-        );
+        self::assertSame([
+            'battery',
+            'cells_remaining',
+            'connectivity',
+            'humidity',
+            'lid_state',
+            'medication_alarm_status',
+            'temperature',
+            'sync_configuration',
+        ], array_keys($this->requests()));
+    }
+
+    /** E o `device_status`, que só existia para ser botão, deixou de fazer falta. */
+    public function testTheEmptyStatusCapabilityIsGone(): void
+    {
+        self::assertArrayNotHasKey('device_status', $this->requests());
     }
 
     /** Cada um tem de saber que trama manda e que resposta espera, senão não fecha o ciclo. */
@@ -50,8 +71,10 @@ final class PillDispenserRequestCardsTest extends TestCase
     {
         $requests = $this->requests();
 
-        self::assertSame('readStatus', $requests['device_status']['command'] ?? null);
-        self::assertSame(['read_status_ack'], $requests['device_status']['expectedReplyTypes'] ?? null);
+        foreach (['battery', 'temperature', 'humidity', 'connectivity', 'cells_remaining', 'lid_state', 'medication_alarm_status'] as $feature) {
+            self::assertSame('readStatus', $requests[$feature]['command'] ?? null, $feature);
+            self::assertSame(['read_status_ack'], $requests[$feature]['expectedReplyTypes'] ?? null, $feature);
+        }
         self::assertSame('readConfiguration', $requests['sync_configuration']['command'] ?? null);
         self::assertSame(['read_config_ack'], $requests['sync_configuration']['expectedReplyTypes'] ?? null);
     }

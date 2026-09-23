@@ -445,8 +445,21 @@ corpo com os valores e com o resultado de cada TAG nos bits de estado do `Flag`.
 A resposta ao `0x05` sai como `device_config`, que é o que os relógios já usam
 para a confirmação de uma configuração. A resposta ao `0x07` passa pelo mesmo
 caminho do heartbeat: traz as mesmas TAGs de estado, e ter dois caminhos era ter
-duas verdades. As duas leituras são acções na dashboard — «Sincronizar
-configuração» e «Atualizar estado» —, e não correm sozinhas.
+duas verdades.
+
+Nenhuma das duas corre sozinha, e cada uma se pede de onde o resultado dela
+aparece. O `0x05` enche os campos do modal de configurações, e por isso é ali que
+está — «Sincronizar configuração». O `0x07` enche **sete** cartões do ecrã
+principal, e são esses sete que o pedem: bateria, temperatura, humidade, ligação
+à rede, compartimentos, tampa e o estado dos nove alarmes. Sete pedidos, uma
+trama só.
+
+> Havia em vez disso uma capacidade `device_status` que não publicava nada e
+> existia só para ser o botão. Quem quisesse a temperatura tinha de saber que a ia
+> buscar clicando numa coisa chamada «estado do dispositivo», num modal, enquanto
+> o cartão da temperatura ficava a olhar sem responder ao clique. O catálogo de
+> comandos permite vários pedidos com a mesma trama nativa, que é o que resolve
+> isto sem inventar nada.
 
 **O que falta.** Ligar a resposta `0x86` ao ciclo de vida da configuração. Ela já
 é descodificada e já diz que TAGs foram recusadas, mas o hub ainda não a usa para

@@ -49,7 +49,7 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
      */
     public function testEveryConfigurationWaitsForTheAcknowledgementOfItsPacketType(): void
     {
-        $esperado = [
+        $expected = [
             'alarm_volume' => 'write_config_ack',
             'alarm_ringtone' => 'write_config_ack',
             'do_not_disturb' => 'write_config_ack',
@@ -60,7 +60,6 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
             'device_language' => 'write_config_ack',
             'time_zone' => 'write_config_ack',
             'sync_configuration' => 'read_config_ack',
-            'device_status' => 'read_status_ack',
             'dispense_now' => 'control_ack',
             'calibrate_clock' => 'control_ack',
             'mute_alarm' => 'control_ack',
@@ -73,7 +72,7 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
             $actual[(string)$entry['key']] = $entry['expectedReplyTypes'] ?? [];
         }
 
-        foreach ($esperado as $key => $reply) {
+        foreach ($expected as $key => $reply) {
             self::assertSame([$reply], $actual[$key] ?? null, $key);
         }
     }

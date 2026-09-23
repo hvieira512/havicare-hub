@@ -150,14 +150,11 @@ final class ZayataConfigurationDefinitions
                 5,
                 'Pergunta ao aparelho que configurações ele tem lá dentro e mostra-as aqui. Não muda nada: serve para confirmar que o que está no ecrã é mesmo o que o aparelho ficou a ter.',
             ),
-            self::action(
-                'device_status',
-                'readStatus',
-                'Atualizar estado',
-                'system',
-                6,
-                'Pede já as leituras todas — bateria, temperatura, sinal, compartimentos e o estado dos nove alarmes — em vez de esperar pelo sinal de vida do minuto seguinte. É o que preenche os cartões que o aparelho não manda sozinho.',
-            ),
+            // «Atualizar estado» não está aqui: a mesma trama `0x07` enche sete leituras, e
+            // são os mosaicos dessas sete que a pedem, no ecrã principal. Um botão à parte
+            // obrigava quem quisesse a temperatura a saber que a ia buscar a uma coisa
+            // chamada «estado do dispositivo», num modal, enquanto o cartão da temperatura
+            // ficava a olhar.
             // Perguntar ao aparelho que parâmetros ele serve, em vez de adivinhar por recusa.
             // São três porque o aparelho separa configuração, estado e controlo, e cada
             // pergunta é um pacote próprio; um botão só cobria um terço da resposta.

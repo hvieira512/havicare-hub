@@ -45,15 +45,34 @@ final class DeviceCommandCatalog
      * muda o aparelho, e um mosaico do ecrã principal dispara ao primeiro clique, sem
      * confirmação e sem contexto. Esses ficam no modal, atrás de quem lá foi de propósito.
      *
-     * Estes dois só perguntam: o `0x07` devolve as leituras todas e o `0x05` devolve a
-     * configuração que o aparelho tem lá dentro.
+     * O `0x07` é uma trama só e enche sete leituras, e por isso são sete os pedidos que a
+     * mandam. Havia em vez disso um `device_status` que não publicava nada e existia só para
+     * ser o botão: quem quisesse a temperatura tinha de saber que a ia buscar clicando numa
+     * coisa chamada «estado do dispositivo», e o mosaico da temperatura ficava a olhar. O
+     * clique passa a estar onde a pessoa está a olhar quando o quer.
      *
      * @return list<array<string, mixed>>
      */
     private static function pillDispenserCommands(): array
     {
+        $readStatus = static fn(string $feature, string $icon): array => [
+            'id' => 'pillReadStatus.' . $feature,
+            'command' => 'readStatus',
+            'label' => 'Device status',
+            'icon' => $icon,
+            'kind' => 'request',
+            'feature' => $feature,
+            'expectedReplyTypes' => ['read_status_ack'],
+        ];
+
         return [
-            ['id' => 'pillReadStatus', 'command' => 'readStatus', 'label' => 'Device status', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['read_status_ack']],
+            $readStatus('battery', 'fa-battery-three-quarters'),
+            $readStatus('cells_remaining', 'fa-table-cells'),
+            $readStatus('connectivity', 'fa-wifi'),
+            $readStatus('humidity', 'fa-droplet'),
+            $readStatus('lid_state', 'fa-box-open'),
+            $readStatus('medication_alarm_status', 'fa-clock-rotate-left'),
+            $readStatus('temperature', 'fa-temperature-half'),
             ['id' => 'pillReadConfiguration', 'command' => 'readConfiguration', 'label' => 'Stored configuration', 'icon' => 'fa-rotate', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
         ];
     }
