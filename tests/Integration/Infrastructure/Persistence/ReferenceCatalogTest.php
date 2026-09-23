@@ -161,7 +161,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'medication_alarm_status',
             'medication_intake',
             'medication_level',
-            'medication_pause',
             'medication_period',
             'medication_reminders',
             'mute_alarm',
@@ -170,9 +169,11 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // o servidor a que ele se liga, que é a única que nos pode fazer perdê-lo.
             'reset_tray',
             'restart_device',
+            // Rodar até um compartimento e pausar a medicação não entram: estão na
+            // especificação da série M2, mas este firmware recusa-as e a descoberta de
+            // parâmetros não as anuncia.
             'retrieval_timeout',
             'retrieval_warning',
-            'rotate_to_cell',
             // Uma por família: o aparelho separa configuração, estado e controlo, e cada
             // pergunta é um pacote próprio.
             'supported_configuration',
@@ -190,10 +191,10 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Catorze configuráveis e dez pedíveis. Uma acção pede-se e não se configura, e por
+        // Doze configuráveis e dez pedíveis. Uma acção pede-se e não se configura, e por
         // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
         self::assertSame(
-            ['14', '10'],
+            ['12', '10'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

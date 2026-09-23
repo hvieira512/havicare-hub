@@ -326,19 +326,6 @@ final class DeviceCommandCatalog
             ]);
         }
 
-        // Ordens de controlo que levam um valor, e não um interruptor. O prato tem 28
-        // compartimentos; a pausa conta-se em minutos e `0` é «voltar ao normal».
-        if ($command === 'rotateToCell') {
-            return self::pillFrame($imei, 0x08, [
-                0xA124 => ['value' => self::pillByte($payload['cell'] ?? 0, 28)],
-            ]);
-        }
-        if ($command === 'medicationPause') {
-            return self::pillFrame($imei, 0x08, [
-                0xA125 => ['value' => self::pillByte($payload['minutes'] ?? 0, 255)],
-            ]);
-        }
-
         // O `0xA002`, reposição de fábrica, não está aqui de propósito: devolveria o aparelho
         // ao servidor do fornecedor, e daqui não há como o trazer de volta.
         $control = [

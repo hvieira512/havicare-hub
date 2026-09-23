@@ -420,8 +420,6 @@ final class CapabilityCatalog
             'retrieval_warning',
             'retrieval_timeout',
             'loaded_cells',
-            'rotate_to_cell',
-            'medication_pause',
             'alarm_volume',
             'alarm_ringtone',
             'do_not_disturb',

@@ -62,37 +62,29 @@ final class PillDispenserRetrievalSettingsTest extends TestCase
         $this->build('loadedCells', ['cells' => 29], 0x06);
     }
 
-    /** Rodar é uma ordem de controlo, não uma configuração: vai num `0x08`. */
-    public function testRotatingToACellIsAControlPacket(): void
-    {
-        $tlv = $this->build('rotateToCell', ['cell' => 7], 0x08);
-
-        self::assertSame(7, ord((string)$tlv[0xA124]['value']));
-    }
-
-    public function testPausingMedicationIsAControlPacket(): void
-    {
-        $tlv = $this->build('medicationPause', ['minutes' => 20], 0x08);
-
-        self::assertSame(20, ord((string)$tlv[0xA125]['value']));
-    }
-
-    /** Zero é «voltar ao normal», e é um valor legítimo. */
-    public function testPausingWithZeroResumesMedication(): void
-    {
-        $tlv = $this->build('medicationPause', ['minutes' => 0], 0x08);
-
-        self::assertSame(0, ord((string)$tlv[0xA125]['value']));
-    }
-
-    /** E as cinco aparecem no catálogo, senão não há por onde as usar. */
+    /** E as três aparecem no catálogo, senão não há por onde as usar. */
     public function testTheyAreAllInTheCatalogue(): void
     {
         $chaves = array_column(DeviceConfigurationCatalog::configsForProtocol('zayata-m228'), 'key');
 
-        foreach (['retrieval_warning', 'retrieval_timeout', 'loaded_cells', 'rotate_to_cell', 'medication_pause'] as $chave) {
+        foreach (['retrieval_warning', 'retrieval_timeout', 'loaded_cells'] as $chave) {
             self::assertContains($chave, $chaves, $chave);
         }
+    }
+
+    /**
+     * Rodar até um compartimento e pausar a medicação não entram.
+     *
+     * Estão na especificação da série M2, mas foram acrescentadas numa versão posterior à que
+     * o aparelho de ensaio corre: ele recusa-as com «TAG inválida» e a descoberta de
+     * parâmetros não as anuncia. O hub ficava a retentá-las de minuto a minuto.
+     */
+    public function testTheOnesThisFirmwareRefusesAreNotOffered(): void
+    {
+        $chaves = array_column(DeviceConfigurationCatalog::configsForProtocol('zayata-m228'), 'key');
+
+        self::assertNotContains('rotate_to_cell', $chaves);
+        self::assertNotContains('medication_pause', $chaves);
     }
 
     /**

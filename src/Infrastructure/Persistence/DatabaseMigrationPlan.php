@@ -12,6 +12,7 @@ use Hub\Infrastructure\Persistence\Migration\PillDispenserImage;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserParameterDiscovery;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserReportedConfigurationCleanup;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserRetrievalSettings;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutUnservedControls;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutEncryptionSwitch;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutFactoryReset;
 
@@ -52,6 +53,8 @@ final class DatabaseMigrationPlan
             new ModelImageFilenameOnly(),
             // E os tempos da toma deixam de se mudar por script.
             new PillDispenserRetrievalSettings(),
+            // Duas dessas ordens este firmware não as serve, e o aparelho disse-o.
+            new PillDispenserWithoutUnservedControls(),
         ];
     }
 

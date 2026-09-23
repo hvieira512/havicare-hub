@@ -154,31 +154,12 @@ final class ZayataConfigurationDefinitions
             // As acções. O relógio calibra-se à mão porque num ensaio um alarme das 12:55
             // ficou registado às 11:45.
             self::action('dispense_now', 'dispenseNow', 'Dispensar agora', 'system', 20),
-            // Duas ordens de controlo que levam um valor, e não um interruptor.
-            self::number(
-                'rotate_to_cell',
-                'rotateToCell',
-                'Rodar até ao compartimento',
-                'system',
-                21,
-                'cell',
-                0,
-                28,
-                'Compartimento',
-                'Roda o prato até ao compartimento indicado, sem dispensar nada. Serve para carregar ou inspecionar um compartimento em particular. Zero não roda.',
-            ),
-            self::number(
-                'medication_pause',
-                'medicationPause',
-                'Pausar medicação',
-                'system',
-                22,
-                'minutes',
-                0,
-                255,
-                'Minutos',
-                'Suspende a dispensa durante os minutos indicados — para uma ida ao hospital ou uma consulta. Zero volta ao normal.',
-            ),
+            // Rodar até um compartimento (`0xA124`) e pausar a medicação (`0xA125`) não estão
+            // aqui: a especificação descreve-as, mas este firmware recusa-as com «TAG
+            // inválida» e a descoberta de parâmetros não as anuncia. Foram declaradas a
+            // partir do documento sem se olhar para a resposta que o aparelho já tinha dado, e
+            // o hub ficou a retentá-las de minuto a minuto. Quando um firmware as anunciar,
+            // voltam — depois de lhe perguntar, e não antes.
             self::action('calibrate_clock', 'calibrateClock', 'Calibrar relógio', 'system', 30),
             self::action('mute_alarm', 'muteAlarm', 'Silenciar', 'system', 40),
             self::action('reset_tray', 'resetTray', 'Repor o prato', 'system', 50),
