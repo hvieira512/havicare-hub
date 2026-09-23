@@ -43,12 +43,34 @@ final class ConnectionFactoryTest extends TestCase
         self::assertSame('hub-pub-' . getmypid(), $client->getClientId());
     }
 
-    public function testClientIdIsTruncatedToTheMqttLimit(): void
+    /**
+     * O identificador chega ao broker inteiro, por mais comprido que seja.
+     *
+     * Havia aqui um corte aos 23 caracteres, que é o que o MQTT 3.1 exigia. Nós falamos
+     * 3.1.1, onde 23 é apenas o mínimo que um servidor conforme tem de aceitar, e o mosquitto
+     * aceita muito mais. O corte só garantia compatibilidade com um broker estrito que não
+     * temos, e em troca comia o sufixo e a cauda do prefixo -- justamente a parte escolhida
+     * para distinguir uma máquina das outras. Duas configurações que se queriam diferentes
+     * apresentavam-se ao broker com o mesmo nome e expulsavam-se uma à outra em ciclo, com o
+     * registo dos dois lados a dizer só «connection lost».
+     *
+     * Um broker que recuse um identificador comprido recusa a ligação, e isso já se vê.
+     */
+    public function testALongClientIdIsSentWhole(): void
     {
         $client = $this->factory('a-very-long-client-prefix')->create('subscriber', true);
 
-        self::assertSame(23, strlen($client->getClientId()));
-        self::assertSame('a-very-long-client-pref', $client->getClientId());
+        self::assertSame('a-very-long-client-prefix-subscriber', $client->getClientId());
+    }
+
+    /** E o `-hugo` de um prefixo local, que era o primeiro a desaparecer, sobrevive. */
+    public function testThePartOfThePrefixThatDistinguishesAMachineSurvives(): void
+    {
+        $hugo = $this->factory('qinglanst-radar-local-hugo')->create('sub', true);
+        $maria = $this->factory('qinglanst-radar-local-maria')->create('sub', true);
+
+        self::assertSame('qinglanst-radar-local-hugo-sub', $hugo->getClientId());
+        self::assertNotSame($hugo->getClientId(), $maria->getClientId());
     }
 
     public function testConnectionSettingsCarryCredentialsAndTls(): void
