@@ -23,7 +23,8 @@ flowchart LR
   F -->|não| H["Desistir<br/><small>device.downlink.dropped</small>"]
 ```
 
-**A API REST é o único caminho de entrada.** A dashboard usa-o, serve todos os
+**A [API REST](09-api.md) é o único caminho de entrada.** A
+[dashboard](13-dashboard.md) usa-o, serve todos os
 tipos de dispositivo, e é o que faz o comando passar pelo registo — sem isso não
 haveria repetição, nem consulta em `GET /api/commands/{id}`, nem correlação da
 resposta.
@@ -40,7 +41,7 @@ há falha silenciosa.
 
 ## 2. Construir os bytes
 
-Cada protocolo constrói de sua maneira:
+Cada [protocolo de relógio](02-ingestao-tcp-relogios.md) constrói de sua maneira:
 
 | Protocolo | Como |
 |---|---|
@@ -53,7 +54,7 @@ pergunta.
 
 ## 3. A fila
 
-Vive no Redis, com duas chaves por dispositivo:
+Vive no [Redis](14-persistencia.md), com duas chaves por dispositivo:
 
 ```text
 hub:downlink:{imei}:{chave}      o comando, com TTL
@@ -112,7 +113,9 @@ sequenceDiagram
 
 ## 4. Repetir e desistir
 
-A cada 10 segundos, o hub olha para os comandos que estão à espera de resposta:
+A cada 10 segundos — o temporizador de manutenção descrito na
+[visão geral](01-visao-geral.md) — o hub olha para os comandos que estão à
+espera de resposta:
 
 | Parâmetro | Valor |
 |---|---|
@@ -151,7 +154,8 @@ de confirmação que vale `1` ou `0`, e é isso que distingue aceite de recusado
 
 ## 6. O que sai no MQTT
 
-Cada passo é publicado, em dois sítios:
+Cada passo é publicado, em dois dos canais do
+[contrato MQTT](08-contrato-mqtt.md):
 
 - No canal `events`, um de `device.downlink.sent`, `.queued` ou `.dropped`. Os
   `dropped` levam `error.code` — `device_offline` ou `queue_unavailable`.
@@ -160,7 +164,8 @@ Cada passo é publicado, em dois sítios:
 
 ## 7. Emissão de comandos
 
-Pela API, e só por ela:
+Pela [API](09-api.md), e só por ela. O `PATCH` das configurações é a ponta
+visível da [convergência de configurações](10-configuracao-de-dispositivos.md):
 
 ```http
 POST  /api/devices/{imei}/requests          { "feature": "heart_rate" }

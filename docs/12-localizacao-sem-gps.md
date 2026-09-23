@@ -18,7 +18,8 @@ flowchart LR
 ```
 
 **As coordenadas entram no mesmo evento.** Não há um segundo envelope, nem um
-tipo novo. Quem já consumia `location` não muda nada.
+tipo novo. Quem já consumia a capacidade
+[`location`](06-normalizacao.md) não muda nada.
 
 ## 1. A ordem de resolução
 
@@ -113,7 +114,8 @@ composer location:radio-map -- seed \
 Um endereço MAC de router é um identificador estável de um sítio físico. Guardar
 uma lista deles em claro é construir um mapa das casas das pessoas.
 
-Por isso a tabela **não tem coluna para o MAC**. Só guarda um resumo com chave:
+Por isso a [tabela do mapa de rádio](14-persistencia.md) **não tem coluna para o
+MAC**. Só guarda um resumo com chave:
 
 ```php
 hash_hmac('sha256', $mac, $chave)
@@ -188,9 +190,9 @@ mesmo sítio ao mesmo tempo, sai **um** pedido.
 | HTTP 429 | abre já, pelo `Retry-After` ou 3600 s |
 
 Com o circuito aberto, o hub **não estabelece qualquer pedido de rede**. O
-estado reside no Redis e sobrevive a reinícios, evitando que um processo
-reiniciado durante uma indisponibilidade retome de imediato as chamadas ao
-serviço externo.
+estado reside no [Redis](14-persistencia.md) e sobrevive a reinícios, evitando
+que um processo reiniciado durante uma indisponibilidade retome de imediato as
+chamadas ao serviço externo.
 
 Duas distinções na contabilização:
 
@@ -214,8 +216,8 @@ BEACONDB_USER_AGENT='Havicare location test (ops@example.com)' \
 ```
 
 A ferramenta constrói o pedido, invoca a BeaconDB e apresenta a resposta. A
-chamada real **não** integra as suites de teste: o serviço tem estatuto
-experimental e as suites não dependem de serviços de terceiros.
+chamada real **não** integra as [suites de teste](16-testes.md): o serviço tem
+estatuto experimental e as suites não dependem de serviços de terceiros.
 
 ## Implementação
 

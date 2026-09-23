@@ -2,6 +2,9 @@
 
 Findings from live-capturing the Minew MKGW4 gateways on the `health-hub` MQTT broker.
 
+Hub-side ingestion of these gateways is documented in
+[chapter 05](../../05-gateways-ble.md).
+
 Both gateways publish to a topic named `havicare-hub/null/0/gw/<mac>/raw` (suffix `/raw`), but each
 gateway serializes its payload differently:
 

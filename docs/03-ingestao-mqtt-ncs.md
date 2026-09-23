@@ -20,7 +20,8 @@ flowchart LR
 ```
 
 O hub subscreve um espaço de tópicos e publica noutro, no mesmo broker,
-convertendo o formato do fabricante no contrato normalizado.
+convertendo o formato do fabricante no
+[contrato normalizado](06-normalizacao.md).
 
 ## 1. Tópicos subscritos
 
@@ -71,8 +72,10 @@ Duas exigências distinguem esta ingestão das restantes:
 - **Concordância entre corpo e tópico.** Um valor de `from` que não corresponda
   ao segmento do tópico é rejeitado. Sem esta verificação, qualquer entidade com
   acesso de publicação ao broker poderia emitir em nome de outro dispositivo.
-- **Licença obrigatória.** Ao contrário dos relógios, que podem permanecer
-  registados sem atribuição, um NCS sem licença é tratado como não autorizado. O
+- **Licença obrigatória.** Ao contrário dos
+  [relógios](02-ingestao-tcp-relogios.md), que podem permanecer registados sem
+  atribuição, um NCS sem [licença](07-multi-inquilino.md) é tratado como não
+  autorizado. O
   registo usa `deviceType: "ncs"`, o IMEI canónico como chave e o valor de
   `from` na coluna `device_id`.
 
@@ -80,14 +83,16 @@ A licença nunca é lida do tópico para atribuir dados. Configurar o gateway co
 número da licença no `{âmbito}` — `/voerka/1001/devices/…` — serve apenas para a
 notificação de aparelho desconhecido a levar consigo, e a dashboard a
 pré-selecionar no assistente de registo. É o mesmo tratamento que o
-`radar/{licenseId}/{uid}` do Qinglanst recebe, e pela mesma razão: o tópico é
+`radar/{licenseId}/{uid}` do [Qinglanst](04-ingestao-mqtt-radar.md) recebe, e
+pela mesma razão: o tópico é
 escrito por quem publica no broker, e por isso não é autoridade sobre a que
 cliente pertencem os dados. Um âmbito que não seja um número — o `0` do manual,
 ou um nome — deixa a notificação sem licença, como sempre esteve.
 
 ## 3. O que sai
 
-Três canais, pelo mesmo `HubMqttBridge` de todos os outros dispositivos:
+Três canais, pelo mesmo `HubMqttBridge` de todos os outros dispositivos, na
+forma que o [contrato MQTT](08-contrato-mqtt.md) fixa:
 
 ```text
 {prefixo}/{empresa}/{licenca}/ncs/{dispositivo}/raw
@@ -137,14 +142,15 @@ uma mensagem cujo `key` o hub não interprete permanece integralmente disponíve
 ## 4. Designação do evento de chamada
 
 O evento de chamada de ajuda designa-se **`help_call`**, tanto no catálogo de
-capacidades como na mensagem publicada. É a mesma designação usada pela pulseira
-MOKO, que dispõe da mesma funcionalidade.
+capacidades como na mensagem publicada. É a mesma designação usada pela
+[pulseira MOKO](05-gateways-ble.md), que dispõe da mesma funcionalidade.
 
 Até setembro de 2026 o catálogo declarava `pager_call` enquanto o normalizador
 publicava `help_call`, divergência que levava as integrações baseadas no
 catálogo a aguardar um evento inexistente. Nas bases de dados anteriores a essa
-correção, a linha `ncs:pager_call` da tabela `capabilities` é **renomeada** por
-migração e não removida: o identificador dessa linha suporta a associação do
+correção, a linha `ncs:pager_call` da tabela
+[`capabilities`](14-persistencia.md) é **renomeada** por migração e não
+removida: o identificador dessa linha suporta a associação do
 Voerka W812 à capacidade, e a remoção propagaria-se por chave estrangeira.
 
 ## Implementação

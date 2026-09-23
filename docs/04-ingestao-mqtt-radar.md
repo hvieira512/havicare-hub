@@ -31,8 +31,12 @@ radar/{licenca}/{uid}
 ```
 
 Por omissão `radar/1001/#`, configurável em `QINGLANST_TOPIC_FILTER`. O tópico
-traz a licença — é o único protocolo em que o dono vem anunciado pela própria
-origem, e não tem de ser descoberto na whitelist.
+traz um número de licença, mas **não é ele que decide o dono**: o radar é
+resolvido na [whitelist](07-multi-inquilino.md) pelo `uid`, e é de lá que sai a
+licença com que os dados são publicados. O número do tópico serve apenas para a
+notificação de aparelho desconhecido levar uma pista consigo — o mesmo
+tratamento, e pela mesma razão, que o [NCS](03-ingestao-mqtt-ncs.md) recebe:
+quem publica no broker é que escreve o tópico.
 
 A ligação usa `QINGLANST_MQTT_HOST`, `_PORT`, `_USERNAME` e `_PASSWORD`, com
 identificador de cliente com prefixo `qinglanst-radar`.
@@ -155,9 +159,10 @@ Cada evento leva `detectionType`, `detectionCategory`, `detectionLevel` e
 | `detectionLevel` | `info` · `warning` · `danger` |
 | `detectionSource` | `position` · `heartbreath` |
 
-**Todos os valores publicados são enumerações em inglês, em minúsculas com
-underscores** — `lying_down`, `deep_sleep`, `hypopnea`. As etiquetas do documento
-do fabricante não saem no fio: traduzir para o idioma de quem lê é trabalho de
+**Todos os valores publicados são [enumerações em inglês](06-normalizacao.md),
+em minúsculas com underscores** —
+`lying_down`, `deep_sleep`, `hypopnea`. As etiquetas do documento do fabricante
+não saem no fio: traduzir para o idioma de quem lê é trabalho de
 quem desenha a interface.
 
 Um estado que o firmware acrescente numa versão nova sai na mesma forma, derivada
@@ -177,8 +182,8 @@ escrita útil no Redis e de atualização da interface.
 | "vi este aparelho" | 5 000 ms | `QINGLANST_DASHBOARD_SEEN_MIN_INTERVAL_MS` |
 | Histórico de posições | 1 000 ms | `QINGLANST_POSITION_HISTORY_SAMPLE_MS` |
 
-**O MQTT não é estrangulado.** Só as escritas na dashboard. Quem subscreve
-recebe tudo.
+**O MQTT não é estrangulado.** Só as escritas na [dashboard](13-dashboard.md).
+Quem [subscreve](08-contrato-mqtt.md) recebe tudo.
 
 Há ainda um resumo periódico no log, a cada `QINGLANST_STATS_FLUSH_SECONDS`
 (300 s por omissão), com contagens, taxa e tempo por fase — e só quando houve

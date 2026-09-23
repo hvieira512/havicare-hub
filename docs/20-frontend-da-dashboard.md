@@ -1,5 +1,9 @@
 # 20 — O frontend da dashboard
 
+Este capítulo é sobre **como o código do frontend está organizado**. O que a
+dashboard faz, e como se articula com as outras camadas, está no
+[capítulo 13](13-dashboard.md).
+
 A interface do hub: uma página só, servida em PHP, com o comportamento em módulos ES que
 o browser carrega tal como estão. **Não há build step** -- nem bundler, nem transpilador,
 nem `node_modules` em produção. Guardar um ficheiro e recarregar a página é o ciclo todo.
@@ -279,7 +283,7 @@ regra nova, a resposta é uma capacidade nova em PHP.
 
 | o que estou a escrever | onde vai |
 |---|---|
-| uma chamada nova à API | `api/<recurso>.js`, exportada em `api/index.js` |
+| uma chamada nova à [API](09-api.md) | `api/<recurso>.js`, exportada em `api/index.js` |
 | uma pergunta sobre tipos de dispositivo, modelos ou licenças | `domain.js` |
 | HTML puro que dois ecrãs desenham | `components/<nome>.js`, um ficheiro por peça |
 | HTML que um ecrã desenha | o ficheiro desse ecrã |
@@ -297,6 +301,8 @@ npm run lint                   # eslint sobre main.js, dashboard/, assets/js/ e 
 npm test                       # 122 ficheiros em tests/Frontend/
 composer test:unit             # inclui os testes que lêem estes ficheiros como texto
 ```
+
+As quatro suites e o que cada uma cobre estão no [capítulo 16](16-testes.md).
 
 Dois valem por si:
 

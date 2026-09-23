@@ -22,14 +22,17 @@ frontend, as duas suites PHP, a do frontend e os cenários.
 
 ## O que cada uma cobre
 
-**Unitários** — lógica isolada: descodificadores de protocolo, normalizador de
-capacidades, construtor de comandos, validação de pedidos, especificação OpenAPI
-e prefixo do Redis. Executam sem dependências externas.
+**Unitários** — lógica isolada: descodificadores de protocolo,
+[normalizador de capacidades](06-normalizacao.md), construtor de comandos,
+validação de pedidos, especificação OpenAPI e prefixo do Redis. Executam sem
+dependências externas.
 
-**Integração** — a API ao nível da rota, sobre base de dados real: autenticação,
-âmbito por inquilino, validação de escrita, servidor HTTP e stream.
+**Integração** — a [API](09-api.md) ao nível da rota, sobre base de dados real:
+autenticação, [âmbito por inquilino](07-multi-inquilino.md), validação de
+escrita, servidor HTTP e stream.
 
-**Frontend** — os módulos da dashboard, com `node --test`. Um dos testes renderiza
+**Frontend** — os [módulos da dashboard](20-frontend-da-dashboard.md), com
+`node --test`. Um dos testes renderiza
 a página e verifica a existência no HTML de cada elemento referenciado pelo
 JavaScript, impedindo a rutura silenciosa do contrato entre o PHP e o JS.
 
@@ -37,11 +40,11 @@ JavaScript, impedindo a rutura silenciosa do contrato entre o PHP e o JS.
 
 | Cenário | Prova |
 |---|---|
-| `hub_raw_mqtt_roundtrip` | Um dispositivo TCP simulado chega ao MQTT, e um comando da API chega-lhe de volta |
-| `hub_downlink_queue` | Um comando para um aparelho offline fica em fila e é entregue quando ele volta |
-| `dashboard_api` | 401 sem token, login, listagem, pedido de medição |
-| `ncs_mqtt_ingress` | A ingestão Voerka |
-| `location_beacondb_pipeline` | A resolução de localização, com um servidor falso |
+| `hub_raw_mqtt_roundtrip` | Um [dispositivo TCP](02-ingestao-tcp-relogios.md) simulado chega ao [MQTT](08-contrato-mqtt.md), e um comando da API chega-lhe de volta |
+| `hub_downlink_queue` | Um [comando para um aparelho offline](11-comandos-e-downlink.md) fica em fila e é entregue quando ele volta |
+| `dashboard_api` | 401 sem token, login, listagem, [pedido de medição](09-api.md) |
+| `ncs_mqtt_ingress` | A [ingestão Voerka](03-ingestao-mqtt-ncs.md) |
+| `location_beacondb_pipeline` | A [resolução de localização](12-localizacao-sem-gps.md), com um servidor falso |
 
 Cada um tem 240 segundos e deixa os seus registos em `tests/artifacts/`, com
 retenção das 20 corridas mais recentes.
@@ -117,11 +120,11 @@ regressão involuntária.
 
 | Teste | Invariante |
 |---|---|
-| `Unit/Database/SeedWhitelistTest` | O seed não grava sentinelas de memória na base de dados e nunca produz licença sem empresa |
-| `Unit/Runtime/RedisPrefixTest` | Os seis espaços de chaves recebem o prefixo, e a ausência de prefixo preserva a chave |
-| `Unit/Api/OpenApiSpecRoutesTest` | Correspondência entre rotas e especificação nos dois sentidos, com duas exceções declaradas |
+| `Unit/Database/SeedWhitelistTest` | O seed não grava [sentinelas de memória](07-multi-inquilino.md) na base de dados e nunca produz licença sem empresa |
+| `Unit/Runtime/RedisPrefixTest` | Os seis [espaços de chaves](14-persistencia.md) recebem o prefixo, e a ausência de prefixo preserva a chave |
+| `Unit/Api/OpenApiSpecRoutesTest` | Correspondência entre [rotas e especificação](09-api.md) nos dois sentidos, com duas exceções declaradas |
 | `Unit/Api/OpenApi/SchemaFromRequestTest` | Conjunto de restrições de validação traduzidas para o esquema |
-| `Unit/Dashboard/DashboardElementIdsTest` | Existência no HTML de cada elemento referenciado pelo JavaScript |
+| `Unit/Dashboard/DashboardElementIdsTest` | Existência no HTML de cada elemento referenciado pelo [JavaScript](20-frontend-da-dashboard.md) |
 
 ## Implementação
 
