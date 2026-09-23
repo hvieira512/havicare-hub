@@ -10,14 +10,9 @@ use PDO;
  * A mudança de estado de uma dose passa a ser acontecimento próprio.
  *
  * As TAGs `0x8131`--`0x8139` chegam por dois caminhos com naturezas opostas: a resposta ao
- * `0x07` traz os nove e é uma leitura de um instante, e a notificação `0x04` traz o alarme que
- * mudou e é o que aconteceu entre duas leituras. Viajavam ambos como `medication_alarm_status`
- * com uma bandeira `complete` a separá-los.
- *
- * O que isso custava não era arrumação. Uma dose falhada não gera `medication_intake` nenhum
- * -- não houve toma a registar --, e o único sinal dela é esta mudança de estado; como
- * telemetria, saía a QoS 0. O acontecimento mais importante que este aparelho produz era o
- * único dos três que se podia perder no caminho.
+ * `0x07` é uma leitura de um instante, e a notificação `0x04` é o que aconteceu entre duas
+ * leituras. Uma dose falhada não gera `medication_intake` nenhum, e o único sinal dela é esta
+ * mudança de estado -- que como telemetria saía a QoS 0.
  */
 final class PillDispenserDoseChangeEvent implements Migration
 {

@@ -8,13 +8,9 @@ namespace Hub\Ingress\Mqtt\Moko;
  * Uma janela curta de leituras de sinal por par (dispositivo, gateway). O hub reporta o
  * sinal; o cliente decide o que ele significa -- ver `docs/05-gateways-ble.md` §5.
  *
- * Três estatísticas e não uma, porque uma passagem a andar são uma ou duas leituras e a
- * mediana não se mexe com isso -- é o máximo que a apanha. O ruído é assimétrico: corpos e
- * paredes atenuam e quase nada amplifica, por isso uma leitura forte é de confiança e uma
- * fraca não.
- *
- * A janela vive em memória e reenche-se em `windowSeconds` depois de um reinício. O registo
- * durável do último avistamento fica no store da dashboard.
+ * Três estatísticas e não uma: o ruído é assimétrico -- corpos e paredes atenuam e quase nada
+ * amplifica --, e uma passagem a andar só se apanha pelo máximo. A janela vive em memória e
+ * reenche-se em `windowSeconds` depois de um reinício.
  */
 final class ProximityTracker
 {

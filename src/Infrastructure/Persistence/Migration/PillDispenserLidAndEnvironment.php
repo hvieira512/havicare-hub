@@ -9,16 +9,9 @@ use PDO;
 /**
  * A tampa e o ambiente de armazenamento saem do estado do dispositivo.
  *
- * O `device_status` tinha virado uma gaveta: o sinal, que muda ao minuto, ao lado da tampa
- * aberta, da corrente e do juízo que o aparelho faz sobre a temperatura e a humidade. Na
- * lista de eventos saía tudo numa linha só — «Tampa aberta: Não · Ligado à corrente: Sim ·
- * Ambiente fora da gama: Não» — com o nome de nenhuma das quatro coisas.
- *
- * Cada uma foi para onde alguém a procura. A corrente juntou-se à bateria, que é a mesma
- * pergunta feita de dois lados e já tem cartão. A tampa e o ambiente ganham capacidade
- * própria: a primeira porque uma tampa aberta é um estado sobre que se age, a segunda porque
- * «alarme de ambiente» não dizia a ninguém que o aparelho estava a avisar que a medicação
- * pode estar mal guardada.
+ * O `device_status` tinha virado uma gaveta, e na lista de eventos saía tudo numa linha só.
+ * Cada uma foi para onde alguém a procura: a corrente juntou-se à bateria, que é a mesma
+ * pergunta feita de dois lados, e a tampa e o ambiente ganham capacidade própria.
  */
 final class PillDispenserLidAndEnvironment implements Migration
 {

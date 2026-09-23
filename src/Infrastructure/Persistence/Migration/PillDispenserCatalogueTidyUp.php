@@ -9,17 +9,9 @@ use PDO;
 /**
  * Arruma o catálogo do dispensador para quem nunca viu o aparelho conseguir administrá-lo.
  *
- * Três coisas. O cartão SIM passa a ser capacidade própria: era publicado dentro do estado do
- * dispositivo, ao lado do sinal, e ficava perdido entre vinte e cinco linhas por hora a dizer
- * `-25 dBm` — uma coisa é uma leitura que muda ao minuto, outra é o cartão que está lá dentro.
- *
- * Duas acções mudam de sítio para o sítio que a pessoa procura: dispensar é um acto sobre a
- * medicação e vai para Saúde, silenciar cala um alarme e vai para Alarmes. O «Dispensar agora»
- * era também o único ponto onde o catálogo de capacidades e as definições discordavam --
- * aquele dizia saúde, estas diziam sistema, e são estas que mandam no que aparece no modal.
- *
- * E as etiquetas passam a dizer o que a acção faz: «Parâmetros de controlo» não diz nada a
- * quem chega; «Que ordens este aparelho obedece» diz.
+ * Três coisas: o cartão SIM passa a capacidade própria em vez de viajar dentro do estado do
+ * dispositivo; dispensar vai para Saúde e silenciar para Alarmes, que é onde se procuram; e
+ * as etiquetas passam a dizer o que a acção faz.
  */
 final class PillDispenserCatalogueTidyUp implements Migration
 {

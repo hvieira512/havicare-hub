@@ -34,10 +34,7 @@ final class DatabaseMigrator
      * templates --, vindo do código.
      *
      * **Só numa base vazia:** o catálogo é editável, e semear a cada arranque fazia voltar o
-     * que alguém apagou. Numa base existente, quem o faz evoluir é uma migração.
-     *
-     * O inventário tem passo próprio (`bin/seed-inventory.php`), senão aparecia na base-modelo
-     * que os testes de integração clonam.
+     * que alguém apagou. O inventário tem passo próprio (`bin/seed-inventory.php`).
      */
     private function syncReferenceCatalog(): void
     {

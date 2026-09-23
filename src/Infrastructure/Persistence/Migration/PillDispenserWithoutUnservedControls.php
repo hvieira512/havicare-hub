@@ -10,12 +10,8 @@ use PDO;
  * Tira do catálogo as duas ordens que este firmware não serve.
  *
  * Rodar até um compartimento (`0xA124`) e pausar a medicação (`0xA125`) estão na especificação
- * da série M2, mas foram acrescentadas numa versão posterior à que o aparelho de ensaio corre.
- * Ele recusa-as com «TAG inválida», e o hub retentava-as de minuto a minuto até desistir.
- *
- * Foram declaradas a partir do documento sem se confrontar com a resposta que o próprio
- * aparelho já tinha dado: a descoberta de parâmetros devolveu doze TAGs de controlo, e nenhuma
- * delas é estas duas. Quando entrar um firmware que as anuncie, voltam.
+ * da série M2, mas este firmware recusa-as com «TAG inválida» e a descoberta de parâmetros
+ * não as anuncia. Quando entrar um firmware que as sirva, voltam.
  */
 final class PillDispenserWithoutUnservedControls implements Migration
 {

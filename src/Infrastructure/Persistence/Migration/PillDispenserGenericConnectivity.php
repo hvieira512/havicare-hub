@@ -10,16 +10,10 @@ use PDO;
  * O sinal do dispensador passa a ser a `connectivity` que o hub já tem, e o ambiente vira
  * alerta.
  *
- * Duas coisas que estavam feitas só para este aparelho e não precisavam de estar. A ligação à
- * rede já tem forma no contrato — os gateways publicam `interface` e `signalStrengthDbm`, e a
- * dashboard já os desenha —, e publicar `gsmSignalDbm` dentro de um `device_status` obrigava
- * quem integra a conhecer mais um formato para ler a mesma grandeza. O `device_status` fica
- * como o que sempre foi na prática: o botão que pede ao aparelho o estado que ele tem agora.
- *
- * E o ambiente de armazenamento sai da telemetria para os alarmes. Publicado a cada leitura,
- * enchia a lista de eventos com linhas iguais a dizer «Dentro da gama» — o estado normal, que
- * ninguém lê. Passa a falar só quando a temperatura ou a humidade saem da gama, como a avaria
- * já fazia, e o nome diz o que aconteceu em vez de nomear o sensor.
+ * A ligação à rede já tem forma no contrato — os gateways publicam `interface` e
+ * `signalStrengthDbm` —, e um `gsmSignalDbm` próprio obrigava quem integra a conhecer mais um
+ * formato. O ambiente de armazenamento sai da telemetria para os alarmes, e passa a falar só
+ * quando a temperatura ou a humidade saem da gama.
  */
 final class PillDispenserGenericConnectivity implements Migration
 {

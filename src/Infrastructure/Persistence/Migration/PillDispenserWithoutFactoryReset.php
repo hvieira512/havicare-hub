@@ -9,13 +9,9 @@ use PDO;
 /**
  * Tira a reposição de fábrica do catálogo do dispensador nas bases que já a têm.
  *
- * O M228 só aponta para o hub porque o fornecedor lhe mandou essa configuração. Uma reposição
- * devolve-o ao servidor dele: deixa de nos falar, e recuperá-lo obriga a pedir a outra pessoa,
- * noutro fuso horário, que volte a empurrar a configuração. Não há nada que a acção resolva
- * que justifique ter o botão à distância de um clique enganado.
- *
- * Só as linhas do dispensador. A mesma chave existe nos relógios, onde uma reposição é
- * recuperável e continua a fazer sentido.
+ * O M228 só aponta para o hub porque o fornecedor lhe mandou essa configuração, e uma
+ * reposição devolve-o ao servidor dele. Só as linhas do dispensador: a mesma chave existe nos
+ * relógios, onde uma reposição é recuperável e continua a fazer sentido.
  */
 final class PillDispenserWithoutFactoryReset implements Migration
 {

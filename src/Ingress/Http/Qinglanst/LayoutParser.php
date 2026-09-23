@@ -10,8 +10,8 @@ namespace Hub\Ingress\Http\Qinglanst;
  * sejam seguidas ou tenham buracos, e o prefixo de cada nome é o tipo da área -- que já vem no
  * `declare_area` -- e não uma sequência.
  *
- * Sai daqui uma sala e um punhado de caixas em decímetros, que é a forma que a base de dados
- * guarda. Nenhuma string do fabricante sobrevive à fronteira.
+ * Sai daqui uma sala e um punhado de caixas em decímetros: nenhuma string do fabricante
+ * sobrevive à fronteira.
  */
 final class LayoutParser
 {

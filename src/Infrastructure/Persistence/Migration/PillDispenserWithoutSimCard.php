@@ -9,15 +9,9 @@ use PDO;
 /**
  * Tira o cartão SIM do catálogo do dispensador.
  *
- * Tinha acabado de ser separado do estado do dispositivo para capacidade própria, com o
- * argumento de que uma coisa é uma leitura que muda ao minuto e outra é o cartão que está lá
- * dentro. O argumento estava certo e a conclusão não: o CCID é um identificador que nunca
- * muda, ninguém o consulta na dashboard, e quem precise dele vai buscá-lo à ficha do
- * dispositivo. O cartão só ocupava um lugar na telemetria e cada leitura de estado deixava
- * mais uma linha na lista de eventos a repetir o mesmo número.
- *
- * O adaptador continua a descodificar o `0x8009` — é preciso para não tropeçar no TLV — mas
- * descodificar e publicar são decisões separadas.
+ * O CCID é um identificador que nunca muda e ninguém o consulta na dashboard: cada leitura de
+ * estado deixava mais uma linha na lista de eventos a repetir o mesmo número. O adaptador
+ * continua a descodificar o `0x8009` — descodificar e publicar são decisões separadas.
  */
 final class PillDispenserWithoutSimCard implements Migration
 {

@@ -9,15 +9,10 @@ use PDO;
 /**
  * A fotografia do dispensador M228.
  *
- * A imagem de um modelo é um caminho para um ficheiro em disco e não um endereço para fora:
- * a dashboard serve-a de `var/dashboard/model-images`. Esse directório está no gitignore, e é
- * por isso que esta migração copia o ficheiro além de escrever a linha — pôr só o caminho na
- * base dava uma imagem partida no ecrã e nenhum erro em lado nenhum.
- *
- * O ficheiro viaja em `database/seed-model-images`, que é por onde as imagens dos outros
- * modelos já viajam, e está guardado como a dashboard guardaria um upload: JPEG de qualidade
- * 78, no máximo 640 píxeis de lado, achatado sobre branco porque o original é um PNG com
- * transparência.
+ * A imagem de um modelo é um caminho para um ficheiro em `var/dashboard/model-images`, que
+ * está no gitignore: por isso esta migração copia o ficheiro além de escrever a linha. O
+ * ficheiro viaja em `database/seed-model-images`, guardado como a dashboard guardaria um
+ * upload -- JPEG de qualidade 78, no máximo 640 píxeis de lado, achatado sobre branco.
  */
 final class PillDispenserImage implements Migration
 {

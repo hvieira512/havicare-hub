@@ -10,11 +10,8 @@ use PDO;
  * As três acções que perguntam ao aparelho que parâmetros ele serve.
  *
  * Sem elas, a única maneira de saber se um firmware suporta uma TAG era mandá-la e ler a
- * recusa. Foi assim que se descobriu que o M228 de ensaio não tem WiFi, e é um método que não
- * escala para uma frota com firmwares diferentes.
- *
- * São três porque o aparelho separa configuração, estado e controlo, e cada pergunta é um
- * pacote próprio: `0x0A`, `0x0B` e `0x0C`.
+ * recusa, que não escala para uma frota com firmwares diferentes. São três porque o aparelho
+ * separa configuração, estado e controlo em pacotes próprios: `0x0A`, `0x0B` e `0x0C`.
  */
 final class PillDispenserParameterDiscovery implements Migration
 {

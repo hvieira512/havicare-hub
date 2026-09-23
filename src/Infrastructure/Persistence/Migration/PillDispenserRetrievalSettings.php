@@ -10,14 +10,9 @@ use PDO;
  * As definições da toma que o aparelho suporta e o hub não expunha.
  *
  * Os dois tempos — quando avisar de atraso e quando desistir — decidem se uma dose por tomar
- * chega a alguém como alerta ou fica em silêncio. De fábrica são trinta e sessenta minutos, e
- * mudá-los obrigava a escrever as TAGs à mão por script.
- *
- * As outras três dizem quantos compartimentos estão carregados, mandam o prato rodar até um
- * deles, e suspendem a medicação por uns minutos — para uma ida ao hospital, por exemplo.
- *
- * O que ficou de fora, de propósito: mudar o servidor a que o aparelho se liga
- * (`0xA021`–`0xA023`). É a única ordem que nos pode fazer perder o aparelho.
+ * chega a alguém como alerta. As outras três dizem quantos compartimentos estão carregados,
+ * mandam o prato rodar até um deles, e suspendem a medicação por uns minutos. Fica de fora,
+ * de propósito, mudar o servidor a que o aparelho se liga (`0xA021`–`0xA023`).
  */
 final class PillDispenserRetrievalSettings implements Migration
 {

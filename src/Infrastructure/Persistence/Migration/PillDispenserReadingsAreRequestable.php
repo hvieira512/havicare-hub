@@ -9,15 +9,9 @@ use PDO;
 /**
  * Cada leitura que o `0x07` enche passa a pedir-se por si.
  *
- * Havia um `device_status` que não publicava nada e existia só para ser o botão dessa trama:
- * quem quisesse a temperatura tinha de saber que a ia buscar clicando numa coisa chamada
- * «estado do dispositivo», dentro do modal de configurações, enquanto o mosaico da
- * temperatura ficava a olhar sem responder ao clique.
- *
+ * Havia um `device_status` que não publicava nada e existia só para ser o botão dessa trama.
  * A trama é uma só e enche sete leituras — bateria, temperatura, humidade, ligação à rede,
- * compartimentos, tampa e o estado dos nove alarmes —, e por isso são as sete que a pedem. O
- * clique fica no mosaico que a pessoa está a olhar quando o quer, e o botão à parte deixa de
- * fazer falta.
+ * compartimentos, tampa e o estado dos nove alarmes —, e por isso são as sete que a pedem.
  */
 final class PillDispenserReadingsAreRequestable implements Migration
 {

@@ -27,14 +27,8 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
      * é uma recusa com motivo.
      *
      * Numa **escrita**, uma só TAG recusada chega para não ter feito o que se pediu. Numa
-     * **leitura** não: o aparelho responde com tudo o que tem, e uma TAG que ele não suporta
-     * é informação sobre esse parâmetro, não uma falha do pedido. O M228 de produção é a
-     * variante 4G e não tem WiFi -- recusa o `0x810A` em todas as consultas de estado, e
-     * tratar isso como recusa punha «o aparelho recusou» numa leitura que trouxe a bateria, a
-     * temperatura, a humidade e as células todas.
-     *
-     * Um corpo vazio é `null` e não recusa: `null` é «não disse». É o que devolvem os pacotes
-     * que o aparelho envia por sua iniciativa, que não comentam nada que lhe tenha sido pedido.
+     * **leitura** não: uma TAG que o aparelho não suporta é informação sobre esse parâmetro,
+     * não uma falha do pedido. Um corpo vazio é `null` e não recusa -- `null` é «não disse».
      */
     public function replyAccepted(array $decoded): ?bool
     {

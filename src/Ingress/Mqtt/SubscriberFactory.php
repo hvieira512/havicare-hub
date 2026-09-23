@@ -16,8 +16,7 @@ use PhpMqtt\Client\Subscription;
  *
  * Todos retomam a sessão do lado do broker (`cleanSession = false`), e por isso o id do
  * cliente tem de ser estável, sem pid: um id que muda a cada reinício deixa a sessão anterior
- * órfã a segurar a subscrição. As duas coisas só estão certas juntas, e não há flag para as
- * separar.
+ * órfã a segurar a subscrição.
  */
 final class SubscriberFactory
 {

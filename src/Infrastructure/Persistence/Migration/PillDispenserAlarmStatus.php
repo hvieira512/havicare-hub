@@ -10,12 +10,8 @@ use PDO;
  * O estado de toma dos nove alarmes passa a ser telemetria do dispensador.
  *
  * O evento de toma (`0x03`) é a leitura rica — hora prevista, hora real, célula — e chega
- * cifrado, porque o M228 cifra tudo o que envia por iniciativa própria e a chave sai da
- * codificação dele. As TAGs `0x8131`–`0x8139` respondem à mesma pergunta por outro caminho:
- * são estado, pedem-se num `0x07`, e uma resposta a pedido nosso vem sempre em claro.
- *
- * Sem isto, a funcionalidade central do aparelho ficava à espera de o fornecedor desligar a
- * cifra do lado dele.
+ * cifrado. As TAGs `0x8131`–`0x8139` respondem à mesma pergunta por outro caminho: são
+ * estado, pedem-se num `0x07`, e uma resposta a pedido nosso vem sempre em claro.
  */
 final class PillDispenserAlarmStatus implements Migration
 {

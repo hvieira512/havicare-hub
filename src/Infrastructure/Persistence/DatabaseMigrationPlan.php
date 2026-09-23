@@ -28,10 +28,7 @@ use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutFactoryReset;
  *
  * Entram aqui as mudanças que uma base existente precisa de aplicar e que o `schema.sql`
  * sozinho não faz -- largar uma coluna, renomear, converter linhas. Uma instalação nova nasce
- * na baseline e não replica nada disto.
- *
- * Sai daqui o que já foi aplicado nas duas bases que existem e cujo destino uma base nova já
- * alcança pela baseline. Não há caminho de actualização a partir de antes da baseline.
+ * na baseline, e não há caminho de actualização a partir de antes dela.
  */
 final class DatabaseMigrationPlan
 {

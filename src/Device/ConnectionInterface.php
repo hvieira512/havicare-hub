@@ -14,11 +14,9 @@ interface ConnectionInterface
     /**
      * De onde veio esta ligação, quando se sabe.
      *
-     * Existe por causa do aviso de quem se liga e fala sem se identificar. A porta do TCP
-     * está aberta ao mundo, e portanto os varredores de portas batem-lhe: quarenta e quatro
-     * avisos destes em dois dias. Sem a origem, um varredor e um dispositivo verdadeiro cujo
-     * protocolo não estamos a saber ler são a mesma linha no registo -- e o segundo caso é o
-     * que interessa, porque é um cliente com um aparelho que não funciona.
+     * Existe por causa do aviso de quem se liga e fala sem se identificar: sem a origem, um
+     * varredor de portas e um dispositivo verdadeiro cujo protocolo não sabemos ler são a
+     * mesma linha no registo, e é o segundo caso que interessa.
      */
     public function remoteAddress(): ?string;
 

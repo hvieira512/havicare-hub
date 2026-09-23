@@ -74,12 +74,8 @@ abstract class Bridge implements MqttIngress
      * Escreve um aviso uma vez por assunto e por janela.
      *
      * Há queixas que se repetem a cada trama porque a causa se repete a cada trama: um gateway
-     * no terreno anuncia tudo o que o rodeia, e o hub recusa o que não lhe está ligado -- uma
-     * linha por segundo, por par. Dizê-lo uma vez por janela é o que faz do diário uma
-     * ferramenta de diagnóstico em vez de um despejo.
-     *
-     * O `$subject` é o que se considera a mesma queixa: o par aparelho/gateway, e não a
-     * mensagem, que traz valores que mudam.
+     * anuncia tudo o que o rodeia, e o hub recusa o que não lhe está ligado. O `$subject` é o
+     * que se considera a mesma queixa -- o par aparelho/gateway, e não a mensagem.
      */
     protected function warnRepeatedly(string $subject, string $message): void
     {
@@ -175,12 +171,8 @@ abstract class Bridge implements MqttIngress
      * Esquece as identidades que já saíram da janela do travão.
      *
      * As identidades chegam do tópico -- o MAC do gateway, o UID do radar -- e o processo
-     * corre meses. Sem isto, o mapa acompanha o número de identidades que alguma vez
-     * apareceram em vez do número que está a aparecer agora.
-     *
-     * Não custa comportamento: uma entrada fora da janela já deixava passar o aviso seguinte,
-     * portanto apagá-la é o mesmo que mantê-la. E corre uma vez por janela e não por
-     * mensagem, porque o varrimento é linear e isto está no caminho da ingestão.
+     * corre meses. Corre uma vez por janela e não por mensagem, porque o varrimento é linear
+     * e isto está no caminho da ingestão.
      */
     private function forgetExpiredUnauthorized(int $now): void
     {
@@ -222,12 +214,8 @@ abstract class Bridge implements MqttIngress
     /**
      * Se um gateway e um aparelho retransmitido pertencem ao mesmo cliente.
      *
-     * A ligação entre os dois é editável na dashboard, e um engano ali não pode bastar para a
-     * telemetria de um cliente sair debaixo de outro: a ligação diz que o gateway *ouve* o
-     * aparelho, isto diz que pode *falar* por ele.
-     *
-     * O `'null'` é a sentinela de sem dono, e vale dos dois lados -- dois aparelhos sem
-     * cliente são o mesmo não-cliente, e não dois clientes diferentes.
+     * A ligação diz que o gateway *ouve* o aparelho; isto diz que pode *falar* por ele. O
+     * `'null'` é a sentinela de sem dono, e vale dos dois lados.
      *
      * @param array<string, mixed> $gateway
      * @param array<string, mixed> $device
