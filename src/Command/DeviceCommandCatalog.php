@@ -40,9 +40,8 @@ final class DeviceCommandCatalog
     }
 
     /**
-     * Só o que o dispensador serve como *pedido*: o `0x07`, que é uma trama só e enche sete
-     * leituras, e o `0x05`. O que muda o aparelho fica no modal, atrás de quem lá foi de
-     * propósito — um mosaico dispara ao primeiro clique, sem confirmação.
+     * Só o que o dispensador serve como *pedido*: o `0x07` e o `0x05`. O que muda o aparelho
+     * fica no modal, porque um mosaico dispara ao primeiro clique e sem confirmação.
      *
      * @return list<array<string, mixed>>
      */
@@ -185,17 +184,8 @@ final class DeviceCommandCatalog
     /**
      * Medições a pedido de uma pulseira Veepoo.
      *
-     * Ao contrário dos relógios, aqui o comando não viaja para o aparelho: vai para o gateway
-     * que tem a sessão BLE, e é ele que chama o SDK. Por isso o `command` é o nome da operação
-     * na ponte, e não uma trama.
-     *
-     * Não há `location`: a MF91 não tem GPS. Também não há pedido de HRV, PPG nem intervalos
-     * R-R -- o firmware calcula-os nos blocos que acumula sozinho e não os mede a pedido.
-     *
-     * Cada uma destas foi confirmada contra a pulseira: o pedido sai, o aparelho mede e o
-     * valor volta. A tensão é a mais lenta -- cerca de meio minuto -- e é servida pela
-     * «tensão universal» do SDK, e não pelo comando de tensão personalizada, que apesar do
-     * nome só define valores e responde sempre com zeros.
+     * O comando não viaja para o aparelho: vai para o gateway que tem a sessão BLE e chama o
+     * SDK, e por isso o `command` é o nome da operação na ponte e não uma trama.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -214,18 +204,13 @@ final class DeviceCommandCatalog
             // A bateria é o único pedido que não depende do sensor ótico: responde sempre,
             // e em menos de um segundo.
             ['id' => 'readBattery', 'command' => 'read.battery', 'label' => 'Battery', 'icon' => 'fa-battery-half', 'kind' => 'request', 'feature' => 'battery', 'expectedReplyTypes' => ['battery']],
-            // O registo de sono é a única grandeza sem outro caminho: os blocos de cinco
-            // minutos são relidos sozinhos, ele entrava uma vez só, no arranque do gateway.
-            // É uma leitura e não uma medição -- a pulseira já o tem calculado, e não ter
-            // dormido não é falha dela.
+            // É uma leitura e não uma medição: a pulseira já tem o sono calculado.
             ['id' => 'readSleep', 'command' => 'read.sleep', 'label' => 'Sleep', 'icon' => 'fa-bed', 'kind' => 'request', 'feature' => 'sleep', 'expectedReplyTypes' => ['sleep', 'sleep_quality']],
             // O acumulado do dia responde no instante, como a bateria: é um contador que a
             // pulseira já tem, e não uma medição a fazer.
             ['id' => 'readDailyTotals', 'command' => 'read.dailyTotals', 'label' => 'Daily totals', 'icon' => 'fa-shoe-prints', 'kind' => 'request', 'feature' => 'activity', 'expectedReplyTypes' => ['activity']],
-            // O ECG arranca e transmite, mas exige que quem a usa encoste o dedo ao elétrodo:
-            // sem isso o aparelho envia dezenas de tramas com `wearNotPass` e tudo a zero.
-            // Fica no catálogo porque é assim em qualquer pulseira com ECG, e a falha de
-            // contacto é reportada em vez de o pedido ficar pendurado.
+            // O ECG exige que quem a usa encoste o dedo ao elétrodo: sem isso o aparelho
+            // envia dezenas de tramas com `wearNotPass` e tudo a zero.
             ['id' => 'measureEcg', 'command' => 'measure.ecg.start', 'label' => 'ECG', 'icon' => 'fa-wave-square', 'kind' => 'request', 'feature' => 'ecg', 'expectedReplyTypes' => ['ecg']],
         ];
     }
@@ -333,9 +318,8 @@ final class DeviceCommandCatalog
     /**
      * A descida do dispensador M228.
      *
-     * A configuração vai num pacote `0x06` e o controlo num `0x08`, ambos com o corpo em
-     * TFLV. O que distingue os dois não é o conteúdo mas o tipo de pacote: escrever uma TAG
-     * de controlo num pacote de configuração não faz nada.
+     * A configuração vai num pacote `0x06` e o controlo num `0x08`, ambos em TFLV. O que os
+     * distingue é o tipo de pacote e não o conteúdo.
      */
     private static function buildPillDispenser(string $imei, string $command, array $payload = [], array $context = []): string
     {
@@ -372,7 +356,7 @@ final class DeviceCommandCatalog
         }
 
         // As leituras. O aparelho devolve o mesmo corpo preenchido, com o resultado de cada
-        // TAG no estado do Flag -- é assim que se sabe o que ele tem, em vez de se assumir.
+        // TAG no estado do Flag.
         if ($command === 'readConfiguration') {
             return self::pillFrame($imei, 0x05, PillDispenserAdapter::readRequestTlv(PillDispenserAdapter::CONFIGURATION_TAGS));
         }
@@ -396,7 +380,7 @@ final class DeviceCommandCatalog
                 0x1055 => ['value' => self::pillByte($payload['endMinute'] ?? 0, 59)],
             ],
             'deviceLanguage' => [0x1001 => ['value' => self::pillByte($payload['language'] ?? 0, 1)]],
-            // Em segundos no fio, em minutos na interface: converter é trabalho do hub.
+            // Os dois tempos da toma viajam em segundos e expõem-se em minutos.
             'retrievalWarning' => [0x1017 => ['value' => self::pillSeconds($payload['minutes'] ?? 0)]],
             'retrievalTimeout' => [0x1018 => ['value' => self::pillSeconds($payload['minutes'] ?? 0)]],
             // Quantos vão carregados, que não é a capacidade do prato.
@@ -411,8 +395,7 @@ final class DeviceCommandCatalog
 
     /**
      * Os nove alarmes, sempre os nove. O aparelho não os cria nem apaga, e um slot que o
-     * plano não use tem de ser desligado explicitamente: senão ficava a tocar o que lá
-     * estivesse de um plano anterior.
+     * plano não use tem de ser desligado explicitamente.
      *
      * @return array<int, array{value: string}>
      */
@@ -423,10 +406,8 @@ final class DeviceCommandCatalog
             throw new \InvalidArgumentException('o M228 tem nove alarmes, e o plano traz ' . count($plans));
         }
 
-        // Cada plano diz em que alarme fica. Sem isso, o enésimo plano da lista caía no
-        // enésimo alarme: quem escolhesse o 5 na dashboard via-o chegar ao 3, por cima do que
-        // lá estivesse. Um plano guardado antes disto não traz slot e continua a valer por
-        // posição, que é a única leitura que dele se pode fazer.
+        // Cada plano diz em que alarme fica. Um plano guardado antes disto não traz slot e
+        // continua a valer por posição.
         $bySlot = [];
         foreach ($plans as $position => $plan) {
             $slot = isset($plan['slot']) ? (int)$plan['slot'] : $position + 1;
@@ -451,9 +432,8 @@ final class DeviceCommandCatalog
     }
 
     /**
-     * O período em que o plano vale. O aparelho só sabe "todos os dias entre duas datas":
-     * não tem dias da semana nem repetição. Sem período, é o interruptor que fica a zero —
-     * e não datas a zero, que o aparelho leria como um intervalo real.
+     * O período em que o plano vale. O aparelho só sabe "todos os dias entre duas datas".
+     * Sem período fica o interruptor a zero, e não as datas: essas ele leria como intervalo.
      *
      * @return array<int, array{value: string}>
      */
@@ -489,9 +469,8 @@ final class DeviceCommandCatalog
     /**
      * O número de série de cada trama de descida, que o aparelho ecoa na resposta.
      *
-     * É por ele que se sabe a qual dos pedidos pendentes uma resposta pertence. Todas a zero,
-     * duas escritas ao mesmo tempo ficavam indistinguíveis e a primeira resposta fechava a
-     * errada. Começa em 1 porque o zero é o que a trama tem quando ninguém lhe mexeu.
+     * É por ele que se sabe a qual dos pedidos pendentes uma resposta pertence. Começa em 1
+     * porque o zero é o que a trama tem quando ninguém lhe mexeu.
      */
     private static int $pillSerial = 0;
 
@@ -511,14 +490,8 @@ final class DeviceCommandCatalog
     /**
      * A hora a que o aparelho se deve pôr, no fuso dele.
      *
-     * A TAG `0xA101` leva uma string sem marca de fuso e o M228 toma-a à letra: é a hora que
-     * passa a mostrar no ecrã, e é nessa escala que os nove alarmes disparam. Mandar UTC
-     * deixava-o uma hora atrasado em Lisboa no verão, com os alarmes todos a tocar uma hora
-     * depois do que a dashboard mostrava.
-     *
-     * O fuso vem na mesma unidade da TAG `0x1015`: INT16S em HHMM, `+100` é uma hora à
-     * frente. Sem fuso conhecido fica UTC, que é errado por um valor conhecido em vez de por
-     * um valor inventado.
+     * A TAG `0xA101` leva uma string sem marca de fuso e o M228 toma-a à letra. O fuso vem na
+     * mesma unidade da TAG `0x1015`: INT16S em HHMM, `+100` é uma hora à frente.
      */
     private static function pillLocalTime(mixed $timeZone): string
     {

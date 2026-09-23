@@ -7,15 +7,10 @@ namespace Hub\Device;
 /**
  * Entrega a quem tem um stream aberto as mensagens do seu próprio inquilino.
  *
- * A chave é o âmbito -- `empresa/licença/canal` --, e não o dispositivo. Uma mensagem só
- * chega a quem está registado sob a sua própria chave, e por isso não existe caminho onde
- * uma mensagem de outro inquilino seja considerada e depois recusada: nunca é procurada.
- * A licença sozinha não serve de chave, porque a 1001 do hitcare e a 1001 do havicare são
- * clientes diferentes.
- *
- * Ao contrário do `DeviceUpdateNotifier`, que diz apenas *qual* o dispositivo mudou, aqui a
- * mensagem viaja com o ouvinte: um espelho não tem estado autoritativo para reler, e uma
- * notificação perdida seria a mensagem perdida.
+ * A chave é o âmbito -- `empresa/licença/canal` --, e não o dispositivo: uma mensagem de outro
+ * inquilino nunca chega a ser procurada. A licença sozinha não serve, porque a 1001 do hitcare
+ * e a 1001 do havicare são clientes diferentes. A mensagem viaja com o ouvinte, porque um
+ * espelho não tem estado autoritativo para reler.
  */
 class MessageFanout
 {
@@ -65,9 +60,8 @@ class MessageFanout
      * A chave que o produtor e o consumidor têm de compor da mesma maneira, e é por isso que
      * vive aqui em vez de nos dois lados.
      *
-     * A empresa vem em minúsculas porque o `canAccessTenant` a compara sem distinguir caixa, e
-     * as duas pontas têm de chegar à mesma string. Os outros dois segmentos são um inteiro e
-     * um de quatro literais, pelo que nenhuma empresa consegue produzir a chave de outra.
+     * A empresa vem em minúsculas porque o `canAccessTenant` a compara sem distinguir caixa.
+     * Os outros dois segmentos são um inteiro e um de quatro literais.
      */
     public static function scope(string $company, int $licenseId, string $channel): string
     {

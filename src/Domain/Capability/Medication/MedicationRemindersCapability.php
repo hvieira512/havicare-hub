@@ -13,11 +13,8 @@ use Hub\Domain\Capability\CapabilityContract;
  *   o campo nativo `number` derivado do `reminderSettings`.
  * - zayata-m228: `{ medication_reminders: { plans: [...] } }`, os nove alarmes do aparelho.
  *
- * Os tratadores estão num mapa e não em `match` repetidos. São seis métodos a fazer a mesma
- * pergunta -- qual é o tratador deste protocolo --, e escrita seis vezes a tabela saía
- * desalinhada: acrescentar um fornecedor obrigava a lembrar-se dos seis, e esquecer um não
- * dava erro, dava o tratador errado. O `supportedProtocols` sai do mesmo mapa, para não poder
- * anunciar o que o despacho recusa.
+ * Os tratadores estão num mapa e não em `match` repetidos, e o `supportedProtocols` sai do
+ * mesmo mapa, para não poder anunciar o que o despacho recusa.
  */
 final class MedicationRemindersCapability implements CapabilityContract
 {

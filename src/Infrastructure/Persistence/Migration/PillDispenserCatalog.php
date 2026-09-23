@@ -10,13 +10,9 @@ use PDO;
  * Põe o dispensador de comprimidos no catálogo das bases que já existiam.
  *
  * O tipo de dispositivo, o fornecedor e o modelo são novos, e nenhum deles chega por código:
- * o seeder só corre numa base vazia, e as duas que temos já lá estavam. Sem isto o hub
- * descodifica as tramas do M228 e não tem onde as pendurar -- a chave estrangeira da
- * whitelist recusa um tipo que a `device_types` não conhece, e a dashboard não o sabe
- * desenhar.
- *
- * A ordem não é arbitrária: a `device_types` é o destino das chaves estrangeiras da `models` e
- * da `capabilities`, e a `model_capabilities` precisa das duas.
+ * o seeder só corre numa base vazia. A ordem não é arbitrária -- a `device_types` é o destino
+ * das chaves estrangeiras da `models` e da `capabilities`, e a `model_capabilities` precisa
+ * das duas.
  */
 final class PillDispenserCatalog implements Migration
 {

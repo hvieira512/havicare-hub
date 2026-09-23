@@ -12,14 +12,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * A resposta ao `0x05` diz o que o aparelho **tem**, e não o que lhe pedimos.
  *
- * O hub mandava a leitura da configuração e deitava fora a resposta: a dashboard mostrava
- * sempre o desejado, e uma escrita que o aparelho tivesse alterado por sua conta -- ou que
- * nunca tivesse chegado -- ficava invisível. Agora cada configuração volta com o seu valor,
- * pela chave do contrato, para a projeção a guardar como reportada.
- *
- * As chaves e as formas são as mesmas com que a configuração é enviada: é o que permite à
- * dashboard desenhar o reportado com o mesmo componente que desenha o desejado, e comparar
- * os dois sem traduzir nada pelo meio.
+ * Cada configuração volta com o seu valor, pela chave do contrato, para a projeção a guardar
+ * como reportada. As chaves e as formas são as mesmas com que a configuração é enviada: é o
+ * que permite desenhar o reportado com o mesmo componente que desenha o desejado.
  */
 final class PillDispenserReportedConfigurationTest extends TestCase
 {

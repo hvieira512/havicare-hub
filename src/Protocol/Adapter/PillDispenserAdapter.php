@@ -7,8 +7,7 @@ namespace Hub\Protocol\Adapter;
  *
  * Trama: 0xAA · Length(2) · Status · Version · Serial(2) · Subserial · Subtotal · Flag ·
  * DeviceType · DeviceNumber(8) · PacketType · dados TFLV · CRC16(2). Os inteiros vão em
- * ordem do anfitrião — little-endian no x86 em que o hub corre. O CRC é o de MODBUS,
- * calculado de Length ao fim dos dados.
+ * little-endian e o CRC é o de MODBUS, calculado de Length ao fim dos dados.
  */
 class PillDispenserAdapter implements DeviceAdapterInterface
 {
@@ -70,13 +69,9 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         $encrypted = ($flag & 0x04) === 0x04;
         $plain = $encrypted ? self::decryptAppData($appData, $deviceNumber) : $appData;
 
-        // A resposta à descoberta de parâmetros não é TFLV: é uma lista de TAGs coladas. Lê-la
-        // como TFLV dava TAGs inventadas -- o `0xA002` aparecia como `0x02A0`.
-        //
-        // E uma lista que não se entenda também não vira TFLV. Ler esses bytes como TLV dava
-        // telemetria inventada com identidade correcta e CRC válido, que é a falha calada que
-        // este protocolo torna fácil; um `0x8B` de um firmware com famílias que não listamos
-        // chegava para a provocar.
+        // A resposta à descoberta de parâmetros não é TFLV: é uma lista de TAGs coladas, e
+        // lê-la como TFLV dava TAGs inventadas. Uma lista que não se entenda também não vira
+        // TFLV -- daria telemetria inventada com identidade correcta e CRC válido.
         $isDiscovery = self::isDiscoveryReply($packetType);
         $discovered = $isDiscovery ? self::parseTagList($plain ?? '') : null;
         $tlv = $plain === null || $isDiscovery ? [] : self::parseTlv($plain);
@@ -187,10 +182,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     /**
      * O tipo declarado de cada TAG, da tabela «TAG Definition - Device Type 02».
      *
-     * O tipo vai nos bits 0--4 do Flag de cada TFLV e não é decorativo: uma TAG que chegue ao
-     * aparelho como `UNKONW` volta recusada com «tipo de parâmetro inválido», e o pedido
-     * inteiro não produz nada. Daqui sai também o comprimento com que uma leitura pede o
-     * valor, que antes vivia numa segunda lista à parte.
+     * O tipo vai nos bits 0--4 do Flag de cada TFLV: uma TAG que chegue ao aparelho como
+     * `UNKONW` volta recusada. Daqui sai também o comprimento com que uma leitura o pede.
      *
      * @var array<int, list<int>>
      */
@@ -386,19 +379,10 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     /**
      * O corpo de uma trama que o aparelho cifrou, ou `null` se não abrir.
      *
-     * O M228 cifra em AES128-CFB tudo o que envia por iniciativa própria — o heartbeat, as
-     * notificações, e o evento de toma de medicação, que é a funcionalidade central. As
-     * respostas aos nossos pedidos vêm em claro, e é por isso que a configuração sempre
-     * funcionou enquanto a telemetria não chegava.
-     *
-     * A chave e o IV são a mesma coisa: o Device Number escrito como string hexadecimal de
-     * dezasseis caracteres, que é exactamente o comprimento de uma chave AES-128. O
-     * fornecedor descreveu-o como «both the key and the random IV are based on the device's
-     * Device Number», e a leitura confirmou-se contra tramas reais.
-     *
-     * Tentam-se as duas caixas. Um Device Number que codifica um IMEI é só dígitos e a caixa
-     * não se nota; um que codifique um MAC leva letras, e não há aqui nenhum aparelho desses
-     * para decidir qual delas o firmware usa.
+     * O M228 cifra em AES128-CFB tudo o que envia por iniciativa própria; as respostas aos
+     * nossos pedidos vêm em claro. A chave e o IV são a mesma coisa: o Device Number escrito
+     * como string hexadecimal de dezasseis caracteres. Tentam-se as duas caixas, porque não
+     * há aqui nenhum aparelho com letras no Device Number para decidir qual delas ele usa.
      */
     private static function decryptAppData(string $appData, int $deviceNumber): ?string
     {

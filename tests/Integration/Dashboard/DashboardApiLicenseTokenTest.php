@@ -9,12 +9,8 @@ use Tests\Support\DashboardHttpTestCase;
  * Um administrador emite um token de inquilino sem conhecer a password dele.
  *
  * Existe para as aplicações dos clientes deixarem de precisar de uma credencial do hub
- * configurada em cada lado: quem já fala com a plataforma do inquilino pede-lhe o token, e a
- * plataforma pede-o ao hub com a conta de administrador que já tem. O que a aplicação recebe
- * é estritamente mais fraco do que aquilo com que foi pedido.
- *
- * É por isso que o sentido único importa aqui mais do que o caso feliz: a rota só serve se
- * nunca puder emitir um token igual ou mais forte do que o de quem a chama.
+ * configurada em cada lado. O sentido único importa aqui mais do que o caso feliz: a rota só
+ * serve se nunca puder emitir um token igual ou mais forte do que o de quem a chama.
  */
 final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
 {

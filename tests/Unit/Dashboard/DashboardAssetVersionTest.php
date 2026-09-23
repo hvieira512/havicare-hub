@@ -11,16 +11,10 @@ use PHPUnit\Framework\TestCase;
 /**
  * Os módulos da dashboard entram pelo caminho e não por uma etiqueta de revalidação.
  *
- * A origem pede `no-cache`, mas quem está pelo meio pode não obedecer: a Cloudflare à frente
- * do hub reescreve o cabeçalho para `max-age=14400`, e o browser passa quatro horas a servir
- * ficheiros seus sem perguntar nada. Num refactor que mude ficheiros de sítio isso mistura
- * duas versões no mesmo arranque -- um módulo velho a importar um caminho que já não existe
- * rebenta o `import()` inteiro, e um módulo velho a desenhar um catálogo novo cai no editor
- * de JSON genérico porque não conhece o descritor que lhe chega.
- *
- * A impressão digital no caminho resolve-o sem depender de ninguém: o conjunto muda, os URL
- * mudam todos, e nenhuma cópia velha chega a ser pedida. O prefixo é herdado pelos `import`
- * relativos, que é o que faz o grafo inteiro acompanhar sem haver um passo de compilação.
+ * A origem pede `no-cache`, mas a Cloudflare à frente do hub reescreve-o para `max-age=14400`
+ * e o browser mistura duas versões no mesmo arranque. A impressão digital no caminho resolve-o
+ * sem depender de ninguém, e o prefixo é herdado pelos `import` relativos -- é o que faz o
+ * grafo inteiro acompanhar sem haver um passo de compilação.
  */
 final class DashboardAssetVersionTest extends TestCase
 {

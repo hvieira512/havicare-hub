@@ -35,10 +35,8 @@ final class CollectionQuery
     /**
      * Um filtro que aceita vários valores.
      *
-     * Lê tanto `?supplier[]=a&supplier[]=b` como `?supplier=a,b`, porque a primeira forma é
-     * o que um cliente que constrói a query com um array produz naturalmente e a segunda é
-     * o que se escreve à mão. "all" continua a querer dizer "sem filtro", como no filtro de
-     * valor único, para que um cliente antigo não passe a filtrar pela palavra "all".
+     * Lê tanto `?supplier[]=a&supplier[]=b` como `?supplier=a,b`. "all" continua a querer
+     * dizer "sem filtro", como no filtro de valor único.
      *
      * @return list<string>
      */
@@ -70,12 +68,9 @@ final class CollectionQuery
      * por vírgula, pela ordem em que mandam: `company:desc,model:asc` ordena por empresa
      * descendente e desempata por modelo ascendente. Sem sentido escrito, é ascendente.
      *
-     * O sentido vai ao lado do nome, e não num sinal à frente dele: `-company` obriga a
-     * saber a convenção para se ler, e num log não se percebe sozinho.
-     *
-     * O valor acaba num `ORDER BY`, onde não pode entrar como parâmetro ligado. A allowlist
-     * é por isso a fronteira, e o que não estiver nela não é limpo -- cai fora. Uma coluna
-     * má no meio de boas leva só a si própria, para um engano não deitar o resto abaixo.
+     * O valor acaba num `ORDER BY`, onde não pode entrar como parâmetro ligado: a allowlist é
+     * a fronteira, e o que não estiver nela cai fora em vez de ser limpo. Uma coluna má no
+     * meio de boas leva só a si própria.
      *
      * @param array<string, mixed> $params
      * @param list<string> $allowed

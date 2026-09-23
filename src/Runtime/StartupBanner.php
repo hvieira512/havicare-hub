@@ -24,12 +24,9 @@ final class StartupBanner
         $log->info('=== Havicare Hub ===');
 
         // A implementação do event loop não vem de configuração nossa: o ReactPHP escolhe a
-        // melhor das extensões instaladas, e cai no `StreamSelectLoop` quando não há nenhuma.
-        // Isso importa e muito -- o `StreamSelectLoop` é `select(2)`, preso nos 1024
-        // descritores, e ultrapassá-los faz o processo deixar de servir sem morrer. Instalar
-        // uma extensão troca o loop em silêncio, sem uma linha de diferença no repositório, e
-        // por isso a escolha fica registada aqui: dentro de meses, é isto que diz com o que se
-        // estava a correr.
+        // melhor das extensões instaladas, e cai no `StreamSelectLoop` -- `select(2)`, preso
+        // nos 1024 descritores -- quando não há nenhuma. Fica registada porque instalar uma
+        // extensão a troca em silêncio, sem uma linha de diferença no repositório.
         $loop = get_class(\React\EventLoop\Loop::get());
         $log->info(sprintf(
             'Event loop: %s%s',
@@ -55,9 +52,8 @@ final class StartupBanner
         // Com que identidade cada ligação se apresenta ao broker.
         //
         // Dois hubs com o mesmo identificador expulsam-se em ciclo, e cada expulsão tira a
-        // ingestão do ar até a reconexão acabar. Produção usa os valores por omissão, por isso
-        // qualquer clone que não os sobreponha bate-se com ela -- e nos dois lados o log só
-        // dizia «connection lost», que é o sintoma. Aqui fica a causa, à vista no arranque.
+        // ingestão do ar. Nos dois lados o log só diz «connection lost», que é o sintoma;
+        // aqui fica a causa, à vista no arranque.
         $log->info(sprintf(
             'MQTT client id: %s-*',
             trim((string)($config['mqtt']['client_id_prefix'] ?? '')),

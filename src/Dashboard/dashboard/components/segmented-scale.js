@@ -4,12 +4,9 @@ import { html, raw } from "../html.js";
  * Uma escala curta com todas as posições à vista, à largura de quem a recebe.
  *
  * Serve as enumerações em que a ordem diz alguma coisa e a lista fechada a esconde -- o
- * volume do dispensador tem quatro posições e está invertido, `0` é o mais alto. Numa lista
- * vê-se uma de cada vez, e a escala deixa de se ler.
+ * volume do dispensador tem quatro posições e está invertido, `0` é o mais alto.
  *
- * O `name` vem de fora: quem chama é que sabe gerar um identificador único na página, e
- * recebê-lo mantém isto determinístico e testável sem contador global. Sem nomes distintos,
- * dois grupos na mesma página comportam-se como um só.
+ * O `name` vem de fora: sem nomes distintos, dois grupos na mesma página comportam-se como um.
  */
 export function segmentedScale({ name, field, value, options, label = "" }) {
     const current = String(value ?? "");

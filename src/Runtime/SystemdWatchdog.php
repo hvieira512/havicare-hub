@@ -11,17 +11,10 @@ use React\EventLoop\TimerInterface;
  * O sinal de vida que o systemd espera, enviado de dentro do event loop.
  *
  * O `Restart=always` da unit reage ao processo **terminar**, e o modo de falha que mais
- * interessa não termina nada. Quando o hub esgotou os descritores que o `select()` conseguia
- * vigiar, ficou vivo e deixou de servir: a API sem resposta, os descritores nunca libertados, e
- * o systemd a reportar `active (running)` porque não havia nada de errado que ele soubesse ver.
- * Foi preciso reiniciar à mão.
+ * interessa não termina nada: um hub sem descritores fica vivo e deixa de servir.
  *
- * O ping fecha essa lacuna precisamente porque sai de um temporizador do loop: **só é enviado
- * se o loop estiver a girar.** É prova de vivacidade, e não de existência -- que é a diferença
- * entre o que o systemd sabia e o que precisava de saber.
- *
- * Fora do systemd é inerte. Sem `NOTIFY_SOCKET` ou sem o watchdog armado, o
- * `fromEnvironment()` devolve `null` e não se registam temporizadores.
+ * O ping sai de um temporizador do loop, e por isso **só é enviado se o loop estiver a
+ * girar** -- é prova de vivacidade e não de existência. Fora do systemd é inerte.
  */
 final class SystemdWatchdog
 {
@@ -74,9 +67,7 @@ final class SystemdWatchdog
      * Um datagrama para o socket do systemd, e nada mais.
      *
      * Falhar aqui não pode derrubar o hub: se o socket desapareceu, o pior que acontece é o
-     * systemd deixar de ver pings e reiniciar o serviço -- que é exactamente o comportamento
-     * que se quer. Uma excepção a subir daqui matava o processo por causa do mecanismo que
-     * existe para o proteger.
+     * systemd deixar de ver pings e reiniciar o serviço, que é o comportamento que se quer.
      */
     public function ping(): void
     {

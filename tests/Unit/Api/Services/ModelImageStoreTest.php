@@ -14,12 +14,8 @@ use PHPUnit\Framework\TestCase;
  *
  * Um PNG de poucos quilobytes pode declarar dezenas de milhares de píxeis por lado, e o GD
  * aloca `largura × altura × 4` bytes **antes** de alguém poder verificar seja o que for. O hub
- * é um processo só, que serve a dashboard, a API e a ingestão TCP de todos os relógios: um
- * `fatal` de memória aqui não devolve um 500, derruba as ligações de todos os dispositivos.
- *
- * Por isso as dimensões declaradas têm de ser lidas do cabeçalho e recusadas antes da
- * descodificação -- e recusadas com um código próprio, para quem integra distinguir uma
- * imagem grande demais de uma imagem corrompida.
+ * é um processo só, e um `fatal` de memória aqui derruba as ligações de todos os dispositivos:
+ * as dimensões declaradas lêem-se do cabeçalho e recusam-se antes da descodificação.
  */
 final class ModelImageStoreTest extends TestCase
 {

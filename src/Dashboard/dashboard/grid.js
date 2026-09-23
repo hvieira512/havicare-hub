@@ -5,10 +5,8 @@
  * se filtram -- caixa de texto ou lista de opções, com o parâmetro e os valores já contados.
  * Este módulo traduz isso para o AG Grid, e é o único sítio do projeto que o conhece.
  *
- * Ordenar, filtrar e paginar acontecem no servidor. Fazê-lo no cliente ordenaria só a página
- * visível, o que parece funcionar e mente. A paginação é a do projeto -- o `pagination.js` --
- * e não a que a biblioteca traz: um paginador diferente por listagem é uma dashboard
- * incoerente.
+ * Ordenar, filtrar e paginar acontecem no servidor: no cliente ordenava-se só a página
+ * visível. A paginação é a do projeto -- o `pagination.js` -- e não a da biblioteca.
  */
 
 /**
@@ -22,10 +20,8 @@ const labelFor = (labels, value) => labels[value] ?? String(value ?? "");
  * O que a biblioteca escreve por sua conta.
  *
  * São só duas chaves porque só duas chegam ao utilizador: o menu de filtro por coluna está
- * suprimido, a paginação é a do projeto, e o texto de «sem linhas» vem do `emptyMessage`. O
- * resto do dicionário do AG Grid ficaria aqui a envelhecer sem nunca aparecer no ecrã.
- *
- * A biblioteca escreve o nome da coluna antes da etiqueta -- «Utilizador campo de filtro».
+ * suprimido, a paginação é a do projeto, e o texto de «sem linhas» vem do `emptyMessage`. A
+ * biblioteca escreve o nome da coluna antes da etiqueta -- «Utilizador campo de filtro».
  */
 export const GRID_LOCALE = {
     ariaFilterInput: "campo de filtro",
@@ -445,10 +441,9 @@ export function createGrid({
     /**
      * Só a última leitura pedida pode escrever a grelha.
      *
-     * Dois cliques seguidos na paginação, ou filtrar e logo a seguir ordenar, põem dois
-     * pedidos no ar e nada os cancela. Com as respostas trocadas ficavam as linhas da página
-     * errada **e** o `page` interno errado -- e aí nem o clique seguinte endireitava, porque
-     * passava a contar a partir do número errado. É o contador do `stream.js` e do `list.js`.
+     * Dois cliques seguidos na paginação põem dois pedidos no ar e nada os cancela; com as
+     * respostas trocadas ficava a página errada **e** o `page` interno errado. É o mesmo
+     * contador do `stream.js` e do `list.js`.
      */
     let generation = 0;
 

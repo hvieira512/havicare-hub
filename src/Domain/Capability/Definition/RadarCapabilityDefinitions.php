@@ -8,10 +8,8 @@ namespace Hub\Domain\Capability\Definition;
  * isso reaproveitam os mesmos cartões.
  *
  * O `sleep_state` não é o `sleep` do relógio -- aquele é um relatório, este é o estado num
- * instante -- e o `presence` não é o `location`, que é geográfico.
- *
- * A postura não é capacidade: é de cada pessoa, e vive dentro do `presence` ao lado da
- * posição. Os dois envelopes por minuto são agregados e não leituras.
+ * instante -- e o `presence` não é o `location`, que é geográfico. A postura não é
+ * capacidade: é de cada pessoa, e vive dentro do `presence` ao lado da posição.
  */
 final class RadarCapabilityDefinitions
 {

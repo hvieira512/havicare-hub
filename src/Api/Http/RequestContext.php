@@ -65,13 +65,8 @@ final class RequestContext
      * O endereço de quem fez o pedido, e não o de quem o entregou.
      *
      * Com o nginx à frente, o `REMOTE_ADDR` é sempre o do proxy, e o `LoginThrottle` conta
-     * tentativas por endereço: sem isto, todos os utilizadores caem no mesmo balde e a
-     * vigésima primeira tentativa de qualquer um tranca os restantes.
-     *
-     * O cabeçalho só vale vindo do loopback, que é onde o nosso proxy está. E vale o
-     * **último** elemento da lista: o `$proxy_add_x_forwarded_for` do nginx acrescenta o
-     * endereço da ligação ao que o cliente tiver mandado, portanto tudo o que vem antes é
-     * escolha de quem ligou.
+     * tentativas por endereço. O cabeçalho só vale vindo do loopback, e vale o **último**
+     * elemento da lista: tudo o que vem antes é escolha de quem ligou.
      */
     public static function clientAddress(ServerRequestInterface $request): string
     {

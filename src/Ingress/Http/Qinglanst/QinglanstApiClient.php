@@ -17,9 +17,7 @@ use React\Promise\PromiseInterface;
  * há conta que veja a frota toda -- com a conta errada, os radares das outras respondem `777`,
  * "dispositivo offline", mesmo a publicar telemetria nesse minuto.
  *
- * Sem `final` só para os testes da sincronização a poderem substituir: o que eles têm de
- * afirmar -- um login por licença, um radar que rebenta não levar os outros atrás -- não se vê
- * sem trocar as respostas da cloud.
+ * Sem `final` só para os testes da sincronização a poderem substituir.
  */
 class QinglanstApiClient
 {

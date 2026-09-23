@@ -7,15 +7,9 @@ import { telemetryActivityRow } from "../../src/Dashboard/dashboard/devices/deta
 /**
  * A seta de abrir uma linha só aparece quando há mesmo mais para ver.
  *
- * A linha aberta mostrava o texto simples dos detalhes, que é o mesmo texto que a linha
- * fechada já mostra: quem carregava via «Tampa aberta: Não · Ligado à corrente: Sim» duas
- * vezes, uma por cima da outra. A seta prometia mais e não tinha.
- *
- * Há mais para ver em dois casos. Quando o renderizador declara um `detailsTitle` — a linha
- * visível é então um resumo, e o que ficou de fora vive ali; é o caso da presença, que mostra
- * as posturas e guarda as coordenadas. E quando os detalhes são mais do que um campo: na
- * linha vão todos seguidos numa corrida cortada ao fim da coluna, e abertos ficam um por
- * linha.
+ * Há mais para ver em dois casos: quando o renderizador declara um `detailsTitle` -- a linha
+ * visível é então um resumo, como na presença, que guarda as coordenadas --, e quando os
+ * detalhes são mais do que um campo, que na linha vão cortados ao fim da coluna.
  */
 test("uma linha que já diz tudo não abre", () => {
     const row = telemetryActivityRow({

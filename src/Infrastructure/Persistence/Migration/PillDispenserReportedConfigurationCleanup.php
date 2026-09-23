@@ -9,13 +9,9 @@ use PDO;
 /**
  * Tira as linhas de configuração que o caminho antigo deixou no dispensador.
  *
- * Antes de a leitura do `0x05` ser guardada por chave, a projeção resolvia a chave a partir
- * do tipo da resposta. Quando nenhuma configuração declarava aquele tipo, a chave ficava a
- * ser o próprio tipo: nasciam linhas `read_config_ack` e `write_config_ack`, que não são
- * capacidades nenhumas e apareciam na dashboard como configurações a sério.
- *
- * Só as do dispensador, e só essas duas chaves — resolvidas e contadas antes de escrever
- * isto. As configurações verdadeiras não são tocadas: a leitura seguinte reescreve-as.
+ * Antes de a leitura do `0x05` ser guardada por chave, a projeção resolvia-a a partir do tipo
+ * da resposta, e nasciam linhas `read_config_ack` e `write_config_ack` que não são
+ * capacidades nenhumas. Só as do dispensador, e só essas duas chaves.
  */
 final class PillDispenserReportedConfigurationCleanup implements Migration
 {

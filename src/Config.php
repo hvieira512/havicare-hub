@@ -109,28 +109,17 @@ class Config
                 ))),
                 'command_timeout_seconds' => (int)(getenv('DASHBOARD_COMMAND_TIMEOUT_SECONDS') ?: 3600),
                 'device_idle_timeout_seconds' => (int)(getenv('DASHBOARD_DEVICE_IDLE_TIMEOUT_SECONDS') ?: 1800),
-                // Uma ligação de eventos é um pedido que nunca termina, e o limitador de
-                // concorrência larga o seu lugar assim que a resposta sai. Sem estes tetos o
+                // Uma ligação de eventos é um pedido que nunca termina, e sem estes tetos o
                 // número de streams abertos não tinha limite algum.
                 //
-                // O teto NÃO é a memória. Medido, uma ligação custa ~15 KB de heap inerte e
-                // ~111 KB com a fila cheia, o que a 2000 ligações daria ~256 MB numa máquina
-                // com 15,7 GB -- folgado. O que manda é outra coisa.
+                // O que manda não é a memória: sem as extensões `ev`, `event` ou `uv`, o
+                // ReactPHP usa o `StreamSelectLoop`, que é `select(2)` com o `FD_SETSIZE`
+                // fixo em 1024, partilhado com a ingestão TCP, o MQTT e o HTTP. Daí 400, que
+                // deixa ~600 descritores para o resto; ver `config/systemd/limit-nofile.conf`
+                // para o caminho de subida.
                 //
-                // Sem as extensões `ev`, `event` ou `uv`, o ReactPHP usa o `StreamSelectLoop`,
-                // que é `select(2)` com o `FD_SETSIZE` fixo em 1024. Medido em dev: aos 1025
-                // descritores o processo **deixa de servir tudo**, não morre, e o
-                // `Restart=always` não o recupera. Esse teto é partilhado com a ingestão TCP
-                // dos relógios, os sockets MQTT e os pedidos HTTP, que vivem no mesmo
-                // processo.
-                //
-                // Daí 400: deixa ~600 descritores para todo o resto e nunca chega perto do
-                // ponto em que o loop se parte. Ver `config/systemd/limit-nofile.conf` para o
-                // caminho de subida, que passa por instalar uma extensão de loop primeiro.
-                //
-                // O teto por utilizador é, na prática, por **inquilino**: uma licença tem uma
-                // conta, e por isso todos os ecrãs de um cliente entram por ela. A 25% do
-                // global, um inquilino grande cresce sem conseguir esfomear os outros.
+                // O teto por utilizador é, na prática, por **inquilino**: a 25% do global, um
+                // inquilino grande cresce sem conseguir esfomear os outros.
                 'max_open_streams' => max(1, (int)(getenv('DASHBOARD_MAX_OPEN_STREAMS') ?: 400)),
                 'max_open_streams_per_user' => max(1, (int)(getenv('DASHBOARD_MAX_OPEN_STREAMS_PER_USER') ?: 100)),
                 // O login é a única rota pública que verifica uma password, e o bcrypt a custo

@@ -5,10 +5,9 @@ namespace Hub\Command\Configuration\Payload;
 /**
  * Valida o que se configura numa pulseira Veepoo.
  *
- * Não monta tramas: quem as monta é o SDK dentro do gateway, e o payload chega lá tal e
- * qual. O que este construtor faz é impedir que lá chegue coisa que o aparelho não sabe
- * ler -- uma janela sem traço, um tom de pele fora da escala --, porque o SDK aceita-os em
- * silêncio e não configura nada.
+ * Não monta tramas: quem as monta é o SDK dentro do gateway. O que faz é impedir que lá
+ * chegue coisa que o aparelho não sabe ler, porque o SDK aceita-a em silêncio e não
+ * configura nada.
  */
 final class VeepooPayloadBuilder extends ConfigurationPayloadBuilder
 {

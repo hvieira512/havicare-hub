@@ -21,11 +21,8 @@ export const CAPABILITY_SECTION_ICONS = {
 /**
  * O catálogo de capacidades de cada tipo de dispositivo, e o nome por que se chama cada uma.
  *
- * O nome vem na `label` do `/api/capabilities`, que sai das definições em PHP e da base de
- * dados: é a única fonte, e um segundo mapa escrito à mão aqui discordaria dela.
- *
- * O que fica escrito aqui são os nomes que *não* são capacidades: eventos de protocolo como
- * `device.connected` ou `heartbreath`, que não são coisas que um modelo suporte ou não.
+ * O nome vem na `label` do `/api/capabilities`, que é a única fonte. O que fica escrito aqui
+ * são os nomes que *não* são capacidades: eventos de protocolo como `device.connected`.
  */
 const PROTOCOL_EVENT_LABELS = {
     alarm: "Alarme",

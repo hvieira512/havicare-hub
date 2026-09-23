@@ -7,12 +7,9 @@ namespace Hub\Device;
 /**
  * O envelope de uma leitura normalizada, tal como sai no MQTT.
  *
- * O `RawPayload` já fazia isto para o `status` e para o `event`; a telemetria era o único dos
- * três que cada ingestão montava à mão, e só na bridge Veepoo estava copiado cinco vezes.
- *
  * A forma é contrato público: o `type` é o nome da capacidade em snake_case, tem de coincidir
- * com o que o `CapabilityCatalog` declara, e os campos do `data` são camelCase com a unidade no
- * nome. Cinco cópias eram cinco sítios onde essa coincidência se podia partir em silêncio.
+ * com o que o `CapabilityCatalog` declara, e os campos do `data` são camelCase com a unidade
+ * no nome. É o par do `RawPayload`, que faz o mesmo para o `status` e para o `event`.
  */
 final class TelemetryEnvelope
 {

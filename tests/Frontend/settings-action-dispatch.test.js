@@ -9,10 +9,8 @@ import { fileURLToPath } from "node:url";
  * desenha o botão escreve o mesmo nome. Os dois lados são texto solto, e um nome mal escrito
  * de um dos lados não dá erro nenhum -- o clique simplesmente não faz nada.
  *
- * Os dois lados vivem em sítios diferentes: os handlers no JS das definições e no `wiring/`,
- * e os botões tanto no JS que os constrói como nos templates PHP do modal. Varrer só um deles
- * dá falsos órfãos e, pior, faz passar por código morto um ouvinte cujo botão está do outro
- * lado da fronteira PHP/JS.
+ * Os botões vivem tanto no JS que os constrói como nos templates PHP do modal, e varrer só um
+ * dos lados faz passar por código morto um ouvinte cujo botão está do outro.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = (relative) => path.join(here, "../../src/Dashboard", relative);

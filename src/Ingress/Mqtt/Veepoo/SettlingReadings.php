@@ -24,11 +24,8 @@ final class SettlingReadings
     /**
      * A leitura mais recente de cada pedido em curso, por aparelho.
      *
-     * Enquanto mede, o firmware manda uma trama por segundo e o valor anda: um só pedido de
-     * frequência cardíaca, numa pulseira ao pulso, deu dezanove leituras entre 79 e 97. Isso
-     * é a medição a assentar, e o resultado é o valor com que ela assentou -- o mesmo que a
-     * app do fabricante mostra. Publicar o caminho todo enchia o histórico do aparelho com o
-     * decorrer de uma medição em vez do que ela deu.
+     * Enquanto mede, o firmware manda uma trama por segundo e o valor anda. Isso é a medição
+     * a assentar, e o resultado é o valor com que ela assentou -- o mesmo que a app mostra.
      *
      * @var array<string, array<string, array{at: float, telemetry: array<string, mixed>, licenseId: int, company: string}>>
      */
@@ -37,11 +34,9 @@ final class SettlingReadings
     /**
      * Pedidos já encerrados, à espera da confirmação que ainda vem a caminho.
      *
-     * A pulseira diz `notWear` a meio da medição e o pedido morre aí. A confirmação chega a
-     * seguir -- o gateway executou o comando -- e encontrava-o sem leitura nenhuma à espera,
-     * dando-o por falhado outra vez e agora por não ter dado valor. Eram dois acontecimentos
-     * para o mesmo toque no botão, e o segundo apontava para o sensor quando o problema era
-     * o pulso.
+     * A pulseira diz `notWear` a meio da medição e o pedido morre aí; a confirmação do
+     * gateway chega a seguir, e sem esta lista dava o mesmo toque no botão por falhado duas
+     * vezes, com razões diferentes.
      *
      * @var array<string, array<string, float>>
      */
@@ -116,10 +111,8 @@ final class SettlingReadings
      * As leituras cuja confirmação nunca chegou e já passaram do prazo.
      *
      * O valor foi medido; se a caixa morrer entre a última trama e a confirmação, ele tem de
-     * sair na mesma.
-     *
-     * Larga uma de cada vez, e não todas de uma assentada: quem as recebe publica-as, e uma
-     * publicação que rebente deixa as restantes onde estão para saírem no tique seguinte.
+     * sair na mesma. Larga uma de cada vez, para que uma publicação que rebente deixe as
+     * restantes onde estão.
      *
      * @return \Generator<int, array{deviceKey: string, telemetry: array<string, mixed>, licenseId: int, company: string}>
      */

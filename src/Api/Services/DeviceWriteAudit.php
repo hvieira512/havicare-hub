@@ -10,12 +10,9 @@ use Hub\Log\Logger;
 /**
  * Regista uma escrita de metadados recusada, e devolve a recusa.
  *
- * Cada rejeição no `update()` eram seis linhas de instrumentação por uma de decisão, e a mesma
- * forma repetida seis vezes: o `request_id`, o IMEI, o código e a razão. O trabalho real --
- * limpar o estado retido no tópico antigo quando o aparelho muda de dono, de tipo ou de IMEI,
- * e a ordem deliberada entre o Redis e o inventário -- ficava enterrado no meio disso.
- *
- * Construído por pedido, porque o `request_id` e o IMEI são dele.
+ * Junta a forma que cada rejeição do `update()` repete -- o `request_id`, o IMEI, o código e
+ * a razão -- para o trabalho real não ficar enterrado na instrumentação. Construído por
+ * pedido, porque o `request_id` e o IMEI são dele.
  */
 final class DeviceWriteAudit
 {

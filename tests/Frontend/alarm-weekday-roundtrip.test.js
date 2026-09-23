@@ -16,8 +16,7 @@ import { configSection } from "./support/dom.js";
  * com o **domingo** na posição 0. A interface marca sempre 1 a 7, de segunda a domingo, e é
  * na fronteira que a conversão acontece.
  *
- * Errar aqui é um alarme a tocar no dia errado no pulso de alguém, e por isso a tabela é
- * exaustiva: os sete dias, nos dois sentidos, para cada construtor.
+ * Errar aqui é um alarme a tocar no dia errado, e por isso a tabela é exaustiva.
  */
 
 const DIAS = [

@@ -8,13 +8,9 @@ import { deviceTypeFields, deviceTypeOptions } from "../../src/Dashboard/dashboa
 /**
  * REDE DE SEGURANCA, escrita antes de tocar no modal.
  *
- * O `renderDeviceTypeSelector` decidia isto com quatro cadeias de `if` e cinco
- * `classList.toggle`. Estas expectativas são o comportamento que está em produção, e por
- * isso este ficheiro não muda quando a tabela de tipos passa a servi-lo: se for preciso mudar
- * uma expectativa aqui, a tabela mudou comportamento e não só a forma.
- *
- * O que se fixa: que campos aparecem por tipo, e que rotulo, ajuda e placeholder tem o
- * campo de identidade -- que era a parte espalhada por mais sitios.
+ * Estas expectativas são o comportamento que está em produção: se for preciso mudar uma delas,
+ * mudou o comportamento e não só a forma. O que se fixa é que campos aparecem por tipo, e que
+ * rotulo, ajuda e placeholder tem o campo de identidade.
  */
 
 const TYPES = ["watch", "ncs", "radar", "gateway", "diaper_sensor", "bracelet"];

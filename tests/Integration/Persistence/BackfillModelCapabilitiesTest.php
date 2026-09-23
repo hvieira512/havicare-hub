@@ -13,10 +13,8 @@ use Tests\Support\MysqlDashboardTestCase;
  * chegar. Enquanto o seeder saltava os modelos que já tinham linhas, não chegava: o
  * aparelho suportava a coisa e a API recusava-se a configurá-la.
  *
- * Isto foi uma migração (`2026081102_backfill_missing_model_capabilities`), escrita
- * porque na altura a semeadura só sabia encher modelos vazios. Agora enche lacunas e corre
- * a cada `migrate`, por isso o mesmo problema deixa de precisar de uma migração de cada
- * vez que acontece -- e o teste passa a apontar para onde o comportamento vive.
+ * A semeadura enche lacunas e corre a cada `migrate`, e por isso o mesmo problema deixa de
+ * precisar de uma migração de cada vez que acontece.
  */
 final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
 {

@@ -15,9 +15,8 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
  * O que entra no histórico cru do gateway.
  *
  * Um gateway em "real time scan & immediate report" publica cerca de duas mensagens por
- * segundo, e a lista da dashboard guarda 100 entradas. Enquanto os relatórios de scan foram
- * lá parar, a janela do histórico era de menos de um minuto e as tramas de estado -- as
- * únicas que trazem bateria e cobertura do próprio gateway -- eram despejadas em segundos.
+ * segundo, e a lista da dashboard guarda 100 entradas: com os relatórios de scan lá dentro, a
+ * janela do histórico era de menos de um minuto.
  *
  * A separação é por assunto e não por volume: um relatório de scan descreve os dispositivos
  * retransmitidos, que já têm o seu próprio histórico, e o histórico do gateway é do gateway.

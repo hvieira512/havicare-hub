@@ -15,8 +15,7 @@ use Hub\Log\Logger;
  * gateway confirma.
  *
  * Publica no canal de comandos do próprio gateway, e não no do aparelho: quem executa é a
- * caixa, que tem a sessão BLE. A criação continua a ser exclusiva da API REST -- isto é
- * entrega, o equivalente ao socket por onde um relógio recebe os seus.
+ * caixa, que tem a sessão BLE. Isto é entrega, não criação.
  */
 final class DownlinkDispatcher
 {
@@ -123,12 +122,8 @@ final class DownlinkDispatcher
      * Fecha o pedido que a pulseira não consegue cumprir.
      *
      * O acontecimento de falha diz a razão, mas dizer não é encerrar: sem isto o comando
-     * ficava em fila a ser reentregue até expirar, e a pulseira repetia de dez em dez minutos
-     * uma medição que já se sabia que não ia dar valor. Uma pulseira fora do pulso gastou
-     * assim três pontos de bateria numa manhã.
-     *
-     * Só o pedido daquela grandeza. As outras medições em fila não sabem nada sobre esta, e
-     * uma falha de contacto no ECG não diz nada sobre a leitura da bateria.
+     * ficava em fila a ser reentregue até expirar. Só o pedido daquela grandeza -- uma falha
+     * de contacto no ECG não diz nada sobre a leitura da bateria.
      */
     public function failPending(string $deviceKey, string $operation, string $reason): void
     {

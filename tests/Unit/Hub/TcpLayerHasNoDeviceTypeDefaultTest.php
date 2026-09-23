@@ -11,13 +11,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * A camada TCP não pode ter um tipo de dispositivo por omissão.
  *
- * O nome da camada deixou de dizer «watch», mas o conceito continuava lá: a sessão e o
- * servidor traziam `deviceType = 'watch'` por omissão, de quando os relógios eram a única
- * coisa a ligar-se ao socket. Um tipo por omissão neste sítio não dá erro nenhum -- dá
- * telemetria publicada no tópico errado, que é a falha mais cara de encontrar, porque quem
- * consome o contrato recebe um dispensador de comprimidos debaixo de `/watch/` e acredita.
- *
- * O tipo de um aparelho sai da whitelist, e quem não estiver na whitelist não chega aqui.
+ * Um `deviceType = 'watch'` por omissão não dá erro nenhum: dá telemetria publicada no tópico
+ * errado, e quem consome o contrato recebe um dispensador debaixo de `/watch/` e acredita. O
+ * tipo sai da whitelist, e quem não estiver na whitelist não chega aqui.
  */
 final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
 {

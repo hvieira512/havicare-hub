@@ -11,9 +11,8 @@ namespace Hub\Api\Configuration;
  * ficheiro de 42 s são 978 KB numa linha. A marca -- `voiceDataAvailable` e `voiceDataBytes`
  * -- é o vocabulário que a API já falava para o mesmo efeito, e que o ecrã já sabe ler.
  *
- * O tecto decide quem passa: zero marca sempre, e é o que o histórico usa, porque quem lê uma
- * revisão antiga quer saber o que mudou e não ouvir o anexo. O modelo de leitura da API usa um
- * tecto de 64 KB, que serve o áudio pequeno tal e qual.
+ * O tecto decide quem passa: zero marca sempre, e é o que o histórico usa; o modelo de leitura
+ * da API usa 64 KB, que serve o áudio pequeno tal e qual.
  */
 final class VoiceDataMarker
 {

@@ -413,9 +413,7 @@ export function uplinkCardContent(type, data, meta = {}) {
  * O valor reportado de uma configuração.
  *
  * O `device_config` traz um mapa: a chave é a definição e o valor é o que o aparelho diz ter
- * lá dentro. Sem isto caía no cartão genérico, que passa cada campo por `String()` -- o mapa
- * saía como «Definições: [object Object]», que não diz nem que definição é nem em que estado
- * ficou.
+ * lá dentro. Sem isto caía no cartão genérico e saía como «[object Object]».
  */
 /** Quantas TAGs o firmware anuncia servir, e quais. A linha resume; a gaveta traz a lista. */
 const SUPPORTED_TAGS_ON_THE_LINE = 8;

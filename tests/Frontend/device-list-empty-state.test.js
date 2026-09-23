@@ -8,11 +8,8 @@ import { deviceListEmptyState } from "../../src/Dashboard/dashboard/devices/list
 /**
  * O vazio tem de dizer o que o está a causar.
  *
- * Os filtros do selector persistem entre sessões. Com «Ligados» guardado de uma vez anterior,
- * procurar o IMEI completo de um aparelho desligado devolvia «Não há dispositivos para o
- * filtro selecionado» -- que se lê como «esse aparelho não existe» -- enquanto o cabeçalho, a
- * meio palmo de distância, continuava a dizer «49 dispositivos». O único «Limpar» estava na
- * outra coluna.
+ * Os filtros do selector persistem entre sessões, e um «Ligados» guardado de uma vez anterior
+ * faz «Não há dispositivos para o filtro selecionado» ler-se como «esse aparelho não existe».
  */
 /** O `online` é booleano, como o `changeDeviceFilter` o guarda: `null` é não filtrar. */
 const filters = (overrides = {}) => ({

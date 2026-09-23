@@ -8,15 +8,9 @@ import { settingRow } from "../../src/Dashboard/dashboard/components/setting-row
 /**
  * O botão de uma definição fica na linha do nome, por mais longa que seja a descrição.
  *
- * A linha é um `flex-wrap`, e o bloco do título levava `flex-grow-1` com a base no conteúdo:
- * com uma descrição de duas linhas a largura natural dele passava a largura toda, não sobrava
- * espaço para o botão, e o `wrap` mandava-o para a linha de baixo, encostado à esquerda. Cada
- * cartão de acção do dispensador gastava assim mais quarenta pixéis de altura para dizer o
- * mesmo.
- *
- * O que o corrige é a base a zero -- `flex: 1 1 0` --, que faz o bloco repartir o espaço que
- * sobra em vez de o reclamar todo. Fica na classe, porque o teste não tem motor de layout e é
- * a declaração que se pode prender aqui.
+ * A linha é um `flex-wrap`, e um bloco de título com a base no conteúdo reclama a largura
+ * toda e manda o botão para a linha de baixo. O que o corrige é a base a zero -- `flex: 1 1
+ * 0` --, e é a declaração que se prende aqui, porque o teste não tem motor de layout.
  */
 const LONG_NOTE = "Pergunta ao aparelho que configurações ele tem lá dentro e mostra-as aqui." +
     " Não muda nada: serve para confirmar que o que está no ecrã é mesmo o que o aparelho" +

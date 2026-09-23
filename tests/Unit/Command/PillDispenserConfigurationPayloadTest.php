@@ -10,16 +10,10 @@ use PHPUnit\Framework\TestCase;
 /**
  * O que o utilizador escreveu no ecrã chega inteiro ao construtor da trama.
  *
- * Entre a configuração guardada e os bytes há um validador por protocolo, e o do dispensador
- * devolvia `[]` para tudo o que não conhecesse pelo nome. Três definições novas -- os dois
- * tempos da toma e a contagem de compartimentos carregados -- caíam nesse `default`: o
- * `desired_payload` na base dizia `{"minutes":20}`, o comando saía com payload vazio, e o
- * aparelho recebia zero e respondia «ACEITE». Nada falhava em lado nenhum, e a definição
- * simplesmente não valia.
- *
- * Os testes que já existiam entravam pelo `DeviceCommandCatalog`, que é o degrau a seguir, e
- * por isso não viam nada disto. Este entra pelo degrau de cima, que é por onde a dashboard
- * entra.
+ * Entre a configuração guardada e os bytes há um validador por protocolo, e uma definição que
+ * ele não conheça pelo nome sai com payload vazio: o aparelho recebe zero e responde
+ * «ACEITE», sem nada falhar em lado nenhum. Este teste entra pelo degrau por onde a dashboard
+ * entra, e não pelo `DeviceCommandCatalog`, que é o de baixo.
  */
 final class PillDispenserConfigurationPayloadTest extends TestCase
 {

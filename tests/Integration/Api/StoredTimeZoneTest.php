@@ -11,13 +11,9 @@ use Tests\Support\MysqlDashboardTestCase;
 /**
  * A calibração do relógio encontra o fuso que o próprio aparelho reportou.
  *
- * A hora que se manda ao M228 é local, e o fuso vem do que o hub tem guardado. A procura
- * olhava para `$payload['timeZone']`, mas um valor **reportado** fica debaixo de `data` —
- * é a forma com que a projeção guarda qualquer leitura. Só o **desejado** é um mapa simples.
- *
- * Quer dizer que num aparelho cujo fuso nunca tenha sido escrito pelo hub — só lido dele —
- * a calibração continuava a mandar UTC e o aparelho ficava uma hora atrasado, que é
- * exactamente o defeito que ela devia corrigir.
+ * A hora que se manda ao M228 é local, e o fuso vem do que o hub tem guardado. Um valor
+ * **reportado** fica debaixo de `data`, que é como a projeção guarda qualquer leitura; só o
+ * **desejado** é um mapa simples.
  */
 final class StoredTimeZoneTest extends MysqlDashboardTestCase
 {

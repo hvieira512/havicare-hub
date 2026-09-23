@@ -12,14 +12,9 @@ use Psr\Http\Message\ServerRequestInterface;
 /**
  * Como uma rota chama o seu controlador.
  *
- * O contrato era implícito: o `ApiKernel` construía uma `ReflectionMethod` **a cada pedido**
- * para adivinhar, pela contagem de parâmetros e pelo tipo do primeiro, se o controlador queria
- * o pedido, os parâmetros do caminho, ou os dois. Isso custava reflexão no caminho quente --
- * o mesmo processo que serve a ingestão TCP de todos os relógios -- e, pior, não estava
- * escrito em lado nenhum: um controlador com os dois argumentos trocados compilava, passava o
- * PHPStan e falhava em execução.
- *
- * As rotas são construídas uma vez no arranque. A forma da chamada resolve-se aí.
+ * As rotas são construídas uma vez no arranque, e a forma da chamada resolve-se aí. Adivinhá-la
+ * por reflexão a cada pedido custava tempo no caminho quente e não estava escrita em lado
+ * nenhum: um controlador com os dois argumentos trocados só falhava em execução.
  */
 final class ApiRouteInvocationTest extends TestCase
 {

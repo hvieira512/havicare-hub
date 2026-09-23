@@ -11,13 +11,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * Cada protocolo é servido pelo seu tratador, e o contrato não escolhe por ele.
  *
- * Os lembretes de medicação são a capacidade com mais protocolos e a que tinha o despacho mais
- * espalhado: cinco `match ($protocol)` paralelos sobre o mesmo conjunto, cada um a repetir a
- * mesma tabela. Acrescentar um fornecedor obrigava a lembrar-se dos cinco, e esquecer um não
- * dava erro em lado nenhum -- dava o tratador errado ou uma recusa a meio do caminho.
- *
- * Estes testes prendem o encaminhamento com tratadores falsos que dizem quem são, para não
- * dependerem do que cada fornecedor real faz com os dados.
+ * Os lembretes de medicação são a capacidade com mais protocolos. Estes testes prendem o
+ * encaminhamento com tratadores falsos que dizem quem são, para não dependerem do que cada
+ * fornecedor real faz com os dados.
  */
 final class MedicationRemindersDispatchTest extends TestCase
 {
@@ -87,10 +83,8 @@ final class MedicationRemindersDispatchTest extends TestCase
     /**
      * E na leitura devolve o que lá está, em vez de o descodificar com um tratador ao calhas.
      *
-     * O `default` do `fromNative` caía no tratador do 4P Touch. Hoje está certo por acidente,
-     * porque o 4P Touch é o único caso que sobra depois dos dois nomeados; um quarto protocolo
-     * levava descodificação de 4P Touch em silêncio. A leitura não pode rebentar -- é o
-     * caminho que desenha o ecrã --, mas também não pode inventar.
+     * Um `default` que caia no tratador do 4P Touch dá descodificação de 4P Touch em silêncio
+     * ao protocolo seguinte. A leitura não pode rebentar, mas também não pode inventar.
      */
     public function testAnUnknownProtocolIsNotDecodedBySomebodyElsesHandler(): void
     {

@@ -13,12 +13,8 @@ use PHPUnit\Framework\TestCase;
  * As definições da toma que o aparelho suporta e o hub não expunha.
  *
  * Os dois tempos — quando avisar de atraso e quando desistir — decidem se uma dose por tomar
- * chega a alguém como alerta ou fica em silêncio. De fábrica são trinta e sessenta minutos, e
- * até agora só se mudavam por script. As outras três dizem quantos compartimentos estão
- * carregados, mandam o prato rodar até um deles, e suspendem a medicação por uns minutos.
- *
- * Os tempos são expostos em **minutos** e não nos segundos que o aparelho quer: quem marca
- * uma janela de medicação pensa em minutos, e a conversão é trabalho do hub.
+ * chega a alguém como alerta. São expostos em **minutos** e não nos segundos que o aparelho
+ * quer: a conversão é trabalho do hub.
  */
 final class PillDispenserRetrievalSettingsTest extends TestCase
 {

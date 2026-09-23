@@ -131,11 +131,8 @@ class AuthService
 
     /**
      * A identidade com que se renova sai de `api_users`, relida agora, e não do que o token
-     * guardou. Assim um utilizador desactivado, apagado ou com o papel mudado deixa de renovar,
-     * e um `licenseRefId` ou nome de empresa alterado propaga-se ao token novo.
-     *
-     * Sem `userId` não há linha a reler -- é um token de inquilino emitido por um administrador,
-     * que por desenho não corresponde a nenhuma conta. Esse segue com o contexto que trazia.
+     * guardou: um utilizador desactivado ou com o papel mudado deixa de renovar. Sem `userId`
+     * não há linha a reler, e o token de inquilino segue com o contexto que trazia.
      */
     private function identityForRefresh(ApiAuthContext $context): ?array
     {
@@ -169,16 +166,9 @@ class AuthService
      * Emite um token de inquilino a pedido de um administrador.
      *
      * Serve para a plataforma de um cliente entregar credenciais do hub às aplicações dela sem
-     * ter de guardar uma password por inquilino: pede com a conta de administrador que já usa,
-     * e o que recebe é um token que só vê o par nomeado.
-     *
-     * O que sai é sempre mais fraco do que aquilo com que se pediu, e é isso que torna a rota
-     * segura. Fechá-la a não-administradores é trabalho do `RouteAccessPolicy`, que abre ao
-     * `license_client` apenas a lista de rotas do inquilino e nega o resto -- por isso aqui
-     * não há verificação de papel nenhuma a repetir.
-     *
-     * Não há teto de tentativas porque não há password para verificar: quem chega aqui já
-     * apresentou um token válido, e a emissão são duas leituras e duas escritas no Redis.
+     * guardar uma password por inquilino. O que sai é sempre mais fraco do que aquilo com que
+     * se pediu, e fechar a rota a não-administradores é do `RouteAccessPolicy`. Não há teto de
+     * tentativas porque não há password para verificar.
      */
     public function licenseToken(array $payload, string $requestId = ''): array
     {
@@ -236,9 +226,8 @@ class AuthService
      * Um hash de referência, para uma tentativa contra uma conta que não existe custar o mesmo
      * que uma contra uma que existe.
      *
-     * É gerado e não escrito à mão de propósito: assim acompanha o custo que o
-     * `PASSWORD_DEFAULT` tiver na altura, em vez de ficar preso ao que era no dia em que a
-     * linha foi escrita -- e um custo menor aqui reabria o oráculo.
+     * É gerado e não escrito à mão de propósito: acompanha o custo que o `PASSWORD_DEFAULT`
+     * tiver na altura, e um custo menor aqui reabria o oráculo.
      */
     private ?string $referenceHash = null;
 
@@ -253,14 +242,8 @@ class AuthService
         $storedHash = is_array($user) ? (string)($user['password_hash'] ?? '') : '';
 
         // A verificação corre **sempre**, e sempre uma vez, aconteça o que acontecer a seguir.
-        //
-        // Medido antes: uma tentativa contra uma conta real custava ~175 ms de bcrypt e uma
-        // contra uma conta inexistente 0,5 ms, porque o `&&` fazia curto-circuito antes do
-        // `password_verify` quando não havia hash. Essa diferença de ~350× dizia a quem
-        // perguntasse que contas existem, sem ser preciso acertar em nenhuma password. E o
-        // curto-circuito ia mais longe do que isso: uma conta desactivada, ou um
-        // `license_client` mal ligado, também respondiam depressa -- e portanto também se
-        // distinguiam de uma conta saudável pelo relógio.
+        // Um curto-circuito antes do `password_verify` responde em 0,5 ms em vez de ~175 ms, e
+        // essa diferença diz a quem perguntar que contas existem e quais estão saudáveis.
         $passwordMatches = password_verify($password, $storedHash !== '' ? $storedHash : $this->referenceHash());
 
         if (!is_array($user) || $storedHash === '' || !$passwordMatches) {

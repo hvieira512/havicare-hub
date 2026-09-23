@@ -10,10 +10,8 @@ use Hub\Domain\Capability\CapabilityHelpers;
  *
  * As árvores de capacidades pretendida e reportada são achatadas em caminhos comparáveis
  * `secção.chave`, comparadas, e cada diferença é reportada com o estado do ciclo de vida do
- * comando que a devia ter entregado.
- *
- * Vive à parte do `DeviceCapabilityPresenter`, que projectava capacidades e classificava a
- * entrega delas na mesma classe. Esta metade não precisa do registo nem da base de dados.
+ * comando que a devia ter entregado. Vive à parte do `DeviceCapabilityPresenter` porque não
+ * precisa do registo nem da base de dados.
  */
 final class ConfigurationSyncStatus
 {

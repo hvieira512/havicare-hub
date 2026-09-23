@@ -12,8 +12,7 @@ use React\EventLoop\LoopInterface;
  * milissegundos, e sem isto uma queda só deixava rasto no `journalctl`, onde ninguém olha.
  *
  * Escreve-se um ficheiro ao arrancar e apaga-se ao desligar em condições: encontrá-lo ao
- * arrancar quer dizer que o anterior não passou pelo `SIGTERM`. Não adivinha a causa -- só
- * garante que alguém fica a saber.
+ * arrancar quer dizer que o anterior não passou pelo `SIGTERM`.
  */
 final class CrashWatch
 {
@@ -24,10 +23,8 @@ final class CrashWatch
     /**
      * Toma posse do arranque, relata a queda anterior e liga o desligar limpo ao loop.
      *
-     * Uma queda tem de chegar a alguém. O `Restart=always` levanta o processo em
-     * milissegundos e a única prova ficava no `journalctl`; a notificação aparece no sino da
-     * dashboard, que é onde se está a olhar. Repetições incrementam o contador e voltam a
-     * pô-la por ler.
+     * A notificação aparece no sino da dashboard, que é onde se está a olhar. Repetições
+     * incrementam o contador e voltam a pô-la por ler.
      */
     public static function attach(LoopInterface $loop, HubServices $services, string $markerPath): self
     {

@@ -13,14 +13,9 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 /**
  * O recuo entre reconexões, quando o broker aceita a ligação e a larga logo a seguir.
  *
- * É o caso que um `client_id` duplicado produz -- o segundo cliente a chegar expulsa o
- * primeiro, os dois reconectam, e expulsam-se um ao outro sem fim. Como o `connect` devolve
- * sucesso, um recuo reposto a cada tentativa nunca cresce.
- *
- * Isso não seria mais do que ruído no log se o MQTT tivesse loop próprio. Não tem: o
- * `IngressRunner` agenda os ticks no mesmo event loop que serve o HTTP, e o `connect` é
- * bloqueante -- cada tentativa pára a dashboard, o que se vê em pedidos de 88 a 400 ms com
- * `duration_ms: 0` registado pelo próprio hub.
+ * É o caso que um `client_id` duplicado produz, e como o `connect` devolve sucesso um recuo
+ * reposto a cada tentativa nunca cresce. O MQTT não tem loop próprio: o `connect` é
+ * bloqueante e cada tentativa pára a dashboard.
  */
 final class BridgeReconnectBackoffTest extends TestCase
 {

@@ -15,10 +15,8 @@ use Hub\Registry\Whitelist;
 /**
  * Põe no fio o que um gateway ouviu de um aparelho retransmitido.
  *
- * Nada aqui decide: recebe o que os decoders já reconheceram e os normalizadores já traduziram,
- * e escolhe apenas o destino -- o MQTT, que leva tudo, e o histórico da dashboard, que leva
- * uma amostra. Essa distinção é o assunto desta classe, e é a razão de ela existir separada da
- * `Bridge`, que encaminha.
+ * Nada aqui decide: recebe o que os decoders já reconheceram e escolhe apenas o destino -- o
+ * MQTT, que leva tudo, e o histórico da dashboard, que leva uma amostra.
  */
 final class RelayPublisher
 {
@@ -52,10 +50,8 @@ final class RelayPublisher
     /**
      * Guarda a observação crua no histórico do aparelho retransmitido, para debugging.
      *
-     * No histórico **dele** e não do gateway de propósito: as observações são de alta
-     * frequência e afogariam as tramas de estado do gateway; a lista `raw` do aparelho é
-     * dedicada, portanto não expulsa a sua própria telemetria. Só para aparelhos já
-     * autorizados -- o `$device` chega resolvido e ligado a este gateway.
+     * No histórico **dele** e não do gateway: as observações são de alta frequência e
+     * afogariam as tramas de estado do gateway. Só para aparelhos já autorizados.
      *
      * @param array<string, mixed> $device @param array<string, mixed> $gateway
      * @param array<string, mixed> $observation
@@ -173,9 +169,8 @@ final class RelayPublisher
      * O protocolo por que um aparelho retransmitido reporta.
      *
      * O tipo sozinho não chega: uma pulseira tanto é W6 como W6B, e nem sequer é
-     * necessariamente MOKO -- um gateway MOKO vê tudo o que anuncia à sua volta, e a MF91 da
-     * Wonlex fala Veepoo. Quem sabe isto é o `DeviceProtocol`, que resolve pelo par
-     * fornecedor/modelo; o tipo fica como último recurso, para um modelo que ele não conheça.
+     * necessariamente MOKO. Quem sabe isto é o `DeviceProtocol`, que resolve pelo par
+     * fornecedor/modelo; o tipo fica como último recurso.
      *
      * @param array<string, mixed> $device
      */

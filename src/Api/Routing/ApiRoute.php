@@ -40,8 +40,7 @@ final class ApiRoute
      * - `fn(array, ServerRequestInterface): mixed` -- quer os dois, por esta ordem.
      *
      * O tipo não se escreve mais apertado do que isto de propósito: uma união das quatro
-     * assinaturas descrevia-o mal e obrigava a mentir em três delas, que era o que a
-     * declaração anterior fazia -- dizia que todos os handlers levavam dois argumentos.
+     * assinaturas obrigava a mentir em três delas.
      *
      * @param callable $handler
      */

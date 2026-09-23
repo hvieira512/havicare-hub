@@ -371,12 +371,7 @@ class DeviceHubServer
 
             // Os eventos saem por `events`, a QoS 1, e as leituras por `telemetry`, a QoS 0. A
             // `location` do mesmo frame de um alarme fica em `telemetry`, com
-            // `reportKind: "alarm"` a ligar as duas.
-            //
-            // Quem decide é o catálogo, que já declara o `isEvent` em cada definição. Era uma
-            // lista escrita aqui, e as duas fontes de verdade discordavam: uma dose falhada só
-            // se anuncia pela mudança de estado de um alarme, e essa saía por telemetria --
-            // sem garantia de entrega, o acontecimento mais importante que este aparelho tem.
+            // `reportKind: "alarm"` a ligar as duas. Quem decide é o `isEvent` do catálogo.
             $channel = CapabilityCatalog::isEventType((string)$type) ? 'events' : 'telemetry';
             if ($channel === 'events') {
                 $this->mqtt->publishEvent($session->imei, $event, $session->deviceType, $licenseId, $company);

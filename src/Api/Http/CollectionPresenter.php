@@ -7,12 +7,9 @@ namespace Hub\Api\Http;
 /**
  * As listagens que cabem em memória: filtra, ordena, conta e só depois pagina.
  *
- * A ordem dos quatro passos não é indiferente. Contar antes de filtrar daria números que não
- * correspondem ao que se vê; paginar antes de ordenar deixaria a página 2 com as linhas da
- * ordem anterior.
- *
- * As listagens grandes -- a de dispositivos -- não passam por aqui: essas paginam no SQL,
- * porque trazê-las inteiras para memória a cada pedido não escala.
+ * A ordem dos quatro passos não é indiferente: contar antes de filtrar dá números que não
+ * correspondem ao que se vê, e paginar antes de ordenar dá à página 2 as linhas da ordem
+ * anterior. As listagens grandes -- a de dispositivos -- paginam no SQL e não passam aqui.
  */
 final class CollectionPresenter
 {

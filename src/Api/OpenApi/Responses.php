@@ -23,11 +23,8 @@ final class Responses
      * devolver. O estado de cada código vem do `ApiError` e não se escreve aqui, senão as
      * duas listas divergiam sem nada as confrontar.
      *
-     * Vários códigos com o mesmo estado colapsam numa entrada só -- a resposta tem a mesma
-     * forma, e é o `code` no corpo que distingue o caso.
-     *
-     * A junção é com `+` e não com `...`: as chaves são estados HTTP, e o desdobramento
-     * renumera chaves inteiras.
+     * Vários códigos com o mesmo estado colapsam numa entrada só. A junção é com `+` e não
+     * com `...`: as chaves são estados HTTP, e o desdobramento renumera chaves inteiras.
      *
      * @param array<string, mixed> $success as respostas de sucesso, já com o seu estado
      * @return array<string, mixed>

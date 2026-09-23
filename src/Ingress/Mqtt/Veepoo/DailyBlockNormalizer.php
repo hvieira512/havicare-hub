@@ -12,13 +12,8 @@ namespace Hub\Ingress\Mqtt\Veepoo;
  * datada somando o seu índice.
  *
  * O firmware usa dois sentinelas para «não medido»: 0xFF nas grandezas de um byte e 0 nas
- * que nunca valem zero num ser vivo. Publicar qualquer um deles seria inventar uma medição.
- *
- * O sono fica de fora, apesar de o bloco trazer um campo com esse nome. A documentação
- * promete seis estados; num histórico de 733 blocos o firmware só devolveu 0, 112, 136, 144,
- * 200 e 208, com a mesma distribuição de manhã e de tarde. Nesse histórico não há um único
- * bloco noturno com batimentos -- a pulseira nunca esteve ao pulso a dormir --, e sem isso
- * não há como saber o que os códigos dizem. Quando houver uma noite medida, resolve-se aqui.
+ * que nunca valem zero num ser vivo. O sono fica de fora, apesar de o bloco trazer um campo
+ * com esse nome: os códigos que o firmware devolve não batem certo com a documentação.
  */
 final class DailyBlockNormalizer
 {
@@ -47,10 +42,8 @@ final class DailyBlockNormalizer
     /**
      * O código de uso que significa «detecção passou».
      *
-     * O javadoc chama ao campo «bits de bandeira de uso» e não publica a tabela. Em capturas
-     * de dois dias apareceram quatro valores: `0` sempre que há leitura ótica, e `1`, `2` e
-     * `6` sempre que não há nenhuma -- a pulseira a ser calçada, pousada na secretária, e a
-     * noite inteira fora do pulso. A regra é a bandeira a zero, não cada código de per si.
+     * O javadoc chama ao campo «bits de bandeira de uso» e não publica a tabela. A regra
+     * observada é a bandeira a zero sempre que há leitura ótica, e não cada código de per si.
      */
     private const WEAR_OK = 0;
 
@@ -205,14 +198,8 @@ final class DailyBlockNormalizer
     /**
      * Os cinquenta intervalos R-R do bloco, na forma que o hub já usa para esta grandeza.
      *
-     * O firmware conta-os em unidades de dez milissegundos e não em milissegundos: no bloco
-     * das 09:00 a média das leituras é 73,75, que a dez milissegundos dá 738 ms -- os 81 bpm
-     * que o mesmo bloco reporta como frequência cardíaca. Publicá-los em cru daria intervalos
-     * de oitenta milissegundos, ou seja setecentos batimentos por minuto.
-     *
-     * Vão sem instante próprio de propósito. São uma amostra de trinta e sete segundos dentro
-     * de um bloco de cinco minutos, e a posição na lista não diz onde: reconstruir carimbos
-     * somando-os afirmaria que foram medidos em fila logo no início do bloco.
+     * O firmware conta-os em unidades de dez milissegundos e não em milissegundos. Vão sem
+     * instante próprio de propósito: a posição na lista não diz onde caem dentro do bloco.
      *
      * @return list<array{milliseconds: int}>
      */
@@ -302,16 +289,10 @@ final class DailyBlockNormalizer
     /**
      * Glicemia do bloco, com o nível de risco que o firmware lhe atribui.
      *
-     * O firmware usa duas formas para o mesmo campo: um objeto com valor e nível quando os
-     * declara, e um número solto quando só tem o valor -- é assim que o MF91 o envia. Aceitar
-     * só o objeto deixava a glicemia calada para sempre, sem erro nenhum.
-     *
-     * O nível vem como 1, 2 ou 3 e traduz-se para as enumerações inglesas do hub. Um valor a
-     * zero é ausência de leitura, não uma glicemia de zero.
-     *
-     * O hub publica glicemia em mg/dL -- é o nome do campo e portanto o contrato. A pulseira
-     * reporta em mmol/L, e por isso converte-se aqui: publicar o valor original sob um nome
-     * que diz mg/dL seria dar o número certo com a unidade errada.
+     * O firmware usa duas formas para o mesmo campo: um objeto com valor e nível, e um número
+     * solto quando só tem o valor -- é assim que o MF91 o envia. O nível vem como 1, 2 ou 3 e
+     * traduz-se para as enumerações inglesas; a pulseira reporta em mmol/L e o contrato é
+     * mg/dL, por isso converte-se aqui.
      *
      * @return array{glucoseMgDl: float, riskLevel?: string}|null
      */
@@ -395,15 +376,8 @@ final class DailyBlockNormalizer
      * Zero passos é uma leitura verdadeira, ao contrário de zero batimentos; o que se
      * descarta é o bloco que não traz sequer a contagem.
      *
-     * A distância e as calorias do bloco ficam de fora porque não são medições: em
-     * quatrocentos e dezasseis blocos capturados são sempre os passos vezes uma constante --
-     * 0,86 m e 0,067 kcal por passo -- e zero sempre que os passos são zero. O acumulado do
-     * dia, esse, é contado pela pulseira e chega pelo `Bridge` como `activity`.
-     *
-     * A `amountOfExercise` também fica: é um contador do acelerómetro sem unidade nem escala
-     * documentada, que a app do fabricante não mostra em lado nenhum. O movimento com unidade
-     * é o `met`, que cobre vinte e um dos vinte e cinco blocos em que ela é diferente de zero
-     * e nunca aparece sem ela.
+     * A distância, as calorias e a `amountOfExercise` ficam de fora porque não são medições:
+     * as duas primeiras são os passos vezes uma constante, e a terceira não tem unidade.
      *
      * @return array{count: int, periodSeconds: int}|null
      */

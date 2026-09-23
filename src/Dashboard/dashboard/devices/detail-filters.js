@@ -16,13 +16,9 @@ import { filterChips } from "../components/chips.js";
  * Os filtros do histórico de um dispositivo -- a janela de datas, o tipo e a pesquisa -- e os
  * paginadores dos dois painéis que eles reduzem.
  *
- * Saíram do `detail.js` porque não desenham o ecrã: reduzem uma lista, dizem que pastilhas
- * mostrar e escolhem que página dela se vê. Tudo o que volta a desenhar entra pelo contexto
- * do arranque -- o `onChange` e os dois renderizadores dos painéis -- e não por um import de
- * volta: o grafo de módulos da dashboard não tem ciclos e não é aqui que ganha o primeiro.
- *
- * Não confundir com o `devices/list-filters.js`, que filtra a *listagem* de dispositivos.
- * Estes filtram o que um dispositivo já reportou.
+ * Não desenham o ecrã: tudo o que volta a desenhar entra pelo contexto do arranque, para o
+ * grafo de módulos não ganhar um ciclo. Não confundir com o `devices/list-filters.js`, que
+ * filtra a *listagem* de dispositivos; estes filtram o que um dispositivo já reportou.
  */
 
 let els;

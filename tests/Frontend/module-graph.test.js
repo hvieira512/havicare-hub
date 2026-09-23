@@ -12,10 +12,8 @@ import { reachableFrom } from "./support/module-graph.js";
  * ficheiro é individualmente válido.
  *
  * Avaliá-los em node falha em globais como o `window` -- isso é esperado e ignorado. O que
- * não se ignora são as duas formas de um import partido: um nome que ninguém exporta, que dá
- * `SyntaxError`, e um caminho para um ficheiro que não existe, que dá `ERR_MODULE_NOT_FOUND`.
- * A segunda é a que aparece ao mover ou apagar um módulo, que é precisamente quando isto é
- * preciso.
+ * não se ignora são as duas formas de um import partido: um nome que ninguém exporta
+ * (`SyntaxError`) e um caminho que não existe (`ERR_MODULE_NOT_FOUND`).
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ENTRY = path.join(here, "../../src/Dashboard/main.js");

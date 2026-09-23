@@ -15,14 +15,9 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 /**
  * A fronteira entre clientes nos dois ingressos que retransmitem por um gateway.
  *
- * Um gateway só fala por aparelhos do mesmo cliente e da mesma licença. A ligação estar
- * activa não chega: a tabela de ligações é editável na dashboard, e um engano ali não pode
- * bastar para a telemetria de um cliente sair debaixo de outro.
- *
- * A regra está escrita duas vezes -- em `Moko\Bridge::linkedDevice()` e em linha no
- * `Veepoo\Bridge::handleMessage()` -- e é por isso que este teste exercita os dois: a
- * cobertura que existia só apanhava a cláusula da ligação, e as da empresa e da licença
- * podiam desaparecer de qualquer um dos lados com a suite inteira a verde.
+ * Um gateway só fala por aparelhos do mesmo cliente e da mesma licença, e a ligação estar
+ * activa não chega. A regra está escrita duas vezes -- em `Moko\Bridge::linkedDevice()` e em
+ * linha no `Veepoo\Bridge::handleMessage()` --, e por isso este teste exercita os dois.
  */
 final class GatewayTenantBoundaryTest extends TestCase
 {

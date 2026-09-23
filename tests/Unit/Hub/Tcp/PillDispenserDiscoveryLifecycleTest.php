@@ -13,12 +13,8 @@ use PHPUnit\Framework\TestCase;
  * Uma resposta à descoberta de parâmetros fecha o pedido que a provocou.
  *
  * O `replyAccepted` decide pelo corpo TFLV, e uma resposta à descoberta não tem nenhum: as
- * TAGs vêm numa lista simples, fora do TFLV. Caía na guarda do corpo vazio, que devolve
- * `null` — «não disse» —, e o pedido ficava eternamente «a aguardar resposta do dispositivo»,
- * a ser repetido de minuto a minuto, com o aparelho a responder de cada vez.
- *
- * Apanhou-se na dashboard, com o aparelho ligado: a lista das 54 TAGs de configuração chegou
- * e ficou lá guardada, e o cartão continuava amarelo a dizer que esperava.
+ * TAGs vêm numa lista simples, fora do TFLV. Sem isto caía na guarda do corpo vazio e o
+ * pedido ficava eternamente «a aguardar resposta do dispositivo».
  */
 final class PillDispenserDiscoveryLifecycleTest extends TestCase
 {

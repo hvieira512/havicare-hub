@@ -18,46 +18,13 @@ final class CapabilityCatalogTest extends TestCase
             'radar' => [9, '45dfaa71313e4da275fca1da9536b826bf0fe6a442cf462d3d2534db1499fa65'],
             'gateway' => [3, '044f4b1de47b562638442dc3fc8be22b3ab76043721211a47f478ee68124a91f'],
             'diaper_sensor' => [7, '1aabeb619dd84c1e60cb25bc6d43fe88ea8b3b708365ad38f39a3c13bf5c4fd2'],
-            // De 4 para 28 com a Veepoo MF91: as W6/W6B só anunciam bateria, movimento,
-            // proximidade e botão, mas uma pulseira com sessão GATT entrega dezasseis
-            // grandezas e aceita seis interruptores de medição autónoma. E 36 desde que a
-            // pulseira passou a dizer se está ao pulso, a medir composição corporal, a contar
-            // os passos de cada bloco à parte do acumulado do dia, e a versão que traz.
-            // São 40 desde que se deixou de a configurar só por interruptores: a janela em
-            // que mede o oxigénio, os limiares do alerta de frequência cardíaca, e as duas
-            // calibrações que entram nas contas do aparelho -- tom de pele e dados do corpo.
-            // Os alarmes, os lembretes e as unidades existem na pulseira e ficaram de fora:
-            // não alteram nenhuma leitura. E 41 desde que o relatório de sono do firmware
-            // deixou de se perder: as pontuações que ele atribui à noite saem à parte do
-            // `sleep`, que é o contrato partilhado com os relógios e não pontua nada. O sono
-            // passou também a poder ser pedido: é a única grandeza sem outro caminho, e a
-            // pulseira responde ao pedido a qualquer momento.
+            // As 41 da pulseira: as W6/W6B só anunciam bateria, movimento, proximidade e
+            // botão, e é a Veepoo MF91 que traz o resto — as grandezas da sessão GATT, os
+            // interruptores de medição autónoma e as calibrações que entram nas contas dela.
             'bracelet' => [41, 'c24b1c638090a697db262e4159d9b57acc2632480af274cb8c98e1b4f2ef57bd'],
-            // O dispensador M228: oito grandezas de telemetria, três eventos (toma, avaria,
-            // chamada de ajuda), doze configurações e dez acções. Cada enumeração é uma
-            // configuração própria -- volume e toque não são a mesma escolha -- e o
-            // `device_status` é pedível desde que o `0x07` passou a perguntar o estado em vez
-            // de se esperar pelo heartbeat. A sétima é o estado dos nove alarmes, que
-            // é como a toma de medicação se lia antes de a cifra abrir. Três das acções
-            // perguntam ao aparelho que parâmetros ele serve, uma por família. Três não estão
-            // cá: a reposição de fábrica, que devolvia o aparelho ao servidor do fornecedor,
-            // desligar a cifra, que o firmware recusa sempre, e mudar o servidor a que ele se
-            // liga, que é a única ordem que nos pode fazer perder o aparelho. Rodar até um
-            // compartimento e pausar a medicação também não: estão na especificação da série,
-            // mas este firmware recusa-as e a descoberta de parâmetros não as anuncia. O
-            // cartão SIM também não: o CCID é um identificador que nunca muda e ninguém o
-            // consulta na dashboard, e cada leitura de estado repetia-o na lista de eventos.
-            // O `device_status` deixou de ser uma gaveta e já não publica nada -- é só o botão
-            // que pede o estado. O sinal saiu para a `connectivity` que os gateways já usam, a
-            // corrente juntou-se à bateria, a tampa ganhou cartão próprio, e o ambiente de
-            // armazenamento virou alerta, ao lado da avaria, porque só fala quando dispara.
-            // E o `medication_level` saiu: era o juízo grosseiro do aparelho a dizer o mesmo
-            // que a contagem de células, sem número nenhum — passou a campo dela. A mudança de
-            // estado de uma dose entrou como acontecimento próprio, porque é o único sinal de
-            // uma dose falhada e viajava dentro de uma leitura, pelo canal sem garantia.
-            // E o `device_status` saiu: era uma capacidade que não publicava nada e existia só
-            // para ser o botão do `0x07`. A trama enche sete leituras, e são essas sete que
-            // passam a pedir-se — o clique fica no mosaico que a pessoa está a olhar.
+            // As 33 do dispensador M228: telemetria, eventos, configurações e acções, cada
+            // enumeração como configuração própria. Ficam de fora a reposição de fábrica,
+            // desligar a cifra e mudar o servidor — as três que nos podem tirar o aparelho.
             'pill_dispenser' => [33, 'caa2d6f45a81be827fe8fc62543ceccaa870ccde7b48268f4016505d69fc81d4'],
         ];
 
@@ -206,14 +173,9 @@ final class CapabilityCatalogTest extends TestCase
     /**
      * O `isTelemetry` e a secção dizem a mesma coisa, e têm de continuar a dizê-la.
      *
-     * Cada definição declara as duas ao lado uma da outra, e nas 93 que existem coincidem
-     * sempre -- o `is_telemetry` da base de dados é, na prática, `section = 'telemetry'`. Uma
-     * definição que as separasse não daria erro em sítio nenhum: o `ModelCapabilityRepository`
-     * filtra por `is_telemetry`, o ecrã das capacidades lê `isTelemetry`, e a capacidade
-     * aparecia numa secção a dizer que era telemetria ou o contrário.
-     *
-     * Vale mais prender a coincidência aqui do que remover a repetição de 93 declarações: a
-     * redundância é legível, e é a divergência que faz mal.
+     * O `is_telemetry` da base de dados é, na prática, `section = 'telemetry'`. Uma definição
+     * que as separasse não daria erro em sítio nenhum: o repositório filtra por uma e o ecrã
+     * lê a outra.
      */
     public function testTelemetryFlagAndSectionCannotDisagree(): void
     {

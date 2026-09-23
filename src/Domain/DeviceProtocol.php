@@ -7,10 +7,8 @@ final class DeviceProtocol
     /**
      * Os fornecedores cujos modelos não partilham um protocolo só.
      *
-     * A MOKO vende gateways e pulseiras, e por isso resolver só pelo fornecedor dava a uma
-     * W6B o protocolo de gateway do MKGW3. A Wonlex tem o mesmo problema pelo outro lado:
-     * vende relógios que falam TCP e a MF91, que é BLE e não entende uma única trama do
-     * protocolo dos relógios. As chaves vêm em minúsculas.
+     * A MOKO vende gateways e pulseiras, e a Wonlex vende relógios TCP e a MF91, que é BLE:
+     * resolver só pelo fornecedor dava a protocolo errado a metade deles. Chaves em minúsculas.
      *
      * @var array<string, array<string, string>>
      */

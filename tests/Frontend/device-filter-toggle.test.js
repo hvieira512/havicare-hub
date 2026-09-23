@@ -11,14 +11,9 @@ const { handleDeviceFilterClick, initListFilters } =
 /**
  * O que um clique numa caixa de filtro faz ao estado, sem passar pelo desenho.
  *
- * As três árvores -- fornecedor/modelo, empresa/licença -- desenham o filho marcado quando o
- * pai está marcado, mas quem está na lista é só o pai. Por isso um clique num filho marcado
- * não é «tira este valor da lista»: é «troca o pai pelos irmãos». E marcar o pai tem de
- * apagar os filhos marcados à parte, senão a condição leva o mesmo fornecedor duas vezes e a
- * lista estreita quando devia alargar.
- *
- * Nada disto se vê no ecrã antes de estar errado: a caixa continua a acender, e o que muda é
- * a lista de dispositivos que volta do servidor.
+ * As árvores desenham o filho marcado quando o pai está marcado, mas quem está na lista é só o
+ * pai: um clique num filho marcado é «troca o pai pelos irmãos», e marcar o pai tem de apagar
+ * os filhos marcados à parte. Nada disto se vê no ecrã antes de estar errado.
  */
 const els = new Proxy({}, {
     get(target, name) {

@@ -12,13 +12,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * O hub não expõe a reposição de fábrica do dispensador, e isso tem de continuar assim.
  *
- * O M228 só aponta para o hub porque o fornecedor lhe mandou essa configuração. Uma reposição
- * devolve-o ao servidor dele: deixa de nos falar, e recuperá-lo obriga a pedir a outra pessoa,
- * noutro fuso horário, que a volte a empurrar. Um clique enganado na dashboard -- e o botão
- * estava debaixo do «Reiniciar» -- custava o aparelho.
- *
- * Nos relógios a mesma acção continua a existir: lá é recuperável, e por isso a chave genérica
- * não desaparece do catálogo, só a exposição do dispensador.
+ * O M228 só aponta para o hub porque o fornecedor lhe mandou essa configuração, e uma
+ * reposição devolve-o ao servidor dele. Nos relógios a mesma acção continua a existir, porque
+ * lá é recuperável: o que sai do catálogo é só a exposição do dispensador.
  */
 final class PillDispenserNoFactoryResetTest extends TestCase
 {

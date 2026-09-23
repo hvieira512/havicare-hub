@@ -13,14 +13,8 @@ use PHPUnit\Framework\TestCase;
  * Uma acção que o utilizador não desfaz tem de dizer, na definição, o que faz ao aparelho.
  *
  * A mesma capacidade significa coisas diferentes conforme o protocolo: o `reset_device` da
- * Wonlex é uma reposição de fábrica, o do 4P Touch é um reinício. Enquanto a frase da
- * confirmação foi escolhida pela chave da capacidade, a reposição de fábrica era confirmada
- * com «fica sem comunicar enquanto arranca» -- e quem carregava julgava que o relógio voltava
- * dali a um minuto, quando na verdade voltava a apontar para o servidor do fornecedor e
- * deixava de ser comandável a partir do hub.
- *
- * Quem sabe o que o comando faz é quem escreveu o adaptador, e é por isso que a frase vive na
- * definição, ao lado do rótulo e da legenda.
+ * Wonlex é uma reposição de fábrica, o do 4P Touch é um reinício. Quem sabe o que o comando
+ * faz é quem escreveu o adaptador, e é por isso que a frase vive na definição.
  */
 final class DestructiveConfirmationTest extends TestCase
 {

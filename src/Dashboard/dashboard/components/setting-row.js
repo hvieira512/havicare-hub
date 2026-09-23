@@ -4,12 +4,9 @@ import { html, raw } from "../html.js";
  * Uma definição numa linha: o nome à esquerda, e à direita o que lhe pertence -- a pastilha
  * de estado e o que se faz com ela.
  *
- * Serve os três desenhos do painel de configurações -- o cartão de uma acção sem parâmetros,
- * o cartão de uma definição de um campo, e cada linha de um grupo -- para o espaçamento, a
- * ordem e o lugar da pastilha serem os mesmos nos três.
- *
- * O `badge` e as `actions` entram já construídos. É o único acoplamento, e é o que mantém a
- * linha ignorante do vocabulário da configuração: quem sabe de `data-config-*` é o painel.
+ * Serve os três desenhos do painel de configurações, para o espaçamento, a ordem e o lugar da
+ * pastilha serem os mesmos nos três. O `badge` e as `actions` entram já construídos, o que
+ * mantém a linha ignorante do vocabulário da configuração.
  */
 export function settingRow({
     title,

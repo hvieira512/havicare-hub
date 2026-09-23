@@ -33,10 +33,8 @@ final class StreamController
      * Quantos frames uma ligação pode ter à espera antes de ser fechada.
      *
      * Ao contrário do stream de um dispositivo, aqui não se pode saltar um envio: aquele relê
-     * o estado autoritativo e não perde nada ao saltar, e um espelho de mensagens não tem
-     * estado para reler. Perder um `event` em silêncio é pior do que uma religação -- quem
-     * religa volta a listar e reencontra o estado; quem não sabe que perdeu um alarme fica a
-     * mostrar o mundo errado com confiança.
+     * o estado autoritativo, e um espelho de mensagens não tem estado para reler. Perder um
+     * `event` em silêncio é pior do que uma religação.
      */
     private const QUEUE_LIMIT = 256;
 
@@ -72,14 +70,9 @@ final class StreamController
         $company = trim((string)$auth->company);
         $licenseId = (int)$auth->licenseId;
 
-        // Um administrador não tem inquilino próprio, mas pode nomear um. O âmbito dele seria
-        // o sistema inteiro, e disso não há implementação -- o fanout é indexado por âmbito e
-        // não tem wildcard --, mas recusá-lo por completo era uma restrição sem contrapartida:
-        // ele já lê os dispositivos desse inquilino por todas as outras rotas. Nomeado, o
-        // âmbito fica tão limitado como o de um cliente, e é uma subscrição só.
-        //
-        // Para o `license_client` os parâmetros não existem: o âmbito sai do token e nada no
-        // pedido o pode alargar.
+        // Um administrador não tem inquilino próprio, mas pode nomear um: o fanout é indexado
+        // por âmbito e não tem wildcard. Para o `license_client` os parâmetros não existem --
+        // o âmbito sai do token e nada no pedido o pode alargar.
         if ($auth->isAdmin()) {
             parse_str((string)$request->getUri()->getQuery(), $params);
             $company = trim((string)($params['company'] ?? ''));
@@ -250,8 +243,7 @@ final class StreamController
      * informação -- envolvendo em vez de misturar.
      *
      * O `payload` entra por concatenação, e não por descodificar e voltar a codificar: é a
-     * mesma string que vai para o fio, byte a byte, e quem já tem código escrito contra o MQTT
-     * reutiliza a desserialização que tem.
+     * mesma string que vai para o fio, byte a byte.
      */
     private static function frame(
         string $company,

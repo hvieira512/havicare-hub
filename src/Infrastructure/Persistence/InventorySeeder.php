@@ -11,11 +11,8 @@ use PDO;
  * ligações aos gateways.
  *
  * Fora do plano de migrações de propósito: o `DatabaseMigrator` corre também na base-modelo
- * que os testes clonam, e uma migração que insere inventário fazia cada teste começar com
- * vinte e seis dispositivos. O esquema é migração; os dados de arranque são um passo à parte.
- *
- * As imagens dos modelos viajam em `database/seed-model-images` porque o `var/` está no
- * gitignore, e são copiadas para o lugar aqui.
+ * que os testes clonam. O esquema é migração; os dados de arranque são um passo à parte. As
+ * imagens viajam em `database/seed-model-images` porque o `var/` está no gitignore.
  */
 final class InventorySeeder
 {

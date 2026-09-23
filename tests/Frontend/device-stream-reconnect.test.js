@@ -8,12 +8,9 @@ import { installStreamHarness } from "./support/device-stream-harness.js";
  * chegam: o `GET /api/devices/{imei}` traz o dispositivo, o modelo e a configuração, e a
  * sondagem de 30 em 30 segundos preserva de propósito o `recent` que já tinha.
  *
- * Antes, um `EventSource` que fechasse fazia `close()` e ficava por ali. O resultado era o
- * histórico congelado no ecrã, sem erro nenhum à vista, até alguém trocar de dispositivo ou
- * o token ser renovado. Estes testes prendem a religação.
- *
- * Com `fetch` em vez de `EventSource`, o fim do corpo é o que assinala a queda -- e ao
- * contrário do `onerror`, traz o estado da resposta consigo.
+ * Estes testes prendem a religação: sem ela o histórico ficava congelado no ecrã, sem erro
+ * nenhum à vista. Com `fetch` em vez de `EventSource`, o fim do corpo é o que assinala a
+ * queda -- e ao contrário do `onerror`, traz o estado da resposta consigo.
  */
 
 const harness = installStreamHarness();

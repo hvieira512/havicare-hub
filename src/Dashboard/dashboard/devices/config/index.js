@@ -62,9 +62,7 @@ function queueDeadline(seconds) {
 /**
  * O aviso de que o aparelho não está a ouvir.
  *
- * O painel apresentava os blocos e os «Enviar» de um aparelho desligado exactamente como os
- * de um ligado. O comando não se perde -- o `submitDownlink` mete-o em fila quando não há
- * ligação --, mas a fila tem prazo, e nada disso estava no ecrã.
+ * O comando não se perde -- o `submitDownlink` mete-o em fila --, mas a fila tem prazo.
  */
 export function offlineQueueNotice(online, ttlSeconds) {
     if (online) return "";
@@ -102,9 +100,8 @@ export function renderDeviceConfigurationRoot(context) {
     }
 
     if (!catalog.length) {
-        // Calado quando quem chama já mostrou uma configuração decidida no hub: "este
-        // protocolo não tem configurações suportadas" é verdade sobre downlinks e mentira
-        // sobre o ecrã, que tem uma configuração logo acima.
+        // Calado quando quem chama já mostrou uma configuração decidida no hub: seria verdade
+        // sobre downlinks e mentira sobre o ecrã, que tem uma configuração logo acima.
         return quietWhenEmpty
             ? ""
             : emptyPanel("Este protocolo não tem configurações suportadas.");
@@ -195,9 +192,7 @@ export function renderDeviceConfigurationRoot(context) {
 /**
  * Um interruptor que se guarda, e não uma acção nem um campo composto.
  *
- * É o único caso em que uma linha diz tudo o que há a dizer: um nome, o que faz, e ligado ou
- * desligado. Tudo o resto -- alarmes, agendas, listas, intervalos -- precisa do espaço do
- * cartão, e agrupá-lo espremia-o.
+ * É o único caso em que uma linha diz tudo: um nome, o que faz, e ligado ou desligado.
  */
 function isPlainToggle(entry) {
     return entry.input === "toggle" &&
@@ -209,9 +204,7 @@ function isPlainToggle(entry) {
  * A mesma definição repetida para grandezas diferentes: o mesmo comando nativo e a mesma
  * legenda declarada.
  *
- * É o que distingue as dez medições da Wonlex de dois números que por acaso ficaram
- * vizinhos. A chave inclui o comando e a legenda de propósito -- agrupar por tipo de campo
- * juntava o limiar de bateria com o intervalo de localização, que não têm nada a ver.
+ * É o que distingue as dez medições da Wonlex de dois números que por acaso ficaram vizinhos.
  */
 function isRepeatedField(entry) {
     return entry.input === "number" &&
@@ -231,9 +224,7 @@ function configRunKind(entry) {
 /**
  * As entradas por ordem, com as corridas marcadas para agrupar.
  *
- * Corridas e não «todos os interruptores da secção»: a ordem do catálogo é editorial, e
- * juntar interruptores separados por um alarme trocava-a por uma arrumação que o autor do
- * catálogo não pediu.
+ * Corridas e não «todos os interruptores da secção»: a ordem do catálogo é editorial.
  *
  * @returns {Array<{kind: string, grouped: boolean, entries: Array<object>}>}
  */
@@ -250,8 +241,7 @@ function configRuns(entries) {
     }
 
     // Um interruptor sozinho continua a agrupar -- em cartão gastava quatro linhas para um
-    // bit. Um campo sozinho não: o cartão magro dele já é uma linha, e um grupo de um só
-    // acrescentava um cabeçalho e um rodapé para a mesma coisa.
+    // bit. Um campo sozinho não: o cartão magro dele já é uma linha.
     return runs.map((run) => ({
         ...run,
         grouped: run.kind === "toggle" || (run.kind.startsWith("field:") && run.entries.length > 1),
@@ -261,9 +251,7 @@ function configRuns(entries) {
 /**
  * A unidade ao lado do campo.
  *
- * A definição ganha ao nome nativo: `minutes` não está na tabela de nomes e não deixava nada
- * ao lado da caixa, enquanto a definição sempre soube que eram minutos. Só quando ela se cala
- * é que se adivinha pelo campo -- de «Intervalo (min)» sobrevive o «min».
+ * A definição ganha ao nome nativo; só quando ela se cala é que se adivinha pelo campo.
  */
 function unitLabel(entry) {
     return String(entry.options?.label ?? "").trim() || fieldUnit(entry.fields?.[0] || "");
@@ -278,9 +266,8 @@ function unitOf(entry) {
 /**
  * O valor de uma linha na forma em que o leitor do campo o devolve.
  *
- * Tem de bater certo ao caractere com o `readConfigPayload`, porque é contra ele que a
- * fotografia é comparada: um `"0"` onde o leitor devolve `0` contava uma alteração a quem
- * não tinha mexido em nada.
+ * Tem de bater certo ao caractere com o `readConfigPayload`: é contra ele que a fotografia
+ * é comparada para saber se há alterações por enviar.
  */
 function readConfigEntryValue(entry, desired) {
     const field = entry.fields?.[0] || "value";
@@ -372,19 +359,16 @@ export function renderConfigSection(
     };
     const help = configHelp(entry);
     // Uma acção com dois sentidos mostra os dois verbos em vez de um interruptor e um
-    // «Enviar»: o botão passa a dizer o que vai acontecer, e parar deixa de ser uma
-    // descoberta. Sem verbos declarados, o cartão fica como estava.
+    // «Enviar». Sem verbos declarados, o cartão fica como estava.
     const verbs = configActionVerbs(entry);
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
     // Uma acção não tem valor guardado, mas o pedido que ela dispara tem estado: em fila, à
-    // espera, confirmado ou falhado. Sem o mostrar, quem carrega no botão fica sem saber se a
-    // ordem chegou sequer a sair do hub.
+    // espera, confirmado ou falhado.
     const showConfigurationBadge = !entry.requestOnly || delivery !== null;
     // «Padrão» quer dizer que o hub ainda não guardou valor nenhum, e uma acção nunca guarda:
     // o que ela tem é o estado do último pedido, e é esse que a pastilha mostra.
     const deliveryMeta = configurationDeliveryMeta(isStored || (entry.requestOnly === true && delivery !== null), delivery);
-    // Sem comando nativo, o hub aplica-a sozinho, e então não há vocabulário de protocolo
-    // para mostrar: o comando não existe, e o tipo de campo sozinho é ruído.
+    // Sem comando nativo, o hub aplica-a sozinho e não há vocabulário de protocolo a mostrar.
     const hideNativeCommand = (entry.configKind === "capability" && entry.key === "alarm_clock") ||
         String(entry.command || "") === "";
     const configSectionName = entry.configSectionName || entry.configSection || "";
@@ -399,31 +383,24 @@ export function renderConfigSection(
     const phonebookMetaAttrs = isPhonebookLike
         ? `${phonebookNameMaxLength > 0 ? ` data-phonebook-name-max-length="${esc(String(phonebookNameMaxLength))}"` : ""}${phonebookPhoneMaxLength > 0 ? ` data-phonebook-phone-max-length="${esc(String(phonebookPhoneMaxLength))}"` : ""}`
         : "";
-    // O cartão diz o que a definição faz, e mais nada. O nome do comando e o tipo de campo
-    // são vocabulário de protocolo: servem os registos e as ferramentas de diagnóstico, não
-    // quem gere dispositivos, e estavam a ser a única coisa que se lia em cada cartão.
+    // O cartão diz o que a definição faz, e mais nada: o nome do comando e o tipo de campo
+    // são vocabulário de protocolo e não servem quem gere dispositivos.
     const details = [help || ""].filter((part) => part !== "");
     // O que a confirmação vai dizer, tal como a definição do protocolo o declara. Só as
     // destrutivas o trazem, e é a presença dele que decide se há caixa.
     const confirmText = String(entry.confirm || "");
     const confirmAttrs = confirmText === "" ? "" : ` data-config-confirm="${esc(confirmText)}"`;
     // Um descritor conhecido que não declara `render` não tem campos para desenhar, e o
-    // cartão dele cabe numa linha. Um tipo que o registo não conhece cai no editor de JSON,
-    // que continua a ser um formulário.
+    // cartão dele cabe numa linha. Um tipo desconhecido cai no editor de JSON.
     const descriptor = CONFIG_INPUTS[entry.input || "json"];
     const drawsFields = !descriptor || typeof descriptor.render === "function";
     const control = drawsFields ? "" : renderConfigControl(entry, desired, { ...meta, protocol });
-    // O verbo é das acções. Uma definição guarda-se, e o que o botão dela faz é enviá-la.
-    //
-    // Sem verbo declarado o botão não repete o título: das vinte e uma acções do catálogo,
-    // vinte têm o rótulo como frase do verbo, e pô-lo também no botão dava a mesma frase
-    // duas vezes na mesma linha. Pior nas que são nomes -- «Versão de firmware», «Estado do
-    // dispositivo» --, onde o botão deixava de dizer o que o clique faz.
+    // O verbo é das acções: uma definição guarda-se, e o que o botão dela faz é enviá-la.
+    // Sem verbo declarado o botão não repete o título.
     const verb = drawsFields || control !== "" ? "" : String(entry.verb || "");
 
     // O bloco do título leva `min-w-0` para encolher em vez de empurrar a pastilha de estado
-    // para a linha de baixo: com uma descrição comprida ela saltava para o canto esquerdo,
-    // que é o oposto do que o `justify-content-between` promete.
+    // para a linha de baixo.
     return `
         <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-label="${esc(entry.label || entry.key)}"${confirmAttrs}${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
             ${drawsFields
@@ -505,9 +482,8 @@ function renderConfigActionButton(key, row, uiState, disabled = false, appliedBy
     const isDisabled =
         disabled || ["submitting", "sent", "queued", "waiting"].includes(state);
     const meta = CONFIG_ACTION_BUTTON_META[state] || CONFIG_ACTION_BUTTON_META.idle;
-    // O peso de uma acção que não se desfaz fica no botão, e não numa faixa de aviso sempre
-    // acesa por cima dele. A partir do clique a fase manda na cor: ela conta o que aconteceu
-    // ao pedido, que é outra coisa.
+    // O peso de uma acção que não se desfaz fica no botão, e não numa faixa de aviso. A
+    // partir do clique é a fase que manda na cor.
     const className = state === "idle" && destructive ? "btn-outline-danger" : meta.className;
 
     return `
@@ -519,14 +495,8 @@ function renderConfigActionButton(key, row, uiState, disabled = false, appliedBy
 /**
  * A caixa de mensagem do cartão, que é para o que a pastilha não sabe dizer.
  *
- * Só falhas. A pastilha conta a história de um pedido do princípio ao fim -- em envio, a
- * aguardar, aplicado, falhou -- e vai mudando com ela; uma caixa de sucesso congelava um
- * instante e ficava até alguém a fechar, a dizer «enviado» por cima de um pedido já aplicado.
- * E contradizia a barra do mesmo cartão, que dizia, correctamente, que o hub ainda só o tinha
- * em fila.
- *
- * Uma falha é outra coisa: um pedido que nem chega a criar comando não tem pastilha nenhuma, e
- * sem isto o clique morria em silêncio.
+ * Só falhas: um pedido que nem chega a criar comando não tem pastilha nenhuma, e sem isto o
+ * clique morria em silêncio.
  */
 function renderConfigFeedback(key, uiState) {
     if (!uiState?.feedback?.message || uiState.feedback.tone !== "danger") {

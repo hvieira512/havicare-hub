@@ -9,10 +9,8 @@ import "./support/browser-env.js";
  * 15 segundos e o dispositivo escolhido de 30 em 30. Numa dashboard deixada aberta o dia todo
  * num separador de fundo são centenas de pedidos por nada.
  *
- * O padrão é o do `devices/stream.js`, que fecha o stream no `visibilitychange` e volta a
- * ligar ao regressar: escondido não se sonda, e ao voltar relê-se de imediato -- esperar pelo
- * tique seguinte deixava até meio minuto de dados velhos no ecrã, que é pior do que o próprio
- * polling.
+ * O padrão é o do `devices/stream.js`: escondido não se sonda, e ao voltar relê-se de imediato,
+ * porque esperar pelo tique seguinte deixava dados velhos no ecrã.
  */
 let hidden = false;
 Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });

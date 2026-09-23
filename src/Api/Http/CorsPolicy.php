@@ -14,10 +14,8 @@ use Psr\Http\Message\ServerRequestInterface;
  * autenticação é por `Bearer` em cabeçalho e não por cookie, portanto o browser não anexa
  * credenciais sozinho e não há CSRF a partir de uma página de terceiros.
  *
- * A lista existe porque essa razão não estava declarada em lado nenhum, e a dashboard e a API
- * partilham a porta: no dia em que alguém puser a sessão num cookie, `*` passa a ser um buraco
- * sem ninguém ter tocado neste ficheiro. Com `CORS_ALLOWED_ORIGINS` preenchido, quem responde
- * a essa pergunta é a configuração.
+ * No dia em que alguém puser a sessão num cookie, o `*` passa a ser um buraco sem ninguém
+ * ter tocado neste ficheiro. Com `CORS_ALLOWED_ORIGINS` preenchido, decide a configuração.
  */
 final class CorsPolicy
 {

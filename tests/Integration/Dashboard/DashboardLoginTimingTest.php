@@ -10,15 +10,9 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 /**
  * O tempo de resposta do login não pode dizer se uma conta existe.
  *
- * Medido contra a instância de desenvolvimento antes desta correcção: uma tentativa com
- * utilizador real custava 172 a 187 ms, e uma com utilizador inexistente 0,5 ms. A diferença
- * de ~350× era um oráculo -- descobria-se que contas existem só pelo relógio, sem acertar em
- * nenhuma password. A causa é o `&&` a fazer curto-circuito antes do `password_verify` quando
- * não há hash para comparar.
- *
- * Fechar isto torna **todas** as tentativas caras, e por isso só era seguro depois de os tetos
- * do `LoginThrottle` existirem: sem eles, seria trocar um oráculo por um caminho mais barato
- * para parar o event loop.
+ * Um curto-circuito antes do `password_verify` responde em 0,5 ms em vez de ~175 ms, e essa
+ * diferença é um oráculo: descobre-se que contas existem só pelo relógio. Fechá-lo torna
+ * **todas** as tentativas caras, e por isso depende dos tetos do `LoginThrottle`.
  */
 final class DashboardLoginTimingTest extends DashboardHttpTestCase
 {

@@ -13,13 +13,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * O que se escreve no aparelho volta a ler-se com o mesmo valor.
  *
- * A ida estava presa para cada configuração e a volta não: o descodificador tinha caminhos
- * -- os dois tempos da toma, o período do plano, os compartimentos carregados -- que nenhum
- * teste percorria. Um escritor que empacote em `V` e um leitor que desempacote em `v` passam
- * os dois nos seus testes e discordam no meio.
- *
- * Aqui a trama escrita é a que se lê: monta-se o `0x06` com o construtor real e devolve-se
- * como se fosse a resposta `0x86` do aparelho.
+ * Um escritor que empacote em `V` e um leitor que desempacote em `v` passam os dois nos seus
+ * testes e discordam no meio. Aqui a trama escrita é a que se lê: monta-se o `0x06` com o
+ * construtor real e devolve-se como se fosse a resposta `0x86` do aparelho.
  */
 final class PillDispenserReadBackRoundTripTest extends TestCase
 {

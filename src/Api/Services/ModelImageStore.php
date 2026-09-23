@@ -24,11 +24,9 @@ final class ModelImageStore
     /**
      * O tecto do que se aceita descodificar, em píxeis.
      *
-     * O `MAX_BYTES` mede o ficheiro comprimido e não diz nada sobre o custo de o abrir: um PNG
-     * de cor lisa comprime quase até nada, e o GD aloca `largura × altura × 4` bytes antes de
-     * devolver seja o que for. Vinte e cinco megapíxeis são folgados para a fotografia de um
-     * modelo -- que ainda por cima vai ser reduzida a 640 px -- e limitam o GD a cerca de
-     * 100 MB, que este processo aguenta sem morrer a meio.
+     * O `MAX_BYTES` mede o ficheiro comprimido e não diz nada sobre o custo de o abrir: o GD
+     * aloca `largura × altura × 4` bytes antes de devolver seja o que for. Vinte e cinco
+     * megapíxeis limitam-no a cerca de 100 MB, que este processo aguenta.
      */
     private const MAX_PIXELS = 25_000_000;
 

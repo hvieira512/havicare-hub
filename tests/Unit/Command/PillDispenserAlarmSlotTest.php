@@ -11,13 +11,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * O alarme fica no slot que foi pedido, e não na posição que calhou na lista.
  *
- * O plano viajava como lista compacta e o construtor punha o enésimo plano no enésimo slot.
- * Quem escolhesse o alarme 5 na dashboard via-o chegar ao alarme 3 -- e, pior, o 3 tinha um
- * plano anterior que ficava silenciosamente por cima. Apanhou-se com o aparelho na mesa:
- * pediu-se o 5, os bytes que saíram foram `0x1023`/`0x1033`/`0x1043`.
- *
- * O slot vai agora dentro de cada plano. Quem não o mandar continua a ser colocado por
- * posição, que é o que os planos já guardados trazem.
+ * Um construtor que ponha o enésimo plano no enésimo slot manda o alarme 5 para o 3, por cima
+ * do que lá estivesse. O slot vai dentro de cada plano; quem não o mandar continua a ser
+ * colocado por posição, que é o que os planos já guardados trazem.
  */
 final class PillDispenserAlarmSlotTest extends TestCase
 {

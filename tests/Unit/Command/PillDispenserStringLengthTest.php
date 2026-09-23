@@ -12,12 +12,7 @@ use PHPUnit\Framework\TestCase;
  *
  * A especificação declara `STRING` com comprimento **20** para todas elas — a calibração do
  * relógio (`0xA101`), o CCID do cartão SIM (`0x8009`), o identificador do prato (`0x8105`).
- * O hub mandava o comprimento do texto: 19 bytes para `2026-09-22T09:49:28`. O aparelho
- * respondeu `011` em ambas as direcções, que é «comprimento não corresponde» — o relógio
- * nunca chegou a ser calibrado, e o CCID nunca chegou a ser lido.
- *
- * Isto apanhou-se contra o aparelho: o `0x88` de resposta à calibração veio com estado 3, e
- * uma leitura do `0x8009` tinha vindo com o mesmo estado meia hora antes.
+ * Mandar o comprimento do texto dá `011`, que é «comprimento não corresponde».
  */
 final class PillDispenserStringLengthTest extends TestCase
 {

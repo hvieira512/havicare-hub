@@ -3,8 +3,7 @@
  * configuração e o detalhe.
  *
  * É raiz de composição e não uma funcionalidade, e por isso pode importar de onde precisar.
- * Vivem aqui porque quase todos atravessam duas ou três funcionalidades, e pô-los dentro de
- * uma obrigava-a a importar as outras.
+ * Vivem aqui porque quase todos atravessam duas ou três funcionalidades.
  */
 import { state } from "../state.js";
 import { syncPhoneControl } from "../phone.js";
@@ -157,9 +156,7 @@ function bindDeviceForm() {
  * A acção do botão que dá a saída depois de a carga do painel falhar.
  *
  * Recarrega a página, e não pede o módulo outra vez: o browser guarda no mapa de módulos a
- * falha por URL, e um segundo `import()` do mesmo especificador resolve para a entrada nula
- * **sem voltar à rede**. Medido contra o hub local -- duas tentativas, um só pedido. Um botão
- * que pedisse outra vez prometia uma recuperação que não acontece.
+ * falha por URL, e um segundo `import()` resolve para a entrada nula **sem voltar à rede**.
  */
 const CONFIG_RETRY_ACTION = "reloadForConfigPanel";
 
@@ -168,8 +165,7 @@ const CONFIG_RETRY_ACTION = "reloadForConfigPanel";
  *
  * Entre o clique e o módulo chegar há rede pelo meio, e a raiz não pode ficar vazia: escreve
  * a mesma frase que o painel escreve enquanto vai buscar o catálogo, para as duas esperas se
- * lerem como uma só. Um esqueleto de barras seria afirmar uma forma que ainda não se sabe --
- * o que o painel desenha depende do protocolo e do modelo.
+ * lerem como uma só.
  */
 async function openConfigPanel() {
     els.deviceConfigRoot.innerHTML = emptyPanel("A carregar configurações...");

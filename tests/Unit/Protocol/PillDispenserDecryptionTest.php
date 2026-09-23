@@ -10,19 +10,10 @@ use PHPUnit\Framework\TestCase;
 /**
  * O M228 cifra tudo o que envia por iniciativa própria, e a chave sai do Device Number.
  *
- * O aparelho liga-se a mandar um heartbeat por minuto com o **bit 2 do Flag** ligado:
- * cabeçalho legível, identidade correcta, CRC válido, e o corpo em AES128-CFB. Durante
- * semanas isso deixou a dashboard sem telemetria e o evento de toma de medicação — a
- * funcionalidade central do aparelho — completamente ilegível.
- *
- * O fornecedor acabou por dizer onde estava a chave: «Both the key and the random IV are
- * based on the device's Device Number». São a mesma coisa, e são o Device Number escrito
- * como string hexadecimal de 16 caracteres: o número de 64 bits deste aparelho é
- * `0x4869243062262262`, e a chave é o texto `4869243062262262`. Dezasseis caracteres, que é
- * exactamente o que o AES-128 precisa.
- *
- * As tramas deste teste são reais, capturadas do aparelho de ensaio a 22 de setembro de 2026.
- * O `0x03` é a toma que alguém fez à mão, com o alarme a tocar em cima da mesa.
+ * O corpo vem em AES128-CFB quando o **bit 2 do Flag** está ligado. A chave e o IV são a mesma
+ * coisa: o Device Number escrito como string hexadecimal de 16 caracteres, que é exactamente
+ * o comprimento de uma chave AES-128. As tramas deste teste são reais, capturadas do aparelho
+ * de ensaio.
  */
 final class PillDispenserDecryptionTest extends TestCase
 {

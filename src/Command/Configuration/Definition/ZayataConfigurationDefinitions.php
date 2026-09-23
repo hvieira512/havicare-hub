@@ -5,12 +5,8 @@ namespace Hub\Command\Configuration\Definition;
 /**
  * O que se configura num dispensador de comprimidos Zayata M228.
  *
- * O aparelho tem nove alarmes **fixos**: não se criam nem se apagam, ligam-se e desligam-se.
- * É por isso que o plano viaja inteiro de cada vez — escrever só um slot deixava os outros
- * com o que lá estivesse antes, e um alarme esquecido continua a dispensar comprimidos.
- *
- * As acções entram aqui como entradas transientes em vez de um catálogo à parte: o que a
- * `PATCH` recusa é exactamente o que a `/requests` aceita.
+ * O aparelho tem nove alarmes **fixos**: não se criam nem se apagam, ligam-se e desligam-se,
+ * e é por isso que o plano viaja inteiro de cada vez.
  */
 final class ZayataConfigurationDefinitions
 {
@@ -91,8 +87,7 @@ final class ZayataConfigurationDefinitions
                 'Quantos dos 28 compartimentos foram carregados com medicação. É por este número que o aparelho sabe avisar que está a acabar — não se confunde com a capacidade do prato, que é sempre 28.',
             ),
             // O volume é uma enumeração e não uma escala: na especificação, 0 é o mais alto
-            // e 3 é silêncio. Um número solto no ecrã dizia exactamente o contrário a quem o
-            // lesse.
+            // e 3 é silêncio.
             // Num grupo de botões e não numa lista fechada: são quatro posições e a ordem é
             // que diz que a escala está invertida. Uma de cada vez escondia isso.
             self::choice('alarm_volume', 'alarmVolume', 'Volume', 'alerts', 10, 'volume', [
@@ -151,13 +146,9 @@ final class ZayataConfigurationDefinitions
                 'Pergunta ao aparelho que configurações ele tem lá dentro e mostra-as aqui. Não muda nada: serve para confirmar que o que está no ecrã é mesmo o que o aparelho ficou a ter.',
             ),
             // «Atualizar estado» não está aqui: a mesma trama `0x07` enche sete leituras, e
-            // são os mosaicos dessas sete que a pedem, no ecrã principal. Um botão à parte
-            // obrigava quem quisesse a temperatura a saber que a ia buscar a uma coisa
-            // chamada «estado do dispositivo», num modal, enquanto o cartão da temperatura
-            // ficava a olhar.
+            // são os mosaicos dessas sete que a pedem, no ecrã principal.
             // Perguntar ao aparelho que parâmetros ele serve, em vez de adivinhar por recusa.
-            // São três porque o aparelho separa configuração, estado e controlo, e cada
-            // pergunta é um pacote próprio; um botão só cobria um terço da resposta.
+            // São três porque configuração, estado e controlo são pacotes próprios.
             self::action(
                 'supported_configuration',
                 'discoverParametersConfiguration',
@@ -202,10 +193,7 @@ final class ZayataConfigurationDefinitions
             ),
             // Rodar até um compartimento (`0xA124`) e pausar a medicação (`0xA125`) não estão
             // aqui: a especificação descreve-as, mas este firmware recusa-as com «TAG
-            // inválida» e a descoberta de parâmetros não as anuncia. Foram declaradas a
-            // partir do documento sem se olhar para a resposta que o aparelho já tinha dado, e
-            // o hub ficou a retentá-las de minuto a minuto. Quando um firmware as anunciar,
-            // voltam — depois de lhe perguntar, e não antes.
+            // inválida» e a descoberta de parâmetros não as anuncia.
             self::action(
                 'calibrate_clock',
                 'calibrateClock',
@@ -250,11 +238,8 @@ final class ZayataConfigurationDefinitions
     /**
      * A resposta que um comando espera é a do seu tipo de pacote, e não o nome dele.
      *
-     * É a diferença entre este protocolo e os outros: o M2 responde a um `0x06` com
-     * `write_config_ack` seja qual for a TAG que ele levou, e por isso o valor por omissão --
-     * uma resposta com o nome do comando -- nunca casava. O resultado era a dashboard a dar
-     * «falhou, tentativas esgotadas» em configurações que o aparelho tinha aceitado, e o hub
-     * a reenviá-las de minuto a minuto.
+     * O M228 responde a um `0x06` com `write_config_ack` seja qual for a TAG que ele levou,
+     * e por isso o valor por omissão -- uma resposta com o nome do comando -- nunca casava.
      *
      * @return list<string>
      */
@@ -346,9 +331,6 @@ final class ZayataConfigurationDefinitions
 
     /**
      * Um número com gama, e a etiqueta e a ajuda que dizem o que ele significa.
-     *
-     * A ajuda não é decoração: metade destas definições tem um nome que não se explica a si
-     * próprio, e sem uma frase quem opera a dashboard fica a adivinhar.
      */
     private static function number(
         string $key,
@@ -397,11 +379,8 @@ final class ZayataConfigurationDefinitions
     }
 
     /**
-     * Uma acção leva sempre uma frase a dizer o que faz.
-     *
-     * Metade destes nomes não se explica a si própria — «Repor o prato», «Parâmetros de
-     * controlo», «Sincronizar configuração» — e quem opera a dashboard ficava a adivinhar o
-     * que ia acontecer ao aparelho ao carregar no botão.
+     * Uma acção leva sempre uma frase a dizer o que faz: metade destes nomes — «Repor o
+     * prato», «Parâmetros de controlo» — não se explica a si própria.
      */
     private static function action(
         string $key,

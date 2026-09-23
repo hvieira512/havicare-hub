@@ -15,9 +15,8 @@ use function React\Promise\resolve;
  * Corre por licença, com um login por licença e não um por radar: são quinze radares numa
  * delas, e o fabricante não distingue quinze logins legítimos de uma tentativa de força bruta.
  *
- * Os radares de uma licença são percorridos por ordem e não em paralelo. É de propósito: a
- * cloud é de terceiros, a sincronização não tem pressa nenhuma, e quinze pedidos ao mesmo
- * tempo são a forma mais rápida de alguém nos fechar a porta.
+ * Os radares de uma licença são percorridos por ordem e não em paralelo: a cloud é de
+ * terceiros e a sincronização não tem pressa nenhuma.
  */
 final class RadarLayoutSync
 {

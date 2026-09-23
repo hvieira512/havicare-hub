@@ -8,16 +8,9 @@ import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/confi
 /**
  * A caixa de mensagem do cartão é para o que a pastilha não sabe dizer.
  *
- * A pastilha conta a história toda de um pedido -- em envio, a aguardar, aplicado, falhou --
- * e vai mudando com ela. Uma caixa de sucesso congela um instante e fica lá até alguém a
- * fechar: com o pedido já aplicado, continuava a dizer que tinha sido enviado, e ao lado de
- * uma pastilha vermelha ficava uma caixa verde.
- *
- * Pior do que redundante, contradizia: dizia «enviado ao dispositivo» enquanto a barra do
- * mesmo cartão dizia, correctamente, que o hub ainda só o tinha em fila à espera de entrega.
- *
- * A falha é outra coisa. Um pedido que nem chega a criar comando não tem pastilha nenhuma --
- * e sem esta caixa o clique morria em silêncio.
+ * A pastilha conta a história toda de um pedido e vai mudando com ela; uma caixa de sucesso
+ * congela um instante e fica a contradizê-la. A falha é outra coisa: um pedido que nem chega
+ * a criar comando não tem pastilha nenhuma, e sem esta caixa o clique morria em silêncio.
  */
 const ACTION = {
     key: "find_device",

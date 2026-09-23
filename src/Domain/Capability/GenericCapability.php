@@ -55,13 +55,8 @@ final class GenericCapability implements CapabilityContract
     public function toNative(string $protocol, mixed $value): array
     {
         // Sem recusa por omissão: esta é a capacidade de quem não tem contrato próprio, e
-        // anuncia todos os protocolos. Recusar os que não traduz era anunciar o que não servia
-        // -- foi assim que dezasseis configurações do dispensador M228 rebentaram ao serem
-        // gravadas, com a suite toda verde.
-        //
-        // Quem traduz nomes está aqui. Para o resto, o nome nativo é a própria chave genérica,
-        // que é a convenção com que os fornecedores mais recentes declaram o catálogo, e um
-        // fornecedor novo não tem de tocar neste ficheiro.
+        // anuncia todos os protocolos. Quem traduz nomes está aqui; para o resto, o nome
+        // nativo é a própria chave genérica e um fornecedor novo não toca neste ficheiro.
         return match ($protocol) {
             'vivistar-iw' => $this->vivistarToNative($value),
             'wonlex-json' => $this->wonlexGenericToNative($value),
@@ -74,9 +69,7 @@ final class GenericCapability implements CapabilityContract
      * Os protocolos cujo nome nativo é a própria chave genérica.
      *
      * Quem monta a trama recebe o nome da operação e o valor -- o gateway com a sessão BLE nas
-     * pulseiras Veepoo, o `DeviceCommandCatalog` no dispensador. Sem nomes de fabricante pelo
-     * meio não há tradução a fazer, e inventar um nome nativo só obrigava a destraduzi-lo do
-     * outro lado.
+     * pulseiras Veepoo, o `DeviceCommandCatalog` no dispensador -- e não há tradução a fazer.
      *
      * @return array<string, array<string, mixed>>
      */

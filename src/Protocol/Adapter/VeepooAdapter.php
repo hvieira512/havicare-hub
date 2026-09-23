@@ -5,14 +5,9 @@ namespace Hub\Protocol\Adapter;
 /**
  * Pulseiras Veepoo, alcançadas através de um gateway BLE.
  *
- * Só existe pelo lado do downlink. A subida não passa por aqui: o gateway já entrega os
- * valores estruturados pelo SDK do fabricante, e quem lhes dá os nomes do hub é o
- * `Ingress\Mqtt\Veepoo\Bridge`. Por isso `canDecode` recusa sempre -- não há trama crua
- * que este adaptador saiba reclamar, e dizer que sim tirava mensagens a quem as sabe ler.
- *
- * E o que desce não são bytes para a pulseira: é o nome de uma operação para a caixa que
- * tem a sessão BLE. É ela que fala com o SDK; o hub não sabe montar uma trama Veepoo nem
- * precisa de saber.
+ * Só existe pelo lado do downlink: a subida é do `Ingress\Mqtt\Veepoo\Bridge`, e por isso o
+ * `canDecode` recusa sempre. E o que desce não são bytes para a pulseira, é o nome de uma
+ * operação para a caixa que tem a sessão BLE.
  */
 final class VeepooAdapter implements DeviceAdapterInterface
 {
