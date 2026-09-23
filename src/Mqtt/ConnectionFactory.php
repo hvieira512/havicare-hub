@@ -24,11 +24,8 @@ class ConnectionFactory
      * Um id de cliente estável não leva o pid, para o broker reconhecer a mesma sessão
      * através dos reinícios do processo -- que é o que as subscrições persistentes exigem.
      *
-     * O identificador vai inteiro. Houve aqui um corte aos 23 caracteres, que é o limite do
-     * MQTT 3.1; nós falamos 3.1.1, onde 23 é só o mínimo que um servidor conforme tem de
-     * aceitar. O corte comprava compatibilidade com um broker estrito que não temos, e pagava
-     * com o sufixo e a cauda do prefixo -- a parte escolhida para distinguir uma máquina das
-     * outras. Um broker que recuse um identificador comprido recusa a ligação, e isso vê-se.
+     * O id vai inteiro: em MQTT 3.1.1 os 23 caracteres são o mínimo que o servidor tem de
+     * aceitar, não um máximo, e encurtá-lo funde prefixos que se queriam distintos.
      */
     public function create(string $suffix, bool $stableClientId = false, ?Repository $repository = null): MqttClient
     {

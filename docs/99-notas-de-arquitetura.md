@@ -54,31 +54,18 @@ expulsão mútua em ciclo, com a ingestão a falhar de forma intermitente.
 Declará-los explicitamente no `.env` da produção remove o acoplamento. É uma
 alteração de configuração, não de código, e obriga a reiniciar o serviço.
 
-**O corte aos 23 caracteres foi levantado.** Havia aqui um `substr` no
-`ConnectionFactory`, herdado do limite que o MQTT 3.1 fixava. O hub fala 3.1.1,
-onde 23 é apenas o mínimo que um servidor conforme tem de aceitar, e o mosquitto
-aceita muito mais — o corte comprava compatibilidade com um broker estrito que
-não existe em lado nenhum desta instalação.
+**O corte aos 23 caracteres foi levantado.** O `ConnectionFactory` encurtava o
+identificador ao limite do MQTT 3.1; o hub fala 3.1.1, onde 23 é o mínimo que um
+servidor tem de aceitar e não um máximo.
 
-E pagava caro por ela. O identificador é `{prefixo}-{sufixo}` e os sufixos das
-ingestões são fixos — `ncs-sub`, `moko-sub`, `veepoo-sub` e `sub`. Um prefixo
-comprido fazia o corte comer o sufixo **e a cauda do prefixo, que é justamente a
-parte escolhida para distinguir uma máquina das outras**: um
-`QINGLANST_CLIENT_ID_PREFIX=qinglanst-radar-local-hugo` tem 26 caracteres e
-chegava ao broker como `qinglanst-radar-local-h`, sem o `-hugo`. Duas
-configurações que se queriam diferentes apresentavam-se com o mesmo nome e
-expulsavam-se uma à outra em ciclo, com o registo dos dois lados a dizer apenas
-«connection lost» — o sintoma, nunca a causa.
+O id é `{prefixo}-{sufixo}` e os sufixos são fixos, por isso o corte comia a
+cauda do prefixo — a parte que distingue uma máquina das outras. Um
+`qinglanst-radar-local-hugo` chegava ao broker como `qinglanst-radar-local-h`, e
+duas configurações distintas passavam a apresentar-se com o mesmo nome, com o
+broker a expulsar uma delas e o registo a dizer só «connection lost».
 
-Um broker que recuse um identificador comprido recusa a ligação, e uma ligação
-recusada vê-se. Era o silêncio que era o defeito, não o comprimento.
-
-A produção não sentiu a mudança: os identificadores dela já cabiam nos 23
-(`health-mqtt-ncs-sub`, `-moko-sub` e `-veepoo-sub` têm 19, 20 e 22). A
-instância de desenvolvimento passou a apresentar dois deles por inteiro —
-`health-mqtt-dev-moko-sub` e `health-mqtt-dev-veepoo-sub` em vez das versões
-cortadas —, o que deixa no broker uma sessão persistente órfã de cada um até ser
-limpa.
+A produção não mudou — os identificadores dela já cabiam. A dev passou a enviar
+dois por inteiro, deixando no broker uma sessão persistente órfã de cada um.
 
 ---
 
