@@ -266,8 +266,15 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
             // O pedido disparado guarda o seu estado: é o que a pastilha do cartão mostra até
             // o dispositivo confirmar ou falhar.
             const command = (result.commands || [])[0] || null;
+            // O `id` fica guardado com o estado: é por ele que a resposta do aparelho se casa
+            // com esta acção quando chega pelo stream. Sem ele a pastilha era escrita uma vez
+            // no envio e ficava em «A aguardar» para sempre.
             state.deviceModal.actionDeliveries[capabilityKey] = command
-                ? { status: deliveryStatusFromCommand(command.status), error: String(command.error || "") }
+                ? {
+                        id: String(command.id || ""),
+                        status: deliveryStatusFromCommand(command.status),
+                        error: String(command.error || ""),
+                    }
                 : null;
         }
 
@@ -314,6 +321,30 @@ export function syncDeviceModalCommandStates(imei, commands) {
         (commands || []).map((command) => [String(command?.id || ""), command]),
     );
     let changed = false;
+
+    // As acções guardam o estado de entrega noutro mapa, e ele também tem de acompanhar o
+    // comando até ao fim: sem isto o servidor dava o pedido por confirmado e o cartão
+    // continuava a dizer «A aguardar» até alguém fechar e reabrir o modal.
+    for (const [capabilityKey, delivery] of Object.entries(state.deviceModal.actionDeliveries || {})) {
+        const command = delivery?.id ? commandsById.get(String(delivery.id)) : null;
+        if (!command) {
+            continue;
+        }
+
+        const commandStatus = String(command.status || "");
+        const nextStatus = deliveryStatusFromCommand(commandStatus) || String(delivery.status || "");
+        const nextError = ["failed", "dropped"].includes(commandStatus)
+            ? String(command.lastError || command.error || commandStatus)
+            : "";
+        if (nextStatus !== String(delivery.status || "") || nextError !== String(delivery.error || "")) {
+            state.deviceModal.actionDeliveries[capabilityKey] = {
+                ...delivery,
+                status: nextStatus,
+                error: nextError,
+            };
+            changed = true;
+        }
+    }
     for (const section of Object.values(state.deviceModal.configurationSync?.entries || {})) {
         for (const delivery of Object.values(section || {})) {
             const operation = (delivery?.operations || []).find((item) =>
