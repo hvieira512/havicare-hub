@@ -38,8 +38,8 @@ alteração de definições e o pedido de medições. A especificação em vigor
 disponível em `/api/docs`.
 
 **Desenvolvimento.** [Visão geral](01-visao-geral.md) e, em seguida, a camada a
-alterar. A arquitetura do frontend está documentada em
-[`src/Dashboard/README.md`](../src/Dashboard/README.md). As regras de trabalho
+alterar. A arquitetura do frontend está documentada no
+[capítulo 20](20-frontend-da-dashboard.md). As regras de trabalho
 com as instâncias de desenvolvimento e produção estão no
 [`CLAUDE.md`](../CLAUDE.md).
 
@@ -74,6 +74,7 @@ com as instâncias de desenvolvimento e produção estão no
 | [11 — Comandos e downlink](11-comandos-e-downlink.md) | Entrega de comandos a dispositivos intermitentes |
 | [12 — Localização sem GPS](12-localizacao-sem-gps.md) | Mapa de rádio privado, cache e BeaconDB |
 | [13 — Dashboard](13-dashboard.md) | Funcionalidades e relação com a API |
+| [20 — O frontend da dashboard](20-frontend-da-dashboard.md) | As regras de organização, a árvore de módulos e a composição de um ecrã |
 | [17 — Sensor de fralda](17-sensor-de-fralda.md) | Capacidades, derivação do estado, sensibilidade e contrato congelado |
 | [19 — Dispensador de comprimidos](19-dispensador-de-comprimidos.md) | Zayata M228: protocolo TCP, o que o hub já descodifica, API do fabricante e armadilhas |
 

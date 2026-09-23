@@ -1,11 +1,11 @@
-# A dashboard
+# 20 — O frontend da dashboard
 
 A interface do hub: uma página só, servida em PHP, com o comportamento em módulos ES que
 o browser carrega tal como estão. **Não há build step** -- nem bundler, nem transpilador,
 nem `node_modules` em produção. Guardar um ficheiro e recarregar a página é o ciclo todo.
 
 Bootstrap, Font Awesome, SweetAlert2 e o Swagger UI estão no repositório, em
-`assets/vendor/`, e são servidos por nós -- ver o `README.md` dessa pasta. O resto é nosso.
+`assets/vendor/`, e são servidos por nós -- ver o `README.md` em `src/Dashboard/assets/vendor/`. O resto é nosso.
 
 ```
 src/Dashboard/

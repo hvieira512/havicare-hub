@@ -5,8 +5,8 @@
 Interface de administração da plataforma: registo de dispositivos, atribuição a
 clientes, visualização dos dados recebidos e configuração.
 
-> A arquitetura do frontend está documentada em
-> [`src/Dashboard/README.md`](../src/Dashboard/README.md), que descreve as
+> A arquitetura do frontend está documentada no
+> [capítulo 20](20-frontend-da-dashboard.md), que descreve as
 > regras de organização, a árvore de módulos ficheiro a ficheiro, a composição
 > de um ecrã e as limitações conhecidas. Este capítulo não a duplica: descreve
 > as funcionalidades da dashboard e a sua articulação com as restantes camadas.
@@ -77,7 +77,7 @@ biblioteca que a desenha.
 Registar e editar são caixas **separadas**, e não a mesma a mudar de forma: um
 registo pede a identidade e pouco mais, ao passo que a edição dá acesso às
 configurações do aparelho. O desenho de cada uma está em
-[`src/Dashboard/README.md`](../src/Dashboard/README.md).
+[capítulo 20](20-frontend-da-dashboard.md).
 
 ## 4. Tempo real
 
@@ -152,7 +152,7 @@ genérico por não conhecer o descritor que lhe chega.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| [`src/Dashboard/README.md`](../src/Dashboard/README.md) | **A referência do frontend.** Começa por aqui |
+| [20 — O frontend da dashboard](20-frontend-da-dashboard.md) | **A referência do frontend.** Começa por aqui |
 | `src/Dashboard/DashboardHttpServer.php` | Encaminhamento não-API, ficheiros estáticos, cache |
 | `src/Dashboard/index.php` | A casca da página |
 | `src/Dashboard/dashboard/api/` | O único sítio que fala HTTP |
