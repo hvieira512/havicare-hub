@@ -228,9 +228,8 @@ final class DeviceEventDecoder
 
     /**
      * O dispensador M228 traz o corpo já descodificado num mapa de TAGs TFLV. O evento
-     * `0x03` é uma toma; os restantes pacotes carregam estado. Ao contrário dos relógios,
-     * a normalização não passa pela FeatureNormalizer: os valores lêem-se por TAG, com o
-     * tipo que a especificação define para cada uma.
+     * `0x03` é uma toma; os restantes pacotes carregam estado. Não passa pelo
+     * FeatureNormalizer: cada TAG lê-se com o tipo que a especificação lhe dá.
      */
     private function decodePillDispenser(string $nativeType, array $payload): array
     {
@@ -241,8 +240,7 @@ final class DeviceEventDecoder
             return $intake === null ? [] : [$intake];
         }
 
-        // A resposta à descoberta não traz TFLV nenhum: traz a lista de TAGs que o firmware
-        // serve. É o que acaba com o adivinhar-por-recusa quando chega um modelo novo.
+        // A resposta à descoberta não traz TFLV nenhum: traz a lista de TAGs que o firmware serve.
         $discovered = $this->pillSupportedParameters($nativeType, $payload);
         if ($discovered !== null) {
             return [$discovered];
@@ -255,27 +253,24 @@ final class DeviceEventDecoder
             return $configuration === null ? [] : [$configuration];
         }
 
-        // Tudo o resto -- heartbeat, registo, notificação e a resposta à consulta de estado --
-        // traz as mesmas TAGs de estado, e por isso passa pelo mesmo caminho.
+        // Tudo o resto -- heartbeat, registo, notificação e consulta de estado -- traz as
+        // mesmas TAGs de estado, e por isso passa pelo mesmo caminho.
         return $this->pillStatusEvents($nativeType, $tlv);
     }
 
     /**
      * As TAGs que o firmware anuncia, em resposta a um `0x0A`, `0x0B` ou `0x0C`.
      *
-     * Sai como uma capacidade própria e não como configuração: não é um valor que se escolha,
-     * é o que o aparelho sabe fazer. Quem integra o hub passa a poder perguntar-lhe isso em
-     * vez de manter uma tabela por modelo.
+     * Sai como capacidade própria e não como configuração: não é um valor que se escolha,
+     * é o que o aparelho sabe fazer.
      *
      * @param array<string, mixed> $payload
      * @return array{feature: string, nativeType: string, value: array<string, mixed>}|null
      */
     private function pillSupportedParameters(string $nativeType, array $payload): ?array
     {
-        // Pela chave com que a capacidade é declarada, e não por um nome inventado aqui: o
-        // catálogo declara as três, e publicar um `supported_parameters` que não existe em
-        // lado nenhum era a falha calada de sempre — quem integra subscreve o nome declarado
-        // e nunca recebe nada.
+        // Pela chave com que a capacidade é declarada no catálogo, e não por um nome
+        // inventado aqui: publicar um nome não declarado é uma falha calada.
         $feature = match ($nativeType) {
             'discover_config_ack' => 'supported_configuration',
             'discover_status_ack' => 'supported_status',
@@ -292,8 +287,7 @@ final class DeviceEventDecoder
             'nativeType' => $nativeType,
             'value' => [
                 'count' => count($tags),
-                // Em hexadecimal, que é como a especificação as nomeia: `4098` não se procura
-                // num documento onde está escrito `0x1002`.
+                // Em hexadecimal, que é como a especificação as nomeia.
                 'tags' => array_map(static fn (int $tag): string => sprintf('0x%04X', $tag), $tags),
             ],
         ];
@@ -328,9 +322,7 @@ final class DeviceEventDecoder
     /**
      * A configuração que o aparelho diz ter.
      *
-     * Sai como `device_config`, que é o que os relógios já usam para o mesmo — a confirmação
-     * de uma configuração, e não uma leitura. Fica de fora do catálogo de capacidades pela
-     * razão registada nas notas de arquitetura.
+     * Sai como `device_config`, que é o que os relógios já usam para o mesmo.
      */
     private function pillConfiguration(string $nativeType, array $tlv): ?array
     {
@@ -338,9 +330,7 @@ final class DeviceEventDecoder
         // número do alarme vai junto, senão o terceiro voltava como se fosse o segundo.
         $plans = [];
         // Se a trama falou dos interruptores, ela diz o plano inteiro — mesmo que o plano
-        // inteiro sejam nove alarmes desligados. Sem esta distinção, desligar os nove não
-        // publicava plano nenhum e a dashboard continuava a mostrar o plano antigo como
-        // reportado, para sempre.
+        // inteiro sejam nove alarmes desligados.
         $planReported = false;
         for ($offset = 0; $offset < 9; $offset++) {
             $enabled = $this->tlvU8($tlv, 0x1041 + $offset);
@@ -367,9 +357,8 @@ final class DeviceEventDecoder
             }
         }
 
-        // Pela chave do contrato e com a forma com que a configuração é enviada. É o que
-        // permite guardar cada uma como reportada e desenhá-la com o mesmo componente que
-        // desenha o desejado, sem traduzir nada pelo meio.
+        // Pela chave do contrato e com a forma com que a configuração é enviada, para que o
+        // reportado se desenhe com o mesmo componente que desenha o desejado.
         $settings = array_filter([
             'medication_reminders' => $planReported ? ['plans' => $plans] : null,
             'medication_period' => $this->pillPeriod($tlv),
@@ -444,9 +433,6 @@ final class DeviceEventDecoder
     /**
      * A janela de «não incomodar», das quatro TAGs de hora mais o interruptor.
      *
-     * Era a única configuração que se escrevia e nunca se lia de volta: o hub não tinha
-     * maneira nenhuma de saber o que estava lá dentro.
-     *
      * @param array<int, array{value?: string}> $tlv
      * @return array{enabled: bool, startHour: int, startMinute: int, endHour: int, endMinute: int}|null
      */
@@ -505,9 +491,7 @@ final class DeviceEventDecoder
         $events = [];
 
         // A corrente viaja com a bateria: «ligado à corrente» e «a carregar» são a mesma
-        // pergunta feita de dois lados, e a dashboard já desenha a bateria com o estado de
-        // carga. Numa capacidade à parte, ficava a uma linha de distância da percentagem que
-        // a explica.
+        // pergunta feita de dois lados.
         $battery = array_filter([
             'percent' => $this->tlvU8($tlv, 0x8103),
             'chargingState' => match ($this->tlvU8($tlv, 0x8104)) {
@@ -535,11 +519,8 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'humidity', 'nativeType' => $nativeType, 'value' => ['humidityPercent' => $humidity]];
         }
 
-        // O nível de medicação viaja com a contagem de células, que é o mesmo facto com
-        // número: o `0x8101` é o juízo grosseiro do aparelho -- normal, a acabar, sem
-        // medicação -- e o `0x811D` é a contagem que lhe dá origem. Em cartões separados eram
-        // dois a dizer a mesma coisa, um deles sem número nenhum. Junto, é o juízo que diz que
-        // 4 de 28 já é pouco, e essa gama é do aparelho e não nossa.
+        // O nível de medicação viaja com a contagem de células: o `0x8101` é o juízo
+        // grosseiro do aparelho e o `0x811D` é a contagem que lhe dá origem.
         $level = match ($this->tlvU8($tlv, 0x8101)) {
             0 => 'ok',
             1 => 'low',
@@ -547,11 +528,8 @@ final class DeviceEventDecoder
             default => null,
         };
 
-        // O `0x811B` conta posições e não compartimentos: a especificação numera o
-        // compartimento de 0 a 28, e a zero é a de repouso, onde o prato assenta e onde não
-        // vai medicação nenhuma. O aparelho reporta 29, a ficha dele diz 28, e é 28 que o
-        // contrato publica -- senão o cartão diz «de 29» ao lado de uma definição que só
-        // aceita 28.
+        // O `0x811B` conta posições e não compartimentos: a zero é a de repouso, onde o
+        // prato assenta e onde não vai medicação nenhuma.
         $capacity = $this->tlvU8($tlv, 0x811B);
         $cells = array_filter([
             'remaining' => $this->tlvU8($tlv, 0x811D),
@@ -563,21 +541,15 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'cells_remaining', 'nativeType' => $nativeType, 'value' => $cells];
         }
 
-        // A tampa aberta quer dizer que o prato está acessível -- alguém está a carregá-lo,
-        // ou ficou aberta por esquecimento. É um estado sobre que se age, e por isso tem
-        // cartão próprio em vez de ser um campo entre dois números de sinal.
+        // A tampa aberta quer dizer que o prato está acessível: é um estado sobre que se age,
+        // e por isso tem capacidade própria.
         $lidOpen = $this->pillFlag($tlv, 0x8107);
         if ($lidOpen !== null) {
             $events[] = ['feature' => 'lid_state', 'nativeType' => $nativeType, 'value' => ['open' => $lidOpen]];
         }
 
-        // O `0x8111` é o juízo que o aparelho faz sobre a temperatura e a humidade que ele
-        // próprio mede: diz se a medicação está guardada dentro das condições que o
-        // fabricante dá como boas. Chamar-lhe «alarme de ambiente» não dizia isso a ninguém.
-        //
-        // Só sai quando dispara, como a avaria aqui ao lado: publicado a cada leitura, enchia
-        // a lista de eventos com linhas iguais a dizer «Dentro da gama», que é o normal e que
-        // ninguém lê.
+        // O `0x8111` diz se a medicação está guardada dentro das condições que o fabricante
+        // dá como boas. Só sai quando dispara, como a avaria aqui ao lado.
         if ($this->pillFlag($tlv, 0x8111) === true) {
             $events[] = [
                 'feature' => 'storage_environment',
@@ -597,8 +569,8 @@ final class DeviceEventDecoder
             ]];
         }
 
-        // O estado do bloqueio de criança é o valor reportado da configuração, e não uma
-        // leitura ao lado dela: são a mesma coisa vista de dois ângulos.
+        // O bloqueio de criança é o valor reportado da configuração, e não uma leitura ao
+        // lado dela.
         $childLock = $this->pillSwitch($tlv, 0x8102);
         if ($childLock !== null) {
             $events[] = [
@@ -651,10 +623,8 @@ final class DeviceEventDecoder
     }
 
     /**
-     * A força de sinal em dBm, que é sempre negativa.
-     *
-     * O aparelho manda a magnitude sem sinal. Um valor que já venha negativo fica como está,
-     * para o dia em que um firmware o mandar com o sinal certo.
+     * A força de sinal em dBm, que é sempre negativa: o aparelho manda a magnitude sem sinal,
+     * e um valor que já venha negativo fica como está.
      */
     private static function pillNegativeSignal(?int $value): ?int
     {
@@ -692,11 +662,8 @@ final class DeviceEventDecoder
     /**
      * O valor de uma TAG, ou `null` quando não há valor nenhum a ler.
      *
-     * O estado nos bits 5--7 do Flag é o que distingue uma leitura de um eco: numa resposta a
-     * um pedido, uma TAG que o aparelho recuse volta com os bytes que nós lhe mandámos --
-     * zeros -- e um estado diferente de `000`. O M228 de produção é a variante 4G e não tem
-     * WiFi: recusava o `0x810A` e o hub publicava `wifiSignalDbm: 0`, que é um valor
-     * plausível de que ninguém desconfia.
+     * O estado nos bits 5--7 do Flag distingue uma leitura de um eco: uma TAG recusada volta
+     * com os bytes que lhe mandámos -- zeros -- e um estado diferente de `000`.
      *
      * @param array<int, array{value?: string, state?: int}> $tlv
      */
