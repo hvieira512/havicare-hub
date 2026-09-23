@@ -337,15 +337,40 @@ REST eram um único `rotate`, aqui vêm discriminadas em cinco.
 | `0x1012` / `0x1013` | tipo de toque e volume |
 | `0x1014` / `0x1015` | calibração automática de relógio, fuso horário |
 | `0x1017` / `0x1018` / `0x1019` | aviso de atraso, tempo até falha, dispensa em falha |
-| `0x101A` / `0x101C` / `0x101D` | célula actual, células carregadas, aviso de poucas células |
+| `0x101C` | células carregadas |
 | `0x1021`–`0x1029` | **hora de cada um dos nove alarmes** |
 | `0x1031`–`0x1039` | minuto de cada alarme |
 | `0x1041`–`0x1049` | interruptor de cada alarme |
 | `0x1051`–`0x1055` | não incomodar: interruptor e janela |
-| `0x1063` | pausa do toque |
 | `0x8004` / `0x800B` | intervalo de heartbeat, tempo de permanência online |
 
 **São nove alarmes, não seis.** A API REST só expõe seis.
+
+### O que este firmware anuncia aceitar
+
+A descoberta de parâmetros (`0x0A`) devolveu **54 TAGs de configuração**, que são
+as da tabela acima menos o bloco de sistema `0x8004`/`0x800B`:
+
+```
+0x1001 0x1002 0x1003 0x1004 0x1005 0x1006 0x1007 0x1008 0x1009 0x100A
+0x100B 0x100C 0x100D 0x100E
+0x1012 0x1013 0x1014 0x1015 0x1017 0x1018 0x1019 0x101C
+0x1021 0x1022 0x1023 0x1024 0x1025 0x1026 0x1027 0x1028 0x1029
+0x1031 0x1032 0x1033 0x1034 0x1035 0x1036 0x1037 0x1038 0x1039
+0x1041 0x1042 0x1043 0x1044 0x1045 0x1046 0x1047 0x1048 0x1049
+0x1051 0x1052 0x1053 0x1054 0x1055
+```
+
+**Três TAGs da especificação não estão na lista** e uma versão anterior deste
+capítulo dava-as como aceites: o `0x101A` (célula actual) e o `0x101D` (células
+restantes), que neste firmware são só estado — `0x811A` e `0x811D` —, e o
+`0x1063` (pausa do toque). Nenhuma configuração exposta assenta nelas: aparecem
+apenas na tabela de tipos do adaptador, e o `DeviceCommandCatalog` nunca as
+emite.
+
+Também não estão anunciados o `0x1011` (duração do toque) nem o `0x1061` (tempo
+de pressão para a chamada de emergência), pela mesma razão que o `0xA124` e o
+`0xA125`: existem na especificação da série, não neste modelo.
 
 ### Controlo
 
