@@ -92,8 +92,19 @@ com as instâncias de desenvolvimento e produção estão no
 ## Documentação dos fabricantes
 
 Os manuais e as folhas de especificação originais estão em
-[`fornecedores/`](fornecedores/) — Voerka, Wonlex, VIVISTAR e 4P Touch — e em
-[`fornecedores/MOKO/`](fornecedores/MOKO/) para os equipamentos MOKO,
-incluindo a análise de tramas em
+[`fornecedores/`](fornecedores/), **uma pasta por fabricante**. Constituem a
+fonte primária para o que não estiver coberto nesta documentação.
+
+| Fabricante | Tipo de dispositivo | Capítulo |
+|---|---|---|
+| [4PTouch](fornecedores/4PTouch/) | Relógios | [02](02-ingestao-tcp-relogios.md) |
+| [VIVISTAR](fornecedores/VIVISTAR/) | Relógios | [02](02-ingestao-tcp-relogios.md) |
+| [Wonlex](fornecedores/Wonlex/) | Relógios | [02](02-ingestao-tcp-relogios.md) |
+| [Voerka](fornecedores/Voerka/) | Chamada de enfermagem | [03](03-ingestao-mqtt-ncs.md) |
+| [MOKO](fornecedores/MOKO/) | Gateways BLE e beacons | [05](05-gateways-ble.md) |
+| [MONIT](fornecedores/MONIT/) | Sensor de fralda | [17](17-sensor-de-fralda.md) |
+| [Zayata](fornecedores/Zayata/) | Dispensador de comprimidos | [19](19-dispensador-de-comprimidos.md) |
+
+O [`model-capabilities.xlsx`](fornecedores/model-capabilities.xlsx) fica na raiz
+porque cruza a frota toda, e a análise de tramas do gateway está em
 [`MKGW4 payloads — hex vs JSON.md`](fornecedores/MOKO/MKGW4%20payloads%20—%20hex%20vs%20JSON.md).
-Constituem a fonte primária para o que não estiver coberto nesta documentação.

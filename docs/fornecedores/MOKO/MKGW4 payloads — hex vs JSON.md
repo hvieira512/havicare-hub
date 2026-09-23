@@ -30,7 +30,7 @@ ef 30 04 c5 e3 90 f3 0b ce  ...device fields...
 
 ### 1.2 msg_id 3004 — status / heartbeat
 
-Decoded by the vendor script `docs/gateways/MKGW4-V2.js` (option "status"). Verified against
+Decoded by the vendor script `docs/fornecedores/MOKO/MKGW4-V2.js` (option "status"). Verified against
 17 live captures (heartbeat index 955 → 971):
 
 - **Network type / operator**: `FDD LTE`
@@ -251,4 +251,4 @@ alerts (3/7), Normal (4/12), Fewer (7/15).
 - `/tmp/mk_json.log` — JSON capture of `d48c49f7909c` (3608 messages: 237× 3004, 3371× 3070).
 - `/tmp/mk_ble_decode.js` — AD-structure decoder + distinct-device report.
 - `/tmp/mecspro.js` — bit-level MECSPro Raw20 decoder.
-- Vendor decoder: `docs/gateways/MKGW4-V2.js` (has the `operator` slice bug, see 1.2).
+- Vendor decoder: `docs/fornecedores/MOKO/MKGW4-V2.js` (has the `operator` slice bug, see 1.2).

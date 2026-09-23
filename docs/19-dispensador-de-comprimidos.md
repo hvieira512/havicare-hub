@@ -104,7 +104,7 @@ contrato, não técnica.
 ## 3. O protocolo TCP
 
 Especificado em
-[`Network_Equipment_Communication_Protocol_V1.0_M2_Series_EN.docx`](pill-dispensor/).
+[`Network_Equipment_Communication_Protocol_V1.0_M2_Series_EN.docx`](fornecedores/Zayata/).
 É um protocolo binário maduro, com vinte e seis revisões desde 2017.
 
 Suporta TCP, UDP e HTTP, com TCP preferido. Em HTTP o `content-type` é
