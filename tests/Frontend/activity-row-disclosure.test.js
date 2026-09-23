@@ -12,14 +12,9 @@ const { toggleActivityRow } =
 /**
  * A altura de uma linha da lista de actividade, e a gaveta que a abre.
  *
- * Media-se 59px numas linhas e 160px noutras: os detalhes de um `minute_stats` são uma frase
- * comprida que caía num contentor a embrulhar e ocupava seis linhas. Uma página de doze
- * linhas media 708px ou 1920px conforme os tipos que lhe calhassem, e comparar duas páginas
- * deixava de ser possível.
- *
- * O que se prende aqui: os detalhes cortam-se numa linha, o que fica de fora abre-se, e a
- * linha aberta continua aberta enquanto o histórico anda por baixo dela -- que num radar é
- * mais do que uma vez por segundo.
+ * Sem corte, uma página de doze linhas media 708px ou 1920px conforme os tipos que lhe
+ * calhassem. O que se prende aqui: os detalhes cortam-se numa linha, o que fica de fora
+ * abre-se, e a linha aberta continua aberta enquanto o histórico anda por baixo dela.
  */
 
 function fakeElement() {

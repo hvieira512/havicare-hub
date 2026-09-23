@@ -9,13 +9,8 @@ import { state } from "../../src/Dashboard/dashboard/state.js";
  * A pastilha de uma acção tem de acompanhar o comando até ao fim.
  *
  * Uma configuração guarda o seu estado de entrega em `configurationSync.entries`, e é isso que
- * o stream sincroniza quando o aparelho responde. Uma **acção** — «Dispensar agora», «Calibrar
- * relógio», os pedidos de parâmetros — guarda-o noutro sítio, em `actionDeliveries`, e esse
- * mapa não era tocado por ninguém.
- *
- * O resultado via-se no ecrã: o comando fechava como confirmado do lado do servidor e o modal
- * continuava a dizer «A aguardar — o valor foi enviado e aguarda resposta do dispositivo»,
- * indefinidamente, até alguém fechar e reabrir o modal.
+ * o stream sincroniza quando o aparelho responde. Uma **acção** guarda-o noutro sítio, em
+ * `actionDeliveries`, e esse mapa também tem de ser sincronizado.
  */
 
 const IMEI = "869243062262262";

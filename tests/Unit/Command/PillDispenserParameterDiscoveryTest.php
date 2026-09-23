@@ -14,14 +14,9 @@ use Tests\Unit\Hub\PillFakeConnection;
 /**
  * Perguntar ao aparelho que parâmetros ele suporta, em vez de adivinhar por recusa.
  *
- * Sem isto, a única maneira de saber se um firmware serve uma TAG era mandá-la e ler a
- * recusa. Foi assim que se descobriu que este M228 não tem WiFi — o `0x810A` voltava sempre
- * com «TAG inválida» —, e é um método que não escala para uma frota com firmwares diferentes.
- *
  * Os pacotes `0x0A`, `0x0B` e `0x0C` perguntam pelos parâmetros de configuração, de estado e
- * de controlo, e a resposta é uma lista simples de TAGs de dois bytes, sem TFLV pelo meio. O
- * fornecedor confirmou que este firmware os serve, e as respostas deste teste são as que o
- * aparelho de ensaio deu a 22 de setembro de 2026.
+ * de controlo, e a resposta é uma lista simples de TAGs de dois bytes, sem TFLV pelo meio. As
+ * respostas deste teste são as que o aparelho de ensaio deu.
  */
 final class PillDispenserParameterDiscoveryTest extends TestCase
 {

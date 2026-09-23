@@ -8,16 +8,9 @@ import "./support/browser-env.js";
 import { notificationRow } from "../../src/Dashboard/dashboard/notifications.js";
 
 /**
- * O vermelho repetia-se em cada linha das listagens.
- *
- * Oito lixos vermelhos ao mesmo tempo no separador «Licenças» faziam do que se faz raramente
- * o elemento mais chamativo do painel, ao lado dos lápis neutros do que se faz muitas vezes.
- * A repetição também gasta o significado da cor: onde tudo é vermelho, nada é.
- *
- * A regra é o `btn-quiet-danger`: neutro em repouso, vermelho ao ser apontado ou focado. Vale
- * para o destrutivo que se repete por linha, e não para o que aparece uma vez -- o «Eliminar»
- * do diálogo do dispositivo e o «Apagar modelo» continuam vermelhos, porque não competem com
- * cópias de si próprios.
+ * O destrutivo que se repete por linha leva `btn-quiet-danger`: neutro em repouso, vermelho ao
+ * ser apontado ou focado. A repetição gasta o significado da cor -- onde tudo é vermelho, nada
+ * é. O que aparece uma vez continua vermelho, porque não compete com cópias de si próprio.
  */
 const css = readFileSync(
     fileURLToPath(new URL("../../src/Dashboard/assets/css/base.css", import.meta.url)),

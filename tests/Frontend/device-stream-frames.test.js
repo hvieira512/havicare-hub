@@ -5,14 +5,9 @@ import "./support/browser-env.js";
 /**
  * O stream do dispositivo lido a bytes, e não por `EventSource`.
  *
- * O `EventSource` não deixa pôr cabeçalhos, e era só por isso que existia um bilhete de uso
- * único no URL. Com `fetch` a credencial vai no `Authorization` como em todas as outras
- * chamadas da dashboard -- mas o preço é que o corte do corpo em frames passa a ser nosso.
- *
- * É aí que mora o defeito provável, e é isso que estes casos prendem. O `snapshot` traz até
- * cem entradas de telemetria e cem de eventos, pelo que **chegar partido entre dois chunks é
- * o caso normal, não a excepção**. Um `split("\n\n")` ingénuo perde o pedaço final e o ecrã
- * fica com o histórico truncado, sem erro à vista.
+ * O `EventSource` não deixa pôr cabeçalhos; com `fetch` a credencial vai no `Authorization`,
+ * mas o corte do corpo em frames passa a ser nosso. O `snapshot` traz até cem entradas de
+ * cada lado, pelo que **chegar partido entre dois chunks é o caso normal, não a excepção**.
  */
 
 // O módulo agenda com `window.setTimeout`; os temporizadores do node não lhe tocam.

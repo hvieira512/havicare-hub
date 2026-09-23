@@ -12,13 +12,9 @@ use PHPUnit\Framework\TestCase;
  * Quem abre a dashboard sem conhecer o aparelho tem de conseguir administrá-lo.
  *
  * Metade dos nomes deste catálogo não se explica a si própria — «Repor o prato», «Parâmetros
- * de controlo», «Sincronizar configuração». Sem uma frase por baixo, quem opera fica a
- * adivinhar o que vai acontecer ao carregar no botão, e a adivinhar sobre a medicação de
- * alguém.
- *
- * E a categoria tem de ser uma só: o catálogo de capacidades e as definições declaram-na cada
- * um por seu lado, e discordavam no «Dispensar agora» — a capacidade dizia saúde, a definição
- * dizia sistema, e é a definição que manda no modal.
+ * de controlo» —, e sem uma frase por baixo quem opera fica a adivinhar sobre a medicação de
+ * alguém. E a categoria tem de ser uma só: o catálogo de capacidades e as definições
+ * declaram-na cada um por seu lado, e é a definição que manda no modal.
  */
 final class PillDispenserCatalogueIsLegibleTest extends TestCase
 {

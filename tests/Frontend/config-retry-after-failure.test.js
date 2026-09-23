@@ -8,14 +8,9 @@ import { parseFragment } from "./support/dom.js";
 /**
  * Uma configuração cuja entrega falhou tem de poder ser reenviada.
  *
- * O «Enviar» de um cartão acende-se por diferença: só quando o valor no ecrã difere do que
- * está guardado. Há duas excepções -- uma acção, que é sempre um pedido novo, e uma definição
- * que o aparelho nunca recebeu. Faltava a terceira, e é a que dói: uma definição **guardada**
- * cuja entrega falhou mostra o valor guardado, coincide consigo própria, e o botão apaga-se.
- * Fica sem caminho nenhum para sair do ecrã a não ser mexer-lhe no valor.
- *
- * Aconteceu com quatro configurações do M228 ao mesmo tempo, presas duas horas em «tentativas
- * esgotadas». O valor estava certo no hub; o que faltava era voltar a mandá-lo.
+ * O «Enviar» de um cartão acende-se por diferença, com três excepções: uma acção, que é sempre
+ * um pedido novo; uma definição que o aparelho nunca recebeu; e uma definição **guardada**
+ * cuja entrega falhou, que coincide consigo própria e ficaria sem caminho para sair do ecrã.
  */
 
 const section = ({ stored = "1", delivery = "", pristine = { volume: 1 }, value = 1 } = {}) =>
