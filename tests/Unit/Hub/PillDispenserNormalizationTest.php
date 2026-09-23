@@ -54,7 +54,7 @@ final class PillDispenserNormalizationTest extends TestCase
                 0x810A => ['value' => pack('s', -60)],   // WiFi -60 dBm, INT16S
                 0x810B => ['value' => pack('s', -85)],   // GSM -85 dBm, INT16S
                 0x811A => ['value' => "\x0C"],           // compartimento atual 12
-                0x811B => ['value' => "\x1C"],           // 28 compartimentos no total
+                0x811B => ['value' => "\x1D"],           // 29 posições, que são 28 compartimentos
                 0x811D => ['value' => "\x10"],           // 16 restantes
             ],
         ]);
@@ -282,6 +282,41 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertIsArray($decoded);
 
         return $decoded;
+    }
+
+    /**
+     * O prato tem 28 compartimentos, e o firmware conta 29.
+     *
+     * A ficha do aparelho diz 28 e a especificação numera o compartimento de 0 a 28 — são 29
+     * posições porque a zero é a de repouso, onde o prato assenta e onde não vai medicação
+     * nenhuma. O `0x811B` reporta as posições, e o cartão da dashboard mostrava «0 de 29» ao
+     * lado de uma definição que só aceita 28. Uma das duas estava a mentir.
+     *
+     * Apanhou-se com o aparelho na mesa: pedido o estado, ele respondeu `0x811B = 29`.
+     */
+    public function testTheTrayCapacityLeavesOutTheRestingPosition(): void
+    {
+        $decoded = $this->decode([
+            'packetType' => 0x87,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [
+                0x811A => ['value' => "\x10"],
+                0x811B => ['value' => "\x1D"],
+                0x811D => ['value' => "\x00"],
+            ],
+        ]);
+
+        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
+        $cells = [];
+        foreach ($events as $event) {
+            if ($event['feature'] === 'cells_remaining') {
+                $cells = $event['value'];
+            }
+        }
+
+        self::assertSame(28, $cells['total'] ?? null);
+        self::assertSame(16, $cells['current'] ?? null);
+        self::assertSame(0, $cells['remaining'] ?? null);
     }
 
     private function session(): DeviceSession

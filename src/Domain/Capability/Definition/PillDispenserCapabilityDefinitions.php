@@ -20,9 +20,10 @@ final class PillDispenserCapabilityDefinitions
             // própria. Pedível: o `0x07` pergunta ao aparelho o estado que ele tem agora, em
             // vez de se esperar pelo próximo heartbeat.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'device_status', 'label' => 'Estado do dispositivo', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            // O cartão SIM é identidade do aparelho e não uma leitura que mude: misturado com
-            // o sinal, ficava perdido entre vinte e cinco linhas por hora a dizer `-25 dBm`.
-            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'sim_card', 'label' => 'Cartão SIM', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            // O CCID do cartão SIM não está aqui de propósito: é um identificador que nunca
+            // muda, ninguém o consulta na dashboard, e quem precise dele vai buscá-lo à ficha
+            // do dispositivo. O adaptador continua a descodificá-lo, mas descodificar e
+            // publicar são decisões separadas.
             // O estado de toma dos nove alarmes: a única leitura da toma que chega em claro,
             // porque o `0x03` que traz a hora e a célula vem cifrado. Não é pedível à parte —
             // viaja no mesmo `0x07` que o «Atualizar estado» já manda.

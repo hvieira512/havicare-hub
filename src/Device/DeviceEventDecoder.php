@@ -442,26 +442,6 @@ final class DeviceEventDecoder
     }
 
     /**
-     * O ICCID do cartão SIM, sem o enchimento do BCD.
-     *
-     * Um ICCID de comprimento ímpar traz um `F` no fim: é o meio byte que sobra, e não faz
-     * parte do número. Quem copie o valor com ele para procurar o cartão não o encontra.
-     *
-     * @param array<int, array{value?: string, state?: int}> $tlv
-     */
-    private function pillSimCcid(array $tlv): ?string
-    {
-        $value = $this->tlvValue($tlv, 0x8009);
-        if ($value === null) {
-            return null;
-        }
-
-        $ccid = rtrim(trim($value), 'Ff');
-
-        return $ccid === '' ? null : $ccid;
-    }
-
-    /**
      * A janela de «não incomodar», das quatro TAGs de hora mais o interruptor.
      *
      * Era a única configuração que se escrevia e nunca se lia de volta: o hub não tinha
@@ -560,9 +540,15 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'medication_level', 'nativeType' => $nativeType, 'value' => ['level' => $level]];
         }
 
+        // O `0x811B` conta posições e não compartimentos: a especificação numera o
+        // compartimento de 0 a 28, e a zero é a de repouso, onde o prato assenta e onde não
+        // vai medicação nenhuma. O aparelho reporta 29, a ficha dele diz 28, e é 28 que o
+        // contrato publica -- senão o cartão diz «de 29» ao lado de uma definição que só
+        // aceita 28.
+        $capacity = $this->tlvU8($tlv, 0x811B);
         $cells = array_filter([
             'remaining' => $this->tlvU8($tlv, 0x811D),
-            'total' => $this->tlvU8($tlv, 0x811B),
+            'total' => $capacity === null ? null : max(0, $capacity - 1),
             'current' => $this->tlvU8($tlv, 0x811A),
         ], static fn (mixed $field): bool => $field !== null);
         if ($cells !== []) {
@@ -592,11 +578,6 @@ final class DeviceEventDecoder
             'mainsPowered' => $this->pillFlag($tlv, 0x8109),
             'environmentAlarm' => $this->pillFlag($tlv, 0x8111),
         ], static fn (mixed $field): bool => $field !== null);
-
-        $ccid = $this->pillSimCcid($tlv);
-        if ($ccid !== null) {
-            $events[] = ['feature' => 'sim_card', 'nativeType' => $nativeType, 'value' => ['ccid' => $ccid]];
-        }
 
         // O estado do bloqueio de criança é o valor reportado da configuração, e não uma
         // leitura ao lado dela: são a mesma coisa vista de dois ângulos.

@@ -279,7 +279,7 @@ ao hub.
 | `0x810E` / `0x810F` | **temperatura e humidade** | INT8S de −40 a 120 °C, INT8U de 0 a 100 %RH — **um byte cada**, ao contrário do sinal, que é INT16S |
 | `0x8111` | alarme de temperatura/humidade | `0` normal · `1` em alarme — é o juízo que o aparelho faz sobre os dois anteriores |
 | `0x8112` | chamada de emergência | `0` normal · `1` em curso |
-| `0x811A` / `0x811B` / `0x811D` | célula actual, total e restantes | o `0x811B` é a **capacidade do prato**, não quantas vão carregadas — essas são a configuração `0x101C` |
+| `0x811A` / `0x811B` / `0x811D` | célula actual, total e restantes | o `0x811B` é a **capacidade do prato**, não quantas vão carregadas — essas são a configuração `0x101C`. Conta **posições**, e o aparelho responde 29: a zero é a de repouso e não leva medicação, por isso o contrato publica 28 |
 | `0x8121`–`0x8125` | falhas | rotação, reset do prato, empurrador, porta da célula, teclas |
 | `0x8131`–`0x8139` | **estado de toma de cada um dos nove alarmes** | `0` nada · `1` a preparar · `2` à espera · `4` tempo esgotado · `6` **falhada** · `7` **tomada** |
 

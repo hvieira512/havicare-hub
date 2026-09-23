@@ -13,6 +13,7 @@ use Hub\Infrastructure\Persistence\Migration\PillDispenserParameterDiscovery;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserReportedConfigurationCleanup;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserRetrievalSettings;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalogueTidyUp;
+use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutSimCard;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutUnservedControls;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutEncryptionSwitch;
 use Hub\Infrastructure\Persistence\Migration\PillDispenserWithoutFactoryReset;
@@ -58,6 +59,7 @@ final class DatabaseMigrationPlan
             new PillDispenserWithoutUnservedControls(),
             // E o catálogo arruma-se para quem nunca viu o aparelho o conseguir administrar.
             new PillDispenserCatalogueTidyUp(),
+            new PillDispenserWithoutSimCard(),
         ];
     }
 

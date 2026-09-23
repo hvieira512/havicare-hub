@@ -10,17 +10,16 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Cada coisa na sua capacidade: o sinal não é o cartão SIM, e nenhum dos dois é o bloqueio.
+ * Cada coisa na sua capacidade, e o que não serve a ninguém não é capacidade nenhuma.
  *
  * O `device_status` tinha virado uma gaveta. Lá dentro iam o sinal — que muda de minuto a
- * minuto e enche o histórico —, o número do cartão SIM, que não muda nunca e é identidade do
- * aparelho, e o estado do bloqueio de criança, que já é uma configuração com valor reportado.
- * Na lista de eventos saíam todos com a mesma etiqueta, «Estado do dispositivo», e vinte e
- * cinco linhas seguidas a dizer `-25 dBm` escondiam a única que trazia o CCID.
+ * minuto e enche o histórico —, o número do cartão SIM, e o estado do bloqueio de criança,
+ * que já é uma configuração com valor reportado. Na lista de eventos saíam todos com a mesma
+ * etiqueta, «Estado do dispositivo».
  *
- * A separação segue o que cada coisa é: o que muda ao minuto é telemetria, o que identifica o
- * aparelho é do aparelho, e o que se configura tem o seu valor reportado e não uma segunda
- * verdade ao lado.
+ * A separação segue o que cada coisa é: o que muda ao minuto é telemetria, o que se configura
+ * tem o seu valor reportado e não uma segunda verdade ao lado, e o CCID não é nem uma nem
+ * outra — é um identificador que ninguém vai ler ali.
  */
 final class PillDispenserStatusSeparationTest extends TestCase
 {
@@ -43,16 +42,19 @@ final class PillDispenserStatusSeparationTest extends TestCase
     }
 
     /**
-     * O cartão SIM sai por capacidade própria.
+     * O cartão SIM não sai de todo.
      *
-     * Não é uma leitura que mude: é o cartão que está lá dentro. Misturado com o sinal, ficava
-     * perdido entre vinte e cinco linhas por hora a dizer a mesma coisa.
+     * Primeiro foi separado do estado do dispositivo para capacidade própria, e o argumento
+     * estava certo — uma coisa é o sinal, outra é o cartão. A conclusão é que não é nenhuma
+     * das duas: o CCID é um identificador que nunca muda, ninguém o consulta na dashboard, e
+     * cada leitura de estado deixava mais uma linha na lista de eventos a repetir o mesmo
+     * número. O adaptador continua a descodificá-lo; o contrato não o publica.
      */
-    public function testTheSimCardHasItsOwnCapability(): void
+    public function testTheSimCardIsNotPublished(): void
     {
         $eventos = $this->telemetry([0x8009 => "8935103211501958977F\x00", 0x810D => "\x03"]);
 
-        self::assertSame(['ccid' => '8935103211501958977'], $eventos['sim_card'] ?? null);
+        self::assertArrayNotHasKey('sim_card', $eventos);
         self::assertArrayNotHasKey('simCcid', $eventos['device_status'] ?? []);
     }
 

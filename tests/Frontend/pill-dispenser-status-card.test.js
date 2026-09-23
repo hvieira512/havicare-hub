@@ -57,15 +57,7 @@ test("um valor falso continua a ser um valor", () => {
     assert.match(details, /Tampa aberta/);
 });
 
-/** O cartão SIM tem o número como valor: não é um detalhe do sinal. */
-test("o cartão SIM mostra o número", () => {
-    assert.equal(
-        uplinkCardContent("sim_card", { ccid: "8935103211501958977" }).value,
-        "8935103211501958977",
-    );
-});
-
-/** E o estado do dispositivo deixou de o levar lá dentro. */
+/** O estado do dispositivo não leva o SIM nem o bloqueio, e o SIM não vai a lado nenhum. */
 test("o estado do dispositivo já não leva o SIM nem o bloqueio", () => {
     const { details } = uplinkCardContent("device_status", {
         gsmSignalDbm: -24,
