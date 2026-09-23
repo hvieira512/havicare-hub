@@ -116,3 +116,18 @@ test("a toma e a avaria chegam à lista de atividade", () => {
 
     assert.deepEqual(types, ["medication_intake", "device_fault", "help_call"]);
 });
+
+/** As cinco avarias que o aparelho reporta têm todas nome em português. */
+test("cada avaria tem tradução", () => {
+    const faults = {
+        rotation: "Rotação do prato",
+        tray_reset: "Reposição do prato",
+        pusher: "Empurrador",
+        cell_door: "Porta do compartimento",
+        keys: "Teclas",
+    };
+
+    for (const [fault, label] of Object.entries(faults)) {
+        assert.equal(fieldValue("fault", fault), label);
+    }
+});

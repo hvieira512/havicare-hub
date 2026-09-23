@@ -267,7 +267,7 @@ final class PillDispenserDownlinkTest extends TestCase
             0xA101 => 11,               // calibração do relógio, STRING
         ];
 
-        $errados = [];
+        $wrong = [];
         foreach (self::everyCommand() as [$comando, $payload]) {
             $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, $comando, $payload);
             $decoded = (new PillDispenserAdapter())->decodeIncoming($frame);
@@ -276,7 +276,7 @@ final class PillDispenserDownlinkTest extends TestCase
             foreach ($decoded['tlv'] as $tag => $entry) {
                 $esperado = $excepções[$tag] ?? $int8u;
                 if ($entry['type'] !== $esperado) {
-                    $errados[] = sprintf(
+                    $wrong[] = sprintf(
                         '%s/0x%04X: tipo %d, esperado %d',
                         $comando,
                         $tag,
@@ -287,7 +287,7 @@ final class PillDispenserDownlinkTest extends TestCase
             }
         }
 
-        self::assertSame([], $errados);
+        self::assertSame([], $wrong);
     }
 
     /** @return list<array{0: string, 1: array<string, mixed>}> */
@@ -295,7 +295,7 @@ final class PillDispenserDownlinkTest extends TestCase
     {
         return [
             ['medicationPlan', ['plans' => [['hour' => 8, 'minute' => 30, 'enabled' => true]]]],
-            ['medicationPeriod', ['enabled' => true, 'start' => '2026-01-01', 'end' => '2026-12-31']],
+            ['medicationPeriod', ['enabled' => true, 'startDate' => '2026-01-01', 'endDate' => '2026-12-31']],
             ['childLock', ['enabled' => true]],
             ['earlyRetrieval', ['enabled' => false]],
             ['alarmRingtone', ['ringtone' => 2]],

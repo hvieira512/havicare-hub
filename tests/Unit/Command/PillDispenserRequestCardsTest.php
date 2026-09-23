@@ -5,20 +5,13 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
+use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Os dois pedidos que só leem pertencem ao ecrã principal, e não ao modal.
- *
- * O que a dashboard mostra como mosaico pedível sai daqui: o `DeviceCapabilityPresenter`
- * percorre os comandos do protocolo, guarda os de `kind: request`, e marca a capacidade de
- * cada um como pedível. O dispensador não declarava comando nenhum -- o
- * `commandsForProtocol('zayata-m228')` devolvia lista vazia --, e por isso o mosaico «Estado
- * do dispositivo» aparecia no ecrã principal sem responder ao clique. Era um botão a fingir.
- *
- * Só entram os dois que perguntam e não mexem: ler o estado e ler a configuração. Reiniciar,
- * repor o prato ou dispensar mudam o aparelho e ficam no modal, atrás de quem foi lá de
- * propósito.
+/**
+ * Só os pedidos que leem viram mosaico no ecrã principal: as sete leituras que o `0x07` enche
+ * e a configuração do `0x05`. O que muda o aparelho fica no modal.
  */
 final class PillDispenserRequestCardsTest extends TestCase
 {
@@ -38,14 +31,7 @@ final class PillDispenserRequestCardsTest extends TestCase
     }
 
     /**
-     * Cada leitura que o `0x07` enche é pedível por si.
-     *
-     * Havia um `device_status` que não publicava nada e existia só para ser o botão: quem
-     * quisesse a temperatura tinha de saber que a ia buscar clicando numa coisa chamada
-     * «estado do dispositivo», e o cartão da temperatura ficava a olhar. A mesma trama serve
-     * sete leituras, e por isso são sete os pedidos — o mosaico de cada uma responde ao
-     * clique, que é onde a pessoa está a olhar quando o quer.
-     */
+    /** Cada leitura que o `0x07` enche pede-se do seu próprio mosaico. */
     public function testEveryReadingTheStatusFramePullsIsRequestable(): void
     {
         self::assertSame([
@@ -92,17 +78,31 @@ final class PillDispenserRequestCardsTest extends TestCase
         }
     }
 
-    /** E a trama sai mesmo: o descritor nomeia um comando que o construtor conhece. */
-    public function testTheDeclaredCommandsBuildAFrame(): void
+    /**
+     * A trama que cada pedido manda é a que o protocolo exige, e traz o corpo a perguntar.
+     *
+     * Afirmar que os bytes não são vazios não media nada: o construtor ou lança, ou devolve
+     * uma trama por construção.
+     */
+    public function testEachRequestBuildsTheFrameItsPacketTypeRequires(): void
     {
+        $adapter = new PillDispenserAdapter();
+        $expected = [
+            'readStatus' => [0x07, PillDispenserAdapter::STATUS_TAGS],
+            'readConfiguration' => [0x05, PillDispenserAdapter::CONFIGURATION_TAGS],
+        ];
+
         foreach ($this->requests() as $feature => $entry) {
-            $bytes = DeviceCommandCatalog::buildDownlink(
-                'zayata-m228',
-                '869243062262262',
-                (string)$entry['command'],
+            $command = (string)$entry['command'];
+            [$packetType, $tags] = $expected[$command];
+
+            $decoded = $adapter->decodeIncoming(
+                DeviceCommandCatalog::buildDownlink('zayata-m228', '869243062262262', $command)
             );
 
-            self::assertNotSame('', $bytes, $feature);
+            self::assertIsArray($decoded, $feature);
+            self::assertSame($packetType, $decoded['packetType'], $feature);
+            self::assertSame($tags, array_keys($decoded['tlv']), $feature);
         }
     }
 }

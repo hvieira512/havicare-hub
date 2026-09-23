@@ -5,26 +5,15 @@ import "./support/browser-env.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 
 /**
- * A tampa e o ambiente de armazenamento, cada um no seu cartão.
- *
- * Vinham dentro do estado do dispositivo, ao lado do sinal, e chegavam ao ecrã como
- * «Tampa aberta: Não · Ligado à corrente: Sim · Ambiente fora da gama: Não» — três coisas sem
- * relação nenhuma, numa linha com o nome de nenhuma delas, e a última com um nome que não
- * dizia o que era.
- *
  * O valor de cada cartão é o estado em que a coisa está, e não um «Sim» ou um «Não» que
- * obriga a reler o título para saber a que respondem.
+ * obriga a reler o título para saber a que responde.
  */
 test("a tampa diz se está aberta ou fechada", () => {
     assert.equal(uplinkCardContent("lid_state", { open: true }).value, "Aberta");
     assert.equal(uplinkCardContent("lid_state", { open: false }).value, "Fechada");
 });
 
-/**
- * O ambiente é um alerta e só chega quando dispara, e por isso o valor diz o que aconteceu em
- * vez de dizer em que estado se está — e não leva legenda fixa por baixo, que se repetia
- * linha após linha sem nunca mudar.
- */
+/** O ambiente só chega quando dispara: o valor diz o que aconteceu, e não leva legenda fixa. */
 test("o ambiente diz o que aconteceu", () => {
     const { value, details } = uplinkCardContent("storage_environment", { outOfRange: true });
 
@@ -33,15 +22,15 @@ test("o ambiente diz o que aconteceu", () => {
     assert.equal(details || "", "");
 });
 
-/** O estado do dispositivo fica com o sinal, e já não carrega o resto. */
-test("o estado do dispositivo é só o sinal", () => {
-    const { value, details } = uplinkCardContent("device_status", {
-        gsmSignalDbm: -25,
-        signalLevel: 3,
+/** O sinal do dispensador é a `connectivity` genérica, com o formato dos gateways. */
+test("o sinal desenha-se como conectividade", () => {
+    const { value } = uplinkCardContent("connectivity", {
+        interface: "cellular",
+        signalStrengthDbm: -25,
     });
 
-    assert.equal(value, "-25 dBm");
-    assert.doesNotMatch(details, /Tampa|corrente|gama/);
+    assert.match(value, /-25 dBm/);
+    assert.match(value, /[Rr]ede móvel/);
 });
 
 /** A corrente viaja com a bateria, que é a mesma pergunta feita do outro lado. */

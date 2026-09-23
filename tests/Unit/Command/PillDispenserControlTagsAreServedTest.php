@@ -43,26 +43,32 @@ final class PillDispenserControlTagsAreServedTest extends TestCase
         0xA101, 0xA102, 0xA103, 0xA123,
     ];
 
+    /** As cinco acções que saem como controlo, para o varrimento não poder ficar sem amostra. */
+    private const CONTROL_COMMANDS = [
+        'dispenseNow',
+        'calibrateClock',
+        'muteAlarm',
+        'resetTray',
+        'restartDevice',
+    ];
+
     public function testEveryControlTagTheHubCanSendIsOneTheDeviceServes(): void
     {
         $adapter = new PillDispenserAdapter();
         $unserved = [];
+        $seen = [];
 
         foreach (DeviceConfigurationCatalog::configsForProtocol('zayata-m228') as $entry) {
             $command = (string)$entry['command'];
-            try {
-                $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', '869243062262262', $command, self::sample());
-            } catch (\Throwable) {
-                // Comandos que precisam de um corpo que esta amostra não dá: o teste dos
-                // downlinks cobre-os, e o que aqui interessa é a família da TAG.
-                continue;
-            }
-
+            $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', '869243062262262', $command, self::sample());
             $decoded = $adapter->decodeIncoming($frame);
-            if (!is_array($decoded) || ($decoded['packetType'] ?? 0) !== 0x08) {
+            self::assertIsArray($decoded, $command);
+
+            if (($decoded['packetType'] ?? 0) !== 0x08) {
                 continue;
             }
 
+            $seen[] = $command;
             foreach (array_keys($decoded['tlv'] ?? []) as $tag) {
                 if (!in_array($tag, self::SERVED_TAGS, true)) {
                     $unserved[] = sprintf('%s manda 0x%04X, que o aparelho não anuncia', $command, $tag);
@@ -71,6 +77,12 @@ final class PillDispenserControlTagsAreServedTest extends TestCase
         }
 
         self::assertSame([], $unserved);
+        // Sem isto, o varrimento continuava verde se nenhum comando chegasse a sair como
+        // controlo -- que é o caso em que ele deixa de medir o que diz medir.
+        sort($seen);
+        $expected = self::CONTROL_COMMANDS;
+        sort($expected);
+        self::assertSame($expected, $seen);
     }
 
     /**
