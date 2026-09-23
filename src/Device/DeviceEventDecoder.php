@@ -504,6 +504,10 @@ final class DeviceEventDecoder
     {
         $events = [];
 
+        // A corrente viaja com a bateria: «ligado à corrente» e «a carregar» são a mesma
+        // pergunta feita de dois lados, e a dashboard já desenha a bateria com o estado de
+        // carga. Numa capacidade à parte, ficava a uma linha de distância da percentagem que
+        // a explica.
         $battery = array_filter([
             'percent' => $this->tlvU8($tlv, 0x8103),
             'chargingState' => match ($this->tlvU8($tlv, 0x8104)) {
@@ -514,6 +518,7 @@ final class DeviceEventDecoder
                 4 => 'absent',
                 default => null,
             },
+            'mainsPowered' => $this->pillFlag($tlv, 0x8109),
         ], static fn (mixed $field): bool => $field !== null);
         if ($battery !== []) {
             $events[] = ['feature' => 'battery', 'nativeType' => $nativeType, 'value' => $battery];
@@ -555,7 +560,30 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'cells_remaining', 'nativeType' => $nativeType, 'value' => $cells];
         }
 
-        // O sinal viaja no device_status, à maneira dos relógios, e não numa capacidade própria.
+        // A tampa aberta quer dizer que o prato está acessível -- alguém está a carregá-lo,
+        // ou ficou aberta por esquecimento. É um estado sobre que se age, e por isso tem
+        // cartão próprio em vez de ser um campo entre dois números de sinal.
+        $lidOpen = $this->pillFlag($tlv, 0x8107);
+        if ($lidOpen !== null) {
+            $events[] = ['feature' => 'lid_state', 'nativeType' => $nativeType, 'value' => ['open' => $lidOpen]];
+        }
+
+        // O `0x8111` é o juízo que o aparelho faz sobre a temperatura e a humidade que ele
+        // próprio mede: diz se a medicação está guardada dentro das condições que o
+        // fabricante dá como boas. Chamar-lhe «alarme de ambiente» não dizia isso a ninguém.
+        $outOfRange = $this->pillFlag($tlv, 0x8111);
+        if ($outOfRange !== null) {
+            $events[] = [
+                'feature' => 'storage_environment',
+                'nativeType' => $nativeType,
+                'value' => ['outOfRange' => $outOfRange],
+            ];
+        }
+
+        // O sinal viaja no device_status, à maneira dos relógios, e não numa capacidade
+        // própria. É a ligação à rede e mais nada: o que ali estava misturado -- a tampa, a
+        // corrente, o juízo sobre o ambiente, o cartão SIM, o bloqueio de criança -- saiu
+        // cada um para o sítio onde alguém o procura.
         //
         // O `signalLevel` é o que a dashboard mostra: a especificação declara-o de 0 a 3 e é
         // uma contagem de barras sem ambiguidade. O `gsmSignalDbm` fica ao lado porque é a
@@ -565,18 +593,10 @@ final class DeviceEventDecoder
         // confirmou a unidade em dBm e, perante um valor positivo, respondeu «treat it as a
         // negative value». Um sinal recebido é sempre negativo, e publicar `25 dBm` era
         // publicar a potência de um emissor.
-        // Só o que muda e interessa operar. O cartão SIM sai por capacidade própria — é
-        // identidade do aparelho e não uma leitura —, e o bloqueio de criança sai pelo valor
-        // reportado da configuração com o mesmo nome, para não haver duas verdades sobre ele.
         $signal = array_filter([
             'wifiSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810A)),
             'gsmSignalDbm' => self::pillNegativeSignal($this->tlvI16($tlv, 0x810B)),
             'signalLevel' => $this->tlvU8($tlv, 0x810D),
-            // O que o aparelho diz de si e não havia outra maneira de saber: a tampa aberta,
-            // a corrente em falta, e o juízo que ele faz sobre a temperatura e a humidade.
-            'lidOpen' => $this->pillFlag($tlv, 0x8107),
-            'mainsPowered' => $this->pillFlag($tlv, 0x8109),
-            'environmentAlarm' => $this->pillFlag($tlv, 0x8111),
         ], static fn (mixed $field): bool => $field !== null);
 
         // O estado do bloqueio de criança é o valor reportado da configuração, e não uma

@@ -16,9 +16,18 @@ final class PillDispenserCapabilityDefinitions
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'cells_remaining', 'label' => 'Células restantes', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'temperature', 'label' => 'Temperatura', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'humidity', 'label' => 'Humidade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            // A tampa do prato: aberta quer dizer que a medicação está acessível, e é um
+            // estado sobre que alguém age. Estava enfiada dentro do estado do dispositivo,
+            // entre dois números de sinal, onde ninguém a lia.
+            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'lid_state', 'label' => 'Tampa', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            // O juízo que o aparelho faz sobre a temperatura e a humidade que ele próprio
+            // mede: diz se a medicação está guardada dentro das condições que o fabricante dá
+            // como boas. Chamava-se «alarme de ambiente», que não dizia isso a ninguém.
+            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'storage_environment', 'label' => 'Ambiente de armazenamento', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             // O sinal WiFi/GSM viaja aqui, à maneira dos relógios, e não numa capacidade
-            // própria. Pedível: o `0x07` pergunta ao aparelho o estado que ele tem agora, em
-            // vez de se esperar pelo próximo heartbeat.
+            // própria — é a ligação à rede e mais nada. Pedível: o `0x07` pergunta ao
+            // aparelho o estado que ele tem agora, em vez de se esperar pelo próximo
+            // heartbeat, e é a resposta desse pedido que enche os cartões todos.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'device_status', 'label' => 'Estado do dispositivo', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             // O CCID do cartão SIM não está aqui de propósito: é um identificador que nunca
             // muda, ninguém o consulta na dashboard, e quem precise dele vai buscá-lo à ficha

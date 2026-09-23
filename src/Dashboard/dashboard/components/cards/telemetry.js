@@ -74,6 +74,8 @@ const CARD_STYLE = {
     medication_level: ["fa-prescription-bottle-medical", "info"],
     medication_alarm_status: ["fa-clock-rotate-left", "primary"],
     cells_remaining: ["fa-table-cells", "info"],
+    lid_state: ["fa-box-open", "primary"],
+    storage_environment: ["fa-temperature-half", "warning"],
     humidity: ["fa-droplet", "info"],
     reset: ["fa-bell-slash", "warning"],
     unknown: ["fa-bell", ""],
@@ -165,6 +167,22 @@ const UPLINK_CARD_RENDERERS = {
     medication_alarm_status: (data) => medicationAlarmContent(data),
     device_status: (data) => deviceStatusContent(data),
     device_config: (data) => deviceConfigContent(data),
+    // O valor é o estado em que a coisa está, e não um «Sim» que obriga a reler o título
+    // para saber a que responde.
+    lid_state: (data) => ({
+        value: data?.open == null ? "-" : data.open ? "Aberta" : "Fechada",
+        details: data?.open ? "O prato está acessível" : "",
+    }),
+    storage_environment: (data) => ({
+        value: data?.outOfRange == null
+            ? "-"
+            : data.outOfRange
+                ? "Fora da gama"
+                : "Dentro da gama",
+        // Sem isto é um estado sem causa visível: o aparelho compara a temperatura e a
+        // humidade que ele próprio mede com a gama que o fabricante dá como boa.
+        details: "Temperatura e humidade, medidas pelo aparelho",
+    }),
     device_fault: (data) => ({
         value: fieldValue("fault", data.fault),
     }),
@@ -344,9 +362,17 @@ const STATUS_BADGE_LABEL = {
     unknown: "desconhecido",
 };
 
+// Os relógios mandam um bit, e o dispensador manda uma enumeração com cinco estados. As duas
+// convivem na mesma tabela porque a pergunta é a mesma; sem as cinco, o cartão do dispensador
+// ficava sem nada a dizer sobre a carga.
 const BATTERY_CHARGING_STATE_LABEL = {
     1: "A carregar",
     0: "Não está a carregar",
+    charging: "A carregar",
+    full: "Carregada",
+    normal: "Não está a carregar",
+    low: "Bateria fraca",
+    absent: "Sem bateria",
 };
 
 // O alarme traz um só motivo; a etiqueta é a única coisa que o cartão mostra.
@@ -499,10 +525,17 @@ function rrIntervalValue(data) {
 }
 
 function batteryDetails(data) {
-    if (BATTERY_CHARGING_STATE_LABEL[data.chargingState]) {
-        return BATTERY_CHARGING_STATE_LABEL[data.chargingState];
-    }
-    return compactDetails(data, ["batteryType"]);
+    // A corrente vem com a bateria no dispensador: «ligado à corrente» e «a carregar» são a
+    // mesma pergunta feita de dois lados, e separá-las punha-as a uma linha de distância.
+    const mains = data.mainsPowered == null
+        ? ""
+        : data.mainsPowered
+            ? "Ligado à corrente"
+            : "Sem corrente";
+    const charging = BATTERY_CHARGING_STATE_LABEL[data.chargingState] ||
+        compactDetails(data, ["batteryType"]);
+
+    return [charging, mains].filter(Boolean).join(" · ");
 }
 
 /** A cor da categoria, para o ícone. Sem entrada na tabela, o ícone fica neutro. */

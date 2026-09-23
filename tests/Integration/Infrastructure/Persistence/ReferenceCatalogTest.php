@@ -155,6 +155,10 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'early_dispense',
             'help_call',
             'humidity',
+            // A tampa e o ambiente saíram de dentro do estado do dispositivo: uma tampa
+            // aberta é um estado sobre que se age, e «alarme de ambiente» não dizia a
+            // ninguém que o aparelho estava a avisar sobre a conservação da medicação.
+            'lid_state',
             'loaded_cells',
             // A toma lê-se por aqui sem a chave de cifra: o `medication_intake` é o evento
             // rico e chega cifrado, este é o estado dos nove alarmes e chega em claro.
@@ -174,6 +178,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // parâmetros não as anuncia.
             'retrieval_timeout',
             'retrieval_warning',
+            'storage_environment',
             // O cartão SIM não está cá: o CCID é um identificador que nunca muda, ninguém o
             // consulta na dashboard, e cada leitura de estado repetia-o na lista de eventos.
             // Uma por família: o aparelho separa configuração, estado e controlo, e cada

@@ -351,12 +351,14 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | TAG | Capacidade | Campos |
 |---|---|---|
 | `0xC201`–`0xC206` | `medication_intake` | `alarmSlot`, `scheduledAt`, `takenAt`, `cellNumber`, `method`, `result` |
-| `0x8103` / `0x8104` | `battery` | `percent`, `chargingState` |
+| `0x8103` / `0x8104` / `0x8109` | `battery` | `percent`, `chargingState`, `mainsPowered` — a corrente vai com a bateria porque «ligado à corrente» e «a carregar» são a mesma pergunta |
 | `0x8101` | `medication_level` | `level`: `ok` · `low` · `empty` |
 | `0x811A` / `0x811B` / `0x811D` | `cells_remaining` | `current`, `total`, `remaining` |
 | `0x810E` | `temperature` | `environmentCelsius` |
 | `0x810F` | `humidity` | `humidityPercent` |
-| `0x810A` / `0x810B` | `device_status` | `wifiSignalDbm`, `gsmSignalDbm` |
+| `0x810A` / `0x810B` / `0x810D` | `device_status` | `wifiSignalDbm`, `gsmSignalDbm`, `signalLevel` — a ligação à rede e mais nada |
+| `0x8107` | `lid_state` | `open` |
+| `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede |
 | `0x8131`–`0x8139` | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` |
 | `0x8121`–`0x8125` | `device_fault` | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
 | `0x8112` | `help_call` | `state` |

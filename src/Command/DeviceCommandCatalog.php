@@ -34,8 +34,28 @@ final class DeviceCommandCatalog
             'vivistar-iw' => self::vivistarCommands(),
             'four-p-touch' => self::fourPTouchCommands(),
             'veepoo-ble' => self::veepooCommands(),
+            'zayata-m228' => self::pillDispenserCommands(),
             default => [],
         };
+    }
+
+    /**
+     * O que o dispensador aceita como *pedido*, e é isso que o distingue do resto do
+     * catálogo dele: tudo o mais que ele faz — dispensar, calibrar, reiniciar, repor o prato —
+     * muda o aparelho, e um mosaico do ecrã principal dispara ao primeiro clique, sem
+     * confirmação e sem contexto. Esses ficam no modal, atrás de quem lá foi de propósito.
+     *
+     * Estes dois só perguntam: o `0x07` devolve as leituras todas e o `0x05` devolve a
+     * configuração que o aparelho tem lá dentro.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function pillDispenserCommands(): array
+    {
+        return [
+            ['id' => 'pillReadStatus', 'command' => 'readStatus', 'label' => 'Device status', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['read_status_ack']],
+            ['id' => 'pillReadConfiguration', 'command' => 'readConfiguration', 'label' => 'Stored configuration', 'icon' => 'fa-rotate', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
+        ];
     }
 
     public static function commandForProtocol(string $protocol, string $command): ?array

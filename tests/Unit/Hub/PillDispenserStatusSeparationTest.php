@@ -23,8 +23,15 @@ use PHPUnit\Framework\TestCase;
  */
 final class PillDispenserStatusSeparationTest extends TestCase
 {
-    /** O estado do aparelho fica com o que muda e interessa operar. */
-    public function testDeviceStatusKeepsWhatChanges(): void
+    /**
+     * O estado do dispositivo fica com o sinal e mais nada.
+     *
+     * É a mesma arrumação que os relógios já têm: `device_status` é a ligação à rede, e a
+     * leitura fina em dBm vive ao lado da contagem de barras. Tudo o resto que lá estava
+     * dentro tinha um sítio melhor, e chegar ao ecrã como «Tampa aberta: Não · Ligado à
+     * corrente: Sim · Ambiente fora da gama: Não» era uma linha que ninguém lê.
+     */
+    public function testDeviceStatusIsTheSignalAndNothingElse(): void
     {
         $status = $this->telemetry([
             0x810B => pack('s', 25),
@@ -34,11 +41,59 @@ final class PillDispenserStatusSeparationTest extends TestCase
             0x8111 => "\x00",
         ])['device_status'] ?? [];
 
-        self::assertSame(-25, $status['gsmSignalDbm'] ?? null);
-        self::assertSame(3, $status['signalLevel'] ?? null);
-        self::assertTrue($status['lidOpen'] ?? null);
-        self::assertTrue($status['mainsPowered'] ?? null);
-        self::assertFalse($status['environmentAlarm'] ?? null);
+        self::assertSame(['gsmSignalDbm' => -25, 'signalLevel' => 3], $status);
+    }
+
+    /**
+     * A corrente entra na bateria, que é onde alguém a procura.
+     *
+     * «Ligado à corrente» e «a carregar» são a mesma pergunta feita de dois lados, e a
+     * dashboard já desenha a bateria com o estado de carga. Numa lista à parte, a corrente
+     * ficava a uma linha de distância da percentagem que a explica.
+     */
+    public function testTheMainsSupplyTravelsWithTheBattery(): void
+    {
+        $battery = $this->telemetry([
+            0x8103 => "\x64",
+            0x8104 => "\x03",
+            0x8109 => "\x01",
+        ])['battery'] ?? [];
+
+        self::assertSame(100, $battery['percent'] ?? null);
+        self::assertSame('charging', $battery['chargingState'] ?? null);
+        self::assertTrue($battery['mainsPowered'] ?? null);
+    }
+
+    /**
+     * A tampa é uma capacidade própria: é um estado físico sobre que alguém age.
+     *
+     * Uma tampa aberta quer dizer que o prato está acessível — alguém está a carregá-lo, ou
+     * ficou aberta por esquecimento. Enfiada entre dois números de sinal, não chamava
+     * ninguém.
+     */
+    public function testTheLidIsItsOwnCapability(): void
+    {
+        self::assertSame(['open' => true], $this->telemetry([0x8107 => "\x01"])['lid_state'] ?? null);
+        self::assertSame(['open' => false], $this->telemetry([0x8107 => "\x00"])['lid_state'] ?? null);
+    }
+
+    /**
+     * O «ambiente fora da gama» é o juízo do aparelho sobre a temperatura e a humidade.
+     *
+     * O nome não dizia isso a ninguém. É uma capacidade própria, com o nome do que mede: se
+     * a medicação está guardada dentro das condições que o fabricante dá como boas. As duas
+     * leituras que ele compara já têm cartão, e este é a conclusão delas.
+     */
+    public function testTheStorageEnvironmentIsItsOwnCapability(): void
+    {
+        self::assertSame(
+            ['outOfRange' => true],
+            $this->telemetry([0x8111 => "\x01"])['storage_environment'] ?? null,
+        );
+        self::assertSame(
+            ['outOfRange' => false],
+            $this->telemetry([0x8111 => "\x00"])['storage_environment'] ?? null,
+        );
     }
 
     /**
@@ -52,10 +107,10 @@ final class PillDispenserStatusSeparationTest extends TestCase
      */
     public function testTheSimCardIsNotPublished(): void
     {
-        $eventos = $this->telemetry([0x8009 => "8935103211501958977F\x00", 0x810D => "\x03"]);
+        $byFeature = $this->telemetry([0x8009 => "8935103211501958977F\x00", 0x810D => "\x03"]);
 
-        self::assertArrayNotHasKey('sim_card', $eventos);
-        self::assertArrayNotHasKey('simCcid', $eventos['device_status'] ?? []);
+        self::assertArrayNotHasKey('sim_card', $byFeature);
+        self::assertArrayNotHasKey('simCcid', $byFeature['device_status'] ?? []);
     }
 
     /**
@@ -66,19 +121,46 @@ final class PillDispenserStatusSeparationTest extends TestCase
      */
     public function testTheChildLockIsNotTelemetry(): void
     {
-        $eventos = $this->telemetry([0x8102 => "\x01", 0x810D => "\x03"]);
+        $byFeature = $this->telemetry([0x8102 => "\x01", 0x810D => "\x03"]);
 
-        self::assertArrayNotHasKey('childLockEngaged', $eventos['device_status'] ?? []);
-        self::assertSame(['enabled' => true], $eventos['device_config']['settings']['child_lock'] ?? null);
+        self::assertArrayNotHasKey('childLockEngaged', $byFeature['device_status'] ?? []);
+        self::assertSame(['enabled' => true], $byFeature['device_config']['settings']['child_lock'] ?? null);
     }
 
     /** Uma trama sem nada disto não publica capacidade nenhuma vazia. */
     public function testNothingIsPublishedWithoutReadings(): void
     {
-        $eventos = $this->telemetry([0x8103 => "\x64"]);
+        $byFeature = $this->telemetry([0x8103 => "\x64"]);
 
-        self::assertArrayNotHasKey('sim_card', $eventos);
-        self::assertArrayNotHasKey('device_status', $eventos);
+        self::assertArrayNotHasKey('sim_card', $byFeature);
+        self::assertArrayNotHasKey('device_status', $byFeature);
+    }
+
+    /**
+     * Uma TAG que o aparelho recusa não vira valor, que era como se publicava zero.
+     *
+     * O estado da leitura viaja nos bits 5--7 do Flag, e a trama leva-o tal como o aparelho o
+     * manda: uma TAG recusada volta com os bytes que lhe mandámos, zeros. Sem olhar ao
+     * estado, uma tampa que o firmware não sabe reportar aparecia no ecrã como fechada.
+     */
+    public function testARefusedTagIsNotPublished(): void
+    {
+        $adapter = new PillDispenserAdapter();
+        $byFeature = [];
+        $decoded = $adapter->decodeIncoming($adapter->encodeOutgoing([
+            'packetType' => 0x87,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [
+                0x8107 => ['value' => "\x00", 'state' => 1],
+                0x810D => ['value' => "\x03", 'state' => 0],
+            ],
+        ]));
+        foreach ((new DeviceEventDecoder())->decode($this->session(), $decoded) as $event) {
+            $byFeature[$event['feature']] = $event['value'];
+        }
+
+        self::assertArrayNotHasKey('lid_state', $byFeature);
+        self::assertSame(3, $byFeature['device_status']['signalLevel'] ?? null);
     }
 
     /**
@@ -99,12 +181,12 @@ final class PillDispenserStatusSeparationTest extends TestCase
             'tlv' => $entries,
         ]));
 
-        $porCapacidade = [];
+        $byFeature = [];
         foreach ((new DeviceEventDecoder())->decode($this->session(), $decoded) as $event) {
-            $porCapacidade[$event['feature']] = $event['value'];
+            $byFeature[$event['feature']] = $event['value'];
         }
 
-        return $porCapacidade;
+        return $byFeature;
     }
 
     private function session(): DeviceSession
