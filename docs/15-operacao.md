@@ -63,7 +63,8 @@ ciclo — e o sintoma é ingestão a falhar de forma intermitente, sem erro óbv
 
 O identificador final é `{prefixo}-{sufixo}`, onde o sufixo identifica o
 subscritor (`sub`, `ncs-sub`, `moko-sub`). O prefixo é o que tem de ser único
-por hub, e é limitado a 14 caracteres — o identificador é truncado aos 23.
+por hub, e vai inteiro para o broker: em MQTT 3.1.1 os 23 caracteres são o
+mínimo que o servidor tem de aceitar, não um máximo.
 
 **O prefixo dos tópicos MQTT.** Dois hubs que o partilhem publicam nos mesmos
 tópicos e escrevem por cima das mensagens retidas de `status` um do outro. Não
