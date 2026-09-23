@@ -58,7 +58,7 @@ final class CapabilityCatalogTest extends TestCase
             // E o `device_status` saiu: era uma capacidade que não publicava nada e existia só
             // para ser o botão do `0x07`. A trama enche sete leituras, e são essas sete que
             // passam a pedir-se — o clique fica no mosaico que a pessoa está a olhar.
-            'pill_dispenser' => [33, 'ac5d8181f162a1d35532232e1d29fc9561b23bfaffa8a078fb884e65789fadb1'],
+            'pill_dispenser' => [33, 'caa2d6f45a81be827fe8fc62543ceccaa870ccde7b48268f4016505d69fc81d4'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

@@ -97,6 +97,64 @@ final class ReferenceCatalogSeeder
         }
     }
 
+    /**
+     * Põe a tabela a dizer exactamente o que o `CapabilityCatalog` declara, e devolve o que
+     * mudou.
+     *
+     * Corre a cada arranque, ao contrário do resto do semeador. Pode fazê-lo porque ninguém
+     * escreve nesta tabela fora daqui e das migrações -- o que a dashboard edita é a
+     * `model_capabilities`, que diz o que cada modelo tem ligado e não se toca aqui.
+     *
+     * @return array{added: list<string>, changed: list<string>, removed: list<string>}
+     */
+    public function reconcileCapabilities(PDO $pdo): array
+    {
+        $stored = [];
+        foreach ($pdo->query('SELECT device_type, capability_key, section, label, is_configurable, is_requestable FROM capabilities') as $row) {
+            $stored[$row['device_type'] . ':' . $row['capability_key']] = [
+                (string)$row['section'],
+                (string)$row['label'],
+                (int)$row['is_configurable'],
+                (int)$row['is_requestable'],
+            ];
+        }
+
+        $added = [];
+        $changed = [];
+        $declared = [];
+        foreach (CapabilityCatalog::definitions() as $definition) {
+            $key = $definition['deviceType'] . ':' . $definition['key'];
+            $declared[$key] = true;
+            $row = [
+                (string)$definition['section'],
+                (string)$definition['label'],
+                !empty($definition['isConfigurable']) ? 1 : 0,
+                !empty($definition['isRequestable']) ? 1 : 0,
+            ];
+
+            if (!isset($stored[$key])) {
+                $added[] = $key;
+            } elseif ($stored[$key] !== $row) {
+                $changed[] = $key;
+            }
+        }
+
+        $this->seedCapabilities($pdo);
+
+        $removed = array_values(array_diff(array_keys($stored), array_keys($declared)));
+        if ($removed !== []) {
+            $delete = $pdo->prepare('DELETE FROM capabilities WHERE device_type = ? AND capability_key = ?');
+            $deleteLinks = $pdo->prepare('DELETE FROM model_capabilities WHERE device_type = ? AND capability_key = ?');
+            foreach ($removed as $key) {
+                [$deviceType, $capabilityKey] = explode(':', $key, 2);
+                $deleteLinks->execute([$deviceType, $capabilityKey]);
+                $delete->execute([$deviceType, $capabilityKey]);
+            }
+        }
+
+        return ['added' => $added, 'changed' => $changed, 'removed' => $removed];
+    }
+
     private function seedCapabilities(PDO $pdo): void
     {
         $insert = $pdo->prepare('
