@@ -175,6 +175,14 @@
     --moisture-wet-text: #93c5fd;
 }
 
+/* O nome de uma definição reparte o espaço que sobra em vez de o reclamar todo. Com
+   `flex-grow-1` a base é o conteúdo, e uma descrição de duas linhas não deixava espaço para o
+   botão: o `flex-wrap` mandava-o para a linha de baixo, e cada cartão de acção gastava mais
+   quarenta pixéis de altura para dizer o mesmo. O Bootstrap não tem utilitário para isto. */
+.setting-row-title {
+    flex: 1 1 0;
+}
+
 /* A faixa do dia: uma coluna por dose marcada, na ordem das horas. As colunas repartem a
    largura em partes iguais e embrulham quando não cabem — com cinco doses e o cartão a meia
    largura ficariam com quarenta pixéis cada, e por isso o cartão pede a linha inteira. */

@@ -26,9 +26,14 @@ export function settingRow({
         ? ""
         : html`<div class="d-flex align-items-center gap-2">${raw(control)}${unit === "" ? "" : raw(html`<span class="small text-secondary flex-shrink-0">${unit}</span>`)}</div>`;
 
+    // O bloco do nome reparte o espaço que sobra em vez de o reclamar todo: com `flex-grow-1`
+    // sozinho a base é o conteúdo, e uma descrição de duas linhas passava a largura toda --
+    // não sobrava espaço para o botão, e o `flex-wrap` mandava-o para a linha de baixo,
+    // encostado à esquerda. A classe fica na folha de estilo porque é `flex: 1 1 0`, e o
+    // Bootstrap não tem utilitário para a base a zero.
     return html`
         <div class="${`d-flex align-items-center justify-content-between gap-3 flex-wrap ${extraClass}`.trim()}">
-            <div class="flex-grow-1 min-w-0">
+            <div class="setting-row-title min-w-0">
                 <div class="fw-semibold">${title}</div>
                 ${note === "" ? "" : raw(html`<div class="small text-secondary">${note}</div>`)}
             </div>

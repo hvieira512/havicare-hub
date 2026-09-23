@@ -485,15 +485,21 @@ function medicationAlarmContent(data) {
         taken > 0 ? `${taken} ${taken === 1 ? "tomada" : "tomadas"}` : "",
     ].filter(Boolean);
 
+    const strip = medicationDoseStrip(alarms);
+
     return {
         value: counts.length > 0 ? counts.join(" · ") : "Sem tomas registadas",
-        // Na linha da lista de actividade não há corpo que desenhar, e por isso as doses
-        // vivas continuam a ir em texto para os detalhes -- pela hora, como na faixa.
-        details: live
-            .map((entry) => html`${doseLabel(entry.alarm)}: ${fieldValue("state", entry.state)}`)
-            .join(" · "),
+        // O texto das doses vivas só aparece onde a faixa não chega — a linha da lista de
+        // actividade, que não desenha corpo nenhum. No cartão era a mesma informação duas
+        // vezes, uma em cima da outra. É o que a tira de canais da fralda já faz: quem tem
+        // corpo não o repete em palavras.
+        details: strip === ""
+            ? live
+                    .map((entry) => html`${doseLabel(entry.alarm)}: ${fieldValue("state", entry.state)}`)
+                    .join(" · ")
+            : "",
         span: 12,
-        body: medicationDoseStrip(alarms),
+        body: strip,
     };
 }
 
