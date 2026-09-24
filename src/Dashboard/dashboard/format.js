@@ -416,6 +416,8 @@ export const commandLabel = (command) =>
         "Body composition": "Composição corporal",
         "Firmware version": "Versão de firmware",
         "Device status": "Estado do dispositivo",
+        "Refresh telemetry": "Atualizar telemetria",
+        "Stored configuration": "Configuração guardada",
         ECG: "ECG",
         HRV: "VFC",
         PPG: "PPG",
