@@ -34,8 +34,8 @@ final class PillDispenserCapabilityDefinitions
             // O estado dos nove alarmes é a única leitura da toma que chega em claro — o
             // `0x03`, que traz a hora e a célula, vem cifrado.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'medication_alarm_status', 'label' => 'Estado dos alarmes', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            // O botão das sete leituras. Não publica valor nenhum: o que a resposta traz sai
-            // nos cartões delas.
+            // O botão das sete leituras, e uma acção e não uma leitura: não se publica nada
+            // com este nome, o que a resposta traz sai nos cartões delas.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'device_status', 'label' => 'Estado do dispositivo', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'medication_intake', 'label' => 'Toma de medicação', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'device_fault', 'label' => 'Avaria', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],

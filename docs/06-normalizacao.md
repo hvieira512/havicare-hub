@@ -154,7 +154,7 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `battery` | `percent`, `chargingState`, `batteryType`, `lowBattery` — este último só das pulseiras, e é o firmware a dizê-lo, não um limiar nosso sobre a percentagem |
 | `heartbeat` | `status`, `steps`, `gsmSignal`, `satelliteCount`, `batteryPercent`, `chargingState`, `batteryType`, `rollFrequency`, `remainingSpace`, `fortificationState`, `workMode` |
 | `device_state` | `state`, `resetStatus`, `reason` |
-| `device_status` | `deviceTime` e, no dispensador, `wifiSignalDbm` e `gsmSignalDbm` — o sinal viaja aqui, como o `gsmSignal` do `heartbeat`, e não numa capacidade própria |
+| `device_status` | *(não é publicado)* — é o nome de um botão e não de uma medição. Nos relógios o `TS` devolve sobretudo o que o hub lá escreveu; no dispensador a resposta ao `0x07` enche as sete leituras, cada uma na sua capacidade |
 | `firmware_version` | `version` |
 | `device_config` | `status`, `ack`, `settings` |
 | `alarm` | `reason` |

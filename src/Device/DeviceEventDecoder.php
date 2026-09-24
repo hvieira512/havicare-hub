@@ -212,7 +212,11 @@ final class DeviceEventDecoder
             ])),
             $nativeType === 'CONFIG', $nativeType === 'TAKEPILLS' => [$this->event('device_config', $nativeType, $payload)],
             $nativeType === 'VERNO' => [$this->event('firmware_version', $nativeType, $payload)],
-            $nativeType === 'TS' => [$this->event('device_status', $nativeType, $payload)],
+            // O `TS` não publica nada. Dos dezasseis campos que devolve, onze são o hub a ler
+            // de volta o que escreveu — idioma, fuso, intervalo, perfil, o endereço do nosso
+            // servidor, a identidade, a bateria que já chega no heartbeat. Saíam todos numa
+            // string só, num campo chamado `deviceTime`. Pedir o estado é uma acção, e a
+            // trama fica no fluxo cru para quem precisar de a ler.
             default => [],
         };
     }

@@ -265,11 +265,26 @@ vida da 4P Touch produz três: o próprio sinal, a atividade e a bateria.
 | `AL` `AL_WCDMA` `AL_LTE` | `location` + `alarm` + `battery` |
 | `CONFIG` · `TAKEPILLS` | `device_config` |
 | `VERNO` | `firmware_version` |
-| `TS` | `device_status` |
+| `TS` | *(nada)* — ver abaixo |
 
 Um tipo ausente destas tabelas é descodificado e publicado no tópico `raw` sem
 gerar telemetria. O `raw` transporta sempre a mensagem original, pelo que
 nenhum dado é descartado.
+
+> **O `TS` não publica telemetria, e é de propósito.** Pedir o estado é uma
+> acção. A resposta de um D41 traz dezasseis campos e **onze deles são o hub a
+> ler de volta o que ele próprio escreveu** — idioma, fuso, intervalo de upload,
+> perfil, o endereço do nosso próprio servidor, a identidade que já está na base,
+> e a bateria que chega em cada heartbeat. A versão do firmware tem capacidade
+> própria, pedida com o `VERNO`. O que sobra é estado dos rádios e do GPS, útil
+> para diagnóstico e sobre o qual ninguém age.
+>
+> Saía tudo numa string só, num campo chamado `deviceTime`, que não é a hora do
+> dispositivo nem é um valor. A trama continua no tópico `raw`, por inteiro, para
+> quem precisar de a ler.
+>
+> O comando também não responde em todos os modelos: num D41 devolve o bloco
+> completo, num Y6M o firmware limita-se a ecoar `[3G*<id>*0002*TS]`.
 
 ## 6. Códigos de alarme
 
