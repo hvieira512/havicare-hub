@@ -282,7 +282,7 @@ ao hub.
 | `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
 | `0x8105` | estado do não incomodar | `0` desligado · `1` ligado · `2` **ligado e a silenciar agora** |
 | `0x8106` | copo da medicação | `0` retirado · `1` colocado |
-| `0x8107` | trinco do prato | `0` destrancado · `1` trancado |
+| `0x8107` | trinco do prato | `0` destrancado · `1` trancado. **Nunca foi observado em `1`** — nem com a tampa fora, nem com o carrossel a rodar numa dispensa, nem durante o teste de fábrica, nem com o prato acabado de reencaixar. O que o faz fechar continua por descobrir, e é preferível escrevê-lo assim a inventar-lhe um significado |
 | `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
 | `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **dBm**, e o aparelho manda a magnitude: o sinal negativo é posto pelo hub |
 | `0x810C` / `0x810D` | nível de sinal | a escala grosseira |
@@ -484,6 +484,36 @@ O procedimento, e a ordem importa:
 3. **Só então dizer ao hub quantos compartimentos foram carregados**, na
    configuração «Compartimentos carregados». É a partir desse número que o
    `0x811D` desce.
+
+### Como se limpa uma avaria de reposição do prato
+
+O `0x8122` — *Pill Tray Reset Fault*, que o aparelho mostra no ecrã como
+«Restart cycle failure» — **não sai com nenhuma ordem remota**. Medido a
+24/09/2026, e por esta ordem, sem efeito nenhum:
+
+- o `0xA103` (**«Repor o prato»**) quatro vezes, todas confirmadas com
+  `0xA123 = 01`;
+- um reinício do aparelho com a avaria ainda por resolver;
+- o `RestartCycle` do menu, duas vezes — a segunda já com o prato vazio;
+- o `Recycle Test` do menu de fábrica;
+- desmontar e reencaixar o prato à mão, duas vezes.
+
+**O que a limpa é uma sequência, e a ordem é tudo:**
+
+1. **Tirar o que estiver preso** ao prato.
+2. **Desmontar e reencaixar** o prato.
+3. **Só então reiniciar o aparelho.**
+
+A razão é que **o aparelho não deteta o prato a ser reencaixado**: não existe
+TAG de presença do prato na tabela do tipo `0x02`, e um desmonte não produz
+notificação nenhuma. Ele só reavalia o estado do mecanismo **ao arrancar** — e
+por isso o reinício tem de vir depois de o problema estar fisicamente resolvido,
+não antes. Um reinício sozinho, com o prato ainda mal posto, não adianta nada: foi
+o que se tentou primeiro.
+
+> Enquanto a avaria está activa, **o aparelho continua a dispensar normalmente**.
+> As três dispensas medidas nesse dia foram todas com o `0x8122` em `01`. É uma
+> bandeira, não um bloqueio — o que bloqueia é outra coisa, descrita na secção 5.
 
 Saltar o primeiro passo deixa o contador do aparelho a meio da volta anterior, e
 a partir daí tudo o que a dashboard mostra sobre posições está deslocado.
