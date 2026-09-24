@@ -39,6 +39,9 @@ final class ConfigurationLifecyclePresenter
         $effective = [];
         foreach ($changes as $change) {
             $key = (string)$change['config_key'];
+            if (self::isOrphan($key)) {
+                continue;
+            }
             $section = CapabilityCatalog::sectionForCapabilityKey($key) ?? 'settings_system';
             $operations = array_map(static fn(array $operation): array => [
                 'operationId' => (string)$operation['operation_id'],
@@ -93,6 +96,9 @@ final class ConfigurationLifecyclePresenter
         // lhes criar a primeira revisão.
         $legacyPending = $this->pendingConfiguration($model, $protocol, $configRows);
         foreach ($desired as $key => $value) {
+            if (self::isOrphan((string)$key)) {
+                continue;
+            }
             $section = CapabilityCatalog::sectionForCapabilityKey((string)$key) ?? 'settings_system';
             if (isset($entries[$section][$key])) {
                 continue;
@@ -133,6 +139,18 @@ final class ConfigurationLifecyclePresenter
                 'entries' => $entries,
             ],
         ];
+    }
+
+    /**
+     * Uma chave que já não é capacidade nenhuma.
+     *
+     * Tirar uma capacidade do catálogo deixa as mudanças por confirmar dela sem nada que as
+     * suplante — só uma escrita da mesma chave o faz —, e uma delas em `failed` marcava o
+     * aparelho inteiro a vermelho por uma coisa que ninguém consegue ver nem corrigir.
+     */
+    private static function isOrphan(string $key): bool
+    {
+        return CapabilityCatalog::sectionForCapabilityKey($key) === null;
     }
 
     private function pendingConfiguration(?array $model, string $protocol, array $configRows): array
