@@ -53,6 +53,22 @@ final class TelemetryRefreshCommandTest extends TestCase
         }
     }
 
+    /**
+     * E o caminho que o envia tem de o encontrar.
+     *
+     * O `commandsForFeature` filtrava só por `kind` `request`, e por isso a API respondia
+     * «Feature is not supported for this device» a um botão que ela própria anunciava.
+     */
+    public function testTheSendPathFindsIt(): void
+    {
+        foreach (['zayata-m228', 'four-p-touch'] as $protocol) {
+            $entries = DeviceCommandCatalog::commandsForFeature($protocol, 'telemetry_refresh');
+
+            self::assertCount(1, $entries, $protocol);
+            self::assertSame('refresh', $entries[0]['kind'], $protocol);
+        }
+    }
+
     /** E não entra entre os mosaicos, que são os que têm capacidade por trás. */
     public function testTheRefreshIsNotOneOfTheRequestCards(): void
     {

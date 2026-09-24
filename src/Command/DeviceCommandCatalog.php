@@ -108,11 +108,16 @@ final class DeviceCommandCatalog
     /**
      * @return list<array<string, mixed>>
      */
+    /**
+     * O `refresh` entra aqui com o `request`: a diferença entre os dois é onde o botão vive,
+     * e não como o comando se envia. Fora daqui, um `request` é um mosaico com capacidade por
+     * trás e um `refresh` não é.
+     */
     public static function commandsForFeature(string $protocol, string $feature): array
     {
         return array_values(array_filter(
             self::commandsForProtocol($protocol),
-            static fn(array $entry): bool => (string)($entry['kind'] ?? '') === 'request'
+            static fn(array $entry): bool => in_array((string)($entry['kind'] ?? ''), ['request', 'refresh'], true)
                 && trim((string)($entry['feature'] ?? '')) === $feature
         ));
     }
