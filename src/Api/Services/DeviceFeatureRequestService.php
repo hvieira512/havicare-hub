@@ -24,6 +24,9 @@ use Hub\Log\Logger;
  */
 final class DeviceFeatureRequestService
 {
+    /** Não é uma chave do catálogo de capacidades, e é de propósito: não é uma medição. */
+    public const REFRESH_FEATURE = 'telemetry_refresh';
+
     public function __construct(
         private DashboardStoreContract $store,
         private DeviceHubServer $hub,
@@ -61,6 +64,22 @@ final class DeviceFeatureRequestService
         }
 
         $identity = $this->directory->identify($imei);
+
+        // Actualizar a telemetria não é uma capacidade: é o ecrã a pedir ao aparelho que
+        // releia o que já publica, e o que a resposta traz sai nas capacidades que existem.
+        // Por isso valida-se contra o catálogo de comandos e não contra a matriz do modelo.
+        if ($feature === self::REFRESH_FEATURE) {
+            if (DeviceCommandCatalog::refreshCommandForProtocol($identity->protocol) === null) {
+                Logger::channel('api')->warning('API telemetry refresh rejected', [
+                    'request_id' => $requestId,
+                    'imei' => $imei,
+                    'error_code' => 'unsupported_feature',
+                ]);
+                return ApiError::unsupportedFeature('Feature is not supported for this device')->toArray();
+            }
+
+            return $this->sendFeatureCommands($imei, $identity->protocol, $feature, $identity->metadata, $identity->device);
+        }
 
         $telemetrySupport = $this->capabilities->telemetryCapabilities($identity->modelRow, $identity->protocol);
         if (!($telemetrySupport[$feature]['supported'] ?? false)) {

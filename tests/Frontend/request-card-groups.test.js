@@ -26,7 +26,6 @@ test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", (
     const groups = telemetryRequestCards({
         heart_rate: supported(),
         firmware_version: supported(),
-        device_status: supported(),
     });
     assert.deepEqual(
         groups.map((group) => group.label),
@@ -34,7 +33,7 @@ test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", (
     );
     assert.deepEqual(
         groups.map((group) => group.cards.map((card) => card.feature)),
-        [["heart_rate"], ["device_status", "firmware_version"]],
+        [["heart_rate"], ["firmware_version"]],
     );
 });
 

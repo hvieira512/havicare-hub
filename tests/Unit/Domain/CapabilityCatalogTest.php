@@ -13,7 +13,7 @@ final class CapabilityCatalogTest extends TestCase
         $expected = [
             // Três rótulos de contactos passaram a dizer o que fazem: a «lista branca» é a
             // lista de chamadas autorizadas, e o interruptor dela restringe as recebidas.
-            'watch' => [69, '7886530a01fe8b83f158ecfccb597bcb952f63edd2b4ec05441543ac97f76295'],
+            'watch' => [68, '5dff9e048f5364209e731ed1e137965da436db78f4ee0980fd0fcb38d632ac99'],
             'ncs' => [1, '213f35a9295bacacfdaa5570451707a23ee59416ebc3ac1de062f1b6ca7685a4'],
             'radar' => [9, '45dfaa71313e4da275fca1da9536b826bf0fe6a442cf462d3d2534db1499fa65'],
             'gateway' => [3, '044f4b1de47b562638442dc3fc8be22b3ab76043721211a47f478ee68124a91f'],
@@ -22,11 +22,12 @@ final class CapabilityCatalogTest extends TestCase
             // botão, e é a Veepoo MF91 que traz o resto — as grandezas da sessão GATT, os
             // interruptores de medição autónoma e as calibrações que entram nas contas dela.
             'bracelet' => [41, 'c24b1c638090a697db262e4159d9b57acc2632480af274cb8c98e1b4f2ef57bd'],
-            // As 35 do dispensador M228: telemetria, eventos, configurações e acções, cada
+            // As 34 do dispensador M228: telemetria, eventos, configurações e acções, cada
             // enumeração como configuração própria. Ficam de fora a reposição de fábrica,
             // desligar a cifra e mudar o servidor — as três que nos podem tirar o aparelho —
-            // e as três sondas da descoberta, que serviram para fazer a integração.
-            'pill_dispenser' => [35, '9bdb9319d4c652442ae1e486662fee2e968b962c09e60cf19465fab63390b149'],
+            // as três sondas da descoberta, que serviram para fazer a integração, e o
+            // recarregar da telemetria, que é uma função do ecrã e não uma capacidade.
+            'pill_dispenser' => [34, '927b4a53b40a5b8d17b5f0b34dfe13dc30a31718562b07369a256f398f7c1aed'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

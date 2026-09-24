@@ -121,10 +121,6 @@ export function requestCardShell(
     const type = commandFeature(command);
     const card = requestCardContent(type);
     const requestable = command.requestable !== false;
-    // Um pedido de estado não tem valor próprio: o que ele traz espalha-se pelos outros
-    // cartões. A versão do firmware tem, e por isso segue o caminho normal da telemetria.
-    const isSystemRequestCard = type === "device_status";
-
     const telemetryTypes = requestTelemetryTypes(type);
     const payloads = telemetry
         .map(rowPayload)
@@ -169,7 +165,7 @@ export function requestCardShell(
     const icon = command.icon || lastContent?.icon || card.icon;
     // O título é sempre o nome da categoria: "78%" sozinho não diz 78% de quê.
     const title = capabilityLabel(type) || card.value || type;
-    const value = isSystemRequestCard ? card.value : lastValue;
+    const value = lastValue;
     // Um cartão pode pedir a linha toda e trazer o seu próprio corpo.
     const span = lastContent?.span || card.span || 6;
     const bodyHtml = lastContent?.body || "";
@@ -188,10 +184,8 @@ export function requestCardShell(
         title,
         // O valor só aparece quando diz algo que o título não diga.
         value: value && value !== title ? value : "",
-        details: isSystemRequestCard ? "" : lastContent?.details || "",
-        detailsTitle: isSystemRequestCard
-            ? ""
-            : lastContent?.detailsTitle || "",
+        details: lastContent?.details || "",
+        detailsTitle: lastContent?.detailsTitle || "",
         body: bodyHtml,
         // O que não responde ao clique não deve parecer que responde.
         feature: requestable ? type : "",

@@ -25,10 +25,6 @@ final class WatchCapabilityDefinitions
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'ppg', 'label' => 'PPG', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'rr_interval', 'label' => 'Intervalo RR', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'firmware_version', 'label' => 'Versão do firmware', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            // Na prática uma acção: o `TS` devolve sobretudo o que o hub lá escreveu, e nada
-            // se publica com este nome. Fica na secção de telemetria porque é ela que põe o
-            // botão no painel, e a bandeira tem de concordar com a secção.
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'device_status', 'label' => 'Estado do dispositivo', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'device_state', 'label' => 'Estado do dispositivo', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'auto_vitals_interval', 'label' => 'Intervalo de sinais vitais automáticos', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'heart_rate_measurement_interval', 'label' => 'Intervalo de medição da frequência cardíaca', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],

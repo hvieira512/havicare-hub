@@ -183,7 +183,6 @@ const UPLINK_CARD_RENDERERS = {
     medication_alarm_change: (data) => ({
         value: `${doseLabel(data?.alarm)}: ${fieldValue("state", data?.state)}`,
     }),
-    device_status: (data) => deviceStatusContent(data),
     device_config: (data) => deviceConfigContent(data),
     // O valor é o estado em que a coisa está, e não um «Sim» que obriga a reler o título
     // para saber a que responde.
@@ -486,16 +485,6 @@ function settingSummary(key, value) {
             ? `${fieldLabel(field)}: ${Object.values(inner).length}`
             : fieldValue(field, inner)))
         .join(" · ");
-}
-
-/**
- * O `device_status` é a resposta ao `TS` de um 4P Touch, e o normalizador dele só devolve o
- * relógio do aparelho — ver `FeatureNormalizer::deviceStatus`.
- */
-function deviceStatusContent(data) {
-    return {
-        value: data?.deviceTime || capabilityLabel("device_status"),
-    };
 }
 
 /**

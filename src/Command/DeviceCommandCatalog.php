@@ -50,9 +50,29 @@ final class DeviceCommandCatalog
         return [
             // Um pedido só: o `0x07` pede sempre as `STATUS_TAGS` todas, e a resposta enche
             // as sete leituras de uma vez.
-            ['id' => 'pillReadStatus', 'command' => 'readStatus', 'label' => 'Device status', 'icon' => 'fa-arrows-rotate', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['read_status_ack']],
+            ['id' => 'pillReadStatus', 'command' => 'readStatus', 'label' => 'Refresh telemetry', 'icon' => 'fa-arrows-rotate', 'kind' => 'refresh', 'feature' => 'telemetry_refresh', 'expectedReplyTypes' => ['read_status_ack']],
             ['id' => 'pillReadConfiguration', 'command' => 'readConfiguration', 'label' => 'Stored configuration', 'icon' => 'fa-rotate', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
         ];
+    }
+
+    /**
+     * O comando com que um protocolo relê o estado do aparelho, se souber.
+     *
+     * Não tem capacidade por trás: actualizar a telemetria é uma função do ecrã, e o que a
+     * resposta traz sai nas capacidades que já existem. Por isso não é `request` — um
+     * `request` é um mosaico, e um mosaico precisa de uma capacidade que o sustente.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function refreshCommandForProtocol(string $protocol): ?array
+    {
+        foreach (self::commandsForProtocol($protocol) as $entry) {
+            if ((string)($entry['kind'] ?? '') === 'refresh') {
+                return $entry;
+            }
+        }
+
+        return null;
     }
 
     public static function commandForProtocol(string $protocol, string $command): ?array
@@ -244,7 +264,7 @@ final class DeviceCommandCatalog
             ['id' => 'fourPBloodPressure', 'command' => 'hrtstart', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
             ['id' => 'fourPBodyTemperature', 'command' => 'bodytemp2', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['bodytemp2', 'btemp2']],
             ['id' => 'fourPFirmwareVersion', 'command' => 'VERNO', 'label' => 'Firmware version', 'icon' => 'fa-microchip', 'kind' => 'request', 'feature' => 'firmware_version', 'expectedReplyTypes' => ['VERNO']],
-            ['id' => 'fourPDeviceStatus', 'command' => 'TS', 'label' => 'Device status', 'icon' => 'fa-clock', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['TS']],
+            ['id' => 'fourPDeviceStatus', 'command' => 'TS', 'label' => 'Refresh telemetry', 'icon' => 'fa-arrows-rotate', 'kind' => 'refresh', 'feature' => 'telemetry_refresh', 'expectedReplyTypes' => ['TS']],
         ];
     }
 

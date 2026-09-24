@@ -152,7 +152,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'connectivity',
             'device_fault',
             'device_language',
-            'device_status',
             'dispense_now',
             'do_not_disturb',
             // A janela configura-se; o estado é outra coisa, e o terceiro valor dele — ligado
@@ -212,13 +211,13 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Treze configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por isso
-        // as duas bandeiras nunca estão ligadas ao mesmo tempo.
+        // Treze configuráveis e seis pedíveis. Uma acção pede-se e não se configura, e por
+        // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
         //
         // As sete leituras que o `0x07` enche não se pedem sozinhas: a trama pede-as sempre a
-        // todas, e quem carrega o botão é o `device_status`.
+        // todas, e quem a manda é o botão de recarregar do painel, que não é uma capacidade.
         self::assertSame(
-            ['13', '7'],
+            ['13', '6'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

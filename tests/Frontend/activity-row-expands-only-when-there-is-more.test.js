@@ -25,8 +25,8 @@ test("uma linha que já diz tudo não abre", () => {
 /** Sem detalhes nenhuns também não há o que abrir. */
 test("uma linha sem detalhes não abre", () => {
     const row = telemetryActivityRow({
-        type: "device_status",
-        data: { gsmSignalDbm: -25, signalLevel: 3 },
+        type: "tray_lock",
+        data: { locked: true },
         occurredAt: "2026-09-23T10:00:00Z",
     });
 

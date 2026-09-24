@@ -351,8 +351,7 @@ final class CapabilityCatalog
             'activity',
             'heartbeat',
             'blood_sugar',
-            'firmware_version',
-            'device_status' => $feature,
+            'firmware_version' => $feature,
             default => null,
         };
     }
@@ -447,8 +446,6 @@ final class CapabilityCatalog
             'device_language',
             'time_zone',
             'sync_configuration',
-            // Pedir o estado é uma acção sobre a mesma capacidade que o publica.
-            'device_status',
             'dispense_now',
             'calibrate_clock',
             'mute_alarm',

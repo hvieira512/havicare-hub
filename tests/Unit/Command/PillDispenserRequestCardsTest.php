@@ -33,10 +33,15 @@ final class PillDispenserRequestCardsTest extends TestCase
         return $requests;
     }
 
-    /** Duas perguntas, porque são duas tramas: o estado no `0x07` e a configuração no `0x05`. */
-    public function testOnlyTheTwoFramesTheDeviceAnswersAreOffered(): void
+    /**
+     * Um mosaico só: a configuração no `0x05`.
+     *
+     * O `0x07` também se pede, mas não daqui — reler o estado é uma função do ecrã e não uma
+     * capacidade, e por isso é um comando de `kind` `refresh` sem capacidade por trás.
+     */
+    public function testOnlyTheConfigurationReadIsARequestCard(): void
     {
-        self::assertSame(['device_status', 'sync_configuration'], array_keys($this->requests()));
+        self::assertSame(['sync_configuration'], array_keys($this->requests()));
     }
 
     /**
@@ -70,17 +75,18 @@ final class PillDispenserRequestCardsTest extends TestCase
         }
     }
 
-    /** E o botão que ficou pede o estado inteiro. */
-    public function testTheStatusCapabilityIsTheOneThatCarriesTheButton(): void
+    /** E quem relê as sete é o comando de recarregar, sem capacidade que o anuncie. */
+    public function testTheStatusReadIsARefreshAndNotACapability(): void
     {
-        $definitions = [];
-        foreach (CapabilityCatalog::definitionsForDeviceType('pill_dispenser') as $definition) {
-            $definitions[(string)$definition['key']] = $definition;
-        }
+        $refresh = DeviceCommandCatalog::refreshCommandForProtocol('zayata-m228');
 
-        self::assertArrayHasKey('device_status', $definitions);
-        self::assertTrue($definitions['device_status']['isRequestable']);
-        self::assertSame('Estado do dispositivo', $definitions['device_status']['label']);
+        self::assertNotNull($refresh);
+        self::assertSame('readStatus', $refresh['command']);
+        self::assertSame(['read_status_ack'], $refresh['expectedReplyTypes']);
+        self::assertNotContains(
+            'device_status',
+            array_column(CapabilityCatalog::definitionsForDeviceType('pill_dispenser'), 'key'),
+        );
     }
 
     /** Cada um tem de saber que trama manda e que resposta espera, senão não fecha o ciclo. */
@@ -88,8 +94,6 @@ final class PillDispenserRequestCardsTest extends TestCase
     {
         $requests = $this->requests();
 
-        self::assertSame('readStatus', $requests['device_status']['command'] ?? null);
-        self::assertSame(['read_status_ack'], $requests['device_status']['expectedReplyTypes'] ?? null);
         self::assertSame('readConfiguration', $requests['sync_configuration']['command'] ?? null);
         self::assertSame(['read_config_ack'], $requests['sync_configuration']['expectedReplyTypes'] ?? null);
     }
