@@ -68,24 +68,10 @@ final class DeviceCommandCatalog
      */
     private static function pillDispenserCommands(): array
     {
-        $readStatus = static fn(string $feature, string $icon): array => [
-            'id' => 'pillReadStatus.' . $feature,
-            'command' => 'readStatus',
-            'label' => 'Device status',
-            'icon' => $icon,
-            'kind' => 'request',
-            'feature' => $feature,
-            'expectedReplyTypes' => ['read_status_ack'],
-        ];
-
         return [
-            $readStatus('battery', 'fa-battery-three-quarters'),
-            $readStatus('cells_remaining', 'fa-table-cells'),
-            $readStatus('connectivity', 'fa-wifi'),
-            $readStatus('humidity', 'fa-droplet'),
-            $readStatus('lid_state', 'fa-box-open'),
-            $readStatus('medication_alarm_status', 'fa-clock-rotate-left'),
-            $readStatus('temperature', 'fa-temperature-half'),
+            // Um pedido só: o `0x07` pede sempre as `STATUS_TAGS` todas, e a resposta enche
+            // as sete leituras de uma vez.
+            ['id' => 'pillReadStatus', 'command' => 'readStatus', 'label' => 'Device status', 'icon' => 'fa-arrows-rotate', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['read_status_ack']],
             ['id' => 'pillReadConfiguration', 'command' => 'readConfiguration', 'label' => 'Stored configuration', 'icon' => 'fa-rotate', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
         ];
     }

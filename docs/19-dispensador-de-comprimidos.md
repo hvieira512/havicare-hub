@@ -338,7 +338,7 @@ aparelho, e é o que se quer saber quando um lote vem com firmware mau. Vai em
 hexadecimal, `0x0502`, porque a especificação não diz como se lê o número e o
 decimal `1282` esconderia a única estrutura visível nele.
 
-Não é pedível, ao contrário das outras leituras: só o registo a traz, e o registo
+Não é pedível, e nem sequer pelo `device_status`: só o registo a traz, e o registo
 é do aparelho. Um firmware novo chega sempre depois de um religar, e o religar
 traz um registo.
 
@@ -509,19 +509,24 @@ para a confirmação de uma configuração. A resposta ao `0x07` passa pelo mesm
 caminho do heartbeat: traz as mesmas TAGs de estado, e ter dois caminhos era ter
 duas verdades.
 
-Nenhuma das duas corre sozinha, e cada uma se pede de onde o resultado dela
-aparece. O `0x05` enche os campos do modal de configurações, e por isso é ali que
-está — «Sincronizar configuração». O `0x07` enche **sete** cartões do ecrã
-principal, e são esses sete que o pedem: bateria, temperatura, humidade, ligação
-à rede, compartimentos, tampa e o estado dos nove alarmes. Sete pedidos, uma
-trama só.
+Nenhuma das duas corre sozinha, e há **um botão por trama**. O `0x05` enche os
+campos do modal de configurações, e por isso é ali que está — «Sincronizar
+configuração». O `0x07` é pedido pelo `device_status`, e a resposta dele enche de
+uma vez os sete cartões que traz: bateria, temperatura, humidade, ligação à rede,
+compartimentos, tampa e o estado dos nove alarmes. Esses sete mostram o valor,
+mas não se pedem sozinhos.
 
-> Havia em vez disso uma capacidade `device_status` que não publicava nada e
-> existia só para ser o botão. Quem quisesse a temperatura tinha de saber que a ia
-> buscar clicando numa coisa chamada «estado do dispositivo», num modal, enquanto
-> o cartão da temperatura ficava a olhar sem responder ao clique. O catálogo de
-> comandos permite vários pedidos com a mesma trama nativa, que é o que resolve
-> isto sem inventar nada.
+A regra é a mesma que os relógios seguem: **uma capacidade é pedível quando
+carregar nela faz acontecer alguma coisa distinta no aparelho.** A bateria de um
+relógio não tem botão, porque vem no `device_status` dele; a frequência cardíaca
+tem, porque o pedido manda o relógio medir.
+
+> Os sete cartões já tiveram botão, cada um com o seu, partindo do princípio de
+> que o `0x07` permitia pedir TAG a TAG. O protocolo permite, mas a construção da
+> trama nunca o fez: manda sempre as 31 TAGs do `STATUS_TAGS`, e os sete pedidos
+> saíam com corpo idêntico ao byte. Dois cartões carregados de seguida davam dois
+> registos do mesmo comando, com o primeiro marcado `superseded`, e o histórico de
+> pedidos ficava com linhas repetidas indistinguíveis.
 
 **A descoberta no primeiro registo.** A especificação pede-a — *«If this is the
 Client's first registration, the Server should query the Client's parameter

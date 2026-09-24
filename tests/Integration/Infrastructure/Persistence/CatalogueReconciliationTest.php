@@ -42,12 +42,12 @@ final class CatalogueReconciliationTest extends MysqlDashboardTestCase
         $pdo->exec("
             UPDATE capabilities
             SET is_requestable = 0
-            WHERE device_type = 'pill_dispenser' AND capability_key = 'battery'
+            WHERE device_type = 'pill_dispenser' AND capability_key = 'device_status'
         ");
 
         (new ReferenceCatalogSeeder())->reconcileCapabilities($pdo);
 
-        self::assertSame(1, $this->flag($pdo, 'pill_dispenser', 'battery'));
+        self::assertSame(1, $this->flag($pdo, 'pill_dispenser', 'device_status'));
     }
 
     /** Uma capacidade que a base não tem entra, sem precisar de migração. */

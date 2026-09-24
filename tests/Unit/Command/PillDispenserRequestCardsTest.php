@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
-/**
- * Só os pedidos que leem viram mosaico no ecrã principal: as sete leituras que o `0x07` enche
- * e a configuração do `0x05`. O que muda o aparelho fica no modal.
+ * Um botão por pergunta, e não um botão por grandeza.
+ *
+ * O `0x07` do M228 pede sempre as 31 TAGs do `STATUS_TAGS`, e a resposta enche as sete
+ * leituras de uma vez. Sete botões a construir a trama idêntica prometiam uma granularidade
+ * que o protocolo não dá, e atropelavam-se entre si quando carregados de seguida.
  */
 final class PillDispenserRequestCardsTest extends TestCase
 {
@@ -30,11 +33,27 @@ final class PillDispenserRequestCardsTest extends TestCase
         return $requests;
     }
 
-    /**
-    /** Cada leitura que o `0x07` enche pede-se do seu próprio mosaico. */
-    public function testEveryReadingTheStatusFramePullsIsRequestable(): void
+    /** Duas perguntas, porque são duas tramas: o estado no `0x07` e a configuração no `0x05`. */
+    public function testOnlyTheTwoFramesTheDeviceAnswersAreOffered(): void
     {
-        self::assertSame([
+        self::assertSame(['device_status', 'sync_configuration'], array_keys($this->requests()));
+    }
+
+    /**
+     * As sete leituras que a resposta ao `0x07` enche mostram-se, mas não se pedem.
+     *
+     * É a mesma regra que o relógio já segue: a bateria dele não tem botão porque vem no
+     * `device_status`, e a frequência cardíaca tem porque carregar nela manda medir.
+     */
+    public function testTheSevenReadingsTheStatusFrameFillsAreNotRequestedOnTheirOwn(): void
+    {
+        $requests = $this->requests();
+        $telemetry = [];
+        foreach (CapabilityCatalog::definitionsForDeviceType('pill_dispenser') as $definition) {
+            $telemetry[(string)$definition['key']] = $definition;
+        }
+
+        $filledByTheStatusFrame = [
             'battery',
             'cells_remaining',
             'connectivity',
@@ -42,14 +61,26 @@ final class PillDispenserRequestCardsTest extends TestCase
             'lid_state',
             'medication_alarm_status',
             'temperature',
-            'sync_configuration',
-        ], array_keys($this->requests()));
+        ];
+
+        foreach ($filledByTheStatusFrame as $feature) {
+            self::assertArrayNotHasKey($feature, $requests, $feature);
+            self::assertTrue($telemetry[$feature]['isTelemetry'], $feature);
+            self::assertFalse($telemetry[$feature]['isRequestable'], $feature);
+        }
     }
 
-    /** E o `device_status`, que só existia para ser botão, deixou de fazer falta. */
-    public function testTheEmptyStatusCapabilityIsGone(): void
+    /** E o botão que ficou pede o estado inteiro. */
+    public function testTheStatusCapabilityIsTheOneThatCarriesTheButton(): void
     {
-        self::assertArrayNotHasKey('device_status', $this->requests());
+        $definitions = [];
+        foreach (CapabilityCatalog::definitionsForDeviceType('pill_dispenser') as $definition) {
+            $definitions[(string)$definition['key']] = $definition;
+        }
+
+        self::assertArrayHasKey('device_status', $definitions);
+        self::assertTrue($definitions['device_status']['isRequestable']);
+        self::assertSame('Estado do dispositivo', $definitions['device_status']['label']);
     }
 
     /** Cada um tem de saber que trama manda e que resposta espera, senão não fecha o ciclo. */
@@ -57,10 +88,8 @@ final class PillDispenserRequestCardsTest extends TestCase
     {
         $requests = $this->requests();
 
-        foreach (['battery', 'temperature', 'humidity', 'connectivity', 'cells_remaining', 'lid_state', 'medication_alarm_status'] as $feature) {
-            self::assertSame('readStatus', $requests[$feature]['command'] ?? null, $feature);
-            self::assertSame(['read_status_ack'], $requests[$feature]['expectedReplyTypes'] ?? null, $feature);
-        }
+        self::assertSame('readStatus', $requests['device_status']['command'] ?? null);
+        self::assertSame(['read_status_ack'], $requests['device_status']['expectedReplyTypes'] ?? null);
         self::assertSame('readConfiguration', $requests['sync_configuration']['command'] ?? null);
         self::assertSame(['read_config_ack'], $requests['sync_configuration']['expectedReplyTypes'] ?? null);
     }
