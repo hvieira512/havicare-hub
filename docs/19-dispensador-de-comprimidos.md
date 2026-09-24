@@ -265,6 +265,14 @@ Case 1, onde o callback só traz `HH:MM` sem data nem fuso.
 O anexo do protocolo define a tabela completa. O que se segue é o que interessa
 ao hub.
 
+> **O anexo tem duas tabelas, uma por tipo de dispositivo, e dezassete TAGs
+> mudam de significado entre elas.** O M228 é o tipo `0x02`; a tabela do `0x01` é
+> de outro aparelho. Ler o M228 pela tabela errada não dá erro nenhum — dá campos
+> com nomes plausíveis e conteúdo trocado. Foi o que aconteceu com o `0x8107`,
+> que no tipo `0x01` é a tampa e aqui é o trinco do prato, com a polaridade ao
+> contrário: a dashboard anunciou «Aberta» enquanto o prato estava trancado. Ao
+> acrescentar uma TAG, confirmar sempre em que tabela se está a ler.
+
 ### Estado
 
 | TAG | O quê | Notas |
@@ -272,8 +280,8 @@ ao hub.
 | `0x8101` | medicação | `0` normal · `1` a acabar · `2` sem medicação |
 | `0x8103` / `0x8104` | bateria | nível, e estado `0` normal · `1` cheia · `2` fraca · `3` a carregar · `4` sem bateria |
 | `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
-| `0x8105` / `0x8106` | identificador do prato, tensão baixa de bateria | **ambas *deprecated* na especificação** |
-| `0x8107` | tampa | `0` fechada · `1` aberta |
+| `0x8105` / `0x8106` | não incomodar, copo da medicação | `0` desligado · `1` ligado · `2` ligado e a silenciar · — · `0` copo retirado · `1` copo colocado. **Nenhuma é lida pelo hub** |
+| `0x8107` | trinco do prato | `0` destrancado · `1` trancado |
 | `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
 | `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **dBm**, e o aparelho manda a magnitude: o sinal negativo é posto pelo hub |
 | `0x810C` / `0x810D` | nível de sinal | a escala grosseira |
@@ -446,7 +454,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x810E` | `temperature` | `environmentCelsius` |
 | `0x810F` | `humidity` | `humidityPercent` |
 | `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |
-| `0x8107` | `lid_state` | `open` |
+| `0x8107` | `tray_lock` | `locked` |
 | `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. **Só é publicado quando dispara**: como leitura, enchia o histórico com linhas a dizer que estava tudo bem |
 | `0x8131`–`0x8139` **num `0x87`** | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` — a leitura dos nove, que só a resposta ao `0x07` traz |
 | `0x8131`–`0x8139` **num `0x04`/`0x02`** | `medication_alarm_change` | `alarm`, `state` — o alarme que mudou, um evento por alarme |

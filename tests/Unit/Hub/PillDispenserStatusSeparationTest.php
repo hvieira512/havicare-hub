@@ -77,11 +77,16 @@ final class PillDispenserStatusSeparationTest extends TestCase
         );
     }
 
-    /** A tampa aberta quer dizer que a medicação está acessível: é um estado sobre que se age. */
-    public function testTheLidIsItsOwnCapability(): void
+    /**
+     * O `0x8107` do tipo 02 é o trinco do prato, e não a tampa do tipo 01.
+     *
+     * A tabela do tipo 01 chama-lhe «Lid Status», com `0` fechada e `1` aberta. Lida assim
+     * num M228, a dashboard anunciava «Aberta» exactamente quando o prato estava trancado.
+     */
+    public function testTheTrayLockIsItsOwnCapability(): void
     {
-        self::assertSame(['open' => true], $this->telemetry([0x8107 => "\x01"])['lid_state'] ?? null);
-        self::assertSame(['open' => false], $this->telemetry([0x8107 => "\x00"])['lid_state'] ?? null);
+        self::assertSame(['locked' => true], $this->telemetry([0x8107 => "\x01"])['tray_lock'] ?? null);
+        self::assertSame(['locked' => false], $this->telemetry([0x8107 => "\x00"])['tray_lock'] ?? null);
     }
 
     /** Um alerta só se publica quando dispara, como a avaria aqui ao lado. */
@@ -138,7 +143,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
             $byFeature[$event['feature']] = $event['value'];
         }
 
-        self::assertArrayNotHasKey('lid_state', $byFeature);
+        self::assertArrayNotHasKey('tray_lock', $byFeature);
         self::assertSame(-25, $byFeature['connectivity']['signalStrengthDbm'] ?? null);
     }
 

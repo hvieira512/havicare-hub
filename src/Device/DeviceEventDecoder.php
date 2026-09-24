@@ -510,10 +510,11 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'cells_remaining', 'nativeType' => $nativeType, 'value' => $cells];
         }
 
-        // A tampa aberta quer dizer que o prato está acessível: é um estado sobre que se age.
-        $lidOpen = $this->pillFlag($tlv, 0x8107);
-        if ($lidOpen !== null) {
-            $events[] = ['feature' => 'lid_state', 'nativeType' => $nativeType, 'value' => ['open' => $lidOpen]];
+        // Trancado quer dizer que a medicação não está acessível: é um estado sobre que se age.
+        // A tabela do tipo 01 chama a esta TAG «Lid Status», com a polaridade ao contrário.
+        $trayLocked = $this->pillFlag($tlv, 0x8107);
+        if ($trayLocked !== null) {
+            $events[] = ['feature' => 'tray_lock', 'nativeType' => $nativeType, 'value' => ['locked' => $trayLocked]];
         }
 
         // O juízo do aparelho sobre a temperatura e a humidade que ele mede. Só sai quando

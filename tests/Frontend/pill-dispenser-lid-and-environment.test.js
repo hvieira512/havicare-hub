@@ -8,9 +8,9 @@ import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/card
  * O valor de cada cartão é o estado em que a coisa está, e não um «Sim» ou um «Não» que
  * obriga a reler o título para saber a que responde.
  */
-test("a tampa diz se está aberta ou fechada", () => {
-    assert.equal(uplinkCardContent("lid_state", { open: true }).value, "Aberta");
-    assert.equal(uplinkCardContent("lid_state", { open: false }).value, "Fechada");
+test("o trinco do prato diz se está trancado ou destrancado", () => {
+    assert.equal(uplinkCardContent("tray_lock", { locked: true }).value, "Trancado");
+    assert.equal(uplinkCardContent("tray_lock", { locked: false }).value, "Destrancado");
 });
 
 /** O ambiente só chega quando dispara: o valor diz o que aconteceu, e não leva legenda fixa. */

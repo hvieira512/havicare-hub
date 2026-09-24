@@ -160,10 +160,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'firmware_version',
             'help_call',
             'humidity',
-            // A tampa e o ambiente saíram de dentro do estado do dispositivo: uma tampa
-            // aberta é um estado sobre que se age, e «alarme de ambiente» não dizia a
-            // ninguém que o aparelho estava a avisar sobre a conservação da medicação.
-            'lid_state',
             'loaded_cells',
             // A mudança de estado de uma dose é acontecimento próprio: é o único sinal de uma
             // dose falhada, e viajava dentro da leitura dos nove, pelo canal sem garantia de
@@ -196,6 +192,9 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'sync_configuration',
             'temperature',
             'time_zone',
+            // O trinco do prato saiu de dentro do estado do dispositivo: destrancado é um
+            // estado sobre que se age. Não é a «tampa» — essa é a leitura do tipo 01.
+            'tray_lock',
         ];
 
         self::assertSame(

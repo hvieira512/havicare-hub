@@ -75,7 +75,7 @@ const CARD_STYLE = {
     medication_alarm_status: ["fa-clock-rotate-left", "primary"],
     medication_alarm_change: ["fa-pills", "primary"],
     cells_remaining: ["fa-table-cells", "info"],
-    lid_state: ["fa-box-open", "primary"],
+    tray_lock: ["fa-box-open", "primary"],
     storage_environment: ["fa-triangle-exclamation", "danger"],
     humidity: ["fa-droplet", "info"],
     reset: ["fa-bell-slash", "warning"],
@@ -185,9 +185,9 @@ const UPLINK_CARD_RENDERERS = {
     device_config: (data) => deviceConfigContent(data),
     // O valor é o estado em que a coisa está, e não um «Sim» que obriga a reler o título
     // para saber a que responde.
-    lid_state: (data) => ({
-        value: data?.open == null ? "-" : data.open ? "Aberta" : "Fechada",
-        details: data?.open ? "O prato está acessível" : "",
+    tray_lock: (data) => ({
+        value: data?.locked == null ? "-" : data.locked ? "Trancado" : "Destrancado",
+        details: data?.locked === false ? "A medicação está acessível" : "",
     }),
     // Um alerta e não uma leitura: só chega quando dispara, e por isso o valor diz o que
     // aconteceu em vez de dizer em que estado se está. A legenda fixa que aqui estava — «

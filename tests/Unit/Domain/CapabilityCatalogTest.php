@@ -26,7 +26,7 @@ final class CapabilityCatalogTest extends TestCase
             // enumeração como configuração própria. Ficam de fora a reposição de fábrica,
             // desligar a cifra e mudar o servidor — as três que nos podem tirar o aparelho —
             // e as três sondas da descoberta, que serviram para fazer a integração.
-            'pill_dispenser' => [32, '204f6f356583b0f7e16a69119c00ef64dc344951623e2bf1f1f203881cac9d81'],
+            'pill_dispenser' => [32, 'c470d4f753a1486eea1241f9682de4262d43a1e2e2715af01979fcea50e4da45'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

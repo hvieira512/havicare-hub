@@ -58,7 +58,7 @@ final class PillDispenserRequestCardsTest extends TestCase
             'cells_remaining',
             'connectivity',
             'humidity',
-            'lid_state',
+            'tray_lock',
             'medication_alarm_status',
             'temperature',
         ];
