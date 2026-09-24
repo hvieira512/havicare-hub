@@ -121,9 +121,9 @@ export function requestCardShell(
     const type = commandFeature(command);
     const card = requestCardContent(type);
     const requestable = command.requestable !== false;
-    const isSystemRequestCard = ["firmware_version", "device_status"].includes(
-        type,
-    );
+    // Um pedido de estado não tem valor próprio: o que ele traz espalha-se pelos outros
+    // cartões. A versão do firmware tem, e por isso segue o caminho normal da telemetria.
+    const isSystemRequestCard = type === "device_status";
 
     const telemetryTypes = requestTelemetryTypes(type);
     const payloads = telemetry
