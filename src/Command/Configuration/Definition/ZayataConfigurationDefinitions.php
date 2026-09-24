@@ -162,7 +162,7 @@ final class ZayataConfigurationDefinitions
                 'Dispensar agora',
                 'health',
                 40,
-                'Roda o prato e empurra já o próximo compartimento, sem esperar pela hora. Consome a dose do próximo alarme marcado e dá-o como tomado — não é uma dose a mais.',
+                'Roda o prato e empurra já o próximo compartimento, sem esperar pela hora. Consome a dose do próximo alarme marcado e dá-o como tomado — não é uma dose a mais. Só funciona se ainda houver hoje um alarme por vir cujo slot não tenha já dado a dose dele: sem isso o aparelho responde que conseguiu e não faz nada.',
                 'Isto gasta a dose do próximo alarme e dá-a como tomada. Confirma?',
             ),
             // Rodar até um compartimento (`0xA124`) e pausar a medicação (`0xA125`) não estão
