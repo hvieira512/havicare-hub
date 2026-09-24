@@ -1,4 +1,5 @@
 import { fieldLabel, fieldValue, titleize } from "../../format.js";
+import { state } from "../../state.js";
 import { DETECTION_TYPE_LABEL } from "../../domain.js";
 import { html, raw } from "../../html.js";
 import { compactDetails } from "./shared.js";
@@ -88,6 +89,33 @@ export function cardIcon(type) {
     return CARD_STYLE[type]?.[0] || "fa-circle-info";
 }
 
+/**
+ * A posição do carrossel na linguagem do prato.
+ *
+ * O prato não tem números: tem um autocolante de esquema com grupos de doses e uma marca de
+ * início. O `21` que o aparelho conta por dentro não se encontra lá, mas «dia 7» conta-se em
+ * sete grupos a partir da marca. As doses por dia vêm do plano que o aparelho confirmou ter.
+ *
+ * Sem plano não se inventa dia nenhum: fica o número cru, que é verdade mesmo quando não
+ * ajuda.
+ */
+function cyclePosition(current) {
+    const plans = state.selectedDetail?.effectiveConfigurations?.medication_reminders?.plans;
+    if (!Array.isArray(plans) || current == null || current < 1) {
+        return "";
+    }
+
+    const porDia = plans.filter((plan) => plan?.enabled !== false).length;
+    if (porDia < 1) {
+        return "";
+    }
+
+    const dia = Math.ceil(current / porDia);
+    const dose = ((current - 1) % porDia) + 1;
+
+    return porDia === 1 ? `Dia ${dia}` : `Dia ${dia}, ${dose}ª dose`;
+}
+
 const UPLINK_CARD_RENDERERS = {
     // O radar manda as mesmas chaves e formas que um relógio e usa os cartões dele.
     presence: (data) => ({
@@ -168,19 +196,26 @@ const UPLINK_CARD_RENDERERS = {
     //
     // A posição vai nos detalhes porque é o que se precisa para carregar o prato: sem ela,
     // quem põe a medicação não sabe em que compartimento o aparelho vai pegar a seguir.
-    cells_remaining: (data) => ({
-        value: data.remaining == null
-            ? fieldValue("level", data.level)
-            : data.remaining === 0
-                ? "Nenhuma por dispensar"
-                : `${data.remaining} por dispensar`,
-        details: [
-            data.current != null && data.total != null
-                ? `Compartimento ${data.current} de ${data.total}`
-                : "",
-            data.level != null ? fieldValue("level", data.level) : "",
-        ].filter(Boolean).join(" · "),
-    }),
+    cells_remaining: (data) => {
+        const compartimento = data.current != null && data.total != null
+            ? `Compartimento ${data.current} de ${data.total}`
+            : "";
+        const nivel = data.level != null ? fieldValue("level", data.level) : "";
+        const noCiclo = cyclePosition(data.current);
+
+        return {
+            value: data.remaining == null
+                ? fieldValue("level", data.level)
+                : data.remaining === 0
+                    ? "Nenhuma por dispensar"
+                    : `${data.remaining} por dispensar`,
+            // A leitura em dias primeiro, porque é a que se encontra no prato; o número cru
+            // fica na gaveta, para o cartão não mentir se o autocolante e o plano não
+            // corresponderem.
+            details: [noCiclo || compartimento, nivel].filter(Boolean).join(" · "),
+            detailsTitle: [noCiclo, compartimento, nivel].filter(Boolean).join(" · "),
+        };
+    },
     // O que interessa numa toma é como ela acabou, e numa avaria é qual foi.
     medication_intake: (data) => ({
         value: fieldValue("result", data.result),

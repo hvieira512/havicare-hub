@@ -438,6 +438,35 @@ E, com relevo para a operação: `0xA011` intervalo de heartbeat, **`0xA021` IP 
 servidor, `0xA022` domínio e `0xA023` porta**. O aparelho pode ser reapontado
 para outro servidor pelo próprio protocolo.
 
+### Como se carrega o prato, e porque é que a dashboard sozinha não chega
+
+O prato tem 28 compartimentos e **nenhum número impresso**. O que traz é um
+**autocolante de esquema**, removível, com grupos de doses — `1 2 3` repetidos
+para «3x por dia, 9 dias» — e uma **marca cor-de-rosa** que é o ponto de partida.
+
+O aparelho, por dentro, conta de 1 a 28 e é esse número que o `0x811A` reporta.
+**Esse número não existe em lado nenhum no prato.** Dizer a alguém «está no
+compartimento 21» não o ajuda: não há 21 para encontrar. Por isso o cartão
+traduz a posição para a linguagem do autocolante — com três doses por dia, a
+posição 21 é «dia 7, 3ª dose», e sete grupos contam-se a partir da marca sem
+hesitar. O número cru fica na gaveta do cartão, porque o autocolante e o plano
+configurado podem não corresponder.
+
+O procedimento, e a ordem importa:
+
+1. **Reiniciar o ciclo no aparelho**, pelo menu — é o `RestartCycle` do manual.
+   Não há comando para isto no protocolo: os treze controlos do tipo `0x02` só
+   têm o `0xA103`, que reassenta o prato mecanicamente e **não mexe no
+   contador**. Observado a 24/09/2026: o prato rodou e o `0x811A` ficou em 20
+   antes e depois.
+2. **Carregar a partir da marca cor-de-rosa**, seguindo os grupos do autocolante.
+3. **Só então dizer ao hub quantos compartimentos foram carregados**, na
+   configuração «Compartimentos carregados». É a partir desse número que o
+   `0x811D` desce.
+
+Saltar o primeiro passo deixa o contador do aparelho a meio da volta anterior, e
+a partir daí tudo o que a dashboard mostra sobre posições está deslocado.
+
 ### Duas definições que só existem no aparelho
 
 O manual do M228A descreve definições que **o protocolo TCP não expõe**. Quem

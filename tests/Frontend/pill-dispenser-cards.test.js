@@ -69,6 +69,52 @@ test("sem nenhuma por dispensar, o cartão di-lo por palavras", () => {
     assert.match(html, /[Cc]ompartimento 21 de 28/);
 });
 
+/**
+ * O prato não tem números: tem um autocolante com grupos de doses e uma marca de início.
+ *
+ * O `21` que o aparelho conta por dentro não existe em lado nenhum no prato, e por isso não
+ * ajuda quem está com ele na mão. Com três doses por dia, a posição 21 é o fim do sétimo dia
+ * — e sete grupos contam-se a partir da marca cor-de-rosa sem hesitar.
+ *
+ * O número cru fica na gaveta, para o cartão não mentir se o autocolante não corresponder ao
+ * plano configurado.
+ */
+test("com um plano de três doses por dia, a posição lê-se em dias", (t) => {
+    const anterior = state.selectedDetail;
+    t.after(() => {
+        state.selectedDetail = anterior;
+    });
+    state.selectedDetail = {
+        effectiveConfigurations: {
+            medication_reminders: {
+                plans: [
+                    { slot: 1, hour: 8, minute: 0 },
+                    { slot: 2, hour: 13, minute: 0 },
+                    { slot: 3, hour: 20, minute: 0 },
+                ],
+            },
+        },
+    };
+
+    const html = card("cells_remaining", { remaining: 6, total: 28, current: 21, level: "ok" });
+
+    assert.match(html, /Dia 7, 3ª dose/);
+    assert.match(html, /[Cc]ompartimento 21 de 28/);
+});
+
+test("sem plano, fica só o número que o aparelho conta", (t) => {
+    const anterior = state.selectedDetail;
+    t.after(() => {
+        state.selectedDetail = anterior;
+    });
+    state.selectedDetail = { effectiveConfigurations: {} };
+
+    const html = card("cells_remaining", { remaining: 6, total: 28, current: 21, level: "ok" });
+
+    assert.match(html, /[Cc]ompartimento 21 de 28/);
+    assert.doesNotMatch(html, /Dia \d/);
+});
+
 test("nenhum campo do dispensador aparece em inglês", () => {
     assert.equal(fieldLabel("remaining"), "Restantes");
     assert.equal(fieldLabel("total"), "Total");
