@@ -145,34 +145,7 @@ final class ZayataConfigurationDefinitions
                 5,
                 'Pergunta ao aparelho que configurações ele tem lá dentro e mostra-as aqui. Não muda nada: serve para confirmar que o que está no ecrã é mesmo o que o aparelho ficou a ter.',
             ),
-            // «Atualizar estado» não está aqui: a mesma trama `0x07` enche sete leituras, e
-            // são os mosaicos dessas sete que a pedem, no ecrã principal.
-            // Perguntar ao aparelho que parâmetros ele serve, em vez de adivinhar por recusa.
-            // São três porque configuração, estado e controlo são pacotes próprios.
-            self::action(
-                'supported_configuration',
-                'discoverParametersConfiguration',
-                'Que configurações este aparelho aceita',
-                'system',
-                7,
-                'Diagnóstico. Pergunta ao aparelho que definições o firmware dele sabe gravar. Só interessa quando entra um modelo ou uma versão nova: em vez de tentar cada uma e ler as recusas, pergunta-se-lhe de uma vez.',
-            ),
-            self::action(
-                'supported_status',
-                'discoverParametersStatus',
-                'Que leituras este aparelho sabe dar',
-                'system',
-                8,
-                'Diagnóstico. Pergunta que grandezas o firmware sabe reportar. Foi assim que se soube que esta unidade é 4G e não tem rádio WiFi nenhum.',
-            ),
-            self::action(
-                'supported_control',
-                'discoverParametersControl',
-                'Que ordens este aparelho obedece',
-                'system',
-                9,
-                'Diagnóstico. Pergunta que ordens o firmware aceita — dispensar, calibrar, reiniciar. Serve para não se oferecer um botão que o aparelho vai recusar.',
-            ),
+            // «Atualizar estado» não está aqui: pede-se do mosaico dele, no ecrã principal.
             // Desligar a cifra também não entra: o `0x8005` aparece na tabela dos parâmetros
             // escrevíveis, mas o fornecedor respondeu que o aparelho o recusa e que a chave sai
             // da codificação dele — ou cifra tudo o que envia, ou não cifra nada, e a decisão

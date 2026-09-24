@@ -176,9 +176,6 @@ const UPLINK_CARD_RENDERERS = {
         value: fieldValue("result", data.result),
     }),
     medication_alarm_status: (data) => medicationAlarmContent(data),
-    supported_configuration: (data) => supportedParametersContent(data),
-    supported_status: (data) => supportedParametersContent(data),
-    supported_control: (data) => supportedParametersContent(data),
     // A mudança de uma dose: um acontecimento, e por isso lê-se numa linha. A hora identifica
     // a dose melhor do que o número do alarme, que é vocabulário do aparelho e não do dia.
     medication_alarm_change: (data) => ({
@@ -421,24 +418,6 @@ export function uplinkCardContent(type, data, meta = {}) {
  * O `device_config` traz um mapa: a chave é a definição e o valor é o que o aparelho diz ter
  * lá dentro. Sem isto caía no cartão genérico e saía como «[object Object]».
  */
-/** Quantas TAGs o firmware anuncia servir, e quais. A linha resume; a gaveta traz a lista. */
-const SUPPORTED_TAGS_ON_THE_LINE = 8;
-
-function supportedParametersContent(data) {
-    const tags = Array.isArray(data?.tags) ? data.tags.map(String) : [];
-    if (tags.length === 0) {
-        return { value: "Nenhuma" };
-    }
-
-    const shown = tags.slice(0, SUPPORTED_TAGS_ON_THE_LINE);
-
-    return {
-        value: `${tags.length} ${tags.length === 1 ? "TAG" : "TAGs"}`,
-        details: shown.join(" · ") + (tags.length > shown.length ? " …" : ""),
-        detailsTitle: tags.join(" · "),
-    };
-}
-
 function deviceConfigContent(data) {
     const settings = Object.entries(data?.settings ?? {});
 

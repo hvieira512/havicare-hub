@@ -528,22 +528,25 @@ tem, porque o pedido manda o relógio medir.
 > registos do mesmo comando, com o primeiro marcado `superseded`, e o histórico de
 > pedidos ficava com linhas repetidas indistinguíveis.
 
-**A descoberta no primeiro registo.** A especificação pede-a — *«If this is the
-Client's first registration, the Server should query the Client's parameter
-information for synchronization»* — e o hub fá-la: na primeira vez que vê um
-aparelho, manda-lhe o `0x0A`, o `0x0B` e o `0x0C` a seguir ao ACK do registo. As
-três respostas enchem os cartões «Que configurações este aparelho aceita», «Que
-leituras este aparelho sabe dar» e «Que ordens este aparelho obedece».
+**A descoberta de parâmetros foi andaime da integração, e não ficou.** A
+especificação sugere-a — *«If this is the Client's first registration, the Server
+should query the Client's parameter information for synchronization»* — e ela foi
+mesmo usada: é dela que saem as listas de 54, 43 e 12 TAGs escritas neste
+capítulo, e foi ela que provou que esta unidade é 4G sem rádio WiFi.
 
-É **uma vez por aparelho**, e a marca fica num campo do hash dele no Redis,
-escrito com `HSETNX`: decidir e marcar no mesmo passo evita que duas ligações a
-registarem-se ao mesmo tempo passem as duas pela guarda. Um aparelho que se
-religue dez vezes por dia não responde dez vezes à mesma pergunta.
+Feito esse trabalho, a pergunta deixou de ter público. Nada no hub lia a
+resposta: nenhuma decisão, nenhum aviso, nenhuma tabela mudava com ela. O que
+restava eram três cartões a devolver `0x1001 · 0x1002 · …` a um administrador que
+não tem nenhuma decisão a tomar com aquilo. Saíram, e com eles saiu a pergunta
+automática no primeiro registo.
 
-> As listas de TAGs continuam escritas no `PillDispenserAdapter`, e é delas que
-> sai o que o hub pede. O que a descoberta acrescenta é saber, por aparelho, o
-> que ele de facto serve — sem isso, um firmware diferente recusa em silêncio o
-> que lhe pedirmos a mais e o cartão fica vazio sem explicação.
+> O que **não** saiu é o adaptador reconhecer os `0x8A`–`0x8C`. O corpo deles é
+> uma lista de TAGs coladas e não TFLV; lido como TFLV, dá telemetria fabricada
+> com identidade correcta e CRC válido, e nada a jusante a distingue de uma
+> leitura verdadeira. Isso é uma propriedade de segurança e fica, pedida ou não.
+
+No dia em que entrar um firmware novo, a pergunta volta a fazer-se com um script:
+o protocolo está descrito aqui e as três listas de referência também.
 
 A resposta `0x86` fecha o ciclo de vida de uma escrita: uma configuração escrita
 fica em `confirmed` com `applied_at` quando o aparelho a reconhece.

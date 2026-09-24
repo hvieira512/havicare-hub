@@ -193,9 +193,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // consulta na dashboard, e cada leitura de estado repetia-o na lista de eventos.
             // Uma por família: o aparelho separa configuração, estado e controlo, e cada
             // pergunta é um pacote próprio.
-            'supported_configuration',
-            'supported_control',
-            'supported_status',
             'sync_configuration',
             'temperature',
             'time_zone',
@@ -208,14 +205,13 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Doze configuráveis e dez pedíveis. Uma acção pede-se e não se configura, e por isso
+        // Doze configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por isso
         // as duas bandeiras nunca estão ligadas ao mesmo tempo.
         //
-        // São dez e não dezasseis porque as sete leituras que o `0x07` enche não se pedem
-        // sozinhas: a trama pede-as sempre a todas, e quem carrega o botão é o
-        // `device_status`.
+        // As sete leituras que o `0x07` enche não se pedem sozinhas: a trama pede-as sempre a
+        // todas, e quem carrega o botão é o `device_status`.
         self::assertSame(
-            ['12', '10'],
+            ['12', '7'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

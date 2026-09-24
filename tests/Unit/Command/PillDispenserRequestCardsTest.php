@@ -95,6 +95,23 @@ final class PillDispenserRequestCardsTest extends TestCase
     }
 
     /**
+     * As sondas da descoberta não ficam: serviram para fazer a integração.
+     *
+     * Perguntavam ao firmware que TAGs ele serve. Nada no hub lia a resposta, e o
+     * administrador que carregasse no botão recebia uma lista de TAGs sobre a qual não tem
+     * nenhuma decisão. As três listas estão escritas no capítulo 19.
+     */
+    public function testTheIntegrationProbesAreNotPartOfTheProduct(): void
+    {
+        $keys = array_column(CapabilityCatalog::definitionsForDeviceType('pill_dispenser'), 'key');
+
+        foreach (['supported_configuration', 'supported_status', 'supported_control'] as $probe) {
+            self::assertNotContains($probe, $keys, $probe);
+            self::assertArrayNotHasKey($probe, $this->requests(), $probe);
+        }
+    }
+
+    /**
      * O que muda o aparelho não é pedido.
      *
      * A distinção não é cosmética: um mosaico do ecrã principal dispara ao primeiro clique,

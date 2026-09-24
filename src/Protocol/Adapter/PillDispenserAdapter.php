@@ -70,16 +70,13 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         $plain = $encrypted ? self::decryptAppData($appData, $deviceNumber) : $appData;
 
         // A resposta à descoberta de parâmetros não é TFLV: é uma lista de TAGs coladas, e
-        // lê-la como TFLV dava TAGs inventadas. Uma lista que não se entenda também não vira
-        // TFLV -- daria telemetria inventada com identidade correcta e CRC válido.
-        $isDiscovery = self::isDiscoveryReply($packetType);
-        $discovered = $isDiscovery ? self::parseTagList($plain ?? '') : null;
-        $tlv = $plain === null || $isDiscovery ? [] : self::parseTlv($plain);
+        // lê-la como TFLV daria telemetria inventada com identidade correcta e CRC válido.
+        // O hub já não pergunta, mas continua a ter de saber não ler o que não é para ler.
+        $tlv = $plain === null || self::isDiscoveryReply($packetType) ? [] : self::parseTlv($plain);
 
         return [
             'encrypted' => $encrypted,
             'decrypted' => !$encrypted || $plain !== null,
-            'supportedTags' => $discovered,
             'type' => $type,
             'packetType' => $packetType,
             'imei' => $identity['id'],
@@ -93,7 +90,7 @@ class PillDispenserAdapter implements DeviceAdapterInterface
             // marca cifra AES128-CFB. A lógica de ACK vive na camada de protocolo, não aqui.
             'waivesReply' => ($flag & 0x02) === 0x02,
             'tlv' => $tlv,
-            'data' => ['idKind' => $identity['kind'], 'tlv' => $tlv, 'supportedTags' => $discovered],
+            'data' => ['idKind' => $identity['kind'], 'tlv' => $tlv],
             'timestamp' => $this->now(),
         ];
     }
@@ -438,43 +435,14 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     private const TAG_FAMILIES = [0x10, 0x80, 0x81, 0xA0, 0xA1, 0xC2];
 
     /**
-     * Só as três que o hub sabe nomear. O `0x8D` estava aqui dentro e fazia fechar como
-     * aceite qualquer operação pendente, enquanto o descodificador o via como `unknown` e não
-     * publicava nada.
+     * As três respostas à descoberta, cujo corpo é uma lista de TAGs e não TFLV.
+     *
+     * O hub deixou de perguntar, mas continua a ter de as reconhecer: ler uma delas como TFLV
+     * publica telemetria fabricada com identidade correcta e CRC válido.
      */
     private static function isDiscoveryReply(int $packetType): bool
     {
         return $packetType >= 0x8A && $packetType <= 0x8C;
-    }
-
-    /**
-     * A lista de TAGs de uma resposta à descoberta, na ordem do anfitrião.
-     *
-     * Um corpo vazio é uma lista vazia e não uma falha: é o que responde um firmware que não
-     * serve nenhum parâmetro daquela família, e o pedido tem de fechar na mesma. Devolver
-     * `null` aqui deixava-o para sempre à espera, a repetir-se de minuto a minuto.
-     *
-     * @return list<int>|null
-     */
-    private static function parseTagList(string $body): ?array
-    {
-        if ($body === '') {
-            return [];
-        }
-        if (strlen($body) % 2 !== 0) {
-            return null;
-        }
-
-        $tags = [];
-        foreach (str_split($body, 2) as $pair) {
-            $tag = unpack('v', $pair)[1];
-            if (!in_array($tag >> 8, self::TAG_FAMILIES, true)) {
-                return null;
-            }
-            $tags[] = $tag;
-        }
-
-        return $tags;
     }
 
     private static function packetTypeName(int $packetType): string

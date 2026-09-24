@@ -10,69 +10,39 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A descoberta de parâmetros, decodificada a partir de tramas a sério.
+ * O hub já não pergunta que parâmetros o firmware serve, mas tem de continuar a saber não ler
+ * a resposta.
  *
- * O teste que já existia construía à mão o `supportedTags` que esperava encontrar, e por isso
- * passava sobre uma forma que o adaptador nunca produz. Aqui as tramas são montadas e
- * descodificadas pelo adaptador, que é o único caminho por onde uma resposta real entra.
+ * O corpo de um `0x8A`–`0x8C` é uma lista de TAGs coladas e não TFLV. Lido como TFLV, dá
+ * telemetria fabricada com identidade correcta e CRC válido — a pior falha calada que este
+ * protocolo permite, porque nada a jusante tem como a distinguir de uma leitura verdadeira.
  */
 final class PillDispenserDiscoveryDecodingTest extends TestCase
 {
-    /**
-     * Um firmware que não serve nenhum parâmetro daquela família responde com corpo vazio, e o
-     * pedido tem de fechar na mesma.
-     *
-     * Devolvia `null`, que é «não disse»: o pedido ficava para sempre «a aguardar resposta do
-     * dispositivo» e era repetido de minuto a minuto, com o aparelho a responder de cada vez.
-     */
-    public function testAnEmptyAnswerClosesTheRequest(): void
-    {
-        $decoded = $this->decode(0x8B, '');
-
-        self::assertSame([], $decoded['supportedTags'], 'sem TAGs, mas respondeu');
-        self::assertTrue($this->protocol()->replyAccepted($decoded));
-    }
-
-    public function testATagListIsReadInHostOrder(): void
+    /** Uma lista de TAGs bem formada não vira telemetria. */
+    public function testATagListIsNeverReadAsTlv(): void
     {
         $decoded = $this->decode(0x8C, pack('v*', 0xA001, 0xA002, 0xA101));
 
-        self::assertSame([0xA001, 0xA002, 0xA101], $decoded['supportedTags']);
-        self::assertTrue($this->protocol()->replyAccepted($decoded));
+        self::assertSame([], $decoded['tlv']);
+        self::assertSame([], (new DeviceEventDecoder())->decode($this->session(), $decoded));
     }
 
-    /**
-     * Um corpo que não é uma lista de TAGs não pode ser lido como TFLV.
-     *
-     * Caía no `parseTlv` sobre os mesmos bytes, e o que saísse dali virava telemetria
-     * inventada com identidade correcta e CRC válido -- a falha calada que este protocolo
-     * torna fácil. É a mesma razão por que a decifra tem a sua própria guarda.
-     */
+    /** E um corpo que não se entende também não. */
     public function testAnUnreadableAnswerPublishesNothing(): void
     {
         // Comprimento ímpar: não fecha como lista de TAGs nem como TFLV.
         $decoded = $this->decode(0x8B, "\x01\x81\x02");
 
-        self::assertNull($decoded['supportedTags']);
         self::assertSame([], $decoded['tlv'], 'nada é lido de um corpo que não se entende');
         self::assertSame([], (new DeviceEventDecoder())->decode($this->session(), $decoded));
-    }
-
-    /** Uma família de TAGs que não conhecemos também não vira TFLV. */
-    public function testAnUnknownTagFamilyPublishesNothing(): void
-    {
-        $decoded = $this->decode(0x8B, pack('v*', 0x8201, 0x8202));
-
-        self::assertNull($decoded['supportedTags']);
-        self::assertSame([], $decoded['tlv']);
     }
 
     /**
      * O `0x8D` não é uma resposta que se saiba ler.
      *
-     * Estava dentro da gama tratada como descoberta, o que o fazia fechar como aceite
-     * qualquer operação pendente -- enquanto o descodificador o via como `unknown` e não
-     * publicava nada.
+     * Esteve dentro da gama tratada como descoberta, o que o fazia fechar como aceite
+     * qualquer operação pendente, enquanto o descodificador o via como `unknown`.
      */
     public function testAnUnnamedReplyDoesNotCloseAnything(): void
     {

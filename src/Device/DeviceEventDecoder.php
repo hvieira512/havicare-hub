@@ -241,12 +241,6 @@ final class DeviceEventDecoder
             return $intake === null ? [] : [$intake];
         }
 
-        // A resposta à descoberta não traz TFLV nenhum: traz a lista de TAGs que o firmware serve.
-        $discovered = $this->pillSupportedParameters($nativeType, $payload);
-        if ($discovered !== null) {
-            return [$discovered];
-        }
-
         // A resposta a uma leitura ou a uma escrita de configuração traz o corpo pedido já
         // preenchido, e o resultado de cada TAG nos bits de estado do Flag.
         if ($nativeType === 'read_config_ack' || $nativeType === 'write_config_ack') {
@@ -257,41 +251,6 @@ final class DeviceEventDecoder
         // Tudo o resto -- heartbeat, registo, notificação e consulta de estado -- traz as
         // mesmas TAGs de estado, e por isso passa pelo mesmo caminho.
         return $this->pillStatusEvents($nativeType, $tlv);
-    }
-
-    /**
-     * As TAGs que o firmware anuncia, em resposta a um `0x0A`, `0x0B` ou `0x0C`.
-     *
-     * Sai como capacidade própria e não como configuração: não é um valor que se escolha,
-     * é o que o aparelho sabe fazer.
-     *
-     * @param array<string, mixed> $payload
-     * @return array{feature: string, nativeType: string, value: array<string, mixed>}|null
-     */
-    private function pillSupportedParameters(string $nativeType, array $payload): ?array
-    {
-        // Pela chave com que a capacidade é declarada no catálogo, e não por um nome
-        // inventado aqui: publicar um nome não declarado é uma falha calada.
-        $feature = match ($nativeType) {
-            'discover_config_ack' => 'supported_configuration',
-            'discover_status_ack' => 'supported_status',
-            'discover_control_ack' => 'supported_control',
-            default => null,
-        };
-        $tags = $payload['supportedTags'] ?? null;
-        if ($feature === null || !is_array($tags)) {
-            return null;
-        }
-
-        return [
-            'feature' => $feature,
-            'nativeType' => $nativeType,
-            'value' => [
-                'count' => count($tags),
-                // Em hexadecimal, que é como a especificação as nomeia.
-                'tags' => array_map(static fn (int $tag): string => sprintf('0x%04X', $tag), $tags),
-            ],
-        ];
     }
 
     private function pillMedicationIntake(string $nativeType, array $tlv): ?array

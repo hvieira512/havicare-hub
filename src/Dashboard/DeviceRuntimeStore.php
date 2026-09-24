@@ -90,22 +90,6 @@ final class DeviceRuntimeStore
     }
 
     /**
-     * Marca que já se perguntaram os parâmetros a este aparelho, e diz se foi esta a chamada
-     * que o marcou.
-     *
-     * O `hsetnx` decide e escreve num só passo: ler e depois escrever deixava duas ligações a
-     * registarem-se ao mesmo tempo a passar as duas pela guarda.
-     */
-    public function claimParameterDiscovery(string $imei): bool
-    {
-        return (int)$this->redis->hsetnx(
-            $this->deviceKey($imei),
-            'parametersDiscoveredAt',
-            gmdate('Y-m-d\\TH:i:s\\Z'),
-        ) === 1;
-    }
-
-    /**
      * A última vez que um gateway ouviu um dispositivo retransmitido, e com que força.
      * Indexado pelo dispositivo, para os dois lados da ligação lerem o mesmo registo. O sinal
      * pertence ao par e não a nenhum deles, e por isso não vive no hash do dispositivo.

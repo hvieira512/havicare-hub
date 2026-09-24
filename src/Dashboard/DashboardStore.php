@@ -95,11 +95,6 @@ final class DashboardStore implements DashboardStoreContract
         $this->runtime->deviceSeen($imei, $fields);
     }
 
-    public function claimParameterDiscovery(string $imei): bool
-    {
-        return $this->runtime->claimParameterDiscovery($imei);
-    }
-
     public function recordGatewaySighting(string $deviceKey, string $gatewayKey, ?int $rssiDbm): void
     {
         $this->runtime->recordGatewaySighting($deviceKey, $gatewayKey, $rssiDbm);

@@ -34,14 +34,6 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
     {
         $type = (string)($decoded['type'] ?? '');
 
-        // A descoberta de parâmetros responde fora do TFLV: as TAGs vêm numa lista simples, e
-        // o corpo TFLV fica vazio. Sem isto caía na guarda do corpo vazio e o pedido ficava
-        // eternamente à espera, a repetir-se de minuto a minuto. Uma lista vazia também fecha:
-        // é um firmware que não serve aquela família, e não uma recusa do pedido.
-        if (is_array($decoded['supportedTags'] ?? null)) {
-            return true;
-        }
-
         $tlv = $decoded['tlv'] ?? [];
         if (!is_array($tlv) || $tlv === []) {
             return null;

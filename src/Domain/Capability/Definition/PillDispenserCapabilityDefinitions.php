@@ -56,11 +56,6 @@ final class PillDispenserCapabilityDefinitions
 
             // O que se pede. Uma acção pede-se, não se configura.
             ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'sync_configuration', 'label' => 'Sincronizar configuração', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
-            // O que o firmware anuncia servir. Não é um valor que se escolha, é o que o
-            // aparelho sabe fazer — e é o que evita manter uma tabela por modelo.
-            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'supported_configuration', 'label' => 'Que configurações este aparelho aceita', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'supported_status', 'label' => 'Que leituras este aparelho sabe dar', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'pill_dispenser', 'section' => 'settings_system', 'key' => 'supported_control', 'label' => 'Que ordens este aparelho obedece', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             // Os dois tempos decidem se uma dose por tomar chega a alguém como alerta, e as
             // células carregadas são o que permite ao aparelho avisar que está a acabar.
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'retrieval_warning', 'label' => 'Avisar de atraso ao fim de', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],

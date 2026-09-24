@@ -40,27 +40,6 @@ final class DeviceCommandCatalog
     }
 
     /**
-     * O que se pergunta a um aparelho na primeira vez que ele se regista.
-     *
-     * A especificação da série M2 pede-o: sem isto as listas de TAGs suportadas são as que
-     * alguém escreveu à mão depois de uma descoberta única, e um firmware diferente recusa em
-     * silêncio o que lhe pedirmos a mais.
-     *
-     * @return list<string>
-     */
-    public static function firstRegistrationCommands(string $protocol): array
-    {
-        return match ($protocol) {
-            'zayata-m228' => [
-                'discoverParametersConfiguration',
-                'discoverParametersStatus',
-                'discoverParametersControl',
-            ],
-            default => [],
-        };
-    }
-
-    /**
      * Só o que o dispensador serve como *pedido*: o `0x07` e o `0x05`. O que muda o aparelho
      * fica no modal, porque um mosaico dispara ao primeiro clique e sem confirmação.
      *
@@ -330,16 +309,6 @@ final class DeviceCommandCatalog
      */
     private static function buildPillDispenser(string $imei, string $command, array $payload = [], array $context = []): string
     {
-        // Perguntar que parâmetros o firmware serve, em vez de adivinhar por recusa. O pedido
-        // não leva corpo: o tipo do pacote é a pergunta toda.
-        $discovery = [
-            'discoverParametersConfiguration' => 0x0A,
-            'discoverParametersStatus' => 0x0B,
-            'discoverParametersControl' => 0x0C,
-        ];
-        if (isset($discovery[$command])) {
-            return self::pillFrame($imei, $discovery[$command], []);
-        }
 
         // A calibração leva a hora a que o aparelho se deve pôr, e não um interruptor: é a
         // única TAG de controlo que é STRING.
