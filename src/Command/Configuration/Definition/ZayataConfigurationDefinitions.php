@@ -85,7 +85,7 @@ final class ZayataConfigurationDefinitions
                 0,
                 28,
                 'Compartimentos',
-                'Quantos dos 28 compartimentos foram carregados com medicação. É por este número que o aparelho sabe avisar que está a acabar — não se confunde com a capacidade do prato, que é sempre 28.',
+                'Quantos dos 28 compartimentos foram carregados com medicação. O aparelho não vê lá dentro: este número é o ponto de partida da contagem dele, e é dele que desce o «células restantes». Não se confunde com a capacidade do prato, que é sempre 28.',
             ),
             // O volume é uma enumeração e não uma escala: na especificação, 0 é o mais alto
             // e 3 é silêncio.
