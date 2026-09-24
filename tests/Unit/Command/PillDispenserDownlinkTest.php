@@ -109,6 +109,14 @@ final class PillDispenserDownlinkTest extends TestCase
             0x06,
         );
         self::assertSame("\x00", $lock[0x100C]['value']);
+
+        // Decide se o aparelho ainda entrega a dose depois de a dar como falhada, e por isso
+        // decide se o desfecho `abnormal` do evento chega a existir.
+        $missed = $this->decode(
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'missedDispense', ['enabled' => true]),
+            0x06,
+        );
+        self::assertSame("\x01", $missed[0x1019]['value']);
     }
 
     public function testThePlanPeriodIsWrittenAsSixIntegersAndASwitch(): void

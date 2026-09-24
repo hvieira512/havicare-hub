@@ -261,6 +261,7 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     public const STATUS_TAGS = [
         0x8101,                     // nível de medicação
         0x8102,                     // estado do bloqueio de criança, como o aparelho o vê
+        0x8105, 0x8106,             // não incomodar a silenciar agora, e o copo da medicação
         0x8103, 0x8104,             // bateria
         0x810A, 0x810B,             // sinal WiFi e GSM em dBm, unidade que o fornecedor confirmou
         0x810D,                     // nível do sinal GSM: 0 a 3, e esse está documentado

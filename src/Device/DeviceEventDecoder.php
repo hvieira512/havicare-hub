@@ -517,6 +517,23 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'tray_lock', 'nativeType' => $nativeType, 'value' => ['locked' => $trayLocked]];
         }
 
+        // Sem copo, a dose sai do compartimento e não há onde ela caia.
+        $cupInserted = $this->pillFlag($tlv, 0x8106);
+        if ($cupInserted !== null) {
+            $events[] = ['feature' => 'medication_cup', 'nativeType' => $nativeType, 'value' => ['inserted' => $cupInserted]];
+        }
+
+        // O `silencing` é o que a configuração não sabe dizer: ligado e a silenciar agora.
+        $quiet = match ($this->tlvU8($tlv, 0x8105)) {
+            0 => 'off',
+            1 => 'on',
+            2 => 'silencing',
+            default => null,
+        };
+        if ($quiet !== null) {
+            $events[] = ['feature' => 'do_not_disturb_state', 'nativeType' => $nativeType, 'value' => ['state' => $quiet]];
+        }
+
         // O juízo do aparelho sobre a temperatura e a humidade que ele mede. Só sai quando
         // dispara, como a avaria aqui ao lado.
         if ($this->pillFlag($tlv, 0x8111) === true) {

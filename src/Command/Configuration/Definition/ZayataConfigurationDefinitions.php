@@ -48,6 +48,7 @@ final class ZayataConfigurationDefinitions
             // à direita. Um bloco só com os dois lá dentro fugia a esse padrão.
             self::toggle('early_dispense', 'earlyRetrieval', 'Toma antecipada', 20, 'Deixa o utente levantar a medicação antes da hora marcada.'),
             self::toggle('child_lock', 'childLock', 'Bloqueio de criança', 21, 'Tranca o prato para não ser aberto por quem não deve.'),
+            self::toggle('missed_dispense', 'missedDispense', 'Dispensar depois de falhar', 22, 'Deixa o utente levantar a dose mesmo depois de ela já estar dada como falhada. Desligado, a dose falhada deixa de estar acessível.'),
             // Os dois tempos decidem se uma dose por tomar chega a alguém como alerta ou fica
             // em silêncio, e até agora só se mudavam por script.
             self::number(

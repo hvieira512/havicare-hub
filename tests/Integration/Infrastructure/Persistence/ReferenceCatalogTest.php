@@ -155,6 +155,9 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'device_status',
             'dispense_now',
             'do_not_disturb',
+            // A janela configura-se; o estado é outra coisa, e o terceiro valor dele — ligado
+            // e a silenciar agora — é o que a configuração sozinha não sabe dizer.
+            'do_not_disturb_state',
             'early_dispense',
             // Chega no pacote de registo, e por isso não é pedível como as outras leituras.
             'firmware_version',
@@ -168,11 +171,16 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // A toma lê-se por aqui sem a chave de cifra: o `medication_intake` é o evento
             // rico e chega cifrado, este é o estado dos nove alarmes e chega em claro.
             'medication_alarm_status',
+            // Fecha o ciclo físico: sem copo, a dose sai e não há onde ela caia.
+            'medication_cup',
             'medication_intake',
             // O `medication_level` não está cá: era o juízo grosseiro do aparelho a dizer o
             // mesmo que a contagem de células, e sem número nenhum. É campo dela.
             'medication_period',
             'medication_reminders',
+            // Decide se uma dose já dada como falhada continua acessível, e por isso decide
+            // se o desfecho `abnormal` do evento de toma chega a existir.
+            'missed_dispense',
             'mute_alarm',
             // Três acções não entram: a reposição de fábrica, que devolvia o aparelho ao
             // servidor do fornecedor, desligar a cifra, que o firmware recusa sempre, e mudar
@@ -204,13 +212,13 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Doze configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por isso
+        // Treze configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por isso
         // as duas bandeiras nunca estão ligadas ao mesmo tempo.
         //
         // As sete leituras que o `0x07` enche não se pedem sozinhas: a trama pede-as sempre a
         // todas, e quem carrega o botão é o `device_status`.
         self::assertSame(
-            ['12', '7'],
+            ['13', '7'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

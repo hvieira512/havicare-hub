@@ -22,11 +22,11 @@ final class CapabilityCatalogTest extends TestCase
             // botão, e é a Veepoo MF91 que traz o resto — as grandezas da sessão GATT, os
             // interruptores de medição autónoma e as calibrações que entram nas contas dela.
             'bracelet' => [41, 'c24b1c638090a697db262e4159d9b57acc2632480af274cb8c98e1b4f2ef57bd'],
-            // As 32 do dispensador M228: telemetria, eventos, configurações e acções, cada
+            // As 35 do dispensador M228: telemetria, eventos, configurações e acções, cada
             // enumeração como configuração própria. Ficam de fora a reposição de fábrica,
             // desligar a cifra e mudar o servidor — as três que nos podem tirar o aparelho —
             // e as três sondas da descoberta, que serviram para fazer a integração.
-            'pill_dispenser' => [32, 'c470d4f753a1486eea1241f9682de4262d43a1e2e2715af01979fcea50e4da45'],
+            'pill_dispenser' => [35, '9bdb9319d4c652442ae1e486662fee2e968b962c09e60cf19465fab63390b149'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

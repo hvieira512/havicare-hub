@@ -280,7 +280,8 @@ ao hub.
 | `0x8101` | medicação | `0` normal · `1` a acabar · `2` sem medicação |
 | `0x8103` / `0x8104` | bateria | nível, e estado `0` normal · `1` cheia · `2` fraca · `3` a carregar · `4` sem bateria |
 | `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
-| `0x8105` / `0x8106` | não incomodar, copo da medicação | `0` desligado · `1` ligado · `2` ligado e a silenciar · — · `0` copo retirado · `1` copo colocado. **Nenhuma é lida pelo hub** |
+| `0x8105` | estado do não incomodar | `0` desligado · `1` ligado · `2` **ligado e a silenciar agora** |
+| `0x8106` | copo da medicação | `0` retirado · `1` colocado |
 | `0x8107` | trinco do prato | `0` destrancado · `1` trancado |
 | `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
 | `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **dBm**, e o aparelho manda a magnitude: o sinal negativo é posto pelo hub |
@@ -380,7 +381,7 @@ REST eram um único `rotate`, aqui vêm discriminadas em cinco.
 | `0x100B`–`0x100E` | som das teclas, bloqueio de criança, toma antecipada, **chamada de emergência** |
 | `0x1012` / `0x1013` | tipo de toque e volume |
 | `0x1014` / `0x1015` | calibração automática de relógio, fuso horário |
-| `0x1017` / `0x1018` / `0x1019` | aviso de atraso, tempo até falha, dispensa em falha |
+| `0x1017` / `0x1018` / `0x1019` | aviso de atraso, tempo até falha, e o interruptor que decide se uma dose já dada como falhada continua acessível — é ele que faz existir o desfecho `abnormal` do evento de toma |
 | `0x101C` | células carregadas |
 | `0x1021`–`0x1029` | **hora de cada um dos nove alarmes** |
 | `0x1031`–`0x1039` | minuto de cada alarme |
@@ -455,6 +456,8 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x810F` | `humidity` | `humidityPercent` |
 | `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |
 | `0x8107` | `tray_lock` | `locked` |
+| `0x8106` | `medication_cup` | `inserted` — fecha o ciclo físico da toma: sem copo, a dose sai do compartimento e não há onde ela caia |
+| `0x8105` | `do_not_disturb_state` | `state`: `off` · `on` · `silencing`. O terceiro é o que a configuração não sabe dar — a janela está guardada, mas só esta leitura diz se ela está a silenciar neste minuto |
 | `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. **Só é publicado quando dispara**: como leitura, enchia o histórico com linhas a dizer que estava tudo bem |
 | `0x8131`–`0x8139` **num `0x87`** | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` — a leitura dos nove, que só a resposta ao `0x07` traz |
 | `0x8131`–`0x8139` **num `0x04`/`0x02`** | `medication_alarm_change` | `alarm`, `state` — o alarme que mudou, um evento por alarme |

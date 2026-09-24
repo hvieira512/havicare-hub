@@ -38,6 +38,7 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
         ];
         yield 'bloqueio de criança' => ['child_lock', ['enabled' => true], 0x06, [0x100C]];
         yield 'toma antecipada' => ['early_dispense', ['enabled' => true], 0x06, [0x100D]];
+        yield 'dispensar depois de falhar' => ['missed_dispense', ['enabled' => true], 0x06, [0x1019]];
         yield 'tipo de toque' => ['alarm_ringtone', ['ringtone' => 2], 0x06, [0x1012]];
         yield 'volume' => ['alarm_volume', ['volume' => 1], 0x06, [0x1013]];
         yield 'fuso horário' => ['time_zone', ['timeZone' => 100], 0x06, [0x1015]];

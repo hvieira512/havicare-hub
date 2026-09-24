@@ -21,6 +21,11 @@ final class PillDispenserCapabilityDefinitions
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'humidity', 'label' => 'Humidade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             // Destrancado quer dizer que a medicação está acessível: é um estado sobre que se age.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'tray_lock', 'label' => 'Trinco do prato', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            // Fecha o ciclo físico da toma: sem copo, a dose sai e não há onde ela caia.
+            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'medication_cup', 'label' => 'Copo da medicação', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            // O estado, que a configuração não sabe dar: ela diz a janela, esta diz se está a
+            // silenciar neste minuto.
+            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'do_not_disturb_state', 'label' => 'Estado do não incomodar', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             // A mesma `connectivity` que os gateways publicam, e não um formato só deste.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'connectivity', 'label' => 'Conectividade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             // Chega no pacote de registo e em mais lado nenhum: a única altura em que muda é
@@ -47,6 +52,9 @@ final class PillDispenserCapabilityDefinitions
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'medication_reminders', 'label' => 'Plano de medicação', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'medication_period', 'label' => 'Período do plano', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'early_dispense', 'label' => 'Toma antecipada', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            // Sem ele, uma dose falhada deixa de estar acessível — e o desfecho `abnormal` do
+            // evento de toma nunca chega a existir.
+            ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'missed_dispense', 'label' => 'Dispensar depois de falhar', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'health', 'key' => 'child_lock', 'label' => 'Bloqueio de criança', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'alarm_volume', 'label' => 'Volume', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'alarms', 'key' => 'alarm_ringtone', 'label' => 'Tipo de toque', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],

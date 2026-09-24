@@ -89,6 +89,26 @@ final class PillDispenserStatusSeparationTest extends TestCase
         self::assertSame(['locked' => false], $this->telemetry([0x8107 => "\x00"])['tray_lock'] ?? null);
     }
 
+    /**
+     * O copo fecha o ciclo físico da toma.
+     *
+     * Sem ele sabe-se que a dose saiu do compartimento e não se sabe se havia copo onde ela
+     * caísse. O aparelho respondeu `0x01` com estado `ok` quando se lhe perguntou.
+     */
+    public function testTheMedicationCupIsItsOwnCapability(): void
+    {
+        self::assertSame(['inserted' => true], $this->telemetry([0x8106 => "\x01"])['medication_cup'] ?? null);
+        self::assertSame(['inserted' => false], $this->telemetry([0x8106 => "\x00"])['medication_cup'] ?? null);
+    }
+
+    /** O «não incomodar» tem três estados, e o terceiro é o que a configuração não diz. */
+    public function testDoNotDisturbHasAThirdStateTheConfigurationCannotTell(): void
+    {
+        self::assertSame(['state' => 'off'], $this->telemetry([0x8105 => "\x00"])['do_not_disturb_state'] ?? null);
+        self::assertSame(['state' => 'on'], $this->telemetry([0x8105 => "\x01"])['do_not_disturb_state'] ?? null);
+        self::assertSame(['state' => 'silencing'], $this->telemetry([0x8105 => "\x02"])['do_not_disturb_state'] ?? null);
+    }
+
     /** Um alerta só se publica quando dispara, como a avaria aqui ao lado. */
     public function testTheStorageEnvironmentOnlySpeaksWhenItIsOutOfRange(): void
     {
