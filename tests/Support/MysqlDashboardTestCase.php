@@ -47,11 +47,20 @@ abstract class MysqlDashboardTestCase extends TestCase
      */
     private function cloneTemplateInto(string $databaseName): void
     {
-        $this->adminPdo()->exec(sprintf(
-            'USE `%s`; SET FOREIGN_KEY_CHECKS = 0; %s SET FOREIGN_KEY_CHECKS = 1;',
-            $databaseName,
-            $this->templateCloneSql()
-        ));
+        $admin = $this->adminPdo();
+
+        try {
+            $admin->exec(sprintf(
+                'USE `%s`; SET FOREIGN_KEY_CHECKS = 0; %s',
+                $databaseName,
+                $this->templateCloneSql()
+            ));
+        } finally {
+            // A bandeira é da ligação, e esta ligação serve os testes todos do processo: se
+            // o clone rebentar a meio, deixá-la a zero calava as chaves estrangeiras no
+            // resto da corrida.
+            $admin->exec('SET FOREIGN_KEY_CHECKS = 1');
+        }
     }
 
     /**

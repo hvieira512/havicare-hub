@@ -21,19 +21,23 @@ OUTPUT_DIR="$(mktemp -d)"
 trap 'rm -rf "$OUTPUT_DIR"' EXIT
 
 # Do maior ficheiro para o menor, para os longos arrancarem primeiro e os curtos encherem o fim.
+#
+# Cada processo escreve num ficheiro tirado do `mktemp` e não num nome feito do PID: os PIDs
+# reciclam-se numa corrida de centenas de invocações, e um log por cima de outro levava com
+# ele a falha que lá estivesse e a contagem que a prova do fim soma.
 find "$SUITE_DIR" -name '*Test.php' -print0 \
   | xargs -0 ls -S \
   | xargs -P "$WORKERS" -n 1 sh -c \
-      'vendor/bin/phpunit --do-not-cache-result "$@" > "$OUTPUT_DIR/$$.log" 2>&1' _
+      'vendor/bin/phpunit --do-not-cache-result "$@" > "$(mktemp "$OUTPUT_DIR/logXXXXXX")" 2>&1' _
 status=$?
 
-cat "$OUTPUT_DIR"/*.log
+cat "$OUTPUT_DIR"/log*
 
 # A soma serve de prova de que o paralelo corre os mesmos testes que uma corrida única.
 awk '
     /^OK \(/                 { gsub(/[^0-9 ]/, " "); tests += $1; assertions += $2 }
     /^Tests: [0-9]+, Assert/ { gsub(/[^0-9 ]/, " "); tests += $1; assertions += $2 }
     END { printf "\n%s: %d testes, %d asserções\n", SUITE, tests, assertions }
-' SUITE="$SUITE_DIR" "$OUTPUT_DIR"/*.log
+' SUITE="$SUITE_DIR" "$OUTPUT_DIR"/log*
 
 exit $((status == 0 ? 0 : 1))
