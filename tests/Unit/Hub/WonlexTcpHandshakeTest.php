@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceHubServer;
-use Hub\Device\HubMqttBridge;
 use Hub\Device\HubTcpIngress;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Registry\Whitelist;
@@ -15,6 +14,7 @@ use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\LocalTcpPort;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 final class WonlexTcpHandshakeTest extends TestCase
 {
@@ -40,7 +40,7 @@ final class WonlexTcpHandshakeTest extends TestCase
             self::markTestSkipped('Local TCP sockets are not available in this environment');
         }
 
-        $mqtt = new WonlexRecordingHubMqttBridge();
+        $mqtt = new RecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
         new HubTcpIngress($hub, $loop, '127.0.0.1', $port);
 
@@ -98,42 +98,10 @@ final class WonlexTcpHandshakeTest extends TestCase
         self::assertCount(1, $mqtt->statuses);
         self::assertCount(1, $mqtt->events);
         self::assertCount(1, $mqtt->raw);
-        self::assertSame('online', $mqtt->statuses[0][1]['state']);
-        self::assertSame('Wonlex', $mqtt->statuses[0][1]['device']['supplier']);
-        self::assertSame('HW20PRO', $mqtt->statuses[0][1]['device']['model']);
-        self::assertSame('device.connected', $mqtt->events[0][1]['type']);
-        self::assertSame('base64', $mqtt->raw[0][1]['debug']['encoding']);
-    }
-}
-
-final class WonlexRecordingHubMqttBridge extends HubMqttBridge
-{
-    public array $raw = [];
-    public array $statuses = [];
-    public array $events = [];
-    public array $telemetry = [];
-
-    public function __construct()
-    {
-    }
-
-    public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
-    {
-        $this->raw[] = [$imei, $payload];
-    }
-
-    public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
-    {
-        $this->statuses[] = [$imei, $payload, $retain];
-    }
-
-    public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
-    {
-        $this->events[] = [$imei, $payload];
-    }
-
-    public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
-    {
-        $this->telemetry[] = [$imei, $payload];
+        self::assertSame('online', $mqtt->statuses[0]['payload']['state']);
+        self::assertSame('Wonlex', $mqtt->statuses[0]['payload']['device']['supplier']);
+        self::assertSame('HW20PRO', $mqtt->statuses[0]['payload']['device']['model']);
+        self::assertSame('device.connected', $mqtt->events[0]['payload']['type']);
+        self::assertSame('base64', $mqtt->raw[0]['payload']['debug']['encoding']);
     }
 }

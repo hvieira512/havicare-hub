@@ -14,6 +14,7 @@ use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\LocalTcpPort;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 final class PillDispenserTcpHandshakeTest extends TestCase
 {
@@ -34,7 +35,7 @@ final class PillDispenserTcpHandshakeTest extends TestCase
             self::markTestSkipped('Local TCP sockets are not available in this environment');
         }
 
-        $mqtt = new WonlexRecordingHubMqttBridge();
+        $mqtt = new RecordingHubMqttBridge();
         $hub = new DeviceHubServer($this->whitelist, $mqtt);
         new HubTcpIngress($hub, $loop, '127.0.0.1', $port);
 
@@ -86,8 +87,8 @@ final class PillDispenserTcpHandshakeTest extends TestCase
 
         // Ligou e foi reconhecido pelo protocolo certo.
         self::assertCount(1, $mqtt->statuses);
-        self::assertSame('online', $mqtt->statuses[0][1]['state']);
-        self::assertSame('device.connected', $mqtt->events[0][1]['type']);
+        self::assertSame('online', $mqtt->statuses[0]['payload']['state']);
+        self::assertSame('device.connected', $mqtt->events[0]['payload']['type']);
 
         // O ACK do registo descodifica como register_ack com a mesma identidade. O primeiro
         // frame mede-se pelo seu campo de comprimento — o 0xAA também aparece dentro da trama.
@@ -100,10 +101,10 @@ final class PillDispenserTcpHandshakeTest extends TestCase
         // A toma falhada saiu pelo canal de eventos, não pela telemetria.
         $intake = array_values(array_filter(
             $mqtt->events,
-            static fn (array $entry): bool => ($entry[1]['type'] ?? null) === 'medication_intake'
+            static fn (array $entry): bool => $entry['type'] === 'medication_intake'
         ));
         self::assertCount(1, $intake);
-        self::assertSame('missed', $intake[0][1]['data']['result']);
-        self::assertSame(3, $intake[0][1]['data']['alarmSlot']);
+        self::assertSame('missed', $intake[0]['payload']['data']['result']);
+        self::assertSame(3, $intake[0]['payload']['data']['alarmSlot']);
     }
 }

@@ -26,6 +26,15 @@ use Tests\Support\Doubles\IngressFixtures;
  */
 abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
 {
+    /**
+     * O `password_hash` com o custo por omissão leva ~190ms, e cada teste semeia dois
+     * utilizadores. O que conta é ser um hash válido daquela palavra-passe, por isso
+     * guarda-se um por palavra-passe durante o processo.
+     *
+     * @var array<string, string>
+     */
+    private static array $passwordHashes = [];
+
     protected string $whitelistPath;
     protected string $apiLogPath;
     private string|false $originalLogFile;
@@ -102,10 +111,10 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
         $hitcareLicenseRef = $db->licenses->create($hitcareId, '1001', 'hitcare-license');
         $db->licenses->create($otherCareId, '2002', 'othercare-license');
         $db->licenses->create($otherCareId, '1001', 'overlapping-license-number');
-        $db->apiUsers->create('admin', password_hash('secret', PASSWORD_DEFAULT), 'hub_admin', true);
+        $db->apiUsers->create('admin', self::passwordHash('secret'), 'hub_admin', true);
         // A licença entra pela referência: é ela que separa a 1001 da hitcare da 1001 da
         // otherCare, criada acima de propósito para o isolamento não poder passar por sorte.
-        $db->apiUsers->create('tenant', password_hash('tenant-secret', PASSWORD_DEFAULT), 'license_client', true, $hitcareLicenseRef);
+        $db->apiUsers->create('tenant', self::passwordHash('tenant-secret'), 'license_client', true, $hitcareLicenseRef);
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $db->whitelist->register('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
         $db->whitelist->register('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
@@ -137,6 +146,11 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
         $dashboard->warmUp();
 
         return [DashboardServerFactory::handler($dashboard), $db, $store, $messages];
+    }
+
+    private static function passwordHash(string $password): string
+    {
+        return self::$passwordHashes[$password] ??= password_hash($password, PASSWORD_DEFAULT);
     }
 
     protected function loginToken(callable $server, string $username, string $password): string

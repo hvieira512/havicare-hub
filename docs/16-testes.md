@@ -28,6 +28,18 @@ composer test               # tudo, na ordem da integração contínua
 O `composer test` é o portão completo: estilo, análise estática, lint do
 frontend, as duas suites PHP, a do frontend e os cenários.
 
+As duas suites PHP correm repartidas por vários processos, um ficheiro de teste
+de cada vez ([`tests/run-parallel.sh`](../tests/run-parallel.sh)), e no fim somam
+os testes e as asserções para se ver que o paralelo corre o mesmo que uma corrida
+única. O número de processos vem do `TEST_WORKERS`; acima de oito o MySQL
+serializa o DDL e a corrida fica mais lenta. Um erro que só apareça em paralelo
+confirma-se com `composer test:unit:serial` ou `composer test:integration:serial`,
+que correm a mesma suite num processo só.
+
+Uma classe de teste é a unidade de repartição, por isso uma classe muito maior do
+que as outras fixa o chão do tempo: a `DevicesApiTest`, com 89 testes, demora
+sozinha tanto como as restantes 42 juntas.
+
 ## O que cada uma cobre
 
 **Unitários** — lógica isolada: descodificadores de protocolo,
@@ -144,6 +156,7 @@ regressão involuntária.
 | Ficheiro | Responsabilidade |
 |---|---|
 | `phpunit.xml` | As duas suites PHP |
+| `tests/run-parallel.sh` | Reparte uma suite PHP por vários processos |
 | `phpstan.neon` · `phpcs.xml.dist` · `eslint.config.js` | As três ferramentas, com as exclusões justificadas |
 | `.github/workflows/ci.yml` | O portão |
 | `tests/scenarios/run-all.sh` | Os seis cenários |

@@ -11,8 +11,6 @@ parameters:
         # assinaturas diferentes. Analisados no mesmo processo colidem, e o PHPStan verifica
         # cada chamada contra a definição do ficheiro errado.
     tmpDir: var/phpstan
-    parallel:
-        maximumNumberOfProcesses: 1
 
     ignoreErrors:
         # notIdentical.alwaysTrue is deliberately NOT here: it is what would

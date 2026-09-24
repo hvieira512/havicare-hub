@@ -15,12 +15,13 @@ abstract class MysqlDashboardTestCase extends TestCase
 {
     /**
      * Construir o esquema a cada teste custa ~820ms e domina a suite, por isso constrói-se
-     * uma vez por processo numa base-modelo e cada teste clona-a (~180ms).
+     * uma vez por processo numa base-modelo e cada teste clona-a.
+     *
+     * O clone é um só `exec` com o DDL e as inserções já prontos: o MySQL aceita várias
+     * instruções por chamada, e ler o DDL tabela a tabela a cada teste custava sessenta
+     * idas ao servidor.
      */
-    private static ?string $templateDatabaseName = null;
-
-    /** @var list<string>|null */
-    private static ?array $templateTableNames = null;
+    private static ?string $templateCloneSql = null;
 
     /** @var list<string> */
     private array $temporaryDatabaseNames = [];
@@ -39,70 +40,85 @@ abstract class MysqlDashboardTestCase extends TestCase
     }
 
     /**
-     * Constrói a base-modelo uma vez e copia-a para uma base nova.
+     * Copia a base-modelo para uma base nova.
      *
      * O clone é uma cópia de estrutura e dados, por isso cada teste continua a ter a sua
      * base isolada e pode correr DDL ou abrir mais ligações contra ela.
      */
     private function cloneTemplateInto(string $databaseName): void
     {
+        $this->adminPdo()->exec(sprintf(
+            'USE `%s`; SET FOREIGN_KEY_CHECKS = 0; %s SET FOREIGN_KEY_CHECKS = 1;',
+            $databaseName,
+            $this->templateCloneSql()
+        ));
+    }
+
+    /**
+     * O DDL e as inserções que reconstroem a base-modelo, montados uma vez por processo.
+     *
+     * O `CREATE TABLE ... LIKE` larga as chaves estrangeiras, e a `gateway_device_links`
+     * depende do `ON DELETE CASCADE`: daí repetir o DDL a sério.
+     */
+    private function templateCloneSql(): string
+    {
+        if (self::$templateCloneSql !== null) {
+            return self::$templateCloneSql;
+        }
+
         $admin = $this->adminPdo();
+        $config = $this->mysqlAdminConfig();
+        $templateName = 'hub_test_tpl_' . bin2hex(random_bytes(6));
+        $admin->exec(sprintf(
+            'CREATE DATABASE `%s` CHARACTER SET %s COLLATE %s',
+            $templateName,
+            $config['charset'],
+            $config['charset'] . '_unicode_ci'
+        ));
 
-        if (self::$templateDatabaseName === null) {
-            $templateName = 'hub_test_tpl_' . bin2hex(random_bytes(6));
-            $config = $this->mysqlAdminConfig();
-            $admin->exec(sprintf(
-                'CREATE DATABASE `%s` CHARACTER SET %s COLLATE %s',
-                $templateName,
-                $config['charset'],
-                $config['charset'] . '_unicode_ci'
-            ));
+        $template = new DashboardDatabase($this->dashboardDatabaseConfig($templateName));
+        (new DatabaseMigrator($template->pdo()))->migrate();
 
-            $template = new DashboardDatabase($this->dashboardDatabaseConfig($templateName));
-            (new DatabaseMigrator($template->pdo()))->migrate();
-
-            self::$templateDatabaseName = $templateName;
-            self::$templateTableNames = $template->pdo()
-                ->query(sprintf(
-                    "SELECT table_name FROM information_schema.tables WHERE table_schema = '%s'",
-                    $templateName
-                ))
-                ->fetchAll(PDO::FETCH_COLUMN);
-
-            // A base-modelo sobrevive a todos os testes, por isso larga-se no fim do
-            // processo e não no `tearDown`.
-            register_shutdown_function(static function () use ($config, $templateName): void {
-                try {
-                    (new PDO(
-                        sprintf('mysql:host=%s;port=%d;charset=%s', $config['host'], $config['port'], $config['charset']),
-                        $config['username'],
-                        $config['password']
-                    ))->exec(sprintf('DROP DATABASE IF EXISTS `%s`', $templateName));
-                } catch (\Throwable) {
-                }
-            });
-        }
-
-        // O `CREATE TABLE ... LIKE` larga as chaves estrangeiras, e a `gateway_device_links`
-        // depende do `ON DELETE CASCADE`: daí repetir o DDL a sério.
-        $admin->exec('SET FOREIGN_KEY_CHECKS = 0');
-        try {
-            $admin->exec(sprintf('USE `%s`', $databaseName));
-            foreach (self::$templateTableNames ?? [] as $table) {
-                $ddl = (string)$admin
-                    ->query(sprintf('SHOW CREATE TABLE `%s`.`%s`', self::$templateDatabaseName, $table))
-                    ->fetch(PDO::FETCH_NUM)[1];
-                $admin->exec($ddl);
-                $admin->exec(sprintf(
-                    'INSERT INTO `%s` SELECT * FROM `%s`.`%s`',
-                    $table,
-                    self::$templateDatabaseName,
-                    $table
-                ));
+        // A base-modelo sobrevive a todos os testes, por isso larga-se no fim do
+        // processo e não no `tearDown`.
+        register_shutdown_function(static function () use ($config, $templateName): void {
+            try {
+                (new PDO(
+                    sprintf('mysql:host=%s;port=%d;charset=%s', $config['host'], $config['port'], $config['charset']),
+                    $config['username'],
+                    $config['password']
+                ))->exec(sprintf('DROP DATABASE IF EXISTS `%s`', $templateName));
+            } catch (\Throwable) {
             }
-        } finally {
-            $admin->exec('SET FOREIGN_KEY_CHECKS = 1');
+        });
+
+        $tables = $template->pdo()
+            ->query(sprintf(
+                "SELECT table_name FROM information_schema.tables WHERE table_schema = '%s'",
+                $templateName
+            ))
+            ->fetchAll(PDO::FETCH_COLUMN);
+
+        $statements = [];
+        $inserts = [];
+        foreach ($tables as $table) {
+            $statements[] = (string)$admin
+                ->query(sprintf('SHOW CREATE TABLE `%s`.`%s`', $templateName, $table))
+                ->fetch(PDO::FETCH_NUM)[1] . ';';
+
+            // A maior parte das tabelas do modelo está vazia; copiá-las custava uma ida ao
+            // servidor por tabela e por teste.
+            $rowCount = (int)$admin
+                ->query(sprintf('SELECT COUNT(*) FROM `%s`.`%s`', $templateName, $table))
+                ->fetchColumn();
+            if ($rowCount > 0) {
+                $inserts[] = sprintf('INSERT INTO `%s` SELECT * FROM `%s`.`%s`;', $table, $templateName, $table);
+            }
         }
+
+        self::$templateCloneSql = implode(' ', [...$statements, ...$inserts]);
+
+        return self::$templateCloneSql;
     }
 
     protected function reopenDashboardDatabase(string $databaseName): DashboardDatabase
