@@ -358,11 +358,32 @@ descoberta já dizia — o `0x0A` devolve 54 TAGs de configuração e nenhuma de
 do bloco de sistema.
 
 > **«Tomada» não quer sempre dizer «tomada à hora».** Uma dispensa manual — o
-> comando `0xA004` ou o botão verde do aparelho — consome a dose do **próximo
+> comando `0xA123` ou o botão verde do aparelho — consome a dose do **próximo
 > alarme marcado** e dá-o como tomado, mesmo que a hora dele ainda esteja longe.
 > Observou-se com o aparelho na mesa: um «Dispensar agora» às 13:10:50 marcou como
 > tomado o alarme das 20:00, e dezasseis segundos depois chegou uma notificação
 > `0x04` a dizê-lo. O compartimento actual avançou e os restantes desceram um.
+>
+> **E não dispensa se não houver alarme nenhum à frente.** Sem um alarme marcado
+> por vir ainda nesse dia, o aparelho responde `0xA123 = 01` — «consegui» — e não
+> faz absolutamente nada: não roda, não muda estado, não manda notificação. Medido
+> a 24/09/2026: três ordens seguidas com o único alarme já passado, todas aceites e
+> ignoradas; a seguir marcou-se um alarme para as 22:00 e a ordem seguinte rodou. É
+> uma recusa silenciosa, e não há forma de a distinguir de um sucesso pela resposta.
+>
+> **Uma dose é um compartimento, e é sempre um passo.** Medido três vezes com
+> configurações diferentes — dois alarmes marcados, nove, e dois outra vez — o
+> `0x811A` andou `+1` em todas. O número de alarmes decide **quantas vezes por dia**
+> a dose sai, nunca o tamanho do salto. E o prato mexe-se mesmo: confirmado à vista
+> na terceira medição, de 22 para 23.
+>
+> **A avaria do prato não bloqueia a dispensa.** O `0x8122` esteve em `01` durante
+> as três medições e nenhuma delas falhou por causa dele.
+>
+> **O que bloqueia é uma dose por concluir.** Enquanto um alarme estiver em `2` ou
+> `3`, as ordens seguintes são aceites e ignoradas. Reescrever o plano de medicação
+> limpa os nove estados e desbloqueia — foi a única coisa que o desfez, entre o
+> reinício do aparelho, o `0xA103` e o `RestartCycle` do menu.
 >
 > As notificações `0x04` trazem **só o que mudou** — um alarme, não os nove. É por
 > isso que uma leitura vinda de uma notificação traz a lista incompleta, e só um
