@@ -156,7 +156,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'do_not_disturb',
             // A janela configura-se; o estado é outra coisa, e o terceiro valor dele — ligado
             // e a silenciar agora — é o que a configuração sozinha não sabe dizer.
-            'do_not_disturb_state',
             'early_dispense',
             // Chega no pacote de registo, e por isso não é pedível como as outras leituras.
             'firmware_version',

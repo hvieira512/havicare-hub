@@ -77,7 +77,6 @@ const CARD_STYLE = {
     cells_remaining: ["fa-table-cells", "info"],
     tray_lock: ["fa-box-open", "primary"],
     medication_cup: ["fa-mug-hot", "primary"],
-    do_not_disturb_state: ["fa-moon", "secondary"],
     storage_environment: ["fa-triangle-exclamation", "danger"],
     humidity: ["fa-droplet", "info"],
     reset: ["fa-bell-slash", "warning"],
@@ -193,15 +192,6 @@ const UPLINK_CARD_RENDERERS = {
     medication_cup: (data) => ({
         value: data?.inserted == null ? "-" : data.inserted ? "Colocado" : "Retirado",
         details: data?.inserted === false ? "Uma dose dispensada agora não tem onde cair" : "",
-    }),
-    // O terceiro estado é o que a configuração não diz: a janela está lá, mas só isto conta
-    // se ela está a silenciar neste minuto.
-    do_not_disturb_state: (data) => ({
-        value: {
-            off: "Desligado",
-            on: "Ligado",
-            silencing: "A silenciar",
-        }[data?.state] || "—",
     }),
     // Um alerta e não uma leitura: só chega quando dispara, e por isso o valor diz o que
     // aconteceu em vez de dizer em que estado se está. A legenda fixa que aqui estava — «

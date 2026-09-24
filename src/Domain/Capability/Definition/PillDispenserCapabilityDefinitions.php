@@ -23,9 +23,6 @@ final class PillDispenserCapabilityDefinitions
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'tray_lock', 'label' => 'Trinco do prato', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             // Fecha o ciclo físico da toma: sem copo, a dose sai e não há onde ela caia.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'medication_cup', 'label' => 'Copo da medicação', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            // O estado, que a configuração não sabe dar: ela diz a janela, esta diz se está a
-            // silenciar neste minuto.
-            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'do_not_disturb_state', 'label' => 'Estado do não incomodar', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             // A mesma `connectivity` que os gateways publicam, e não um formato só deste.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'connectivity', 'label' => 'Conectividade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             // Chega no pacote de registo e em mais lado nenhum: a única altura em que muda é

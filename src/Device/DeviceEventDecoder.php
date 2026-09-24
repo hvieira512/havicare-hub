@@ -527,17 +527,6 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'medication_cup', 'nativeType' => $nativeType, 'value' => ['inserted' => $cupInserted]];
         }
 
-        // O `silencing` é o que a configuração não sabe dizer: ligado e a silenciar agora.
-        $quiet = match ($this->tlvU8($tlv, 0x8105)) {
-            0 => 'off',
-            1 => 'on',
-            2 => 'silencing',
-            default => null,
-        };
-        if ($quiet !== null) {
-            $events[] = ['feature' => 'do_not_disturb_state', 'nativeType' => $nativeType, 'value' => ['state' => $quiet]];
-        }
-
         // O juízo do aparelho sobre a temperatura e a humidade que ele mede. Só sai quando
         // dispara, como a avaria aqui ao lado.
         if ($this->pillFlag($tlv, 0x8111) === true) {
@@ -559,14 +548,23 @@ final class DeviceEventDecoder
             ]];
         }
 
-        // O bloqueio de criança é o valor reportado da configuração, e não uma leitura ao
-        // lado dela.
-        $childLock = $this->pillSwitch($tlv, 0x8102);
-        if ($childLock !== null) {
+        // Os interruptores que o aparelho reporta são configuração e não leitura: o que eles
+        // dizem é o que nós lá pusemos. O `0x8105` distingue ligado de ligado-e-a-silenciar,
+        // e a diferença não sai daqui — deduz-se da janela configurada e do relógio.
+        $reported = array_filter([
+            'do_not_disturb' => match ($this->tlvU8($tlv, 0x8105)) {
+                0 => ['enabled' => false],
+                1, 2 => ['enabled' => true],
+                default => null,
+            },
+            'child_lock' => $this->pillSwitch($tlv, 0x8102),
+        ], static fn (mixed $setting): bool => $setting !== null);
+
+        if ($reported !== []) {
             $events[] = [
                 'feature' => 'device_config',
                 'nativeType' => $nativeType,
-                'value' => ['settings' => ['child_lock' => $childLock]],
+                'value' => ['settings' => $reported],
             ];
         }
 

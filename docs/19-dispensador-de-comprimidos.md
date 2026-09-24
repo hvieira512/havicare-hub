@@ -457,7 +457,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |
 | `0x8107` | `tray_lock` | `locked` |
 | `0x8106` | `medication_cup` | `inserted` — fecha o ciclo físico da toma: sem copo, a dose sai do compartimento e não há onde ela caia |
-| `0x8105` | `do_not_disturb_state` | `state`: `off` · `on` · `silencing`. O terceiro é o que a configuração não sabe dar — a janela está guardada, mas só esta leitura diz se ela está a silenciar neste minuto |
+| `0x8105` / `0x8102` | `device_config` | `settings.do_not_disturb.enabled` e `settings.child_lock.enabled` — os dois interruptores que o aparelho reporta. Não são telemetria: o que dizem é o que nós lá pusemos, e por isso viajam como configuração reportada. O `0x8105` distingue ligado de ligado-e-a-silenciar-agora, e essa diferença não sai — deduz-se da janela configurada e do relógio |
 | `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. **Só é publicado quando dispara**: como leitura, enchia o histórico com linhas a dizer que estava tudo bem |
 | `0x8131`–`0x8139` **num `0x87`** | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` — a leitura dos nove, que só a resposta ao `0x07` traz |
 | `0x8131`–`0x8139` **num `0x04`/`0x02`** | `medication_alarm_change` | `alarm`, `state` — o alarme que mudou, um evento por alarme |
