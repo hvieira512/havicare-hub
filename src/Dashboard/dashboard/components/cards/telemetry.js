@@ -162,15 +162,24 @@ const UPLINK_CARD_RENDERERS = {
     // denominador que lhe dá escala. O nível é o juízo do aparelho sobre esse mesmo número --
     // é ele que sabe que 4 de 28 já é pouco -- e por isso vem como legenda e não como cartão
     // à parte a dizer a mesma coisa sem número nenhum.
+    // O `remaining` é `carregados − posição`: quantas doses faltam sair a partir de onde o
+    // carrossel está, e não quantos compartimentos ainda têm comprimidos. Ao lado do total
+    // lia-se como a segunda coisa, que é outra e é falsa.
+    //
+    // A posição vai nos detalhes porque é o que se precisa para carregar o prato: sem ela,
+    // quem põe a medicação não sabe em que compartimento o aparelho vai pegar a seguir.
     cells_remaining: (data) => ({
-        value: data.remaining != null && data.total != null
-            ? `${data.remaining} de ${data.total}`
-            : data.remaining != null
-                ? `${data.remaining}`
-                : fieldValue("level", data.level),
-        details: data.remaining != null && data.level != null
+        value: data.remaining == null
             ? fieldValue("level", data.level)
-            : "",
+            : data.remaining === 0
+                ? "Nenhuma por dispensar"
+                : `${data.remaining} por dispensar`,
+        details: [
+            data.current != null && data.total != null
+                ? `Compartimento ${data.current} de ${data.total}`
+                : "",
+            data.level != null ? fieldValue("level", data.level) : "",
+        ].filter(Boolean).join(" · "),
     }),
     // O que interessa numa toma é como ela acabou, e numa avaria é qual foi.
     medication_intake: (data) => ({

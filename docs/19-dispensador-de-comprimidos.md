@@ -438,6 +438,30 @@ E, com relevo para a operação: `0xA011` intervalo de heartbeat, **`0xA021` IP 
 servidor, `0xA022` domínio e `0xA023` porta**. O aparelho pode ser reapontado
 para outro servidor pelo próprio protocolo.
 
+### Duas definições que só existem no aparelho
+
+O manual do M228A descreve definições que **o protocolo TCP não expõe**. Quem
+instalar isto tem de as configurar no próprio aparelho ou na aplicação do
+fabricante, porque pela dashboard não se lá chega — e a primeira decide se a
+medicação chega sequer ao utente.
+
+**O modo de dispensa.** O manual dá-lhe dois valores:
+
+> **Button:** *When the medication time arrives, users need to press [tecla] for
+> the medicine to fall into the medicine cup.*
+> **Auto:** *When the medication time arrives, the medicine will automatically
+> fall into the medicine cup.*
+
+Em **Button**, a dose só cai se alguém carregar no botão do aparelho. Não há
+TAG nenhuma para isto na tabela do tipo `0x02`: o hub não o lê nem o escreve, e
+uma instalação feita toda pela dashboard pode ficar com um aparelho que nunca
+dispensa sozinho.
+
+**A toma antecipada tem quatro modos, e nós vemos dois.** O `0x100D` é `0: Off`
+e `1: On`, mas o manual descreve *Disable*, *Enable*, *Lock* (exige destrancar
+o bloqueio de criança antes) e *Double Check* (carregar duas vezes). O protocolo
+dá-nos uma vista reduzida do que o aparelho sabe fazer.
+
 ## 6. O que o hub já faz com isto
 
 O aparelho entra pela mesma porta TCP dos relógios. O protocolo chama-se
@@ -458,7 +482,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 |---|---|---|
 | `0xC201`–`0xC206` | `medication_intake` | `alarmSlot`, `scheduledAt`, `takenAt`, `cellNumber`, `method`, `result` |
 | `0x8103` / `0x8104` / `0x8109` | `battery` | `percent`, `chargingState`, `mainsPowered` — a corrente vai com a bateria porque «ligado à corrente» e «a carregar» são a mesma pergunta |
-| `0x811A` / `0x811B` / `0x811D` / `0x8101` | `cells_remaining` | `current`, `total`, `remaining`, `level` (`ok` · `low` · `empty`) — o nível é o juízo do aparelho sobre a mesma contagem, e é ele que sabe que 4 de 28 já é pouco |
+| `0x811A` / `0x811B` / `0x811D` / `0x8101` | `cells_remaining` | `current`, `total`, `remaining`, `level` (`ok` · `low` · `empty`). **O `remaining` é `carregados − posição`**, com corte a zero — quantas doses faltam sair a partir de onde o carrossel está, e **não** quantos compartimentos ainda têm comprimidos. Confirmado no aparelho: 28 carregados na posição 20 deram 8, e a posição 21 deu 7. Por isso o cartão não os põe lado a lado: diz «8 por dispensar» e manda a posição para os detalhes, que é o que se precisa para saber onde carregar o prato |
 | `0x810E` | `temperature` | `environmentCelsius` |
 | `0x810F` | `humidity` | `humidityPercent` |
 | `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |

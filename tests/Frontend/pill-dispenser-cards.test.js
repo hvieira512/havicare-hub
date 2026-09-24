@@ -44,12 +44,29 @@ test("o nível de medicação sai em português e não como enumeração crua", 
     assert.doesNotMatch(html, /Low/);
 });
 
-test("as células restantes mostram quantas faltam do total", () => {
+/**
+ * O «16 de 28» dizia uma coisa que não era verdade.
+ *
+ * O 28 é a capacidade do prato e o 16 é o que falta dispensar a partir de onde o carrossel
+ * está — a conta que o aparelho faz é `carregados − posição`. Postos lado a lado liam-se como
+ * «16 dos 28 compartimentos ainda têm medicação», que não é o que nenhum dos dois quer dizer.
+ *
+ * E a posição ficava por mostrar, que é precisamente o que uma pessoa precisa de saber para
+ * carregar o prato: em que compartimento é que isto vai pegar a seguir.
+ */
+test("as células dizem quantas faltam dispensar e em que compartimento vai o prato", () => {
     const html = card("cells_remaining", { remaining: 16, total: 28, current: 12 });
 
-    assert.match(html, /16/);
-    assert.match(html, /28/);
+    assert.match(html, /16 por dispensar/);
+    assert.match(html, /[Cc]ompartimento 12 de 28/);
     assert.doesNotMatch(html, /Remaining|Total:|Current/);
+});
+
+test("sem nenhuma por dispensar, o cartão di-lo por palavras", () => {
+    const html = card("cells_remaining", { remaining: 0, total: 28, current: 21, level: "empty" });
+
+    assert.match(html, /Nenhuma por dispensar/);
+    assert.match(html, /[Cc]ompartimento 21 de 28/);
 });
 
 test("nenhum campo do dispensador aparece em inglês", () => {
