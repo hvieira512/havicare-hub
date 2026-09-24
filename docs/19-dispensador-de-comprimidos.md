@@ -371,6 +371,17 @@ do bloco de sistema.
 > ignoradas; a seguir marcou-se um alarme para as 22:00 e a ordem seguinte rodou. É
 > uma recusa silenciosa, e não há forma de a distinguir de um sucesso pela resposta.
 >
+> **Um slot só dá a dose dele uma vez por dia, e mudar-lhe a hora não a devolve.**
+> É a segunda metade da regra de cima, e sozinha explica quase todas as recusas.
+> Medido a 24/09/2026: cinco voltas a reescrever o **slot 1** com horas diferentes
+> — 18:00, 19:00, 20:00, 21:00, 22:00, todas à frente da hora do aparelho — não
+> moveram o contador um único passo. Marcados os **nove slots** em horas distintas,
+> as ordens seguintes andaram `+1` cada uma, seis vezes seguidas, de 24 a 1. O que
+> tem de variar é o slot, não a hora. São por isso nove dispensas manuais por dia,
+> no máximo, e o contador delas é do dia do **relógio do aparelho**: adiantá-lo um
+> dia com o `0xA101` devolve os nove — foi assim que se deu a volta completa ao
+> prato para desencravar um objecto lá dentro.
+>
 > **Uma dose é um compartimento, e é sempre um passo.** Medido três vezes com
 > configurações diferentes — dois alarmes marcados, nove, e dois outra vez — o
 > `0x811A` andou `+1` em todas. O número de alarmes decide **quantas vezes por dia**
@@ -379,6 +390,17 @@ do bloco de sistema.
 >
 > **A avaria do prato não bloqueia a dispensa.** O `0x8122` esteve em `01` durante
 > as três medições e nenhuma delas falhou por causa dele.
+>
+> **A volta fecha em `0`, e aí o `0x811D` fica preso a zero.** O `0x811A` conta
+> `…27`, `28`, `0` — a posição de repouso — e depois `1`. Enquanto está em `0` os
+> restantes ficam a zero e a dispensa seguinte é recusada; reescrever os
+> «compartimentos carregados» repõe a contagem e desbloqueia.
+>
+> **Nada denuncia uma dose que não caiu.** A dispensa é por gravidade e o aparelho
+> não tem sensor de queda: os contadores andam, o alarme fica «tomado» e a
+> notificação `0x04` sai na mesma, com a dose ainda no compartimento. Medido a
+> 24/09/2026 com uma chiclete, que passou pelo furo nove vezes sem cair por estar
+> colada. Só serve medicação solta e seca.
 >
 > **O que bloqueia é uma dose por concluir.** Enquanto um alarme estiver em `2` ou
 > `3`, as ordens seguintes são aceites e ignoradas. Reescrever o plano de medicação
@@ -443,7 +465,7 @@ nunca as emite.
 
 Também não estão anunciados o `0x1011` (duração do toque) nem o `0x1061` (tempo
 de pressão para a chamada de emergência), pela mesma razão que o `0xA124` e o
-`0xA125`: existem na especificação da série, não neste modelo.
+`0xA125`: existem na especificação da série, não no firmware deste aparelho.
 
 ### Controlo
 
@@ -452,8 +474,23 @@ sincronização forçada · `0xA004` novo registo · `0xA101` calibrar relógio 
 `0xA102` silenciar · `0xA103` repor o prato · `0xA123` toma antecipada.
 
 A lista acaba aqui. O `0xA124` (rodar para uma célula indicada) e o `0xA125`
-(pausa da medicação) **existem só no tipo de dispositivo `0x01`** e não estão
-disponíveis no M228 — uma versão anterior deste capítulo atribuía-lhos por erro.
+(pausa da medicação) **não existem neste firmware**: a descoberta de parâmetros
+não os anuncia, e um `0xA124` mandado à mão é acusado com o valor ecoado — `0E`,
+`05`, `19` — sem que o prato mexa e sem que o `0x811A` mude. Medido a 24/09/2026
+três vezes, com a avaria `0x8122` activa e depois com ela limpa, para excluir que
+fosse o índice do prato a ser recusado.
+
+A razão é a idade do firmware e não o tipo de dispositivo: a revisão **1.25** da
+especificação, de 2024-05-06, é que acrescentou o `0xA124`, o `0xA125`, o `0x1063`
+e as TAGs de estado `0x8140` e `0x8141`. Este aparelho é anterior a ela. Uma
+versão anterior deste capítulo dizia que eram do tipo `0x01`, o que não é verdade
+— estão na tabela de controlo da série M2, ao lado do `0xA123`.
+
+Não há por isso forma remota de rodar o prato sem consumir uma dose: o `0xA103`
+reassenta-o sem mexer no contador, e o `0xA123` anda um compartimento mas gasta a
+dose de um slot. Quem precisar de dar a volta ao prato — para desencravar alguma
+coisa — faz nove passos por dia com o `0xA123`, ou adianta o relógio do aparelho
+para ter outros nove.
 
 E, com relevo para a operação: `0xA011` intervalo de heartbeat, **`0xA021` IP do
 servidor, `0xA022` domínio e `0xA023` porta**. O aparelho pode ser reapontado
