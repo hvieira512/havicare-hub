@@ -271,8 +271,10 @@ const FIELD_VALUE_LABELS = {
         // O estado de cada alarme do dispensador, como o aparelho o classifica.
         idle: "Sem toma marcada",
         preparing: "A preparar",
-        waiting: "À espera da toma",
-        timed_out: "Tempo esgotado",
+        waiting: "À espera de sair",
+        awaiting_retrieval: "À espera de ser levantada",
+        timed_out: "Não chegou a sair",
+        retrieval_timed_out: "Saiu e não foi levantada",
         missed: "Toma falhada",
         taken: "Tomada",
     },

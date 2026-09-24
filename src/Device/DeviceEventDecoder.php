@@ -630,11 +630,15 @@ final class DeviceEventDecoder
     {
         $doses = [];
         foreach (range(1, PillDispenserAdapter::ALARM_SLOTS) as $alarm) {
+            // São oito, e são duas fases: o aparelho primeiro empurra a dose para fora, e só
+            // depois espera que alguém a levante. Cada fase tem o seu tempo esgotado.
             $state = match ($this->tlvU8($tlv, 0x8130 + $alarm)) {
                 0 => 'idle',
                 1 => 'preparing',
                 2 => 'waiting',
+                3 => 'awaiting_retrieval',
                 4 => 'timed_out',
+                5 => 'retrieval_timed_out',
                 6 => 'missed',
                 7 => 'taken',
                 default => null,

@@ -22,11 +22,13 @@ final class PillDispenserAlarmStatusTest extends TestCase
     {
         $events = $this->statusEvents([
             0x8131 => "\x07",   // alarme 1: tomado
-            0x8132 => "\x02",   // alarme 2: à espera
+            0x8132 => "\x02",   // alarme 2: à espera de sair
             0x8133 => "\x06",   // alarme 3: falhado
             0x8134 => "\x00",   // alarme 4: sem nada
-            0x8135 => "\x04",   // alarme 5: esgotou o tempo
+            0x8135 => "\x04",   // alarme 5: esgotou o tempo de sair
             0x8136 => "\x01",   // alarme 6: a preparar
+            0x8137 => "\x03",   // alarme 7: saiu, à espera de ser levantada
+            0x8138 => "\x05",   // alarme 8: esgotou o tempo de levantamento
         ]);
 
         // As contagens são totais porque a trama perguntou pelos nove. Uma notificação traz o
@@ -41,6 +43,8 @@ final class PillDispenserAlarmStatusTest extends TestCase
                 ['alarm' => 4, 'state' => 'idle'],
                 ['alarm' => 5, 'state' => 'timed_out'],
                 ['alarm' => 6, 'state' => 'preparing'],
+                ['alarm' => 7, 'state' => 'awaiting_retrieval'],
+                ['alarm' => 8, 'state' => 'retrieval_timed_out'],
             ],
         ], $events['medication_alarm_status'] ?? null);
     }

@@ -15,7 +15,9 @@ const DOSE_BAND = {
     taken: "taken",
     preparing: "pending",
     waiting: "pending",
+    awaiting_retrieval: "pending",
     timed_out: "missed",
+    retrieval_timed_out: "missed",
     missed: "missed",
 };
 
