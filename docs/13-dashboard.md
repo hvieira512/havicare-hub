@@ -95,8 +95,16 @@ recuo exponencial, e o recuo só volta a zero quando um frame é efetivamente en
 
 ## 5. Sessão
 
-**Não há sessão de servidor. Não há cookie.** Os tokens vivem no
-`sessionStorage` do separador.
+**A sessão é um cookie `HttpOnly`; o token de acesso vive em memória.** O login
+manda `session: "cookie"`, e o hub devolve o token de acesso no corpo e guarda o
+de renovação no cookie `hub_session` — `HttpOnly`, `SameSite=Strict`,
+`Path=/api/auth`, e `Secure` em HTTPS. O JavaScript nunca lê o de renovação, e
+o de acesso não é escrito em armazenamento nenhum: morre com o separador.
+
+Ao abrir, cada separador faz `POST /api/auth/login` com o corpo vazio. A
+credencial vai no cookie, e a resposta é um token de acesso só dele. É isto que
+faz um segundo separador abrir já autenticado, em vez de mostrar o login com a
+sessão do primeiro aberta.
 
 | | |
 |---|---|
@@ -104,10 +112,18 @@ recuo exponencial, e o recuo só volta a zero quando um frame é efetivamente en
 | Renovação | Automática, 60 s antes de o token expirar; num 401, tenta uma vez e repete o pedido |
 | Aviso de inatividade | 15 minutos |
 | Sessão terminada | 20 minutos |
+| Terminar sessão | `POST /api/auth/logout` apaga o cookie e revoga os dois tokens |
 
 A deteção de atividade considera ponteiro, teclado, deslocamento e toque, bem
 como o regresso ao separador. A escrita do marcador é limitada a uma por
-segundo.
+segundo, e fica no `localStorage`: o relógio de inatividade é **um só para
+todos os separadores**, e um separador esquecido relê-o antes de terminar a
+sessão, para não a fechar por baixo de quem está a trabalhar no outro. Pelo
+mesmo canal, terminar sessão num separador termina-a nos restantes.
+
+O token de renovação é de uso único, e por isso dois separadores a arrancar no
+mesmo instante gastariam o mesmo cookie. A renovação passa por um cadeado do
+`navigator.locks`, e o segundo separador espera e lê o cookie já rodado.
 
 > **O papel `license_client` aplica-se à API e não à interface.** A dashboard
 > aceita exclusivamente contas com o papel `hub_admin`.

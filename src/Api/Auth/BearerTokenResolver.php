@@ -16,11 +16,16 @@ final class BearerTokenResolver
      */
     public function resolve(ServerRequestInterface $request): ?ApiAuthContext
     {
-        $header = $request->getHeaderLine('Authorization');
-        if (!preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
-            return null;
-        }
+        $token = self::tokenFrom($request);
 
-        return $this->tokens->context((string)$matches[1]);
+        return $token === '' ? null : $this->tokens->context($token);
+    }
+
+    /** O token em cru, para quem precisa dele sem o resolver -- o logout revoga-o. */
+    public static function tokenFrom(ServerRequestInterface $request): string
+    {
+        $header = $request->getHeaderLine('Authorization');
+
+        return preg_match('/^Bearer\s+(.+)$/i', $header, $matches) === 1 ? trim((string)$matches[1]) : '';
     }
 }

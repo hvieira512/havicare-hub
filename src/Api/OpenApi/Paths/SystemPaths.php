@@ -30,8 +30,11 @@ final class SystemPaths
                             'username' => ['type' => 'string'],
                             'password' => ['type' => 'string'],
                             'refresh_token' => ['type' => 'string'],
+                            'session' => ['type' => 'string', 'enum' => ['cookie']],
                         ],
-                        'description' => 'Provide username and password for initial login, or refresh_token to issue a new token pair.',
+                        'description' => 'Provide username and password for initial login, or refresh_token to issue a new token pair. '
+                            . 'Browser clients send session=cookie instead: the refresh token is then returned in an HttpOnly '
+                            . 'cookie rather than in the body, and a later call with an empty body renews from that cookie.',
                     ]),
                     // O 400 é o corpo mal formado -- sem utilizador, sem password, ou que nem
                     // é JSON. O 401 é a credencial recusada, seja a palavra-passe ou o token
@@ -42,6 +45,16 @@ final class SystemPaths
                         'invalid_credentials',
                         'invalid_refresh_token',
                     ),
+                ],
+            ],
+            '/api/auth/logout' => [
+                'post' => [
+                    'tags' => ['System'],
+                    'summary' => 'End a cookie session',
+                    'description' => 'Clears the session cookie and revokes both the refresh token it carried and the '
+                        . 'bearer token sent in the Authorization header.',
+                    'security' => [],
+                    'responses' => Responses::map(['200' => Responses::json('Session closed', 'StatusResponse')]),
                 ],
             ],
             '/api/auth/license-token' => [

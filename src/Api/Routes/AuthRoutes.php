@@ -8,6 +8,7 @@ return static function (
 ): array {
     return [
         new ApiRoute('POST', '/api/auth/login', [$auth, 'login']),
+        new ApiRoute('POST', '/api/auth/logout', [$auth, 'logout']),
         new ApiRoute('POST', '/api/auth/license-token', [$auth, 'licenseToken']),
     ];
 };

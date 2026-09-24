@@ -102,9 +102,18 @@ final class ApiTokenStore
             return null;
         }
 
-        $this->redis->del($this->key(trim($refreshToken)));
+        $this->revoke($refreshToken);
 
         return $context;
+    }
+
+    /** Apaga um token, seja de acesso ou de renovação. Um token que não existe não é erro. */
+    public function revoke(string $token): void
+    {
+        $token = trim($token);
+        if ($token !== '') {
+            $this->redis->del($this->key($token));
+        }
     }
 
     public function context(string $token): ?ApiAuthContext

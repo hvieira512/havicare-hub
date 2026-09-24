@@ -1,5 +1,7 @@
-// O token da API vive aqui, no dono das escritas, e não num global no `window`: todos os
-// leitores são módulos e importam o getter. O `set`/`clear` avisam a app pelo evento.
+// O token de acesso vive aqui e só aqui: em memória, nem no `window` nem em armazenamento
+// nenhum, por isso morre com o separador. Quem o renova é o cookie `HttpOnly` da sessão, que
+// o browser reenvia sozinho e que este código não consegue ler. O `set`/`clear` avisam a app
+// pelo evento.
 let apiToken = null;
 export const getDashboardApiToken = () => apiToken;
 
@@ -135,23 +137,34 @@ const requestWithAuthRetry = async (url, options = {}) => {
     return response;
 };
 
+// O pedido que troca o cookie da sessão por um token de acesso novo. É o mesmo no arranque de
+// um separador e na renovação, e o corpo vazio é o que o diz: a credencial vai no cookie.
+export const requestSessionToken = () => fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: "{}",
+});
+
+/**
+ * O cadeado que impede dois separadores de gastarem o mesmo cookie ao mesmo tempo.
+ *
+ * O token de renovação é de uso único: abrir dois separadores no mesmo instante punha os dois
+ * a renovar com o mesmo valor, e o segundo levava com um 401 e o ecrã de login. Com o cadeado
+ * o segundo espera e já lê o cookie rodado. Onde a API não existir corre à mesma, sem ele.
+ */
+const withSessionLock = (task) => navigator.locks?.request
+    ? navigator.locks.request("hub-dashboard-session", task)
+    : task();
+
 export const refreshAccessToken = async () => {
     if (tokenRefreshInFlight !== null) {
         return tokenRefreshInFlight;
     }
 
-    const refreshToken = apiToken?.refresh_token || "";
-    if (refreshToken === "") {
-        return null;
-    }
-
-    tokenRefreshInFlight = (async () => {
+    tokenRefreshInFlight = withSessionLock(async () => {
         try {
-            const response = await fetch("/api/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ refresh_token: refreshToken }),
-            });
+            const response = await requestSessionToken();
             const payload = await parseJsonResponse(response);
             const nextToken = payload?.token?.access_token || "";
             if (response.ok && nextToken !== "") {
@@ -172,7 +185,7 @@ export const refreshAccessToken = async () => {
         }
 
         return null;
-    })().finally(() => {
+    }).finally(() => {
         tokenRefreshInFlight = null;
     });
 

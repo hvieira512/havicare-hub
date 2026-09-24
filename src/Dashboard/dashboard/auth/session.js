@@ -1,18 +1,16 @@
 import {
+    authHeaders,
     clearDashboardApiToken,
     getDashboardApiToken,
-    refreshAccessToken,
+    requestSessionToken,
     setDashboardApiToken,
 } from "../api/http.js";
 import { toast } from "../dialogs.js";
 import {
-    clearSessionKey,
+    clearStorageKey,
     LAST_ACTIVITY_STORAGE_KEY,
-    loadJsonSession,
-    loadTextSession,
-    saveJsonSession,
-    saveTextSession,
-    TOKEN_STORAGE_KEY,
+    loadTextStorage,
+    saveTextStorage,
 } from "../storage.js";
 
 const ADMIN_ROLE = "hub_admin";
@@ -50,31 +48,21 @@ const renderAuthenticatedUsername = (token) => {
     authenticatedUsername.textContent = String(token?.username || "Administrador");
 };
 
+/**
+ * O que a dashboard aceita como sessão: um token de acesso de administrador por expirar.
+ *
+ * Já não há token de renovação a validar aqui -- esse vive no cookie `HttpOnly` e este código
+ * nunca o vê.
+ */
 export const validAdminToken = (token) => {
     if (!token || typeof token !== "object" || token.role !== ADMIN_ROLE) {
         return false;
     }
 
-    const accessToken = String(token.access_token || "");
-    const refreshToken = String(token.refresh_token || "");
-    const refreshExpiresAt = Date.parse(String(token.refresh_expires_at || ""));
-    return accessToken !== "" &&
-        refreshToken !== "" &&
-        Number.isFinite(refreshExpiresAt) &&
-        refreshExpiresAt > Date.now();
-};
-
-const storeToken = (token) => {
-    if (!validAdminToken(token)) {
-        clearSessionKey(TOKEN_STORAGE_KEY);
-        return;
-    }
-    saveJsonSession(TOKEN_STORAGE_KEY, token);
-};
-
-export const restoreToken = () => {
-    const token = loadJsonSession(TOKEN_STORAGE_KEY);
-    return validAdminToken(token) ? token : null;
+    const expiresAt = Date.parse(String(token.expires_at || ""));
+    return String(token.access_token || "") !== "" &&
+        Number.isFinite(expiresAt) &&
+        expiresAt > Date.now();
 };
 
 const clearTimers = () => {
@@ -110,7 +98,9 @@ const showTimeoutWarning = () => {
             return;
         }
         if (result.dismiss === Swal.DismissReason.timer) {
-            logout("A sessão terminou por inatividade. Inicie sessão novamente.");
+            // Não termina já: o `scheduleIdleTimers` relê a atividade partilhada, e só termina
+            // se também não tiver havido nada nos outros separadores.
+            scheduleIdleTimers();
         }
     });
 };
@@ -193,34 +183,55 @@ const startDashboard = async () => {
     }
 };
 
-const logout = (message = "") => {
+/**
+ * Fecha a sessão. Com `notifyServer`, manda apagar o cookie e revogar os dois tokens.
+ *
+ * Sem o pedido, o cookie ficava e o separador seguinte voltava a entrar sem palavra-passe. O
+ * `notifyServer` a falso é para quem já soube por outro separador que a sessão acabou.
+ */
+const logout = (message = "", notifyServer = true) => {
     clearTimers();
     hideTimeoutWarning();
-    clearSessionKey(TOKEN_STORAGE_KEY);
-    clearSessionKey(LAST_ACTIVITY_STORAGE_KEY);
+    if (notifyServer) {
+        void fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: authHeaders(),
+        }).catch(() => {});
+    }
+    clearStorageKey(LAST_ACTIVITY_STORAGE_KEY);
     clearDashboardApiToken();
     showLogin(message);
 };
 
+const IDLE_MESSAGE = "A sessão terminou por inatividade. Inicie sessão novamente.";
+
 const scheduleIdleTimers = () => {
     clearTimers();
+    // A atividade é de toda a gente: um separador esquecido relê o que os outros escreveram
+    // antes de terminar a sessão, ou fechava-a por baixo de quem estava a trabalhar ao lado.
+    const shared = Number(loadTextStorage(LAST_ACTIVITY_STORAGE_KEY));
+    if (Number.isFinite(shared) && shared > lastActivityAt) {
+        lastActivityAt = shared;
+    }
+
     const idleMs = Date.now() - lastActivityAt;
     if (idleMs >= LOGOUT_AFTER_MS) {
-        logout("A sessão terminou por inatividade. Inicie sessão novamente.");
+        logout(IDLE_MESSAGE);
         return;
     }
     if (idleMs >= WARNING_AFTER_MS) {
         showTimeoutWarning();
     } else {
+        // Houve atividade -- aqui ou noutro separador -- e o aviso que estivesse aberto
+        // deixou de ser verdade.
+        hideTimeoutWarning();
         warningTimer = window.setTimeout(
-            showTimeoutWarning,
+            scheduleIdleTimers,
             WARNING_AFTER_MS - idleMs,
         );
     }
-    logoutTimer = window.setTimeout(
-        () => logout("A sessão terminou por inatividade. Inicie sessão novamente."),
-        LOGOUT_AFTER_MS - idleMs,
-    );
+    logoutTimer = window.setTimeout(scheduleIdleTimers, LOGOUT_AFTER_MS - idleMs);
 };
 
 const registerActivity = (force = false) => {
@@ -231,7 +242,7 @@ const registerActivity = (force = false) => {
     hideTimeoutWarning();
     scheduleIdleTimers();
     if (now - lastActivityWriteAt >= ACTIVITY_WRITE_THROTTLE_MS) {
-        saveTextSession(LAST_ACTIVITY_STORAGE_KEY, String(now));
+        saveTextStorage(LAST_ACTIVITY_STORAGE_KEY, String(now));
         lastActivityWriteAt = now;
     }
 };
@@ -249,11 +260,15 @@ const bindActivityTracking = () => {
         ) {
             return;
         }
-        const idleMs = Date.now() - lastActivityAt;
-        if (idleMs >= LOGOUT_AFTER_MS) {
-            logout("A sessão terminou por inatividade. Inicie sessão novamente.");
-        } else {
-            scheduleIdleTimers();
+        scheduleIdleTimers();
+    });
+
+    // Terminar sessão num separador termina-a em todos: o `storage` só dispara nos outros, e
+    // a chave apagada é o sinal. Sem isto, o outro separador ficava a mostrar dados com um
+    // token que ainda valia até expirar.
+    window.addEventListener("storage", (event) => {
+        if (event.key === LAST_ACTIVITY_STORAGE_KEY && event.newValue === null && getDashboardApiToken()) {
+            logout("A sessão foi terminada noutro separador.", false);
         }
     });
 };
@@ -270,10 +285,13 @@ const login = async (event) => {
 
     setLoginBusy(true);
     try {
+        // O `session: "cookie"` é o que pede a sessão de browser: o Hub devolve só o token de
+        // acesso e guarda a renovação no cookie `HttpOnly`, em vez de a entregar ao script.
         const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password }),
+            credentials: "same-origin",
+            body: JSON.stringify({ username, password, session: "cookie" }),
         });
         const payload = await response.json().catch(() => null);
         const token = payload?.token;
@@ -292,10 +310,9 @@ const login = async (event) => {
 
         setDashboardApiToken(token);
         renderAuthenticatedUsername(token);
-        storeToken(token);
         lastActivityAt = Date.now();
         lastActivityWriteAt = lastActivityAt;
-        saveTextSession(LAST_ACTIVITY_STORAGE_KEY, String(lastActivityAt));
+        saveTextStorage(LAST_ACTIVITY_STORAGE_KEY, String(lastActivityAt));
         scheduleIdleTimers();
         toast("success", "Autenticação concluída. Bem-vindo ao Hub.");
         await startDashboard();
@@ -306,38 +323,38 @@ const login = async (event) => {
     }
 };
 
+/**
+ * A sessão não está em lado nenhum que este código possa ler: pergunta-se ao Hub, que a
+ * reconhece pelo cookie. É isto que faz um separador novo abrir já autenticado, e o que
+ * devolve um token de acesso novo a cada separador.
+ */
 const restoreSession = async () => {
-    const token = restoreToken();
-    if (!token) {
+    let token = null;
+    try {
+        const response = await requestSessionToken();
+        const payload = await response.json().catch(() => null);
+        token = response.ok ? payload?.token || null : null;
+    } catch {
+        showLogin("Não foi possível contactar o Hub. Recarregue a página.");
+        return;
+    }
+
+    if (!validAdminToken(token)) {
         showLogin("");
         return;
     }
 
-    const storedActivity = Number(loadTextSession(LAST_ACTIVITY_STORAGE_KEY));
+    const storedActivity = Number(loadTextStorage(LAST_ACTIVITY_STORAGE_KEY));
     lastActivityAt = Number.isFinite(storedActivity) && storedActivity > 0
         ? storedActivity
         : Date.now();
     if (Date.now() - lastActivityAt >= LOGOUT_AFTER_MS) {
-        logout("A sessão terminou por inatividade. Inicie sessão novamente.");
+        logout(IDLE_MESSAGE);
         return;
     }
 
     setDashboardApiToken(token);
     renderAuthenticatedUsername(token);
-    const expiresAt = Date.parse(String(token.expires_at || ""));
-    const accessExpired = !Number.isFinite(expiresAt) || expiresAt <= Date.now();
-    const usernameMissing = String(token.username || "").trim() === "";
-    if (accessExpired || usernameMissing) {
-        const refreshedToken = await refreshAccessToken();
-        if (refreshedToken && refreshedToken.role === ADMIN_ROLE) {
-            renderAuthenticatedUsername(refreshedToken);
-        } else if (accessExpired) {
-            logout("A sessão expirou. Inicie sessão novamente.");
-            return;
-        }
-    }
-
-    storeToken(getDashboardApiToken());
     scheduleIdleTimers();
     await startDashboard();
 };
@@ -349,7 +366,6 @@ export async function initializeDashboardSession(startAuthenticatedDashboard) {
     loginForm?.addEventListener("submit", login);
     logoutButton?.addEventListener("click", () => logout(""));
     window.addEventListener("hub-dashboard-api-token-updated", () => {
-        storeToken(getDashboardApiToken());
         renderAuthenticatedUsername(getDashboardApiToken());
     });
     window.addEventListener("hub-dashboard-auth-required", () => {

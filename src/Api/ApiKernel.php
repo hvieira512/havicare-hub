@@ -262,6 +262,7 @@ final class ApiKernel
     {
         return in_array($path, [
             '/api/auth/login',
+            '/api/auth/logout',
             '/api/docs',
             '/api/openapi.json',
         ], true);

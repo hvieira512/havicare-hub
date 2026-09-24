@@ -89,6 +89,24 @@ class AuthService
         ];
     }
 
+    /**
+     * Fecha a sessão: as duas credenciais deixam de valer imediatamente.
+     *
+     * Revogar o token de acesso é o que distingue isto de apagar o cookie -- sem a revogação,
+     * quem ficasse com ele tinha a API aberta até ele expirar por si.
+     */
+    public function logout(string $refreshToken, string $accessToken, string $requestId = ''): void
+    {
+        $context = $accessToken !== '' ? $this->tokens->context($accessToken) : null;
+        $this->tokens->revoke($refreshToken);
+        $this->tokens->revoke($accessToken);
+
+        Logger::channel('api')->info('API session closed', [
+            'request_id' => $requestId,
+            'username' => $context?->username ?? '',
+        ]);
+    }
+
     private function refresh(string $refreshToken, string $requestId = ''): array
     {
         // Consome o token de renovação primeiro -- é de uso único -- e só depois revalida. Um

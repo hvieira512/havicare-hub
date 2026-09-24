@@ -66,6 +66,38 @@ POST /api/auth/login
 { "refresh_token": "…" }
 ```
 
+### Entrar de um navegador
+
+Um cliente que corra dentro de um navegador acrescenta `"session": "cookie"` ao
+login. A resposta passa a trazer **só** o token de acesso, e o de renovação sai
+num cookie `HttpOnly`:
+
+```http
+Set-Cookie: hub_session=…; Path=/api/auth; Max-Age=2592000; HttpOnly; SameSite=Strict; Secure
+```
+
+Nenhum script lê esse cookie, e o `SameSite=Strict` impede que outro sítio o
+faça viajar. O `Path` prende-o às rotas de autenticação: o resto da API nunca o
+recebe e continua a autenticar-se pelo cabeçalho. O `Secure` só entra em HTTPS,
+ou o hub local em `http://` deixava de guardar a sessão.
+
+A partir daí a renovação é a mesma rota com o corpo vazio — a credencial vai no
+cookie —, e o cookie que volta traz o par rodado:
+
+```http
+POST /api/auth/login
+{}
+```
+
+Terminar a sessão apaga o cookie e revoga as duas credenciais. É o que
+distingue isto de largar o token: sem a revogação, quem ficasse com o *bearer*
+tinha a API aberta até ele expirar por si.
+
+```http
+POST /api/auth/logout
+Authorization: Bearer <access_token>
+```
+
 Depois, em cada pedido:
 
 ```http

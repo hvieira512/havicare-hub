@@ -158,7 +158,7 @@ dashboard/
 ├── grid.js                 a tabela de dados dos Utilizadores API, do descritor que a API devolve
 ├── pagination.js           escreve o paginador no painel, e resolve a página de um clique
 ├── phone.js                o campo de telefone com indicativo
-├── storage.js              as chaves e os acessos ao localStorage e ao sessionStorage
+├── storage.js              as chaves e os acessos ao localStorage
 ├── tooltips.js             re-atar os tooltips do Bootstrap depois de um render
 ├── notifications.js        o sino da barra (funcionalidade de um ficheiro)
 ├── observability.js        o handler global de erros: o que falha sem catch deixa rasto
