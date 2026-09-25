@@ -29,6 +29,20 @@
         var(--login-surface);
 }
 
+/* 55/45, que é a divisão da Havicare e não existe na grelha do Bootstrap -- o `col-lg-7` que
+   lá estava dava 58/42. */
+@media (min-width: 992px) {
+    .dashboard-login-atmosphere {
+        flex: 0 0 55%;
+        max-width: 55%;
+    }
+
+    .dashboard-login-panel {
+        flex: 0 0 45%;
+        max-width: 45%;
+    }
+}
+
 /* O cinzento claro da maqueta, e não branco: o cartão é branco, e sobre branco puro
    desaparecia. A sombra é de um lado só, e as utilitárias do Bootstrap são a toda a volta. */
 .dashboard-login-panel {
@@ -88,16 +102,18 @@
 }
 
 /* O halo por trás do discurso, no lugar das órbitas: dá profundidade sem competir com o
-   texto que lhe fica por cima. */
+   texto que lhe fica por cima. Segue a coluna centrada, senão num ecrã largo ficava a
+   iluminar a margem em vez do texto. */
 .dashboard-login-atmosphere::after {
     content: "";
     position: absolute;
-    left: -7.5rem;
-    top: 11rem;
-    width: 38rem;
+    left: 50%;
+    top: 50%;
+    width: min(46rem, 90%);
     aspect-ratio: 1;
+    transform: translate(-50%, -50%);
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--login-accent-rgb), .2), transparent 62%);
+    background: radial-gradient(circle, rgba(var(--login-accent-rgb), .18), transparent 62%);
 }
 
 /* A marca no canto superior esquerdo do painel escuro, como na maqueta. O painel é escuro
@@ -106,8 +122,10 @@
     height: 26px;
 }
 
-.dashboard-login-story {
-    max-width: 32.5rem;
+/* Os três blocos do painel partilham a mesma coluna centrada. Encostados à esquerda, num
+   ultrawide o texto ficava com 520px de um lado e 1391px de nada do outro. */
+.dashboard-login-column {
+    max-width: 34rem;
 }
 
 .dashboard-login-rule {

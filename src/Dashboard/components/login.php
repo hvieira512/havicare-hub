@@ -30,9 +30,9 @@ $loginHighlights = [
 ];
 ?>
 <section id="dashboardLogin" class="dashboard-login row g-0 min-vh-100 d-none" hidden>
-    <div class="dashboard-login-atmosphere col-lg-7 d-none d-lg-flex flex-column justify-content-between min-vh-100 position-relative overflow-hidden p-5">
-        <span class="dashboard-login-badge position-relative"><img class="d-block w-auto opacity-75" src="/assets/logo-dark.png" alt="havi hub"></span>
-        <div class="dashboard-login-story position-relative">
+    <div class="dashboard-login-atmosphere col-12 col-lg d-none d-lg-flex flex-column justify-content-between min-vh-100 position-relative overflow-hidden p-5">
+        <span class="dashboard-login-badge dashboard-login-column position-relative w-100 mx-auto"><img class="d-block w-auto opacity-75" src="/assets/logo-dark.png" alt="havi hub"></span>
+        <div class="dashboard-login-story dashboard-login-column position-relative w-100 mx-auto">
             <span class="dashboard-login-rule d-block rounded-pill mb-3"></span>
             <h1 class="dashboard-login-headline fw-semibold mb-3">Muitos aparelhos.<br>Um só contrato.</h1>
             <p class="dashboard-login-pitch lh-base mb-5">Ingestão, normalização e publicação de telemetria de dispositivos de saúde, sempre no mesmo formato.</p>
@@ -48,9 +48,9 @@ $loginHighlights = [
                 <?php endforeach; ?>
             </ul>
         </div>
-        <span class="dashboard-login-signature d-block fw-semibold text-uppercase position-relative">Hub / Operação</span>
+        <span class="dashboard-login-signature dashboard-login-column d-block fw-semibold text-uppercase position-relative w-100 mx-auto">Hub / Operação</span>
     </div>
-    <div class="dashboard-login-panel col-12 col-lg-5 min-vh-100 d-flex flex-column justify-content-center align-items-center position-relative z-1 px-4 py-5">
+    <div class="dashboard-login-panel col-12 col-lg min-vh-100 d-flex flex-column justify-content-center align-items-center position-relative z-1 px-4 py-5">
         <button data-theme-toggle class="dashboard-login-theme btn border bg-body text-secondary position-absolute top-0 end-0 m-4 p-0 rounded-circle d-flex align-items-center justify-content-center" type="button" aria-pressed="false" aria-label="Mudar para o tema escuro" title="Mudar para o tema escuro">
             <?= icon('fa-moon', 'fa-fw') ?>
         </button>
