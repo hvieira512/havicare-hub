@@ -429,7 +429,7 @@ REST eram um único `rotate`, aqui vêm discriminadas em cinco.
 | `0x1012` / `0x1013` | tipo de toque e volume |
 | `0x1014` / `0x1015` | calibração automática de relógio, fuso horário |
 | `0x1017` / `0x1018` / `0x1019` | aviso de atraso, tempo até falha, e o interruptor que decide se uma dose já dada como falhada continua acessível — é ele que faz existir o desfecho `abnormal` do evento de toma |
-| `0x101C` | células carregadas |
+| `0x101C` | **até que compartimento o prato está cheio** — um índice, e não uma contagem |
 | `0x1021`–`0x1029` | **hora de cada um dos nove alarmes** |
 | `0x1031`–`0x1039` | minuto de cada alarme |
 | `0x1041`–`0x1049` | interruptor de cada alarme — **inerte neste firmware**, ver abaixo |
@@ -564,9 +564,12 @@ O procedimento, e a ordem importa:
    contador**. Observado a 24/09/2026: o prato rodou e o `0x811A` ficou em 20
    antes e depois.
 2. **Carregar a partir da marca cor-de-rosa**, seguindo os grupos do autocolante.
-3. **Só então dizer ao hub quantos compartimentos foram carregados**, na
-   configuração «Compartimentos carregados». É a partir desse número que o
-   `0x811D` desce.
+3. **Só então dizer ao hub até que compartimento o prato ficou cheio**, na
+   configuração «Carregado até ao compartimento». É o número do último que se
+   encheu, e não quantos se encheram: o `0x811D` é este menos a posição actual.
+   Depois de reiniciar o ciclo a posição é zero e os dois números coincidem, mas
+   ao recarregar a meio não coincidem — parado no 10 e cheio até ao 28,
+   escreve-se 28.
 
 ### Como se limpa uma avaria de reposição do prato
 
@@ -603,8 +606,10 @@ o que se tentou primeiro.
 > **O que a fez voltar foi o prato ser mandado rodar para lá do carregamento.** O
 > `0x811A` estava em 22 com os compartimentos carregados em 14, e o `0x811D` a
 > zero; o alarme das 09:30 disparou, o aparelho tentou rodar para uma posição que
-> se dava por esgotada, e falhou. Manter os «compartimentos carregados» a dizer a
-> verdade não é cosmético: é o que impede esta avaria.
+> se dava por esgotada, e falhou. Manter o «carregado até ao compartimento» a
+> dizer a verdade não é cosmético: é o que impede esta avaria — e a ajuda antiga,
+> que pedia **quantos** compartimentos se tinham carregado, levava direita a um
+> número abaixo da posição sempre que o prato se recarregava a meio.
 
 > Enquanto a avaria está activa, **o aparelho continua a dispensar normalmente**.
 > As três dispensas medidas nesse dia foram todas com o `0x8122` em `01`. É uma

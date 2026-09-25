@@ -78,14 +78,14 @@ final class ZayataConfigurationDefinitions
             self::number(
                 'loaded_cells',
                 'loadedCells',
-                'Compartimentos carregados',
+                'Carregado até ao compartimento',
                 'health',
                 32,
                 'cells',
                 0,
                 28,
-                'Compartimentos',
-                'Quantos dos 28 compartimentos foram carregados com medicação. O aparelho não vê lá dentro: este número é o ponto de partida da contagem dele, e é dele que desce o «células restantes». Não se confunde com a capacidade do prato, que é sempre 28.',
+                'de 28',
+                'O número do último compartimento que encheu — não quantos encheu. O aparelho não vê lá dentro: as doses que faltam são este número menos o compartimento em que o prato está. Com o prato cheio de raiz os dois números são 28 e dá no mesmo, mas ao recarregar a meio contam coisas diferentes: parado no 10 e cheio até ao 28, é 28 que se escreve, e não 18.',
             ),
             // O volume é uma enumeração e não uma escala: na especificação, 0 é o mais alto
             // e 3 é silêncio.
