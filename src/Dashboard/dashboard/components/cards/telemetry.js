@@ -76,7 +76,6 @@ const CARD_STYLE = {
     medication_alarm_status: ["fa-clock-rotate-left", "primary"],
     medication_alarm_change: ["fa-pills", "primary"],
     cells_remaining: ["fa-table-cells", "info"],
-    medication_cup: ["fa-mug-hot", "primary"],
     storage_environment: ["fa-triangle-exclamation", "danger"],
     humidity: ["fa-droplet", "info"],
     reset: ["fa-bell-slash", "warning"],
@@ -226,12 +225,6 @@ const UPLINK_CARD_RENDERERS = {
         value: `${doseLabel(data?.alarm)}: ${fieldValue("state", data?.state)}`,
     }),
     device_config: (data) => deviceConfigContent(data),
-    // O valor é o estado em que a coisa está, e não um «Sim» que obriga a reler o título
-    // para saber a que responde.
-    medication_cup: (data) => ({
-        value: data?.inserted == null ? "-" : data.inserted ? "Colocado" : "Retirado",
-        details: data?.inserted === false ? "Uma dose dispensada agora não tem onde cair" : "",
-    }),
     // Um alerta e não uma leitura: só chega quando dispara, e por isso o valor diz o que
     // aconteceu em vez de dizer em que estado se está. A legenda fixa que aqui estava — «
     // Temperatura e humidade, medidas pelo aparelho» — repetia-se linha após linha sem nunca

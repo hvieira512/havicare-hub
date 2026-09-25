@@ -514,14 +514,10 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'cells_remaining', 'nativeType' => $nativeType, 'value' => $cells];
         }
 
-        // O `0x8107` («Pill Tray Lock Status») não entra: responde sempre `0` neste firmware.
-        // Medido com o prato trancado, com a fechadura de chave trancada e com o prato fora.
-
-        // Sem copo, a dose sai do compartimento e não há onde ela caia.
-        $cupInserted = $this->pillFlag($tlv, 0x8106);
-        if ($cupInserted !== null) {
-            $events[] = ['feature' => 'medication_cup', 'nativeType' => $nativeType, 'value' => ['inserted' => $cupInserted]];
-        }
+        // Os dois sensores de estado físico não entram: neste firmware nenhum deles lê a peça
+        // que diz ler. O `0x8107` («Pill Tray Lock Status») responde sempre `0` — medido com o
+        // prato trancado, com a fechadura de chave trancada e com o prato fora — e o `0x8106`
+        // («Medication Cup Status») responde sempre `1`, com o copo fora.
 
         // O juízo do aparelho sobre a temperatura e a humidade que ele mede. Só sai quando
         // dispara, como a avaria aqui ao lado.

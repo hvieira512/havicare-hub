@@ -28,7 +28,7 @@ final class CapabilityCatalogTest extends TestCase
             // as três sondas da descoberta, que serviram para fazer a integração, o
             // recarregar da telemetria, que é uma função do ecrã, e o estado do «não
             // incomodar», que é configuração reportada e viaja no `device_config`.
-            'pill_dispenser' => [32, '476c9c06c6e43ac358d7e9469e8f63cfb4a2db7b5498c0d1891dae323f03b835'],
+            'pill_dispenser' => [31, '7e27573bd6b929815ef2c52ec412d055bf69bdbeee3331b614e5f732fa95ea5e'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

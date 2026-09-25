@@ -4,15 +4,6 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 
-/**
- * O valor de cada cartão é o estado em que a coisa está, e não um «Sim» ou um «Não» que
- * obriga a reler o título para saber a que responde.
- */
-test("o copo da medicação diz se está colocado ou retirado", () => {
-    assert.equal(uplinkCardContent("medication_cup", { inserted: true }).value, "Colocado");
-    assert.equal(uplinkCardContent("medication_cup", { inserted: false }).value, "Retirado");
-});
-
 /** O ambiente só chega quando dispara: o valor diz o que aconteceu, e não leva legenda fixa. */
 test("o ambiente diz o que aconteceu", () => {
     const { value, details } = uplinkCardContent("storage_environment", { outOfRange: true });

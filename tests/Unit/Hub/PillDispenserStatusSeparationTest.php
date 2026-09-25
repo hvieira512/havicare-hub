@@ -78,27 +78,19 @@ final class PillDispenserStatusSeparationTest extends TestCase
     }
 
     /**
-     * O `0x8107` não sai do descodificador: responde sempre `0` e nunca diria outra coisa.
+     * Os dois sensores de estado físico não saem do descodificador: nenhum lê a peça que diz
+     * ler, e cada um responde sempre o mesmo.
      *
-     * Medido com o prato trancado, com a fechadura de chave trancada e com o prato fora do
-     * aparelho. Um cartão que só sabe dizer um valor ensina a não confiar nos outros.
+     * O `0x8107` deu `0` com o prato trancado, com a fechadura de chave trancada e com o
+     * prato fora do aparelho; o `0x8106` deu `1` com o copo fora. Um cartão que só sabe dizer
+     * um valor ensina a não confiar nos outros.
      */
-    public function testTheTrayLockTagDoesNotBecomeTelemetry(): void
+    public function testThePhysicalStateTagsDoNotBecomeTelemetry(): void
     {
         self::assertArrayNotHasKey('tray_lock', $this->telemetry([0x8107 => "\x01"]));
         self::assertArrayNotHasKey('tray_lock', $this->telemetry([0x8107 => "\x00"]));
-    }
-
-    /**
-     * O copo fecha o ciclo físico da toma.
-     *
-     * Sem ele sabe-se que a dose saiu do compartimento e não se sabe se havia copo onde ela
-     * caísse. O aparelho respondeu `0x01` com estado `ok` quando se lhe perguntou.
-     */
-    public function testTheMedicationCupIsItsOwnCapability(): void
-    {
-        self::assertSame(['inserted' => true], $this->telemetry([0x8106 => "\x01"])['medication_cup'] ?? null);
-        self::assertSame(['inserted' => false], $this->telemetry([0x8106 => "\x00"])['medication_cup'] ?? null);
+        self::assertArrayNotHasKey('medication_cup', $this->telemetry([0x8106 => "\x01"]));
+        self::assertArrayNotHasKey('medication_cup', $this->telemetry([0x8106 => "\x00"]));
     }
 
     /**
@@ -186,7 +178,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
             'packetType' => 0x87,
             'mac' => 'AABBCCDDEEFF',
             'tlv' => [
-                0x8106 => ['value' => "\x00", 'state' => 1],
+                0x810E => ['value' => "\x18", 'state' => 1],
                 0x810B => ['value' => pack('s', 25), 'state' => 0],
             ],
         ]));
@@ -194,7 +186,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
             $byFeature[$event['feature']] = $event['value'];
         }
 
-        self::assertArrayNotHasKey('medication_cup', $byFeature);
+        self::assertArrayNotHasKey('temperature', $byFeature);
         self::assertSame(-25, $byFeature['connectivity']['signalStrengthDbm'] ?? null);
     }
 

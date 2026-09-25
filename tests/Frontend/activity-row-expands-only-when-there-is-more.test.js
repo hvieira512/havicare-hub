@@ -13,8 +13,8 @@ import { telemetryActivityRow } from "../../src/Dashboard/dashboard/devices/deta
  */
 test("uma linha que já diz tudo não abre", () => {
     const row = telemetryActivityRow({
-        type: "medication_cup",
-        data: { inserted: false },
+        type: "battery",
+        data: { percent: 80, chargingState: "charging" },
         occurredAt: "2026-09-23T10:00:00Z",
     });
 
@@ -25,8 +25,8 @@ test("uma linha que já diz tudo não abre", () => {
 /** Sem detalhes nenhuns também não há o que abrir. */
 test("uma linha sem detalhes não abre", () => {
     const row = telemetryActivityRow({
-        type: "medication_cup",
-        data: { inserted: true },
+        type: "battery",
+        data: { percent: 80 },
         occurredAt: "2026-09-23T10:00:00Z",
     });
 

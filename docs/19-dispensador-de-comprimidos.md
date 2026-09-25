@@ -281,7 +281,7 @@ ao hub.
 | `0x8103` / `0x8104` | bateria | nível, e estado `0` normal · `1` cheia · `2` fraca · `3` a carregar · `4` sem bateria |
 | `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
 | `0x8105` | estado do não incomodar | `0` desligado · `1` ligado · `2` **ligado e a silenciar agora** |
-| `0x8106` | copo da medicação | `0` retirado · `1` colocado |
+| `0x8106` | copo da medicação | `0` retirado · `1` colocado. **Responde sempre `1` no firmware `0x0502`, e por isso não é normalizado.** Testado a 25/09/2026 com o copo fora do aparelho, e com pedidos de actualização repetidos pela dashboard. É o mesmo caso do `0x8107`: os dois sensores de estado físico desta unidade estão presos, cada um no seu extremo |
 | `0x8107` | tranca do prato | `0` destrancado · `1` trancado. **Responde sempre `0` no firmware `0x0502`, e por isso não é normalizado.** Testado a 25/09/2026 com o prato trancado à mão, com a fechadura de chave lateral trancada, e com o prato removido do aparelho: as três leituras deram `0`. Uma telemetria que só sabe dizer um valor não é telemetria, e num ecrã em que tudo o resto é verdade, um campo que nunca muda ensina a não confiar nos outros. Fica por saber que mecanismo a TAG reflecte e em que firmware passa a reportar `1` — é pergunta para o fornecedor |
 | `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
 | `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **dBm**, e o aparelho manda a magnitude: o sinal negativo é posto pelo hub |
@@ -318,7 +318,11 @@ não o publica: seria um campo calculado por nós com cara de leitura dele.
 próprio aparelho, de que esta unidade é 4G e não tem rádio WiFi nenhum — só o
 `0x810B` e o `0x810D` respondem.
 
-O `0x8105` e o `0x8106` estão *deprecated* na própria especificação.
+> **O `0x8105` e o `0x8106` não estão *deprecated*.** Uma versão anterior deste
+> capítulo dizia que sim, e estava a ler a tabela do **tipo 01** — onde são «Pill
+> Tray ID» e «Low battery voltage», essas sim retiradas. No tipo 02 são o «não
+> incomodar» e o copo da medicação, ambos correntes. É a quarta vez que a troca
+> das duas tabelas nos morde, e é a razão do aviso da secção 5.
 
 #### O bloco de sistema, que vem no registo
 
@@ -615,7 +619,6 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x810E` | `temperature` | `environmentCelsius` |
 | `0x810F` | `humidity` | `humidityPercent` |
 | `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |
-| `0x8106` | `medication_cup` | `inserted` — fecha o ciclo físico da toma: sem copo, a dose sai do compartimento e não há onde ela caia |
 | `0x8105` / `0x8102` | `device_config` | `settings.do_not_disturb.enabled` e `settings.child_lock.enabled` — os dois interruptores que o aparelho reporta. Não são telemetria: o que dizem é o que nós lá pusemos, e por isso viajam como configuração reportada. O `0x8105` distingue ligado de ligado-e-a-silenciar-agora, e essa diferença não sai — deduz-se da janela configurada e do relógio |
 | `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. **Só é publicado quando dispara**: como leitura, enchia o histórico com linhas a dizer que estava tudo bem |
 | `0x8131`–`0x8139` **num `0x87`** | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` — a leitura dos nove, que só a resposta ao `0x07` traz |

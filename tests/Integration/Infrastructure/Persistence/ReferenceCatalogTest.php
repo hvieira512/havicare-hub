@@ -169,8 +169,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // A toma lê-se por aqui sem a chave de cifra: o `medication_intake` é o evento
             // rico e chega cifrado, este é o estado dos nove alarmes e chega em claro.
             'medication_alarm_status',
-            // Fecha o ciclo físico: sem copo, a dose sai e não há onde ela caia.
-            'medication_cup',
             'medication_intake',
             // O `medication_level` não está cá: era o juízo grosseiro do aparelho a dizer o
             // mesmo que a contagem de células, e sem número nenhum. É campo dela.

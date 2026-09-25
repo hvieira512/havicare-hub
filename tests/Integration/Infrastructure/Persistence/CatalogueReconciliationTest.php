@@ -56,12 +56,12 @@ final class CatalogueReconciliationTest extends MysqlDashboardTestCase
         $pdo = $this->createDashboardDatabase()->pdo();
         $pdo->exec("
             DELETE FROM capabilities
-            WHERE device_type = 'pill_dispenser' AND capability_key = 'medication_cup'
+            WHERE device_type = 'pill_dispenser' AND capability_key = 'cells_remaining'
         ");
 
         (new ReferenceCatalogSeeder())->reconcileCapabilities($pdo);
 
-        self::assertSame('Copo da medicação', $this->label($pdo, 'pill_dispenser', 'medication_cup'));
+        self::assertSame('Células restantes', $this->label($pdo, 'pill_dispenser', 'cells_remaining'));
     }
 
     /**
