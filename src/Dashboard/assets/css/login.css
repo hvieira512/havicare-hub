@@ -180,3 +180,59 @@
     font-size: var(--fs-label);
     letter-spacing: .22em;
 }
+
+/* A frase manuscrita, a responder ao título em vez de o repetir. */
+.dashboard-login-aside {
+    font-family: 'Caveat', cursive;
+    font-size: 1.7rem;
+    line-height: 1.15;
+    color: rgba(var(--login-ink-rgb), .44);
+    transform: rotate(-3deg);
+}
+
+/* ----- a constelação dos tipos de dispositivo ----- */
+
+/* Fundo do painel e não conteúdo: entra na árvore como decoração, e sai do caminho do rato.
+   Mede o painel exactamente, para as percentagens da tabela serem do painel; quem corta os
+   cartões que saem pela aresta é o `overflow-hidden` do painel. */
+.dashboard-login-constellation {
+    inset: 0;
+    opacity: .42;
+    pointer-events: none;
+}
+
+/* Cada cartão traz o seu ângulo, o seu compasso e o seu curso: inclinar o grupo todo dava
+   sete cartões paralelos a subir e a descer em uníssono. O passo é até ao centro do painel e
+   de volta, e vem antes da rotação para ser em linha recta no ecrã e não no eixo do cartão. */
+.dashboard-login-device {
+    left: var(--x);
+    top: var(--y);
+    width: 124px;
+    padding: 15px 10px 13px;
+    gap: 9px;
+    border: 1px solid rgba(var(--login-ink-rgb), .16);
+    border-radius: 18px;
+    background: rgba(var(--login-ink-rgb), .07);
+    backdrop-filter: blur(7px);
+    box-shadow: 0 14px 34px rgba(4, 8, 26, .34), inset 0 1px 0 rgba(var(--login-ink-rgb), .14);
+    color: rgba(var(--login-ink-rgb), .9);
+    transform: translate(0, 0) rotate(var(--angle));
+    animation: dashboard-login-drift var(--seconds) ease-in-out var(--delay) infinite;
+}
+
+.dashboard-login-device-label {
+    font-size: var(--fs-label);
+    line-height: 1.25;
+}
+
+@keyframes dashboard-login-drift {
+    50% {
+        transform: translate(var(--dx), var(--dy)) rotate(var(--angle));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-login-device {
+        animation: none;
+    }
+}

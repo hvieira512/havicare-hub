@@ -21,6 +21,33 @@ $loginFields = [
     ],
 ];
 
+/* A constelação de fundo: onde cai o cartão de cada tipo, com que inclinação e com que
+   compasso. Os tipos vêm do catálogo -- um tipo novo entra aqui sozinho -- e a posição vem
+   desta tabela, pela chave. Sem posição declarada, o tipo encosta-se à margem esquerda.
+
+   As medidas são do painel e não do ecrã: em pixéis fixos, um painel de 1869px deixava os
+   cartões todos amontoados à esquerda. Corta-se pelo lado e nunca por cima nem por baixo,
+   porque o ícone começa a 15px do topo do cartão e o nome acaba nos últimos.
+
+   O `dx`/`dy` é o passo até ao centro do painel e de volta, e por isso aponta ao contrário
+   da aresta em que o cartão está: o de cima desce, o da direita anda para a esquerda. */
+$loginConstellation = [
+    'watch' => ['x' => '-38px', 'y' => '18%', 'angle' => -13, 'seconds' => 8.5, 'delay' => -0.4, 'dx' => 16, 'dy' => 10],
+    'ncs' => ['x' => '28%', 'y' => '3%', 'angle' => 6, 'seconds' => 10.5, 'delay' => -3.2, 'dx' => 7, 'dy' => 14],
+    'radar' => ['x' => '52%', 'y' => '12%', 'angle' => -4, 'seconds' => 9.2, 'delay' => -6.1, 'dx' => -4, 'dy' => 15],
+    'gateway' => ['x' => 'calc(100% - 86px)', 'y' => '4%', 'angle' => 11, 'seconds' => 11, 'delay' => -1.8, 'dx' => -14, 'dy' => 11],
+    'bracelet' => ['x' => 'calc(100% - 82px)', 'y' => '48%', 'angle' => -9, 'seconds' => 8.8, 'delay' => -5, 'dx' => -17, 'dy' => 3],
+    'pill_dispenser' => ['x' => 'calc(100% - 140px)', 'y' => '70%', 'angle' => -6, 'seconds' => 9.6, 'delay' => -7.4, 'dx' => -13, 'dy' => -10],
+    'diaper_sensor' => ['x' => '-6px', 'y' => '80%', 'angle' => 8, 'seconds' => 10, 'delay' => -2.6, 'dx' => 15, 'dy' => -9],
+];
+
+$loginDeviceSpotFallback = ['x' => '-40px', 'y' => '34%', 'angle' => 0, 'seconds' => 9, 'delay' => 0, 'dx' => 14, 'dy' => 0];
+$loginDevices = [];
+foreach (\Hub\Domain\DeviceTypeCatalog::all() as $deviceType => $descriptor) {
+    $loginDevices[] = ($loginConstellation[$deviceType] ?? $loginDeviceSpotFallback)
+        + ['icon' => (string)$descriptor['icon'], 'label' => (string)$descriptor['label']];
+}
+
 /* A coluna da esquerda: o que o hub faz, por ordem de percurso do dado. */
 $loginHighlights = [
     ['icon' => 'fa-tower-broadcast', 'title' => 'Ingestão', 'text' => 'Relógios, radares e sensores ligam-se por TCP ou por MQTT.'],
@@ -31,6 +58,14 @@ $loginHighlights = [
 ?>
 <section id="dashboardLogin" class="dashboard-login row g-0 min-vh-100 d-none" hidden>
     <div class="dashboard-login-atmosphere col-12 col-lg d-none d-lg-flex flex-column justify-content-between min-vh-100 position-relative overflow-hidden p-5">
+        <div class="dashboard-login-constellation position-absolute" aria-hidden="true">
+            <?php foreach ($loginDevices as $device) : ?>
+            <span class="dashboard-login-device position-absolute d-flex flex-column align-items-center" style="--x: <?= h((string)$device['x']) ?>; --y: <?= h((string)$device['y']) ?>; --angle: <?= (float)$device['angle'] ?>deg; --seconds: <?= (float)$device['seconds'] ?>s; --delay: <?= (float)$device['delay'] ?>s; --dx: <?= (int)$device['dx'] ?>px; --dy: <?= (int)$device['dy'] ?>px">
+                <?= icon($device['icon']) ?>
+                <span class="dashboard-login-device-label d-block fw-semibold text-center"><?= h($device['label']) ?></span>
+            </span>
+            <?php endforeach; ?>
+        </div>
         <span class="dashboard-login-badge dashboard-login-column position-relative w-100 mx-auto"><img class="d-block w-auto opacity-75" src="/assets/logo-dark.png" alt="havi hub"></span>
         <div class="dashboard-login-story dashboard-login-column position-relative w-100 mx-auto">
             <span class="dashboard-login-rule d-block rounded-pill mb-3"></span>
@@ -48,7 +83,10 @@ $loginHighlights = [
                 <?php endforeach; ?>
             </ul>
         </div>
-        <span class="dashboard-login-signature dashboard-login-column d-block fw-semibold text-uppercase position-relative w-100 mx-auto">Hub / Operação</span>
+        <div class="dashboard-login-column d-flex align-items-end justify-content-between gap-4 position-relative w-100 mx-auto">
+            <span class="dashboard-login-signature d-block fw-semibold text-uppercase">Hub / Operação</span>
+            <span class="dashboard-login-aside d-block text-end">cada aparelho fala<br>a sua língua</span>
+        </div>
     </div>
     <div class="dashboard-login-panel col-12 col-lg min-vh-100 d-flex flex-column justify-content-center align-items-center position-relative z-1 px-4 py-5">
         <button data-theme-toggle class="dashboard-login-theme btn border bg-body text-secondary position-absolute top-0 end-0 m-4 p-0 rounded-circle d-flex align-items-center justify-content-center" type="button" aria-pressed="false" aria-label="Mudar para o tema escuro" title="Mudar para o tema escuro">

@@ -154,6 +154,30 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         }
     }
 
+    /**
+     * A constelação do ecrã de entrada desenha a frota, e por isso sai do catálogo. Escrita à
+     * mão, um tipo novo entrava no hub e ficava de fora do único ecrã que os mostra todos.
+     */
+    public function testTheLoginScreenNamesEveryDeviceTypeInTheCatalog(): void
+    {
+        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+
+        $html = (string)$server(new ServerRequest('GET', '/dashboard'))->getBody();
+
+        // Só a secção da entrada: a página serve o catálogo inteiro numa ilha JSON, e contra
+        // o documento todo a asserção passava sem a constelação existir.
+        $start = strpos($html, '<section id="dashboardLogin"');
+        $end = strpos($html, '</section>', $start === false ? 0 : $start);
+        self::assertIsInt($start);
+        self::assertIsInt($end);
+        $login = substr($html, $start, $end - $start);
+
+        foreach (\Hub\Domain\DeviceTypeCatalog::all() as $deviceType => $descriptor) {
+            self::assertStringContainsString((string)$descriptor['label'], $login, $deviceType);
+            self::assertStringContainsString((string)($descriptor['icon'] ?? ''), $login, $deviceType);
+        }
+    }
+
     public function testCatalogRoutesRevalidateWhileDeviceRoutesDoNot(): void
     {
         $server = $this->makeServer();

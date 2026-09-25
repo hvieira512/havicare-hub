@@ -4,7 +4,8 @@ namespace Hub\Domain;
 
 /**
  * O que cada tipo de dispositivo é, num sítio só. `identity` é o campo que o identifica,
- * `sim` diz se há número de SIM, e `gatewayLinks` se é retransmitido por um gateway.
+ * `sim` diz se há número de SIM, `gatewayLinks` se é retransmitido por um gateway, e `icon` é
+ * o glifo do Font Awesome com que aparece na dashboard e no ecrã de entrada.
  *
  * A tabela vive num JSON e não neste ficheiro porque os dois lados precisam dela: o PHP
  * serve-a numa ilha JSON `#hub-device-types`, e os testes do frontend, que correm sem PHP,
@@ -18,7 +19,7 @@ final class DeviceTypeCatalog
     private static ?array $cache = null;
 
     /**
-     * @return array<string, array{label: string, identity: array{field: string, label: string, help: string, placeholder: string}, sim: bool, gatewayLinks: bool}>
+     * @return array<string, array{label: string, icon: string, identity: array{field: string, label: string, help: string, placeholder: string}, sim: bool, gatewayLinks: bool}>
      */
     public static function all(): array
     {

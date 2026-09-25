@@ -1,6 +1,7 @@
 {
     "watch": {
         "label": "Relógio",
+        "icon": "fa-clock",
         "identity": {
             "field": "imei",
             "label": "IMEI",
@@ -12,6 +13,7 @@
     },
     "ncs": {
         "label": "NCS",
+        "icon": "fa-bell-concierge",
         "identity": {
             "field": "deviceId",
             "label": "MAC",
@@ -23,6 +25,7 @@
     },
     "radar": {
         "label": "Radar",
+        "icon": "fa-wifi",
         "identity": {
             "field": "deviceId",
             "label": "ID do dispositivo",
@@ -34,6 +37,7 @@
     },
     "gateway": {
         "label": "Gateway",
+        "icon": "fa-tower-broadcast",
         "identity": {
             "field": "deviceId",
             "label": "MAC",
@@ -45,6 +49,7 @@
     },
     "diaper_sensor": {
         "label": "Medidor de fraldas",
+        "icon": "fa-droplet",
         "identity": {
             "field": "deviceId",
             "label": "MAC",
@@ -56,6 +61,7 @@
     },
     "bracelet": {
         "label": "Pulseira",
+        "icon": "fa-ring",
         "identity": {
             "field": "deviceId",
             "label": "MAC",
@@ -67,6 +73,7 @@
     },
     "pill_dispenser": {
         "label": "Dispensador de comprimidos",
+        "icon": "fa-pills",
         "identity": {
             "field": "deviceId",
             "label": "ID do dispositivo",

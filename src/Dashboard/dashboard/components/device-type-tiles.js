@@ -1,19 +1,12 @@
 import { html, raw } from "../html.js";
-import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
+import { deviceTypeFields, deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 
-/** O ícone de cada tipo de dispositivo, o mesmo do assistente de criação. */
-const DEVICE_TYPE_ICON = {
-    watch: "fa-clock",
-    radar: "fa-wifi",
-    gateway: "fa-tower-broadcast",
-    diaper_sensor: "fa-droplet",
-    bracelet: "fa-ring",
-    ncs: "fa-bell-concierge",
-    pill_dispenser: "fa-pills",
-};
-
+/**
+ * O ícone de cada tipo, tirado do catálogo. Estava aqui numa tabela à parte, e a entrada
+ * desenha a mesma constelação em PHP, que não lê módulos ES: duas cópias, uma adição.
+ */
 export function deviceTypeIcon(deviceType) {
-    return DEVICE_TYPE_ICON[normalizeDeviceType(deviceType)] || "fa-microchip";
+    return deviceTypeFields(deviceType)?.icon || "fa-microchip";
 }
 
 /**

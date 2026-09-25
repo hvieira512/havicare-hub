@@ -34,6 +34,16 @@
     src: url('/assets/fonts/Poppins-Bold.woff2') format('woff2');
 }
 
+/* O manuscrito da frase do ecrã de entrada e mais nada. Subconjunto latino do Caveat (OFL),
+   alojado aqui como o Poppins: a dashboard não pede tipos de letra à rede. */
+@font-face {
+    font-family: 'Caveat';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/assets/fonts/Caveat-Medium.woff2') format('woff2');
+}
+
 /* ===== a paleta da marca =====
    A identidade, e não o tema: é o bloco de baixo que a liga aos nomes do Bootstrap. */
 :root {
