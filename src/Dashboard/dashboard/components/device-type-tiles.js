@@ -6,7 +6,9 @@ import { deviceTypeFields, deviceTypeLabel, normalizeDeviceType } from "../domai
  * desenha a mesma constelação em PHP, que não lê módulos ES: duas cópias, uma adição.
  */
 export function deviceTypeIcon(deviceType) {
-    return deviceTypeFields(deviceType)?.icon || "fa-microchip";
+    // O que não se reconhece cai no tipo por omissão, como em todo o `domain.js`; o
+    // `fa-microchip` é só para o caso de uma entrada do catálogo chegar sem ícone.
+    return deviceTypeFields(deviceType).icon || "fa-microchip";
 }
 
 /**

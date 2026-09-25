@@ -173,9 +173,27 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         $login = substr($html, $start, $end - $start);
 
         foreach (\Hub\Domain\DeviceTypeCatalog::all() as $deviceType => $descriptor) {
+            self::assertArrayHasKey('icon', $descriptor, $deviceType);
+            self::assertNotSame('', $descriptor['icon'], $deviceType);
             self::assertStringContainsString((string)$descriptor['label'], $login, $deviceType);
-            self::assertStringContainsString((string)($descriptor['icon'] ?? ''), $login, $deviceType);
+            self::assertStringContainsString($descriptor['icon'], $login, $deviceType);
         }
+    }
+
+    /**
+     * O único `h1` vive no painel escuro, que desaparece abaixo dos 992px. Sem outro, quem usa
+     * leitor de ecrã chega a dois campos e um botão sem saber em que página está.
+     */
+    public function testTheLoginCardCarriesAHeadingForTheWidthsWithoutThePanel(): void
+    {
+        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+
+        $html = (string)$server(new ServerRequest('GET', '/dashboard'))->getBody();
+        $start = strpos($html, 'dashboard-login-card');
+        self::assertIsInt($start);
+        $card = substr($html, $start, (int)strpos($html, '</form>', $start) - $start);
+
+        self::assertMatchesRegularExpression('/<h1[^>]*>[^<]+<\/h1>/', $card);
     }
 
     public function testCatalogRoutesRevalidateWhileDeviceRoutesDoNot(): void

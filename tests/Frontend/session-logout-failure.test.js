@@ -38,6 +38,22 @@ const mount = () => {
 const visible = (el) => !el.hidden && !el.classList.contains("d-none");
 const warnings = () => fired.filter((options) => options.icon === "warning");
 
+/**
+ * Esperar pela resposta antes de esconder a dashboard deixava os dados de doentes no ecrã
+ * enquanto o pedido não caísse -- e o `fetch` não tem prazo.
+ */
+test("sai-se do ecrã antes de esperar pelo Hub, e não depois", async () => {
+    const { login, logoutButton } = mount();
+    await initializeDashboardSession(async () => {});
+    // Um pedido que nunca responde é a rede caída: o ecrã não pode ficar à espera dele.
+    globalThis.fetch = () => new Promise(() => {});
+
+    logoutButton.click();
+    await flush();
+
+    assert.equal(visible(login), true);
+});
+
 test("uma saída que o Hub não chegou a receber diz-se a quem saiu", async () => {
     const { login, logoutButton } = mount();
     await initializeDashboardSession(async () => {});
@@ -65,6 +81,21 @@ test("um 500 do Hub conta como não ter saído", async () => {
     await flush();
 
     assert.equal(warnings().length, 1);
+});
+
+/** O porquê da saída e o aviso da sessão são dois factos, e não se substituem um ao outro. */
+test("o motivo da saída não se perde quando o pedido falha", async () => {
+    mount();
+    await initializeDashboardSession(async () => {});
+    globalThis.fetch = async () => ({ ok: false, status: 500 });
+
+    // Uma saída com motivo -- a que o relógio de inatividade dispara é assim.
+    window.dispatchEvent(new Event("hub-dashboard-auth-required"));
+    await flush();
+
+    const ditos = warnings().map((options) => options.titleText).join(" | ");
+    assert.match(ditos, /expirou|inatividade/i, "o motivo tem de continuar a ser dito");
+    assert.match(ditos, /pode continuar aberta/i, "e o aviso da sessão também");
 });
 
 test("quando o Hub recebe a saída, não se avisa nada", async () => {

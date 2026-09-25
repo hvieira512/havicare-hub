@@ -32,7 +32,7 @@ fi
 command_response="$(curl -s -H "Authorization: Bearer $api_token" -H 'Content-Type: application/json' \
   -d '{"feature":"heart_rate"}' "$DASHBOARD_BASE_URL/api/devices/$IMEI/requests")"
 printf '%s' "$command_response" > "$SCENARIO_DIR/api-command.json"
-if ! printf '%s' "$command_response" | grep -q '"status":"queued"'; then
+if ! grep -q '"status":"queued"' <<<"$command_response"; then
   scenario_fail "command_failure" "offline API command was not queued"
 fi
 

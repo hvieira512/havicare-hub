@@ -52,10 +52,13 @@ command_response="$(curl -s -H "Authorization: Bearer $api_token" -H 'Content-Ty
   -d '{"feature":"heart_rate"}' "$DASHBOARD_BASE_URL/api/devices/$IMEI/requests")"
 printf '%s' "$command_response" > "$SCENARIO_DIR/api-command.json"
 # Ligado, o comando desce logo e fica `waiting`. O `sentAt` é a prova de que saiu.
-if printf '%s' "$command_response" | grep -q '"status":"queued"'; then
+#
+# Herestring e não `printf | grep`: nesta forma, a afirmativa, o SIGPIPE que o `pipefail`
+# transforma em 141 fazia o `if` ler falso e a asserção passar com a falha à frente.
+if grep -q '"status":"queued"' <<<"$command_response"; then
   scenario_fail "command_failure" "API command was queued although the device was connected"
 fi
-if ! printf '%s' "$command_response" | grep -q '"sentAt"'; then
+if ! grep -q '"sentAt"' <<<"$command_response"; then
   scenario_fail "command_failure" "online API command was not sent to the connected device"
 fi
 

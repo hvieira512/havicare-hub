@@ -237,17 +237,21 @@ const revokeSession = async () => {
  * Sem o pedido, o cookie ficava e o separador seguinte voltava a entrar sem palavra-passe. O
  * `notifyServer` a falso é para quem já soube por outro separador que a sessão acabou.
  *
- * Espera-se pela resposta: o pedido era disparado sem olhar, e uma saída que não chegasse ao
- * Hub deixava a sessão aberta lá com o ecrã de entrada à frente.
+ * Sai-se primeiro e pergunta-se depois: o `fetch` não tem prazo, e esperar por ele deixava a
+ * dashboard no ecrã -- com os dados lá -- enquanto a rede caída não desistisse.
  */
 const logout = async (message = "", notifyServer = true) => {
     clearTimers();
     hideTimeoutWarning();
-    const revoked = notifyServer ? await revokeSession() : true;
+    const pending = notifyServer ? revokeSession() : Promise.resolve(true);
     clearStorageKey(LAST_ACTIVITY_STORAGE_KEY);
     clearDashboardApiToken();
-    // Sai-se sempre: ficar na dashboard a pedido de sair é pior do que sair mal.
-    showLogin(revoked ? message : LOGOUT_FAILED_MESSAGE);
+    showLogin(message);
+
+    // O motivo da saída e o aviso da sessão são dois factos, e o segundo não apaga o primeiro.
+    if (!await pending) {
+        toast("warning", LOGOUT_FAILED_MESSAGE);
+    }
 };
 
 const IDLE_MESSAGE = "A sessão terminou por inatividade. Inicie sessão novamente.";

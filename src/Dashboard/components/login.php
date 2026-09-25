@@ -69,7 +69,8 @@ $loginHighlights = [
         <span class="dashboard-login-badge dashboard-login-column position-relative w-100 mx-auto"><img class="d-block w-auto opacity-75" src="/assets/logo-dark.png" alt="havi hub"></span>
         <div class="dashboard-login-story dashboard-login-column position-relative w-100 mx-auto">
             <span class="dashboard-login-rule d-block rounded-pill mb-3"></span>
-            <h1 class="dashboard-login-headline fw-semibold mb-3">Muitos aparelhos.<br>Um só contrato.</h1>
+            <!-- Divisa e não cabeçalho: o `h1` da página é o do cartão, que é o que ela faz. -->
+            <p class="dashboard-login-headline fw-semibold mb-3">Muitos aparelhos.<br>Um só contrato.</p>
             <p class="dashboard-login-pitch lh-base mb-5">Ingestão, normalização e publicação de telemetria de dispositivos de saúde, sempre no mesmo formato.</p>
             <ul class="list-unstyled d-grid gap-3 m-0">
                 <?php foreach ($loginHighlights as $highlight) : ?>
@@ -93,6 +94,7 @@ $loginHighlights = [
             <?= icon('fa-moon', 'fa-fw') ?>
         </button>
         <div class="dashboard-login-card w-100 p-0 p-sm-5">
+            <h1 class="visually-hidden">Entrar no havi hub</h1>
             <div class="dashboard-login-brand mb-4">
                 <img class="d-block mx-auto" src="/assets/logo.png" alt="havi hub">
             </div>
