@@ -313,9 +313,9 @@
     color: var(--bs-secondary-color);
 }
 
+/* A barra é navy nos dois temas, por isso a versão escura do logótipo serve sempre. */
 .navbar-brand img {
     height: 30px;
-    filter: invert(100%);
 }
 
 .dashboard-notifications-menu {

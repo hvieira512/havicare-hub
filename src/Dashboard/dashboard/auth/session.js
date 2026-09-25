@@ -131,6 +131,36 @@ export const closeDashboardOverlays = () => {
     document.body.style.removeProperty("padding-right");
 };
 
+const SHOW_PASSWORD = "Mostrar a palavra-passe";
+const HIDE_PASSWORD = "Ocultar a palavra-passe";
+
+const passwordToggles = () => [...document.querySelectorAll("[data-password-toggle]")];
+
+const showPassword = (button, visible) => {
+    const input = document.getElementById(button.dataset.passwordToggle);
+    if (!input) return;
+
+    input.setAttribute("type", visible ? "text" : "password");
+    const label = visible ? HIDE_PASSWORD : SHOW_PASSWORD;
+    const glyph = button.querySelector("i");
+    glyph?.classList.toggle("fa-eye", !visible);
+    glyph?.classList.toggle("fa-eye-slash", visible);
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+    button.setAttribute("aria-pressed", String(visible));
+};
+
+export const initializePasswordVisibility = () => {
+    passwordToggles().forEach((button) => button.addEventListener("click", () => {
+        showPassword(button, button.getAttribute("aria-pressed") !== "true");
+    }));
+};
+
+/** Uma palavra-passe revelada não sobrevive à saída: o ecrã seguinte é de outra pessoa. */
+export const resetPasswordVisibility = () => {
+    passwordToggles().forEach((button) => showPassword(button, false));
+};
+
 const setLoginBusy = (busy) => {
     const { loginSubmit, loginSubmitLabel, loginSubmitLoading } = elements();
     if (loginSubmit) {
@@ -153,6 +183,7 @@ const showLogin = (message) => {
         login.classList.remove("d-none");
     }
     loginForm?.reset();
+    resetPasswordVisibility();
     if (message !== "") {
         toast("warning", message);
     }
@@ -365,6 +396,7 @@ export async function initializeDashboardSession(startAuthenticatedDashboard) {
 
     loginForm?.addEventListener("submit", login);
     logoutButton?.addEventListener("click", () => logout(""));
+    initializePasswordVisibility();
     window.addEventListener("hub-dashboard-api-token-updated", () => {
         renderAuthenticatedUsername(getDashboardApiToken());
     });

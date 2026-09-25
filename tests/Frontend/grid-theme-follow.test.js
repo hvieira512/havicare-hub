@@ -24,7 +24,7 @@ test("o tema que está no ecrã lê-se do elemento raiz", () => {
 });
 
 test("o botão continua a alternar a partir do que está no ecrã", () => {
-    document.body.innerHTML = "<button id=\"dashboardThemeBtn\"><i class=\"fa-solid fa-moon\"></i></button>";
+    document.body.innerHTML = "<button data-theme-toggle><i class=\"fa-solid fa-moon\"></i></button>";
     applyTheme(DARK);
 
     assert.equal(isDarkTheme(), true, "o alternar do botão lê daqui, e não do armazenamento");

@@ -53,7 +53,7 @@ final class ApiRequestLoggerTest extends TestCase
     {
         $logger = new ApiRequestLogger();
 
-        foreach (['/', '/dashboard', '/main.js', '/assets/logo.svg', '/model-images/abc.jpg'] as $path) {
+        foreach (['/', '/dashboard', '/main.js', '/assets/logo.png', '/model-images/abc.jpg'] as $path) {
             $logger(new ServerRequest('GET', $path), static fn(): Response => new Response(200));
         }
 

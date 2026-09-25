@@ -108,9 +108,9 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         self::assertSame(200, $module->getStatusCode());
         self::assertSame('application/javascript', $module->getHeaderLine('Content-Type'));
 
-        $logo = $server(new ServerRequest('GET', '/assets/logo.svg'));
+        $logo = $server(new ServerRequest('GET', '/assets/logo.png'));
         self::assertSame(200, $logo->getStatusCode());
-        self::assertSame('image/svg+xml', $logo->getHeaderLine('Content-Type'));
+        self::assertSame('image/png', $logo->getHeaderLine('Content-Type'));
 
         $themeInit = $server(new ServerRequest('GET', '/assets/js/theme-init.js'));
         self::assertSame(200, $themeInit->getStatusCode());

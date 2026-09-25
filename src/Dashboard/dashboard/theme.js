@@ -29,6 +29,9 @@ export function isDarkTheme() {
     return document.documentElement.getAttribute("data-bs-theme") === DARK;
 }
 
+/** Há mais do que um: a barra de navegação tem o seu, e a entrada tem o dela. */
+const themeButtons = () => [...document.querySelectorAll("[data-theme-toggle]")];
+
 export function applyTheme(theme) {
     const resolved = theme === DARK ? DARK : LIGHT;
     document.documentElement.setAttribute("data-bs-theme", resolved);
@@ -39,24 +42,23 @@ export function applyTheme(theme) {
     // `bootstrap-5` sozinho segue o sistema operativo, e aqui quem manda é o botão.
     document.body?.setAttribute("data-swal2-theme", `bootstrap-5-${resolved}`);
 
-    const button = document.getElementById("dashboardThemeBtn");
-    if (!button) {
-        return resolved;
-    }
-
     // O ícone diz para onde se vai, não onde se está: no claro mostra-se a lua porque é a
     // lua que se vai buscar. O `fa-fw` mantém a largura ao trocar -- sem ele o botão mudava
     // de tamanho ao ser carregado, e um controlo não se mexe por ter sido usado.
     const goingToDark = resolved === LIGHT;
     const label = goingToDark ? "Mudar para o tema escuro" : "Mudar para o tema claro";
-    const glyph = button.querySelector("i");
-    if (glyph) {
-        glyph.classList.toggle("fa-moon", goingToDark);
-        glyph.classList.toggle("fa-sun", !goingToDark);
-    }
-    button.setAttribute("aria-label", label);
-    button.setAttribute("title", label);
-    button.setAttribute("aria-pressed", resolved === DARK ? "true" : "false");
+
+    // Os dois acompanham o tema, senão o que estivesse escondido voltava com o ícone errado.
+    themeButtons().forEach((button) => {
+        const glyph = button.querySelector("i");
+        if (glyph) {
+            glyph.classList.toggle("fa-moon", goingToDark);
+            glyph.classList.toggle("fa-sun", !goingToDark);
+        }
+        button.setAttribute("aria-label", label);
+        button.setAttribute("title", label);
+        button.setAttribute("aria-pressed", resolved === DARK ? "true" : "false");
+    });
 
     return resolved;
 }
@@ -64,9 +66,9 @@ export function applyTheme(theme) {
 export function initializeTheme() {
     applyTheme(preferredTheme());
 
-    document.getElementById("dashboardThemeBtn")?.addEventListener("click", () => {
+    themeButtons().forEach((button) => button.addEventListener("click", () => {
         const next = isDarkTheme() ? LIGHT : DARK;
         saveTextStorage(THEME_STORAGE_KEY, next);
         applyTheme(next);
-    });
+    }));
 }

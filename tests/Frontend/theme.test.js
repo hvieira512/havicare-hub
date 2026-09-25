@@ -12,11 +12,19 @@ const { THEME_STORAGE_KEY } = await import("../../src/Dashboard/dashboard/storag
  * escolhido, e o que o botão mostra depois de ser carregado.
  */
 
-function mountButton() {
-    document.body.innerHTML =
-        "<button id=\"dashboardThemeBtn\"><i class=\"fa-solid fa-moon fa-fw\"></i></button>";
+const themeButton = () =>
+    "<button data-theme-toggle><i class=\"fa-solid fa-moon fa-fw\"></i></button>";
 
-    return document.getElementById("dashboardThemeBtn");
+function mountButton() {
+    document.body.innerHTML = themeButton();
+
+    return document.querySelector("[data-theme-toggle]");
+}
+
+function mountTwoButtons() {
+    document.body.innerHTML = themeButton() + themeButton();
+
+    return [...document.querySelectorAll("[data-theme-toggle]")];
 }
 
 function reset() {
@@ -115,6 +123,33 @@ test("carregar no botão troca o tema e guarda a escolha", () => {
     button.click();
     assert.equal(document.documentElement.getAttribute("data-bs-theme"), LIGHT);
     assert.equal(localStorage.getItem(THEME_STORAGE_KEY), LIGHT);
+});
+
+// São dois desde que a entrada ganhou o seu: nenhum deles é *o* botão.
+test("todos os botões da página acompanham o tema aplicado", () => {
+    reset();
+    const buttons = mountTwoButtons();
+
+    applyTheme(DARK);
+
+    buttons.forEach((button) => {
+        assert.ok(button.querySelector("i").classList.contains("fa-sun"));
+        assert.equal(button.getAttribute("aria-pressed"), "true");
+    });
+});
+
+test("carregar em qualquer um dos botões troca o tema", () => {
+    reset();
+    const [navbar, login] = mountTwoButtons();
+    initializeTheme();
+
+    login.click();
+    assert.equal(document.documentElement.getAttribute("data-bs-theme"), DARK);
+    assert.equal(navbar.getAttribute("aria-pressed"), "true");
+
+    navbar.click();
+    assert.equal(document.documentElement.getAttribute("data-bs-theme"), LIGHT);
+    assert.equal(login.getAttribute("aria-pressed"), "false");
 });
 
 test("sem botão na página, aplicar o tema não rebenta", () => {

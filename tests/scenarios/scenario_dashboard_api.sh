@@ -56,34 +56,36 @@ if [ -z "$api_token" ]; then
 fi
 
 html="$(curl -s $DASHBOARD_BASE_URL/dashboard)"
-if ! printf '%s' "$html" | grep -q 'Havicare Hub'; then
+# Herestring e não `printf | grep`: com `pipefail`, o grep sai ao encontrar, o printf leva
+# SIGPIPE, e uma resposta maior que o buffer do tubo falhava com a asserção a passar.
+if ! grep -q 'Havicare Hub' <<<"$html"; then
   scenario_fail "dashboard_failure" "dashboard HTML did not render expected page"
 fi
 
 devices="$(curl -s -H "Authorization: Bearer $api_token" "$DASHBOARD_BASE_URL/api/devices?limit=100&page=1")"
 printf '%s' "$devices" > "$SCENARIO_DIR/dashboard-devices.json"
-if ! printf '%s' "$devices" | grep -q '"data"'; then
+if ! grep -q '"data"' <<<"$devices"; then
   scenario_fail "dashboard_failure" "devices collection did not return data wrapper"
 fi
-if ! printf '%s' "$devices" | grep -q "$IMEI"; then
+if ! grep -q "$IMEI" <<<"$devices"; then
   scenario_fail "dashboard_failure" "devices collection did not include whitelist device"
 fi
 
 command_response="$(curl -s -H "Authorization: Bearer $api_token" -H 'Content-Type: application/json' -d '{"feature":"blood_oxygen"}' "$DASHBOARD_BASE_URL/api/devices/$IMEI/requests")"
 printf '%s' "$command_response" > "$SCENARIO_DIR/dashboard-command.json"
-if ! printf '%s' "$command_response" | grep -q '"status":"queued"'; then
+if ! grep -q '"status":"queued"' <<<"$command_response"; then
   scenario_fail "command_failure" "offline dashboard command was not queued"
 fi
-if ! printf '%s' "$command_response" | grep -q '"feature":"blood_oxygen"'; then
+if ! grep -q '"feature":"blood_oxygen"' <<<"$command_response"; then
   scenario_fail "command_failure" "generic telemetry request did not echo requested feature"
 fi
 
 device="$(curl -s -H "Authorization: Bearer $api_token" "$DASHBOARD_BASE_URL/api/devices/$IMEI")"
 printf '%s' "$device" > "$SCENARIO_DIR/dashboard-device.json"
-if ! printf '%s' "$device" | grep -q '"configurationSync"'; then
+if ! grep -q '"configurationSync"' <<<"$device"; then
   scenario_fail "dashboard_failure" "device detail did not include configurationSync"
 fi
-if ! printf '%s' "$device" | grep -q '"blood_oxygen"'; then
+if ! grep -q '"blood_oxygen"' <<<"$device"; then
   scenario_fail "dashboard_failure" "device detail did not include queued generic request state"
 fi
 

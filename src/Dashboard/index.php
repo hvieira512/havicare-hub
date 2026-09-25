@@ -31,9 +31,10 @@ require_once __DIR__ . '/components/modal.php';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Havicare Hub</title>
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.svg">
-    <link rel="icon" type="image/svg+xml" sizes="32x32" href="/assets/logo.svg">
-    <link rel="icon" type="image/svg+xml" sizes="16x16" href="/assets/logo.svg">
+    <!-- O ícone é só o «h» da marca: o logótipo inteiro é uma faixa e num quadrado de 16px
+         não se lia nada. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo-mark.png">
+    <link rel="icon" type="image/png" href="/assets/logo-mark.png">
     <!-- O tema antes da primeira pintura: script clássico e sem defer, no <head> antes das
          folhas, para pôr o data-bs-theme antes de o CSS carregar. Ver assets/js/theme-init.js. -->
     <script src="<?= $asset('/assets/js/theme-init.js') ?>"></script>

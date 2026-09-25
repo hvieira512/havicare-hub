@@ -1,5 +1,8 @@
 /* ===== entrada =====
-   O ecrã de autenticação e mais nada: uma regra `dashboard-login-*` só existe aqui. */
+   O ecrã de autenticação e mais nada: uma regra `dashboard-login-*` só existe aqui.
+
+   O que o Bootstrap sabe fazer fica na marcação, em utilitárias. Aqui só entra o que não
+   tem utilitária: medidas exactas, os fundos do painel e os tons que não são do tema. */
 
 /* O cinzento claro da maqueta é a superfície deste ecrã, e estava escrito duas vezes.
    O painel da esquerda não leva par escuro: já é escuro nos dois temas, de propósito. */
@@ -26,38 +29,47 @@
         var(--login-surface);
 }
 
-/* O cinzento claro da maqueta, e não branco: os campos são brancos, e sobre branco puro
-   desapareciam -- o lado direito lê-se como uma folha vazia com texto solto. */
+/* O cinzento claro da maqueta, e não branco: o cartão é branco, e sobre branco puro
+   desaparecia. A sombra é de um lado só, e as utilitárias do Bootstrap são a toda a volta. */
 .dashboard-login-panel {
     background: var(--login-surface);
     box-shadow: -1.5rem 0 4rem var(--login-panel-shadow);
 }
 
-/* O branco do campo é o do corpo da página: é a mesma relação -- campo claro sobre
-   superfície cinzenta -- e assim vira com o tema em vez de ficar branco no escuro. */
-.dashboard-login-panel .form-control {
-    background-color: var(--bs-body-bg);
+/* ----- o cartão do formulário ----- */
+
+.dashboard-login-card {
+    max-width: 26rem;
 }
 
 .dashboard-login-brand img {
-    width: 148px;
+    width: 136px;
 }
 
-/* O `logo.svg` é preto de uma cor só e no escuro ficava preto sobre preto. Este é o único
-   ecrã sem botão de tema para contornar o problema. */
+/* O logótipo tem duas versões, e é o único sítio que segue o tema: o texto escuro sobre a
+   superfície escura não se lia. */
 [data-bs-theme="dark"] .dashboard-login-brand img {
-    filter: invert(100%);
+    content: url("/assets/logo-dark.png");
 }
 
-.dashboard-login-submit {
-    min-height: 2.75rem;
-    font-size: var(--fs-body);
+/* O ícone e o olho ficam por dentro do campo, e por isso o texto começa mais adentro. */
+.dashboard-login-field .form-control {
+    padding-left: 2.6rem;
+    padding-right: 2.9rem;
 }
 
-/* O `d-flex` não serve: é do mesmo peso que o `d-none` que a esconde, e ganhava-lhe. */
-.dashboard-login-submit-loading:not(.d-none) {
-    display: inline-flex;
+.dashboard-login-reveal {
+    width: 2.25rem;
+    height: 2.25rem;
 }
+
+/* O único ecrã que não tem a barra de navegação, e por isso leva o seu próprio botão. */
+.dashboard-login-theme {
+    width: 2.75rem;
+    height: 2.75rem;
+}
+
+/* ----- o painel escuro ----- */
 
 .dashboard-login-atmosphere {
     background:
@@ -75,25 +87,62 @@
     background-size: 80px 80px;
 }
 
-/* A marca no canto superior esquerdo do painel escuro, como na maqueta. O logo e escuro,
-   por isso inverte-se, como ja acontece na barra de navegacao. */
-.dashboard-login-badge {
-    left: 3rem;
-    top: 2.5rem;
+/* O halo por trás do discurso, no lugar das órbitas: dá profundidade sem competir com o
+   texto que lhe fica por cima. */
+.dashboard-login-atmosphere::after {
+    content: "";
+    position: absolute;
+    left: -7.5rem;
+    top: 11rem;
+    width: 38rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--login-accent-rgb), .2), transparent 62%);
 }
 
+/* A marca no canto superior esquerdo do painel escuro, como na maqueta. O painel é escuro
+   nos dois temas, por isso leva sempre a versão escura do logótipo. */
 .dashboard-login-badge img {
-    height: 24px;
-    filter: invert(100%);
-    opacity: .9;
+    height: 26px;
 }
 
-/* A assinatura e a frase, no canto inferior esquerdo. Estavam a direita e sem frase. */
-.dashboard-login-mark {
-    left: 3rem;
-    right: 3rem;
-    bottom: 2.5rem;
-    max-width: 20rem;
+.dashboard-login-story {
+    max-width: 32.5rem;
+}
+
+.dashboard-login-rule {
+    width: 3.25rem;
+    height: 3px;
+    background: var(--login-accent);
+}
+
+.dashboard-login-headline {
+    font-size: clamp(2rem, 3vw, 2.75rem);
+    line-height: 1.14;
+    letter-spacing: -.01em;
+    color: rgb(var(--login-ink-rgb));
+}
+
+/* Os tons do painel são o branco diluído e não os do tema: o painel não vira com ele. */
+.dashboard-login-pitch {
+    max-width: 26rem;
+    color: rgba(var(--login-ink-rgb), .66);
+}
+
+.dashboard-login-highlight-icon {
+    width: 2.625rem;
+    height: 2.625rem;
+    border: 1px solid rgba(var(--login-ink-rgb), .13);
+    background: rgba(var(--login-ink-rgb), .07);
+    color: rgba(var(--login-ink-rgb), .88);
+}
+
+.dashboard-login-highlight-title {
+    color: rgb(var(--login-ink-rgb));
+}
+
+.dashboard-login-highlight-text {
+    color: rgba(var(--login-ink-rgb), .56);
 }
 
 .dashboard-login-signature {
@@ -101,63 +150,3 @@
     font-size: var(--fs-label);
     letter-spacing: .22em;
 }
-
-.dashboard-login-pitch {
-    color: rgba(var(--login-ink-rgb), .8);
-    line-height: 1.6;
-}
-
-/* Uma medida fixa para o formulario, em vez da largura que a coluna der. */
-.dashboard-login-form-column {
-    max-width: 22.5rem;
-}
-
-.dashboard-login-orbit {
-    width: min(46vw, 660px);
-    aspect-ratio: 1;
-    border: 1px solid rgba(var(--login-accent-rgb), .34);
-}
-
-.dashboard-login-orbit::before,
-.dashboard-login-orbit::after {
-    content: "";
-    position: absolute;
-    border: 1px solid rgba(var(--login-accent-rgb), .2);
-    border-radius: 50%;
-}
-
-.dashboard-login-orbit::before {
-    inset: 16%;
-}
-
-.dashboard-login-orbit::after {
-    inset: 34%;
-    background: radial-gradient(circle, rgba(var(--login-accent-rgb), .3), transparent 68%);
-}
-
-.dashboard-login-signal {
-    width: 13px;
-    height: 13px;
-    background: var(--login-accent);
-    box-shadow: 0 0 0 10px rgba(var(--login-accent-rgb), .08), 0 0 2rem var(--login-accent);
-    animation: signal-pulse 2.4s ease-in-out infinite;
-}
-
-.dashboard-login-signal-one {
-    top: 27%;
-    left: 39%;
-}
-
-.dashboard-login-signal-two {
-    right: 28%;
-    bottom: 31%;
-    animation-delay: -1.2s;
-}
-
-@keyframes signal-pulse {
-    50% {
-        transform: scale(1.25);
-        opacity: .65;
-    }
-}
-
