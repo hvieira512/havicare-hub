@@ -103,15 +103,15 @@ function cyclePosition(current) {
         return "";
     }
 
-    const porDia = plans.filter((plan) => plan?.enabled !== false).length;
-    if (porDia < 1) {
+    const perDay = plans.filter((plan) => plan?.enabled !== false).length;
+    if (perDay < 1) {
         return "";
     }
 
-    const dia = Math.ceil(current / porDia);
-    const dose = ((current - 1) % porDia) + 1;
+    const day = Math.ceil(current / perDay);
+    const dose = ((current - 1) % perDay) + 1;
 
-    return porDia === 1 ? `Dia ${dia}` : `Dia ${dia}, ${dose}ª dose`;
+    return perDay === 1 ? `Dia ${day}` : `Dia ${day}, ${dose}ª dose`;
 }
 
 const UPLINK_CARD_RENDERERS = {
@@ -195,11 +195,11 @@ const UPLINK_CARD_RENDERERS = {
     // A posição vai nos detalhes porque é o que se precisa para carregar o prato: sem ela,
     // quem põe a medicação não sabe em que compartimento o aparelho vai pegar a seguir.
     cells_remaining: (data) => {
-        const compartimento = data.current != null && data.total != null
+        const cell = data.current != null && data.total != null
             ? `Compartimento ${data.current} de ${data.total}`
             : "";
-        const nivel = data.level != null ? fieldValue("level", data.level) : "";
-        const noCiclo = cyclePosition(data.current);
+        const level = data.level != null ? fieldValue("level", data.level) : "";
+        const inCycle = cyclePosition(data.current);
 
         return {
             value: data.remaining == null
@@ -210,8 +210,8 @@ const UPLINK_CARD_RENDERERS = {
             // A leitura em dias primeiro, porque é a que se encontra no prato; o número cru
             // fica na gaveta, para o cartão não mentir se o autocolante e o plano não
             // corresponderem.
-            details: [noCiclo || compartimento, nivel].filter(Boolean).join(" · "),
-            detailsTitle: [noCiclo, compartimento, nivel].filter(Boolean).join(" · "),
+            details: [inCycle || cell, level].filter(Boolean).join(" · "),
+            detailsTitle: [inCycle, cell, level].filter(Boolean).join(" · "),
         };
     },
     // O que interessa numa toma é como ela acabou, e numa avaria é qual foi.
