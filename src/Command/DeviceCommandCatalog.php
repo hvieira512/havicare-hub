@@ -425,9 +425,16 @@ final class DeviceCommandCatalog
         $tlv = [];
         for ($offset = 0; $offset < PillDispenserAdapter::ALARM_SLOTS; $offset++) {
             $plan = $bySlot[$offset + 1] ?? null;
-            $tlv[0x1021 + $offset] = ['value' => self::pillByte($plan['hour'] ?? 0, 23)];
-            $tlv[0x1031 + $offset] = ['value' => self::pillByte($plan['minute'] ?? 0, 59)];
-            $tlv[0x1041 + $offset] = ['value' => self::pillBool($plan !== null && ($plan['enabled'] ?? true))];
+            // Um plano guardado antes de o interruptor sair do cartão pode trazê-lo
+            // desligado. Ele nunca calou nada, e é o vazio que finalmente o faz.
+            $set = $plan !== null && ($plan['enabled'] ?? true) !== false;
+            $tlv[0x1021 + $offset] = ['value' => $set
+                ? self::pillByte($plan['hour'] ?? 0, 23)
+                : chr(PillDispenserAdapter::ALARM_UNSET_HOUR)];
+            $tlv[0x1031 + $offset] = ['value' => $set
+                ? self::pillByte($plan['minute'] ?? 0, 59)
+                : chr(PillDispenserAdapter::ALARM_UNSET_MINUTE)];
+            $tlv[0x1041 + $offset] = ['value' => self::pillBool($set)];
         }
 
         return $tlv;

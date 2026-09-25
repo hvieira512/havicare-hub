@@ -290,26 +290,29 @@ final class DeviceEventDecoder
      */
     private function pillConfiguration(string $nativeType, array $tlv): ?array
     {
-        // Só os alarmes ligados: os outros seriam nove linhas a dizer "00:00 desligado". O
-        // número do alarme vai junto, senão o terceiro voltava como se fosse o segundo.
+        // Só os alarmes definidos: os outros seriam nove linhas vazias. O número do alarme vai
+        // junto, senão o terceiro voltava como se fosse o segundo.
+        //
+        // Quem decide é a hora e não o interruptor: esta firmware ignora o `0x1041`, e um
+        // alarme posto no próprio aparelho podia vir com ele a zero e tocar na mesma.
         $plans = [];
-        // Se a trama falou dos interruptores, ela diz o plano inteiro — mesmo que o plano
-        // inteiro sejam nove alarmes desligados.
+        // Se a trama falou das horas, ela diz o plano inteiro — mesmo que o plano inteiro
+        // seja nove slots vazios.
         $planReported = false;
         for ($offset = 0; $offset < PillDispenserAdapter::ALARM_SLOTS; $offset++) {
-            $enabled = $this->tlvU8($tlv, 0x1041 + $offset);
-            if ($enabled === null) {
+            $hour = $this->tlvU8($tlv, 0x1021 + $offset);
+            if ($hour === null) {
                 continue;
             }
             $planReported = true;
-            if ($enabled !== 1) {
+            $minute = $this->tlvU8($tlv, 0x1031 + $offset) ?? 0;
+            if ($hour >= PillDispenserAdapter::ALARM_UNSET_HOUR || $minute >= PillDispenserAdapter::ALARM_UNSET_MINUTE) {
                 continue;
             }
             $plans[] = [
                 'slot' => $offset + 1,
-                'hour' => $this->tlvU8($tlv, 0x1021 + $offset) ?? 0,
-                'minute' => $this->tlvU8($tlv, 0x1031 + $offset) ?? 0,
-                'enabled' => true,
+                'hour' => $hour,
+                'minute' => $minute,
             ];
         }
 

@@ -5,8 +5,8 @@ namespace Hub\Command\Configuration\Definition;
 /**
  * O que se configura num dispensador de comprimidos Zayata M228.
  *
- * O aparelho tem nove alarmes **fixos**: não se criam nem se apagam, ligam-se e desligam-se,
- * e é por isso que o plano viaja inteiro de cada vez.
+ * O aparelho tem nove alarmes **fixos**: não se criam nem se apagam, preenchem-se e
+ * esvaziam-se, e é por isso que o plano viaja inteiro de cada vez.
  */
 final class ZayataConfigurationDefinitions
 {
@@ -25,8 +25,8 @@ final class ZayataConfigurationDefinitions
                 9,
                 null,
                 false,
-                'Os nove alarmes do aparelho. O plano é enviado inteiro: um slot que fique de'
-                . ' fora é desligado, para não sobrar nada de um plano anterior.',
+                'Os nove alarmes do aparelho. O plano é enviado inteiro: um slot deixado em'
+                . ' branco fica vazio, para não sobrar nada de um plano anterior.',
             ),
             ConfigurationDefinition::make(
                 'medication_period',

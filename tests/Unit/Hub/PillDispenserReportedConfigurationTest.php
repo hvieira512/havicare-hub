@@ -49,8 +49,8 @@ final class PillDispenserReportedConfigurationTest extends TestCase
 
         self::assertSame(
             ['plans' => [
-                ['slot' => 1, 'hour' => 8, 'minute' => 30, 'enabled' => true],
-                ['slot' => 3, 'hour' => 20, 'minute' => 0, 'enabled' => true],
+                ['slot' => 1, 'hour' => 8, 'minute' => 30],
+                ['slot' => 3, 'hour' => 20, 'minute' => 0],
             ]],
             $settings['medication_reminders'],
         );
@@ -82,20 +82,39 @@ final class PillDispenserReportedConfigurationTest extends TestCase
     }
 
     /**
-     * Nove alarmes desligados é um plano, e tem de ser publicado como tal.
+     * Nove slots vazios é um plano, e tem de ser publicado como tal.
      *
-     * A lista só saía quando havia pelo menos um alarme ligado. Desligar os nove não publicava
-     * plano nenhum, a projeção não tocava na linha, e a dashboard continuava a mostrar o plano
-     * antigo como reportado — para sempre.
+     * A lista só saía quando havia pelo menos um alarme definido. Esvaziar os nove não
+     * publicava plano nenhum, a projeção não tocava na linha, e a dashboard continuava a
+     * mostrar o plano antigo como reportado — para sempre.
      */
-    public function testTurningEveryAlarmOffIsAlsoAPlan(): void
+    public function testAnEmptyPlanIsAlsoAPlan(): void
     {
         $tlv = [];
         foreach (range(0, 8) as $offset) {
-            $tlv[0x1041 + $offset] = "\x00";
+            $tlv[0x1021 + $offset] = "\x18";
+            $tlv[0x1031 + $offset] = "\x3C";
         }
 
         self::assertSame(['plans' => []], $this->readConfiguration($tlv)['medication_reminders'] ?? null);
+    }
+
+    /**
+     * Um alarme com o interruptor a zero mas com hora é um alarme.
+     *
+     * Esta firmware ignora o `0x1041`: um alarme posto no próprio aparelho pode chegar com o
+     * interruptor a zero e tocar na mesma, e esconder-lho era mostrar-lhe um plano falso.
+     */
+    public function testAnAlarmWithTheSwitchOffIsStillReported(): void
+    {
+        $settings = $this->readConfiguration([
+            0x1021 => "\x10", 0x1031 => "\x1E", 0x1041 => "\x00",
+        ]);
+
+        self::assertSame(
+            ['plans' => [['slot' => 1, 'hour' => 16, 'minute' => 30]]],
+            $settings['medication_reminders'],
+        );
     }
 
     /** Uma trama que não fala dos alarmes não diz nada sobre o plano. */

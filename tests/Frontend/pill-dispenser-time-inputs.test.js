@@ -50,7 +50,7 @@ test("as horas de silêncio voltam separadas em hora e minuto", () => {
 
 test("cada alarme tem um seletor de horas, e os nove aparecem sempre", () => {
     const root = render("pillDispenserAlarms", {
-        plans: [{ hour: 8, minute: 30, enabled: true }],
+        plans: [{ hour: 8, minute: 30 }],
     });
 
     const times = [...root.querySelectorAll("input[type=time]")];
@@ -58,17 +58,17 @@ test("cada alarme tem um seletor de horas, e os nove aparecem sempre", () => {
     assert.equal(times[0].getAttribute("value"), "08:30");
 });
 
-test("um alarme ligado volta com a hora que se escolheu", () => {
+test("um alarme definido volta com a hora que se escolheu", () => {
     const root = render("pillDispenserAlarms", {
-        plans: [{ hour: 8, minute: 30, enabled: true }, { hour: 20, minute: 5, enabled: true }],
+        plans: [{ hour: 8, minute: 30 }, { hour: 20, minute: 5 }],
     });
 
     // O `slot` é o número do alarme e não a posição: sem ele, o enésimo plano caía no
     // enésimo alarme e escolher o 5 escrevia no 3.
     assert.deepEqual(INPUTS.pillDispenserAlarms.read(root), {
         plans: [
-            { slot: 1, hour: 8, minute: 30, enabled: true },
-            { slot: 2, hour: 20, minute: 5, enabled: true },
+            { slot: 1, hour: 8, minute: 30 },
+            { slot: 2, hour: 20, minute: 5 },
         ],
     });
 });
@@ -79,8 +79,17 @@ test("um alarme ligado volta com a hora que se escolheu", () => {
  */
 test("as horas sentinela do aparelho não se desenham como hora", () => {
     const root = render("pillDispenserAlarms", {
-        plans: [{ hour: 24, minute: 60, enabled: false }],
+        plans: [{ hour: 24, minute: 60 }],
     });
 
     assert.equal(root.querySelectorAll("input[type=time]")[0].getAttribute("value"), "");
+});
+
+/** E um slot desenhado em branco não volta como plano nenhum, que é o que o esvazia. */
+test("um slot em branco não volta no plano", () => {
+    const root = render("pillDispenserAlarms", { plans: [{ hour: 8, minute: 30 }] });
+
+    root.querySelectorAll("input[type=time]")[0].setAttribute("value", "");
+
+    assert.deepEqual(INPUTS.pillDispenserAlarms.read(root), { plans: [] });
 });

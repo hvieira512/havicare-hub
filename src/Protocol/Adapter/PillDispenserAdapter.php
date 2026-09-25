@@ -177,6 +177,15 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     public const ALARM_SLOTS = 9;
 
     /**
+     * O «sem alarme» do aparelho, fora da gama de horas que a especificação declara.
+     *
+     * A meia-noite não serve de vazio: um slot a `00:00` toca e gasta um compartimento todos
+     * os dias. O aparelho aceita e devolve este par nos alarmes que não estão definidos.
+     */
+    public const ALARM_UNSET_HOUR = 24;
+    public const ALARM_UNSET_MINUTE = 60;
+
+    /**
      * O tipo declarado de cada TAG, da tabela «TAG Definition - Device Type 02».
      *
      * O tipo vai nos bits 0--4 do Flag de cada TFLV: uma TAG que chegue ao aparelho como

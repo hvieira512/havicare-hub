@@ -33,23 +33,25 @@ final class PillDispenserDownlinkTest extends TestCase
     {
         $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'medicationPlan', [
             'plans' => [
-                ['hour' => 8, 'minute' => 30, 'enabled' => true],
-                ['hour' => 20, 'minute' => 5, 'enabled' => false],
+                ['hour' => 8, 'minute' => 30],
+                ['hour' => 20, 'minute' => 5],
             ],
         ]);
 
         $tlv = $this->decode($frame, 0x06);
 
-        // Alarme 1: 08:30 ligado.
+        // Alarme 1: 08:30.
         self::assertSame("\x08", $tlv[0x1021]['value']);
         self::assertSame("\x1E", $tlv[0x1031]['value']);
         self::assertSame("\x01", $tlv[0x1041]['value']);
-        // Alarme 2: 20:05 desligado.
+        // Alarme 2: 20:05.
         self::assertSame("\x14", $tlv[0x1022]['value']);
         self::assertSame("\x05", $tlv[0x1032]['value']);
-        self::assertSame("\x00", $tlv[0x1042]['value']);
-        // Os slots que o plano não usa são desligados de propósito: o aparelho tem nove
-        // fixos, e um que sobrasse de um plano anterior continuava a tocar.
+        self::assertSame("\x01", $tlv[0x1042]['value']);
+        // Os slots que o plano não usa vão vazios: o aparelho tem nove fixos, e um que
+        // sobrasse de um plano anterior continuava a tocar.
+        self::assertSame("\x18", $tlv[0x1029]['value']);
+        self::assertSame("\x3C", $tlv[0x1039]['value']);
         self::assertSame("\x00", $tlv[0x1049]['value']);
     }
 

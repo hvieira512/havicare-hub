@@ -30,18 +30,40 @@ final class PillDispenserAlarmSlotTest extends TestCase
         self::assertSame(1, $this->byte($tlv, 0x1045), 'interruptor do alarme 5');
 
         self::assertSame(0, $this->byte($tlv, 0x1043), 'o alarme 3 não foi tocado');
-        self::assertSame(0, $this->byte($tlv, 0x1023));
+        self::assertSame(24, $this->byte($tlv, 0x1023));
     }
 
-    /** Os nove vão sempre, e um slot que o plano não use fica desligado. */
-    public function testTheUnusedSlotsAreSwitchedOff(): void
+    /**
+     * Os nove vão sempre, e um slot que o plano não use vai vazio.
+     *
+     * O vazio do aparelho é `24:60`, não `00:00`: a hora a zero é a meia-noite, e oito slots
+     * por preencher gastavam uma dose todos os dias à meia-noite.
+     */
+    public function testTheUnusedSlotsAreEmptyAndNotMidnight(): void
     {
-        $tlv = $this->plan([['slot' => 9, 'hour' => 8, 'minute' => 0, 'enabled' => true]]);
+        $tlv = $this->plan([['slot' => 9, 'hour' => 8, 'minute' => 0]]);
 
         foreach (range(0, 7) as $offset) {
-            self::assertSame(0, $this->byte($tlv, 0x1041 + $offset), "alarme " . ($offset + 1));
+            self::assertSame(24, $this->byte($tlv, 0x1021 + $offset), 'hora do alarme ' . ($offset + 1));
+            self::assertSame(60, $this->byte($tlv, 0x1031 + $offset), 'minuto do alarme ' . ($offset + 1));
+            self::assertSame(0, $this->byte($tlv, 0x1041 + $offset), 'interruptor do alarme ' . ($offset + 1));
         }
+        self::assertSame(8, $this->byte($tlv, 0x1029), 'hora do alarme 9');
         self::assertSame(1, $this->byte($tlv, 0x1049), 'alarme 9');
+    }
+
+    /**
+     * Um plano guardado com o interruptor desligado passa a ir vazio.
+     *
+     * O interruptor nunca calou nada — a firmware ignora-o —, e quem o desligou queria o
+     * alarme calado. O `24:60` é o que finalmente lho dá.
+     */
+    public function testASlotSwitchedOffInAStoredPlanGoesOutEmpty(): void
+    {
+        $tlv = $this->plan([['slot' => 1, 'hour' => 16, 'minute' => 30, 'enabled' => false]]);
+
+        self::assertSame(24, $this->byte($tlv, 0x1021));
+        self::assertSame(60, $this->byte($tlv, 0x1031));
     }
 
     /** Um plano guardado antes desta mudança não traz slot, e continua a valer por posição. */

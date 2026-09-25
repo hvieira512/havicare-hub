@@ -65,14 +65,14 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
     {
         $settings = $this->roundTrip('medicationPlan', [
             'plans' => [
-                ['slot' => 1, 'hour' => 9, 'minute' => 35, 'enabled' => true],
-                ['slot' => 4, 'hour' => 20, 'minute' => 0, 'enabled' => true],
+                ['slot' => 1, 'hour' => 9, 'minute' => 35],
+                ['slot' => 4, 'hour' => 20, 'minute' => 0],
             ],
         ]);
 
         self::assertSame(['plans' => [
-            ['slot' => 1, 'hour' => 9, 'minute' => 35, 'enabled' => true],
-            ['slot' => 4, 'hour' => 20, 'minute' => 0, 'enabled' => true],
+            ['slot' => 1, 'hour' => 9, 'minute' => 35],
+            ['slot' => 4, 'hour' => 20, 'minute' => 0],
         ]], $settings['medication_reminders'] ?? null);
     }
 

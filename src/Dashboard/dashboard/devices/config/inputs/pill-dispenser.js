@@ -9,17 +9,19 @@ import { readCheckbox, readText } from "../readers.js";
 /**
  * Os campos do dispensador de comprimidos.
  *
- * O aparelho tem **nove alarmes fixos**: não se criam nem se apagam, ligam-se e desligam-se.
- * Por isso o formulário mostra sempre os nove, e não uma lista a que se acrescentam linhas —
- * é essa a diferença entre este campo e um plano de lembretes de relógio.
+ * O aparelho tem **nove alarmes fixos**: não se criam nem se apagam. Por isso o formulário
+ * mostra sempre os nove, e não uma lista a que se acrescentam linhas — o número do slot é o
+ * que liga cada alarme ao estado que o aparelho reporta dele.
  */
 
 /** O aparelho tem nove, e o formulário mostra os nove. */
 const SLOTS = 9;
 
 /**
- * O M228 devolve `24` e `60` nos alarmes que nunca foram definidos. Não são uma hora: são o
- * sentinela dele, e desenhá-los à letra punha «24:60» no ecrã.
+ * O «sem alarme» do M228, que ele devolve nos que nunca foram definidos e aceita de volta.
+ *
+ * Não é uma hora: desenhá-lo à letra punha «24:60» no ecrã. A meia-noite não serve de vazio,
+ * porque um slot a `00:00` toca e gasta um compartimento todos os dias.
  */
 const UNSET_HOUR = 24;
 const UNSET_MINUTE = 60;
@@ -38,26 +40,26 @@ const fromTimeValue = (value) => {
     return { hour: Number(hour) || 0, minute: Number(minute) || 0 };
 };
 
+/** Um campo de hora em branco. */
+const isBlank = (value) => String(value ?? "").trim() === "";
+
 const timeField = (configField, hour, minute) =>
     html`<input class="form-control" type="time" data-config-field="${esc(configField)}"
         value="${esc(toTimeValue(hour, minute))}">`;
 
-const slotCell = (index, plan) => {
-    const enabled = plan ? plan.enabled !== false : false;
-
-    return html`
+/**
+ * Sem interruptor: o `0x1041`--`0x1049` desta firmware é inerte. O aparelho aceita-o,
+ * guarda-o, devolve-o numa leitura e toca na mesma, e o ecrã dele desenha os dois casos
+ * iguais. Quem decide se há alarme é a hora estar preenchida.
+ */
+const slotCell = (index, plan) =>
+    html`
         <div class="col">
             <div class="d-flex align-items-center gap-2 border rounded-3 px-2 py-1" data-alarm-slot="${String(index)}">
-                <div class="form-check form-switch m-0">
-                    <input class="form-check-input" type="checkbox" role="switch"
-                        aria-label="Alarme ${String(index + 1)}"
-                        data-config-field="enabled-${String(index)}" ${raw(enabled ? "checked" : "")}>
-                </div>
                 <div class="text-secondary small flex-shrink-0">${String(index + 1)}</div>
                 ${raw(timeField(`time-${index}`, plan?.hour, plan?.minute))}
             </div>
         </div>`;
-};
 
 /**
  * Sem rótulo próprio: o cartão da configuração já mostra "Plano de medicação" por cima, e
@@ -78,8 +80,8 @@ function alarmsInput(entry, desired) {
 }
 
 /**
- * Lê os nove slots de volta, e deixa cair os desligados que não têm hora: o que vai para o
- * aparelho é a lista dos que ficam, e o resto é desligado por omissão.
+ * Lê os nove slots de volta, e deixa cair os que ficaram em branco: o que vai para o aparelho
+ * é a lista dos que ficam, e o resto sai vazio por omissão.
  *
  * Cada plano leva o número do alarme em que fica. Sem ele a lista compactava-se e o enésimo
  * plano caía no enésimo alarme: escolher o 5 escrevia no 3, por cima do que lá estivesse.
@@ -87,10 +89,9 @@ function alarmsInput(entry, desired) {
 function readAlarms(section) {
     const plans = [];
     for (let index = 0; index < SLOTS; index++) {
-        const enabled = readCheckbox(section, `enabled-${index}`);
-        const { hour, minute } = fromTimeValue(readText(section, `time-${index}`));
-        if (!enabled && hour === 0 && minute === 0) continue;
-        plans.push({ slot: index + 1, hour, minute, enabled });
+        const value = readText(section, `time-${index}`);
+        if (isBlank(value)) continue;
+        plans.push({ slot: index + 1, ...fromTimeValue(value) });
     }
 
     return { plans };

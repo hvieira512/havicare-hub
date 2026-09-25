@@ -109,10 +109,9 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertSame(['timeZone' => 100], $settings['time_zone']);
         self::assertSame(['enabled' => true], $settings['child_lock']);
         self::assertSame(['enabled' => false], $settings['early_dispense']);
-        // O plano volta só com os alarmes que estão ligados: os outros nove menos um seriam
-        // ruído a dizer "00:00 desligado".
+        // O plano volta só com os alarmes definidos: os outros oito seriam ruído.
         self::assertSame(
-            ['plans' => [['slot' => 1, 'hour' => 8, 'minute' => 30, 'enabled' => true]]],
+            ['plans' => [['slot' => 1, 'hour' => 8, 'minute' => 30]]],
             $settings['medication_reminders'],
         );
     }

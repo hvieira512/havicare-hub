@@ -12,47 +12,33 @@ import { INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/pill
  * estivesse. Confirmou-se contra o aparelho: pediu-se o 5 e saíram os bytes do 3.
  */
 
-const section = (slots) => {
+const section = (times) => {
     const fields = new Map();
-    for (const [index, slot] of slots.entries()) {
-        fields.set(`enabled-${index}`, slot?.enabled === true);
-        fields.set(`time-${index}`, slot?.time ?? "");
+    for (const [index, time] of times.entries()) {
+        fields.set(`time-${index}`, time ?? "");
     }
 
     return {
         querySelector: (selector) => {
             const field = selector.match(/\[data-config-field="([^"]+)"\]/)?.[1];
             if (field === undefined || !fields.has(field)) return null;
-            const value = fields.get(field);
 
-            return typeof value === "boolean"
-                ? { checked: value, value: "" }
-                : { value, checked: false };
+            return { value: fields.get(field), checked: false };
         },
     };
 };
 
-const empty = { enabled: false, time: "" };
-const nine = (overrides) =>
-    Array.from({ length: 9 }, (_, index) => overrides[index] ?? empty);
+const nine = (overrides) => Array.from({ length: 9 }, (_, index) => overrides[index] ?? "");
 
 test("o alarme escolhido leva o seu número, e não a posição na lista", () => {
-    const read = INPUTS.pillDispenserAlarms.read(
-        section(nine({ 4: { enabled: true, time: "10:24" } })),
-    );
+    const read = INPUTS.pillDispenserAlarms.read(section(nine({ 4: "10:24" })));
 
-    assert.deepEqual(read.plans, [
-        { slot: 5, hour: 10, minute: 24, enabled: true },
-    ]);
+    assert.deepEqual(read.plans, [{ slot: 5, hour: 10, minute: 24 }]);
 });
 
 test("vários alarmes mantêm cada um o seu número", () => {
     const read = INPUTS.pillDispenserAlarms.read(
-        section(nine({
-            0: { enabled: true, time: "11:00" },
-            4: { enabled: true, time: "10:24" },
-            8: { enabled: true, time: "20:00" },
-        })),
+        section(nine({ 0: "11:00", 4: "10:24", 8: "20:00" })),
     );
 
     assert.deepEqual(
@@ -61,7 +47,7 @@ test("vários alarmes mantêm cada um o seu número", () => {
     );
 });
 
-/** Um slot vazio e desligado continua a não viajar: o aparelho desliga o que não vier. */
+/** Um slot em branco não viaja: o backend escreve-lhe o vazio do aparelho. */
 test("os slots por preencher não entram no plano", () => {
     const read = INPUTS.pillDispenserAlarms.read(section(nine({})));
 
@@ -72,11 +58,21 @@ test("os slots por preencher não entram no plano", () => {
 test("o alarme 5 é desenhado na caixa 5", () => {
     const rendered = INPUTS.pillDispenserAlarms.render(
         {},
-        { plans: [{ slot: 5, hour: 10, minute: 24, enabled: true }] },
+        { plans: [{ slot: 5, hour: 10, minute: 24 }] },
     );
 
     const cells = rendered.split("data-alarm-slot=\"").slice(1);
     assert.equal(cells.length, 9);
     assert.match(cells[4], /value="10:24"/);
     assert.doesNotMatch(cells[0], /value="10:24"/);
+});
+
+/**
+ * Sem interruptor por alarme: esta firmware ignora o `0x1041`--`0x1049`, e um comando que não
+ * comanda nada no cartão faz o utilizador julgar calado o que continua a tocar.
+ */
+test("o cartão não desenha interruptores", () => {
+    const rendered = INPUTS.pillDispenserAlarms.render({}, { plans: [{ slot: 1, hour: 8, minute: 0 }] });
+
+    assert.doesNotMatch(rendered, /type="checkbox"/);
 });

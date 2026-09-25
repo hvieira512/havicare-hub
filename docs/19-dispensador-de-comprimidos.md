@@ -432,11 +432,53 @@ REST eram um único `rotate`, aqui vêm discriminadas em cinco.
 | `0x101C` | células carregadas |
 | `0x1021`–`0x1029` | **hora de cada um dos nove alarmes** |
 | `0x1031`–`0x1039` | minuto de cada alarme |
-| `0x1041`–`0x1049` | interruptor de cada alarme |
+| `0x1041`–`0x1049` | interruptor de cada alarme — **inerte neste firmware**, ver abaixo |
 | `0x1051`–`0x1055` | não incomodar: interruptor e janela |
 | `0x8004` / `0x800B` | intervalo de heartbeat, tempo de permanência online — a especificação põe-nos aqui, mas o aparelho só os serve como estado |
 
 **São nove alarmes, não seis.** A API REST só expõe seis.
+
+### Um alarme desliga-se esvaziando-o, e não pelo interruptor
+
+O `0x1041`–`0x1049` não faz nada neste firmware. Um alarme sai como uma hora
+preenchida ou como o par `24:60`, que é o «sem alarme» do próprio aparelho.
+
+Medido a 25/09/2026, com o interruptor como única variável:
+
+| | |
+|---|---|
+| `0x1049 = 0`, alarme às 16:12 | **tocou e dispensou** |
+| `0x1049 = 1`, alarme às 16:10 | tocou e dispensou |
+| o ecrã do aparelho | desenha os dois casos **iguais** — não há lá nada para desligar |
+| leitura de volta | devolve o que se escreveu, `0` ou `1`, com estado `0` |
+
+Aceita, guarda, devolve, e ignora. É uma gaveta.
+
+**`00:00` não serve de vazio: é meia-noite a sério.** Com os nove slots a zero e
+o relógio do aparelho posto às 23:57, à meia-noite o alarme 1 percorreu
+`1 → 2 → 3 → 7` e o carrossel andou de 7 para 8. Um slot deixado por preencher
+custa uma dose por dia.
+
+**`24:60` é o vazio, e o aparelho aceita-o de volta.** Escrito à mão nos oito
+slots não usados, voltou como `0x18`/`0x3C` com estado `0`, o ecrã passou a
+mostrar um só alarme, e a meia-noite seguinte passou sem tocar e sem mexer o
+carrossel — compartimento 10, restantes 18, antes e depois. É o que o hub
+escreve hoje, e é por isso que o cartão da dashboard não tem interruptores.
+
+> O sentinela já era conhecido na dashboard — ela desenha vazio acima de 24 —,
+> mas o construtor limitava a hora a 23 e esmagava-o contra o tecto. Era essa a
+> raiz de o «desligar» escrever meia-noite.
+
+**O `0x100A` é honrado**, e é outra coisa: liga a validade por datas. Com um
+intervalo já terminado, o plano inteiro desaparece do ecrã e não toca, mesmo com
+o interruptor do alarme ligado. Serve o intervalo de datas, não o desligar de um
+alarme sozinho.
+
+**Alarmes à mesma hora fundem-se num só.** Nove slots marcados para as 16:34
+deram uma dose: compartimento 8 → 9, restantes 20 → 19, e os alarmes 2 a 9 nunca
+saíram do estado `0`. Deixou de ser preciso desde que o `24:60` funciona, mas
+explica porque é que os nove slots a `00:00` davam uma dose à meia-noite e não
+nove.
 
 ### O que este firmware anuncia aceitar
 
@@ -656,7 +698,7 @@ configuração não faz nada.
 
 | Capacidade | TAGs | Notas |
 |---|---|---|
-| `medication_reminders` | `0x1021`–`0x1049` | **os nove alarmes de cada vez.** Os slots que o plano não usa são desligados de propósito — o aparelho tem nove fixos, e um que sobrasse de um plano anterior continuava a tocar |
+| `medication_reminders` | `0x1021`–`0x1049` | **os nove alarmes de cada vez.** Os slots que o plano não usa saem a `24:60` de propósito — o aparelho tem nove fixos, e um que sobrasse de um plano anterior continuava a tocar. O interruptor vai a `1` onde há hora e a `0` onde não há, mas quem decide é a hora: o `0x1041`–`0x1049` é inerte |
 | `dispense_mode` | `0x100C` / `0x100D` | bloqueio de criança e toma antecipada |
 | `sound_profile` | `0x1012` / `0x1013` | tipo de toque e volume |
 | `do_not_disturb` | `0x1051`–`0x1055` | interruptor e janela |
