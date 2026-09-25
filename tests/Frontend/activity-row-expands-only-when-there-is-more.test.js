@@ -13,8 +13,8 @@ import { telemetryActivityRow } from "../../src/Dashboard/dashboard/devices/deta
  */
 test("uma linha que já diz tudo não abre", () => {
     const row = telemetryActivityRow({
-        type: "tray_lock",
-        data: { locked: false },
+        type: "medication_cup",
+        data: { inserted: false },
         occurredAt: "2026-09-23T10:00:00Z",
     });
 
@@ -25,8 +25,8 @@ test("uma linha que já diz tudo não abre", () => {
 /** Sem detalhes nenhuns também não há o que abrir. */
 test("uma linha sem detalhes não abre", () => {
     const row = telemetryActivityRow({
-        type: "tray_lock",
-        data: { locked: true },
+        type: "medication_cup",
+        data: { inserted: true },
         occurredAt: "2026-09-23T10:00:00Z",
     });
 

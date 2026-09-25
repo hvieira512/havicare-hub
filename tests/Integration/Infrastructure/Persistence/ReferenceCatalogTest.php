@@ -200,7 +200,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'time_zone',
             // O trinco do prato saiu de dentro do estado do dispositivo: destrancado é um
             // estado sobre que se age. Não é a «tampa» — essa é a leitura do tipo 01.
-            'tray_lock',
         ];
 
         self::assertSame(

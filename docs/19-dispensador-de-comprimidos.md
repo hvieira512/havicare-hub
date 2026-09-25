@@ -282,7 +282,7 @@ ao hub.
 | `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
 | `0x8105` | estado do não incomodar | `0` desligado · `1` ligado · `2` **ligado e a silenciar agora** |
 | `0x8106` | copo da medicação | `0` retirado · `1` colocado |
-| `0x8107` | trinco do prato | `0` destrancado · `1` trancado. **Nunca foi observado em `1`** — nem com a tampa fora, nem com o carrossel a rodar numa dispensa, nem durante o teste de fábrica, nem com o prato acabado de reencaixar. O que o faz fechar continua por descobrir, e é preferível escrevê-lo assim a inventar-lhe um significado |
+| `0x8107` | tranca do prato | `0` destrancado · `1` trancado. **Responde sempre `0` no firmware `0x0502`, e por isso não é normalizado.** Testado a 25/09/2026 com o prato trancado à mão, com a fechadura de chave lateral trancada, e com o prato removido do aparelho: as três leituras deram `0`. Uma telemetria que só sabe dizer um valor não é telemetria, e num ecrã em que tudo o resto é verdade, um campo que nunca muda ensina a não confiar nos outros. Fica por saber que mecanismo a TAG reflecte e em que firmware passa a reportar `1` — é pergunta para o fornecedor |
 | `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
 | `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **dBm**, e o aparelho manda a magnitude: o sinal negativo é posto pelo hub |
 | `0x810C` / `0x810D` | nível de sinal | a escala grosseira |
@@ -615,7 +615,6 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x810E` | `temperature` | `environmentCelsius` |
 | `0x810F` | `humidity` | `humidityPercent` |
 | `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |
-| `0x8107` | `tray_lock` | `locked` |
 | `0x8106` | `medication_cup` | `inserted` — fecha o ciclo físico da toma: sem copo, a dose sai do compartimento e não há onde ela caia |
 | `0x8105` / `0x8102` | `device_config` | `settings.do_not_disturb.enabled` e `settings.child_lock.enabled` — os dois interruptores que o aparelho reporta. Não são telemetria: o que dizem é o que nós lá pusemos, e por isso viajam como configuração reportada. O `0x8105` distingue ligado de ligado-e-a-silenciar-agora, e essa diferença não sai — deduz-se da janela configurada e do relógio |
 | `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. **Só é publicado quando dispara**: como leitura, enchia o histórico com linhas a dizer que estava tudo bem |

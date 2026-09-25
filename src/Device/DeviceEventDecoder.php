@@ -514,12 +514,8 @@ final class DeviceEventDecoder
             $events[] = ['feature' => 'cells_remaining', 'nativeType' => $nativeType, 'value' => $cells];
         }
 
-        // Trancado quer dizer que a medicação não está acessível: é um estado sobre que se age.
-        // A tabela do tipo 01 chama a esta TAG «Lid Status», com a polaridade ao contrário.
-        $trayLocked = $this->pillFlag($tlv, 0x8107);
-        if ($trayLocked !== null) {
-            $events[] = ['feature' => 'tray_lock', 'nativeType' => $nativeType, 'value' => ['locked' => $trayLocked]];
-        }
+        // O `0x8107` («Pill Tray Lock Status») não entra: responde sempre `0` neste firmware.
+        // Medido com o prato trancado, com a fechadura de chave trancada e com o prato fora.
 
         // Sem copo, a dose sai do compartimento e não há onde ela caia.
         $cupInserted = $this->pillFlag($tlv, 0x8106);

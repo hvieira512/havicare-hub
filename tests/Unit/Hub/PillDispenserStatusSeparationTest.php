@@ -78,15 +78,15 @@ final class PillDispenserStatusSeparationTest extends TestCase
     }
 
     /**
-     * O `0x8107` do tipo 02 é o trinco do prato, e não a tampa do tipo 01.
+     * O `0x8107` não sai do descodificador: responde sempre `0` e nunca diria outra coisa.
      *
-     * A tabela do tipo 01 chama-lhe «Lid Status», com `0` fechada e `1` aberta. Lida assim
-     * num M228, a dashboard anunciava «Aberta» exactamente quando o prato estava trancado.
+     * Medido com o prato trancado, com a fechadura de chave trancada e com o prato fora do
+     * aparelho. Um cartão que só sabe dizer um valor ensina a não confiar nos outros.
      */
-    public function testTheTrayLockIsItsOwnCapability(): void
+    public function testTheTrayLockTagDoesNotBecomeTelemetry(): void
     {
-        self::assertSame(['locked' => true], $this->telemetry([0x8107 => "\x01"])['tray_lock'] ?? null);
-        self::assertSame(['locked' => false], $this->telemetry([0x8107 => "\x00"])['tray_lock'] ?? null);
+        self::assertArrayNotHasKey('tray_lock', $this->telemetry([0x8107 => "\x01"]));
+        self::assertArrayNotHasKey('tray_lock', $this->telemetry([0x8107 => "\x00"]));
     }
 
     /**
@@ -186,7 +186,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
             'packetType' => 0x87,
             'mac' => 'AABBCCDDEEFF',
             'tlv' => [
-                0x8107 => ['value' => "\x00", 'state' => 1],
+                0x8106 => ['value' => "\x00", 'state' => 1],
                 0x810B => ['value' => pack('s', 25), 'state' => 0],
             ],
         ]));
@@ -194,7 +194,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
             $byFeature[$event['feature']] = $event['value'];
         }
 
-        self::assertArrayNotHasKey('tray_lock', $byFeature);
+        self::assertArrayNotHasKey('medication_cup', $byFeature);
         self::assertSame(-25, $byFeature['connectivity']['signalStrengthDbm'] ?? null);
     }
 

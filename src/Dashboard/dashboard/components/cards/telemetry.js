@@ -76,7 +76,6 @@ const CARD_STYLE = {
     medication_alarm_status: ["fa-clock-rotate-left", "primary"],
     medication_alarm_change: ["fa-pills", "primary"],
     cells_remaining: ["fa-table-cells", "info"],
-    tray_lock: ["fa-box-open", "primary"],
     medication_cup: ["fa-mug-hot", "primary"],
     storage_environment: ["fa-triangle-exclamation", "danger"],
     humidity: ["fa-droplet", "info"],
@@ -229,10 +228,6 @@ const UPLINK_CARD_RENDERERS = {
     device_config: (data) => deviceConfigContent(data),
     // O valor é o estado em que a coisa está, e não um «Sim» que obriga a reler o título
     // para saber a que responde.
-    tray_lock: (data) => ({
-        value: data?.locked == null ? "-" : data.locked ? "Trancado" : "Destrancado",
-        details: data?.locked === false ? "A medicação está acessível" : "",
-    }),
     medication_cup: (data) => ({
         value: data?.inserted == null ? "-" : data.inserted ? "Colocado" : "Retirado",
         details: data?.inserted === false ? "Uma dose dispensada agora não tem onde cair" : "",

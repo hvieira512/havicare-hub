@@ -19,8 +19,6 @@ final class PillDispenserCapabilityDefinitions
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'cells_remaining', 'label' => 'Células restantes', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'temperature', 'label' => 'Temperatura', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'humidity', 'label' => 'Humidade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            // Destrancado quer dizer que a medicação está acessível: é um estado sobre que se age.
-            ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'tray_lock', 'label' => 'Tranca do prato', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             // Fecha o ciclo físico da toma: sem copo, a dose sai e não há onde ela caia.
             ['deviceType' => 'pill_dispenser', 'section' => 'telemetry', 'key' => 'medication_cup', 'label' => 'Copo da medicação', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             // A mesma `connectivity` que os gateways publicam, e não um formato só deste.
