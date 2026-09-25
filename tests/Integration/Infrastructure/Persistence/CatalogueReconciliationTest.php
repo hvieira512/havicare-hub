@@ -61,7 +61,7 @@ final class CatalogueReconciliationTest extends MysqlDashboardTestCase
 
         (new ReferenceCatalogSeeder())->reconcileCapabilities($pdo);
 
-        self::assertSame('Trinco do prato', $this->label($pdo, 'pill_dispenser', 'tray_lock'));
+        self::assertSame('Tranca do prato', $this->label($pdo, 'pill_dispenser', 'tray_lock'));
     }
 
     /**

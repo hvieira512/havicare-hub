@@ -548,6 +548,18 @@ por isso o reinício tem de vir depois de o problema estar fisicamente resolvido
 não antes. Um reinício sozinho, com o prato ainda mal posto, não adianta nada: foi
 o que se tentou primeiro.
 
+> **Sem nada preso, o reinício remoto sozinho chega.** Os dois primeiros passos
+> existem por causa da obstrução, e não do reinício. Medido a 25/09/2026: a avaria
+> voltou com o prato já vazio, e saiu com um `0xA001` mandado pela dashboard, sem
+> ninguém tocar no aparelho. Vale a pena tentar isso primeiro — é o único remédio
+> remoto que existe para esta avaria, e poupa uma deslocação a casa do utente.
+>
+> **O que a fez voltar foi o prato ser mandado rodar para lá do carregamento.** O
+> `0x811A` estava em 22 com os compartimentos carregados em 14, e o `0x811D` a
+> zero; o alarme das 09:30 disparou, o aparelho tentou rodar para uma posição que
+> se dava por esgotada, e falhou. Manter os «compartimentos carregados» a dizer a
+> verdade não é cosmético: é o que impede esta avaria.
+
 > Enquanto a avaria está activa, **o aparelho continua a dispensar normalmente**.
 > As três dispensas medidas nesse dia foram todas com o `0x8122` em `01`. É uma
 > bandeira, não um bloqueio — o que bloqueia é outra coisa, descrita na secção 5.
