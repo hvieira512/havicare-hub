@@ -37,7 +37,15 @@ final class AuthController
         // pela API não pede nada disto e continua a receber o par no corpo.
         $session = SessionCookie::read($request);
         $wantsCookie = $session !== '' || ($payload['session'] ?? '') === 'cookie';
-        if ($session !== '' && trim((string)($payload['refresh_token'] ?? '')) === '') {
+
+        // O cookie só entra quando o corpo não traz credenciais: escrever a palavra-passe é
+        // dizer «esquece a sessão que aí está». O `AuthService` renova antes de olhar para o
+        // utilizador, e o ramo da renovação também não passa pelo teto de tentativas.
+        $usedSession = $session !== ''
+            && trim((string)($payload['refresh_token'] ?? '')) === ''
+            && trim((string)($payload['username'] ?? '')) === ''
+            && (string)($payload['password'] ?? '') === '';
+        if ($usedSession) {
             $payload['refresh_token'] = $session;
         }
 
@@ -49,7 +57,14 @@ final class AuthController
             RequestContext::clientAddress($request),
         );
 
-        if (!$wantsCookie || isset($result['error'])) {
+        if (isset($result['error'])) {
+            // Um cookie recusado não volta a servir, e por apagar ficava o `Max-Age` inteiro.
+            return $usedSession
+                ? SessionCookie::clear($this->json->result($result), $request)
+                : $this->json->result($result);
+        }
+
+        if (!$wantsCookie) {
             return $this->json->result($result);
         }
 

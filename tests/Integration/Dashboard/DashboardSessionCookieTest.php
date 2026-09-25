@@ -86,6 +86,47 @@ final class DashboardSessionCookieTest extends DashboardHttpTestCase
     }
 
     /**
+     * A renovação é de uso único e o cookie fica morto por pouco -- uma resposta perdida, o
+     * Redis limpo. Ignorar o corpo por haver cookie trancava a entrada a quem sabia a senha.
+     */
+    public function testCredentialsInTheBodyWinOverAStaleCookie(): void
+    {
+        $server = $this->makeServer();
+
+        $withStaleCookie = $server($this->withSession(
+            new ServerRequest(
+                'POST',
+                '/api/auth/login',
+                ['Content-Type' => 'application/json'],
+                json_encode(
+                    ['username' => 'admin', 'password' => 'secret', 'session' => 'cookie'],
+                    JSON_THROW_ON_ERROR
+                )
+            ),
+            'ja-nao-existe'
+        ));
+
+        self::assertSame(200, $withStaleCookie->getStatusCode(), (string)$withStaleCookie->getBody());
+        $token = json_decode((string)$withStaleCookie->getBody(), true, 512, JSON_THROW_ON_ERROR)['token'];
+        self::assertSame('hub_admin', $token['role'] ?? null);
+        self::assertNotSame('', $this->sessionValue($withStaleCookie), 'o cookie novo substitui o morto');
+    }
+
+    /** O cookie recusado é apagado na mesma resposta, senão o bloqueio dura o `Max-Age` todo. */
+    public function testARefusedCookieIsClearedInTheSameResponse(): void
+    {
+        $server = $this->makeServer();
+
+        $staleCookie = $server($this->withSession(
+            new ServerRequest('POST', '/api/auth/login', ['Content-Type' => 'application/json'], '{}'),
+            'ja-nao-existe'
+        ));
+
+        self::assertSame(401, $staleCookie->getStatusCode(), (string)$staleCookie->getBody());
+        self::assertStringContainsString('Max-Age=0', $staleCookie->getHeaderLine('Set-Cookie'));
+    }
+
+    /**
      * Terminar sessão apaga o cookie e queima as duas credenciais.
      *
      * Um logout que deixasse o token de acesso vivo dava uma hora de API a quem ficasse com
