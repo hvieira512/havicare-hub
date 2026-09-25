@@ -94,41 +94,30 @@ final class PillDispenserStatusSeparationTest extends TestCase
     }
 
     /**
-     * O «não incomodar» é configuração reportada, e não uma leitura.
-     *
-     * Dos três valores do `0x8105`, dois são o eco do que o hub escreveu na janela de
-     * silêncio. Teve mosaico próprio durante umas horas e não devia: vai no `device_config`,
-     * ao lado do bloqueio de criança, que é o outro interruptor que o aparelho reporta.
+     * O `0x8105` diz ligado ou desligado e a janela vem só na resposta ao `0x05`. Na mesma
+     * chave, e como o `saveReported` substitui o payload inteiro, o meio apagava o todo.
      */
-    public function testDoNotDisturbIsReportedConfigurationAndNotTelemetry(): void
+    public function testTheStatusPacketDoesNotReportTheQuietHoursItOnlyHalfKnows(): void
     {
-        self::assertArrayNotHasKey('do_not_disturb_state', $this->telemetry([0x8105 => "\x01"]));
+        foreach (["\x00", "\x01", "\x02"] as $state) {
+            $settings = $this->telemetry([0x8105 => $state])['device_config']['settings'] ?? [];
 
-        self::assertSame(
-            ['settings' => ['do_not_disturb' => ['enabled' => true]]],
-            $this->telemetry([0x8105 => "\x01"])['device_config'] ?? null,
-        );
-        self::assertSame(
-            ['settings' => ['do_not_disturb' => ['enabled' => false]]],
-            $this->telemetry([0x8105 => "\x00"])['device_config'] ?? null,
-        );
-        // «Ligado e a silenciar agora» continua a ser ligado: o minuto em que a janela está
-        // a produzir efeito deduz-se dela e do relógio, e ninguém age sobre ele.
-        self::assertSame(
-            ['settings' => ['do_not_disturb' => ['enabled' => true]]],
-            $this->telemetry([0x8105 => "\x02"])['device_config'] ?? null,
-        );
+            self::assertArrayNotHasKey('do_not_disturb', $settings);
+        }
+
+        self::assertArrayNotHasKey('do_not_disturb_state', $this->telemetry([0x8105 => "\x01"]));
     }
 
-    /** E os dois interruptores reportados chegam juntos, num `device_config` só. */
-    public function testTheReportedSwitchesTravelTogether(): void
+    /** O bloqueio de criança é um interruptor inteiro, e por isso vai no `device_config`. */
+    public function testTheChildLockIsReportedConfigurationAndNotTelemetry(): void
     {
         self::assertSame(
-            ['settings' => [
-                'do_not_disturb' => ['enabled' => true],
-                'child_lock' => ['enabled' => true],
-            ]],
-            $this->telemetry([0x8105 => "\x01", 0x8102 => "\x01"])['device_config'] ?? null,
+            ['settings' => ['child_lock' => ['enabled' => true]]],
+            $this->telemetry([0x8102 => "\x01"])['device_config'] ?? null,
+        );
+        self::assertSame(
+            ['settings' => ['child_lock' => ['enabled' => false]]],
+            $this->telemetry([0x8102 => "\x00"])['device_config'] ?? null,
         );
     }
 

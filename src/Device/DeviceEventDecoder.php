@@ -541,14 +541,10 @@ final class DeviceEventDecoder
         }
 
         // Os interruptores que o aparelho reporta são configuração e não leitura: o que eles
-        // dizem é o que nós lá pusemos. O `0x8105` distingue ligado de ligado-e-a-silenciar,
-        // e a diferença não sai daqui — deduz-se da janela configurada e do relógio.
+        // dizem é o que nós lá pusemos. O `0x8105` fica de fora: sabe o ligado/desligado do
+        // «não incomodar» mas não a janela, e escrever meia configuração na chave apaga a
+        // outra metade, que só a resposta ao `0x05` traz.
         $reported = array_filter([
-            'do_not_disturb' => match ($this->tlvU8($tlv, 0x8105)) {
-                0 => ['enabled' => false],
-                1, 2 => ['enabled' => true],
-                default => null,
-            },
             'child_lock' => $this->pillSwitch($tlv, 0x8102),
         ], static fn (mixed $setting): bool => $setting !== null);
 
