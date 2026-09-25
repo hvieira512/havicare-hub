@@ -78,17 +78,6 @@
     content: url("/assets/logo-dark.png");
 }
 
-/* O ícone e o olho ficam por dentro do campo, e por isso o texto começa mais adentro. */
-.dashboard-login-field .form-control {
-    padding-left: 2.6rem;
-    padding-right: 2.9rem;
-}
-
-.dashboard-login-reveal {
-    width: 2.25rem;
-    height: 2.25rem;
-}
-
 /* O único ecrã que não tem a barra de navegação, e por isso leva o seu próprio botão. */
 .dashboard-login-theme {
     width: 2.75rem;

@@ -100,11 +100,11 @@ $loginHighlights = [
                 <?php foreach ($loginFields as $field) : ?>
                 <div>
                     <label for="<?= $field['id'] ?>" class="section-label d-block mb-1"><?= h($field['label']) ?></label>
-                    <div class="dashboard-login-field position-relative d-flex align-items-center">
-                        <span class="position-absolute start-0 ms-3 d-flex align-items-center text-body-tertiary pe-none"><?= icon($field['icon']) ?></span>
+                    <div class="input-group">
+                        <span class="input-group-text bg-body text-body-tertiary"><?= icon($field['icon'], 'fa-fw') ?></span>
                         <input id="<?= $field['id'] ?>" name="<?= $field['name'] ?>" class="form-control" type="<?= $field['type'] ?>" autocomplete="<?= $field['autocomplete'] ?>" required<?= $field['autofocus'] ? ' autofocus' : '' ?>>
                         <?php if ($field['type'] === 'password') : ?>
-                        <button data-password-toggle="<?= $field['id'] ?>" class="dashboard-login-reveal btn border-0 text-body-tertiary position-absolute end-0 me-1 p-0 d-flex align-items-center justify-content-center" type="button" aria-pressed="false" aria-label="Mostrar a palavra-passe" title="Mostrar a palavra-passe">
+                        <button data-password-toggle="<?= $field['id'] ?>" class="input-group-text bg-body text-body-tertiary" type="button" aria-pressed="false" aria-label="Mostrar a palavra-passe" title="Mostrar a palavra-passe">
                             <?= icon('fa-eye', 'fa-fw') ?>
                         </button>
                         <?php endif; ?>
