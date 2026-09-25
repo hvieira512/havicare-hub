@@ -214,25 +214,40 @@ const startDashboard = async () => {
     }
 };
 
+/** O cookie é `HttpOnly` e só o Hub o apaga: falhado o pedido, não há nada a fazer daqui. */
+const LOGOUT_FAILED_MESSAGE =
+    "A sessão pode continuar aberta no Hub: o pedido para a fechar não chegou lá. " +
+    "Volte a entrar e a sair quando houver ligação.";
+
+const revokeSession = async () => {
+    try {
+        return (await fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: authHeaders(),
+        })).ok;
+    } catch {
+        return false;
+    }
+};
+
 /**
  * Fecha a sessão. Com `notifyServer`, manda apagar o cookie e revogar os dois tokens.
  *
  * Sem o pedido, o cookie ficava e o separador seguinte voltava a entrar sem palavra-passe. O
  * `notifyServer` a falso é para quem já soube por outro separador que a sessão acabou.
+ *
+ * Espera-se pela resposta: o pedido era disparado sem olhar, e uma saída que não chegasse ao
+ * Hub deixava a sessão aberta lá com o ecrã de entrada à frente.
  */
-const logout = (message = "", notifyServer = true) => {
+const logout = async (message = "", notifyServer = true) => {
     clearTimers();
     hideTimeoutWarning();
-    if (notifyServer) {
-        void fetch("/api/auth/logout", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: authHeaders(),
-        }).catch(() => {});
-    }
+    const revoked = notifyServer ? await revokeSession() : true;
     clearStorageKey(LAST_ACTIVITY_STORAGE_KEY);
     clearDashboardApiToken();
-    showLogin(message);
+    // Sai-se sempre: ficar na dashboard a pedido de sair é pior do que sair mal.
+    showLogin(revoked ? message : LOGOUT_FAILED_MESSAGE);
 };
 
 const IDLE_MESSAGE = "A sessão terminou por inatividade. Inicie sessão novamente.";
@@ -248,7 +263,7 @@ const scheduleIdleTimers = () => {
 
     const idleMs = Date.now() - lastActivityAt;
     if (idleMs >= LOGOUT_AFTER_MS) {
-        logout(IDLE_MESSAGE);
+        void logout(IDLE_MESSAGE);
         return;
     }
     if (idleMs >= WARNING_AFTER_MS) {
@@ -299,7 +314,7 @@ const bindActivityTracking = () => {
     // token que ainda valia até expirar.
     window.addEventListener("storage", (event) => {
         if (event.key === LAST_ACTIVITY_STORAGE_KEY && event.newValue === null && getDashboardApiToken()) {
-            logout("A sessão foi terminada noutro separador.", false);
+            void logout("A sessão foi terminada noutro separador.", false);
         }
     });
 };
@@ -380,7 +395,7 @@ const restoreSession = async () => {
         ? storedActivity
         : Date.now();
     if (Date.now() - lastActivityAt >= LOGOUT_AFTER_MS) {
-        logout(IDLE_MESSAGE);
+        await logout(IDLE_MESSAGE);
         return;
     }
 
@@ -395,13 +410,13 @@ export async function initializeDashboardSession(startAuthenticatedDashboard) {
     const { loginForm, logoutButton } = elements();
 
     loginForm?.addEventListener("submit", login);
-    logoutButton?.addEventListener("click", () => logout(""));
+    logoutButton?.addEventListener("click", () => void logout(""));
     initializePasswordVisibility();
     window.addEventListener("hub-dashboard-api-token-updated", () => {
         renderAuthenticatedUsername(getDashboardApiToken());
     });
     window.addEventListener("hub-dashboard-auth-required", () => {
-        logout("A sessão expirou. Inicie sessão novamente.");
+        void logout("A sessão expirou. Inicie sessão novamente.");
     });
     bindActivityTracking();
 
