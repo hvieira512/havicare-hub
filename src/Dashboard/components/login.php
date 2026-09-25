@@ -54,7 +54,7 @@ $loginHighlights = [
         <button data-theme-toggle class="dashboard-login-theme btn border bg-body text-secondary position-absolute top-0 end-0 m-4 p-0 rounded-circle d-flex align-items-center justify-content-center" type="button" aria-pressed="false" aria-label="Mudar para o tema escuro" title="Mudar para o tema escuro">
             <?= icon('fa-moon', 'fa-fw') ?>
         </button>
-        <div class="dashboard-login-card w-100 bg-body border rounded-4 shadow-lg p-4 p-sm-5">
+        <div class="dashboard-login-card w-100 p-0 p-sm-5">
             <div class="dashboard-login-brand mb-4">
                 <img class="d-block mx-auto" src="/assets/logo.png" alt="havi hub">
             </div>

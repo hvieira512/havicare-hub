@@ -56,6 +56,18 @@
     max-width: 26rem;
 }
 
+/* Num telemóvel não há cartão: a moldura e o seu avanço tiravam 100px de largura ao
+   formulário num ecrã de 348px, e o `col-12` já lhe dá o ecrã todo. O Bootstrap não tem
+   utilitárias de moldura, sombra ou canto por ponto de quebra, e por isso isto é daqui. */
+@media (min-width: 576px) {
+    .dashboard-login-card {
+        border: var(--bs-border-width) solid var(--bs-border-color);
+        border-radius: 1rem;
+        background: var(--bs-body-bg);
+        box-shadow: var(--bs-box-shadow-lg);
+    }
+}
+
 .dashboard-login-brand img {
     width: 136px;
 }
