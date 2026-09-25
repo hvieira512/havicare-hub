@@ -4,7 +4,11 @@
         ?>
         <nav class="navbar dashboard-navbar">
             <div class="container-fluid">
-                <span class="navbar-brand"><img class="d-block w-auto" src="/assets/logo-dark.png" alt="havi hub"></span>
+                <?php /* Num telemóvel só a marca: a faixa inteira leva 137px dos 390 do ecrã, e a barra enrolava. */ ?>
+                <span class="navbar-brand me-0 me-sm-3">
+                    <img class="d-none d-sm-block w-auto" src="/assets/logo-dark.png" alt="havi hub">
+                    <img class="d-block d-sm-none" src="/assets/logo-mark.png" alt="havi hub">
+                </span>
                 <div class="d-flex align-items-center gap-2">
                     <button data-theme-toggle class="btn btn-sm btn-dark" type="button" aria-pressed="false" aria-label="Mudar para o tema escuro" title="Mudar para o tema escuro">
                         <?= icon('fa-moon', 'fs-5 fa-fw') ?>
