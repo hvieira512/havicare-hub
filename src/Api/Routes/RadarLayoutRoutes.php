@@ -5,14 +5,19 @@
  * quando alguém a pede, e nunca por conta própria.
  */
 
-use Hub\Api\Controllers\RadarLayoutController;
 use Hub\Api\Routing\ApiRoute;
+use Hub\Api\Services\RadarLayoutService;
+use React\Promise\PromiseInterface;
 
 return static function (
-    RadarLayoutController $radarLayouts,
+    RadarLayoutService $radarLayouts,
 ): array {
     return [
-        new ApiRoute('GET', '/api/devices/{imei}/radar-layout', [$radarLayouts, 'show']),
-        new ApiRoute('POST', '/api/devices/{imei}/radar-layout/sync', [$radarLayouts, 'sync']),
+        new ApiRoute('GET', '/api/devices/{imei}/radar-layout', static fn(array $params): array
+            => $radarLayouts->show($params['imei'])),
+        // A promessa segue para o kernel em vez de se esperar por ela: o processo tem um
+        // event loop só, e a ingestão pararia enquanto isto bloqueasse.
+        new ApiRoute('POST', '/api/devices/{imei}/radar-layout/sync', static fn(array $params): PromiseInterface
+            => $radarLayouts->sync($params['imei'])),
     ];
 };

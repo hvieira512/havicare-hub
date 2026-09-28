@@ -8,6 +8,7 @@ use Psr\Http\Message\ServerRequestInterface;
 final class RequestContext
 {
     public const ATTR_AUTH = 'apiAuth';
+    public const ATTR_BODY = 'apiBody';
     public const ATTR_RAW_BODY = 'apiRawBody';
     public const ATTR_REQUEST_ID = 'apiRequestId';
     public const ATTR_ROUTE_PATTERN = 'apiRoutePattern';
@@ -54,6 +55,20 @@ final class RequestContext
         $parsed = $request->getParsedBody();
 
         return is_array($parsed) ? $parsed : self::jsonBody($request);
+    }
+
+    /**
+     * O corpo que o kernel já descodificou, nas rotas que declaram levar um.
+     *
+     * Chega sempre descodificado: uma rota com corpo ilegível nem sequer é chamada.
+     *
+     * @return array<mixed>
+     */
+    public static function body(ServerRequestInterface $request): array
+    {
+        $body = $request->getAttribute(self::ATTR_BODY);
+
+        return is_array($body) ? $body : [];
     }
 
     public static function requestId(ServerRequestInterface $request): string
