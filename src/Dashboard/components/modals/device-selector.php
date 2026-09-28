@@ -19,7 +19,7 @@ ob_start();
         <div class="d-flex align-items-center justify-content-between gap-2">
             <div class="d-flex align-items-center gap-2">
                 <span class="section-label">Filtros</span>
-                <span id="deviceFilterCount" class="count-chip count-chip-strong d-none"></span>
+                <span id="deviceFilterCount" class="count-chip count-chip-strong"></span>
             </div>
             <button id="clearDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary d-none" type="button">
                 <?= icon('fa-filter-circle-xmark', 'me-1') ?>Limpar
