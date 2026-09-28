@@ -8,8 +8,8 @@ use Hub\Log\Logger;
 
 final class QinglanstBridge extends MqttBridgeBase
 {
-    private readonly ?PayloadDecoder $decoder;
-    private readonly ?MessageNormalizer $normalizer;
+    private readonly PayloadDecoder $decoder;
+    private readonly MessageNormalizer $normalizer;
     private readonly ?\Hub\Device\CommercialModelResolver $commercialModelResolver;
     private readonly IngestStats $stats;
     private readonly DashboardWritePolicy $dashboardWritePolicy;
@@ -24,8 +24,6 @@ final class QinglanstBridge extends MqttBridgeBase
         string $topicFilter = 'radar/1001/#',
         ?callable $reconnectSubscriber = null,
         ?\Hub\Dashboard\DashboardStoreContract $dashboardStore = null,
-        ?PayloadDecoder $decoder = null,
-        ?MessageNormalizer $normalizer = null,
         ?IngestStats $stats = null,
         ?DashboardWritePolicy $dashboardWritePolicy = null,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
@@ -41,8 +39,8 @@ final class QinglanstBridge extends MqttBridgeBase
             dashboardStore: $dashboardStore,
             denylist: $denylist,
         );
-        $this->decoder = $decoder;
-        $this->normalizer = $normalizer;
+        $this->decoder = new PayloadDecoder();
+        $this->normalizer = new MessageNormalizer();
         $this->commercialModelResolver = $commercialModelResolver;
         $this->stats = $stats ?? new IngestStats($topicFilter);
         $this->dashboardWritePolicy = $dashboardWritePolicy ?? new DashboardWritePolicy();
@@ -102,7 +100,7 @@ final class QinglanstBridge extends MqttBridgeBase
         $encodedPayload = (string)($upstreamPayload[$messageType] ?? '');
 
         $decodeStart = hrtime(true);
-        $decoded = ($this->decoder ?? new PayloadDecoder())->decode($messageType, $encodedPayload, $deviceCode);
+        $decoded = $this->decoder->decode($messageType, $encodedPayload, $deviceCode);
         $decodeDuration = hrtime(true) - $decodeStart;
         if ($decoded === null) {
             $this->stats->recordRejected('decode_failed', [
@@ -117,7 +115,7 @@ final class QinglanstBridge extends MqttBridgeBase
 
         try {
             $normalizeStart = hrtime(true);
-            $normalized = ($this->normalizer ?? new MessageNormalizer())->normalize($decoded, $parsedTopic, $device);
+            $normalized = $this->normalizer->normalize($decoded, $parsedTopic, $device);
             $normalizeDuration = hrtime(true) - $normalizeStart;
         } catch (\Throwable $e) {
             $this->stats->recordRejected('normalize_failed', [

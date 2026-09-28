@@ -108,12 +108,11 @@ final class DeviceCommandCatalog
     }
 
     /**
-     * @return list<array<string, mixed>>
-     */
-    /**
      * O `refresh` entra aqui com o `request`: a diferença entre os dois é onde o botão vive,
      * e não como o comando se envia. Fora daqui, um `request` é um mosaico com capacidade por
      * trás e um `refresh` não é.
+     *
+     * @return list<array<string, mixed>>
      */
     public static function commandsForFeature(string $protocol, string $feature): array
     {
@@ -196,9 +195,6 @@ final class DeviceCommandCatalog
         return $adapter->encodeOutgoing($decoded);
     }
 
-    /**
-     * @return array<int, array<string, mixed>>
-     */
     /**
      * Medições a pedido de uma pulseira Veepoo.
      *

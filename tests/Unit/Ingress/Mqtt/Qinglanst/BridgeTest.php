@@ -100,8 +100,6 @@ final class BridgeTest extends TestCase
                 'radar-canonical-1' => IngressFixtures::radar() + ['deviceId' => 'radar-topic-uid'],
             ]),
             $mqttBridge,
-            decoder: new \Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder(),
-            normalizer: new \Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer(),
             commercialModelResolver: new class extends \Hub\Device\CommercialModelResolver {
                 public function __construct()
                 {
@@ -145,8 +143,6 @@ final class BridgeTest extends TestCase
                 'radar-canonical-1' => IngressFixtures::radar() + ['deviceId' => 'radar-topic-uid'],
             ]),
             $mqttBridge,
-            decoder: new \Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder(),
-            normalizer: new \Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer(),
         );
 
         $bridge->handleReceivedMessage(

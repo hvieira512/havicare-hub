@@ -207,7 +207,7 @@ final class ZayataDownlink
         return pack('V', $number * 60);
     }
 
-    /** HHMM com sinal, na gama da especificação. Era o único limite que só o validador tinha. */
+    /** HHMM com sinal, na gama da especificação. */
     private static function pillTimeZone(mixed $value): string
     {
         $number = (int)$value;
