@@ -133,6 +133,11 @@ async function loadSettingsCapabilitiesSection(
     }
     state.settingsModal.sectionLoaded.capabilities = true;
     renderCapabilitiesCatalogSection();
+    // A caixa segue o estado, como a do catálogo de modelos: a marcação é estática e o texto
+    // sobrevive ao fecho do modal, mas o filtro que ele representa não.
+    if (els.capabilityCatalogSearch) {
+        els.capabilityCatalogSearch.value = state.settingsModal.capabilityQuery || "";
+    }
 }
 
 function handleCapabilityDeviceTypeClick(event) {

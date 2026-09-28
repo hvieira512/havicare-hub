@@ -34,7 +34,10 @@ export function initRadarMapModal(context) {
 /** O Konva são 175 kB que só este ecrã usa: entra quando alguém abre a planta. */
 function loadKonva() {
     if (globalThis.Konva) return Promise.resolve();
-    return loadScript("/assets/vendor/konva/konva.min.js");
+    // O erro do carregador traz o caminho do ficheiro, que não é linguagem de quem lê o aviso.
+    return loadScript("/assets/vendor/konva/konva.min.js").catch(() => {
+        throw new Error("Não foi possível carregar a planta da divisão.");
+    });
 }
 
 /** A contagem por cima da planta, como no hitCare: o número destacado e o resto discreto. */

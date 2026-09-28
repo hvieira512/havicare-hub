@@ -60,11 +60,16 @@ function chartsReady() {
 export async function loadCharts() {
     if (chartsReady()) return;
 
-    await loadScript("/assets/vendor/amcharts5/index.js");
-    await Promise.all([
-        loadScript("/assets/vendor/amcharts5/xy.js"),
-        loadScript("/assets/vendor/amcharts5/themes/Animated.js"),
-    ]);
+    // O erro do carregador traz o caminho do ficheiro, que não é linguagem de quem lê o aviso.
+    try {
+        await loadScript("/assets/vendor/amcharts5/index.js");
+        await Promise.all([
+            loadScript("/assets/vendor/amcharts5/xy.js"),
+            loadScript("/assets/vendor/amcharts5/themes/Animated.js"),
+        ]);
+    } catch {
+        throw new Error("Não foi possível carregar os gráficos dos sinais vitais.");
+    }
 
     // Sem licença a biblioteca desenha o logótipo dela em cima de cada gráfico. Não é erro:
     // é o que o amCharts faz até alguém pôr a chave no ambiente.

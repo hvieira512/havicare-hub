@@ -38,7 +38,10 @@ export function ensureAgGrid() {
     if (globalThis.agGrid) {
         return Promise.resolve();
     }
-    return loadScript("/assets/vendor/ag-grid/ag-grid-community.min.js");
+    // O erro do carregador traz o caminho do ficheiro, que não é linguagem de quem lê o aviso.
+    return loadScript("/assets/vendor/ag-grid/ag-grid-community.min.js").catch(() => {
+        throw new Error("Não foi possível carregar a tabela.");
+    });
 }
 
 /**
