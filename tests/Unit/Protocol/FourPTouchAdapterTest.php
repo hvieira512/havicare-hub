@@ -194,15 +194,27 @@ final class FourPTouchAdapterTest extends TestCase
         self::assertSame('ABC123', $payload['data']['firmware']);
     }
 
+    /**
+     * A resposta ao `TS` é um bloco `chave:valor` e não um carimbo de tempo -- este teste
+     * prendia um `deviceTime` que o aparelho nunca devolve.
+     */
     public function testDecodeIncomingParsesDeviceStatus(): void
     {
         $adapter = new FourPTouchAdapter();
 
-        $payload = $adapter->decodeIncoming('[3G*8800000015*0011*TS,20240101120000]');
+        $content = 'TS,ver:ABC123; lk:300; batlevel:87; zone:+01:00; gprsOpen:true';
+        $payload = $adapter->decodeIncoming(
+            sprintf('[3G*8800000015*%04X*%s]', strlen($content), $content)
+        );
 
         self::assertIsArray($payload);
         self::assertSame('TS', $payload['type']);
-        self::assertSame('20240101120000', $payload['data']['deviceTime']);
+        self::assertSame('ABC123', $payload['data']['firmware']);
+        self::assertSame(300, $payload['data']['heartbeatIntervalSeconds']);
+        self::assertSame(87, $payload['data']['batteryPercent']);
+        self::assertSame('+01:00', $payload['data']['timeZone']);
+        self::assertTrue($payload['data']['cellularEnabled']);
+        self::assertArrayNotHasKey('deviceTime', $payload['data']);
     }
 
     private function frame(FourPTouchAdapter $adapter, string $type, array $fields): string

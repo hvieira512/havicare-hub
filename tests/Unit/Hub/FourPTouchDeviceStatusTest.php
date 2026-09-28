@@ -4,72 +4,120 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\Device\DeviceEventDecoder;
-use Hub\Device\DeviceSession;
+use Hub\Device\Decoder\FourPTouchEventDecoder;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Pedir o estado a um relógio é uma acção, e não uma leitura.
+ * A resposta ao `TS`, apanhada de um D45 Pro em produção a 2026-09-28.
  *
- * O `TS` devolve dezasseis campos e onze deles são o hub a ler de volta o que ele próprio
- * escreveu — idioma, fuso, intervalo de upload, perfil, o endereço do nosso servidor, a
- * identidade, a bateria que já chega em cada heartbeat. Saía tudo como um único campo de
- * telemetria chamado `deviceTime`, que não é a hora do dispositivo nem é um valor só.
- *
- * O pedido continua a existir e a fechar-se; o que deixa de haver é uma mensagem publicada
- * com um nome que mente sobre o que traz.
+ * Nem todos os modelos respondem: o Y6M e o Y6L devolvem o comando tal e qual, e a própria
+ * especificação avisa que a validade depende do firmware.
  */
 final class FourPTouchDeviceStatusTest extends TestCase
 {
+    private const REPLY = 'ver:A6C_YSC_D45Pro_En_Z_2026.04.21_18.34.39_0627_1005; '
+        . "\nID:6006029822; \nimei:868160060298224; \nurl:144.76.186.92; \nport:8080; "
+        . "\nupload:14400; \nlk:300; \nbatlevel:100; \nlanguage:pt; \nzone:+01:00; "
+        . "\nprofile:1; \nGPS:OK(2); \nwifiOpen:true; \nwifiConnect:false; "
+        . "\ngprsOpen:true; \nNET:OK(100)";
+
+    /** @return array<string, mixed> */
+    private function decoded(): array
+    {
+        $frame = '[3G*6006029822*011c*TS,' . self::REPLY . ']';
+        $decoded = (new FourPTouchAdapter())->decodeIncoming($frame);
+
+        return $decoded['data'] ?? [];
+    }
+
+    /** O bloco é `chave:valor` separado por `;`, e não campos por vírgulas. */
+    public function testTheReplyIsReadAsKeysAndValues(): void
+    {
+        $data = $this->decoded();
+
+        self::assertSame('A6C_YSC_D45Pro_En_Z_2026.04.21_18.34.39_0627_1005', $data['firmware']);
+        self::assertSame(100, $data['batteryPercent']);
+        self::assertSame(14400, $data['uploadIntervalSeconds']);
+        self::assertSame(300, $data['heartbeatIntervalSeconds']);
+        self::assertSame('pt', $data['language']);
+        self::assertSame('+01:00', $data['timeZone']);
+        self::assertSame(1, $data['soundProfile']);
+        self::assertTrue($data['cellularEnabled']);
+        self::assertTrue($data['wifiEnabled']);
+        self::assertFalse($data['wifiConnected']);
+    }
+
     /**
-     * O bloco real de um D41, byte a byte como chegou do aparelho a 24/09/2026.
-     *
-     * Vai em base64 porque a trama leva mudanças de linha dentro do corpo, e o campo de
-     * comprimento do cabeçalho conta-as: reescrevê-la à mão com espaços dava uma trama que o
-     * adaptador recusa, e o teste passava a medir a minha reconstrução e não o aparelho.
+     * O `GPS:OK(2)` e o `NET:OK(100)` ficam de fora: a especificação dá o formato e nunca
+     * diz o que os números são, e o `100` é o mesmo no exemplo dela e no aparelho real. Uma
+     * grandeza sem unidade conhecida não entra no contrato.
      */
-    private const REAL_REPLY_BASE64 = 'WzNHKjI4MDg3NzQzMDYqMDEyOCpUUyx2ZXI6QTZDX1lTQ19ENDFfRU1NQ18yNDAyOTZfNU1f'
-        . 'Q09NTU9OX09WRVJTRUFfMjAyNi4wNC4xNV8yMC4wMS41MTsgCklEOjI4MDg3NzQzMDY7IAppbWVpOjg2MTcyODA4Nzc0MzA2Mjsg'
-        . 'CnVybDoxNDQuNzYuMTg2LjkyOyAKcG9ydDo4MDgwOyAKdXBsb2FkOjE0NDAwOyAKbGs6MzAwOyAKYmF0bGV2ZWw6MTAwOyAKbGFu'
-        . 'Z3VhZ2U6cHQ7IAp6b25lOiswMTowMDsgCnByb2ZpbGU6MTsgCkdQUzpPSygwKTsgCndpZmlPcGVuOnRydWU7IAp3aWZpQ29ubmVj'
-        . 'dDpmYWxzZTsgCmdwcnNPcGVuOnRydWU7IApORVQ6T0soMTAwKV0=';
-
-    public function testTheStatusReplyPublishesNoTelemetry(): void
+    public function testTheUndocumentedNumbersDoNotBecomeAContract(): void
     {
-        $decoded = (new FourPTouchAdapter())->decodeIncoming(
-            (string)base64_decode(self::REAL_REPLY_BASE64, true)
-        );
+        $data = $this->decoded();
 
-        self::assertIsArray($decoded);
-        self::assertSame('TS', $decoded['type'], 'a trama continua a ser reconhecida');
-        self::assertSame([], (new DeviceEventDecoder())->decode($this->session(), $decoded));
+        foreach (['netQuality', 'gpsSatellites', 'signalQuality', 'signalStrengthDbm'] as $invented) {
+            self::assertArrayNotHasKey($invented, $data, $invented);
+        }
     }
 
-    /** A versão do firmware tem capacidade própria, e essa continua a publicar-se. */
-    public function testTheFirmwareVersionStillPublishes(): void
+    /** A ligação de rede é telemetria: muda sozinha. */
+    public function testTheRadiosBecomeConnectivity(): void
     {
-        $decoded = (new FourPTouchAdapter())->decodeIncoming('[3G*2808774306*000D*VERNO,A6C_D41]');
+        $events = FourPTouchEventDecoder::decode('TS', $this->decoded());
+        $connectivity = $this->firstOf($events, 'connectivity');
 
-        self::assertIsArray($decoded);
-        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
-
-        self::assertCount(1, $events);
-        self::assertSame('firmware_version', $events[0]['feature']);
+        self::assertNotNull($connectivity);
+        self::assertSame('cellular', $connectivity['value']['interface']);
+        self::assertTrue($connectivity['value']['cellularEnabled']);
+        self::assertFalse($connectivity['value']['wifiConnected']);
     }
 
-    private function session(): DeviceSession
+    /** O que o hub lá escreveu volta como configuração reportada, e não como leitura. */
+    public function testWhatTheHubWroteComesBackAsReportedConfiguration(): void
     {
-        return new DeviceSession(
-            new PillFakeConnection(),
-            'tcp',
-            true,
-            '861728087743062',
-            'four-p-touch',
-            '4P Touch',
-            'D41',
-            '4P Touch D41',
-            'watch',
-        );
+        $events = FourPTouchEventDecoder::decode('TS', $this->decoded());
+        $config = $this->firstOf($events, 'device_config');
+
+        self::assertNotNull($config);
+        $settings = $config['value']['settings'];
+
+        self::assertSame(['language' => 'pt', 'timeZone' => '+01:00'], $settings['language_timezone']);
+        self::assertSame(['mode' => 1], $settings['sound_profile']);
+        self::assertSame(['intervalSeconds' => 14400], $settings['location_reporting_interval']);
+        // O `lk` não tem capacidade e não ganha uma: entra só para se ver.
+        self::assertSame(['seconds' => 300], $settings['heartbeat_interval']);
+    }
+
+    /** E a versão do firmware sai na capacidade que já existe. */
+    public function testTheFirmwareVersionUsesTheCapabilityThatExists(): void
+    {
+        $events = FourPTouchEventDecoder::decode('TS', $this->decoded());
+
+        self::assertNotNull($this->firstOf($events, 'firmware_version'));
+    }
+
+    /**
+     * O eco do Y6L não é uma resposta: a trama de subida é igual à que desceu, e sem bloco
+     * não há nada para publicar.
+     */
+    public function testAnEchoPublishesNothing(): void
+    {
+        $decoded = (new FourPTouchAdapter())->decodeIncoming('[3G*2808660424*0002*TS]');
+
+        self::assertSame([], FourPTouchEventDecoder::decode('TS', $decoded['data'] ?? []));
+    }
+
+    /** @param list<array<string, mixed>> $events */
+    private function firstOf(array $events, string $feature): ?array
+    {
+        foreach ($events as $event) {
+            if (($event['feature'] ?? null) === $feature) {
+                return $event;
+            }
+        }
+
+        return null;
     }
 }

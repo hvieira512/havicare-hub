@@ -2,103 +2,130 @@
 
 namespace Hub\Domain\Capability\Definition;
 
-final class BraceletCapabilityDefinitions
+/**
+ * O botão é uma capacidade só e não uma por modo de toque: os modos configuram-se no
+ * aparelho, e o tipo de toque viaja no payload do evento.
+ *
+ * O que decide se uma grandeza se pede não é o tipo de aparelho mas o modelo, e é por
+ * isso que `is_requestable` também existe em `model_capabilities`: aqui declara-se o que
+ * é possível, lá o que cada modelo faz.
+ */
+final class BraceletCapabilityDefinitions extends CapabilityDefinitions
 {
-    /**
-     * O botão é uma capacidade só e não uma por modo de toque: os modos configuram-se no
-     * aparelho, e o tipo de toque viaja no payload do evento.
-     *
-     * O que decide se uma grandeza se pede não é o tipo de aparelho mas o modelo, e é por
-     * isso que `is_requestable` também existe em `model_capabilities`: aqui declara-se o que
-     * é possível, lá o que cada modelo faz.
-     *
-     * @return list<array{deviceType: string, section: string, key: string, label: string, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
-     */
-    public static function all(): array
+    protected static function deviceType(): string
+    {
+        return 'bracelet';
+    }
+
+    protected static function rows(): array
     {
         return [
-            // Pedível nas pulseiras com sessão GATT, que respondem à pergunta. As que só
-            // anunciam continuam sem card, porque o catálogo de comandos do protocolo delas
-            // está vazio -- é lá que a diferença se faz, não aqui.
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'battery', 'label' => 'Bateria', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'motion', 'label' => 'Movimento', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            // Sai por avistamento, e não do aparelho: é a força com que cada gateway o ouve,
-            // que é o que sustenta os alarmes de proximidade. Nunca é pedível, porque não é
-            // o aparelho que a produz.
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'proximity', 'label' => 'Proximidade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'alarms', 'key' => 'help_call', 'label' => 'Chamada de ajuda', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
-
-            // Pulseiras com sessão GATT. Só é pedível o que, testado no aparelho, devolve uma
-            // resposta conclusiva -- um valor ou uma razão. Prometer um botão que nunca
-            // responde é pior do que não o ter: o cuidador carrega, não acontece nada, e
-            // deixa de confiar nos que funcionam.
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'heart_rate', 'label' => 'Frequência cardíaca', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'blood_pressure', 'label' => 'Pressão arterial', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'blood_oxygen', 'label' => 'Oxigénio no sangue', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'blood_sugar', 'label' => 'Glicemia', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'ecg', 'label' => 'ECG', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'temperature', 'label' => 'Temperatura', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'hrv', 'label' => 'VFC', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'rr_interval', 'label' => 'Intervalo R-R', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Frequência respiratória', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'ppg', 'label' => 'PPG', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'sleep', 'label' => 'Sono', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            // As pontuações que o firmware atribui à noite. São um juízo sobre a medição e
-            // não a medição, e por isso não cabem no `sleep`, que é o mesmo contrato dos
-            // relógios -- nenhum deles pontua o sono.
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'sleep_quality', 'label' => 'Qualidade do sono', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            // O acumulado do dia, como nos relógios: lá o `steps` do aparelho é um contador
-            // desde a meia-noite, e é o mesmo que a pulseira dá quando lhe perguntam.
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'activity', 'label' => 'Atividade', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            // E os passos de cada bloco de cinco minutos, que é quando eles foram dados.
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'steps', 'label' => 'Passos', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-
-            // Derivados que a pulseira calcula sozinha e entrega nos blocos diários. Nenhum é
-            // pedível: não há comando que os mande medir, saem do que já foi medido.
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'stress', 'label' => 'Stress', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'met', 'label' => 'MET', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'blood_lipids', 'label' => 'Lípidos no sangue', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'uric_acid', 'label' => 'Ácido úrico', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'sleep_apnea', 'label' => 'Apneia do sono', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'cardiac_load', 'label' => 'Carga cardíaca', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            // A pulseira diz em cada bloco se estava ao pulso. Sem isto, um bloco de zeros
-            // por estar na mesinha é igual a um bloco de zeros de quem está sentado.
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'wear_state', 'label' => 'Estado de uso', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            // A pulseira diz a versão em cada sessão; sem isto não havia onde a guardar.
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'firmware_version', 'label' => 'Versão de firmware', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'body_composition', 'label' => 'Composição corporal', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-
-            // Interruptores de medição autónoma. A pulseira mede sozinha ao longo do dia e
-            // guarda; estes dizem-lhe o que medir. São as mesmas chaves dos relógios, porque
-            // é a mesma capacidade -- inventar `bracelet_heart_rate_continuous` obrigaria
-            // quem integra a tratar por dois nomes o que é uma coisa só.
-            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'heart_rate_continuous', 'label' => 'Frequência cardíaca contínua', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'blood_pressure_trend', 'label' => 'Tendência da pressão arterial', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'temperature_continuous', 'label' => 'Temperatura contínua', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'hrv_continuous', 'label' => 'VFC contínua', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'blood_sugar_continuous', 'label' => 'Glicemia contínua', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'blood_lipids_continuous', 'label' => 'Composição sanguínea contínua', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'stress_continuous', 'label' => 'Stress contínuo', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'sleep_monitoring', 'label' => 'Monitorização do sono', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            // Não é medição contínua de oxigénio -- essa a pulseira faz sempre, e vem nos
-            // blocos. Este interruptor é o despertar por hipoxia, e o hub já chama
-            // `blood_oxygen_alert` à mesma coisa nos relógios.
-            ['deviceType' => 'bracelet', 'section' => 'alarms', 'key' => 'blood_oxygen_alert', 'label' => 'Alerta de oxigénio no sangue', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            // As configurações que levam valores, e não só um interruptor. Só entram as que
-            // mudam o que o aparelho mede ou como calcula: alarmes, lembretes, brilho do ecrã
-            // e unidades são comportamento de relógio de pulso e não alteram uma leitura.
-            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'blood_oxygen_window', 'label' => 'Oxigénio de dia inteiro', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            // Estas duas não são preferências de quem usa a pulseira: entram nas contas dela.
-            // O tom de pele regula a potência do LED de que sai todo o sinal ótico, e o corpo
-            // é o que ela usa para calorias e composição corporal.
-            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'skin_tone', 'label' => 'Tom de pele', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'health', 'key' => 'personal_info', 'label' => 'Dados para cálculo', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            // Os limiares são avaliados pelo aparelho sobre a medição dele.
-            ['deviceType' => 'bracelet', 'section' => 'alarms', 'key' => 'heart_rate_alert', 'label' => 'Alerta de frequência cardíaca', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            // Faz a pulseira vibrar até alguém a encontrar. Não é configurável porque não há
-            // estado a guardar -- pede-se, e pede-se outra vez para parar.
-            ['deviceType' => 'bracelet', 'section' => 'settings_system', 'key' => 'find_device', 'label' => 'Encontrar dispositivo', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            'telemetry' => [
+                // As pulseiras com sessão GATT respondem à pergunta; as que só anunciam
+                // continuam sem card, porque o catálogo de comandos do protocolo delas está
+                // vazio -- é lá que a diferença se faz, não aqui.
+                //
+                // Só entra aqui o que, testado no aparelho, devolve uma resposta conclusiva:
+                // um valor ou uma razão. Prometer um botão que nunca responde é pior do que
+                // não o ter -- o cuidador carrega, não acontece nada, e deixa de confiar nos
+                // que funcionam.
+                'measurementOnRequest' => [
+                    'battery' => 'Bateria',
+                    'heart_rate' => 'Frequência cardíaca',
+                    'blood_pressure' => 'Pressão arterial',
+                    'blood_oxygen' => 'Oxigénio no sangue',
+                    'blood_sugar' => 'Glicemia',
+                    'ecg' => 'ECG',
+                    'temperature' => 'Temperatura corporal',
+                    'sleep' => 'Sono',
+                    // O acumulado do dia, como nos relógios: lá o `steps` do aparelho é um
+                    // contador desde a meia-noite, e é o mesmo que a pulseira dá quando lhe
+                    // perguntam.
+                    'activity' => 'Atividade',
+                    'stress' => 'Stress',
+                    'body_composition' => 'Composição corporal',
+                ],
+                // O avistamento é o que sustenta os alarmes de proximidade. O `motion` não
+                // entra: vem no anúncio BLE e é o acelerómetro da própria pulseira.
+                'sighting' => [
+                    'proximity' => 'Proximidade',
+                ],
+                'measurement' => [
+                    'motion' => 'Movimento',
+                    'hrv' => 'VFC',
+                    'rr_interval' => 'Intervalo R-R',
+                    'breath_rate' => 'Frequência respiratória',
+                    'ppg' => 'PPG',
+                    // As pontuações que o firmware atribui à noite. São um juízo sobre a
+                    // medição e não a medição, e por isso não cabem no `sleep`, que é o
+                    // mesmo contrato dos relógios -- nenhum deles pontua o sono.
+                    'sleep_quality' => 'Qualidade do sono',
+                    // Os passos de cada bloco de cinco minutos, que é quando eles foram
+                    // dados. A `activity` é o acumulado do dia, e a etiqueta tem de as
+                    // distinguir: lado a lado no mesmo ecrã, «Passos» sozinho não dizia qual.
+                    'steps' => 'Passos por período',
+                    // Derivados que a pulseira calcula sozinha e entrega nos blocos diários:
+                    // não há comando que os mande medir, saem do que já foi medido.
+                    'met' => 'MET',
+                    'blood_lipids' => 'Lípidos no sangue',
+                    'uric_acid' => 'Ácido úrico',
+                    'sleep_apnea' => 'Apneia do sono',
+                    'cardiac_load' => 'Carga cardíaca',
+                    // A pulseira diz em cada bloco se estava ao pulso. Sem isto, um bloco de
+                    // zeros por estar na mesinha é igual a um bloco de zeros de quem está
+                    // sentado.
+                    'wear_state' => 'Estado de uso',
+                    // A pulseira diz a versão em cada sessão; sem isto não havia onde a
+                    // guardar.
+                    'firmware_version' => 'Versão do firmware',
+                ],
+            ],
+            'health' => [
+                // Interruptores de medição autónoma: a pulseira mede sozinha ao longo do dia
+                // e guarda, e estes dizem-lhe o que medir. São as mesmas chaves dos relógios,
+                // porque é a mesma capacidade -- inventar `bracelet_heart_rate_continuous`
+                // obrigaria quem integra a tratar por dois nomes o que é uma coisa só.
+                //
+                // Só entra o que muda o que o aparelho mede ou como calcula: alarmes,
+                // lembretes, brilho do ecrã e unidades são comportamento de relógio de pulso
+                // e não alteram uma leitura.
+                'setting' => [
+                    'heart_rate_continuous' => 'Frequência cardíaca contínua',
+                    'blood_pressure_trend' => 'Tendência da pressão arterial',
+                    'temperature_continuous' => 'Temperatura contínua',
+                    'hrv_continuous' => 'VFC contínua',
+                    'blood_sugar_continuous' => 'Glicemia contínua',
+                    'blood_lipids_continuous' => 'Composição sanguínea contínua',
+                    'stress_continuous' => 'Stress contínuo',
+                    'sleep_monitoring' => 'Monitorização do sono',
+                    'blood_oxygen_window' => 'Oxigénio de dia inteiro',
+                    // Estas duas não são preferências de quem usa a pulseira: entram nas
+                    // contas dela. O tom de pele regula a potência do LED de que sai todo o
+                    // sinal ótico, e o corpo é o que ela usa para calorias e composição.
+                    'skin_tone' => 'Tom de pele',
+                    'personal_info' => 'Dados para cálculo',
+                ],
+            ],
+            'alarms' => [
+                // Os limiares são avaliados pelo aparelho sobre a medição dele.
+                'setting' => [
+                    // Não é medição contínua de oxigénio -- essa a pulseira faz sempre, e vem
+                    // nos blocos. Este interruptor é o despertar por hipoxia, e o hub já
+                    // chama `blood_oxygen_alert` à mesma coisa nos relógios.
+                    'blood_oxygen_alert' => 'Alerta de oxigénio no sangue',
+                    'heart_rate_alert' => 'Alerta de frequência cardíaca',
+                ],
+                'event' => [
+                    'help_call' => 'Chamada de ajuda',
+                ],
+            ],
+            'settings_system' => [
+                // Faz a pulseira vibrar até alguém a encontrar. É acção e não configuração
+                // porque não há estado a guardar -- pede-se, e pede-se outra vez para parar.
+                'action' => [
+                    'find_device' => 'Encontrar dispositivo',
+                ],
+            ],
         ];
     }
 }

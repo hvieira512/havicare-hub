@@ -140,21 +140,23 @@ const TELEMETRY_REQUEST_GROUPS = [
     },
 ];
 
+/** O que o aparelho diz sobre si próprio, e não uma medição do mundo. */
 const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
     "firmware_version",
+    "device_status",
 ]);
 
 /**
  * Capacidades sem mosaico próprio. O resumo diz o estado agora, e os agregados do radar são
  * médias do último minuto -- continuam na lista de eventos, onde a hora lhes dá sentido.
  */
-/** O mesmo nome que a API valida contra o catálogo de comandos, e não uma capacidade. */
-const TELEMETRY_REFRESH_FEATURE = "telemetry_refresh";
-
 const TELEMETRY_REQUEST_HIDDEN_FEATURES = new Set([
     "diaper_moisture_level",
     "position_minute_stats",
     "vitals_minute_stats",
+    // O resumo já a mostra em «Dispositivos ligados», uma linha por gateway e com barras. O
+    // mosaico dizia-a pior: um só, e sem nomear o gateway que a ouviu.
+    "proximity",
 ]);
 
 function telemetryRequestCards(telemetryCapabilities = {}) {
@@ -386,33 +388,10 @@ function renderRequestCards(
         : "";
     // Um W812 não aceita pedido nenhum, e o cartão vazio a dizê-lo ocupava a coluna com uma
     // grelha que nunca teria mosaicos. Sem nada para mostrar, a secção não existe.
-    const grid = telemetryRefreshButton() + falls + helpCalls + cards;
+    const grid = falls + helpCalls + cards;
     els.requestCardsCard?.classList.toggle("d-none", grid === "");
     els.requestGrid.innerHTML = grid;
     refreshTooltips(els.requestGrid);
-}
-
-/**
- * Pedir ao aparelho que releia o estado.
- *
- * Não é um mosaico porque não é uma grandeza: o que a resposta traz sai nos mosaicos que já
- * existem, e por isso o botão fica à cabeça deles e não ao lado. Só aparece nos protocolos
- * que sabem fazê-lo -- o `0x07` do dispensador e o `TS` dos 4P Touch.
- */
-function telemetryRefreshButton() {
-    if (!state.selectedDetail?.telemetryRefresh) {
-        return "";
-    }
-
-    const pending = state.loadingCommands.has(TELEMETRY_REFRESH_FEATURE);
-
-    return html`
-        <div class="telemetry-card-wide d-flex justify-content-end">
-        <button type="button" class="btn btn-sm btn-outline-secondary"
-        data-action="requestFeature" data-feature="${TELEMETRY_REFRESH_FEATURE}"${raw(pending ? " disabled" : "")}>
-        <i class="fa-solid fa-arrows-rotate me-1" aria-hidden="true"></i>${pending ? "A pedir…" : "Atualizar"}
-        </button>
-        </div>`;
 }
 
 function renderRequestCardGroup(

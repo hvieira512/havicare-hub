@@ -52,7 +52,7 @@ final class DeviceCommandCatalog
         return [
             // Um pedido só: o `0x07` pede sempre as `STATUS_TAGS` todas, e a resposta enche
             // as sete leituras de uma vez.
-            ['id' => 'pillReadStatus', 'command' => 'readStatus', 'label' => 'Refresh telemetry', 'icon' => 'fa-arrows-rotate', 'kind' => 'refresh', 'feature' => 'telemetry_refresh', 'expectedReplyTypes' => ['read_status_ack']],
+            ['id' => 'pillReadStatus', 'command' => 'readStatus', 'label' => 'Device status', 'icon' => 'fa-arrows-rotate', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['read_status_ack']],
             ['id' => 'pillReadConfiguration', 'command' => 'readConfiguration', 'label' => 'Stored configuration', 'icon' => 'fa-rotate', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
         ];
     }
@@ -66,17 +66,6 @@ final class DeviceCommandCatalog
      *
      * @return array<string, mixed>|null
      */
-    public static function refreshCommandForProtocol(string $protocol): ?array
-    {
-        foreach (self::commandsForProtocol($protocol) as $entry) {
-            if ((string)($entry['kind'] ?? '') === 'refresh') {
-                return $entry;
-            }
-        }
-
-        return null;
-    }
-
     public static function commandForProtocol(string $protocol, string $command): ?array
     {
         foreach (self::commandsForProtocol($protocol) as $entry) {
@@ -108,17 +97,13 @@ final class DeviceCommandCatalog
     }
 
     /**
-     * O `refresh` entra aqui com o `request`: a diferença entre os dois é onde o botão vive,
-     * e não como o comando se envia. Fora daqui, um `request` é um mosaico com capacidade por
-     * trás e um `refresh` não é.
-     *
      * @return list<array<string, mixed>>
      */
     public static function commandsForFeature(string $protocol, string $feature): array
     {
         return array_values(array_filter(
             self::commandsForProtocol($protocol),
-            static fn(array $entry): bool => in_array((string)($entry['kind'] ?? ''), ['request', 'refresh'], true)
+            static fn(array $entry): bool => (string)($entry['kind'] ?? '') === 'request'
                 && trim((string)($entry['feature'] ?? '')) === $feature
         ));
     }
@@ -272,7 +257,7 @@ final class DeviceCommandCatalog
             ['id' => 'fourPBloodPressure', 'command' => 'hrtstart', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
             ['id' => 'fourPBodyTemperature', 'command' => 'bodytemp2', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['bodytemp2', 'btemp2']],
             ['id' => 'fourPFirmwareVersion', 'command' => 'VERNO', 'label' => 'Firmware version', 'icon' => 'fa-microchip', 'kind' => 'request', 'feature' => 'firmware_version', 'expectedReplyTypes' => ['VERNO']],
-            ['id' => 'fourPDeviceStatus', 'command' => 'TS', 'label' => 'Refresh telemetry', 'icon' => 'fa-arrows-rotate', 'kind' => 'refresh', 'feature' => 'telemetry_refresh', 'expectedReplyTypes' => ['TS']],
+            ['id' => 'fourPDeviceStatus', 'command' => 'TS', 'label' => 'Device status', 'icon' => 'fa-arrows-rotate', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['TS']],
         ];
     }
 }

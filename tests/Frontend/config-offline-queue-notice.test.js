@@ -35,3 +35,26 @@ test("sem prazo conhecido, fala da fila e não inventa um número", () => {
     assert.match(notice, /fila/);
     assert.doesNotMatch(notice, /\d/);
 });
+
+/**
+ * O medidor de fraldas é um beacon BLE que só transmite. A única configuração dele é aplicada
+ * pelo hub, e o aviso prometia uma fila que não existe -- cinco linhas acima da ajuda que diz
+ * «o sensor apenas transmite e nada lhe é enviado».
+ */
+test("sem nada que viaje para o aparelho, não há fila de que falar", () => {
+    const hubApplied = [{ key: "diaper_sensitivity", command: "" }];
+
+    assert.equal(offlineQueueNotice(false, 300, hubApplied), "");
+});
+
+test("basta uma configuração que viaje para o aviso voltar", () => {
+    const mixed = [{ key: "diaper_sensitivity", command: "" }, { key: "alarmClock", command: "REMIND" }];
+
+    assert.match(offlineQueueNotice(false, 300, mixed), /fila/);
+});
+
+/** Sem lista, o aviso mantém-se: é o que já acontece em todos os outros painéis. */
+test("sem saber o que o painel tem, o aviso mantém-se", () => {
+    assert.match(offlineQueueNotice(false, 300), /fila/);
+    assert.match(offlineQueueNotice(false, 300, []), /fila/);
+});

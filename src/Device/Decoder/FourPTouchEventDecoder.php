@@ -4,6 +4,7 @@ namespace Hub\Device\Decoder;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
+use Hub\Support\Values;
 
 final class FourPTouchEventDecoder
 {
@@ -37,13 +38,56 @@ final class FourPTouchEventDecoder
             ])),
             $nativeType === 'CONFIG', $nativeType === 'TAKEPILLS' => [DeviceEventDecoder::event('device_config', $nativeType, $payload)],
             $nativeType === 'VERNO' => [DeviceEventDecoder::event('firmware_version', $nativeType, $payload)],
-            // O `TS` não publica nada. Dos dezasseis campos que devolve, onze são o hub a ler
-            // de volta o que escreveu — idioma, fuso, intervalo, perfil, o endereço do nosso
-            // servidor, a identidade, a bateria que já chega no heartbeat. Saíam todos numa
-            // string só, num campo chamado `deviceTime`. Pedir o estado é uma acção, e a
-            // trama fica no fluxo cru para quem precisar de a ler.
+            $nativeType === 'TS' => self::deviceStatus($nativeType, $payload),
             default => [],
         };
+    }
+
+    /**
+     * A resposta ao `TS`, repartida pelas três naturezas que traz.
+     *
+     * Os modelos que ecoam o comando não trazem bloco nenhum, e daqui não sai nada.
+     *
+     * @param array<string, mixed> $payload
+     * @return list<array<string, mixed>>
+     */
+    private static function deviceStatus(string $nativeType, array $payload): array
+    {
+        $events = array_values(array_filter([
+            DeviceEventDecoder::event('firmware_version', $nativeType, ['firmware' => $payload['firmware'] ?? null]),
+            DeviceEventDecoder::event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
+        ]));
+
+        if (isset($payload['cellularEnabled']) || isset($payload['wifiConnected'])) {
+            $events[] = ['feature' => 'connectivity', 'nativeType' => $nativeType, 'value' => Values::withoutNulls([
+                // O que está a servir a ligação, e não o que está ligado: o rádio pode estar
+                // aceso sem estar associado a rede nenhuma.
+                'interface' => ($payload['wifiConnected'] ?? false) === true ? 'wifi' : 'cellular',
+                'wifiEnabled' => $payload['wifiEnabled'] ?? null,
+                'wifiConnected' => $payload['wifiConnected'] ?? null,
+                'cellularEnabled' => $payload['cellularEnabled'] ?? null,
+            ])];
+        }
+
+        $settings = Values::withoutNulls([
+            'language_timezone' => isset($payload['language'], $payload['timeZone'])
+                ? ['language' => $payload['language'], 'timeZone' => $payload['timeZone']]
+                : null,
+            'sound_profile' => isset($payload['soundProfile']) ? ['mode' => $payload['soundProfile']] : null,
+            'location_reporting_interval' => isset($payload['uploadIntervalSeconds'])
+                ? ['intervalSeconds' => $payload['uploadIntervalSeconds']]
+                : null,
+            // Não tem capacidade e não ganha uma: entra só para se ver ao lado das outras.
+            'heartbeat_interval' => isset($payload['heartbeatIntervalSeconds'])
+                ? ['seconds' => $payload['heartbeatIntervalSeconds']]
+                : null,
+        ]);
+
+        if ($settings !== []) {
+            $events[] = ['feature' => 'device_config', 'nativeType' => $nativeType, 'value' => ['settings' => $settings]];
+        }
+
+        return $events;
     }
 
     private static function isPosition(string $nativeType): bool

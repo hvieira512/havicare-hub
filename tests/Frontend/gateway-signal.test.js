@@ -49,6 +49,44 @@ test("a reading without a timestamp still shows band and strength", () => {
     assert.equal(signalLabel({ rssiDbm: -64, at: "" }), "Bom · -64 dBm");
 });
 
+/**
+ * Uma pulseira vista pela última vez há 28 dias aparecia com quatro barras verdes e
+ * «Excelente · -32 dBm · há 28d». A leitura não expira: o hub declara o par calado ao fim de
+ * 30 s e publica `unknown`, mas o registo em Redis guarda o último dBm para sempre, e depois
+ * de um reinício do hub nem chega a haver quem o expire.
+ *
+ * O limite de apresentação é a soma do que o hub tolera (30 s) com o intervalo a que a
+ * dashboard sonda (30 s): mais apertado do que isso e um aparelho vivo dizia «sem sinal» só
+ * por atraso da sondagem.
+ */
+const secondsAgo = (seconds) => new Date(Date.now() - (seconds * 1000)).toISOString();
+
+test("uma leitura velha deixa de afirmar qualidade", () => {
+    const stale = { rssiDbm: -32, at: secondsAgo(28 * 86400) };
+
+    assert.equal(signalBand(stale).bars, 0);
+    assert.equal(signalBand(stale).tone, "secondary");
+    assert.doesNotMatch(signalLabel(stale), /Excelente/);
+});
+
+test("mas continua a dizer quando foi e quanto era", () => {
+    const label = signalLabel({ rssiDbm: -32, at: secondsAgo(28 * 86400) });
+
+    assert.match(label, /-32 dBm/);
+    assert.match(label, /28d/);
+});
+
+test("dentro do limite, a leitura continua a valer", () => {
+    const fresh = { rssiDbm: -32, at: secondsAgo(59) };
+
+    assert.equal(signalBand(fresh).label, "Excelente");
+    assert.equal(signalBand(fresh).bars, 4);
+});
+
+test("o limite são os 30 s do hub mais os 30 s da sondagem", () => {
+    assert.equal(signalBand({ rssiDbm: -32, at: secondsAgo(61) }).bars, 0);
+});
+
 test("every band boundary lands in the documented category", () => {
     const band = (rssiDbm) => signalBand({ rssiDbm, at: "" }).label;
 

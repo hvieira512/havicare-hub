@@ -57,8 +57,8 @@ final class FourPTouchConfigurationDefinitions
             $entry('doNotDisturb', 'SILENCETIME', 'Não perturbar', 'toggle', ['enabled'], ['SILENCETIME'], 'system', 60),
             // Estas duas perguntam em vez de mandar, e o rótulo delas é um nome: sem o verbo
             // o botão dizia «Enviar», que descreve mal o que o clique faz.
-            $entry('firmwareVersion', 'VERNO', 'Versão de firmware', 'action', [], ['VERNO'], 'system', 5, transient: true, verb: 'Consultar'),
-            $entry('deviceStatus', 'TS', 'Estado do dispositivo', 'action', [], ['TS'], 'system', 5, transient: true, verb: 'Consultar'),
+            // Sem `deviceStatus`: o `TS` pede-se no mosaico «Estado do dispositivo», em
+            // Informação do sistema. Aqui era a segunda porta para o mesmo comando.
             $entry('alarmClock', 'REMIND', 'Alarmes', 'alarm_clock', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Uma vez'],

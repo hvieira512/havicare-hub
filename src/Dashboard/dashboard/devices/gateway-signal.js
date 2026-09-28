@@ -34,9 +34,25 @@ const SIGNAL_BANDS = [
 
 const NO_SIGNAL = { label: "Sem sinal", bars: 0, tone: "secondary" };
 
+/**
+ * A partir de quando uma leitura deixa de dizer alguma coisa sobre agora.
+ *
+ * São os 30 s que o hub tolera antes de dar o par por calado -- o `stalenessSeconds` do
+ * `ProximityTracker` -- mais os 30 s a que a dashboard sonda o dispositivo. Mais apertado do
+ * que isto e um aparelho vivo dizia «sem sinal» só por atraso da sondagem.
+ */
+const SIGNAL_MAX_AGE_SECONDS = 60;
+
 /** A banda em que uma leitura cai, ou a banda do "nunca ouvido" quando não há leitura. */
-export function signalBand(signal) {
+export function signalBand(signal, now = Date.now()) {
     if (!signal) return NO_SIGNAL;
+
+    // Uma leitura velha não é uma leitura fraca: as barras ficam vazias e a qualidade deixa
+    // de se afirmar, mas o valor e a idade continuam a ler-se na etiqueta.
+    const at = signal.at ? Date.parse(signal.at) : NaN;
+    if (Number.isFinite(at) && (now - at) > (SIGNAL_MAX_AGE_SECONDS * 1000)) {
+        return NO_SIGNAL;
+    }
 
     return SIGNAL_BANDS.find((band) => signal.rssiDbm >= band.atLeast) || NO_SIGNAL;
 }

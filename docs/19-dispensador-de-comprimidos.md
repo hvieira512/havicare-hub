@@ -695,8 +695,8 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0xC201`–`0xC206` | `medication_intake` | `alarmSlot`, `scheduledAt`, `takenAt`, `cellNumber`, `method`, `result` |
 | `0x8103` / `0x8104` / `0x8109` | `battery` | `percent`, `chargingState`, `mainsPowered` — a corrente vai com a bateria porque «ligado à corrente» e «a carregar» são a mesma pergunta |
 | `0x811A` / `0x811B` / `0x811D` / `0x8101` | `cells_remaining` | `current`, `total`, `remaining`, `level` (`ok` · `low` · `empty`). **O `remaining` é `carregados − posição`**, com corte a zero — quantas doses faltam sair a partir de onde o carrossel está, e **não** quantos compartimentos ainda têm comprimidos. Confirmado no aparelho: 28 carregados na posição 20 deram 8, e a posição 21 deu 7. Por isso o cartão não os põe lado a lado: diz «8 por dispensar» e manda a posição para os detalhes, que é o que se precisa para saber onde carregar o prato |
-| `0x810E` | `temperature` | `environmentCelsius` |
-| `0x810F` | `humidity` | `humidityPercent` |
+| `0x810E` | `ambient_temperature` | `environmentCelsius` — o ar onde o aparelho está, e não uma pessoa. A spec dá-o como INT8S de −40 a 120 **graus inteiros**, que não é gama nem resolução de sensor corporal; por isso não partilha a chave `temperature` dos relógios |
+| `0x810F` | `ambient_humidity` | `humidityPercent` |
 | `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam, sempre em dBm, com o CSQ do 4G convertido na fronteira. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |
 | `0x8102` | `device_config` | `settings.child_lock.enabled` — não é telemetria: o que ele diz é o que nós lá pusemos, e por isso viaja como configuração reportada |
 | `0x8105` | — | Nada. Sabe o ligado/desligado do «não incomodar» mas não a janela, e as duas escreviam na mesma chave: como o `saveReported` substitui o payload inteiro, meia configuração apagava a outra metade. A janela completa — interruptor incluído — vem só na resposta ao `0x05` |

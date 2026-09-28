@@ -64,7 +64,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         ));
 
         self::assertSame($sorted, $labels, 'a telemetria de um relógio sai fora de ordem');
-        self::assertSame('Atividade (passos)', $labels[0] ?? null);
+        self::assertSame('Atividade', $labels[0] ?? null);
         // Em bytes o "VFC" vinha antes da "Versão", por a maiúscula pesar menos que a
         // minúscula. É o caso que distingue ordem portuguesa de ordem de tabela ASCII.
         self::assertGreaterThan(
@@ -143,6 +143,10 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         $expected = [
             'alarm_ringtone',
             'alarm_volume',
+            // O ar onde o aparelho está, e não uma pessoa: a spec dá o `0x810E` como INT8S de
+            // -40 a 120 graus inteiros. Partilhavam chave com a temperatura corporal.
+            'ambient_humidity',
+            'ambient_temperature',
             'battery',
             'calibrate_clock',
             'cells_remaining',
@@ -152,6 +156,9 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'connectivity',
             'device_fault',
             'device_language',
+            // O `0x07` pede as `STATUS_TAGS` todas, e a resposta enche as sete leituras. É a
+            // única pedível entre elas, e pede-se como qualquer outra.
+            'device_status',
             'dispense_now',
             'do_not_disturb',
             // A janela configura-se; o estado é outra coisa, e o terceiro valor dele — ligado
@@ -160,7 +167,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // Chega no pacote de registo, e por isso não é pedível como as outras leituras.
             'firmware_version',
             'help_call',
-            'humidity',
             'loaded_cells',
             // A mudança de estado de uma dose é acontecimento próprio: é o único sinal de uma
             // dose falhada, e viajava dentro da leitura dos nove, pelo canal sem garantia de
@@ -194,7 +200,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // Uma por família: o aparelho separa configuração, estado e controlo, e cada
             // pergunta é um pacote próprio.
             'sync_configuration',
-            'temperature',
             'time_zone',
             // O trinco do prato saiu de dentro do estado do dispositivo: destrancado é um
             // estado sobre que se age. Não é a «tampa» — essa é a leitura do tipo 01.
@@ -207,13 +212,13 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Treze configuráveis e seis pedíveis. Uma acção pede-se e não se configura, e por
+        // Treze configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por
         // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
         //
         // As sete leituras que o `0x07` enche não se pedem sozinhas: a trama pede-as sempre a
-        // todas, e quem a manda é o botão de recarregar do painel, que não é uma capacidade.
+        // todas, e quem a manda é o `device_status`, que é a sétima pedível.
         self::assertSame(
-            ['13', '6'],
+            ['13', '7'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

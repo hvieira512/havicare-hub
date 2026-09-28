@@ -264,12 +264,12 @@ final class PillDispenserEventDecoder
         // A temperatura é INT8S e a humidade INT8U -- um byte cada, e não dois como o sinal.
         $temperature = Tlv::i8($tlv, 0x810E);
         if ($temperature !== null) {
-            $events[] = ['feature' => 'temperature', 'nativeType' => $nativeType, 'value' => ['environmentCelsius' => $temperature]];
+            $events[] = ['feature' => 'ambient_temperature', 'nativeType' => $nativeType, 'value' => ['environmentCelsius' => $temperature]];
         }
 
         $humidity = Tlv::u8($tlv, 0x810F);
         if ($humidity !== null) {
-            $events[] = ['feature' => 'humidity', 'nativeType' => $nativeType, 'value' => ['humidityPercent' => $humidity]];
+            $events[] = ['feature' => 'ambient_humidity', 'nativeType' => $nativeType, 'value' => ['humidityPercent' => $humidity]];
         }
 
         // O `0x8101` é o juízo do aparelho sobre a contagem do `0x811D`: viaja como campo dela.
