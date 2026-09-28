@@ -69,7 +69,7 @@ $footer = (string) ob_get_clean();
 ob_start();
 ?>
 <div class="flex-grow-1 min-w-0">
-    <h2 class="modal-title h5 mb-0">Escolher dispositivo</h2>
+    <h2 class="modal-title h5 mb-0" id="deviceSelectorModalLabel">Escolher dispositivo</h2>
     <div id="deviceSelectorSummary" class="small text-secondary"></div>
 </div>
 <?php
@@ -77,7 +77,6 @@ $headerHtml = (string) ob_get_clean();
 
 render_modal(
     id: 'deviceSelectorModal',
-    title: 'Escolher dispositivo',
     body: $body,
     footer: $footer,
     size: 'xl',

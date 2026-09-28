@@ -16,7 +16,7 @@ ob_start();
               // separador escolhido, e o botão em que se acabou de carregar foge de debaixo
               // do rato. ?>
         <div class="col-12 col-lg-2 d-flex align-items-lg-start">
-            <div class="nav nav-pills flex-row flex-lg-column flex-nowrap gap-2 w-100" id="deviceModalNav" role="tablist">
+            <div class="nav nav-pills flex-row flex-lg-column flex-nowrap gap-2 w-100" role="tablist">
                 <?php foreach ($deviceTabs as $index => $tab) : ?>
                     <?php $pane = 'device' . $tab['key'] . 'Pane'; ?>
                 <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex<?= $tab['extra'] ?> align-items-center gap-2" id="device<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?></button>
@@ -115,7 +115,6 @@ $header = '<div class="modal-device-identity d-flex align-items-center min-w-0 f
 
 render_modal(
     id: 'deviceModal',
-    title: 'Editar dispositivo',
     body: $body,
     footer: $footer,
     size: 'xl',

@@ -288,17 +288,16 @@
     opacity: 1;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .telemetry-card-hint { transition: none; }
-}
-
 .telemetry-card-action:disabled {
     cursor: default;
     opacity: .75;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .telemetry-card-action { transition: none; }
+    .telemetry-card-hint,
+    .telemetry-card-action {
+        transition: none;
+    }
 }
 
 /* ===== escolher dispositivo ===== */
@@ -505,9 +504,10 @@
     font-size: var(--fs-sm);
 }
 
-.device-type-tile-check {
-    top: .375rem;
-    right: .375rem;
+/* A caixa de marcar do mosaico e a da lista de filtros são a mesma: só a do mosaico é que
+   se encosta ao canto. */
+.device-type-tile-check,
+.filter-option-box {
     width: 14px;
     height: 14px;
     place-items: center;
@@ -518,7 +518,14 @@
     font-size: var(--fs-micro);
 }
 
-.device-type-tile.selected .device-type-tile-check {
+.device-type-tile-check {
+    top: .375rem;
+    right: .375rem;
+}
+
+.device-type-tile.selected .device-type-tile-check,
+.filter-option.selected .filter-option-box,
+.filter-option.partial .filter-option-box {
     border-color: var(--bs-primary);
     background: var(--bs-primary);
     color: var(--brand-on);
@@ -557,24 +564,6 @@
     background: var(--bs-body-bg);
     border-color: var(--bs-primary-border-subtle);
     font-weight: 500;
-}
-
-.filter-option-box {
-    width: 14px;
-    height: 14px;
-    place-items: center;
-    border: 1px solid var(--bs-border-color);
-    border-radius: 3px;
-    background: var(--bs-body-bg);
-    color: transparent;
-    font-size: var(--fs-micro);
-}
-
-.filter-option.selected .filter-option-box,
-.filter-option.partial .filter-option-box {
-    border-color: var(--bs-primary);
-    background: var(--bs-primary);
-    color: var(--brand-on);
 }
 
 /* A licença por baixo da empresa a que pertence, com o traço que as liga. */

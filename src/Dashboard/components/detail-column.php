@@ -22,7 +22,7 @@
                     <div class="card h-100">
                         <div class="card-body d-flex flex-column min-h-0">
                             <div id="deviceDetail" class="d-none device-detail-open">
-                                <div id="detailFiltersPanel">
+                                <div>
                                     <div class="d-flex align-items-center gap-2">
                                         <?= search_input('detailSearch', 'Procurar na atividade', 'flex-grow-1') ?>
                                         <?= filter_toggle_button('detailFiltersCollapse', 'detailFilterCount', 'flex-shrink-0') ?>
