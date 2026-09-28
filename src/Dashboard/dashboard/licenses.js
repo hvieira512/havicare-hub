@@ -12,16 +12,16 @@ let inFlight = null;
 
 /** Devolve `null` quando o pedido falha, para quem precisa distinguir isso de "não há". */
 export async function ensureLicensesLoaded() {
-    if (state.settingsModal.licenses.length > 0) {
-        return state.settingsModal.licenses;
+    if (state.licenses.length > 0) {
+        return state.licenses;
     }
 
     // Uma promessa partilhada: duas colunas a pedir ao mesmo tempo pediam duas vezes o mesmo.
     inFlight ??= apiGetLicenses({ limit: 1000 })
         .then((response) => {
             if (response?.error) return null;
-            state.settingsModal.licenses = response.data || [];
-            return state.settingsModal.licenses;
+            state.licenses = response.data || [];
+            return state.licenses;
         })
         .finally(() => {
             inFlight = null;
@@ -31,6 +31,6 @@ export async function ensureLicensesLoaded() {
 }
 
 export function invalidateLicenses() {
-    state.settingsModal.licenses = [];
+    state.licenses = [];
     inFlight = null;
 }

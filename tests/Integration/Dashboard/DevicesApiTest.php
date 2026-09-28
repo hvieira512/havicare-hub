@@ -834,7 +834,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         self::assertSame(
             ['value' => ['intervalSeconds' => 300], '_meta' => []],
-            $response['capabilities']['settings_system']['location_reporting_interval'] ?? null
+            $response['capabilities']['health']['location_reporting_interval'] ?? null
         );
         self::assertSame(
             ['value' => ['enabled' => false], '_meta' => []],

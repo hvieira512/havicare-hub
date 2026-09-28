@@ -69,7 +69,9 @@ final class WatchCapabilityDefinitions
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'device_password', 'label' => 'Palavra-passe do dispositivo', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'language_timezone', 'label' => 'Idioma e fuso horário', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'do_not_disturb', 'label' => 'Não incomodar', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'location_reporting_interval', 'label' => 'Intervalo de envio da localização', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            // Com os outros intervalos e não em Sistema: a pergunta é de quanto em quanto
+            // tempo o relógio envia, como no dos passos, e não uma definição do aparelho.
+            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'location_reporting_interval', 'label' => 'Intervalo de envio da localização', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'sound_profile', 'label' => 'Perfil de som', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'make_call', 'label' => 'Efetuar chamada', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             // Ação, e não contacto: o relógio liga para o número mal recebe o comando, em

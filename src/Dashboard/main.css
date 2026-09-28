@@ -213,7 +213,7 @@
 }
 
 .dose-slot {
-    font-size: .6875rem;
+    font-size: var(--fs-label);
     line-height: 1.2;
     min-height: 1.1em;
     opacity: .75;
@@ -226,7 +226,7 @@
     line-height: 1.3;
 }
 
-.dose-state { font-size: .6875rem; line-height: 1.2; }
+.dose-state { font-size: var(--fs-label); line-height: 1.2; }
 
 /* Uma dose sem nada marcado é o fundo: o que se procura na faixa é o que destoa dele. */
 .dose--taken {

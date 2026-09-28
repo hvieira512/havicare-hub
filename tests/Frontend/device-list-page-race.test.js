@@ -28,7 +28,7 @@ const pageResponse = (page) => ({
 beforeEach(() => {
     initDeviceList({ els, ui: {}, onChange: () => {} });
     // Com as licenças em cache, o único pedido em jogo é o da listagem.
-    state.settingsModal.licenses = [{ licenseId: 1, company: "havicare" }];
+    state.licenses = [{ licenseId: 1, company: "havicare" }];
     state.selectedImei = "";
     state.selectedDetail = null;
 });

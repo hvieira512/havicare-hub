@@ -242,7 +242,22 @@ function phoneRepeaterInput(entry, desired, options) {
         </div>`;
 }
 
-function alarmClockInput(desired, meta = {}) {
+/**
+ * O interruptor que desliga os lembretes todos de uma vez, para quem o declara. Sem ele, o
+ * payload ia sempre ligado e não havia como parar o aparelho sem apagar os alarmes.
+ */
+function alarmClockMasterSwitch(desired) {
+    const enabled = boolValue(desired?.masterEnabled, true);
+
+    return `
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" data-alarm-clock-field="masterEnabled" ${enabled ? "checked" : ""}>
+            <label class="form-check-label" data-switch-label data-switch-on="Lembretes ligados" data-switch-off="Lembretes desligados">${enabled ? "Lembretes ligados" : "Lembretes desligados"}</label>
+        </div>`;
+}
+
+function alarmClockInput(entry, desired, meta = {}) {
+    const hasMaster = Array.isArray(entry?.fields) && entry.fields.includes("masterEnabled");
     const items = normalizeAlarmClockItems(desired);
     const limit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
     const typeOptions = Array.isArray(meta.type?.options) ? meta.type.options : [];
@@ -266,6 +281,7 @@ function alarmClockInput(desired, meta = {}) {
 
     return `
         <div class="vstack gap-3">
+            ${hasMaster ? alarmClockMasterSwitch(desired) : ""}
             <div class="small text-secondary">Até ${esc(String(limit))} alarmes. A recorrência personalizada usa dias de Segunda a Domingo.</div>
             <div class="d-flex justify-content-end">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="alarm_clock" ${items.length >= limit ? "disabled" : ""}>Adicionar item</button>
@@ -457,7 +473,9 @@ function readAlarmClock(section) {
         })
         .filter((item) => item.time !== "");
 
-    return { items };
+    const master = section.querySelector("[data-alarm-clock-field=\"masterEnabled\"]");
+
+    return master === null ? { items } : { masterEnabled: master.checked, items };
 }
 
 /**
@@ -552,7 +570,7 @@ export const INPUTS = {
         help: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
     },
     alarm_clock: {
-        render: (_entry, desired, meta) => alarmClockInput(desired, meta),
+        render: (entry, desired, meta) => alarmClockInput(entry, desired, meta),
         read: (section) => readAlarmClock(section),
         // Sem `help`: o limite real e a nota da recorrência já estão no topo do bloco, e o
         // texto fixo que aqui estava dizia três alarmes a quem tem dez.
