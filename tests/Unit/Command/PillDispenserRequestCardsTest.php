@@ -34,14 +34,12 @@ final class PillDispenserRequestCardsTest extends TestCase
     }
 
     /**
-     * Um mosaico só: a configuração no `0x05`.
-     *
-     * O `0x07` também se pede, mas não daqui — reler o estado é uma função do ecrã e não uma
-     * capacidade, e por isso é um comando de `kind` `refresh` sem capacidade por trás.
+     * Dois mosaicos: o estado no `0x07` e a configuração no `0x05`. São as duas perguntas
+     * que o aparelho responde, e pedem-se como qualquer outra.
      */
-    public function testOnlyTheConfigurationReadIsARequestCard(): void
+    public function testTheTwoReadsAreRequestCards(): void
     {
-        self::assertSame(['sync_configuration'], array_keys($this->requests()));
+        self::assertSame(['device_status', 'sync_configuration'], array_keys($this->requests()));
     }
 
     /**
@@ -74,15 +72,15 @@ final class PillDispenserRequestCardsTest extends TestCase
         }
     }
 
-    /** E quem relê as sete é o comando de recarregar, sem capacidade que o anuncie. */
-    public function testTheStatusReadIsARefreshAndNotACapability(): void
+    /** Quem as relê é o `device_status`, e é o único pedível entre as leituras do `0x07`. */
+    public function testTheStatusReadIsTheOneRequestableReading(): void
     {
-        $refresh = DeviceCommandCatalog::refreshCommandForProtocol('zayata-m228');
+        $status = $this->requests()['device_status'] ?? null;
 
-        self::assertNotNull($refresh);
-        self::assertSame('readStatus', $refresh['command']);
-        self::assertSame(['read_status_ack'], $refresh['expectedReplyTypes']);
-        self::assertNotContains(
+        self::assertNotNull($status);
+        self::assertSame('readStatus', $status['command']);
+        self::assertSame(['read_status_ack'], $status['expectedReplyTypes']);
+        self::assertContains(
             'device_status',
             array_column(CapabilityCatalog::definitionsForDeviceType('pill_dispenser'), 'key'),
         );

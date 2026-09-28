@@ -81,6 +81,7 @@ const CARD_STYLE = {
     medication_intake: ["fa-pills", "primary"],
     device_fault: ["fa-triangle-exclamation", "warning"],
     medication_alarm_status: ["fa-clock-rotate-left", "primary"],
+    device_status: ["fa-arrows-rotate", "secondary"],
     medication_alarm_change: ["fa-pills", "primary"],
     cells_remaining: ["fa-table-cells", "info"],
     storage_environment: ["fa-triangle-exclamation", "danger"],

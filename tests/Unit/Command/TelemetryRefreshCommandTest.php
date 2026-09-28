@@ -5,90 +5,64 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Actualizar a telemetria é uma função do ecrã, e não uma capacidade do aparelho.
+ * Reler o estado do dispensador é um pedido como os outros.
  *
- * O `device_status` era uma capacidade declarada como telemetria que nunca publicava nada:
- * nos relógios o `TS` devolve sobretudo o que o hub lá escreveu, e no dispensador a resposta
- * ao `0x07` enche as sete leituras, cada uma na sua capacidade. Quem consultasse o catálogo
- * pela API via um tipo anunciado que o MQTT nunca carrega.
- *
- * Passou a ser um comando de `kind` próprio, que o painel oferece como botão de recarregar à
- * cabeça dos cartões que ele actualiza.
+ * Foi um `kind` próprio com botão próprio à cabeça dos mosaicos, e isso trouxe o botão para
+ * todos os 4P Touch quando o `TS` deles foi marcado do mesmo modo -- num sítio que promete
+ * actualizar mosaicos que o `TS` não actualiza. Deixou de haver caminho especial: é uma
+ * capacidade pedível, e o mosaico dela é igual ao da versão do firmware.
  */
 final class TelemetryRefreshCommandTest extends TestCase
 {
-    /** Só o dispensador relê telemetria, e por isso só ele oferece o botão. */
-    public function testOnlyTheDispenserOffersARefresh(): void
+    public function testTheDispenserStatusIsAnOrdinaryRequestableCapability(): void
     {
-        $dispenser = DeviceCommandCatalog::refreshCommandForProtocol('zayata-m228');
-        self::assertNotNull($dispenser);
-        self::assertSame('readStatus', $dispenser['command']);
-
-        foreach (['four-p-touch', 'wonlex-json', 'vivistar-iw', 'veepoo-ble'] as $protocol) {
-            self::assertNull(DeviceCommandCatalog::refreshCommandForProtocol($protocol), $protocol);
-        }
-    }
-
-    /**
-     * O `TS` dos 4P Touch devolve sobretudo o que o hub lá escreveu, e por isso já vive no
-     * painel de configuração como «Estado do dispositivo», com o verbo «Consultar». Oferecê-lo
-     * também como «Atualizar» à cabeça dos mosaicos era uma segunda porta para o mesmo
-     * comando, a prometer uma releitura de telemetria que ele não faz.
-     */
-    public function testTheWatchStatusStaysInTheConfigurationPanel(): void
-    {
-        $entry = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'deviceStatus');
-
-        self::assertNotNull($entry);
-        self::assertSame('Estado do dispositivo', $entry['label']);
-        self::assertSame('Consultar', $entry['verb'] ?? '');
-    }
-
-    /** Deixou de ser capacidade, e por isso o catálogo deixa de a anunciar. */
-    public function testTheRefreshIsNotACapabilityAnyMore(): void
-    {
-        foreach (['watch', 'pill_dispenser'] as $deviceType) {
-            $keys = array_column(CapabilityCatalog::definitionsForDeviceType($deviceType), 'key');
-            self::assertNotContains('device_status', $keys, $deviceType);
-        }
-
-        foreach (['zayata-m228', 'four-p-touch'] as $protocol) {
-            self::assertNotContains('device_status', CapabilityCatalog::keysForProtocol($protocol), $protocol);
-        }
-    }
-
-    /**
-     * E o caminho que o envia tem de o encontrar.
-     *
-     * O `commandsForFeature` filtrava só por `kind` `request`, e por isso a API respondia
-     * «Feature is not supported for this device» a um botão que ela própria anunciava.
-     */
-    public function testTheSendPathFindsIt(): void
-    {
-        foreach (['zayata-m228'] as $protocol) {
-            $entries = DeviceCommandCatalog::commandsForFeature($protocol, 'telemetry_refresh');
-
-            self::assertCount(1, $entries, $protocol);
-            self::assertSame('refresh', $entries[0]['kind'], $protocol);
-        }
-    }
-
-    /** E não entra entre os mosaicos, que são os que têm capacidade por trás. */
-    public function testTheRefreshIsNotOneOfTheRequestCards(): void
-    {
-        foreach (['zayata-m228', 'four-p-touch'] as $protocol) {
-            foreach (DeviceCommandCatalog::commandsForProtocol($protocol) as $entry) {
-                self::assertNotSame(
-                    'device_status',
-                    $entry['feature'] ?? null,
-                    $protocol . ': ' . (string)($entry['id'] ?? '?'),
-                );
+        $definitions = CapabilityCatalog::definitionsForDeviceType('pill_dispenser');
+        $status = null;
+        foreach ($definitions as $definition) {
+            if ($definition['key'] === 'device_status') {
+                $status = $definition;
             }
         }
+
+        self::assertNotNull($status);
+        self::assertSame('telemetry', $status['section']);
+        self::assertTrue($status['isRequestable']);
+    }
+
+    /** O comando que a serve é um `request`, como os outros todos. */
+    public function testTheCommandBehindItIsAnOrdinaryRequest(): void
+    {
+        $entries = DeviceCommandCatalog::commandsForFeature('zayata-m228', 'device_status');
+
+        self::assertCount(1, $entries);
+        self::assertSame('readStatus', $entries[0]['command']);
+        self::assertSame('request', $entries[0]['kind']);
+        self::assertContains('device_status', DeviceCommandCatalog::featuresForProtocol('zayata-m228'));
+    }
+
+    /** E não sobra `kind` nenhum fora do `request` no catálogo inteiro. */
+    public function testNoCommandKeepsARefreshKind(): void
+    {
+        foreach (\Hub\Domain\ProtocolRegistry::keys() as $protocol) {
+            foreach (DeviceCommandCatalog::commandsForProtocol($protocol) as $entry) {
+                self::assertNotSame('refresh', $entry['kind'] ?? null, $protocol . '/' . (string)($entry['id'] ?? '?'));
+            }
+        }
+    }
+
+    /**
+     * O `TS` dos 4P Touch fica só no painel de configuração, como «Estado do dispositivo»
+     * com o verbo «Consultar»: devolve sobretudo o que o hub lá escreveu, e não é uma
+     * releitura de telemetria.
+     */
+    public function testTheWatchStatusIsNotARequestableCapability(): void
+    {
+        $keys = array_column(CapabilityCatalog::definitionsForDeviceType('watch'), 'key');
+
+        self::assertNotContains('device_status', $keys);
     }
 }

@@ -39,7 +39,10 @@ final class CapabilityCatalogTest extends TestCase
             // incomodar», que é configuração reportada e viaja no `device_config`.
             // O `temperature` e o `humidity` passaram a `ambient_*`: o `0x810E` é o ar onde o
             // aparelho está, e partilhava chave com a temperatura corporal dos relógios.
-            'pill_dispenser' => [31, 'baa80cc8cb854b1f4fe714877dff944bae3e54b4d803d927c30c40472d0a382f'],
+            //
+            // E o `device_status` voltou, agora como leitura pedível: reler o estado deixou
+            // de ter caminho próprio e é um pedido como os outros.
+            'pill_dispenser' => [32, '19f649ecc1e8d250c6f4091a03a1b5a4f8b57e717e68cb846ca1aa2d47f0cef7'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

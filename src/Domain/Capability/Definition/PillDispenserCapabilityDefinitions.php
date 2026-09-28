@@ -38,6 +38,12 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
                     // claro — o `0x03`, que traz a hora e a célula, vem cifrado.
                     'medication_alarm_status' => 'Estado dos alarmes',
                 ],
+                // O `0x07` pede as `STATUS_TAGS` todas de uma vez, e a resposta enche as
+                // leituras acima em vez de trazer valor próprio. Por isso é o único pedível
+                // daqui: as outras não se pedem sozinhas.
+                'measurementOnRequest' => [
+                    'device_status' => 'Estado do dispositivo',
+                ],
             ],
             'health' => [
                 'setting' => [

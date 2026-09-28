@@ -218,9 +218,6 @@ class DeviceService
             'effectiveConfigurations' => $lifecycle['effectiveConfigurations'],
             'configurationSync' => $lifecycle['configurationSync'],
             'capabilities' => $this->capabilities->deviceCapabilities($modelRow, $protocol, $configRows),
-            // Fica fora das capacidades porque não é uma: é o ecrã a poder pedir ao aparelho
-            // que releia o estado, e o que vier sai nas capacidades que já existem.
-            'telemetryRefresh' => DeviceCommandCatalog::refreshCommandForProtocol($protocol) !== null,
             'enabledCapabilityKeys' => $modelRow !== null
                 ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
                 : CapabilityCatalog::keysForProtocol($protocol),
