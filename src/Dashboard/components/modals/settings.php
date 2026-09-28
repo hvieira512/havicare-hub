@@ -92,20 +92,20 @@ ob_start();
                                 <div class="row g-4 mb-4">
                                     <div class="col-lg-8" id="modelDetailFields">
                                         <div class="mb-3">
-                                            <label for="modelDetailCommercialName" class="section-label d-block mb-1">Nome comercial</label>
+                                            <label for="modelDetailCommercialName" class="section-label">Nome comercial</label>
                                             <input type="text" class="form-control fw-semibold" id="modelDetailCommercialName">
                                         </div>
                                         <div class="row g-3">
                                             <div class="col-md-4">
-                                                <label for="modelDetailSupplierSelect" class="section-label d-block mb-1">Fornecedor</label>
+                                                <label for="modelDetailSupplierSelect" class="section-label">Fornecedor</label>
                                                 <select class="form-select" id="modelDetailSupplierSelect"></select>
                                             </div>
                                             <div class="col-md-4">
-                                                <label for="modelDetailDeviceType" class="section-label d-block mb-1">Tipo</label>
+                                                <label for="modelDetailDeviceType" class="section-label">Tipo</label>
                                                 <select class="form-select" id="modelDetailDeviceType"></select>
                                             </div>
                                             <div class="col-md-4">
-                                                <label for="modelDetailInternalModel" class="section-label d-block mb-1">Modelo interno</label>
+                                                <label for="modelDetailInternalModel" class="section-label">Modelo interno</label>
                                                 <input type="text" class="form-control" id="modelDetailInternalModel">
                                             </div>
                                         </div>

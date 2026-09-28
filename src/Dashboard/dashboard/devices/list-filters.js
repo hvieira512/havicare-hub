@@ -266,11 +266,11 @@ function renderDeviceFilterCounters() {
         supplier: els.deviceSupplierFilterCount,
         license: els.deviceLicenseFilterCount,
     };
+    // Só o texto: a pastilha vazia desaparece pelo `.count-chip:empty` do `shell.css`.
     for (const [key, count] of Object.entries(perGroup)) {
         const el = counterEls[key];
         if (!el) continue;
         el.textContent = count ? String(count) : "";
-        el.classList.toggle("d-none", count === 0);
     }
 
     const activeGroups =
@@ -279,7 +279,6 @@ function renderDeviceFilterCounters() {
     for (const el of [els.deviceFilterCount, els.deviceFilterCountMobile]) {
         if (!el) continue;
         el.textContent = activeGroups ? String(activeGroups) : "";
-        el.classList.toggle("d-none", activeGroups === 0);
     }
     els.clearDeviceFiltersBtn.classList.toggle("d-none", activeGroups === 0);
 }

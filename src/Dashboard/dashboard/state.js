@@ -184,11 +184,6 @@ export function setDownlinkPage(page, totalPages) {
     state.downlinkPage = clampPage(page, totalPages);
 }
 
-/** O catálogo achatado de tipos×fornecedores×modelos, como veio da resposta. */
-export function setDeviceTypeSuppliersModels(models) {
-    state.deviceTypeSuppliersModels = models;
-}
-
 /**
  * Mexer no catálogo -- gravar ou apagar um modelo -- invalida a cópia em memória: a lista
  * vazia é o sinal de "pede outra vez", que é o que o carregador em `devices/list.js` lê.
@@ -210,11 +205,6 @@ export function setSelectedDetail(detail) {
 export function refreshSelectedDetail(detail) {
     const recent = state.selectedDetail?.recent ?? null;
     state.selectedDetail = detail;
-    state.selectedDetail.recent = recent;
-}
-
-/** O histórico ao vivo, tal como o stream o entrega. A contraparte do `refreshSelectedDetail`. */
-export function setSelectedDetailRecent(recent) {
     state.selectedDetail.recent = recent;
 }
 

@@ -20,9 +20,8 @@ export function renderPagination({
     actionPrefix,
     defaultLimit = 20,
     summary = defaultSummary,
-    goAction = `${actionPrefix}Go`,
 }) {
-    const controls = paginationControls({ pagination, actionPrefix, goAction });
+    const controls = paginationControls({ pagination, actionPrefix });
 
     if (controls === "") {
         rootEl.classList.add("d-none");
@@ -50,15 +49,9 @@ export function renderPagination({
     controlsEl.innerHTML = controls;
 }
 
-/** `goAction` acompanha o do `renderPagination`: os painéis do dispositivo não usam o padrão. */
-export function resolvePaginationPage(
-    event,
-    pagination,
-    actionPrefix,
-    goAction = `${actionPrefix}Go`,
-) {
+export function resolvePaginationPage(event, pagination, actionPrefix) {
     const button = event.target.closest(
-        `[data-action="${actionPrefix}Prev"], [data-action="${actionPrefix}Next"], [data-action="${goAction}"]`,
+        `[data-action="${actionPrefix}Prev"], [data-action="${actionPrefix}Next"], [data-action="${actionPrefix}Go"]`,
     );
     if (!button) {
         return null;

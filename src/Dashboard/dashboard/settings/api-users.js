@@ -305,19 +305,19 @@ function renderCreateForm(open) {
         <div class="border rounded-3 p-3 mb-2 bg-body-tertiary" data-editor="apiUser">
             <div class="row g-2">
                 <div class="col-12 col-md-3">
-                    <label class="section-label d-block mb-1" for="apiUserNewUsername">Utilizador</label>
+                    <label class="section-label" for="apiUserNewUsername">Utilizador</label>
                     <input type="text" class="form-control form-control-sm" id="apiUserNewUsername" data-field="username" autocomplete="off">
                 </div>
                 <div class="col-12 col-md-3">
-                    <label class="section-label d-block mb-1" for="apiUserNewPassword">Password</label>
+                    <label class="section-label" for="apiUserNewPassword">Password</label>
                     <input type="password" class="form-control form-control-sm" id="apiUserNewPassword" data-field="password" autocomplete="new-password">
                 </div>
                 <div class="col-12 col-md-2">
-                    <label class="section-label d-block mb-1" for="apiUserNewRole">Perfil</label>
+                    <label class="section-label" for="apiUserNewRole">Perfil</label>
                     <select class="form-select form-select-sm" id="apiUserNewRole" data-field="role">${raw(roleOptions())}</select>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="section-label d-block mb-1" for="apiUserNewLicense">Licença</label>
+                    <label class="section-label" for="apiUserNewLicense">Licença</label>
                     <select class="form-select form-select-sm" id="apiUserNewLicense" data-field="licenseRefId">${raw(licenseOptions())}</select>
                 </div>
             </div>

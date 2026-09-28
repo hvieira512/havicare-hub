@@ -304,7 +304,6 @@ function renderClientPager(prefix, totalRows, totalPages) {
         summaryEl,
         controlsEl,
         actionPrefix: prefix,
-        goAction: `${prefix}PageGo`,
         summary: (start, end, total) => `${start}–${end} de ${total}`,
     });
 }
@@ -453,7 +452,7 @@ function renderRequestCardGroup(
         <div class="telemetry-card-wide min-w-0">
         <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="section-label">${group.label || "Pedidos"}</div>
-        <span class="count-chip fw-semibold px-2 rounded-pill tabular-nums">${group.cards.length}</span>
+        <span class="count-chip">${group.cards.length}</span>
         </div>
         <div class="d-grid telemetry-card-grid gap-3">${raw(cards)}</div>
         </div>`;

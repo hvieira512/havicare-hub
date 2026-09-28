@@ -883,3 +883,10 @@
     color: var(--bs-secondary-color);
 }
 
+/* Como etiqueta de um campo leva sempre a linha toda e o mesmo espaço por baixo: eram dois
+   utilitários colados à classe em dezoito sítios. */
+label.section-label {
+    display: block;
+    margin-bottom: .25rem;
+}
+

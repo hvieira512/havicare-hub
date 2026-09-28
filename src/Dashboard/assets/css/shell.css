@@ -199,10 +199,16 @@
 
 /* O contador ao lado da etiqueta, e não no extremo oposto do cartão: "Eventos recebidos" e
    "12" são a mesma informação, e a meio metro de distância deixam de o ser. */
-/* O fundo e a cor ficam aqui: o `count-chip-strong` troca-os. */
+/* O fundo e a cor ficam aqui: o `count-chip-strong` troca-os. A forma também, como no
+   `.count-number` abaixo: os quatro utilitários viajavam sempre colados à classe em cinco
+   sítios, e nenhum deles a queria com outra forma. */
 .count-chip {
     font-size: var(--fs-label);
     line-height: 1.45;
+    font-weight: 600;
+    padding-inline: .5rem;
+    border-radius: var(--bs-border-radius-pill);
+    font-variant-numeric: tabular-nums;
     background: var(--bs-tertiary-bg);
     color: var(--bs-secondary-color);
 }

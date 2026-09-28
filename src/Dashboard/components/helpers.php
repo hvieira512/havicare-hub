@@ -10,23 +10,21 @@ function icon(string $name, string $class = ''): string
     return '<i class="fa-solid ' . h($name) . ($class !== '' ? ' ' . h($class) : '') . '"></i>';
 }
 
+/** A pastilha vazia esconde-se pelo `.count-chip:empty`, e por isso não nasce com `d-none`. */
 function section_header(
     string $title,
     ?string $counterId = null,
-    bool $chip = false,
-    bool $counterHidden = false,
     string $spacing = 'mb-2'
 ): string {
-    if ($counterId !== null && $chip) {
+    if ($counterId !== null) {
         return '<div class="' . h(trim('d-flex align-items-center gap-2 ' . $spacing)) . '">'
             . '<span class="section-label">' . h($title) . '</span>'
-            . '<span class="count-chip fw-semibold px-2 rounded-pill tabular-nums' . ($counterHidden ? ' d-none' : '') . '" id="' . h($counterId) . '"></span>'
+            . '<span class="count-chip" id="' . h($counterId) . '"></span>'
             . '</div>';
     }
 
-    return '<div class="d-flex justify-content-between align-items-center gap-2 mb-2">'
+    return '<div class="' . h(trim('d-flex justify-content-between align-items-center gap-2 ' . $spacing)) . '">'
         . '<span class="section-label">' . h($title) . '</span>'
-        . ($counterId !== null ? '<span class="small text-secondary" id="' . h($counterId) . '"></span>' : '')
         . '</div>';
 }
 
@@ -38,7 +36,7 @@ function showcase_preview(string $id): string
 function filter_group(string $title, string $counterId, string $contentId, string $contentClass): string
 {
     return '<div class="d-flex flex-column">'
-        . section_header($title, $counterId, true, true)
+        . section_header($title, $counterId)
         . '<div id="' . h($contentId) . '" class="' . h($contentClass) . '"></div>'
         . '</div>';
 }
@@ -50,7 +48,7 @@ function filter_toggle_button(string $targetId, string $countId, string $extraCl
         . ' data-bs-toggle="collapse" data-bs-target="#' . h($targetId) . '"'
         . ' aria-expanded="false" aria-controls="' . h($targetId) . '">'
         . icon('fa-sliders') . 'Filtros'
-        . '<span id="' . h($countId) . '" class="count-chip count-chip-strong fw-semibold px-2 rounded-pill tabular-nums d-none"></span>'
+        . '<span id="' . h($countId) . '" class="count-chip count-chip-strong"></span>'
         . '</button>';
 }
 

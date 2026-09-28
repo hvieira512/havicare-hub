@@ -157,7 +157,7 @@ const withSessionLock = (task) => navigator.locks?.request
     ? navigator.locks.request("hub-dashboard-session", task)
     : task();
 
-export const refreshAccessToken = async () => {
+const refreshAccessToken = async () => {
     if (tokenRefreshInFlight !== null) {
         return tokenRefreshInFlight;
     }

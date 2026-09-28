@@ -24,14 +24,13 @@ function render(pagination) {
         summaryEl: null,
         controlsEl: controls,
         actionPrefix: "telemetry",
-        goAction: "telemetryPageGo",
     });
 
     return { root, controls };
 }
 
 const numbers = (controls) =>
-    [...controls.querySelectorAll("[data-action='telemetryPageGo']")].map((b) => b.dataset.page);
+    [...controls.querySelectorAll("[data-action='telemetryGo']")].map((b) => b.dataset.page);
 
 const labels = (controls) =>
     [...controls.querySelectorAll(".page-link")].slice(1, -1).map((el) => el.textContent);
@@ -109,7 +108,7 @@ test("a actual está marcada, e as setas travam nas pontas", () => {
 test("todos os botões de página levam as mesmas classes, para medirem o mesmo", () => {
     const { controls } = render({ total: 167, total_pages: 14, page: 1, limit: 12 });
 
-    const classes = [...controls.querySelectorAll("[data-action='telemetryPageGo']")]
+    const classes = [...controls.querySelectorAll("[data-action='telemetryGo']")]
         .map((b) => [...b.classList].sort().join(" "));
 
     assert.equal(new Set(classes).size, 1, "um botão de página não pode ter classes diferentes de outro");

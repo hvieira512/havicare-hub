@@ -1,4 +1,4 @@
-import { setSelectedDetailRecent, state } from "../state.js";
+import { state } from "../state.js";
 import { authHeaders, getDashboardApiToken } from "../api/http.js";
 
 let onRenderSelection = () => {};
@@ -287,8 +287,10 @@ function handleStreamUpdate(event) {
     }
     if (!state.selectedDetail) return;
 
-    setSelectedDetailRecent(
-        mergeRecent(state.selectedDetail.recent, data, event.type === "snapshot"),
+    state.selectedDetail.recent = mergeRecent(
+        state.selectedDetail.recent,
+        data,
+        event.type === "snapshot",
     );
     onCommandsUpdated(currentImei, data.commands || []);
     scheduleSelectionRender();
