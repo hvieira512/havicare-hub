@@ -39,7 +39,7 @@ final class VivistarConfigurationDefinitions
                     ['value' => 3, 'label' => 'Qua'],
                     ['value' => 4, 'label' => 'Qui'],
                     ['value' => 5, 'label' => 'Sex'],
-                    ['value' => 6, 'label' => 'Sab'],
+                    ['value' => 6, 'label' => 'Sáb'],
                     ['value' => 7, 'label' => 'Dom'],
                 ],
                 'type' => [

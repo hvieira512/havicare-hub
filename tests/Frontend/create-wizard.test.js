@@ -33,11 +33,18 @@ test("o passo 2 de cada tipo vem da tabela e não do assistente", () => {
     assert.equal(deviceTypeFields("radar").sim, false);
 });
 
+/** A transição é da linguagem de selecção partilhada, e por isso a guarda também é de lá. */
 test("os cards do assistente respeitam quem pediu menos movimento", () => {
     const css = readFileSync(
-        new URL("../../src/Dashboard/main.css", import.meta.url),
+        new URL("../../src/Dashboard/assets/css/shell.css", import.meta.url),
         "utf8",
     );
 
-    assert.match(css, /prefers-reduced-motion[\s\S]*?\.wizard-card \{ transition: none/);
+    const quiet = css
+        .split("@media (prefers-reduced-motion: reduce)")
+        .slice(1)
+        .find((block) => block.includes(".wizard-card"));
+
+    assert.ok(quiet, "nenhum bloco de movimento reduzido nomeia o cartão do assistente");
+    assert.match(quiet, /transition: none/);
 });

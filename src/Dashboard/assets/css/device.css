@@ -366,24 +366,9 @@
     grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
 }
 
-/* A borda e o fundo ficam aqui, que os estados abaixo os trocam. */
+/* O estado vem do `shell.css`, com as outras caixas que se escolhem. */
 .device-type-tile {
     padding: .8125rem .5rem .6875rem;
-    border: 1px solid var(--bs-border-color);
-    background: var(--bs-body-bg);
-    cursor: pointer;
-    transition: border-color .12s ease, background-color .12s ease;
-}
-
-.device-type-tile:hover,
-.device-type-tile:focus-visible {
-    border-color: var(--bs-primary-border-subtle);
-    background: var(--bs-tertiary-bg);
-}
-
-.device-type-tile.selected {
-    border-color: var(--bs-primary);
-    background: var(--bs-primary-bg-subtle);
 }
 
 /* Um tipo sem dispositivos fica à vista e apagado: saber que a frota não tem pulseiras é
@@ -495,18 +480,14 @@
 /* ===== cartão de dispositivo =====
    A marcação vive em `dashboard/devices/device-card.js`. Cada campo cai na mesma abcissa e a
    lista lê-se a descer por coluna, mas cada dispositivo tem contorno próprio. */
-/* O alinhamento, o espaço e o enchimento mudam no telefone, e a borda e o fundo mudam com o
-   estado: um utilitário do Bootstrap traz `!important` e ganharia a essas regras. */
+/* O alinhamento, o espaço e o enchimento mudam no telefone: um utilitário do Bootstrap traz
+   `!important` e ganharia à regra de baixo. O estado vem do `shell.css`. */
 .device-card {
     grid-template-columns: 40px 104px minmax(0, 1fr) 11.75rem 7rem;
     align-items: center;
     gap: .875rem;
     padding: .625rem .875rem;
-    border: 1px solid var(--bs-border-color);
     border-radius: .5rem;
-    background: var(--bs-body-bg);
-    cursor: pointer;
-    transition: border-color .12s ease, background-color .12s ease;
 }
 
 /* O esqueleto empresta a geometria do cartão, mas não é um alvo: sem isto reagia ao rato e
@@ -550,17 +531,6 @@
    mudar, e deixa-o legível -- trocar a lista por um esqueleto a cada filtro custa mais. */
 .device-card-list[aria-busy="true"] {
     opacity: .55;
-}
-
-.device-card:hover,
-.device-card:focus-visible {
-    border-color: var(--bs-primary-border-subtle);
-    background: var(--bs-tertiary-bg);
-}
-
-.device-card.selected {
-    border-color: var(--bs-primary);
-    background: var(--bs-primary-bg-subtle);
 }
 
 .device-card-when {
@@ -645,13 +615,6 @@
 
     .device-card-field {
         min-width: 0;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .device-card,
-    .device-type-tile {
-        transition: none;
     }
 }
 
