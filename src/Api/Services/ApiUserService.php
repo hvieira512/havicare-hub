@@ -3,10 +3,8 @@
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
-use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\ApiUserColumns;
 use Hub\Api\Http\CollectionPresenter;
-use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Api\Request\ApiUserWriteRequest;
 use Hub\Api\Request\RequestBinder;
@@ -23,30 +21,21 @@ class ApiUserService
      */
     private const ERROR_CODE_BY_FIELD = ['role' => 'invalid_role'];
 
-    private CollectionQuery $query;
-    private CollectionResponder $collection;
     private CollectionPresenter $presenter;
     private RequestBinder $binder;
 
-    public function __construct(
-        private ApiDataAccess $db,
-        ?CollectionQuery $query = null,
-        ?CollectionResponder $collection = null,
-        ?RequestBinder $binder = null,
-    ) {
-        $this->query = $query ?? new CollectionQuery();
-        $this->collection = $collection ?? new CollectionResponder();
-        $this->presenter = new CollectionPresenter($this->query, $this->collection);
-        $this->binder = $binder ?? new RequestBinder();
+    public function __construct(private ApiDataAccess $db)
+    {
+        $this->presenter = new CollectionPresenter();
+        $this->binder = new RequestBinder();
     }
 
     public function list(string $query = ''): array
     {
-        $params = $this->query->params($query);
         return $this->presenter->present(
             $this->db->apiUsers->all(),
             ApiUserColumns::definition(),
-            $params,
+            $this->presenter->params($query),
             self::DEFAULT_COLLECTION_LIMIT,
         );
     }

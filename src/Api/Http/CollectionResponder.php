@@ -27,16 +27,4 @@ final class CollectionResponder
             ],
         ];
     }
-
-    public function uniqueValues(array $values): array
-    {
-        $filtered = array_values(array_filter(array_map(
-            static fn (mixed $value): string => trim((string)$value),
-            $values
-        ), static fn (string $value): bool => $value !== ''));
-        $unique = array_values(array_unique($filtered));
-        usort($unique, static fn (string $left, string $right): int => strnatcasecmp($left, $right));
-
-        return $unique;
-    }
 }

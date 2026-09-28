@@ -76,6 +76,32 @@ final class ApiError
     ];
 
     /**
+     * Os 404 de recurso: por cada construtor, o código que sai no fio e a mensagem dele.
+     *
+     * A chave é o construtor e não o código porque dois pares partilham código e diferem na
+     * mensagem -- o `not_found` serve dispositivos e comandos, e o `model_not_found` serve o
+     * modelo que não existe e o que não é daquele fornecedor.
+     *
+     * @var array<string, array{string, string}>
+     */
+    private const NOT_FOUND = [
+        'deviceNotFound' => ['not_found', 'Device was not found'],
+        'commandNotFound' => ['not_found', 'Command was not found'],
+        'modelNotFound' => ['model_not_found', 'Model not found'],
+        'modelNotFoundForSupplier' => ['model_not_found', 'Model does not exist for this supplier'],
+        'companyNotFound' => ['company_not_found', 'Company not found'],
+        'licenseNotFound' => ['license_not_found', 'License not found'],
+        'capabilityNotFound' => ['capability_not_found', 'Capability not found'],
+        'discoveryNotFound' => ['discovery_not_found', 'Discovery run not found'],
+        'notificationNotFound' => ['notification_not_found', 'Notification not found'],
+        'denylistNotFound' => ['denylist_not_found', 'Denylist entry not found'],
+        'supplierNotFound' => ['supplier_not_found', 'Supplier does not exist'],
+        'protocolNotFound' => ['protocol_not_found', 'Unsupported protocol'],
+        'userNotFound' => ['user_not_found', 'API user not found'],
+        'associationNotFound' => ['association_not_found', 'Device association was not found'],
+    ];
+
+    /**
      * @param array<string, list<string>>|null $fields o erro campo a campo, quando o há
      */
     private function __construct(
@@ -186,77 +212,86 @@ final class ApiError
         return new self('unknown_protocol', $message);
     }
 
-    // Não encontrado. O `not_found` serve dispositivos e comandos, e a mensagem diz qual.
+    // Não encontrado. Cada um destes lê o seu par na tabela `NOT_FOUND`.
+
+    /** @throws \InvalidArgumentException se o construtor não estiver na tabela */
+    private static function notFound(string $factory): self
+    {
+        $entry = self::NOT_FOUND[$factory]
+            ?? throw new \InvalidArgumentException("Unknown API not-found factory: {$factory}");
+
+        return new self($entry[0], $entry[1]);
+    }
 
     public static function deviceNotFound(): self
     {
-        return new self('not_found', 'Device was not found');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function commandNotFound(): self
     {
-        return new self('not_found', 'Command was not found');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function modelNotFound(): self
     {
-        return new self('model_not_found', 'Model not found');
+        return self::notFound(__FUNCTION__);
     }
 
     /** O modelo existe no catálogo, mas não para o fornecedor que o pedido indicou. */
     public static function modelNotFoundForSupplier(): self
     {
-        return new self('model_not_found', 'Model does not exist for this supplier');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function companyNotFound(): self
     {
-        return new self('company_not_found', 'Company not found');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function licenseNotFound(): self
     {
-        return new self('license_not_found', 'License not found');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function capabilityNotFound(): self
     {
-        return new self('capability_not_found', 'Capability not found');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function discoveryNotFound(): self
     {
-        return new self('discovery_not_found', 'Discovery run not found');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function notificationNotFound(): self
     {
-        return new self('notification_not_found', 'Notification not found');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function denylistNotFound(): self
     {
-        return new self('denylist_not_found', 'Denylist entry not found');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function supplierNotFound(): self
     {
-        return new self('supplier_not_found', 'Supplier does not exist');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function protocolNotFound(): self
     {
-        return new self('protocol_not_found', 'Unsupported protocol');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function userNotFound(): self
     {
-        return new self('user_not_found', 'API user not found');
+        return self::notFound(__FUNCTION__);
     }
 
     public static function associationNotFound(): self
     {
-        return new self('association_not_found', 'Device association was not found');
+        return self::notFound(__FUNCTION__);
     }
 
     // Conflitos com o que já está registado.
