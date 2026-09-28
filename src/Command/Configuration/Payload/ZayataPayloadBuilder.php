@@ -7,7 +7,7 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 /**
  * Valida o que se configura num dispensador Zayata M228.
  *
- * Não monta a trama -- isso é do `DeviceCommandCatalog`, que conhece as TAGs. Recusa aqui o
+ * Não monta a trama -- isso é do `ZayataDownlink`, que conhece as TAGs. Recusa aqui o
  * que o aparelho recusaria lá: uma hora acima das 23, mais alarmes do que os nove que ele
  * tem, um fuso fora do mapa.
  */
