@@ -159,7 +159,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertTrue($wonlex['capabilities']['telemetry']['ecg'] ?? false);
         self::assertTrue($wonlex['capabilities']['health']['heart_rate_measurement_interval'] ?? false);
         self::assertTrue($wonlex['capabilities']['alarms']['alarm_clock'] ?? false);
-        self::assertTrue($wonlex['capabilities']['settings_system']['location_reporting_interval'] ?? false);
+        self::assertTrue($wonlex['capabilities']['health']['location_reporting_interval'] ?? false);
     }
 
     public function testDeviceTypeSuppliersModelsReturnsAbsoluteImageUrls(): void
