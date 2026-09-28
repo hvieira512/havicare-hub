@@ -155,6 +155,9 @@ const TELEMETRY_REQUEST_HIDDEN_FEATURES = new Set([
     "diaper_moisture_level",
     "position_minute_stats",
     "vitals_minute_stats",
+    // O resumo já a mostra em «Dispositivos ligados», uma linha por gateway e com barras. O
+    // mosaico dizia-a pior: um só, e sem nomear o gateway que a ouviu.
+    "proximity",
 ]);
 
 function telemetryRequestCards(telemetryCapabilities = {}) {

@@ -37,6 +37,23 @@ test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", (
     );
 });
 
+/**
+ * A proximidade é a força com que cada gateway ouve o aparelho, e o resumo já a mostra em
+ * «Dispositivos ligados» -- uma linha por gateway, com barras. O mosaico dizia-a pior: um só,
+ * e sem nomear o gateway que a produziu.
+ */
+test("a proximidade não dá mosaico, que o resumo já a mostra por gateway", () => {
+    const groups = telemetryRequestCards({
+        battery: supported(false),
+        proximity: supported(false),
+    });
+
+    assert.deepEqual(
+        groups.flatMap((group) => group.cards.map((card) => card.feature)),
+        ["battery"],
+    );
+});
+
 test("uma capacidade que o modelo não tem não dá cartão", () => {
     const groups = telemetryRequestCards({
         heart_rate: { supported: false, requestable: true },
