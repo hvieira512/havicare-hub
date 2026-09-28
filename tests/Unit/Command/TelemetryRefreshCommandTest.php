@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
+use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
@@ -21,23 +22,31 @@ use PHPUnit\Framework\TestCase;
  */
 final class TelemetryRefreshCommandTest extends TestCase
 {
-    /** Os dois protocolos que sabem reler o estado oferecem-no. */
-    public function testTheProtocolsThatCanRereadTheirStateOfferARefresh(): void
+    /** Só o dispensador relê telemetria, e por isso só ele oferece o botão. */
+    public function testOnlyTheDispenserOffersARefresh(): void
     {
         $dispenser = DeviceCommandCatalog::refreshCommandForProtocol('zayata-m228');
         self::assertNotNull($dispenser);
         self::assertSame('readStatus', $dispenser['command']);
 
-        $watch = DeviceCommandCatalog::refreshCommandForProtocol('four-p-touch');
-        self::assertNotNull($watch);
-        self::assertSame('TS', $watch['command']);
+        foreach (['four-p-touch', 'wonlex-json', 'vivistar-iw', 'veepoo-ble'] as $protocol) {
+            self::assertNull(DeviceCommandCatalog::refreshCommandForProtocol($protocol), $protocol);
+        }
     }
 
-    /** E quem não sabe não oferece botão nenhum. */
-    public function testAProtocolWithoutOneOffersNothing(): void
+    /**
+     * O `TS` dos 4P Touch devolve sobretudo o que o hub lá escreveu, e por isso já vive no
+     * painel de configuração como «Estado do dispositivo», com o verbo «Consultar». Oferecê-lo
+     * também como «Atualizar» à cabeça dos mosaicos era uma segunda porta para o mesmo
+     * comando, a prometer uma releitura de telemetria que ele não faz.
+     */
+    public function testTheWatchStatusStaysInTheConfigurationPanel(): void
     {
-        self::assertNull(DeviceCommandCatalog::refreshCommandForProtocol('wonlex-json'));
-        self::assertNull(DeviceCommandCatalog::refreshCommandForProtocol('veepoo-ble'));
+        $entry = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'deviceStatus');
+
+        self::assertNotNull($entry);
+        self::assertSame('Estado do dispositivo', $entry['label']);
+        self::assertSame('Consultar', $entry['verb'] ?? '');
     }
 
     /** Deixou de ser capacidade, e por isso o catálogo deixa de a anunciar. */
@@ -61,7 +70,7 @@ final class TelemetryRefreshCommandTest extends TestCase
      */
     public function testTheSendPathFindsIt(): void
     {
-        foreach (['zayata-m228', 'four-p-touch'] as $protocol) {
+        foreach (['zayata-m228'] as $protocol) {
             $entries = DeviceCommandCatalog::commandsForFeature($protocol, 'telemetry_refresh');
 
             self::assertCount(1, $entries, $protocol);
