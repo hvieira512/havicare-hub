@@ -67,13 +67,12 @@ test("uma página só não tem controlos nenhuns", () => {
     assert.equal(paginationControls({ pagination: { page: 1, total_pages: 1 }, actionPrefix: "devices" }), "");
 });
 
-/** Os painéis do dispositivo registam o handler noutro nome, e os números têm de o usar. */
-test("o nome da acção dos números pode não seguir o prefixo", () => {
+/** Os três nomes de acção saem todos do mesmo prefixo, e os números usam o `Go`. */
+test("os números levam a acção do prefixo", () => {
     const controls = parseFragment(paginationControls({
         pagination: { page: 2, total_pages: 9 },
-        actionPrefix: "telemetryPage",
-        goAction: "telemetryPageGo",
+        actionPrefix: "telemetry",
     }));
 
-    assert.ok(controls.querySelector("[data-action=\"telemetryPageGo\"][data-page=\"1\"]"));
+    assert.ok(controls.querySelector("[data-action=\"telemetryGo\"][data-page=\"1\"]"));
 });

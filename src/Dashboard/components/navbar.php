@@ -14,7 +14,7 @@
                         <?= icon('fa-moon', 'fs-5 fa-fw') ?>
                     </button>
                     <div id="dashboardNotificationsDropdown" class="dropdown">
-                        <button id="dashboardNotificationsBtn" class="btn btn-sm btn-dark position-relative" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Notificações" title="Notificações">
+                        <button class="btn btn-sm btn-dark position-relative" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Notificações" title="Notificações">
                             <?= icon('fa-bell', 'fs-5') ?>
                             <span id="dashboardNotificationsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger d-none">0</span>
                         </button>

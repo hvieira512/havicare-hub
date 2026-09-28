@@ -159,6 +159,7 @@ dashboard/
 ├── pagination.js           escreve o paginador no painel, e resolve a página de um clique
 ├── phone.js                o campo de telefone com indicativo
 ├── storage.js              as chaves e os acessos ao localStorage
+├── load-script.js          carrega uma biblioteca de terceiros à primeira vez que faz falta
 ├── tooltips.js             re-atar os tooltips do Bootstrap depois de um render
 ├── notifications.js        o sino da barra (funcionalidade de um ficheiro)
 ├── observability.js        o handler global de erros: o que falha sem catch deixa rasto
@@ -245,8 +246,14 @@ JavaScript lê exista mesmo.
 
 **O estado.** Tudo o que sobrevive a um render está em `state.js`, com um
 sub-objeto por ecrã (`state.settingsModal`, `state.deviceModal`,
-`state.summary`). Não há estado duplicado em variáveis de módulo — essas
-guardam só o `els` e coisas que não são dados.
+`state.summary`). Uma variável de módulo guarda o `els` e, nalgumas secções das
+definições, a página que está à vista — essa morre quando o modal fecha, e é
+por isso que não sobe ao `state`.
+
+A forma de cada sub-objeto declara-se uma vez, no `blankDeviceModal` e no
+`blankSettingsModal`. O `Object.seal` só apanha gralhas no primeiro nível, e
+enquanto as chaves do segundo se repuseram à mão houve cinco a serem escritas
+sem nunca terem sido declaradas.
 
 **Os eventos.** São delegados na raiz de cada zona e resolvidos por
 `data-action`:
@@ -360,12 +367,17 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
   gravar. Resolvem-se em tempo de chamada e não quebram nada; parti-los
   obrigava a um registo de callbacks que custa mais do que resolve. É o único
   ciclo do grafo.
-- **Um tipo de campo de configuração declara as suas quatro faces num descritor
-  só** — `render`, `read`, `defaults` e `help`, em `devices/config/inputs/`.
-  Eram quatro mapas paralelos indexados pela mesma chave e alinhados à mão: uma
-  entrada em falta não dava erro, dava um campo genérico ou um payload vazio.
-  Um descritor sem `defaults` é agora uma ausência visível, e algumas estão
-  anotadas como tal.
+- **Um tipo de campo de configuração declara as suas faces num descritor só** —
+  `render` ou `control`, `read`, `defaults` e `help`, em
+  `devices/config/inputs/`. Eram mapas paralelos indexados pela mesma chave e
+  alinhados à mão: uma entrada em falta não dava erro, dava um campo genérico ou
+  um payload vazio. Um descritor sem `defaults` é agora uma ausência visível, e
+  algumas estão anotadas como tal.
+
+  O `render` e o `control` decidem a forma do bloco e não são cosmética: com
+  `render` sai o cartão inteiro, com `control` sai a linha magra do
+  `settingRow`. O que o `defaults` devolve tem de ser o que o `read` devolve, e
+  não o que o controlo se chama — o `config-payload-roundtrip.test.js` prende-o.
 - **As famílias de cartões que só existem num aparelho vivem em `cards/`** —
   radar, fralda, gateway, NCS e localização. A linha não é o tamanho: uma
   postura ou uma contagem de pessoas não existe num relógio. O eixo do *tipo de

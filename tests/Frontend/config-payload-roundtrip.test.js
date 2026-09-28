@@ -127,6 +127,8 @@ const DEFAULT_ROUND_TRIPS = [
     ["text", { enabled: "" }],
     ["intervalToggle", { enabled: true, intervalMinutes: 60 }],
     ["pushMessage", { message: "" }],
+    // O par idioma/fuso: o `defaults` tem de falar a língua do `read`, não a do `<select>`.
+    ["languageTimezone", { language: 3, timeZone: "1" }],
 ];
 
 test("o valor por omissão de cada tipo de campo lê-se de volta como ele é", () => {

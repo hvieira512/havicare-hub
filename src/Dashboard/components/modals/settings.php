@@ -17,7 +17,7 @@ ob_start();
         <?php // Ao topo e não ao centro, pela mesma razão do modal do dispositivo: centrado,
               // o menu desloca-se conforme o separador escolhido e o botão foge do rato. ?>
         <div class="col-12 col-lg-3 d-flex align-items-lg-start h-100">
-            <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" id="settingsModalNav" role="tablist">
+            <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" role="tablist">
                 <?php foreach ($settingsTabs as $index => $tab) : ?>
                     <?php $pane = 'settings' . $tab['key'] . 'Pane'; ?>
                 <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex align-items-center gap-2" id="settings<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?><?= $tab['count'] ? '<span class="settings-nav-count d-none ms-auto flex-shrink-0 px-1 rounded-pill fw-semibold text-center tabular-nums" id="settings' . $tab['key'] . 'Count"></span>' : '' ?></button>
@@ -48,7 +48,7 @@ ob_start();
                             <div class="carousel-item">
                                 <form id="modelForm" class="row g-4 align-items-stretch mb-4">
                                     <div class="col-lg-5">
-                                        <div id="modelPreview" class="showcase-preview border rounded d-flex align-items-center justify-content-center p-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
+                                        <div class="showcase-preview border rounded d-flex align-items-center justify-content-center p-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
                                             <input type="file" id="modelImage" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
                                             <div id="modelPreviewContent" class="text-center text-secondary w-100">
                                                 <?= icon('fa-microchip', 'fs-1 opacity-50') ?>
@@ -69,11 +69,11 @@ ob_start();
                                             <div class="row g-3">
                                                 <div class="col-md-6">
                                                     <label for="modelInternalModel" class="form-label">Modelo interno</label>
-                                                    <input type="text" class="form-control" id="modelInternalModel" placeholder="Identificador interno" required>
+                                                    <input type="text" class="form-control" id="modelInternalModel" required>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label for="modelCommercialName" class="form-label">Nome comercial</label>
-                                                    <input type="text" class="form-control" id="modelCommercialName" placeholder="Nome visível" required>
+                                                    <input type="text" class="form-control" id="modelCommercialName" required>
                                                 </div>
                                             </div>
                                             <div id="modelTemplateSummary" class="small text-secondary">A carregar template de capacidades do fornecedor.</div>
@@ -92,20 +92,20 @@ ob_start();
                                 <div class="row g-4 mb-4">
                                     <div class="col-lg-8" id="modelDetailFields">
                                         <div class="mb-3">
-                                            <label for="modelDetailCommercialName" class="section-label d-block mb-1">Nome comercial</label>
+                                            <label for="modelDetailCommercialName" class="section-label">Nome comercial</label>
                                             <input type="text" class="form-control fw-semibold" id="modelDetailCommercialName">
                                         </div>
                                         <div class="row g-3">
                                             <div class="col-md-4">
-                                                <label for="modelDetailSupplierSelect" class="section-label d-block mb-1">Fornecedor</label>
+                                                <label for="modelDetailSupplierSelect" class="section-label">Fornecedor</label>
                                                 <select class="form-select" id="modelDetailSupplierSelect"></select>
                                             </div>
                                             <div class="col-md-4">
-                                                <label for="modelDetailDeviceType" class="section-label d-block mb-1">Tipo</label>
+                                                <label for="modelDetailDeviceType" class="section-label">Tipo</label>
                                                 <select class="form-select" id="modelDetailDeviceType"></select>
                                             </div>
                                             <div class="col-md-4">
-                                                <label for="modelDetailInternalModel" class="section-label d-block mb-1">Modelo interno</label>
+                                                <label for="modelDetailInternalModel" class="section-label">Modelo interno</label>
                                                 <input type="text" class="form-control" id="modelDetailInternalModel">
                                             </div>
                                         </div>
@@ -118,7 +118,7 @@ ob_start();
                                         </div>
                                     </div>
                                     <div class="col-lg-4">
-                                        <div class="showcase-preview border rounded d-flex align-items-center justify-content-center p-3 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
+                                        <div class="showcase-preview border rounded d-flex align-items-center justify-content-center p-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
                                             <input type="file" id="modelDetailImageInput" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
                                             <div id="modelDetailImage" class="text-center w-100">
                                                 <div class="text-secondary">

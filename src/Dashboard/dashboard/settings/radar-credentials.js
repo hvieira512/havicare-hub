@@ -37,7 +37,7 @@ export function clearRadarCredentials() {
 function secretField(id, label, stored) {
     return html`
         <div class="flex-grow-1" style="min-width:11rem">
-            <label class="section-label d-block mb-1" for="${id}">${label}</label>
+            <label class="section-label" for="${id}">${label}</label>
             <input type="password" class="form-control form-control-sm" id="${id}" data-field="${id === "radarRowPassword" ? "password" : "appSecret"}" autocomplete="new-password" placeholder="${stored ? "guardada — deixe em branco para manter" : "obrigatória"}">
         </div>`;
 }
@@ -53,16 +53,16 @@ export function radarCredentialsEditorRow(license) {
             </div>
             <div class="d-flex align-items-end gap-2 flex-wrap">
                 <div class="flex-grow-1" style="min-width:16rem">
-                    <label class="section-label d-block mb-1" for="radarRowBaseUrl">Endereço da API</label>
+                    <label class="section-label" for="radarRowBaseUrl">Endereço da API</label>
                     <input type="url" class="form-control form-control-sm" id="radarRowBaseUrl" data-field="baseUrl" value="${stored?.baseUrl || ""}" placeholder="https://radarconsole.com/prod-api">
                 </div>
                 <div class="flex-grow-1" style="min-width:10rem">
-                    <label class="section-label d-block mb-1" for="radarRowUsername">Utilizador</label>
+                    <label class="section-label" for="radarRowUsername">Utilizador</label>
                     <input type="text" class="form-control form-control-sm" id="radarRowUsername" data-field="username" value="${stored?.username || ""}" autocomplete="off">
                 </div>
                 ${raw(secretField("radarRowPassword", "Palavra-passe", stored?.hasPassword))}
                 <div class="flex-grow-1" style="min-width:10rem">
-                    <label class="section-label d-block mb-1" for="radarRowAppId">App ID</label>
+                    <label class="section-label" for="radarRowAppId">App ID</label>
                     <input type="text" class="form-control form-control-sm" id="radarRowAppId" data-field="appId" value="${stored?.appId || ""}" autocomplete="off">
                 </div>
                 ${raw(secretField("radarRowAppSecret", "App secret", stored?.hasAppSecret))}

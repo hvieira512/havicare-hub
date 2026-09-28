@@ -9,6 +9,8 @@
  * visível. A paginação é a do projeto -- o `pagination.js` -- e não a da biblioteca.
  */
 
+import { loadScript } from "./load-script.js";
+
 /**
  * As etiquetas são de quem monta a grelha e não da API: o descritor descreve estrutura, e
  * traduzir é trabalho de quem desenha a interface. Viajam por grelha e não num estado do
@@ -28,31 +30,18 @@ export const GRID_LOCALE = {
     ariaFilterMenuOpen: "Abrir menu de filtro",
 };
 
-let agGridLoad = null;
-
 /**
  * O AG Grid são 2 MB, e só a secção de utilizadores da API precisa dele. Em vez de o
- * `index.php` o carregar em todas as sessões, carrega-se aqui à primeira grelha. Uma vez só:
- * chamadas seguintes esperam a mesma carga, e um erro deixa tentar de novo.
+ * `index.php` o carregar em todas as sessões, carrega-se aqui à primeira grelha.
  */
 export function ensureAgGrid() {
     if (globalThis.agGrid) {
         return Promise.resolve();
     }
-    if (agGridLoad) {
-        return agGridLoad;
-    }
-    agGridLoad = new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "/assets/vendor/ag-grid/ag-grid-community.min.js";
-        script.addEventListener("load", () => resolve());
-        script.addEventListener("error", () => {
-            agGridLoad = null;
-            reject(new Error("Não foi possível carregar o AG Grid."));
-        });
-        document.head.appendChild(script);
+    // O erro do carregador traz o caminho do ficheiro, que não é linguagem de quem lê o aviso.
+    return loadScript("/assets/vendor/ag-grid/ag-grid-community.min.js").catch(() => {
+        throw new Error("Não foi possível carregar a tabela.");
     });
-    return agGridLoad;
 }
 
 /**

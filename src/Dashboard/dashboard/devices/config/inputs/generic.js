@@ -86,7 +86,7 @@ function textInput(entry, desired) {
 function pushMessageInput(_entry, desired) {
     return field(
         "Mensagem",
-        `<input class="form-control" type="text" data-config-field="message" value="${esc(String(desired.message ?? ""))}" placeholder="Mensagem a mostrar no relógio">`,
+        `<input class="form-control" type="text" data-config-field="message" value="${esc(String(desired.message ?? ""))}">`,
         { help: "Envia uma mensagem imediata para o relógio. Não fica guardada como configuração desejada." },
     );
 }

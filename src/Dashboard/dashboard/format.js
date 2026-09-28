@@ -210,6 +210,13 @@ export const fieldLabel = (key) =>
         hdlMmolPerL: "HDL",
         ldlMmolPerL: "LDL",
         milliseconds: "Milissegundos",
+        // O que um exame de ECG apura, além da onda.
+        heartRateBpm: "Frequência cardíaca",
+        qtcMilliseconds: "QTc",
+        hrvMilliseconds: "VFC",
+        rrIntervalMilliseconds: "Intervalo RR",
+        frequencyHz: "Amostragem",
+        sampleCount: "Amostras",
         durationMinutes: "Duração",
         startTime: "Início",
         endTime: "Fim",
@@ -380,6 +387,11 @@ const FIELD_UNIT = {
     hdlMmolPerL: "mmol/L",
     ldlMmolPerL: "mmol/L",
     milliseconds: "ms",
+    heartRateBpm: "bpm",
+    qtcMilliseconds: "ms",
+    hrvMilliseconds: "ms",
+    rrIntervalMilliseconds: "ms",
+    frequencyHz: "Hz",
 };
 
 export const fieldValue = (key, value) => {

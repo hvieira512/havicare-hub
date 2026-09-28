@@ -18,6 +18,32 @@ use PHPUnit\Framework\TestCase;
  */
 final class DashboardElementIdsTest extends TestCase
 {
+    /**
+     * Os `id` que o JavaScript compõe a partir de um prefixo, e quem os compõe. Quem
+     * acrescentar um par de prefixos escreve-os aqui, senão ficam sem rede.
+     *
+     * Os dois `PagerSummary` ficam de fora: o `pagination_component(..., withSummary: false)`
+     * não os desenha, e o `detail.js` já conta com isso.
+     */
+    private const COMPOSED_IDS = [
+        'telemetryPagerControls' => 'devices/detail.js',
+        'downlinkPagerControls' => 'devices/detail.js',
+        'radarHeartRateValue' => 'devices/radar-vitals.js',
+        'radarHeartRateMin' => 'devices/radar-vitals.js',
+        'radarHeartRateMax' => 'devices/radar-vitals.js',
+        'radarHeartRateAvg' => 'devices/radar-vitals.js',
+        'radarHeartRateChart' => 'devices/radar-vitals.js',
+        'radarBreathRateValue' => 'devices/radar-vitals.js',
+        'radarBreathRateMin' => 'devices/radar-vitals.js',
+        'radarBreathRateMax' => 'devices/radar-vitals.js',
+        'radarBreathRateAvg' => 'devices/radar-vitals.js',
+        'radarBreathRateChart' => 'devices/radar-vitals.js',
+        'settingsModelsCount' => 'settings/shell.js',
+        'settingsCompanyCount' => 'settings/shell.js',
+        'settingsDenylistCount' => 'settings/shell.js',
+        'settingsApiUsersCount' => 'settings/shell.js',
+    ];
+
     private static ?string $renderedPage = null;
 
     public function testEveryElementIdReadByJavaScriptExistsInTheRenderedPage(): void
@@ -47,10 +73,11 @@ final class DashboardElementIdsTest extends TestCase
     }
 
     /**
-     * Os nomes que o JavaScript lê do objecto dos elementos, e onde os lê.
+     * Os nomes que o JavaScript lê da página, e onde os lê: o `els.nome` e o
+     * `getElementById("nome")`, com que o ecrã de entrada e os modais apanham os seus.
      *
-     * Só apanha o acesso literal (`els.nome`): o acesso dinâmico (`els[chave]`) não se
-     * consegue resolver sem correr o código, e não há nenhum neste momento.
+     * Um `getElementById` com variável não se apanha, e é isso que se quer -- esses são `id`
+     * que o próprio JavaScript acabou de desenhar. Os compostos estão em `COMPOSED_IDS`.
      *
      * @return array<string, list<string>> nome do elemento => ficheiros que o lêem
      */
@@ -62,11 +89,16 @@ final class DashboardElementIdsTest extends TestCase
         $referenced = [];
         foreach ($files as $file) {
             $source = (string)file_get_contents($file);
-            preg_match_all('/\bels\??\.([A-Za-z][A-Za-z0-9_]*)/', $source, $matches);
-            foreach ($matches[1] as $name) {
+            preg_match_all('/\bels\??\.([A-Za-z][A-Za-z0-9_]*)/', $source, $direct);
+            preg_match_all('/getElementById\(\s*"([A-Za-z][A-Za-z0-9_-]*)"/', $source, $byId);
+            foreach ([...$direct[1], ...$byId[1]] as $name) {
                 $relative = substr($file, strlen($root) + 1);
                 $referenced[$name][$relative] = true;
             }
+        }
+
+        foreach (self::COMPOSED_IDS as $name => $where) {
+            $referenced[$name][$where] = true;
         }
 
         return array_map(static fn (array $files): array => array_keys($files), $referenced);

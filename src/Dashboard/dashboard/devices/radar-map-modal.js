@@ -9,6 +9,7 @@ import { apiError, toast } from "../dialogs.js";
 import { refreshTooltips } from "../tooltips.js";
 import { createRadarScene } from "./radar-scene.js";
 import { destroyVitals, loadCharts, renderVitals, resizeVitals } from "./radar-vitals.js";
+import { loadScript } from "../load-script.js";
 import { state } from "../state.js";
 
 /**
@@ -25,33 +26,18 @@ import { state } from "../state.js";
 let els;
 let modal;
 let scene = null;
-let konvaLoading = null;
-
 export function initRadarMapModal(context) {
     els = context.els;
     modal = context.modals.radarMap;
 }
 
-/**
- * O Konva são 175 kB que só este ecrã usa, e por isso entra quando alguém abre a planta e não
- * no `<head>`. A promessa fica guardada para a segunda abertura não voltar a descarregar.
- */
+/** O Konva são 175 kB que só este ecrã usa: entra quando alguém abre a planta. */
 function loadKonva() {
     if (globalThis.Konva) return Promise.resolve();
-    if (konvaLoading) return konvaLoading;
-
-    konvaLoading = new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "/assets/vendor/konva/konva.min.js";
-        script.onload = () => resolve();
-        script.onerror = () => {
-            konvaLoading = null;
-            reject(new Error("Não foi possível carregar o Konva"));
-        };
-        document.head.appendChild(script);
+    // O erro do carregador traz o caminho do ficheiro, que não é linguagem de quem lê o aviso.
+    return loadScript("/assets/vendor/konva/konva.min.js").catch(() => {
+        throw new Error("Não foi possível carregar a planta da divisão.");
     });
-
-    return konvaLoading;
 }
 
 /** A contagem por cima da planta, como no hitCare: o número destacado e o resto discreto. */

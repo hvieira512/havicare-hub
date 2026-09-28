@@ -287,7 +287,6 @@ function renderDetailActiveFilters() {
 
     els.detailActiveFilters.innerHTML = filterChips(labels, "removeDetailFilter");
     els.detailFilterCount.textContent = labels.length ? String(labels.length) : "";
-    els.detailFilterCount.classList.toggle("d-none", labels.length === 0);
     els.clearDetailFiltersBtn.classList.toggle("d-none", labels.length === 0);
     // Sem filtros aplicados a linha inteira sai, para não sobrar espaço sem conteúdo.
     els.detailActiveFiltersRow?.classList.toggle("d-none", labels.length === 0);
@@ -320,7 +319,6 @@ function paginateDetailPanel(event, { belongsToPanel, pageSize, page, actionPref
         event,
         { page, total_pages: totalPages },
         actionPrefix,
-        `${actionPrefix}PageGo`,
     );
     if (nextPage === null) return;
 

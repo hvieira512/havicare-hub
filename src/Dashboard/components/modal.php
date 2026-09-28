@@ -6,13 +6,12 @@
  */
 function render_modal(
     string $id,
-    string $title,
     string $body,
+    string $title = '',
     string $footer = '',
     string $size = '',
     ?string $fullscreenBelow = null,
     bool $scrollable = false,
-    bool $centered = true,
     bool $staticBackdrop = false,
     string $headerHtml = '',
     string $bodyClass = '',
@@ -20,7 +19,7 @@ function render_modal(
 ): void {
     $dialog = array_filter([
         'modal-dialog',
-        $centered ? 'modal-dialog-centered' : '',
+        'modal-dialog-centered',
         $scrollable ? 'modal-dialog-scrollable' : '',
         $size !== '' ? "modal-{$size}" : '',
         $fullscreenBelow !== null ? "modal-fullscreen-{$fullscreenBelow}-down" : '',
@@ -30,7 +29,7 @@ function render_modal(
     // fora ou um Escape fecham a caixa e levam o que estiver preenchido lá dentro.
     $backdrop = $staticBackdrop ? ' data-bs-backdrop="static" data-bs-keyboard="false"' : '';
     ?>
-    <div class="modal fade" id="<?= h($id) ?>" tabindex="-1"<?= $backdrop ?>>
+    <div class="modal fade" id="<?= h($id) ?>" tabindex="-1" aria-labelledby="<?= h($id) ?>Label"<?= $backdrop ?>>
         <div class="<?= h(implode(' ', $dialog)) ?>">
             <div class="<?= h(trim('modal-content ' . $contentClass)) ?>">
                 <div class="modal-header">

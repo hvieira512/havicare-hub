@@ -101,7 +101,7 @@ $loginHighlights = [
             <form id="dashboardLoginForm" class="d-grid gap-3" novalidate>
                 <?php foreach ($loginFields as $field) : ?>
                 <div>
-                    <label for="<?= $field['id'] ?>" class="section-label d-block mb-1"><?= h($field['label']) ?></label>
+                    <label for="<?= $field['id'] ?>" class="section-label"><?= h($field['label']) ?></label>
                     <div class="input-group">
                         <span class="input-group-text bg-body text-body-tertiary"><?= icon($field['icon'], 'fa-fw') ?></span>
                         <input id="<?= $field['id'] ?>" name="<?= $field['name'] ?>" class="form-control" type="<?= $field['type'] ?>" autocomplete="<?= $field['autocomplete'] ?>" required<?= $field['autofocus'] ? ' autofocus' : '' ?>>

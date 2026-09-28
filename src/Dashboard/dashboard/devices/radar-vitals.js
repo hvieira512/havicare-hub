@@ -1,4 +1,5 @@
 import { fieldValue } from "../format.js";
+import { loadScript } from "../load-script.js";
 
 /**
  * Os sinais vitais de um radar, ao lado da planta: o estado do sono e os dois gráficos.
@@ -51,27 +52,6 @@ function chartsReady() {
     return Boolean(globalThis.am5?.Root && globalThis.am5xy && globalThis.am5themes_Animated);
 }
 
-function loadScriptOnce(src) {
-    return new Promise((resolve, reject) => {
-        const existing = document.querySelector(`script[src="${src}"]`);
-        if (existing) {
-            if (existing.dataset.loaded === "true") resolve();
-            else existing.addEventListener("load", () => resolve());
-            existing.addEventListener("error", () => reject(new Error(`Não foi possível carregar ${src}`)));
-            return;
-        }
-
-        const script = document.createElement("script");
-        script.src = src;
-        script.onload = () => {
-            script.dataset.loaded = "true";
-            resolve();
-        };
-        script.onerror = () => reject(new Error(`Não foi possível carregar ${src}`));
-        document.head.appendChild(script);
-    });
-}
-
 /**
  * O amCharts são 650 kB que só este ecrã usa, e entram quando alguém abre a planta.
  *
@@ -80,11 +60,16 @@ function loadScriptOnce(src) {
 export async function loadCharts() {
     if (chartsReady()) return;
 
-    await loadScriptOnce("/assets/vendor/amcharts5/index.js");
-    await Promise.all([
-        loadScriptOnce("/assets/vendor/amcharts5/xy.js"),
-        loadScriptOnce("/assets/vendor/amcharts5/themes/Animated.js"),
-    ]);
+    // O erro do carregador traz o caminho do ficheiro, que não é linguagem de quem lê o aviso.
+    try {
+        await loadScript("/assets/vendor/amcharts5/index.js");
+        await Promise.all([
+            loadScript("/assets/vendor/amcharts5/xy.js"),
+            loadScript("/assets/vendor/amcharts5/themes/Animated.js"),
+        ]);
+    } catch {
+        throw new Error("Não foi possível carregar os gráficos dos sinais vitais.");
+    }
 
     // Sem licença a biblioteca desenha o logótipo dela em cima de cada gráfico. Não é erro:
     // é o que o amCharts faz até alguém pôr a chave no ambiente.

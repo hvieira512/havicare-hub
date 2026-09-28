@@ -10,7 +10,7 @@ import { html, raw } from "../html.js";
 import { apiError, confirmDestructive, promptPassword, toast } from "../dialogs.js";
 import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
-import { renderPagination, resolvePaginationPage } from "../pagination.js";
+import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor } from "./row-editor.js";
 import { createGrid, ensureAgGrid } from "../grid.js";
 import { isDarkTheme } from "../theme.js";
@@ -97,7 +97,7 @@ function actionsCell(params) {
 
     return html`
         <div class="d-flex justify-content-end gap-1">
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="changeApiUserPassword" data-id="${user.id}" title="Mudar password" aria-label="Mudar password"><i class="fa-solid fa-key"></i></button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="changeApiUserPassword" data-id="${user.id}" title="Mudar palavra-passe" aria-label="Mudar palavra-passe"><i class="fa-solid fa-key"></i></button>
         <button type="button" class="btn btn-outline-secondary btn-sm" data-action="toggleApiUser" data-id="${user.id}" title="${enabled ? "Desativar" : "Ativar"}" aria-label="${enabled ? "Desativar" : "Ativar"}"><i class="fa-solid ${enabled ? "fa-pause" : "fa-play"}"></i></button>
         <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="deleteApiUser" data-id="${user.id}" title="Apagar" aria-label="Apagar"><i class="fa-solid fa-trash"></i></button>
         </div>`;
@@ -183,14 +183,6 @@ export async function loadSettingsApiUsersSection(page = 1) {
             onError: showError,
         });
 
-        els.settingsApiUsersPaginationControls?.addEventListener("click", (event) => {
-            const current = state.settingsModal.apiUsersPagination;
-            const next = resolvePaginationPage(event, current, "settingsApiUsersPage");
-            if (next !== null && next !== current?.page) {
-                void grid.goToPage(next);
-            }
-        });
-
         await grid.start();
     } catch (error) {
         showError(error);
@@ -261,12 +253,12 @@ async function toggleApiUser(user) {
 }
 
 async function changeApiUserPassword(user) {
-    const { isConfirmed, value } = await promptPassword("Nova password", user.username);
+    const { isConfirmed, value } = await promptPassword("Nova palavra-passe", user.username);
     if (!isConfirmed) {
         return;
     }
     await saveUser(user, { password: value });
-    toast("success", "Password alterada");
+    toast("success", "Palavra-passe alterada");
 }
 
 export async function deleteApiUser(user) {
@@ -305,19 +297,19 @@ function renderCreateForm(open) {
         <div class="border rounded-3 p-3 mb-2 bg-body-tertiary" data-editor="apiUser">
             <div class="row g-2">
                 <div class="col-12 col-md-3">
-                    <label class="section-label d-block mb-1" for="apiUserNewUsername">Utilizador</label>
+                    <label class="section-label" for="apiUserNewUsername">Utilizador</label>
                     <input type="text" class="form-control form-control-sm" id="apiUserNewUsername" data-field="username" autocomplete="off">
                 </div>
                 <div class="col-12 col-md-3">
-                    <label class="section-label d-block mb-1" for="apiUserNewPassword">Password</label>
+                    <label class="section-label" for="apiUserNewPassword">Palavra-passe</label>
                     <input type="password" class="form-control form-control-sm" id="apiUserNewPassword" data-field="password" autocomplete="new-password">
                 </div>
                 <div class="col-12 col-md-2">
-                    <label class="section-label d-block mb-1" for="apiUserNewRole">Perfil</label>
+                    <label class="section-label" for="apiUserNewRole">Perfil</label>
                     <select class="form-select form-select-sm" id="apiUserNewRole" data-field="role">${raw(roleOptions())}</select>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="section-label d-block mb-1" for="apiUserNewLicense">Licença</label>
+                    <label class="section-label" for="apiUserNewLicense">Licença</label>
                     <select class="form-select form-select-sm" id="apiUserNewLicense" data-field="licenseRefId">${raw(licenseOptions())}</select>
                 </div>
             </div>
@@ -353,7 +345,7 @@ async function createApiUser(button) {
         markInvalid(field("username"), "Utilizador é obrigatório");
     }
     if (!body.password.trim()) {
-        markInvalid(field("password"), "Password é obrigatória para novo utilizador");
+        markInvalid(field("password"), "A palavra-passe é obrigatória para um utilizador novo");
     }
     if (body.role === "license_client" && !body.licenseRefId) {
         markInvalid(field("licenseRefId"), "Licença é obrigatória para clientes");

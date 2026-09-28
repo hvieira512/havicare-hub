@@ -22,7 +22,7 @@
                     <div class="card h-100">
                         <div class="card-body d-flex flex-column min-h-0">
                             <div id="deviceDetail" class="d-none device-detail-open">
-                                <div id="detailFiltersPanel">
+                                <div>
                                     <div class="d-flex align-items-center gap-2">
                                         <?= search_input('detailSearch', 'Procurar na atividade', 'flex-grow-1') ?>
                                         <?= filter_toggle_button('detailFiltersCollapse', 'detailFilterCount', 'flex-shrink-0') ?>
@@ -34,15 +34,15 @@
                                     <div class="collapse" id="detailFiltersCollapse">
                                         <div class="row g-2 align-items-end pt-3">
                                             <div class="col-auto">
-                                                <label for="detailFilterFrom" class="section-label d-block mb-1">De</label>
+                                                <label for="detailFilterFrom" class="section-label">De</label>
                                                 <input type="datetime-local" id="detailFilterFrom" class="form-control form-control-sm">
                                             </div>
                                             <div class="col-auto">
-                                                <label for="detailFilterTo" class="section-label d-block mb-1">Até</label>
+                                                <label for="detailFilterTo" class="section-label">Até</label>
                                                 <input type="datetime-local" id="detailFilterTo" class="form-control form-control-sm">
                                             </div>
                                             <div class="col-auto">
-                                                <label for="detailFilterType" class="section-label d-block mb-1">Tipo</label>
+                                                <label for="detailFilterType" class="section-label">Tipo</label>
                                                 <select id="detailFilterType" class="form-select form-select-sm">
                                                     <option value="all">Todos</option>
                                                 </select>
@@ -67,7 +67,7 @@
                                                     oposto. Num telefone não cabe ao lado do
                                                     título e desce para baixo dele. */ ?>
                                             <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2 mb-2">
-                                                <?= section_header($panel['title'], $panel['countId'], true, false, '') ?>
+                                                <?= section_header($panel['title'], $panel['countId'], '') ?>
                                                 <?= pagination_component($panel['pager'], '', false) ?>
                                             </div>
                                             <div id="<?= $panel['list'] ?>" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>

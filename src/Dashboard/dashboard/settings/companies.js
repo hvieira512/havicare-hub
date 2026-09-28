@@ -110,11 +110,11 @@ function licenseEditorRow(license, companyId) {
         <div class="tree-row position-relative d-flex align-items-center" data-editor="license" data-id="${license?.id || ""}" data-company-id="${companyId}">
             <div class="d-flex align-items-end gap-2 flex-wrap w-100">
                 <div style="width:8rem">
-                    <label class="section-label d-block mb-1" for="licenseRowId">ID da licença</label>
+                    <label class="section-label" for="licenseRowId">ID da licença</label>
                     <input type="text" class="form-control form-control-sm tabular-nums" id="licenseRowId" data-field="licenseId" inputmode="numeric" value="${license?.license_id || ""}" placeholder="1001">
                 </div>
                 <div class="flex-grow-1" style="min-width:12rem">
-                    <label class="section-label d-block mb-1" for="licenseRowName">Nome</label>
+                    <label class="section-label" for="licenseRowName">Nome</label>
                     <input type="text" class="form-control form-control-sm" id="licenseRowName" data-field="name" value="${license?.name || ""}" placeholder="gucc.dev">
                 </div>
                 <div class="d-flex gap-2">
@@ -142,7 +142,7 @@ function companyHeaderEditor(company) {
     return html`
         <div class="d-flex align-items-end gap-2 flex-wrap" data-editor="company" data-id="${company?.id || ""}">
             <div class="flex-grow-1" style="min-width:12rem">
-                <label class="section-label d-block mb-1" for="companyRowName">Nome da empresa</label>
+                <label class="section-label" for="companyRowName">Nome da empresa</label>
                 <input type="text" class="form-control form-control-sm" id="companyRowName" data-field="name" value="${company?.name || ""}" placeholder="hitcare">
             </div>
             <div class="d-flex gap-2">

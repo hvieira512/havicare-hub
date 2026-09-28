@@ -83,7 +83,7 @@ function supplierNode(group, supplier) {
             data-bs-toggle="collapse" data-bs-target="#${id}" aria-expanded="true" aria-controls="${id}">
         <i class="fa-solid fa-chevron-down catalog-caret" aria-hidden="true"></i>
         <span class="fw-semibold text-truncate">${esc(supplier.name)}</span>
-        <span class="count-chip count-chip-strong fw-semibold px-2 rounded-pill tabular-nums">${models.length}</span>
+        <span class="count-chip count-chip-strong">${models.length}</span>
         </button>
         </div>
         <div class="collapse show" id="${id}">

@@ -109,7 +109,7 @@ test("três páginas dão três botões, com a actual marcada e o anterior trava
     const buttons = [...els.telemetryPagerControls.querySelectorAll("button")];
     assert.deepEqual(
         buttons.map((button) => button.dataset.action),
-        ["telemetryPrev", "telemetryPageGo", "telemetryPageGo", "telemetryPageGo", "telemetryNext"],
+        ["telemetryPrev", "telemetryGo", "telemetryGo", "telemetryGo", "telemetryNext"],
     );
     assert.deepEqual(
         buttons.map((button) => button.dataset.page).filter(Boolean),
@@ -152,7 +152,7 @@ test("o paginador dos pedidos leva o seu prefixo nas acções", () => {
     assert.equal(els.downlinkPagerSummary.textContent, `1–${size} de ${total}`);
     assert.equal(pagerButton(els.downlinkPagerControls, "downlinkPrev").disabled, true);
     assert.deepEqual(
-        [...els.downlinkPagerControls.querySelectorAll("[data-action='downlinkPageGo']")]
+        [...els.downlinkPagerControls.querySelectorAll("[data-action='downlinkGo']")]
             .map((button) => button.dataset.page),
         ["1", "2", "3"],
     );

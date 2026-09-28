@@ -33,15 +33,9 @@ function pageWindow(currentPage, totalPages) {
 /**
  * Os botões de um paginador: as duas setas e a janela de páginas entre elas. Vazio quando há
  * uma página só -- não há para onde ir, e um paginador de um botão é ruído.
- *
- * O `goAction` existe porque os painéis do dispositivo registam os handlers em
- * `telemetryPageGo`/`downlinkPageGo` e não em `${actionPrefix}Go`.
  */
-export function paginationControls({
-    pagination,
-    actionPrefix,
-    goAction = `${actionPrefix}Go`,
-}) {
+export function paginationControls({ pagination, actionPrefix }) {
+    const goAction = `${actionPrefix}Go`;
     const totalPages = pagination?.total_pages ?? 1;
     const currentPage = pagination?.page ?? 1;
 

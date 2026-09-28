@@ -13,7 +13,6 @@ import {
     resetDeviceListPage,
     selectImei,
     setDeviceListPage,
-    setDeviceTypeSuppliersModels,
     setSelectedDetail,
 } from "../state.js";
 import { html } from "../html.js";
@@ -159,7 +158,7 @@ async function ensureDeviceTypeSuppliersModelsLoaded(force = false) {
 
     const response = await apiGetDeviceTypeSuppliersModels();
     const groups = response?.error ? [] : response.data || [];
-    setDeviceTypeSuppliersModels(flattenDeviceTypeSuppliersModels(groups));
+    state.deviceTypeSuppliersModels = flattenDeviceTypeSuppliersModels(groups);
     return state.deviceTypeSuppliersModels;
 }
 

@@ -106,13 +106,12 @@ ob_start();
 $body = (string) ob_get_clean();
 
 $header = '<div class="d-flex flex-column min-w-0 flex-fill">'
-    . '<h5 class="modal-title mb-0" id="radarMapTitle">Planta da divisão</h5>'
+    . '<h5 class="modal-title mb-0" id="radarMapModalLabel">Planta da divisão</h5>'
     . '<small class="text-secondary" id="radarMapSubtitle"></small>'
     . '</div>';
 
 render_modal(
     id: 'radarMapModal',
-    title: 'Planta da divisão',
     body: $body,
     footer: '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>',
     size: 'xl',

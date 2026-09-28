@@ -19,7 +19,7 @@ ob_start();
         <div class="d-flex align-items-center justify-content-between gap-2">
             <div class="d-flex align-items-center gap-2">
                 <span class="section-label">Filtros</span>
-                <span id="deviceFilterCount" class="count-chip count-chip-strong fw-semibold px-2 rounded-pill tabular-nums d-none"></span>
+                <span id="deviceFilterCount" class="count-chip count-chip-strong"></span>
             </div>
             <button id="clearDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary d-none" type="button">
                 <?= icon('fa-filter-circle-xmark', 'me-1') ?>Limpar
@@ -69,7 +69,7 @@ $footer = (string) ob_get_clean();
 ob_start();
 ?>
 <div class="flex-grow-1 min-w-0">
-    <h2 class="modal-title h5 mb-0">Escolher dispositivo</h2>
+    <h2 class="modal-title h5 mb-0" id="deviceSelectorModalLabel">Escolher dispositivo</h2>
     <div id="deviceSelectorSummary" class="small text-secondary"></div>
 </div>
 <?php
@@ -77,7 +77,6 @@ $headerHtml = (string) ob_get_clean();
 
 render_modal(
     id: 'deviceSelectorModal',
-    title: 'Escolher dispositivo',
     body: $body,
     footer: $footer,
     size: 'xl',

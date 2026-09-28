@@ -1,5 +1,6 @@
-import { eventTime, rowPayload } from "../../format.js";
+import { eventTime, rowPayload, titleize } from "../../format.js";
 import { capabilityLabel } from "../../capability-catalog.js";
+import { stateBadge } from "../state-badge.js";
 import { telemetryCard } from "./shell.js";
 import { cardIcon, cardTone, uplinkCardContent } from "./telemetry.js";
 import { locationCoordinates } from "./location.js";
@@ -58,6 +59,27 @@ const REQUEST_CARD_STATE = {
     failed: { label: "falhou", tone: "danger" },
     dropped: { label: "descartado", tone: "danger" },
 };
+
+/** O estado de um pedido na linha do painel. O tom vazio do `sent` deixa-o no azul da marca. */
+const DOWNLINK_STATE = {
+    queued: { label: "em fila", tone: "secondary" },
+    sent: { label: "enviado", tone: "" },
+    waiting: { label: "à espera", tone: "warning" },
+    acked: { label: "confirmado", tone: "success" },
+    failed: { label: "falhou", tone: "danger" },
+    dropped: { label: "descartado", tone: "danger" },
+    superseded: { label: "substituído", tone: "secondary" },
+    unknown: { label: "desconhecido", tone: "secondary" },
+};
+
+export function statusBadge(status) {
+    const known = DOWNLINK_STATE[status];
+
+    return stateBadge(
+        known?.label || titleize(status).toLowerCase(),
+        known?.tone ?? "secondary",
+    );
+}
 
 /**
  * O estado do pedido mais recente desta categoria. Uma falha só se mostra enquanto for a
@@ -162,7 +184,7 @@ export function requestCardShell(
     // por palavras era repetir o que o vazio diz, multiplicado pelos mosaicos vazios do ecrã.
     const lastValue = lastContent ? lastContent.value : "";
     // Um ícone tirado da leitura vence o estático: um gateway com fios não mostra Wi-Fi.
-    const icon = command.icon || lastContent?.icon || card.icon;
+    const icon = lastContent?.icon || card.icon;
     // O título é sempre o nome da categoria: "78%" sozinho não diz 78% de quê.
     const title = capabilityLabel(type) || card.value || type;
     const value = lastValue;
