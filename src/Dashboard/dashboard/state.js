@@ -40,8 +40,8 @@ export function blankDeviceModal(overrides = {}) {
 }
 
 /**
- * O modal de definições em branco. A secção aberta, as licenças e o carrossel não entram
- * aqui: quem repõe passa-os de volta, porque sobrevivem à abertura.
+ * O modal de definições em branco. A secção aberta e o carrossel não entram aqui: quem repõe
+ * passa-os de volta, porque sobrevivem à abertura.
  */
 export function blankSettingsModal(overrides = {}) {
     return {
@@ -144,11 +144,11 @@ export const state = {
         templateDeviceType: "watch",
     },
     protocolCatalogs: {},
+    // As licenças, uma vez por sessão, e aqui e não no `settingsModal` porque a árvore do
+    // filtro da listagem também as lê. Quem as muda limpa-as, pelo `invalidateLicenses`.
+    licenses: [],
     settingsModal: blankSettingsModal({
         section: "suppliers",
-        // As licenças, uma vez por sessão: são a árvore do filtro, a do assistente e as
-        // opções de três formulários. Quem as muda limpa-as.
-        licenses: [],
         modelsCarousel: null,
     }),
     modelPreviewObjectUrl: null,
@@ -262,8 +262,8 @@ export function updateDetailFiltersDraft(changes) {
     state.detailFiltersDraft = { ...state.detailFiltersDraft, ...changes };
 }
 
-/** Abrir as definições recomeça o modal. A secção, as licenças e o carrossel sobrevivem. */
+/** Abrir as definições recomeça o modal. A secção e o carrossel sobrevivem. */
 export function resetSettingsModal() {
-    const { section, licenses, modelsCarousel } = state.settingsModal;
-    state.settingsModal = blankSettingsModal({ section, licenses, modelsCarousel });
+    const { section, modelsCarousel } = state.settingsModal;
+    state.settingsModal = blankSettingsModal({ section, modelsCarousel });
 }

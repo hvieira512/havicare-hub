@@ -292,24 +292,30 @@ function timeRangesInput(entry, desired) {
     return `
         <div class="vstack gap-2">
             <div class="small text-secondary">Formato HH:MM-HH:MM. Envie pelo menos um intervalo.</div>
-            ${values
-                .map(
-                    (value, index) => `
-                <div>
-                    <label class="form-label-sm">Intervalo ${index + 1}</label>
-                    <input class="form-control" type="text" data-config-field="ranges" value="${esc(String(value))}" placeholder="08:10-09:30">
-                </div>
-            `,
-                )
-                .join("")}
+            <div class="row row-cols-1 row-cols-sm-auto g-3">
+                ${values
+                    .map(
+                        (value, index) => `
+                    <div class="col">
+                        <label class="form-label-sm">Intervalo ${index + 1}</label>
+                        <input class="form-control" type="text" data-config-field="ranges" value="${esc(String(value))}" placeholder="08:10-09:30" size="11">
+                    </div>
+                `,
+                    )
+                    .join("")}
+            </div>
         </div>`;
 }
 
 function timeRangeInput(desired) {
-    return field(
-        "Intervalo",
-        `<input class="form-control" type="text" data-config-field="range" value="${esc(String(desired.range ?? "21:10-07:30"))}" placeholder="21:10-07:30">`,
-    );
+    return `
+        <div class="row row-cols-1 row-cols-sm-auto g-3">
+            ${field(
+                "Intervalo",
+                `<input class="form-control" type="text" data-config-field="range" value="${esc(String(desired.range ?? "21:10-07:30"))}" placeholder="21:10-07:30" size="11">`,
+                { cls: "col" },
+            )}
+        </div>`;
 }
 
 /**

@@ -106,6 +106,22 @@ function sampleCount(data) {
     return count === 0 ? "Sem amostras" : `${count} amostras`;
 }
 
+/**
+ * O que um renderizador pode devolver. Tudo é opcional menos o `value`, e o que não vier tem
+ * omissão: o ícone sai do `CARD_STYLE`, o `rowValue` cai no `value`, o `span` em 6.
+ *
+ * @typedef {object} CardContent
+ * @property {string} value          o valor principal, no cartão e na linha
+ * @property {string} [rowValue]     o que a linha da lista mostra, quando não cabe o `value`
+ * @property {string} [icon]         só quando a leitura o escolhe -- um gateway com fios
+ * @property {string} [details]      a segunda linha, em texto ou em pastilhas
+ * @property {"text"|"chips"} [detailsKind]
+ * @property {string} [detailsTitle] o texto inteiro, para o `title` do que se corta
+ * @property {number} [span]         colunas do mosaico; 12 pede a linha toda
+ * @property {string} [body]         marcação própria por baixo do valor, para quem pede 12
+ */
+
+/** @type {Record<string, (data: object, meta?: object) => CardContent>} */
 const UPLINK_CARD_RENDERERS = {
     // O radar manda as mesmas chaves e formas que um relógio e usa os cartões dele.
     presence: (data) => ({

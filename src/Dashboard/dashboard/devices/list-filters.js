@@ -231,7 +231,7 @@ function renderDeviceLicenseFilter() {
                     value,
                     label: licenseDisplayLabel(
                         license.licenseId,
-                        state.settingsModal.licenses || [],
+                        state.licenses || [],
                     ),
                     count: license.count,
                     selected: companySelected || selected.includes(value),

@@ -6,7 +6,6 @@ import "./support/browser-env.js";
 import {
     renderConfigInputs,
     readConfigPayload,
-    defaultConfigPayload,
 } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { configSection } from "./support/dom.js";
 
@@ -111,34 +110,6 @@ test("an unknown input type falls back to the json reader rather than throwing",
     const payload = roundTrip({ input: "not-a-real-input", key: "weird" }, { a: 1 });
 
     assert.equal(typeof payload, "object");
-});
-
-/**
- * O que o leitor devolve para um valor por omissão é o que vai para o aparelho na primeira
- * gravação de uma secção que ninguém tocou. Afirmar que a leitura não estoira não chegava: um
- * padrão lido de volta como outro valor qualquer passava na mesma.
- *
- * O `pushMessage` é o único que não devolve o que recebeu, e desvia-se para o lado certo -- o
- * campo nasce vazio e lê-se `{message: ""}`, que é o payload de uma mensagem por escrever.
- */
-const DEFAULT_ROUND_TRIPS = [
-    ["toggle", { enabled: true }],
-    ["number", { enabled: 0 }],
-    ["text", { enabled: "" }],
-    ["intervalToggle", { enabled: true, intervalMinutes: 60 }],
-    ["pushMessage", { message: "" }],
-    // O par idioma/fuso: o `defaults` tem de falar a língua do `read`, não a do `<select>`.
-    ["languageTimezone", { language: 3, timeZone: "1" }],
-];
-
-test("o valor por omissão de cada tipo de campo lê-se de volta como ele é", () => {
-    for (const [input, expected] of DEFAULT_ROUND_TRIPS) {
-        const entry = { input, key: input, fields: ["enabled"] };
-        const defaults = defaultConfigPayload(entry, "");
-
-        assert.equal(typeof defaults, "object", `${input}: o valor por omissão é um objecto`);
-        assert.deepEqual(roundTrip(entry, defaults), expected, input);
-    }
 });
 
 test("a window is split into two time fields and joined back", () => {

@@ -106,7 +106,7 @@ test("um erro de licenças sem corpo nenhum também não envenena a cache", asyn
     // para o resto da sessão: nenhum ecrã voltava a ver uma licença.
     respondWith(500, "");
     assert.equal(await ensureLicensesLoaded(), null);
-    assert.deepEqual(state.settingsModal.licenses, [], "nada ficou guardado");
+    assert.deepEqual(state.licenses, [], "nada ficou guardado");
 
     ok([{ id: 9 }]);
     assert.deepEqual(await ensureLicensesLoaded(), [{ id: 9 }]);
