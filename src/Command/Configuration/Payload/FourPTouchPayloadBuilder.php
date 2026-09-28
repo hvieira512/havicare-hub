@@ -2,6 +2,8 @@
 
 namespace Hub\Command\Configuration\Payload;
 
+use Hub\Support\Values;
+
 final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 {
     /**
@@ -322,7 +324,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         } elseif (!array_is_list($alarms)) {
             $alarms = [$alarms];
         }
-        $alarms = array_values(array_filter($alarms, static fn(mixed $item): bool => $item !== null));
+        $alarms = array_values(Values::withoutNulls($alarms));
         if ($alarms === []) {
             return [];
         }

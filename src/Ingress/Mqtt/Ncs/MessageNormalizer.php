@@ -3,6 +3,7 @@
 namespace Hub\Ingress\Mqtt\Ncs;
 
 use Hub\Device\RawPayload;
+use Hub\Support\Values;
 
 final class MessageNormalizer
 {
@@ -108,7 +109,7 @@ final class MessageNormalizer
                 'model' => (string)$device['model'],
                 'commercialName' => (string)($device['commercialName'] ?? ''),
             ], static fn (mixed $value): bool => $value !== ''),
-            'debug' => array_filter([
+            'debug' => Values::withoutNulls([
                 'protocol' => 'voerka-ncs',
                 'transport' => 'mqtt',
                 'payload' => $message,
@@ -116,7 +117,7 @@ final class MessageNormalizer
                 'sourceScope' => $topic->scope,
                 'sourceMessageKind' => $topic->kind,
                 'sourceStatus' => $topic->statusName,
-            ], static fn (mixed $value): bool => $value !== null),
+            ]),
         ];
     }
 

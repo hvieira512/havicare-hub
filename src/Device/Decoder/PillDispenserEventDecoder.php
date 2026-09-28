@@ -3,6 +3,7 @@
 namespace Hub\Device\Decoder;
 
 use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Support\Values;
 
 final class PillDispenserEventDecoder
 {
@@ -35,7 +36,7 @@ final class PillDispenserEventDecoder
     private static function medicationIntake(string $nativeType, array $tlv): ?array
     {
         $slot = Tlv::u8($tlv, 0xC201);
-        $value = array_filter([
+        $value = Values::withoutNulls([
             'alarmSlot' => $slot === null ? null : $slot + 1,
             'scheduledAt' => Tlv::text($tlv, 0xC202),
             'takenAt' => Tlv::text($tlv, 0xC203),
@@ -53,7 +54,7 @@ final class PillDispenserEventDecoder
                 3 => 'missed',
                 default => null,
             },
-        ], static fn (mixed $field): bool => $field !== null);
+        ]);
 
         return $value === [] ? null : ['feature' => 'medication_intake', 'nativeType' => $nativeType, 'value' => $value];
     }
@@ -101,7 +102,7 @@ final class PillDispenserEventDecoder
 
         // Pela chave do contrato e com a forma com que a configuração é enviada, para que o
         // reportado se desenhe com o mesmo componente que desenha o desejado.
-        $settings = array_filter([
+        $settings = Values::withoutNulls([
             'medication_reminders' => $planReported ? ['plans' => $plans] : null,
             'medication_period' => self::period($tlv),
             'do_not_disturb' => self::quietHours($tlv),
@@ -115,12 +116,12 @@ final class PillDispenserEventDecoder
             'retrieval_warning' => self::minutes($tlv, 0x1017),
             'retrieval_timeout' => self::minutes($tlv, 0x1018),
             'loaded_cells' => self::field($tlv, 0x101C, 'cells'),
-        ], static fn (mixed $field): bool => $field !== null);
+        ]);
 
-        $value = array_filter([
+        $value = Values::withoutNulls([
             'settings' => $settings !== [] ? $settings : null,
             'refusedTags' => $refused !== [] ? $refused : null,
-        ], static fn (mixed $field): bool => $field !== null);
+        ]);
 
         return $value === [] ? null : ['feature' => 'device_config', 'nativeType' => $nativeType, 'value' => $value];
     }
@@ -218,11 +219,11 @@ final class PillDispenserEventDecoder
             return sprintf('%04d-%02d-%02d', $year, $month, $day);
         };
 
-        return array_filter([
+        return Values::withoutNulls([
             'enabled' => $enabled === 1,
             'startDate' => $date(0x1004, 0x1005, 0x1006),
             'endDate' => $date(0x1007, 0x1008, 0x1009),
-        ], static fn (mixed $field): bool => $field !== null);
+        ]);
     }
 
     /**
@@ -244,7 +245,7 @@ final class PillDispenserEventDecoder
         }
 
         // A corrente viaja com a bateria: é a mesma pergunta feita de dois lados.
-        $battery = array_filter([
+        $battery = Values::withoutNulls([
             'percent' => Tlv::u8($tlv, 0x8103),
             'chargingState' => match (Tlv::u8($tlv, 0x8104)) {
                 0 => 'normal',
@@ -255,7 +256,7 @@ final class PillDispenserEventDecoder
                 default => null,
             },
             'mainsPowered' => self::flag($tlv, 0x8109),
-        ], static fn (mixed $field): bool => $field !== null);
+        ]);
         if ($battery !== []) {
             $events[] = ['feature' => 'battery', 'nativeType' => $nativeType, 'value' => $battery];
         }
@@ -282,12 +283,12 @@ final class PillDispenserEventDecoder
         // O `0x811B` conta posições: a zero é a de repouso e não leva medicação. O aparelho
         // responde 29, e o contrato publica os 28 compartimentos.
         $capacity = Tlv::u8($tlv, 0x811B);
-        $cells = array_filter([
+        $cells = Values::withoutNulls([
             'remaining' => Tlv::u8($tlv, 0x811D),
             'total' => $capacity === null ? null : max(0, $capacity - 1),
             'current' => Tlv::u8($tlv, 0x811A),
             'level' => $level,
-        ], static fn (mixed $field): bool => $field !== null);
+        ]);
         if ($cells !== []) {
             $events[] = ['feature' => 'cells_remaining', 'nativeType' => $nativeType, 'value' => $cells];
         }
@@ -325,9 +326,9 @@ final class PillDispenserEventDecoder
         // dizem é o que nós lá pusemos. O `0x8105` fica de fora: sabe o ligado/desligado do
         // «não incomodar» mas não a janela, e escrever meia configuração na chave apaga a
         // outra metade, que só a resposta ao `0x05` traz.
-        $reported = array_filter([
+        $reported = Values::withoutNulls([
             'child_lock' => self::switchSetting($tlv, 0x8102),
-        ], static fn (mixed $setting): bool => $setting !== null);
+        ]);
 
         if ($reported !== []) {
             $events[] = [

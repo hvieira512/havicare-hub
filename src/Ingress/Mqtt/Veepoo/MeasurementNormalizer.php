@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
+use Hub\Support\Values;
+
 /**
  * Traduz uma medição ao vivo da pulseira para o tipo e os campos do hub.
  *
@@ -52,12 +54,12 @@ final class MeasurementNormalizer
                 : ['blood_sugar', ['glucoseMgDl' => round($glucose * DailyBlockNormalizer::MMOL_PER_L_TO_MG_PER_DL, 1)]],
             6 => ($body = self::positive($payload['bodyTemperature'] ?? null)) === null
                 ? null
-                : ['temperature', array_filter([
+                : ['temperature', Values::withoutNulls([
                     'bodyCelsius' => round($body, 1),
                     'surfaceCelsius' => ($skin = self::positive($payload['bodySurfaceTemperature'] ?? null)) === null
                         ? null
                         : round($skin, 1),
-                ], static fn(mixed $v): bool => $v !== null)],
+                ])],
             58 => self::withinRange($payload['pressure'] ?? null, 1, 100) === null
                 ? null
                 : ['stress', ['score' => (int)$payload['pressure']]],
@@ -178,11 +180,11 @@ final class MeasurementNormalizer
             return null;
         }
 
-        return ['activity', array_filter([
+        return ['activity', Values::withoutNulls([
             'steps' => $steps,
             'distanceMeters' => is_int($payload['distance'] ?? null) ? $payload['distance'] : null,
             'caloriesKcal' => is_int($payload['calorie'] ?? null) ? round($payload['calorie'] / 10, 1) : null,
-        ], static fn(mixed $v): bool => $v !== null)];
+        ])];
     }
 
     /**

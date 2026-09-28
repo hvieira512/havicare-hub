@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Moko;
 
 use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
+use Hub\Support\Values;
 
 /**
  * Descodifica as observações de uma MOKO W6B (BXP-B / "MK Button") retransmitidas por um
@@ -58,9 +59,8 @@ final class W6bDecoder
         // Quem mede o RSSI é o gateway e não o beacon, e por isso ele só chega na
         // observação. Passa por aqui para quem consome a proximidade o ver, tal como o
         // `MonitMecsProDecoder` faz para o medidor de fraldas.
-        return array_filter(
+        return Values::withoutNulls(
             ['mac' => $mac, 'rssiDbm' => is_numeric($observation['rssi'] ?? null) ? (int)$observation['rssi'] : null] + $decoded,
-            static fn(mixed $value): bool => $value !== null,
         );
     }
 
@@ -86,12 +86,12 @@ final class W6bDecoder
             'deviceId' => (string)($observation['device_id'] ?? ''),
         ];
 
-        return array_filter([
+        return Values::withoutNulls([
             'alarm' => $alarm,
             // A resposta ao scan não é sempre capturada, e por isso estes só chegam em
             // alguns avistamentos do mesmo dispositivo.
             'info' => $this->gatewayInfo($observation),
-        ], static fn(mixed $value): bool => $value !== null);
+        ]);
     }
 
     /**
@@ -137,10 +137,10 @@ final class W6bDecoder
             return null;
         }
 
-        return array_filter([
+        return Values::withoutNulls([
             'alarm' => $alarm,
             'info' => $info,
-        ], static fn(mixed $value): bool => $value !== null);
+        ]);
     }
 
     /**

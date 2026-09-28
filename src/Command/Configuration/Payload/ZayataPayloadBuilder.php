@@ -3,6 +3,7 @@
 namespace Hub\Command\Configuration\Payload;
 
 use Hub\Protocol\Adapter\PillDispenserAdapter;
+use Hub\Support\Values;
 
 /**
  * Valida o que se configura num dispensador Zayata M228.
@@ -121,14 +122,14 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             }
             // O slot só viaja quando o plano o traz: sem ele, quem monta a trama coloca o
             // plano pela posição, que é a única leitura que um plano antigo permite.
-            $out[] = array_filter([
+            $out[] = Values::withoutNulls([
                 'slot' => isset($plan['slot'])
                     ? self::zeroBasedRangeInt($plan['slot'], 1, PillDispenserAdapter::ALARM_SLOTS, "plans[{$index}].slot")
                     : null,
                 'hour' => self::zeroBasedRangeInt($plan['hour'] ?? 0, 0, 23, "plans[{$index}].hour"),
                 'minute' => self::zeroBasedRangeInt($plan['minute'] ?? 0, 0, 59, "plans[{$index}].minute"),
                 'enabled' => (bool)self::boolInt($plan['enabled'] ?? true, "plans[{$index}].enabled"),
-            ], static fn(mixed $field): bool => $field !== null);
+            ]);
         }
 
         return $out;

@@ -15,6 +15,7 @@ use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
+use Hub\Support\Values;
 use PhpMqtt\Client\MqttClient;
 
 /**
@@ -442,10 +443,10 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             $context->device,
             self::PROTOCOL,
             'battery',
-            array_filter([
+            Values::withoutNulls([
                 'percent' => $percent,
                 'lowBattery' => ($payload['VPDeviceElectricTypeIsLowVoltage'] ?? null) === 'lowVoltage' ? true : null,
-            ], static fn(mixed $v): bool => $v !== null),
+            ]),
             $context->gatewayKey,
         ));
     }
@@ -614,10 +615,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             $context->device,
             self::PROTOCOL,
             'ecg_wave',
-            array_filter(
-                ['samples' => $samples, 'frequencyHz' => $frequencyHz],
-                static fn(mixed $v): bool => $v !== null,
-            ) + $measured,
+            Values::withoutNulls(['samples' => $samples, 'frequencyHz' => $frequencyHz]) + $measured,
             $context->gatewayKey,
         ));
     }

@@ -11,6 +11,7 @@ use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DeviceProtocol;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Registry\Whitelist;
+use Hub\Support\Values;
 
 /**
  * Põe no fio o que um gateway ouviu de um aparelho retransmitido.
@@ -245,12 +246,12 @@ final class RelayPublisher
                 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
                 'device' => self::describe($device),
                 'data' => ['gatewayId' => (string)$gateway['imei']] + $data,
-                'source' => array_filter([
+                'source' => Values::withoutNulls([
                     'protocol' => $protocol,
                     'nativeType' => 'manufacturer_data',
                     'gatewayId' => (string)$gateway['imei'],
                     'rssiDbm' => $data['rssiDbm'] ?? null,
-                ], static fn(mixed $value): bool => $value !== null),
+                ]),
             ],
             (string)$device['deviceType'],
             DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0),
