@@ -414,7 +414,7 @@ imagem do modelo no mesmo pedido.
 {
   "data": [ … ],
   "pagination": { "limit": 20, "page": 1, "total_pages": 5, "total": 87 },
-  "filters": { "applied": { … }, "available": { … } }
+  "filters": { "applied": { … }, "available": { … }, "counts": { … } }
 }
 ```
 
@@ -425,11 +425,17 @@ os menus a partir dele, sem os ter escritos à mão.
 
 Filtros de lista aceitam as duas grafias: `?k[]=a&k[]=b` e `?k=a,b`.
 
+Um filtro de escolha acerta por **valor exato** e um filtro de texto por
+**pedaço**. Qual é qual está no `columns`, no `filter.type`: `?supplier=Wonlex`
+acerta, `?supplier=Won` não, mas `?model=D41` acerta em qualquer modelo que
+contenha `D41` no nome interno ou no comercial.
+
 ### Colunas que se descrevem
 
-Algumas listagens acrescentam um `columns` ao envelope, e o `GET /api/users` é a
-primeira. Cada entrada diz o que se pode fazer àquela coluna, e nada sobre como
-ela se desenha — o nome visível é de quem constrói a interface.
+Cinco listagens acrescentam um `columns` ao envelope: `/api/users`,
+`/api/models`, `/api/companies`, `/api/licenses` e `/api/suppliers`. Cada
+entrada diz o que se pode fazer àquela coluna, e nada sobre como ela se desenha
+— o nome visível é de quem constrói a interface.
 
 ```json
 { "field": "role", "sortable": true, "editable": true,
@@ -509,7 +515,7 @@ mais curta de escrever.
 | **500** | `server_error` |
 | **503** | `too_many_streams` |
 
-São **41 códigos**. Um código não declarado responde com 400.
+São **43 códigos**. Um código não declarado responde com 400.
 
 Duas distinções relevantes:
 
@@ -622,7 +628,7 @@ declarado na especificação como o de qualquer outra rota.
 | `src/Api/Auth/ApiTokenStore.php` | Os três tipos de token |
 | `src/Api/Auth/RouteAccessPolicy.php` | As nove rotas do `license_client` |
 | `src/Api/Auth/ApiAuthContext.php` | `canAccessTenant()` |
-| `src/Api/Http/ApiError.php` | Os 41 códigos e o mapa de estados |
+| `src/Api/Http/ApiError.php` | Os 43 códigos e o mapa de estados |
 | `src/Api/Http/JsonResponder.php` | O estado sai do código do erro |
 | `src/Api/Request/RequestBinder.php` | Corpo → objeto validado |
 | `src/Api/OpenApi/SchemaFromRequest.php` | Restrições → esquema |
