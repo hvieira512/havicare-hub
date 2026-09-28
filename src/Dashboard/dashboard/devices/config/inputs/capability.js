@@ -276,6 +276,10 @@ function alarmClockInput(desired, meta = {}) {
         </div>`;
 }
 
+/**
+ * As larguras não dependem do que o fornecedor declara: a linha soma doze com o nome
+ * (Wonlex) ou com o tipo (Vivistar), e nenhum declara os dois. O remover fecha o cartão.
+ */
 function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonlexFields = {}) {
     const rowId = nextUid("alarm-clock");
     const recurrenceKind = normalizeAlarmClockRecurrenceKind(
@@ -307,8 +311,6 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                             { cls: "col-12 col-lg-4" },
                         )
                     : ""}
-                ${/* As larguras não dependem do que o fornecedor declara: a linha soma doze
-                      com o nome (Wonlex) ou com o tipo (Vivistar), e nenhum declara os dois. */""}
                 ${field(
                     "Hora",
                     `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(formatReminderTime(item.time))}" required>`,
@@ -379,7 +381,6 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                             },
                         )
                     : ""}
-                ${/* O remover fecha o cartão: antes do URL, ficava a meio dos campos. */""}
                 <div class="col-12 d-flex justify-content-end">
                     <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover" aria-label="Remover">
                         <i class="fa-solid fa-trash-can"></i>
