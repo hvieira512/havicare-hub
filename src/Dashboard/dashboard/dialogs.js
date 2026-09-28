@@ -54,7 +54,7 @@ export function promptPassword(title, text = "") {
         text,
         input: "password",
         inputAttributes: { autocomplete: "new-password" },
-        inputValidator: (value) => (value ? undefined : "A password é obrigatória"),
+        inputValidator: (value) => (value ? undefined : "A palavra-passe é obrigatória"),
         showCancelButton: true,
         confirmButtonText: "Guardar",
         cancelButtonText: "Cancelar",

@@ -268,9 +268,9 @@ function alarmClockInput(desired, meta = {}) {
         <div class="vstack gap-3">
             <div class="small text-secondary">Até ${esc(String(limit))} alarmes. A recorrência personalizada usa dias de Segunda a Domingo.</div>
             <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="alarm_clock">Adicionar item</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="alarm_clock" ${items.length >= limit ? "disabled" : ""}>Adicionar item</button>
             </div>
-            <div class="vstack gap-2" data-repeat-list="alarm_clock">
+            <div class="vstack gap-2" data-repeat-list="alarm_clock" data-repeat-limit="${limit}">
                 ${items.slice(0, limit).map((item) => alarmClockRow(item, typeOptions, recurrenceOptions, wonlexFields)).join("")}
             </div>
         </div>`;

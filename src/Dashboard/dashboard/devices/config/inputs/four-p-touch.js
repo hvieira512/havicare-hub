@@ -352,7 +352,9 @@ export const INPUTS = {
                 timeZone: String(timeZone || "0"),
             };
         },
-        defaults: () => ({ preset: "0|0" }),
+        // A forma do `read` e não a do `<select>`: com `{preset}` o render não encontrava par
+        // e caía na primeira opção, que é inglês. A frota é portuguesa.
+        defaults: () => ({ language: 3, timeZone: "1" }),
     },
     dualToggle: {
         render: (_entry, desired) => dualToggleInput(desired),
