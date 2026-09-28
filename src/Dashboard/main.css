@@ -80,31 +80,11 @@
     grid-column: 1 / -1;
 }
 
-/* A borda e o fundo ficam aqui: os estados abaixo trocam-nos, e um utilitário do Bootstrap
-   traz `!important` e ganharia a todos eles. O `.75rem` também, que não é degrau do
-   Bootstrap. */
+/* O estado vem do `shell.css`. O `.75rem` fica aqui por não ser degrau do Bootstrap. */
 .gateway-card {
     gap: .75rem;
     padding-inline: .75rem;
-    border: 1px solid var(--bs-border-color);
     border-radius: .75rem;
-    background: var(--bs-body-bg);
-    cursor: pointer;
-    transition: border-color .15s ease-in-out, background-color .15s ease-in-out;
-}
-
-.gateway-card:hover {
-    border-color: var(--bs-primary);
-}
-
-.gateway-card:has(.gateway-card-check:focus-visible) {
-    outline: 2px solid var(--bs-primary);
-    outline-offset: 2px;
-}
-
-.gateway-card:has(.gateway-card-check:checked) {
-    border-color: var(--bs-primary);
-    background: var(--bs-primary-bg-subtle);
 }
 
 .gateway-card:has(.gateway-card-check:disabled) {
@@ -527,30 +507,10 @@
     .wizard-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* A borda e o fundo ficam aqui, que os estados abaixo os trocam. */
+/* O estado vem do `shell.css`. O `.selected` só o modal de edição o usa: no assistente,
+   responder colapsa a pergunta numa badge. */
 .wizard-card {
-    border: 1px solid var(--bs-border-color);
-    background: var(--bs-body-bg);
     padding: .9rem .7rem;
-    cursor: pointer;
-    transition: border-color .15s ease, background-color .15s ease, transform .15s ease;
-}
-
-.wizard-card:hover {
-    border-color: var(--bs-primary);
-    transform: translateY(-1px);
-}
-
-.wizard-card:focus-visible {
-    outline: 2px solid var(--bs-primary);
-    outline-offset: 2px;
-}
-
-/* O que ja esta escolhido. So o modal de edicao o usa: no assistente responder colapsa a
-   pergunta numa badge, e não há grelha por onde ver a escolha. */
-.wizard-card.selected {
-    border-color: var(--bs-primary);
-    background: var(--bs-primary-bg-subtle);
 }
 
 .wizard-card-icon {
@@ -593,8 +553,6 @@
     .wizard-art {
         animation: none;
     }
-    .wizard-card { transition: none; }
-    .wizard-card:hover { transform: none; }
 }
 
 /* ===== catálogo de capacidades ===== */
@@ -612,26 +570,13 @@
 .capability-section-chip {
     gap: .375rem;
     padding: .3125rem .6875rem;
-    border: 1px solid var(--bs-border-color);
-    background: var(--bs-body-bg);
     color: var(--bs-body-color);
     font-size: var(--fs-sm);
     font-weight: 560;
-    cursor: pointer;
-    transition: background-color .12s ease, border-color .12s ease;
 }
 
 .capability-section-chip .count {
     font-weight: 600;
-}
-
-.capability-section-chip:hover {
-    background: var(--bs-tertiary-bg);
-}
-
-.capability-section-chip.selected {
-    background: var(--bs-primary-bg-subtle);
-    border-color: var(--bs-primary-border-subtle);
 }
 
 .capability-section-chip.selected .count {

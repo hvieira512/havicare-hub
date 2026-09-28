@@ -286,3 +286,56 @@ label.section-label {
     display: block;
     margin-bottom: .25rem;
 }
+
+/* ===== a linguagem de selecção =====
+   Os quatro estados das caixas que se escolhem com o rato. A geometria de cada uma fica no
+   ficheiro da sua área; quem redeclarar um estado lá parte a língua. */
+.device-type-tile,
+.device-card,
+.capability-section-chip,
+.gateway-card,
+.wizard-card {
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    cursor: pointer;
+    transition: border-color .12s ease, background-color .12s ease;
+}
+
+.device-type-tile:hover,
+.device-card:hover,
+.capability-section-chip:hover,
+.gateway-card:hover,
+.wizard-card:hover {
+    border-color: var(--bs-primary-border-subtle);
+    background: var(--bs-tertiary-bg);
+}
+
+/* O anel do browser tem 1px e não conhece a cor da marca. O do gateway pendura-se na caixa
+   de marcar, que é o que lá dentro recebe o foco. */
+.device-type-tile:focus-visible,
+.device-card:focus-visible,
+.capability-section-chip:focus-visible,
+.wizard-card:focus-visible,
+.gateway-card:has(.gateway-card-check:focus-visible) {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+.device-type-tile.selected,
+.device-card.selected,
+.capability-section-chip.selected,
+.wizard-card.selected,
+.gateway-card:has(.gateway-card-check:checked) {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .device-type-tile,
+    .device-card,
+    .capability-section-chip,
+    .gateway-card,
+    .wizard-card {
+        transition: none;
+    }
+}

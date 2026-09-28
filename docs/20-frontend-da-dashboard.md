@@ -395,3 +395,16 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
   ficheiros da raiz não são apanhados por padrão, só o `/main.css` e o
   `/main.js`. Sem build, cada ficheiro é mais um pedido, e por isso são cinco e
   não vinte.
+
+  A excepção é **a linguagem de selecção**, que vive toda no `shell.css`: as
+  cinco caixas que se escolhem — o mosaico de tipos, o cartão de dispositivo, a
+  pastilha de secção, o cartão de gateway e o do assistente — dizem o mesmo em
+  repouso, por cima, no foco e escolhidas, e o ficheiro da área de cada uma leva
+  só a geometria. Falharam-no uma vez, com duas a passar a borda cheia da marca
+  por cima e três a subtil; o `SelectionLanguageTest` prende-o agora.
+
+- **O grupo «Recorrência» de um alarme parte em duas linhas**, e fica. São 306px
+  de conteúdo para 289px de coluna, e os dezassete que faltam só saíam de
+  encurtar as etiquetas ou de dar ao grupo a linha toda — a primeira muda
+  vocabulário, a segunda cresce ~30px por alarme numa lista que vai até dez. A
+  quebra é simétrica e nenhum botão fica cortado.

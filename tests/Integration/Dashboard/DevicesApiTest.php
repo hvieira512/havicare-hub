@@ -644,7 +644,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 ['value' => 3, 'label' => 'Qua'],
                 ['value' => 4, 'label' => 'Qui'],
                 ['value' => 5, 'label' => 'Sex'],
-                ['value' => 6, 'label' => 'Sab'],
+                ['value' => 6, 'label' => 'Sáb'],
                 ['value' => 7, 'label' => 'Dom'],
             ],
             $response['capabilities']['alarms']['alarm_clock']['_meta']['days']['options'] ?? null
@@ -1086,7 +1086,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 ['value' => 3, 'label' => 'Qua'],
                 ['value' => 4, 'label' => 'Qui'],
                 ['value' => 5, 'label' => 'Sex'],
-                ['value' => 6, 'label' => 'Sab'],
+                ['value' => 6, 'label' => 'Sáb'],
                 ['value' => 7, 'label' => 'Dom'],
             ],
             $response['capabilities']['alarms']['alarm_clock']['_meta']['days']['options'] ?? null
@@ -1164,7 +1164,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 ['value' => 3, 'label' => 'Qua'],
                 ['value' => 4, 'label' => 'Qui'],
                 ['value' => 5, 'label' => 'Sex'],
-                ['value' => 6, 'label' => 'Sab'],
+                ['value' => 6, 'label' => 'Sáb'],
                 ['value' => 7, 'label' => 'Dom'],
             ],
             $response['capabilities']['alarms']['alarm_clock']['_meta']['days']['options'] ?? null
