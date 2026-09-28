@@ -16,21 +16,60 @@ use PHPUnit\Framework\TestCase;
  */
 final class PillDispenserStatusSeparationTest extends TestCase
 {
-    /** O sinal sai como a `connectivity` dos gateways, e não num formato só deste aparelho. */
-    public function testTheSignalIsPublishedAsConnectivity(): void
+    /**
+     * O sinal sai como a `connectivity` dos gateways, e não num formato só deste aparelho.
+     *
+     * O `0x810B` de uma unidade 4G é o **CSQ do módulo**, não dBm: o fornecedor deu a tabela
+     * — `0` é menos de −113 dBm, `31` é mais de −51 — e ela é a do 3GPP, `−113 + 2 × CSQ`.
+     * Publicar o número em cru punha −25 dBm onde o sinal era −63.
+     */
+    public function testTheCellularSignalIsConvertedFromCsq(): void
     {
         $byFeature = $this->telemetry([
             0x810B => pack('s', 25),
             0x810D => "\x03",
-            0x8107 => "\x01",
             0x8109 => "\x01",
         ]);
 
         self::assertSame(
-            ['interface' => 'cellular', 'signalStrengthDbm' => -25],
+            ['interface' => 'cellular', 'signalStrengthDbm' => -63],
             $byFeature['connectivity'] ?? null,
         );
         self::assertArrayNotHasKey('device_status', $byFeature);
+    }
+
+    /** As pontas da tabela do fornecedor, que é onde uma conversão errada se denuncia. */
+    public function testTheEndsOfTheCsqTableMatchTheSupplier(): void
+    {
+        foreach ([0 => -113, 1 => -111, 2 => -109, 30 => -53, 31 => -51] as $csq => $dbm) {
+            self::assertSame(
+                $dbm,
+                $this->telemetry([0x810B => pack('s', $csq)])['connectivity']['signalStrengthDbm'] ?? null,
+                "CSQ {$csq}",
+            );
+        }
+    }
+
+    /** Um valor já negativo é dBm e passa como está: o CSQ nunca o é, e por isso não colidem. */
+    public function testASignedReadingIsTakenAsDbm(): void
+    {
+        self::assertSame(
+            -85,
+            $this->telemetry([0x810B => pack('s', -85)])['connectivity']['signalStrengthDbm'] ?? null,
+        );
+    }
+
+    /**
+     * O `99` do CSQ é «não sei», e não um sinal excelente.
+     *
+     * A tabela que o fornecedor enviou dá-lhe −51 dBm, o mesmo que o `31`. No 3GPP TS 27.007
+     * é «not known or not detectable», e publicá-lo como o melhor valor da escala mostrava
+     * sinal de sobra a um aparelho que não tem nenhum.
+     */
+    public function testAnUnknownCsqIsNotPublished(): void
+    {
+        self::assertArrayNotHasKey('connectivity', $this->telemetry([0x810B => pack('s', 99)]));
+        self::assertArrayNotHasKey('connectivity', $this->telemetry([0x810B => pack('s', 32)]));
     }
 
     /** Esta unidade é 4G, mas a série tem modelos com WiFi e a interface tem de o dizer. */
@@ -176,7 +215,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         }
 
         self::assertArrayNotHasKey('temperature', $byFeature);
-        self::assertSame(-25, $byFeature['connectivity']['signalStrengthDbm'] ?? null);
+        self::assertSame(-63, $byFeature['connectivity']['signalStrengthDbm'] ?? null);
     }
 
     /**

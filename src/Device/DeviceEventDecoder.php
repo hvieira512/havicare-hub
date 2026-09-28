@@ -534,7 +534,10 @@ final class DeviceEventDecoder
 
         // Sai como a `connectivity` dos gateways, em dBm. Não vai a contagem de barras do
         // `0x810D`: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras vão de 0 a 3.
-        $cellular = self::pillNegativeSignal($this->tlvI16($tlv, 0x810B));
+        //
+        // As duas interfaces medem em escalas diferentes: o WiFi dá dBm e o 4G dá o CSQ do
+        // módulo, confirmado pelo fornecedor a 2026-09-28.
+        $cellular = self::pillCellularSignal($this->tlvI16($tlv, 0x810B));
         $wifi = self::pillNegativeSignal($this->tlvI16($tlv, 0x810A));
         if ($cellular !== null || $wifi !== null) {
             $events[] = ['feature' => 'connectivity', 'nativeType' => $nativeType, 'value' => [
@@ -608,6 +611,24 @@ final class DeviceEventDecoder
     private static function pillNegativeSignal(?int $value): ?int
     {
         return $value === null ? null : -abs($value);
+    }
+
+    /**
+     * O sinal móvel em dBm, venha ele como dBm ou como o CSQ do módulo.
+     *
+     * O sinal do número é que os separa, e não se sobrepõem: dBm de rádio é sempre negativo e
+     * o CSQ vai de 0 a 31. A escala é a do 3GPP — `0` é menos de −113 e `31` é mais de −51.
+     *
+     * O resto não é leitura nenhuma. O `99` é o «não sei» do CSQ, e publicá-lo como os −51 dBm
+     * que a tabela do fornecedor lhe dá mostrava sinal de sobra a quem não tem nenhum.
+     */
+    private static function pillCellularSignal(?int $value): ?int
+    {
+        if ($value === null || $value > 31) {
+            return null;
+        }
+
+        return $value < 0 ? $value : -113 + 2 * $value;
     }
 
     /**

@@ -186,10 +186,10 @@ final class PillDispenserNormalizationTest extends TestCase
     /**
      * A força do sinal sai como a `connectivity` que os gateways já publicam.
      *
-     * O `0x810B` é a força do sinal, e o fornecedor confirmou a unidade em dBm e que a
-     * magnitude se lê negativa. Fica só ela: o `0x810D` é uma contagem de barras de 0 a 3, e
-     * o `signalQuality` do contrato é o CSQ de 0 a 31 -- enfiar um no outro dava um número
-     * que ninguém sabe interpretar, e as barras são um arredondamento do dBm.
+     * O `0x810B` é a força do sinal. Numa unidade 4G vem como o CSQ do módulo, e o `25` daqui
+     * são −63 dBm. Fica só ela: o `0x810D` é uma contagem de barras de 0 a 3, e o
+     * `signalQuality` do contrato é o CSQ de 0 a 31 -- enfiar um no outro dava um número que
+     * ninguém sabe interpretar, e as barras são um arredondamento do dBm.
      */
     public function testTheStatusQueryBringsTheSignalAsConnectivity(): void
     {
@@ -212,7 +212,7 @@ final class PillDispenserNormalizationTest extends TestCase
 
         self::assertSame([
             'interface' => 'cellular',
-            'signalStrengthDbm' => -25,
+            'signalStrengthDbm' => -63,
         ], $events['connectivity'] ?? null);
     }
 
@@ -270,7 +270,7 @@ final class PillDispenserNormalizationTest extends TestCase
         // O WiFi foi recusado e o móvel não: a ligação é a que respondeu, e o zero do eco não
         // pode passar por uma leitura de 0 dBm.
         self::assertSame(
-            ['interface' => 'cellular', 'signalStrengthDbm' => -24],
+            ['interface' => 'cellular', 'signalStrengthDbm' => -65],
             $events['connectivity'] ?? null,
         );
     }

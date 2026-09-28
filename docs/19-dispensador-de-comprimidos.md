@@ -281,10 +281,10 @@ ao hub.
 | `0x8103` / `0x8104` | bateria | nível, e estado `0` normal · `1` cheia · `2` fraca · `3` a carregar · `4` sem bateria |
 | `0x8102` | bloqueio de criança | `0` destrancado · `1` trancado |
 | `0x8105` | estado do não incomodar | `0` desligado · `1` ligado · `2` **ligado e a silenciar agora** — descodificado, não publicado (ver secção do contrato) |
-| `0x8106` | copo da medicação | `0` retirado · `1` colocado. **Responde sempre `1` no firmware `0x0502`, e por isso não é normalizado.** Testado a 25/09/2026 com o copo fora do aparelho, e com pedidos de actualização repetidos pela dashboard. É o mesmo caso do `0x8107`: os dois sensores de estado físico desta unidade estão presos, cada um no seu extremo |
-| `0x8107` | tranca do prato | `0` destrancado · `1` trancado. **Responde sempre `0` no firmware `0x0502`, e por isso não é normalizado.** Testado a 25/09/2026 com o prato trancado à mão, com a fechadura de chave lateral trancada, e com o prato removido do aparelho: as três leituras deram `0`. Uma telemetria que só sabe dizer um valor não é telemetria, e num ecrã em que tudo o resto é verdade, um campo que nunca muda ensina a não confiar nos outros. Fica por saber que mecanismo a TAG reflecte e em que firmware passa a reportar `1` — é pergunta para o fornecedor |
+| `0x8106` | copo da medicação | `0` retirado · `1` colocado. **Responde sempre `1` no firmware `0x0502`, e por isso não é normalizado.** Testado a 25/09/2026 com o copo fora do aparelho, e com pedidos de actualização repetidos pela dashboard. É o mesmo caso do `0x8107`: os dois sensores de estado físico desta unidade estão presos, cada um no seu extremo. **O fornecedor confirmou-o a 2026-09-28**: *«0x8106 only reported during initialization and not used afterward»* |
+| `0x8107` | tranca do prato | `0` destrancado · `1` trancado. **Responde sempre `0` no firmware `0x0502`, e por isso não é normalizado.** Testado a 25/09/2026 com o prato trancado à mão, com a fechadura de chave lateral trancada, e com o prato removido do aparelho: as três leituras deram `0`. Uma telemetria que só sabe dizer um valor não é telemetria, e num ecrã em que tudo o resto é verdade, um campo que nunca muda ensina a não confiar nos outros. O fornecedor respondeu a 2026-09-28 e fechou a questão: *«0x8107 not used»*. Não reflecte mecanismo nenhum, em firmware nenhum |
 | `0x8109` | alimentação DC | `0` desligada da corrente · `1` ligada |
-| `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300 — **dBm**, e o aparelho manda a magnitude: o sinal negativo é posto pelo hub |
+| `0x810A` / `0x810B` | sinal WiFi e GSM | INT16S, −300 a 300. **As duas escalas não são a mesma**: o WiFi dá dBm, e o `0x810B` de uma unidade 4G dá o **CSQ do módulo**, de 0 a 31. Ver abaixo |
 | `0x810C` / `0x810D` | nível de sinal | a escala grosseira |
 | `0x810E` / `0x810F` | **temperatura e humidade** | INT8S de −40 a 120 °C, INT8U de 0 a 100 %RH — **um byte cada**, ao contrário do sinal, que é INT16S |
 | `0x8111` | alarme de temperatura/humidade | `0` normal · `1` em alarme — é o juízo que o aparelho faz sobre os dois anteriores |
@@ -317,6 +317,27 @@ não o publica: seria um campo calculado por nós com cara de leitura dele.
 **O `0x810A` não está na lista**, nem o `0x810C`. É a confirmação, vinda do
 próprio aparelho, de que esta unidade é 4G e não tem rádio WiFi nenhum — só o
 `0x810B` e o `0x810D` respondem.
+
+> **Numa unidade 4G o `0x810B` é CSQ, não dBm.** O fornecedor deu a tabela a
+> 2026-09-28: *«The WiFi unit is indeed dbm. For the 4G version, the CSQ returned
+> by module transmission is as follows»* — `0` abaixo de −113 dBm, `1` a −111,
+> `2`–`30` de −109 a −53, `31` acima de −51. É a escala do 3GPP, e cabe numa
+> conta: **dBm = −113 + 2 × CSQ**.
+>
+> O hub publicava o número em cru com o sinal trocado, e por isso mostrava
+> **−29 dBm** a um aparelho cujo sinal real eram **−55**. Vinte e seis dB de
+> diferença, num campo que serve para decidir se vale a pena ir lá.
+>
+> A conversão distingue as duas escalas pelo sinal do número, porque não se
+> sobrepõem: dBm de rádio é sempre negativo e o CSQ vai de 0 a 31. Um valor já
+> negativo passa como está, o que cobre a variante WiFi e um firmware que venha a
+> reportar dBm.
+>
+> **O `99` fica de fora.** A tabela do fornecedor dá-lhe −51 dBm, o mesmo que o
+> `31`, mas no 3GPP TS 27.007 o `99` é *«not known or not detectable»*. Publicar
+> o melhor valor da escala para dizer «não sei» é a pior troca possível neste
+> campo, e por isso o hub não publica leitura nenhuma. Está por confirmar com
+> eles.
 
 > **O `0x8105` e o `0x8106` não estão *deprecated*.** Uma versão anterior deste
 > capítulo dizia que sim, e estava a ler a tabela do **tipo 01** — onde são «Pill
@@ -526,11 +547,22 @@ não os anuncia, e um `0xA124` mandado à mão é acusado com o valor ecoado —
 três vezes, com a avaria `0x8122` activa e depois com ela limpa, para excluir que
 fosse o índice do prato a ser recusado.
 
-A razão é a idade do firmware e não o tipo de dispositivo: a revisão **1.25** da
-especificação, de 2024-05-06, é que acrescentou o `0xA124`, o `0xA125`, o `0x1063`
-e as TAGs de estado `0x8140` e `0x8141`. Este aparelho é anterior a ela. Uma
-versão anterior deste capítulo dizia que eram do tipo `0x01`, o que não é verdade
-— estão na tabela de controlo da série M2, ao lado do `0xA123`.
+A razão é o **tipo de dispositivo**, e são TAGs que este aparelho nunca vai ter.
+O `0xA124`, o `0xA125` e ainda o `0xA121`/`0xA122` (SSID e palavra-passe de WiFi)
+estão na secção **8.3, «TAG Definition - Device Type 01»**, que vai da linha 1522
+à 1951 do documento. A secção **8.4**, que é a nossa, começa na 1952 e a lista de
+controlo dela acaba mesmo no `0xA123`. O fornecedor confirmou-o a 2026-09-28:
+*«The parameters mentioned in question 1 are all non-M2 series parameters»*.
+
+> Uma versão anterior deste capítulo dizia exactamente isto, e eu «corrigi-a» a
+> 25/09 para a idade do firmware, sem reabrir o documento. Estava certa e ficou
+> errada. É a quinta vez que as duas tabelas de TAGs enganam alguém neste
+> capítulo, e a única defesa é confirmar em que secção a linha está antes de
+> afirmar seja o que for sobre ela.
+
+O `0x1063` (pausa do toque) é outro caso e esse **é** do tipo `0x02`, na linha
+2072 — existe para nós, mas a descoberta de parâmetros desta unidade não o
+anuncia, e aí sim a razão é a idade do firmware.
 
 Não há por isso forma remota de rodar o prato sem consumir uma dose: o `0xA103`
 reassenta-o sem mexer no contador, e o `0xA123` anda um compartimento mas gasta a
@@ -665,7 +697,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x811A` / `0x811B` / `0x811D` / `0x8101` | `cells_remaining` | `current`, `total`, `remaining`, `level` (`ok` · `low` · `empty`). **O `remaining` é `carregados − posição`**, com corte a zero — quantas doses faltam sair a partir de onde o carrossel está, e **não** quantos compartimentos ainda têm comprimidos. Confirmado no aparelho: 28 carregados na posição 20 deram 8, e a posição 21 deu 7. Por isso o cartão não os põe lado a lado: diz «8 por dispensar» e manda a posição para os detalhes, que é o que se precisa para saber onde carregar o prato |
 | `0x810E` | `temperature` | `environmentCelsius` |
 | `0x810F` | `humidity` | `humidityPercent` |
-| `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |
+| `0x810A` / `0x810B` | `connectivity` | `interface` (`cellular` · `wifi`), `signalStrengthDbm` — a mesma capacidade que os gateways publicam, sempre em dBm, com o CSQ do 4G convertido na fronteira. O `0x810D` é uma contagem de barras de 0 a 3 e fica de fora: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras são um arredondamento do dBm |
 | `0x8102` | `device_config` | `settings.child_lock.enabled` — não é telemetria: o que ele diz é o que nós lá pusemos, e por isso viaja como configuração reportada |
 | `0x8105` | — | Nada. Sabe o ligado/desligado do «não incomodar» mas não a janela, e as duas escreviam na mesma chave: como o `saveReported` substitui o payload inteiro, meia configuração apagava a outra metade. A janela completa — interruptor incluído — vem só na resposta ao `0x05` |
 | `0x8111` | `storage_environment` | `outOfRange` — o juízo do aparelho sobre a temperatura e a humidade que ele mede. **Só é publicado quando dispara**: como leitura, enchia o histórico com linhas a dizer que estava tudo bem |
