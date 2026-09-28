@@ -201,3 +201,22 @@ function resetConfigGroup(group) {
         }
     }
 }
+
+/**
+ * O «Repor» de um bloco é o `type="reset"` do formulário dele: o browser devolve os campos ao
+ * estado inicial sem disparar `change`, e as etiquetas dos interruptores ficavam a dizer o
+ * contrário do que eles mostram.
+ *
+ * A reposição acontece depois dos ouvintes, e por isso a leitura espera pela microtarefa.
+ */
+export function handleDeviceConfigReset(event) {
+    const form = event.target.closest?.("form") || event.target;
+
+    queueMicrotask(() => {
+        for (const input of form.querySelectorAll(
+            ".form-check-input[type=\"checkbox\"][role=\"switch\"]",
+        )) {
+            syncSwitchLabel(input);
+        }
+    });
+}

@@ -281,6 +281,7 @@ function bindConfigPanel() {
         ["click", (handlers) => handlers.handleDeviceConfigClick],
         ["input", (handlers) => handlers.handleDeviceConfigInput],
         ["change", (handlers) => handlers.handleDeviceConfigChange],
+        ["reset", (handlers) => handlers.handleDeviceConfigReset],
     ]) {
         els.deviceConfigRoot.addEventListener(type, (event) => {
             // Sem o painel carregado a raiz só tem a frase da espera ou a da falha, e não há

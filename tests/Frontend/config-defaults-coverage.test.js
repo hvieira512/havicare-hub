@@ -23,11 +23,11 @@ const FIXTURES = {
     volumeScale: { options: OPTIONS },
 };
 
-/** Os que não devolvem o que receberam, e porquê. */
+/** Os que não devolvem o que receberam: `reads` devolve outra coisa, `throws` estoira. */
 const READ_DIFFERS = {
-    call_whitelist: "o leitor tira as posições em branco dos dez lugares",
-    takePills: "o tipo do áudio só viaja quando há áudio",
-    wonlexMedicationPlans: "um plano sem nome não se envia, e a leitura recusa-o",
+    call_whitelist: { kind: "reads", why: "o leitor tira as posições em branco dos dez lugares" },
+    takePills: { kind: "reads", why: "o tipo do áudio só viaja quando há áudio" },
+    wonlexMedicationPlans: { kind: "throws", why: "um plano sem nome não se envia" },
 };
 
 const entryFor = (input) => ({ input, key: input, fields: ["enabled"], ...FIXTURES[input] });
@@ -51,17 +51,18 @@ test("o valor por omissão de cada tipo de campo lê-se de volta como ele é", (
 
 /** Uma divergência só vale enquanto for verdade: quando deixar de ser, sai da lista. */
 test("os que divergem divergem mesmo, e os outros estão todos cobertos", () => {
-    for (const [input, porque] of Object.entries(READ_DIFFERS)) {
+    for (const [input, { kind, why }] of Object.entries(READ_DIFFERS)) {
         const entry = entryFor(input);
         const defaults = defaultConfigPayload(entry, "");
-        let readBack;
-        try {
-            readBack = readConfigPayload(configSection(renderConfigInputs, entry, defaults, {}));
-        } catch {
+        const readBack = () =>
+            readConfigPayload(configSection(renderConfigInputs, entry, defaults, {}));
+
+        if (kind === "throws") {
+            assert.throws(readBack, `${input} já não recusa: ${why}`);
             continue;
         }
 
-        assert.notDeepEqual(readBack, defaults, `${input} já não diverge: ${porque}`);
+        assert.notDeepEqual(readBack(), defaults, `${input} já não diverge: ${why}`);
     }
 
     const declared = new Set([...inputsWithDefaults(), ...Object.keys(READ_DIFFERS)]);
