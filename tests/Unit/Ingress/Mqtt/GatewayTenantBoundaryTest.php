@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt;
 
-use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Moko\Bridge as MokoBridge;
-use Hub\Ingress\Mqtt\Veepoo\Bridge as VeepooBridge;
+use Tests\Support\Doubles\ArrayObservationStateStore;
+use Hub\Ingress\Mqtt\Moko\MokoBridge;
+use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -16,8 +16,8 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
  * A fronteira entre clientes nos dois ingressos que retransmitem por um gateway.
  *
  * Um gateway só fala por aparelhos do mesmo cliente e da mesma licença, e a ligação estar
- * activa não chega. A regra está escrita duas vezes -- em `Moko\Bridge::linkedDevice()` e em
- * linha no `Veepoo\Bridge::handleMessage()` --, e por isso este teste exercita os dois.
+ * activa não chega. A regra está escrita duas vezes -- em `MokoBridge::linkedDevice()` e em
+ * linha no `VeepooBridge::handleMessage()` --, e por isso este teste exercita os dois.
  */
 final class GatewayTenantBoundaryTest extends TestCase
 {

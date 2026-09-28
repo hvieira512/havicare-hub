@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
 use Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer;
-use Hub\Ingress\Mqtt\Qinglanst\Topic;
+use Hub\Ingress\Mqtt\Qinglanst\QinglanstTopic;
 use PHPUnit\Framework\TestCase;
 
 final class MessageNormalizerTest extends TestCase
@@ -17,7 +17,7 @@ final class MessageNormalizerTest extends TestCase
     public function testHeartBreathBecomesThreeCanonicalReadings(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $result = $normalizer->normalize([
             'type' => 'heartbreath',
@@ -47,7 +47,7 @@ final class MessageNormalizerTest extends TestCase
     public function testAbsentMeasurementsDoNotBecomeReadings(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $result = $normalizer->normalize([
             'type' => 'heartbreath',
@@ -65,7 +65,7 @@ final class MessageNormalizerTest extends TestCase
     public function testNormalizesPosStaticsTelemetryUsingRawNativeType(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $result = $normalizer->normalize([
             'type' => 'posstatics',
@@ -90,7 +90,7 @@ final class MessageNormalizerTest extends TestCase
     public function testPositionDetectionIncludesDeviceAndSourceMetadata(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $result = $normalizer->normalize([
             'type' => 'position',
@@ -122,7 +122,7 @@ final class MessageNormalizerTest extends TestCase
     public function testDetectionsCarryTheCapabilityTheyBelongTo(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $vitals = $normalizer->normalize([
             'type' => 'hbstatics',
@@ -154,7 +154,7 @@ final class MessageNormalizerTest extends TestCase
     public function testTheEnvelopeCarriesNoSchemaVersion(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $result = $normalizer->normalize([
             'type' => 'position',
@@ -169,7 +169,7 @@ final class MessageNormalizerTest extends TestCase
     public function testPositionNormalizationDropsSentinelPersonIndex88(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $result = $normalizer->normalize([
             'type' => 'position',
@@ -194,7 +194,7 @@ final class MessageNormalizerTest extends TestCase
     public function testPositionNormalizationKeepsRealPeopleWhenSentinelIsPresent(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $result = $normalizer->normalize([
             'type' => 'position',
@@ -242,7 +242,7 @@ final class MessageNormalizerTest extends TestCase
     public function testEveryPersonKeepsTheirOwnPosture(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $result = $normalizer->normalize([
             'type' => 'position',
@@ -292,7 +292,7 @@ final class MessageNormalizerTest extends TestCase
     public function testEveryAlarmInOneMessageSurvives(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $result = $normalizer->normalize([
             'type' => 'hbstatics',
@@ -320,7 +320,7 @@ final class MessageNormalizerTest extends TestCase
     public function testTheMinuteStatsCarryEnumsAndNotVendorLabels(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $result = $normalizer->normalize([
             'type' => 'hbstatics',
@@ -350,7 +350,7 @@ final class MessageNormalizerTest extends TestCase
     public function testTheDetectionLevelIsAnEnglishEnum(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('radar/1001/radar-topic-uid');
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
         $result = $normalizer->normalize([
             'type' => 'hbstatics',
@@ -382,7 +382,7 @@ final class MessageNormalizerTest extends TestCase
     {
         $result = (new MessageNormalizer())->normalize(
             $decoded,
-            Topic::parse('radar/1001/radar-topic-uid'),
+            QinglanstTopic::parse('radar/1001/radar-topic-uid'),
             $this->device(),
         );
 
@@ -402,7 +402,7 @@ final class MessageNormalizerTest extends TestCase
     {
         $result = (new MessageNormalizer())->normalize(
             $decoded,
-            Topic::parse('radar/1001/radar-topic-uid'),
+            QinglanstTopic::parse('radar/1001/radar-topic-uid'),
             $this->device(),
         );
 

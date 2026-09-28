@@ -1,13 +1,15 @@
 <?php
 
-use Hub\Api\Controllers\SupplierController;
 use Hub\Api\Routing\ApiRoute;
+use Hub\Api\Services\SupplierService;
+use Psr\Http\Message\ServerRequestInterface;
 
 return static function (
-    SupplierController $suppliers,
+    SupplierService $suppliers,
 ): array {
     return [
         // Os fornecedores estão definidos em código, e por isso esta colecção é só de leitura.
-        new ApiRoute('GET', '/api/suppliers', [$suppliers, 'list']),
+        new ApiRoute('GET', '/api/suppliers', static fn(array $params, ServerRequestInterface $request): array
+            => $suppliers->list((string)$request->getUri()->getQuery())),
     ];
 };

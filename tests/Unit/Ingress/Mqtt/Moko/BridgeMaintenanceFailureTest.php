@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Moko\Bridge;
+use Tests\Support\Doubles\ArrayObservationStateStore;
+use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -46,11 +46,11 @@ final class BridgeMaintenanceFailureTest extends TestCase
         );
     }
 
-    /** @return array{0: Bridge, 1: FailingHubMqttBridge} */
+    /** @return array{0: MokoBridge, 1: FailingHubMqttBridge} */
     private function bridgeWithTwoIdleGateways(): array
     {
         $mqtt = new FailingHubMqttBridge();
-        $bridge = new Bridge(
+        $bridge = new MokoBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::gateway('MKGW3'),

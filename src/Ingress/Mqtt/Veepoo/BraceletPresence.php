@@ -13,7 +13,7 @@ use Hub\Device\RawPayload;
  *
  * Ao contrário de um relógio, a pulseira não mantém ligação: está online enquanto um gateway
  * tiver sessão aberta com ela. Guardar esse estado, publicá-lo retido e anunciar a transição
- * são três coisas que andam sempre juntas, e é por isso que saíram juntas da `Bridge`.
+ * são três coisas que andam sempre juntas, e é por isso que saíram juntas da `VeepooBridge`.
  */
 final class BraceletPresence
 {

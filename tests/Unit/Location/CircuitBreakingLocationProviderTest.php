@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Location;
 
-use Hub\Location\ArrayProviderCircuitStateStore;
+use Tests\Support\Doubles\ArrayProviderCircuitStateStore;
 use Hub\Location\CallbackLocationProvider;
 use Hub\Location\CircuitBreakingLocationProvider;
 use Hub\Location\LocationProviderException;

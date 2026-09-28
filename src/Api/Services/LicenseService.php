@@ -3,8 +3,8 @@
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
-use Hub\Api\Http\CollectionQuery;
-use Hub\Api\Http\CollectionResponder;
+use Hub\Api\Http\CollectionPresenter;
+use Hub\Api\Http\LicenseColumns;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Api\Request\LicenseWriteRequest;
 use Hub\Api\Request\RequestBinder;
@@ -13,38 +13,35 @@ class LicenseService
 {
     private const DEFAULT_COLLECTION_LIMIT = 20;
 
-    private CollectionQuery $query;
-    private CollectionResponder $collection;
+    private CollectionPresenter $presenter;
     private RequestBinder $binder;
 
-    public function __construct(
-        private ApiDataAccess $db,
-        ?CollectionQuery $query = null,
-        ?CollectionResponder $collection = null,
-        ?RequestBinder $binder = null,
-    ) {
-        $this->query = $query ?? new CollectionQuery();
-        $this->collection = $collection ?? new CollectionResponder();
-        $this->binder = $binder ?? new RequestBinder();
+    public function __construct(private ApiDataAccess $db)
+    {
+        $this->presenter = new CollectionPresenter();
+        $this->binder = new RequestBinder();
     }
 
     public function list(string $query = ''): array
     {
-        $params = $this->query->params($query);
-        $page = $this->query->page($params);
-        $limit = $this->query->limit($params, self::DEFAULT_COLLECTION_LIMIT);
-        $companyId = $this->query->filter($params, 'companyId');
-        $items = $companyId !== null
-            ? $this->db->licenses->findByCompanyId((int)$companyId)
-            : $this->db->licenses->all();
-        $available = [
-            'companyId' => $this->collection->uniqueValues(array_map(
-                static fn (array $s): string => (string)($s['id'] ?? ''),
-                $this->db->companies->all()
-            )),
-        ];
+        $params = $this->presenter->params($query);
+        // O `companyId` é o nome antigo do parâmetro, e é público: continua a valer ao lado
+        // da coluna que o descritor agora anuncia.
+        if (isset($params['companyId']) && !isset($params['company_id'])) {
+            $params['company_id'] = $params['companyId'];
+        }
 
-        return $this->collection->respond($items, $page, $limit, ['companyId' => $companyId], $available);
+        $companyIds = array_map(
+            static fn (array $company): string => (string)($company['id'] ?? ''),
+            $this->db->companies->all(),
+        );
+
+        return $this->presenter->present(
+            $this->db->licenses->all(),
+            LicenseColumns::definition(array_values($companyIds)),
+            $params,
+            self::DEFAULT_COLLECTION_LIMIT,
+        );
     }
 
     /** O `licenseId` chega como texto tantas vezes como inteiro, e por isso converte-se. */

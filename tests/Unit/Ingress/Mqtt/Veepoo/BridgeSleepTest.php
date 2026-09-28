@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\Bridge;
+use Tests\Support\Doubles\ArrayObservationStateStore;
+use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -15,7 +15,7 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
  * O registo de sono chega ao hub e tem de sair dele.
  *
  * O gateway publica-o em espécie própria -- não vem nos blocos de cinco minutos --, e a
- * `Bridge` não tinha ramo nenhum para ela: a trama caía no aviso de «kind sem normalização»,
+ * `VeepooBridge` não tinha ramo nenhum para ela: a trama caía no aviso de «kind sem normalização»,
  * uma vez por aparelho, e a noite inteira desaparecia. É exactamente o caso que o comentário
  * desse aviso descreve como já tendo acontecido.
  */
@@ -173,9 +173,9 @@ final class BridgeSleepTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt): Bridge
+    private function bridge(RecordingHubMqttBridge $mqtt): VeepooBridge
     {
-        return new Bridge(
+        return new VeepooBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),

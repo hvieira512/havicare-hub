@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
 use Hub\Dashboard\DashboardStoreContract;
-use Hub\Ingress\Mqtt\Qinglanst\Bridge;
+use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
 use Hub\Registry\Denylist;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
@@ -35,7 +35,7 @@ final class BridgeTest extends TestCase
                 'device_not_authorized',
                 2103
             );
-        $bridge = new Bridge(
+        $bridge = new QinglanstBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
@@ -55,7 +55,7 @@ final class BridgeTest extends TestCase
         $dashboardStore = $this->createMock(DashboardStoreContract::class);
         // Duas mensagens seguidas do mesmo radar desconhecido, um só registo.
         $dashboardStore->expects(self::once())->method('recordRejectedDevice');
-        $bridge = new Bridge(
+        $bridge = new QinglanstBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
@@ -79,7 +79,7 @@ final class BridgeTest extends TestCase
         $denylist = new Denylist();
         $denylist->block('9D8A3204F853');
 
-        $bridge = new Bridge(
+        $bridge = new QinglanstBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
@@ -93,15 +93,13 @@ final class BridgeTest extends TestCase
     public function testPublishesUsingCanonicalWhitelistKeyAndNotTheUpstreamRadarUid(): void
     {
         $mqttBridge = new RecordingHubMqttBridge();
-        $bridge = new Bridge(
+        $bridge = new QinglanstBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 // Chave canónica e UID do tópico diferentes de propósito.
                 'radar-canonical-1' => IngressFixtures::radar() + ['deviceId' => 'radar-topic-uid'],
             ]),
             $mqttBridge,
-            decoder: new \Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder(),
-            normalizer: new \Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer(),
             commercialModelResolver: new class extends \Hub\Device\CommercialModelResolver {
                 public function __construct()
                 {
@@ -139,14 +137,12 @@ final class BridgeTest extends TestCase
     public function testARegisteredRadarPublishesTheRawMessage(): void
     {
         $mqttBridge = new RecordingHubMqttBridge();
-        $bridge = new Bridge(
+        $bridge = new QinglanstBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 'radar-canonical-1' => IngressFixtures::radar() + ['deviceId' => 'radar-topic-uid'],
             ]),
             $mqttBridge,
-            decoder: new \Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder(),
-            normalizer: new \Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer(),
         );
 
         $bridge->handleReceivedMessage(

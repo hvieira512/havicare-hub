@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Hub\Location;
+namespace Tests\Support\Doubles;
+
+use Hub\Location\PrivateRadioMapStoreContract;
 
 final class ArrayPrivateRadioMapStore implements PrivateRadioMapStoreContract
 {

@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Moko\Bridge;
+use Tests\Support\Doubles\ArrayObservationStateStore;
+use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -24,12 +24,12 @@ final class BridgeUnclaimedSightingTest extends TestCase
     private const MF91 = '9f69c4866e6c';
     private const STRANGER = 'aabbccddeeff';
 
-    /** @return array{0: Bridge, 1: RecordingHubMqttBridge} */
+    /** @return array{0: MokoBridge, 1: RecordingHubMqttBridge} */
     private function bridge(): array
     {
         $mqtt = new RecordingHubMqttBridge();
 
-        $bridge = new Bridge(
+        $bridge = new MokoBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::gateway('MKGW3'),
@@ -66,7 +66,7 @@ final class BridgeUnclaimedSightingTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function deliver(Bridge $bridge, string $payload): void
+    private function deliver(MokoBridge $bridge, string $payload): void
     {
         $bridge->handleReceivedMessage(
             'havicare-hub/null/0/gw/' . self::GATEWAY . '/raw',

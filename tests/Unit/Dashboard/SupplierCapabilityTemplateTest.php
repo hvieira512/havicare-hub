@@ -3,14 +3,14 @@
 namespace Tests\Unit\Dashboard;
 
 use Hub\Domain\SupplierCapabilityTemplate;
-use Hub\Domain\GenericModelCapabilityCatalog;
+use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 final class SupplierCapabilityTemplateTest extends TestCase
 {
     public function testWatchCatalogIncludesPushMessageInSystemSettings(): void
     {
-        $definitions = GenericModelCapabilityCatalog::definitionsForDeviceType('watch');
+        $definitions = CapabilityCatalog::definitionsForDeviceType('watch');
         $match = array_values(array_filter(
             $definitions,
             static fn(array $definition): bool => ($definition['key'] ?? '') === 'push_message'
@@ -25,7 +25,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
 
     public function testWatchCatalogPlacesMedicationRemindersInAlarms(): void
     {
-        $definitions = GenericModelCapabilityCatalog::definitionsForDeviceType('watch');
+        $definitions = CapabilityCatalog::definitionsForDeviceType('watch');
         $match = array_values(array_filter(
             $definitions,
             static fn(array $definition): bool => ($definition['key'] ?? '') === 'medication_reminders'
@@ -140,7 +140,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
 
     public function testNcsCatalogPlacesHelpCallInAlarms(): void
     {
-        $definitions = GenericModelCapabilityCatalog::definitionsForDeviceType('ncs');
+        $definitions = CapabilityCatalog::definitionsForDeviceType('ncs');
         $match = array_values(array_filter(
             $definitions,
             static fn(array $definition): bool => ($definition['key'] ?? '') === 'help_call'

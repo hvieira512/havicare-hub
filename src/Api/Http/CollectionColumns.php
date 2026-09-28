@@ -20,7 +20,8 @@ final class CollectionColumns
     /**
      * @param array<string, string> $sortable As colunas por que a listagem se deixa ordenar.
      * @param class-string|null $writable O pedido de escrita, ou `null` numa listagem só de leitura.
-     * @param array<string, string> $textFilters As colunas que se estreitam por texto livre.
+     * @param array<string, string|list<string>> $textFilters As colunas que se estreitam por texto
+     *     livre. Uma lista diz que o mesmo parâmetro procura em várias colunas.
      * @param array<string, list<string>> $fixedOptions Opções que não saem dos dados, como um estado.
      * @param list<string> $extra Colunas que não se ordenam nem editam, mas existem na resposta.
      */

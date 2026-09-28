@@ -5,7 +5,7 @@ namespace Tests\Unit\Command;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Domain\GenericModelCapabilityCatalog;
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
@@ -192,12 +192,12 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testPublicAlarmClockAliasMapsToGenericCapability(): void
     {
-        self::assertSame('alarm_clock', GenericModelCapabilityCatalog::mapConfigurationKey('alarm_clock'));
+        self::assertSame('alarm_clock', CapabilityCatalog::mapConfigurationKey('alarm_clock'));
 
-        self::assertSame('call_whitelist', GenericModelCapabilityCatalog::mapConfigurationKey('call_whitelist'));
-        self::assertSame('sos_contacts', GenericModelCapabilityCatalog::mapConfigurationKey('SOSNumber'));
-        self::assertSame('whitelist_enabled', GenericModelCapabilityCatalog::mapConfigurationKey('whitelistSwitch'));
-        self::assertSame('whitelist_enabled', GenericModelCapabilityCatalog::mapConfigurationKey('rejectUnknownCalls'));
+        self::assertSame('call_whitelist', CapabilityCatalog::mapConfigurationKey('call_whitelist'));
+        self::assertSame('sos_contacts', CapabilityCatalog::mapConfigurationKey('SOSNumber'));
+        self::assertSame('whitelist_enabled', CapabilityCatalog::mapConfigurationKey('whitelistSwitch'));
+        self::assertSame('whitelist_enabled', CapabilityCatalog::mapConfigurationKey('rejectUnknownCalls'));
 
         $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'call_whitelist');
         self::assertIsArray($config);
@@ -833,7 +833,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
                 ['value' => 3, 'label' => 'Personalizado'],
             ],
         ], $config['options'] ?? null);
-        self::assertSame('medication_reminders', GenericModelCapabilityCatalog::mapConfigurationKey('takePills'));
+        self::assertSame('medication_reminders', CapabilityCatalog::mapConfigurationKey('takePills'));
     }
 
     public function testFourPTouchLanguageTimezoneBuildsNativeFields(): void

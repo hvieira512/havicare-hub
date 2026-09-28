@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\Bridge;
+use Tests\Support\Doubles\ArrayObservationStateStore;
+use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -177,9 +177,9 @@ final class EcgSummaryTest extends TestCase
         self::fail('o exame não foi publicado');
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt): Bridge
+    private function bridge(RecordingHubMqttBridge $mqtt): VeepooBridge
     {
-        return new Bridge(
+        return new VeepooBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),

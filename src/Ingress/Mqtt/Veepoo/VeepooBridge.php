@@ -9,10 +9,13 @@ use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\GatewayDeviceLinkLookup;
+use Hub\Ingress\Mqtt\DispatchesQueued;
+use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
-use Hub\Ingress\Mqtt\Gateway\Topic;
+use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
+use Hub\Support\Values;
 use PhpMqtt\Client\MqttClient;
 
 /**
@@ -22,7 +25,7 @@ use PhpMqtt\Client\MqttClient;
  * repete um anúncio: conduziu uma sessão GATT autenticada e traz o que a pulseira lhe deu já
  * estruturado pelo SDK do fabricante. O que falta é dar-lhe os nomes do hub.
  */
-final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt\DispatchesQueued
+final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 {
     /**
      * Estados que o aparelho reporta durante uma medição, e o que significam para o pedido.
@@ -100,7 +103,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         string $topicFilter,
         ?callable $reconnectSubscriber = null,
         ?DashboardStoreContract $dashboardStore = null,
-        ?DailyBlockNormalizer $normalizer = null,
         ?callable $clock = null,
     ) {
         parent::__construct(
@@ -113,7 +115,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             $dashboardStore,
             clock: $clock,
         );
-        $this->normalizer = $normalizer ?? new DailyBlockNormalizer();
+        $this->normalizer = new DailyBlockNormalizer();
         $this->downlinkDispatcher = new DownlinkDispatcher(
             $downlinks,
             $mqttBridge,
@@ -138,7 +140,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         }
 
         foreach ($this->readings->release() as $due) {
-            $this->emitTelemetry($due['deviceKey'], $due['telemetry'], $due['licenseId'], $due['company']);
+            $this->emitTelemetry($due['context'], $due['telemetry']);
         }
     }
 
@@ -150,13 +152,13 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             return;
         }
 
-        $parsed = Topic::parse($topic);
+        $parsed = GatewayTopic::parse($topic);
         $gateway = $parsed === null ? null : $this->whitelist->resolve($parsed->gatewayMac);
         if ($gateway === null || ($gateway['deviceType'] ?? '') !== 'gateway') {
             return;
         }
 
-        $mac = Topic::normalizeMac((string)($message['device']['mac'] ?? ''));
+        $mac = GatewayTopic::normalizeMac((string)($message['device']['mac'] ?? ''));
         $device = $mac === null ? null : $this->whitelist->resolve($mac);
         if ($device === null || ($device['deviceType'] ?? '') !== 'bracelet') {
             $this->recordUnauthorizedDevice((string)$mac, 'veepoo-ble', (string)($message['device']['model'] ?? ''), ident: (string)$mac);
@@ -179,6 +181,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         $deviceKey = (string)$device['imei'];
         $licenseId = (int)($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
+        $context = new BraceletContext($deviceKey, (string)$gateway['imei'], $device, $licenseId, $company);
 
         $this->mqttBridge->publishRaw($deviceKey, $message, 'bracelet', $licenseId, $company);
 
@@ -195,14 +198,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             }
 
             $this->presence->markOnline($deviceKey, $device, $licenseId, $company);
-            $this->publishFirmware(
-                (string)($message['device']['firmware'] ?? ''),
-                $deviceKey,
-                (string)$gateway['imei'],
-                $device,
-                $licenseId,
-                $company,
-            );
+            $this->publishFirmware((string)($message['device']['firmware'] ?? ''), $context);
             $this->sessionGateway[$deviceKey] = (string)$gateway['imei'];
             $this->downlinkDispatcher->dispatchPending($deviceKey, (string)$gateway['imei']);
             return;
@@ -211,21 +207,21 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         // A bateria vem em toda a sessão e é o único valor que não depende do sensor ótico:
         // chega mesmo com a pulseira pousada. Sem isto ficava só no `raw`.
         if (($message['kind'] ?? null) === 'battery') {
-            $this->publishBattery($message['payload'] ?? null, $deviceKey, (string)$gateway['imei'], $device, $licenseId, $company);
+            $this->publishBattery($message['payload'] ?? null, $context);
             return;
         }
 
         // Medição ao vivo, pedida por comando. Fecha o ciclo: sem a telemetria de volta o
         // registo de comandos nunca dá o pedido por cumprido e repete-o até esgotar.
         if (($message['kind'] ?? null) === 'measurement') {
-            $this->publishMeasurement($message['payload'] ?? null, $deviceKey, (string)$gateway['imei'], $device, $licenseId, $company);
+            $this->publishMeasurement($message['payload'] ?? null, $context);
             return;
         }
 
         // A onda do ECG chega à parte das tramas de estado: o gateway junta os pacotes de
         // uma medição e entrega o traçado completo de uma vez.
         if (($message['kind'] ?? null) === 'ecg_wave') {
-            $this->publishEcg($message['payload'] ?? null, $deviceKey, (string)$gateway['imei'], $device, $licenseId, $company);
+            $this->publishEcg($message['payload'] ?? null, $context);
             return;
         }
 
@@ -241,7 +237,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             // Os instantes da noite vêm no relógio da pulseira; é este desvio que os põe em UTC.
             $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;
             foreach (SleepNormalizer::normalize(is_array($payload) ? $payload : [], $identity, (string)$gateway['imei'], $offset) as $telemetry) {
-                $this->emitTelemetry($deviceKey, $telemetry, $licenseId, $company);
+                $this->emitTelemetry($context, $telemetry);
             }
 
             return;
@@ -254,10 +250,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             // que o relatório de falhas existe para eliminar.
             if ((string)($message['payload']['outcome'] ?? '') === self::SILENT_OUTCOME) {
                 $this->fail(
-                    $deviceKey,
-                    $device,
-                    $licenseId,
-                    $company,
+                    $context,
                     self::SILENT_OUTCOME,
                     (string)($message['payload']['operation'] ?? '') ?: null,
                 );
@@ -277,12 +270,12 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
 
                 $settled = $this->readings->takeSettled($deviceKey, $operation);
                 if ($settled === null && $operation !== MeasurementNormalizer::ECG_OPERATION) {
-                    $this->fail($deviceKey, $device, $licenseId, $company, 'no_reading', $operation);
+                    $this->fail($context, 'no_reading', $operation);
 
                     return;
                 }
                 if ($settled !== null) {
-                    $this->emitTelemetry($deviceKey, $settled, $licenseId, $company);
+                    $this->emitTelemetry($context, $settled);
                 }
             }
 
@@ -322,7 +315,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
 
             $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;
             foreach ($this->normalizer->normalize($block, $identity, (string)$gateway['imei'], $offset) as $telemetry) {
-                $this->emitTelemetry($deviceKey, $telemetry, $licenseId, $company);
+                $this->emitTelemetry($context, $telemetry);
             }
         }
     }
@@ -340,21 +333,27 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
      *
      * @param array<string, mixed> $telemetry
      */
-    private function emitTelemetry(string $deviceKey, array $telemetry, int $licenseId, string $company): void
+    private function emitTelemetry(BraceletContext $context, array $telemetry): void
     {
-        $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, 'bracelet', $licenseId, $company);
+        $this->mqttBridge->publishTelemetry(
+            $context->deviceKey,
+            $telemetry,
+            'bracelet',
+            $context->licenseId,
+            $context->company,
+        );
 
         // A dashboard guarda cem entradas e serve para consultar, não para arquivar. Uma
         // pulseira produz 288 blocos de cinco minutos por dia, e os que não trazem nada
         // esgotavam a lista em horas -- exactamente o que já acontecia com os relatórios de
         // varrimento. No MQTT continua a sair tudo; quem arquiva é quem integra.
-        if (!$this->worthShowing($deviceKey, $telemetry)) {
+        if (!$this->worthShowing($context->deviceKey, $telemetry)) {
             return;
         }
 
-        $this->dashboardStore?->append($deviceKey, 'telemetry', self::forDashboard($telemetry) + [
+        $this->dashboardStore?->append($context->deviceKey, 'telemetry', self::forDashboard($telemetry) + [
             'deviceType' => 'bracelet',
-            'licenseId' => $licenseId,
+            'licenseId' => $context->licenseId,
         ]);
     }
 
@@ -426,16 +425,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
      * célula, que não temos, e um palpite aqui vira um alarme de bateria fraca errado.
      *
      * @param array<string, mixed>|null $payload
-     * @param array<string, mixed> $device
      */
-    private function publishBattery(
-        mixed $payload,
-        string $deviceKey,
-        string $gatewayKey,
-        array $device,
-        int $licenseId,
-        string $company,
-    ): void {
+    private function publishBattery(mixed $payload, BraceletContext $context): void
+    {
         if (!is_array($payload) || ($payload['VPDeviceIsPercent'] ?? false) !== true) {
             return;
         }
@@ -445,18 +437,18 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             return;
         }
 
-        $this->emitTelemetry($deviceKey, TelemetryEnvelope::for(
+        $this->emitTelemetry($context, TelemetryEnvelope::for(
             'battery',
-            $deviceKey,
-            $device,
+            $context->deviceKey,
+            $context->device,
             self::PROTOCOL,
             'battery',
-            array_filter([
+            Values::withoutNulls([
                 'percent' => $percent,
                 'lowBattery' => ($payload['VPDeviceElectricTypeIsLowVoltage'] ?? null) === 'lowVoltage' ? true : null,
-            ], static fn(mixed $v): bool => $v !== null),
-            $gatewayKey,
-        ), $licenseId, $company);
+            ]),
+            $context->gatewayKey,
+        ));
     }
 
     /**
@@ -465,30 +457,22 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
      * Sai em cada sessão, mesmo repetida. Guardar a anterior para só publicar a mudança era
      * o hub a decidir o que vale a pena dizer -- e essa é a comparação de quem integra, que
      * tem o valor que leu da vez passada.
-     *
-     * @param array<string, mixed> $device
      */
-    private function publishFirmware(
-        string $firmware,
-        string $deviceKey,
-        string $gatewayKey,
-        array $device,
-        int $licenseId,
-        string $company,
-    ): void {
+    private function publishFirmware(string $firmware, BraceletContext $context): void
+    {
         if ($firmware === '') {
             return;
         }
 
-        $this->emitTelemetry($deviceKey, TelemetryEnvelope::for(
+        $this->emitTelemetry($context, TelemetryEnvelope::for(
             'firmware_version',
-            $deviceKey,
-            $device,
+            $context->deviceKey,
+            $context->device,
             self::PROTOCOL,
             'session',
             ['version' => $firmware],
-            $gatewayKey,
-        ), $licenseId, $company);
+            $context->gatewayKey,
+        ));
     }
 
     /**
@@ -499,16 +483,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
      * dava um batimento inventado a quem consome.
      *
      * @param array<string, mixed>|null $payload
-     * @param array<string, mixed> $device
      */
-    private function publishMeasurement(
-        mixed $payload,
-        string $deviceKey,
-        string $gatewayKey,
-        array $device,
-        int $licenseId,
-        string $company,
-    ): void {
+    private function publishMeasurement(mixed $payload, BraceletContext $context): void
+    {
         if (!is_array($payload)) {
             return;
         }
@@ -519,10 +496,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         $detection = (string)($payload['deviceDetectionInfo'] ?? '');
         if (isset(self::DETECTION_FAILURES[$detection])) {
             $this->fail(
-                $deviceKey,
-                $device,
-                $licenseId,
-                $company,
+                $context,
                 self::DETECTION_FAILURES[$detection],
                 MeasurementNormalizer::operationForSdkType((int)($payload['sdkType'] ?? 0)),
             );
@@ -540,10 +514,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         // próprio: exige o dedo no elétrodo e não só a pulseira no pulso.
         if (($payload['notWear'] ?? false) === true || ($payload['wearStatus'] ?? '') === 'wearNotPass') {
             $this->fail(
-                $deviceKey,
-                $device,
-                $licenseId,
-                $company,
+                $context,
                 'not_worn',
                 MeasurementNormalizer::operationForSdkType((int)($payload['sdkType'] ?? 0)),
             );
@@ -563,11 +534,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         if ($measurement === null) {
             // Um tipo do SDK que ninguém reclama sai daqui tão calado como saía um `kind`, e
             // pela mesma razão se diz uma vez por espécie e por aparelho.
-            $seenKey = $deviceKey . '|sdk:' . $sdkType;
+            $seenKey = $context->deviceKey . '|sdk:' . $sdkType;
             if ($sdkType !== 0 && !isset($this->unhandledKinds[$seenKey])) {
                 $this->unhandledKinds[$seenKey] = true;
                 Logger::channel('hub')->warning(
-                    "Veepoo tipo do SDK sem normalização: {$sdkType} de {$deviceKey}"
+                    "Veepoo tipo do SDK sem normalização: {$sdkType} de {$context->deviceKey}"
                 );
             }
 
@@ -578,14 +549,14 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
 
         $telemetry = TelemetryEnvelope::for(
             $type,
-            $deviceKey,
-            $device,
+            $context->deviceKey,
+            $context->device,
             self::PROTOCOL,
             // O tipo do fabricante e não a espécie de mensagem: `measurement` cobria nove
             // tipos e não dizia qual, e é por ele que se vai à documentação da Veepoo.
             "type-{$sdkType}",
             $data,
-            $gatewayKey,
+            $context->gatewayKey,
         );
 
         // Uma leitura instantânea não tem medição a assentar: os totais do dia e o estado de
@@ -593,12 +564,12 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         // trama só.
         $operation = MeasurementNormalizer::operationForSdkType($sdkType);
         if ($operation === null) {
-            $this->emitTelemetry($deviceKey, $telemetry, $licenseId, $company);
+            $this->emitTelemetry($context, $telemetry);
 
             return;
         }
 
-        $this->readings->hold($deviceKey, $operation, $telemetry, $licenseId, $company);
+        $this->readings->hold($context, $operation, $telemetry);
     }
 
     /**
@@ -608,16 +579,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
      * dezasseis mil amostras a zero, que é uma medição que não apanhou nada e não um exame.
      *
      * @param array<string, mixed>|null $payload
-     * @param array<string, mixed> $device
      */
-    private function publishEcg(
-        mixed $payload,
-        string $deviceKey,
-        string $gatewayKey,
-        array $device,
-        int $licenseId,
-        string $company,
-    ): void {
+    private function publishEcg(mixed $payload, BraceletContext $context): void
+    {
         $samples = is_array($payload) ? ($payload['samples'] ?? null) : null;
         if (!is_array($samples) || $samples === []) {
             return;
@@ -629,7 +593,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
         }
 
         if (count(array_filter($samples, static fn(int|float $v): bool => $v !== 0)) === 0) {
-            $this->fail($deviceKey, $device, $licenseId, $company, 'no_signal', MeasurementNormalizer::ECG_OPERATION);
+            $this->fail($context, 'no_signal', MeasurementNormalizer::ECG_OPERATION);
             return;
         }
 
@@ -645,18 +609,15 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
             static fn(mixed $frame): bool => is_array($frame),
         )));
 
-        $this->emitTelemetry($deviceKey, TelemetryEnvelope::for(
+        $this->emitTelemetry($context, TelemetryEnvelope::for(
             'ecg',
-            $deviceKey,
-            $device,
+            $context->deviceKey,
+            $context->device,
             self::PROTOCOL,
             'ecg_wave',
-            array_filter(
-                ['samples' => $samples, 'frequencyHz' => $frequencyHz],
-                static fn(mixed $v): bool => $v !== null,
-            ) + $measured,
-            $gatewayKey,
-        ), $licenseId, $company);
+            Values::withoutNulls(['samples' => $samples, 'frequencyHz' => $frequencyHz]) + $measured,
+            $context->gatewayKey,
+        ));
     }
 
 
@@ -666,21 +627,19 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge implements \Hub\Ingress\Mqtt
      *
      * As duas coisas andam juntas: o acontecimento é para quem opera ver a razão, e tirar o
      * comando da fila é o que impede a pulseira de repetir uma medição que já se sabe falhada.
-     *
-     * @param array<string, mixed> $device
      */
-    private function fail(
-        string $deviceKey,
-        array $device,
-        int $licenseId,
-        string $company,
-        string $reason,
-        ?string $operation,
-    ): void {
-        $this->failures->report($deviceKey, $device, $licenseId, $company, $reason);
+    private function fail(BraceletContext $context, string $reason, ?string $operation): void
+    {
+        $this->failures->report(
+            $context->deviceKey,
+            $context->device,
+            $context->licenseId,
+            $context->company,
+            $reason,
+        );
         if ($operation !== null) {
-            $this->downlinkDispatcher->failPending($deviceKey, $operation, $reason);
-            $this->readings->close($deviceKey, $operation);
+            $this->downlinkDispatcher->failPending($context->deviceKey, $operation, $reason);
+            $this->readings->close($context->deviceKey, $operation);
         }
     }
 

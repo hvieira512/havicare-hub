@@ -3,8 +3,8 @@
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Dashboard\DashboardStore;
-use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Moko\Bridge;
+use Tests\Support\Doubles\ArrayObservationStateStore;
+use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Moko\ProximityTracker;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
@@ -52,13 +52,13 @@ final class BridgeProximityTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    /** @return array{0: Bridge, 1: RecordingHubMqttBridge, 2: DashboardStore} */
+    /** @return array{0: MokoBridge, 1: RecordingHubMqttBridge, 2: DashboardStore} */
     private function bridge(): array
     {
         $mqtt = new RecordingHubMqttBridge();
         $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard:proximity');
 
-        $bridge = new Bridge(
+        $bridge = new MokoBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::gateway('MKGW3'),
@@ -76,7 +76,7 @@ final class BridgeProximityTest extends TestCase
         return [$bridge, $mqtt, $store];
     }
 
-    private function deliver(Bridge $bridge, string $payload, string $gateway = self::GATEWAY): void
+    private function deliver(MokoBridge $bridge, string $payload, string $gateway = self::GATEWAY): void
     {
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/' . $gateway . '/raw', $payload);
     }
@@ -201,7 +201,7 @@ final class BridgeProximityTest extends TestCase
     public function testNothingIsReportedForADeviceTheGatewayMayNotRelay(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $bridge = new Bridge(
+        $bridge = new MokoBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::gateway('MKGW3'),
@@ -228,7 +228,7 @@ final class BridgeProximityTest extends TestCase
     public function testMaintenanceIsThrottledToOncePerWindow(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $bridge = new Bridge(
+        $bridge = new MokoBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::gateway('MKGW3'),

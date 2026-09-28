@@ -20,6 +20,17 @@ final class CollectionPresenter
     }
 
     /**
+     * Os parâmetros de uma query string, para quem serve uma listagem não ter de guardar o
+     * `CollectionQuery` só para isto.
+     *
+     * @return array<string, mixed>
+     */
+    public function params(string $query): array
+    {
+        return $this->query->params($query);
+    }
+
+    /**
      * @param list<array<string, mixed>> $items
      * @param array<string, mixed> $params
      * @return array<string, mixed>
@@ -41,8 +52,10 @@ final class CollectionPresenter
             $applied,
             $available,
         );
-        $response['filters']['counts'] = $counts;
         $response['columns'] = $columns->describe($counts);
+        // Como o `applied` e o `available`: o esquema declara-o objecto, e um array vazio
+        // serializaria como `[]` nas listagens sem colunas de escolha.
+        $response['filters']['counts'] = $counts === [] ? (object)[] : $counts;
 
         return $response;
     }
@@ -54,15 +67,16 @@ final class CollectionPresenter
     private function filter(array $items, CollectionColumns $columns, array $params): array
     {
         $applied = [];
-        foreach (array_keys($columns->textFilterColumns()) as $field) {
+        foreach ($columns->textFilterColumns() as $field => $searched) {
             $needle = trim((string)($params[$field] ?? ''));
             if ($needle === '') {
                 continue;
             }
             $applied[$field] = $needle;
+            $searched = (array)$searched;
             $items = array_values(array_filter(
                 $items,
-                static fn(array $row): bool => stripos((string)($row[$field] ?? ''), $needle) !== false,
+                static fn(array $row): bool => self::containsIn($row, $searched, $needle),
             ));
         }
 
@@ -173,6 +187,25 @@ final class CollectionPresenter
         unset($params[$field]);
 
         return $params;
+    }
+
+    /**
+     * Um filtro de texto pode olhar para mais do que uma coluna, e basta uma delas conter o
+     * que se procura: quem procura um modelo não sabe se tem na mão o código do fabricante
+     * ou o nome comercial.
+     *
+     * @param array<string, mixed> $row
+     * @param list<string> $fields
+     */
+    private static function containsIn(array $row, array $fields, string $needle): bool
+    {
+        foreach ($fields as $field) {
+            if (stripos(self::text($row[$field] ?? ''), $needle) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Um booleano guardado como `1`/`0` lê-se como `true`/`false`, que é o que se filtra. */

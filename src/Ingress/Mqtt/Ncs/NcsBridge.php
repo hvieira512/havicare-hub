@@ -3,11 +3,12 @@
 namespace Hub\Ingress\Mqtt\Ncs;
 
 use Hub\Domain\DeviceMetadata;
+use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
 
-final class Bridge extends \Hub\Ingress\Mqtt\Bridge
+final class NcsBridge extends MqttBridgeBase
 {
-    private readonly ?MessageNormalizer $normalizer;
+    private readonly MessageNormalizer $normalizer;
     private readonly ?\Hub\Device\CommercialModelResolver $commercialModelResolver;
 
     public function __construct(
@@ -17,7 +18,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         string $topicFilter = '/voerka/#',
         ?callable $reconnectSubscriber = null,
         ?\Hub\Dashboard\DashboardStoreContract $dashboardStore = null,
-        ?MessageNormalizer $normalizer = null,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
         ?\Hub\Registry\Denylist $denylist = null,
     ) {
@@ -31,13 +31,13 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             dashboardStore: $dashboardStore,
             denylist: $denylist,
         );
-        $this->normalizer = $normalizer;
+        $this->normalizer = new MessageNormalizer();
         $this->commercialModelResolver = $commercialModelResolver;
     }
 
     protected function handleMessage(string $topic, string $payload): void
     {
-        $parsedTopic = Topic::parse($topic);
+        $parsedTopic = NcsTopic::parse($topic);
         if ($parsedTopic === null) {
             Logger::channel('hub')->warning("Ignoring unsupported NCS topic {$topic}");
             return;
@@ -83,7 +83,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $device = $this->enrichDevice($device);
 
         try {
-            $normalized = ($this->normalizer ?? new MessageNormalizer())->normalize($parsedTopic, $message, $device);
+            $normalized = $this->normalizer->normalize($parsedTopic, $message, $device);
         } catch (\Throwable $e) {
             Logger::channel('hub')->warning("Ignoring invalid NCS message from={$from}: {$e->getMessage()}");
             return;

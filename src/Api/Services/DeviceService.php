@@ -43,46 +43,32 @@ class DeviceService
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
-        ?CollectionQuery $query = null,
-        ?DevicePresentation $presentation = null,
-        ?CapabilityRegistry $capabilityRegistry = null,
-        ?DeviceConfigurationUpdateService $configurationUpdates = null,
-        ?DeviceConfigurationQueryService $configurationQueries = null,
-        ?DeviceResponseCompactor $responseCompactor = null,
-        ?DeviceAssociationService $associations = null,
-        ?DeviceCapabilityPresenter $capabilities = null,
-        ?ConfigurationSyncStatus $configurationSync = null,
-        ?DeviceDirectory $directory = null,
-        ?DeviceFeatureRequestService $featureRequests = null,
-        ?RequestBinder $binder = null,
     ) {
-        $this->binder = $binder ?? new RequestBinder();
-        $this->query = $query ?? new CollectionQuery();
-        $this->presentation = $presentation ?? new DevicePresentation();
-        $this->responseCompactor = $responseCompactor ?? new DeviceResponseCompactor();
-        $this->capabilityRegistry = $capabilityRegistry ?? new CapabilityRegistry();
-        $this->configurationUpdates = $configurationUpdates ?? new DeviceConfigurationUpdateService(
+        $this->binder = new RequestBinder();
+        $this->query = new CollectionQuery();
+        $this->presentation = new DevicePresentation();
+        $this->responseCompactor = new DeviceResponseCompactor();
+        $this->capabilityRegistry = new CapabilityRegistry();
+        $this->configurationUpdates = new DeviceConfigurationUpdateService(
             $this->store,
             $this->hub,
             $this->db,
             $this->capabilityRegistry,
         );
-        $this->configurationQueries = $configurationQueries ?? new DeviceConfigurationQueryService(
+        $this->configurationQueries = new DeviceConfigurationQueryService(
             $this->db,
             $this->capabilityRegistry,
         );
-        $this->associations = $associations ?? new DeviceAssociationService($this->store, $this->whitelist, $this->db, $this->hub);
-        // Nasce aqui porque é uma projecção do que este serviço já tem. O parâmetro existe
-        // para um teste poder trocar esta peça sozinha.
-        $this->capabilities = $capabilities ?? new DeviceCapabilityPresenter($this->capabilityRegistry, $this->db);
-        $this->configurationSync = $configurationSync ?? new ConfigurationSyncStatus();
-        $this->directory = $directory ?? new DeviceDirectory($this->store, $this->whitelist, $this->db);
+        $this->associations = new DeviceAssociationService($this->store, $this->whitelist, $this->db, $this->hub);
+        $this->capabilities = new DeviceCapabilityPresenter($this->capabilityRegistry, $this->db);
+        $this->configurationSync = new ConfigurationSyncStatus();
+        $this->directory = new DeviceDirectory($this->store, $this->whitelist, $this->db);
         $this->lifecyclePresenter = new ConfigurationLifecyclePresenter(
             $this->db->configurationLifecycle,
             $this->capabilities,
             $this->configurationSync,
         );
-        $this->featureRequests = $featureRequests ?? new DeviceFeatureRequestService(
+        $this->featureRequests = new DeviceFeatureRequestService(
             $this->store,
             $this->hub,
             $this->db,

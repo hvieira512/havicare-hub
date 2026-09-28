@@ -97,7 +97,10 @@ final class TenancyPaths
                 'get' => [
                     'tags' => ['Companies'],
                     'summary' => 'List companies',
-                    'parameters' => Parameters::pagination(),
+                    'parameters' => array_merge(Parameters::pagination(), [
+                        Parameters::stringQuery('name'),
+                        Parameters::query('sort', ['type' => 'string', 'example' => 'name:asc']),
+                    ]),
                     'responses' => [
                         '200' => Responses::json('Paginated company collection', 'CompanyListResponse'),
                     ],
@@ -152,7 +155,12 @@ final class TenancyPaths
                     'tags' => ['Licenses'],
                     'summary' => 'List licenses',
                     'parameters' => array_merge(Parameters::pagination(), [
+                        Parameters::query('company_id', ['type' => 'integer']),
+                        // O nome antigo do mesmo filtro, mantido porque é público.
                         Parameters::query('companyId', ['type' => 'integer']),
+                        Parameters::stringQuery('name'),
+                        Parameters::stringQuery('company_name'),
+                        Parameters::query('sort', ['type' => 'string', 'example' => 'company_name:asc,license_id:asc']),
                     ]),
                     'responses' => [
                         '200' => Responses::json('Paginated license collection', 'LicenseListResponse'),

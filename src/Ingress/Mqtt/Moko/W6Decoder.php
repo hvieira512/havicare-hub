@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\Ingress\Mqtt\Gateway\Topic;
+use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
+use Hub\Support\Values;
 
 /**
  * Reconhece uma MOKO W6 retransmitida por um gateway.
@@ -51,7 +52,7 @@ final class W6Decoder
      */
     public function decode(array $observation): ?array
     {
-        $mac = Topic::normalizeMac((string)($observation['mac'] ?? ''));
+        $mac = GatewayTopic::normalizeMac((string)($observation['mac'] ?? ''));
         if ($mac === null) {
             return null;
         }
@@ -68,12 +69,11 @@ final class W6Decoder
 
         // O RSSI é medido pelo gateway, não pela pulseira, por isso só existe na observação
         // -- tal como em W6bDecoder e MonitMecsProDecoder.
-        return array_filter(
+        return Values::withoutNulls(
             [
                 'mac' => $mac,
                 'rssiDbm' => is_numeric($observation['rssi'] ?? null) ? (int)$observation['rssi'] : null,
             ] + $decoded,
-            static fn(mixed $value): bool => $value !== null,
         );
     }
 

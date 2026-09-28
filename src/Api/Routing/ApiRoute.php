@@ -6,41 +6,21 @@ use Psr\Http\Message\ServerRequestInterface;
 
 final class ApiRoute
 {
-    /** O handler não quer nada. */
-    private const TAKES_NOTHING = 0;
+    /** O corpo chega em JSON. */
+    public const JSON_BODY = 'json';
 
-    /** O handler quer o pedido. */
-    private const TAKES_REQUEST = 1;
-
-    /** O handler quer os parâmetros do caminho. */
-    private const TAKES_PARAMETERS = 2;
-
-    /** O handler quer os dois, por esta ordem. */
-    private const TAKES_BOTH = 3;
-
-    /**
-     * Quantas vezes uma rota teve de olhar para a assinatura de um handler.
-     *
-     * Existe para o teste: o ganho desta classe é a reflexão correr uma vez por rota e não
-     * uma por pedido, e sem um contador isso não se distingue de continuar a correr sempre.
-     */
-    private static int $shapeResolutions = 0;
+    /** O corpo chega em JSON ou em `multipart/form-data`, porque traz um ficheiro com ele. */
+    public const FORM_BODY = 'form';
 
     private string $regex;
 
-    private int $shape;
-
     /**
-     * O handler declara o que quer receber, e a rota resolve isso uma vez. As formas aceites
-     * são quatro, e não há outra:
+     * O handler tem sempre a mesma assinatura -- `fn(array $params, ServerRequestInterface $request)`
+     * --, e quem não quer os argumentos declara menos.
      *
-     * - `fn(): mixed` -- não quer nada;
-     * - `fn(ServerRequestInterface): mixed` -- quer o pedido;
-     * - `fn(array): mixed` -- quer os parâmetros do caminho;
-     * - `fn(array, ServerRequestInterface): mixed` -- quer os dois, por esta ordem.
-     *
-     * O tipo não se escreve mais apertado do que isto de propósito: uma união das quatro
-     * assinaturas obrigava a mentir em três delas.
+     * O `$body` diz que esta rota leva corpo: o kernel descodifica-o uma vez e recusa o
+     * pedido com `invalid_json` antes de chamar o handler. O `$status` é o estado de sucesso
+     * de um handler que devolva o resultado do serviço em cru.
      *
      * @param callable $handler
      */
@@ -48,9 +28,10 @@ final class ApiRoute
         private string $method,
         private string $pattern,
         private $handler,
+        private ?string $body = null,
+        private int $status = 200,
     ) {
         $this->regex = $this->compilePattern($pattern);
-        $this->shape = self::resolveShape($handler);
     }
 
     public function method(): string
@@ -61,6 +42,17 @@ final class ApiRoute
     public function pattern(): string
     {
         return $this->pattern;
+    }
+
+    /** `null`, `self::JSON_BODY` ou `self::FORM_BODY`. */
+    public function body(): ?string
+    {
+        return $this->body;
+    }
+
+    public function status(): int
+    {
+        return $this->status;
     }
 
     public function matches(string $method, string $path): bool
@@ -90,75 +82,18 @@ final class ApiRoute
         return $parameters;
     }
 
-    /** @return callable a assinatura é uma das quatro descritas no construtor */
+    /** @return callable */
     public function handler(): callable
     {
         return $this->handler;
     }
 
     /**
-     * Chama o controlador com o que ele declarou querer.
-     *
-     * A forma foi resolvida na construção, que corre uma vez no arranque. O `ApiKernel` fazia
-     * isto por pedido, com uma `ReflectionMethod` nova de cada vez, no mesmo processo que
-     * serve a ingestão TCP dos relógios.
-     *
      * @param array<string, string> $parameters
      */
     public function invoke(array $parameters, ServerRequestInterface $request): mixed
     {
-        $handler = $this->handler;
-
-        return match ($this->shape) {
-            self::TAKES_NOTHING => $handler(),
-            self::TAKES_REQUEST => $handler($request),
-            self::TAKES_PARAMETERS => $handler($parameters),
-            default => $handler($parameters, $request),
-        };
-    }
-
-    /**
-     * Que argumentos é que este handler quer.
-     *
-     * Um argumento é ambíguo -- tanto pode ser o pedido como os parâmetros --, e é o tipo
-     * declarado que decide. Sem tipo, são os parâmetros: é o que a maioria dos controladores
-     * recebe e era o comportamento anterior.
-     *
-     * @param callable $handler
-     */
-    private static function resolveShape($handler): int
-    {
-        self::$shapeResolutions++;
-
-        $reflection = is_array($handler)
-            ? new \ReflectionMethod($handler[0], $handler[1])
-            : new \ReflectionFunction(\Closure::fromCallable($handler));
-
-        $count = $reflection->getNumberOfParameters();
-        if ($count === 0) {
-            return self::TAKES_NOTHING;
-        }
-        if ($count >= 2) {
-            return self::TAKES_BOTH;
-        }
-
-        $parameter = $reflection->getParameters()[0] ?? null;
-
-        return $parameter !== null && self::expectsRequest($parameter)
-            ? self::TAKES_REQUEST
-            : self::TAKES_PARAMETERS;
-    }
-
-    private static function expectsRequest(\ReflectionParameter $parameter): bool
-    {
-        $type = $parameter->getType();
-        if (!$type instanceof \ReflectionNamedType) {
-            return false;
-        }
-
-        $name = $type->getName();
-
-        return $name === ServerRequestInterface::class || is_a($name, ServerRequestInterface::class, true);
+        return ($this->handler)($parameters, $request);
     }
 
     private function compilePattern(string $pattern): string

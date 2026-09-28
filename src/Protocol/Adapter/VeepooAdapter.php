@@ -5,7 +5,7 @@ namespace Hub\Protocol\Adapter;
 /**
  * Pulseiras Veepoo, alcançadas através de um gateway BLE.
  *
- * Só existe pelo lado do downlink: a subida é do `Ingress\Mqtt\Veepoo\Bridge`, e por isso o
+ * Só existe pelo lado do downlink: a subida é do `Ingress\Mqtt\Veepoo\VeepooBridge`, e por isso o
  * `canDecode` recusa sempre. E o que desce não são bytes para a pulseira, é o nome de uma
  * operação para a caixa que tem a sessão BLE.
  */

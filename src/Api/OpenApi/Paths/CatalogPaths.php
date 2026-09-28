@@ -52,7 +52,10 @@ final class CatalogPaths
                 'get' => [
                     'tags' => ['Suppliers'],
                     'summary' => 'List suppliers',
-                    'parameters' => Parameters::pagination(),
+                    'parameters' => array_merge(Parameters::pagination(), [
+                        Parameters::stringQuery('name'),
+                        Parameters::query('sort', ['type' => 'string', 'example' => 'name:asc']),
+                    ]),
                     'responses' => [
                         '200' => Responses::json('Paginated supplier collection', 'SupplierListResponse'),
                     ],
@@ -76,7 +79,11 @@ final class CatalogPaths
                         Parameters::stringQuery('deviceType'),
                         Parameters::query('model', [
                             'type' => 'string',
-                            'description' => 'Filter by internal model or commercial name (exact match)',
+                            'description' => 'Filter by part of the internal model or of the commercial name',
+                        ]),
+                        Parameters::query('sort', [
+                            'type' => 'string',
+                            'example' => 'supplier:asc,commercialName:asc',
                         ]),
                     ]),
                     'responses' => [

@@ -6,8 +6,8 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
-use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Moko\Bridge;
+use Tests\Support\Doubles\ArrayObservationStateStore;
+use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\MutableDiaperSensitivity;
@@ -239,9 +239,9 @@ final class BridgeMonitAlarmTest extends TestCase
         return '020104' . sprintf('%02x', strlen($manufacturer) / 2 + 1) . 'ff' . $manufacturer;
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt, ?DiaperSensitivityLookup $sensitivity = null): Bridge
+    private function bridge(RecordingHubMqttBridge $mqtt, ?DiaperSensitivityLookup $sensitivity = null): MokoBridge
     {
-        return new Bridge(
+        return new MokoBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::gateway('MKGW3'),

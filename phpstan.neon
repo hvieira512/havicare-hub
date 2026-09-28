@@ -36,13 +36,8 @@ parameters:
             paths:
                 - src/Api/Routing/ApiRoute.php
                 - src/Device/DeviceEventDecoder.php
+                - src/Device/Decoder/VivistarEventDecoder.php
                 - src/Protocol/Adapter/VivistarAdapter.php
-        # Exhaustive match over a fixed key set: the last arm and the default are
-        # unreachable by inference, but dropping the default would turn an
-        # unexpected key into an UnhandledMatchError.
-        - identifier: match.alwaysTrue
-          path: src/Api/Services/ModelService.php
-
         # Predis declares pipeline() on Client, not on ClientInterface. Narrowing
         # our hints to Client would break the in-memory doubles the tests use,
         # which implement the interface.

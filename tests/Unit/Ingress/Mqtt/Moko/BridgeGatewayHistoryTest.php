@@ -3,8 +3,8 @@
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Dashboard\DashboardStore;
-use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Moko\Bridge;
+use Tests\Support\Doubles\ArrayObservationStateStore;
+use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\InMemoryRedisClient;
@@ -26,13 +26,13 @@ final class BridgeGatewayHistoryTest extends TestCase
     private const GATEWAY = 'd48c49f7909c';
     private const BRACELET = 'fbd87c59ba8b';
 
-    /** @return array{0: Bridge, 1: RecordingHubMqttBridge, 2: DashboardStore} */
+    /** @return array{0: MokoBridge, 1: RecordingHubMqttBridge, 2: DashboardStore} */
     private function bridge(): array
     {
         $mqtt = new RecordingHubMqttBridge();
         $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard:gwhistory');
 
-        $bridge = new Bridge(
+        $bridge = new MokoBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::gateway('MKGW3'),
@@ -47,7 +47,7 @@ final class BridgeGatewayHistoryTest extends TestCase
         return [$bridge, $mqtt, $store];
     }
 
-    private function deliver(Bridge $bridge, string $payload): void
+    private function deliver(MokoBridge $bridge, string $payload): void
     {
         $bridge->handleReceivedMessage(
             'havicare-hub/null/0/gw/' . self::GATEWAY . '/raw',

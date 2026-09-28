@@ -224,7 +224,7 @@ final class DeviceController
             : $this->service->updateConfigurations($params['imei'], $payload, RequestContext::auth($request), RequestContext::requestId($request)));
     }
 
-    public function delete(array $params): Response
+    public function delete(array $params, ServerRequestInterface $request): Response
     {
         return $this->json->result($this->service->delete($params['imei']));
     }

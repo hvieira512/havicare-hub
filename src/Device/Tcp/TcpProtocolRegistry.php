@@ -28,11 +28,10 @@ final class TcpProtocolRegistry
 
     public function __construct(
         ?AdapterRegistry $adapters = null,
-        ?DeviceEventDecoder $eventDecoder = null,
         ?callable $wonlexStateProvider = null,
     ) {
         $adapters ??= new AdapterRegistry();
-        $eventDecoder ??= new DeviceEventDecoder();
+        $eventDecoder = new DeviceEventDecoder();
 
         $this->register(new WonlexTcpProtocol(
             $adapters->get('wonlex-json') ?? new WonlexAdapter(),

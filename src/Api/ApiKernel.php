@@ -2,22 +2,10 @@
 
 namespace Hub\Api;
 
-use Hub\Api\Controllers\ApiUserController;
 use Hub\Api\Controllers\AuthController;
-use Hub\Api\Controllers\CapabilityController;
-use Hub\Api\Controllers\CapabilityDiscoveryController;
-use Hub\Api\Controllers\CompanyController;
 use Hub\Api\Controllers\DeviceController;
-use Hub\Api\Controllers\DashboardNotificationController;
-use Hub\Api\Controllers\DenylistController;
-use Hub\Api\Controllers\LicenseController;
-use Hub\Api\Controllers\RadarCredentialsController;
-use Hub\Api\Controllers\RadarLayoutController;
-use Hub\Api\Controllers\ModelController;
-use Hub\Api\Controllers\ProtocolController;
 use Hub\Api\Controllers\StreamController;
 use Hub\Device\MessageFanout;
-use Hub\Api\Controllers\SupplierController;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Auth\BearerTokenResolver;
 use Hub\Api\Auth\RouteAccessPolicy;
@@ -179,18 +167,6 @@ final class ApiKernel
     {
         $auth = new AuthController($this->auth, $this->json);
         $devices = new DeviceController($this->devices, $this->json);
-        $models = new ModelController($this->models, $this->json);
-        $capabilities = new CapabilityController($this->capabilities, $this->json);
-        $capabilityDiscovery = new CapabilityDiscoveryController($this->capabilityDiscovery, $this->json);
-        $suppliers = new SupplierController($this->suppliers, $this->json);
-        $apiUsers = new ApiUserController($this->apiUsers, $this->json);
-        $company = new CompanyController($this->company, $this->json);
-        $licenses = new LicenseController($this->licenses, $this->json);
-        $radarCredentials = new RadarCredentialsController($this->radarCredentials, $this->json);
-        $radarLayouts = new RadarLayoutController($this->radarLayouts, $this->json);
-        $protocols = new ProtocolController($this->protocols, $this->json);
-        $notifications = new DashboardNotificationController($this->notifications, $this->json);
-        $denylist = new DenylistController($this->denylist, $this->json);
         // Construído uma vez, como os restantes: os tetos de ligações abertas são estado deste
         // controlador, e um por pedido não contava nada.
         $stream = new StreamController(
@@ -206,18 +182,18 @@ final class ApiKernel
             ...((require __DIR__ . '/Routes/AuthRoutes.php')($auth)),
             ...((require __DIR__ . '/Routes/StreamRoutes.php')($stream)),
             ...((require __DIR__ . '/Routes/DeviceRoutes.php')($devices)),
-            ...((require __DIR__ . '/Routes/ModelRoutes.php')($models)),
-            ...((require __DIR__ . '/Routes/CapabilityRoutes.php')($capabilities)),
-            ...((require __DIR__ . '/Routes/CapabilityDiscoveryRoutes.php')($capabilityDiscovery)),
-            ...((require __DIR__ . '/Routes/SupplierRoutes.php')($suppliers)),
-            ...((require __DIR__ . '/Routes/ApiUserRoutes.php')($apiUsers)),
-            ...((require __DIR__ . '/Routes/CompanyRoutes.php')($company)),
-            ...((require __DIR__ . '/Routes/LicenseRoutes.php')($licenses)),
-            ...((require __DIR__ . '/Routes/RadarCredentialsRoutes.php')($radarCredentials)),
-            ...((require __DIR__ . '/Routes/RadarLayoutRoutes.php')($radarLayouts)),
-            ...((require __DIR__ . '/Routes/ProtocolRoutes.php')($protocols)),
-            ...((require __DIR__ . '/Routes/DashboardNotificationRoutes.php')($notifications)),
-            ...((require __DIR__ . '/Routes/DenylistRoutes.php')($denylist)),
+            ...((require __DIR__ . '/Routes/ModelRoutes.php')($this->models)),
+            ...((require __DIR__ . '/Routes/CapabilityRoutes.php')($this->capabilities)),
+            ...((require __DIR__ . '/Routes/CapabilityDiscoveryRoutes.php')($this->capabilityDiscovery)),
+            ...((require __DIR__ . '/Routes/SupplierRoutes.php')($this->suppliers)),
+            ...((require __DIR__ . '/Routes/ApiUserRoutes.php')($this->apiUsers)),
+            ...((require __DIR__ . '/Routes/CompanyRoutes.php')($this->company)),
+            ...((require __DIR__ . '/Routes/LicenseRoutes.php')($this->licenses)),
+            ...((require __DIR__ . '/Routes/RadarCredentialsRoutes.php')($this->radarCredentials)),
+            ...((require __DIR__ . '/Routes/RadarLayoutRoutes.php')($this->radarLayouts)),
+            ...((require __DIR__ . '/Routes/ProtocolRoutes.php')($this->protocols)),
+            ...((require __DIR__ . '/Routes/DashboardNotificationRoutes.php')($this->notifications)),
+            ...((require __DIR__ . '/Routes/DenylistRoutes.php')($this->denylist)),
             ...((require __DIR__ . '/Routes/SystemRoutes.php')($json, $html)),
         ];
     }
@@ -253,9 +229,41 @@ final class ApiKernel
         if ($authContext !== null) {
             $request = $request->withAttribute(RequestContext::ATTR_AUTH, $authContext);
         }
-        $request = $request->withAttribute(RequestContext::ATTR_ROUTE_PATTERN, $match['route']->pattern());
+        $route = $match['route'];
+        $request = $request->withAttribute(RequestContext::ATTR_ROUTE_PATTERN, $route->pattern());
 
-        return $match['route']->invoke($match['parameters'], $request);
+        $bodyMode = $route->body();
+        if ($bodyMode !== null) {
+            $body = $bodyMode === ApiRoute::FORM_BODY
+                ? RequestContext::formOrJsonBody($request)
+                : RequestContext::jsonBody($request);
+            if ($body === null) {
+                return $this->json->result(ApiError::invalidJson()->toArray());
+            }
+
+            $request = $request->withAttribute(RequestContext::ATTR_BODY, $body);
+        }
+
+        $result = $route->invoke($match['parameters'], $request);
+        if ($result instanceof PromiseInterface) {
+            return $result->then(fn(mixed $value): Response => $this->routeResponse($value, $route->status()));
+        }
+
+        return $this->routeResponse($result, $route->status());
+    }
+
+    /** Um handler devolve a resposta feita ou o resultado do serviço em cru; o embrulho é aqui. */
+    private function routeResponse(mixed $result, int $status): Response
+    {
+        if ($result instanceof Response) {
+            return $result;
+        }
+
+        if (is_array($result)) {
+            return $this->json->result($result, $status);
+        }
+
+        throw new \RuntimeException('API route handler returned neither an array nor a response.');
     }
 
     private function isPublicApiPath(string $path): bool

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
+use Hub\Support\Values;
+
 /**
  * Traz um bloco diário da pulseira Veepoo para as formas genéricas do hub.
  *
@@ -22,7 +24,7 @@ final class DailyBlockNormalizer
     /**
      * Fator de conversão da glicemia: 1 mmol/L equivale a 18,016 mg/dL.
      *
-     * Público porque a medição ao vivo chega pelo `Bridge` e não por aqui, e as duas têm de
+     * Público porque a medição ao vivo chega pelo `VeepooBridge` e não por aqui, e as duas têm de
      * converter da mesma maneira -- uma glicemia do histórico e uma pedida agora não podem
      * sair em unidades diferentes.
      */
@@ -254,12 +256,12 @@ final class DailyBlockNormalizer
             return [];
         }
 
-        $lipids = array_filter([
+        $lipids = Values::withoutNulls([
             'totalCholesterolMmolPerL' => self::decimal($liquid['cholesterol'] ?? null),
             'triglyceridesMmolPerL' => self::decimal($liquid['triacylglycerol'] ?? null),
             'hdlMmolPerL' => self::decimal($liquid['highDensity'] ?? null),
             'ldlMmolPerL' => self::decimal($liquid['lowDensity'] ?? null),
-        ], static fn(?float $v): bool => $v !== null);
+        ]);
 
         $uric = self::decimal($liquid['uricAcidVal'] ?? null);
 
@@ -334,10 +336,10 @@ final class DailyBlockNormalizer
             return null;
         }
 
-        $data = array_filter([
+        $data = Values::withoutNulls([
             'bodyCelsius' => self::celsius($temperature['bodyTemperature'] ?? null),
             'surfaceCelsius' => self::celsius($temperature['bodySurfaceTemperature'] ?? null),
-        ], static fn(?float $v): bool => $v !== null);
+        ]);
 
         return $data === [] ? null : $data;
     }

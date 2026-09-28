@@ -102,7 +102,7 @@ forma que o [contrato MQTT](08-contrato-mqtt.md) fixa:
 
 > Documentação anterior a setembro de 2026 descreve estes tópicos com **quatro**
 > segmentos, omitindo a empresa (`{licenca}/ncs/{dispositivo}/…`). Essa forma
-> está incorreta: o `Ncs\Bridge` publica através dos mesmos métodos das
+> está incorreta: o `NcsBridge` publica através dos mesmos métodos das
 > restantes ingestões, que produzem sempre cinco segmentos.
 
 ### `status`
@@ -157,7 +157,7 @@ Voerka W812 à capacidade, e a remoção propagaria-se por chave estrangeira.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Ingress/Mqtt/Ncs/Topic.php` | Analisa o tópico de origem e decide se é tratável |
-| `src/Ingress/Mqtt/Ncs/Bridge.php` | Subscreve, verifica a identidade, publica |
+| `src/Ingress/Mqtt/Ncs/NcsTopic.php` | Analisa o tópico de origem e decide se é tratável |
+| `src/Ingress/Mqtt/Ncs/NcsBridge.php` | Subscreve, verifica a identidade, publica |
 | `src/Ingress/Mqtt/Ncs/MessageNormalizer.php` | Constrói o `raw`, o `status` e o `event` |
 | `src/Domain/Capability/Definition/NcsCapabilityDefinitions.php` | O que o catálogo diz que um NCS tem |

@@ -32,10 +32,6 @@ class DeviceHubServer
         Whitelist $whitelist,
         HubMqttBridge $mqtt,
         ?CommercialModelResolver $commercialModelResolver = null,
-        ?DeviceIdentityExtractor $identityExtractor = null,
-        ?DeviceAuthorizer $authorizer = null,
-        ?ConnectionRegistry $connections = null,
-        ?DeviceEventDecoder $eventDecoder = null,
         ?PendingDownlinkQueue $downlinkQueue = null,
         ?DashboardStoreContract $dashboardStore = null,
         int $downlinkQueueTtlSeconds = 300,
@@ -44,15 +40,14 @@ class DeviceHubServer
     ) {
         $this->whitelist = $whitelist;
         $this->denylist = $denylist;
-        $this->connections = $connections ?? new ConnectionRegistry();
-        $this->authorizer = $authorizer ?? new DeviceAuthorizer($whitelist, $commercialModelResolver);
+        $this->connections = new ConnectionRegistry();
+        $this->authorizer = new DeviceAuthorizer($whitelist, $commercialModelResolver);
         $this->mqtt = $mqtt;
         $this->dashboardStore = $dashboardStore;
         $adapters = new AdapterRegistry();
-        $this->identityExtractor = $identityExtractor ?? new DeviceIdentityExtractor($adapters);
+        $this->identityExtractor = new DeviceIdentityExtractor($adapters);
         $this->tcpProtocols = new TcpProtocolRegistry(
             $adapters,
-            $eventDecoder ?? new DeviceEventDecoder(),
             fn (DeviceSession $session): array => $this->wonlexState($session)
         );
         $this->downlinkQueue = $downlinkQueue;
