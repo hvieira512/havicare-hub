@@ -3,8 +3,8 @@
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
-use Hub\Api\Http\CollectionQuery;
-use Hub\Api\Http\CollectionResponder;
+use Hub\Api\Http\CollectionPresenter;
+use Hub\Api\Http\ModelColumns;
 use Hub\Api\Http\ModelImageUrl;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Api\Request\ModelWriteRequest;
@@ -19,109 +19,51 @@ class ModelService
 {
     private const DEFAULT_COLLECTION_LIMIT = 20;
 
-    private CollectionQuery $query;
-    private CollectionResponder $collection;
+    private CollectionPresenter $presenter;
     private ModelImageUrl $imageUrl;
     private RequestBinder $binder;
     private ModelImageStore $images;
 
-    public function __construct(
-        private ApiDataAccess $db,
-        ?CollectionQuery $query = null,
-        ?CollectionResponder $collection = null,
-        ?ModelImageUrl $imageUrl = null,
-        ?RequestBinder $binder = null,
-        ?ModelImageStore $images = null,
-    ) {
-        $this->query = $query ?? new CollectionQuery();
-        $this->collection = $collection ?? new CollectionResponder();
-        $this->imageUrl = $imageUrl ?? new ModelImageUrl();
-        $this->binder = $binder ?? new RequestBinder();
-        $this->images = $images ?? new ModelImageStore();
+    public function __construct(private ApiDataAccess $db)
+    {
+        $this->presenter = new CollectionPresenter();
+        $this->imageUrl = new ModelImageUrl();
+        $this->binder = new RequestBinder();
+        $this->images = new ModelImageStore();
     }
 
     public function list(string $query = '', string $baseUrl = ''): array
     {
-        $params = $this->query->params($query);
-        $page = $this->query->page($params);
-        $limit = $this->query->limit($params, self::DEFAULT_COLLECTION_LIMIT);
-        $filters = [
-            'supplier' => $this->query->filter($params, 'supplier'),
-            'protocol' => $this->query->filter($params, 'protocol'),
-            'deviceType' => $this->query->filter($params, 'deviceType'),
-            'model' => $this->query->filter($params, 'model'),
-        ];
-        $models = array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
-            $supplierRaw = trim((string)($model['supplier'] ?? ''));
-            $supplier = mb_strtolower($supplierRaw);
-            $protocol = mb_strtolower(DeviceProtocol::forModel($supplierRaw, (string)($model['internal_model'] ?? '')));
-            $deviceType = mb_strtolower(trim((string)($model['device_type'] ?? 'watch')));
-            $internalModel = mb_strtolower(trim((string)($model['internal_model'] ?? '')));
-            $commercialName = mb_strtolower(trim((string)($model['commercial_name'] ?? '')));
+        $models = $this->presentRows($this->db->models->all(), $baseUrl);
 
-            foreach ($filters as $key => $value) {
-                if ($value === null) {
-                    continue;
-                }
-                $needle = mb_strtolower($value);
-                $haystack = match ($key) {
-                    'supplier' => $supplier,
-                    'protocol' => $protocol,
-                    'deviceType' => $deviceType,
-                    'model' => $internalModel . "\0" . $commercialName,
-                    default => '',
-                };
-                if (!str_contains($haystack, $needle)) {
-                    return false;
-                }
-            }
+        return $this->presenter->present(
+            $models,
+            ModelColumns::definition($models),
+            $this->presenter->params($query),
+            self::DEFAULT_COLLECTION_LIMIT,
+        );
+    }
 
-            return true;
-        }));
-        $available = [
-            'supplier' => $this->collection->uniqueValues(array_map(
-                static fn (array $model): string => trim((string)($model['supplier'] ?? '')),
-                array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
-                    $protocol = DeviceProtocol::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? ''));
-                    $deviceType = trim((string)($model['device_type'] ?? 'watch'));
-                    return (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol'])
-                        && (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType']);
-                }))
-            )),
-            'protocol' => $this->collection->uniqueValues(array_map(
-                static fn (array $model): string => DeviceProtocol::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? '')),
-                array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
-                    $supplier = trim((string)($model['supplier'] ?? ''));
-                    $deviceType = trim((string)($model['device_type'] ?? 'watch'));
-                    return (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
-                        && (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType']);
-                }))
-            )),
-            'deviceType' => $this->collection->uniqueValues(array_map(
-                static fn (array $model): string => trim((string)($model['device_type'] ?? 'watch')),
-                array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
-                    $supplier = trim((string)($model['supplier'] ?? ''));
-                    $protocol = DeviceProtocol::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? ''));
-                    return (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
-                        && (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol']);
-                }))
-            )),
-            'model' => $this->collection->uniqueValues(array_merge(
-                array_map(static fn (array $m): string => trim((string)($m['internal_model'] ?? '')), $this->db->models->all()),
-                array_map(static fn (array $m): string => trim((string)($m['commercial_name'] ?? '')), $this->db->models->all()),
-            )),
-        ];
-
+    /**
+     * As linhas como a listagem as devolve. O protocolo e a matriz de capacidades não estão
+     * na tabela dos modelos, e é aqui que se juntam.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function presentRows(array $rows, string $baseUrl): array
+    {
         $catalogByType = [];
         $enabledByModel = $this->db->modelCapabilities->enabledFeaturesForModelIds(array_map(
-            static fn(array $model): int => (int)($model['id'] ?? 0),
-            $models
+            static fn (array $model): int => (int)($model['id'] ?? 0),
+            $rows
         ));
-        $models = array_map(function (array $model) use ($enabledByModel, &$catalogByType, $baseUrl): array {
+
+        return array_map(function (array $model) use ($enabledByModel, &$catalogByType, $baseUrl): array {
             $modelId = (int)($model['id'] ?? 0);
-            $protocol = DeviceProtocol::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? ''));
             $deviceType = (string)($model['device_type'] ?? 'watch');
             $catalogByType[$deviceType] ??= $this->db->genericCapabilities->all($deviceType);
+
             return [
                 'id' => $modelId,
                 'supplier_id' => (int)($model['supplier_id'] ?? 0),
@@ -129,13 +71,11 @@ class ModelService
                 'internalModel' => (string)($model['internal_model'] ?? ''),
                 'commercialName' => (string)($model['commercial_name'] ?? ''),
                 'deviceType' => $deviceType,
-                'protocol' => $protocol,
+                'protocol' => DeviceProtocol::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? '')),
                 'image' => $this->imageUrl->resolve((string)($model['image'] ?? ''), $baseUrl),
                 'capabilities' => CapabilityCatalog::buildCapabilityMatrix($catalogByType[$deviceType], $enabledByModel[$modelId] ?? []),
             ];
-        }, $models);
-
-        return $this->collection->respond($models, $page, $limit, $filters, $available);
+        }, $rows);
     }
 
     public function filters(): array
@@ -250,7 +190,7 @@ class ModelService
 
     public function template(string $query = ''): array
     {
-        $params = $this->query->params($query);
+        $params = $this->presenter->params($query);
         $supplierId = (int)($params['supplierId'] ?? $params['supplier_id'] ?? 0);
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($params['deviceType'] ?? $params['device_type'] ?? 'watch'));
         if ($supplierId <= 0) {

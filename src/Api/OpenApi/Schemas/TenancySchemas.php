@@ -65,7 +65,7 @@ final class TenancySchemas
                     'updated_at' => ['type' => 'string'],
                 ],
             ],
-            'CompanyListResponse' => CommonSchemas::collection('CompanyItem'),
+            'CompanyListResponse' => CommonSchemas::collection('CompanyItem', withColumns: true),
             'CompanyWriteRequest' => SchemaFromRequest::schema(CompanyWriteRequest::class),
         ];
     }
@@ -85,7 +85,7 @@ final class TenancySchemas
                     'updated_at' => ['type' => 'string'],
                 ],
             ],
-            'LicenseListResponse' => CommonSchemas::collection('LicenseItem'),
+            'LicenseListResponse' => CommonSchemas::collection('LicenseItem', withColumns: true),
             // O criar exige a empresa e a licença; o actualizar aceita a ausência de ambos
             // como "fica como está", e é por isso que passam a ser dois esquemas e não um.
             'LicenseCreateRequest' => SchemaFromRequest::schema(

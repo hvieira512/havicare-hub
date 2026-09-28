@@ -34,7 +34,7 @@ final class CatalogSchemas
                     'updated_at' => ['type' => 'string'],
                 ],
             ],
-            'SupplierListResponse' => CommonSchemas::collection('SupplierItem'),
+            'SupplierListResponse' => CommonSchemas::collection('SupplierItem', withColumns: true),
         ];
     }
 
@@ -79,7 +79,7 @@ final class CatalogSchemas
                     ],
                 ],
             ],
-            'ModelListResponse' => CommonSchemas::collection('ModelItem'),
+            'ModelListResponse' => CommonSchemas::collection('ModelItem', withColumns: true),
             'ModelCapabilitySection' => [
                 'type' => 'object',
                 'additionalProperties' => ['type' => 'boolean'],

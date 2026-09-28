@@ -78,6 +78,21 @@ final class CommonSchemas
                 'properties' => [
                     'applied' => ['type' => 'object', 'additionalProperties' => true],
                     'available' => ['type' => 'object', 'additionalProperties' => ['type' => 'array', 'items' => ['type' => 'string']]],
+                    // As linhas que cada valor de uma coluna de escolha tem, contadas sem o
+                    // filtro dessa mesma coluna.
+                    'counts' => [
+                        'type' => 'object',
+                        'additionalProperties' => [
+                            'type' => 'array',
+                            'items' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'value' => ['type' => 'string'],
+                                    'count' => ['type' => 'integer'],
+                                ],
+                            ],
+                        ],
+                    ],
                 ],
             ],
             // Uma coluna descreve-se pelo que se lhe pode fazer, e não por como se desenha:
