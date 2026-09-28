@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
+use Hub\Support\Values;
+
 /**
  * Traz um bloco diário da pulseira Veepoo para as formas genéricas do hub.
  *
@@ -254,12 +256,12 @@ final class DailyBlockNormalizer
             return [];
         }
 
-        $lipids = array_filter([
+        $lipids = Values::withoutNulls([
             'totalCholesterolMmolPerL' => self::decimal($liquid['cholesterol'] ?? null),
             'triglyceridesMmolPerL' => self::decimal($liquid['triacylglycerol'] ?? null),
             'hdlMmolPerL' => self::decimal($liquid['highDensity'] ?? null),
             'ldlMmolPerL' => self::decimal($liquid['lowDensity'] ?? null),
-        ], static fn(?float $v): bool => $v !== null);
+        ]);
 
         $uric = self::decimal($liquid['uricAcidVal'] ?? null);
 
@@ -334,10 +336,10 @@ final class DailyBlockNormalizer
             return null;
         }
 
-        $data = array_filter([
+        $data = Values::withoutNulls([
             'bodyCelsius' => self::celsius($temperature['bodyTemperature'] ?? null),
             'surfaceCelsius' => self::celsius($temperature['bodySurfaceTemperature'] ?? null),
-        ], static fn(?float $v): bool => $v !== null);
+        ]);
 
         return $data === [] ? null : $data;
     }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
+use Hub\Support\Values;
+
 /**
  * Traduz o registo de sono preciso da pulseira para os nomes do hub.
  *
@@ -133,13 +135,13 @@ final class SleepNormalizer
             $segments = self::totalSegments($content);
         }
 
-        $night = array_filter([
+        $night = Values::withoutNulls([
             'startTime' => $start === null ? null : self::instantFromSeconds($start),
             'endTime' => $end === null ? null : self::instantFromSeconds($end),
             'totalDurationMinutes' => $total,
             'timingValid' => $timingValid,
             'segments' => $segments === [] ? null : $segments,
-        ], static fn(mixed $v): bool => $v !== null);
+        ]);
 
         // `timingValid` sozinho não é uma noite: sem duração nem troços não há nada a dizer.
         return isset($night['totalDurationMinutes']) || isset($night['segments']) ? $night : null;

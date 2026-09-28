@@ -2,6 +2,8 @@
 
 namespace Hub\Device;
 
+use Hub\Support\Values;
+
 final class FeatureNormalizer
 {
     public static function normalize(string $feature, array $payload): array
@@ -45,10 +47,10 @@ final class FeatureNormalizer
             $payload['pulse'] = $parts[2] ?? $payload['pulse'] ?? null;
         }
 
-        return array_filter([
+        return Values::withoutNulls([
             'systolicMmHg' => self::int($payload['systolic'] ?? $payload['systolicMmHg'] ?? $payload['sbp'] ?? null),
             'diastolicMmHg' => self::int($payload['diastolic'] ?? $payload['diastolicMmHg'] ?? $payload['dbp'] ?? null),
-        ], static fn (mixed $value): bool => $value !== null);
+        ]);
     }
 
     private static function bloodOxygen(array $payload): array
@@ -85,11 +87,11 @@ final class FeatureNormalizer
         }
         if (is_string($value) && str_contains($value, '/')) {
             $parts = explode('/', $value);
-            return array_filter([
+            return Values::withoutNulls([
                 'bodyCelsius' => self::float($parts[0] ?? null),
                 'surfaceCelsius' => self::float($parts[1] ?? null),
                 'environmentCelsius' => self::float($parts[2] ?? null),
-            ], static fn (mixed $field): bool => $field !== null);
+            ]);
         }
 
         return is_numeric((string)$value) ? ['bodyCelsius' => (float)$value] : [];
@@ -98,23 +100,23 @@ final class FeatureNormalizer
     private static function battery(array $payload): array
     {
         $value = self::first($payload, ['batteryPercent', 'battery', 'batteryLevel', 'power', 'value']);
-        return array_filter([
+        return Values::withoutNulls([
             'percent' => $value === null ? null : (int)$value,
             'chargingState' => self::int($payload['chargingState'] ?? $payload['batteryState'] ?? null),
             'batteryType' => self::int($payload['batteryType'] ?? null),
-        ], static fn (mixed $value): bool => $value !== null);
+        ]);
     }
 
     private static function activity(array $payload): array
     {
-        return array_filter([
+        return Values::withoutNulls([
             'steps' => self::int($payload['steps'] ?? $payload['step'] ?? null),
             'distanceMeters' => self::float($payload['distanceMeters'] ?? $payload['distance'] ?? null),
             'distanceKm' => self::float($payload['mileage'] ?? null),
             'caloriesKcal' => self::float($payload['caloriesKcal'] ?? $payload['kcal'] ?? $payload['calories'] ?? $payload['consumed'] ?? null),
             'exerciseSeconds' => self::int($payload['exerciseSeconds'] ?? $payload['exerciseTime'] ?? null),
             'standMinutes' => self::int($payload['standMinutes'] ?? $payload['standTime'] ?? null),
-        ], static fn (mixed $value): bool => $value !== null);
+        ]);
     }
 
     private static function sleep(array $payload): array
@@ -152,12 +154,12 @@ final class FeatureNormalizer
                 }
                 $timingValid = $timingValid && $segmentTimingValid;
 
-                $normalized = array_filter([
+                $normalized = Values::withoutNulls([
                     'startTime' => $segmentTimingValid ? self::instantFromMilliseconds($segmentStart) : null,
                     'endTime' => $segmentTimingValid ? self::instantFromMilliseconds($segmentEnd) : null,
                     'durationMinutes' => $duration,
                     'type' => self::normalizeSleepType($segment['sleepType'] ?? $segment['sleeptype'] ?? $segment['type'] ?? null),
-                ], static fn (mixed $value): bool => $value !== null);
+                ]);
                 if ($normalized !== []) {
                     $segments[] = $normalized;
                 }
@@ -172,14 +174,14 @@ final class FeatureNormalizer
         $endTime = $timingValid ? self::validEpochMilliseconds($payload['endTime'] ?? null) : null;
         $isAccumulative = self::boolLike(self::first($payload, ['isAccumulative', 'IsAccumulative']));
 
-        return array_filter([
+        return Values::withoutNulls([
             'startTime' => self::instantFromMilliseconds($startTime),
             'endTime' => self::instantFromMilliseconds($endTime),
             'isAccumulative' => $isAccumulative,
             'totalDurationMinutes' => $hasDuration ? self::number($totalDurationMinutes) : null,
             'timingValid' => $timingValid,
             'segments' => $segments !== [] ? $segments : null,
-        ], static fn (mixed $value): bool => $value !== null);
+        ]);
     }
 
     private static function validSleepRange(mixed $start, mixed $end): bool
@@ -237,14 +239,14 @@ final class FeatureNormalizer
             }
         }
 
-        return array_filter([
+        return Values::withoutNulls([
             $field => $samples !== [] ? $samples : null,
             'frequencyHz' => self::int($payload['frequency'] ?? $payload['Frequency'] ?? null),
             'collectionId' => self::stringOrNull($payload['collectionLogo'] ?? null),
             'startedAt' => self::int($payload['dataStartTime'] ?? $payload['Data start time'] ?? null),
             'packetStatus' => self::int($payload['dataStatus'] ?? $payload['Data Status'] ?? null),
             'block' => self::int($payload['block'] ?? null),
-        ], static fn (mixed $value): bool => $value !== null);
+        ]);
     }
 
     private static function rrIntervals(array $payload): array
@@ -259,25 +261,25 @@ final class FeatureNormalizer
             $intervals[] = ['timestamp' => (int)$parts[0], 'milliseconds' => (int)$parts[1]];
         }
 
-        return array_filter([
+        return Values::withoutNulls([
             'intervals' => $intervals !== [] ? $intervals : null,
             'frequencyHz' => self::int($payload['frequency'] ?? $payload['Frequency'] ?? null),
             'collectionId' => self::stringOrNull($payload['collectionLogo'] ?? null),
-        ], static fn (mixed $value): bool => $value !== null);
+        ]);
     }
 
     private static function deviceState(array $payload): array
     {
-        return array_filter([
+        return Values::withoutNulls([
             'state' => self::stringOrNull($payload['state'] ?? null),
             'resetStatus' => self::int($payload['status'] ?? null),
             'reason' => self::stringOrNull($payload['reason'] ?? null),
-        ], static fn (mixed $value): bool => $value !== null);
+        ]);
     }
 
     private static function heartbeat(array $payload): array
     {
-        return array_filter([
+        return Values::withoutNulls([
             'status' => 'ok',
             'steps' => self::int($payload['steps'] ?? $payload['step'] ?? null),
             'gsmSignal' => self::int($payload['gsmSignal'] ?? null),
@@ -289,7 +291,7 @@ final class FeatureNormalizer
             'remainingSpace' => self::int($payload['remainingSpace'] ?? null),
             'fortificationState' => self::int($payload['fortificationState'] ?? $payload['fortification'] ?? null),
             'workMode' => self::int($payload['workMode'] ?? $payload['workingMode'] ?? null),
-        ], static fn (mixed $value): bool => $value !== null);
+        ]);
     }
 
     /**
@@ -333,18 +335,18 @@ final class FeatureNormalizer
         $ack = $payload['configAck'] ?? null;
         $normalizedAck = is_scalar($ack) && $ack !== '' ? (string)$ack : null;
 
-        return array_filter([
+        return Values::withoutNulls([
             'status' => $normalizedAck === '0' ? 'failed' : 'ok',
             'ack' => $normalizedAck,
             'settings' => $configs !== [] ? $configs : null,
-        ], static fn (mixed $value): bool => $value !== null);
+        ]);
     }
 
     private static function firmwareVersion(array $payload): array
     {
-        return array_filter([
+        return Values::withoutNulls([
             'version' => self::stringOrNull($payload['firmware'] ?? null),
-        ], static fn (mixed $value): bool => $value !== null);
+        ]);
     }
 
     private static function first(array $payload, array $keys): mixed

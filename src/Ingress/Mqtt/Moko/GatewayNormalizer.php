@@ -2,6 +2,8 @@
 
 namespace Hub\Ingress\Mqtt\Moko;
 
+use Hub\Support\Values;
+
 final class GatewayNormalizer
 {
     /** @param array<string, mixed> $message @param array<string, mixed> $device @return list<array<string, mixed>> */
@@ -30,14 +32,14 @@ final class GatewayNormalizer
             }
             return [[
                 'type' => 'location',
-                'data' => array_filter([
+                'data' => Values::withoutNulls([
                     'source' => 'gps',
                     'gpsValid' => ($data['fix_result'] ?? null) === 'gps_success',
                     'hasCoordinates' => true,
                     'lat' => (float)$data['latitude'],
                     'lon' => (float)$data['longitude'],
                     'hdop' => is_numeric($data['hdop'] ?? null) ? (float)$data['hdop'] : null,
-                ], static fn(mixed $value): bool => $value !== null),
+                ]),
             ] + $common];
         }
 
@@ -69,10 +71,10 @@ final class GatewayNormalizer
             2 => 'ethernet_wifi',
             default => null,
         };
-        $connectivity = array_filter([
+        $connectivity = Values::withoutNulls([
             'interface' => $interface,
             'signalStrengthDbm' => is_numeric($data['wifi_rssi'] ?? null) ? (int)$data['wifi_rssi'] : null,
-        ], static fn(mixed $value): bool => $value !== null);
+        ]);
         if ($connectivity === []) {
             return [];
         }

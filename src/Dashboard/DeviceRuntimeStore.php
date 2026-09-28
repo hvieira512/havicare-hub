@@ -3,6 +3,7 @@
 namespace Hub\Dashboard;
 
 use Hub\Domain\DeviceMetadata;
+use Hub\Support\Values;
 use Predis\ClientInterface;
 
 final class DeviceRuntimeStore
@@ -101,10 +102,7 @@ final class DeviceRuntimeStore
         }
 
         $this->redis->hset($this->sightingKey($deviceKey), $gatewayKey, json_encode(
-            array_filter(
-                ['rssiDbm' => $rssiDbm, 'lastSeenAt' => gmdate('Y-m-d\\TH:i:s\\Z')],
-                static fn(mixed $value): bool => $value !== null,
-            ),
+            Values::withoutNulls(['rssiDbm' => $rssiDbm, 'lastSeenAt' => gmdate('Y-m-d\\TH:i:s\\Z')]),
             JSON_THROW_ON_ERROR,
         ));
     }
