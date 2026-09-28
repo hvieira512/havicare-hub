@@ -919,7 +919,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'make call' => ['make_call', 'makeCall'];
         yield 'reset device' => ['reset_device', 'resetCommand'];
         yield 'firmware version' => ['firmwareVersion', 'firmwareVersion'];
-        yield 'device status' => ['deviceStatus', 'deviceStatus'];
         yield 'device password' => ['device_password', 'devicePassword'];
         yield 'language timezone' => ['language_timezone', 'languageTimezone'];
         yield 'whitelist enabled' => ['whitelist_enabled', 'rejectUnknownCalls'];
@@ -1418,7 +1417,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public static function fieldlessRequestProvider(): iterable
     {
         yield 'firmware version' => ['four-p-touch', 'firmwareVersion', 'VERNO'];
-        yield 'device status' => ['four-p-touch', 'deviceStatus', 'TS'];
     }
 
     /**

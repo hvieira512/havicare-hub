@@ -66,6 +66,14 @@ final class TelemetryRefreshCommandTest extends TestCase
         self::assertSame('request', $entries[0]['kind']);
     }
 
+    /** E tem uma porta só: o mosaico. A entrada no painel de configuração era a segunda. */
+    public function testTheWatchStatusHasNoSecondDoorInTheConfigurationPanel(): void
+    {
+        self::assertNull(
+            \Hub\Command\DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'deviceStatus'),
+        );
+    }
+
     /** E o `device_state` do relógio é outra coisa: o acontecimento de se desligar ou repor. */
     public function testTheWatchKeepsItsSeparateLifecycleEvent(): void
     {
