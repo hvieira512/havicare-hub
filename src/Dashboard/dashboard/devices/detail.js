@@ -140,8 +140,10 @@ const TELEMETRY_REQUEST_GROUPS = [
     },
 ];
 
+/** O que o aparelho diz sobre si próprio, e não uma medição do mundo. */
 const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
     "firmware_version",
+    "device_status",
 ]);
 
 /**

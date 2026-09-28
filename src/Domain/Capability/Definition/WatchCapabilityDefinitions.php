@@ -31,6 +31,9 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
                     'ppg' => 'PPG',
                     'rr_interval' => 'Intervalo R-R',
                     'firmware_version' => 'Versão do firmware',
+                    // O `TS` dos 4P Touch. Não traz valor próprio: o que ele responde enche
+                    // as leituras que já existem, como o `0x07` do dispensador.
+                    'device_status' => 'Estado do dispositivo',
                 ],
             ],
             'health' => [

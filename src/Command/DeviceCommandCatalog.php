@@ -257,10 +257,7 @@ final class DeviceCommandCatalog
             ['id' => 'fourPBloodPressure', 'command' => 'hrtstart', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
             ['id' => 'fourPBodyTemperature', 'command' => 'bodytemp2', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['bodytemp2', 'btemp2']],
             ['id' => 'fourPFirmwareVersion', 'command' => 'VERNO', 'label' => 'Firmware version', 'icon' => 'fa-microchip', 'kind' => 'request', 'feature' => 'firmware_version', 'expectedReplyTypes' => ['VERNO']],
-            // Sem `TS` aqui: ele devolve sobretudo o que o hub lá escreveu, e por isso já
-            // vive no painel de configuração como «Estado do dispositivo · Consultar».
-            // Anunciá-lo também como `refresh` punha um «Atualizar» à cabeça dos mosaicos de
-            // todos os 4P Touch, a prometer uma releitura de telemetria que ele não faz.
+            ['id' => 'fourPDeviceStatus', 'command' => 'TS', 'label' => 'Device status', 'icon' => 'fa-arrows-rotate', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['TS']],
         ];
     }
 }

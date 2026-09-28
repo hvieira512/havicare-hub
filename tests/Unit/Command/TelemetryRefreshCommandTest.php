@@ -54,15 +54,28 @@ final class TelemetryRefreshCommandTest extends TestCase
         }
     }
 
-    /**
-     * O `TS` dos 4P Touch fica só no painel de configuração, como «Estado do dispositivo»
-     * com o verbo «Consultar»: devolve sobretudo o que o hub lá escreveu, e não é uma
-     * releitura de telemetria.
-     */
-    public function testTheWatchStatusIsNotARequestableCapability(): void
+    /** O `TS` dos 4P Touch é o mesmo pedido, com o mesmo mosaico. */
+    public function testTheWatchStatusIsTheSameRequestableCapability(): void
     {
         $keys = array_column(CapabilityCatalog::definitionsForDeviceType('watch'), 'key');
+        self::assertContains('device_status', $keys);
 
-        self::assertNotContains('device_status', $keys);
+        $entries = DeviceCommandCatalog::commandsForFeature('four-p-touch', 'device_status');
+        self::assertCount(1, $entries);
+        self::assertSame('TS', $entries[0]['command']);
+        self::assertSame('request', $entries[0]['kind']);
+    }
+
+    /** E o `device_state` do relógio é outra coisa: o acontecimento de se desligar ou repor. */
+    public function testTheWatchKeepsItsSeparateLifecycleEvent(): void
+    {
+        foreach (CapabilityCatalog::definitionsForDeviceType('watch') as $definition) {
+            if ($definition['key'] === 'device_state') {
+                self::assertTrue($definition['isEvent'] ?? false);
+                return;
+            }
+        }
+
+        self::fail('o `device_state` do relógio desapareceu');
     }
 }

@@ -971,11 +971,10 @@ final class DeviceConfigurationCatalogTest extends TestCase
     {
         $commands = DeviceCommandCatalog::commandsForProtocol('four-p-touch');
 
-        // Cinco e não seis: o `TS` saiu daqui. Devolve sobretudo o que o hub lá escreveu, e
-        // já vive no painel de configuração como «Estado do dispositivo · Consultar».
-        self::assertCount(5, $commands);
+        self::assertCount(6, $commands);
         self::assertSame('CR', $commands[0]['command']);
         self::assertSame('VERNO', $commands[4]['command']);
+        self::assertSame('TS', $commands[5]['command']);
         self::assertContains('bphrt', $commands[1]['expectedReplyTypes']);
         self::assertContains('btemp2', $commands[3]['expectedReplyTypes']);
     }

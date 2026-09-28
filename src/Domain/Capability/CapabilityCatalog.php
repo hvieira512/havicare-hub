@@ -269,7 +269,9 @@ final class CapabilityCatalog
             // aqui, o catálogo declarava-a e a matriz do modelo dava-a por não suportada.
             'monit-mecs-pro-ble' => ['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition', 'proximity'],
             'moko-w6b', 'moko-w6' => ['battery', 'motion', 'proximity'],
-            'zayata-m228' => ['battery', 'cells_remaining', 'ambient_temperature', 'ambient_humidity', 'connectivity', 'medication_alarm_status', 'firmware_version', 'device_status'],
+            // Sem `device_status`: esta lista é o que o protocolo publica, e ele não publica
+            // valor nenhum. Chega cá pelo comando que o pede, como nos 4P Touch.
+            'zayata-m228' => ['battery', 'cells_remaining', 'ambient_temperature', 'ambient_humidity', 'connectivity', 'medication_alarm_status', 'firmware_version'],
             default => [],
         };
     }
@@ -351,7 +353,10 @@ final class CapabilityCatalog
             'activity',
             'heartbeat',
             'blood_sugar',
-            'firmware_version' => $feature,
+            'firmware_version',
+            // Não traz valor próprio: o que a resposta enche são as leituras que já existem.
+            // Está aqui porque é uma capacidade pedível como as outras.
+            'device_status' => $feature,
             default => null,
         };
     }

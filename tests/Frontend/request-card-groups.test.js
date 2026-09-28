@@ -38,6 +38,26 @@ test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", (
 });
 
 /**
+ * O que o aparelho diz sobre si próprio fica junto: a versão do firmware e o pedido para ele
+ * reler o seu estado são a mesma natureza, e nenhuma das duas é uma medição do mundo.
+ */
+test("o estado do dispositivo fica com a versão do firmware, e não entre as medições", () => {
+    const groups = telemetryRequestCards({
+        battery: supported(false),
+        device_status: supported(),
+        firmware_version: supported(),
+    });
+
+    assert.deepEqual(
+        groups.map((group) => [group.label, group.cards.map((card) => card.feature)]),
+        [
+            ["Telemetria", ["battery"]],
+            ["Informação do sistema", ["device_status", "firmware_version"]],
+        ],
+    );
+});
+
+/**
  * A proximidade é a força com que cada gateway ouve o aparelho, e o resumo já a mostra em
  * «Dispositivos ligados» -- uma linha por gateway, com barras. O mosaico dizia-a pior: um só,
  * e sem nomear o gateway que a produziu.
