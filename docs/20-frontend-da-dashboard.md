@@ -143,7 +143,6 @@ dashboard/
 │   ├── device-license.js   a empresa e a licença de um dispositivo, ou «Sem licença»
 │   ├── form-field.js       etiqueta, controlo e linha de ajuda
 │   ├── setting-row.js      uma definição numa linha: nome, pastilha, controlo e acções
-│   ├── segmented-scale.js  uma escala curta com todas as posições à vista
 │   ├── button-group.js     uma escolha única em botões
 │   ├── device-type-tiles.js  o mosaico de tipos de dispositivo, e o ícone de cada um
 │   ├── chips.js            as pastilhas de secção e as de filtro aplicado
@@ -195,6 +194,7 @@ dashboard/
 │   │   ├── inputs/         um descritor por tipo de campo, agrupado por fornecedor
 │   │   │   ├── index.js        junta os cinco grupos num registo só
 │   │   │   ├── shared.js       o contador de ids, o campo numérico, o interruptor
+│   │   │   ├── segmented-scale.js  uma escala curta com todas as posições à vista
 │   │   │   ├── generic.js      o que mais do que um fornecedor declara
 │   │   │   ├── capability.js   alarmes, contactos SOS, lista branca, dados pessoais
 │   │   │   ├── four-p-touch.js · vivistar.js · wonlex.js

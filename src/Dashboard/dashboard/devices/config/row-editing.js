@@ -5,6 +5,7 @@ import {
 } from "./four-p-touch-take-pills.js";
 import { syncAlarmClockCustomVisibility } from "./inputs/capability.js";
 import { createContactRow } from "./inputs/generic.js";
+import { nextUid } from "./inputs/shared.js";
 import {
     renumberWonlexMedicationPlans,
     wonlexMedicationPlanRow,
@@ -59,22 +60,53 @@ export function appendRepeatRow(section, kind) {
     if (!spec || !list) return;
 
     const rows = list.querySelectorAll(`[data-repeat-row="${kind}"]`);
-    // Sem `data-repeat-limit` não há limite: os alarmes do relógio nunca tiveram um.
+    // Sem `data-repeat-limit` não há limite.
     const limit = parseInt(list.dataset.repeatLimit || "", 10);
     if (Number.isFinite(limit) && rows.length >= limit) return;
 
+    // Os dois caminhos passam pelo `restampRowIds` com a linha ainda fora do documento: o
+    // `resetRowFields` marca rádios, e com os grupos por renomear isso desmarcava os da linha
+    // que os partilhasse.
     if (spec.render) {
-        list.insertAdjacentHTML("beforeend", spec.render(rows.length));
+        const holder = document.createElement("template");
+        holder.innerHTML = spec.render(rows.length);
+        for (const fresh of [...holder.content.children]) {
+            restampRowIds(fresh);
+            list.appendChild(fresh);
+        }
     } else {
         const template = rows[rows.length - 1] || spec.template?.(section);
         if (!template) return;
         const clone = template.cloneNode(true);
+        restampRowIds(clone);
         resetRowFields(clone);
         list.appendChild(clone);
     }
 
     spec.after?.(section);
     syncAddButton(section, kind);
+}
+
+/**
+ * Renomeia os `id`, os `name` e os `for` de uma linha acabada de nascer.
+ *
+ * Um clone traz os do original; o `render` numera-os pela contagem de linhas, que volta atrás
+ * quando se remove uma do meio. Repetidos, os rádios de duas linhas formam um grupo só e as
+ * etiquetas dos dias apontam para as caixas da outra.
+ */
+function restampRowIds(row) {
+    const suffix = nextUid("copy");
+    const rename = (value) => `${value}-${suffix}`;
+
+    for (const label of row.querySelectorAll("label[for]")) {
+        label.htmlFor = rename(label.htmlFor);
+    }
+    for (const element of row.querySelectorAll("[id]")) {
+        element.id = rename(element.id);
+    }
+    for (const element of row.querySelectorAll("[name]")) {
+        element.name = rename(element.name);
+    }
 }
 
 export function removeRepeatRow(button) {

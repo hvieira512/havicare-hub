@@ -269,3 +269,20 @@
     color: var(--bs-body-bg);
 }
 
+/* O cabeçalho de secção dentro de um cartão: o título do ecrã não pode competir com um h5
+   em cada bloco. */
+.section-label,
+.selected-device-facts dt,
+.wizard-trail .wizard-badge-key {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+}
+
+/* Como etiqueta de um campo leva sempre a linha toda e o mesmo espaço por baixo. */
+label.section-label {
+    display: block;
+    margin-bottom: .25rem;
+}

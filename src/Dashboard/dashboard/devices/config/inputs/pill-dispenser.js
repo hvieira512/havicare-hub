@@ -1,7 +1,7 @@
 import { esc } from "../../../format.js";
 import { field } from "../../../components/form-field.js";
 import { html, raw } from "../../../html.js";
-import { segmentedScale } from "../../../components/segmented-scale.js";
+import { segmentedScale } from "./segmented-scale.js";
 import { enabledSwitch, nextUid } from "./shared.js";
 import { selectOptions } from "./generic.js";
 import { readCheckbox, readText } from "../readers.js";
@@ -152,7 +152,7 @@ export const INPUTS = {
     pillDispenserPeriod: {
         render: (entry, desired) =>
             enabledSwitch(Boolean(desired?.enabled)) +
-            html`<div class="row row-cols-1 row-cols-sm-2 g-2 mt-1">
+            html`<div class="row row-cols-1 row-cols-sm-auto g-2 mt-1">
                 <div class="col">${raw(field("Início", dateField("startDate", desired?.startDate)))}</div>
                 <div class="col">${raw(field("Fim", dateField("endDate", desired?.endDate)))}</div>
             </div>`,
@@ -171,7 +171,7 @@ export const INPUTS = {
     pillDispenserQuietHours: {
         render: (entry, desired) =>
             enabledSwitch(Boolean(desired?.enabled)) +
-            html`<div class="row row-cols-1 row-cols-sm-2 g-2 mt-1">
+            html`<div class="row row-cols-1 row-cols-sm-auto g-2 mt-1">
                 <div class="col">${raw(field("Início", timeField("start", desired?.startHour, desired?.startMinute)))}</div>
                 <div class="col">${raw(field("Fim", timeField("end", desired?.endHour, desired?.endMinute)))}</div>
             </div>`,

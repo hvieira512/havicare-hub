@@ -1,4 +1,4 @@
-import { html, raw } from "../html.js";
+import { html, raw } from "../../../html.js";
 
 /**
  * Uma escala curta com todas as posições à vista, à largura de quem a recebe.

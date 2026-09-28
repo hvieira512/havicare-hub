@@ -276,6 +276,10 @@ function alarmClockInput(desired, meta = {}) {
         </div>`;
 }
 
+/**
+ * As larguras não dependem do que o fornecedor declara: a linha soma doze com o nome
+ * (Wonlex) ou com o tipo (Vivistar), e nenhum declara os dois. O remover fecha o cartão.
+ */
 function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonlexFields = {}) {
     const rowId = nextUid("alarm-clock");
     const recurrenceKind = normalizeAlarmClockRecurrenceKind(
@@ -310,9 +314,9 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                 ${field(
                     "Hora",
                     `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(formatReminderTime(item.time))}" required>`,
-                    { cls: `col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}`, required: true },
+                    { cls: "col-sm-6 col-lg-2", required: true },
                 )}
-                <div class="col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}">
+                <div class="col-sm-6 col-lg-2">
                     <div class="form-check form-switch mt-4">
                         <input class="form-check-input" type="checkbox" role="switch" data-alarm-clock-field="enabled" ${boolValue(item.enabled, true) ? "checked" : ""}>
                         <label class="form-check-label" data-switch-label>${boolValue(item.enabled, true) ? "Ligado" : "Desligado"}</label>
@@ -338,7 +342,7 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                         `;
                         }).join("")}
                     </div>`,
-                            { cls: "col-12 col-lg-3" },
+                            { cls: "col-12 col-lg-4" },
                         )
                     : ""}
                 ${field(
@@ -362,15 +366,10 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                             })
                             .join("")}
                     </div>`,
-                    { cls: `col-12 col-lg-${hasTypeSelector ? "3" : "4"}`, required: true },
+                    { cls: "col-12 col-lg-4", required: true },
                 )}
                 <div class="col-12 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
                     ${weekdayPicker(dayMask, rowId)}
-                </div>
-                <div class="col-12 d-flex justify-content-end">
-                    <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover" aria-label="Remover">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
                 </div>
                 ${wonlexFields.url
                     ? field(
@@ -382,6 +381,11 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                             },
                         )
                     : ""}
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover" aria-label="Remover">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
             </div>
         </div>`;
 }
@@ -550,7 +554,8 @@ export const INPUTS = {
     alarm_clock: {
         render: (_entry, desired, meta) => alarmClockInput(desired, meta),
         read: (section) => readAlarmClock(section),
+        // Sem `help`: o limite real e a nota da recorrência já estão no topo do bloco, e o
+        // texto fixo que aqui estava dizia três alarmes a quem tem dez.
         defaults: () => ({ items: [] }),
-        help: () => "Até 3 alarmes com recorrência e tipo, quando suportado.",
     },
 };
