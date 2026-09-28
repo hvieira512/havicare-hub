@@ -20,7 +20,8 @@ final class CapabilityCatalogTest extends TestCase
             //
             // O intervalo de envio da localização está em Saúde, com os outros dez intervalos
             // de medição e de envio.
-            'watch' => [68, 'a62c8bd6be2d838cc63f4ba8a13f6a5babf6f7aafd8b1804a77e86b671156a67'],
+            // E a `connectivity`, que chega na resposta ao `TS`: que rádio serve a ligação.
+            'watch' => [69, 'f5f4233f0087097003e031ff68c2af49180dd334b20d5ae56f911e1f31abf408'],
             'ncs' => [1, '213f35a9295bacacfdaa5570451707a23ee59416ebc3ac1de062f1b6ca7685a4'],
             'radar' => [9, '45dfaa71313e4da275fca1da9536b826bf0fe6a442cf462d3d2534db1499fa65'],
             'gateway' => [3, '044f4b1de47b562638442dc3fc8be22b3ab76043721211a47f478ee68124a91f'],

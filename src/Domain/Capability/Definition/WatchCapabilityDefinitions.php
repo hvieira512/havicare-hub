@@ -15,6 +15,9 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
             'telemetry' => [
                 'measurement' => [
                     'battery' => 'Bateria',
+                    // Que rádio serve a ligação, e quais estão acesos. Chega na resposta ao
+                    // `TS`; é a mesma capacidade que os gateways e o dispensador publicam.
+                    'connectivity' => 'Conectividade',
                     'activity' => 'Atividade',
                     'blood_sugar' => 'Glicemia',
                     'sleep' => 'Sono',

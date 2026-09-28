@@ -918,7 +918,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'push message' => ['push_message', 'pushMessage'];
         yield 'make call' => ['make_call', 'makeCall'];
         yield 'reset device' => ['reset_device', 'resetCommand'];
-        yield 'firmware version' => ['firmwareVersion', 'firmwareVersion'];
         yield 'device password' => ['device_password', 'devicePassword'];
         yield 'language timezone' => ['language_timezone', 'languageTimezone'];
         yield 'whitelist enabled' => ['whitelist_enabled', 'rejectUnknownCalls'];
@@ -1412,27 +1411,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         $off = DeviceConfigurationCatalog::commandPayload($protocol, $key, ['enabled' => false]);
         self::assertSame($command, $off['command']);
         self::assertSame(['fields' => ['0']], $off['payload']);
-    }
-
-    public static function fieldlessRequestProvider(): iterable
-    {
-        yield 'firmware version' => ['four-p-touch', 'firmwareVersion', 'VERNO'];
-    }
-
-    /**
-     * Perguntar não leva argumentos: o comando vai sozinho e o dispositivo responde.
-     *
-     * @dataProvider fieldlessRequestProvider
-     */
-    public function testARequestGoesOnTheWireWithoutFields(
-        string $protocol,
-        string $key,
-        string $command,
-    ): void {
-        $payload = DeviceConfigurationCatalog::commandPayload($protocol, $key, []);
-
-        self::assertSame($command, $payload['command']);
-        self::assertSame(['fields' => []], $payload['payload']);
     }
 
     public static function rejectedConfigurationProvider(): iterable

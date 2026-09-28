@@ -2,6 +2,8 @@
 
 namespace Hub\Protocol\Adapter;
 
+use Hub\Support\Values;
+
 class FourPTouchAdapter implements DeviceAdapterInterface
 {
     /**
@@ -194,9 +196,49 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         }
 
         if ($type === 'TS') {
-            $data['deviceTime'] = $fields[0] ?? null;
+            $data += self::deviceStatus($fields[0] ?? null);
             return;
         }
+    }
+
+    /**
+     * O bloco `chave:valor` da resposta ao `TS`, separado por `;`.
+     *
+     * O `GPS:OK(n)` e o `NET:OK(n)` ficam de fora: a especificação dá o formato e nunca diz o
+     * que os números são, e o `100` do `NET` é o mesmo no exemplo dela e no aparelho real.
+     *
+     * Um modelo que ecoe o comando devolve o bloco vazio, e daqui não sai nada.
+     *
+     * @return array<string, mixed>
+     */
+    private static function deviceStatus(?string $block): array
+    {
+        $values = [];
+        foreach (explode(';', (string)$block) as $pair) {
+            [$key, $value] = array_pad(explode(':', trim($pair), 2), 2, null);
+            $key = trim((string)$key);
+            if ($key !== '' && $value !== null) {
+                $values[$key] = trim($value);
+            }
+        }
+
+        $boolean = static fn(string $key): ?bool => isset($values[$key])
+            ? strtolower($values[$key]) === 'true'
+            : null;
+
+        return Values::withoutNulls([
+            'firmware' => $values['ver'] ?? null,
+            'batteryPercent' => isset($values['batlevel']) ? (int)$values['batlevel'] : null,
+            'uploadIntervalSeconds' => isset($values['upload']) ? (int)$values['upload'] : null,
+            'heartbeatIntervalSeconds' => isset($values['lk']) ? (int)$values['lk'] : null,
+            'language' => $values['language'] ?? null,
+            // O `explode` leva limite 2 por causa deste: o fuso é `+01:00` e tem dois pontos.
+            'timeZone' => $values['zone'] ?? null,
+            'soundProfile' => isset($values['profile']) ? (int)$values['profile'] : null,
+            'wifiEnabled' => $boolean('wifiOpen'),
+            'wifiConnected' => $boolean('wifiConnect'),
+            'cellularEnabled' => $boolean('gprsOpen'),
+        ]);
     }
 
     private function enrichPosition(string $type, array $fields, array &$data): void
