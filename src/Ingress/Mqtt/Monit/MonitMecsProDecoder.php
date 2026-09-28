@@ -2,7 +2,7 @@
 
 namespace Hub\Ingress\Mqtt\Monit;
 
-use Hub\Ingress\Mqtt\Gateway\Topic;
+use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 
 final class MonitMecsProDecoder
 {
@@ -12,7 +12,7 @@ final class MonitMecsProDecoder
      */
     public function decode(array $observation): ?array
     {
-        $mac = Topic::normalizeMac((string)($observation['mac'] ?? ''));
+        $mac = GatewayTopic::normalizeMac((string)($observation['mac'] ?? ''));
         $advHex = strtolower(trim((string)($observation['adv_data'] ?? '')));
         if ($mac === null || !str_starts_with($mac, 'eec500') || $advHex === '' || preg_match('/^[0-9a-f]+$/', $advHex) !== 1 || strlen($advHex) % 2 !== 0) {
             return null;

@@ -41,7 +41,7 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
     public function testAnUnknownSensorAlsoReadsTheNormalPreset(): void
     {
         // A ingestao chama isto antes de qualquer garantia de que a linha existe. Devolver
-        // null obrigaria o `Bridge` a decidir limiares, que é onde eles não devem viver.
+        // null obrigaria o `MokoBridge` a decidir limiares, que é onde eles não devem viver.
         $repository = new DiaperSensitivityRepository($this->createDashboardDatabase()->pdo());
 
         self::assertSame(DiaperSensitivity::normal(), $repository->forDevice('nao-existe'));

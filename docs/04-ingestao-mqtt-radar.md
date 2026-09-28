@@ -205,8 +205,8 @@ broker ou para a interface, e nada no código impedia esse registo.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Ingress/Mqtt/Qinglanst/Topic.php` | `radar/{licenca}/{uid}` |
-| `src/Ingress/Mqtt/Qinglanst/Bridge.php` | Subscreve, identifica, publica |
+| `src/Ingress/Mqtt/Qinglanst/QinglanstTopic.php` | `radar/{licenca}/{uid}` |
+| `src/Ingress/Mqtt/Qinglanst/QinglanstBridge.php` | Subscreve, identifica, publica |
 | `src/Ingress/Mqtt/Qinglanst/PayloadDecoder.php` | Os quatro formatos binários, e os códigos numéricos para nomes |
 | `src/Ingress/Mqtt/Qinglanst/MessageNormalizer.php` | Telemetria, limiares e eventos |
 | `src/Ingress/Mqtt/Qinglanst/DashboardWritePolicy.php` | Os dois travões |

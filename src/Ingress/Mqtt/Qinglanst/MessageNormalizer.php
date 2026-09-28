@@ -60,7 +60,7 @@ final class MessageNormalizer
      * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string} $device
      * @return array{telemetry: array<string, array>, events: list<array>}
      */
-    public function normalize(array $decoded, Topic $topic, array $device): array
+    public function normalize(array $decoded, QinglanstTopic $topic, array $device): array
     {
         return match ($decoded['type']) {
             'position' => $this->normalizePosition($decoded, $topic, $device),
@@ -76,7 +76,7 @@ final class MessageNormalizer
      * @param array $device
      * @return array{telemetry: array<string, array>, events: list<array>}
      */
-    private function normalizePosition(array $decoded, Topic $topic, array $device): array
+    private function normalizePosition(array $decoded, QinglanstTopic $topic, array $device): array
     {
         $people = $this->occupiedPeople($decoded['people']);
 
@@ -126,7 +126,7 @@ final class MessageNormalizer
      * @param array $people
      * @return array|null
      */
-    private function detectPositionEvent(Topic $topic, array $device, array $people): ?array
+    private function detectPositionEvent(QinglanstTopic $topic, array $device, array $people): ?array
     {
         foreach ($people as $person) {
             $posture = (string)($person['posture_state'] ?? '');
@@ -205,7 +205,7 @@ final class MessageNormalizer
     /**
      * @return array{telemetry: array<string, array>, events: list<array>}
      */
-    private function normalizeVitals(array $decoded, Topic $topic, array $device): array
+    private function normalizeVitals(array $decoded, QinglanstTopic $topic, array $device): array
     {
         $breathing = (int)($decoded['breathing'] ?? 0);
         $heartRate = (int)($decoded['heart_rate'] ?? 0);
@@ -294,7 +294,7 @@ final class MessageNormalizer
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
-    private function telemetry(Topic $topic, array $device, string $capability, string $nativeType, array $data): array
+    private function telemetry(QinglanstTopic $topic, array $device, string $capability, string $nativeType, array $data): array
     {
         return [
             'type' => $capability,
@@ -308,7 +308,7 @@ final class MessageNormalizer
     /**
      * @return array{telemetry: array<string, array>, events: list<array>}
      */
-    private function normalizeMinuteStats(array $decoded, Topic $topic, array $device): array
+    private function normalizeMinuteStats(array $decoded, QinglanstTopic $topic, array $device): array
     {
         return [
             'telemetry' => [
@@ -340,7 +340,7 @@ final class MessageNormalizer
     /**
      * @return array{telemetry: array<string, array>, events: list<array>}
      */
-    private function normalizeHbStatics(array $decoded, Topic $topic, array $device): array
+    private function normalizeHbStatics(array $decoded, QinglanstTopic $topic, array $device): array
     {
         // Sem `PerMinute` no nome de cada campo: a capacidade já se chama
         // `vitals_minute_stats`, e nenhuma outra repete o próprio nome dentro dos campos.
@@ -412,7 +412,7 @@ final class MessageNormalizer
      * @param array<string, mixed> $data
      * @return array
      */
-    private function detectionEvent(Topic $topic, array $device, string $type, string $level, string $source, array $data): array
+    private function detectionEvent(QinglanstTopic $topic, array $device, string $type, string $level, string $source, array $data): array
     {
         return [
             'type' => self::DETECTION_CAPABILITY[$type] ?? 'vitals_alarm',
@@ -433,7 +433,7 @@ final class MessageNormalizer
      * @param array{supplier?: string, model?: string, commercialName?: string, ...} $device
      * @return array{id: string, supplier?: string, model?: string, commercialName?: string}
      */
-    private function deviceInfo(Topic $topic, array $device): array
+    private function deviceInfo(QinglanstTopic $topic, array $device): array
     {
         // O IMEI canónico, o mesmo que vai no tópico publicado.
         $info = ['id' => (string)($device['imei'] ?? $topic->deviceUid)];
@@ -452,7 +452,7 @@ final class MessageNormalizer
     /**
      * @return array{protocol: string, nativeType: string, topic: string}
      */
-    private function source(Topic $topic, string $messageType): array
+    private function source(QinglanstTopic $topic, string $messageType): array
     {
         return [
             'protocol' => 'qinglanst-radar',

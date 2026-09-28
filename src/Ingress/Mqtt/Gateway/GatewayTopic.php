@@ -8,7 +8,7 @@ namespace Hub\Ingress\Mqtt\Gateway;
  * É do hub e não de um fornecedor -- todos os gateways publicam sob o seu próprio MAC, e cada
  * ingestão reclama do espaço partilhado só o que sabe ler.
  */
-final class Topic
+final class GatewayTopic
 {
     public function __construct(
         public readonly string $original,

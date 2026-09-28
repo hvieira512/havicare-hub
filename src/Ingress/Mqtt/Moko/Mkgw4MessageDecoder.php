@@ -2,7 +2,7 @@
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\Ingress\Mqtt\Gateway\Topic;
+use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 
 final class Mkgw4MessageDecoder implements MessageDecoder
 {
@@ -17,7 +17,7 @@ final class Mkgw4MessageDecoder implements MessageDecoder
         }
 
         $messageId = strtolower(bin2hex(substr($binary, 1, 2)));
-        $gatewayMac = Topic::normalizeMac(bin2hex(substr($binary, 3, 6)));
+        $gatewayMac = GatewayTopic::normalizeMac(bin2hex(substr($binary, 3, 6)));
         $declaredLength = unpack('n', substr($binary, 9, 2))[1] ?? -1;
         if ($gatewayMac === null || !in_array($messageId, self::SUPPORTED_MESSAGES, true) || $declaredLength < 0 || strlen($binary) !== 11 + $declaredLength) {
             return null;

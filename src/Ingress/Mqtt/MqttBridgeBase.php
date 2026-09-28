@@ -11,7 +11,7 @@ use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
 
-abstract class Bridge implements MqttIngress
+abstract class MqttBridgeBase implements MqttIngress
 {
     use ReconnectsOnLoopFailure;
 

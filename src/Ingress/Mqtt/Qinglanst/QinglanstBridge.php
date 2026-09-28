@@ -3,9 +3,10 @@
 namespace Hub\Ingress\Mqtt\Qinglanst;
 
 use Hub\Domain\DeviceMetadata;
+use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
 
-final class Bridge extends \Hub\Ingress\Mqtt\Bridge
+final class QinglanstBridge extends MqttBridgeBase
 {
     private readonly ?PayloadDecoder $decoder;
     private readonly ?MessageNormalizer $normalizer;
@@ -51,7 +52,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     {
         $totalStart = hrtime(true);
 
-        $parsedTopic = Topic::parse($topic);
+        $parsedTopic = QinglanstTopic::parse($topic);
         if ($parsedTopic === null) {
             $this->stats->recordRejected('unsupported_topic', [
                 'total' => hrtime(true) - $totalStart,
@@ -240,7 +241,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     /**
      * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string}|null
      */
-    private function resolveDevice(Topic $topic): ?array
+    private function resolveDevice(QinglanstTopic $topic): ?array
     {
         $deviceUid = $topic->deviceUid;
 

@@ -6,7 +6,7 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Moko\Bridge;
+use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -67,8 +67,8 @@ final class BridgeW6Test extends TestCase
         ?DashboardStoreContract $dashboardStore = null,
         ?RecordingHubMqttBridge $mqtt = null,
         array $extraDevices = [],
-    ): Bridge {
-        return new Bridge(
+    ): MokoBridge {
+        return new MokoBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::gateway('MKGW4'),
@@ -88,7 +88,7 @@ final class BridgeW6Test extends TestCase
         ];
     }
 
-    private function deliver(Bridge $bridge, string $payload): void
+    private function deliver(MokoBridge $bridge, string $payload): void
     {
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/' . self::GATEWAY . '/raw', $payload);
     }

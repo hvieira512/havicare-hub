@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt;
 
 use Hub\Ingress\Mqtt\Gateway\RedisObservationStateStore;
-use Hub\Ingress\Mqtt\Moko\Bridge as MokoBridge;
-use Hub\Ingress\Mqtt\Ncs\Bridge as NcsBridge;
-use Hub\Ingress\Mqtt\Qinglanst\Bridge as QinglanstBridge;
+use Hub\Ingress\Mqtt\Moko\MokoBridge;
+use Hub\Ingress\Mqtt\Ncs\NcsBridge;
 use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy as QinglanstDashboardWritePolicy;
 use Hub\Ingress\Mqtt\Qinglanst\IngestStats as QinglanstIngestStats;
-use Hub\Ingress\Mqtt\Veepoo\Bridge as VeepooBridge;
+use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
+use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
 use Hub\Runtime\HubServices;

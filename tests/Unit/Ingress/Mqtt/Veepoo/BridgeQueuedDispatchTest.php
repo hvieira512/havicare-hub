@@ -7,7 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\Bridge;
+use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -208,9 +208,9 @@ final class BridgeQueuedDispatchTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt, PendingDownlinkQueue $queue): Bridge
+    private function bridge(RecordingHubMqttBridge $mqtt, PendingDownlinkQueue $queue): VeepooBridge
     {
-        return new Bridge(
+        return new VeepooBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),
