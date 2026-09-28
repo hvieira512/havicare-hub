@@ -24,7 +24,7 @@ final class PillDispenserValidationRangesTest extends TestCase
     {
         yield 'volume acima da escala' => ['alarm_volume', ['volume' => 4]];
         yield 'volume negativo' => ['alarm_volume', ['volume' => -1]];
-        yield 'toque acima da escala' => ['alarm_ringtone', ['ringtone' => 5]];
+        yield 'toque acima da escala' => ['alarm_ringtone', ['ringtone' => 4]];
         yield 'idioma que não existe' => ['device_language', ['language' => 2]];
         yield 'fuso a leste de +1400' => ['time_zone', ['timeZone' => 1500]];
         yield 'fuso a oeste de -1200' => ['time_zone', ['timeZone' => -1300]];

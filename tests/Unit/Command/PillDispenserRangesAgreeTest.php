@@ -27,7 +27,7 @@ final class PillDispenserRangesAgreeTest extends TestCase
     public static function ranges(): iterable
     {
         yield 'volume' => ['alarm_volume', 'alarmVolume', 'volume', 3, 4];
-        yield 'toque' => ['alarm_ringtone', 'alarmRingtone', 'ringtone', 4, 5];
+        yield 'toque' => ['alarm_ringtone', 'alarmRingtone', 'ringtone', 3, 4];
         yield 'idioma' => ['device_language', 'deviceLanguage', 'language', 1, 2];
         yield 'compartimentos' => ['loaded_cells', 'loadedCells', 'cells', 28, 29];
         yield 'aviso de atraso' => ['retrieval_warning', 'retrievalWarning', 'minutes', 1440, 1441];

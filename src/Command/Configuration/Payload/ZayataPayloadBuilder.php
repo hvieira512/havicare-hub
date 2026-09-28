@@ -24,10 +24,12 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             'early_dispense', 'child_lock', 'missed_dispense' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
             ],
-            // As gamas são as da especificação: quatro níveis de volume, em que 0 é o mais
-            // alto e 3 é silêncio, e cinco toques a contar com o «nenhum».
+            // As gamas são as do tipo de dispositivo 02 da especificação: quatro níveis de
+            // volume, em que 0 é o mais alto e 3 é silêncio, e quatro toques a contar com o
+            // «nenhum». A tabela do 0x1012 ainda lista um «Ringtone 4» que ficou do tipo 01,
+            // mas o máximo do tipo 02 é 3 e o aparelho recusa o 4.
             'alarm_volume' => ['volume' => self::zeroBasedRangeInt($payload['volume'] ?? 0, 0, 3, 'volume')],
-            'alarm_ringtone' => ['ringtone' => self::zeroBasedRangeInt($payload['ringtone'] ?? 0, 0, 4, 'ringtone')],
+            'alarm_ringtone' => ['ringtone' => self::zeroBasedRangeInt($payload['ringtone'] ?? 0, 0, 3, 'ringtone')],
             'do_not_disturb' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
                 'startHour' => self::zeroBasedRangeInt($payload['startHour'] ?? 22, 0, 23, 'startHour'),

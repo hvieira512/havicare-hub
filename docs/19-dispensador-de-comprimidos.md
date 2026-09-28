@@ -426,7 +426,7 @@ REST eram um único `rotate`, aqui vêm discriminadas em cinco.
 | `0x1001`–`0x1003` | idioma, formato de data, formato de hora |
 | `0x1004`–`0x100A` | período de validade dos alarmes e respectivo interruptor |
 | `0x100B`–`0x100E` | som das teclas, bloqueio de criança, toma antecipada, **chamada de emergência** |
-| `0x1012` / `0x1013` | tipo de toque e volume |
+| `0x1012` / `0x1013` | tipo de toque e volume — o toque vai de `0` («nenhum») a `3`. A tabela do tipo de dispositivo 02 dá máximo `3` e enumera na mesma um «Ringtone 4» que ficou do tipo 01; o aparelho recusa o `4` |
 | `0x1014` / `0x1015` | calibração automática de relógio, fuso horário |
 | `0x1017` / `0x1018` / `0x1019` | aviso de atraso, tempo até falha, e o interruptor que decide se uma dose já dada como falhada continua acessível — é ele que faz existir o desfecho `abnormal` do evento de toma |
 | `0x101C` | **até que compartimento o prato está cheio** — um índice, e não uma contagem |

@@ -102,7 +102,6 @@ final class ZayataConfigurationDefinitions
                 [1, 'Toque 1'],
                 [2, 'Toque 2'],
                 [3, 'Toque 3'],
-                [4, 'Toque 4'],
             ], 'Qual dos toques o aparelho usa para chamar a pessoa à hora da medicação.'),
             ConfigurationDefinition::make(
                 'do_not_disturb',
