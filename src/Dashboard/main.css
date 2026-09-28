@@ -596,3 +596,108 @@
     .wizard-card { transition: none; }
     .wizard-card:hover { transform: none; }
 }
+
+/* ===== catálogo de capacidades ===== */
+
+/* A tira das secções fica colada ao topo enquanto a lista corre por baixo, e cada pastilha
+   aponta para o `id` da sua secção. Com cinco cabeçalhos dentro de milhares de pixéis de
+   scroll, saber onde está uma secção exigia procurá-la. */
+.capability-section-nav {
+    gap: .375rem;
+    scrollbar-width: thin;
+}
+
+/* A borda e o fundo ficam aqui: os estados abaixo trocam-nos, e um utilitário traz
+   `!important` e ganharia-lhes. */
+.capability-section-chip {
+    gap: .375rem;
+    padding: .3125rem .6875rem;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    font-size: var(--fs-sm);
+    font-weight: 560;
+    cursor: pointer;
+    transition: background-color .12s ease, border-color .12s ease;
+}
+
+.capability-section-chip .count {
+    font-weight: 600;
+}
+
+.capability-section-chip:hover {
+    background: var(--bs-tertiary-bg);
+}
+
+.capability-section-chip.selected {
+    background: var(--bs-primary-bg-subtle);
+    border-color: var(--bs-primary-border-subtle);
+}
+
+.capability-section-chip.selected .count {
+    color: var(--bs-primary);
+}
+
+.capability-filter-row {
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .capability-filter-row {
+        grid-template-columns: 7fr 5fr;
+    }
+}
+
+/* A secção é um destino de scroll, e o desvio é a altura da tira, para o cabeçalho não
+   ficar debaixo dela ao chegar. */
+.capability-catalog-section {
+    scroll-margin-top: 3.25rem;
+}
+
+/* Uma linha por capacidade: o número, o ícone que a capacidade já tem nos cartões de pedido,
+   o nome, e os factos. Nada leva largura fixa. */
+.capability-row {
+    grid-template-columns: 1.9rem 1.4rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .625rem;
+    padding: .4375rem .75rem;
+}
+
+/* O número conta o que o fornecedor suporta, em negrito e apagado: enumera sem competir
+   com o nome que está ao lado. */
+.capability-index {
+    font-size: var(--fs-lg);
+    color: var(--bs-emphasis-color);
+    opacity: .22;
+}
+
+/* O alinhamento e a quebra viram no telefone, mais abaixo. */
+.capability-facts {
+    font-size: var(--fs-sm);
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Existe para o tipo de dispositivo, mas o fornecedor escolhido não a declara. Fica
+   apagada e no fundo afundado: é contexto, e não uma linha que se possa accionar. */
+.capability-row.is-unsupported {
+    opacity: .42;
+    background: var(--bs-tertiary-bg);
+}
+
+.capability-row.is-unsupported .capability-index {
+    opacity: .12;
+}
+
+@media (max-width: 575.98px) {
+    .capability-row {
+        grid-template-columns: 1.9rem 1.4rem minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .capability-facts {
+        grid-column: 3;
+        text-align: left;
+        white-space: normal;
+    }
+}

@@ -1,7 +1,7 @@
 import { esc } from "../../../format.js";
 import { field } from "../../../components/form-field.js";
 import { html, raw } from "../../../html.js";
-import { segmentedScale } from "../../../components/segmented-scale.js";
+import { segmentedScale } from "./segmented-scale.js";
 import { enabledSwitch, nextUid } from "./shared.js";
 import { selectOptions } from "./generic.js";
 import { readCheckbox, readText } from "../readers.js";
