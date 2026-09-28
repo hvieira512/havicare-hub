@@ -28,12 +28,7 @@ function section_header(
         . '</div>';
 }
 
-/**
- * A moldura de uma fotografia, sem conteúdo: o `devicePreview` é o único que a leva vazia.
- * Os dois selectores de imagem do catálogo escrevem-na à mão porque levam um `<input file>`
- * e marcação em PHP lá dentro -- passá-la por aqui obrigava a capturar a saída, que é mais
- * código do que o que poupava. As classes têm de continuar a bater certo com as deles.
- */
+/** A moldura vazia. Os dois selectores de imagem do `settings.php` repetem-lhe as classes. */
 function showcase_preview(string $id): string
 {
     return '<div id="' . h($id) . '" class="showcase-preview border rounded d-flex align-items-center justify-content-center p-4 h-100"></div>';

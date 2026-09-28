@@ -127,8 +127,7 @@ const DEFAULT_ROUND_TRIPS = [
     ["text", { enabled: "" }],
     ["intervalToggle", { enabled: true, intervalMinutes: 60 }],
     ["pushMessage", { message: "" }],
-    // O par idioma/fuso é o caso que motivou esta lista: o `defaults` declarava `{preset}`,
-    // que é o nome do `<select>` e não o que o `read` devolve, e a omissão caía em inglês.
+    // O par idioma/fuso: o `defaults` tem de falar a língua do `read`, não a do `<select>`.
     ["languageTimezone", { language: 3, timeZone: "1" }],
 ];
 

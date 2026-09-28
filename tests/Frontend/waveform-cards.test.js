@@ -4,13 +4,7 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 
-/**
- * O ECG e a PPG diziam «Dados de ECG» e «Dados de PPG» com os números já dentro da mensagem.
- * O exame traz a frequência que apurou, e a onda traz o tamanho do lote.
- *
- * A contagem lê-se do `sampleCount`: o `VeepooBridge::forDashboard()` troca as amostras por
- * ela antes de guardar, porque um traçado são dezasseis mil e o histórico tem cem entradas.
- */
+/** A contagem lê-se do `sampleCount`, que é o que o histórico guarda no lugar das amostras. */
 test("o cartão de ECG mostra a frequência que o exame apurou", () => {
     const card = uplinkCardContent("ecg", {
         heartRateBpm: 68,

@@ -6,13 +6,9 @@ import { renderConfigInputs } from "../../src/Dashboard/dashboard/devices/config
 import { appendRepeatRow } from "../../src/Dashboard/dashboard/devices/config/row-editing.js";
 import { configSection } from "./support/dom.js";
 
-/**
- * O cartão anuncia «Até N alarmes» e o render corta a lista em N -- mas o motor que acrescenta
- * linhas lê o limite do `data-repeat-limit`, que o alarme não escrevia. Dava para passar do
- * limite, e o excedente desaparecia calado no render seguinte.
- */
 const ENTRY = { input: "alarm_clock", key: "alarm_clock", fields: [] };
 
+/** O motor lê o limite do `data-repeat-limit`; o texto do cartão promete o mesmo número. */
 test("o limite anunciado pelo cartão dos alarmes chega ao motor das linhas", () => {
     const section = configSection(renderConfigInputs, ENTRY, {}, { limit: 3 });
     const list = section.querySelector("[data-repeat-list=\"alarm_clock\"]");

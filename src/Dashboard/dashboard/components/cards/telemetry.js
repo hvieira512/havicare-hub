@@ -73,8 +73,7 @@ const CARD_STYLE = {
     "device.connected": ["fa-plug-circle-check", "success"],
     "device.disconnected": ["fa-plug-circle-xmark", "danger"],
     help_call: ["fa-triangle-exclamation", "danger"],
-    // Os quatro eventos escolhem o ícone dentro do renderizador, mas o tom só sai daqui: sem
-    // entrada, uma queda saía cinzenta ao lado de uma chamada de ajuda vermelha.
+    // Eventos e não leituras, mas o tom sai daqui como o de todos os outros.
     fall: ["fa-person-falling", "danger"],
     alarm: ["fa-triangle-exclamation", "danger"],
     vitals_alarm: ["fa-heart-crack", "danger"],
@@ -96,11 +95,8 @@ export function cardIcon(type) {
 }
 
 /**
- * O tamanho de um lote de amostras, que é o que há a dizer de uma onda sem escalar nenhum.
- *
- * O `sampleCount` vem primeiro porque é o que o histórico da dashboard guarda: um traçado são
- * dezasseis mil amostras, e o `VeepooBridge::forDashboard()` troca-as pela contagem antes de
- * as pôr no Redis. O `samples` fica para quem não passa por lá.
+ * O tamanho do lote, que é o que há a dizer de uma onda sem escalar nenhum. O `sampleCount`
+ * vem primeiro: o `VeepooBridge::forDashboard()` troca as amostras por ele antes de guardar.
  */
 function sampleCount(data) {
     const count = Number.isFinite(data?.sampleCount)
@@ -129,8 +125,7 @@ const UPLINK_CARD_RENDERERS = {
     firmware_version: (data) => ({
         value: String(data?.version ?? "").trim() || "—",
     }),
-    // O tipo específico vai no valor: "Queda" não distingue uma queda de alguém no chão. O
-    // ícone dos três vem do `CARD_STYLE`, como o de todos os outros.
+    // O tipo específico vai no valor: "Queda" não distingue uma queda de alguém no chão.
     fall: (data) => ({
         value: detectionValue(data),
         details: detectionDetails(data),
@@ -352,8 +347,7 @@ const UPLINK_CARD_RENDERERS = {
             "returnToDeepSleepMeanMinutes",
         ]),
     }),
-    // O exame traz o que mediu, e é isso que se mostra: a frequência que ele apurou vale mais
-    // do que anunciar que há dados. Sem leitura fica a contagem de amostras, como no `ppg`.
+    // A frequência que o exame apurou, que não é a do sensor ótico; sem ela, o tamanho do lote.
     ecg: (data) => ({
         value: data?.heartRateBpm != null
             ? `${data.heartRateBpm} bpm`

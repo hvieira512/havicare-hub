@@ -6,11 +6,7 @@ import { handleSettingsPaginationClick } from "../../src/Dashboard/dashboard/set
 import { renderPagination } from "../../src/Dashboard/dashboard/pagination.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
-/**
- * O `pagination_component()` põe os controlos **dentro** do contentor, e o ouvinte está no
- * contentor: um clique num número borbulha. Enquanto os Utilizadores API tinham um segundo
- * ouvinte nos controlos, o mesmo clique pedia a página duas vezes ao servidor.
- */
+/** O contentor e os controlos aninhados, como o `pagination_component()` os desenha. */
 function mountPager(prefix) {
     const root = document.createElement("div");
     root.innerHTML = `<div><ul id="${prefix}Controls"></ul></div>`;
@@ -18,6 +14,7 @@ function mountPager(prefix) {
     return { root, controls: root.querySelector("ul") };
 }
 
+/** O ouvinte está no contentor e o clique num número borbulha até ele: resolve-se uma vez. */
 test("um clique no paginador das definições pede uma página só", () => {
     const { root, controls } = mountPager("settingsApiUsersPagination");
     const pagination = { page: 1, total_pages: 4, total: 40, limit: 10 };

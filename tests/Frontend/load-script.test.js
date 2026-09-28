@@ -6,10 +6,7 @@ import { loadScript } from "../../src/Dashboard/dashboard/load-script.js";
 
 const tagsFor = (src) => document.querySelectorAll(`script[src="${src}"]`);
 
-/**
- * O jsdom não descarrega nada: o `load` e o `error` são disparados aqui à mão. Sempre no
- * último `<script>` daquele `src` -- depois de uma falha há dois, e o primeiro já disparou.
- */
+/** O jsdom não descarrega nada. No último `<script>`: depois de uma falha há dois. */
 const settle = (src, event) => {
     const tags = tagsFor(src);
     tags[tags.length - 1].dispatchEvent(new window.Event(event));
@@ -28,10 +25,6 @@ test("duas chamadas ao mesmo script partilham uma carga só", async () => {
     await first;
 });
 
-/**
- * Uma biblioteca que não chegou -- rede em baixo, deploy a meio -- não pode ficar a falhar
- * para sempre: quem voltar a abrir o ecrã tem de conseguir tentar outra vez.
- */
 test("um erro liberta a cache e a chamada seguinte tenta de novo", async () => {
     const src = "/assets/vendor/falha/lib.js";
 

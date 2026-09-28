@@ -1,10 +1,8 @@
 /**
- * Carrega um script de terceiros à primeira vez que alguém precisa dele.
+ * Carrega um script de terceiros à primeira vez que alguém precisa dele: o AG Grid, o Konva e
+ * o amCharts são megabytes que a maioria das sessões nunca abre.
  *
- * As bibliotecas grandes -- o AG Grid, o Konva, o amCharts -- não vêm no `<head>`: são
- * megabytes que a maioria das sessões nunca abre. A promessa fica guardada por `src`, e por
- * isso duas chamadas partilham uma carga só. Um erro apaga-a, para quem voltar ao ecrã poder
- * tentar de novo em vez de ficar preso à primeira falha.
+ * A promessa fica guardada por `src`, e um erro apaga-a para a chamada seguinte tentar de novo.
  */
 const loading = new Map();
 

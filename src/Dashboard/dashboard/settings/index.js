@@ -1,4 +1,4 @@
-import { state } from "../state.js";
+import { resetSettingsModal, state } from "../state.js";
 import {
     activateSettingsSection,
     initSettingsShell,
@@ -38,25 +38,7 @@ export function initSettings(context) {
 export async function loadSettingsModal(
     section = state.settingsModal.section || "models",
 ) {
-    state.settingsModal.sectionLoaded = {
-        models: false,
-        modelFilters: false,
-        capabilities: false,
-        company: false,
-        denylist: false,
-        apiUsers: false,
-    };
-    state.settingsModal.modelCatalog = [];
-    state.settingsModal.companyPagination = null;
-    state.settingsModal.apiUsersPagination = null;
-    state.settingsModal.modelFilters = [];
-    state.settingsModal.capabilityCatalog = [];
-    state.settingsModal.capabilitySupplier = "";
-    state.settingsModal.capabilityModelId = null;
-    state.settingsModal.capabilityModelTemplateKeys = [];
-    state.settingsModal.capabilityEnabledCapabilities = [];
-    state.settingsModal.capabilityRequestableCapabilities = [];
-    state.settingsModal.currentCapabilitiesModel = null;
+    resetSettingsModal();
     state.modelModal.enabledCapabilities = [];
     state.modelModal.templateSummary = "";
     state.modelModal.templateSupplier = "";

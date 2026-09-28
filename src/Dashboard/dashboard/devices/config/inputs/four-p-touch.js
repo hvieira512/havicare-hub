@@ -352,8 +352,7 @@ export const INPUTS = {
                 timeZone: String(timeZone || "0"),
             };
         },
-        // A forma do `read` e não a do `<select>`: com `{preset}` o render não encontrava par
-        // e caía na primeira opção, que é inglês. A frota é portuguesa.
+        // A forma do `read` e não a do `<select>`: é por ela que o render procura o par.
         defaults: () => ({ language: 3, timeZone: "1" }),
     },
     dualToggle: {

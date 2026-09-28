@@ -39,6 +39,44 @@ export function blankDeviceModal(overrides = {}) {
     };
 }
 
+/**
+ * O modal de definições em branco. A secção aberta, as licenças e o carrossel não entram
+ * aqui: quem repõe passa-os de volta, porque sobrevivem à abertura.
+ */
+export function blankSettingsModal(overrides = {}) {
+    return {
+        radarCredentials: null,
+        capabilityDeviceType: "",
+        capabilityCatalog: [],
+        activeCapabilityCatalogSection: "",
+        activeCapabilitySection: "",
+        capabilitySupplier: "",
+        capabilityQuery: "",
+        capabilityTemplateEnabledKeys: [],
+        capabilitySuppliersForDeviceType: [],
+        capabilityModelId: null,
+        capabilityModelTemplateKeys: [],
+        capabilityEnabledCapabilities: [],
+        capabilityRequestableCapabilities: [],
+        currentCapabilitiesModel: null,
+        modelFilters: [],
+        modelCatalog: [],
+        modelsSearchQuery: "",
+        modelDetailPristine: null,
+        sectionLoaded: {
+            models: false,
+            modelFilters: false,
+            capabilities: false,
+            company: false,
+            denylist: false,
+            apiUsers: false,
+        },
+        companyPagination: null,
+        apiUsersPagination: null,
+        ...overrides,
+    };
+}
+
 export const state = {
     // Gateways registados, para o assistente de adicionar oferecer os elegíveis.
     wizardGateways: [],
@@ -106,42 +144,13 @@ export const state = {
         templateDeviceType: "watch",
     },
     protocolCatalogs: {},
-    settingsModal: {
+    settingsModal: blankSettingsModal({
         section: "suppliers",
         // As licenças, uma vez por sessão: são a árvore do filtro, a do assistente e as
         // opções de três formulários. Quem as muda limpa-as.
         licenses: [],
-        // As credenciais do radar da licença que está aberta, sem os segredos -- a API não os
-        // devolve. Sobrevivem ao render da árvore enquanto a linha estiver aberta.
-        radarCredentials: null,
-        capabilityDeviceType: "",
-        capabilityCatalog: [],
-        // A secção do catálogo para onde a tira de pastilhas levou, para o realce sobreviver
-        // a uma reconstrução da tira.
-        activeCapabilityCatalogSection: "",
-        capabilitySupplier: "",
-        capabilityTemplateEnabledKeys: [],
-        capabilitySuppliersForDeviceType: [],
-        capabilityModelId: null,
-        capabilityModelTemplateKeys: [],
-        capabilityEnabledCapabilities: [],
-        capabilityRequestableCapabilities: [],
-        currentCapabilitiesModel: null,
-        modelFilters: [],
-        // A árvore do catálogo, inteira: tipos, fornecedores e modelos numa chamada. Não há
-        // página nem filtros porque não há paginação -- a busca corre sobre isto em memória.
-        modelCatalog: [],
-        modelsSearchQuery: "",
-        sectionLoaded: {
-            models: false,
-            modelFilters: false,
-            capabilities: false,
-            company: false,
-            apiUsers: false,
-        },
-        companyPagination: null,
-        apiUsersPagination: null,
-    },
+        modelsCarousel: null,
+    }),
     modelPreviewObjectUrl: null,
     loadingCommands: new Set(),
     deviceListPage: 1,
@@ -251,4 +260,10 @@ export function resetDetailFiltersDraft() {
 /** Campos do rascunho a mudar, sem tocar no que está aplicado. */
 export function updateDetailFiltersDraft(changes) {
     state.detailFiltersDraft = { ...state.detailFiltersDraft, ...changes };
+}
+
+/** Abrir as definições recomeça o modal. A secção, as licenças e o carrossel sobrevivem. */
+export function resetSettingsModal() {
+    const { section, licenses, modelsCarousel } = state.settingsModal;
+    state.settingsModal = blankSettingsModal({ section, licenses, modelsCarousel });
 }

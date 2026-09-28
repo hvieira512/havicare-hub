@@ -24,8 +24,7 @@ export function helpCallContent(data) {
  * coluna do valor repetia "Chamada de ajuda" ao lado de "Chamada de ajuda".
  */
 export function ncsPagerContent(type, data) {
-    // O ícone vem do `CARD_STYLE`, que o `uplinkCardContent` já põe: aqui era a mesma escolha
-    // escrita uma segunda vez. O valor fica, que esse difere do nome da capacidade.
+    // O ícone vem do `CARD_STYLE`, pelo `uplinkCardContent`; o valor difere do nome da capacidade.
     const value = NCS_PAGER_EVENT_VALUE[type] || capabilityLabel(type);
     const pagerId = String(data?.pagerId || "");
 

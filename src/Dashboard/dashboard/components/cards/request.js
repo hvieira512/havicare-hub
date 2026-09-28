@@ -60,11 +60,7 @@ const REQUEST_CARD_STATE = {
     dropped: { label: "descartado", tone: "danger" },
 };
 
-/**
- * O estado de um pedido na linha do painel: a lista completa, ao contrário do mosaico acima,
- * que esconde os dois estados que não lhe dizem nada. O tom vazio do `sent` deixa a pastilha
- * no azul neutro da marca.
- */
+/** O estado de um pedido na linha do painel. O tom vazio do `sent` deixa-o no azul da marca. */
 const DOWNLINK_STATE = {
     queued: { label: "em fila", tone: "secondary" },
     sent: { label: "enviado", tone: "" },

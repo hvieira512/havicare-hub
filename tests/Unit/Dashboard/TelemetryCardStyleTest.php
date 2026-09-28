@@ -8,14 +8,10 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Prova que cada capacidade de telemetria do catálogo tem ícone e tom no `CARD_STYLE`.
+ * Prova que cada capacidade de telemetria do catálogo tem ícone e tom no `CARD_STYLE`. Sem
+ * entrada o cartão sai cinzento e com o ícone genérico, sem erro nenhum.
  *
- * Sem entrada, o `cardIcon()` devolve o `fa-circle-info` genérico e o `cardTone()` devolve
- * vazio: o cartão aparece na mesma, cinzento e sem nada a dizer que falta escolher a cor. Uma
- * capacidade nova passava despercebida até alguém reparar no ecrã.
- *
- * O catálogo é a fonte, e por isso o teste vive em PHP: o frontend só o conhece em execução,
- * pela resposta do `/api/capabilities`.
+ * Vive em PHP porque o catálogo é a fonte: o frontend só o conhece pela resposta da API.
  */
 final class TelemetryCardStyleTest extends TestCase
 {
@@ -36,12 +32,7 @@ final class TelemetryCardStyleTest extends TestCase
         ));
     }
 
-    /**
-     * As chaves do `CARD_STYLE`, lidas do bloco que vai da abertura até à primeira chaveta a
-     * fechar na coluna zero.
-     *
-     * @return list<string>
-     */
+    /** @return list<string> */
     private function styledKeys(): array
     {
         $source = (string) file_get_contents(self::CATALOG);
