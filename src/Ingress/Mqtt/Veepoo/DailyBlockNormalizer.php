@@ -22,7 +22,7 @@ final class DailyBlockNormalizer
     /**
      * Fator de conversão da glicemia: 1 mmol/L equivale a 18,016 mg/dL.
      *
-     * Público porque a medição ao vivo chega pelo `Bridge` e não por aqui, e as duas têm de
+     * Público porque a medição ao vivo chega pelo `VeepooBridge` e não por aqui, e as duas têm de
      * converter da mesma maneira -- uma glicemia do histórico e uma pedida agora não podem
      * sair em unidades diferentes.
      */

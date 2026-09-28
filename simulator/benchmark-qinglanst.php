@@ -10,7 +10,7 @@ use Hub\Device\HubMqttBridge;
 use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy;
 use Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer;
 use Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder;
-use Hub\Ingress\Mqtt\Qinglanst\Topic;
+use Hub\Ingress\Mqtt\Qinglanst\QinglanstTopic;
 use Hub\Registry\Whitelist;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
@@ -122,7 +122,7 @@ $startAll = hrtime(true);
 for ($loop = 0; $loop < $loops; $loop++) {
     foreach ($samples as $sample) {
         $totalStart = hrtime(true);
-        $parsedTopic = Topic::parse($sample['topic']);
+        $parsedTopic = QinglanstTopic::parse($sample['topic']);
         if ($parsedTopic === null) {
             $rejected++;
             continue;
@@ -210,7 +210,7 @@ for ($loop = 0; $loop < $loops; $loop++) {
             $telemetryPublishes++;
         }
 
-        // O normalizador devolve `events` em lista, tal como o `Qinglanst\Bridge` a percorre.
+        // O normalizador devolve `events` em lista, tal como o `QinglanstBridge` a percorre.
         foreach ($normalized['events'] as $event) {
             $mqttStart = hrtime(true);
             $mqttBridge->publishEvent($topicDeviceKey, $event, $deviceType, $licenseId, $company);

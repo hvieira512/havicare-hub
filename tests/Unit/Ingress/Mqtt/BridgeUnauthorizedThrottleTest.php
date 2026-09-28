@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt;
 
-use Hub\Ingress\Mqtt\Bridge;
+use Hub\Ingress\Mqtt\MqttBridgeBase;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -84,16 +84,16 @@ final class BridgeUnauthorizedThrottleTest extends TestCase
     }
 
     /** O tamanho do travão, que é privado na base por não ser contrato de ninguém. */
-    private static function throttled(Bridge $bridge): int
+    private static function throttled(MqttBridgeBase $bridge): int
     {
-        $property = new \ReflectionProperty(Bridge::class, 'lastUnauthorizedAt');
+        $property = new \ReflectionProperty(MqttBridgeBase::class, 'lastUnauthorizedAt');
 
         return count($property->getValue($bridge));
     }
 }
 
 /** Expõe o registo de recusa, que é `protected` porque só as subclasses o chamam. */
-final class ThrottleProbeBridge extends Bridge
+final class ThrottleProbeBridge extends MqttBridgeBase
 {
     protected function handleMessage(string $topic, string $payload): void
     {

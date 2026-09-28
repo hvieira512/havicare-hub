@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt;
 
-use Hub\Ingress\Mqtt\Bridge;
+use Hub\Ingress\Mqtt\MqttBridgeBase;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
@@ -71,7 +71,7 @@ final class DeadOnArrivalSubscriber extends MqttClient
     }
 }
 
-final class AlwaysFailingBridge extends Bridge
+final class AlwaysFailingBridge extends MqttBridgeBase
 {
     protected function handleMessage(string $topic, string $payload): void
     {

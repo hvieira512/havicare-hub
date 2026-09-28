@@ -10,7 +10,7 @@ final class MessageNormalizer
      * @param array{imei: string, supplier: string, model: string, commercialName?: string, deviceType: string, licenseId: int} $device
      * @return array{raw: array<string, mixed>, status?: array<string, mixed>, event?: array<string, mixed>}
      */
-    public function normalize(Topic $topic, array $message, array $device): array
+    public function normalize(NcsTopic $topic, array $message, array $device): array
     {
         $raw = $this->rawPayload($topic, $message, $device);
 
@@ -26,7 +26,7 @@ final class MessageNormalizer
      * @param array<string, mixed> $device
      * @return array{raw: array<string, mixed>, status?: array<string, mixed>, event?: array<string, mixed>}
      */
-    private function normalizeStatus(Topic $topic, array $message, array $device, array $raw): array
+    private function normalizeStatus(NcsTopic $topic, array $message, array $device, array $raw): array
     {
         if ($topic->statusName !== 'online') {
             return ['raw' => $raw];
@@ -97,7 +97,7 @@ final class MessageNormalizer
      * @param array<string, mixed> $device
      * @return array<string, mixed>
      */
-    private function rawPayload(Topic $topic, array $message, array $device): array
+    private function rawPayload(NcsTopic $topic, array $message, array $device): array
     {
         return [
             'direction' => 'uplink',

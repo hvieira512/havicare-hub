@@ -6,7 +6,7 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\Bridge;
+use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -83,9 +83,9 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
         self::assertSame(['aabbccddeeff'], $recorded);
     }
 
-    private function bridge(DashboardStoreContract $store): Bridge
+    private function bridge(DashboardStoreContract $store): VeepooBridge
     {
-        return new Bridge(
+        return new VeepooBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),

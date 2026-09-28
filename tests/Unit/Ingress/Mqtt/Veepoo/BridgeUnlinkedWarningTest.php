@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
 use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\Bridge;
+use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Log\Logger;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
@@ -92,9 +92,9 @@ final class BridgeUnlinkedWarningTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function bridge(?callable $clock = null): Bridge
+    private function bridge(?callable $clock = null): VeepooBridge
     {
-        return new Bridge(
+        return new VeepooBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),

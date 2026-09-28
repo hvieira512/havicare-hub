@@ -10,7 +10,7 @@ use Hub\Domain\DiaperSensitivity;
  * e a graduação.
  *
  * `HubAppliedCapability` porque não há downlink: o que estes valores mudam é a regra com que
- * o `Moko\Bridge` interpreta a leitura. Os limiares e a validação estão no
+ * o `Moko\MokoBridge` interpreta a leitura. Os limiares e a validação estão no
  * `DiaperSensitivity`.
  */
 final class DiaperSensitivityCapability implements

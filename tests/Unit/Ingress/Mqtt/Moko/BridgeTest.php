@@ -7,7 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Device\HubMqttBridge;
 use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Moko\Bridge;
+use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
@@ -174,7 +174,7 @@ final class BridgeTest extends TestCase
             ->method('recordRejectedDevice')
             ->with($mac, $expected, '', $mac, 'device_not_authorized');
 
-        $bridge = new Bridge(
+        $bridge = new MokoBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
@@ -186,14 +186,14 @@ final class BridgeTest extends TestCase
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/' . $mac . '/raw', $payload);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt, bool $linked, ?callable $clock = null, int $idleTimeout = 180): Bridge
+    private function bridge(RecordingHubMqttBridge $mqtt, bool $linked, ?callable $clock = null, int $idleTimeout = 180): MokoBridge
     {
         $whitelist = IngressFixtures::whitelist([
             'd48c49f7909c' => IngressFixtures::gateway('MKGW3'),
             'c5e390f30bce' => IngressFixtures::gateway('MKGW4'),
             'eec5000202f9' => IngressFixtures::diaperSensor(),
         ]);
-        return new Bridge(
+        return new MokoBridge(
             new FakeMqttSubscriber(),
             $whitelist,
             $mqtt,

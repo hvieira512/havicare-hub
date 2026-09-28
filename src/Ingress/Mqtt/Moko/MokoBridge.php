@@ -7,13 +7,14 @@ use Hub\Device\CommercialModelResolver;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
 use Hub\Domain\GatewayDeviceLinkLookup;
+use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
-use Hub\Ingress\Mqtt\Gateway\Topic;
 use Hub\Ingress\Mqtt\Monit\MonitMecsProDecoder;
 use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
+use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
 
-final class Bridge extends \Hub\Ingress\Mqtt\Bridge
+final class MokoBridge extends MqttBridgeBase
 {
     /** Relatórios de scan, e não estado do gateway. 3070 é MKGW3; 30a0 e 30b2 são MKGW4. */
     private const SCAN_MESSAGE_IDS = ['3070', '30a0', '30b2'];
@@ -46,14 +47,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         private readonly int $telemetryRefreshSeconds = 60,
         private readonly int $gatewayIdleTimeoutSeconds = 180,
         private readonly int $rawHistorySampleSeconds = 30,
-        private readonly ?MessageDecoder $messageDecoder = null,
-        private readonly ?MonitMecsProDecoder $monitDecoder = null,
-        private readonly ?MonitNormalizer $monitNormalizer = null,
-        private readonly ?GatewayNormalizer $gatewayNormalizer = null,
-        private readonly ?W6bDecoder $w6bDecoder = null,
-        private readonly ?W6bNormalizer $w6bNormalizer = null,
-        private readonly ?W6Decoder $w6Decoder = null,
-        private readonly ?W6Normalizer $w6Normalizer = null,
         ?callable $clock = null,
         private readonly ?ProximityTracker $proximityTracker = null,
         private readonly ?DiaperSensitivityLookup $diaperSensitivity = null,
@@ -84,12 +77,28 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $clock,
         );
         $this->gateways = new GatewayPresence($mqttBridge, $dashboardStore, $gatewayIdleTimeoutSeconds, $clock);
+        $this->messageDecoder = new MokoMessageDecoder();
+        $this->monitDecoder = new MonitMecsProDecoder();
+        $this->monitNormalizer = new MonitNormalizer();
+        $this->gatewayNormalizer = new GatewayNormalizer();
+        $this->w6bDecoder = new W6bDecoder();
+        $this->w6bNormalizer = new W6bNormalizer();
+        $this->w6Decoder = new W6Decoder();
+        $this->w6Normalizer = new W6Normalizer();
     }
 
     private readonly GatewayDeviceLinkLookup $links;
     private readonly ObservationStateStore $state;
     private readonly RelayPublisher $relay;
     private readonly GatewayPresence $gateways;
+    private readonly MessageDecoder $messageDecoder;
+    private readonly MonitMecsProDecoder $monitDecoder;
+    private readonly MonitNormalizer $monitNormalizer;
+    private readonly GatewayNormalizer $gatewayNormalizer;
+    private readonly W6bDecoder $w6bDecoder;
+    private readonly W6bNormalizer $w6bNormalizer;
+    private readonly W6Decoder $w6Decoder;
+    private readonly W6Normalizer $w6Normalizer;
 
     /**
      * Diz se a mensagem se identifica como sendo de outra ingestão.
@@ -147,7 +156,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
     protected function handleMessage(string $topic, string $payload): void
     {
-        $parsedTopic = Topic::parse($topic);
+        $parsedTopic = GatewayTopic::parse($topic);
         if ($parsedTopic === null) {
             Logger::channel('hub')->warning("Ignoring unsupported MOKO gateway topic {$topic}");
             return;
@@ -161,7 +170,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return;
         }
 
-        $decoded = ($this->messageDecoder ?? new MokoMessageDecoder())->decode($payload);
+        $decoded = $this->messageDecoder->decode($payload);
 
         $gateway = $this->whitelist->resolve($parsedTopic->gatewayMac);
         if ($gateway === null || ($gateway['deviceType'] ?? '') !== 'gateway') {
@@ -228,7 +237,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $this->dashboardStore?->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
 
-        foreach (($this->gatewayNormalizer ?? new GatewayNormalizer())->telemetry($decoded, $gateway) as $telemetry) {
+        foreach ($this->gatewayNormalizer->telemetry($decoded, $gateway) as $telemetry) {
             if (!$this->state->shouldPublish($deviceKey, (string)$telemetry['type'], $telemetry, $this->telemetryRefreshSeconds)) {
                 continue;
             }
@@ -247,19 +256,19 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
      */
     private function handleObservation(array $gateway, array $observation): void
     {
-        $monit = ($this->monitDecoder ?? new MonitMecsProDecoder())->decode($observation);
+        $monit = $this->monitDecoder->decode($observation);
         if ($monit !== null) {
             $this->handleMonitObservation($gateway, $monit, $observation);
             return;
         }
 
-        $w6b = ($this->w6bDecoder ?? new W6bDecoder())->decode($observation);
+        $w6b = $this->w6bDecoder->decode($observation);
         if ($w6b !== null) {
             $this->handleW6bObservation($gateway, $w6b, $observation);
             return;
         }
 
-        $w6 = ($this->w6Decoder ?? new W6Decoder())->decode($observation);
+        $w6 = $this->w6Decoder->decode($observation);
         if ($w6 !== null) {
             $this->handleW6Observation($gateway, $w6, $observation);
             return;
@@ -278,7 +287,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
      */
     private function recordUnclaimedSighting(array $gateway, array $observation): void
     {
-        $mac = Topic::normalizeMac((string)($observation['mac'] ?? ''));
+        $mac = GatewayTopic::normalizeMac((string)($observation['mac'] ?? ''));
         if ($mac === null || !is_numeric($observation['rssi'] ?? null)) {
             return;
         }
@@ -360,7 +369,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
                 : (int)$transition['previous'];
         }
 
-        $normalized = ($this->w6bNormalizer ?? new W6bNormalizer())->normalize(
+        $normalized = $this->w6bNormalizer->normalize(
             $decoded,
             $device,
             (string)$gateway['imei'],
@@ -398,8 +407,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             unset($decoded['alarm']);
         }
 
-        $normalized = ($this->w6Normalizer ?? new W6Normalizer())
-            ->normalize($decoded, $device, (string)$gateway['imei']);
+        $normalized = $this->w6Normalizer->normalize($decoded, $device, (string)$gateway['imei']);
 
         $this->relay->publishTelemetry($device, $gateway, 'moko-w6', $normalized, $decoded['rssiDbm'] ?? null);
         $this->relay->publishEvents($device, $gateway, $normalized['events']);
@@ -425,7 +433,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         // aqui e não no normalizador, onde um parâmetro opcional esconderia uma ligação
         // esquecida.
         $sensitivity = $this->diaperSensitivity?->forDevice($sensorKey) ?? DiaperSensitivity::normal();
-        $normalized = ($this->monitNormalizer ?? new MonitNormalizer())
+        $normalized = $this->monitNormalizer
             ->normalize($decoded, $sensor, (string)$gateway['imei'], $sensitivity);
         $this->relay->publishTelemetry($sensor, $gateway, 'monit-mecs-pro-ble', $normalized, $decoded['rssiDbm'] ?? null);
 

@@ -289,5 +289,5 @@ Para as outras instâncias, o mesmo broker com o prefixo correspondente — ver 
 | `src/Domain/DiaperSensitivityLookup.php` | O valor em vigor para cada sensor |
 | `src/Domain/Capability/DiaperSensitivityCapability.php` | A capacidade, na API |
 | `src/Api/Repository/DiaperSensitivityRepository.php` | A persistência do par de valores |
-| `src/Ingress/Mqtt/Moko/Bridge.php` | A transição de estado e o evento `change_required` |
+| `src/Ingress/Mqtt/Moko/MokoBridge.php` | A transição de estado e o evento `change_required` |
 | `src/Domain/Capability/Definition/DiaperSensorCapabilityDefinitions.php` | As capacidades no catálogo |

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\Ingress\Mqtt\Gateway\Topic;
+use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 
 /**
  * Descodifica as observações de uma MOKO W6B (BXP-B / "MK Button") retransmitidas por um
@@ -45,7 +45,7 @@ final class W6bDecoder
      */
     public function decode(array $observation): ?array
     {
-        $mac = Topic::normalizeMac((string)($observation['mac'] ?? ''));
+        $mac = GatewayTopic::normalizeMac((string)($observation['mac'] ?? ''));
         if ($mac === null) {
             return null;
         }

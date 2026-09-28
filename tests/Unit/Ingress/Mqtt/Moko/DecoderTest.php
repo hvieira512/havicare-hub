@@ -10,7 +10,7 @@ use Hub\Ingress\Mqtt\Moko\Mkgw4MessageDecoder;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Ingress\Mqtt\Monit\MonitMecsProDecoder;
 use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
-use Hub\Ingress\Mqtt\Gateway\Topic;
+use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Ingress\Mqtt\Moko\W6bDecoder;
 use PHPUnit\Framework\TestCase;
 
@@ -21,9 +21,9 @@ final class DecoderTest extends TestCase
 
     public function testParsesCanonicalGatewayIngressTopic(): void
     {
-        $topic = Topic::parse('havicare-hub/null/0/gw/d4:8c:49:f7:90:9c/raw');
+        $topic = GatewayTopic::parse('havicare-hub/null/0/gw/d4:8c:49:f7:90:9c/raw');
         self::assertSame('d48c49f7909c', $topic?->gatewayMac);
-        self::assertNull(Topic::parse('havicare-hub/null/0/gateway/d48c49f7909c/raw'));
+        self::assertNull(GatewayTopic::parse('havicare-hub/null/0/gateway/d48c49f7909c/raw'));
     }
 
     public function testDecodesMkgw3HeartbeatAndNormalizesConnectivity(): void

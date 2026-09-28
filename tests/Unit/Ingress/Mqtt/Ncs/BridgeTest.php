@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Ncs;
 
 use Hub\Dashboard\DashboardStoreContract;
-use Hub\Ingress\Mqtt\Ncs\Bridge;
+use Hub\Ingress\Mqtt\Ncs\NcsBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
@@ -30,7 +30,7 @@ final class BridgeTest extends TestCase
                 'device_not_authorized',
                 0
             );
-        $bridge = new Bridge(
+        $bridge = new NcsBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
@@ -64,7 +64,7 @@ final class BridgeTest extends TestCase
                 'device_not_authorized',
                 1001
             );
-        $bridge = new Bridge(
+        $bridge = new NcsBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
@@ -84,7 +84,7 @@ final class BridgeTest extends TestCase
     public function testRegisteredNcsPublishesTheHelpCallEvent(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $bridge = new Bridge(
+        $bridge = new NcsBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 'gw-001' => IngressFixtures::device('Voerka', 'W812', 'ncs'),

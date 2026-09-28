@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Ncs;
 
 use Hub\Ingress\Mqtt\Ncs\MessageNormalizer;
-use Hub\Ingress\Mqtt\Ncs\Topic;
+use Hub\Ingress\Mqtt\Ncs\NcsTopic;
 use PHPUnit\Framework\TestCase;
 
 final class MessageNormalizerTest extends TestCase
@@ -13,7 +13,7 @@ final class MessageNormalizerTest extends TestCase
     public function testNormalizesStatusAndIncludesCommercialName(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('/voerka/1001/devices/1001/status/online');
+        $topic = NcsTopic::parse('/voerka/1001/devices/1001/status/online');
 
         $result = $normalizer->normalize($topic, [
             'from' => '1001',
@@ -36,7 +36,7 @@ final class MessageNormalizerTest extends TestCase
     public function testNormalizesHelpCallPagerEventWithoutTelemetryOrSource(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('/voerka/1001/devices/gw-001/events');
+        $topic = NcsTopic::parse('/voerka/1001/devices/gw-001/events');
 
         $result = $normalizer->normalize($topic, [
             'from' => 'gw-001',
@@ -66,7 +66,7 @@ final class MessageNormalizerTest extends TestCase
     public function testNormalizesResetPagerEventForKnownResetKey(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('/voerka/1001/devices/gw-001/events');
+        $topic = NcsTopic::parse('/voerka/1001/devices/gw-001/events');
 
         $result = $normalizer->normalize($topic, [
             'from' => 'gw-001',
@@ -88,7 +88,7 @@ final class MessageNormalizerTest extends TestCase
     public function testDiscardsUnmappedPagerEventKeysFromNormalization(): void
     {
         $normalizer = new MessageNormalizer();
-        $topic = Topic::parse('/voerka/1001/devices/gw-001/events');
+        $topic = NcsTopic::parse('/voerka/1001/devices/gw-001/events');
 
         $result = $normalizer->normalize($topic, [
             'from' => 'gw-001',

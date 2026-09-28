@@ -6,7 +6,7 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\Bridge;
+use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Ingress\Mqtt\Veepoo\MeasurementNormalizer;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
@@ -417,8 +417,8 @@ final class BridgeMeasurementTest extends TestCase
         RecordingHubMqttBridge $mqtt,
         ?DashboardStoreContract $store = null,
         ?callable $clock = null,
-    ): Bridge {
-        return new Bridge(
+    ): VeepooBridge {
+        return new VeepooBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),

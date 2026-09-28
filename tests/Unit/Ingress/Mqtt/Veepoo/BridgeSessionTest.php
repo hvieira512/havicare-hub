@@ -7,7 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\Bridge;
+use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -193,8 +193,8 @@ final class BridgeSessionTest extends TestCase
         RecordingHubMqttBridge $mqtt,
         ?PendingDownlinkQueue $queue = null,
         ?DashboardStoreContract $store = null,
-    ): Bridge {
-        return new Bridge(
+    ): VeepooBridge {
+        return new VeepooBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
                 self::GATEWAY => IngressFixtures::device('Havicare', 'Veepoo Gateway', 'gateway'),

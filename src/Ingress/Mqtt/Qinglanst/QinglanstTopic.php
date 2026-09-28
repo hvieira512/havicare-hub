@@ -2,7 +2,7 @@
 
 namespace Hub\Ingress\Mqtt\Qinglanst;
 
-final class Topic
+final class QinglanstTopic
 {
     public function __construct(
         public readonly string $original,

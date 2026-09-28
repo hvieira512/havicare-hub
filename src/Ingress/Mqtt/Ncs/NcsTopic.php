@@ -2,7 +2,7 @@
 
 namespace Hub\Ingress\Mqtt\Ncs;
 
-final class Topic
+final class NcsTopic
 {
     public function __construct(
         public readonly string $original,

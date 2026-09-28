@@ -27,7 +27,7 @@ final class SettlingReadings
      * Enquanto mede, o firmware manda uma trama por segundo e o valor anda. Isso é a medição
      * a assentar, e o resultado é o valor com que ela assentou -- o mesmo que a app mostra.
      *
-     * @var array<string, array<string, array{at: float, telemetry: array<string, mixed>, licenseId: int, company: string}>>
+     * @var array<string, array<string, array{at: float, telemetry: array<string, mixed>, context: BraceletContext}>>
      */
     private array $settling = [];
 
@@ -52,18 +52,12 @@ final class SettlingReadings
      *
      * @param array<string, mixed> $telemetry
      */
-    public function hold(
-        string $deviceKey,
-        string $operation,
-        array $telemetry,
-        int $licenseId,
-        string $company,
-    ): void {
-        $this->settling[$deviceKey][$operation] = [
+    public function hold(BraceletContext $context, string $operation, array $telemetry): void
+    {
+        $this->settling[$context->deviceKey][$operation] = [
             'at' => ($this->clock)(),
             'telemetry' => $telemetry,
-            'licenseId' => $licenseId,
-            'company' => $company,
+            'context' => $context,
         ];
     }
 
@@ -114,7 +108,7 @@ final class SettlingReadings
      * sair na mesma. Larga uma de cada vez, para que uma publicação que rebente deixe as
      * restantes onde estão.
      *
-     * @return \Generator<int, array{deviceKey: string, telemetry: array<string, mixed>, licenseId: int, company: string}>
+     * @return \Generator<int, array{context: BraceletContext, telemetry: array<string, mixed>}>
      */
     public function release(): \Generator
     {
@@ -137,10 +131,8 @@ final class SettlingReadings
                 }
                 unset($this->settling[$deviceKey][$operation]);
                 yield [
-                    'deviceKey' => $deviceKey,
+                    'context' => $settled['context'],
                     'telemetry' => $settled['telemetry'],
-                    'licenseId' => $settled['licenseId'],
-                    'company' => $settled['company'],
                 ];
             }
         }

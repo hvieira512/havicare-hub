@@ -303,8 +303,8 @@ conteúdo se altere.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `src/Ingress/Mqtt/Gateway/Topic.php` | `…/gw/{mac}/raw` e a forma canónica de um MAC |
-| `src/Ingress/Mqtt/Moko/Bridge.php` | O centro: identidade, ligações, travões, publicação |
+| `src/Ingress/Mqtt/Gateway/GatewayTopic.php` | `…/gw/{mac}/raw` e a forma canónica de um MAC |
+| `src/Ingress/Mqtt/Moko/MokoBridge.php` | O centro: identidade, ligações, travões, publicação |
 | `src/Ingress/Mqtt/Moko/MokoMessageDecoder.php` | Seleção entre os formatos MKGW3 e MKGW4 |
 | `src/Ingress/Mqtt/Moko/Mkgw3MessageDecoder.php` | JSON |
 | `src/Ingress/Mqtt/Moko/Mkgw4MessageDecoder.php` | Binário TLV |

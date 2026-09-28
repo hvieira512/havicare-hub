@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\Ingress\Mqtt\Gateway\Topic;
+use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 
 /**
  * Reconhece uma MOKO W6 retransmitida por um gateway.
@@ -51,7 +51,7 @@ final class W6Decoder
      */
     public function decode(array $observation): ?array
     {
-        $mac = Topic::normalizeMac((string)($observation['mac'] ?? ''));
+        $mac = GatewayTopic::normalizeMac((string)($observation['mac'] ?? ''));
         if ($mac === null) {
             return null;
         }

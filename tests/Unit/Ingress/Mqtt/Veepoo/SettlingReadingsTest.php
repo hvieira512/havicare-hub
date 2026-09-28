@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
+use Hub\Ingress\Mqtt\Veepoo\BraceletContext;
 use Hub\Ingress\Mqtt\Veepoo\SettlingReadings;
 use PHPUnit\Framework\TestCase;
 
@@ -23,8 +24,8 @@ final class SettlingReadingsTest extends TestCase
     public function testTheConfirmationTakesTheValueItSettledOn(): void
     {
         $readings = $this->readings();
-        $readings->hold(self::DEVICE, self::OPERATION, ['bpm' => 79], 7, 'acme');
-        $readings->hold(self::DEVICE, self::OPERATION, ['bpm' => 91], 7, 'acme');
+        $readings->hold($this->context(), self::OPERATION, ['bpm' => 79]);
+        $readings->hold($this->context(), self::OPERATION, ['bpm' => 91]);
 
         self::assertSame(['bpm' => 91], $readings->takeSettled(self::DEVICE, self::OPERATION));
         self::assertNull($readings->takeSettled(self::DEVICE, self::OPERATION));
@@ -40,7 +41,7 @@ final class SettlingReadingsTest extends TestCase
     public function testTheConfirmationOfAClosedRequestIsDiscarded(): void
     {
         $readings = $this->readings();
-        $readings->hold(self::DEVICE, self::OPERATION, ['bpm' => 91], 7, 'acme');
+        $readings->hold($this->context(), self::OPERATION, ['bpm' => 91]);
         $readings->close(self::DEVICE, self::OPERATION);
 
         self::assertTrue($readings->discardConfirmation(self::DEVICE, self::OPERATION));
@@ -53,7 +54,7 @@ final class SettlingReadingsTest extends TestCase
     {
         $readings = $this->readings();
         $readings->close(self::DEVICE, self::OPERATION);
-        $readings->hold(self::DEVICE, self::OPERATION, ['bpm' => 91], 7, 'acme');
+        $readings->hold($this->context(), self::OPERATION, ['bpm' => 91]);
 
         self::assertTrue($readings->discardConfirmation(self::DEVICE, self::OPERATION));
         self::assertNull($readings->takeSettled(self::DEVICE, self::OPERATION));
@@ -63,14 +64,15 @@ final class SettlingReadingsTest extends TestCase
     public function testAReadingIsReleasedOnceTheDeadlinePasses(): void
     {
         $readings = $this->readings();
-        $readings->hold(self::DEVICE, self::OPERATION, ['bpm' => 91], 7, 'acme');
+        $context = $this->context();
+        $readings->hold($context, self::OPERATION, ['bpm' => 91]);
 
         $this->now += 179;
         self::assertSame([], iterator_to_array($readings->release()));
 
         $this->now += 2;
         self::assertSame(
-            [['deviceKey' => self::DEVICE, 'telemetry' => ['bpm' => 91], 'licenseId' => 7, 'company' => 'acme']],
+            [['context' => $context, 'telemetry' => ['bpm' => 91]]],
             iterator_to_array($readings->release()),
         );
         self::assertSame([], iterator_to_array($readings->release()));
@@ -90,5 +92,10 @@ final class SettlingReadingsTest extends TestCase
     private function readings(): SettlingReadings
     {
         return new SettlingReadings(fn(): float => $this->now);
+    }
+
+    private function context(): BraceletContext
+    {
+        return new BraceletContext(self::DEVICE, 'd48c49f7909c', ['imei' => self::DEVICE], 7, 'acme');
     }
 }

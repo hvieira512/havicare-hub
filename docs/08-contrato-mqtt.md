@@ -37,7 +37,7 @@ havicare-hub/null/0/watch/637507597567372/status
 ```
 
 > Documentação anterior a setembro de 2026 descreve os tópicos do NCS com quatro
-> segmentos, omitindo a empresa. Essa forma está incorreta: o `Ncs\Bridge`
+> segmentos, omitindo a empresa. Essa forma está incorreta: o `NcsBridge`
 > publica pelos mesmos métodos das restantes ingestões, que produzem sempre
 > cinco segmentos. Ver o [capítulo do NCS](03-ingestao-mqtt-ncs.md).
 
