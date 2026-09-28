@@ -22,7 +22,7 @@ final class RadarCapabilityDefinitions extends CapabilityDefinitions
     {
         return [
             'telemetry' => [
-                'reading' => [
+                'measurement' => [
                     'heart_rate' => 'Frequência cardíaca',
                     'breath_rate' => 'Frequência respiratória',
                     'sleep_state' => 'Estado do sono',

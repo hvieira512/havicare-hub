@@ -67,8 +67,8 @@ final class PillDispenserNormalizationTest extends TestCase
 
         self::assertSame('low', $byFeature['cells_remaining']['level'] ?? null);
         self::assertSame(['percent' => 80, 'chargingState' => 'charging'], $byFeature['battery']);
-        self::assertSame(['environmentCelsius' => -5], $byFeature['temperature']);
-        self::assertSame(['humidityPercent' => 47], $byFeature['humidity']);
+        self::assertSame(['environmentCelsius' => -5], $byFeature['ambient_temperature']);
+        self::assertSame(['humidityPercent' => 47], $byFeature['ambient_humidity']);
         // Com os dois rádios a reportar, a interface é aquela por onde ele está mesmo a
         // falar: nesta unidade é o móvel, e o WiFi nem sequer existe.
         self::assertSame(['interface' => 'cellular', 'signalStrengthDbm' => -85], $byFeature['connectivity']);
@@ -136,7 +136,7 @@ final class PillDispenserNormalizationTest extends TestCase
         }
 
         self::assertSame(['percent' => 80], $byFeature['battery']);
-        self::assertSame(['environmentCelsius' => 21], $byFeature['temperature']);
+        self::assertSame(['environmentCelsius' => 21], $byFeature['ambient_temperature']);
     }
 
     public function testARefusedWriteIsVisibleInTheAnswer(): void
@@ -265,8 +265,8 @@ final class PillDispenserNormalizationTest extends TestCase
             $events[$event['feature']] = $event['value'];
         }
 
-        self::assertSame(['environmentCelsius' => 27], $events['temperature'] ?? null);
-        self::assertArrayNotHasKey('humidity', $events, 'uma TAG recusada não vira telemetria');
+        self::assertSame(['environmentCelsius' => 27], $events['ambient_temperature'] ?? null);
+        self::assertArrayNotHasKey('ambient_humidity', $events, 'uma TAG recusada não vira telemetria');
         // O WiFi foi recusado e o móvel não: a ligação é a que respondeu, e o zero do eco não
         // pode passar por uma leitura de 0 dBm.
         self::assertSame(

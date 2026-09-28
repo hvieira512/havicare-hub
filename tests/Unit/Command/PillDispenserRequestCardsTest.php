@@ -62,9 +62,9 @@ final class PillDispenserRequestCardsTest extends TestCase
             'battery',
             'cells_remaining',
             'connectivity',
-            'humidity',
+            'ambient_humidity',
             'medication_alarm_status',
-            'temperature',
+            'ambient_temperature',
         ];
 
         foreach ($filledByTheStatusFrame as $feature) {

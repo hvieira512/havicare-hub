@@ -28,12 +28,13 @@ final class CapabilityDefinitionRolesTest extends TestCase
             {
                 return [
                     'telemetry' => [
-                        'reading' => ['a' => 'A'],
-                        'readingOnRequest' => ['b' => 'B'],
+                        'measurement' => ['a' => 'A'],
+                        'measurementOnRequest' => ['b' => 'B'],
+                        'sighting' => ['c' => 'C'],
                     ],
-                    'health' => ['setting' => ['c' => 'C']],
-                    'settings_system' => ['action' => ['d' => 'D']],
-                    'alarms' => ['event' => ['e' => 'E']],
+                    'health' => ['setting' => ['d' => 'D'], 'hubSetting' => ['e' => 'E']],
+                    'settings_system' => ['action' => ['f' => 'F']],
+                    'alarms' => ['event' => ['g' => 'G']],
                 ];
             }
         };
@@ -41,10 +42,35 @@ final class CapabilityDefinitionRolesTest extends TestCase
         self::assertSame([
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'a', 'label' => 'A', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'b', 'label' => 'B', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'c', 'label' => 'C', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'd', 'label' => 'D', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'e', 'label' => 'E', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
+            // O avistamento é indistinguível de uma medição no fio: o que o separa é o
+            // conceito, e nunca é pedível porque não há a quem pedir.
+            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'c', 'label' => 'C', 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'd', 'label' => 'D', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'e', 'label' => 'E', 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'f', 'label' => 'F', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
+            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'g', 'label' => 'G', 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
         ], $subject::all());
+    }
+
+    /** O `isTelemetry` sai da secção, e um papel de leitura fora dela seria uma contradição. */
+    public function testATelemetryRoleOutsideTheTelemetrySectionIsRefused(): void
+    {
+        $subject = new class extends CapabilityDefinitions {
+            protected static function deviceType(): string
+            {
+                return 'watch';
+            }
+
+            protected static function rows(): array
+            {
+                return ['health' => ['measurement' => ['heart_rate' => 'Frequência cardíaca']]];
+            }
+        };
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessageMatches('/o papel "measurement" não pertence à secção "health"/');
+
+        $subject::all();
     }
 
     /** Um papel mal escrito dava uma capacidade com as bandeiras todas a false. */

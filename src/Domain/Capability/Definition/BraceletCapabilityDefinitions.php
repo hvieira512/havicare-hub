@@ -29,27 +29,29 @@ final class BraceletCapabilityDefinitions extends CapabilityDefinitions
                 // um valor ou uma razão. Prometer um botão que nunca responde é pior do que
                 // não o ter -- o cuidador carrega, não acontece nada, e deixa de confiar nos
                 // que funcionam.
-                'readingOnRequest' => [
+                'measurementOnRequest' => [
                     'battery' => 'Bateria',
                     'heart_rate' => 'Frequência cardíaca',
                     'blood_pressure' => 'Pressão arterial',
                     'blood_oxygen' => 'Oxigénio no sangue',
                     'blood_sugar' => 'Glicemia',
                     'ecg' => 'ECG',
-                    'temperature' => 'Temperatura',
+                    'temperature' => 'Temperatura corporal',
                     'sleep' => 'Sono',
                     // O acumulado do dia, como nos relógios: lá o `steps` do aparelho é um
                     // contador desde a meia-noite, e é o mesmo que a pulseira dá quando lhe
                     // perguntam.
-                    'activity' => 'Atividade',
+                    'activity' => 'Atividade (passos)',
                     'stress' => 'Stress',
                     'body_composition' => 'Composição corporal',
                 ],
-                'reading' => [
-                    'motion' => 'Movimento',
-                    // Sai por avistamento, e não do aparelho: é a força com que cada gateway
-                    // o ouve, que é o que sustenta os alarmes de proximidade.
+                // O avistamento é o que sustenta os alarmes de proximidade. O `motion` não
+                // entra: vem no anúncio BLE e é o acelerómetro da própria pulseira.
+                'sighting' => [
                     'proximity' => 'Proximidade',
+                ],
+                'measurement' => [
+                    'motion' => 'Movimento',
                     'hrv' => 'VFC',
                     'rr_interval' => 'Intervalo R-R',
                     'breath_rate' => 'Frequência respiratória',
@@ -74,7 +76,7 @@ final class BraceletCapabilityDefinitions extends CapabilityDefinitions
                     'wear_state' => 'Estado de uso',
                     // A pulseira diz a versão em cada sessão; sem isto não havia onde a
                     // guardar.
-                    'firmware_version' => 'Versão de firmware',
+                    'firmware_version' => 'Versão do firmware',
                 ],
             ],
             'health' => [

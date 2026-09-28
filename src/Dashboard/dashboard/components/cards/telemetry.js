@@ -84,7 +84,8 @@ const CARD_STYLE = {
     medication_alarm_change: ["fa-pills", "primary"],
     cells_remaining: ["fa-table-cells", "info"],
     storage_environment: ["fa-triangle-exclamation", "danger"],
-    humidity: ["fa-droplet", "info"],
+    ambient_temperature: ["fa-temperature-half", "info"],
+    ambient_humidity: ["fa-droplet", "info"],
     reset: ["fa-bell-slash", "warning"],
     unknown: ["fa-bell", ""],
 };
@@ -174,19 +175,19 @@ const UPLINK_CARD_RENDERERS = {
     blood_sugar: (data) => ({
         value: `${data.glucoseMgDl ?? "-"} mg/dL`,
     }),
-    // Nem toda a leitura traz a corporal: há aparelhos que só amostram a superfície, e o
-    // dispensador mede a divisão onde está em vez de medir alguém.
+    // Nem toda a leitura traz a corporal: há aparelhos que só amostram a superfície.
     temperature: (data) => ({
         value:
             data.bodyCelsius != null
                 ? `${data.bodyCelsius} °C`
                 : data.surfaceCelsius != null
                     ? `${data.surfaceCelsius} °C na pele`
-                    : data.environmentCelsius != null
-                        ? `${data.environmentCelsius} °C`
-                        : "-",
+                    : "-",
     }),
-    humidity: (data) => ({
+    ambient_temperature: (data) => ({
+        value: data.environmentCelsius != null ? `${data.environmentCelsius} °C` : "-",
+    }),
+    ambient_humidity: (data) => ({
         value: data.humidityPercent != null ? `${data.humidityPercent}%` : "-",
     }),
     // Quantas doses faltam, que é a pergunta que se faz a um dispensador; o total é o

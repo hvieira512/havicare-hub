@@ -13,7 +13,7 @@ final class GatewayCapabilityDefinitions extends CapabilityDefinitions
     {
         return [
             'telemetry' => [
-                'reading' => [
+                'measurement' => [
                     'connectivity' => 'Conectividade',
                     'battery' => 'Bateria',
                     'location' => 'Localização',

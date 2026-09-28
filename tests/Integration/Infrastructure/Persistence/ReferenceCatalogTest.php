@@ -143,6 +143,10 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         $expected = [
             'alarm_ringtone',
             'alarm_volume',
+            // O ar onde o aparelho está, e não uma pessoa: a spec dá o `0x810E` como INT8S de
+            // -40 a 120 graus inteiros. Partilhavam chave com a temperatura corporal.
+            'ambient_humidity',
+            'ambient_temperature',
             'battery',
             'calibrate_clock',
             'cells_remaining',
@@ -160,7 +164,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // Chega no pacote de registo, e por isso não é pedível como as outras leituras.
             'firmware_version',
             'help_call',
-            'humidity',
             'loaded_cells',
             // A mudança de estado de uma dose é acontecimento próprio: é o único sinal de uma
             // dose falhada, e viajava dentro da leitura dos nove, pelo canal sem garantia de
@@ -194,7 +197,6 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // Uma por família: o aparelho separa configuração, estado e controlo, e cada
             // pergunta é um pacote próprio.
             'sync_configuration',
-            'temperature',
             'time_zone',
             // O trinco do prato saiu de dentro do estado do dispositivo: destrancado é um
             // estado sobre que se age. Não é a «tampa» — essa é a leitura do tipo 01.

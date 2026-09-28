@@ -26,15 +26,16 @@ const card = (type, data) => requestCardShell(
     [{ type, occurredAt: "2026-09-18T20:05:04Z", data }],
 );
 
-test("a temperatura do dispensador é a do ambiente, e não a corporal", () => {
-    // O aparelho mede a divisão onde está. Sem isto o cartão ficava a traço, porque só
-    // procurava a temperatura corporal que um relógio entrega.
-    assert.match(card("temperature", { environmentCelsius: 22 }), /22 °C/);
-    assert.match(card("temperature", { environmentCelsius: -5 }), /-5 °C/);
+test("a temperatura do dispensador tem chave própria e não a do corpo", () => {
+    // O `0x810E` é o ar onde o aparelho está. Partilhava a chave `temperature` com a
+    // temperatura corporal dos relógios, que publica outro campo.
+    assert.match(card("ambient_temperature", { environmentCelsius: 22 }), /22 °C/);
+    assert.match(card("ambient_temperature", { environmentCelsius: -5 }), /-5 °C/);
+    assert.match(card("temperature", { environmentCelsius: 22 }), /-/);
 });
 
 test("a humidade sai com a unidade", () => {
-    assert.match(card("humidity", { humidityPercent: 47 }), /47\s*%/);
+    assert.match(card("ambient_humidity", { humidityPercent: 47 }), /47\s*%/);
 });
 
 test("o nível de medicação sai em português e não como enumeração crua", () => {

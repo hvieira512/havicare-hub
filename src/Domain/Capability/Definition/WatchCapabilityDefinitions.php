@@ -13,13 +13,13 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
     {
         return [
             'telemetry' => [
-                'reading' => [
+                'measurement' => [
                     'battery' => 'Bateria',
                     'activity' => 'Atividade (passos)',
                     'blood_sugar' => 'Glicemia',
                     'sleep' => 'Sono',
                 ],
-                'readingOnRequest' => [
+                'measurementOnRequest' => [
                     'heart_rate' => 'Frequência cardíaca',
                     'blood_pressure' => 'Pressão arterial',
                     'blood_oxygen' => 'Oxigénio no sangue',
@@ -29,7 +29,7 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
                     'ecg' => 'ECG',
                     'hrv' => 'VFC',
                     'ppg' => 'PPG',
-                    'rr_interval' => 'Intervalo RR',
+                    'rr_interval' => 'Intervalo R-R',
                     'firmware_version' => 'Versão do firmware',
                 ],
             ],
@@ -51,7 +51,6 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
                     'temperature_continuous' => 'Temperatura contínua',
                     'step_goal' => 'Meta de passos',
                     'sleep_monitoring' => 'Monitorização do sono',
-                    'blood_pressure_calibration' => 'Calibração da pressão arterial',
                     // A pergunta é de quanto em quanto tempo o relógio envia, como no dos
                     // passos, e não uma definição do aparelho.
                     'location_reporting_interval' => 'Intervalo de envio da localização',
@@ -71,7 +70,7 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
             'alarms' => [
                 'setting' => [
                     'alarm_clock' => 'Alarmes',
-                    'medication_reminders' => 'Lembretes de medicação',
+                    'medication_reminders' => 'Plano de medicação',
                     'low_battery_alert' => 'Alerta de bateria fraca',
                     'fall_detection' => 'Deteção de queda',
                     'fall_sensitivity' => 'Sensibilidade de queda',

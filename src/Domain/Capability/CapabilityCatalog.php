@@ -269,7 +269,7 @@ final class CapabilityCatalog
             // aqui, o catálogo declarava-a e a matriz do modelo dava-a por não suportada.
             'monit-mecs-pro-ble' => ['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition', 'proximity'],
             'moko-w6b', 'moko-w6' => ['battery', 'motion', 'proximity'],
-            'zayata-m228' => ['battery', 'cells_remaining', 'temperature', 'humidity', 'connectivity', 'medication_alarm_status', 'firmware_version'],
+            'zayata-m228' => ['battery', 'cells_remaining', 'ambient_temperature', 'ambient_humidity', 'connectivity', 'medication_alarm_status', 'firmware_version'],
             default => [],
         };
     }
@@ -415,7 +415,6 @@ final class CapabilityCatalog
             'skin_tone',
             'personal_info',
             'find_device' => $key,
-            'bloodPressureCalibration' => 'blood_pressure_calibration',
             'wonlexStepInterval' => 'step_reporting_interval',
             'locationInterval' => 'location_reporting_interval',
             'workingMode' => 'working_mode',

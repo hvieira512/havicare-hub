@@ -63,10 +63,10 @@ final class PillDispenserEndToEndTest extends TestCase
 
         self::assertCount(1, $this->ofType($mqtt->telemetry, 'battery'));
         self::assertSame(80, $this->ofType($mqtt->telemetry, 'battery')[0]['data']['percent']);
-        self::assertCount(1, $this->ofType($mqtt->telemetry, 'temperature'));
+        self::assertCount(1, $this->ofType($mqtt->telemetry, 'ambient_temperature'));
 
         self::assertSame([], $this->ofType($mqtt->events, 'battery'));
-        self::assertSame([], $this->ofType($mqtt->events, 'temperature'));
+        self::assertSame([], $this->ofType($mqtt->events, 'ambient_temperature'));
     }
 
     /** O único sinal de uma dose falhada: sair por `telemetry` era sair a QoS 0. */
