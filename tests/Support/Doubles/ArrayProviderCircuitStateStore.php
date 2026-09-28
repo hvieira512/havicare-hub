@@ -1,6 +1,8 @@
 <?php
 
-namespace Hub\Location;
+namespace Tests\Support\Doubles;
+
+use Hub\Location\ProviderCircuitStateStoreContract;
 
 final class ArrayProviderCircuitStateStore implements ProviderCircuitStateStoreContract
 {

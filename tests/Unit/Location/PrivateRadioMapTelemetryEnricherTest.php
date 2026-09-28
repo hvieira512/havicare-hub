@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Location;
 
-use Hub\Location\ArrayPrivateRadioMapStore;
+use Tests\Support\Doubles\ArrayPrivateRadioMapStore;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Location\PrivateRadioMap;

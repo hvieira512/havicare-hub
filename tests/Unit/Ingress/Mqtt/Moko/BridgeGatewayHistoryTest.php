@@ -3,7 +3,7 @@
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Dashboard\DashboardStore;
-use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
+use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;

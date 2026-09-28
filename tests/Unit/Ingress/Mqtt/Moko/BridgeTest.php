@@ -6,7 +6,7 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Device\HubMqttBridge;
-use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
+use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;

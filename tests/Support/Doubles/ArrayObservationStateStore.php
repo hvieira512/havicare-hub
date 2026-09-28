@@ -1,6 +1,8 @@
 <?php
 
-namespace Hub\Ingress\Mqtt\Gateway;
+namespace Tests\Support\Doubles;
+
+use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 
 final class ArrayObservationStateStore implements ObservationStateStore
 {

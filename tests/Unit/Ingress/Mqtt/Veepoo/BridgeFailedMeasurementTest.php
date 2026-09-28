@@ -7,7 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
-use Hub\Ingress\Mqtt\Gateway\ArrayObservationStateStore;
+use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
