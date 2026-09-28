@@ -63,9 +63,18 @@ function queueDeadline(seconds) {
  * O aviso de que o aparelho não está a ouvir.
  *
  * O comando não se perde -- o `submitDownlink` mete-o em fila --, mas a fila tem prazo.
+ *
+ * Num painel em que nada viaja, não há fila nenhuma: o `entries` vazio ou omitido mantém o
+ * aviso, porque não saber o que lá está não é o mesmo que saber que não sai nada.
  */
-export function offlineQueueNotice(online, ttlSeconds) {
+export function offlineQueueNotice(online, ttlSeconds, entries) {
     if (online) return "";
+
+    const travels = Array.isArray(entries) && entries.length > 0 &&
+        entries.some((entry) => String(entry?.command || "") !== "");
+    if (Array.isArray(entries) && entries.length > 0 && !travels) {
+        return "";
+    }
 
     const seconds = Math.max(0, Number(ttlSeconds) || 0);
     const deadline = seconds > 0
@@ -113,7 +122,7 @@ export function renderDeviceConfigurationRoot(context) {
         ? activeCategory
         : groups[0]?.key || "";
 
-    const offlineNotice = offlineQueueNotice(online, queueTtlSeconds);
+    const offlineNotice = offlineQueueNotice(online, queueTtlSeconds, catalog);
 
     return `
         <div class="vstack gap-3">

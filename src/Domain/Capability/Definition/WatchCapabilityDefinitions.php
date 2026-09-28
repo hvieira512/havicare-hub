@@ -15,7 +15,7 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
             'telemetry' => [
                 'measurement' => [
                     'battery' => 'Bateria',
-                    'activity' => 'Atividade (passos)',
+                    'activity' => 'Atividade',
                     'blood_sugar' => 'Glicemia',
                     'sleep' => 'Sono',
                 ],

@@ -41,7 +41,7 @@ final class BraceletCapabilityDefinitions extends CapabilityDefinitions
                     // O acumulado do dia, como nos relógios: lá o `steps` do aparelho é um
                     // contador desde a meia-noite, e é o mesmo que a pulseira dá quando lhe
                     // perguntam.
-                    'activity' => 'Atividade (passos)',
+                    'activity' => 'Atividade',
                     'stress' => 'Stress',
                     'body_composition' => 'Composição corporal',
                 ],
@@ -61,8 +61,9 @@ final class BraceletCapabilityDefinitions extends CapabilityDefinitions
                     // mesmo contrato dos relógios -- nenhum deles pontua o sono.
                     'sleep_quality' => 'Qualidade do sono',
                     // Os passos de cada bloco de cinco minutos, que é quando eles foram
-                    // dados.
-                    'steps' => 'Passos',
+                    // dados. A `activity` é o acumulado do dia, e a etiqueta tem de as
+                    // distinguir: lado a lado no mesmo ecrã, «Passos» sozinho não dizia qual.
+                    'steps' => 'Passos por período',
                     // Derivados que a pulseira calcula sozinha e entrega nos blocos diários:
                     // não há comando que os mande medir, saem do que já foi medido.
                     'met' => 'MET',

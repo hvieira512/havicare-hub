@@ -19,7 +19,7 @@ final class CapabilityCatalogTest extends TestCase
             //
             // O intervalo de envio da localização está em Saúde, com os outros dez intervalos
             // de medição e de envio.
-            'watch' => [67, 'bcd42161002aa2672441ad6cb0cd3195906180c4f8d013e3a8b9e9e31fad6955'],
+            'watch' => [67, '2921c9418eb1045df9ea1fce4634363778c42e897dce2f30aba32b4373c112e7'],
             'ncs' => [1, '213f35a9295bacacfdaa5570451707a23ee59416ebc3ac1de062f1b6ca7685a4'],
             'radar' => [9, '45dfaa71313e4da275fca1da9536b826bf0fe6a442cf462d3d2534db1499fa65'],
             'gateway' => [3, '044f4b1de47b562638442dc3fc8be22b3ab76043721211a47f478ee68124a91f'],
@@ -30,7 +30,7 @@ final class CapabilityCatalogTest extends TestCase
             // O `proximity` subiu para o grupo `sighting`, que fica antes das medições. Só a
             // posição mudou: a linha dele sai com as mesmas bandeiras, e prova-o o sensor de
             // fraldas, que usa os dois papéis novos e manteve o hash.
-            'bracelet' => [41, '4f11d430127f296529453263f2eb40e659452d320e0da703878cb83844f8c471'],
+            'bracelet' => [41, 'ad637eeb21fdd6c4dd6241d5b6dbded1c46ff7b61021ded18fcafa9b6f65042d'],
             // As 33 do dispensador M228: telemetria, eventos, configurações e acções, cada
             // enumeração como configuração própria. Ficam de fora a reposição de fábrica,
             // desligar a cifra e mudar o servidor — as três que nos podem tirar o aparelho —

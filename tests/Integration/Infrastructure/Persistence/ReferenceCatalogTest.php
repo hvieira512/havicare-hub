@@ -64,7 +64,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         ));
 
         self::assertSame($sorted, $labels, 'a telemetria de um relógio sai fora de ordem');
-        self::assertSame('Atividade (passos)', $labels[0] ?? null);
+        self::assertSame('Atividade', $labels[0] ?? null);
         // Em bytes o "VFC" vinha antes da "Versão", por a maiúscula pesar menos que a
         // minúscula. É o caso que distingue ordem portuguesa de ordem de tabela ASCII.
         self::assertGreaterThan(
