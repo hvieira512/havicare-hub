@@ -10,11 +10,6 @@ const NCS_PAGER_EVENT_VALUE = {
     reset: "Cancelado",
 };
 
-const NCS_PAGER_EVENT_ICON = {
-    help_call: "fa-triangle-exclamation",
-    reset: "fa-bell-slash",
-};
-
 export function helpCallContent(data) {
     const base = ncsPagerContent("help_call", data);
     const pressType = PRESS_TYPE_LABEL[String(data?.pressType || "")];
@@ -29,11 +24,10 @@ export function helpCallContent(data) {
  * coluna do valor repetia "Chamada de ajuda" ao lado de "Chamada de ajuda".
  */
 export function ncsPagerContent(type, data) {
+    // O ícone vem do `CARD_STYLE`, que o `uplinkCardContent` já põe: aqui era a mesma escolha
+    // escrita uma segunda vez. O valor fica, que esse difere do nome da capacidade.
     const value = NCS_PAGER_EVENT_VALUE[type] || capabilityLabel(type);
-    const icon = NCS_PAGER_EVENT_ICON[type] || "fa-bell";
     const pagerId = String(data?.pagerId || "");
 
-    return pagerId === ""
-        ? { icon, value }
-        : { icon, value, rowValue: `Pager ${pagerId}` };
+    return pagerId === "" ? { value } : { value, rowValue: `Pager ${pagerId}` };
 }

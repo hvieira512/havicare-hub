@@ -56,7 +56,7 @@ ob_start();
                                 <div class="wizard-ask" id="deviceStep2">
                                     <div id="deviceDeviceIdRow" class="d-none">
                                         <label for="deviceDeviceId" class="form-label-sm" id="deviceDeviceIdLabel">ID do dispositivo</label>
-                                        <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
+                                        <input type="text" class="form-control" id="deviceDeviceId">
                                         <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
                                     </div>
                                     <div id="deviceImeiRow">

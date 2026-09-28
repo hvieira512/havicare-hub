@@ -69,11 +69,11 @@ ob_start();
                                             <div class="row g-3">
                                                 <div class="col-md-6">
                                                     <label for="modelInternalModel" class="form-label">Modelo interno</label>
-                                                    <input type="text" class="form-control" id="modelInternalModel" placeholder="Identificador interno" required>
+                                                    <input type="text" class="form-control" id="modelInternalModel" required>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label for="modelCommercialName" class="form-label">Nome comercial</label>
-                                                    <input type="text" class="form-control" id="modelCommercialName" placeholder="Nome visível" required>
+                                                    <input type="text" class="form-control" id="modelCommercialName" required>
                                                 </div>
                                             </div>
                                             <div id="modelTemplateSummary" class="small text-secondary">A carregar template de capacidades do fornecedor.</div>
@@ -118,7 +118,7 @@ ob_start();
                                         </div>
                                     </div>
                                     <div class="col-lg-4">
-                                        <div class="showcase-preview border rounded d-flex align-items-center justify-content-center p-3 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
+                                        <div class="showcase-preview border rounded d-flex align-items-center justify-content-center p-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
                                             <input type="file" id="modelDetailImageInput" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
                                             <div id="modelDetailImage" class="text-center w-100">
                                                 <div class="text-secondary">

@@ -21,13 +21,9 @@ import { capabilityLabel } from "../capability-catalog.js";
 import { apiError, toast } from "../dialogs.js";
 import { deviceLicenseBlock } from "../components/device-license.js";
 import { onlineBadge } from "../components/state-badge.js";
-import {
-    cardTone,
-    statusBadge,
-    uplinkCardContent,
-} from "../components/cards/telemetry.js";
+import { cardTone, uplinkCardContent } from "../components/cards/telemetry.js";
 import { telemetryCard } from "../components/cards/shell.js";
-import { requestCardShell, requestCardContent } from "../components/cards/request.js";
+import { requestCardShell, requestCardContent, statusBadge } from "../components/cards/request.js";
 import { fallSummaryCard, helpCallSummaryCard } from "./event-summary-cards.js";
 import { onRadarPresence } from "./radar-map-modal.js";
 import { activityTable } from "./activity-table.js";

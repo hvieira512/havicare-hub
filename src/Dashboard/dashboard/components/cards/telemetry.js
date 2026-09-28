@@ -1,11 +1,10 @@
-import { fieldLabel, fieldValue, titleize } from "../../format.js";
-import { state } from "../../state.js";
+import { fieldLabel, fieldValue } from "../../format.js";
 import { DETECTION_TYPE_LABEL } from "../../domain.js";
 import { html, raw } from "../../html.js";
 import { compactDetails } from "./shared.js";
 import { connectivityIcon, connectivityValue } from "./gateway.js";
 import { diaperMoistureBody, diaperMoistureRowValue } from "./diaper.js";
-import { doseLabel, medicationDoseStrip } from "./medication.js";
+import { cyclePosition, doseLabel, medicationAlarmContent } from "./medication.js";
 import { helpCallContent, ncsPagerContent } from "./ncs.js";
 import { locationDetails, locationValue } from "./location.js";
 import { sleepDetails, sleepQualityValue, sleepValue } from "./sleep.js";
@@ -19,7 +18,6 @@ import {
     radarVitalsMinuteStatsValue,
 } from "./radar.js";
 import { capabilityLabel } from "../../capability-catalog.js";
-import { stateBadge } from "../state-badge.js";
 
 /** Os cartões de telemetria. As peças genéricas de interface estão em `components/`. */
 
@@ -60,7 +58,11 @@ const CARD_STYLE = {
     location: ["fa-location-dot", "success"],
     sleep: ["fa-bed", "primary"],
     sleep_state: ["fa-bed", "primary"],
+    sleep_quality: ["fa-bed", "primary"],
     sleep_apnea: ["fa-bed-pulse", "warning"],
+    // A versão de firmware é ficha técnica e não uma leitura: fica no cinzento do sistema.
+    firmware_version: ["fa-microchip", "secondary"],
+    proximity: ["fa-tower-broadcast", "info"],
     presence: ["fa-location-crosshairs", "success"],
     ecg: ["fa-wave-square", "danger"],
     hrv: ["fa-chart-line", "danger"],
@@ -71,6 +73,12 @@ const CARD_STYLE = {
     "device.connected": ["fa-plug-circle-check", "success"],
     "device.disconnected": ["fa-plug-circle-xmark", "danger"],
     help_call: ["fa-triangle-exclamation", "danger"],
+    // Os quatro eventos escolhem o ícone dentro do renderizador, mas o tom só sai daqui: sem
+    // entrada, uma queda saía cinzenta ao lado de uma chamada de ajuda vermelha.
+    fall: ["fa-person-falling", "danger"],
+    alarm: ["fa-triangle-exclamation", "danger"],
+    vitals_alarm: ["fa-heart-crack", "danger"],
+    presence_event: ["fa-door-open", "info"],
     medication_intake: ["fa-pills", "primary"],
     device_fault: ["fa-triangle-exclamation", "warning"],
     medication_alarm_status: ["fa-clock-rotate-left", "primary"],
@@ -88,30 +96,18 @@ export function cardIcon(type) {
 }
 
 /**
- * A posição do carrossel na linguagem do prato.
+ * O tamanho de um lote de amostras, que é o que há a dizer de uma onda sem escalar nenhum.
  *
- * O prato não tem números: tem um autocolante de esquema com grupos de doses e uma marca de
- * início. O `21` que o aparelho conta por dentro não se encontra lá, mas «dia 7» conta-se em
- * sete grupos a partir da marca. As doses por dia vêm do plano que o aparelho confirmou ter.
- *
- * Sem plano não se inventa dia nenhum: fica o número cru, que é verdade mesmo quando não
- * ajuda.
+ * O `sampleCount` vem primeiro porque é o que o histórico da dashboard guarda: um traçado são
+ * dezasseis mil amostras, e o `VeepooBridge::forDashboard()` troca-as pela contagem antes de
+ * as pôr no Redis. O `samples` fica para quem não passa por lá.
  */
-function cyclePosition(current) {
-    const plans = state.selectedDetail?.effectiveConfigurations?.medication_reminders?.plans;
-    if (!Array.isArray(plans) || current == null || current < 1) {
-        return "";
-    }
+function sampleCount(data) {
+    const count = Number.isFinite(data?.sampleCount)
+        ? data.sampleCount
+        : (Array.isArray(data?.samples) ? data.samples.length : 0);
 
-    const perDay = plans.filter((plan) => plan?.enabled !== false).length;
-    if (perDay < 1) {
-        return "";
-    }
-
-    const day = Math.ceil(current / perDay);
-    const dose = ((current - 1) % perDay) + 1;
-
-    return perDay === 1 ? `Dia ${day}` : `Dia ${day}, ${dose}ª dose`;
+    return count === 0 ? "Sem amostras" : `${count} amostras`;
 }
 
 const UPLINK_CARD_RENDERERS = {
@@ -133,19 +129,17 @@ const UPLINK_CARD_RENDERERS = {
     firmware_version: (data) => ({
         value: String(data?.version ?? "").trim() || "—",
     }),
-    // O tipo específico vai no valor: "Queda" não distingue uma queda de alguém no chão.
+    // O tipo específico vai no valor: "Queda" não distingue uma queda de alguém no chão. O
+    // ícone dos três vem do `CARD_STYLE`, como o de todos os outros.
     fall: (data) => ({
-        icon: "fa-person-falling",
         value: detectionValue(data),
         details: detectionDetails(data),
     }),
     vitals_alarm: (data) => ({
-        icon: "fa-heart-crack",
         value: detectionValue(data),
         details: detectionDetails(data),
     }),
     presence_event: (data) => ({
-        icon: "fa-door-open",
         value: detectionValue(data),
         details: detectionDetails(data),
     }),
@@ -358,7 +352,14 @@ const UPLINK_CARD_RENDERERS = {
             "returnToDeepSleepMeanMinutes",
         ]),
     }),
-    ecg: () => ({ value: "Dados de ECG" }),
+    // O exame traz o que mediu, e é isso que se mostra: a frequência que ele apurou vale mais
+    // do que anunciar que há dados. Sem leitura fica a contagem de amostras, como no `ppg`.
+    ecg: (data) => ({
+        value: data?.heartRateBpm != null
+            ? `${data.heartRateBpm} bpm`
+            : sampleCount(data),
+        details: compactDetails(data, ["qtcMilliseconds", "hrvMilliseconds", "frequencyHz"]),
+    }),
     // A VFC é um escalar em milissegundos e não uma série: anunciá-la como "Dados de VFC"
     // escondia o número que já vinha na mensagem.
     hrv: (data) => ({
@@ -371,7 +372,11 @@ const UPLINK_CARD_RENDERERS = {
     breath_rate: (data) => ({
         value: `${data.breathsPerMinute ?? "-"} rpm`,
     }),
-    ppg: () => ({ value: "Dados de PPG" }),
+    // Uma onda sem escalar nenhum: o que se pode dizer dela é o tamanho do lote.
+    ppg: (data) => ({
+        value: sampleCount(data),
+        details: compactDetails(data, ["frequencyHz"]),
+    }),
     // Chegam em lote: o que cabe no cartão é quantos são e a média, que é o inverso da
     // frequência cardíaca e portanto o número que denuncia uma leitura absurda.
     rr_interval: (data) => ({
@@ -391,26 +396,6 @@ const UPLINK_CARD_RENDERERS = {
 };
 
 // A mesma pastilha das configurações; o tom vazio deixa-a no azul neutro da marca.
-const STATUS_BADGE_TONE = {
-    queued: "secondary",
-    sent: "",
-    waiting: "warning",
-    acked: "success",
-    failed: "danger",
-    dropped: "danger",
-};
-
-const STATUS_BADGE_LABEL = {
-    queued: "em fila",
-    sent: "enviado",
-    waiting: "à espera",
-    acked: "confirmado",
-    failed: "falhou",
-    dropped: "descartado",
-    superseded: "substituído",
-    unknown: "desconhecido",
-};
-
 // Os relógios mandam um bit, e o dispensador manda uma enumeração com cinco estados. As duas
 // convivem na mesma tabela porque a pergunta é a mesma; sem as cinco, o cartão do dispensador
 // ficava sem nada a dizer sobre a carga.
@@ -510,42 +495,6 @@ function settingSummary(key, value) {
 }
 
 /**
- * As doses do dia, tal como o aparelho as reporta numa leitura dos nove alarmes.
- *
- * Uma toma falhada é o que faz alguém olhar para o cartão, e por isso ganha o valor
- * principal; sem falhas, o que vale é quantas foram tomadas. O corpo é a faixa do dia, uma
- * coluna por dose marcada, na ordem das horas.
- */
-function medicationAlarmContent(data) {
-    const alarms = Array.isArray(data?.alarms) ? data.alarms : [];
-    const live = alarms.filter((entry) => entry?.state && entry.state !== "idle");
-    const missed = Number(data?.missedCount ?? 0);
-    const taken = Number(data?.takenCount ?? 0);
-
-    const counts = [
-        missed > 0 ? `${missed} ${missed === 1 ? "falhada" : "falhadas"}` : "",
-        taken > 0 ? `${taken} ${taken === 1 ? "tomada" : "tomadas"}` : "",
-    ].filter(Boolean);
-
-    const strip = medicationDoseStrip(alarms);
-
-    return {
-        value: counts.length > 0 ? counts.join(" · ") : "Sem tomas registadas",
-        // O texto das doses vivas só aparece onde a faixa não chega — a linha da lista de
-        // actividade, que não desenha corpo nenhum. No cartão era a mesma informação duas
-        // vezes, uma em cima da outra. É o que a tira de canais da fralda já faz: quem tem
-        // corpo não o repete em palavras.
-        details: strip === ""
-            ? live
-                    .map((entry) => html`${doseLabel(entry.alarm)}: ${fieldValue("state", entry.state)}`)
-                    .join(" · ")
-            : "",
-        span: 12,
-        body: strip,
-    };
-}
-
-/**
  * Os intervalos R-R chegam em lote e sem instante próprio, e por isso não há um valor
  * único para mostrar. A média é o que permite conferir a leitura de relance: o seu inverso
  * é a frequência cardíaca, e um lote absurdo salta à vista sem abrir a mensagem.
@@ -583,13 +532,6 @@ function batteryDetails(data) {
 /** A cor da categoria, para o ícone. Sem entrada na tabela, o ícone fica neutro. */
 export function cardTone(type) {
     return CARD_STYLE[type]?.[1] || "";
-}
-
-export function statusBadge(status) {
-    return stateBadge(
-        STATUS_BADGE_LABEL[status] || titleize(status).toLowerCase(),
-        STATUS_BADGE_TONE[status] ?? "secondary",
-    );
 }
 
 function alarmValue(data) {

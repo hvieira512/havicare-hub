@@ -100,3 +100,65 @@ export function medicationDoseStrip(alarms) {
 
     return html`<div class="dose-strip d-grid mt-3">${raw(columns)}${raw(spare)}</div>`;
 }
+
+/**
+ * A posição do carrossel na linguagem do prato.
+ *
+ * O prato não tem números: tem um autocolante de esquema com grupos de doses e uma marca de
+ * início. O `21` que o aparelho conta por dentro não se encontra lá, mas «dia 7» conta-se em
+ * sete grupos a partir da marca. As doses por dia vêm do plano que o aparelho confirmou ter.
+ *
+ * Sem plano não se inventa dia nenhum: fica o número cru, que é verdade mesmo quando não
+ * ajuda.
+ */
+export function cyclePosition(current) {
+    const plans = state.selectedDetail?.effectiveConfigurations?.medication_reminders?.plans;
+    if (!Array.isArray(plans) || current == null || current < 1) {
+        return "";
+    }
+
+    const perDay = plans.filter((plan) => plan?.enabled !== false).length;
+    if (perDay < 1) {
+        return "";
+    }
+
+    const day = Math.ceil(current / perDay);
+    const dose = ((current - 1) % perDay) + 1;
+
+    return perDay === 1 ? `Dia ${day}` : `Dia ${day}, ${dose}ª dose`;
+}
+
+/**
+ * As doses do dia, tal como o aparelho as reporta numa leitura dos nove alarmes.
+ *
+ * Uma toma falhada é o que faz alguém olhar para o cartão, e por isso ganha o valor
+ * principal; sem falhas, o que vale é quantas foram tomadas. O corpo é a faixa do dia, uma
+ * coluna por dose marcada, na ordem das horas.
+ */
+export function medicationAlarmContent(data) {
+    const alarms = Array.isArray(data?.alarms) ? data.alarms : [];
+    const live = alarms.filter((entry) => entry?.state && entry.state !== "idle");
+    const missed = Number(data?.missedCount ?? 0);
+    const taken = Number(data?.takenCount ?? 0);
+
+    const counts = [
+        missed > 0 ? `${missed} ${missed === 1 ? "falhada" : "falhadas"}` : "",
+        taken > 0 ? `${taken} ${taken === 1 ? "tomada" : "tomadas"}` : "",
+    ].filter(Boolean);
+
+    const strip = medicationDoseStrip(alarms);
+
+    return {
+        value: counts.length > 0 ? counts.join(" · ") : "Sem tomas registadas",
+        // O texto das doses vivas só aparece onde a faixa não chega -- a linha da lista de
+        // actividade, que não desenha corpo nenhum. No cartão era a mesma informação duas
+        // vezes, uma em cima da outra.
+        details: strip === ""
+            ? live
+                    .map((entry) => html`${doseLabel(entry.alarm)}: ${fieldValue("state", entry.state)}`)
+                    .join(" · ")
+            : "",
+        span: 12,
+        body: strip,
+    };
+}
