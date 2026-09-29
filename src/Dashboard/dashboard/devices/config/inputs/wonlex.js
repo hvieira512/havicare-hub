@@ -60,8 +60,8 @@ function wonlexSleepSettingsInput(desired) {
                     { cls: "col-md-4" },
                 )}
                 ${field(
-                    "Meta (minutos)",
-                    numberField("sleepTarget", desired.sleepTarget ?? 480),
+                    "Meta",
+                    numberField("sleepTarget", desired.sleepTarget ?? 480, { unit: "min" }),
                     { cls: "col-md-4" },
                 )}
             </div>

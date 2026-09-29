@@ -111,8 +111,8 @@ function intervalHoursToggleInput(desired) {
         <div class="row g-3">
             <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
             ${field(
-                "Intervalo (horas)",
-                numberField("intervalHours", desired.intervalHours ?? 2, { min: 1, max: 12 }),
+                "Intervalo",
+                numberField("intervalHours", desired.intervalHours ?? 2, { min: 1, max: 12, unit: "h" }),
                 { cls: "col-md-8" },
             )}
         </div>`;

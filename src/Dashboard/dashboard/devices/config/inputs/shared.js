@@ -18,8 +18,19 @@ export function nextUid(prefix) {
  * O `ariaLabel` serve os cartões que não desenham rótulo visível: o nome da definição está
  * no título da linha, e um campo sem nome nenhum não se lê a um leitor de ecrã.
  */
-export const numberField = (configField, value, { min = 0, max = "", step = 1, ariaLabel = "" } = {}) =>
-    `<input class="form-control" type="number" min="${min}"${max === "" ? "" : ` max="${max}"`} step="${step}" data-config-field="${esc(configField)}"${ariaLabel === "" ? "" : ` aria-label="${esc(ariaLabel)}"`} value="${esc(String(value))}">`;
+export const numberField = (
+    configField,
+    value,
+    { min = 0, max = "", step = 1, ariaLabel = "", unit = "" } = {},
+) => {
+    const input = `<input class="form-control" type="number" min="${min}"${max === "" ? "" : ` max="${max}"`} step="${step}" data-config-field="${esc(configField)}"${ariaLabel === "" ? "" : ` aria-label="${esc(ariaLabel)}"`} value="${esc(String(value))}">`;
+
+    // A unidade cola-se ao campo: no nome da definição ela obriga a ler duas coisas em
+    // sítios diferentes para saber uma.
+    return unit === ""
+        ? input
+        : `<div class="input-group">${input}<span class="input-group-text">${esc(unit)}</span></div>`;
+};
 
 export function enabledSwitch(enabled, cls = "") {
     return `

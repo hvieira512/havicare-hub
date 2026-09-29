@@ -138,8 +138,8 @@ function workingModeInput(desired) {
             <div class="${mode === 8 ? "" : "d-none"}" data-working-mode-extra>
                 <div class="row g-3">
                     ${field(
-                        "Intervalo de envio (segundos)",
-                        numberField("intervalSeconds", intervalSeconds, { min: 30 }),
+                        "Intervalo de envio",
+                        numberField("intervalSeconds", intervalSeconds, { min: 30, unit: "s" }),
                         { cls: "col-md-6" },
                     )}
                     <div class="col-md-6">

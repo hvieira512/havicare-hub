@@ -91,8 +91,6 @@ export function renderDeviceConfigurationRoot(context) {
         capabilities = {},
         capabilityCatalog = [],
         configurationSync = { entries: {} },
-        supplier = "",
-        model = "",
         disabled = false,
         activeCategory = "",
         uiByKey = {},
@@ -125,12 +123,6 @@ export function renderDeviceConfigurationRoot(context) {
 
     return `
         <div class="vstack gap-3" data-config-root>
-            <div class="d-flex justify-content-between align-items-start gap-3">
-                <div>
-                    <div class="fw-semibold">Configurações do dispositivo</div>
-                    <div class="small text-secondary">${supplier || model ? `${esc(supplier)} ${esc(model)}` : ""}</div>
-                </div>
-            </div>
             ${offlineNotice === ""
                 ? ""
                 : `
