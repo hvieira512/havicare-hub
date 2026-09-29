@@ -10,6 +10,8 @@ Lê lá:
 
 - **As duas instâncias** — o que separa a de desenvolvimento da de produção, e
   o que nunca pode ser tocado sem intenção.
+- **Comentários** — só quando necessários, em português, sucintos e diretos, e
+  nunca sobre o que estava antes. Identificadores em inglês.
 - **O teste vem primeiro** — uma funcionalidade começa pelo teste que falha, e
   confirma-se que falha pela razão certa antes de se escrever o código.
 - **Trabalho em paralelo** — vários agentes a alterar código correm cada um no

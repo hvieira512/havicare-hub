@@ -76,6 +76,30 @@ saem no fio, e traduzir é trabalho de quem desenha a interface.
 O detalhe está no [contrato MQTT](docs/08-contrato-mqtt.md) e na
 [normalização](docs/06-normalizacao.md).
 
+## Comentários
+
+Comentários **só quando necessários**, em **português**, sucintos e diretos —
+uma linha ou duas. O que eles dizem é o que o código faz e porquê **agora**.
+
+**Não se escreve o que estava antes.** Nem o defeito anterior, nem o sintoma,
+nem a investigação, nem a defesa da decisão em parágrafos. O sítio da história é
+a mensagem de commit; o da lógica de negócio é o `docs/`.
+
+- **Fica:** «O `0x811B` conta posições e não compartimentos: a zero é a de
+  repouso.» Uma linha, diz o que o leitor não adivinha.
+- **Sai:** o parágrafo a seguir a contar que o aparelho respondia 29, que a
+  ficha dele dizia 28, e que uma das duas estava a mentir.
+
+Vale igual nos docblocks dos testes: o nome do teste diz o que se prende, e uma
+linha chega para dizer porquê. Nos templates de HTML — o `index.php` e os
+componentes — não entra comentário nenhum.
+
+O que está em português são os comentários e o texto que aparece no ecrã. **Os
+identificadores são em inglês** — variáveis, métodos, classes, chaves de array,
+também nos ficheiros de teste. Misturar as duas línguas no mesmo ficheiro é pior
+do que qualquer das duas sozinha: quem lê deixa de saber, ao ver um nome, se
+está a olhar para uma peça do programa ou para vocabulário do domínio.
+
 ## O teste vem primeiro
 
 Uma funcionalidade começa pelo teste que falha. Escreve-se o teste, confirma-se

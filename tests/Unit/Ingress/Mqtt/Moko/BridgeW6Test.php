@@ -167,8 +167,8 @@ final class BridgeW6Test extends TestCase
     }
 
     /**
-     * The slot keeps advertising for thirty seconds and every gateway in range repeats it,
-     * so one press must not become thirty help calls.
+     * O slot anuncia-se durante trinta segundos e cada gateway ao alcance repete-o: um toque
+     * não pode virar trinta pedidos de ajuda.
      */
     public function testTheRepeatedFrameOfOnePressRaisesOneHelpCall(): void
     {
@@ -182,9 +182,7 @@ final class BridgeW6Test extends TestCase
         self::assertCount(1, $this->forBracelet($mqtt->events));
     }
 
-    /**
-     * The identity slot is advertised permanently, so it must never read as a press.
-     */
+    /** O slot de identidade anuncia-se em permanência, e nunca pode ler-se como um toque. */
     public function testTheIdentitySlotRaisesNoHelpCall(): void
     {
         $mqtt = new RecordingHubMqttBridge();

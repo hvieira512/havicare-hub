@@ -8,10 +8,8 @@ use Hub\Ingress\Mqtt\Moko\W6Decoder;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Reading a MOKO W6 out of what a gateway relays.
- *
- * The observations here are what a MKGW3 actually publishes for this bracelet: MOKO and
- * Eddystone frames arrive already parsed, with no advertising bytes.
+ * A leitura de uma MOKO W6 a partir do que um gateway retransmite. As observações são as que
+ * um MKGW3 publica: as tramas MOKO e Eddystone chegam já lidas, sem os bytes do anúncio.
  */
 final class W6DecoderTest extends TestCase
 {
@@ -47,8 +45,8 @@ final class W6DecoderTest extends TestCase
     }
 
     /**
-     * The always-on identity slot is a sighting, not a press: it repeats forever, and
-     * reporting it as an alarm would raise a help call every time the gateway scans.
+     * O slot de identidade anuncia-se sempre: é um avistamento e não um toque, e dá-lo como
+     * alarme levantava um pedido de ajuda a cada varrimento do gateway.
      */
     public function testTheIdentitySlotIsASightingWithoutAnAlarm(): void
     {
