@@ -31,6 +31,57 @@ export function initDetailFilters(context) {
     onChange = context.onChange;
     renderDownlinkRequests = context.renderDownlinkRequests;
     renderTelemetryList = context.renderTelemetryList;
+    activeRange = "";
+    els.detailRangePresets?.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-detail-range]");
+        if (button) applyDetailRange(button.dataset.detailRange);
+    });
+}
+
+/**
+ * Os alcances prontos. O «Hoje» conta da meia-noite de cá e não de vinte e quatro horas
+ * atrás, que é o que quem carrega no botão quer dizer.
+ */
+const DETAIL_RANGES = {
+    today: {
+        label: "Hoje",
+        start: () => {
+            const midnight = new Date();
+            midnight.setHours(0, 0, 0, 0);
+            return midnight;
+        },
+    },
+    "7d": { label: "7 dias", start: () => daysAgo(7) },
+    "30d": { label: "30 dias", start: () => daysAgo(30) },
+};
+
+/** Qual dos alcances está aplicado, para a pastilha e para o botão carregado. */
+let activeRange = "";
+
+function daysAgo(days) {
+    return new Date(Date.now() - days * 86400000);
+}
+
+/** O valor de um `datetime-local`: hora local, sem fuso e sem segundos. */
+function dateTimeLocal(date) {
+    const pad = (value) => String(value).padStart(2, "0");
+    const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    return `${day}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+export function applyDetailRange(range) {
+    const preset = DETAIL_RANGES[range];
+    if (!preset) return;
+
+    activeRange = range;
+    state.detailFilters = {
+        ...state.detailFilters,
+        from: dateTimeLocal(preset.start()),
+        to: "",
+    };
+    resetDetailFiltersDraft();
+    state.telemetryPage = 1;
+    onChange();
 }
 
 const DETAIL_ITEM_TYPES = {
@@ -204,10 +255,22 @@ export function syncDetailFilterControls() {
     els.detailFilterFrom.value = state.detailFiltersDraft?.from ?? state.detailFilters.from;
     els.detailFilterTo.value = state.detailFiltersDraft?.to ?? state.detailFilters.to;
     els.detailFilterType.value = state.detailFiltersDraft?.type ?? state.detailFilters.type;
+    syncDetailRangeButtons();
     renderDetailActiveFilters();
 }
 
+function syncDetailRangeButtons() {
+    const buttons = els.detailRangePresets?.querySelectorAll("[data-detail-range]") || [];
+    for (const button of buttons) {
+        const chosen = button.dataset.detailRange === activeRange;
+        button.classList.toggle("btn-primary", chosen);
+        button.classList.toggle("btn-outline-secondary", !chosen);
+        button.setAttribute("aria-pressed", chosen ? "true" : "false");
+    }
+}
+
 export function applyDetailFilters() {
+    activeRange = "";
     state.detailFilters = {
         from: els.detailFilterFrom.value,
         to: els.detailFilterTo.value,
@@ -220,6 +283,7 @@ export function applyDetailFilters() {
 }
 
 export function clearDetailFilters() {
+    activeRange = "";
     state.detailFilters = { from: "", to: "", type: "all", q: "" };
     resetDetailFiltersDraft();
     state.telemetryPage = 1;
@@ -251,6 +315,7 @@ function applyDetailSearchNow() {
 }
 
 export function removeDetailFilter(key) {
+    if (key === "from" || key === "to") activeRange = "";
     const cleared = key === "type" ? "all" : "";
     state.detailFilters = { ...state.detailFilters, [key]: cleared };
     resetDetailFiltersDraft();
@@ -266,9 +331,12 @@ export function removeDetailFilter(key) {
 export function detailFilterChipLabels({ from, to, type, q }) {
     const labels = [];
     if (from || to) {
+        const range = DETAIL_RANGES[activeRange];
         labels.push({
-            key: from && to ? "range" : from ? "from" : "to",
-            label: `${from ? when(from) : "início"} → ${to ? when(to) : "agora"}`,
+            key: range || (from && to) ? "range" : from ? "from" : "to",
+            label: range
+                ? range.label
+                : `${from ? when(from) : "início"} → ${to ? when(to) : "agora"}`,
         });
     }
     if (type && type !== "all") {
