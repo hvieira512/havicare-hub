@@ -233,8 +233,8 @@
     padding-inline: var(--bs-card-spacer-x, 1rem);
 }
 
-/* O contador ao lado da etiqueta, e não no extremo oposto do cartão: "Eventos recebidos" e
-   "12" são a mesma informação, e a meio metro de distância deixam de o ser. */
+/* O contador ao lado da etiqueta, e não no extremo oposto do cartão: "Leituras" e "12" são
+   a mesma informação, e a meio metro de distância deixam de o ser. */
 /* O fundo e a cor ficam aqui: o `count-chip-strong` troca-os. A forma também, como no
    `.count-number` abaixo. */
 .count-chip {

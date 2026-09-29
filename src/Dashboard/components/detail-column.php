@@ -2,8 +2,7 @@
                 $activityPanels = [
                     [
                         'column' => 'telemetryColumn',
-                        'title' => 'Eventos recebidos',
-                        'tab' => 'Leituras',
+                        'title' => 'Leituras',
                         'tabCountId' => 'telemetryTabCount',
                         'countId' => 'telemetryCount',
                         'pager' => 'telemetryPager',
@@ -12,8 +11,7 @@
                     ],
                     [
                         'column' => 'downlinkColumn',
-                        'title' => 'Pedidos ao dispositivo',
-                        'tab' => 'Pedidos',
+                        'title' => 'Pedidos',
                         'tabCountId' => 'downlinkTabCount',
                         'countId' => 'downlinkRequestCount',
                         'pager' => 'downlinkPager',
@@ -28,7 +26,7 @@
                             <div id="deviceDetail" class="d-none device-detail-open">
                                 <div>
                                     <div class="d-flex align-items-center gap-2">
-                                        <?= search_input('detailSearch', 'Procurar na atividade', 'flex-grow-1') ?>
+                                        <?= search_input('detailSearch', 'Procurar', 'flex-grow-1') ?>
                                         <?= filter_toggle_button('detailFiltersCollapse', 'detailFilterCount', 'flex-shrink-0') ?>
                                     </div>
                                     <div id="detailActiveFiltersRow" class="d-flex flex-wrap align-items-center gap-2 mt-2 d-none">
@@ -73,7 +71,7 @@
                                     <div class="card-section mt-3 pt-3 border-top d-flex flex-column flex-grow-1 min-h-0">
                                         <div class="nav nav-pills activity-tabs d-xl-none flex-nowrap gap-2 mb-3" id="activityTabs" role="tablist">
                                             <?php foreach ($activityPanels as $index => $panel) : ?>
-                                            <button class="nav-link<?= $index === 0 ? ' active' : '' ?> flex-fill d-flex align-items-center justify-content-center gap-2" id="<?= $panel['column'] ?>Tab" data-bs-toggle="pill" data-bs-target="#<?= $panel['column'] ?>" type="button" role="tab" aria-controls="<?= $panel['column'] ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= h($panel['tab']) ?><span class="badge text-bg-secondary rounded-pill" id="<?= $panel['tabCountId'] ?>"></span></button>
+                                            <button class="nav-link<?= $index === 0 ? ' active' : '' ?> flex-fill d-flex align-items-center justify-content-center gap-2" id="<?= $panel['column'] ?>Tab" data-bs-toggle="pill" data-bs-target="#<?= $panel['column'] ?>" type="button" role="tab" aria-controls="<?= $panel['column'] ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= h($panel['title']) ?><span class="badge text-bg-secondary rounded-pill" id="<?= $panel['tabCountId'] ?>"></span></button>
                                             <?php endforeach; ?>
                                         </div>
                                         <div class="tab-content activity-tab-content row g-0 flex-grow-1 min-h-0">

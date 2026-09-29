@@ -21,7 +21,7 @@ test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", (
         heart_rate: supported(),
         battery: supported(),
     });
-    assert.equal(telemetry.label, "Telemetria");
+    assert.equal(telemetry.label, "Últimas leituras");
 
     const groups = telemetryRequestCards({
         heart_rate: supported(),
@@ -29,7 +29,7 @@ test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", (
     });
     assert.deepEqual(
         groups.map((group) => group.label),
-        ["Telemetria", "Informação do sistema"],
+        ["Últimas leituras", "Informação do sistema"],
     );
     assert.deepEqual(
         groups.map((group) => group.cards.map((card) => card.feature)),
@@ -51,7 +51,7 @@ test("o estado do dispositivo fica com a versão do firmware, e não entre as me
     assert.deepEqual(
         groups.map((group) => [group.label, group.cards.map((card) => card.feature)]),
         [
-            ["Telemetria", ["battery"]],
+            ["Últimas leituras", ["battery"]],
             ["Informação do sistema", ["device_status", "firmware_version"]],
         ],
     );
@@ -100,7 +100,7 @@ test("a faixa do grupo conta o que mediu, mesmo quando o grupo é um só", () =>
 
     const rendered = renderRequestCardGroup(group, [reading], []);
 
-    assert.match(rendered, /section-label[^>]*>Telemetria</);
+    assert.match(rendered, /section-label[^>]*>Últimas leituras</);
     assert.match(rendered, />1 com leitura</);
 });
 

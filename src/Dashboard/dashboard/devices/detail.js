@@ -139,7 +139,7 @@ function renderSelection() {
 const TELEMETRY_REQUEST_GROUPS = [
     {
         key: "telemetry",
-        label: "Telemetria",
+        label: "Últimas leituras",
     },
     {
         key: "system",
@@ -283,7 +283,7 @@ function renderTelemetryList(telemetryRows) {
     activityTable(
         els.telemetryList,
         pageRows.map(telemetryActivityRow),
-        "Ainda não há eventos recebidos.",
+        "Ainda não há leituras.",
         // O prefixo é por lista: as duas desenham-se ao mesmo tempo no mesmo documento, e
         // com o mesmo `activityRowDetail0` em cada uma ficavam dois elementos com o mesmo id.
         "telemetryRowDetail",
@@ -524,7 +524,7 @@ function renderDownlinkRequests(commands) {
     activityTable(
         els.downlinkRequests,
         pageRows.map(downlinkActivityRow),
-        "Ainda não há pedidos ao dispositivo.",
+        "Ainda não há pedidos.",
         "downlinkRowDetail",
         state.downlinkPage,
     );
