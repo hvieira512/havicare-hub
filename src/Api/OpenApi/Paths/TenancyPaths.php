@@ -235,6 +235,23 @@ final class TenancyPaths
                     ),
                 ],
             ],
+            // Autenticar não prova que a conta é desta licença: a de outra autentica à mesma e
+            // só depois dá estes radares por offline. O que prova é quantos deles ela conhece.
+            '/api/licenses/{id}/radar-credentials/check' => [
+                'post' => [
+                    'tags' => ['Licenses'],
+                    'summary' => 'Try radar cloud credentials against this license radars',
+                    'parameters' => [$id],
+                    'requestBody' => Requests::json('RadarCredentialsWriteRequest'),
+                    'responses' => Responses::map(
+                        ['200' => Responses::json(
+                            'How many of this license radars the account knows',
+                            'RadarCredentialsCheckResponse',
+                        )],
+                        'license_not_found',
+                    ),
+                ],
+            ],
         ];
     }
 }

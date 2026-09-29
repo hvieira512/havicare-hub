@@ -5,8 +5,20 @@ declare(strict_types=1);
 namespace Tests\Integration\Api\Services;
 
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Api\Repository\RadarApiCredentialsRepository;
+use Hub\Api\Repository\RadarLayoutRepository;
+use Hub\Api\Repository\WhitelistRepository;
 use Hub\Api\Services\RadarCredentialsService;
+use Hub\Ingress\Http\Qinglanst\LayoutParser;
+use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
+use Hub\Ingress\Http\Qinglanst\QinglanstApiException;
+use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
+use PDO;
+use React\Promise\PromiseInterface;
 use Tests\Support\MysqlDashboardTestCase;
+
+use function React\Promise\reject;
+use function React\Promise\resolve;
 
 /**
  * As credenciais da cloud do fabricante dos radares, que são de cada licença.
@@ -19,12 +31,15 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
 {
     private RadarCredentialsService $service;
     private ApiDataAccess $db;
+    private PDO $pdo;
     private int $licenseRefId;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $database = $this->createDashboardDatabase();
+        $this->pdo = $database->pdo();
+        $this->db = ApiDataAccess::fromDatabase($database);
         $this->service = new RadarCredentialsService($this->db);
 
         $companyId = $this->db->companies->create('hitcare');
@@ -159,6 +174,68 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
         self::assertArrayHasKey('password', $result['error']['fields'] ?? []);
     }
 
+    /**
+     * Uma conta de outra licença autentica à mesma, e só depois os radares desta respondem
+     * `777`. Experimentar antes de gravar é o que apanha a conta trocada, e por isso o que
+     * volta é a contagem de quantos responderam -- não um "ligou".
+     */
+    public function testTheConnectionCheckCountsTheRadarsThatAnswer(): void
+    {
+        $this->registerRadars('594B3CCBA56B', '414D74184CBF');
+        $service = $this->serviceWithClient($this->clientAnswering([
+            '594B3CCBA56B' => 200,
+            '414D74184CBF' => 777,
+        ]));
+
+        $result = $this->await($service->check($this->licenseRefId, $this->credentials()));
+
+        self::assertSame(2, $result['data']['radars']);
+        self::assertSame(1, $result['data']['responding']);
+        self::assertNull($result['data']['error']);
+    }
+
+    /** Um login que falha é uma causa só, e não uma falha por radar. */
+    public function testTheConnectionCheckReportsALoginThatFails(): void
+    {
+        $this->registerRadars('594B3CCBA56B');
+        $service = $this->serviceWithClient($this->clientAnswering([], 'Qinglanst login failed'));
+
+        $result = $this->await($service->check($this->licenseRefId, $this->credentials()));
+
+        self::assertSame(0, $result['data']['responding']);
+        self::assertSame('Qinglanst login failed', $result['data']['error']);
+    }
+
+    /** Sem radares não há a quem perguntar, e inventar um "ligou" seria mentir. */
+    public function testTheConnectionCheckSaysWhenThereIsNothingToTry(): void
+    {
+        $service = $this->serviceWithClient($this->clientAnswering([]));
+
+        $result = $this->await($service->check($this->licenseRefId, $this->credentials()));
+
+        self::assertSame(0, $result['data']['radars']);
+    }
+
+    /**
+     * O ecrã nunca recebe os segredos e por isso também não os pode reenviar: experimentar
+     * depois de corrigir só o endereço tem de usar os que já lá estão.
+     */
+    public function testTheConnectionCheckFallsBackToTheStoredSecrets(): void
+    {
+        $this->service->save($this->licenseRefId, $this->credentials());
+        $this->registerRadars('594B3CCBA56B');
+        $client = $this->clientAnswering(['594B3CCBA56B' => 200]);
+
+        $this->await($this->serviceWithClient($client)->check($this->licenseRefId, [
+            'baseUrl' => 'https://radarconsole.com/outro-api',
+            'username' => 'casabranca',
+            'appId' => 'ql-casabranca',
+        ]));
+
+        self::assertSame('a-boa', $client->seenCredentials['password'] ?? null);
+        self::assertSame('https://radarconsole.com/outro-api', $client->seenCredentials['base_url'] ?? null);
+    }
+
     public function testForgettingTheCredentialsRemovesTheRow(): void
     {
         $this->service->save($this->licenseRefId, [
@@ -171,5 +248,103 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
 
         self::assertSame('ok', $this->service->delete($this->licenseRefId)['status'] ?? null);
         self::assertNull($this->db->radarCredentials->findByLicenseRefId($this->licenseRefId));
+    }
+
+    /** @return array<string, string> */
+    private function credentials(): array
+    {
+        return [
+            'baseUrl' => 'https://radarconsole.com/prod-api',
+            'username' => 'casabranca',
+            'password' => 'a-boa',
+            'appId' => 'ql-casabranca',
+            'appSecret' => 'o-bom',
+        ];
+    }
+
+    private function registerRadars(string ...$imeis): void
+    {
+        foreach ($imeis as $imei) {
+            $this->db->whitelist->register(
+                imei: $imei,
+                supplier: 'Qinglanst',
+                model: 'RD-V1',
+                deviceType: 'radar',
+                company: 'hitcare',
+                licenseId: 2103,
+            );
+        }
+    }
+
+    private function serviceWithClient(QinglanstApiClient $client): RadarCredentialsService
+    {
+        $pdo = $this->pdo;
+
+        return new RadarCredentialsService($this->db, sync: new RadarLayoutSync(
+            $client,
+            new LayoutParser(),
+            new RadarLayoutRepository($pdo),
+            new RadarApiCredentialsRepository($pdo),
+            new WhitelistRepository($pdo),
+            static fn(): string => '2026-09-29 15:00:00',
+        ));
+    }
+
+    /** @param array<string, int> $codes imei => código do fabricante */
+    private function clientAnswering(array $codes, ?string $loginError = null): QinglanstApiClient
+    {
+        return new class ($codes, $loginError) extends QinglanstApiClient {
+            /** @var array<string, string> */
+            public array $seenCredentials = [];
+
+            /** @param array<string, int> $codes */
+            public function __construct(private array $codes, private ?string $loginError)
+            {
+            }
+
+            public function login(array $credentials): PromiseInterface
+            {
+                $this->seenCredentials = $credentials;
+                if ($this->loginError !== null) {
+                    return reject(new QinglanstApiException($this->loginError));
+                }
+
+                return resolve([
+                    'access_token' => 't',
+                    'refresh_token' => 'r',
+                    'token_type' => 'bearer',
+                    'expires_in' => 3600,
+                ]);
+            }
+
+            public function deviceProp(array $credentials, array $token, string $uid): PromiseInterface
+            {
+                $code = $this->codes[$uid] ?? 777;
+
+                return resolve($code === 200
+                    ? ['code' => 200, 'data' => [
+                        'rectangle' => '{-30,-8;30,-8;-30,20;30,20}',
+                        'declare_area' => '',
+                        'declare_area_name' => [],
+                    ]]
+                    : ['code' => $code]);
+            }
+        };
+    }
+
+
+    /**
+     * @template T
+     * @param PromiseInterface<T> $promise
+     * @return T
+     */
+    private function await(PromiseInterface $promise): mixed
+    {
+        $settled = null;
+        $promise->then(static function (mixed $value) use (&$settled): void {
+            $settled = $value;
+        });
+
+        return $settled;
     }
 }

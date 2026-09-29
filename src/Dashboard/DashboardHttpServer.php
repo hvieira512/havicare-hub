@@ -117,7 +117,7 @@ final class DashboardHttpServer
             new ApiUserService($this->db),
             new CompanyService($this->db),
             new LicenseService($this->db),
-            new RadarCredentialsService($this->db),
+            new RadarCredentialsService($this->db, sync: $radarLayoutSync),
             new RadarLayoutService($this->db, $radarLayoutSync),
             new ProtocolService(),
             new DashboardNotificationService($this->db),

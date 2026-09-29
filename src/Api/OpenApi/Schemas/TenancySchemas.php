@@ -116,6 +116,19 @@ final class TenancySchemas
                 RadarCredentialsWriteRequest::class,
                 [RadarCredentialsWriteRequest::GROUP_CREATE],
             ),
+            'RadarCredentialsCheckResponse' => [
+                'type' => 'object',
+                'properties' => [
+                    'data' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'radars' => ['type' => 'integer', 'example' => 21],
+                            'responding' => ['type' => 'integer', 'example' => 21],
+                            'error' => ['type' => 'string', 'nullable' => true],
+                        ],
+                    ],
+                ],
+            ],
         ];
     }
 }

@@ -20,8 +20,11 @@ import {
     clearRadarCredentials,
     forgetRadarCredentials,
     loadRadarCredentials,
+    radarCheckMessage,
     radarCredentialsEditorRow,
+    replaceRadarSecret,
     submitRadarCredentials,
+    tryRadarCredentials,
 } from "./radar-credentials.js";
 
 /**
@@ -375,6 +378,30 @@ async function saveRadarCredentialsRow(button) {
     toast("success", "Credenciais guardadas");
 }
 
+/** Experimenta antes de gravar, e escreve o resultado por cima dos botões. */
+async function checkRadarCredentialsRow(button) {
+    const row = editorOf(button, RADAR_EDITOR_KIND);
+    const slot = row?.el.querySelector("#radarCheckResult");
+    if (!row || !slot) return;
+
+    button.disabled = true;
+    slot.className = "small mt-3 text-body-secondary";
+    slot.textContent = "A experimentar…";
+
+    const result = await tryRadarCredentials(row);
+    button.disabled = false;
+
+    if (result.error) {
+        slot.className = "small mt-3 text-danger";
+        slot.textContent = apiError(result);
+        return;
+    }
+
+    const message = radarCheckMessage(result.data);
+    slot.className = `small mt-3 text-${message.tone}`;
+    slot.textContent = message.text;
+}
+
 async function forgetRadarCredentialsFor(licenseRefId) {
     const license = currentLicenses.find((row) => Number(row.id) === Number(licenseRefId));
     const { isConfirmed } = await confirmDestructive(
@@ -417,6 +444,11 @@ export function handleCompanyListClick(event) {
         editLicense: () => editor.edit("license", button.dataset.id),
         editRadarCredentials: () => void openRadarCredentials(button.dataset.id),
         saveRadarCredentialsRow: () => void saveRadarCredentialsRow(button),
+        checkRadarCredentials: () => void checkRadarCredentialsRow(button),
+        replaceRadarSecret: () => {
+            const row = editorOf(button, RADAR_EDITOR_KIND);
+            if (row) replaceRadarSecret(row, button.dataset.secret);
+        },
         forgetRadarCredentials: () => void forgetRadarCredentialsFor(button.dataset.id),
         newLicenseForCompany: () => editor.draft("license", { companyId: button.dataset.companyId }),
         cancelEdit: () => editor.cancel(),
