@@ -1,9 +1,9 @@
 import { deviceTypeLabel } from "../domain.js";
 import { state } from "../state.js";
 import {
+    classificationRowsHtml,
     licenseBadgeValue,
     licensePickerHtml,
-    wizardTrailHtml,
 } from "./classification-ui.js";
 
 /**
@@ -110,18 +110,11 @@ function renderTrail() {
     // é a classificação de outro aparelho: sem badges, a trilha diz o que se sabe -- nada.
     const known = !state.deviceModal.loading;
 
-    els.deviceTrail.setAttribute("aria-valuenow", String(step));
-    els.deviceTrail.innerHTML = wizardTrailHtml({
+    els.deviceTrail.innerHTML = classificationRowsHtml({
         questions: TRAIL_QUESTIONS,
-        // A pergunta aberta não leva badge: o valor antigo está marcado na grelha abaixo.
-        badges: TRAIL_QUESTIONS
-            .filter((question) => known && question.key !== openQuestion)
-            .map((question) => ({
-                key: question.key,
-                label: question.label,
-                value: values[question.key],
-            })),
-        currentKey: openQuestion || "",
+        values,
+        openKey: openQuestion || "",
+        known,
     });
 }
 

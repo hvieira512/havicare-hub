@@ -168,6 +168,30 @@ export function wizardTrailHtml({ questions, badges = [], currentKey = "" }) {
         .join("");
 }
 
+/**
+ * A classificação de um aparelho que já existe: tipo, modelo e licença, uma linha cada.
+ *
+ * Não é uma trilha de assistente -- as três respostas já estão dadas, e em pastilhas
+ * quebravam num ecrã estreito deixando uma seta a apontar para o vazio. Cada linha abre a
+ * sua escolha, e a que está aberta não repete o valor, que está marcado na grelha abaixo.
+ */
+export function classificationRowsHtml({ questions, values, openKey = "", known = true }) {
+    return questions
+        .map((question) => {
+            const open = question.key === openKey;
+            const value = known && !open ? String(values[question.key] ?? "") : "";
+
+            return `
+            <button type="button" class="classification-row btn btn-link text-decoration-none d-flex align-items-center gap-3 w-100 px-0 py-2 border-bottom"
+                data-wizard-reopen="${esc(question.key)}" aria-expanded="${open ? "true" : "false"}">
+                <span class="section-label mb-0 flex-shrink-0">${esc(question.label)}</span>
+                <span class="text-body flex-grow-1 text-end text-truncate">${esc(value)}</span>
+                <i class="fa-solid fa-chevron-right text-body-tertiary flex-shrink-0" aria-hidden="true"></i>
+            </button>`;
+        })
+        .join("");
+}
+
 /** A barra: um traço por passo, os já feitos a navy e os que faltam em cinzento claro. */
 export function wizardProgressHtml(step, total) {
     const bars = Array.from(

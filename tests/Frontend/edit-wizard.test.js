@@ -81,33 +81,35 @@ test("abre no passo do aparelho, com a classificação em etiquetas", () => {
     assert.equal(els.deviceNextBtn.classList.contains("d-none"), true);
 });
 
-test("as etiquetas dizem o que está escolhido", () => {
+test("as linhas dizem o que está escolhido", () => {
     const { root } = harness();
 
     assert.deepEqual(
-        [...root.querySelectorAll("[data-wizard-reopen]")].map((badge) => [
-            badge.querySelector(".wizard-badge-key").textContent,
-            badge.textContent.replace(/\s+/g, " ").trim(),
-        ]),
+        [...root.querySelectorAll("[data-wizard-reopen]")]
+            .map((row) => row.textContent.replace(/\s+/g, " ").trim()),
         [
-            ["Tipo", "Tipo · Medidor de fraldas"],
-            ["Modelo", "Modelo · MECS-PRO"],
-            ["Licença", "Licença · gucc.dev (1001)"],
+            "Tipo Medidor de fraldas",
+            "Modelo MECS-PRO",
+            "Licença gucc.dev (1001)",
         ],
     );
 });
 
-test("tocar numa etiqueta abre aquela pergunta, e só aquela", () => {
+test("tocar numa linha abre aquela pergunta, e só aquela", () => {
     const { root, els, openQuestion } = harness();
 
     root.querySelector("[data-wizard-reopen=\"model\"]").click();
 
     assert.deepEqual(openQuestion(), ["model"]);
     assert.equal(els.deviceStep2.classList.contains("d-none"), true);
-    assert.equal(root.querySelector(".wizard-trail-step"), null);
-    // A pergunta aberta perde o valor da etiqueta: esta na grelha por baixo, marcada.
-    assert.equal(root.querySelector("[data-wizard-reopen=\"model\"]"), null);
-    assert.equal(root.querySelectorAll(".wizard-badge-now").length, 1);
+    // A pergunta aberta perde o valor da linha: está na grelha por baixo, marcada.
+    const open = root.querySelector("[data-wizard-reopen=\"model\"]");
+    assert.equal(open.getAttribute("aria-expanded"), "true");
+    assert.doesNotMatch(open.textContent, /MECS-PRO/);
+    assert.equal(
+        root.querySelectorAll("[aria-expanded=\"true\"][data-wizard-reopen]").length,
+        1,
+    );
     // O `Guardar` fica. Está no rodapé do modal e não desaparece por se ter tocado numa
     // etiqueta -- um botão que foge quando se mexe noutra coisa é o que faz procurá-lo.
     // Guardar com a pergunta aberta fecha-a primeiro, para a validação se ver.
@@ -186,7 +188,7 @@ test("sair de uma pergunta aberta devolve os campos do aparelho, sem apagar resp
     assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 3);
 });
 
-test("enquanto o dispositivo não chegou, a trilha não inventa uma classificação", () => {
+test("enquanto o dispositivo não chegou, as linhas não inventam uma classificação", () => {
     // O formulario ainda tem o que la estava por omissao -- Relogio, o primeiro modelo,
     // sem licença -- e isso é a classificação de outro aparelho.
     const { state } = stateModule;
@@ -194,10 +196,15 @@ test("enquanto o dispositivo não chegou, a trilha não inventa uma classificaç
     state.deviceModal.loading = true;
     renderEditWizard();
 
-    assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 0);
-    assert.equal(root.querySelectorAll(".wizard-badge").length, 3);
+    const values = () => [...root.querySelectorAll("[data-wizard-reopen]")]
+        .map((row) => row.textContent.replace(/\s+/g, " ").trim());
+    assert.deepEqual(values(), ["Tipo", "Modelo", "Licença"]);
 
     state.deviceModal.loading = false;
     renderEditWizard();
-    assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 3);
+    assert.deepEqual(values(), [
+        "Tipo Medidor de fraldas",
+        "Modelo MECS-PRO",
+        "Licença gucc.dev (1001)",
+    ]);
 });
