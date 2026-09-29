@@ -9,12 +9,9 @@ import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/dev
 import { parseFragment } from "./support/dom.js";
 
 /**
- * As secções escolhem-se sempre da mesma maneira: a pastilha do `sectionStrip`, com ícone e
- * com a contagem no `.count-number`.
- *
- * O painel de configuração desenhava a tira dele à mão, em separadores sublinhados com
- * distintivo do Bootstrap; o catálogo desenhava pastilhas sem ícone. Três aparências para o
- * mesmo gesto, e a diferença entre elas não dizia nada.
+ * As secções escolhem-se sempre com o mesmo vocabulário: o ícone da secção, o nome e a
+ * contagem. A forma é que muda com o número -- o catálogo tem-nas em tira, e o painel de
+ * configuração em lista, porque lá chegam a seis e uma tira corta.
  */
 test.afterEach(() => {
     state.protocols = [];
@@ -40,15 +37,15 @@ const renderConfigStrip = () => parseFragment(renderDeviceConfigurationRoot({
     ],
 }));
 
-test("a tira de secções do painel de configuração é a pastilha partilhada", () => {
-    const chips = renderConfigStrip().querySelectorAll(".capability-section-chip");
+test("a lista de secções do painel de configuração diz o mesmo que a tira", () => {
+    const links = renderConfigStrip().querySelectorAll("[data-config-section-link]");
 
-    assert.ok(chips.length >= 2);
-    for (const chip of chips) {
-        assert.ok(chip.querySelector("i.fa-solid"), "a pastilha ficou sem ícone");
-        assert.ok(chip.querySelector(".count-number"), "a contagem não é a partilhada");
-        assert.equal(chip.dataset.action, "selectConfigCategory");
-        assert.notEqual(chip.dataset.section, undefined);
+    assert.ok(links.length >= 2);
+    for (const link of links) {
+        assert.ok(link.querySelector("i.fa-solid"), "a linha ficou sem ícone");
+        assert.ok(link.querySelector("[data-config-section-total]"), "a linha ficou sem contagem");
+        assert.equal(link.dataset.action, "selectConfigCategory");
+        assert.notEqual(link.dataset.section, undefined);
     }
 });
 

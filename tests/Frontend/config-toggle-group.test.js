@@ -4,7 +4,7 @@ import test from "node:test";
 // Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
 import "./support/browser-env.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
-import { changedConfigGroupEntries } from "../../src/Dashboard/dashboard/devices/config/panel.js";
+import { changedConfigEntries } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { parseFragment } from "./support/dom.js";
 
 /**
@@ -66,11 +66,11 @@ test("os interruptores seguidos passam a linhas de um só cartão", () => {
     assert.equal(groups[0].querySelectorAll("[data-config-row]").length, 3);
 });
 
-test("o grupo tem uma acção só, e não uma por definição", () => {
-    const group = render(CATALOG).querySelector("[data-config-group]");
+test("o envio é um só, no rodapé da secção, e não um por definição", () => {
+    const root = render(CATALOG);
 
-    assert.equal(group.querySelectorAll("[data-action=\"saveConfigGroup\"]").length, 1);
-    assert.equal(group.querySelectorAll("[data-action=\"saveConfig\"]").length, 0);
+    assert.equal(root.querySelectorAll("[data-action=\"saveConfigPane\"]").length, 1);
+    assert.equal(root.querySelectorAll("[data-action=\"saveConfig\"]").length, 0);
 });
 
 test("o que não é interruptor continua a ser cartão", () => {
@@ -109,7 +109,7 @@ test("o grupo envia só as linhas alteradas", () => {
             </div>
         </div>`).firstElementChild;
 
-    assert.deepEqual(changedConfigGroupEntries(group), { b: { enabled: false } });
+    assert.deepEqual(changedConfigEntries(group), { b: { enabled: false } });
 });
 
 /**

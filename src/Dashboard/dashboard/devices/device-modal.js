@@ -194,6 +194,9 @@ export async function editDevice(imei, supplier, model) {
     setDeviceFormError("");
     clearInvalid(els.deviceForm);
     els.deviceConfigTabBtn?.classList.remove("d-none");
+    // A conta do separador é do dispositivo que está aberto: sem isto ficava a do anterior
+    // até o painel de configurações chegar.
+    els.deviceConfigCount?.classList.add("d-none");
     els.deleteDeviceBtn.dataset.imei = imei;
     els.deleteDeviceBtn.classList.remove("d-none");
     renderDeviceTypeSelector("watch");

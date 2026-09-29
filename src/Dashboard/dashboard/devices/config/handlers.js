@@ -2,10 +2,9 @@ import { state } from "../../state.js";
 import { syncPhoneControl } from "../../phone.js";
 import {
     dismissConfigFeedback,
-    renderDeviceConfigurationModal,
     saveDeviceConfiguration,
-    saveDeviceConfigurationGroup,
-    syncConfigGroupDirty,
+    saveDeviceConfigurations,
+    syncConfigCounts,
     syncConfigSectionDirty,
 } from "./panel.js";
 import { appendRepeatRow, removeRepeatRow } from "./row-editing.js";
@@ -39,21 +38,24 @@ export function handleDeviceConfigClick(event) {
 
     if (button.dataset.action === "selectConfigCategory") {
         event.preventDefault();
-        state.deviceModal.activeCategory = button.dataset.section || "";
-        renderDeviceConfigurationModal();
+        const key = button.dataset.section || "";
+        state.deviceModal.activeCategory = key;
+        // Trocado no sítio e não redesenhado: as secções estão todas no DOM, e redesenhar
+        // deitava fora o que estivesse escrito nas outras e ainda por enviar.
+        selectConfigSection(button.closest("[data-config-root]"), key);
         return;
     }
 
-    // Os interruptores agrupados enviam-se em conjunto: uma alteração por linha, um comando
-    // por linha alterada, e um só pedido.
-    const group = button.closest("[data-config-group]");
-    if (group && button.dataset.action === "saveConfigGroup") {
-        void saveDeviceConfigurationGroup(group);
+    // A secção inteira envia-se de uma vez: uma alteração por definição, um comando por
+    // definição alterada, e um só pedido.
+    const pane = button.closest("[data-config-pane]");
+    if (pane && button.dataset.action === "saveConfigPane") {
+        void saveDeviceConfigurations(pane);
         return;
     }
-    if (group && button.dataset.action === "resetConfigGroup") {
-        resetConfigGroup(group);
-        syncConfigGroupDirty(group);
+    if (pane && button.dataset.action === "resetConfigPane") {
+        resetConfigPane(pane);
+        syncConfigCounts(pane.closest("[data-config-root]") || pane);
         return;
     }
 
@@ -102,6 +104,11 @@ export function handleDeviceConfigClick(event) {
 }
 
 export function handleDeviceConfigChange(event) {
+    dispatchConfigChange(event);
+    syncConfigCountsFrom(event.target);
+}
+
+function dispatchConfigChange(event) {
     if (event.target.matches("[data-phone-country]")) {
         syncPhoneControl(event.target);
         return;
@@ -166,6 +173,30 @@ export function handleDeviceConfigInput(event) {
     if (event.target.matches("[data-time-format=\"24h\"]")) {
         normalizeTwentyFourHourTimeInput(event.target);
     }
+
+    syncConfigCountsFrom(event.target);
+}
+
+/** Acende a secção escolhida e abre o painel dela, sem tocar no que os outros têm escrito. */
+export function selectConfigSection(root, key) {
+    if (!root) return;
+
+    for (const link of root.querySelectorAll("[data-config-section-link]")) {
+        const selected = link.dataset.section === key;
+        link.classList.toggle("selected", selected);
+        link.setAttribute("aria-pressed", selected ? "true" : "false");
+    }
+    for (const pane of root.querySelectorAll("[data-config-pane]")) {
+        const selected = pane.dataset.configPane === key;
+        pane.classList.toggle("show", selected);
+        pane.classList.toggle("active", selected);
+    }
+}
+
+/** As contagens acompanham quem escreve: acertadas só ao desenhar, mentiam entre teclas. */
+function syncConfigCountsFrom(target) {
+    const root = target.closest?.("[data-config-root]");
+    if (root) syncConfigCounts(root);
 }
 
 export function handleConfigFeedbackClosed(event) {
@@ -176,23 +207,30 @@ export function handleConfigFeedbackClosed(event) {
 }
 
 /**
- * Devolve as linhas do grupo ao valor com que foram desenhadas.
+ * Devolve as definições da secção ao valor com que foram desenhadas.
  *
- * O `type="reset"` de um formulário não serve aqui: as linhas não estão num formulário, e o
- * valor a repor é o que veio do hub e não o do atributo `checked` do HTML.
+ * O `type="reset"` de um formulário não serve aqui: as linhas de um grupo não estão num
+ * formulário, e o valor a repor é o que veio do hub e não o do atributo `checked` do HTML.
+ *
+ * As listas repetíveis -- contactos, alarmes -- ficam de fora e mantêm o seu próprio repor:
+ * uma linha que alguém acrescentou não se tira campo a campo.
  */
-function resetConfigGroup(group) {
-    for (const row of group.querySelectorAll("[data-config-row]")) {
+export function resetConfigPane(pane) {
+    const blocks = pane.querySelectorAll("[data-config-row], [data-config-section]");
+    for (const block of blocks) {
+        if (block.querySelector("[data-repeat-list]")) continue;
+
         let pristine;
         try {
-            pristine = JSON.parse(row.dataset.configPristine || "{}");
+            pristine = JSON.parse(block.dataset.configPristine || "{}");
         } catch {
             continue;
         }
-        for (const input of row.querySelectorAll("[data-config-field]")) {
+        for (const input of block.querySelectorAll("[data-config-field]")) {
             const value = pristine[input.dataset.configField];
             if (input.type === "checkbox") {
                 input.checked = value === true;
+                syncSwitchLabel(input);
                 continue;
             }
             input.value = value ?? "";
@@ -216,5 +254,6 @@ export function handleDeviceConfigReset(event) {
         )) {
             syncSwitchLabel(input);
         }
+        syncConfigCountsFrom(form);
     });
 }

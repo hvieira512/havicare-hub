@@ -53,16 +53,21 @@ export function configActionPayload(section, actionValue) {
 }
 
 /**
- * As linhas de um grupo cujo valor difere do que estava desenhado.
+ * As definições de uma secção -- ou de um grupo -- cujo valor difere do que estava desenhado.
  *
  * Só o que mudou é que viaja: enviar as oito de uma vez transformava uma alteração num lote
  * de oito comandos para a pulseira executar um a um, e o aparelho serve um de cada vez.
  *
+ * As acções ficam de fora: elas não se guardam, e o botão delas é que as dispara.
+ *
  * @returns {Object<string, object>} chave da definição => valor a enviar
  */
-export function changedConfigGroupEntries(group) {
+export function changedConfigEntries(container) {
     const changed = {};
-    for (const row of group.querySelectorAll("[data-config-row]")) {
+    const rows = container.querySelectorAll(
+        "[data-config-row], [data-config-section]:not([data-config-transient=\"1\"])",
+    );
+    for (const row of rows) {
         const key = row.dataset.configKey || "";
         if (!key) continue;
 
@@ -93,65 +98,46 @@ export function changedConfigGroupEntries(group) {
  * Conta só o que alguém editou: avisar por causa das que ninguém tocou era avisar em todos
  * os relógios, todas as vezes.
  */
-export function unsentConfigChanges(root) {
-    const edited = (element) => {
-        if (!("configPristine" in element.dataset)) return false;
-        try {
-            return JSON.stringify(readConfigPayload(element)) !== element.dataset.configPristine;
-        } catch {
-            return false;
-        }
-    };
+/** Se o que está escrito no bloco difere da fotografia tirada ao desenhá-lo. */
+function isConfigBlockEdited(element) {
+    if (!("configPristine" in element.dataset)) return false;
+    try {
+        return JSON.stringify(readConfigPayload(element)) !== element.dataset.configPristine;
+    } catch {
+        return false;
+    }
+}
 
+export function unsentConfigChanges(root) {
     const sections = [...root.querySelectorAll("[data-config-section]")]
-        .filter((section) => section.dataset.configTransient !== "1" && edited(section));
+        .filter((section) => section.dataset.configTransient !== "1" && isConfigBlockEdited(section));
     const rows = [...root.querySelectorAll("[data-config-group] [data-config-row]")]
-        .filter(edited);
+        .filter(isConfigBlockEdited);
 
     return sections.length + rows.length;
 }
 
-/** Acende o «Enviar alterações» do grupo e diz quantas são. */
-export function syncConfigGroupDirty(group) {
-    const button = group.querySelector("[data-action=\"saveConfigGroup\"]");
-    const status = group.querySelector("[data-config-group-status]");
-    if (!button || button.dataset.configPhase !== "idle") return;
-
-    const pending = changedConfigGroupEntries(group);
-    const count = Object.keys(pending).length;
-    button.disabled = count === 0;
-    button.classList.toggle("btn-primary", count > 0);
-    button.classList.toggle("btn-outline-secondary", count === 0);
-
-    // «Alterações» só quando alguém alterou. As definições sem valor guardado no hub entram
-    // na conta sem ninguém lhes ter tocado -- o botão tem de as poder enviar pela primeira
-    // vez --, e chamar-lhes alterações era mentir sobre a origem.
-    const edited = Object.keys(pending).some((key) => {
-        const row = group.querySelector(`[data-config-row][data-config-key="${key}"]`);
-        return row?.dataset.configStored !== "0";
-    });
-
-    // «Sem alterações por enviar» e não «tudo enviado ao dispositivo»: o que se conta aqui são
-    // edições por submeter, e zero delas não diz nada sobre entrega -- o hub pode ter tudo em
-    // fila e o aparelho não ter recebido nada. Quem fala de entrega é a pastilha de cada
-    // cartão, que é quem sabe.
-    if (status) {
-        status.textContent = count === 0
-            ? "Sem alterações por enviar"
-            : edited
-                ? `${count} ${count === 1 ? "alteração" : "alterações"} por enviar`
-                // «No valor padrão» e não «nunca enviada ao dispositivo»: o que sabemos é que
-                // o hub nunca guardou valor nenhum. Sobre o aparelho não sabemos nada -- ele
-                // tem sempre um valor, de fábrica ou posto pela app do fabricante.
-                : `${count} ${count === 1 ? "definição" : "definições"} no valor padrão, por enviar`;
+/**
+ * Marca os blocos com edição por enviar.
+ *
+ * É por esta marca que a pastilha «Alterado» e o valor anterior aparecem: as duas leituras
+ * são desenhadas juntas, e trocá-las por marcação nova a cada tecla mexia num campo em uso.
+ */
+function markEditedConfigBlocks(root) {
+    for (const block of root.querySelectorAll("[data-config-section], [data-config-row]")) {
+        if (block.dataset.configTransient !== "1" && isConfigBlockEdited(block)) {
+            block.dataset.configEdited = "1";
+        } else {
+            delete block.dataset.configEdited;
+        }
     }
 }
 
-export async function saveDeviceConfigurationGroup(group) {
-    const changed = changedConfigGroupEntries(group);
+export async function saveDeviceConfigurations(container) {
+    const changed = changedConfigEntries(container);
     if (Object.keys(changed).length === 0) return;
 
-    const button = group.querySelector("[data-action=\"saveConfigGroup\"]");
+    const button = container.querySelector("[data-action=\"saveConfigPane\"]");
     if (button) {
         button.dataset.configPhase = "submitting";
         button.disabled = true;
@@ -518,13 +504,71 @@ export function renderDeviceConfigurationModal() {
         queueTtlSeconds: Number(document.body.dataset.downlinkQueueTtl) || 0,
     });
     resetPhoneControls(els.deviceConfigRoot);
-    captureConfigSectionPristine();
-    // O rodapé de um grupo tem de dizer a verdade ao ser desenhado, e não só quando alguém
-    // mexe num interruptor: se nada foi ainda enviado ao aparelho, é isso que está lá.
-    for (const group of els.deviceConfigRoot.querySelectorAll("[data-config-group]")) {
-        syncConfigGroupDirty(group);
-    }
+    captureConfigPristine(els.deviceConfigRoot);
+    syncConfigCounts(els.deviceConfigRoot);
     armConfigFeedbackAutoClose();
+}
+
+/**
+ * O que o rodapé de uma secção diz.
+ *
+ * «Sem alterações por enviar» e não «tudo enviado ao dispositivo»: o que se conta aqui são
+ * edições por submeter, e zero delas não diz nada sobre entrega. Quem fala de entrega é a
+ * pastilha de cada definição, que é quem sabe.
+ *
+ * As definições sem valor guardado no hub entram no envio sem ninguém lhes ter tocado -- é o
+ * único caminho para a primeira gravação --, e chamar-lhes alterações era mentir sobre a
+ * origem: sobre o aparelho não sabemos nada, ele tem sempre um valor.
+ */
+function paneStatusLabel(pending, edited) {
+    if (pending === 0) return "Sem alterações por enviar";
+    if (edited === 0) {
+        return `${pending} ${pending === 1 ? "definição" : "definições"} no valor padrão, por enviar`;
+    }
+    return `${edited} ${edited === 1 ? "alteração" : "alterações"} por enviar`;
+}
+
+/**
+ * As três contas da mesma coisa: o separador do modal, a linha de cada secção e o rodapé
+ * dela. Saem todas das mesmas duas leituras, para nenhuma poder discordar das outras.
+ */
+export function syncConfigCounts(root) {
+    markEditedConfigBlocks(root);
+
+    for (const pane of root.querySelectorAll("[data-config-pane]")) {
+        const pending = Object.keys(changedConfigEntries(pane)).length;
+        const edited = unsentConfigChanges(pane);
+        const key = pane.dataset.configPane || "";
+
+        const changed = root.querySelector(
+            `[data-config-section-link][data-section="${CSS.escape(key)}"] [data-config-section-changed]`,
+        );
+        if (changed) {
+            changed.textContent = edited === 0
+                ? ""
+                : ` · ${edited} ${edited === 1 ? "alterada" : "alteradas"}`;
+            changed.classList.toggle("text-warning-emphasis", edited > 0);
+        }
+
+        const status = pane.querySelector("[data-config-pane-status]");
+        if (status) {
+            status.textContent = paneStatusLabel(pending, edited);
+            status.classList.toggle("text-warning-emphasis", edited > 0);
+            status.classList.toggle("text-secondary", edited === 0);
+        }
+
+        for (const button of pane.querySelectorAll("[data-action=\"saveConfigPane\"], [data-action=\"resetConfigPane\"]")) {
+            if (button.dataset.configPhase === "submitting") continue;
+            button.disabled = pending === 0;
+        }
+    }
+
+    const badge = els?.deviceConfigCount;
+    if (badge) {
+        const total = unsentConfigChanges(root);
+        badge.textContent = String(total);
+        badge.classList.toggle("d-none", total === 0);
+    }
 }
 
 /**
@@ -534,8 +578,8 @@ export function renderDeviceConfigurationModal() {
  * Falha aberta de propósito: um bloco cuja leitura não se consegue tirar fica com o botão
  * activo. É melhor um botão a mais do que uma configuração que não se consegue enviar.
  */
-function captureConfigSectionPristine() {
-    for (const section of els.deviceConfigRoot.querySelectorAll("[data-config-section]")) {
+export function captureConfigPristine(root) {
+    for (const section of root.querySelectorAll("[data-config-section]")) {
         try {
             section.dataset.configPristine = JSON.stringify(readConfigPayload(section));
         } catch {
