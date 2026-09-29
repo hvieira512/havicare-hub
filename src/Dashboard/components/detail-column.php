@@ -36,24 +36,32 @@
                                         <button id="clearDetailFiltersBtn" class="btn btn-link btn-sm p-0 text-decoration-none text-secondary small d-none" type="button">Limpar</button>
                                     </div>
                                     <div class="collapse" id="detailFiltersCollapse">
-                                        <div class="row g-2 align-items-end pt-3">
-                                            <div class="col-auto">
-                                                <label for="detailFilterFrom" class="section-label">De</label>
-                                                <input type="datetime-local" id="detailFilterFrom" class="form-control form-control-sm">
+                                        <div id="detailRangePresets" class="d-flex flex-wrap gap-2 pt-3">
+                                            <?php foreach (['today' => 'Hoje', '7d' => '7 dias', '30d' => '30 dias'] as $range => $label) : ?>
+                                            <button class="btn btn-sm btn-outline-secondary rounded-pill" type="button" data-detail-range="<?= h($range) ?>" aria-pressed="false"><?= h($label) ?></button>
+                                            <?php endforeach; ?>
+                                            <button class="btn btn-sm btn-outline-secondary rounded-pill" type="button" data-bs-toggle="collapse" data-bs-target="#detailFilterDates" aria-expanded="false" aria-controls="detailFilterDates">Datas&hellip;</button>
+                                        </div>
+                                        <div class="collapse" id="detailFilterDates">
+                                            <div class="row g-2 align-items-end pt-3">
+                                                <div class="col-auto">
+                                                    <label for="detailFilterFrom" class="section-label">De</label>
+                                                    <input type="datetime-local" id="detailFilterFrom" class="form-control form-control-sm">
+                                                </div>
+                                                <div class="col-auto">
+                                                    <label for="detailFilterTo" class="section-label">Até</label>
+                                                    <input type="datetime-local" id="detailFilterTo" class="form-control form-control-sm">
+                                                </div>
+                                                <div class="col-auto">
+                                                    <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check', 'me-1') ?>Aplicar</button>
+                                                </div>
                                             </div>
-                                            <div class="col-auto">
-                                                <label for="detailFilterTo" class="section-label">Até</label>
-                                                <input type="datetime-local" id="detailFilterTo" class="form-control form-control-sm">
-                                            </div>
-                                            <div class="col-auto">
-                                                <label for="detailFilterType" class="section-label">Tipo</label>
-                                                <select id="detailFilterType" class="form-select form-select-sm">
-                                                    <option value="all">Todos</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-auto">
-                                                <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check', 'me-1') ?>Aplicar</button>
-                                            </div>
+                                        </div>
+                                        <div class="pt-3">
+                                            <label for="detailFilterType" class="section-label">Tipo</label>
+                                            <select id="detailFilterType" class="form-select form-select-sm w-auto">
+                                                <option value="all">Todos</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>

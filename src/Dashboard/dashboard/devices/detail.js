@@ -516,32 +516,89 @@ function renderDownlinkRequests(commands) {
     renderClientPager("downlink", commands.length, totalPages);
 }
 
+/**
+ * A leitura que respondeu ao pedido: a primeira da capacidade pedida a partir do instante em
+ * que se pediu. Uma mais antiga respondeu a outro pedido, e a última de todas seria a de
+ * agora e não a desta linha.
+ */
+function commandReply(command) {
+    const feature = String(command.feature || "");
+    const acked = Date.parse(command.ackedAt || "");
+    if (feature === "" || Number.isNaN(acked)) return null;
+
+    const requested = Date.parse(command.requestedAt || "") || acked;
+    const reply = (state.selectedDetail?.recent?.telemetry || [])
+        .map(rowPayload)
+        .filter(
+            (payload) =>
+                payload &&
+                String(payload.type || "") === feature &&
+                eventTime(payload) >= requested,
+        )
+        .sort((left, right) => eventTime(left) - eventTime(right))[0];
+
+    return reply ? uplinkCardContent(feature, reply.data || {}) : null;
+}
+
+/** Quando se pediu, com segundos, e quanto tempo a resposta demorou a chegar. */
+function commandTiming(command) {
+    const requested = Date.parse(command.requestedAt || "");
+    if (Number.isNaN(requested)) return "";
+
+    const at = new Date(requested).toLocaleTimeString("pt-PT");
+    const acked = Date.parse(command.ackedAt || "");
+    if (Number.isNaN(acked)) return `Pedido às ${at}`;
+
+    const seconds = Math.max(0, Math.round((acked - requested) / 1000));
+    const elapsed = seconds < 60
+        ? `${seconds} s`
+        : `${Math.round(seconds / 60)} min`;
+
+    return `Pedido às ${at}, respondeu ${elapsed} depois`;
+}
+
 function downlinkActivityRow(command) {
     const feature = String(command.feature || "");
-    // A resposta cabe no `title` do estado, e o erro na segunda linha do nome.
     const replied = command.ackedAt
         ? `Resposta ${when(command.ackedAt)}`
         : command.sentAt
             ? `Enviado ${when(command.sentAt)}`
             : expectedReplies(command);
     const note = commandError(command.error);
+    const reply = commandReply(command);
+    // O valor da resposta vai por baixo do nome: a coluna do valor leva a pastilha do estado,
+    // e o nome é onde há espaço para ele.
+    const value = reply ? String(reply.rowValue || reply.value || "") : "";
+    const replyDetails = plainText(reply?.detailsTitle || reply?.details || "");
 
     return {
         icon: requestCardContent(feature).icon,
         tone: cardTone(feature),
         name: commandLabel(command) || requestCardContent(feature).value || "Pedido",
-        sub: note ? html`${note}` : "",
-        subTitle: note,
+        sub: value
+            ? html`<span class="fw-semibold text-body">${value}</span>`
+            : note ? html`${note}` : "",
+        subTitle: value || note,
         value: statusBadge(String(command.status || "unknown")),
         valueTitle: replied,
-        // O erro corta-se na linha e a resposta só vivia num `title`. Abrindo, vêem-se os
-        // dois por inteiro -- que num pedido falhado é justamente o que se quer ler.
-        expanded: [note, replied].filter(Boolean).join(" · "),
+        expanded: [
+            replyDetails,
+            commandTiming(command),
+            command.ackedAt ? "" : replied,
+            note,
+        ].filter(Boolean).join("\n"),
         key: `d:${state.selectedImei}:${command.id ?? `${command.requestedAt}:${feature}`}`,
         at: command.requestedAt,
         time: timeOnly(command.requestedAt) || "--:--",
         timeTitle: when(command.requestedAt),
     };
+}
+
+/** A gaveta escapa o que recebe: os detalhes chegam com marcação e saem em texto. */
+function plainText(markup) {
+    return String(markup)
+        .replace(/<br\s*\/?>/gi, " · ")
+        .replace(/<[^>]*>/g, "");
 }
 
 function renderConnectionTimeline(rows) {
@@ -649,6 +706,7 @@ function clearSelectedDeviceFromStorage() {
 
 export {
     clearSelectedDeviceFromStorage,
+    downlinkActivityRow,
     initDeviceDetailView,
     renderDownlinkRequests,
     renderRequestCardGroup,
