@@ -26,7 +26,9 @@ final class ZayataConfigurationDefinitions
                 null,
                 false,
                 'Os nove alarmes do aparelho. O plano é enviado inteiro: um slot deixado em'
-                . ' branco fica vazio, para não sobrar nada de um plano anterior.',
+                . ' branco fica vazio, para não sobrar nada de um plano anterior. O número é'
+                . ' uma etiqueta e não a ordem das tomas — o aparelho toca pela hora, e os'
+                . ' compartimentos saem por ordem do relógio, não do slot.',
             ),
             ConfigurationDefinition::make(
                 'medication_period',

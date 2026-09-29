@@ -404,6 +404,14 @@ do bloco de sistema.
 > ignorado. É o único sinal legível desta regra — pelo protocolo, ela só se deduz
 > somando os nove estados.
 >
+> **O número do slot é uma etiqueta, e não a ordem das tomas.** Medido a
+> 29/09/2026 com o slot 1 às 14:00 e o slot 2 às 13:20: o ecrã anunciou o
+> **13:20**. Quem decide é o relógio, e o prato anda um compartimento por dose
+> seja qual for o slot que a pediu — a enésima toma do dia leva o enésimo
+> compartimento. Não há por isso nada a ordenar do lado do hub, e ordenar seria
+> nocivo: os slots guardam o estado do dia, e trocar horas entre eles a meio do
+> dia salta ou repete uma toma.
+>
 > **Um slot só dá a dose dele uma vez por dia, e mudar-lhe a hora não a devolve.**
 > É a segunda metade da regra de cima, e sozinha explica quase todas as recusas.
 > Medido a 24/09/2026: cinco voltas a reescrever o **slot 1** com horas diferentes
