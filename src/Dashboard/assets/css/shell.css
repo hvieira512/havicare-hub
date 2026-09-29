@@ -17,6 +17,30 @@
     max-width: var(--content-max);
 }
 
+/* Empilhado, a atividade sobe para debaixo da identidade e os cartões de telemetria descem:
+   com eles pelo meio, passava-se o cartão do aparelho e sete cartões antes do primeiro
+   evento. A coluna do aparelho desfaz-se para os seus cartões poderem ser ordenados. */
+@media (max-width: 991.98px) {
+    .device-screen > #deviceColumn {
+        display: contents;
+    }
+
+    .device-screen > #deviceColumn > * {
+        width: 100%;
+        margin-top: var(--bs-gutter-y);
+        padding-inline: calc(.5 * var(--bs-gutter-x));
+    }
+
+    .device-screen > #detailColumn {
+        order: 1;
+    }
+
+    .device-screen > #deviceColumn > #requestCardsCard,
+    .device-screen > #deviceColumn > #ncsEventSection {
+        order: 2;
+    }
+}
+
 /* ===== primitivas do sistema ===== */
 
 /* A barra de navegação é o navy da marca -- a superfície, e não a cor que reage ao toque:

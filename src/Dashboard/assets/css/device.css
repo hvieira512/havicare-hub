@@ -37,6 +37,18 @@
 /* As colunas não medem pelo conteúdo: o que não cabe corta-se com o `text-truncate` de cada
    linha de texto, e o texto completo fica no `title`. Sem largura fixa, a lista alternava de
    altura conforme o tipo do evento. */
+/* Os dois painéis da atividade são separadores até ao `xl` e colunas lado a lado a partir
+   dele. O Bootstrap desenha um separador com `display: block`, e estes são colunas flex. */
+.activity-tab-content > .tab-pane.active {
+    display: flex;
+}
+
+@media (min-width: 1200px) {
+    .activity-tab-content > .tab-pane {
+        display: flex;
+    }
+}
+
 .telemetry-table {
     table-layout: fixed;
 }
@@ -113,6 +125,13 @@
 
    TEM de vir depois das regras que anula -- mesma especificidade, ganha quem vier abaixo. */
 @media (max-width: 575.98px) {
+    /* Sem algoritmo de tabela: as linhas são grelhas e as larguras do `colgroup` mediam-nas
+       pela primeira coluna -- trinta e quatro pixéis para a linha inteira. */
+    .telemetry-table,
+    .telemetry-table > tbody {
+        display: block;
+    }
+
     .telemetry-table > tbody > tr {
         display: grid;
         grid-template-columns: 2.125rem minmax(0, 1fr) auto;
@@ -167,6 +186,10 @@
     .telemetry-table > tbody > tr.telemetry-row-panel {
         grid-template-columns: minmax(0, 1fr);
         padding-top: 0;
+    }
+
+    .telemetry-table > tbody > tr.telemetry-day {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     /* O recuo até onde começa o nome perde-se com a regra que zera o preenchimento das

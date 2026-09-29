@@ -268,8 +268,11 @@ function renderTelemetryList(telemetryRows) {
     const start = (state.telemetryPage - 1) * state.telemetryPageSize;
     const pageRows = telemetry.slice(start, start + state.telemetryPageSize);
 
-    // Na pastilha do contador cabe o número e mais nada: o título já diz de quê.
-    els.telemetryCount.textContent = telemetry.length ? String(telemetry.length) : "";
+    // Na pastilha do contador cabe o número e mais nada: o título já diz de quê. O separador
+    // tem a sua, porque abaixo do `xl` o cabeçalho da coluna não se vê.
+    const telemetryTotal = telemetry.length ? String(telemetry.length) : "";
+    els.telemetryCount.textContent = telemetryTotal;
+    els.telemetryTabCount.textContent = telemetryTotal;
     activityTable(
         els.telemetryList,
         pageRows.map(telemetryActivityRow),
@@ -471,7 +474,9 @@ function renderNcsEventCard({ type, latest }) {
 }
 
 function renderDownlinkRequests(commands) {
-    els.downlinkRequestCount.textContent = commands.length ? String(commands.length) : "";
+    const downlinkTotal = commands.length ? String(commands.length) : "";
+    els.downlinkRequestCount.textContent = downlinkTotal;
+    els.downlinkTabCount.textContent = downlinkTotal;
 
     // A maioria dos aparelhos -- radares, gateways, medidores de fralda -- não recebe pedido
     // nenhum, e metade do painel dizia permanentemente que não havia pedidos enquanto a lista
@@ -481,6 +486,13 @@ function renderDownlinkRequests(commands) {
     els.downlinkColumn?.classList.toggle("d-none", !hasRequests);
     els.telemetryColumn?.classList.toggle("col-xl-6", hasRequests);
     els.telemetryColumn?.classList.toggle("pe-xl-4", hasRequests);
+
+    // Um separador só não é escolha nenhuma: a régua sai, e quem estava nos pedidos volta
+    // aos eventos em vez de ficar num painel escondido.
+    els.activityTabs?.classList.toggle("d-none", !hasRequests);
+    if (!hasRequests && els.downlinkColumn?.classList.contains("active")) {
+        globalThis.bootstrap?.Tab.getOrCreateInstance(els.telemetryColumnTab).show();
+    }
 
     // Paginado como os eventos recebidos: sem páginas, os pedidos antigos ficam atrás de
     // um scroll interno que ninguém vê.

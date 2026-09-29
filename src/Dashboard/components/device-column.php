@@ -1,4 +1,4 @@
-                <aside id="deviceColumn" class="col-12 col-lg-4 d-flex flex-column gap-3">
+                <aside id="deviceColumn" class="col-12 col-lg-4 d-lg-flex flex-column gap-3">
                     <div class="card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">

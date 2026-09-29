@@ -3,6 +3,8 @@
                     [
                         'column' => 'telemetryColumn',
                         'title' => 'Eventos recebidos',
+                        'tab' => 'Leituras',
+                        'tabCountId' => 'telemetryTabCount',
                         'countId' => 'telemetryCount',
                         'pager' => 'telemetryPager',
                         'list' => 'telemetryList',
@@ -11,6 +13,8 @@
                     [
                         'column' => 'downlinkColumn',
                         'title' => 'Pedidos ao dispositivo',
+                        'tab' => 'Pedidos',
+                        'tabCountId' => 'downlinkTabCount',
                         'countId' => 'downlinkRequestCount',
                         'pager' => 'downlinkPager',
                         'list' => 'downlinkRequests',
@@ -58,16 +62,23 @@
                                         <?= section_header('Ligações ao servidor') ?>
                                         <div id="connectionTimeline"></div>
                                     </section>
-                                    <div class="card-section mt-3 pt-3 border-top row g-0 flex-grow-1 min-h-0">
-                                        <?php foreach ($activityPanels as $panel) : ?>
-                                        <div id="<?= $panel['column'] ?>" class="col-12 col-xl-6 d-flex flex-column min-h-0 <?= $panel['spacing'] ?>">
-                                            <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2 mb-2">
-                                                <?= section_header($panel['title'], $panel['countId'], '') ?>
-                                                <?= pagination_component($panel['pager'], '', false) ?>
-                                            </div>
-                                            <div id="<?= $panel['list'] ?>" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
+                                    <div class="card-section mt-3 pt-3 border-top d-flex flex-column flex-grow-1 min-h-0">
+                                        <div class="nav nav-pills activity-tabs d-xl-none flex-nowrap gap-2 mb-3" id="activityTabs" role="tablist">
+                                            <?php foreach ($activityPanels as $index => $panel) : ?>
+                                            <button class="nav-link<?= $index === 0 ? ' active' : '' ?> flex-fill d-flex align-items-center justify-content-center gap-2" id="<?= $panel['column'] ?>Tab" data-bs-toggle="pill" data-bs-target="#<?= $panel['column'] ?>" type="button" role="tab" aria-controls="<?= $panel['column'] ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= h($panel['tab']) ?><span class="badge text-bg-secondary rounded-pill" id="<?= $panel['tabCountId'] ?>"></span></button>
+                                            <?php endforeach; ?>
                                         </div>
-                                        <?php endforeach; ?>
+                                        <div class="tab-content activity-tab-content row g-0 flex-grow-1 min-h-0">
+                                            <?php foreach ($activityPanels as $index => $panel) : ?>
+                                            <div id="<?= $panel['column'] ?>" class="tab-pane<?= $index === 0 ? ' show active' : '' ?> col-12 col-xl-6 flex-column min-h-0 <?= $panel['spacing'] ?>" role="tabpanel">
+                                                <div class="d-flex flex-column flex-xl-row justify-content-xl-between align-items-xl-center gap-2 mb-2">
+                                                    <div class="d-none d-xl-block"><?= section_header($panel['title'], $panel['countId'], '') ?></div>
+                                                    <?= pagination_component($panel['pager'], '', true) ?>
+                                                </div>
+                                                <div id="<?= $panel['list'] ?>" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
+                                            </div>
+                                            <?php endforeach; ?>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

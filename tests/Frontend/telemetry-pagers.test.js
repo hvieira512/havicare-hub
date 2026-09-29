@@ -49,6 +49,7 @@ function pagerEls(prefix) {
 function telemetryEls() {
     return {
         telemetryCount: fakeElement(),
+        telemetryTabCount: fakeElement(),
         telemetryList: fakeElement(),
         ...pagerEls("telemetry"),
     };
@@ -57,6 +58,7 @@ function telemetryEls() {
 function downlinkEls() {
     return {
         downlinkRequestCount: fakeElement(),
+        downlinkTabCount: fakeElement(),
         downlinkRequests: fakeElement(),
         ...pagerEls("downlink"),
     };
