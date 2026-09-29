@@ -96,12 +96,8 @@ class RadarCredentialsService
     }
 
     /**
-     * O botão de experimentar, antes de gravar.
-     *
-     * Uma conta de outra licença autentica à mesma, e só depois os radares desta respondem
-     * `777`. Autenticar não prova nada; o que prova é quantos destes radares a conta conhece,
-     * e é isso que volta. De caminho fica a planta que cada um respondeu -- é a mesma leitura
-     * que o botão de sincronizar faz.
+     * O botão de experimentar, antes de gravar. Autenticar não prova nada -- a conta de outra
+     * licença autentica à mesma --, e por isso o que volta é quantos destes radares ela conhece.
      *
      * @param array<string, mixed> $payload o que está no ecrã, com os segredos em branco
      *                                      quando ninguém lhes tocou

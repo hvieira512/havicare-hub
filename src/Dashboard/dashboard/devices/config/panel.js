@@ -510,15 +510,9 @@ export function renderDeviceConfigurationModal() {
 }
 
 /**
- * O que o rodapé de uma secção diz.
- *
- * «Sem alterações por enviar» e não «tudo enviado ao dispositivo»: o que se conta aqui são
- * edições por submeter, e zero delas não diz nada sobre entrega. Quem fala de entrega é a
- * pastilha de cada definição, que é quem sabe.
- *
- * As definições sem valor guardado no hub entram no envio sem ninguém lhes ter tocado -- é o
- * único caminho para a primeira gravação --, e chamar-lhes alterações era mentir sobre a
- * origem: sobre o aparelho não sabemos nada, ele tem sempre um valor.
+ * O rodapé conta edições por submeter, e não entregas -- de entrega fala a pastilha de cada
+ * definição. As que nunca foram gravadas viajam sem ninguém lhes ter tocado, e por isso
+ * contam-se à parte das alterações.
  */
 function paneStatusLabel(pending, edited) {
     if (pending === 0) return "Sem alterações por enviar";
