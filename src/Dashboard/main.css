@@ -354,7 +354,7 @@
     color: var(--brand-on);
 }
 
-/* Abaixo do ecrã largo, o menu das definições é uma tira que desliza. O `align-items`
+/* Abaixo do ecrã largo, o menu lateral de um modal é uma tira que desliza. O `align-items`
    centrado da linha esticava as pills a altura toda da coluna, o que dava um bloco navy
    de 700px em telefone. */
 @media (max-width: 991.98px) {
@@ -369,7 +369,9 @@
         height: auto !important;
     }
 
-    .settings-modal-nav {
+    /* O menu lateral dos dois modais -- definições e dispositivo -- é aqui uma tira que
+       desliza: sem isto os separadores apertam-se uns contra os outros. */
+    .modal-side-nav {
         align-items: center;
         overflow-x: auto;
         overflow-y: hidden;
@@ -378,7 +380,7 @@
         scrollbar-width: thin;
     }
 
-    .settings-modal-nav .nav-link {
+    .modal-side-nav .nav-link {
         flex: none;
         white-space: nowrap;
     }
@@ -560,8 +562,13 @@
 /* A tira das secções fica colada ao topo enquanto a lista corre por baixo, e cada pastilha
    aponta para o `id` da sua secção. Com cinco cabeçalhos dentro de milhares de pixéis de
    scroll, saber onde está uma secção exigia procurá-la. */
+/* Uma linha só, que desliza quando não cabe. Em telefone as cinco secções partiam-se em
+   duas e três linhas, e o cabeçalho de um painel passava a ocupar meio ecrã. */
 .capability-section-nav {
     gap: .375rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: thin;
 }
 

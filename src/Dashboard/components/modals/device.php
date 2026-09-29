@@ -16,7 +16,7 @@ ob_start();
               // separador escolhido, e o botão em que se acabou de carregar foge de debaixo
               // do rato. ?>
         <div class="col-12 col-lg-2 d-flex align-items-lg-start">
-            <div class="nav nav-pills flex-row flex-lg-column flex-nowrap gap-2 w-100" role="tablist">
+            <div class="nav nav-pills modal-side-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" role="tablist">
                 <?php foreach ($deviceTabs as $index => $tab) : ?>
                     <?php $pane = 'device' . $tab['key'] . 'Pane'; ?>
                 <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex<?= $tab['extra'] ?> align-items-center gap-2" id="device<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?></button>
@@ -82,13 +82,12 @@ ob_start();
                                 </div>
 
                                 <div id="deviceFormError" class="small text-danger d-none"></div>
-                                <?php /* Guardar e Eliminar vivem aqui e não no rodapé: gravam o
-                                        que está neste separador, e nas Configurações cada bloco
-                                        tem o seu «Enviar». O `me-auto` afasta o destrutivo. */ ?>
-                                <div class="d-flex align-items-center gap-2">
-                                    <button type="button" class="btn btn-outline-danger d-none me-auto" id="deleteDeviceBtn"><?= icon('fa-trash', 'me-1') ?>Eliminar</button>
-                                    <button type="button" class="btn btn-outline-secondary d-none ms-auto" id="deviceNextBtn"><?= icon('fa-arrow-left', 'me-2') ?>Manter o que estava</button>
-                                    <button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>
+                                <?php /* Guardar vive aqui e não no rodapé: grava o que está neste
+                                        separador, e nas Configurações cada bloco tem o seu
+                                        «Enviar». */ ?>
+                                <div class="d-flex align-items-center justify-content-end gap-2">
+                                    <button type="button" class="btn btn-outline-secondary d-none" id="deviceNextBtn"><?= icon('fa-arrow-left', 'me-2') ?>Manter o que estava</button>
+                                    <button id="saveDeviceBtn" type="button" class="btn btn-primary"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar dispositivo</button>
                                 </div>
                             </div>
                         </div>
@@ -107,7 +106,11 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-$footer = '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
+// Eliminar apaga o dispositivo inteiro, e não o que está num separador: fica no rodapé,
+// encostado à esquerda pelo `me-auto` e longe do «Fechar».
+$footer = '<button type="button" class="btn btn-outline-danger d-none me-auto" id="deleteDeviceBtn">'
+    . icon('fa-trash', 'me-1') . 'Eliminar</button>'
+    . '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
 
 $header = '<div class="modal-device-identity d-flex align-items-center min-w-0 flex-fill" id="deviceModalIdentity">'
     . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'

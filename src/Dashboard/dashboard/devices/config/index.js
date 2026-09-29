@@ -140,7 +140,7 @@ export function renderDeviceConfigurationRoot(context) {
                 <i class="fa-solid fa-clock mt-1" aria-hidden="true"></i>
                 <span>${esc(offlineNotice)}</span>
             </div>`}
-            <div class="capability-section-nav d-flex flex-wrap" role="group" aria-label="Secções de configuração">
+            <div class="capability-section-nav d-flex py-1" role="group" aria-label="Secções de configuração">
                 ${sectionStrip(
                     groups.map((group) => ({
                         key: group.key,

@@ -17,7 +17,7 @@ ob_start();
         <?php // Ao topo e não ao centro, pela mesma razão do modal do dispositivo: centrado,
               // o menu desloca-se conforme o separador escolhido e o botão foge do rato. ?>
         <div class="col-12 col-lg-3 d-flex align-items-lg-start h-100">
-            <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" role="tablist">
+            <div class="nav nav-pills modal-side-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" role="tablist">
                 <?php foreach ($settingsTabs as $index => $tab) : ?>
                     <?php $pane = 'settings' . $tab['key'] . 'Pane'; ?>
                 <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex align-items-center gap-2" id="settings<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?><?= $tab['count'] ? '<span class="settings-nav-count d-none ms-auto flex-shrink-0 px-1 rounded-pill fw-semibold text-center tabular-nums" id="settings' . $tab['key'] . 'Count"></span>' : '' ?></button>
@@ -139,7 +139,7 @@ ob_start();
                                         <button id="saveCapabilitiesBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar capacidades</button>
                                     </div>
                                 </div>
-                                <div id="capabilitySectionNav" class="capability-section-nav d-flex flex-wrap mb-3" role="group" aria-label="Secções de capacidade"></div>
+                                <div id="capabilitySectionNav" class="capability-section-nav d-flex py-1 mb-3" role="group" aria-label="Secções de capacidade"></div>
                                 <div id="capabilityGroups"></div>
                                 <div class="border-top mt-4 pt-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
                                     <div>
@@ -174,7 +174,7 @@ ob_start();
                         <?= icon('fa-sliders', 'fs-1 opacity-25') ?>
                         <div class="mt-2">Sem capacidades generalizadas definidas para este tipo de dispositivo.</div>
                     </div>
-                    <div id="capabilityCatalogSectionNav" class="capability-section-nav position-sticky top-0 z-2 d-flex overflow-x-auto py-2 mb-1 bg-body" role="group" aria-label="Secções do catálogo"></div>
+                    <div id="capabilityCatalogSectionNav" class="capability-section-nav position-sticky top-0 z-2 d-flex py-2 mb-1 bg-body" role="group" aria-label="Secções do catálogo"></div>
                     <div id="capabilityCatalogViewer" class="vstack gap-3"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsCompanyPane" role="tabpanel" aria-labelledby="settingsCompanyTabBtn">

@@ -86,11 +86,11 @@ export function renderPhoneControl({
     return `
         <div class="vstack gap-1" data-phone-control${fieldAttr}${repeatAttr}${maxLengthAttr}>
             <div class="input-group">
-                <select class="form-select" data-phone-country aria-label="País" style="max-width: 16rem;">
+                <select class="form-select flex-grow-0 w-auto" data-phone-country aria-label="País">
                     ${PHONE_COUNTRIES.map(
                         (option) => `
-                        <option value="${esc(option.code)}" ${option.code === country.code ? "selected" : ""}>
-                            ${esc(`${option.flag} ${option.name} (+${option.dialCode})`)}
+                        <option value="${esc(option.code)}" ${option.code === country.code ? "selected" : ""} title="${esc(option.name)}" aria-label="${esc(`${option.name} (+${option.dialCode})`)}">
+                            ${esc(`${option.flag} +${option.dialCode}`)}
                         </option>
                     `,
                     ).join("")}
