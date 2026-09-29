@@ -396,17 +396,16 @@
         height: auto !important;
     }
 
-    /* O menu lateral dos dois modais -- definições e dispositivo -- é aqui uma tira que
-       desliza: sem isto os separadores apertam-se uns contra os outros. */
+    /* O menu lateral dos dois modais -- definições e dispositivo -- é aqui uma linha que
+       quebra. Os cinco separadores das definições não cabem na calha, e o que passasse dela
+       ficava fora do ecrã com a contagem dentro. */
     .modal-side-nav {
         align-items: center;
-        overflow-x: auto;
-        overflow-y: hidden;
         padding-bottom: .375rem;
         border-bottom: 1px solid var(--bs-border-color);
-        scrollbar-width: thin;
     }
 
+    /* Cada separador com a largura do seu texto: esticados, um por linha dava cinco linhas. */
     .modal-side-nav .nav-link {
         flex: none;
         white-space: nowrap;

@@ -13,7 +13,7 @@ ob_start();
 <div class="settings-modal-shell d-flex flex-column w-100 p-2 p-lg-3">
     <div class="row g-3 g-lg-4 h-100 min-h-0">
         <div class="col-12 col-lg-3 d-flex align-items-lg-start h-100">
-            <div class="nav nav-pills modal-side-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" role="tablist">
+            <div class="nav nav-pills modal-side-nav flex-row flex-lg-column flex-wrap flex-lg-nowrap gap-2 w-100" role="tablist">
                 <?php foreach ($settingsTabs as $index => $tab) : ?>
                     <?php $pane = 'settings' . $tab['key'] . 'Pane'; ?>
                 <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex align-items-center gap-2" id="settings<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?><?= $tab['count'] ? '<span class="settings-nav-count d-none ms-auto flex-shrink-0 px-1 rounded-pill fw-semibold text-center tabular-nums" id="settings' . $tab['key'] . 'Count"></span>' : '' ?></button>
@@ -180,7 +180,7 @@ ob_start();
                     <?= pagination_component('settingsCompanyPagination') ?>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsDenylistPane" role="tabpanel" aria-labelledby="settingsDenylistTabBtn">
-                    <?= tab_pane_header('Aparelhos bloqueados', 'denylistTabSummary') ?>
+                    <?= tab_pane_header('Aparelhos bloqueados', 'denylistTabSummary', titleId: 'denylistTabTitle') ?>
                     <div id="denylistListBody" class="mb-4"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">
