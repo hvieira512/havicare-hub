@@ -60,12 +60,16 @@ function modelRowMeta(model, showType) {
 function modelRow(model, { showType = false } = {}) {
     const meta = modelRowMeta(model, showType);
 
+    const name = modelCommercialName(model);
+
+    // Numa linha a partir do `sm`, e em duas abaixo dela: numa calha de telemóvel o nome
+    // comercial come a linha toda e o fornecedor -- que é o que a linha ganhou -- desaparecia.
     return `
         <div class="tree-row catalog-model position-relative d-flex align-items-center" data-action="modelCapabilities" data-id="${esc(model.id)}" role="button" tabindex="0">
         <span class="catalog-model-image flex-shrink-0 d-flex align-items-center justify-content-center">${modelImageHtml(model, 28)}</span>
-        <span class="flex-grow-1 min-w-0 text-truncate">
-        <span class="fw-semibold">${esc(modelCommercialName(model))}</span>
-        <span class="catalog-model-meta small text-secondary">${meta.map((part) => ` · ${esc(part)}`).join("")}</span>
+        <span class="flex-grow-1 min-w-0 text-truncate" title="${esc([name, ...meta].join(" · "))}">
+        <span class="fw-semibold d-block d-sm-inline text-truncate">${esc(name)}</span>
+        <span class="catalog-model-meta small text-secondary d-block d-sm-inline text-truncate"><span class="d-none d-sm-inline"> · </span>${meta.map((part) => esc(part)).join(" · ")}</span>
         </span>
         <i class="fa-solid fa-chevron-right text-secondary flex-shrink-0" aria-hidden="true"></i>
         </div>`;
