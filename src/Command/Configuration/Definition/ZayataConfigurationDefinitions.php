@@ -35,7 +35,7 @@ final class ZayataConfigurationDefinitions
                 'pillDispenserPeriod',
                 ['enabled', 'startDate', 'endDate'],
                 self::replyTo('medicationPeriod'),
-                'health',
+                'alerts',
                 15,
                 null,
                 null,

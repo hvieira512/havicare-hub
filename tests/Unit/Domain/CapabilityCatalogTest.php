@@ -44,7 +44,7 @@ final class CapabilityCatalogTest extends TestCase
             //
             // E o `device_status` voltou, agora como leitura pedível: reler o estado deixou
             // de ter caminho próprio e é um pedido como os outros.
-            'pill_dispenser' => [32, '19f649ecc1e8d250c6f4091a03a1b5a4f8b57e717e68cb846ca1aa2d47f0cef7'],
+            'pill_dispenser' => [32, '11ea694e6aaa677460ce6938e61b5374c04cd39ff8ecf4014584cf445f67a87e'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

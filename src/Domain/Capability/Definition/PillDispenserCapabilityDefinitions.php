@@ -47,7 +47,6 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
             ],
             'health' => [
                 'setting' => [
-                    'medication_period' => 'Período do plano',
                     'early_dispense' => 'Toma antecipada',
                     // Sem ele, uma dose falhada deixa de estar acessível — e o desfecho
                     // `abnormal` do evento de toma nunca chega a existir.
@@ -69,6 +68,7 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
                     // O plano reaproveita a chave que os relógios já usam, e fica com eles
                     // em Alarmes: é o horário das doses, e é o que faz o aparelho tocar.
                     'medication_reminders' => 'Plano de medicação',
+                    'medication_period' => 'Período do plano',
                     'alarm_volume' => 'Volume',
                     'alarm_ringtone' => 'Tipo de toque',
                 ],
