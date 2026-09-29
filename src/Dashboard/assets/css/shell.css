@@ -189,6 +189,15 @@
     min-width: 1.5rem;
 }
 
+/* Num ecrã de toque o botão mede o mínimo que um dedo acerta. Acima de `md` volta à medida
+   do rato, que é onde catorze números fazem sentido lado a lado. */
+@media (max-width: 767.98px) {
+    .pagination .page-link-touch {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+    }
+}
+
 /* A divisória entre blocos de um cartão vai de bordo a bordo. Encolhida à largura do
    conteúdo lê-se como a moldura de outra caixa dentro do cartão; a sangrar até ao contorno é
    a mesma linha que separa duas linhas de uma tabela, e o cartão continua um. */
