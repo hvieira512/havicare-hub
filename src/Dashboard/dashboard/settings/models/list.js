@@ -14,7 +14,7 @@ import {
     normalizeDeviceType,
 } from "../../domain.js";
 import { setSettingsNavCount } from "../shell.js";
-import { resetModelForm } from "./form.js";
+import { resetModelWizard } from "./form.js";
 import { getSettingsModelsRuntime, modelsCarousel } from "./shell.js";
 
 /**
@@ -178,9 +178,9 @@ async function loadSettingsModelsSection() {
     const response = await apiGetCatalog();
     state.settingsModal.modelCatalog = response.data || [];
     state.settingsModal.sectionLoaded.models = true;
-    // Aqui e não no `renderModelsSection`: a busca redesenha a cada tecla, e o formulário
+    // Aqui e não no `renderModelsSection`: a busca redesenha a cada tecla, e o assistente
     // do outro slide não tem nada a ver com isso.
-    resetModelForm();
+    resetModelWizard();
     renderModelsSection();
 
     const { els } = getSettingsModelsRuntime();
@@ -223,6 +223,7 @@ function backToModelList() {
     els.modelsBreadcrumbCurrent.classList.add("d-none");
     els.modelsBreadcrumbCurrent.classList.remove("active");
     els.modelsBreadcrumbCurrent.textContent = "";
+    els.settingsCloseBtn?.classList.remove("d-none");
 
     carousel.to(0);
 
@@ -235,9 +236,13 @@ function backToModelList() {
     void loadSettingsModelsSection();
 }
 
-/** O rasto e o slide do formulário de um modelo novo. */
+/**
+ * O rasto e o slide do assistente de um modelo novo. O «Fechar» do rodapé do modal sai:
+ * enquanto há formulário por gravar, o rodapé é o do assistente.
+ */
 function showNewModelSlide() {
     const { els } = getSettingsModelsRuntime();
+    els.settingsCloseBtn?.classList.add("d-none");
     els.modelsBreadcrumb.classList.remove("d-none");
     els.modelsBreadcrumbModels.classList.remove("active");
     els.modelsBreadcrumbNew.textContent = "Novo modelo";

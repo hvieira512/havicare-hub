@@ -74,6 +74,7 @@ async function openModelDetail(modelId) {
             (key) => enabledSet.has(key),
         );
 
+    els.settingsCloseBtn?.classList.remove("d-none");
     els.modelsBreadcrumb.classList.remove("d-none");
     els.modelsBreadcrumbModels.classList.remove("active");
     els.modelsBreadcrumbNew.classList.add("d-none");

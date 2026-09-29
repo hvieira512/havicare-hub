@@ -6,8 +6,7 @@
  * funcionalidade, e por isso pode importar de toda a gente. A regra de que uma funcionalidade
  * nunca importa outra continua de pé.
  */
-import { setModelPreviewObjectUrl, state } from "../state.js";
-import { esc } from "../format.js";
+import { state } from "../state.js";
 import { loadSettingsModal } from "../settings/index.js";
 import { handleSettingsPaginationClick } from "../settings/shell.js";
 import {
@@ -39,12 +38,13 @@ import {
     loadSettingsModelsSection,
 } from "../settings/models/list.js";
 import {
-    handleModelDeviceTypeClick,
-    handleModelSupplierClick,
+    handleModelWizardChange,
+    handleModelWizardClick,
+    handleModelWizardInput,
+    handleModelWizardSave,
+    handleModelWizardTrailClick,
+    modelWizardBack,
     openNewModelForm,
-    resetModelForm,
-    saveModel,
-    updateModelProtocolAndPreview,
 } from "../settings/models/form.js";
 import {
     deleteCurrentModel,
@@ -112,27 +112,12 @@ function bindTabs() {
 }
 
 function bindModels() {
-    els.saveModelBtn.addEventListener("click", saveModel);
-    els.resetModelBtn.addEventListener("click", () => resetModelForm());
-    els.modelForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        saveModel();
-    });
-    els.modelInternalModel.addEventListener("input", () =>
-        updateModelProtocolAndPreview(),
-    );
-    els.modelCommercialName.addEventListener("input", () =>
-        updateModelProtocolAndPreview(),
-    );
-    els.modelImage.addEventListener("change", handleModelImageChange);
-    els.modelSupplierButtons.addEventListener(
-        "click",
-        handleModelSupplierClick,
-    );
-    els.modelDeviceTypeButtons.addEventListener(
-        "click",
-        handleModelDeviceTypeClick,
-    );
+    els.modelWizardAsk.addEventListener("click", handleModelWizardClick);
+    els.modelWizardAsk.addEventListener("input", handleModelWizardInput);
+    els.modelWizardAsk.addEventListener("change", handleModelWizardChange);
+    els.modelWizardTrail.addEventListener("click", handleModelWizardTrailClick);
+    els.modelWizardBackBtn.addEventListener("click", modelWizardBack);
+    els.modelWizardSaveBtn.addEventListener("click", handleModelWizardSave);
     els.modelsBreadcrumbModels.addEventListener("click", backToModelList);
     els.modelsNewModelBtn.addEventListener("click", openNewModelForm);
     els.modelDetailSaveBtn.addEventListener("click", saveModelDetail);
@@ -212,21 +197,4 @@ function bindCompanies() {
 
 function bindDenylist() {
     els.denylistListBody.addEventListener("click", handleDenylistListClick);
-}
-
-function handleModelImageChange() {
-    const file = els.modelImage.files[0];
-    if (file) {
-        setModelPreviewObjectUrl(URL.createObjectURL(file));
-        const label =
-            els.modelCommercialName.value.trim() ||
-            els.modelInternalModel.value.trim() ||
-            "Modelo";
-        els.modelPreviewContent.innerHTML = `<img src="${esc(state.modelPreviewObjectUrl)}" class="object-fit-contain w-100 h-100" alt="${esc(label)}" style="max-height:180px;">`;
-    } else {
-        // Limpar a escolha volta à imagem gravada, e o `updateModelProtocolAndPreview` só a
-        // desenha quando não há object URL por cima.
-        setModelPreviewObjectUrl();
-        updateModelProtocolAndPreview();
-    }
 }

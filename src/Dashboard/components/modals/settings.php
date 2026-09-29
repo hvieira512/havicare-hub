@@ -42,44 +42,15 @@ ob_start();
                                 <div id="modelCatalog" class="mt-3"></div>
                             </div>
                             <div class="carousel-item">
-                                <form id="modelForm" class="row g-4 align-items-stretch mb-4">
-                                    <div class="col-lg-5">
-                                        <div class="showcase-preview border rounded d-flex align-items-center justify-content-center p-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
-                                            <input type="file" id="modelImage" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
-                                            <div id="modelPreviewContent" class="text-center text-secondary w-100">
-                                                <?= icon('fa-microchip', 'fs-1 opacity-50') ?>
-                                                <div class="small mt-2">Novo modelo</div>
-                                            </div>
-                                        </div>
+                                <div class="d-flex flex-column gap-4">
+                                    <div class="wizard-trail d-flex align-items-center justify-content-center flex-wrap gap-2 border-bottom" id="modelWizardTrail" role="progressbar" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1"></div>
+                                    <div class="wizard-ask" id="modelWizardAsk"></div>
+                                    <div class="small text-secondary d-none" id="modelWizardTemplateSummary"></div>
+                                    <div class="d-flex align-items-center gap-2 border-top pt-3">
+                                        <button type="button" class="btn btn-outline-secondary d-none" id="modelWizardBackBtn"></button>
+                                        <button type="button" class="btn btn-primary ms-auto" id="modelWizardSaveBtn"></button>
                                     </div>
-                                    <div class="col-lg-7">
-                                        <div class="vstack gap-3 h-100">
-                                            <div>
-                                                <div class="form-label">Tipo de dispositivo</div>
-                                                <div id="modelDeviceTypeButtons" class="device-type-grid is-wide d-grid gap-2" role="group"></div>
-                                            </div>
-                                            <div>
-                                                <div class="form-label">Fornecedor</div>
-                                                <div id="modelSupplierButtons" class="btn-group flex-wrap" role="group"></div>
-                                            </div>
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <label for="modelInternalModel" class="form-label">Modelo interno</label>
-                                                    <input type="text" class="form-control" id="modelInternalModel" required>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="modelCommercialName" class="form-label">Nome comercial</label>
-                                                    <input type="text" class="form-control" id="modelCommercialName" required>
-                                                </div>
-                                            </div>
-                                            <div id="modelTemplateSummary" class="small text-secondary">A carregar template de capacidades do fornecedor.</div>
-                                            <div class="d-flex justify-content-end gap-2 mt-auto">
-                                                <button id="resetModelBtn" type="button" class="btn btn-outline-secondary">Cancelar</button>
-                                                <button id="saveModelBtn" type="button" class="btn btn-primary"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </form>
+                                </div>
                             </div>
                             <div class="carousel-item">
                                 <div class="d-flex align-items-center gap-2 mb-3">
@@ -203,7 +174,7 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-$footer = '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
+$footer = '<button type="button" class="btn btn-outline-secondary" id="settingsCloseBtn" data-bs-dismiss="modal">Fechar</button>';
 
 render_modal(
     id: 'settingsModal',

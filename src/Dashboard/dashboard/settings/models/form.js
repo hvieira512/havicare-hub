@@ -9,14 +9,15 @@ import {
 } from "../../state.js";
 import { esc } from "../../format.js";
 import { apiError, toast } from "../../dialogs.js";
-import { clearInvalid, markInvalid } from "../../validation.js";
-import { buttonGroup } from "../../components/button-group.js";
-import { deviceTypeTiles } from "../../components/device-type-tiles.js";
+import { field } from "../../components/form-field.js";
+import { modelImageHtml } from "../../components/model-image.js";
 import {
-    deviceTypeLabel,
-    deviceTypeOptions,
-    normalizeDeviceType,
-} from "../../domain.js";
+    deviceTypeCardsHtml,
+    supplierPillsHtml,
+    wizardTrailHtml,
+} from "../../devices/classification-ui.js";
+import { createWizard } from "../../devices/wizard.js";
+import { deviceTypeLabel, normalizeDeviceType } from "../../domain.js";
 import { getSettingsModelsRuntime } from "./shell.js";
 import {
     backToModelList,
@@ -25,22 +26,60 @@ import {
 } from "./list.js";
 
 /**
- * O formulário de um modelo novo: o segundo slide do carrossel do catálogo.
+ * O modelo novo: o mesmo assistente que adiciona um dispositivo, com três passos em vez de
+ * cinco -- tipo, fornecedor, informações.
  *
  * Um modelo nasce com as capacidades que o fornecedor declara para aquele tipo -- o
  * template --, e não em branco: é por isso que escolher fornecedor ou tipo vai buscar o
  * template outra vez. Alterar um modelo que já existe faz-se na ficha dele.
  */
 
-function modelSupplierOptions(deviceType = "watch") {
-    return modelSuppliersForDeviceType(deviceType).map((supplier) => ({
-        value: String(supplier.id),
-        label: supplier.name,
-    }));
-}
+const STEPS = ["Tipo", "Fornecedor", "Informações"];
+
+const TRAIL_QUESTIONS = [
+    { key: "deviceType", label: "Tipo" },
+    { key: "supplier", label: "Fornecedor" },
+    { key: "info", label: "Informações" },
+];
+
+const QUESTIONS = [
+    {
+        key: "deviceType",
+        step: 1,
+        // Os fornecedores são por tipo: trocar de tipo pode deixar o escolhido de fora.
+        clears: ["supplier"],
+        isAnswered: (answers) => Boolean(answers.deviceType),
+        badges: (answers) => [
+            { label: "Tipo", value: deviceTypeLabel(answers.deviceType) },
+        ],
+    },
+    {
+        key: "supplier",
+        step: 2,
+        clears: [],
+        isAnswered: (answers) => Boolean(answers.supplier),
+        badges: (answers) => [
+            { label: "Fornecedor", value: answers.supplier.name },
+        ],
+    },
+    {
+        key: "info",
+        step: 3,
+        clears: [],
+        isAnswered: (answers) =>
+            Boolean(answers.commercialName && answers.internalModel),
+        badges: () => [],
+    },
+];
+
+const wizard = createWizard({ questions: QUESTIONS, steps: STEPS });
+
+// A imagem escolhida. Fora das respostas porque o `<input type="file">` é redesenhado a
+// cada passo e não se lhe pode devolver o ficheiro.
+let chosenImage = null;
 
 /** Os fornecedores que servem este tipo de dispositivo. */
-function modelSuppliersForDeviceType(deviceType = "watch") {
+function suppliersForDeviceType(deviceType) {
     const group = (state.settingsModal.modelFilters || []).find(
         (entry) =>
             normalizeDeviceType(entry?.deviceType || entry?.device_type || "watch") ===
@@ -49,230 +88,252 @@ function modelSuppliersForDeviceType(deviceType = "watch") {
     return group?.suppliers || [];
 }
 
-function modelSupplierEntry(deviceType, supplierId) {
-    return modelSuppliersForDeviceType(deviceType).find(
-        (supplier) => String(supplier.id) === String(supplierId),
-    );
-}
+/* ---------- desenho ---------- */
 
-function renderModelSupplierButtons(selectedSupplierId) {
+function render() {
     const { els } = getSettingsModelsRuntime();
-    const deviceType = normalizeDeviceType(
-        els.modelForm?.dataset.deviceType || "watch",
-    );
-    els.modelSupplierButtons.innerHTML = buttonGroup(
-        modelSupplierOptions(deviceType),
-        String(selectedSupplierId),
-        "selectModelSupplier",
-    );
-}
+    const step = wizard.step();
 
-function renderModelDeviceTypeButtons(selectedDeviceType) {
-    const { els } = getSettingsModelsRuntime();
-    els.modelDeviceTypeButtons.innerHTML = deviceTypeTiles(deviceTypeOptions, {
-        selected: selectedDeviceType,
-        action: "selectModelDeviceType",
+    els.modelWizardTrail.setAttribute("aria-valuenow", String(step));
+    els.modelWizardTrail.innerHTML = wizardTrailHtml({
+        questions: TRAIL_QUESTIONS,
+        badges: wizard.badges(),
+        // No último passo as informações são sempre a pergunta à vista: sem isto a etiqueta
+        // esbatia-se assim que os dois nomes ficavam escritos.
+        currentKey: wizard.isLastStep() ? "info" : wizard.current()?.key || "",
+        step,
+        steps: STEPS,
     });
+
+    els.modelWizardAsk.innerHTML = renderStep(step, wizard.answers());
+    els.modelWizardTemplateSummary.classList.toggle("d-none", !wizard.isLastStep());
+    renderFooter();
 }
 
-function updateModelProtocolAndPreview() {
-    const { els } = getSettingsModelsRuntime();
-    const supplier = els.modelForm.dataset.supplier || "";
-    const internalModel = els.modelInternalModel.value.trim();
-    const commercialName = els.modelCommercialName.value.trim();
-    const image = els.modelForm.dataset.image || "";
-    const label = commercialName || internalModel || supplier || "Novo modelo";
+function renderStep(step, answers) {
+    if (step === 1) {
+        return deviceTypeCardsHtml({
+            attrsFor: (value) => `data-model-type="${esc(value)}"`,
+            selected: answers.deviceType || "",
+            countFor: modelCountFor,
+        });
+    }
+    if (step === 2) {
+        return renderSuppliers(answers);
+    }
+    return renderInfo(answers);
+}
 
-    if (!state.modelPreviewObjectUrl) {
-        els.modelPreviewContent.innerHTML = image
-            ? `<img src="${esc(image)}" class="object-fit-contain w-100 h-100" alt="${esc(label)}" style="max-height:180px;">`
-            : `<i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div>`;
+/** Quantos modelos deste tipo já existem: o mesmo subtítulo do assistente dos dispositivos. */
+function modelCountFor(deviceType) {
+    return (state.settingsModal.modelCatalog || [])
+        .filter(
+            (group) =>
+                normalizeDeviceType(group?.deviceType || group?.device_type || "watch") ===
+                deviceType,
+        )
+        .flatMap((group) => group?.suppliers || [])
+        .reduce((total, supplier) => total + (supplier.models || []).length, 0);
+}
+
+function renderSuppliers(answers) {
+    const suppliers = suppliersForDeviceType(answers.deviceType);
+    if (suppliers.length === 0) {
+        return "<p class=\"text-secondary small mb-0\">Nenhum fornecedor regista este tipo de dispositivo.</p>";
+    }
+
+    return field(
+        "Fornecedor",
+        supplierPillsHtml({
+            suppliers: suppliers.map((supplier) => supplier.name),
+            selected: answers.supplier?.name || "",
+            attrsFor: (name) => `data-model-supplier="${esc(name)}"`,
+        }),
+    );
+}
+
+function renderInfo(answers) {
+    const preview = chosenImage
+        ? modelImageHtml({ image: state.modelPreviewObjectUrl }, 40)
+        : modelImageHtml({}, 40);
+
+    return `
+        <div class="row g-3">
+        <div class="col-md-6">${field(
+            "Nome comercial",
+            `<input type="text" class="form-control" data-model-field="commercialName" value="${esc(answers.commercialName || "")}">`,
+            { required: true },
+        )}</div>
+        <div class="col-md-6">${field(
+            "Modelo interno",
+            `<input type="text" class="form-control" data-model-field="internalModel" value="${esc(answers.internalModel || "")}">`,
+            { required: true, help: "O código do fabricante, que é o que os tópicos usam." },
+        )}</div>
+        </div>
+        <div class="d-flex align-items-center gap-3 border rounded-3 bg-body-tertiary p-3 mt-3 position-relative">
+        <input type="file" accept="image/*" data-model-image class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" title="Imagem do modelo">
+        <span class="flex-shrink-0 d-flex align-items-center">${preview}</span>
+        <span class="flex-grow-1 min-w-0 text-truncate text-secondary">${esc(chosenImage?.name || "Imagem do modelo")}</span>
+        <span class="btn btn-outline-secondary btn-sm flex-shrink-0">Carregar</span>
+        </div>`;
+}
+
+function renderFooter() {
+    const { els } = getSettingsModelsRuntime();
+    const step = wizard.step();
+
+    els.modelWizardBackBtn.classList.toggle("d-none", !wizard.canGoBack());
+    els.modelWizardBackBtn.innerHTML =
+        `<i class="fa-solid fa-arrow-left me-2"></i>${esc(STEPS[step - 2] || "")}`;
+
+    const last = wizard.isLastStep();
+    els.modelWizardSaveBtn.innerHTML = last
+        ? "<i class=\"fa-solid fa-floppy-disk me-2\"></i>Guardar modelo"
+        : "Seguinte<i class=\"fa-solid fa-arrow-right ms-2\"></i>";
+    els.modelWizardSaveBtn.disabled = last
+        ? !wizard.isComplete()
+        : !wizard.canAdvance();
+}
+
+/* ---------- interacção ---------- */
+
+function handleModelWizardClick(event) {
+    const deviceType = event.target.closest("[data-model-type]");
+    if (deviceType) {
+        wizard.answerAndAdvance("deviceType", deviceType.dataset.modelType);
+        render();
+        void refreshTemplate();
+        return;
+    }
+
+    const supplier = event.target.closest("[data-model-supplier]");
+    if (supplier) {
+        const name = supplier.dataset.modelSupplier;
+        const answers = wizard.answers();
+        wizard.answerAndAdvance("supplier", {
+            name,
+            id: suppliersForDeviceType(answers.deviceType).find(
+                (entry) => entry.name === name,
+            )?.id,
+        });
+        render();
+        void refreshTemplate();
     }
 }
 
-function resetModelForm(selectedSupplierId = "") {
+/** Escrever não redesenha o passo: tirava o cursor de baixo dos dedos. */
+function handleModelWizardInput(event) {
+    const input = event.target.closest("[data-model-field]");
+    if (!input) return;
+    wizard.answer(input.dataset.modelField, input.value.trim());
+    renderFooter();
+}
+
+function handleModelWizardChange(event) {
+    const input = event.target.closest("[data-model-image]");
+    if (!input) return;
+    chosenImage = input.files?.[0] || null;
+    setModelPreviewObjectUrl(chosenImage ? URL.createObjectURL(chosenImage) : null);
+    render();
+}
+
+function handleModelWizardTrailClick(event) {
+    const badge = event.target.closest("[data-wizard-reopen]");
+    if (!badge) return;
+    wizard.reopen(badge.dataset.wizardReopen);
+    render();
+}
+
+function modelWizardBack() {
+    wizard.back();
+    render();
+}
+
+/** O botão do rodapé: avançar nos dois primeiros passos, gravar no último. */
+function handleModelWizardSave() {
+    if (!wizard.isLastStep()) {
+        wizard.advance();
+        render();
+        return;
+    }
+    void saveModel();
+}
+
+/* ---------- o template do fornecedor ---------- */
+
+/**
+ * As capacidades predefinidas do fornecedor para este tipo: é o que o modelo herda ao
+ * nascer, e o número que o último passo anuncia.
+ */
+async function refreshTemplate() {
     const { els } = getSettingsModelsRuntime();
-    setModelPreviewObjectUrl();
-    els.modelForm.reset();
-    clearInvalid(els.modelForm);
-    delete els.modelForm.dataset.modelId;
-    delete els.modelForm.dataset.image;
-    els.modelForm.dataset.deviceType = "watch";
+    const { deviceType, supplier } = wizard.answers();
     state.modelModal.enabledCapabilities = [];
-    els.saveModelBtn.innerHTML =
-        "<i class=\"fa-solid fa-floppy-disk me-1\"></i>Guardar";
-    els.modelImage.value = "";
-    if (els.modelTemplateSummary) {
-        els.modelTemplateSummary.textContent =
-            "A carregar template de capacidades do fornecedor.";
+    state.modelModal.templateSummary = "";
+
+    if (!supplier?.id || !deviceType) {
+        els.modelWizardTemplateSummary.textContent = "";
+        return;
     }
 
-    renderModelDeviceTypeButtons("watch");
+    els.modelWizardTemplateSummary.textContent =
+        "A carregar template de capacidades do fornecedor.";
 
-    const deviceType = "watch";
-    const suppliers = modelSupplierOptions(deviceType);
-    const supplierId = suppliers.some(
-        (supplier) => supplier.value === String(selectedSupplierId),
-    )
-        ? String(selectedSupplierId)
-        : suppliers[0]?.value || "";
-    const supplier = modelSupplierEntry(deviceType, supplierId);
-    els.modelForm.dataset.supplierId = supplierId;
-    els.modelForm.dataset.supplier = supplier?.name || "";
+    const response = await ensureModelTemplate(supplier.id, deviceType);
+    if (response.error) {
+        state.modelModal.templateSummary = apiError(response);
+        els.modelWizardTemplateSummary.textContent = state.modelModal.templateSummary;
+        return;
+    }
 
-    renderModelSupplierButtons(supplierId);
-    updateModelProtocolAndPreview();
+    const capabilities = Array.isArray(response.enabledCapabilities)
+        ? response.enabledCapabilities.map(String)
+        : [];
+    state.modelModal.enabledCapabilities = capabilities;
+    state.modelModal.templateSupplier = String(response.supplier || supplier.name);
+    state.modelModal.templateDeviceType = String(response.deviceType || deviceType);
+    state.modelModal.templateSummary =
+        `${capabilities.length} capacidades predefinidas para ${state.modelModal.templateSupplier} (${deviceTypeLabel(deviceType)}).`;
+    els.modelWizardTemplateSummary.textContent = state.modelModal.templateSummary;
 }
 
-function selectModelSupplier(supplierId) {
-    const { els } = getSettingsModelsRuntime();
+/* ---------- abrir e gravar ---------- */
+
+function resetModelWizard() {
     setModelPreviewObjectUrl();
-    els.modelImage.value = "";
-    const deviceType = normalizeDeviceType(
-        els.modelForm.dataset.deviceType || "watch",
-    );
-    const supplier = modelSupplierEntry(deviceType, supplierId);
-    els.modelForm.dataset.supplierId = String(supplierId);
-    els.modelForm.dataset.supplier = supplier?.name || "";
+    chosenImage = null;
+    wizard.reset();
     state.modelModal.enabledCapabilities = [];
-    delete els.modelForm.dataset.image;
-    renderModelSupplierButtons(supplierId);
-    updateModelProtocolAndPreview();
-    void refreshNewModelCapabilityTemplate();
+    state.modelModal.templateSummary = "";
 }
 
-function selectModelDeviceType(deviceType) {
-    const { els } = getSettingsModelsRuntime();
-    els.modelForm.dataset.deviceType = normalizeDeviceType(deviceType);
-    state.modelModal.enabledCapabilities = [];
-    renderModelDeviceTypeButtons(els.modelForm.dataset.deviceType);
-    void refreshNewModelCapabilityTemplate();
-}
-
-/* ---------- os cliques, delegados na raiz de cada grupo de botões ---------- */
-
-function handleModelSupplierClick(event) {
-    const button = event.target.closest("[data-action=\"selectModelSupplier\"]");
-    if (button) selectModelSupplier(button.dataset.value);
-}
-
-function handleModelDeviceTypeClick(event) {
-    const button = event.target.closest(
-        "[data-action=\"selectModelDeviceType\"]",
-    );
-    if (button) selectModelDeviceType(button.dataset.value);
-}
-
-/** Abre o slide do formulário, com o template do fornecedor já carregado. */
 async function openNewModelForm() {
     if (!state.settingsModal.sectionLoaded.modelFilters) {
         await loadSettingsModelFilters();
     }
-    resetModelForm();
-    await refreshNewModelCapabilityTemplate();
+    resetModelWizard();
+    render();
     showNewModelSlide();
 }
 
-/**
- * As capacidades predefinidas do fornecedor para este tipo. Só corre para um modelo novo:
- * num que já existe as capacidades são as dele, e vivem na ficha.
- */
-async function refreshNewModelCapabilityTemplate() {
-    const { els } = getSettingsModelsRuntime();
-    if (!els?.modelForm || els.modelForm.dataset.modelId) {
-        return;
-    }
-
-    const supplierId = parseInt(els.modelForm.dataset.supplierId || "0", 10);
-    const deviceType = normalizeDeviceType(
-        els.modelForm.dataset.deviceType || "watch",
-    );
-
-    state.modelModal.enabledCapabilities = [];
-    state.modelModal.templateDeviceType = deviceType;
-    state.modelModal.templateSupplier = els.modelForm.dataset.supplier || "";
-
-    if (!supplierId) {
-        state.modelModal.templateSummary =
-            "Selecione um fornecedor para carregar o template de capacidades.";
-        if (els.modelTemplateSummary) {
-            els.modelTemplateSummary.textContent =
-                state.modelModal.templateSummary;
-        }
-        return;
-    }
-
-    if (els.modelTemplateSummary) {
-        els.modelTemplateSummary.textContent =
-            "A carregar template de capacidades do fornecedor.";
-    }
-
-    const response = await ensureModelTemplate(supplierId, deviceType);
-    if (response.error) {
-        state.modelModal.templateSummary =
-            response.error.message ||
-            response.error.code ||
-            "Erro ao carregar template.";
-        if (els.modelTemplateSummary) {
-            els.modelTemplateSummary.textContent =
-                state.modelModal.templateSummary;
-        }
-        return;
-    }
-
-    const enabledCapabilities = Array.isArray(response.enabledCapabilities)
-        ? response.enabledCapabilities.map(String)
-        : [];
-    state.modelModal.enabledCapabilities = enabledCapabilities;
-    state.modelModal.templateSupplier = String(response.supplier || "");
-    state.modelModal.templateDeviceType = String(
-        response.deviceType || deviceType,
-    );
-    state.modelModal.templateSummary = `${enabledCapabilities.length} capacidades predefinidas para ${state.modelModal.templateSupplier} (${deviceTypeLabel(deviceType)}).`;
-    if (els.modelTemplateSummary) {
-        els.modelTemplateSummary.textContent = state.modelModal.templateSummary;
-    }
-}
-
 async function saveModel() {
-    const { els } = getSettingsModelsRuntime();
-    const supplierId = parseInt(els.modelForm.dataset.supplierId || "0");
-    const internalModel = els.modelInternalModel.value.trim();
-    const commercialName = els.modelCommercialName.value.trim();
-    const deviceType = normalizeDeviceType(
-        els.modelForm.dataset.deviceType || "watch",
-    );
-    clearInvalid(els.modelForm);
-    if (!supplierId) {
-        markInvalid(els.modelSupplierButtons, "O fornecedor é obrigatório");
-    }
-    if (!internalModel) {
-        markInvalid(els.modelInternalModel, "O modelo interno é obrigatório");
-    }
-    if (!commercialName) {
-        markInvalid(els.modelCommercialName, "O nome comercial é obrigatório");
-    }
-    if (els.modelForm.querySelector(".is-invalid")) return;
+    const { deviceType, supplier, commercialName, internalModel } = wizard.answers();
+    if (!wizard.isComplete()) return;
 
     const body = new FormData();
-    body.append("supplier_id", String(supplierId));
+    body.append("supplier_id", String(supplier.id));
     body.append("internalModel", internalModel);
     body.append("commercialName", commercialName);
     body.append("deviceType", deviceType);
-    if (els.modelImage.files[0]) {
-        body.append("image", els.modelImage.files[0]);
+    if (chosenImage) {
+        body.append("image", chosenImage);
     }
-    if (!els.modelForm.dataset.modelId) {
-        body.append("capabilitiesConfigured", "1");
-        for (const feature of state.modelModal.enabledCapabilities || []) {
-            body.append("capabilities[]", String(feature));
-        }
+    body.append("capabilitiesConfigured", "1");
+    for (const feature of state.modelModal.enabledCapabilities || []) {
+        body.append("capabilities[]", String(feature));
     }
 
-    const result = await apiSaveModel(
-        els.modelForm.dataset.modelId || "",
-        body,
-    );
+    const result = await apiSaveModel("", body);
     if (result.error) {
         toast("error", apiError(result));
         return;
@@ -287,10 +348,13 @@ async function saveModel() {
 }
 
 export {
-    handleModelDeviceTypeClick,
-    handleModelSupplierClick,
+    handleModelWizardChange,
+    handleModelWizardClick,
+    handleModelWizardInput,
+    handleModelWizardSave,
+    handleModelWizardTrailClick,
+    modelWizardBack,
     openNewModelForm,
-    resetModelForm,
+    resetModelWizard,
     saveModel,
-    updateModelProtocolAndPreview,
 };
