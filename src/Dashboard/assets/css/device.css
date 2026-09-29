@@ -39,6 +39,15 @@
    altura conforme o tipo do evento. */
 /* Os dois painéis da atividade são separadores até ao `xl` e colunas lado a lado a partir
    dele. O Bootstrap desenha um separador com `display: block`, e estes são colunas flex. */
+/* A régua cola debaixo da barra de navegação: numa lista de duzentas leituras, trocar de
+   painel obrigava a subir o ecrã todo. */
+.activity-tabs {
+    position: sticky;
+    top: var(--navbar-height, 3.5rem);
+    z-index: 3;
+    background-color: var(--bs-body-bg);
+}
+
 .activity-tab-content > .tab-pane.active {
     display: flex;
 }
@@ -67,7 +76,7 @@
    baixo, e colado ao rolar para se saber sempre em que dia se está. */
 .telemetry-day > td {
     position: sticky;
-    top: 0;
+    top: var(--sticky-top, 0px);
     z-index: 1;
     background: var(--bs-tertiary-bg);
     border-bottom-width: 0;
@@ -188,8 +197,18 @@
         padding-top: 0;
     }
 
+    /* Aqui quem cola é a linha e não a célula: fora do algoritmo de tabela o bloco que a
+       prende passa a ser o `tr`, que tem a altura do próprio cabeçalho. */
     .telemetry-table > tbody > tr.telemetry-day {
         grid-template-columns: minmax(0, 1fr);
+        position: sticky;
+        top: var(--sticky-top, 0px);
+        z-index: 1;
+        background-color: var(--bs-tertiary-bg);
+    }
+
+    .telemetry-table > tbody > tr.telemetry-day > td {
+        position: static;
     }
 
     /* O recuo até onde começa o nome perde-se com a regra que zera o preenchimento das

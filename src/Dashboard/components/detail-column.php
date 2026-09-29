@@ -75,7 +75,7 @@
                                                     <div class="d-none d-xl-block"><?= section_header($panel['title'], $panel['countId'], '') ?></div>
                                                     <?= pagination_component($panel['pager'], '', true) ?>
                                                 </div>
-                                                <div id="<?= $panel['list'] ?>" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
+                                                <div id="<?= $panel['list'] ?>" class="activity-list flex-grow-1 min-h-0"></div>
                                             </div>
                                             <?php endforeach; ?>
                                         </div>

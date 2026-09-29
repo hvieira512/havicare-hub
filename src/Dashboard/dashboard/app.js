@@ -8,6 +8,7 @@
 import { getDashboardApiToken, getDevice as apiGetDevice } from "./api/index.js";
 import { refreshSelectedDetail, setDeviceFilters, state } from "./state.js";
 import { cacheElements } from "./dom.js";
+import { trackStickyTop } from "./sticky-top.js";
 import { bindDeviceEvents } from "./wiring/devices.js";
 import { bindSettingsEvents } from "./wiring/settings.js";
 import { bindInvalidClearing } from "./validation.js";
@@ -48,6 +49,10 @@ let radarMapModal = null;
 
 export async function startDashboard() {
     els = cacheElements();
+    trackStickyTop({
+        navbar: document.querySelector(".dashboard-navbar"),
+        tabs: els.activityTabs,
+    });
     initGatewayLinksUi({ els });
     deviceModal = new bootstrap.Modal(document.getElementById("deviceModal"));
     deviceWizardModal = new bootstrap.Modal(

@@ -48,6 +48,9 @@
    de ficar em baixo para continuar a ser a barra. */
 .dashboard-navbar {
     background-color: var(--brand-bar);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
 }
 
 /* Dentro da barra, os `btn-dark` pedem a cor à própria barra: o quase-preto do Bootstrap
