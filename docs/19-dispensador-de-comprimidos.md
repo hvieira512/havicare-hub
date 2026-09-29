@@ -797,6 +797,9 @@ configuração não faz nada.
 | `do_not_disturb` | `0x1051`–`0x1055` | interruptor e janela |
 | `language_timezone` | `0x1001` / `0x1015` | o fuso é INT16S: a oeste é negativo |
 
+> **O bloqueio de criança funciona**, e é o único dos interruptores de saída sobre
+> o qual não havia nada escrito.
+>
 > **O «não incomodar» silencia sem deixar de dispensar, e o ecrã di-lo.** Medido a
 > 29/09/2026 com a janela das 23:00 às 23:59 e um alarme às 23:30, com o volume em
 > Médio: o prato andou de 0 para 1, os restantes desceram, e não houve som nenhum.
@@ -1019,6 +1022,15 @@ que este evento saiu deste aparelho, e não precisou de serviço nenhum contrata
 
 Fica por ver o fim: só se observou o `in_progress`, e não se sabe se há transição
 quando a chamada termina ou é cancelada.
+
+**Mas não há como dizer para quem ele liga.** A tabela do tipo `0x02` tem seis
+TAGs de texto e nenhuma é um número de telefone: o CCID do SIM (`0x8009`), o IP e
+o domínio do servidor (`0xA021`/`0xA022`), o acerto do relógio (`0xA101`) e as
+duas horas de medicação (`0xC202`/`0xC203`). O `0x100E` é só um interruptor.
+
+Recebemos o aviso e podemos avisar quem quisermos do nosso lado; a chamada que o
+aparelho faz sozinho configura-se fora do protocolo — na cloud do fabricante, ou
+como parte do serviço pago. É pergunta por fazer ao fornecedor.
 
 ## 10. Armadilhas confirmadas
 
