@@ -7,17 +7,12 @@ ficheiros estão no repositório.
 
 | pasta | versão | de onde |
 |---|---|---|
-| `ag-grid/` | 36.1.0 | `cdn.jsdelivr.net/npm/ag-grid-community@36.1.0/dist/` |
 | `bootstrap/` | 5.3.3 | `cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/` |
 | `fontawesome/` | 6.5.2 | `cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/` |
 | `amcharts5/` | 5 | `cdn.amcharts.com/lib/5/` (`index.js`, `xy.js`, `themes/Animated.js`) |
 | `konva/` | 9.3.22 | `cdn.jsdelivr.net/npm/konva@9.3.22/` |
 | `sweetalert2/` | 11.26.25 | `cdn.jsdelivr.net/npm/sweetalert2@11.26.25/` (`dist/` e `themes/`) |
 | `swagger-ui/` | 5.32.14 | `cdn.jsdelivr.net/npm/swagger-ui-dist@5.32.14/` |
-
-Do AG Grid vem só o `ag-grid-community.min.js`, que já traz os estilos: o tema é montado em
-código no `dashboard/grid.js`, com o `themeQuartz` e a paleta da casa por cima. Não há folha
-de estilos a vendorizar, e por isso também não há uma para manter em par com a versão.
 
 O Konva desenha a planta da divisão de um radar e o amCharts os gráficos dos sinais vitais ao
 lado dela -- são os dois que o hitCare usa, e o código veio de lá. Carregam-se só quando alguém
@@ -40,12 +35,11 @@ compensa.
 ## Actualizar
 
 Uma versão nova é descarregar por cima e corrigir a tabela. Os caminhos estão no
-`index.php` (AG Grid, Bootstrap, Font Awesome, SweetAlert2) e no
+`index.php` (Bootstrap, Font Awesome, SweetAlert2) e no
 `src/Api/Routes/SystemRoutes.php` (Swagger UI, na página `/api/docs`).
 
 ```sh
 cd src/Dashboard/assets/vendor
-curl -o ag-grid/ag-grid-community.min.js   "https://cdn.jsdelivr.net/npm/ag-grid-community@36.1.0/dist/ag-grid-community.min.js"
 curl -o bootstrap/bootstrap.min.css        https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css
 curl -o bootstrap/bootstrap.bundle.min.js  https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js
 curl -o fontawesome/css/all.min.css        https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css

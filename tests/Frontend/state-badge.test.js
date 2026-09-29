@@ -6,8 +6,7 @@ import { onlineBadge, stateBadge } from "../../src/Dashboard/dashboard/component
 
 /**
  * A pastilha de estado, em classes do Bootstrap. Era CSS da casa a refazer o que o
- * `badge` já traz, e por isso desalinhava-se sempre que caía num contentor novo -- dentro
- * de uma célula do AG Grid herdava a altura da linha e transbordava.
+ * `badge` já traz, e por isso desalinhava-se sempre que caía num contentor novo.
  *
  * O tom é o nome do Bootstrap e não uma classe escrita: quem chama diz "success", e é a
  * pastilha que sabe que isso são um fundo subtil e um texto de ênfase.

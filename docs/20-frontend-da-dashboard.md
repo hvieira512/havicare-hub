@@ -60,8 +60,8 @@ São só estas, e explicam onde cada ficheiro está:
 
    Um widget que escreve no elemento que recebeu, que abre um modal ou que fala
    com o Bootstrap **não é um componente**: ou é parte da funcionalidade, ou é
-   um módulo da raiz, como o `phone.js`, o `dialogs.js`, o `tooltips.js` e o
-   `grid.js`. A fronteira é essa, e não o tamanho.
+   um módulo da raiz, como o `phone.js`, o `dialogs.js` e o `tooltips.js`. A
+   fronteira é essa, e não o tamanho.
 
    Quando um módulo destes tem os dois lados, separam-se: o
    `components/pagination.js` devolve os botões e o `pagination.js` da raiz é
@@ -154,7 +154,6 @@ dashboard/
 │       ├── request.js          o cartão de um pedido ao dispositivo
 │       ├── shared.js           o resumo compacto que mais do que uma família usa
 │       └── radar.js · diaper.js · gateway.js · ncs.js · location.js · sleep.js
-├── grid.js                 a grelha do AG Grid, sem consumidor desde que os Utilizadores API passaram a lista
 ├── pagination.js           escreve o paginador no painel, e resolve a página de um clique
 ├── phone.js                o campo de telefone com indicativo
 ├── storage.js              as chaves e os acessos ao localStorage
