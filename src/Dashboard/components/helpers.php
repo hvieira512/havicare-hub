@@ -51,11 +51,18 @@ function filter_toggle_button(string $targetId, string $countId, string $extraCl
         . '</button>';
 }
 
-function tab_pane_header(string $title, string $summaryId, string $trailingHtml = ''): string
-{
+function tab_pane_header(
+    string $title,
+    string $summaryId,
+    string $trailingHtml = '',
+    string $titleId = '',
+): string {
+    // O `titleId` é para os separadores cujo título muda com o que a lista trouxe.
+    $id = $titleId === '' ? '' : ' id="' . h($titleId) . '"';
+
     return '<div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">'
         . '<div>'
-        . '<div class="fw-semibold">' . h($title) . '</div>'
+        . '<div class="fw-semibold"' . $id . '>' . h($title) . '</div>'
         . '<div class="small text-secondary" id="' . h($summaryId) . '"></div>'
         . '</div>'
         . $trailingHtml
