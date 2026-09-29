@@ -256,6 +256,13 @@ const FILTER_GROUP_LABEL = {
     license: "licença",
 };
 
+/** Há filtro aplicado quando o estado está escolhido ou algum grupo tem escolhas. */
+export function hasDeviceFilters(filters) {
+    if (!filters) return false;
+    if (filters.online === true || filters.online === false) return true;
+    return Object.keys(FILTER_GROUP_LABEL).some((key) => (filters[key] || []).length > 0);
+}
+
 /**
  * O que dizer quando a lista sai vazia.
  *
@@ -295,15 +302,36 @@ export function deviceListEmptyState(filters, query) {
     };
 }
 
+/**
+ * O contador do cabeçalho. Com filtros aplicados diz quantos ficam de quantos há: a contagem
+ * da frota sozinha, por cima de quatro linhas, lê-se como se a lista estivesse partida.
+ *
+ * Os ligados só entram quando se vê a frota toda -- filtrada, a pergunta é quantos passaram.
+ */
+export function deviceSelectorSummary(totals, pagination, hasFilters) {
+    const { total = 0, online = 0 } = totals || {};
+    if (!total) return "";
+
+    const word = (count) => (count === 1 ? "dispositivo" : "dispositivos");
+    if (!hasFilters) {
+        return `${total} ${word(total)} · ${online} ligado${online === 1 ? "" : "s"}`;
+    }
+
+    const shown = pagination?.total ?? 0;
+    return `${shown} de ${total} ${word(total)}`;
+}
+
 function renderDeviceSelectorSummary() {
     if (!els.deviceSelectorSummary) return;
     // Uma contagem da resposta anterior ao lado de um erro lê-se como se ainda valesse.
-    const { total, online } = state.summary.devicesError
+    const totals = state.summary.devicesError
         ? { total: 0, online: 0 }
         : state.summary.deviceTotals || { total: 0, online: 0 };
-    els.deviceSelectorSummary.textContent = total
-        ? `${total} ${total === 1 ? "dispositivo" : "dispositivos"} · ${online} ligado${online === 1 ? "" : "s"}`
-        : "";
+    els.deviceSelectorSummary.textContent = deviceSelectorSummary(
+        totals,
+        state.summary.devicePagination,
+        hasDeviceFilters(state.deviceFilters),
+    );
 }
 
 /** Os vizinhos são os da mesma página: é com esses que o identificador se confunde. */
