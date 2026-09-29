@@ -392,17 +392,10 @@ function renderRequestCards(
         .filter((item) => item._source === "telemetry")
         .map((item) => item.raw);
 
-    // Com um grupo só, a faixa com o nome do grupo não separa nada.
     const cards = totalCards
         ? groups
                 .map((group) =>
-                    renderRequestCardGroup(
-                        group,
-                        telemetry,
-                        groups.length > 1,
-                        commands,
-                        everMeasured,
-                    ),
+                    renderRequestCardGroup(group, telemetry, commands, everMeasured),
                 )
                 .join("")
         : "";
@@ -417,7 +410,6 @@ function renderRequestCards(
 function renderRequestCardGroup(
     group,
     telemetry = [],
-    showLabel = true,
     commands = [],
     everMeasured = telemetry,
 ) {
@@ -450,13 +442,7 @@ function renderRequestCardGroup(
         </div>`
         : "";
 
-    if (!showLabel) {
-        return withoutReading
-            ? html`${raw(cards)}<div class="telemetry-card-wide min-w-0">${raw(withoutReading)}</div>`
-            : cards;
-    }
-
-    // O rótulo separa os grupos sem os meter dentro de outra caixa: uma caixa com borda e
+    // A faixa separa os grupos sem os meter dentro de outra caixa: uma caixa com borda e
     // enchimento custa largura à grelha, e é largura que a coluna do aparelho não tem.
     return html`
         <div class="telemetry-card-wide min-w-0">

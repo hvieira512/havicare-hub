@@ -86,7 +86,11 @@ test("uma capacidade que o modelo não tem não dá cartão", () => {
     );
 });
 
-test("a faixa com o nome do grupo só existe quando há mais do que um grupo", () => {
+/**
+ * A faixa deixou de ser só o nome do grupo: traz a conta do que mediu e do que nunca mediu,
+ * e essa não está em mais lado nenhum do ecrã. Existe mesmo num aparelho de um grupo só.
+ */
+test("a faixa do grupo conta o que mediu, mesmo quando o grupo é um só", () => {
     const [group] = telemetryRequestCards({ heart_rate: supported() });
     const reading = {
         type: "heart_rate",
@@ -94,15 +98,10 @@ test("a faixa com o nome do grupo só existe quando há mais do que um grupo", (
         data: { bpm: 72 },
     };
 
-    // Num relógio, que só tem "Telemetria", a faixa seria uma moldura dentro de um cartão que
-    // já se chama "Pedir dados".
-    const alone = renderRequestCardGroup(group, [reading], false, []);
-    assert.doesNotMatch(alone, /Telemetria/);
-    assert.doesNotMatch(alone, /section-label/);
+    const rendered = renderRequestCardGroup(group, [reading], []);
 
-    const accompanied = renderRequestCardGroup(group, [reading], true, []);
-    assert.match(accompanied, /section-label[^>]*>Telemetria</);
-    assert.match(accompanied, />1 com leitura</);
+    assert.match(rendered, /section-label[^>]*>Telemetria</);
+    assert.match(rendered, />1 com leitura</);
 });
 
 /**
@@ -112,7 +111,7 @@ test("a faixa com o nome do grupo só existe quando há mais do que um grupo", (
 test("uma capacidade que nunca mediu dá pastilha e não mosaico", () => {
     const [group] = telemetryRequestCards({ heart_rate: supported() });
 
-    const html = renderRequestCardGroup(group, [], false, []);
+    const html = renderRequestCardGroup(group, [], []);
 
     assert.match(html, /Sem leitura até agora/);
     // O catálogo de capacidades não está carregado aqui, e por isso o nome vem do
@@ -130,7 +129,7 @@ test("com leitura, o mosaico mostra o valor", () => {
         data: { bpm: 72 },
     };
 
-    const html = renderRequestCardGroup(group, [reading], false, []);
+    const html = renderRequestCardGroup(group, [reading], []);
 
     assert.match(html, /72 bpm/);
     assert.match(html, /telemetry-card-value/);
