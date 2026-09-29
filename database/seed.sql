@@ -6,9 +6,7 @@
 -- uq_licenses_company_license, e os dispositivos pelo whitelist.imei.
 --
 -- Os dispositivos e as ligações a gateways usam INSERT IGNORE: uma base nova recebe o
--- inventário todo, e uma base já editada à mão fica com as tuas edições. Os modelos fazem
--- upsert, porque o ReferenceCatalogSeeder cria um subconjunto deles primeiro, com o
--- image_path vazio e um commercial_name provisório.
+-- inventário todo, e uma base já editada à mão fica com as tuas edições.
 --
 -- Deliberadamente NÃO semeados: api_users (hashes de password), device_configurations e
 -- device_configuration_changes/operations (estado de sincronização vivo por dispositivo, que
@@ -41,39 +39,11 @@ SELECT c.id, l.license_id, l.name FROM companies c JOIN (
 ) l ON l.company = c.name
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
--- A W6 e a W6B são a mesma pulseira, com e sem botão macio, por isso partilham a imagem. O
--- W812 não tem imagem, e é por isso que a actualização não deixa uma imagem vazia apagar a
--- que lá esteja: uma trocada no painel não se perde por o seed não trazer nenhuma.
-INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, m.internal_model, m.commercial_name, m.device_type, m.image_path
-FROM suppliers s JOIN (
-    SELECT '4P Touch' AS supplier, 'D41' AS internal_model, 'D41' AS commercial_name,
-           'watch' AS device_type, '9201181e4f07060bd5ded5e48ca8e20a.jpg' AS image_path
-    UNION ALL SELECT '4P Touch',  'D44S',             'R05',                        'watch',         'be4e5160e602a993f519011e6c9f796c.jpg'
-    UNION ALL SELECT '4P Touch',  'D45 Pro',          'D45 Pro',                    'watch',         '4a088f59242d03d7023d5e51d4da8e49.jpg'
-    UNION ALL SELECT '4P Touch',  'D46',              'R04',                        'watch',         '1347f078cd3c213a48495d8f1a366713.jpg'
-    UNION ALL SELECT '4P Touch',  'Y6M',              'Y6M',                        'watch',         '9648d481eb3381148ea91c84aba2687c.jpg'
-    UNION ALL SELECT '4P Touch',  'Y6S',              'R03',                        'watch',         '3d48c42e589923177a1ac3ed147758e0.jpg'
-    UNION ALL SELECT 'MOKO',      'MKGW3',            'MOKOSmart MKGW3',            'gateway',       '45bee5a0028156faa71ff5c6c081b6d7.jpg'
-    UNION ALL SELECT 'MOKO',      'MKGW4',            'MOKOSmart MKGW4',            'gateway',       '3bbccf9f4d8e4830480adf834cdfd278.jpg'
-    UNION ALL SELECT 'MOKO',      'MKGW-mini 03-20D', 'MOKOSmart MKGW-mini 03-20D', 'gateway',       'a8b0f419d117411508270b342869add0.jpg'
-    UNION ALL SELECT 'MOKO',      'W6B',              'MOKO W6B',                   'bracelet',      '78888c5376784c64ca05b691c4686ecd.jpg'
-    UNION ALL SELECT 'MOKO',      'W6',               'MOKO W6',                    'bracelet',      '78888c5376784c64ca05b691c4686ecd.jpg'
-    UNION ALL SELECT 'MONIT',     'MECS-PRO',         'MONIT MECS Pro',             'diaper_sensor', 'c7a8992a69d659ef06e853f6befecd42.jpg'
-    UNION ALL SELECT 'Qinglanst', 'RD-V1',            'W01',                        'radar',         '2a87616691f4878b9ac4f8cfd816a615.jpg'
-    UNION ALL SELECT 'Vivistar',  'L08 Pro',          'R05',                        'watch',         '019cb6bcc40ef15ffe98a2f4ca1d2679.jpg'
-    UNION ALL SELECT 'Vivistar',  'VL16P',            'R04',                        'watch',         '45465accf3d7b8c10279225d089cf227.jpg'
-    UNION ALL SELECT 'Vivistar',  'VL17',             'R03',                        'watch',         'c27707e761813389512c25a4050a3b85.jpg'
-    UNION ALL SELECT 'Voerka',    'W812',             'W812',                       'ncs',           ''
-    UNION ALL SELECT 'Wonlex',    'HW20PRO',          'HW20PRO',                    'watch',         'eed091a62f83e3ef03c7090ce09ea262.jpg'
-    UNION ALL SELECT 'Wonlex',    'MF91',             'MF91',                       'bracelet',      '4d62bc6aac04e660f06f1de7d0ab6a4f.jpg'
-) m ON m.supplier = s.name
-ON DUPLICATE KEY UPDATE
-    commercial_name = VALUES(commercial_name),
-    device_type = VALUES(device_type),
-    image_path = IF(VALUES(image_path) = '', models.image_path, VALUES(image_path));
+-- Os modelos não se semeiam aqui: a lista vive no `ReferenceCatalogSeeder`, que já a
+-- escreve inteira -- com os nomes comerciais e as fotografias -- antes de este ficheiro
+-- correr. Duas listas da mesma coisa divergiram uma vez e não voltam a existir.
 
--- Os pares fornecedor x tipo de dispositivo não se semeiam: saem dos modelos acima.
+-- Os pares fornecedor x tipo de dispositivo não se semeiam: saem dos modelos.
 
 -- Um dispositivo sem dono tem `NULL` nas duas colunas, e não o `0` e o `'null'`.
 --

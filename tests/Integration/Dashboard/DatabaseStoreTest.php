@@ -4,6 +4,7 @@ namespace Tests\Integration\Dashboard;
 
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Domain\SupplierCapabilityTemplate;
+use Hub\Infrastructure\Persistence\ReferenceCatalogSeeder;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DatabaseStoreTest extends MysqlDashboardTestCase
@@ -15,10 +16,10 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $catalog = $db->genericCapabilities->all('watch');
         self::assertNotEmpty($catalog);
         self::assertSame('watch', $catalog[0]['device_type'] ?? null);
-        self::assertSame(13, count($db->models->all()));
+        self::assertCount(count(ReferenceCatalogSeeder::models()), $db->models->all());
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
-        self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
+        self::assertSame('R05', $model['commercial_name'] ?? null);
         self::assertSame('watch', $model['device_type'] ?? null);
         $expected = SupplierCapabilityTemplate::keysForSupplierDeviceType('Vivistar', 'watch');
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
@@ -27,10 +28,10 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame($expected, $actual);
 
         $db = ApiDataAccess::fromDatabase($database);
-        self::assertSame(13, count($db->models->all()));
+        self::assertCount(count(ReferenceCatalogSeeder::models()), $db->models->all());
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
-        self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
+        self::assertSame('R05', $model['commercial_name'] ?? null);
         self::assertSame('watch', $model['device_type'] ?? null);
         $expected = SupplierCapabilityTemplate::keysForSupplierDeviceType('Vivistar', 'watch');
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);

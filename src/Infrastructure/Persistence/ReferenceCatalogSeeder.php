@@ -13,23 +13,48 @@ final class ReferenceCatalogSeeder
 {
     private const SUPPLIERS = ['Wonlex', 'Vivistar', '4P Touch', 'Voerka', 'Qinglanst', 'MOKO', 'MONIT', 'Zayata'];
 
+    /**
+     * O catálogo de modelos tal como produção o tem, a 2026-09-29.
+     *
+     * É a lista toda e não um subconjunto provisório: uma instalação nova nasce com os mesmos
+     * modelos, nomes comerciais e fotografias que o hub a correr, e não há uma segunda lista
+     * a completá-la depois.
+     */
     private const MODELS = [
-        ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', ''],
-        ['Vivistar', 'L08 Pro', 'L08 Pro', 'watch', ''],
-        ['4P Touch', 'D46', 'D46', 'watch', ''],
+        ['4P Touch', 'D41', 'D41', 'watch', '9201181e4f07060bd5ded5e48ca8e20a.jpg'],
+        ['4P Touch', 'D44S', 'R05', 'watch', 'be4e5160e602a993f519011e6c9f796c.jpg'],
+        ['4P Touch', 'D45 Pro', 'D45 Pro', 'watch', '4a088f59242d03d7023d5e51d4da8e49.jpg'],
+        ['4P Touch', 'D46', 'R04', 'watch', '1347f078cd3c213a48495d8f1a366713.jpg'],
+        ['4P Touch', 'Y6L', 'Y6L', 'watch', '0d77b2f141f0dea6bde1c03b85271bc1.jpg'],
+        ['4P Touch', 'Y6M', 'Y6M', 'watch', '9648d481eb3381148ea91c84aba2687c.jpg'],
+        ['4P Touch', 'Y6S', 'R03', 'watch', '3d48c42e589923177a1ac3ed147758e0.jpg'],
+        ['MOKO', 'MKGW-mini 03-20D', 'MOKOSmart MKGW-mini 03-20D', 'gateway', 'a8b0f419d117411508270b342869add0.jpg'],
+        ['MOKO', 'MKGW3', 'MOKOSmart MKGW3', 'gateway', '45bee5a0028156faa71ff5c6c081b6d7.jpg'],
+        ['MOKO', 'MKGW4', 'MOKOSmart MKGW4', 'gateway', '3bbccf9f4d8e4830480adf834cdfd278.jpg'],
+        // A W6 e a W6B são a mesma pulseira, com e sem botão macio, e partilham a fotografia.
+        ['MOKO', 'W6', 'MOKO W6', 'bracelet', '78888c5376784c64ca05b691c4686ecd.jpg'],
+        ['MOKO', 'W6B', 'MOKO W6B', 'bracelet', '78888c5376784c64ca05b691c4686ecd.jpg'],
+        ['MONIT', 'MECS-PRO', 'MONIT MECS Pro', 'diaper_sensor', 'c7a8992a69d659ef06e853f6befecd42.jpg'],
+        ['Qinglanst', 'RD-V1', 'W01', 'radar', '2a87616691f4878b9ac4f8cfd816a615.jpg'],
+        ['Vivistar', 'L08 Pro', 'R05', 'watch', '019cb6bcc40ef15ffe98a2f4ca1d2679.jpg'],
+        ['Vivistar', 'VL16P', 'R04', 'watch', '45465accf3d7b8c10279225d089cf227.jpg'],
+        ['Vivistar', 'VL17', 'R03', 'watch', 'c27707e761813389512c25a4050a3b85.jpg'],
+        // O W812 não tem fotografia publicada pelo fornecedor.
         ['Voerka', 'W812', 'W812', 'ncs', ''],
-        ['Qinglanst', 'RD-V1', 'RD-V1', 'radar', ''],
-        ['MOKO', 'MKGW3', 'MOKOSmart MKGW3', 'gateway', ''],
-        ['MOKO', 'MKGW4', 'MOKOSmart MKGW4', 'gateway', ''],
-        ['MOKO', 'MKGW-mini 03-20D', 'MOKOSmart MKGW-mini 03-20D', 'gateway', ''],
-        ['MONIT', 'MECS-PRO', 'MONIT MECS Pro', 'diaper_sensor', ''],
-        ['MOKO', 'W6B', 'MOKO W6B', 'bracelet', ''],
-        ['MOKO', 'W6', 'MOKO W6', 'bracelet', ''],
-        ['Wonlex', 'MF91', 'MF91', 'bracelet', ''],
-        // O nome comercial não repete o fornecedor: a dashboard já o mostra ao lado. O
-        // ficheiro da imagem viaja em `database/seed-model-images`, como os outros.
+        ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', 'eed091a62f83e3ef03c7090ce09ea262.jpg'],
+        ['Wonlex', 'MF91', 'MF91', 'bracelet', '4d62bc6aac04e660f06f1de7d0ab6a4f.jpg'],
         ['Zayata', 'M228', 'M228', 'pill_dispenser', '464e9b90a30f30aee389cd9de5926977.jpg'],
     ];
+
+    /**
+     * A lista de modelos, para quem precise de a comparar com outra fonte.
+     *
+     * @return list<array{0: string, 1: string, 2: string, 3: string, 4: string}>
+     */
+    public static function models(): array
+    {
+        return self::MODELS;
+    }
 
     public function seedReferenceData(PDO $pdo): void
     {
