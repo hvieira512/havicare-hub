@@ -797,6 +797,13 @@ configuração não faz nada.
 | `do_not_disturb` | `0x1051`–`0x1055` | interruptor e janela |
 | `language_timezone` | `0x1001` / `0x1015` | o fuso é INT16S: a oeste é negativo |
 
+> **O «não incomodar» silencia sem deixar de dispensar, e o ecrã di-lo.** Medido a
+> 29/09/2026 com a janela das 23:00 às 23:59 e um alarme às 23:30, com o volume em
+> Médio: o prato andou de 0 para 1, os restantes desceram, e não houve som nenhum.
+> O aparelho mostra **um ícone de lua** enquanto a janela está activa — quem está à
+> frente dele distingue assim «calado por escolha» de «avariado», coisa que pelo
+> protocolo só se sabe lendo o `0x1051`.
+
 E as acções, em pacote `0x08`: `dispense_now` (`0xA123`), `calibrate_clock`
 (`0xA101`), `mute_alarm` (`0xA102`), `reset_tray` (`0xA103`) e `restart_device`
 (`0xA001`).
@@ -1004,6 +1011,14 @@ Está desligado na unidade de ensaio, e o manual explica porquê:
 
 **É um serviço pago.** Activá-lo é conversa comercial com o fabricante, não de
 configuração.
+
+**O que é pago é a chamada, não o aviso.** O botão reporta-nos na mesma: medido a
+29/09/2026, uma pressão fez chegar o `0x8123` e o hub publicou `help_call` com
+`state: in_progress` — a mesma capacidade do NCS e da pulseira. É a primeira vez
+que este evento saiu deste aparelho, e não precisou de serviço nenhum contratado.
+
+Fica por ver o fim: só se observou o `in_progress`, e não se sabe se há transição
+quando a chamada termina ou é cancelada.
 
 ## 10. Armadilhas confirmadas
 
