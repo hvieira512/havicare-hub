@@ -21,40 +21,40 @@ const controls = (page, totalPages) =>
 const items = (root) => [...root.querySelectorAll("li")];
 
 test("as setas vêem-se em qualquer largura", () => {
-    const [primeiro, ...resto] = items(controls(3, 14));
-    const ultimo = resto.at(-1);
+    const [first, ...rest] = items(controls(3, 14));
+    const last = rest.at(-1);
 
-    for (const seta of [primeiro, ultimo]) {
+    for (const arrow of [first, last]) {
         assert.equal(
-            seta.className.includes("d-none"),
+            arrow.className.includes("d-none"),
             false,
-            `a seta não se esconde: ${seta.className}`,
+            `a seta não se esconde: ${arrow.className}`,
         );
     }
 });
 
 test("os números só aparecem a partir de md", () => {
-    const numeros = items(controls(3, 14)).slice(1, -1);
+    const numbers = items(controls(3, 14)).slice(1, -1);
 
-    assert.equal(numeros.length > 0, true, "esperavam-se lugares de página");
-    for (const lugar of numeros) {
+    assert.equal(numbers.length > 0, true, "esperavam-se lugares de página");
+    for (const slot of numbers) {
         assert.match(
-            lugar.className,
+            slot.className,
             /\bd-none\b.*\bd-md-block\b|\bd-none\b.*\bd-md-flex\b/,
-            `o lugar «${lugar.textContent.trim()}» tem de se esconder abaixo de md: ${lugar.className}`,
+            `o lugar «${slot.textContent.trim()}» tem de se esconder abaixo de md: ${slot.className}`,
         );
     }
 });
 
 test("os botões levam a classe do alvo de toque", () => {
-    const botoes = [...controls(3, 14).querySelectorAll("button")];
+    const buttons = [...controls(3, 14).querySelectorAll("button")];
 
-    assert.equal(botoes.length > 0, true);
-    for (const botao of botoes) {
+    assert.equal(buttons.length > 0, true);
+    for (const button of buttons) {
         assert.match(
-            botao.className,
+            button.className,
             /\bpage-link-touch\b/,
-            `o botão «${botao.getAttribute("aria-label") || botao.textContent.trim()}» precisa do alvo de 44px`,
+            `o botão «${button.getAttribute("aria-label") || button.textContent.trim()}» precisa do alvo de 44px`,
         );
     }
 });
