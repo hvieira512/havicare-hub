@@ -15,9 +15,8 @@ final class CorsMiddleware
 
     public function __invoke(ServerRequestInterface $request, callable $next): mixed
     {
-        // O preflight responde aqui e não desce: era o que o `DashboardHttpServer` já fazia
-        // antes sequer de olhar para o caminho, e é por isso que o `OPTIONS` nunca apareceu
-        // no canal `api`. Mantém-se assim ao ficar acima do `ApiRequestLogger`.
+        // O preflight responde aqui e não desce. Acima do `ApiRequestLogger`, e por isso o
+        // `OPTIONS` não aparece no canal `api`.
         if (strtoupper($request->getMethod()) === 'OPTIONS') {
             return $this->cors->apply(new Response(204), $request);
         }

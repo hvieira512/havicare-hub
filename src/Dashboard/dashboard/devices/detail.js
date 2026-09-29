@@ -614,7 +614,7 @@ async function requestTelemetryFeature(feature) {
         const result = await apiRequestFeature(state.selectedImei, feature);
         if (result.error) toast("error", apiError(result));
         // O comando novo chega pela via do stream (onCommandsUpdated); não se relê o
-        // dispositivo -- e derrubar o stream para um snapshot completo era o custo a evitar.
+        // dispositivo, porque derrubar o stream para um snapshot completo é o custo a evitar.
     } finally {
         state.loadingCommands.delete(feature);
         renderSelection();

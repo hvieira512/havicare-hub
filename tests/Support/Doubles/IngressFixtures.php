@@ -11,9 +11,8 @@ use Hub\Registry\Whitelist;
  * O andaime que os testes de ingress partilham.
  *
  * Todos eles precisam de uma `Whitelist`, que só sabe ler de um ficheiro, e alguns de um
- * `GatewayDeviceLinkLookup`. Montar os dois era uma dúzia de linhas repetida por ficheiro de
- * teste. Cada teste continua a declarar os seus dispositivos, que é a única parte que lhe
- * pertence.
+ * `GatewayDeviceLinkLookup`. Montar os dois à mão é uma dúzia de linhas por ficheiro de
+ * teste. Cada teste declara os seus dispositivos, que é a única parte que lhe pertence.
  */
 final class IngressFixtures
 {
@@ -77,7 +76,7 @@ final class IngressFixtures
      * dois argumentos e é construída no próprio teste.
      *
      * O ficheiro sai do temporário do sistema no fim do processo, e não no fim do teste: um
-     * teste que estoura não chega ao fim, e era assim que ficavam ficheiros para trás.
+     * teste que estoura não chega ao fim e deixaria o ficheiro para trás.
      *
      * @param array<string, array<string, mixed>> $devices indexados pela chave do dispositivo
      */

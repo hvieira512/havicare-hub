@@ -8,9 +8,8 @@ import { parseFragment } from "./support/dom.js";
 /**
  * Um campo de telefone não sugere um número.
  *
- * O placeholder era um número real com indicativo -- `+351912345678` nos contactos do 4P
- * Touch --, e um número cinzento dentro de um campo vazio lê-se como um número lá escrito. O
- * campo já diz o que é pelo seletor de país ao lado e pelo rótulo por cima.
+ * Um número cinzento dentro de um campo vazio lê-se como um número lá escrito. O campo já diz
+ * o que é pelo seletor de país ao lado e pelo rótulo por cima.
  */
 
 const control = (options) => parseFragment(renderPhoneControl(options));

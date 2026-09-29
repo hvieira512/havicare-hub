@@ -83,9 +83,9 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
     /**
      * O valor escolhido chega à trama.
      *
-     * As TAGs certas com zeros dentro é o defeito que aconteceu: uma definição que o validador
-     * não conhecia saía com payload vazio, o construtor punha o valor por omissão, e o
-     * aparelho respondia «aceite» a um zero que ninguém pediu.
+     * As TAGs certas com zeros dentro são o pior caso: uma definição que o validador não
+     * conheça sai com payload vazio, o construtor põe o valor por omissão, e o aparelho
+     * responde «aceite» a um zero que ninguém pediu.
      *
      * @return iterable<string, array{string, array<string, mixed>, int, int}>
      */

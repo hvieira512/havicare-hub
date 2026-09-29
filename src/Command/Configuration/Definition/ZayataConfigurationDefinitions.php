@@ -151,10 +151,9 @@ final class ZayataConfigurationDefinitions
             // da codificação dele — ou cifra tudo o que envia, ou não cifra nada, e a decisão
             // não é deste lado. O botão só prometia uma saída que o firmware não tem.
 
-            // As acções. O relógio calibra-se à mão porque num ensaio um alarme das 12:55
-            // ficou registado às 11:45.
-            // Em Saúde e não em Sistema: dispensar é um acto sobre a medicação do utente, e
-            // era o único sítio onde o catálogo de capacidades e as definições discordavam.
+            // As acções. O relógio calibra-se à mão: o aparelho deriva, e um alarme das 12:55
+            // chega a ficar registado às 11:45.
+            // Dispensar fica em Saúde e não em Sistema: é um acto sobre a medicação do utente.
             self::action(
                 'dispense_now',
                 'dispenseNow',

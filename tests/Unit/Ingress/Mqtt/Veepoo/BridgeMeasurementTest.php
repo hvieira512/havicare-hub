@@ -68,7 +68,7 @@ final class BridgeMeasurementTest extends TestCase
             // de quilos, e `muscleRate` ao lado de `muscleMass` obriga a adivinhar.
             'composição corporal' => [
                 'composição corporal',
-                // Em texto, que é como o SDK os entrega -- foi assim que chegaram do aparelho.
+                // Em texto, que é como o SDK os entrega.
                 [
                     'sdkType' => 32,
                     'BMI' => '28.9', 'bodyFatPercentage' => '31.9', 'fatMass' => '30.3', 'leanBodyMass' => '64.6',
@@ -229,8 +229,8 @@ final class BridgeMeasurementTest extends TestCase
      * Um traçado todo a zeros não é um exame.
      *
      * A pulseira grava os trinta segundos mesmo sem sinal -- pousada numa secretária devolve
-     * dezasseis mil amostras a zero. Publicá-las dava um ECG no histórico de quem nunca fez
-     * nenhum; o que aconteceu foi uma medição sem sinal, e é isso que o operador tem de ler.
+     * dezasseis mil amostras a zero. Publicá-las dá um ECG no histórico de quem nunca fez
+     * nenhum; o que houve foi uma medição sem sinal, e é isso que o operador tem de ler.
      */
     public function testAnAllZeroTracingIsReportedAsFailureAndNotAsAnExam(): void
     {

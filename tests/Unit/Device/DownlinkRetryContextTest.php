@@ -11,9 +11,9 @@ use PHPUnit\Framework\TestCase;
  * Uma repetição tem de levar o mesmo valor que a primeira tentativa.
  *
  * Nos protocolos que entregam a um gateway, os bytes em fila são só o nome da operação -- o
- * valor viaja ao lado. Repetir com os bytes e mais nada põe em fila um comando sem valor, e
- * o gateway executa-o com o interruptor a falso: foi assim que um alerta de frequência
- * cardíaca já aplicado se desligou sozinho, e que um ECG correu quatro vezes seguidas.
+ * valor viaja ao lado. Repetir com os bytes e mais nada põe em fila um comando sem valor, e o
+ * gateway executa-o com o interruptor a falso: desliga um alerta já aplicado, ou repete uma
+ * medição que ninguém pediu.
  */
 final class DownlinkRetryContextTest extends TestCase
 {

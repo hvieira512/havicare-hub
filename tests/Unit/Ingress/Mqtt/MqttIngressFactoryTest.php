@@ -38,8 +38,8 @@ final class MqttIngressFactoryTest extends TestCase
      * O interruptor do MOKO comanda duas ingestões e não uma.
      *
      * As pulseiras Veepoo chegam pelo mesmo gateway e pelo mesmo espaço de tópicos, e por isso
-     * partilham o interruptor. Desligar o MOKO tem de as desligar às duas -- ficarem meio
-     * ligadas era uma subscrição sem ninguém a alimentá-la.
+     * partilham o interruptor. Desligar o MOKO tem de as desligar às duas: meio ligadas são
+     * uma subscrição sem ninguém a alimentá-la.
      */
     public function testTheMokoSwitchAlsoGovernsTheVeepooIngress(): void
     {

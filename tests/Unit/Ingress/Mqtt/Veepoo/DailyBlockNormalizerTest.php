@@ -127,9 +127,9 @@ final class DailyBlockNormalizerTest extends TestCase
     /**
      * Cada bloco traz o seu estado de uso, mesmo quando é igual ao anterior.
      *
-     * Colapsar repetições era o hub a decidir o que vale a pena dizer, e a mudar o
-     * significado do silêncio: deixava de se distinguir «não mudou» de «não houve leitura».
-     * Quem consome é que compara com o que leu da vez anterior.
+     * Colapsar repetições é o hub a decidir o que vale a pena dizer, e muda o significado do
+     * silêncio: deixa de se distinguir «não mudou» de «não houve leitura». Quem consome é que
+     * compara com o que leu da vez anterior.
      */
     public function testEveryBlockCarriesItsOwnWearState(): void
     {

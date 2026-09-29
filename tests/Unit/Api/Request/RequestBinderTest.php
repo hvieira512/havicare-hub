@@ -24,7 +24,7 @@ final class RequestBinderTest extends TestCase
         $this->binder = new RequestBinder();
     }
 
-    /** Antes era um campo por resposta: três campos errados eram três idas ao servidor. */
+    /** Um campo por resposta faria de três campos errados três idas ao servidor. */
     public function testEveryInvalidFieldIsReportedAtOnce(): void
     {
         $result = $this->binder->bind([], ApiUserWriteRequest::class, [ApiUserWriteRequest::GROUP_CREATE]);

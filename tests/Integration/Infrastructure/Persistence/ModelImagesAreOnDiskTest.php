@@ -13,8 +13,7 @@ use Tests\Support\MysqlDashboardTestCase;
  * gitignore: a linha na base e o ficheiro são semeados por caminhos diferentes, e quando um
  * deles não corre a dashboard mostra uma imagem partida sem um erro em lado nenhum.
  *
- * Prende o invariante e não um modelo: era o que faltava quando a cópia do ficheiro vivia numa
- * migração, e só o dispensador tinha quem reparasse.
+ * Prende o invariante e não um modelo: vale para os que já existem e para os que entrarem.
  */
 final class ModelImagesAreOnDiskTest extends MysqlDashboardTestCase
 {

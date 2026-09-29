@@ -393,8 +393,7 @@ final class MessageNormalizerTest extends TestCase
 
     /**
      * O `type` de uma capacidade é snake_case; os campos dentro do `data` são camelCase. São
-     * dois vocabulários, e o radar era o único sítio do contrato onde o segundo escorregava
-     * para o primeiro.
+     * dois vocabulários, e no radar é fácil o segundo escorregar para o primeiro.
      *
      * @dataProvider everyMessageType
      */

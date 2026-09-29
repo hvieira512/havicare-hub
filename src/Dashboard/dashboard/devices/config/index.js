@@ -288,7 +288,7 @@ function readConfigEntryValue(entry, desired) {
 function renderConfigGroup(protocol, entries, ctx) {
     const { rowsByKey, capabilities, disabled, uiByKey, configurationSync } = ctx;
     // Numa corrida de campos repetidos a legenda é a mesma nas dez, e sobe ao cabeçalho: dita
-    // por linha, era a única coisa que se lia dez vezes seguidas.
+    // por linha, é a única coisa que se lê dez vezes seguidas.
     const shared = entries.length > 1 && entries.every((entry) => configHelp(entry) === configHelp(entries[0]))
         ? configHelp(entries[0])
         : "";

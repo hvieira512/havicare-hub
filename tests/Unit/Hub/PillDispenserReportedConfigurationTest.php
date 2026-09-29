@@ -57,10 +57,8 @@ final class PillDispenserReportedConfigurationTest extends TestCase
     }
 
     /**
-     * O «não incomodar» faltava por inteiro na leitura.
-     *
-     * Escrevia-se e nunca se lia de volta: era a única configuração do aparelho sobre a qual
-     * o hub não tinha maneira nenhuma de saber o que lá estava.
+     * O «não incomodar» também se lê de volta: escrever sem ler deixa o hub sem maneira
+     * nenhuma de saber o que o aparelho tem lá dentro.
      */
     public function testQuietHoursComeBack(): void
     {

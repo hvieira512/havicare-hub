@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * O canal do MQTT sai do `isEvent` do catálogo: acontecimentos por `events`, a QoS 1, leituras
- * por `telemetry`, a QoS 0. Era uma lista escrita à mão que já discordava do catálogo.
+ * por `telemetry`, a QoS 0. Uma lista à parte discordaria do catálogo sem dar erro.
  */
 final class EventChannelComesFromTheCatalogueTest extends TestCase
 {

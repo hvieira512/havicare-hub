@@ -6,11 +6,8 @@ import { parseFragment } from "./support/dom.js";
 import { buttonGroup } from "../../src/Dashboard/dashboard/components/button-group.js";
 
 /**
- * Um grupo de botões que devolve HTML em vez de o escrever no elemento que recebeu.
- *
- * Escrever no contentor impedia-o de ser composto dentro de outra marcação, e era o que o
- * separava dos outros componentes: os seis sítios que o usam já tinham o elemento na mão e já
- * faziam `innerHTML` para tudo o resto.
+ * Um grupo de botões que devolve HTML em vez de o escrever no elemento que recebeu: escrever
+ * no contentor impede-o de ser composto dentro de outra marcação.
  */
 const ITEMS = [
     { value: "watch", label: "Relógio" },

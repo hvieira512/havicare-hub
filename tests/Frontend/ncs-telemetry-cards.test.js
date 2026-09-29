@@ -13,8 +13,8 @@ test("a chamada de ajuda diz que comando a fez", () => {
     const card = uplinkCardContent("help_call", { pagerId: "348319" });
 
     assert.equal(card.value, "Chamada de ajuda");
-    // O nome da linha já é "Chamada de ajuda": repeti-lo na coluna do valor não acrescentava
-    // nada, e era o único sítio onde o comando cabia.
+    // O nome da linha já é "Chamada de ajuda": repeti-lo na coluna do valor não acrescenta
+    // nada, e é ali que o comando cabe.
     assert.equal(card.rowValue, "Pager 348319");
     assert.equal(card.icon, "fa-triangle-exclamation");
 });

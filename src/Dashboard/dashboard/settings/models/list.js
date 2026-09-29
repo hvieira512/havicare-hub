@@ -120,8 +120,8 @@ function typeCard(group) {
 }
 
 /**
- * A busca achata a árvore, senão um resultado ficava escondido dentro de um grupo fechado.
- * Cada linha passa a dizer de quem é, que era o que a posição dizia.
+ * A busca achata a árvore, senão um resultado fica escondido dentro de um grupo fechado.
+ * Achatada, cada linha diz de quem é, porque já não o diz pela posição.
  */
 function searchResults(query) {
     const needle = query.toLowerCase();

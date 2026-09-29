@@ -10,8 +10,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * O que o aparelho recusaria é recusado à entrada.
  *
- * O `ZayataPayloadBuilder` existe para isso, e as gamas dele estavam declaradas sem nenhum
- * teste lhes dar um valor ilegal — a recusa acontecia por sorte ou não acontecia de todo. O
+ * O `ZayataPayloadBuilder` existe para isso, e cada gama dele leva aqui um valor ilegal. O
  * protocolo responde a um valor fora da gama com um estado no TFLV, e uma escrita recusada
  * pelo aparelho fica em «em envio» até alguém reparar.
  */

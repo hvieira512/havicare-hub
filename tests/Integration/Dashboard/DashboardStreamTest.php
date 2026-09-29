@@ -121,9 +121,9 @@ final class DashboardStreamTest extends DashboardHttpTestCase
             'GET',
             '/api/devices/861265061009822/stream?access_token=' . rawurlencode($token)
         ));
-        self::assertSame(401, $viaQuery->getStatusCode(), 'o URL deixou de ser um sítio para credenciais');
+        self::assertSame(401, $viaQuery->getStatusCode(), 'o URL não é sítio para credenciais');
 
-        // O `?ticket=` era o único parâmetro que o resolvedor lia. Já não lê nenhum.
+        // O resolvedor não lê parâmetro nenhum, nem sequer o `?ticket=`.
         $viaTicketParameter = $server(new ServerRequest(
             'GET',
             '/api/devices/861265061009822/stream?ticket=' . str_repeat('a', 64)

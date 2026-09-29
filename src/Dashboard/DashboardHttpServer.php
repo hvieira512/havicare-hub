@@ -133,8 +133,8 @@ final class DashboardHttpServer
     }
 
     /**
-     * Semeia no Redis os dispositivos da whitelist. Era o que o construtor fazia, e construir
-     * um objecto não deve escrever num datastore: quem serve é que decide quando aquecer.
+     * Semeia no Redis os dispositivos da whitelist. Fora do construtor: construir um objecto
+     * não deve escrever num datastore, e quem serve é que decide quando aquecer.
      */
     public function warmUp(): void
     {

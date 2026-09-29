@@ -58,8 +58,8 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
      * O intervalo em que o plano vale.
      *
      * O aparelho leva as duas datas em TAGs separadas e aceita-as sem reclamar da ordem. Um
-     * intervalo ao contrário passava, e o que saía era um plano que nunca chega a valer, sem
-     * erro em lado nenhum -- os alarmes simplesmente não tocavam.
+     * intervalo ao contrário é um plano que nunca chega a valer, sem erro em lado nenhum:
+     * os alarmes não tocam.
      *
      * @param array<string, mixed> $payload
      * @return array{enabled: bool, startDate: string, endDate: string}

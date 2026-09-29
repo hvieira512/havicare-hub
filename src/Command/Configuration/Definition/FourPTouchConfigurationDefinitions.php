@@ -58,7 +58,8 @@ final class FourPTouchConfigurationDefinitions
             // Estas duas perguntam em vez de mandar, e o rótulo delas é um nome: sem o verbo
             // o botão dizia «Enviar», que descreve mal o que o clique faz.
             // Sem `deviceStatus`: o `TS` pede-se no mosaico «Estado do dispositivo», em
-            // Informação do sistema. Aqui era a segunda porta para o mesmo comando.
+            // Informação do sistema. Uma entrada aqui seria a segunda porta para o mesmo
+            // comando.
             $entry('alarmClock', 'REMIND', 'Alarmes', 'alarm_clock', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Uma vez'],

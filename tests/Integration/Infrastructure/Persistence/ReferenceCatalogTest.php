@@ -38,8 +38,8 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
 
     /**
      * A ordem dentro de uma secção é alfabética pela etiqueta, que é o que quem lê tem à
-     * frente. Antes era um inteiro escolhido à mão e guardado na base, invisível no ecrã: a
-     * lista tinha uma ordem que não se explicava por nada do que lá estava.
+     * frente. Um inteiro escolhido à mão e guardado na base é invisível no ecrã, e dá à lista
+     * uma ordem que nada do que lá está explica.
      *
      * A ordem das secções não vem daqui -- é uma lista fixa na consulta -- e continua igual.
      */
@@ -176,8 +176,8 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // rico e chega cifrado, este é o estado dos nove alarmes e chega em claro.
             'medication_alarm_status',
             'medication_intake',
-            // O `medication_level` não está cá: era o juízo grosseiro do aparelho a dizer o
-            // mesmo que a contagem de células, e sem número nenhum. É campo dela.
+            // O `medication_level` não está cá: é o juízo grosseiro do aparelho a dizer o
+            // mesmo que a contagem de células, e sem número nenhum.
             'medication_period',
             'medication_reminders',
             // Decide se uma dose já dada como falhada continua acessível, e por isso decide

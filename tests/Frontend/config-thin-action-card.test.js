@@ -43,8 +43,8 @@ test("a acção não repete o título dentro de um alerta", () => {
 
     assert.equal(section.querySelectorAll(".alert").length, 0);
     assert.doesNotMatch(section.textContent, /sem parâmetros/);
-    // Um renderizador que não desenha nada caía no editor de JSON, porque a escolha do
-    // campo era um `||` sobre o resultado em vez de uma pergunta ao descritor.
+    // O campo escolhe-se perguntando ao descritor, e não com um `||` sobre o resultado: assim
+    // um renderizador que não desenha nada não cai no editor de JSON.
     assert.equal(section.querySelectorAll("textarea").length, 0);
 });
 

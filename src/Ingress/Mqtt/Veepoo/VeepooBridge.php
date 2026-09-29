@@ -30,9 +30,9 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     /**
      * Estados que o aparelho reporta durante uma medição, e o que significam para o pedido.
      *
-     * O firmware não se limita a devolver valores: diz em que estado está. Sem isto um pedido
-     * que morreu por bateria fraca ou por sensor avariado ficava em fila até expirar, sem
-     * ninguém saber porquê -- que era o que acontecia antes.
+     * O firmware não se limita a devolver valores: diz em que estado está. Sem isto, um pedido
+     * que morre por bateria fraca ou por sensor avariado fica em fila até expirar, sem
+     * ninguém saber porquê.
      */
     private const DETECTION_FAILURES = [
         'atLowVoltage' => 'low_battery',
@@ -283,9 +283,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        // Um `kind` que ninguém reclama sai daqui em silêncio, e foi assim que o registo de
-        // sono se perdeu sem ninguém dar por isso. Dizê-lo uma vez por espécie e por aparelho
-        // chega para aparecer no diário sem o encher.
+        // Um `kind` que ninguém reclama sairia daqui em silêncio. Dizê-lo uma vez por espécie
+        // e por aparelho chega para aparecer no diário sem o encher.
         if (($message['kind'] ?? null) !== 'daily_block') {
             $kind = (string)($message['kind'] ?? '');
             $seenKey = $deviceKey . '|' . $kind;
@@ -345,8 +344,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 
         // A dashboard guarda cem entradas e serve para consultar, não para arquivar. Uma
         // pulseira produz 288 blocos de cinco minutos por dia, e os que não trazem nada
-        // esgotavam a lista em horas -- exactamente o que já acontecia com os relatórios de
-        // varrimento. No MQTT continua a sair tudo; quem arquiva é quem integra.
+        // esgotam a lista em horas. No MQTT continua a sair tudo; quem arquiva é quem integra.
         if (!$this->worthShowing($context->deviceKey, $telemetry)) {
             return;
         }

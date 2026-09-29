@@ -67,8 +67,8 @@ const slotCell = (index, plan) =>
  */
 function alarmsInput(entry, desired) {
     const plans = Array.isArray(desired?.plans) ? desired.plans : [];
-    // Pelo número do alarme, não pela posição na lista: um plano só do alarme 5 aparecia na
-    // primeira caixa, e o utilizador via um número que não era o dele.
+    // Pelo número do alarme, não pela posição na lista: pela posição, um plano só do alarme 5
+    // cai na primeira caixa e mostra um número que não é o dele.
     const bySlot = new Map(
         plans.map((plan, position) => [Number(plan?.slot ?? position + 1), plan]),
     );

@@ -10,8 +10,7 @@ import {
 
 /**
  * A pastilha de contagem de um separador diz quantos são. A zero não diz nada que a lista
- * vazia já não diga, e a «Denylist» era a única a mostrá-la -- as outras escondiam-na por
- * acaso, por nunca chegarem a zero.
+ * vazia já não diga, e por isso esconde-se -- em todos, e não só nos que nunca lá chegam.
  */
 function setUpNav() {
     document.body.innerHTML = "<span id=\"settingsDenylistCount\" class=\"d-none\"></span>";

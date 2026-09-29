@@ -137,7 +137,7 @@ final class BridgeUnclaimedSightingTest extends TestCase
         self::assertSame([], $this->proximity($mqtt->telemetry));
     }
 
-    /** Sem RSSI não há nada a reportar: a medição é que era o conteúdo. */
+    /** Sem RSSI não há nada a reportar: a medição é o conteúdo do avistamento. */
     public function testASightingWithoutSignalReportsNothing(): void
     {
         [$bridge, $mqtt] = $this->bridge();

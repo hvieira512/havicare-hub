@@ -21,7 +21,7 @@ export function helpCallContent(data) {
 
 /**
  * O `rowValue` leva o comando porque o nome da linha já diz o que aconteceu, e sem ele a
- * coluna do valor repetia "Chamada de ajuda" ao lado de "Chamada de ajuda".
+ * coluna do valor repete "Chamada de ajuda" ao lado de "Chamada de ajuda".
  */
 export function ncsPagerContent(type, data) {
     // O ícone vem do `CARD_STYLE`, pelo `uplinkCardContent`; o valor difere do nome da capacidade.

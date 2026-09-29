@@ -117,7 +117,7 @@ export class ServerSelectFloatingFilter {
 
     /**
      * As opções da última resposta. O valor escolhido entra a zero quando não vem nelas: a
-     * faceta conta-se sem o filtro da própria coluna, e sem isto o `<select>` voltava a
+     * faceta conta-se sem o filtro da própria coluna, e sem isto o `<select>` volta a
      * "Todos" com o filtro ainda a estreitar a tabela.
      */
     setOptions(options) {

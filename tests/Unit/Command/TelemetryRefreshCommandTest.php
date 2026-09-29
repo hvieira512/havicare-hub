@@ -66,7 +66,7 @@ final class TelemetryRefreshCommandTest extends TestCase
         self::assertSame('request', $entries[0]['kind']);
     }
 
-    /** E tem uma porta só: o mosaico. A entrada no painel de configuração era a segunda. */
+    /** E tem uma porta só: o mosaico. Uma entrada no painel de configuração seria a segunda. */
     public function testTheWatchStatusHasNoSecondDoorInTheConfigurationPanel(): void
     {
         self::assertNull(

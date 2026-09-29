@@ -57,9 +57,9 @@ final class PillDispenserConfigurationPayloadTest extends TestCase
     /**
      * O alarme que o plano escolheu não se perde no caminho.
      *
-     * O construtor da trama já coloca cada plano no slot que ele pede, mas o validador
-     * reconstruía cada plano com três campos e deitava o `slot` fora. O plano voltava a valer
-     * por posição, que é exactamente o defeito que o slot existe para corrigir.
+     * O construtor da trama coloca cada plano no slot que ele pede, e o validador tem de lhe
+     * entregar o `slot`: sem ele o plano vale por posição, que é o que o slot existe para
+     * evitar.
      */
     public function testTheAlarmSlotSurvivesTheValidator(): void
     {

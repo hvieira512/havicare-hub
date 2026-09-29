@@ -291,7 +291,7 @@ test("uma pergunta opcional não trava o passo, mas continua a ser feita", () =>
 });
 
 test("responder à última pergunta do passo avança-o", () => {
-    // Um ecrã a dizer "este passo está completo" não pergunta nada: era um clique no
+    // Um ecrã a dizer "este passo está completo" não pergunta nada: é um clique a mais no
     // "Seguinte" entre a última resposta e o campo seguinte.
     const w = wizard();
     w.answerAndAdvance("type", "x");

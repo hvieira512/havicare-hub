@@ -168,9 +168,9 @@ test("\"Sem licença\" limpa a empresa e não deixa o número anterior", () => {
 /**
  * Sair de uma pergunta sem lhe mexer.
  *
- * O "Anterior" saiu: num dispositivo que existe não há um passo atrás para onde ir, e quem
- * quer mudar a classificação toca na etiqueta que a diz. O que ficou por resolver era o
- * contrário -- abrir uma pergunta por engano e querer voltar --, e é isso que este botão faz.
+ * Sem "Anterior": num dispositivo que existe não há um passo atrás para onde ir, e quem quer
+ * mudar a classificação toca na etiqueta que a diz. Este botão serve o contrário -- abrir uma
+ * pergunta por engano e querer sair dela.
  */
 test("sair de uma pergunta aberta devolve os campos do aparelho, sem apagar respostas", () => {
     const { root, els, openQuestion } = harness();

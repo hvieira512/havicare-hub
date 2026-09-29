@@ -15,8 +15,8 @@ interface ObservationStateStore
 
     /**
      * O `$observedBy` restringe o estrangulamento a quem fez a observação: cada gateway em
-     * alcance é uma medição distinta, e sem esse âmbito o primeiro a publicar suprimia os
-     * outros -- qual deles ganhava era uma corrida.
+     * alcance é uma medição distinta, e sem esse âmbito o primeiro a publicar suprime os
+     * outros, numa corrida entre eles.
      *
      * Vazio para um dispositivo que reporta sobre si próprio.
      *

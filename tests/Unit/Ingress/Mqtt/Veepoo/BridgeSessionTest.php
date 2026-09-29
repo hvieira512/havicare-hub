@@ -136,7 +136,7 @@ final class BridgeSessionTest extends TestCase
      *
      * A sessão repete-se de trinta em trinta segundos enquanto a ligação BLE durar, e com ela
      * a versão de firmware. No MQTT isso é de propósito -- quem integra compara com o que leu
-     * da vez passada. No histórico da dashboard, que guarda cem entradas por aparelho, era uma
+     * da vez passada. No histórico da dashboard, que guarda cem entradas por aparelho, é uma
      * hora a expulsar tudo o resto: cem entradas iguais, e nem uma medição à vista.
      */
     public function testTheDashboardKeepsTheFirmwareOnlyWhenItChanges(): void

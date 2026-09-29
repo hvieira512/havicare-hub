@@ -233,9 +233,8 @@ const UPLINK_CARD_RENDERERS = {
     }),
     device_config: (data) => deviceConfigContent(data),
     // Um alerta e não uma leitura: só chega quando dispara, e por isso o valor diz o que
-    // aconteceu em vez de dizer em que estado se está. A legenda fixa que aqui estava — «
-    // Temperatura e humidade, medidas pelo aparelho» — repetia-se linha após linha sem nunca
-    // mudar, que é o contrário de um detalhe.
+    // aconteceu em vez de dizer em que estado se está. Sem legenda fixa, que se repetiria
+    // linha após linha sem nunca mudar.
     storage_environment: () => ({
         value: "Temperatura ou humidade fora da gama",
     }),

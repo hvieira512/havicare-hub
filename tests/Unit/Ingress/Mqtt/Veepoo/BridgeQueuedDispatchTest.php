@@ -98,10 +98,9 @@ final class BridgeQueuedDispatchTest extends TestCase
     /**
      * Uma publicação que estoira não pode consumir a janela de repetição.
      *
-     * O travão marcava a chave como entregue *ao ser perguntado* se ela era devida, e a
-     * pergunta vinha antes da publicação. Um gateway inalcançável naquele instante deixava a
-     * ordem calada trinta segundos sem nunca ter saído -- e o único sinal era a ausência de
-     * uma vibração que alguém pediu.
+     * O travão só pode marcar a chave como entregue depois de a publicação passar: marcada
+     * antes, um gateway inalcançável naquele instante cala a ordem trinta segundos sem ela
+     * nunca ter saído, e o único sinal é a ausência de uma vibração que alguém pediu.
      */
     public function testACommandWhosePublishFailsIsRetriedOnTheNextTick(): void
     {

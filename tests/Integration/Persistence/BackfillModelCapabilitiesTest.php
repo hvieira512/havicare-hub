@@ -60,7 +60,7 @@ final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
 
         $this->fillGaps($pdo);
 
-        // Os relógios Vivistar têm o BP77, e recusar configurá-lo era o defeito.
+        // Os relógios Vivistar têm o BP77, e tem de se poder configurá-lo.
         self::assertSame(1, $this->capabilities($pdo, $modelId)['fall_sensitivity'] ?? null);
     }
 

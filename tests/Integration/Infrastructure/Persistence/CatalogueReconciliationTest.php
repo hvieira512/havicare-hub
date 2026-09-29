@@ -11,10 +11,9 @@ use Tests\Support\MysqlDashboardTestCase;
 /**
  * O catálogo em código é a verdade, e a base segue-o a cada arranque.
  *
- * Eram duas cópias com dois leitores — o PHP decide o canal do MQTT pelo `isEvent`, a base
- * decide o que a dashboard mostra — e o semeador só corria em base vazia. Numa base existente
- * só uma migração escrita à mão as voltava a juntar, e uma que faltasse não dava erro nenhum:
- * o hub passava a tratar uma capacidade que o ecrã nunca mostrava.
+ * São duas cópias com dois leitores — o PHP decide o canal do MQTT pelo `isEvent`, a base
+ * decide o que a dashboard mostra. Sem reconciliação a cada arranque, as duas afastam-se sem
+ * erro nenhum: o hub trata uma capacidade que o ecrã nunca mostra.
  *
  * Em produção isso já tinha acontecido em dez linhas, uma delas a bandeira de pedível da
  * bateria da pulseira.

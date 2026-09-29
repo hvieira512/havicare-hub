@@ -67,9 +67,9 @@ final class GatewayIngressConfigTest extends TestCase
 
     public function testTheGatewaySwitchIsWhatTheBraceletIngressFollows(): void
     {
-        // A dependência é real e fica: as pulseiras Veepoo são retransmitidas pelo gateway, e
-        // sem a ingestão dele não há tópico nenhum para ouvir. O que estava errado era o nome
-        // dizer «MOKO» quando o que manda é o gateway.
+        // A dependência é real: as pulseiras Veepoo são retransmitidas pelo gateway, e sem a
+        // ingestão dele não há tópico nenhum para ouvir. Quem manda é o gateway, e é o nome
+        // dele que a variável leva.
         $this->env('MOKO_GATEWAY_ENABLED', 'false');
 
         self::assertFalse(Config::load()->all()['gateway']['enabled']);

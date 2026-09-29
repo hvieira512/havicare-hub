@@ -43,8 +43,8 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
     }
 
     /**
-     * O ano do período viaja em INT16U e voltava a ser lido como INT16S. Hoje 2026 cabe nos
-     * dois, e é por isso que a discordância não dava erro nenhum.
+     * O ano do período viaja em INT16U e tem de ser lido como INT16U. 2026 cabe também no
+     * INT16S, e por isso a discordância não dá erro nenhum.
      */
     public function testThePlanPeriodComesBackWithBothDates(): void
     {

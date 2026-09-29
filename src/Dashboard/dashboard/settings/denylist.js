@@ -58,7 +58,7 @@ function renderDenylistSection() {
     setSettingsNavCount("Denylist", total);
 
     // O vazio diz de onde vêm os bloqueios em vez de repetir que não há nenhum: é o único
-    // separador onde não se faz nada, e era o único que não o explicava.
+    // separador onde não se acrescenta nada a partir daqui.
     els.denylistListBody.innerHTML = total === 0
         ? "<div class=\"text-center text-secondary small p-4\">Um aparelho bloqueia-se a partir da notificação de «Dispositivo não autorizado». Os bloqueados aparecem aqui.</div>"
         : current.map(denylistRow).join("");

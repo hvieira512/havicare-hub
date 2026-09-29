@@ -16,8 +16,8 @@ const { initializeDashboardSession } =
     await import("../../src/Dashboard/dashboard/auth/session.js");
 
 /**
- * O pedido de saída podia falhar em silêncio: o ecrã caía para a entrada, mas o cookie e os
- * dois tokens ficavam vivos no Hub, e recarregar voltava a entrar sem palavra-passe.
+ * O pedido de saída não pode falhar em silêncio: o ecrã cai para a entrada, e se o cookie e
+ * os dois tokens ficarem vivos no Hub, recarregar entra sem palavra-passe.
  */
 const mount = () => {
     fired.length = 0;

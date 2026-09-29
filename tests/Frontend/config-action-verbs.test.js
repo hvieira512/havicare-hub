@@ -58,8 +58,8 @@ test("sem verbos declarados, o cartão não muda", () => {
  * O verbo traz o valor consigo.
  *
  * Um botão que diz «Parar» não tem formulário para ler -- o que vai enviar está no próprio
- * botão. Sem isto, os dois verbos enviavam o mesmo e a ordem de parar era indistinguível da
- * de começar, que foi exactamente o que aconteceu quando o valor não viajava.
+ * botão. Sem isto os dois verbos enviam o mesmo, e a ordem de parar é indistinguível da de
+ * começar.
  */
 test("cada verbo envia o seu valor", () => {
     const section = parseFragment(

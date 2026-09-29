@@ -72,9 +72,8 @@ final class PillDispenserDecryptionTest extends TestCase
     /**
      * Uma trama cifrada que não abra não pode passar por telemetria vazia.
      *
-     * Publicar um corpo ilegível como se não trouxesse nada era o que já acontecia, e é a
-     * falha calada que este protocolo torna fácil: identidade certa, CRC válido, e nenhum
-     * erro em lado nenhum.
+     * Publicar um corpo ilegível como se não trouxesse nada é a falha calada que este
+     * protocolo torna fácil: identidade certa, CRC válido, e nenhum erro em lado nenhum.
      */
     public function testAFrameThatDoesNotOpenIsMarked(): void
     {

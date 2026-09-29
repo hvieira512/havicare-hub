@@ -6,12 +6,9 @@ import "./support/browser-env.js";
 import { notificationRow } from "../../src/Dashboard/dashboard/notifications.js";
 
 /**
- * A cor dizia o contrário do risco.
- *
- * «Bloquear dispositivo» -- que escreve na denylist e cala o aparelho -- era um contorno
- * cinzento neutro, e «Eliminar notificação» -- que dispensa um item transitório -- era
- * vermelho. E registar o aparelho, que é o que se quer fazer na maioria dos casos, não tinha
- * botão nenhum: acontecia ao clicar no corpo da notificação, sem nada que o anunciasse.
+ * A cor de cada acção acompanha o risco dela: «Bloquear dispositivo» escreve na denylist e
+ * cala o aparelho; «Eliminar notificação» dispensa um item transitório. E registar o
+ * aparelho, que é o que se quer fazer na maioria dos casos, tem botão próprio.
  */
 const notAuthorized = {
     id: 7,

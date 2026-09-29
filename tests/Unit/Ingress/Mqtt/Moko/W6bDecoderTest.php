@@ -83,8 +83,7 @@ final class W6bDecoderTest extends TestCase
     public function testFrameTypeIsReportedWithoutTheSpecBaseOffset(): void
     {
         // A folha do fabricante numera os modos 0x20/0x21/0x22 e o gateway 0/1/2. Cada modo
-        // leva o seu contador, e foi assim que o mapeamento se confirmou contra um aparelho
-        // premido em simples, duplo e longo, um a um.
+        // leva o seu contador, e é o contador que distingue os três.
         $decoder = new W6bDecoder();
         $modes = [];
         foreach ([0, 1, 2, 3] as $frameType) {

@@ -50,8 +50,7 @@ final class LoginThrottle
     public function allows(string $address, string $username): bool
     {
         // Os três contam sempre, mesmo quando o primeiro já recusou: senão um endereço
-        // bloqueado deixava de alimentar o teto global, e a rotação de endereços voltava a
-        // passar.
+        // bloqueado deixa de alimentar o teto global, e a rotação de endereços passa.
         $withinAddress = $this->count('ip', $address, $this->windowPerAddressSeconds) <= $this->maxPerAddress;
         $withinUsername = $this->count('user', strtolower($username), $this->windowPerUsernameSeconds)
             <= $this->maxPerUsername;

@@ -89,7 +89,7 @@ test("uma capacidade que o modelo não tem não dá cartão", () => {
 test("a faixa com o nome do grupo só existe quando há mais do que um grupo", () => {
     const [group] = telemetryRequestCards({ heart_rate: supported() });
 
-    // Num relógio, que só tem "Telemetria", a faixa era uma moldura dentro de um cartão que
+    // Num relógio, que só tem "Telemetria", a faixa seria uma moldura dentro de um cartão que
     // já se chama "Pedir dados".
     const alone = renderRequestCardGroup(group, [], false, []);
     assert.doesNotMatch(alone, /Telemetria/);

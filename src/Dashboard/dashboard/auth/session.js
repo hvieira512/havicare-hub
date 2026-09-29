@@ -234,11 +234,11 @@ const revokeSession = async () => {
 /**
  * Fecha a sessão. Com `notifyServer`, manda apagar o cookie e revogar os dois tokens.
  *
- * Sem o pedido, o cookie ficava e o separador seguinte voltava a entrar sem palavra-passe. O
+ * Sem o pedido, o cookie fica e o separador seguinte entra sem palavra-passe. O
  * `notifyServer` a falso é para quem já soube por outro separador que a sessão acabou.
  *
- * Sai-se primeiro e pergunta-se depois: o `fetch` não tem prazo, e esperar por ele deixava a
- * dashboard no ecrã -- com os dados lá -- enquanto a rede caída não desistisse.
+ * Sai-se primeiro e pergunta-se depois: o `fetch` não tem prazo, e esperar por ele deixa a
+ * dashboard no ecrã -- com os dados lá -- enquanto a rede caída não desistir.
  */
 const logout = async (message = "", notifyServer = true) => {
     clearTimers();

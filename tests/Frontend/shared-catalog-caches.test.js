@@ -102,8 +102,8 @@ test("um erro a carregar licenças não fica em cache", async () => {
 });
 
 test("um erro de licenças sem corpo nenhum também não envenena a cache", async () => {
-    // O `500` sem corpo lia-se como sucesso, e o `response.data || []` gravava a lista vazia
-    // para o resto da sessão: nenhum ecrã voltava a ver uma licença.
+    // Um `500` sem corpo não pode ler-se como sucesso: um `response.data || []` grava a lista
+    // vazia para o resto da sessão, e nenhum ecrã volta a ver uma licença.
     respondWith(500, "");
     assert.equal(await ensureLicensesLoaded(), null);
     assert.deepEqual(state.licenses, [], "nada ficou guardado");

@@ -47,8 +47,8 @@ final class BridgeTest extends TestCase
 
     /**
      * A notificação de um radar desconhecido é estrangulada: um radar por registar publica
-     * ~20 mensagens por segundo, e sem travão era uma escrita ao MySQL por cada, a reabrir o
-     * aviso que o operador nunca conseguia marcar como lido.
+     * ~20 mensagens por segundo, e sem travão é uma escrita ao MySQL por cada, a reabrir um
+     * aviso que o operador nunca consegue marcar como lido.
      */
     public function testUnregisteredRadarNotificationIsThrottled(): void
     {

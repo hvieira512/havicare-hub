@@ -15,8 +15,8 @@ const { validAdminToken, initializeDashboardSession } = await import(
 /**
  * As guardas que decidem se uma sessão vale, e o arranque que a vai buscar ao cookie.
  *
- * A credencial já não vive no `sessionStorage`, que é por separador: era isso que punha o
- * segundo separador a pedir login com a sessão do primeiro aberta.
+ * A credencial não vive no `sessionStorage`, que é por separador: no `sessionStorage`, o
+ * segundo separador pede login com a sessão do primeiro aberta.
  */
 const future = () => new Date(Date.now() + 3_600_000).toISOString();
 const past = () => new Date(Date.now() - 1_000).toISOString();

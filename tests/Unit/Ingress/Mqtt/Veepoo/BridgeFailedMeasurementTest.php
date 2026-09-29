@@ -281,10 +281,9 @@ final class BridgeFailedMeasurementTest extends TestCase
      * Um pedido morre uma vez, e com a razão certa.
      *
      * A pulseira diz `notWear` a meio da medição e o pedido fecha-se aí. A confirmação do
-     * gateway chega a seguir -- ele executou o comando -- e encontrava o pedido sem leitura
-     * nenhuma à espera, dando-o por falhado outra vez, agora por `no_reading`. Medido contra
-     * a pulseira: dois acontecimentos para o mesmo toque no botão, e o segundo a apontar para
-     * o sensor quando o problema era o pulso.
+     * gateway chega a seguir -- ele executou o comando -- e encontra o pedido sem leitura
+     * nenhuma: dá-lo por falhado outra vez, por `no_reading`, são dois acontecimentos para o
+     * mesmo toque no botão, e o segundo aponta ao sensor quando o problema é o pulso.
      */
     public function testARequestThatAlreadyFailedIsNotFailedAgainByTheConfirmation(): void
     {

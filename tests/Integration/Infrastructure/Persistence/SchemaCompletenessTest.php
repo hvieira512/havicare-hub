@@ -60,8 +60,8 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O `device_type` deixou de ser um `ENUM` repetido em três tabelas e passou a referência
-     * para a `device_types`, cujo conteúdo vem do `config/device-types.json`.
+     * O `device_type` é uma referência para a `device_types`, cujo conteúdo vem do
+     * `config/device-types.json`, e não um `ENUM` repetido em três tabelas.
      *
      * O que este caso prende é o que sobra por prender: a tabela tem de reproduzir o ficheiro
      * -- o `DeviceTypeCatalog` é servido ao frontend, e uma linha a mais ou a menos aqui

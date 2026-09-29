@@ -81,9 +81,9 @@ final class BridgeSleepTest extends TestCase
     /**
      * Os instantes vêm no relógio da pulseira, e do hub tem de sair UTC.
      *
-     * A trama declara o desvio do fuso e o normalizador ignorava-o: uma noite começada à 01:00
-     * em Lisboa saía publicada como 01:00 UTC, uma hora à frente do que aconteceu. É o mesmo
-     * desconto que os blocos de cinco minutos já fazem.
+     * A trama declara o desvio do fuso e o normalizador desconta-o: ignorá-lo publica uma
+     * noite começada à 01:00 em Lisboa como 01:00 UTC, uma hora à frente. É o mesmo desconto
+     * que os blocos de cinco minutos fazem.
      */
     public function testTheInstantsAreConvertedFromTheBraceletClockToUtc(): void
     {

@@ -151,7 +151,7 @@ export function medicationAlarmContent(data) {
     return {
         value: counts.length > 0 ? counts.join(" · ") : "Sem tomas registadas",
         // O texto das doses vivas só aparece onde a faixa não chega -- a linha da lista de
-        // actividade, que não desenha corpo nenhum. No cartão era a mesma informação duas
+        // actividade, que não desenha corpo nenhum. No cartão seria a mesma informação duas
         // vezes, uma em cima da outra.
         details: strip === ""
             ? live

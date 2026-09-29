@@ -15,8 +15,8 @@ const {
  * distingue: a lista a que pertence, o tamanho de página, a página actual, o prefixo da
  * acção, quem guarda a página e quem redesenha.
  *
- * Trocar dois desses valores entre eles não parte nada que se veja em teste de render -- e
- * era o erro fácil. O que se afirma aqui é que cada clique mexe no painel certo.
+ * Trocar dois desses valores entre eles não parte nada que se veja num teste de render. O que
+ * se afirma aqui é que cada clique mexe no painel certo.
  */
 const els = new Proxy({}, {
     get(target, name) {

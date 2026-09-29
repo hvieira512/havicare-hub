@@ -261,7 +261,7 @@ export function removeDetailFilter(key) {
 
 /**
  * O que cada pastilha diz. A do tipo leva a mesma etiqueta do select que a escolheu: aplicar
- * um filtro em português e vê-lo voltar em inglês era a mesma coisa dita de duas maneiras.
+ * um filtro em português e vê-lo voltar em inglês é a mesma coisa dita de duas maneiras.
  */
 export function detailFilterChipLabels({ from, to, type, q }) {
     const labels = [];
