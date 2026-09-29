@@ -21,16 +21,6 @@ $loginFields = [
     ],
 ];
 
-/* A constelação de fundo: onde cai o cartão de cada tipo, com que inclinação e com que
-   compasso. Os tipos vêm do catálogo -- um tipo novo entra aqui sozinho -- e a posição vem
-   desta tabela, pela chave. Sem posição declarada, o tipo encosta-se à margem esquerda.
-
-   As medidas são do painel e não do ecrã: em pixéis fixos, um painel de 1869px deixava os
-   cartões todos amontoados à esquerda. Corta-se pelo lado e nunca por cima nem por baixo,
-   porque o ícone começa a 15px do topo do cartão e o nome acaba nos últimos.
-
-   O `dx`/`dy` é o passo até ao centro do painel e de volta, e por isso aponta ao contrário
-   da aresta em que o cartão está: o de cima desce, o da direita anda para a esquerda. */
 $loginConstellation = [
     'watch' => ['x' => '-38px', 'y' => '18%', 'angle' => -13, 'seconds' => 8.5, 'delay' => -0.4, 'dx' => 16, 'dy' => 10],
     'ncs' => ['x' => '28%', 'y' => '3%', 'angle' => 6, 'seconds' => 10.5, 'delay' => -3.2, 'dx' => 7, 'dy' => 14],
@@ -48,7 +38,6 @@ foreach (\Hub\Domain\DeviceTypeCatalog::all() as $deviceType => $descriptor) {
         + ['icon' => (string)$descriptor['icon'], 'label' => (string)$descriptor['label']];
 }
 
-/* A coluna da esquerda: o que o hub faz, por ordem de percurso do dado. */
 $loginHighlights = [
     ['icon' => 'fa-tower-broadcast', 'title' => 'Ingestão', 'text' => 'Relógios, radares e sensores ligam-se por TCP ou por MQTT.'],
     ['icon' => 'fa-layer-group', 'title' => 'Normalização', 'text' => 'Cada fabricante traduzido para os mesmos nomes e as mesmas unidades.'],
@@ -69,7 +58,6 @@ $loginHighlights = [
         <span class="dashboard-login-badge dashboard-login-column position-relative w-100 mx-auto"><img class="d-block w-auto opacity-75" src="/assets/logo-dark.png" alt="havi hub"></span>
         <div class="dashboard-login-story dashboard-login-column position-relative w-100 mx-auto">
             <span class="dashboard-login-rule d-block rounded-pill mb-3"></span>
-            <!-- Divisa e não cabeçalho: o `h1` da página é o do cartão, que é o que ela faz. -->
             <p class="dashboard-login-headline fw-semibold mb-3">Muitos aparelhos.<br>Um só contrato.</p>
             <p class="dashboard-login-pitch lh-base mb-5">Ingestão, normalização e publicação de telemetria de dispositivos de saúde, sempre no mesmo formato.</p>
             <ul class="list-unstyled d-grid gap-3 m-0">

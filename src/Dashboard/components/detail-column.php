@@ -58,14 +58,9 @@
                                         <?= section_header('Ligações ao servidor') ?>
                                         <div id="connectionTimeline"></div>
                                     </section>
-                                    <?php /* O `col-xl-6` e o espaçamento da coluna dos eventos saem e voltam pelo
-                                           * `renderDownlinkRequests`: sem pedidos, ela fica com a linha toda. */ ?>
                                     <div class="card-section mt-3 pt-3 border-top row g-0 flex-grow-1 min-h-0">
                                         <?php foreach ($activityPanels as $panel) : ?>
                                         <div id="<?= $panel['column'] ?>" class="col-12 col-xl-6 d-flex flex-column min-h-0 <?= $panel['spacing'] ?>">
-                                            <?php /* O paginador na linha do título, do lado
-                                                    oposto. Num telefone não cabe ao lado do
-                                                    título e desce para baixo dele. */ ?>
                                             <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2 mb-2">
                                                 <?= section_header($panel['title'], $panel['countId'], '') ?>
                                                 <?= pagination_component($panel['pager'], '', false) ?>

@@ -1,8 +1,5 @@
 <?php
 
-/* `d-flex` e `d-none` juntas nas Configurações: o `d-none` do Bootstrap vem depois na folha e
- * ganha enquanto lá estiver; o JS que a tira deixa o `d-flex` a valer, e sem ele o botão
- * voltava a `inline-block` e o ícone descolava do texto. */
 $deviceTabs = [
     ['key' => 'General', 'label' => 'Geral', 'icon' => 'fa-address-card', 'extra' => ''],
     ['key' => 'Config', 'label' => 'Configurações', 'icon' => 'fa-sliders', 'extra' => ' d-none'],
@@ -12,9 +9,6 @@ ob_start();
 ?>
 <div class="device-modal-shell h-100">
     <div class="row g-4 h-100">
-        <?php // Ao topo e não ao centro: centrado, o menu muda de altura com o conteúdo do
-              // separador escolhido, e o botão em que se acabou de carregar foge de debaixo
-              // do rato. ?>
         <div class="col-12 col-lg-2 d-flex align-items-lg-start">
             <div class="nav nav-pills modal-side-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" role="tablist">
                 <?php foreach ($deviceTabs as $index => $tab) : ?>
@@ -49,7 +43,6 @@ ob_start();
                                     <p data-device-question="none" class="text-secondary small mb-0">Toque numa etiqueta acima para alterar uma resposta.</p>
                                 </div>
 
-                                <?php /* Duas colunas na base de dados, uma só escolha no ecrã. */ ?>
                                 <input type="hidden" id="deviceCompany" value="">
                                 <input type="hidden" id="deviceLicenseId" value="0">
 
@@ -82,9 +75,6 @@ ob_start();
                                 </div>
 
                                 <div id="deviceFormError" class="small text-danger d-none"></div>
-                                <?php /* Guardar vive aqui e não no rodapé: grava o que está neste
-                                        separador, e nas Configurações cada bloco tem o seu
-                                        «Enviar». */ ?>
                                 <div class="d-flex align-items-center justify-content-end gap-2">
                                     <button type="button" class="btn btn-outline-secondary d-none" id="deviceNextBtn"><?= icon('fa-arrow-left', 'me-2') ?>Manter o que estava</button>
                                     <button id="saveDeviceBtn" type="button" class="btn btn-primary"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar dispositivo</button>
@@ -106,8 +96,6 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-// Eliminar apaga o dispositivo inteiro, e não o que está num separador: fica no rodapé,
-// encostado à esquerda pelo `me-auto` e longe do «Fechar».
 $footer = '<button type="button" class="btn btn-outline-danger d-none me-auto" id="deleteDeviceBtn">'
     . icon('fa-trash', 'me-1') . 'Eliminar</button>'
     . '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
@@ -124,8 +112,6 @@ render_modal(
     fullscreenBelow: 'md',
     scrollable: true,
     headerHtml: $header,
-    // O rolamento passa do corpo para a coluna do conteúdo, e o `h-100` faz a caixa medir
-    // sempre a altura toda em vez da altura do separador aberto.
     bodyClass: 'overflow-hidden',
     contentClass: 'h-100',
 );

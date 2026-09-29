@@ -1,7 +1,5 @@
 <?php
 
-/* A chave é o nome que atravessa o `dom.js`, o `bootstrap.js` e o estado: `Models` é a do
- * catálogo e não se renomeia por causa da etiqueta. `count` diz se a aba tem pastilha. */
 $settingsTabs = [
     ['key' => 'Models', 'label' => 'Catálogo', 'icon' => 'fa-microchip', 'count' => true],
     ['key' => 'Capabilities', 'label' => 'Capacidades', 'icon' => 'fa-list-check', 'count' => false],
@@ -14,8 +12,6 @@ ob_start();
 ?>
 <div class="settings-modal-shell d-flex flex-column w-100 p-2 p-lg-3">
     <div class="row g-3 g-lg-4 h-100 min-h-0">
-        <?php // Ao topo e não ao centro, pela mesma razão do modal do dispositivo: centrado,
-              // o menu desloca-se conforme o separador escolhido e o botão foge do rato. ?>
         <div class="col-12 col-lg-3 d-flex align-items-lg-start h-100">
             <div class="nav nav-pills modal-side-nav flex-row flex-lg-column flex-nowrap gap-2 w-100" role="tablist">
                 <?php foreach ($settingsTabs as $index => $tab) : ?>
@@ -110,8 +106,6 @@ ob_start();
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2 mt-3">
-                                            <?php /* As mesmas classes que o `state-badge.js` monta: esta nunca é
-                                                   * redesenhada, só escondida, e por isso vive aqui à mão. */ ?>
                                             <span class="state-badge badge rounded-pill d-inline-flex align-items-center gap-1 text-uppercase fw-semibold lh-sm px-2 bg-secondary-subtle text-body-secondary" id="modelDetailDirtyState"><span class="state-badge-dot rounded-circle d-inline-block"></span>Sem alterações</span>
                                             <button type="button" class="btn btn-primary btn-sm d-none" id="modelDetailSaveBtn"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
                                             <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="modelDetailResetBtn">Descartar</button>
@@ -158,8 +152,6 @@ ob_start();
                         <div class="small text-secondary" id="capabilitySupplierSummary"></div>
                     </div>
                     <?= search_input('capabilityCatalogSearch', 'Procurar capacidade ou chave') ?>
-                    <?php /* Sete contra cinco: a quatro, o grupo do fornecedor parte de linha e
-                           * perde os cantos, deixando de se ler como um controlo só. */ ?>
                     <div class="capability-filter-row d-grid gap-3 py-3">
                         <div>
                             <div class="section-label mb-1">Tipo de dispositivo</div>
@@ -188,7 +180,6 @@ ob_start();
                     <?= pagination_component('settingsCompanyPagination') ?>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsDenylistPane" role="tabpanel" aria-labelledby="settingsDenylistTabBtn">
-                    <?php /* Só se desbloqueia daqui; bloquear é o botão da notificação. */ ?>
                     <?= tab_pane_header('Aparelhos bloqueados', 'denylistTabSummary') ?>
                     <div id="denylistListBody" class="mb-4"></div>
                 </div>
@@ -199,7 +190,6 @@ ob_start();
                         '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newApiUserBtn">'
                         . icon('fa-plus', 'me-1') . 'Novo utilizador</button>'
                     ) ?>
-                    <?php /* O invólucro apanha os cliques do formulário e os da grelha. */ ?>
                     <div id="apiUserList">
                         <div id="apiUserCreateRow"></div>
                         <div id="apiUserGrid" class="settings-grid"></div>

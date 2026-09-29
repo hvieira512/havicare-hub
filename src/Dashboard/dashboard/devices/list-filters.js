@@ -45,8 +45,6 @@ export function renderDeviceFilterSkeleton() {
         <div class="placeholder-wave device-type-grid d-grid gap-2">
         ${repeatMarkup(
             6,
-            // As mesmas classes da pastilha a sério: a altura vem do mesmo CSS, e a grelha
-            // não salta quando os dados chegam.
             `<div class="device-type-tile" aria-hidden="true">
                 <span class="device-type-tile-icon"><i class="fa-solid fa-square placeholder"></i></span>
                 <span class="device-type-tile-name placeholder col-7">&nbsp;</span>
@@ -60,8 +58,6 @@ export function renderDeviceFilterSkeleton() {
             <div class="placeholder-wave">
             ${repeatMarkup(
                 3,
-                // A barra vai dentro do nome e não por cima dele: a altura da linha vem do
-                // mesmo CSS da opção a sério, e a largura fica a de um nome.
                 `<div class="filter-option d-flex align-items-center text-start rounded-2" aria-hidden="true">
                     <span class="filter-option-box d-grid flex-shrink-0"></span>
                     <span class="flex-fill min-w-0 text-truncate"><span class="placeholder col-6">&nbsp;</span></span>

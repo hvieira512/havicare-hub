@@ -1,9 +1,5 @@
 <?php
 
-/**
- * A casca de um modal. O `$headerHtml` substitui o título quando o cabeçalho é mais do que
- * uma linha de texto.
- */
 function render_modal(
     string $id,
     string $body,
@@ -25,8 +21,6 @@ function render_modal(
         $fullscreenBelow !== null ? "modal-fullscreen-{$fullscreenBelow}-down" : '',
     ]);
 
-    // O Bootstrap lê estes dois do próprio elemento ao criar a instância; sem eles, um clique
-    // fora ou um Escape fecham a caixa e levam o que estiver preenchido lá dentro.
     $backdrop = $staticBackdrop ? ' data-bs-backdrop="static" data-bs-keyboard="false"' : '';
     ?>
     <div class="modal fade" id="<?= h($id) ?>" tabindex="-1" aria-labelledby="<?= h($id) ?>Label"<?= $backdrop ?>>

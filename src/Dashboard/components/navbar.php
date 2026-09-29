@@ -1,10 +1,8 @@
         <?php
-        // O contrato do partial, como no index.php: sem quem o inclua, assume acesso protegido.
         $dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
         ?>
         <nav class="navbar dashboard-navbar">
             <div class="container-fluid">
-                <?php /* Num telemóvel só a marca: a faixa inteira leva 137px dos 390 do ecrã, e a barra enrolava. */ ?>
                 <span class="navbar-brand me-0 me-sm-3">
                     <img class="d-none d-sm-block w-auto" src="/assets/logo-dark.png" alt="havi hub">
                     <img class="d-block d-sm-none" src="/assets/logo-mark.png" alt="havi hub">

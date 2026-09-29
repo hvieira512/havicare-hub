@@ -1,8 +1,5 @@
 <?php
 
-/* O ponto é o mesmo do `state-badge`, na cor do mesmo estado: o filtro e as pastilhas das
- * linhas passam a falar a mesma língua. A forma continua a ser a de um botão -- dar-lhes
- * aspecto de pastilha convidava a clicar nas pastilhas das linhas, que não se clicam. */
 $onlineFilters = [
     ['id' => 'deviceOnlineAll', 'value' => 'all', 'label' => 'Todos', 'dot' => ''],
     ['id' => 'deviceOnlineOn', 'value' => 'online', 'label' => 'Ligados', 'dot' => 'text-success'],
@@ -40,8 +37,6 @@ ob_start();
 
         <?= filter_group('Licença', 'deviceLicenseFilterCount', 'deviceLicenseFilter', 'filter-list d-flex flex-column') ?>
 
-        <?php /* Diz "Modelo" e os `id` dizem `supplier`: o fornecedor é o agrupador e a chave
-               * do filtro, o modelo é o que se escolhe. */ ?>
         <?= filter_group('Modelo', 'deviceSupplierFilterCount', 'deviceSupplierFilter', 'filter-list d-flex flex-column') ?>
     </aside>
 
@@ -82,6 +77,5 @@ render_modal(
     size: 'xl',
     fullscreenBelow: 'lg',
     headerHtml: $headerHtml,
-    // Sem padding no corpo: são as colunas que o trazem, e assim chegam às bordas dele.
     bodyClass: 'p-0',
 );

@@ -10,7 +10,6 @@ function icon(string $name, string $class = ''): string
     return '<i class="fa-solid ' . h($name) . ($class !== '' ? ' ' . h($class) : '') . '"></i>';
 }
 
-/** A pastilha vazia esconde-se pelo `.count-chip:empty`, e por isso não nasce com `d-none`. */
 function section_header(
     string $title,
     ?string $counterId = null,
@@ -28,7 +27,6 @@ function section_header(
         . '</div>';
 }
 
-/** A moldura vazia. Os dois selectores de imagem do `settings.php` repetem-lhe as classes. */
 function showcase_preview(string $id): string
 {
     return '<div id="' . h($id) . '" class="showcase-preview border rounded d-flex align-items-center justify-content-center p-4 h-100"></div>';
@@ -53,7 +51,6 @@ function filter_toggle_button(string $targetId, string $countId, string $extraCl
         . '</button>';
 }
 
-/** O `$trailingHtml` é HTML pronto porque os quatro sítios que o usam levam lá coisas diferentes. */
 function tab_pane_header(string $title, string $summaryId, string $trailingHtml = ''): string
 {
     return '<div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">'

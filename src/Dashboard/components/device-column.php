@@ -33,10 +33,6 @@
                             </div>
                         </div>
                     </div>
-                    <?php /* `card-flush-sm`: em telefone a moldura de fora desaparece, porque o
-                           * Bootstrap não tem `border-sm` nem `bg-sm-*`. */ ?>
-                    <?php /* O cartão dos mosaicos absorve o resto da coluna: o da identidade
-                           * tem a altura dos factos que mostra. */ ?>
                     <div class="card card-flush-sm flex-fill" id="requestCardsCard">
                         <div class="card-body p-0 p-sm-3">
                             <div class="d-grid telemetry-card-grid gap-2 gap-sm-3" id="requestGrid"></div>
