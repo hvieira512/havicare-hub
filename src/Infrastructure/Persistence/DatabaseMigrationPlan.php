@@ -5,10 +5,6 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\Migration;
-use Hub\Infrastructure\Persistence\Migration\ModelImageFilenameOnly;
-use Hub\Infrastructure\Persistence\Migration\PillDispenserCatalog;
-use Hub\Infrastructure\Persistence\Migration\PillDispenserImage;
-use Hub\Infrastructure\Persistence\Migration\PillDispenserReportedConfigurationCleanup;
 
 /**
  * As migrações posteriores à baseline, que é o `database/schema.sql` mais o catálogo que o
@@ -20,23 +16,17 @@ use Hub\Infrastructure\Persistence\Migration\PillDispenserReportedConfigurationC
  *
  * **O catálogo de capacidades não entra:** o `DatabaseMigrator` reconcilia-o do código a cada
  * arranque, e doze migrações que não faziam outra coisa saíram daqui por causa disso.
+ *
+ * A lista está vazia: uma migração sai daqui quando as instâncias todas a têm aplicada e uma
+ * base nova chega ao mesmo estado sem ela. O `DatabaseSchemaGuard` só exige que o que está
+ * aqui esteja aplicado, e por isso as linhas que sobram na `schema_migrations` não incomodam.
  */
 final class DatabaseMigrationPlan
 {
     /** @return list<Migration> */
     public function migrations(): array
     {
-        return [
-            // O fornecedor, o modelo e o tipo de dispositivo. O semeador só os cria numa base
-            // vazia, e as duas que existem já não estavam quando o dispensador chegou.
-            new PillDispenserCatalog(),
-            // A configuração que o aparelho tem passa a ser guardada pela chave certa.
-            new PillDispenserReportedConfigurationCleanup(),
-            // O modelo ganha a fotografia que o fornecedor publica.
-            new PillDispenserImage(),
-            // E a imagem passa a ser guardada pelo nome, sem a rota que é código.
-            new ModelImageFilenameOnly(),
-        ];
+        return [];
     }
 
     /** @return list<string> */

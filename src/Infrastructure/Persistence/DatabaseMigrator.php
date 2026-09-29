@@ -43,6 +43,10 @@ final class DatabaseMigrator
      */
     private function syncReferenceCatalog(): void
     {
+        // A linha do modelo guarda o nome de um ficheiro em `var/`, que está no gitignore: sem
+        // o copiar, a dashboard mostra uma imagem partida e não há erro em lado nenhum.
+        (new InventorySeeder())->copyMissingModelImages();
+
         $seeder = new ReferenceCatalogSeeder();
 
         if ((int)$this->pdo->query('SELECT COUNT(*) FROM capabilities')->fetchColumn() === 0) {
