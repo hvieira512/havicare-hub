@@ -324,6 +324,33 @@
     overflow-y: auto;
 }
 
+/* No modal do dispositivo quem rola é a coluna do conteúdo, e não o corpo. */
+.device-modal-content {
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Com o menu ao lado, a coluna do conteúdo mede a altura toda da linha. */
+@media (min-width: 992px) {
+    .device-modal-content {
+        height: 100%;
+    }
+}
+
+/* Abaixo disso o menu passa para cima do conteúdo, e as duas deixam de estar lado a lado. Em
+   coluna, o conteúdo fica com a altura que sobra; a altura toda da linha punha-o a acabar
+   por baixo do rodapé, com a última caixa escondida. */
+@media (max-width: 991.98px) {
+    .device-modal-shell>.row {
+        flex-direction: column;
+        flex-wrap: nowrap;
+    }
+
+    .device-modal-content {
+        flex: 1 1 auto;
+    }
+}
+
 /* Não existe `h-lg-100`. O limite acompanha o `modal-fullscreen-lg-down`: abaixo dele o
    diálogo é o ecrã todo, e uma altura fixa deixava metade em branco. */
 @media (max-width: 991.98px) {

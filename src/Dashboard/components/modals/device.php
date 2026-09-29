@@ -23,7 +23,7 @@ ob_start();
                 <?php endforeach; ?>
             </div>
         </div>
-        <div class="col-12 col-lg-10 h-100 overflow-auto">
+        <div class="col-12 col-lg-10 device-modal-content">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
                     <form id="deviceForm" class="row g-4">
