@@ -36,7 +36,7 @@ final class ZayataConfigurationDefinitions
                 ['enabled', 'startDate', 'endDate'],
                 self::replyTo('medicationPeriod'),
                 'alerts',
-                15,
+                11,
                 null,
                 null,
                 false,
@@ -91,13 +91,13 @@ final class ZayataConfigurationDefinitions
             // e 3 é silêncio.
             // Num grupo de botões e não numa lista fechada: são quatro posições e a ordem é
             // que diz que a escala está invertida. Uma de cada vez escondia isso.
-            self::choice('alarm_volume', 'alarmVolume', 'Volume', 'alerts', 10, 'volume', [
+            self::choice('alarm_volume', 'alarmVolume', 'Volume', 'alerts', 20, 'volume', [
                 [0, 'Alto'],
                 [1, 'Médio'],
                 [2, 'Baixo'],
                 [3, 'Silêncio'],
             ], 'A que volume o alarme toca. Em silêncio não toca de todo — a pessoa não tem como saber que chegou a hora, e o hub continua a dar a dose como falhada.', input: 'volumeScale'),
-            self::choice('alarm_ringtone', 'alarmRingtone', 'Tipo de toque', 'alerts', 11, 'ringtone', [
+            self::choice('alarm_ringtone', 'alarmRingtone', 'Tipo de toque', 'alerts', 21, 'ringtone', [
                 [0, 'Nenhum'],
                 [1, 'Toque 1'],
                 [2, 'Toque 2'],
