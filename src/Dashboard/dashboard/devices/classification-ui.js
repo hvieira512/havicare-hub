@@ -129,53 +129,55 @@ export function licenseBadgeValue(owner, tree = []) {
     return match?.name ? `${match.name} (${licenseId})` : licenseId;
 }
 
-/* ---------- a trilha ---------- */
+/* ---------- a migalha e a barra ---------- */
 
-/** A etiqueta por cima do valor: lado a lado, três respostas com nomes compridos não cabem. */
-const WIZARD_BADGE = "wizard-badge d-inline-flex flex-column align-items-start justify-content-center fw-medium text-start rounded-3";
+const WIZARD_BADGE = "wizard-badge d-inline-flex align-items-center gap-1 text-start rounded-3";
+
+// Cinco nomes numa linha não cabem num telemóvel: fora do passo actual, a migalha só existe
+// a partir de `md`. Abaixo disso quem diz onde se está são a barra e o contador.
+const ONLY_ON_WIDE = "d-none d-md-inline-flex";
 
 /**
- * A trilha: as perguntas da classificação em fila, e o passo no fim da linha. Uma
- * respondida é um botão para voltar àquela pergunta, a activa fica contornada, e as que
- * faltam ficam esbatidas -- para se ver quantas são sem parecerem clicáveis.
+ * A migalha: um nome por passo. O já respondido é um botão com a escolha ao lado, o passo
+ * em que se está fica a negrito, e os que faltam esbatidos e sem serem clicáveis.
  */
-export function wizardTrailHtml({
-    questions,
-    badges = [],
-    currentKey = "",
-    step = 1,
-    steps = [],
-}) {
+export function wizardTrailHtml({ questions, badges = [], currentKey = "" }) {
     const answered = new Map(badges.map((badge) => [badge.key, badge]));
 
     return questions
         .map((question, index) => {
-            const badge = answered.get(question.key);
+            const badge = question.key === currentKey ? null : answered.get(question.key);
             const sep = index > 0
-                ? "<i class=\"fa-solid fa-caret-right wizard-trail-sep text-secondary\"></i>"
+                ? `<i class="fa-solid fa-caret-right wizard-trail-sep text-body-tertiary ${ONLY_ON_WIDE}"></i>`
                 : "";
+            const name = `<span class="wizard-badge-key text-nowrap">${esc(badge?.label ?? question.label)}</span>`;
             if (badge) {
                 return `${sep}
-            <button type="button" class="${WIZARD_BADGE}" data-wizard-reopen="${esc(badge.key)}"
-                title="Voltar a esta pergunta">
-                <span class="wizard-badge-key text-nowrap lh-sm">${esc(badge.label)}</span>${esc(String(badge.value))}
+            <button type="button" class="${WIZARD_BADGE} text-body-emphasis ${ONLY_ON_WIDE}" data-wizard-reopen="${esc(badge.key)}"
+                title="Voltar a este passo">
+                <i class="fa-solid fa-check text-success"></i>${name}
+                <span class="wizard-badge-value text-truncate">· ${esc(String(badge.value))}</span>
             </button>`;
             }
-            const pendingClass = question.key === currentKey
-                ? `${WIZARD_BADGE} wizard-badge-now`
-                : `${WIZARD_BADGE} wizard-badge-pending`;
+            const state = question.key === currentKey
+                ? "wizard-badge-now fw-semibold"
+                : `wizard-badge-pending text-body-tertiary ${ONLY_ON_WIDE}`;
             return `${sep}
-            <span class="${pendingClass}">
-                <span class="wizard-badge-key text-nowrap lh-sm">${esc(question.label)}</span>
-            </span>`;
+            <span class="${WIZARD_BADGE} ${state}">${name}</span>`;
         })
-        .join("") +
-        // Sem passos não há contador. Num dispositivo que já existe não se está a meio de
-        // coisa nenhuma -- as etiquetas são o que ele é, e "Passo 2 de 2" anunciava uma
-        // sequência que ninguém começou.
-        (steps.length
-            ? `<span class="wizard-trail-step ms-auto text-secondary text-nowrap">Passo ${step} de ${steps.length} · ${esc(steps[step - 1] || "")}</span>`
-            : "");
+        .join("");
+}
+
+/** A barra: um traço por passo, os já feitos a navy e os que faltam em cinzento claro. */
+export function wizardProgressHtml(step, total) {
+    const bars = Array.from(
+        { length: total },
+        (_, index) =>
+            `<span class="flex-fill rounded-pill ${index < step ? "bg-primary" : "bg-secondary-subtle"}"></span>`,
+    ).join("");
+
+    return `<div class="wizard-progress d-flex gap-1" role="progressbar" aria-label="Progresso"
+        aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${step}">${bars}</div>`;
 }
 
 /* ---------- o tipo e o modelo ---------- */

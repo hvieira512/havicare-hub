@@ -28,6 +28,7 @@ import {
     modelCardsHtml,
     ownerFromLicense,
     supplierPillsHtml,
+    wizardProgressHtml,
     wizardTrailHtml,
 } from "./classification-ui.js";
 import { gatewayCardMarkup } from "./gateway-links-ui.js";
@@ -37,9 +38,9 @@ import {
 } from "./list.js";
 
 /**
- * O assistente de adicionar um dispositivo: quatro perguntas, uma de cada vez, e cada
- * resposta a colapsar numa badge. O que varia por tipo vem da tabela `DEVICE_TYPES` e não
- * de ramificações aqui -- o passo 2 de um relógio tem IMEI e SIM, o de um medidor tem MAC.
+ * O assistente de adicionar um dispositivo: cinco perguntas, uma por passo, e cada resposta
+ * a colapsar numa migalha. O que varia por tipo vem da tabela `DEVICE_TYPES` e não de
+ * ramificações aqui -- a identificação de um relógio tem IMEI e SIM, a de um medidor tem MAC.
  */
 
 let els;
@@ -47,34 +48,35 @@ let wizard;
 let wizardModal = null;
 let licenseGroups = [];
 
-const STEPS = ["Classificação", "Este aparelho"];
-
-/** A pergunta do passo 2 não entra: a trilha é a classificação, o passo 2 é este aparelho. */
-const TRAIL_QUESTIONS = [
-    { key: "type", label: "Tipo" },
-    { key: "model", label: "Modelo" },
-    { key: "owner", label: "Licença" },
-];
+/** Um passo por pergunta: é o que o contador, a barra e a migalha contam todos igual. */
+const STEPS = ["Tipo", "Fornecedor", "Modelo", "Licença", "Identificação"];
 
 /** Cada pergunta sabe quando está respondida, que badges produz e o que invalida. */
 const QUESTIONS = [
     {
         key: "type",
         step: 1,
-        clears: ["model", "identity", "gateways"],
+        clears: ["supplier", "model", "identity", "gateways"],
         isAnswered: (a) => Boolean(a.type),
         badges: (a) => [{ label: "Tipo", value: deviceTypeLabel(a.type) }],
     },
     {
+        key: "supplier",
+        step: 2,
+        clears: ["model", "identity"],
+        isAnswered: (a) => Boolean(a.supplier),
+        badges: (a) => [{ label: "Fornecedor", value: a.supplier }],
+    },
+    {
         key: "model",
-        step: 1,
+        step: 3,
         clears: ["identity"],
         isAnswered: (a) => Boolean(a.model?.supplier && a.model?.model),
         badges: (a) => [{ label: "Modelo", value: a.model.model }],
     },
     {
         key: "owner",
-        step: 1,
+        step: 4,
         // Os gateways autorizáveis são os da mesma empresa e licença, daí trocar de
         // licença limpar os que já estavam escolhidos.
         clears: ["gateways"],
@@ -87,12 +89,19 @@ const QUESTIONS = [
     },
     {
         key: "identity",
-        step: 2,
+        step: 5,
         clears: [],
         isAnswered: (a) => Boolean(a.identity),
         badges: () => [],
     },
 ];
+
+const TRAIL_QUESTIONS = QUESTIONS.map((question) => ({
+    key: question.key,
+    label: STEPS[question.step - 1],
+}));
+
+const questionOfStep = (step) => QUESTIONS.find((question) => question.step === step);
 
 export function initCreateWizard(context) {
     els = context.els;
@@ -128,6 +137,7 @@ function openCreateWizard(licenseList = [], seed = {}) {
     for (const [key, value] of Object.entries(seed)) {
         if (value) wizard.answer(key, value);
     }
+    answerSingleSupplier();
     // Abre onde há alguma coisa para fazer: para no primeiro passo com uma pergunta por
     // responder, e nunca salta o último -- criar é um clique deliberado.
     while (wizard.current() === null && wizard.canAdvance()) {
@@ -137,28 +147,32 @@ function openCreateWizard(licenseList = [], seed = {}) {
     render();
 }
 
+/** Um tipo com um só fornecedor não tem nada a perguntar: a única resposta dá-se sozinha. */
+function answerSingleSupplier() {
+    const answers = wizard.answers();
+    if (!answers.type || answers.supplier) return;
+    const suppliers = suppliersForDeviceType(answers.type, state.deviceTypeSuppliersModels);
+    if (suppliers.length === 1) wizard.answerAndAdvance("supplier", suppliers[0]);
+}
+
 /* ---------- desenho ---------- */
 
 function render() {
-    renderTrail();
+    renderHead();
     renderArt();
     renderAsk();
     renderFooter();
 }
 
-/**
- * As três perguntas da classificação estão sempre na trilha: uma pendente esbatida diz o
- * que vem a seguir, a activa fica contornada, a respondida é um botão para voltar a ela.
- */
-function renderTrail() {
+/** O contador, a barra e a migalha dizem a mesma coisa em três formas: passo x de cinco. */
+function renderHead() {
     const step = wizard.step();
-    els.wizardTrail.setAttribute("aria-valuenow", String(step));
+    els.wizardStepCount.textContent = `${step} de ${STEPS.length}`;
+    els.wizardProgress.innerHTML = wizardProgressHtml(step, STEPS.length);
     els.wizardTrail.innerHTML = wizardTrailHtml({
         questions: TRAIL_QUESTIONS,
         badges: wizard.badges(),
-        currentKey: wizard.current()?.key || "",
-        step,
-        steps: STEPS,
+        currentKey: questionOfStep(step).key,
     });
 }
 
@@ -179,16 +193,13 @@ function renderArt() {
 }
 
 /**
- * O último passo não é uma pergunta a revelar: é o formulário a rever antes de criar, com
- * os campos à vista respondidos ou não. O `handleInput` responde sem redesenhar de
- * propósito, para não tirar o cursor de baixo dos dedos.
+ * A pergunta do passo em que se está, respondida ou não: voltar a um passo abre-o com a
+ * escolha marcada. O `handleInput` responde sem redesenhar de propósito, para não tirar o
+ * cursor de baixo dos dedos.
  */
-const LAST_STEP_QUESTIONS = QUESTIONS.filter((question) => question.step === STEPS.length);
-
 function renderAsk() {
-    const question = wizard.current() ??
-        (wizard.isLastStep() ? LAST_STEP_QUESTIONS[0] : null);
-    els.wizardAsk.innerHTML = question ? renderQuestion(question.key) : renderStepDone();
+    const question = questionOfStep(wizard.step());
+    els.wizardAsk.innerHTML = renderQuestion(question.key);
     // Reinicia a animação de entrada a cada pergunta nova.
     els.wizardAsk.style.animation = "none";
     void els.wizardAsk.offsetHeight;
@@ -199,9 +210,11 @@ function renderQuestion(key) {
     const answers = wizard.answers();
     switch (key) {
         case "type":
-            return renderTypeGrid();
+            return renderTypeGrid(answers.type);
+        case "supplier":
+            return renderSupplier(answers.type, answers.supplier);
         case "model":
-            return renderModel(answers.type);
+            return renderModel(answers.type, answers.supplier, answers.model?.model);
         case "owner":
             return renderOwner(answers.owner);
         case "identity":
@@ -212,18 +225,18 @@ function renderQuestion(key) {
 }
 
 function answerAndRender(key, value) {
-    wizard.answerAndAdvance(key, value);
+    if (sameAnswer(wizard.answers()[key], value)) {
+        // Repetir a resposta que já lá estava não invalida as seguintes: só segue em frente.
+        if (wizard.canAdvance()) wizard.advance();
+    } else {
+        wizard.answerAndAdvance(key, value);
+        answerSingleSupplier();
+    }
     render();
 }
 
-/**
- * Um passo intermédio sem nada por perguntar -- no passo 1 só se chega aqui pelo "Anterior":
- * a trilha é o único sítio onde há que fazer.
- */
-function renderStepDone() {
-    return `<p class="text-secondary small mb-0">
-        Toque numa etiqueta acima para alterar uma resposta.
-    </p>`;
+function sameAnswer(previous, value) {
+    return JSON.stringify(previous ?? null) === JSON.stringify(value);
 }
 
 function modelCountFor(type) {
@@ -232,50 +245,44 @@ function modelCountFor(type) {
     ).length;
 }
 
-function renderTypeGrid() {
+function renderTypeGrid(selected) {
     return deviceTypeCardsHtml({
         attrsFor: (value) => `data-wizard-type="${esc(value)}"`,
         countFor: modelCountFor,
+        selected: selected || "",
     });
 }
 
-function renderModelGrid(supplier, models) {
-    return modelCardsHtml({
-        models,
-        attrsFor: (internal) =>
-            `data-wizard-model="${esc(internal)}" data-wizard-model-supplier="${esc(supplier)}"`,
-    });
-}
-
-function renderModel(type) {
+function renderSupplier(type, selected) {
     const suppliers = suppliersForDeviceType(type, state.deviceTypeSuppliersModels);
     if (suppliers.length === 0) {
         return `<p class="text-secondary small mb-0">Nenhum modelo registado para este tipo.
             Registe o modelo no catálogo antes de adicionar o dispositivo.</p>`;
     }
-    const supplier = pendingSupplier ?? (suppliers.length === 1 ? suppliers[0] : null);
-    const models = supplier
-        ? modelsForSupplierAndType(supplier, type, state.deviceTypeSuppliersModels)
-        : [];
 
-    return `
-        ${field(
-            "Fornecedor",
-            supplierPillsHtml({
-                suppliers,
-                selected: supplier,
-                attrsFor: (name) => `data-wizard-supplier="${esc(name)}"`,
-            }),
-            { help: suppliers.length === 1 ? "Só um fornecedor tem modelos deste tipo." : "" },
-        )}
-        ${supplier
-            ? field(
-                    "Modelo",
-                    models.length
-                        ? renderModelGrid(supplier, models)
-                        : "<p class=\"text-secondary small mb-0\">Este fornecedor não tem modelos deste tipo.</p>",
-                )
-            : ""}`;
+    return field(
+        "Fornecedor",
+        supplierPillsHtml({
+            suppliers,
+            selected: selected || "",
+            attrsFor: (name) => `data-wizard-supplier="${esc(name)}"`,
+        }),
+        { help: suppliers.length === 1 ? "Só um fornecedor tem modelos deste tipo." : "" },
+    );
+}
+
+function renderModel(type, supplier, selected) {
+    const models = modelsForSupplierAndType(supplier, type, state.deviceTypeSuppliersModels);
+    if (models.length === 0) {
+        return "<p class=\"text-secondary small mb-0\">Este fornecedor não tem modelos deste tipo.</p>";
+    }
+
+    return modelCardsHtml({
+        models,
+        selected: selected || "",
+        attrsFor: (internal) =>
+            `data-wizard-model="${esc(internal)}" data-wizard-model-supplier="${esc(supplier)}"`,
+    });
 }
 
 function renderOwner(owner) {
@@ -348,35 +355,34 @@ function licenseIdKey(value) {
     return id === "" ? "0" : id;
 }
 
+/** Os dois botões nomeiam o passo para onde levam: "Seguinte" sozinho não dizia para onde. */
 function renderFooter() {
-    // Escondido e não desactivado no primeiro passo: um botão cinzento que nunca serve
-    // convida a ser premido. Voltar a uma resposta faz-se pelo "alterar" na trilha.
-    els.wizardBackBtn.classList.toggle("d-none", !wizard.canGoBack());
+    const step = wizard.step();
     const last = wizard.isLastStep();
+
+    // Escondido e não desactivado no primeiro passo: um botão cinzento que nunca serve
+    // convida a ser premido.
+    els.wizardBackBtn.classList.toggle("d-none", !wizard.canGoBack());
+    els.wizardBackBtn.innerHTML =
+        `<i class="fa-solid fa-arrow-left me-2"></i>${esc(STEPS[step - 2] || "")}`;
     els.wizardNextBtn.innerHTML = last
         ? "<i class=\"fa-solid fa-plus me-2\"></i>Criar dispositivo"
-        : "Seguinte<i class=\"fa-solid fa-arrow-right ms-2\"></i>";
+        : `Seguinte: ${esc(STEPS[step])}<i class="fa-solid fa-arrow-right ms-2"></i>`;
     els.wizardNextBtn.disabled = last ? !wizard.isComplete() : !wizard.canAdvance();
 }
 
 /* ---------- interacção ---------- */
 
-// O fornecedor escolhido enquanto a pergunta do modelo está aberta. Não é resposta: só
-// passa a ser quando o modelo também estiver escolhido, porque é o par que identifica.
-let pendingSupplier = null;
-
 function handleClick(event) {
     const type = event.target.closest("[data-wizard-type]");
     if (type) {
-        pendingSupplier = null;
         answerAndRender("type", type.dataset.wizardType);
         return;
     }
 
     const supplier = event.target.closest("[data-wizard-supplier]");
     if (supplier) {
-        pendingSupplier = supplier.dataset.wizardSupplier;
-        renderAsk();
+        answerAndRender("supplier", supplier.dataset.wizardSupplier);
         return;
     }
 
@@ -483,6 +489,7 @@ function seedFromNotification(source, tree = []) {
 
     return {
         type: modelDeviceType(detected),
+        supplier: String(detected.supplier || ""),
         model: {
             supplier: String(detected.supplier || ""),
             model: modelInternalName(detected),

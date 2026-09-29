@@ -90,9 +90,9 @@ test("as etiquetas dizem o que está escolhido", () => {
             badge.textContent.replace(/\s+/g, " ").trim(),
         ]),
         [
-            ["Tipo", "TipoMedidor de fraldas"],
-            ["Modelo", "ModeloMECS-PRO"],
-            ["Licença", "Licençagucc.dev (1001)"],
+            ["Tipo", "Tipo · Medidor de fraldas"],
+            ["Modelo", "Modelo · MECS-PRO"],
+            ["Licença", "Licença · gucc.dev (1001)"],
         ],
     );
 });

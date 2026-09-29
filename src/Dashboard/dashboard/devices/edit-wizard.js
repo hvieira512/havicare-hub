@@ -122,10 +122,6 @@ function renderTrail() {
                 value: values[question.key],
             })),
         currentKey: openQuestion || "",
-        step,
-        // Sem contador: ver `wizardTrailHtml`. As etiquetas continuam a ser a saída para
-        // voltar a uma pergunta, que é o que aqui faz falta.
-        steps: [],
     });
 }
 

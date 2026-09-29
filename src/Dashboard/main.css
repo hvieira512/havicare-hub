@@ -414,55 +414,45 @@
 
 /* ===== assistente de adicionar dispositivo ===== */
 
-/* A barra mostra os passos com nome, e não uma percentagem: quem está no primeiro tem de
-   conseguir ver o que falta. */
-/* A trilha das respostas já dadas, e o passo no fim da linha. Cada badge colapsa uma
-   pergunta respondida, o que faz o ecrã nunca acumular controlos -- e cada uma é um botão
-   para voltar àquela pergunta. */
-.wizard-trail {
-    min-height: 1.9rem;
-    padding-bottom: .875rem;
+/* Os cinco traços da barra: finos, à mesma largura, e a cor diz quais já ficaram para trás. */
+.wizard-progress > * {
+    height: .25rem;
 }
 
-/* A etiqueta por cima do valor, e não ao lado: lado a lado, três respostas com nomes
-   compridos não cabem na linha e a terceira cai sozinha para baixo. Empilhadas, cada badge
-   mede o mais largo dos seus dois textos e as três cabem. */
-/* A borda e o fundo ficam aqui, que os estados abaixo os trocam. */
+/* A migalha: cinco nomes em linha e sem fundo. O peso e a cor bastam para distinguir o
+   passo dado, o actual e o que falta -- cinco pastilhas cheias eram uma parede. */
+.wizard-trail {
+    min-height: 1.9rem;
+}
+
 .wizard-trail .wizard-badge {
-    gap: .05rem;
-    min-height: 2.5rem;
+    max-width: 14rem;
+    padding: .2rem .4rem;
     font-size: var(--fs-sm);
-    padding: .25rem .7rem;
     border: 1px solid transparent;
-    background: var(--bs-primary-bg-subtle);
-    color: var(--bs-emphasis-color);
+    background: transparent;
     animation: wizard-badge-in .32s cubic-bezier(.2, .8, .3, 1) both;
+}
+
+/* A cor vem das utilidades do Bootstrap na marcação, e o nome do passo acompanha-a. */
+.wizard-trail .wizard-badge-key {
+    color: inherit;
+}
+
+.wizard-trail .wizard-badge-value {
+    min-width: 0;
+}
+
+.wizard-trail button.wizard-badge {
     cursor: pointer;
 }
 
-.wizard-trail .wizard-badge:hover,
-.wizard-trail .wizard-badge:focus-visible {
+.wizard-trail button.wizard-badge:hover,
+.wizard-trail button.wizard-badge:focus-visible {
     border-color: var(--bs-primary-border-subtle);
+    background: var(--bs-primary-bg-subtle);
 }
 
-/* A pergunta activa: contornada, sem valor ainda. */
-.wizard-trail .wizard-badge-now {
-    background: transparent;
-    border-color: var(--bs-primary-border-subtle);
-    cursor: default;
-}
-
-/* As que faltam: esbatidas, para se ver quantas são sem parecerem clicáveis. */
-.wizard-trail .wizard-badge-pending {
-    background: var(--bs-tertiary-bg);
-    cursor: default;
-}
-
-.wizard-trail .wizard-badge-pending .wizard-badge-key {
-    color: var(--bs-secondary-color);
-}
-
-.wizard-trail .wizard-trail-step,
 .wizard-trail .wizard-trail-sep {
     font-size: var(--fs-sm);
 }
