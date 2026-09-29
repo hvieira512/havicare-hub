@@ -8,16 +8,16 @@ $deviceTabs = [
 ob_start();
 ?>
 <div class="device-modal-shell h-100">
-    <div class="row g-4 h-100">
-        <div class="col-12 col-lg-2 d-flex align-items-lg-start">
-            <div class="nav nav-pills modal-side-nav flex-row flex-lg-column flex-wrap flex-lg-nowrap gap-2 w-100" role="tablist">
+    <div class="row g-3 h-100">
+        <div class="col-12">
+            <div class="nav nav-pills device-modal-tabs flex-row flex-nowrap gap-2 w-100" role="tablist">
                 <?php foreach ($deviceTabs as $index => $tab) : ?>
                     <?php $pane = 'device' . $tab['key'] . 'Pane'; ?>
-                <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex<?= $tab['extra'] ?> align-items-center gap-2" id="device<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?></button>
+                <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex<?= $tab['extra'] ?> align-items-center gap-2" id="device<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?><?= $tab['key'] === 'Config' ? '<span class="settings-nav-count d-none ms-1 flex-shrink-0 px-1 rounded-pill fw-semibold text-center tabular-nums" id="deviceConfigCount"></span>' : '' ?></button>
                 <?php endforeach; ?>
             </div>
         </div>
-        <div class="col-12 col-lg-10 device-modal-content">
+        <div class="col-12 device-modal-content">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
                     <form id="deviceForm" class="row g-4">
@@ -79,6 +79,12 @@ ob_start();
                                     <button type="button" class="btn btn-outline-secondary d-none" id="deviceNextBtn"><?= icon('fa-arrow-left', 'me-2') ?>Manter o que estava</button>
                                     <button id="saveDeviceBtn" type="button" class="btn btn-primary"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar dispositivo</button>
                                 </div>
+
+                                <div class="device-danger-zone border border-danger-subtle rounded-3 p-3" id="deviceDangerZone">
+                                    <div class="fw-semibold text-danger-emphasis">Zona perigosa</div>
+                                    <p class="small text-secondary mb-3">Eliminar apaga o dispositivo, as configurações e o histórico dele. Não se desfaz.</p>
+                                    <button type="button" class="btn btn-outline-danger d-none" id="deleteDeviceBtn"><?= icon('fa-trash', 'me-1') ?>Eliminar dispositivo</button>
+                                </div>
                             </div>
                         </div>
                         <div class="col-lg-4 order-lg-2">
@@ -96,9 +102,7 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-$footer = '<button type="button" class="btn btn-outline-danger d-none me-auto" id="deleteDeviceBtn">'
-    . icon('fa-trash', 'me-1') . 'Eliminar</button>'
-    . '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
+$footer = '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
 
 $header = '<div class="modal-device-identity d-flex align-items-center min-w-0 flex-fill" id="deviceModalIdentity">'
     . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'
