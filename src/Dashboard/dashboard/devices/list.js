@@ -22,6 +22,7 @@ import { renderPagination, resolvePaginationPage } from "../pagination.js";
 import { normalizeDeviceType } from "../domain.js";
 import {
     initListFilters,
+    renderDeviceActiveFilters,
     renderDeviceFilterControls,
     renderDeviceFilterSkeleton,
 } from "./list-filters.js";
@@ -233,6 +234,7 @@ function renderDeviceSelector() {
     else renderDeviceFilterControls();
 
     renderDeviceSelectorSummary();
+    renderDeviceActiveFilters();
 
     els.deviceList.innerHTML = deviceListBody(state.summary);
     renderDevicePagination(state.summary.devicePagination);

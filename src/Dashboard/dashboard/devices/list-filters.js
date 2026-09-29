@@ -5,9 +5,10 @@ import {
     saveJsonStorage,
 } from "../storage.js";
 import { html, raw } from "../html.js";
-import { deviceTypeTiles } from "../components/device-type-tiles.js";
+import { filterChips } from "../components/chips.js";
 import {
     companyLabel,
+    deviceTypeLabel,
     deviceTypeOptions,
     licenseDisplayLabel,
     modelDisplayName,
@@ -15,8 +16,8 @@ import {
 } from "../domain.js";
 
 /**
- * O painel de filtros da listagem: o mosaico de tipos, as árvores de fornecedores e de
- * licenças, o estado de ligação, e o que cada clique faz a eles.
+ * O painel de filtros da listagem: as listas de tipos, de fornecedores e de licenças, o
+ * estado de ligação, e o que cada clique faz a eles.
  *
  * Desenho e comportamento no mesmo sítio, porque marcar um valor e mostrá-lo marcado são a
  * mesma ideia. O que falta é quem volta a pedir a lista: entra por um `onChange` entregue no
@@ -41,19 +42,11 @@ const repeatMarkup = (count, markup) => Array.from({ length: count }, () => mark
  * resposta quando é a falta de uma.
  */
 export function renderDeviceFilterSkeleton() {
-    els.deviceTypeFilter.innerHTML = `
-        <div class="placeholder-wave device-type-grid d-grid gap-2">
-        ${repeatMarkup(
-            6,
-            `<div class="device-type-tile" aria-hidden="true">
-                <span class="device-type-tile-icon"><i class="fa-solid fa-square placeholder"></i></span>
-                <span class="device-type-tile-name placeholder col-7">&nbsp;</span>
-                <span class="count-number placeholder col-5">&nbsp;</span>
-            </div>`,
-        )}
-        </div>`;
-
-    for (const el of [els.deviceSupplierFilter, els.deviceLicenseFilter]) {
+    for (const el of [
+        els.deviceTypeFilter,
+        els.deviceSupplierFilter,
+        els.deviceLicenseFilter,
+    ]) {
         el.innerHTML = `
             <div class="placeholder-wave">
             ${repeatMarkup(
@@ -79,11 +72,12 @@ export function renderDeviceFilterControls() {
     }
 
     renderDeviceFilterCounters();
+    renderApplyDeviceFiltersButton();
 }
 
 /**
- * O mosaico de tipos, a aceitar vários. Vêm do catálogo e não das contagens, para que um
- * tipo sem dispositivos apareça apagado -- saber que a frota não tem pulseiras é informação.
+ * Os tipos, a aceitar vários. Vêm do catálogo e não das contagens, para que um tipo sem
+ * dispositivos apareça apagado -- saber que a frota não tem pulseiras é informação.
  */
 function renderDeviceTypeFilter() {
     const counts = new Map(
@@ -93,14 +87,33 @@ function renderDeviceTypeFilter() {
         ]),
     );
 
-    els.deviceTypeFilter.innerHTML = deviceTypeTiles(deviceTypeOptions, {
-        selected: state.deviceFilters.deviceType,
-        multiple: true,
-        counts,
-    });
+    els.deviceTypeFilter.innerHTML = deviceTypeOptions
+        .map(({ value, label }) => {
+            const count = Number(counts.get(value) || 0);
+            const selected = state.deviceFilters.deviceType.includes(value);
+
+            return filterOptionMarkup({
+                key: "deviceType",
+                value,
+                label,
+                count: count === 0 ? "nenhum" : count,
+                selected,
+                disabled: count === 0 && !selected,
+            });
+        })
+        .join("");
 }
 
-function filterOptionMarkup({ key, value, label, count, selected, partial = false, nested = false }) {
+function filterOptionMarkup({
+    key,
+    value,
+    label,
+    count,
+    selected,
+    partial = false,
+    nested = false,
+    disabled = false,
+}) {
     const classes = [
         "filter-option d-flex align-items-center text-start rounded-2",
         nested ? "filter-option-nested" : "",
@@ -112,7 +125,8 @@ function filterOptionMarkup({ key, value, label, count, selected, partial = fals
 
     return html`
         <button type="button" class="${classes}" data-action="toggleDeviceFilter"
-            data-filter-key="${key}" data-filter-value="${value}" aria-pressed="${selected ? "true" : "false"}">
+            data-filter-key="${key}" data-filter-value="${value}" aria-pressed="${selected ? "true" : "false"}"
+            ${disabled ? "disabled" : ""}>
         <span class="filter-option-box d-grid flex-shrink-0"><i class="fa-solid ${partial && !selected ? "fa-minus" : "fa-check"}"></i></span>
         <span class="flex-fill min-w-0 text-truncate">${label}</span>
         <span class="count-number flex-shrink-0">${count}</span>
@@ -277,6 +291,83 @@ function renderDeviceFilterCounters() {
         el.textContent = activeGroups ? String(activeGroups) : "";
     }
     els.clearDeviceFiltersBtn.classList.toggle("d-none", activeGroups === 0);
+}
+
+/**
+ * O rodapé do painel. No telemóvel o painel cobre a lista, e este número é o que substitui
+ * o vê-la: sem ele, filtra-se às cegas até fechar.
+ */
+function renderApplyDeviceFiltersButton() {
+    const total = state.summary.devicePagination?.total ?? 0;
+    els.applyDeviceFiltersBtn.textContent = total === 0
+        ? "Nenhum dispositivo"
+        : `Ver ${total} dispositivo${total === 1 ? "" : "s"}`;
+}
+
+/**
+ * O que cada filtro aplicado diz na sua pastilha. O grupo e o valor vão numa chave só, e o
+ * valor de uma licença já leva dois pontos -- quem a parte, parte no primeiro.
+ */
+export function deviceFilterChipLabels(filters) {
+    const labels = [];
+
+    if (filters.online === true || filters.online === false) {
+        labels.push({
+            key: `online:${filters.online ? "online" : "offline"}`,
+            label: filters.online ? "Ligados" : "Desligados",
+        });
+    }
+    for (const value of filters.deviceType || []) {
+        labels.push({ key: `deviceType:${value}`, label: deviceTypeLabel(value) });
+    }
+    for (const value of filters.supplier || []) {
+        labels.push({ key: `supplier:${value}`, label: value });
+    }
+    for (const value of filters.model || []) {
+        labels.push({ key: `model:${value}`, label: value });
+    }
+    for (const value of filters.license || []) {
+        labels.push({ key: `license:${value}`, label: licenseChipLabel(value) });
+    }
+
+    return labels;
+}
+
+function licenseChipLabel(value) {
+    if (value === "none") return "Sem licença";
+    const separator = value.lastIndexOf(":");
+
+    return separator < 0
+        ? companyLabel(value)
+        : licenseDisplayLabel(value.slice(separator + 1), state.licenses || []);
+}
+
+/** As pastilhas do que está aplicado, por cima da lista e fora do painel. */
+export function renderDeviceActiveFilters() {
+    const labels = deviceFilterChipLabels(state.deviceFilters);
+
+    els.deviceActiveFilters.innerHTML = filterChips(labels, "removeDeviceFilter");
+    els.deviceActiveFilters.classList.toggle("d-none", labels.length === 0);
+}
+
+export async function handleDeviceFilterChipRemove(event) {
+    const button = event.target.closest("[data-action=\"removeDeviceFilter\"]");
+    if (!button) return;
+    const separator = String(button.dataset.filterKey || "").indexOf(":");
+    if (separator < 0) return;
+    const key = button.dataset.filterKey.slice(0, separator);
+    const value = button.dataset.filterKey.slice(separator + 1);
+
+    if (key === "online") {
+        changeDeviceFilter("online", null);
+        saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
+        await onChange();
+        return;
+    }
+    if (!(key in state.deviceFilters)) return;
+    // O valor está aplicado, e por isso o `toggle` só o pode tirar -- as trocas da árvore
+    // ficam todas do lado de lá da condição.
+    await toggleDeviceFilter(key, value);
 }
 
 /**

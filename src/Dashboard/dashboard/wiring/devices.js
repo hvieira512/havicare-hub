@@ -13,6 +13,7 @@ import { emptyPanel } from "../components/empty-panel.js";
 import { html } from "../html.js";
 import {
     clearDeviceFilters,
+    handleDeviceFilterChipRemove,
     handleDeviceFilterClick,
     handleDeviceOnlineFilterChange,
 } from "../devices/list-filters.js";
@@ -230,6 +231,7 @@ function bindListAndFilters() {
         input.addEventListener("change", handleDeviceOnlineFilterChange);
     }
     els.clearDeviceFiltersBtn.addEventListener("click", clearDeviceFilters);
+    els.deviceActiveFilters.addEventListener("click", handleDeviceFilterChipRemove);
     els.deviceList.addEventListener("click", handleDeviceListClick);
     els.deviceListPagination.addEventListener(
         "click",
