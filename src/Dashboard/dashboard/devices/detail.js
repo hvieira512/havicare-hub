@@ -435,9 +435,11 @@ function renderRequestCardGroup(
         .join("");
     // Fora da grelha: uma capacidade que nunca mediu não tem valor para mostrar, e um mosaico
     // do tamanho dos outros dava-lhe o peso de quem tem.
+    // A etiqueta só existe para separar estas das que têm leitura. Sem cartões nenhuns não
+    // separa nada, e a faixa do grupo já conta quantas são.
     const withoutReading = pills
         ? html`<div class="${cards ? "mt-3" : ""}">
-        <div class="section-label mb-2">Sem leitura até agora</div>
+        ${raw(cards ? html`<div class="section-label mb-2">Sem leitura até agora</div>` : "")}
         <div class="d-flex flex-wrap gap-2">${raw(pills)}</div>
         </div>`
         : "";
