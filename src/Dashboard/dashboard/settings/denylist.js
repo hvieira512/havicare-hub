@@ -3,6 +3,7 @@ import { state } from "../state.js";
 import { html, raw } from "../html.js";
 import { ago } from "../format.js";
 import { apiError, toast } from "../dialogs.js";
+import { emptyPanel } from "../components/empty-panel.js";
 import { setSettingsNavCount } from "./shell.js";
 
 /**
@@ -51,16 +52,23 @@ function denylistRow(entry) {
 
 function renderDenylistSection() {
     const total = current.length;
-    if (els.denylistTabSummary) {
-        els.denylistTabSummary.textContent =
-            `${total} ${total === 1 ? "aparelho bloqueado" : "aparelhos bloqueados"}`;
-    }
     setSettingsNavCount("Denylist", total);
 
-    // O vazio diz de onde vêm os bloqueios em vez de repetir que não há nenhum: é o único
-    // separador onde não se acrescenta nada a partir daqui.
+    // Sem bloqueados, o vazio é um estado só: o título di-lo e a frase por baixo explica de
+    // onde vêm os bloqueios, que é o único separador onde não se acrescenta nada daqui.
+    if (els.denylistTabTitle) {
+        els.denylistTabTitle.textContent = total === 0
+            ? "Nenhum aparelho bloqueado"
+            : "Aparelhos bloqueados";
+    }
+    if (els.denylistTabSummary) {
+        els.denylistTabSummary.textContent = total === 0
+            ? ""
+            : `${total} ${total === 1 ? "aparelho bloqueado" : "aparelhos bloqueados"}`;
+    }
+
     els.denylistListBody.innerHTML = total === 0
-        ? "<div class=\"text-center text-secondary small p-4\">Um aparelho bloqueia-se a partir da notificação de «Dispositivo não autorizado». Os bloqueados aparecem aqui.</div>"
+        ? emptyPanel("Um aparelho bloqueia-se a partir da notificação de «Dispositivo não autorizado».")
         : current.map(denylistRow).join("");
 }
 
