@@ -321,8 +321,8 @@
     color: var(--tone-fg, var(--bs-body-color));
 }
 
-/* O avião de papel: presente em repouso, mas quase apagado -- oito mosaicos com um ícone
-   nítido no canto leem-se como oito avisos. Sob o rato ganha o tom da categoria. */
+/* O sinal de que o mosaico abre outra coisa: presente em repouso, mas quase apagado -- um
+   ícone nítido no canto lê-se como um aviso. Sob o rato ganha o tom da categoria. */
 .telemetry-card-hint {
     font-size: var(--fs-label);
     line-height: 1.6;
@@ -668,9 +668,10 @@
 }
 
 /* Mede-se pelo contentor e não pelo ecrã: com `auto-fit`, a segunda coluna só aparece
-   quando há 14rem para ela, que é o que a palavra mais comprida do catálogo pede. */
+   quando há 9rem para ela. A coluna do aparelho num portátil não chega às 14rem × 2, e a
+   telemetria ficava numa coluna só, mais estreita do que as três do tablet. */
 .telemetry-card-grid {
-    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
 }
 
 /* O `span: 12` da casca: o mosaico que pede a linha toda. */
@@ -678,18 +679,25 @@
     grid-column: 1 / -1;
 }
 
+/* O enchimento do mosaico, mais apertado do que o do cartão genérico: numa célula de 9rem
+   cada pixel de moldura sai do nome da categoria. Não há passo do Bootstrap a .75rem. */
+.telemetry-card {
+    --bs-card-spacer-y: .75rem;
+    --bs-card-spacer-x: .8125rem;
+}
+
 /* A leitura mais recente, sob o nome da categoria, na cor da categoria. */
 .telemetry-card-value {
     font-size: var(--fs-lg);
-    margin-top: .0625rem;
     color: var(--tone-fg, inherit);
 }
 
 /* O ícone de um cartão de telemetria, cinzento por omissão: a categoria lê-se no ícone e não
    na cor, e a cor fica disponível para o estado. */
 .telemetry-card-icon {
-    width: 36px;
-    height: 36px;
+    width: 24px;
+    height: 24px;
+    font-size: var(--fs-sm);
     background: var(--tone-bg, var(--bs-tertiary-bg));
     color: var(--tone-fg, var(--bs-secondary-color));
 }

@@ -29,9 +29,11 @@ export function telemetryCard({
     const tag = clickable ? "button" : "div";
     const toneClass = tone ? ` telemetry-card-tone-${tone}` : "";
     const featureAttr = feature ? html` data-feature="${feature}"` : "";
+    // O `p-0` tira ao botão o enchimento que o browser lhe dá: numa coluna de 9rem são doze
+    // pixéis que saíam do nome da categoria.
     const attrs = clickable
-        ? html` type="button" class="card h-100 w-100 telemetry-card-action text-start${toneClass}" data-action="${action || "requestFeature"}"${raw(featureAttr)}${pending ? " disabled" : ""}`
-        : html` class="card h-100${toneClass}"`;
+        ? html` type="button" class="card telemetry-card h-100 w-100 p-0 telemetry-card-action text-start${toneClass}" data-action="${action || "requestFeature"}"${raw(featureAttr)}${pending ? " disabled" : ""}`
+        : html` class="card telemetry-card h-100${toneClass}"`;
     // A pastilha leva a sua linha: num mosaico estreito não cabe ao lado do ícone e do nome.
     const state = stateLabel
         ? stateBadge(
@@ -40,44 +42,42 @@ export function telemetryCard({
                 "align-self-start",
             )
         : "";
-    // Em repouso o avião de papel diz que o mosaico se pode pedir; a correr, a pastilha
-    // diz em que estado está. Um mosaico que não se pode pedir não tem nada ali.
+    // Só o mosaico que abre outra coisa -- a planta da divisão -- leva sinal no canto. O de
+    // pedir não: era o mesmo ícone em todos, e numa célula de 9rem custava o nome da categoria.
     const requestHint =
-        clickable && !stateLabel
-            ? `<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid ${action ? "fa-up-right-and-down-left-from-center" : "fa-paper-plane"}"></i></span>`
+        action && !stateLabel
+            ? `<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>`
             : "";
 
     // Fora da linha do ícone, para ter a largura toda do cartão.
     const detailsTitleAttr = detailsTitle ? html` title="${detailsTitle}"` : "";
     const detailsHtml = details
-        ? html`<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details text-secondary lh-sm"${raw(detailsTitleAttr)}>${raw(details)}</div>`
+        ? html`<div class="d-flex flex-wrap gap-1 telemetry-row-details text-secondary lh-sm"${raw(detailsTitleAttr)}>${raw(details)}</div>`
         : "";
     const valueHtml = value
         ? html`<div class="telemetry-card-value fw-semibold lh-sm tabular-nums text-break">${value}</div>`
         : "";
 
     // A célula mede-se pelo contentor e não pela largura do ecrã: a grelha só abre uma
-    // segunda coluna quando há 14rem para ela. Ver `.telemetry-card-grid` no `device.css`.
+    // segunda coluna quando há 9rem para ela. Ver `.telemetry-card-grid` no `device.css`.
     const cell = span === 12 ? "telemetry-card-wide min-w-0" : "min-w-0";
 
-    // O corpo é uma coluna só para separar a linha do ícone do corpo que alguns mosaicos
-    // trazem -- a barra de humidade da fralda, por exemplo.
+    // O valor tem linha própria: ao lado do ícone sobrava-lhe um terço da largura, e «2 pessoas»
+    // partia-se a meio da palavra.
     return html`
     <div class="${cell}">
         <${tag}${raw(attrs)}>
-            <div class="card-body p-3 d-flex flex-column gap-3">
-                <div class="d-flex align-items-center gap-2 gap-sm-3">
-                    <div class="telemetry-card-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">
+            <div class="card-body d-flex flex-column gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="telemetry-card-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-2">
                         <i class="fa-solid ${icon}"></i>
                     </div>
-                    <div class="flex-grow-1 min-w-0">
-                        <div class="telemetry-card-title text-uppercase fw-normal text-secondary lh-sm">${title}</div>
-                            ${raw(valueHtml)}
-                        </div>
-                        ${raw(requestHint)}
-                    </div>
-                    ${raw(state)}
-                    ${raw(detailsHtml)}
+                    <div class="telemetry-card-title text-uppercase fw-normal text-secondary lh-sm flex-grow-1 min-w-0">${title}</div>
+                    ${raw(requestHint)}
+                </div>
+                ${raw(valueHtml)}
+                ${raw(state)}
+                ${raw(detailsHtml)}
                 ${raw(body)}
             </div>
         </${tag}>
