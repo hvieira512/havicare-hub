@@ -47,11 +47,11 @@ test("o cabeçalho conta as linhas daquele dia", () => {
         row("2026-09-28T16:56:00Z", "Bateria"),
     ]);
 
-    const [primeiro, segundo] = [...root.querySelectorAll("[data-day-header]")]
+    const [first, second] = [...root.querySelectorAll("[data-day-header]")]
         .map((el) => el.textContent.replace(/\s+/g, " ").trim());
 
-    assert.match(primeiro, /2$/, `o primeiro dia tem duas linhas: ${primeiro}`);
-    assert.match(segundo, /1$/, `o segundo dia tem uma linha: ${segundo}`);
+    assert.match(first, /2$/, `o primeiro dia tem duas linhas: ${first}`);
+    assert.match(second, /1$/, `o segundo dia tem uma linha: ${second}`);
 });
 
 test("o dia de hoje diz «Hoje» e o de ontem diz «Ontem»", () => {
@@ -62,11 +62,11 @@ test("o dia de hoje diz «Hoje» e o de ontem diz «Ontem»", () => {
         row(ontem.toISOString(), "Atividade"),
     ]);
 
-    const textos = [...root.querySelectorAll("[data-day-header]")]
+    const headers = [...root.querySelectorAll("[data-day-header]")]
         .map((el) => el.textContent.replace(/\s+/g, " ").trim());
 
-    assert.match(textos[0], /^Hoje/i, textos[0]);
-    assert.match(textos[1], /^Ontem/i, textos[1]);
+    assert.match(headers[0], /^Hoje/i, headers[0]);
+    assert.match(headers[1], /^Ontem/i, headers[1]);
 });
 
 test("uma linha sem data não inventa cabeçalho nenhum", () => {
