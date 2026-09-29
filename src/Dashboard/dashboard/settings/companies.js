@@ -86,18 +86,41 @@ async function reloadLicenses() {
 
 /* ---------- as linhas ---------- */
 
+/**
+ * Os verbos de uma linha num menu só, com os nomes escritos. Em ícones soltos eram três por
+ * linha, e o primeiro deles -- a cloud dos radares -- não se adivinha de um satélite.
+ *
+ * O `"divider"` no lugar de uma entrada dá a linha que separa o apagar do resto.
+ */
+function rowActionsMenu(label, items) {
+    const entries = items.map((item) => (item === "divider"
+        ? html`<li><hr class="dropdown-divider"></li>`
+        : html`<li><button type="button" class="dropdown-item${raw(item.danger ? " text-danger" : "")}" data-action="${item.action}" ${raw(item.attrs)}>${item.label}</button></li>`));
+
+    return html`
+        <div class="dropdown flex-shrink-0">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="dropdown" aria-expanded="false" aria-label="${label}"><i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>
+            <ul class="dropdown-menu dropdown-menu-end shadow">${raw(entries.join(""))}</ul>
+        </div>`;
+}
+
 function licenseViewRow(license) {
+    const name = license.name || "sem nome";
+    const id = html`data-id="${license.id}"`;
+    const menu = rowActionsMenu(`Acções da licença ${name}`, [
+        { action: "editRadarCredentials", attrs: id, label: "Cloud dos radares" },
+        { action: "editLicense", attrs: id, label: "Editar licença" },
+        "divider",
+        { action: "deleteLicense", attrs: id, label: "Eliminar licença", danger: true },
+    ]);
+
     return html`
         <div class="tree-row position-relative d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2 min-w-0">
                 <span class="section-label tabular-nums" style="letter-spacing:0">ID ${license.license_id}</span>
-                <span class="text-truncate">${license.name || "sem nome"}</span>
+                <span class="text-truncate">${name}</span>
             </div>
-            <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                <button class="btn btn-outline-secondary btn-sm" data-action="editRadarCredentials" data-id="${license.id}" title="Cloud dos radares" aria-label="Credenciais da cloud dos radares"><i class="fa-solid fa-satellite-dish" aria-hidden="true"></i></button>
-                <button class="btn btn-outline-secondary btn-sm" data-action="editLicense" data-id="${license.id}" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
-                <button class="btn btn-outline-danger btn-quiet-danger btn-sm" data-id="${license.id}" data-action="deleteLicense" title="Apagar" aria-label="Apagar"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
-            </div>
+            ${raw(menu)}
         </div>`;
 }
 
@@ -126,14 +149,21 @@ function licenseEditorRow(license, companyId) {
 }
 
 function companyHeaderView(company, owned) {
+    const id = html`data-id="${company.id}"`;
+    const companyId = html`data-company-id="${company.id}"`;
+    const menu = rowActionsMenu(`Acções da empresa ${company.name}`, [
+        { action: "newLicenseForCompany", attrs: companyId, label: "Nova licença" },
+        { action: "editCompany", attrs: id, label: "Editar empresa" },
+        "divider",
+        { action: "deleteCompany", attrs: id, label: "Eliminar empresa", danger: true },
+    ]);
+
     return html`
         <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
             <div class="fw-semibold">${company.name}</div>
             <div class="d-flex align-items-center gap-2">
                 ${raw(stateBadge(`${owned.length} ${owned.length === 1 ? "licença" : "licenças"}`, "secondary"))}
-                <button class="btn btn-outline-secondary btn-sm" data-action="newLicenseForCompany" data-company-id="${company.id}" title="Nova licença" aria-label="Nova licença nesta empresa"><i class="fa-solid fa-plus"></i></button>
-                <button class="btn btn-outline-secondary btn-sm" data-action="editCompany" data-id="${company.id}" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
-                <button class="btn btn-outline-danger btn-quiet-danger btn-sm" data-id="${company.id}" data-action="deleteCompany" title="Apagar" aria-label="Apagar"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                ${raw(menu)}
             </div>
         </div>`;
 }
