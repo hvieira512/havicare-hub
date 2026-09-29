@@ -142,7 +142,6 @@ dashboard/
 │   ├── state-badge.js      a pastilha de estado: ponto ou ícone, rótulo e tom
 │   ├── device-license.js   a empresa e a licença de um dispositivo, ou «Sem licença»
 │   ├── form-field.js       etiqueta, controlo e linha de ajuda
-│   ├── setting-row.js      uma definição numa linha: nome, pastilha, controlo e acções
 │   ├── button-group.js     uma escolha única em botões
 │   ├── device-type-tiles.js  o mosaico de tipos de dispositivo, e o ícone de cada um
 │   ├── chips.js            as pastilhas de secção e as de filtro aplicado
@@ -159,6 +158,7 @@ dashboard/
 ├── storage.js              as chaves e os acessos ao localStorage
 ├── load-script.js          carrega uma biblioteca de terceiros à primeira vez que faz falta
 ├── tooltips.js             re-atar os tooltips do Bootstrap depois de um render
+├── sticky-top.js           mede o que está colado ao topo e publica-o em --sticky-top
 ├── notifications.js        o sino da barra (funcionalidade de um ficheiro)
 ├── observability.js        o handler global de erros: o que falha sem catch deixa rasto
 │
@@ -374,8 +374,10 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
   algumas estão anotadas como tal.
 
   O `render` e o `control` decidem a forma do bloco e não são cosmética: com
-  `render` sai o cartão inteiro, com `control` sai a linha magra do
-  `settingRow`. O que o `defaults` devolve tem de ser o que o `read` devolve, e
+  `render` o descritor desenha o corpo inteiro do cartão, com `control` devolve
+  só o controlo e o painel monta o cartão à volta dele — nome, subtítulo,
+  pastilha de estado e a unidade colada ao campo. O que o `defaults` devolve
+  tem de ser o que o `read` devolve, e
   não o que o controlo se chama — o `config-payload-roundtrip.test.js` prende-o.
 - **As famílias de cartões que só existem num aparelho vivem em `cards/`** —
   radar, fralda, gateway, NCS e localização. A linha não é o tamanho: uma
