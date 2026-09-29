@@ -302,6 +302,21 @@
     width: min(24rem, calc(100vw - 2rem));
 }
 
+/* Num ecrã estreito o menu é quase tão largo como ele, e alinhado pela direita do sino --
+   que não está na ponta da barra -- saía 153px para fora pela esquerda. Dentro de uma navbar
+   o Bootstrap não chama o Popper, por isso quem o trava tem de ser o CSS. */
+@media (max-width: 575.98px) {
+    /* Dois nomes de classe para empatar com o `[data-bs-popper]` do Bootstrap, que é quem
+       põe o `top: 100%` e o `right: 0` desta posição estática. */
+    .dropdown-menu.dashboard-notifications-menu {
+        position: fixed;
+        top: var(--navbar-height, 3.5rem);
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+    }
+}
+
 .dashboard-notifications-list {
     max-height: min(28rem, calc(100vh - 8rem));
 }

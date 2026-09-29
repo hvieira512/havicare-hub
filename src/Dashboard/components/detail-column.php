@@ -59,7 +59,7 @@
                                         </div>
                                         <div class="pt-3">
                                             <label for="detailFilterType" class="section-label">Tipo</label>
-                                            <select id="detailFilterType" class="form-select form-select-sm w-auto">
+                                            <select id="detailFilterType" class="form-select form-select-sm w-auto mw-100">
                                                 <option value="all">Todos</option>
                                             </select>
                                         </div>
