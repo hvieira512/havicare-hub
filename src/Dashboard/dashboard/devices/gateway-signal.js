@@ -98,7 +98,7 @@ export function gatewaySignalRows(linkedDevices) {
             if (!key) return "";
             const model = String(linked.model || "");
             return `<li class="d-flex justify-content-between align-items-center gap-2">
-                <span class="text-break font-monospace">${esc(key)}${model ? ` <span class="text-secondary">${esc(model)}</span>` : ""}</span>
+                <span class="min-w-0 text-truncate font-monospace" title="${esc(key)}">${esc(key)}${model ? ` <span class="text-secondary">${esc(model)}</span>` : ""}</span>
                 ${signalMeter(linkSignal(linked))}
             </li>`;
         })

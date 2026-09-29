@@ -22,7 +22,7 @@
                                     <div id="selectedDevicePreview" class="selected-device-preview d-flex align-items-center justify-content-center flex-shrink-0 text-center rounded-4"></div>
                                     <div class="min-w-0 flex-grow-1">
                                         <div class="mb-1" id="selectedDeviceBadge"></div>
-                                        <h1 class="h4 mb-1 text-break tabular-nums lh-sm" id="selectedDeviceTitle"></h1>
+                                        <h1 class="h4 mb-1 text-truncate tabular-nums lh-sm" id="selectedDeviceTitle"></h1>
                                         <div id="selectedDeviceMeta" class="text-secondary small"></div>
                                     </div>
                                 </div>

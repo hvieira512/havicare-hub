@@ -23,5 +23,6 @@ export function deviceLicenseBlock(device, { valueClass = "", noteClass = "" } =
         ? html`<span class="license-number">${licenseId}</span>`
         : html`${company}<span class="license-separator">·</span><span class="license-number">${licenseId}</span>`;
 
-    return html`<span class="${valueClass}">${heading}</span><span class="${noteClass}">${raw(owner)}</span>`;
+    // O nome corta com reticências numa coluna estreita: o `title` guarda-o inteiro.
+    return html`<span class="${valueClass}" title="${heading}">${heading}</span><span class="${noteClass}">${raw(owner)}</span>`;
 }

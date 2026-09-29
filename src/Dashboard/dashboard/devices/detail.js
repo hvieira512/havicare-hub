@@ -201,8 +201,8 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         {
             label: "Licença",
             html: deviceLicenseBlock(device, {
-                valueClass: "d-block",
-                noteClass: "d-block small text-body-secondary",
+                valueClass: "d-block text-truncate",
+                noteClass: "d-block small text-body-secondary text-truncate",
             }),
         },
         {
@@ -234,6 +234,8 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
             : "<i class=\"fa-solid fa-microchip fa-xl text-secondary\"></i>";
     }
     els.selectedDeviceTitle.textContent = device.imei;
+    // Corta-se com reticências numa coluna estreita, e por isso o valor inteiro fica no `title`.
+    els.selectedDeviceTitle.title = device.imei;
     // O estado é a primeira coisa que se pergunta sobre um dispositivo, e por isso vem
     // antes do identificador.
     els.selectedDeviceBadge.innerHTML = onlineBadge(device.online);
@@ -244,7 +246,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
             (item) => html`
         <div class="${item.wide ? "col-12" : "col-6"}">
             <dt class="mb-1">${item.label}</dt>
-            <dd class="text-break mb-0">${item.html ? raw(item.html) : item.value}</dd>
+            <dd class="text-truncate mb-0"${raw(item.html ? "" : html` title="${item.value}"`)}>${item.html ? raw(item.html) : item.value}</dd>
         </div>
     `,
         )

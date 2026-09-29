@@ -88,7 +88,7 @@ export function notificationRow(notification) {
         ? ""
         : html`<span class="d-block small text-secondary text-break">${details}</span>`;
     const deviceLine = kind.showsDevice
-        ? html`<span class="d-block font-monospace small text-break">${notification.imei}</span>`
+        ? html`<span class="d-block font-monospace small text-truncate" title="${notification.imei}">${notification.imei}</span>`
         : "";
     // Só um aparelho com identidade se regista ou se cala; um aviso do próprio hub dispensa-se.
     const deviceActions = kind.showsDevice

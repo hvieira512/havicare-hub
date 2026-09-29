@@ -41,7 +41,7 @@ function denylistRow(entry) {
     return html`
         <div class="tree-row position-relative d-flex align-items-center justify-content-between">
             <div class="min-w-0">
-                <span class="d-block font-monospace text-break">${entry.identity}</span>
+                <span class="d-block font-monospace text-truncate" title="${entry.identity}">${entry.identity}</span>
                 ${raw(metaLine)}
                 ${raw(whoLine)}
             </div>
