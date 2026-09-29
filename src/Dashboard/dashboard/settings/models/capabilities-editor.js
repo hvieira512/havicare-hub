@@ -68,6 +68,35 @@ const capabilitySummaryText = (sections, enabled) =>
     `/${sections.reduce((total, item) => total + item.entries.length, 0)} ativos`;
 
 /**
+ * O template traz mais do que se liga aqui: as acções -- desligar, encontrar -- só se pedem
+ * ao aparelho, e sem as nomear os dois números do cabeçalho contradiziam-se.
+ */
+function capabilitySubtitleText(supplier, templateCount, shownCount) {
+    if (templateCount === 0) return supplier;
+    const actions = templateCount - shownCount;
+    if (actions <= 0) {
+        return `${supplier} — ${templateCount} capacidades no template.`;
+    }
+    return `${supplier} — ${templateCount} capacidades no template: ${shownCount} ligam-se aqui e` +
+        ` ${actions} ${actions === 1 ? "é uma ação, que só se pede" : "são ações, que só se pedem"} ao aparelho.`;
+}
+
+/**
+ * O que o protocolo do fornecedor permite pedir, dito uma vez para a secção inteira em vez
+ * de repetido por baixo de cada capacidade.
+ */
+function telemetryProtocolNote(supplier, entries, protocolRequestable) {
+    const requestable = entries.filter((feature) => protocolRequestable.has(feature)).length;
+    if (requestable === 0) {
+        return `O ${supplier} envia estas leituras, mas não aceita que lhe sejam pedidas.`;
+    }
+    if (requestable === entries.length) {
+        return `O ${supplier} envia estas leituras, e todas podem também ser pedidas.`;
+    }
+    return `O ${supplier} envia estas leituras; ${requestable} ${requestable === 1 ? "delas também pode ser pedida" : "delas também podem ser pedidas"}.`;
+}
+
+/**
  * Acerta no sítio em vez de redesenhar a secção, que tirava o foco ao interruptor acabado de
  * premir. Sem template do fornecedor a linha desaparece ao desligar, e aí quem chama redesenha.
  */
@@ -205,13 +234,12 @@ function renderCapabilitiesSection() {
         : "Capacidades";
     const templateKeys = state.settingsModal.capabilityModelTemplateKeys || [];
 
-    els.capabilitySubtitle.textContent =
-        String(model?.supplier || "") +
-        (templateKeys.length > 0
-            ? ` — ${templateKeys.length} capacidades do template`
-            : "");
-
     const sections = capabilitySections(enabled);
+    els.capabilitySubtitle.textContent = capabilitySubtitleText(
+        String(model?.supplier || ""),
+        templateKeys.length,
+        sections.reduce((total, item) => total + item.entries.length, 0),
+    );
 
     els.capabilitySummary.textContent = capabilitySummaryText(sections, enabled);
 
@@ -248,37 +276,34 @@ function renderCapabilitiesSection() {
                 const canBeRequested =
                     section.section === "telemetry" &&
                     protocolRequestable.has(feature);
-                const protocolDescription =
-                    section.section === "telemetry"
-                        ? html`${String(model?.supplier || "Protocolo")}: ${canBeRequested ? "receção e pedido" : "apenas receção"}`
-                        : "";
-                const noRequestNote = canBeRequested
-                    ? ""
-                    : html`<div class="section-label">${String(model?.supplier || "O protocolo")} não suporta pedido</div>`;
                 // São sempre dois interruptores, na mesma posição. Quando o fornecedor não
-                // suporta pedido, o segundo fica desligado com a razão na etiqueta, em vez
-                // de trocar de tipo de controlo.
+                // suporta pedido, o segundo fica desligado; porquê está no cabeçalho.
                 const requestableSwitch = section.section !== "telemetry"
                     ? ""
                     : html`<div class="form-check form-switch mb-0 flex-shrink-0 text-nowrap">
                                 <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequestability" data-feature="${feature}" id="requestable-${feature}" ${canBeRequested && requestable.has(feature) ? "checked" : ""} ${canBeRequested && enabled.has(feature) ? "" : "disabled"}>
                                 <label class="form-check-label small" for="requestable-${feature}">Solicitável</label>
-                                ${raw(noRequestNote)}
                                </div>`;
-                const description = protocolDescription || (!isInModelPayload
-                    ? "Disponível no catálogo do tipo de dispositivo."
-                    : "Suportada pelo modelo");
+                // Só a linha que diz algo que a posição não diz: esta capacidade ainda não
+                // está no modelo, e vem do catálogo do tipo.
+                const description = isInModelPayload
+                    ? ""
+                    : html`<div class="section-label">Disponível no catálogo do tipo de dispositivo.</div>`;
                 return html`
-                        <div class="d-flex justify-content-between align-items-start gap-3 border rounded-3 px-3 py-2">
+                        <div class="capability-model-row d-flex justify-content-between align-items-start gap-3 border rounded-3 px-3 py-2">
                             <div class="form-check form-switch mb-0">
                                 <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilitySupport" data-feature="${feature}" id="cap-${feature}" ${enabled.has(feature) ? "checked" : ""}>
                                 <label class="form-check-label" for="cap-${feature}">${labelText}</label>
-                                <div class="section-label">${raw(description)}</div>
+                                ${raw(description)}
                             </div>
                             ${raw(requestableSwitch)}
                         </div>`;
             })
             .join("");
+
+        const note = section.section === "telemetry"
+            ? html`<div class="small text-secondary mb-3" data-section-note>${telemetryProtocolNote(String(model?.supplier || "protocolo"), section.entries, protocolRequestable)}</div>`
+            : "";
 
         els.capabilityGroups.innerHTML = html`
         <section class="border rounded-3 p-3">
@@ -286,6 +311,7 @@ function renderCapabilitiesSection() {
                 <div class="section-label">${section.label}</div>
                 <span class="small text-secondary" data-section-count>${section.entries.filter((f) => enabled.has(f)).length}/${section.entries.length} ativos</span>
             </div>
+            ${raw(note)}
             <div class="d-flex flex-column gap-2">
                 ${raw(rows)}
             </div>
