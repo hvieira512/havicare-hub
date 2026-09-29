@@ -63,8 +63,8 @@ export function telemetryCard({
         ? html`<div class="telemetry-row-details text-secondary lh-sm">${age}</div>`
         : "";
 
-    // A célula mede-se pelo contentor e não pela largura do ecrã: a grelha só abre uma
-    // segunda coluna quando há 9rem para ela. Ver `.telemetry-card-grid` no `device.css`.
+    // Quantas células cabem por linha é do `.telemetry-card-grid`, no `device.css`. Aqui só
+    // se diz quais pedem a linha toda.
     const cell = span === 12 ? "telemetry-card-wide min-w-0" : "min-w-0";
 
     // O valor tem linha própria: ao lado do ícone sobrava-lhe um terço da largura, e «2 pessoas»

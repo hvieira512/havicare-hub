@@ -667,11 +667,24 @@
     }
 }
 
-/* Mede-se pelo contentor e não pelo ecrã: com `auto-fit`, a segunda coluna só aparece
-   quando há 9rem para ela. A coluna do aparelho num portátil não chega às 14rem × 2, e a
-   telemetria ficava numa coluna só, mais estreita do que as três do tablet. */
+/* A contagem é fixa enquanto a coluna do aparelho ocupa o ecrã todo: duas no telemóvel e
+   três daí para cima. Medir pelo contentor aqui dava quatro a 768px, e o desenho pede três. */
 .telemetry-card-grid {
-    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 576px) {
+    .telemetry-card-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* Daqui para cima a coluna é uma faixa ao lado do detalhe, e o que lá cabe varia com o ecrã:
+   273px dão uma coluna e 400px dão duas. É o contentor que manda, e não o ecrã. */
+@media (min-width: 992px) {
+    .telemetry-card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    }
 }
 
 /* O `span: 12` da casca: o mosaico que pede a linha toda. */
