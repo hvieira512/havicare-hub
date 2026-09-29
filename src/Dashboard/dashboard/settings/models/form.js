@@ -14,6 +14,7 @@ import { modelImageHtml } from "../../components/model-image.js";
 import {
     deviceTypeCardsHtml,
     supplierPillsHtml,
+    wizardProgressHtml,
     wizardTrailHtml,
 } from "../../devices/classification-ui.js";
 import { createWizard } from "../../devices/wizard.js";
@@ -34,13 +35,8 @@ import {
  * template outra vez. Alterar um modelo que já existe faz-se na ficha dele.
  */
 
+/** Um passo por pergunta: é o que o contador, a barra e a migalha contam todos igual. */
 const STEPS = ["Tipo", "Fornecedor", "Informações"];
-
-const TRAIL_QUESTIONS = [
-    { key: "deviceType", label: "Tipo" },
-    { key: "supplier", label: "Fornecedor" },
-    { key: "info", label: "Informações" },
-];
 
 const QUESTIONS = [
     {
@@ -72,6 +68,13 @@ const QUESTIONS = [
     },
 ];
 
+const TRAIL_QUESTIONS = QUESTIONS.map((question) => ({
+    key: question.key,
+    label: STEPS[question.step - 1],
+}));
+
+const questionOfStep = (step) => QUESTIONS.find((question) => question.step === step);
+
 const wizard = createWizard({ questions: QUESTIONS, steps: STEPS });
 
 // A imagem escolhida. Fora das respostas porque o `<input type="file">` é redesenhado a
@@ -94,15 +97,12 @@ function render() {
     const { els } = getSettingsModelsRuntime();
     const step = wizard.step();
 
-    els.modelWizardTrail.setAttribute("aria-valuenow", String(step));
+    els.modelWizardStepCount.textContent = `${step} de ${STEPS.length}`;
+    els.modelWizardProgress.innerHTML = wizardProgressHtml(step, STEPS.length);
     els.modelWizardTrail.innerHTML = wizardTrailHtml({
         questions: TRAIL_QUESTIONS,
         badges: wizard.badges(),
-        // No último passo as informações são sempre a pergunta à vista: sem isto a etiqueta
-        // esbatia-se assim que os dois nomes ficavam escritos.
-        currentKey: wizard.isLastStep() ? "info" : wizard.current()?.key || "",
-        step,
-        steps: STEPS,
+        currentKey: questionOfStep(step).key,
     });
 
     els.modelWizardAsk.innerHTML = renderStep(step, wizard.answers());
@@ -189,7 +189,7 @@ function renderFooter() {
     const last = wizard.isLastStep();
     els.modelWizardSaveBtn.innerHTML = last
         ? "<i class=\"fa-solid fa-floppy-disk me-2\"></i>Guardar modelo"
-        : "Seguinte<i class=\"fa-solid fa-arrow-right ms-2\"></i>";
+        : `Seguinte: ${esc(STEPS[step])}<i class="fa-solid fa-arrow-right ms-2"></i>`;
     els.modelWizardSaveBtn.disabled = last
         ? !wizard.isComplete()
         : !wizard.canAdvance();

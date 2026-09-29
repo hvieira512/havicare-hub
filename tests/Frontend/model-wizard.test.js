@@ -74,7 +74,11 @@ const typeIn = (root, fieldName, value) => {
 /** O template do fornecedor é um pedido: deixa-o resolver antes de se ler o resumo. */
 const settled = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-const trailText = () => els.modelWizardTrail.textContent.replace(/\s+/g, " ").trim();
+/** Em que passo está: o contador e a barra contam o mesmo. */
+const stepNow = () => ({
+    count: els.modelWizardStepCount.textContent,
+    now: els.modelWizardTrail.querySelector(".wizard-badge-now")?.textContent.trim(),
+});
 
 beforeEach(() => {
     sent = [];
@@ -104,9 +108,9 @@ beforeEach(() => {
 test("abre no primeiro passo, a perguntar o tipo", async () => {
     await openWizard();
 
-    assert.match(trailText(), /Passo 1 de 3 · Tipo$/);
+    assert.deepEqual(stepNow(), { count: "1 de 3", now: "Tipo" });
     assert.ok(els.modelWizardAsk.querySelector("[data-model-type=\"watch\"]"));
-    assert.equal(els.modelWizardSaveBtn.textContent.trim(), "Seguinte");
+    assert.equal(els.modelWizardSaveBtn.textContent.trim(), "Seguinte: Fornecedor");
     assert.equal(els.modelWizardBackBtn.classList.contains("d-none"), true);
 });
 
@@ -114,7 +118,7 @@ test("escolher o tipo avança para o fornecedor, e só mostra os desse tipo", as
     await openWizard();
     clickIn(els.modelWizardAsk, "[data-model-type=\"watch\"]");
 
-    assert.match(trailText(), /Passo 2 de 3 · Fornecedor$/);
+    assert.deepEqual(stepNow(), { count: "2 de 3", now: "Fornecedor" });
     assert.deepEqual(
         [...els.modelWizardAsk.querySelectorAll("[data-model-supplier]")].map(
             (pill) => pill.dataset.modelSupplier,
@@ -128,7 +132,7 @@ test("escolher o fornecedor avança para as informações, com o rodapé do últ
     clickIn(els.modelWizardAsk, "[data-model-type=\"watch\"]");
     clickIn(els.modelWizardAsk, "[data-model-supplier=\"4P Touch\"]");
 
-    assert.match(trailText(), /Passo 3 de 3 · Informações$/);
+    assert.deepEqual(stepNow(), { count: "3 de 3", now: "Informações" });
     assert.equal(els.modelWizardBackBtn.textContent.trim(), "Fornecedor");
     assert.equal(els.modelWizardSaveBtn.textContent.trim(), "Guardar modelo");
     // Sem os dois nomes não há modelo para gravar.
@@ -176,7 +180,7 @@ test("voltar ao tipo e trocá-lo esquece o fornecedor que já não serve", async
     modelWizardBack();
     clickIn(els.modelWizardAsk, "[data-model-type=\"radar\"]");
 
-    assert.match(trailText(), /Passo 2 de 3 · Fornecedor$/);
+    assert.deepEqual(stepNow(), { count: "2 de 3", now: "Fornecedor" });
     assert.deepEqual(
         [...els.modelWizardAsk.querySelectorAll("[data-model-supplier]")].map(
             (pill) => pill.dataset.modelSupplier,

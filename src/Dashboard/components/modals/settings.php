@@ -43,7 +43,13 @@ ob_start();
                             </div>
                             <div class="carousel-item">
                                 <div class="d-flex flex-column gap-4">
-                                    <div class="wizard-trail d-flex align-items-center justify-content-center flex-wrap gap-2 border-bottom" id="modelWizardTrail" role="progressbar" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1"></div>
+                                    <div class="d-flex flex-column gap-2">
+                                        <div id="modelWizardProgress"></div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="wizard-trail d-flex align-items-center flex-wrap gap-2 flex-grow-1 min-w-0" id="modelWizardTrail"></div>
+                                            <span class="text-secondary text-nowrap flex-shrink-0" id="modelWizardStepCount"></span>
+                                        </div>
+                                    </div>
                                     <div class="wizard-ask" id="modelWizardAsk"></div>
                                     <div class="small text-secondary d-none" id="modelWizardTemplateSummary"></div>
                                     <div class="d-flex align-items-center gap-2 border-top pt-3">

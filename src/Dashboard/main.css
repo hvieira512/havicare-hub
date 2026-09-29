@@ -679,18 +679,3 @@
     height: auto;
     max-height: clamp(26rem, 68vh, 46rem);
 }
-
-/* A numeração de cada capacidade saiu: a contagem da secção já diz quantas são. */
-.capability-row {
-    grid-template-columns: 1.4rem minmax(0, 1fr) auto;
-}
-
-@media (max-width: 575.98px) {
-    .capability-row {
-        grid-template-columns: 1.4rem minmax(0, 1fr);
-    }
-
-    .capability-facts {
-        grid-column: 2;
-    }
-}
