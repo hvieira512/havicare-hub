@@ -908,3 +908,27 @@
 [data-config-edited] .input-group-text {
     border-color: var(--bs-warning-border-subtle);
 }
+
+/* A linha fechada de um alarme. O triângulo do browser sai: o que abre e fecha é a linha
+   inteira, e a seta à direita é que o diz. */
+.alarm-line {
+    list-style: none;
+    cursor: pointer;
+}
+
+.alarm-line::-webkit-details-marker {
+    display: none;
+}
+
+/* Sem largura mínima zero o título não corta e empurra a hora para fora do cartão. */
+.alarm-line-main {
+    min-width: 0;
+}
+
+.alarm-line-chevron {
+    transition: transform .15s ease-in-out;
+}
+
+.alarm-line-body[open] > .alarm-line .alarm-line-chevron {
+    transform: rotate(180deg);
+}

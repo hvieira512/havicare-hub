@@ -1,4 +1,5 @@
 import { resetPhoneControls } from "../../phone.js";
+import { refreshAlarmLine } from "./alarm-fields.js";
 import {
     syncTakePillsRows,
     takePillsReminderGroup,
@@ -67,12 +68,14 @@ export function appendRepeatRow(section, kind) {
     // Os dois caminhos passam pelo `restampRowIds` com a linha ainda fora do documento: o
     // `resetRowFields` marca rádios, e com os grupos por renomear isso desmarcava os da linha
     // que os partilhasse.
+    let added = null;
     if (spec.render) {
         const holder = document.createElement("template");
         holder.innerHTML = spec.render(rows.length);
         for (const fresh of [...holder.content.children]) {
             restampRowIds(fresh);
             list.appendChild(fresh);
+            added = fresh;
         }
     } else {
         const template = rows[rows.length - 1] || spec.template?.(section);
@@ -81,10 +84,13 @@ export function appendRepeatRow(section, kind) {
         restampRowIds(clone);
         resetRowFields(clone);
         list.appendChild(clone);
+        added = clone;
     }
 
     spec.after?.(section);
     syncAddButton(section, kind);
+    refreshAlarmLine(added);
+    openOnly(list, added);
 }
 
 /**
@@ -104,9 +110,24 @@ function restampRowIds(row) {
     for (const element of row.querySelectorAll("[id]")) {
         element.id = rename(element.id);
     }
-    for (const element of row.querySelectorAll("[name]")) {
+    // O `name` de um `<details>` é o grupo que o fecha quando outro abre: renomeá-lo tirava a
+    // linha nova do grupo das irmãs.
+    for (const element of row.querySelectorAll("input[name], select[name], textarea[name]")) {
         element.name = rename(element.name);
     }
+}
+
+/** Só uma entrada aberta de cada vez, e a aberta é aquela em que se acabou de mexer. */
+function openOnly(list, row) {
+    const group = list.querySelector("details[name]")?.name || "";
+    for (const details of list.querySelectorAll("details")) {
+        details.open = false;
+    }
+
+    const opened = row?.querySelector("details");
+    if (!opened) return;
+    if (group !== "") opened.name = group;
+    opened.open = true;
 }
 
 export function removeRepeatRow(button) {
@@ -118,6 +139,7 @@ export function removeRepeatRow(button) {
     const section = row.closest("[data-config-section]");
     if (spec.keepLast && row.parentElement?.children.length <= 1) {
         resetRowFields(row);
+        refreshAlarmLine(row);
     } else {
         row.remove();
     }
@@ -180,6 +202,11 @@ function syncAddButton(section, kind) {
     if (!list || !addButton) return;
 
     const limit = parseInt(list.dataset.repeatLimit || "", 10);
-    addButton.disabled = Number.isFinite(limit) &&
-        list.querySelectorAll(`[data-repeat-row="${kind}"]`).length >= limit;
+    const count = list.querySelectorAll(`[data-repeat-row="${kind}"]`).length;
+    addButton.disabled = Number.isFinite(limit) && count >= limit;
+
+    const counter = addButton.querySelector("[data-repeat-count]");
+    if (counter && Number.isFinite(limit)) {
+        counter.textContent = `(${count} de ${limit})`;
+    }
 }

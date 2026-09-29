@@ -27,7 +27,7 @@ const META = {
 
 const columnsOf = (meta) =>
     [...configSection(renderConfigInputs, ENTRY, {}, meta)
-        .querySelectorAll("[data-repeat-row=\"alarm_clock\"] > .row > *")]
+        .querySelectorAll("[data-repeat-row=\"alarm_clock\"] details .row > *")]
         .map((cell) => cell.className);
 
 /** Só a Vivistar declara `type`, e era ela que acertava no ramo de uma coluna. */

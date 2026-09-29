@@ -9,7 +9,9 @@ import { configSection } from "./support/dom.js";
 const ENTRY = { input: "alarm_clock", key: "alarm_clock", fields: [] };
 
 const idsIn = (row) => [...row.querySelectorAll("[id]")].map((el) => el.id);
-const namesIn = (row) => [...row.querySelectorAll("[name]")].map((el) => el.name);
+// Só os campos: o `name` do `<details>` é o grupo que fecha as irmãs, e esse é para partilhar.
+const namesIn = (row) =>
+    [...row.querySelectorAll("input[name], select[name], textarea[name]")].map((el) => el.name);
 
 /**
  * A linha do alarme traz `id` e `name` próprios, e nasce por clonagem. Com os `id` repetidos,
