@@ -1,5 +1,6 @@
-import { eventTime, rowPayload, titleize } from "../../format.js";
+import { ago, eventTime, rowPayload, titleize } from "../../format.js";
 import { capabilityLabel } from "../../capability-catalog.js";
+import { html, raw } from "../../html.js";
 import { stateBadge } from "../state-badge.js";
 import { telemetryCard } from "./shell.js";
 import { cardIcon, cardTone, uplinkCardContent } from "./telemetry.js";
@@ -134,6 +135,58 @@ function requestTelemetryTypes(type) {
     return [type];
 }
 
+/** As leituras de uma categoria, da mais recente para a mais antiga. */
+function payloadsOfFeature(type, telemetry) {
+    const telemetryTypes = requestTelemetryTypes(type);
+
+    return telemetry
+        .map(rowPayload)
+        .filter(
+            (payload) =>
+                payload && telemetryTypes.includes(String(payload.type || "")),
+        )
+        .sort((a, b) => eventTime(b) - eventTime(a));
+}
+
+/**
+ * Se alguma vez chegou leitura desta categoria. É o que separa um mosaico de uma pastilha:
+ * sem nenhuma, o mosaico mostrava um lugar vazio a parecer um valor.
+ */
+export function hasReading(command, telemetry = []) {
+    return payloadsOfFeature(commandFeature(command), telemetry).length > 0;
+}
+
+/** A conta que a cabeça da secção mostra. O lado que está a zero não se escreve. */
+export function readingCountLabel(withReading, withoutReading) {
+    const parts = [];
+    if (withReading > 0) {
+        parts.push(`${withReading} com leitura`);
+    }
+    if (withoutReading > 0) {
+        parts.push(withReading > 0 ? `${withoutReading} sem` : `${withoutReading} sem leitura`);
+    }
+
+    return parts.join(" · ");
+}
+
+/**
+ * A pastilha de uma capacidade que nunca mediu: o nome, e o botão de pedir quando se pode.
+ * O tom fica de fora de propósito -- a cor identifica quem tem leitura.
+ */
+export function requestPill(command, loading = false) {
+    const type = commandFeature(command);
+    const label = capabilityLabel(type) || type;
+    const button = command.requestable === false
+        ? ""
+        : html`<button type="button" class="btn btn-sm btn-primary rounded-pill py-0 px-2 flex-shrink-0" data-action="requestFeature" data-feature="${type}"${raw(loading ? " disabled" : "")}>${loading ? "A pedir" : "Pedir"}</button>`;
+
+    return html`<div class="telemetry-pill d-inline-flex align-items-center gap-2 border rounded-pill ps-2 pe-2 py-1 bg-body-tertiary">
+        <span class="telemetry-card-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-2"><i class="fa-solid ${cardIcon(type)}"></i></span>
+        <span class="text-secondary">${label}</span>
+        ${raw(button)}
+    </div>`;
+}
+
 export function requestCardShell(
     command,
     loading,
@@ -144,13 +197,7 @@ export function requestCardShell(
     const card = requestCardContent(type);
     const requestable = command.requestable !== false;
     const telemetryTypes = requestTelemetryTypes(type);
-    const payloads = telemetry
-        .map(rowPayload)
-        .filter(
-            (payload) =>
-                payload && telemetryTypes.includes(String(payload.type || "")),
-        )
-        .sort((a, b) => eventTime(b) - eventTime(a));
+    const payloads = payloadsOfFeature(type, telemetry);
 
     // A mais recente que serve: um relatório de localização sem posição apagaria o fixo bom
     // de dois minutos antes. Sem nenhuma que sirva, fica a última.
@@ -183,6 +230,9 @@ export function requestCardShell(
     // valor vazio, ao lado dos irmãos que têm um, já se lê como ausência de leitura. Escrevê-lo
     // por palavras era repetir o que o vazio diz, multiplicado pelos mosaicos vazios do ecrã.
     const lastValue = lastContent ? lastContent.value : "";
+    // Sem instante não se escreve nada: o `ago` de um vazio diz «nunca», e isso é outra
+    // afirmação -- a de que o aparelho nunca mediu, que não é o que se sabe aqui.
+    const readingAt = lastTelemetry?.occurredAt || lastTelemetry?.recordedAt || "";
     // Um ícone tirado da leitura vence o estático: um gateway com fios não mostra Wi-Fi.
     const icon = lastContent?.icon || card.icon;
     // O título é sempre o nome da categoria: "78%" sozinho não diz 78% de quê.
@@ -207,6 +257,7 @@ export function requestCardShell(
         // O valor só aparece quando diz algo que o título não diga.
         value: value && value !== title ? value : "",
         details: lastContent?.details || "",
+        age: readingAt ? ago(readingAt) : "",
         detailsTitle: lastContent?.detailsTitle || "",
         body: bodyHtml,
         // O que não responde ao clique não deve parecer que responde.

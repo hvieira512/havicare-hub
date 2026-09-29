@@ -23,7 +23,14 @@ import { deviceLicenseBlock } from "../components/device-license.js";
 import { onlineBadge } from "../components/state-badge.js";
 import { cardTone, uplinkCardContent } from "../components/cards/telemetry.js";
 import { telemetryCard } from "../components/cards/shell.js";
-import { requestCardShell, requestCardContent, statusBadge } from "../components/cards/request.js";
+import {
+    hasReading,
+    readingCountLabel,
+    requestCardContent,
+    requestCardShell,
+    requestPill,
+    statusBadge,
+} from "../components/cards/request.js";
 import { fallSummaryCard, helpCallSummaryCard } from "./event-summary-cards.js";
 import { onRadarPresence } from "./radar-map-modal.js";
 import { activityTable } from "./activity-table.js";
@@ -379,6 +386,12 @@ function renderRequestCards(
 
     disposeTooltips(els.requestGrid);
 
+    // Sem passar pelo filtro: «sem leitura até agora» é sobre o histórico do aparelho, e não
+    // sobre a janela que o utilizador escolheu ver.
+    const everMeasured = allDetailItems()
+        .filter((item) => item._source === "telemetry")
+        .map((item) => item.raw);
+
     // Com um grupo só, a faixa com o nome do grupo não separa nada.
     const cards = totalCards
         ? groups
@@ -388,6 +401,7 @@ function renderRequestCards(
                         telemetry,
                         groups.length > 1,
                         commands,
+                        everMeasured,
                     ),
                 )
                 .join("")
@@ -405,37 +419,53 @@ function renderRequestCardGroup(
     telemetry = [],
     showLabel = true,
     commands = [],
+    everMeasured = telemetry,
 ) {
-    const cards = group.cards
+    const isLoading = (command) =>
+        state.loadingCommands.has(
+            String(command.id || command.feature || command.command || ""),
+        );
+    // A partição mede-se pelo histórico todo e não pelo que o filtro deixou passar: um filtro
+    // de datas não transforma uma capacidade que mediu ontem numa que nunca mediu.
+    const measured = group.cards.filter((command) => hasReading(command, everMeasured));
+    const unmeasured = group.cards.filter((command) => !hasReading(command, everMeasured));
+
+    const cards = measured
         .map((command) =>
-            requestCardShell(
-                command,
-                state.loadingCommands.has(
-                    String(
-                        command.id || command.feature || command.command || "",
-                    ),
-                ),
-                telemetry,
-                commands,
-            ),
+            requestCardShell(command, isLoading(command), telemetry, commands),
         )
         .join("");
+    const grid = cards
+        ? html`<div class="d-grid telemetry-card-grid gap-3">${raw(cards)}</div>`
+        : "";
+    const pills = unmeasured
+        .map((command) => requestPill(command, isLoading(command)))
+        .join("");
+    // Fora da grelha: uma capacidade que nunca mediu não tem valor para mostrar, e um mosaico
+    // do tamanho dos outros dava-lhe o peso de quem tem.
+    const withoutReading = pills
+        ? html`<div class="${cards ? "mt-3" : ""}">
+        <div class="section-label mb-2">Sem leitura até agora</div>
+        <div class="d-flex flex-wrap gap-2">${raw(pills)}</div>
+        </div>`
+        : "";
 
     if (!showLabel) {
-        return cards;
+        return withoutReading
+            ? html`${raw(cards)}<div class="telemetry-card-wide min-w-0">${raw(withoutReading)}</div>`
+            : cards;
     }
 
-    // O rótulo separa os grupos sem os meter dentro de outra caixa. A caixa com borda e
-    // enchimento custava trinta e quatro pixéis de largura, e a grelha precisa de 464 numa
-    // coluna que tem 481: com ela, os mosaicos caíam de dois por linha para um -- e só nos
-    // aparelhos com mais do que um grupo, que são os únicos que a mostram.
+    // O rótulo separa os grupos sem os meter dentro de outra caixa: uma caixa com borda e
+    // enchimento custa largura à grelha, e é largura que a coluna do aparelho não tem.
     return html`
         <div class="telemetry-card-wide min-w-0">
-        <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex justify-content-between align-items-baseline gap-2 mb-2">
         <div class="section-label">${group.label || "Pedidos"}</div>
-        <span class="count-chip">${group.cards.length}</span>
+        <span class="text-secondary small text-end">${readingCountLabel(measured.length, unmeasured.length)}</span>
         </div>
-        <div class="d-grid telemetry-card-grid gap-3">${raw(cards)}</div>
+        ${raw(grid)}
+        ${raw(withoutReading)}
         </div>`;
 }
 
