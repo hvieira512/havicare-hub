@@ -6,7 +6,6 @@ import { state } from "../../state.js";
 import { esc } from "../../format.js";
 import { deviceTypeIcon } from "../../components/device-type-tiles.js";
 import { modelImageHtml } from "../../components/model-image.js";
-import { stateBadge } from "../../components/state-badge.js";
 import {
     deviceTypeLabel,
     modelCommercialName,
@@ -19,19 +18,10 @@ import { resetModelForm } from "./form.js";
 import { getSettingsModelsRuntime, modelsCarousel } from "./shell.js";
 
 /**
- * O catálogo: tipo de dispositivo, fornecedor, modelo. Três níveis porque um fornecedor
- * suporta *tipos* -- a MOKO aparece em gateways e em pulseiras, e não é duplicação.
+ * O catálogo: um nível por tipo de dispositivo, e o modelo como folha. O fornecedor é um
+ * dado da linha e não uma pasta -- como pasta custava um nível de indentação a dizer o que
+ * cabe em duas palavras ao lado do nome.
  */
-
-/** Um id de `collapse` que sobrevive a nomes com espaços e acentos. */
-function slug(value) {
-    return String(value)
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/\p{Diacritic}/gu, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-}
 
 function plural(count, singular, pluralWord) {
     return `${count} ${count === 1 ? singular : pluralWord}`;
@@ -53,50 +43,37 @@ function catalogGroups() {
         .filter((group) => group.suppliers.length > 0);
 }
 
-function modelRow(model, { showOrigin = false } = {}) {
-    const commercial = modelCommercialName(model);
+/**
+ * O que a linha diz a seguir ao nome comercial. O nome interno é o código do fabricante e
+ * repete-se muitas vezes com o comercial (D41/D41): quando é outro, diz-se que é interno,
+ * porque de outro modo nada distingue os dois nomes.
+ */
+function modelRowMeta(model, showType) {
     const internal = modelInternalName(model);
-    // O nome interno é o código do fabricante e repete-se muitas vezes com o comercial
-    // (D41/D41): quando são iguais não vale a pena escrever duas vezes.
-    const subtitle = showOrigin
-        ? `${esc(model.supplier || "")} · ${esc(deviceTypeLabel(modelDeviceType(model)))}`
-        : (internal && internal !== commercial ? esc(internal) : "");
+    return [
+        String(model.supplier || ""),
+        showType ? deviceTypeLabel(modelDeviceType(model)) : "",
+        internal && internal !== modelCommercialName(model) ? `interno ${internal}` : "",
+    ].filter(Boolean);
+}
+
+function modelRow(model, { showType = false } = {}) {
+    const meta = modelRowMeta(model, showType);
 
     return `
-        <div class="tree-row tree-row-nested catalog-model position-relative d-flex align-items-center" data-action="modelCapabilities" data-id="${esc(model.id)}" role="button" tabindex="0">
+        <div class="tree-row catalog-model position-relative d-flex align-items-center" data-action="modelCapabilities" data-id="${esc(model.id)}" role="button" tabindex="0">
         <span class="catalog-model-image flex-shrink-0 d-flex align-items-center justify-content-center">${modelImageHtml(model, 28)}</span>
-        <span class="flex-grow-1 min-w-0">
-        <span class="d-block text-truncate fw-semibold">${esc(commercial)}</span>
-        ${subtitle ? `<span class="section-label d-block text-truncate">${subtitle}</span>` : ""}
+        <span class="flex-grow-1 min-w-0 text-truncate">
+        <span class="fw-semibold">${esc(modelCommercialName(model))}</span>
+        <span class="catalog-model-meta small text-secondary">${meta.map((part) => ` · ${esc(part)}`).join("")}</span>
         </span>
         <i class="fa-solid fa-chevron-right text-secondary flex-shrink-0" aria-hidden="true"></i>
         </div>`;
 }
 
-function supplierNode(group, supplier) {
-    const models = supplier.models || [];
-    const id = `catalogSupplier-${slug(group.deviceType)}-${slug(supplier.name)}`;
-
-    return `
-        <div class="tree-row position-relative d-flex align-items-center">
-        <button type="button" class="btn btn-link p-0 text-decoration-none text-body d-flex align-items-center gap-2 flex-grow-1 min-w-0 text-start"
-            data-bs-toggle="collapse" data-bs-target="#${id}" aria-expanded="true" aria-controls="${id}">
-        <i class="fa-solid fa-chevron-down catalog-caret" aria-hidden="true"></i>
-        <span class="fw-semibold text-truncate">${esc(supplier.name)}</span>
-        <span class="count-chip count-chip-strong">${models.length}</span>
-        </button>
-        </div>
-        <div class="collapse show" id="${id}">
-        ${models.map((model) => modelRow(model)).join("")}
-        </div>`;
-}
-
 function typeCard(group) {
-    const id = `catalogType-${slug(group.deviceType)}`;
-    const models = group.suppliers.reduce(
-        (total, supplier) => total + (supplier.models || []).length,
-        0,
-    );
+    const id = `catalogType-${group.deviceType}`;
+    const models = group.suppliers.flatMap((supplier) => supplier.models || []);
 
     return `
         <div class="card mb-2">
@@ -105,15 +82,11 @@ function typeCard(group) {
             data-bs-toggle="collapse" data-bs-target="#${id}" aria-expanded="true" aria-controls="${id}">
         <i class="fa-solid ${esc(deviceTypeIcon(group.deviceType))} text-secondary" aria-hidden="true"></i>
         <span class="fw-semibold">${esc(deviceTypeLabel(group.deviceType))}</span>
-        ${stateBadge(
-            `${plural(models, "modelo", "modelos")} · ${plural(group.suppliers.length, "fornecedor", "fornecedores")}`,
-            "secondary",
-            "ms-auto",
-        )}
+        <span class="small text-secondary ms-auto text-end">${plural(models.length, "modelo", "modelos")} · ${plural(group.suppliers.length, "fornecedor", "fornecedores")}</span>
         <i class="fa-solid fa-chevron-down catalog-caret text-secondary" aria-hidden="true"></i>
         </button>
         <div class="collapse show" id="${id}">
-        ${group.suppliers.map((supplier) => supplierNode(group, supplier)).join("")}
+        ${models.map((model) => modelRow(model)).join("")}
         </div>
         </div>
         </div>`;
@@ -121,7 +94,7 @@ function typeCard(group) {
 
 /**
  * A busca achata a árvore, senão um resultado fica escondido dentro de um grupo fechado.
- * Achatada, cada linha diz de quem é, porque já não o diz pela posição.
+ * Sem o cabeçalho do tipo por cima, cada linha passa a dizer também de que tipo é.
  */
 function searchResults(query) {
     const needle = query.toLowerCase();
@@ -165,7 +138,7 @@ function renderModelsSection() {
         els.modelCatalog.innerHTML = results.length === 0
             ? `<div class="text-secondary py-4 text-center">Nenhum modelo encontrado para “${esc(query)}”.</div>`
             : `<div class="card"><div class="card-body p-3">
-                ${results.map((model) => modelRow(model, { showOrigin: true })).join("")}
+                ${results.map((model) => modelRow(model, { showType: true })).join("")}
                 </div></div>`;
         if (els.modelsTabSummary) {
             els.modelsTabSummary.textContent = results.length === 0
