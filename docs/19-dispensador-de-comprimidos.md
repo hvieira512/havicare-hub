@@ -396,6 +396,14 @@ do bloco de sistema.
 > ignoradas; a seguir marcou-se um alarme para as 22:00 e a ordem seguinte rodou. É
 > uma recusa silenciosa, e não há forma de a distinguir de um sucesso pela resposta.
 >
+> **O ecrã do aparelho denuncia-a antes de a ordem sair.** Quando não há mais
+> nenhum slot por dar nesse dia, o ecrã principal deixa de anunciar um próximo
+> alarme, embora o menu continue a mostrar os alarmes configurados. Observado a
+> 29/09/2026 às 12:57, com o 13:30 e o 14:30 ainda por chegar mas os dois já em
+> estado `7`: o aparelho dizia que não tinha próximo e um `0xA123` teria sido
+> ignorado. É o único sinal legível desta regra — pelo protocolo, ela só se deduz
+> somando os nove estados.
+>
 > **Um slot só dá a dose dele uma vez por dia, e mudar-lhe a hora não a devolve.**
 > É a segunda metade da regra de cima, e sozinha explica quase todas as recusas.
 > Medido a 24/09/2026: cinco voltas a reescrever o **slot 1** com horas diferentes
