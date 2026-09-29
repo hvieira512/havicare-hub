@@ -20,6 +20,7 @@ import {
 import {
     handleApiUserListChange,
     handleApiUserListClick,
+    handleApiUserListInput,
     loadSettingsApiUsersSection,
     newApiUser,
 } from "../settings/api-users.js";
@@ -185,10 +186,11 @@ function bindCapabilities() {
 
 function bindApiUsers() {
     els.newApiUserBtn?.addEventListener("click", newApiUser);
-    // O invólucro e não a tabela: apanha os cliques do formulário de criar e os das acções
-    // que a grelha desenha em cada linha. Ordenar é do cabeçalho dela, e vai ao servidor.
+    // O invólucro e não a lista: apanha os cliques do formulário de criar, os verbos do menu
+    // de cada linha e os filtros por cima dela.
     els.apiUserList.addEventListener("click", handleApiUserListClick);
     els.apiUserList.addEventListener("change", handleApiUserListChange);
+    els.apiUserList.addEventListener("input", handleApiUserListInput);
     els.settingsApiUsersPagination?.addEventListener("click", (event) =>
         handleSettingsPaginationClick(
             event,

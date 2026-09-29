@@ -12,36 +12,38 @@ import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor } from "./row-editor.js";
-import { createGrid, ensureAgGrid } from "../grid.js";
-import { isDarkTheme } from "../theme.js";
 
 /**
- * Os utilizadores da API, numa grelha. As colunas, o que se ordena, o que se filtra e o que
- * se edita vêm do descritor que o `GET /api/users` devolve.
+ * Os utilizadores da API, um por linha. A busca e os filtros de perfil e estado vêm do
+ * descritor que o `GET /api/users` devolve, e quem estreita e pagina é o servidor.
  *
- * Edita-se por célula. A password não é coluna -- não é valor que se mostre --, e por isso é
- * uma acção da linha. Criar continua a ser formulário: um utilizador novo precisa de
- * password e de licença antes de existir, e isso não cabe numa célula.
+ * A password não é valor que se mostre, e por isso trocá-la é um verbo do menu da linha.
+ * Criar continua a ser formulário: um utilizador novo precisa de password e de licença antes
+ * de existir.
  */
 let els;
-let grid = null;
 let licenses = [];
 let users = [];
 let adminCount = 0;
+let currentPage = 1;
+let filterEl = null;
+let listEl = null;
 
-const COLUMN_TITLES = {
-    username: "Utilizador",
-    role: "Perfil",
-    company_name: "Empresa",
-    license_id: "Licença",
-    enabled: "Estado",
+/** O que cada filtro do descritor mostra. Um campo que não esteja aqui não gera controlo. */
+const FILTER_CONTROLS = {
+    username: { label: "Procurar utilizador" },
+    role: { label: "perfil", all: "Todos os perfis" },
+    enabled: { label: "estado", all: "Todos os estados" },
 };
+
+/** O que está escolhido em cada filtro, por parâmetro do descritor. */
+const filters = { username: "", role: "", enabled: "" };
 
 const VALUE_LABELS = {
     hub_admin: "Administrador",
     license_client: "Cliente",
     1: "Ativo",
-    0: "Inativo",
+    0: "Pausado",
 };
 
 /** O primeiro é o que um utilizador novo traz escolhido. */
@@ -51,72 +53,91 @@ const isEnabled = (user) => Number(user.enabled) === 1;
 
 const labelOf = (value) => VALUE_LABELS[value] ?? String(value ?? "");
 
-/** Um conjunto fechado escolhe-se de uma lista; sem isto o editor era caixa de texto. */
-const closedSet = (values) => ({
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: { values },
-    valueFormatter: (params) => labelOf(params.value),
-});
+/** O perfil e o que ele alcança, em texto corrido por baixo do nome. */
+function contextOf(user) {
+    if (user.role === "hub_admin") {
+        return "Administrador · todas as licenças";
+    }
+    const license = [user.company_name, user.license_id].filter(Boolean).join(" / ");
 
-/**
- * O perfil, na pastilha: o escudo é quem manda em todas as licenças, o edifício é quem tem
- * uma. O `secondary` fica de fora porque aqui lê-se como inativo, e um cliente não é isso.
- */
-const ROLE_BADGES = {
-    hub_admin: { tone: "primary", icon: "fa-shield-halved" },
-    license_client: { tone: "info", icon: "fa-building" },
-};
-
-function roleCell(params) {
-    const badge = ROLE_BADGES[params.value];
-
-    return stateBadge(labelOf(params.value), badge?.tone, { icon: badge?.icon });
+    return `${labelOf(user.role)} · ${license || "sem licença"}`;
 }
 
 /**
- * A pastilha só veste a célula em repouso. O `valueFormatter` que vem do `closedSet` desenha
- * as opções do `agSelectCellEditor`, e marcação dentro de um `<option>` não se desenha.
- *
- * A largura mínima é maior do que a das outras colunas porque uma pastilha não encolhe: com
- * os 120 por omissão, "ADMINISTRADOR" em maiúsculas ficava cortado a meio numa janela
- * estreita.
+ * Uma linha por utilizador: o nome e o contexto à esquerda, o estado por palavra, e os verbos
+ * num menu. Três botões só de ícone não se adivinhavam, e a pausa era o menos óbvio deles.
  */
-export const ROLE_COLUMN = { ...closedSet(ROLES), cellRenderer: roleCell, minWidth: 180 };
-
-/** O estado, na pastilha que o resto da dashboard usa. */
-function stateCell(params) {
-    const enabled = Number(params.value) === 1;
-
-    return stateBadge(enabled ? "Ativo" : "Inativo", enabled ? "success" : "secondary");
-}
-
-/** As acções da linha. Os cliques sobem por delegação, como no resto do modal. */
-function actionsCell(params) {
-    const user = params.data || {};
+export function apiUserRow(user) {
     const enabled = isEnabled(user);
+    // A pastilha não encolhe: num telefone estreito é ela que diz o que a cor sozinha não diz.
+    const badge = stateBadge(
+        enabled ? "Ativo" : "Pausado",
+        enabled ? "success" : "warning",
+        "flex-shrink-0",
+    );
 
     return html`
-        <div class="d-flex justify-content-end gap-1">
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="changeApiUserPassword" data-id="${user.id}" title="Mudar palavra-passe" aria-label="Mudar palavra-passe"><i class="fa-solid fa-key"></i></button>
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="toggleApiUser" data-id="${user.id}" title="${enabled ? "Desativar" : "Ativar"}" aria-label="${enabled ? "Desativar" : "Ativar"}"><i class="fa-solid ${enabled ? "fa-pause" : "fa-play"}"></i></button>
-        <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="deleteApiUser" data-id="${user.id}" title="Apagar" aria-label="Apagar"><i class="fa-solid fa-trash"></i></button>
+        <div class="list-group-item d-flex align-items-center gap-2">
+            <div class="min-w-0 flex-grow-1">
+                <span class="d-block text-truncate fw-semibold" title="${user.username}">${user.username}</span>
+                <span class="d-block small text-secondary text-truncate">${contextOf(user)}</span>
+            </div>
+            ${raw(badge)}
+            <div class="dropdown flex-shrink-0">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Ações de ${user.username}"><i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button type="button" class="dropdown-item" data-action="changeApiUserPassword" data-id="${user.id}">Trocar palavra-passe</button></li>
+                    <li><button type="button" class="dropdown-item" data-action="toggleApiUser" data-id="${user.id}">${enabled ? "Pausar acesso" : "Retomar acesso"}</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button type="button" class="dropdown-item text-danger" data-action="deleteApiUser" data-id="${user.id}">Eliminar utilizador</button></li>
+                </ul>
+            </div>
         </div>`;
 }
 
-/** Não vem do descritor: não é um campo do utilizador, são as acções sobre ele. */
-const ACTIONS_COLUMN = {
-    colId: "actions",
-    headerName: "",
-    cellRenderer: actionsCell,
-    pinned: "right",
-    width: 132,
-    minWidth: 132,
-    resizable: false,
-    sortable: false,
-    suppressMovable: true,
-    lockPosition: "right",
-    valueGetter: () => "",
-};
+/** As opções de um conjunto fechado, com a contagem que a faceta da resposta trouxe. */
+function filterOptions(column, chosen, allLabel) {
+    const options = (column.filter?.options ?? []).map(({ value, count }) => {
+        const tally = count === null || count === undefined ? "" : ` (${count})`;
+        const selected = String(value) === String(chosen) ? " selected" : "";
+
+        return html`<option value="${value}"${raw(selected)}>${labelOf(value)}${tally}</option>`;
+    });
+
+    return html`<option value="">${allLabel}</option>${raw(options.join(""))}`;
+}
+
+/** A busca e os filtros que a grelha dava no cabeçalho, agora por cima da lista. */
+export function apiUserFilterControls(columns, chosen = {}) {
+    const controls = columns
+        .map((column) => filterControl(column, chosen[column.field] ?? ""))
+        .filter((control) => control !== "");
+
+    return html`<div class="row g-2 mb-3">${raw(controls.join(""))}</div>`;
+}
+
+function filterControl(column, chosen) {
+    const spec = FILTER_CONTROLS[column.field];
+    if (!spec) {
+        return "";
+    }
+
+    if (column.filter?.type === "text") {
+        return html`
+            <div class="col-12 col-sm">
+                <input type="search" class="form-control form-control-sm" data-filter="${column.field}" value="${chosen}" placeholder="${spec.label}" aria-label="${spec.label}" autocomplete="off">
+            </div>`;
+    }
+
+    if (column.filter?.type !== "select") {
+        return "";
+    }
+
+    return html`
+        <div class="col-6 col-sm-auto">
+            <select class="form-select form-select-sm" data-filter="${column.field}" aria-label="Filtrar por ${spec.label}">${raw(filterOptions(column, chosen, spec.all))}</select>
+        </div>`;
+}
 
 export function initSettingsApiUsers(context) {
     els = context.els;
@@ -125,8 +146,8 @@ export function initSettingsApiUsers(context) {
 const showError = (error) => toast("error", error.message);
 const run = (work) => void work.catch(showError);
 
-/** A grelha sabe em que página está: recarregar é pedi-la outra vez. */
-const reload = () => (grid === null ? Promise.resolve() : grid.start().catch(showError));
+/** Recarregar é pedir outra vez a página que está à vista. */
+const reload = () => loadSettingsApiUsersSection(currentPage);
 
 async function fetchApiUsers(params) {
     const response = await apiGetApiUsers(params);
@@ -142,51 +163,77 @@ async function fetchApiUsers(params) {
     return response;
 }
 
+/**
+ * Só a última leitura pedida escreve a lista: duas teclas seguidas na busca põem dois pedidos
+ * no ar e nada os cancela. É o mesmo contador do `stream.js` e do `list.js`.
+ */
+let generation = 0;
+
 export async function loadSettingsApiUsersSection(page = 1) {
     state.settingsModal.sectionLoaded.apiUsers = true;
+    currentPage = page;
+    generation += 1;
+    const current = generation;
 
     try {
-        if (grid !== null) {
-            // A grelha é criada uma vez e guarda o tema desse momento. Sem isto, trocar de
-            // tema com o modal fechado -- que é a única altura em que o botão do tema se
-            // alcança -- deixava-a na cor antiga ao reabrir.
-            grid.setDark(isDarkTheme());
-            await grid.goToPage(page);
+        // As licenças são só do formulário de criar, e vêm da cache partilhada.
+        const [response, loaded] = await Promise.all([
+            fetchApiUsers({ page, sort: "username:asc", ...appliedFilters() }),
+            ensureLicensesLoaded(),
+        ]);
+        if (current !== generation) {
             return;
         }
-
-        // O primeiro pedido traz o descritor com que a grelha é construída. As licenças são
-        // só do formulário de criar, e vêm da cache partilhada.
-        // O AG Grid carrega-se em paralelo com o primeiro pedido: só aqui faz falta.
-        const [first, loaded] = await Promise.all([
-            fetchApiUsers({ page: 1, limit: 1 }),
-            ensureLicensesLoaded(),
-            ensureAgGrid(),
-        ]);
         licenses = loaded ?? [];
-
-        grid = createGrid({
-            element: els.apiUserGrid,
-            columns: first.columns,
-            dark: isDarkTheme(),
-            columnTitles: COLUMN_TITLES,
-            valueLabels: VALUE_LABELS,
-            emptyMessage: "Nenhum utilizador para este filtro.",
-            cellRenderers: {
-                role: ROLE_COLUMN,
-                enabled: { ...closedSet(["1", "0"]), cellRenderer: stateCell },
-            },
-            extraColumns: [ACTIONS_COLUMN],
-            load: fetchApiUsers,
-            save: saveEditedCell,
-            onPage: renderApiUsersPage,
-            onError: showError,
-        });
-
-        await grid.start();
+        renderApiUsers(response);
     } catch (error) {
         showError(error);
     }
+}
+
+const appliedFilters = () =>
+    Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ""));
+
+/** A barra de filtros por cima, a lista por baixo, dentro do contentor da secção. */
+function mountList() {
+    if (listEl !== null && els.apiUserGrid.contains(listEl)) {
+        return;
+    }
+    els.apiUserGrid.innerHTML =
+        "<div data-part=\"filters\"></div><div class=\"list-group\" data-part=\"rows\"></div>";
+    filterEl = els.apiUserGrid.querySelector("[data-part=\"filters\"]");
+    listEl = els.apiUserGrid.querySelector("[data-part=\"rows\"]");
+}
+
+/** A barra desenha-se uma vez: repintá-la a cada resposta tirava o cursor de dentro da busca. */
+function renderFilterBar(columns) {
+    if (filterEl.childElementCount === 0) {
+        filterEl.innerHTML = apiUserFilterControls(columns, filters);
+        return;
+    }
+
+    // As contagens mudam a cada filtro; o que está escolhido fica.
+    for (const column of columns) {
+        const select = filterEl.querySelector(`select[data-filter="${column.field}"]`);
+        if (select) {
+            select.innerHTML = filterOptions(
+                column,
+                filters[column.field] ?? "",
+                FILTER_CONTROLS[column.field]?.all ?? "Todos",
+            );
+        }
+    }
+}
+
+function renderApiUsers(response) {
+    mountList();
+    renderFilterBar(response.columns ?? []);
+
+    listEl.innerHTML = users.length === 0
+        ? "<div class=\"text-center text-secondary small p-4\">Nenhum utilizador para este filtro.</div>"
+        : users.map(apiUserRow).join("");
+
+    renderApiUsersPage(response.pagination || {});
 }
 
 function renderApiUsersPage(pagination) {
@@ -235,15 +282,6 @@ async function saveUser(user, changes = {}) {
     const result = await apiSaveApiUser(user.id, body);
     if (result.error) {
         throw new Error(apiError(result));
-    }
-}
-
-/** Lançar o erro é o que faz a grelha repor o valor antigo da célula. */
-async function saveEditedCell(user, field) {
-    await saveUser(user);
-    // A empresa e a licença seguem o perfil, e quem lhes mexeu foi o servidor.
-    if (field === "role") {
-        await reload();
     }
 }
 
@@ -364,7 +402,7 @@ async function createApiUser(button) {
     await reload();
 }
 
-/** Os cliques da secção: o formulário de criar, e as acções que a grelha desenha nas linhas. */
+/** Os cliques da secção: o formulário de criar, e os verbos do menu de cada linha. */
 export function handleApiUserListClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button) {
@@ -381,8 +419,28 @@ export function handleApiUserListClick(event) {
     actions[button.dataset.action]?.();
 }
 
+/** Um filtro novo volta à primeira página: a 3 da lista nova não tem as mesmas linhas. */
+function applyFilter(control) {
+    filters[control.dataset.filter] = control.value;
+    run(loadSettingsApiUsersSection(1));
+}
+
+/** A busca estreita a lista enquanto se escreve. */
+export function handleApiUserListInput(event) {
+    const search = event.target.closest("input[data-filter]");
+    if (search) {
+        applyFilter(search);
+    }
+}
+
 /** O perfil de admin manda em todas as licenças, por isso a escolha de uma não se aplica. */
 export function handleApiUserListChange(event) {
+    const filter = event.target.closest("select[data-filter]");
+    if (filter) {
+        applyFilter(filter);
+        return;
+    }
+
     const select = event.target.closest("[data-field=\"role\"]");
     if (!select) {
         return;
