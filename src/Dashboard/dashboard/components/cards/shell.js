@@ -12,6 +12,8 @@ export function telemetryCard({
     title,
     value = "",
     details = "",
+    // Há quanto tempo é a leitura, já escrito. Vazio quando não há leitura nenhuma.
+    age = "",
     // O texto da tooltip, para quando diz mais do que a linha truncada.
     detailsTitle = "",
     body = "",
@@ -57,6 +59,9 @@ export function telemetryCard({
     const valueHtml = value
         ? html`<div class="telemetry-card-value fw-semibold lh-sm tabular-nums text-break">${value}</div>`
         : "";
+    const ageHtml = age
+        ? html`<div class="telemetry-row-details text-secondary lh-sm">${age}</div>`
+        : "";
 
     // A célula mede-se pelo contentor e não pela largura do ecrã: a grelha só abre uma
     // segunda coluna quando há 9rem para ela. Ver `.telemetry-card-grid` no `device.css`.
@@ -78,6 +83,7 @@ export function telemetryCard({
                 ${raw(valueHtml)}
                 ${raw(state)}
                 ${raw(detailsHtml)}
+                ${raw(ageHtml)}
                 ${raw(body)}
             </div>
         </${tag}>

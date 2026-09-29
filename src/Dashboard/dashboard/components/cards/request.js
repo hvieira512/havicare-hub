@@ -1,4 +1,4 @@
-import { eventTime, rowPayload, titleize } from "../../format.js";
+import { ago, eventTime, rowPayload, titleize } from "../../format.js";
 import { capabilityLabel } from "../../capability-catalog.js";
 import { stateBadge } from "../state-badge.js";
 import { telemetryCard } from "./shell.js";
@@ -183,6 +183,9 @@ export function requestCardShell(
     // valor vazio, ao lado dos irmãos que têm um, já se lê como ausência de leitura. Escrevê-lo
     // por palavras era repetir o que o vazio diz, multiplicado pelos mosaicos vazios do ecrã.
     const lastValue = lastContent ? lastContent.value : "";
+    // Sem instante não se escreve nada: o `ago` de um vazio diz «nunca», e isso é outra
+    // afirmação -- a de que o aparelho nunca mediu, que não é o que se sabe aqui.
+    const readingAt = lastTelemetry?.occurredAt || lastTelemetry?.recordedAt || "";
     // Um ícone tirado da leitura vence o estático: um gateway com fios não mostra Wi-Fi.
     const icon = lastContent?.icon || card.icon;
     // O título é sempre o nome da categoria: "78%" sozinho não diz 78% de quê.
@@ -207,6 +210,7 @@ export function requestCardShell(
         // O valor só aparece quando diz algo que o título não diga.
         value: value && value !== title ? value : "",
         details: lastContent?.details || "",
+        age: readingAt ? ago(readingAt) : "",
         detailsTitle: lastContent?.detailsTitle || "",
         body: bodyHtml,
         // O que não responde ao clique não deve parecer que responde.
