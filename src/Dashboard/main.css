@@ -622,21 +622,13 @@
     scroll-margin-top: 3.25rem;
 }
 
-/* Uma linha por capacidade: o número, o ícone que a capacidade já tem nos cartões de pedido,
-   o nome, e os factos. Nada leva largura fixa. */
+/* Uma linha por capacidade: o ícone que a capacidade já tem nos cartões de pedido, o nome, e
+   os factos. Nada leva largura fixa. */
 .capability-row {
-    grid-template-columns: 1.9rem 1.4rem minmax(0, 1fr) auto;
+    grid-template-columns: 1.4rem minmax(0, 1fr) auto;
     align-items: center;
     gap: .625rem;
     padding: .4375rem .75rem;
-}
-
-/* O número conta o que o fornecedor suporta, em negrito e apagado: enumera sem competir
-   com o nome que está ao lado. */
-.capability-index {
-    font-size: var(--fs-lg);
-    color: var(--bs-emphasis-color);
-    opacity: .22;
 }
 
 /* O alinhamento e a quebra viram no telefone, mais abaixo. */
@@ -653,18 +645,14 @@
     background: var(--bs-tertiary-bg);
 }
 
-.capability-row.is-unsupported .capability-index {
-    opacity: .12;
-}
-
 @media (max-width: 575.98px) {
     .capability-row {
-        grid-template-columns: 1.9rem 1.4rem minmax(0, 1fr);
+        grid-template-columns: 1.4rem minmax(0, 1fr);
         align-items: start;
     }
 
     .capability-facts {
-        grid-column: 3;
+        grid-column: 2;
         text-align: left;
         white-space: normal;
     }
