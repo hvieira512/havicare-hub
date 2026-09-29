@@ -184,6 +184,8 @@ async function loadSettingsModelsSection() {
     renderModelsSection();
 
     const { els } = getSettingsModelsRuntime();
+    // Fechar o modal a meio do assistente deixava o rodapé sem o «Fechar» ao reabrir.
+    els.settingsCloseBtn?.classList.remove("d-none");
     if (els.modelsListSearch) {
         els.modelsListSearch.value = state.settingsModal.modelsSearchQuery || "";
     }
