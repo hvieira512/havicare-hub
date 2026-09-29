@@ -372,9 +372,26 @@
 
 /* Cada coluna rola por si. Presas ao mesmo scroll, chegar ao último filtro obrigava a descer
    a lista de dispositivos -- duas coisas independentes num movimento só. */
+/* Quem rola é a lista de filtros lá dentro, para o título e o botão do rodapé ficarem
+   quietos enquanto se marca. */
 .device-filter-column {
-    gap: 1.25rem;
     border-right: 1px solid var(--bs-border-color);
+    overflow: hidden;
+}
+
+.device-filter-head,
+.device-filter-foot {
+    flex-shrink: 0;
+}
+
+/* O `contain` para o fim da lista de filtros não passar o movimento ao modal atrás dela:
+   chegar ao fundo punha a lista tapada a rolar por baixo do painel. */
+.device-filter-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
 }
 
 /* O `d-lg-block` do Bootstrap traz `display: block !important` e apagava a coluna flex: este
@@ -386,8 +403,8 @@
 }
 
 @media (max-width: 991.98px) {
-    /* Abaixo de lg o modal é o ecrã inteiro e as colunas empilham: a coluna dos filtros
-       deixa de ter contorno lateral e rola com a página, e não por dentro. */
+    /* Abaixo de lg o modal é o ecrã inteiro e as colunas empilham: a lista rola com a
+       página, e não por dentro. */
     .device-selector-body {
         height: auto;
     }
@@ -397,9 +414,21 @@
         overflow-y: visible;
     }
 
+    /* O painel cobre a lista em vez de a empurrar: filtra-se e fecha-se sem sair do sítio, e
+       fica um scroll só, o dele. Fixo porque abaixo de lg o modal já é o ecrã inteiro. */
     .device-filter-column {
+        position: fixed;
+        inset: 0;
+        z-index: 3;
+        height: auto;
         border-right: 0;
-        border-bottom: 1px solid var(--bs-border-color);
+        overflow: hidden;
+    }
+
+    /* O `collapse` anima a altura, e a altura deste painel vem dos cantos. */
+    .device-filter-column.collapsing {
+        height: auto !important;
+        transition: none;
     }
 }
 
@@ -433,12 +462,10 @@
     font-size: var(--fs-sm);
 }
 
-/* A caixa de marcar do mosaico e a da lista de filtros são a mesma: só a do mosaico é que
-   se encosta ao canto. */
+/* A caixa de marcar do mosaico e a da lista de filtros são a mesma, à parte da medida: a do
+   mosaico é uma marca no canto, e a da lista é o que o dedo acerta. */
 .device-type-tile-check,
 .filter-option-box {
-    width: 14px;
-    height: 14px;
     place-items: center;
     border: 1px solid var(--bs-border-color);
     border-radius: 3px;
@@ -448,8 +475,16 @@
 }
 
 .device-type-tile-check {
+    width: 14px;
+    height: 14px;
     top: .375rem;
     right: .375rem;
+}
+
+.filter-option-box {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
 }
 
 .device-type-tile.selected .device-type-tile-check,
@@ -475,8 +510,10 @@
    margem de indentacao das licencas empurrava a contagem para fora da coluna.
 
    A borda e o fundo ficam aqui, que os estados abaixo os trocam. */
+/* 44px é o alvo de toque mínimo. */
 .filter-option {
-    gap: .5625rem;
+    gap: .625rem;
+    min-height: 44px;
     padding: .3125rem .4375rem;
     border: 1px solid transparent;
     background: transparent;
@@ -487,6 +524,13 @@
 .filter-option:hover,
 .filter-option:focus-visible {
     background: var(--bs-body-bg);
+}
+
+/* Um tipo sem dispositivos fica à vista e apagado: saber que a frota não tem pulseiras é
+   informação, e escondê-lo deixava a pergunta sem resposta. */
+.filter-option:disabled {
+    opacity: .45;
+    cursor: default;
 }
 
 .filter-option.selected {
@@ -501,21 +545,17 @@
     font-size: var(--fs-sm);
 }
 
-.filter-option-nested .filter-option-box {
-    width: 13px;
-    height: 13px;
-}
-
 .filter-branch {
     gap: 1px;
 }
 
+/* O traço desce pelo meio das caixas de marcar e pára no centro da última. */
 .filter-branch::before {
     content: "";
     position: absolute;
-    left: .8125rem;
+    left: 1.0625rem;
     top: 0;
-    bottom: .5625rem;
+    bottom: 1.375rem;
     width: 1px;
     background: var(--bs-border-color);
 }
@@ -523,7 +563,7 @@
 /* O mesmo desenho dos filtros, mas de escolha única: a marca leva `rounded-circle` na
    marcação, para não prometer que se podem marcar várias. A empresa é só o cabeçalho. */
 .license-picker-company {
-    padding: .5rem .4375rem .125rem 1.875rem;
+    padding: .5rem .4375rem .125rem 2.3125rem;
 }
 
 /* ===== cartão de dispositivo =====
