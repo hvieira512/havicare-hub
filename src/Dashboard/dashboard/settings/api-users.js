@@ -86,6 +86,7 @@ export function apiUserRow(user) {
             <div class="dropdown flex-shrink-0">
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Ações de ${user.username}"><i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>
                 <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button type="button" class="dropdown-item" data-action="editApiUser" data-id="${user.id}">Editar utilizador</button></li>
                     <li><button type="button" class="dropdown-item" data-action="changeApiUserPassword" data-id="${user.id}">Trocar palavra-passe</button></li>
                     <li><button type="button" class="dropdown-item" data-action="toggleApiUser" data-id="${user.id}">${enabled ? "Pausar acesso" : "Retomar acesso"}</button></li>
                     <li><hr class="dropdown-divider"></li>
@@ -315,74 +316,91 @@ export async function deleteApiUser(user) {
     await reload();
 }
 
-const licenseOptions = () =>
+const licenseOptions = (licenseList, chosen) =>
     "<option value=\"\">Selecionar licença</option>" +
-    licenses
-        .map((license) => html`<option value="${license.id}">${`${license.company_name || "-"} / ${license.license_id} — ${license.name || ""}`}</option>`)
+    licenseList
+        .map((license) => html`<option value="${license.id}"${raw(String(license.id) === String(chosen ?? "") ? " selected" : "")}>${`${license.company_name || "-"} / ${license.license_id} — ${license.name || ""}`}</option>`)
         .join("");
 
-const roleOptions = () =>
-    ROLES.map((role) => html`<option value="${role}">${VALUE_LABELS[role]}</option>`).join("");
+const roleOptions = (chosen) =>
+    ROLES.map((role) => html`<option value="${role}"${raw(role === chosen ? " selected" : "")}>${VALUE_LABELS[role]}</option>`).join("");
 
-/** Criar pede password e licença, que a grelha não edita. Nasce ativo. */
-function renderCreateForm(open) {
-    if (!open) {
-        els.apiUserCreateRow.innerHTML = "";
-        return;
-    }
-
-    els.apiUserCreateRow.innerHTML = html`
-        <div class="border rounded-3 p-3 mb-2 bg-body-tertiary" data-editor="apiUser">
-            <div class="row g-2">
-                <div class="col-12 col-md-3">
-                    <label class="section-label" for="apiUserNewUsername">Utilizador</label>
-                    <input type="text" class="form-control form-control-sm" id="apiUserNewUsername" data-field="username" autocomplete="off">
-                </div>
+/**
+ * O formulário de um utilizador. Sem `user` é o de criar, que nasce cliente e ativo e é o
+ * único que pede password -- trocá-la depois é outro verbo do menu da linha.
+ */
+export function apiUserForm(user, licenseList) {
+    const role = user?.role ?? ROLES[0];
+    const passwordField = user !== null && user !== undefined
+        ? ""
+        : html`
                 <div class="col-12 col-md-3">
                     <label class="section-label" for="apiUserNewPassword">Palavra-passe</label>
                     <input type="password" class="form-control form-control-sm" id="apiUserNewPassword" data-field="password" autocomplete="new-password">
-                </div>
+                </div>`;
+
+    return html`
+        <div class="border rounded-3 p-3 mb-2 bg-body-tertiary" data-editor="apiUser" data-id="${user?.id ?? ""}">
+            <div class="row g-2">
+                <div class="col-12 col-md-3">
+                    <label class="section-label" for="apiUserNewUsername">Utilizador</label>
+                    <input type="text" class="form-control form-control-sm" id="apiUserNewUsername" data-field="username" value="${user?.username ?? ""}" autocomplete="off">
+                </div>${raw(passwordField)}
                 <div class="col-12 col-md-2">
                     <label class="section-label" for="apiUserNewRole">Perfil</label>
-                    <select class="form-select form-select-sm" id="apiUserNewRole" data-field="role">${raw(roleOptions())}</select>
+                    <select class="form-select form-select-sm" id="apiUserNewRole" data-field="role">${raw(roleOptions(role))}</select>
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="section-label" for="apiUserNewLicense">Licença</label>
-                    <select class="form-select form-select-sm" id="apiUserNewLicense" data-field="licenseRefId">${raw(licenseOptions())}</select>
+                    <select class="form-select form-select-sm" id="apiUserNewLicense" data-field="licenseRefId"${raw(role === "hub_admin" ? " disabled" : "")}>${raw(licenseOptions(licenseList, user?.license_ref_id))}</select>
                 </div>
             </div>
             <div class="d-flex justify-content-end gap-2 mt-3">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="cancelEdit">Cancelar</button>
-                <button type="button" class="btn btn-primary btn-sm" data-action="saveApiUserRow">Criar</button>
+                <button type="button" class="btn btn-primary btn-sm" data-action="saveApiUserRow">${user ? "Guardar" : "Criar"}</button>
             </div>
         </div>`;
+}
 
+function openUserForm(user) {
+    els.apiUserCreateRow.innerHTML = apiUserForm(user, licenses);
     focusEditor(els.apiUserCreateRow);
 }
 
+const closeUserForm = () => {
+    els.apiUserCreateRow.innerHTML = "";
+};
+
 export function newApiUser() {
-    renderCreateForm(true);
+    openUserForm(null);
 }
 
-async function createApiUser(button) {
+/** O `PUT` substitui o registo, e o `POST` cria: a diferença é haver id na vaga aberta. */
+async function saveApiUserRow(button) {
     const row = editorOf(button, "apiUser");
     if (!row) {
         return;
     }
 
-    const { el, field } = row;
+    const { el, field, id } = row;
+    const existing = users.find((user) => String(user.id) === id);
     const body = {
         username: row.value("username"),
-        password: field("password").value,
         role: field("role").value,
         licenseRefId: licenseRefIdFor(field("role").value, row.value("licenseRefId")),
     };
+    if (id === "") {
+        body.password = field("password").value;
+    } else {
+        // O estado não está no formulário: quem o muda é o verbo de pausar.
+        body.enabled = isEnabled(existing ?? {});
+    }
 
     clearInvalid(el);
     if (!body.username) {
         markInvalid(field("username"), "Utilizador é obrigatório");
     }
-    if (!body.password.trim()) {
+    if (id === "" && !body.password.trim()) {
         markInvalid(field("password"), "A palavra-passe é obrigatória para um utilizador novo");
     }
     if (body.role === "license_client" && !body.licenseRefId) {
@@ -392,17 +410,17 @@ async function createApiUser(button) {
         return;
     }
 
-    const result = await apiSaveApiUser("", body);
+    const result = await apiSaveApiUser(id, body);
     if (result.error) {
         toast("error", apiError(result));
         return;
     }
 
-    renderCreateForm(false);
+    closeUserForm();
     await reload();
 }
 
-/** Os cliques da secção: o formulário de criar, e os verbos do menu de cada linha. */
+/** Os cliques da secção: o formulário aberto, e os verbos do menu de cada linha. */
 export function handleApiUserListClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button) {
@@ -410,8 +428,9 @@ export function handleApiUserListClick(event) {
     }
     const user = users.find((row) => String(row.id) === button.dataset.id);
     const actions = {
-        cancelEdit: () => renderCreateForm(false),
-        saveApiUserRow: () => run(createApiUser(button)),
+        cancelEdit: closeUserForm,
+        saveApiUserRow: () => run(saveApiUserRow(button)),
+        editApiUser: () => user && openUserForm(user),
         changeApiUserPassword: () => user && run(changeApiUserPassword(user)),
         toggleApiUser: () => user && run(toggleApiUser(user)),
         deleteApiUser: () => user && run(deleteApiUser(user)),

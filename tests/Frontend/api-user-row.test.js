@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 import {
     apiUserFilterControls,
+    apiUserForm,
     apiUserRow,
 } from "../../src/Dashboard/dashboard/settings/api-users.js";
 
@@ -46,6 +47,14 @@ test("as ações da linha vivem num menu com os verbos escritos", () => {
     assert.match(row, /data-action="changeApiUserPassword"[^>]*>Trocar palavra-passe</);
     assert.match(row, /dropdown-divider/);
     assert.match(row, /text-danger[^>]*data-action="deleteApiUser"[^>]*>Eliminar utilizador</);
+});
+
+/** Mudar o perfil ou a licença é o que a edição em célula dava, e não pode ficar sem caminho. */
+test("o menu abre pela edição do utilizador", () => {
+    const row = apiUserRow(admin);
+
+    assert.match(row, /data-action="editApiUser"[^>]*>Editar utilizador</);
+    assert.ok(row.indexOf("Editar utilizador") < row.indexOf("Trocar palavra-passe"));
 });
 
 test("o verbo da pausa segue o estado do utilizador", () => {
@@ -106,4 +115,43 @@ test("o valor escolhido fica selecionado", () => {
 /** Uma coluna sem filtro no descritor não gera controlo nenhum. */
 test("uma coluna sem filtro não aparece na barra", () => {
     assert.doesNotMatch(apiUserFilterControls(COLUMNS, {}), /company_name/);
+});
+
+const LICENSES = [
+    { id: 7, company_name: "havicare", license_id: 22, name: "Lar do Sol" },
+    { id: 9, company_name: "hitcare", license_id: 3, name: "Casa Azul" },
+];
+
+/** Criar e editar são o mesmo formulário: o que muda é o que vem preenchido. */
+test("editar traz o utilizador dentro do formulário", () => {
+    const form = apiUserForm({ ...client, license_ref_id: 7 }, LICENSES);
+
+    assert.match(form, /data-id="2"/);
+    assert.match(form, /data-field="username" value="cliente"/);
+    assert.match(form, /<option value="license_client" selected>/);
+    assert.match(form, /<option value="7" selected>/);
+    assert.match(form, />Guardar</);
+});
+
+/** Nasce cliente, que é o perfil que a maioria leva, e sem licença nenhuma escolhida. */
+test("criar nasce vazio e no perfil de cliente", () => {
+    const form = apiUserForm(null, LICENSES);
+
+    assert.match(form, /data-id=""/);
+    assert.match(form, /data-field="username" value=""/);
+    assert.match(form, /<option value="license_client" selected>/);
+    assert.doesNotMatch(form, /<option value="7" selected>/);
+    assert.match(form, />Criar</);
+});
+
+/** A password só se pede a criar: trocá-la é outro verbo do mesmo menu. */
+test("só o formulário de criar pede palavra-passe", () => {
+    assert.match(apiUserForm(null, LICENSES), /data-field="password"/);
+    assert.doesNotMatch(apiUserForm(client, LICENSES), /data-field="password"/);
+});
+
+/** Um admin manda em todas as licenças, e a escolha de uma não se lhe aplica. */
+test("a licença de um administrador entra desligada", () => {
+    assert.match(apiUserForm(admin, LICENSES), /data-field="licenseRefId" disabled/);
+    assert.doesNotMatch(apiUserForm(client, LICENSES), /data-field="licenseRefId" disabled/);
 });
