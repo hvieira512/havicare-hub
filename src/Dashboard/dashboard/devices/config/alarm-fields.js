@@ -99,7 +99,9 @@ export function recurrenceWords(kind, days) {
  * A linha fechada de uma entrada de alarme: interruptor, título e valor à direita, com o
  * resto por baixo. O `name` agrupa as linhas da mesma lista e o browser fecha as outras.
  */
-export function alarmDisclosure({ kind, group, control = "", summary, body, attrs = "" }) {
+export function alarmDisclosure({ kind, group, control = "", summary: given, body, attrs = "" }) {
+    const summary = alarmLineSlots(given);
+
     return `
         <div class="border rounded bg-body d-flex align-items-start gap-2 p-2" data-repeat-row="${esc(kind)}" ${attrs}>
             ${control === "" ? "" : `<div class="flex-shrink-0 pt-1">${control}</div>`}
@@ -116,6 +118,16 @@ export function alarmDisclosure({ kind, group, control = "", summary, body, attr
                 <div class="pt-3">${body}</div>
             </details>
         </div>`;
+}
+
+/** Quem não tem nome fica com a hora por título, e aí repeti-la à direita não diz nada. */
+function alarmLineSlots(summary) {
+    return {
+        title: summary.title || "",
+        subtitle: summary.subtitle || "",
+        badges: summary.badges || "",
+        trailing: summary.trailing === summary.title ? "" : (summary.trailing || ""),
+    };
 }
 
 /** O «acrescentar» de uma lista, com a conta do que lá está por baixo do texto. */
@@ -143,6 +155,12 @@ const selectedLabel = (row, selector) => {
 const fieldValue = (row, selector) => String(row.querySelector(selector)?.value || "").trim();
 
 const TAKE_PILLS_FREQUENCIES = { 1: "once", 2: "daily", 3: "custom" };
+
+/** O campo guarda a data em ISO; na linha fechada ela lê-se como cá se escreve. */
+export function shortDate(value) {
+    const parts = String(value || "").trim().split("-");
+    return parts.length === 3 ? `${parts[2]}/${parts[1]}` : String(value || "").trim();
+}
 
 /**
  * O que enche cada encaixe da linha fechada, por tipo de lista. Aqui, e não espalhado por
@@ -193,7 +211,7 @@ const ALARM_LINE_SUMMARIES = {
         return {
             title: [name, dose === "" ? "" : `${dose} ${unit}`.trim()].filter(Boolean).join(" ") ||
                 "Medicamento por preencher",
-            subtitle: [times.join(" · "), end === "" ? "" : `até ${end}`].filter(Boolean).join(" · "),
+            subtitle: [times.join(" · "), end === "" ? "" : `até ${shortDate(end)}`].filter(Boolean).join(" · "),
             trailing: times.length === 0 ? "" : `${times.length}×/dia`,
             badges: "",
         };
@@ -205,10 +223,10 @@ export function refreshAlarmLine(row) {
     const summarize = ALARM_LINE_SUMMARIES[row?.dataset?.repeatRow || ""];
     if (!summarize) return;
 
-    const summary = summarize(row);
+    const summary = alarmLineSlots(summarize(row));
     for (const slot of ["title", "subtitle", "trailing", "badges"]) {
         const target = row.querySelector(`[data-alarm-line-${slot}]`);
-        if (target) target.textContent = summary[slot] || "";
+        if (target) target.textContent = summary[slot];
     }
 }
 

@@ -921,6 +921,7 @@
 }
 
 /* Sem largura mínima zero o título não corta e empurra a hora para fora do cartão. */
+.alarm-line-body,
 .alarm-line-main {
     min-width: 0;
 }

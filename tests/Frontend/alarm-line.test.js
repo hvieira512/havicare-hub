@@ -94,6 +94,20 @@ test("a linha fechada mostra o que se acabou de escrever, e não o que lá estav
     assert.equal(textOf(row, "trailing"), "21:15");
 });
 
+/** Sem isto a linha fechada só acertava até à primeira tecla, e o módulo é quem a liga. */
+test("escrever num campo aberto refaz a linha fechada, sem ninguém chamar nada", () => {
+    const section = configSection(renderConfigInputs, ALARM, { items: [{ time: "08:40", label: "Antigo" }] }, WONLEX_META);
+    document.body.appendChild(section);
+
+    const [row] = rowsOf(section, "alarm_clock");
+    const label = row.querySelector("[data-alarm-clock-field=\"label\"]");
+    label.value = "Novo";
+    label.dispatchEvent(new window.Event("input", { bubbles: true }));
+
+    assert.equal(textOf(row, "title"), "Novo");
+    section.remove();
+});
+
 test("o plano de medicação mostra a frequência à direita, porque tem várias horas", () => {
     const section = configSection(renderConfigInputs, MEDICATION, {
         plans: [{

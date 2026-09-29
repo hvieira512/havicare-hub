@@ -1,6 +1,6 @@
 import { esc, fieldLabel } from "../../../format.js";
 import { field } from "../../../components/form-field.js";
-import { addAlarmButton, alarmDisclosure } from "../alarm-fields.js";
+import { addAlarmButton, alarmDisclosure, shortDate } from "../alarm-fields.js";
 import {
     WONLEX_MEDICATION_PERIODS,
     boolValue,
@@ -273,7 +273,7 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0, group = "wonlex-me
         summary: {
             title: [normalized.drugName, dose === "" ? "" : `${dose} ${unit}`.trim()]
                 .filter(Boolean).join(" ") || "Medicamento por preencher",
-            subtitle: [times.join(" · "), normalized.drugEndTime === "" ? "" : `até ${normalized.drugEndTime}`]
+            subtitle: [times.join(" · "), normalized.drugEndTime === "" ? "" : `até ${shortDate(normalized.drugEndTime)}`]
                 .filter(Boolean).join(" · "),
             trailing: times.length === 0 ? "" : `${times.length}×/dia`,
             badges: "",
