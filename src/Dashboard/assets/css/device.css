@@ -53,11 +53,11 @@
 }
 
 /* A hora mede o que a hora precisa e nunca se corta -- o `text-nowrap` da célula trata disso,
-   e é a coluna que se usa para comparar dois eventos. O `overflow` visível é para a seta da
-   linha que abre não ser cortada pela borda da coluna. */
+   e é a coluna que se usa para comparar dois eventos. A largura conta com a seta da linha que
+   abre, que vive nesta célula: o que não lhe couber sai para fora e a lista ganha barra
+   horizontal. */
 .telemetry-table > tbody > tr > td:nth-child(4) {
-    width: 7.5rem;
-    overflow: visible;
+    width: 8.25rem;
 }
 
 /* A altura de duas linhas fica no contentor e não numa linha vazia: sem detalhes, o valor
