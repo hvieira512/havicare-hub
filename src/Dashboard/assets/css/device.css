@@ -692,6 +692,12 @@
     grid-column: 1 / -1;
 }
 
+/* A capacidade que nunca mediu. O tracejado diz a ausência sem uma palavra a dizê-la, e o
+   Bootstrap não tem utilitário para o estilo da borda. */
+.telemetry-pill {
+    --bs-border-style: dashed;
+}
+
 /* O enchimento do mosaico, mais apertado do que o do cartão genérico: numa célula de 9rem
    cada pixel de moldura sai do nome da categoria. Não há passo do Bootstrap a .75rem. */
 .telemetry-card {
