@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import "./support/browser-env.js";
-import { changedConfigGroupEntries } from "../../src/Dashboard/dashboard/devices/config/panel.js";
+import { changedConfigEntries } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { parseFragment } from "./support/dom.js";
 
 /**
@@ -31,7 +31,7 @@ test("desligar um interruptor envia esse e não o vizinho", () => {
         { key: "child_lock", on: false, stored: true },
     ]);
 
-    assert.deepEqual(changedConfigGroupEntries(group), {
+    assert.deepEqual(changedConfigEntries(group), {
         child_lock: { enabled: false },
     });
 });
@@ -42,7 +42,7 @@ test("com os dois alterados, cada um leva o seu valor", () => {
         { key: "child_lock", on: true, stored: false },
     ]);
 
-    assert.deepEqual(changedConfigGroupEntries(group), {
+    assert.deepEqual(changedConfigEntries(group), {
         early_dispense: { enabled: false },
         child_lock: { enabled: true },
     });
@@ -54,5 +54,5 @@ test("sem alterações não se envia nada", () => {
         { key: "child_lock", on: true, stored: true },
     ]);
 
-    assert.deepEqual(changedConfigGroupEntries(group), {});
+    assert.deepEqual(changedConfigEntries(group), {});
 });

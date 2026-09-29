@@ -46,17 +46,16 @@ test("o verbo declarado ganha ao valor por omissão", () => {
     );
 });
 
-/** O cartão de uma definição continua a guardar-se, e o botão dela não é um verbo. */
-test("uma definição com campos continua a dizer Enviar", () => {
-    assert.equal(
-        buttonLabel(action({
-            key: "step_goal",
-            label: "Meta de passos",
-            input: "number",
-            fields: ["steps"],
-            transient: false,
-            verb: "Nunca usado",
-        })),
-        "Enviar",
-    );
+/** Uma definição guarda-se, e quem a envia é o rodapé da secção. O verbo é das acções. */
+test("uma definição com campos não tem botão nenhum", () => {
+    const section = parseFragment(renderConfigSection("wonlex-json", action({
+        key: "step_goal",
+        label: "Meta de passos",
+        input: "number",
+        fields: ["steps"],
+        transient: false,
+        verb: "Nunca usado",
+    }), null));
+
+    assert.equal(section.querySelectorAll("[data-action=\"saveConfig\"]").length, 0);
 });
