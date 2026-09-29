@@ -645,10 +645,19 @@ indefinidamente até alguém o encher e reescrever o «carregado até». Quem sa
 o prato acabou é o hub, pelos restantes a zero e pelo nível `2`; o aparelho não
 distingue esse estado de um dia normal.
 
-> **Ele também não repõe o prato sozinho.** Uma versão anterior desta nota dizia
-> que sim, a partir de um prato que voltou à posição zero logo depois de esgotar.
-> Era o `RestartCycle` de quem estava ao pé do aparelho. Com os restantes a zero e
-> ninguém a tocar-lhe, o prato fica onde está e continua a andar.
+> **O prato volta ao zero quando a última dose carregada é levantada — e só
+> então.** Se ela falhar, fica onde está e a dose seguinte passa para lá do
+> carregamento. Três medições, e a diferença é sempre o desfecho da última:
+>
+> | posição no fim | última dose | repôs-se |
+> |---|---|---|
+> | 3, com o carregado em 3 | tomada (`7`) | sim, 34 s depois |
+> | 7, com o carregado em 7 | falhada (`6`) | não — a seguinte foi ao 8 |
+> | 4, com o carregado em 4 | tomada (`7`) | sim, 42 s depois |
+>
+> Repor-se não resolve nada: com o «carregado até» intacto, os restantes voltam ao
+> número cheio e o aparelho recomeça a dispensar os mesmos compartimentos, agora
+> vazios. Seja qual for o caminho, quem tem de reagir é quem recarrega.
 
 ### Como se limpa uma avaria de reposição do prato
 
