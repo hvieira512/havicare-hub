@@ -7,9 +7,10 @@ import {
     renderConfigurationDeliveryNotice,
     resolveConfigDelivery,
 } from "./delivery.js";
-// Os mesmos cinco ícones do catálogo de capacidades: as secções são as mesmas, e um separador
+// Os mesmos cinco ícones do catálogo de capacidades: as secções são as mesmas, e uma pastilha
 // com outro ícone para a mesma secção lia-se como sendo outra coisa.
 import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
+import { sectionStrip } from "../../components/chips.js";
 import { configCatalogSections } from "./catalog-model.js";
 import { CONFIG_INPUTS } from "./inputs/index.js";
 import { toggleField, toggleValue } from "./inputs/generic.js";
@@ -139,18 +140,17 @@ export function renderDeviceConfigurationRoot(context) {
                 <i class="fa-solid fa-clock mt-1" aria-hidden="true"></i>
                 <span>${esc(offlineNotice)}</span>
             </div>`}
-            <div class="nav nav-underline flex-wrap gap-3" role="tablist">
-                ${groups
-                    .map(
-                        (group) => `
-                    <button type="button" class="nav-link d-inline-flex align-items-center gap-2 ${group.key === currentCategory ? "active" : ""}" data-config-category="${esc(group.key)}">
-                        <i class="fa-solid ${esc(CAPABILITY_SECTION_ICONS[group.key] || "fa-gear")} fa-fw" aria-hidden="true"></i>
-                        ${esc(group.label)}
-                        <span class="badge rounded-pill text-bg-secondary">${group.entries.length}</span>
-                    </button>
-                `,
-                    )
-                    .join("")}
+            <div class="capability-section-nav d-flex flex-wrap" role="group" aria-label="Secções de configuração">
+                ${sectionStrip(
+                    groups.map((group) => ({
+                        key: group.key,
+                        label: group.label,
+                        count: group.entries.length,
+                        icon: CAPABILITY_SECTION_ICONS[group.key] || "fa-gear",
+                    })),
+                    "selectConfigCategory",
+                    currentCategory,
+                )}
             </div>
             <div class="tab-content">
                 ${groups

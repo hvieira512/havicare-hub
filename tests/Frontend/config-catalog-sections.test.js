@@ -21,7 +21,7 @@ const render = (context) => parseFragment(renderDeviceConfigurationRoot({
 }));
 
 const sectionTabs = (root) =>
-    [...root.querySelectorAll("[data-config-category]")].map((tab) => tab.dataset.configCategory);
+    [...root.querySelectorAll(".capability-section-chip")].map((chip) => chip.dataset.section);
 
 test.afterEach(() => {
     state.protocols = [];
@@ -63,7 +63,7 @@ test("as capacidades agrupadas colapsam as chaves nativas numa entrada só", () 
     assert.equal(sections[0].dataset.configStored, "1");
     assert.equal(sections[0].dataset.configSectionName, "contacts");
     assert.equal(
-        root.querySelector("[data-config-category=\"contacts\"] .badge").textContent.trim(),
+        root.querySelector(".capability-section-chip[data-section=\"contacts\"] .count-number").textContent.trim(),
         "1",
     );
 });
@@ -93,11 +93,11 @@ test("as secções saem pela ordem do catálogo de secções, e não pela do cat
     });
 
     assert.deepEqual(sectionTabs(root), ["health", "contacts", "settings_system"]);
-    // Sem `sectionLabel` na definição, o separador fica com o nome cru da secção.
+    // Sem `sectionLabel` na definição, a pastilha fica com o nome cru da secção.
     assert.match(
-        root.querySelector("[data-config-category=\"settings_system\"]")
+        root.querySelector(".capability-section-chip[data-section=\"settings_system\"]")
             .textContent.replace(/\s+/g, " ").trim(),
-        /^settings_system 1$/,
+        /^settings_system\s*1$/,
     );
 });
 

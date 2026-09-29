@@ -139,7 +139,7 @@ ob_start();
                                         <button id="saveCapabilitiesBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar capacidades</button>
                                     </div>
                                 </div>
-                                <div id="capabilitySectionNav" class="d-flex flex-wrap gap-1 mb-3" role="group" aria-label="Secções de capacidade"></div>
+                                <div id="capabilitySectionNav" class="capability-section-nav d-flex flex-wrap mb-3" role="group" aria-label="Secções de capacidade"></div>
                                 <div id="capabilityGroups"></div>
                                 <div class="border-top mt-4 pt-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
                                     <div>

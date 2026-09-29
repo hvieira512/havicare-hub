@@ -320,6 +320,7 @@ function renderCapabilityCatalogSectionNav(sections) {
                     key: catalogSectionId(section),
                     label,
                     count: entries.filter((entry) => entry.supported).length,
+                    icon: CAPABILITY_SECTION_ICONS[section] || "fa-circle-info",
                 })),
                 "scrollCapabilityCatalogSection",
                 state.settingsModal.activeCapabilityCatalogSection,

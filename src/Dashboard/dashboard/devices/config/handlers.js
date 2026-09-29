@@ -34,14 +34,12 @@ import {
  * regras de cada campo vivem com esse campo, e não aqui.
  */
 export function handleDeviceConfigClick(event) {
-    const button = event.target.closest(
-        "[data-config-category], [data-action]",
-    );
+    const button = event.target.closest("[data-action]");
     if (!button) return;
 
-    if (button.dataset.configCategory) {
+    if (button.dataset.action === "selectConfigCategory") {
         event.preventDefault();
-        state.deviceModal.activeCategory = button.dataset.configCategory;
+        state.deviceModal.activeCategory = button.dataset.section || "";
         renderDeviceConfigurationModal();
         return;
     }

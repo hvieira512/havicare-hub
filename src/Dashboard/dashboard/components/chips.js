@@ -1,4 +1,4 @@
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 
 /**
  * As duas tiras de pastilhas da plataforma: as secções de um catálogo, e os filtros
@@ -7,15 +7,19 @@ import { html, raw } from "../html.js";
  */
 
 /**
- * Uma tira de pastilhas de secção, cada uma com a sua contagem. A pastilha acesa vem do
- * estado e não do DOM, porque a tira é redesenhada.
+ * Uma tira de pastilhas de secção, cada uma com o ícone da secção e a sua contagem. A
+ * pastilha acesa vem do estado e não do DOM, porque a tira é redesenhada.
+ *
+ * É a única forma de escolher uma secção no hub -- o painel de configuração tinha separadores
+ * sublinhados com distintivo do Bootstrap e o catálogo pastilhas sem ícone, três aparências
+ * para o mesmo gesto.
  */
 export function sectionStrip(sections, action, activeKey = "") {
     return sections
-        .map(({ key, label, count, icon = "" }) => html`
+        .map(({ key, label, count, icon }) => html`
         <button type="button" class="capability-section-chip d-inline-flex align-items-center flex-shrink-0 rounded-pill text-nowrap${key === activeKey ? " selected" : ""}"
             data-action="${action}" data-section="${key}">
-            ${raw(icon ? html`<i class="fa-solid ${icon}"></i>` : "")}${label}<span class="count count-number" data-section-count>${count}</span>
+            <i class="fa-solid ${icon}" aria-hidden="true"></i>${label}<span class="count count-number" data-section-count>${count}</span>
         </button>`)
         .join("");
 }
