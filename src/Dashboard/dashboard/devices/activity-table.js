@@ -1,5 +1,6 @@
 import { html, raw } from "../html.js";
 import { emptyPanel } from "../components/empty-panel.js";
+import { dayKey, dayLabel } from "../format.js";
 
 /**
  * A tabela genérica de atividade -- a de telemetria e a de pedidos usam-na igual. Recebe as
@@ -13,6 +14,18 @@ import { emptyPanel } from "../components/empty-panel.js";
  */
 const openActivityRows = new Set();
 
+/**
+ * As larguras das colunas. Com `table-layout: fixed` o browser mede-as pela primeira linha,
+ * e a primeira é o cabeçalho de um dia, com `colspan` a atravessar a tabela toda -- sem isto
+ * as quatro colunas saíam todas iguais. O nome é o que sobra, e por isso não leva `col`.
+ */
+const COLGROUP = `<colgroup>
+    <col class="telemetry-col-icon">
+    <col>
+    <col class="telemetry-col-value">
+    <col class="telemetry-col-time">
+</colgroup>`;
+
 /** A página que cada lista tinha da última vez, para se saber quando o leitor mudou de página. */
 const lastRenderedPage = new Map();
 
@@ -24,10 +37,45 @@ export function activityTable(rootEl, rows, emptyText, idPrefix, page = 1) {
     const scrollTop = pageChanged ? 0 : rootEl.scrollTop;
     rootEl.innerHTML = rows.length
         ? html`<table class="table table-sm align-middle mb-0 telemetry-table">
-            <tbody>${raw(rows.map((row, index) => activityRow(row, `${idPrefix}${index}`)).join(""))}</tbody>
+            ${raw(COLGROUP)}
+            <tbody>${raw(groupedByDay(rows, idPrefix))}</tbody>
            </table>`
         : emptyPanel(emptyText);
     rootEl.scrollTop = scrollTop;
+}
+
+/**
+ * As linhas, com um cabeçalho por dia pelo meio. O cabeçalho conta as linhas daquele dia,
+ * que é o que faz dele um cabeçalho e não uma data solta.
+ *
+ * Uma linha sem instante não abre grupo nenhum: há tipos que chegam sem data e não vale a
+ * pena inventar-lhes um dia.
+ */
+function groupedByDay(rows, idPrefix) {
+    const counts = new Map();
+    rows.forEach((row) => {
+        const key = dayKey(row.at);
+        if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+
+    let openDay = null;
+    return rows
+        .map((row, index) => {
+            const key = dayKey(row.at);
+            const header = key && key !== openDay
+                ? dayHeader(dayLabel(row.at), counts.get(key) ?? 0)
+                : "";
+            if (key) openDay = key;
+            return header + activityRow(row, `${idPrefix}${index}`);
+        })
+        .join("");
+}
+
+function dayHeader(label, count) {
+    return html`
+        <tr class="telemetry-day" data-day-header>
+            <td colspan="4" class="text-uppercase small text-secondary fw-semibold">${label}<span class="telemetry-day-count ms-2 fw-normal">${String(count)}</span></td>
+        </tr>`;
 }
 
 /** Abre ou fecha a linha carregada. Devolve `true` quando tratou do clique. */

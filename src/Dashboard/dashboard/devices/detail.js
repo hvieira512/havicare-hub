@@ -13,8 +13,8 @@ import {
     commandLabel,
     eventTime,
     rowPayload,
+    timeOnly,
     when,
-    whenShort,
 } from "../format.js";
 import { html, raw } from "../html.js";
 import { capabilityLabel } from "../capability-catalog.js";
@@ -350,7 +350,8 @@ export function telemetryActivityRow(payload) {
         // O `seq` é monótono por dispositivo e lista. O IMEI vai na chave porque ele
         // recomeça em cada aparelho.
         key: `t:${state.selectedImei}:${payload?.seq ?? `${at}:${type}`}`,
-        time: whenShort(at) || "hora desconhecida",
+        at,
+        time: timeOnly(at) || "--:--",
         timeTitle: when(at),
     };
 }
@@ -525,7 +526,8 @@ function downlinkActivityRow(command) {
         // dois por inteiro -- que num pedido falhado é justamente o que se quer ler.
         expanded: [note, replied].filter(Boolean).join(" · "),
         key: `d:${state.selectedImei}:${command.id ?? `${command.requestedAt}:${feature}`}`,
-        time: whenShort(command.requestedAt) || "-",
+        at: command.requestedAt,
+        time: timeOnly(command.requestedAt) || "--:--",
         timeTitle: when(command.requestedAt),
     };
 }

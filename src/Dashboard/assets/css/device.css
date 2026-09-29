@@ -41,23 +41,30 @@
     table-layout: fixed;
 }
 
-/* Colunas fixas, iguais nos dois painéis: o ícone, o nome, o valor com o que sobra, e a
-   hora. Sem isto cada página media as suas colunas pelo conteúdo que lhe tocou, e as duas
-   listas lado a lado nunca alinhavam entre si nem de uma página para a outra. */
-.telemetry-table > tbody > tr > td:nth-child(1) {
-    width: 2.125rem;
+/* Três colunas medidas e o nome com o resto. O que se prende aqui é a do valor: a pastilha
+   de estado de um pedido mede 105px, e enquanto o valor levava o que sobrava de 34% + 8.25rem
+   ficava com 98px num painel de 401 -- o «O» de CONFIRMADO desaparecia. */
+.telemetry-col-icon { width: 2.125rem; }
+.telemetry-col-value { width: 7.5rem; }
+
+/* A hora mede o que a hora precisa, agora que a data subiu para o cabeçalho do dia. A
+   largura conta com a seta da linha que abre, que vive nesta célula. */
+.telemetry-col-time { width: 5rem; }
+
+/* O cabeçalho de um dia atravessa a tabela toda e não é uma linha de dados: sem linha em
+   baixo, e colado ao rolar para se saber sempre em que dia se está. */
+.telemetry-day > td {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bs-tertiary-bg);
+    border-bottom-width: 0;
+    letter-spacing: .06em;
+    padding-left: .75rem;
 }
 
-.telemetry-table > tbody > tr > td:nth-child(2) {
-    width: 34%;
-}
-
-/* A hora mede o que a hora precisa e nunca se corta -- o `text-nowrap` da célula trata disso,
-   e é a coluna que se usa para comparar dois eventos. A largura conta com a seta da linha que
-   abre, que vive nesta célula: o que não lhe couber sai para fora e a lista ganha barra
-   horizontal. */
-.telemetry-table > tbody > tr > td:nth-child(4) {
-    width: 8.25rem;
+.telemetry-day-count {
+    color: var(--bs-secondary-color);
 }
 
 /* A altura de duas linhas fica no contentor e não numa linha vazia: sem detalhes, o valor

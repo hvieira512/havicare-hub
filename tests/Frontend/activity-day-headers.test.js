@@ -1,0 +1,88 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import "./support/browser-env.js";
+
+const { activityTable } =
+    await import("../../src/Dashboard/dashboard/devices/activity-table.js");
+
+/**
+ * A data sobe para um cabeçalho por dia, e a linha fica só com a hora.
+ *
+ * A coluna da hora reservava 8.25rem para `29/09, 15:04:10` repetido em todas as linhas,
+ * e eram esses pixéis que faltavam à pastilha de estado ao lado. Agrupar por dia diz a
+ * mesma coisa uma vez e devolve a largura a quem precisa dela.
+ */
+
+const row = (at, name, extra = {}) => ({
+    icon: "fa-battery-full",
+    name,
+    at,
+    time: at.slice(11, 16),
+    ...extra,
+});
+
+function render(rows) {
+    const root = document.createElement("div");
+    activityTable(root, rows, "Sem nada.", "t", 1);
+    return root;
+}
+
+test("cada dia leva um cabeçalho, e as linhas do mesmo dia ficam debaixo dele", () => {
+    const root = render([
+        row("2026-09-29T15:04:00Z", "Bateria"),
+        row("2026-09-29T14:54:00Z", "Atividade"),
+        row("2026-09-28T16:56:00Z", "Bateria"),
+    ]);
+
+    const headers = [...root.querySelectorAll("[data-day-header]")];
+    assert.equal(headers.length, 2, "esperavam-se dois dias distintos");
+    assert.equal(root.querySelectorAll("tbody tr[data-row-key], tbody tr:not([data-day-header]):not(.telemetry-row-panel)").length >= 3, true);
+});
+
+test("o cabeçalho conta as linhas daquele dia", () => {
+    const root = render([
+        row("2026-09-29T15:04:00Z", "Bateria"),
+        row("2026-09-29T14:54:00Z", "Atividade"),
+        row("2026-09-28T16:56:00Z", "Bateria"),
+    ]);
+
+    const [primeiro, segundo] = [...root.querySelectorAll("[data-day-header]")]
+        .map((el) => el.textContent.replace(/\s+/g, " ").trim());
+
+    assert.match(primeiro, /2$/, `o primeiro dia tem duas linhas: ${primeiro}`);
+    assert.match(segundo, /1$/, `o segundo dia tem uma linha: ${segundo}`);
+});
+
+test("o dia de hoje diz «Hoje» e o de ontem diz «Ontem»", () => {
+    const hoje = new Date();
+    const ontem = new Date(hoje.getTime() - 86400000);
+    const root = render([
+        row(hoje.toISOString(), "Bateria"),
+        row(ontem.toISOString(), "Atividade"),
+    ]);
+
+    const textos = [...root.querySelectorAll("[data-day-header]")]
+        .map((el) => el.textContent.replace(/\s+/g, " ").trim());
+
+    assert.match(textos[0], /^Hoje/i, textos[0]);
+    assert.match(textos[1], /^Ontem/i, textos[1]);
+});
+
+test("uma linha sem data não inventa cabeçalho nenhum", () => {
+    const root = render([{ icon: "fa-question", name: "Sem data", time: "-" }]);
+
+    assert.equal(root.querySelectorAll("[data-day-header]").length, 0);
+});
+
+test("a tabela leva um colgroup: com layout fixo as larguras saem dele e não da primeira linha", () => {
+    const root = render([row("2026-09-29T15:04:00Z", "Bateria")]);
+    const cols = [...root.querySelectorAll("colgroup col")];
+
+    assert.equal(cols.length, 4, "quatro colunas, quatro <col>");
+    assert.deepEqual(
+        cols.map((col) => col.className),
+        ["telemetry-col-icon", "", "telemetry-col-value", "telemetry-col-time"],
+        "o nome mede o que sobra e por isso é o único <col> sem classe",
+    );
+});
