@@ -619,6 +619,37 @@ O procedimento, e a ordem importa:
    ao recarregar a meio não coincidem — parado no 10 e cheio até ao 28,
    escreve-se 28.
 
+### O prato acabar não pára nada
+
+**Quando os compartimentos carregados se esgotam, o aparelho continua a
+dispensar.** Não pára, não recusa, não avisa: a dose seguinte roda como qualquer
+outra e entra na contabilidade como entregue.
+
+Medido a 29/09/2026, com o «carregado até» em 7 e o prato na posição 6, ou seja
+uma dose por dar:
+
+```
+13:37   o alarme esgota o prato       posição 6 → 7, restantes 0, nível 2 (vazio)
+13:42   o alarme seguinte dispara     posição 7 → 8, restantes 0
+13:44   e acaba em falhada, como qualquer dose que ninguém levante
+```
+
+O `0x811D` ficou em zero porque a conta corta aí — é `carregado até − posição`,
+com corte a zero —, mas o `0x811A` andou na mesma. **Se alguém carregar no botão
+dentro do tempo, a dose fica registada como tomada com o compartimento vazio**,
+porque não há sensor de queda. É a falha calada deste aparelho, e o «carregado
+até» é a única coisa que o poderia travar — e não trava.
+
+Para quem opera: ao fim dos dias que o prato dá, o aparelho toca e reporta doses
+indefinidamente até alguém o encher e reescrever o «carregado até». Quem sabe que
+o prato acabou é o hub, pelos restantes a zero e pelo nível `2`; o aparelho não
+distingue esse estado de um dia normal.
+
+> **Ele também não repõe o prato sozinho.** Uma versão anterior desta nota dizia
+> que sim, a partir de um prato que voltou à posição zero logo depois de esgotar.
+> Era o `RestartCycle` de quem estava ao pé do aparelho. Com os restantes a zero e
+> ninguém a tocar-lhe, o prato fica onde está e continua a andar.
+
 ### Como se limpa uma avaria de reposição do prato
 
 O `0x8122` — *Pill Tray Reset Fault*, que o aparelho mostra no ecrã como
