@@ -21,7 +21,7 @@ import { storedFilterList } from "./devices/list-filters.js";
 import {
     ensureProtocolsLoaded,
     initDeviceList,
-    loadDevice,
+    restoreSelectedDevice,
 } from "./devices/list.js";
 import { renderSelection } from "./devices/detail.js";
 import { initDeviceStream } from "./devices/stream.js";
@@ -118,13 +118,7 @@ export async function startDashboard() {
             online: typeof stored.online === "boolean" ? stored.online : null,
         });
     }
-    const storedSelectedImei = loadTextStorage(SELECTED_DEVICE_STORAGE_KEY);
-    if (storedSelectedImei) {
-        state.selectedImei = storedSelectedImei;
-        void loadDevice(storedSelectedImei);
-    } else {
-        renderSelection();
-    }
+    restoreSelectedDevice(loadTextStorage(SELECTED_DEVICE_STORAGE_KEY));
 
     startSelectedDevicePolling();
 }

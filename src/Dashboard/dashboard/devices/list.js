@@ -192,6 +192,21 @@ async function openDeviceSelector() {
 }
 
 /**
+ * O arranque: há escolha guardada, lê-se; não há, abre-se o selector. Sem dispositivo não
+ * existe coluna de atividade nenhuma, e o ecrã ficava à espera de um clique num botão.
+ */
+export function restoreSelectedDevice(storedImei) {
+    if (storedImei) {
+        state.selectedImei = storedImei;
+        void loadDevice(storedImei);
+        return;
+    }
+
+    renderSelectionDetail();
+    void openDeviceSelector();
+}
+
+/**
  * O esqueleto da lista e dos filtros. Cada linha é o cartão a sério com barras no lugar do
  * texto, para a lista não saltar quando os dados chegam.
  */
