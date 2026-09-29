@@ -226,24 +226,17 @@ function renderCapabilitiesCatalogSection() {
     els.capabilityCatalogViewer.innerHTML = visibleSections
         .map(({ section, label, entries }) => {
             const supported = entries.filter((entry) => entry.supported).length;
-            let index = 0;
 
             const rows = entries
                 .map((entry) => {
                     const facts = entry.supported
                         ? capabilityFacts(entry)
                         : [supplierName ? `não oferecido pela ${supplierName}` : "não oferecido"];
-                    // Numera o que é suportado, para o último número da secção dizer
-                    // quantas capacidades o dispositivo tem de facto.
-                    const number = entry.supported
-                        ? String(++index).padStart(2, "0")
-                        : "—";
                     // Os ícones das secções irmãs vão todos na mesma cor: cores diferentes
                     // leem-se como gravidades diferentes, e o vermelho numa secção de
                     // alarmes lê-se como erro em vez de categoria.
                     return html`
                 <div class="capability-row d-grid border rounded-2${entry.supported ? "" : " is-unsupported"}">
-                    <span class="capability-index fw-bold lh-1 text-end tabular-nums" aria-hidden="true">${number}</span>
                     <span class="d-flex justify-content-center text-secondary"><i class="fa-solid ${capabilityIcon(entry, section)}"></i></span>
                     <span class="fw-semibold min-w-0">${entry.label || humanizeCapabilityKey(entry.key)}</span>
                     <span class="capability-facts text-secondary">${facts.join(" · ")}</span>
