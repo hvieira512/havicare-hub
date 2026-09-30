@@ -25,7 +25,7 @@ ob_start();
     <div class="row g-0 h-100">
         <div class="col-12 device-modal-content">
             <div class="tab-content">
-                <div class="tab-pane fade show active" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
+                <div class="tab-pane fade show active p-3 p-lg-0" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
                     <form id="deviceForm" class="row g-4">
                         <div class="col-lg-8 order-lg-1">
                             <div class="d-flex flex-column gap-4">
@@ -115,10 +115,10 @@ render_modal(
     body: $body,
     footer: $footer,
     size: 'xl',
-    fullscreenBelow: 'md',
+    fullscreenBelow: 'lg',
     scrollable: true,
     headerHtml: $header,
-    bodyClass: 'overflow-hidden',
+    bodyClass: 'overflow-hidden p-0 p-lg-3',
     contentClass: 'h-100',
     footerClass: 'd-none d-lg-flex',
 );

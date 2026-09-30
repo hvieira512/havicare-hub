@@ -31,7 +31,8 @@
     opacity: 1;
 }
 
-@media (max-width: 767.98px) {
+/* Onde o diálogo é o ecrã todo -- tablet e telemóvel -- o fecho é um alvo de toque. */
+@media (max-width: 991.98px) {
     #deviceModal .modal-header>.btn-close {
         width: 2.75rem;
         height: 2.75rem;
@@ -148,15 +149,6 @@
     color: var(--bs-secondary-color);
     font-size: var(--fs-label);
     letter-spacing: .1em;
-}
-
-@media (max-width: 991.98px) {
-    /* O painel das configurações entrega-se rente: a régua das secções atravessa o modal e
-       o recuo de cada definição é o dela. Sangra o enchimento do corpo em vez de o apagar,
-       que o separador «Geral» é um formulário e precisa dele. */
-    #deviceModal .config-panel {
-        margin: -1rem;
-    }
 }
 
 .config-section-nav .config-section-link {

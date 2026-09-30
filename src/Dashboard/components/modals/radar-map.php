@@ -70,7 +70,8 @@ render_modal(
     body: $body,
     footer: '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>',
     size: 'xl',
-    fullscreenBelow: 'md',
+    fullscreenBelow: 'lg',
     scrollable: true,
     headerHtml: $header,
+    footerClass: 'd-none d-lg-flex',
 );

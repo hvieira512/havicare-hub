@@ -30,7 +30,7 @@ render_modal(
     body: $body,
     footer: $footer,
     size: 'lg',
-    fullscreenBelow: 'md',
+    fullscreenBelow: 'lg',
     staticBackdrop: true,
     headerHtml: $header,
 );
