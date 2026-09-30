@@ -122,19 +122,17 @@ export function renderDeviceConfigurationRoot(context) {
     const offlineNotice = offlineQueueNotice(online, queueTtlSeconds, catalog);
 
     return `
-        <div class="vstack gap-3" data-config-root>
+        <div class="config-panel d-flex flex-column" data-config-root>
             ${offlineNotice === ""
                 ? ""
                 : `
-            <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 small mb-0" role="status">
+            <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 small mb-0 rounded-0" role="status">
                 <i class="fa-solid fa-clock mt-1" aria-hidden="true"></i>
                 <span>${esc(offlineNotice)}</span>
             </div>`}
-            <div class="row g-3">
-                <div class="col-12 col-lg-3">
-                    ${sectionList(groups, currentCategory)}
-                </div>
-                <div class="col-12 col-lg-9 tab-content">
+            <div class="config-panel-body d-flex flex-column flex-lg-row flex-grow-1 min-h-0">
+                ${sectionList(groups, currentCategory)}
+                <div class="config-panel-content tab-content flex-grow-1 min-w-0">
                 ${groups
                     .map(
                         (group) => `
@@ -190,7 +188,8 @@ export function renderDeviceConfigurationRoot(context) {
  */
 function sectionList(groups, currentCategory) {
     return `
-        <div class="config-section-nav vstack border rounded-3 overflow-hidden" role="group" aria-label="Secções de configuração">
+        <div class="config-section-nav vstack flex-shrink-0" role="group" aria-label="Secções de configuração">
+            <div class="config-section-nav-label text-uppercase fw-semibold">Secções</div>
             ${groups.map((group) => `
             <button type="button" class="config-section-link d-flex align-items-center justify-content-between border-bottom${group.key === currentCategory ? " selected" : ""}"
                     data-action="selectConfigCategory" data-section="${esc(group.key)}" data-config-section-link
@@ -199,7 +198,7 @@ function sectionList(groups, currentCategory) {
                     <i class="fa-solid ${esc(CAPABILITY_SECTION_ICONS[group.key] || "fa-gear")} fa-fw" aria-hidden="true"></i>
                     <span class="text-truncate">${esc(group.label)}</span>
                 </span>
-                <span class="small text-secondary flex-shrink-0"><span data-config-section-total>${group.entries.length}</span><span data-config-section-changed></span></span>
+                <span class="small text-secondary flex-shrink-0"><span data-config-section-total>${group.entries.length}</span><span data-config-section-changed></span><span class="config-section-chevron" aria-hidden="true"> &rsaquo;</span></span>
             </button>`).join("")}
         </div>`;
 }
@@ -378,7 +377,7 @@ function renderConfigGroup(protocol, entries, ctx) {
         ? configHelp(entries[0])
         : "";
 
-    const rows = entries.map((entry, index) => {
+    const rows = entries.map((entry) => {
         const capability = capabilityForEntry(entry, capabilities);
         const desired = normalizeDesired(entry, resolveConfigRow(entry, rowsByKey), capability ? extractCapabilityValue(capability) : null, protocol);
         const isToggle = isPlainToggle(entry);
@@ -404,7 +403,7 @@ function renderConfigGroup(protocol, entries, ctx) {
         const rowState = settingState(entry, desired, stored, deliveryMeta, true);
 
         return `
-            <div class="d-flex align-items-center gap-3 px-3 py-2${index === entries.length - 1 ? "" : " border-bottom"}" data-config-row
+            <div class="config-setting d-flex align-items-center gap-3 px-3 py-2 border-bottom" data-config-row
                  data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"
                  data-config-input="${esc(isToggle ? "toggle" : entry.input || "json")}" data-config-stored="${stored ? "1" : "0"}"
                  data-config-protocol="${esc(protocol)}"
@@ -420,10 +419,10 @@ function renderConfigGroup(protocol, entries, ctx) {
     }).join("");
 
     return `
-        <section class="border rounded-3 mb-3" data-config-group data-config-protocol="${esc(protocol)}">
+        <section data-config-group data-config-protocol="${esc(protocol)}">
             ${shared === ""
                 ? ""
-                : `<div class="px-3 py-2 border-bottom small text-secondary">${esc(shared)}</div>`}
+                : `<div class="px-3 pt-2 small text-secondary">${esc(shared)}</div>`}
             ${rows}
         </section>`;
 }
@@ -490,15 +489,18 @@ export function renderConfigSection(
     // Uma definição guarda-se e sai no envio da secção; uma acção dispara, e o botão dela é o
     // único sítio onde isso acontece.
     const isCommand = entry.transient === true || entry.requestOnly === true;
+    const commands = verbs.length > 0
+        ? renderConfigActionVerbs(verbs, disabled)
+        : isCommand
+            ? renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "", verb)
+            : "";
     const state = settingState(entry, desired, isStored, deliveryMeta, showConfigurationBadge);
 
     // O bloco do título leva `min-w-0` para encolher em vez de empurrar a pastilha de estado
     // para a linha de baixo.
     return `
-        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-label="${esc(entry.label || entry.key)}"${confirmAttrs}${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
-            ${drawsFields
-                ? `
-            <div class="d-flex align-items-start justify-content-between gap-2">
+        <section class="config-setting px-3 py-2 border-bottom" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-label="${esc(entry.label || entry.key)}"${confirmAttrs}${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
+            <div class="d-flex align-items-start gap-2">
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
                     ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
@@ -507,34 +509,21 @@ export function renderConfigSection(
                 <div class="flex-shrink-0">${state.badge}</div>
             </div>
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}
-            <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}">
+            ${drawsFields
+                ? `
+            <form class="mt-2" data-config-form data-config-key="${esc(entry.key)}">
                 ${verbs.length > 0 ? "" : renderConfigInputs(entry, desired, { ...meta, protocol })}
-                <div class="d-flex justify-content-end gap-2 mt-3">
-                    ${verbs.length > 0
-                        ? renderConfigActionVerbs(verbs, disabled)
-                        : isCommand
-                            ? renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "")
-                            : `<button type="reset" class="btn btn-outline-secondary btn-sm" title="Repor" aria-label="Repor" ${disabled ? "disabled" : ""}>
-                        <i class="fa-solid fa-rotate-left"></i>
-                    </button>`}
-                </div>
+                ${commands === ""
+                    ? ""
+                    : `<div class="d-flex justify-content-end gap-2 mt-2">${commands}</div>`}
             </form>`
-                : `
-            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
-                <div class="setting-row-title min-w-0">
-                    <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
-                    ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
-                    ${state.summary}
-                </div>
-                ${state.badge}
+                : control === "" && commands === ""
+                    ? ""
+                    : `
+            <div class="d-flex align-items-center justify-content-end gap-2 mt-2">
                 ${unitGroup(control, entry)}
-                ${verbs.length > 0
-                    ? renderConfigActionVerbs(verbs, disabled)
-                    : isCommand
-                        ? renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "", verb)
-                        : ""}
-            </div>
-            ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}`}
+                ${commands}
+            </div>`}
             ${renderConfigFeedback(entry.key, uiState)}
         </section>`;
 }

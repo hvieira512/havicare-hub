@@ -97,7 +97,7 @@ test("as secções saem pela ordem do catálogo de secções, e não pela do cat
     assert.match(
         root.querySelector("[data-config-section-link][data-section=\"settings_system\"]")
             .textContent.replace(/\s+/g, " ").trim(),
-        /^settings_system\s*1$/,
+        /^settings_system 1\b/,
     );
 });
 
