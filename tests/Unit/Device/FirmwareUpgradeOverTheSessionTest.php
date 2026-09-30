@@ -63,6 +63,24 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
         self::assertSame(['heartbeat_ack', 'upgrade_start'], $types);
     }
 
+    /**
+     * Os campos de subpacote vão a zero nos pacotes do upgrade.
+     *
+     * A secção 4 manda-o para um pedido partido em vários pacotes, em que cada um é tratado
+     * como pedido independente. O resto do protocolo manda `subtotal` a 1, e aqui não serve.
+     */
+    public function testTheUpgradePacketsCarryNoSubpacketFields(): void
+    {
+        $store = $this->store(['status' => 'starting', 'offset' => 0]);
+        $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
+        $message = $protocol->handleIncoming($this->session(), $this->frame(0x8E, 0));
+
+        $bytes = ($message?->responses ?? [])[0]->bytes ?? '';
+
+        self::assertSame(0, ord($bytes[7]), 'número do subpacote');
+        self::assertSame(0, ord($bytes[8]), 'total de subpacotes');
+    }
+
     /** Um `Status` diferente de zero pára tudo, e o aparelho deixa de receber pacotes. */
     public function testARefusalStopsTheTransfer(): void
     {

@@ -146,6 +146,11 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
             'deviceNumber' => (int)($decoded['deviceNumber'] ?? 0),
             'serial' => (int)($step['state']['serial'] ?? 0),
             'status' => 0,
+            // Um pedido partido em vários pacotes leva os campos de subpacote a zero, e cada
+            // pacote conta como pedido independente. É a secção 4; o resto do protocolo manda
+            // `subtotal` a 1.
+            'subserial' => 0,
+            'subtotal' => 0,
             'appDataRaw' => $step['body'],
         ]));
     }

@@ -16,14 +16,14 @@ namespace Hub\Device\Firmware;
  */
 final class FirmwareUpgrade
 {
-    /** O fornecedor pediu 256 para um `0x0F`, e o aparelho declara 300 no `0x8003`. */
-    public const MAX_PACKET = 256;
-
-    /** Cabeçalho, identidade e CRC, que contam para o tamanho do pacote no fio. */
-    private const FRAME_OVERHEAD = 22;
+    /**
+     * Os 256 são do **corpo de aplicação**, não da trama: perguntámo-lo com estas palavras e
+     * o fornecedor respondeu «this value is correct».
+     */
+    public const MAX_BODY = 256;
 
     /** Os quatro primeiros bytes do corpo são o offset. */
-    public const CHUNK = self::MAX_PACKET - self::FRAME_OVERHEAD - 4;
+    public const CHUNK = self::MAX_BODY - 4;
 
     public const START = 0x0E;
     public const DATA = 0x0F;
