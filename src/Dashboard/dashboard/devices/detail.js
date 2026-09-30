@@ -19,7 +19,7 @@ import {
 import { html, raw } from "../html.js";
 import { capabilityLabel } from "../capability-catalog.js";
 import { apiError, toast } from "../dialogs.js";
-import { deviceLicenseBlock } from "../components/device-license.js";
+import { deviceLicenseBlock, deviceLicenseLabel } from "../components/device-license.js";
 import { onlineBadge } from "../components/state-badge.js";
 import { cardTone, uplinkCardContent } from "../components/cards/telemetry.js";
 import { telemetryCard } from "../components/cards/shell.js";
@@ -71,6 +71,10 @@ function renderSelection() {
     // diga, e essa tem o botão: desaparece, e a da escolha ocupa a largura toda.
     els.detailColumn.classList.toggle("d-none", !state.selectedDetail);
     els.deviceColumn.classList.toggle("col-lg-4", !!state.selectedDetail);
+    // Abaixo do `lg` a banda e a régua substituem o cartão da identidade, e sem dispositivo
+    // escolhido não há identidade nenhuma para elas dizerem.
+    els.deviceBand.classList.toggle("d-none", !state.selectedDetail);
+    els.deviceTabs.classList.toggle("d-none", !state.selectedDetail);
     // Sem dispositivo escolhido, o cartão dos pedidos não tem mosaico nenhum para mostrar.
     els.requestCardsCard?.classList.toggle("d-none", !state.selectedDetail);
     if (!state.selectedDetail) {
@@ -244,6 +248,13 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     // antes do identificador.
     els.selectedDeviceBadge.innerHTML = onlineBadge(device.online);
     els.selectedDeviceMeta.textContent = `${typeLabel} · ${supplier || "Sem fornecedor"} · ${model || "Sem modelo interno"}`;
+    // A banda do telemóvel diz o mesmo numa linha: o estado primeiro, que é o que se
+    // pergunta, e o fornecedor de fora, que o modelo já o implica.
+    els.deviceBandTitle.textContent = device.imei;
+    els.deviceBandTitle.title = device.imei;
+    els.deviceBandDot.classList.toggle("bg-success", !!device.online);
+    els.deviceBandDot.classList.toggle("bg-secondary", !device.online);
+    els.deviceBandMeta.textContent = `${device.online ? "Ligado" : "Desligado"} · ${model || "Sem modelo interno"} · ${deviceLicenseLabel(device)}`;
     disposeTooltips(els.selectedDeviceFacts);
     els.selectedDeviceFacts.innerHTML = facts
         .map(
@@ -277,6 +288,7 @@ function renderTelemetryList(telemetryRows) {
     const telemetryTotal = telemetry.length ? String(telemetry.length) : "";
     els.telemetryCount.textContent = telemetryTotal;
     els.telemetryTabCount.textContent = telemetryTotal;
+    els.deviceTabReadingsCount.textContent = telemetryTotal;
     activityTable(
         els.telemetryList,
         pageRows.map(telemetryActivityRow),
@@ -481,6 +493,7 @@ function renderDownlinkRequests(commands) {
     const downlinkTotal = commands.length ? String(commands.length) : "";
     els.downlinkRequestCount.textContent = downlinkTotal;
     els.downlinkTabCount.textContent = downlinkTotal;
+    els.deviceTabRequestsCount.textContent = downlinkTotal;
 
     // A maioria dos aparelhos -- radares, gateways, medidores de fralda -- não recebe pedido
     // nenhum, e metade do painel dizia permanentemente que não havia pedidos enquanto a lista
@@ -492,10 +505,15 @@ function renderDownlinkRequests(commands) {
     els.telemetryColumn?.classList.toggle("pe-xl-4", hasRequests);
 
     // Um separador só não é escolha nenhuma: a régua sai, e quem estava nos pedidos volta
-    // aos eventos em vez de ficar num painel escondido.
+    // aos eventos em vez de ficar num painel escondido. No telemóvel resta-lhe a telemetria,
+    // e por isso só sai o separador dos pedidos.
     els.activityTabs?.classList.toggle("d-none", !hasRequests);
+    els.deviceTabRequests?.classList.toggle("d-none", !hasRequests);
     if (!hasRequests && els.downlinkColumn?.classList.contains("active")) {
         globalThis.bootstrap?.Tab.getOrCreateInstance(els.telemetryColumnTab).show();
+    }
+    if (!hasRequests && els.deviceTabRequests?.classList.contains("active")) {
+        els.deviceTabReadings.click();
     }
 
     // Paginado como os eventos recebidos: sem páginas, os pedidos antigos ficam atrás de

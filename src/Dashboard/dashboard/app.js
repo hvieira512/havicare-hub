@@ -51,7 +51,7 @@ export async function startDashboard() {
     els = cacheElements();
     trackStickyTop({
         navbar: document.querySelector(".dashboard-navbar"),
-        tabs: els.activityTabs,
+        tabs: [els.activityTabs, els.deviceTabs],
     });
     initGatewayLinksUi({ els });
     deviceModal = new bootstrap.Modal(document.getElementById("deviceModal"));

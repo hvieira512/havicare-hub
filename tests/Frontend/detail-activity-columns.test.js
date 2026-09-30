@@ -25,6 +25,9 @@ function detailEls() {
     return {
         downlinkRequestCount: document.createElement("div"),
         downlinkTabCount: document.createElement("div"),
+        deviceTabRequestsCount: document.createElement("div"),
+        deviceTabRequests: document.createElement("button"),
+        deviceTabReadings: document.createElement("button"),
         downlinkRequests: document.createElement("div"),
         activityTabs: document.createElement("div"),
         telemetryColumnTab: document.createElement("button"),

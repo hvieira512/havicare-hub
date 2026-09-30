@@ -48,6 +48,14 @@
     background-color: var(--bs-body-bg);
 }
 
+/* No telemóvel quem escolhe é a régua do topo, que tem também a telemetria. Esconde-se por
+   media query e não com `d-none`, que é o que o detalhe liga e desliga por haver pedidos. */
+@media (max-width: 991.98px) {
+    .activity-tabs {
+        display: none;
+    }
+}
+
 .activity-tab-content > .tab-pane.active {
     display: flex;
 }
