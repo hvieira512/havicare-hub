@@ -113,27 +113,12 @@ test("uma capacidade que nunca mediu dá pastilha e não mosaico", () => {
 
     const html = renderRequestCardGroup(group, [], []);
 
+    assert.match(html, /Sem leitura até agora/);
     // O catálogo de capacidades não está carregado aqui, e por isso o nome vem do
     // `humanizeCapabilityKey`.
     assert.match(html, /telemetry-pill/);
     assert.match(html, /Heart Rate/);
     assert.doesNotMatch(html, /telemetry-card-title/);
-});
-
-/**
- * A etiqueta separa as pastilhas dos mosaicos. Sem mosaicos nenhuns não separa nada, e a
- * faixa do grupo já diz quantas capacidades estão sem leitura.
- */
-test("sem mosaico nenhum, a etiqueta das pastilhas não se escreve", () => {
-    const [group] = telemetryRequestCards({ heart_rate: supported(), battery: supported() });
-    const reading = {
-        type: "battery",
-        occurredAt: "2026-08-25T10:15:00Z",
-        data: { percent: 32 },
-    };
-
-    assert.doesNotMatch(renderRequestCardGroup(group, [], []), /Sem leitura até agora/);
-    assert.match(renderRequestCardGroup(group, [reading], []), /Sem leitura até agora/);
 });
 
 test("com leitura, o mosaico mostra o valor", () => {
