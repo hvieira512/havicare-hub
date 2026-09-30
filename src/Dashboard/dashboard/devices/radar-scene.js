@@ -208,9 +208,12 @@ function drawRoom(state, layout) {
             fontSize: 14,
             fontFamily: "Poppins",
             fill: color,
-            // O halo branco é o que deixa o nome legível quando cai por cima de uma linha.
-            shadowColor: "white",
-            shadowBlur: 5,
+            // Uma área pode atravessar a parede, e o nome fica por cima da linha. O contorno
+            // branco por baixo do preenchimento abre-lhe espaço. Sem sombra ao lado dele:
+            // as duas juntas mandam o Konva para uma tela intermédia que sai a zero.
+            stroke: "white",
+            strokeWidth: 3,
+            fillAfterStrokeEnabled: true,
         }));
     });
 
