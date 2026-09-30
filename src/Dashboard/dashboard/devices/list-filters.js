@@ -6,6 +6,7 @@ import {
 } from "../storage.js";
 import { html, raw } from "../html.js";
 import { filterChips } from "../components/chips.js";
+import { deviceTypeTiles } from "../components/device-type-tiles.js";
 import {
     companyLabel,
     deviceTypeLabel,
@@ -42,11 +43,19 @@ const repeatMarkup = (count, markup) => Array.from({ length: count }, () => mark
  * resposta quando é a falta de uma.
  */
 export function renderDeviceFilterSkeleton() {
-    for (const el of [
-        els.deviceTypeFilter,
-        els.deviceSupplierFilter,
-        els.deviceLicenseFilter,
-    ]) {
+    els.deviceTypeFilter.innerHTML = `
+        <div class="placeholder-wave device-type-grid d-grid gap-2">
+        ${repeatMarkup(
+            6,
+            `<div class="device-type-tile" aria-hidden="true">
+                <span class="device-type-tile-icon"><i class="fa-solid fa-square placeholder"></i></span>
+                <span class="device-type-tile-name placeholder col-7">&nbsp;</span>
+                <span class="count-number placeholder col-5">&nbsp;</span>
+            </div>`,
+        )}
+        </div>`;
+
+    for (const el of [els.deviceSupplierFilter, els.deviceLicenseFilter]) {
         el.innerHTML = `
             <div class="placeholder-wave">
             ${repeatMarkup(
@@ -87,21 +96,11 @@ function renderDeviceTypeFilter() {
         ]),
     );
 
-    els.deviceTypeFilter.innerHTML = deviceTypeOptions
-        .map(({ value, label }) => {
-            const count = Number(counts.get(value) || 0);
-            const selected = state.deviceFilters.deviceType.includes(value);
-
-            return filterOptionMarkup({
-                key: "deviceType",
-                value,
-                label,
-                count: count === 0 ? "nenhum" : count,
-                selected,
-                disabled: count === 0 && !selected,
-            });
-        })
-        .join("");
+    els.deviceTypeFilter.innerHTML = deviceTypeTiles(deviceTypeOptions, {
+        selected: state.deviceFilters.deviceType,
+        multiple: true,
+        counts,
+    });
 }
 
 function filterOptionMarkup({

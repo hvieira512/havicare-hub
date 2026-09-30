@@ -30,7 +30,7 @@ ob_start();
                 </div>
             </div>
 
-            <?= filter_group('Tipo', 'deviceTypeFilterCount', 'deviceTypeFilter', 'filter-list d-flex flex-column') ?>
+            <?= filter_group('Tipo', 'deviceTypeFilterCount', 'deviceTypeFilter', 'device-type-grid d-grid gap-2') ?>
 
             <?= filter_group('Licença', 'deviceLicenseFilterCount', 'deviceLicenseFilter', 'filter-list d-flex flex-column') ?>
 
