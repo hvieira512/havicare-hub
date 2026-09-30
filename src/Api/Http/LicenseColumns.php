@@ -24,7 +24,7 @@ final class LicenseColumns
             writable: LicenseWriteRequest::class,
             textFilters: ['name' => 'name', 'company_name' => 'company_name'],
             fixedOptions: ['company_id' => $companyIds],
-            extra: ['id', 'radar_cloud_configured'],
+            extra: ['id', 'radar_cloud_configured', 'device_count'],
         );
     }
 }

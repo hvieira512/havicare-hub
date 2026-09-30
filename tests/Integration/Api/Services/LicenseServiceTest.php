@@ -35,4 +35,25 @@ final class LicenseServiceTest extends MysqlDashboardTestCase
         self::assertSame(1, (int)$configured[2103]);
         self::assertSame(0, (int)$configured[2104]);
     }
+
+    /**
+     * Quantos aparelhos usam a licença é o que se quer saber antes de a apagar, e tem de vir
+     * com a listagem: contado do lado do ecrã, quem abrisse as Definições sem ter passado
+     * pela lista de dispositivos via zero em todas.
+     */
+    public function testTheListingCountsTheDevicesOnEachLicense(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $companyId = $db->companies->create('hitcare');
+        $db->licenses->create($companyId, 2103, 'casabrancaresidencial');
+        $db->licenses->create($companyId, 2104, 'gerpi1');
+        $db->whitelist->register('351266770073676', '4P Touch', 'Y6M', 'watch', 2103, '', '', 'hitcare');
+        $db->whitelist->register('351266770073677', '4P Touch', 'Y6M', 'watch', 2103, '', '', 'hitcare');
+
+        $rows = (new LicenseService($db))->list('limit=1000')['data'];
+        $counts = array_column($rows, 'device_count', 'license_id');
+
+        self::assertSame(2, (int)$counts[2103]);
+        self::assertSame(0, (int)$counts[2104]);
+    }
 }

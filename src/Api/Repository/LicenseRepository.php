@@ -16,7 +16,10 @@ final class LicenseRepository
      * diz que a licença já a tem, e os segredos nunca saem da tabela deles.
      */
     private const COLUMNS = 'l.id, l.company_id, l.license_id, l.name, l.created_at, l.updated_at, c.name AS company_name,'
-        . ' EXISTS (SELECT 1 FROM radar_api_credentials r WHERE r.license_ref_id = l.id) AS radar_cloud_configured';
+        . ' EXISTS (SELECT 1 FROM radar_api_credentials r WHERE r.license_ref_id = l.id) AS radar_cloud_configured,'
+        // Um aparelho aponta para a licença pelo par número + empresa, e não pela chave da
+        // linha: o mesmo número existe em empresas diferentes.
+        . ' (SELECT COUNT(*) FROM whitelist w WHERE w.license_id = l.license_id AND w.company = c.name) AS device_count';
 
     public function all(?int $companyId = null): array
     {

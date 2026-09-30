@@ -111,8 +111,10 @@ function rowActionsMenu(label, items) {
  * é o que se quer saber antes de a apagar -- e a cloud dos radares quando está configurada.
  */
 function licenseMetaHtml(license) {
-    const devices = deviceCountForLicense(license.license_id);
-    const meta = `licença ${license.license_id} · ${devices} ${devices === 1 ? "aparelho" : "aparelhos"}`;
+    const devices = deviceCountForLicense(license);
+    const meta = devices === null
+        ? `licença ${license.license_id}`
+        : `licença ${license.license_id} · ${devices} ${devices === 1 ? "aparelho" : "aparelhos"}`;
     const cloud = Number(license.radar_cloud_configured || 0) > 0
         ? html` · <span class="text-success">cloud dos radares ligada</span>`
         : "";
@@ -283,11 +285,16 @@ async function saveCompanyRow(button) {
  */
 export function licenseDeletePrompt(license, deviceCount) {
     const name = license.name ? ` — ${license.name}` : "";
+    const unknown = deviceCount === null || deviceCount === undefined;
     return {
         title: `Apagar a licença ${license.license_id}${name}?`,
-        text: deviceCount > 0
-            ? `${deviceCount} ${deviceCount === 1 ? "dispositivo fica" : "dispositivos ficam"} com uma licença que já não existe.`
-            : "Não há dispositivos a usá-la.",
+        // Não saber quantos são não é saber que são nenhuns, e é mesmo antes de apagar que
+        // a diferença conta.
+        text: unknown
+            ? "Não foi possível confirmar quantos dispositivos a usam."
+            : deviceCount > 0
+                ? `${deviceCount} ${deviceCount === 1 ? "dispositivo fica" : "dispositivos ficam"} com uma licença que já não existe.`
+                : "Não há dispositivos a usá-la.",
     };
 }
 
@@ -312,10 +319,21 @@ function deviceCountForCompany(name) {
     return Number(entry?.count || 0);
 }
 
-function deviceCountForLicense(licenseId) {
-    for (const company of deviceCountsByCompany()) {
-        for (const license of company.licenses || []) {
-            if (String(license.licenseId) === String(licenseId)) return Number(license.count || 0);
+/**
+ * A contagem vem com a própria licença. O resumo da frota é o caminho de recurso para quem
+ * já o tem em memória; `null` quando nenhum dos dois sabe, que zero por não saber não é zero.
+ */
+function deviceCountForLicense(license) {
+    if (license?.device_count !== undefined && license.device_count !== null) {
+        return Number(license.device_count);
+    }
+
+    const companies = deviceCountsByCompany();
+    if (companies.length === 0) return null;
+
+    for (const company of companies) {
+        for (const entry of company.licenses || []) {
+            if (String(entry.licenseId) === String(license?.license_id)) return Number(entry.count || 0);
         }
     }
     return 0;
@@ -436,7 +454,7 @@ async function deleteLicense(id) {
     const license = currentLicenses.find((row) => Number(row.id) === Number(id));
     if (!license) return;
 
-    const prompt = licenseDeletePrompt(license, deviceCountForLicense(license.license_id));
+    const prompt = licenseDeletePrompt(license, deviceCountForLicense(license));
     const { isConfirmed } = await confirmDestructive(prompt.title, prompt.text);
     if (!isConfirmed) return;
     const result = await apiDeleteLicense(id);
