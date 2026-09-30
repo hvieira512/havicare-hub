@@ -814,12 +814,12 @@
     min-height: 6rem;
 }
 
-/* O nome quebra entre palavras: o `word-wrap: break-word` que o `.card` herda serve texto
-   corrido, não uma etiqueta de duas palavras. */
+/* O nome corta-se com reticências na marcação e leva o valor inteiro no `title`: numa
+   grelha de quatro colunas «LOCALIZAÇÃO» é uma palavra mais larga do que a calha que lhe
+   sobra, e sem corte passava por cima do avião de papel. */
 .telemetry-card-title {
     font-size: var(--fs-label);
     letter-spacing: .04em;
-    overflow-wrap: normal;
 }
 
 /* A cor da categoria é definida uma vez por tom, e o ícone, a borda e o valor bebem dela:
