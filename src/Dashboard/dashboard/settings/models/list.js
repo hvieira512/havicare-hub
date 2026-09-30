@@ -185,11 +185,12 @@ async function loadSettingsModelsSection() {
     // Aqui e não no `renderModelsSection`: a busca redesenha a cada tecla, e o assistente
     // do outro slide não tem nada a ver com isso.
     resetModelWizard();
+    // Fechar o modal a meio do assistente ou de uma ficha deixava o carrossel lá ao reabrir,
+    // e com ele o rodapé sem o «Fechar».
+    showModelListSlide();
     renderModelsSection();
 
     const { els } = getSettingsModelsRuntime();
-    // Fechar o modal a meio do assistente deixava o rodapé sem o «Fechar» ao reabrir.
-    els.settingsCloseBtn?.classList.remove("d-none");
     if (els.modelsListSearch) {
         els.modelsListSearch.value = state.settingsModal.modelsSearchQuery || "";
     }
@@ -209,7 +210,6 @@ function handleModelsListSearchInput() {
  * `sectionLoaded.models`. Ligar capacidades não mexe em nada disso.
  */
 function backToModelList() {
-    const { els } = getSettingsModelsRuntime();
     const carousel = state.settingsModal.modelsCarousel;
     if (!carousel) return;
 
@@ -220,6 +220,23 @@ function backToModelList() {
     ) {
         return;
     }
+
+    showModelListSlide();
+    if (state.settingsModal.sectionLoaded.models) {
+        renderModelsSection();
+        return;
+    }
+    void loadSettingsModelsSection();
+}
+
+/**
+ * Põe o separador no seu ecrã de entrada. Sai daqui e não do `backToModelList` porque
+ * carregar o separador -- que é o que acontece ao reabrir o modal -- também o tem de fazer:
+ * o estado é limpo à abertura, e o carrossel deixado na ficha mostrava um modelo que já não
+ * existia, com um «Guardar capacidades» que respondia «Selecione um modelo».
+ */
+function showModelListSlide() {
+    const { els } = getSettingsModelsRuntime();
 
     // Na lista o rasto tem um só degrau e repetiria o título logo por baixo.
     els.modelsBreadcrumb.classList.add("d-none");
@@ -232,15 +249,10 @@ function backToModelList() {
     els.settingsCloseBtn?.classList.remove("d-none");
     els.modelDetailActionBar?.classList.replace("d-flex", "d-none");
 
-    carousel.to(0);
+    modelsCarousel()?.to(0);
 
     state.settingsModal.currentCapabilitiesModel = null;
     state.settingsModal.capabilityModelTemplateKeys = [];
-    if (state.settingsModal.sectionLoaded.models) {
-        renderModelsSection();
-        return;
-    }
-    void loadSettingsModelsSection();
 }
 
 /**
