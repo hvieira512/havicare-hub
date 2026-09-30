@@ -132,9 +132,11 @@ function activityRow({
     time,
     timeTitle = "",
 }, panelId) {
-    const subLine = sub
-        ? html`<span class="telemetry-row-details text-secondary lh-sm fw-normal d-block text-truncate"${raw(subTitle ? html` title="${subTitle}"` : "")}>${raw(sub)}</span>`
-        : "";
+    // Abaixo do `lg` a hora desce para baixo do nome, ao lado do que já lá estava: a calha
+    // fixa reservava-lhe 132px que o nome não tinha, e é aí que o valor passa a caber.
+    const stackedTime = html`<span class="d-lg-none">${raw(sub ? " · " : "")}${time}</span>`;
+    const subClass = sub ? "telemetry-row-details" : "telemetry-row-time d-lg-none";
+    const subLine = html`<span class="${subClass} text-secondary lh-sm fw-normal d-block text-truncate"${raw(subTitle ? html` title="${subTitle}"` : "")}>${raw(sub)}${raw(stackedTime)}</span>`;
     // As pastilhas não se cortam a meio: já vêm limitadas na origem, e o que sobra do lado
     // direito esconde-se. O texto corta-se com reticências, como o nome na coluna ao lado.
     const detailClass = detailKind === "chips"
@@ -179,6 +181,6 @@ function activityRow({
                 ${raw(detailLine)}
             </span>
         </td>
-        <td class="text-end text-nowrap tabular-nums text-secondary" title="${timeTitle}">${time}${caret}</td>
+        <td class="text-end text-nowrap tabular-nums text-secondary" title="${timeTitle}"><span class="d-none d-lg-inline">${time}</span>${caret}</td>
         </tr>${raw(panel)}`;
 }

@@ -18,6 +18,15 @@
     }
 }
 
+/* Entre o `lg` e o `xl` a coluna da identidade aperta e os quinze dígitos do IMEI não cabem
+   a `h4`. Encolhe em vez de cortar: um identificador a que faltem dígitos não se compara
+   com o aparelho que se tem na mão. */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    #selectedDeviceTitle {
+        font-size: var(--fs-lg);
+    }
+}
+
 /* O `table-sm` aperta as linhas a .25rem e uma pastilha de 26px toca nas vizinhas. A última
    linha não leva divisória: por baixo dela vem logo o contorno do cartão. */
 .telemetry-table > :not(caption) > * > * {
@@ -137,10 +146,11 @@
     white-space: normal;
 }
 
-/* No telefone a linha passa a duas: ícone, nome e hora em cima, valor em baixo.
+/* Sem a coluna lado a lado, a linha reorganiza-se: ícone, nome com a hora por baixo, e à
+   direita o valor -- ou a pastilha de estado, nos pedidos.
 
    TEM de vir depois das regras que anula -- mesma especificidade, ganha quem vier abaixo. */
-@media (max-width: 575.98px) {
+@media (max-width: 991.98px) {
     /* Sem algoritmo de tabela: as linhas são grelhas e as larguras do `colgroup` mediam-nas
        pela primeira coluna -- trinta e quatro pixéis para a linha inteira. */
     .telemetry-table,
@@ -150,8 +160,8 @@
 
     .telemetry-table > tbody > tr {
         display: grid;
-        grid-template-columns: 2.125rem minmax(0, 1fr) auto;
-        align-items: start;
+        grid-template-columns: 2.125rem minmax(0, 1fr) auto auto;
+        align-items: center;
         padding: .5rem 0;
         border-bottom: 1px solid var(--bs-border-color);
     }
@@ -180,19 +190,19 @@
         width: auto;
     }
 
-    .telemetry-table > tbody > tr > td:nth-child(4) {
+    /* O valor encosta à direita, que é o espaço que a hora deixou ao descer. */
+    .telemetry-table > tbody > tr > td:nth-child(3) {
         grid-column: 3;
         grid-row: 1;
-        padding-right: 0;
+        text-align: right;
         width: auto;
     }
 
-    /* O valor debaixo do nome, e não a atravessar a linha até à hora: assim a linha mede
-       duas linhas de texto em vez de três. */
-    .telemetry-table > tbody > tr > td:nth-child(3) {
-        grid-column: 2;
-        grid-row: 2;
-        padding: .125rem 0 0 0;
+    /* Só a seta: a hora daqui esconde-se, e quem a mostra é a linha debaixo do nome. */
+    .telemetry-table > tbody > tr > td:nth-child(4) {
+        grid-column: 4;
+        grid-row: 1;
+        padding-right: 0;
         width: auto;
     }
 
@@ -231,21 +241,15 @@
         border-bottom: 0;
     }
 
-    /* Nos pedidos o valor é a pastilha de estado, e ela sobe para uma calha de 96px na
-       primeira linha: encostada ao início da calha, os pontos ficam uns por cima dos
-       outros. O nome fica com o que sobra e corta com reticências. */
+    /* Nos pedidos o valor é a pastilha de estado, e ela tem calha própria de 96px: encostada
+       ao início dela, os pontos ficam uns por cima dos outros. O nome fica com o que sobra e
+       corta com reticências. */
     #downlinkRequests .telemetry-table > tbody > tr:not(.telemetry-day):not(.telemetry-row-panel) {
         grid-template-columns: 2.125rem minmax(0, 1fr) 96px auto;
     }
 
     #downlinkRequests .telemetry-table > tbody > tr > td:nth-child(3) {
-        grid-column: 3;
-        grid-row: 1;
-        padding: 0 .5rem 0 0;
-    }
-
-    #downlinkRequests .telemetry-table > tbody > tr > td:nth-child(4) {
-        grid-column: 4;
+        text-align: left;
     }
 
     /* A altura de duas linhas serve a coluna estreita do ecrã grande, onde os detalhes vão ao
@@ -258,7 +262,8 @@
 /* A truncagem destas duas vive na marcação, em `d-block text-truncate`: o `d-block` tem de
    ir junto porque `overflow` e `text-overflow` não fazem nada num elemento inline, e estes
    são `span`. Aqui fica só o que o Bootstrap não dá. */
-.telemetry-row-details {
+.telemetry-row-details,
+.telemetry-row-time {
     font-size: var(--fs-sm);
 }
 
@@ -818,12 +823,12 @@
     min-height: 6rem;
 }
 
-/* O nome quebra entre palavras: o `word-wrap: break-word` que o `.card` herda serve texto
-   corrido, não uma etiqueta de duas palavras. */
+/* O nome corta-se com reticências na marcação e leva o valor inteiro no `title`: numa
+   grelha de quatro colunas «LOCALIZAÇÃO» é uma palavra mais larga do que a calha que lhe
+   sobra, e sem corte passava por cima do avião de papel. */
 .telemetry-card-title {
     font-size: var(--fs-label);
     letter-spacing: .04em;
-    overflow-wrap: normal;
 }
 
 /* A cor da categoria é definida uma vez por tom, e o ícone, a borda e o valor bebem dela:

@@ -36,6 +36,23 @@ export function initDetailFilters(context) {
         const button = event.target.closest("[data-detail-range]");
         if (button) applyDetailRange(button.dataset.detailRange);
     });
+    syncDetailSearchPlaceholder();
+}
+
+/**
+ * O texto da busca nomeia o painel que está à vista. A partir do `xl` os dois estão lado a
+ * lado debaixo do mesmo campo, e aí só o texto geral serve.
+ */
+export function syncDetailSearchPlaceholder() {
+    if (!els?.detailSearch) return;
+
+    const sideBySide = globalThis.matchMedia?.("(min-width: 1200px)")?.matches;
+    const onRequests = !sideBySide && els.downlinkColumn?.classList.contains("active");
+    const onReadings = !sideBySide && els.telemetryColumn?.classList.contains("active");
+
+    els.detailSearch.placeholder = onRequests
+        ? "Procurar nos pedidos"
+        : onReadings ? "Procurar nas leituras" : "Procurar";
 }
 
 /**
@@ -69,6 +86,12 @@ function dateTimeLocal(date) {
     return `${day}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+/** Mexer num filtro leva a lista ao princípio, e desfaz o que o «Carregar mais» juntou. */
+function restartTelemetryPaging() {
+    state.telemetryPage = 1;
+    state.telemetryCumulative = false;
+}
+
 export function applyDetailRange(range) {
     const preset = DETAIL_RANGES[range];
     if (!preset) return;
@@ -80,7 +103,7 @@ export function applyDetailRange(range) {
         to: "",
     };
     resetDetailFiltersDraft();
-    state.telemetryPage = 1;
+    restartTelemetryPaging();
     onChange();
 }
 
@@ -278,7 +301,7 @@ export function applyDetailFilters() {
         q: state.detailFilters.q,
     };
     resetDetailFiltersDraft();
-    state.telemetryPage = 1;
+    restartTelemetryPaging();
     onChange();
 }
 
@@ -286,7 +309,7 @@ export function clearDetailFilters() {
     activeRange = "";
     state.detailFilters = { from: "", to: "", type: "all", q: "" };
     resetDetailFiltersDraft();
-    state.telemetryPage = 1;
+    restartTelemetryPaging();
     if (els.detailSearch) els.detailSearch.value = "";
     onChange();
 }
@@ -310,7 +333,7 @@ function applyDetailSearchNow() {
         q: els.detailSearch.value,
     };
     updateDetailFiltersDraft({ q: els.detailSearch.value });
-    state.telemetryPage = 1;
+    restartTelemetryPaging();
     onChange();
 }
 
@@ -319,7 +342,7 @@ export function removeDetailFilter(key) {
     const cleared = key === "type" ? "all" : "";
     state.detailFilters = { ...state.detailFilters, [key]: cleared };
     resetDetailFiltersDraft();
-    state.telemetryPage = 1;
+    restartTelemetryPaging();
     if (key === "q" && els.detailSearch) els.detailSearch.value = "";
     onChange();
 }
@@ -383,14 +406,16 @@ function paginateDetailPanel(event, { belongsToPanel, pageSize, page, actionPref
         .filter(belongsToPanel)
         .map((item) => item.raw);
     const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
-    const nextPage = resolvePaginationPage(
-        event,
-        { page, total_pages: totalPages },
-        actionPrefix,
-    );
+    // O «Carregar mais» pede a mesma página seguinte das setas, e manda juntá-la ao que já
+    // está na lista em vez de a substituir.
+    const more = event.target?.closest?.(`[data-action="${actionPrefix}More"]`);
+    const nextPage = more
+        ? Math.min(totalPages, page + 1)
+        : resolvePaginationPage(event, { page, total_pages: totalPages }, actionPrefix);
     if (nextPage === null) return;
 
     setPage(nextPage, totalPages);
+    state[`${actionPrefix}Cumulative`] = !!more;
     render(rows);
 }
 

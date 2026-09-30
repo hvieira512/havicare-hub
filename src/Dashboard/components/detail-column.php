@@ -6,6 +6,7 @@
                         'tabCountId' => 'telemetryTabCount',
                         'countId' => 'telemetryCount',
                         'pager' => 'telemetryPager',
+                        'loadMore' => 'telemetryLoadMore',
                         'list' => 'telemetryList',
                         'spacing' => 'pe-xl-4',
                     ],
@@ -15,6 +16,7 @@
                         'tabCountId' => 'downlinkTabCount',
                         'countId' => 'downlinkRequestCount',
                         'pager' => 'downlinkPager',
+                        'loadMore' => 'downlinkLoadMore',
                         'list' => 'downlinkRequests',
                         'spacing' => 'border-start-xl ps-xl-4 mt-4 mt-xl-0',
                     ],
@@ -77,11 +79,12 @@
                                         <div class="tab-content activity-tab-content row g-0 flex-grow-1 min-h-0">
                                             <?php foreach ($activityPanels as $index => $panel) : ?>
                                             <div id="<?= $panel['column'] ?>" class="tab-pane<?= $index === 0 ? ' show active' : '' ?> col-12 col-xl-6 flex-column min-h-0 <?= $panel['spacing'] ?>" role="tabpanel">
-                                                <div class="d-flex flex-column flex-xl-row justify-content-xl-between align-items-xl-center gap-2 mb-2">
+                                                <div class="d-none d-lg-flex flex-column flex-xl-row justify-content-xl-between align-items-xl-center gap-2 mb-2">
                                                     <div class="d-none d-xl-block"><?= section_header($panel['title'], $panel['countId'], '') ?></div>
                                                     <?= pagination_component($panel['pager'], '', true) ?>
                                                 </div>
                                                 <div id="<?= $panel['list'] ?>" class="activity-list flex-grow-1 min-h-0"></div>
+                                                <div id="<?= $panel['loadMore'] ?>" class="d-grid d-lg-none"></div>
                                             </div>
                                             <?php endforeach; ?>
                                         </div>
