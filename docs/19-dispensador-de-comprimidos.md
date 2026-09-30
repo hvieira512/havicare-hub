@@ -505,6 +505,11 @@ escreve hoje, e é por isso que o cartão da dashboard não tem interruptores.
 > O sentinela já era conhecido na dashboard — ela desenha vazio acima de 24 —,
 > mas o construtor limitava a hora a 23 e esmagava-o contra o tecto. Era essa a
 > raiz de o «desligar» escrever meia-noite.
+>
+> **O fornecedor confirmou-o a 2026-09-30:** *«24:60 is used as the value when no
+> alarm is set»*. A gama que a especificação publica para o `0x1021`–`0x1029` é
+> 0–23, e o sentinela está fora dela: não é lapso nosso, é o documento que não o
+> descreve.
 
 **O `0x100A` é honrado**, e é outra coisa: liga a validade por datas. Com um
 intervalo já terminado, o plano inteiro desaparece do ecrã e não toca, mesmo com
@@ -1023,14 +1028,20 @@ que este evento saiu deste aparelho, e não precisou de serviço nenhum contrata
 Fica por ver o fim: só se observou o `in_progress`, e não se sabe se há transição
 quando a chamada termina ou é cancelada.
 
-**Mas não há como dizer para quem ele liga.** A tabela do tipo `0x02` tem seis
+**Quem decide para quem se liga somos nós.** A tabela do tipo `0x02` tem seis
 TAGs de texto e nenhuma é um número de telefone: o CCID do SIM (`0x8009`), o IP e
 o domínio do servidor (`0xA021`/`0xA022`), o acerto do relógio (`0xA101`) e as
 duas horas de medicação (`0xC202`/`0xC203`). O `0x100E` é só um interruptor.
 
-Recebemos o aviso e podemos avisar quem quisermos do nosso lado; a chamada que o
-aparelho faz sozinho configura-se fora do protocolo — na cloud do fabricante, ou
-como parte do serviço pago. É pergunta por fazer ao fornecedor.
+O fornecedor confirmou a 2026-09-30 que é assim por desenho:
+
+> *"Our devices only trigger the call function. Which numbers to dial during an
+> emergency requires server-side development and configuration."*
+
+Ou seja, o aparelho levanta a mão e mais nada. O encaminhamento — a quem se
+telefona, por que ordem, com que escalonamento — é trabalho do lado de cá, e não
+existe número nenhum a gravar no aparelho. O hub já tem a metade que falta: o
+`help_call` chega e é publicado como o do NCS e o da pulseira.
 
 ## 10. Armadilhas confirmadas
 
