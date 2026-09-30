@@ -363,7 +363,7 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                             })
                             .join("")}
                     </div>`,
-                    { cls: "flex-shrink-0", required: true },
+                    { required: true },
                 )}
                 ${hasTypeSelector
                     ? field(

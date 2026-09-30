@@ -246,8 +246,8 @@ function unitGroup(control, entry) {
     const unit = unitLabel(entry);
     if (control === "") return "";
     return unit === ""
-        ? `<div class="flex-shrink-0">${control}</div>`
-        : `<div class="input-group flex-nowrap w-auto flex-shrink-0">${control}<span class="input-group-text">${esc(unit)}</span></div>`;
+        ? `<div class="config-line-control">${control}</div>`
+        : `<div class="input-group flex-nowrap w-auto config-line-control">${control}<span class="input-group-text">${esc(unit)}</span></div>`;
 }
 
 /** As unidades de tempo que se dizem por extenso, no singular e no plural. */

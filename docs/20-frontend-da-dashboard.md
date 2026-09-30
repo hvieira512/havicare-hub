@@ -405,8 +405,14 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
   só a geometria. Falharam-no uma vez, com duas a passar a borda cheia da marca
   por cima e três a subtil; o `SelectionLanguageTest` prende-o agora.
 
-- **O grupo «Recorrência» de um alarme parte em duas linhas**, e fica. São 306px
-  de conteúdo para 289px de coluna, e os dezassete que faltam só saíam de
-  encurtar as etiquetas ou de dar ao grupo a linha toda — a primeira muda
-  vocabulário, a segunda cresce ~30px por alarme numa lista que vai até dez. A
-  quebra é simétrica e nenhum botão fica cortado.
+- **O grupo «Recorrência» de um alarme encolhe com a linha**, e as etiquetas dos
+  três botões partem em duas. São 306px de conteúdo para 289px de coluna no ecrã
+  largo e 282 num telemóvel: preso a `flex-shrink-0` não cedia nenhum deles e
+  saía para fora do cartão. Encurtar as etiquetas mudava vocabulário e dar-lhe a
+  linha toda crescia ~30px por alarme numa lista que vai até dez; a quebra dentro
+  do próprio botão não custa nada e nenhum fica cortado.
+
+  O mesmo vale para o controlo de uma definição que cabe numa linha — o campo com
+  a unidade colada. O `.config-line-control` deixa-o encolher até aos 7rem que
+  mostram um número de quatro dígitos: sem isso, num telemóvel, o «Intervalo de
+  localização» punha o campo e o «s» para lá do bordo do cartão.

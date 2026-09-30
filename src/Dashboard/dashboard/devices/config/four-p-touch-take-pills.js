@@ -42,7 +42,7 @@ export function takePillsReminderGroup(settings, index, frequencyOptions, group 
     const control = `<div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" aria-label="Lembrete ligado" data-takepills-field="reminderEnabled" data-takepills-index="${index}" ${settings.enabled ? "checked" : ""}></div>`;
     const body = `<div class="d-flex flex-wrap align-items-end gap-3">
         <div class="alarm-field-time"><label class="form-label-sm required">Hora</label><input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-takepills-field="reminderTime" data-takepills-index="${index}" value="${esc(settings.time)}" required></div>
-        <div class="flex-shrink-0"><label class="form-label-sm required">Recorrência</label><div class="btn-group" role="group" aria-label="Recorrência do lembrete">${frequencyOptions.map((option) => {
+        <div><label class="form-label-sm required">Recorrência</label><div class="btn-group" role="group" aria-label="Recorrência do lembrete">${frequencyOptions.map((option) => {
             const inputId = `takepills-${index}-freq-${option.value}`;
             return `<input class="btn-check" type="radio" name="takepills-${index}-freq" id="${esc(inputId)}" value="${esc(String(option.value))}" data-takepills-field="reminderFrequency" data-takepills-index="${index}" ${parseInt(String(option.value), 10) === frequency ? "checked" : ""}><label class="btn btn-outline-secondary btn-sm" for="${esc(inputId)}">${esc(String(option.label))}</label>`;
         }).join("")}</div></div>
