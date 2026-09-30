@@ -26,13 +26,19 @@ final class FirmwareUpgradeTest extends TestCase
         self::assertSame(str_repeat("\x00", 10), substr($body, 10));
     }
 
-    /** O corpo de um pacote de dados nunca passa dos 256: quatro de offset e 252 de ficheiro. */
-    public function testADataPacketNeverExceedsTheAgreedSize(): void
+    /**
+     * O limite de 256 é da **trama inteira**, não do corpo.
+     *
+     * Com o corpo a 256 o aparelho recusou o primeiro pacote de dados com `0x08`, e o
+     * arranque — que dá uma trama de 42 bytes — tinha passado. Descontados os 22 do
+     * enquadramento e os 4 do offset, sobram 230 de ficheiro.
+     */
+    public function testAWholeDataPacketFitsTheAgreedSize(): void
     {
         $body = FirmwareUpgrade::dataBody(504, str_repeat('x', FirmwareUpgrade::CHUNK));
 
-        self::assertSame(252, FirmwareUpgrade::CHUNK);
-        self::assertSame(256, strlen($body));
+        self::assertSame(230, FirmwareUpgrade::CHUNK);
+        self::assertSame(FirmwareUpgrade::MAX_PACKET, strlen($body) + 22);
         self::assertSame(504, unpack('V', substr($body, 0, 4))[1]);
     }
 
@@ -54,7 +60,7 @@ final class FirmwareUpgradeTest extends TestCase
         self::assertSame(0x0F, $step['packetType']);
         self::assertSame(0, unpack('V', substr((string)$step['body'], 0, 4))[1]);
         self::assertSame(FirmwareUpgrade::CHUNK, strlen((string)$step['body']) - 4);
-        self::assertSame(252, $step['state']['offset']);
+        self::assertSame(FirmwareUpgrade::CHUNK, $step['state']['offset']);
     }
 
     /**
@@ -73,18 +79,18 @@ final class FirmwareUpgradeTest extends TestCase
     /** Cada confirmação faz sair o pedaço seguinte, e o offset anda o tamanho do anterior. */
     public function testEachAcknowledgementAdvancesTheOffset(): void
     {
-        $step = FirmwareUpgrade::advance($this->state('sending', 252), $this->firmware(), 'upgrade_data_ack', 0);
+        $step = FirmwareUpgrade::advance($this->state('sending', 230), $this->firmware(), 'upgrade_data_ack', 0);
 
-        self::assertSame(252, unpack('V', substr((string)$step['body'], 0, 4))[1]);
-        self::assertSame(504, $step['state']['offset']);
+        self::assertSame(230, unpack('V', substr((string)$step['body'], 0, 4))[1]);
+        self::assertSame(460, $step['state']['offset']);
     }
 
     /** O último pedaço leva só o que resta, e não enche o pacote. */
     public function testTheLastChunkCarriesOnlyTheRemainder(): void
     {
-        $step = FirmwareUpgrade::advance($this->state('sending', 504), $this->firmware(), 'upgrade_data_ack', 0);
+        $step = FirmwareUpgrade::advance($this->state('sending', 460), $this->firmware(), 'upgrade_data_ack', 0);
 
-        self::assertSame(self::SIZE - 504, strlen((string)$step['body']) - 4);
+        self::assertSame(self::SIZE - 460, strlen((string)$step['body']) - 4);
         self::assertSame(self::SIZE, $step['state']['offset']);
     }
 
