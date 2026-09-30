@@ -21,6 +21,16 @@
    com eles pelo meio, passava-se o cartão do aparelho e sete cartões antes do primeiro
    evento. A coluna do aparelho desfaz-se para os seus cartões poderem ser ordenados. */
 @media (max-width: 991.98px) {
+    /* A lista vai de bordo a bordo, como um ecrã e não como uma folha pousada. Os 12px são
+       o enchimento do `container-fluid`, que o cartão anula para lá chegar. O respiro por
+       cima sai pelo `pt-lg-3` da marcação: a régua entrega a lista sem goteira. */
+    .device-screen > #detailColumn > .card {
+        margin-inline: -12px;
+        border-inline-width: 0;
+        border-top-width: 0;
+        border-radius: 0;
+    }
+
     .device-screen > #deviceColumn {
         display: contents;
     }
