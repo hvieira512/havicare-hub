@@ -82,6 +82,12 @@
     }
 }
 
+/* Sem dispositivo escolhido, o botão do cabeçalho e o do meio do cartão abrem o mesmo
+   selector a cem pixéis um do outro. Fica o do meio, que é onde a frase leva o olho. */
+.card:has(#deviceSelectionEmptyState:not(.d-none)) #openDeviceSelectorBtn {
+    display: none;
+}
+
 /* A banda do aparelho, abaixo do `lg`: a mesma superfície da barra, e rola com a página --
    a identidade lê-se uma vez, e os separadores é que se usam sempre. */
 .device-band {
