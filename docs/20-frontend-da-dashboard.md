@@ -405,12 +405,13 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
   só a geometria. Falharam-no uma vez, com duas a passar a borda cheia da marca
   por cima e três a subtil; o `SelectionLanguageTest` prende-o agora.
 
-- **O grupo «Recorrência» de um alarme encolhe com a linha**, e as etiquetas dos
-  três botões partem em duas. São 306px de conteúdo para 289px de coluna no ecrã
-  largo e 282 num telemóvel: preso a `flex-shrink-0` não cedia nenhum deles e
-  saía para fora do cartão. Encurtar as etiquetas mudava vocabulário e dar-lhe a
-  linha toda crescia ~30px por alarme numa lista que vai até dez; a quebra dentro
-  do próprio botão não custa nada e nenhum fica cortado.
+- **O grupo «Recorrência» de um alarme encolhe com a linha.** Pede 306px: onde
+  eles existem — num modal de 1140, por exemplo — fica numa linha como sempre
+  esteve, e onde não existem, como nos 282 de um telemóvel, são as etiquetas dos
+  três botões que partem em duas. Preso a `flex-shrink-0` não cedia, e o que
+  partia era o cartão. Encurtar as etiquetas mudava vocabulário e dar-lhe a linha
+  toda crescia ~30px por alarme numa lista que vai até dez; a quebra dentro do
+  próprio botão não custa nada e nenhum fica cortado.
 
   O mesmo vale para o controlo de uma definição que cabe numa linha — o campo com
   a unidade colada. O `.config-line-control` deixa-o encolher até aos 7rem que
