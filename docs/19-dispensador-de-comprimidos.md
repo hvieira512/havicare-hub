@@ -1170,6 +1170,52 @@ telefona, por que ordem, com que escalonamento — é trabalho do lado de cá, e
 existe número nenhum a gravar no aparelho. O hub já tem a metade que falta: o
 `help_call` chega e é publicado como o do NCS e o da pulseira.
 
+### Actualização de firmware
+
+O ficheiro sai do servidor para o aparelho em pacotes `0x0F`, depois de um `0x0E`
+que anuncia o que vem. **É o único caminho em que o servidor inicia a conversa** —
+e mesmo assim depende de o aparelho falar primeiro, porque a ligação TCP é dele.
+
+O corpo destes quatro pacotes **não é TFLV**:
+
+| | |
+|---|---|
+| `0x0E` | tamanho [4] · checksum [4] · tempo limite [2] · reservado [10] |
+| `0x0F` | offset [4] · dados [n] |
+| `0x8E` / `0x8F` | corpo vazio — **o resultado vem no `Status` do cabeçalho** |
+
+O checksum é a **soma acumulada dos bytes** do ficheiro. O fim marca-se com um
+`0x0F` cujo offset é o tamanho do ficheiro e que não leva dados nenhuns.
+
+**Os números vêm do aparelho, e não se supõem.** O `0x8003` diz o tamanho de
+pacote que ele aceita — 300 bytes nesta unidade —, o `0x8006` quanto tempo espera
+por uma resposta (60 s) e o `0x8007` quantas vezes retransmite (2). O fornecedor
+pediu que um `0x0F` **não passe dos 256**, que é mais apertado do que o que o
+aparelho declara, e mandou segui-lo à risca: ficam **252 bytes de ficheiro** por
+pacote, depois do offset.
+
+**A sequência é a do modo 2 da secção 4**, no caso «um pedido, n pacotes, uma
+resposta por pacote»: cada `0x0F` é tratado como pedido independente, e por isso
+os campos de subpacote do cabeçalho ficam **a zero**. Quem sequencia é o offset.
+
+> **A tabela da secção 6 dá `0x8D` como resposta ao `0x0E`, e a secção 26 dá
+> `0x8E`.** O `0x8D` já é a resposta ao `0x0D`. O fornecedor confirmou o erro e
+> disse que corrige o documento; até lá o hub aceita as duas.
+
+**Uma transferência interrompida não grava nada.** O fornecedor foi explícito:
+*«If the transmission is interrupted, no upgrade will occur here»*, e o aparelho
+continua a correr o firmware que tem — é também o que acontece quando o tempo
+limite do `0x0E` expira. **Não há gravação parcial nem risco de perder a
+unidade**, e foi esta a resposta que destravou o ensaio.
+
+**E não há retoma:** *«After an interruption, the next upgrade will restart from
+the beginning»*. O offset guardado deixa de valer assim que a ligação cai, e por
+isso um registo novo a meio da transferência repõe o pedido no princípio.
+
+**Como se sabe que correu bem:** o `0x8002` é a versão, e passa a valer a nova
+depois de o aparelho reiniciar e voltar a registar-se. Aparece sozinha no cartão
+«Versão do firmware».
+
 ## 10. Armadilhas confirmadas
 
 **A telemetria não se lê com o aparelho desligado.** Pela API REST, o

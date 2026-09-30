@@ -64,6 +64,12 @@ final class FirmwareUpgrade
         $offset = (int)($state['offset'] ?? 0);
         $size = (int)($state['size'] ?? 0);
 
+        // Uma ligação nova a meio da transferência é uma interrupção, e o fornecedor disse
+        // que a seguinte recomeça do princípio: o offset guardado deixou de valer.
+        if ($replyType === 'register' && in_array($status, ['starting', 'sending', 'finishing'], true)) {
+            return self::step(['status' => 'requested', 'offset' => 0] + $state, null, null);
+        }
+
         if ($status === 'requested') {
             return self::step(
                 ['status' => 'starting'] + $state,

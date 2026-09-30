@@ -123,6 +123,23 @@ final class FirmwareUpgradeTest extends TestCase
         }
     }
 
+    /**
+     * Uma ligação nova a meio da transferência manda recomeçar do princípio.
+     *
+     * O fornecedor foi claro: uma transferência interrompida não grava nada e a seguinte
+     * recomeça do zero. Sem isto, o estado ficava parado num offset que já não vale.
+     */
+    public function testAFreshRegistrationRestartsTheTransfer(): void
+    {
+        foreach (['starting', 'sending', 'finishing'] as $status) {
+            $step = FirmwareUpgrade::advance($this->state($status, 252), $this->firmware(), 'register', 0);
+
+            self::assertSame('requested', $step['state']['status'], $status);
+            self::assertSame(0, $step['state']['offset'], $status);
+            self::assertNull($step['body'], 'o registo leva a confirmação dele, não um pacote de upgrade');
+        }
+    }
+
     /** Uma trama que não diga respeito ao upgrade não mexe no estado nem faz sair nada. */
     public function testAnUnrelatedFrameChangesNothing(): void
     {
