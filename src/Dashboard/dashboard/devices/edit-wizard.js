@@ -1,7 +1,6 @@
 import { deviceTypeLabel } from "../domain.js";
 import { state } from "../state.js";
 import {
-    classificationRowsHtml,
     classificationTrailHtml,
     licenseBadgeValue,
     licensePickerHtml,
@@ -113,13 +112,10 @@ function renderTrail() {
 
     const shape = { questions: TRAIL_QUESTIONS, values, openKey: openQuestion || "", known };
 
-    // As duas formas vão as duas para o DOM e o ponto de quebra escolhe a que se vê, como o
-    // resto da dashboard faz com os rótulos que encurtam.
     els.deviceTrail.innerHTML = `
-        <div class="d-none d-lg-flex align-items-center gap-2 flex-nowrap overflow-hidden mb-2" data-classification="trail">
+        <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
             ${classificationTrailHtml(shape)}
-        </div>
-        <div class="d-lg-none" data-classification="rows">${classificationRowsHtml(shape)}</div>`;
+        </div>`;
 }
 
 function renderVisibleQuestion() {

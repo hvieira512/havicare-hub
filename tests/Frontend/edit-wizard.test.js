@@ -59,10 +59,8 @@ function harness({ company = "hitcare", licenseId = "1001" } = {}) {
             .filter((block) => !block.classList.contains("d-none"))
             .map((block) => block.dataset.deviceQuestion);
 
-    // As duas formas da classificação estão as duas no DOM, e o ponto de quebra escolhe a
-    // que se vê. Sem CSS, o jsdom vê as duas: olha-se para uma.
     const classification = (selector = "[data-wizard-reopen]") =>
-        root.querySelectorAll(`[data-classification="rows"] ${selector}`);
+        root.querySelectorAll(selector);
 
     return { root, els, changes, openQuestion, classification };
 }

@@ -53,18 +53,20 @@ ob_start();
                                 <input type="hidden" id="deviceLicenseId" value="0">
 
                                 <div class="wizard-ask" id="deviceStep2">
-                                    <div id="deviceDeviceIdRow" class="d-none">
-                                        <label for="deviceDeviceId" class="form-label-sm" id="deviceDeviceIdLabel">ID do dispositivo</label>
-                                        <input type="text" class="form-control" id="deviceDeviceId">
-                                        <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
-                                    </div>
-                                    <div id="deviceImeiRow">
-                                        <label for="deviceImei" class="form-label-sm">IMEI</label>
-                                        <input type="text" class="form-control" id="deviceImei" required>
-                                    </div>
-                                    <div id="deviceSimRow">
-                                        <label class="form-label-sm">Número do SIM</label>
-                                        <div id="deviceSimNumberRoot"></div>
+                                    <div class="row g-3">
+                                        <div id="deviceDeviceIdRow" class="col-md-6 d-none">
+                                            <label for="deviceDeviceId" class="form-label-sm" id="deviceDeviceIdLabel">ID do dispositivo</label>
+                                            <input type="text" class="form-control" id="deviceDeviceId">
+                                            <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
+                                        </div>
+                                        <div id="deviceImeiRow" class="col-md-6">
+                                            <label for="deviceImei" class="form-label-sm">IMEI</label>
+                                            <input type="text" class="form-control" id="deviceImei" required>
+                                        </div>
+                                        <div id="deviceSimRow" class="col-md-6">
+                                            <label class="form-label-sm">Número do SIM</label>
+                                            <div id="deviceSimNumberRoot"></div>
+                                        </div>
                                     </div>
                                     <div id="deviceGatewayLinksRow" class="d-none">
                                         <div class="d-flex justify-content-between align-items-center gap-2">
@@ -87,9 +89,13 @@ ob_start();
                                 </div>
 
                                 <div class="border border-danger-subtle rounded-3 p-3" id="deviceDangerZone">
-                                    <div class="fw-semibold text-danger-emphasis">Zona perigosa</div>
-                                    <p class="small text-secondary mb-3">Eliminar apaga o dispositivo, as configurações e o histórico dele. Não se desfaz.</p>
-                                    <button type="button" class="btn btn-outline-danger d-none" id="deleteDeviceBtn"><?= icon('fa-trash', 'me-1') ?>Eliminar dispositivo</button>
+                                    <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3">
+                                        <div class="flex-grow-1 min-w-0">
+                                            <div class="fw-semibold text-danger-emphasis">Zona perigosa</div>
+                                            <p class="small text-secondary mb-0">Eliminar apaga o dispositivo, as configurações e o histórico dele. Não se desfaz.</p>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-danger d-none flex-shrink-0" id="deleteDeviceBtn"><?= icon('fa-trash', 'me-1') ?>Eliminar dispositivo</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

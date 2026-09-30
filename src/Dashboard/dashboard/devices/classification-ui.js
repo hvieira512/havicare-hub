@@ -169,9 +169,12 @@ export function wizardTrailHtml({ questions, badges = [], currentKey = "" }) {
 }
 
 /**
- * A classificação de um aparelho que já existe, em pastilhas ligadas: tipo, modelo e
- * licença, com o nome do campo por cima do valor. É a forma a partir do `lg`, onde as três
- * cabem numa linha; abaixo disso quem serve são as linhas, que não quebram.
+ * A classificação de um aparelho que já existe: tipo, modelo e licença em pastilhas
+ * ligadas, com o nome do campo por cima do valor.
+ *
+ * As três deitam-se em linha onde cabem e empilham-se onde não cabem -- a seta acompanha,
+ * para a direita ou para baixo, e nunca fica a apontar para o vazio. O valor corta-se com
+ * reticências, que é o último recurso e só chega a acontecer num ecrã muito estreito.
  */
 export function classificationTrailHtml({ questions, values, openKey = "", known = true }) {
     return questions
@@ -180,35 +183,14 @@ export function classificationTrailHtml({ questions, values, openKey = "", known
             const value = known && !open ? String(values[question.key] ?? "") : "";
             const sep = index === 0
                 ? ""
-                : "<i class=\"fa-solid fa-caret-right text-body-tertiary flex-shrink-0\" aria-hidden=\"true\"></i>";
+                : `<i class="fa-solid fa-caret-down d-md-none text-body-tertiary align-self-center" aria-hidden="true"></i>
+                   <i class="fa-solid fa-caret-right d-none d-md-inline text-body-tertiary flex-shrink-0" aria-hidden="true"></i>`;
 
             return `${sep}
-            <button type="button" class="classification-pill btn btn-link text-decoration-none text-start d-flex flex-column min-w-0 bg-primary-subtle rounded-3 px-3 py-2 border-0"
+            <button type="button" class="classification-pill btn btn-link text-decoration-none text-start d-flex flex-column lh-sm min-w-0 bg-primary-subtle rounded-3 px-3 py-2 border-0"
                 data-wizard-reopen="${esc(question.key)}" aria-expanded="${open ? "true" : "false"}">
                 <span class="section-label mb-0">${esc(question.label)}</span>
                 <span class="fw-semibold text-body text-truncate">${esc(value)}</span>
-            </button>`;
-        })
-        .join("");
-}
-
-/**
- * A mesma classificação em linhas, uma por campo. É a forma abaixo do `lg`: em pastilhas as
- * três quebram e deixam uma seta a apontar para o vazio. Cada linha abre a sua escolha, e a
- * que está aberta não repete o valor, que está marcado na grelha abaixo.
- */
-export function classificationRowsHtml({ questions, values, openKey = "", known = true }) {
-    return questions
-        .map((question) => {
-            const open = question.key === openKey;
-            const value = known && !open ? String(values[question.key] ?? "") : "";
-
-            return `
-            <button type="button" class="classification-row btn btn-link text-decoration-none d-flex align-items-center gap-3 w-100 px-0 py-2 border-bottom"
-                data-wizard-reopen="${esc(question.key)}" aria-expanded="${open ? "true" : "false"}">
-                <span class="section-label mb-0 flex-shrink-0">${esc(question.label)}</span>
-                <span class="text-body flex-grow-1 text-end text-truncate">${esc(value)}</span>
-                <i class="fa-solid fa-chevron-right text-body-tertiary flex-shrink-0" aria-hidden="true"></i>
             </button>`;
         })
         .join("");
