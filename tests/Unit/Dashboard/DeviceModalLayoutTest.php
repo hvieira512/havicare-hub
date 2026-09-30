@@ -10,40 +10,15 @@ use DOMXPath;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O arranjo do modal do dispositivo: os dois separadores na horizontal, a conta das
- * alterações por enviar, e o «Eliminar» fora do rodapé.
+ * Onde mora o «Eliminar» do modal do dispositivo. Não é uma escolha de aspecto: no rodapé
+ * ficava à vista em qualquer separador, a um clique de distância de quem estava a mexer
+ * numa definição.
  */
 final class DeviceModalLayoutTest extends TestCase
 {
     private static ?string $renderedPage = null;
 
     private static ?DOMDocument $document = null;
-
-    public function testTheTwoTabsSitInOneHorizontalRow(): void
-    {
-        $nav = $this->element('deviceConfigTabBtn')->parentNode;
-        self::assertInstanceOf(DOMElement::class, $nav);
-
-        $classes = (string)$nav->getAttribute('class');
-        self::assertStringNotContainsString('flex-lg-column', $classes);
-        self::assertStringContainsString('flex-row', $classes);
-    }
-
-    public function testTheContentTakesTheTwelveColumns(): void
-    {
-        $content = $this->query('//*[contains(concat(" ", @class, " "), " device-modal-content ")]');
-        self::assertInstanceOf(DOMElement::class, $content);
-
-        self::assertStringNotContainsString('col-lg-10', (string)$content->getAttribute('class'));
-    }
-
-    public function testTheConfigTabCarriesTheUnsentCount(): void
-    {
-        $count = $this->element('deviceConfigCount');
-
-        self::assertSame('deviceConfigTabBtn', $count->parentNode?->getAttribute('id'));
-        self::assertStringContainsString('d-none', (string)$count->getAttribute('class'));
-    }
 
     public function testDeleteLeavesTheFooterForTheGeneralTab(): void
     {

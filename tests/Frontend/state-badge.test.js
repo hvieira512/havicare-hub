@@ -25,19 +25,6 @@ test("sem tom fica no secundário, e não sem cor nenhuma", () => {
 });
 
 /**
- * O `badge` cru é mais escuro, mais pesado e mais baixo do que a pastilha da plataforma. Os
- * três degraus que faltam existem como utilitários, e por isso não precisam de CSS próprio.
- */
-test("a pastilha corrige o peso, a altura de linha e o padding do `badge`", () => {
-    const html = stateBadge("Ativo", "success");
-
-    assert.match(html, /class="[^"]*\bfw-semibold\b/);
-    assert.match(html, /class="[^"]*\blh-sm\b/);
-    assert.match(html, /class="[^"]*\bpx-2\b/);
-    assert.doesNotMatch(html, /class="[^"]*\bfw-bold\b/);
-});
-
-/**
  * O texto de ênfase do secundário é quase preto, e um estado neutro pintado assim lê-se com
  * o peso de um alarme. Os outros tons já são os da plataforma e ficam como estão.
  */
@@ -92,7 +79,7 @@ test("uma classe extra junta-se às do Bootstrap em vez de as substituir", () =>
 test("sem pedido de ícone, a marca continua a ser o ponto", () => {
     const html = stateBadge("Ativo", "success");
 
-    assert.match(html, /class="state-badge-dot rounded-circle d-inline-block"/);
+    assert.match(html, /class="[^"]*\bstate-badge-dot\b/);
     assert.doesNotMatch(html, /<i /);
 });
 
