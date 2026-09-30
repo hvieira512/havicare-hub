@@ -24,8 +24,8 @@ ob_start();
 <div class="device-modal-shell h-100">
     <div class="row g-0 h-100">
         <div class="col-12 device-modal-content">
-            <div class="tab-content">
-                <div class="tab-pane fade show active p-3 p-lg-0" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
+            <div class="tab-content h-100">
+                <div class="tab-pane fade show active h-100 p-3 p-lg-0" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
                     <form id="deviceForm" class="row g-4">
                         <div class="col-lg-8 order-lg-1">
                             <div class="d-flex flex-column gap-4">
@@ -98,8 +98,8 @@ ob_start();
                         </div>
                     </form>
                 </div>
-                <div class="tab-pane fade" id="deviceConfigPane" role="tabpanel" aria-labelledby="deviceConfigTabBtn">
-                    <div id="deviceConfigRoot"></div>
+                <div class="tab-pane fade h-100" id="deviceConfigPane" role="tabpanel" aria-labelledby="deviceConfigTabBtn">
+                    <div class="h-100" id="deviceConfigRoot"></div>
                 </div>
             </div>
         </div>

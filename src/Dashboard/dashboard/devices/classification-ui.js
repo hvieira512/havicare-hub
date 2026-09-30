@@ -169,11 +169,33 @@ export function wizardTrailHtml({ questions, badges = [], currentKey = "" }) {
 }
 
 /**
- * A classificação de um aparelho que já existe: tipo, modelo e licença, uma linha cada.
- *
- * Não é uma trilha de assistente -- as três respostas já estão dadas, e em pastilhas
- * quebravam num ecrã estreito deixando uma seta a apontar para o vazio. Cada linha abre a
- * sua escolha, e a que está aberta não repete o valor, que está marcado na grelha abaixo.
+ * A classificação de um aparelho que já existe, em pastilhas ligadas: tipo, modelo e
+ * licença, com o nome do campo por cima do valor. É a forma a partir do `lg`, onde as três
+ * cabem numa linha; abaixo disso quem serve são as linhas, que não quebram.
+ */
+export function classificationTrailHtml({ questions, values, openKey = "", known = true }) {
+    return questions
+        .map((question, index) => {
+            const open = question.key === openKey;
+            const value = known && !open ? String(values[question.key] ?? "") : "";
+            const sep = index === 0
+                ? ""
+                : "<i class=\"fa-solid fa-caret-right text-body-tertiary flex-shrink-0\" aria-hidden=\"true\"></i>";
+
+            return `${sep}
+            <button type="button" class="classification-pill btn btn-link text-decoration-none text-start d-flex flex-column min-w-0 bg-primary-subtle rounded-3 px-3 py-2 border-0"
+                data-wizard-reopen="${esc(question.key)}" aria-expanded="${open ? "true" : "false"}">
+                <span class="section-label mb-0">${esc(question.label)}</span>
+                <span class="fw-semibold text-body text-truncate">${esc(value)}</span>
+            </button>`;
+        })
+        .join("");
+}
+
+/**
+ * A mesma classificação em linhas, uma por campo. É a forma abaixo do `lg`: em pastilhas as
+ * três quebram e deixam uma seta a apontar para o vazio. Cada linha abre a sua escolha, e a
+ * que está aberta não repete o valor, que está marcado na grelha abaixo.
  */
 export function classificationRowsHtml({ questions, values, openKey = "", known = true }) {
     return questions

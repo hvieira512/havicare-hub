@@ -124,6 +124,15 @@
     min-height: 0;
 }
 
+/* A secção aberta ocupa a altura do painel, para a barra de envio ficar encostada ao fundo
+   com o `mt-auto`. Não se declara na marcação: um `d-flex` num `.tab-pane` acendia também
+   as secções fechadas, que é o `.active` que apaga. */
+.config-panel-content>.tab-pane.active {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
 /* A coluna das secções: largura fixa, porque é uma lista de nomes curtos e crescer com o
    diálogo só lhe punha branco ao lado. Nem cresce nem encolhe -- um nome comprido corta com
    reticências, e a coluna mede o mesmo em todas as secções. */
