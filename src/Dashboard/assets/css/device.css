@@ -828,12 +828,22 @@
     min-height: 6rem;
 }
 
-/* O nome corta-se com reticências na marcação e leva o valor inteiro no `title`: numa
-   grelha de quatro colunas «LOCALIZAÇÃO» é uma palavra mais larga do que a calha que lhe
-   sobra, e sem corte passava por cima do avião de papel. */
+/* O nome ocupa duas linhas antes de cortar, e leva o valor inteiro no `title`. Numa grelha
+   de quatro colunas «LOCALIZAÇÃO» é uma palavra mais larga do que a calha que lhe sobra, e
+   sem limite passava por cima do avião de papel -- mas cortar à primeira linha deixava
+   «FREQUÊNCIA CAR...» quando o cartão tinha altura para as duas palavras. */
 .telemetry-card-title {
     font-size: var(--fs-label);
     letter-spacing: .04em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    /* «Localização» não cabe numa calha de quatro colunas e tem de partir. Com hifenização
+       parte onde a palavra parte -- «localiza-ção» -- e não a meio de uma sílaba. */
+    hyphens: auto;
+    overflow-wrap: break-word;
 }
 
 /* A cor da categoria é definida uma vez por tom, e o ícone, a borda e o valor bebem dela:

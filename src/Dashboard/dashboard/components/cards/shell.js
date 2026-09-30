@@ -71,7 +71,7 @@ export function telemetryCard({
                         <i class="fa-solid ${icon}"></i>
                     </div>
                     <div class="flex-grow-1 min-w-0">
-                        <div class="telemetry-card-title text-uppercase fw-normal text-secondary lh-sm text-truncate" title="${title}">${title}</div>
+                        <div class="telemetry-card-title text-uppercase fw-normal text-secondary lh-sm" title="${title}">${title}</div>
                             ${raw(valueHtml)}
                         </div>
                         ${raw(requestHint)}
