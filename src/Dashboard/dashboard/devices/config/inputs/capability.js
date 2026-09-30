@@ -296,8 +296,8 @@ function alarmClockInput(entry, desired, meta = {}) {
 }
 
 /**
- * As larguras não dependem do que o fornecedor declara: a linha soma doze com o nome
- * (Wonlex) ou com o tipo (Vivistar), e nenhum declara os dois. O remover fecha o cartão.
+ * A ordem é a mesma em todos os fornecedores -- hora, nome, recorrência, e depois o que cada
+ * um declarar de seu. O que não couber desce; o URL do som ocupa a linha toda.
  */
 function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonlexFields = {}, group = "alarm-clock") {
     const rowId = nextUid("alarm-clock");
@@ -329,45 +329,22 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
             <input class="form-check-input" type="checkbox" role="switch" aria-label="Alarme ligado" data-alarm-clock-field="enabled" ${boolValue(item.enabled, true) ? "checked" : ""}>
         </div>`;
     const body = `
-            <div class="row g-3 align-items-end">
+            <div class="d-flex flex-wrap align-items-end gap-3">
+                ${field(
+                    "Hora",
+                    `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(time)}" required>`,
+                    { cls: "alarm-field-time", required: true },
+                )}
                 ${wonlexFields.label
                     ? field(
                             "Nome do alarme",
                             `<input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}">`,
-                            { cls: "col-12 col-lg-4" },
-                        )
-                    : ""}
-                ${field(
-                    "Hora",
-                    `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(time)}" required>`,
-                    { cls: "col-sm-6 col-lg-2", required: true },
-                )}
-                ${hasTypeSelector
-                    ? field(
-                            "Tipo",
-                            `<div class="btn-group w-100" role="group" aria-label="Tipo de alarme">
-                        ${typeOptions.map((option) => {
-                            const optionValue = parseInt(String(option.value), 10) || 1;
-                            const inputId = `${rowId}-type-${optionValue}`;
-                            return `
-                            <input
-                                class="btn-check"
-                                type="radio"
-                                name="${rowId}-type"
-                                id="${inputId}"
-                                value="${esc(String(optionValue))}"
-                                data-alarm-clock-field="type"
-                                ${optionValue === typeValue ? "checked" : ""}>
-                            <label class="btn btn-outline-primary btn-sm" for="${inputId}">${esc(String(option.label || option.value))}</label>
-                        `;
-                        }).join("")}
-                    </div>`,
-                            { cls: "col-12 col-lg-4" },
+                            { cls: "alarm-field-grow" },
                         )
                     : ""}
                 ${field(
                     "Recorrência",
-                    `<div class="btn-group w-100" role="group" aria-label="Recorrência do alarme">
+                    `<div class="btn-group" role="group" aria-label="Recorrência do alarme">
                         ${recurrenceButtonOptions
                             .map((option) => {
                                 const optionValue = normalizeAlarmClockRecurrenceKind(option.value);
@@ -386,22 +363,45 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                             })
                             .join("")}
                     </div>`,
-                    { cls: "col-12 col-lg-4", required: true },
+                    { cls: "flex-shrink-0", required: true },
                 )}
-                <div class="col-12 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
+                ${hasTypeSelector
+                    ? field(
+                            "Tipo",
+                            `<div class="btn-group" role="group" aria-label="Tipo de alarme">
+                        ${typeOptions.map((option) => {
+                            const optionValue = parseInt(String(option.value), 10) || 1;
+                            const inputId = `${rowId}-type-${optionValue}`;
+                            return `
+                            <input
+                                class="btn-check"
+                                type="radio"
+                                name="${rowId}-type"
+                                id="${inputId}"
+                                value="${esc(String(optionValue))}"
+                                data-alarm-clock-field="type"
+                                ${optionValue === typeValue ? "checked" : ""}>
+                            <label class="btn btn-outline-primary btn-sm" for="${inputId}">${esc(String(option.label || option.value))}</label>
+                        `;
+                        }).join("")}
+                    </div>`,
+                            { cls: "flex-shrink-0" },
+                        )
+                    : ""}
+                <div class="w-100 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
                     ${weekdayPicker(dayMask, rowId)}
                 </div>
                 ${wonlexFields.url
                     ? field(
-                            "URL do áudio",
+                            "Som do lembrete",
                             `<input class="form-control" type="url" inputmode="url" placeholder="https://exemplo.pt/lembrete.mp3" data-alarm-clock-field="url" value="${esc(String(item.url || ""))}">`,
                             {
-                                cls: "col-12",
+                                cls: "w-100",
                                 help: "Endereço HTTP ou HTTPS opcional para o ficheiro de voz do lembrete.",
                             },
                         )
                     : ""}
-                <div class="col-12 d-flex justify-content-end">
+                <div class="w-100 d-flex justify-content-end">
                     <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover" aria-label="Remover">
                         <i class="fa-solid fa-trash-can me-2"></i>Remover
                     </button>

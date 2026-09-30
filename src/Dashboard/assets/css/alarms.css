@@ -1,0 +1,13 @@
+/*
+ * Os campos de um alarme aberto vivem numa linha só que quebra quando precisa. O Bootstrap
+ * não tem utilitários de `flex-basis`, e é só isso que falta ao `d-flex flex-wrap`.
+ */
+
+.alarm-field-time {
+    flex: 0 0 7rem;
+}
+
+.alarm-field-grow {
+    flex: 1 1 12rem;
+    min-width: 0;
+}
