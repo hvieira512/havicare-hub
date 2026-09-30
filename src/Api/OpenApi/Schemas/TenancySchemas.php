@@ -81,6 +81,7 @@ final class TenancySchemas
                     'company_name' => ['type' => 'string', 'example' => 'hitcare'],
                     'license_id' => ['type' => 'integer', 'example' => 1001],
                     'name' => ['type' => 'string', 'example' => 'gucc.dev'],
+                    'radar_cloud_configured' => ['type' => 'integer', 'enum' => [0, 1], 'example' => 0],
                     'created_at' => ['type' => 'string'],
                     'updated_at' => ['type' => 'string'],
                 ],

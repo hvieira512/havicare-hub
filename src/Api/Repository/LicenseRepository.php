@@ -11,13 +11,20 @@ final class LicenseRepository
     {
     }
 
+    /**
+     * As credenciais da cloud dos radares entram como bandeira e não como linha: a listagem
+     * diz que a licença já a tem, e os segredos nunca saem da tabela deles.
+     */
+    private const COLUMNS = 'l.id, l.company_id, l.license_id, l.name, l.created_at, l.updated_at, c.name AS company_name,'
+        . ' EXISTS (SELECT 1 FROM radar_api_credentials r WHERE r.license_ref_id = l.id) AS radar_cloud_configured';
+
     public function all(?int $companyId = null): array
     {
         if ($companyId !== null) {
-            $stmt = $this->pdo->prepare("SELECT l.id, l.company_id, l.license_id, l.name, l.created_at, l.updated_at, c.name AS company_name FROM licenses l LEFT JOIN companies c ON c.id = l.company_id WHERE l.company_id = ? ORDER BY l.license_id");
+            $stmt = $this->pdo->prepare('SELECT ' . self::COLUMNS . ' FROM licenses l LEFT JOIN companies c ON c.id = l.company_id WHERE l.company_id = ? ORDER BY l.license_id');
             $stmt->execute([$companyId]);
         } else {
-            $stmt = $this->pdo->query("SELECT l.id, l.company_id, l.license_id, l.name, l.created_at, l.updated_at, c.name AS company_name FROM licenses l LEFT JOIN companies c ON c.id = l.company_id ORDER BY c.name, l.license_id");
+            $stmt = $this->pdo->query('SELECT ' . self::COLUMNS . ' FROM licenses l LEFT JOIN companies c ON c.id = l.company_id ORDER BY c.name, l.license_id');
         }
 
         return TimestampFormatter::normalizeRows($stmt->fetchAll());
