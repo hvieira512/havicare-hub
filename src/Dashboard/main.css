@@ -31,6 +31,18 @@
     max-height: 260px;
 }
 
+/* Num telefone a chapa é uma tira. A esmagadora maioria dos modelos não tem fotografia, e
+   280px para mostrar um ícone cinzento e um nome é um terço do ecrã. */
+@media (max-width: 767.98px) {
+    .showcase-preview {
+        min-height: 0;
+    }
+
+    .showcase-preview img {
+        max-height: 104px;
+    }
+}
+
 /* O fundo fica aqui: no escuro a chapa passa a branca, e um `bg-*` na marcação
    ganharia-lhe pelo `!important`. */
 .modal-device-thumb {
@@ -316,19 +328,16 @@
 /* O mesmo tecto de leitura do ecrã principal: o modal continua de ecrã inteiro, e é o
    conteúdo que para. A 3399px uma linha da árvore do catálogo media 2739px, com o nome do
    modelo numa ponta e o chevron na outra. Ver o `--content-max` no `base.css`. */
-/* Altura estável, como o `.device-selector-body`: sem ela o diálogo media o separador aberto
-   e saltava a cada troca, e o Catálogo com dezanove modelos contra a Denylist vazia são dois
-   modais de alturas diferentes. Quem rola é cada painel por dentro. */
 #settingsModal .modal-body>.settings-modal-shell {
-    height: clamp(26rem, 68vh, 46rem);
     max-width: var(--content-max);
     margin-inline: auto;
 }
 
-/* Com a altura fixa no invólucro, quem rola é o painel e não o diálogo. */
-.settings-modal-shell .tab-content {
-    min-height: 0;
-    overflow-y: auto;
+/* Quem rola é o corpo do diálogo, e o tecto é dele. Posto no invólucro, o invólucro ficava
+   mais curto do que o que leva dentro, e a régua -- que lá se cola ao topo -- só acompanhava
+   o rolo até ao fim dessa altura falsa. */
+#settingsModal .modal-body {
+    max-height: clamp(26rem, 68vh, 46rem);
 }
 
 /* No modal do dispositivo quem rola é a coluna do conteúdo, e não o corpo. */
@@ -358,19 +367,11 @@
     }
 }
 
-/* Não existe `h-lg-100`. O limite acompanha o `modal-fullscreen-lg-down`: abaixo dele o
-   diálogo é o ecrã todo, e uma altura fixa deixava metade em branco. */
+/* Abaixo do `modal-fullscreen-lg-down` o diálogo é o ecrã todo, e o tecto de leitura
+   deixa de fazer sentido. */
 @media (max-width: 991.98px) {
-
-    /* Cada folha mede o que o seu conteúdo mede, e quem rola é o corpo do modal. */
-    .settings-modal-shell,
-    .settings-modal-shell .tab-content,
-    .settings-modal-shell .tab-pane {
-        height: auto !important;
-    }
-
-    .settings-modal-shell .tab-content {
-        overflow-y: visible;
+    #settingsModal .modal-body {
+        max-height: none;
     }
 }
 
@@ -388,34 +389,28 @@
     color: var(--brand-on);
 }
 
-/* Abaixo do ecrã largo, o menu lateral de um modal é uma tira que desliza. O `align-items`
-   centrado da linha esticava as pills a altura toda da coluna, o que dava um bloco navy
-   de 700px em telefone. */
-@media (max-width: 991.98px) {
-    .settings-modal-shell>.row {
-        align-items: flex-start !important;
-        height: auto !important;
-    }
-
-    /* Sem isto a coluna do menu ocupa a altura toda e as pills esticam com ela: dava um
-       bloco de 700px com o nome do separador centrado no meio do nada. */
-    .settings-modal-shell>.row>[class*="col-"] {
-        height: auto !important;
-    }
-
-    /* O menu lateral dos dois modais -- definições e dispositivo -- é aqui uma linha que
-       quebra. Os cinco separadores das definições não cabem na calha, e o que passasse dela
-       ficava fora do ecrã com a contagem dentro. */
+/* Abaixo do ecrã médio a régua deita-se, e é uma tira de uma linha que desliza -- a mesma
+   da `.capability-section-nav`. Embrulhada dava três linhas num telefone. */
+@media (max-width: 767.98px) {
     .modal-side-nav {
         align-items: center;
         padding-bottom: .375rem;
         border-bottom: 1px solid var(--bs-border-color);
+        overflow-x: auto;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
     }
 
-    /* Cada separador com a largura do seu texto: esticados, um por linha dava cinco linhas. */
+    .modal-side-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Cada separador com a largura do seu texto, e a encaixar: meia pastilha ao fundo é o
+       que diz que há mais para o lado. */
     .modal-side-nav .nav-link {
         flex: none;
         white-space: nowrap;
+        scroll-snap-align: start;
     }
 }
 
@@ -630,7 +625,9 @@
     grid-template-columns: 1fr;
 }
 
-@media (min-width: 768px) {
+/* Os dois filtros lado a lado só quando há largura para eles: a partir de 768 a régua das
+   secções está ao lado e sobram 560px, que divididos em 7/5 davam mosaicos de 80px. */
+@media (min-width: 992px) {
     .capability-filter-row {
         grid-template-columns: 7fr 5fr;
     }
@@ -676,11 +673,4 @@
         text-align: left;
         white-space: normal;
     }
-}
-
-/* A altura do modal de definições segue o conteúdo, com tecto: o separador dos bloqueados é
-   uma linha de texto e não precisa dos 68vh que o catálogo precisa. */
-#settingsModal .modal-body>.settings-modal-shell {
-    height: auto;
-    max-height: clamp(26rem, 68vh, 46rem);
 }

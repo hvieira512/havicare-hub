@@ -11,7 +11,8 @@ function render_modal(
     bool $staticBackdrop = false,
     string $headerHtml = '',
     string $bodyClass = '',
-    string $contentClass = ''
+    string $contentClass = '',
+    string $footerClass = ''
 ): void {
     $dialog = array_filter([
         'modal-dialog',
@@ -36,7 +37,7 @@ function render_modal(
                     <?= $body ?>
                 </div>
                 <?php if ($footer !== '') : ?>
-                <div class="modal-footer">
+                <div class="<?= h(trim('modal-footer ' . $footerClass)) ?>">
                     <?= $footer ?>
                 </div>
                 <?php endif; ?>

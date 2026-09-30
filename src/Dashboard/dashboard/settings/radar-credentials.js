@@ -81,11 +81,16 @@ export function radarCheckMessage({ radars, responding, error }) {
     return { tone: "success", text: `Ligou · ${responding} ${noun} nesta conta` };
 }
 
+/**
+ * A linha aberta. Num telefone sai da indentação da árvore e toma o cartão todo, e dos
+ * quatro botões só os dois que se usam ficam na primeira linha: quatro seguidos numa calha
+ * de 330px dão setenta pixéis cada.
+ */
 export function radarCredentialsEditorRow(license) {
     const stored = state.settingsModal.radarCredentials;
 
     return html`
-        <div class="tree-row position-relative" data-editor="${EDITOR_KIND}" data-id="${license.id}">
+        <div class="tree-row radar-credentials-row position-relative" data-editor="${EDITOR_KIND}" data-id="${license.id}">
             <div class="d-flex align-items-center gap-2 mb-1">
                 <i class="fa-solid fa-satellite-dish text-secondary" aria-hidden="true"></i>
                 <span class="fw-semibold">Cloud dos radares</span>
@@ -110,10 +115,10 @@ export function radarCredentialsEditorRow(license) {
             </div>
             <div id="radarCheckResult" class="small mt-3 d-none" role="status"></div>
             <div class="d-flex align-items-center flex-wrap gap-2 mt-3">
-                ${raw(stored?.configured ? html`<button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm me-auto" data-action="forgetRadarCredentials" data-id="${license.id}">Esquecer</button>` : "")}
-                <button type="button" class="btn btn-outline-secondary btn-sm ${stored?.configured ? "" : "ms-auto"}" data-action="cancelEdit">Cancelar</button>
-                <button type="button" class="btn btn-outline-primary btn-sm" data-action="checkRadarCredentials" data-id="${license.id}">Testar ligação</button>
-                <button type="button" class="btn btn-primary btn-sm" data-action="saveRadarCredentialsRow">Guardar</button>
+                ${raw(stored?.configured ? html`<button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm me-auto order-last order-sm-0" data-action="forgetRadarCredentials" data-id="${license.id}">Esquecer</button>` : "")}
+                <button type="button" class="btn btn-outline-secondary btn-sm order-last order-sm-0 ${stored?.configured ? "" : "ms-auto"}" data-action="cancelEdit">Cancelar</button>
+                <button type="button" class="btn btn-outline-primary btn-sm flex-grow-1 flex-sm-grow-0" data-action="checkRadarCredentials" data-id="${license.id}">Testar ligação</button>
+                <button type="button" class="btn btn-primary btn-sm flex-grow-1 flex-sm-grow-0" data-action="saveRadarCredentialsRow">Guardar</button>
             </div>
         </div>`;
 }

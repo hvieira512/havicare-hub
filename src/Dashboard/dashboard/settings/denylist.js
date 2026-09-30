@@ -39,14 +39,16 @@ function denylistRow(entry) {
     const whoLine = who === ""
         ? ""
         : html`<span class="d-block small text-secondary">${who}</span>`;
+    // Num telefone o botão desce para baixo do texto: uma identidade de quinze dígitos em
+    // monoespaçada e um botão de 96px não cabem os dois numa calha de 300px.
     return html`
-        <div class="tree-row position-relative d-flex align-items-center justify-content-between">
-            <div class="min-w-0">
+        <div class="list-group-item d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
+            <div class="min-w-0 flex-grow-1">
                 <span class="d-block font-monospace text-truncate" title="${entry.identity}">${entry.identity}</span>
                 ${raw(metaLine)}
                 ${raw(whoLine)}
             </div>
-            <button class="btn btn-outline-secondary btn-sm flex-shrink-0" data-action="unblock" data-id="${entry.identity}" title="Desbloquear">Desbloquear</button>
+            <button class="btn btn-outline-secondary btn-sm flex-shrink-0" data-action="unblock" data-id="${entry.identity}">Desbloquear</button>
         </div>`;
 }
 
@@ -69,7 +71,7 @@ function renderDenylistSection() {
 
     els.denylistListBody.innerHTML = total === 0
         ? emptyPanel("Um aparelho bloqueia-se a partir da notificação de «Dispositivo não autorizado».")
-        : current.map(denylistRow).join("");
+        : html`<div class="list-group">${raw(current.map(denylistRow).join(""))}</div>`;
 }
 
 async function unblock(identity) {

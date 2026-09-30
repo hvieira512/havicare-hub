@@ -280,7 +280,7 @@ function renderCapabilitiesSection() {
                 // suporta pedido, o segundo fica desligado; porquê está no cabeçalho.
                 const requestableSwitch = section.section !== "telemetry"
                     ? ""
-                    : html`<div class="form-check form-switch mb-0 flex-shrink-0 text-nowrap">
+                    : html`<div class="form-check form-switch mb-0 flex-shrink-0 text-nowrap ms-4 ms-sm-0">
                                 <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequestability" data-feature="${feature}" id="requestable-${feature}" ${canBeRequested && requestable.has(feature) ? "checked" : ""} ${canBeRequested && enabled.has(feature) ? "" : "disabled"}>
                                 <label class="form-check-label small" for="requestable-${feature}">Solicitável</label>
                                </div>`;
@@ -289,8 +289,10 @@ function renderCapabilitiesSection() {
                 const description = isInModelPayload
                     ? ""
                     : html`<div class="section-label">Disponível no catálogo do tipo de dispositivo.</div>`;
+                // Num telefone os dois interruptores empilham-se: lado a lado, «Solicitável»
+                // e o nome da capacidade disputavam uma calha de 330px.
                 return html`
-                        <div class="capability-model-row d-flex justify-content-between align-items-start gap-3 border rounded-3 px-3 py-2">
+                        <div class="capability-model-row d-flex flex-column flex-sm-row justify-content-sm-between align-items-start gap-2 gap-sm-3 border rounded-3 px-3 py-2">
                             <div class="form-check form-switch mb-0">
                                 <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilitySupport" data-feature="${feature}" id="cap-${feature}" ${enabled.has(feature) ? "checked" : ""}>
                                 <label class="form-check-label" for="cap-${feature}">${labelText}</label>

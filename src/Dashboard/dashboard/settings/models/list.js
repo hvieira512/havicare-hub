@@ -230,6 +230,7 @@ function backToModelList() {
     els.modelsBreadcrumbCurrent.classList.remove("active");
     els.modelsBreadcrumbCurrent.textContent = "";
     els.settingsCloseBtn?.classList.remove("d-none");
+    els.modelDetailActionBar?.classList.replace("d-flex", "d-none");
 
     carousel.to(0);
 
@@ -249,6 +250,7 @@ function backToModelList() {
 function showNewModelSlide() {
     const { els } = getSettingsModelsRuntime();
     els.settingsCloseBtn?.classList.add("d-none");
+    els.modelDetailActionBar?.classList.replace("d-flex", "d-none");
     els.modelsBreadcrumb.classList.remove("d-none");
     els.modelsBreadcrumbModels.classList.remove("active");
     els.modelsBreadcrumbNew.textContent = "Novo modelo";

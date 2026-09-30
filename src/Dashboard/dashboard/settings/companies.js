@@ -119,7 +119,9 @@ function licenseMetaHtml(license) {
         ? html` · <span class="text-success">cloud dos radares ligada</span>`
         : "";
 
-    return html`<div class="small text-secondary text-truncate">${meta}${raw(cloud)}</div>`;
+    // Sem truncar: num telefone a linha inteira não cabe, e o que se perderia era «cloud dos
+    // radares ligada», que é o facto que só aqui se lê.
+    return html`<div class="small text-secondary">${meta}${raw(cloud)}</div>`;
 }
 
 function licenseViewRow(license) {

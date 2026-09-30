@@ -164,7 +164,7 @@ function sectionList(groups, currentCategory) {
  */
 function sectionFooter() {
     return `
-        <div class="config-section-footer position-sticky d-flex align-items-center justify-content-between gap-2 flex-wrap border-top bg-body pt-3 mt-3">
+        <div class="config-section-footer position-sticky bottom-0 d-flex align-items-center justify-content-between gap-2 flex-wrap border-top bg-body pt-3 mt-3">
             <span class="small text-secondary flex-grow-1 min-w-0 lh-sm" data-config-pane-status></span>
             <span class="d-flex gap-2 flex-shrink-0">
                 <button type="button" class="btn btn-outline-secondary" data-action="resetConfigPane" disabled>Repor</button>
