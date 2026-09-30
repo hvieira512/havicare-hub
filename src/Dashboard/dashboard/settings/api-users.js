@@ -339,8 +339,12 @@ export function apiUserForm(user, licenseList) {
                     <input type="password" class="form-control form-control-sm" id="apiUserNewPassword" data-field="password" autocomplete="new-password">
                 </div>`;
 
+    // O estado viaja com o editor: procurá-lo na página carregada devolve nada assim que a
+    // linha sai dela, e o `PUT` pausava o utilizador em silêncio.
+    const enabledAttr = user ? html` data-enabled="${isEnabled(user) ? "1" : "0"}"` : "";
+
     return html`
-        <div class="border rounded-3 p-3 mb-2 bg-body-tertiary" data-editor="apiUser" data-id="${user?.id ?? ""}">
+        <div class="border rounded-3 p-3 mb-2 bg-body-tertiary" data-editor="apiUser" data-id="${user?.id ?? ""}"${raw(enabledAttr)}>
             <div class="row g-2">
                 <div class="col-12 col-md-3">
                     <label class="section-label" for="apiUserNewUsername">Utilizador</label>
@@ -383,7 +387,6 @@ async function saveApiUserRow(button) {
     }
 
     const { el, field, id } = row;
-    const existing = users.find((user) => String(user.id) === id);
     const body = {
         username: row.value("username"),
         role: field("role").value,
@@ -393,7 +396,7 @@ async function saveApiUserRow(button) {
         body.password = field("password").value;
     } else {
         // O estado não está no formulário: quem o muda é o verbo de pausar.
-        body.enabled = isEnabled(existing ?? {});
+        body.enabled = el.dataset.enabled === "1";
     }
 
     clearInvalid(el);
