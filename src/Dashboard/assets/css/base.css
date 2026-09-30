@@ -194,6 +194,16 @@ body[data-swal2-theme] {
         min-height: 44px;
     }
 
+    /* Um campo também é alvo de toque, e ao lado de um botão a diferença vê-se: a busca
+       ficava numa caixa de 34 px encostada a uma de 44. */
+    .form-control,
+    .form-select,
+    .input-group-sm > .form-control,
+    .input-group-sm > .form-select,
+    .input-group-sm > .input-group-text {
+        min-height: 44px;
+    }
+
     /* Um cartão que só serve de moldura em ecrã largo. O padding sai por `p-0 p-sm-3` na
        marcação; a borda e o fundo vêm cá ter porque não há `border-sm` nem `bg-sm-*`. */
     .card-flush-sm {

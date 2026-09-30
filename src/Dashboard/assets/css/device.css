@@ -221,16 +221,23 @@
 
     /* Aqui quem cola é a linha e não a célula: fora do algoritmo de tabela o bloco que a
        prende passa a ser o `tr`, que tem a altura do próprio cabeçalho. */
+    /* A faixa do dia atravessa o cartão de lado a lado. Presa ao enchimento da secção ficava
+       uma tira cinzenta com margens brancas dos dois lados, que a fazia parecer um cartão
+       dentro do cartão em vez de uma divisória da lista. */
     .telemetry-table > tbody > tr.telemetry-day {
         grid-template-columns: minmax(0, 1fr);
         position: sticky;
         top: var(--sticky-top, 0px);
         z-index: 1;
         background-color: var(--bs-tertiary-bg);
+        margin-inline: -1rem;
+        padding-inline: 1rem;
     }
 
+    /* O nome do dia alinha com o ícone das linhas, e não com o recuo que o desktop lhe dá. */
     .telemetry-table > tbody > tr.telemetry-day > td {
         position: static;
+        padding-left: 0;
     }
 
     /* O recuo até onde começa o nome perde-se com a regra que zera o preenchimento das
