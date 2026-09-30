@@ -52,13 +52,14 @@ test("o valor diz-se em palavras por baixo do nome", () => {
     assert.match(section.querySelector("[data-config-summary]").textContent, /a cada 60 minutos/);
 });
 
-test("uma definição que o hub nunca guardou di-lo por palavras", () => {
+/**
+ * Quem o diz é a pastilha «Padrão» ao lado. Uma frase a dizer o mesmo por palavras rouba a
+ * linha ao que o campo tem para explicar.
+ */
+test("uma definição que o hub nunca guardou não repete a pastilha por palavras", () => {
     const section = sectionOf(INTERVAL, null, false);
 
-    assert.match(
-        section.querySelector("[data-config-summary]").textContent,
-        /nunca foi enviada ao aparelho/,
-    );
+    assert.equal(section.querySelector("[data-config-summary] .config-when-clean").textContent, "");
 });
 
 test("uma definição editada mostra o valor que lá estava", () => {

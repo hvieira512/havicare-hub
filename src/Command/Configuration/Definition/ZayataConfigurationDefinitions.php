@@ -25,10 +25,8 @@ final class ZayataConfigurationDefinitions
                 9,
                 null,
                 false,
-                'Os nove alarmes do aparelho. O plano é enviado inteiro: um slot deixado em'
-                . ' branco fica vazio, para não sobrar nada de um plano anterior. O número é'
-                . ' uma etiqueta e não a ordem das tomas — o aparelho toca pela hora, e os'
-                . ' compartimentos saem por ordem do relógio, não do slot.',
+                'Enviado em bloco: um slot em branco fica vazio. O número é etiqueta e não'
+                . ' ordem — quem manda é a hora.',
             ),
             ConfigurationDefinition::make(
                 'medication_period',
@@ -42,15 +40,14 @@ final class ZayataConfigurationDefinitions
                 null,
                 null,
                 false,
-                'Entre que datas o plano vale. Desligado, os alarmes tocam sempre. O aparelho'
-                . ' não sabe dias da semana — só "todos os dias, neste intervalo".',
+                'Entre que datas o plano vale; desligado, tocam sempre. Não há dias da semana.',
             ),
             // Dois interruptores independentes, e por isso duas definições: a dashboard
             // agrupa interruptores seguidos em linhas compactas, com a pastilha e o switch
             // à direita. Um bloco só com os dois lá dentro fugia a esse padrão.
             self::toggle('early_dispense', 'earlyRetrieval', 'Toma antecipada', 20, 'Deixa o utente levantar a medicação antes da hora marcada.'),
             self::toggle('child_lock', 'childLock', 'Bloqueio de criança', 21, 'Tranca o prato para não ser aberto por quem não deve.'),
-            self::toggle('missed_dispense', 'missedDispense', 'Dispensar depois de falhar', 22, 'Deixa o utente levantar a dose mesmo depois de ela já estar dada como falhada. Desligado, a dose falhada deixa de estar acessível.'),
+            self::toggle('missed_dispense', 'missedDispense', 'Dispensar depois de falhar', 22, 'Deixa levantar a dose depois de ela já contar como falhada.'),
             // Os dois tempos decidem se uma dose por tomar chega a alguém como alerta ou fica
             // em silêncio, e até agora só se mudavam por script.
             self::number(
@@ -63,7 +60,7 @@ final class ZayataConfigurationDefinitions
                 0,
                 1440,
                 'Minutos',
-                'Quanto tempo o aparelho espera, depois de o alarme tocar, antes de marcar a toma como atrasada. De fábrica são 30 minutos.',
+                'Depois de o alarme tocar, quanto espera antes de marcar a toma como atrasada.',
             ),
             self::number(
                 'retrieval_timeout',
@@ -75,7 +72,7 @@ final class ZayataConfigurationDefinitions
                 0,
                 1440,
                 'Minutos',
-                'Quanto tempo espera antes de desistir e dar a toma como falhada. É esta que faz a dose contar como perdida. De fábrica são 60 minutos, e tem de ser maior do que o aviso de atraso.',
+                'Quanto espera antes de dar a toma como falhada. Tem de ser maior do que o aviso de atraso.',
             ),
             self::number(
                 'loaded_cells',
@@ -87,7 +84,7 @@ final class ZayataConfigurationDefinitions
                 0,
                 28,
                 'de 28',
-                'O número do último compartimento que encheu — não quantos encheu. O aparelho não vê lá dentro: as doses que faltam são este número menos o compartimento em que o prato está. Com o prato cheio de raiz os dois números são 28 e dá no mesmo, mas ao recarregar a meio contam coisas diferentes: parado no 10 e cheio até ao 28, é 28 que se escreve, e não 18.',
+                'O último compartimento que encheu, e não quantos encheu: o aparelho não vê lá dentro.',
             ),
             // O volume é uma enumeração e não uma escala: na especificação, 0 é o mais alto
             // e 3 é silêncio.
@@ -98,13 +95,13 @@ final class ZayataConfigurationDefinitions
                 [1, 'Médio'],
                 [2, 'Baixo'],
                 [3, 'Silêncio'],
-            ], 'A que volume o alarme toca. Em silêncio não toca de todo — a pessoa não tem como saber que chegou a hora, e o hub continua a dar a dose como falhada.', input: 'volumeScale'),
+            ], 'Em silêncio não toca de todo, e a dose continua a contar como falhada.', input: 'volumeScale'),
             self::choice('alarm_ringtone', 'alarmRingtone', 'Tipo de toque', 'alerts', 21, 'ringtone', [
                 [0, 'Nenhum'],
                 [1, 'Toque 1'],
                 [2, 'Toque 2'],
                 [3, 'Toque 3'],
-            ], 'Qual dos toques o aparelho usa para chamar a pessoa à hora da medicação.'),
+            ], 'Qual dos quatro toques chama a pessoa à hora da medicação.'),
             ConfigurationDefinition::make(
                 'do_not_disturb',
                 'doNotDisturb',
@@ -117,14 +114,14 @@ final class ZayataConfigurationDefinitions
                 null,
                 null,
                 false,
-                'Uma janela de horas em que o aparelho se cala. Os alarmes marcados para dentro dela continuam a dispensar — o que muda é só ele não tocar.',
+                'Uma janela em que não toca. Os alarmes lá dentro dispensam na mesma.',
             ),
             // Duas opções e mais nada: o aparelho só fala a língua de fábrica ou inglês. O
             // português existe, mas só instalado de origem — não é configurável.
             self::choice('device_language', 'deviceLanguage', 'Idioma do ecrã', 'system', 10, 'language', [
                 [0, 'Do aparelho'],
                 [1, 'Inglês'],
-            ], 'Em que língua o aparelho escreve no seu próprio ecrã. Não muda nada na dashboard. Só há estas duas: o português existe mas vem instalado de origem e não se configura.'),
+            ], 'A língua do ecrã do aparelho, não a da dashboard.'),
             self::choice(
                 'time_zone',
                 'timeZone',
@@ -145,7 +142,7 @@ final class ZayataConfigurationDefinitions
                 'Sincronizar configuração',
                 'system',
                 5,
-                'Pergunta ao aparelho que configurações ele tem lá dentro e mostra-as aqui. Não muda nada: serve para confirmar que o que está no ecrã é mesmo o que o aparelho ficou a ter.',
+                'Confirma que o que está no ecrã é o que o aparelho ficou a ter. Não muda nada.',
             ),
             // «Atualizar estado» não está aqui: pede-se do mosaico dele, no ecrã principal.
             // Desligar a cifra também não entra: o `0x8005` aparece na tabela dos parâmetros
@@ -162,7 +159,7 @@ final class ZayataConfigurationDefinitions
                 'Dispensar agora',
                 'health',
                 40,
-                'Roda o prato e empurra já o próximo compartimento, sem esperar pela hora. Consome a dose do próximo alarme marcado e dá-o como tomado — não é uma dose a mais. Só funciona se ainda houver hoje um alarme por vir cujo slot não tenha já dado a dose dele: sem isso o aparelho responde que conseguiu e não faz nada.',
+                'Empurra já a dose do próximo alarme de hoje e dá-o como tomado. Sem alarme por vir, não faz nada.',
                 'Isto gasta a dose do próximo alarme e dá-a como tomada. Confirma?',
             ),
             // Rodar até um compartimento (`0xA124`) e pausar a medicação (`0xA125`) não estão
@@ -174,7 +171,7 @@ final class ZayataConfigurationDefinitions
                 'Acertar o relógio do aparelho',
                 'system',
                 30,
-                'Põe o relógio interno do aparelho à hora certa, no fuso configurado acima. Os nove alarmes disparam pela hora dele, e ele deriva: com o relógio atrasado, os comprimidos saem à hora errada sem nenhum erro em lado nenhum.',
+                'Os alarmes disparam pelo relógio do aparelho, e ele deriva: atrasado, as doses saem à hora errada sem erro nenhum.',
             ),
             // Em Alarmes e não em Sistema: o que isto faz é calar um alarme que está a tocar.
             self::action(
@@ -183,7 +180,7 @@ final class ZayataConfigurationDefinitions
                 'Silenciar o alarme a tocar',
                 'alerts',
                 30,
-                'Cala o alarme que está a tocar neste momento. Não é um silenciar permanente — para isso há o volume e o «não incomodar» — e a dose continua por tomar.',
+                'Cala o alarme que está a tocar agora. A dose continua por tomar.',
             ),
             self::action(
                 'reset_tray',
@@ -191,7 +188,7 @@ final class ZayataConfigurationDefinitions
                 'Repor o prato',
                 'system',
                 50,
-                'Manda o carrossel voltar à posição de origem e reassentar-se. Serve quando o prato ficou desalinhado — depois de alguém o forçar, de encravar, ou de se trocarem os compartimentos. O aparelho responde a dizer se conseguiu.',
+                'Reassenta o carrossel na origem, para quando o prato ficou desalinhado.',
             ),
             self::action(
                 'restart_device',
@@ -199,7 +196,7 @@ final class ZayataConfigurationDefinitions
                 'Reiniciar',
                 'system',
                 60,
-                'Reinicia o aparelho. Não apaga configurações nem o plano de medicação. Fica sem comunicar enquanto arranca, e uma toma agendada para esse minuto não é dispensada.',
+                'Não apaga configurações nem o plano. Uma toma agendada para o minuto do arranque não sai.',
                 'O dispensador fica sem comunicar enquanto arranca. Uma toma agendada para esse minuto não é dispensada.',
             ),
             // A reposição de fábrica não entra. O aparelho só aponta para o hub porque o

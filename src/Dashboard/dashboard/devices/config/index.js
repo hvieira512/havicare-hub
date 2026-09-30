@@ -264,7 +264,9 @@ const TIME_UNIT_WORDS = {
  * por isso lê-se «a cada». Um número sem unidade de tempo diz-se como está.
  */
 function valueSummary(entry, desired, isStored) {
-    if (!isStored) return "nunca foi enviada ao aparelho";
+    // Por enviar não se diz nada: a pastilha «Padrão» ao lado já o diz, e repetir a mesma
+    // coisa em duas formas rouba a linha ao que o campo tem para explicar.
+    if (!isStored) return "";
 
     const value = desired?.[entry.fields?.[0] || ""];
     if (typeof value !== "number") return "";
