@@ -113,7 +113,7 @@ function renderTrail() {
     const shape = { questions: TRAIL_QUESTIONS, values, openKey: openQuestion || "", known };
 
     els.deviceTrail.innerHTML = `
-        <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
+        <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-center gap-2">
             ${classificationTrailHtml(shape)}
         </div>`;
 }

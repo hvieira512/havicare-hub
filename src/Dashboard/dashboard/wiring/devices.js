@@ -52,6 +52,7 @@ import {
     editDevice,
     ensureDeviceConfigurationCatalogLoaded,
     handleDeleteDeviceBtnClick,
+    syncDeleteFooterButton,
     loadConfigPanel,
     renderDeviceSelectors,
     renderDeviceTypeSelector,
@@ -169,6 +170,7 @@ function bindDeviceForm() {
     els.deviceForm.addEventListener("input", handleDeviceFormInput);
     els.deviceForm.addEventListener("change", handleDeviceFormChange);
     els.deleteDeviceBtn.addEventListener("click", handleDeleteDeviceBtnClick);
+    els.deleteDeviceFooterBtn?.addEventListener("click", handleDeleteDeviceBtnClick);
     els.deviceSupplierButtons.addEventListener(
         "click",
         handleDeviceSupplierClick,
@@ -177,9 +179,11 @@ function bindDeviceForm() {
     els.deviceModelButtons.addEventListener("click", handleDeviceModelClick);
     els.deviceGeneralTabBtn.addEventListener("shown.bs.tab", () => {
         state.deviceModal.activeTab = "general";
+        syncDeleteFooterButton();
     });
     els.deviceConfigTabBtn.addEventListener("shown.bs.tab", () => {
         state.deviceModal.activeTab = "config";
+        syncDeleteFooterButton();
         void openConfigPanel();
     });
     bindUnsentConfigGuard();

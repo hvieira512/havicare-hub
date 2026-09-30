@@ -156,6 +156,15 @@ function classificationIsMissing(supplier, model) {
     return true;
 }
 
+/** Só em ecrã largo, e só no Geral: no separador das configurações ninguém veio apagar. */
+export function syncDeleteFooterButton() {
+    const deletable = !els.deleteDeviceBtn.classList.contains("d-none");
+    els.deleteDeviceFooterBtn?.classList.toggle(
+        "d-none",
+        !deletable || state.deviceModal.activeTab === "config",
+    );
+}
+
 export function setDeviceFormError(message = "") {
     state.deviceModal.errorMessage = String(message || "");
     if (!els.deviceFormError) {
@@ -198,6 +207,7 @@ export async function editDevice(imei, supplier, model) {
     els.deviceConfigCount?.classList.add("d-none");
     els.deleteDeviceBtn.dataset.imei = imei;
     els.deleteDeviceBtn.classList.remove("d-none");
+    syncDeleteFooterButton();
     renderDeviceTypeSelector("watch");
     els.deviceCompany.value = "";
     els.deviceLicenseId.value = "0";

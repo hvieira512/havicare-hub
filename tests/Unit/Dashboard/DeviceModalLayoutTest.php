@@ -10,9 +10,9 @@ use DOMXPath;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Onde mora o «Eliminar» do modal do dispositivo. Não é uma escolha de aspecto: no rodapé
- * ficava à vista em qualquer separador, a um clique de distância de quem estava a mexer
- * numa definição.
+ * Onde mora o «Eliminar» do modal do dispositivo. Não é uma escolha de aspecto: o que está
+ * na zona do polegar acerta-se por engano, e o que está no rodapé alcança-se de qualquer
+ * separador -- incluindo o das configurações, onde ninguém veio apagar o aparelho.
  */
 final class DeviceModalLayoutTest extends TestCase
 {
@@ -34,6 +34,17 @@ final class DeviceModalLayoutTest extends TestCase
         foreach ($ancestors as $ancestor) {
             self::assertStringNotContainsString('modal-footer', $ancestor);
         }
+    }
+
+    /** O do rodapé nasce escondido: quem o acende é o separador que está aberto. */
+    public function testTheFooterDeleteStartsHidden(): void
+    {
+        $footerDelete = $this->element('deleteDeviceFooterBtn');
+        $footer = $footerDelete->parentNode;
+        self::assertInstanceOf(DOMElement::class, $footer);
+
+        self::assertStringContainsString('d-none', (string)$footerDelete->getAttribute('class'));
+        self::assertStringContainsString('modal-footer', (string)$footer->getAttribute('class'));
     }
 
     /** A zona perigosa diz-se antes de se carregar nela. */

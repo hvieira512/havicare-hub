@@ -169,12 +169,8 @@ export function wizardTrailHtml({ questions, badges = [], currentKey = "" }) {
 }
 
 /**
- * A classificação de um aparelho que já existe: tipo, modelo e licença em pastilhas
- * ligadas, com o nome do campo por cima do valor.
- *
- * As três deitam-se em linha onde cabem e empilham-se onde não cabem -- a seta acompanha,
- * para a direita ou para baixo, e nunca fica a apontar para o vazio. O valor corta-se com
- * reticências, que é o último recurso e só chega a acontecer num ecrã muito estreito.
+ * A classificação de um aparelho que já existe, em pastilhas ligadas: o nome do campo por
+ * cima do valor. Em linha onde cabem e empilhadas onde não cabem, com a seta a acompanhar.
  */
 export function classificationTrailHtml({ questions, values, openKey = "", known = true }) {
     return questions

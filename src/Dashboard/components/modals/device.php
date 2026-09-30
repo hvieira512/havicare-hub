@@ -25,7 +25,7 @@ ob_start();
     <div class="row g-0 h-100">
         <div class="col-12 device-modal-content">
             <div class="tab-content h-100">
-                <div class="tab-pane fade show active h-100 p-3 p-lg-0" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
+                <div class="tab-pane fade show active h-100 p-3" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
                     <form id="deviceForm" class="row g-4">
                         <div class="col-lg-8 order-lg-1">
                             <div class="d-flex flex-column gap-4">
@@ -88,7 +88,7 @@ ob_start();
                                     <button id="saveDeviceBtn" type="button" class="btn btn-primary"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar dispositivo</button>
                                 </div>
 
-                                <div class="border border-danger-subtle rounded-3 p-3" id="deviceDangerZone">
+                                <div class="border border-danger-subtle rounded-3 p-3 d-lg-none" id="deviceDangerZone">
                                     <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3">
                                         <div class="flex-grow-1 min-w-0">
                                             <div class="fw-semibold text-danger-emphasis">Zona perigosa</div>
@@ -114,7 +114,9 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-$footer = '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
+$footer = '<button type="button" class="btn btn-outline-danger d-none me-auto" id="deleteDeviceFooterBtn">'
+    . icon('fa-trash', 'me-1') . 'Eliminar dispositivo</button>'
+    . '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
 
 render_modal(
     id: 'deviceModal',
@@ -124,7 +126,7 @@ render_modal(
     fullscreenBelow: 'lg',
     scrollable: true,
     headerHtml: $header,
-    bodyClass: 'overflow-hidden p-0 p-lg-3',
+    bodyClass: 'overflow-hidden p-0',
     contentClass: 'h-100',
     footerClass: 'd-none d-lg-flex',
 );
