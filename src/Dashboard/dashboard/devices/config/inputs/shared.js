@@ -21,7 +21,7 @@ export function nextUid(prefix) {
 export const numberField = (
     configField,
     value,
-    { min = 0, max = "", step = 1, ariaLabel = "", unit = "" } = {},
+    { min = 0, max = "", step = 1, ariaLabel = "", unit = "", cls = "" } = {},
 ) => {
     const input = `<input class="form-control" type="number" min="${min}"${max === "" ? "" : ` max="${max}"`} step="${step}" data-config-field="${esc(configField)}"${ariaLabel === "" ? "" : ` aria-label="${esc(ariaLabel)}"`} value="${esc(String(value))}">`;
 
@@ -29,7 +29,7 @@ export const numberField = (
     // sítios diferentes para saber uma.
     return unit === ""
         ? input
-        : `<div class="input-group">${input}<span class="input-group-text">${esc(unit)}</span></div>`;
+        : `<div class="input-group${cls ? ` ${cls}` : ""}">${input}<span class="input-group-text">${esc(unit)}</span></div>`;
 };
 
 export function enabledSwitch(enabled, cls = "") {

@@ -169,6 +169,14 @@
     color: var(--brand-on);
 }
 
+/* As caixas que rolam dentro de um modal rolam só na vertical. Com `overflow-y: auto` o
+   eixo x sobe de `visible` a `auto`, e a meia goteira negativa de qualquer `.row` lá dentro
+   -- que as colunas repõem em `padding` -- vira barra horizontal. O `clip` corta-a. */
+.device-modal-content,
+.settings-modal-shell .tab-content {
+    overflow-x: clip;
+}
+
 /* A contagem é texto ao lado do nome, e não uma pastilha: aqui o nome já é curto. */
 .device-tab-count {
     margin-left: .35rem;
