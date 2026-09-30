@@ -18,6 +18,15 @@
     }
 }
 
+/* Entre o `lg` e o `xl` a coluna da identidade aperta e os quinze dígitos do IMEI não cabem
+   a `h4`. Encolhe em vez de cortar: um identificador a que faltem dígitos não se compara
+   com o aparelho que se tem na mão. */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    #selectedDeviceTitle {
+        font-size: var(--fs-lg);
+    }
+}
+
 /* O `table-sm` aperta as linhas a .25rem e uma pastilha de 26px toca nas vizinhas. A última
    linha não leva divisória: por baixo dela vem logo o contorno do cartão. */
 .telemetry-table > :not(caption) > * > * {
@@ -37,27 +46,71 @@
 /* As colunas não medem pelo conteúdo: o que não cabe corta-se com o `text-truncate` de cada
    linha de texto, e o texto completo fica no `title`. Sem largura fixa, a lista alternava de
    altura conforme o tipo do evento. */
+/* Os dois painéis da atividade são separadores até ao `xl` e colunas lado a lado a partir
+   dele. O Bootstrap desenha um separador com `display: block`, e estes são colunas flex. */
+/* A régua cola debaixo da barra de navegação: numa lista de duzentas leituras, trocar de
+   painel obrigava a subir o ecrã todo. */
+.activity-tabs {
+    position: sticky;
+    top: var(--navbar-height, 3.5rem);
+    z-index: 3;
+    background-color: var(--bs-body-bg);
+}
+
+/* No telemóvel quem escolhe é a régua do topo, que tem também a telemetria. Esconde-se por
+   media query e não com `d-none`, que é o que o detalhe liga e desliga por haver pedidos. */
+@media (max-width: 991.98px) {
+    .activity-tabs {
+        display: none;
+    }
+}
+
+/* No telemóvel a lista já se separa da busca pelo espaço e pelo cabeçalho do dia, que tem
+   fundo próprio: a linha era uma terceira divisória para a mesma junta. No ecrã largo não há
+   cabeçalho de dia à vista à partida, e a linha continua a ser o que marca a junta. */
+@media (min-width: 992px) {
+    .activity-section {
+        border-top: 1px solid var(--bs-border-color);
+    }
+}
+
+.activity-tab-content > .tab-pane.active {
+    display: flex;
+}
+
+@media (min-width: 1200px) {
+    .activity-tab-content > .tab-pane {
+        display: flex;
+    }
+}
+
 .telemetry-table {
     table-layout: fixed;
 }
 
-/* Colunas fixas, iguais nos dois painéis: o ícone, o nome, o valor com o que sobra, e a
-   hora. Sem isto cada página media as suas colunas pelo conteúdo que lhe tocou, e as duas
-   listas lado a lado nunca alinhavam entre si nem de uma página para a outra. */
-.telemetry-table > tbody > tr > td:nth-child(1) {
-    width: 2.125rem;
+/* Três colunas medidas e o nome com o resto. A do valor é a calha onde a pastilha de estado
+   de um pedido encosta: mede o que a mais larga pede -- «substituído», «desconhecido». */
+.telemetry-col-icon { width: 2.125rem; }
+.telemetry-col-value { width: 8rem; }
+
+/* A hora mede o que a hora precisa, agora que a data subiu para o cabeçalho do dia. A
+   largura conta com a seta da linha que abre, que vive nesta célula. */
+.telemetry-col-time { width: 5rem; }
+
+/* O cabeçalho de um dia atravessa a tabela toda e não é uma linha de dados: sem linha em
+   baixo, e colado ao rolar para se saber sempre em que dia se está. */
+.telemetry-day > td {
+    position: sticky;
+    top: var(--sticky-top, 0px);
+    z-index: 1;
+    background: var(--bs-tertiary-bg);
+    border-bottom-width: 0;
+    letter-spacing: .06em;
+    padding-left: .75rem;
 }
 
-.telemetry-table > tbody > tr > td:nth-child(2) {
-    width: 34%;
-}
-
-/* A hora mede o que a hora precisa e nunca se corta -- o `text-nowrap` da célula trata disso,
-   e é a coluna que se usa para comparar dois eventos. A largura conta com a seta da linha que
-   abre, que vive nesta célula: o que não lhe couber sai para fora e a lista ganha barra
-   horizontal. */
-.telemetry-table > tbody > tr > td:nth-child(4) {
-    width: 8.25rem;
+.telemetry-day-count {
+    color: var(--bs-secondary-color);
 }
 
 /* A altura de duas linhas fica no contentor e não numa linha vazia: sem detalhes, o valor
@@ -102,14 +155,25 @@
     white-space: normal;
 }
 
-/* No telefone a linha passa a duas: ícone, nome e hora em cima, valor em baixo.
+/* Sem a coluna lado a lado, a linha reorganiza-se: ícone, nome com a hora por baixo, e à
+   direita o valor -- ou a pastilha de estado, nos pedidos.
 
    TEM de vir depois das regras que anula -- mesma especificidade, ganha quem vier abaixo. */
-@media (max-width: 575.98px) {
+@media (max-width: 991.98px) {
+    /* Sem algoritmo de tabela: as linhas são grelhas e as larguras do `colgroup` mediam-nas
+       pela primeira coluna -- trinta e quatro pixéis para a linha inteira. */
+    .telemetry-table,
+    .telemetry-table > tbody {
+        display: block;
+    }
+
     .telemetry-table > tbody > tr {
         display: grid;
-        grid-template-columns: 2.125rem minmax(0, 1fr) auto;
-        align-items: start;
+        /* O valor pede o que o seu conteúdo mede, mas cede quando a linha não dá: sem o
+           `minmax(0, ...)` um valor longo -- «Tempo a andar: 0 · Tempo em meditação: 0 ·
+           ...» -- estica a faixa e leva a lista inteira para fora do ecrã. */
+        grid-template-columns: 2.125rem minmax(0, 1fr) minmax(0, max-content) auto;
+        align-items: center;
         padding: .5rem 0;
         border-bottom: 1px solid var(--bs-border-color);
     }
@@ -138,19 +202,21 @@
         width: auto;
     }
 
-    .telemetry-table > tbody > tr > td:nth-child(4) {
+    /* O valor encosta à direita, que é o espaço que a hora deixou ao descer. */
+    .telemetry-table > tbody > tr > td:nth-child(3) {
         grid-column: 3;
         grid-row: 1;
-        padding-right: 0;
+        text-align: right;
         width: auto;
+        min-width: 0;
+        overflow: hidden;
     }
 
-    /* O valor debaixo do nome, e não a atravessar a linha até à hora: assim a linha mede
-       duas linhas de texto em vez de três. */
-    .telemetry-table > tbody > tr > td:nth-child(3) {
-        grid-column: 2;
-        grid-row: 2;
-        padding: .125rem 0 0 0;
+    /* Só a seta: a hora daqui esconde-se, e quem a mostra é a linha debaixo do nome. */
+    .telemetry-table > tbody > tr > td:nth-child(4) {
+        grid-column: 4;
+        grid-row: 1;
+        padding-right: 0;
         width: auto;
     }
 
@@ -160,6 +226,27 @@
     .telemetry-table > tbody > tr.telemetry-row-panel {
         grid-template-columns: minmax(0, 1fr);
         padding-top: 0;
+    }
+
+    /* Aqui quem cola é a linha e não a célula: fora do algoritmo de tabela o bloco que a
+       prende passa a ser o `tr`, que tem a altura do próprio cabeçalho. */
+    /* A faixa do dia atravessa o cartão de lado a lado. Presa ao enchimento da secção ficava
+       uma tira cinzenta com margens brancas dos dois lados, que a fazia parecer um cartão
+       dentro do cartão em vez de uma divisória da lista. */
+    .telemetry-table > tbody > tr.telemetry-day {
+        grid-template-columns: minmax(0, 1fr);
+        position: sticky;
+        top: var(--sticky-top, 0px);
+        z-index: 1;
+        background-color: var(--bs-tertiary-bg);
+        margin-inline: -1rem;
+        padding-inline: 1rem;
+    }
+
+    /* O nome do dia alinha com o ícone das linhas, e não com o recuo que o desktop lhe dá. */
+    .telemetry-table > tbody > tr.telemetry-day > td {
+        position: static;
+        padding-left: 0;
     }
 
     /* O recuo até onde começa o nome perde-se com a regra que zera o preenchimento das
@@ -175,6 +262,17 @@
         border-bottom: 0;
     }
 
+    /* Nos pedidos o valor é a pastilha de estado, e a calha é a mesma que o ecrã largo mede
+       para a mais larga delas: uma pastilha não se corta a meio, e o nome corta com
+       reticências. */
+    #downlinkRequests .telemetry-table > tbody > tr:not(.telemetry-day):not(.telemetry-row-panel) {
+        grid-template-columns: 2.125rem minmax(0, 1fr) 8rem auto;
+    }
+
+    #downlinkRequests .telemetry-table > tbody > tr > td:nth-child(3) {
+        text-align: left;
+    }
+
     /* A altura de duas linhas serve a coluna estreita do ecrã grande, onde os detalhes vão ao
        lado do valor. Aqui os detalhes já têm linha própria, e o mínimo era só vazio. */
     .telemetry-row-stack {
@@ -185,7 +283,8 @@
 /* A truncagem destas duas vive na marcação, em `d-block text-truncate`: o `d-block` tem de
    ir junto porque `overflow` e `text-overflow` não fazem nada num elemento inline, e estes
    são `span`. Aqui fica só o que o Bootstrap não dá. */
-.telemetry-row-details {
+.telemetry-row-details,
+.telemetry-row-time {
     font-size: var(--fs-sm);
 }
 
@@ -323,9 +422,19 @@
 
 /* Cada coluna rola por si. Presas ao mesmo scroll, chegar ao último filtro obrigava a descer
    a lista de dispositivos -- duas coisas independentes num movimento só. */
+/* Quem rola é a lista de filtros lá dentro, para o título e o botão do rodapé ficarem
+   quietos enquanto se marca. */
 .device-filter-column {
-    gap: 1.25rem;
     border-right: 1px solid var(--bs-border-color);
+    overflow: hidden;
+}
+
+/* O `contain` para o fim da lista de filtros não passar o movimento ao modal atrás dela:
+   chegar ao fundo punha a lista tapada a rolar por baixo do painel. */
+.device-filter-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
 }
 
 /* O `d-lg-block` do Bootstrap traz `display: block !important` e apagava a coluna flex: este
@@ -337,8 +446,8 @@
 }
 
 @media (max-width: 991.98px) {
-    /* Abaixo de lg o modal é o ecrã inteiro e as colunas empilham: a coluna dos filtros
-       deixa de ter contorno lateral e rola com a página, e não por dentro. */
+    /* Abaixo de lg o modal é o ecrã inteiro e as colunas empilham: a lista rola com a
+       página, e não por dentro. */
     .device-selector-body {
         height: auto;
     }
@@ -348,9 +457,21 @@
         overflow-y: visible;
     }
 
+    /* O painel cobre a lista em vez de a empurrar: filtra-se e fecha-se sem sair do sítio, e
+       fica um scroll só, o dele. Fixo porque abaixo de lg o modal já é o ecrã inteiro. */
     .device-filter-column {
+        position: fixed;
+        inset: 0;
+        z-index: 3;
+        height: auto;
         border-right: 0;
-        border-bottom: 1px solid var(--bs-border-color);
+        overflow: hidden;
+    }
+
+    /* O `collapse` anima a altura, e a altura deste painel vem dos cantos. */
+    .device-filter-column.collapsing {
+        height: auto !important;
+        transition: none;
     }
 }
 
@@ -384,12 +505,10 @@
     font-size: var(--fs-sm);
 }
 
-/* A caixa de marcar do mosaico e a da lista de filtros são a mesma: só a do mosaico é que
-   se encosta ao canto. */
+/* A caixa de marcar do mosaico e a da lista de filtros são a mesma, à parte da medida: a do
+   mosaico é uma marca no canto, e a da lista é o que o dedo acerta. */
 .device-type-tile-check,
 .filter-option-box {
-    width: 14px;
-    height: 14px;
     place-items: center;
     border: 1px solid var(--bs-border-color);
     border-radius: 3px;
@@ -399,8 +518,16 @@
 }
 
 .device-type-tile-check {
+    width: 14px;
+    height: 14px;
     top: .375rem;
     right: .375rem;
+}
+
+.filter-option-box {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
 }
 
 .device-type-tile.selected .device-type-tile-check,
@@ -426,8 +553,10 @@
    margem de indentacao das licencas empurrava a contagem para fora da coluna.
 
    A borda e o fundo ficam aqui, que os estados abaixo os trocam. */
+/* 44px é o alvo de toque mínimo. */
 .filter-option {
-    gap: .5625rem;
+    gap: .625rem;
+    min-height: 44px;
     padding: .3125rem .4375rem;
     border: 1px solid transparent;
     background: transparent;
@@ -438,6 +567,13 @@
 .filter-option:hover,
 .filter-option:focus-visible {
     background: var(--bs-body-bg);
+}
+
+/* Um tipo sem dispositivos fica à vista e apagado: saber que a frota não tem pulseiras é
+   informação, e escondê-lo deixava a pergunta sem resposta. */
+.filter-option:disabled {
+    opacity: .45;
+    cursor: default;
 }
 
 .filter-option.selected {
@@ -452,21 +588,17 @@
     font-size: var(--fs-sm);
 }
 
-.filter-option-nested .filter-option-box {
-    width: 13px;
-    height: 13px;
-}
-
 .filter-branch {
     gap: 1px;
 }
 
+/* O traço desce pelo meio das caixas de marcar e pára no centro da última. */
 .filter-branch::before {
     content: "";
     position: absolute;
-    left: .8125rem;
+    left: 1.0625rem;
     top: 0;
-    bottom: .5625rem;
+    bottom: 1.375rem;
     width: 1px;
     background: var(--bs-border-color);
 }
@@ -474,7 +606,7 @@
 /* O mesmo desenho dos filtros, mas de escolha única: a marca leva `rounded-circle` na
    marcação, para não prometer que se podem marcar várias. A empresa é só o cabeçalho. */
 .license-picker-company {
-    padding: .5rem .4375rem .125rem 1.875rem;
+    padding: .5rem .4375rem .125rem 2.3125rem;
 }
 
 /* ===== cartão de dispositivo =====
@@ -619,9 +751,18 @@
 }
 
 /* Mede-se pelo contentor e não pelo ecrã: com `auto-fit`, a segunda coluna só aparece
-   quando há 14rem para ela, que é o que a palavra mais comprida do catálogo pede. */
+   quando há 11rem para ela. A coluna do aparelho tem 400px no portátil, e é esse o mínimo
+   que lhe dá duas colunas em vez de uma. */
 .telemetry-card-grid {
-    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+/* No telemóvel a coluna cabe duas vezes mas o valor não: «2 pessoas» parte-se a meio da
+   palavra. Abaixo do `sm` é sempre uma. */
+@media (max-width: 575.98px) {
+    .telemetry-card-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 /* O `span: 12` da casca: o mosaico que pede a linha toda. */
@@ -655,20 +796,10 @@
     --bs-modal-width: min(1680px, 96vw);
 }
 
-/* A divisão precisa de altura para se ler: a escala é uniforme nos dois eixos, e um contentor
-   baixo encolhe a planta inteira em vez de a achatar.
-
-   Num telemóvel é ao contrário: a largura é que manda, e as 32rem do ecrã grande deixavam a
-   planta no meio de trezentos pixéis de nada -- um quarto tem tipicamente uma proporção de
-   3:2, portanto a 310px de largura não passa dos 200 de altura. */
+/* A altura sai da proporção da divisão e é o `radar-scene.js` que a escreve, depois de saber
+   quanto mede a sala. Aqui fica só o chão para o instante entre abrir e desenhar. */
 .radar-map-canvas {
-    min-height: 16rem;
-}
-
-@media (min-width: 768px) {
-    .radar-map-canvas {
-        min-height: 32rem;
-    }
+    min-height: 11.25rem;
 }
 
 /* A faixa do estado do sono. Não cresce com a coluna -- é contexto e não uma leitura --, mas
@@ -696,12 +827,22 @@
     min-height: 6rem;
 }
 
-/* O nome quebra entre palavras: o `word-wrap: break-word` que o `.card` herda serve texto
-   corrido, não uma etiqueta de duas palavras. */
+/* O nome ocupa duas linhas antes de cortar, e leva o valor inteiro no `title`. Numa grelha
+   de quatro colunas «LOCALIZAÇÃO» é uma palavra mais larga do que a calha que lhe sobra, e
+   sem limite passava por cima do avião de papel -- mas cortar à primeira linha deixava
+   «FREQUÊNCIA CAR...» quando o cartão tinha altura para as duas palavras. */
 .telemetry-card-title {
     font-size: var(--fs-label);
     letter-spacing: .04em;
-    overflow-wrap: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    /* «Localização» não cabe numa calha de quatro colunas e tem de partir. Com hifenização
+       parte onde a palavra parte -- «localiza-ção» -- e não a meio de uma sílaba. */
+    hyphens: auto;
+    overflow-wrap: break-word;
 }
 
 /* A cor da categoria é definida uma vez por tom, e o ícone, a borda e o valor bebem dela:
@@ -716,4 +857,55 @@
 /* A borda do cartão acompanha o tom. */
 .card[class*="telemetry-card-tone-"] {
     border-color: var(--tone-border);
+}
+
+/* ===== modal do dispositivo: configuração =====
+   A marcação vive em `components/modals/device.php` e em `devices/config/index.js`. O que
+   veste o cabeçalho e a régua das secções está no `config.css`. */
+
+/* A zona perigosa só existe onde há dispositivo para eliminar: com o botão escondido, o
+   aviso ficava sozinho a dizer o que ninguém pode fazer. */
+#deviceDangerZone:has(#deleteDeviceBtn.d-none) {
+    display: none;
+}
+
+/* As duas leituras de uma definição -- a entrega ao aparelho e a edição por enviar -- são
+   desenhadas juntas, e o `data-config-edited` escolhe qual se vê. */
+.config-when-changed {
+    display: none;
+}
+
+[data-config-edited] .config-when-clean {
+    display: none;
+}
+
+[data-config-edited] .config-when-changed {
+    display: inline-flex;
+}
+
+/* O campo alterado diz-se também na borda: a pastilha está no topo do bloco e o número que
+   se acabou de escrever pode estar a três linhas dela. */
+[data-config-edited] .form-control,
+[data-config-edited] .form-select,
+[data-config-edited] .input-group-text {
+    border-color: var(--bs-warning-border-subtle);
+}
+
+/* A linha fechada de um alarme. O triângulo do browser sai: o que abre e fecha é a linha
+   inteira, e a seta à direita é que o diz. */
+.alarm-line {
+    list-style: none;
+    cursor: pointer;
+}
+
+.alarm-line::-webkit-details-marker {
+    display: none;
+}
+
+.alarm-line-chevron {
+    transition: transform .15s ease-in-out;
+}
+
+.alarm-line-body[open] > .alarm-line .alarm-line-chevron {
+    transform: rotate(180deg);
 }

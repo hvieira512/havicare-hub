@@ -2,19 +2,23 @@
                 $activityPanels = [
                     [
                         'column' => 'telemetryColumn',
-                        'title' => 'Eventos recebidos',
+                        'title' => 'Leituras',
+                        'tabCountId' => 'telemetryTabCount',
                         'countId' => 'telemetryCount',
                         'pager' => 'telemetryPager',
+                        'loadMore' => 'telemetryLoadMore',
                         'list' => 'telemetryList',
-                        'spacing' => 'pe-xl-4',
+                        'spacing' => '',
                     ],
                     [
                         'column' => 'downlinkColumn',
-                        'title' => 'Pedidos ao dispositivo',
+                        'title' => 'Pedidos',
+                        'tabCountId' => 'downlinkTabCount',
                         'countId' => 'downlinkRequestCount',
                         'pager' => 'downlinkPager',
+                        'loadMore' => 'downlinkLoadMore',
                         'list' => 'downlinkRequests',
-                        'spacing' => 'border-start-xl ps-xl-4 mt-4 mt-xl-0',
+                        'spacing' => 'border-start-xl ps-xl-3',
                     ],
                 ];
                 ?>
@@ -24,7 +28,7 @@
                             <div id="deviceDetail" class="d-none device-detail-open">
                                 <div>
                                     <div class="d-flex align-items-center gap-2">
-                                        <?= search_input('detailSearch', 'Procurar na atividade', 'flex-grow-1') ?>
+                                        <?= search_input('detailSearch', 'Procurar', 'flex-grow-1') ?>
                                         <?= filter_toggle_button('detailFiltersCollapse', 'detailFilterCount', 'flex-shrink-0') ?>
                                     </div>
                                     <div id="detailActiveFiltersRow" class="d-flex flex-wrap align-items-center gap-2 mt-2 d-none">
@@ -32,24 +36,32 @@
                                         <button id="clearDetailFiltersBtn" class="btn btn-link btn-sm p-0 text-decoration-none text-secondary small d-none" type="button">Limpar</button>
                                     </div>
                                     <div class="collapse" id="detailFiltersCollapse">
-                                        <div class="row g-2 align-items-end pt-3">
-                                            <div class="col-auto">
-                                                <label for="detailFilterFrom" class="section-label">De</label>
-                                                <input type="datetime-local" id="detailFilterFrom" class="form-control form-control-sm">
+                                        <div id="detailRangePresets" class="d-flex flex-wrap gap-2 pt-3">
+                                            <?php foreach (['today' => 'Hoje', '7d' => '7 dias', '30d' => '30 dias'] as $range => $label) : ?>
+                                            <button class="btn btn-sm btn-outline-secondary rounded-pill" type="button" data-detail-range="<?= h($range) ?>" aria-pressed="false"><?= h($label) ?></button>
+                                            <?php endforeach; ?>
+                                            <button class="btn btn-sm btn-outline-secondary rounded-pill" type="button" data-bs-toggle="collapse" data-bs-target="#detailFilterDates" aria-expanded="false" aria-controls="detailFilterDates">Datas&hellip;</button>
+                                        </div>
+                                        <div class="collapse" id="detailFilterDates">
+                                            <div class="row g-2 align-items-end pt-3">
+                                                <div class="col-auto">
+                                                    <label for="detailFilterFrom" class="section-label">De</label>
+                                                    <input type="datetime-local" id="detailFilterFrom" class="form-control form-control-sm">
+                                                </div>
+                                                <div class="col-auto">
+                                                    <label for="detailFilterTo" class="section-label">Até</label>
+                                                    <input type="datetime-local" id="detailFilterTo" class="form-control form-control-sm">
+                                                </div>
+                                                <div class="col-auto">
+                                                    <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check', 'me-1') ?>Aplicar</button>
+                                                </div>
                                             </div>
-                                            <div class="col-auto">
-                                                <label for="detailFilterTo" class="section-label">Até</label>
-                                                <input type="datetime-local" id="detailFilterTo" class="form-control form-control-sm">
-                                            </div>
-                                            <div class="col-auto">
-                                                <label for="detailFilterType" class="section-label">Tipo</label>
-                                                <select id="detailFilterType" class="form-select form-select-sm">
-                                                    <option value="all">Todos</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-auto">
-                                                <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check', 'me-1') ?>Aplicar</button>
-                                            </div>
+                                        </div>
+                                        <div class="pt-3">
+                                            <label for="detailFilterType" class="section-label">Tipo</label>
+                                            <select id="detailFilterType" class="form-select form-select-sm w-auto mw-100">
+                                                <option value="all">Todos</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -58,16 +70,24 @@
                                         <?= section_header('Ligações ao servidor') ?>
                                         <div id="connectionTimeline"></div>
                                     </section>
-                                    <div class="card-section mt-3 pt-3 border-top row g-0 flex-grow-1 min-h-0">
-                                        <?php foreach ($activityPanels as $panel) : ?>
-                                        <div id="<?= $panel['column'] ?>" class="col-12 col-xl-6 d-flex flex-column min-h-0 <?= $panel['spacing'] ?>">
-                                            <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2 mb-2">
-                                                <?= section_header($panel['title'], $panel['countId'], '') ?>
-                                                <?= pagination_component($panel['pager'], '', false) ?>
-                                            </div>
-                                            <div id="<?= $panel['list'] ?>" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
+                                    <div class="card-section activity-section mt-3 pt-lg-3 d-flex flex-column flex-grow-1 min-h-0">
+                                        <div class="nav nav-pills activity-tabs d-xl-none flex-nowrap gap-2 mb-3" id="activityTabs" role="tablist">
+                                            <?php foreach ($activityPanels as $index => $panel) : ?>
+                                            <button class="nav-link<?= $index === 0 ? ' active' : '' ?> flex-fill d-flex align-items-center justify-content-center gap-2" id="<?= $panel['column'] ?>Tab" data-bs-toggle="pill" data-bs-target="#<?= $panel['column'] ?>" type="button" role="tab" aria-controls="<?= $panel['column'] ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= h($panel['title']) ?><span class="badge text-bg-secondary rounded-pill" id="<?= $panel['tabCountId'] ?>"></span></button>
+                                            <?php endforeach; ?>
                                         </div>
-                                        <?php endforeach; ?>
+                                        <div class="tab-content activity-tab-content row g-0 flex-grow-1 min-h-0">
+                                            <?php foreach ($activityPanels as $index => $panel) : ?>
+                                            <div id="<?= $panel['column'] ?>" class="tab-pane<?= $index === 0 ? ' show active' : '' ?> col-12 col-xl-6 flex-column min-h-0 <?= $panel['spacing'] ?>" role="tabpanel">
+                                                <div class="d-none d-lg-flex flex-column flex-xl-row justify-content-xl-between align-items-xl-center gap-2 mb-2">
+                                                    <div class="d-none d-xl-block"><?= section_header($panel['title'], $panel['countId'], '') ?></div>
+                                                    <?= pagination_component($panel['pager'], '', true) ?>
+                                                </div>
+                                                <div id="<?= $panel['list'] ?>" class="activity-list flex-grow-1 min-h-0"></div>
+                                                <div id="<?= $panel['loadMore'] ?>" class="d-grid d-lg-none"></div>
+                                            </div>
+                                            <?php endforeach; ?>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

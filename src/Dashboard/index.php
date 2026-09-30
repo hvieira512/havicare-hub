@@ -5,7 +5,6 @@ declare(strict_types=1);
 require_once __DIR__ . '/components/helpers.php';
 
 $dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
-$downlinkQueueTtlSeconds = $downlinkQueueTtlSeconds ?? 300;
 $assetVersion = $assetVersion ?? '';
 
 $asset = static function (string $path) use ($assetVersion): string {
@@ -37,6 +36,8 @@ require_once __DIR__ . '/components/modal.php';
         '/assets/css/base.css',
         '/assets/css/shell.css',
         '/assets/css/device.css',
+        '/assets/css/config.css',
+        '/assets/css/alarms.css',
         '/assets/css/login.css',
         'main.css',
     ];
@@ -46,13 +47,14 @@ require_once __DIR__ . '/components/modal.php';
     <?php endforeach; ?>
 </head>
 
-<body class="bg-body-tertiary" data-dashboard-auth-required="<?= $dashboardApiAuthRequired ? 'true' : 'false' ?>" data-downlink-queue-ttl="<?= (int)$downlinkQueueTtlSeconds ?>">
+<body class="bg-body-tertiary" data-dashboard-auth-required="<?= $dashboardApiAuthRequired ? 'true' : 'false' ?>">
     <?php require __DIR__ . '/components/login.php'; ?>
 
     <div id="dashboardApp" class="<?= $dashboardApiAuthRequired ? 'd-none' : '' ?>"<?= $dashboardApiAuthRequired ? ' hidden' : '' ?>>
         <?php require __DIR__ . '/components/navbar.php'; ?>
-        <main class="container-fluid py-3 dashboard-main d-flex flex-column flex-fill min-h-0 w-100 mx-auto">
-            <div class="row g-3 flex-fill">
+        <?php require __DIR__ . '/components/device-band.php'; ?>
+        <main class="container-fluid pt-lg-3 pb-3 dashboard-main d-flex flex-column flex-fill min-h-0 w-100 mx-auto">
+            <div class="row g-3 flex-fill device-screen">
                 <?php require __DIR__ . '/components/device-column.php'; ?>
                 <?php require __DIR__ . '/components/detail-column.php'; ?>
             </div>

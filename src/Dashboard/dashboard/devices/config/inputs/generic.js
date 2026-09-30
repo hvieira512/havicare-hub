@@ -91,15 +91,17 @@ function pushMessageInput(_entry, desired) {
     );
 }
 
-function intervalToggleInput(entry, desired) {
+// Um campo só: o nome da definição já está na linha de cima e a unidade está colada ao
+// campo, e por isso o rótulo sai e o campo encosta à direita.
+function intervalToggleInput(_entry, desired) {
     return `
-        <div class="row g-3">
-            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
-            ${field(
-                "Intervalo (minutos)",
-                numberField("intervalMinutes", desired.intervalMinutes ?? 60),
-                { cls: "col-md-8" },
-            )}
+        <div class="d-flex align-items-center gap-3">
+            ${enabledSwitch(boolValue(desired.enabled, true))}
+            ${numberField("intervalMinutes", desired.intervalMinutes ?? 60, {
+                unit: "min",
+                ariaLabel: "Intervalo",
+                cls: "flex-nowrap w-auto ms-auto",
+            })}
         </div>`;
 }
 

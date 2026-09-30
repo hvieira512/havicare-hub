@@ -1,7 +1,7 @@
         <?php
         $dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
         ?>
-        <nav class="navbar dashboard-navbar">
+        <nav class="navbar dashboard-navbar sticky-top">
             <div class="container-fluid">
                 <span class="navbar-brand me-0 me-sm-3">
                     <img class="d-none d-sm-block w-auto" src="/assets/logo-dark.png" alt="havi hub">
@@ -29,7 +29,7 @@
                     <div class="dropdown">
                         <button class="btn btn-sm btn-dark dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <?= icon('fa-circle-user', 'fs-5') ?>
-                            <span id="dashboardAuthenticatedUsername">Administrador</span>
+                            <span class="d-none d-lg-inline" id="dashboardAuthenticatedUsername">Administrador</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow">
                             <li>

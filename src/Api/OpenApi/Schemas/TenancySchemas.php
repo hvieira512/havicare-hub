@@ -81,6 +81,8 @@ final class TenancySchemas
                     'company_name' => ['type' => 'string', 'example' => 'hitcare'],
                     'license_id' => ['type' => 'integer', 'example' => 1001],
                     'name' => ['type' => 'string', 'example' => 'gucc.dev'],
+                    'radar_cloud_configured' => ['type' => 'integer', 'enum' => [0, 1], 'example' => 0],
+                    'device_count' => ['type' => 'integer', 'example' => 12],
                     'created_at' => ['type' => 'string'],
                     'updated_at' => ['type' => 'string'],
                 ],
@@ -116,6 +118,19 @@ final class TenancySchemas
                 RadarCredentialsWriteRequest::class,
                 [RadarCredentialsWriteRequest::GROUP_CREATE],
             ),
+            'RadarCredentialsCheckResponse' => [
+                'type' => 'object',
+                'properties' => [
+                    'data' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'radars' => ['type' => 'integer', 'example' => 21],
+                            'responding' => ['type' => 'integer', 'example' => 21],
+                            'error' => ['type' => 'string', 'nullable' => true],
+                        ],
+                    ],
+                ],
+            ],
         ];
     }
 }

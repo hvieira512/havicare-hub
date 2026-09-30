@@ -18,8 +18,10 @@ const jsonResponse = (obj, status = 200) => ({
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function setupDom() {
-    document.body.innerHTML = "<span id=\"summary\"></span><div id=\"body\"></div>";
+    document.body.innerHTML =
+        "<span id=\"title\"></span><span id=\"summary\"></span><div id=\"body\"></div>";
     const els = {
+        denylistTabTitle: document.getElementById("title"),
         denylistTabSummary: document.getElementById("summary"),
         denylistListBody: document.getElementById("body"),
     };
@@ -84,5 +86,27 @@ test("uma lista vazia diz de onde vêm os bloqueios em vez de só dizer que não
     await loadSettingsDenylistSection();
 
     assert.match(els.denylistListBody.innerHTML, /notificação/i);
-    assert.match(els.denylistTabSummary.textContent, /0 aparelhos bloqueados/);
+});
+
+/** O vazio é um estado só: o título di-lo, e por baixo fica a frase. Nada de contar zero. */
+test("sem bloqueados, o título é «Nenhum aparelho bloqueado» e não há contagem a zero", async () => {
+    const els = setupDom();
+    globalThis.fetch = async () => jsonResponse({ data: [] });
+
+    await loadSettingsDenylistSection();
+
+    assert.equal(els.denylistTabTitle.textContent, "Nenhum aparelho bloqueado");
+    assert.equal(els.denylistTabSummary.textContent, "");
+});
+
+test("com bloqueados, o título volta a «Aparelhos bloqueados» e a contagem aparece", async () => {
+    const els = setupDom();
+    globalThis.fetch = async () => jsonResponse({
+        data: [{ identity: "357000000000123" }, { identity: "357000000000124" }],
+    });
+
+    await loadSettingsDenylistSection();
+
+    assert.equal(els.denylistTabTitle.textContent, "Aparelhos bloqueados");
+    assert.equal(els.denylistTabSummary.textContent, "2 aparelhos bloqueados");
 });

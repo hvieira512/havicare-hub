@@ -24,6 +24,8 @@ function fakeElement() {
 function els() {
     return {
         telemetryCount: fakeElement(),
+        telemetryTabCount: fakeElement(),
+        deviceTabReadingsCount: fakeElement(),
         telemetryList: fakeElement(),
         telemetryPager: fakeElement(),
         telemetryPagerSummary: fakeElement(),

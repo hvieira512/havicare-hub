@@ -30,11 +30,13 @@ export function normalizeWonlexMedicationPlan(plan) {
     const drugTime = plan.drugTime && typeof plan.drugTime === "object"
         ? plan.drugTime
         : {};
-    const alarmClock = drugTime.alarmClock && typeof drugTime.alarmClock === "object"
-        ? drugTime.alarmClock
-        : {};
-    let periods = Array.isArray(drugTime.checkboxes)
-        ? drugTime.checkboxes
+    // A forma já normalizada volta aqui -- a lista normaliza, e a linha normaliza outra vez --
+    // e nela o `drugTime` não existe: sem estas segundas leituras a segunda passagem perdia
+    // todos os períodos menos o primeiro.
+    const alarmClock = pickObject(drugTime.alarmClock) ?? pickObject(plan.alarmClock) ?? {};
+    const checkboxes = Array.isArray(drugTime.checkboxes) ? drugTime.checkboxes : plan.periods;
+    let periods = Array.isArray(checkboxes)
+        ? checkboxes
                 .map((value) => parseInt(String(value), 10))
                 .filter((value) => Number.isFinite(value) && value >= 0 && value <= 3)
         : [];
@@ -54,9 +56,11 @@ export function normalizeWonlexMedicationPlan(plan) {
         drugInterval: numericValue(plan.drugInterval, 1),
         alarmClock,
         periods: periods.length > 0 ? periods : [0],
-        mealTiming: parseInt(String(drugTime.radio ?? 0), 10) === 1 ? 1 : 0,
+        mealTiming: parseInt(String(drugTime.radio ?? plan.mealTiming ?? 0), 10) === 1 ? 1 : 0,
     };
 }
+
+const pickObject = (value) => (value && typeof value === "object" ? value : null);
 
 export function defaultWonlexMedicationPlan() {
     return normalizeWonlexMedicationPlan({

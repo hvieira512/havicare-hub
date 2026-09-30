@@ -1,5 +1,6 @@
 import { esc, fieldLabel } from "../../../format.js";
 import { field } from "../../../components/form-field.js";
+import { addAlarmButton, alarmDisclosure, shortDate } from "../alarm-fields.js";
 import {
     WONLEX_MEDICATION_PERIODS,
     boolValue,
@@ -60,8 +61,8 @@ function wonlexSleepSettingsInput(desired) {
                     { cls: "col-md-4" },
                 )}
                 ${field(
-                    "Meta (minutos)",
-                    numberField("sleepTarget", desired.sleepTarget ?? 480),
+                    "Meta",
+                    numberField("sleepTarget", desired.sleepTarget ?? 480, { unit: "min" }),
                     { cls: "col-md-4" },
                 )}
             </div>
@@ -132,35 +133,37 @@ function wonlexMedicationPlansInput(desired) {
         plans.push(defaultWonlexMedicationPlan());
     }
 
+    const group = nextUid("wonlex-medication-group");
+
     return `
         <div class="vstack gap-3">
             <div class="small text-secondary">
                 Cada plano é enviado separadamente ao relógio. Selecione pelo menos um período e indique a respetiva hora.
             </div>
             <div class="small"><span class="text-danger" aria-hidden="true">*</span> Campo obrigatório</div>
-            <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="wonlexMedicationPlan">
-                    <i class="fa-solid fa-plus me-2"></i>Adicionar medicamento
-                </button>
+            <div class="vstack gap-2" data-repeat-list="wonlexMedicationPlan" data-repeat-limit="${WONLEX_MEDICATION_PLAN_LIMIT}">
+                ${plans.slice(0, WONLEX_MEDICATION_PLAN_LIMIT).map((plan, index) => wonlexMedicationPlanRow(plan, index, group)).join("")}
             </div>
-            <div class="vstack gap-3" data-repeat-list="wonlexMedicationPlan">
-                ${plans.map((plan, index) => wonlexMedicationPlanRow(plan, index)).join("")}
-            </div>
+            ${addAlarmButton("wonlexMedicationPlan", "Acrescentar medicamento", Math.min(plans.length, WONLEX_MEDICATION_PLAN_LIMIT), WONLEX_MEDICATION_PLAN_LIMIT)}
         </div>`;
 }
 
-export function wonlexMedicationPlanRow(plan = {}, index = 0) {
+/** O relógio guarda dez planos, e o décimo primeiro escrevia por cima de um que lá estava. */
+const WONLEX_MEDICATION_PLAN_LIMIT = 10;
+
+const WONLEX_MEDICATION_UNITS = [
+    ["0", "Comprimido / unidade"],
+    ["1", "Ampola"],
+    ["2", "ml"],
+    ["3", "mg"],
+    ["4", "UI"],
+    ["5", "Outra"],
+];
+
+export function wonlexMedicationPlanRow(plan = {}, index = 0, group = "wonlex-medication") {
     const normalized = normalizeWonlexMedicationPlan(plan);
     const rowId = nextUid("wonlex-medication");
-
-    return `
-        <div class="border rounded p-3 bg-body" data-repeat-row="wonlexMedicationPlan">
-            <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
-                <div class="fw-semibold">Medicamento <span data-medication-plan-number>${index + 1}</span></div>
-                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover medicamento" aria-label="Remover medicamento">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-            </div>
+    const body = `
             <div class="row g-3">
                 ${field(
                     "Tipo",
@@ -189,14 +192,7 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                 ${field(
                     "Unidade",
                     `<select class="form-select" data-medication-field="drugUnit">
-                        ${[
-                            ["0", "Comprimido / unidade"],
-                            ["1", "Ampola"],
-                            ["2", "ml"],
-                            ["3", "mg"],
-                            ["4", "UI"],
-                            ["5", "Outra"],
-                        ].map(([value, label]) => `
+                        ${WONLEX_MEDICATION_UNITS.map(([value, label]) => `
                             <option value="${value}" ${normalized.drugUnit === value ? "selected" : ""}>${esc(label)}</option>
                         `).join("")}
                     </select>`,
@@ -257,7 +253,32 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                     }).join("")}
                 </div>
             </div>
-        </div>`;
+            <div class="d-flex justify-content-end mt-3">
+                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover medicamento" aria-label="Remover medicamento">
+                    <i class="fa-solid fa-trash-can me-2"></i>Remover
+                </button>
+            </div>`;
+
+    const times = WONLEX_MEDICATION_PERIODS
+        .filter((period) => normalized.periods.includes(period.index))
+        .map((period) => normalized.alarmClock[period.key] || period.defaultTime)
+        .sort();
+    const unit = WONLEX_MEDICATION_UNITS.find(([value]) => value === normalized.drugUnit)?.[1] ?? "";
+    const dose = String(normalized.drugDose ?? "").trim();
+
+    return alarmDisclosure({
+        kind: "wonlexMedicationPlan",
+        group,
+        body,
+        summary: {
+            title: [normalized.drugName, dose === "" ? "" : `${dose} ${unit}`.trim()]
+                .filter(Boolean).join(" ") || "Medicamento por preencher",
+            subtitle: [times.join(" · "), normalized.drugEndTime === "" ? "" : `até ${shortDate(normalized.drugEndTime)}`]
+                .filter(Boolean).join(" · "),
+            trailing: times.length === 0 ? "" : `${times.length}×/dia`,
+            badges: "",
+        },
+    });
 }
 
 /** O número de cada medicamento é a sua posição na lista, e remover um a meio desalinha-os. */

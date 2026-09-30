@@ -158,18 +158,28 @@ export const state = {
     // O Redis guarda 100 entradas por lista, e as duas do painel dão 200 no pior caso. A 15
     // são catorze páginas, que é o que o paginador consegue mostrar numa linha só.
     telemetryPageSize: 15,
+    // Com o «Carregar mais» do telemóvel a lista acumula: a página seguinte junta-se às
+    // anteriores em vez de as substituir.
+    telemetryCumulative: false,
     downlinkPage: 1,
     downlinkPageSize: 15,
+    downlinkCumulative: false,
 };
 
 // Guarda contra gralhas, não uma tranca: um `state.selectedDetial = x` passa a atirar em vez
 // de criar uma chave nova que ninguém lê. Os objectos aninhados continuam a mudar.
 Object.seal(state);
 
+function resetActivityPaging() {
+    state.telemetryPage = 1;
+    state.telemetryCumulative = false;
+    state.downlinkPage = 1;
+    state.downlinkCumulative = false;
+}
+
 export function selectImei(imei) {
     if (state.selectedImei !== imei) {
-        state.telemetryPage = 1;
-        state.downlinkPage = 1;
+        resetActivityPaging();
     }
     state.selectedImei = imei;
 }
@@ -177,8 +187,7 @@ export function selectImei(imei) {
 export function clearSelection() {
     state.selectedImei = null;
     state.selectedDetail = null;
-    state.telemetryPage = 1;
-    state.downlinkPage = 1;
+    resetActivityPaging();
     state.detailFiltersDraft = { from: "", to: "", type: "all", q: "" };
 }
 

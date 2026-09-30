@@ -96,6 +96,11 @@ export const saveRadarCredentials = (licenseId, body) =>
     });
 export const forgetRadarCredentials = (licenseId) =>
     requestJson(`/api/licenses/${id(licenseId)}/radar-credentials`, { method: "DELETE" });
+export const checkRadarCredentials = (licenseId, body) =>
+    requestJson(`/api/licenses/${id(licenseId)}/radar-credentials/check`, {
+        method: "POST",
+        body: JSON.stringify(body),
+    });
 
 /* ---------- utilizadores da API ---------- */
 

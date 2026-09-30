@@ -5,7 +5,7 @@ import test from "node:test";
 import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
-import { changedConfigGroupEntries } from "../../src/Dashboard/dashboard/devices/config/panel.js";
+import { changedConfigEntries } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 
 /**
  * As dez medições da Wonlex são a mesma decisão dita dez vezes: com que frequência é que o
@@ -76,7 +76,7 @@ test("a frase de ajuda é dita uma vez, e não uma por medição", () => {
 test("um envio para as três, e não três", () => {
     const root = render(INTERVALS);
 
-    assert.equal(root.querySelectorAll("[data-action=\"saveConfigGroup\"]").length, 1);
+    assert.equal(root.querySelectorAll("[data-action=\"saveConfigPane\"]").length, 1);
     assert.equal(root.querySelectorAll("[data-action=\"saveConfig\"]").length, 0);
 });
 
@@ -102,12 +102,12 @@ test("só viaja a linha que alguém mexeu", () => {
     );
     const group = renderWith(INTERVALS, stored).querySelector("[data-config-group]");
 
-    assert.deepEqual(changedConfigGroupEntries(group), {});
+    assert.deepEqual(changedConfigEntries(group), {});
 
     const [firstRow] = group.querySelectorAll("[data-config-row] input[type=\"number\"]");
     firstRow.value = "15";
 
-    assert.deepEqual(changedConfigGroupEntries(group), {
+    assert.deepEqual(changedConfigEntries(group), {
         heart_rate_measurement_interval: { interval: 15 },
     });
 });
@@ -122,12 +122,12 @@ test("só viaja a linha que alguém mexeu", () => {
 test("um grupo de campos nunca enviados não envia nada sem alguém escrever um valor", () => {
     const group = render(INTERVALS).querySelector("[data-config-group]");
 
-    assert.deepEqual(changedConfigGroupEntries(group), {});
+    assert.deepEqual(changedConfigEntries(group), {});
 
     const [firstRow] = group.querySelectorAll("[data-config-row] input[type=\"number\"]");
     firstRow.value = "30";
 
-    assert.deepEqual(changedConfigGroupEntries(group), {
+    assert.deepEqual(changedConfigEntries(group), {
         heart_rate_measurement_interval: { interval: 30 },
     });
 });
@@ -147,7 +147,7 @@ test("um grupo de interruptores nunca enviados continua a poder ser enviado", ()
 
     const group = render(toggles).querySelector("[data-config-group]");
 
-    assert.equal(Object.keys(changedConfigGroupEntries(group)).length, 2);
+    assert.equal(Object.keys(changedConfigEntries(group)).length, 2);
 });
 
 test("números de comandos diferentes continuam a ser cartões separados", () => {

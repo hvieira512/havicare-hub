@@ -35,18 +35,39 @@ export const when = (value) => {
     return new Date(parsed).toLocaleString("pt-PT");
 };
 
-const SHORT_DATE = { day: "2-digit", month: "2-digit" };
-
-/**
- * A hora de uma linha de lista: dia, mês e hora, sem ano. A coluna é a última de quatro em
- * meio painel, e a janela de filtro começa por omissão a sete dias.
- */
-export const whenShort = (value) => {
+/** Só a hora: a data vive no cabeçalho do dia, e repeti-la em cada linha come a coluna. */
+export const timeOnly = (value) => {
     if (!value) return "";
     const parsed = Date.parse(value);
     if (Number.isNaN(parsed)) return String(value);
+    return new Date(parsed).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" });
+};
+
+/** O dia de um instante, para agrupar. Local e não UTC: o corte é à meia-noite de cá. */
+export const dayKey = (value) => {
+    if (!value) return "";
+    const parsed = Date.parse(value);
+    if (Number.isNaN(parsed)) return "";
     const date = new Date(parsed);
-    return `${date.toLocaleDateString("pt-PT", SHORT_DATE)}, ${date.toLocaleTimeString("pt-PT")}`;
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+};
+
+const DAY_MONTH = { day: "numeric", month: "long" };
+
+/** O cabeçalho de um dia. «Hoje» e «Ontem» poupam a quem lê a conta de cabeça. */
+export const dayLabel = (value) => {
+    if (!value) return "";
+    const parsed = Date.parse(value);
+    if (Number.isNaN(parsed)) return "";
+    const date = new Date(parsed);
+    const today = new Date();
+    const dayMonth = date.toLocaleDateString("pt-PT", DAY_MONTH);
+
+    if (dayKey(value) === dayKey(today.toISOString())) return `Hoje, ${dayMonth}`;
+    const yesterday = new Date(today.getTime() - 86400000);
+    if (dayKey(value) === dayKey(yesterday.toISOString())) return `Ontem, ${dayMonth}`;
+    if (date.getFullYear() === today.getFullYear()) return dayMonth;
+    return `${dayMonth} de ${date.getFullYear()}`;
 };
 
 export const fieldLabel = (key) =>

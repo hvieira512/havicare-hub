@@ -74,8 +74,9 @@ export function editorOf(button, kind) {
         el,
         id: el.dataset.id || "",
         field,
-        /** O valor de um campo de texto, já aparado. */
-        value: (name) => field(name).value.trim(),
+        // Um campo que não está desenhado vale vazio: um segredo já guardado mostra-se como
+        // guardado e só vira campo quando alguém carrega em «Substituir».
+        value: (name) => field(name)?.value.trim() ?? "",
     };
 }
 

@@ -77,7 +77,7 @@ function render(catalog = CATALOG, query = "") {
     return { root, summary };
 }
 
-test("a árvore agrupa por tipo e, dentro dele, por fornecedor", () => {
+test("a árvore agrupa por tipo e o fornecedor é um dado da linha, não uma pasta", () => {
     const { root } = render();
 
     const types = [...root.querySelectorAll(".card > .card-body > button")].map(
@@ -89,9 +89,9 @@ test("a árvore agrupa por tipo e, dentro dele, por fornecedor", () => {
         "Pulseira 1 modelo · 1 fornecedor",
     ]);
 
-    const suppliers = [...root.querySelectorAll(".tree-row:not(.tree-row-nested) button")]
-        .map((button) => button.textContent.replace(/\s+/g, " ").trim());
-    assert.deepEqual(suppliers, ["4P Touch 2", "Wonlex 1", "MOKO 1", "MOKO 1"]);
+    // Um nível só: os únicos `collapse` são os dos três tipos.
+    assert.equal(root.querySelectorAll("[data-bs-toggle=\"collapse\"]").length, 3);
+    assert.equal(root.querySelectorAll(".tree-row-nested").length, 0);
 });
 
 test("um tipo sem modelos não desenha uma moldura vazia", () => {
@@ -106,38 +106,47 @@ test("um fornecedor que serve dois tipos aparece nos dois, e conta uma vez no re
 
     // A MOKO faz gateways e pulseiras: são duas coisas diferentes de suportar, e é por
     // isso que a tabela `supplier_device_types` existe. Dois nós, um fornecedor.
-    const mokoNodes = [...root.querySelectorAll(".tree-row:not(.tree-row-nested)")]
+    const mokoRows = [...root.querySelectorAll(".catalog-model")]
         .filter((row) => row.textContent.includes("MOKO"));
-    assert.equal(mokoNodes.length, 2);
-    // Quatro nós de fornecedor na árvore, três fornecedores no resumo.
+    assert.equal(mokoRows.length, 2);
     assert.equal(summary.textContent, "3 tipos · 3 fornecedores · 5 modelos");
 });
 
-test("a folha leva o id do modelo e o nome interno só quando diz algo a mais", () => {
+test("a linha diz o fornecedor, e o nome interno só quando difere do comercial", () => {
     const { root } = render();
 
-    const leaves = [...root.querySelectorAll(".catalog-model")];
-    assert.equal(leaves.length, 5);
+    const rows = [...root.querySelectorAll(".catalog-model")];
+    assert.equal(rows.length, 5);
     assert.deepEqual(
-        leaves.map((leaf) => leaf.dataset.id),
+        rows.map((row) => row.dataset.id),
         ["91", "92", "93", "94", "95"],
     );
-    // D41/D41: escrever o código interno por baixo do nome comercial repetia-o.
-    assert.equal(leaves[0].querySelector(".section-label"), null);
-    assert.equal(leaves[1].querySelector(".section-label").textContent, "Y6S");
+    assert.deepEqual(
+        rows.map((row) => row.textContent.replace(/\s+/g, " ").trim()),
+        [
+            "D41 · 4P Touch",
+            "R03 · 4P Touch · interno Y6S",
+            "HW20PRO · Wonlex",
+            "MOKOSmart MKGW3 · MOKO · interno MKGW3",
+            "MOKO W6B · MOKO · interno W6B",
+        ],
+    );
 });
 
-test("a busca achata a árvore e devolve a origem a cada linha", () => {
+test("a busca achata a árvore e devolve o tipo a cada linha", () => {
     const { root, summary } = render(CATALOG, "moko");
 
     assert.equal(root.querySelectorAll(".card").length, 1);
     // Nenhum cabeçalho de grupo: um resultado dentro de um grupo fechado não é resultado.
     assert.equal(root.querySelectorAll("[data-bs-toggle=\"collapse\"]").length, 0);
     assert.deepEqual(
-        [...root.querySelectorAll(".catalog-model .section-label")].map(
-            (label) => label.textContent,
+        [...root.querySelectorAll(".catalog-model")].map((row) =>
+            row.textContent.replace(/\s+/g, " ").trim(),
         ),
-        ["MOKO · Gateway", "MOKO · Pulseira"],
+        [
+            "MOKOSmart MKGW3 · MOKO · Gateway · interno MKGW3",
+            "MOKO W6B · MOKO · Pulseira · interno W6B",
+        ],
     );
     assert.equal(summary.textContent, "2 resultados de 5");
 });
@@ -155,12 +164,12 @@ test("uma busca sem resultados diz que não encontrou, e não fica em branco", (
     assert.equal(summary.textContent, "Sem resultados");
 });
 
-test("os identificadores de collapse sobrevivem a nomes com espaços", () => {
+test("cada tipo abre e fecha o seu grupo", () => {
     const { root } = render();
 
     const target = root
-        .querySelector(".tree-row button[data-bs-target]")
+        .querySelector(".card-body > button[data-bs-target]")
         .getAttribute("data-bs-target");
-    assert.equal(target, "#catalogSupplier-watch-4p-touch");
-    assert.notEqual(root.querySelector(target), null);
+    assert.equal(target, "#catalogType-watch");
+    assert.equal(root.querySelectorAll(`${target} .catalog-model`).length, 3);
 });

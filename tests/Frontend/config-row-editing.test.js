@@ -66,14 +66,15 @@ test("clonar: o indicativo volta ao inicial em vez de herdar o anterior", () => 
     assert.equal(rowsIn(section, "numbers")[1].querySelector("[data-phone-country]").value, "PT");
 });
 
-test("desenhar: a linha nova é construída de raiz e numerada", () => {
+test("desenhar: a linha nova é construída de raiz", () => {
     const section = medicationList(1);
 
     appendRepeatRow(section, "wonlexMedicationPlan");
 
     const rows = rowsIn(section, "wonlexMedicationPlan");
     assert.equal(rows.length, 2);
-    assert.equal(rows[1].querySelector("[data-medication-plan-number]").textContent, "2");
+    // A linha do molde não tem campo nenhum: clonada, a nova também não teria.
+    assert.ok(rows[1].querySelector("[data-medication-field=\"drugName\"]"));
 });
 
 test("o limite de repetições é respeitado", () => {

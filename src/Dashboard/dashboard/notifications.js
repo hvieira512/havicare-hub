@@ -8,6 +8,7 @@ import {
 import { ago } from "./format.js";
 import { html, raw } from "./html.js";
 import { confirmDestructive, toast } from "./dialogs.js";
+import { loadSettingsModal } from "./settings/index.js";
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -88,7 +89,7 @@ export function notificationRow(notification) {
         ? ""
         : html`<span class="d-block small text-secondary text-break">${details}</span>`;
     const deviceLine = kind.showsDevice
-        ? html`<span class="d-block font-monospace small text-break">${notification.imei}</span>`
+        ? html`<span class="d-block font-monospace small text-truncate" title="${notification.imei}">${notification.imei}</span>`
         : "";
     // Só um aparelho com identidade se regista ou se cala; um aviso do próprio hub dispensa-se.
     const deviceActions = kind.showsDevice
@@ -123,14 +124,27 @@ export function notificationRow(notification) {
         </div>`;
 }
 
-const render = () => {
-    if (notifications.length === 0) {
-        elements.list.innerHTML =
-            "<div class=\"list-group-item text-center text-secondary small p-4\">Sem notificações.</div>";
-        return;
-    }
+/**
+ * O que o sino mostra. Vazio, diz o que apareceria ali em vez de só dizer que não há nada; e
+ * o rodapé leva sempre ao sítio onde o que se bloqueou vai parar.
+ */
+export function notificationsPanel(rows) {
+    const empty = html`
+        <div class="list-group-item text-center px-3 py-4">
+            <i class="fa-solid fa-bell-slash fa-lg text-secondary mb-2" aria-hidden="true"></i>
+            <span class="d-block">Nada por ver</span>
+            <span class="d-block small text-secondary">Aparecem aqui os aparelhos não autorizados e os reinícios do hub.</span>
+        </div>`;
+    const footer = html`
+        <button class="list-group-item list-group-item-action position-sticky bottom-0 bg-body border-top small text-start" type="button" data-notification-denylist>
+            Ver bloqueados <i class="fa-solid fa-chevron-right ms-1" aria-hidden="true"></i>
+        </button>`;
 
-    elements.list.innerHTML = notifications.map(notificationRow).join("");
+    return (rows.length ? rows.map(notificationRow).join("") : empty) + footer;
+}
+
+const render = () => {
+    elements.list.innerHTML = notificationsPanel(notifications);
 };
 
 const load = async () => {
@@ -251,21 +265,31 @@ const blockDeviceAction = async (notification, button) => {
     await load();
 };
 
-const registerDeviceAction = (notification) => {
+const closeDropdown = () => {
     bootstrap.Dropdown.getOrCreateInstance(
         elements.dropdown.querySelector("[data-bs-toggle=\"dropdown\"]"),
     ).hide();
+};
+
+const registerDeviceAction = (notification) => {
+    closeDropdown();
     void addDevice(notification);
 };
 
 const handleNotificationClick = (event) => {
     const button = event.target.closest(
-        "[data-notification-dismiss], [data-notification-block], [data-notification-register]",
+        "[data-notification-dismiss], [data-notification-block], [data-notification-register], [data-notification-denylist]",
     );
     if (!button) return;
 
     event.preventDefault();
     event.stopPropagation();
+
+    if (button.dataset.notificationDenylist !== undefined) {
+        closeDropdown();
+        void loadSettingsModal("denylist");
+        return;
+    }
 
     const { notificationDismiss, notificationBlock, notificationRegister } = button.dataset;
     const id = Number(notificationDismiss ?? notificationBlock ?? notificationRegister);

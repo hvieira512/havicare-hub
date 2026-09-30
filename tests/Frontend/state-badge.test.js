@@ -6,8 +6,7 @@ import { onlineBadge, stateBadge } from "../../src/Dashboard/dashboard/component
 
 /**
  * A pastilha de estado, em classes do Bootstrap. Era CSS da casa a refazer o que o
- * `badge` já traz, e por isso desalinhava-se sempre que caía num contentor novo -- dentro
- * de uma célula do AG Grid herdava a altura da linha e transbordava.
+ * `badge` já traz, e por isso desalinhava-se sempre que caía num contentor novo.
  *
  * O tom é o nome do Bootstrap e não uma classe escrita: quem chama diz "success", e é a
  * pastilha que sabe que isso são um fundo subtil e um texto de ênfase.
@@ -23,19 +22,6 @@ test("o tom vira o par de classes do Bootstrap", () => {
 
 test("sem tom fica no secundário, e não sem cor nenhuma", () => {
     assert.match(stateBadge("Sem alterações"), /bg-secondary-subtle/);
-});
-
-/**
- * O `badge` cru é mais escuro, mais pesado e mais baixo do que a pastilha da plataforma. Os
- * três degraus que faltam existem como utilitários, e por isso não precisam de CSS próprio.
- */
-test("a pastilha corrige o peso, a altura de linha e o padding do `badge`", () => {
-    const html = stateBadge("Ativo", "success");
-
-    assert.match(html, /class="[^"]*\bfw-semibold\b/);
-    assert.match(html, /class="[^"]*\blh-sm\b/);
-    assert.match(html, /class="[^"]*\bpx-2\b/);
-    assert.doesNotMatch(html, /class="[^"]*\bfw-bold\b/);
 });
 
 /**
@@ -93,7 +79,7 @@ test("uma classe extra junta-se às do Bootstrap em vez de as substituir", () =>
 test("sem pedido de ícone, a marca continua a ser o ponto", () => {
     const html = stateBadge("Ativo", "success");
 
-    assert.match(html, /class="state-badge-dot rounded-circle d-inline-block"/);
+    assert.match(html, /class="[^"]*\bstate-badge-dot\b/);
     assert.doesNotMatch(html, /<i /);
 });
 

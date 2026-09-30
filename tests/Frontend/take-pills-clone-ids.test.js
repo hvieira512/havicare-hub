@@ -41,7 +41,11 @@ test("um lembrete acrescentado depois de remover outro não reutiliza os id", ()
 
     // Dentro de uma linha os rádios partilham o `name` de propósito -- é o que os torna um
     // grupo. O que não pode acontecer é duas linhas caírem no mesmo.
-    const groupsPerRow = rows.map((row) => new Set(attrsIn(row, "name")));
+    // O `name` do `<details>` fica de fora: esse é o grupo que fecha as irmãs, e é partilhado.
+    const groupsPerRow = rows.map((row) => new Set(
+        [...row.querySelectorAll("input[name], select[name], textarea[name]")]
+            .map((element) => element.getAttribute("name")),
+    ));
     for (const [index, groups] of groupsPerRow.entries()) {
         for (const [other, otherGroups] of groupsPerRow.entries()) {
             if (index >= other) continue;

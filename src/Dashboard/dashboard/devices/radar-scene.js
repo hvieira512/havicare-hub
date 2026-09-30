@@ -54,6 +54,27 @@ function boundsOf(layout) {
     return { minX, minY, width: maxX - minX, height: maxY - minY };
 }
 
+/**
+ * A tela toma a proporção da divisão. A escala é uniforme nos dois eixos: numa tela quadrada,
+ * uma sala de 6,0 × 2,8 m desenha-se ao meio e deixa duas faixas de nada em cima e em baixo.
+ * O mínimo evita que uma sala muito comprida fique numa tira de trinta pixéis.
+ */
+const MIN_STAGE_HEIGHT = 180;
+
+function fitStageToLayout(state, layout) {
+    const bounds = boundsOf(layout);
+    const width = state.stage.width();
+    if (!width || !bounds.width) return;
+
+    const height = Math.max(
+        MIN_STAGE_HEIGHT,
+        Math.round((width - 2 * PADDING) * (bounds.height / bounds.width)) + 2 * PADDING,
+    );
+
+    state.stage.height(height);
+    state.stage.container().style.height = `${height}px`;
+}
+
 /** Uma caixa em decímetros nos quatro cantos que o `Konva.Line` fechado quer, por ordem. */
 function corners(box) {
     return [
@@ -208,9 +229,12 @@ function drawRoom(state, layout) {
             fontSize: 14,
             fontFamily: "Poppins",
             fill: color,
-            // O halo branco é o que deixa o nome legível quando cai por cima de uma linha.
-            shadowColor: "white",
-            shadowBlur: 5,
+            // Uma área pode atravessar a parede, e o nome fica por cima da linha. O contorno
+            // branco por baixo do preenchimento abre-lhe espaço. Sem sombra ao lado dele:
+            // as duas juntas mandam o Konva para uma tela intermédia que sai a zero.
+            stroke: "white",
+            strokeWidth: 3,
+            fillAfterStrokeEnabled: true,
         }));
     });
 
@@ -281,6 +305,7 @@ export function createRadarScene(options = {}) {
         if (!state.stage || !layout?.room) return;
 
         state.currentLayout = layout;
+        fitStageToLayout(state, layout);
         state.layer.destroyChildren();
         clearPeopleNodes(state);
 

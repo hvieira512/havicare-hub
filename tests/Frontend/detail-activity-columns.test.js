@@ -24,11 +24,17 @@ function column(...classes) {
 function detailEls() {
     return {
         downlinkRequestCount: document.createElement("div"),
+        downlinkTabCount: document.createElement("div"),
+        deviceTabRequestsCount: document.createElement("div"),
+        deviceTabRequests: document.createElement("button"),
+        deviceTabReadings: document.createElement("button"),
         downlinkRequests: document.createElement("div"),
+        activityTabs: document.createElement("div"),
+        telemetryColumnTab: document.createElement("button"),
         downlinkPager: document.createElement("div"),
         downlinkPagerSummary: document.createElement("div"),
         downlinkPagerControls: document.createElement("ul"),
-        telemetryColumn: column("col-xl-6", "pe-xl-4"),
+        telemetryColumn: column("col-xl-6", "pe-xl-3"),
         downlinkColumn: column("col-xl-6", "ps-xl-4"),
     };
 }
@@ -49,7 +55,7 @@ test("sem pedidos, os eventos ficam com a linha toda", () => {
 
     assert.equal(els.downlinkColumn.classList.contains("d-none"), true);
     assert.equal(els.telemetryColumn.classList.contains("col-xl-6"), false);
-    assert.equal(els.telemetryColumn.classList.contains("pe-xl-4"), false);
+    assert.equal(els.telemetryColumn.classList.contains("pe-xl-3"), false);
     // A coluna nunca deixa de ser uma coluna da linha: só deixa de ser metade dela.
     assert.equal(els.telemetryColumn.classList.contains("col-12"), true);
 });
@@ -63,7 +69,32 @@ test("com pedidos, volta a divisão a meio", () => {
 
     assert.equal(els.downlinkColumn.classList.contains("d-none"), false);
     assert.equal(els.telemetryColumn.classList.contains("col-xl-6"), true);
-    assert.equal(els.telemetryColumn.classList.contains("pe-xl-4"), true);
+    assert.equal(els.telemetryColumn.classList.contains("pe-xl-3"), true);
+});
+
+/**
+ * Empilhados, os dois painéis são separadores. Num radar o dos pedidos está escondido, e a
+ * régua ficava com um separador só a apontar para um painel que não existe.
+ */
+test("sem pedidos, a régua de separadores sai", () => {
+    const els = detailEls();
+    initDeviceDetailView({ els });
+    state.downlinkPage = 1;
+
+    renderDownlinkRequests([]);
+
+    assert.equal(els.activityTabs.classList.contains("d-none"), true);
+});
+
+test("com pedidos, a régua volta", () => {
+    const els = detailEls();
+    initDeviceDetailView({ els });
+    state.downlinkPage = 1;
+
+    renderDownlinkRequests([]);
+    renderDownlinkRequests([downlinkRequest]);
+
+    assert.equal(els.activityTabs.classList.contains("d-none"), false);
 });
 
 test("desenhar duas vezes o mesmo não muda a largura", () => {

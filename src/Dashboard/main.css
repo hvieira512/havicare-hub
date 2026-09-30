@@ -31,6 +31,18 @@
     max-height: 260px;
 }
 
+/* Num telefone a chapa é uma tira. A esmagadora maioria dos modelos não tem fotografia, e
+   280px para mostrar um ícone cinzento e um nome é um terço do ecrã. */
+@media (max-width: 767.98px) {
+    .showcase-preview {
+        min-height: 0;
+    }
+
+    .showcase-preview img {
+        max-height: 104px;
+    }
+}
+
 /* O fundo fica aqui: no escuro a chapa passa a branca, e um `bg-*` na marcação
    ganharia-lhe pelo `!important`. */
 .modal-device-thumb {
@@ -153,14 +165,6 @@
     --moisture-wet: #93c5fd;
     --moisture-damp-text: #60a5fa;
     --moisture-wet-text: #93c5fd;
-}
-
-/* O nome de uma definição reparte o espaço que sobra em vez de o reclamar todo. Com
-   `flex-grow-1` a base é o conteúdo, e uma descrição de duas linhas não deixava espaço para o
-   botão: o `flex-wrap` mandava-o para a linha de baixo, e cada cartão de acção gastava mais
-   quarenta pixéis de altura para dizer o mesmo. O Bootstrap não tem utilitário para isto. */
-.setting-row-title {
-    flex: 1 1 0;
 }
 
 /* A configuração que o aparelho reporta: uma linha por definição, nome à esquerda. */
@@ -302,6 +306,21 @@
     width: min(24rem, calc(100vw - 2rem));
 }
 
+/* Num ecrã estreito o menu é quase tão largo como ele, e alinhado pela direita do sino --
+   que não está na ponta da barra -- saía 153px para fora pela esquerda. Dentro de uma navbar
+   o Bootstrap não chama o Popper, por isso quem o trava tem de ser o CSS. */
+@media (max-width: 575.98px) {
+    /* Dois nomes de classe para empatar com o `[data-bs-popper]` do Bootstrap, que é quem
+       põe o `top: 100%` e o `right: 0` desta posição estática. */
+    .dropdown-menu.dashboard-notifications-menu {
+        position: fixed;
+        top: var(--navbar-height, 3.5rem);
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+    }
+}
+
 .dashboard-notifications-list {
     max-height: min(28rem, calc(100vh - 8rem));
 }
@@ -309,19 +328,15 @@
 /* O mesmo tecto de leitura do ecrã principal: o modal continua de ecrã inteiro, e é o
    conteúdo que para. A 3399px uma linha da árvore do catálogo media 2739px, com o nome do
    modelo numa ponta e o chevron na outra. Ver o `--content-max` no `base.css`. */
-/* Altura estável, como o `.device-selector-body`: sem ela o diálogo media o separador aberto
-   e saltava a cada troca, e o Catálogo com dezanove modelos contra a Denylist vazia são dois
-   modais de alturas diferentes. Quem rola é cada painel por dentro. */
 #settingsModal .modal-body>.settings-modal-shell {
-    height: clamp(26rem, 68vh, 46rem);
     max-width: var(--content-max);
     margin-inline: auto;
 }
 
-/* Com a altura fixa no invólucro, quem rola é o painel e não o diálogo. */
-.settings-modal-shell .tab-content {
-    min-height: 0;
-    overflow-y: auto;
+/* Quem rola é o corpo do diálogo, e por isso o tecto é dele: a régua cola-se ao topo e a
+   barra de gravar ao fundo contra esta caixa, e não contra o invólucro. */
+#settingsModal .modal-body {
+    max-height: clamp(26rem, 68vh, 46rem);
 }
 
 /* No modal do dispositivo quem rola é a coluna do conteúdo, e não o corpo. */
@@ -351,19 +366,11 @@
     }
 }
 
-/* Não existe `h-lg-100`. O limite acompanha o `modal-fullscreen-lg-down`: abaixo dele o
-   diálogo é o ecrã todo, e uma altura fixa deixava metade em branco. */
+/* Abaixo do `modal-fullscreen-lg-down` o diálogo é o ecrã todo, e o tecto de leitura
+   deixa de fazer sentido. */
 @media (max-width: 991.98px) {
-
-    /* Cada folha mede o que o seu conteúdo mede, e quem rola é o corpo do modal. */
-    .settings-modal-shell,
-    .settings-modal-shell .tab-content,
-    .settings-modal-shell .tab-pane {
-        height: auto !important;
-    }
-
-    .settings-modal-shell .tab-content {
-        overflow-y: visible;
+    #settingsModal .modal-body {
+        max-height: none;
     }
 }
 
@@ -381,90 +388,79 @@
     color: var(--brand-on);
 }
 
-/* Abaixo do ecrã largo, o menu lateral de um modal é uma tira que desliza. O `align-items`
-   centrado da linha esticava as pills a altura toda da coluna, o que dava um bloco navy
-   de 700px em telefone. */
-@media (max-width: 991.98px) {
-    .settings-modal-shell>.row {
-        align-items: flex-start !important;
-        height: auto !important;
-    }
-
-    /* Sem isto a coluna do menu ocupa a altura toda e as pills esticam com ela: dava um
-       bloco de 700px com o nome do separador centrado no meio do nada. */
-    .settings-modal-shell>.row>[class*="col-"] {
-        height: auto !important;
-    }
-
-    /* O menu lateral dos dois modais -- definições e dispositivo -- é aqui uma tira que
-       desliza: sem isto os separadores apertam-se uns contra os outros. */
+/* Abaixo do ecrã médio a régua deita-se, e é uma tira de uma linha que desliza -- a mesma
+   da `.capability-section-nav`. Embrulhada dava três linhas num telefone. */
+@media (max-width: 767.98px) {
     .modal-side-nav {
         align-items: center;
-        overflow-x: auto;
-        overflow-y: hidden;
         padding-bottom: .375rem;
         border-bottom: 1px solid var(--bs-border-color);
-        scrollbar-width: thin;
+        overflow-x: auto;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
     }
 
+    .modal-side-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Cada separador com a largura do seu texto, e a encaixar: meia pastilha ao fundo é o
+       que diz que há mais para o lado. */
     .modal-side-nav .nav-link {
         flex: none;
         white-space: nowrap;
+        scroll-snap-align: start;
     }
 }
 
 /* ===== assistente de adicionar dispositivo ===== */
 
-/* A barra mostra os passos com nome, e não uma percentagem: quem está no primeiro tem de
-   conseguir ver o que falta. */
-/* A trilha das respostas já dadas, e o passo no fim da linha. Cada badge colapsa uma
-   pergunta respondida, o que faz o ecrã nunca acumular controlos -- e cada uma é um botão
-   para voltar àquela pergunta. */
-.wizard-trail {
-    min-height: 1.9rem;
-    padding-bottom: .875rem;
+/* Os cinco traços da barra: finos, à mesma largura, e a cor diz quais já ficaram para trás. */
+.wizard-progress > * {
+    height: .25rem;
 }
 
-/* A etiqueta por cima do valor, e não ao lado: lado a lado, três respostas com nomes
-   compridos não cabem na linha e a terceira cai sozinha para baixo. Empilhadas, cada badge
-   mede o mais largo dos seus dois textos e as três cabem. */
-/* A borda e o fundo ficam aqui, que os estados abaixo os trocam. */
+/* A migalha: cinco nomes em linha e sem fundo. O peso e a cor bastam para distinguir o
+   passo dado, o actual e o que falta -- cinco pastilhas cheias eram uma parede. */
+.wizard-trail {
+    min-height: 1.9rem;
+}
+
 .wizard-trail .wizard-badge {
-    gap: .05rem;
-    min-height: 2.5rem;
+    max-width: 14rem;
+    padding: .2rem .4rem;
     font-size: var(--fs-sm);
-    padding: .25rem .7rem;
     border: 1px solid transparent;
-    background: var(--bs-primary-bg-subtle);
-    color: var(--bs-emphasis-color);
+    background: transparent;
     animation: wizard-badge-in .32s cubic-bezier(.2, .8, .3, 1) both;
+}
+
+/* A cor vem das utilidades do Bootstrap na marcação, e o nome do passo acompanha-a. */
+.wizard-trail .wizard-badge-key {
+    color: inherit;
+}
+
+.wizard-trail .wizard-badge-value {
+    min-width: 0;
+}
+
+.wizard-trail button.wizard-badge {
     cursor: pointer;
 }
 
-.wizard-trail .wizard-badge:hover,
-.wizard-trail .wizard-badge:focus-visible {
+.wizard-trail button.wizard-badge:hover,
+.wizard-trail button.wizard-badge:focus-visible {
     border-color: var(--bs-primary-border-subtle);
+    background: var(--bs-primary-bg-subtle);
 }
 
-/* A pergunta activa: contornada, sem valor ainda. */
-.wizard-trail .wizard-badge-now {
-    background: transparent;
-    border-color: var(--bs-primary-border-subtle);
-    cursor: default;
-}
-
-/* As que faltam: esbatidas, para se ver quantas são sem parecerem clicáveis. */
-.wizard-trail .wizard-badge-pending {
-    background: var(--bs-tertiary-bg);
-    cursor: default;
-}
-
-.wizard-trail .wizard-badge-pending .wizard-badge-key {
-    color: var(--bs-secondary-color);
-}
-
-.wizard-trail .wizard-trail-step,
 .wizard-trail .wizard-trail-sep {
+    font-size: var(--fs-sm);
+}
+
+/* A pastilha da classificação de um aparelho que já existe: o valor no corpo pequeno da
+   plataforma, que é o tamanho das outras etiquetas do modal. */
+.classification-pill {
     font-size: var(--fs-sm);
 }
 
@@ -590,13 +586,26 @@
    aponta para o `id` da sua secção. Com cinco cabeçalhos dentro de milhares de pixéis de
    scroll, saber onde está uma secção exigia procurá-la. */
 /* Uma linha só, que desliza quando não cabe. Em telefone as cinco secções partiam-se em
-   duas e três linhas, e o cabeçalho de um painel passava a ocupar meio ecrã. */
+   duas e três linhas, e o cabeçalho de um painel passava a ocupar meio ecrã.
+
+   Sem barra à vista e com encaixe: uma pastilha meio cortada ao lado de uma barra de
+   rolagem lê-se como conteúdo partido, e a mesma pastilha meio cortada sozinha lê-se como
+   «há mais para o lado». O encaixe garante que nenhuma fica a meio depois de se arrastar. */
 .capability-section-nav {
     gap: .375rem;
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: thin;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+}
+
+.capability-section-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.capability-section-nav > * {
+    scroll-snap-align: start;
 }
 
 /* A borda e o fundo ficam aqui: os estados abaixo trocam-nos, e um utilitário traz
@@ -621,7 +630,9 @@
     grid-template-columns: 1fr;
 }
 
-@media (min-width: 768px) {
+/* Os dois filtros lado a lado só quando há largura para eles: a partir de 768 a régua das
+   secções está ao lado e sobram 560px, que divididos em 7/5 davam mosaicos de 80px. */
+@media (min-width: 992px) {
     .capability-filter-row {
         grid-template-columns: 7fr 5fr;
     }
@@ -633,21 +644,13 @@
     scroll-margin-top: 3.25rem;
 }
 
-/* Uma linha por capacidade: o número, o ícone que a capacidade já tem nos cartões de pedido,
-   o nome, e os factos. Nada leva largura fixa. */
+/* Uma linha por capacidade: o ícone que a capacidade já tem nos cartões de pedido, o nome, e
+   os factos. Nada leva largura fixa. */
 .capability-row {
-    grid-template-columns: 1.9rem 1.4rem minmax(0, 1fr) auto;
+    grid-template-columns: 1.4rem minmax(0, 1fr) auto;
     align-items: center;
     gap: .625rem;
     padding: .4375rem .75rem;
-}
-
-/* O número conta o que o fornecedor suporta, em negrito e apagado: enumera sem competir
-   com o nome que está ao lado. */
-.capability-index {
-    font-size: var(--fs-lg);
-    color: var(--bs-emphasis-color);
-    opacity: .22;
 }
 
 /* O alinhamento e a quebra viram no telefone, mais abaixo. */
@@ -664,18 +667,14 @@
     background: var(--bs-tertiary-bg);
 }
 
-.capability-row.is-unsupported .capability-index {
-    opacity: .12;
-}
-
 @media (max-width: 575.98px) {
     .capability-row {
-        grid-template-columns: 1.9rem 1.4rem minmax(0, 1fr);
+        grid-template-columns: 1.4rem minmax(0, 1fr);
         align-items: start;
     }
 
     .capability-facts {
-        grid-column: 3;
+        grid-column: 2;
         text-align: left;
         white-space: normal;
     }

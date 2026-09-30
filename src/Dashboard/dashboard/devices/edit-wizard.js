@@ -1,9 +1,9 @@
 import { deviceTypeLabel } from "../domain.js";
 import { state } from "../state.js";
 import {
+    classificationTrailHtml,
     licenseBadgeValue,
     licensePickerHtml,
-    wizardTrailHtml,
 } from "./classification-ui.js";
 
 /**
@@ -110,23 +110,12 @@ function renderTrail() {
     // é a classificação de outro aparelho: sem badges, a trilha diz o que se sabe -- nada.
     const known = !state.deviceModal.loading;
 
-    els.deviceTrail.setAttribute("aria-valuenow", String(step));
-    els.deviceTrail.innerHTML = wizardTrailHtml({
-        questions: TRAIL_QUESTIONS,
-        // A pergunta aberta não leva badge: o valor antigo está marcado na grelha abaixo.
-        badges: TRAIL_QUESTIONS
-            .filter((question) => known && question.key !== openQuestion)
-            .map((question) => ({
-                key: question.key,
-                label: question.label,
-                value: values[question.key],
-            })),
-        currentKey: openQuestion || "",
-        step,
-        // Sem contador: ver `wizardTrailHtml`. As etiquetas continuam a ser a saída para
-        // voltar a uma pergunta, que é o que aqui faz falta.
-        steps: [],
-    });
+    const shape = { questions: TRAIL_QUESTIONS, values, openKey: openQuestion || "", known };
+
+    els.deviceTrail.innerHTML = `
+        <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-center gap-2">
+            ${classificationTrailHtml(shape)}
+        </div>`;
 }
 
 function renderVisibleQuestion() {

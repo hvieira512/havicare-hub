@@ -1,6 +1,5 @@
 import { esc, fieldUnit } from "../../format.js";
 import { emptyPanel } from "../../components/empty-panel.js";
-import { settingRow } from "../../components/setting-row.js";
 import { stateBadge } from "../../components/state-badge.js";
 import {
     configurationDeliveryMeta,
@@ -10,7 +9,6 @@ import {
 // Os mesmos cinco ícones do catálogo de capacidades: as secções são as mesmas, e uma pastilha
 // com outro ícone para a mesma secção lia-se como sendo outra coisa.
 import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
-import { sectionStrip } from "../../components/chips.js";
 import { configCatalogSections } from "./catalog-model.js";
 import { CONFIG_INPUTS } from "./inputs/index.js";
 import { toggleField, toggleValue } from "./inputs/generic.js";
@@ -50,41 +48,6 @@ const CONFIG_ACTION_BUTTON_META = {
     },
 };
 
-/** O prazo na unidade em que é redondo: 300 são cinco minutos, e 90 são noventa segundos. */
-function queueDeadline(seconds) {
-    for (const [size, one, many] of [[3600, "1 hora", "horas"], [60, "1 minuto", "minutos"]]) {
-        if (seconds % size !== 0) continue;
-        const count = seconds / size;
-        return count === 1 ? one : `${count} ${many}`;
-    }
-    return `${seconds} segundos`;
-}
-
-/**
- * O aviso de que o aparelho não está a ouvir.
- *
- * O comando não se perde -- o `submitDownlink` mete-o em fila --, mas a fila tem prazo.
- *
- * Num painel em que nada viaja, não há fila nenhuma: o `entries` vazio ou omitido mantém o
- * aviso, porque não saber o que lá está não é o mesmo que saber que não sai nada.
- */
-export function offlineQueueNotice(online, ttlSeconds, entries) {
-    if (online) return "";
-
-    const travels = Array.isArray(entries) && entries.length > 0 &&
-        entries.some((entry) => String(entry?.command || "") !== "");
-    if (Array.isArray(entries) && entries.length > 0 && !travels) {
-        return "";
-    }
-
-    const seconds = Math.max(0, Number(ttlSeconds) || 0);
-    const deadline = seconds > 0
-        ? ` Ao fim de ${queueDeadline(seconds)} sem ligação, é descartado.`
-        : "";
-
-    return `Este dispositivo está desligado. O que enviar fica em fila e sai quando ele voltar.${deadline}`;
-}
-
 export function renderDeviceConfigurationRoot(context) {
     const {
         protocol,
@@ -93,15 +56,11 @@ export function renderDeviceConfigurationRoot(context) {
         capabilities = {},
         capabilityCatalog = [],
         configurationSync = { entries: {} },
-        supplier = "",
-        model = "",
         disabled = false,
         activeCategory = "",
         uiByKey = {},
         actionDeliveries = {},
         quietWhenEmpty = false,
-        online = true,
-        queueTtlSeconds = 0,
     } = context;
     if (!protocol) {
         return emptyPanel(
@@ -123,40 +82,15 @@ export function renderDeviceConfigurationRoot(context) {
         ? activeCategory
         : groups[0]?.key || "";
 
-    const offlineNotice = offlineQueueNotice(online, queueTtlSeconds, catalog);
-
     return `
-        <div class="vstack gap-3">
-            <div class="d-flex justify-content-between align-items-start gap-3">
-                <div>
-                    <div class="fw-semibold">Configurações do dispositivo</div>
-                    <div class="small text-secondary">${supplier || model ? `${esc(supplier)} ${esc(model)}` : ""}</div>
-                </div>
-            </div>
-            ${offlineNotice === ""
-                ? ""
-                : `
-            <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 small mb-0" role="status">
-                <i class="fa-solid fa-clock mt-1" aria-hidden="true"></i>
-                <span>${esc(offlineNotice)}</span>
-            </div>`}
-            <div class="capability-section-nav d-flex py-1" role="group" aria-label="Secções de configuração">
-                ${sectionStrip(
-                    groups.map((group) => ({
-                        key: group.key,
-                        label: group.label,
-                        count: group.entries.length,
-                        icon: CAPABILITY_SECTION_ICONS[group.key] || "fa-gear",
-                    })),
-                    "selectConfigCategory",
-                    currentCategory,
-                )}
-            </div>
-            <div class="tab-content">
+        <div class="config-panel d-flex flex-column" data-config-root>
+            <div class="d-flex flex-column flex-lg-row flex-grow-1 min-h-0">
+                ${sectionList(groups, currentCategory)}
+                <div class="config-panel-content tab-content flex-grow-1 min-w-0 min-h-0">
                 ${groups
                     .map(
                         (group) => `
-                    <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}">
+                    <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}" data-config-pane="${esc(group.key)}">
                         ${configRuns(group.entries).map((run) => {
                             if (run.grouped) {
                                 return renderConfigGroup(protocol, run.entries, {
@@ -190,11 +124,52 @@ export function renderDeviceConfigurationRoot(context) {
                                 );
                             }).join("");
                         }).join("")}
+                        ${sectionFooter()}
                     </div>
                 `,
                     )
                     .join("")}
+                </div>
             </div>
+        </div>`;
+}
+
+/**
+ * As secções em lista vertical, com a contagem de definições e a do que está alterado.
+ *
+ * A contagem do alterado é escrita pelo painel a partir do DOM -- é o que está no ecrã e
+ * ainda não saiu --, e por isso nasce vazia.
+ */
+function sectionList(groups, currentCategory) {
+    return `
+        <div class="config-section-nav d-flex flex-column flex-shrink-0" role="group" aria-label="Secções de configuração">
+            <div class="config-section-nav-label d-none d-lg-block text-uppercase fw-semibold">Secções</div>
+            ${groups.map((group) => `
+            <button type="button" class="config-section-link d-flex align-items-center justify-content-between border-bottom text-start${group.key === currentCategory ? " selected" : ""}"
+                    data-action="selectConfigCategory" data-section="${esc(group.key)}" data-config-section-link
+                    aria-pressed="${group.key === currentCategory ? "true" : "false"}">
+                <span class="d-inline-flex align-items-center gap-2 min-w-0">
+                    <i class="fa-solid ${esc(CAPABILITY_SECTION_ICONS[group.key] || "fa-gear")} fa-fw" aria-hidden="true"></i>
+                    <span class="text-truncate">${esc(group.label)}</span>
+                </span>
+                <span class="small text-secondary flex-shrink-0"><span data-config-section-total>${group.entries.length}</span><span data-config-section-changed></span><span class="config-section-chevron" aria-hidden="true"> &rsaquo;</span></span>
+            </button>`).join("")}
+        </div>`;
+}
+
+/**
+ * O envio de uma secção inteira: a conta, o «Repor» e o «Enviar ao dispositivo».
+ *
+ * Nasce desligado, e é o painel que o acende contando o que está alterado no ecrã.
+ */
+function sectionFooter() {
+    return `
+        <div class="config-section-footer position-sticky bottom-0 mt-auto d-flex align-items-center justify-content-between gap-2 flex-wrap border-top bg-body">
+            <span class="small text-secondary flex-grow-1 min-w-0 lh-sm" data-config-pane-status></span>
+            <span class="d-flex gap-2 flex-shrink-0">
+                <button type="button" class="btn btn-outline-secondary" data-action="resetConfigPane" disabled>Repor</button>
+                <button type="button" class="btn btn-primary" data-action="saveConfigPane" data-config-phase="idle" disabled><span class="d-lg-none">Enviar</span><span class="d-none d-lg-inline">Enviar ao dispositivo</span></button>
+            </span>
         </div>`;
 }
 
@@ -266,10 +241,75 @@ function unitLabel(entry) {
     return String(entry.options?.label ?? "").trim() || fieldUnit(entry.fields?.[0] || "");
 }
 
-/** A mesma unidade já desenhada, para a linha de um cartão estreito. */
-function unitOf(entry) {
+/** O controlo com a unidade colada: «5» e «min» separados deixam de ser uma medida. */
+function unitGroup(control, entry) {
     const unit = unitLabel(entry);
-    return unit === "" ? "" : `<span class="small text-secondary flex-shrink-0">${esc(unit)}</span>`;
+    if (control === "") return "";
+    return unit === ""
+        ? `<div class="config-line-control">${control}</div>`
+        : `<div class="input-group flex-nowrap w-auto config-line-control">${control}<span class="input-group-text">${esc(unit)}</span></div>`;
+}
+
+/** As unidades de tempo que se dizem por extenso, no singular e no plural. */
+const TIME_UNIT_WORDS = {
+    min: ["minuto", "minutos"],
+    s: ["segundo", "segundos"],
+    h: ["hora", "horas"],
+};
+
+/**
+ * O valor da definição em palavras, para a linha por baixo do nome.
+ *
+ * Numa unidade de tempo é sempre uma periodicidade -- é o que o catálogo declara nelas --, e
+ * por isso lê-se «a cada». Um número sem unidade de tempo diz-se como está.
+ */
+function valueSummary(entry, desired, isStored) {
+    // Por enviar não se diz nada: a pastilha «Padrão» ao lado já o diz, e repetir a mesma
+    // coisa em duas formas rouba a linha ao que o campo tem para explicar.
+    if (!isStored) return "";
+
+    const value = desired?.[entry.fields?.[0] || ""];
+    if (typeof value !== "number") return "";
+
+    const unit = unitLabel(entry);
+    const words = TIME_UNIT_WORDS[unit];
+    if (words) return `a cada ${value} ${value === 1 ? words[0] : words[1]}`;
+    return unit === "" ? String(value) : `${value} ${unit}`;
+}
+
+/** O valor de onde a edição partiu, para se saber o que se está a trocar. */
+function previousValueSummary(entry, desired, isStored) {
+    if (!isStored) return "por enviar pela primeira vez";
+
+    const value = desired?.[entry.fields?.[0] || ""];
+    if (typeof value !== "number") return "alterada e por enviar";
+
+    const unit = unitLabel(entry);
+    return unit === "" ? `era ${value}` : `era ${value} ${unit}`;
+}
+
+/**
+ * As duas leituras da mesma definição, e qual delas se vê.
+ *
+ * As duas são desenhadas juntas e é o CSS que escolhe, pelo `data-config-edited` do bloco:
+ * trocar texto e pastilha a cada tecla era reescrever marcação dentro de um campo em uso.
+ */
+function settingState(entry, desired, isStored, deliveryMeta, showBadge) {
+    const summary = valueSummary(entry, desired, isStored);
+    const previous = previousValueSummary(entry, desired, isStored);
+
+    return {
+        summary: `
+            <div class="small text-secondary" data-config-summary>
+                <span class="config-when-clean">${esc(summary)}</span>
+                <span class="config-when-changed text-warning-emphasis">${esc(previous)}</span>
+            </div>`,
+        badge: showBadge
+            ? `
+            <span class="config-when-clean">${stateBadge(deliveryMeta.label, deliveryMeta.tone)}</span>
+            <span class="config-when-changed">${stateBadge("Alterado", "warning")}</span>`
+            : "",
+    };
 }
 
 /**
@@ -316,9 +356,10 @@ function renderConfigGroup(protocol, entries, ctx) {
         // A fotografia do valor tem de bater certo com o que o leitor devolve, ou o rodapé
         // conta uma alteração a quem não mexeu em nada.
         const pristine = isToggle ? { [field]: on } : readConfigEntryValue(entry, desired);
+        const rowState = settingState(entry, desired, stored, deliveryMeta, true);
 
         return `
-            <div class="d-flex align-items-center gap-3 px-3 py-2 border-bottom" data-config-row
+            <div class="config-setting d-flex align-items-center gap-3 px-3 py-2 border-bottom" data-config-row
                  data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"
                  data-config-input="${esc(isToggle ? "toggle" : entry.input || "json")}" data-config-stored="${stored ? "1" : "0"}"
                  data-config-protocol="${esc(protocol)}"
@@ -326,25 +367,19 @@ function renderConfigGroup(protocol, entries, ctx) {
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
                     ${help ? `<div class="small text-secondary">${esc(help)}</div>` : ""}
+                    ${rowState.summary}
                 </div>
-                ${stateBadge(deliveryMeta.label, deliveryMeta.tone)}
-                ${isToggle ? control : `<div class="d-flex align-items-center gap-2">${control}${unitOf(entry)}</div>`}
+                ${rowState.badge}
+                ${isToggle ? control : unitGroup(control, entry)}
             </div>`;
     }).join("");
 
     return `
-        <section class="border rounded-3 mb-3" data-config-group data-config-protocol="${esc(protocol)}">
+        <section data-config-group data-config-protocol="${esc(protocol)}">
             ${shared === ""
                 ? ""
-                : `<div class="px-3 py-2 border-bottom small text-secondary">${esc(shared)}</div>`}
+                : `<div class="px-3 pt-2 small text-secondary">${esc(shared)}</div>`}
             ${rows}
-            <div class="d-flex align-items-center justify-content-between gap-3 px-3 py-2 bg-body-tertiary rounded-bottom-3">
-                <span class="small text-secondary" data-config-group-status>Sem alterações por enviar</span>
-                <span class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="resetConfigGroup" ${disabled ? "disabled" : ""}>Repor</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="saveConfigGroup" data-config-phase="idle" disabled>Enviar alterações</button>
-                </span>
-            </div>
         </section>`;
 }
 
@@ -407,46 +442,44 @@ export function renderConfigSection(
     // O verbo é das acções: uma definição guarda-se, e o que o botão dela faz é enviá-la.
     // Sem verbo declarado o botão não repete o título.
     const verb = drawsFields || control !== "" ? "" : String(entry.verb || "");
+    // Uma definição guarda-se e sai no envio da secção; uma acção dispara, e o botão dela é o
+    // único sítio onde isso acontece.
+    const isCommand = entry.transient === true || entry.requestOnly === true;
+    const commands = verbs.length > 0
+        ? renderConfigActionVerbs(verbs, disabled)
+        : isCommand
+            ? renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "", verb)
+            : "";
+    const state = settingState(entry, desired, isStored, deliveryMeta, showConfigurationBadge);
 
     // O bloco do título leva `min-w-0` para encolher em vez de empurrar a pastilha de estado
     // para a linha de baixo.
     return `
-        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-label="${esc(entry.label || entry.key)}"${confirmAttrs}${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
-            ${drawsFields
-                ? `
-            <div class="d-flex align-items-start justify-content-between gap-2">
+        <section class="config-setting px-3 py-2 border-bottom" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-label="${esc(entry.label || entry.key)}"${confirmAttrs}${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
+            <div class="d-flex align-items-start gap-2">
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
                     ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
+                    ${state.summary}
                 </div>
-                ${showConfigurationBadge
-                    ? `<div class="flex-shrink-0">${stateBadge(deliveryMeta.label, deliveryMeta.tone)}</div>`
-                    : ""}
+                <div class="flex-shrink-0">${state.badge}</div>
             </div>
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}
-            <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}">
+            ${drawsFields
+                ? `
+            <form class="mt-2" data-config-form data-config-key="${esc(entry.key)}">
                 ${verbs.length > 0 ? "" : renderConfigInputs(entry, desired, { ...meta, protocol })}
-                <div class="d-flex justify-content-end gap-2 mt-3">
-                    ${verbs.length > 0
-                        ? renderConfigActionVerbs(verbs, disabled)
-                        : `${renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "")}
-                    <button type="reset" class="btn btn-outline-secondary btn-sm" title="Repor" aria-label="Repor" ${disabled ? "disabled" : ""}>
-                        <i class="fa-solid fa-rotate-left"></i>
-                    </button>`}
-                </div>
+                ${commands === ""
+                    ? ""
+                    : `<div class="d-flex justify-content-end gap-2 mt-2">${commands}</div>`}
             </form>`
-                : `
-            ${settingRow({
-                title: entry.label || entry.key,
-                note: details.join(" · "),
-                badge: showConfigurationBadge ? stateBadge(deliveryMeta.label, deliveryMeta.tone) : "",
-                control,
-                unit: control === "" ? "" : unitLabel(entry),
-                actions: verbs.length > 0
-                    ? renderConfigActionVerbs(verbs, disabled)
-                    : renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "", verb),
-            })}
-            ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}`}
+                : control === "" && commands === ""
+                    ? ""
+                    : `
+            <div class="d-flex align-items-center justify-content-end gap-2 mt-2">
+                ${unitGroup(control, entry)}
+                ${commands}
+            </div>`}
             ${renderConfigFeedback(entry.key, uiState)}
         </section>`;
 }

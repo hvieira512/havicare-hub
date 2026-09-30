@@ -164,6 +164,7 @@ final class ReferenceCatalogSeeder
             }
         }
 
+        $this->seedDeviceTypes($pdo);
         $this->seedCapabilities($pdo);
 
         $removed = array_values(array_diff(array_keys($stored), array_keys($declared)));

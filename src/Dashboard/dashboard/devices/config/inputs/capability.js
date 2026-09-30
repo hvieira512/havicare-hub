@@ -2,8 +2,11 @@ import { esc } from "../../../format.js";
 import { field } from "../../../components/form-field.js";
 import { renderPhoneControl } from "../../../phone.js";
 import {
+    addAlarmButton,
+    alarmDisclosure,
     normalizeAlarmClockRecurrenceKind,
     readWeekdays,
+    recurrenceWords,
     weekdayPicker,
 } from "../alarm-fields.js";
 import {
@@ -279,24 +282,24 @@ function alarmClockInput(entry, desired, meta = {}) {
         ));
     }
 
+    const group = nextUid("alarm-clock-group");
+    const shown = items.slice(0, limit);
+
     return `
         <div class="vstack gap-3">
             ${hasMaster ? alarmClockMasterSwitch(desired) : ""}
-            <div class="small text-secondary">Até ${esc(String(limit))} alarmes. A recorrência personalizada usa dias de Segunda a Domingo.</div>
-            <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="alarm_clock" ${items.length >= limit ? "disabled" : ""}>Adicionar item</button>
-            </div>
             <div class="vstack gap-2" data-repeat-list="alarm_clock" data-repeat-limit="${limit}">
-                ${items.slice(0, limit).map((item) => alarmClockRow(item, typeOptions, recurrenceOptions, wonlexFields)).join("")}
+                ${shown.map((item) => alarmClockRow(item, typeOptions, recurrenceOptions, wonlexFields, group)).join("")}
             </div>
+            ${addAlarmButton("alarm_clock", "Acrescentar alarme", shown.length, limit)}
         </div>`;
 }
 
 /**
- * As larguras não dependem do que o fornecedor declara: a linha soma doze com o nome
- * (Wonlex) ou com o tipo (Vivistar), e nenhum declara os dois. O remover fecha o cartão.
+ * A ordem é a mesma em todos os fornecedores -- hora, nome, recorrência, e depois o que cada
+ * um declarar de seu. O que não couber desce; o URL do som ocupa a linha toda.
  */
-function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonlexFields = {}) {
+function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonlexFields = {}, group = "alarm-clock") {
     const rowId = nextUid("alarm-clock");
     const recurrenceKind = normalizeAlarmClockRecurrenceKind(
         item.recurrence?.kind ?? item.kind ?? recurrenceOptions[0]?.value ?? "once",
@@ -317,53 +320,31 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                 { value: "daily", label: "Todos os dias" },
                 { value: "custom", label: "Personalizado" },
             ];
-    return `
-        <div class="border rounded p-3 bg-body" data-repeat-row="alarm_clock">
-            <div class="row g-3 align-items-end">
+    const time = formatReminderTime(item.time);
+    const typeLabel = hasTypeSelector
+        ? String(typeOptions.find((option) => (parseInt(String(option.value), 10) || 1) === typeValue)?.label || "")
+        : "";
+    const control = `
+        <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" role="switch" aria-label="Alarme ligado" data-alarm-clock-field="enabled" ${boolValue(item.enabled, true) ? "checked" : ""}>
+        </div>`;
+    const body = `
+            <div class="d-flex flex-wrap align-items-end gap-3">
+                ${field(
+                    "Hora",
+                    `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(time)}" required>`,
+                    { cls: "alarm-field-time", required: true },
+                )}
                 ${wonlexFields.label
                     ? field(
                             "Nome do alarme",
                             `<input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}">`,
-                            { cls: "col-12 col-lg-4" },
-                        )
-                    : ""}
-                ${field(
-                    "Hora",
-                    `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(formatReminderTime(item.time))}" required>`,
-                    { cls: "col-sm-6 col-lg-2", required: true },
-                )}
-                <div class="col-sm-6 col-lg-2">
-                    <div class="form-check form-switch mt-4">
-                        <input class="form-check-input" type="checkbox" role="switch" data-alarm-clock-field="enabled" ${boolValue(item.enabled, true) ? "checked" : ""}>
-                        <label class="form-check-label" data-switch-label>${boolValue(item.enabled, true) ? "Ligado" : "Desligado"}</label>
-                    </div>
-                </div>
-                ${hasTypeSelector
-                    ? field(
-                            "Tipo",
-                            `<div class="btn-group w-100" role="group" aria-label="Tipo de alarme">
-                        ${typeOptions.map((option) => {
-                            const optionValue = parseInt(String(option.value), 10) || 1;
-                            const inputId = `${rowId}-type-${optionValue}`;
-                            return `
-                            <input
-                                class="btn-check"
-                                type="radio"
-                                name="${rowId}-type"
-                                id="${inputId}"
-                                value="${esc(String(optionValue))}"
-                                data-alarm-clock-field="type"
-                                ${optionValue === typeValue ? "checked" : ""}>
-                            <label class="btn btn-outline-primary btn-sm" for="${inputId}">${esc(String(option.label || option.value))}</label>
-                        `;
-                        }).join("")}
-                    </div>`,
-                            { cls: "col-12 col-lg-4" },
+                            { cls: "alarm-field-grow" },
                         )
                     : ""}
                 ${field(
                     "Recorrência",
-                    `<div class="btn-group w-100" role="group" aria-label="Recorrência do alarme">
+                    `<div class="btn-group" role="group" aria-label="Recorrência do alarme">
                         ${recurrenceButtonOptions
                             .map((option) => {
                                 const optionValue = normalizeAlarmClockRecurrenceKind(option.value);
@@ -382,28 +363,63 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                             })
                             .join("")}
                     </div>`,
-                    { cls: "col-12 col-lg-4", required: true },
+                    { required: true },
                 )}
-                <div class="col-12 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
+                ${hasTypeSelector
+                    ? field(
+                            "Tipo",
+                            `<div class="btn-group" role="group" aria-label="Tipo de alarme">
+                        ${typeOptions.map((option) => {
+                            const optionValue = parseInt(String(option.value), 10) || 1;
+                            const inputId = `${rowId}-type-${optionValue}`;
+                            return `
+                            <input
+                                class="btn-check"
+                                type="radio"
+                                name="${rowId}-type"
+                                id="${inputId}"
+                                value="${esc(String(optionValue))}"
+                                data-alarm-clock-field="type"
+                                ${optionValue === typeValue ? "checked" : ""}>
+                            <label class="btn btn-outline-primary btn-sm" for="${inputId}">${esc(String(option.label || option.value))}</label>
+                        `;
+                        }).join("")}
+                    </div>`,
+                            { cls: "flex-shrink-0" },
+                        )
+                    : ""}
+                <div class="w-100 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
                     ${weekdayPicker(dayMask, rowId)}
                 </div>
                 ${wonlexFields.url
                     ? field(
-                            "URL do áudio",
+                            "Som do lembrete",
                             `<input class="form-control" type="url" inputmode="url" placeholder="https://exemplo.pt/lembrete.mp3" data-alarm-clock-field="url" value="${esc(String(item.url || ""))}">`,
                             {
-                                cls: "col-12",
+                                cls: "w-100",
                                 help: "Endereço HTTP ou HTTPS opcional para o ficheiro de voz do lembrete.",
                             },
                         )
                     : ""}
-                <div class="col-12 d-flex justify-content-end">
+                <div class="w-100 d-flex justify-content-end">
                     <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" title="Remover" aria-label="Remover">
-                        <i class="fa-solid fa-trash-can"></i>
+                        <i class="fa-solid fa-trash-can me-2"></i>Remover
                     </button>
                 </div>
-            </div>
-        </div>`;
+            </div>`;
+
+    return alarmDisclosure({
+        kind: "alarm_clock",
+        group,
+        control,
+        body,
+        summary: {
+            title: String(item.label || "") || typeLabel || time || "Alarme por preencher",
+            subtitle: recurrenceWords(recurrenceKind, dayMask),
+            trailing: time,
+            badges: String(item.url || "").trim() === "" ? "" : "♪",
+        },
+    });
 }
 
 /** Os dias da semana só se escolhem na recorrência personalizada. */

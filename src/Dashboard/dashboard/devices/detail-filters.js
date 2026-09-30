@@ -31,6 +31,80 @@ export function initDetailFilters(context) {
     onChange = context.onChange;
     renderDownlinkRequests = context.renderDownlinkRequests;
     renderTelemetryList = context.renderTelemetryList;
+    activeRange = "";
+    els.detailRangePresets?.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-detail-range]");
+        if (button) applyDetailRange(button.dataset.detailRange);
+    });
+    syncDetailSearchPlaceholder();
+}
+
+/**
+ * O texto da busca nomeia o painel que está à vista. A partir do `xl` os dois estão lado a
+ * lado debaixo do mesmo campo, e aí só o texto geral serve.
+ */
+export function syncDetailSearchPlaceholder() {
+    if (!els?.detailSearch) return;
+
+    const sideBySide = globalThis.matchMedia?.("(min-width: 1200px)")?.matches;
+    const onRequests = !sideBySide && els.downlinkColumn?.classList.contains("active");
+    const onReadings = !sideBySide && els.telemetryColumn?.classList.contains("active");
+
+    els.detailSearch.placeholder = onRequests
+        ? "Procurar nos pedidos"
+        : onReadings ? "Procurar nas leituras" : "Procurar";
+}
+
+/**
+ * Os alcances prontos. O «Hoje» conta da meia-noite de cá e não de vinte e quatro horas
+ * atrás, que é o que quem carrega no botão quer dizer.
+ */
+const DETAIL_RANGES = {
+    today: {
+        label: "Hoje",
+        start: () => {
+            const midnight = new Date();
+            midnight.setHours(0, 0, 0, 0);
+            return midnight;
+        },
+    },
+    "7d": { label: "7 dias", start: () => daysAgo(7) },
+    "30d": { label: "30 dias", start: () => daysAgo(30) },
+};
+
+/** Qual dos alcances está aplicado, para a pastilha e para o botão carregado. */
+let activeRange = "";
+
+function daysAgo(days) {
+    return new Date(Date.now() - days * 86400000);
+}
+
+/** O valor de um `datetime-local`: hora local, sem fuso e sem segundos. */
+function dateTimeLocal(date) {
+    const pad = (value) => String(value).padStart(2, "0");
+    const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    return `${day}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/** Mexer num filtro leva a lista ao princípio, e desfaz o que o «Carregar mais» juntou. */
+function restartTelemetryPaging() {
+    state.telemetryPage = 1;
+    state.telemetryCumulative = false;
+}
+
+export function applyDetailRange(range) {
+    const preset = DETAIL_RANGES[range];
+    if (!preset) return;
+
+    activeRange = range;
+    state.detailFilters = {
+        ...state.detailFilters,
+        from: dateTimeLocal(preset.start()),
+        to: "",
+    };
+    resetDetailFiltersDraft();
+    restartTelemetryPaging();
+    onChange();
 }
 
 const DETAIL_ITEM_TYPES = {
@@ -204,10 +278,22 @@ export function syncDetailFilterControls() {
     els.detailFilterFrom.value = state.detailFiltersDraft?.from ?? state.detailFilters.from;
     els.detailFilterTo.value = state.detailFiltersDraft?.to ?? state.detailFilters.to;
     els.detailFilterType.value = state.detailFiltersDraft?.type ?? state.detailFilters.type;
+    syncDetailRangeButtons();
     renderDetailActiveFilters();
 }
 
+function syncDetailRangeButtons() {
+    const buttons = els.detailRangePresets?.querySelectorAll("[data-detail-range]") || [];
+    for (const button of buttons) {
+        const chosen = button.dataset.detailRange === activeRange;
+        button.classList.toggle("btn-primary", chosen);
+        button.classList.toggle("btn-outline-secondary", !chosen);
+        button.setAttribute("aria-pressed", chosen ? "true" : "false");
+    }
+}
+
 export function applyDetailFilters() {
+    activeRange = "";
     state.detailFilters = {
         from: els.detailFilterFrom.value,
         to: els.detailFilterTo.value,
@@ -215,14 +301,15 @@ export function applyDetailFilters() {
         q: state.detailFilters.q,
     };
     resetDetailFiltersDraft();
-    state.telemetryPage = 1;
+    restartTelemetryPaging();
     onChange();
 }
 
 export function clearDetailFilters() {
+    activeRange = "";
     state.detailFilters = { from: "", to: "", type: "all", q: "" };
     resetDetailFiltersDraft();
-    state.telemetryPage = 1;
+    restartTelemetryPaging();
     if (els.detailSearch) els.detailSearch.value = "";
     onChange();
 }
@@ -246,15 +333,16 @@ function applyDetailSearchNow() {
         q: els.detailSearch.value,
     };
     updateDetailFiltersDraft({ q: els.detailSearch.value });
-    state.telemetryPage = 1;
+    restartTelemetryPaging();
     onChange();
 }
 
 export function removeDetailFilter(key) {
+    if (key === "from" || key === "to") activeRange = "";
     const cleared = key === "type" ? "all" : "";
     state.detailFilters = { ...state.detailFilters, [key]: cleared };
     resetDetailFiltersDraft();
-    state.telemetryPage = 1;
+    restartTelemetryPaging();
     if (key === "q" && els.detailSearch) els.detailSearch.value = "";
     onChange();
 }
@@ -266,9 +354,12 @@ export function removeDetailFilter(key) {
 export function detailFilterChipLabels({ from, to, type, q }) {
     const labels = [];
     if (from || to) {
+        const range = DETAIL_RANGES[activeRange];
         labels.push({
-            key: from && to ? "range" : from ? "from" : "to",
-            label: `${from ? when(from) : "início"} → ${to ? when(to) : "agora"}`,
+            key: range || (from && to) ? "range" : from ? "from" : "to",
+            label: range
+                ? range.label
+                : `${from ? when(from) : "início"} → ${to ? when(to) : "agora"}`,
         });
     }
     if (type && type !== "all") {
@@ -315,14 +406,16 @@ function paginateDetailPanel(event, { belongsToPanel, pageSize, page, actionPref
         .filter(belongsToPanel)
         .map((item) => item.raw);
     const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
-    const nextPage = resolvePaginationPage(
-        event,
-        { page, total_pages: totalPages },
-        actionPrefix,
-    );
+    // O «Carregar mais» pede a mesma página seguinte das setas, e manda juntá-la ao que já
+    // está na lista em vez de a substituir.
+    const more = event.target?.closest?.(`[data-action="${actionPrefix}More"]`);
+    const nextPage = more
+        ? Math.min(totalPages, page + 1)
+        : resolvePaginationPage(event, { page, total_pages: totalPages }, actionPrefix);
     if (nextPage === null) return;
 
     setPage(nextPage, totalPages);
+    state[`${actionPrefix}Cumulative`] = !!more;
     render(rows);
 }
 

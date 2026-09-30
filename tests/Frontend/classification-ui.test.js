@@ -9,7 +9,8 @@ const {
     deviceTypeCardsHtml,
     modelCardsHtml,
     ownerFromLicense,
-    supplierPillsHtml,
+    supplierCardsHtml,
+    wizardProgressHtml,
     wizardTrailHtml,
 } = await import("../../src/Dashboard/dashboard/devices/classification-ui.js");
 
@@ -24,12 +25,9 @@ const TRAIL_QUESTIONS = [
     { key: "model", label: "Modelo" },
     { key: "owner", label: "Licença" },
 ];
-const STEPS = ["Classificação", "Este aparelho"];
 
-function trail(badges, currentKey = "", step = 1) {
-    return parseFragment(
-        wizardTrailHtml({ questions: TRAIL_QUESTIONS, badges, currentKey, step, steps: STEPS }),
-    );
+function trail(badges, currentKey = "") {
+    return parseFragment(wizardTrailHtml({ questions: TRAIL_QUESTIONS, badges, currentKey }));
 }
 
 test("uma resposta na trilha é um botão que volta àquela pergunta", () => {
@@ -59,11 +57,39 @@ test("as perguntas por responder ficam na trilha, e a activa distingue-se", () =
     assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 0);
 });
 
-test("a trilha diz em que passo se está", () => {
-    assert.equal(
-        trail([], "", 2).querySelector(".wizard-trail-step").textContent,
-        "Passo 2 de 2 · Este aparelho",
+test("o passo em que se está não é botão, mesmo já respondido", () => {
+    // Voltar a um passo dado abre lá a pergunta outra vez: o valor está marcado na grelha
+    // por baixo, e a migalha diz onde se está em vez de oferecer um salto para o mesmo sítio.
+    const root = trail([{ key: "type", label: "Tipo", value: "Relógio" }], "type");
+
+    assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 0);
+    assert.equal(root.querySelector(".wizard-badge-now").textContent.trim(), "Tipo");
+});
+
+test("os passos que faltam ficam esbatidos e fora do telemóvel", () => {
+    // Cinco nomes numa linha não cabem em 342px, e só o actual fica visível abaixo de `md`.
+    const root = trail([], "type");
+
+    const pending = [...root.querySelectorAll(".wizard-badge-pending")];
+    assert.equal(pending.length, 2);
+    assert.equal(pending.every((crumb) => crumb.classList.contains("text-body-tertiary")), true);
+    assert.equal(pending.every((crumb) => crumb.classList.contains("d-none")), true);
+    assert.equal(pending.every((crumb) => crumb.classList.contains("d-md-inline-flex")), true);
+    assert.equal(root.querySelector(".wizard-badge-now").classList.contains("d-none"), false);
+});
+
+test("a barra tem um traço por passo, e os já feitos preenchidos", () => {
+    const root = parseFragment(wizardProgressHtml(3, 5));
+
+    const bars = [...root.querySelectorAll(".wizard-progress > *")];
+    assert.equal(bars.length, 5);
+    assert.deepEqual(
+        bars.map((bar) => bar.classList.contains("bg-primary")),
+        [true, true, true, false, false],
     );
+    assert.equal(root.firstElementChild.getAttribute("role"), "progressbar");
+    assert.equal(root.firstElementChild.getAttribute("aria-valuenow"), "3");
+    assert.equal(root.firstElementChild.getAttribute("aria-valuemax"), "5");
 });
 
 test("o card escolhido fica marcado, e é o único", () => {
@@ -130,21 +156,20 @@ test("o card do modelo leva fotografia, o nome comercial e o modelo interno", ()
     assert.equal(second.classList.contains("selected"), true);
 });
 
-test("o fornecedor escolhido é a pastilha cheia", () => {
+test("o fornecedor escolhido é o que está marcado, e a contagem é opcional", () => {
     const root = parseFragment(
-        supplierPillsHtml({
+        supplierCardsHtml({
             suppliers: ["4P Touch", "Wonlex"],
             selected: "Wonlex",
             attrsFor: (name) => `data-supplier="${name}"`,
+            countFor: (name) => (name === "Wonlex" ? 3 : null),
         }),
     );
 
-    assert.equal(root.querySelector("[data-supplier=\"Wonlex\"]").classList.contains("btn-primary"), true);
     assert.equal(root.querySelector("[data-supplier=\"Wonlex\"]").getAttribute("aria-pressed"), "true");
-    assert.equal(
-        root.querySelector("[data-supplier=\"4P Touch\"]").classList.contains("btn-outline-secondary"),
-        true,
-    );
+    assert.equal(root.querySelector("[data-supplier=\"4P Touch\"]").getAttribute("aria-pressed"), null);
+    assert.equal(root.querySelector("[data-supplier=\"Wonlex\"] .wizard-card-sub").textContent, "3 modelos");
+    assert.equal(root.querySelector("[data-supplier=\"4P Touch\"] .wizard-card-sub"), null);
 });
 
 /**

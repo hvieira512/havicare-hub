@@ -13,6 +13,7 @@ import { emptyPanel } from "../components/empty-panel.js";
 import { html } from "../html.js";
 import {
     clearDeviceFilters,
+    handleDeviceFilterChipRemove,
     handleDeviceFilterClick,
     handleDeviceOnlineFilterChange,
 } from "../devices/list-filters.js";
@@ -34,6 +35,7 @@ import {
     handleDownlinkPagerClick,
     handleTelemetryPagerClick,
     removeDetailFilter,
+    syncDetailSearchPlaceholder,
     updateDetailFilterDraft,
 } from "../devices/detail-filters.js";
 import { toggleActivityRow } from "../devices/activity-table.js";
@@ -50,6 +52,7 @@ import {
     editDevice,
     ensureDeviceConfigurationCatalogLoaded,
     handleDeleteDeviceBtnClick,
+    syncDeleteFooterButton,
     loadConfigPanel,
     renderDeviceSelectors,
     renderDeviceTypeSelector,
@@ -71,6 +74,7 @@ export function bindDeviceEvents(context) {
     ui = context.ui;
 
     bindEntryPoints();
+    bindDeviceTabs();
     bindDeviceForm();
     bindListAndFilters();
     bindDetail();
@@ -101,21 +105,51 @@ function bindEntryPoints() {
         ui.deviceSelectorModal?.hide();
         void openWizard();
     });
-    els.openDeviceSelectorBtn.addEventListener("click", () => {
-        void openDeviceSelector();
-    });
-    els.emptyStateSelectDeviceBtn.addEventListener("click", () => {
-        void openDeviceSelector();
-    });
-    els.selectedDeviceEditBtn.addEventListener("click", () => {
-        if (!state.selectedDetail?.device) return;
-        const m = state.selectedDetail.model;
-        void editDevice(
-            state.selectedDetail.device.imei,
-            m?.supplier || "",
-            m?.internalModel || "",
-        );
-    });
+    for (const button of [
+        els.openDeviceSelectorBtn,
+        els.emptyStateSelectDeviceBtn,
+        els.deviceBandSelectBtn,
+    ]) {
+        button.addEventListener("click", () => {
+            void openDeviceSelector();
+        });
+    }
+    for (const button of [els.selectedDeviceEditBtn, els.deviceBandEditBtn]) {
+        button.addEventListener("click", () => {
+            if (!state.selectedDetail?.device) return;
+            const m = state.selectedDetail.model;
+            void editDevice(
+                state.selectedDetail.device.imei,
+                m?.supplier || "",
+                m?.internalModel || "",
+            );
+        });
+    }
+}
+
+/**
+ * A régua do telemóvel. As leituras e os pedidos são os separadores que o cartão da atividade
+ * já tem, e esta manda na régua de lá para as duas nunca divergirem; a telemetria não é
+ * separador nenhum -- são os cartões da coluna do aparelho, e quem os mostra é o atributo na
+ * raiz da aplicação.
+ */
+function bindDeviceTabs() {
+    for (const button of els.deviceTabs.querySelectorAll(".nav-link")) {
+        button.addEventListener("click", () => showDeviceTab(button));
+    }
+    showDeviceTab(els.deviceTabTelemetry);
+}
+
+function showDeviceTab(button) {
+    for (const link of els.deviceTabs.querySelectorAll(".nav-link")) {
+        link.classList.toggle("active", link === button);
+        link.setAttribute("aria-selected", String(link === button));
+    }
+
+    const pane = button.dataset.bsTarget;
+    els.dashboardApp.dataset.deviceTab = pane ? "activity" : "telemetry";
+    const tab = pane && els.activityTabs.querySelector(`[data-bs-target="${pane}"]`);
+    if (tab) globalThis.bootstrap?.Tab.getOrCreateInstance(tab).show();
 }
 
 function bindDeviceForm() {
@@ -136,6 +170,7 @@ function bindDeviceForm() {
     els.deviceForm.addEventListener("input", handleDeviceFormInput);
     els.deviceForm.addEventListener("change", handleDeviceFormChange);
     els.deleteDeviceBtn.addEventListener("click", handleDeleteDeviceBtnClick);
+    els.deleteDeviceFooterBtn?.addEventListener("click", handleDeleteDeviceBtnClick);
     els.deviceSupplierButtons.addEventListener(
         "click",
         handleDeviceSupplierClick,
@@ -144,9 +179,11 @@ function bindDeviceForm() {
     els.deviceModelButtons.addEventListener("click", handleDeviceModelClick);
     els.deviceGeneralTabBtn.addEventListener("shown.bs.tab", () => {
         state.deviceModal.activeTab = "general";
+        syncDeleteFooterButton();
     });
     els.deviceConfigTabBtn.addEventListener("shown.bs.tab", () => {
         state.deviceModal.activeTab = "config";
+        syncDeleteFooterButton();
         void openConfigPanel();
     });
     bindUnsentConfigGuard();
@@ -230,6 +267,7 @@ function bindListAndFilters() {
         input.addEventListener("change", handleDeviceOnlineFilterChange);
     }
     els.clearDeviceFiltersBtn.addEventListener("click", clearDeviceFilters);
+    els.deviceActiveFilters.addEventListener("click", handleDeviceFilterChipRemove);
     els.deviceList.addEventListener("click", handleDeviceListClick);
     els.deviceListPagination.addEventListener(
         "click",
@@ -247,6 +285,12 @@ function bindDetail() {
     }
     els.telemetryPager.addEventListener("click", handleTelemetryPagerClick);
     els.downlinkPager?.addEventListener("click", handleDownlinkPagerClick);
+    els.telemetryLoadMore?.addEventListener("click", handleTelemetryPagerClick);
+    els.downlinkLoadMore?.addEventListener("click", handleDownlinkPagerClick);
+    els.activityTabs?.addEventListener("shown.bs.tab", syncDetailSearchPlaceholder);
+    globalThis
+        .matchMedia?.("(min-width: 1200px)")
+        ?.addEventListener("change", syncDetailSearchPlaceholder);
     els.applyDetailFiltersBtn.addEventListener("click", applyDetailFilters);
     els.clearDetailFiltersBtn.addEventListener("click", clearDetailFilters);
     els.detailFilterFrom.addEventListener("change", updateDetailFilterDraft);

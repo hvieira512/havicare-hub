@@ -40,6 +40,7 @@
         "analyse": "php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress",
         "style": "vendor/bin/phpcs src tests simulator bin",
         "style:fix": "vendor/bin/phpcbf src tests simulator bin",
+        "test:php84": "docker compose exec -T hub sh -lc \"composer style && composer analyse && composer test:unit && composer test:integration\"",
         "test:scenarios": "tests/scenarios/run-all.sh",
         "lint:frontend": "npm run lint",
         "test": [
@@ -76,6 +77,7 @@
         "test:integration": "MySQL-backed suite, repartida por vários processos; skips without a reachable MySQL.",
         "test:integration:serial": "A mesma suite num processo só, para quando o paralelo confunde um diagnóstico.",
         "test:php": "Both PHP suites.",
+        "test:php84": "As suites de PHP dentro do contentor, que corre o 8.4 da produção -- o `composer test` corre no PHP da máquina, que é outro.",
         "test:frontend": "Node test runner over tests/Frontend.",
         "test:scenarios": "End-to-end scenarios against docker compose.",
         "test": "Everything: phpstan, both PHP suites, frontend, scenarios.",

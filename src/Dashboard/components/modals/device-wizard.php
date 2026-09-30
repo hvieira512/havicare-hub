@@ -3,7 +3,10 @@
 ob_start();
 ?>
 <div class="d-flex flex-column gap-4">
-    <div class="wizard-trail d-flex align-items-center justify-content-center flex-wrap gap-2 border-bottom" id="wizardTrail" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="1"></div>
+    <div class="d-flex flex-column gap-2">
+        <div id="wizardProgress"></div>
+        <div class="wizard-trail d-flex align-items-center flex-wrap gap-2" id="wizardTrail"></div>
+    </div>
 
     <div class="wizard-stage d-grid gap-4 align-items-start">
         <div class="wizard-ask" id="wizardAsk"></div>
@@ -15,10 +18,11 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-$footer = '<button type="button" class="btn btn-outline-secondary" id="wizardBackBtn">'
-    . icon('fa-arrow-left', 'me-2') . 'Anterior</button>'
-    . '<button type="button" class="btn btn-primary" id="wizardNextBtn">Seguinte'
-    . icon('fa-arrow-right', 'ms-2') . '</button>';
+$header = '<h5 class="modal-title" id="deviceWizardModalLabel">Adicionar dispositivo</h5>'
+    . '<span class="ms-auto me-2 text-secondary text-nowrap" id="wizardStepCount"></span>';
+
+$footer = '<button type="button" class="btn btn-outline-secondary" id="wizardBackBtn"></button>'
+    . '<button type="button" class="btn btn-primary" id="wizardNextBtn"></button>';
 
 render_modal(
     id: 'deviceWizardModal',
@@ -26,6 +30,7 @@ render_modal(
     body: $body,
     footer: $footer,
     size: 'lg',
-    fullscreenBelow: 'md',
+    fullscreenBelow: 'lg',
     staticBackdrop: true,
+    headerHtml: $header,
 );

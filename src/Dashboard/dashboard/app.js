@@ -8,6 +8,7 @@
 import { getDashboardApiToken, getDevice as apiGetDevice } from "./api/index.js";
 import { refreshSelectedDetail, setDeviceFilters, state } from "./state.js";
 import { cacheElements } from "./dom.js";
+import { trackStickyTop } from "./sticky-top.js";
 import { bindDeviceEvents } from "./wiring/devices.js";
 import { bindSettingsEvents } from "./wiring/settings.js";
 import { bindInvalidClearing } from "./validation.js";
@@ -21,7 +22,7 @@ import { storedFilterList } from "./devices/list-filters.js";
 import {
     ensureProtocolsLoaded,
     initDeviceList,
-    loadDevice,
+    restoreSelectedDevice,
 } from "./devices/list.js";
 import { renderSelection } from "./devices/detail.js";
 import { initDeviceStream } from "./devices/stream.js";
@@ -48,6 +49,10 @@ let radarMapModal = null;
 
 export async function startDashboard() {
     els = cacheElements();
+    trackStickyTop({
+        navbar: document.querySelector(".dashboard-navbar"),
+        tabs: [els.activityTabs, els.deviceTabs],
+    });
     initGatewayLinksUi({ els });
     deviceModal = new bootstrap.Modal(document.getElementById("deviceModal"));
     deviceWizardModal = new bootstrap.Modal(
@@ -118,13 +123,7 @@ export async function startDashboard() {
             online: typeof stored.online === "boolean" ? stored.online : null,
         });
     }
-    const storedSelectedImei = loadTextStorage(SELECTED_DEVICE_STORAGE_KEY);
-    if (storedSelectedImei) {
-        state.selectedImei = storedSelectedImei;
-        void loadDevice(storedSelectedImei);
-    } else {
-        renderSelection();
-    }
+    restoreSelectedDevice(loadTextStorage(SELECTED_DEVICE_STORAGE_KEY));
 
     startSelectedDevicePolling();
 }

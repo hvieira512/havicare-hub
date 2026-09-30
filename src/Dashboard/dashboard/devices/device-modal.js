@@ -11,7 +11,7 @@ import {
     deviceTypeCardsHtml,
     licenseTree,
     modelCardsHtml,
-    supplierPillsHtml,
+    supplierCardsHtml,
 } from "./classification-ui.js";
 import {
     renderEditWizard,
@@ -67,7 +67,6 @@ import {
     modelImageHtml,
     modelPreviewHtml,
 } from "../components/model-image.js";
-import { onlineBadge } from "../components/state-badge.js";
 import {
     blankDeviceModal,
     clearSelection,
@@ -157,6 +156,15 @@ function classificationIsMissing(supplier, model) {
     return true;
 }
 
+/** Só em ecrã largo, e só no Geral: no separador das configurações ninguém veio apagar. */
+export function syncDeleteFooterButton() {
+    const deletable = !els.deleteDeviceBtn.classList.contains("d-none");
+    els.deleteDeviceFooterBtn?.classList.toggle(
+        "d-none",
+        !deletable || state.deviceModal.activeTab === "config",
+    );
+}
+
 export function setDeviceFormError(message = "") {
     state.deviceModal.errorMessage = String(message || "");
     if (!els.deviceFormError) {
@@ -194,8 +202,12 @@ export async function editDevice(imei, supplier, model) {
     setDeviceFormError("");
     clearInvalid(els.deviceForm);
     els.deviceConfigTabBtn?.classList.remove("d-none");
+    // A conta do separador é do dispositivo que está aberto: sem isto ficava a do anterior
+    // até o painel de configurações chegar.
+    els.deviceConfigCount?.classList.add("d-none");
     els.deleteDeviceBtn.dataset.imei = imei;
     els.deleteDeviceBtn.classList.remove("d-none");
+    syncDeleteFooterButton();
     renderDeviceTypeSelector("watch");
     els.deviceCompany.value = "";
     els.deviceLicenseId.value = "0";
@@ -282,14 +294,17 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
             : company,
     ].filter((part) => part !== "");
 
+    // O estado é um ponto e não uma pastilha: a linha já leva o tipo, o modelo e a licença, e
+    // uma pastilha ao lado do IMEI empurrava-a para fora. Quem não vê o ponto lê a palavra.
     els.deviceModalIdentity.innerHTML = html`
-        <span class="modal-device-thumb d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">${raw(modelImageHtml(deviceModel, 26))}</span>
+        <span class="modal-device-thumb d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">${raw(modelImageHtml(deviceModel, 24))}</span>
         <span class="min-w-0">
-            <span class="d-flex align-items-center gap-2 flex-wrap">
-                <h5 class="modal-title mb-0 tabular-nums" id="deviceModalLabel">${imei}</h5>
-                ${raw(onlineBadge(online))}
+            <h5 class="modal-title mb-0 tabular-nums text-truncate" id="deviceModalLabel">${imei}</h5>
+            <span class="modal-device-meta d-flex align-items-center gap-2 min-w-0">
+                <span class="state-badge-dot rounded-circle flex-shrink-0${online ? " bg-success" : ""}" aria-hidden="true"></span>
+                <span class="visually-hidden">${online ? "Ligado" : "Desligado"}</span>
+                <span class="text-truncate">${meta.join(" · ")}</span>
             </span>
-            <span class="d-block small text-secondary">${meta.join(" · ")}</span>
         </span>`;
 }
 
@@ -325,7 +340,7 @@ export async function renderDeviceSelectors(
     els.deviceForm.dataset.supplier = supplier;
     els.deviceForm.dataset.model = model;
 
-    els.deviceSupplierButtons.innerHTML = supplierPillsHtml({
+    els.deviceSupplierButtons.innerHTML = supplierCardsHtml({
         suppliers,
         selected: supplier,
         attrsFor: (name) =>

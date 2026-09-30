@@ -13,22 +13,27 @@ import {
     commandLabel,
     eventTime,
     rowPayload,
+    timeOnly,
     when,
-    whenShort,
 } from "../format.js";
 import { html, raw } from "../html.js";
 import { capabilityLabel } from "../capability-catalog.js";
 import { apiError, toast } from "../dialogs.js";
-import { deviceLicenseBlock } from "../components/device-license.js";
+import { deviceLicenseBlock, deviceLicenseLabel } from "../components/device-license.js";
 import { onlineBadge } from "../components/state-badge.js";
 import { cardTone, uplinkCardContent } from "../components/cards/telemetry.js";
 import { telemetryCard } from "../components/cards/shell.js";
-import { requestCardShell, requestCardContent, statusBadge } from "../components/cards/request.js";
+import {
+    requestCardContent,
+    requestCardShell,
+    statusBadge,
+} from "../components/cards/request.js";
 import { fallSummaryCard, helpCallSummaryCard } from "./event-summary-cards.js";
 import { onRadarPresence } from "./radar-map-modal.js";
 import { activityTable } from "./activity-table.js";
 import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";
 import { renderPagination } from "../pagination.js";
+import { loadMoreButton, pagedRows } from "../components/pagination.js";
 import { SELECTED_DEVICE_STORAGE_KEY, clearStorageKey, saveTextStorage } from "../storage.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { gatewaySignalRows } from "./gateway-signal.js";
@@ -67,6 +72,10 @@ function renderSelection() {
     // diga, e essa tem o botão: desaparece, e a da escolha ocupa a largura toda.
     els.detailColumn.classList.toggle("d-none", !state.selectedDetail);
     els.deviceColumn.classList.toggle("col-lg-4", !!state.selectedDetail);
+    // Abaixo do `lg` a banda e a régua substituem o cartão da identidade, e sem dispositivo
+    // escolhido não há identidade nenhuma para elas dizerem.
+    els.deviceBand.classList.toggle("d-none", !state.selectedDetail);
+    els.deviceTabs.classList.toggle("d-none", !state.selectedDetail);
     // Sem dispositivo escolhido, o cartão dos pedidos não tem mosaico nenhum para mostrar.
     els.requestCardsCard?.classList.toggle("d-none", !state.selectedDetail);
     if (!state.selectedDetail) {
@@ -132,7 +141,7 @@ function renderSelection() {
 const TELEMETRY_REQUEST_GROUPS = [
     {
         key: "telemetry",
-        label: "Telemetria",
+        label: "Últimas leituras",
     },
     {
         key: "system",
@@ -201,8 +210,8 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         {
             label: "Licença",
             html: deviceLicenseBlock(device, {
-                valueClass: "d-block",
-                noteClass: "d-block small text-body-secondary",
+                valueClass: "d-block text-truncate",
+                noteClass: "d-block small text-body-secondary text-truncate",
             }),
         },
         {
@@ -234,17 +243,37 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
             : "<i class=\"fa-solid fa-microchip fa-xl text-secondary\"></i>";
     }
     els.selectedDeviceTitle.textContent = device.imei;
+    // Corta-se com reticências numa coluna estreita, e por isso o valor inteiro fica no `title`.
+    els.selectedDeviceTitle.title = device.imei;
     // O estado é a primeira coisa que se pergunta sobre um dispositivo, e por isso vem
     // antes do identificador.
     els.selectedDeviceBadge.innerHTML = onlineBadge(device.online);
     els.selectedDeviceMeta.textContent = `${typeLabel} · ${supplier || "Sem fornecedor"} · ${model || "Sem modelo interno"}`;
+    // A banda do telemóvel diz o mesmo numa linha: o estado primeiro, que é o que se
+    // pergunta, e o fornecedor de fora, que o modelo já o implica.
+    els.deviceBandTitle.textContent = device.imei;
+    els.deviceBandTitle.title = device.imei;
+    if (els.deviceBandThumb.dataset.previewKey !== previewKey) {
+        els.deviceBandThumb.dataset.previewKey = previewKey;
+        els.deviceBandThumb.innerHTML = image
+            ? html`<img src="${image}" class="object-fit-contain" alt="${model || device.imei}">`
+            : "<i class=\"fa-solid fa-microchip text-white-50\"></i>";
+    }
+    // O estado é a cor da bola e não uma palavra a repeti-la. Quem não vê a cor lê-o no
+    // nome acessível, que é o que ali a bola é.
+    const onlineLabel = device.online ? "Ligado" : "Desligado";
+    els.deviceBandDot.classList.toggle("bg-success", !!device.online);
+    els.deviceBandDot.classList.toggle("bg-secondary", !device.online);
+    els.deviceBandDot.setAttribute("aria-label", onlineLabel);
+    els.deviceBandDot.title = onlineLabel;
+    els.deviceBandMeta.textContent = `${model || "Sem modelo interno"} · ${deviceLicenseLabel(device)}`;
     disposeTooltips(els.selectedDeviceFacts);
     els.selectedDeviceFacts.innerHTML = facts
         .map(
             (item) => html`
         <div class="${item.wide ? "col-12" : "col-6"}">
             <dt class="mb-1">${item.label}</dt>
-            <dd class="text-break mb-0">${item.html ? raw(item.html) : item.value}</dd>
+            <dd class="text-truncate mb-0"${raw(item.html ? "" : html` title="${item.value}"`)}>${item.html ? raw(item.html) : item.value}</dd>
         </div>
     `,
         )
@@ -263,15 +292,22 @@ function renderTelemetryList(telemetryRows) {
     );
     setTelemetryPage(state.telemetryPage, totalPages);
 
-    const start = (state.telemetryPage - 1) * state.telemetryPageSize;
-    const pageRows = telemetry.slice(start, start + state.telemetryPageSize);
+    const listedRows = pagedRows(telemetry, {
+        page: state.telemetryPage,
+        pageSize: state.telemetryPageSize,
+        cumulative: state.telemetryCumulative,
+    });
 
-    // Na pastilha do contador cabe o número e mais nada: o título já diz de quê.
-    els.telemetryCount.textContent = telemetry.length ? String(telemetry.length) : "";
+    // Na pastilha do contador cabe o número e mais nada: o título já diz de quê. O separador
+    // tem a sua, porque abaixo do `xl` o cabeçalho da coluna não se vê.
+    const telemetryTotal = telemetry.length ? String(telemetry.length) : "";
+    els.telemetryCount.textContent = telemetryTotal;
+    els.telemetryTabCount.textContent = telemetryTotal;
+    els.deviceTabReadingsCount.textContent = telemetryTotal;
     activityTable(
         els.telemetryList,
-        pageRows.map(telemetryActivityRow),
-        "Ainda não há eventos recebidos.",
+        listedRows.map(telemetryActivityRow),
+        "Ainda não há leituras.",
         // O prefixo é por lista: as duas desenham-se ao mesmo tempo no mesmo documento, e
         // com o mesmo `activityRowDetail0` em cada uma ficavam dois elementos com o mesmo id.
         "telemetryRowDetail",
@@ -291,19 +327,26 @@ function renderClientPager(prefix, totalRows, totalPages) {
     // O resumo é opcional: nestes dois painéis o total já está na pastilha do título.
     if (!root || !controlsEl) return;
 
+    const pagination = {
+        total: totalRows,
+        total_pages: totalPages,
+        page: state[`${prefix}Page`],
+        limit: state[`${prefix}PageSize`],
+    };
+
     renderPagination({
-        pagination: {
-            total: totalRows,
-            total_pages: totalPages,
-            page: state[`${prefix}Page`],
-            limit: state[`${prefix}PageSize`],
-        },
+        pagination,
         rootEl: root,
         summaryEl,
         controlsEl,
         actionPrefix: prefix,
         summary: (start, end, total) => `${start}–${end} de ${total}`,
     });
+
+    const loadMoreEl = els[`${prefix}LoadMore`];
+    if (loadMoreEl) {
+        loadMoreEl.innerHTML = loadMoreButton({ pagination, actionPrefix: prefix });
+    }
 }
 
 /**
@@ -348,7 +391,8 @@ export function telemetryActivityRow(payload) {
         // O `seq` é monótono por dispositivo e lista. O IMEI vai na chave porque ele
         // recomeça em cada aparelho.
         key: `t:${state.selectedImei}:${payload?.seq ?? `${at}:${type}`}`,
-        time: whenShort(at) || "hora desconhecida",
+        at,
+        time: timeOnly(at) || "--:--",
         timeTitle: when(at),
     };
 }
@@ -468,7 +512,10 @@ function renderNcsEventCard({ type, latest }) {
 }
 
 function renderDownlinkRequests(commands) {
-    els.downlinkRequestCount.textContent = commands.length ? String(commands.length) : "";
+    const downlinkTotal = commands.length ? String(commands.length) : "";
+    els.downlinkRequestCount.textContent = downlinkTotal;
+    els.downlinkTabCount.textContent = downlinkTotal;
+    els.deviceTabRequestsCount.textContent = downlinkTotal;
 
     // A maioria dos aparelhos -- radares, gateways, medidores de fralda -- não recebe pedido
     // nenhum, e metade do painel dizia permanentemente que não havia pedidos enquanto a lista
@@ -477,7 +524,19 @@ function renderDownlinkRequests(commands) {
     const hasRequests = commands.length > 0;
     els.downlinkColumn?.classList.toggle("d-none", !hasRequests);
     els.telemetryColumn?.classList.toggle("col-xl-6", hasRequests);
-    els.telemetryColumn?.classList.toggle("pe-xl-4", hasRequests);
+    els.telemetryColumn?.classList.toggle("pe-xl-3", hasRequests);
+
+    // Um separador só não é escolha nenhuma: a régua sai, e quem estava nos pedidos volta
+    // aos eventos em vez de ficar num painel escondido. No telemóvel resta-lhe a telemetria,
+    // e por isso só sai o separador dos pedidos.
+    els.activityTabs?.classList.toggle("d-none", !hasRequests);
+    els.deviceTabRequests?.classList.toggle("d-none", !hasRequests);
+    if (!hasRequests && els.downlinkColumn?.classList.contains("active")) {
+        globalThis.bootstrap?.Tab.getOrCreateInstance(els.telemetryColumnTab).show();
+    }
+    if (!hasRequests && els.deviceTabRequests?.classList.contains("active")) {
+        els.deviceTabReadings.click();
+    }
 
     // Paginado como os eventos recebidos: sem páginas, os pedidos antigos ficam atrás de
     // um scroll interno que ninguém vê.
@@ -487,13 +546,16 @@ function renderDownlinkRequests(commands) {
     );
     setDownlinkPage(state.downlinkPage, totalPages);
 
-    const start = (state.downlinkPage - 1) * state.downlinkPageSize;
-    const pageRows = commands.slice(start, start + state.downlinkPageSize);
+    const listedRows = pagedRows(commands, {
+        page: state.downlinkPage,
+        pageSize: state.downlinkPageSize,
+        cumulative: state.downlinkCumulative,
+    });
 
     activityTable(
         els.downlinkRequests,
-        pageRows.map(downlinkActivityRow),
-        "Ainda não há pedidos ao dispositivo.",
+        listedRows.map(downlinkActivityRow),
+        "Ainda não há pedidos.",
         "downlinkRowDetail",
         state.downlinkPage,
     );
@@ -501,31 +563,89 @@ function renderDownlinkRequests(commands) {
     renderClientPager("downlink", commands.length, totalPages);
 }
 
+/**
+ * A leitura que respondeu ao pedido: a primeira da capacidade pedida a partir do instante em
+ * que se pediu. Uma mais antiga respondeu a outro pedido, e a última de todas seria a de
+ * agora e não a desta linha.
+ */
+function commandReply(command) {
+    const feature = String(command.feature || "");
+    const acked = Date.parse(command.ackedAt || "");
+    if (feature === "" || Number.isNaN(acked)) return null;
+
+    const requested = Date.parse(command.requestedAt || "") || acked;
+    const reply = (state.selectedDetail?.recent?.telemetry || [])
+        .map(rowPayload)
+        .filter(
+            (payload) =>
+                payload &&
+                String(payload.type || "") === feature &&
+                eventTime(payload) >= requested,
+        )
+        .sort((left, right) => eventTime(left) - eventTime(right))[0];
+
+    return reply ? uplinkCardContent(feature, reply.data || {}) : null;
+}
+
+/** Quando se pediu, com segundos, e quanto tempo a resposta demorou a chegar. */
+function commandTiming(command) {
+    const requested = Date.parse(command.requestedAt || "");
+    if (Number.isNaN(requested)) return "";
+
+    const at = new Date(requested).toLocaleTimeString("pt-PT");
+    const acked = Date.parse(command.ackedAt || "");
+    if (Number.isNaN(acked)) return `Pedido às ${at}`;
+
+    const seconds = Math.max(0, Math.round((acked - requested) / 1000));
+    const elapsed = seconds < 60
+        ? `${seconds} s`
+        : `${Math.round(seconds / 60)} min`;
+
+    return `Pedido às ${at}, respondeu ${elapsed} depois`;
+}
+
 function downlinkActivityRow(command) {
     const feature = String(command.feature || "");
-    // A resposta cabe no `title` do estado, e o erro na segunda linha do nome.
     const replied = command.ackedAt
         ? `Resposta ${when(command.ackedAt)}`
         : command.sentAt
             ? `Enviado ${when(command.sentAt)}`
             : expectedReplies(command);
     const note = commandError(command.error);
+    const reply = commandReply(command);
+    // O valor da resposta vai por baixo do nome: a coluna do valor leva a pastilha do estado,
+    // e o nome é onde há espaço para ele.
+    const value = reply ? String(reply.rowValue || reply.value || "") : "";
+    const replyDetails = plainText(reply?.detailsTitle || reply?.details || "");
 
     return {
         icon: requestCardContent(feature).icon,
         tone: cardTone(feature),
         name: commandLabel(command) || requestCardContent(feature).value || "Pedido",
-        sub: note ? html`${note}` : "",
-        subTitle: note,
+        sub: value
+            ? html`<span class="fw-semibold text-body">${value}</span>`
+            : note ? html`${note}` : "",
+        subTitle: value || note,
         value: statusBadge(String(command.status || "unknown")),
         valueTitle: replied,
-        // O erro corta-se na linha e a resposta só vivia num `title`. Abrindo, vêem-se os
-        // dois por inteiro -- que num pedido falhado é justamente o que se quer ler.
-        expanded: [note, replied].filter(Boolean).join(" · "),
+        expanded: [
+            replyDetails,
+            commandTiming(command),
+            command.ackedAt ? "" : replied,
+            note,
+        ].filter(Boolean).join("\n"),
         key: `d:${state.selectedImei}:${command.id ?? `${command.requestedAt}:${feature}`}`,
-        time: whenShort(command.requestedAt) || "-",
+        at: command.requestedAt,
+        time: timeOnly(command.requestedAt) || "--:--",
         timeTitle: when(command.requestedAt),
     };
+}
+
+/** A gaveta escapa o que recebe: os detalhes chegam com marcação e saem em texto. */
+function plainText(markup) {
+    return String(markup)
+        .replace(/<br\s*\/?>/gi, " · ")
+        .replace(/<[^>]*>/g, "");
 }
 
 function renderConnectionTimeline(rows) {
@@ -633,6 +753,7 @@ function clearSelectedDeviceFromStorage() {
 
 export {
     clearSelectedDeviceFromStorage,
+    downlinkActivityRow,
     initDeviceDetailView,
     renderDownlinkRequests,
     renderRequestCardGroup,

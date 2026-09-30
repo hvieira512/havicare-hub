@@ -60,8 +60,8 @@ São só estas, e explicam onde cada ficheiro está:
 
    Um widget que escreve no elemento que recebeu, que abre um modal ou que fala
    com o Bootstrap **não é um componente**: ou é parte da funcionalidade, ou é
-   um módulo da raiz, como o `phone.js`, o `dialogs.js`, o `tooltips.js` e o
-   `grid.js`. A fronteira é essa, e não o tamanho.
+   um módulo da raiz, como o `phone.js`, o `dialogs.js` e o `tooltips.js`. A
+   fronteira é essa, e não o tamanho.
 
    Quando um módulo destes tem os dois lados, separam-se: o
    `components/pagination.js` devolve os botões e o `pagination.js` da raiz é
@@ -142,7 +142,6 @@ dashboard/
 │   ├── state-badge.js      a pastilha de estado: ponto ou ícone, rótulo e tom
 │   ├── device-license.js   a empresa e a licença de um dispositivo, ou «Sem licença»
 │   ├── form-field.js       etiqueta, controlo e linha de ajuda
-│   ├── setting-row.js      uma definição numa linha: nome, pastilha, controlo e acções
 │   ├── button-group.js     uma escolha única em botões
 │   ├── device-type-tiles.js  o mosaico de tipos de dispositivo, e o ícone de cada um
 │   ├── chips.js            as pastilhas de secção e as de filtro aplicado
@@ -154,12 +153,12 @@ dashboard/
 │       ├── request.js          o cartão de um pedido ao dispositivo
 │       ├── shared.js           o resumo compacto que mais do que uma família usa
 │       └── radar.js · diaper.js · gateway.js · ncs.js · location.js · sleep.js
-├── grid.js                 a tabela de dados dos Utilizadores API, do descritor que a API devolve
 ├── pagination.js           escreve o paginador no painel, e resolve a página de um clique
 ├── phone.js                o campo de telefone com indicativo
 ├── storage.js              as chaves e os acessos ao localStorage
 ├── load-script.js          carrega uma biblioteca de terceiros à primeira vez que faz falta
 ├── tooltips.js             re-atar os tooltips do Bootstrap depois de um render
+├── sticky-top.js           mede o que está colado ao topo e publica-o em --sticky-top
 ├── notifications.js        o sino da barra (funcionalidade de um ficheiro)
 ├── observability.js        o handler global de erros: o que falha sem catch deixa rasto
 │
@@ -320,7 +319,7 @@ PHP.
 | uma pergunta sobre tipos de dispositivo, modelos ou licenças | `domain.js` |
 | HTML puro que dois ecrãs desenham | `components/<nome>.js`, um ficheiro por peça |
 | HTML que um ecrã desenha | o ficheiro desse ecrã |
-| uma listagem plana que se ordena e filtra por coluna | uma grelha com o `grid.js`, alimentada pelo `columns` da API |
+| uma listagem plana que se filtra | uma linha por registo no ficheiro do ecrã, com os filtros do `columns` da API por cima |
 | um handler de clique | ao lado do módulo que desenha o que ele trata |
 | um campo novo de configuração | um descritor em `devices/config/inputs/<grupo>.js` |
 | uma configuração que o hub aplica sem downlink | nada de especial no frontend: é a capacidade em PHP que se marca com `HubAppliedCapability` |
@@ -375,8 +374,10 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
   algumas estão anotadas como tal.
 
   O `render` e o `control` decidem a forma do bloco e não são cosmética: com
-  `render` sai o cartão inteiro, com `control` sai a linha magra do
-  `settingRow`. O que o `defaults` devolve tem de ser o que o `read` devolve, e
+  `render` o descritor desenha o corpo inteiro do cartão, com `control` devolve
+  só o controlo e o painel monta o cartão à volta dele — nome, subtítulo,
+  pastilha de estado e a unidade colada ao campo. O que o `defaults` devolve
+  tem de ser o que o `read` devolve, e
   não o que o controlo se chama — o `config-payload-roundtrip.test.js` prende-o.
 - **As famílias de cartões que só existem num aparelho vivem em `cards/`** —
   radar, fralda, gateway, NCS e localização. A linha não é o tamanho: uma
@@ -386,15 +387,16 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
 - **O que fica no `components/cards/telemetry.js` é o registo e as
   primitivas**, que são genuinamente uma coisa só: o mapa dos cartões por tipo,
   o ícone, o tom e a badge de estado. Partir isso por tamanho só espalharia.
-- **O CSS está dividido por área**, em cinco ficheiros: `assets/css/base.css`
+- **O CSS está dividido por área**, em sete ficheiros: `assets/css/base.css`
   (tokens e fontes), `shell.css` (moldura, navbar, cartões), `device.css` (o
-  ecrã do dispositivo), `login.css`, e o `main.css` fica com os modais. A ordem
-  no `<head>` é essa, e é a cascata original: cada ficheiro é uma fatia
-  contígua do que era um só. O `main.css` ficou em último e na raiz porque
-  `/main.css` é uma rota fixa no `DashboardHttpServer::publicAssetPath()` — os
-  ficheiros da raiz não são apanhados por padrão, só o `/main.css` e o
-  `/main.js`. Sem build, cada ficheiro é mais um pedido, e por isso são cinco e
-  não vinte.
+  ecrã do dispositivo), `config.css` (o modal do dispositivo e o painel de
+  configuração), `alarms.css` (os campos de um alarme), `login.css`, e o
+  `main.css` fica com os modais. A ordem no `<head>` é essa, e é a cascata: o
+  `config.css` carrega depois do `device.css` e é daí que lhe ganha. O
+  `main.css` ficou em último e na raiz porque `/main.css` é uma rota fixa no
+  `DashboardHttpServer::publicAssetPath()` — os ficheiros da raiz não são
+  apanhados por padrão, só o `/main.css` e o `/main.js`. Sem build, cada
+  ficheiro é mais um pedido, e por isso são sete e não vinte.
 
   A excepção é **a linguagem de selecção**, que vive toda no `shell.css`: as
   cinco caixas que se escolhem — o mosaico de tipos, o cartão de dispositivo, a
@@ -403,8 +405,15 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
   só a geometria. Falharam-no uma vez, com duas a passar a borda cheia da marca
   por cima e três a subtil; o `SelectionLanguageTest` prende-o agora.
 
-- **O grupo «Recorrência» de um alarme parte em duas linhas**, e fica. São 306px
-  de conteúdo para 289px de coluna, e os dezassete que faltam só saíam de
-  encurtar as etiquetas ou de dar ao grupo a linha toda — a primeira muda
-  vocabulário, a segunda cresce ~30px por alarme numa lista que vai até dez. A
-  quebra é simétrica e nenhum botão fica cortado.
+- **O grupo «Recorrência» de um alarme encolhe com a linha.** Pede 306px: onde
+  eles existem — num modal de 1140, por exemplo — fica numa linha como sempre
+  esteve, e onde não existem, como nos 282 de um telemóvel, são as etiquetas dos
+  três botões que partem em duas. Preso a `flex-shrink-0` não cedia, e o que
+  partia era o cartão. Encurtar as etiquetas mudava vocabulário e dar-lhe a linha
+  toda crescia ~30px por alarme numa lista que vai até dez; a quebra dentro do
+  próprio botão não custa nada e nenhum fica cortado.
+
+  O mesmo vale para o controlo de uma definição que cabe numa linha — o campo com
+  a unidade colada. O `.config-line-control` deixa-o encolher até aos 7rem que
+  mostram um número de quatro dígitos: sem isso, num telemóvel, o «Intervalo de
+  localização» punha o campo e o «s» para lá do bordo do cartão.

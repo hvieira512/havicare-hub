@@ -26,15 +26,11 @@ const LOCATION_INTERVAL = {
 
 const sectionOf = (entry) => parseFragment(renderConfigSection("wonlex-json", entry, null));
 
-test("o controlo e o envio ficam na linha do título", () => {
+test("uma definição de campo estreito desenha o campo e mais nada", () => {
     const section = sectionOf(LOCATION_INTERVAL);
-    const input = section.querySelector("input[type=\"number\"]");
-    const button = section.querySelector("[data-action=\"saveConfig\"]");
 
-    assert.ok(input, "o cartão devia desenhar o campo");
-    const row = input.closest("div").parentElement;
-    assert.ok(row.querySelector(".fw-semibold"), "o campo devia partilhar a linha com o nome");
-    assert.ok(row.contains(button), "o envio devia estar na mesma linha");
+    assert.ok(section.querySelector("input[type=\"number\"]"), "a definição devia desenhar o campo");
+    assert.equal(section.querySelectorAll("button").length, 0);
 });
 
 test("o rótulo do campo desaparece", () => {
@@ -71,11 +67,11 @@ test("o campo continua a ter nome para quem não o vê", () => {
     assert.equal(input.getAttribute("aria-label"), "Intervalo de localização");
 });
 
-/** O verbo é das acções. Uma definição guarda-se, e o que o botão faz é enviá-la. */
-test("o botão de uma definição continua a dizer «Enviar»", () => {
-    const button = sectionOf(LOCATION_INTERVAL).querySelector("[data-action=\"saveConfig\"]");
+/** Quem envia uma definição é o rodapé da secção: um botão por definição eram vinte e nove. */
+test("uma definição não leva botão de enviar", () => {
+    const section = sectionOf(LOCATION_INTERVAL);
 
-    assert.equal(button.textContent.trim(), "Enviar");
+    assert.equal(section.querySelectorAll("[data-action=\"saveConfig\"]").length, 0);
 });
 
 test("um campo estreito não leva botão de repor", () => {

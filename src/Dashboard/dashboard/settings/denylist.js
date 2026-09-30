@@ -3,6 +3,7 @@ import { state } from "../state.js";
 import { html, raw } from "../html.js";
 import { ago } from "../format.js";
 import { apiError, toast } from "../dialogs.js";
+import { emptyPanel } from "../components/empty-panel.js";
 import { setSettingsNavCount } from "./shell.js";
 
 /**
@@ -38,30 +39,39 @@ function denylistRow(entry) {
     const whoLine = who === ""
         ? ""
         : html`<span class="d-block small text-secondary">${who}</span>`;
+    // Num telefone o botão desce para baixo do texto: uma identidade de quinze dígitos em
+    // monoespaçada e um botão de 96px não cabem os dois numa calha de 300px.
     return html`
-        <div class="tree-row position-relative d-flex align-items-center justify-content-between">
-            <div class="min-w-0">
-                <span class="d-block font-monospace text-break">${entry.identity}</span>
+        <div class="list-group-item d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
+            <div class="min-w-0 flex-grow-1">
+                <span class="d-block font-monospace text-truncate" title="${entry.identity}">${entry.identity}</span>
                 ${raw(metaLine)}
                 ${raw(whoLine)}
             </div>
-            <button class="btn btn-outline-secondary btn-sm flex-shrink-0" data-action="unblock" data-id="${entry.identity}" title="Desbloquear">Desbloquear</button>
+            <button class="btn btn-outline-secondary btn-sm flex-shrink-0" data-action="unblock" data-id="${entry.identity}">Desbloquear</button>
         </div>`;
 }
 
 function renderDenylistSection() {
     const total = current.length;
-    if (els.denylistTabSummary) {
-        els.denylistTabSummary.textContent =
-            `${total} ${total === 1 ? "aparelho bloqueado" : "aparelhos bloqueados"}`;
-    }
     setSettingsNavCount("Denylist", total);
 
-    // O vazio diz de onde vêm os bloqueios em vez de repetir que não há nenhum: é o único
-    // separador onde não se acrescenta nada a partir daqui.
+    // Sem bloqueados, o vazio é um estado só: o título di-lo e a frase por baixo explica de
+    // onde vêm os bloqueios, que é o único separador onde não se acrescenta nada daqui.
+    if (els.denylistTabTitle) {
+        els.denylistTabTitle.textContent = total === 0
+            ? "Nenhum aparelho bloqueado"
+            : "Aparelhos bloqueados";
+    }
+    if (els.denylistTabSummary) {
+        els.denylistTabSummary.textContent = total === 0
+            ? ""
+            : `${total} ${total === 1 ? "aparelho bloqueado" : "aparelhos bloqueados"}`;
+    }
+
     els.denylistListBody.innerHTML = total === 0
-        ? "<div class=\"text-center text-secondary small p-4\">Um aparelho bloqueia-se a partir da notificação de «Dispositivo não autorizado». Os bloqueados aparecem aqui.</div>"
-        : current.map(denylistRow).join("");
+        ? emptyPanel("Um aparelho bloqueia-se a partir da notificação de «Dispositivo não autorizado».")
+        : html`<div class="list-group">${raw(current.map(denylistRow).join(""))}</div>`;
 }
 
 async function unblock(identity) {

@@ -1,5 +1,4 @@
 import { esc } from "../../../format.js";
-import { field } from "../../../components/form-field.js";
 import { renderPhoneControl } from "../../../phone.js";
 import { boolValue } from "../normalizers.js";
 import { readTakePills, takePillsInput } from "../four-p-touch-take-pills.js";
@@ -106,15 +105,19 @@ function soundProfileInput(desired) {
         </div>`;
 }
 
+// Um campo só: o nome da definição já está na linha de cima e a unidade está colada ao
+// campo, e por isso o rótulo sai e o campo encosta à direita.
 function intervalHoursToggleInput(desired) {
     return `
-        <div class="row g-3">
-            <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
-            ${field(
-                "Intervalo (horas)",
-                numberField("intervalHours", desired.intervalHours ?? 2, { min: 1, max: 12 }),
-                { cls: "col-md-8" },
-            )}
+        <div class="d-flex align-items-center gap-3">
+            ${enabledSwitch(boolValue(desired.enabled, true))}
+            ${numberField("intervalHours", desired.intervalHours ?? 2, {
+                min: 1,
+                max: 12,
+                unit: "h",
+                ariaLabel: "Intervalo",
+                cls: "flex-nowrap w-auto ms-auto",
+            })}
         </div>`;
 }
 
@@ -309,12 +312,8 @@ function timeRangesInput(entry, desired) {
 
 function timeRangeInput(desired) {
     return `
-        <div class="row row-cols-1 row-cols-sm-auto g-3">
-            ${field(
-                "Intervalo",
-                `<input class="form-control" type="text" data-config-field="range" value="${esc(String(desired.range ?? "21:10-07:30"))}" placeholder="21:10-07:30" size="11">`,
-                { cls: "col" },
-            )}
+        <div class="d-flex justify-content-end">
+            <input class="form-control w-auto" type="text" data-config-field="range" value="${esc(String(desired.range ?? "21:10-07:30"))}" placeholder="21:10-07:30" size="11" aria-label="Intervalo">
         </div>`;
 }
 

@@ -21,7 +21,7 @@ test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", (
         heart_rate: supported(),
         battery: supported(),
     });
-    assert.equal(telemetry.label, "Telemetria");
+    assert.equal(telemetry.label, "Últimas leituras");
 
     const groups = telemetryRequestCards({
         heart_rate: supported(),
@@ -29,7 +29,7 @@ test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", (
     });
     assert.deepEqual(
         groups.map((group) => group.label),
-        ["Telemetria", "Informação do sistema"],
+        ["Últimas leituras", "Informação do sistema"],
     );
     assert.deepEqual(
         groups.map((group) => group.cards.map((card) => card.feature)),
@@ -51,7 +51,7 @@ test("o estado do dispositivo fica com a versão do firmware, e não entre as me
     assert.deepEqual(
         groups.map((group) => [group.label, group.cards.map((card) => card.feature)]),
         [
-            ["Telemetria", ["battery"]],
+            ["Últimas leituras", ["battery"]],
             ["Informação do sistema", ["device_status", "firmware_version"]],
         ],
     );
@@ -92,11 +92,11 @@ test("a faixa com o nome do grupo só existe quando há mais do que um grupo", (
     // Num relógio, que só tem "Telemetria", a faixa seria uma moldura dentro de um cartão que
     // já se chama "Pedir dados".
     const alone = renderRequestCardGroup(group, [], false, []);
-    assert.doesNotMatch(alone, /Telemetria/);
+    assert.doesNotMatch(alone, /Últimas leituras/);
     assert.doesNotMatch(alone, /section-label/);
 
     const accompanied = renderRequestCardGroup(group, [], true, []);
-    assert.match(accompanied, /section-label[^>]*>Telemetria</);
+    assert.match(accompanied, /section-label[^>]*>Últimas leituras</);
     assert.match(accompanied, /count-chip[^>]*>1</);
 });
 

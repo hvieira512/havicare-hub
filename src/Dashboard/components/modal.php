@@ -11,7 +11,9 @@ function render_modal(
     bool $staticBackdrop = false,
     string $headerHtml = '',
     string $bodyClass = '',
-    string $contentClass = ''
+    string $contentClass = '',
+    string $footerClass = '',
+    string $closeClass = ''
 ): void {
     $dialog = array_filter([
         'modal-dialog',
@@ -30,13 +32,13 @@ function render_modal(
                     <?= $headerHtml !== ''
                         ? $headerHtml
                         : '<h5 class="modal-title" id="' . h($id) . 'Label">' . h($title) . '</h5>' ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="<?= h(trim('btn-close ' . $closeClass)) ?>" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="<?= h(trim('modal-body ' . $bodyClass)) ?>">
                     <?= $body ?>
                 </div>
                 <?php if ($footer !== '') : ?>
-                <div class="modal-footer">
+                <div class="<?= h(trim('modal-footer ' . $footerClass)) ?>">
                     <?= $footer ?>
                 </div>
                 <?php endif; ?>

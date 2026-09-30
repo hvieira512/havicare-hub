@@ -17,6 +17,62 @@
     max-width: var(--content-max);
 }
 
+/* Empilhado, a atividade sobe para debaixo da identidade e os cartões de telemetria descem:
+   com eles pelo meio, passava-se o cartão do aparelho e sete cartões antes do primeiro
+   evento. A coluna do aparelho desfaz-se para os seus cartões poderem ser ordenados. */
+@media (max-width: 991.98px) {
+    /* A régua entrega a telemetria com um respiro -- sem ele a etiqueta da secção fica
+       colada aos separadores --, e o `g-3` da linha anula a margem do primeiro cartão. */
+    .device-screen {
+        padding-top: .625rem;
+    }
+
+    /* A lista é a excepção: vai de bordo a bordo e encostada à régua, como um ecrã e não
+       como uma folha pousada. Os 12px são o enchimento do `container-fluid`. */
+    .device-screen > #detailColumn > .card {
+        margin-top: -.625rem;
+        margin-inline: -12px;
+        border-inline-width: 0;
+        border-top-width: 0;
+        border-radius: 0;
+    }
+
+    .device-screen > #deviceColumn {
+        display: contents;
+    }
+
+    .device-screen > #deviceColumn > * {
+        width: 100%;
+        margin-top: var(--bs-gutter-y);
+        padding-inline: calc(.5 * var(--bs-gutter-x));
+    }
+
+    .device-screen > #detailColumn {
+        order: 1;
+    }
+
+    .device-screen > #deviceColumn > #requestCardsCard,
+    .device-screen > #deviceColumn > #ncsEventSection {
+        order: 2;
+    }
+
+    /* A banda do topo diz o que o cartão da identidade dizia, e diz-o sempre à vista. */
+    .device-screen > #deviceColumn > .card:has(#selectedDevicePanel:not(.d-none)) {
+        display: none;
+    }
+
+    /* Os três separadores: a telemetria são os cartões do aparelho, e as outras duas são o
+       cartão da atividade inteiro -- com a busca e os filtros que só ali fazem sentido. */
+    [data-device-tab="telemetry"] .device-screen > #detailColumn {
+        display: none;
+    }
+
+    [data-device-tab="activity"] .device-screen > #deviceColumn > #requestCardsCard,
+    [data-device-tab="activity"] .device-screen > #deviceColumn > #ncsEventSection {
+        display: none;
+    }
+}
+
 /* ===== primitivas do sistema ===== */
 
 /* A barra de navegação é o navy da marca -- a superfície, e não a cor que reage ao toque:
@@ -26,9 +82,126 @@
     background-color: var(--brand-bar);
 }
 
+/* No telemóvel a barra leva a marca e três alvos em 390px, e os botões respiram com menos
+   enchimento. O nome da conta esconde-se na marcação, com o `d-none d-lg-inline`. */
+@media (max-width: 991.98px) {
+    .dashboard-navbar .btn {
+        --bs-btn-padding-x: .5rem;
+        --bs-btn-padding-y: .3125rem;
+    }
+}
+
+/* Sem dispositivo escolhido, o botão do cabeçalho e o do meio do cartão abrem o mesmo
+   selector a cem pixéis um do outro. Fica o do meio, que é onde a frase leva o olho. */
+.card:has(#deviceSelectionEmptyState:not(.d-none)) #openDeviceSelectorBtn {
+    display: none;
+}
+
+/* A banda do aparelho, abaixo do `lg`: a mesma superfície da barra, e rola com a página --
+   a identidade lê-se uma vez, e os separadores é que se usam sempre. */
+.device-band {
+    background-color: var(--brand-bar);
+    color: var(--brand-on);
+}
+
+.device-band-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: .625rem;
+}
+
+/* A identidade é o selector: toca-se nela para trocar de aparelho, e a seta di-lo. Um
+   `⋮` ao lado diria «mais opções», que é outra coisa. */
+.device-band-identity {
+    padding: .25rem .5rem .25rem .25rem;
+    border: 0;
+    border-radius: .625rem;
+    background-color: transparent;
+    color: inherit;
+}
+
+.device-band-identity:hover,
+.device-band-identity:focus-visible {
+    background-color: rgba(var(--brand-on-rgb), .1);
+}
+
+.device-band-caret {
+    font-size: .6875rem;
+    color: rgba(var(--brand-on-rgb), .62);
+}
+
+/* A imagem do modelo, a mesma do selector: diz de que aparelho se trata antes de se ler
+   o IMEI. Sobre o navy precisa de fundo claro, senão os contornos escuros somem-se. */
+.device-band-thumb {
+    width: 34px;
+    height: 34px;
+    background-color: rgba(var(--brand-on-rgb), .1);
+}
+
+.device-band-thumb img {
+    width: 26px;
+    height: 26px;
+}
+
+.device-band-title {
+    font-size: 1.03125rem;
+    letter-spacing: -.01em;
+}
+
+.device-band-meta {
+    font-size: var(--fs-label);
+    color: rgba(var(--brand-on-rgb), .62);
+}
+
+/* A régua cola debaixo da barra de navegação, e por isso é a banda que sai ao rolar. O
+   `z-index` fica abaixo do da barra e acima do conteúdo, que vem depois na página. */
+.device-tabs {
+    --bs-nav-link-padding-y: .75rem;
+    --bs-nav-link-padding-x: 0;
+    --bs-nav-link-color: rgba(var(--brand-on-rgb), .62);
+    --bs-nav-link-hover-color: var(--brand-on);
+    position: sticky;
+    top: var(--navbar-height, 3.5rem);
+    z-index: 1019;
+    background-color: var(--brand-bar);
+    text-align: center;
+}
+
+.device-tabs .nav-link {
+    border-bottom: 2.5px solid transparent;
+    border-radius: 0;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+}
+
+.device-tabs .nav-link.active {
+    border-bottom-color: var(--brand-on);
+    color: var(--brand-on);
+}
+
+/* A coluna rola só na vertical. Com `overflow-y: auto` o eixo x sobe de `visible` a `auto`,
+   e a meia goteira negativa de qualquer `.row` lá dentro -- que as colunas repõem em
+   `padding` -- vira barra horizontal. O `clip` corta-a. */
+.device-modal-content {
+    overflow-x: clip;
+}
+
+/* A contagem é texto ao lado do nome, e não uma pastilha: aqui o nome já é curto. */
+.device-tab-count {
+    margin-left: .35rem;
+    font-size: var(--fs-label);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+}
+
+.device-tab-count:empty {
+    display: none;
+}
+
 /* Dentro da barra, os `btn-dark` pedem a cor à própria barra: o quase-preto do Bootstrap
    sobre o navy da marca lê-se como um segundo escuro. */
-.dashboard-navbar .btn-dark {
+.dashboard-navbar .btn-dark,
+.device-band .btn-dark {
     --bs-btn-color: var(--brand-on);
     --bs-btn-bg: rgba(var(--brand-on-rgb), .08);
     --bs-btn-border-color: rgba(var(--brand-on-rgb), .18);
@@ -123,6 +296,19 @@
     .tree-row-nested::after {
         left: 1.625rem;
     }
+
+    /* O formulário das credenciais sai da indentação e toma o cartão de lado a lado: cinco
+       campos dentro da linha, dentro do cartão, dentro do painel não são um formulário. O
+       fundo é o que o separa da licença a que pertence, já que o traço da árvore sai. */
+    .radar-credentials-row {
+        padding: 1rem;
+        background: var(--bs-tertiary-bg);
+    }
+
+    .radar-credentials-row::before,
+    .radar-credentials-row::after {
+        display: none;
+    }
 }
 
 /* A folha do catálogo abre a ficha do modelo, e por isso reage ao rato. */
@@ -189,6 +375,15 @@
     min-width: 1.5rem;
 }
 
+/* Num ecrã de toque o botão mede o mínimo que um dedo acerta. Acima de `md` volta à medida
+   do rato, que é onde catorze números fazem sentido lado a lado. */
+@media (max-width: 767.98px) {
+    .pagination .page-link-touch {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+    }
+}
+
 /* A divisória entre blocos de um cartão vai de bordo a bordo. Encolhida à largura do
    conteúdo lê-se como a moldura de outra caixa dentro do cartão; a sangrar até ao contorno é
    a mesma linha que separa duas linhas de uma tabela, e o cartão continua um. */
@@ -197,8 +392,8 @@
     padding-inline: var(--bs-card-spacer-x, 1rem);
 }
 
-/* O contador ao lado da etiqueta, e não no extremo oposto do cartão: "Eventos recebidos" e
-   "12" são a mesma informação, e a meio metro de distância deixam de o ser. */
+/* O contador ao lado da etiqueta, e não no extremo oposto do cartão: "Leituras" e "12" são
+   a mesma informação, e a meio metro de distância deixam de o ser. */
 /* O fundo e a cor ficam aqui: o `count-chip-strong` troca-os. A forma também, como no
    `.count-number` abaixo. */
 .count-chip {

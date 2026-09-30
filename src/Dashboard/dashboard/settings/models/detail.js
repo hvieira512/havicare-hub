@@ -74,6 +74,9 @@ async function openModelDetail(modelId) {
             (key) => enabledSet.has(key),
         );
 
+    els.settingsCloseBtn?.classList.remove("d-none");
+    // A barra de gravar vive fora do carrossel: o `overflow` dele corta o `position: sticky`.
+    els.modelDetailActionBar?.classList.replace("d-none", "d-flex");
     els.modelsBreadcrumb.classList.remove("d-none");
     els.modelsBreadcrumbModels.classList.remove("active");
     els.modelsBreadcrumbNew.classList.add("d-none");

@@ -21,7 +21,7 @@ const render = (context) => parseFragment(renderDeviceConfigurationRoot({
 }));
 
 const sectionTabs = (root) =>
-    [...root.querySelectorAll(".capability-section-chip")].map((chip) => chip.dataset.section);
+    [...root.querySelectorAll("[data-config-section-link]")].map((link) => link.dataset.section);
 
 test.afterEach(() => {
     state.protocols = [];
@@ -63,7 +63,7 @@ test("as capacidades agrupadas colapsam as chaves nativas numa entrada só", () 
     assert.equal(sections[0].dataset.configStored, "1");
     assert.equal(sections[0].dataset.configSectionName, "contacts");
     assert.equal(
-        root.querySelector(".capability-section-chip[data-section=\"contacts\"] .count-number").textContent.trim(),
+        root.querySelector("[data-config-section-link][data-section=\"contacts\"] [data-config-section-total]").textContent.trim(),
         "1",
     );
 });
@@ -95,9 +95,9 @@ test("as secções saem pela ordem do catálogo de secções, e não pela do cat
     assert.deepEqual(sectionTabs(root), ["health", "contacts", "settings_system"]);
     // Sem `sectionLabel` na definição, a pastilha fica com o nome cru da secção.
     assert.match(
-        root.querySelector(".capability-section-chip[data-section=\"settings_system\"]")
+        root.querySelector("[data-config-section-link][data-section=\"settings_system\"]")
             .textContent.replace(/\s+/g, " ").trim(),
-        /^settings_system\s*1$/,
+        /^settings_system 1\b/,
     );
 });
 
@@ -128,9 +128,11 @@ test("quem não é configurável nem pedível cai, e o pedível entra sem estado
     // Uma acção não guarda valor: sem entrega por mostrar, não tem pastilha de estado.
     const action = root.querySelector("[data-config-section][data-config-key=\"find_device\"]");
     assert.equal(action.querySelectorAll(".state-badge").length, 0);
+    // Uma configuração tem as duas leituras desenhadas -- a entrega e o «Alterado» --, e o
+    // que se vê enquanto ninguém lhe toca é a da entrega.
     assert.equal(
         root.querySelector("[data-config-section][data-config-key=\"heart_rate\"]")
-            .querySelectorAll(".state-badge").length,
+            .querySelectorAll(".config-when-clean .state-badge").length,
         1,
     );
 });

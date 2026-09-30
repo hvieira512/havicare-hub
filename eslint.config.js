@@ -30,7 +30,6 @@ export default [
                 am5: "readonly",
                 am5xy: "readonly",
                 am5themes_Animated: "readonly",
-                agGrid: "readonly",
             },
         },
         rules: {

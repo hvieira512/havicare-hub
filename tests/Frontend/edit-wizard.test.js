@@ -59,16 +59,19 @@ function harness({ company = "hitcare", licenseId = "1001" } = {}) {
             .filter((block) => !block.classList.contains("d-none"))
             .map((block) => block.dataset.deviceQuestion);
 
-    return { root, els, changes, openQuestion };
+    const classification = (selector = "[data-wizard-reopen]") =>
+        root.querySelectorAll(selector);
+
+    return { root, els, changes, openQuestion, classification };
 }
 
 test("abre no passo do aparelho, com a classificação em etiquetas", () => {
     // O que se vem alterar é o número de série ou os gateways: a classificação já está
     // feita, e um dispositivo registado não tem perguntas por responder.
-    const { root, els, openQuestion } = harness();
+    const { root, els, openQuestion, classification } = harness();
 
     assert.deepEqual(
-        [...root.querySelectorAll("[data-wizard-reopen]")].map((b) => b.dataset.wizardReopen),
+        [...classification()].map((b) => b.dataset.wizardReopen),
         ["type", "model", "owner"],
     );
     // Sem contador de passos: um dispositivo que já existe não está a meio de uma sequência,
@@ -81,33 +84,35 @@ test("abre no passo do aparelho, com a classificação em etiquetas", () => {
     assert.equal(els.deviceNextBtn.classList.contains("d-none"), true);
 });
 
-test("as etiquetas dizem o que está escolhido", () => {
-    const { root } = harness();
+test("as linhas dizem o que está escolhido", () => {
+    const { classification } = harness();
 
     assert.deepEqual(
-        [...root.querySelectorAll("[data-wizard-reopen]")].map((badge) => [
-            badge.querySelector(".wizard-badge-key").textContent,
-            badge.textContent.replace(/\s+/g, " ").trim(),
-        ]),
+        [...classification()]
+            .map((row) => row.textContent.replace(/\s+/g, " ").trim()),
         [
-            ["Tipo", "TipoMedidor de fraldas"],
-            ["Modelo", "ModeloMECS-PRO"],
-            ["Licença", "Licençagucc.dev (1001)"],
+            "Tipo Medidor de fraldas",
+            "Modelo MECS-PRO",
+            "Licença gucc.dev (1001)",
         ],
     );
 });
 
-test("tocar numa etiqueta abre aquela pergunta, e só aquela", () => {
-    const { root, els, openQuestion } = harness();
+test("tocar numa linha abre aquela pergunta, e só aquela", () => {
+    const { els, openQuestion, classification } = harness();
 
-    root.querySelector("[data-wizard-reopen=\"model\"]").click();
+    classification("[data-wizard-reopen=\"model\"]")[0].click();
 
     assert.deepEqual(openQuestion(), ["model"]);
     assert.equal(els.deviceStep2.classList.contains("d-none"), true);
-    assert.equal(root.querySelector(".wizard-trail-step"), null);
-    // A pergunta aberta perde o valor da etiqueta: esta na grelha por baixo, marcada.
-    assert.equal(root.querySelector("[data-wizard-reopen=\"model\"]"), null);
-    assert.equal(root.querySelectorAll(".wizard-badge-now").length, 1);
+    // A pergunta aberta perde o valor da linha: está na grelha por baixo, marcada.
+    const open = classification("[data-wizard-reopen=\"model\"]")[0];
+    assert.equal(open.getAttribute("aria-expanded"), "true");
+    assert.doesNotMatch(open.textContent, /MECS-PRO/);
+    assert.equal(
+        classification("[aria-expanded=\"true\"]").length,
+        1,
+    );
     // O `Guardar` fica. Está no rodapé do modal e não desaparece por se ter tocado numa
     // etiqueta -- um botão que foge quando se mexe noutra coisa é o que faz procurá-lo.
     // Guardar com a pergunta aberta fecha-a primeiro, para a validação se ver.
@@ -131,9 +136,9 @@ test("escolher o modelo ou a licença fecha o passo", () => {
 });
 
 test("a árvore abre com a licença actual marcada", () => {
-    const { root } = harness({ company: "havicare", licenseId: "1" });
+    const { root, classification } = harness({ company: "havicare", licenseId: "1" });
 
-    root.querySelector("[data-wizard-reopen=\"owner\"]").click();
+    classification("[data-wizard-reopen=\"owner\"]")[0].click();
 
     const checked = [...root.querySelectorAll("#deviceLicensePicker [aria-checked=\"true\"]")];
     assert.equal(checked.length, 1);
@@ -144,9 +149,9 @@ test("a árvore abre com a licença actual marcada", () => {
 test("escolher uma licença escreve a empresa e o número, e refaz os gateways", () => {
     // São duas colunas na base de dados e uma só escolha no ecrã; e a autorização de um
     // gateway é por empresa e licença, por isso os que estavam marcados eram de outro.
-    const { root, els, changes } = harness();
+    const { root, els, changes, classification } = harness();
 
-    root.querySelector("[data-wizard-reopen=\"owner\"]").click();
+    classification("[data-wizard-reopen=\"owner\"]")[0].click();
     root.querySelector("#deviceLicensePicker [data-license-id=\"1\"]").click();
 
     assert.equal(els.deviceCompany.value, "havicare");
@@ -156,9 +161,9 @@ test("escolher uma licença escreve a empresa e o número, e refaz os gateways",
 });
 
 test("\"Sem licença\" limpa a empresa e não deixa o número anterior", () => {
-    const { root, els } = harness();
+    const { root, els, classification } = harness();
 
-    root.querySelector("[data-wizard-reopen=\"owner\"]").click();
+    classification("[data-wizard-reopen=\"owner\"]")[0].click();
     root.querySelector("#deviceLicensePicker [data-license-id=\"0\"]").click();
 
     assert.equal(els.deviceCompany.value, "");
@@ -173,9 +178,9 @@ test("\"Sem licença\" limpa a empresa e não deixa o número anterior", () => {
  * pergunta por engano e querer sair dela.
  */
 test("sair de uma pergunta aberta devolve os campos do aparelho, sem apagar respostas", () => {
-    const { root, els, openQuestion } = harness();
+    const { els, openQuestion, classification } = harness();
 
-    root.querySelector("[data-wizard-reopen=\"model\"]").click();
+    classification("[data-wizard-reopen=\"model\"]")[0].click();
     assert.deepEqual(openQuestion(), ["model"]);
 
     els.deviceNextBtn.click();
@@ -183,21 +188,26 @@ test("sair de uma pergunta aberta devolve os campos do aparelho, sem apagar resp
     assert.deepEqual(openQuestion(), []);
     assert.equal(els.deviceStep2.classList.contains("d-none"), false);
     // As três continuam respondidas: sair não apaga nada.
-    assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 3);
+    assert.equal(classification().length, 3);
 });
 
-test("enquanto o dispositivo não chegou, a trilha não inventa uma classificação", () => {
+test("enquanto o dispositivo não chegou, as linhas não inventam uma classificação", () => {
     // O formulario ainda tem o que la estava por omissao -- Relogio, o primeiro modelo,
     // sem licença -- e isso é a classificação de outro aparelho.
     const { state } = stateModule;
-    const { root } = harness();
+    const { classification } = harness();
     state.deviceModal.loading = true;
     renderEditWizard();
 
-    assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 0);
-    assert.equal(root.querySelectorAll(".wizard-badge").length, 3);
+    const values = () => [...classification()]
+        .map((row) => row.textContent.replace(/\s+/g, " ").trim());
+    assert.deepEqual(values(), ["Tipo", "Modelo", "Licença"]);
 
     state.deviceModal.loading = false;
     renderEditWizard();
-    assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 3);
+    assert.deepEqual(values(), [
+        "Tipo Medidor de fraldas",
+        "Modelo MECS-PRO",
+        "Licença gucc.dev (1001)",
+    ]);
 });

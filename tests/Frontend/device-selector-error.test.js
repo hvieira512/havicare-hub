@@ -26,7 +26,9 @@ function setUpSelector(summary) {
             <div id="deviceListPaginationControls"></div>
         </div>
         <div id="deviceSelectorSummary"></div>
-        <button id="clearDeviceFiltersBtn"></button>`;
+        <div id="deviceActiveFilters"></div>
+        <button id="clearDeviceFiltersBtn"></button>
+        <button id="applyDeviceFiltersBtn"></button>`;
 
     const byId = (id) => document.getElementById(id);
     const els = {};
@@ -39,7 +41,9 @@ function setUpSelector(summary) {
         "deviceListPaginationSummary",
         "deviceListPaginationControls",
         "deviceSelectorSummary",
+        "deviceActiveFilters",
         "clearDeviceFiltersBtn",
+        "applyDeviceFiltersBtn",
     ]) {
         els[id] = byId(id);
     }

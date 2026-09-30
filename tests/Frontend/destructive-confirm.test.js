@@ -91,6 +91,18 @@ test("uma licença sem dispositivos di-lo em vez de contar zero", () => {
     assert.doesNotMatch(prompt.text, /0 dispositivos/);
 });
 
+/**
+ * Não saber quantos são não é saber que são nenhuns. A contagem vem do resumo da frota, que
+ * pode ainda não ter carregado quando alguém abre as Definições de raiz -- e prometer que
+ * ninguém a usa, mesmo antes de apagar, é a pior altura para adivinhar.
+ */
+test("com a contagem por carregar, a caixa não promete que não há dispositivos", () => {
+    const prompt = licenseDeletePrompt({ license_id: 1001, name: "gucc.dev" }, null);
+
+    assert.doesNotMatch(prompt.text, /Não há dispositivos/);
+    assert.match(prompt.text, /confirmar/i);
+});
+
 test("a caixa de apagar uma empresa diz o nome e as licenças que leva com ela", () => {
     const prompt = companyDeletePrompt({ name: "Hitecosystem" }, 3, 41);
 

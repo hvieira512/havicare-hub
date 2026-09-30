@@ -7,13 +7,8 @@ namespace Tests\Integration\Infrastructure\Persistence;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * Todo o modelo com fotografia tem o ficheiro dela em disco depois de semear.
- *
- * A imagem de um modelo é o nome de um ficheiro em `var/dashboard/model-images`, que está no
- * gitignore: a linha na base e o ficheiro são semeados por caminhos diferentes, e quando um
- * deles não corre a dashboard mostra uma imagem partida sem um erro em lado nenhum.
- *
- * Prende o invariante e não um modelo: vale para os que já existem e para os que entrarem.
+ * A linha na base e o ficheiro em `var/dashboard/model-images` são semeados por caminhos
+ * diferentes, e quando um deles não corre a dashboard mostra uma imagem partida sem erro.
  */
 final class ModelImagesAreOnDiskTest extends MysqlDashboardTestCase
 {

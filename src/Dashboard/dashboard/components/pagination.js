@@ -31,6 +31,12 @@ function pageWindow(currentPage, totalPages) {
 }
 
 /**
+ * Os números escondem-se num ecrã estreito e ficam as duas setas: catorze alvos de 24px não
+ * se acertam com o polegar, e a que página se vai não é pergunta de telemóvel.
+ */
+const NUMBER_SLOT = "d-none d-md-flex";
+
+/**
  * Os botões de um paginador: as duas setas e a janela de páginas entre elas. Vazio quando há
  * uma página só -- não há para onde ir, e um paginador de um botão é ruído.
  */
@@ -45,13 +51,13 @@ export function paginationControls({ pagination, actionPrefix }) {
 
     const arrow = (action, icon, label, disabled) =>
         `<li class="page-item${disabled ? " disabled" : ""}">` +
-        `<button type="button" class="page-link rounded ms-0" data-action="${esc(action)}" ${disabled ? "disabled" : ""}` +
+        `<button type="button" class="page-link page-link-touch rounded ms-0" data-action="${esc(action)}" ${disabled ? "disabled" : ""}` +
         ` aria-label="${esc(label)}"><i class="fa-solid ${icon}"></i></button></li>`;
 
     // Um `span` e não um botão: as reticências não são um destino, e o `page-link` dá-lhes a
     // mesma medida mínima dos números para o lugar não encolher quando lá está.
     const gap =
-        "<li class=\"page-item disabled\">" +
+        `<li class="page-item disabled ${NUMBER_SLOT}">` +
         "<span class=\"page-link rounded ms-0 px-1 text-center\" aria-hidden=\"true\">…</span></li>";
 
     return [
@@ -61,10 +67,33 @@ export function paginationControls({ pagination, actionPrefix }) {
                 return gap;
             }
             const active = page === currentPage;
-            return `<li class="page-item${active ? " active" : ""}">` +
-                `<button type="button" class="page-link rounded ms-0 px-1 text-center" data-action="${esc(goAction)}" data-page="${page}"` +
+            return `<li class="page-item ${NUMBER_SLOT}${active ? " active" : ""}">` +
+                `<button type="button" class="page-link page-link-touch rounded ms-0 px-1 text-center" data-action="${esc(goAction)}" data-page="${page}"` +
                 `${active ? " aria-current=\"page\"" : ""}>${page}</button></li>`;
         }),
         arrow(`${actionPrefix}Next`, "fa-chevron-right", "Página seguinte", currentPage >= totalPages),
     ].join("");
+}
+
+/**
+ * O que a paginação numerada é no telemóvel: um botão largo em vez de catorze de 24px, que
+ * nenhum polegar acerta. Vazio na última página, que não tem mais nada para trazer.
+ */
+export function loadMoreButton({ pagination, actionPrefix }) {
+    const totalPages = pagination?.total_pages ?? 1;
+    const currentPage = pagination?.page ?? 1;
+
+    if (currentPage >= totalPages) {
+        return "";
+    }
+
+    return `<button type="button" class="btn btn-outline-secondary py-2 mt-2" data-action="${esc(actionPrefix)}More">Carregar mais</button>`;
+}
+
+/**
+ * As linhas que a lista mostra. Com o «Carregar mais» ela acumula, e a página seguinte
+ * junta-se às anteriores em vez de as substituir.
+ */
+export function pagedRows(rows, { page, pageSize, cumulative = false }) {
+    return rows.slice(cumulative ? 0 : (page - 1) * pageSize, page * pageSize);
 }
