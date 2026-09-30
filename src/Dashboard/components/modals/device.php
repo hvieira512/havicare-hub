@@ -86,7 +86,7 @@ ob_start();
                                     <button id="saveDeviceBtn" type="button" class="btn btn-primary"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar dispositivo</button>
                                 </div>
 
-                                <div class="device-danger-zone border border-danger-subtle rounded-3 p-3" id="deviceDangerZone">
+                                <div class="border border-danger-subtle rounded-3 p-3" id="deviceDangerZone">
                                     <div class="fw-semibold text-danger-emphasis">Zona perigosa</div>
                                     <p class="small text-secondary mb-3">Eliminar apaga o dispositivo, as configurações e o histórico dele. Não se desfaz.</p>
                                     <button type="button" class="btn btn-outline-danger d-none" id="deleteDeviceBtn"><?= icon('fa-trash', 'me-1') ?>Eliminar dispositivo</button>
@@ -120,4 +120,5 @@ render_modal(
     headerHtml: $header,
     bodyClass: 'overflow-hidden',
     contentClass: 'h-100',
+    footerClass: 'd-none d-lg-flex',
 );

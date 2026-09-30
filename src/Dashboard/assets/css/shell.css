@@ -85,16 +85,12 @@
     z-index: 1020;
 }
 
-/* No telemóvel a barra leva a marca e três alvos em 390px. O nome da conta é o que ali
-   sobra -- o avatar e a seta já dizem que abre -- e sem ele os botões respiram. */
+/* No telemóvel a barra leva a marca e três alvos em 390px, e os botões respiram com menos
+   enchimento. O nome da conta esconde-se na marcação, com o `d-none d-lg-inline`. */
 @media (max-width: 991.98px) {
     .dashboard-navbar .btn {
         --bs-btn-padding-x: .5rem;
         --bs-btn-padding-y: .3125rem;
-    }
-
-    #dashboardAuthenticatedUsername {
-        display: none;
     }
 }
 

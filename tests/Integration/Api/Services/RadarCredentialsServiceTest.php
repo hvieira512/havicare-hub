@@ -206,6 +206,32 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
         self::assertSame('Qinglanst login failed', $result['data']['error']);
     }
 
+    /**
+     * O mesmo número de licença existe em empresas diferentes, e um aparelho aponta para a
+     * licença pelo par número + empresa. Experimentar contra os radares da outra empresa
+     * respondia à pergunta errada -- e responderia «nenhum destes é desta conta» a uma conta
+     * que está certa.
+     */
+    public function testTheConnectionCheckOnlyTriesTheRadarsOfThisCompany(): void
+    {
+        $this->registerRadars('594B3CCBA56B');
+        $other = $this->db->companies->create('gerpi');
+        $this->db->licenses->create($other, 2103, 'lar-sao-joao');
+        $this->db->whitelist->register(
+            imei: 'FFFFFFFFFFFF',
+            supplier: 'Qinglanst',
+            model: 'RD-V1',
+            deviceType: 'radar',
+            company: 'gerpi',
+            licenseId: 2103,
+        );
+
+        $client = $this->clientAnswering(['594B3CCBA56B' => 200, 'FFFFFFFFFFFF' => 200]);
+        $result = $this->await($this->serviceWithClient($client)->check($this->licenseRefId, $this->credentials()));
+
+        self::assertSame(1, $result['data']['radars']);
+    }
+
     /** Sem radares não há a quem perguntar, e inventar um "ligou" seria mentir. */
     public function testTheConnectionCheckSaysWhenThereIsNothingToTry(): void
     {

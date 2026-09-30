@@ -69,7 +69,7 @@ function modelRow(model, { showType = false } = {}) {
         <span class="catalog-model-image flex-shrink-0 d-flex align-items-center justify-content-center">${modelImageHtml(model, 28)}</span>
         <span class="flex-grow-1 min-w-0 text-truncate" title="${esc([name, ...meta].join(" · "))}">
         <span class="fw-semibold d-block d-sm-inline text-truncate">${esc(name)}</span>
-        <span class="catalog-model-meta small text-secondary d-block d-sm-inline text-truncate"><span class="d-none d-sm-inline"> · </span>${meta.map((part) => esc(part)).join(" · ")}</span>
+        <span class="small text-secondary d-block d-sm-inline text-truncate"><span class="d-none d-sm-inline"> · </span>${meta.map((part) => esc(part)).join(" · ")}</span>
         </span>
         <i class="fa-solid fa-chevron-right text-secondary flex-shrink-0" aria-hidden="true"></i>
         </div>`;

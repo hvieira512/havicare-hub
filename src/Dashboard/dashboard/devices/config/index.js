@@ -84,7 +84,7 @@ export function renderDeviceConfigurationRoot(context) {
 
     return `
         <div class="config-panel d-flex flex-column" data-config-root>
-            <div class="config-panel-body d-flex flex-column flex-lg-row flex-grow-1 min-h-0">
+            <div class="d-flex flex-column flex-lg-row flex-grow-1 min-h-0">
                 ${sectionList(groups, currentCategory)}
                 <div class="config-panel-content tab-content flex-grow-1 min-w-0">
                 ${groups
@@ -143,7 +143,7 @@ export function renderDeviceConfigurationRoot(context) {
 function sectionList(groups, currentCategory) {
     return `
         <div class="config-section-nav d-flex flex-column flex-shrink-0" role="group" aria-label="Secções de configuração">
-            <div class="config-section-nav-label text-uppercase fw-semibold">Secções</div>
+            <div class="config-section-nav-label d-none d-lg-block text-uppercase fw-semibold">Secções</div>
             ${groups.map((group) => `
             <button type="button" class="config-section-link d-flex align-items-center justify-content-between border-bottom${group.key === currentCategory ? " selected" : ""}"
                     data-action="selectConfigCategory" data-section="${esc(group.key)}" data-config-section-link
@@ -164,7 +164,7 @@ function sectionList(groups, currentCategory) {
  */
 function sectionFooter() {
     return `
-        <div class="config-section-footer position-sticky bottom-0 d-flex align-items-center justify-content-between gap-2 flex-wrap border-top bg-body pt-3 mt-3">
+        <div class="config-section-footer position-sticky bottom-0 d-flex align-items-center justify-content-between gap-2 flex-wrap border-top bg-body">
             <span class="small text-secondary flex-grow-1 min-w-0 lh-sm" data-config-pane-status></span>
             <span class="d-flex gap-2 flex-shrink-0">
                 <button type="button" class="btn btn-outline-secondary" data-action="resetConfigPane" disabled>Repor</button>

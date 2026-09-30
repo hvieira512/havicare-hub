@@ -274,7 +274,7 @@ const FILTER_GROUP_LABEL = {
 };
 
 /** Há filtro aplicado quando o estado está escolhido ou algum grupo tem escolhas. */
-export function hasDeviceFilters(filters) {
+function hasDeviceFilters(filters) {
     if (!filters) return false;
     if (filters.online === true || filters.online === false) return true;
     return Object.keys(FILTER_GROUP_LABEL).some((key) => (filters[key] || []).length > 0);

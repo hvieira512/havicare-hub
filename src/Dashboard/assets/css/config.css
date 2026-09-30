@@ -150,20 +150,7 @@
     letter-spacing: .1em;
 }
 
-/* No telemóvel a régua é a própria lista e ocupa a largura toda: quatro nomes por baixo do
-   separador não precisam de uma etiqueta a dizer que são secções. Na coluna do ecrã largo
-   precisa, que ali é uma faixa estreita ao lado do conteúdo. */
 @media (max-width: 991.98px) {
-    .config-section-nav-label {
-        display: none;
-    }
-
-    /* O rodapé do modal era uma faixa inteira para um «Fechar» que o × do cabeçalho já faz,
-       e num ecrã de 789px cada faixa custa duas definições a menos à vista. */
-    #deviceModal .modal-footer {
-        display: none;
-    }
-
     /* O painel das configurações entrega-se rente: a régua das secções atravessa o modal e
        o recuo de cada definição é o dela. Sangra o enchimento do corpo em vez de o apagar,
        que o separador «Geral» é um formulário e precisa dele. */
@@ -192,9 +179,10 @@
     background: var(--bs-warning-bg-subtle);
 }
 
-/* O recuo de um pixel põe a borda do rodapé por cima da da última definição: sem ele são
-   dois traços encostados a fingir de um. */
+/* O enchimento e o recuo são daqui, e por isso não há `p-*` nem `m-*` na marcação: o recuo
+   de um pixel põe a borda do rodapé por cima da da última definição -- sem ele são dois
+   traços encostados a fingir de um --, e um utilitário do Bootstrap ganhava-lhe. */
 .config-section-footer {
     padding: .75rem 1rem;
-    margin: -1px 0 0 !important;
+    margin: -1px 0 0;
 }

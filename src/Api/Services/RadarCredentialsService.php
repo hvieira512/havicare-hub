@@ -105,7 +105,8 @@ class RadarCredentialsService
      */
     public function check(int $licenseRefId, array $payload): PromiseInterface
     {
-        if ($this->sync === null || $this->db->licenses->findById($licenseRefId) === null) {
+        $license = $this->db->licenses->findById($licenseRefId);
+        if ($this->sync === null || $license === null) {
             return resolve(ApiError::licenseNotFound()->toArray());
         }
 
@@ -118,7 +119,7 @@ class RadarCredentialsService
             'app_secret' => $this->orStored($payload['appSecret'] ?? null, $stored['app_secret'] ?? ''),
         ];
 
-        $radars = $this->licenseRadars($licenseRefId);
+        $radars = $this->licenseRadars($license);
 
         return $this->sync->syncLicense($credentials, $radars)->then(
             static fn(array $tally): array => ['data' => [
@@ -134,16 +135,21 @@ class RadarCredentialsService
      * Os radares desta licença, pelo identificador com que o fabricante os conhece -- que é o
      * `device_id` e não o IMEI canónico do hub.
      *
+     * Um aparelho aponta para a licença pelo par número + empresa: o mesmo número existe em
+     * empresas diferentes, e sem a empresa experimentava-se contra os radares da outra.
+     *
+     * @param array<string, mixed> $license
      * @return list<array{imei: string, uid: string}>
      */
-    private function licenseRadars(int $licenseRefId): array
+    private function licenseRadars(array $license): array
     {
-        $license = $this->db->licenses->findById($licenseRefId);
+        $company = $this->db->companies->findById((int)($license['company_id'] ?? 0));
         $page = $this->db->whitelist->listPage(
             ['deviceType' => 'radar'],
             1,
             self::SAMPLE,
             (int)($license['license_id'] ?? 0),
+            (string)($company['name'] ?? ''),
         );
 
         return array_map(static function (array $device): array {

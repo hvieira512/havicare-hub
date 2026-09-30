@@ -29,7 +29,7 @@
                     <div class="dropdown">
                         <button class="btn btn-sm btn-dark dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <?= icon('fa-circle-user', 'fs-5') ?>
-                            <span id="dashboardAuthenticatedUsername">Administrador</span>
+                            <span class="d-none d-lg-inline" id="dashboardAuthenticatedUsername">Administrador</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow">
                             <li>
