@@ -3,8 +3,11 @@
  * fixar: a barra de navegação quebra em duas linhas num ecrã estreito, e a régua de
  * separadores só existe enquanto os dois painéis da atividade não cabem lado a lado.
  */
-export function trackStickyTop({ navbar, tabs }) {
-    const targets = [navbar, tabs].filter(Boolean);
+export function trackStickyTop({ navbar, tabs = [] }) {
+    // São duas réguas, e nunca as duas ao mesmo tempo: a do telemóvel e a do cartão. A que
+    // está escondida mede zero, e somá-las dá sempre a que está no ecrã.
+    const strips = [tabs].flat().filter(Boolean);
+    const targets = [navbar, ...strips].filter(Boolean);
     if (targets.length === 0) return;
 
     const height = (element) => element?.getBoundingClientRect().height || 0;
@@ -12,8 +15,9 @@ export function trackStickyTop({ navbar, tabs }) {
     const write = () => {
         const root = document.documentElement.style;
         const navbarHeight = height(navbar);
+        const stripsHeight = strips.reduce((total, strip) => total + height(strip), 0);
         root.setProperty("--navbar-height", `${navbarHeight}px`);
-        root.setProperty("--sticky-top", `${navbarHeight + height(tabs)}px`);
+        root.setProperty("--sticky-top", `${navbarHeight + stripsHeight}px`);
     };
 
     write();

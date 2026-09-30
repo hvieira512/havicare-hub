@@ -39,6 +39,22 @@
     .device-screen > #deviceColumn > #ncsEventSection {
         order: 2;
     }
+
+    /* A banda do topo diz o que o cartão da identidade dizia, e diz-o sempre à vista. */
+    .device-screen > #deviceColumn > .card:has(#selectedDevicePanel:not(.d-none)) {
+        display: none;
+    }
+
+    /* Os três separadores: a telemetria são os cartões do aparelho, e as outras duas são o
+       cartão da atividade inteiro -- com a busca e os filtros que só ali fazem sentido. */
+    [data-device-tab="telemetry"] .device-screen > #detailColumn {
+        display: none;
+    }
+
+    [data-device-tab="activity"] .device-screen > #deviceColumn > #requestCardsCard,
+    [data-device-tab="activity"] .device-screen > #deviceColumn > #ncsEventSection {
+        display: none;
+    }
 }
 
 /* ===== primitivas do sistema ===== */
@@ -53,9 +69,76 @@
     z-index: 1020;
 }
 
+/* A banda do aparelho, abaixo do `lg`: a mesma superfície da barra, e rola com a página --
+   a identidade lê-se uma vez, e os separadores é que se usam sempre. */
+.device-band {
+    background-color: var(--brand-bar);
+    color: var(--brand-on);
+}
+
+.device-band-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: .6875rem;
+}
+
+.device-band-title {
+    font-size: 1.03125rem;
+    letter-spacing: -.01em;
+}
+
+.device-band-meta {
+    font-size: var(--fs-label);
+    color: rgba(var(--brand-on-rgb), .62);
+}
+
+.device-band-dot {
+    width: 6px;
+    height: 6px;
+}
+
+/* A régua cola debaixo da barra de navegação, e por isso é a banda que sai ao rolar. O
+   `z-index` fica abaixo do da barra e acima do conteúdo, que vem depois na página. */
+.device-tabs {
+    --bs-nav-link-padding-y: .75rem;
+    --bs-nav-link-padding-x: 0;
+    --bs-nav-link-color: rgba(var(--brand-on-rgb), .62);
+    --bs-nav-link-hover-color: var(--brand-on);
+    position: sticky;
+    top: var(--navbar-height, 3.5rem);
+    z-index: 1019;
+    background-color: var(--brand-bar);
+    text-align: center;
+}
+
+.device-tabs .nav-link {
+    border-bottom: 2.5px solid transparent;
+    border-radius: 0;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+}
+
+.device-tabs .nav-link.active {
+    border-bottom-color: var(--brand-on);
+    color: var(--brand-on);
+}
+
+/* A contagem é texto ao lado do nome, e não uma pastilha: aqui o nome já é curto. */
+.device-tab-count {
+    margin-left: .35rem;
+    font-size: var(--fs-label);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+}
+
+.device-tab-count:empty {
+    display: none;
+}
+
 /* Dentro da barra, os `btn-dark` pedem a cor à própria barra: o quase-preto do Bootstrap
    sobre o navy da marca lê-se como um segundo escuro. */
-.dashboard-navbar .btn-dark {
+.dashboard-navbar .btn-dark,
+.device-band .btn-dark {
     --bs-btn-color: var(--brand-on);
     --bs-btn-bg: rgba(var(--brand-on-rgb), .08);
     --bs-btn-border-color: rgba(var(--brand-on-rgb), .18);

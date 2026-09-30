@@ -21,6 +21,8 @@ const IDS = [
     "detailColumn",
     "deviceColumn",
     "requestCardsCard",
+    "deviceBand",
+    "deviceTabs",
     "requestGrid",
     "ncsEventGrid",
     "ncsEventSection",

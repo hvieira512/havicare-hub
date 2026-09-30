@@ -50,6 +50,7 @@ function telemetryEls() {
     return {
         telemetryCount: fakeElement(),
         telemetryTabCount: fakeElement(),
+        deviceTabReadingsCount: fakeElement(),
         telemetryList: fakeElement(),
         ...pagerEls("telemetry"),
     };
@@ -59,6 +60,7 @@ function downlinkEls() {
     return {
         downlinkRequestCount: fakeElement(),
         downlinkTabCount: fakeElement(),
+        deviceTabRequestsCount: fakeElement(),
         downlinkRequests: fakeElement(),
         ...pagerEls("downlink"),
     };
