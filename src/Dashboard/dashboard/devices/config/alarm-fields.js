@@ -188,14 +188,13 @@ const ALARM_LINE_SUMMARIES = {
         const time = fieldValue(row, "[data-takepills-field=\"reminderTime\"]");
         const frequency = fieldValue(row, "[data-takepills-field=\"reminderFrequency\"]:checked") || "1";
         const text = section ? fieldValue(section, "[data-config-field=\"reminderText\"]") : "";
-        const hasVoice = Boolean(section?.querySelector("[data-config-field=\"voiceEnabled\"]")?.checked) &&
-            (section ? fieldValue(section, "[data-config-field=\"voiceData\"]") !== "" : false);
 
+        // Sem sinal de voz: a gravação é uma só do aparelho, e não de cada lembrete.
         return {
             title: text || time || "Lembrete por preencher",
             subtitle: recurrenceWords(TAKE_PILLS_FREQUENCIES[frequency] || "once", readWeekdays(row)),
             trailing: time,
-            badges: hasVoice ? "🎤" : "",
+            badges: "",
         };
     },
     wonlexMedicationPlan: (row) => {
