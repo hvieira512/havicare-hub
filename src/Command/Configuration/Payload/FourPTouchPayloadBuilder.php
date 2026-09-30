@@ -15,24 +15,31 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
      */
     private const MAX_VOICE_AUDIO_BYTES = 2 * 1024 * 1024;
 
-    /** O resultado da sonda ao `ffmpeg`, que não muda enquanto o processo viver. */
-    private static ?bool $voiceTranscodingSupport = null;
+    /**
+     * O resultado da sonda ao `ffmpeg`, por `PATH`: é o `PATH` que decide onde o binário se
+     * procura, e a resposta só vale para aquele.
+     *
+     * @var array<string, bool>
+     */
+    private static array $voiceTranscodingSupport = [];
 
     public static function supportsVoiceTranscoding(): bool
     {
-        // Sem memória, cada lembrete com voz lançava três subprocessos em vez de um: a procura
+        // Sem memória, cada lembrete com voz lança três subprocessos em vez de um: a procura
         // do binário, a lista de codificadores, e só depois a conversão.
-        if (self::$voiceTranscodingSupport !== null) {
-            return self::$voiceTranscodingSupport;
+        $path = (string)getenv('PATH');
+        if (isset(self::$voiceTranscodingSupport[$path])) {
+            return self::$voiceTranscodingSupport[$path];
         }
 
         if (!self::commandExists('ffmpeg')) {
-            return self::$voiceTranscodingSupport = false;
+            return self::$voiceTranscodingSupport[$path] = false;
         }
 
         [$exitCode, $output] = self::runProcess(['ffmpeg', '-hide_banner', '-encoders']);
 
-        return self::$voiceTranscodingSupport = ($exitCode === 0 && str_contains($output, 'libopencore_amrnb'));
+        return self::$voiceTranscodingSupport[$path]
+            = ($exitCode === 0 && str_contains($output, 'libopencore_amrnb'));
     }
 
     public static function build(string $key, array $payload): array

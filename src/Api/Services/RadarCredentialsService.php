@@ -136,7 +136,7 @@ class RadarCredentialsService
      * `device_id` e não o IMEI canónico do hub.
      *
      * Um aparelho aponta para a licença pelo par número + empresa: o mesmo número existe em
-     * empresas diferentes, e sem a empresa experimentava-se contra os radares da outra.
+     * empresas diferentes, e a amostra tem de ser desta.
      *
      * @param array<string, mixed> $license
      * @return list<array{imei: string, uid: string}>

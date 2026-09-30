@@ -290,7 +290,7 @@ function renderCapabilitiesSection() {
                     ? ""
                     : html`<div class="section-label">Disponível no catálogo do tipo de dispositivo.</div>`;
                 // Num telefone os dois interruptores empilham-se: lado a lado, «Solicitável»
-                // e o nome da capacidade disputavam uma calha de 330px.
+                // e o nome da capacidade não cabem numa calha de 330px.
                 return html`
                         <div class="capability-model-row d-flex flex-column flex-sm-row justify-content-sm-between align-items-start gap-2 gap-sm-3 border rounded-3 px-3 py-2">
                             <div class="form-check form-switch mb-0">

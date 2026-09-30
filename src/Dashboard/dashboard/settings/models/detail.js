@@ -75,8 +75,7 @@ async function openModelDetail(modelId) {
         );
 
     els.settingsCloseBtn?.classList.remove("d-none");
-    // A barra de gravar vive fora do carrossel: dentro dele o `overflow` do Bootstrap corta
-    // o `position: sticky` e ela deixava de colar ao fundo do painel.
+    // A barra de gravar vive fora do carrossel: o `overflow` dele corta o `position: sticky`.
     els.modelDetailActionBar?.classList.replace("d-none", "d-flex");
     els.modelsBreadcrumb.classList.remove("d-none");
     els.modelsBreadcrumbModels.classList.remove("active");

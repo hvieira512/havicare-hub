@@ -333,9 +333,8 @@
     margin-inline: auto;
 }
 
-/* Quem rola é o corpo do diálogo, e o tecto é dele. Posto no invólucro, o invólucro ficava
-   mais curto do que o que leva dentro, e a régua -- que lá se cola ao topo -- só acompanhava
-   o rolo até ao fim dessa altura falsa. */
+/* Quem rola é o corpo do diálogo, e por isso o tecto é dele: a régua cola-se ao topo e a
+   barra de gravar ao fundo contra esta caixa, e não contra o invólucro. */
 #settingsModal .modal-body {
     max-height: clamp(26rem, 68vh, 46rem);
 }

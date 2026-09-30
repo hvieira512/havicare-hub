@@ -185,8 +185,6 @@ async function loadSettingsModelsSection() {
     // Aqui e não no `renderModelsSection`: a busca redesenha a cada tecla, e o assistente
     // do outro slide não tem nada a ver com isso.
     resetModelWizard();
-    // Fechar o modal a meio do assistente ou de uma ficha deixava o carrossel lá ao reabrir,
-    // e com ele o rodapé sem o «Fechar».
     showModelListSlide();
     renderModelsSection();
 
@@ -230,10 +228,9 @@ function backToModelList() {
 }
 
 /**
- * Põe o separador no seu ecrã de entrada. Sai daqui e não do `backToModelList` porque
- * carregar o separador -- que é o que acontece ao reabrir o modal -- também o tem de fazer:
- * o estado é limpo à abertura, e o carrossel deixado na ficha mostrava um modelo que já não
- * existia, com um «Guardar capacidades» que respondia «Selecione um modelo».
+ * Põe o separador no seu ecrã de entrada. Vale para quem volta da ficha e para quem carrega
+ * o separador, que é o que acontece ao reabrir o modal: a abertura limpa o estado, e a ficha
+ * sem modelo não tem nada para mostrar.
  */
 function showModelListSlide() {
     const { els } = getSettingsModelsRuntime();

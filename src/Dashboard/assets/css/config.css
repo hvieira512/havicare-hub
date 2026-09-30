@@ -166,10 +166,9 @@
     display: none;
 }
 
-/* O controlo de uma definição que cabe numa linha. Encolhe com a linha -- não encolher
-   punha-o para fora do cartão num telemóvel, com o nome da definição do outro lado --, mas
-   não abaixo do que mostra um número de quatro dígitos com a unidade ao lado. O Bootstrap
-   não tem utilitários de largura mínima. */
+/* O controlo de uma definição que cabe numa linha: cede à linha, mas não abaixo do que
+   mostra um número de quatro dígitos com a unidade ao lado. O Bootstrap não tem utilitários
+   de largura mínima. */
 .config-line-control {
     flex: 0 1 auto;
     min-width: 7rem;
