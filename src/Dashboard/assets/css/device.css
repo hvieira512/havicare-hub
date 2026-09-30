@@ -262,11 +262,11 @@
         border-bottom: 0;
     }
 
-    /* Nos pedidos o valor é a pastilha de estado, e ela tem calha própria de 96px: encostada
-       ao início dela, os pontos ficam uns por cima dos outros. O nome fica com o que sobra e
-       corta com reticências. */
+    /* Nos pedidos o valor é a pastilha de estado, e a calha é a mesma que o ecrã largo mede
+       para a mais larga delas: uma pastilha não se corta a meio, e o nome corta com
+       reticências. */
     #downlinkRequests .telemetry-table > tbody > tr:not(.telemetry-day):not(.telemetry-row-panel) {
-        grid-template-columns: 2.125rem minmax(0, 1fr) 96px auto;
+        grid-template-columns: 2.125rem minmax(0, 1fr) 8rem auto;
     }
 
     #downlinkRequests .telemetry-table > tbody > tr > td:nth-child(3) {
