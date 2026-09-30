@@ -7,7 +7,6 @@ import {
     updateCompany as apiUpdateCompany,
 } from "../api/index.js";
 import { ensureLicensesLoaded, invalidateLicenses } from "../licenses.js";
-import { stateBadge } from "../components/state-badge.js";
 import { state } from "../state.js";
 import { html, raw } from "../html.js";
 import { apiError, confirmDestructive, toast } from "../dialogs.js";
@@ -107,6 +106,20 @@ function rowActionsMenu(label, items) {
         </div>`;
 }
 
+/**
+ * O que a linha diz por baixo do nome: o número da licença, quantos aparelhos a usam -- que
+ * é o que se quer saber antes de a apagar -- e a cloud dos radares quando está configurada.
+ */
+function licenseMetaHtml(license) {
+    const devices = deviceCountForLicense(license.license_id);
+    const meta = `licença ${license.license_id} · ${devices} ${devices === 1 ? "aparelho" : "aparelhos"}`;
+    const cloud = Number(license.radar_cloud_configured || 0) > 0
+        ? html` · <span class="text-success">cloud dos radares ligada</span>`
+        : "";
+
+    return html`<div class="small text-secondary text-truncate">${meta}${raw(cloud)}</div>`;
+}
+
 function licenseViewRow(license) {
     const name = license.name || "sem nome";
     const id = html`data-id="${license.id}"`;
@@ -118,10 +131,10 @@ function licenseViewRow(license) {
     ]);
 
     return html`
-        <div class="tree-row position-relative d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2 min-w-0">
-                <span class="section-label tabular-nums" style="letter-spacing:0">ID ${license.license_id}</span>
-                <span class="text-truncate">${name}</span>
+        <div class="tree-row position-relative d-flex align-items-center justify-content-between gap-2">
+            <div class="min-w-0">
+                <div class="fw-medium text-truncate">${name}</div>
+                ${raw(licenseMetaHtml(license))}
             </div>
             ${raw(menu)}
         </div>`;
@@ -165,7 +178,7 @@ function companyHeaderView(company, owned) {
         <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
             <div class="fw-semibold">${company.name}</div>
             <div class="d-flex align-items-center gap-2">
-                ${raw(stateBadge(`${owned.length} ${owned.length === 1 ? "licença" : "licenças"}`, "secondary"))}
+                <span class="small text-secondary">${owned.length} ${owned.length === 1 ? "licença" : "licenças"}</span>
                 ${raw(menu)}
             </div>
         </div>`;
@@ -373,8 +386,8 @@ async function saveRadarCredentialsRow(button) {
         return;
     }
     clearRadarCredentials();
-    editor.reset();
-    renderCompanySection();
+    // As licenças voltam a vir: é delas que a linha tira o estado da cloud.
+    await reloadLicenses();
     toast("success", "Credenciais guardadas");
 }
 
@@ -416,8 +429,7 @@ async function forgetRadarCredentialsFor(licenseRefId) {
         return;
     }
     clearRadarCredentials();
-    editor.reset();
-    renderCompanySection();
+    await reloadLicenses();
 }
 
 async function deleteLicense(id) {
