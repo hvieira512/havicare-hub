@@ -738,6 +738,14 @@
     grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
 }
 
+/* No telemóvel a coluna cabe duas vezes mas o valor não: «2 pessoas» parte-se a meio da
+   palavra. Abaixo do `sm` é sempre uma. */
+@media (max-width: 575.98px) {
+    .telemetry-card-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 /* O `span: 12` da casca: o mosaico que pede a linha toda. */
 .telemetry-card-wide {
     grid-column: 1 / -1;

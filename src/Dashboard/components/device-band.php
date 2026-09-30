@@ -1,13 +1,16 @@
         <div id="deviceBand" class="device-band d-none d-lg-none">
             <div class="container-fluid d-flex align-items-center gap-2 pb-2">
-                <button id="deviceBandSelectBtn" class="btn btn-dark device-band-btn flex-shrink-0" type="button" aria-label="Escolher outro dispositivo" title="Escolher outro dispositivo"><?= icon('fa-ellipsis-vertical') ?></button>
-                <div class="min-w-0 flex-grow-1">
-                    <div id="deviceBandTitle" class="device-band-title fw-semibold text-truncate tabular-nums"></div>
-                    <div class="device-band-meta d-flex align-items-center gap-2">
-                        <span id="deviceBandDot" class="device-band-dot rounded-circle flex-shrink-0" aria-hidden="true"></span>
-                        <span id="deviceBandMeta" class="text-truncate"></span>
-                    </div>
-                </div>
+                <button id="deviceBandSelectBtn" class="device-band-identity d-flex align-items-center gap-2 text-start min-w-0 flex-grow-1" type="button" aria-label="Escolher outro dispositivo" title="Escolher outro dispositivo">
+                    <span id="deviceBandThumb" class="device-band-thumb d-flex align-items-center justify-content-center flex-shrink-0 rounded-2"></span>
+                    <span class="min-w-0 flex-grow-1">
+                        <span id="deviceBandTitle" class="device-band-title d-block fw-semibold text-truncate tabular-nums"></span>
+                        <span class="device-band-meta d-flex align-items-center gap-2">
+                            <span id="deviceBandDot" class="device-band-dot rounded-circle flex-shrink-0" aria-hidden="true"></span>
+                            <span id="deviceBandMeta" class="text-truncate"></span>
+                        </span>
+                    </span>
+                    <?= icon('fa-chevron-down', 'device-band-caret flex-shrink-0') ?>
+                </button>
                 <button id="deviceBandEditBtn" class="btn btn-dark device-band-btn flex-shrink-0" type="button" aria-label="Editar dispositivo e configurações" title="Editar dispositivo e configurações"><?= icon('fa-pen') ?></button>
             </div>
         </div>

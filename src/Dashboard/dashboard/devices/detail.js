@@ -252,6 +252,12 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     // pergunta, e o fornecedor de fora, que o modelo já o implica.
     els.deviceBandTitle.textContent = device.imei;
     els.deviceBandTitle.title = device.imei;
+    if (els.deviceBandThumb.dataset.previewKey !== previewKey) {
+        els.deviceBandThumb.dataset.previewKey = previewKey;
+        els.deviceBandThumb.innerHTML = image
+            ? html`<img src="${image}" class="object-fit-contain" alt="${model || device.imei}">`
+            : "<i class=\"fa-solid fa-microchip text-white-50\"></i>";
+    }
     els.deviceBandDot.classList.toggle("bg-success", !!device.online);
     els.deviceBandDot.classList.toggle("bg-secondary", !device.online);
     els.deviceBandMeta.textContent = `${device.online ? "Ligado" : "Desligado"} · ${model || "Sem modelo interno"} · ${deviceLicenseLabel(device)}`;
