@@ -586,13 +586,26 @@
    aponta para o `id` da sua secção. Com cinco cabeçalhos dentro de milhares de pixéis de
    scroll, saber onde está uma secção exigia procurá-la. */
 /* Uma linha só, que desliza quando não cabe. Em telefone as cinco secções partiam-se em
-   duas e três linhas, e o cabeçalho de um painel passava a ocupar meio ecrã. */
+   duas e três linhas, e o cabeçalho de um painel passava a ocupar meio ecrã.
+
+   Sem barra à vista e com encaixe: uma pastilha meio cortada ao lado de uma barra de
+   rolagem lê-se como conteúdo partido, e a mesma pastilha meio cortada sozinha lê-se como
+   «há mais para o lado». O encaixe garante que nenhuma fica a meio depois de se arrastar. */
 .capability-section-nav {
     gap: .375rem;
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: thin;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+}
+
+.capability-section-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.capability-section-nav > * {
+    scroll-snap-align: start;
 }
 
 /* A borda e o fundo ficam aqui: os estados abaixo trocam-nos, e um utilitário traz
