@@ -18,6 +18,15 @@
     }
 }
 
+/* Entre o `lg` e o `xl` a coluna da identidade aperta e os quinze dígitos do IMEI não cabem
+   a `h4`. Encolhe em vez de cortar: um identificador a que faltem dígitos não se compara
+   com o aparelho que se tem na mão. */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    #selectedDeviceTitle {
+        font-size: var(--fs-lg);
+    }
+}
+
 /* O `table-sm` aperta as linhas a .25rem e uma pastilha de 26px toca nas vizinhas. A última
    linha não leva divisória: por baixo dela vem logo o contorno do cartão. */
 .telemetry-table > :not(caption) > * > * {
