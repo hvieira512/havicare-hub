@@ -13,13 +13,13 @@ ob_start();
         <?= filter_toggle_button('deviceFilterPanel', 'deviceFilterCountMobile') ?>
     </div>
     <aside id="deviceFilterPanel" class="col-12 col-lg-4 device-filter-column collapse d-lg-block bg-body-tertiary">
-        <div class="device-filter-head d-flex align-items-center gap-2 px-3 py-2 border-bottom">
+        <div class="device-filter-head d-flex align-items-center flex-shrink-0 gap-2 px-3 py-2 border-bottom">
             <span class="section-label">Filtrar</span>
             <span id="deviceFilterCount" class="count-chip count-chip-strong"></span>
             <button id="clearDeviceFiltersBtn" class="btn btn-sm btn-link ms-auto p-0 text-decoration-none d-none" type="button">Limpar</button>
         </div>
 
-        <div class="device-filter-scroll d-flex flex-column gap-4 p-3">
+        <div class="device-filter-scroll d-flex flex-column flex-fill min-h-0 gap-4 p-3">
             <div class="d-flex flex-column">
                 <span class="section-label d-block mb-2">Estado</span>
                 <div class="btn-group w-100" role="group" aria-label="Estado de ligação">
@@ -37,7 +37,7 @@ ob_start();
             <?= filter_group('Modelo', 'deviceSupplierFilterCount', 'deviceSupplierFilter', 'filter-list d-flex flex-column') ?>
         </div>
 
-        <div class="device-filter-foot d-lg-none p-3 border-top">
+        <div class="device-filter-foot d-lg-none flex-shrink-0 p-3 border-top">
             <button id="applyDeviceFiltersBtn" class="btn btn-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#deviceFilterPanel"></button>
         </div>
     </aside>

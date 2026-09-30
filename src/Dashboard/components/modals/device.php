@@ -13,7 +13,7 @@ ob_start();
 <div class="nav device-modal-tabs d-flex flex-row flex-nowrap" role="tablist">
     <?php foreach ($deviceTabs as $index => $tab) : ?>
         <?php $pane = 'device' . $tab['key'] . 'Pane'; ?>
-    <button class="nav-link<?= $index === 0 ? ' active' : '' ?> d-flex<?= $tab['extra'] ?> align-items-center gap-2" id="device<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= h($tab['label']) ?><?= $tab['key'] === 'Config' ? '<span class="device-modal-tab-count d-none flex-shrink-0 fw-semibold tabular-nums" id="deviceConfigCount"></span>' : '' ?></button>
+    <button class="nav-link<?= $index === 0 ? ' active' : '' ?> d-flex<?= $tab['extra'] ?> align-items-center flex-grow-0 flex-shrink-0 text-nowrap gap-2" id="device<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= h($tab['label']) ?><?= $tab['key'] === 'Config' ? '<span class="device-modal-tab-count d-none flex-shrink-0 fw-semibold tabular-nums" id="deviceConfigCount"></span>' : '' ?></button>
     <?php endforeach; ?>
 </div>
 <?php
@@ -129,4 +129,5 @@ render_modal(
     bodyClass: 'overflow-hidden p-0',
     contentClass: 'h-100',
     footerClass: 'd-none d-lg-flex',
+    closeClass: 'btn-close-white',
 );

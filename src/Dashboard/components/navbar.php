@@ -1,7 +1,7 @@
         <?php
         $dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
         ?>
-        <nav class="navbar dashboard-navbar">
+        <nav class="navbar dashboard-navbar sticky-top">
             <div class="container-fluid">
                 <span class="navbar-brand me-0 me-sm-3">
                     <img class="d-none d-sm-block w-auto" src="/assets/logo-dark.png" alt="havi hub">

@@ -429,16 +429,9 @@
     overflow: hidden;
 }
 
-.device-filter-head,
-.device-filter-foot {
-    flex-shrink: 0;
-}
-
 /* O `contain` para o fim da lista de filtros não passar o movimento ao modal atrás dela:
    chegar ao fundo punha a lista tapada a rolar por baixo do painel. */
 .device-filter-scroll {
-    flex: 1 1 auto;
-    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
@@ -866,59 +859,14 @@
     border-color: var(--tone-border);
 }
 
-/* ===== modal do dispositivo: separadores e configuração =====
-   A marcação vive em `components/modals/device.php` e em `devices/config/index.js`. */
-
-/* Os separadores do modal são sempre dois e ficam na horizontal em qualquer largura: em
-   coluna gastavam 180x480 px para dois botões. */
-.device-modal-tabs {
-    padding-bottom: .375rem;
-    border-bottom: 1px solid var(--bs-border-color);
-}
-
-.device-modal-tabs .nav-link {
-    flex: none;
-    white-space: nowrap;
-}
+/* ===== modal do dispositivo: configuração =====
+   A marcação vive em `components/modals/device.php` e em `devices/config/index.js`. O que
+   veste o cabeçalho e a régua das secções está no `config.css`. */
 
 /* A zona perigosa só existe onde há dispositivo para eliminar: com o botão escondido, o
    aviso ficava sozinho a dizer o que ninguém pode fazer. */
 #deviceDangerZone:has(#deleteDeviceBtn.d-none) {
     display: none;
-}
-
-/* A régua das secções em lista: chegam a seis e variam por fornecedor, e em tira horizontal
-   a 342 px media 466 numa calha de 295. */
-.config-section-nav .config-section-link {
-    gap: .75rem;
-    /* O mesmo recuo lateral das definições: a régua e a lista são a mesma coluna, e num
-       telemóvel de barra de rolagem flutuante os .75rem punham a contagem por baixo dela. */
-    padding: .5rem 1rem;
-    border: 0;
-    border-left: 2px solid transparent;
-    background: transparent;
-    color: var(--bs-body-color);
-    font-size: var(--fs-sm);
-    text-align: start;
-    cursor: pointer;
-}
-
-.config-section-nav .config-section-link:hover,
-.config-section-nav .config-section-link:focus-visible {
-    background: var(--bs-tertiary-bg);
-}
-
-.config-section-nav .config-section-link.selected {
-    border-left-color: var(--bs-primary);
-    background: var(--bs-primary-bg-subtle);
-    font-weight: 600;
-}
-
-/* O rodapé da secção acompanha a leitura até ao fim da lista: com trinta definições, os dois
-   botões ficavam a um ecrã e meio de distância do que se acabou de alterar. */
-.config-section-footer {
-    bottom: 0;
-    z-index: 2;
 }
 
 /* As duas leituras de uma definição -- a entrega ao aparelho e a edição por enviar -- são
@@ -952,12 +900,6 @@
 
 .alarm-line::-webkit-details-marker {
     display: none;
-}
-
-/* Sem largura mínima zero o título não corta e empurra a hora para fora do cartão. */
-.alarm-line-body,
-.alarm-line-main {
-    min-width: 0;
 }
 
 .alarm-line-chevron {

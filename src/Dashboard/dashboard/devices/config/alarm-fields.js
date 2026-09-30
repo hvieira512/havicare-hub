@@ -105,9 +105,9 @@ export function alarmDisclosure({ kind, group, control = "", summary: given, bod
     return `
         <div class="border rounded bg-body d-flex align-items-start gap-2 p-2" data-repeat-row="${esc(kind)}" ${attrs}>
             ${control === "" ? "" : `<div class="flex-shrink-0 pt-1">${control}</div>`}
-            <details class="flex-grow-1 alarm-line-body" name="${esc(group)}">
+            <details class="flex-grow-1 min-w-0 alarm-line-body" name="${esc(group)}">
                 <summary class="alarm-line d-flex align-items-center gap-2">
-                    <span class="alarm-line-main flex-grow-1">
+                    <span class="flex-grow-1 min-w-0">
                         <span class="d-block fw-semibold text-truncate" data-alarm-line-title>${esc(summary.title)}</span>
                         <span class="d-block small text-secondary text-truncate" data-alarm-line-subtitle>${esc(summary.subtitle)}</span>
                     </span>

@@ -80,9 +80,6 @@
    de ficar em baixo para continuar a ser a barra. */
 .dashboard-navbar {
     background-color: var(--brand-bar);
-    position: sticky;
-    top: 0;
-    z-index: 1020;
 }
 
 /* No telemóvel a barra leva a marca e três alvos em 390px, e os botões respiram com menos
@@ -154,11 +151,6 @@
 .device-band-meta {
     font-size: var(--fs-label);
     color: rgba(var(--brand-on-rgb), .62);
-}
-
-.device-band-dot {
-    width: 6px;
-    height: 6px;
 }
 
 /* A régua cola debaixo da barra de navegação, e por isso é a banda que sai ao rolar. O

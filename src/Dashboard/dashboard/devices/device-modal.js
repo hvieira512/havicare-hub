@@ -301,7 +301,7 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
         <span class="min-w-0">
             <h5 class="modal-title mb-0 tabular-nums text-truncate" id="deviceModalLabel">${imei}</h5>
             <span class="modal-device-meta d-flex align-items-center gap-2 min-w-0">
-                <span class="modal-device-dot rounded-circle flex-shrink-0${online ? " online" : ""}" aria-hidden="true"></span>
+                <span class="state-badge-dot rounded-circle flex-shrink-0${online ? " bg-success" : ""}" aria-hidden="true"></span>
                 <span class="visually-hidden">${online ? "Ligado" : "Desligado"}</span>
                 <span class="text-truncate">${meta.join(" · ")}</span>
             </span>

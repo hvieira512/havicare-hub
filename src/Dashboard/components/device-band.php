@@ -5,7 +5,7 @@
                     <span class="min-w-0 flex-grow-1">
                         <span id="deviceBandTitle" class="device-band-title d-block fw-semibold text-truncate tabular-nums"></span>
                         <span class="device-band-meta d-flex align-items-center gap-2">
-                            <span id="deviceBandDot" class="device-band-dot rounded-circle flex-shrink-0" role="img"></span>
+                            <span id="deviceBandDot" class="state-badge-dot rounded-circle flex-shrink-0" role="img"></span>
                             <span id="deviceBandMeta" class="text-truncate"></span>
                         </span>
                     </span>

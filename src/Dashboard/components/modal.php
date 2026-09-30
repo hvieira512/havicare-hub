@@ -12,7 +12,8 @@ function render_modal(
     string $headerHtml = '',
     string $bodyClass = '',
     string $contentClass = '',
-    string $footerClass = ''
+    string $footerClass = '',
+    string $closeClass = ''
 ): void {
     $dialog = array_filter([
         'modal-dialog',
@@ -31,7 +32,7 @@ function render_modal(
                     <?= $headerHtml !== ''
                         ? $headerHtml
                         : '<h5 class="modal-title" id="' . h($id) . 'Label">' . h($title) . '</h5>' ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    <button type="button" class="<?= h(trim('btn-close ' . $closeClass)) ?>" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="<?= h(trim('modal-body ' . $bodyClass)) ?>">
                     <?= $body ?>

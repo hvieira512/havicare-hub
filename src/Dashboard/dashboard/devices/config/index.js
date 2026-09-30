@@ -86,7 +86,7 @@ export function renderDeviceConfigurationRoot(context) {
         <div class="config-panel d-flex flex-column" data-config-root>
             <div class="d-flex flex-column flex-lg-row flex-grow-1 min-h-0">
                 ${sectionList(groups, currentCategory)}
-                <div class="config-panel-content tab-content flex-grow-1 min-w-0">
+                <div class="config-panel-content tab-content flex-grow-1 min-w-0 min-h-0">
                 ${groups
                     .map(
                         (group) => `
@@ -145,7 +145,7 @@ function sectionList(groups, currentCategory) {
         <div class="config-section-nav d-flex flex-column flex-shrink-0" role="group" aria-label="Secções de configuração">
             <div class="config-section-nav-label d-none d-lg-block text-uppercase fw-semibold">Secções</div>
             ${groups.map((group) => `
-            <button type="button" class="config-section-link d-flex align-items-center justify-content-between border-bottom${group.key === currentCategory ? " selected" : ""}"
+            <button type="button" class="config-section-link d-flex align-items-center justify-content-between border-bottom text-start${group.key === currentCategory ? " selected" : ""}"
                     data-action="selectConfigCategory" data-section="${esc(group.key)}" data-config-section-link
                     aria-pressed="${group.key === currentCategory ? "true" : "false"}">
                 <span class="d-inline-flex align-items-center gap-2 min-w-0">

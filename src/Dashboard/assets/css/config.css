@@ -24,7 +24,6 @@
     height: 2rem;
     padding: 0;
     opacity: .85;
-    filter: var(--bs-btn-close-white-filter, invert(1) grayscale(100%) brightness(200%));
 }
 
 #deviceModal .modal-header>.btn-close:hover {
@@ -67,25 +66,6 @@
     color: rgba(var(--brand-on-rgb), .68);
 }
 
-/* Verde a ligado, e o mesmo cinzento da linha a desligado: a cor é reforço, e a palavra
-   ao lado é que diz o estado a quem não a vê. */
-.modal-device-dot {
-    width: 6px;
-    height: 6px;
-    background: currentcolor;
-}
-
-.modal-device-dot.online {
-    background: var(--bs-success);
-}
-
-/* Os separadores são dois e cabem em qualquer largura, incluindo 390 px. */
-#deviceModal .device-modal-tabs {
-    gap: 0;
-    padding-bottom: 0;
-    border-bottom: 0;
-}
-
 #deviceModal .device-modal-tabs .nav-link {
     padding: .5rem 1rem;
     border: 0;
@@ -118,10 +98,6 @@
    o rodapé fica colado ao fundo em vez de fugir com ela. */
 .config-panel {
     min-height: 100%;
-}
-
-.config-panel-content {
-    min-height: 0;
 }
 
 /* A secção aberta ocupa a altura do painel, para a barra de envio encostar ao fundo com o
@@ -159,14 +135,31 @@
     letter-spacing: .1em;
 }
 
+/* A régua das secções em lista: chegam a seis e variam por fornecedor, e em tira horizontal
+   a 342 px media 466 numa calha de 295. */
 .config-section-nav .config-section-link {
-    border-bottom: 1px solid var(--bs-border-color-translucent);
-    border-left-width: 2.5px;
+    gap: .75rem;
+    /* O mesmo recuo lateral das definições: a régua e a lista são a mesma coluna, e num
+       telemóvel de barra de rolagem flutuante os .75rem punham a contagem por baixo dela. */
+    padding: .5rem 1rem;
+    border: 0;
+    border-left: 2.5px solid transparent;
+    background: transparent;
+    color: var(--bs-body-color);
+    font-size: var(--fs-sm);
+    cursor: pointer;
+}
+
+.config-section-nav .config-section-link:hover,
+.config-section-nav .config-section-link:focus-visible {
+    background: var(--bs-tertiary-bg);
 }
 
 /* A secção aberta é a que tem o fundo do conteúdo: a lista fica atrás dela e ela à frente. */
 .config-section-nav .config-section-link.selected {
+    border-left-color: var(--bs-primary);
     background: var(--bs-body-bg);
+    font-weight: 600;
 }
 
 /* O chevron só aparece onde não há contagem de alteradas a ocupar-lhe o lugar. */
@@ -178,7 +171,6 @@
    mostra um número de quatro dígitos com a unidade ao lado. O Bootstrap não tem utilitários
    de largura mínima. */
 .config-line-control {
-    flex: 0 1 auto;
     min-width: 7rem;
 }
 
@@ -190,7 +182,10 @@
 /* O enchimento e o recuo são daqui, e por isso não há `p-*` nem `m-*` na marcação: o recuo
    de um pixel põe a borda do rodapé por cima da da última definição -- sem ele são dois
    traços encostados a fingir de um --, e um utilitário do Bootstrap ganhava-lhe. */
+/* O rodapé acompanha a leitura até ao fim da lista: com trinta definições, os dois botões
+   ficavam a um ecrã e meio de distância do que se acabou de alterar. */
 .config-section-footer {
     padding: .75rem 1rem;
     margin: -1px 0 0;
+    z-index: 2;
 }
