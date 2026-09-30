@@ -61,18 +61,59 @@ function boundsOf(layout) {
  */
 const MIN_STAGE_HEIGHT = 180;
 
-function fitStageToLayout(state, layout) {
-    const bounds = boundsOf(layout);
-    const width = state.stage.width();
-    if (!width || !bounds.width) return;
+/**
+ * Abaixo disto a planta deixa de se ler: a escala é uniforme, portanto apertar a altura
+ * encolhe o desenho também na largura, e num portátil de 14" sobravam 316px de altura para
+ * um desenho de 235 de largura numa tela de 887.
+ */
+const COMFORTABLE_STAGE_HEIGHT = 420;
 
-    const height = Math.max(
-        MIN_STAGE_HEIGHT,
-        Math.round((width - 2 * PADDING) * (bounds.height / bounds.width)) + 2 * PADDING,
+/**
+ * A altura da tela: a proporção da divisão, travada pelo que sobra do ecrã -- mas nunca
+ * apertada ao ponto de a planta deixar de se ler. Sem tecto, uma sala mais alta do que larga
+ * pedia dois mil pixéis num monitor largo; com o tecto colado ao ecrã, ficava do tamanho de um
+ * selo. Onde o ecrã não chega para a medida de conforto, é o diálogo que rola.
+ */
+export function stageHeightFor(bounds, width, available) {
+    if (!width || !bounds.width) return null;
+
+    const proportional =
+        Math.round((width - 2 * PADDING) * (bounds.height / bounds.width)) + 2 * PADDING;
+
+    return Math.min(
+        Math.max(MIN_STAGE_HEIGHT, proportional),
+        Math.max(COMFORTABLE_STAGE_HEIGHT, available),
     );
+}
+
+/**
+ * O que a tela pode ocupar do que se vê de uma vez, já sem a legenda por baixo dela. Não conta
+ * com os sinais vitais: em ecrã largo ficam ao lado, e abaixo do `xl` empilham e alcançam-se a
+ * rolar -- apertar a planta para eles caberem deixava-a do tamanho de um selo.
+ */
+function availableHeight(container) {
+    const scroller = container.closest(".modal-body") || document.documentElement;
+    const box = container.getBoundingClientRect();
+    const card = container.closest(".card");
+    const below = card ? card.getBoundingClientRect().bottom - box.bottom : 0;
+    const visibleBottom = scroller.getBoundingClientRect().top + scroller.clientHeight;
+
+    return Math.round(visibleBottom - box.top - below - PADDING);
+}
+
+function fitStageToLayout(state, layout) {
+    const container = state.stage.container();
+    // Medir sem a altura da vez anterior: com ela, o que sobra do ecrã saía do desenho velho.
+    container.style.height = "";
+    const height = stageHeightFor(
+        boundsOf(layout),
+        state.stage.width(),
+        availableHeight(container),
+    );
+    if (height === null) return;
 
     state.stage.height(height);
-    state.stage.container().style.height = `${height}px`;
+    container.style.height = `${height}px`;
 }
 
 /** Uma caixa em decímetros nos quatro cantos que o `Konva.Line` fechado quer, por ordem. */
