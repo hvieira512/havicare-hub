@@ -32,7 +32,14 @@ import {
  * do evento, e por isso este módulo não guarda `els` nenhum. O que fazem é encaminhar: as
  * regras de cada campo vivem com esse campo, e não aqui.
  */
+/** A raiz lê-se antes: há verbos que tiram o botão do DOM e depois já não se lá chega. */
 export function handleDeviceConfigClick(event) {
+    const root = event.target.closest?.("[data-config-root]") || null;
+    dispatchConfigClick(event);
+    if (root) syncConfigCounts(root);
+}
+
+function dispatchConfigClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button) return;
 
@@ -55,7 +62,6 @@ export function handleDeviceConfigClick(event) {
     }
     if (pane && button.dataset.action === "resetConfigPane") {
         resetConfigPane(pane);
-        syncConfigCounts(pane.closest("[data-config-root]") || pane);
         return;
     }
 
