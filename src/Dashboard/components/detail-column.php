@@ -8,7 +8,7 @@
                         'pager' => 'telemetryPager',
                         'loadMore' => 'telemetryLoadMore',
                         'list' => 'telemetryList',
-                        'spacing' => 'pe-xl-4',
+                        'spacing' => '',
                     ],
                     [
                         'column' => 'downlinkColumn',
@@ -18,7 +18,7 @@
                         'pager' => 'downlinkPager',
                         'loadMore' => 'downlinkLoadMore',
                         'list' => 'downlinkRequests',
-                        'spacing' => 'border-start-xl ps-xl-4 mt-4 mt-xl-0',
+                        'spacing' => 'border-start-xl ps-xl-3 mt-4 mt-xl-0',
                     ],
                 ];
                 ?>

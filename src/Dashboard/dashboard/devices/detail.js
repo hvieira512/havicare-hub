@@ -524,7 +524,7 @@ function renderDownlinkRequests(commands) {
     const hasRequests = commands.length > 0;
     els.downlinkColumn?.classList.toggle("d-none", !hasRequests);
     els.telemetryColumn?.classList.toggle("col-xl-6", hasRequests);
-    els.telemetryColumn?.classList.toggle("pe-xl-4", hasRequests);
+    els.telemetryColumn?.classList.toggle("pe-xl-3", hasRequests);
 
     // Um separador só não é escolha nenhuma: a régua sai, e quem estava nos pedidos volta
     // aos eventos em vez de ficar num painel escondido. No telemóvel resta-lhe a telemetria,

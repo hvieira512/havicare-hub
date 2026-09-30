@@ -34,7 +34,7 @@ function detailEls() {
         downlinkPager: document.createElement("div"),
         downlinkPagerSummary: document.createElement("div"),
         downlinkPagerControls: document.createElement("ul"),
-        telemetryColumn: column("col-xl-6", "pe-xl-4"),
+        telemetryColumn: column("col-xl-6", "pe-xl-3"),
         downlinkColumn: column("col-xl-6", "ps-xl-4"),
     };
 }
@@ -55,7 +55,7 @@ test("sem pedidos, os eventos ficam com a linha toda", () => {
 
     assert.equal(els.downlinkColumn.classList.contains("d-none"), true);
     assert.equal(els.telemetryColumn.classList.contains("col-xl-6"), false);
-    assert.equal(els.telemetryColumn.classList.contains("pe-xl-4"), false);
+    assert.equal(els.telemetryColumn.classList.contains("pe-xl-3"), false);
     // A coluna nunca deixa de ser uma coluna da linha: só deixa de ser metade dela.
     assert.equal(els.telemetryColumn.classList.contains("col-12"), true);
 });
@@ -69,7 +69,7 @@ test("com pedidos, volta a divisão a meio", () => {
 
     assert.equal(els.downlinkColumn.classList.contains("d-none"), false);
     assert.equal(els.telemetryColumn.classList.contains("col-xl-6"), true);
-    assert.equal(els.telemetryColumn.classList.contains("pe-xl-4"), true);
+    assert.equal(els.telemetryColumn.classList.contains("pe-xl-3"), true);
 });
 
 /**
