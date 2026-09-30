@@ -42,6 +42,27 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
         self::assertSame(FirmwareUpgrade::CHUNK, strlen($sent['body']) - 4);
     }
 
+    /**
+     * O arranque não come a confirmação do heartbeat que o trouxe.
+     *
+     * O aparelho espera o `0x82` por cada `0x02`. Sem ele retransmite, e ao fim das tentativas
+     * corta a ligação — a meio de uma transferência de firmware.
+     */
+    public function testTheHeartbeatIsStillAcknowledgedWhileTheUpgradeStarts(): void
+    {
+        $store = $this->store(['status' => 'requested', 'offset' => 0]);
+        $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
+
+        $message = $protocol->handleIncoming($this->session(), $this->frame(0x02, 0));
+
+        $types = array_map(
+            fn ($response): string => (string)(new PillDispenserAdapter())->decodeIncoming($response->bytes)['type'],
+            $message?->responses ?? [],
+        );
+
+        self::assertSame(['heartbeat_ack', 'upgrade_start'], $types);
+    }
+
     /** Um `Status` diferente de zero pára tudo, e o aparelho deixa de receber pacotes. */
     public function testARefusalStopsTheTransfer(): void
     {
@@ -76,8 +97,10 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
         $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
         $message = $protocol->handleIncoming($this->session(), $this->frame($packetType, $status));
 
-        self::assertCount(1, $message?->responses ?? [], 'a transferência tem de mandar um pacote');
-        $bytes = $message->responses[0]->bytes;
+        $responses = $message?->responses ?? [];
+        self::assertNotSame([], $responses, 'a transferência tem de mandar um pacote');
+        // A confirmação vai à frente quando a trama a pede; o pacote do upgrade é o último.
+        $bytes = $responses[count($responses) - 1]->bytes;
         $decoded = (new PillDispenserAdapter())->decodeIncoming($bytes);
 
         return [

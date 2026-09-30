@@ -106,11 +106,18 @@ final class FirmwareUpgrade
     }
 
     /**
+     * O número de série anda um por cada pacote que sai, como a especificação pede, e dá a
+     * volta nos dois bytes que o campo tem.
+     *
      * @param array<string, mixed> $state
      * @return array{state: array<string, mixed>, packetType: int|null, body: string|null}
      */
     private static function step(array $state, ?int $packetType, ?string $body): array
     {
+        if ($body !== null) {
+            $state = ['serial' => ((int)($state['serial'] ?? 0) + 1) % 65536] + $state;
+        }
+
         return ['state' => $state, 'packetType' => $packetType, 'body' => $body];
     }
 }

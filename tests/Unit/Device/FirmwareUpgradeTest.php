@@ -140,6 +140,29 @@ final class FirmwareUpgradeTest extends TestCase
         }
     }
 
+    /**
+     * Cada pacote leva o número de série seguinte, como a especificação pede.
+     *
+     * Um número repetido a meio de 839 pacotes arrisca o aparelho tomar um por duplicado e
+     * deitá-lo fora, e a transferência encalha sem dizer porquê.
+     */
+    public function testEachPacketCarriesTheNextSerial(): void
+    {
+        $first = FirmwareUpgrade::advance($this->state('requested', 0), $this->firmware(), 'heartbeat', 0);
+        $second = FirmwareUpgrade::advance($first['state'], $this->firmware(), 'upgrade_start_ack', 0);
+        $third = FirmwareUpgrade::advance($second['state'], $this->firmware(), 'upgrade_data_ack', 0);
+
+        self::assertSame([1, 2, 3], [$first['state']['serial'], $second['state']['serial'], $third['state']['serial']]);
+    }
+
+    /** O campo tem dois bytes, e a contagem dá a volta em vez de transbordar. */
+    public function testTheSerialWrapsInsteadOfOverflowing(): void
+    {
+        $state = ['serial' => 65535] + $this->state('requested', 0);
+
+        self::assertSame(0, FirmwareUpgrade::advance($state, $this->firmware(), 'heartbeat', 0)['state']['serial']);
+    }
+
     /** Uma trama que não diga respeito ao upgrade não mexe no estado nem faz sair nada. */
     public function testAnUnrelatedFrameChangesNothing(): void
     {

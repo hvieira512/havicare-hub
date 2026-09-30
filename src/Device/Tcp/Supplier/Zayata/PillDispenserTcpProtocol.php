@@ -73,24 +73,31 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
      */
     protected function responsesForDecoded(DeviceSession $session, array $decoded): array
     {
+        // A confirmação primeiro: o pacote de upgrade viaja com ela, nunca em vez dela. Sem o
+        // `0x82` de um heartbeat o aparelho retransmite e acaba por cortar a ligação.
+        $responses = [];
+        $type = (string)($decoded['type'] ?? '');
+        if (in_array($type, self::ACKNOWLEDGED_TYPES, true) && ($decoded['waivesReply'] ?? false) !== true) {
+            $responses[] = new TcpResponse($this->acknowledgement($decoded));
+        }
+
         $upgrade = $this->upgradeResponse($decoded);
         if ($upgrade !== null) {
-            return [$upgrade];
+            $responses[] = $upgrade;
         }
 
-        $type = (string)($decoded['type'] ?? '');
-        if (!in_array($type, self::ACKNOWLEDGED_TYPES, true) || ($decoded['waivesReply'] ?? false) === true) {
-            return [];
-        }
+        return $responses;
+    }
 
-        $ack = $this->encodeOutgoing([
+    private function acknowledgement(array $decoded): string
+    {
+
+        return $this->encodeOutgoing([
             'packetType' => ((int)($decoded['packetType'] ?? 0)) | 0x80,
             'deviceNumber' => (int)($decoded['deviceNumber'] ?? 0),
             'serial' => (int)($decoded['ident'] ?? 0),
             'status' => 0,
         ]);
-
-        return [new TcpResponse($ack)];
     }
 
     /**
@@ -137,7 +144,7 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
         return new TcpResponse($this->encodeOutgoing([
             'packetType' => $step['packetType'],
             'deviceNumber' => (int)($decoded['deviceNumber'] ?? 0),
-            'serial' => random_int(1, 60000),
+            'serial' => (int)($step['state']['serial'] ?? 0),
             'status' => 0,
             'appDataRaw' => $step['body'],
         ]));
