@@ -27,7 +27,7 @@ import {
     licenseTree,
     modelCardsHtml,
     ownerFromLicense,
-    supplierPillsHtml,
+    supplierCardsHtml,
     wizardProgressHtml,
     wizardTrailHtml,
 } from "./classification-ui.js";
@@ -262,7 +262,7 @@ function renderSupplier(type, selected) {
 
     return field(
         "Fornecedor",
-        supplierPillsHtml({
+        supplierCardsHtml({
             suppliers,
             selected: selected || "",
             attrsFor: (name) => `data-wizard-supplier="${esc(name)}"`,

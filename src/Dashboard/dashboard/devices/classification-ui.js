@@ -271,19 +271,27 @@ export function modelCardsHtml({ models, attrsFor, selected = "" }) {
     );
 }
 
-/** Os fornecedores em pastilhas: são poucos e não têm imagem que justifique um card. */
-export function supplierPillsHtml({ suppliers, attrsFor, selected = "" }) {
-    return `
-        <div class="d-flex flex-wrap gap-2" role="group" aria-label="Fornecedor">
-            ${suppliers
-                .map(
-                    (name) => `
-                <button type="button" ${attrsFor(name)}
-                    class="btn btn-sm ${name === selected ? "btn-primary" : "btn-outline-secondary"}"
-                    aria-pressed="${name === selected ? "true" : "false"}">${esc(name)}</button>`,
-                )
-                .join("")}
-        </div>`;
+/**
+ * Os fornecedores em cards, como o tipo e o modelo. É a mesma pergunta -- escolher um de
+ * poucos -- e duas formas para ela obrigavam a reaprendê-la a cada passo. Sem ícone, que
+ * um fornecedor não tem; a contagem vem de quem chama, onde ela existir.
+ */
+export function supplierCardsHtml({ suppliers, attrsFor, selected = "", countFor = null }) {
+    return cardGrid(
+        "Fornecedor",
+        suppliers.map((name) => {
+            const count = countFor ? countFor(name) : null;
+            return {
+                attrs: attrsFor(name),
+                selected: name === selected,
+                visual: "",
+                label: name,
+                sub: count === null
+                    ? ""
+                    : `${count} ${count === 1 ? "modelo" : "modelos"}`,
+            };
+        }),
+    );
 }
 
 /** O que o tipo de dispositivo se chama, para quem só precisa da etiqueta. */

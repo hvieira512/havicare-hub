@@ -13,7 +13,7 @@ import { field } from "../../components/form-field.js";
 import { modelImageHtml } from "../../components/model-image.js";
 import {
     deviceTypeCardsHtml,
-    supplierPillsHtml,
+    supplierCardsHtml,
     wizardProgressHtml,
     wizardTrailHtml,
 } from "../../devices/classification-ui.js";
@@ -144,10 +144,12 @@ function renderSuppliers(answers) {
 
     return field(
         "Fornecedor",
-        supplierPillsHtml({
+        supplierCardsHtml({
             suppliers: suppliers.map((supplier) => supplier.name),
             selected: answers.supplier?.name || "",
             attrsFor: (name) => `data-model-supplier="${esc(name)}"`,
+            countFor: (name) =>
+                suppliers.find((supplier) => supplier.name === name)?.models?.length ?? null,
         }),
     );
 }

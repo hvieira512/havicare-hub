@@ -9,7 +9,7 @@ const {
     deviceTypeCardsHtml,
     modelCardsHtml,
     ownerFromLicense,
-    supplierPillsHtml,
+    supplierCardsHtml,
     wizardProgressHtml,
     wizardTrailHtml,
 } = await import("../../src/Dashboard/dashboard/devices/classification-ui.js");
@@ -156,21 +156,20 @@ test("o card do modelo leva fotografia, o nome comercial e o modelo interno", ()
     assert.equal(second.classList.contains("selected"), true);
 });
 
-test("o fornecedor escolhido é a pastilha cheia", () => {
+test("o fornecedor escolhido é o que está marcado, e a contagem é opcional", () => {
     const root = parseFragment(
-        supplierPillsHtml({
+        supplierCardsHtml({
             suppliers: ["4P Touch", "Wonlex"],
             selected: "Wonlex",
             attrsFor: (name) => `data-supplier="${name}"`,
+            countFor: (name) => (name === "Wonlex" ? 3 : null),
         }),
     );
 
-    assert.equal(root.querySelector("[data-supplier=\"Wonlex\"]").classList.contains("btn-primary"), true);
     assert.equal(root.querySelector("[data-supplier=\"Wonlex\"]").getAttribute("aria-pressed"), "true");
-    assert.equal(
-        root.querySelector("[data-supplier=\"4P Touch\"]").classList.contains("btn-outline-secondary"),
-        true,
-    );
+    assert.equal(root.querySelector("[data-supplier=\"4P Touch\"]").getAttribute("aria-pressed"), null);
+    assert.equal(root.querySelector("[data-supplier=\"Wonlex\"] .wizard-card-sub").textContent, "3 modelos");
+    assert.equal(root.querySelector("[data-supplier=\"4P Touch\"] .wizard-card-sub"), null);
 });
 
 /**

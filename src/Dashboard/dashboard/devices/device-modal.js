@@ -11,7 +11,7 @@ import {
     deviceTypeCardsHtml,
     licenseTree,
     modelCardsHtml,
-    supplierPillsHtml,
+    supplierCardsHtml,
 } from "./classification-ui.js";
 import {
     renderEditWizard,
@@ -330,7 +330,7 @@ export async function renderDeviceSelectors(
     els.deviceForm.dataset.supplier = supplier;
     els.deviceForm.dataset.model = model;
 
-    els.deviceSupplierButtons.innerHTML = supplierPillsHtml({
+    els.deviceSupplierButtons.innerHTML = supplierCardsHtml({
         suppliers,
         selected: supplier,
         attrsFor: (name) =>
