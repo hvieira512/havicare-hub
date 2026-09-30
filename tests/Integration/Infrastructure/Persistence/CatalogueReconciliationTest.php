@@ -113,6 +113,23 @@ final class CatalogueReconciliationTest extends MysqlDashboardTestCase
         ")->fetchColumn());
     }
 
+    /** Sem o tipo, a primeira capacidade declarada para ele rebenta a chave estrangeira. */
+    public function testADeviceTypeMissingFromTheDatabaseIsInserted(): void
+    {
+        $pdo = $this->createDashboardDatabase()->pdo();
+        $pdo->exec("DELETE FROM whitelist WHERE device_type = 'pill_dispenser'");
+        $pdo->exec("DELETE FROM models WHERE device_type = 'pill_dispenser'");
+        $pdo->exec("DELETE FROM capabilities WHERE device_type = 'pill_dispenser'");
+        $pdo->exec("DELETE FROM device_types WHERE device_type = 'pill_dispenser'");
+
+        (new ReferenceCatalogSeeder())->reconcileCapabilities($pdo);
+
+        self::assertSame(1, (int)$pdo->query("
+            SELECT COUNT(*) FROM device_types WHERE device_type = 'pill_dispenser'
+        ")->fetchColumn());
+        self::assertSame('Bateria', $this->label($pdo, 'pill_dispenser', 'battery'));
+    }
+
     /** E no fim a base diz exactamente o que o código declara, toda ela. */
     public function testTheWholeCatalogueMatchesAfterReconciling(): void
     {
