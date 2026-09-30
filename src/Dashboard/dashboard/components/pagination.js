@@ -74,3 +74,26 @@ export function paginationControls({ pagination, actionPrefix }) {
         arrow(`${actionPrefix}Next`, "fa-chevron-right", "Página seguinte", currentPage >= totalPages),
     ].join("");
 }
+
+/**
+ * O que a paginação numerada é no telemóvel: um botão largo em vez de catorze de 24px, que
+ * nenhum polegar acerta. Vazio na última página, que não tem mais nada para trazer.
+ */
+export function loadMoreButton({ pagination, actionPrefix }) {
+    const totalPages = pagination?.total_pages ?? 1;
+    const currentPage = pagination?.page ?? 1;
+
+    if (currentPage >= totalPages) {
+        return "";
+    }
+
+    return `<button type="button" class="btn btn-outline-secondary py-2 mt-2" data-action="${esc(actionPrefix)}More">Carregar mais</button>`;
+}
+
+/**
+ * As linhas que a lista mostra. Com o «Carregar mais» ela acumula, e a página seguinte
+ * junta-se às anteriores em vez de as substituir.
+ */
+export function pagedRows(rows, { page, pageSize, cumulative = false }) {
+    return rows.slice(cumulative ? 0 : (page - 1) * pageSize, page * pageSize);
+}

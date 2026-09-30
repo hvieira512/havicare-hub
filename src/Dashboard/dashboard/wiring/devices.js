@@ -35,6 +35,7 @@ import {
     handleDownlinkPagerClick,
     handleTelemetryPagerClick,
     removeDetailFilter,
+    syncDetailSearchPlaceholder,
     updateDetailFilterDraft,
 } from "../devices/detail-filters.js";
 import { toggleActivityRow } from "../devices/activity-table.js";
@@ -280,6 +281,12 @@ function bindDetail() {
     }
     els.telemetryPager.addEventListener("click", handleTelemetryPagerClick);
     els.downlinkPager?.addEventListener("click", handleDownlinkPagerClick);
+    els.telemetryLoadMore?.addEventListener("click", handleTelemetryPagerClick);
+    els.downlinkLoadMore?.addEventListener("click", handleDownlinkPagerClick);
+    els.activityTabs?.addEventListener("shown.bs.tab", syncDetailSearchPlaceholder);
+    globalThis
+        .matchMedia?.("(min-width: 1200px)")
+        ?.addEventListener("change", syncDetailSearchPlaceholder);
     els.applyDetailFiltersBtn.addEventListener("click", applyDetailFilters);
     els.clearDetailFiltersBtn.addEventListener("click", clearDetailFilters);
     els.detailFilterFrom.addEventListener("change", updateDetailFilterDraft);

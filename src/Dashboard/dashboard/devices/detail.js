@@ -33,6 +33,7 @@ import { onRadarPresence } from "./radar-map-modal.js";
 import { activityTable } from "./activity-table.js";
 import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";
 import { renderPagination } from "../pagination.js";
+import { loadMoreButton, pagedRows } from "../components/pagination.js";
 import { SELECTED_DEVICE_STORAGE_KEY, clearStorageKey, saveTextStorage } from "../storage.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { gatewaySignalRows } from "./gateway-signal.js";
@@ -286,8 +287,11 @@ function renderTelemetryList(telemetryRows) {
     );
     setTelemetryPage(state.telemetryPage, totalPages);
 
-    const start = (state.telemetryPage - 1) * state.telemetryPageSize;
-    const pageRows = telemetry.slice(start, start + state.telemetryPageSize);
+    const listedRows = pagedRows(telemetry, {
+        page: state.telemetryPage,
+        pageSize: state.telemetryPageSize,
+        cumulative: state.telemetryCumulative,
+    });
 
     // Na pastilha do contador cabe o número e mais nada: o título já diz de quê. O separador
     // tem a sua, porque abaixo do `xl` o cabeçalho da coluna não se vê.
@@ -297,7 +301,7 @@ function renderTelemetryList(telemetryRows) {
     els.deviceTabReadingsCount.textContent = telemetryTotal;
     activityTable(
         els.telemetryList,
-        pageRows.map(telemetryActivityRow),
+        listedRows.map(telemetryActivityRow),
         "Ainda não há leituras.",
         // O prefixo é por lista: as duas desenham-se ao mesmo tempo no mesmo documento, e
         // com o mesmo `activityRowDetail0` em cada uma ficavam dois elementos com o mesmo id.
@@ -318,19 +322,26 @@ function renderClientPager(prefix, totalRows, totalPages) {
     // O resumo é opcional: nestes dois painéis o total já está na pastilha do título.
     if (!root || !controlsEl) return;
 
+    const pagination = {
+        total: totalRows,
+        total_pages: totalPages,
+        page: state[`${prefix}Page`],
+        limit: state[`${prefix}PageSize`],
+    };
+
     renderPagination({
-        pagination: {
-            total: totalRows,
-            total_pages: totalPages,
-            page: state[`${prefix}Page`],
-            limit: state[`${prefix}PageSize`],
-        },
+        pagination,
         rootEl: root,
         summaryEl,
         controlsEl,
         actionPrefix: prefix,
         summary: (start, end, total) => `${start}–${end} de ${total}`,
     });
+
+    const loadMoreEl = els[`${prefix}LoadMore`];
+    if (loadMoreEl) {
+        loadMoreEl.innerHTML = loadMoreButton({ pagination, actionPrefix: prefix });
+    }
 }
 
 /**
@@ -530,12 +541,15 @@ function renderDownlinkRequests(commands) {
     );
     setDownlinkPage(state.downlinkPage, totalPages);
 
-    const start = (state.downlinkPage - 1) * state.downlinkPageSize;
-    const pageRows = commands.slice(start, start + state.downlinkPageSize);
+    const listedRows = pagedRows(commands, {
+        page: state.downlinkPage,
+        pageSize: state.downlinkPageSize,
+        cumulative: state.downlinkCumulative,
+    });
 
     activityTable(
         els.downlinkRequests,
-        pageRows.map(downlinkActivityRow),
+        listedRows.map(downlinkActivityRow),
         "Ainda não há pedidos.",
         "downlinkRowDetail",
         state.downlinkPage,
