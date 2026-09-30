@@ -26,13 +26,11 @@ const LOCATION_INTERVAL = {
 
 const sectionOf = (entry) => parseFragment(renderConfigSection("wonlex-json", entry, null));
 
-test("o controlo fica na linha do título", () => {
+test("uma definição de campo estreito desenha o campo e mais nada", () => {
     const section = sectionOf(LOCATION_INTERVAL);
-    const input = section.querySelector("input[type=\"number\"]");
 
-    assert.ok(input, "o cartão devia desenhar o campo");
-    const row = input.closest(".input-group").parentElement;
-    assert.ok(row.querySelector(".fw-semibold"), "o campo devia partilhar a linha com o nome");
+    assert.ok(section.querySelector("input[type=\"number\"]"), "a definição devia desenhar o campo");
+    assert.equal(section.querySelectorAll("button").length, 0);
 });
 
 test("o rótulo do campo desaparece", () => {

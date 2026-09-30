@@ -1,0 +1,177 @@
+/* ===== modal do dispositivo: cabeçalho e painel de configuração =====
+   A marcação vive em `components/modals/device.php`, em `devices/device-modal.js` e em
+   `devices/config/index.js`. Carrega depois do `device.css`, e é daí que vem a precedência
+   sobre as regras de configuração que lá estão. */
+
+/* O cabeçalho é navy como a barra de navegação: a identidade do aparelho e os separadores
+   ficam lá dentro, e por isso empilham em vez de partilharem uma linha. */
+#deviceModal .modal-header {
+    display: block;
+    position: relative;
+    padding: .75rem 1.125rem 0;
+    border-bottom: 0;
+    background: var(--brand-bar);
+    color: var(--brand-on);
+}
+
+/* O fecho sai do fluxo para não ficar debaixo dos separadores, e mede um alvo de toque no
+   telemóvel, onde o diálogo é o ecrã todo. */
+#deviceModal .modal-header>.btn-close {
+    position: absolute;
+    top: .75rem;
+    right: 1.125rem;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    opacity: .85;
+    filter: var(--bs-btn-close-white-filter, invert(1) grayscale(100%) brightness(200%));
+}
+
+#deviceModal .modal-header>.btn-close:hover {
+    opacity: 1;
+}
+
+@media (max-width: 767.98px) {
+    #deviceModal .modal-header>.btn-close {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+}
+
+/* O bloco da identidade recua do lado do fecho, que está por cima dele. */
+#deviceModal .modal-device-identity {
+    padding-right: 3rem;
+}
+
+#deviceModal .modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* A chapa da fotografia acompanha o navy em vez de trazer o cinzento do corpo. */
+#deviceModal .modal-device-thumb {
+    width: 34px;
+    height: 34px;
+    background: rgba(var(--brand-on-rgb), .12);
+}
+
+#deviceModal .modal-device-thumb img,
+#deviceModal .modal-device-thumb i {
+    max-width: 22px;
+    max-height: 22px;
+}
+
+.modal-device-meta {
+    font-size: var(--fs-label);
+    color: rgba(var(--brand-on-rgb), .68);
+}
+
+/* Verde a ligado, e o mesmo cinzento da linha a desligado: a cor é reforço, e a palavra
+   ao lado é que diz o estado a quem não a vê. */
+.modal-device-dot {
+    width: 6px;
+    height: 6px;
+    background: currentcolor;
+}
+
+.modal-device-dot.online {
+    background: var(--bs-success);
+}
+
+/* Os separadores são dois e cabem em qualquer largura, incluindo 390 px. */
+#deviceModal .device-modal-tabs {
+    gap: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+#deviceModal .device-modal-tabs .nav-link {
+    padding: .5rem 1rem;
+    border: 0;
+    border-bottom: 2.5px solid transparent;
+    border-radius: 0;
+    background: none;
+    color: rgba(var(--brand-on-rgb), .68);
+    font-size: var(--fs-sm);
+    white-space: nowrap;
+}
+
+#deviceModal .device-modal-tabs .nav-link:hover {
+    color: var(--brand-on);
+}
+
+#deviceModal .device-modal-tabs .nav-link.active {
+    border-bottom-color: var(--brand-on);
+    background: none;
+    color: var(--brand-on);
+    font-weight: 600;
+}
+
+/* A conta das alterações por enviar, ao lado do nome do separador. */
+.device-modal-tab-count {
+    font-size: var(--fs-label);
+    color: var(--bs-warning);
+}
+
+/* O painel ocupa a altura toda da coluna do conteúdo: quem rola é a lista de definições, e
+   o rodapé fica colado ao fundo em vez de fugir com ela. */
+.config-panel {
+    min-height: 100%;
+}
+
+.config-panel-content {
+    min-height: 0;
+}
+
+/* A coluna das secções: largura fixa, porque é uma lista de nomes curtos e crescer com o
+   diálogo só lhe punha branco ao lado. */
+@media (min-width: 992px) {
+    .config-section-nav {
+        width: 186px;
+        border-right: 1px solid var(--bs-border-color);
+    }
+}
+
+@media (max-width: 991.98px) {
+    .config-section-nav {
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+}
+
+.config-section-nav {
+    background: var(--bs-tertiary-bg);
+}
+
+.config-section-nav-label {
+    padding: .625rem .875rem .25rem;
+    color: var(--bs-secondary-color);
+    font-size: var(--fs-label);
+    letter-spacing: .1em;
+}
+
+.config-section-nav .config-section-link {
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    border-left-width: 2.5px;
+}
+
+/* A secção aberta é a que tem o fundo do conteúdo: a lista fica atrás dela e ela à frente. */
+.config-section-nav .config-section-link.selected {
+    background: var(--bs-body-bg);
+}
+
+/* O chevron só aparece onde não há contagem de alteradas a ocupar-lhe o lugar. */
+[data-config-section-changed]:not(:empty)~.config-section-chevron {
+    display: none;
+}
+
+/* A definição alterada tinge-se, para se encontrar na lista sem se ler linha a linha. */
+[data-config-edited].config-setting {
+    background: var(--bs-warning-bg-subtle);
+}
+
+/* O recuo de um pixel põe a borda do rodapé por cima da da última definição: sem ele são
+   dois traços encostados a fingir de um. */
+.config-section-footer {
+    padding: .75rem 1rem;
+    margin: -1px 0 0 !important;
+}

@@ -1,22 +1,28 @@
 <?php
 
 $deviceTabs = [
-    ['key' => 'General', 'label' => 'Geral', 'icon' => 'fa-address-card', 'extra' => ''],
-    ['key' => 'Config', 'label' => 'Configurações', 'icon' => 'fa-sliders', 'extra' => ' d-none'],
+    ['key' => 'General', 'label' => 'Geral', 'extra' => ''],
+    ['key' => 'Config', 'label' => 'Configurações', 'extra' => ' d-none'],
 ];
 
 ob_start();
 ?>
+<div class="modal-device-identity d-flex align-items-center min-w-0" id="deviceModalIdentity">
+    <h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>
+</div>
+<div class="nav device-modal-tabs d-flex flex-row flex-nowrap" role="tablist">
+    <?php foreach ($deviceTabs as $index => $tab) : ?>
+        <?php $pane = 'device' . $tab['key'] . 'Pane'; ?>
+    <button class="nav-link<?= $index === 0 ? ' active' : '' ?> d-flex<?= $tab['extra'] ?> align-items-center gap-2" id="device<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= h($tab['label']) ?><?= $tab['key'] === 'Config' ? '<span class="device-modal-tab-count d-none flex-shrink-0 fw-semibold tabular-nums" id="deviceConfigCount"></span>' : '' ?></button>
+    <?php endforeach; ?>
+</div>
+<?php
+$header = (string) ob_get_clean();
+
+ob_start();
+?>
 <div class="device-modal-shell h-100">
-    <div class="row g-3 h-100">
-        <div class="col-12">
-            <div class="nav nav-pills device-modal-tabs flex-row flex-nowrap gap-2 w-100" role="tablist">
-                <?php foreach ($deviceTabs as $index => $tab) : ?>
-                    <?php $pane = 'device' . $tab['key'] . 'Pane'; ?>
-                <button class="nav-link<?= $index === 0 ? ' active' : '' ?> text-start d-flex<?= $tab['extra'] ?> align-items-center gap-2" id="device<?= $tab['key'] ?>TabBtn" data-bs-toggle="pill" data-bs-target="#<?= $pane ?>" type="button" role="tab" aria-controls="<?= $pane ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= icon($tab['icon'], 'fa-fw') ?><?= h($tab['label']) ?><?= $tab['key'] === 'Config' ? '<span class="settings-nav-count d-none ms-1 flex-shrink-0 px-1 rounded-pill fw-semibold text-center tabular-nums" id="deviceConfigCount"></span>' : '' ?></button>
-                <?php endforeach; ?>
-            </div>
-        </div>
+    <div class="row g-0 h-100">
         <div class="col-12 device-modal-content">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
@@ -103,10 +109,6 @@ ob_start();
 $body = (string) ob_get_clean();
 
 $footer = '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
-
-$header = '<div class="modal-device-identity d-flex align-items-center min-w-0 flex-fill" id="deviceModalIdentity">'
-    . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'
-    . '</div>';
 
 render_modal(
     id: 'deviceModal',
