@@ -51,7 +51,6 @@ final class DashboardHttpServer
     /* Com valor por omissão e não promovida no construtor: a página desenha-se sem o servidor
      * montado -- é o que o teste dos componentes faz -- e uma propriedade promovida ficaria
      * por inicializar nesse caminho. */
-    private int $downlinkQueueTtlSeconds = 300;
     /* Com valor por omissão pela mesma razão das duas acima: a página desenha-se sem o
      * servidor montado. Vazia, o amCharts desenha o logótipo dele em cada gráfico. */
     private string $amchartsLicense = '';
@@ -86,7 +85,6 @@ final class DashboardHttpServer
             $this->db->whitelist,
         );
         $this->apiAuthRequired = $apiAuthRequired;
-        $this->downlinkQueueTtlSeconds = $hub->downlinkQueueTtlSeconds();
 
         // O store anuncia as suas próprias escritas, e por isso o stream tem de subscrever
         // esse notificador exacto, e não um seu.
@@ -212,7 +210,6 @@ final class DashboardHttpServer
     private function page(): string
     {
         $dashboardApiAuthRequired = $this->apiAuthRequired;
-        $downlinkQueueTtlSeconds = $this->downlinkQueueTtlSeconds;
         $amchartsLicense = $this->amchartsLicense;
         $assetVersion = $this->assetVersion();
 

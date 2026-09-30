@@ -500,8 +500,6 @@ export function renderDeviceConfigurationModal() {
         model: state.deviceModal.model,
         activeCategory: state.deviceModal.activeCategory,
         disabled: !state.deviceModal.protocol,
-        online: state.deviceModal.online,
-        queueTtlSeconds: Number(document.body.dataset.downlinkQueueTtl) || 0,
     });
     resetPhoneControls(els.deviceConfigRoot);
     captureConfigPristine(els.deviceConfigRoot);
@@ -515,7 +513,9 @@ export function renderDeviceConfigurationModal() {
  * contam-se à parte das alterações.
  */
 function paneStatusLabel(pending, edited) {
-    if (pending === 0) return "Sem alterações por enviar";
+    // Sem nada por enviar não se diz nada: os dois botões desligados já o dizem, e a frase
+    // roubava a linha que o «1 alteração por enviar» precisa quando há mesmo alguma.
+    if (pending === 0) return "";
     if (edited === 0) {
         return `${pending} ${pending === 1 ? "definição" : "definições"} no valor padrão, por enviar`;
     }

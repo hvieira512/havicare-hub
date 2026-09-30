@@ -48,41 +48,6 @@ const CONFIG_ACTION_BUTTON_META = {
     },
 };
 
-/** O prazo na unidade em que é redondo: 300 são cinco minutos, e 90 são noventa segundos. */
-function queueDeadline(seconds) {
-    for (const [size, one, many] of [[3600, "1 hora", "horas"], [60, "1 minuto", "minutos"]]) {
-        if (seconds % size !== 0) continue;
-        const count = seconds / size;
-        return count === 1 ? one : `${count} ${many}`;
-    }
-    return `${seconds} segundos`;
-}
-
-/**
- * O aviso de que o aparelho não está a ouvir.
- *
- * O comando não se perde -- o `submitDownlink` mete-o em fila --, mas a fila tem prazo.
- *
- * Num painel em que nada viaja, não há fila nenhuma: o `entries` vazio ou omitido mantém o
- * aviso, porque não saber o que lá está não é o mesmo que saber que não sai nada.
- */
-export function offlineQueueNotice(online, ttlSeconds, entries) {
-    if (online) return "";
-
-    const travels = Array.isArray(entries) && entries.length > 0 &&
-        entries.some((entry) => String(entry?.command || "") !== "");
-    if (Array.isArray(entries) && entries.length > 0 && !travels) {
-        return "";
-    }
-
-    const seconds = Math.max(0, Number(ttlSeconds) || 0);
-    const deadline = seconds > 0
-        ? ` Ao fim de ${queueDeadline(seconds)} sem ligação, é descartado.`
-        : "";
-
-    return `Este dispositivo está desligado. O que enviar fica em fila e sai quando ele voltar.${deadline}`;
-}
-
 export function renderDeviceConfigurationRoot(context) {
     const {
         protocol,
@@ -96,8 +61,6 @@ export function renderDeviceConfigurationRoot(context) {
         uiByKey = {},
         actionDeliveries = {},
         quietWhenEmpty = false,
-        online = true,
-        queueTtlSeconds = 0,
     } = context;
     if (!protocol) {
         return emptyPanel(
@@ -119,17 +82,8 @@ export function renderDeviceConfigurationRoot(context) {
         ? activeCategory
         : groups[0]?.key || "";
 
-    const offlineNotice = offlineQueueNotice(online, queueTtlSeconds, catalog);
-
     return `
         <div class="config-panel d-flex flex-column" data-config-root>
-            ${offlineNotice === ""
-                ? ""
-                : `
-            <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 small mb-0 rounded-0" role="status">
-                <i class="fa-solid fa-clock mt-1" aria-hidden="true"></i>
-                <span>${esc(offlineNotice)}</span>
-            </div>`}
             <div class="config-panel-body d-flex flex-column flex-lg-row flex-grow-1 min-h-0">
                 ${sectionList(groups, currentCategory)}
                 <div class="config-panel-content tab-content flex-grow-1 min-w-0">
@@ -210,11 +164,11 @@ function sectionList(groups, currentCategory) {
  */
 function sectionFooter() {
     return `
-        <div class="config-section-footer position-sticky d-flex align-items-center justify-content-between gap-3 flex-wrap border-top bg-body pt-3 mt-3">
-            <span class="small text-secondary" data-config-pane-status>Sem alterações por enviar</span>
-            <span class="d-flex gap-2">
+        <div class="config-section-footer position-sticky d-flex align-items-center justify-content-between gap-2 flex-wrap border-top bg-body pt-3 mt-3">
+            <span class="small text-secondary flex-grow-1 min-w-0 lh-sm" data-config-pane-status></span>
+            <span class="d-flex gap-2 flex-shrink-0">
                 <button type="button" class="btn btn-outline-secondary" data-action="resetConfigPane" disabled>Repor</button>
-                <button type="button" class="btn btn-primary" data-action="saveConfigPane" data-config-phase="idle" disabled>Enviar ao dispositivo</button>
+                <button type="button" class="btn btn-primary" data-action="saveConfigPane" data-config-phase="idle" disabled><span class="d-lg-none">Enviar</span><span class="d-none d-lg-inline">Enviar ao dispositivo</span></button>
             </span>
         </div>`;
 }

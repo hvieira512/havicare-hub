@@ -5,7 +5,6 @@ declare(strict_types=1);
 require_once __DIR__ . '/components/helpers.php';
 
 $dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
-$downlinkQueueTtlSeconds = $downlinkQueueTtlSeconds ?? 300;
 $assetVersion = $assetVersion ?? '';
 
 $asset = static function (string $path) use ($assetVersion): string {
@@ -48,7 +47,7 @@ require_once __DIR__ . '/components/modal.php';
     <?php endforeach; ?>
 </head>
 
-<body class="bg-body-tertiary" data-dashboard-auth-required="<?= $dashboardApiAuthRequired ? 'true' : 'false' ?>" data-downlink-queue-ttl="<?= (int)$downlinkQueueTtlSeconds ?>">
+<body class="bg-body-tertiary" data-dashboard-auth-required="<?= $dashboardApiAuthRequired ? 'true' : 'false' ?>">
     <?php require __DIR__ . '/components/login.php'; ?>
 
     <div id="dashboardApp" class="<?= $dashboardApiAuthRequired ? 'd-none' : '' ?>"<?= $dashboardApiAuthRequired ? ' hidden' : '' ?>>

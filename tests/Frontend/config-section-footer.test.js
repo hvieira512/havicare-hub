@@ -98,7 +98,8 @@ test("o rodapé diz quantas alterações estão por enviar, e só acende com ela
     const send = pane(root).querySelector("[data-action=\"saveConfigPane\"]");
 
     assert.equal(send.disabled, true);
-    assert.match(pane(root).querySelector("[data-config-pane-status]").textContent, /Sem alterações/);
+    // Sem nada por enviar o rodapé cala-se: são os botões desligados que o dizem.
+    assert.equal(pane(root).querySelector("[data-config-pane-status]").textContent, "");
 
     fieldOf(root, "heart_rate").value = "30";
     syncConfigCounts(root);
