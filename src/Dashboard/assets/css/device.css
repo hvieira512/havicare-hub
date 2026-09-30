@@ -892,7 +892,9 @@
    a 342 px media 466 numa calha de 295. */
 .config-section-nav .config-section-link {
     gap: .75rem;
-    padding: .5rem .75rem;
+    /* O mesmo recuo lateral das definições: a régua e a lista são a mesma coluna, e num
+       telemóvel de barra de rolagem flutuante os .75rem punham a contagem por baixo dela. */
+    padding: .5rem 1rem;
     border: 0;
     border-left: 2px solid transparent;
     background: transparent;
