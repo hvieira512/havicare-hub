@@ -70,7 +70,7 @@
                                         <?= section_header('Ligações ao servidor') ?>
                                         <div id="connectionTimeline"></div>
                                     </section>
-                                    <div class="card-section mt-lg-3 pt-lg-3 border-top d-flex flex-column flex-grow-1 min-h-0">
+                                    <div class="card-section activity-section mt-3 pt-lg-3 d-flex flex-column flex-grow-1 min-h-0">
                                         <div class="nav nav-pills activity-tabs d-xl-none flex-nowrap gap-2 mb-3" id="activityTabs" role="tablist">
                                             <?php foreach ($activityPanels as $index => $panel) : ?>
                                             <button class="nav-link<?= $index === 0 ? ' active' : '' ?> flex-fill d-flex align-items-center justify-content-center gap-2" id="<?= $panel['column'] ?>Tab" data-bs-toggle="pill" data-bs-target="#<?= $panel['column'] ?>" type="button" role="tab" aria-controls="<?= $panel['column'] ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= h($panel['title']) ?><span class="badge text-bg-secondary rounded-pill" id="<?= $panel['tabCountId'] ?>"></span></button>

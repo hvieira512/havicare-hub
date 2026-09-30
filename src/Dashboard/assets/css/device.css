@@ -63,6 +63,16 @@
     .activity-tabs {
         display: none;
     }
+
+}
+
+/* No telemóvel a lista já se separa da busca pelo espaço e pelo cabeçalho do dia, que tem
+   fundo próprio: a linha era uma terceira divisória para a mesma junta. No ecrã largo não há
+   cabeçalho de dia à vista à partida, e a linha continua a ser o que marca a junta. */
+@media (min-width: 992px) {
+    .activity-section {
+        border-top: 1px solid var(--bs-border-color);
+    }
 }
 
 .activity-tab-content > .tab-pane.active {
