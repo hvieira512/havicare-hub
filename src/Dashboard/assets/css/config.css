@@ -124,10 +124,11 @@
 }
 
 /* A coluna das secções: largura fixa, porque é uma lista de nomes curtos e crescer com o
-   diálogo só lhe punha branco ao lado. */
+   diálogo só lhe punha branco ao lado. Nem cresce nem encolhe -- um nome comprido corta com
+   reticências, e a coluna mede o mesmo em todas as secções. */
 @media (min-width: 992px) {
     .config-section-nav {
-        width: 186px;
+        flex: 0 0 186px;
         border-right: 1px solid var(--bs-border-color);
     }
 }

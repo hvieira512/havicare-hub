@@ -188,7 +188,7 @@ export function renderDeviceConfigurationRoot(context) {
  */
 function sectionList(groups, currentCategory) {
     return `
-        <div class="config-section-nav vstack flex-shrink-0" role="group" aria-label="Secções de configuração">
+        <div class="config-section-nav d-flex flex-column flex-shrink-0" role="group" aria-label="Secções de configuração">
             <div class="config-section-nav-label text-uppercase fw-semibold">Secções</div>
             ${groups.map((group) => `
             <button type="button" class="config-section-link d-flex align-items-center justify-content-between border-bottom${group.key === currentCategory ? " selected" : ""}"
