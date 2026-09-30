@@ -62,11 +62,10 @@
     table-layout: fixed;
 }
 
-/* Três colunas medidas e o nome com o resto. O que se prende aqui é a do valor: a pastilha
-   de estado de um pedido mede 105px, e enquanto o valor levava o que sobrava de 34% + 8.25rem
-   ficava com 98px num painel de 401 -- o «O» de CONFIRMADO desaparecia. */
+/* Três colunas medidas e o nome com o resto. A do valor é a calha onde a pastilha de estado
+   de um pedido encosta: mede o que a mais larga pede -- «substituído», «desconhecido». */
 .telemetry-col-icon { width: 2.125rem; }
-.telemetry-col-value { width: 7.5rem; }
+.telemetry-col-value { width: 8rem; }
 
 /* A hora mede o que a hora precisa, agora que a data subiu para o cabeçalho do dia. A
    largura conta com a seta da linha que abre, que vive nesta célula. */
@@ -222,6 +221,23 @@
     .telemetry-table > tbody > tr.telemetry-row-openable[aria-expanded="true"] {
         padding-bottom: 0;
         border-bottom: 0;
+    }
+
+    /* Nos pedidos o valor é a pastilha de estado, e ela sobe para uma calha de 96px na
+       primeira linha: encostada ao início da calha, os pontos ficam uns por cima dos
+       outros. O nome fica com o que sobra e corta com reticências. */
+    #downlinkRequests .telemetry-table > tbody > tr:not(.telemetry-day):not(.telemetry-row-panel) {
+        grid-template-columns: 2.125rem minmax(0, 1fr) 96px auto;
+    }
+
+    #downlinkRequests .telemetry-table > tbody > tr > td:nth-child(3) {
+        grid-column: 3;
+        grid-row: 1;
+        padding: 0 .5rem 0 0;
+    }
+
+    #downlinkRequests .telemetry-table > tbody > tr > td:nth-child(4) {
+        grid-column: 4;
     }
 
     /* A altura de duas linhas serve a coluna estreita do ecrã grande, onde os detalhes vão ao
@@ -708,9 +724,10 @@
 }
 
 /* Mede-se pelo contentor e não pelo ecrã: com `auto-fit`, a segunda coluna só aparece
-   quando há 14rem para ela, que é o que a palavra mais comprida do catálogo pede. */
+   quando há 11rem para ela. A coluna do aparelho tem 400px no portátil, e é esse o mínimo
+   que lhe dá duas colunas em vez de uma. */
 .telemetry-card-grid {
-    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
 }
 
 /* O `span: 12` da casca: o mosaico que pede a linha toda. */
