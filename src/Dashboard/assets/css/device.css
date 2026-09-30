@@ -787,20 +787,10 @@
     --bs-modal-width: min(1680px, 96vw);
 }
 
-/* A divisão precisa de altura para se ler: a escala é uniforme nos dois eixos, e um contentor
-   baixo encolhe a planta inteira em vez de a achatar.
-
-   Num telemóvel é ao contrário: a largura é que manda, e as 32rem do ecrã grande deixavam a
-   planta no meio de trezentos pixéis de nada -- um quarto tem tipicamente uma proporção de
-   3:2, portanto a 310px de largura não passa dos 200 de altura. */
+/* A altura sai da proporção da divisão e é o `radar-scene.js` que a escreve, depois de saber
+   quanto mede a sala. Aqui fica só o chão para o instante entre abrir e desenhar. */
 .radar-map-canvas {
-    min-height: 16rem;
-}
-
-@media (min-width: 768px) {
-    .radar-map-canvas {
-        min-height: 32rem;
-    }
+    min-height: 11.25rem;
 }
 
 /* A faixa do estado do sono. Não cresce com a coluna -- é contexto e não uma leitura --, mas
