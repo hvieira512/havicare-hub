@@ -49,8 +49,10 @@ test("a banda diz o IMEI, o estado, o modelo e a licença do dispositivo escolhi
     select(els, { device, model, capabilities: {} });
 
     assert.equal(els.deviceBandTitle.textContent, "351266770073676");
-    assert.equal(els.deviceBandMeta.textContent, "Ligado · Y6M · besenior.havicare");
+    assert.equal(els.deviceBandMeta.textContent, "Y6M · besenior.havicare");
     assert.equal(els.deviceBandDot.classList.contains("bg-success"), true);
+    // O estado é a cor da bola; a palavra só existe para quem não vê a cor.
+    assert.equal(els.deviceBandDot.getAttribute("aria-label"), "Ligado");
     assert.equal(els.deviceBand.classList.contains("d-none"), false);
 });
 
@@ -63,8 +65,9 @@ test("desligado e sem licença, a banda continua a dizer o que sabe", () => {
         capabilities: {},
     });
 
-    assert.equal(els.deviceBandMeta.textContent, "Desligado · Y6M · Sem licença");
+    assert.equal(els.deviceBandMeta.textContent, "Y6M · Sem licença");
     assert.equal(els.deviceBandDot.classList.contains("bg-success"), false);
+    assert.equal(els.deviceBandDot.getAttribute("aria-label"), "Desligado");
 });
 
 test("sem dispositivo escolhido, a banda e os separadores saem", () => {

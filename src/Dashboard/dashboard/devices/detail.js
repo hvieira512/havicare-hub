@@ -259,9 +259,14 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
             ? html`<img src="${image}" class="object-fit-contain" alt="${model || device.imei}">`
             : "<i class=\"fa-solid fa-microchip text-white-50\"></i>";
     }
+    // O estado é a cor da bola e não uma palavra a repeti-la. Quem não vê a cor lê-o no
+    // nome acessível, que é o que ali a bola é.
+    const onlineLabel = device.online ? "Ligado" : "Desligado";
     els.deviceBandDot.classList.toggle("bg-success", !!device.online);
     els.deviceBandDot.classList.toggle("bg-secondary", !device.online);
-    els.deviceBandMeta.textContent = `${device.online ? "Ligado" : "Desligado"} · ${model || "Sem modelo interno"} · ${deviceLicenseLabel(device)}`;
+    els.deviceBandDot.setAttribute("aria-label", onlineLabel);
+    els.deviceBandDot.title = onlineLabel;
+    els.deviceBandMeta.textContent = `${model || "Sem modelo interno"} · ${deviceLicenseLabel(device)}`;
     disposeTooltips(els.selectedDeviceFacts);
     els.selectedDeviceFacts.innerHTML = facts
         .map(
