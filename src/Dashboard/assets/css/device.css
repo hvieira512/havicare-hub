@@ -160,7 +160,10 @@
 
     .telemetry-table > tbody > tr {
         display: grid;
-        grid-template-columns: 2.125rem minmax(0, 1fr) auto auto;
+        /* O valor pede o que o seu conteúdo mede, mas cede quando a linha não dá: sem o
+           `minmax(0, ...)` um valor longo -- «Tempo a andar: 0 · Tempo em meditação: 0 ·
+           ...» -- estica a faixa e leva a lista inteira para fora do ecrã. */
+        grid-template-columns: 2.125rem minmax(0, 1fr) minmax(0, max-content) auto;
         align-items: center;
         padding: .5rem 0;
         border-bottom: 1px solid var(--bs-border-color);
@@ -196,6 +199,8 @@
         grid-row: 1;
         text-align: right;
         width: auto;
+        min-width: 0;
+        overflow: hidden;
     }
 
     /* Só a seta: a hora daqui esconde-se, e quem a mostra é a linha debaixo do nome. */
