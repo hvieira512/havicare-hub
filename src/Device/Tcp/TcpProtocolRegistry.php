@@ -3,6 +3,7 @@
 namespace Hub\Device\Tcp;
 
 use Hub\Device\DeviceEventDecoder;
+use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
@@ -29,6 +30,7 @@ final class TcpProtocolRegistry
     public function __construct(
         ?AdapterRegistry $adapters = null,
         ?callable $wonlexStateProvider = null,
+        ?FirmwareUpgradeStore $firmwareUpgrades = null,
     ) {
         $adapters ??= new AdapterRegistry();
         $eventDecoder = new DeviceEventDecoder();
@@ -40,7 +42,11 @@ final class TcpProtocolRegistry
         ));
         $this->register(new VivistarTcpProtocol($adapters->get('vivistar-iw') ?? new VivistarAdapter(), $eventDecoder));
         $this->register(new FourPTouchTcpProtocol($adapters->get('four-p-touch') ?? new FourPTouchAdapter(), $eventDecoder));
-        $this->register(new PillDispenserTcpProtocol($adapters->get('zayata-m228') ?? new PillDispenserAdapter(), $eventDecoder));
+        $this->register(new PillDispenserTcpProtocol(
+            $adapters->get('zayata-m228') ?? new PillDispenserAdapter(),
+            $eventDecoder,
+            $firmwareUpgrades,
+        ));
     }
 
     public function register(TcpProtocolInterface $protocol): void

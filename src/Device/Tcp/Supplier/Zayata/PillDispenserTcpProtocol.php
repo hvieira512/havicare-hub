@@ -2,9 +2,13 @@
 
 namespace Hub\Device\Tcp\Supplier\Zayata;
 
+use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
+use Hub\Device\Firmware\FirmwareUpgrade;
+use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Device\Tcp\AbstractTcpProtocol;
 use Hub\Device\Tcp\TcpResponse;
+use Hub\Protocol\Adapter\DeviceAdapterInterface;
 
 /**
  * O dispensador M228 espera que o servidor confirme cada pacote de subida: registo `0x01`,
@@ -15,6 +19,14 @@ use Hub\Device\Tcp\TcpResponse;
 final class PillDispenserTcpProtocol extends AbstractTcpProtocol
 {
     private const ACKNOWLEDGED_TYPES = ['register', 'heartbeat', 'event', 'change'];
+
+    public function __construct(
+        DeviceAdapterInterface $adapter,
+        DeviceEventDecoder $eventDecoder,
+        private readonly ?FirmwareUpgradeStore $upgrades = null,
+    ) {
+        parent::__construct($adapter, $eventDecoder);
+    }
 
     /** As respostas a uma escrita, em que o estado de cada TAG diz se ela pegou. */
     private const WRITE_REPLIES = ['write_config_ack', 'control_ack'];
@@ -61,6 +73,11 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
      */
     protected function responsesForDecoded(DeviceSession $session, array $decoded): array
     {
+        $upgrade = $this->upgradeResponse($decoded);
+        if ($upgrade !== null) {
+            return [$upgrade];
+        }
+
         $type = (string)($decoded['type'] ?? '');
         if (!in_array($type, self::ACKNOWLEDGED_TYPES, true) || ($decoded['waivesReply'] ?? false) === true) {
             return [];
@@ -74,5 +91,55 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
         ]);
 
         return [new TcpResponse($ack)];
+    }
+
+    /**
+     * O pacote seguinte da actualização de firmware, se houver uma a correr.
+     *
+     * O aparelho é que liga ao hub, por isso a transferência só anda quando ele fala: o
+     * arranque sai no primeiro heartbeat depois do pedido, e cada pedaço na confirmação do
+     * anterior.
+     */
+    private function upgradeResponse(array $decoded): ?TcpResponse
+    {
+        if ($this->upgrades === null) {
+            return null;
+        }
+
+        $imei = (string)($decoded['imei'] ?? '');
+        $state = $imei === '' ? null : $this->upgrades->load($imei);
+        if ($state === null || in_array((string)($state['status'] ?? ''), ['done', 'failed'], true)) {
+            return null;
+        }
+
+        $firmware = @file_get_contents((string)($state['path'] ?? ''));
+        if ($firmware === false) {
+            $this->upgrades->save($imei, ['status' => 'failed', 'error' => 'firmware_unreadable'] + $state);
+
+            return null;
+        }
+
+        $step = FirmwareUpgrade::advance(
+            $state,
+            $firmware,
+            (string)($decoded['type'] ?? ''),
+            (int)($decoded['status'] ?? 0),
+        );
+
+        if ($step['state'] !== $state) {
+            $this->upgrades->save($imei, $step['state']);
+        }
+
+        if ($step['body'] === null || $step['packetType'] === null) {
+            return null;
+        }
+
+        return new TcpResponse($this->encodeOutgoing([
+            'packetType' => $step['packetType'],
+            'deviceNumber' => (int)($decoded['deviceNumber'] ?? 0),
+            'serial' => random_int(1, 60000),
+            'status' => 0,
+            'appDataRaw' => $step['body'],
+        ]));
     }
 }

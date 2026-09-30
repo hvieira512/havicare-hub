@@ -11,6 +11,7 @@ use Hub\Protocol\AdapterRegistry;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\Device\Tcp\TcpMessage;
+use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Device\Tcp\TcpProtocolRegistry;
 use Hub\Device\Tcp\TcpResponse;
 
@@ -37,6 +38,7 @@ class DeviceHubServer
         int $downlinkQueueTtlSeconds = 300,
         ?LocationTelemetryEnricherContract $locationTelemetryEnricher = null,
         ?Denylist $denylist = null,
+        ?FirmwareUpgradeStore $firmwareUpgrades = null,
     ) {
         $this->whitelist = $whitelist;
         $this->denylist = $denylist;
@@ -48,7 +50,8 @@ class DeviceHubServer
         $this->identityExtractor = new DeviceIdentityExtractor($adapters);
         $this->tcpProtocols = new TcpProtocolRegistry(
             $adapters,
-            fn (DeviceSession $session): array => $this->wonlexState($session)
+            fn (DeviceSession $session): array => $this->wonlexState($session),
+            $firmwareUpgrades,
         );
         $this->downlinkQueue = $downlinkQueue;
         $this->downlinkQueueTtlSeconds = max(1, $downlinkQueueTtlSeconds);

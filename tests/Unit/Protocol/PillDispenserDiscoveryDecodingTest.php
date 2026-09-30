@@ -39,16 +39,16 @@ final class PillDispenserDiscoveryDecodingTest extends TestCase
     }
 
     /**
-     * O `0x8D` não é uma resposta que se saiba ler.
+     * O `0x8D` é a resposta à lista de parâmetros de evento, e não fecha operação nenhuma.
      *
      * Esteve dentro da gama tratada como descoberta, o que o fazia fechar como aceite
-     * qualquer operação pendente, enquanto o descodificador o via como `unknown`.
+     * qualquer escrita pendente.
      */
-    public function testAnUnnamedReplyDoesNotCloseAnything(): void
+    public function testTheEventParameterReplyDoesNotCloseAnything(): void
     {
         $decoded = $this->decode(0x8D, pack('v*', 0x1001));
 
-        self::assertSame('unknown', $decoded['type']);
+        self::assertSame('discover_event_ack', $decoded['type']);
         self::assertNull($this->protocol()->replyAccepted($decoded));
     }
 

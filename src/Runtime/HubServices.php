@@ -8,6 +8,7 @@ use Hub\Api\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceHubServer;
+use Hub\Device\Firmware\RedisFirmwareUpgradeStore;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\RedisPendingDownlinkQueue;
@@ -93,6 +94,7 @@ final class HubServices
             downlinkQueueTtlSeconds: (int)$config['hub']['downlink_queue_ttl_seconds'],
             locationTelemetryEnricher: $locationEnricher,
             denylist: $denylist,
+            firmwareUpgrades: new RedisFirmwareUpgradeStore($redis),
         );
 
         $radarLayoutSync = new RadarLayoutSync(

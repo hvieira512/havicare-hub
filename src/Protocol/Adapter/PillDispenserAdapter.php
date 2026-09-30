@@ -485,6 +485,14 @@ class PillDispenserAdapter implements DeviceAdapterInterface
             0x8A => 'discover_config_ack',
             0x8B => 'discover_status_ack',
             0x8C => 'discover_control_ack',
+            0x0D => 'discover_event',
+            0x8D => 'discover_event_ack',
+            // A actualização de firmware, que parte do servidor. O corpo destes quatro não é
+            // TFLV, e o resultado vem no `Status` do cabeçalho.
+            0x0E => 'upgrade_start',
+            0x0F => 'upgrade_data',
+            0x8E => 'upgrade_start_ack',
+            0x8F => 'upgrade_data_ack',
             default => 'unknown',
         };
     }

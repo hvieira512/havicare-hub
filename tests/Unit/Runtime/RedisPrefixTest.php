@@ -63,6 +63,7 @@ final class RedisPrefixTest extends TestCase
             'location circuit' => ['hub:location:circuit:beacondb'],
             'location resolution' => ['hub:location:resolution:861265061009822'],
             'login throttle' => ['hub:login-throttle:ip:203.0.113.9:29123456'],
+            'firmware upgrade' => ['hub:firmware-upgrade:869243062262262'],
         ];
     }
 
