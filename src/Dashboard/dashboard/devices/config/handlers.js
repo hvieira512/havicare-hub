@@ -8,6 +8,7 @@ import {
     syncConfigSectionDirty,
 } from "./panel.js";
 import { appendRepeatRow, removeRepeatRow } from "./row-editing.js";
+import { syncLoadedCellsRunout } from "./loaded-cells-runout.js";
 import { syncAlarmClockCustomVisibility } from "./inputs/capability.js";
 import { syncFallSensitivityLevels } from "./inputs/four-p-touch.js";
 import {
@@ -178,6 +179,10 @@ export function handleDeviceConfigInput(event) {
 
     if (event.target.matches("[data-time-format=\"24h\"]")) {
         normalizeTwentyFourHourTimeInput(event.target);
+    }
+
+    if (event.target.matches("[data-config-field=\"cells\"]")) {
+        syncLoadedCellsRunout(event.target);
     }
 
     syncConfigCountsFrom(event.target);

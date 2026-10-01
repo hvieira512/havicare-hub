@@ -4,7 +4,7 @@ import { html, raw } from "../../html.js";
 import { compactDetails } from "./shared.js";
 import { connectivityIcon, connectivityValue } from "./gateway.js";
 import { diaperMoistureBody, diaperMoistureRowValue } from "./diaper.js";
-import { cyclePosition, doseLabel, medicationAlarmContent } from "./medication.js";
+import { cyclePosition, cycleRunout, doseLabel, medicationAlarmContent } from "./medication.js";
 import { helpCallContent, ncsPagerContent } from "./ncs.js";
 import { locationDetails, locationValue } from "./location.js";
 import { sleepDetails, sleepQualityValue, sleepValue } from "./sleep.js";
@@ -207,6 +207,7 @@ const UPLINK_CARD_RENDERERS = {
             : "";
         const level = data.level != null ? fieldValue("level", data.level) : "";
         const inCycle = cyclePosition(data.current);
+        const runout = cycleRunout(data.remaining);
 
         return {
             value: data.remaining == null
@@ -214,11 +215,10 @@ const UPLINK_CARD_RENDERERS = {
                 : data.remaining === 0
                     ? "Nenhuma por dispensar"
                     : `${data.remaining} por dispensar`,
-            // A leitura em dias primeiro, porque é a que se encontra no prato; o número cru
-            // fica na gaveta, para o cartão não mentir se o autocolante e o plano não
-            // corresponderem.
-            details: [inCycle || cell, level].filter(Boolean).join(" · "),
-            detailsTitle: [inCycle, cell, level].filter(Boolean).join(" · "),
+            // A data primeiro: é ela que diz quando alguém tem de lá ir recarregar. A posição
+            // e o compartimento ficam no `title`, que é onde se vai ver onde carregar.
+            details: [runout ? `Acaba ${runout}` : inCycle || cell, level].filter(Boolean).join(" · "),
+            detailsTitle: [runout && `Acaba ${runout}`, inCycle, cell, level].filter(Boolean).join(" · "),
         };
     },
     // O que interessa numa toma é como ela acabou, e numa avaria é qual foi.

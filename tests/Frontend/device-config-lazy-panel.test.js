@@ -6,9 +6,9 @@ import { fileURLToPath } from "node:url";
 import { reachableFrom } from "./support/module-graph.js";
 
 /**
- * O separador «Configurações» do modal de um dispositivo é servido por vinte e um módulos ES
- * e 207 KB, e não é tocado até alguém abrir um dispositivo **e** clicar nesse separador. Eram
- * 29% dos bytes do arranque, pagos por toda a gente para servir uma minoria das visitas.
+ * O separador «Configurações» do modal de um dispositivo é servido por vinte e dois módulos
+ * ES e 209 KB, e não é tocado até alguém abrir um dispositivo **e** clicar nesse separador.
+ * Eram 29% dos bytes do arranque, pagos por toda a gente para servir uma minoria das visitas.
  *
  * Entra por `import()` no `device-modal.js`, pedido pelo gancho do separador.
  */
@@ -52,7 +52,7 @@ test("o painel de configurações continua pendurado no modal do dispositivo", (
     );
     assert.equal(
         configModulesIn(full).length,
-        21,
-        "os vinte e um módulos do cluster continuam a fazer parte do grafo",
+        22,
+        "os vinte e dois módulos do cluster continuam a fazer parte do grafo",
     );
 });

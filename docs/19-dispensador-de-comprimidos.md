@@ -601,6 +601,14 @@ O prato tem 28 compartimentos e **nenhum número impresso**. O que traz é um
 **autocolante de esquema**, removível, com grupos de doses — `1 2 3` repetidos
 para «3x por dia, 9 dias» — e uma **marca cor-de-rosa** que é o ponto de partida.
 
+**Nove alarmes e vinte e oito compartimentos não são o mesmo número porque não
+medem a mesma coisa.** Os nove alarmes são um ritmo — quantas doses por dia — e
+os 28 compartimentos são capacidade. Cada alarme gasta um compartimento, por
+isso os dias que o prato dá são `28 ÷ doses por dia`: 28 dias a uma por dia, 14
+a duas, 9 a três, 3 a nove. São exactamente os grupos que o autocolante traz
+impressos, e o carrossel atravessa os dias sem se repor — anda uma posição por
+dose até chegar ao «carregado até».
+
 O aparelho, por dentro, conta de 1 a 28 e é esse número que o `0x811A` reporta.
 **Esse número não existe em lado nenhum no prato.** Dizer a alguém «está no
 compartimento 21» não o ajuda: não há 21 para encontrar. Por isso o cartão
@@ -608,6 +616,25 @@ traduz a posição para a linguagem do autocolante — com três doses por dia, 
 posição 21 é «dia 7, 3ª dose», e sete grupos contam-se a partir da marca sem
 hesitar. O número cru fica na gaveta do cartão, porque o autocolante e o plano
 configurado podem não corresponder.
+
+### A data em que a medicação acaba
+
+Nem o número de doses nem a posição respondem à pergunta de quem cuida: **em que
+dia tenho de ir lá recarregar.** A dashboard responde-a por si, com os alarmes do
+plano, a posição do prato e o «carregado até ao compartimento» — percorre os
+alarmes a partir de agora e pára na última dose carregada.
+
+Aparece em dois sítios: no cartão «Células restantes», onde a data toma o lugar
+da posição na linha visível (a posição e o compartimento ficam no `title`), e por
+baixo do campo «Carregado até ao compartimento», onde a frase muda enquanto se
+escreve o número — é aí que se vê se o que se carregou chega.
+
+**A conta não é `28 ÷ doses por dia`.** Essa divisão só vale com o carrossel no
+zero; a partir do momento em que o prato anda, o que conta é a posição. E há três
+casos em que a dashboard se cala, porque não há resposta honesta: sem plano
+configurado não há ritmo, com um período de plano já terminado os alarmes que
+faltavam nunca tocam, e com o «carregado até» abaixo da posição não há doses
+nenhumas por dispensar.
 
 O procedimento, e a ordem importa:
 
@@ -652,13 +679,21 @@ distingue esse estado de um dia normal.
 
 > **O prato volta ao zero quando a última dose carregada é levantada — e só
 > então.** Se ela falhar, fica onde está e a dose seguinte passa para lá do
-> carregamento. Três medições, e a diferença é sempre o desfecho da última:
+> carregamento. O que repõe é chegar ao «carregado até», e **não** esgotar os
+> alarmes do dia:
 >
-> | posição no fim | última dose | repôs-se |
-> |---|---|---|
-> | 3, com o carregado em 3 | tomada (`7`) | sim, 34 s depois |
-> | 7, com o carregado em 7 | falhada (`6`) | não — a seguinte foi ao 8 |
-> | 4, com o carregado em 4 | tomada (`7`) | sim, 42 s depois |
+> | posição no fim | alarmes do dia | última dose | repôs-se |
+> |---|---|---|---|
+> | 3, com o carregado em 3 | 3 | tomada (`7`) | sim, 34 s depois |
+> | 7, com o carregado em 7 | — | falhada (`6`) | não — a seguinte foi ao 8 |
+> | 4, com o carregado em 4 | 4 | tomada (`7`) | sim, 42 s depois |
+> | 3, com o carregado em 6 | 2 | tomada (`7`) | **não** |
+>
+> A última linha é a que separa as duas explicações: nas três primeiras o número
+> de alarmes e o de compartimentos carregados coincidiam, e por isso nenhuma
+> delas distinguia uma causa da outra. Medida a 01/10/2026, com dois alarmes
+> contra seis carregados, as duas doses foram tomadas a horas e o prato ficou na
+> posição 3 com três por dispensar.
 >
 > Repor-se não resolve nada: com o «carregado até» intacto, os restantes voltam ao
 > número cheio e o aparelho recomeça a dispensar os mesmos compartimentos, agora

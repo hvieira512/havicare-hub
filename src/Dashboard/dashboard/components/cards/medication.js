@@ -1,5 +1,6 @@
 import { fieldValue } from "../../format.js";
 import { html, raw } from "../../html.js";
+import { runoutAt, runoutLabel } from "../../devices/medication-runout.js";
 import { state } from "../../state.js";
 
 /**
@@ -126,6 +127,17 @@ export function cyclePosition(current) {
     const dose = ((current - 1) % perDay) + 1;
 
     return perDay === 1 ? `Dia ${day}` : `Dia ${day}, ${dose}ª dose`;
+}
+
+/** Quando sai a última dose carregada, em palavras. Vazio sem plano ou fora do período. */
+export function cycleRunout(remaining) {
+    const configurations = state.selectedDetail?.effectiveConfigurations;
+
+    return runoutLabel(runoutAt({
+        doses: remaining,
+        plans: configurations?.medication_reminders?.plans,
+        period: configurations?.medication_period,
+    }));
 }
 
 /**

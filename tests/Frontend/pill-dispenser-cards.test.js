@@ -195,3 +195,47 @@ test("cada avaria tem tradução", () => {
         assert.equal(fieldValue("fault", fault), label);
     }
 });
+
+/** Quantas doses faltam não diz quando é preciso recarregar; a data diz. */
+test("com plano, a linha visível do cartão diz quando a medicação acaba", (t) => {
+    const previous = state.selectedDetail;
+    t.after(() => {
+        state.selectedDetail = previous;
+    });
+    state.selectedDetail = {
+        effectiveConfigurations: {
+            medication_reminders: {
+                plans: [
+                    { slot: 1, hour: 8, minute: 0 },
+                    { slot: 2, hour: 20, minute: 0 },
+                ],
+            },
+        },
+    };
+
+    const html = card("cells_remaining", { remaining: 3, total: 28, current: 3, level: "low" });
+
+    assert.match(html, /Acaba /);
+    assert.match(html, /A acabar/);
+    assert.match(html, /title="[^"]*Compartimento 3 de 28[^"]*"/);
+    assert.match(html, /title="[^"]*Dia 2, 1ª dose[^"]*"/);
+});
+
+/** Um período já terminado suspende o plano, e os alarmes que faltavam nunca tocam. */
+test("com o período do plano terminado, o cartão volta a falar em compartimentos", (t) => {
+    const previous = state.selectedDetail;
+    t.after(() => {
+        state.selectedDetail = previous;
+    });
+    state.selectedDetail = {
+        effectiveConfigurations: {
+            medication_reminders: { plans: [{ slot: 1, hour: 8, minute: 0 }] },
+            medication_period: { enabled: true, startDate: "2020-01-01", endDate: "2020-01-02" },
+        },
+    };
+
+    const html = card("cells_remaining", { remaining: 3, total: 28, current: 3, level: "low" });
+
+    assert.doesNotMatch(html, /Acaba /);
+    assert.match(html, /Dia 3/);
+});

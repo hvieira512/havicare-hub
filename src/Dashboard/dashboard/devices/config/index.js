@@ -11,6 +11,7 @@ import {
 import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
 import { configCatalogSections } from "./catalog-model.js";
 import { CONFIG_INPUTS } from "./inputs/index.js";
+import { loadedCellsRunoutText } from "./loaded-cells-runout.js";
 import { toggleField, toggleValue } from "./inputs/generic.js";
 import { jsonInput, readJson } from "./readers.js";
 import {
@@ -297,13 +298,17 @@ function previousValueSummary(entry, desired, isStored) {
 function settingState(entry, desired, isStored, deliveryMeta, showBadge) {
     const summary = valueSummary(entry, desired, isStored);
     const previous = previousValueSummary(entry, desired, isStored);
+    // A data acompanha o que se escreve, e por isso não entra no par limpo/alterado.
+    const runout = entry.key === "loaded_cells"
+        ? `<div class="small text-secondary" data-loaded-runout>${esc(loadedCellsRunoutText(desired?.cells))}</div>`
+        : "";
 
     return {
         summary: `
             <div class="small text-secondary" data-config-summary>
                 <span class="config-when-clean">${esc(summary)}</span>
                 <span class="config-when-changed text-warning-emphasis">${esc(previous)}</span>
-            </div>`,
+            </div>${runout}`,
         badge: showBadge
             ? `
             <span class="config-when-clean">${stateBadge(deliveryMeta.label, deliveryMeta.tone)}</span>
