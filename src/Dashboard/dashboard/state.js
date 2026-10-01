@@ -177,9 +177,15 @@ function resetActivityPaging() {
     state.downlinkCumulative = false;
 }
 
+const blankDetailFilters = () => ({ from: "", to: "", type: "all", q: "" });
+
 export function selectImei(imei) {
     if (state.selectedImei !== imei) {
         resetActivityPaging();
+        // Os filtros são do histórico do aparelho anterior: herdados, escondem as leituras do
+        // novo e o painel passa a dizer que não há nenhumas.
+        state.detailFilters = blankDetailFilters();
+        state.detailFiltersDraft = blankDetailFilters();
     }
     state.selectedImei = imei;
 }
@@ -188,7 +194,8 @@ export function clearSelection() {
     state.selectedImei = null;
     state.selectedDetail = null;
     resetActivityPaging();
-    state.detailFiltersDraft = { from: "", to: "", type: "all", q: "" };
+    state.detailFilters = blankDetailFilters();
+    state.detailFiltersDraft = blankDetailFilters();
 }
 
 const clampPage = (page, totalPages) =>

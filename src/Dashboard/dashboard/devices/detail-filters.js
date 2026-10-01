@@ -224,34 +224,22 @@ export function populateDetailFilterTypes() {
         allDetailItems().filter((item) => item._source !== "command"),
     );
     const signature = observedTypes.join("|");
-    const hasCurrentValue = Array.from(select.options || []).some(
-        (option) => option.value === currentValue,
-    );
 
+    // Refeito e não acrescentado: acrescentar deixava no selector os tipos do aparelho
+    // anterior, e um radar ficava a oferecer «Pressão arterial». Quem está escolhido volta
+    // logo abaixo.
     if (select.dataset.detailFilterTypesSignature !== signature) {
-        const existingTypes = new Set(
-            Array.from(select.options || [])
-                .map((option) => option.value)
-                .filter((value) => value && value !== "all"),
-        );
-        const missingTypes = observedTypes.filter((type) => !existingTypes.has(type));
-
-        if (select.dataset.detailFilterTypesSignature) {
-            for (const type of missingTypes) {
-                select.insertAdjacentHTML("beforeend", filterTypeOption(type));
-            }
-        } else {
-            select.innerHTML = [
-                "<option value=\"all\">Todos</option>",
-                ...observedTypes.map(filterTypeOption),
-            ].join("");
-        }
-
+        select.innerHTML = [
+            "<option value=\"all\">Todos</option>",
+            ...observedTypes.map(filterTypeOption),
+        ].join("");
         select.dataset.detailFilterTypesSignature = signature;
     }
 
+    // Um tipo escolhido que ainda não apareceu na janela carregada continua a oferecer-se:
+    // senão o selector saltava para «Todos» e o filtro aplicado deixava de se ver.
     if (currentValue && currentValue !== "all") {
-        if (!hasCurrentValue) {
+        if (!observedTypes.includes(currentValue)) {
             select.insertAdjacentHTML("beforeend", filterTypeOption(currentValue));
         }
         select.value = currentValue;
