@@ -447,33 +447,40 @@ export function renderConfigSection(
             ? renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "", verb)
             : "";
     const state = settingState(entry, desired, isStored, deliveryMeta, showConfigurationBadge);
+    // Sem campos, o cartão é só uma acção, e o botão sobe à linha do título -- como o controlo
+    // de uma definição que cabe numa linha. Em linha própria ficava com o lado esquerdo vazio.
+    const fields = drawsFields
+        ? (verbs.length > 0 ? "" : renderConfigInputs(entry, desired, { ...meta, protocol }))
+        : unitGroup(control, entry);
+    const inlineCommands = fields.trim() === "" && commands !== "";
 
     // O bloco do título leva `min-w-0` para encolher em vez de empurrar a pastilha de estado
     // para a linha de baixo.
     return `
         <section class="config-setting px-3 py-2 border-bottom" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-label="${esc(entry.label || entry.key)}"${confirmAttrs}${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
-            <div class="d-flex align-items-start gap-2">
+            <div class="d-flex gap-2 ${inlineCommands ? "align-items-center" : "align-items-start"}">
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
                     ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
                     ${state.summary}
                 </div>
-                <div class="flex-shrink-0">${state.badge}</div>
+                ${state.badge === "" ? "" : `<div class="flex-shrink-0">${state.badge}</div>`}
+                ${inlineCommands ? `<div class="flex-shrink-0 d-flex gap-2">${commands}</div>` : ""}
             </div>
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}
-            ${drawsFields
-                ? `
+            ${fields.trim() === ""
+                ? ""
+                : drawsFields
+                    ? `
             <form class="mt-2" data-config-form data-config-key="${esc(entry.key)}">
-                ${verbs.length > 0 ? "" : renderConfigInputs(entry, desired, { ...meta, protocol })}
+                ${fields}
                 ${commands === ""
                     ? ""
                     : `<div class="d-flex justify-content-end gap-2 mt-2">${commands}</div>`}
             </form>`
-                : control === "" && commands === ""
-                    ? ""
                     : `
             <div class="d-flex align-items-center justify-content-end gap-2 mt-2">
-                ${unitGroup(control, entry)}
+                ${fields}
                 ${commands}
             </div>`}
             ${renderConfigFeedback(entry.key, uiState)}
