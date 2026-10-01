@@ -491,6 +491,32 @@ Medido a 25/09/2026, com o interruptor como única variável:
 
 Aceita, guarda, devolve, e ignora. É uma gaveta.
 
+**Reconfirmado no firmware `0x0503`, a 01/10/2026.** Com o interruptor desligado,
+o alarme 2 tocou às 15:51 e o alarme 1 às 16:04, cada um a gastar o seu
+compartimento. A escrita foi aceite com as 27 TAGs e nenhuma recusada.
+
+> Uma medição intermédia dessa tarde pareceu dizer o contrário — um alarme
+> desligado ficou calado — e a causa era outra, descrita a seguir: faltavam-lhe
+> dois minutos para ser armado. Um resultado animador numa experiência contra
+> hardware não se dá por bom sem o controlo que o tente derrubar.
+
+### Um alarme precisa de minutos para ser armado
+
+**Um alarme marcado para menos de dois minutos no futuro não chega a tocar.** O
+aparelho aceita a escrita, confirma as TAGs todas e não faz nada à hora marcada.
+
+Medido a 01/10/2026, com a mesma trama a escrever dois alarmes:
+
+| plano entregue | alarme | distância | |
+|---|---|---|---|
+| 15:37:04 | 15:39 | 1 min 56 s | **não tocou** |
+| 15:37:04 | 15:42 | 4 min 56 s | tocou |
+| 15:55:45 | 16:04 | 8 min 15 s | tocou |
+
+O limite exacto não está medido; o que está é que dois minutos não chegam e cinco
+chegam. Importa a quem configura: uma toma marcada para já não acontece, e nem o
+aparelho nem a dashboard o dizem.
+
 **`00:00` não serve de vazio: é meia-noite a sério.** Com os nove slots a zero e
 o relógio do aparelho posto às 23:57, à meia-noite o alarme 1 percorreu
 `1 → 2 → 3 → 7` e o carrossel andou de 7 para 8. Um slot deixado por preencher
@@ -561,10 +587,16 @@ de pressão para a chamada de emergência), pela mesma razão que o `0xA124` e o
 sincronização forçada · `0xA004` novo registo · `0xA101` calibrar relógio ·
 `0xA102` silenciar · `0xA103` repor o prato · `0xA123` toma antecipada.
 
+> **O `0xA001` é confirmado sem o aparelho reiniciar.** Medido a 01/10/2026 no
+> firmware `0x0503`: o comando voltou acusado, e não houve registo novo nem falha
+> de heartbeat — a sessão TCP nunca se interrompeu. Quem precisar de uma ligação
+> nova — para entregar uma trama que espere por ela, por exemplo — tem de a
+> provocar do lado do hub.
+
 A lista acaba aqui. O `0xA124` (rodar para uma célula indicada) e o `0xA125`
-(pausa da medicação) **não existem neste firmware**: a descoberta de parâmetros
-não os anuncia, e um `0xA124` mandado à mão é acusado com o valor ecoado — `0E`,
-`05`, `19` — sem que o prato mexa e sem que o `0x811A` mude. Medido a 24/09/2026
+(pausa da medicação) **não existem neste firmware**: um `0xA124` mandado à mão é
+acusado com o valor ecoado — `0E`, `05`, `19` — sem que o prato mexa e sem que o
+`0x811A` mude. Medido a 24/09/2026
 três vezes, com a avaria `0x8122` activa e depois com ela limpa, para excluir que
 fosse o índice do prato a ser recusado.
 
@@ -582,8 +614,23 @@ controlo dela acaba mesmo no `0xA123`. O fornecedor confirmou-o a 2026-09-28:
 > afirmar seja o que for sobre ela.
 
 O `0x1063` (pausa do toque) é outro caso e esse **é** do tipo `0x02`, na linha
-2072 — existe para nós, mas a descoberta de parâmetros desta unidade não o
-anuncia, e aí sim a razão é a idade do firmware.
+2072 — existe para nós, mas este aparelho recusa-o: lido a 01/10/2026 no firmware
+`0x0503`, voltou com estado `1`, TAG inválida. O mesmo para o `0x101D`.
+
+> **A descoberta não é exaustiva, e por isso não serve de prova de ausência.**
+> Três TAGs que ela não anuncia funcionam: o `0x8139` (estado de toma do nono
+> alarme) e o `0x1055` (minuto final do não incomodar) respondem com estado `0`,
+> e o `0xA123` é a toma antecipada que o hub usa todos os dias. Confirmado a
+> 01/10/2026 nas três listas. O argumento que vale contra o `0xA124`/`0xA125`
+> continua a ser o das duas tabelas e a palavra do fornecedor; o «a descoberta não
+> os anuncia» não vale nada. A prova de ausência que vale é a leitura voltar com
+> estado `1`.
+
+**O `0xA021`–`0xA023` está anunciado e o `0x8081` diz que não.** A lista de
+controlo traz as três TAGs do servidor, mas o identificador de funções adicionais
+veio `4` — só o bit 2, actualização remota —, com o bit 0 («server switching») a
+zero. Não está medido qual dos dois manda, e enquanto não estiver, reapontar este
+aparelho para outro servidor é uma hipótese e não um procedimento.
 
 Não há por isso forma remota de rodar o prato sem consumir uma dose: o `0xA103`
 reassenta-o sem mexer no contador, e o `0xA123` anda um compartimento mas gasta a
@@ -745,6 +792,27 @@ o que se tentou primeiro.
 
 Saltar o primeiro passo deixa o contador do aparelho a meio da volta anterior, e
 a partir daí tudo o que a dashboard mostra sobre posições está deslocado.
+
+### Uma actualização de firmware apaga a configuração do aparelho
+
+A subida de `0x0502` para `0x0503`, a 01/10/2026, repôs valores de fábrica. Lido
+do aparelho logo a seguir, antes de lhe escrevermos por cima:
+
+| | antes | depois |
+|---|---|---|
+| `0x101C` carregados | 6 | **28** |
+| `0x1021`/`0x1031` alarme 1 | 10:47 | **24:60** |
+| `0x1022`/`0x1032` alarme 2 | 10:50 | **24:60** |
+| `0x1054` não incomodar, hora final | 23 | **6** |
+
+O prato também se repôs: posição 0.
+
+**E o hub não deu por nada.** A dashboard continuou a mostrar os alarmes antigos
+e a data em que a medicação acabaria, porque é isso que está guardado como
+aplicado. Durante esse tempo o aparelho não tinha alarme nenhum e nada no ecrã o
+dizia. Quem actualizar o firmware de uma unidade instalada **tem de reconfigurar
+o plano e o carregamento a seguir**, e confirmá-los com uma sincronização — a
+configuração do hub é a intenção, não a verdade do aparelho.
 
 ### Duas definições que só existem no aparelho
 
