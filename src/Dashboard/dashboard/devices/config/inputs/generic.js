@@ -3,7 +3,7 @@ import { field } from "../../../components/form-field.js";
 import { renderPhoneControl, resetPhoneControls } from "../../../phone.js";
 import { protocolPhonebookConstraints } from "../protocol-catalog.js";
 import { boolValue } from "../normalizers.js";
-import { enabledSwitch, numberField } from "./shared.js";
+import { intervalToggle, numberField } from "./shared.js";
 import {
     firstFieldName,
     readCheckbox,
@@ -91,18 +91,8 @@ function pushMessageInput(_entry, desired) {
     );
 }
 
-// Um campo só: o nome da definição já está na linha de cima e a unidade está colada ao
-// campo, e por isso o rótulo sai e o campo encosta à direita.
 function intervalToggleInput(_entry, desired) {
-    return `
-        <div class="d-flex align-items-center gap-3">
-            ${enabledSwitch(boolValue(desired.enabled, true))}
-            ${numberField("intervalMinutes", desired.intervalMinutes ?? 60, {
-                unit: "min",
-                ariaLabel: "Intervalo",
-                cls: "flex-nowrap w-auto ms-auto",
-            })}
-        </div>`;
+    return intervalToggle(desired, "intervalMinutes", { fallback: 60, unit: "min" });
 }
 
 export function contactsInput(entry, desired, meta = {}) {

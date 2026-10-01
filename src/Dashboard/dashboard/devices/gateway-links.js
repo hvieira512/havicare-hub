@@ -1,4 +1,5 @@
-const normalizeKey = (value) => String(value || "").trim().toLowerCase();
+/** A chave de um gateway compara-se sempre assim: o MAC chega com caixa e espaços à mistura. */
+export const normalizeKey = (value) => String(value || "").trim().toLowerCase();
 
 export function gatewayKeysFromLinks(links) {
     return [...new Set(

@@ -6,7 +6,7 @@ import {
 import { esc } from "../format.js";
 import { state } from "../state.js";
 import { linksToGateway, normalizeDeviceType } from "../domain.js";
-import { eligibleGateways, gatewayLinkChanges } from "./gateway-links.js";
+import { eligibleGateways, gatewayLinkChanges, normalizeKey } from "./gateway-links.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { linkSignal, signalMeter } from "./gateway-signal.js";
 
@@ -29,7 +29,7 @@ export function selectedGatewayKeys() {
         ) || []),
     ]
         .filter((input) => input.checked)
-        .map((input) => String(input.dataset.gatewayKey || "").trim().toLowerCase())
+        .map((input) => normalizeKey(input.dataset.gatewayKey))
         .filter(Boolean);
 }
 
@@ -89,7 +89,7 @@ const GATEWAY_THUMB_PLACEHOLDER = `<svg class="gateway-card-thumb-icon text-seco
  * os estados de foco vivem no CSS, e duplicar a marcação era duplicar essa contratação.
  */
 export function gatewayCardMarkup(gateway, checked, signal = null) {
-    const key = String(gateway.imei || "").trim().toLowerCase();
+    const key = normalizeKey(gateway.imei);
     const model = String(gateway.model || "").trim();
     const image = String(gateway.image || "").trim();
     const thumb = image
@@ -113,16 +113,14 @@ export function gatewayCardMarkup(gateway, checked, signal = null) {
  * mostra sinal nenhum, em vez de mostrar o de outro dispositivo.
  */
 function signalsForEditedDevice() {
-    const editing = String(els.deviceImei?.value || "").trim().toLowerCase();
-    const selected = String(
-        state.selectedDetail?.device?.imei || "",
-    ).trim().toLowerCase();
+    const editing = normalizeKey(els.deviceImei?.value);
+    const selected = normalizeKey(state.selectedDetail?.device?.imei);
     if (!editing || editing !== selected) return new Map();
 
     const signals = new Map();
     for (const linked of state.selectedDetail?.linkedDevices || []) {
         const signal = linkSignal(linked);
-        const key = String(linked.deviceKey || "").trim().toLowerCase();
+        const key = normalizeKey(linked.deviceKey);
         if (key && signal) signals.set(key, signal);
     }
 
@@ -134,7 +132,7 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
     if (!list) return;
 
     const selected = new Set(
-        selectedKeys.map((key) => String(key || "").trim().toLowerCase()),
+        selectedKeys.map(normalizeKey),
     );
     disposeTooltips(list);
     if (gateways.length === 0) {
@@ -145,7 +143,7 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
         const signals = signalsForEditedDevice();
         list.innerHTML = gateways
             .map((gateway) => {
-                const key = String(gateway.imei || "").trim().toLowerCase();
+                const key = normalizeKey(gateway.imei);
                 return gatewayCardMarkup(
                     gateway,
                     selected.has(key),

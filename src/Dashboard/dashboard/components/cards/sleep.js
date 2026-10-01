@@ -26,6 +26,10 @@ const duration = (minutes) =>
         ? `${Math.floor(minutes / 60)}h ${Math.round(minutes % 60)}m`
         : `${Math.round(minutes)} min`;
 
+/**
+ * A hora, ou nada se não se conseguir ler. Difere do `timeOnly`, que mostra o valor em cru
+ * quando não o percebe: a frase «Das ... às ...» ou sai inteira ou não sai.
+ */
 const clock = (value) => {
     const parsed = Date.parse(value ?? "");
     return Number.isNaN(parsed)

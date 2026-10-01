@@ -1,4 +1,5 @@
 import { esc } from "../../../format.js";
+import { boolValue } from "../normalizers.js";
 
 /**
  * As peças que os campos de todos os fornecedores partilham: um contador de identificadores,
@@ -37,6 +38,25 @@ export function enabledSwitch(enabled, cls = "") {
         <div class="form-check form-switch${cls ? ` ${cls}` : ""}">
             <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
             <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
+        </div>`;
+}
+
+/**
+ * Um interruptor e o intervalo dele, lado a lado.
+ *
+ * Um campo só: o nome da definição já está na linha de cima e a unidade está colada ao campo,
+ * e por isso o rótulo sai e o campo encosta à direita.
+ */
+export function intervalToggle(desired, field, { fallback, unit, bounds = {} }) {
+    return `
+        <div class="d-flex align-items-center gap-3">
+            ${enabledSwitch(boolValue(desired.enabled, true))}
+            ${numberField(field, desired[field] ?? fallback, {
+                ...bounds,
+                unit,
+                ariaLabel: "Intervalo",
+                cls: "flex-nowrap w-auto ms-auto",
+            })}
         </div>`;
 }
 

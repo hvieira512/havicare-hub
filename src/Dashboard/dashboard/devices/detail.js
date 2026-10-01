@@ -375,9 +375,7 @@ export function telemetryActivityRow(payload) {
     // posturas e guarda para aqui as coordenadas e as pessoas que não couberam.
     const at = payload.occurredAt || payload.recordedAt;
 
-    const plainDetail = detail
-        .replace(/<br\s*\/?>/gi, " · ")
-        .replace(/<[^>]*>/g, "");
+    const plainDetail = plainText(detail);
     const detailText = card.detailsTitle || plainDetail;
 
     return {

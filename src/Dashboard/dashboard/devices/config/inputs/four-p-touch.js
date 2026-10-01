@@ -2,7 +2,7 @@ import { esc } from "../../../format.js";
 import { renderPhoneControl } from "../../../phone.js";
 import { boolValue } from "../normalizers.js";
 import { readTakePills, takePillsInput } from "../four-p-touch-take-pills.js";
-import { enabledSwitch, numberField } from "./shared.js";
+import { intervalToggle } from "./shared.js";
 import {
     readCheckbox,
     readNumber,
@@ -105,20 +105,12 @@ function soundProfileInput(desired) {
         </div>`;
 }
 
-// Um campo só: o nome da definição já está na linha de cima e a unidade está colada ao
-// campo, e por isso o rótulo sai e o campo encosta à direita.
 function intervalHoursToggleInput(desired) {
-    return `
-        <div class="d-flex align-items-center gap-3">
-            ${enabledSwitch(boolValue(desired.enabled, true))}
-            ${numberField("intervalHours", desired.intervalHours ?? 2, {
-                min: 1,
-                max: 12,
-                unit: "h",
-                ariaLabel: "Intervalo",
-                cls: "flex-nowrap w-auto ms-auto",
-            })}
-        </div>`;
+    return intervalToggle(desired, "intervalHours", {
+        fallback: 2,
+        unit: "h",
+        bounds: { min: 1, max: 12 },
+    });
 }
 
 const languageTimezonePresetOptions = [
