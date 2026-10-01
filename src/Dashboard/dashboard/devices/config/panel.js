@@ -171,8 +171,12 @@ export async function saveDeviceConfigurations(container) {
         button.disabled = true;
     }
 
+    const imei = state.deviceModal.imei;
     try {
-        const result = await apiSaveConfiguration(state.deviceModal.imei, { configurations: changed });
+        const result = await apiSaveConfiguration(imei, { configurations: changed });
+        // Trocou-se de aparelho enquanto isto viajava: a resposta é do anterior e não pode
+        // escrever as configurações de quem está agora no ecrã.
+        if (state.deviceModal.imei !== imei) return;
         if (result.error) {
             toast("error", result.error.message || "Não foi possível enviar as alterações");
             return;
@@ -240,16 +244,19 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
     setConfigUi(key, { phase: "submitting" });
     renderDeviceConfigurationModal();
 
+    const imei = state.deviceModal.imei;
     try {
         const isTransientAction = section.dataset.configTransient === "1";
         const capabilityKey = section.dataset.capabilityKey || section.dataset.configKey || "";
         const result = isTransientAction
-            ? await apiRequestCapability(state.deviceModal.imei, capabilityKey, payload)
-            : await apiSaveConfiguration(state.deviceModal.imei, {
+            ? await apiRequestCapability(imei, capabilityKey, payload)
+            : await apiSaveConfiguration(imei, {
                     configurations: {
                         [key]: payload,
                     },
                 });
+        // A resposta do aparelho anterior não escreve no modal de quem está agora no ecrã.
+        if (state.deviceModal.imei !== imei) return;
         if (result.error) {
             setConfigUi(key, {
                 phase: "idle",
