@@ -13,9 +13,15 @@ export function installDeferredFetch() {
 
     return {
         pending,
-        /** Responde ao pedido em fila cujo URL contenha `match`, e deixa correr o que se segue. */
+        /**
+         * Responde ao pedido em fila cujo URL contenha `match`, e deixa correr o que se segue.
+         * O exacto ganha ao que só contém: `/api/devices/x` é prefixo de `/api/devices/x/stream`.
+         */
         async respond(match, body) {
-            const index = pending.findIndex((entry) => entry.url.includes(match));
+            const exact = pending.findIndex((entry) => entry.url === match);
+            const index = exact === -1
+                ? pending.findIndex((entry) => entry.url.includes(match))
+                : exact;
             if (index === -1) {
                 throw new Error(`Nenhum pedido pendente para «${match}»`);
             }

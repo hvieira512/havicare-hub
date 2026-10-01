@@ -32,7 +32,7 @@ import {
     renderSelection as renderSelectionDetail,
     saveSelectedDeviceToStorage,
 } from "./detail.js";
-import { connectDeviceStream, disconnectDeviceStream } from "./stream.js";
+import { connectDeviceStream, disconnectDeviceStream, isDeviceStreamFor } from "./stream.js";
 
 /**
  * A coluna da esquerda: a lista, a paginação, a busca e o modal de escolher dispositivo.
@@ -443,11 +443,14 @@ async function loadDevice(imei) {
     if (generation !== deviceLoadGeneration) {
         return false;
     }
-    disconnectDeviceStream();
+    // Um filtro ou uma página da lista recarregam o dispositivo que já está escolhido. Isso
+    // não é trocar de aparelho, e rasgar o stream para o reabrir perdia o que ele entregou.
+    const changingDevice = !isDeviceStreamFor(imei);
+    if (changingDevice) disconnectDeviceStream();
     setSelectedDetail(detail);
     resetDetailFiltersDraft();
     renderSelectionDetail();
-    connectDeviceStream(imei);
+    if (changingDevice) connectDeviceStream(imei);
     return true;
 }
 

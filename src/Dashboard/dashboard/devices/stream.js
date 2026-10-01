@@ -41,6 +41,11 @@ export function isDeviceStreamLive() {
     return streamLive;
 }
 
+/** Se já há stream aberto ou a abrir para este dispositivo. */
+export function isDeviceStreamFor(imei) {
+    return imei !== "" && imei === currentImei && abortController !== null;
+}
+
 /**
  * Um separador em segundo plano não drena o stream e deixa o servidor a encher buffer. Ao
  * voltar religa-se do zero, e o `snapshot` fecha o buraco no histórico.
