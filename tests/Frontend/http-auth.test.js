@@ -76,3 +76,30 @@ test("um 401 dispara o refresh e repete o pedido com o token novo", async () => 
 
     clearDashboardApiToken();
 });
+
+/**
+ * Sair com uma renovação no ar: a resposta chega depois e repunha o token, o que acendia o
+ * stream outra vez com o ecrã de entrada à frente de quem opera.
+ */
+test("uma renovação que chega depois do logout não repõe o token", async () => {
+    setDashboardApiToken({ access_token: "velho", expires_at: "2099-01-01T00:00:00Z" });
+
+    let releaseLogin = () => {};
+    const heldLogin = () => new Promise((resolve) => {
+        releaseLogin = () => resolve(jsonResponse(200, {
+            token: { access_token: "novo", expires_at: "2099-01-01T00:00:00Z" },
+        }));
+    });
+    globalThis.fetch = (url) => String(url).includes("/api/auth/login")
+        ? heldLogin()
+        : Promise.resolve(jsonResponse(401, { error: { code: "unauthorized" } }));
+
+    const pending = requestJson("/api/x");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    clearDashboardApiToken();
+    releaseLogin();
+    await pending;
+
+    assert.equal(getDashboardApiToken(), null);
+});

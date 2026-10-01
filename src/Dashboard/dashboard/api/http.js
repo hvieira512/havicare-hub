@@ -3,6 +3,8 @@
 // o browser reenvia sozinho e que este código não consegue ler. O `set`/`clear` avisam a app
 // pelo evento.
 let apiToken = null;
+/** Sobe a cada limpeza: é por ele que uma renovação sabe se ainda é a sessão dela. */
+let tokenEpoch = 0;
 export const getDashboardApiToken = () => apiToken;
 
 export const authHeaders = () => {
@@ -34,6 +36,9 @@ export const clearDashboardApiToken = () => {
         window.clearTimeout(tokenRefreshTimer);
         tokenRefreshTimer = null;
     }
+    // Invalida a renovação que estiver no ar: o pedido dela saiu antes do logout e o servidor
+    // ainda o honra, mas a resposta já não pode repor a credencial.
+    tokenEpoch += 1;
     apiToken = null;
     emitTokenUpdated();
 };
@@ -162,11 +167,13 @@ const refreshAccessToken = async () => {
         return tokenRefreshInFlight;
     }
 
+    const epoch = tokenEpoch;
     tokenRefreshInFlight = withSessionLock(async () => {
         try {
             const response = await requestSessionToken();
             const payload = await parseJsonResponse(response);
             const nextToken = payload?.token?.access_token || "";
+            if (epoch !== tokenEpoch) return null;
             if (response.ok && nextToken !== "") {
                 setDashboardApiToken(payload.token);
                 return payload.token;
