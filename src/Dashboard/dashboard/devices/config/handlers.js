@@ -244,6 +244,11 @@ export function resetConfigPane(pane) {
                 syncSwitchLabel(input);
                 continue;
             }
+            // Num grupo de rádios o `value` é a identidade da opção: o que se repõe é a marca.
+            if (input.type === "radio") {
+                input.checked = String(value ?? "") === input.value;
+                continue;
+            }
             input.value = value ?? "";
         }
     }
