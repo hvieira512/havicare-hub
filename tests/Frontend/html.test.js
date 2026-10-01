@@ -198,3 +198,34 @@ test("o compartimento reportado por um dispensador não escreve marcação", () 
 
     assert.equal(root.querySelector("img"), null);
 });
+
+/** Dois destinos e duas regras: os detalhes são marcação, o título é texto para um atributo. */
+test("o nível reportado por um dispensador não escreve marcação", () => {
+    state.selectedDetail = { model: { deviceType: "pill_dispenser" } };
+    const content = uplinkCardContent("cells_remaining", {
+        remaining: 5,
+        level: "<img src=x onerror=alert(1)>",
+    });
+
+    assert.doesNotMatch(String(content.details), /<img/i);
+});
+
+test("o título de um dispensador não passa pelo escapamento duas vezes", () => {
+    state.selectedDetail = { model: { deviceType: "pill_dispenser" } };
+    const content = uplinkCardContent("cells_remaining", {
+        remaining: 5,
+        current: "A & B",
+        total: 28,
+    });
+    const root = parseFragment(telemetryCard({
+        icon: "fa-x",
+        title: "Doses",
+        details: content.details,
+        detailsTitle: content.detailsTitle,
+    }));
+
+    assert.match(
+        root.querySelector(".telemetry-row-details")?.getAttribute("title") ?? "",
+        /A & B/,
+    );
+});

@@ -203,7 +203,7 @@ const UPLINK_CARD_RENDERERS = {
     // quem põe a medicação não sabe em que compartimento o aparelho vai pegar a seguir.
     cells_remaining: (data) => {
         const cell = data.current != null && data.total != null
-            ? html`Compartimento ${data.current} de ${data.total}`
+            ? `Compartimento ${data.current} de ${data.total}`
             : "";
         const level = data.level != null ? fieldValue("level", data.level) : "";
         const inCycle = cyclePosition(data.current);
@@ -217,7 +217,14 @@ const UPLINK_CARD_RENDERERS = {
                     : `${data.remaining} por dispensar`,
             // A data primeiro: é ela que diz quando alguém tem de lá ir recarregar. A posição
             // e o compartimento ficam no `title`, que é onde se vai ver onde carregar.
-            details: joinMarkup([runout ? html`Acaba ${runout}` : inCycle || cell, level]),
+            //
+            // As peças são texto do aparelho: os detalhes escapam-nas uma a uma, e o título
+            // fica em texto porque vai para um atributo, que quem o monta escapa.
+            details: joinMarkup(
+                [runout ? `Acaba ${runout}` : inCycle || cell, level]
+                    .filter(Boolean)
+                    .map((part) => html`${part}`),
+            ),
             detailsTitle: [runout && `Acaba ${runout}`, inCycle, cell, level].filter(Boolean).join(" · "),
         };
     },
