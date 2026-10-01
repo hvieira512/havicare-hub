@@ -261,12 +261,14 @@ function valueSummary(entry, desired, isStored) {
     if (!isStored) return "";
 
     const value = desired?.[entry.fields?.[0] || ""];
-    if (typeof value !== "number") return "";
-
     const unit = unitLabel(entry);
+    // Sem unidade o número não é uma medida, é um código do fabricante -- o `3` do idioma, o
+    // `100` do fuso --, e quem o traduz é o campo por baixo.
+    if (typeof value !== "number" || unit === "") return "";
+
     const words = TIME_UNIT_WORDS[unit];
     if (words) return `a cada ${value} ${value === 1 ? words[0] : words[1]}`;
-    return unit === "" ? String(value) : `${value} ${unit}`;
+    return `${value} ${unit}`;
 }
 
 /** O valor de onde a edição partiu, para se saber o que se está a trocar. */
@@ -274,10 +276,10 @@ function previousValueSummary(entry, desired, isStored) {
     if (!isStored) return "por enviar pela primeira vez";
 
     const value = desired?.[entry.fields?.[0] || ""];
-    if (typeof value !== "number") return "alterada e por enviar";
-
     const unit = unitLabel(entry);
-    return unit === "" ? `era ${value}` : `era ${value} ${unit}`;
+    if (typeof value !== "number" || unit === "") return "alterada e por enviar";
+
+    return `era ${value} ${unit}`;
 }
 
 /**

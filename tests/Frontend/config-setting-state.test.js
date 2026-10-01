@@ -87,3 +87,30 @@ test("o «Alterado» sobrepõe-se enquanto a edição estiver por enviar, sem ap
 
     assert.equal(section.dataset.configEdited, "1");
 });
+
+/** O `3` do idioma e o `100` do fuso são códigos do fabricante, e o campo por baixo diz-os. */
+test("uma definição sem unidade não mostra o código em cru", () => {
+    const section = sectionOf({
+        key: "languageTimezone",
+        capabilityKey: "language_timezone",
+        command: "LZ",
+        label: "Idioma e fuso horário",
+        input: "languageTimezone",
+        fields: ["language", "timeZone"],
+    }, { language: 3, timeZone: "1" }, true);
+
+    assert.equal(section.querySelector(".config-when-clean").textContent.trim(), "");
+});
+
+test("e ao ser editada diz que mudou, em vez do código que lá estava", () => {
+    const section = sectionOf({
+        key: "alarmVolume",
+        capabilityKey: "alarm_volume",
+        command: "volume",
+        label: "Volume",
+        input: "choice",
+        fields: ["volume"],
+    }, { volume: 2 }, true);
+
+    assert.equal(section.querySelector(".config-when-changed").textContent.trim(), "alterada e por enviar");
+});
