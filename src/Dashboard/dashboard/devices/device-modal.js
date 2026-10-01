@@ -217,12 +217,17 @@ export async function editDevice(imei, supplier, model) {
     renderEditWizard();
     deviceModal.show();
 
+    // Entre abrir e responder pode abrir-se outro aparelho: o que chega atrasado não pinta
+    // configurações nem capacidades por baixo da identidade de quem está no ecrã.
+    const superseded = () => state.deviceModal.imei !== imei;
+
     let licensesLoaded = true;
     try {
         const [detail, licenseGroups] = await Promise.all([
             apiGetDevice(imei),
             loadLicenseGroups(),
         ]);
+        if (superseded()) return;
         licensesLoaded = licenseGroups !== null;
         resetEditWizard(licenseGroups || []);
         if (detail?.error) {
@@ -240,6 +245,7 @@ export async function editDevice(imei, supplier, model) {
             String(deviceModel?.internalModel || model),
             deviceType,
         );
+        if (superseded()) return;
         // `null` é como a base de dados escreve "sem empresa": não é um nome.
         els.deviceCompany.value = deviceCompany === "null" ? "" : deviceCompany;
         els.deviceLicenseId.value = licenseId;
@@ -256,6 +262,7 @@ export async function editDevice(imei, supplier, model) {
         state.deviceModal.linkedGatewayKeys = linkedGatewayKeys;
         state.deviceModal.selectedGatewayKeys = linkedGatewayKeys;
         await refreshGatewayOptions(linkedGatewayKeys);
+        if (superseded()) return;
         state.deviceModal.configurations = detail.configurations || {};
         state.deviceModal.configurationSync = detail.configurationSync || { entries: {} };
         state.deviceModal.capabilities = detail.capabilities || {};
