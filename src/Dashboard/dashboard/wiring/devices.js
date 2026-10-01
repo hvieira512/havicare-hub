@@ -336,10 +336,6 @@ function bindConfigPanel() {
             pick(loaded.handlers)(event);
             const section = event.target.closest("[data-config-section]");
             if (section) loaded.panel.syncConfigSectionDirty(section);
-            // Os interruptores agrupados não vivem numa secção: a conta das alterações é do
-            // grupo, e é o rodapé dele que acende.
-            const group = event.target.closest("[data-config-group]");
-            if (group) loaded.panel.syncConfigGroupDirty(group);
         });
     }
     els.deviceConfigRoot.addEventListener("closed.bs.alert", (event) => {
