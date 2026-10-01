@@ -121,13 +121,6 @@ function intervalHoursToggleInput(desired) {
         </div>`;
 }
 
-/**
- * A janela horária em que o aparelho mede.
- *
- * As horas são dois `input type="time"`, e não texto: o navegador já não deixa escrever uma
- * hora que não existe, e o par volta a juntar-se em `HH:MM-HH:MM` na leitura.
- */
-
 const languageTimezonePresetOptions = [
     { language: 0, timeZone: "0", label: "English (UTC+0)" },
     { language: 1, timeZone: "8", label: "简体中文 (UTC+8)" },

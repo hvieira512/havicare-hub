@@ -248,7 +248,8 @@ const logout = async (message = "", notifyServer = true) => {
     clearDashboardApiToken();
     showLogin(message);
 
-    // O motivo da saída e o aviso da sessão são dois factos, e o segundo não apaga o primeiro.
+    // O toast é instância única: este apaga o motivo da saída quando a rede falha antes de
+    // o primeiro se dissipar.
     if (!await pending) {
         toast("warning", LOGOUT_FAILED_MESSAGE);
     }

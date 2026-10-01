@@ -328,9 +328,8 @@ export function createRadarScene(options = {}) {
         state.peopleNodes.clear();
         state.transformCoords = null;
 
-        // O cliente força aqui `height: 400px` quando o contentor mede zero. Não veio: a
-        // altura é do `.radar-map-canvas`, que a faz variar com a largura do ecrã, e um
-        // estilo em linha de 400px passava-lhe por cima em qualquer telemóvel.
+        // A altura vem do contentor: quem a escreve é o `fitStageToLayout`, depois de saber
+        // quanto mede a sala. Aqui ainda é só o chão do `.radar-map-canvas`.
         state.stage = new Konva.Stage({
             container,
             width: container.offsetWidth,
