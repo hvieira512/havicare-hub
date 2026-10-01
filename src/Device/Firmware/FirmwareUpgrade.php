@@ -16,14 +16,11 @@ namespace Hub\Device\Firmware;
  */
 final class FirmwareUpgrade
 {
-    /**
-     * Os 256 são do **corpo de aplicação**, não da trama: perguntámo-lo com estas palavras e
-     * o fornecedor respondeu «this value is correct».
-     */
-    public const MAX_BODY = 256;
+    /** Quanto firmware vai em cada pacote: uma página de flash. */
+    public const CHUNK = 256;
 
     /** Os quatro primeiros bytes do corpo são o offset. */
-    public const CHUNK = self::MAX_BODY - 4;
+    public const MAX_BODY = self::CHUNK + 4;
 
     public const START = 0x0E;
     public const DATA = 0x0F;
