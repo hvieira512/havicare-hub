@@ -201,6 +201,31 @@ A whitelist resolve o radar pela coluna `device_id`, que é independente do
 os dois valores diferentes aparecesse com dois nomes, conforme se olhasse para o
 broker ou para a interface, e nada no código impedia esse registo.
 
+## 6. Os tipos de área da planta
+
+O `declare_area` do `thirdparty/v2/deviceProp` traz um tuplo por área, e o
+segundo campo é o tipo. São sete, e a tabela abaixo é a do próprio console do
+fabricante — o `baseList` do componente da planta, que é onde os nomes e as
+cores vivem.
+
+| Tipo | Fabricante (EN) | Fabricante (ZH) | Na dashboard |
+|---|---|---|---|
+| 1 | Customize | 自定义 | Personalizada |
+| 2 | Bed | 床 | Cama |
+| 3 | Exclusive area | 干扰区域 | Interferência |
+| 4 | Door | 门 | Porta |
+| 5 | Monitoring Bed | 监护床 | Cama de monitorização |
+| 6 | Sensing area | 告警区域 | Região de alarme |
+| 7 | Furniture | 家具 | Mobília |
+
+O nome que cada área leva na planta é escolhido por quem a instalou e não diz o
+tipo: no radar 208 da emeis Iberia, as três áreas de tipo 7 chamam-se «Mesita»,
+«Table or Chairs» e «Mesita».
+
+Um tipo que a tabela não conheça aparece como «Tipo N» e fica cinzento, em vez
+de desaparecer da planta — foi assim que o 7 se deu a conhecer. A tabela está em
+[`radar-style.js`](../src/Dashboard/dashboard/radar-style.js).
+
 ## Implementação
 
 | Ficheiro | Responsabilidade |

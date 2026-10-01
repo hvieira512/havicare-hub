@@ -58,6 +58,7 @@ const AREA_TYPE_STYLE = {
     4: { label: "Porta", color: "#ffa500" },
     5: { label: "Cama de monitorização", color: "#32cd32" },
     6: { label: "Região de alarme", color: "#ff4500" },
+    7: { label: "Mobília", color: "#adb9ca" },
 };
 
 /** Um tipo que o fabricante acrescente fica cinzento e com o número à vista, em vez de sumir. */
