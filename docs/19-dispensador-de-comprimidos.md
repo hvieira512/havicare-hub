@@ -1189,10 +1189,22 @@ O checksum é a **soma acumulada dos bytes** do ficheiro. O fim marca-se com um
 
 **Os números vêm do aparelho, e não se supõem.** O `0x8003` diz o tamanho de
 pacote que ele aceita — 300 bytes nesta unidade —, o `0x8006` quanto tempo espera
-por uma resposta (60 s) e o `0x8007` quantas vezes retransmite (2). O fornecedor
-pediu que um `0x0F` **não passe dos 256**, que é mais apertado do que o que o
-aparelho declara, e mandou segui-lo à risca: ficam **252 bytes de ficheiro** por
-pacote, depois do offset.
+por uma resposta (60 s) e o `0x8007` quantas vezes retransmite (2).
+
+**São 256 bytes de ficheiro por pacote**, e não de corpo de aplicação: o corpo
+fica em 260 com o offset à frente, e a trama em 282, abaixo dos 300 que ele
+declara. O fornecedor escreveu «256» e a frase aguenta as duas leituras; é esta
+que o aparelho aceita.
+
+> **Foi esta ambiguidade que travou a actualização durante dois dias.** Com 252
+> bytes de ficheiro — a outra leitura, em que os 256 são o corpo inteiro — o
+> aparelho aceita o `0x0E` e recusa o **primeiro** `0x0F` com `0x08`. Com 256
+> passa o ficheiro todo: medido a 01/10/2026, 824 pacotes, pouco mais de dois
+> minutos, sem uma retransmissão, e o `0x8002` passou de `0x0502` a `0x0503`.
+>
+> O `0x08` não ajudava a distinguir. A tabela de estados tem códigos próprios
+> para comprimento (`0x07`) e para sequência (`0x03`), mas esses são do **quadro**;
+> um bloco de firmware que o escritor de flash recuse volta como `0x08` na mesma.
 
 **A sequência é a do modo 2 da secção 4**, no caso «um pedido, n pacotes, uma
 resposta por pacote»: cada `0x0F` é tratado como pedido independente, e por isso
