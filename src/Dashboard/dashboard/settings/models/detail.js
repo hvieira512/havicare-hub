@@ -267,6 +267,15 @@ async function saveModelDetail() {
     // usa para reconhecer o modelo: as duas listas em memória deixam de valer.
     state.settingsModal.sectionLoaded.models = false;
     invalidateDeviceTypeSuppliersModels();
+
+    // Trocar o fornecedor ou o tipo faz o servidor substituir as capacidades pelo template
+    // novo. A metade de baixo do ecrã ficava a mostrar a selecção que já não existe, e o
+    // «Guardar capacidades» seguinte enviava chaves que o fornecedor novo não suporta.
+    const supplierChanged = Number(supplier?.id ?? 0) !== Number(model.supplier_id || 0);
+    const typeChanged = fields.deviceType !== (model.device_type || model.deviceType);
+    if (supplierChanged || typeChanged) {
+        await openModelDetail(model.id);
+    }
 }
 
 /**
