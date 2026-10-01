@@ -4,7 +4,11 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/index.js";
 
-const alarms = CONFIG_INPUTS.pillDispenserAlarms;
+// O `render` devolve um fragmento de marcação; as assertivas de texto querem texto.
+const alarms = {
+    ...CONFIG_INPUTS.pillDispenserAlarms,
+    render: (...args) => String(CONFIG_INPUTS.pillDispenserAlarms.render(...args)),
+};
 const entry = (fields, overrides = {}) => ({ fields, ...overrides });
 
 test("os nove alarmes são desenhados, ocupados ou não", () => {

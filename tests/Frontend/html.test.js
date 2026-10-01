@@ -10,57 +10,76 @@ import { html, raw, trusted } from "../../src/Dashboard/dashboard/html.js";
 import { deviceLicenseBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/shell.js";
+import { compactDetails } from "../../src/Dashboard/dashboard/components/cards/shared.js";
 
 const ROOT = new URL("../..", import.meta.url).pathname;
 
 /* ---------- a template tag ---------- */
 
+/** O que se afirma é a marcação, e o `html` devolve um fragmento: comparar texto com texto. */
+const markup = (value) => String(value);
+
 test("cada interpolação sai escapada, sem ninguém se lembrar do esc()", () => {
     assert.equal(
-        html`<p>${"<script>alert(1)</script>"}</p>`,
+        markup(html`<p>${"<script>alert(1)</script>"}</p>`),
         "<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>",
     );
     assert.equal(
-        html`<i title="${"\" onerror=\"alert(1)"}"></i>`,
+        markup(html`<i title="${"\" onerror=\"alert(1)"}"></i>`),
         "<i title=\"&quot; onerror=&quot;alert(1)\"></i>",
     );
 });
 
 test("o raw() deixa passar um fragmento já construído", () => {
-    assert.equal(html`<p>${raw("<b>a</b>")}</p>`, "<p><b>a</b></p>");
+    assert.equal(markup(html`<p>${raw("<b>a</b>")}</p>`), "<p><b>a</b></p>");
 });
 
 test("um fragmento aninhado não é escapado duas vezes", () => {
     const inner = html`<b>${"a & b"}</b>`;
 
-    assert.equal(inner, "<b>a &amp; b</b>");
-    assert.equal(html`<p>${raw(inner)}</p>`, "<p><b>a &amp; b</b></p>");
+    assert.equal(markup(inner), "<b>a &amp; b</b>");
+    assert.equal(markup(html`<p>${inner}</p>`), "<p><b>a &amp; b</b></p>");
 });
 
-// A regra não tem excepção implícita: o `html` devolve texto, e por isso compor dois
-// construtores é sempre um `raw()` à vista. Sem isto, um `raw()` esquecido saía escapado no
-// ecrã -- feio, mas visível -- em vez de um `esc()` esquecido, que é XSS em silêncio.
-test("sem o raw(), até marcação nossa sai escapada", () => {
-    assert.equal(html`<p>${html`<b>x</b>`}</p>`, "<p>&lt;b&gt;x&lt;/b&gt;</p>");
+/**
+ * Esta é a regra que o resto do ficheiro protege, e é a que inverte a omissão.
+ *
+ * Encaixar um construtor noutro não leva `raw()`, porque o `html` devolve um fragmento e o
+ * fragmento passa intacto. O que **não** passa é texto, e por isso um produtor novo que
+ * devolva uma string sai escapado sozinho -- que é exactamente o que faltava quando a chave
+ * de configuração que um aparelho inventava entrou na dashboard como marcação.
+ */
+test("compor dois construtores não precisa de raw(), e texto continua a ser escapado", () => {
+    assert.equal(markup(html`<p>${html`<b>x</b>`}</p>`), "<p><b>x</b></p>");
+    assert.equal(markup(html`<p>${"<b>x</b>"}</p>`), "<p>&lt;b&gt;x&lt;/b&gt;</p>");
 });
 
-test("uma lista junta-se sem separador, como o .map(...).join(\"\") do código", () => {
+test("uma lista de construtores junta-se sem separador e sem raw()", () => {
     const cells = ["a", "b & c"].map((value) => html`<td>${value}</td>`);
 
-    assert.equal(html`<tr>${cells.map(raw)}</tr>`, "<tr><td>a</td><td>b &amp; c</td></tr>");
+    assert.equal(markup(html`<tr>${cells}</tr>`), "<tr><td>a</td><td>b &amp; c</td></tr>");
     // E uma lista de texto continua a ser escapada, item a item.
-    assert.equal(html`<p>${["<a>", "<b>"]}</p>`, "<p>&lt;a&gt;&lt;b&gt;</p>");
+    assert.equal(markup(html`<p>${["<a>", "<b>"]}</p>`), "<p>&lt;a&gt;&lt;b&gt;</p>");
 });
 
 test("o null e o undefined dão texto vazio, como no esc()", () => {
-    assert.equal(html`<p>${null}${undefined}</p>`, "<p></p>");
+    assert.equal(markup(html`<p>${null}${undefined}</p>`), "<p></p>");
     assert.equal(String(raw(null)), "");
     // O zero é um valor e não uma ausência: as contagens dos mosaicos dependem disso.
-    assert.equal(html`<p>${0}</p>`, "<p>0</p>");
+    assert.equal(markup(html`<p>${0}</p>`), "<p>0</p>");
 });
 
-test("o resultado é texto, que é o que os construtores de marcação já devolviam", () => {
-    assert.equal(typeof html`<p>${1}</p>`, "string");
+/**
+ * O fragmento é uma `String` e não um objecto à parte: `String(x)`, `+`, `.join()` e a
+ * atribuição a `innerHTML` continuam todos a funcionar sem ninguém pensar nisso.
+ */
+test("o fragmento comporta-se como texto em tudo menos no escapamento", () => {
+    const fragment = html`<p>${1}</p>`;
+
+    assert.ok(fragment instanceof String);
+    assert.equal(`${fragment}`, "<p>1</p>");
+    assert.equal([fragment, fragment].join(""), "<p>1</p><p>1</p>");
+    assert.equal(fragment.length, "<p>1</p>".length);
 });
 
 /* ---------- as regressões, pelos renderizadores migrados ---------- */
@@ -128,12 +147,12 @@ test("o valor e o título de um cartão saem escapados", () => {
  * inventava, e que entrava na dashboard como marcação.
  */
 test("o trusted deixa passar marcação construída por quem chama", () => {
-    assert.equal(html`<p>${trusted("<b>a</b>")}</p>`, "<p><b>a</b></p>");
+    assert.equal(markup(html`<p>${trusted("<b>a</b>")}</p>`), "<p><b>a</b></p>");
 });
 
 test("sem o trusted, o que vem de quem chama sai escapado", () => {
     assert.equal(
-        html`<p>${"<img src=x onerror=alert(1)>"}</p>`,
+        markup(html`<p>${"<img src=x onerror=alert(1)>"}</p>`),
         "<p>&lt;img src=x onerror=alert(1)&gt;</p>",
     );
 });
@@ -149,4 +168,32 @@ test("as fronteiras de confiança continuam a caber numa mão", () => {
         sites.length <= 12,
         `o trusted está em ${sites.length} sítios: ou há fronteiras novas a rever, ou passou a usar-se onde o raw chegava.\n${[...new Set(sites)].join("\n")}`,
     );
+});
+
+/**
+ * A inversão da omissão tem um custo que é preciso prender: quem entrega **marcação** numa
+ * fronteira tem de o dizer, senão ela sai escapada duas vezes e o utilizador lê
+ * `A &amp; B` à letra. É feio e visível -- que é o ponto, por oposição ao `esc()` esquecido,
+ * que era XSS em silêncio.
+ */
+test("os detalhes de um cartão saem escapados uma vez e não duas", () => {
+    const card = String(telemetryCard({
+        icon: "fa-x",
+        title: "T",
+        details: compactDetails({ batteryType: "A & B" }, ["batteryType"]),
+    }));
+
+    assert.match(card, /A &amp; B/);
+    assert.doesNotMatch(card, /&amp;amp;/);
+});
+
+test("um detalhe que chegue em texto cru sai escapado, e não como marcação", () => {
+    const card = String(telemetryCard({
+        icon: "fa-x",
+        title: "T",
+        details: "<img src=x onerror=alert(1)>",
+    }));
+
+    assert.doesNotMatch(card, /<img/i);
+    assert.match(card, /&lt;img/);
 });

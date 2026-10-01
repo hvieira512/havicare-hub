@@ -1,7 +1,7 @@
 import { fieldLabel, fieldValue } from "../../format.js";
 import { DETECTION_TYPE_LABEL } from "../../domain.js";
 import { html, raw } from "../../html.js";
-import { compactDetails } from "./shared.js";
+import { compactDetails, joinMarkup } from "./shared.js";
 import { connectivityIcon, connectivityValue } from "./gateway.js";
 import { diaperMoistureBody, diaperMoistureRowValue } from "./diaper.js";
 import { cyclePosition, cycleRunout, doseLabel, medicationAlarmContent } from "./medication.js";
@@ -217,7 +217,7 @@ const UPLINK_CARD_RENDERERS = {
                     : `${data.remaining} por dispensar`,
             // A data primeiro: é ela que diz quando alguém tem de lá ir recarregar. A posição
             // e o compartimento ficam no `title`, que é onde se vai ver onde carregar.
-            details: [runout ? `Acaba ${runout}` : inCycle || cell, level].filter(Boolean).join(" · "),
+            details: joinMarkup([runout ? html`Acaba ${runout}` : inCycle || cell, level]),
             detailsTitle: [runout && `Acaba ${runout}`, inCycle, cell, level].filter(Boolean).join(" · "),
         };
     },
@@ -457,8 +457,7 @@ function deviceConfigContent(data) {
         value: settings.length === 1
             ? capabilityLabel(settings[0][0])
             : `${settings.length} definições`,
-        // A chave vem do aparelho e pode não estar no catálogo: o `details` entra sem escape.
-        details: settings.map(([key]) => html`${capabilityLabel(key)}`).join(" · "),
+        details: joinMarkup(settings.map(([key]) => html`${capabilityLabel(key)}`)),
         span: 12,
         body: reportedSettingsBody(settings),
     };
@@ -538,7 +537,7 @@ function batteryDetails(data) {
     const charging = BATTERY_CHARGING_STATE_LABEL[data.chargingState] ||
         compactDetails(data, ["batteryType"]);
 
-    return [charging, mains].filter(Boolean).join(" · ");
+    return joinMarkup([charging, mains]);
 }
 
 /** A cor da categoria, para o ícone. Sem entrada na tabela, o ícone fica neutro. */

@@ -3,9 +3,13 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 import {
-    modelImageHtml,
-    modelPreviewHtml,
+    modelImageHtml as buildImage,
+    modelPreviewHtml as buildPreview,
 } from "../../src/Dashboard/dashboard/components/model-image.js";
+
+// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
+const modelImageHtml = (...args) => String(buildImage(...args));
+const modelPreviewHtml = (...args) => String(buildPreview(...args));
 
 const withImage = { commercialName: "HW20PRO", image: "/assets/models/hw20pro.png" };
 const withoutImage = { commercialName: "HW20PRO" };

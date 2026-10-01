@@ -1,4 +1,4 @@
-import { html, raw, trusted } from "../html.js";
+import { html, raw } from "../html.js";
 import { emptyPanel } from "../components/empty-panel.js";
 import { renderInto } from "../dom.js";
 import { dayKey, dayLabel } from "../format.js";
@@ -138,14 +138,14 @@ function activityRow({
     // fixa reservava-lhe 132px que o nome não tinha, e é aí que o valor passa a caber.
     const stackedTime = html`<span class="d-lg-none">${raw(sub ? " · " : "")}${time}</span>`;
     const subClass = sub ? "telemetry-row-details" : "telemetry-row-time d-lg-none";
-    const subLine = html`<span class="${subClass} text-secondary lh-sm fw-normal d-block text-truncate"${raw(subTitle ? html` title="${subTitle}"` : "")}>${trusted(sub)}${raw(stackedTime)}</span>`;
+    const subLine = html`<span class="${subClass} text-secondary lh-sm fw-normal d-block text-truncate"${subTitle ? html` title="${subTitle}"` : ""}>${sub}${stackedTime}</span>`;
     // As pastilhas não se cortam a meio: já vêm limitadas na origem, e o que sobra do lado
     // direito esconde-se. O texto corta-se com reticências, como o nome na coluna ao lado.
     const detailClass = detailKind === "chips"
         ? "telemetry-row-details text-secondary lh-sm d-flex gap-1 overflow-hidden"
         : "telemetry-row-details text-secondary lh-sm d-block text-truncate";
     const detailLine = detail
-        ? html`<span class="${detailClass}"${raw(detailTitle ? html` title="${detailTitle}"` : "")}>${trusted(detail)}</span>`
+        ? html`<span class="${detailClass}"${detailTitle ? html` title="${detailTitle}"` : ""}>${detail}</span>`
         : "";
 
     const openable = expanded !== "";
@@ -179,7 +179,7 @@ function activityRow({
         </td>
         <td class="tabular-nums"${raw(valueTitle ? html` title="${valueTitle}"` : "")}>
             <span class="telemetry-row-stack d-flex flex-column justify-content-center min-w-0">
-                <span class="d-block text-truncate">${trusted(value)}</span>
+                <span class="d-block text-truncate">${value}</span>
                 ${raw(detailLine)}
             </span>
         </td>

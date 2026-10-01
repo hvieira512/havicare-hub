@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
-import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
+import { cardContent as uplinkCardContent } from "./support/cards.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/shell.js";
 
 /**
@@ -146,11 +146,11 @@ test("os alarmes dizem o que aconteceu, não só a categoria", () => {
  */
 test("o grau de um alarme é traduzido no ecrã, não no fio", () => {
     assert.equal(
-        uplinkCardContent("vitals_alarm", { detectionType: "apnea", detectionLevel: "danger" }).details,
+        String(uplinkCardContent("vitals_alarm", { detectionType: "apnea", detectionLevel: "danger" }).details),
         "Perigo",
     );
     assert.equal(
-        uplinkCardContent("vitals_alarm", { detectionType: "heart_rate_high", detectionLevel: "warning" }).details,
+        String(uplinkCardContent("vitals_alarm", { detectionType: "heart_rate_high", detectionLevel: "warning" }).details),
         "Aviso",
     );
     // O `info` não se mostra: é o grau de um acontecimento que não é alarme nenhum.

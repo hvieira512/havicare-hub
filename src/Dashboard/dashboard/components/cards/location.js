@@ -1,5 +1,6 @@
 import { ago } from "../../format.js";
 import { html } from "../../html.js";
+import { joinMarkup } from "./shared.js";
 
 /**
  * Os cartões de localização: coordenadas, tipo de fix, precisão e a evidência rádio.
@@ -72,8 +73,9 @@ export function locationDetails(data, meta = {}) {
         ? [locationFixLabel(data), locationAccuracy(data)]
         : [locationRadioEvidence(data)];
 
-    return [...parts, meta?.occurredAt ? ago(meta.occurredAt) : ""]
-        .filter(Boolean)
-        .map((part) => html`${part}`)
-        .join(" · ");
+    return joinMarkup(
+        [...parts, meta?.occurredAt ? ago(meta.occurredAt) : ""]
+            .filter(Boolean)
+            .map((part) => html`${part}`),
+    );
 }

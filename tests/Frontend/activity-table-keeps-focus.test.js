@@ -4,6 +4,9 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 import { activityTable } from "../../src/Dashboard/dashboard/devices/activity-table.js";
 
+const { state } = await import("../../src/Dashboard/dashboard/state.js");
+const { telemetryActivityRow } = await import("../../src/Dashboard/dashboard/devices/detail.js");
+
 /**
  * O stream redesenha o detalhe a cada mensagem, sem comparar o que mudou. Substituir o
  * `innerHTML` deita fora o elemento com o foco, e chegar de Tab a uma linha para a abrir com
@@ -86,4 +89,27 @@ test("redesenhar não traz o foco para a lista", () => {
     activityTable(root, [{ ...rows[0], key: "t:aaa111:heart_rate:9" }], "Sem nada.", "t");
 
     assert.equal(document.activeElement, outside);
+});
+
+/**
+ * A tooltip de uma linha é texto, e sai da marcação dos detalhes, que já está escapada: sem
+ * desfazer as entidades, quem tivesse um `&` no valor lia «A &amp;amp; B» ao passar o rato.
+ */
+test("a tooltip de uma linha não mostra entidades à letra", () => {
+    state.selectedImei = "aaa111";
+    const row = telemetryActivityRow({
+        type: "battery",
+        seq: 1,
+        occurredAt: "2026-10-01T09:00:00Z",
+        data: { percent: 50, batteryType: "A & B" },
+    });
+
+    const root = document.createElement("div");
+    document.body.replaceChildren(root);
+    activityTable(root, [row], "Sem nada.", "t");
+
+    const title = root.querySelector(".telemetry-row-details[title]")?.getAttribute("title") ?? "";
+
+    assert.doesNotMatch(title, /&amp;|&lt;|&gt;/);
+    assert.match(title, /A & B/);
 });

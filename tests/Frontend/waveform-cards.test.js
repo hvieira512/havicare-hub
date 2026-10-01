@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
-import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
+import { cardContent as uplinkCardContent } from "./support/cards.js";
 
 /** A contagem lê-se do `sampleCount`, que é o que o histórico guarda no lugar das amostras. */
 test("o cartão de ECG mostra a frequência que o exame apurou", () => {

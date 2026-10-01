@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
-import { deviceListBody } from "../../src/Dashboard/dashboard/devices/list.js";
+import { deviceListBody as buildBody } from "../../src/Dashboard/dashboard/devices/list.js";
+
+// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
+const deviceListBody = (...args) => String(buildBody(...args));
 
 /**
  * Um backend em baixo devolvia `{error}` e o código fazia `data || []`, pintando o mesmo

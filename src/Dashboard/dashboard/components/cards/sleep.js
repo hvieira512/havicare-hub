@@ -1,4 +1,5 @@
 import { html } from "../../html.js";
+import { joinMarkup } from "./shared.js";
 
 /**
  * Os cartões do sono: a noite e as pontuações que o firmware lhe atribui.
@@ -86,7 +87,7 @@ export function sleepDetails(data) {
         parts.push(html`${count} ${count === 1 ? "troço" : "troços"}`);
     }
 
-    return parts.join(" · ");
+    return joinMarkup(parts);
 }
 
 export function sleepQualityValue(data) {

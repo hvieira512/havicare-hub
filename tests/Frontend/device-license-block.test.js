@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 
 // Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
 import "./support/browser-env.js";
-import { deviceLicenseBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
+import { deviceLicenseBlock as buildBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
+
+// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
+const deviceLicenseBlock = (...args) => String(buildBlock(...args));
 
 /** A empresa fica na segunda linha: o mesmo sítio pode ter licença em duas empresas. */
 const device = {

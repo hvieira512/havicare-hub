@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
-import { apiUserForm } from "../../src/Dashboard/dashboard/settings/api-users.js";
+import { apiUserForm as buildForm } from "../../src/Dashboard/dashboard/settings/api-users.js";
+
+// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
+const apiUserForm = (...args) => String(buildForm(...args));
 
 /**
  * O estado não está no formulário -- quem o muda é o verbo de pausar --, mas tem de viajar

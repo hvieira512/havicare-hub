@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 
 // Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
 import "./support/browser-env.js";
-import { notificationRow } from "../../src/Dashboard/dashboard/notifications.js";
+import { notificationRow as buildRow } from "../../src/Dashboard/dashboard/notifications.js";
+
+// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
+const notificationRow = (...args) => String(buildRow(...args));
 
 /**
  * A cor de cada acção acompanha o risco dela: «Bloquear dispositivo» escreve na denylist e

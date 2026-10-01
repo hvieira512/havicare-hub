@@ -4,8 +4,11 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
 // esse caminho passa pelo api/http.js, que toca em window ao carregar.
 import "./support/browser-env.js";
-import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
-import { requestCardShell } from "../../src/Dashboard/dashboard/components/cards/request.js";
+import { cardContent as uplinkCardContent } from "./support/cards.js";
+import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
+
+// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
+const requestCardShell = (...args) => String(buildCard(...args));
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
 state.capabilityCatalogByType.watch = [{ key: "location", label: "Localização" }];

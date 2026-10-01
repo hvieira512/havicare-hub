@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
-import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
+import { cardContent as uplinkCardContent } from "./support/cards.js";
 
 /** O ambiente só chega quando dispara: o valor diz o que aconteceu, e não leva legenda fixa. */
 test("o ambiente diz o que aconteceu", () => {

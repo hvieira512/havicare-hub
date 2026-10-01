@@ -4,9 +4,13 @@ import "./support/browser-env.js";
 
 import {
     DEVICE_CARD_ACTION,
-    deviceCard,
-    deviceCardSkeletonList,
+    deviceCard as buildCard,
+    deviceCardSkeletonList as buildSkeletonList,
 } from "../../src/Dashboard/dashboard/devices/device-card.js";
+
+// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
+const deviceCard = (...args) => String(buildCard(...args));
+const deviceCardSkeletonList = (...args) => String(buildSkeletonList(...args));
 
 /**
  * O cartão saiu do meio do `list.js` para um módulo seu, e isto é metade do porquê: passou a

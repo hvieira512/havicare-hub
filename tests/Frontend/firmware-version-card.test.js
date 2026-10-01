@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
-import { requestCardShell } from "../../src/Dashboard/dashboard/components/cards/request.js";
+import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
+
+// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
+const requestCardShell = (...args) => String(buildCard(...args));
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
 state.capabilityCatalogByType.pill_dispenser = [

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
-import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
+import { cardContent as uplinkCardContent } from "./support/cards.js";
 
 /**
  * A configuração que o aparelho reporta, com as doze definições de uma resposta ao `0x05`.
@@ -39,8 +39,8 @@ const body = (data) => parseFragment(uplinkCardContent("device_config", data).bo
 test("nenhuma definição sai como [object Object]", () => {
     const content = uplinkCardContent("device_config", REPORTED);
 
-    assert.doesNotMatch(content.body || "", /\[object/);
-    assert.doesNotMatch(content.details || "", /\[object/);
+    assert.doesNotMatch(String(content.body || ""), /\[object/);
+    assert.doesNotMatch(String(content.details || ""), /\[object/);
 });
 
 /** A gaveta da lista de actividade escapa tudo: marcação em texto aparece à letra. */

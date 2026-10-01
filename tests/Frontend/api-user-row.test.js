@@ -3,10 +3,15 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 import {
-    apiUserFilterControls,
-    apiUserForm,
-    apiUserRow,
+    apiUserFilterControls as buildFilterControls,
+    apiUserForm as buildForm,
+    apiUserRow as buildRow,
 } from "../../src/Dashboard/dashboard/settings/api-users.js";
+
+// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
+const apiUserRow = (...args) => String(buildRow(...args));
+const apiUserForm = (...args) => String(buildForm(...args));
+const apiUserFilterControls = (...args) => String(buildFilterControls(...args));
 
 const admin = { id: 1, username: "havicare-platform", role: "hub_admin", enabled: 1 };
 const client = {

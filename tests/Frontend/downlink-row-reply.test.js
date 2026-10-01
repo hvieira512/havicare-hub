@@ -4,9 +4,15 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { downlinkActivityRow } = await import(
+const { downlinkActivityRow: buildRow } = await import(
     "../../src/Dashboard/dashboard/devices/detail.js",
 );
+
+// Os campos de marcação do descritor são fragmentos; as assertivas de texto querem texto.
+const downlinkActivityRow = (payload) => {
+    const row = buildRow(payload);
+    return { ...row, sub: String(row.sub ?? ""), expanded: String(row.expanded ?? "") };
+};
 
 /**
  * Um pedido confirmado tem valor -- numa localização são as coordenadas -- e a coluna do

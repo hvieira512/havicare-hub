@@ -2,7 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
-import { onlineBadge, stateBadge } from "../../src/Dashboard/dashboard/components/state-badge.js";
+import {
+    onlineBadge as buildOnlineBadge,
+    stateBadge as buildStateBadge,
+} from "../../src/Dashboard/dashboard/components/state-badge.js";
+
+// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
+const stateBadge = (...args) => String(buildStateBadge(...args));
+const onlineBadge = (...args) => String(buildOnlineBadge(...args));
 
 /**
  * A pastilha de estado, em classes do Bootstrap. Era CSS da casa a refazer o que o

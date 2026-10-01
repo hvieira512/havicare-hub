@@ -72,7 +72,9 @@ test("o alarme 5 é desenhado na caixa 5", () => {
  * comanda nada no cartão faz o utilizador julgar calado o que continua a tocar.
  */
 test("o cartão não desenha interruptores", () => {
-    const rendered = INPUTS.pillDispenserAlarms.render({}, { plans: [{ slot: 1, hour: 8, minute: 0 }] });
+    const rendered = String(
+        INPUTS.pillDispenserAlarms.render({}, { plans: [{ slot: 1, hour: 8, minute: 0 }] }),
+    );
 
     assert.doesNotMatch(rendered, /type="checkbox"/);
 });

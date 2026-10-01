@@ -1,7 +1,7 @@
 import { displayPersonIndex, fieldValue } from "../../format.js";
 import { postureStyle } from "../../radar-style.js";
 import { html } from "../../html.js";
-import { compactDetails } from "./shared.js";
+import { compactDetails, joinMarkup } from "./shared.js";
 
 /**
  * Os cartões do radar: presença, posturas e as estatísticas por minuto.
@@ -60,7 +60,7 @@ export function presenceDetails(data) {
         );
     }
 
-    return chips.join("");
+    return joinMarkup(chips, "");
 }
 
 /**

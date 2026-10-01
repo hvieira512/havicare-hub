@@ -40,4 +40,4 @@ const render = (value) => {
 };
 
 export const html = (strings, ...values) =>
-    strings.reduce((out, part, index) => out + render(values[index - 1]) + part);
+    new Fragment(strings.reduce((out, part, index) => out + render(values[index - 1]) + part));

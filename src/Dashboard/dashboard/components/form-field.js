@@ -16,6 +16,6 @@ export function field(label, control, { help = "", cls = "", required = false } 
         <div${raw(classAttribute)}>
             <label class="form-label-sm${required ? " required" : ""}">${label}</label>
             ${trusted(control)}
-            ${raw(helpLine)}
+            ${helpLine}
         </div>`;
 }
