@@ -150,7 +150,7 @@ test("as fronteiras de confiança continuam a caber numa mão", () => {
     }).filter((rel) => !rel.endsWith("html.js"));
 
     assert.ok(
-        sites.length <= 12,
+        sites.length <= 2,
         `o trusted está em ${sites.length} sítios: ou há fronteiras novas a rever, ou passou a usar-se onde o raw chegava.\n${[...new Set(sites)].join("\n")}`,
     );
 });

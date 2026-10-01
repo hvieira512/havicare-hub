@@ -1,4 +1,6 @@
-import { ago, esc } from "../format.js";
+import { ago } from "../format.js";
+import { html } from "../html.js";
+import { normalizeKey } from "./gateway-links.js";
 
 /**
  * O último sinal de cada ligação a um gateway. O RSSI pertence ao par e não ao dispositivo --
@@ -79,10 +81,9 @@ export function signalMeter(signal) {
     const title = signalLabel(signal);
     // A altura de cada barra é `h-25` a `h-100`, por ordem.
     const bars = [1, 2, 3, 4]
-        .map((bar) => `<span class="signal-meter-bar h-${bar * 25}${bar <= band.bars ? " opacity-100" : ""}"></span>`)
-        .join("");
+        .map((bar) => html`<span class="signal-meter-bar h-${bar * 25}${bar <= band.bars ? " opacity-100" : ""}"></span>`);
 
-    return `<span class="signal-meter d-inline-flex align-items-end flex-shrink-0 text-${band.tone}" data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${esc(title)}" aria-label="${esc(title)}" role="img" tabindex="0">${bars}</span>`;
+    return html`<span class="signal-meter d-inline-flex align-items-end flex-shrink-0 text-${band.tone}" data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${title}" aria-label="${title}" role="img" tabindex="0">${bars}</span>`;
 }
 
 /**
@@ -92,15 +93,14 @@ export function signalMeter(signal) {
 export function gatewaySignalRows(linkedDevices) {
     if (!linkedDevices.length) return "";
 
-    return `<ul class="list-unstyled mb-0 small">${linkedDevices
+    return html`<ul class="list-unstyled mb-0 small">${linkedDevices
         .map((linked) => {
-            const key = String(linked.deviceKey || "").trim().toLowerCase();
+            const key = normalizeKey(linked.deviceKey);
             if (!key) return "";
             const model = String(linked.model || "");
-            return `<li class="d-flex justify-content-between align-items-center gap-2">
-                <span class="min-w-0 text-truncate font-monospace" title="${esc(key)}">${esc(key)}${model ? ` <span class="text-secondary">${esc(model)}</span>` : ""}</span>
+            return html`<li class="d-flex justify-content-between align-items-center gap-2">
+                <span class="min-w-0 text-truncate font-monospace" title="${key}">${key}${model ? html` <span class="text-secondary">${model}</span>` : ""}</span>
                 ${signalMeter(linkSignal(linked))}
             </li>`;
-        })
-        .join("")}</ul>`;
+        })}</ul>`;
 }

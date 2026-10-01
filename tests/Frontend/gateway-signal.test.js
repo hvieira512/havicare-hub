@@ -2,12 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-    gatewaySignalRows,
+    gatewaySignalRows as buildRows,
     linkSignal,
     signalBand,
     signalLabel,
-    signalMeter,
+    signalMeter as buildMeter,
 } from "../../src/Dashboard/dashboard/devices/gateway-signal.js";
+
+// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
+const signalMeter = (...args) => String(buildMeter(...args));
+const gatewaySignalRows = (...args) => String(buildRows(...args));
 
 // Com a forma das linhas `linkedDevices` que o `/api/devices/{imei}` serve, onde o hub
 // acrescenta o último avistamento registado do par (dispositivo, gateway).
