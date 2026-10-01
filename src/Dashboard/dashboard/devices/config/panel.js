@@ -62,11 +62,27 @@ export function configActionPayload(section, actionValue) {
  *
  * @returns {Object<string, object>} chave da definição => valor a enviar
  */
+const SAVEABLE_BLOCKS =
+    "[data-config-row], [data-config-section]:not([data-config-transient=\"1\"])";
+
+/** As mensagens dos leitores que recusaram o que está escrito, pela ordem do ecrã. */
+function configReadErrors(container) {
+    const errors = [];
+    for (const row of container.querySelectorAll(SAVEABLE_BLOCKS)) {
+        if (!row.dataset.configKey) continue;
+        try {
+            readConfigPayload(row);
+        } catch (error) {
+            errors.push(error instanceof Error ? error.message : "Configuração inválida");
+        }
+    }
+
+    return errors;
+}
+
 export function changedConfigEntries(container) {
     const changed = {};
-    const rows = container.querySelectorAll(
-        "[data-config-row], [data-config-section]:not([data-config-transient=\"1\"])",
-    );
+    const rows = container.querySelectorAll(SAVEABLE_BLOCKS);
     for (const row of rows) {
         const key = row.dataset.configKey || "";
         if (!key) continue;
@@ -98,13 +114,18 @@ export function changedConfigEntries(container) {
  * Conta só o que alguém editou: avisar por causa das que ninguém tocou era avisar em todos
  * os relógios, todas as vezes.
  */
-/** Se o que está escrito no bloco difere da fotografia tirada ao desenhá-lo. */
+/**
+ * Se o que está escrito no bloco difere da fotografia tirada ao desenhá-lo.
+ *
+ * Falha aberta como a fotografia e o acender do botão: um bloco cuja leitura não se consegue
+ * tirar conta como alteração, para o rodapé não se calar sobre uma validação que falhou.
+ */
 function isConfigBlockEdited(element) {
     if (!("configPristine" in element.dataset)) return false;
     try {
         return JSON.stringify(readConfigPayload(element)) !== element.dataset.configPristine;
     } catch {
-        return false;
+        return true;
     }
 }
 
@@ -134,6 +155,13 @@ function markEditedConfigBlocks(root) {
 }
 
 export async function saveDeviceConfigurations(container) {
+    // Enviar o resto e dizer que ficou guardado escondia a definição que não passou.
+    const errors = configReadErrors(container);
+    if (errors.length > 0) {
+        toast("error", errors[0]);
+        return;
+    }
+
     const changed = changedConfigEntries(container);
     if (Object.keys(changed).length === 0) return;
 
