@@ -93,3 +93,19 @@ test("uma definição sozinha dá o nome dela", () => {
 test("sem definições não há corpo", () => {
     assert.equal(uplinkCardContent("device_config", { settings: {} }).body || "", "");
 });
+
+/**
+ * O frame `CONFIG` do 4P Touch parte-se em `chave:valor` e a chave entra como vier. Uma que o
+ * catálogo não conheça chega ao ecrã pelo `humanizeCapabilityKey`, que não escapa nada.
+ */
+test("uma chave que o aparelho inventou chega escapada aos detalhes", () => {
+    const content = uplinkCardContent("device_config", {
+        settings: {
+            "<img src=x onerror=alert(1)>": { enabled: true },
+            child_lock: { enabled: true },
+        },
+    });
+
+    assert.doesNotMatch(content.details, /<img/i);
+    assert.match(content.details, /&lt;/);
+});

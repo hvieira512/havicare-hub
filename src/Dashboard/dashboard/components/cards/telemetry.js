@@ -457,7 +457,8 @@ function deviceConfigContent(data) {
         value: settings.length === 1
             ? capabilityLabel(settings[0][0])
             : `${settings.length} definições`,
-        details: settings.map(([key]) => capabilityLabel(key)).join(" · "),
+        // A chave vem do aparelho e pode não estar no catálogo: o `details` entra sem escape.
+        details: settings.map(([key]) => html`${capabilityLabel(key)}`).join(" · "),
         span: 12,
         body: reportedSettingsBody(settings),
     };
