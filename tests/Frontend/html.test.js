@@ -11,6 +11,7 @@ import { deviceLicenseBlock } from "../../src/Dashboard/dashboard/components/dev
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/shell.js";
 import { compactDetails } from "../../src/Dashboard/dashboard/components/cards/shared.js";
+import { state } from "../../src/Dashboard/dashboard/state.js";
 
 const ROOT = new URL("../..", import.meta.url).pathname;
 
@@ -176,4 +177,24 @@ test("um detalhe que chegue em texto cru sai escapado, e não como marcação", 
 
     assert.doesNotMatch(card, /<img/i);
     assert.match(card, /&lt;img/);
+});
+
+/** O `current` e o `total` chegam do aparelho pelo MQTT e vão parar a uma linha de detalhes. */
+test("o compartimento reportado por um dispensador não escreve marcação", () => {
+    state.selectedDetail = { model: { deviceType: "pill_dispenser" } };
+    const content = uplinkCardContent("cells_remaining", {
+        remaining: 5,
+        current: "<img src=x onerror=alert(1)>",
+        total: 28,
+    });
+
+    assert.doesNotMatch(String(content.details), /<img/i);
+
+    const root = parseFragment(telemetryCard({
+        icon: "fa-x",
+        title: "Doses",
+        details: content.details,
+    }));
+
+    assert.equal(root.querySelector("img"), null);
 });

@@ -203,7 +203,7 @@ const UPLINK_CARD_RENDERERS = {
     // quem põe a medicação não sabe em que compartimento o aparelho vai pegar a seguir.
     cells_remaining: (data) => {
         const cell = data.current != null && data.total != null
-            ? `Compartimento ${data.current} de ${data.total}`
+            ? html`Compartimento ${data.current} de ${data.total}`
             : "";
         const level = data.level != null ? fieldValue("level", data.level) : "";
         const inCycle = cyclePosition(data.current);
