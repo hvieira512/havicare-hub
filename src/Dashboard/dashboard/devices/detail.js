@@ -17,6 +17,7 @@ import {
     when,
 } from "../format.js";
 import { html, raw } from "../html.js";
+import { renderInto } from "../dom.js";
 import { capabilityLabel } from "../capability-catalog.js";
 import { apiError, toast } from "../dialogs.js";
 import { deviceLicenseBlock, deviceLicenseLabel } from "../components/device-license.js";
@@ -267,8 +268,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     els.deviceBandDot.setAttribute("aria-label", onlineLabel);
     els.deviceBandDot.title = onlineLabel;
     els.deviceBandMeta.textContent = `${model || "Sem modelo interno"} · ${deviceLicenseLabel(device)}`;
-    disposeTooltips(els.selectedDeviceFacts);
-    els.selectedDeviceFacts.innerHTML = facts
+    const factsHtml = facts
         .map(
             (item) => html`
         <div class="${item.wide ? "col-12" : "col-6"}">
@@ -278,7 +278,9 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     `,
         )
         .join("");
-    refreshTooltips(els.selectedDeviceFacts);
+    if (renderInto(els.selectedDeviceFacts, factsHtml, disposeTooltips)) {
+        refreshTooltips(els.selectedDeviceFacts);
+    }
 }
 
 function renderTelemetryList(telemetryRows) {
@@ -433,8 +435,7 @@ function renderRequestCards(
     // grelha que nunca teria mosaicos. Sem nada para mostrar, a secção não existe.
     const grid = falls + helpCalls + cards;
     els.requestCardsCard?.classList.toggle("d-none", grid === "");
-    els.requestGrid.innerHTML = grid;
-    refreshTooltips(els.requestGrid);
+    if (renderInto(els.requestGrid, grid, disposeTooltips)) refreshTooltips(els.requestGrid);
 }
 
 function renderRequestCardGroup(
@@ -489,7 +490,7 @@ function renderNcsEventCards(rows = []) {
 
     // Sem cartões a secção não aparece, e por isso não há estado vazio para desenhar.
     els.ncsEventSection.classList.toggle("d-none", cards.length === 0);
-    els.ncsEventGrid.innerHTML = cards.map(renderNcsEventCard).join("");
+    renderInto(els.ncsEventGrid, cards.map(renderNcsEventCard).join(""));
 }
 
 /**

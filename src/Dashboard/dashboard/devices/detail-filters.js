@@ -1,6 +1,7 @@
 import { capabilityLabel } from "../capability-catalog.js";
 import { rowPayload, when } from "../format.js";
 import { html } from "../html.js";
+import { renderInto } from "../dom.js";
 import {
     resetDetailFiltersDraft,
     setDownlinkPage,
@@ -364,7 +365,7 @@ export function detailFilterChipLabels({ from, to, type, q }) {
 function renderDetailActiveFilters() {
     const labels = detailFilterChipLabels(state.detailFilters);
 
-    els.detailActiveFilters.innerHTML = filterChips(labels, "removeDetailFilter");
+    renderInto(els.detailActiveFilters, filterChips(labels, "removeDetailFilter"));
     els.detailFilterCount.textContent = labels.length ? String(labels.length) : "";
     els.clearDetailFiltersBtn.classList.toggle("d-none", labels.length === 0);
     // Sem filtros aplicados a linha inteira sai, para não sobrar espaço sem conteúdo.

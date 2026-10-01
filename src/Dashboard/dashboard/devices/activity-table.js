@@ -1,11 +1,12 @@
 import { html, raw } from "../html.js";
 import { emptyPanel } from "../components/empty-panel.js";
+import { renderInto } from "../dom.js";
 import { dayKey, dayLabel } from "../format.js";
 
 /**
  * A tabela genérica de atividade -- a de telemetria e a de pedidos usam-na igual. Recebe as
- * linhas já prontas (o descritor de cada uma), pinta-as, e trata da gaveta que abre por baixo
- * e da posição de rolagem entre mensagens do stream. Não sabe nada do detalhe do dispositivo.
+ * linhas já prontas (o descritor de cada uma), pinta-as, e trata da gaveta que abre por
+ * baixo. Não sabe nada do detalhe do dispositivo.
  */
 
 /**
@@ -27,12 +28,12 @@ const COLGROUP = `<colgroup>
 </colgroup>`;
 
 export function activityTable(rootEl, rows, emptyText, idPrefix) {
-    rootEl.innerHTML = rows.length
+    renderInto(rootEl, rows.length
         ? html`<table class="table table-sm align-middle mb-0 telemetry-table">
             ${raw(COLGROUP)}
             <tbody>${raw(groupedByDay(rows, idPrefix))}</tbody>
            </table>`
-        : emptyPanel(emptyText);
+        : emptyPanel(emptyText));
 }
 
 /**
