@@ -46,8 +46,12 @@ final class ZayataDownlink
 
         // As leituras. O aparelho devolve o mesmo corpo preenchido, com o resultado de cada
         // TAG no estado do Flag.
-        if ($command === 'readConfiguration') {
-            return self::pillFrame($imei, 0x05, PillDispenserAdapter::readRequestTlv(PillDispenserAdapter::CONFIGURATION_TAGS));
+        // A leitura vai partida porque já não cabe numa trama. Quem fecha a conta é o teste
+        // que exige que os comandos declarados cubram as TAGs todas.
+        $chunk = ['readConfiguration' => 0, 'readConfiguration2' => 1][$command] ?? null;
+        if ($chunk !== null) {
+            $chunks = PillDispenserAdapter::configurationReadChunks();
+            return self::pillFrame($imei, 0x05, PillDispenserAdapter::readRequestTlv($chunks[$chunk] ?? []));
         }
         if ($command === 'readStatus') {
             return self::pillFrame($imei, 0x07, PillDispenserAdapter::readRequestTlv(PillDispenserAdapter::STATUS_TAGS));

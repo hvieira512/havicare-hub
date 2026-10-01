@@ -54,6 +54,8 @@ final class DeviceCommandCatalog
             // as sete leituras de uma vez.
             ['id' => 'pillReadStatus', 'command' => 'readStatus', 'label' => 'Device status', 'icon' => 'fa-arrows-rotate', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['read_status_ack']],
             ['id' => 'pillReadConfiguration', 'command' => 'readConfiguration', 'label' => 'Stored configuration', 'icon' => 'fa-rotate', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
+            // A segunda metade da leitura: as TAGs já não cabem numa trama de 300 bytes.
+            ['id' => 'pillReadConfiguration2', 'command' => 'readConfiguration2', 'label' => 'Stored configuration (rest)', 'icon' => 'fa-rotate', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
         ];
     }
 

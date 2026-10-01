@@ -177,6 +177,12 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     public const ALARM_SLOTS = 9;
 
     /**
+     * O tamanho de trama que o aparelho declara no `0x8003`. O que passa dele é deitado fora
+     * em silêncio: sem erro e sem resposta.
+     */
+    public const MAX_FRAME_BYTES = 300;
+
+    /**
      * O «sem alarme» do aparelho, fora da gama de horas que a especificação declara.
      *
      * A meia-noite não serve de vazio: um slot a `00:00` toca e gasta um compartimento todos
@@ -267,6 +273,42 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         0x1041, 0x1042, 0x1043, 0x1044, 0x1045, 0x1046, 0x1047, 0x1048, 0x1049, // interruptores
         0x1051, 0x1052, 0x1053, 0x1054, 0x1055,             // não incomodar
     ];
+
+    /**
+     * As TAGs de configuração repartidas por tramas que cabem no que o aparelho declara.
+     *
+     * Mede-se a trama em vez de contar TAGs: o tamanho de cada pedido depende do tipo, e uma
+     * conta feita de cabeça volta a estourar sem dar sinal.
+     *
+     * @return list<list<int>>
+     */
+    public static function configurationReadChunks(): array
+    {
+        $adapter = new self();
+        $chunks = [];
+        $current = [];
+
+        foreach (self::CONFIGURATION_TAGS as $tag) {
+            $candidate = [...$current, $tag];
+            $frame = $adapter->encodeOutgoing([
+                'deviceNumber' => 0,
+                'packetType' => 0x05,
+                'tlv' => self::readRequestTlv($candidate),
+            ]);
+
+            if (strlen($frame) > self::MAX_FRAME_BYTES && $current !== []) {
+                $chunks[] = $current;
+                $current = [$tag];
+                continue;
+            }
+
+            $current = $candidate;
+        }
+
+        $chunks[] = $current;
+
+        return $chunks;
+    }
 
     /** As TAGs de estado que o hub sabe ler. */
     public const STATUS_TAGS = [

@@ -26,7 +26,7 @@ final class PillDispenserRequestCardsTest extends TestCase
         $requests = [];
         foreach (DeviceCommandCatalog::commandsForProtocol('zayata-m228') as $entry) {
             if (($entry['kind'] ?? '') === 'request') {
-                $requests[(string)$entry['feature']] = $entry;
+                $requests[(string)$entry['feature']][] = $entry;
             }
         }
 
@@ -75,7 +75,7 @@ final class PillDispenserRequestCardsTest extends TestCase
     /** Quem as relê é o `device_status`, e é o único pedível entre as leituras do `0x07`. */
     public function testTheStatusReadIsTheOneRequestableReading(): void
     {
-        $status = $this->requests()['device_status'] ?? null;
+        $status = $this->requests()['device_status'][0] ?? null;
 
         self::assertNotNull($status);
         self::assertSame('readStatus', $status['command']);
@@ -86,13 +86,21 @@ final class PillDispenserRequestCardsTest extends TestCase
         );
     }
 
-    /** Cada um tem de saber que trama manda e que resposta espera, senão não fecha o ciclo. */
+    /**
+     * Cada um tem de saber que trama manda e que resposta espera, senão não fecha o ciclo. A
+     * configuração vai em duas porque as TAGs já não cabem numa trama de 300 bytes.
+     */
     public function testEachRequestKnowsItsCommandAndItsReply(): void
     {
-        $requests = $this->requests();
+        $sync = $this->requests()['sync_configuration'] ?? [];
 
-        self::assertSame('readConfiguration', $requests['sync_configuration']['command'] ?? null);
-        self::assertSame(['read_config_ack'], $requests['sync_configuration']['expectedReplyTypes'] ?? null);
+        self::assertSame(
+            ['readConfiguration', 'readConfiguration2'],
+            array_column($sync, 'command'),
+        );
+        foreach ($sync as $entry) {
+            self::assertSame(['read_config_ack'], $entry['expectedReplyTypes']);
+        }
     }
 
     /**
@@ -134,22 +142,26 @@ final class PillDispenserRequestCardsTest extends TestCase
     public function testEachRequestBuildsTheFrameItsPacketTypeRequires(): void
     {
         $adapter = new PillDispenserAdapter();
+        $chunks = PillDispenserAdapter::configurationReadChunks();
         $expected = [
             'readStatus' => [0x07, PillDispenserAdapter::STATUS_TAGS],
-            'readConfiguration' => [0x05, PillDispenserAdapter::CONFIGURATION_TAGS],
+            'readConfiguration' => [0x05, $chunks[0]],
+            'readConfiguration2' => [0x05, $chunks[1] ?? []],
         ];
 
-        foreach ($this->requests() as $feature => $entry) {
-            $command = (string)$entry['command'];
-            [$packetType, $tags] = $expected[$command];
+        foreach ($this->requests() as $entries) {
+            foreach ($entries as $entry) {
+                $command = (string)$entry['command'];
+                [$packetType, $tags] = $expected[$command];
 
-            $decoded = $adapter->decodeIncoming(
-                DeviceCommandCatalog::buildDownlink('zayata-m228', '869243062262262', $command)
-            );
+                $decoded = $adapter->decodeIncoming(
+                    DeviceCommandCatalog::buildDownlink('zayata-m228', '869243062262262', $command)
+                );
 
-            self::assertIsArray($decoded, $feature);
-            self::assertSame($packetType, $decoded['packetType'], $feature);
-            self::assertSame($tags, array_keys($decoded['tlv']), $feature);
+                self::assertIsArray($decoded, $command);
+                self::assertSame($packetType, $decoded['packetType'], $command);
+                self::assertSame($tags, array_keys($decoded['tlv']), $command);
+            }
         }
     }
 }
