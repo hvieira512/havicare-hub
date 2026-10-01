@@ -226,7 +226,7 @@ export async function editDevice(imei, supplier, model) {
         licensesLoaded = licenseGroups !== null;
         resetEditWizard(licenseGroups || []);
         if (detail?.error) {
-            setDeviceFormError(detail.error.message || "Nao foi possivel carregar o dispositivo.");
+            setDeviceFormError(detail.error.message || "Não foi possível carregar o dispositivo.");
             return;
         }
         const device = detail.device || {};
