@@ -22,11 +22,12 @@ composer test:unit          # ~6 s
 composer test:integration   # precisa de base de dados
 composer test:frontend
 composer test:scenarios     # levanta mosquitto, redis, mysql e o hub
-composer test               # tudo, na ordem da integração contínua
+composer test:php84         # o mesmo no 8.4 da produção, dentro do contentor
+composer test               # o portão completo
 ```
 
 O `composer test` é o portão completo: estilo, análise estática, lint do
-frontend, as duas suites PHP, a do frontend e os cenários.
+frontend, as duas suites PHP, a do frontend, o 8.4 da produção e os cenários.
 
 As duas suites PHP correm repartidas por vários processos, um ficheiro de teste
 de cada vez ([`tests/run-parallel.sh`](../tests/run-parallel.sh)), e no fim somam
@@ -125,9 +126,25 @@ A verificação não recorre a `grep` pela palavra "ignorado" na saída: existe 
 teste legitimamente ignorado — o do áudio AMR-NB, quando o `ffmpeg` disponível
 não inclui o codec — que essa abordagem reprovaria igualmente.
 
-**Os cenários estão excluídos da integração contínua.** Requerem a pilha Docker
-completa, cuja duração excede o tempo aceitável para um push. São executados
-manualmente com `composer test:scenarios`.
+## Não há integração contínua
+
+A verificação é local e corre inteira antes de cada push. O CI do GitHub foi
+removido a 01/10/2026: dava uma coisa que a máquina não dava — o **PHP 8.4**, que
+é o da produção, contra o 8.5 que corre aqui — e essa passou para o
+`composer test:php84`, que repete o estilo, a análise e as duas suites de PHP
+dentro do contentor `hub`. São cerca de 90 segundos.
+
+Esse alvo corre em **série** e não pelo corredor paralelo: o contentor partilha
+o Redis com a máquina, e duas corridas a escrever nas mesmas chaves de token
+davam falhas que desapareciam à segunda tentativa.
+
+O que se perdeu com o CI, e vale a pena ter presente: a instalação de raiz. O CI
+fazia `composer install` e `npm ci` num disco vazio, e apanhava uma dependência
+em falta ou um teste que dependesse de estado local. Aqui o `vendor/` e o
+`node_modules/` já existem.
+
+**Os cenários ficam de fora do `test:php84`** — e ficavam do CI pela mesma razão:
+requerem a pilha Docker completa, e correm no `composer test` da máquina.
 
 ## Motores de base de dados
 
@@ -135,8 +152,7 @@ O ambiente local executa MySQL 8.4 e a produção executa MariaDB 10.11. O volum
 local contém ficheiros escritos pelo MySQL que o MariaDB não lê, o que impede a
 substituição.
 
-O esquema e as consultas evitam sintaxe exclusiva de qualquer dos motores,
-condição verificada pela integração contínua a cada push.
+O esquema e as consultas evitam sintaxe exclusiva de qualquer dos motores.
 
 ## Testes de invariantes
 

@@ -40,7 +40,7 @@
         "analyse": "php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress",
         "style": "vendor/bin/phpcs src tests simulator bin",
         "style:fix": "vendor/bin/phpcbf src tests simulator bin",
-        "test:php84": "docker compose exec -T hub sh -lc \"composer style && composer analyse && composer test:unit && composer test:integration\"",
+        "test:php84": "docker compose up -d hub > /dev/null && docker compose exec -T hub sh -lc \"composer style && composer analyse && composer test:unit:serial && composer test:integration:serial\"",
         "test:scenarios": "tests/scenarios/run-all.sh",
         "lint:frontend": "npm run lint",
         "test": [
@@ -50,6 +50,7 @@
             "@test:unit",
             "@test:integration",
             "@test:frontend",
+            "@test:php84",
             "@test:scenarios"
         ],
         "lsp:php": "nvim --headless -u ~/.config/nvim/init.lua -l scripts/lsp-diagnostics.lua $(git ls-files '*.php')",
@@ -77,10 +78,10 @@
         "test:integration": "MySQL-backed suite, repartida por vários processos; skips without a reachable MySQL.",
         "test:integration:serial": "A mesma suite num processo só, para quando o paralelo confunde um diagnóstico.",
         "test:php": "Both PHP suites.",
-        "test:php84": "As suites de PHP dentro do contentor, que corre o 8.4 da produção -- o `composer test` corre no PHP da máquina, que é outro.",
+        "test:php84": "Estilo, análise e as duas suites de PHP dentro do contentor, que corre o 8.4 da produção -- a máquina corre outro. Em série, porque o paralelo colide no Redis que o contentor partilha.",
         "test:frontend": "Node test runner over tests/Frontend.",
         "test:scenarios": "End-to-end scenarios against docker compose.",
-        "test": "Everything: phpstan, both PHP suites, frontend, scenarios.",
+        "test": "Tudo: estilo, análise, frontend, as duas suites de PHP, o mesmo no 8.4 da produção, e os cenários.",
         "hooks": "Point git at .githooks so the pre-commit style checks run."
     }
 }

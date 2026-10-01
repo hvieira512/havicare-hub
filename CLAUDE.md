@@ -123,17 +123,21 @@ As quatro suites e o que cada uma cobre estão no [capítulo 16](docs/16-testes.
 
 ## A verificação é o `composer test`
 
-São **sete** coisas: `style` (phpcs), `analyse` (phpstan), `lint:frontend`
-(eslint), `test:unit`, `test:integration`, `test:frontend` e `test:scenarios`.
-Correr o `phpunit`, o `npm test` e o `phpstan` à mão parece equivalente e não é —
-deixa de fora o phpcs, o eslint e os cenários.
+São **oito** coisas: `style` (phpcs), `analyse` (phpstan), `lint:frontend`
+(eslint), `test:unit`, `test:integration`, `test:frontend`, `test:php84` e
+`test:scenarios`. Correr o `phpunit`, o `npm test` e o `phpstan` à mão parece
+equivalente e não é — deixa de fora o phpcs, o eslint, o 8.4 e os cenários.
 
-Depois do push confirma-se com `gh run list`. É mais barato do que a suite e
-apanha o que a máquina local não apanha: o CI corre em PHP 8.4 **e** 8.5.
+**O `test:php84` é a razão de não haver CI no GitHub.** A máquina corre PHP 8.5
+e a produção corre 8.4; esse alvo repete o estilo, a análise e as duas suites de
+PHP dentro do contentor `hub`, que é 8.4. Leva cerca de 90 segundos e corre em
+série, porque o corredor paralelo colide no Redis que o contentor partilha. Era
+a única coisa que o CI dava e a máquina não.
 
 > Em setembro de 2026 uma linha em branco num bloco de `use` manteve o CI
 > vermelho dez horas e meia, com onze commits a irem para produção por cima. O
-> phpcs apanha-a em dois segundos e ninguém correu o phpcs.
+> phpcs apanha-a em dois segundos e ninguém correu o phpcs. Sem CI, a disciplina
+> deixa de ter rede: **o `composer test` corre antes de cada push**, e não depois.
 
 O `.githooks/pre-commit` corre as duas verificações rápidas — phpcs e eslint — e
 fica ligado sozinho, porque o `composer install` aponta o `core.hooksPath` para
