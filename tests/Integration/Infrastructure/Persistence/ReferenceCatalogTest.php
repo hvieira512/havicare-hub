@@ -147,6 +147,8 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // -40 a 120 graus inteiros. Partilhavam chave com a temperatura corporal.
             'ambient_humidity',
             'ambient_temperature',
+            // O aparelho acerta-se sozinho, sem esperar pelo `calibrate_clock`.
+            'auto_clock',
             'battery',
             'calibrate_clock',
             'cells_remaining',
@@ -154,6 +156,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // A ligação à rede é a mesma capacidade genérica que os gateways publicam, e não
             // um `device_status` com uma forma só deste aparelho.
             'connectivity',
+            'date_format',
             'device_fault',
             'device_language',
             // O `0x07` pede as `STATUS_TAGS` todas, e a resposta enche as sete leituras. É a
@@ -170,6 +173,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // Chega no pacote de registo, e por isso não é pedível como as outras leituras.
             'firmware_version',
             'help_call',
+            'key_tone',
             'loaded_cells',
             // A mudança de estado de uma dose é acontecimento próprio: é o único sinal de uma
             // dose falhada, e viajava dentro da leitura dos nove, pelo canal sem garantia de
@@ -203,6 +207,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // Uma por família: o aparelho separa configuração, estado e controlo, e cada
             // pergunta é um pacote próprio.
             'sync_configuration',
+            'time_format',
             'time_zone',
             // O trinco do prato saiu de dentro do estado do dispositivo: destrancado é um
             // estado sobre que se age. Não é a «tampa» — essa é a leitura do tipo 01.
@@ -215,13 +220,13 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Catorze configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por
+        // Dezoito configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por
         // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
         //
         // As sete leituras que o `0x07` enche não se pedem sozinhas: a trama pede-as sempre a
         // todas, e quem a manda é o `device_status`, que é a sétima pedível.
         self::assertSame(
-            ['14', '7'],
+            ['18', '7'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

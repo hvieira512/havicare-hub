@@ -131,6 +131,30 @@ final class ZayataConfigurationDefinitions
                 [0, 'Do aparelho'],
                 [1, 'Inglês'],
             ], 'A língua do ecrã do aparelho, não a da dashboard.'),
+            self::choice('date_format', 'dateFormat', 'Formato da data', 'system', 11, 'format', [
+                [0, 'Ano/Mês/Dia'],
+                [1, 'Dia/Mês/Ano'],
+            ], 'Como o aparelho escreve a data no ecrã: 01/10/2026 ou 2026/10/01.'),
+            self::choice('time_format', 'timeFormat', 'Formato da hora', 'system', 12, 'format', [
+                [0, '24 horas'],
+                [1, '12 horas'],
+            ], 'Relógio de 24 ou de 12 horas no ecrã do aparelho.'),
+            self::toggle(
+                'auto_clock',
+                'autoClock',
+                'Acerto automático do relógio',
+                13,
+                'Deixa o aparelho acertar-se sozinho, sem esperar pelo comando de acertar.',
+                'system',
+            ),
+            self::toggle(
+                'key_tone',
+                'keyTone',
+                'Som das teclas',
+                14,
+                'O apito que o aparelho dá quando alguém carrega num botão.',
+                'system',
+            ),
             self::choice(
                 'time_zone',
                 'timeZone',

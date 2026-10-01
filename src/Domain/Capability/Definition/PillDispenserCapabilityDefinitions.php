@@ -95,6 +95,10 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
             'settings_system' => [
                 'setting' => [
                     'device_language' => 'Idioma do ecrã',
+                    'date_format' => 'Formato da data',
+                    'time_format' => 'Formato da hora',
+                    'auto_clock' => 'Acerto automático do relógio',
+                    'key_tone' => 'Som das teclas',
                     'time_zone' => 'Fuso horário',
                     // Com os relógios: é uma janela de silêncio do aparelho inteiro, e não
                     // uma definição de um alarme em particular.

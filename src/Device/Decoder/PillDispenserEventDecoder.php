@@ -114,6 +114,10 @@ final class PillDispenserEventDecoder
             'early_dispense' => self::switchSetting($tlv, 0x100D),
             'missed_dispense' => self::switchSetting($tlv, 0x1019),
             'emergency_call' => self::switchSetting($tlv, 0x100E),
+            'key_tone' => self::switchSetting($tlv, 0x100B),
+            'auto_clock' => self::switchSetting($tlv, 0x1014),
+            'date_format' => self::field($tlv, 0x1002, 'format'),
+            'time_format' => self::field($tlv, 0x1003, 'format'),
             // Os dois tempos viajam em segundos e mostram-se em minutos, como são enviados.
             'retrieval_warning' => self::minutes($tlv, 0x1017),
             'retrieval_timeout' => self::minutes($tlv, 0x1018),

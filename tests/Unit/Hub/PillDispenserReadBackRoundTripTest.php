@@ -95,6 +95,11 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
             ['missedDispense', ['enabled' => true], 'missed_dispense', ['enabled' => true]];
         yield 'chamada de emergência' =>
             ['emergencyCall', ['enabled' => false], 'emergency_call', ['enabled' => false]];
+        yield 'formato de data' => ['dateFormat', ['format' => 1], 'date_format', ['format' => 1]];
+        yield 'formato de hora' => ['timeFormat', ['format' => 0], 'time_format', ['format' => 0]];
+        yield 'som das teclas' => ['keyTone', ['enabled' => true], 'key_tone', ['enabled' => true]];
+        yield 'acerto automático do relógio' =>
+            ['autoClock', ['enabled' => true], 'auto_clock', ['enabled' => true]];
     }
 
     /**

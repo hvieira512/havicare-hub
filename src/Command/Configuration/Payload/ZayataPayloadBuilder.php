@@ -22,7 +22,8 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             // Os valores em falta caem no que o aparelho traz de fábrica, e não em erro: o
             // painel pede o payload por omissão antes de alguém escolher seja o que for, e
             // um por omissão que não passa na própria validação não é um por omissão.
-            'early_dispense', 'child_lock', 'missed_dispense', 'emergency_call' => [
+            'early_dispense', 'child_lock', 'missed_dispense', 'emergency_call',
+            'key_tone', 'auto_clock' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
             ],
             // As gamas são as do tipo de dispositivo 02 da especificação: quatro níveis de
@@ -31,6 +32,11 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             // mas o máximo do tipo 02 é 3 e o aparelho recusa o 4.
             'alarm_volume' => ['volume' => self::zeroBasedRangeInt($payload['volume'] ?? 0, 0, 3, 'volume')],
             'alarm_ringtone' => ['ringtone' => self::zeroBasedRangeInt($payload['ringtone'] ?? 0, 0, 3, 'ringtone')],
+            // Os dois formatos declaram um máximo acima do que a ficha descreve; aqui só
+            // passam os valores que sabemos nomear.
+            'date_format', 'time_format' => [
+                'format' => self::zeroBasedRangeInt($payload['format'] ?? 0, 0, 1, 'format'),
+            ],
             'do_not_disturb' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
                 'startHour' => self::zeroBasedRangeInt($payload['startHour'] ?? 22, 0, 23, 'startHour'),

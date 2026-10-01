@@ -40,6 +40,10 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
         yield 'toma antecipada' => ['early_dispense', ['enabled' => true], 0x06, [0x100D]];
         yield 'dispensar depois de falhar' => ['missed_dispense', ['enabled' => true], 0x06, [0x1019]];
         yield 'chamada de emergência' => ['emergency_call', ['enabled' => false], 0x06, [0x100E]];
+        yield 'formato da data' => ['date_format', ['format' => 1], 0x06, [0x1002]];
+        yield 'formato da hora' => ['time_format', ['format' => 0], 0x06, [0x1003]];
+        yield 'som das teclas' => ['key_tone', ['enabled' => true], 0x06, [0x100B]];
+        yield 'acerto automático do relógio' => ['auto_clock', ['enabled' => true], 0x06, [0x1014]];
         yield 'tipo de toque' => ['alarm_ringtone', ['ringtone' => 2], 0x06, [0x1012]];
         yield 'volume' => ['alarm_volume', ['volume' => 1], 0x06, [0x1013]];
         yield 'fuso horário' => ['time_zone', ['timeZone' => 100], 0x06, [0x1015]];
