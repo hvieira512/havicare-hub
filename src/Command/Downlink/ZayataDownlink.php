@@ -59,6 +59,9 @@ final class ZayataDownlink
             'childLock' => [0x100C => ['value' => self::pillBool($payload['enabled'] ?? false)]],
             'earlyRetrieval' => [0x100D => ['value' => self::pillBool($payload['enabled'] ?? false)]],
             'missedDispense' => [0x1019 => ['value' => self::pillBool($payload['enabled'] ?? false)]],
+            // A ficha declara gama 0 a 3 e descreve só o 0 e o 1; os outros dois não se
+            // mandam a um mecanismo de emergência sem saber o que são.
+            'emergencyCall' => [0x100E => ['value' => self::pillBool($payload['enabled'] ?? false)]],
             'alarmRingtone' => [0x1012 => ['value' => self::pillByte($payload['ringtone'] ?? 0, 3)]],
             // 0 é o mais alto e 3 é silêncio, ao contrário do que o nome faz esperar.
             'alarmVolume' => [0x1013 => ['value' => self::pillByte($payload['volume'] ?? 0, 3)]],

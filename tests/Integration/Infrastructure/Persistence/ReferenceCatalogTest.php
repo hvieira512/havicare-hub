@@ -164,6 +164,9 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // A janela configura-se; o estado é outra coisa, e o terceiro valor dele — ligado
             // e a silenciar agora — é o que a configuração sozinha não sabe dizer.
             'early_dispense',
+            // O interruptor que decide se o botão do aparelho chega a pedir ajuda. Fica ao
+            // lado do `help_call`, que é o evento que ele produz.
+            'emergency_call',
             // Chega no pacote de registo, e por isso não é pedível como as outras leituras.
             'firmware_version',
             'help_call',
@@ -212,13 +215,13 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Treze configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por
+        // Catorze configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por
         // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
         //
         // As sete leituras que o `0x07` enche não se pedem sozinhas: a trama pede-as sempre a
         // todas, e quem a manda é o `device_status`, que é a sétima pedível.
         self::assertSame(
-            ['13', '7'],
+            ['14', '7'],
             array_map('strval', $pdo->query("
                 SELECT
                     SUM(is_configurable = 1) AS configuraveis,

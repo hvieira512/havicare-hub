@@ -441,6 +441,7 @@ final class CapabilityCatalog
             'early_dispense',
             'missed_dispense',
             'child_lock',
+            'emergency_call',
             'retrieval_warning',
             'retrieval_timeout',
             'loaded_cells',

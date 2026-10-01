@@ -258,7 +258,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         0x1001, 0x1015,                                     // idioma e fuso
         0x1017, 0x1018, 0x101C,                             // avisar de atraso, dar como falhada, células carregadas
         0x1004, 0x1005, 0x1006, 0x1007, 0x1008, 0x1009, 0x100A, // período do plano
-        0x100C, 0x100D,                                     // bloqueio de criança, toma antecipada
+        0x100C, 0x100D, 0x1019,                             // bloqueio de criança, toma antecipada, dispensar depois de falhar
+        0x100E,                                             // chamada de emergência
         0x1012, 0x1013,                                     // toque e volume
         0x1021, 0x1022, 0x1023, 0x1024, 0x1025, 0x1026, 0x1027, 0x1028, 0x1029, // horas
         0x1031, 0x1032, 0x1033, 0x1034, 0x1035, 0x1036, 0x1037, 0x1038, 0x1039, // minutos

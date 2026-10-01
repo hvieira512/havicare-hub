@@ -71,6 +71,9 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
                     'medication_period' => 'Período do plano',
                     'alarm_volume' => 'Volume',
                     'alarm_ringtone' => 'Tipo de toque',
+                    // Fica ao lado do evento que produz, a chamada de ajuda, e não em
+                    // Sistema: é segurança e não configuração de aparelho.
+                    'emergency_call' => 'Chamada de emergência',
                 ],
                 'action' => [
                     'mute_alarm' => 'Silenciar o alarme a tocar',

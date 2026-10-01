@@ -22,7 +22,7 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             // Os valores em falta caem no que o aparelho traz de fábrica, e não em erro: o
             // painel pede o payload por omissão antes de alguém escolher seja o que for, e
             // um por omissão que não passa na própria validação não é um por omissão.
-            'early_dispense', 'child_lock', 'missed_dispense' => [
+            'early_dispense', 'child_lock', 'missed_dispense', 'emergency_call' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
             ],
             // As gamas são as do tipo de dispositivo 02 da especificação: quatro níveis de

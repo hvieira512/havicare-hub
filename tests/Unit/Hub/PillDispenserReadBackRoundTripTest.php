@@ -91,6 +91,10 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
         yield 'fuso a oeste' => ['timeZone', ['timeZone' => -300], 'time_zone', ['timeZone' => -300]];
         yield 'bloqueio' => ['childLock', ['enabled' => true], 'child_lock', ['enabled' => true]];
         yield 'toma antecipada' => ['earlyRetrieval', ['enabled' => false], 'early_dispense', ['enabled' => false]];
+        yield 'dispensar depois de falhar' =>
+            ['missedDispense', ['enabled' => true], 'missed_dispense', ['enabled' => true]];
+        yield 'chamada de emergência' =>
+            ['emergencyCall', ['enabled' => false], 'emergency_call', ['enabled' => false]];
     }
 
     /**

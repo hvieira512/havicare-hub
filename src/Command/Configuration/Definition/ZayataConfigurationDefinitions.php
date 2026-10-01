@@ -48,6 +48,15 @@ final class ZayataConfigurationDefinitions
             self::toggle('early_dispense', 'earlyRetrieval', 'Toma antecipada', 20, 'Deixa o utente levantar a medicação antes da hora marcada.'),
             self::toggle('child_lock', 'childLock', 'Bloqueio de criança', 21, 'Tranca o prato para não ser aberto por quem não deve.'),
             self::toggle('missed_dispense', 'missedDispense', 'Dispensar depois de falhar', 22, 'Deixa levantar a dose depois de ela já contar como falhada.'),
+            self::toggle(
+                'emergency_call',
+                'emergencyCall',
+                'Chamada de emergência',
+                30,
+                'Decide se o botão do aparelho chega a pedir ajuda. Desligado, ele deixa de'
+                . ' produzir a chamada.',
+                'alerts',
+            ),
             // Os dois tempos decidem se uma dose por tomar chega a alguém como alerta ou fica
             // em silêncio, e até agora só se mudavam por script.
             self::number(
@@ -331,8 +340,14 @@ final class ZayataConfigurationDefinitions
         );
     }
 
-    private static function toggle(string $key, string $command, string $label, int $order, string $help): array
-    {
+    private static function toggle(
+        string $key,
+        string $command,
+        string $label,
+        int $order,
+        string $help,
+        string $category = 'health',
+    ): array {
         return ConfigurationDefinition::make(
             $key,
             $command,
@@ -340,7 +355,7 @@ final class ZayataConfigurationDefinitions
             'toggle',
             ['enabled'],
             self::replyTo($command),
-            'health',
+            $category,
             $order,
             null,
             null,

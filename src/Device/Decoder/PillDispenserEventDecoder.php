@@ -112,6 +112,8 @@ final class PillDispenserEventDecoder
             'time_zone' => ($zone = Tlv::i16($tlv, 0x1015)) === null ? null : ['timeZone' => $zone],
             'child_lock' => self::switchSetting($tlv, 0x100C),
             'early_dispense' => self::switchSetting($tlv, 0x100D),
+            'missed_dispense' => self::switchSetting($tlv, 0x1019),
+            'emergency_call' => self::switchSetting($tlv, 0x100E),
             // Os dois tempos viajam em segundos e mostram-se em minutos, como são enviados.
             'retrieval_warning' => self::minutes($tlv, 0x1017),
             'retrieval_timeout' => self::minutes($tlv, 0x1018),
