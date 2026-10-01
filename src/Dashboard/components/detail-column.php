@@ -83,7 +83,7 @@
                                                     <div class="d-none d-xl-block"><?= section_header($panel['title'], $panel['countId'], '') ?></div>
                                                     <?= pagination_component($panel['pager'], '', true) ?>
                                                 </div>
-                                                <div id="<?= $panel['list'] ?>" class="activity-list flex-grow-1 min-h-0"></div>
+                                                <div id="<?= $panel['list'] ?>" class="flex-grow-1"></div>
                                                 <div id="<?= $panel['loadMore'] ?>" class="d-grid d-lg-none"></div>
                                             </div>
                                             <?php endforeach; ?>
