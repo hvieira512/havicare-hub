@@ -1,14 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { globSync, readFileSync } from "node:fs";
 
 // Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e
 // esse caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
-import { html, raw } from "../../src/Dashboard/dashboard/html.js";
+import { html, raw, trusted } from "../../src/Dashboard/dashboard/html.js";
 import { deviceLicenseBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/shell.js";
+
+const ROOT = new URL("../..", import.meta.url).pathname;
 
 /* ---------- a template tag ---------- */
 
@@ -114,4 +117,36 @@ test("o valor e o título de um cartão saem escapados", () => {
     assert.equal(root.querySelector("script"), null);
     assert.match(root.textContent, /<script>alert\(1\)<\/script>/);
     assert.match(root.textContent, /<script>alert\(2\)<\/script>/);
+});
+
+/* ---------- a fronteira de confiança ---------- */
+
+/**
+ * O `raw` e o `trusted` fazem o mesmo e distinguem-se pela proveniência. A separação só serve
+ * para alguma coisa enquanto o `trusted` continuar a ser o conjunto pequeno: foi um `raw()`
+ * perdido entre cento e doze que deixou passar a chave de configuração que um aparelho
+ * inventava, e que entrava na dashboard como marcação.
+ */
+test("o trusted deixa passar marcação construída por quem chama", () => {
+    assert.equal(html`<p>${trusted("<b>a</b>")}</p>`, "<p><b>a</b></p>");
+});
+
+test("sem o trusted, o que vem de quem chama sai escapado", () => {
+    assert.equal(
+        html`<p>${"<img src=x onerror=alert(1)>"}</p>`,
+        "<p>&lt;img src=x onerror=alert(1)&gt;</p>",
+    );
+});
+
+test("as fronteiras de confiança continuam a caber numa mão", () => {
+    const files = globSync("src/Dashboard/dashboard/**/*.js", { cwd: ROOT });
+    const sites = files.flatMap((rel) => {
+        const src = readFileSync(`${ROOT}/${rel}`, "utf8");
+        return [...src.matchAll(/trusted\(/g)].map(() => rel);
+    }).filter((rel) => !rel.endsWith("html.js"));
+
+    assert.ok(
+        sites.length <= 12,
+        `o trusted está em ${sites.length} sítios: ou há fronteiras novas a rever, ou passou a usar-se onde o raw chegava.\n${[...new Set(sites)].join("\n")}`,
+    );
 });

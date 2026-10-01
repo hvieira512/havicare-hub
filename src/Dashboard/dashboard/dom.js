@@ -22,6 +22,9 @@ const lastHtml = new WeakMap();
  * segundo num aparelho vivo.
  */
 export function renderInto(container, markup, beforeWrite = null) {
+    // Pelo texto e não pela referência: o `html` devolve um `Fragment` novo a cada render, e
+    // comparar objectos dava sempre diferente.
+    markup = String(markup);
     if (!container || lastHtml.get(container) === markup) return false;
     // Os tooltips do Bootstrap desfazem-se antes de o elemento deles sair, e só quando sai:
     // desfazê-los a cada mensagem fechava sozinho o que estivesse aberto.

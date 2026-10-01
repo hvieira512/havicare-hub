@@ -1,4 +1,4 @@
-import { html, raw } from "../html.js";
+import { html, raw, trusted } from "../html.js";
 
 /**
  * Uma etiqueta com o seu controlo, e a linha de ajuda por baixo quando existe.
@@ -15,7 +15,7 @@ export function field(label, control, { help = "", cls = "", required = false } 
     return html`
         <div${raw(classAttribute)}>
             <label class="form-label-sm${required ? " required" : ""}">${label}</label>
-            ${raw(control)}
+            ${trusted(control)}
             ${raw(helpLine)}
         </div>`;
 }

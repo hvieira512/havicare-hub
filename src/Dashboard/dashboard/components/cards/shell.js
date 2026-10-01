@@ -1,4 +1,4 @@
-import { html, raw } from "../../html.js";
+import { html, raw, trusted } from "../../html.js";
 import { stateBadge } from "../state-badge.js";
 
 /**
@@ -50,7 +50,7 @@ export function telemetryCard({
     // Fora da linha do ícone, para ter a largura toda do cartão.
     const detailsTitleAttr = detailsTitle ? html` title="${detailsTitle}"` : "";
     const detailsHtml = details
-        ? html`<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details text-secondary lh-sm"${raw(detailsTitleAttr)}>${raw(details)}</div>`
+        ? html`<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details text-secondary lh-sm"${raw(detailsTitleAttr)}>${trusted(details)}</div>`
         : "";
     const valueHtml = value
         ? html`<div class="telemetry-card-value fw-semibold lh-sm tabular-nums text-break">${value}</div>`
@@ -78,7 +78,7 @@ export function telemetryCard({
                     </div>
                     ${raw(state)}
                     ${raw(detailsHtml)}
-                ${raw(body)}
+                ${trusted(body)}
             </div>
         </${tag}>
     </div>`;

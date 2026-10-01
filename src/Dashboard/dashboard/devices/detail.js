@@ -16,7 +16,7 @@ import {
     timeOnly,
     when,
 } from "../format.js";
-import { html, raw } from "../html.js";
+import { html, raw, trusted } from "../html.js";
 import { renderInto } from "../dom.js";
 import { capabilityLabel } from "../capability-catalog.js";
 import { apiError, toast } from "../dialogs.js";
@@ -273,7 +273,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
             (item) => html`
         <div class="${item.wide ? "col-12" : "col-6"}">
             <dt class="mb-1">${item.label}</dt>
-            <dd class="text-truncate mb-0"${raw(item.html ? "" : html` title="${item.value}"`)}>${item.html ? raw(item.html) : item.value}</dd>
+            <dd class="text-truncate mb-0"${raw(item.html ? "" : html` title="${item.value}"`)}>${item.html ? trusted(item.html) : item.value}</dd>
         </div>
     `,
         )
@@ -471,7 +471,7 @@ function renderRequestCardGroup(
         <div class="section-label">${group.label || "Pedidos"}</div>
         <span class="count-chip">${group.cards.length}</span>
         </div>
-        <div class="d-grid telemetry-card-grid gap-3">${raw(cards)}</div>
+        <div class="d-grid telemetry-card-grid gap-3">${trusted(cards)}</div>
         </div>`;
 }
 
