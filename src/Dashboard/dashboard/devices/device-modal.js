@@ -268,6 +268,7 @@ export async function editDevice(imei, supplier, model) {
         state.deviceModal.capabilities = detail.capabilities || {};
         state.deviceModal.enabledCapabilityKeys = detail.enabledCapabilityKeys || [];
         state.deviceModal.online = Boolean(device.online);
+        state.deviceModal.detailLoaded = true;
         renderDeviceModalIdentity(device, deviceModel, deviceType);
     } finally {
         if (!licensesLoaded && state.deviceModal.errorMessage === "") {
@@ -473,6 +474,12 @@ function applyFourPTouchDeviceIdUi() {
 }
 
 export async function saveDevice() {
+    // Editar o que não chegou a carregar é gravar os valores de arranque por cima do registo
+    // real. Criar não traz detalhe nenhum e por isso não entra aqui.
+    if (state.deviceModal.mode === "edit" && !state.deviceModal.detailLoaded) {
+        setDeviceFormError("O dispositivo não chegou a carregar. Feche e volte a abrir.");
+        return;
+    }
     // Guardar com uma pergunta da classificação aberta fecha-a primeiro: a validação abaixo
     // marca campos que só existem no passo do aparelho.
     showDeviceFields();
