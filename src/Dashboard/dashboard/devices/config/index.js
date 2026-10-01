@@ -22,6 +22,10 @@ import {
 // O `device-modal.js` chega ao catálogo por aqui, que é a porta do painel tardio.
 export { catalogForProtocol };
 
+/**
+ * As três fases do botão: o que este ecrã fez com o clique. O que o aparelho fez com o
+ * comando é outra coisa e mora na pastilha, pelo `delivery.js`.
+ */
 const CONFIG_ACTION_BUTTON_META = {
     idle: {
         icon: "fa-paper-plane",
@@ -34,19 +38,6 @@ const CONFIG_ACTION_BUTTON_META = {
         className: "btn-primary",
     },
     sent: { icon: "fa-check", label: "Enviado", className: "btn-info" },
-    queued: { icon: "fa-list-check", label: "Em fila", className: "btn-secondary" },
-    waiting: { icon: "fa-hourglass-half", label: "À espera", className: "btn-warning" },
-    acked: { icon: "fa-circle-check", label: "Confirmado", className: "btn-success" },
-    failed: {
-        icon: "fa-triangle-exclamation",
-        label: "Falhou",
-        className: "btn-danger",
-    },
-    dropped: {
-        icon: "fa-triangle-exclamation",
-        label: "Falhou",
-        className: "btn-danger",
-    },
 };
 
 export function renderDeviceConfigurationRoot(context) {
@@ -526,8 +517,7 @@ function renderConfigActionButton(key, row, uiState, disabled = false, appliedBy
         : appliedByHub
             ? "Guardar"
             : (["pushMessage", "push_message"].includes(key) ? "Enviar mensagem" : "Enviar");
-    const isDisabled =
-        disabled || ["submitting", "sent", "queued", "waiting"].includes(state);
+    const isDisabled = disabled || ["submitting", "sent"].includes(state);
     const meta = CONFIG_ACTION_BUTTON_META[state] || CONFIG_ACTION_BUTTON_META.idle;
     // O peso de uma acção que não se desfaz fica no botão, e não numa faixa de aviso. A
     // partir do clique é a fase que manda na cor.

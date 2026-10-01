@@ -47,7 +47,41 @@ let deviceSelectorModal = null;
 let settingsModal = null;
 let radarMapModal = null;
 
+/**
+ * A fiação faz-se uma vez só.
+ *
+ * Falhar o arranque devolve o ecrã de entrada com a bandeira baixada, de propósito, para
+ * haver onde tentar outra vez. Mas repetir a fiação deixava cinco modais, um
+ * `ResizeObserver` e dois temporizadores por cima dos que já lá estavam, e nenhum deles se
+ * desliga.
+ */
+let wired = false;
+
 export async function startDashboard() {
+    if (!wired) {
+        wired = true;
+        wireDashboard();
+        startSelectedDevicePolling();
+    }
+
+    await ensureProtocolsLoaded();
+
+    // Os filtros guardados podem ser da forma antiga, com um valor por chave e `licenseId`
+    // e `company` separados: o `storedFilterList` aceita as duas para não os perder.
+    const stored = loadJsonStorage(FILTERS_STORAGE_KEY);
+    if (stored && typeof stored === "object") {
+        setDeviceFilters({
+            deviceType: storedFilterList(stored.deviceType),
+            supplier: storedFilterList(stored.supplier),
+            model: storedFilterList(stored.model),
+            license: storedFilterList(stored.license),
+            online: typeof stored.online === "boolean" ? stored.online : null,
+        });
+    }
+    restoreSelectedDevice(loadTextStorage(SELECTED_DEVICE_STORAGE_KEY));
+}
+
+function wireDashboard() {
     els = cacheElements();
     trackStickyTop({
         navbar: document.querySelector(".dashboard-navbar"),
@@ -108,24 +142,6 @@ export async function startDashboard() {
     bindInvalidClearing(document);
     bindDeviceEvents({ els, ui });
     bindSettingsEvents({ els });
-
-    await ensureProtocolsLoaded();
-
-    // Os filtros guardados podem ser da forma antiga, com um valor por chave e `licenseId`
-    // e `company` separados: o `storedFilterList` aceita as duas para não os perder.
-    const stored = loadJsonStorage(FILTERS_STORAGE_KEY);
-    if (stored && typeof stored === "object") {
-        setDeviceFilters({
-            deviceType: storedFilterList(stored.deviceType),
-            supplier: storedFilterList(stored.supplier),
-            model: storedFilterList(stored.model),
-            license: storedFilterList(stored.license),
-            online: typeof stored.online === "boolean" ? stored.online : null,
-        });
-    }
-    restoreSelectedDevice(loadTextStorage(SELECTED_DEVICE_STORAGE_KEY));
-
-    startSelectedDevicePolling();
 }
 
 /**
