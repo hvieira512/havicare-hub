@@ -311,7 +311,6 @@ function renderTelemetryList(telemetryRows) {
         // O prefixo é por lista: as duas desenham-se ao mesmo tempo no mesmo documento, e
         // com o mesmo `activityRowDetail0` em cada uma ficavam dois elementos com o mesmo id.
         "telemetryRowDetail",
-        state.telemetryPage,
     );
     renderClientPager("telemetry", telemetry.length, totalPages);
 }
@@ -388,9 +387,9 @@ export function telemetryActivityRow(payload) {
         detailKind: card.detailsKind || "text",
         detailTitle: detailText,
         expanded: detailExpanded(card, plainDetail),
-        // O `seq` é monótono por dispositivo e lista. O IMEI vai na chave porque ele
-        // recomeça em cada aparelho.
-        key: `t:${state.selectedImei}:${payload?.seq ?? `${at}:${type}`}`,
+        // O `seq` é monótono por dispositivo e lista, e esta tabela junta duas listas: sem o
+        // tipo, a leitura 7 e o alarme 7 davam a mesma chave.
+        key: `t:${state.selectedImei}:${type}:${payload?.seq ?? at}`,
         at,
         time: timeOnly(at) || "--:--",
         timeTitle: when(at),
@@ -557,7 +556,6 @@ function renderDownlinkRequests(commands) {
         listedRows.map(downlinkActivityRow),
         "Ainda não há pedidos.",
         "downlinkRowDetail",
-        state.downlinkPage,
     );
 
     renderClientPager("downlink", commands.length, totalPages);
