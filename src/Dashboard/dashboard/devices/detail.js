@@ -639,11 +639,26 @@ function downlinkActivityRow(command) {
 }
 
 /** A gaveta escapa o que recebe: os detalhes chegam com marcação e saem em texto. */
+/**
+ * Marcação em texto, para uma tooltip ou um atributo.
+ *
+ * As entidades desfazem-se: o que entra já está escapado, e quem receber isto escapa outra
+ * vez -- sem isto a tooltip de um detalhe com `&` mostrava «A &amp;amp; B» à letra.
+ */
 function plainText(markup) {
     return String(markup)
         .replace(/<br\s*\/?>/gi, " · ")
-        .replace(/<[^>]*>/g, "");
+        .replace(/<[^>]*>/g, "")
+        .replace(/&(amp|lt|gt|quot|#039);/g, (entity) => UNESCAPED[entity]);
 }
+
+const UNESCAPED = {
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": "\"",
+    "&#039;": "'",
+};
 
 function renderConnectionTimeline(rows) {
     const events = rows
