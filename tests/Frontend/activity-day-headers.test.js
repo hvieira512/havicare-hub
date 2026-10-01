@@ -24,7 +24,7 @@ const row = (at, name, extra = {}) => ({
 
 function render(rows) {
     const root = document.createElement("div");
-    activityTable(root, rows, "Sem nada.", "t", 1);
+    activityTable(root, rows, "Sem nada.", "t");
     return root;
 }
 

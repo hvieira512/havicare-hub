@@ -23,7 +23,7 @@ $vitalCard = static function (string $prefix, string $icon, string $label, strin
                 <?php $stat($prefix . 'Max', 'fa-arrow-up', 'Máximo da janela'); ?>
             </div>
         </div>
-        <div id="<?= h($prefix) ?>Chart" class="radar-vital-chart w-100 flex-grow-1 mt-3 mb-n3"></div>
+        <div id="<?= h($prefix) ?>Chart" class="radar-vital-chart w-100 flex-grow-1 mt-3"></div>
     </div>
 <?php };
 

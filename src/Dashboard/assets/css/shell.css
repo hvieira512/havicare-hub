@@ -266,18 +266,6 @@
     background: var(--bs-border-color);
 }
 
-/* O terceiro nível: um modelo dentro de um fornecedor dentro de um tipo. */
-.tree-row-nested {
-    padding-left: 3.25rem;
-}
-
-.tree-row-nested::before,
-.tree-row-nested::after {
-    left: 2.25rem;
-}
-
-/* A 375px a indentação dupla come o nome: um modelo com nome comercial e código interno
-   começa a 3.25rem e sobra-lhe menos de metade da largura. */
 @media (max-width: 575.98px) {
     .tree-row {
         padding-left: 1.5rem;
@@ -286,15 +274,6 @@
     .tree-row::before,
     .tree-row::after {
         left: .625rem;
-    }
-
-    .tree-row-nested {
-        padding-left: 2.5rem;
-    }
-
-    .tree-row-nested::before,
-    .tree-row-nested::after {
-        left: 1.625rem;
     }
 
     /* O formulário das credenciais sai da indentação e toma o cartão de lado a lado: cinco
@@ -366,6 +345,13 @@
    `overflow-auto` nunca chega a ter o que rolar. O Bootstrap também não traz utilitário. */
 .min-h-0 {
     min-height: 0;
+}
+
+/* O Bootstrap 5 não traz utilitário de cursor, e a marcação já o pedia em dois sítios: os
+   `input[type=file]` invisíveis por cima da imagem de um modelo, onde o ponteiro é a única
+   pista de que a zona se clica. */
+.cursor-pointer {
+    cursor: pointer;
 }
 
 /* Sem medida mínima os botões medem o que o número mede, e treze caixas de larguras

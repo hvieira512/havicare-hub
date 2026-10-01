@@ -26,22 +26,13 @@ const COLGROUP = `<colgroup>
     <col class="telemetry-col-time">
 </colgroup>`;
 
-/** A página que cada lista tinha da última vez, para se saber quando o leitor mudou de página. */
-const lastRenderedPage = new Map();
-
-export function activityTable(rootEl, rows, emptyText, idPrefix, page = 1) {
-    // A lista rola por dentro e a posição repõe-se, senão cada mensagem do stream atirava
-    // para o topo uma lista que estava a ser lida. Mudar de página é o contrário.
-    const pageChanged = lastRenderedPage.get(idPrefix) !== page;
-    lastRenderedPage.set(idPrefix, page);
-    const scrollTop = pageChanged ? 0 : rootEl.scrollTop;
+export function activityTable(rootEl, rows, emptyText, idPrefix) {
     rootEl.innerHTML = rows.length
         ? html`<table class="table table-sm align-middle mb-0 telemetry-table">
             ${raw(COLGROUP)}
             <tbody>${raw(groupedByDay(rows, idPrefix))}</tbody>
            </table>`
         : emptyPanel(emptyText);
-    rootEl.scrollTop = scrollTop;
 }
 
 /**
