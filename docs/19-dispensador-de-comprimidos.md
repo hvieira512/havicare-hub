@@ -480,7 +480,7 @@ aparelho a 01/10/2026, todas com estado `0`:
 
 | TAG | O quê | Valor |
 |---|---|---|
-| `0x1002` | formato de data | `1` — Dia/Mês/Ano, que já é o português |
+| `0x1002` | formato de data | `1` — Dia/Mês/Ano, e o ecrã cumpre-o: `01/10/2026` |
 | `0x1003` | formato de hora | `0` — 24 horas |
 | `0x100B` | som das teclas | `1`, ligado |
 | `0x100E` | chamada de emergência | `1`, ligada |
