@@ -28,12 +28,22 @@ const COLGROUP = `<colgroup>
 </colgroup>`;
 
 export function activityTable(rootEl, rows, emptyText, idPrefix) {
-    renderInto(rootEl, rows.length
+    // A chave do registo é a mesma antes e depois do redesenho, e é por ela que o foco volta:
+    // sem isto, uma leitura nova tirava do documento a linha a que se tinha chegado de Tab.
+    const focusedKey = rootEl.contains(document.activeElement)
+        ? document.activeElement.closest("[data-row-key]")?.dataset.rowKey
+        : null;
+
+    const written = renderInto(rootEl, rows.length
         ? html`<table class="table table-sm align-middle mb-0 telemetry-table">
             ${raw(COLGROUP)}
             <tbody>${raw(groupedByDay(rows, idPrefix))}</tbody>
            </table>`
         : emptyPanel(emptyText));
+
+    if (written && focusedKey) {
+        rootEl.querySelector(`[data-row-key="${CSS.escape(focusedKey)}"]`)?.focus();
+    }
 }
 
 /**

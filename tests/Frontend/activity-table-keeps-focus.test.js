@@ -55,3 +55,35 @@ test("uma linha nova continua a entrar", () => {
     assert.equal(root.querySelectorAll("[data-row-toggle]").length, before + 1);
     assert.match(root.textContent, /80 bpm/);
 });
+
+/**
+ * Quando chega mesmo uma leitura nova a lista tem de ser reescrita, e a linha focada morre
+ * com ela. A chave do registo é a mesma antes e depois, e é por ela que o foco volta.
+ */
+test("uma leitura nova não rouba o foco à linha que estava escolhida", () => {
+    const root = mounted();
+    const openable = root.querySelector("[data-row-toggle]");
+    const key = openable.dataset.rowKey;
+    openable.focus();
+
+    activityTable(root, [{ ...rows[0], key: "t:aaa111:heart_rate:2", value: "80 bpm" }, ...rows],
+        "Sem nada.", "t");
+
+    assert.equal(
+        document.activeElement?.dataset?.rowKey,
+        key,
+        "o foco tem de voltar à linha da mesma leitura",
+    );
+});
+
+/** Sem foco na lista, redesenhar não vai roubá-lo a quem o tiver noutro sítio. */
+test("redesenhar não traz o foco para a lista", () => {
+    const root = mounted();
+    const outside = document.createElement("button");
+    document.body.append(outside);
+    outside.focus();
+
+    activityTable(root, [{ ...rows[0], key: "t:aaa111:heart_rate:9" }], "Sem nada.", "t");
+
+    assert.equal(document.activeElement, outside);
+});
