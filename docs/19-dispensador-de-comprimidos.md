@@ -475,6 +475,26 @@ REST eram um único `rotate`, aqui vêm discriminadas em cinco.
 
 **São nove alarmes, não seis.** A API REST só expõe seis.
 
+**Cinco destas o hub nunca mandou, e nenhuma precisa de ser mudada.** Lidas do
+aparelho a 01/10/2026, todas com estado `0`:
+
+| TAG | O quê | Valor |
+|---|---|---|
+| `0x1002` | formato de data | `1` — Dia/Mês/Ano, que já é o português |
+| `0x1003` | formato de hora | `0` — 24 horas |
+| `0x100B` | som das teclas | `1`, ligado |
+| `0x100E` | chamada de emergência | `1`, ligada |
+| `0x1014` | acerto automático do relógio | `1`, ligado |
+
+A única com valor de produto é o `0x100E`: é o interruptor que liga e desliga a
+chamada de emergência, e a dashboard não o expõe. A ficha dele declara gama `0`
+a `3` e descreve só o `0` e o `1` — os outros dois não estão documentados em
+lado nenhum.
+
+**O `0x1055` fixa-se.** Apesar de a descoberta não o anunciar, escrever `47` no
+minuto final do não incomodar devolveu `47` com estado `0`. A janela que o hub
+manda vale inteira.
+
 ### Um alarme desliga-se esvaziando-o, e não pelo interruptor
 
 O `0x1041`–`0x1049` não faz nada neste firmware. Um alarme sai como uma hora
@@ -587,11 +607,15 @@ de pressão para a chamada de emergência), pela mesma razão que o `0xA124` e o
 sincronização forçada · `0xA004` novo registo · `0xA101` calibrar relógio ·
 `0xA102` silenciar · `0xA103` repor o prato · `0xA123` toma antecipada.
 
-> **O `0xA001` é confirmado sem o aparelho reiniciar.** Medido a 01/10/2026 no
-> firmware `0x0503`: o comando voltou acusado, e não houve registo novo nem falha
-> de heartbeat — a sessão TCP nunca se interrompeu. Quem precisar de uma ligação
-> nova — para entregar uma trama que espere por ela, por exemplo — tem de a
-> provocar do lado do hub.
+> **O `0xA001` é confirmado sem o aparelho reiniciar, e o `0xA004` é que serve.**
+> Medidos a 01/10/2026 no firmware `0x0503`. O reinício voltou acusado sem registo
+> novo e sem falha de heartbeat — a sessão TCP nunca se interrompeu. O novo
+> registo também é acusado de imediato, mas **setenta segundos depois chega um
+> `0x01` a sério**, numa sessão nova.
+>
+> Isto resolve um problema prático do hub: as tramas em fila só saem quando um
+> aparelho se autentica, e até aqui a única forma de o provocar era reiniciar o
+> serviço. Com o `0xA004` ao fim de cada lote, o lote seguinte entrega-se sozinho.
 
 A lista acaba aqui. O `0xA124` (rodar para uma célula indicada) e o `0xA125`
 (pausa da medicação) **não existem neste firmware**: um `0xA124` mandado à mão é
