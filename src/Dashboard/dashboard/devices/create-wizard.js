@@ -368,7 +368,10 @@ function renderFooter() {
     els.wizardNextBtn.innerHTML = last
         ? "<i class=\"fa-solid fa-plus me-2\"></i>Criar dispositivo"
         : `Seguinte: ${esc(STEPS[step])}<i class="fa-solid fa-arrow-right ms-2"></i>`;
-    els.wizardNextBtn.disabled = last ? !wizard.isComplete() : !wizard.canAdvance();
+    // Com um POST no ar o botão fica desligado: escrever num campo redesenha o rodapé, e sem
+    // isto reacendia-o a meio da criação.
+    els.wizardNextBtn.disabled = creating ||
+        (last ? !wizard.isComplete() : !wizard.canAdvance());
 }
 
 /* ---------- interacção ---------- */
@@ -440,12 +443,20 @@ function setError(message) {
     els.wizardError.classList.toggle("d-none", message === "");
 }
 
+let creating = false;
+
 async function create() {
+    if (creating) return;
     setError("");
+    creating = true;
     els.wizardNextBtn.disabled = true;
-    const error = await createDeviceFromWizard(wizard.answers());
-    els.wizardNextBtn.disabled = false;
-    if (error) setError(error);
+    try {
+        const error = await createDeviceFromWizard(wizard.answers());
+        if (error) setError(error);
+    } finally {
+        creating = false;
+        els.wizardNextBtn.disabled = false;
+    }
 }
 
 /* ---------- o que o assistente precisa do resto da aplicação ---------- */
