@@ -48,12 +48,8 @@ let settingsModal = null;
 let radarMapModal = null;
 
 /**
- * A fiação faz-se uma vez só.
- *
- * Falhar o arranque devolve o ecrã de entrada com a bandeira baixada, de propósito, para
- * haver onde tentar outra vez. Mas repetir a fiação deixava cinco modais, um
- * `ResizeObserver` e dois temporizadores por cima dos que já lá estavam, e nenhum deles se
- * desliga.
+ * Falhar o arranque devolve o ecrã de entrada e deixa tentar outra vez; a fiação é que não se
+ * repete, porque os modais, o `ResizeObserver` e os temporizadores não se desligam.
  */
 let wired = false;
 

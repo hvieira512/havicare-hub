@@ -638,13 +638,7 @@ function downlinkActivityRow(command) {
     };
 }
 
-/** A gaveta escapa o que recebe: os detalhes chegam com marcação e saem em texto. */
-/**
- * Marcação em texto, para uma tooltip ou um atributo.
- *
- * As entidades desfazem-se: o que entra já está escapado, e quem receber isto escapa outra
- * vez -- sem isto a tooltip de um detalhe com `&` mostrava «A &amp;amp; B» à letra.
- */
+/** Marcação em texto, para uma tooltip. As entidades desfazem-se: quem a recebe escapa-a. */
 function plainText(markup) {
     return String(markup)
         .replace(/<br\s*\/?>/gi, " · ")

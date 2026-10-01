@@ -7,8 +7,7 @@ export function blankDeviceModal(overrides = {}) {
         mode: "create",
         activeTab: "general",
         activeCategory: "",
-        // O detalhe do aparelho chegou. A falso, o formulário mostra valores de arranque e
-        // não representa registo nenhum: gravá-lo escrevia-os por cima do que lá está.
+        // A falso, o formulário tem valores de arranque e não representa registo nenhum.
         detailLoaded: false,
         imei: "",
         originalImei: "",

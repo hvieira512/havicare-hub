@@ -4,11 +4,7 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 import { areaTypeStyle } from "../../src/Dashboard/dashboard/radar-style.js";
 
-/**
- * Os tipos de área declarados no aparelho, como o `baseList` do console do fabricante os
- * enumera. Um tipo que o hub não conheça aparece na planta como «Tipo 7», que é o que se viu
- * num radar da emeis Iberia antes de a mobília entrar na tabela.
- */
+/** Os tipos de área como o `baseList` do console do fabricante os enumera. */
 const DECLARED = [
     [1, "Personalizada"],
     [2, "Cama"],

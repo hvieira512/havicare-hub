@@ -7,11 +7,7 @@ import { activityTable } from "../../src/Dashboard/dashboard/devices/activity-ta
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { telemetryActivityRow } = await import("../../src/Dashboard/dashboard/devices/detail.js");
 
-/**
- * O stream redesenha o detalhe a cada mensagem, sem comparar o que mudou. Substituir o
- * `innerHTML` deita fora o elemento com o foco, e chegar de Tab a uma linha para a abrir com
- * Enter passa a ser impossível num aparelho vivo.
- */
+/** O stream redesenha a cada mensagem, e o `innerHTML` deita fora o elemento com o foco. */
 const rows = [
     {
         icon: "fa-heart",
@@ -59,10 +55,7 @@ test("uma linha nova continua a entrar", () => {
     assert.match(root.textContent, /80 bpm/);
 });
 
-/**
- * Quando chega mesmo uma leitura nova a lista tem de ser reescrita, e a linha focada morre
- * com ela. A chave do registo é a mesma antes e depois, e é por ela que o foco volta.
- */
+/** Com conteúdo novo a lista tem de ser reescrita, e o foco volta pela chave do registo. */
 test("uma leitura nova não rouba o foco à linha que estava escolhida", () => {
     const root = mounted();
     const openable = root.querySelector("[data-row-toggle]");
@@ -91,10 +84,7 @@ test("redesenhar não traz o foco para a lista", () => {
     assert.equal(document.activeElement, outside);
 });
 
-/**
- * A tooltip de uma linha é texto, e sai da marcação dos detalhes, que já está escapada: sem
- * desfazer as entidades, quem tivesse um `&` no valor lia «A &amp;amp; B» ao passar o rato.
- */
+/** A tooltip é texto e sai de marcação já escapada: o atributo escaparia as entidades outra vez. */
 test("a tooltip de uma linha não mostra entidades à letra", () => {
     state.selectedImei = "aaa111";
     const row = telemetryActivityRow({

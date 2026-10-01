@@ -28,8 +28,7 @@ const COLGROUP = `<colgroup>
 </colgroup>`;
 
 export function activityTable(rootEl, rows, emptyText, idPrefix) {
-    // A chave do registo é a mesma antes e depois do redesenho, e é por ela que o foco volta:
-    // sem isto, uma leitura nova tirava do documento a linha a que se tinha chegado de Tab.
+    // A chave do registo sobrevive ao redesenho, e é por ela que o foco volta.
     const focusedKey = rootEl.contains(document.activeElement)
         ? document.activeElement.closest("[data-row-key]")?.dataset.rowKey
         : null;

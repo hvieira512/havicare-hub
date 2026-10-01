@@ -41,14 +41,7 @@ test("um fragmento aninhado não é escapado duas vezes", () => {
     assert.equal(markup(html`<p>${inner}</p>`), "<p><b>a &amp; b</b></p>");
 });
 
-/**
- * Esta é a regra que o resto do ficheiro protege, e é a que inverte a omissão.
- *
- * Encaixar um construtor noutro não leva `raw()`, porque o `html` devolve um fragmento e o
- * fragmento passa intacto. O que **não** passa é texto, e por isso um produtor novo que
- * devolva uma string sai escapado sozinho -- que é exactamente o que faltava quando a chave
- * de configuração que um aparelho inventava entrou na dashboard como marcação.
- */
+/** A regra que o resto do ficheiro protege: um produtor que devolva texto sai escapado sozinho. */
 test("compor dois construtores não precisa de raw(), e texto continua a ser escapado", () => {
     assert.equal(markup(html`<p>${html`<b>x</b>`}</p>`), "<p><b>x</b></p>");
     assert.equal(markup(html`<p>${"<b>x</b>"}</p>`), "<p>&lt;b&gt;x&lt;/b&gt;</p>");
@@ -69,10 +62,7 @@ test("o null e o undefined dão texto vazio, como no esc()", () => {
     assert.equal(markup(html`<p>${0}</p>`), "<p>0</p>");
 });
 
-/**
- * O fragmento é uma `String` e não um objecto à parte: `String(x)`, `+`, `.join()` e a
- * atribuição a `innerHTML` continuam todos a funcionar sem ninguém pensar nisso.
- */
+/** É uma `String`, por isso `+`, `.join()` e o `innerHTML` continuam a funcionar. */
 test("o fragmento comporta-se como texto em tudo menos no escapamento", () => {
     const fragment = html`<p>${1}</p>`;
 
@@ -140,12 +130,7 @@ test("o valor e o título de um cartão saem escapados", () => {
 
 /* ---------- a fronteira de confiança ---------- */
 
-/**
- * O `raw` e o `trusted` fazem o mesmo e distinguem-se pela proveniência. A separação só serve
- * para alguma coisa enquanto o `trusted` continuar a ser o conjunto pequeno: foi um `raw()`
- * perdido entre cento e doze que deixou passar a chave de configuração que um aparelho
- * inventava, e que entrava na dashboard como marcação.
- */
+/** A separação só vale enquanto o `trusted` for o conjunto pequeno. */
 test("o trusted deixa passar marcação construída por quem chama", () => {
     assert.equal(markup(html`<p>${trusted("<b>a</b>")}</p>`), "<p><b>a</b></p>");
 });
@@ -170,12 +155,7 @@ test("as fronteiras de confiança continuam a caber numa mão", () => {
     );
 });
 
-/**
- * A inversão da omissão tem um custo que é preciso prender: quem entrega **marcação** numa
- * fronteira tem de o dizer, senão ela sai escapada duas vezes e o utilizador lê
- * `A &amp; B` à letra. É feio e visível -- que é o ponto, por oposição ao `esc()` esquecido,
- * que era XSS em silêncio.
- */
+/** Quem entrega marcação tem de o dizer: senão sai escapada duas vezes, que se vê no ecrã. */
 test("os detalhes de um cartão saem escapados uma vez e não duas", () => {
     const card = String(telemetryCard({
         icon: "fa-x",

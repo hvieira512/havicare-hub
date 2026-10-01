@@ -19,8 +19,5 @@ export function compactDetails(data, keys) {
     );
 }
 
-/**
- * Juntar fragmentos devolve texto, e texto volta a ser escapado por quem o receber. O que sai
- * daqui já está escapado peça a peça, e por isso diz-se que é marcação.
- */
+/** Juntar fragmentos devolve texto, que seria escapado outra vez: o resultado é marcação. */
 export const joinMarkup = (parts, separator = " · ") => raw(parts.filter(Boolean).join(separator));

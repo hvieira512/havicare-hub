@@ -1,12 +1,6 @@
 import { uplinkCardContent } from "../../../src/Dashboard/dashboard/components/cards/telemetry.js";
 
-/**
- * O conteúdo de um cartão, com os campos de marcação em texto.
- *
- * O `html` devolve um fragmento -- é isso que faz com que texto entregue a uma fronteira saia
- * escapado -- e o `assert.match` só aceita texto. Aqui num sítio só, em vez de um `String()`
- * por assertiva.
- */
+/** O conteúdo de um cartão com os campos de marcação em texto: o `assert.match` só aceita texto. */
 export function cardContent(type, data, meta) {
     const content = uplinkCardContent(type, data, meta);
     if (!content) return content;

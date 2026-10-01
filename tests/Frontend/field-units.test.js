@@ -6,12 +6,8 @@ import "./support/browser-env.js";
 import { fieldLabel, fieldUnit, fieldValue } from "../../src/Dashboard/dashboard/format.js";
 
 /**
- * A unidade de um campo diz-se num sítio só.
- *
- * O `FIELD_UNIT` cola-a ao valor e serve a telemetria; a unidade entre parênteses na etiqueta
- * serve os campos de configuração, cujo rótulo é escondido e de onde o `fieldUnit` a tira.
- * Um campo nas duas convenções escreve-a duas vezes; um campo em nenhuma obriga quem lê a
- * adivinhar se são metros ou quilómetros.
+ * A unidade diz-se num sítio só: o `FIELD_UNIT` cola-a ao valor na telemetria, e os parênteses
+ * na etiqueta servem os campos de configuração, cujo rótulo é escondido.
  */
 const source = readFileSync(
     new URL("../../src/Dashboard/dashboard/format.js", import.meta.url),
