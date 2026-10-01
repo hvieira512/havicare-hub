@@ -84,3 +84,17 @@ export function editorOf(button, kind) {
 export function focusEditor(root) {
     root.querySelector("[data-editor] input, [data-editor] select")?.focus();
 }
+
+/**
+ * Corre o que o botão dispara com ele desligado até acabar. Sem isto, dois cliques seguidos
+ * em «Guardar» numa linha por criar criavam dois registos iguais.
+ */
+export async function whileBusy(button, work) {
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    try {
+        await work();
+    } finally {
+        button.disabled = false;
+    }
+}

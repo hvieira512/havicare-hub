@@ -13,7 +13,7 @@ import { apiError, confirmDestructive, toast } from "../dialogs.js";
 import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
-import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
+import { editorOf, focusEditor, inlineEditor, whileBusy } from "./row-editor.js";
 import {
     EDITOR_KIND as RADAR_EDITOR_KIND,
     clearRadarCredentials,
@@ -475,7 +475,7 @@ export function handleCompanyListClick(event) {
         editCompany: () => editor.edit("company", button.dataset.id),
         editLicense: () => editor.edit("license", button.dataset.id),
         editRadarCredentials: () => void openRadarCredentials(button.dataset.id),
-        saveRadarCredentialsRow: () => void saveRadarCredentialsRow(button),
+        saveRadarCredentialsRow: () => void whileBusy(button, () => saveRadarCredentialsRow(button)),
         checkRadarCredentials: () => void checkRadarCredentialsRow(button),
         replaceRadarSecret: () => {
             const row = editorOf(button, RADAR_EDITOR_KIND);
@@ -484,8 +484,8 @@ export function handleCompanyListClick(event) {
         forgetRadarCredentials: () => void forgetRadarCredentialsFor(button.dataset.id),
         newLicenseForCompany: () => editor.draft("license", { companyId: button.dataset.companyId }),
         cancelEdit: () => editor.cancel(),
-        saveCompanyRow: () => void saveCompanyRow(button),
-        saveLicenseRow: () => void saveLicenseRow(button),
+        saveCompanyRow: () => void whileBusy(button, () => saveCompanyRow(button)),
+        saveLicenseRow: () => void whileBusy(button, () => saveLicenseRow(button)),
         deleteCompany: () => void deleteCompany(Number(button.dataset.id)),
         deleteLicense: () => void deleteLicense(Number(button.dataset.id)),
     };

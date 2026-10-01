@@ -11,7 +11,7 @@ import { apiError, confirmDestructive, promptPassword, toast } from "../dialogs.
 import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
-import { editorOf, focusEditor } from "./row-editor.js";
+import { editorOf, focusEditor, whileBusy } from "./row-editor.js";
 
 /**
  * Os utilizadores da API, um por linha. A busca e os filtros de perfil e estado vêm do
@@ -432,7 +432,7 @@ export function handleApiUserListClick(event) {
     const user = users.find((row) => String(row.id) === button.dataset.id);
     const actions = {
         cancelEdit: closeUserForm,
-        saveApiUserRow: () => run(saveApiUserRow(button)),
+        saveApiUserRow: () => run(whileBusy(button, () => saveApiUserRow(button))),
         editApiUser: () => user && openUserForm(user),
         changeApiUserPassword: () => user && run(changeApiUserPassword(user)),
         toggleApiUser: () => user && run(toggleApiUser(user)),
