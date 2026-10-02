@@ -139,7 +139,9 @@ export function renderConfigurationDeliveryNotice(meta, delivery) {
  * ser escritos noutro bloco -- precisamente enquanto se espera pelo envio de um.
  */
 export function patchConfigurationDeliveryStates(root, configurationSync) {
-    for (const section of root.querySelectorAll("[data-config-section]")) {
+    // As linhas entram a par das secções: um interruptor agrupado também tem pastilha, e sem
+    // isto ela ficava na que nasceu até alguém reabrir o modal.
+    for (const section of root.querySelectorAll("[data-config-section], [data-config-row]")) {
         const key = section.dataset.capabilityKey || section.dataset.configKey || "";
         if (key === "") continue;
 
@@ -154,6 +156,12 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
         const badge = section.querySelector(".state-badge");
         if (badge) {
             badge.outerHTML = stateBadge(meta.label, meta.tone);
+        }
+
+        // A linha agrupada é compacta por desenho e não leva aviso: acrescentar-lho aqui
+        // punha no fim da linha o que a secção põe antes do formulário.
+        if (section.dataset.configRow !== undefined) {
+            continue;
         }
 
         const notice = section.querySelector("[role=\"status\"]");

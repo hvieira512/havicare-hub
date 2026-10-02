@@ -143,9 +143,10 @@ final class ZayataConfigurationDefinitions
             self::toggle(
                 'auto_clock',
                 'autoClock',
-                'Acerto automático do relógio',
+                'Acertar-se sozinho',
                 13,
-                'Deixa o aparelho acertar-se sozinho, sem esperar pelo comando de acertar.',
+                'O aparelho corrige a própria hora sem ninguém lhe pedir. Desligado, só muda'
+                . ' com o «Acertar o relógio do aparelho», aqui em baixo.',
                 'system',
             ),
             self::toggle(
