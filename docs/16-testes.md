@@ -3,8 +3,8 @@
 ## Âmbito
 
 O que prende o comportamento do hub contra regressão: as quatro suites de teste
-e o que cada uma cobre, as três ferramentas de análise, e o portão da integração
-contínua. Uma funcionalidade começa pelo teste que falha, e a regra está no
+e o que cada uma cobre, as três ferramentas de análise, e o portão local que é o
+`composer test`. Uma funcionalidade começa pelo teste que falha, e a regra está no
 [`CLAUDE.md`](../CLAUDE.md); este capítulo descreve o que já existe para a
 sustentar.
 
@@ -103,28 +103,10 @@ a base de dados de raiz a cada corrida.
 | **ESLint** | Configuração plana, com estilo próprio. Corre com zero avisos tolerados, que é o que apanha um import órfão ao mover código |
 
 Cada exclusão está justificada no respetivo ficheiro de configuração, com dados
-quantitativos. Uma exclusão em particular não foi aplicada: a regra que assinala
-comparações sempre verdadeiras **não** está silenciada globalmente, por o
-silenciamento anterior ter permitido a passagem de um defeito.
-
-## Integração contínua
-
-Corre em cada push e cada pull request para `main` e `dev`.
-
-Duas escolhas deliberadas:
-
-**As versões são as da produção, não as mais recentes.** MariaDB 10.11, e PHP
-8.4 — mas também 8.5, que é o que o contentor de desenvolvimento corre. As duas
-correm para uma diferença entre elas aparecer aqui e não no servidor.
-
-**A suite de integração falha se se ignorar a si própria.** Essa suite é
-ignorada automaticamente quando a base de dados não responde, e um resultado
-verde por omissão não constitui verificação. A ligação ao MariaDB e ao Redis é
-exigida antes da execução.
-
-A verificação não recorre a `grep` pela palavra "ignorado" na saída: existe um
-teste legitimamente ignorado — o do áudio AMR-NB, quando o `ffmpeg` disponível
-não inclui o codec — que essa abordagem reprovaria igualmente.
+quantitativos. Das regras de comparação sempre verdadeira, o
+`notIdentical.alwaysTrue` **não** está silenciado globalmente — só em quatro
+ficheiros, nomeados um a um; o `booleanAnd.rightAlwaysTrue` e o
+`instanceof.alwaysTrue` estão, por assinalarem estilo defensivo e não defeito.
 
 ## Não há integração contínua
 
@@ -138,13 +120,20 @@ Esse alvo corre em **série** e não pelo corredor paralelo: o contentor partilh
 o Redis com a máquina, e duas corridas a escrever nas mesmas chaves de token
 davam falhas que desapareciam à segunda tentativa.
 
-O que se perdeu com o CI, e vale a pena ter presente: a instalação de raiz. O CI
-fazia `composer install` e `npm ci` num disco vazio, e apanhava uma dependência
-em falta ou um teste que dependesse de estado local. Aqui o `vendor/` e o
-`node_modules/` já existem.
+O que se perdeu com o CI, e vale a pena ter presente:
 
-**Os cenários ficam de fora do `test:php84`** — e ficavam do CI pela mesma razão:
-requerem a pilha Docker completa, e correm no `composer test` da máquina.
+- **A instalação de raiz.** O CI fazia `composer install` e `npm ci` num disco
+  vazio, e apanhava uma dependência em falta ou um teste que dependesse de
+  estado local. Aqui o `vendor/` e o `node_modules/` já existem.
+- **A exigência de base de dados.** A suite de integração ignora-se a si própria
+  quando o MySQL não responde, e um verde por omissão não é verificação. Quem
+  corre a suite é que tem de reparar nos testes ignorados.
+- **O MariaDB.** O CI corria a suite contra o motor da produção. O `test:php84`
+  corre MySQL dentro do contentor, e por isso a divergência entre os dois
+  motores **não está provada em lado nenhum**.
+
+**Os cenários ficam de fora do `test:php84`**, pela razão de sempre: requerem a
+pilha Docker completa, e correm no `composer test` da máquina.
 
 ## Motores de base de dados
 
@@ -162,7 +151,7 @@ regressão involuntária.
 | Teste | Invariante |
 |---|---|
 | `Unit/Database/SeedWhitelistTest` | O seed não grava [sentinelas de memória](07-multi-inquilino.md) na base de dados e nunca produz licença sem empresa |
-| `Unit/Runtime/RedisPrefixTest` | Os sete [espaços de chaves](14-persistencia.md) recebem o prefixo, e a ausência de prefixo preserva a chave |
+| `Unit/Runtime/RedisPrefixTest` | Os oito [espaços de chaves](14-persistencia.md) recebem o prefixo, e a ausência de prefixo preserva a chave |
 | `Unit/Api/OpenApiSpecRoutesTest` | Correspondência entre [rotas e especificação](09-api.md) nos dois sentidos, com duas exceções declaradas |
 | `Unit/Api/OpenApi/SchemaFromRequestTest` | Conjunto de restrições de validação traduzidas para o esquema |
 | `Unit/Dashboard/DashboardElementIdsTest` | Existência no HTML de cada elemento referenciado pelo [JavaScript](20-frontend-da-dashboard.md) |
@@ -174,6 +163,6 @@ regressão involuntária.
 | `phpunit.xml` | As duas suites PHP |
 | `tests/run-parallel.sh` | Reparte uma suite PHP por vários processos |
 | `phpstan.neon` · `phpcs.xml.dist` · `eslint.config.js` | As três ferramentas, com as exclusões justificadas |
-| `.github/workflows/ci.yml` | O portão |
+| `composer.json` | O portão: os oito alvos que o `composer test` encadeia |
 | `tests/scenarios/run-all.sh` | Os seis cenários |
 | `tests/Support/` | Casos-base e duplos partilhados |
