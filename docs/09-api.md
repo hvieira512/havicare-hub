@@ -162,13 +162,11 @@ tentativas mostram a assinatura de um loop bloqueado — uma delas espera os
 mesmos ~180 ms, e as restantes respondem em 0,3 ms depois de ele libertar. A 175
 ms, **5,7 tentativas por segundo saturam o loop a 100%**.
 
-> **Uma tentativa com utilizador inexistente custa 0,5 ms**, porque o `&&` em
-> `AuthService` faz curto-circuito antes do `password_verify` quando não há
-> hash. A diferença de ~350× é um oráculo de enumeração de utilizadores: dá para
-> descobrir que contas existem só pelo tempo de resposta. Os tetos abaixo limitam
-> quantas tentativas se fazem, mas não igualam os dois tempos. Fechar o oráculo
-> — verificar contra um hash fixo quando o utilizador não existe — torna *todas*
-> as tentativas caras, e por isso só é seguro fazê-lo com os tetos já em vigor.
+> **Uma tentativa custa o mesmo, exista a conta ou não.** O `AuthService` corre
+> o `password_verify` **sempre e uma só vez** — contra um hash de referência
+> quando o utilizador não existe —, e por isso o tempo de resposta não diz quais
+> são as contas. O preço é que *todas* as tentativas são caras, e é isso que
+> torna os tetos abaixo indispensáveis em vez de apenas convenientes.
 
 Daí três tetos por janela, verificados **antes** da verificação da password, cada
 um a fechar uma porta que os outros deixam aberta:
