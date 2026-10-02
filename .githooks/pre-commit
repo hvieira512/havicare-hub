@@ -1,29 +1,28 @@
 #!/bin/sh
 #
-# As duas verificações rápidas do `composer test`, antes de o commit existir.
-#
-# São as que não precisam de base de dados, de Redis nem de contentores, e correm
-# em poucos segundos: o phpcs sobre o PHP e o eslint sobre o JavaScript da
-# dashboard. As outras cinco -- phpstan e as quatro suites -- ficam de fora de
-# propósito, porque os cenários levantam contentores e um `git commit` que demora
-# minutos deixa de ser usado.
-#
-# Isto não substitui o `composer test` antes de empurrar. Existe porque em
-# 2026-09-21 uma linha em branco num bloco de `use` manteve o CI vermelho durante
-# dez horas e meia, com onze commits a irem para produção por cima: o phpcs
-# apanha-a em dois segundos, e ninguém correu o phpcs.
-#
-# Para saltar num commit intermédio: `git commit --no-verify`.
+# As verificações do `composer test` que não precisam de base de dados, de Redis
+# nem de contentores: phpcs, phpstan e eslint, em poucos segundos. As outras
+# cinco ficam de fora porque levantam contentores e um `git commit` que demora
+# minutos deixa de ser usado. Isto não substitui o `composer test` antes de
+# empurrar; para saltar num commit intermédio, `git commit --no-verify`.
 
 set -e
 
-raiz=$(git rev-parse --show-toplevel)
-cd "$raiz"
+root=$(git rev-parse --show-toplevel)
+cd "$root"
 
 if [ -x vendor/bin/phpcs ]; then
     if ! vendor/bin/phpcs src tests simulator bin; then
         echo ""
         echo "pre-commit: o estilo do PHP não passa. 'composer style:fix' corrige a maioria."
+        exit 1
+    fi
+fi
+
+if [ -x vendor/bin/phpstan ]; then
+    if ! php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress; then
+        echo ""
+        echo "pre-commit: a análise estática não passa."
         exit 1
     fi
 fi

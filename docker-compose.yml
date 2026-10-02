@@ -120,7 +120,9 @@ services:
       QINGLANST_MQTT_USERNAME: ${QINGLANST_MQTT_USERNAME:-}
       QINGLANST_MQTT_PASSWORD: ${QINGLANST_MQTT_PASSWORD:-}
       QINGLANST_TOPIC_FILTER: ${QINGLANST_TOPIC_FILTER:-radar/1001/#}
-      QINGLANST_CLIENT_ID_PREFIX: ${QINGLANST_CLIENT_ID_PREFIX:-qinglanst-radar}
+      # O `qinglanst-radar` sem sufixo é o identificador da produção, e dois iguais
+      # expulsam-se do broker em ciclo: o default local é o mesmo do `.env.example`.
+      QINGLANST_CLIENT_ID_PREFIX: ${QINGLANST_CLIENT_ID_PREFIX:-qinglanst-radar-local}
       TCP_INGRESS_HOST: 0.0.0.0
       TCP_INGRESS_PORT: 9000
       LOCATION_RESOLUTION_ENABLED: ${LOCATION_RESOLUTION_ENABLED:-true}

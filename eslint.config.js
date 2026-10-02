@@ -15,7 +15,9 @@ const style = stylistic.configs.customize({
 
 export default [
     {
-        files: ["src/Dashboard/main.js", "src/Dashboard/dashboard/**/*.js", "tests/Frontend/**/*.js"],
+        // Todo o JavaScript da dashboard, e não uma lista de pastas: em flat config um
+        // ficheiro sem config correspondente é analisado sem regra nenhuma.
+        files: ["src/Dashboard/**/*.js", "tests/Frontend/**/*.js"],
         plugins: style.plugins,
         languageOptions: {
             ecmaVersion: "latest",

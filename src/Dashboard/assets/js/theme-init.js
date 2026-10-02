@@ -7,8 +7,8 @@
 (function () {
     try {
         const stored = localStorage.getItem("hub-dashboard-theme");
-        const dark = stored === "dark"
-            || (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        const dark = stored === "dark" ||
+            (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.setAttribute("data-bs-theme", dark ? "dark" : "light");
     } catch {
         document.documentElement.setAttribute("data-bs-theme", "light");
