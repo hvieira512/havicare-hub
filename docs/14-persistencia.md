@@ -56,7 +56,7 @@ chave. Com `ON UPDATE CASCADE`, renomear uma capacidade leva as ligações consi
 O `capabilities.id` permanece como identificador exposto pela API.
 
 **O `is_telemetry` deixou de ser coluna.** Coincidia com `section = 'telemetry'`
-nas 93 linhas do catálogo, e é assim que a consulta o calcula; o campo
+nas 167 linhas do catálogo, e é assim que a consulta o calcula; o campo
 `isTelemetry` da API mantém-se.
 
 ### Registo — o que temos e de quem é
@@ -161,9 +161,10 @@ aconteceu às onze de setembro de 2026, da auditoria ao esquema, e é por isso q
 não estão em `src/Infrastructure/Persistence/Migration/` — o que elas fizeram
 está descrito abaixo porque explica o esquema de hoje, não porque ainda corra.
 
-O plano em vigor é o `DatabaseMigrationPlan`, uma classe por versão. Hoje é
-quase todo do [dispensador de comprimidos](19-dispensador-de-comprimidos.md),
-que é o tipo de dispositivo mais recente.
+O plano em vigor é o `DatabaseMigrationPlan`, uma classe por versão, e **está
+vazio**: todas as migrações já correram na frota e foram dobradas na linha de
+base. O `DatabaseSchemaGuard` só exige o que estiver no plano, e por isso as
+linhas que sobram na `schema_migrations` não incomodam.
 
 ### O que a linha de base já traz feito
 
@@ -213,17 +214,18 @@ O inventário de exemplo — 26 dispositivos, licenças, imagens — é `bin/see
 e está **fora** do plano de migrações de propósito: senão cada teste de integração
 começava com 26 dispositivos lá dentro.
 
-## 3. Redis — os sete espaços de chaves
+## 3. Redis — os oito espaços de chaves
 
 | Prefixo | Guarda | Expira? |
 |---|---|---|
 | `hub:dashboard` | Presença, metadados em execução, histórico, comandos, avistamentos | não — mas limitado |
-| `hub:api-tokens` | Os três tipos de token | sim, é o TTL que os valida |
+| `hub:api-tokens` | Os dois tipos de token | sim, é o TTL que os valida |
 | `hub:downlink` | A fila de comandos por entregar | sim, 300 s |
 | `hub:moko` | De-duplicação, refrescamento e transições de estado BLE | parcialmente |
 | `hub:location:circuit` | O estado do disjuntor | sim |
 | `hub:location:resolution` | Cache de resoluções de localização | sim, 24 h ou 60 s |
 | `hub:login-throttle` | Os contadores que travam as tentativas de autenticação, por endereço, por utilizador e global | sim, é a janela de cada teto |
+| `hub:firmware-upgrade` | A actualização de firmware em curso de cada aparelho | sim, 24 h |
 
 ### O histórico é limitado, não é um arquivo
 
@@ -246,10 +248,10 @@ A variável `REDIS_PREFIX` permite executar uma segunda instância contra o mesm
 Redis. O valor vazio corresponde a produção, mantendo as chaves nas suas
 posições originais; a instância de desenvolvimento usa `dev:`.
 
-**O prefixo é aplicado ao cliente e não a cada componente.** Existem seis
-espaços de chaves, e a aplicação por componente faria com que um sétimo espaço
+**O prefixo é aplicado ao cliente e não a cada componente.** Existem oito
+espaços de chaves, e a aplicação por componente faria com que um nono espaço
 adicionado posteriormente ficasse sem prefixo, sem erro visível. Um teste
-verifica os seis.
+verifica os oito.
 
 Uma segunda instância a escrever nas mesmas chaves não produziria erro:
 sobreporia o estado dos dispositivos da primeira e as sessões das duas
@@ -286,7 +288,7 @@ integram a primeira contagem sem pertencerem ao hub.
 
 | Ficheiro | Responsabilidade |
 |---|---|
-| `database/schema.sql` | A linha de base — as 16 tabelas |
+| `database/schema.sql` | A linha de base — as 20 tabelas |
 | `database/seed.sql` · `bin/seed-inventory.php` | O inventário de exemplo |
 | `src/Infrastructure/Persistence/DatabaseMigrator.php` | Esquema, migrações, catálogo |
 | `src/Api/Configuration/VoiceDataMarker.php` | A marca do áudio, no histórico e na resposta |
@@ -295,4 +297,4 @@ integram a primeira contagem sem pertencerem ao hub.
 | `src/Api/Repository/` | Um repositório por assunto |
 | `src/Dashboard/DeviceRuntimeStore.php` · `DeviceEventStore.php` · `DeviceCommandStore.php` | Os três espaços de `hub:dashboard` |
 | `src/Runtime/HubServices.php` | Onde o prefixo do Redis é aplicado |
-| `tests/Unit/Runtime/RedisPrefixTest.php` | Tranca os seis espaços de chaves |
+| `tests/Unit/Runtime/RedisPrefixTest.php` | Tranca os oito espaços de chaves |
