@@ -117,7 +117,8 @@ export const fieldLabel = (key) =>
         affectedChannelCount: "Canais afetados",
         maximumDelta: "Delta máximo",
         chargingState: "Estado de carga",
-        batteryType: "Tipo de bateria",
+        // Apesar do nome, o `batteryType` do Wonlex diz porque é que a leitura foi enviada.
+        batteryType: "Motivo do envio",
         batteryPercent: "Bateria",
         rollFrequency: "Frequência de rotação",
         workMode: "Modo de trabalho",
@@ -268,6 +269,23 @@ export const fieldUnit = (key) => fieldLabel(key).match(/\(([^)]+)\)\s*$/)?.[1] 
  * diferentes conforme se fale de uma frequência cardíaca ou de um nível de bateria.
  */
 const FIELD_VALUE_LABELS = {
+    // O bit dos relógios e a enumeração do dispensador, que no contrato partilham o campo.
+    chargingState: {
+        0: "Não está a carregar",
+        1: "A carregar",
+        charging: "A carregar",
+        full: "Carregada",
+        normal: "Não está a carregar",
+        low: "Bateria fraca",
+        absent: "Sem bateria",
+    },
+    // Os quatro motivos que o Wonlex declara para enviar uma leitura de bateria.
+    batteryType: {
+        0: "Ao ligar",
+        1: "Ao desligar",
+        2: "Envio periódico",
+        3: "Bateria fraca",
+    },
     // Dispensador de comprimidos: o resultado da toma, como o aparelho a classifica.
     result: {
         on_time: "A horas",
