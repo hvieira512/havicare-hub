@@ -198,12 +198,14 @@ class DeviceService
         $device = array_diff_key($device, array_flip([
             'supplier', 'model', 'deviceType', 'protocol', 'transport', 'lastConnectionId',
         ]));
+        // Uma vez só: cada chamada volta a resolver o dispositivo e a lê-lo do Redis.
+        $configurations = $this->configurationFor($imei, $protocol, $configRows);
         $lifecycle = $this->lifecyclePresenter->present(
             $imei,
             $modelRow,
             $protocol,
             $configRows,
-            $this->configuration($imei, null, $configRows),
+            $configurations,
         );
 
         return $this->responseCompactor->compact([
@@ -213,7 +215,7 @@ class DeviceService
                 'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
                 'stored' => count($configRows),
             ],
-            'configurations' => $this->configuration($imei, null, $configRows),
+            'configurations' => $configurations,
             'effectiveConfigurations' => $lifecycle['effectiveConfigurations'],
             'configurationSync' => $lifecycle['configurationSync'],
             'capabilities' => $this->capabilities->deviceCapabilities($modelRow, $protocol, $configRows),
@@ -322,6 +324,19 @@ class DeviceService
         $device = $this->directory->deviceSnapshot($imei);
         $metadata = $this->whitelist->getMetadata($imei);
         $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel((string)($device['supplier'] ?? $metadata?->supplier ?? ''), (string)($device['model'] ?? $metadata?->model ?? '')));
+
+        return $this->configurationFor($imei, $protocol, $configRows);
+    }
+
+    /**
+     * Para quem já resolveu o dispositivo: o `configuration()` público volta a resolvê-lo, e
+     * dentro do `show()` isso era a segunda ida à base pelo mesmo aparelho.
+     *
+     * @param array<int, array<string, mixed>>|null $configRows
+     * @return array<string, mixed>
+     */
+    private function configurationFor(string $imei, string $protocol, ?array $configRows): array
+    {
         return $this->configurationQueries->current($imei, $protocol, $configRows);
     }
 
@@ -376,7 +391,8 @@ class DeviceService
         return [
             'status' => 'ok',
             'results' => $results,
-            'configurations' => $this->configuration($imei, $auth),
+            // O `show()` já as traz: pedi-las outra vez resolvia o dispositivo de novo.
+            'configurations' => $snapshot['configurations'] ?? [],
             'effectiveConfigurations' => $snapshot['effectiveConfigurations'] ?? [],
             'configurationSync' => $snapshot['configurationSync'] ?? [],
         ];

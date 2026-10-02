@@ -3,6 +3,7 @@
 namespace Hub\Api\Repository;
 
 use Hub\Infrastructure\Persistence\DashboardDatabase;
+use PDO;
 
 final class ApiDataAccess
 {
@@ -28,8 +29,12 @@ final class ApiDataAccess
 
     public static function fromDatabase(DashboardDatabase $database): self
     {
-        $pdo = $database->pdo();
+        return self::fromPdo($database->pdo());
+    }
 
+    /** A mesma coisa a partir da ligação, para quem já a tem ou lhe queira pôr um invólucro. */
+    public static function fromPdo(PDO $pdo): self
+    {
         return new self(
             new SupplierRepository($pdo),
             new ModelRepository($pdo),
