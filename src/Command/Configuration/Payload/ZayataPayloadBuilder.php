@@ -32,11 +32,8 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             // mas o máximo do tipo 02 é 3 e o aparelho recusa o 4.
             'alarm_volume' => ['volume' => self::zeroBasedRangeInt($payload['volume'] ?? 0, 0, 3, 'volume')],
             'alarm_ringtone' => ['ringtone' => self::zeroBasedRangeInt($payload['ringtone'] ?? 0, 0, 3, 'ringtone')],
-            // Os dois formatos declaram um máximo acima do que a ficha descreve; aqui só
-            // passam os valores que sabemos nomear.
-            'date_format', 'time_format' => [
-                'format' => self::zeroBasedRangeInt($payload['format'] ?? 0, 0, 1, 'format'),
-            ],
+            'date_format' => ['format' => self::zeroBasedRangeInt($payload['format'] ?? 0, 0, 2, 'format')],
+            'time_format' => ['format' => self::zeroBasedRangeInt($payload['format'] ?? 0, 0, 1, 'format')],
             'do_not_disturb' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
                 'startHour' => self::zeroBasedRangeInt($payload['startHour'] ?? 22, 0, 23, 'startHour'),

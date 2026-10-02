@@ -77,9 +77,9 @@ final class ZayataDownlink
                 0x1055 => ['value' => self::pillByte($payload['endMinute'] ?? 0, 59)],
             ],
             'deviceLanguage' => [0x1001 => ['value' => self::pillByte($payload['language'] ?? 0, 1)]],
-            // A ficha de cada um declara um máximo acima do que descreve — 2 para a data, e
-            // o terceiro valor não está documentado. Vai só o que se sabe ler.
-            'dateFormat' => [0x1002 => ['value' => self::pillByte($payload['format'] ?? 0, 1)]],
+            // A gama da data vai a 2; a ficha só descreve os dois primeiros, e o terceiro é a
+            // ordem que falta — mês à frente.
+            'dateFormat' => [0x1002 => ['value' => self::pillByte($payload['format'] ?? 0, 2)]],
             'timeFormat' => [0x1003 => ['value' => self::pillByte($payload['format'] ?? 0, 1)]],
             'keyTone' => [0x100B => ['value' => self::pillBool($payload['enabled'] ?? false)]],
             'autoClock' => [0x1014 => ['value' => self::pillBool($payload['enabled'] ?? false)]],

@@ -96,6 +96,9 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
         yield 'chamada de emergência' =>
             ['emergencyCall', ['enabled' => false], 'emergency_call', ['enabled' => false]];
         yield 'formato de data' => ['dateFormat', ['format' => 1], 'date_format', ['format' => 1]];
+        // O terceiro valor da gama: o aparelho declara máximo 2 e a ficha descreve dois.
+        yield 'formato de data americano' =>
+            ['dateFormat', ['format' => 2], 'date_format', ['format' => 2]];
         yield 'formato de hora' => ['timeFormat', ['format' => 0], 'time_format', ['format' => 0]];
         yield 'som das teclas' => ['keyTone', ['enabled' => true], 'key_tone', ['enabled' => true]];
         yield 'acerto automático do relógio' =>

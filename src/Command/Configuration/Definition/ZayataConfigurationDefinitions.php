@@ -132,9 +132,10 @@ final class ZayataConfigurationDefinitions
                 [1, 'Inglês'],
             ], 'A língua do ecrã do aparelho, não a da dashboard.'),
             self::choice('date_format', 'dateFormat', 'Formato da data', 'system', 11, 'format', [
-                [0, 'Ano/Mês/Dia'],
-                [1, 'Dia/Mês/Ano'],
-            ], 'Como o aparelho escreve a data no ecrã: 01/10/2026 ou 2026/10/01.'),
+                [0, 'YYYY-MM-DD'],
+                [1, 'DD-MM-YYYY'],
+                [2, 'MM-DD-YYYY'],
+            ], 'A ordem por que o aparelho escreve a data no ecrã. Não muda a da dashboard.'),
             self::choice('time_format', 'timeFormat', 'Formato da hora', 'system', 12, 'format', [
                 [0, '24 horas'],
                 [1, '12 horas'],

@@ -480,7 +480,7 @@ aparelho a 01/10/2026, todas com estado `0`:
 
 | TAG | O quê | Valor |
 |---|---|---|
-| `0x1002` | formato de data | `1` — Dia/Mês/Ano, e o ecrã cumpre-o: `01/10/2026` |
+| `0x1002` | formato de data | `1` — `DD-MM-YYYY`, e o ecrã cumpre-o. A gama vai a `2`; a ficha descreve os dois primeiros e o terceiro é a ordem que falta, com o mês à frente |
 | `0x1003` | formato de hora | `0` — 24 horas |
 | `0x100B` | som das teclas | `1`, ligado |
 | `0x100E` | chamada de emergência | `1`, ligada |
@@ -516,26 +516,33 @@ o alarme 2 tocou às 15:51 e o alarme 1 às 16:04, cada um a gastar o seu
 compartimento. A escrita foi aceite com as 27 TAGs e nenhuma recusada.
 
 > Uma medição intermédia dessa tarde pareceu dizer o contrário — um alarme
-> desligado ficou calado — e a causa era outra, descrita a seguir: faltavam-lhe
-> dois minutos para ser armado. Um resultado animador numa experiência contra
-> hardware não se dá por bom sem o controlo que o tente derrubar.
+> desligado ficou calado —, e é o caso sem explicação descrito a seguir. Um
+> resultado animador numa experiência contra hardware não se dá por bom sem o
+> controlo que o tente derrubar.
 
-### Um alarme precisa de minutos para ser armado
+### Um alarme que não tocou, e continua por explicar
 
-**Um alarme marcado para menos de dois minutos no futuro não chega a tocar.** O
-aparelho aceita a escrita, confirma as TAGs todas e não faz nada à hora marcada.
-
-Medido a 01/10/2026, com a mesma trama a escrever dois alarmes:
+**Um alarme marcado para dois minutos à frente toca.** Medido a 02/10/2026, com
+os dois alarmes na mesma trama e ambos com o interruptor ligado:
 
 | plano entregue | alarme | distância | |
 |---|---|---|---|
-| 15:37:04 | 15:39 | 1 min 56 s | **não tocou** |
-| 15:37:04 | 15:42 | 4 min 56 s | tocou |
-| 15:55:45 | 16:04 | 8 min 15 s | tocou |
+| 09:14:02 | 09:16 | 1 min 58 s | tocou |
+| 09:14:02 | 09:19 | 4 min 58 s | tocou |
 
-O limite exacto não está medido; o que está é que dois minutos não chegam e cinco
-chegam. Importa a quem configura: uma toma marcada para já não acontece, e nem o
-aparelho nem a dashboard o dizem.
+Fica aqui porque houve **um** caso em que não tocou, a 01/10/2026: plano entregue
+às 15:37:04 com o alarme 1 às 15:39 e o alarme 2 às 15:42, e só o segundo tocou.
+A escrita foi aceite com as 27 TAGs e nenhuma recusada.
+
+Uma versão anterior deste capítulo explicava-o pela distância — «menos de dois
+minutos não arma» — a partir dessa observação única. **A medição de 02/10 desmente
+isso**, e a causa continua por saber. A única diferença que separa o caso silencioso
+de todos os que tocaram: nele o alarme ia com o **interruptor desligado e havia
+outro alarme ligado na mesma trama**. Um interruptor desligado sozinho não cala
+nada — está medido duas vezes —, mas a combinação nunca foi repetida.
+
+Enquanto não for, não se escreve aqui uma regra. O que se sabe é que aconteceu
+uma vez.
 
 **`00:00` não serve de vazio: é meia-noite a sério.** Com os nove slots a zero e
 o relógio do aparelho posto às 23:57, à meia-noite o alarme 1 percorreu
