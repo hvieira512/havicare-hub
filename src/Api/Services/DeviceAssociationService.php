@@ -9,7 +9,7 @@ use Hub\Api\Http\ApiError;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\DeviceAssociationRequest;
 use Hub\Api\Request\RequestBinder;
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceRegistry;
 use Hub\Domain\DeviceMetadata;
 use Hub\Device\DeviceHubServer;
 use Hub\Registry\Whitelist;
@@ -19,7 +19,7 @@ final class DeviceAssociationService
     private RequestBinder $binder;
 
     public function __construct(
-        private DeviceStoreContract $store,
+        private DeviceRegistry $store,
         private Whitelist $whitelist,
         private ApiDataAccess $db,
         private ?DeviceHubServer $hub = null,

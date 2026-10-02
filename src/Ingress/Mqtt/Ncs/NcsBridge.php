@@ -19,7 +19,7 @@ final class NcsBridge extends MqttBridgeBase
         \Hub\Device\HubMqttBridge $mqttBridge,
         string $topicFilter = '/voerka/#',
         ?callable $reconnectSubscriber = null,
-        ?\Hub\State\DeviceStoreContract $deviceStore = null,
+        ?\Hub\State\DeviceReportStore $deviceStore = null,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
         ?\Hub\Registry\Denylist $denylist = null,
     ) {

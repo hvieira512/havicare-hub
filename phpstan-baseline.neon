@@ -4621,79 +4621,79 @@ parameters:
 			path: src/State/DeviceStore.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:append\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceReportStore\:\:append\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceReportStore.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:commands\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:commands\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceCommandLog.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:device\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceRegistry\:\:device\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceRegistry.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:deviceSeen\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceReportStore\:\:deviceSeen\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceReportStore.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:devices\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceRegistry\:\:devices\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceRegistry.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:findCommand\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:findCommand\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceCommandLog.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:markCommand\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:markCommand\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceCommandLog.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:markLatestCommand\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:markLatestCommand\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceCommandLog.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:recent\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceHistoryStore\:\:recent\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceHistoryStore.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:recordCommand\(\) has parameter \$record with no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:recordCommand\(\) has parameter \$record with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceCommandLog.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:retryWaitingCommands\(\) has parameter \$dispatch with no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:retryWaitingCommands\(\) has parameter \$dispatch with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceCommandLog.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:runtimeStates\(\) has parameter \$imeis with no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceRegistry\:\:runtimeStates\(\) has parameter \$imeis with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceRegistry.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceStoreContract\:\:runtimeStates\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Hub\\State\\DeviceRegistry\:\:runtimeStates\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceStoreContract.php
+			path: src/State/DeviceRegistry.php

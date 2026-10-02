@@ -10,7 +10,7 @@ use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceCommandLog;
 use Hub\State\DeviceCommandRecord;
 use Hub\Device\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityRegistry;
@@ -27,7 +27,7 @@ use Hub\Log\Logger;
 final class DeviceFeatureRequestService
 {
     public function __construct(
-        private DeviceStoreContract $store,
+        private DeviceCommandLog $store,
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
         private CapabilityRegistry $capabilityRegistry,

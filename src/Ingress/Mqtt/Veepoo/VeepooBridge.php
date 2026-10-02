@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceCommandLog;
+use Hub\State\DeviceReportStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
@@ -103,7 +104,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
         private readonly ObservationStateStore $state,
         string $topicFilter,
         ?callable $reconnectSubscriber = null,
-        ?DeviceStoreContract $deviceStore = null,
+        null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,
         private readonly ?CommercialModelResolver $commercialModelResolver = null,
     ) {

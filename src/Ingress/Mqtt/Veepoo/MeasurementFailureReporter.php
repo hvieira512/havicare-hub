@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceReportStore;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\RawPayload;
 
@@ -30,7 +30,7 @@ final class MeasurementFailureReporter
 
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
-        private readonly ?DeviceStoreContract $deviceStore,
+        private readonly ?DeviceReportStore $deviceStore,
     ) {
     }
 

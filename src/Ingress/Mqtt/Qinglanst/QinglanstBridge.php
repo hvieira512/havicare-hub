@@ -25,7 +25,7 @@ final class QinglanstBridge extends MqttBridgeBase
         \Hub\Device\HubMqttBridge $mqttBridge,
         string $topicFilter = 'radar/1001/#',
         ?callable $reconnectSubscriber = null,
-        ?\Hub\State\DeviceStoreContract $deviceStore = null,
+        ?\Hub\State\DeviceReportStore $deviceStore = null,
         ?IngestStats $stats = null,
         ?DashboardWritePolicy $dashboardWritePolicy = null,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,

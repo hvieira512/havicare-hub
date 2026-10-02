@@ -10,7 +10,7 @@ use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookDelta;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceCommandLog;
 use Hub\Device\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
@@ -23,7 +23,7 @@ final class DeviceConfigurationUpdateService
     use CapabilityHelpers;
 
     public function __construct(
-        private DeviceStoreContract $store,
+        private DeviceCommandLog $store,
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
         private CapabilityRegistry $capabilities,

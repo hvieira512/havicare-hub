@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt;
 
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceReportStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Log\Logger;
@@ -49,7 +49,7 @@ abstract class MqttBridgeBase implements MqttIngress
         protected readonly string $topicFilter,
         protected readonly ?string $sourceName = null,
         ?callable $reconnectSubscriber = null,
-        protected readonly ?DeviceStoreContract $deviceStore = null,
+        protected readonly ?DeviceReportStore $deviceStore = null,
         protected readonly ?Denylist $denylist = null,
         ?callable $clock = null,
     ) {

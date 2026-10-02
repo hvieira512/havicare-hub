@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceReportStore;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\RawPayload;
 use Hub\Domain\DeviceMetadata;
@@ -30,7 +30,7 @@ final class GatewayPresence
 
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
-        private readonly ?DeviceStoreContract $deviceStore,
+        private readonly ?DeviceReportStore $deviceStore,
         private readonly int $idleTimeoutSeconds,
         ?callable $clock = null,
     ) {

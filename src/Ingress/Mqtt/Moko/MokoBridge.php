@@ -43,7 +43,7 @@ final class MokoBridge extends MqttBridgeBase
         ObservationStateStore $state,
         string $topicFilter = 'havicare-hub/null/0/gw/+/raw',
         ?callable $reconnectSubscriber = null,
-        ?\Hub\State\DeviceStoreContract $deviceStore = null,
+        ?\Hub\State\DeviceReportStore $deviceStore = null,
         private readonly ?CommercialModelResolver $commercialModelResolver = null,
         private readonly int $dedupeTtlSeconds = 5,
         private readonly int $telemetryRefreshSeconds = 60,

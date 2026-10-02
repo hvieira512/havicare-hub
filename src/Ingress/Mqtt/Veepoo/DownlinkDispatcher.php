@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceCommandLog;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
@@ -38,7 +38,7 @@ final class DownlinkDispatcher
     public function __construct(
         private readonly ?PendingDownlinkQueue $downlinks,
         private readonly HubMqttBridge $mqttBridge,
-        private readonly ?DeviceStoreContract $deviceStore,
+        private readonly ?DeviceCommandLog $deviceStore,
         private readonly string $topicFilter,
     ) {
     }

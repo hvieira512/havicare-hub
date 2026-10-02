@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceReportStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Domain\DeviceMetadata;
@@ -36,7 +36,7 @@ final class RelayPublisher
 
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
-        private readonly ?DeviceStoreContract $deviceStore,
+        private readonly ?DeviceReportStore $deviceStore,
         private readonly ObservationStateStore $state,
         private readonly Whitelist $whitelist,
         private readonly ?CommercialModelResolver $commercialModelResolver,
