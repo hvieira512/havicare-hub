@@ -13,15 +13,7 @@
 -- punha cada um a parecer ter alterações pendentes que não consegue confirmar),
 -- private_radio_map_access_points (aprendidos em execução) e dashboard_notifications.
 
-INSERT IGNORE INTO suppliers (name) VALUES
-    ('4P Touch'),
-    ('MOKO'),
-    ('MONIT'),
-    ('Qinglanst'),
-    ('Vivistar'),
-    ('Voerka'),
-    ('Wonlex');
-
+-- As empresas ficam porque a licença logo a seguir junta-se a elas pelo nome.
 INSERT IGNORE INTO companies (name) VALUES
     ('havicare'),
     ('hitcare');
@@ -39,9 +31,10 @@ SELECT c.id, l.license_id, l.name FROM companies c JOIN (
 ) l ON l.company = c.name
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
--- Os modelos não se semeiam aqui: a lista vive no `ReferenceCatalogSeeder`, que já a
--- escreve inteira -- com os nomes comerciais e as fotografias -- antes de este ficheiro
--- correr. Duas listas da mesma coisa divergiram uma vez e não voltam a existir.
+-- Os fornecedores e os modelos não se semeiam aqui: as listas vivem no
+-- `ReferenceCatalogSeeder`, que já as escreve inteiras -- com os nomes comerciais e as
+-- fotografias -- antes de este ficheiro correr. Duas listas da mesma coisa divergiram uma
+-- vez e não voltam a existir.
 
 -- Os pares fornecedor x tipo de dispositivo não se semeiam: saem dos modelos.
 
