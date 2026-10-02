@@ -9,6 +9,8 @@ import { stateBadge } from "../state-badge.js";
 export function telemetryCard({
     span = 6,
     icon,
+    // Um segundo ícone, pequeno, no canto do azulejo: o relâmpago de uma bateria a carregar.
+    badge = "",
     title,
     value = "",
     details = "",
@@ -47,12 +49,16 @@ export function telemetryCard({
             ? `<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid ${action ? "fa-up-right-and-down-left-from-center" : "fa-paper-plane"}"></i></span>`
             : "";
 
+    // Pelo texto, e não pelo valor: um `Fragment` vazio é um objecto, e um objecto é sempre
+    // verdadeiro -- a linha abria à mesma, vazia e com a margem toda.
+    const hasText = (part) => String(part ?? "") !== "";
+
     // Fora da linha do ícone, para ter a largura toda do cartão.
-    const detailsTitleAttr = detailsTitle ? html` title="${detailsTitle}"` : "";
-    const detailsHtml = details
+    const detailsTitleAttr = hasText(detailsTitle) ? html` title="${detailsTitle}"` : "";
+    const detailsHtml = hasText(details)
         ? html`<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details text-secondary lh-sm"${detailsTitleAttr}>${details}</div>`
         : "";
-    const valueHtml = value
+    const valueHtml = hasText(value)
         ? html`<div class="telemetry-card-value fw-semibold lh-sm tabular-nums text-break">${value}</div>`
         : "";
 
@@ -67,8 +73,9 @@ export function telemetryCard({
         <${tag}${raw(attrs)}>
             <div class="card-body p-3 d-flex flex-column gap-3">
                 <div class="d-flex align-items-center gap-2 gap-sm-3">
-                    <div class="telemetry-card-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">
+                    <div class="telemetry-card-icon position-relative d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">
                         <i class="fa-solid ${icon}"></i>
+                        ${badge ? html`<span class="telemetry-card-badge d-flex align-items-center justify-content-center rounded-circle"><i class="fa-solid ${badge}"></i></span>` : ""}
                     </div>
                     <div class="flex-grow-1 min-w-0">
                         <div class="telemetry-card-title text-uppercase fw-normal text-secondary lh-sm" title="${title}">${title}</div>

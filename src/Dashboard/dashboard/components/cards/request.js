@@ -185,6 +185,8 @@ export function requestCardShell(
     const lastValue = lastContent ? lastContent.value : "";
     // Um ícone tirado da leitura vence o estático: um gateway com fios não mostra Wi-Fi.
     const icon = lastContent?.icon || card.icon;
+    // Pela mesma razão o tom: uma bateria quase vazia não se lê no verde de uma cheia.
+    const tone = lastContent?.tone || cardTone(type);
     // O título é sempre o nome da categoria: "78%" sozinho não diz 78% de quê.
     const title = capabilityLabel(type) || card.value || type;
     const value = lastValue;
@@ -203,6 +205,7 @@ export function requestCardShell(
     return telemetryCard({
         span,
         icon,
+        badge: lastContent?.iconBadge || "",
         title,
         // O valor só aparece quando diz algo que o título não diga.
         value: value && value !== title ? value : "",
@@ -217,6 +220,6 @@ export function requestCardShell(
         pending: requestable && loading,
         stateLabel: loading ? "a pedir" : requestState?.label || "",
         stateTone: loading ? "warning" : requestState?.tone || "",
-        tone: cardTone(type),
+        tone,
     });
 }

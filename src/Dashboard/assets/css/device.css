@@ -786,6 +786,24 @@
     color: var(--tone-fg, var(--bs-secondary-color));
 }
 
+/* O relâmpago de uma bateria a carregar, num disco ao canto do azulejo. O anel da cor do
+   cartão separa-o do ícone por baixo; sem ele os dois desenhos tocam-se e lêem-se como um. */
+.telemetry-card-badge {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    width: .95em;
+    height: .95em;
+    background: var(--bs-warning-text-emphasis);
+    color: var(--bs-body-bg);
+    font-size: 1em;
+    box-shadow: 0 0 0 2px var(--bs-body-bg);
+}
+
+.telemetry-card-badge > i {
+    font-size: .5em;
+}
+
 /* ===== a planta da divisão de um radar =====
    Ver `devices/radar-map-modal.js`, `radar-scene.js` e `radar-vitals.js`. */
 

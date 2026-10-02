@@ -371,7 +371,8 @@ export function telemetryActivityRow(payload) {
         payload?.data && typeof payload.data === "object" ? payload.data : {};
     const card = uplinkCardContent(type, data);
     // Os detalhes são os que cada renderizador declara, e não todos os campos do payload.
-    const detail = card.details || "";
+    // Pelo texto: um `Fragment` vazio é um objecto, e passaria por detalhes que existem.
+    const detail = String(card.details ?? "") === "" ? "" : card.details;
     // O `detailsTitle` existe quando a linha visível é um resumo: a presença mostra as
     // posturas e guarda para aqui as coordenadas e as pessoas que não couberam.
     const at = payload.occurredAt || payload.recordedAt;
@@ -381,7 +382,10 @@ export function telemetryActivityRow(payload) {
 
     return {
         icon: card.icon,
-        tone: cardTone(type),
+        badge: card.iconBadge || "",
+        // O tom tirado da leitura vence o estático, como já acontece com o ícone: uma bateria
+        // quase vazia não se lê no mesmo verde de uma cheia.
+        tone: card.tone || cardTone(type),
         name: capabilityLabel(type),
         value: html`${card.rowValue || card.value}`,
         detail,
@@ -502,10 +506,11 @@ function renderNcsEventCard({ type, latest }) {
 
     return telemetryCard({
         icon: content.icon,
+        badge: content.iconBadge || "",
         title: content.value,
         value: content.rowValue || "",
         details: html`Último evento: ${timestamp}`,
-        tone: cardTone(type),
+        tone: content.tone || cardTone(type),
     });
 }
 

@@ -304,6 +304,9 @@ const UPLINK_CARD_RENDERERS = {
                 : data.voltageMv != null
                     ? `${data.voltageMv} mV`
                     : "-",
+        icon: batteryIcon(data.percent),
+        iconBadge: isCharging(data.chargingState) ? "fa-bolt" : "",
+        tone: batteryTone(data.percent),
         details: batteryDetails(data),
     }),
     connectivity: (data) => ({
@@ -413,16 +416,8 @@ const UPLINK_CARD_RENDERERS = {
     "device.disconnected": () => ({ value: "Desligado" }),
 };
 
-// A mesma pastilha das configurações; o tom vazio deixa-a no azul neutro da marca.
-// Os relógios mandam um bit, e o dispensador manda uma enumeração com cinco estados. As duas
-// convivem na mesma tabela porque a pergunta é a mesma; sem as cinco, o cartão do dispensador
-// ficava sem nada a dizer sobre a carga.
-const BATTERY_CHARGING_STATE_LABEL = {
-    1: "A carregar",
-    0: "Não está a carregar",
-    charging: "A carregar",
-    full: "Carregada",
-    normal: "Não está a carregar",
+// Os dois estados do dispensador que não são carga e que por isso o ícone não desenha.
+const BATTERY_STATE_LABEL = {
     low: "Bateria fraca",
     absent: "Sem bateria",
 };
@@ -533,18 +528,40 @@ function rrIntervalValue(data) {
     return `${intervals.length} × ${mean} ms`;
 }
 
+/** Os cinco degraus que o Font Awesome free desenha. Sem percentagem, nenhum deles mente. */
+function batteryIcon(percent) {
+    if (typeof percent !== "number") return "fa-battery-three-quarters";
+    if (percent >= 95) return "fa-battery-full";
+    if (percent >= 63) return "fa-battery-three-quarters";
+    if (percent >= 38) return "fa-battery-half";
+    if (percent >= 13) return "fa-battery-quarter";
+    return "fa-battery-empty";
+}
+
+/** A cor é do estado, e numa bateria o estado é quanto falta para alguém ter de lá ir. */
+function batteryTone(percent) {
+    if (typeof percent !== "number") return "success";
+    if (percent < 10) return "danger";
+    return percent < 25 ? "warning" : "success";
+}
+
+/** Os relógios mandam um bit e o dispensador uma enumeração. O `full` já acabou de carregar. */
+const isCharging = (state) => state === 1 || state === "charging";
+
 function batteryDetails(data) {
-    // A corrente vem com a bateria no dispensador: «ligado à corrente» e «a carregar» são a
-    // mesma pergunta feita de dois lados, e separá-las punha-as a uma linha de distância.
+    // A corrente vem com a bateria no dispensador, e é outra pergunta: um aparelho cheio e
+    // ligado à ficha não carrega nada, mas continua a interessar que esteja ligado.
     const mains = data.mainsPowered == null
         ? ""
         : data.mainsPowered
             ? "Ligado à corrente"
             : "Sem corrente";
-    const charging = BATTERY_CHARGING_STATE_LABEL[data.chargingState] ||
-        compactDetails(data, ["batteryType"]);
+    // «A carregar», «Carregada» e «Não está a carregar» estão agora no ícone. Ficam os dois
+    // estados que ele não sabe desenhar -- no Font Awesome free não há bateria rasurada.
+    const state = BATTERY_STATE_LABEL[data.chargingState] ||
+        (data.chargingState == null ? compactDetails(data, ["batteryType"]) : "");
 
-    return joinMarkup([charging, mains]);
+    return joinMarkup([state, mains]);
 }
 
 /** A cor da categoria, para o ícone. Sem entrada na tabela, o ícone fica neutro. */

@@ -20,4 +20,7 @@ export function compactDetails(data, keys) {
 }
 
 /** Juntar fragmentos devolve texto, que seria escapado outra vez: o resultado é marcação. */
-export const joinMarkup = (parts, separator = " · ") => raw(parts.filter(Boolean).join(separator));
+export const joinMarkup = (parts, separator = " · ") =>
+    // Filtrado pelo texto e não pela verdade: um fragmento vazio é um objecto, e passava o
+    // filtro para deixar o separador pendurado à frente do que sobrava.
+    raw(parts.filter((part) => String(part ?? "") !== "").join(separator));

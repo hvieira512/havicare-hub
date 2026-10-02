@@ -14,7 +14,7 @@ import { telemetryActivityRow } from "../../src/Dashboard/dashboard/devices/deta
 test("uma linha que já diz tudo não abre", () => {
     const row = telemetryActivityRow({
         type: "battery",
-        data: { percent: 80, chargingState: "charging" },
+        data: { percent: 80, mainsPowered: true },
         occurredAt: "2026-09-23T10:00:00Z",
     });
 
@@ -37,7 +37,8 @@ test("uma linha sem detalhes não abre", () => {
 test("uma linha com mais do que um campo abre e arruma-os", () => {
     const row = telemetryActivityRow({
         type: "battery",
-        data: { percent: 80, chargingState: "charging", mainsPowered: true },
+        // O estado de carga está no ícone; os dois campos que sobram à bateria são estes.
+        data: { percent: 0, chargingState: "absent", mainsPowered: false },
         occurredAt: "2026-09-23T10:00:00Z",
     });
 
@@ -65,7 +66,8 @@ test("uma linha cujo resumo esconde alguma coisa abre", () => {
 test("a gaveta não recebe marcação", () => {
     const row = telemetryActivityRow({
         type: "battery",
-        data: { percent: 80, chargingState: "charging", mainsPowered: true },
+        // O estado de carga está no ícone; os dois campos que sobram à bateria são estes.
+        data: { percent: 0, chargingState: "absent", mainsPowered: false },
         occurredAt: "2026-09-23T10:00:00Z",
     });
 

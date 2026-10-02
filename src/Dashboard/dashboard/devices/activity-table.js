@@ -118,6 +118,7 @@ export function toggleActivityRow(event) {
  */
 function activityRow({
     icon,
+    badge = "",
     tone = "",
     name,
     nameTitle = "",
@@ -166,8 +167,9 @@ function activityRow({
     return html`
         <tr${rowAttrs}>
         <td>
-            <span class="telemetry-row-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-3${tone ? ` telemetry-card-tone-${tone}` : ""}">
+            <span class="telemetry-row-icon position-relative d-flex align-items-center justify-content-center flex-shrink-0 rounded-3${tone ? ` telemetry-card-tone-${tone}` : ""}">
                 <i class="fa-solid ${icon}"></i>
+                ${badge ? html`<span class="telemetry-card-badge d-flex align-items-center justify-content-center rounded-circle"><i class="fa-solid ${badge}"></i></span>` : ""}
             </span>
         </td>
         <td class="fw-medium">
