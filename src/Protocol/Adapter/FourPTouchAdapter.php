@@ -244,7 +244,6 @@ class FourPTouchAdapter implements DeviceAdapterInterface
     private function enrichPosition(string $type, array $fields, array &$data): void
     {
         $gpsValid = strtoupper((string) ($fields[2] ?? '')) === 'A';
-        $statusBits = $this->hexInt($fields[15] ?? null);
         $baseStationCount = max(0, $this->int($fields[16] ?? null) ?? 0);
 
         $data['date'] = $fields[0] ?? null;
@@ -267,12 +266,9 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         $data['mcc'] = isset($fields[18]) ? (string) $fields[18] : null;
         $data['mnc'] = isset($fields[19]) ? (string) $fields[19] : null;
 
-        if ($statusBits !== null) {
-            // Só o estado (os 16 bits baixos). Os bits de alarme (os 16 altos)
-            // decodificam-se apenas no frame `AL`, para não fabricar um alarme a
-            // partir de um status periódico.
-            $this->applyStatusBits($statusBits, $data);
-        }
+        // Os 16 bits baixos do campo 15 são condições -- bateria fraca, dentro ou fora da
+        // cerca, relógio ao pulso, parado. O hub move-se a eventos, e cada uma delas tem o
+        // seu alarme nos 16 bits altos, que o `enrichAlarm` lê do frame `AL`.
 
         $cursor = 20;
         $baseStations = [];
@@ -350,15 +346,6 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         $data['abnormalHeartRateAlarm'] = ($alarm & 0x00400000) !== 0;
     }
 
-    private function applyStatusBits(int $status, array &$data): void
-    {
-        $data['lowBatteryState'] = ($status & 0x00000001) !== 0;
-        $data['outFenceState'] = ($status & 0x00000002) !== 0;
-        $data['inFenceState'] = ($status & 0x00000004) !== 0;
-        $data['watchState'] = ($status & 0x00000008) !== 0;
-        $data['staticState'] = ($status & 0x00000010) !== 0;
-    }
-
     private function coordinate(mixed $value, mixed $direction): ?float
     {
         $float = $this->float($value);
@@ -397,16 +384,6 @@ class FourPTouchAdapter implements DeviceAdapterInterface
     private function float(mixed $value): ?float
     {
         return $value === null || $value === '' || !is_numeric((string) $value) ? null : (float) $value;
-    }
-
-    private function hexInt(mixed $value): ?int
-    {
-        $value = trim((string) $value);
-        if ($value === '' || preg_match('/^[0-9A-Fa-f]+$/', $value) !== 1) {
-            return null;
-        }
-
-        return hexdec($value);
     }
 
     private function gender(mixed $value): ?string
