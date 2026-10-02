@@ -70,6 +70,10 @@ flowchart LR
 `storedCompany()` troca `'null'` por `NULL`, `storedLicenseId()` troca `0` por
 `NULL`. Tudo o que escreve na tabela passa por elas.
 
+A pergunta tem a mesma fronteira: o `licenseCondition()` converte a sentinela `0`
+em `w.license_id IS NULL`, porque uma comparação por igualdade nunca encontra os
+dispositivos sem licença.
+
 ### Consequência de contornar a fronteira
 
 O `database/seed.sql` escrevia diretamente na tabela, **contornando a

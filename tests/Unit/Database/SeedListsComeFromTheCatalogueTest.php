@@ -8,13 +8,13 @@ use Hub\Infrastructure\Persistence\ReferenceCatalogSeeder;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Há uma só lista de modelos, e é a do `ReferenceCatalogSeeder`.
+ * Há uma só lista de fornecedores e de modelos, e é a do `ReferenceCatalogSeeder`.
  *
- * O `seed.sql` teve a sua durante algum tempo, e as duas divergiram: o dispensador ficou só
- * numa e sete relógios só na outra, sem nada a denunciá-lo. Uma instalação nova nascia com
- * treze modelos e produção tinha vinte e um.
+ * O `seed.sql` teve as suas durante algum tempo, e cada par divergiu: o dispensador ficou só
+ * numa das listas de modelos e sete relógios só na outra, e o fornecedor dele só no catálogo.
+ * Uma instalação nova nascia com menos do que produção, sem nada a denunciá-lo.
  */
-final class SeedModelsComeFromTheCatalogueTest extends TestCase
+final class SeedListsComeFromTheCatalogueTest extends TestCase
 {
     private const SEED = __DIR__ . '/../../../database/seed.sql';
 
@@ -24,6 +24,14 @@ final class SeedModelsComeFromTheCatalogueTest extends TestCase
         $sql = (string)file_get_contents(self::SEED);
 
         self::assertStringNotContainsString('INTO models', $sql);
+    }
+
+    /** Nem de fornecedores: o catálogo escreve-os antes de este ficheiro correr. */
+    public function testTheInventorySeedDoesNotWriteSuppliers(): void
+    {
+        $sql = (string)file_get_contents(self::SEED);
+
+        self::assertStringNotContainsString('INTO suppliers', $sql);
     }
 
     /** E todo o dispositivo do inventário tem o modelo dele no catálogo. */
