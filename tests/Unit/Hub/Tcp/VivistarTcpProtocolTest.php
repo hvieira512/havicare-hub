@@ -7,7 +7,7 @@ namespace Tests\Unit\Hub\Tcp;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\VivistarAdapter;
-use Hub\Device\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
 use PHPUnit\Framework\TestCase;
 
 final class VivistarTcpProtocolTest extends TestCase

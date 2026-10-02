@@ -8,7 +8,7 @@ use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Device\Firmware\FirmwareUpgrade;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
-use Hub\Device\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 use Tests\Unit\Hub\PillFakeConnection;

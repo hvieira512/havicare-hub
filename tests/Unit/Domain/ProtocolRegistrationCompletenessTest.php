@@ -10,7 +10,7 @@ use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\ConfigurationInputDefaults;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Protocol\AdapterRegistry;
-use Hub\Device\Tcp\TcpProtocolRegistry;
+use Hub\Ingress\Tcp\TcpProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**

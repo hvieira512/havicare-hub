@@ -8,8 +8,8 @@ use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
-use Hub\Device\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
-use Hub\Device\Tcp\Supplier\Wonlex\WonlexTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\Wonlex\WonlexTcpProtocol;
 use PHPUnit\Framework\TestCase;
 
 final class WonlexAndFourPTouchProtocolTest extends TestCase

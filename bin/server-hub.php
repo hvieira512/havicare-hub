@@ -5,7 +5,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Hub\Device\HubTcpIngress;
+use Hub\Ingress\Tcp\HubTcpIngress;
 use Hub\Ingress\Mqtt\MqttIngressFactory;
 use Hub\Log\Logger;
 use Hub\Mqtt\BrokerSettings;

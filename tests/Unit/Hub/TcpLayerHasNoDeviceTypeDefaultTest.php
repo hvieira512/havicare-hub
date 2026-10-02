@@ -39,7 +39,7 @@ final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
     public function testTheHubServerDoesNotInventADeviceType(): void
     {
         $reflection = new \ReflectionClass(DeviceHubServer::class);
-        $assumem = [];
+        $assuming = [];
 
         foreach ($reflection->getMethods() as $method) {
             foreach ($method->getParameters() as $parameter) {
@@ -47,12 +47,12 @@ final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
                     continue;
                 }
                 if ($parameter->getDefaultValue() === 'watch') {
-                    $assumem[] = $method->getName();
+                    $assuming[] = $method->getName();
                 }
             }
         }
 
-        self::assertSame([], $assumem, 'Estes métodos assumem que um aparelho TCP é um relógio.');
+        self::assertSame([], $assuming, 'Estes métodos assumem que um aparelho TCP é um relógio.');
     }
 
     /**
@@ -61,24 +61,24 @@ final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
      */
     public function testNoSourceLineFallsBackToWatch(): void
     {
-        $ficheiros = [
+        $files = [
             'src/Device/DeviceHubServer.php',
             'src/Device/DeviceSession.php',
-            'src/Device/HubTcpIngress.php',
+            'src/Ingress/Tcp/HubTcpIngress.php',
         ];
 
-        $linhas = [];
-        foreach ($ficheiros as $ficheiro) {
-            $conteudo = file_get_contents(dirname(__DIR__, 3) . '/' . $ficheiro);
-            self::assertIsString($conteudo, $ficheiro);
+        $lines = [];
+        foreach ($files as $file) {
+            $contents = file_get_contents(dirname(__DIR__, 3) . '/' . $file);
+            self::assertIsString($contents, $file);
 
-            foreach (explode("\n", $conteudo) as $numero => $linha) {
-                if (str_contains($linha, "'watch'")) {
-                    $linhas[] = $ficheiro . ':' . ($numero + 1) . ' -> ' . trim($linha);
+            foreach (explode("\n", $contents) as $number => $line) {
+                if (str_contains($line, "'watch'")) {
+                    $lines[] = $file . ':' . ($number + 1) . ' -> ' . trim($line);
                 }
             }
         }
 
-        self::assertSame([], $linhas);
+        self::assertSame([], $lines);
     }
 }

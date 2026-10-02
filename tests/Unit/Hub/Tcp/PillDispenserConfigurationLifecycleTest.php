@@ -7,7 +7,7 @@ namespace Tests\Unit\Hub\Tcp;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Device\DeviceEventDecoder;
-use Hub\Device\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 

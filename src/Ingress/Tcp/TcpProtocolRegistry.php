@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Device\Tcp;
+namespace Hub\Ingress\Tcp;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
@@ -9,10 +9,10 @@ use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
-use Hub\Device\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
-use Hub\Device\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
-use Hub\Device\Tcp\Supplier\Wonlex\WonlexTcpProtocol;
-use Hub\Device\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\Wonlex\WonlexTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 
 /**
  * Os protocolos que falam TCP com o hub, indexados pelo nome do protocolo.

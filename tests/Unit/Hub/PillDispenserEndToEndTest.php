@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceHubServer;
-use Hub\Device\HubTcpIngress;
+use Hub\Ingress\Tcp\HubTcpIngress;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;

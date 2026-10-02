@@ -6,7 +6,7 @@ namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceHubServer;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\HubTcpIngress;
+use Hub\Ingress\Tcp\HubTcpIngress;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;

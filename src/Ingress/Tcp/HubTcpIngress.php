@@ -1,9 +1,9 @@
 <?php
 
-namespace Hub\Device;
+namespace Hub\Ingress\Tcp;
 
+use Hub\Device\DeviceHubServer;
 use Hub\Log\Logger;
-use Hub\Tcp\TcpDeviceConnection;
 use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface as ReactConnection;
 use React\Socket\SocketServer;

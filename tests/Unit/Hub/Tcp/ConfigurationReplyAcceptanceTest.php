@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub\Tcp;
 
 use Hub\Device\DeviceEventDecoder;
-use Hub\Device\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
-use Hub\Device\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
-use Hub\Device\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
+use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;

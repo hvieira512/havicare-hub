@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Device\Tcp;
+namespace Hub\Ingress\Tcp;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceEventPayloadBuilder;

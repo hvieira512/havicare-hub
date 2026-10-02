@@ -10,10 +10,10 @@ use Hub\State\DeviceStoreContract;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
-use Hub\Device\Tcp\TcpMessage;
+use Hub\Ingress\Tcp\TcpMessage;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
-use Hub\Device\Tcp\TcpProtocolRegistry;
-use Hub\Device\Tcp\TcpResponse;
+use Hub\Ingress\Tcp\TcpProtocolRegistry;
+use Hub\Ingress\Tcp\TcpResponse;
 
 class DeviceHubServer
 {

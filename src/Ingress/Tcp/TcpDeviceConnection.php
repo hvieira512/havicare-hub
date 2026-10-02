@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Tcp;
+namespace Hub\Ingress\Tcp;
 
 use Hub\Device\ConnectionInterface;
 use React\Socket\ConnectionInterface as ReactConnection;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub\Tcp;
 
-use Hub\Device\Tcp\TcpProtocolRegistry;
+use Hub\Ingress\Tcp\TcpProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 final class TcpProtocolRegistryTest extends TestCase

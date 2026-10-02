@@ -1,12 +1,12 @@
 <?php
 
-namespace Hub\Device\Tcp\Supplier\Wonlex;
+namespace Hub\Ingress\Tcp\Supplier\Wonlex;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
-use Hub\Device\Tcp\AbstractTcpProtocol;
-use Hub\Device\Tcp\TcpResponse;
+use Hub\Ingress\Tcp\AbstractTcpProtocol;
+use Hub\Ingress\Tcp\TcpResponse;
 
 final class WonlexTcpProtocol extends AbstractTcpProtocol
 {

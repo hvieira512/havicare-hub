@@ -1,13 +1,13 @@
 <?php
 
-namespace Hub\Device\Tcp\Supplier\Zayata;
+namespace Hub\Ingress\Tcp\Supplier\Zayata;
 
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Device\Firmware\FirmwareUpgrade;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
-use Hub\Device\Tcp\AbstractTcpProtocol;
-use Hub\Device\Tcp\TcpResponse;
+use Hub\Ingress\Tcp\AbstractTcpProtocol;
+use Hub\Ingress\Tcp\TcpResponse;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
 
 /**
