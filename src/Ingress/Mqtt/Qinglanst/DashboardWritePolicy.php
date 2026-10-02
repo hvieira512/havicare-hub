@@ -47,7 +47,7 @@ final class DashboardWritePolicy
     public function shouldStoreTelemetry(string $deviceKey, string $capability, int $nowMs): bool
     {
         $key = $deviceKey . '|' . $capability;
-        if ($capability !== 'positions' || $this->positionHistorySampleMs <= 0) {
+        if ($capability !== 'presence' || $this->positionHistorySampleMs <= 0) {
             $this->remember($this->lastTelemetryMs, $key, $nowMs);
             return true;
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
+use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy;
 use Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstTopic;
 use PHPUnit\Framework\TestCase;
@@ -270,6 +271,31 @@ final class MessageNormalizerTest extends TestCase
     /**
      * @return array<string, mixed>
      */
+    /**
+     * A política de escrita recebe a chave da capacidade, e a amostragem só actua se for a
+     * mesma que a mensagem de posição emite. Separadas, a amostragem cala-se sem erro.
+     */
+    public function testTheThrottledCapabilityIsTheOneThePositionMessageEmits(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'position',
+            'device_code' => 'radar-topic-uid',
+            'people' => [$this->person(1, 'walking')],
+        ], $topic, $this->device());
+
+        $capability = (string)array_key_first($result['telemetry']);
+        $policy = new DashboardWritePolicy(positionHistorySampleMs: 1000);
+
+        self::assertTrue($policy->shouldStoreTelemetry('radar-1', $capability, 0));
+        self::assertFalse(
+            $policy->shouldStoreTelemetry('radar-1', $capability, 500),
+            "a política tem de amostrar a capacidade '{$capability}', que é a que a posição emite",
+        );
+    }
+
     private function person(int $index, string $posture, string $lastEvent = 'no_event'): array
     {
         return [

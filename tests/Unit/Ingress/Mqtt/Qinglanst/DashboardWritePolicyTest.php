@@ -10,22 +10,21 @@ use PHPUnit\Framework\TestCase;
 /**
  * O estrangulamento da escrita do histórico no Redis.
  *
- * A política é chamada com a chave da capacidade e não com o tipo do envelope do fabricante.
- * Trocar as duas não estoira nada: a amostragem deixa de actuar, cada leitura vai para o
- * Redis, e só se vê na factura.
+ * A política recebe a chave da capacidade, não o tipo do envelope do fabricante: uma chave
+ * que não case cala a amostragem sem dar erro.
  */
 final class DashboardWritePolicyTest extends TestCase
 {
-    public function testPositionsAreSampledAndEverythingElseAlwaysStores(): void
+    public function testPresenceIsSampledAndEverythingElseAlwaysStores(): void
     {
         $policy = new DashboardWritePolicy(positionHistorySampleMs: 1000);
 
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'positions', 0));
+        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'presence', 0));
         self::assertFalse(
-            $policy->shouldStoreTelemetry('radar-1', 'positions', 500),
+            $policy->shouldStoreTelemetry('radar-1', 'presence', 500),
             'uma posição dentro da janela de amostragem não vai para o histórico',
         );
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'positions', 1000));
+        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'presence', 1000));
 
         // Os sinais vitais chegam ao mesmo ritmo e passam sempre: são o que o cartão mostra.
         self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'vitals', 0));
@@ -37,16 +36,16 @@ final class DashboardWritePolicyTest extends TestCase
     {
         $policy = new DashboardWritePolicy(positionHistorySampleMs: 1000);
 
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'positions', 0));
-        self::assertTrue($policy->shouldStoreTelemetry('radar-2', 'positions', 0));
+        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'presence', 0));
+        self::assertTrue($policy->shouldStoreTelemetry('radar-2', 'presence', 0));
     }
 
     public function testSamplingOffStoresEveryReading(): void
     {
         $policy = new DashboardWritePolicy(positionHistorySampleMs: 0);
 
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'positions', 0));
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'positions', 1));
+        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'presence', 0));
+        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'presence', 1));
     }
 
     /**
