@@ -9,8 +9,9 @@ fixo, dispensa a utilização e o carregamento exigidos por dispositivos vestív
 
 Três características distinguem esta ingestão das restantes:
 
-1. **Broker dedicado.** O hub estabelece uma segunda ligação MQTT, com
-   credenciais próprias, exclusiva dos radares.
+1. **Sessão própria no mesmo broker.** O hub estabelece uma segunda ligação
+   MQTT, com credenciais e identificador de cliente próprios. O servidor é o
+   mesmo da ingestão restante — o que separa as duas são os tópicos.
 2. **Corpo binário codificado em base64 dentro de um envelope JSON.** O conteúdo
    não é legível sem descodificação.
 3. **Desativada por omissão.** `QINGLANST_ENABLED` é a única variável de
@@ -18,10 +19,10 @@ Três características distinguem esta ingestão das restantes:
 
 ```mermaid
 flowchart LR
-  R["Radar Qinglanst"] -->|"radar/{licenca}/{uid}"| B1(["Broker do fabricante"])
-  B1 --> H["Ingestão radar"]
+  R["Radar Qinglanst"] -->|"radar/{licenca}/{uid}"| B(["Broker MQTT"])
+  B --> H["Ingestão radar"]
   H --> M["HubMqttBridge"]
-  M -->|"telemetry · events"| B2(["Broker do hub"])
+  M -->|"havicare-hub/…/telemetry · events"| B
 ```
 
 ## 1. Tópicos subscritos
@@ -39,7 +40,8 @@ tratamento, e pela mesma razão, que o [NCS](03-ingestao-mqtt-ncs.md) recebe:
 quem publica no broker é que escreve o tópico.
 
 A ligação usa `QINGLANST_MQTT_HOST`, `_PORT`, `_USERNAME` e `_PASSWORD`, com
-identificador de cliente com prefixo `qinglanst-radar`.
+identificador de cliente com prefixo `qinglanst-radar`. O `QINGLANST_MQTT_HOST`
+aponta para o mesmo servidor que o `MQTT_HOST` — o broker é um só.
 
 ## 2. Desembrulhar a mensagem
 
@@ -77,7 +79,18 @@ Blocos de **16 bytes**, um por pessoa detetada:
 | 14 | último acontecimento | entrada, saída, queda… |
 | 15 | região | identificador da zona configurada no radar |
 
-Sai como telemetria `presence`, com `count` e a lista `people`.
+Sai como telemetria `presence`, com `count` e a lista `people` — oito chaves por
+pessoa:
+
+| Chave | |
+|---|---|
+| `personIndex` | O índice que o radar lhe deu nesta trama |
+| `xPositionDm` · `yPositionDm` | Decímetros, com sinal, relativos ao radar |
+| `zPositionCm` | Centímetros |
+| `timeLeftS` | Segundos |
+| `regionId` | A zona configurada no radar |
+| `posture` | `unknown` quando a trama não a traz |
+| `lastEvent` | `unknown` quando a trama não o traz |
 
 > **Isto não é o `location` canónico.** São coordenadas relativas ao próprio
 > radar, em decímetros, dentro de uma divisão — não latitude e longitude. O
@@ -150,14 +163,11 @@ específico viaja dentro do evento:
 O agrupamento em três capacidades, e não em quinze, mantém a matriz por modelo
 proporcional às funcionalidades do equipamento.
 
-Cada evento leva `detectionType`, `detectionCategory`, `detectionLevel` e
-`detectionSource`.
+Quatro dos quinze — `sitting_confirmed`, `on_floor`, `breathing_high` e
+`breathing_low` — estão declarados e **nenhuma mensagem os produz hoje**.
 
-| Campo | Valores |
-|---|---|
-| `detectionCategory` | `alarm` · `event` |
-| `detectionLevel` | `info` · `warning` · `danger` |
-| `detectionSource` | `position` · `heartbreath` |
+A forma do `data` de uma deteção, com os campos `detection*` e o `details` que
+varia com o tipo, está no [contrato MQTT](08-contrato-mqtt.md).
 
 **Todos os valores publicados são [enumerações em inglês](06-normalizacao.md),
 em minúsculas com underscores** —

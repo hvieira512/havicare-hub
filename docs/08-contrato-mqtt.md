@@ -185,6 +185,49 @@ trama do 4P Touch é uma máscara de bits —, e nesse caso saem **vários event
 `low_battery`, `fall`, `watch_removed`, `geofence_exit`, `geofence_entry` e
 `abnormal_heart_rate`.
 
+### As detecções do radar
+
+As três capacidades do radar partilham a forma do `data`, e o tipo concreto da
+deteção viaja lá dentro — são quinze tipos para três capacidades, e o
+agrupamento está no [capítulo 04](04-ingestao-mqtt-radar.md):
+
+```json
+{
+  "type": "vitals_alarm",
+  "occurredAt": "2026-09-01T10:35:10Z",
+  "device": { "id": "594B3CF100A7", "supplier": "Qinglanst", "model": "RD-V1" },
+  "data": {
+    "detectionType": "heart_rate_high",
+    "detectionCategory": "alarm",
+    "detectionLevel": "warning",
+    "detectionSource": "heartbreath",
+    "details": { "heartRate": 134 }
+  },
+  "source": { "protocol": "qinglanst-radar", "nativeType": "heartbreath", "topic": "…" }
+}
+```
+
+| Campo | Valores |
+|---|---|
+| `detectionType` | O tipo concreto da deteção |
+| `detectionCategory` | `alarm` · `event` — entradas e saídas descrevem movimento, e não perigo |
+| `detectionLevel` | `info` · `warning` · `danger` |
+| `detectionSource` | `position` · `heartbreath` — de que lado do aparelho veio |
+| `details` | O que justifica a deteção. É `data` como qualquer outro, e os campos são camelCase |
+
+O `details` muda com o tipo e com a mensagem que o produziu. O
+`detectionSource` não separa o `heartbreath` do `hbstatics` — quem precisa dessa
+distinção lê o `source.nativeType`:
+
+| `source.nativeType` | `detectionType` | `details` |
+|---|---|---|
+| `position` | `fall_confirmed` · `room_entry` · `room_exit` · `area_entry` · `area_exit` | `personIndex` |
+| `heartbreath` | os quatro de frequência cardíaca | `heartRate` |
+| `heartbreath` | `vitals_signal_lost` | `breathsPerMinute` · `heartRate` |
+| `hbstatics` | `heart_rate_high` · `heart_rate_low` | `heartRateStatus` |
+| `hbstatics` | `apnea` | `breathingStatus` |
+| `hbstatics` | `vitals_signal_lost` | `vitalSignsStatus` |
+
 ## 5. `status`
 
 ```json
