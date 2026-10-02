@@ -12,7 +12,7 @@ use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\Device\ConnectionInterface;
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\BeaconDbTelemetryEnricher;
 use PHPUnit\Framework\TestCase;
@@ -43,7 +43,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testRejectedDevicePublishesErrorStatusAndRejectedEvent(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $store = $this->createMock(DashboardStoreContract::class);
+        $store = $this->createMock(DeviceStoreContract::class);
         $store->expects(self::once())
             ->method('recordRejectedDevice')
             ->with(
@@ -56,7 +56,7 @@ final class DeviceHubMqttContractTest extends TestCase
         $hub = new DeviceHubServer(
             $this->whitelist,
             $mqtt,
-            dashboardStore: $store
+            deviceStore: $store
         );
         $connection = new ContractFakeConnection(1);
 
@@ -85,7 +85,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testDenylistedDeviceIsRejectedSilently(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $store = $this->createMock(DashboardStoreContract::class);
+        $store = $this->createMock(DeviceStoreContract::class);
         $store->expects(self::never())->method('recordRejectedDevice');
 
         $denylist = new Denylist();
@@ -94,7 +94,7 @@ final class DeviceHubMqttContractTest extends TestCase
         $hub = new DeviceHubServer(
             $this->whitelist,
             $mqtt,
-            dashboardStore: $store,
+            deviceStore: $store,
             denylist: $denylist,
         );
         $connection = new ContractFakeConnection(1);
@@ -124,13 +124,13 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testNotificationPersistenceFailureDoesNotInterruptDeviceRejection(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $store = $this->createStub(DashboardStoreContract::class);
+        $store = $this->createStub(DeviceStoreContract::class);
         $store->method('recordRejectedDevice')
             ->willThrowException(new \RuntimeException('Database unavailable'));
         $hub = new DeviceHubServer(
             $this->whitelist,
             $mqtt,
-            dashboardStore: $store
+            deviceStore: $store
         );
         $connection = new ContractFakeConnection(11);
 
@@ -629,7 +629,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testFourPTouchRejectedTakePillsReplyIsPassedToCommandLifecycle(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $store = $this->createStub(DashboardStoreContract::class);
+        $store = $this->createStub(DeviceStoreContract::class);
         $replies = [];
         $store->method('markCommandReply')->willReturnCallback(
             static function (...$arguments) use (&$replies): void {
@@ -639,7 +639,7 @@ final class DeviceHubMqttContractTest extends TestCase
         $hub = new DeviceHubServer(
             $this->whitelist,
             $mqtt,
-            dashboardStore: $store,
+            deviceStore: $store,
         );
         $connection = new ContractFakeConnection(18);
 

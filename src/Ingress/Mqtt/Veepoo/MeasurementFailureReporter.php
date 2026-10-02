@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\RawPayload;
 
@@ -30,7 +30,7 @@ final class MeasurementFailureReporter
 
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
-        private readonly ?DashboardStoreContract $dashboardStore,
+        private readonly ?DeviceStoreContract $deviceStore,
     ) {
     }
 
@@ -71,7 +71,7 @@ final class MeasurementFailureReporter
         );
 
         $this->mqttBridge->publishEvent($deviceKey, $event, 'bracelet', $licenseId, $company);
-        $this->dashboardStore?->append($deviceKey, 'events', $event + [
+        $this->deviceStore?->append($deviceKey, 'events', $event + [
             'deviceType' => 'bracelet',
             'licenseId' => $licenseId,
         ]);

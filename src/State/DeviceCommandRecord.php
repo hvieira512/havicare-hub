@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Dashboard;
+namespace Hub\State;
 
 final class DeviceCommandRecord
 {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hub\Runtime;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\Dashboard\DashboardStore;
+use Hub\State\DeviceStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceHubServer;
 use Hub\Device\Firmware\RedisFirmwareUpgradeStore;
@@ -42,7 +42,7 @@ final class HubServices
         public readonly Whitelist $whitelist,
         public readonly Denylist $denylist,
         public readonly PendingDownlinkQueue $downlinkQueue,
-        public readonly DashboardStore $dashboardStore,
+        public readonly DeviceStore $deviceStore,
         public readonly CommercialModelResolver $commercialModelResolver,
         public readonly HubMqttBridge $mqttBridge,
         public readonly DeviceHubServer $hubServer,
@@ -67,8 +67,8 @@ final class HubServices
         $whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null, $dataAccess->whitelist);
         $denylist = new Denylist($dataAccess->denylist);
 
-        $dashboardStore = new DashboardStore($redis, (int)$config['dashboard']['history_limit']);
-        $dashboardStore->setDataAccess($dataAccess);
+        $deviceStore = new DeviceStore($redis, (int)$config['dashboard']['history_limit']);
+        $deviceStore->setDataAccess($dataAccess);
 
         $downlinkQueue = new RedisPendingDownlinkQueue($redis);
         $commercialModelResolver = new CommercialModelResolver($dataAccess->models);
@@ -90,7 +90,7 @@ final class HubServices
             $mqttBridge,
             $commercialModelResolver,
             downlinkQueue: $downlinkQueue,
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
             downlinkQueueTtlSeconds: (int)$config['hub']['downlink_queue_ttl_seconds'],
             locationTelemetryEnricher: $locationEnricher,
             denylist: $denylist,
@@ -115,7 +115,7 @@ final class HubServices
             $whitelist,
             $denylist,
             $downlinkQueue,
-            $dashboardStore,
+            $deviceStore,
             $commercialModelResolver,
             $mqttBridge,
             $hubServer,

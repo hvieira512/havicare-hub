@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hub\Dashboard;
+namespace Hub\State;
 
 /**
  * Diz aos streams abertos que o histórico de um dispositivo mudou. A ingestão e o servidor

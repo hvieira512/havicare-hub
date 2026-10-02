@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\HubMqttBridge;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
@@ -169,8 +169,8 @@ final class BridgeTest extends TestCase
 
     private function assertRejectedProtocol(string $expected, string $payload, string $mac = self::STRANGER_GATEWAY): void
     {
-        $dashboardStore = $this->createMock(DashboardStoreContract::class);
-        $dashboardStore->expects(self::once())
+        $deviceStore = $this->createMock(DeviceStoreContract::class);
+        $deviceStore->expects(self::once())
             ->method('recordRejectedDevice')
             ->with($mac, $expected, '', $mac, 'device_not_authorized');
 
@@ -180,7 +180,7 @@ final class BridgeTest extends TestCase
             new RecordingHubMqttBridge(),
             IngressFixtures::links(),
             new ArrayObservationStateStore(),
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
         );
 
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/' . $mac . '/raw', $payload);

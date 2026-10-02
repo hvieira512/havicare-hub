@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
 use Tests\Support\Doubles\ArrayObservationStateStore;
@@ -120,7 +120,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         $queue = new FakeQueue();
         $queue->add('measure.heartRate.start');
         $marked = [];
-        $store = $this->createMock(DashboardStoreContract::class);
+        $store = $this->createMock(DeviceStoreContract::class);
         $store->method('markLatestCommand')->willReturnCallback(
             static function (string $imei, string $nativeType, array $fields) use (&$marked): void {
                 $marked[] = [$nativeType, $fields];
@@ -461,7 +461,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     private function bridge(
         RecordingHubMqttBridge $mqtt,
         PendingDownlinkQueue $queue,
-        ?DashboardStoreContract $store = null,
+        ?DeviceStoreContract $store = null,
         ?callable $clock = null,
     ): VeepooBridge {
         return new VeepooBridge(

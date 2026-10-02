@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
 use Hub\Registry\Denylist;
 use PHPUnit\Framework\TestCase;
@@ -24,8 +24,8 @@ final class BridgeTest extends TestCase
      */
     public function testUnregisteredRadarNotificationCarriesTheTopicLicense(): void
     {
-        $dashboardStore = $this->createMock(DashboardStoreContract::class);
-        $dashboardStore->expects(self::once())
+        $deviceStore = $this->createMock(DeviceStoreContract::class);
+        $deviceStore->expects(self::once())
             ->method('recordRejectedDevice')
             ->with(
                 '9D8A3204F853',
@@ -39,7 +39,7 @@ final class BridgeTest extends TestCase
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
         );
 
         $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
@@ -54,8 +54,8 @@ final class BridgeTest extends TestCase
     public function testEveryPositionReadingReachesTheHistory(): void
     {
         $lists = [];
-        $dashboardStore = $this->createMock(DashboardStoreContract::class);
-        $dashboardStore->method('append')->willReturnCallback(
+        $deviceStore = $this->createMock(DeviceStoreContract::class);
+        $deviceStore->method('append')->willReturnCallback(
             static function (string $imei, string $list) use (&$lists): void {
                 $lists[] = $list;
             }
@@ -67,7 +67,7 @@ final class BridgeTest extends TestCase
                 'radar-canonical-1' => IngressFixtures::radar() + ['deviceId' => 'radar-topic-uid'],
             ]),
             new RecordingHubMqttBridge(),
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
         );
 
         $message = (string)json_encode([
@@ -96,14 +96,14 @@ final class BridgeTest extends TestCase
      */
     public function testUnregisteredRadarNotificationIsThrottled(): void
     {
-        $dashboardStore = $this->createMock(DashboardStoreContract::class);
+        $deviceStore = $this->createMock(DeviceStoreContract::class);
         // Duas mensagens seguidas do mesmo radar desconhecido, um só registo.
-        $dashboardStore->expects(self::once())->method('recordRejectedDevice');
+        $deviceStore->expects(self::once())->method('recordRejectedDevice');
         $bridge = new QinglanstBridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
         );
 
         $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
@@ -117,8 +117,8 @@ final class BridgeTest extends TestCase
      */
     public function testDenylistedRadarProducesNoNotification(): void
     {
-        $dashboardStore = $this->createMock(DashboardStoreContract::class);
-        $dashboardStore->expects(self::never())->method('recordRejectedDevice');
+        $deviceStore = $this->createMock(DeviceStoreContract::class);
+        $deviceStore->expects(self::never())->method('recordRejectedDevice');
 
         $denylist = new Denylist();
         $denylist->block('9D8A3204F853');
@@ -127,7 +127,7 @@ final class BridgeTest extends TestCase
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
             denylist: $denylist,
         );
 

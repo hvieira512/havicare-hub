@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Dashboard;
+namespace Hub\State;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceConfigurationCatalog;
@@ -8,7 +8,7 @@ use Hub\Log\Logger;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use Predis\ClientInterface;
 
-final class DashboardStore implements DashboardStoreContract
+final class DeviceStore implements DeviceStoreContract
 {
     private ?ApiDataAccess $db = null;
     private DeviceRuntimeStore $runtime;

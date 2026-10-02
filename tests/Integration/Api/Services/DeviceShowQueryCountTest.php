@@ -6,7 +6,7 @@ namespace Tests\Integration\Api\Services;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\DeviceService;
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\DeviceHubServer;
 use Hub\Registry\Whitelist;
 use PDO;
@@ -29,7 +29,7 @@ final class DeviceShowQueryCountTest extends MysqlDashboardTestCase
         $whitelist->register($imei, 'Vivistar', 'L08 Pro', 'watch', 1001, '', $imei, 'hitcare');
 
         $service = new DeviceService(
-            $this->createStub(DashboardStoreContract::class),
+            $this->createStub(DeviceStoreContract::class),
             $whitelist,
             $this->createStub(DeviceHubServer::class),
             $db,

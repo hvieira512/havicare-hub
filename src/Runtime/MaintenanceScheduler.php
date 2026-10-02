@@ -24,7 +24,7 @@ final class MaintenanceScheduler
     {
         $commandTimeout = (int)$dashboardConfig['command_timeout_seconds'];
         $deviceIdleTimeout = (int)$dashboardConfig['device_idle_timeout_seconds'];
-        $store = $services->dashboardStore;
+        $store = $services->deviceStore;
         $hubServer = $services->hubServer;
 
         $loop->addPeriodicTimer(

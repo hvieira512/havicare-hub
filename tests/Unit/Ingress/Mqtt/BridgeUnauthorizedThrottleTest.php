@@ -60,7 +60,7 @@ final class BridgeUnauthorizedThrottleTest extends TestCase
     public function testAnIdentityInsideTheWindowIsStillThrottled(): void
     {
         $now = 1_000_000.0;
-        $store = $this->createMock(\Hub\Dashboard\DashboardStoreContract::class);
+        $store = $this->createMock(\Hub\State\DeviceStoreContract::class);
         $store->expects(self::once())->method('recordRejectedDevice');
         $bridge = new ThrottleProbeBridge(
             new FakeMqttSubscriber(),

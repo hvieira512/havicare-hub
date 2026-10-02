@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\Dashboard\DeviceEventStore;
+use Hub\State\DeviceEventStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 

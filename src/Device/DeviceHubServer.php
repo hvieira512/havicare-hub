@@ -6,7 +6,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Log\Logger;
 use Hub\Location\LocationTelemetryEnricherContract;
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
@@ -24,7 +24,7 @@ class DeviceHubServer
     private TcpProtocolRegistry $tcpProtocols;
     private HubMqttBridge $mqtt;
     private ?PendingDownlinkQueue $downlinkQueue;
-    private ?DashboardStoreContract $dashboardStore;
+    private ?DeviceStoreContract $deviceStore;
     private int $downlinkQueueTtlSeconds;
     private ?LocationTelemetryEnricherContract $locationTelemetryEnricher;
     private ?Denylist $denylist;
@@ -34,7 +34,7 @@ class DeviceHubServer
         HubMqttBridge $mqtt,
         ?CommercialModelResolver $commercialModelResolver = null,
         ?PendingDownlinkQueue $downlinkQueue = null,
-        ?DashboardStoreContract $dashboardStore = null,
+        ?DeviceStoreContract $deviceStore = null,
         int $downlinkQueueTtlSeconds = 300,
         ?LocationTelemetryEnricherContract $locationTelemetryEnricher = null,
         ?Denylist $denylist = null,
@@ -45,7 +45,7 @@ class DeviceHubServer
         $this->connections = new ConnectionRegistry();
         $this->authorizer = new DeviceAuthorizer($whitelist, $commercialModelResolver);
         $this->mqtt = $mqtt;
-        $this->dashboardStore = $dashboardStore;
+        $this->deviceStore = $deviceStore;
         $adapters = new AdapterRegistry();
         $this->identityExtractor = new DeviceIdentityExtractor($adapters);
         $this->tcpProtocols = new TcpProtocolRegistry(
@@ -97,7 +97,7 @@ class DeviceHubServer
         $commercialName = $this->currentCommercialName($session->imei, $session->commercialName);
         $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline', $session->deviceType, $licenseId, $company, $commercialName);
         $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected', $session->deviceType, $licenseId, $company, $commercialName);
-        $this->dashboardStore?->deviceOffline($session->imei);
+        $this->deviceStore?->deviceOffline($session->imei);
         Logger::channel('hub')->info("Device offline IMEI={$session->imei}");
     }
 
@@ -238,7 +238,7 @@ class DeviceHubServer
             $commercialName = $this->currentCommercialName($session->imei, $session->commercialName);
             $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline', $session->deviceType, $licenseId, $company, $commercialName);
             $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected', $session->deviceType, $licenseId, $company, $commercialName);
-            $this->dashboardStore?->deviceOffline($session->imei);
+            $this->deviceStore?->deviceOffline($session->imei);
             Logger::channel('hub')->warning("Device offline by idle timeout IMEI={$session->imei} idle_seconds={$idleSeconds}");
         }
     }
@@ -280,7 +280,7 @@ class DeviceHubServer
             $authorization->licenseId,
             $authorization->company,
         );
-        $this->dashboardStore?->deviceSeen($identity->imei, [
+        $this->deviceStore?->deviceSeen($identity->imei, [
             'supplier' => $session->supplier,
             'model' => $session->model,
             'commercialName' => $session->commercialName,
@@ -332,7 +332,7 @@ class DeviceHubServer
 
         // Se a trama confirma uma configuração é conhecimento do protocolo: aqui serve-se
         // tudo o que fala TCP, e um `if` por fornecedor neste sítio cresce com a frota.
-        $this->dashboardStore?->markCommandReply(
+        $this->deviceStore?->markCommandReply(
             $session->imei,
             (string)($message->decoded['type'] ?? ''),
             $message->decoded['ident'] ?? null,
@@ -383,7 +383,7 @@ class DeviceHubServer
             // terço deles seriam keep-alives a repetir a bateria e os passos que já chegam
             // como eventos próprios no mesmo instante.
             if ($type !== 'heartbeat') {
-                $this->dashboardStore?->append($session->imei, $channel, array_merge(
+                $this->deviceStore?->append($session->imei, $channel, array_merge(
                     $event,
                     ['deviceType' => $session->deviceType, 'licenseId' => $licenseId]
                 ));
@@ -406,7 +406,7 @@ class DeviceHubServer
 
         if ($reason === 'device_not_authorized') {
             try {
-                $this->dashboardStore?->recordRejectedDevice(
+                $this->deviceStore?->recordRejectedDevice(
                     $identity->imei,
                     $identity->protocol,
                     $identity->model,
@@ -453,10 +453,10 @@ class DeviceHubServer
                 $operationId = is_array($downlink->command) ? (string)($downlink->command['operationId'] ?? '') : '';
                 if (
                     $operationId !== ''
-                    && $this->dashboardStore !== null
-                    && !$this->dashboardStore->isCurrentOperation($operationId)
+                    && $this->deviceStore !== null
+                    && !$this->deviceStore->isCurrentOperation($operationId)
                 ) {
-                    $this->dashboardStore->markCommand($session->imei, $operationId, [
+                    $this->deviceStore->markCommand($session->imei, $operationId, [
                         'status' => 'superseded',
                         'error' => '',
                     ]);
@@ -468,12 +468,12 @@ class DeviceHubServer
                 }
                 $nativeType = is_array($downlink->command) ? (string)($downlink->command['nativeType'] ?? '') : '';
                 if ($operationId !== '') {
-                    $this->dashboardStore?->markCommand($session->imei, $operationId, [
+                    $this->deviceStore?->markCommand($session->imei, $operationId, [
                         'status' => 'waiting',
                         'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
                     ]);
                 } elseif ($nativeType !== '') {
-                    $this->dashboardStore?->markLatestCommand($session->imei, $nativeType, [
+                    $this->deviceStore?->markLatestCommand($session->imei, $nativeType, [
                         'status' => 'waiting',
                         'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
                     ]);
@@ -502,7 +502,7 @@ class DeviceHubServer
         try {
             $this->mqtt->publishStatus($imei, RawPayload::status($imei, $supplier, $model, $state, null, $commercialName), true, $deviceType, $licenseId, $company);
             if ($state === 'online') {
-                $this->dashboardStore?->deviceSeen($imei, [
+                $this->deviceStore?->deviceSeen($imei, [
                     'supplier' => $supplier,
                     'model' => $model,
                     'commercialName' => $commercialName,
@@ -512,7 +512,7 @@ class DeviceHubServer
                     'online' => '1',
                 ]);
             } elseif ($state === 'offline') {
-                $this->dashboardStore?->deviceOffline($imei);
+                $this->deviceStore?->deviceOffline($imei);
             }
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
@@ -531,7 +531,7 @@ class DeviceHubServer
 
     private function recordRaw(DeviceSession $session, string $raw, string $connectionId): void
     {
-        $this->dashboardStore?->deviceSeen($session->imei, [
+        $this->deviceStore?->deviceSeen($session->imei, [
             'supplier' => $session->supplier,
             'model' => $session->model,
             'commercialName' => $session->commercialName,
@@ -543,7 +543,7 @@ class DeviceHubServer
             'online' => '1',
             'lastConnectionId' => $connectionId,
         ]);
-        $this->dashboardStore?->append($session->imei, 'raw', RawPayload::raw(
+        $this->deviceStore?->append($session->imei, 'raw', RawPayload::raw(
             $session->imei,
             $session->supplier,
             $session->model,
@@ -566,7 +566,7 @@ class DeviceHubServer
         int $licenseId = 0,
         string $commercialName = ''
     ): void {
-        $this->dashboardStore?->append($imei, 'events', array_merge(
+        $this->deviceStore?->append($imei, 'events', array_merge(
             RawPayload::event($imei, $supplier, $model, $type, null, $command, $commercialName),
             ['deviceType' => $deviceType, 'licenseId' => $licenseId]
         ));
@@ -628,9 +628,9 @@ class DeviceHubServer
     private function wonlexState(DeviceSession $session): array
     {
         $state = [
-            'configurations' => $this->dashboardStore?->desiredConfigurations($session->imei) ?? [],
+            'configurations' => $this->deviceStore?->desiredConfigurations($session->imei) ?? [],
         ];
-        foreach ($this->dashboardStore?->recent($session->imei, 'telemetry') ?? [] as $event) {
+        foreach ($this->deviceStore?->recent($session->imei, 'telemetry') ?? [] as $event) {
             $type = (string)($event['type'] ?? '');
             if ($type === 'sleep' && !isset($state['sleep']) && is_array($event['data'] ?? null)) {
                 $state['sleep'] = $event['data'];

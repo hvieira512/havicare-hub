@@ -7,7 +7,7 @@ namespace Tests\Integration\Dashboard;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\DiaperSensitivityRepository;
 use Hub\Api\Services\DeviceService;
-use Hub\Dashboard\DashboardStore;
+use Hub\State\DeviceStore;
 use Hub\Registry\Whitelist;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
@@ -45,7 +45,7 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         $database = $this->createDashboardDatabase();
         $pdo = $database->pdo();
         $db = ApiDataAccess::fromDatabase($database);
-        $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard:diaper-sensitivity');
+        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:diaper-sensitivity');
         $store->setDataAccess($db);
         $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('sent');

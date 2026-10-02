@@ -4,7 +4,7 @@ namespace Tests\Integration\Api\Services;
 
 use Hub\Api\Services\DeviceService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\DeviceHubServer;
 use Hub\Domain\DeviceMetadata;
 use Hub\Registry\Whitelist;
@@ -13,7 +13,7 @@ use Tests\Support\MysqlDashboardTestCase;
 final class DeviceServiceTest extends MysqlDashboardTestCase
 {
     private DeviceService $service;
-    private DashboardStoreContract $store;
+    private DeviceStoreContract $store;
     private Whitelist $whitelist;
     private DeviceHubServer $hub;
     private ApiDataAccess $db;
@@ -23,7 +23,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
     {
         parent::setUp();
 
-        $this->store = $this->createStub(DashboardStoreContract::class);
+        $this->store = $this->createStub(DeviceStoreContract::class);
 
         $this->whitelist = $this->createStub(Whitelist::class);
         $this->hub = $this->createStub(DeviceHubServer::class);

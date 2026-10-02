@@ -41,7 +41,7 @@ final class MokoBridge extends MqttBridgeBase
         ObservationStateStore $state,
         string $topicFilter = 'havicare-hub/null/0/gw/+/raw',
         ?callable $reconnectSubscriber = null,
-        ?\Hub\Dashboard\DashboardStoreContract $dashboardStore = null,
+        ?\Hub\State\DeviceStoreContract $deviceStore = null,
         private readonly ?CommercialModelResolver $commercialModelResolver = null,
         private readonly int $dedupeTtlSeconds = 5,
         private readonly int $telemetryRefreshSeconds = 60,
@@ -59,7 +59,7 @@ final class MokoBridge extends MqttBridgeBase
             $topicFilter,
             sourceName: 'moko-gateway',
             reconnectSubscriber: $reconnectSubscriber,
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
             denylist: $denylist,
             clock: $clock,
         );
@@ -67,7 +67,7 @@ final class MokoBridge extends MqttBridgeBase
         $this->state = $state;
         $this->relay = new RelayPublisher(
             $mqttBridge,
-            $dashboardStore,
+            $deviceStore,
             $state,
             $whitelist,
             $commercialModelResolver,
@@ -76,7 +76,7 @@ final class MokoBridge extends MqttBridgeBase
             $proximityTracker,
             $clock,
         );
-        $this->gateways = new GatewayPresence($mqttBridge, $dashboardStore, $gatewayIdleTimeoutSeconds, $clock);
+        $this->gateways = new GatewayPresence($mqttBridge, $deviceStore, $gatewayIdleTimeoutSeconds, $clock);
         $this->messageDecoder = new MokoMessageDecoder();
         $this->monitDecoder = new MonitMecsProDecoder();
         $this->monitNormalizer = new MonitNormalizer();
@@ -226,7 +226,7 @@ final class MokoBridge extends MqttBridgeBase
             ],
         ];
         $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
-        $this->dashboardStore?->deviceSeen($deviceKey, [
+        $this->deviceStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$gateway['supplier'], 'model' => (string)$gateway['model'],
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => $protocol, 'transport' => 'mqtt', 'online' => '1',
@@ -234,7 +234,7 @@ final class MokoBridge extends MqttBridgeBase
         // Só as tramas do próprio gateway entram no histórico dele; os scans descrevem os
         // dispositivos retransmitidos, que já têm o seu. No MQTT continua a sair tudo.
         if (!in_array((string)$decoded['messageId'], self::SCAN_MESSAGE_IDS, true)) {
-            $this->dashboardStore?->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->deviceStore?->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
 
         foreach ($this->gatewayNormalizer->telemetry($decoded, $gateway) as $telemetry) {
@@ -242,7 +242,7 @@ final class MokoBridge extends MqttBridgeBase
                 continue;
             }
             $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->deviceStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
 
         $this->gateways->markOnline($gateway);

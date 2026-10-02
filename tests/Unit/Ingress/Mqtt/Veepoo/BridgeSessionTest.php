@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\PendingDownlinkQueue;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
@@ -143,7 +143,7 @@ final class BridgeSessionTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $appended = [];
-        $store = $this->createMock(DashboardStoreContract::class);
+        $store = $this->createMock(DeviceStoreContract::class);
         $store->method('append')->willReturnCallback(
             static function (string $imei, string $list, array $payload) use (&$appended): void {
                 $appended[] = $payload;
@@ -192,7 +192,7 @@ final class BridgeSessionTest extends TestCase
     private function bridge(
         RecordingHubMqttBridge $mqtt,
         ?PendingDownlinkQueue $queue = null,
-        ?DashboardStoreContract $store = null,
+        ?DeviceStoreContract $store = null,
     ): VeepooBridge {
         return new VeepooBridge(
             new FakeMqttSubscriber(),

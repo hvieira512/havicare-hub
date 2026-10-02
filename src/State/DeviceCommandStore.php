@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Dashboard;
+namespace Hub\State;
 
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookFallback;
 use Hub\Command\DeviceCommandCatalog;

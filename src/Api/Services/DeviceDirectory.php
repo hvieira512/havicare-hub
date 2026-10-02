@@ -5,7 +5,7 @@ namespace Hub\Api\Services;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DeviceProtocol;
 use Hub\Registry\Whitelist;
@@ -20,7 +20,7 @@ use Hub\Registry\Whitelist;
 final class DeviceDirectory
 {
     public function __construct(
-        private DashboardStoreContract $store,
+        private DeviceStoreContract $store,
         private Whitelist $whitelist,
         private ApiDataAccess $db,
     ) {

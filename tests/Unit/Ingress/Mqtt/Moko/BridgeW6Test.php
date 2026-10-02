@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use PHPUnit\Framework\TestCase;
@@ -64,7 +64,7 @@ final class BridgeW6Test extends TestCase
      * @param array<string, array<string, string>> $extraDevices
      */
     private function bridge(
-        ?DashboardStoreContract $dashboardStore = null,
+        ?DeviceStoreContract $deviceStore = null,
         ?RecordingHubMqttBridge $mqtt = null,
         array $extraDevices = [],
     ): MokoBridge {
@@ -76,7 +76,7 @@ final class BridgeW6Test extends TestCase
             $mqtt ?? new RecordingHubMqttBridge(),
             IngressFixtures::links(),
             new ArrayObservationStateStore(),
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
         );
     }
 
@@ -104,12 +104,12 @@ final class BridgeW6Test extends TestCase
 
     public function testAnUnregisteredW6BaisesADashboardNotification(): void
     {
-        $dashboardStore = $this->createMock(DashboardStoreContract::class);
-        $dashboardStore->expects(self::once())
+        $deviceStore = $this->createMock(DeviceStoreContract::class);
+        $deviceStore->expects(self::once())
             ->method('recordRejectedDevice')
             ->with(self::BRACELET, 'moko-w6', 'W6', self::BRACELET, 'device_not_authorized', 0);
 
-        $this->deliver($this->bridge($dashboardStore), $this->accPayload());
+        $this->deliver($this->bridge($deviceStore), $this->accPayload());
     }
 
     public function testARegisteredW6IsSeenInsteadOfRejected(): void
@@ -117,15 +117,15 @@ final class BridgeW6Test extends TestCase
         // O gateway também se anuncia a si próprio, por isso guardam-se todas as chamadas
         // e olha-se só para a da pulseira.
         $seen = [];
-        $dashboardStore = $this->createMock(DashboardStoreContract::class);
-        $dashboardStore->expects(self::never())->method('recordRejectedDevice');
-        $dashboardStore->method('deviceSeen')
+        $deviceStore = $this->createMock(DeviceStoreContract::class);
+        $deviceStore->expects(self::never())->method('recordRejectedDevice');
+        $deviceStore->method('deviceSeen')
             ->willReturnCallback(function (string $imei, array $state) use (&$seen): void {
                 $seen[$imei] = $state;
             });
 
         $this->deliver(
-            $this->bridge($dashboardStore, extraDevices: $this->registered()),
+            $this->bridge($deviceStore, extraDevices: $this->registered()),
             $this->accPayload(),
         );
 

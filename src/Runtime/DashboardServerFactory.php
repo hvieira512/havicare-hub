@@ -31,7 +31,7 @@ final class DashboardServerFactory
     public static function listen(HubServices $services, array $dashboardConfig, LoopInterface $loop): void
     {
         $dashboard = new DashboardHttpServer(
-            $services->dashboardStore,
+            $services->deviceStore,
             new ApiTokenStore($services->redis),
             $services->whitelist,
             $services->hubServer,

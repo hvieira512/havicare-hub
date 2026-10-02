@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Dashboard\DashboardStore;
+use Hub\State\DeviceStore;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Moko\ProximityTracker;
@@ -52,11 +52,11 @@ final class BridgeProximityTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    /** @return array{0: MokoBridge, 1: RecordingHubMqttBridge, 2: DashboardStore} */
+    /** @return array{0: MokoBridge, 1: RecordingHubMqttBridge, 2: DeviceStore} */
     private function bridge(): array
     {
         $mqtt = new RecordingHubMqttBridge();
-        $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard:proximity');
+        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:proximity');
 
         $bridge = new MokoBridge(
             new FakeMqttSubscriber(),
@@ -68,7 +68,7 @@ final class BridgeProximityTest extends TestCase
             $mqtt,
             IngressFixtures::links(),
             new ArrayObservationStateStore(),
-            dashboardStore: $store,
+            deviceStore: $store,
             clock: fn(): float => $this->now,
             proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 30),
         );
@@ -237,7 +237,7 @@ final class BridgeProximityTest extends TestCase
             $mqtt,
             IngressFixtures::links(),
             new ArrayObservationStateStore(),
-            dashboardStore: new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard:maint'),
+            deviceStore: new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:maint'),
             clock: fn(): float => $this->now,
             proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 2),
         );

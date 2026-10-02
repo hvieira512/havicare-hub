@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
@@ -103,7 +103,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
         private readonly ObservationStateStore $state,
         string $topicFilter,
         ?callable $reconnectSubscriber = null,
-        ?DashboardStoreContract $dashboardStore = null,
+        ?DeviceStoreContract $deviceStore = null,
         ?callable $clock = null,
         private readonly ?CommercialModelResolver $commercialModelResolver = null,
     ) {
@@ -114,18 +114,18 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             $topicFilter,
             'veepoo',
             $reconnectSubscriber,
-            $dashboardStore,
+            $deviceStore,
             clock: $clock,
         );
         $this->normalizer = new DailyBlockNormalizer();
         $this->downlinkDispatcher = new DownlinkDispatcher(
             $downlinks,
             $mqttBridge,
-            $dashboardStore,
+            $deviceStore,
             $topicFilter,
         );
-        $this->presence = new BraceletPresence($mqttBridge, $dashboardStore);
-        $this->failures = new MeasurementFailureReporter($mqttBridge, $dashboardStore);
+        $this->presence = new BraceletPresence($mqttBridge, $deviceStore);
+        $this->failures = new MeasurementFailureReporter($mqttBridge, $deviceStore);
         $this->readings = new SettlingReadings(fn(): float => $this->clockNow());
     }
 
@@ -348,7 +348,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        $this->dashboardStore?->append($context->deviceKey, 'telemetry', self::forDashboard($telemetry) + [
+        $this->deviceStore?->append($context->deviceKey, 'telemetry', self::forDashboard($telemetry) + [
             'deviceType' => 'bracelet',
             'licenseId' => $context->licenseId,
         ]);

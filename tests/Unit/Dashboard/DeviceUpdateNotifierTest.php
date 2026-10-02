@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\Dashboard\DeviceUpdateNotifier;
+use Hub\State\DeviceUpdateNotifier;
 use PHPUnit\Framework\TestCase;
 
 final class DeviceUpdateNotifierTest extends TestCase

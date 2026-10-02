@@ -2,7 +2,7 @@
 
 namespace Hub\Ingress\Mqtt;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Log\Logger;
@@ -47,7 +47,7 @@ abstract class MqttBridgeBase implements MqttIngress
         protected readonly string $topicFilter,
         protected readonly ?string $sourceName = null,
         ?callable $reconnectSubscriber = null,
-        protected readonly ?DashboardStoreContract $dashboardStore = null,
+        protected readonly ?DeviceStoreContract $deviceStore = null,
         protected readonly ?Denylist $denylist = null,
         ?callable $clock = null,
     ) {
@@ -151,7 +151,7 @@ abstract class MqttBridgeBase implements MqttIngress
         $this->lastUnauthorizedAt[$identity] = $now;
 
         try {
-            $this->dashboardStore?->recordRejectedDevice(
+            $this->deviceStore?->recordRejectedDevice(
                 $identity,
                 $protocol,
                 $model,

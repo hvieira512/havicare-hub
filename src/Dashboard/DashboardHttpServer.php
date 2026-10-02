@@ -3,6 +3,7 @@
 namespace Hub\Dashboard;
 
 use Hub\Api\ApiKernel;
+use Hub\State\DeviceStore;
 use Hub\Api\Auth\ApiTokenStore;
 use Hub\Api\Auth\LoginThrottle;
 use Hub\Api\Services\ApiUserService;
@@ -56,7 +57,7 @@ final class DashboardHttpServer
     private string $amchartsLicense = '';
 
     public function __construct(
-        private DashboardStore $store,
+        private DeviceStore $store,
         private ApiTokenStore $tokens,
         private Whitelist $whitelist,
         private DeviceHubServer $hub,

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Dashboard\DashboardStore;
+use Hub\State\DeviceStore;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use PHPUnit\Framework\TestCase;
@@ -26,11 +26,11 @@ final class BridgeGatewayHistoryTest extends TestCase
     private const GATEWAY = 'd48c49f7909c';
     private const BRACELET = 'fbd87c59ba8b';
 
-    /** @return array{0: MokoBridge, 1: RecordingHubMqttBridge, 2: DashboardStore} */
+    /** @return array{0: MokoBridge, 1: RecordingHubMqttBridge, 2: DeviceStore} */
     private function bridge(): array
     {
         $mqtt = new RecordingHubMqttBridge();
-        $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard:gwhistory');
+        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:gwhistory');
 
         $bridge = new MokoBridge(
             new FakeMqttSubscriber(),
@@ -41,7 +41,7 @@ final class BridgeGatewayHistoryTest extends TestCase
             $mqtt,
             IngressFixtures::links(),
             new ArrayObservationStateStore(),
-            dashboardStore: $store,
+            deviceStore: $store,
         );
 
         return [$bridge, $mqtt, $store];

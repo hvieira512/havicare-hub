@@ -7,7 +7,7 @@ use Hub\Api\Auth\ApiTokenStore;
 use Hub\Api\Auth\LoginThrottle;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardHttpServer;
-use Hub\Dashboard\DashboardStore;
+use Hub\State\DeviceStore;
 use Hub\Device\MessageFanout;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Log\Logger;
@@ -90,7 +90,7 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
      * O `MessageFanout` vem no quarto lugar por ser o que a ingestão usa para anunciar uma
      * publicação: um teste que queira exercitar um stream de inquilino publica através dele.
      *
-     * @return array{0: callable, 1: ApiDataAccess, 2: DashboardStore, 3: MessageFanout}
+     * @return array{0: callable, 1: ApiDataAccess, 2: DeviceStore, 3: MessageFanout}
      */
     protected function makeServerWithDatabase(
         ?\Hub\Device\DeviceHubServer $hub = null,
@@ -118,7 +118,7 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $db->whitelist->register('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
         $db->whitelist->register('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
-        $store = new DashboardStore($redis, prefix: 'test:dashboard:http');
+        $store = new DeviceStore($redis, prefix: 'test:dashboard:http');
         $store->setDataAccess($db);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $store->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');

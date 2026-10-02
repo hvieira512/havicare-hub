@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\RawPayload;
 use Hub\Domain\DeviceMetadata;
@@ -30,7 +30,7 @@ final class GatewayPresence
 
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
-        private readonly ?DashboardStoreContract $dashboardStore,
+        private readonly ?DeviceStoreContract $deviceStore,
         private readonly int $idleTimeoutSeconds,
         ?callable $clock = null,
     ) {
@@ -68,7 +68,7 @@ final class GatewayPresence
 
         $this->mqttBridge->publishStatus($deviceKey, $status, true, $deviceType, $licenseId, $company);
         $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
-        $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        $this->deviceStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
     }
 
     /** Dá por desligado quem passou do prazo sem falar. */
@@ -96,8 +96,8 @@ final class GatewayPresence
                 continue;
             }
 
-            $this->dashboardStore?->deviceOffline($deviceKey);
-            $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->deviceStore?->deviceOffline($deviceKey);
+            $this->deviceStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
             unset($this->online[$deviceKey], $this->lastSeenAt[$deviceKey]);
         }
     }

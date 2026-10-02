@@ -13,8 +13,8 @@ use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Request\RequestBinder;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
-use Hub\Dashboard\DashboardStoreContract;
-use Hub\Dashboard\DeviceUpdateNotifier;
+use Hub\State\DeviceStoreContract;
+use Hub\State\DeviceUpdateNotifier;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DeviceTypeCatalog;
 use Hub\Device\DeviceHubServer;
@@ -38,7 +38,7 @@ class DeviceService
     private RequestBinder $binder;
 
     public function __construct(
-        private DashboardStoreContract $store,
+        private DeviceStoreContract $store,
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
         private ApiDataAccess $db,

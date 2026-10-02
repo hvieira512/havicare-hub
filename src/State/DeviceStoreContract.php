@@ -1,8 +1,8 @@
 <?php
 
-namespace Hub\Dashboard;
+namespace Hub\State;
 
-interface DashboardStoreContract
+interface DeviceStoreContract
 {
     public function registerDevice(
         string $imei,

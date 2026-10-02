@@ -17,7 +17,7 @@ final class NcsBridge extends MqttBridgeBase
         \Hub\Device\HubMqttBridge $mqttBridge,
         string $topicFilter = '/voerka/#',
         ?callable $reconnectSubscriber = null,
-        ?\Hub\Dashboard\DashboardStoreContract $dashboardStore = null,
+        ?\Hub\State\DeviceStoreContract $deviceStore = null,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
         ?\Hub\Registry\Denylist $denylist = null,
     ) {
@@ -28,7 +28,7 @@ final class NcsBridge extends MqttBridgeBase
             $topicFilter,
             sourceName: 'ncs',
             reconnectSubscriber: $reconnectSubscriber,
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
             denylist: $denylist,
         );
         $this->normalizer = new MessageNormalizer();
@@ -95,7 +95,7 @@ final class NcsBridge extends MqttBridgeBase
         $company = (string)($device['company'] ?? 'null');
 
         $this->mqttBridge->publishRaw($deviceKey, $normalized['raw'], $deviceType, $licenseId, $company);
-        $this->dashboardStore?->deviceSeen($deviceKey, [
+        $this->deviceStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$device['supplier'],
             'model' => (string)$device['model'],
             'deviceType' => $deviceType,
@@ -105,7 +105,7 @@ final class NcsBridge extends MqttBridgeBase
             'transport' => 'mqtt',
             'online' => '1',
         ]);
-        $this->dashboardStore?->append($deviceKey, 'raw', array_merge($normalized['raw'], [
+        $this->deviceStore?->append($deviceKey, 'raw', array_merge($normalized['raw'], [
             'deviceType' => $deviceType,
             'licenseId' => $licenseId,
         ]));
@@ -114,13 +114,13 @@ final class NcsBridge extends MqttBridgeBase
             $retain = ((string)($normalized['status']['state'] ?? '')) !== 'error';
             $this->mqttBridge->publishStatus($deviceKey, $normalized['status'], $retain, $deviceType, $licenseId, $company);
             if (($normalized['status']['state'] ?? '') === 'offline') {
-                $this->dashboardStore?->deviceOffline($deviceKey);
+                $this->deviceStore?->deviceOffline($deviceKey);
             }
         }
 
         if (isset($normalized['event']) && is_array($normalized['event'])) {
             $this->mqttBridge->publishEvent($deviceKey, $normalized['event'], $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'events', array_merge($normalized['event'], [
+            $this->deviceStore?->append($deviceKey, 'events', array_merge($normalized['event'], [
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,
             ]));

@@ -6,7 +6,7 @@ namespace Tests\Integration\Api\Services;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\DeviceService;
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\DeviceHubServer;
 use Hub\Registry\Whitelist;
 use Tests\Support\MysqlDashboardTestCase;
@@ -29,7 +29,7 @@ final class DeviceImeiRenameTest extends MysqlDashboardTestCase
         $db->radarLayouts->store($radar, $this->layout(), '{}', '2026-10-02 12:00:00');
 
         $service = new DeviceService(
-            $this->createStub(DashboardStoreContract::class),
+            $this->createStub(DeviceStoreContract::class),
             $whitelist,
             $this->createStub(DeviceHubServer::class),
             $db,

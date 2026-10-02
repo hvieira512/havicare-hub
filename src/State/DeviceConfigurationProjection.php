@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Dashboard;
+namespace Hub\State;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceConfigurationCatalog;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
@@ -38,7 +38,7 @@ final class DownlinkDispatcher
     public function __construct(
         private readonly ?PendingDownlinkQueue $downlinks,
         private readonly HubMqttBridge $mqttBridge,
-        private readonly ?DashboardStoreContract $dashboardStore,
+        private readonly ?DeviceStoreContract $deviceStore,
         private readonly string $topicFilter,
     ) {
     }
@@ -78,7 +78,7 @@ final class DownlinkDispatcher
             // correr o comando, a sessão seguinte volta a recebê-lo, e o TTL da política é
             // que decide quando deixa de fazer sentido. Sai da fila em `resolvePending`,
             // quando a caixa confirma -- caso contrário perdia-se em silêncio.
-            $this->dashboardStore?->markLatestCommand($deviceKey, $operation, [
+            $this->deviceStore?->markLatestCommand($deviceKey, $operation, [
                 'status' => 'waiting',
                 'sentAt' => gmdate('Y-m-d\TH:i:s\Z'),
             ]);
@@ -107,7 +107,7 @@ final class DownlinkDispatcher
             unset($this->sentAt[$dedupeKey]);
             $operation = self::operationOf($downlink);
             if ($operation !== '') {
-                $this->dashboardStore?->markLatestCommand($deviceKey, $operation, [
+                $this->deviceStore?->markLatestCommand($deviceKey, $operation, [
                     'status' => 'acked',
                     'ackedAt' => gmdate('Y-m-d\TH:i:s\Z'),
                 ]);
@@ -138,7 +138,7 @@ final class DownlinkDispatcher
 
             $this->downlinks->remove($downlink);
             unset($this->sentAt[$downlink->dedupeKey]);
-            $this->dashboardStore?->markLatestCommand($deviceKey, $operation, [
+            $this->deviceStore?->markLatestCommand($deviceKey, $operation, [
                 'status' => 'failed',
                 'error' => $reason,
                 'failedAt' => gmdate('Y-m-d\TH:i:s\Z'),

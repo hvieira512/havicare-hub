@@ -5,7 +5,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Hub\Bootstrap;
 use Hub\Config;
-use Hub\Dashboard\DashboardStore;
+use Hub\State\DeviceStore;
 use Hub\Device\HubMqttBridge;
 use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy;
 use Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer;
@@ -70,7 +70,7 @@ $redis = new RedisClient(
     ]),
     HubServices::redisOptions($redisConfig)
 );
-$dashboardStore = new DashboardStore($redis, $historyLimit, 'hub:dashboard:benchmark:qinglanst');
+$deviceStore = new DeviceStore($redis, $historyLimit, 'hub:dashboard:benchmark:qinglanst');
 $writePolicy = new DashboardWritePolicy(
     max(0, (int)($options['seen-min-ms'] ?? 5000)),
     max(0, (int)($options['position-sample-ms'] ?? 1000)),
@@ -177,7 +177,7 @@ for ($loop = 0; $loop < $loops; $loop++) {
 
         if ($writePolicy->shouldUpdateSeen($dashboardKey, $nowMs)) {
             $seenStart = hrtime(true);
-            $dashboardStore->deviceSeen($dashboardKey, [
+            $deviceStore->deviceSeen($dashboardKey, [
                 'supplier' => (string)$device['supplier'],
                 'model' => (string)$device['model'],
                 'deviceType' => $deviceType,
@@ -199,7 +199,7 @@ for ($loop = 0; $loop < $loops; $loop++) {
 
             if ($writePolicy->shouldStoreTelemetry($dashboardKey, (string)($normalized['telemetry']['type'] ?? ''), $nowMs)) {
                 $redisStart = hrtime(true);
-                $dashboardStore->append($dashboardKey, 'telemetry', array_merge($normalized['telemetry'], [
+                $deviceStore->append($dashboardKey, 'telemetry', array_merge($normalized['telemetry'], [
                     'deviceType' => $deviceType,
                     'licenseId' => $licenseId,
                 ]));
@@ -219,7 +219,7 @@ for ($loop = 0; $loop < $loops; $loop++) {
             $peak['mqtt_event'] = max($peak['mqtt_event'], $duration);
 
             $redisStart = hrtime(true);
-            $dashboardStore->append($dashboardKey, 'events', array_merge($event, [
+            $deviceStore->append($dashboardKey, 'events', array_merge($event, [
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,
             ]));

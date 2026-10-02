@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Runtime;
 
-use Hub\Dashboard\DashboardStore;
+use Hub\State\DeviceStore;
 use Hub\Device\DeviceHubServer;
 use Hub\Runtime\HubServices;
 use Hub\Runtime\MaintenanceScheduler;
@@ -25,7 +25,7 @@ final class MaintenanceSchedulerTest extends TestCase
     /** @var list<callable():void> */
     private array $timers = [];
 
-    private DashboardStore $store;
+    private DeviceStore $store;
 
     /** @var DeviceHubServer&object{submitted: list<array<string, mixed>>, idleSeconds: list<int>} */
     private DeviceHubServer $hubServer;
@@ -33,7 +33,7 @@ final class MaintenanceSchedulerTest extends TestCase
     protected function setUp(): void
     {
         $this->timers = [];
-        $this->store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
+        $this->store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
         $this->store->registerDevice(self::IMEI, 'Vivistar', 'VIVISTAR-CARE');
         $this->hubServer = $this->recordingHubServer();
 
@@ -243,7 +243,7 @@ final class MaintenanceSchedulerTest extends TestCase
     {
         $reflection = new \ReflectionClass(HubServices::class);
         $services = $reflection->newInstanceWithoutConstructor();
-        $reflection->getProperty('dashboardStore')->setValue($services, $this->store);
+        $reflection->getProperty('deviceStore')->setValue($services, $this->store);
         $reflection->getProperty('hubServer')->setValue($services, $this->hubServer);
 
         return $services;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Dashboard;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\Dashboard\DeviceConfigurationProjection;
+use Hub\State\DeviceConfigurationProjection;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**

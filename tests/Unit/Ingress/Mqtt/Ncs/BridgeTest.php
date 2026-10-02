@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Ncs;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Ingress\Mqtt\Ncs\NcsBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
@@ -19,8 +19,8 @@ final class BridgeTest extends TestCase
      */
     public function testUnregisteredNcsCreatesDashboardNotification(): void
     {
-        $dashboardStore = $this->createMock(DashboardStoreContract::class);
-        $dashboardStore->expects(self::once())
+        $deviceStore = $this->createMock(DeviceStoreContract::class);
+        $deviceStore->expects(self::once())
             ->method('recordRejectedDevice')
             ->with(
                 'bea6c3dd8e02',
@@ -34,7 +34,7 @@ final class BridgeTest extends TestCase
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
         );
 
         $bridge->handleReceivedMessage(
@@ -53,8 +53,8 @@ final class BridgeTest extends TestCase
      */
     public function testUnregisteredNcsNotificationCarriesTheTopicLicense(): void
     {
-        $dashboardStore = $this->createMock(DashboardStoreContract::class);
-        $dashboardStore->expects(self::once())
+        $deviceStore = $this->createMock(DeviceStoreContract::class);
+        $deviceStore->expects(self::once())
             ->method('recordRejectedDevice')
             ->with(
                 'bea6c3dd8e02',
@@ -68,7 +68,7 @@ final class BridgeTest extends TestCase
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
         );
 
         $bridge->handleReceivedMessage(

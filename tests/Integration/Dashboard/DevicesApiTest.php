@@ -4,7 +4,7 @@ namespace Tests\Integration\Dashboard;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\DeviceService;
-use Hub\Dashboard\DashboardStore;
+use Hub\State\DeviceStore;
 use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
@@ -3100,14 +3100,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * @return array{0: DeviceService, 1: ApiDataAccess, 2: DashboardStore}
+     * @return array{0: DeviceService, 1: ApiDataAccess, 2: DeviceStore}
      */
     private function makeApi(?\Hub\Device\DeviceHubServer $hub = null, ?PendingDownlinkQueue $queue = null): array
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro');
         $db->whitelist->register('868017032159118', '4P Touch', 'D46', 'watch', 0, '', '1703215911');
-        $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard:devices-api');
+        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:devices-api');
         $store->setDataAccess($db);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro');
         $whitelist = new Whitelist($this->whitelistPath, $db->whitelist);

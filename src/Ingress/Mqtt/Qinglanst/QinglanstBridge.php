@@ -23,7 +23,7 @@ final class QinglanstBridge extends MqttBridgeBase
         \Hub\Device\HubMqttBridge $mqttBridge,
         string $topicFilter = 'radar/1001/#',
         ?callable $reconnectSubscriber = null,
-        ?\Hub\Dashboard\DashboardStoreContract $dashboardStore = null,
+        ?\Hub\State\DeviceStoreContract $deviceStore = null,
         ?IngestStats $stats = null,
         ?DashboardWritePolicy $dashboardWritePolicy = null,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
@@ -36,7 +36,7 @@ final class QinglanstBridge extends MqttBridgeBase
             $topicFilter,
             sourceName: 'qinglanst-radar',
             reconnectSubscriber: $reconnectSubscriber,
-            dashboardStore: $dashboardStore,
+            deviceStore: $deviceStore,
             denylist: $denylist,
         );
         $this->decoder = new PayloadDecoder();
@@ -158,14 +158,14 @@ final class QinglanstBridge extends MqttBridgeBase
         ];
         // O MQTT leva tudo -- é o debugging ao vivo; o histórico da dashboard leva uma amostra.
         $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
-        if ($this->dashboardStore !== null && $this->dashboardWritePolicy->shouldStoreRaw($deviceKey, $nowMs)) {
-            $this->dashboardStore->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        if ($this->deviceStore !== null && $this->dashboardWritePolicy->shouldStoreRaw($deviceKey, $nowMs)) {
+            $this->deviceStore->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
 
         $redisSeenDuration = 0;
-        if ($this->dashboardStore !== null && $this->dashboardWritePolicy->shouldUpdateSeen($deviceKey, $nowMs)) {
+        if ($this->deviceStore !== null && $this->dashboardWritePolicy->shouldUpdateSeen($deviceKey, $nowMs)) {
             $redisSeenStart = hrtime(true);
-            $this->dashboardStore->deviceSeen($deviceKey, [
+            $this->deviceStore->deviceSeen($deviceKey, [
                 'supplier' => (string)$device['supplier'],
                 'model' => (string)$device['model'],
                 'deviceType' => $deviceType,
@@ -194,9 +194,9 @@ final class QinglanstBridge extends MqttBridgeBase
             $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
             $mqttTelemetryDuration += hrtime(true) - $mqttTelemetryStart;
 
-            if ($this->dashboardStore !== null) {
+            if ($this->deviceStore !== null) {
                 $redisTelemetryStart = hrtime(true);
-                $this->dashboardStore->append($deviceKey, 'telemetry', array_merge($telemetry, [
+                $this->deviceStore->append($deviceKey, 'telemetry', array_merge($telemetry, [
                     'deviceType' => $deviceType,
                     'licenseId' => $licenseId,
                 ]));
@@ -211,7 +211,7 @@ final class QinglanstBridge extends MqttBridgeBase
             $mqttEventDuration += hrtime(true) - $mqttEventStart;
 
             $redisEventStart = hrtime(true);
-            $this->dashboardStore?->append($deviceKey, 'events', array_merge($event, [
+            $this->deviceStore?->append($deviceKey, 'events', array_merge($event, [
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,
             ]));

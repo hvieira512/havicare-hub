@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use PHPUnit\Framework\TestCase;
@@ -45,7 +45,7 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
     public function testAFrameWithoutADeviceIsNotRecordedAsUnauthorised(?array $device): void
     {
         $recorded = [];
-        $store = $this->createMock(DashboardStoreContract::class);
+        $store = $this->createMock(DeviceStoreContract::class);
         $store->method('recordRejectedDevice')->willReturnCallback(
             static function (string $imei) use (&$recorded): void {
                 $recorded[] = $imei;
@@ -66,7 +66,7 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
     public function testAnIdentifiedStrangerIsStillRecorded(): void
     {
         $recorded = [];
-        $store = $this->createMock(DashboardStoreContract::class);
+        $store = $this->createMock(DeviceStoreContract::class);
         $store->method('recordRejectedDevice')->willReturnCallback(
             static function (string $imei) use (&$recorded): void {
                 $recorded[] = $imei;
@@ -83,7 +83,7 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
         self::assertSame(['aabbccddeeff'], $recorded);
     }
 
-    private function bridge(DashboardStoreContract $store): VeepooBridge
+    private function bridge(DeviceStoreContract $store): VeepooBridge
     {
         return new VeepooBridge(
             new FakeMqttSubscriber(),

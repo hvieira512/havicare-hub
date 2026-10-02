@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
-use Hub\Dashboard\DashboardStore;
+use Hub\State\DeviceStore;
 use Predis\Client as RedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -51,7 +51,7 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
         parent::tearDown();
     }
 
-    private function store(): DashboardStore
+    private function store(): DeviceStore
     {
         $redis = new RedisClient([
             'host' => (string)(getenv('TEST_REDIS_HOST') ?: getenv('REDIS_HOST') ?: '127.0.0.1'),
@@ -68,10 +68,10 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
         $this->clients[] = $redis;
         $this->roots[] = $root;
 
-        return new DashboardStore($redis, 100, $root);
+        return new DeviceStore($redis, 100, $root);
     }
 
-    /** @return array{DashboardStore, callable(): int} */
+    /** @return array{DeviceStore, callable(): int} */
     private function storeCountingNotifications(): array
     {
         $store = $this->store();

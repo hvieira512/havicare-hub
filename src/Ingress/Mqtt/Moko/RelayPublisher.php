@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Domain\DeviceMetadata;
@@ -36,7 +36,7 @@ final class RelayPublisher
 
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
-        private readonly ?DashboardStoreContract $dashboardStore,
+        private readonly ?DeviceStoreContract $deviceStore,
         private readonly ObservationStateStore $state,
         private readonly Whitelist $whitelist,
         private readonly ?CommercialModelResolver $commercialModelResolver,
@@ -79,8 +79,8 @@ final class RelayPublisher
         // O MQTT leva todas as observações -- é o debugging ao vivo; o histórico da dashboard
         // leva uma amostra por dispositivo, para não afogar a janela nem somar escritas.
         $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
-        if ($this->dashboardStore !== null && $this->shouldStoreRaw($deviceKey)) {
-            $this->dashboardStore->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        if ($this->deviceStore !== null && $this->shouldStoreRaw($deviceKey)) {
+            $this->deviceStore->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
     }
 
@@ -99,7 +99,7 @@ final class RelayPublisher
         $deviceType = (string)$device['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
-        $this->dashboardStore?->deviceSeen($deviceKey, [
+        $this->deviceStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => $protocol, 'transport' => 'ble_gateway', 'online' => '1',
@@ -111,7 +111,7 @@ final class RelayPublisher
                 continue;
             }
             $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->deviceStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
     }
 
@@ -129,7 +129,7 @@ final class RelayPublisher
         $company = (string)($device['company'] ?? 'null');
         foreach ($events as $event) {
             $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+            $this->deviceStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
     }
 
@@ -215,7 +215,7 @@ final class RelayPublisher
     {
         $deviceKey = (string)$device['imei'];
         $gatewayKey = (string)$gateway['imei'];
-        $this->dashboardStore?->recordGatewaySighting(
+        $this->deviceStore?->recordGatewaySighting(
             $deviceKey,
             $gatewayKey,
             is_numeric($rssiDbm) ? (int)$rssiDbm : null,

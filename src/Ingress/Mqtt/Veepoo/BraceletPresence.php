@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
-use Hub\Dashboard\DashboardStoreContract;
+use Hub\State\DeviceStoreContract;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\RawPayload;
 
@@ -28,7 +28,7 @@ final class BraceletPresence
 
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
-        private readonly ?DashboardStoreContract $dashboardStore,
+        private readonly ?DeviceStoreContract $deviceStore,
     ) {
     }
 
@@ -51,7 +51,7 @@ final class BraceletPresence
 
         // É isto que a dashboard e a API leem para dizer se o aparelho está online. Sem
         // esta linha o estado sai no MQTT e mais nada, e o ecrã continua a dizer offline.
-        $this->dashboardStore?->deviceSeen($deviceKey, [
+        $this->deviceStore?->deviceSeen($deviceKey, [
             'supplier' => $supplier,
             'model' => $model,
             'deviceType' => 'bracelet',
@@ -91,7 +91,7 @@ final class BraceletPresence
         }
         $this->online[$deviceKey] = false;
 
-        $this->dashboardStore?->deviceOffline($deviceKey);
+        $this->deviceStore?->deviceOffline($deviceKey);
 
         $status = RawPayload::status(
             $deviceKey,
@@ -124,7 +124,7 @@ final class BraceletPresence
         );
 
         $this->mqttBridge->publishEvent($deviceKey, $event, 'bracelet', $licenseId, $company);
-        $this->dashboardStore?->append($deviceKey, 'events', $event + [
+        $this->deviceStore?->append($deviceKey, 'events', $event + [
             'deviceType' => 'bracelet',
             'licenseId' => $licenseId,
         ]);
