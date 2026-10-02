@@ -151,13 +151,36 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 |---|---|
 | `activity` | `steps`, `distanceMeters`, `distanceKm`, `caloriesKcal`, `exerciseSeconds`, `standMinutes` — **o acumulado do dia**, e não um incremento |
 | `sleep` | `startTime`, `endTime`, `isAccumulative`, `totalDurationMinutes`, `timingValid`, `segments[]` |
-| `battery` | `percent`, `chargingState`, `batteryType`, `lowBattery` — este último só das pulseiras, e é o firmware a dizê-lo, não um limiar nosso sobre a percentagem |
+| `battery` | `percent` **ou** `voltageMv`, `chargingState`, `batteryType`, `mainsPowered`, `lowBattery` — ver a tabela abaixo, que diz quem manda o quê |
 | `heartbeat` | `status`, `steps`, `gsmSignal`, `satelliteCount`, `batteryPercent`, `chargingState`, `batteryType`, `rollFrequency`, `remainingSpace`, `fortificationState`, `workMode` |
 | `device_state` | `state`, `resetStatus`, `reason` |
 | `firmware_version` | `version` |
 | `device_config` | `status`, `ack`, `settings` |
 | `alarm` | `reason` |
 | `location` | ver a secção 4 |
+
+#### A bateria, campo a campo
+
+O cartão da bateria junta coisas que vêm de sítios diferentes, e nenhum aparelho
+manda tudo. Quem integra tem de contar com a ausência de qualquer um deles.
+
+| Campo | Quem o manda | O que é |
+|---|---|---|
+| `percent` | todos menos o gateway MKGW4 | A carga, de 0 a 100 |
+| `voltageMv` | pulseiras MOKO sem percentagem, e o gateway MKGW4 | A tensão em milivolts. **Alternativa** ao `percent`, nunca vem com ele: converter uma na outra exigia a curva da célula |
+| `chargingState` | relógios Wonlex e o dispensador | Se está a carregar. Chega em **duas formas** — ver abaixo |
+| `batteryType` | relógios Wonlex | **Apesar do nome, não é o tipo da bateria**: é o motivo do envio. `0` ao ligar, `1` ao desligar, `2` envio periódico, `3` bateria fraca |
+| `mainsPowered` | dispensador | Se está ligado à ficha. É outra pergunta: um aparelho cheio e ligado não carrega nada |
+| `lowBattery` | pulseiras Veepoo | É o firmware a dizê-lo, e não um limiar nosso sobre a percentagem |
+
+O `chargingState` tem dois tipos no mesmo campo, e quem o lê tem de aceitar os
+dois: os relógios Wonlex mandam o **inteiro** `0` ou `1` — o `batteryState` do
+fabricante —, e o dispensador manda uma **enumeração**, `normal`, `full`, `low`,
+`charging` ou `absent`. O dispensador só o consegue fazer porque o descodificador
+dele não passa pelo `FeatureNormalizer`, que converteria a palavra em `null`.
+
+Os relógios 4P Touch e Vivistar **não reportam carga** — as especificações dos
+dois não têm bit nenhum para ela, só a percentagem e um alarme de bateria fraca.
 
 ### Só de alguns tipos de aparelho
 
