@@ -5,7 +5,7 @@ namespace Hub\Domain\Capability\Definition;
 /**
  * A base dos sete ficheiros de definições, um por tipo de aparelho.
  *
- * Cada linha do catálogo declara quatro bandeiras, mas nas 160 que existem só aparecem
+ * Cada linha do catálogo declara quatro bandeiras, mas em todas elas só aparecem
  * cinco combinações. São um eixo só, e é esse eixo que os ficheiros escrevem: o papel.
  */
 abstract class CapabilityDefinitions

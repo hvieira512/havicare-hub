@@ -139,11 +139,11 @@ a única coisa que o CI dava e a máquina não.
 > phpcs apanha-a em dois segundos e ninguém correu o phpcs. Sem CI, a disciplina
 > deixa de ter rede: **o `composer test` corre antes de cada push**, e não depois.
 
-O `.githooks/pre-commit` corre as duas verificações rápidas — phpcs e eslint — e
-fica ligado sozinho, porque o `composer install` aponta o `core.hooksPath` para
-lá. As outras cinco ficam de fora: os cenários levantam contentores, e um
-`git commit` que demora minutos deixa de ser usado. Num commit intermédio,
-`git commit --no-verify`.
+O `.githooks/pre-commit` corre as três verificações que não precisam de base de
+dados, de Redis nem de contentores — phpcs, phpstan e eslint — e fica ligado
+sozinho, porque o `composer install` aponta o `core.hooksPath` para lá. As
+outras quatro ficam de fora: levantam contentores, e um `git commit` que demora
+minutos deixa de ser usado. Num commit intermédio, `git commit --no-verify`.
 
 ## Uma migração nova aplica-se logo
 
