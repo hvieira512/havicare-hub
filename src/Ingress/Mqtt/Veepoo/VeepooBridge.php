@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Veepoo;
 
 use Hub\Dashboard\DashboardStoreContract;
+use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\TelemetryEnvelope;
@@ -104,6 +105,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
         ?callable $reconnectSubscriber = null,
         ?DashboardStoreContract $dashboardStore = null,
         ?callable $clock = null,
+        private readonly ?CommercialModelResolver $commercialModelResolver = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -178,6 +180,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
+        $device = $this->enrichWithCommercialName($device, $this->commercialModelResolver);
         $deviceKey = (string)$device['imei'];
         $licenseId = (int)($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
@@ -228,11 +231,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
         // O registo de sono chega em espécie própria: é o relatório de uma noite, já calculado
         // pelo firmware, e não uma sequência de leituras como os blocos de cinco minutos.
         if (($message['kind'] ?? null) === 'sleep') {
-            $identity = [
-                'id' => $deviceKey,
-                'supplier' => (string)($device['supplier'] ?? ''),
-                'model' => (string)($device['model'] ?? ''),
-            ];
+            $identity = TelemetryEnvelope::device($deviceKey, $device);
             $payload = $message['payload'] ?? null;
             // Os instantes da noite vêm no relógio da pulseira; é este desvio que os põe em UTC.
             $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;

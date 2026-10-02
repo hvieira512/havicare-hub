@@ -144,6 +144,7 @@ final class MqttIngressFactory
                 $topicFilter,
                 $reconnect,
                 $services->dashboardStore,
+                commercialModelResolver: $services->commercialModelResolver,
             ),
         );
     }
