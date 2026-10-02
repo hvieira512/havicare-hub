@@ -38,13 +38,27 @@ final class TelemetryEnvelope
         return [
             'type' => $type,
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => [
-                'id' => $deviceKey,
-                'supplier' => (string)($device['supplier'] ?? ''),
-                'model' => (string)($device['model'] ?? ''),
-            ],
+            'device' => self::device($deviceKey, $device),
             'source' => $source,
             'data' => $data,
         ];
+    }
+
+    /**
+     * O descritor do dispositivo, na forma que todo o contrato usa: o que não se sabe omite-se,
+     * porque uma chave vazia obriga quem consome a distinguir o vazio do ausente.
+     *
+     * @param array<string, mixed> $device o dispositivo como a whitelist o resolve
+     *
+     * @return array<string, string>
+     */
+    public static function device(string $deviceKey, array $device): array
+    {
+        return array_filter([
+            'id' => $deviceKey,
+            'supplier' => (string)($device['supplier'] ?? ''),
+            'model' => (string)($device['model'] ?? ''),
+            'commercialName' => (string)($device['commercialName'] ?? ''),
+        ], static fn(string $value): bool => $value !== '');
     }
 }

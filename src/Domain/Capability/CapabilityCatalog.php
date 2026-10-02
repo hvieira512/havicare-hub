@@ -254,6 +254,8 @@ final class CapabilityCatalog
                 'blood_oxygen',
                 'temperature',
                 'location',
+                // Que rádio serve a ligação: sai na resposta ao `TS`, como o firmware e a bateria.
+                'connectivity',
             ],
             'qinglanst-radar' => [
                 'heart_rate',
