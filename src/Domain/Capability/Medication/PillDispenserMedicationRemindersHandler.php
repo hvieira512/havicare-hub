@@ -41,7 +41,7 @@ final class PillDispenserMedicationRemindersHandler implements MedicationReminde
             }
         }
 
-        return ['medication_reminders' => ['plans' => array_values($plans)]];
+        return ['medication_reminders' => ['plans' => $plans]];
     }
 
     public function fromNative(array $desired): mixed

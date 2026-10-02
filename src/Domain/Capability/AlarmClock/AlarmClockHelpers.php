@@ -18,7 +18,7 @@ trait AlarmClockHelpers
         $existingList = is_array($existing) ? array_values($existing) : [];
         $incomingList = is_array($incoming) ? array_values($incoming) : [];
 
-        return array_values(array_merge($existingList, $incomingList));
+        return array_merge($existingList, $incomingList);
     }
 
     /**
@@ -51,7 +51,7 @@ trait AlarmClockHelpers
         }
         // Um item que já traz `recurrence` é público, e sai como entrou.
         if ($items !== [] && is_array($items[0] ?? null) && array_key_exists('recurrence', $items[0])) {
-            return array_values($items);
+            return $items;
         }
 
         return array_values(array_filter(

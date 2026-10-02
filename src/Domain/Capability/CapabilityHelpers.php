@@ -64,7 +64,7 @@ trait CapabilityHelpers
             throw new \InvalidArgumentException("{$field} must be an array");
         }
 
-        return array_values($value);
+        return $value;
     }
 
     /** @return array<string, mixed> */
@@ -165,7 +165,7 @@ trait CapabilityHelpers
         $existingList = is_array($existing) ? array_values($existing) : [];
         $incomingList = is_array($incoming) ? array_values($incoming) : [];
 
-        return array_values(array_merge($existingList, $incomingList));
+        return array_merge($existingList, $incomingList);
     }
 
     protected function stringifyPhoneList(array $value): mixed

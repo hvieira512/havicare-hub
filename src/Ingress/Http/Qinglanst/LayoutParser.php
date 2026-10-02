@@ -85,7 +85,7 @@ final class LayoutParser
 
             $key = (int)array_shift($numbers);
             $type = (int)array_shift($numbers);
-            $tuples[] = [$key, $type, array_values($numbers)];
+            $tuples[] = [$key, $type, $numbers];
         }
 
         return $tuples;

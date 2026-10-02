@@ -560,7 +560,7 @@ final class WhitelistRepository
             );
         }
 
-        return ['suppliers' => array_values($suppliers)];
+        return ['suppliers' => $suppliers];
     }
 
     private function licenseTree(array $filters, ?int $licenseScope = null, ?string $companyScope = null): array
@@ -608,7 +608,7 @@ final class WhitelistRepository
                 ?: strcasecmp($left['company'], $right['company'])
         );
 
-        return ['companies' => array_values($companies), 'none' => $none];
+        return ['companies' => $companies, 'none' => $none];
     }
 
     private function normalizeDeviceRow(array $row): array

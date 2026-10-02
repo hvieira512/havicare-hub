@@ -31,7 +31,7 @@ final class WonlexMedicationRemindersHandler implements MedicationRemindersHandl
                     throw new \InvalidArgumentException('plans items must be objects');
                 }
             }
-            return ['dnMedicationPlan' => ['plans' => array_values($plans)]];
+            return ['dnMedicationPlan' => ['plans' => $plans]];
         }
 
         return ['dnMedicationPlan' => ['plan' => $value['plan'] ?? $value]];

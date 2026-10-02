@@ -1,8 +1,12 @@
+# O que já estava por anotar fica congelado no baseline, e vai-se limpando ficheiro a
+# ficheiro. Código novo não pode acrescentar mais.
+includes:
+    - phpstan-baseline.neon
+
 parameters:
-    # Level 4 turns on the dead-code and impossible-condition rules. Those are
-    # what found the undeclared resourceId on ConnectionInterface and an NCS
-    # branch that could never run, so they are worth failing the build over.
-    level: 4
+    # O nível 6 exige a forma dos arrays, que é onde os tipos deste projecto eram
+    # uma promessa vaga: um `array` sem forma não diz nada a quem o recebe.
+    level: 6
     paths:
         - src
         - bin
