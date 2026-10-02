@@ -122,7 +122,7 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
     {
         $protocol = $this->protocol();
 
-        $leitura = (new PillDispenserAdapter())->encodeOutgoing([
+        $reading = (new PillDispenserAdapter())->encodeOutgoing([
             'imei' => self::IMEI,
             'packetType' => 0x87,
             'tlv' => [
@@ -131,7 +131,7 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
             ],
         ]);
 
-        self::assertTrue($protocol->replyAccepted($this->decodeFrame($leitura)));
+        self::assertTrue($protocol->replyAccepted($this->decodeFrame($reading)));
     }
 
     public function testAFrameThatDoesNotCommentOnConfigurationSaysNothing(): void
@@ -146,17 +146,17 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
 
     public function testTwoDownlinksInARowCarryDifferentSerials(): void
     {
-        $primeiro = $this->decodeFrame(
+        $first = $this->decodeFrame(
             DeviceCommandCatalog::buildDownlink('zayata-m228', self::IMEI, 'alarmVolume', ['volume' => 1])
         );
-        $segundo = $this->decodeFrame(
+        $second = $this->decodeFrame(
             DeviceCommandCatalog::buildDownlink('zayata-m228', self::IMEI, 'alarmRingtone', ['ringtone' => 2])
         );
 
         // O número de série é o que o aparelho ecoa na resposta, e é por ele que se sabe a
         // qual dos pedidos pendentes ela pertence. Todos a zero e duas escritas ao mesmo
         // tempo ficavam indistinguíveis.
-        self::assertNotSame('0', $primeiro['ident']);
-        self::assertNotSame($primeiro['ident'], $segundo['ident']);
+        self::assertNotSame('0', $first['ident']);
+        self::assertNotSame($first['ident'], $second['ident']);
     }
 }

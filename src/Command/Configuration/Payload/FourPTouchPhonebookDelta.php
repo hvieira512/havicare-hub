@@ -39,20 +39,20 @@ final class FourPTouchPhonebookDelta
      */
     public static function resyncCommands(array $desired): array
     {
-        $escritas = self::commands([], $desired);
-        $ocupados = [];
-        foreach ($escritas as $escrita) {
-            $ocupados[(int)$escrita['fields'][0]] = true;
+        $writes = self::commands([], $desired);
+        $usedSlots = [];
+        foreach ($writes as $write) {
+            $usedSlots[(int)$write['fields'][0]] = true;
         }
 
         $commands = [];
         for ($index = 1; $index <= self::MAX_CONTACTS; $index++) {
-            if (!isset($ocupados[$index])) {
+            if (!isset($usedSlots[$index])) {
                 $commands[] = ['command' => 'DPHBX', 'fields' => [(string)$index]];
             }
         }
 
-        return array_merge($commands, $escritas);
+        return array_merge($commands, $writes);
     }
 
     /**

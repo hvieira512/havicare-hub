@@ -1340,8 +1340,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
             ['previousContacts' => [1 => $hugo], 'resync' => true],
         );
 
-        $comandos = array_column($payloads, 'command');
-        self::assertSame('DPHBX', $comandos[0], 'a reparação varre antes de escrever');
+        $commands = array_column($payloads, 'command');
+        self::assertSame('DPHBX', $commands[0], 'a reparação varre antes de escrever');
         self::assertCount(
             100,
             $payloads,

@@ -39,16 +39,16 @@ final class MedicationRemindersDispatchTest extends TestCase
     /**
      * @dataProvider protocolos
      */
-    public function testEachProtocolIsServedByItsOwnHandler(string $protocol, string $esperado): void
+    public function testEachProtocolIsServedByItsOwnHandler(string $protocol, string $expected): void
     {
         $capability = $this->capability();
 
-        self::assertSame(['quem' => $esperado], $capability->toNative($protocol, []), 'toNative');
-        self::assertSame($esperado, $capability->fromNative($protocol, '', []), 'fromNative');
-        self::assertSame($esperado, $capability->defaultValue($protocol), 'defaultValue');
-        self::assertSame(['quem' => $esperado], $capability->meta($protocol), 'meta');
+        self::assertSame(['who' => $expected], $capability->toNative($protocol, []), 'toNative');
+        self::assertSame($expected, $capability->fromNative($protocol, '', []), 'fromNative');
+        self::assertSame($expected, $capability->defaultValue($protocol), 'defaultValue');
+        self::assertSame(['who' => $expected], $capability->meta($protocol), 'meta');
         self::assertSame(
-            ['quem' => $esperado],
+            ['who' => $expected],
             $capability->responseEntry($protocol, '', null, []),
             'responseEntry',
         );
@@ -97,42 +97,42 @@ final class MedicationRemindersDispatchTest extends TestCase
 /** Um tratador que só diz o seu nome, para o teste ver por onde a chamada passou. */
 final class NamedRemindersHandler implements MedicationRemindersHandler
 {
-    public function __construct(private readonly string $nome)
+    public function __construct(private readonly string $name)
     {
     }
 
     public function nativeKey(): string
     {
-        return $this->nome;
+        return $this->name;
     }
 
     public function toNative(mixed $value): array
     {
-        return ['quem' => $this->nome];
+        return ['who' => $this->name];
     }
 
     public function fromNative(array $desired): mixed
     {
-        return $this->nome;
+        return $this->name;
     }
 
     public function defaultValue(): mixed
     {
-        return $this->nome;
+        return $this->name;
     }
 
     public function meta(array $accumulatedMeta = []): array
     {
-        return ['quem' => $this->nome];
+        return ['who' => $this->name];
     }
 
     public function merge(mixed $existing, mixed $incoming): mixed
     {
-        return $this->nome;
+        return $this->name;
     }
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
-        return ['quem' => $this->nome];
+        return ['who' => $this->name];
     }
 }

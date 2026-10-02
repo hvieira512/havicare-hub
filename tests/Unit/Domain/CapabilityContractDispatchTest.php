@@ -29,7 +29,7 @@ final class CapabilityContractDispatchTest extends TestCase
     {
         $registry = new CapabilityRegistry();
         $todos = array_keys(ProtocolRegistry::all());
-        $errados = [];
+        $wrong = [];
         $verificados = 0;
 
         foreach (CapabilityCatalog::keys() as $key) {
@@ -49,17 +49,17 @@ final class CapabilityContractDispatchTest extends TestCase
                 $verificados++;
                 try {
                     $contract->toNative($protocol, []);
-                    $errados[] = "{$key} serve `{$protocol}` sem o anunciar.";
+                    $wrong[] = "{$key} serve `{$protocol}` sem o anunciar.";
                 } catch (\Throwable $e) {
                     if (!str_contains($e->getMessage(), 'Unsupported protocol')) {
-                        $errados[] = "{$key} recusa `{$protocol}` pela razão errada: {$e->getMessage()}";
+                        $wrong[] = "{$key} recusa `{$protocol}` pela razão errada: {$e->getMessage()}";
                     }
                 }
             }
         }
 
         self::assertGreaterThan(0, $verificados, 'Nenhum par contrato/protocolo foi verificado.');
-        self::assertSame([], $errados);
+        self::assertSame([], $wrong);
     }
 
     /**

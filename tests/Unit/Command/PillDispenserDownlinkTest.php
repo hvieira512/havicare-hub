@@ -278,20 +278,20 @@ final class PillDispenserDownlinkTest extends TestCase
         ];
 
         $wrong = [];
-        foreach (self::everyCommand() as [$comando, $payload]) {
-            $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, $comando, $payload);
+        foreach (self::everyCommand() as [$command, $payload]) {
+            $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, $command, $payload);
             $decoded = (new PillDispenserAdapter())->decodeIncoming($frame);
-            self::assertIsArray($decoded, $comando);
+            self::assertIsArray($decoded, $command);
 
             foreach ($decoded['tlv'] as $tag => $entry) {
-                $esperado = $excepções[$tag] ?? $int8u;
-                if ($entry['type'] !== $esperado) {
+                $expected = $excepções[$tag] ?? $int8u;
+                if ($entry['type'] !== $expected) {
                     $wrong[] = sprintf(
                         '%s/0x%04X: tipo %d, esperado %d',
-                        $comando,
+                        $command,
                         $tag,
                         $entry['type'],
-                        $esperado,
+                        $expected,
                     );
                 }
             }

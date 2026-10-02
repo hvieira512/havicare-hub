@@ -22,7 +22,7 @@ final class PillDispenserGenericConfigurationTest extends TestCase
     public function testEveryDispenserConfigurationSurvivesTheGenericContract(): void
     {
         $registry = new CapabilityRegistry();
-        $falhas = [];
+        $failures = [];
 
         foreach (DeviceConfigurationCatalog::configsForProtocol('zayata-m228') as $entry) {
             $nativeKey = trim((string)($entry['key'] ?? ''));
@@ -31,12 +31,12 @@ final class PillDispenserGenericConfigurationTest extends TestCase
             try {
                 $registry->toNative('zayata-m228', $genericKey, ConfigurationInputDefaults::forEntry($entry));
             } catch (\Throwable $e) {
-                $falhas[] = $genericKey . ': ' . $e->getMessage();
+                $failures[] = $genericKey . ': ' . $e->getMessage();
             }
         }
 
         self::assertNotSame([], DeviceConfigurationCatalog::configsForProtocol('zayata-m228'));
-        self::assertSame([], $falhas);
+        self::assertSame([], $failures);
     }
 
     /**

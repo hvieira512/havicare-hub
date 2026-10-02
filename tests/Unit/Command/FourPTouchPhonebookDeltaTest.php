@@ -130,29 +130,29 @@ final class FourPTouchPhonebookDeltaTest extends TestCase
 
     public function testStateFromAFailedDeliveryIsNotTrusted(): void
     {
-        $guardado = [1 => self::HUGO, 2 => self::RICARDO];
+        $stored = [1 => self::HUGO, 2 => self::RICARDO];
 
         self::assertSame(
-            $guardado,
-            FourPTouchPhonebookDelta::trustedPrevious($guardado, 'confirmed'),
+            $stored,
+            FourPTouchPhonebookDelta::trustedPrevious($stored, 'confirmed'),
             'uma entrega confirmada é a base do delta seguinte'
         );
 
-        foreach (['failed', 'retry_exhausted', 'response_timeout', 'created'] as $estado) {
+        foreach (['failed', 'retry_exhausted', 'response_timeout', 'created'] as $state) {
             self::assertSame(
                 [],
-                FourPTouchPhonebookDelta::trustedPrevious($guardado, $estado),
-                "o estado guardado não descreve o aparelho depois de {$estado}"
+                FourPTouchPhonebookDelta::trustedPrevious($stored, $state),
+                "o estado guardado não descreve o aparelho depois de {$state}"
             );
         }
     }
 
     public function testAfterAFailedDeliveryTheWholeListIsWrittenAgain(): void
     {
-        $guardado = [1 => self::HUGO, 2 => self::RICARDO];
+        $stored = [1 => self::HUGO, 2 => self::RICARDO];
 
         $commands = FourPTouchPhonebookDelta::commands(
-            FourPTouchPhonebookDelta::trustedPrevious($guardado, 'failed'),
+            FourPTouchPhonebookDelta::trustedPrevious($stored, 'failed'),
             [self::HUGO, self::RICARDO],
         );
 

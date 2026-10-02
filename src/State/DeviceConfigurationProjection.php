@@ -52,19 +52,19 @@ final class DeviceConfigurationProjection
         // declarem não nomeia nenhuma: ficar pela primeira do catálogo era escolher à sorte, e
         // o valor de uma escrita ia parar à linha de outra configuração qualquer, que passava
         // a mostrar um reportado que nunca foi dela. Melhor não guardar do que guardar errado.
-        $candidatas = [];
+        $candidates = [];
         foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
             if (in_array($nativeType, $entry['expectedReplyTypes'] ?? [], true)) {
-                $candidatas[(string)$entry['key']] = true;
+                $candidates[(string)$entry['key']] = true;
             }
         }
-        if (count($candidatas) !== 1) {
+        if (count($candidates) !== 1) {
             return;
         }
 
         $this->db->deviceConfigurations->saveReported(
             $imei,
-            (string)array_key_first($candidatas),
+            (string)array_key_first($candidates),
             $protocol,
             $nativeType,
             $payload

@@ -53,14 +53,14 @@ final class AmbiguousReplyTypeTest extends MysqlDashboardTestCase
     /** @return list<string> */
     private function reportedKeys(ApiDataAccess $db, string $imei = self::IMEI): array
     {
-        $chaves = [];
+        $keys = [];
         foreach ($db->deviceConfigurations->allForImei($imei) as $row) {
             $payload = $row['reported_payload'] ?? null;
             if (is_array($payload) && $payload !== []) {
-                $chaves[] = (string)$row['config_key'];
+                $keys[] = (string)$row['config_key'];
             }
         }
 
-        return $chaves;
+        return $keys;
     }
 }
