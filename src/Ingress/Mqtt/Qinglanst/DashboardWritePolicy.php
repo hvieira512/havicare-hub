@@ -11,13 +11,10 @@ final class DashboardWritePolicy
     /** @var array<string, int> */
     private array $lastSeenMs = [];
     /** @var array<string, int> */
-    private array $lastTelemetryMs = [];
-    /** @var array<string, int> */
     private array $lastRawMs = [];
 
     public function __construct(
         private readonly int $deviceSeenMinIntervalMs = 5000,
-        private readonly int $positionHistorySampleMs = 1000,
         private readonly int $rawHistorySampleMs = 30000,
     ) {
     }
@@ -38,28 +35,6 @@ final class DashboardWritePolicy
         return true;
     }
 
-    /**
-     * `$capability` é a chave da capacidade, não o tipo do envelope do fabricante.
-     *
-     * Só a posição é amostrada: chega uma vez por segundo e o histórico não precisa de
-     * cada leitura. As outras passam sempre.
-     */
-    public function shouldStoreTelemetry(string $deviceKey, string $capability, int $nowMs): bool
-    {
-        $key = $deviceKey . '|' . $capability;
-        if ($capability !== 'presence' || $this->positionHistorySampleMs <= 0) {
-            $this->remember($this->lastTelemetryMs, $key, $nowMs);
-            return true;
-        }
-
-        $last = $this->lastTelemetryMs[$key] ?? null;
-        if ($last !== null && ($nowMs - $last) < $this->positionHistorySampleMs) {
-            return false;
-        }
-
-        $this->remember($this->lastTelemetryMs, $key, $nowMs);
-        return true;
-    }
 
     /**
      * O raw vai para o histórico no máximo uma vez por janela, por dispositivo. Um radar

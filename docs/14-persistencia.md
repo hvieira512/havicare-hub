@@ -239,6 +239,19 @@ A retenção é dimensionada para a apresentação do passado recente na dashboa
 Dois tipos de mensagem são excluídos do histórico, pelo volume que representam:
 os sinais de vida dos relógios e os relatórios de varrimento dos gateways.
 
+### O histórico é também o transporte do stream
+
+A escrita no histórico é o que acorda o stream em directo. O `append` de uma
+entrada de `telemetry` ou de `events` chama o `DeviceUpdateNotifier`, a que o
+`GET /api/devices/{imei}/stream` está subscrito, e é esse aviso que faz a
+dashboard voltar a desenhar — o mapa da planta de um radar incluído.
+
+**Travar escritas no histórico é travar a interface.** Quem lhe queira reduzir o
+volume tem de contar com isso: uma amostragem que pareça só poupar Redis atrasa,
+pela mesma medida, tudo o que o ecrã mostra em directo. As únicas escritas que se
+podem amostrar sem custo visível são as que não passam pelo notificador — o
+`raw`, e a marca de "vi este aparelho".
+
 ## 4. Duas instâncias no mesmo Redis
 
 A raiz `hub:` **já é partilhada** com o reencaminhador, que é outra aplicação e

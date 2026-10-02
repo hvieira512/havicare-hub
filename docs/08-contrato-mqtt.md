@@ -301,11 +301,34 @@ este canal.
 Os tópicos que o hub subscreve não são contrato dele — são o que a firmware de
 cada fabricante já publica:
 
-| Origem | Filtro | Broker |
+| Origem | Filtro | Sessão |
 |---|---|---|
-| NCS Voerka | `/voerka/#` | o do hub |
-| Gateways MOKO | `havicare-hub/null/0/gw/+/raw` | o do hub |
-| Radar Qinglanst | `radar/1001/#` | **outro** |
+| NCS Voerka | `/voerka/#` | a do hub |
+| Gateways MOKO | `havicare-hub/null/0/gw/+/raw` | a do hub |
+| Radar Qinglanst | `radar/+/+` | própria, no **mesmo** broker |
+
+O radar abre sessão à parte — credenciais e identificador de cliente próprios —
+mas no mesmo broker que todo o resto.
+
+### A norma de um tópico de entrada
+
+Os gateways MOKO são o único fornecedor já apontado para o espaço do hub, e é
+deles que sai a forma a seguir quando um aparelho for reapontado:
+
+```text
+sobe:   havicare-hub/null/0/gw/{mac}/raw
+desce:  havicare-hub/null/0/gw/{mac}/cmd
+```
+
+| Segmento | Regra |
+|---|---|
+| prefixo | o `MQTT_TOPIC_PREFIX` da instância |
+| empresa e licença | `null/0` — o aparelho não sabe de quem é, e quem resolve o dono é a [whitelist](07-multi-inquilino.md) |
+| tipo | **diferente do que o hub publica**: entra `gw`, sai `gateway` |
+| último | `raw` para o que sobe, `cmd` para o que desce |
+
+A terceira regra é a que não se adivinha: se o tipo de entrada fosse igual ao de
+saída, o hub subscrevia o que ele próprio publica.
 
 ## 8. Divergências face a documentação anterior
 

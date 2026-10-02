@@ -183,7 +183,6 @@ final class MqttIngressFactory
                 ),
                 dashboardWritePolicy: new QinglanstDashboardWritePolicy(
                     (int)$config['qinglanst']['dashboard_seen_min_interval_ms'],
-                    (int)$config['qinglanst']['position_history_sample_ms'],
                     (int)$config['qinglanst']['raw_history_sample_ms'],
                 ),
                 commercialModelResolver: $services->commercialModelResolver,

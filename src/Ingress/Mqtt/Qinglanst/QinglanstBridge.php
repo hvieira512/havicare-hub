@@ -194,10 +194,7 @@ final class QinglanstBridge extends MqttBridgeBase
             $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
             $mqttTelemetryDuration += hrtime(true) - $mqttTelemetryStart;
 
-            if (
-                $this->dashboardStore !== null
-                && $this->dashboardWritePolicy->shouldStoreTelemetry($deviceKey, (string)$capability, $nowMs)
-            ) {
+            if ($this->dashboardStore !== null) {
                 $redisTelemetryStart = hrtime(true);
                 $this->dashboardStore->append($deviceKey, 'telemetry', array_merge($telemetry, [
                     'deviceType' => $deviceType,

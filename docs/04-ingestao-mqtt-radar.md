@@ -163,8 +163,10 @@ específico viaja dentro do evento:
 O agrupamento em três capacidades, e não em quinze, mantém a matriz por modelo
 proporcional às funcionalidades do equipamento.
 
-Quatro dos quinze — `sitting_confirmed`, `on_floor`, `breathing_high` e
-`breathing_low` — estão declarados e **nenhuma mensagem os produz hoje**.
+Um dos quinze — `on_floor` — está declarado e **nenhuma mensagem o produz**. É o
+mesmo estado que o `sitting_confirmed`: no hitCare, `on_floor` é o nome com que o
+frontend mostra a postura que o backend chama `sitting_confirmed`, e o hub herdou
+os dois como se fossem detecções distintas.
 
 A forma do `data` de uma deteção, com os campos `detection*` e o `details` que
 varia com o tipo, está no [contrato MQTT](08-contrato-mqtt.md).
@@ -184,13 +186,23 @@ da etiqueta, em vez de se perder num `unknown`.
 
 ## 4. Limitação da taxa de escrita
 
-Um radar publica múltiplas vezes por segundo, volume que excede a capacidade de
-escrita útil no Redis e de atualização da interface.
+Duas escritas da dashboard são amostradas, e nenhuma delas é telemetria.
 
 | Escrita | Intervalo mínimo | Variável |
 |---|---|---|
 | "vi este aparelho" | 5 000 ms | `QINGLANST_DASHBOARD_SEEN_MIN_INTERVAL_MS` |
-| Histórico de posições | 1 000 ms | `QINGLANST_POSITION_HISTORY_SAMPLE_MS` |
+| Histórico do `raw` | 30 000 ms | `QINGLANST_RAW_HISTORY_SAMPLE_MS` |
+
+As duas escrevem sempre os mesmos campos e nenhuma chega ao stream, por isso
+amostrá-las não se vê em lado nenhum.
+
+**A telemetria não é amostrada**, e isso é deliberado: o histórico é também o que
+alimenta o stream em directo — travar escritas seria travar o mapa da planta. A
+lista já está limitada a 100 entradas pelo `DASHBOARD_HISTORY_LIMIT`.
+
+Medido em Outubro de 2026 com dois radares de cliente ocupados: cerca de 2,5
+escritas por segundo cada, das quais 40% são `presence` e 60% os três sinais
+vitais que chegam juntos em cada `heartbreath`.
 
 **O MQTT não é estrangulado.** Só as escritas na [dashboard](13-dashboard.md).
 Quem [subscreve](08-contrato-mqtt.md) recebe tudo.

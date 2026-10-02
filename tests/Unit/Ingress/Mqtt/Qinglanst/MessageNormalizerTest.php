@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
-use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy;
 use Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstTopic;
 use PHPUnit\Framework\TestCase;
@@ -271,28 +270,6 @@ final class MessageNormalizerTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    /** A amostragem só actua se a chave for a mesma que a mensagem de posição emite. */
-    public function testTheThrottledCapabilityIsTheOneThePositionMessageEmits(): void
-    {
-        $normalizer = new MessageNormalizer();
-        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
-
-        $result = $normalizer->normalize([
-            'type' => 'position',
-            'device_code' => 'radar-topic-uid',
-            'people' => [$this->person(1, 'walking')],
-        ], $topic, $this->device());
-
-        $capability = (string)array_key_first($result['telemetry']);
-        $policy = new DashboardWritePolicy(positionHistorySampleMs: 1000);
-
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', $capability, 0));
-        self::assertFalse(
-            $policy->shouldStoreTelemetry('radar-1', $capability, 500),
-            "a política tem de amostrar a capacidade '{$capability}', que é a que a posição emite",
-        );
-    }
-
     /** O `details` é `data` como qualquer outro, e os campos do `data` são camelCase. */
     public function testVitalsAlarmDetailsUseTheContractNaming(): void
     {

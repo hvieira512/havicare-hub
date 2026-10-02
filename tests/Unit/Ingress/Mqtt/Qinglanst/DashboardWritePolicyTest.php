@@ -7,52 +7,10 @@ namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O estrangulamento da escrita do histórico no Redis.
- *
- * A política recebe a chave da capacidade, não o tipo do envelope do fabricante: uma chave
- * que não case cala a amostragem sem dar erro.
- */
+/** O que o radar escreve no histórico da dashboard: a telemetria toda, e o raw por amostra. */
 final class DashboardWritePolicyTest extends TestCase
 {
-    public function testPresenceIsSampledAndEverythingElseAlwaysStores(): void
-    {
-        $policy = new DashboardWritePolicy(positionHistorySampleMs: 1000);
-
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'presence', 0));
-        self::assertFalse(
-            $policy->shouldStoreTelemetry('radar-1', 'presence', 500),
-            'uma posição dentro da janela de amostragem não vai para o histórico',
-        );
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'presence', 1000));
-
-        // Os sinais vitais chegam ao mesmo ritmo e passam sempre: são o que o cartão mostra.
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'vitals', 0));
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'vitals', 1));
-    }
-
-    /** A janela é por dispositivo: um radar movimentado não cala o do lado. */
-    public function testTheSamplingWindowIsPerDevice(): void
-    {
-        $policy = new DashboardWritePolicy(positionHistorySampleMs: 1000);
-
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'presence', 0));
-        self::assertTrue($policy->shouldStoreTelemetry('radar-2', 'presence', 0));
-    }
-
-    public function testSamplingOffStoresEveryReading(): void
-    {
-        $policy = new DashboardWritePolicy(positionHistorySampleMs: 0);
-
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'presence', 0));
-        self::assertTrue($policy->shouldStoreTelemetry('radar-1', 'presence', 1));
-    }
-
-    /**
-     * O raw do radar é amostrado para o histórico: um radar publica muitas mensagens por
-     * segundo, e guardá-las todas afogava a janela e somava escritas ao caminho quente. No
-     * MQTT continua a sair tudo -- é só o histórico da dashboard que leva uma amostra.
-     */
+    /** O raw é amostrado: não alimenta o stream, e um radar publica muitas vezes por segundo. */
     public function testRawIsSampledForTheHistory(): void
     {
         $policy = new DashboardWritePolicy(rawHistorySampleMs: 30000);
@@ -73,5 +31,15 @@ final class DashboardWritePolicyTest extends TestCase
         $off = new DashboardWritePolicy(rawHistorySampleMs: 0);
         self::assertTrue($off->shouldStoreRaw('radar-1', 0));
         self::assertTrue($off->shouldStoreRaw('radar-1', 1), 'com a amostragem a zero, tudo vai');
+    }
+
+    /** O «visto há» continua travado: é escrita idempotente e não chega ao stream. */
+    public function testTheSeenWriteIsStillThrottled(): void
+    {
+        $policy = new DashboardWritePolicy(deviceSeenMinIntervalMs: 5000);
+
+        self::assertTrue($policy->shouldUpdateSeen('radar-1', 0));
+        self::assertFalse($policy->shouldUpdateSeen('radar-1', 4999));
+        self::assertTrue($policy->shouldUpdateSeen('radar-1', 5000));
     }
 }

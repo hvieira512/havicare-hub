@@ -46,6 +46,50 @@ final class BridgeTest extends TestCase
     }
 
     /**
+     * Toda a telemetria vai para o histórico, sem amostragem.
+     *
+     * O histórico é também o que alimenta o stream em directo: travar escritas é travar o
+     * mapa, e a lista já está limitada a 100 entradas.
+     */
+    public function testEveryPositionReadingReachesTheHistory(): void
+    {
+        $lists = [];
+        $dashboardStore = $this->createMock(DashboardStoreContract::class);
+        $dashboardStore->method('append')->willReturnCallback(
+            static function (string $imei, string $list) use (&$lists): void {
+                $lists[] = $list;
+            }
+        );
+
+        $bridge = new QinglanstBridge(
+            new FakeMqttSubscriber(),
+            IngressFixtures::whitelist([
+                'radar-canonical-1' => IngressFixtures::radar() + ['deviceId' => 'radar-topic-uid'],
+            ]),
+            new RecordingHubMqttBridge(),
+            dashboardStore: $dashboardStore,
+        );
+
+        $message = (string)json_encode([
+            'payload' => [
+                'deviceCode' => 'radar-topic-uid',
+                'position' => base64_encode($this->bytes([
+                    0x01, 0x0A, 0x0B, 0x0C, 0, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x01, 0x00, 0x09,
+                ])),
+            ],
+        ]);
+
+        $bridge->handleReceivedMessage('radar/1001/radar-topic-uid', $message);
+        $bridge->handleReceivedMessage('radar/1001/radar-topic-uid', $message);
+
+        self::assertCount(
+            2,
+            array_filter($lists, static fn (string $list): bool => $list === 'telemetry'),
+            'as duas leituras de posição têm de ir para o histórico',
+        );
+    }
+
+    /**
      * A notificação de um radar desconhecido é estrangulada: um radar por registar publica
      * ~20 mensagens por segundo, e sem travão é uma escrita ao MySQL por cada, a reabrir um
      * aviso que o operador nunca consegue marcar como lido.

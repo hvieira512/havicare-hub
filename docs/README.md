@@ -104,6 +104,7 @@ fonte primária para o que não estiver coberto nesta documentação.
 | [Voerka](fornecedores/Voerka/) | Chamada de enfermagem | [03](03-ingestao-mqtt-ncs.md) |
 | [MOKO](fornecedores/MOKO/) | Gateways BLE e beacons | [05](05-gateways-ble.md) |
 | [MONIT](fornecedores/MONIT/) | Sensor de fralda | [17](17-sensor-de-fralda.md) |
+| [Qinglanst](fornecedores/Qinglanst/) | Radar | [04](04-ingestao-mqtt-radar.md) — **sem documentação do fabricante** |
 | [Zayata](fornecedores/Zayata/) | Dispensador de comprimidos | [19](19-dispensador-de-comprimidos.md) |
 
 O [`model-capabilities.xlsx`](fornecedores/model-capabilities.xlsx) fica na raiz
