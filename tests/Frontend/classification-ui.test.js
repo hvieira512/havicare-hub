@@ -106,6 +106,25 @@ test("o card escolhido fica marcado, e é o único", () => {
     assert.equal(cards[1].getAttribute("aria-pressed"), "true");
 });
 
+/**
+ * Um botão de alternar diz sempre em que estado está. Sem o atributo, o leitor de ecrã
+ * anuncia os não escolhidos como botões normais: não se percebe que são escolhíveis nem que
+ * estão desligados.
+ */
+test("os cards por escolher dizem que estão por escolher", () => {
+    const root = parseFragment(
+        cardGrid("Escolha", [
+            { attrs: html`data-x="a"`, label: "A", selected: false },
+            { attrs: html`data-x="b"`, label: "B", selected: true },
+        ]),
+    );
+
+    assert.deepEqual(
+        [...root.querySelectorAll(".wizard-card")].map((c) => c.getAttribute("aria-pressed")),
+        ["false", "true"],
+    );
+});
+
 test("os tipos de dispositivo saem todos, com o número de modelos de cada um", () => {
     const root = parseFragment(
         deviceTypeCardsHtml({
@@ -168,7 +187,7 @@ test("o fornecedor escolhido é o que está marcado, e a contagem é opcional", 
     );
 
     assert.equal(root.querySelector("[data-supplier=\"Wonlex\"]").getAttribute("aria-pressed"), "true");
-    assert.equal(root.querySelector("[data-supplier=\"4P Touch\"]").getAttribute("aria-pressed"), null);
+    assert.equal(root.querySelector("[data-supplier=\"4P Touch\"]").getAttribute("aria-pressed"), "false");
     assert.equal(root.querySelector("[data-supplier=\"Wonlex\"] .wizard-card-sub").textContent, "3 modelos");
     assert.equal(root.querySelector("[data-supplier=\"4P Touch\"] .wizard-card-sub"), null);
 });

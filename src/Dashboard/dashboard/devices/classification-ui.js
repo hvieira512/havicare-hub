@@ -220,7 +220,7 @@ export function cardGrid(label, cards) {
                     .map(
                         (card) => html`
                 <button type="button" class="wizard-card d-flex flex-column align-items-center gap-2 text-center rounded-3${card.selected ? " selected" : ""}"
-                    ${card.selected ? html`aria-pressed="true"` : ""} ${card.attrs}>
+                    aria-pressed="${card.selected ? "true" : "false"}" ${card.attrs}>
                     ${card.visual}
                     <span class="wizard-card-label fw-medium lh-sm">${card.label}</span>
                     ${card.sub ? html`<span class="wizard-card-sub text-secondary">${card.sub}</span>` : ""}
