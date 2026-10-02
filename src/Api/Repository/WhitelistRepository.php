@@ -163,6 +163,19 @@ final class WhitelistRepository
     }
 
     /**
+     * A mesma fronteira do `storedLicenseId()`, do lado da leitura: a sentinela `0` pergunta
+     * pelos dispositivos sem licença, que na coluna são `NULL` e nunca casam por igualdade.
+     *
+     * @return array{0: string, 1: list<int>}
+     */
+    private static function licenseCondition(int|string $licenseId): array
+    {
+        $stored = self::storedLicenseId(DeviceMetadata::normalizeLicenseId($licenseId));
+
+        return $stored === null ? ['w.license_id IS NULL', []] : ['w.license_id = ?', [$stored]];
+    }
+
+    /**
      * Tira um dispositivo do registo e com ele as suas configurações, senão um IMEI registado
      * outra vez herdava os valores do dono anterior. Sem `ON DELETE CASCADE`, que
      * transformaria uma mensagem em voo numa excepção no caminho quente do MQTT.
@@ -250,8 +263,9 @@ final class WhitelistRepository
         $params = [];
 
         if ($licenseScope !== null) {
-            $clauses[] = 'w.license_id = ?';
-            $params[] = DeviceMetadata::normalizeLicenseId($licenseScope);
+            [$sql, $licenseParams] = self::licenseCondition($licenseScope);
+            $clauses[] = $sql;
+            $params = array_merge($params, $licenseParams);
         }
 
         if ($companyScope !== null && trim($companyScope) !== '') {
@@ -292,8 +306,9 @@ final class WhitelistRepository
         // e por isso é uma condição independente.
         $legacyLicenseId = trim((string)($filters['licenseId'] ?? ''));
         if ($legacyLicenseId !== '' && $legacyLicenseId !== 'all') {
-            $clauses[] = 'w.license_id = ?';
-            $params[] = DeviceMetadata::normalizeLicenseId($legacyLicenseId);
+            [$sql, $licenseParams] = self::licenseCondition($legacyLicenseId);
+            $clauses[] = $sql;
+            $params = array_merge($params, $licenseParams);
         }
 
         // Pares, e não dois filtros independentes: {hitcare, haviCare} com {1001, 2002}
@@ -312,9 +327,10 @@ final class WhitelistRepository
                     $params[] = $pair['company'];
                     continue;
                 }
-                $pairClauses[] = '(w.company = ? AND w.license_id = ?)';
+                [$sql, $licenseParams] = self::licenseCondition($pair['licenseId']);
+                $pairClauses[] = '(w.company = ? AND ' . $sql . ')';
                 $params[] = $pair['company'];
-                $params[] = $pair['licenseId'];
+                $params = array_merge($params, $licenseParams);
             }
             $clauses[] = '(' . implode(' OR ', $pairClauses) . ')';
         }
