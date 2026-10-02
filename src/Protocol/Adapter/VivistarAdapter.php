@@ -191,17 +191,7 @@ class VivistarAdapter implements DeviceAdapterInterface
         }
 
         if ($type === 'AP03') {
-            $status = (string)($fields[0] ?? '');
-            if (preg_match('/^\d{11,14}$/', $status) === 1) {
-                $data['gsmSignal'] = $this->num(substr($status, 0, 3));
-                $data['satelliteCount'] = $this->num(substr($status, 3, 3));
-                $data['battery'] = $this->num(substr($status, 6, 3));
-                $data['remainingSpace'] = $this->num(substr($status, 9, 1));
-                $data['fortificationState'] = $this->num(substr($status, 10, 2));
-                if (strlen($status) >= 14) {
-                    $data['workMode'] = $this->num(substr($status, 12, 2));
-                }
-            }
+            $this->enrichStatusBlock((string)($fields[0] ?? ''), $data);
             $data['steps'] = $this->num($fields[1] ?? null);
             $data['rollFrequency'] = $this->num($fields[2] ?? null);
             return;

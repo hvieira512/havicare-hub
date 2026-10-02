@@ -111,6 +111,31 @@ final class WhitelistRepository
     }
 
     /**
+     * Os dispositivos de um tipo dentro de um inquilino, sem as facetas de filtro: quem só
+     * quer a lista não paga as oito consultas que a coluna de filtros da dashboard precisa.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listByDeviceType(string $deviceType, int $licenseScope, string $companyScope, int $limit): array
+    {
+        [$whereSql, $params] = $this->buildWhereClause(
+            ['deviceType' => $deviceType],
+            $licenseScope,
+            $companyScope,
+        );
+
+        $stmt = $this->pdo->prepare($this->deviceSelectSql() . $whereSql . ' ORDER BY w.imei LIMIT ?');
+        $bindIndex = 1;
+        foreach ($params as $param) {
+            $stmt->bindValue($bindIndex++, $param);
+        }
+        $stmt->bindValue($bindIndex, max(1, $limit), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return array_map([$this, 'normalizeDeviceRow'], $stmt->fetchAll() ?: []);
+    }
+
+    /**
      * @param array<string, mixed> $filters
      */
     public function countDevices(array $filters, ?int $licenseScope = null, ?string $companyScope = null): int

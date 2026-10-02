@@ -146,12 +146,11 @@ class RadarCredentialsService
     private function licenseRadars(array $license): array
     {
         $company = $this->db->companies->findById((int)($license['company_id'] ?? 0));
-        $page = $this->db->whitelist->listPage(
-            ['deviceType' => 'radar'],
-            1,
-            self::SAMPLE,
+        $radars = $this->db->whitelist->listByDeviceType(
+            'radar',
             (int)($license['license_id'] ?? 0),
             (string)($company['name'] ?? ''),
+            self::SAMPLE,
         );
 
         return array_map(static function (array $device): array {
@@ -159,7 +158,7 @@ class RadarCredentialsService
             $uid = trim((string)($device['device_id'] ?? ''));
 
             return ['imei' => $imei, 'uid' => $uid !== '' ? $uid : $imei];
-        }, $page['items']);
+        }, $radars);
     }
 
     private function orStored(mixed $typed, string $stored): string
