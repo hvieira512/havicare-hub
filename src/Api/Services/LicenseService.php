@@ -100,8 +100,7 @@ class LicenseService
     }
 
     /**
-     * O `company_id` é chave estrangeira: sem esta resposta, uma empresa inexistente só se
-     * descobre pelo erro do PDO, que sai como 500.
+     * O `company_id` é chave estrangeira e resolve-se antes da escrita.
      *
      * @return array<string, mixed>|null
      */

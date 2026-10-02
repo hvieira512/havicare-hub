@@ -29,13 +29,7 @@ final class MessageNormalizer
         'on_floor',
     ];
 
-    /**
-     * O que cada postura e cada movimento levantam, por campo da pessoa.
-     *
-     * A ordem conta duas vezes: a postura é procurada antes do movimento, e dentro de cada
-     * campo a primeira que acertar ganha -- quem cai à entrada da sala dá a queda, não a
-     * entrada.
-     */
+    /** O que cada postura e cada movimento levantam. A ordem é a da procura: a postura ganha. */
     private const POSITION_DETECTIONS = [
         'posture_state' => [
             'fall_confirmation' => ['fall_confirmed', self::LEVEL_DANGER],
@@ -50,13 +44,7 @@ final class MessageNormalizer
         ],
     ];
 
-    /**
-     * Os alarmes que o radar levanta por si: ele próprio classifica cada minuto e o hub só
-     * traduz a palavra dele na detecção que lhe pertence.
-     *
-     * Cada entrada é o campo descodificado, a chave com que o estado viaja no `details`, e as
-     * palavras que levantam alarme. Ao contrário da posição, aqui saem todos os que acertarem.
-     */
+    /** Campo descodificado, chave no `details`, e o estado que levanta cada alarme. */
     private const VITALS_STATUS_DETECTIONS = [
         ['breathing_status_per_minute', 'breathingStatus', [
             'apnea' => ['apnea', self::LEVEL_DANGER],
@@ -166,10 +154,7 @@ final class MessageNormalizer
     }
 
     /**
-     * A primeira detecção que a mensagem justifica, ou `null`.
-     *
-     * Sai uma só, mesmo com várias pessoas: é um alarme por mensagem, da primeira pessoa que
-     * acertar na tabela.
+     * Uma detecção por mensagem, da primeira pessoa que acertar.
      *
      * @param array<int, array> $people
      * @return array<string, mixed>|null

@@ -11,10 +11,7 @@ use PDOException;
 use PDOStatement;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * O hub é um processo de vida longa com a ligação sempre aberta: uma transacção que fique por
- * fechar prende os locks e faz a escrita seguinte rebentar na mesma ligação.
- */
+/** Numa ligação sempre aberta, uma transacção por fechar rebenta a escrita seguinte. */
 final class ModelCapabilityTransactionTest extends MysqlDashboardTestCase
 {
     public function testAFailedInsertLeavesNoOpenTransaction(): void
@@ -30,7 +27,7 @@ final class ModelCapabilityTransactionTest extends MysqlDashboardTestCase
             $repository->replaceForModelId((int)$model['id'], ['heart_rate', 'location']);
             self::fail('o INSERT devia ter rebentado');
         } catch (PDOException) {
-            // A falha é o ponto de partida; o que se prende é o estado que ela deixa.
+            // O que se prende é o estado que a falha deixa.
         }
 
         self::assertFalse($pdo->inTransaction(), 'a transacção ficou aberta depois da falha');

@@ -151,10 +151,7 @@ final class WhitelistRepository
         $stmt->execute([$supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company, $imei]);
     }
 
-    /**
-     * Muda o IMEI de um dispositivo mantendo a mesma linha, para o `ON UPDATE CASCADE` levar
-     * com ela as ligações de gateway e a planta do radar.
-     */
+    /** A mesma linha com outra chave, para o `ON UPDATE CASCADE` levar o que lhe aponta. */
     public function rename(string $imei, string $newImei): void
     {
         $stmt = $this->pdo->prepare('UPDATE whitelist SET imei = ? WHERE imei = ?');

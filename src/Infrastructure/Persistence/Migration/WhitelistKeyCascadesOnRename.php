@@ -6,10 +6,7 @@ namespace Hub\Infrastructure\Persistence\Migration;
 
 use PDO;
 
-/**
- * As chaves estrangeiras que apontam para o `whitelist.imei` passam a acompanhar a renomeação
- * da chave, e não só a remoção da linha.
- */
+/** As chaves que apontam para o `whitelist.imei` passam a acompanhar a renomeação. */
 final class WhitelistKeyCascadesOnRename implements Migration
 {
     /** Cada chave com a sua tabela e a sua coluna, pela ordem em que são recriadas. */

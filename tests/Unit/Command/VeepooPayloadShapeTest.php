@@ -9,13 +9,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A forma do que sai para o gateway de uma pulseira Veepoo.
- *
- * O hub não monta trama nenhuma aqui: o payload viaja genérico até ao SDK, que o aceita em
- * silêncio quando não o reconhece. Validar os valores não chega -- quem integra lê estes
- * nomes.
- */
+/** A forma do payload que sai para o gateway: o SDK aceita em silêncio o que não reconhece. */
 final class VeepooPayloadShapeTest extends TestCase
 {
     private const PROTOCOL = 'veepoo-ble';

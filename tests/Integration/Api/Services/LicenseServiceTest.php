@@ -10,10 +10,7 @@ use Tests\Support\MysqlDashboardTestCase;
 
 final class LicenseServiceTest extends MysqlDashboardTestCase
 {
-    /**
-     * O `companyId` é uma chave estrangeira, e uma empresa que não existe tem de ser recusada
-     * antes da escrita: o erro do PDO sobe como 500 e a especificação não o declara.
-     */
+    /** O `companyId` é chave estrangeira: uma empresa inexistente recusa-se antes da escrita. */
     public function testCreatingALicenseForAnUnknownCompanyIsRefused(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());

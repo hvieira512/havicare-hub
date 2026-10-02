@@ -12,10 +12,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
 
-/**
- * Onde a política do CORS se aplica na cadeia, que é outra pergunta que não a de que origens
- * ela deixa passar.
- */
+/** Onde a política do CORS se aplica na cadeia, e não que origens ela deixa passar. */
 final class CorsMiddlewareTest extends TestCase
 {
     /** O preflight responde aqui e não desce: é por isso que o `OPTIONS` não chega ao canal `api`. */

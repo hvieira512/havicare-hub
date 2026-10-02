@@ -15,12 +15,7 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * A manutenção periódica do hub: repetir o que ficou por entregar e largar o que se calou.
- *
- * Não há aparelho nenhum a provar isto em produção -- um comando que deixasse de ser repetido
- * ficava calado na dashboard, com o mesmo aspecto de um que ainda está a caminho.
- */
+/** A manutenção periódica: repetir o que ficou por entregar e largar o que se calou. */
 final class MaintenanceSchedulerTest extends TestCase
 {
     private const IMEI = '861265061009822';

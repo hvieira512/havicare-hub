@@ -8,13 +8,7 @@ use Hub\Api\Repository\GatewayDeviceLinkRepository;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * O portão que decide se um gateway pode retransmitir uma pulseira.
- *
- * A ingestão fala com a interface e os testes dela injectam um duplo, por isso só aqui é que
- * o método a sério corre -- e ele responde a cada observação BLE, de que vêm dezenas por
- * segundo: a cache curta é parte do que ele é.
- */
+/** O portão que decide se um gateway pode retransmitir uma pulseira, e a cache dele. */
 final class GatewayDeviceLinkRepositoryTest extends MysqlDashboardTestCase
 {
     private const GATEWAY = 'd48c49f7909c';

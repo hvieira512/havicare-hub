@@ -11,10 +11,7 @@ use Hub\Device\DeviceHubServer;
 use Hub\Registry\Whitelist;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * O IMEI é a chave por onde as ligações de gateway e a planta do radar apontam para o
- * dispositivo. Renomeá-lo tem de as levar com ele.
- */
+/** O IMEI é a chave por onde as ligações e a planta apontam: renomeá-lo leva-as com ele. */
 final class DeviceImeiRenameTest extends MysqlDashboardTestCase
 {
     public function testRenamingTheImeiKeepsTheGatewayLinkAndTheRadarLayout(): void

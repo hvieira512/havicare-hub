@@ -492,9 +492,8 @@ class DeviceService
         // A regra do `create` nos dois sentidos: a projecção ganha primeiro e perde por
         // último, e o registo novo entra antes de o antigo sair. Uma falha a meio deixa no
         // máximo uma entrada a mais no Redis, nunca um dispositivo sem inventário.
-        // O IMEI muda na própria linha, e não por uma entrada nova mais a remoção da antiga:
-        // é o `ON UPDATE CASCADE` que leva com ele as ligações de gateway e a planta do
-        // radar, que apontam para esta chave.
+        // Na própria linha: é o `ON UPDATE CASCADE` que leva as ligações de gateway e a
+        // planta do radar, que apontam para esta chave.
         if ($newImei !== $imei) {
             $this->whitelist->rename($imei, $newImei);
         }

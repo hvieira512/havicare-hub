@@ -16,12 +16,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * O canal em que cada capacidade sai no MQTT contra o `isEvent` do catálogo.
- *
- * A ingestão TCP pergunta ao catálogo em tempo de execução; as quatro pontes MQTT fixam o
- * canal no sítio da chamada, e só este teste liga as duas pontas.
- */
+/** O canal de cada capacidade no MQTT contra o `isEvent` do catálogo, nas quatro pontes. */
 final class CapabilityChannelTest extends TestCase
 {
     private const GATEWAY = 'd48c49f7909c';

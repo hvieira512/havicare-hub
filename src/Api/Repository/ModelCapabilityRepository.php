@@ -197,8 +197,8 @@ final class ModelCapabilityRepository
         $capabilityKeys = $this->normalizeCapabilityKeys($modelId, $capabilityIds);
         $deviceType = $this->modelContextForModelId($modelId)['device_type'];
 
-        // Desligar tudo e religar o que ficou são uma só operação: a meio, o modelo não tem
-        // capacidade nenhuma. O PDO não aninha transacções, e quem a abriu é que a fecha.
+        // Desligar tudo e religar o que ficou são uma só operação. O PDO não aninha
+        // transacções, e quem a abriu é que a fecha.
         $ownsTransaction = !$this->pdo->inTransaction();
         if ($ownsTransaction) {
             $this->pdo->beginTransaction();

@@ -271,10 +271,7 @@ final class MessageNormalizerTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    /**
-     * A política de escrita recebe a chave da capacidade, e a amostragem só actua se for a
-     * mesma que a mensagem de posição emite. Separadas, a amostragem cala-se sem erro.
-     */
+    /** A amostragem só actua se a chave for a mesma que a mensagem de posição emite. */
     public function testTheThrottledCapabilityIsTheOneThePositionMessageEmits(): void
     {
         $normalizer = new MessageNormalizer();
@@ -296,10 +293,7 @@ final class MessageNormalizerTest extends TestCase
         );
     }
 
-    /**
-     * Os campos dentro do `data` são camelCase, e o `details` dos alarmes de sinais vitais é
-     * `data` como qualquer outro.
-     */
+    /** O `details` é `data` como qualquer outro, e os campos do `data` são camelCase. */
     public function testVitalsAlarmDetailsUseTheContractNaming(): void
     {
         $normalizer = new MessageNormalizer();
@@ -318,8 +312,7 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * O radar classifica a respiração sozinho — `hypopnea`, `hyperpnea`, `apnea` — e o hub
-     * limita-se a levantar o alarme que já estava declarado para cada uma.
+     * O estado que o radar reporta levanta o alarme que lhe pertence.
      *
      * @dataProvider breathingAlarms
      */
@@ -371,8 +364,7 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * Os sete ramos da detecção de posição, cada um com a sua detecção e o seu nível. É a
-     * rede do `detectPositionEvent`: três deles não tinham teste nenhum.
+     * Os sete ramos da detecção de posição, com a detecção e o nível de cada um.
      *
      * @dataProvider positionDetections
      */
