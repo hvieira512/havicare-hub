@@ -131,7 +131,6 @@ function languageTimezoneInput(desired) {
 
     return `
         <div class="vstack gap-2">
-            <label class="form-label-sm">Idioma e fuso horário</label>
             <select class="form-select" data-config-field="preset">
                 ${languageTimezonePresetOptions
                     .map(
@@ -322,7 +321,6 @@ export const INPUTS = {
         render: (_entry, desired) => soundProfileInput(desired),
         read: (section) => ({ mode: readNumber(section, "mode") }),
         defaults: () => ({ mode: 1 }),
-        help: () => "4 modos",
     },
     intervalHoursToggle: {
         render: (_entry, desired) => intervalHoursToggleInput(desired),
