@@ -18,20 +18,6 @@ use Hub\Api\Http\Middleware\ApiLogContext;
 use Hub\Api\Http\RequestContext;
 use Hub\Api\Routing\ApiRoute;
 use Hub\Api\Routing\ApiRouter;
-use Hub\Api\Services\ApiUserService;
-use Hub\Api\Services\AuthService;
-use Hub\Api\Services\CapabilityService;
-use Hub\Api\Services\CapabilityDiscoveryService;
-use Hub\Api\Services\CompanyService;
-use Hub\Api\Services\DeviceService;
-use Hub\Api\Services\DashboardNotificationService;
-use Hub\Api\Services\DenylistService;
-use Hub\Api\Services\LicenseService;
-use Hub\Api\Services\RadarCredentialsService;
-use Hub\Api\Services\RadarLayoutService;
-use Hub\Api\Services\ModelService;
-use Hub\Api\Services\ProtocolService;
-use Hub\Api\Services\SupplierService;
 use Hub\Log\Logger;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
@@ -59,20 +45,7 @@ final class ApiKernel
 
     public function __construct(
         private bool $apiAuthRequired,
-        private AuthService $auth,
-        private DeviceService $devices,
-        private ModelService $models,
-        private CapabilityService $capabilities,
-        private CapabilityDiscoveryService $capabilityDiscovery,
-        private SupplierService $suppliers,
-        private ApiUserService $apiUsers,
-        private CompanyService $company,
-        private LicenseService $licenses,
-        private RadarCredentialsService $radarCredentials,
-        private RadarLayoutService $radarLayouts,
-        private ProtocolService $protocols,
-        private DashboardNotificationService $notifications,
-        private DenylistService $denylist,
+        private ApiServices $services,
         private JsonResponder $json,
         private HtmlResponder $html,
         private BearerTokenResolver $bearerTokenResolver,
@@ -167,8 +140,8 @@ final class ApiKernel
      */
     private function apiRoutes(): array
     {
-        $auth = new AuthController($this->auth, $this->json);
-        $devices = new DeviceController($this->devices, $this->json);
+        $auth = new AuthController($this->services->auth, $this->json);
+        $devices = new DeviceController($this->services->devices, $this->json);
         // Construído uma vez, como os restantes: os tetos de ligações abertas são estado deste
         // controlador, e um por pedido não contava nada.
         $stream = new StreamController(
@@ -184,18 +157,18 @@ final class ApiKernel
             ...((require __DIR__ . '/Routes/AuthRoutes.php')($auth)),
             ...((require __DIR__ . '/Routes/StreamRoutes.php')($stream)),
             ...((require __DIR__ . '/Routes/DeviceRoutes.php')($devices)),
-            ...((require __DIR__ . '/Routes/ModelRoutes.php')($this->models)),
-            ...((require __DIR__ . '/Routes/CapabilityRoutes.php')($this->capabilities)),
-            ...((require __DIR__ . '/Routes/CapabilityDiscoveryRoutes.php')($this->capabilityDiscovery)),
-            ...((require __DIR__ . '/Routes/SupplierRoutes.php')($this->suppliers)),
-            ...((require __DIR__ . '/Routes/ApiUserRoutes.php')($this->apiUsers)),
-            ...((require __DIR__ . '/Routes/CompanyRoutes.php')($this->company)),
-            ...((require __DIR__ . '/Routes/LicenseRoutes.php')($this->licenses)),
-            ...((require __DIR__ . '/Routes/RadarCredentialsRoutes.php')($this->radarCredentials)),
-            ...((require __DIR__ . '/Routes/RadarLayoutRoutes.php')($this->radarLayouts)),
-            ...((require __DIR__ . '/Routes/ProtocolRoutes.php')($this->protocols)),
-            ...((require __DIR__ . '/Routes/DashboardNotificationRoutes.php')($this->notifications)),
-            ...((require __DIR__ . '/Routes/DenylistRoutes.php')($this->denylist)),
+            ...((require __DIR__ . '/Routes/ModelRoutes.php')($this->services->models)),
+            ...((require __DIR__ . '/Routes/CapabilityRoutes.php')($this->services->capabilities)),
+            ...((require __DIR__ . '/Routes/CapabilityDiscoveryRoutes.php')($this->services->capabilityDiscovery)),
+            ...((require __DIR__ . '/Routes/SupplierRoutes.php')($this->services->suppliers)),
+            ...((require __DIR__ . '/Routes/ApiUserRoutes.php')($this->services->apiUsers)),
+            ...((require __DIR__ . '/Routes/CompanyRoutes.php')($this->services->company)),
+            ...((require __DIR__ . '/Routes/LicenseRoutes.php')($this->services->licenses)),
+            ...((require __DIR__ . '/Routes/RadarCredentialsRoutes.php')($this->services->radarCredentials)),
+            ...((require __DIR__ . '/Routes/RadarLayoutRoutes.php')($this->services->radarLayouts)),
+            ...((require __DIR__ . '/Routes/ProtocolRoutes.php')($this->services->protocols)),
+            ...((require __DIR__ . '/Routes/DashboardNotificationRoutes.php')($this->services->notifications)),
+            ...((require __DIR__ . '/Routes/DenylistRoutes.php')($this->services->denylist)),
             ...((require __DIR__ . '/Routes/SystemRoutes.php')($json, $html)),
         ];
     }
