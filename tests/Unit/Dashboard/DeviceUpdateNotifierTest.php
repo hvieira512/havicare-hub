@@ -116,6 +116,6 @@ final class DeviceUpdateNotifierTest extends TestCase
 
         $notifier->notify('nobody-is-watching');
 
-        self::addToAssertionCount(1);
+        self::assertSame(0, $notifier->listenerCount());
     }
 }

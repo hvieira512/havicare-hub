@@ -33,12 +33,14 @@ test("uma leitura e um alarme com o mesmo seq não partilham a chave", () => {
 
 test("a mesma mensagem dá sempre a mesma chave", () => {
     state.selectedImei = "aaa111";
-    const payload = {
+    const payload = () => ({
         type: "heart_rate",
         seq: 7,
         occurredAt: "2026-10-01T09:00:00Z",
         data: { bpm: 72 },
-    };
+    });
 
-    assert.equal(telemetryActivityRow(payload).key, telemetryActivityRow(payload).key);
+    // Dois objectos distintos com o mesmo conteúdo: a chave sai da mensagem e não da
+    // identidade do objecto nem de um contador.
+    assert.equal(telemetryActivityRow(payload()).key, telemetryActivityRow(payload()).key);
 });
