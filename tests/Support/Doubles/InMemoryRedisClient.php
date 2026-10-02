@@ -45,11 +45,11 @@ final class InMemoryRedisClient implements ClientInterface
         throw new \BadMethodCallException('Not implemented');
     }
 
-    public function connect()
+    public function connect(): void
     {
     }
 
-    public function disconnect()
+    public function disconnect(): void
     {
     }
 
@@ -58,7 +58,8 @@ final class InMemoryRedisClient implements ClientInterface
         throw new \BadMethodCallException('Not implemented');
     }
 
-    public function createCommand($method, $arguments = [])
+    /** @param array<int, mixed> $arguments */
+    public function createCommand($method, $arguments = []): never
     {
         throw new \BadMethodCallException('Not implemented');
     }
@@ -73,6 +74,7 @@ final class InMemoryRedisClient implements ClientInterface
         $callback($this);
     }
 
+    /** @param array<int, mixed> $arguments */
     public function __call($method, $arguments)
     {
         return match (strtolower((string)$method)) {
@@ -130,11 +132,13 @@ final class InMemoryRedisClient implements ClientInterface
         return $exists ? 1 : 0;
     }
 
+    /** @return list<string> */
     private function smembers(string $key): array
     {
         return array_keys($this->sets[$key] ?? []);
     }
 
+    /** @param array<string, mixed> $dictionary */
     private function hmset(string $key, array $dictionary): string
     {
         $this->hashes[$key] = array_merge($this->hashes[$key] ?? [], array_map('strval', $dictionary));
@@ -142,6 +146,7 @@ final class InMemoryRedisClient implements ClientInterface
         return 'OK';
     }
 
+    /** @return array<string, string> */
     private function hgetall(string $key): array
     {
         return $this->hashes[$key] ?? [];
@@ -166,6 +171,7 @@ final class InMemoryRedisClient implements ClientInterface
         return 1;
     }
 
+    /** @param list<string>|string $fields */
     private function hdel(string $key, $fields): int
     {
         $fields = is_array($fields) ? $fields : [$fields];
@@ -187,11 +193,16 @@ final class InMemoryRedisClient implements ClientInterface
     }
 
     /** @return list<string|null> values in the order requested, null where absent */
+    /**
+     * @param list<string> $fields
+     * @return list<string|null>
+     */
     private function hmget(string $key, array $fields): array
     {
         return array_map(fn(string $field): ?string => $this->hashes[$key][$field] ?? null, $fields);
     }
 
+    /** @param array<array-key, mixed>|string $values */
     private function lpush(string $key, $values): int
     {
         $values = is_array($values) ? array_values(array_map('strval', $values)) : [(string)$values];
@@ -212,6 +223,7 @@ final class InMemoryRedisClient implements ClientInterface
         return 'OK';
     }
 
+    /** @return list<string> */
     private function lrange(string $key, int $start, int $stop): array
     {
         $list = $this->lists[$key] ?? [];
@@ -242,6 +254,7 @@ final class InMemoryRedisClient implements ClientInterface
         return $removed;
     }
 
+    /** @param array<string, float|int|string> $members */
     private function zadd(string $key, array $members): int
     {
         $added = 0;
@@ -255,6 +268,7 @@ final class InMemoryRedisClient implements ClientInterface
         return $added;
     }
 
+    /** @param list<string>|string $members */
     private function zrem(string $key, $members): int
     {
         $members = is_array($members) ? $members : [$members];
@@ -270,6 +284,7 @@ final class InMemoryRedisClient implements ClientInterface
         return $deleted;
     }
 
+    /** @return list<string> */
     private function zrangebyscore(string $key, string $min, string $max): array
     {
         $items = $this->sortedSets[$key] ?? [];
@@ -339,6 +354,7 @@ final class InMemoryRedisClient implements ClientInterface
         return $this->strings[$key] ?? null;
     }
 
+    /** @param list<string>|string $keys */
     private function del($keys): int
     {
         $keys = is_array($keys) ? $keys : [$keys];

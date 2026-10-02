@@ -784,37 +784,49 @@ final class DeviceHubMqttContractTest extends TestCase
 
 final class ContractRecordingHubMqttBridge extends HubMqttBridge
 {
+    /** @var list<array{0: string, 1: array<string, mixed>}> */
     public array $raw = [];
+    /** @var list<array{0: string, 1: array<string, mixed>, 2: bool}> */
     public array $statuses = [];
+    /** @var list<array{0: string, 1: array<string, mixed>}> */
     public array $events = [];
+    /** @var list<array{0: string, 1: array<string, mixed>}> */
     public array $telemetry = [];
+    /** @var list<string> */
     public array $rawTopics = [];
+    /** @var list<string> */
     public array $statusTopics = [];
+    /** @var list<string> */
     public array $eventTopics = [];
+    /** @var list<string> */
     public array $telemetryTopics = [];
 
     public function __construct()
     {
     }
 
+    /** @param array<string, mixed> $payload */
     public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->raw[] = [$imei, $payload];
         $this->rawTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'raw');
     }
 
+    /** @param array<string, mixed> $payload */
     public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->statuses[] = [$imei, $payload, $retain];
         $this->statusTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'status');
     }
 
+    /** @param array<string, mixed> $payload */
     public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->events[] = [$imei, $payload];
         $this->eventTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'events');
     }
 
+    /** @param array<string, mixed> $payload */
     public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->telemetry[] = [$imei, $payload];
@@ -825,6 +837,7 @@ final class ContractRecordingHubMqttBridge extends HubMqttBridge
 final class ContractFakeConnection implements ConnectionInterface
 {
     public int $resourceId;
+    /** @var list<mixed> */
     public array $sent = [];
     public bool $closed = false;
 
@@ -838,6 +851,7 @@ final class ContractFakeConnection implements ConnectionInterface
         return null;
     }
 
+    /** @param mixed $data */
     public function send($data): static
     {
         $this->sent[] = $data;
@@ -858,6 +872,7 @@ final class ContractFakePendingDownlinkQueue implements PendingDownlinkQueue
     public bool $failEnqueue = false;
     public int $lastTtl = 0;
 
+    /** @param array<string, mixed>|null $command */
     public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
     {
         if ($this->failEnqueue) {
@@ -882,6 +897,7 @@ final class ContractFakePendingDownlinkQueue implements PendingDownlinkQueue
         unset($this->items[$downlink->imei][$downlink->dedupeKey]);
     }
 
+    /** @param array<string, mixed>|null $command */
     private function dedupeKey(string $bytes, ?array $command): string
     {
         $nativeType = is_array($command) ? (string)($command['nativeType'] ?? '') : '';

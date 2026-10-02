@@ -62,7 +62,8 @@
         "phpunit/phpunit": "^10.5",
         "phpstan/phpstan": "^2.1",
         "guzzlehttp/psr7": "^2.13",
-        "squizlabs/php_codesniffer": "^4.0"
+        "squizlabs/php_codesniffer": "^4.0",
+        "phpstan/phpstan-phpunit": "^2.0"
     },
     "config": {
         "policy": {

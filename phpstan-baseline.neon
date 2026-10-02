@@ -2311,12 +2311,6 @@ parameters:
 			path: src/Device/PendingDownlink.php
 
 		-
-			message: '#^Method Hub\\Device\\PendingDownlinkQueue\:\:enqueue\(\) has parameter \$command with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Device/PendingDownlinkQueue.php
-
-		-
 			message: '#^Method Hub\\Device\\RawPayload\:\:decodedPayload\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -2360,12 +2354,6 @@ parameters:
 
 		-
 			message: '#^Method Hub\\Device\\RedisPendingDownlinkQueue\:\:dedupeKey\(\) has parameter \$command with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Device/RedisPendingDownlinkQueue.php
-
-		-
-			message: '#^Method Hub\\Device\\RedisPendingDownlinkQueue\:\:enqueue\(\) has parameter \$command with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Device/RedisPendingDownlinkQueue.php
@@ -4429,6 +4417,42 @@ parameters:
 			path: src/Registry/Whitelist.php
 
 		-
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:commands\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceCommandLog.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:findCommand\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceCommandLog.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:markCommand\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceCommandLog.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:markLatestCommand\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceCommandLog.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:recordCommand\(\) has parameter \$record with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceCommandLog.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceCommandLog\:\:retryWaitingCommands\(\) has parameter \$dispatch with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceCommandLog.php
+
+		-
 			message: '#^Method Hub\\State\\DeviceCommandRecord\:\:makeJsonSafe\(\) has parameter \$record with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -4517,6 +4541,48 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/State/DeviceEventStore.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceHistoryStore\:\:recent\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceHistoryStore.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceRegistry\:\:device\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceRegistry.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceRegistry\:\:devices\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceRegistry.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceRegistry\:\:runtimeStates\(\) has parameter \$imeis with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceRegistry.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceRegistry\:\:runtimeStates\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceRegistry.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceReportStore\:\:append\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceReportStore.php
+
+		-
+			message: '#^Method Hub\\State\\DeviceReportStore\:\:deviceSeen\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/State/DeviceReportStore.php
 
 		-
 			message: '#^Method Hub\\State\\DeviceRuntimeStore\:\:device\(\) return type has no value type specified in iterable type array\.$#'
@@ -4609,79 +4675,667 @@ parameters:
 			path: src/State/DeviceStore.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceReportStore\:\:append\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			message: '#^Method PDO@anonymous/tests/Integration/Api/Repository/ModelCapabilityTransactionTest\.php\:41\:\:prepare\(\) has parameter \$options with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceReportStore.php
+			path: tests/Integration/Api/Repository/ModelCapabilityTransactionTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceCommandLog\:\:commands\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/State/DeviceCommandLog.php
+			message: '#^Call to an undefined method Hub\\Device\\DeviceHubServer\:\:method\(\)\.$#'
+			identifier: method.notFound
+			count: 6
+			path: tests/Integration/Api/Services/DeviceServiceTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceRegistry\:\:device\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/State/DeviceRegistry.php
+			message: '#^Call to an undefined method Hub\\Registry\\Whitelist\:\:method\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Integration/Api/Services/DeviceServiceTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceReportStore\:\:deviceSeen\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/State/DeviceReportStore.php
+			message: '#^Call to an undefined method Hub\\State\\DeviceStoreContract\:\:method\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Integration/Api/Services/DeviceServiceTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceRegistry\:\:devices\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Tests\\Integration\\Api\\Services\\DeviceServiceTest\:\:mockModelCapabilities\(\) has parameter \$capabilities with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceRegistry.php
+			path: tests/Integration/Api/Services/DeviceServiceTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceCommandLog\:\:findCommand\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method PDO@anonymous/tests/Integration/Api/Services/DeviceShowQueryCountTest\.php\:55\:\:prepare\(\) has parameter \$options with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceCommandLog.php
+			path: tests/Integration/Api/Services/DeviceShowQueryCountTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceCommandLog\:\:markCommand\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			message: '#^Method Tests\\Integration\\Dashboard\\ApiWriteValidationTest\:\:write\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceCommandLog.php
+			path: tests/Integration/Dashboard/ApiWriteValidationTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceCommandLog\:\:markLatestCommand\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
+			message: '#^Call to an undefined method Psr\\Http\\Message\\StreamInterface\:\:pause\(\)\.$#'
+			identifier: method.notFound
 			count: 1
-			path: src/State/DeviceCommandLog.php
+			path: tests/Integration/Dashboard/DashboardStreamMemoryTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceHistoryStore\:\:recent\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/State/DeviceHistoryStore.php
+			message: '#^Call to an undefined method Psr\\Http\\Message\\StreamInterface\:\:on\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: tests/Integration/Dashboard/DashboardStreamTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceCommandLog\:\:recordCommand\(\) has parameter \$record with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
+			message: '#^Call to an undefined method Psr\\Http\\Message\\StreamInterface\:\:pause\(\)\.$#'
+			identifier: method.notFound
 			count: 1
-			path: src/State/DeviceCommandLog.php
+			path: tests/Integration/Dashboard/DashboardStreamTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceCommandLog\:\:retryWaitingCommands\(\) has parameter \$dispatch with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
+			message: '#^Call to an undefined method Psr\\Http\\Message\\StreamInterface\:\:resume\(\)\.$#'
+			identifier: method.notFound
 			count: 1
-			path: src/State/DeviceCommandLog.php
+			path: tests/Integration/Dashboard/DashboardStreamTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceRegistry\:\:runtimeStates\(\) has parameter \$imeis with no value type specified in iterable type array\.$#'
+			message: '#^Method Tests\\Integration\\Dashboard\\DashboardStreamTest\:\:decodeSseFrame\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceRegistry.php
+			path: tests/Integration/Dashboard/DashboardStreamTest.php
 
 		-
-			message: '#^Method Hub\\State\\DeviceRegistry\:\:runtimeStates\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Call to an undefined method Psr\\Http\\Message\\StreamInterface\:\:on\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Integration/Dashboard/DashboardTenantStreamTest.php
+
+		-
+			message: '#^Parameter \#1 \$devices of static method Tests\\Support\\Doubles\\IngressFixtures\:\:whitelistPath\(\) expects array\<string, array\<string, mixed\>\>, array\<int, array\<string, string\>\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Integration/Dashboard/DevicesApiTest.php
+
+		-
+			message: '#^Method Tests\\Integration\\Dashboard\\DiaperSensitivityApiTest\:\:patch\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/State/DeviceRegistry.php
+			path: tests/Integration/Dashboard/DiaperSensitivityApiTest.php
+
+		-
+			message: '#^Method Tests\\Integration\\Dashboard\\ModelsApiTest\:\:makeApi\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Integration/Dashboard/ModelsApiTest.php
+
+		-
+			message: '#^PHPDoc tag @return with type array\<int, Hub\\Api\\Services\\ModelService\|Hub\\Infrastructure\\Persistence\\Repository\\ApiDataAccess\> is incompatible with native type void\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: tests/Integration/Dashboard/ModelsApiTest.php
+
+		-
+			message: '#^Access to an undefined property Hub\\Ingress\\Http\\Qinglanst\\QinglanstApiClient\:\:\$logins\.$#'
+			identifier: property.notFound
+			count: 3
+			path: tests/Integration/Ingress/Http/Qinglanst/RadarLayoutSyncTest.php
+
+		-
+			message: '#^Method Tests\\Integration\\Ingress\\Http\\Qinglanst\\RadarLayoutSyncTest\:\:await\(\) has parameter \$promise with generic interface React\\Promise\\PromiseInterface but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: tests/Integration/Ingress/Http/Qinglanst/RadarLayoutSyncTest.php
+
+		-
+			message: '#^Template type T of method Tests\\Integration\\Ingress\\Http\\Qinglanst\\RadarLayoutSyncTest\:\:await\(\) is not referenced in a parameter\.$#'
+			identifier: method.templateTypeNotInParameter
+			count: 1
+			path: tests/Integration/Ingress/Http/Qinglanst/RadarLayoutSyncTest.php
+
+		-
+			message: '#^Parameter \#1 \$devices of static method Tests\\Support\\Doubles\\IngressFixtures\:\:whitelistPath\(\) expects array\<string, array\<string, mixed\>\>, array\<int, array\<string, string\>\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Support/DashboardHttpTestCase.php
+
+		-
+			message: '#^Parameter \#2 \$licenseId of method Hub\\Infrastructure\\Persistence\\Repository\\LicenseRepository\:\:create\(\) expects int, string given\.$#'
+			identifier: argument.type
+			count: 3
+			path: tests/Support/DashboardHttpTestCase.php
+
+		-
+			message: '#^Property Tests\\Support\\Doubles\\ArrayObservationStateStore\:\:\$conditions type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Support/Doubles/ArrayObservationStateStore.php
+
+		-
+			message: '#^Property Tests\\Support\\Doubles\\ArrayObservationStateStore\:\:\$observations type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Support/Doubles/ArrayObservationStateStore.php
+
+		-
+			message: '#^Property Tests\\Support\\Doubles\\ArrayObservationStateStore\:\:\$published type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Support/Doubles/ArrayObservationStateStore.php
+
+		-
+			message: '#^Method Tests\\Support\\Doubles\\RecordingHubMqttBridge\:\:entry\(\) should return array\{type\: string\|null, imei\: string, payload\: array\<string, mixed\>, deviceType\: string, licenseId\: string, company\: string\} but returns array\{type\: string\|null, imei\: string, payload\: array\<string, mixed\>, deviceType\: string, licenseId\: int, company\: string\}\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Support/Doubles/RecordingHubMqttBridge.php
+
+		-
+			message: '#^Method Tests\\Support\\Doubles\\RecordingHubMqttBridge\:\:publishEvent\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Support/Doubles/RecordingHubMqttBridge.php
+
+		-
+			message: '#^Method Tests\\Support\\Doubles\\RecordingHubMqttBridge\:\:publishRaw\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Support/Doubles/RecordingHubMqttBridge.php
+
+		-
+			message: '#^Method Tests\\Support\\Doubles\\RecordingHubMqttBridge\:\:publishStatus\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Support/Doubles/RecordingHubMqttBridge.php
+
+		-
+			message: '#^Method Tests\\Support\\Doubles\\RecordingHubMqttBridge\:\:publishTelemetry\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Support/Doubles/RecordingHubMqttBridge.php
+
+		-
+			message: '#^Method Tests\\Support\\MysqlDashboardTestCase\:\:columnStructure\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Support/MysqlDashboardTestCase.php
+
+		-
+			message: '#^Method Tests\\Support\\MysqlDashboardTestCase\:\:foreignKeyStructure\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Support/MysqlDashboardTestCase.php
+
+		-
+			message: '#^Method Tests\\Support\\MysqlDashboardTestCase\:\:indexStructure\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Support/MysqlDashboardTestCase.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<string\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: tests/Unit/Api/Http/ApiErrorTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Api\\Http\\CollectionColumnsTest\:\:describedByField\(\) has parameter \$counts with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Api/Http/CollectionColumnsTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Api\\Http\\CollectionPresenterTest\:\:names\(\) has parameter \$result with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Api/Http/CollectionPresenterTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Api\\Http\\CollectionPresenterTest\:\:present\(\) has parameter \$params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Api/Http/CollectionPresenterTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Api\\Http\\CollectionPresenterTest\:\:present\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Api/Http/CollectionPresenterTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Api\\Http\\CollectionQuerySortTest\:\:sort\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Api/Http/CollectionQuerySortTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Api\\Http\\CollectionQuerySortTest\:\:testAnInjectionKeepsOnlyTheColumnsTheAllowlistRecognises\(\) has parameter \$expected with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Api/Http/CollectionQuerySortTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Api\\OpenApiSpecSchemasTest\:\:referencedSchemas\(\) has parameter \$spec with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Api/OpenApiSpecSchemasTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Command\\DeviceConfigurationCatalogTest\:\:nativeToggleProvider\(\) return type has no value type specified in iterable type iterable\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Command/DeviceConfigurationCatalogTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Command\\DeviceConfigurationCatalogTest\:\:rejectedConfigurationProvider\(\) return type has no value type specified in iterable type iterable\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Command/DeviceConfigurationCatalogTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Command\\PillDispenserRequestCardsTest\:\:requests\(\) should return array\<string, array\<string, mixed\>\> but returns array\<string, list\<array\<string, mixed\>\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Unit/Command/PillDispenserRequestCardsTest.php
+
+		-
+			message: '#^Method GuzzleHttp\\Psr7\\ServerRequest@anonymous/tests/Unit/Dashboard/ApiRequestLoggerTest\.php\:122\:\:getServerParams\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Dashboard/ApiRequestLoggerTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Dashboard\\ExpiringRedisClientForApiTokenStoreTest\:\:__call\(\) has parameter \$arguments with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Dashboard/ApiTokenStoreTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Dashboard\\ExpiringRedisClientForApiTokenStoreTest\:\:connect\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: tests/Unit/Dashboard/ApiTokenStoreTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Dashboard\\ExpiringRedisClientForApiTokenStoreTest\:\:createCommand\(\) has parameter \$arguments with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Dashboard/ApiTokenStoreTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Dashboard\\ExpiringRedisClientForApiTokenStoreTest\:\:del\(\) has parameter \$keys with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: tests/Unit/Dashboard/ApiTokenStoreTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Dashboard\\ExpiringRedisClientForApiTokenStoreTest\:\:disconnect\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: tests/Unit/Dashboard/ApiTokenStoreTest.php
+
+		-
+			message: '#^Access to an undefined property Hub\\Device\\Firmware\\FirmwareUpgradeStore\:\:\$state\.$#'
+			identifier: property.notFound
+			count: 3
+			path: tests/Unit/Device/FirmwareUpgradeOverTheSessionTest.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$state$#'
+			identifier: parameter.notFound
+			count: 1
+			path: tests/Unit/Device/FirmwareUpgradeOverTheSessionTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Domain\\Capability\\AlarmClockMergeTest\:\:handlers\(\) should return list\<array\{object\}\> but returns array\{capability\: array\{Hub\\Domain\\Capability\\AlarmClock\\AlarmClockCapability\}, four\-p\-touch\: array\{Hub\\Domain\\Capability\\AlarmClock\\FourPTouch\}, vivistar\: array\{Hub\\Domain\\Capability\\AlarmClock\\Vivistar\}\}\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Unit/Domain/Capability/AlarmClockMergeTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Domain\\NamedRemindersHandler\:\:fromNative\(\) has parameter \$desired with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Domain/MedicationRemindersDispatchTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Domain\\NamedRemindersHandler\:\:meta\(\) has parameter \$accumulatedMeta with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Domain/MedicationRemindersDispatchTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Domain\\NamedRemindersHandler\:\:meta\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Domain/MedicationRemindersDispatchTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Domain\\NamedRemindersHandler\:\:responseEntry\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Domain/MedicationRemindersDispatchTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Domain\\NamedRemindersHandler\:\:responseEntry\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Domain/MedicationRemindersDispatchTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Domain\\NamedRemindersHandler\:\:toNative\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Domain/MedicationRemindersDispatchTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Hub\\FakeHubConnection\:\:send\(\) has parameter \$data with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: tests/Unit/Hub/ConnectionRegistryTest.php
+
+		-
+			message: '#^Property Tests\\Unit\\Hub\\FakeHubConnection\:\:\$sent type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Hub/ConnectionRegistryTest.php
+
+		-
+			message: '#^Parameter \#1 \$devices of static method Tests\\Support\\Doubles\\IngressFixtures\:\:whitelist\(\) expects array\<string, array\<string, mixed\>\>, array\<int, array\<string, string\>\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/Hub/DeviceAuthorizerTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Hub\\DecoderFakeConnection\:\:send\(\) has parameter \$data with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: tests/Unit/Hub/DeviceEventDecoderTest.php
+
+		-
+			message: '#^Parameter \#1 \$devices of static method Tests\\Support\\Doubles\\IngressFixtures\:\:whitelist\(\) expects array\<string, array\<string, mixed\>\>, array\<int, array\<string, string\>\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/Hub/DeviceHubMqttContractTest.php
+
+		-
+			message: '#^Parameter \#1 \$devices of static method Tests\\Support\\Doubles\\IngressFixtures\:\:whitelist\(\) expects array\<string, array\<string, mixed\>\>, array\<int, array\<string, string\>\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/Hub/DeviceTopicShapeTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Hub\\FourPTouchDeviceStatusTest\:\:firstOf\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Hub/FourPTouchDeviceStatusTest.php
+
+		-
+			message: '#^Parameter \#1 \$devices of static method Tests\\Support\\Doubles\\IngressFixtures\:\:whitelist\(\) expects array\<string, array\<string, mixed\>\>, array\<int, array\<string, string\>\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/Hub/FourPTouchTcpHandshakeTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Hub\\PillDispenserFirmwareVersionTest\:\:decodeAndNormalize\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Hub/PillDispenserFirmwareVersionTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Hub\\PillDispenserNormalizationTest\:\:decode\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Hub/PillDispenserNormalizationTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Hub\\PillDispenserNormalizationTest\:\:decode\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Hub/PillDispenserNormalizationTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Hub\\Tcp\\VivistarFakeConnection\:\:send\(\) has parameter \$data with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: tests/Unit/Hub/Tcp/VivistarTcpProtocolTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Hub\\Tcp\\TcpFakeConnection\:\:send\(\) has parameter \$data with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: tests/Unit/Hub/Tcp/WonlexAndFourPTouchProtocolTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Hub\\Tcp\\WonlexAndFourPTouchProtocolTest\:\:wonlexFrame\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Hub/Tcp/WonlexAndFourPTouchProtocolTest.php
+
+		-
+			message: '#^Parameter \#1 \$devices of static method Tests\\Support\\Doubles\\IngressFixtures\:\:whitelist\(\) expects array\<string, array\<string, mixed\>\>, array\<int, array\<string, string\>\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/Hub/WonlexTcpHandshakeTest.php
+
+		-
+			message: '#^Method PDO@anonymous/tests/Unit/Infrastructure/Persistence/ReconnectingPdoTest\.php\:37\:\:prepare\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Infrastructure/Persistence/ReconnectingPdoTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\CapabilityChannelTest\:\:person\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/CapabilityChannelTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Moko\\FailingHubMqttBridge\:\:publishStatus\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Moko/BridgeMaintenanceFailureTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Moko\\BridgeUnclaimedSightingTest\:\:proximity\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Moko/BridgeUnclaimedSightingTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Moko\\BridgeW6Test\:\:forBracelet\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Moko/BridgeW6Test.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Moko\\DecoderTest\:\:device\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Moko/DecoderTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Moko\\W6DecoderTest\:\:uid\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Moko/W6DecoderTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Moko\\W6bNormalizerTest\:\:decoded\(\) has parameter \$info with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Moko/W6bNormalizerTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Monit\\MonitMoistureIndexTest\:\:level\(\) has parameter \$deltas with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Monit/MonitMoistureIndexTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Monit\\MonitMoistureIndexTest\:\:level\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Monit/MonitMoistureIndexTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Monit\\MonitMoistureIndexTest\:\:moisture\(\) has parameter \$deltas with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Monit/MonitMoistureIndexTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Monit\\MonitMoistureIndexTest\:\:moisture\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Monit/MonitMoistureIndexTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Monit\\MonitMoistureIndexTest\:\:telemetry\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Monit/MonitMoistureIndexTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Monit\\MonitSensitivityTest\:\:decoded\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Monit/MonitSensitivityTest.php
+
+		-
+			message: '#^Parameter \#3 \$device of method Hub\\Ingress\\Mqtt\\Ncs\\MessageNormalizer\:\:normalize\(\) expects array\{imei\: string, supplier\: string, model\: string, commercialName\?\: string, deviceType\: string, licenseId\: int\}, array\{imei\: string, supplier\: string, model\: string, commercialName\: string, deviceType\: string, licenseId\: string, simNumber\: string, deviceId\: string\} given\.$#'
+			identifier: argument.type
+			count: 4
+			path: tests/Unit/Ingress/Mqtt/Ncs/MessageNormalizerTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Qinglanst\\MessageNormalizerTest\:\:person\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Qinglanst/MessageNormalizerTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Qinglanst\\MessageNormalizerTest\:\:testNoPublishedFieldIsSnakeCase\(\) has parameter \$decoded with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Qinglanst/MessageNormalizerTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Qinglanst\\MessageNormalizerTest\:\:testTheEnvelopeTypeIsAlwaysTheCapabilityItIsFiledUnder\(\) has parameter \$decoded with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Qinglanst/MessageNormalizerTest.php
+
+		-
+			message: '#^Parameter \#3 \$device of method Hub\\Ingress\\Mqtt\\Qinglanst\\MessageNormalizer\:\:normalize\(\) expects array\{imei\: string, supplier\: string, model\: string, deviceType\: string, licenseId\: int, company\?\: string\}, array\{imei\: string, supplier\: string, model\: string, deviceType\: string, licenseId\: string, company\: string\} given\.$#'
+			identifier: argument.type
+			count: 21
+			path: tests/Unit/Ingress/Mqtt/Qinglanst/MessageNormalizerTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Veepoo\\BridgeMeasurementTest\:\:measurements\(\) should return list\<array\{string, array\<string, mixed\>, string, array\<string, mixed\>\}\> but returns array\{''frequência cardíaca''\: array\{''heart_rate'', array\{sdkType\: 51, heartRate\: 74\}, ''heart_rate'', array\{bpm\: 74\}\}, oxigénio\: array\{''oxigénio'', array\{sdkType\: 31, bloodOxygen\: 97\}, ''blood_oxygen'', array\{spo2Percent\: 97\}\}, glicemia\: array\{''glicemia'', array\{sdkType\: 22, bloodGlucose\: 6\.44\}, ''blood_sugar'', array\{glucoseMgDl\: 116\.0\}\}, temperatura\: array\{''temperatura'', array\{sdkType\: 6, bodyTemperature\: 36\.2, bodySurfaceTemperature\: 33\.5\}, ''temperature'', array\{bodyCelsius\: 36\.2, surfaceCelsius\: 33\.5\}\}, stress\: array\{''stress'', array\{sdkType\: 58, pressure\: 23\}, ''stress'', array\{score\: 23\}\}, tensão\: array\{''tensão'', array\{sdkType\: 18, bloodPressureHigh\: 101, bloodPressureLow\: 74\}, ''blood_pressure'', array\{systolicMmHg\: 101, diastolicMmHg\: 74\}\}, ''a procurar''\: array\{''a procurar'', array\{sdkType\: 17, value\: ''search''\}, ''find_device'', array\{state\: ''searching''\}\}, parada\: array\{''parada'', array\{sdkType\: 17, value\: ''find''\}, ''find_device'', array\{state\: ''stopped''\}\}, \.\.\.\}\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Veepoo/BridgeMeasurementTest.php
+
+		-
+			message: '#^Call to an undefined method Hub\\Device\\PendingDownlinkQueue\:\:push\(\)\.$#'
+			identifier: method.notFound
+			count: 6
+			path: tests/Unit/Ingress/Mqtt/Veepoo/BridgeQueuedDispatchTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Ingress\\Mqtt\\Veepoo\\DailyBlockNormalizerTest\:\:ofType\(\) has parameter \$out with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Veepoo/DailyBlockNormalizerTest.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$override$#'
+			identifier: parameter.notFound
+			count: 1
+			path: tests/Unit/Ingress/Mqtt/Veepoo/SleepNormalizerTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Location\\BeaconDbTelemetryEnricherTest\:\:nonGpsTelemetry\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Location/BeaconDbTelemetryEnricherTest.php
+
+		-
+			message: '#^Method Hub\\Location\\LocationTelemetryEnricherContract@anonymous/tests/Unit/Location/PrivateRadioMapTelemetryEnricherTest\.php\:23\:\:enrich\(\) has parameter \$telemetry with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Location/PrivateRadioMapTelemetryEnricherTest.php
+
+		-
+			message: '#^Method Hub\\Location\\LocationTelemetryEnricherContract@anonymous/tests/Unit/Location/PrivateRadioMapTelemetryEnricherTest\.php\:46\:\:enrich\(\) has parameter \$telemetry with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Location/PrivateRadioMapTelemetryEnricherTest.php
+
+		-
+			message: '#^Method Hub\\Location\\LocationTelemetryEnricherContract@anonymous/tests/Unit/Location/PrivateRadioMapTelemetryEnricherTest\.php\:71\:\:enrich\(\) has parameter \$telemetry with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Location/PrivateRadioMapTelemetryEnricherTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Location\\PrivateRadioMapTelemetryEnricherTest\:\:telemetry\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Location/PrivateRadioMapTelemetryEnricherTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Location\\PrivateRadioMapTest\:\:gpsTelemetry\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Location/PrivateRadioMapTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Location\\PrivateRadioMapTest\:\:nonGpsTelemetry\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Location/PrivateRadioMapTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Mqtt\\BrokerSettingsTest\:\:hubConfig\(\) has parameter \$overrides with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Mqtt/BrokerSettingsTest.php
+
+		-
+			message: '#^Parameter \#3 \$reconnect of method Tests\\Unit\\Mqtt\\ReconnectingDouble\:\:reconnectAfterLoopFailure\(\) expects callable\(\)\: PhpMqtt\\Client\\MqttClient, Closure\(\)\: null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/Mqtt/ReconnectsOnLoopFailureTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Protocol\\FourPTouchAdapterTest\:\:frame\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Protocol/FourPTouchAdapterTest.php
+
+		-
+			message: '#^Method Hub\\Device\\DeviceHubServer@anonymous/tests/Unit/Runtime/MaintenanceSchedulerTest\.php\:220\:\:submitDownlink\(\) has parameter \$context with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Runtime/MaintenanceSchedulerTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Runtime\\RedisPrefixTest\:\:hubKeyspaces\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Runtime/RedisPrefixTest.php
+
+		-
+			message: '#^Method Tests\\Unit\\Runtime\\RedisPrefixTest\:\:phpFilesIn\(\) has parameter \$directories with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Runtime/RedisPrefixTest.php
+
+		-
+			message: '#^Property Tests\\Unit\\Runtime\\SystemdWatchdogTest\:\:\$receiver \(resource\|Socket\|null\) is never assigned resource so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: tests/Unit/Runtime/SystemdWatchdogTest.php

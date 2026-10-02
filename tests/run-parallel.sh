@@ -33,7 +33,16 @@ status=$?
 
 cat "$OUTPUT_DIR"/log*
 
-# A soma serve de prova de que o paralelo corre os mesmos testes que uma corrida única.
+# Um trabalhador que morra sem deixar resultado baixa a soma em silêncio, e a suite passava
+# com menos testes do que tem. Cada ficheiro de teste tem de ter deixado um resumo.
+expected=$(find "$SUITE_DIR" -name '*Test.php' | wc -l | tr -d ' ')
+summarised=$(grep -lE '^(OK \(|Tests: [0-9]+, Assert)' "$OUTPUT_DIR"/log* | wc -l | tr -d ' ')
+if [ "$expected" != "$summarised" ]; then
+    printf '\n%s: %s ficheiros de teste, %s resumos -- um trabalhador não deixou resultado\n' \
+        "$SUITE_DIR" "$expected" "$summarised"
+    exit 1
+fi
+
 awk '
     /^OK \(/                 { gsub(/[^0-9 ]/, " "); tests += $1; assertions += $2 }
     /^Tests: [0-9]+, Assert/ { gsub(/[^0-9 ]/, " "); tests += $1; assertions += $2 }

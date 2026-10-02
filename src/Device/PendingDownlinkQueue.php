@@ -6,6 +6,7 @@ namespace Hub\Device;
 
 interface PendingDownlinkQueue
 {
+    /** @param array<string, mixed>|null $command o comando que o downlink transporta, para registo */
     public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink;
 
     /**

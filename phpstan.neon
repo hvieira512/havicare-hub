@@ -2,6 +2,9 @@
 # ficheiro. Código novo não pode acrescentar mais.
 includes:
     - phpstan-baseline.neon
+    # Ensina o analisador a ler os duplos do PHPUnit: sem isto, cada `->method()` num
+    # stub é um `method.notFound` que não é defeito nenhum.
+    - vendor/phpstan/phpstan-phpunit/extension.neon
 
 parameters:
     # O nível 6 exige a forma dos arrays, que é onde os tipos deste projecto eram
@@ -10,6 +13,7 @@ parameters:
     paths:
         - src
         - bin
+        - tests
         # `simulator/` fica de fora: os 8 scripts são pontos de entrada CLI independentes
         # que partilham 20 nomes de função globais (`describe`, `waitForMessages`, ...) com
         # assinaturas diferentes. Analisados no mesmo processo colidem, e o PHPStan verifica
@@ -17,6 +21,18 @@ parameters:
     tmpDir: var/phpstan
 
     ignoreErrors:
+        # Uma asserção sobre um valor que o analisador já conhece é o que um teste faz: a
+        # fixture é literal de propósito, e prendê-la é o ponto. Só em `tests/`.
+        -
+            identifier: staticMethod.alreadyNarrowedType
+            path: tests/*
+        -
+            identifier: staticMethod.impossibleType
+            path: tests/*
+        -
+            identifier: function.alreadyNarrowedType
+            path: tests/*
+
         # notIdentical.alwaysTrue is deliberately NOT here: it is what would
         # have caught an int licenseId compared against the string '0', and
         # silencing it cost a live bug.
