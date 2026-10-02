@@ -6,6 +6,10 @@ namespace Hub\Command\Configuration\Payload;
 
 final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
 {
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{fields: list<string>}
+     */
     public static function build(string $key, array $payload): array
     {
         if (isset($payload['fields']) && is_array($payload['fields'])) {
@@ -32,6 +36,10 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
         return ['fields' => array_map(static fn(mixed $value): string => (string)$value, $fields)];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<string|int>
+     */
     private static function workingMode(array $payload): array
     {
         $mode = self::rangeInt($payload['mode'] ?? null, 1, 8, 'mode');
@@ -51,11 +59,19 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
         return [8, $interval, self::boolInt($payload['gpsEnabled'] ?? null, 'gpsEnabled')];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<string>
+     */
     private static function callWhitelist(array $payload): array
     {
         return self::phonebook($payload);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<string>
+     */
     private static function phonebook(array $payload): array
     {
         $contacts = $payload['contacts'] ?? $payload['numbers'] ?? $payload;
@@ -85,6 +101,10 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
         return array_pad($fields, 10, '');
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<string|int>
+     */
     private static function reminders(array $payload): array
     {
         $items = $payload['items'] ?? [];
@@ -120,6 +140,9 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
         ];
     }
 
+    /**
+     * @param array<string, mixed> $item
+     */
     private static function reminderDays(array $item): string
     {
         $recurrence = is_array($item['recurrence'] ?? null) ? $item['recurrence'] : [];
@@ -144,6 +167,9 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
         return preg_replace('/[^0-9]/', '', (string)($item['days'] ?? '')) ?: '';
     }
 
+    /**
+     * @param array<array-key, mixed> $days
+     */
     private static function formatDayList(array $days): string
     {
         $normalized = [];

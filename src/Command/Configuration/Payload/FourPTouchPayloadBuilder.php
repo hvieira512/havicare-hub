@@ -44,6 +44,10 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             = ($exitCode === 0 && str_contains($output, 'libopencore_amrnb'));
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{fields: list<string>}
+     */
     public static function build(string $key, array $payload): array
     {
         if (isset($payload['fields']) && is_array($payload['fields'])) {
@@ -93,6 +97,10 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return ['fields' => array_map(static fn(mixed $value): string => (string)$value, $fields)];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<string>
+     */
     private static function takePills(array $payload): array
     {
         $settings = $payload['reminderSettings'] ?? [];
@@ -253,6 +261,10 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return $exitCode === 0 && trim(implode("\n", $output)) !== '';
     }
 
+    /**
+     * @param list<string> $command
+     * @return array{0: int, 1: string}
+     */
     private static function runProcess(array $command): array
     {
         $quoted = array_map('escapeshellarg', $command);
@@ -276,6 +288,10 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return $mode;
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<string>
+     */
     private static function timeRanges(array $payload, int $max, string $field): array
     {
         if (!array_key_exists('ranges', $payload)) {
@@ -319,6 +335,10 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         }
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<string>
+     */
     private static function alarmClock(array $payload): array
     {
         $alarms = $payload['items'] ?? $payload['alarms'] ?? $payload['alarmClock'] ?? null;
@@ -344,6 +364,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return array_map([self::class, 'alarmClockEntry'], $alarms);
     }
 
+    /** @return list<string> */
     private static function alarmClockListFromString(string $value): array
     {
         $value = trim($value);
@@ -443,6 +464,9 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return $days;
     }
 
+    /**
+     * @param array<array-key, mixed> $days
+     */
     private static function alarmClockDayMaskFromList(array $days): string
     {
         $mask = array_fill(0, 7, '0');
@@ -458,6 +482,10 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return implode('', $mask);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<string>
+     */
     private static function phonebook(array $payload): array
     {
         if (!array_key_exists('contacts', $payload) || !is_array($payload['contacts'])) {

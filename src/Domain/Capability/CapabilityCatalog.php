@@ -21,9 +21,9 @@ use Hub\Domain\DeviceTypeCatalog;
  * O catálogo autoritativo da identidade de cada capacidade genérica e do suporte por
  * protocolo.
  *
- * Protocol-native configuration definitions remain transport concerns in
- * `DeviceConfigurationCatalog`. Este catálogo é o único sítio que mapeia essas definições
- * nativas no contrato público de capacidades genéricas.
+ * As definições de configuração nativas de cada protocolo são assunto do transporte e vivem
+ * no `DeviceConfigurationCatalog`. Este catálogo é o único sítio que as mapeia no contrato
+ * público de capacidades genéricas.
  */
 final class CapabilityCatalog
 {
