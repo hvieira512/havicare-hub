@@ -173,6 +173,7 @@ final class TenancyPaths
                     'responses' => Responses::map(
                         ['200' => Responses::json('License created', 'IdCreateResponse')],
                         'invalid_request',
+                        'company_not_found',
                     ),
                 ],
             ],
@@ -182,14 +183,13 @@ final class TenancyPaths
                     'summary' => 'Update license',
                     'parameters' => [$id],
                     'requestBody' => Requests::json('LicenseUpdateRequest'),
-                    // O actualizar continua a herdar do que já lá está o que o pedido não
-                    // trouxer, mas o que ele *trouxer* passa a ser validado: um `companyId` a
-                    // zero era escrito na mesma, e a chave estrangeira rebentava depois -- o
-                    // cliente levava um 500 no lugar da recusa que lhe pertencia.
+                    // O que o pedido não trouxer fica como está; o `companyId` que ele trouxer
+                    // é resolvido antes da escrita, porque é chave estrangeira.
                     'responses' => Responses::map(
                         ['200' => Responses::json('License updated', 'StatusResponse')],
                         'invalid_request',
                         'license_not_found',
+                        'company_not_found',
                     ),
                 ],
                 'delete' => [

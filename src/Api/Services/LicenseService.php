@@ -57,6 +57,11 @@ class LicenseService
             return $request;
         }
 
+        $refused = $this->refuseUnknownCompany($request->companyId);
+        if ($refused !== null) {
+            return $refused;
+        }
+
         $id = $this->db->licenses->create(
             (int)$request->companyId,
             (int)$request->licenseId,
@@ -79,6 +84,11 @@ class LicenseService
             return $request;
         }
 
+        $refused = $this->refuseUnknownCompany($request->companyId);
+        if ($refused !== null) {
+            return $refused;
+        }
+
         $this->db->licenses->update(
             $id,
             $request->companyId ?? (int)$existing['company_id'],
@@ -87,6 +97,23 @@ class LicenseService
         );
 
         return ['status' => 'ok'];
+    }
+
+    /**
+     * O `company_id` é chave estrangeira: sem esta resposta, uma empresa inexistente só se
+     * descobre pelo erro do PDO, que sai como 500.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function refuseUnknownCompany(?int $companyId): ?array
+    {
+        if ($companyId === null) {
+            return null;
+        }
+
+        return $this->db->companies->findById($companyId) === null
+            ? ApiError::companyNotFound()->toArray()
+            : null;
     }
 
     public function delete(int $id): array

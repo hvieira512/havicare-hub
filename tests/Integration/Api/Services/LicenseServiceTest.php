@@ -11,6 +11,32 @@ use Tests\Support\MysqlDashboardTestCase;
 final class LicenseServiceTest extends MysqlDashboardTestCase
 {
     /**
+     * O `companyId` é uma chave estrangeira, e uma empresa que não existe tem de ser recusada
+     * antes da escrita: o erro do PDO sobe como 500 e a especificação não o declara.
+     */
+    public function testCreatingALicenseForAnUnknownCompanyIsRefused(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $service = new LicenseService($db);
+
+        $result = $service->create(['companyId' => 999999, 'licenseId' => 4004, 'name' => 'orfa']);
+
+        self::assertSame('company_not_found', $result['error']['code'] ?? null);
+    }
+
+    /** O actualizar escreve a mesma chave estrangeira, e recusa pela mesma razão. */
+    public function testUpdatingALicenseToAnUnknownCompanyIsRefused(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $companyId = $db->companies->create('hitcare');
+        $licenseId = $db->licenses->create($companyId, 5005, 'valida');
+
+        $result = (new LicenseService($db))->update($licenseId, ['companyId' => 999999]);
+
+        self::assertSame('company_not_found', $result['error']['code'] ?? null);
+    }
+
+    /**
      * A linha de cada licença diz se a cloud dos radares já está ligada, e a listagem é o
      * único sítio de onde isso pode vir sem uma chamada por linha.
      */
