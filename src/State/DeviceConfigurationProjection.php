@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\State;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Domain\Contacts;
 
 use Hub\Domain\Capability\Contacts\WhitelistEnabledCapability;

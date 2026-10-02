@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Domain\Alarms;
 
 use Hub\Domain\Capability\Alarms\SosSmsAlertCapability;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 $deviceTabs = [
     ['key' => 'General', 'label' => 'Geral', 'extra' => ''],
     ['key' => 'Config', 'label' => 'Configurações', 'extra' => ' d-none'],

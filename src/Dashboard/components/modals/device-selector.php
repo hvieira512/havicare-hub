@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 $onlineFilters = [
     ['id' => 'deviceOnlineAll', 'value' => 'all', 'label' => 'Todos', 'dot' => ''],
     ['id' => 'deviceOnlineOn', 'value' => 'online', 'label' => 'Ligados', 'dot' => 'text-success'],

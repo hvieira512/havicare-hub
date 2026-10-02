@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Protocol\Adapter;
 
 use Hub\Support\Values;

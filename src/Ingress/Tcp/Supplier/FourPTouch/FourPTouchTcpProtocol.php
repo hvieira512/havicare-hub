@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Ingress\Tcp\Supplier\FourPTouch;
 
 use Hub\Device\DeviceEventDecoder;

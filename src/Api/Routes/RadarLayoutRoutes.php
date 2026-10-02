@@ -5,6 +5,8 @@
  * quando alguém a pede, e nunca por conta própria.
  */
 
+declare(strict_types=1);
+
 use Hub\Api\Routing\ApiRoute;
 use Hub\Api\Services\RadarLayoutService;
 use React\Promise\PromiseInterface;

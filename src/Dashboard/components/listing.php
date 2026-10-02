@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 require_once __DIR__ . '/helpers.php';
 
 function search_input(string $id, string $placeholder, string $wrapperClass = ''): string

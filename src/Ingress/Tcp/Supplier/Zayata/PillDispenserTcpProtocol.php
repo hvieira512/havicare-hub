@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Ingress\Tcp\Supplier\Zayata;
 
 use Hub\Device\DeviceEventDecoder;

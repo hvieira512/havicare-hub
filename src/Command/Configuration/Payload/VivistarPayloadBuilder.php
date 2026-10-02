@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Command\Configuration\Payload;
 
 final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder

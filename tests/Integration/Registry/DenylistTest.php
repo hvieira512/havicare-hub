@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Integration\Registry;
 
 use Hub\Infrastructure\Persistence\Repository\DenylistRepository;

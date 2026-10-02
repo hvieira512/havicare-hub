@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Ingress\Tcp;
 
 final class TcpResponse

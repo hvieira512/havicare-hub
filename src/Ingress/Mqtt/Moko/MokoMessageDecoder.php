@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Ingress\Mqtt\Moko;
 
 final class MokoMessageDecoder implements MessageDecoder

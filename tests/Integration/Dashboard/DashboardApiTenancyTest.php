@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Integration\Dashboard;
 
 use GuzzleHttp\Psr7\ServerRequest;
@@ -227,7 +229,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();
         $hitcareId = $db->companies->create('hitcare-extra-holder');
-        $db->licenses->create($hitcareId, '3003', 'hitcare-second-license');
+        $db->licenses->create($hitcareId, 3003, 'hitcare-second-license');
 
         // A mesma empresa do cliente, e uma licença que ele não tem.
         $store->registerDevice('861265061009899', 'Vivistar', 'L08 Pro', 'watch', 3003, '', '', 'hitcare');

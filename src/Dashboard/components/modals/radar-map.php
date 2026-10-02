@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 $vitalCard = static function (string $prefix, string $icon, string $label, string $unit, string $tone): void { ?>
     <?php
     $stat = static function (string $id, string $icon, string $label): void { ?>

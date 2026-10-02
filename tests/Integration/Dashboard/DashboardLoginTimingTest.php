@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Integration\Dashboard;
 
 use GuzzleHttp\Psr7\ServerRequest;

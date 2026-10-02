@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Hub\Api\Controllers\StreamController;
 use Hub\Api\Routing\ApiRoute;
 

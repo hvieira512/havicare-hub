@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Infrastructure\Persistence\Repository;
 
 use Hub\Domain\DeviceProtocol;

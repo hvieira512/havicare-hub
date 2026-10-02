@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Api\OpenApi;
 
 /** Construtores de corpos de pedido OpenAPI, partilhados pelas definições de rotas. */

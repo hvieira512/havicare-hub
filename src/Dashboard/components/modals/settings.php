@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 $settingsTabs = [
     ['key' => 'Models', 'label' => 'Catálogo', 'icon' => 'fa-microchip', 'count' => true],
     ['key' => 'Capabilities', 'label' => 'Capacidades', 'icon' => 'fa-list-check', 'count' => false],

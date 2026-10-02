@@ -55,4 +55,16 @@
     <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
         <exclude-pattern>tests/*</exclude-pattern>
     </rule>
+
+    <!--
+        O `strict_types` é obrigatório: num hub cheio de descodificadores binários, uma
+        coerção silenciosa de "12abc" para 12 é um valor errado guardado sem erro.
+    -->
+    <rule ref="Generic.PHP.RequireStrictTypes">
+        <!-- Os parciais do template não declaram nada: abrem com HTML. -->
+        <!-- O caso-base HTTP exercita a coerção do número da licença, que vem em texto. -->
+        <exclude-pattern>tests/Support/DashboardHttpTestCase.php</exclude-pattern>
+        <exclude-pattern>src/Dashboard/components/*</exclude-pattern>
+        <exclude-pattern>src/Dashboard/index.php</exclude-pattern>
+    </rule>
 </ruleset>

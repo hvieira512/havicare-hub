@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Command;
 
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookFallback;

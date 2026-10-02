@@ -31,7 +31,7 @@ docker compose exec -T hub php -r '
 require "vendor/autoload.php";
 Hub\Bootstrap::loadEnv(getcwd());
 $config = Hub\Config::load()->all();
-$db = Hub\Api\Repository\ApiDataAccess::fromDatabase(
+$db = Hub\Infrastructure\Persistence\Repository\ApiDataAccess::fromDatabase(
     new Hub\Infrastructure\Persistence\DashboardDatabase($config["database"])
 );
 $existing = $db->apiUsers->findByUsername("admin");

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\State;
 
 interface DeviceStoreContract
@@ -9,7 +11,7 @@ interface DeviceStoreContract
         string $supplier,
         string $model,
         string $deviceType = 'watch',
-        int $licenseId = 0,
+        int|string $licenseId = 0,
         string $simNumber = '',
         string $deviceId = '',
         string $company = 'null'
@@ -34,7 +36,7 @@ interface DeviceStoreContract
         string $model,
         string $ident,
         string $reason,
-        int $licenseId = 0,
+        int|string $licenseId = 0,
         ?string $company = null
     ): void;
 

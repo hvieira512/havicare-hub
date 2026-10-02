@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Integration\Api\Repository;
 
 use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationRepository;

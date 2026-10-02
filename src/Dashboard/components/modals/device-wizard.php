@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 ob_start();
 ?>
 <div class="d-flex flex-column gap-4">

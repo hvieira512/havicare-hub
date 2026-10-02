@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Domain\Capability;
 
 /** Os ajudantes de validação e normalização partilhados pelas capacidades. */

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Support\Doubles;
 
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;

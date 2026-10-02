@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Api;
 
 use Hub\Api\OpenApi\Paths\CapabilityPaths;

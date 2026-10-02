@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Api\Controllers;
 
 use Hub\Api\Http\ApiError;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Api\Auth;
 
 use Psr\Http\Message\ServerRequestInterface;

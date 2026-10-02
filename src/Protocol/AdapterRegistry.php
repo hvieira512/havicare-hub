@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hub\Protocol;
 
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
