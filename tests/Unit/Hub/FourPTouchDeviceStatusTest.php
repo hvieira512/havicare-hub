@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\Decoder\FourPTouchEventDecoder;
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use PHPUnit\Framework\TestCase;
 
@@ -96,6 +97,25 @@ final class FourPTouchDeviceStatusTest extends TestCase
         $events = FourPTouchEventDecoder::decode('TS', $this->decoded());
 
         self::assertNotNull($this->firstOf($events, 'firmware_version'));
+    }
+
+    /**
+     * O que o descodificador publica tem de estar na matriz do protocolo: a declarar menos
+     * do que sai, a API diz que o modelo não suporta uma capacidade que o MQTT publica.
+     */
+    public function testEveryCapabilityItPublishesIsDeclaredForTheProtocol(): void
+    {
+        $declared = CapabilityCatalog::keysForProtocol('four-p-touch');
+
+        foreach (FourPTouchEventDecoder::decode('TS', $this->decoded()) as $event) {
+            $feature = (string)$event['feature'];
+            // O `device_config` é o canal da configuração reportada, e não uma capacidade.
+            if ($feature === 'device_config') {
+                continue;
+            }
+
+            self::assertContains($feature, $declared, $feature);
+        }
     }
 
     /**
