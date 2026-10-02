@@ -2323,12 +2323,6 @@ parameters:
 			path: src/Device/RawPayload.php
 
 		-
-			message: '#^Method Hub\\Device\\RawPayload\:\:device\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Device/RawPayload.php
-
-		-
 			message: '#^Method Hub\\Device\\RawPayload\:\:event\(\) has parameter \$command with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1

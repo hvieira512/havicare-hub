@@ -6,6 +6,7 @@ namespace Hub\Ingress\Mqtt\Moko;
 
 use Hub\State\DeviceReportStore;
 use Hub\Device\CommercialModelResolver;
+use Hub\Device\DeviceDescriptor;
 use Hub\Device\HubMqttBridge;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DeviceProtocol;
@@ -195,10 +196,7 @@ final class RelayPublisher
      */
     public static function describe(array $device): array
     {
-        return array_filter([
-            'id' => (string)$device['imei'], 'supplier' => (string)($device['supplier'] ?? ''),
-            'model' => (string)($device['model'] ?? ''), 'commercialName' => (string)($device['commercialName'] ?? ''),
-        ], static fn(string $value): bool => $value !== '');
+        return DeviceDescriptor::of((string)$device['imei'], $device);
     }
 
     /**

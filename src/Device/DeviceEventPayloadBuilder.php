@@ -10,16 +10,12 @@ final class DeviceEventPayloadBuilder
     {
         $feature = (string)$decodedEvent['feature'];
 
-        $device = ['id' => $session->imei];
-        if ($session->supplier !== '') {
-            $device['supplier'] = $session->supplier;
-        }
-        if ($session->model !== '') {
-            $device['model'] = $session->model;
-        }
-        if ($session->commercialName !== '') {
-            $device['commercialName'] = $session->commercialName;
-        }
+        $device = DeviceDescriptor::fromParts(
+            $session->imei,
+            $session->supplier,
+            $session->model,
+            $session->commercialName,
+        );
 
         $payload = [
             'type' => $feature,

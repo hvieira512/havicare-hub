@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
+use Hub\Device\DeviceDescriptor;
 use Hub\Support\Values;
 
 final class GatewayNormalizer
@@ -19,12 +20,7 @@ final class GatewayNormalizer
         $protocol = (string)($message['protocol'] ?? 'moko-mkgw3');
         $common = [
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => array_filter([
-                'id' => (string)$device['imei'],
-                'supplier' => (string)$device['supplier'],
-                'model' => (string)$device['model'],
-                'commercialName' => (string)($device['commercialName'] ?? ''),
-            ], static fn(string $value): bool => $value !== ''),
+            'device' => DeviceDescriptor::of((string)$device['imei'], $device),
             'source' => ['protocol' => $protocol, 'nativeType' => $messageId],
         ];
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Monit;
 
+use Hub\Device\DeviceDescriptor;
 use Hub\Domain\DiaperSensitivity;
 
 final class MonitNormalizer
@@ -119,11 +120,6 @@ final class MonitNormalizer
     /** @param array<string, mixed> $device */
     private function device(array $device): array
     {
-        return array_filter([
-            'id' => (string)$device['imei'],
-            'supplier' => (string)($device['supplier'] ?? ''),
-            'model' => (string)($device['model'] ?? ''),
-            'commercialName' => (string)($device['commercialName'] ?? ''),
-        ], static fn(string $value): bool => $value !== '');
+        return DeviceDescriptor::of((string)$device['imei'], $device);
     }
 }

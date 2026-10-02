@@ -206,6 +206,12 @@ final class BridgeTest extends TestCase
         self::assertSame('radar-canonical-1', $raw['imei'], 'o raw vai na chave canónica, não no uid do tópico');
         self::assertSame('uplink', $raw['payload']['direction']);
         self::assertSame('qinglanst-radar', $raw['payload']['debug']['protocol']);
+        // O descritor omite o que não sabe: uma chave vazia obriga quem lê a distinguir o
+        // vazio do ausente.
+        self::assertSame(
+            ['id' => 'radar-canonical-1', 'supplier' => 'Qinglanst', 'model' => 'RD-V1'],
+            $raw['payload']['device'],
+        );
         // O original preservado: o deviceCode que chegou no payload MQTT tem de estar lá.
         self::assertStringContainsString('radar-topic-uid', json_encode($raw['payload']['debug']['payload']));
     }

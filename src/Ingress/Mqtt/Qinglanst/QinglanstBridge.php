@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Qinglanst;
 
+use Hub\Device\DeviceDescriptor;
 use Hub\Domain\DeviceMetadata;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
@@ -143,12 +144,7 @@ final class QinglanstBridge extends MqttBridgeBase
         $raw = [
             'direction' => 'uplink',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => [
-                'id' => $deviceKey,
-                'supplier' => (string)$device['supplier'],
-                'model' => (string)$device['model'],
-                'commercialName' => (string)($device['commercialName'] ?? ''),
-            ],
+            'device' => DeviceDescriptor::of($deviceKey, $device),
             'data' => $upstreamPayload,
             'debug' => [
                 'protocol' => 'qinglanst-radar',

@@ -23,7 +23,7 @@ class RawPayload
         $payload = [
             'direction' => $direction,
             'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            'device' => self::device($imei, $supplier, $model, $commercialName),
+            'device' => DeviceDescriptor::fromParts($imei, $supplier, $model, $commercialName),
             'debug' => [
                 'protocol' => $protocol,
                 'transport' => $transport,
@@ -49,7 +49,7 @@ class RawPayload
         $payload = [
             'state' => $state,
             'updatedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            'device' => self::device($imei, $supplier, $model, $commercialName),
+            'device' => DeviceDescriptor::fromParts($imei, $supplier, $model, $commercialName),
         ];
 
         if ($error !== null) {
@@ -71,7 +71,7 @@ class RawPayload
         $payload = [
             'type' => $type,
             'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            'device' => self::device($imei, $supplier, $model, $commercialName),
+            'device' => DeviceDescriptor::fromParts($imei, $supplier, $model, $commercialName),
         ];
 
         if ($error !== null) {
@@ -143,21 +143,5 @@ class RawPayload
 
         $decoded = json_decode(substr($raw, 4, $length), true);
         return is_array($decoded) && isset($decoded['type']) ? $decoded : null;
-    }
-
-    private static function device(string $imei, string $supplier, string $model, string $commercialName = ''): array
-    {
-        $device = ['id' => $imei];
-        if ($supplier !== '') {
-            $device['supplier'] = $supplier;
-        }
-        if ($model !== '') {
-            $device['model'] = $model;
-        }
-        if ($commercialName !== '') {
-            $device['commercialName'] = $commercialName;
-        }
-
-        return $device;
     }
 }

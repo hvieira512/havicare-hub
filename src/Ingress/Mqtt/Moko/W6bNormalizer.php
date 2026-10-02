@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
+use Hub\Device\DeviceDescriptor;
+
 /**
  * Traz um anúncio W6B descodificado para as formas genéricas do hub.
  *
@@ -80,11 +82,6 @@ final class W6bNormalizer
     /** @param array<string, mixed> $device @return array<string, string> */
     private function device(array $device): array
     {
-        return array_filter([
-            'id' => (string)$device['imei'],
-            'supplier' => (string)($device['supplier'] ?? ''),
-            'model' => (string)($device['model'] ?? ''),
-            'commercialName' => (string)($device['commercialName'] ?? ''),
-        ], static fn(string $value): bool => $value !== '');
+        return DeviceDescriptor::of((string)$device['imei'], $device);
     }
 }

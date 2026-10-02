@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Ncs;
 
+use Hub\Device\DeviceDescriptor;
 use Hub\Device\RawPayload;
 use Hub\Support\Values;
 
@@ -105,12 +106,7 @@ final class MessageNormalizer
         return [
             'direction' => 'uplink',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => array_filter([
-                'id' => (string)$device['imei'],
-                'supplier' => (string)$device['supplier'],
-                'model' => (string)$device['model'],
-                'commercialName' => (string)($device['commercialName'] ?? ''),
-            ], static fn (mixed $value): bool => $value !== ''),
+            'device' => DeviceDescriptor::of((string)$device['imei'], $device),
             'debug' => Values::withoutNulls([
                 'protocol' => 'voerka-ncs',
                 'transport' => 'mqtt',
@@ -129,18 +125,7 @@ final class MessageNormalizer
      */
     private function device(array $device): array
     {
-        $payload = ['id' => (string)$device['imei']];
-        if ((string)($device['supplier'] ?? '') !== '') {
-            $payload['supplier'] = (string)$device['supplier'];
-        }
-        if ((string)($device['model'] ?? '') !== '') {
-            $payload['model'] = (string)$device['model'];
-        }
-        if ((string)($device['commercialName'] ?? '') !== '') {
-            $payload['commercialName'] = (string)$device['commercialName'];
-        }
-
-        return $payload;
+        return DeviceDescriptor::of((string)$device['imei'], $device);
     }
 
     private function resolveNcsEventType(string $key): ?string

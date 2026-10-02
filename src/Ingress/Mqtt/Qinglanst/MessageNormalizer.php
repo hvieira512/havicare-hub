@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Qinglanst;
 
+use Hub\Device\DeviceDescriptor;
+
 final class MessageNormalizer
 {
     private const LEVEL_INFO = 'info';
@@ -389,17 +391,7 @@ final class MessageNormalizer
     private function deviceInfo(QinglanstTopic $topic, array $device): array
     {
         // O IMEI canónico, o mesmo que vai no tópico publicado.
-        $info = ['id' => (string)($device['imei'] ?? $topic->deviceUid)];
-        if ((string)($device['supplier'] ?? '') !== '') {
-            $info['supplier'] = (string)$device['supplier'];
-        }
-        if ((string)($device['model'] ?? '') !== '') {
-            $info['model'] = (string)$device['model'];
-        }
-        if ((string)($device['commercialName'] ?? '') !== '') {
-            $info['commercialName'] = (string)$device['commercialName'];
-        }
-        return $info;
+        return DeviceDescriptor::of((string)($device['imei'] ?? $topic->deviceUid), $device);
     }
 
     /**
