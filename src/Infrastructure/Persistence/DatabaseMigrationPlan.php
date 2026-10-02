@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\Migration;
+use Hub\Infrastructure\Persistence\Migration\WhitelistKeyCascadesOnRename;
 
 /**
  * As migrações posteriores à baseline, que é o `database/schema.sql` mais o catálogo que o
@@ -17,8 +18,8 @@ use Hub\Infrastructure\Persistence\Migration\Migration;
  * **O catálogo de capacidades não entra:** o `DatabaseMigrator` reconcilia-o do código a cada
  * arranque, e doze migrações que não faziam outra coisa saíram daqui por causa disso.
  *
- * A lista está vazia: uma migração sai daqui quando as instâncias todas a têm aplicada e uma
- * base nova chega ao mesmo estado sem ela. O `DatabaseSchemaGuard` só exige que o que está
+ * Uma migração sai daqui quando as instâncias todas a têm aplicada e uma base nova chega ao
+ * mesmo estado sem ela. O `DatabaseSchemaGuard` só exige que o que está
  * aqui esteja aplicado, e por isso as linhas que sobram na `schema_migrations` não incomodam.
  */
 final class DatabaseMigrationPlan
@@ -26,7 +27,9 @@ final class DatabaseMigrationPlan
     /** @return list<Migration> */
     public function migrations(): array
     {
-        return [];
+        return [
+            new WhitelistKeyCascadesOnRename(),
+        ];
     }
 
     /** @return list<string> */

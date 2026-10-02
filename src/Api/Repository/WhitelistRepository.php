@@ -151,6 +151,16 @@ final class WhitelistRepository
         $stmt->execute([$supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company, $imei]);
     }
 
+    /**
+     * Muda o IMEI de um dispositivo mantendo a mesma linha, para o `ON UPDATE CASCADE` levar
+     * com ela as ligações de gateway e a planta do radar.
+     */
+    public function rename(string $imei, string $newImei): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE whitelist SET imei = ? WHERE imei = ?');
+        $stmt->execute([$newImei, $imei]);
+    }
+
     /** A fronteira entre o `NULL` da tabela e a sentinela em memória. */
     private static function storedCompany(string $company): ?string
     {

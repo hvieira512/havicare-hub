@@ -101,6 +101,24 @@ class Whitelist
         }
     }
 
+    /**
+     * O dispositivo passa a atender por outro IMEI, sem deixar de ser a mesma linha: é isso
+     * que leva com ele o que aponta para a chave antiga.
+     */
+    public function rename(string $imei, string $newImei): void
+    {
+        $metadata = $this->devices[$imei] ?? null;
+        if ($metadata !== null) {
+            unset($this->devices[$imei]);
+            $this->devices[$newImei] = $metadata;
+        }
+
+        $this->db?->rename($imei, $newImei);
+        if ($this->db === null) {
+            $this->saveFile();
+        }
+    }
+
     public function unregister(string $imei): void
     {
         unset($this->devices[$imei]);

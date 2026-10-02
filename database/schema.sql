@@ -124,8 +124,8 @@ CREATE TABLE IF NOT EXISTS gateway_device_links (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (gateway_device_key, linked_device_key),
     KEY idx_gateway_device_links_linked (linked_device_key, enabled),
-    CONSTRAINT fk_gateway_device_links_gateway FOREIGN KEY (gateway_device_key) REFERENCES whitelist(imei) ON DELETE CASCADE,
-    CONSTRAINT fk_gateway_device_links_device FOREIGN KEY (linked_device_key) REFERENCES whitelist(imei) ON DELETE CASCADE
+    CONSTRAINT fk_gateway_device_links_gateway FOREIGN KEY (gateway_device_key) REFERENCES whitelist(imei) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_gateway_device_links_device FOREIGN KEY (linked_device_key) REFERENCES whitelist(imei) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS device_configurations (
@@ -263,7 +263,7 @@ CREATE TABLE IF NOT EXISTS radar_layouts (
     fetched_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_radar_layouts_device FOREIGN KEY (imei)
-        REFERENCES whitelist(imei) ON DELETE CASCADE
+        REFERENCES whitelist(imei) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- As áreas declaradas no aparelho: camas, portas, zonas de alarme. São caixas e não polígonos

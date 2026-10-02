@@ -6,7 +6,6 @@ use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\DevicePresentation;
 use Hub\Api\Http\DeviceResponseCompactor;
-use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Repository\ApiDataAccess;
@@ -493,10 +492,15 @@ class DeviceService
         // A regra do `create` nos dois sentidos: a projecção ganha primeiro e perde por
         // último, e o registo novo entra antes de o antigo sair. Uma falha a meio deixa no
         // máximo uma entrada a mais no Redis, nunca um dispositivo sem inventário.
+        // O IMEI muda na própria linha, e não por uma entrada nova mais a remoção da antiga:
+        // é o `ON UPDATE CASCADE` que leva com ele as ligações de gateway e a planta do
+        // radar, que apontam para esta chave.
+        if ($newImei !== $imei) {
+            $this->whitelist->rename($imei, $newImei);
+        }
         $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         if ($newImei !== $imei) {
-            $this->whitelist->unregister($imei);
             $this->store->deleteDevice($imei);
         }
 
