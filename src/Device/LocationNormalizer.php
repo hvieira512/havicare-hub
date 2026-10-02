@@ -140,10 +140,6 @@ final class LocationNormalizer
         if ($hasWifi) {
             return 'wifi';
         }
-        if ($hasBaseStations) {
-            return 'cell';
-        }
-
         return 'cell';
     }
 

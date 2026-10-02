@@ -71,14 +71,6 @@ final class GenericCapabilityRepository
         return $row === false ? null : $this->enrichRow(TimestampFormatter::normalizeRow($row));
     }
 
-    /**
-     * @return list<string>
-     */
-    public function keysForDeviceType(string $deviceType): array
-    {
-        return CapabilityCatalog::keysForDeviceType($deviceType);
-    }
-
     public function findIdByDeviceTypeAndKey(string $deviceType, string $key): ?int
     {
         $stmt = $this->pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');

@@ -25,7 +25,6 @@ parameters:
         # this call site cannot receive as null. Removing them would make the code
         # more brittle against inputs the type system only *believes* are narrow.
         - identifier: nullCoalesce.offset
-        - identifier: nullCoalesce.expr
         - identifier: nullsafe.neverNull
         - identifier: function.alreadyNarrowedType
         - identifier: booleanAnd.rightAlwaysTrue

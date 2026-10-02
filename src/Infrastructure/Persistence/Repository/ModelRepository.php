@@ -68,11 +68,6 @@ final class ModelRepository
         return null;
     }
 
-    public function protocolForModel(string $supplier, string $internalModel): string
-    {
-        return DeviceProtocol::forModel($supplier, $internalModel);
-    }
-
     public function add(int $supplierId, string $internalModel, string $commercialName, string $deviceType, ?string $imagePath = null): void
     {
         $existing = $this->findBySupplierId($supplierId, $internalModel);

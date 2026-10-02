@@ -16,21 +16,6 @@ final class DeviceCommandCatalog
     /**
      * @return array<int, array<string, mixed>>
      */
-    public static function models(): array
-    {
-        return [
-            ['supplier' => 'Wonlex', 'model' => 'HW20PRO', 'image' => '', 'protocol' => 'wonlex-json'],
-            ['supplier' => 'Wonlex', 'model' => 'L08 Pro', 'image' => '', 'protocol' => 'wonlex-json'],
-            ['supplier' => 'Vivistar', 'model' => 'VIVISTAR-CARE', 'image' => '', 'protocol' => 'vivistar-iw'],
-            ['supplier' => 'Vivistar', 'model' => 'VIVISTAR-LITE', 'image' => '', 'protocol' => 'vivistar-iw'],
-            ['supplier' => '4P Touch', 'model' => '4P-TOUCH', 'image' => '', 'protocol' => 'four-p-touch'],
-            ['supplier' => '4P Touch', 'model' => 'D46', 'image' => '', 'protocol' => 'four-p-touch'],
-        ];
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
     public static function commandsForProtocol(string $protocol): array
     {
         return match ($protocol) {

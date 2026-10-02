@@ -77,7 +77,7 @@ final class AlarmClockCapability implements CapabilityContract
 
     public function defaultValue(string $protocol): mixed
     {
-        return $this->handlers[$protocol]?->defaultValue() ?? [];
+        return ($this->handlers[$protocol] ?? null)?->defaultValue() ?? [];
     }
 
     // ------------------------------------------------------------------
@@ -86,7 +86,7 @@ final class AlarmClockCapability implements CapabilityContract
 
     public function meta(string $protocol, array $accumulatedMeta = []): array
     {
-        $meta = $this->handlers[$protocol]?->meta($accumulatedMeta) ?? $accumulatedMeta;
+        $meta = ($this->handlers[$protocol] ?? null)?->meta($accumulatedMeta) ?? $accumulatedMeta;
 
         $recurrenceOptions = $meta['mode']['options'] ?? null;
         if (!is_array($recurrenceOptions) || $recurrenceOptions === []) {
