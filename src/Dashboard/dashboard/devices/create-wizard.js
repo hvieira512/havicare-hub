@@ -1,3 +1,4 @@
+import { html } from "../html.js";
 import {
     createDeviceLink as apiCreateDeviceLink,
     getDevices as apiGetDevices,
@@ -5,7 +6,6 @@ import {
 } from "../api/index.js";
 import { ensureLicensesLoaded } from "../licenses.js";
 import { toast } from "../dialogs.js";
-import { esc } from "../format.js";
 import { state } from "../state.js";
 import { field } from "../components/form-field.js";
 import { modelPreviewHtml } from "../components/model-image.js";
@@ -188,8 +188,8 @@ function renderArt() {
     const info = findModelInfo(chosen.supplier, chosen.model, state.deviceTypeSuppliersModels);
     els.wizardArt.innerHTML = `
         ${modelPreviewHtml(info, chosen.model)}
-        <div class="wizard-art-name fw-semibold text-center">${esc(chosen.supplier)} ${esc(chosen.model)}</div>
-        <div class="wizard-art-sub text-secondary text-center">${esc(deviceTypeLabel(answers.type))}</div>`;
+        <div class="wizard-art-name fw-semibold text-center">${chosen.supplier} ${chosen.model}</div>
+        <div class="wizard-art-sub text-secondary text-center">${(deviceTypeLabel(answers.type))}</div>`;
 }
 
 /**
@@ -247,7 +247,7 @@ function modelCountFor(type) {
 
 function renderTypeGrid(selected) {
     return deviceTypeCardsHtml({
-        attrsFor: (value) => `data-wizard-type="${esc(value)}"`,
+        attrsFor: (value) => html`data-wizard-type="${value}"`,
         countFor: modelCountFor,
         selected: selected || "",
     });
@@ -256,7 +256,7 @@ function renderTypeGrid(selected) {
 function renderSupplier(type, selected) {
     const suppliers = suppliersForDeviceType(type, state.deviceTypeSuppliersModels);
     if (suppliers.length === 0) {
-        return `<p class="text-secondary small mb-0">Nenhum modelo registado para este tipo.
+        return html`<p class="text-secondary small mb-0">Nenhum modelo registado para este tipo.
             Registe o modelo no catálogo antes de adicionar o dispositivo.</p>`;
     }
 
@@ -265,7 +265,7 @@ function renderSupplier(type, selected) {
         supplierCardsHtml({
             suppliers,
             selected: selected || "",
-            attrsFor: (name) => `data-wizard-supplier="${esc(name)}"`,
+            attrsFor: (name) => html`data-wizard-supplier="${name}"`,
         }),
         { help: suppliers.length === 1 ? "Só um fornecedor tem modelos deste tipo." : "" },
     );
@@ -281,12 +281,12 @@ function renderModel(type, supplier, selected) {
         models,
         selected: selected || "",
         attrsFor: (internal) =>
-            `data-wizard-model="${esc(internal)}" data-wizard-model-supplier="${esc(supplier)}"`,
+            html`data-wizard-model="${internal}" data-wizard-model-supplier="${supplier}"`,
     });
 }
 
 function renderOwner(owner) {
-    return `
+    return html`
         <label class="form-label-sm">Licença</label>
         ${licensePickerHtml(licenseGroups, owner)}`;
 }
@@ -295,22 +295,22 @@ function renderIdentity(answers) {
     const fields = deviceTypeFields(answers.type);
     const gateways = eligibleGatewayList(answers);
 
-    return `
+    return html`
         <div>
-            <label class="form-label-sm" for="wizardIdentity">${esc(fields.identity.label)}</label>
+            <label class="form-label-sm" for="wizardIdentity">${fields.identity.label}</label>
             <input type="text" class="form-control" id="wizardIdentity" data-wizard-identity
-                placeholder="${esc(fields.identity.placeholder)}" value="${esc(answers.identity || "")}">
-            <div class="form-text">${esc(fields.identity.help)}</div>
+                placeholder="${fields.identity.placeholder}" value="${answers.identity || ""}">
+            <div class="form-text">${fields.identity.help}</div>
         </div>
         ${fields.sim
-            ? `<div>
+            ? html`<div>
                 <label class="form-label-sm" for="wizardSim">Número do SIM</label>
                 <input type="text" class="form-control" id="wizardSim" data-wizard-sim
-                    value="${esc(answers.sim || "")}">
+                    value="${answers.sim || ""}">
                </div>`
             : ""}
         ${fields.gatewayLinks
-            ? `<div>
+            ? html`<div>
                 <label class="form-label-sm">Gateways autorizados</label>
                 <div class="gateway-picker d-grid gap-2 overflow-y-auto">
                     ${gateways.length
@@ -364,10 +364,10 @@ function renderFooter() {
     // convida a ser premido.
     els.wizardBackBtn.classList.toggle("d-none", !wizard.canGoBack());
     els.wizardBackBtn.innerHTML =
-        `<i class="fa-solid fa-arrow-left me-2"></i>${esc(STEPS[step - 2] || "")}`;
+        html`<i class="fa-solid fa-arrow-left me-2"></i>${STEPS[step - 2] || ""}`;
     els.wizardNextBtn.innerHTML = last
         ? "<i class=\"fa-solid fa-plus me-2\"></i>Criar dispositivo"
-        : `Seguinte: ${esc(STEPS[step])}<i class="fa-solid fa-arrow-right ms-2"></i>`;
+        : `Seguinte: ${STEPS[step]}<i class="fa-solid fa-arrow-right ms-2"></i>`;
     // Com um POST no ar o botão fica desligado: escrever num campo redesenha o rodapé, e sem
     // isto reacendia-o a meio da criação.
     els.wizardNextBtn.disabled = creating ||

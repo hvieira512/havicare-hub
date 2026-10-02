@@ -1,4 +1,4 @@
-import { esc } from "./format.js";
+import { html } from "./html.js";
 
 const PHONE_COUNTRIES = [
     {
@@ -75,34 +75,37 @@ export function renderPhoneControl({
     const parsed = parseStoredPhone(value);
     const country = phoneCountry(parsed.countryCode);
     const fieldAttr =
-        configField !== "" ? ` data-config-field="${esc(configField)}"` : "";
+        configField !== "" ? html` data-config-field="${configField}"` : "";
     const repeatAttr =
-        repeatField !== "" ? ` data-repeat-field="${esc(repeatField)}"` : "";
+        repeatField !== "" ? html` data-repeat-field="${repeatField}"` : "";
     const normalizedMaxLength = parseInt(String(maxLength), 10) || 0;
     const maxLengthAttr = normalizedMaxLength > 0
-        ? ` data-phone-max-length="${esc(String(normalizedMaxLength))}"`
+        ? html` data-phone-max-length="${normalizedMaxLength}"`
+        : "";
+    const localMaxLengthAttr = normalizedMaxLength > 0
+        ? html`maxlength="${normalizedMaxLength}"`
         : "";
 
-    return `
+    return html`
         <div class="vstack gap-1" data-phone-control${fieldAttr}${repeatAttr}${maxLengthAttr}>
             <div class="input-group">
                 <select class="form-select flex-grow-0 w-auto" data-phone-country aria-label="País">
                     ${PHONE_COUNTRIES.map(
-                        (option) => `
-                        <option value="${esc(option.code)}" ${option.code === country.code ? "selected" : ""} title="${esc(option.name)}" aria-label="${esc(`${option.name} (+${option.dialCode})`)}">
-                            ${esc(`${option.flag} +${option.dialCode}`)}
+                        (option) => html`
+                        <option value="${option.code}" ${option.code === country.code ? "selected" : ""} title="${option.name}" aria-label="${`${option.name} (+${option.dialCode})`}">
+                            ${`${option.flag} +${option.dialCode}`}
                         </option>
                     `,
-                    ).join("")}
+                    )}
                 </select>
                 <input
                     class="form-control"
                     type="tel"
                     inputmode="tel"
                     autocomplete="tel-national"
-                    ${normalizedMaxLength > 0 ? `maxlength="${esc(String(normalizedMaxLength))}"` : ""}
+                    ${localMaxLengthAttr}
                     data-phone-local
-                    value="${esc(formatLocalNumber(country.code, parsed.localDigits))}">
+                    value="${formatLocalNumber(country.code, parsed.localDigits)}">
             </div>
             <div class="invalid-feedback d-none" data-phone-feedback></div>
         </div>`;

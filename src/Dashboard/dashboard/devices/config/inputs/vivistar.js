@@ -1,4 +1,4 @@
-import { esc } from "../../../format.js";
+import { html } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
 import { boolValue } from "../normalizers.js";
 import { numberField } from "./shared.js";
@@ -35,14 +35,14 @@ function fallSensitivityInput(desired) {
         },
     ];
 
-    return `
+    return html`
         <div>
             <label class="form-label-sm">Sensibilidade</label>
-            <input type="hidden" data-config-field="sensitivity" value="${esc(String(current))}">
+            <input type="hidden" data-config-field="sensitivity" value="${String(current)}">
             <div class="btn-group w-100" role="group" aria-label="Sensibilidade de queda" data-config-choice-group="sensitivity">
                 ${options
                     .map(
-                        (option) => `
+                        (option) => html`
                     <button
                         type="button"
                         class="btn ${option.className} ${option.value === current ? "active" : ""}"
@@ -53,8 +53,7 @@ function fallSensitivityInput(desired) {
                         <i class="fa-solid ${option.icon} me-2"></i>${option.label}
                     </button>
                 `,
-                    )
-                    .join("")}
+                    )}
             </div>
         </div>`;
 }
@@ -105,14 +104,14 @@ function workingModeInput(desired) {
         },
     ];
 
-    return `
+    return html`
         <div class="vstack gap-3">
             <div>
                 <label class="form-label-sm">Modo</label>
                 <div class="row g-2">
                     ${options
                         .map(
-                            (option) => `
+                            (option) => html`
                         <div class="col-12 col-md-6">
                             <input
                                 class="btn-check"
@@ -131,8 +130,7 @@ function workingModeInput(desired) {
                             </label>
                         </div>
                     `,
-                        )
-                        .join("")}
+                        )}
                 </div>
             </div>
             <div class="${mode === 8 ? "" : "d-none"}" data-working-mode-extra>

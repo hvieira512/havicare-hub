@@ -1,4 +1,4 @@
-import { esc } from "../../../format.js";
+import { html } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
 import { renderPhoneControl } from "../../../phone.js";
 import {
@@ -54,30 +54,29 @@ function diaperSensitivityInput(desired, meta = {}) {
             const preset = presets[level.profile];
             const active = Number(preset.pollutionRange) === Number(range) &&
                 Number(preset.pollutionValue) === Number(value);
-            return `
+            return html`
             <button type="button" class="btn ${level.className}${active ? " active" : ""}"
                 data-action="selectConfigChoice"
-                data-config-preset="${esc(JSON.stringify(preset))}"
+                data-config-preset="${JSON.stringify(preset)}"
                 aria-pressed="${active ? "true" : "false"}">
-                <i class="fa-solid ${esc(level.icon)} me-2"></i>${esc(level.label)}
+                <i class="fa-solid ${level.icon} me-2"></i>${level.label}
             </button>`;
-        })
-        .join("");
+        });
 
-    return `
+    return html`
         <div>
-            ${buttons === "" ? "" : `<div class="btn-group w-100 mb-2" role="group" aria-label="Sensibilidade dos alertas" data-config-choice-group="diaperSensitivity">${buttons}</div>`}
+            ${buttons.length === 0 ? "" : html`<div class="btn-group w-100 mb-2" role="group" aria-label="Sensibilidade dos alertas" data-config-choice-group="diaperSensitivity">${buttons}</div>`}
             <div class="row g-2">
                 <div class="col">
                     <label class="form-label-sm mb-1" for="diaperPollutionRange">Canais afetados</label>
                     <input type="number" class="form-control" id="diaperPollutionRange" data-config-field="pollutionRange"
-                        min="${esc(String(rangeMin))}" max="${esc(String(rangeMax))}" step="1" value="${esc(String(range))}">
+                        min="${(String(rangeMin))}" max="${(String(rangeMax))}" step="1" value="${(String(range))}">
                     <div class="form-text">Quantos canais molhados obrigam a uma muda.</div>
                 </div>
                 <div class="col">
                     <label class="form-label-sm mb-1" for="diaperPollutionValue">Limiar por canal</label>
                     <input type="number" class="form-control" id="diaperPollutionValue" data-config-field="pollutionValue"
-                        min="${esc(String(valueMin))}" max="${esc(String(valueMax))}" step="1" value="${esc(String(value))}">
+                        min="${(String(valueMin))}" max="${(String(valueMax))}" step="1" value="${(String(value))}">
                     <div class="form-text">A partir de quanto um canal conta como molhado.</div>
                 </div>
             </div>
@@ -87,18 +86,18 @@ function diaperSensitivityInput(desired, meta = {}) {
 
 function windowToggleInput(_entry, desired) {
     const [start = "22:00", end = "08:00"] = String(desired.range ?? "22:00-08:00").split("-");
-    return `
+    return html`
         <div class="row g-3 align-items-end">
             <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
-            ${field("Início", `<input class="form-control" type="time" data-config-field="rangeStart" value="${esc(start)}">`, { cls: "col-md-4" })}
-            ${field("Fim", `<input class="form-control" type="time" data-config-field="rangeEnd" value="${esc(end)}">`, { cls: "col-md-4" })}
+            ${field("Início", html`<input class="form-control" type="time" data-config-field="rangeStart" value="${start}">`, { cls: "col-md-4" })}
+            ${field("Fim", html`<input class="form-control" type="time" data-config-field="rangeEnd" value="${end}">`, { cls: "col-md-4" })}
         </div>`;
 }
 
 /** Os limiares que o aparelho avalia sobre a medição dele. */
 
 function heartRateThresholdsInput(_entry, desired) {
-    return `
+    return html`
         <div class="row g-3 align-items-end">
             <div class="col-md-4">${enabledSwitch(boolValue(desired.enabled, true), "mt-4")}</div>
             ${field("Máximo (bpm)", numberField("maxBpm", desired.maxBpm ?? 150, { min: 40, max: 220 }), { cls: "col-md-4" })}
@@ -115,14 +114,14 @@ function heartRateThresholdsInput(_entry, desired) {
 
 function personalInfoInput(_entry, desired) {
     const sex = desired.sex === "male" ? "male" : "female";
-    return `
+    return html`
         <div class="row g-3">
             ${field("Altura (cm)", numberField("heightCm", desired.heightCm ?? 170, { min: 50, max: 250 }), { cls: "col-md-4" })}
             ${field("Peso (kg)", numberField("weightKg", desired.weightKg ?? 70, { min: 10, max: 300 }), { cls: "col-md-4" })}
             ${field("Idade", numberField("age", desired.age ?? 40, { min: 1, max: 120 }), { cls: "col-md-4" })}
             ${field(
                 "Sexo",
-                `<select class="form-select" data-config-field="sex">
+                html`<select class="form-select" data-config-field="sex">
                     <option value="female"${sex === "female" ? " selected" : ""}>Feminino</option>
                     <option value="male"${sex === "male" ? " selected" : ""}>Masculino</option>
                 </select>`,
@@ -142,13 +141,13 @@ function sosContactsInput(entry, desired, meta = {}) {
             ? meta.phonebookContacts.filter((contact) => contact?.phone)
             : [];
         if (contacts.length === 0) {
-            return `
+            return html`
                 <div class="alert alert-warning small mb-0">
                     Adicione primeiro os contactos à Lista telefónica. Os contactos SOS do Wonlex são selecionados dessa lista.
                 </div>`;
         }
 
-        return `
+        return html`
             <div>
                 <div class="form-label-sm">Selecionar da lista telefónica</div>
                 <div class="vstack gap-2">
@@ -156,21 +155,21 @@ function sosContactsInput(entry, desired, meta = {}) {
                         const phone = String(contact.phone || "");
                         const name = String(contact.name || "").trim();
                         const id = `${nextUid("sos-phonebook")}-${index}`;
-                        return `
-                            <label class="border rounded bg-body p-3 d-flex align-items-center gap-3" for="${esc(id)}">
+                        return html`
+                            <label class="border rounded bg-body p-3 d-flex align-items-center gap-3" for="${id}">
                                 <input
-                                    id="${esc(id)}"
+                                    id="${id}"
                                     class="form-check-input mt-0"
                                     type="checkbox"
                                     data-sos-contact-phone
-                                    value="${esc(phone)}"
+                                    value="${phone}"
                                     ${selected.has(phone) ? "checked" : ""}>
                                 <span>
-                                    <span class="d-block fw-semibold">${esc(name || phone)}</span>
-                                    ${name ? `<span class="small text-secondary">${esc(phone)}</span>` : ""}
+                                    <span class="d-block fw-semibold">${name || phone}</span>
+                                    ${name ? html`<span class="small text-secondary">${phone}</span>` : ""}
                                 </span>
                             </label>`;
-                    }).join("")}
+                    })}
                 </div>
                 <div class="form-text">Apenas contactos existentes na lista telefónica podem ser usados como SOS.</div>
             </div>`;
@@ -215,18 +214,18 @@ function phoneRepeaterInput(entry, desired, options) {
     const emptyLabel = String(options.emptyLabel || "Adicionar");
     const phoneMaxLength = Math.max(0, parseInt(String(options.phoneMaxLength ?? 0), 10) || 0);
 
-    return `
+    return html`
         <div class="vstack gap-3">
             <div class="d-flex justify-content-between align-items-center gap-2">
-                <label class="form-label-sm mb-0">${esc(label)}</label>
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="${esc(kind)}" ${rows.length >= limit ? "disabled" : ""}>${esc(emptyLabel)}</button>
+                <label class="form-label-sm mb-0">${label}</label>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="${kind}" ${rows.length >= limit ? "disabled" : ""}>${emptyLabel}</button>
             </div>
-            ${helpText !== "" ? `<div class="small text-secondary">${esc(helpText)}</div>` : ""}
-            <div class="vstack gap-2" data-repeat-list="${esc(kind)}" data-repeat-limit="${limit}">
+            ${helpText !== "" ? html`<div class="small text-secondary">${helpText}</div>` : ""}
+            <div class="vstack gap-2" data-repeat-list="${kind}" data-repeat-limit="${limit}">
                 ${rows
-                    .map(
-                        (value, index) => `
-                    <div class="row g-2 align-items-end" data-repeat-row="${esc(kind)}">
+                        .map(
+                            (value, index) => html`
+                    <div class="row g-2 align-items-end" data-repeat-row="${kind}">
                         <div class="col">
                             ${renderPhoneControl({
                                 value: String(value || ""),
@@ -239,8 +238,8 @@ function phoneRepeaterInput(entry, desired, options) {
                         </div>
                     </div>
                 `,
-                    )
-                    .join("")}
+                        )
+                }
             </div>
         </div>`;
 }
@@ -252,7 +251,7 @@ function phoneRepeaterInput(entry, desired, options) {
 function alarmClockMasterSwitch(desired) {
     const enabled = boolValue(desired?.masterEnabled, true);
 
-    return `
+    return html`
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" data-alarm-clock-field="masterEnabled" ${enabled ? "checked" : ""}>
             <label class="form-check-label" data-switch-label data-switch-on="Lembretes ligados" data-switch-off="Lembretes desligados">${enabled ? "Lembretes ligados" : "Lembretes desligados"}</label>
@@ -285,11 +284,11 @@ function alarmClockInput(entry, desired, meta = {}) {
     const group = nextUid("alarm-clock-group");
     const shown = items.slice(0, limit);
 
-    return `
+    return html`
         <div class="vstack gap-3">
             ${hasMaster ? alarmClockMasterSwitch(desired) : ""}
             <div class="vstack gap-2" data-repeat-list="alarm_clock" data-repeat-limit="${limit}">
-                ${shown.map((item) => alarmClockRow(item, typeOptions, recurrenceOptions, wonlexFields, group)).join("")}
+                ${shown.map((item) => alarmClockRow(item, typeOptions, recurrenceOptions, wonlexFields, group))}
             </div>
             ${addAlarmButton("alarm_clock", "Acrescentar alarme", shown.length, limit)}
         </div>`;
@@ -324,66 +323,66 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
     const typeLabel = hasTypeSelector
         ? String(typeOptions.find((option) => (parseInt(String(option.value), 10) || 1) === typeValue)?.label || "")
         : "";
-    const control = `
+    const control = html`
         <div class="form-check form-switch m-0">
             <input class="form-check-input" type="checkbox" role="switch" aria-label="Alarme ligado" data-alarm-clock-field="enabled" ${boolValue(item.enabled, true) ? "checked" : ""}>
         </div>`;
-    const body = `
+    const body = html`
             <div class="d-flex flex-wrap align-items-end gap-3">
                 ${field(
                     "Hora",
-                    `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(time)}" required>`,
+                    html`<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${time}" required>`,
                     { cls: "alarm-field-time", required: true },
                 )}
                 ${wonlexFields.label
                     ? field(
                             "Nome do alarme",
-                            `<input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}">`,
+                            html`<input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${(String(item.label || ""))}">`,
                             { cls: "alarm-field-grow" },
                         )
                     : ""}
                 ${field(
                     "Recorrência",
-                    `<div class="btn-group" role="group" aria-label="Recorrência do alarme">
+                    html`<div class="btn-group" role="group" aria-label="Recorrência do alarme">
                         ${recurrenceButtonOptions
-                            .map((option) => {
-                                const optionValue = normalizeAlarmClockRecurrenceKind(option.value);
-                                const inputId = `${rowId}-recurrence-${optionValue}`;
-                                return `
+                                .map((option) => {
+                                    const optionValue = normalizeAlarmClockRecurrenceKind(option.value);
+                                    const inputId = `${rowId}-recurrence-${optionValue}`;
+                                    return html`
                             <input
                                 class="btn-check"
                                 type="radio"
                                 name="${rowId}-recurrence"
                                 id="${inputId}"
-                                value="${esc(optionValue)}"
+                                value="${optionValue}"
                                 data-alarm-clock-field="recurrenceKind"
                                 ${optionValue === recurrenceValue ? "checked" : ""}>
-                            <label class="btn btn-outline-secondary btn-sm" for="${inputId}">${esc(String(option.label))}</label>
+                            <label class="btn btn-outline-secondary btn-sm" for="${inputId}">${(String(option.label))}</label>
                         `;
-                            })
-                            .join("")}
+                                })
+                        }
                     </div>`,
                     { required: true },
                 )}
                 ${hasTypeSelector
                     ? field(
                             "Tipo",
-                            `<div class="btn-group" role="group" aria-label="Tipo de alarme">
+                            html`<div class="btn-group" role="group" aria-label="Tipo de alarme">
                         ${typeOptions.map((option) => {
                             const optionValue = parseInt(String(option.value), 10) || 1;
                             const inputId = `${rowId}-type-${optionValue}`;
-                            return `
+                            return html`
                             <input
                                 class="btn-check"
                                 type="radio"
                                 name="${rowId}-type"
                                 id="${inputId}"
-                                value="${esc(String(optionValue))}"
+                                value="${(String(optionValue))}"
                                 data-alarm-clock-field="type"
                                 ${optionValue === typeValue ? "checked" : ""}>
-                            <label class="btn btn-outline-primary btn-sm" for="${inputId}">${esc(String(option.label || option.value))}</label>
+                            <label class="btn btn-outline-primary btn-sm" for="${inputId}">${(String(option.label || option.value))}</label>
                         `;
-                        }).join("")}
+                        })}
                     </div>`,
                             { cls: "flex-shrink-0" },
                         )
@@ -394,7 +393,7 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                 ${wonlexFields.url
                     ? field(
                             "Som do lembrete",
-                            `<input class="form-control" type="url" inputmode="url" placeholder="https://exemplo.pt/lembrete.mp3" data-alarm-clock-field="url" value="${esc(String(item.url || ""))}">`,
+                            html`<input class="form-control" type="url" inputmode="url" placeholder="https://exemplo.pt/lembrete.mp3" data-alarm-clock-field="url" value="${(String(item.url || ""))}">`,
                             {
                                 cls: "w-100",
                                 help: "Endereço HTTP ou HTTPS opcional para o ficheiro de voz do lembrete.",

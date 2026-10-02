@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
+import { html } from "../../src/Dashboard/dashboard/html.js";
 
 const {
     cardGrid,
@@ -95,8 +96,8 @@ test("a barra tem um traço por passo, e os já feitos preenchidos", () => {
 test("o card escolhido fica marcado, e é o único", () => {
     const root = parseFragment(
         cardGrid("Escolha", [
-            { attrs: "data-x=\"a\"", label: "A", selected: false },
-            { attrs: "data-x=\"b\"", label: "B", selected: true },
+            { attrs: html`data-x="a"`, label: "A", selected: false },
+            { attrs: html`data-x="b"`, label: "B", selected: true },
         ]),
     );
 
@@ -108,7 +109,7 @@ test("o card escolhido fica marcado, e é o único", () => {
 test("os tipos de dispositivo saem todos, com o número de modelos de cada um", () => {
     const root = parseFragment(
         deviceTypeCardsHtml({
-            attrsFor: (value) => `data-type="${value}"`,
+            attrsFor: (value) => html`data-type="${value}"`,
             selected: "gateway",
             countFor: (value) => (value === "watch" ? 1 : 4),
         }),
@@ -130,7 +131,7 @@ test("os tipos de dispositivo saem todos, com o número de modelos de cada um", 
 
 test("sem contagem não sai subtítulo nenhum: no modal de edição não há nada para contar", () => {
     const root = parseFragment(
-        deviceTypeCardsHtml({ attrsFor: (value) => `data-type="${value}"`, selected: "watch" }),
+        deviceTypeCardsHtml({ attrsFor: (value) => html`data-type="${value}"`, selected: "watch" }),
     );
 
     assert.equal(root.querySelector(".wizard-card-sub"), null);
@@ -143,7 +144,7 @@ test("o card do modelo leva fotografia, o nome comercial e o modelo interno", ()
         { supplier: "4P Touch", internalModel: "D41", commercialName: "D41", image: "" },
     ];
     const root = parseFragment(
-        modelCardsHtml({ models, attrsFor: (internal) => `data-model="${internal}"`, selected: "D41" }),
+        modelCardsHtml({ models, attrsFor: (internal) => html`data-model="${internal}"`, selected: "D41" }),
     );
 
     const first = root.querySelector("[data-model=\"Y6S\"]");
@@ -161,7 +162,7 @@ test("o fornecedor escolhido é o que está marcado, e a contagem é opcional", 
         supplierCardsHtml({
             suppliers: ["4P Touch", "Wonlex"],
             selected: "Wonlex",
-            attrsFor: (name) => `data-supplier="${name}"`,
+            attrsFor: (name) => html`data-supplier="${name}"`,
             countFor: (name) => (name === "Wonlex" ? 3 : null),
         }),
     );

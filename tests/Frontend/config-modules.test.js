@@ -3,9 +3,13 @@ import assert from "node:assert/strict";
 
 import { parseFragment } from "./support/dom.js";
 import {
-    takePillsInput,
-    takePillsReminderGroup,
+    takePillsInput as buildTakePillsInput,
+    takePillsReminderGroup as buildTakePillsReminderGroup,
 } from "../../src/Dashboard/dashboard/devices/config/four-p-touch-take-pills.js";
+
+// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
+const takePillsInput = (...args) => String(buildTakePillsInput(...args));
+const takePillsReminderGroup = (...args) => String(buildTakePillsReminderGroup(...args));
 
 test("4P Touch medication UI escapes values and respects the reminder limit", () => {
     const html = takePillsInput({

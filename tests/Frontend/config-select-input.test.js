@@ -12,7 +12,11 @@ import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inpu
  * uma definição com `options` e sem campo próprio caía num número solto, e o utilizador via
  * "2" sem saber que 2 é "Baixo".
  */
-const select = CONFIG_INPUTS.select;
+// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
+const select = {
+    ...CONFIG_INPUTS.select,
+    control: (...args) => String(CONFIG_INPUTS.select.control(...args)),
+};
 
 const entry = (field, options, extra = {}) => ({
     fields: [field],

@@ -1,4 +1,4 @@
-import { esc } from "../../format.js";
+import { html } from "../../html.js";
 
 /**
  * As formas dos campos de alarme, partilhadas por quem os desenha e por quem os lê. Vivem
@@ -29,19 +29,19 @@ export function weekdayPicker(days, rowId) {
             .filter((day) => Number.isFinite(day)),
     );
 
-    return `
+    return html`
         <label class="form-label-sm required">Dias</label>
         <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias da semana">
-            ${WEEKDAYS.map((day) => `
+            ${WEEKDAYS.map((day) => html`
                 <input
                     class="btn-check"
                     type="checkbox"
-                    id="${esc(rowId)}-day-${day.value}"
+                    id="${rowId}-day-${day.value}"
                     data-weekday
                     value="${day.value}"
                     ${checked.has(day.value) ? "checked" : ""}>
-                <label class="btn btn-outline-secondary btn-sm" for="${esc(rowId)}-day-${day.value}">${day.label}</label>
-            `).join("")}
+                <label class="btn btn-outline-secondary btn-sm" for="${rowId}-day-${day.value}">${day.label}</label>
+            `)}
         </div>`;
 }
 
@@ -102,17 +102,17 @@ export function recurrenceWords(kind, days) {
 export function alarmDisclosure({ kind, group, control = "", summary: given, body, attrs = "" }) {
     const summary = alarmLineSlots(given);
 
-    return `
-        <div class="border rounded bg-body d-flex align-items-start gap-2 p-2" data-repeat-row="${esc(kind)}" ${attrs}>
-            ${control === "" ? "" : `<div class="flex-shrink-0 pt-1">${control}</div>`}
-            <details class="flex-grow-1 min-w-0 alarm-line-body" name="${esc(group)}">
+    return html`
+        <div class="border rounded bg-body d-flex align-items-start gap-2 p-2" data-repeat-row="${kind}" ${attrs}>
+            ${control === "" ? "" : html`<div class="flex-shrink-0 pt-1">${control}</div>`}
+            <details class="flex-grow-1 min-w-0 alarm-line-body" name="${group}">
                 <summary class="alarm-line d-flex align-items-center gap-2">
                     <span class="flex-grow-1 min-w-0">
-                        <span class="d-block fw-semibold text-truncate" data-alarm-line-title>${esc(summary.title)}</span>
-                        <span class="d-block small text-secondary text-truncate" data-alarm-line-subtitle>${esc(summary.subtitle)}</span>
+                        <span class="d-block fw-semibold text-truncate" data-alarm-line-title>${summary.title}</span>
+                        <span class="d-block small text-secondary text-truncate" data-alarm-line-subtitle>${summary.subtitle}</span>
                     </span>
-                    <span class="small text-secondary flex-shrink-0" data-alarm-line-badges>${esc(summary.badges || "")}</span>
-                    <span class="fw-semibold flex-shrink-0" data-alarm-line-trailing>${esc(summary.trailing)}</span>
+                    <span class="small text-secondary flex-shrink-0" data-alarm-line-badges>${summary.badges || ""}</span>
+                    <span class="fw-semibold flex-shrink-0" data-alarm-line-trailing>${summary.trailing}</span>
                     <i class="fa-solid fa-chevron-down small text-secondary flex-shrink-0 alarm-line-chevron" aria-hidden="true"></i>
                 </summary>
                 <div class="pt-3">${body}</div>
@@ -132,10 +132,10 @@ function alarmLineSlots(summary) {
 
 /** O «acrescentar» de uma lista, com a conta do que lá está por baixo do texto. */
 export function addAlarmButton(kind, label, count, limit) {
-    return `
+    return html`
         <div>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="${esc(kind)}" ${count >= limit ? "disabled" : ""}>
-                <i class="fa-solid fa-plus me-2"></i>${esc(label)} <span data-repeat-count>(${count} de ${limit})</span>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="${kind}" ${count >= limit ? "disabled" : ""}>
+                <i class="fa-solid fa-plus me-2"></i>${label} <span data-repeat-count>(${count} de ${limit})</span>
             </button>
         </div>`;
 }

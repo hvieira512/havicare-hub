@@ -1,4 +1,4 @@
-import { esc } from "../format.js";
+import { html } from "../html.js";
 import {
     companyLabel,
     deviceTypeLabel,
@@ -78,8 +78,8 @@ export function licensePickerHtml(tree, selected = null) {
     for (const group of tree || []) {
         if ((group.licenses || []).length === 0) continue;
         rows.push(
-            `<div class="license-picker-company fw-medium text-secondary">${esc(companyLabel(group.company))}</div>`,
-            `<div class="filter-branch position-relative d-flex flex-column">${group.licenses
+            html`<div class="license-picker-company fw-medium text-secondary">${(companyLabel(group.company))}</div>`,
+            html`<div class="filter-branch position-relative d-flex flex-column">${group.licenses
                 .map((license) =>
                     licenseRow({
                         company: group.company,
@@ -91,12 +91,12 @@ export function licensePickerHtml(tree, selected = null) {
                         nested: true,
                     }),
                 )
-                .join("")}</div>`,
+            }</div>`,
         );
     }
 
-    return `<div class="filter-list license-picker d-flex flex-column" role="radiogroup" aria-label="Licença">
-        ${rows.join("")}
+    return html`<div class="filter-list license-picker d-flex flex-column" role="radiogroup" aria-label="Licença">
+        ${rows}
     </div>`;
 }
 
@@ -109,12 +109,12 @@ function licenseRow({ company, licenseId, label, selected, nested = false }) {
         .filter(Boolean)
         .join(" ");
 
-    return `
+    return html`
         <button type="button" role="radio" aria-checked="${selected ? "true" : "false"}"
             class="${classes}" data-license-pick
-            data-license-company="${esc(company)}" data-license-id="${esc(licenseId)}">
+            data-license-company="${company}" data-license-id="${licenseId}">
             <span class="filter-option-box d-grid flex-shrink-0 rounded-circle"><i class="fa-solid fa-check"></i></span>
-            <span class="flex-fill min-w-0 text-truncate">${esc(label)}</span>
+            <span class="flex-fill min-w-0 text-truncate">${label}</span>
         </button>`;
 }
 
@@ -144,28 +144,29 @@ const ONLY_ON_WIDE = "d-none d-md-inline-flex";
 export function wizardTrailHtml({ questions, badges = [], currentKey = "" }) {
     const answered = new Map(badges.map((badge) => [badge.key, badge]));
 
-    return questions
+    const parts = questions
         .map((question, index) => {
             const badge = question.key === currentKey ? null : answered.get(question.key);
             const sep = index > 0
-                ? `<i class="fa-solid fa-caret-right wizard-trail-sep text-body-tertiary ${ONLY_ON_WIDE}"></i>`
+                ? html`<i class="fa-solid fa-caret-right wizard-trail-sep text-body-tertiary ${ONLY_ON_WIDE}"></i>`
                 : "";
-            const name = `<span class="wizard-badge-key text-nowrap">${esc(badge?.label ?? question.label)}</span>`;
+            const name = html`<span class="wizard-badge-key text-nowrap">${badge?.label ?? question.label}</span>`;
             if (badge) {
-                return `${sep}
-            <button type="button" class="${WIZARD_BADGE} text-body-emphasis ${ONLY_ON_WIDE}" data-wizard-reopen="${esc(badge.key)}"
+                return html`${sep}
+            <button type="button" class="${WIZARD_BADGE} text-body-emphasis ${ONLY_ON_WIDE}" data-wizard-reopen="${badge.key}"
                 title="Voltar a este passo">
                 <i class="fa-solid fa-check text-success"></i>${name}
-                <span class="wizard-badge-value text-truncate">· ${esc(String(badge.value))}</span>
+                <span class="wizard-badge-value text-truncate">· ${(String(badge.value))}</span>
             </button>`;
             }
             const state = question.key === currentKey
                 ? "wizard-badge-now fw-semibold"
                 : `wizard-badge-pending text-body-tertiary ${ONLY_ON_WIDE}`;
-            return `${sep}
+            return html`${sep}
             <span class="${WIZARD_BADGE} ${state}">${name}</span>`;
-        })
-        .join("");
+        });
+
+    return html`${parts}`;
 }
 
 /**
@@ -173,23 +174,24 @@ export function wizardTrailHtml({ questions, badges = [], currentKey = "" }) {
  * cima do valor. Em linha onde cabem e empilhadas onde não cabem, com a seta a acompanhar.
  */
 export function classificationTrailHtml({ questions, values, openKey = "", known = true }) {
-    return questions
+    const parts = questions
         .map((question, index) => {
             const open = question.key === openKey;
             const value = known && !open ? String(values[question.key] ?? "") : "";
             const sep = index === 0
                 ? ""
-                : `<i class="fa-solid fa-caret-down d-md-none text-body-tertiary align-self-center" aria-hidden="true"></i>
+                : html`<i class="fa-solid fa-caret-down d-md-none text-body-tertiary align-self-center" aria-hidden="true"></i>
                    <i class="fa-solid fa-caret-right d-none d-md-inline text-body-tertiary flex-shrink-0" aria-hidden="true"></i>`;
 
-            return `${sep}
+            return html`${sep}
             <button type="button" class="classification-pill btn btn-link text-decoration-none text-start d-flex flex-column lh-sm min-w-0 bg-primary-subtle rounded-3 px-3 py-2 border-0"
-                data-wizard-reopen="${esc(question.key)}" aria-expanded="${open ? "true" : "false"}">
-                <span class="section-label mb-0">${esc(question.label)}</span>
-                <span class="fw-semibold text-body text-truncate">${esc(value)}</span>
+                data-wizard-reopen="${question.key}" aria-expanded="${open ? "true" : "false"}">
+                <span class="section-label mb-0">${question.label}</span>
+                <span class="fw-semibold text-body text-truncate">${value}</span>
             </button>`;
-        })
-        .join("");
+        });
+
+    return html`${parts}`;
 }
 
 /** A barra: um traço por passo, os já feitos a navy e os que faltam em cinzento claro. */
@@ -197,10 +199,10 @@ export function wizardProgressHtml(step, total) {
     const bars = Array.from(
         { length: total },
         (_, index) =>
-            `<span class="flex-fill rounded-pill ${index < step ? "bg-primary" : "bg-secondary-subtle"}"></span>`,
-    ).join("");
+            html`<span class="flex-fill rounded-pill ${index < step ? "bg-primary" : "bg-secondary-subtle"}"></span>`,
+    );
 
-    return `<div class="wizard-progress d-flex gap-1" role="progressbar" aria-label="Progresso"
+    return html`<div class="wizard-progress d-flex gap-1" role="progressbar" aria-label="Progresso"
         aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${step}">${bars}</div>`;
 }
 
@@ -212,19 +214,19 @@ export function wizardProgressHtml(step, total) {
  * objecto que existe e leva a fotografia.
  */
 export function cardGrid(label, cards) {
-    return `
-        <div class="wizard-card-grid d-grid gap-2" role="group" aria-label="${esc(label)}">
+    return html`
+        <div class="wizard-card-grid d-grid gap-2" role="group" aria-label="${label}">
             ${cards
-                .map(
-                    (card) => `
+                    .map(
+                        (card) => html`
                 <button type="button" class="wizard-card d-flex flex-column align-items-center gap-2 text-center rounded-3${card.selected ? " selected" : ""}"
-                    ${card.selected ? "aria-pressed=\"true\"" : ""} ${card.attrs}>
+                    ${card.selected ? html`aria-pressed="true"` : ""} ${card.attrs}>
                     ${card.visual}
-                    <span class="wizard-card-label fw-medium lh-sm">${esc(card.label)}</span>
-                    ${card.sub ? `<span class="wizard-card-sub text-secondary">${esc(card.sub)}</span>` : ""}
+                    <span class="wizard-card-label fw-medium lh-sm">${card.label}</span>
+                    ${card.sub ? html`<span class="wizard-card-sub text-secondary">${card.sub}</span>` : ""}
                 </button>`,
-                )
-                .join("")}
+                    )
+            }
         </div>`;
 }
 
@@ -240,7 +242,7 @@ export function deviceTypeCardsHtml({ attrsFor, selected = "", countFor = null }
             return {
                 attrs: attrsFor(option.value),
                 selected: option.value === selected,
-                visual: `<i class="fa-solid ${esc(deviceTypeIcon(option.value))} wizard-card-icon text-secondary"></i>`,
+                visual: html`<i class="fa-solid ${(deviceTypeIcon(option.value))} wizard-card-icon text-secondary"></i>`,
                 label: option.label,
                 sub: count === null
                     ? ""
@@ -263,7 +265,7 @@ export function modelCardsHtml({ models, attrsFor, selected = "" }) {
             return {
                 attrs: attrsFor(internal),
                 selected: internal === selected,
-                visual: `<span class="wizard-card-thumb d-flex align-items-center justify-content-center w-100">${modelPreviewHtml(model, internal)}</span>`,
+                visual: html`<span class="wizard-card-thumb d-flex align-items-center justify-content-center w-100">${modelPreviewHtml(model, internal)}</span>`,
                 label: commercial || internal,
                 sub: commercial && commercial !== internal ? internal : "",
             };

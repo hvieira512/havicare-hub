@@ -1,4 +1,3 @@
-import { esc } from "../../../format.js";
 import { field } from "../../../components/form-field.js";
 import { html, raw } from "../../../html.js";
 import { segmentedScale } from "./segmented-scale.js";
@@ -44,8 +43,8 @@ const fromTimeValue = (value) => {
 const isBlank = (value) => String(value ?? "").trim() === "";
 
 const timeField = (configField, hour, minute) =>
-    html`<input class="form-control" type="time" data-config-field="${esc(configField)}"
-        value="${esc(toTimeValue(hour, minute))}">`;
+    html`<input class="form-control" type="time" data-config-field="${configField}"
+        value="${(toTimeValue(hour, minute))}">`;
 
 /**
  * Sem interruptor: o `0x1041`--`0x1049` desta firmware é inerte. O aparelho aceita-o,
@@ -98,7 +97,7 @@ function readAlarms(section) {
 }
 
 const dateField = (name, value) =>
-    html`<input class="form-control" type="date" data-config-field="${esc(name)}" value="${esc(String(value ?? ""))}">`;
+    html`<input class="form-control" type="date" data-config-field="${name}" value="${(String(value ?? ""))}">`;
 
 /**
  * A escala do volume, do mais alto ao silêncio.

@@ -1,3 +1,4 @@
+import { html } from "../../html.js";
 import {
     saveModel as apiSaveModel,
 } from "../../api/index.js";
@@ -7,7 +8,6 @@ import {
     setModelPreviewObjectUrl,
     state,
 } from "../../state.js";
-import { esc } from "../../format.js";
 import { apiError, toast } from "../../dialogs.js";
 import { field } from "../../components/form-field.js";
 import { modelImageHtml } from "../../components/model-image.js";
@@ -113,7 +113,7 @@ function render() {
 function renderStep(step, answers) {
     if (step === 1) {
         return deviceTypeCardsHtml({
-            attrsFor: (value) => `data-model-type="${esc(value)}"`,
+            attrsFor: (value) => html`data-model-type="${value}"`,
             selected: answers.deviceType || "",
             countFor: modelCountFor,
         });
@@ -147,7 +147,7 @@ function renderSuppliers(answers) {
         supplierCardsHtml({
             suppliers: suppliers.map((supplier) => supplier.name),
             selected: answers.supplier?.name || "",
-            attrsFor: (name) => `data-model-supplier="${esc(name)}"`,
+            attrsFor: (name) => html`data-model-supplier="${name}"`,
             countFor: (name) =>
                 suppliers.find((supplier) => supplier.name === name)?.models?.length ?? null,
         }),
@@ -159,23 +159,23 @@ function renderInfo(answers) {
         ? modelImageHtml({ image: state.modelPreviewObjectUrl }, 40)
         : modelImageHtml({}, 40);
 
-    return `
+    return html`
         <div class="row g-3">
         <div class="col-md-6">${field(
             "Nome comercial",
-            `<input type="text" class="form-control" data-model-field="commercialName" value="${esc(answers.commercialName || "")}">`,
+            html`<input type="text" class="form-control" data-model-field="commercialName" value="${answers.commercialName || ""}">`,
             { required: true },
         )}</div>
         <div class="col-md-6">${field(
             "Modelo interno",
-            `<input type="text" class="form-control" data-model-field="internalModel" value="${esc(answers.internalModel || "")}">`,
+            html`<input type="text" class="form-control" data-model-field="internalModel" value="${answers.internalModel || ""}">`,
             { required: true, help: "O código do fabricante, que é o que os tópicos usam." },
         )}</div>
         </div>
         <div class="d-flex align-items-center gap-3 border rounded-3 bg-body-tertiary p-3 mt-3 position-relative">
         <input type="file" accept="image/*" data-model-image class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" title="Imagem do modelo">
         <span class="flex-shrink-0 d-flex align-items-center">${preview}</span>
-        <span class="flex-grow-1 min-w-0 text-truncate text-secondary">${esc(chosenImage?.name || "Imagem do modelo")}</span>
+        <span class="flex-grow-1 min-w-0 text-truncate text-secondary">${chosenImage?.name || "Imagem do modelo"}</span>
         <span class="btn btn-outline-secondary btn-sm flex-shrink-0">Carregar</span>
         </div>`;
 }
@@ -186,12 +186,12 @@ function renderFooter() {
 
     els.modelWizardBackBtn.classList.toggle("d-none", !wizard.canGoBack());
     els.modelWizardBackBtn.innerHTML =
-        `<i class="fa-solid fa-arrow-left me-2"></i>${esc(STEPS[step - 2] || "")}`;
+        html`<i class="fa-solid fa-arrow-left me-2"></i>${STEPS[step - 2] || ""}`;
 
     const last = wizard.isLastStep();
     els.modelWizardSaveBtn.innerHTML = last
         ? "<i class=\"fa-solid fa-floppy-disk me-2\"></i>Guardar modelo"
-        : `Seguinte: ${esc(STEPS[step])}<i class="fa-solid fa-arrow-right ms-2"></i>`;
+        : `Seguinte: ${STEPS[step]}<i class="fa-solid fa-arrow-right ms-2"></i>`;
     els.modelWizardSaveBtn.disabled = last
         ? !wizard.isComplete()
         : !wizard.canAdvance();

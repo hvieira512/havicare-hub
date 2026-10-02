@@ -1,4 +1,5 @@
-import { esc, fieldLabel } from "../../../format.js";
+import { fieldLabel } from "../../../format.js";
+import { html, raw } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
 import { renderPhoneControl, resetPhoneControls } from "../../../phone.js";
 import { protocolPhonebookConstraints } from "../protocol-catalog.js";
@@ -41,9 +42,9 @@ export function toggleValue(entry, desired, protocol = "") {
 export function toggleInput(entry, desired, protocol = "") {
     const field = toggleField(entry, protocol);
     const checked = toggleValue(entry, desired, protocol);
-    return `
+    return html`
         <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" data-config-field="${esc(field)}" ${checked ? "checked" : ""}>
+            <input class="form-check-input" type="checkbox" role="switch" data-config-field="${field}" ${checked ? "checked" : ""}>
             <label class="form-check-label" data-switch-label>${checked ? "Ligado" : "Desligado"}</label>
         </div>`;
 }
@@ -79,14 +80,14 @@ function textInput(entry, desired) {
     const key = entry.fields?.[0] || "value";
     return field(
         fieldLabel(key),
-        `<input class="form-control" type="text" data-config-field="${esc(key)}" value="${esc(String(desired[key] ?? ""))}">`,
+        html`<input class="form-control" type="text" data-config-field="${key}" value="${String(desired[key] ?? "")}">`,
     );
 }
 
 function pushMessageInput(_entry, desired) {
     return field(
         "Mensagem",
-        `<input class="form-control" type="text" data-config-field="message" value="${esc(String(desired.message ?? ""))}">`,
+        html`<input class="form-control" type="text" data-config-field="message" value="${String(desired.message ?? "")}">`,
         { help: "Envia uma mensagem imediata para o relógio. Não fica guardada como configuração desejada." },
     );
 }
@@ -113,21 +114,27 @@ export function contactsInput(entry, desired, meta = {}) {
         0,
         parseInt(String(meta.phone?.maxLength ?? phonebookConstraints.phone?.maxLength ?? 0), 10) || 0,
     );
-    const nameMaxLength = nameMaxLengthValue > 0 ? ` maxlength="${esc(String(nameMaxLengthValue))}"` : "";
-    return `
+    const nameMaxLength = nameMaxLengthValue > 0 ? html` maxlength="${nameMaxLengthValue}"` : "";
+    const nameLimitAttr = isPhonebookLike && nameMaxLengthValue > 0
+        ? html` data-phonebook-name-max-length="${nameMaxLengthValue}"`
+        : "";
+    const phoneLimitAttr = isPhonebookLike && phoneMaxLengthValue > 0
+        ? html` data-phonebook-phone-max-length="${phoneMaxLengthValue}"`
+        : "";
+    return html`
         <div>
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <label class="form-label-sm mb-0">Contactos</label>
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="contacts" ${rows.length >= limit ? "disabled" : ""}>Adicionar</button>
             </div>
             <div class="small text-secondary mb-2">${limit} contactos máximos</div>
-            <div class="vstack gap-2" data-repeat-list="contacts" data-repeat-limit="${limit}"${isPhonebookLike && nameMaxLengthValue > 0 ? ` data-phonebook-name-max-length="${esc(String(nameMaxLengthValue))}"` : ""}${isPhonebookLike && phoneMaxLengthValue > 0 ? ` data-phonebook-phone-max-length="${esc(String(phoneMaxLengthValue))}"` : ""}>
+            <div class="vstack gap-2" data-repeat-list="contacts" data-repeat-limit="${limit}"${nameLimitAttr}${phoneLimitAttr}>
                 ${rows
                     .map(
-                        (contact, index) => `
+                        (contact, index) => html`
                     <div class="row g-2 align-items-end" data-repeat-row="contacts">
                         <div class="col-md-6">
-                            <input class="form-control" type="text" placeholder="Nome ${index + 1}" data-repeat-field="name"${nameMaxLength} value="${esc(String(contact.name || ""))}">
+                            <input class="form-control" type="text" placeholder="Nome ${index + 1}" data-repeat-field="name"${nameMaxLength} value="${String(contact.name || "")}">
                         </div>
                         <div class="col-md-6">
                             <div class="d-flex gap-2">
@@ -143,8 +150,7 @@ export function contactsInput(entry, desired, meta = {}) {
                         </div>
                     </div>
                 `,
-                    )
-                    .join("")}
+                    )}
             </div>
         </div>`;
 }
@@ -167,7 +173,7 @@ export function createContactRow(section) {
     const wrapper = document.createElement("div");
     wrapper.className = "row g-2 align-items-end";
     wrapper.dataset.repeatRow = "contacts";
-    wrapper.innerHTML = `
+    wrapper.innerHTML = html`
         <div class="col-md-6">
             <input class="form-control" type="text" placeholder="Nome"${phonebook && nameMaxLength > 0 ? ` maxlength="${nameMaxLength}"` : ""} data-repeat-field="name">
         </div>
@@ -216,13 +222,12 @@ function selectInput(entry, desired) {
     const choices = options
         .map((option) => {
             const value = String(option.value);
-            return `<option value="${esc(value)}"${value === current ? " selected" : ""}>${esc(String(option.label ?? value))}</option>`;
-        })
-        .join("");
+            return html`<option value="${value}"${value === current ? raw(" selected") : ""}>${String(option.label ?? value)}</option>`;
+        });
 
     // Sem rótulo: o cartão da configuração já mostra o nome por cima, e um rótulo aqui
     // repetia-o — ou, pior, mostrava o nome do campo do protocolo, que está em inglês.
-    return `<select class="form-select" data-config-field="${esc(name)}">${choices}</select>`;
+    return html`<select class="form-select" data-config-field="${name}">${choices}</select>`;
 }
 
 export const INPUTS = {

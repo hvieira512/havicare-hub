@@ -1,4 +1,5 @@
-import { esc, fieldLabel } from "../../../format.js";
+import { fieldLabel } from "../../../format.js";
+import { html } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
 import { addAlarmButton, alarmDisclosure, shortDate } from "../alarm-fields.js";
 import {
@@ -27,7 +28,7 @@ import {
 const wonlexEnabled = (desired) => boolValue(desired.enabled ?? desired.switchState, true);
 
 function wonlexBloodPressureWarningInput(desired) {
-    return `
+    return html`
         <div class="vstack gap-3">
             ${enabledSwitch(wonlexEnabled(desired))}
             <div class="row g-3">
@@ -46,18 +47,18 @@ function wonlexBloodPressureWarningInput(desired) {
 }
 
 function wonlexSleepSettingsInput(desired) {
-    return `
+    return html`
         <div class="vstack gap-3">
             ${enabledSwitch(wonlexEnabled(desired))}
             <div class="row g-3">
                 ${field(
                     "Início (HHmmss)",
-                    `<input class="form-control" type="text" data-config-field="sleepStartTime" value="${esc(String(desired.sleepStartTime ?? "220000"))}" placeholder="220000">`,
+                    html`<input class="form-control" type="text" data-config-field="sleepStartTime" value="${(String(desired.sleepStartTime ?? "220000"))}" placeholder="220000">`,
                     { cls: "col-md-4" },
                 )}
                 ${field(
                     "Fim (HHmmss)",
-                    `<input class="form-control" type="text" data-config-field="sleepEndTime" value="${esc(String(desired.sleepEndTime ?? "100000"))}" placeholder="100000">`,
+                    html`<input class="form-control" type="text" data-config-field="sleepEndTime" value="${(String(desired.sleepEndTime ?? "100000"))}" placeholder="100000">`,
                     { cls: "col-md-4" },
                 )}
                 ${field(
@@ -78,7 +79,7 @@ function wonlexReminderThresholdInput(entry, desired) {
         desired.reminderValue ??
         desired.RemindValue ??
         90;
-    return `
+    return html`
         <div class="vstack gap-3">
             ${enabledSwitch(wonlexEnabled(desired))}
             ${field(
@@ -93,7 +94,7 @@ function wonlexHeartRateRangeInput(desired) {
         desired.exerciseEnabled ?? desired.exerciseSwitchState,
         true,
     );
-    return `
+    return html`
         <div class="vstack gap-3">
             ${enabledSwitch(wonlexEnabled(desired))}
             <div class="row g-3">
@@ -135,14 +136,14 @@ function wonlexMedicationPlansInput(desired) {
 
     const group = nextUid("wonlex-medication-group");
 
-    return `
+    return html`
         <div class="vstack gap-3">
             <div class="small text-secondary">
                 Cada plano é enviado separadamente ao relógio. Selecione pelo menos um período e indique a respetiva hora.
             </div>
             <div class="small"><span class="text-danger" aria-hidden="true">*</span> Campo obrigatório</div>
             <div class="vstack gap-2" data-repeat-list="wonlexMedicationPlan" data-repeat-limit="${WONLEX_MEDICATION_PLAN_LIMIT}">
-                ${plans.slice(0, WONLEX_MEDICATION_PLAN_LIMIT).map((plan, index) => wonlexMedicationPlanRow(plan, index, group)).join("")}
+                ${plans.slice(0, WONLEX_MEDICATION_PLAN_LIMIT).map((plan, index) => wonlexMedicationPlanRow(plan, index, group))}
             </div>
             ${addAlarmButton("wonlexMedicationPlan", "Acrescentar medicamento", Math.min(plans.length, WONLEX_MEDICATION_PLAN_LIMIT), WONLEX_MEDICATION_PLAN_LIMIT)}
         </div>`;
@@ -163,72 +164,72 @@ const WONLEX_MEDICATION_UNITS = [
 export function wonlexMedicationPlanRow(plan = {}, index = 0, group = "wonlex-medication") {
     const normalized = normalizeWonlexMedicationPlan(plan);
     const rowId = nextUid("wonlex-medication");
-    const body = `
+    const body = html`
             <div class="row g-3">
                 ${field(
                     "Tipo",
-                    `<select class="form-select" data-medication-field="drugType" required>
+                    html`<select class="form-select" data-medication-field="drugType" required>
                         ${[
                             [0, "Hipertensão"],
                             [1, "Diabetes"],
                             [2, "Colesterol / lípidos"],
                             [3, "Ácido úrico elevado"],
-                        ].map(([value, label]) => `
-                            <option value="${value}" ${normalized.drugType === value ? "selected" : ""}>${esc(label)}</option>
-                        `).join("")}
+                        ].map(([value, label]) => html`
+                            <option value="${value}" ${normalized.drugType === value ? "selected" : ""}>${label}</option>
+                        `)}
                     </select>`,
                     { cls: "col-md-4", required: true },
                 )}
                 ${field(
                     "Nome do medicamento",
-                    `<input class="form-control" type="text" data-medication-field="drugName" value="${esc(normalized.drugName)}" placeholder="Ex.: Losartan" required>`,
+                    html`<input class="form-control" type="text" data-medication-field="drugName" value="${normalized.drugName}" placeholder="Ex.: Losartan" required>`,
                     { cls: "col-md-8", required: true },
                 )}
                 ${field(
                     "Dose",
-                    `<input class="form-control" type="number" min="0" step="0.1" data-medication-field="drugDose" value="${esc(String(normalized.drugDose))}">`,
+                    html`<input class="form-control" type="number" min="0" step="0.1" data-medication-field="drugDose" value="${(String(normalized.drugDose))}">`,
                     { cls: "col-sm-6 col-md-3" },
                 )}
                 ${field(
                     "Unidade",
-                    `<select class="form-select" data-medication-field="drugUnit">
-                        ${WONLEX_MEDICATION_UNITS.map(([value, label]) => `
-                            <option value="${value}" ${normalized.drugUnit === value ? "selected" : ""}>${esc(label)}</option>
-                        `).join("")}
+                    html`<select class="form-select" data-medication-field="drugUnit">
+                        ${WONLEX_MEDICATION_UNITS.map(([value, label]) => html`
+                            <option value="${value}" ${normalized.drugUnit === value ? "selected" : ""}>${label}</option>
+                        `)}
                     </select>`,
                     { cls: "col-sm-6 col-md-3" },
                 )}
                 ${field(
                     "Data inicial",
-                    `<input class="form-control" type="date" data-medication-field="drugStartTime" value="${esc(normalized.drugStartTime)}" required>`,
+                    html`<input class="form-control" type="date" data-medication-field="drugStartTime" value="${normalized.drugStartTime}" required>`,
                     { cls: "col-sm-6 col-md-3", required: true },
                 )}
                 ${field(
                     "Data final",
-                    `<input class="form-control" type="date" data-medication-field="drugEndTime" value="${esc(normalized.drugEndTime)}" required>`,
+                    html`<input class="form-control" type="date" data-medication-field="drugEndTime" value="${normalized.drugEndTime}" required>`,
                     { cls: "col-sm-6 col-md-3", required: true },
                 )}
                 ${field(
                     "Intervalo",
-                    `<div class="input-group">
-                        <input class="form-control" type="number" min="0" step="0.5" data-medication-field="drugInterval" value="${esc(String(normalized.drugInterval))}" required>
+                    html`<div class="input-group">
+                        <input class="form-control" type="number" min="0" step="0.5" data-medication-field="drugInterval" value="${(String(normalized.drugInterval))}" required>
                         <span class="input-group-text">dias</span>
                     </div>`,
                     { cls: "col-sm-6 col-md-4", required: true },
                 )}
                 ${field(
                     "Tomar",
-                    `<div class="btn-group" role="group" aria-label="Relação com a refeição">
+                    html`<div class="btn-group" role="group" aria-label="Relação com a refeição">
                         ${[
                             [0, "Antes da refeição"],
                             [1, "Depois da refeição"],
                         ].map(([value, label]) => {
                             const id = `${rowId}-meal-${value}`;
-                            return `
+                            return html`
                                 <input class="btn-check" type="radio" name="${rowId}-meal" id="${id}" value="${value}" data-medication-field="mealTiming" ${normalized.mealTiming === value ? "checked" : ""}>
-                                <label class="btn btn-outline-secondary" for="${id}">${esc(label)}</label>
+                                <label class="btn btn-outline-secondary" for="${id}">${label}</label>
                             `;
-                        }).join("")}
+                        })}
                     </div>`,
                     { cls: "col-sm-6 col-md-8", required: true },
                 )}
@@ -239,18 +240,18 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0, group = "wonlex-me
                     ${WONLEX_MEDICATION_PERIODS.map((period) => {
                         const selected = normalized.periods.includes(period.index);
                         const inputId = `${rowId}-period-${period.index}`;
-                        return `
+                        return html`
                             <div class="col-sm-6 col-xl-3">
                                 <div class="border rounded p-2 h-100">
                                     <div class="form-check mb-2">
                                         <input class="form-check-input" type="checkbox" id="${inputId}" value="${period.index}" data-medication-period ${selected ? "checked" : ""}>
-                                        <label class="form-check-label" for="${inputId}">${esc(period.label)}</label>
+                                        <label class="form-check-label" for="${inputId}">${period.label}</label>
                                     </div>
-                                    <input class="form-control form-control-sm" type="time" data-medication-period-time="${period.index}" value="${esc(normalized.alarmClock[period.key] || period.defaultTime)}" ${selected ? "" : "disabled"}>
+                                    <input class="form-control form-control-sm" type="time" data-medication-period-time="${period.index}" value="${normalized.alarmClock[period.key] || period.defaultTime}" ${selected ? "" : "disabled"}>
                                 </div>
                             </div>
                         `;
-                    }).join("")}
+                    })}
                 </div>
             </div>
             <div class="d-flex justify-content-end mt-3">

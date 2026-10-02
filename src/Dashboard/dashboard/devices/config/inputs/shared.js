@@ -1,4 +1,4 @@
-import { esc } from "../../../format.js";
+import { html } from "../../../html.js";
 import { boolValue } from "../normalizers.js";
 
 /**
@@ -24,17 +24,19 @@ export const numberField = (
     value,
     { min = 0, max = "", step = 1, ariaLabel = "", unit = "", cls = "" } = {},
 ) => {
-    const input = `<input class="form-control" type="number" min="${min}"${max === "" ? "" : ` max="${max}"`} step="${step}" data-config-field="${esc(configField)}"${ariaLabel === "" ? "" : ` aria-label="${esc(ariaLabel)}"`} value="${esc(String(value))}">`;
+    const maxAttr = max === "" ? "" : html` max="${max}"`;
+    const ariaAttr = ariaLabel === "" ? "" : html` aria-label="${ariaLabel}"`;
+    const input = html`<input class="form-control" type="number" min="${min}"${maxAttr} step="${step}" data-config-field="${configField}"${ariaAttr} value="${String(value)}">`;
 
     // A unidade cola-se ao campo: no nome da definição ela obriga a ler duas coisas em
     // sítios diferentes para saber uma.
     return unit === ""
         ? input
-        : `<div class="input-group${cls ? ` ${cls}` : ""}">${input}<span class="input-group-text">${esc(unit)}</span></div>`;
+        : html`<div class="input-group${cls ? ` ${cls}` : ""}">${input}<span class="input-group-text">${unit}</span></div>`;
 };
 
 export function enabledSwitch(enabled, cls = "") {
-    return `
+    return html`
         <div class="form-check form-switch${cls ? ` ${cls}` : ""}">
             <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
             <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
@@ -48,7 +50,7 @@ export function enabledSwitch(enabled, cls = "") {
  * e por isso o rótulo sai e o campo encosta à direita.
  */
 export function intervalToggle(desired, field, { fallback, unit, bounds = {} }) {
-    return `
+    return html`
         <div class="d-flex align-items-center gap-3">
             ${enabledSwitch(boolValue(desired.enabled, true))}
             ${numberField(field, desired[field] ?? fallback, {

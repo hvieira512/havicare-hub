@@ -1,4 +1,4 @@
-import { esc } from "../../format.js";
+import { html } from "../../html.js";
 import {
     addAlarmButton,
     alarmDisclosure,
@@ -24,28 +24,28 @@ export function takePillsInput(desired, meta = {}) {
     const numberLimit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
     const reminders = normalizeReminderSettings(desired).slice(0, numberLimit);
     const group = nextUid("take-pills-group");
-    return `<div class="vstack gap-3">
-        <div class="vstack gap-2" data-repeat-list="takePillsReminder" data-repeat-limit="${esc(String(numberLimit))}">${reminders.map((settings, index) => takePillsReminderGroup(settings, index, frequencyOptions, group, desired)).join("")}</div>
+    return html`<div class="vstack gap-3">
+        <div class="vstack gap-2" data-repeat-list="takePillsReminder" data-repeat-limit="${(String(numberLimit))}">${reminders.map((settings, index) => takePillsReminderGroup(settings, index, frequencyOptions, group, desired))}</div>
         ${addAlarmButton("takePillsReminder", "Acrescentar lembrete", reminders.length, numberLimit)}
         <div class="border rounded-3 p-3 vstack gap-3">
-        <div><label class="form-label-sm">Texto do lembrete</label><input class="form-control" type="text" data-config-field="reminderText" value="${esc(reminderText)}"><div class="form-text">O mesmo texto em todos os lembretes.</div></div>
-        <div class="vstack gap-2" data-takepills-audio><div class="form-label-sm mb-0">Voz dos lembretes <span class="text-secondary">· uma gravação, vale para os ${esc(String(numberLimit))}</span></div>
+        <div><label class="form-label-sm">Texto do lembrete</label><input class="form-control" type="text" data-config-field="reminderText" value="${reminderText}"><div class="form-text">O mesmo texto em todos os lembretes.</div></div>
+        <div class="vstack gap-2" data-takepills-audio><div class="form-label-sm mb-0">Voz dos lembretes <span class="text-secondary">· uma gravação, vale para os ${(String(numberLimit))}</span></div>
         <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" data-config-field="voiceEnabled" ${voiceEnabled ? "checked" : ""}><label class="form-check-label" data-switch-label data-switch-on="Áudio ligado" data-switch-off="Áudio desligado">${voiceEnabled ? "Áudio ligado" : "Áudio desligado"}</label></div>
-        <fieldset class="vstack gap-2" data-takepills-audio-controls ${voiceEnabled ? "" : "disabled"}><input type="hidden" data-config-field="voiceData" value="${esc(voiceData)}"><input type="hidden" data-config-field="voiceMimeType" value="${esc(voiceMimeType)}"><div class="d-flex flex-wrap align-items-center gap-2">
+        <fieldset class="vstack gap-2" data-takepills-audio-controls ${voiceEnabled ? "" : "disabled"}><input type="hidden" data-config-field="voiceData" value="${voiceData}"><input type="hidden" data-config-field="voiceMimeType" value="${voiceMimeType}"><div class="d-flex flex-wrap align-items-center gap-2">
         <button type="button" class="btn btn-outline-primary btn-sm" data-action="takePillsRecord"><i class="fa-solid fa-microphone me-2"></i>${hasVoiceData ? "Regravar" : "Gravar"}</button><button type="button" class="btn btn-outline-secondary btn-sm d-none" data-action="takePillsStop"><i class="fa-solid fa-stop me-2"></i>Parar</button><button type="button" class="btn btn-outline-danger btn-sm" data-action="takePillsClear"><i class="fa-solid fa-trash-can me-2"></i>Limpar</button><label class="btn btn-outline-secondary btn-sm mb-0"><i class="fa-solid fa-file-audio me-2"></i>Carregar<input type="file" class="d-none" accept="audio/*" data-action="takePillsFile"></label><span class="small text-secondary" data-takepills-status>${voiceEnabled ? (hasVoiceData ? "Áudio carregado" : "Sem áudio") : "Áudio desligado"}</span></div>
-        <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${esc(previewSrc)}"` : ""}></audio></fieldset></div></div></div>`;
+        <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${previewSrc}"` : ""}></audio></fieldset></div></div></div>`;
 }
 
 export function takePillsReminderGroup(settings, index, frequencyOptions, group = "take-pills", desired = {}) {
     const frequency = parseInt(String(settings.frequency ?? 1), 10) || 1;
     const reminderText = String(desired.reminderText || "").trim();
-    const control = `<div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" aria-label="Lembrete ligado" data-takepills-field="reminderEnabled" data-takepills-index="${index}" ${settings.enabled ? "checked" : ""}></div>`;
-    const body = `<div class="d-flex flex-wrap align-items-end gap-3">
-        <div class="alarm-field-time"><label class="form-label-sm required">Hora</label><input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-takepills-field="reminderTime" data-takepills-index="${index}" value="${esc(settings.time)}" required></div>
+    const control = html`<div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" aria-label="Lembrete ligado" data-takepills-field="reminderEnabled" data-takepills-index="${index}" ${settings.enabled ? "checked" : ""}></div>`;
+    const body = html`<div class="d-flex flex-wrap align-items-end gap-3">
+        <div class="alarm-field-time"><label class="form-label-sm required">Hora</label><input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-takepills-field="reminderTime" data-takepills-index="${index}" value="${settings.time}" required></div>
         <div><label class="form-label-sm required">Recorrência</label><div class="btn-group" role="group" aria-label="Recorrência do lembrete">${frequencyOptions.map((option) => {
             const inputId = `takepills-${index}-freq-${option.value}`;
-            return `<input class="btn-check" type="radio" name="takepills-${index}-freq" id="${esc(inputId)}" value="${esc(String(option.value))}" data-takepills-field="reminderFrequency" data-takepills-index="${index}" ${parseInt(String(option.value), 10) === frequency ? "checked" : ""}><label class="btn btn-outline-secondary btn-sm" for="${esc(inputId)}">${esc(String(option.label))}</label>`;
-        }).join("")}</div></div>
+            return html`<input class="btn-check" type="radio" name="takepills-${index}-freq" id="${inputId}" value="${(String(option.value))}" data-takepills-field="reminderFrequency" data-takepills-index="${index}" ${parseInt(String(option.value), 10) === frequency ? "checked" : ""}><label class="btn btn-outline-secondary btn-sm" for="${inputId}">${(String(option.label))}</label>`;
+        })}</div></div>
         <div class="w-100 ${frequency === 3 ? "" : "d-none"}" data-takepills-custom-wrapper="${index}">${weekdayPicker(fourPTouchMaskToWeekdays(settings.custom), `takepills-${index}`)}</div>
         <div class="w-100 d-flex justify-content-end"><button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow" aria-label="Remover lembrete"><i class="fa-solid fa-trash-can me-2"></i>Remover</button></div></div>`;
 

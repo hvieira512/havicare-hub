@@ -7,6 +7,7 @@ import { globSync, readFileSync } from "node:fs";
 import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { html, raw, trusted } from "../../src/Dashboard/dashboard/html.js";
+import { field } from "../../src/Dashboard/dashboard/components/form-field.js";
 import { deviceLicenseBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/shell.js";
@@ -143,16 +144,17 @@ test("sem o trusted, o que vem de quem chama sai escapado", () => {
     );
 });
 
-test("as fronteiras de confiança continuam a caber numa mão", () => {
+test("não sobra nenhuma fronteira de confiança no frontend", () => {
     const files = globSync("src/Dashboard/dashboard/**/*.js", { cwd: ROOT });
     const sites = files.flatMap((rel) => {
         const src = readFileSync(`${ROOT}/${rel}`, "utf8");
         return [...src.matchAll(/trusted\(/g)].map(() => rel);
     }).filter((rel) => !rel.endsWith("html.js"));
 
-    assert.ok(
-        sites.length <= 2,
-        `o trusted está em ${sites.length} sítios: ou há fronteiras novas a rever, ou passou a usar-se onde o raw chegava.\n${[...new Set(sites)].join("\n")}`,
+    assert.equal(
+        sites.length,
+        0,
+        `o trusted voltou a ${sites.length} sítios. Quem entrega marcação constrói-a com o \`html\`; o trusted é para marcação que vem de fora da função, e isso quer revisão.\n${[...new Set(sites)].join("\n")}`,
     );
 });
 
@@ -228,4 +230,18 @@ test("o título de um dispensador não passa pelo escapamento duas vezes", () =>
         root.querySelector(".telemetry-row-details")?.getAttribute("title") ?? "",
         /A & B/,
     );
+});
+
+/* ---- o campo de formulário deixa de confiar em quem o chama ---- */
+
+test("um controlo construído com html passa intacto", () => {
+    const rendered = markup(field("Nome", html`<input class="form-control">`));
+
+    assert.match(rendered, /<input class="form-control">/);
+});
+
+test("mas um controlo em texto cru sai escapado", () => {
+    const rendered = markup(field("Nome", "<img src=x onerror=alert(1)>"));
+
+    assert.doesNotMatch(rendered, /<img/i);
 });

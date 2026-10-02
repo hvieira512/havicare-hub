@@ -1,4 +1,4 @@
-import { esc } from "../../../format.js";
+import { html } from "../../../html.js";
 import { renderPhoneControl } from "../../../phone.js";
 import { boolValue } from "../normalizers.js";
 import { readTakePills, takePillsInput } from "../four-p-touch-take-pills.js";
@@ -17,7 +17,7 @@ import {
  */
 
 function makeCallInput(entry, desired) {
-    return `
+    return html`
         <div>
             <label class="form-label-sm">Número de telefone</label>
             <div class="d-flex gap-2">
@@ -33,7 +33,7 @@ function makeCallInput(entry, desired) {
 }
 
 function voiceMonitorInput(entry, desired) {
-    return `
+    return html`
         <div>
             <div class="alert alert-warning small py-2 px-3 mb-3">
                 <i class="fa-solid fa-triangle-exclamation me-2"></i>
@@ -77,13 +77,13 @@ function soundProfileInput(desired) {
         },
     ];
 
-    return `
+    return html`
         <div class="vstack gap-2">
             <div class="small text-secondary">Escolha o perfil de som do dispositivo.</div>
             <div class="row row-cols-2 g-2" role="radiogroup" aria-label="Perfil de som">
                 ${options
-                    .map(
-                        (option) => `
+                        .map(
+                            (option) => html`
                     <div class="col">
                         <input
                             class="btn-check"
@@ -95,12 +95,12 @@ function soundProfileInput(desired) {
                             ${option.value === current ? "checked" : ""}>
                         <label class="btn ${option.className} w-100 h-100 text-start d-flex align-items-center gap-2 py-3 px-3" for="soundProfile${option.value}">
                             <i class="fa-solid ${option.icon}"></i>
-                            <span class="small fw-semibold">${esc(option.label)}</span>
+                            <span class="small fw-semibold">${option.label}</span>
                         </label>
                     </div>
                 `,
-                    )
-                    .join("")}
+                        )
+                }
             </div>
         </div>`;
 }
@@ -129,21 +129,21 @@ function languageTimezoneInput(desired) {
             String(desired.timeZone ?? "0") === String(option.timeZone),
     ) || languageTimezonePresetOptions[0];
 
-    return `
+    return html`
         <div class="vstack gap-2">
             <select class="form-select" data-config-field="preset">
                 ${languageTimezonePresetOptions
-                    .map(
-                        (option) => `
-                        <option value="${option.language}|${esc(String(option.timeZone))}" ${
+                        .map(
+                            (option) => html`
+                        <option value="${option.language}|${(String(option.timeZone))}" ${
                             option.language === preset.language &&
                             String(option.timeZone) === String(preset.timeZone)
                                 ? "selected"
                                 : ""
-                        }>${esc(option.label)}</option>
+                        }>${option.label}</option>
                     `,
-                    )
-                    .join("")}
+                        )
+                }
             </select>
             <div class="form-text">Escolha a combinação suportada pelo dispositivo.</div>
         </div>`;
@@ -152,7 +152,7 @@ function languageTimezoneInput(desired) {
 function dualToggleInput(desired) {
     const enabled = boolValue(desired.enabled, true);
     const callCenterOnFall = boolValue(desired.callCenterOnFall, false);
-    return `
+    return html`
         <div class="vstack gap-3">
             <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
@@ -184,17 +184,17 @@ function fallSensitivityLevelsInput(desired) {
         { label: "Mínima", icon: "fa-snowflake", btnClass: "btn-outline-secondary" },
     ];
 
-    return `
+    return html`
         <div class="row g-3">
             <div class="col-12 col-md-9">
                 <label class="form-label-sm">Nível de sensibilidade</label>
-                <input type="hidden" data-config-field="sensitivity" value="${esc(String(sensitivityLevel))}">
+                <input type="hidden" data-config-field="sensitivity" value="${(String(sensitivityLevel))}">
                 <div class="d-flex flex-wrap gap-1 w-100 sens-level-group" role="group" aria-label="Nível de sensibilidade" data-config-choice-group="sensitivity">
                     ${levels
-                        .map(
-                            ({ label, icon, btnClass }, i) => {
-                                const level = i + 1;
-                                return `
+                            .map(
+                                ({ label, icon, btnClass }, i) => {
+                                    const level = i + 1;
+                                    return html`
                         <button
                             type="button"
                             class="btn ${btnClass} sens-level-btn d-flex flex-column align-items-center justify-content-center ${level === sensitivityLevel ? "active" : ""} ${level > totalLevels ? "d-none" : ""}"
@@ -211,9 +211,9 @@ function fallSensitivityLevelsInput(desired) {
                             <div class="small opacity-75">${label}</div>
                         </button>
                     `;
-                            },
-                        )
-                        .join("")}
+                                },
+                            )
+                    }
                 </div>
             </div>
             <div class="col-12 col-md-3">
@@ -276,28 +276,28 @@ function timeRangesInput(entry, desired) {
         { length: limit },
         (_, index) => ranges[index] ?? "",
     );
-    return `
+    return html`
         <div class="vstack gap-2">
             <div class="small text-secondary">Formato HH:MM-HH:MM. Envie pelo menos um intervalo.</div>
             <div class="row row-cols-1 row-cols-sm-auto g-3">
                 ${values
-                    .map(
-                        (value, index) => `
+                        .map(
+                            (value, index) => html`
                     <div class="col">
                         <label class="form-label-sm">Intervalo ${index + 1}</label>
-                        <input class="form-control" type="text" data-config-field="ranges" value="${esc(String(value))}" placeholder="08:10-09:30" size="11">
+                        <input class="form-control" type="text" data-config-field="ranges" value="${(String(value))}" placeholder="08:10-09:30" size="11">
                     </div>
                 `,
-                    )
-                    .join("")}
+                        )
+                }
             </div>
         </div>`;
 }
 
 function timeRangeInput(desired) {
-    return `
+    return html`
         <div class="d-flex justify-content-end">
-            <input class="form-control w-auto" type="text" data-config-field="range" value="${esc(String(desired.range ?? "21:10-07:30"))}" placeholder="21:10-07:30" size="11" aria-label="Intervalo">
+            <input class="form-control w-auto" type="text" data-config-field="range" value="${(String(desired.range ?? "21:10-07:30"))}" placeholder="21:10-07:30" size="11" aria-label="Intervalo">
         </div>`;
 }
 
