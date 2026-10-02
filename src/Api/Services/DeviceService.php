@@ -400,7 +400,7 @@ class DeviceService
         ];
     }
 
-    public function create(array $payload): array
+    public function create(array $payload, ?ApiAuthContext $auth = null): array
     {
         $request = $this->binder->bind(
             $payload,
@@ -421,6 +421,9 @@ class DeviceService
         $simNumber = trim($request->simNumber);
         $deviceId = trim($request->deviceId);
         $company = DeviceMetadata::normalizeCompany($request->company);
+        if ($auth !== null && !$auth->canAccessTenant($company, $licenseId)) {
+            return ApiError::forbidden()->toArray();
+        }
         if ($modelRecord === null) {
             return ApiError::modelNotFoundForSupplier()->toArray();
         }
@@ -544,8 +547,12 @@ class DeviceService
         return $this->associations->remove($imei, $auth);
     }
 
-    public function delete(string $imei): array
+    public function delete(string $imei, ?ApiAuthContext $auth = null): array
     {
+        if (!$this->directory->canAccessDevice($imei, $auth)) {
+            return ApiError::deviceNotFound()->toArray();
+        }
+
         $metadata = $this->whitelist->getMetadata($imei);
         $this->hub->clearRetainedStatus(
             $metadata?->company ?? 'null',

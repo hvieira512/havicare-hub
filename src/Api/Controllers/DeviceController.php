@@ -203,7 +203,9 @@ final class DeviceController
         $payload = RequestContext::jsonBody($request);
 
         return $this->json->result(
-            $payload === null ? ApiError::invalidJson()->toArray() : $this->service->create($payload),
+            $payload === null
+                ? ApiError::invalidJson()->toArray()
+                : $this->service->create($payload, RequestContext::auth($request)),
             201,
         );
     }
@@ -228,6 +230,6 @@ final class DeviceController
 
     public function delete(array $params, ServerRequestInterface $request): Response
     {
-        return $this->json->result($this->service->delete($params['imei']));
+        return $this->json->result($this->service->delete($params['imei'], RequestContext::auth($request)));
     }
 }

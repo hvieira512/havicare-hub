@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
+use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
+use Hub\Domain\DeviceMetadata;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
 use React\Promise\PromiseInterface;
@@ -29,10 +31,9 @@ class RadarLayoutService
     }
 
     /** @return array<string, mixed> */
-    public function show(string $imei): array
+    public function show(string $imei, ?ApiAuthContext $auth = null): array
     {
-        $device = $this->db->whitelist->get($imei);
-        if ($device === null) {
+        if ($this->deviceForTenant($imei, $auth) === null) {
             return ApiError::deviceNotFound()->toArray();
         }
 
@@ -56,13 +57,13 @@ class RadarLayoutService
      *
      * @return PromiseInterface<array<string, mixed>>
      */
-    public function sync(string $imei): PromiseInterface
+    public function sync(string $imei, ?ApiAuthContext $auth = null): PromiseInterface
     {
-        if ($this->db->whitelist->get($imei) === null) {
+        if ($this->deviceForTenant($imei, $auth) === null) {
             return resolve(ApiError::deviceNotFound()->toArray());
         }
 
-        return $this->sync->syncDevice($imei)->then(function (array $result) use ($imei): array {
+        return $this->sync->syncDevice($imei)->then(function (array $result) use ($imei, $auth): array {
             if (in_array($result['error'] ?? '', self::REFUSALS, true)) {
                 return ApiError::invalidRequest((string)$result['error'])->toArray();
             }
@@ -75,8 +76,30 @@ class RadarLayoutService
                 // a cloud não conhece aquele aparelho, e isso não se adivinha de um "falhou".
                 'codes' => $result['codes'],
                 'error' => $result['error'],
-                'layout' => $this->show($imei)['data'] ?? null,
+                'layout' => $this->show($imei, $auth)['data'] ?? null,
             ]];
         });
+    }
+
+    /**
+     * O aparelho, ou `null` se não existir ou pertencer a outro inquilino — que para quem
+     * pergunta é a mesma resposta.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function deviceForTenant(string $imei, ?ApiAuthContext $auth): ?array
+    {
+        $device = $this->db->whitelist->get($imei);
+        if ($device === null) {
+            return null;
+        }
+        if ($auth === null) {
+            return $device;
+        }
+
+        return $auth->canAccessTenant(
+            DeviceMetadata::normalizeCompany((string)($device['company'] ?? '')),
+            DeviceMetadata::normalizeLicenseId($device['license_id'] ?? 0),
+        ) ? $device : null;
     }
 }
