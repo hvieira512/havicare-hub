@@ -8,6 +8,10 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
 {
     private const ALARM_CLOCK_LIMIT = 10;
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public static function build(string $key, array $payload): array
     {
         if (isset($payload['data']) && is_array($payload['data'])) {
@@ -56,21 +60,37 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
         };
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function measurementInterval(string $metric, array $payload): array
     {
         return ['configs' => [$metric => ['interval' => (string)self::nonNegativeInt($payload['interval'] ?? null, 'interval')]]];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function deviceToggle(string $configName, array $payload): array
     {
         return ['configs' => [$configName => ['switchState' => self::boolInt($payload['switchState'] ?? $payload['enabled'] ?? null, 'switchState')]]];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function deviceNumber(string $configName, string $field, array $payload): array
     {
         return ['configs' => [$configName => [$field => self::nonNegativeInt($payload[$field] ?? $payload['value'] ?? null, $field)]]];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function sleepSettings(array $payload): array
     {
         return ['configs' => ['SleepIntervalOrSwitch' => [
@@ -81,6 +101,10 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
         ]]];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function reminderThreshold(string $configName, array $payload): array
     {
         $valueKey = array_key_exists('RemindValue', $payload) ? 'RemindValue' : 'reminderValue';
@@ -91,6 +115,10 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
         ]]];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function heartRateRange(string $configName, array $payload): array
     {
         return ['configs' => [$configName => [
@@ -103,6 +131,10 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
         ]]];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function bloodPressureWarning(array $payload): array
     {
         return ['configs' => ['BPEarlyWarning' => [
@@ -113,6 +145,10 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
         ]]];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<array<string, mixed>>
+     */
     private static function alarmClockList(array $payload): array
     {
         $items = $payload['alarmClockList'] ?? $payload['alarmClock'] ?? $payload['alarms'] ?? $payload['items'] ?? null;
@@ -123,7 +159,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             throw new \InvalidArgumentException('alarmClockList must contain at most 10 items');
         }
 
-        return array_values(array_map(static function (mixed $item): array {
+        return array_map(static function (mixed $item): array {
             if (!is_array($item)) {
                 throw new \InvalidArgumentException('alarmClockList items must be objects');
             }
@@ -191,9 +227,12 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                 'status' => (string)self::boolInt($item['status'] ?? $item['enabled'] ?? true, 'status'),
                 'url' => $url,
             ], static fn (mixed $value): bool => $value !== '');
-        }, array_values($items)));
+        }, $items);
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     private static function familyNumbers(mixed $contacts): array
     {
         if (!is_array($contacts) || !array_is_list($contacts)) {
@@ -203,7 +242,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             throw new \InvalidArgumentException('contacts must contain at most 10 values');
         }
 
-        return array_values(array_map(static function (mixed $contact): array {
+        return array_map(static function (mixed $contact): array {
             if (!is_array($contact)) {
                 throw new \InvalidArgumentException('contacts items must be objects');
             }
@@ -215,9 +254,12 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                 'sosSwitch' => self::boolInt($contact['sosSwitch'] ?? false, 'sosSwitch'),
                 'areaCode' => trim((string)($contact['areaCode'] ?? '')),
             ];
-        }, $contacts));
+        }, $contacts);
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     private static function sosNumbers(mixed $contacts): array
     {
         if (!is_array($contacts) || !array_is_list($contacts)) {
@@ -227,7 +269,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             throw new \InvalidArgumentException('numbers must contain at most 10 values');
         }
 
-        return array_values(array_map(static function (mixed $contact): array {
+        return array_map(static function (mixed $contact): array {
             $contact = is_array($contact) ? $contact : ['phone' => $contact];
             $phone = self::requiredString($contact['phone'] ?? null, 'phone');
             return [
@@ -235,9 +277,13 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                 'name' => trim((string)($contact['name'] ?? '')),
                 'phone' => $phone,
             ];
-        }, $contacts));
+        }, $contacts);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function medicationPlan(array $payload): array
     {
         if (array_key_exists('plans', $payload) && $payload['plans'] === []) {

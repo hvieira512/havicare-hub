@@ -8,6 +8,10 @@ use Hub\Support\Values;
 
 final class FeatureNormalizer
 {
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public static function normalize(string $feature, array $payload): array
     {
         return match ($feature) {
@@ -33,12 +37,20 @@ final class FeatureNormalizer
         };
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function heartRate(array $payload): array
     {
         $value = self::first($payload, ['heartRate', 'heart_rate', 'hr', 'bpm', 'pulse', 'value', 'data', 'date']);
         return $value === null ? [] : ['bpm' => (int)$value];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function bloodPressure(array $payload): array
     {
         $rawData = $payload['data'] ?? $payload['date'] ?? null;
@@ -55,12 +67,20 @@ final class FeatureNormalizer
         ]);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function bloodOxygen(array $payload): array
     {
         $value = self::first($payload, ['spo2', 'spo2Percent', 'oxygen', 'bloodOxygen', 'bo', 'value', 'data', 'date']);
         return $value === null ? [] : ['spo2Percent' => (int)$value];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function bloodSugar(array $payload): array
     {
         $value = self::first($payload, ['bloodSugar', 'blood_sugar', 'glucoseMgDl', 'bs', 'value', 'data', 'date']);
@@ -71,6 +91,11 @@ final class FeatureNormalizer
         return ['glucoseMgDl' => str_contains((string)$value, '.') ? (float)$value : (int)$value];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @param list<string> $keys
+     * @return array<string, mixed>
+     */
     private static function scalar(array $payload, string $field, array $keys): array
     {
         $value = self::first($payload, $keys);
@@ -81,6 +106,10 @@ final class FeatureNormalizer
         return [$field => str_contains((string)$value, '.') ? (float)$value : (int)$value];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function temperature(array $payload): array
     {
         $value = self::first($payload, ['bodyTemperature', 'temperature', 'bodyCelsius', 'temp', 'value', 'data', 'date']);
@@ -99,6 +128,10 @@ final class FeatureNormalizer
         return is_numeric((string)$value) ? ['bodyCelsius' => (float)$value] : [];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function battery(array $payload): array
     {
         $value = self::first($payload, ['batteryPercent', 'battery', 'batteryLevel', 'power', 'value']);
@@ -109,6 +142,10 @@ final class FeatureNormalizer
         ]);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function activity(array $payload): array
     {
         return Values::withoutNulls([
@@ -121,6 +158,10 @@ final class FeatureNormalizer
         ]);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function sleep(array $payload): array
     {
         $segments = [];
@@ -229,6 +270,10 @@ final class FeatureNormalizer
         };
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function waveform(array $payload, string $field): array
     {
         $raw = self::first($payload, ['data', 'date']);
@@ -251,6 +296,10 @@ final class FeatureNormalizer
         ]);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function rrIntervals(array $payload): array
     {
         $raw = (string)($payload['data'] ?? $payload['date'] ?? '');
@@ -270,6 +319,10 @@ final class FeatureNormalizer
         ]);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function deviceState(array $payload): array
     {
         return Values::withoutNulls([
@@ -279,6 +332,10 @@ final class FeatureNormalizer
         ]);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function heartbeat(array $payload): array
     {
         return Values::withoutNulls([
@@ -302,6 +359,10 @@ final class FeatureNormalizer
      * próprio; máscara a zero devolve lista vazia, e não há alarme.
      *
      * @return list<string>
+     */
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
      */
     public static function alarmReasons(array $payload): array
     {
@@ -331,6 +392,10 @@ final class FeatureNormalizer
         return $reasons;
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function deviceConfig(array $payload): array
     {
         $configs = isset($payload['configs']) && is_array($payload['configs']) ? $payload['configs'] : null;
@@ -344,6 +409,10 @@ final class FeatureNormalizer
         ]);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private static function firmwareVersion(array $payload): array
     {
         return Values::withoutNulls([
@@ -351,6 +420,10 @@ final class FeatureNormalizer
         ]);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @param list<string> $keys
+     */
     private static function first(array $payload, array $keys): mixed
     {
         foreach ($keys as $key) {
