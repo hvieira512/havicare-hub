@@ -197,22 +197,38 @@ final class ModelCapabilityRepository
         $capabilityKeys = $this->normalizeCapabilityKeys($modelId, $capabilityIds);
         $deviceType = $this->modelContextForModelId($modelId)['device_type'];
 
-        $this->pdo->beginTransaction();
-        $disable = $this->pdo->prepare('UPDATE model_capabilities SET enabled = 0 WHERE model_id = ?');
-        $disable->execute([$modelId]);
-
-        if ($capabilityKeys !== []) {
-            $insert = $this->pdo->prepare('
-                INSERT INTO model_capabilities (model_id, device_type, capability_key, enabled)
-                VALUES (?, ?, ?, 1)
-                ON DUPLICATE KEY UPDATE enabled = 1
-            ');
-            foreach ($capabilityKeys as $capabilityKey) {
-                $insert->execute([$modelId, $deviceType, $capabilityKey]);
-            }
+        // Desligar tudo e religar o que ficou são uma só operação: a meio, o modelo não tem
+        // capacidade nenhuma. O PDO não aninha transacções, e quem a abriu é que a fecha.
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
         }
 
-        $this->pdo->commit();
+        try {
+            $disable = $this->pdo->prepare('UPDATE model_capabilities SET enabled = 0 WHERE model_id = ?');
+            $disable->execute([$modelId]);
+
+            if ($capabilityKeys !== []) {
+                $insert = $this->pdo->prepare('
+                    INSERT INTO model_capabilities (model_id, device_type, capability_key, enabled)
+                    VALUES (?, ?, ?, 1)
+                    ON DUPLICATE KEY UPDATE enabled = 1
+                ');
+                foreach ($capabilityKeys as $capabilityKey) {
+                    $insert->execute([$modelId, $deviceType, $capabilityKey]);
+                }
+            }
+        } catch (\Throwable $e) {
+            if ($ownsTransaction) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
+        }
+
+        if ($ownsTransaction) {
+            $this->pdo->commit();
+        }
         $this->enabledFeatures = [];
     }
 
