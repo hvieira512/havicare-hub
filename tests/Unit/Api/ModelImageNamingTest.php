@@ -19,6 +19,24 @@ final class ModelImageNamingTest extends TestCase
 {
     private const FILE = '464e9b90a30f30aee389cd9de5926977.jpg';
 
+    /** @var list<string> */
+    private array $plantedFiles = [];
+
+    /** @var list<string> */
+    private array $createdDirectories = [];
+
+    protected function tearDown(): void
+    {
+        foreach ($this->plantedFiles as $path) {
+            @unlink($path);
+        }
+        foreach (array_reverse($this->createdDirectories) as $directory) {
+            @rmdir($directory);
+        }
+        $this->plantedFiles = [];
+        $this->createdDirectories = [];
+    }
+
     public function testTheUrlIsBuiltFromTheRouteAndTheFilename(): void
     {
         self::assertSame(
@@ -58,15 +76,51 @@ final class ModelImageNamingTest extends TestCase
         self::assertFileDoesNotExist($path);
     }
 
-    /** Um nome que não é um dos nossos não apaga nada, venha de onde vier. */
+    /**
+     * Um nome que não é um dos nossos não apaga nada, venha de onde vier.
+     *
+     * Cada nome recusado tem um isco no caminho que ele atingiria: sem ficheiro lá, um
+     * `delete` que apagasse tudo o que lhe dessem também não deixava rasto.
+     */
     public function testDeleteIgnoresAnythingThatIsNotOneOfOurNames(): void
     {
         $store = new ModelImageStore();
+        $decoys = [];
+        foreach (['../../../etc/passwd', 'nao-e-um-hash.jpg', self::FILE . '/x'] as $name) {
+            $decoys[$name] = $this->plantDecoy(ModelImageStore::pathFor($name));
+        }
 
-        foreach (['../../../etc/passwd', 'nao-e-um-hash.jpg', '', self::FILE . '/x'] as $name) {
+        // O nome vazio aponta para a própria pasta, e o isco dela é ela mesma.
+        $directory = dirname(ModelImageStore::pathFor(self::FILE));
+        $this->makeDirectory($directory);
+
+        foreach ([...array_keys($decoys), ''] as $name) {
             $store->delete($name);
         }
 
-        self::assertTrue(true, 'nenhum destes pode chegar ao disco');
+        foreach ($decoys as $name => $path) {
+            self::assertFileExists($path, "`{$name}` chegou ao disco");
+        }
+        self::assertDirectoryExists($directory, 'o nome vazio apontava para a pasta das imagens');
+    }
+
+    private function plantDecoy(string $path): string
+    {
+        $this->makeDirectory(dirname($path));
+        file_put_contents($path, 'isco');
+        $this->plantedFiles[] = $path;
+
+        return $path;
+    }
+
+    /** Só as pastas que este teste criou é que ele larga no fim. */
+    private function makeDirectory(string $directory): void
+    {
+        if (is_dir($directory)) {
+            return;
+        }
+        $this->makeDirectory(dirname($directory));
+        mkdir($directory, 0755);
+        $this->createdDirectories[] = $directory;
     }
 }
