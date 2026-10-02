@@ -3,7 +3,7 @@
 namespace Hub\Registry;
 
 use Hub\Domain\DeviceMetadata;
-use Hub\Api\Repository\WhitelistRepository;
+use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 
 class Whitelist
 {

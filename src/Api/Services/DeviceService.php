@@ -8,7 +8,7 @@ use Hub\Api\Http\DevicePresentation;
 use Hub\Api\Http\DeviceResponseCompactor;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Request\RequestBinder;
 use Hub\Domain\Capability\CapabilityCatalog;

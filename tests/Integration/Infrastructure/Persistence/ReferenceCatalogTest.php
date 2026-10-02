@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Infrastructure\Persistence;
 
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
@@ -45,7 +45,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
      */
     public function testCapabilitiesComeBackAlphabeticalWithinTheirSection(): void
     {
-        $capabilities = new \Hub\Api\Repository\GenericCapabilityRepository(
+        $capabilities = new \Hub\Infrastructure\Persistence\Repository\GenericCapabilityRepository(
             $this->createDashboardDatabase()->pdo(),
         );
 
@@ -76,7 +76,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
     /** A ordem das secções é escolhida, e não alfabética: a telemetria vem antes da saúde. */
     public function testSectionsKeepTheirDeliberateOrder(): void
     {
-        $capabilities = new \Hub\Api\Repository\GenericCapabilityRepository(
+        $capabilities = new \Hub\Infrastructure\Persistence\Repository\GenericCapabilityRepository(
             $this->createDashboardDatabase()->pdo(),
         );
 

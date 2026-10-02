@@ -2,9 +2,9 @@
 
 namespace Hub\Ingress\Http\Qinglanst;
 
-use Hub\Api\Repository\RadarApiCredentialsRepository;
-use Hub\Api\Repository\RadarLayoutRepository;
-use Hub\Api\Repository\WhitelistRepository;
+use Hub\Infrastructure\Persistence\Repository\RadarApiCredentialsRepository;
+use Hub\Infrastructure\Persistence\Repository\RadarLayoutRepository;
+use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;

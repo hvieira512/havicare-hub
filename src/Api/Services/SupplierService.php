@@ -4,7 +4,7 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\SupplierColumns;
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
 class SupplierService
 {

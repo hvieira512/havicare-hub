@@ -2,7 +2,7 @@
 
 namespace Tests\Integration\Api\Repository;
 
-use Hub\Api\Repository\DeviceConfigurationRepository;
+use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationRepository;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 

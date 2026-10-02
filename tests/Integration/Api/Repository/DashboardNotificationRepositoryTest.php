@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Repository;
 
-use Hub\Api\Repository\DashboardNotificationRepository;
+use Hub\Infrastructure\Persistence\Repository\DashboardNotificationRepository;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DashboardNotificationRepositoryTest extends MysqlDashboardTestCase

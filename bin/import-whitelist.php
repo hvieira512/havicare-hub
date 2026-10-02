@@ -5,7 +5,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Hub\Api\Repository\WhitelistRepository;
+use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 use Hub\Registry\WhitelistFileImporter;
 use Hub\Runtime\CliBootstrap;
 

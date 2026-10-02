@@ -2,7 +2,7 @@
 
 namespace Hub\Dashboard;
 
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Log\Logger;
 use Hub\Protocol\Adapter\WonlexAdapter;

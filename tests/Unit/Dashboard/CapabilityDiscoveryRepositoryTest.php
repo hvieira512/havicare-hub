@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\Api\Repository\CapabilityDiscoveryRepository;
+use Hub\Infrastructure\Persistence\Repository\CapabilityDiscoveryRepository;
 use PHPUnit\Framework\TestCase;
 
 final class CapabilityDiscoveryRepositoryTest extends TestCase

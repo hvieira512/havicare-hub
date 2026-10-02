@@ -3,7 +3,7 @@
 namespace Tests\Integration\Dashboard;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\ModelService;
 use Hub\Domain\DeviceProtocol;
 use Hub\Domain\SupplierCapabilityTemplate;

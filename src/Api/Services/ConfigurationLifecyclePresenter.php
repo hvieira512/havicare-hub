@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
-use Hub\Api\Repository\DeviceConfigurationLifecycleRepository;
+use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationLifecycleRepository;
 use Hub\Domain\Capability\CapabilityCatalog;
 
 /**

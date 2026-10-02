@@ -5,7 +5,7 @@ namespace Tests\Support;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Auth\ApiTokenStore;
 use Hub\Api\Auth\LoginThrottle;
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Dashboard\DashboardStore;
 use Hub\Device\MessageFanout;

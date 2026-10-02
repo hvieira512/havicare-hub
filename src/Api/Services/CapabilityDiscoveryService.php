@@ -4,8 +4,8 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
-use Hub\Api\Repository\ApiDataAccess;
-use Hub\Api\Repository\CapabilityDiscoveryRepository;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\CapabilityDiscoveryRepository;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceMetadata;
 

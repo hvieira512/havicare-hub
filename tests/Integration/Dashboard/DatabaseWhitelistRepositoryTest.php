@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Registry\Whitelist;
 use Hub\Registry\WhitelistFileImporter;
 use Tests\Support\Doubles\IngressFixtures;

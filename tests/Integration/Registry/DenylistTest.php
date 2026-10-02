@@ -2,7 +2,7 @@
 
 namespace Tests\Integration\Registry;
 
-use Hub\Api\Repository\DenylistRepository;
+use Hub\Infrastructure\Persistence\Repository\DenylistRepository;
 use Hub\Registry\Denylist;
 use Tests\Support\MysqlDashboardTestCase;
 

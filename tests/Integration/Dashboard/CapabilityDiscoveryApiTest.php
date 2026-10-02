@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
-use Hub\Api\Repository\ApiDataAccess;
-use Hub\Api\Repository\CapabilityDiscoveryRepository;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\CapabilityDiscoveryRepository;
 use Hub\Api\Services\CapabilityDiscoveryService;
 use Hub\Api\Services\DeviceService;
 use Tests\Support\MysqlDashboardTestCase;

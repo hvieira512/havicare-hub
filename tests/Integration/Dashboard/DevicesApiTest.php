@@ -2,7 +2,7 @@
 
 namespace Tests\Integration\Dashboard;
 
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\DeviceService;
 use Hub\Dashboard\DashboardStore;
 use Hub\Device\PendingDownlink;

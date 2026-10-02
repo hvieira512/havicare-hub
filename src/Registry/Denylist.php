@@ -2,7 +2,7 @@
 
 namespace Hub\Registry;
 
-use Hub\Api\Repository\DenylistRepository;
+use Hub\Infrastructure\Persistence\Repository\DenylistRepository;
 
 /**
  * As identidades bloqueadas, em memória, consultadas no caminho de rejeição para calar um

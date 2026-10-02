@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Repository;
 
-use Hub\Api\Repository\GatewayDeviceLinkRepository;
+use Hub\Infrastructure\Persistence\Repository\GatewayDeviceLinkRepository;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 

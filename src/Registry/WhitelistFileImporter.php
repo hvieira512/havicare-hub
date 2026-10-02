@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Registry;
 
-use Hub\Api\Repository\WhitelistRepository;
+use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 use Hub\Domain\DeviceMetadata;
 
 final class WhitelistFileImporter

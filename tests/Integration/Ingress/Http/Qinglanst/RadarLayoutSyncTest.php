@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Ingress\Http\Qinglanst;
 
-use Hub\Api\Repository\RadarApiCredentialsRepository;
-use Hub\Api\Repository\RadarLayoutRepository;
-use Hub\Api\Repository\WhitelistRepository;
+use Hub\Infrastructure\Persistence\Repository\RadarApiCredentialsRepository;
+use Hub\Infrastructure\Persistence\Repository\RadarLayoutRepository;
+use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 use Hub\Ingress\Http\Qinglanst\LayoutParser;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiException;

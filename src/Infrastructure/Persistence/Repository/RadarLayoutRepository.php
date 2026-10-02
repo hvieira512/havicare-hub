@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Api\Repository;
+namespace Hub\Infrastructure\Persistence\Repository;
 
 use PDO;
 

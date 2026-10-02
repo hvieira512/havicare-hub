@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Runtime;
 
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceHubServer;

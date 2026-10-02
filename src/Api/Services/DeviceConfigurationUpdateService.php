@@ -3,7 +3,7 @@
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookDelta;
 use Hub\Command\DeviceCommandCatalog;

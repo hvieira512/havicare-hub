@@ -3,7 +3,7 @@
 namespace Tests\Integration\Api\Services;
 
 use Hub\Api\Services\DeviceService;
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Device\DeviceHubServer;
 use Hub\Domain\DeviceMetadata;

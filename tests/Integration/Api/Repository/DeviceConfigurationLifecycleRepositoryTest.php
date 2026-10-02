@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Repository;
 
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTestCase

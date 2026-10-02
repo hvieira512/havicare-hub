@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Persistence;
 
-use Hub\Api\Repository\DiaperSensitivityRepository;
+use Hub\Infrastructure\Persistence\Repository\DiaperSensitivityRepository;
 use Hub\Domain\DiaperSensitivity;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;

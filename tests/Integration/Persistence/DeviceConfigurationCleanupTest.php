@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Persistence;
 
-use Hub\Api\Repository\WhitelistRepository;
+use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 

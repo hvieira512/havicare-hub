@@ -5,7 +5,7 @@ namespace Hub\Api\Services;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\LicenseColumns;
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\LicenseWriteRequest;
 use Hub\Api\Request\RequestBinder;
 

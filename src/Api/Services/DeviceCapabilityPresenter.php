@@ -2,7 +2,7 @@
 
 namespace Hub\Api\Services;
 
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\ConfigurationInputDefaults;

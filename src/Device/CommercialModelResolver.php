@@ -2,7 +2,7 @@
 
 namespace Hub\Device;
 
-use Hub\Api\Repository\ModelRepository;
+use Hub\Infrastructure\Persistence\Repository\ModelRepository;
 
 class CommercialModelResolver
 {

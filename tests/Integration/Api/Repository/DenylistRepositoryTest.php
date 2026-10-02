@@ -2,7 +2,7 @@
 
 namespace Tests\Integration\Api\Repository;
 
-use Hub\Api\Repository\DenylistRepository;
+use Hub\Infrastructure\Persistence\Repository\DenylistRepository;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Repository;
 
-use Hub\Api\Repository\RadarLayoutRepository;
+use Hub\Infrastructure\Persistence\Repository\RadarLayoutRepository;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 

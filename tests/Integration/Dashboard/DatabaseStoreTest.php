@@ -2,7 +2,7 @@
 
 namespace Tests\Integration\Dashboard;
 
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Domain\SupplierCapabilityTemplate;
 use Hub\Infrastructure\Persistence\ReferenceCatalogSeeder;
 use Tests\Support\MysqlDashboardTestCase;

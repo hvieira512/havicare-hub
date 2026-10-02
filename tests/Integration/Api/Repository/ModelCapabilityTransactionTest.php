@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Repository;
 
-use Hub\Api\Repository\ApiDataAccess;
-use Hub\Api\Repository\ModelCapabilityRepository;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ModelCapabilityRepository;
 use PDO;
 use PDOException;
 use PDOStatement;

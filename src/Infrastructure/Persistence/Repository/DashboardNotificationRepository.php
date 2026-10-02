@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hub\Api\Repository;
+namespace Hub\Infrastructure\Persistence\Repository;
 
 use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;

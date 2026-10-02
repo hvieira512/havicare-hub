@@ -6,7 +6,7 @@ use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionPresenter;
 use Hub\Api\Http\ModelColumns;
 use Hub\Api\Http\ModelImageUrl;
-use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\ModelWriteRequest;
 use Hub\Api\Request\RequestBinder;
 use Hub\Command\DeviceCommandCatalog;
