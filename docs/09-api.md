@@ -222,7 +222,7 @@ Um `license_client` mal ligado — sem licença, sem empresa, ou com referência
 inconsistentes — **não autentica de todo**. Ver o
 [capítulo do multi-inquilino](07-multi-inquilino.md).
 
-## 3. As 51 rotas
+## 3. As 61 rotas
 
 **P** = pública · **LC** = admin e `license_client` · **A** = só `hub_admin`
 
@@ -231,6 +231,7 @@ inconsistentes — **não autentica de todo**. Ver o
 | | Rota | O que faz | |
 |---|---|---|---|
 | POST | `/api/auth/login` | Autentica ou roda o par de tokens | **P** |
+| POST | `/api/auth/logout` | Revoga o par de tokens | **P** |
 | POST | `/api/auth/license-token` | Emite um par de tokens para um inquilino nomeado | **A** |
 
 ### O stream do inquilino
@@ -360,6 +361,8 @@ forma a um inquilino grande poder crescer sem conseguir esfomear os outros.
 | GET | `/api/devices/{imei}/links` | Dispositivos BLE ligados a um gateway | **A** |
 | POST | `/api/devices/{imei}/links/{linkedImei}` | Liga | **A** |
 | DELETE | `/api/devices/{imei}/links/{linkedImei}` | Desliga | **A** |
+| GET | `/api/devices/{imei}/radar-layout` | A planta das divisões de um radar | **A** |
+| POST | `/api/devices/{imei}/radar-layout/sync` | Lê a planta ao aparelho e guarda-a | **A** |
 
 ### Catálogo
 
@@ -390,6 +393,11 @@ imagem do modelo no mesmo pedido.
 |---|---|---|
 | GET · POST | `/api/companies` · `/api/licenses` · `/api/users` | **A** |
 | PUT · DELETE | `/api/companies/{id}` · `/api/licenses/{id}` · `/api/users/{id}` | **A** |
+| GET · PUT · DELETE | `/api/licenses/{id}/radar-credentials` | **A** |
+| POST | `/api/licenses/{id}/radar-credentials/check` | **A** |
+
+As credenciais da cloud do radar são por licença — não há conta única que veja a
+frota toda —, e o `check` experimenta-as sem as guardar.
 
 ### Notificações e sistema
 
@@ -398,9 +406,14 @@ imagem do modelo no mesmo pedido.
 | GET | `/api/notifications` | **A** |
 | PATCH | `/api/notifications/read` | **A** |
 | DELETE | `/api/notifications/{id}` | **A** |
+| GET · POST | `/api/denylist` | **A** |
+| DELETE | `/api/denylist/{identity}` | **A** |
 | GET | `/api/openapi.json` · `/api/docs` | **P** |
 
-**51 rotas**, que dão **50 operações** na especificação. A que falta é o
+Bloquear uma identidade cala o aparelho de vez, e apaga as notificações que ele
+já tinha gerado.
+
+**61 rotas**, que dão **60 operações** na especificação. A que falta é o
 `/api/devices/{imei}/stream`, excluído por decisão — ver a
 [secção 6](#rotas-excluídas-da-especificação).
 
@@ -504,10 +517,10 @@ mais curta de escrever.
 
 | Estado | Códigos |
 |---|---|
-| **400** | `invalid_request`, `invalid_config`, `invalid_link`, `invalid_state`, `unsupported_feature`, `unknown_protocol`, `device_already_associated`, `invalid_association`, `invalid_role`, `invalid_license`, `feature_not_requestable`, `unsupported_capability`, `invalid_requestable_capability`, `upload_failed`, `image_too_large`, `gd_missing`, `gd_jpeg_missing`, `invalid_image`, `image_save_failed` |
+| **400** | `invalid_request`, `invalid_config`, `invalid_link`, `invalid_state`, `unsupported_feature`, `unknown_protocol`, `device_already_associated`, `invalid_association`, `invalid_role`, `invalid_license`, `feature_not_requestable`, `unsupported_capability`, `invalid_requestable_capability`, `upload_failed`, `image_too_large`, `image_dimensions_too_large`, `gd_missing`, `gd_jpeg_missing`, `invalid_image`, `image_save_failed` |
 | **401** | `invalid_credentials`, `invalid_refresh_token`, `unauthorized` |
 | **403** | `forbidden` |
-| **404** | `association_not_found`, `capability_not_found`, `company_not_found`, `discovery_not_found`, `license_not_found`, `model_not_found`, `not_found`, `notification_not_found`, `protocol_not_found`, `supplier_not_found`, `user_not_found` |
+| **404** | `association_not_found`, `capability_not_found`, `company_not_found`, `denylist_not_found`, `discovery_not_found`, `license_not_found`, `model_not_found`, `not_found`, `notification_not_found`, `protocol_not_found`, `supplier_not_found`, `user_not_found` |
 | **409** | `device_exists`, `model_exists`, `user_exists`, `duplicate` |
 | **429** | `too_many_attempts` |
 | **500** | `server_error` |
@@ -622,8 +635,8 @@ declarado na especificação como o de qualquer outra rota.
 |---|---|
 | `src/Api/ApiKernel.php` | Despacho, identidade, `ETag`, erros não apanhados |
 | `src/Api/Routing/ApiRouter.php` · `ApiRoute.php` | Encaminhamento |
-| `src/Api/Routes/*.php` | As 51 rotas, agrupadas por assunto |
-| `src/Api/Auth/ApiTokenStore.php` | Os três tipos de token |
+| `src/Api/Routes/*.php` | As 61 rotas, agrupadas por assunto |
+| `src/Api/Auth/ApiTokenStore.php` | Os dois tipos de token |
 | `src/Api/Auth/RouteAccessPolicy.php` | As nove rotas do `license_client` |
 | `src/Api/Auth/ApiAuthContext.php` | `canAccessTenant()` |
 | `src/Api/Http/ApiError.php` | Os 43 códigos e o mapa de estados |
