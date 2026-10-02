@@ -40,36 +40,7 @@ esta lógica venha a ser descartada em vez de generalizada.
 
 ---
 
-## 3. A produção não declara os seus identificadores de cliente MQTT
-
-**O que é.** O `.env` da instância de produção não define `MQTT_CLIENT_ID_PREFIX`
-nem `QINGLANST_CLIENT_ID_PREFIX`. Os valores efetivos — `health-mqtt` e
-`qinglanst-radar` — vêm dos literais por omissão do `src/Config.php`.
-
-**Porque importa.** A identidade da produção no broker está implícita em código.
-Alterar um desses literais mudaria silenciosamente o identificador com que a
-produção se apresenta, e o efeito de dois clientes trocarem de identidade é uma
-expulsão mútua em ciclo, com a ingestão a falhar de forma intermitente.
-
-Declará-los explicitamente no `.env` da produção remove o acoplamento. É uma
-alteração de configuração, não de código, e obriga a reiniciar o serviço.
-
-**O corte aos 23 caracteres foi levantado.** O `ConnectionFactory` encurtava o
-identificador ao limite do MQTT 3.1; o hub fala 3.1.1, onde 23 é o mínimo que um
-servidor tem de aceitar e não um máximo.
-
-O id é `{prefixo}-{sufixo}` e os sufixos são fixos, por isso o corte comia a
-cauda do prefixo — a parte que distingue uma máquina das outras. Um
-`qinglanst-radar-local-hugo` chegava ao broker como `qinglanst-radar-local-h`, e
-duas configurações distintas passavam a apresentar-se com o mesmo nome, com o
-broker a expulsar uma delas e o registo a dizer só «connection lost».
-
-A produção não mudou — os identificadores dela já cabiam. A dev passou a enviar
-dois por inteiro, deixando no broker uma sessão persistente órfã de cada um.
-
----
-
-## 4. Ausência de tabela de telemetria
+## 3. Ausência de tabela de telemetria
 
 **Descrição.** O histórico reside exclusivamente no Redis, limitado a 100
 entradas por lista e por dispositivo.
@@ -83,7 +54,7 @@ Fica registado por constituir uma decisão de arquitetura e não uma omissão.
 
 ---
 
-## 5. O dispensador de comprimidos entra por TCP, não pela cloud do fabricante
+## 4. O dispensador de comprimidos entra por TCP, não pela cloud do fabricante
 
 **O que é.** O fabricante do Zayata M228 oferece dois modelos de integração. No
 primeiro, o aparelho fala com a cloud dele e nós falamos com essa cloud por HTTPS,
@@ -162,3 +133,6 @@ novas:
 | O `composer.json` aceitava PHP 8.1, versão que nunca foi testada                                | passou a `^8.4`                                                          |
 | O IMEI por omissão do simulador não existia no inventário semeado                               | corrigido no `Makefile`                                                  |
 | A nota dizia não haver cópias de segurança das bases; passaram a existir, com rotação e temporizador | corrigido no [capítulo 18](18-backups.md)                           |
+| A produção não declarava os seus identificadores de cliente MQTT, que vinham dos literais do `src/Config.php` | as duas instâncias declaram-nos no `.env`                      |
+| O `ConnectionFactory` cortava o identificador de cliente aos 23 caracteres do MQTT 3.1          | levantado; o hub fala 3.1.1, onde 23 é o mínimo e não o máximo            |
+| A documentação dava ao radar um broker próprio                                                  | é o mesmo broker — [capítulo 04](04-ingestao-mqtt-radar.md)              |

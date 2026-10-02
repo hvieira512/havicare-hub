@@ -3,7 +3,7 @@
 ## Âmbito
 
 O hub serve simultaneamente um socket TCP de ligações persistentes, três
-clientes MQTT em dois brokers distintos e um servidor HTTP para a dashboard e a
+clientes MQTT contra o mesmo broker e um servidor HTTP para a dashboard e a
 API. Toda esta atividade decorre **num único processo**, sobre **um único event
 loop** ReactPHP.
 

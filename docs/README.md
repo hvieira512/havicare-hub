@@ -54,7 +54,7 @@ com as instâncias de desenvolvimento e produção estão no
 | [01 — Visão geral](01-visao-geral.md) | Processo, event loop, sequência de arranque e ciclo de vida de uma mensagem |
 | [02 — Ingestão TCP: relógios](02-ingestao-tcp-relogios.md) | Wonlex, Vivistar e 4P Touch: enquadramento, autenticação, telemetria e identidade |
 | [03 — Ingestão MQTT: NCS](03-ingestao-mqtt-ncs.md) | Voerka W812: chamadas de ajuda e estado de ligação |
-| [04 — Ingestão MQTT: radar](04-ingestao-mqtt-radar.md) | Qinglanst: broker dedicado e descodificação binária |
+| [04 — Ingestão MQTT: radar](04-ingestao-mqtt-radar.md) | Qinglanst: sessão MQTT própria e descodificação binária |
 | [05 — Gateways e dispositivos BLE](05-gateways-ble.md) | MOKO MKGW3/MKGW4, pulseiras W6/W6B e sensor de fralda MONIT |
 
 ### Contratos públicos
