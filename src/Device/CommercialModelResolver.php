@@ -25,4 +25,24 @@ class CommercialModelResolver
 
         return trim((string)($row['commercial_name'] ?? ''));
     }
+
+    /**
+     * O nome comercial acrescentado ao dispositivo, quando se sabe. Omite-se quando não se
+     * sabe, como todo o descritor.
+     *
+     * @param array<string, mixed> $device
+     * @return array<string, mixed>
+     */
+    public function enrich(array $device): array
+    {
+        $name = $this->resolveCommercialName(
+            (string)($device['supplier'] ?? ''),
+            (string)($device['model'] ?? ''),
+        );
+        if ($name !== '') {
+            $device['commercialName'] = $name;
+        }
+
+        return $device;
+    }
 }

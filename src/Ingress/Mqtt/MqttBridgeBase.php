@@ -52,6 +52,7 @@ abstract class MqttBridgeBase implements MqttIngress
         protected readonly ?DeviceReportStore $deviceStore = null,
         protected readonly ?Denylist $denylist = null,
         ?callable $clock = null,
+        protected readonly ?CommercialModelResolver $commercialModelResolver = null,
     ) {
         $this->subscriber = $subscriber;
         $this->reconnectSubscriber = $reconnectSubscriber;
@@ -197,20 +198,11 @@ abstract class MqttBridgeBase implements MqttIngress
      * @param array<string, mixed> $device
      * @return array<string, mixed>
      */
-    protected function enrichWithCommercialName(array $device, ?CommercialModelResolver $resolver): array
+    protected function enrichWithCommercialName(array $device): array
     {
         // A resolução corre por mensagem, mas assenta num lookup O(1) no índice em memória do
         // ModelRepository, invalidado quando um modelo muda -- não justifica um memo à parte.
-        $commercialName = $resolver?->resolveCommercialName(
-            (string)($device['supplier'] ?? ''),
-            (string)($device['model'] ?? '')
-        ) ?? '';
-
-        if ($commercialName !== '') {
-            $device['commercialName'] = $commercialName;
-        }
-
-        return $device;
+        return $this->commercialModelResolver?->enrich($device) ?? $device;
     }
 
     /**

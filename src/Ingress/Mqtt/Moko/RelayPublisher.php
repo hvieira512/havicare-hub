@@ -286,15 +286,6 @@ final class RelayPublisher
      */
     private function withCommercialName(array $device): array
     {
-        $name = $this->commercialModelResolver?->resolveCommercialName(
-            (string)($device['supplier'] ?? ''),
-            (string)($device['model'] ?? ''),
-        ) ?? '';
-
-        if ($name !== '') {
-            $device['commercialName'] = $name;
-        }
-
-        return $device;
+        return $this->commercialModelResolver?->enrich($device) ?? $device;
     }
 }

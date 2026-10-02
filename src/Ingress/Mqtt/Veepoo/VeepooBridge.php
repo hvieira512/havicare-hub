@@ -107,7 +107,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
         ?callable $reconnectSubscriber = null,
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,
-        private readonly ?CommercialModelResolver $commercialModelResolver = null,
+        ?CommercialModelResolver $commercialModelResolver = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -118,6 +118,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             $reconnectSubscriber,
             $deviceStore,
             clock: $clock,
+            commercialModelResolver: $commercialModelResolver,
         );
         $this->normalizer = new DailyBlockNormalizer();
         $this->downlinkDispatcher = new DownlinkDispatcher(
@@ -182,7 +183,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        $device = $this->enrichWithCommercialName($device, $this->commercialModelResolver);
+        $device = $this->enrichWithCommercialName($device);
         $deviceKey = (string)$device['imei'];
         $licenseId = (int)($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');

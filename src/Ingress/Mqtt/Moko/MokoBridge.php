@@ -44,7 +44,7 @@ final class MokoBridge extends MqttBridgeBase
         string $topicFilter = 'havicare-hub/null/0/gw/+/raw',
         ?callable $reconnectSubscriber = null,
         ?\Hub\State\DeviceReportStore $deviceStore = null,
-        private readonly ?CommercialModelResolver $commercialModelResolver = null,
+        ?CommercialModelResolver $commercialModelResolver = null,
         private readonly int $dedupeTtlSeconds = 5,
         private readonly int $telemetryRefreshSeconds = 60,
         private readonly int $gatewayIdleTimeoutSeconds = 180,
@@ -64,6 +64,7 @@ final class MokoBridge extends MqttBridgeBase
             deviceStore: $deviceStore,
             denylist: $denylist,
             clock: $clock,
+            commercialModelResolver: $commercialModelResolver,
         );
         $this->links = $links;
         $this->state = $state;
@@ -192,7 +193,7 @@ final class MokoBridge extends MqttBridgeBase
             Logger::channel('hub')->warning("Ignoring invalid MOKO gateway payload or gateway MAC mismatch on {$topic}");
             return;
         }
-        $gateway = $this->enrich($gateway);
+        $gateway = $this->enrichWithCommercialName($gateway);
         $this->recordGateway($gateway, $decoded, $topic, $payload);
 
         if (in_array((string)$decoded['messageId'], self::SCAN_MESSAGE_IDS, true) && is_array($decoded['data'])) {
@@ -341,7 +342,7 @@ final class MokoBridge extends MqttBridgeBase
             return null;
         }
 
-        return $this->enrich($device);
+        return $this->enrichWithCommercialName($device);
     }
 
     /**
@@ -461,8 +462,4 @@ final class MokoBridge extends MqttBridgeBase
     }
 
     /** @param array<string, mixed> $device @return array<string, mixed> */
-    private function enrich(array $device): array
-    {
-        return $this->enrichWithCommercialName($device, $this->commercialModelResolver);
-    }
 }

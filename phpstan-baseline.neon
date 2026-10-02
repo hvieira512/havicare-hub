@@ -3607,12 +3607,6 @@ parameters:
 			path: src/Ingress/Mqtt/Moko/Mkgw4MessageDecoder.php
 
 		-
-			message: '#^Method Hub\\Ingress\\Mqtt\\Moko\\MokoBridge\:\:enrich\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Ingress/Mqtt/Moko/MokoBridge.php
-
-		-
 			message: '#^Method Hub\\Ingress\\Mqtt\\Moko\\MokoBridge\:\:handleMonitObservation\(\) has parameter \$decoded with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1

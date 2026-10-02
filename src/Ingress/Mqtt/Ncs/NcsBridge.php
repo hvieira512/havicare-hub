@@ -11,7 +11,6 @@ use Hub\Log\Logger;
 final class NcsBridge extends MqttBridgeBase
 {
     private readonly MessageNormalizer $normalizer;
-    private readonly ?\Hub\Device\CommercialModelResolver $commercialModelResolver;
 
     public function __construct(
         \PhpMqtt\Client\MqttClient $subscriber,
@@ -32,9 +31,9 @@ final class NcsBridge extends MqttBridgeBase
             reconnectSubscriber: $reconnectSubscriber,
             deviceStore: $deviceStore,
             denylist: $denylist,
+            commercialModelResolver: $commercialModelResolver,
         );
         $this->normalizer = new MessageNormalizer();
-        $this->commercialModelResolver = $commercialModelResolver;
     }
 
     protected function handleMessage(string $topic, string $payload): void
@@ -82,7 +81,7 @@ final class NcsBridge extends MqttBridgeBase
             return;
         }
 
-        $device = $this->enrichDevice($device);
+        $device = $this->enrichWithCommercialName($device);
 
         try {
             $normalized = $this->normalizer->normalize($parsedTopic, $message, $device);
@@ -127,14 +126,5 @@ final class NcsBridge extends MqttBridgeBase
                 'licenseId' => $licenseId,
             ]));
         }
-    }
-
-    /**
-     * @param array<string, mixed> $device
-     * @return array<string, mixed>
-     */
-    private function enrichDevice(array $device): array
-    {
-        return $this->enrichWithCommercialName($device, $this->commercialModelResolver);
     }
 }

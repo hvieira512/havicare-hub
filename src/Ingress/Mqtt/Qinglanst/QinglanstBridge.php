@@ -13,7 +13,6 @@ final class QinglanstBridge extends MqttBridgeBase
 {
     private readonly PayloadDecoder $decoder;
     private readonly MessageNormalizer $normalizer;
-    private readonly ?\Hub\Device\CommercialModelResolver $commercialModelResolver;
     private readonly IngestStats $stats;
     private readonly DashboardWritePolicy $dashboardWritePolicy;
     private const SUPPORTED_TYPES = ['position', 'heartbreath', 'posstatics', 'hbstatics'];
@@ -41,10 +40,10 @@ final class QinglanstBridge extends MqttBridgeBase
             reconnectSubscriber: $reconnectSubscriber,
             deviceStore: $deviceStore,
             denylist: $denylist,
+            commercialModelResolver: $commercialModelResolver,
         );
         $this->decoder = new PayloadDecoder();
         $this->normalizer = new MessageNormalizer();
-        $this->commercialModelResolver = $commercialModelResolver;
         $this->stats = $stats ?? new IngestStats($topicFilter);
         $this->dashboardWritePolicy = $dashboardWritePolicy ?? new DashboardWritePolicy();
     }
@@ -73,7 +72,7 @@ final class QinglanstBridge extends MqttBridgeBase
             return;
         }
 
-        $device = $this->enrichDevice($device);
+        $device = $this->enrichWithCommercialName($device);
 
         $jsonStart = hrtime(true);
         $upstreamPayload = $this->extractUpstreamPayload($payload);
@@ -255,15 +254,6 @@ final class QinglanstBridge extends MqttBridgeBase
         );
         Logger::channel('hub')->warning("Ignoring unregistered Qinglanst device uid={$deviceUid}");
         return null;
-    }
-
-    /**
-     * @param array<string, mixed> $device
-     * @return array<string, mixed>
-     */
-    private function enrichDevice(array $device): array
-    {
-        return $this->enrichWithCommercialName($device, $this->commercialModelResolver);
     }
 
     private function extractUpstreamPayload(string $payload): ?array
