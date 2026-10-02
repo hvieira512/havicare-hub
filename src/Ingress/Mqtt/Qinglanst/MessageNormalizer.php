@@ -241,7 +241,7 @@ final class MessageNormalizer
                 'heart_rate_high_critical',
                 self::LEVEL_DANGER,
                 self::SOURCE_HEARTBREATH,
-                ['heart_rate' => $heartRate]
+                ['heartRate' => $heartRate]
             );
         } elseif ($heartRate > 120) {
             $events[] = $this->detectionEvent(
@@ -250,7 +250,7 @@ final class MessageNormalizer
                 'heart_rate_high',
                 self::LEVEL_WARNING,
                 self::SOURCE_HEARTBREATH,
-                ['heart_rate' => $heartRate]
+                ['heartRate' => $heartRate]
             );
         }
 
@@ -261,7 +261,7 @@ final class MessageNormalizer
                 'heart_rate_low_critical',
                 self::LEVEL_DANGER,
                 self::SOURCE_HEARTBREATH,
-                ['heart_rate' => $heartRate]
+                ['heartRate' => $heartRate]
             );
         } elseif ($heartRate > 0 && $heartRate < 40) {
             $events[] = $this->detectionEvent(
@@ -270,7 +270,7 @@ final class MessageNormalizer
                 'heart_rate_low',
                 self::LEVEL_WARNING,
                 self::SOURCE_HEARTBREATH,
-                ['heart_rate' => $heartRate]
+                ['heartRate' => $heartRate]
             );
         }
 
@@ -281,7 +281,7 @@ final class MessageNormalizer
                 'vitals_signal_lost',
                 self::LEVEL_DANGER,
                 self::SOURCE_HEARTBREATH,
-                ['breathing' => $breathing, 'heart_rate' => $heartRate]
+                ['breathsPerMinute' => $breathing, 'heartRate' => $heartRate]
             );
         }
 

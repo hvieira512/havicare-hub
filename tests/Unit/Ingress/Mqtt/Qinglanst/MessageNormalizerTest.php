@@ -296,6 +296,27 @@ final class MessageNormalizerTest extends TestCase
         );
     }
 
+    /**
+     * Os campos dentro do `data` são camelCase, e o `details` dos alarmes de sinais vitais é
+     * `data` como qualquer outro.
+     */
+    public function testVitalsAlarmDetailsUseTheContractNaming(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'heartbreath',
+            'device_code' => 'radar-topic-uid',
+            'breathing' => 14,
+            'heart_rate' => 180,
+        ], $topic, $this->device());
+
+        $details = $result['events'][0]['data']['details'];
+
+        self::assertSame(['heartRate' => 180], $details);
+    }
+
     private function person(int $index, string $posture, string $lastEvent = 'no_event'): array
     {
         return [
