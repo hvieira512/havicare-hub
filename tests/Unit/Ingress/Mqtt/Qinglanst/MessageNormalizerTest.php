@@ -317,6 +317,59 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame(['heartRate' => 180], $details);
     }
 
+    /**
+     * O radar classifica a respiração sozinho — `hypopnea`, `hyperpnea`, `apnea` — e o hub
+     * limita-se a levantar o alarme que já estava declarado para cada uma.
+     *
+     * @dataProvider breathingAlarms
+     */
+    public function testTheReportedBreathingStatusRaisesItsAlarm(int $statusByte, string $expected): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'hbstatics',
+            'device_code' => 'radar-topic-uid',
+            'real_time_breathing' => 16,
+            'real_time_heart_rate' => 70,
+            'avg_breathing_per_minute' => 16,
+            'avg_heart_rate_per_minute' => 70,
+            'breathing_status_per_minute' => $statusByte === 1 ? 'hypopnea' : 'hyperpnea',
+            'heart_rate_status_per_minute' => 'normal',
+            'vital_signs_status' => 'normal',
+            'sleep_state_status' => 'awake',
+        ], $topic, $this->device());
+
+        $types = array_column(array_column($result['events'], 'data'), 'detectionType');
+        self::assertContains($expected, $types);
+    }
+
+    /** @return array<string, array{0: int, 1: string}> */
+    public static function breathingAlarms(): array
+    {
+        return [
+            'respiração fraca' => [1, 'breathing_low'],
+            'respiração acelerada' => [2, 'breathing_high'],
+        ];
+    }
+
+    /** Sentado no chão é estado a assinalar, e estava declarado sem ninguém o produzir. */
+    public function testSittingOnTheGroundRaisesItsAlarm(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'position',
+            'device_code' => 'radar-topic-uid',
+            'people' => [$this->person(1, 'confirmed_sitting_on_ground')],
+        ], $topic, $this->device());
+
+        $types = array_column(array_column($result['events'], 'data'), 'detectionType');
+        self::assertContains('sitting_confirmed', $types);
+    }
+
     private function person(int $index, string $posture, string $lastEvent = 'no_event'): array
     {
         return [

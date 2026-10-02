@@ -154,6 +154,19 @@ final class MessageNormalizer
                 );
             }
 
+            // Sentado no chão é o estado em que muitas vezes se encontra alguém depois de
+            // uma queda que o radar não chegou a confirmar.
+            if ($posture === 'confirmed_sitting_on_ground') {
+                return $this->detectionEvent(
+                    $topic,
+                    $device,
+                    'sitting_confirmed',
+                    self::LEVEL_WARNING,
+                    self::SOURCE_POSITION,
+                    ['personIndex' => $person['person_index']]
+                );
+            }
+
             if ($eventCode === 'enter_room') {
                 return $this->detectionEvent(
                     $topic,
@@ -367,6 +380,31 @@ final class MessageNormalizer
                 $device,
                 'apnea',
                 self::LEVEL_DANGER,
+                self::SOURCE_HEARTBREATH,
+                ['breathingStatus' => $breathingStatus]
+            );
+        }
+
+        // O radar classifica a respiração nas suas próprias palavras clínicas, e o hub
+        // levanta o alarme que cada uma já tinha declarado. A apneia é perigo, estas duas são
+        // aviso, como as da frequência cardíaca.
+        if ($breathingStatus === 'hyperpnea') {
+            $events[] = $this->detectionEvent(
+                $topic,
+                $device,
+                'breathing_high',
+                self::LEVEL_WARNING,
+                self::SOURCE_HEARTBREATH,
+                ['breathingStatus' => $breathingStatus]
+            );
+        }
+
+        if ($breathingStatus === 'hypopnea') {
+            $events[] = $this->detectionEvent(
+                $topic,
+                $device,
+                'breathing_low',
+                self::LEVEL_WARNING,
                 self::SOURCE_HEARTBREATH,
                 ['breathingStatus' => $breathingStatus]
             );
