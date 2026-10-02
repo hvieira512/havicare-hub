@@ -73,51 +73,68 @@ final class CallWhitelistCapability implements CapabilityContract
 
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
-        if ($nativeKey === 'call_whitelist') {
-            if (isset($desired['fields']) && is_array($desired['fields'])) {
-                $contacts = [];
-                foreach ($desired['fields'] as $field) {
-                    $field = trim((string)$field);
-                    if ($field === '') {
-                        continue;
-                    }
-                    $separator = strpos($field, '|');
-                    $name = $separator !== false ? substr($field, 0, $separator) : '';
-                    $phone = $separator !== false ? substr($field, $separator + 1) : $field;
-                    $name = trim((string)$name);
-                    $phone = trim((string)$phone);
-                    if ($phone !== '') {
-                        $contacts[] = [
-                            'name' => $name,
-                            'phone' => $phone,
-                        ];
-                    }
-                }
-
-                return self::normalizeContactsList($contacts);
-            }
-
-            if (isset($desired['contacts']) && is_array($desired['contacts'])) {
-                return self::normalizeContactsList($desired['contacts']);
-            }
-
-            if (isset($desired['numbers']) && is_array($desired['numbers'])) {
-                return self::normalizeContactsList(array_map(
-                    static fn(mixed $phone): array => ['name' => '', 'phone' => $phone],
-                    $desired['numbers']
-                ));
-            }
-
-            if (array_is_list($desired)) {
-                return self::normalizeContactsList($desired);
-            }
-        }
-
         if ($nativeKey === 'whitelistGroup1' || $nativeKey === 'whitelistGroup2') {
             return $this->fourPTouch->fromNative($desired);
         }
 
-        return [];
+        if ($nativeKey !== 'call_whitelist') {
+            return [];
+        }
+
+        return self::publicForm($protocol, self::decodeContacts($desired));
+    }
+
+    /**
+     * Só o Vivistar leva nome: as tramas dos outros transportam o número e mais nada.
+     *
+     * @param list<array{name: string, phone: string}> $contacts
+     * @return list<array{name: string, phone: string}>|list<string>
+     */
+    private static function publicForm(string $protocol, array $contacts): array
+    {
+        return $protocol === 'vivistar-iw'
+            ? $contacts
+            : array_map(static fn(array $contact): string => $contact['phone'], $contacts);
+    }
+
+    /**
+     * O payload guardado chega com chave (`fields`, `contacts`, `numbers`) ou em lista simples.
+     *
+     * @param array<array-key, mixed> $desired
+     * @return list<array{name: string, phone: string}>
+     */
+    private static function decodeContacts(array $desired): array
+    {
+        if (isset($desired['fields']) && is_array($desired['fields'])) {
+            $contacts = [];
+            foreach ($desired['fields'] as $field) {
+                $field = trim((string)$field);
+                if ($field === '') {
+                    continue;
+                }
+                $separator = strpos($field, '|');
+                $name = $separator !== false ? trim((string)substr($field, 0, $separator)) : '';
+                $phone = trim((string)($separator !== false ? substr($field, $separator + 1) : $field));
+                if ($phone !== '') {
+                    $contacts[] = ['name' => $name, 'phone' => $phone];
+                }
+            }
+
+            return self::normalizeContactsList($contacts);
+        }
+
+        if (isset($desired['contacts']) && is_array($desired['contacts'])) {
+            return self::normalizeContactsList($desired['contacts']);
+        }
+
+        if (isset($desired['numbers']) && is_array($desired['numbers'])) {
+            return self::normalizeContactsList(array_map(
+                static fn(mixed $phone): array => ['name' => '', 'phone' => $phone],
+                $desired['numbers']
+            ));
+        }
+
+        return array_is_list($desired) ? self::normalizeContactsList($desired) : [];
     }
 
     public function defaultValue(string $protocol): mixed

@@ -29,13 +29,6 @@ final class ConfigurationSyncStatus
         'response_timeout',
     ];
 
-    private PublicConfigurationValue $publicForm;
-
-    public function __construct()
-    {
-        $this->publicForm = new PublicConfigurationValue();
-    }
-
     /**
      * Quanto de uma capacidade entregue em vários comandos é que o aparelho já confirmou.
      *
@@ -71,13 +64,12 @@ final class ConfigurationSyncStatus
      * @return array<string, array<string, array<string, mixed>>>
      */
     public function pendingEntries(
-        string $protocol,
         array $desiredCapabilities,
         array $reportedCapabilities,
         array $configRows,
     ): array {
-        $desiredValues = $this->flattenWritableCapabilities($protocol, $desiredCapabilities);
-        $reportedValues = $this->flattenWritableCapabilities($protocol, $reportedCapabilities);
+        $desiredValues = $this->flattenWritableCapabilities($desiredCapabilities);
+        $reportedValues = $this->flattenWritableCapabilities($reportedCapabilities);
         $rowMeta = $this->genericCapabilityRowMeta($configRows);
         $pending = [];
 
@@ -108,7 +100,7 @@ final class ConfigurationSyncStatus
      * @param array<string, mixed> $capabilities
      * @return array<string, mixed>
      */
-    public function flattenWritableCapabilities(string $protocol, array $capabilities): array
+    public function flattenWritableCapabilities(array $capabilities): array
     {
         $flattened = [];
         foreach ($capabilities as $section => $entries) {
@@ -119,11 +111,7 @@ final class ConfigurationSyncStatus
                 if (is_array($value) && array_key_exists('supported', $value) && !array_key_exists('value', $value)) {
                     continue;
                 }
-                $flattened["{$section}.{$key}"] = $this->publicForm->forGenericKey(
-                    $protocol,
-                    $key,
-                    $this->extractCapabilityValue($value)
-                );
+                $flattened["{$section}.{$key}"] = $this->extractCapabilityValue($value);
             }
         }
 

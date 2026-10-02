@@ -164,7 +164,6 @@ final class ConfigurationLifecyclePresenter
             false
         );
         return $this->configurationSync->pendingEntries(
-            $protocol,
             $desiredCapabilities,
             $reportedCapabilities,
             $configRows,

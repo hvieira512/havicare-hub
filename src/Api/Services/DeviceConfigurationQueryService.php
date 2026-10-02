@@ -13,13 +13,10 @@ final class DeviceConfigurationQueryService
 {
     use CapabilityHelpers;
 
-    private PublicConfigurationValue $publicForm;
-
     public function __construct(
         private ApiDataAccess $db,
         private CapabilityRegistry $capabilities,
     ) {
-        $this->publicForm = new PublicConfigurationValue();
     }
 
     /**
@@ -49,11 +46,7 @@ final class DeviceConfigurationQueryService
                 continue;
             }
 
-            $normalized = $this->publicValue(
-                $protocol,
-                $genericKey,
-                $this->capabilities->fromNative($protocol, $genericKey, $nativeKey, $desired)
-            );
+            $normalized = $this->capabilities->fromNative($protocol, $genericKey, $nativeKey, $desired);
             if ($normalized === null) {
                 continue;
             }
@@ -73,11 +66,6 @@ final class DeviceConfigurationQueryService
         }
 
         return $configurations;
-    }
-
-    public function publicValue(string $protocol, string $genericKey, mixed $value): mixed
-    {
-        return $this->publicForm->forGenericKey($protocol, $genericKey, $value);
     }
 
     /**

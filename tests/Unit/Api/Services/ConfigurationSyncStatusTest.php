@@ -17,7 +17,7 @@ final class ConfigurationSyncStatusTest extends TestCase
 {
     public function testFlattensWritableCapabilitiesToSectionDotKeyPaths(): void
     {
-        $flat = $this->subject()->flattenWritableCapabilities('wonlex-json', [
+        $flat = $this->subject()->flattenWritableCapabilities([
             'telemetry' => ['heart_rate' => ['supported' => true, 'requestable' => true]],
             'alarms' => ['alarm_clock' => ['value' => [['time' => '08:00', 'enabled' => true]], '_meta' => ['limit' => 3]]],
             'settings_system' => ['whitelist_enabled' => ['value' => ['enabled' => true], '_meta' => []]],
@@ -34,7 +34,7 @@ final class ConfigurationSyncStatusTest extends TestCase
 
     public function testFlattenSkipsSupportedOnlyEntriesThatCarryNoValue(): void
     {
-        $flat = $this->subject()->flattenWritableCapabilities('voerka-ncs', [
+        $flat = $this->subject()->flattenWritableCapabilities([
             'settings_system' => [
                 'nurse_call' => ['supported' => true],
                 'volume' => ['value' => ['level' => 3], '_meta' => []],
@@ -44,41 +44,23 @@ final class ConfigurationSyncStatusTest extends TestCase
         self::assertSame(['settings_system.volume'], array_keys($flat));
     }
 
-    public function testSosContactsFlattenToPlainPhoneStrings(): void
+    /** O achatamento não toca no valor: ele chega já na forma pública do contrato. */
+    public function testFlatteningKeepsTheContractValueUntouched(): void
     {
-        $fromNumbers = $this->subject()->flattenWritableCapabilities('wonlex-json', [
-            'contacts' => [
-                'sos_contacts' => ['value' => ['numbers' => ['+351911111111', '']], '_meta' => []],
-            ],
-        ]);
-        $fromList = $this->subject()->flattenWritableCapabilities('wonlex-json', [
+        $flat = $this->subject()->flattenWritableCapabilities([
             'contacts' => [
                 'sos_contacts' => ['value' => ['+351911111111'], '_meta' => []],
-            ],
-        ]);
-
-        self::assertSame(['+351911111111'], $fromNumbers['contacts.sos_contacts'], 'blank slots are dropped');
-        self::assertSame(['+351911111111'], $fromList['contacts.sos_contacts']);
-    }
-
-    public function testCallWhitelistKeepsContactObjectsForVivistarAndPhonesElsewhere(): void
-    {
-        $capabilities = [
-            'contacts' => [
                 'call_whitelist' => [
-                    'value' => ['contacts' => [['name' => 'Suporte', 'phone' => '+351278710140']]],
+                    'value' => [['name' => 'Suporte', 'phone' => '+351278710140']],
                     '_meta' => [],
                 ],
             ],
-        ];
+        ]);
 
+        self::assertSame(['+351911111111'], $flat['contacts.sos_contacts']);
         self::assertSame(
             [['name' => 'Suporte', 'phone' => '+351278710140']],
-            $this->subject()->flattenWritableCapabilities('vivistar-iw', $capabilities)['contacts.call_whitelist']
-        );
-        self::assertSame(
-            ['+351278710140'],
-            $this->subject()->flattenWritableCapabilities('four-p-touch', $capabilities)['contacts.call_whitelist']
+            $flat['contacts.call_whitelist'],
         );
     }
 

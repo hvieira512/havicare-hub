@@ -1543,24 +1543,6 @@ parameters:
 			path: src/Api/Services/ProtocolService.php
 
 		-
-			message: '#^Method Hub\\Api\\Services\\PublicConfigurationValue\:\:mergeListValues\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Api/Services/PublicConfigurationValue.php
-
-		-
-			message: '#^Method Hub\\Api\\Services\\PublicConfigurationValue\:\:stringList\(\) has parameter \$values with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Api/Services/PublicConfigurationValue.php
-
-		-
-			message: '#^Method Hub\\Api\\Services\\PublicConfigurationValue\:\:stringifyPhoneList\(\) has parameter \$value with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Api/Services/PublicConfigurationValue.php
-
-		-
 			message: '#^Method Hub\\Api\\Services\\SupplierService\:\:list\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
