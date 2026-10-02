@@ -370,6 +370,80 @@ final class MessageNormalizerTest extends TestCase
         self::assertContains('sitting_confirmed', $types);
     }
 
+    /**
+     * Os sete ramos da detecção de posição, cada um com a sua detecção e o seu nível. É a
+     * rede do `detectPositionEvent`: três deles não tinham teste nenhum.
+     *
+     * @dataProvider positionDetections
+     */
+    public function testEachPostureAndMovementRaisesItsOwnDetection(
+        string $posture,
+        string $lastEvent,
+        string $expectedType,
+        string $expectedLevel,
+    ): void {
+        $normalizer = new MessageNormalizer();
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'position',
+            'device_code' => 'radar-topic-uid',
+            'people' => [$this->person(1, $posture, $lastEvent)],
+        ], $topic, $this->device());
+
+        self::assertCount(1, $result['events']);
+        self::assertSame($expectedType, $result['events'][0]['data']['detectionType']);
+        self::assertSame($expectedLevel, $result['events'][0]['data']['detectionLevel']);
+    }
+
+    /** @return array<string, array{0: string, 1: string, 2: string, 3: string}> */
+    public static function positionDetections(): array
+    {
+        return [
+            'queda confirmada'  => ['fall_confirmation', 'no_event', 'fall_confirmed', 'danger'],
+            'queda suspeita'    => ['suspected_fall', 'no_event', 'fall_confirmed', 'warning'],
+            'sentado no chão'   => ['confirmed_sitting_on_ground', 'no_event', 'sitting_confirmed', 'warning'],
+            'entrou na sala'    => ['walking', 'enter_room', 'room_entry', 'info'],
+            'saiu da sala'      => ['walking', 'leave_room', 'room_exit', 'info'],
+            'entrou na região'  => ['walking', 'enter_area', 'area_entry', 'info'],
+            'saiu da região'    => ['walking', 'leave_area', 'area_exit', 'info'],
+        ];
+    }
+
+    /** A postura ganha ao movimento: quem cai à entrada da sala dá a queda, não a entrada. */
+    public function testThePostureWinsOverTheMovement(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'position',
+            'device_code' => 'radar-topic-uid',
+            'people' => [$this->person(1, 'fall_confirmation', 'enter_room')],
+        ], $topic, $this->device());
+
+        self::assertSame('fall_confirmed', $result['events'][0]['data']['detectionType']);
+    }
+
+    /** Sai uma detecção por mensagem, mesmo com várias pessoas: a primeira que acertar. */
+    public function testOnlyTheFirstMatchingPersonProducesADetection(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'position',
+            'device_code' => 'radar-topic-uid',
+            'people' => [
+                $this->person(1, 'suspected_fall'),
+                $this->person(2, 'fall_confirmation'),
+            ],
+        ], $topic, $this->device());
+
+        self::assertCount(1, $result['events']);
+        self::assertSame(1, $result['events'][0]['data']['details']['personIndex']);
+    }
+
     private function person(int $index, string $posture, string $lastEvent = 'no_event'): array
     {
         return [

@@ -30,6 +30,49 @@ final class MessageNormalizer
     ];
 
     /**
+     * O que cada postura e cada movimento levantam, por campo da pessoa.
+     *
+     * A ordem conta duas vezes: a postura é procurada antes do movimento, e dentro de cada
+     * campo a primeira que acertar ganha -- quem cai à entrada da sala dá a queda, não a
+     * entrada.
+     */
+    private const POSITION_DETECTIONS = [
+        'posture_state' => [
+            'fall_confirmation' => ['fall_confirmed', self::LEVEL_DANGER],
+            'suspected_fall' => ['fall_confirmed', self::LEVEL_WARNING],
+            'confirmed_sitting_on_ground' => ['sitting_confirmed', self::LEVEL_WARNING],
+        ],
+        'last_event' => [
+            'enter_room' => ['room_entry', self::LEVEL_INFO],
+            'leave_room' => ['room_exit', self::LEVEL_INFO],
+            'enter_area' => ['area_entry', self::LEVEL_INFO],
+            'leave_area' => ['area_exit', self::LEVEL_INFO],
+        ],
+    ];
+
+    /**
+     * Os alarmes que o radar levanta por si: ele próprio classifica cada minuto e o hub só
+     * traduz a palavra dele na detecção que lhe pertence.
+     *
+     * Cada entrada é o campo descodificado, a chave com que o estado viaja no `details`, e as
+     * palavras que levantam alarme. Ao contrário da posição, aqui saem todos os que acertarem.
+     */
+    private const VITALS_STATUS_DETECTIONS = [
+        ['breathing_status_per_minute', 'breathingStatus', [
+            'apnea' => ['apnea', self::LEVEL_DANGER],
+            'hyperpnea' => ['breathing_high', self::LEVEL_WARNING],
+            'hypopnea' => ['breathing_low', self::LEVEL_WARNING],
+        ]],
+        ['heart_rate_status_per_minute', 'heartRateStatus', [
+            'high' => ['heart_rate_high', self::LEVEL_WARNING],
+            'low' => ['heart_rate_low', self::LEVEL_WARNING],
+        ]],
+        ['vital_signs_status', 'vitalSignsStatus', [
+            'weak' => ['vitals_signal_lost', self::LEVEL_WARNING],
+        ]],
+    ];
+
+    /**
      * A capacidade a que cada detecção pertence. Três e não quinze: cada evento leva o tipo
      * específico dentro, e o separador das Capacidades não ganha quinze linhas.
      */
@@ -123,89 +166,30 @@ final class MessageNormalizer
     }
 
     /**
-     * @param array $people
-     * @return array|null
+     * A primeira detecção que a mensagem justifica, ou `null`.
+     *
+     * Sai uma só, mesmo com várias pessoas: é um alarme por mensagem, da primeira pessoa que
+     * acertar na tabela.
+     *
+     * @param array<int, array> $people
+     * @return array<string, mixed>|null
      */
     private function detectPositionEvent(QinglanstTopic $topic, array $device, array $people): ?array
     {
         foreach ($people as $person) {
-            $posture = (string)($person['posture_state'] ?? '');
-            $eventCode = (string)($person['last_event'] ?? '');
+            foreach (self::POSITION_DETECTIONS as $field => $detections) {
+                $detection = $detections[(string)($person[$field] ?? '')] ?? null;
+                if ($detection === null) {
+                    continue;
+                }
 
-            if ($posture === 'fall_confirmation') {
+                [$type, $level] = $detection;
+
                 return $this->detectionEvent(
                     $topic,
                     $device,
-                    'fall_confirmed',
-                    self::LEVEL_DANGER,
-                    self::SOURCE_POSITION,
-                    ['personIndex' => $person['person_index']]
-                );
-            }
-
-            if ($posture === 'suspected_fall') {
-                return $this->detectionEvent(
-                    $topic,
-                    $device,
-                    'fall_confirmed',
-                    self::LEVEL_WARNING,
-                    self::SOURCE_POSITION,
-                    ['personIndex' => $person['person_index']]
-                );
-            }
-
-            // Sentado no chão é o estado em que muitas vezes se encontra alguém depois de
-            // uma queda que o radar não chegou a confirmar.
-            if ($posture === 'confirmed_sitting_on_ground') {
-                return $this->detectionEvent(
-                    $topic,
-                    $device,
-                    'sitting_confirmed',
-                    self::LEVEL_WARNING,
-                    self::SOURCE_POSITION,
-                    ['personIndex' => $person['person_index']]
-                );
-            }
-
-            if ($eventCode === 'enter_room') {
-                return $this->detectionEvent(
-                    $topic,
-                    $device,
-                    'room_entry',
-                    self::LEVEL_INFO,
-                    self::SOURCE_POSITION,
-                    ['personIndex' => $person['person_index']]
-                );
-            }
-
-            if ($eventCode === 'leave_room') {
-                return $this->detectionEvent(
-                    $topic,
-                    $device,
-                    'room_exit',
-                    self::LEVEL_INFO,
-                    self::SOURCE_POSITION,
-                    ['personIndex' => $person['person_index']]
-                );
-            }
-
-            if ($eventCode === 'enter_area') {
-                return $this->detectionEvent(
-                    $topic,
-                    $device,
-                    'area_entry',
-                    self::LEVEL_INFO,
-                    self::SOURCE_POSITION,
-                    ['personIndex' => $person['person_index']]
-                );
-            }
-
-            if ($eventCode === 'leave_area') {
-                return $this->detectionEvent(
-                    $topic,
-                    $device,
-                    'area_exit',
-                    self::LEVEL_INFO,
+                    $type,
+                    $level,
                     self::SOURCE_POSITION,
                     ['personIndex' => $person['person_index']]
                 );
@@ -369,77 +353,21 @@ final class MessageNormalizer
         ]);
 
         $events = [];
+        foreach (self::VITALS_STATUS_DETECTIONS as [$field, $detailKey, $detections]) {
+            $status = (string)($decoded[$field] ?? '');
+            $detection = $detections[$status] ?? null;
+            if ($detection === null) {
+                continue;
+            }
 
-        $breathingStatus = (string)($decoded['breathing_status_per_minute'] ?? '');
-        $heartStatus = (string)($decoded['heart_rate_status_per_minute'] ?? '');
-        $vitalStatus = (string)($decoded['vital_signs_status'] ?? '');
-
-        if ($breathingStatus === 'apnea') {
+            [$type, $level] = $detection;
             $events[] = $this->detectionEvent(
                 $topic,
                 $device,
-                'apnea',
-                self::LEVEL_DANGER,
+                $type,
+                $level,
                 self::SOURCE_HEARTBREATH,
-                ['breathingStatus' => $breathingStatus]
-            );
-        }
-
-        // O radar classifica a respiração nas suas próprias palavras clínicas, e o hub
-        // levanta o alarme que cada uma já tinha declarado. A apneia é perigo, estas duas são
-        // aviso, como as da frequência cardíaca.
-        if ($breathingStatus === 'hyperpnea') {
-            $events[] = $this->detectionEvent(
-                $topic,
-                $device,
-                'breathing_high',
-                self::LEVEL_WARNING,
-                self::SOURCE_HEARTBREATH,
-                ['breathingStatus' => $breathingStatus]
-            );
-        }
-
-        if ($breathingStatus === 'hypopnea') {
-            $events[] = $this->detectionEvent(
-                $topic,
-                $device,
-                'breathing_low',
-                self::LEVEL_WARNING,
-                self::SOURCE_HEARTBREATH,
-                ['breathingStatus' => $breathingStatus]
-            );
-        }
-
-        if ($heartStatus === 'high') {
-            $events[] = $this->detectionEvent(
-                $topic,
-                $device,
-                'heart_rate_high',
-                self::LEVEL_WARNING,
-                self::SOURCE_HEARTBREATH,
-                ['heartRateStatus' => $heartStatus]
-            );
-        }
-
-        if ($heartStatus === 'low') {
-            $events[] = $this->detectionEvent(
-                $topic,
-                $device,
-                'heart_rate_low',
-                self::LEVEL_WARNING,
-                self::SOURCE_HEARTBREATH,
-                ['heartRateStatus' => $heartStatus]
-            );
-        }
-
-        if ($vitalStatus === 'weak') {
-            $events[] = $this->detectionEvent(
-                $topic,
-                $device,
-                'vitals_signal_lost',
-                self::LEVEL_WARNING,
-                self::SOURCE_HEARTBREATH,
-                ['vitalSignsStatus' => $vitalStatus]
+                [$detailKey => $status]
             );
         }
 
