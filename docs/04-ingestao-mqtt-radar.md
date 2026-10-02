@@ -259,3 +259,14 @@ de desaparecer da planta — foi assim que o 7 se deu a conhecer. A tabela está
 | `src/Ingress/Mqtt/Qinglanst/DashboardWritePolicy.php` | Os dois travões |
 | `src/Ingress/Mqtt/Qinglanst/IngestStats.php` | O resumo periódico |
 | `simulator/benchmark-qinglanst.php` | Mede o custo da ingestão com dados gravados |
+
+A planta das divisões não vem pelo MQTT: é lida à cloud do fabricante, a pedido,
+pelo `POST /api/devices/{imei}/radar-layout/sync`.
+
+| Ficheiro | Responsabilidade |
+|---|---|
+| `src/Ingress/Http/Qinglanst/RadarLayoutSync.php` | O pedido, as credenciais da licença e a escrita da planta |
+| `src/Ingress/Http/Qinglanst/QinglanstApiClient.php` | O cliente HTTP da cloud, com login e sessão |
+| `src/Ingress/Http/Qinglanst/RequestSignature.php` | A assinatura que o fornecedor exige em cada pedido |
+| `src/Ingress/Http/Qinglanst/LayoutParser.php` | A planta crua para a forma que a dashboard desenha |
+| `src/Ingress/Http/Qinglanst/QinglanstApiException.php` | As avarias da cloud, distintas das recusas do pedido |

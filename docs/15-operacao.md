@@ -228,8 +228,9 @@ sem deixar rasto em código.
 
 Esse teto é partilhado por tudo o que o processo aceita: as ligações TCP dos
 relógios, os sockets MQTT, os pedidos HTTP e cada ligação aberta ao
-`/api/stream`. Medido a abrir streams em rampa, o que acontece ao passar dos 1024
-é isto:
+`/api/stream`. Medido com o `simulator/stream-stress-probe.php`, que abre N
+streams de inquilino em simultâneo contra `127.0.0.1`, o que acontece ao passar
+dos 1024 é isto:
 
 - O `stream_select()` começa a avisar `You MUST recompile PHP with a larger value
   of FD_SETSIZE`, **uma vez por iteração do loop** — e o loop itera milhares de

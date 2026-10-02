@@ -1231,6 +1231,15 @@ unidade**, e foi esta a resposta que destravou o ensaio.
 the beginning»*. O offset guardado deixa de valer assim que a ligação cai, e por
 isso um registo novo a meio da transferência repõe o pedido no princípio.
 
+No hub, a transferência vive em três peças e num comando de linha:
+
+| Ficheiro | Responsabilidade |
+|---|---|
+| `src/Device/Firmware/FirmwareUpgrade.php` | O ficheiro, o checksum e o pacote seguinte a partir de um offset |
+| `src/Device/Firmware/FirmwareUpgradeStore.php` | O contrato de onde a transferência em curso é guardada |
+| `src/Device/Firmware/RedisFirmwareUpgradeStore.php` | A implementação em Redis, que sobrevive a um reinício do hub |
+| `bin/upgrade-firmware.php` | Põe um ficheiro em fila para um aparelho |
+
 **Como se sabe que correu bem:** o `0x8002` é a versão, e passa a valer a nova
 depois de o aparelho reiniciar e voltar a registar-se. Aparece sozinha no cartão
 «Versão do firmware».

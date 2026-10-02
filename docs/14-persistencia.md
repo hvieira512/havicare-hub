@@ -114,7 +114,7 @@ dispositivo e capacidade, substituída e não acumulada.
 **As credenciais do radar são reversíveis, e não há maneira de não o serem:**
 servem para fazer login no fornecedor, que espera a palavra-passe. A defesa não
 é a cifra, é a saída — não saem pela API, e a dashboard recebe apenas se estão
-ou não preenchidas. A [`RadarLayoutSync`](04-ingestao-mqtt-radar.md) é quem as
+ou não preenchidas. A [`RadarLayoutSync`](04-ingestao-mqtt-radar.md#implementação) é quem as
 usa, e os tokens ficam na base e não em ficheiro porque são duas instâncias do
 hub na mesma máquina.
 

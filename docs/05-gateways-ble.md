@@ -281,7 +281,7 @@ seu valor de consulta.
 
 ## Diagnóstico
 
-Duas ferramentas de linha de comandos operam sobre um broker real:
+Três ferramentas de linha de comandos operam sobre um broker real:
 
 ```bash
 # Dispositivos captados por um gateway, com identificação quando possível
@@ -289,7 +289,13 @@ php simulator/ble-scan-probe.php --seconds=120
 
 # Identificação de um dispositivo pela alteração do anúncio ao ser acionado
 php simulator/ble-scan-diff.php --baseline=45 --min-rssi=-70
+
+# Observa um dispositivo até ele anunciar, e descodifica o primeiro frame a sério
+php simulator/w6b-watch.php
 ```
+
+A terceira serve uma W6B ainda sem slot de anúncio configurado: ela é visível ao
+gateway mas não traz dados nenhuns, e isso distingue-se mal de um defeito.
 
 A segunda destina-se a dispositivos ainda sem descodificador: regista uma linha
 de base do que já é captado e assinala os endereços novos e os anúncios cujo
@@ -312,6 +318,22 @@ conteúdo se altere.
 | `src/Ingress/Mqtt/Monit/MonitMecsProDecoder.php` | Os 20 bytes do sensor de fralda |
 | `src/Ingress/Mqtt/Monit/MonitNormalizer.php` | Humidade, índice e estado |
 | `src/Ingress/Mqtt/Moko/W6bDecoder.php` · `W6Decoder.php` | As duas pulseiras |
+
+As pulseiras Veepoo não passam por um gateway MOKO: falam com a sua própria
+aplicação, que publica no broker. É a única ingestão com downlink, e a única a
+implementar o `DispatchesQueued`.
+
+| Ficheiro | Responsabilidade |
+|---|---|
+| `src/Ingress/Mqtt/Veepoo/VeepooBridge.php` | Subscreve, identifica e publica |
+| `src/Ingress/Mqtt/Veepoo/BraceletPresence.php` | Visto, offline e o histórico de presença |
+| `src/Ingress/Mqtt/Veepoo/BraceletContext.php` | O dispositivo resolvido, por mensagem |
+| `src/Ingress/Mqtt/Veepoo/DailyBlockNormalizer.php` | Os blocos diários do histórico |
+| `src/Ingress/Mqtt/Veepoo/MeasurementNormalizer.php` | As medições pontuais |
+| `src/Ingress/Mqtt/Veepoo/SleepNormalizer.php` | As fases de sono |
+| `src/Ingress/Mqtt/Veepoo/SettlingReadings.php` | As leituras ainda a estabilizar, que não saem |
+| `src/Ingress/Mqtt/Veepoo/MeasurementFailureReporter.php` | A medição que falhou, e porquê |
+| `src/Ingress/Mqtt/Veepoo/DownlinkDispatcher.php` | Os comandos em fila para a pulseira |
 | `src/Ingress/Mqtt/Moko/BraceletTelemetry.php` | Bateria e movimento, comuns às duas |
 | `src/Ingress/Mqtt/Moko/ProximityTracker.php` | A janela de RSSI |
 | `src/Ingress/Mqtt/Gateway/RedisObservationStateStore.php` | De-duplicação, refrescamento, transições |

@@ -192,6 +192,13 @@ emitido não se desactiva, expira.
 
 Os detalhes estão no [capítulo da API](09-api.md).
 
+## Verificar o isolamento
+
+O `simulator/stream-isolation-probe.php` prova, contra uma instância a correr,
+que o `/api/stream` de um inquilino não leva nada de outro. Abre todos os streams
+ao mesmo tempo e mantém os outros inquilinos a produzir durante a janela: uma
+janela em que eles estivessem calados provava apenas que estavam calados.
+
 ## Implementação
 
 | Ficheiro | Responsabilidade |
