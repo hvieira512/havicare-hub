@@ -75,9 +75,9 @@ flowchart TB
 
 ### Revisões
 
-Cada alteração incrementa `desired_revision`. O `confirmed_revision` só sobe
-quando o aparelho confirma. A diferença entre os dois é, literalmente, o que
-ainda não chegou lá.
+Cada alteração incrementa `desired_revision`. Quem responde «este dispositivo
+está atrasado?» é o `sync_status` da alteração apontada pelo
+`current_change_id`, e não uma segunda revisão.
 
 ## 3. O ciclo de vida de uma operação
 
