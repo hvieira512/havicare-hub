@@ -127,7 +127,7 @@ POST /api/auth/license-token
 A resposta tem a forma do login, com `role` a `license_client` e o âmbito do par
 nomeado. Daí em diante o token é indistinguível de um obtido com credenciais
 próprias: renova-se pelo `/api/auth/login` com o `refresh_token`, e obedece às
-mesmas nove rotas.
+mesmas onze rotas.
 
 Existe para as plataformas dos clientes deixarem de precisar de uma credencial
 do hub por inquilino. A plataforma pede com a conta de administrador que já usa
@@ -198,9 +198,9 @@ administrador e nada é verificado. **É só para desenvolvimento local.**
 | Papel | Alcance |
 |---|---|
 | `hub_admin` | Tudo. É o único que entra na dashboard |
-| `license_client` | Nove rotas, e só os dispositivos do seu par empresa+licença |
+| `license_client` | Onze rotas, e só os dispositivos do seu par empresa+licença |
 
-As nove rotas do `license_client`:
+As onze rotas do `license_client`:
 
 ```text
 GET    /api/stream
@@ -212,6 +212,8 @@ PATCH  /api/devices/{imei}/configurations
 PATCH  /api/devices/{imei}/association
 DELETE /api/devices/{imei}/association
 GET    /api/commands/{id}
+GET    /api/devices/{imei}/radar-layout
+POST   /api/devices/{imei}/radar-layout/sync
 ```
 
 São **duas** verificações independentes: a rota tem de estar na lista, e depois
@@ -361,8 +363,8 @@ forma a um inquilino grande poder crescer sem conseguir esfomear os outros.
 | GET | `/api/devices/{imei}/links` | Dispositivos BLE ligados a um gateway | **A** |
 | POST | `/api/devices/{imei}/links/{linkedImei}` | Liga | **A** |
 | DELETE | `/api/devices/{imei}/links/{linkedImei}` | Desliga | **A** |
-| GET | `/api/devices/{imei}/radar-layout` | A planta das divisões de um radar | **A** |
-| POST | `/api/devices/{imei}/radar-layout/sync` | Lê a planta ao aparelho e guarda-a | **A** |
+| GET | `/api/devices/{imei}/radar-layout` | A planta das divisões de um radar | **LC** |
+| POST | `/api/devices/{imei}/radar-layout/sync` | Lê a planta ao aparelho e guarda-a | **LC** |
 
 ### Catálogo
 
@@ -637,7 +639,7 @@ declarado na especificação como o de qualquer outra rota.
 | `src/Api/Routing/ApiRouter.php` · `ApiRoute.php` | Encaminhamento |
 | `src/Api/Routes/*.php` | As 61 rotas, agrupadas por assunto |
 | `src/Api/Auth/ApiTokenStore.php` | Os dois tipos de token |
-| `src/Api/Auth/RouteAccessPolicy.php` | As nove rotas do `license_client` |
+| `src/Api/Auth/RouteAccessPolicy.php` | As onze rotas do `license_client` |
 | `src/Api/Auth/ApiAuthContext.php` | `canAccessTenant()` |
 | `src/Api/Http/ApiError.php` | Os 43 códigos e o mapa de estados |
 | `src/Api/Http/JsonResponder.php` | O estado sai do código do erro |

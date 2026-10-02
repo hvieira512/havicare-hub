@@ -100,6 +100,26 @@ final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
     }
 
     /**
+     * O inquilino lê a planta do radar que é seu, e não a de outro.
+     *
+     * A allowlist abre a rota ao papel; quem decide o aparelho é a verificação do serviço. Sem
+     * a segunda metade, abrir a rota dava a planta de qualquer radar a qualquer inquilino.
+     */
+    public function testATenantReadsOnlyItsOwnRadarLayout(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $db->whitelist->register('861265061009901', 'Qinglanst', 'RD-V1', 'radar', 1001, '', '861265061009901', 'hitcare');
+        $db->whitelist->register('861265061009902', 'Qinglanst', 'RD-V1', 'radar', 2002, '', '861265061009902', 'otherCare');
+        $auth = ['Authorization' => 'Bearer ' . $this->loginToken($server, 'tenant', 'tenant-secret')];
+
+        $own = $server(new ServerRequest('GET', '/api/devices/861265061009901/radar-layout', $auth));
+        self::assertSame(200, $own->getStatusCode(), (string)$own->getBody());
+
+        $other = $server(new ServerRequest('GET', '/api/devices/861265061009902/radar-layout', $auth));
+        self::assertSame(404, $other->getStatusCode(), (string)$other->getBody());
+    }
+
+    /**
      * Um inquilino não emite tokens, nem para si próprio.
      *
      * O `tenant` do harness é um `license_client` da mesma licença que pediria, portanto o

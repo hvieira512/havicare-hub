@@ -21,6 +21,10 @@ final class RouteAccessPolicy
         'PATCH /api/devices/{imei}/association',
         'DELETE /api/devices/{imei}/association',
         'GET /api/commands/{id}',
+        // A planta é do radar do próprio inquilino, e o `sync` vai buscá-la com as credenciais
+        // da licença dele. Quem decide o aparelho é o `RadarLayoutService`, não esta lista.
+        'GET /api/devices/{imei}/radar-layout',
+        'POST /api/devices/{imei}/radar-layout/sync',
     ];
 
     public function allows(ApiAuthContext $context, string $method, string $pattern): bool

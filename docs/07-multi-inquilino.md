@@ -173,7 +173,7 @@ Dois papéis:
 | Papel | O que pode |
 |---|---|
 | `hub_admin` | Tudo. É o único que entra na dashboard |
-| `license_client` | Só os dispositivos do seu par empresa+licença, e só em nove rotas |
+| `license_client` | Só os dispositivos do seu par empresa+licença, e só em onze rotas |
 
 A verificação por linha exige que **tudo** bata certo: a mesma empresa (sem
 distinção de maiúsculas), a mesma licença, e as duas positivas. Um dispositivo
