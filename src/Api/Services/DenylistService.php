@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
+use Hub\Api\Request\DenylistBlockRequest;
+use Hub\Api\Request\RequestBinder;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
 final class DenylistService
@@ -20,15 +22,14 @@ final class DenylistService
 
     public function block(array $payload, string $createdBy = ''): array
     {
-        $identity = trim((string)($payload['identity'] ?? ''));
-        if ($identity === '') {
-            return ApiError::invalidRequest('identity is required')->toArray();
+        $request = (new RequestBinder())->bind($payload, DenylistBlockRequest::class, coerceStrings: true);
+        if (is_array($request)) {
+            return $request;
         }
 
-        $protocol = trim((string)($payload['protocol'] ?? ''));
-        $note = isset($payload['note']) && trim((string)$payload['note']) !== ''
-            ? trim((string)$payload['note'])
-            : null;
+        $identity = trim((string)$request->identity);
+        $protocol = trim((string)($request->protocol ?? ''));
+        $note = trim((string)($request->note ?? '')) !== '' ? trim((string)$request->note) : null;
 
         $this->db->denylist->add($identity, $protocol, $note, $createdBy);
         // Bloquear cala o aparelho de vez: as notificações que ele já gerou desaparecem.

@@ -6,6 +6,8 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
+use Hub\Api\Request\CapabilityDiscoveryRequest;
+use Hub\Api\Request\RequestBinder;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\CapabilityDiscoveryRepository;
 use Hub\Domain\Capability\CapabilityCatalog;
@@ -39,11 +41,13 @@ final class CapabilityDiscoveryService
 
     public function preview(array $payload, ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
     {
-        $imei = trim((string)($payload['imei'] ?? ''));
-        $modelId = (int)($payload['modelId'] ?? 0);
-        if ($imei === '' || $modelId <= 0) {
-            return ApiError::invalidRequest('imei and modelId are required')->toArray();
+        $request = (new RequestBinder())->bind($payload, CapabilityDiscoveryRequest::class, coerceStrings: true);
+        if (is_array($request)) {
+            return $request;
         }
+
+        $imei = trim((string)$request->imei);
+        $modelId = (int)$request->modelId;
 
         $model = $this->db->models->findById($modelId);
         if ($model === null) {

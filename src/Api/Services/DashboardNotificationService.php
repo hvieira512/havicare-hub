@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
+use Hub\Api\Request\NotificationReadRequest;
+use Hub\Api\Request\RequestBinder;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
 final class DashboardNotificationService
@@ -34,19 +36,14 @@ final class DashboardNotificationService
      */
     public function markRead(array $payload): array
     {
-        if (!isset($payload['ids']) || !is_array($payload['ids'])) {
-            return ApiError::invalidRequest('ids array is required')->toArray();
+        $request = (new RequestBinder())->bind($payload, NotificationReadRequest::class, coerceStrings: true);
+        if (is_array($request)) {
+            return $request;
         }
 
         $ids = [];
-        foreach ($payload['ids'] as $id) {
-            if (!is_int($id) && !(is_string($id) && ctype_digit($id))) {
-                return ApiError::invalidRequest('ids must contain positive integers')->toArray();
-            }
+        foreach ($request->ids ?? [] as $id) {
             $normalized = (int)$id;
-            if ($normalized <= 0) {
-                return ApiError::invalidRequest('ids must contain positive integers')->toArray();
-            }
             $ids[] = $normalized;
         }
 
