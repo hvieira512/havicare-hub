@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { applyDetailRange, clearDetailFilters, detailFilterChipLabels, initDetailFilters } =
+const { applyDetailRange, applyDetailType, clearDetailFilters, detailFilterChipLabels, initDetailFilters } =
     await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
 
 /**
@@ -94,4 +94,24 @@ test("limpar os filtros larga o alcance escolhido", () => {
     clearDetailFilters();
 
     assert.deepEqual(detailFilterChipLabels(state.detailFilters), []);
+});
+
+/** O «Aplicar» vive dentro das «Datas…»: com elas fechadas, um tipo à espera dele nunca chegava à lista. */
+test("o tipo aplica-se ao escolher, sem passar pelo Aplicar", () => {
+    const els = filterEls();
+    els.detailFilterType.innerHTML = "<option value=\"all\">Todos</option><option value=\"sleep_state\">Estado do sono</option>";
+    initDetailFilters({
+        els,
+        onChange: () => {
+            changes += 1;
+        },
+        renderDownlinkRequests: () => {},
+        renderTelemetryList: () => {},
+    });
+
+    els.detailFilterType.value = "sleep_state";
+    applyDetailType();
+
+    assert.equal(state.detailFilters.type, "sleep_state");
+    assert.equal(changes, 1);
 });

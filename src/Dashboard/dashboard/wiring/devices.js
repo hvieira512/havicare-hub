@@ -31,6 +31,7 @@ import {
 import {
     applyDetailFilters,
     applyDetailSearch,
+    applyDetailType,
     clearDetailFilters,
     handleDownlinkPagerClick,
     handleTelemetryPagerClick,
@@ -295,7 +296,7 @@ function bindDetail() {
     els.clearDetailFiltersBtn.addEventListener("click", clearDetailFilters);
     els.detailFilterFrom.addEventListener("change", updateDetailFilterDraft);
     els.detailFilterTo.addEventListener("change", updateDetailFilterDraft);
-    els.detailFilterType.addEventListener("change", updateDetailFilterDraft);
+    els.detailFilterType.addEventListener("change", applyDetailType);
     els.detailSearch.addEventListener("input", applyDetailSearch);
     els.detailActiveFilters.addEventListener("click", (event) => {
         const button = event.target.closest("[data-action=\"removeDetailFilter\"]");

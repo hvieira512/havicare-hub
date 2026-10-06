@@ -41,6 +41,10 @@
                                             <button class="btn btn-sm btn-outline-secondary rounded-pill" type="button" data-detail-range="<?= h($range) ?>" aria-pressed="false"><?= h($label) ?></button>
                                             <?php endforeach; ?>
                                             <button class="btn btn-sm btn-outline-secondary rounded-pill" type="button" data-bs-toggle="collapse" data-bs-target="#detailFilterDates" aria-expanded="false" aria-controls="detailFilterDates">Datas&hellip;</button>
+                                            <label for="detailFilterType" class="visually-hidden">Tipo</label>
+                                            <select id="detailFilterType" class="form-select form-select-sm w-auto mw-100 ms-auto">
+                                                <option value="all">Todos os tipos</option>
+                                            </select>
                                         </div>
                                         <div class="collapse" id="detailFilterDates">
                                             <div class="row g-2 align-items-end pt-3">
@@ -56,12 +60,6 @@
                                                     <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check', 'me-1') ?>Aplicar</button>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="pt-3">
-                                            <label for="detailFilterType" class="section-label">Tipo</label>
-                                            <select id="detailFilterType" class="form-select form-select-sm w-auto mw-100">
-                                                <option value="all">Todos</option>
-                                            </select>
                                         </div>
                                     </div>
                                 </div>

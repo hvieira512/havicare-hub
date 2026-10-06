@@ -231,7 +231,7 @@ export function populateDetailFilterTypes() {
     // logo abaixo.
     if (select.dataset.detailFilterTypesSignature !== signature) {
         select.innerHTML = [
-            "<option value=\"all\">Todos</option>",
+            "<option value=\"all\">Todos os tipos</option>",
             ...observedTypes.map(filterTypeOption),
         ].join("");
         select.dataset.detailFilterTypesSignature = signature;
@@ -289,6 +289,14 @@ export function applyDetailFilters() {
         type: els.detailFilterType.value,
         q: state.detailFilters.q,
     };
+    resetDetailFiltersDraft();
+    restartTelemetryPaging();
+    onChange();
+}
+
+/** O tipo aplica-se ao escolher, como os alcances: não há nada a meio de escrever. */
+export function applyDetailType() {
+    state.detailFilters = { ...state.detailFilters, type: els.detailFilterType.value };
     resetDetailFiltersDraft();
     restartTelemetryPaging();
     onChange();
