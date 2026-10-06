@@ -192,8 +192,9 @@ final class InMemoryRedisClient implements ClientInterface
         return $this->hashes[$key][$field] ?? null;
     }
 
-    /** @return list<string|null> values in the order requested, null where absent */
     /**
+     * Os valores pela ordem pedida, com `null` onde a chave não existe.
+     *
      * @param list<string> $fields
      * @return list<string|null>
      */

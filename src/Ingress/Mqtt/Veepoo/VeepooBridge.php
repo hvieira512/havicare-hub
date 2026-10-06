@@ -322,12 +322,6 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /**
-     * Entrega ao gateway o que estiver em fila para esta pulseira.
-     *
-     * Publica no canal de comandos do próprio gateway, e não no do aparelho: quem executa é
-     * a caixa, que tem a sessão BLE. Isto é entrega, não criação.
-     */
-    /**
      * Publica telemetria no MQTT e no histórico da dashboard.
      *
      * São dois destinos e não um: o MQTT serve quem integra, a dashboard serve quem opera.

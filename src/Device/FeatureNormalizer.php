@@ -358,11 +358,8 @@ final class FeatureNormalizer
      * vários em simultâneo (a máscara do 4P Touch), e cada um vira um evento
      * próprio; máscara a zero devolve lista vazia, e não há alarme.
      *
-     * @return list<string>
-     */
-    /**
      * @param array<string, mixed> $payload
-     * @return array<string, mixed>
+     * @return list<string>
      */
     public static function alarmReasons(array $payload): array
     {

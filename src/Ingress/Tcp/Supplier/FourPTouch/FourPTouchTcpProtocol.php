@@ -21,11 +21,10 @@ final class FourPTouchTcpProtocol extends AbstractTcpProtocol
     }
 
     /**
-     * @return array<int, TcpResponse>
-     */
-    /**
      * O `TAKEPILLS` é a única trama do 4P Touch que confirma uma configuração, e di-lo num
      * campo próprio: `1` aceitou, `0` recusou, e o resto é o aparelho a não se pronunciar.
+     *
+     * @param array<string, mixed> $decoded
      */
     public function replyAccepted(array $decoded): ?bool
     {

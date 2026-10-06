@@ -1891,12 +1891,6 @@ parameters:
 			path: src/Device/DeviceEventDecoder.php
 
 		-
-			message: '#^Method Hub\\Device\\DeviceEventDecoder\:\:alarmEvents\(\) should return list\<array\{feature\: string, nativeType\: string, value\: array\{reason\: string\}\}\> but returns array\<string, array\{feature\: ''alarm'', nativeType\: string, value\: array\{reason\: string\}\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Device/DeviceEventDecoder.php
-
-		-
 			message: '#^Method Hub\\Device\\DeviceEventDecoder\:\:decode\(\) has parameter \$decoded with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1

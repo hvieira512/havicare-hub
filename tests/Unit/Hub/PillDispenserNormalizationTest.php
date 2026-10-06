@@ -182,7 +182,6 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertSame(['state' => 'in_progress'], $byFeature['help_call']);
     }
 
-    /** @param array<string, mixed> $payload */
     /**
      * A força do sinal sai como a `connectivity` que os gateways já publicam.
      *

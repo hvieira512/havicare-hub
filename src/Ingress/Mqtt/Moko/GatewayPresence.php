@@ -19,8 +19,11 @@ use Hub\Domain\DeviceMetadata;
  */
 final class GatewayPresence
 {
-    /** Os gateways que já se anunciaram, pela forma com que a whitelist os resolve. */
-    /** @var array<string, array<string, mixed>> */
+    /**
+     * Os gateways que já se anunciaram, pela forma com que a whitelist os resolve.
+     *
+     * @var array<string, array<string, mixed>>
+     */
     private array $online = [];
 
     /** @var array<string, float> */

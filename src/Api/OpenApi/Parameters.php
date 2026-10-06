@@ -11,8 +11,9 @@ final class Parameters
 {
     /**
      * Um parâmetro de rota documentado, com esquema escalar.
+     *
+     * @return array<string, mixed>
      */
-    /** @return array<string, mixed> */
     public static function path(string $name, string $description, string $type, string|int $example): array
     {
         return [
@@ -78,8 +79,9 @@ final class Parameters
      *
      * `explode: true` sem `style` dá `chave[]=a&chave[]=b`, que é a forma que o `parse_str`
      * do lado do servidor lê como array.
+     *
+     * @return array<string, mixed>
      */
-    /** @return array<string, mixed> */
     public static function stringList(string $name): array
     {
         return [

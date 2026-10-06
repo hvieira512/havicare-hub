@@ -267,9 +267,6 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame('fall', $result['events'][0]['type']);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     /** O `details` é `data` como qualquer outro, e os campos do `data` são camelCase. */
     public function testVitalsAlarmDetailsUseTheContractNaming(): void
     {
