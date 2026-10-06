@@ -14,6 +14,15 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
         return 'pill_dispenser';
     }
 
+    /**
+     * O `0x07` pede as `STATUS_TAGS` todas e a resposta enche as leituras acima: o
+     * `device_status` não é anunciado, chega pelo comando que o pede.
+     */
+    protected static function publishedBy(): array
+    {
+        return ['device_status' => []];
+    }
+
     protected static function rows(): array
     {
         return [

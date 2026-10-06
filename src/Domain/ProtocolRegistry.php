@@ -105,6 +105,21 @@ final class ProtocolRegistry
     }
 
     /**
+     * Os protocolos que servem um tipo de aparelho.
+     *
+     * @return list<string>
+     */
+    public static function protocolsForDeviceType(string $deviceType): array
+    {
+        $deviceType = trim($deviceType);
+
+        return array_keys(array_filter(
+            self::all(),
+            static fn(array $meta): bool => $meta['deviceType'] === $deviceType,
+        ));
+    }
+
+    /**
      * @return list<string>
      */
     public static function protocolsWithConfigCatalog(): array

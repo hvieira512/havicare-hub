@@ -16,6 +16,7 @@ use Hub\Domain\Capability\Definition\PillDispenserCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\WatchCapabilityDefinitions;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DeviceTypeCatalog;
+use Hub\Domain\ProtocolRegistry;
 
 /**
  * O catálogo autoritativo da identidade de cada capacidade genérica e do suporte por
@@ -152,132 +153,92 @@ final class CapabilityCatalog
     }
 
     /**
+     * Os acontecimentos que um protocolo publica, no canal `events`.
+     *
      * @return list<string>
      */
     public static function protocolSpecificKeys(string $protocol): array
     {
-        return match ($protocol) {
-            'wonlex-json' => ['device_state'],
-            // O `AP10` e os `AL*` saem como `alarm`; a Wonlex não tem equivalente.
-            'vivistar-iw', 'four-p-touch' => ['alarm'],
-            'voerka-ncs' => ['help_call'],
-            'monit-mecs-pro-ble' => ['change_required'],
-            'moko-w6b', 'moko-w6' => ['help_call'],
-            'qinglanst-radar' => ['fall', 'vitals_alarm', 'presence_event'],
-            // Eventos do dispensador: a toma, a avaria e o botão de emergência.
-            'zayata-m228' => ['medication_intake', 'device_fault', 'help_call', 'storage_environment', 'medication_alarm_change'],
-            default => [],
-        };
+        return self::publishedKeys($protocol, events: true);
     }
 
     /**
+     * O que um protocolo publica no canal `telemetry`.
+     *
      * @return list<string>
      */
     public static function telemetryKeysForProtocol(string $protocol): array
     {
-        return match ($protocol) {
-            // Tudo o que a pulseira entrega nos blocos diários mais o que responde a pedido.
-            // Sem `location`: não tem GPS. Sem `motion` nem `proximity`: essas nascem do
-            // avistamento por um gateway que escuta, e esta fala por sessão.
-            'veepoo-ble' => [
-                'battery',
-                'activity',
-                'heart_rate',
-                'blood_pressure',
-                'blood_oxygen',
-                'temperature',
-                'breath_rate',
-                'sleep',
-                'sleep_quality',
-                'ecg',
-                'hrv',
-                // Sem `ppg`: a MF91 não exporta onda nenhuma. O que a app do fabricante
-                // chama `ppgs` são as cinco frequências de pulso do bloco -- o mesmo
-                // `pulseReat` que já sai como `heart_rate`.
-                'rr_interval',
-                'blood_sugar',
-                'stress',
-                'met',
-                'blood_lipids',
-                'uric_acid',
-                'sleep_apnea',
-                'cardiac_load',
-                'wear_state',
-                'body_composition',
-                'steps',
-                'firmware_version',
-                // Configuração: o que a pulseira mede sozinha ao longo do dia.
-                'heart_rate_continuous',
-                'blood_pressure_trend',
-                'temperature_continuous',
-                'hrv_continuous',
-                'blood_sugar_continuous',
-                'blood_lipids_continuous',
-                'stress_continuous',
-                'sleep_monitoring',
-                'blood_oxygen_alert',
-                'blood_oxygen_window',
-                'heart_rate_alert',
-                'skin_tone',
-                'personal_info',
-                'find_device',
-            ],
-            'wonlex-json' => [
-                'battery',
-                'activity',
-                'heart_rate',
-                'blood_pressure',
-                'blood_oxygen',
-                'temperature',
-                'breath_rate',
-                'location',
-                'sleep',
-                'ecg',
-                'hrv',
-                'ppg',
-                'rr_interval',
-                'blood_sugar',
-            ],
-            'vivistar-iw' => [
-                'battery',
-                'activity',
-                'heart_rate',
-                'blood_pressure',
-                'blood_oxygen',
-                'temperature',
-                'location',
-                'blood_sugar',
-            ],
-            'four-p-touch' => [
-                'battery',
-                'activity',
-                'heart_rate',
-                'blood_pressure',
-                'blood_oxygen',
-                'temperature',
-                'location',
-                // Que rádio serve a ligação: sai na resposta ao `TS`, como o firmware e a bateria.
-                'connectivity',
-            ],
-            'qinglanst-radar' => [
-                'heart_rate',
-                'breath_rate',
-                'sleep_state',
-                'presence',
-                'position_minute_stats',
-                'vitals_minute_stats',
-            ],
-            'moko-mkgw3' => ['connectivity'],
-            'moko-mkgw4' => ['connectivity', 'battery', 'location'],
-            // A `proximity` é publicada por avistamento pelo mesmo caminho nos três: sem ela
-            // aqui, o catálogo declarava-a e a matriz do modelo dava-a por não suportada.
-            'monit-mecs-pro-ble' => ['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition', 'proximity'],
-            'moko-w6b', 'moko-w6' => ['battery', 'motion', 'proximity'],
-            // Sem `device_status`: esta lista é o que o protocolo publica, e ele não publica
-            // valor nenhum. Chega cá pelo comando que o pede, como nos 4P Touch.
-            'zayata-m228' => ['battery', 'cells_remaining', 'ambient_temperature', 'ambient_humidity', 'connectivity', 'medication_alarm_status', 'firmware_version'],
-            default => [],
-        };
+        return self::publishedKeys($protocol, events: false);
+    }
+
+    /**
+     * As chaves que um protocolo publica, separadas pelo canal em que saem.
+     *
+     * @return list<string>
+     */
+    private static function publishedKeys(string $protocol, bool $events): array
+    {
+        static $cache = [];
+        $cache[$protocol] ??= self::buildPublishedKeys($protocol);
+
+        return $cache[$protocol][$events ? 'events' : 'telemetry'];
+    }
+
+    /**
+     * Pela ordem em que o tipo de aparelho as declara, que é a ordem por que a dashboard as
+     * mostra.
+     *
+     * @return array{telemetry: list<string>, events: list<string>}
+     */
+    private static function buildPublishedKeys(string $protocol): array
+    {
+        $publishers = self::publishers();
+        $deviceType = ProtocolRegistry::describe($protocol)['deviceType'];
+
+        $published = ['telemetry' => [], 'events' => []];
+        foreach (self::definitionsForDeviceType($deviceType) as $definition) {
+            $key = (string)$definition['key'];
+            if (!in_array($protocol, $publishers[$key] ?? [], true)) {
+                continue;
+            }
+            $published[($definition['isEvent'] ?? false) === true ? 'events' : 'telemetry'][] = $key;
+        }
+
+        return $published;
+    }
+
+    /**
+     * Quem publica cada capacidade. As listas somam-se entre ficheiros: a `battery` é de
+     * cinco tipos de aparelho, e o `help_call` do NCS, da pulseira e do dispensador.
+     *
+     * @return array<string, list<string>>
+     */
+    private static function publishers(): array
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        $cache = [];
+        $files = [
+            WatchCapabilityDefinitions::publishers(),
+            NcsCapabilityDefinitions::publishers(),
+            RadarCapabilityDefinitions::publishers(),
+            GatewayCapabilityDefinitions::publishers(),
+            DiaperSensorCapabilityDefinitions::publishers(),
+            BraceletCapabilityDefinitions::publishers(),
+            PillDispenserCapabilityDefinitions::publishers(),
+        ];
+
+        foreach ($files as $publishers) {
+            foreach ($publishers as $key => $protocols) {
+                $cache[$key] = array_values(array_unique(array_merge($cache[$key] ?? [], $protocols)));
+            }
+        }
+
+        return $cache;
     }
 
     /**

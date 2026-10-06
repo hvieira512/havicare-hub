@@ -19,6 +19,34 @@ final class BraceletCapabilityDefinitions extends CapabilityDefinitions
         return 'bracelet';
     }
 
+    /**
+     * A Veepoo é a que fala: tem sessão GATT e publica tudo o que mede e tudo o que tem
+     * configurado. As W6/W6B só anunciam, e o que anunciam está no `publishedBy`.
+     */
+    protected static function defaultPublishedBy(): array
+    {
+        return ['veepoo-ble'];
+    }
+
+    protected static function publishesOwnConfiguration(): bool
+    {
+        return true;
+    }
+
+    protected static function publishedBy(): array
+    {
+        return [
+            'battery' => ['veepoo-ble', 'moko-w6b', 'moko-w6'],
+            // Vêm do anúncio BLE e do avistamento por um gateway, que é o que as W6/W6B dão.
+            'motion' => ['moko-w6b', 'moko-w6'],
+            'proximity' => ['moko-w6b', 'moko-w6'],
+            'help_call' => ['moko-w6b', 'moko-w6'],
+            // A MF91 não exporta onda nenhuma: o que a app do fabricante chama `ppgs` são as
+            // cinco frequências de pulso do bloco, que já saem como `heart_rate`.
+            'ppg' => [],
+        ];
+    }
+
     protected static function rows(): array
     {
         return [

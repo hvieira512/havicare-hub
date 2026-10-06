@@ -369,6 +369,7 @@ estão no [capítulo do sensor de fralda](17-sensor-de-fralda.md).
 | `src/Domain/Capability/CapabilityContract.php` | O contrato dos dois sentidos da tradução |
 | `src/Domain/Capability/CapabilityRegistry.php` | Que capacidades têm implementação própria |
 | `src/Domain/Capability/CapabilityCatalog.php` | A identidade pública e o suporte por protocolo |
+| `src/Domain/Capability/Definition/*.php` | O que cada tipo de aparelho declara, e quem o publica |
 | `src/Command/DeviceConfigurationCatalog.php` | As definições nativas, por fabricante |
 | `src/Command/Configuration/Payload/*.php` | Construir o corpo de cada comando |
 | `src/Api/Services/DeviceConfigurationUpdateService.php` | O `PATCH`: validar, traduzir, criar operações |

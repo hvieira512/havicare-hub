@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Domain\Capability\Definition;
 
+use Hub\Domain\ProtocolRegistry;
+
 /**
  * A base dos sete ficheiros de definições, um por tipo de aparelho.
  *
@@ -46,6 +48,42 @@ abstract class CapabilityDefinitions
     abstract protected static function rows(): array;
 
     /**
+     * Que protocolos publicam cada capacidade, para as que não seguem a regra do ficheiro.
+     *
+     * Publicar é sair no `telemetry` ou no `events`, e é diferente de suportar: um relógio
+     * aceita escrever o `alarm_clock` e nunca o publica. A lista vazia quer dizer que
+     * nenhum protocolo a publica.
+     *
+     * @return array<string, list<string>> chave => protocolos
+     */
+    protected static function publishedBy(): array
+    {
+        return [];
+    }
+
+    /**
+     * Quem publica uma capacidade que não se declare. `null` quer dizer todos os protocolos
+     * deste tipo de aparelho.
+     *
+     * @return list<string>|null
+     */
+    protected static function defaultPublishedBy(): ?array
+    {
+        return null;
+    }
+
+    /**
+     * Se o aparelho devolve no fio a sua própria configuração, e não só o que mede.
+     *
+     * A pulseira Veepoo faz isso: cada interruptor que ela aceita volta a sair em
+     * `telemetry`. Nos relógios a configuração escreve-se e nunca mais se vê.
+     */
+    protected static function publishesOwnConfiguration(): bool
+    {
+        return false;
+    }
+
+    /**
      * O papel de cada chave. Não entra no `all()` porque não é contrato -- é o conceito que
      * o ficheiro declara, e serve a quem o queira prender.
      *
@@ -63,6 +101,45 @@ abstract class CapabilityDefinitions
         }
 
         return $roles;
+    }
+
+    /**
+     * Os protocolos que publicam cada chave do ficheiro, já com o valor por omissão
+     * aplicado. Só as chaves que alguém publica aparecem.
+     *
+     * @return array<string, list<string>> chave => protocolos
+     */
+    final public static function publishers(): array
+    {
+        $declared = static::publishedBy();
+        $fallback = static::defaultPublishedBy()
+            ?? ProtocolRegistry::protocolsForDeviceType(static::deviceType());
+
+        $publishers = [];
+        foreach (static::all() as $definition) {
+            $key = (string)$definition['key'];
+            // Uma definição só se publica sozinha se for leitura ou acontecimento: uma
+            // escrita chega ao aparelho e não volta, salvo nos aparelhos que a devolvem.
+            $publishesByDefault = $definition['isTelemetry']
+                || ($definition['isEvent'] ?? false)
+                || static::publishesOwnConfiguration();
+            $published = $declared[$key] ?? ($publishesByDefault ? $fallback : []);
+            if ($published !== []) {
+                $publishers[$key] = $published;
+            }
+        }
+
+        foreach ($declared as $key => $protocols) {
+            if (!isset($publishers[$key]) && $protocols !== []) {
+                throw new \LogicException(sprintf(
+                    '%s: o `publishedBy` declara "%s", que o ficheiro não define.',
+                    static::class,
+                    $key,
+                ));
+            }
+        }
+
+        return $publishers;
     }
 
     /**

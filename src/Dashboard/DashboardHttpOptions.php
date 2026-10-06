@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Dashboard;
 
-/**
- * Os números com que a dashboard se afina, num sítio só.
- *
- * Soltos no construtor ficavam seis parâmetros de tipos repetidos entre os colaboradores, e
- * dois inteiros a ladear o fan-out: chamar com um deles trocado compila e só se vê a correr.
- */
+/** Os números com que a dashboard se afina. */
 final class DashboardHttpOptions
 {
     public function __construct(

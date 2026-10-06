@@ -11,6 +11,33 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
         return 'watch';
     }
 
+    /**
+     * O que cada relógio publica além do que os três publicam todos -- bateria, atividade,
+     * localização e as quatro medições de rotina.
+     */
+    protected static function publishedBy(): array
+    {
+        return [
+            // Que rádio serve a ligação sai na resposta ao `TS`, que é só da 4P Touch.
+            'connectivity' => ['four-p-touch'],
+            'blood_sugar' => ['wonlex-json', 'vivistar-iw'],
+            // O que só a Wonlex mede: as outras duas não trazem forma de ondas nem sono.
+            'breath_rate' => ['wonlex-json'],
+            'sleep' => ['wonlex-json'],
+            'ecg' => ['wonlex-json'],
+            'hrv' => ['wonlex-json'],
+            'ppg' => ['wonlex-json'],
+            'rr_interval' => ['wonlex-json'],
+            // Nenhum as anuncia: chegam só como resposta a um pedido, pelo catálogo de
+            // comandos.
+            'firmware_version' => [],
+            'device_status' => [],
+            // O alarme disparado: `AP10` na Vivistar e os `AL*` na 4P Touch.
+            'alarm' => ['vivistar-iw', 'four-p-touch'],
+            'device_state' => ['wonlex-json'],
+        ];
+    }
+
     protected static function rows(): array
     {
         return [

@@ -14,10 +14,6 @@ use Tests\Support\MysqlDashboardTestCase;
 /**
  * Toda a colecção que cresce com o uso devolve o mesmo envelope.
  *
- * O `denylist` e o `capability-discovery` devolviam `{data}` seco enquanto as outras sete
- * devolviam `{data, pagination, filters, columns}`. Quem integra não tem como saber qual é
- * qual sem experimentar, e uma lista sem fim é a que rebenta primeiro em casa do cliente.
- *
  * Quatro listagens ficam de fora de propósito, e não por esquecimento:
  *
  * - o `/api/capabilities` e o `/api/protocols` são catálogos de tamanho fixo, escritos em

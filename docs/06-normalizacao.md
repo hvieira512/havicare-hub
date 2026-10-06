@@ -375,6 +375,22 @@ O `FeatureNormalizer` determina o que a plataforma **normaliza**. O
 suportar**, e é este que a API devolve em `capabilities` e que a dashboard
 apresenta na matriz por modelo.
 
+Quem publica cada capacidade é facto dela, e declara-se no ficheiro de
+definições do tipo de aparelho — não numa lista por protocolo. Por omissão, uma
+leitura ou um acontecimento é publicado por todos os protocolos desse tipo de
+aparelho, e uma configuração por nenhum; o `publishedBy` escreve as exceções,
+que são a diferença entre fornecedores do mesmo aparelho:
+
+```php
+// Em WatchCapabilityDefinitions
+'connectivity' => ['four-p-touch'],          // sai na resposta ao `TS`
+'ppg' => ['wonlex-json'],                    // as outras não medem ondas
+'firmware_version' => [],                    // só como resposta a um pedido
+```
+
+O `telemetryKeysForProtocol` e o `protocolSpecificKeys` do `CapabilityCatalog`
+saem daqui.
+
 São listas distintas. Três capacidades publicadas são **deliberadamente**
 excluídas do catálogo:
 
