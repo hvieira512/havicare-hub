@@ -16,7 +16,7 @@ import {
     normalizeAlarmClockDaySelection,
     normalizeAlarmClockItems,
 } from "../normalizers.js";
-import { contactsInput, toggleInput } from "./generic.js";
+import { contactsInput } from "./generic.js";
 import { enabledSwitch, nextUid, numberField } from "./shared.js";
 import {
     readCheckbox,
@@ -64,19 +64,18 @@ function diaperSensitivityInput(desired, meta = {}) {
             ${buttons.length === 0 ? "" : html`<div class="btn-group w-100 mb-2" role="group" aria-label="Sensibilidade dos alertas" data-config-choice-group="diaperSensitivity">${buttons}</div>`}
             <div class="row g-2">
                 <div class="col">
-                    <label class="form-label-sm mb-1" for="diaperPollutionRange">Canais afetados</label>
+                    <label class="form-label-sm mb-1" for="diaperPollutionRange">Canais para muda</label>
                     <input type="number" class="form-control" id="diaperPollutionRange" data-config-field="pollutionRange"
                         min="${(String(rangeMin))}" max="${(String(rangeMax))}" step="1" value="${(String(range))}">
-                    <div class="form-text">Quantos canais molhados obrigam a uma muda.</div>
                 </div>
                 <div class="col">
                     <label class="form-label-sm mb-1" for="diaperPollutionValue">Limiar por canal</label>
                     <input type="number" class="form-control" id="diaperPollutionValue" data-config-field="pollutionValue"
                         min="${(String(valueMin))}" max="${(String(valueMax))}" step="1" value="${(String(value))}">
-                    <div class="form-text">A partir de quanto um canal conta como molhado.</div>
+                    <div class="form-text">Mais baixo, um canal conta como molhado mais cedo e a fralda deixa antes de estar seca.</div>
                 </div>
             </div>
-            <div class="form-text">O sensor apenas transmite e nada lhe é enviado. Passa a valer na leitura seguinte.</div>
+            <div class="form-text">Muda só como o hub lê o sensor; vale a partir da leitura seguinte.</div>
         </div>`;
 }
 
@@ -169,7 +168,6 @@ function sosContactsInput(entry, desired, meta = {}) {
         limit: Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3),
         label: "Contactos SOS",
         emptyLabel: "Adicionar contacto SOS",
-        helpText: "Até 3 números. A ordem define a posição nos comandos SOS do dispositivo.",
         phoneMaxLength,
     });
 }
@@ -184,7 +182,6 @@ function callWhitelistInput(entry, desired, meta = {}) {
         limit: Math.max(1, parseInt(String(entry.limit ?? 10), 10) || 10),
         label: "Lista de chamadas autorizadas",
         emptyLabel: "Adicionar número",
-        helpText: "Até 10 números permitidos.",
     });
 }
 
@@ -198,7 +195,6 @@ function phoneRepeaterInput(entry, desired, options) {
     const rows = values.length ? values.slice(0, limit) : [""];
     const kind = String(options.kind || "numbers");
     const label = String(options.label || entry.label || "Lista");
-    const helpText = String(options.helpText || "");
     const emptyLabel = String(options.emptyLabel || "Adicionar");
     const phoneMaxLength = Math.max(0, parseInt(String(options.phoneMaxLength ?? 0), 10) || 0);
 
@@ -208,7 +204,6 @@ function phoneRepeaterInput(entry, desired, options) {
                 <label class="form-label-sm mb-0">${label}</label>
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="${kind}" ${rows.length >= limit ? "disabled" : ""}>${emptyLabel}</button>
             </div>
-            ${helpText !== "" ? html`<div class="small text-secondary">${helpText}</div>` : ""}
             <div class="vstack gap-2" data-repeat-list="${kind}" data-repeat-limit="${limit}">
                 ${rows
                         .map(
@@ -548,20 +543,10 @@ export const INPUTS = {
             : ["", "", "", "", "", "", "", "", "", ""],
         help: () => "",
     },
-    whitelist_enabled: {
-        render: (entry, desired) =>
-            toggleInput({ ...entry, fields: ["enabled"] }, desired),
-        read: (section) => ({
-            enabled: readCheckbox(section, "enabled"),
-        }),
-        defaults: () => ({ enabled: true }),
-        help: () => "ativa ou desativa a lista de chamadas autorizadas",
-    },
     phonebook: {
         render: contactsInput,
         read: (section) => ({ contacts: readContacts(section) }),
         defaults: () => ({ contacts: [] }),
-        help: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
     },
     alarm_clock: {
         render: (entry, desired, meta) => alarmClockInput(entry, desired, meta),

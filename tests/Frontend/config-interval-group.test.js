@@ -62,6 +62,13 @@ test("as medições repetidas ficam num cartão só", () => {
     assert.equal(root.querySelectorAll("[data-config-section]").length, 0);
 });
 
+test("sem legenda as medições continuam num cartão só", () => {
+    const root = render(INTERVALS.map((entry) => ({ ...entry, help: "" })));
+
+    assert.equal(root.querySelectorAll("[data-config-group]").length, 1);
+    assert.equal(root.querySelectorAll("[data-config-row]").length, 3);
+});
+
 test("a frase de ajuda é dita uma vez, e não uma por medição", () => {
     const occurrences = render(INTERVALS).textContent.split(HELP).length - 1;
 

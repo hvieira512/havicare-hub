@@ -38,7 +38,8 @@ test("a unidade cola-se ao campo em vez de andar solta", () => {
     assert.equal(group.querySelector(".input-group-text").textContent.trim(), "s");
 });
 
-test("o valor diz-se em palavras por baixo do nome", () => {
+/** O campo já mostra o valor; por baixo do nome só aparece o «era …» de uma edição. */
+test("o valor guardado não se repete por baixo do nome", () => {
     const section = sectionOf({
         key: "autoHealth",
         capabilityKey: "auto_health",
@@ -48,14 +49,7 @@ test("o valor diz-se em palavras por baixo do nome", () => {
         fields: ["interval"],
     }, { interval: 60 }, true);
 
-    assert.match(section.querySelector("[data-config-summary]").textContent, /a cada 60 minutos/);
-});
-
-/** Quem o diz é a pastilha «Padrão» ao lado. */
-test("uma definição que o hub nunca guardou não repete a pastilha por palavras", () => {
-    const section = sectionOf(INTERVAL, null, false);
-
-    assert.equal(section.querySelector("[data-config-summary] .config-when-clean").textContent, "");
+    assert.equal(section.querySelector("[data-config-summary]").textContent.trim(), "era 60 min");
 });
 
 test("uma definição editada mostra o valor que lá estava", () => {
@@ -82,20 +76,6 @@ test("o «Alterado» sobrepõe-se enquanto a edição estiver por enviar, sem ap
     syncConfigCounts(host);
 
     assert.equal(section.dataset.configEdited, "1");
-});
-
-/** O `3` do idioma e o `100` do fuso são códigos do fabricante, e o campo por baixo diz-os. */
-test("uma definição sem unidade não mostra o código em cru", () => {
-    const section = sectionOf({
-        key: "languageTimezone",
-        capabilityKey: "language_timezone",
-        command: "LZ",
-        label: "Idioma e fuso horário",
-        input: "languageTimezone",
-        fields: ["language", "timeZone"],
-    }, { language: 3, timeZone: "1" }, true);
-
-    assert.equal(section.querySelector(".config-when-clean").textContent.trim(), "");
 });
 
 test("e ao ser editada diz que mudou, em vez do código que lá estava", () => {

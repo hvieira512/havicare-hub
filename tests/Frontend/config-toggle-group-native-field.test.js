@@ -3,6 +3,7 @@ import test from "node:test";
 
 import "./support/browser-env.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
+import { changedConfigEntries } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { parseFragment } from "./support/dom.js";
 
 /**
@@ -72,6 +73,30 @@ test("sem valor guardado o interruptor fica ligado", () => {
     const [heartRate] = rowsOf(render({}));
 
     assert.equal(heartRate.checked, true);
+});
+
+/** «Restringir chamadas recebidas» é um interruptor como os outros: uma linha, sem legenda de recurso. */
+test("o interruptor da restrição de chamadas cabe numa linha e lê-se de volta", () => {
+    const entry = {
+        ...toggle("whitelist_enabled", "Restringir chamadas recebidas", 10),
+        category: "contacts",
+    };
+    const root = parseFragment(renderDeviceConfigurationRoot({
+        protocol: "wonlex-json",
+        catalog: [entry],
+        configurations: { whitelist_enabled: { enabled: true } },
+        capabilities: {},
+        capabilityCatalog: capabilityCatalog([entry]),
+    }));
+
+    assert.equal(root.querySelectorAll("[data-config-row]").length, 1);
+    assert.equal(root.querySelectorAll("[data-config-section]").length, 0);
+    assert.doesNotMatch(root.textContent, /ativa ou desativa/);
+
+    root.querySelector("[data-config-row] input[type=checkbox]").checked = false;
+    assert.deepEqual(changedConfigEntries(root.querySelector("[data-config-group]")), {
+        whitelist_enabled: { enabled: false },
+    });
 });
 
 /** Um zero é desligado tanto como um `false` -- a Wonlex manda os dois. */

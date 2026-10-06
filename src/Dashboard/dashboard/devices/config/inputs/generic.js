@@ -83,7 +83,6 @@ function pushMessageInput(_entry, desired) {
     return field(
         "Mensagem",
         html`<input class="form-control" type="text" data-config-field="message" value="${String(desired.message ?? "")}">`,
-        { help: "Envia uma mensagem imediata para o relógio. Não fica guardada como configuração desejada." },
     );
 }
 
@@ -120,9 +119,8 @@ export function contactsInput(entry, desired, meta = {}) {
         <div>
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <label class="form-label-sm mb-0">Contactos</label>
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="contacts" ${rows.length >= limit ? "disabled" : ""}>Adicionar</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="contacts" ${rows.length >= limit ? "disabled" : ""}>Adicionar <span data-repeat-count>(${rows.length} de ${limit})</span></button>
             </div>
-            <div class="small text-secondary mb-2">${limit} contactos máximos</div>
             <div class="vstack gap-2" data-repeat-list="contacts" data-repeat-limit="${limit}"${nameLimitAttr}${phoneLimitAttr}>
                 ${rows
                     .map(

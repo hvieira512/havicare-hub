@@ -166,21 +166,20 @@ function isPlainToggle(entry) {
 }
 
 /**
- * A mesma definição repetida para grandezas diferentes, com o mesmo comando e a mesma legenda,
- * como as dez medições da Wonlex.
+ * A mesma definição repetida para grandezas diferentes: o mesmo comando nativo e o mesmo
+ * campo. É o que distingue as dez medições da Wonlex de dois números que ficaram vizinhos.
  */
 function isRepeatedField(entry) {
     return entry.input === "number" &&
         entry.transient !== true &&
         entry.requestOnly !== true &&
-        (entry.fields?.length ?? 0) === 1 &&
-        String(entry.help || "").trim() !== "";
+        (entry.fields?.length ?? 0) === 1;
 }
 
 /** A assinatura de uma entrada para efeitos de agrupamento. Vazia quando fica cartão. */
 function configRunKind(entry) {
     if (isPlainToggle(entry)) return "toggle";
-    if (isRepeatedField(entry)) return `field:${entry.command}:${entry.help}`;
+    if (isRepeatedField(entry)) return `field:${entry.command}:${entry.input}:${entry.fields[0]}`;
     return "";
 }
 
@@ -223,29 +222,6 @@ function unitGroup(control, entry) {
         : `<div class="input-group flex-nowrap w-auto config-line-control">${control}<span class="input-group-text">${esc(unit)}</span></div>`;
 }
 
-/** As unidades de tempo que se dizem por extenso, no singular e no plural. */
-const TIME_UNIT_WORDS = {
-    min: ["minuto", "minutos"],
-    s: ["segundo", "segundos"],
-    h: ["hora", "horas"],
-};
-
-/** O valor em palavras: numa unidade de tempo é sempre uma periodicidade, e lê-se «a cada». */
-function valueSummary(entry, desired, isStored) {
-    // Por enviar não se diz nada: a pastilha «Padrão» ao lado já o diz.
-    if (!isStored) return "";
-
-    const value = desired?.[entry.fields?.[0] || ""];
-    const unit = unitLabel(entry);
-    // Sem unidade o número não é uma medida, é um código do fabricante -- o `3` do idioma, o
-    // `100` do fuso --, e quem o traduz é o campo por baixo.
-    if (typeof value !== "number" || unit === "") return "";
-
-    const words = TIME_UNIT_WORDS[unit];
-    if (words) return `a cada ${value} ${value === 1 ? words[0] : words[1]}`;
-    return `${value} ${unit}`;
-}
-
 /** O valor de onde a edição partiu, para se saber o que se está a trocar. */
 function previousValueSummary(entry, desired, isStored) {
     if (!isStored) return "por enviar pela primeira vez";
@@ -262,7 +238,6 @@ function previousValueSummary(entry, desired, isStored) {
  * para não se reescrever marcação a cada tecla dentro de um campo em uso.
  */
 function settingState(entry, desired, isStored, deliveryMeta, showBadge) {
-    const summary = valueSummary(entry, desired, isStored);
     const previous = previousValueSummary(entry, desired, isStored);
     // A data acompanha o que se escreve, e por isso não entra no par limpo/alterado.
     const runout = entry.key === "loaded_cells"
@@ -272,7 +247,6 @@ function settingState(entry, desired, isStored, deliveryMeta, showBadge) {
     return {
         summary: `
             <div class="small text-secondary" data-config-summary>
-                <span class="config-when-clean">${esc(summary)}</span>
                 <span class="config-when-changed text-warning-emphasis">${esc(previous)}</span>
             </div>${runout}`,
         badge: showBadge

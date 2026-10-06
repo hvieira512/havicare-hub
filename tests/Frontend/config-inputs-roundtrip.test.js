@@ -154,9 +154,11 @@ test("wonlex heart rate range survives, with both switches read back as enabled 
     );
 });
 
-test("whitelist_enabled survives the round trip", () => {
-    assert.deepEqual(roundTrip(entryFor("whitelist_enabled"), { enabled: true }), { enabled: true });
-    assert.deepEqual(roundTrip(entryFor("whitelist_enabled"), { enabled: false }), { enabled: false });
+test("restricting incoming calls is a plain toggle", () => {
+    const entry = { ...entryFor("toggle", ["enabled"]), key: "whitelist_enabled" };
+
+    assert.deepEqual(roundTrip(entry, { enabled: true }), { enabled: true });
+    assert.deepEqual(roundTrip(entry, { enabled: false }), { enabled: false });
 });
 
 test("sos contacts are read back as a plain list of numbers", () => {
