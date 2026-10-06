@@ -8,8 +8,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Que origens podem falar com esta API a partir de um browser. O `*` só é seguro enquanto a
- * autenticação for `Bearer` em cabeçalho; o `CORS_ALLOWED_ORIGINS` restringe-o.
+ * Que origens podem falar com esta API a partir de um browser. O `*` é seguro porque nunca se
+ * envia `Allow-Credentials`; o `CORS_ALLOWED_ORIGINS` restringe-o.
  */
 final class CorsPolicy
 {

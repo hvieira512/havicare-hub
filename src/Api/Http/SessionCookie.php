@@ -63,10 +63,7 @@ final class SessionCookie
         return implode('; ', $attributes);
     }
 
-    /**
-     * O `Secure` só entra em HTTPS: posto sempre, o hub local em `http://` deixava de guardar
-     * o cookie e a sessão nunca sobrevivia a um separador novo em desenvolvimento.
-     */
+    /** O `Secure` só entra em HTTPS, para o hub local em `http://` guardar o cookie. */
     private static function isHttps(ServerRequestInterface $request): bool
     {
         return $request->getUri()->getScheme() === 'https'
