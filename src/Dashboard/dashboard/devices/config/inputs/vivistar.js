@@ -89,8 +89,7 @@ function workingModeInput(desired) {
     return html`
         <div class="vstack gap-3">
             <div>
-                <label class="form-label-sm">Modo</label>
-                <div class="row g-2">
+                <div class="row g-2" role="radiogroup" aria-label="Envio da localização">
                     ${options
                         .map(
                             (option) => html`

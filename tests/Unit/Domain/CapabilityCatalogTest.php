@@ -22,7 +22,7 @@ final class CapabilityCatalogTest extends TestCase
             'gateway' => [3, '044f4b1de47b562638442dc3fc8be22b3ab76043721211a47f478ee68124a91f'],
             'diaper_sensor' => [7, '1aabeb619dd84c1e60cb25bc6d43fe88ea8b3b708365ad38f39a3c13bf5c4fd2'],
             // As W6/W6B só anunciam bateria, movimento, proximidade e botão; o resto é da Veepoo MF91.
-            'bracelet' => [41, 'ad637eeb21fdd6c4dd6241d5b6dbded1c46ff7b61021ded18fcafa9b6f65042d'],
+            'bracelet' => [41, 'b79cd852c68f3900fef80612e135d2e46652e12ca8eb50a52fdd9bae8d39e463'],
             // Ficam de fora a reposição de fábrica, desligar a cifra e mudar o servidor, que nos podem
             // tirar o aparelho.
             'pill_dispenser' => [37, 'ecee40eac03cdaf7efb85bcb0a2584579a2958b59ff7b2cfdfbda8a5dc41aca0'],
