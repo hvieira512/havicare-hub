@@ -139,7 +139,7 @@ function blobToBase64(blob) {
             const commaIndex = result.indexOf(",");
             resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
         };
-        reader.onerror = () => reject(reader.error || new Error("Failed to read audio"));
+        reader.onerror = () => reject(reader.error || new Error("Não foi possível ler o áudio."));
         reader.readAsDataURL(blob);
     });
 }
