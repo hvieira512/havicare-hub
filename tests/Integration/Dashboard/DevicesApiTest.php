@@ -1677,6 +1677,27 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    /** O AP86 só acusa a receção, sem devolver o intervalo que o relógio aplicou. */
+    public function testVivistarAutoHealthMeasurementIsConfirmedByAckOnly(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['auto_vitals_interval']);
+        $updated = $api->updateConfigurations('861265061009822', [
+            'configurations' => [
+                'auto_vitals_interval' => ['enabled' => true, 'intervalMinutes' => 60],
+            ],
+        ]);
+        $commandId = (string)($updated['results'][0]['operations'][0]['lastCommandId'] ?? '');
+        self::assertNotSame('', $commandId);
+
+        $command = $store->findCommand($commandId)['command'] ?? [];
+        self::assertSame('BP86', $command['nativeType'] ?? null);
+        self::assertSame('ack_only', $command['confirmationMode'] ?? null);
+    }
+
     public function testRetryExhaustionMarksStoredConfigurationAsFailed(): void
     {
         [$api, $db, $store] = $this->makeApi();

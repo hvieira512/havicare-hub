@@ -7,10 +7,7 @@ import {
     readNumber,
 } from "../readers.js";
 
-/**
- * Os campos que só o Vivistar declara: a sensibilidade de queda e o modo de funcionamento,
- * que é o que decide o que o relógio mede e de quanto em quanto tempo.
- */
+/** Os campos que só o Vivistar declara: a sensibilidade de queda e o envio da localização. */
 
 function fallSensitivityInput(desired) {
     const current = parseInt(String(desired.sensitivity ?? 2), 10) || 2;
@@ -37,7 +34,6 @@ function fallSensitivityInput(desired) {
 
     return html`
         <div>
-            <label class="form-label-sm">Sensibilidade</label>
             <input type="hidden" data-config-field="sensitivity" value="${String(current)}">
             <div class="btn-group w-100" role="group" aria-label="Sensibilidade de queda" data-config-choice-group="sensitivity">
                 ${options
@@ -65,31 +61,26 @@ function workingModeInput(desired) {
     const options = [
         {
             value: 1,
-            title: "Normal",
-            description: "Envia localização a cada 15 minutos com Wi-Fi e LBS.",
+            title: "A cada 15 min",
             icon: "fa-clock",
             className: "btn-outline-primary",
         },
         {
             value: 2,
-            title: "Poupança",
-            description: "Envia localização a cada 60 minutos com Wi-Fi e LBS.",
+            title: "A cada 60 min",
             icon: "fa-battery-half",
             className: "btn-outline-success",
         },
         {
             value: 3,
-            title: "Emergência",
-            description:
-                "Envia localização a cada 1 minuto com GPS, Wi-Fi e LBS.",
+            title: "A cada minuto, com GPS",
             icon: "fa-bolt",
             className: "btn-outline-danger",
         },
         {
             value: 8,
             title: "Personalizado",
-            description:
-                "Permite definir intervalo em segundos e ligar ou desligar GPS.",
+            description: "Intervalo à escolha, a partir de 30 s, com ou sem GPS",
             icon: "fa-sliders",
             className: "btn-outline-dark",
         },
@@ -116,7 +107,7 @@ function workingModeInput(desired) {
                                 <i class="fa-solid ${option.icon} mt-1"></i>
                                 <span>
                                     <span class="d-block fw-semibold">${option.title}</span>
-                                    <span class="d-block small">${option.description}</span>
+                                    ${option.description ? html`<span class="d-block small">${option.description}</span>` : ""}
                                 </span>
                             </label>
                         </div>

@@ -113,8 +113,8 @@ foram confirmadas, mas o modo de confirmação é `ack_only`, no qual o disposit
 acusa a receção sem confirmar a aplicação. A distinção face a `confirmed` evita
 declarar uma confirmação que o protocolo não fornece.
 
-O modo `ack_only` aplica-se a um único caso: a frequência de medição da
-Vivistar.
+O modo `ack_only` aplica-se a um único caso: a medição automática de saúde da
+Vivistar (`BP86`), cuja resposta `AP86` só acusa a receção.
 
 ### Supersessão
 

@@ -90,7 +90,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         $switch = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'whitelist_enabled');
         self::assertIsArray($switch);
         self::assertSame('whitelist_enabled', $switch['key'] ?? null);
-        self::assertSame('whitelist_enabled', $switch['input'] ?? null);
+        self::assertSame('toggle', $switch['input'] ?? null);
     }
 
     public function testVivistarCallWhitelistBuildsNamePhonePayload(): void

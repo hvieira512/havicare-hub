@@ -13,14 +13,14 @@ final class VivistarConfigurationDefinitions
 
         return [
             $entry('sosContacts', 'BP12', 'Contactos SOS', 'sos_contacts', ['numbers'], ['AP12'], 'contacts', 10, 3),
-            $entry('call_whitelist', 'BP14', 'Lista de chamadas autorizadas', 'call_whitelist', ['contacts'], ['AP14'], 'contacts', 20, 10),
-            $entry('whitelist_enabled', 'BP84', 'Restringir chamadas recebidas', 'whitelist_enabled', ['enabled'], ['AP84'], 'contacts', 25),
+            $entry('call_whitelist', 'BP14', 'Lista de chamadas autorizadas', 'call_whitelist', ['contacts'], ['AP14'], 'contacts', 20, 10, help: 'É também a agenda do relógio.'),
+            $entry('whitelist_enabled', 'BP84', 'Restringir chamadas recebidas', 'toggle', ['enabled'], ['AP84'], 'contacts', 25, help: 'Só a lista de chamadas autorizadas consegue ligar.'),
             $entry('pushMessage', 'BP40', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], ['AP40'], 'system', 5, transient: true),
-            $entry('workingMode', 'BP33', 'Modo de trabalho', 'workingMode', ['mode'], ['AP33'], 'system', 10, null, [
+            $entry('workingMode', 'BP33', 'Envio da localização', 'workingMode', ['mode'], ['AP33'], 'system', 10, null, [
                 'mode' => [
-                    ['value' => 1, 'label' => 'Normal'],
-                    ['value' => 2, 'label' => 'Poupança'],
-                    ['value' => 3, 'label' => 'Emergência'],
+                    ['value' => 1, 'label' => 'A cada 15 min'],
+                    ['value' => 2, 'label' => 'A cada 60 min'],
+                    ['value' => 3, 'label' => 'A cada minuto, com GPS'],
                     ['value' => 8, 'label' => 'Personalizado', 'fields' => [
                         'intervalSeconds' => ['type' => 'integer', 'min' => 30],
                         'gpsEnabled' => ['type' => 'boolean'],
@@ -51,7 +51,7 @@ final class VivistarConfigurationDefinitions
                     ['value' => 3, 'label' => 'Sedentarismo'],
                 ],
             ]),
-            $entry('autoHealthMeasurement', 'BP86', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['AP86'], 'health', 10),
+            $entry('autoHealthMeasurement', 'BP86', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['AP86'], 'health', 10, help: 'Mede todos os sinais vitais de uma vez e envia-os.'),
         ];
     }
 }

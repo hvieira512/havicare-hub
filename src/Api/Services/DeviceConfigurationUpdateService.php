@@ -295,7 +295,7 @@ final class DeviceConfigurationUpdateService
         $operations = [];
         $lastCommand = '';
         $confirmationMode = (string)($entry['confirmationMode']
-            ?? ($protocol === 'vivistar-iw' && $nativeKey === 'deviceMeasuringFrequency'
+            ?? ($protocol === 'vivistar-iw' && $nativeKey === 'autoHealthMeasurement'
                 ? 'ack_only'
                 : 'execution_ack'));
         foreach (DeviceConfigurationCatalog::commandPayloads($protocol, $nativeKey, $payload, $commandContext) as $commandPayload) {
