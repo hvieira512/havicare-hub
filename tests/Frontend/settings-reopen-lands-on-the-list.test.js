@@ -3,11 +3,7 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 
-/**
- * Fechar o modal a meio da ficha de um modelo e voltar a abri-lo deixava a ficha no ecrã,
- * com a imagem, os campos e os interruptores -- mas o estado tinha sido limpo, e o
- * «Guardar capacidades» respondia «Selecione um modelo» a quem estava a olhar para ele.
- */
+/** A ficha de um modelo depende de estado que fechar o modal limpa. */
 const slides = [];
 
 /** O carrossel do Bootstrap, reduzido ao que estes módulos lhe pedem. */
@@ -86,10 +82,7 @@ test("voltar à lista fecha a ficha, a migalha e a barra de gravar", () => {
     assert.equal(state.settingsModal.currentCapabilitiesModel, null);
 });
 
-/**
- * Carregar o separador é o que acontece ao reabrir o modal, e o ecrã de entrada dele é a
- * lista. Sem isto o carrossel ficava na ficha, que o estado já não tinha como preencher.
- */
+/** Carregar o separador é o que reabrir o modal faz, e a entrada dele é a lista. */
 test("carregar o catálogo traz o carrossel de volta à lista", async () => {
     initSettingsModels({ els, ui: {} });
     onTheModelSheet();

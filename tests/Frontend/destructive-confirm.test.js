@@ -5,12 +5,8 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 
 /**
- * O `confirm()` do browser devolvia um booleano de imediato; o `Swal.fire()` devolve uma
- * promessa. Trocar um pelo outro sem esperar transforma um apagar guardado num apagar
- * directo, e é isso que estes testes trancam: cancelar não pode chegar à API.
- *
- * A segunda metade tranca o que a caixa diz: «Apagar licença?» não diz qual, e quem tem
- * catorze não tem como responder.
+ * O `Swal.fire()` devolve uma promessa, e cancelar não pode chegar à API. A caixa diz também o
+ * que se apaga: «Apagar licença?» não diz qual.
  */
 const calls = [];
 const confirmations = [];
@@ -92,9 +88,8 @@ test("uma licença sem dispositivos di-lo em vez de contar zero", () => {
 });
 
 /**
- * Não saber quantos são não é saber que são nenhuns. A contagem vem do resumo da frota, que
- * pode ainda não ter carregado quando alguém abre as Definições de raiz -- e prometer que
- * ninguém a usa, mesmo antes de apagar, é a pior altura para adivinhar.
+ * A contagem vem do resumo da frota, que pode ainda não ter carregado: não saber quantos são
+ * não é saber que são nenhuns.
  */
 test("com a contagem por carregar, a caixa não promete que não há dispositivos", () => {
     const prompt = licenseDeletePrompt({ license_id: 1001, name: "gucc.dev" }, null);
@@ -146,9 +141,8 @@ test("os comandos que não se desfazem têm caixa, e os inofensivos não", () =>
 });
 
 /**
- * O caso que motivou isto: a mesma capacidade `reset_device` é uma reposição de fábrica na
- * Wonlex e um reinício no 4P Touch, e a caixa escolhida pela chave prometia um reinício a
- * quem estava a devolver o relógio ao servidor do fornecedor.
+ * A mesma capacidade `reset_device` é reposição de fábrica na Wonlex e reinício no 4P Touch: a
+ * caixa não se escolhe pela chave.
  */
 test("a caixa da reposição de fábrica não promete um reinício", () => {
     const section = sectionFor({

@@ -9,19 +9,12 @@ use Hub\Domain\Capability\GenericCapability;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A capacidade genérica serve todos os protocolos que anuncia, e ela anuncia todos.
- *
- * É o contrato de quem não tem contrato próprio, e por isso não declara restrição nenhuma.
- * Quem traduz nomes continua a traduzir; para os outros, o nome nativo é a própria chave
- * genérica e passar o valor tal e qual é a resposta certa, não uma omissão.
+ * A capacidade genérica é de quem não tem contrato próprio, e anuncia todos os protocolos:
+ * sem tradução, o nome nativo é a própria chave genérica.
  */
 final class GenericCapabilityPassthroughTest extends TestCase
 {
-    /**
-     * Instanciada directamente e não pelo registo: o que se prende aqui é o comportamento
-     * desta classe, e passar pelo registo faria o teste depender de que chaves é que hoje têm
-     * contrato próprio.
-     */
+    /** Instanciada directamente, para não depender de que chaves têm hoje contrato próprio. */
     private function contract(string $genericKey): GenericCapability
     {
         return new GenericCapability($genericKey, new FourPTouchGenericHandler());
@@ -38,8 +31,7 @@ final class GenericCapabilityPassthroughTest extends TestCase
 
     public function testAProtocolWithoutTranslationPassesTheValueThrough(): void
     {
-        // O `moko-w6` não tem tradução declarada. Antes rebentava; agora o nome nativo é a
-        // própria chave genérica, que é o que o destinatário da ordem espera receber.
+        // O `moko-w6` não tem tradução declarada: o nome nativo é a própria chave genérica.
         self::assertSame(
             ['heart_rate_continuous' => ['enabled' => true]],
             $this->contract('heart_rate_continuous')->toNative('moko-w6', ['enabled' => true]),

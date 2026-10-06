@@ -12,10 +12,7 @@ import {
 } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { selectConfigSection } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
 
-/**
- * As secções variam por fornecedor e chegam a seis. Em tira horizontal, a 342 px mediam
- * 466 px numa calha de 295 e a última ficava fora do ecrã sem aviso nenhum.
- */
+/** As secções variam por fornecedor e chegam a seis: em tira horizontal não cabem a 342 px. */
 
 const CAPABILITIES = [
     { key: "heart_rate", section: "health", sectionLabel: "Saúde", isConfigurable: true },
@@ -98,7 +95,6 @@ test("a secção com uma definição alterada di-lo na sua linha, e as outras ca
     assert.doesNotMatch(contacts.textContent, /alterada/);
 });
 
-/** Redesenhar ao trocar de secção deitava fora o que estivesse escrito nas outras. */
 test("trocar de secção não perde o que está escrito e por enviar", () => {
     const root = render();
     const field = root.querySelector("[data-config-section][data-config-key=\"heart_rate\"] [data-config-field]");

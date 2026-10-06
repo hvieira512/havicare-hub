@@ -14,27 +14,17 @@ use React\Http\Message\Response;
 use React\Stream\ThroughStream;
 
 /**
- * O stream de um inquilino: tudo o que o MQTT leva da sua empresa e licença, e nada fora dela.
- *
- * O âmbito nunca vem do pedido -- é composto a partir do token, e por isso não existe
- * parâmetro que o alargue. O que o cliente escolhe são os canais, e essa escolha só o pode
- * estreitar.
+ * O stream de um inquilino: tudo o que o MQTT leva da sua empresa e licença. O âmbito sai do
+ * token, e os canais que o cliente escolhe só o podem estreitar.
  */
 final class StreamController
 {
-    /**
-     * O `raw` fica de fora de propósito. É o canal de depuração -- 98% dos bytes publicados,
-     * com o conteúdo aninhado sob uma chave chamada `debug` -- e uma mangueira de inquilino é
-     * o pior sítio para o servir. Para isso o lugar é o dispositivo em concreto.
-     */
+    /** O `raw` fica de fora: é o canal de depuração, 98% dos bytes, e serve-se por dispositivo. */
     private const CHANNELS = ['telemetry', 'events', 'status'];
 
     /**
-     * Quantos frames uma ligação pode ter à espera antes de ser fechada.
-     *
-     * Ao contrário do stream de um dispositivo, aqui não se pode saltar um envio: aquele relê
-     * o estado autoritativo, e um espelho de mensagens não tem estado para reler. Perder um
-     * `event` em silêncio é pior do que uma religação.
+     * Quantos frames uma ligação pode ter à espera antes de ser fechada. Aqui não se salta um
+     * envio: um espelho de mensagens não tem estado para reler.
      */
     private const QUEUE_LIMIT = 256;
 
@@ -71,9 +61,8 @@ final class StreamController
         $company = trim((string)$auth->company);
         $licenseId = (int)$auth->licenseId;
 
-        // Um administrador não tem inquilino próprio, mas pode nomear um: o fanout é indexado
-        // por âmbito e não tem wildcard. Para o `license_client` os parâmetros não existem --
-        // o âmbito sai do token e nada no pedido o pode alargar.
+        // Um administrador pode nomear o inquilino, porque o fanout é por âmbito e sem wildcard; para
+        // o `license_client` o âmbito sai só do token.
         if ($auth->isAdmin()) {
             parse_str((string)$request->getUri()->getQuery(), $params);
             $company = trim((string)($params['company'] ?? ''));
@@ -131,9 +120,8 @@ final class StreamController
         foreach ($channels as $channel) {
             $unsubscribes[] = $this->messages->subscribe(
                 MessageFanout::scope($company, $licenseId, $channel),
-                // A dispersão é chamada de dentro do `publish()`, que corre no caminho da
-                // ingestão. Aqui só se acumula e se agenda: o caminho do dispositivo paga um
-                // append, e as escritas nos sockets ficam para o tique seguinte do loop.
+                // Chamado de dentro do `publish()`, no caminho da ingestão: aqui só se acumula e agenda, e a
+                // escrita nos sockets fica para o tique seguinte do loop.
                 static function (
                     string $topic,
                     string $json
@@ -239,12 +227,8 @@ final class StreamController
     }
 
     /**
-     * No MQTT a empresa, a licença, o tipo e o dispositivo vivem no tópico, e o payload leva
-     * apenas o `device.id`. Um stream não tem tópico, e por isso o envelope devolve essa
-     * informação -- envolvendo em vez de misturar.
-     *
-     * O `payload` entra por concatenação, e não por descodificar e voltar a codificar: é a
-     * mesma string que vai para o fio, byte a byte.
+     * O stream não tem tópico, e o envelope devolve a empresa, a licença, o tipo e o dispositivo
+     * à volta do `payload`, que entra por concatenação: é a mesma string do fio, byte a byte.
      */
     private static function frame(
         string $company,
@@ -253,8 +237,7 @@ final class StreamController
         string $topic,
         string $json
     ): string {
-        // O tipo e o dispositivo contam-se do fim, e não do princípio: o prefixo da instância
-        // pode ser vazio, e nesse caso os índices contados da frente andavam todos um atrás.
+        // O tipo e o dispositivo contam-se do fim: o prefixo da instância pode ser vazio.
         $parts = explode('/', $topic);
         $count = count($parts);
 
@@ -267,10 +250,7 @@ final class StreamController
             'channel' => $channel,
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 
-        // A trama monta-se por concatenação, e não por desserializar e voltar a serializar: é
-        // a mesma string que foi para o fio, byte a byte. Isso obriga o envelope a acabar em
-        // `}` com pelo menos um campo lá dentro -- com o `{}` que o recurso de erro punha
-        // aqui, o `substr` deixava um `{` solto e saía `{,"payload":...}`, que não é JSON.
+        // A concatenação obriga o envelope a acabar em `}` com pelo menos um campo lá dentro.
         if ($envelope === false) {
             $envelope = json_encode(['channel' => $channel], JSON_INVALID_UTF8_SUBSTITUTE) ?: '{"channel":""}';
         }

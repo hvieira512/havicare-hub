@@ -8,11 +8,8 @@ use Hub\Log\Logger;
 use React\EventLoop\LoopInterface;
 
 /**
- * Diz se o arranque anterior terminou de repente. O `Restart=always` levanta o processo em
- * milissegundos, e sem isto uma queda só deixava rasto no `journalctl`, onde ninguém olha.
- *
- * Escreve-se um ficheiro ao arrancar e apaga-se ao desligar em condições: encontrá-lo ao
- * arrancar quer dizer que o anterior não passou pelo `SIGTERM`.
+ * Diz se o arranque anterior terminou de repente: um marcador escrito ao arrancar e apagado no
+ * `SIGTERM` que, encontrado, denuncia uma queda que de outro modo só ficava no `journalctl`.
  */
 final class CrashWatch
 {
@@ -21,10 +18,8 @@ final class CrashWatch
     }
 
     /**
-     * Toma posse do arranque, relata a queda anterior e liga o desligar limpo ao loop.
-     *
-     * A notificação aparece no sino da dashboard, que é onde se está a olhar. Repetições
-     * incrementam o contador e voltam a pô-la por ler.
+     * Toma posse do arranque, relata a queda anterior no sino da dashboard e liga o desligar limpo
+     * ao loop. Repetições incrementam o contador e voltam a pô-la por ler.
      */
     public static function attach(LoopInterface $loop, HubServices $services, string $markerPath): self
     {
@@ -54,11 +49,8 @@ final class CrashWatch
     }
 
     /**
-     * Toma posse deste arranque e descreve o anterior, se ele tiver morrido a meio.
-     *
-     * A leitura vem antes da escrita, porque é o marcador do arranque anterior que carrega a
-     * resposta. Devolve `null` quando o anterior se despediu -- ou quando é o primeiro de
-     * todos, que é indistinguível e deve ser tratado como normal.
+     * Toma posse deste arranque e descreve o anterior, se tiver morrido a meio; lê antes de
+     * escrever. Devolve `null` também no primeiro arranque, indistinguível de um normal.
      */
     public function claimBoot(): ?string
     {

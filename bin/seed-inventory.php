@@ -9,13 +9,8 @@ use Hub\Infrastructure\Persistence\InventorySeeder;
 use Hub\Runtime\CliBootstrap;
 
 /**
- * Enche uma base de dados vazia com o inventário capturado do hub de produção, para um clone
- * novo arrancar com os dispositivos reais em vez de um painel vazio.
- *
- * Não pode ser uma migração: o `DatabaseMigrator` também corre no modelo de base de dados
- * que os testes de integração clonam, e cada teste passaria a começar com vinte e seis
- * dispositivos. Migrações levam esquema; dados de arranque são um passo à parte, que os
- * testes não chamam.
+ * Enche uma base de dados vazia com o inventário capturado da produção. Não é migração porque
+ * os testes de integração clonam a base migrada e começariam todos com dispositivos.
  */
 $config = CliBootstrap::config(__DIR__ . '/..');
 $database = CliBootstrap::database($config, assertSchema: false);

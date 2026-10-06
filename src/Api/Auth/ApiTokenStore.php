@@ -88,11 +88,8 @@ final class ApiTokenStore
     }
 
     /**
-     * Valida um token de renovação e consome-o -- é de uso único, e a rotação apaga-o aqui.
-     *
-     * Devolve só o contexto que trazia; reler o utilizador em `api_users` e reemitir é de quem
-     * chama, porque este store não conhece a base de dados. Um segundo uso do mesmo token já
-     * não encontra nada e devolve `null`.
+     * Valida um token de renovação e consome-o, porque é de uso único. Reler o utilizador e
+     * reemitir é de quem chama.
      */
     public function consumeRefreshToken(string $refreshToken): ?ApiAuthContext
     {

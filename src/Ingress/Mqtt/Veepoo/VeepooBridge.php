@@ -22,27 +22,17 @@ use Hub\Support\Values;
 use PhpMqtt\Client\MqttClient;
 
 /**
- * Ingestão das pulseiras Veepoo entregues por um gateway BLE.
- *
- * O gateway publica no espaço de tópicos do hub, tal como o MOKO, mas ao contrário deste não
- * repete um anúncio: conduziu uma sessão GATT autenticada e traz o que a pulseira lhe deu já
- * estruturado pelo SDK do fabricante. O que falta é dar-lhe os nomes do hub.
+ * Ingestão das pulseiras Veepoo entregues por um gateway BLE, que traz da sessão GATT o que a
+ * pulseira lhe deu já estruturado pelo SDK do fabricante.
  */
 final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 {
-    /**
-     * Estados que o aparelho reporta durante uma medição, e o que significam para o pedido.
-     *
-     * O firmware não se limita a devolver valores: diz em que estado está. Sem isto, um pedido
-     * que morre por bateria fraca ou por sensor avariado fica em fila até expirar, sem
-     * ninguém saber porquê.
-     */
+    /** Estados que o aparelho reporta durante uma medição, e o que significam para o pedido. */
     private const DETECTION_FAILURES = [
         'atLowVoltage' => 'low_battery',
         'wrongfulValue' => 'sensor_fault',
     ];
 
-    /** O nome deste protocolo no contrato, que vai no `source` de tudo o que sai daqui. */
     private const PROTOCOL = 'veepoo-ble';
 
     /** O tipo com que o firmware fala do ECG, tanto no estado ao vivo como na onda. */
@@ -52,11 +42,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     private const SILENT_OUTCOME = 'no_response';
 
     /**
-     * Quanto tempo um bloco fica reconhecido como já publicado.
-     *
-     * Tem de exceder a janela que o gateway consegue reproduzir: o `RETENTION_DAYS` dele, três
-     * dias por omissão, mais o dia corrente. Cinco dias dá folga sem a memória pesar -- são
-     * 288 blocos por dia e por pulseira, e cada um é uma chave curta com prazo.
+     * Excede a janela que o gateway reproduz (`RETENTION_DAYS`, três dias por omissão, mais o
+     * dia corrente).
      */
     private const REPLAY_TTL_SECONDS = 5 * 86400;
 
@@ -76,11 +63,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     private array $unhandledKinds = [];
 
     /**
-     * A última versão de firmware que foi parar ao histórico de cada aparelho.
-     *
-     * Em memória e não em Redis: um hub reiniciado volta a guardar uma entrada, que é uma por
-     * arranque e não uma por batimento. Guardá-la fora custava uma leitura por sessão para
-     * poupar uma linha de cem em cem.
+     * A última versão de firmware no histórico de cada aparelho; em memória, que um reinício
+     * custa só uma entrada repetida.
      *
      * @var array<string, string>
      */
@@ -133,10 +117,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /**
-     * Entrega o que esteja em fila às pulseiras com sessão aberta.
-     *
-     * O gateway fica subscrito ao tópico de comandos enquanto correr, e por isso a pulseira é
-     * alcançável entre sessões. Chamado por um temporizador do `IngressRunner`.
+     * Entrega o que esteja em fila às pulseiras com sessão aberta: o gateway fica subscrito
+     * aos comandos entre sessões.
      */
     public function dispatchQueued(): void
     {
@@ -170,8 +152,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        // A mesma condição do caminho MOKO: um gateway não fala por pulseiras que não são dele,
-        // nem atravessa a fronteira entre clientes.
+        // Como no MOKO: só pulseiras ligadas ao gateway, e do mesmo cliente.
         if (
             !$this->links->isEnabled((string)$gateway['imei'], (string)$device['imei'])
             || !$this->sameTenant($gateway, $device)
@@ -191,12 +172,9 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 
         $this->mqttBridge->publishRaw($deviceKey, $message, 'bracelet', $licenseId, $company);
 
-        // O gateway avisa quando abre sessão com a pulseira, e esse é o único instante em que
-        // ela é alcançável. É aqui que a fila é drenada -- não quando o comando é criado.
+        // A sessão aberta é quando a pulseira é alcançável, e é aqui que a fila é drenada.
         if (($message['kind'] ?? null) === 'session') {
-            // A sessão repete-se enquanto a ligação BLE durar, e deixa de chegar quando ela
-            // cai. É por isso que o campo diz se está autenticada em vez de se limitar a
-            // existir: o gateway avisa da perda em vez de emudecer.
+            // A sessão repete-se enquanto a ligação BLE durar, e a perda chega como não autenticada.
             if (($message['payload']['authenticated'] ?? true) === false) {
                 unset($this->sessionGateway[$deviceKey]);
                 $this->presence->markOffline($deviceKey, $device, $licenseId, $company);
@@ -210,29 +188,25 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        // A bateria vem em toda a sessão e é o único valor que não depende do sensor ótico:
-        // chega mesmo com a pulseira pousada. Sem isto ficava só no `raw`.
+        // A bateria vem em toda a sessão, mesmo com a pulseira pousada.
         if (($message['kind'] ?? null) === 'battery') {
             $this->publishBattery($message['payload'] ?? null, $context);
             return;
         }
 
-        // Medição ao vivo, pedida por comando. Fecha o ciclo: sem a telemetria de volta o
-        // registo de comandos nunca dá o pedido por cumprido e repete-o até esgotar.
+        // Medição ao vivo, pedida por comando.
         if (($message['kind'] ?? null) === 'measurement') {
             $this->publishMeasurement($message['payload'] ?? null, $context);
             return;
         }
 
-        // A onda do ECG chega à parte das tramas de estado: o gateway junta os pacotes de
-        // uma medição e entrega o traçado completo de uma vez.
+        // O gateway junta os pacotes da onda do ECG e entrega o traçado completo de uma vez.
         if (($message['kind'] ?? null) === 'ecg_wave') {
             $this->publishEcg($message['payload'] ?? null, $context);
             return;
         }
 
-        // O registo de sono chega em espécie própria: é o relatório de uma noite, já calculado
-        // pelo firmware, e não uma sequência de leituras como os blocos de cinco minutos.
+        // O relatório de uma noite, já calculado pelo firmware.
         if (($message['kind'] ?? null) === 'sleep') {
             $identity = DeviceDescriptor::of($deviceKey, $device);
             $payload = $message['payload'] ?? null;
@@ -246,10 +220,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
         }
 
         if (($message['kind'] ?? null) === 'command_result') {
-            // Executar não é medir. O gateway confirma o que correu, e diz quando a pulseira
-            // não devolveu coisa nenhuma -- nem valor nem razão. Sem isto o pedido saía da
-            // fila como cumprido e ficava no ecrã «confirmado» e vazio, que é a ambiguidade
-            // que o relatório de falhas existe para eliminar.
+            // Executar não é medir: sem valor nem razão da pulseira, o pedido falha.
             if ((string)($message['payload']['outcome'] ?? '') === self::SILENT_OUTCOME) {
                 $this->fail(
                     $context,
@@ -261,11 +232,10 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             }
 
             $operation = (string)($message['payload']['operation'] ?? '');
-            // Responder não é medir. A pulseira fora do pulso responde a tudo com zeros, e o
-            // gateway confirma porque viu tramas a chegar -- mas quem sabe o que conta como
-            // leitura é este lado, e daqui não saiu nenhuma.
+            // Responder não é medir: fora do pulso responde com zeros, e o que conta como
+            // leitura decide-se deste lado.
             if (str_starts_with($operation, 'measure.')) {
-                // Já morreu, e com a razão certa: a confirmação não o mata segunda vez.
+                // Já falhou com a razão certa: a confirmação não o falha segunda vez.
                 if ($this->readings->discardConfirmation($deviceKey, $operation)) {
                     return;
                 }
@@ -285,8 +255,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        // Um `kind` que ninguém reclama sairia daqui em silêncio. Dizê-lo uma vez por espécie
-        // e por aparelho chega para aparecer no diário sem o encher.
+        // Um `kind` sem normalização avisa uma vez por espécie e por aparelho.
         if (($message['kind'] ?? null) !== 'daily_block') {
             $kind = (string)($message['kind'] ?? '');
             $seenKey = $deviceKey . '|' . $kind;
@@ -307,9 +276,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
         ];
 
         foreach ($this->blocks($message['payload'] ?? null) as $block) {
-            // A pulseira reproduz o histórico por desenho: o gateway relê o dia corrente de
-            // cinco em cinco minutos. Um bloco igual a um que já saiu é a mesma medição, com
-            // o mesmo instante, e não uma leitura nova.
+            // O gateway relê o dia corrente de cinco em cinco minutos: um bloco igual já saiu.
             if (!$this->state->acceptObservation($deviceKey, self::blockFingerprint($block), self::REPLAY_TTL_SECONDS)) {
                 continue;
             }
@@ -322,9 +289,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /**
-     * Publica telemetria no MQTT e no histórico da dashboard.
-     *
-     * São dois destinos e não um: o MQTT serve quem integra, a dashboard serve quem opera.
+     * Publica telemetria no MQTT, para quem integra, e no histórico da dashboard, para quem opera.
      *
      * @param array<string, mixed> $telemetry
      */
@@ -338,9 +303,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             $context->company,
         );
 
-        // A dashboard guarda cem entradas e serve para consultar, não para arquivar. Uma
-        // pulseira produz 288 blocos de cinco minutos por dia, e os que não trazem nada
-        // esgotam a lista em horas. No MQTT continua a sair tudo; quem arquiva é quem integra.
+        // A dashboard guarda cem entradas para consulta; os 288 blocos diários esgotavam-na.
         if (!$this->worthShowing($context->deviceKey, $telemetry)) {
             return;
         }
@@ -352,11 +315,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /**
-     * A mesma telemetria, sem o que não cabe num histórico de consulta.
-     *
-     * Um traçado de ECG são dezasseis mil amostras. Quem integra quer o traçado inteiro e
-     * recebe-o pelo MQTT; a dashboard guarda cem entradas por aparelho e nem sequer desenha
-     * ondas -- guardá-lo lá era despejar megabytes no Redis para mostrar «Dados de ECG».
+     * A mesma telemetria, sem o que não cabe num histórico de consulta: o traçado de um ECG,
+     * dezasseis mil amostras, só sai pelo MQTT.
      *
      * @param array<string, mixed> $telemetry
      * @return array<string, mixed>
@@ -375,11 +335,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /**
-     * Se uma leitura tem valor de consulta.
-     *
-     * Dois casos, e os dois são ausência de informação: um bloco de atividade a zeros, e a
-     * versão de firmware repetida a cada anúncio de sessão. Tudo o resto passa, mesmo
-     * repetido -- aí a repetição é a informação.
+     * Se uma leitura tem valor de consulta: tudo menos um bloco de atividade a zeros e a versão
+     * de firmware repetida.
      *
      * @param array<string, mixed> $telemetry
      */
@@ -412,11 +369,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 
 
     /**
-     * Percentagem de bateria da pulseira.
-     *
-     * O firmware reporta ora percentagem ora tensão, e diz qual em `VPDeviceIsPercent`. Só a
-     * percentagem é publicada: converter milivolts em percentagem exigia conhecer a curva da
-     * célula, que não temos, e um palpite aqui vira um alarme de bateria fraca errado.
+     * Percentagem de bateria, só quando `VPDeviceIsPercent` o diz: sem a curva da célula, a
+     * tensão não se converte.
      *
      * @param array<string, mixed>|null $payload
      */
@@ -445,13 +399,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
         ));
     }
 
-    /**
-     * A versão de firmware, tal como a sessão a traz.
-     *
-     * Sai em cada sessão, mesmo repetida. Guardar a anterior para só publicar a mudança era
-     * o hub a decidir o que vale a pena dizer -- e essa é a comparação de quem integra, que
-     * tem o valor que leu da vez passada.
-     */
+    /** A versão de firmware, tal como a sessão a traz; sai em cada sessão, mesmo repetida. */
     private function publishFirmware(string $firmware, BraceletContext $context): void
     {
         if ($firmware === '') {
@@ -470,11 +418,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /**
-     * Uma medição a pedido traz um valor só e o estado do sensor.
-     *
-     * Um valor a zero não é uma leitura: é o firmware a dizer que ainda não fixou o sinal, e
-     * `notWear` que a pulseira não está em contacto com a pele. Publicar qualquer um deles
-     * dava um batimento inventado a quem consome.
+     * Uma medição a pedido traz um valor só e o estado do sensor. Um zero é sinal ainda por
+     * fixar, e `notWear` a pulseira sem contacto com a pele: nenhum é leitura.
      *
      * @param array<string, mixed>|null $payload
      */
@@ -484,9 +429,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        // O aparelho diz em que estado está. Um `beMeasuring*` é ocupação passageira e não
-        // vale um acontecimento; bateria fraca e sensor anómalo são razões que o operador tem
-        // de ver, porque explicam um pedido que nunca se cumpre.
+        // Um `beMeasuring*` é ocupação passageira; bateria fraca e sensor anómalo são razões a mostrar.
         $detection = (string)($payload['deviceDetectionInfo'] ?? '');
         if (isset(self::DETECTION_FAILURES[$detection])) {
             $this->fail(
@@ -497,15 +440,12 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        // O SDK manda verificar por esta ordem: primeiro se o aparelho está ocupado, depois
-        // se a deteção de uso passou. Ao contrário, uma medição recusada por estar a decorrer
-        // outra apareceria como pulseira fora do pulso.
+        // O SDK manda verificar por esta ordem: primeiro a ocupação, depois a deteção de uso.
         if (($payload['deviceBusy'] ?? false) === true) {
             return;
         }
 
-        // A pulseira reporta explicitamente quando a deteção de uso falha. O ECG usa um campo
-        // próprio: exige o dedo no elétrodo e não só a pulseira no pulso.
+        // O ECG tem campo próprio de deteção de uso: exige o dedo no elétrodo.
         if (($payload['notWear'] ?? false) === true || ($payload['wearStatus'] ?? '') === 'wearNotPass') {
             $this->fail(
                 $context,
@@ -517,17 +457,14 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 
         $sdkType = (int)($payload['sdkType'] ?? 0);
 
-        // O ECG ao vivo manda uma trama por segundo com o estado da medição. Não é telemetria
-        // por si -- são trinta e quatro por exame, e enchiam o histórico com o decorrer em vez
-        // do resultado. O que elas mediram sai uma vez, com a onda.
+        // As tramas de estado do ECG, uma por segundo, não são telemetria: o resumo sai com a onda.
         if ($sdkType === self::ECG_SDK_TYPE) {
             return;
         }
 
         $measurement = MeasurementNormalizer::forSdkType($sdkType, $payload);
         if ($measurement === null) {
-            // Um tipo do SDK que ninguém reclama sai daqui tão calado como saía um `kind`, e
-            // pela mesma razão se diz uma vez por espécie e por aparelho.
+            // Como um `kind`, um tipo do SDK sem normalização avisa uma vez por aparelho.
             $seenKey = $context->deviceKey . '|sdk:' . $sdkType;
             if ($sdkType !== 0 && !isset($this->unhandledKinds[$seenKey])) {
                 $this->unhandledKinds[$seenKey] = true;
@@ -546,16 +483,13 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             $context->deviceKey,
             $context->device,
             self::PROTOCOL,
-            // O tipo do fabricante e não a espécie de mensagem: `measurement` cobria nove
-            // tipos e não dizia qual, e é por ele que se vai à documentação da Veepoo.
+            // O tipo do fabricante, por que se vai à documentação da Veepoo.
             "type-{$sdkType}",
             $data,
             $context->gatewayKey,
         );
 
-        // Uma leitura instantânea não tem medição a assentar: os totais do dia e o estado de
-        // quem manda a pulseira vibrar são contadores que o firmware já tem, e respondem numa
-        // trama só.
+        // Os totais do dia e a procura da pulseira respondem numa trama só, sem assentar.
         $operation = MeasurementNormalizer::operationForSdkType($sdkType);
         if ($operation === null) {
             $this->emitTelemetry($context, $telemetry);
@@ -567,10 +501,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /**
-     * O traçado de um ECG.
-     *
-     * A pulseira grava os trinta segundos haja sinal ou não: pousada numa mesa devolve
-     * dezasseis mil amostras a zero, que é uma medição que não apanhou nada e não um exame.
+     * O traçado de um ECG. A pulseira grava os trinta segundos haja sinal ou não, e um traçado
+     * todo a zero não é exame.
      *
      * @param array<string, mixed>|null $payload
      */
@@ -591,12 +523,9 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        // `frequencyHz` é o nome do contrato, o mesmo que os relógios usam para a onda deles.
         $frequencyHz = is_int($payload['samplingHz'] ?? null) ? $payload['samplingHz'] : null;
 
-        // O que o exame mediu vem com ele, e não em telemetria à parte: um ECG é um exame, e
-        // a frequência cardíaca que ele apurou não é a mesma coisa que a leitura solta do
-        // sensor ótico -- separá-las punha duas grandezas com o mesmo nome a discordar.
+        // O que o exame mediu vai com ele, e não como telemetria solta do sensor ótico.
         $status = is_array($payload['status'] ?? null) ? $payload['status'] : [];
         $measured = MeasurementNormalizer::ecgSummary(array_values(array_filter(
             $status,
@@ -616,12 +545,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 
 
 
-    /**
-     * Diz porque é que a medição não saiu, e encerra o pedido que a mandou fazer.
-     *
-     * As duas coisas andam juntas: o acontecimento é para quem opera ver a razão, e tirar o
-     * comando da fila é o que impede a pulseira de repetir uma medição que já se sabe falhada.
-     */
+    /** Diz porque é que a medição não saiu, e encerra o pedido que a mandou fazer. */
     private function fail(BraceletContext $context, string $reason, ?string $operation): void
     {
         $this->failures->report(
@@ -638,11 +562,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /**
-     * O que identifica um bloco é tudo o que ele traz, e não só o `date`.
-     *
-     * O bloco do intervalo a decorrer chega incompleto e é preenchido na leitura seguinte.
-     * Pela data sozinha, a primeira versão congelava-o e os minutos que faltavam nunca
-     * chegavam a sair.
+     * Um bloco identifica-se por tudo o que traz, e não só pelo `date`: o do intervalo a
+     * decorrer chega incompleto e completa-se na leitura seguinte.
      *
      * @param array<string, mixed> $block
      */

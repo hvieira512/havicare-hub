@@ -10,9 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Uma opção oferecida na lista do dispensador tem de passar nos dois níveis que guardam a gama.
- *
- * O ecrã oferece o que a definição declara, e nada prendia a lista à gama: sobrava uma opção,
- * que era enviada na mesma e o aparelho recusava.
  */
 final class ConfigurationChoicesAreAcceptedTest extends TestCase
 {

@@ -7,12 +7,7 @@ export const WONLEX_MEDICATION_PERIODS = [
     { index: 3, key: "Before sleep", label: "Antes de dormir", defaultTime: "22:00" },
 ];
 
-/**
- * Trazer os valores de configuração guardados para as formas de que os campos desenham.
- *
- * Funções puras sobre dados simples -- sem DOM e sem API --, e é isso que as separa de quem
- * as consome a desenhar e de quem as desfaz a ler.
- */
+/** Os valores guardados nas formas que os campos desenham, em funções puras sem DOM nem API. */
 
 export function normalizeWonlexMedicationPlans(desired) {
     const source = desired?.plans ?? desired?.plan ?? desired;
@@ -32,10 +27,8 @@ export const MEDICATION_MEAL_TIMINGS = ["before_meal", "after_meal"];
 export const MEDICATION_PERIODS = ["morning", "midday", "night", "before_sleep"];
 
 /**
- * A forma pública de um plano, trazida para os nomes com que os campos da Wonlex trabalham.
- *
- * A já normalizada volta aqui -- a lista normaliza, e a linha normaliza outra vez --, e por
- * isso as duas formas são aceites.
+ * A forma pública de um plano nos nomes dos campos da Wonlex. Aceita também a já normalizada,
+ * porque a lista e a linha normalizam as duas.
  */
 export function normalizeWonlexMedicationPlan(plan) {
     const alarmClock = pickObject(plan.alarmClock) ?? {};

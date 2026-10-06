@@ -164,11 +164,11 @@ final class W6bDecoderTest extends TestCase
         // gateway o façam, e por isso o formato BXP-B continua suportado.
         $adv = '020106'
             . sprintf('%02x', 1 + 2 + 12) . '16' . 'e0fe'
-            . '22'            // 0x22 -> long press
-            . '02'            // status: main button triggered
-            . '0006'          // trigger count 6
-            . '000000000001'  // device id
-            . '00' . '00'     // firmware type, RFU
+            . '22'            // 0x22: toque longo
+            . '02'            // estado: botão principal premido
+            . '0006'          // contagem de toques 6
+            . '000000000001'  // id do aparelho
+            . '00' . '00'     // tipo de firmware, RFU
             . '0a09' . bin2hex('MK Button');
 
         $decoded = (new W6bDecoder())->decode(['mac' => 'fbd87c59ba8b', 'adv_data' => $adv]);

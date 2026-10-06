@@ -1,14 +1,8 @@
-# Sobreposição dos cenários, apanhada pelo `COMPOSE_FILE` em `tests/scenarios/lib/common.sh`.
-# Mantém-nos fora do ambiente de desenvolvimento: projeto, contentores e base de dados
-# próprios. Ver `docs/16-testes.md`.
-#
-# O `container_name` tem de ser anulado -- um nome fixo ignora o nome do projeto. As portas
-# do anfitrião são retiradas em vez de deslocadas, porque os cenários falam com os serviços
-# de dentro da rede; só a dashboard é lida de fora.
+# Sobreposição dos cenários (`COMPOSE_FILE` em `tests/scenarios/lib/common.sh`), com projeto,
+# contentores e base de dados próprios. Anula o `container_name` e retira as portas do anfitrião.
 
-# O `restart` também é anulado: o compose base tem `unless-stopped`, que é o que se quer para
-# quem desenvolve e é errado aqui -- uma pilha de testes não se levanta sozinha depois de a
-# máquina reiniciar, nem fica a ocupar meio giga à espera da corrida seguinte.
+# O `restart` também é anulado: uma pilha de testes não se levanta sozinha quando a máquina
+# reinicia.
 
 services:
   mosquitto:

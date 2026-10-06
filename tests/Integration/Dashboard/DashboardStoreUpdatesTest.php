@@ -17,9 +17,8 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
     private const DEVICE = 'fbd87c59ba8b';
 
     /**
-     * A raiz das chaves deste teste. **Não começa por `hub:`** de propósito: o `REDIS_HOST` do
-     * ambiente pode apontar para o Redis de produção, e uma raiz dentro de `hub:` misturava-se
-     * com as chaves reais do hub -- que não têm prazo de validade e ficariam lá para sempre.
+     * Não começa por `hub:` de propósito: o `REDIS_HOST` pode apontar para o Redis de produção,
+     * cujas chaves `hub:` não têm prazo de validade.
      */
     private const KEY_ROOT = 'test:dashboard-store-updates';
 
@@ -31,8 +30,7 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
 
     protected function tearDown(): void
     {
-        // Cada corrida criava uma raiz nova e nunca a limpava. Apagar é do teste, e não de
-        // quem depois encontra o lixo.
+        // Apagar as raízes é do teste, e não de quem depois encontra o lixo.
         foreach ($this->clients as $index => $redis) {
             $root = $this->roots[$index] ?? '';
             if ($root === '') {
@@ -80,8 +78,7 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
             $count++;
         });
 
-        // Por referência: uma arrow function capturava a contagem por valor e
-        // always report zero.
+        // Por referência: uma arrow function capturaria a contagem por valor e daria sempre zero.
         return [$store, static function () use (&$count): int {
             return $count;
         }];
@@ -101,7 +98,7 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
     {
         [$store, $count] = $this->storeCountingNotifications();
 
-        // Escrita a cada mensagem de gateway e nunca enviada no stream: anunciá-la acordava
+        // Escrita a cada mensagem de gateway e nunca enviada no stream: anunciá-la acordaria
         // todos os streams abertos para dados que ninguém lê.
         $store->append(self::DEVICE, 'raw', ['type' => 'raw', 'data' => []]);
 

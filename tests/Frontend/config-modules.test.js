@@ -40,6 +40,6 @@ test("4P Touch custom-frequency reminder marca os dias da máscara, e não a má
         Array.from(root.querySelectorAll("[data-weekday]:checked")).map((i) => i.value),
         ["1", "2", "3", "4", "5"],
     );
-    // A máscara deixou de andar na marcação: quem a escrevia à mão passa a carregar em dias.
+    // A máscara não anda na marcação: escolhem-se os dias.
     assert.doesNotMatch(html, /value="0111110"/);
 });

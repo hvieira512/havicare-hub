@@ -11,18 +11,14 @@ use Tests\Support\DashboardHttpTestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
 /**
- * Os tetos do login, que é a única rota pública que faz trabalho a sério.
- *
- * O `password_verify` está a custo 12 -- medido no servidor, 145,6 ms -- é síncrono, e corre
- * no mesmo event loop que serve a ingestão TCP dos relógios. Cerca de sete tentativas por
- * segundo bastavam para parar o processo inteiro, sem autenticação nenhuma.
+ * O `password_verify` custa ~146 ms, é síncrono e corre no event loop da ingestão TCP: sem
+ * tetos, sete tentativas por segundo param o processo inteiro.
  */
 final class DashboardLoginThrottleTest extends DashboardHttpTestCase
 {
     /**
-     * A asserção que interessa é a última: a tentativa recusada leva a password **certa**. Se
-     * o teto fosse verificado depois do `password_verify`, esta respondia 200 -- e o custo que
-     * ele existe para travar já teria sido pago.
+     * A tentativa recusada leva a password certa: o teto verifica-se antes do `password_verify`,
+     * senão o custo que existe para travar já estaria pago.
      */
     public function testAnAddressThatKeepsGuessingIsRefusedBeforeTheHashIsChecked(): void
     {
@@ -51,11 +47,7 @@ final class DashboardLoginThrottleTest extends DashboardHttpTestCase
         );
     }
 
-    /**
-     * O teto por endereço é derrotado por quem tenha endereços a rodar, e é o global que fecha
-     * essa porta: é ele que fixa o tempo de loop gasto em bcrypt, independentemente de quantos
-     * endereços o atacante tenha.
-     */
+    /** Contra endereços a rodar é o teto global que fixa o tempo de loop gasto em bcrypt. */
     public function testTheGlobalCapHoldsWhenTheAddressesRotate(): void
     {
         $server = $this->serverWithThrottle(maxPerAddress: 50, maxGlobal: 2);
@@ -88,9 +80,8 @@ final class DashboardLoginThrottleTest extends DashboardHttpTestCase
     }
 
     /**
-     * O caminho do `refresh_token` não chama `password_verify` -- é uma leitura ao Redis e duas
-     * escritas. Travá-lo punia justamente o cliente que se porta bem, que é o que renova em vez
-     * de voltar a autenticar.
+     * O `refresh_token` não chama `password_verify`; travá-lo puniria o cliente que renova em
+     * vez de voltar a autenticar.
      */
     public function testRenewingWithARefreshTokenIsNotThrottled(): void
     {
@@ -144,13 +135,8 @@ final class DashboardLoginThrottleTest extends DashboardHttpTestCase
     }
 
     /**
-     * As janelas vão a uma hora de propósito.
-     *
-     * A janela vive na chave, como `intdiv(time(), segundos)`, e por isso um teste que a use
-     * curta depende do alinhamento do relógio: cada tentativa custa ~150 ms de bcrypt, e três
-     * delas atravessam de vez em quando uma fronteira de 10 s -- o contador reinicia a meio, a
-     * tentativa que devia ser recusada passa, e o teste falha uma vez em cada vinte. Com uma
-     * hora não há fronteira para atravessar.
+     * As janelas vão a uma hora de propósito: a janela vive na chave, como `intdiv(time(), s)`,
+     * e uma curta faria o teste depender de atravessar uma fronteira do relógio.
      */
     private function serverWithThrottle(
         int $maxPerAddress = 20,

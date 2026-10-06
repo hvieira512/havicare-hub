@@ -348,9 +348,7 @@ class ModelService
      */
     private function modelFields(array $decoded, string $mode, ?int $modelId = null): array
     {
-        // O corpo chega em JSON ou em `multipart/form-data`, e por isso a conversão de
-        // escalares corre sempre: num corpo JSON não há strings onde se esperam inteiros e
-        // ela não toca em nada.
+        // A conversão de escalares corre sempre: o corpo pode ser multipart, e num JSON não toca em nada.
         $request = $this->binder->bind(self::withCapabilityAliases($decoded), ModelWriteRequest::class, [], true);
         if (is_array($request)) {
             return $request;
@@ -430,11 +428,8 @@ class ModelService
     }
 
     /**
-     * O `enabledCapabilities` é o nome antigo do `capabilities`, e continua a ser aceite.
-     *
-     * Fica aqui e não no `RequestBinder` porque é um sinónimo desta rota e de mais nenhuma.
-     * O binder trata do que é geral -- o `snake_case` e o sufixo `[]` de um formulário --, e
-     * um sinónimo de domínio no meio disso passava a valer para pedidos que nunca o tiveram.
+     * O `enabledCapabilities` é o nome antigo do `capabilities`, e continua a ser aceite. Fica aqui
+     * e não no `RequestBinder` porque é um sinónimo desta rota e de mais nenhuma.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>

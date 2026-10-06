@@ -125,7 +125,7 @@ test("carregar no botão troca o tema e guarda a escolha", () => {
     assert.equal(localStorage.getItem(THEME_STORAGE_KEY), LIGHT);
 });
 
-// São dois desde que a entrada ganhou o seu: nenhum deles é *o* botão.
+// Há um botão na entrada e outro na dashboard: nenhum deles é *o* botão.
 test("todos os botões da página acompanham o tema aplicado", () => {
     reset();
     const buttons = mountTwoButtons();

@@ -7,10 +7,8 @@ namespace Tests\Support\Doubles;
 use Hub\Device\HubMqttBridge;
 
 /**
- * Captures what an ingress publishes instead of talking to a broker.
- *
- * Cada publicação é registada na mesma forma, para uma alteração às assinaturas do
- * `HubMqttBridge` só ter de ser reflectida aqui e não numa cópia por teste.
+ * Regista o que um ingress publica, em vez de falar com um broker; cada publicação fica na
+ * mesma forma, para uma alteração ao `HubMqttBridge` só se reflectir aqui.
  */
 class RecordingHubMqttBridge extends HubMqttBridge
 {

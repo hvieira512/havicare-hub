@@ -8,14 +8,7 @@ import {
     showsInCatalog,
 } from "../../src/Dashboard/dashboard/settings/capabilities.js";
 
-/**
- * O catálogo mostra o que o tipo de dispositivo tem, e as acções fazem parte disso.
- *
- * O filtro pedia telemetria, configuração ou evento, e uma acção não é nenhuma das três: sete
- * capacidades do relógio -- desligar, reiniciar, repor, encontrar, ligar, enviar mensagem e o
- * número de monitorização -- desapareciam do ecrã. O cabeçalho continuava a contá-las, e
- * anunciava 69 capacidades numa página que mostrava 62.
- */
+/** As acções fazem parte do que o tipo de dispositivo tem, e o catálogo mostra-as. */
 const capability = (flags) => ({
     key: "x",
     label: "X",

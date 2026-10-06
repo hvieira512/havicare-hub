@@ -8,12 +8,7 @@ use Hub\Api\Http\CollectionColumns;
 use Hub\Api\Http\CollectionPresenter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O motor das listagens servidas de uma vez: filtra, ordena, conta e só depois pagina.
- *
- * A ordem importa. Contar antes de filtrar dava números que não correspondiam ao que se vê,
- * e paginar antes de ordenar deixava a página 2 com linhas da ordem anterior.
- */
+/** O motor das listagens servidas de uma vez: filtra, ordena, conta e só depois pagina. */
 final class CollectionPresenterTest extends TestCase
 {
     /** @return list<array<string, mixed>> */
@@ -123,9 +118,8 @@ final class CollectionPresenterTest extends TestCase
     }
 
     /**
-     * Um conjunto fechado oferece-se inteiro, mesmo quando os dados só têm um dos valores:
-     * com todos os utilizadores activos, um dropdown tirado das linhas nunca deixaria
-     * escolher "inactivo", e o filtro ficava inalcançável.
+     * Um conjunto fechado oferece-se inteiro mesmo que os dados só tenham um dos valores, senão
+     * o filtro ficava inalcançável.
      */
     public function testAClosedSetOffersEveryValueAndCountsWhatIsThere(): void
     {
@@ -149,9 +143,8 @@ final class CollectionPresenterTest extends TestCase
     }
 
     /**
-     * Cada faceta conta-se sem o seu próprio filtro. Escolher um papel tem de continuar a
-     * mostrar o outro no dropdown, senão quem escolheu fica lá preso -- e as contagens dos
-     * outros filtros continuam a estreitar-se, que é o que as torna úteis.
+     * Cada faceta conta-se sem o seu próprio filtro, para quem escolheu um papel continuar a ver
+     * o outro; as contagens dos outros filtros estreitam-se.
      */
     public function testASelectFacetIgnoresItsOwnFilterButRespectsTheOthers(): void
     {

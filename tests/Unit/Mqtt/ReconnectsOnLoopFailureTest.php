@@ -9,13 +9,8 @@ use Hub\Mqtt\ReconnectsOnLoopFailure;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Uma ligação que cai tem de dizer também quando voltou.
- *
- * O registo dizia «connection lost ...; reconnecting» e mais nada: se a reconexão corria bem,
- * ficava calado. Num dia com vinte quedas por hora -- que é o que o diário deste hub mostrou
- * durante vinte horas seguidas -- quem o lê não consegue distinguir uma ligação a oscilar e a
- * recuperar sempre de uma que caiu de madrugada e nunca mais voltou. As duas dão a mesma
- * parede de avisos.
+ * Uma ligação que cai diz também quando voltou, senão não se distingue de uma que caiu e
+ * nunca mais voltou.
  */
 final class ReconnectsOnLoopFailureTest extends TestCase
 {

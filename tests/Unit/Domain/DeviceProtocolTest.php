@@ -10,8 +10,8 @@ use PHPUnit\Framework\TestCase;
 final class DeviceProtocolTest extends TestCase
 {
     /**
-     * A MOKO vende gateways e uma pulseira, e por isso resolver só pelo fornecedor dava à
-     * W6B um protocolo de gateway.
+     * A MOKO vende gateways e uma pulseira, e por isso resolver só pelo fornecedor daria à W6B um
+     * protocolo de gateway.
      */
     public function testMokoModelsResolveToTheirOwnProtocol(): void
     {

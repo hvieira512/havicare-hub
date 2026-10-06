@@ -92,12 +92,8 @@ class OpenApiSpec
     }
 
     /**
-     * Os dois erros que qualquer rota devolve sem os declarar: o `ApiKernel` responde 401
-     * antes de haver rota e 500 quando uma excepção sobe até ele.
-     *
-     * Acrescentam-se aqui porque a regra é do kernel: o 500 vale para todas, e o 401 para
-     * todas as que não sejam públicas -- o que o `security: []` da operação marca. O `+`
-     * preserva o que uma rota já declare.
+     * Os erros que qualquer rota devolve sem os declarar: 500 em todas, e 401 nas que não são
+     * públicas (`security: []`). O `+` preserva o que a rota já declare.
      *
      * @param array<string, mixed> $paths
      * @return array<string, mixed>

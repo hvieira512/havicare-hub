@@ -126,9 +126,8 @@ final class DeviceConfigurationCatalog
             throw new \InvalidArgumentException("Unsupported {$protocol} configuration {$key}");
         }
 
-        // A lista telefónica endereçada por índice é o único caso em que os comandos de uma
-        // configuração diferem entre si: uns removem, outros escrevem. O comando deixa de vir
-        // da entrada e passa a vir de cada item.
+        // A lista telefónica por índice é o único caso em que os comandos de uma configuração
+        // diferem (uns removem, outros escrevem): o comando vem de cada item.
         if ($protocol === 'four-p-touch' && $key === 'phonebook') {
             $contacts = FourPTouchPayloadBuilder::phonebookContacts($payload);
             // A reparação não olha ao que o hub julga que lá está: varre e reescreve. É o
@@ -173,9 +172,7 @@ final class DeviceConfigurationCatalog
                 'wonlex-json' => WonlexPayloadBuilder::build($key, $item),
                 'vivistar-iw' => VivistarPayloadBuilder::build($key, $item),
                 'four-p-touch' => FourPTouchPayloadBuilder::build($key, $item),
-                // O construtor da pulseira valida mas não monta trama nenhuma: quem a monta é
-                // o SDK dentro do gateway, e o payload chega lá genérico. Inventar aqui uma
-                // forma nativa obrigava a desfazê-la do outro lado.
+                // A pulseira só valida: quem monta a trama é o SDK no gateway, e o payload chega lá genérico.
                 'veepoo-ble' => VeepooPayloadBuilder::build($key, $item),
                 'zayata-m228' => ZayataPayloadBuilder::build($key, $item),
                 default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),

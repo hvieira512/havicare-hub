@@ -62,7 +62,6 @@ final class GatewayDeviceLinkRepositoryTest extends MysqlDashboardTestCase
         self::assertSame(0, $this->linkCount());
     }
 
-    /** Apagar um par que não estava ligado não leva outro à frente. */
     public function testDeletingAPairThatWasNotLinkedLeavesTheOthersAlone(): void
     {
         $repository = $this->repository();
@@ -88,10 +87,7 @@ final class GatewayDeviceLinkRepositoryTest extends MysqlDashboardTestCase
         self::assertTrue($repository->isEnabled(self::GATEWAY, self::BRACELET), 'devia responder da cache');
     }
 
-    /**
-     * Passada a janela, a resposta volta ao MySQL -- senão o portão ficava preso ao que leu
-     * no arranque e desligar uma pulseira nunca chegava à ingestão.
-     */
+    /** Passada a janela, a resposta volta ao MySQL, para desligar uma pulseira chegar à ingestão. */
     public function testOnceTheWindowHasPassedTheAnswerIsReadAgain(): void
     {
         $repository = new GatewayDeviceLinkRepository($this->pdo, cacheTtlSeconds: 0);

@@ -4,13 +4,7 @@ declare(strict_types=1);
 
 /**
  * Prova, contra uma instância a correr, que o `/api/stream` de um inquilino não leva nada de
- * outro -- nem de outra licença da mesma empresa, nem de outra empresa.
- *
- * A parte que interessa não é mostrar que o `hitcare-1001` só vê `hitcare/1001`. É mostrá-lo
- * **enquanto os outros inquilinos estão a produzir**: uma janela em que os outros estivessem
- * calados provava apenas que estavam calados. Por isso abre todos os streams ao mesmo tempo,
- * conta o que cada um recebeu, e só considera a prova válida para os pares que de facto
- * tiveram tráfego na janela.
+ * outro. Abre todos os streams ao mesmo tempo e só conta os pares com tráfego na janela.
  *
  * Uso:
  *   php simulator/stream-isolation-probe.php --url=http://127.0.0.1:8091 \

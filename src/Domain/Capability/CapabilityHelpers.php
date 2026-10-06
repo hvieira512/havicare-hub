@@ -136,10 +136,6 @@ trait CapabilityHelpers
         throw new \InvalidArgumentException("{$field} must be boolean or 0/1");
     }
 
-    // ------------------------------------------------------------------
-    // ajudantes de junção
-    // ------------------------------------------------------------------
-
     /** @param list<string> $listKeys */
     public static function mergeAssociativeValues(mixed $existing, mixed $incoming, array $listKeys = []): mixed
     {

@@ -57,20 +57,15 @@ final class DeviceController
         $loop = Loop::get();
         $stream = new ThroughStream();
 
-        // Contrapressão: o `write()` devolve `false` quando o consumidor pediu pausa, e a
-        // partir daí não se escreve nem se lê o `recent()` até ao `drain`.
-        //
-        // Sem isto, um cliente que drene mais devagar do que o radar produz fazia o buffer
-        // crescer até rebentar o limite de memória do processo -- e com ele todas as ligações
-        // TCP e todas as subscrições MQTT, para todos os clientes.
+        // Contrapressão: com o `write()` a devolver `false`, não se escreve nem se lê o `recent()` até
+        // ao `drain`, senão um cliente lento faz o buffer crescer até rebentar a memória do processo.
         $blocked = false;
         $stream->on('drain', static function () use (&$blocked): void {
             $blocked = false;
         });
 
-        // Onde é que este cliente já vai, por lista: o instantâneo leva o histórico todo, e
-        // as actualizações levam só o que entrou depois. Sem o cursor, um radar custava
-        // dezenas de KB por segundo e por separador aberto.
+        // O cursor deste cliente, por lista: o instantâneo leva o histórico todo, e as actualizações
+        // só o que entrou depois.
         $cursor = ['telemetry' => 0, 'events' => 0];
         $lastCommands = null;
 
@@ -90,9 +85,8 @@ final class DeviceController
             ];
             unset($data['cursor']);
 
-            // Os comandos vão sempre por inteiro porque mudam de estado, e por isso é a
-            // comparação deles que decide se uma actualização sem linhas novas tem alguma
-            // coisa para dizer.
+            // Os comandos vão sempre inteiros porque mudam de estado, e é a comparação deles que decide
+            // se uma actualização sem linhas novas tem algo a dizer.
             $commands = json_encode($data['commands'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             $hasNewEntries = $data['telemetry'] !== [] || $data['events'] !== [];
             if (!$hasNewEntries && $commands === $lastCommands) {
@@ -114,9 +108,7 @@ final class DeviceController
             $send('snapshot');
         });
 
-        // O store anuncia as suas próprias escritas, e por isso não há nada a sondar. Uma
-        // rajada -- uma pulseira a anunciar um toque durante 30 segundos, ou um comando a
-        // percorrer o seu ciclo de vida -- colapsa num envio só.
+        // O store anuncia as suas próprias escritas, e uma rajada colapsa num envio só.
         $flushTimer = null;
         $unsubscribe = $this->service->updates()->subscribe(
             $imei,
@@ -139,8 +131,7 @@ final class DeviceController
 
         $stream->on('close', static function () use ($timer, $loop, $unsubscribe, &$flushTimer): void {
             $loop->cancelTimer($timer);
-            // Sem isto, uma rajada a chegar quando o cliente se desliga deixava este
-            // temporizador a segurar a closure até disparar para nada.
+            // O temporizador da rajada não pode ficar a segurar a closure depois de o cliente sair.
             if ($flushTimer !== null) {
                 $loop->cancelTimer($flushTimer);
                 $flushTimer = null;

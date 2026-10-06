@@ -22,9 +22,8 @@ final class ApiUserColumns
             ],
             writable: ApiUserWriteRequest::class,
             textFilters: ['username' => 'username'],
-            // Os dois são conjuntos fechados e não saem dos dados: com todos os
-            // utilizadores admin e activos, um dropdown alimentado pelas linhas nunca
-            // ofereceria o outro valor, e o filtro ficava inalcançável.
+            // Conjuntos fechados e não tirados dos dados: com todos os utilizadores admin e activos, o
+            // outro valor ficaria inalcançável.
             fixedOptions: [
                 'role' => ApiAuthContext::roles(),
                 'enabled' => ['1', '0'],

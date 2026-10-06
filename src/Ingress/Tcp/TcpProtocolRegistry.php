@@ -13,10 +13,7 @@ use Hub\Ingress\Tcp\Supplier\Wonlex\WonlexTcpProtocol;
 use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 
 /**
- * Os protocolos que falam TCP com o hub, indexados pelo nome do protocolo.
- *
- * O que estes quatro têm em comum não é o tipo de dispositivo -- três são relógios e um é um
- * dispensador de comprimidos -- é entrarem pelo mesmo socket.
+ * Os protocolos que entram pelo socket TCP do hub, indexados pelo nome do protocolo.
  */
 final class TcpProtocolRegistry
 {

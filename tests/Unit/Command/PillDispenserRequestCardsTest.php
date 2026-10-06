@@ -10,11 +10,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Um botão por pergunta, e não um botão por grandeza.
- *
- * O `0x07` do M228 pede sempre as 31 TAGs do `STATUS_TAGS`, e a resposta enche as sete
- * leituras de uma vez. Sete botões a construir a trama idêntica prometiam uma granularidade
- * que o protocolo não dá, e atropelavam-se entre si quando carregados de seguida.
+ * Um botão por pergunta, e não por grandeza: o `0x07` pede sempre as 31 TAGs do `STATUS_TAGS` e
+ * enche as sete leituras de uma vez.
  */
 final class PillDispenserRequestCardsTest extends TestCase
 {
@@ -43,10 +40,8 @@ final class PillDispenserRequestCardsTest extends TestCase
     }
 
     /**
-     * As sete leituras que a resposta ao `0x07` enche mostram-se, mas não se pedem.
-     *
-     * É a mesma regra que o relógio já segue: a bateria dele não tem botão porque vem no
-     * `device_status`, e a frequência cardíaca tem porque carregar nela manda medir.
+     * Como no relógio: a bateria vem no `device_status`, e a frequência cardíaca tem botão porque
+     * carregar nela manda medir.
      */
     public function testTheSevenReadingsTheStatusFrameFillsAreNotRequestedOnTheirOwn(): void
     {
@@ -104,11 +99,8 @@ final class PillDispenserRequestCardsTest extends TestCase
     }
 
     /**
-     * As sondas da descoberta não ficam: serviram para fazer a integração.
-     *
-     * Perguntavam ao firmware que TAGs ele serve. Nada no hub lia a resposta, e o
-     * administrador que carregasse no botão recebia uma lista de TAGs sobre a qual não tem
-     * nenhuma decisão. As três listas estão escritas no capítulo 19.
+     * As sondas da descoberta não ficam: a resposta não serve decisão nenhuma ao
+     * administrador, e as listas estão no capítulo 19.
      */
     public function testTheIntegrationProbesAreNotPartOfTheProduct(): void
     {
@@ -121,10 +113,8 @@ final class PillDispenserRequestCardsTest extends TestCase
     }
 
     /**
-     * O que muda o aparelho não é pedido.
-     *
-     * A distinção não é cosmética: um mosaico do ecrã principal dispara ao primeiro clique,
-     * sem confirmação e sem contexto. Dispensar consome uma dose e reiniciar corta a ligação.
+     * Um mosaico do ecrã principal dispara ao primeiro clique, sem confirmação: dispensar consome uma
+     * dose e reiniciar corta a ligação.
      */
     public function testNothingThatChangesTheDeviceIsARequest(): void
     {
@@ -136,8 +126,7 @@ final class PillDispenserRequestCardsTest extends TestCase
     /**
      * A trama que cada pedido manda é a que o protocolo exige, e traz o corpo a perguntar.
      *
-     * Afirmar que os bytes não são vazios não media nada: o construtor ou lança, ou devolve
-     * uma trama por construção.
+     * Bytes não vazios não medem nada: o construtor ou lança, ou devolve uma trama.
      */
     public function testEachRequestBuildsTheFrameItsPacketTypeRequires(): void
     {

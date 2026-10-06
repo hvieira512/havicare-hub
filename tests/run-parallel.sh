@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # Corre uma suite de PHPUnit repartida por vários processos, um ficheiro de teste de cada vez.
-#
-# Não é o paratest: o paratest que fala com o PHPUnit 10 exige PHP 8.4 ou menos, e a máquina
-# corre 8.5.
+# O paratest para o PHPUnit 10 exige PHP 8.4 ou menos, e a máquina corre 8.5.
 #
 # Uso: tests/run-parallel.sh tests/Integration
 set -uo pipefail
@@ -21,10 +19,7 @@ OUTPUT_DIR="$(mktemp -d)"
 trap 'rm -rf "$OUTPUT_DIR"' EXIT
 
 # Do maior ficheiro para o menor, para os longos arrancarem primeiro e os curtos encherem o fim.
-#
-# Cada processo escreve num ficheiro tirado do `mktemp` e não num nome feito do PID: os PIDs
-# reciclam-se numa corrida de centenas de invocações, e um log por cima de outro levava com
-# ele a falha que lá estivesse e a contagem que a prova do fim soma.
+# Cada processo escreve num ficheiro do `mktemp`, porque os PIDs reciclam-se numa corrida longa.
 find "$SUITE_DIR" -name '*Test.php' -print0 \
   | xargs -0 ls -S \
   | xargs -P "$WORKERS" -n 1 sh -c \
@@ -33,8 +28,8 @@ status=$?
 
 cat "$OUTPUT_DIR"/log*
 
-# Um trabalhador que morra sem deixar resultado baixa a soma em silêncio, e a suite passava
-# com menos testes do que tem. Cada ficheiro de teste tem de ter deixado um resumo.
+# Um trabalhador que morra sem deixar resultado baixa a soma em silêncio: cada ficheiro de teste
+# tem de ter deixado um resumo.
 expected=$(find "$SUITE_DIR" -name '*Test.php' | wc -l | tr -d ' ')
 summarised=$(grep -lE '^(OK \(|Tests: [0-9]+, Assert)' "$OUTPUT_DIR"/log* | wc -l | tr -d ' ')
 if [ "$expected" != "$summarised" ]; then

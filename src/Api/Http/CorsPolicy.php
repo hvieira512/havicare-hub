@@ -8,14 +8,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Que origens podem falar com esta API a partir de um browser.
- *
- * O `*` continua a ser o valor por omissão, e hoje é seguro por uma razão concreta: a
- * autenticação é por `Bearer` em cabeçalho e não por cookie, portanto o browser não anexa
- * credenciais sozinho e não há CSRF a partir de uma página de terceiros.
- *
- * No dia em que alguém puser a sessão num cookie, o `*` passa a ser um buraco sem ninguém
- * ter tocado neste ficheiro. Com `CORS_ALLOWED_ORIGINS` preenchido, decide a configuração.
+ * Que origens podem falar com esta API a partir de um browser. O `*` só é seguro enquanto a
+ * autenticação for `Bearer` em cabeçalho; o `CORS_ALLOWED_ORIGINS` restringe-o.
  */
 final class CorsPolicy
 {
@@ -46,9 +40,8 @@ final class CorsPolicy
     }
 
     /**
-     * A origem que o pedido trouxe, quando está na lista; senão a primeira permitida, para a
-     * resposta não deixar de ser CORS-válida e um browser de outra origem ver a recusa em vez
-     * de um erro de rede sem explicação.
+     * A origem do pedido, quando está na lista; senão a primeira permitida, para o browser ver a
+     * recusa e não um erro de rede.
      */
     private function originFor(?ServerRequestInterface $request): string
     {

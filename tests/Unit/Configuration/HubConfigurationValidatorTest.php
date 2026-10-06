@@ -28,10 +28,8 @@ final class HubConfigurationValidatorTest extends TestCase
     }
 
     /**
-     * O prefixo vazio é o da produção, e é o valor distribuído no `.env.example`. Uma
-     * instância de desenvolvimento que arranque assim escreve por cima das chaves da
-     * produção sem se queixar -- e auditar sítios de construção é um instantâneo, ao passo
-     * que recusar o arranque não é.
+     * O prefixo vazio é o da produção e o do `.env.example`: uma instância de desenvolvimento que
+     * arranque assim escreve nas chaves da produção sem se queixar.
      */
     public function testRejectsDevelopmentInstanceWithoutRedisPrefix(): void
     {
@@ -76,9 +74,8 @@ final class HubConfigurationValidatorTest extends TestCase
     }
 
     /**
-     * A forma que o arranque real usa. O `bin/server-hub.php` passa `__DIR__ . '/..'`, e o
-     * `basename` disso é `..` -- sem resolver os segmentos, o guarda calava-se exactamente
-     * na única chamada que interessa.
+     * O `bin/server-hub.php` passa `__DIR__ . '/..'`, cujo `basename` é `..`: sem resolver os
+     * segmentos, o guarda calava-se na única chamada que interessa.
      */
     public function testResolvesTheParentSegmentThatTheEntryPointPasses(): void
     {

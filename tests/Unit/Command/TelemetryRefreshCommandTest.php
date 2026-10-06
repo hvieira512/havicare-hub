@@ -8,14 +8,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Reler o estado do dispensador é um pedido como os outros.
- *
- * Foi um `kind` próprio com botão próprio à cabeça dos mosaicos, e isso trouxe o botão para
- * todos os 4P Touch quando o `TS` deles foi marcado do mesmo modo -- num sítio que promete
- * actualizar mosaicos que o `TS` não actualiza. Deixou de haver caminho especial: é uma
- * capacidade pedível, e o mosaico dela é igual ao da versão do firmware.
- */
+/** É uma capacidade pedível, com mosaico igual ao da versão do firmware, sem `kind` nem botão próprios. */
 final class TelemetryRefreshCommandTest extends TestCase
 {
     public function testTheDispenserStatusIsAnOrdinaryRequestableCapability(): void

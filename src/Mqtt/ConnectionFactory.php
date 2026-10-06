@@ -9,10 +9,8 @@ use PhpMqtt\Client\Contracts\Repository;
 use PhpMqtt\Client\MqttClient;
 
 /**
- * Constrói e liga os clientes MQTT de um broker.
- *
- * Não é `final` para os testes poderem substituir por uma fábrica que registe os clientes em
- * vez de abrir sockets.
+ * Constrói e liga os clientes MQTT de um broker. Não é `final` para os testes a poderem
+ * substituir por uma que não abre sockets.
  */
 class ConnectionFactory
 {
@@ -21,11 +19,8 @@ class ConnectionFactory
     }
 
     /**
-     * Um id de cliente estável não leva o pid, para o broker reconhecer a mesma sessão
-     * através dos reinícios do processo -- que é o que as subscrições persistentes exigem.
-     *
-     * O id vai inteiro: em MQTT 3.1.1 os 23 caracteres são o mínimo que o servidor tem de
-     * aceitar, não um máximo, e encurtá-lo funde prefixos que se queriam distintos.
+     * Um id de cliente estável não leva o pid, para o broker reconhecer a sessão persistente entre
+     * reinícios. Vai inteiro: os 23 caracteres do MQTT 3.1.1 são um mínimo, não um máximo.
      */
     public function create(string $suffix, bool $stableClientId = false, ?Repository $repository = null): MqttClient
     {

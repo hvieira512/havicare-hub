@@ -14,11 +14,8 @@ final class IngressRunner
     private array $ingresses = [];
 
     /**
-     * A chave curta de cada ingestão, indexada pelo nome legível.
-     *
-     * Duas designações porque servem coisas diferentes: o nome vai nas mensagens de erro e nos
-     * logs, a chave é a identidade do fornecedor com que o `StartupBanner` a procura. Sem a
-     * chave, o arranque mantinha uma segunda lista à mão em paralelo com esta.
+     * A chave curta de cada ingestão, indexada pelo nome legível: o nome vai para os logs, a
+     * chave é o fornecedor com que o `StartupBanner` a procura.
      *
      * @var array<string, string>
      */
@@ -28,10 +25,7 @@ final class IngressRunner
     {
     }
 
-    /**
-     * Um ingress nulo é ignorado, para um fornecedor desligado não precisar de uma condição
-     * em quem o registou.
-     */
+    /** Um ingress nulo, de um fornecedor desligado, é ignorado. */
     public function add(string $name, ?MqttIngress $ingress, string $key = ''): void
     {
         if ($ingress === null) {
@@ -58,11 +52,8 @@ final class IngressRunner
     }
 
     /**
-     * Põe cada ingestão a girar, e as que têm fila a entregá-la.
-     *
-     * Os dois temporizadores são separados por terem ritmos diferentes: o tique conduz o loop
-     * MQTT e quer-se apertado, a entrega vai ao Redis e ao gateway e um segundo chega. Uma
-     * ingestão sem fila não ganha o segundo temporizador.
+     * Põe cada ingestão a girar, e as que têm fila a entregá-la. Dois temporizadores: o tique
+     * do loop MQTT quer-se apertado, e para a entrega um segundo chega.
      */
     public function scheduleTicks(float $interval = 0.05, float $timeout = 0.001, float $dispatchInterval = 1.0): void
     {
@@ -79,8 +70,7 @@ final class IngressRunner
                 continue;
             }
 
-            // Engolido como o tique: uma entrega falhada é uma ordem que fica em fila para a
-            // próxima ronda, e não uma razão para o processo inteiro parar.
+            // Engolido como o tique: uma entrega falhada fica em fila para a próxima ronda.
             $this->loop->addPeriodicTimer($dispatchInterval, static function () use ($name, $ingress): void {
                 try {
                     $ingress->dispatchQueued();
@@ -98,7 +88,7 @@ final class IngressRunner
     }
 
     /**
-     * As chaves curtas das ingestões que arrancaram, pela ordem em que foram registadas.
+     * Pela ordem em que foram registadas.
      *
      * @return list<string>
      */

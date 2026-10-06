@@ -8,11 +8,8 @@ use Hub\Api\Http\ApiError;
 use Hub\Log\Logger;
 
 /**
- * Regista uma escrita de metadados recusada, e devolve a recusa.
- *
- * Junta a forma que cada rejeição do `update()` repete -- o `request_id`, o IMEI, o código e
- * a razão -- para o trabalho real não ficar enterrado na instrumentação. Construído por
- * pedido, porque o `request_id` e o IMEI são dele.
+ * Regista uma escrita de metadados recusada e devolve a recusa, com o `request_id`, o IMEI, o
+ * código e a razão. Construído por pedido, porque o `request_id` e o IMEI são dele.
  */
 final class DeviceWriteAudit
 {

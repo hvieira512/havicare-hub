@@ -19,8 +19,7 @@ test("a miniatura leva o tamanho que lhe pedem, nos dois estados", () => {
     assert.match(modelImageHtml(withoutImage, 32), /style="width:32px;font-size:20px"/);
 });
 
-// Isto é o que torna desnecessária a cirurgia de string em settings/capabilities.js:
-// o tamanho é um parâmetro desde sempre, não algo a remendar no HTML já produzido.
+// O tamanho é parâmetro, e não se remenda no HTML já produzido.
 test("modelImageHtml devolve sempre marcação, nunca um valor falso", () => {
     for (const model of [withImage, withoutImage, {}, null, undefined]) {
         assert.equal(typeof modelImageHtml(model), "string");

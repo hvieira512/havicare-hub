@@ -6,9 +6,7 @@ namespace Hub\Domain\Capability\Medication;
 
 use Hub\Domain\Capability\CapabilityHelpers;
 
-/**
- * 4P Touch strategy for medication reminders.
- */
+/** A estratégia do 4P Touch para os lembretes de medicação. */
 final class FourPTouchMedicationRemindersHandler implements MedicationRemindersHandler
 {
     use CapabilityHelpers;

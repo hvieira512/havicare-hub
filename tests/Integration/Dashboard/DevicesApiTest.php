@@ -85,8 +85,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * Igualdade e não semelhança: com `LIKE`, escolher "L08" trazia também um "L08 Pro Max"
-     * que ninguém marcou. A correspondência parcial é da procura por texto livre.
+     * Igualdade e não semelhança: escolher «L08» não traz o «L08 Pro Max». A correspondência
+     * parcial é da procura por texto livre.
      */
     public function testListModelFilterMatchesTheWholeNameAndNotAPrefix(): void
     {
@@ -110,8 +110,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * Pares, e não duas listas cruzadas: {alfa, beta} com {1001, 2002} trazia um dispositivo
-     * da alfa com a licença 2002. Só divergem quando duas empresas partilham números.
+     * Pares, e não duas listas cruzadas: {alfa, beta} com {1001, 2002} não traz a alfa com a
+     * 2002. Só divergem quando duas empresas partilham números.
      */
     public function testLicenseFilterMatchesCompanyAndLicensePairsAndNotTheirCrossProduct(): void
     {
@@ -145,8 +145,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O estado é presença em runtime e entra na mesma cláusula que os outros filtros:
-     * filtrá-lo depois de paginar dava uma página de dez a devolver um.
+     * O estado é presença em runtime e entra na mesma cláusula que os outros filtros: filtrá-lo
+     * depois de paginar daria uma página de dez a devolver um.
      */
     public function testListFiltersByOnlineStateWithoutBreakingTheTotal(): void
     {
@@ -167,10 +167,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * A árvore de fornecedores e modelos, como a das empresas e licenças.
-     *
-     * A relação tem de vir do servidor: juntar as duas listas planas no cliente não diz a que
-     * fornecedor pertence um modelo, e o mesmo nome pode existir em dois.
+     * A relação entre fornecedores e modelos vem do servidor: o mesmo nome de modelo pode
+     * existir em dois fornecedores.
      */
     public function testListGroupsModelsUnderTheSupplierTheyBelongTo(): void
     {
@@ -192,7 +190,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertNotNull($vivistar, 'o fornecedor tem de estar na árvore');
 
         // Números relativos e não absolutos: o catálogo semeado já traz aparelhos, e uma
-        // contagem à unidade partia-se sempre que a semente mudasse.
+        // contagem à unidade partiria sempre que a semente mudasse.
         self::assertSame(
             array_sum(array_column($vivistar['models'], 'count')),
             $vivistar['count'],

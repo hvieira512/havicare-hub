@@ -100,10 +100,6 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
         self::assertCount(0, $message->responses);
     }
 
-    /**
-     * O `commandMetadata` do Wonlex vinha do `AbstractTcpProtocol` por herança, mas estava
-     * também copiado à letra na subclasse. Isto prende o resultado para a cópia poder sair.
-     */
     public function testWonlexCommandMetadataParsesTheDownlinkBytes(): void
     {
         $protocol = new WonlexTcpProtocol(new WonlexAdapter(), new DeviceEventDecoder());

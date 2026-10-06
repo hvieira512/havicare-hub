@@ -9,13 +9,8 @@ use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * As configurações de um dispositivo desaparecem com ele.
- *
- * Sem isto, as linhas do ciclo de vida das configurações ficam para trás e um IMEI registado
- * outra vez herda os valores desejados do dono anterior.
- *
- * O teste passa pelo `unregister` e não por um `DELETE` à mão: o que se garante é o
- * comportamento do caminho, não a existência de uma chave estrangeira.
+ * As configurações de um dispositivo desaparecem com ele, senão um IMEI registado outra vez
+ * herda as do dono anterior; passa-se pelo `unregister`, e não por um `DELETE` à mão.
  */
 final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
 {
@@ -60,8 +55,7 @@ final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
     }
 
     /**
-     * As operações já não têm `imei` -- é da alteração --, por isso contam-se pelo `JOIN`,
-     * que é o mesmo caminho que o código usa.
+     * As operações não têm `imei`, que é da alteração, e contam-se pelo `JOIN` que o código usa.
      *
      * @return array<string, int>
      */
@@ -110,9 +104,8 @@ final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
 
     public function testAConfigurationCanBeStoredForADeviceTheHubHasNotRegistered(): void
     {
-        // O `DeviceEventStore` grava a configuração reportada por um `device_config` direto
-        // do caminho de ingestão, sem passar pela whitelist. Uma chave estrangeira tornava
-        // isto numa excepção no caminho quente, e é por isso que a limpeza é explícita.
+        // O `DeviceEventStore` grava a configuração reportada direto da ingestão, sem whitelist:
+        // uma chave estrangeira daria excepção no caminho quente, e por isso a limpeza é explícita.
         $pdo = $this->createDashboardDatabase()->pdo();
 
         $pdo->prepare('

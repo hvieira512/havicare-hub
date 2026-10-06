@@ -100,11 +100,8 @@ final class SubscriberFactoryTest extends TestCase
     }
 
     /**
-     * O id de um subscritor não pode levar pid: com `cleanSession = false`, cada reinício
-     * abria uma sessão nova e deixava a anterior órfã a segurar a subscrição.
-     *
-     * O id é truncado a 23 caracteres, e por isso dois pids diferentes chegaram a truncar
-     * para o mesmo id e a expulsar-se um ao outro.
+     * O id de um subscritor não leva pid: com `cleanSession = false` cada reinício deixaria
+     * uma sessão órfã, e truncados a 23 caracteres dois pids podem dar o mesmo id.
      */
     public function testSubscriberClientIdsNeverCarryThePid(): void
     {

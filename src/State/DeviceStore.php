@@ -116,9 +116,8 @@ final class DeviceStore implements DeviceStoreContract
     public function append(string $imei, string $list, array $payload): void
     {
         $this->events->append($imei, $list, $payload);
-        // O `DeviceService::recent()` serve telemetria, eventos e comandos. A lista crua é
-        // escrita a cada mensagem de gateway e nunca vai para o stream, por isso anunciá-la
-        // acordava todos os ouvintes para nada.
+        // O `DeviceService::recent()` serve telemetria, eventos e comandos; a lista crua não vai para
+        // o stream, e anunciá-la acordava os ouvintes a cada mensagem de gateway.
         if ($list === 'telemetry' || $list === 'events') {
             $this->updates->notify($imei);
         }

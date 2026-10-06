@@ -5,14 +5,8 @@ declare(strict_types=1);
 namespace Hub\Api\Configuration;
 
 /**
- * Troca o áudio de um payload de configuração pela marca de que ele existe.
- *
- * O aviso de medicação da 4P Touch traz a gravação em base64 dentro do `voiceData`, e um
- * ficheiro de 42 s são 978 KB numa linha. A marca -- `voiceDataAvailable` e `voiceDataBytes`
- * -- é o vocabulário que a API já falava para o mesmo efeito, e que o ecrã já sabe ler.
- *
- * O tecto decide quem passa: zero marca sempre, e é o que o histórico usa; o modelo de leitura
- * da API usa 64 KB, que serve o áudio pequeno tal e qual.
+ * Troca o áudio em base64 do `voiceData` pela marca `voiceDataAvailable`/`voiceDataBytes`. O tecto
+ * decide: zero marca sempre, que é o do histórico; a API usa 64 KB e serve o áudio pequeno.
  */
 final class VoiceDataMarker
 {

@@ -1,6 +1,5 @@
 /* ===== dispositivos =====
-   As media queries ficam ao lado das regras que anulam: uma media query não acrescenta
-   especificidade, e quem ganha é quem vier mais abaixo. */
+   As media queries ficam ao lado das regras que anulam: ganha quem vier mais abaixo. */
 
 /* O painel de detalhe enche o cartão, para as duas listas terem altura para crescer. Não se
    usa `d-flex` aqui porque o `d-none` que o esconde é do mesmo peso e perdia. */
@@ -18,9 +17,7 @@
     }
 }
 
-/* Entre o `lg` e o `xl` a coluna da identidade aperta e os quinze dígitos do IMEI não cabem
-   a `h4`. Encolhe em vez de cortar: um identificador a que faltem dígitos não se compara
-   com o aparelho que se tem na mão. */
+/* Entre o `lg` e o `xl` os quinze dígitos do IMEI não cabem a `h4`: encolhe em vez de cortar. */
 @media (min-width: 992px) and (max-width: 1199.98px) {
     #selectedDeviceTitle {
         font-size: var(--fs-lg);
@@ -30,8 +27,7 @@
 /* O `table-sm` aperta as linhas a .25rem e uma pastilha de 26px toca nas vizinhas. A última
    linha não leva divisória: por baixo dela vem logo o contorno do cartão. */
 .telemetry-table > :not(caption) > * > * {
-    /* .5rem e não .625rem: dois pixéis por lado numa lista de quinze linhas são trinta
-       pixéis de altura que a lista ganha, e a pastilha de 26px continua a ter folga. */
+    /* .5rem: em quinze linhas poupa trinta pixéis, e a pastilha de 26px continua com folga. */
     padding: .5rem .75rem .5rem 0;
 }
 
@@ -43,13 +39,11 @@
     padding-right: 0;
 }
 
-/* As colunas não medem pelo conteúdo: o que não cabe corta-se com o `text-truncate` de cada
-   linha de texto, e o texto completo fica no `title`. Sem largura fixa, a lista alternava de
-   altura conforme o tipo do evento. */
+/* As colunas não medem pelo conteúdo, para a lista não mudar de altura com o tipo do evento;
+   o que não cabe corta com `text-truncate` e fica completo no `title`. */
 /* Os dois painéis da atividade são separadores até ao `xl` e colunas lado a lado a partir
    dele. O Bootstrap desenha um separador com `display: block`, e estes são colunas flex. */
-/* A régua cola debaixo da barra de navegação: numa lista de duzentas leituras, trocar de
-   painel obrigava a subir o ecrã todo. */
+/* A régua cola debaixo da barra de navegação, para trocar de painel sem subir a lista. */
 .activity-tabs {
     position: sticky;
     top: var(--navbar-height, 3.5rem);
@@ -65,9 +59,8 @@
     }
 }
 
-/* No telemóvel a lista já se separa da busca pelo espaço e pelo cabeçalho do dia, que tem
-   fundo próprio: a linha era uma terceira divisória para a mesma junta. No ecrã largo não há
-   cabeçalho de dia à vista à partida, e a linha continua a ser o que marca a junta. */
+/* No telemóvel a lista já se separa da busca pelo cabeçalho do dia; a linha só existe no ecrã
+   largo. */
 @media (min-width: 992px) {
     .activity-section {
         border-top: 1px solid var(--bs-border-color);
@@ -93,8 +86,7 @@
 .telemetry-col-icon { width: 2.125rem; }
 .telemetry-col-value { width: 8rem; }
 
-/* A hora mede o que a hora precisa, agora que a data subiu para o cabeçalho do dia. A
-   largura conta com a seta da linha que abre, que vive nesta célula. */
+/* A hora mede o que a hora precisa, mais a seta da linha que abre, que vive nesta célula. */
 .telemetry-col-time { width: 5rem; }
 
 /* O cabeçalho de um dia atravessa a tabela toda e não é uma linha de dados: sem linha em
@@ -155,13 +147,10 @@
     white-space: normal;
 }
 
-/* Sem a coluna lado a lado, a linha reorganiza-se: ícone, nome com a hora por baixo, e à
-   direita o valor -- ou a pastilha de estado, nos pedidos.
-
-   TEM de vir depois das regras que anula -- mesma especificidade, ganha quem vier abaixo. */
+/* Sem a coluna lado a lado a linha reorganiza-se: ícone, nome com a hora por baixo, e o valor
+   à direita. Tem de vir depois das regras que anula. */
 @media (max-width: 991.98px) {
-    /* Sem algoritmo de tabela: as linhas são grelhas e as larguras do `colgroup` mediam-nas
-       pela primeira coluna -- trinta e quatro pixéis para a linha inteira. */
+    /* Sem algoritmo de tabela: as linhas são grelhas, e o `colgroup` não lhes mede as colunas. */
     .telemetry-table,
     .telemetry-table > tbody {
         display: block;
@@ -169,9 +158,8 @@
 
     .telemetry-table > tbody > tr {
         display: grid;
-        /* O valor pede o que o seu conteúdo mede, mas cede quando a linha não dá: sem o
-           `minmax(0, ...)` um valor longo -- «Tempo a andar: 0 · Tempo em meditação: 0 ·
-           ...» -- estica a faixa e leva a lista inteira para fora do ecrã. */
+        /* O `minmax(0, ...)` deixa um valor longo ceder quando a linha não dá, em vez de levar a
+           lista para fora do ecrã. */
         grid-template-columns: 2.125rem minmax(0, 1fr) minmax(0, max-content) auto;
         align-items: center;
         padding: .5rem 0;
@@ -220,9 +208,7 @@
         width: auto;
     }
 
-    /* A linha aberta tem uma célula só, e as faixas da grelha acima punham-na na do ícone:
-       trinta e quatro pixéis, com duas letras por linha. Aqui a faixa é uma e vai de ponta
-       a ponta. */
+    /* A linha aberta tem uma célula só, numa faixa que vai de ponta a ponta. */
     .telemetry-table > tbody > tr.telemetry-row-panel {
         grid-template-columns: minmax(0, 1fr);
         padding-top: 0;
@@ -230,9 +216,7 @@
 
     /* Aqui quem cola é a linha e não a célula: fora do algoritmo de tabela o bloco que a
        prende passa a ser o `tr`, que tem a altura do próprio cabeçalho. */
-    /* A faixa do dia atravessa o cartão de lado a lado. Presa ao enchimento da secção ficava
-       uma tira cinzenta com margens brancas dos dois lados, que a fazia parecer um cartão
-       dentro do cartão em vez de uma divisória da lista. */
+    /* A faixa do dia atravessa o cartão de lado a lado, como divisória da lista. */
     .telemetry-table > tbody > tr.telemetry-day {
         grid-template-columns: minmax(0, 1fr);
         position: sticky;
@@ -262,9 +246,8 @@
         border-bottom: 0;
     }
 
-    /* Nos pedidos o valor é a pastilha de estado, e a calha é a mesma que o ecrã largo mede
-       para a mais larga delas: uma pastilha não se corta a meio, e o nome corta com
-       reticências. */
+    /* Nos pedidos o valor é a pastilha de estado, numa calha da largura da mais larga: a pastilha
+       não se corta, e o nome corta com reticências. */
     #downlinkRequests .telemetry-table > tbody > tr:not(.telemetry-day):not(.telemetry-row-panel) {
         grid-template-columns: 2.125rem minmax(0, 1fr) 8rem auto;
     }
@@ -273,33 +256,27 @@
         text-align: left;
     }
 
-    /* A altura de duas linhas serve a coluna estreita do ecrã grande, onde os detalhes vão ao
-       lado do valor. Aqui os detalhes já têm linha própria, e o mínimo era só vazio. */
+    /* A altura de duas linhas serve a coluna estreita do ecrã grande; aqui os detalhes têm
+       linha própria. */
     .telemetry-row-stack {
         min-height: 0;
     }
 }
 
-/* A truncagem destas duas vive na marcação, em `d-block text-truncate`: o `d-block` tem de
-   ir junto porque `overflow` e `text-overflow` não fazem nada num elemento inline, e estes
-   são `span`. Aqui fica só o que o Bootstrap não dá. */
+/* A truncagem destas duas vive na marcação, em `d-block text-truncate`; aqui fica só o que o
+   Bootstrap não dá. */
 .telemetry-row-details,
 .telemetry-row-time {
     font-size: var(--fs-sm);
 }
 
-/* A etiqueta de um campo. Escrevia-se `form-label form-label-sm` em setenta e um sítios, e o
-   segundo nome não existia em lado nenhum -- o espaçamento vinha todo do primeiro. */
 .form-label-sm {
-    /* `block` porque metade destes campos escrevia `d-block` à mão: sem isso, um controlo
-       que não seja de bloco -- um grupo de botões -- sobe para o lado da etiqueta. */
+    /* `block` para um controlo que não seja de bloco não subir para o lado da etiqueta. */
     display: block;
     margin-bottom: .5rem;
 }
 
-/* O asterisco de obrigatório, no CSS e não em nove `<span>` à mão -- seis dos quais estavam
-   escondidos dos leitores de ecrã e três não, que os fazia anunciar "asterisco" em três
-   campos e em seis não. Assim não é anunciado em nenhum. */
+/* O asterisco de obrigatório vem do CSS, e assim os leitores de ecrã não o anunciam. */
 .form-label-sm.required::after {
     content: " *";
     color: var(--bs-danger);
@@ -356,8 +333,7 @@
     transition: border-color .12s ease, background-color .12s ease;
 }
 
-/* O tom da categoria a acender, e não o cinzento: escrever os tokens genéricos por cima
-   apagava a cor que identifica o mosaico no momento em que se ia clicar nele. */
+/* O tom da categoria a acender, e não os tokens genéricos, que apagariam a cor do mosaico. */
 .telemetry-card-action:hover:not(:disabled),
 .telemetry-card-action:focus-visible {
     border-color: var(--tone-fg, var(--bs-primary));
@@ -401,8 +377,8 @@
 
 /* ===== escolher dispositivo ===== */
 
-/* Altura fixa: vinda do conteúdo, cada filtro aplicado colapsava a caixa debaixo do rato. É
-   uma fracção do ecrã e não pixéis, para não passar a altura de um portátil pequeno. */
+/* Altura fixa, para os filtros não colapsarem a caixa debaixo do rato; em fracção do ecrã para
+   caber num portátil pequeno. */
 /* Altura definida e não `min-height`/`max-height`: uma coluna só sabe onde rolar se a altura
    do pai for um comprimento resolvido, senão transborda em vez de rolar. */
 .device-selector-body {
@@ -415,13 +391,11 @@
     height: 100%;
     min-height: 0;
     overflow-y: auto;
-    /* A margem negativa das listas de opções chega ao limite da caixa e dava uma barra
-       horizontal por baixo dos filtros. Nada aqui rola de lado. */
+    /* A margem negativa das listas de opções chega ao limite da caixa: nada aqui rola de lado. */
     overflow-x: hidden;
 }
 
-/* Cada coluna rola por si. Presas ao mesmo scroll, chegar ao último filtro obrigava a descer
-   a lista de dispositivos -- duas coisas independentes num movimento só. */
+/* Cada coluna rola por si: os filtros e a lista de dispositivos são independentes. */
 /* Quem rola é a lista de filtros lá dentro, para o título e o botão do rodapé ficarem
    quietos enquanto se marca. */
 .device-filter-column {
@@ -429,8 +403,7 @@
     overflow: hidden;
 }
 
-/* O `contain` para o fim da lista de filtros não passar o movimento ao modal atrás dela:
-   chegar ao fundo punha a lista tapada a rolar por baixo do painel. */
+/* O `contain` não passa o fim da lista de filtros ao modal por trás. */
 .device-filter-scroll {
     overflow-y: auto;
     overflow-x: hidden;
@@ -476,13 +449,12 @@
 }
 
 /* O mosaico de tipos: o mesmo do assistente de "Adicionar dispositivo", a duas colunas
-   porque e o que cabe numa coluna de 4/12. */
+   porque é o que cabe numa coluna de 4/12. */
 .device-type-grid {
     grid-template-columns: 1fr 1fr;
 }
 
-/* A mesma grelha fora da coluna estreita do selector: nos modais há largura para mais do
-   que duas colunas, e duas deixavam metade da linha vazia. */
+/* A mesma grelha fora da coluna estreita do selector, com mais colunas onde há largura. */
 .device-type-grid.is-wide {
     grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
 }
@@ -492,8 +464,7 @@
     padding: .8125rem .5rem .6875rem;
 }
 
-/* Um tipo sem dispositivos fica à vista e apagado: saber que a frota não tem pulseiras é
-   informação, e escondê-lo deixava a pergunta sem resposta. */
+/* Um tipo sem dispositivos fica à vista e apagado: saber que a frota não tem pulseiras é informação. */
 .device-type-tile:disabled {
     opacity: .45;
     cursor: default;
@@ -538,21 +509,16 @@
     color: var(--brand-on);
 }
 
-/* Uma lista de opções de escolha múltipla. Sem altura máxima nem rolamento próprio: dar a
-   cada grupo o seu dava seis barras de dez pixéis dentro da barra da coluna, e nenhuma
-   delas se agarra bem. Quem rola é a coluna. */
+/* Uma lista de opções sem altura máxima nem rolamento próprio: quem rola é a coluna. */
 .filter-list {
     gap: 1px;
-    /* As caixas de selecção alinham à esquerda com a etiqueta do grupo e com o campo de
-       pesquisa. O `padding` da linha existe para o realce respirar, e sem esta margem
-       empurrava-as para dentro -- a etiqueta a 0 e as opções a 7. */
+    /* As caixas alinham à esquerda com a etiqueta do grupo e com a pesquisa, apesar do `padding`
+       da linha que deixa o realce respirar. */
     margin-inline: -.4375rem;
 }
 
-/* Sem `width: 100%`: numa coluna flex a linha já estica sozinha, e a largura fixa somada à
-   margem de indentacao das licencas empurrava a contagem para fora da coluna.
-
-   A borda e o fundo ficam aqui, que os estados abaixo os trocam. */
+/* Sem `width: 100%`: somada à indentação das licenças empurraria a contagem para fora da
+   coluna. A borda e o fundo ficam aqui porque os estados abaixo os trocam. */
 /* 44px é o alvo de toque mínimo. */
 .filter-option {
     gap: .625rem;
@@ -569,8 +535,7 @@
     background: var(--bs-body-bg);
 }
 
-/* Um tipo sem dispositivos fica à vista e apagado: saber que a frota não tem pulseiras é
-   informação, e escondê-lo deixava a pergunta sem resposta. */
+/* Um tipo sem dispositivos fica à vista e apagado: saber que a frota não tem pulseiras é informação. */
 .filter-option:disabled {
     opacity: .45;
     cursor: default;
@@ -610,8 +575,7 @@
 }
 
 /* ===== cartão de dispositivo =====
-   A marcação vive em `dashboard/devices/device-card.js`. Cada campo cai na mesma abcissa e a
-   lista lê-se a descer por coluna, mas cada dispositivo tem contorno próprio. */
+   Cada campo cai na mesma abcissa e a lista lê-se a descer por coluna. */
 /* O alinhamento, o espaço e o enchimento mudam no telefone: um utilitário do Bootstrap traz
    `!important` e ganharia à regra de baixo. O estado vem do `shell.css`. */
 .device-card {
@@ -622,38 +586,32 @@
     border-radius: .5rem;
 }
 
-/* O esqueleto empresta a geometria do cartão, mas não é um alvo: sem isto reagia ao rato e
-   dava a entender que se podia escolher um dispositivo que ainda não chegou. */
+/* O esqueleto empresta a geometria do cartão, mas não é um alvo. */
 .device-card-skeleton {
     cursor: default;
 }
 
-/* A miniatura empresta a medida e o raio ao esqueleto, mas o fundo dela e o da caixa vazia da
-   fotografia -- e main.css vem depois do Bootstrap, logo ganhava ao `.placeholder`. Sem isto
-   a miniatura ficava quase invisivel ao lado das barras. */
+/* A miniatura empresta a medida e o raio ao esqueleto, mas não o fundo: o `main.css` vem
+   depois do Bootstrap e ganharia ao `.placeholder`. */
 .device-card-skeleton .device-card-thumb {
     background-color: currentcolor;
 }
 
-/* A pastilha de estado do cartão a sério tem a largura do seu texto. A barra que a substitui
-   não tem texto, e sem medida ficava um risco de 1em. */
+/* A barra que substitui a pastilha de estado não tem texto, e por isso leva medida. */
 .device-card-skeleton-pill {
     width: 5.25rem;
     height: 1.25rem;
 }
 
-/* Pela mesma razão que a pastilha: sem texto e sem medida, a barra do «há 8d» ficava um
-   quadrado de 1em em vez de uma linha. A largura é a de «sem registo», que é o mais comprido
-   dos três que ali aparecem. */
+/* O mesmo para a barra do «há 8d», com a largura de «sem registo», o mais comprido dos três. */
 .device-card-skeleton-when {
     width: 3.75rem;
     height: .6875rem;
     margin-inline-start: .125rem;
 }
 
-/* A lista só estica enquanto tem o esqueleto dentro. Esticada sempre, uma lista de três
-   dispositivos empurrava a paginação para o fundo da moldura. O `:has` desliga-se sozinho
-   quando os cartões verdadeiros substituem o esqueleto -- não há classe para limpar. */
+/* A lista só estica enquanto tem o esqueleto dentro, para não empurrar a paginação para o
+   fundo; o `:has` desliga-se sozinho quando chegam os cartões. */
 .device-card-list:has(.device-card-skeleton-list) {
     flex: 1 1 auto;
     min-height: 0;
@@ -670,8 +628,8 @@
     padding-inline-start: .125rem;
 }
 
-/* O `display: contents` promove os dois campos a itens da grelha do cartão: como contentor,
-   empilhava-os numa coluna e perdia o alinhamento a descer. No telefone volta a contentor. */
+/* O `display: contents` promove os dois campos a itens da grelha do cartão, para alinharem a
+   descer. No telefone volta a contentor. */
 .device-card-fields {
     display: contents;
 }
@@ -684,9 +642,8 @@
     color: var(--bs-secondary-color);
 }
 
-/* A chapa acompanha a fotografia no escuro -- ver o comentário das chapas pequenas no
-   `main.css`. Só onde há fotografia, e o esqueleto fica de fora: a barra dele pinta-se com
-   `currentcolor`. */
+/* A chapa acompanha a fotografia no escuro, como as chapas pequenas do `main.css`. O esqueleto
+   fica de fora: pinta-se com `currentcolor`. */
 [data-bs-theme="dark"] .device-card-thumb:not(.placeholder):has(img) {
     background: #fff;
     filter: brightness(.84);
@@ -714,8 +671,8 @@
     padding: 0 1px;
 }
 
-/* No telefone as cinco colunas não cabem, mas continua grelha e não coluna: em coluna
-   simples a miniatura ficava sozinha numa linha e a pastilha esticava à largura toda. */
+/* No telefone as cinco colunas não cabem, mas continua grelha: em coluna simples a miniatura
+   ficaria sozinha numa linha. */
 @media (max-width: 767.98px) {
     .device-card {
         grid-template-columns: 40px minmax(0, 1fr);
@@ -732,9 +689,8 @@
     .device-card > .state-badge { grid-area: state; }
     .device-card-identity { grid-area: identity; min-width: 0; }
 
-    /* O SIM pede a largura que precisa em vez de levar 5.25rem fixos: um número português
-       com indicativo mede mais do que isso e transborda. A licença fica com o resto e
-       encolhe, que é o que o `minmax(0, 1fr)` garante. */
+    /* O SIM pede a largura que precisa: um número português com indicativo não cabe em 5.25rem.
+       A licença fica com o resto e encolhe. */
     .device-card-fields {
         grid-area: fields;
         display: grid;
@@ -750,9 +706,7 @@
     }
 }
 
-/* Mede-se pelo contentor e não pelo ecrã: com `auto-fit`, a segunda coluna só aparece
-   quando há 11rem para ela. A coluna do aparelho tem 400px no portátil, e é esse o mínimo
-   que lhe dá duas colunas em vez de uma. */
+/* Mede-se pelo contentor e não pelo ecrã: a segunda coluna só aparece com 11rem para ela. */
 .telemetry-card-grid {
     grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
 }
@@ -807,9 +761,8 @@
 /* ===== a planta da divisão de um radar =====
    Ver `devices/radar-map-modal.js`, `radar-scene.js` e `radar-vitals.js`. */
 
-/* Mais largo do que o `modal-xl`: são duas colunas com uma planta de uma divisão numa e dois
-   gráficos na outra, e ao `modal-xl` a divisão ficava com metade da altura que precisa. O
-   `min()` com `vw` é o que impede isto de passar do ecrã num portátil. */
+/* Mais largo do que o `modal-xl`, para a planta ter altura; o `min()` com `vw` não o deixa
+   passar do ecrã num portátil. */
 #radarMapModal .modal-dialog {
     --bs-modal-width: min(1680px, 96vw);
 }
@@ -820,35 +773,25 @@
     min-height: 11.25rem;
 }
 
-/* A faixa do estado do sono. Não cresce com a coluna -- é contexto e não uma leitura --, mas
-   tem chão: a 2rem parecia uma etiqueta esquecida por cima dos dois cartões. */
+/* A faixa do estado do sono não cresce com a coluna -- é contexto e não uma leitura --, mas tem chão. */
 .radar-sleep-state {
     min-height: 4.5rem;
 }
 
-/* O azulejo do ícone de um sinal vital: o mesmo tamanho e raio do `.telemetry-card-icon`, mas
-   no tom da categoria em vez de cinzento -- aqui só há dois cartões, e a cor distingue-os em
-   vez de disputar com o estado. */
+/* O azulejo de um sinal vital: como o `.telemetry-card-icon`, mas no tom da categoria, que
+   aqui distingue os dois cartões. */
 .radar-vital-icon {
     width: 36px;
     height: 36px;
 }
 
-/* O chão de um gráfico de sinal vital: daí para cima cresce com o cartão, que por sua vez
-   acompanha a altura da planta ao lado. Sem eixos não precisa de mais -- o que se lê nele é a
-   forma da linha, e os números estão no cabeçalho.
-
-   A tela é montada depois de o modal abrir, no `shown.bs.modal`: o amCharts mede o contentor
-   uma vez, e antes disso o modal ainda não tem tamanho nenhum -- o gráfico ficava com altura
-   zero e a linha colada ao topo. Ver `resizeVitals` no `devices/radar-vitals.js`. */
+/* O chão de um gráfico de sinal vital; daí para cima cresce com o cartão. A tela monta-se no
+   `shown.bs.modal` porque o amCharts mede o contentor uma vez -- ver `resizeVitals`. */
 .radar-vital-chart {
     min-height: 6rem;
 }
 
-/* O nome ocupa duas linhas antes de cortar, e leva o valor inteiro no `title`. Numa grelha
-   de quatro colunas «LOCALIZAÇÃO» é uma palavra mais larga do que a calha que lhe sobra, e
-   sem limite passava por cima do avião de papel -- mas cortar à primeira linha deixava
-   «FREQUÊNCIA CAR...» quando o cartão tinha altura para as duas palavras. */
+/* O nome ocupa duas linhas antes de cortar, e leva o valor inteiro no `title`. */
 .telemetry-card-title {
     font-size: var(--fs-label);
     letter-spacing: .04em;
@@ -863,8 +806,7 @@
     overflow-wrap: break-word;
 }
 
-/* A cor da categoria é definida uma vez por tom, e o ícone, a borda e o valor bebem dela:
-   definida em três sítios, a borda ficava para trás quando o ícone mudava. */
+/* A cor da categoria define-se uma vez por tom, e o ícone, a borda e o valor bebem dela. */
 .telemetry-card-tone-info { --tone-bg: rgba(var(--bs-info-rgb), .12); --tone-fg: var(--bs-info-text-emphasis); --tone-border: var(--bs-info-border-subtle); }
 .telemetry-card-tone-success { --tone-bg: rgba(var(--bs-success-rgb), .12); --tone-fg: var(--bs-success-text-emphasis); --tone-border: var(--bs-success-border-subtle); }
 .telemetry-card-tone-warning { --tone-bg: rgba(var(--bs-warning-rgb), .18); --tone-fg: var(--bs-warning-text-emphasis); --tone-border: var(--bs-warning-border-subtle); }
@@ -878,11 +820,9 @@
 }
 
 /* ===== modal do dispositivo: configuração =====
-   A marcação vive em `components/modals/device.php` e em `devices/config/index.js`. O que
-   veste o cabeçalho e a régua das secções está no `config.css`. */
+   O que veste o cabeçalho e a régua das secções está no `config.css`. */
 
-/* A zona perigosa só existe onde há dispositivo para eliminar: com o botão escondido, o
-   aviso ficava sozinho a dizer o que ninguém pode fazer. */
+/* A zona perigosa só existe onde há dispositivo para eliminar, para o aviso não ficar sem botão. */
 #deviceDangerZone:has(#deleteDeviceBtn.d-none) {
     display: none;
 }

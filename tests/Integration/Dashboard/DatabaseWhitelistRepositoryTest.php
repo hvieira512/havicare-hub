@@ -39,12 +39,8 @@ final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O âmbito por empresa ignora maiúsculas, e é a colação que o garante.
-     *
-     * A condição comparava `LOWER(w.company) = LOWER(?)`. A coluna é `utf8mb4_unicode_ci`,
-     * que já compara sem distinguir maiúsculas, e a função só impedia o uso do
-     * `idx_whitelist_company` -- o `EXPLAIN` passava de `ref` a varrimento do índice. Este
-     * caso prende o comportamento que sobra sem ela.
+     * O âmbito por empresa ignora maiúsculas pela colação `utf8mb4_unicode_ci`, sem `LOWER()`,
+     * que impediria o uso do `idx_whitelist_company`.
      */
     public function testTheCompanyScopeIgnoresLetterCase(): void
     {
@@ -60,10 +56,8 @@ final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
     }
 
     /**
-     * Um `licenseId` que não é um número pede os dispositivos sem licença.
-     *
-     * A sentinela `0` é como o hub diz "sem licença" em memória, e na coluna isso é `NULL`:
-     * o filtro tem de a converter na mesma fronteira em que a escrita a converte.
+     * A sentinela `0` é «sem licença» em memória e `NULL` na coluna: o filtro converte-a na
+     * mesma fronteira em que a escrita a converte.
      */
     public function testTheLegacyLicenseFilterFindsDevicesWithoutLicense(): void
     {

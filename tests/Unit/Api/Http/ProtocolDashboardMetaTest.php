@@ -9,12 +9,7 @@ use Hub\Api\Services\ProtocolService;
 use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
-/**
- * As asserções que estavam no `ProtocolRegistryTest` sobre a chave `dashboard`, agora onde
- * essa informação vive. O que se prova aqui é o mesmo de antes -- os valores não mudaram, só
- * mudaram de camada -- mais uma garantia nova: a resposta da API tem de continuar a sair com
- * a mesma forma, porque a dashboard lê-a tal e qual.
- */
+/** A chave `dashboard` de cada protocolo, e a forma da resposta que a dashboard lê tal e qual. */
 final class ProtocolDashboardMetaTest extends TestCase
 {
     public function testFourPTouchContactGroupsAndFieldLimits(): void
@@ -74,9 +69,8 @@ final class ProtocolDashboardMetaTest extends TestCase
     }
 
     /**
-     * A forma na resposta é o contrato com a dashboard, e a mudança de camada não lhe pode
-     * tocar: cada protocolo continua a sair com os metadados do domínio mais a chave
-     * `dashboard`.
+     * A forma na resposta é o contrato com a dashboard: os metadados do domínio de cada protocolo
+     * mais a chave `dashboard`.
      */
     public function testTheApiResponseStillCarriesBothHalves(): void
     {

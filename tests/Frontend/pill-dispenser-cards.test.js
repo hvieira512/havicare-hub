@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
-// esse caminho passa pelo api/http.js, que toca em window ao carregar.
+// Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e
+// esse caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
 
@@ -30,8 +30,7 @@ const card = (type, data) => requestCardShell(
 );
 
 test("a temperatura do dispensador tem chave própria e não a do corpo", () => {
-    // O `0x810E` é o ar onde o aparelho está. Partilhava a chave `temperature` com a
-    // temperatura corporal dos relógios, que publica outro campo.
+    // O `0x810E` é o ar onde o aparelho está, e não a temperatura corporal dos relógios.
     assert.match(card("ambient_temperature", { environmentCelsius: 22 }), /22 °C/);
     assert.match(card("ambient_temperature", { environmentCelsius: -5 }), /-5 °C/);
     assert.match(card("temperature", { environmentCelsius: 22 }), /-/);
@@ -49,14 +48,8 @@ test("o nível de medicação sai em português e não como enumeração crua", 
 });
 
 /**
- * O «16 de 28» dizia uma coisa que não era verdade.
- *
- * O 28 é a capacidade do prato e o 16 é o que falta dispensar a partir de onde o carrossel
- * está — a conta que o aparelho faz é `carregados − posição`. Postos lado a lado liam-se como
- * «16 dos 28 compartimentos ainda têm medicação», que não é o que nenhum dos dois quer dizer.
- *
- * E a posição ficava por mostrar, que é precisamente o que uma pessoa precisa de saber para
- * carregar o prato: em que compartimento é que isto vai pegar a seguir.
+ * O 28 é a capacidade do prato e o 16 o que falta dispensar a partir da posição do carrossel
+ * (`carregados − posição`); a posição diz em que compartimento o prato pega a seguir.
  */
 test("as células dizem quantas faltam dispensar e em que compartimento vai o prato", () => {
     const html = card("cells_remaining", { remaining: 16, total: 28, current: 12 });
@@ -74,14 +67,8 @@ test("sem nenhuma por dispensar, o cartão di-lo por palavras", () => {
 });
 
 /**
- * O prato não tem números: tem um autocolante com grupos de doses e uma marca de início.
- *
- * O `21` que o aparelho conta por dentro não existe em lado nenhum no prato, e por isso não
- * ajuda quem está com ele na mão. Com três doses por dia, a posição 21 é o fim do sétimo dia
- * — e sete grupos contam-se a partir da marca cor-de-rosa sem hesitar.
- *
- * O número cru fica na gaveta, para o cartão não mentir se o autocolante não corresponder ao
- * plano configurado.
+ * O prato não tem números, tem grupos de doses e uma marca de início: com três doses por dia, a
+ * posição 21 lê-se como o fim do sétimo dia, e o número cru fica na gaveta.
  */
 test("com um plano de três doses por dia, a posição lê-se em dias", (t) => {
     const anterior = state.selectedDetail;
@@ -166,9 +153,8 @@ test("a toma e a avaria têm ícone próprio", () => {
     assert.equal(cardIcon("device_fault"), "fa-triangle-exclamation");
 });
 
-// A lista de atividade tem uma lista branca de tipos de evento, e o que não está nela é
-// descartado em silêncio. Uma toma falhada que não aparece no histórico é o pior caso que
-// esta integração pode ter.
+// A lista de atividade só mostra os tipos de evento da sua lista branca: uma toma falhada fora
+// do histórico é o pior caso desta integração.
 test("a toma e a avaria chegam à lista de atividade", () => {
     state.selectedDetail.recent = {
         telemetry: [],
@@ -184,7 +170,6 @@ test("a toma e a avaria chegam à lista de atividade", () => {
     assert.deepEqual(types, ["medication_intake", "device_fault", "help_call"]);
 });
 
-/** As cinco avarias que o aparelho reporta têm todas nome em português. */
 test("cada avaria tem tradução", () => {
     const faults = {
         rotation: "Rotação do prato",

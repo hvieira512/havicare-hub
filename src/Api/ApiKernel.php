@@ -59,10 +59,8 @@ final class ApiKernel
     }
 
     /**
-     * O CORS, o `X-Request-Id` e o registo do pedido saíram daqui para o
-     * `Hub\Api\Http\Middleware`. A resolução da identidade ficou: alimenta ao mesmo tempo o
-     * registo e a política de acesso à rota, e separá-la obrigava a correr o encaminhamento
-     * duas vezes -- num middleware para saber a rota e aqui para a despachar.
+     * A identidade resolve-se aqui e não num middleware: serve o registo e a política de acesso,
+     * e separá-la obrigava a encaminhar o pedido duas vezes.
      *
      * @return Response|PromiseInterface<Response>
      */
@@ -95,10 +93,8 @@ final class ApiKernel
         try {
             $response = $this->dispatch($request, $authContext, $match);
 
-            // Uma rota que fala com um serviço de terceiros devolve a promessa em vez de
-            // esperar por ele: o processo tem um event loop só, e a ingestão TCP e o MQTT
-            // param enquanto alguém aqui bloqueia. O que vem a seguir -- o `ETag` dos
-            // catálogos e o registo do que rebenta -- é o mesmo nos dois caminhos.
+            // Uma rota que fala com terceiros devolve a promessa em vez de esperar: o event loop é um só,
+            // e bloqueá-lo pára a ingestão TCP e o MQTT.
             if ($response instanceof PromiseInterface) {
                 return $response->then(
                     fn(Response $resolved): Response => $this->revalidatedCatalogResponse($request, $resolved, $method, $routePattern),
@@ -258,9 +254,8 @@ final class ApiKernel
         ], true);
     }
 
-    // O `ETag` sai do corpo já serializado: um contador por tabela exigia escrituração em
-    // cada escrita, e é isso que envelhece mal. Fica no kernel, e não num middleware, porque
-    // é a resposta desta rota que decide -- não o pedido.
+    // O `ETag` sai do corpo já serializado, e fica no kernel porque é a resposta da rota que
+    // decide, não o pedido.
     private function revalidatedCatalogResponse(
         ServerRequestInterface $request,
         Response $response,

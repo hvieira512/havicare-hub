@@ -14,12 +14,8 @@ import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, whileBusy } from "./row-editor.js";
 
 /**
- * Os utilizadores da API, um por linha. A busca e os filtros de perfil e estado vêm do
- * descritor que o `GET /api/users` devolve, e quem estreita e pagina é o servidor.
- *
- * A password não é valor que se mostre, e por isso trocá-la é um verbo do menu da linha.
- * Criar continua a ser formulário: um utilizador novo precisa de password e de licença antes
- * de existir.
+ * Os utilizadores da API, um por linha; a busca, os filtros e a paginação são do servidor.
+ * Trocar a password é um verbo do menu da linha, e criar continua a ser formulário.
  */
 let els;
 let licenses = [];
@@ -63,10 +59,7 @@ function contextOf(user) {
     return `${labelOf(user.role)} · ${license || "sem licença"}`;
 }
 
-/**
- * Uma linha por utilizador: o nome e o contexto à esquerda, o estado por palavra, e os verbos
- * num menu. Três botões só de ícone não se adivinhavam, e a pausa era o menos óbvio deles.
- */
+/** Uma linha por utilizador: o nome e o contexto à esquerda, o estado por palavra, e os verbos num menu. */
 export function apiUserRow(user) {
     const enabled = isEnabled(user);
     // A pastilha não encolhe: num telefone estreito é ela que diz o que a cor sozinha não diz.
@@ -108,7 +101,7 @@ function filterOptions(column, chosen, allLabel) {
     return html`<option value="">${allLabel}</option>${raw(options.join(""))}`;
 }
 
-/** A busca e os filtros que a grelha dava no cabeçalho, agora por cima da lista. */
+/** A busca e os filtros, por cima da lista. */
 export function apiUserFilterControls(columns, chosen = {}) {
     const controls = columns
         .map((column) => filterControl(column, chosen[column.field] ?? ""))
@@ -206,7 +199,7 @@ function mountList() {
     listEl = els.apiUserGrid.querySelector("[data-part=\"rows\"]");
 }
 
-/** A barra desenha-se uma vez: repintá-la a cada resposta tirava o cursor de dentro da busca. */
+/** A barra desenha-se uma vez, para não tirar o cursor de dentro da busca. */
 function renderFilterBar(columns) {
     if (filterEl.childElementCount === 0) {
         filterEl.innerHTML = apiUserFilterControls(columns, filters);
@@ -339,8 +332,7 @@ export function apiUserForm(user, licenseList) {
                     <input type="password" class="form-control form-control-sm" id="apiUserNewPassword" data-field="password" autocomplete="new-password">
                 </div>`;
 
-    // O estado viaja com o editor: procurá-lo na página carregada devolve nada assim que a
-    // linha sai dela, e o `PUT` pausava o utilizador em silêncio.
+    // O estado viaja com o editor: a linha pode já não estar na página carregada.
     const enabledAttr = user ? html` data-enabled="${isEnabled(user) ? "1" : "0"}"` : "";
 
     return html`

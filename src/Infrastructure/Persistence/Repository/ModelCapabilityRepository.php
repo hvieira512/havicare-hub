@@ -235,12 +235,8 @@ final class ModelCapabilityRepository
     }
 
     /**
-     * @param list<int|string> $capabilityIds
-     * As chaves que este modelo pode ter, a partir do que o chamador pediu.
-     *
-     * O contrato aceita as duas formas -- a chave, ou o `capabilities.id` que a API expõe --,
-     * e o que sai é sempre a chave, que é o que a ligação passou a guardar. O que não esteja
-     * no template do modelo é descartado, como sempre foi.
+     * As chaves que este modelo pode ter, a partir do que o chamador pediu: a chave ou o
+     * `capabilities.id` da API. O que não esteja no template do modelo é descartado.
      *
      * @param list<int|string> $capabilityIds
      * @return list<string>

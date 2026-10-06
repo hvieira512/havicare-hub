@@ -7,13 +7,8 @@ import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/confi
 import { syncFallSensitivityLevels } from "../../src/Dashboard/dashboard/devices/config/inputs/four-p-touch.js";
 
 /**
- * O relógio 4P Touch tem escalas de queda de oito ou de seis níveis, e a escala escolhe-se no
- * mesmo cartão. O nível 1 é «Máxima» e o 8 é «Mínima».
- *
- * Ao baixar de oito para seis com um nível acima de seis escolhido, o valor tem de descer até
- * ao maior que ainda existe. Escolher o primeiro botão à vista punha-o no nível 1, ou seja na
- * sensibilidade **máxima** -- o oposto do que quem estava no 7 ou no 8 queria, e sem aviso
- * nenhum no ecrã.
+ * O nível 1 é «Máxima» e o 8 é «Mínima»: ao baixar de oito para seis níveis, um 7 ou um 8 desce
+ * até ao 6, e não para o primeiro botão à vista, que é a sensibilidade máxima.
  */
 const ENTRY = {
     key: "fallSensitivity",

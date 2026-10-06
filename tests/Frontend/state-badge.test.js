@@ -12,11 +12,8 @@ const stateBadge = (...args) => String(buildStateBadge(...args));
 const onlineBadge = (...args) => String(buildOnlineBadge(...args));
 
 /**
- * A pastilha de estado, em classes do Bootstrap. Era CSS da casa a refazer o que o
- * `badge` já traz, e por isso desalinhava-se sempre que caía num contentor novo.
- *
- * O tom é o nome do Bootstrap e não uma classe escrita: quem chama diz "success", e é a
- * pastilha que sabe que isso são um fundo subtil e um texto de ênfase.
+ * A pastilha de estado em classes do Bootstrap: quem chama diz o tom, como "success", e a
+ * pastilha sabe que isso são um fundo subtil e um texto de ênfase.
  */
 test("o tom vira o par de classes do Bootstrap", () => {
     const html = stateBadge("Ativo", "success");
@@ -67,7 +64,6 @@ test("ligado e desligado não são o mesmo tom", () => {
     assert.match(onlineBadge(false), /bg-secondary-subtle/);
 });
 
-/** O rótulo é conteúdo, e conteúdo escapa-se. */
 test("o rótulo é escapado", () => {
     assert.match(stateBadge("<script>x</script>", "success"), /&lt;script&gt;/);
 });
@@ -79,10 +75,7 @@ test("uma classe extra junta-se às do Bootstrap em vez de as substituir", () =>
     assert.match(html, /class="[^"]*\bbadge\b/);
 });
 
-/**
- * O ponto é o sinal por omissão da plataforma, e quem já chama a pastilha não pediu ícone
- * nenhum. Trocá-lo por um ícone mudava o aspecto de todos os ecrãs que a usam.
- */
+/** O ponto é o sinal por omissão da plataforma, e quem já chama a pastilha não pediu ícone. */
 test("sem pedido de ícone, a marca continua a ser o ponto", () => {
     const html = stateBadge("Ativo", "success");
 

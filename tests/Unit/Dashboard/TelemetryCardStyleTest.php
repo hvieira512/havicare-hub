@@ -8,10 +8,8 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Prova que cada capacidade de telemetria do catálogo tem ícone e tom no `CARD_STYLE`. Sem
- * entrada o cartão sai cinzento e com o ícone genérico, sem erro nenhum.
- *
- * Vive em PHP porque o catálogo é a fonte: o frontend só o conhece pela resposta da API.
+ * Cada capacidade de telemetria tem ícone e tom no `CARD_STYLE`, senão o cartão sai cinzento
+ * sem erro. Vive em PHP porque o catálogo é a fonte.
  */
 final class TelemetryCardStyleTest extends TestCase
 {

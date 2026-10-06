@@ -8,13 +8,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Os dois níveis que guardam uma gama recusam o mesmo valor.
- *
- * O validador recusa à entrada da API e o construtor da trama recusa à saída, e os limites
- * estão escritos nos dois. Apertar um sem o outro passava despercebido: nenhum teste os punha
- * lado a lado.
- */
+/** O validador recusa à entrada da API e o construtor da trama à saída, com os limites escritos nos dois. */
 final class PillDispenserRangesAgreeTest extends TestCase
 {
     private const IMEI = '869243062262262';
@@ -62,10 +56,8 @@ final class PillDispenserRangesAgreeTest extends TestCase
     }
 
     /**
-     * E o construtor da trama também.
-     *
-     * É a metade que faltava: o validador pode ser contornado -- o painel da dashboard chama
-     * o construtor por outros caminhos -- e um limite só de um lado não é limite.
+     * E o construtor da trama também: o painel da dashboard chega-lhe sem passar pelo
+     * validador.
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('ranges')]
     public function testTheFrameBuilderRefusesWhatIsOutside(

@@ -12,9 +12,8 @@ const { renderCapabilitiesSection } = await import(
 );
 
 /**
- * A ficha de um modelo contava o template numa casa e as capacidades ligáveis noutra, sem
- * dizer o que eram as que faltavam, e repetia o que o protocolo suporta por baixo de cada
- * linha. As duas coisas dizem-se uma vez.
+ * A ficha de um modelo diz uma vez o que o template tem e o que o protocolo suporta, em vez de
+ * o repetir por baixo de cada linha.
  */
 
 const catalogEntry = (key, section, flags) => ({

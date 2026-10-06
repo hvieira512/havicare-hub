@@ -13,10 +13,8 @@ use Hub\Ingress\Tcp\TcpResponse;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
 
 /**
- * O dispensador M228 espera que o servidor confirme cada pacote de subida: registo `0x01`,
- * heartbeat `0x02`, evento `0x03` e notificação `0x04` respondem-se com o mesmo tipo mais o
- * bit alto (`0x81`–`0x84`), ecoando a identidade e o número de série do pacote recebido. O
- * bit 1 do Flag dispensa a resposta.
+ * O M228 espera confirmação de cada pacote `0x01`–`0x04`: o mesmo tipo com o bit alto, a ecoar
+ * a identidade e o número de série. O bit 1 do Flag dispensa a resposta.
  */
 final class PillDispenserTcpProtocol extends AbstractTcpProtocol
 {
@@ -37,12 +35,8 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
     private const READ_REPLIES = ['read_config_ack', 'read_status_ack'];
 
     /**
-     * O resultado vem por TAG, nos bits 5--7 do Flag de cada TFLV: `000` é sucesso e o resto
-     * é uma recusa com motivo.
-     *
-     * Numa **escrita**, uma só TAG recusada chega para não ter feito o que se pediu. Numa
-     * **leitura** não: uma TAG que o aparelho não suporta é informação sobre esse parâmetro,
-     * não uma falha do pedido. Um corpo vazio é `null` e não recusa -- `null` é «não disse».
+     * O resultado vem por TAG, nos bits 5--7 do Flag de cada TFLV (`000` é sucesso). Só numa
+     * escrita uma TAG recusada é recusa; um corpo vazio é `null`.
      */
     public function replyAccepted(array $decoded): ?bool
     {
@@ -75,8 +69,7 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
      */
     protected function responsesForDecoded(DeviceSession $session, array $decoded): array
     {
-        // A confirmação primeiro: o pacote de upgrade viaja com ela, nunca em vez dela. Sem o
-        // `0x82` de um heartbeat o aparelho retransmite e acaba por cortar a ligação.
+        // A confirmação primeiro, e o pacote de upgrade com ela: sem o `0x82` o aparelho corta.
         $responses = [];
         $type = (string)($decoded['type'] ?? '');
         if (in_array($type, self::ACKNOWLEDGED_TYPES, true) && ($decoded['waivesReply'] ?? false) !== true) {
@@ -104,11 +97,8 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
     }
 
     /**
-     * O pacote seguinte da actualização de firmware, se houver uma a correr.
-     *
-     * O aparelho é que liga ao hub, por isso a transferência só anda quando ele fala: o
-     * arranque sai no primeiro heartbeat depois do pedido, e cada pedaço na confirmação do
-     * anterior.
+     * O pacote seguinte da actualização de firmware: o arranque sai no primeiro heartbeat,
+     * e cada pedaço na confirmação do anterior.
      *
      * @param array<string, mixed> $decoded
      */
@@ -151,9 +141,7 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
             'deviceNumber' => (int)($decoded['deviceNumber'] ?? 0),
             'serial' => (int)($step['state']['serial'] ?? 0),
             'status' => 0,
-            // Um pedido partido em vários pacotes leva os campos de subpacote a zero, e cada
-            // pacote conta como pedido independente. É a secção 4; o resto do protocolo manda
-            // `subtotal` a 1.
+            // Na secção 4 os subpacotes vêm a zero e cada pacote é um pedido; o resto manda `subtotal` a 1.
             'subserial' => 0,
             'subtotal' => 0,
             'appDataRaw' => $step['body'],

@@ -10,12 +10,7 @@ const {
     initListFilters,
 } = await import("../../src/Dashboard/dashboard/devices/list-filters.js");
 
-/**
- * As pastilhas dos filtros aplicados, por cima da lista.
- *
- * Os filtros sobrevivem à sessão, e sem nada no ecrã a dizer quais são, dois herdados de
- * ontem ficam invisíveis.
- */
+/** Os filtros sobrevivem à sessão, e as pastilhas por cima da lista dizem quais estão aplicados. */
 const els = new Proxy({}, {
     get(target, name) {
         if (typeof name !== "string") return undefined;

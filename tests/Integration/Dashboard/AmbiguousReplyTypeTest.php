@@ -9,12 +9,8 @@ use Hub\State\DeviceConfigurationProjection;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * Um tipo de resposta que várias configurações declaram não nomeia nenhuma.
- *
- * Num protocolo onde uma resposta confirma uma configuração, ficar pela primeira do catálogo
- * é exacto; no dispensador, onde nove partilham o `write_config_ack`, é escolher à sorte.
- * Quando o tipo identifica várias, não nomeia nenhuma: é melhor não guardar do que guardar na
- * linha errada.
+ * Um tipo de resposta que várias configurações declaram não nomeia nenhuma: no dispensador nove
+ * partilham o `write_config_ack`, e é melhor não guardar do que guardar na linha errada.
  */
 final class AmbiguousReplyTypeTest extends MysqlDashboardTestCase
 {

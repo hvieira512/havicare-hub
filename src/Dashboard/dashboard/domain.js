@@ -1,9 +1,6 @@
 /**
- * O que cada tipo de dispositivo tem. A tabela vive no `DeviceTypeCatalog`, em PHP, e o
- * `index.php` serve-a numa ilha JSON `#hub-device-types`.
- *
- * Faltando ela, este módulo recusa carregar: um valor por omissão vazio dava um formulário
- * sem tipos, que se lê como problema de dados quando é de fiação.
+ * O que cada tipo de dispositivo tem, vindo do `DeviceTypeCatalog` pela ilha JSON
+ * `#hub-device-types`. Sem ela o módulo recusa carregar: a falha é de fiação, e não de dados.
  */
 const deviceTypesIsland = globalThis.document?.getElementById("hub-device-types");
 const DEVICE_TYPES = deviceTypesIsland ? JSON.parse(deviceTypesIsland.textContent) : null;
@@ -13,10 +10,7 @@ if (!DEVICE_TYPES || Object.keys(DEVICE_TYPES).length === 0) {
     );
 }
 
-/**
- * O tipo para onde cai tudo o que não se reconhece. Verificado aqui porque tirá-lo da tabela
- * passava a guarda acima e só rebentava mais à frente, com `undefined` a meio.
- */
+/** O tipo para onde cai tudo o que não se reconhece; tem de existir na tabela. */
 const FALLBACK_DEVICE_TYPE = "watch";
 if (!(FALLBACK_DEVICE_TYPE in DEVICE_TYPES)) {
     throw new Error(
@@ -28,10 +22,7 @@ export const deviceTypeOptions = Object.entries(DEVICE_TYPES).map(
     ([value, descriptor]) => ({ value, label: descriptor.label }),
 );
 
-/**
- * A linha de um tipo, sempre utilizável. Normaliza como o `normalizeDeviceType`, porque
- * repetir isso em cada chamador é como as formas divergem.
- */
+/** A linha de um tipo, sempre utilizável, normalizada como no `normalizeDeviceType`. */
 export function deviceTypeFields(deviceType) {
     return DEVICE_TYPES[normalizeDeviceType(deviceType)];
 }
@@ -85,11 +76,8 @@ export function licenseDisplayLabel(
 }
 
 /**
- * O protocolo de um aparelho, pelo fornecedor e pelo modelo.
- *
- * Um fornecedor pode vender coisas que falam protocolos diferentes: os relógios da Wonlex
- * falam TCP e a pulseira MF91 da mesma marca fala BLE. O modelo é opcional -- onde não se
- * conhece continua a valer o primeiro do fornecedor.
+ * O protocolo de um aparelho, pelo fornecedor e pelo modelo: a mesma marca vende TCP e BLE.
+ * Sem modelo vale o primeiro do fornecedor.
  */
 export function supplierProtocol(supplier, models = [], model = "") {
     const ofSupplier = (models || []).filter(
@@ -151,10 +139,8 @@ export function modelDisplayName(supplier, model, models = []) {
 }
 
 /**
- * O fornecedor à frente do nome comercial, sem o dizer duas vezes.
- *
- * Vários modelos da frota já o trazem no nome -- «MONIT MECS Pro» --, e juntá-los em cru dava
- * «MONIT MONIT MECS Pro». Basta comparar o início: nenhum fornecedor é prefixo de outro.
+ * O fornecedor à frente do nome comercial, sem o dizer duas vezes quando o nome já o traz.
+ * Basta comparar o início: nenhum fornecedor é prefixo de outro.
  */
 export function supplierModelLabel(supplier, commercial) {
     const brand = String(supplier || "");
@@ -267,12 +253,7 @@ export function capabilitiesGroupedBySection(catalog) {
     }));
 }
 
-/**
- * Como se chama cada modo de toque de um botão de ajuda.
- *
- * Lê-se como sufixo -- "chamada de ajuda (toque simples)" --, e por isso vem em minúsculas;
- * quem titula uma coluna com isto capitaliza a primeira letra.
- */
+/** Os modos de toque de um botão de ajuda, em minúsculas porque se lêem como sufixo. */
 export const PRESS_TYPE_LABEL = {
     single: "toque simples",
     double: "toque duplo",

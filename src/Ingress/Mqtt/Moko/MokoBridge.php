@@ -22,8 +22,7 @@ final class MokoBridge extends MqttBridgeBase
     // O modelo desempata as pulseiras: ver `relayedProtocol()`.
 
     /**
-     * Um pouco mais do que os 30 segundos que o slot anuncia, para a frame repetida dar um
-     * alarme e não trinta.
+     * Um pouco mais do que os 30 segundos que o slot anuncia, para a frame repetida dar um alarme.
      *
      * ponytail: dois toques do mesmo modo na mesma janela contam como um -- a frame não traz
      * contador.
@@ -97,12 +96,7 @@ final class MokoBridge extends MqttBridgeBase
     private readonly W6Decoder $w6Decoder;
     private readonly W6Normalizer $w6Normalizer;
 
-    /**
-     * Diz se a mensagem se identifica como sendo de outra ingestão.
-     *
-     * O critério é a presença do campo `source`: as tramas MOKO, quer em JSON quer em TLV,
-     * nunca o trazem, portanto vê-lo é prova bastante de que a mensagem tem outro dono.
-     */
+    /** Diz se a mensagem é de outra ingestão: as tramas MOKO, em JSON ou TLV, nunca trazem `source`. */
     private static function declaresForeignSource(string $payload): bool
     {
         if (!str_contains($payload, '"source"')) {
@@ -121,12 +115,8 @@ final class MokoBridge extends MqttBridgeBase
     }
 
     /**
-     * Expira gateways parados e pares silenciosos, no máximo uma vez por janela.
-     *
-     * Impõe limiares de 180 e 30 segundos, e não tem nada que correr a cada tique de 50 ms --
-     * o `expireStaleProximity` varre todos os pares, e a 20 vezes por segundo era desperdício.
-     * O `loopOnce` continua a correr a cada tique, que é onde o MQTT é drenado; só isto sai
-     * para uma janela. Público para os testes o exercerem sem o `loopOnce` do tique.
+     * Expira gateways parados e pares silenciosos, no máximo uma vez por janela: os limiares
+     * são de 180 e 30 segundos e o varrimento percorre todos os pares. Público para os testes.
      */
     public function runDueMaintenance(): void
     {
@@ -159,10 +149,8 @@ final class MokoBridge extends MqttBridgeBase
             return;
         }
 
-        // O espaço `.../gw/{mac}/raw` é partilhado por todos os gateways, e nem todos são
-        // MOKO: um gateway BLE que conduza sessões GATT publica aqui na mesma. Quem se
-        // identifica com outra origem não é para ler, e recusá-lo em silêncio evita encher o
-        // log com avisos sobre mensagens que estão correctas -- só não são nossas.
+        // O `.../gw/{mac}/raw` é partilhado com gateways que não são MOKO: o que é de outra
+        // origem recusa-se em silêncio, sem aviso no log.
         if (self::declaresForeignSource($payload)) {
             return;
         }
@@ -171,9 +159,7 @@ final class MokoBridge extends MqttBridgeBase
 
         $gateway = $this->whitelist->resolve($parsedTopic->gatewayMac);
         if ($gateway === null || ($gateway['deviceType'] ?? '') !== 'gateway') {
-            // O assistente de registo tira do protocolo o fornecedor, o tipo e os modelos
-            // possíveis, e o modelo exacto não se deduz: no fio um MKGW3 e um MKGW-mini
-            // são iguais.
+            // O modelo exacto não se deduz: no fio um MKGW3 e um MKGW-mini são iguais.
             $this->recordUnauthorizedDevice(
                 $parsedTopic->gatewayMac,
                 (string)($decoded['protocol'] ?? ''),
@@ -231,8 +217,7 @@ final class MokoBridge extends MqttBridgeBase
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => $protocol, 'transport' => 'mqtt', 'online' => '1',
         ]);
-        // Só as tramas do próprio gateway entram no histórico dele; os scans descrevem os
-        // dispositivos retransmitidos, que já têm o seu. No MQTT continua a sair tudo.
+        // Os scans ficam fora do histórico do gateway: descrevem os retransmitidos, que têm o seu.
         if (!in_array((string)$decoded['messageId'], self::SCAN_MESSAGE_IDS, true)) {
             $this->deviceStore?->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
@@ -279,10 +264,8 @@ final class MokoBridge extends MqttBridgeBase
     }
 
     /**
-     * O sinal de um avistamento que nenhum decoder reclamou. O RSSI é medido pelo gateway e
-     * existe quer se saiba ler o anúncio, quer não -- descartá-lo perdia amostras.
-     *
-     * Só para dispositivos já registados e ligados a este gateway.
+     * O sinal de um avistamento que nenhum decoder reclamou, medido pelo gateway; só para
+     * dispositivos registados e ligados a ele.
      *
      * @param array<string, mixed> $gateway
      * @param array<string, mixed> $observation
@@ -366,8 +349,7 @@ final class MokoBridge extends MqttBridgeBase
                 $deviceKey . ':press:' . $decoded['alarm']['pressMode'],
                 (string)$decoded['alarm']['triggerCount'],
             );
-            // O contador é cumulativo: vê-lo pela primeira vez não é um toque. É o contrário
-            // da fralda abaixo, onde a primeira observação já suja tem de dar alarme.
+            // O contador é cumulativo: vê-lo pela primeira vez não é um toque.
             $previousTriggerCount = $transition === null || $transition['previous'] === null
                 ? null
                 : (int)$transition['previous'];
@@ -385,8 +367,8 @@ final class MokoBridge extends MqttBridgeBase
     }
 
     /**
-     * A W6 não tem contador cumulativo, e por isso o toque é estrangulado por tempo: o
-     * primeiro avistamento de um modo dá o alarme, os seguintes calam-se até a janela fechar.
+     * A W6 não tem contador, e o toque é estrangulado por tempo: só o primeiro avistamento
+     * de um modo na janela dá alarme.
      *
      * @param array<string, mixed> $gateway
      * @param array<string, mixed> $decoded
@@ -435,9 +417,7 @@ final class MokoBridge extends MqttBridgeBase
             return;
         }
 
-        // Sem lookup ligado, a sensibilidade é a do preset normal. O valor por omissão está
-        // aqui e não no normalizador, onde um parâmetro opcional esconderia uma ligação
-        // esquecida.
+        // Sem lookup ligado, a sensibilidade é a do preset normal.
         $sensitivity = $this->options->diaperSensitivity?->forDevice($sensorKey) ?? DiaperSensitivity::normal();
         $normalized = $this->monitNormalizer
             ->normalize($decoded, $sensor, (string)$gateway['imei'], $sensitivity);
@@ -450,9 +430,7 @@ final class MokoBridge extends MqttBridgeBase
             $normalized['condition'] . '@' . $sensitivity['pollutionRange'] . '-' . $sensitivity['pollutionValue'],
         );
         if ($normalized['condition'] === 'change_required' && $transition !== null) {
-            // A sensibilidade fica dentro do estado guardado e NÃO sai no evento: o
-            // `previousState` é parte do contrato publicado e continua a ser um dos três
-            // estados, ou nulo.
+            // A sensibilidade não sai no evento: o `previousState` publicado é um dos três estados.
             $stored = $transition['previous'];
             $previous = is_string($stored) ? explode('@', $stored, 2)[0] : null;
             $event = [

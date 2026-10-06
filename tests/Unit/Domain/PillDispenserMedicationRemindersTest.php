@@ -8,10 +8,8 @@ use Hub\Domain\Capability\CapabilityRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O `medication_reminders` é uma capacidade com contrato próprio, partilhada com os relógios.
- * Declarar a configuração no catálogo do dispensador não chega: sem o protocolo no contrato,
- * o `toNative` rebenta no momento de gravar — o formulário aparece, o utilizador preenche os
- * nove alarmes, carrega em Enviar e leva com um erro.
+ * O `medication_reminders` tem contrato próprio, partilhado com os relógios: sem o protocolo
+ * no contrato, o `toNative` rebenta ao gravar.
  */
 final class PillDispenserMedicationRemindersTest extends TestCase
 {

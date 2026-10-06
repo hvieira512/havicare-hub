@@ -8,20 +8,14 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
- * Um administrador emite um token de inquilino sem conhecer a password dele.
- *
- * Existe para as aplicações dos clientes deixarem de precisar de uma credencial do hub
- * configurada em cada lado. O sentido único importa aqui mais do que o caso feliz: a rota só
- * serve se nunca puder emitir um token igual ou mais forte do que o de quem a chama.
+ * Um administrador emite um token de inquilino sem conhecer a password dele; a rota só serve se
+ * nunca emitir um token igual ou mais forte do que o de quem a chama.
  */
 final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
 {
     /**
-     * O token emitido aponta à licença nomeada, e não a outra com o mesmo número.
-     *
-     * O harness semeia de propósito uma `otherCare` também com a licença 1001. O âmbito de um
-     * inquilino é o par empresa+licença e nunca o número sozinho, por isso um teste que só
-     * verificasse o `license_id` passaria com o token errado.
+     * O harness semeia uma `otherCare` também com a licença 1001: o âmbito é o par
+     * empresa+licença, e verificar só o `license_id` passaria com o token errado.
      */
     public function testAdminMintsATokenScopedToTheNamedTenant(): void
     {
@@ -46,20 +40,15 @@ final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
         $license = $db->licenses->findByCompanyAndLicense((int)$hitcare['id'], 1001);
         self::assertSame((int)$license['id'], (int)($token['license_ref_id'] ?? 0));
 
-        // O nome sai do par, e não de quem emitiu. O tecto de streams simultâneos conta por
-        // `username`: com o nome do administrador, os inquilinos todos partilhavam um balde.
+        // O nome sai do par, e não de quem emitiu: o tecto de streams simultâneos conta por
+        // `username`, e com o do administrador os inquilinos partilhariam um balde.
         self::assertSame('hitcare/1001', $token['username'] ?? null);
 
         self::assertNotSame('', (string)($token['access_token'] ?? ''));
         self::assertNotSame('', (string)($token['refresh_token'] ?? ''));
     }
 
-    /**
-     * O token emitido abre as rotas do inquilino e continua fechado às de administração.
-     *
-     * Sem esta metade, a rota podia estar a devolver um token de administrador com o papel
-     * escrito por cima -- o papel é um campo do envelope, e é o âmbito guardado que decide.
-     */
+    /** O papel é um campo do envelope: é o âmbito guardado que decide o que o token abre. */
     public function testTheMintedTokenSeesOnlyItsTenantAndCannotAdminister(): void
     {
         $server = $this->makeServerWithDatabase()[0];
@@ -99,12 +88,7 @@ final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
         self::assertSame(403, $again->getStatusCode(), (string)$again->getBody());
     }
 
-    /**
-     * O inquilino lê a planta do radar que é seu, e não a de outro.
-     *
-     * A allowlist abre a rota ao papel; quem decide o aparelho é a verificação do serviço. Sem
-     * a segunda metade, abrir a rota dava a planta de qualquer radar a qualquer inquilino.
-     */
+    /** A allowlist abre a rota ao papel; quem decide o aparelho é a verificação do serviço. */
     public function testATenantReadsOnlyItsOwnRadarLayout(): void
     {
         [$server, $db] = $this->makeServerWithDatabase();
@@ -120,11 +104,8 @@ final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
     }
 
     /**
-     * Um inquilino não emite tokens, nem para si próprio.
-     *
-     * O `tenant` do harness é um `license_client` da mesma licença que pediria, portanto o
-     * token que receberia não lhe daria nada de novo. É recusado à mesma: o que fecha a rota
-     * é o papel de quem chama, e não a comparação entre o que pede e o que já tem.
+     * O token que o `tenant` receberia não lhe daria nada de novo, e é recusado à mesma: o que
+     * fecha a rota é o papel de quem chama.
      */
     public function testALicenseClientCannotMintAtAll(): void
     {
@@ -142,11 +123,8 @@ final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
     }
 
     /**
-     * Um par que não existe é recusado, e a mensagem diz qual das duas metades falhou.
-     *
-     * A empresa existir com outra licença é o engano provável -- é o que acontece quando um
-     * inquilino novo ainda não foi criado no hub --, e responder `license_not_found` em vez de
-     * um `invalid_request` genérico poupa a quem integra a adivinhação.
+     * A empresa existir com outra licença é o engano provável, e `license_not_found` diz a quem
+     * integra qual das duas metades falhou.
      */
     public function testAnUnknownTenantIsRefusedByTheHalfThatFailed(): void
     {

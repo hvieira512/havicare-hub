@@ -1,5 +1,4 @@
-# Fixo, e nao derivado da pasta: mudar o nome da pasta mudava o nome do projeto e com ele
-# o dos volumes, o que deixava a base de dados de desenvolvimento para tras.
+# Fixo, e não derivado da pasta: o nome do projeto dá nome aos volumes.
 name: havicare-hub
 
 services:
@@ -38,13 +37,8 @@ services:
     restart: unless-stopped
 
   mysql:
-    # A produção corre MariaDB 10.11, não MySQL. Este serviço fica em MySQL porque o volume
-    # `mysql_data` já existe com dados escritos pelo MySQL e o MariaDB não os lê -- trocar a
-    # imagem aqui obriga a deitar fora a base local.
-    #
-    # A diferença de motor não está coberta por nenhuma verificação: o esquema e as consultas
-    # não usam sintaxe exclusiva de nenhum dos dois, mas nada o prova -- o `test:php84` corre
-    # MySQL dentro do contentor.
+    # A produção corre MariaDB 10.11; aqui fica MySQL porque o volume `mysql_data` foi escrito
+    # pelo MySQL e o MariaDB não o lê. Nenhuma verificação cobre a diferença de motor.
     image: mysql:8.4
     container_name: havicare-mysql
     environment:
@@ -70,10 +64,9 @@ services:
   hub:
     build: .
     container_name: havicare-hub
-    # vendor/ is gitignored and the bind mount below hides the image's copy, so a
-    # fresh clone has none: install before migrate.php, which needs the autoloader.
-    # ponytail: the retry works around extraction races on macOS bind mounts; drop
-    # it if vendor/ ever moves to a named volume.
+    # O vendor/ não vem no clone e o bind mount esconde o da imagem: instala-se antes do migrate.php.
+    # ponytail: a repetição contorna corridas de extração nos bind mounts do macOS; sai quando o
+    # vendor/ passar a volume nomeado.
     command: sh -lc "composer install --no-interaction || composer install --no-interaction; php bin/migrate.php && php bin/seed-inventory.php && exec bin/dev.sh php bin/server-hub.php"
     ports:
       - "8081:8081"
@@ -81,11 +74,8 @@ services:
     volumes:
       - .:/app
     environment:
-      # O mosquitto local por omissão, e não o MQTT_HOST do .env: numa máquina limpa esse
-      # aponta para um broker remoto e o arranque parecia partido. Mas apontar ao broker
-      # remoto é o que faz aparecer os gateways, os medidores de fraldas, as pulseiras e
-      # os radares em localhost, por isso fica um nome próprio para pedir isso de propósito
-      # -- HUB_MQTT_HOST=mqtt.havicare.com -- em vez de acontecer por acidente.
+      # O mosquitto local por omissão, e não o MQTT_HOST do .env, que aponta para um broker remoto;
+      # HUB_MQTT_HOST=mqtt.havicare.com pede o remoto de propósito.
       MQTT_HOST: ${HUB_MQTT_HOST:-mosquitto}
       MQTT_PORT: ${HUB_MQTT_PORT:-1883}
       MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX:-}
@@ -151,7 +141,7 @@ services:
         condition: service_started
       redis:
         condition: service_started
-      # migrate.php runs at startup, so wait for the first-boot init to finish
+      # O migrate.php corre ao arranque: espera que a inicialização da base termine.
       mysql:
         condition: service_healthy
     networks:

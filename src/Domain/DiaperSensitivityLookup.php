@@ -7,11 +7,8 @@ namespace Hub\Domain;
 interface DiaperSensitivityLookup
 {
     /**
-     * A sensibilidade em vigor para um sensor.
-     *
-     * Devolve sempre um par utilizável: um sensor sem configuração recebe o preset
-     * normal, que é o comportamento com que o hub sempre correu. Chama-se
-     * `forDevice` e não `for` porque `for` é palavra reservada em PHP.
+     * A sensibilidade em vigor para um sensor; sem configuração, o preset normal. `forDevice`
+     * porque `for` é palavra reservada.
      *
      * @return array{pollutionRange: int, pollutionValue: int}
      */

@@ -5,13 +5,8 @@ declare(strict_types=1);
 namespace Hub\Domain;
 
 /**
- * O que cada tipo de dispositivo é, num sítio só. `identity` é o campo que o identifica,
- * `sim` diz se há número de SIM, `gatewayLinks` se é retransmitido por um gateway, e `icon` é
- * o glifo do Font Awesome com que aparece na dashboard e no ecrã de entrada.
- *
- * A tabela vive num JSON e não neste ficheiro porque os dois lados precisam dela: o PHP
- * serve-a numa ilha JSON `#hub-device-types`, e os testes do frontend, que correm sem PHP,
- * lêem o mesmo ficheiro.
+ * O que cada tipo de dispositivo é: `identity`, `sim`, `gatewayLinks` e o `icon` do Font Awesome.
+ * Vive num JSON porque os testes do frontend, que correm sem PHP, lêem o mesmo ficheiro.
  */
 final class DeviceTypeCatalog
 {

@@ -1,7 +1,5 @@
-// O token de acesso vive aqui e só aqui: em memória, nem no `window` nem em armazenamento
-// nenhum, por isso morre com o separador. Quem o renova é o cookie `HttpOnly` da sessão, que
-// o browser reenvia sozinho e que este código não consegue ler. O `set`/`clear` avisam a app
-// pelo evento.
+// O token de acesso vive só aqui, em memória, e morre com o separador. Renova-o o cookie
+// `HttpOnly` da sessão, que este código não lê; o `set`/`clear` avisam a app pelo evento.
 let apiToken = null;
 /** Sobe a cada limpeza: é por ele que uma renovação sabe se ainda é a sessão dela. */
 let tokenEpoch = 0;
@@ -69,8 +67,7 @@ const scheduleTokenRefresh = (delayOverrideMs = null) => {
     }, delayMs);
 };
 
-// A frase do browser é inglesa -- «Failed to fetch» no Chrome -- e esta é a mensagem que
-// mais aparece na dashboard, que é toda em português. O texto original fica no `detail`.
+// A frase do browser é inglesa -- «Failed to fetch» no Chrome --; o original fica no `detail`.
 const networkError = (error) => ({
     error: {
         code: "network_error",
@@ -83,8 +80,7 @@ const networkError = (error) => ({
 const parseJsonResponse = async (response) => {
     const raw = await response.text();
     if (raw.trim() === "") {
-        // Quem chama decide por `if (result?.error)`. Sem a chave, um 500 sem corpo lia-se
-        // como sucesso, e as caches de licenças e de capacidades guardavam a lista vazia.
+        // Quem chama decide por `if (result?.error)`, e por isso um 500 sem corpo também leva a chave.
         if (response.ok) {
             return { _httpStatus: response.status };
         }
@@ -129,8 +125,7 @@ const requestWithAuthRetry = async (url, options = {}) => {
     if (handleAuthExpiry(response)) {
         if (await refreshAccessToken()) {
             const retried = await fetch(url, buildFetchOptions(options));
-            // Um 401 com o token novo já não é um token velho: é a sessão a acabar. Sem
-            // isto, a dashboard mostrava um erro genérico e ficava sem pedir autenticação.
+            // Um 401 com o token novo já não é um token velho: é a sessão a acabar.
             if (handleAuthExpiry(retried)) {
                 emitAuthRequired();
             }
@@ -152,11 +147,8 @@ export const requestSessionToken = () => fetch("/api/auth/login", {
 });
 
 /**
- * O cadeado que impede dois separadores de gastarem o mesmo cookie ao mesmo tempo.
- *
- * O token de renovação é de uso único: abrir dois separadores no mesmo instante punha os dois
- * a renovar com o mesmo valor, e o segundo levava com um 401 e o ecrã de login. Com o cadeado
- * o segundo espera e já lê o cookie rodado. Onde a API não existir corre à mesma, sem ele.
+ * O cadeado que impede dois separadores de gastarem ao mesmo tempo o cookie, que é de uso
+ * único: o segundo espera e lê o cookie rodado. Onde a API não existir corre sem ele.
  */
 const withSessionLock = (task) => navigator.locks?.request
     ? navigator.locks.request("hub-dashboard-session", task)
@@ -217,9 +209,8 @@ const withQuery = (url, params = {}) => {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
         if (value === undefined || value === null || value === "") return;
-        // Uma lista sai como `chave[]=a&chave[]=b`, que é o que o `parse_str` do servidor lê
-        // como array. Uma lista vazia não sai: é a ausência do filtro, e não um filtro por
-        // nada.
+        // Uma lista sai como `chave[]=a&chave[]=b`, que o `parse_str` lê como array; uma lista vazia
+        // não sai, porque é a ausência do filtro.
         if (Array.isArray(value)) {
             value
                 .filter((entry) => entry !== undefined && entry !== null && entry !== "")

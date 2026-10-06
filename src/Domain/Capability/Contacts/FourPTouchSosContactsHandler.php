@@ -7,9 +7,7 @@ namespace Hub\Domain\Capability\Contacts;
 use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityProtocolHandler;
 
-/**
- * 4P Touch strategy for SOS contacts.
- */
+/** A estratégia do 4P Touch para os contactos de SOS. */
 final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
 {
     use CapabilityHelpers;

@@ -11,9 +11,8 @@ const { initGatewayLinksUi } =
     await import("../../src/Dashboard/dashboard/devices/gateway-links-ui.js");
 
 /**
- * Com o detalhe recusado, o formulário fica com os valores de arranque — tipo «watch»,
- * licença «0», SIM vazio — e o modal já está à vista. O `saveDevice` lê só o DOM, por isso
- * «Guardar» escrevia isso por cima do registo real.
+ * Com o detalhe recusado o formulário fica com os valores de arranque, e o `saveDevice` lê só o
+ * DOM: «Guardar» escreveria isso por cima do registo real.
  */
 const els = new Proxy({}, {
     get(target, name) {

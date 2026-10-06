@@ -39,16 +39,14 @@ final class DeviceAssociationService
             return ApiError::deviceNotFound()->toArray();
         }
 
-        // O `coerceStrings` porque esta rota sempre aceitou o `licenseId` como texto: é o que
-        // os clientes mandam e o que os testes de integração escrevem.
+        // O `coerceStrings` porque os clientes mandam o `licenseId` como texto.
         $request = $this->binder->bind($payload, DeviceAssociationRequest::class, coerceStrings: true);
         if (is_array($request)) {
             return $request;
         }
 
-        // A normalização fica cá fora. O `normalizeCompany()` devolve `'null'` para o vazio,
-        // que é a forma como um dispositivo sem dono se escreve no inventário -- pô-la numa
-        // constraint fazia o `NotBlank` deixar de ver o vazio que tem de recusar.
+        // A normalização fica fora da constraint: o `normalizeCompany()` transforma o vazio em
+        // `'null'`, e o `NotBlank` deixaria de ver o vazio que tem de recusar.
         $company = DeviceMetadata::normalizeCompany($request->company);
         $licenseId = $request->licenseId;
 
@@ -94,12 +92,8 @@ final class DeviceAssociationService
     }
 
     /**
-     * Muda o dono do dispositivo no inventário e no Redis.
-     *
-     * O Redis vai primeiro de propósito: é uma projecção do inventário e é reconstruído a
-     * partir dele, portanto um par novo escrito lá antes do SQL falhar não estraga nada --
-     * a listagem lê-se do MySQL. Ao contrário, o SQL escrito primeiro e o Redis a falhar
-     * deixava o dispositivo a servir o estado retido do cliente anterior.
+     * Muda o dono no inventário e no Redis, o Redis primeiro: é uma projecção reconstruída do
+     * MySQL, e a ordem inversa deixaria o dispositivo com o estado retido do cliente anterior.
      */
     private function writeAssociation(DeviceMetadata $existing, string $imei, string $company, int $licenseId): void
     {
@@ -126,10 +120,8 @@ final class DeviceAssociationService
     }
 
     /**
-     * Larga o estado retido que um dispositivo deixa atrás de si no cliente anterior.
-     *
-     * Sem isto, o tópico antigo continua a servir o último estado do dispositivo a quem
-     * subscreve esse cliente, muito depois de ele ter mudado.
+     * Larga o estado retido no tópico do cliente anterior, que continuaria a servir o último
+     * estado do dispositivo.
      */
     private function releaseRetainedStatus(DeviceMetadata $existing, string $imei, string $company, int $licenseId): void
     {

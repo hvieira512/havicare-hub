@@ -8,9 +8,8 @@ use Hub\Ingress\Mqtt\Moko\ProximityTracker;
 use PHPUnit\Framework\TestCase;
 
 /**
- * As estatísticas da janela sobre as quais um cliente põe limiares. As séries usadas aqui são
- * leituras reais, capturadas da pulseira fb:d8:7c:59:ba:8b retransmitida pelo MKGW4
- * c5:e3:90:f3:0b:ce, com a pulseira imóvel sobre uma mesa.
+ * As estatísticas da janela sobre as quais um cliente põe limiares, com leituras reais da
+ * pulseira fb:d8:7c:59:ba:8b imóvel numa mesa, via MKGW4 c5:e3:90:f3:0b:ce.
  */
 final class ProximityTrackerTest extends TestCase
 {

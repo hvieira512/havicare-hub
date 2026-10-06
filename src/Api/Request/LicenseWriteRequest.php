@@ -8,11 +8,8 @@ use Hub\Api\OpenApi\Example;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * O corpo do criar e do actualizar de uma licença.
- *
- * Os campos são anuláveis porque `null` quer dizer "não veio no corpo", e no actualizar isso
- * quer dizer "fica como está". A omissão só é recusada a criar, e por isso o `NotNull` vive
- * no grupo `create`; o `Positive` vale nos dois.
+ * O corpo do criar e do actualizar de uma licença. `null` é "não veio no corpo", que a
+ * actualizar quer dizer "fica como está", e por isso o `NotNull` vive no grupo `create`.
  */
 final class LicenseWriteRequest
 {

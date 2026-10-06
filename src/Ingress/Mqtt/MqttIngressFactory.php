@@ -19,16 +19,11 @@ use React\EventLoop\LoopInterface;
 
 /**
  * Monta as ingestões MQTT que a configuração liga, e entrega-as num `IngressRunner`.
- *
- * Isto vivia no `bin/server-hub.php`, onde eram quatro blocos quase iguais que valiam metade
- * do ficheiro de arranque. O que cada fornecedor precisa de saber -- que a sessão dos radares
- * tem credenciais próprias, que o MOKO e o Veepoo partilham o mesmo espaço de tópicos de
- * propósito -- é conhecimento de ingestão, e é aqui que pertence.
  */
 final class MqttIngressFactory
 {
     /**
-     * @param array<string, mixed> $config the full hub config
+     * @param array<string, mixed> $config a configuração completa do hub
      */
     public static function build(
         array $config,
@@ -41,8 +36,7 @@ final class MqttIngressFactory
 
         $runner->add('NCS ingress', self::ncs($config, $services, $subscribers), 'ncs');
 
-        // Uma variável só para as duas ingestões de gateway: são o mesmo espaço de tópicos de
-        // propósito, e dois cálculos separados podiam divergir sem ninguém dar por isso.
+        // As duas ingestões de gateway partilham de propósito o mesmo espaço de tópicos.
         $gatewayTopicFilter = trim((string)$config['gateway']['topic_filter']);
         $runner->add('MOKO gateway ingress', self::moko($config, $services, $subscribers, $gatewayTopicFilter), 'gateway');
         $runner->add('Veepoo bracelet ingress', self::veepoo($config, $services, $subscribers, $gatewayTopicFilter), 'veepoo');
@@ -111,9 +105,8 @@ final class MqttIngressFactory
     }
 
     /**
-     * Pulseiras Veepoo entregues por um gateway BLE. Partilha o tópico do MOKO de propósito:
-     * os gateways publicam todos em `.../gw/{mac}/raw`, e cada ingestão reclama só o que sabe
-     * ler. Vai atrás do mesmo interruptor porque é o mesmo gateway que as serve.
+     * Pulseiras Veepoo entregues por um gateway BLE: partilham o tópico e o interruptor do MOKO,
+     * porque é o mesmo gateway que as serve.
      *
      * @param array<string, mixed> $config
      */
@@ -136,10 +129,8 @@ final class MqttIngressFactory
                 $services->mqttBridge,
                 $services->dataAccess->gatewayDeviceLinks,
                 $services->downlinkQueue,
-                // A mesma porta que trava os anúncios repetidos do MOKO trava aqui os blocos
-                // que o gateway relê. Em Redis e não em memória: a releitura maior é a do
-                // arranque do gateway, e um hub reiniciado teria esquecido tudo o que ela vai
-                // repetir.
+                // Em Redis e não em memória: a maior releitura de blocos é no arranque do
+                // gateway, e tem de sobreviver a um reinício do hub.
                 new RedisObservationStateStore($services->redis),
                 $topicFilter,
                 $reconnect,
@@ -150,9 +141,8 @@ final class MqttIngressFactory
     }
 
     /**
-     * A ingestão dos radares abre sessão própria: outras credenciais e outro identificador de
-     * cliente. O mesmo broker, ao contrário do que a documentação afirmou durante muito tempo
-     * -- o que muda são os tópicos.
+     * Os radares abrem sessão própria no mesmo broker, com outras credenciais e outro
+     * identificador de cliente.
      *
      * @param array<string, mixed> $config
      */

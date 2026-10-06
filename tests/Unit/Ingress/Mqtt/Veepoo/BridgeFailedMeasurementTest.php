@@ -15,12 +15,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * Uma medição que o aparelho não consegue fazer tem de fechar o pedido que a mandou fazer.
- *
- * O acontecimento `device.measurement_failed` diz porquê, mas dizer não é encerrar: o comando
- * ficava em fila, era reentregue de trinta em trinta segundos até expirar, e a pulseira
- * repetia uma medição que já se sabia que não ia dar valor. Uma pulseira fora do pulso gastou
- * assim três pontos de bateria numa manhã, a medir nada cinco vezes seguidas.
+ * Uma medição impossível sai em `device.measurement_failed` e fecha o pedido: senão é reentregue
+ * até expirar e a pulseira repete uma medição que não vai dar valor.
  */
 final class BridgeFailedMeasurementTest extends TestCase
 {
@@ -145,13 +141,8 @@ final class BridgeFailedMeasurementTest extends TestCase
     }
 
     /**
-     * Uma medição que correu e não produziu trama nenhuma é uma falha, e não um sucesso.
-     *
-     * O gateway executa o comando, espera os quarenta e cinco segundos e confirma -- porque
-     * de facto o executou. Se a pulseira não respondeu coisa nenhuma, nem valor nem razão, o
-     * pedido ficava «confirmado» e vazio no ecrã, que é a ambiguidade que o relatório de
-     * falhas existe para eliminar: confirmado passava a querer dizer «o gateway mandou» em
-     * vez de «a pulseira mediu».
+     * O gateway confirma porque executou; sem valor nem razão da pulseira, confirmado passaria a
+     * querer dizer «o gateway mandou» em vez de «a pulseira mediu».
      */
     public function testAMeasurementThatCameBackSilentIsReportedAsAFailure(): void
     {
@@ -201,13 +192,8 @@ final class BridgeFailedMeasurementTest extends TestCase
     }
 
     /**
-     * Responder não é medir, como executar não é responder.
-     *
-     * A pulseira fora do pulso responde às trinta e duas tramas com tudo a zero -- o
-     * firmware a dizer que ainda não fixou o sinal, e que nunca fixa. O gateway vê tramas a
-     * chegar e confirma o comando; o hub, que é quem sabe o que conta como leitura, não
-     * publicou nenhuma. Sem isto o pedido morria «confirmado» e vazio, que é a mesma
-     * ambiguidade por outra porta.
+     * Fora do pulso a pulseira responde com tramas a zero e o gateway confirma; quem sabe o que conta
+     * como leitura é o hub, e não publicou nenhuma.
      */
     public function testAMeasurementThatNeverProducedAReadingIsReportedAsAFailure(): void
     {
@@ -277,14 +263,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame(['reason' => 'no_reading'], $failures[0]['payload']['error']);
     }
 
-    /**
-     * Um pedido morre uma vez, e com a razão certa.
-     *
-     * A pulseira diz `notWear` a meio da medição e o pedido fecha-se aí. A confirmação do
-     * gateway chega a seguir -- ele executou o comando -- e encontra o pedido sem leitura
-     * nenhuma: dá-lo por falhado outra vez, por `no_reading`, são dois acontecimentos para o
-     * mesmo toque no botão, e o segundo aponta ao sensor quando o problema é o pulso.
-     */
+    /** A confirmação que chega depois de `notWear` não volta a dar o pedido por falhado com `no_reading`. */
     public function testARequestThatAlreadyFailedIsNotFailedAgainByTheConfirmation(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -332,11 +311,8 @@ final class BridgeFailedMeasurementTest extends TestCase
     }
 
     /**
-     * Um ECG que apanhou sinal não é uma medição sem leitura.
-     *
-     * A onda sai pelo seu próprio caminho -- chega em `ecg_wave` e não em tramas de medição --
-     * e por isso não há nada a assentar quando a confirmação chega. Sem a excepção, todo o
-     * exame bem-sucedido aparecia no histórico do aparelho como `no_reading`.
+     * A onda chega em `ecg_wave` e não em tramas de medição, e por isso não há nada a assentar quando
+     * a confirmação chega.
      */
     public function testAnEcgThatCaughtSignalIsNotReportedAsAFailure(): void
     {
@@ -362,11 +338,8 @@ final class BridgeFailedMeasurementTest extends TestCase
     }
 
     /**
-     * A marca de pedido encerrado tem prazo.
-     *
-     * A confirmação que a consome pode nunca chegar -- a caixa morre, o gateway reinicia -- e
-     * sem prazo o pedido seguinte da mesma medição herdava o perdão do anterior e falhava em
-     * silêncio.
+     * A confirmação que a consome pode nunca chegar, e sem prazo o pedido seguinte da mesma medição
+     * herdava o perdão e falhava em silêncio.
      */
     public function testTheMarkOfADeadRequestExpires(): void
     {
@@ -401,9 +374,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     /**
      * O pedido morto ganha à leitura que chegou depois dele.
      *
-     * A pulseira sai do pulso a meio, o pedido fecha-se, e as tramas seguintes ainda trazem um
-     * valor -- medido com o sensor a apanhar o ar. Publicá-lo era dar por resultado do pedido
-     * uma leitura tirada depois de ele já ter morrido.
+     * As tramas que chegam depois de a pulseira sair do pulso foram medidas ao ar.
      */
     public function testADeadRequestOutranksTheReadingThatCameAfterIt(): void
     {
@@ -483,10 +454,8 @@ final class BridgeFailedMeasurementTest extends TestCase
 }
 
 /**
- * Uma fila que tira mesmo o que lhe mandam tirar.
- *
- * O duplo das outras suites esvazia-se inteiro no `remove`, e com ele nenhum teste
- * conseguiria distinguir «tirou o pedido certo» de «tirou tudo».
+ * Uma fila cujo `remove` tira só o pedido indicado: o duplo das outras suites esvazia-se inteiro, e
+ * com ele não se distingue «tirou o pedido certo» de «tirou tudo».
  */
 final class FakeQueue implements PendingDownlinkQueue
 {

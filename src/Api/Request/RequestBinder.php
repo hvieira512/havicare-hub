@@ -9,13 +9,8 @@ use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
- * Transforma o corpo de um pedido no objecto que o descreve, ou no erro que o recusa.
- *
- * Os erros vêm todos de uma vez, e um valor do tipo errado é recusado em vez de convertido --
- * um `(int)"abc"` dava `0`, que quer dizer alguma coisa nas regras de licença.
- *
- * A construção é por reflexão sobre o construtor, e não pelo `symfony/serializer`: esse
- * trazia atrás seis pacotes para converter um array num objecto.
+ * Transforma o corpo de um pedido no objecto que o descreve, ou no erro que o recusa, com os
+ * erros todos de uma vez. Um valor do tipo errado é recusado: `(int)"abc"` daria `0`.
  */
 final class RequestBinder
 {
@@ -107,12 +102,8 @@ final class RequestBinder
     }
 
     /**
-     * O valor convertido para o tipo declarado, ou `null` se não for convertível. Devolve um
-     * array de um elemento porque um campo pode legitimamente valer `null`.
-     *
-     * A conversão de strings numéricas é opcional e a rota é que decide: o
-     * `multipart/form-data` não tem tipos, e fora dele um `"3"` num campo inteiro é um erro
-     * do cliente que vale mais apontar do que adivinhar.
+     * O valor no tipo declarado, num array de um elemento porque `null` é legítimo, ou `null` se
+     * não converter. Converter strings numéricas é opção da rota: o multipart não tem tipos.
      *
      * @return array{0: mixed}|null
      */
@@ -167,9 +158,8 @@ final class RequestBinder
     }
 
     /**
-     * Aceita `license_ref_id` como `licenseRefId`, e `capabilities[]` como `capabilities`. O
-     * camelCase ganha quando as duas vêm no mesmo corpo, por ser o que a especificação
-     * documenta.
+     * Aceita `license_ref_id` como `licenseRefId` e `capabilities[]` como `capabilities`; o
+     * camelCase ganha quando vêm os dois.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>

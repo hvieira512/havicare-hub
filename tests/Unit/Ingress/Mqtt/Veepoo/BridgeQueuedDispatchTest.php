@@ -14,13 +14,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * Entrega de um comando criado depois de a sessão já estar aberta.
- *
- * O gateway fica subscrito ao seu tópico de comandos enquanto correr, e por isso a pulseira
- * é alcançável entre sessões e não apenas no instante em que uma chega. Esperar pelo anúncio
- * seguinte custava ao utilizador até um intervalo de heartbeat inteiro por cada ordem dada
- * no ecrã -- fazer a pulseira vibrar demorava mais a sair do hub do que a pulseira leva a
- * desistir de vibrar.
+ * Entrega de um comando criado com a sessão já aberta: a pulseira é alcançável entre sessões, e
+ * esperar pelo anúncio seguinte custaria até um intervalo de heartbeat por ordem.
  */
 final class BridgeQueuedDispatchTest extends TestCase
 {
@@ -46,10 +41,8 @@ final class BridgeQueuedDispatchTest extends TestCase
     }
 
     /**
-     * Entregar não é executar, e o que não for confirmado fica em fila -- mas repeti-lo a
-     * cada volta do temporizador seria um comando por segundo para sempre. O gateway ignora
-     * a repetição da mesma chave durante minutos, por isso nunca a confirmaria e a entrega
-     * nunca pararia.
+     * O que não for confirmado fica em fila, mas não se repete a cada volta: o gateway ignora
+     * a mesma chave durante minutos e a entrega nunca pararia.
      */
     public function testAnUnconfirmedCommandIsNotResentOnEveryTick(): void
     {
@@ -96,11 +89,8 @@ final class BridgeQueuedDispatchTest extends TestCase
     }
 
     /**
-     * Uma publicação que estoira não pode consumir a janela de repetição.
-     *
-     * O travão só pode marcar a chave como entregue depois de a publicação passar: marcada
-     * antes, um gateway inalcançável naquele instante cala a ordem trinta segundos sem ela
-     * nunca ter saído, e o único sinal é a ausência de uma vibração que alguém pediu.
+     * O travão só marca a chave como entregue depois de a publicação passar; senão um gateway
+     * inalcançável calaria a ordem trinta segundos sem ela ter saído.
      */
     public function testACommandWhosePublishFailsIsRetriedOnTheNextTick(): void
     {
@@ -135,12 +125,8 @@ final class BridgeQueuedDispatchTest extends TestCase
     }
 
     /**
-     * O identificador do pedido vai no fio, e é por ele que o gateway sabe que uma reentrega
-     * é a mesma ordem.
-     *
-     * O hub repete o que está à espera de confirmação de sessenta em sessenta segundos, e
-     * cada repetição volta à fila com um prazo novo. Sem este campo, o gateway só tinha o
-     * prazo para se orientar e executava a mesma medição outra vez a cada repetição.
+     * O hub repete de sessenta em sessenta segundos o que espera confirmação, e é pelo identificador
+     * que o gateway reconhece a reentrega e não volta a medir.
      */
     public function testTheRequestIdentityTravelsToTheGateway(): void
     {

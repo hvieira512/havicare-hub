@@ -10,9 +10,8 @@ import { deviceTypeIcon } from "../components/device-type-tiles.js";
 import { modelPreviewHtml } from "../components/model-image.js";
 
 /**
- * A classificação de um dispositivo -- tipo, modelo e licença -- partilhada pelo assistente
- * de adicionar e pelo modal de editar. São construtores de HTML e nada mais: sem estado e
- * sem ouvintes, para os dois modais poderem ter fluxos diferentes.
+ * Tipo, modelo e licença, partilhados pelo assistente de adicionar e pelo modal de editar. Só
+ * HTML, sem estado nem ouvintes, para os dois modais terem fluxos diferentes.
  */
 
 /**
@@ -38,9 +37,8 @@ function licenseKey(company, licenseId) {
 }
 
 /**
- * O dono de uma notificação, confirmado na árvore antes de pré-selecionar o assistente. Sem
- * empresa procura só o número, e um número repetido em duas empresas devolve nada: por
- * escolher é melhor do que escolhido mal sem ninguém reparar.
+ * O dono de uma notificação, confirmado na árvore. Sem empresa procura só o número, e um
+ * número repetido em duas empresas devolve null: fica por escolher em vez de mal escolhido.
  */
 export function ownerFromLicense(licenseId, tree = [], company = "") {
     const wanted = String(licenseId ?? "");
@@ -208,11 +206,7 @@ export function wizardProgressHtml(step, total) {
 
 /* ---------- o tipo e o modelo ---------- */
 
-/**
- * A grelha de escolhas em cards, partilhada pelo tipo de dispositivo e pelo modelo.
- * `visual` é um ícone ou uma miniatura: um tipo é uma ideia e leva ícone, um modelo é um
- * objecto que existe e leva a fotografia.
- */
+/** Grelha de escolhas em cards; o `visual` é um ícone para o tipo e a fotografia para o modelo. */
 export function cardGrid(label, cards) {
     return html`
         <div class="wizard-card-grid d-grid gap-2" role="group" aria-label="${label}">
@@ -273,11 +267,7 @@ export function modelCardsHtml({ models, attrsFor, selected = "" }) {
     );
 }
 
-/**
- * Os fornecedores em cards, como o tipo e o modelo. É a mesma pergunta -- escolher um de
- * poucos -- e duas formas para ela obrigavam a reaprendê-la a cada passo. Sem ícone, que
- * um fornecedor não tem; a contagem vem de quem chama, onde ela existir.
- */
+/** Os fornecedores em cards, como o tipo e o modelo, mas sem ícone. */
 export function supplierCardsHtml({ suppliers, attrsFor, selected = "", countFor = null }) {
     return cardGrid(
         "Fornecedor",
@@ -296,5 +286,4 @@ export function supplierCardsHtml({ suppliers, attrsFor, selected = "", countFor
     );
 }
 
-/** O que o tipo de dispositivo se chama, para quem só precisa da etiqueta. */
 export { deviceTypeLabel };

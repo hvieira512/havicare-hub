@@ -28,10 +28,8 @@ import { backToModelList } from "./list.js";
 import { renderCapabilitiesSection } from "./capabilities-editor.js";
 
 /**
- * A ficha de um modelo, em duas metades: em cima a identidade, que é o que este módulo
- * desenha, e em baixo o editor de capacidades. Gravam para o mesmo endpoint com corpos
- * diferentes, e são dois botões porque mexer no nome não deve reescrever a lista de
- * capacidades.
+ * A ficha de um modelo: em cima a identidade, que este módulo desenha, e em baixo o editor de
+ * capacidades. São dois botões para mexer no nome não reescrever as capacidades.
  */
 
 async function openModelDetail(modelId) {
@@ -92,9 +90,8 @@ async function openModelDetail(modelId) {
 }
 
 /**
- * Um clique numa folha do catálogo abre a ficha do modelo. A linha é um `div` com
- * `role="button"` e não um `<button>`, porque leva dentro a imagem, dois nomes e a seta, que
- * herdariam o reset de tipografia do Bootstrap -- em troca, o teclado é tratado à mão.
+ * Um clique numa folha do catálogo abre a ficha. A linha é um `div` com `role="button"` para
+ * fugir ao reset de tipografia do `<button>`, e o teclado é tratado à mão.
  */
 function handleModelListClick(event) {
     const row = event.target.closest("[data-action=\"modelCapabilities\"]");
@@ -140,9 +137,8 @@ function renderModelDetailInfo(model) {
 }
 
 /**
- * Os fornecedores com o seu id, que é o que o `supplier_id` do modelo precisa. Vêm do
- * separador dos fornecedores, ou carregam-se aqui, porque este detalhe alcança-se sem lá
- * passar.
+ * Os fornecedores com o seu id, para o `supplier_id`: vêm do separador dos fornecedores, ou
+ * carregam-se aqui, porque a ficha alcança-se sem lá passar.
  */
 function modelDetailSuppliers() {
     return state.modelModalSuppliers || [];
@@ -268,9 +264,8 @@ async function saveModelDetail() {
     state.settingsModal.sectionLoaded.models = false;
     invalidateDeviceTypeSuppliersModels();
 
-    // Trocar o fornecedor ou o tipo faz o servidor substituir as capacidades pelo template
-    // novo. A metade de baixo do ecrã ficava a mostrar a selecção que já não existe, e o
-    // «Guardar capacidades» seguinte enviava chaves que o fornecedor novo não suporta.
+    // Trocar o fornecedor ou o tipo faz o servidor substituir as capacidades pelo template novo,
+    // e a metade de baixo tem de o acompanhar.
     const supplierChanged = Number(supplier?.id ?? 0) !== Number(model.supplier_id || 0);
     const typeChanged = fields.deviceType !== (model.device_type || model.deviceType);
     if (supplierChanged || typeChanged) {

@@ -8,12 +8,8 @@ import { configActionPayload } from "../../src/Dashboard/dashboard/devices/confi
 import { parseFragment } from "./support/dom.js";
 
 /**
- * Uma acção com dois sentidos mostra os dois verbos.
- *
- * O «Encontrar dispositivo» estava desenhado como um interruptor que se guarda, e não é: a
- * pulseira vibra no instante e desiste sozinha ao fim de um minuto. Para a parar era preciso
- * adivinhar que se desligava o interruptor e se carregava em Enviar outra vez -- ninguém
- * descobre isso, e foi a primeira pergunta que apareceu ao usá-lo.
+ * O «Encontrar dispositivo» vibra no instante e desiste ao fim de um minuto: é uma acção com
+ * dois verbos, e não um interruptor que se guarda.
  */
 const ACTION = {
     key: "find_device",
@@ -44,7 +40,6 @@ test("não há interruptor a fingir que a acção tem estado guardado", () => {
     assert.equal(root(ACTION).querySelector("input[type=\"checkbox\"]"), null);
 });
 
-/** Uma acção sem verbos declarados continua a ser o que era. */
 test("sem verbos declarados, o cartão não muda", () => {
     const withoutVerbs = { ...ACTION };
     delete withoutVerbs.actions;
@@ -54,13 +49,7 @@ test("sem verbos declarados, o cartão não muda", () => {
     assert.deepEqual(buttons(el).map((b) => b.valor), [undefined]);
 });
 
-/**
- * O verbo traz o valor consigo.
- *
- * Um botão que diz «Parar» não tem formulário para ler -- o que vai enviar está no próprio
- * botão. Sem isto os dois verbos enviam o mesmo, e a ordem de parar é indistinguível da de
- * começar.
- */
+/** Um botão «Parar» não tem formulário: o valor que envia está no próprio botão. */
 test("cada verbo envia o seu valor", () => {
     const section = parseFragment(
         "<section data-config-section data-config-action-field=\"enabled\"></section>",
@@ -70,7 +59,6 @@ test("cada verbo envia o seu valor", () => {
     assert.deepEqual(configActionPayload(section, "off"), { enabled: false });
 });
 
-/** O «Enviar» normal continua a ler os campos do cartão. */
 test("sem verbo, o valor vem do formulário como sempre", () => {
     const section = parseFragment("<section data-config-section></section>").firstElementChild;
 

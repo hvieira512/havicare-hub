@@ -169,9 +169,8 @@ final class DeviceCommandStore
     }
 
     /**
-     * Um 4P Touch que não confirmou uma única escrita indexada não fala o comando novo, e a
-     * lista telefónica é reenviada na forma antiga. As escritas que ficaram por confirmar
-     * passam a `superseded`, senão o recuo repetia-se a cada passagem.
+     * Um 4P Touch que não confirmou uma única escrita indexada recebe a lista telefónica na forma
+     * antiga; as escritas por confirmar passam a `superseded`, para o recuo não se repetir.
      */
     private function fallBackToLegacyPhonebook(string $imei, callable $dispatch): void
     {
@@ -293,10 +292,8 @@ final class DeviceCommandStore
                 continue;
             }
 
-            // Alguns firmwares Wonlex geram um ident novo tanto no `w:reply` como no
-            // `w:update`, em vez de ecoarem o ident do downlink que o protocolo documenta.
-            // O ident exacto tem prioridade, e depois recorre-se ao comando pendente mais
-            // recente que semanticamente espera esta resposta.
+            // Alguns firmwares Wonlex geram um ident novo no `w:reply` e no `w:update` em vez de ecoarem o
+            // do downlink: vale o ident exacto, e depois o pendente mais recente que espera esta resposta.
             if (($command['protocol'] ?? '') === 'wonlex-json') {
                 $wonlexSemanticMatch ??= $command;
                 continue;
@@ -341,10 +338,8 @@ final class DeviceCommandStore
     }
 
     /**
-     * Quando é que um comando começou a contar para o tempo limite.
-     *
-     * O `sentAt` falta em tudo o que nunca chegou ao dispositivo, e recorrer a outro campo é
-     * o que evita que esses envelheçam para sempre, pendentes na dashboard.
+     * Quando é que um comando começou a contar para o tempo limite. Sem `sentAt`, recorre-se a
+     * outro campo, para o que nunca chegou ao dispositivo não ficar pendente para sempre.
      *
      * @param array<string, mixed> $command
      */
@@ -368,9 +363,7 @@ final class DeviceCommandStore
             return [];
         }
 
-        // Uma ida e volta para a página toda em vez de uma por id: o stream do dispositivo
-        // volta a ler isto a cada push, e cem idas e voltas por leitura é a diferença entre
-        // ser barato e não ser.
+        // Uma ida e volta para a página toda em vez de uma por id: o stream relê isto a cada push.
         $raws = $this->redis->hmget($this->commandHashKey($imei), array_map(strval(...), $ids));
 
         $commands = [];

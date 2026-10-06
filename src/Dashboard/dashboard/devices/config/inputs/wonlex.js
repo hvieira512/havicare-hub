@@ -22,10 +22,8 @@ import {
 } from "../readers.js";
 
 /**
- * Os campos que só a Wonlex declara.
- *
- * A Wonlex empacota quase tudo em `deviceConfig` e `deviceMeasuringFrequency`, e por isso
- * cada limiar precisa do seu próprio formulário em vez de um campo numérico solto.
+ * Os campos que só a Wonlex declara: quase tudo vem empacotado em `deviceConfig` e
+ * `deviceMeasuringFrequency`, e cada limiar leva o seu formulário.
  */
 
 /** Os painéis Wonlex trazem o estado em `enabled` ou em `switchState`, conforme a geração. */
@@ -153,7 +151,7 @@ function wonlexMedicationPlansInput(desired) {
         </div>`;
 }
 
-/** O relógio guarda dez planos, e o décimo primeiro escrevia por cima de um que lá estava. */
+/** O relógio guarda dez planos; um décimo primeiro escreveria por cima de um existente. */
 const WONLEX_MEDICATION_PLAN_LIMIT = 10;
 
 const WONLEX_MEDICATION_UNITS = [
@@ -388,20 +386,13 @@ function readWonlexMedicationPlans(section) {
     return { plans };
 }
 
-/**
- * Os descritores dos campos da Wonlex.
- *
- * Cada tipo de campo declara aqui as suas quatro faces juntas -- desenhar, ler de volta, o
- * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
- * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
- */
+/** Cada tipo de campo declara as suas faces juntas: desenhar, ler, valor inicial e legenda. */
 export const INPUTS = {
     wonlexBloodPressureWarning: {
         render: (_entry, desired) =>
             wonlexBloodPressureWarningInput(desired),
         read: (section) => ({
-            // O formulário oferece um limiar sistólico e um diastólico, que é o que a
-            // configuração `BPEarlyWarning` da Wonlex leva: ler um valor só perdia os dois.
+            // A `BPEarlyWarning` da Wonlex leva um limiar sistólico e um diastólico.
             enabled: readCheckbox(section, "enabled"),
             hpWarn: readNumber(section, "hpWarn"),
             LPWarn: readNumber(section, "LPWarn"),

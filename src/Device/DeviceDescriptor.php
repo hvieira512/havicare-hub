@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Hub\Device;
 
 /**
- * O descritor do dispositivo, na forma que todo o contrato usa.
- *
- * O que não se sabe omite-se: uma chave vazia obriga quem consome a distinguir o vazio do
- * ausente, e as duas querem dizer a mesma coisa.
+ * O descritor do dispositivo, na forma que todo o contrato usa. O que não se sabe omite-se:
+ * uma chave vazia e uma ausente querem dizer o mesmo.
  */
 final class DeviceDescriptor
 {

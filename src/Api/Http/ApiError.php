@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Hub\Api\Http;
 
 /**
- * Um erro da API: o código, a mensagem e o estado HTTP que lhe pertence.
- *
- * Cada erro nasce de um construtor com nome, para um engano ser um método que não existe. As
- * mensagens ficam aqui porque vão no fio, e os clientes e a especificação dependem delas
- * palavra por palavra.
+ * Um erro da API: o código, a mensagem e o estado HTTP. As mensagens vão no fio, e os clientes
+ * e a especificação dependem delas palavra por palavra.
  */
 final class ApiError
 {
@@ -71,9 +68,7 @@ final class ApiError
         // ritmo que o travou -- não uma falta de lugar no servidor.
         'too_many_attempts' => 429,
         'server_error' => 500,
-        // 503 e não 429: o pedido é legítimo e o cliente não fez nada de mais -- o que falta é
-        // lugar no processo. Um `Retry-After` faria sentido, e o 429 diria a culpa a quem não
-        // a tem.
+        // 503 e não 429: o pedido é legítimo, o que falta é lugar no processo.
         'too_many_streams' => 503,
     ];
 
@@ -309,9 +304,8 @@ final class ApiError
     }
 
     /**
-     * Uma ligação de eventos é um pedido que nunca termina, e o limitador de concorrência
-     * larga o seu lugar assim que a resposta é devolvida. Sem este teto, o número de streams
-     * abertos não tinha limite nenhum, e o real eram os descritores de ficheiro do processo.
+     * Um stream nunca termina e o limitador de concorrência larga o lugar logo: este teto limita
+     * os streams abertos.
      */
     public static function tooManyStreams(): self
     {
@@ -319,9 +313,8 @@ final class ApiError
     }
 
     /**
-     * O login é a única rota pública que verifica uma password, e o bcrypt a custo 12 bloqueia
-     * o event loop 146 ms por tentativa -- acerte ou falhe. Sem teto, sete tentativas por
-     * segundo paravam o processo que também serve a ingestão dos relógios.
+     * O login verifica a password com bcrypt a custo 12, que bloqueia o event loop 146 ms por
+     * tentativa, acerte ou falhe.
      */
     public static function tooManyAttempts(): self
     {
@@ -409,9 +402,8 @@ final class ApiError
     }
 
     /**
-     * Separado do `image_too_large`, que fala do ficheiro: este fala do que ele custa a abrir.
-     * Um PNG de poucos KB pode declarar centenas de megapíxeis, e quem integra não percebia
-     * porque é que uma imagem «pequena» era recusada por tamanho.
+     * Separado do `image_too_large`, que fala do ficheiro: este fala do custo de o abrir, e um PNG
+     * de poucos KB pode declarar centenas de megapíxeis.
      */
     public static function imageDimensionsTooLarge(): self
     {

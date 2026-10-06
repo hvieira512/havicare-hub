@@ -9,9 +9,8 @@ import {
 } from "../../src/Dashboard/dashboard/devices/config/row-editing.js";
 
 /**
- * O botão «Adicionar item» acompanha o limite: desativa quando se chega a ele e volta a ligar
- * quando se remove uma linha. O sync é genérico -- corre para qualquer tipo repetível --, e
- * por isso vale também para os `keepLast`, como os contactos SOS e a whitelist.
+ * O sync é genérico -- corre para qualquer tipo repetível -- e por isso vale também para os
+ * `keepLast`, como os contactos SOS e a whitelist.
  */
 test("the add-item button tracks the limit for a rendered kind (wonlexMedicationPlan)", () => {
     const dom = new JSDOM(

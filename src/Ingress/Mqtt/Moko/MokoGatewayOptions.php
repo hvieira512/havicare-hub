@@ -7,10 +7,8 @@ namespace Hub\Ingress\Mqtt\Moko;
 use Hub\Domain\DiaperSensitivityLookup;
 
 /**
- * O que o gateway faz com um avistamento: as janelas que o afinam e o que consulta.
- *
- * Sem o `proximityTracker` não há proximidade, e sem o `diaperSensitivity` a sensibilidade é
- * a do preset normal. Nos dois casos o resto continua a correr.
+ * O que o gateway faz com um avistamento. Sem `proximityTracker` não há proximidade, e sem
+ * `diaperSensitivity` vale o preset normal.
  */
 final class MokoGatewayOptions
 {

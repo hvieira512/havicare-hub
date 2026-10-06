@@ -167,10 +167,8 @@ final class CapabilityChannelTest extends TestCase
     }
 
     /**
-     * As capacidades publicadas, por canal, depois de conferir cada uma contra o catálogo.
-     *
-     * O que o catálogo não declara é do ciclo de vida do hub -- `device.connected` e afins --
-     * e não tem capacidade com que ser comparado.
+     * O que o catálogo não declara é do ciclo de vida do hub -- `device.connected` e afins -- e não
+     * tem capacidade com que ser comparado.
      *
      * @return array{events: list<string>, telemetry: list<string>}
      */

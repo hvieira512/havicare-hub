@@ -6,10 +6,8 @@ import { parseFragment } from "./support/dom.js";
 import { cardContent as uplinkCardContent } from "./support/cards.js";
 
 /**
- * A configuração que o aparelho reporta, com as doze definições de uma resposta ao `0x05`.
- *
- * O caso que falta prender é o das compostas: o plano traz uma lista de alarmes, e um
- * formatador que só desce um nível escrevia `[object Object]` no ecrã.
+ * A configuração reportada numa resposta ao `0x05`; as compostas, como a lista de alarmes do
+ * plano, descem mais do que um nível.
  */
 const REPORTED = {
     settings: {

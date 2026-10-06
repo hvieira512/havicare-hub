@@ -10,13 +10,8 @@ use PhpMqtt\Client\Repositories\MemoryRepository;
 use PhpMqtt\Client\Subscription;
 
 /**
- * Liga um ingress MQTT subscritor ao seu broker. A subscrição tem de ser registada *antes* de
- * o ingress existir, porque ele precisa do cliente já ligado no construtor -- essa
- * circularidade resolve-se com um contentor por referência.
- *
- * Todos retomam a sessão do lado do broker (`cleanSession = false`), e por isso o id do
- * cliente tem de ser estável, sem pid: um id que muda a cada reinício deixa a sessão anterior
- * órfã a segurar a subscrição.
+ * Liga um ingress MQTT subscritor ao seu broker, com a subscrição registada antes de o ingress
+ * existir. Com `cleanSession = false`, o id do cliente tem de ser estável, sem pid.
  */
 final class SubscriberFactory
 {

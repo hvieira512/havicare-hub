@@ -9,13 +9,8 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
 /**
- * Dois comandos só são o mesmo se mandarem fazer o mesmo.
- *
- * A fila junta o que se repete, para um aparelho que esteve muito tempo offline não receber
- * vinte vezes o mesmo pedido ao voltar. Mas a identidade era só o comando, e há comandos que
- * se distinguem apenas pelo valor: mandar a pulseira vibrar e mandá-la parar são o mesmo
- * `config:find_device`. O parar era engolido como repetição do começar, e a pulseira só se
- * calava quando o próprio firmware desistia.
+ * Dois comandos só são o mesmo se mandarem fazer o mesmo: mandar a pulseira vibrar e parar
+ * são ambos `config:find_device`, e só o valor os distingue.
  */
 final class PendingDownlinkDedupeTest extends TestCase
 {

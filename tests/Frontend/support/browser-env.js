@@ -4,17 +4,13 @@ import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
 
 /**
- * Instala um DOM antes de qualquer módulo do dashboard ser importado.
- *
- * Alguns módulos tocam em `window` ao carregar -- o `api/http.js` agenda um refresh de token
- * só por ser importado --, e por isso isto tem de ser avaliado primeiro. Os módulos ES
- * avaliam as dependências por ordem de import, e importar isto acima do módulo em teste basta.
+ * Instala um DOM antes de qualquer módulo do dashboard ser importado: alguns tocam em `window`
+ * ao carregar, e os módulos ES avaliam as dependências por ordem de import.
  */
 const dom = new JSDOM("<!doctype html><body></body>", { url: "http://localhost/" });
 
-// O descritor dos tipos que o `index.php` serve em produção. Lê-se o mesmo ficheiro que o
-// PHP lê, e não uma cópia aqui: uma cópia acabava por divergir daquilo que os testes existem
-// para verificar.
+// O descritor dos tipos que o `index.php` serve em produção, lido do mesmo ficheiro que o PHP
+// lê para não haver cópia que divirja.
 const deviceTypesIsland = dom.window.document.createElement("script");
 deviceTypesIsland.type = "application/json";
 deviceTypesIsland.id = "hub-device-types";
@@ -25,11 +21,8 @@ deviceTypesIsland.textContent = readFileSync(
 dom.window.document.body.appendChild(deviceTypesIsland);
 
 /**
- * O `matchMedia`, que o jsdom não instala.
- *
- * Sem ele o `theme.js` cai sempre no claro por a função não existir, e não por o sistema
- * preferir o claro: o ramo do sistema escuro ficava fora de qualquer teste, e um teste que
- * afirmasse «abre no claro» passava pela razão errada. Este é conduzível por quem testa.
+ * O `matchMedia`, que o jsdom não instala, conduzível por quem testa: sem ele o `theme.js` cai
+ * sempre no claro, e o ramo do sistema escuro fica por testar.
  */
 let prefersDark = false;
 

@@ -8,12 +8,8 @@ use Hub\Ingress\Mqtt\Veepoo\SleepNormalizer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O registo de sono preciso, que a pulseira guarda três dias e reproduz quando lhe pedem.
- *
- * São duas coisas na mesma trama e saem como duas capacidades: o `sleep` é a noite e o
- * `sleep_quality` são as pontuações que o firmware calcula sobre ela. Os significados vêm da
- * documentação do fabricante (secção 9.4 do `VeepooUniAppSDK`) e não dos nomes dos campos,
- * que enganam.
+ * O sono preciso que a pulseira guarda três dias: `sleep` é a noite e `sleep_quality` as pontuações.
+ * Os significados vêm da secção 9.4 do `VeepooUniAppSDK`, e não dos nomes dos campos, que enganam.
  */
 final class SleepNormalizerTest extends TestCase
 {
@@ -24,10 +20,8 @@ final class SleepNormalizerTest extends TestCase
     private const NOW = 1789473600;
 
     /**
-     * A noite inteira: começo, fim, duração e o que se passou em cada troço.
-     *
-     * A curva é o que dá os troços. Sem ela ficava um total sem forma — nove horas de sono
-     * não dizem se foram nove horas seguidas ou nove despertares.
+     * Começo, fim, duração e os troços, que vêm da curva: nove horas de sono sem forma não dizem se
+     * foram seguidas ou nove despertares.
      */
     public function testTheNightBecomesOneSleepRecord(): void
     {
@@ -85,11 +79,8 @@ final class SleepNormalizerTest extends TestCase
     }
 
     /**
-     * Instantes que não fazem sentido são removidos, e o registo diz que não são de confiar.
-     *
-     * É a mesma regra dos relógios: uma noite com durações certas e instantes errados ainda
-     * serve para contar horas de sono; instantes errados apresentados como certos não servem
-     * para nada.
+     * Como nos relógios: uma noite com durações certas e instantes errados ainda conta horas de sono,
+     * mas instantes errados dados por certos não servem.
      */
     public function testImpossibleInstantsAreDroppedAndFlagged(): void
     {
@@ -114,11 +105,8 @@ final class SleepNormalizerTest extends TestCase
     }
 
     /**
-     * As pontuações saem à parte, e com os nomes do que medem.
-     *
-     * `nightScore` é 起夜得分 — a pontuação das idas à casa de banho — e não a pontuação da
-     * noite, que é o que o nome do fabricante faz parecer. `sleepQuality` vem 0-4 e a app
-     * mostra 1-5 estrelas: o nome do hub leva a escala para ninguém ter de a adivinhar.
+     * `nightScore` é 起夜得分, a pontuação das idas à casa de banho, e não a da noite.
+     * `sleepQuality` vem 0-4 e a app mostra 1-5 estrelas: o nome leva a escala.
      */
     public function testTheScoresBecomeTheirOwnCapability(): void
     {
@@ -146,11 +134,8 @@ final class SleepNormalizerTest extends TestCase
     }
 
     /**
-     * O envelope diz de onde veio, como o dos blocos.
-     *
-     * `nativeType` é `precise_sleep` e não `sleep`: é por esse nome que se vai à secção 9.4
-     * da documentação do fabricante, e distingue-o do sono que os blocos de cinco minutos
-     * codificam e que continua por decifrar.
+     * `nativeType` é `precise_sleep`, o nome da secção 9.4 do fabricante, e distingue-o do sono dos
+     * blocos de cinco minutos, ainda por decifrar.
      */
     public function testTheEnvelopeNamesTheManufacturerRecord(): void
     {
@@ -163,10 +148,8 @@ final class SleepNormalizerTest extends TestCase
     }
 
     /**
-     * Uma noite que atravessa a passagem de ano continua a ser a noite anterior.
-     *
-     * O firmware datou o registo com mês e dia e mais nada. Tomar sempre o ano corrente
-     * punha o sono de 31 de dezembro onze meses no futuro, em janeiro.
+     * O firmware data o registo só com mês e dia: tomar sempre o ano corrente punha o sono de 31 de
+     * dezembro onze meses no futuro.
      */
     public function testANightBeforeNewYearIsNotDatedInTheFuture(): void
     {

@@ -10,11 +10,8 @@ const { handleCapabilityGroupsChange } =
     await import("../../src/Dashboard/dashboard/settings/models/capabilities-editor.js");
 
 /**
- * Duas afirmações sobre um modelo, e uma depende da outra: «este modelo tem esta capacidade»
- * e «esta capacidade pode ser pedida ao aparelho». Pedir uma leitura que o modelo não oferece
- * não é estado que se possa guardar -- o hub mandaria um comando que nunca tem resposta.
- *
- * O invariante vive num ouvinte só, delegado na raiz das secções, e não tinha rede nenhuma.
+ * «Pode ser pedida» depende de «o modelo tem»: pedir uma leitura que o modelo não oferece
+ * mandaria um comando que nunca tem resposta.
  */
 const els = new Proxy({}, {
     get(target, name) {
@@ -64,7 +61,6 @@ test("uma capacidade suportada pode passar a ser pedida", () => {
     assert.ok(requested().includes("heart_rate"));
 });
 
-/** É o invariante: sem suporte não há pedido que se possa guardar. */
 test("pedir uma capacidade que o modelo não suporta não guarda nada", () => {
     handleCapabilityGroupsChange(requestable("battery", true));
 

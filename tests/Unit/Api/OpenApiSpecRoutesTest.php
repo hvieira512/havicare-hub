@@ -7,11 +7,7 @@ namespace Tests\Unit\Api;
 use Hub\Api\OpenApiSpec;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A especificação é mantida à mão, e por isso nada a impede de divergir das rotas que
- * documenta. Isto prende as duas: uma rota nova fica indocumentada até aparecer na
- * especificação, e uma removida não pode ficar lá a arrastar-se.
- */
+/** A especificação é mantida à mão, e isto prende-a às rotas nos dois sentidos. */
 final class OpenApiSpecRoutesTest extends TestCase
 {
     private const ROUTES_DIR = __DIR__ . '/../../../src/Api/Routes';
@@ -43,11 +39,7 @@ final class OpenApiSpecRoutesTest extends TestCase
         );
     }
 
-    /**
-     * E o outro sentido da mesma regra: uma rota interna não pode reaparecer na especificação
-     * sem que alguém repare. Sem isto, bastava alguém documentá-la de boa fé para ela voltar
-     * a ser pública.
-     */
+    /** Uma rota interna não pode reaparecer na especificação sem que alguém repare. */
     public function testInternalRoutesStayOutOfTheSpecification(): void
     {
         $documented = $this->documentedPaths();
@@ -62,8 +54,8 @@ final class OpenApiSpecRoutesTest extends TestCase
     }
 
     /**
-     * O 401 e o 500 nascem no `ApiKernel` e não numa rota, e por isso escapavam às definições
-     * -- um cliente gerado a partir do documento ficava sem ramo para o token expirado.
+     * O 401 e o 500 nascem no `ApiKernel` e não numa rota, mas um cliente gerado a partir do
+     * documento precisa de ramo para eles.
      */
     public function testEveryOperationDeclaresTheErrorsTheKernelCanReturn(): void
     {

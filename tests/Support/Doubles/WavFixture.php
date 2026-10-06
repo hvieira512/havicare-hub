@@ -5,12 +5,8 @@ declare(strict_types=1);
 namespace Tests\Support\Doubles;
 
 /**
- * Um WAV de silêncio, que é o que os testes do lembrete de medicação precisam de dar ao
- * transcodificador.
- *
- * O 4P Touch quer AMR-NB, e o `FourPTouchPayloadBuilder` chega lá por ffmpeg a partir de PCM
- * de 8 kHz mono 16 bits -- daí os valores por omissão. O conteúdo não importa; o cabeçalho
- * importa, porque é o que o ffmpeg lê para saber o que lhe deram.
+ * Um WAV de silêncio para o transcodificador do lembrete de medicação: o 4P Touch quer AMR-NB,
+ * feito por ffmpeg a partir de PCM 8 kHz mono 16 bits, e só o cabeçalho importa.
  */
 final class WavFixture
 {

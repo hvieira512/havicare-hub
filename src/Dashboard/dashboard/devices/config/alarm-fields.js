@@ -17,10 +17,8 @@ const WEEKDAYS = [
 ];
 
 /**
- * O selector de dias, um só para os quatro sítios que perguntam «que dias?».
- *
- * A ordem é sempre de segunda a domingo: a posição do domingo é do protocolo de cada
- * fabricante, e converte-se na fronteira.
+ * O selector de dias, sempre de segunda a domingo: a posição do domingo é de cada fabricante,
+ * e converte-se na fronteira.
  */
 export function weekdayPicker(days, rowId) {
     const checked = new Set(

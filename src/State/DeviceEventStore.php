@@ -21,9 +21,8 @@ final class DeviceEventStore
     /** @param array<string, mixed> $payload */
     public function append(string $imei, string $list, array $payload): void
     {
-        // O número de ordem é o que permite ao stream mandar só o que é novo. O `recordedAt`
-        // não servia -- tem resolução de um segundo e um radar publica vinte por segundo --,
-        // e o índice da lista anda com cada `lpush`.
+        // O número de ordem deixa o stream mandar só o que é novo: o `recordedAt` tem resolução de um
+        // segundo, e um radar publica vinte por segundo.
         $payload['seq'] = (int)$this->redis->incr($this->sequenceKey($imei, $list));
         $payload['recordedAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -48,9 +47,8 @@ final class DeviceEventStore
     }
 
     /**
-     * As entradas mais recentes, da mais nova para a mais velha. Com `$sinceSeq` maior que
-     * zero devolve só o que entrou depois; as gravadas antes de haver `seq` contam como
-     * anteriores a qualquer cursor e só aparecem no instantâneo inicial.
+     * As entradas mais recentes, da mais nova para a mais velha; com `$sinceSeq`, só as posteriores.
+     * As gravadas sem `seq` só aparecem no instantâneo inicial.
      *
      * @return list<array<string, mixed>>
      */

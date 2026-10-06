@@ -7,21 +7,15 @@ import { selectOptions } from "./generic.js";
 import { readCheckbox, readText } from "../readers.js";
 
 /**
- * Os campos do dispensador de comprimidos.
- *
- * O aparelho tem **nove alarmes fixos**: não se criam nem se apagam. Por isso o formulário
- * mostra sempre os nove, e não uma lista a que se acrescentam linhas — o número do slot é o
- * que liga cada alarme ao estado que o aparelho reporta dele.
+ * O dispensador tem **nove alarmes fixos**, que não se criam nem apagam: o formulário mostra
+ * os nove, e o número do slot liga cada um ao estado que o aparelho reporta.
  */
 
-/** O aparelho tem nove, e o formulário mostra os nove. */
 const SLOTS = 9;
 
 /**
- * O «sem alarme» do M228, que ele devolve nos que nunca foram definidos e aceita de volta.
- *
- * Não é uma hora: desenhá-lo à letra punha «24:60» no ecrã. A meia-noite não serve de vazio,
- * porque um slot a `00:00` toca e gasta um compartimento todos os dias.
+ * O «sem alarme» do M228, que ele devolve e aceita. A meia-noite não serve de vazio: um slot a
+ * `00:00` toca e gasta um compartimento todos os dias.
  */
 const UNSET_HOUR = 24;
 const UNSET_MINUTE = 60;
@@ -40,7 +34,6 @@ const fromTimeValue = (value) => {
     return { hour: Number(hour) || 0, minute: Number(minute) || 0 };
 };
 
-/** Um campo de hora em branco. */
 const isBlank = (value) => String(value ?? "").trim() === "";
 
 const timeField = (configField, hour, minute) =>
@@ -48,9 +41,8 @@ const timeField = (configField, hour, minute) =>
         value="${(toTimeValue(hour, minute))}">`;
 
 /**
- * Sem interruptor: o `0x1041`--`0x1049` desta firmware é inerte. O aparelho aceita-o,
- * guarda-o, devolve-o numa leitura e toca na mesma, e o ecrã dele desenha os dois casos
- * iguais. Quem decide se há alarme é a hora estar preenchida.
+ * Sem interruptor: nesta firmware o `0x1041`--`0x1049` é inerte, e quem decide se há alarme é
+ * a hora estar preenchida.
  */
 const slotCell = (index, plan) =>
     html`
@@ -61,10 +53,7 @@ const slotCell = (index, plan) =>
             </div>
         </div>`;
 
-/**
- * Sem rótulo próprio: o cartão da configuração já mostra "Plano de medicação" por cima, e
- * repeti-lo dava o mesmo texto duas vezes seguidas.
- */
+/** Sem rótulo próprio: o cartão da configuração já mostra «Plano de medicação» por cima. */
 function alarmsInput(entry, desired) {
     // Pelo número do alarme, não pela posição na lista: pela posição, um plano só do alarme 5
     // cai na primeira caixa e mostra um número que não é o dele.
@@ -79,11 +68,8 @@ function alarmsInput(entry, desired) {
 }
 
 /**
- * Lê os nove slots de volta, e deixa cair os que ficaram em branco: o que vai para o aparelho
- * é a lista dos que ficam, e o resto sai vazio por omissão.
- *
- * Cada plano leva o número do alarme em que fica. Sem ele a lista compactava-se e o enésimo
- * plano caía no enésimo alarme: escolher o 5 escrevia no 3, por cima do que lá estivesse.
+ * Lê os nove slots e deixa cair os em branco. Cada plano leva o número do seu alarme, para a
+ * lista compactada não escrever no slot errado.
  */
 function readAlarms(section) {
     const plans = [];
@@ -108,12 +94,8 @@ const dateField = (name, value) =>
     html`<input class="form-control" type="date" data-config-field="${name}" value="${(String(value ?? ""))}">`;
 
 /**
- * A escala do volume, do mais alto ao silêncio.
- *
- * Os valores e os rótulos vêm da definição, como em qualquer escolha; os ícones e os tons
- * ficam aqui porque são deste aparelho. Uma escala genérica não tem como saber que o `0` do
- * M228 é um altifalante cheio, e declarar nomes de ícones nas definições em PHP era pôr
- * apresentação no sítio errado.
+ * A escala do volume, do mais alto (`0`) ao silêncio. Valores e rótulos vêm da definição; os
+ * ícones e os tons ficam aqui porque são apresentação deste aparelho.
  */
 const VOLUME_STEPS = {
     0: { icon: "fa-volume-high", tone: "primary" },
@@ -130,17 +112,14 @@ function volumeScale(entry, desired) {
         field: name,
         value: desired?.[name] ?? fallback,
         label: entry.label || "Volume",
-        // Por valor e não por posição: reordenar a lista na definição trocava os ícones, e o
-        // silêncio ficava com um altifalante cheio sem nada a denunciá-lo.
+        // Por valor e não por posição, para reordenar a definição não trocar os ícones.
         options: options.map((option) => ({ ...option, ...(VOLUME_STEPS[option.value] || {}) })),
     });
 }
 
 export const INPUTS = {
     volumeScale: {
-        // `render` e não `control`: a escala ocupa a largura do cartão, por baixo do título,
-        // como a sensibilidade de queda. Espremida na linha do título, as quatro posições
-        // voltavam a ficar encostadas a um canto, que é o que isto existe para resolver.
+        // `render` e não `control`: a escala ocupa a largura do cartão, por baixo do título.
         render: volumeScale,
         read: (section) => {
             const node = section.querySelector("input[type=radio][data-config-field]:checked");

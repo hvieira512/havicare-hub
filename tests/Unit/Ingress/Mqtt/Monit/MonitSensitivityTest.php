@@ -9,9 +9,8 @@ use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A sensibilidade por sensor. O `MonitMoistureIndexTest` cobre o preset normal; aqui prende-se
- * que os invariantes sobrevivem a qualquer configuração alcançável, e que uma configuração
- * mais sensível nunca produz um estado menos grave para a mesma leitura.
+ * A sensibilidade por sensor: os invariantes sobrevivem a qualquer configuração alcançável, e
+ * uma mais sensível nunca dá um estado menos grave para a mesma leitura.
  */
 final class MonitSensitivityTest extends TestCase
 {
@@ -87,9 +86,8 @@ final class MonitSensitivityTest extends TestCase
 
     public function testTheNormalPresetIsWhatTheHubHadHardcoded(): void
     {
-        // O 4 e o 12 são exactamente o preset "Normal Diaper Alerts" da app da MONIT, e o
-        // terceiro limiar -- o que separa `clean` de `attention` -- tem de sair a 4 pela
-        // fórmula derivada, senão os sensores em produção mudam de comportamento em silêncio.
+        // 4 e 12 são o preset "Normal Diaper Alerts" da MONIT, e o limiar entre `clean` e
+        // `attention` tem de sair a 4 pela fórmula, ou os sensores em produção mudam calados.
         self::assertSame(['pollutionRange' => 4, 'pollutionValue' => 12], DiaperSensitivity::normal());
         self::assertSame(4, DiaperSensitivity::cleanMaxDelta(12));
     }
@@ -106,9 +104,8 @@ final class MonitSensitivityTest extends TestCase
 
     public function testTheSameReadingChangesConditionAcrossPresets(): void
     {
-        // A razão de ser da funcionalidade. Três canais a 13 acima da linha de base: no
-        // preset normal é `attention`, e com "mais alertas" exige muda. A leitura física é
-        // idêntica; o que muda é a regra.
+        // Três canais a 13 acima da base: `attention` no preset normal, muda com "mais alertas".
+        // A leitura física é a mesma; muda a regra.
         $deltas = [13, 13, 13, 0, 0, 0, 0, 0, 0, 0];
 
         self::assertSame('change_required', $this->read($deltas, 3, 7)['condition']);
@@ -128,9 +125,8 @@ final class MonitSensitivityTest extends TestCase
 
     public function testTheScreenInvariantsHoldForEverySetting(): void
     {
-        // A propriedade que importa, varrida sobre todas as configurações alcançáveis pela
-        // API. O número e o badge aparecem lado a lado no mesmo ecrã e nunca se podem
-        // contradizer -- é para isso que as bandas do índice existem.
+        // Varrido sobre todas as configurações alcançáveis pela API: o número e o badge estão
+        // lado a lado no ecrã e nunca se contradizem.
         [$rangeMin, $rangeMax] = DiaperSensitivity::RANGE_BOUNDS;
         [$valueMin, $valueMax] = DiaperSensitivity::VALUE_BOUNDS;
         $checked = 0;

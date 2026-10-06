@@ -86,9 +86,8 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O `777` do fabricante diz "não conheço este aparelho", e aparece por a conta ser de
-     * outra licença ou por o aparelho ter saído. Em nenhum dos casos apaga a planta que já
-     * está guardada: o mapa continua a valer até alguém declarar outra.
+     * O `777` do fabricante diz «não conheço este aparelho», por a conta ser de outra licença ou
+     * por o aparelho ter saído: a planta guardada continua a valer.
      */
     public function testACodeThatIsNotSuccessLeavesTheStoredLayoutAlone(): void
     {
@@ -157,7 +156,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
         self::assertNull($this->layouts->findByImei('594B3CCBA56B'));
     }
 
-    /** Uma resposta sem `rectangle` não é uma planta: guardá-la desenhava uma sala vazia. */
+    /** Uma resposta sem `rectangle` não é uma planta: guardá-la desenharia uma sala vazia. */
     public function testARadarWithoutARoomIsNotStored(): void
     {
         $client = $this->clientAnswering([

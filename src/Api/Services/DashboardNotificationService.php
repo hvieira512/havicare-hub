@@ -31,9 +31,8 @@ final class DashboardNotificationService
     }
 
     /**
-     * Um corpo que não é JSON chega aqui como array vazio, e não à parte: este endpoint
-     * sempre respondeu "ids array is required" a um corpo ilegível, e é o que os clientes
-     * esperam ver.
+     * Um corpo que não é JSON chega como array vazio e responde "ids array is required", que é o
+     * que os clientes esperam.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>

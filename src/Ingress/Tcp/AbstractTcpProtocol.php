@@ -56,10 +56,7 @@ abstract class AbstractTcpProtocol implements TcpProtocolInterface
         );
     }
 
-    /**
-     * Por omissão, nenhuma trama comenta configuração. Quem tiver uma confirmação no
-     * protocolo sobrepõe-se.
-     */
+    /** Por omissão, nenhuma trama comenta configuração. */
     public function replyAccepted(array $decoded): ?bool
     {
         return null;

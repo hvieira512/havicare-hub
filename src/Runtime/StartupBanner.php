@@ -10,8 +10,8 @@ use Hub\Log\Logger;
 final class StartupBanner
 {
     /**
-     * @param array<string, mixed> $config the full hub config
-     * @param list<string> $enabledIngresses keys of the suppliers that were started
+     * @param array<string, mixed> $config a configuração completa do hub
+     * @param list<string> $enabledIngresses as chaves dos fornecedores arrancados
      */
     public static function log(
         array $config,
@@ -23,10 +23,8 @@ final class StartupBanner
 
         $log->info('=== Havicare Hub ===');
 
-        // A implementação do event loop não vem de configuração nossa: o ReactPHP escolhe a
-        // melhor das extensões instaladas, e cai no `StreamSelectLoop` -- `select(2)`, preso
-        // nos 1024 descritores -- quando não há nenhuma. Fica registada porque instalar uma
-        // extensão a troca em silêncio, sem uma linha de diferença no repositório.
+        // O event loop é o que o ReactPHP escolhe das extensões instaladas, ou o `StreamSelectLoop`
+        // (1024 descritores) sem nenhuma; regista-se porque instalar uma extensão o troca em silêncio.
         $loop = get_class(\React\EventLoop\Loop::get());
         $log->info(sprintf(
             'Event loop: %s%s',
@@ -49,11 +47,8 @@ final class StartupBanner
             $config['hub']['downlink_queue_ttl_seconds'],
         ));
 
-        // Com que identidade cada ligação se apresenta ao broker.
-        //
-        // Dois hubs com o mesmo identificador expulsam-se em ciclo, e cada expulsão tira a
-        // ingestão do ar. Nos dois lados o log só diz «connection lost», que é o sintoma;
-        // aqui fica a causa, à vista no arranque.
+        // Com que identidade cada ligação se apresenta ao broker: dois hubs com o mesmo identificador
+        // expulsam-se em ciclo, e o log só diz «connection lost».
         $log->info(sprintf(
             'MQTT client id: %s-*',
             trim((string)($config['mqtt']['client_id_prefix'] ?? '')),
@@ -68,10 +63,8 @@ final class StartupBanner
             $log->info("MQTT {$label} topics: " . $mqttBridge->topic('{company}/{licenseId}/watch/{deviceKey}/' . $channel));
         }
 
-        // A terceira coluna é a secção de onde sai o filtro, e não se deduz da chave: a
-        // ingestão Veepoo lê o mesmo espaço de tópicos dos gateways, e não tem secção
-        // própria. Enquanto a chave servia de índice à configuração, acrescentar aqui uma
-        // linha para ela dava índice indefinido no arranque.
+        // A terceira coluna é a secção de onde sai o filtro, e não se deduz da chave: a ingestão
+        // Veepoo lê o espaço de tópicos dos gateways e não tem secção própria.
         $descriptions = [
             'ncs' => [
                 'NCS ingress topics',

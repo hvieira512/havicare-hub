@@ -9,20 +9,14 @@ use Hub\Log\Logger;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
- * Quem entra na API, com que credencial, e o que fica escrito no registo.
- *
- * O registo está aqui e não à parte porque é a mesma pergunta vista do outro lado: a
- * credencial que se aceita é a que não pode aparecer no ficheiro.
+ * Quem entra na API, com que credencial, e o que fica no registo: a credencial que se aceita é
+ * a que não pode aparecer no ficheiro.
  */
 final class DashboardApiAuthTest extends DashboardHttpTestCase
 {
     /**
-     * O pedido mal formado é 400 e a credencial recusada é 401.
-     *
-     * O controlador respondia 401 a qualquer erro do login, e por isso um corpo sem password
-     * -- ou que nem sequer era JSON -- chegava ao cliente como "credencial inválida". Quem
-     * gera um cliente a partir da especificação não tem como distinguir os dois casos se a
-     * API lhes der o mesmo estado.
+     * O pedido mal formado é 400 e a credencial recusada é 401: quem gera um cliente a partir da
+     * especificação precisa de distinguir os dois.
      */
     public function testApiLoginSeparatesMalformedRequestsFromRejectedCredentials(): void
     {
@@ -331,13 +325,7 @@ final class DashboardApiAuthTest extends DashboardHttpTestCase
         self::assertSame(200, $dashboardResponse->getStatusCode());
     }
 
-    /**
-     * A renovação relê o utilizador: desativado depois de a sessão abrir, deixa de renovar.
-     *
-     * Antes, o refresh reconstruía o contexto a partir do que estava guardado e nunca tocava em
-     * `api_users` -- um utilizador desativado renovava indefinidamente, um por mês, enquanto o
-     * token de renovação vivesse.
-     */
+    /** A renovação relê o utilizador: desativado depois de a sessão abrir, deixa de renovar. */
     public function testApiRefreshRejectsAfterUserDisabled(): void
     {
         [$server, $db] = $this->makeServerWithDatabase();

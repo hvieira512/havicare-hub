@@ -4,17 +4,13 @@
 declare(strict_types=1);
 
 /**
- * Encontra um dispositivo BLE pelo que *muda* quando se interage com ele, em vez de por uma
- * assinatura de anúncio conhecida.
+ * Encontra um dispositivo BLE pelo que muda quando se interage com ele: endereços novos e
+ * payloads alterados face a uma linha de base (um botão que já anuncia só aparece alterado).
  *
- * Regista uma linha de base de tudo o que o gateway já vê e depois reporta cada endereço
- * novo, e cada endereço cujo payload de anúncio mude. A verificação do payload é o que conta:
- * um botão que já anuncia em repouso não aparece como endereço novo, só como alterado.
- *
- * Usage:
- *   php simulator/ble-scan-diff.php                  # 30s baseline, then watch
+ * Uso:
+ *   php simulator/ble-scan-diff.php                  # linha de base de 30 s, depois observa
  *   php simulator/ble-scan-diff.php --baseline=45
- *   php simulator/ble-scan-diff.php --min-rssi=-70   # ignore anything far away
+ *   php simulator/ble-scan-diff.php --min-rssi=-70   # ignora o que está longe
  */
 
 require __DIR__ . '/../vendor/autoload.php';

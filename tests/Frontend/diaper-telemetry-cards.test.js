@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
-// esse caminho passa pelo api/http.js, que toca em window ao carregar.
+// Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e
+// esse caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
 
@@ -10,9 +10,8 @@ import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/com
 const requestCardShell = (...args) => String(buildCard(...args));
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
-// O nome de uma capacidade vem do catálogo do tipo do dispositivo escolhido, e não de um
-// mapa escrito no frontend. Um cartão desenhado sem catálogo mostra a chave humanizada,
-// por isso o teste põe o medidor de fraldas em cima da mesa antes de desenhar.
+// O nome de uma capacidade vem do catálogo do tipo escolhido: sem ele o cartão mostra a
+// chave humanizada.
 state.capabilityCatalogByType.diaper_sensor = [
     { key: "diaper_moisture", label: "Humidade da fralda" },
     { key: "diaper_moisture_level", label: "Nível de humidade" },
@@ -53,7 +52,7 @@ test("MONIT moisture takes the full row and renders one column per channel", () 
     });
 
     // Um mosaico de linha inteira atravessa a grelha; os outros são uma célula dela, e é o
-    // contentor que decide quantas caberam.
+    // contentor que decide quantos cabem.
     assert.match(html, /class="telemetry-card-wide[ "]/);
     assert.equal(html.match(/class="diaper-channel[ "]/g).length, 3);
     assert.match(html, /fa-droplet/);
@@ -144,8 +143,8 @@ test("MONIT moisture exposes the baseline and raw reading per channel", () => {
         maximumDelta: 3,
     });
 
-    // As bases diferem muito entre canais, e por isso a leitura crua só é
-    // meaningful next to its baseline.
+    // As bases diferem muito entre canais, e por isso a leitura crua só tem sentido ao lado
+    // da base.
     assert.match(html, /Canal 5 · delta 3 \(base 32, leitura 35\)/);
 });
 
@@ -171,7 +170,6 @@ test("MONIT moisture shows the level index as its value, from the message that c
 
     assert.match(html, />29%</);
     assert.match(html, /diaper-strip/);
-    // A barra de 0 a 100 e a marca de alerta desapareceram com o segundo cartão.
     assert.doesNotMatch(html, /diaper-level/);
     assert.doesNotMatch(html, /alerta a partir de/);
 });

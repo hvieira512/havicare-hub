@@ -87,10 +87,8 @@ final class DeviceSchemas
                     ],
                 ],
             ],
-            // O `imei` é obrigatório a criar e herdado do endereço a actualizar, e é a única
-            // diferença entre os dois: daí o grupo, e daí serem duas derivações do mesmo
-            // objecto. Escritos à mão, nenhum dos dois mencionava o `deviceType`, que o
-            // serviço lê desde sempre.
+            // O `imei` é obrigatório a criar e herdado do endereço a actualizar: daí o grupo, e as duas
+            // derivações do mesmo objecto.
             'DeviceCreateRequest' => SchemaFromRequest::schema(
                 DeviceWriteRequest::class,
                 [DeviceWriteRequest::GROUP_CREATE],
@@ -385,9 +383,8 @@ final class DeviceSchemas
                 'required' => ['company', 'licenseId'],
                 'properties' => $association,
             ],
-            // Derivado do `DeviceAssociationRequest`. A descrição fica à mão porque descreve
-            // o que a rota *faz* com o corpo -- criar a licença em falta --, e isso não é uma
-            // regra sobre a forma dele.
+            // Derivado do `DeviceAssociationRequest`; a descrição fica à mão porque diz o que a rota faz
+            // com o corpo: criar a licença em falta.
             'DeviceAssociationRequest' => array_merge(
                 SchemaFromRequest::schema(DeviceAssociationRequest::class),
                 ['description' => 'Associates the device to an existing company and license. If the company exists but the license row does not, the hub creates the license automatically using the requested licenseId.'],

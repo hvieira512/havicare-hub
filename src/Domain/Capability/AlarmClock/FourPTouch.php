@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Hub\Domain\Capability\AlarmClock;
 
 /**
- * Handler do `alarm_clock` do 4P Touch.
- *
- * Chave nativa: 'alarmClock'
- * Forma nativa: { alarmClock: { alarms: [{time, enabled, mode, custom}] } }
+ * Handler do `alarm_clock` do 4P Touch, na chave nativa `alarmClock`:
+ * `{ alarmClock: { alarms: [{time, enabled, mode, custom}] } }`.
  */
 final class FourPTouch implements AlarmClockHandler
 {
@@ -59,10 +57,6 @@ final class FourPTouch implements AlarmClockHandler
             '_meta' => $this->meta($meta),
         ];
     }
-
-    // ------------------------------------------------------------------
-    // Normalização da entrada nativa
-    // ------------------------------------------------------------------
 
     /** @return list<array{time: string, enabled: bool, mode: int, custom: string}> */
     private function normalizeInput(mixed $desired): array
@@ -162,10 +156,6 @@ final class FourPTouch implements AlarmClockHandler
         };
     }
 
-    // ------------------------------------------------------------------
-    // Normalização de hora / dia
-    // ------------------------------------------------------------------
-
     private function normalizeTime(string $value): string
     {
         $value = trim($value);
@@ -235,10 +225,6 @@ final class FourPTouch implements AlarmClockHandler
         return implode('', $mask);
     }
 
-    // ------------------------------------------------------------------
-    // Parsing de string
-    // ------------------------------------------------------------------
-
     /**
      * @param array<array-key, mixed> $fields
      * @return list<array{time: string, enabled: bool, mode: int, custom: string}>
@@ -284,10 +270,6 @@ final class FourPTouch implements AlarmClockHandler
 
         throw new \InvalidArgumentException('alarm entry must use HH:MM-switch-frequency[-days]');
     }
-
-    // ------------------------------------------------------------------
-    // Nativo → Público
-    // ------------------------------------------------------------------
 
     /** @return array<string, mixed> */
     public static function publicItem(mixed $item): array

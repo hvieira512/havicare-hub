@@ -33,11 +33,7 @@ beforeEach(() => {
     state.selectedDetail = null;
 });
 
-/**
- * Carregar na página 3 e logo a seguir na 4 deixava as duas respostas em corrida. A que
- * chegasse por último ficava no ecrã, e levava o paginador consigo: a lista mostrava uma
- * página e o paginador dizia outra.
- */
+/** A lista e o paginador vêm da mesma resposta, e a última a chegar não pode ganhar. */
 test("a resposta atrasada de uma página não substitui a página pedida a seguir", async () => {
     const fetches = installDeferredFetch();
 

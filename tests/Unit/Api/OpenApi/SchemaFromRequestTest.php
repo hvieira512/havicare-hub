@@ -10,11 +10,8 @@ use Hub\Api\Request\DeviceAssociationRequest;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Cada tradução de constraint para esquema, presa uma a uma.
- *
  * Uma constraint que o gerador não conheça é ignorada em silêncio: continua a validar em
- * execução, só não fica descrita no documento. Isso é aceitável desde que se saiba quais são
- * -- e é para isso que serve esta lista.
+ * execução, mas não fica descrita no documento.
  */
 final class SchemaFromRequestTest extends TestCase
 {
@@ -25,13 +22,7 @@ final class SchemaFromRequestTest extends TestCase
         self::assertSame(['username', 'password'], $schema['required']);
     }
 
-    /**
-     * Obrigatório não é só o `NotBlank`.
-     *
-     * O `licenseId` da associação é obrigatório porque o `Positive` recusa o `0` com que
-     * nasce, e não porque alguém lhe tenha posto um `NotBlank`. A versão anterior deste
-     * gerador procurava classes de constraint por nome e documentava-o como opcional.
-     */
+    /** O `licenseId` é obrigatório porque o `Positive` recusa o `0` com que nasce, sem `NotBlank`. */
     public function testAnyConstraintThatRejectsTheDefaultMakesTheFieldRequired(): void
     {
         $schema = SchemaFromRequest::schema(DeviceAssociationRequest::class);
@@ -85,9 +76,8 @@ final class SchemaFromRequestTest extends TestCase
     }
 
     /**
-     * A string vazia é o que o construtor precisa para o campo ser opcional em PHP, não um
-     * valor por omissão da API. Documentá-la dizia que omitir o campo é mandá-lo vazio, que
-     * é exactamente o que o `NotBlank` recusa.
+     * A string vazia só torna o campo opcional em PHP; documentá-la diria que omitir o campo é
+     * mandá-lo vazio, que é o que o `NotBlank` recusa.
      */
     public function testConstructorArtefactsAreNotDocumentedAsDefaults(): void
     {

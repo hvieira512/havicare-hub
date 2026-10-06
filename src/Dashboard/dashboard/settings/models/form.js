@@ -27,12 +27,8 @@ import {
 } from "./list.js";
 
 /**
- * O modelo novo: o mesmo assistente que adiciona um dispositivo, com três passos em vez de
- * cinco -- tipo, fornecedor, informações.
- *
- * Um modelo nasce com as capacidades que o fornecedor declara para aquele tipo -- o
- * template --, e não em branco: é por isso que escolher fornecedor ou tipo vai buscar o
- * template outra vez. Alterar um modelo que já existe faz-se na ficha dele.
+ * O modelo novo: o assistente dos dispositivos com três passos. Nasce com o template de
+ * capacidades do fornecedor para o tipo, e por isso trocar um ou outro volta a buscá-lo.
  */
 
 /** Um passo por pergunta: é o que o contador, a barra e a migalha contam todos igual. */
@@ -223,7 +219,7 @@ function handleModelWizardClick(event) {
     }
 }
 
-/** Escrever não redesenha o passo: tirava o cursor de baixo dos dedos. */
+/** Escrever não redesenha o passo, para não tirar o cursor de baixo dos dedos. */
 function handleModelWizardInput(event) {
     const input = event.target.closest("[data-model-field]");
     if (!input) return;

@@ -28,12 +28,8 @@ final class CapabilitiesApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O `isTelemetry` da resposta acompanha a secção, venha ele de uma coluna ou de um
-     * cálculo.
-     *
-     * O ecrã das capacidades usa este campo para decidir o que mostra, e ele não é uma coluna:
-     * sai de `section = 'telemetry'` na consulta. Este caso prende o resultado dos dois lados,
-     * verdadeiro na telemetria e falso fora dela.
+     * O ecrã das capacidades decide pelo `isTelemetry`, que não é coluna: sai de
+     * `section = 'telemetry'` na consulta.
      */
     public function testTelemetryFlagFollowsTheSection(): void
     {

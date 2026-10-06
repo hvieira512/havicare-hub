@@ -42,9 +42,8 @@ final class ApiRouterTest extends TestCase
     }
 
     /**
-     * O HTTP exige que um recurso que aceita GET aceita HEAD. As rotas do hub são todas GET,
-     * e um HEAD -- de um health check ou de uma sonda que confirma a existência antes de
-     * descarregar -- casa a rota GET equivalente em vez de dar 404.
+     * O HTTP exige que um recurso que aceita GET aceite HEAD, e por isso um HEAD casa a rota GET
+     * equivalente em vez de dar 404.
      */
     public function testHeadFallsBackToTheGetRoute(): void
     {

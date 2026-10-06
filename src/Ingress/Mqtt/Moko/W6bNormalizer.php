@@ -7,10 +7,8 @@ namespace Hub\Ingress\Mqtt\Moko;
 use Hub\Device\DeviceDescriptor;
 
 /**
- * Traz um anúncio W6B descodificado para as formas genéricas do hub.
- *
- * Um toque é reportado como um contador por modo e não como um evento, por isso quem chama
- * traz a contagem anterior e isto só emite um `help_call` quando o contador mexeu.
+ * Traz um anúncio W6B descodificado para o hub. O toque é um contador por modo: com a contagem
+ * anterior, só sai `help_call` quando ele mexe.
  */
 final class W6bNormalizer
 {
@@ -57,9 +55,7 @@ final class W6bNormalizer
             return [];
         }
 
-        // O contador é anunciado continuamente, e por isso sem um valor anterior não há com
-        // que comparar: o primeiro avistamento estabelece a linha de base em vez de repetir
-        // o histórico de toques do dispositivo.
+        // O primeiro avistamento só estabelece a linha de base do contador.
         $triggerCount = (int)$alarm['triggerCount'];
         if ($previousTriggerCount === null || $triggerCount === $previousTriggerCount) {
             return [];
@@ -70,8 +66,7 @@ final class W6bNormalizer
             'data' => [
                 'pressType' => $alarm['pressMode'],
                 'triggerCount' => $triggerCount,
-                // Um dispositivo que reinicia põe os contadores a zero, e por isso uma
-                // descida continua a ser um toque e não um delta negativo.
+                // Um reinício põe os contadores a zero: uma descida também é toque.
                 'presses' => $triggerCount > $previousTriggerCount
                     ? $triggerCount - $previousTriggerCount
                     : 1,

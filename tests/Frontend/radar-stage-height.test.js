@@ -5,9 +5,8 @@ import "./support/browser-env.js";
 import { stageHeightFor } from "../../src/Dashboard/dashboard/devices/radar-scene.js";
 
 /**
- * A tela toma a proporção da divisão, mas não pode passar do que sobra do ecrã: num monitor
- * largo uma sala de 2,0 × 2,6 m pedia dois mil pixéis de altura e punha o diálogo a rolar.
- * Apertada, a escala uniforme encosta a planta ao meio e deixa faixas aos lados.
+ * A tela toma a proporção da divisão, mas não passa do que sobra do ecrã; apertada, a escala
+ * uniforme encosta a planta ao meio e deixa faixas aos lados.
  */
 
 const bounds = (width, height) => ({ minX: 0, minY: 0, width, height });
@@ -26,10 +25,7 @@ test("uma divisão que cabe fica com a altura da sua proporção", () => {
     assert.ok(height < 700);
 });
 
-/**
- * Num portátil de 14" sobram 316px para a tela, e a escala uniforme fazia disso um desenho de
- * 235 de largura numa tela de 887. A planta guarda a medida em que se lê, e o diálogo rola.
- */
+/** Num portátil de 14" sobram 316px para a tela, e a escala uniforme daria 235 de largura. */
 test("onde o ecrã não chega, a planta guarda a medida em que se lê", () => {
     assert.equal(stageHeightFor(bounds(20, 26), 887, 316), 420);
 });
@@ -39,7 +35,7 @@ test("o conforto é um chão do tecto, não uma altura imposta", () => {
     assert.equal(stageHeightFor(bounds(60, 20), 887, 316), Math.round((887 - 60) / 3) + 60);
 });
 
-/** Sem chão, uma sala muito larga e pouco funda ficava numa tira de trinta pixéis. */
+/** Sem chão, uma sala muito larga e pouco funda ficaria numa tira de trinta pixéis. */
 test("uma sala rasa não desce abaixo do mínimo", () => {
     assert.equal(stageHeightFor(bounds(200, 5), 800, 700), 180);
 });

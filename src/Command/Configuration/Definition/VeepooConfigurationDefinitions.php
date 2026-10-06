@@ -5,31 +5,12 @@ declare(strict_types=1);
 namespace Hub\Command\Configuration\Definition;
 
 /**
- * O que se configura numa pulseira Veepoo.
- *
- * **Só entra aqui o que muda o que o aparelho mede ou como calcula.** A pulseira deixa
- * configurar bastante mais -- alarmes, lembretes para beber água, o ecrã que acende ao
- * levantar o pulso, o sistema de unidades --, e nada disso altera uma leitura: é
- * comportamento de relógio de pulso, não de sensor. O hub não o expõe, porque uma
- * configuração que não muda telemetria é ruído numa API de integração de saúde.
- *
- * Pelo mesmo critério ficam de fora os campos que o comando `0xB8` aceita mas que este
- * hardware não tem -- deteção de queda, ECG sempre ligado, controlo de música: ao ler as
- * definições o aparelho responde `noThisFeature` a cada um.
- *
- * O `command` é o nome da operação na ponte e não uma trama: quem escreve na pulseira é o
- * gateway que tem a sessão BLE, e o hub não monta tramas Veepoo. A confirmação vem de o
- * gateway reler o aparelho, e não do eco do comando.
+ * O que se configura numa pulseira Veepoo: só o que muda o que ela mede ou calcula. O
+ * `command` é o nome da operação na ponte, porque quem escreve é o gateway com a sessão BLE.
  */
 final class VeepooConfigurationDefinitions
 {
-    /**
-     * Chave genérica do hub => [rótulo, secção, o que faz ao aparelho].
-     *
-     * A terceira coluna é o que o operador precisa de saber para decidir, e que o nome
-     * sozinho não diz: que a tendência de tensão mede de dez em dez minutos, ou que a
-     * temperatura contínua é da pele e não do corpo. A ordem é a que faz sentido ler.
-     */
+    /** Chave genérica do hub => [rótulo, secção, o que faz ao aparelho], pela ordem de leitura. */
     private const SWITCHES = [
         'heart_rate_continuous' => ['Frequência cardíaca contínua', 'health', 'Mede ao longo do dia, um valor por minuto.'],
         'blood_pressure_trend' => ['Tendência da pressão arterial', 'health', 'Estima a tensão de dez em dez minutos.'],
@@ -126,9 +107,8 @@ final class VeepooConfigurationDefinitions
         );
         $order += 10;
 
-        // Não é uma definição: a pulseira vibra no instante em que recebe a ordem e não
-        // guarda estado nenhum. Por isso é transiente -- pede-se por `/requests` e a `PATCH`
-        // recusa-a, que é como o hub separa o que se configura do que se manda fazer.
+        // Transiente: a pulseira vibra quando recebe a ordem e não guarda estado, por isso pede-se
+        // por `/requests` e a `PATCH` recusa-a.
         $configs[] = ConfigurationDefinition::make(
             'find_device',
             'config:find_device',

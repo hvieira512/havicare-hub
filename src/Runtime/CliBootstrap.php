@@ -14,7 +14,7 @@ use Hub\Infrastructure\Persistence\DatabaseSchemaGuard;
 final class CliBootstrap
 {
     /**
-     * @return array<string, mixed> the full hub config
+     * @return array<string, mixed> a configuração completa do hub
      */
     public static function config(string $projectRoot, bool $validate = false): array
     {

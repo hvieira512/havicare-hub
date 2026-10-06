@@ -16,10 +16,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * Signal reporting for a relayed device: one message per sighting per gateway.
- *
- * O contrato que estes testes prendem está em `docs/05-gateways-ble.md` §5: o hub reporta o
- * sinal e diz quando ele se calou; os limiares e os alarmes são do cliente.
+ * Uma mensagem por avistamento e por gateway, pelo contrato do `docs/05-gateways-ble.md` §5: o hub
+ * reporta o sinal e diz quando se calou, e os limiares e os alarmes são do cliente.
  */
 final class BridgeProximityTest extends TestCase
 {
@@ -102,10 +100,8 @@ final class BridgeProximityTest extends TestCase
     {
         [$bridge, $mqtt] = $this->bridge();
 
-        // O mesmo payload três vezes: a bateria e o movimento não mudam, e por isso o
-        // estrangulamento por impressão digital suprime-os depois do primeiro. O sinal tem de
-        // ser reportado todas as vezes, senão a série do cliente fica com buracos que ele não
-        // vê e qualquer estatística que calcule está errada em silêncio.
+        // O mesmo payload três vezes: a bateria e o movimento são suprimidos depois do primeiro,
+        // mas o sinal sai todas as vezes, senão a série do cliente fica com buracos.
         $this->deliver($bridge, $this->scanPayload(['rssi' => -70]));
         $this->deliver($bridge, $this->scanPayload(['rssi' => -55]));
         $this->deliver($bridge, $this->scanPayload(['rssi' => -80]));
@@ -161,7 +157,7 @@ final class BridgeProximityTest extends TestCase
                 $proximity,
             ),
         );
-        // One door's window must never be fed by another's.
+        // A janela de uma porta nunca é alimentada pela de outra.
         self::assertSame(1, $proximity[1]['payload']['data']['samples']);
     }
 
@@ -224,11 +220,8 @@ final class BridgeProximityTest extends TestCase
     }
 
     /**
-     * A manutenção -- expirar gateways parados e pares silenciosos -- impõe limiares de 180 e
-     * 30 segundos, e não tem de correr a cada tique de 50 ms. O `runDueMaintenance` estrangula-a
-     * a uma vez por janela; o `loopOnce` do tique continua a drenar o MQTT vinte vezes por
-     * segundo. Prova-se pelo efeito: um par silenciado só é reportado `unknown` quando a janela
-     * deixa a manutenção correr.
+     * A manutenção (limiares de 180 e 30 segundos) corre uma vez por janela e não a cada tique
+     * de 50 ms; prova-se pelo `unknown` que só sai quando a janela a deixa correr.
      */
     public function testMaintenanceIsThrottledToOncePerWindow(): void
     {

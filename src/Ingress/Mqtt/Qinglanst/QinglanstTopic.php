@@ -13,9 +13,7 @@ final class QinglanstTopic
     ) {
     }
 
-    /**
-     * Parse a Qinglanst radar topic: radar/{licenseId}/{deviceUid}
-     */
+    /** Lê um tópico de radar Qinglanst: `radar/{licenseId}/{deviceUid}`. */
     public static function parse(string $topic): ?self
     {
         $trimmed = trim($topic, '/');

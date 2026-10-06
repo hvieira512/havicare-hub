@@ -3,11 +3,8 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 
 /**
- * O stream do dispositivo lido a bytes, e não por `EventSource`.
- *
- * O `EventSource` não deixa pôr cabeçalhos; com `fetch` a credencial vai no `Authorization`,
- * mas o corte do corpo em frames passa a ser nosso. O `snapshot` traz até cem entradas de
- * cada lado, pelo que **chegar partido entre dois chunks é o caso normal, não a excepção**.
+ * Lido por `fetch` para a credencial ir no `Authorization`, e o corte em frames é nosso: com até
+ * cem entradas no `snapshot`, chegar partido entre dois chunks é o caso normal.
  */
 
 // O módulo agenda com `window.setTimeout`; os temporizadores do node não lhe tocam.
@@ -143,8 +140,8 @@ test("as linhas de keep-alive não contam como frames", async () => {
 
     await openStream("333", [": keep-alive\n\n", snapshot, ": keep-alive\n\n"]);
 
-    // O que se prende é que os comentários não viram entregas: se contassem, o
-    // `handleStreamUpdate` levava um `JSON.parse("")` e o snapshot não chegava.
+    // Os comentários não viram entregas: se contassem, o `handleStreamUpdate` levaria um
+    // `JSON.parse("")` e o snapshot não chegaria.
     assert.deepEqual(state.selectedDetail.recent.telemetry, [row(1)]);
 });
 

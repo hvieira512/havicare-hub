@@ -71,9 +71,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         $encrypted = ($flag & 0x04) === 0x04;
         $plain = $encrypted ? self::decryptAppData($appData, $deviceNumber) : $appData;
 
-        // A resposta à descoberta de parâmetros não é TFLV: é uma lista de TAGs coladas, e
-        // lê-la como TFLV daria telemetria inventada com identidade correcta e CRC válido.
-        // O hub já não pergunta, mas continua a ter de saber não ler o que não é para ler.
+        // A resposta à descoberta de parâmetros é uma lista de TAGs coladas e não TFLV: lida como
+        // TFLV, daria telemetria inventada com CRC válido.
         $tlv = $plain === null || self::isDiscoveryReply($packetType) ? [] : self::parseTlv($plain);
 
         return [
@@ -185,19 +184,15 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     public const MAX_FRAME_BYTES = 300;
 
     /**
-     * O «sem alarme» do aparelho, fora da gama de horas que a especificação declara.
-     *
-     * A meia-noite não serve de vazio: um slot a `00:00` toca e gasta um compartimento todos
-     * os dias. O aparelho aceita e devolve este par nos alarmes que não estão definidos.
+     * O «sem alarme» do aparelho, fora da gama de horas: um slot a `00:00` toca e gasta um
+     * compartimento todos os dias.
      */
     public const ALARM_UNSET_HOUR = 24;
     public const ALARM_UNSET_MINUTE = 60;
 
     /**
-     * O tipo declarado de cada TAG, da tabela «TAG Definition - Device Type 02».
-     *
-     * O tipo vai nos bits 0--4 do Flag de cada TFLV: uma TAG que chegue ao aparelho como
-     * `UNKONW` volta recusada. Daqui sai também o comprimento com que uma leitura o pede.
+     * O tipo de cada TAG, da tabela «TAG Definition - Device Type 02»: vai nos bits 0--4 do Flag e o
+     * aparelho recusa `UNKONW`. Dá também o comprimento com que uma leitura a pede.
      *
      * @var array<int, list<int>>
      */
@@ -237,18 +232,14 @@ class PillDispenserAdapter implements DeviceAdapterInterface
         self::T_INT16S => 2,
         self::T_INT16U => 2,
         self::T_INT32U => 4,
-        // Todas as TAGs de texto da especificação são de 20 bytes, e o aparelho recusa com
-        // «comprimento» qualquer outra medida: a calibração do relógio saía com os 19 do
-        // texto e nunca chegou a ser aplicada.
+        // Todas as TAGs de texto da especificação são de 20 bytes, e o aparelho recusa qualquer
+        // outra medida.
         self::T_STRING => 20,
     ];
 
     /**
-     * O tipo com que uma TAG tem de ser enviada.
-     *
-     * Rebenta em vez de assumir: uma TAG por declarar chegava ao aparelho como `UNKONW` e era
-     * recusada em silêncio do lado de cá, que é exactamente o defeito que isto existe para
-     * não repetir.
+     * O tipo com que uma TAG tem de ser enviada. Rebenta em vez de assumir: uma TAG por declarar
+     * chegaria ao aparelho como `UNKONW` e seria recusada em silêncio.
      */
     public static function parameterType(int $tag): int
     {
@@ -277,10 +268,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     ];
 
     /**
-     * As TAGs de configuração repartidas por tramas que cabem no que o aparelho declara.
-     *
-     * Mede-se a trama em vez de contar TAGs: o tamanho de cada pedido depende do tipo, e uma
-     * conta feita de cabeça volta a estourar sem dar sinal.
+     * As TAGs de configuração repartidas por tramas que cabem no que o aparelho declara. Mede-se a
+     * trama em vez de contar TAGs, porque o tamanho de cada pedido depende do tipo.
      *
      * @return list<list<int>>
      */
@@ -430,12 +419,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     }
 
     /**
-     * O corpo de uma trama que o aparelho cifrou, ou `null` se não abrir.
-     *
-     * O M228 cifra em AES128-CFB tudo o que envia por iniciativa própria; as respostas aos
-     * nossos pedidos vêm em claro. A chave e o IV são a mesma coisa: o Device Number escrito
-     * como string hexadecimal de dezasseis caracteres. Tentam-se as duas caixas, porque não
-     * há aqui nenhum aparelho com letras no Device Number para decidir qual delas ele usa.
+     * Corpo de uma trama cifrada em AES128-CFB (o que o M228 envia por iniciativa), ou `null`. Chave e
+     * IV são o Device Number em hexadecimal, nas duas caixas, porque não se sabe qual usa.
      */
     private static function decryptAppData(string $appData, int $deviceNumber): ?string
     {
@@ -461,11 +446,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     }
 
     /**
-     * Se um corpo decifrado é mesmo TFLV.
-     *
-     * Sem esta verificação, uma decifra falhada devolvia ruído que o `parseTlv` lia como
-     * TAGs inventadas, e o hub publicava telemetria fabricada com identidade correcta e CRC
-     * válido — a pior falha calada que este protocolo permite.
+     * Se um corpo decifrado é mesmo TFLV: uma decifra falhada daria TAGs inventadas, publicadas
+     * com identidade correcta e CRC válido.
      */
     private static function closesAsTlv(string $body): bool
     {
@@ -491,10 +473,8 @@ class PillDispenserAdapter implements DeviceAdapterInterface
     private const TAG_FAMILIES = [0x10, 0x80, 0x81, 0xA0, 0xA1, 0xC2];
 
     /**
-     * As três respostas à descoberta, cujo corpo é uma lista de TAGs e não TFLV.
-     *
-     * O hub deixou de perguntar, mas continua a ter de as reconhecer: ler uma delas como TFLV
-     * publica telemetria fabricada com identidade correcta e CRC válido.
+     * As três respostas à descoberta, cujo corpo é uma lista de TAGs e não TFLV: lidas como TFLV,
+     * publicariam telemetria fabricada.
      */
     private static function isDiscoveryReply(int $packetType): bool
     {

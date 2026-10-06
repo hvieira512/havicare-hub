@@ -5,13 +5,7 @@ import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { paginationControls } from "../../src/Dashboard/dashboard/components/pagination.js";
 
-/**
- * A janela do paginador, sem um documento à volta.
- *
- * São sempre sete lugares: um paginador com sete botões numa página e nove noutra muda de
- * tamanho debaixo do rato de quem carregou nele. A regra é do componente e testava-se só
- * através de um `jsdom` e de três elementos a fingir de painel.
- */
+/** São sempre sete lugares, para o paginador não mudar de tamanho debaixo do rato. */
 const pageWindow = (page, totalPages) =>
     [...parseFragment(paginationControls({
         pagination: { page, total_pages: totalPages },

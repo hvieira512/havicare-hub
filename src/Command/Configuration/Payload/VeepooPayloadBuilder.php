@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Hub\Command\Configuration\Payload;
 
 /**
- * Valida o que se configura numa pulseira Veepoo.
- *
- * Não monta tramas: quem as monta é o SDK dentro do gateway. O que faz é impedir que lá
- * chegue coisa que o aparelho não sabe ler, porque o SDK aceita-a em silêncio e não
- * configura nada.
+ * Valida o que se configura numa pulseira Veepoo. As tramas monta-as o SDK no gateway, que
+ * aceita em silêncio o que o aparelho não sabe ler.
  */
 final class VeepooPayloadBuilder extends ConfigurationPayloadBuilder
 {
@@ -35,9 +32,8 @@ final class VeepooPayloadBuilder extends ConfigurationPayloadBuilder
     }
 
     /**
-     * A pulseira calcula calorias e composição corporal a partir disto. Os limites são de
-     * plausibilidade humana e não do protocolo: o que está em causa é telemetria calculada
-     * sobre um corpo que não existe.
+     * Limites de plausibilidade humana e não do protocolo: a pulseira calcula calorias e
+     * composição corporal a partir disto.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
@@ -60,10 +56,8 @@ final class VeepooPayloadBuilder extends ConfigurationPayloadBuilder
     }
 
     /**
-     * Os limiares do alarme de frequência cardíaca.
-     *
-     * Quem os avalia é o aparelho, sobre a medição dele. Um mínimo acima do máximo passava
-     * nas validações de cada campo e deixava o alarme impossível de disparar.
+     * Os limiares do alarme de frequência cardíaca, avaliados pelo aparelho. Um mínimo acima do
+     * máximo deixava o alarme impossível de disparar.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>

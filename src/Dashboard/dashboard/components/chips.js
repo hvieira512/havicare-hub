@@ -1,18 +1,10 @@
 import { html } from "../html.js";
 
-/**
- * As duas tiras de pastilhas da plataforma: as secções de um catálogo, e os filtros
- * aplicados a uma listagem. A mesma forma com trabalhos diferentes -- uma escolhe, a outra
- * remove --, e é por isso que estão juntas.
- */
+/** As duas tiras de pastilhas da plataforma: as secções de um catálogo e os filtros aplicados. */
 
 /**
- * Uma tira de pastilhas de secção, cada uma com o ícone da secção e a sua contagem. A
- * pastilha acesa vem do estado e não do DOM, porque a tira é redesenhada.
- *
- * É a única forma de escolher uma secção no hub -- o painel de configuração tinha separadores
- * sublinhados com distintivo do Bootstrap e o catálogo pastilhas sem ícone, três aparências
- * para o mesmo gesto.
+ * Uma tira de pastilhas de secção, com ícone e contagem: a única forma de escolher uma secção
+ * no hub. A acesa vem do estado e não do DOM, porque a tira é redesenhada.
  */
 export function sectionStrip(sections, action, activeKey = "") {
     return sections
@@ -25,9 +17,8 @@ export function sectionStrip(sections, action, activeKey = "") {
 }
 
 /**
- * As pastilhas dos filtros aplicados, com o x para remover cada um. O arranjo é sempre o
- * mesmo -- pesquisa e botão de filtros na primeira linha, pastilhas na de baixo --, e entre
- * a listagem de dispositivos e a de modelos o que varia é só o nome da acção.
+ * As pastilhas dos filtros aplicados, com o x para remover cada um, por baixo da pesquisa e
+ * do botão de filtros. Entre listagens varia só o nome da acção.
  */
 export function filterChips(labels, action) {
     return labels

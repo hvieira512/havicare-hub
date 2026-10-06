@@ -130,16 +130,14 @@ final class QinglanstBridge extends MqttBridgeBase
             return;
         }
 
-        // O `uid` do tópico serve para encontrar o dispositivo; a partir daqui vale o IMEI
-        // canónico, no MQTT e na dashboard.
+        // O `uid` do tópico só encontra o dispositivo; daqui em diante vale o IMEI canónico.
         $deviceKey = (string)$device['imei'];
         $deviceType = (string)$device['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
         $nowMs = (int) floor(microtime(true) * 1000);
 
-        // O radar fala directamente por MQTT: a trama que chega é a mensagem original dele, e
-        // um radar registado publica-a em `raw` para debugging, como o relógio e o NCS já fazem.
+        // A trama que chega é a mensagem original do radar, republicada em `raw` para debugging.
         $raw = [
             'direction' => 'uplink',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
@@ -153,7 +151,7 @@ final class QinglanstBridge extends MqttBridgeBase
                 'sourceTopic' => $topic,
             ],
         ];
-        // O MQTT leva tudo -- é o debugging ao vivo; o histórico da dashboard leva uma amostra.
+        // O MQTT leva tudo; o histórico da dashboard, uma amostra.
         $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
         if ($this->deviceStore !== null && $this->dashboardWritePolicy->shouldStoreRaw($deviceKey, $nowMs)) {
             $this->deviceStore->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
@@ -182,10 +180,8 @@ final class QinglanstBridge extends MqttBridgeBase
         $publishedTelemetry = false;
         $publishedEvent = false;
 
-        // Uma mensagem mede mais do que uma coisa, por isso o normalizador devolve um mapa
-        // de capacidade para leitura e uma lista de alarmes. O estrangulamento da escrita
-        // no Redis é por capacidade: a frequência cardíaca e o estado de sono chegam na
-        // mesma mensagem mas mudam a ritmos diferentes.
+        // O estrangulamento no Redis é por capacidade: as que chegam na mesma mensagem mudam
+        // a ritmos diferentes.
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
             $mqttTelemetryStart = hrtime(true);
             $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
@@ -242,9 +238,8 @@ final class QinglanstBridge extends MqttBridgeBase
             return $resolved;
         }
 
-        // A licença é o que o UID não diz, e o tópico é `radar/{licenseId}/{uid}`. Sem ela,
-        // quem lê a notificação não sabe a que licença registar o radar que apareceu --
-        // e é o único campo do assistente que não se deduz do protocolo.
+        // A licença vem do tópico `radar/{licenseId}/{uid}`: é o único campo do assistente de
+        // registo que o protocolo não dá.
         $this->recordUnauthorizedDevice(
             $deviceUid,
             'qinglanst-radar',

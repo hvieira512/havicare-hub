@@ -58,15 +58,6 @@ function fallSensitivityInput(desired) {
         </div>`;
 }
 
-/**
- * A sensibilidade dos alertas de um medidor de fraldas: dois inteiros e três atalhos. Os
- * números estão sempre à vista e os presets são botões que os preenchem, sem um quarto botão
- * "Personalizado" -- nenhum preset activo já diz que os valores não são de nenhum deles.
- *
- * Os presets e as gamas vêm no `_meta` da capacidade, servidos pelo hub, para não haver aqui
- * uma segunda cópia destas fronteiras.
- */
-
 function workingModeInput(desired) {
     const mode = parseInt(String(desired.mode ?? 1), 10) || 1;
     const intervalSeconds = desired.intervalSeconds ?? 60;
@@ -159,13 +150,7 @@ export function syncWorkingModeExtra(section, mode) {
     extra.classList.toggle("d-none", String(mode) !== "8");
 }
 
-/**
- * Os descritores dos campos do Vivistar.
- *
- * Cada tipo de campo declara aqui as suas quatro faces juntas -- desenhar, ler de volta, o
- * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
- * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
- */
+/** Cada tipo de campo declara as suas faces juntas: desenhar, ler de volta e valor inicial. */
 export const INPUTS = {
     fallSensitivity: {
         render: (_entry, desired) => fallSensitivityInput(desired),

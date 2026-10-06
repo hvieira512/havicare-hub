@@ -13,14 +13,8 @@ import { loadScript } from "../load-script.js";
 import { state } from "../state.js";
 
 /**
- * O modal da planta de um radar, com os sinais vitais ao lado -- é o ecrã do hitCare.
- *
- * Abre do cartão «Presença», que é o que já diz quantas pessoas lá estão. As posições e as
- * leituras vêm do stream do dispositivo, que já está aberto por causa do ecrã de detalhe: ao
- * abrir há o histórico que o stream trouxe, e a partir daí é em direto. Não há sondagem
- * nenhuma, ao contrário do hitCare, que pergunta de segundo a segundo.
- *
- * Ir buscar a planta à cloud do fabricante acontece só no botão «Sincronizar».
+ * A planta de um radar com os sinais vitais ao lado. Posições e leituras vêm do stream que o
+ * detalhe já abriu, sem sondagem; a cloud do fabricante só se consulta no «Sincronizar».
  */
 
 let els;
@@ -111,11 +105,8 @@ function subtitle(imei, layout) {
 }
 
 /**
- * A planta que se desenha é a do mapa que está aberto.
- *
- * Fechar antes de a resposta chegar punha o `scene` a `null`, e o `showLayout` construía uma
- * cena nova dentro de um modal já fechado -- que ninguém destrói, porque quem a destruía já
- * correu. É a mesma guarda das outras vistas assíncronas: a do `stream.js`, a do `list.js`.
+ * Só se desenha a planta do mapa que ainda está aberto: depois de fechar, uma cena nova já
+ * não teria quem a destruísse.
  */
 async function load(imei) {
     const response = await apiGetRadarLayout(imei);
@@ -179,7 +170,7 @@ export async function syncRadarMap() {
             return;
         }
 
-        // Sincronizar e fechar antes de a cloud responder desenhava numa planta já fechada.
+        // Quem fechou antes de a cloud responder não quer nada desenhado.
         if (state.radarMap.imei !== imei) {
             return;
         }

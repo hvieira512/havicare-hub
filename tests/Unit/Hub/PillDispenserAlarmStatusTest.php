@@ -10,11 +10,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O estado de toma de cada um dos nove alarmes, que o aparelho diz em claro.
- *
- * O evento de toma (`0x03`) é a leitura rica e chega cifrado. As TAGs `0x8131`--`0x8139`
- * respondem à mesma pergunta por outro caminho: pedem-se num `0x07` e vêm em claro. Não dão a
- * hora nem a célula, mas dizem se cada alarme foi tomado, falhado ou está à espera.
+ * O estado de cada um dos nove alarmes, pelas TAGs `0x8131`--`0x8139` pedidas num `0x07`: vêm
+ * em claro, mas sem a hora nem a célula do evento cifrado `0x03`.
  */
 final class PillDispenserAlarmStatusTest extends TestCase
 {
@@ -58,11 +55,8 @@ final class PillDispenserAlarmStatusTest extends TestCase
     }
 
     /**
-     * Uma TAG recusada não conta como alarme inactivo.
-     *
-     * O estado nos bits 5--7 do Flag distingue uma leitura de um eco: o aparelho devolve os
-     * bytes que lhe mandámos -- zeros -- com um estado diferente de `000`. Publicar isso como
-     * «sem nada» era inventar que o alarme existe e está parado.
+     * O aparelho devolve uma TAG recusada com os zeros que lhe mandámos, e é o estado nos bits
+     * 5--7 do Flag que a distingue de um alarme inactivo.
      */
     public function testARefusedTagIsNotReportedAsIdle(): void
     {
@@ -77,11 +71,7 @@ final class PillDispenserAlarmStatusTest extends TestCase
         );
     }
 
-    /**
-     * O `0x07` tem de pedir as nove, senão o aparelho nunca as manda.
-     *
-     * O heartbeat traz o estado que lhe apetece; as nove só chegam porque são pedidas.
-     */
+    /** O heartbeat traz o estado que lhe apetece, e as nove só chegam se o `0x07` as pedir. */
     public function testTheStatusQueryAsksForAllNine(): void
     {
         foreach (range(0x8131, 0x8139) as $tag) {

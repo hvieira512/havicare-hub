@@ -8,12 +8,8 @@ use Hub\Device\DownlinkRetryContext;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Uma repetição tem de levar o mesmo valor que a primeira tentativa.
- *
- * Nos protocolos que entregam a um gateway, os bytes em fila são só o nome da operação -- o
- * valor viaja ao lado. Repetir com os bytes e mais nada põe em fila um comando sem valor, e o
- * gateway executa-o com o interruptor a falso: desliga um alerta já aplicado, ou repete uma
- * medição que ninguém pediu.
+ * Nos protocolos de gateway os bytes em fila são só o nome da operação, e uma repetição sem o
+ * valor ao lado executa-se com o interruptor a falso.
  */
 final class DownlinkRetryContextTest extends TestCase
 {
@@ -33,11 +29,8 @@ final class DownlinkRetryContextTest extends TestCase
     }
 
     /**
-     * A repetição é o mesmo pedido, e leva o mesmo identificador.
-     *
-     * É por ele que o gateway distingue uma reentrega de alguém a carregar outra vez no
-     * botão. Sem o carregar, cada repetição chegava lá como pedido novo e a pulseira media
-     * de novo -- de sessenta em sessenta segundos, três vezes por pedido.
+     * É pelo identificador que o gateway distingue uma reentrega de um pedido novo, que voltaria
+     * a medir.
      */
     public function testTheRequestKeepsItsIdentityAcrossRetries(): void
     {

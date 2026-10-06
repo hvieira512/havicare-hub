@@ -17,12 +17,8 @@ use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\Medication\MedicationRemindersCapability;
 
 /**
- * O registo central dos contratos de capacidades.
- *
- * As complexas (`alarm_clock`, `sos_contacts`, `call_whitelist`, ...) implementam o
- * `CapabilityContract` e registam-se aqui. As simples -- interruptores, números, telefones --
- * caem na `GenericCapability`, que também é um `CapabilityContract`, e por isso o
- * `contract()` devolve sempre alguém.
+ * O registo central dos contratos de capacidades. As simples caem na `GenericCapability`, e
+ * por isso o `contract()` devolve sempre alguém.
  */
 final class CapabilityRegistry
 {
@@ -76,18 +72,15 @@ final class CapabilityRegistry
     /** Quem trata desta chave: o contrato escrito à mão, ou a genérica. Nunca `null`. */
     private function contract(string $genericKey): CapabilityContract
     {
-        // `??` e não `??=` no primeiro: escrever aqui punha a genérica dentro do mapa dos
-        // contratos, e o `has()` e o `get()` -- que existem justamente para distinguir os
-        // dois -- passavam a responder que sim a toda a gente.
+        // `??` e não `??=`: guardar a genérica no mapa dos contratos faria o `has()` e o `get()`
+        // responderem que sim a tudo.
         return $this->contracts[$genericKey]
             ?? ($this->generic[$genericKey] ??= new GenericCapability($genericKey, $this->fourPTouchGeneric));
     }
 
     /**
-     * Se a alteração tem de viajar para o dispositivo, ou se o hub a aplica sozinho.
-     *
-     * Por omissão viaja: uma configuração é um downlink à espera de acontecer, e uma
-     * capacidade só sai dessa regra dizendo-o com o `HubAppliedCapability`.
+     * Se a alteração viaja para o dispositivo. Por omissão viaja, e só o `HubAppliedCapability`
+     * diz que o hub a aplica sozinho.
      */
     public function travelsToDevice(string $genericKey): bool
     {
@@ -107,11 +100,7 @@ final class CapabilityRegistry
         return $this->contract($genericKey)->toNative($protocol, $value);
     }
 
-    /**
-     * O `instanceof` fica: não é um desvio à regra, é a pergunta "esta capacidade quer
-     * limpar o que lhe entra?". Quem quiser diz-lo implementando o `CapabilityInputSanitizer`,
-     * e quem não quiser não escreve método nenhum.
-     */
+    /** Só as capacidades que implementam o `CapabilityInputSanitizer` limpam o que lhes entra. */
     public function sanitizeInput(string $protocol, string $genericKey, mixed $value): mixed
     {
         $contract = $this->contract($genericKey);

@@ -2,12 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * Percorre o grafo de módulos ES lendo os ficheiros, sem os avaliar.
- *
- * O `import()` dinâmico é uma aresta do grafo na mesma: quem o ignorasse dava por órfão tudo
- * o que só se carrega por ele. Quem quiser saber o que é que o browser paga **antes** de
- * seguir esse `import()` pede o grafo sem ele -- é a diferença entre os dois que mede o que
- * ficou de fora do arranque.
+ * Percorre o grafo de módulos ES lendo os ficheiros, sem os avaliar. O `import()` dinâmico é
+ * aresta na mesma; pedir o grafo sem ele mede o que o browser paga antes de o seguir.
  */
 const STATIC_IMPORT = /(?:\bfrom|^\s*import)\s+["']([^"']+)["']/gm;
 const DYNAMIC_IMPORT = /\bimport\s*\(\s*["']([^"']+)["']/g;

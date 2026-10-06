@@ -9,9 +9,8 @@ use Hub\Support\Values;
 class FourPTouchAdapter implements DeviceAdapterInterface
 {
     /**
-     * Os tipos de trama de posição e de alarme do 4P Touch, por rede. Um `_LTE` novo entra
-     * aqui uma vez, e não em cada sítio que os enumera -- falhar um deixava a trama a chegar
-     * em `raw` sem virar telemetria, em silêncio.
+     * Os tipos de trama de posição e de alarme do 4P Touch, por rede, num só sítio: um `_LTE` em
+     * falta chegava em `raw` sem virar telemetria.
      */
     public const LOCATION_FRAME_TYPES = ['UD', 'UD2', 'UD_WCDMA', 'UD_LTE'];
     public const ALARM_FRAME_TYPES = ['AL', 'AL_WCDMA', 'AL_LTE'];
@@ -209,12 +208,8 @@ class FourPTouchAdapter implements DeviceAdapterInterface
     }
 
     /**
-     * O bloco `chave:valor` da resposta ao `TS`, separado por `;`.
-     *
-     * O `GPS:OK(n)` e o `NET:OK(n)` ficam de fora: a especificação dá o formato e nunca diz o
-     * que os números são, e o `100` do `NET` é o mesmo no exemplo dela e no aparelho real.
-     *
-     * Um modelo que ecoe o comando devolve o bloco vazio, e daqui não sai nada.
+     * O bloco `chave:valor` da resposta ao `TS`, separado por `;`. O `GPS:OK(n)` e o `NET:OK(n)`
+     * ficam de fora, porque a especificação não diz o que os números são.
      *
      * @return array<string, mixed>
      */
@@ -277,9 +272,8 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         $data['mcc'] = isset($fields[18]) ? (string) $fields[18] : null;
         $data['mnc'] = isset($fields[19]) ? (string) $fields[19] : null;
 
-        // Os 16 bits baixos do campo 15 são condições -- bateria fraca, dentro ou fora da
-        // cerca, relógio ao pulso, parado. O hub move-se a eventos, e cada uma delas tem o
-        // seu alarme nos 16 bits altos, que o `enrichAlarm` lê do frame `AL`.
+        // Os 16 bits baixos do campo 15 são condições; cada uma tem o seu alarme nos 16 bits altos,
+        // que o `enrichAlarm` lê do frame `AL`.
 
         $cursor = 20;
         $baseStations = [];

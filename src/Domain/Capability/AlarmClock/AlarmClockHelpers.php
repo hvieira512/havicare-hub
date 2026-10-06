@@ -22,11 +22,8 @@ trait AlarmClockHelpers
     }
 
     /**
-     * A lista pública de alarmes a partir do payload do protocolo.
-     *
-     * O `$keys` é a ordem de precedência, que difere por fornecedor, e o fim da linha é o
-     * próprio `$desired` -- o apresentador chama isto duas vezes na mesma leitura, e à segunda
-     * o que chega já é a lista pública, sem chave à volta.
+     * A lista pública de alarmes a partir do payload. O `$keys` é a precedência do fornecedor, e o
+     * fim da linha é o próprio `$desired`, porque à segunda leitura já chega a lista pública.
      *
      * @param array<string, mixed> $desired
      * @param list<string> $keys

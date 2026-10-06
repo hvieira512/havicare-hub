@@ -12,45 +12,23 @@ final class CapabilityCatalogTest extends TestCase
 {
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
-        // Os ficheiros de definições agrupam por secção e por papel, e a ordem dentro de cada
-        // tipo segue esse agrupamento -- não chega ao ecrã, que a SQL reordena por secção e
-        // etiqueta.
+        // A ordem dentro de cada tipo segue o agrupamento dos ficheiros de definições; o ecrã
+        // reordena por secção e etiqueta.
         $expected = [
-            // A `blood_pressure_calibration` saiu -- estava anunciada e nenhum protocolo a
-            // servia --, e o `device_status` entrou: é o `TS` dos 4P Touch, pedido como
-            // qualquer outro.
-            //
-            // O intervalo de envio da localização está em Saúde, com os outros dez intervalos
-            // de medição e de envio.
-            // E a `connectivity`, que chega na resposta ao `TS`: que rádio serve a ligação.
+            // O `device_status` é o `TS` dos 4P Touch, e a `connectivity` chega na resposta a ele.
             'watch' => [69, 'f5f4233f0087097003e031ff68c2af49180dd334b20d5ae56f911e1f31abf408'],
             'ncs' => [1, '213f35a9295bacacfdaa5570451707a23ee59416ebc3ac1de062f1b6ca7685a4'],
             'radar' => [9, '45dfaa71313e4da275fca1da9536b826bf0fe6a442cf462d3d2534db1499fa65'],
             'gateway' => [3, '044f4b1de47b562638442dc3fc8be22b3ab76043721211a47f478ee68124a91f'],
             'diaper_sensor' => [7, '1aabeb619dd84c1e60cb25bc6d43fe88ea8b3b708365ad38f39a3c13bf5c4fd2'],
-            // As 41 da pulseira: as W6/W6B só anunciam bateria, movimento, proximidade e
-            // botão, e é a Veepoo MF91 que traz o resto — as grandezas da sessão GATT, os
-            // interruptores de medição autónoma e as calibrações que entram nas contas dela.
-            // O `proximity` subiu para o grupo `sighting`, que fica antes das medições. Só a
-            // posição mudou: a linha dele sai com as mesmas bandeiras, e prova-o o sensor de
-            // fraldas, que usa os dois papéis novos e manteve o hash.
+            // As W6/W6B só anunciam bateria, movimento, proximidade e botão; o resto é da Veepoo MF91.
             'bracelet' => [41, 'ad637eeb21fdd6c4dd6241d5b6dbded1c46ff7b61021ded18fcafa9b6f65042d'],
-            // As 33 do dispensador M228: telemetria, eventos, configurações e acções, cada
-            // enumeração como configuração própria. Ficam de fora a reposição de fábrica,
-            // desligar a cifra e mudar o servidor — as três que nos podem tirar o aparelho —
-            // as três sondas da descoberta, que serviram para fazer a integração, o
-            // recarregar da telemetria, que é uma função do ecrã, e o estado do «não
-            // incomodar», que é configuração reportada e viaja no `device_config`.
-            // O `temperature` e o `humidity` passaram a `ambient_*`: o `0x810E` é o ar onde o
-            // aparelho está, e partilhava chave com a temperatura corporal dos relógios.
-            //
-            // E o `device_status` voltou, agora como leitura pedível: reler o estado deixou
-            // de ter caminho próprio e é um pedido como os outros.
+            // Ficam de fora a reposição de fábrica, desligar a cifra e mudar o servidor, que nos podem
+            // tirar o aparelho.
             'pill_dispenser' => [37, 'ecee40eac03cdaf7efb85bcb0a2584579a2958b59ff7b2cfdfbda8a5dc41aca0'],
         ];
 
-        // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim
-        // que a pulseira passou despercebida à primeira.
+        // Um tipo de dispositivo sem hash aqui fica sem guarda.
         self::assertSame(CapabilityCatalog::deviceTypes(), array_keys($expected));
 
         foreach ($expected as $deviceType => [$count, $hash]) {
@@ -192,11 +170,8 @@ final class CapabilityCatalogTest extends TestCase
     }
 
     /**
-     * O `isTelemetry` e a secção dizem a mesma coisa, e têm de continuar a dizê-la.
-     *
-     * O `is_telemetry` da base de dados é, na prática, `section = 'telemetry'`. Uma definição
-     * que as separasse não daria erro em sítio nenhum: o repositório filtra por uma e o ecrã
-     * lê a outra.
+     * O `is_telemetry` da base é, na prática, `section = 'telemetry'`: o repositório filtra por
+     * um e o ecrã lê o outro.
      */
     public function testTelemetryFlagAndSectionCannotDisagree(): void
     {

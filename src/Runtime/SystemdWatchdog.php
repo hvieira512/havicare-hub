@@ -8,13 +8,8 @@ use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
 
 /**
- * O sinal de vida que o systemd espera, enviado de dentro do event loop.
- *
- * O `Restart=always` da unit reage ao processo **terminar**, e o modo de falha que mais
- * interessa não termina nada: um hub sem descritores fica vivo e deixa de servir.
- *
- * O ping sai de um temporizador do loop, e por isso **só é enviado se o loop estiver a
- * girar** -- é prova de vivacidade e não de existência. Fora do systemd é inerte.
+ * O sinal de vida que o systemd espera, enviado de um temporizador do event loop: só sai com o
+ * loop a girar, e apanha um hub vivo que deixou de servir. Fora do systemd é inerte.
  */
 final class SystemdWatchdog
 {
@@ -51,10 +46,8 @@ final class SystemdWatchdog
     }
 
     /**
-     * Registra o temporizador que mantém o serviço declarado vivo.
-     *
-     * O temporizador devolvido serve para o cancelar; em produção nada o cancela, porque o
-     * processo só deixa de precisar dele quando termina.
+     * Regista o temporizador que mantém o serviço declarado vivo; devolve-o para se poder
+     * cancelar.
      */
     public function attach(LoopInterface $loop): ?TimerInterface
     {
@@ -64,10 +57,8 @@ final class SystemdWatchdog
     }
 
     /**
-     * Um datagrama para o socket do systemd, e nada mais.
-     *
-     * Falhar aqui não pode derrubar o hub: se o socket desapareceu, o pior que acontece é o
-     * systemd deixar de ver pings e reiniciar o serviço, que é o comportamento que se quer.
+     * Um datagrama para o socket do systemd, e nada mais. Falhar não derruba o hub: sem pings, o
+     * systemd reinicia o serviço, que é o que se quer.
      */
     public function ping(): void
     {

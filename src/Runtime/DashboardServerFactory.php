@@ -27,7 +27,7 @@ final class DashboardServerFactory
     private const BODY_PARSE_BYTES = 5 * 1024 * 1024;
 
     /**
-     * @param array<string, mixed> $dashboardConfig the `dashboard` section of the hub config
+     * @param array<string, mixed> $dashboardConfig a secção `dashboard` da configuração do hub
      */
     public static function listen(HubServices $services, array $dashboardConfig, LoopInterface $loop): void
     {
@@ -49,7 +49,7 @@ final class DashboardServerFactory
             ),
             $services->radarLayoutSync,
         );
-        // O construtor já não escreve no Redis: quem serve é que semeia, e só aqui.
+        // Quem serve é que semeia o Redis, e só aqui.
         $dashboard->warmUp();
 
         $server = new ReactHttpServer(
@@ -66,12 +66,8 @@ final class DashboardServerFactory
     }
 
     /**
-     * O CORS e o registo do `/api/` são middleware do ReactPHP como os de cima, mas vêm
-     * dobrados num só manipulador em vez de espalhados pela lista: assim os testes chamam
-     * isto e exercitam exactamente a cadeia que corre em produção, sem a repetir.
-     *
-     * A ordem importa: o CORS responde ao preflight e devolve sem descer, e é por isso que o
-     * `OPTIONS` nunca chegou -- nem chega -- ao canal `api`.
+     * O CORS e o registo do `/api/` dobrados num só manipulador, para os testes exercitarem a
+     * cadeia de produção. O CORS responde ao preflight sem descer, e o `OPTIONS` não chega ao `api`.
      *
      * @param list<string> $allowedOrigins vazio mantém a política aberta
      */

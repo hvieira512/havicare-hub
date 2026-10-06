@@ -6,9 +6,7 @@ namespace Hub\Api\OpenApi\Schemas;
 
 use Hub\Api\OpenApi\Responses;
 
-/**
- * Dashboard notification feed.
- */
+/** As notificações da dashboard. */
 final class NotificationSchemas
 {
     /** @return array<string, mixed> */

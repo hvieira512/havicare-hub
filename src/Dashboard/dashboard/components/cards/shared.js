@@ -1,9 +1,7 @@
 import { fieldLabel, fieldValue } from "../../format.js";
 import { html, raw } from "../../html.js";
 
-/**
- * O que mais do que uma família de cartões precisa.
- */
+/** O que mais do que uma família de cartões precisa. */
 
 export function compactDetails(data, keys) {
     return joinMarkup(
@@ -14,13 +12,12 @@ export function compactDetails(data, keys) {
                     data[key] !== null &&
                     data[key] !== "",
             )
-            // O `fieldValue` traduz enumerações; sem ele saía "Estado do sono: awake".
+            // O `fieldValue` traduz enumerações, como o `awake` do estado do sono.
             .map((key) => html`${fieldLabel(key)}: ${fieldValue(key, data[key])}`),
     );
 }
 
 /** Juntar fragmentos devolve texto, que seria escapado outra vez: o resultado é marcação. */
 export const joinMarkup = (parts, separator = " · ") =>
-    // Filtrado pelo texto e não pela verdade: um fragmento vazio é um objecto, e passava o
-    // filtro para deixar o separador pendurado à frente do que sobrava.
+    // Filtrado pelo texto e não pela verdade: um fragmento vazio é um objecto.
     raw(parts.filter((part) => String(part ?? "") !== "").join(separator));

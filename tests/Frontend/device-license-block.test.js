@@ -57,8 +57,7 @@ test("sem dono, di-lo e não inventa linhas", () => {
     }
 });
 
-// A licença chega como texto da API e o normalizador devolve texto: comparada com o número 0
-// nunca era igual, e o campo mostrava "empresa · 0" em vez de "Sem licença".
+// A licença chega da API como texto, e a comparação com zero tem de o aceitar.
 test("a licença zero conta como sem licença mesmo com empresa preenchida", () => {
     assert.match(deviceLicenseBlock({ company: "hitcare", licenseId: "0" }), /Sem licença/);
     assert.match(deviceLicenseBlock({ company: "hitcare", licenseId: 0 }), /Sem licença/);

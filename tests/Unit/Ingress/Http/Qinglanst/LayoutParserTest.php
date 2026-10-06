@@ -40,9 +40,8 @@ final class LayoutParserTest extends TestCase
     }
 
     /**
-     * O nome liga-se à área pela chave e nunca pela posição. Aqui as chaves são 0, 1, 3, 5 e 7
-     * -- é por serem esparsas que o `json_encode` do lado do fabricante manda um objeto em vez
-     * de uma lista --, e por posição a área 5 ficaria com o nome da 3.
+     * O nome liga-se à área pela chave e nunca pela posição: as chaves 0, 1, 3, 5 e 7 são
+     * esparsas, e por isso o fabricante manda um objeto em vez de uma lista.
      */
     public function testJoinsAreaNamesByKeyWhenTheKeysHaveGaps(): void
     {
@@ -80,9 +79,8 @@ final class LayoutParserTest extends TestCase
     }
 
     /**
-     * Guardamos caixas, e não polígonos: as 63 áreas dos 13 radares em produção são todas
-     * caixas alinhadas aos eixos. Uma que não seja fica de fora com o motivo, em vez de virar
-     * uma caixa envolvente que desenhava uma divisão que não existe.
+     * Guardamos caixas, e não polígonos: as áreas em produção são todas alinhadas aos eixos, e
+     * uma que não seja fica de fora com o motivo em vez de virar a caixa envolvente.
      */
     public function testSkipsAnAreaThatIsNotAnAxisAlignedBox(): void
     {

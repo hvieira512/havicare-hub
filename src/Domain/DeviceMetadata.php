@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Hub\Domain;
 
 /**
- * Os sete campos que descrevem um dispositivo na whitelist.
- *
- * O `fromArray()` faz a leitura defensiva -- `deviceType` ou `device_type`, `licenseId` ou
- * `license_id` -- uma vez, na fronteira, e a partir daí os campos são propriedades com tipo.
+ * Os sete campos que descrevem um dispositivo na whitelist. O `fromArray()` lê `deviceType` ou
+ * `device_type`, `licenseId` ou `license_id`, uma vez, na fronteira.
  */
 final class DeviceMetadata
 {
@@ -72,9 +70,8 @@ final class DeviceMetadata
     }
 
     /**
-     * O nome da empresa faz parte do tópico MQTT, e os tópicos distinguem maiúsculas: para
-     * quem subscreve, "hitCare" e "hitcare" são dois clientes diferentes. Uma grafia só,
-     * escolhida aqui, mantém os dispositivos de um cliente num sítio só.
+     * O nome da empresa entra no tópico MQTT, que distingue maiúsculas: uma grafia só mantém os
+     * dispositivos de um cliente num sítio só.
      */
     public static function normalizeCompany(?string $company): string
     {
@@ -84,9 +81,8 @@ final class DeviceMetadata
     }
 
     /**
-     * O `licenseId` chega como inteiro pela API e como texto pelo ficheiro da whitelist e
-     * pelo Redis. O inteiro é a forma canónica em memória -- é o que o controlo de acesso por
-     * cliente compara --, e por isso todas as bordas convergem aqui.
+     * O `licenseId` chega como inteiro pela API e como texto pela whitelist e pelo Redis; o inteiro
+     * é a forma canónica, que o controlo de acesso por cliente compara.
      */
     public static function normalizeLicenseId(int|string $licenseId): int
     {

@@ -68,10 +68,8 @@ class AdapterRegistry
     }
 
     /**
-     * O adaptador deste protocolo, ou uma avaria.
-     *
-     * Quem precisa dele não tem caminho alternativo: construir um de recurso dava uma segunda
-     * instância, fora do registo e sem o estado que o registo partilha.
+     * O adaptador deste protocolo, ou uma avaria: um de recurso seria uma segunda instância, fora
+     * do registo e sem o estado que ele partilha.
      */
     public function require(string $protocol): DeviceAdapterInterface
     {

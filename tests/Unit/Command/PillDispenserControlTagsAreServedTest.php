@@ -10,21 +10,14 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O hub não manda ordens de controlo que este firmware não serve.
- *
- * A especificação descreve a série M2 inteira, e declarar tudo o que lá está dá botões que
- * este firmware recusa com «TAG inválida». A lista abaixo são as doze TAGs de controlo que o
- * `0x0C` do aparelho de ensaio devolveu. O guarda está aqui e não em tempo de execução porque
- * a decisão é de catálogo, e é aí que tem de rebentar.
+ * O hub só manda as doze TAGs de controlo que o `0x0C` do aparelho de ensaio devolveu: a
+ * especificação descreve a série M2 inteira, e este firmware recusa o resto.
  */
 final class PillDispenserControlTagsAreServedTest extends TestCase
 {
     /**
-     * A resposta ao `0x0C` do M228 de ensaio, a 22 de setembro de 2026.
-     *
-     * Escrita à mão de propósito: um teste que leia a mesma tabela que o código serve para
-     * nada. Quando entrar um firmware que sirva mais, é esta lista que se actualiza — depois
-     * de lhe perguntar, e não antes.
+     * A resposta ao `0x0C` do M228 de ensaio a 22 de setembro de 2026, escrita à mão: lida da tabela
+     * do código não provava nada. Actualiza-se depois de perguntar ao firmware.
      *
      * @var list<int>
      */
@@ -68,8 +61,7 @@ final class PillDispenserControlTagsAreServedTest extends TestCase
         }
 
         self::assertSame([], $unserved);
-        // Sem isto, o varrimento continuava verde se nenhum comando chegasse a sair como
-        // controlo -- que é o caso em que ele deixa de medir o que diz medir.
+        // Sem amostra o varrimento fica verde a medir nada.
         sort($seen);
         $expected = self::CONTROL_COMMANDS;
         sort($expected);

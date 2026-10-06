@@ -11,11 +11,8 @@ use Hub\Domain\Capability\ConfigurationInputDefaults;
 use PHPUnit\Framework\TestCase;
 
 /**
- * As configurações sem contrato próprio caem na `GenericCapability`, e ela traduz por
- * protocolo. Um protocolo que ela não conheça rebenta na gravação com «Unsupported protocol»,
- * já depois de o formulário ter aparecido e de o utilizador ter carregado em Enviar.
- *
- * Percorre-se o catálogo inteiro para que a configuração seguinte entre no teste sozinha.
+ * As configurações sem contrato próprio caem na `GenericCapability`, que traduz por protocolo.
+ * Percorre-se o catálogo inteiro para a configuração seguinte entrar no teste sozinha.
  */
 final class PillDispenserGenericConfigurationTest extends TestCase
 {
@@ -39,10 +36,7 @@ final class PillDispenserGenericConfigurationTest extends TestCase
         self::assertSame([], $failures);
     }
 
-    /**
-     * Uma acção não leva parâmetros, e o valor que a dashboard envia é um objecto vazio. Vale
-     * a pena prendê-lo à parte: é o caminho que o Hugo carregou primeiro no aparelho real.
-     */
+    /** Uma acção não leva parâmetros, e a dashboard envia um objecto vazio. */
     public function testAnActionWithoutParametersIsAcceptedAsAnEmptyObject(): void
     {
         $registry = new CapabilityRegistry();

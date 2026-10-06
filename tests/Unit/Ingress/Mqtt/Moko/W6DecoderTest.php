@@ -60,9 +60,8 @@ final class W6DecoderTest extends TestCase
     }
 
     /**
-     * Other Eddystone beacons are in range with low instance ids of their own, so the
-     * namespace -- which our configuration writes as the bracelet's own MAC -- is what keeps
-     * them from being read as W6 presses.
+     * Há outros beacons Eddystone ao alcance com instance ids baixos: é o namespace, que a
+     * configuração escreve como o MAC da pulseira, que os separa de um toque da W6.
      */
     public function testAForeignNamespaceIsNotClaimed(): void
     {

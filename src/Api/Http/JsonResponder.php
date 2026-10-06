@@ -9,9 +9,7 @@ use React\Http\Message\Response;
 final class JsonResponder
 {
     /**
-     * A resposta a um resultado de serviço, com o estado que o próprio resultado declara. É
-     * esta que os controllers usam: com o estado decidido fora, esquecer o argumento
-     * respondia 200 a um corpo de erro, em silêncio.
+     * A resposta a um resultado de serviço, com o estado que o próprio resultado declara.
      *
      * @param array<string, mixed> $payload
      */
@@ -23,11 +21,8 @@ final class JsonResponder
     }
 
     /**
-     * O estado escrito à mão, para as respostas que não nascem de um resultado de serviço.
-     *
-     * O `JSON_INVALID_UTF8_SUBSTITUTE` impede que um byte inválido vindo de um dispositivo
-     * derrube a rota: sem ele, o `json_encode()` devolvia `false` e a listagem inteira saía
-     * 500 por causa de um nome estragado.
+     * O estado escrito à mão, para as respostas que não nascem de um resultado de serviço. O
+     * `JSON_INVALID_UTF8_SUBSTITUTE` impede que um byte inválido de um dispositivo derrube a rota.
      *
      * @param array<string, mixed> $payload
      */

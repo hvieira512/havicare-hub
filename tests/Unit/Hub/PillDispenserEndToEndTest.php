@@ -16,10 +16,7 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\LocalTcpPort;
 
-/**
- * Do socket ao canal do MQTT, com as tramas na forma em que o aparelho as manda -- cifradas.
- * Cada degrau estava preso em separado, e nenhum teste os punha em fila.
- */
+/** Do socket ao canal do MQTT, com as tramas na forma em que o aparelho as manda: cifradas. */
 final class PillDispenserEndToEndTest extends TestCase
 {
     private const DEVICE_NUMBER = 0x0000AABBCCDDEEFF;
@@ -69,7 +66,7 @@ final class PillDispenserEndToEndTest extends TestCase
         self::assertSame([], $this->ofType($mqtt->events, 'ambient_temperature'));
     }
 
-    /** O único sinal de uma dose falhada: sair por `telemetry` era sair a QoS 0. */
+    /** O único sinal de uma dose falhada: por `telemetry` sairia a QoS 0. */
     public function testAMissedDoseReachesTheEventChannel(): void
     {
         $mqtt = $this->exchange([
@@ -84,7 +81,7 @@ final class PillDispenserEndToEndTest extends TestCase
         self::assertSame([], $this->ofType($mqtt->telemetry, 'medication_alarm_change'));
     }
 
-    /** Sem a guarda do TFLV, ruído passava por TAGs inventadas e virava telemetria fabricada. */
+    /** Sem a guarda do TFLV, ruído passaria por TAGs inventadas e viraria telemetria fabricada. */
     public function testABodyThatDoesNotDecryptPublishesNothing(): void
     {
         $frame = $this->frame(0x02, 2, [0x8103 => "\x50"]);

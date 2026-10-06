@@ -36,9 +36,8 @@ class CompanyService
     }
 
     /**
-     * O nome repetido responde 409. A pergunta é feita antes de chamar o repositório, porque
-     * o `create()` dele nunca devolve zero para um nome repetido -- devolve o id da linha que
-     * já existe, e é idempotente de propósito para quem o chama por dentro.
+     * O nome repetido responde 409, perguntado antes: o `create()` do repositório é idempotente e
+     * devolve o id da linha que já existe.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
@@ -59,11 +58,8 @@ class CompanyService
     }
 
     /**
-     * Renomear para um nome que já é de outra empresa é 409, e não 500.
-     *
-     * O `companies.name` é `UNIQUE`, e por isso a base recusava-o -- mas só depois, com uma
-     * excepção do PDO a subir até ao kernel e a sair como `server_error`. É uma recusa
-     * previsível e tem código próprio; não tem de derrubar o pedido para o dizer.
+     * Renomear para o nome de outra empresa é 409, verificado antes de o `UNIQUE` da base o
+     * recusar com uma excepção.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>

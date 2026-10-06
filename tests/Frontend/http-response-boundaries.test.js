@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 
-// Sem temporizadores reais: o refresh de token agenda com window.setTimeout, e um timer de
-// uma hora deixava o processo de teste pendurado.
+// Sem temporizadores reais: o refresh de token agenda com `window.setTimeout`, e um timer de
+// uma hora deixaria o processo de teste pendurado.
 window.setTimeout = () => 0;
 window.clearTimeout = () => {};
 
@@ -23,9 +23,8 @@ beforeEach(() => {
 });
 
 /**
- * Todos os chamadores decidem por `if (result?.error)`. Um corpo vazio devolvia só o estado,
- * sem `error`, e por isso um 500 lia-se como sucesso -- o `licenses.js` e o
- * `capability-catalog.js` gravavam a lista vazia em cache e não voltavam a tentar.
+ * Todos os chamadores decidem por `if (result?.error)`: sem `error`, um 500 de corpo vazio
+ * lê-se como sucesso e a lista vazia fica em cache.
  */
 test("um erro com corpo vazio traz `error`, e não passa por sucesso", async () => {
     globalThis.fetch = async () => response(500, "");
@@ -45,10 +44,7 @@ test("um sucesso com corpo vazio continua a ser sucesso", async () => {
     assert.equal(result._httpStatus, 204);
 });
 
-/**
- * Um 401 depois de o token ter sido renovado não é um token velho -- é a sessão a acabar.
- * Sem o aviso, a dashboard mostrava um erro genérico e ficava sem pedir autenticação.
- */
+/** Um 401 depois de renovar o token não é um token velho: é a sessão a acabar. */
 test("um 401 que sobrevive ao refresh pede autenticação", async () => {
     setDashboardApiToken({ access_token: "velho", refresh_token: "r1" });
     globalThis.fetch = async (url) =>

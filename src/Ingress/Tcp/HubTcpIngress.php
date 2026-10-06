@@ -52,8 +52,7 @@ class HubTcpIngress
     {
         $this->buffers[$resourceId] = ($this->buffers[$resourceId] ?? '') . $data;
 
-        // O `onMessage` pode fechar a ligação e apagar o buffer a meio do ciclo, e o
-        // analisador não vê esse efeito: daí verificar a chave em vez de confiar no tipo.
+        // O `onMessage` pode apagar o buffer a meio do ciclo, sem o analisador o ver.
         while (array_key_exists($resourceId, $this->buffers) && ($packetLength = $this->nextPacketLength($this->buffers[$resourceId])) !== null) {
             $packet = substr($this->buffers[$resourceId], 0, $packetLength);
             $this->buffers[$resourceId] = substr($this->buffers[$resourceId], $packetLength);

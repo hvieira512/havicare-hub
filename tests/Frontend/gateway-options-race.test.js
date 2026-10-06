@@ -37,10 +37,7 @@ beforeEach(() => {
     state.selectedDetail = null;
 });
 
-/**
- * Trocar de licença duas vezes depressa desenhava os gateways da licença anterior e guardava-os
- * no estado do modal. Marcar um e gravar ligava o sensor a um gateway de outro cliente.
- */
+/** Os gateways de uma licença anterior, marcados e gravados, ligariam o sensor a outro cliente. */
 test("a resposta atrasada não desenha os gateways da licença anterior", async () => {
     const fetches = installDeferredFetch();
 

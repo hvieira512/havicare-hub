@@ -8,11 +8,8 @@ use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationLifecycleReposi
 use Hub\Domain\Capability\CapabilityCatalog;
 
 /**
- * Reconcilia as duas eras de armazenamento de configuração num só retrato.
- *
- * As linhas escritas depois do ciclo de vida trazem revisões, estado de sincronização e as
- * operações que as tentaram entregar; as escritas antes dele não trazem nada disso. As duas
- * têm de sair pela mesma porta e com a mesma forma, sem quem consome saber a diferença.
+ * Reconcilia num só retrato as linhas de configuração com ciclo de vida -- revisões,
+ * sincronização, operações -- e as anteriores a ele, sem quem consome saber a diferença.
  */
 final class ConfigurationLifecyclePresenter
 {
@@ -144,11 +141,8 @@ final class ConfigurationLifecyclePresenter
     }
 
     /**
-     * Uma chave que já não é capacidade nenhuma.
-     *
-     * Tirar uma capacidade do catálogo deixa as mudanças por confirmar dela sem nada que as
-     * suplante — só uma escrita da mesma chave o faz —, e uma delas em `failed` marcava o
-     * aparelho inteiro a vermelho por uma coisa que ninguém consegue ver nem corrigir.
+     * Uma chave que já não é capacidade nenhuma: nada suplanta as mudanças por confirmar dela, e
+     * uma em `failed` não pode marcar o aparelho inteiro a vermelho.
      */
     private static function isOrphan(string $key): bool
     {

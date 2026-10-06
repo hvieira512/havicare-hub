@@ -1,8 +1,6 @@
 /**
- * O tema tem de estar posto antes da primeira pintura, senão a página abre clara e escurece à
- * frente de quem está a olhar. Por isso é um script clássico -- sem `defer` e sem ser módulo --
- * e vem no `<head>` antes das folhas de estilo: corre e põe o `data-bs-theme` antes de o CSS
- * sequer carregar. A chave é a mesma do `storage.js`, escrita à mão porque aqui não há módulos.
+ * Script clássico no `<head>`, antes das folhas de estilo, para pôr o `data-bs-theme` antes da
+ * primeira pintura. A chave é a do `storage.js`, escrita à mão porque aqui não há módulos.
  */
 (function () {
     try {

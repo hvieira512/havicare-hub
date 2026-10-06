@@ -41,17 +41,14 @@ final class DeviceCommandCatalog
             // as sete leituras de uma vez.
             ['id' => 'pillReadStatus', 'command' => 'readStatus', 'label' => 'Device status', 'icon' => 'fa-arrows-rotate', 'kind' => 'request', 'feature' => 'device_status', 'expectedReplyTypes' => ['read_status_ack']],
             ['id' => 'pillReadConfiguration', 'command' => 'readConfiguration', 'label' => 'Stored configuration', 'icon' => 'fa-rotate', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
-            // A segunda metade da leitura: as TAGs já não cabem numa trama de 300 bytes.
+            // A segunda metade da leitura: as TAGs não cabem numa trama de 300 bytes.
             ['id' => 'pillReadConfiguration2', 'command' => 'readConfiguration2', 'label' => 'Stored configuration (rest)', 'icon' => 'fa-rotate', 'kind' => 'request', 'feature' => 'sync_configuration', 'expectedReplyTypes' => ['read_config_ack']],
         ];
     }
 
     /**
-     * O comando com que um protocolo relê o estado do aparelho, se souber.
-     *
-     * Não tem capacidade por trás: actualizar a telemetria é uma função do ecrã, e o que a
-     * resposta traz sai nas capacidades que já existem. Por isso não é `request` — um
-     * `request` é um mosaico, e um mosaico precisa de uma capacidade que o sustente.
+     * O comando com que um protocolo relê o estado do aparelho, se souber. Não é `request`
+     * porque não tem capacidade por trás, e um `request` é um mosaico que precisa de uma.
      *
      * @return array<string, mixed>|null
      */
@@ -174,10 +171,8 @@ final class DeviceCommandCatalog
     }
 
     /**
-     * Medições a pedido de uma pulseira Veepoo.
-     *
-     * O comando não viaja para o aparelho: vai para o gateway que tem a sessão BLE e chama o
-     * SDK, e por isso o `command` é o nome da operação na ponte e não uma trama.
+     * Medições a pedido de uma pulseira Veepoo. O `command` é o nome da operação na ponte do
+     * gateway que tem a sessão BLE, e não uma trama.
      *
      * @return array<int, array<string, mixed>>
      */

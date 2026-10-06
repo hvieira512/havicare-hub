@@ -14,12 +14,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * As medições pedidas ao momento, por oposição ao histórico de blocos.
- *
- * O gateway reenvia o que o SDK lhe dá sem decidir o que significa, e é aqui que o tipo do
- * SDK vira uma grandeza do hub. Antes disto só a frequência cardíaca era reconhecida: uma
- * saturação, uma glicemia ou uma temperatura medidas a pedido chegavam e eram deitadas fora
- * em silêncio, e o pedido ficava eternamente por cumprir no ecrã.
+ * As medições pedidas ao momento, por oposição ao histórico de blocos: é aqui que o tipo do SDK,
+ * que o gateway reenvia sem interpretar, vira uma grandeza do hub.
  */
 final class BridgeMeasurementTest extends TestCase
 {
@@ -63,9 +59,8 @@ final class BridgeMeasurementTest extends TestCase
                 'activity',
                 ['steps' => 216, 'distanceMeters' => 187, 'caloriesKcal' => 14.6],
             ],
-            // Medição real feita na app do fabricante, conferida no ecrã dela valor a valor.
-            // Os nomes do hub levam a unidade; os do fabricante não distinguem percentagem
-            // de quilos, e `muscleRate` ao lado de `muscleMass` obriga a adivinhar.
+            // Medição real na app do fabricante, conferida valor a valor. Os nomes do hub levam a
+            // unidade: `muscleRate` ao lado de `muscleMass` obriga a adivinhar.
             'composição corporal' => [
                 'composição corporal',
                 // Em texto, que é como o SDK os entrega.
@@ -133,9 +128,8 @@ final class BridgeMeasurementTest extends TestCase
         self::assertCount(1, $telemetry);
         self::assertSame($expected, $telemetry[0]['payload']['data']);
 
-        // O `nativeType` é, por contrato, o tipo original do fabricante. `measurement` cobria
-        // nove tipos diferentes e não dizia qual, e é por ele que quem integra vai à
-        // documentação da Veepoo procurar o que recebeu.
+        // O `nativeType` é o tipo original do fabricante: é por ele que quem integra vai à
+        // documentação da Veepoo.
         self::assertSame(
             'type-' . $payload['sdkType'],
             $telemetry[0]['payload']['source']['nativeType'],
@@ -143,9 +137,8 @@ final class BridgeMeasurementTest extends TestCase
     }
 
     /**
-     * Enquanto o sensor procura o sinal, o firmware repete a trama com o valor a zero. É
-     * ausência de leitura e não uma leitura de zero -- publicá-la dava uma saturação de 0%
-     * ou uma glicemia nula a meio de uma medição que estava a correr bem.
+     * Enquanto o sensor procura o sinal o firmware repete a trama a zero: é ausência de
+     * leitura, e não uma saturação de 0%.
      */
     public function testZeroWhileMeasuringIsNotPublished(): void
     {
@@ -167,12 +160,8 @@ final class BridgeMeasurementTest extends TestCase
     }
 
     /**
-     * O ECG falha por contacto e não se cala a dizê-lo.
-     *
-     * O firmware reporta `wearStatus: wearNotPass` e conta quedas de derivação
-     * (`leadOffType`), mandando terminar a medição ao fim de quatro. Enquanto isso manda
-     * dezenas de tramas seguidas com tudo a zero. O operador tem de saber porque é que o
-     * exame não sai -- mas uma vez, não sessenta, ou o aviso afoga o histórico do aparelho.
+     * O firmware reporta `wearNotPass` e conta quedas de derivação (`leadOffType`) com dezenas de
+     * tramas a zero: o operador sabe porquê uma vez, e não sessenta.
      */
     public function testEcgWithoutSkinContactIsReportedOnceAndNotAsTelemetry(): void
     {
@@ -200,11 +189,8 @@ final class BridgeMeasurementTest extends TestCase
     }
 
     /**
-     * A onda de ECG chega em array e não em objeto.
-     *
-     * O aparelho manda quatro pacotes por segundo enquanto mede, e o gateway junta-os num
-     * traçado só antes de os entregar -- uma medição é um exame, não trezentos fragmentos
-     * avulsos no histórico.
+     * A onda chega em array, quatro pacotes por segundo, e o gateway junta-os num traçado só: uma
+     * medição é um exame, não trezentos fragmentos.
      */
     public function testEcgWaveformBecomesOneTracing(): void
     {
@@ -225,13 +211,7 @@ final class BridgeMeasurementTest extends TestCase
         self::assertSame(['samples' => [12, -4, 33, 128, -71]], $ecg[0]['payload']['data']);
     }
 
-    /**
-     * Um traçado todo a zeros não é um exame.
-     *
-     * A pulseira grava os trinta segundos mesmo sem sinal -- pousada numa secretária devolve
-     * dezasseis mil amostras a zero. Publicá-las dá um ECG no histórico de quem nunca fez
-     * nenhum; o que houve foi uma medição sem sinal, e é isso que o operador tem de ler.
-     */
+    /** A pulseira grava os trinta segundos mesmo sem sinal, e o que o operador tem de ler é a falta dele. */
     public function testAnAllZeroTracingIsReportedAsFailureAndNotAsAnExam(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -253,11 +233,8 @@ final class BridgeMeasurementTest extends TestCase
     }
 
     /**
-     * O traçado inteiro vai para o MQTT, e para a dashboard vai só o resumo.
-     *
-     * São dezasseis mil amostras por exame. Quem integra quer o traçado; a dashboard guarda
-     * cem entradas por aparelho e não desenha ondas -- enchê-la com o traçado completo era
-     * despejar megabytes no Redis para mostrar «Dados de ECG».
+     * São dezasseis mil amostras por exame, e a dashboard guarda cem entradas por aparelho e não
+     * desenha ondas.
      */
     public function testTheDashboardKeepsTheSummaryAndNotTheWholeTracing(): void
     {
@@ -310,12 +287,8 @@ final class BridgeMeasurementTest extends TestCase
     }
 
     /**
-     * Um pedido é uma leitura: a que o aparelho deu por boa no fim.
-     *
-     * Medido numa pulseira real, ao pulso: um só pedido de frequência cardíaca deu dezanove
-     * leituras entre 79 e 97, porque o firmware repete a trama uma vez por segundo enquanto
-     * mede e o coração não está parado. Travar só o que se repete igual não chega -- é a
-     * medição a assentar, e o resultado é o valor com que ela assentou.
+     * O firmware repete a trama a cada segundo enquanto mede -- dezanove leituras entre 79 e 97 num
+     * só pedido real --, e o resultado é o valor com que ela assentou.
      */
     public function testAMeasurementYieldsTheValueItSettledOn(): void
     {
@@ -336,10 +309,8 @@ final class BridgeMeasurementTest extends TestCase
     }
 
     /**
-     * Uma leitura instantânea não espera por confirmação nenhuma.
-     *
-     * Os totais do dia e o estado de quem manda a pulseira vibrar são contadores que o
-     * firmware já tem: respondem numa trama e não têm medição a assentar.
+     * Os totais do dia e o estado de quem manda a pulseira vibrar são contadores que o firmware já
+     * tem: respondem numa trama e não têm medição a assentar.
      */
     public function testAnInstantReadIsPublishedAtOnce(): void
     {
@@ -352,11 +323,8 @@ final class BridgeMeasurementTest extends TestCase
     }
 
     /**
-     * Uma confirmação perdida não pode levar a leitura com ela.
-     *
-     * O valor foi medido; se a caixa morrer entre a última trama e a confirmação, ele tem de
-     * sair na mesma. O prazo é mais longo do que qualquer medição desta pulseira -- a mais
-     * lenta, a composição corporal, leva dois minutos.
+     * Se a caixa morrer entre a última trama e a confirmação, o valor sai na mesma; o prazo excede a
+     * medição mais lenta, a composição corporal, de dois minutos.
      */
     public function testAReadingIsNotLostWhenTheConfirmationNeverArrives(): void
     {

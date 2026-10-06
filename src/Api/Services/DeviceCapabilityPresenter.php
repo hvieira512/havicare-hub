@@ -14,11 +14,8 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceMetadata;
 
 /**
- * Projecta a configuração guardada de um modelo na forma de capacidades que a API serve.
- *
- * Vive à parte do `DeviceService` porque só precisa do registo de capacidades e da base de
- * dados: nada do hub, da whitelist, do store ou da fila de downlink em torno dos quais o
- * resto dessa classe está construído.
+ * Projecta a configuração guardada de um modelo nas capacidades que a API serve. Só precisa do
+ * registo de capacidades e da base de dados, e por isso vive fora do `DeviceService`.
  */
 final class DeviceCapabilityPresenter
 {

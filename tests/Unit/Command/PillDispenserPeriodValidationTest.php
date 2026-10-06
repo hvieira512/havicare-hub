@@ -8,11 +8,8 @@ use Hub\Command\Configuration\Payload\ZayataPayloadBuilder;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O período do plano é um intervalo, e um intervalo ao contrário não é um intervalo.
- *
- * O aparelho recebe as duas datas em TAGs separadas -- `0x1004`–`0x1006` o início e
- * `0x1007`–`0x1009` o fim -- e aceita-as sem reclamar da ordem. O que sai daí é um plano que
- * nunca chega a valer, sem erro em lado nenhum: os alarmes simplesmente não tocam.
+ * O aparelho aceita as datas (`0x1004`–`0x1006` e `0x1007`–`0x1009`) sem reclamar da ordem, e um
+ * plano ao contrário nunca vale: os alarmes não tocam, sem erro.
  */
 final class PillDispenserPeriodValidationTest extends TestCase
 {

@@ -39,11 +39,7 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
         self::assertSame([0, 4], array_column($layout['areas'], 'key'));
     }
 
-    /**
-     * Uma sala reconfigurada com menos áreas não pode deixar as antigas para trás: o mapa
-     * passava a desenhar uma cama que já ninguém declarou, e o `regionId` da presença
-     * resolvia para o nome errado.
-     */
+    /** As áreas antigas desenhariam uma cama que ninguém declarou, e o `regionId` resolveria mal. */
     public function testReplacingALayoutLeavesNoAreasBehind(): void
     {
         $this->repository->store('594B3CCBA56B', $this->layout(), '{"raw":1}', '2026-09-17 15:00:00');

@@ -16,22 +16,12 @@ import {
 } from "../domain.js";
 
 /**
- * O separador das Capacidades: o catálogo do que um tipo de dispositivo pode ter.
- *
- * É uma vista de leitura e não um editor -- ligar e desligar capacidades faz-se na ficha de
- * um modelo. O que se vem aqui perguntar é o inverso: que capacidades existem para este
- * tipo, e quais delas é que este fornecedor traz. Daí as que ele não declara ficarem na
- * lista, esbatidas, em vez de desaparecerem.
+ * O separador das Capacidades: o catálogo de um tipo de dispositivo, só de leitura. As que o
+ * fornecedor não declara ficam na lista, esbatidas.
  */
 let els;
 
-/**
- * O que entra no catálogo.
- *
- * Uma acção -- desligar, reiniciar, encontrar -- não é telemetria, nem configuração, nem
- * evento, e sem este quarto termo sete capacidades do relógio desapareciam do ecrã enquanto o
- * cabeçalho continuava a contá-las.
- */
+/** O que entra no catálogo: as acções -- desligar, reiniciar, encontrar -- são o quarto termo. */
 export function showsInCatalog(entry) {
     return Boolean(
         entry.isTelemetry ||
@@ -42,11 +32,8 @@ export function showsInCatalog(entry) {
 }
 
 /**
- * O que se diz de uma capacidade à direita do nome.
- *
- * «Solicitável» é pedir uma leitura. Uma capacidade que só se pode pedir e não é telemetria
- * nem definição não devolve leitura nenhuma: é uma acção, e mandar o relógio desligar-se não
- * é o mesmo gesto que pedir-lhe a frequência cardíaca.
+ * O que se diz de uma capacidade à direita do nome. Uma que só se pode pedir e não é
+ * telemetria nem definição é uma acção, e não «Solicitável».
  */
 export function capabilityFacts(entry) {
     if (entry.isRequestable && !entry.isTelemetry && !entry.isConfigurable) {
@@ -194,9 +181,7 @@ function renderCapabilitiesCatalogSection() {
             const visibleEntries = entries
                 .filter(showsInCatalog)
                 .filter((entry) => matchesCapabilityQuery(entry))
-                // As que o fornecedor não declara ficam na lista: saber que uma capacidade
-                // existe para o tipo e que este fornecedor não a traz é a pergunta que se
-                // vem aqui fazer.
+                // As que o fornecedor não declara ficam na lista: é a pergunta que se vem aqui fazer.
                 .map((entry) => ({
                     ...entry,
                     supported: !hasSupplierFilter || enabledSet.has(entry.key),
@@ -216,8 +201,8 @@ function renderCapabilitiesCatalogSection() {
     // protocolo, e o ícone -- o mesmo dos cartões de pedido -- é o que se reconhece.
     const supplierName = supplier ? supplier.name : "";
 
-    // Em telefone cada secção abre e fecha, e o catálogo é reconstruído a cada tecla da
-    // pesquisa: sem isto, escrever uma letra fechava tudo o que estivesse aberto.
+    // Em telefone cada secção abre e fecha, e o catálogo reconstrói-se a cada tecla da pesquisa:
+    // isto mantém aberto o que estava aberto.
     const openBodies = new Set(
         Array.from(els.capabilityCatalogViewer.querySelectorAll(".collapse.show"))
             .map((body) => body.id),
@@ -232,9 +217,8 @@ function renderCapabilitiesCatalogSection() {
                     const facts = entry.supported
                         ? capabilityFacts(entry)
                         : [supplierName ? `não oferecido pela ${supplierName}` : "não oferecido"];
-                    // Os ícones das secções irmãs vão todos na mesma cor: cores diferentes
-                    // leem-se como gravidades diferentes, e o vermelho numa secção de
-                    // alarmes lê-se como erro em vez de categoria.
+                    // Os ícones das secções irmãs vão na mesma cor: cores diferentes leem-se
+                    // como gravidades.
                     return html`
                 <div class="capability-row d-grid border rounded-2${entry.supported ? "" : " is-unsupported"}">
                     <span class="d-flex justify-content-center text-secondary"><i class="fa-solid ${capabilityIcon(entry, section)}"></i></span>
@@ -244,9 +228,8 @@ function renderCapabilitiesCatalogSection() {
                 })
                 .join("");
 
-            // Em telefone cada secção fecha, porque as cinco somam seis ecrãs de lista
-            // corrida. O `d-sm-block` ganha ao `display: none` do collapse, por isso a
-            // partir de `sm` estão todas abertas e não há nada para clicar.
+            // Em telefone cada secção fecha; o `d-sm-block` ganha ao `display: none` do collapse, e a
+            // partir de `sm` estão todas abertas.
             const bodyId = `${catalogSectionId(section)}Body`;
             const count = supported === entries.length
                 ? `${supported} ${supported === 1 ? "capacidade" : "capacidades"}`
@@ -283,11 +266,7 @@ function renderCapabilitiesCatalogSection() {
     renderCapabilityCatalogSectionNav(visibleSections);
 }
 
-/**
- * O ícone de uma capacidade no catálogo. O mapa dos cartões de pedido cobre sobretudo
- * telemetria; fora disso o recurso é o ícone da secção, porque catorze círculos iguais numa
- * secção de alarmes dizem menos do que ícone nenhum.
- */
+/** O ícone de uma capacidade: o dos cartões de pedido, ou o da secção quando não o há. */
 function capabilityIcon(entry, section) {
     const mapped = cardIcon(entry.key);
     if (mapped !== "fa-circle-info") return mapped;

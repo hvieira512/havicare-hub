@@ -7,12 +7,8 @@ namespace Hub\Ingress\Mqtt\Moko;
 use Hub\Device\DeviceDescriptor;
 
 /**
- * Traz um anúncio W6 descodificado para as formas genéricas do hub.
- *
- * Ao contrário da W6B, um toque aqui não traz contador: o slot com o Instance ID daquele
- * modo simplesmente passa a ser anunciado durante 30 segundos. O que chega a este
- * normalizador é já um toque -- quem chama estrangula por tempo para a frame repetida não
- * virar trinta alarmes.
+ * Traz um anúncio W6 descodificado para as formas genéricas do hub. O que chega aqui já é um
+ * toque: quem chama estrangula por tempo a frame repetida.
  */
 final class W6Normalizer
 {
@@ -55,9 +51,7 @@ final class W6Normalizer
             return [];
         }
 
-        // Sem `triggerCount` nem `presses`: a frame não conta nada, só diz qual o modo. Um
-        // consumidor que espere o contador da W6B vê o campo ausente em vez de um zero, que
-        // seria indistinguível de "nunca foi premida".
+        // Sem `triggerCount` nem `presses`: a frame não conta, e um zero leria-se como nunca premida.
         return [[
             'type' => 'help_call',
             'data' => ['pressType' => $pressMode],

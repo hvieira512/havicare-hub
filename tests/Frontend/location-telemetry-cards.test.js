@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
-// esse caminho passa pelo api/http.js, que toca em window ao carregar.
+// Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e
+// esse caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
 import { cardContent as uplinkCardContent } from "./support/cards.js";
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
@@ -15,15 +15,12 @@ state.capabilityCatalogByType.watch = [{ key: "location", label: "Localização"
 state.selectedDetail = { model: { deviceType: "watch" } };
 
 /**
- * O cartão de localização.
- *
- * As três formas em que um evento `location` chega em produção, verificadas no Redis:
- * resolvido com coordenadas, fixo de rádio que não resolveu, e relatório periódico sem
- * prova nenhuma. O cartão dizia "Atualização de localização" nas três.
+ * As três formas em que um `location` chega em produção: resolvido com coordenadas, fixo de
+ * rádio que não resolveu, e relatório periódico sem prova nenhuma.
  */
 
-// A idade é relativa a agora e não a uma data fixa: o `ago` conta a partir do `Date.now()`.
-// Dois minutos dao "há 2m" com quase um minuto de margem em qualquer sentido.
+// A idade é relativa ao `Date.now()`: dois minutos dão «há 2m» com quase um minuto de margem
+// em qualquer sentido.
 const minutesAgo = (minutes) =>
     new Date(Date.now() - minutes * 60_000).toISOString();
 
@@ -93,8 +90,6 @@ test("sem posição, o valor é um travessão e os detalhes são a prova de rád
 
     assert.match(html, /—/);
     assert.match(html, /1 antena · 1 rede WiFi · há 2m/);
-    // O que lá estava: jargão sem tradução, um booleano em inglês e a velocidade de um
-    // relógio parado sem unidade.
     assert.doesNotMatch(html, /Atualização de localização/);
     assert.doesNotMatch(html, /GPS válido/);
     assert.doesNotMatch(html, /Velocidade/);
@@ -122,8 +117,8 @@ test("reportar e não ver nada é outra falha, e diz-se por palavras", () => {
 });
 
 test("um relatório sem posição não apaga a última posição conhecida", () => {
-    // Num HW20PRO são 8 de 29 relatórios que não resolvem. Cada um deles substituía uma
-    // posição de ±1 m obtida dois minutos antes.
+    // Num HW20PRO são 8 de 29 relatórios que não resolvem, e nenhum substitui uma posição de
+    // ±1 m obtida dois minutos antes.
     const html = locationCard([
         { data: UNRESOLVED, minutes: 1 },
         { data: RADIO_FIX, minutes: 14 },
@@ -157,8 +152,8 @@ test("o par 0,0 não é uma posição", () => {
 });
 
 test("o lat/lon manda, e não o hasCoordinates", () => {
-    // O histórico do Redis guarda cem eventos por dispositivo e os mais antigos são
-    // anteriores a esse campo: confiar nele fazia uma posição boa desaparecer.
+    // O histórico do Redis guarda cem eventos por dispositivo e os mais antigos são anteriores
+    // a esse campo: confiar nele faria uma posição boa desaparecer.
     const content = uplinkCardContent("location", {
         source: "gps",
         lat: 41.706841,

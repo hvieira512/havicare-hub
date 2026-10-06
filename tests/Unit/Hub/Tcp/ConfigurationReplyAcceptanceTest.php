@@ -13,15 +13,7 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Saber se o aparelho aceitou uma configuração é conhecimento do protocolo, e não do servidor
- * TCP.
- *
- * Isto vivia no `DeviceHubServer`, num `if` que perguntava pelo protocolo `four-p-touch` e
- * pela trama `TAKEPILLS` — dentro do código que serve todos os aparelhos que falam TCP. Um
- * segundo fornecedor com a mesma ideia teria de acrescentar lá outro `if`, e o dispensador de
- * comprimidos, que passa por ali, não tem nada que ver com o assunto.
- */
+/** Saber se o aparelho aceitou uma configuração é conhecimento do protocolo, e não do servidor TCP. */
 final class ConfigurationReplyAcceptanceTest extends TestCase
 {
     private function fourPTouch(): FourPTouchTcpProtocol
@@ -41,8 +33,8 @@ final class ConfigurationReplyAcceptanceTest extends TestCase
     {
         $protocol = $this->fourPTouch();
 
-        // `null` não é «recusou», é «não disse». Tratar as duas como a mesma coisa marcava
-        // como falhada uma configuração que o aparelho nem chegou a comentar.
+        // `null` não é «recusou», é «não disse»: tratá-lo como recusa marcaria como falhada uma
+        // configuração que o aparelho nem comentou.
         self::assertNull($protocol->replyAccepted(['type' => 'TAKEPILLS', 'data' => []]));
         self::assertNull($protocol->replyAccepted(['type' => 'TAKEPILLS', 'data' => ['configAck' => 'x']]));
         self::assertNull($protocol->replyAccepted(['type' => 'LK', 'data' => ['configAck' => '1']]));

@@ -26,11 +26,8 @@ final class DevicePaths
                 'get' => [
                     'tags' => [self::TAG],
                     'summary' => 'List devices',
-                    // Os filtros de conjunto aceitam vários valores, como `deviceType[]=a&
-                    // deviceType[]=b` ou `deviceType=a,b`. `license` escolhe pares empresa e
-                    // licença -- `empresa`, `empresa:número`, ou `none` para os dispositivos
-                    // sem uma nem outra -- porque uma licença pertence sempre a uma empresa.
-                    // `company` e `licenseId` são a forma anterior e continuam a funcionar.
+                    // Os filtros de conjunto aceitam `deviceType[]=a&deviceType[]=b` ou `deviceType=a,b`. `license`
+                    // escolhe `empresa`, `empresa:número` ou `none`; `company` e `licenseId` continuam a funcionar.
                     'parameters' => array_merge(Parameters::pagination(5), [
                         Parameters::stringList('deviceType'),
                         Parameters::stringList('supplier'),
@@ -62,9 +59,8 @@ final class DevicePaths
                     'tags' => [self::TAG],
                     'summary' => 'Get device detail',
                     'parameters' => [$imei],
-                    // Um dispositivo fora do âmbito de quem pergunta responde `not_found` e
-                    // não `forbidden`: a existência de um dispositivo de outro cliente não é
-                    // coisa que se confirme a quem não lhe pertence.
+                    // Fora do âmbito responde `not_found` e não `forbidden`: não se confirma a existência de um
+                    // dispositivo alheio.
                     'responses' => Responses::map(
                         [
                             '200' => Responses::json(

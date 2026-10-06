@@ -79,21 +79,14 @@ import {
     saveTextStorage,
 } from "../storage.js";
 
-/**
- * O modal de adicionar e editar um dispositivo: os seus selectores, o formulário, e gravar
- * ou apagar. Recebe o mapa de elementos e as instâncias do Bootstrap pelo `initDeviceModal`,
- * como os outros módulos de vista.
- */
+/** O modal de adicionar e editar um dispositivo: selectores, formulário, gravar e apagar. */
 
 let els;
 let deviceModal;
 
 /**
- * O painel de configurações -- 20 módulos e 206 KB -- serve só o separador «Configurações»,
- * e entra por `import()` na primeira vez que alguém o abre.
- *
- * Mora aqui, e não na raiz de composição, porque os dois lados que precisam dele já importam
- * este módulo: assim o grafo tardio tem uma porta só.
+ * O painel de configurações entra por `import()` na primeira vez que se abre o separador. Mora
+ * aqui porque quem precisa dele já importa este módulo: o grafo tardio tem uma porta só.
  */
 let configPanel = null;
 let loadedPanel = null;
@@ -105,15 +98,13 @@ export function loadConfigPanel() {
         import("./config/handlers.js"),
     ])
         .then(([catalog, panel, handlers]) => {
-            // O painel guarda os elementos ao arrancar, como os outros módulos de vista. A
-            // memoização garante que isto corre uma vez só, por muitas aberturas que haja.
+            // Corre uma vez só: a promessa fica memoizada.
             panel.initDeviceConfigPanel({ els });
             loadedPanel = { catalog, panel, handlers };
             return loadedPanel;
         })
         .catch((error) => {
-            // Uma promessa rejeitada não é nullish: sem a limpar ficava em cache, e toda a
-            // tentativa seguinte devolvia a mesma falha sem voltar a pedir nada ao servidor.
+            // Uma promessa rejeitada não é nullish: limpa-se para a tentativa seguinte voltar a pedir.
             configPanel = null;
             throw error;
         }));
@@ -130,12 +121,8 @@ export function initDeviceModal(context) {
 }
 
 /**
- * As licenças, agrupadas pela empresa que as detém, para a árvore da classificação. Todas
- * de uma vez e não as da empresa do dispositivo: mudar de cliente é precisamente uma das
- * razões para abrir isto.
- *
- * Devolve `null` quando o pedido falha, para o modal distinguir "o servidor não respondeu"
- * de "não há licenças nenhumas" a quem está a olhar para uma árvore vazia.
+ * Todas as licenças e não só as da empresa do dispositivo, porque mudar de cliente é uma das
+ * razões para abrir isto. `null` quando o pedido falha, para não parecer que não há licenças.
  */
 async function loadLicenseGroups() {
     const licenses = await ensureLicensesLoaded();
@@ -202,8 +189,7 @@ export async function editDevice(imei, supplier, model) {
     setDeviceFormError("");
     clearInvalid(els.deviceForm);
     els.deviceConfigTabBtn?.classList.remove("d-none");
-    // A conta do separador é do dispositivo que está aberto: sem isto ficava a do anterior
-    // até o painel de configurações chegar.
+    // A conta do separador é do dispositivo aberto: esconde-se até o painel chegar.
     els.deviceConfigCount?.classList.add("d-none");
     els.deleteDeviceBtn.dataset.imei = imei;
     els.deleteDeviceBtn.classList.remove("d-none");
@@ -302,8 +288,7 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
             : company,
     ].filter((part) => part !== "");
 
-    // O estado é um ponto e não uma pastilha: a linha já leva o tipo, o modelo e a licença, e
-    // uma pastilha ao lado do IMEI empurrava-a para fora. Quem não vê o ponto lê a palavra.
+    // O estado é um ponto e não uma pastilha, para a linha caber; quem não vê o ponto lê a palavra.
     els.deviceModalIdentity.innerHTML = html`
         <span class="modal-device-thumb d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">${raw(modelImageHtml(deviceModel, 24))}</span>
         <span class="min-w-0">
@@ -377,7 +362,6 @@ export function renderDeviceTypeSelector(selectedType = "watch") {
             html`data-action="selectDeviceType" data-value="${value}"`,
     });
 
-    // Uma linha da tabela em vez de quatro cadeias de `if` e cinco toggles decididos aqui.
     const fields = deviceTypeFields(deviceType);
     const byImei = fields.identity.field === "imei";
     els.deviceImeiRow?.classList.toggle("d-none", !byImei);
@@ -410,8 +394,7 @@ function updateDevicePreview() {
 export async function syncDeviceModalContext(loadCatalog = false) {
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
-    // Com o modelo: a Wonlex vende relógios TCP e a pulseira MF91, que é BLE, e sem ele o
-    // painel mostrava a esta o catálogo daqueles.
+    // Com o modelo: a Wonlex vende relógios TCP e a pulseira MF91, que é BLE.
     const protocol = supplierProtocol(supplier, state.deviceTypeSuppliersModels, model);
     state.deviceModal.supplier = supplier;
     state.deviceModal.model = model;
@@ -493,10 +476,7 @@ export async function saveDevice() {
     const licenseId = els.deviceLicenseId.value.trim();
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
-    // O que identifica o aparelho e se leva SIM são duas perguntas distintas, e um gateway
-    // responde diferente às duas: identifica-se por MAC e leva SIM à mesma. Enquanto isto foi
-    // um `deviceType !== "watch"` as duas andaram juntas, e guardar apagava o SIM de tudo o
-    // que não fosse relógio -- incluindo do gateway, onde a SIM é o backhaul.
+    // A identidade e o SIM são perguntas distintas: o gateway identifica-se por MAC e leva SIM.
     const fields = deviceTypeFields(deviceType);
     const identifiedByImei = fields.identity.field === "imei";
     const deviceId = isFourPTouchSelection(
@@ -633,12 +613,7 @@ function renderDeviceSimNumberField(value = "") {
     resetPhoneControls(els.deviceSimNumberRoot);
 }
 
-/**
- * O número do SIM tal como está no campo, ou vazio se ainda não for um número.
- *
- * Serve quem só quer espelhar o formulário no estado: um número a meio de ser escrito não é
- * motivo para rebentar nada.
- */
+/** O número do SIM no campo, ou vazio se ainda não for um número: só espelha o formulário. */
 function deviceSimNumber() {
     try {
         return deviceSimNumberOrThrow();

@@ -9,11 +9,8 @@ import { html, raw } from "../html.js";
 import { clearInvalid, markInvalid } from "../validation.js";
 
 /**
- * O acesso à cloud do fabricante dos radares, que é de cada licença.
- *
- * Não há conta que veja a frota toda: com a conta de uma licença, os radares das outras
- * respondem que estão offline mesmo a publicar telemetria nesse minuto, e nem o endereço base
- * coincide entre inquilinos.
+ * O acesso à cloud do fabricante dos radares, que é de cada licença: com a conta de outra, os
+ * radares respondem offline, e nem o endereço base coincide entre inquilinos.
  */
 
 export const EDITOR_KIND = "radarCredentials";
@@ -31,9 +28,8 @@ export function clearRadarCredentials() {
 }
 
 /**
- * Um segredo já guardado diz que está lá em vez de ser uma caixa vazia com um `placeholder`:
- * o campo em branco quer dizer "fica como está", e sem esta distinção quem corrige o endereço
- * fica sem saber se está prestes a apagar a palavra-passe.
+ * Um segredo já guardado diz que está lá, em vez de ser uma caixa vazia: o campo em branco
+ * quer dizer "fica como está".
  */
 function secretField(id, field, label, stored) {
     return html`
@@ -51,10 +47,8 @@ function secretField(id, field, label, stored) {
 }
 
 /**
- * O que o botão de experimentar responde, em palavras.
- *
- * Autenticar não prova que a conta é desta licença: a de outra autentica à mesma e só depois
- * dá estes radares por offline. Por isso o que se diz é quantos deles a conta conhece.
+ * O que o botão de experimentar responde. Autenticar não prova que a conta é desta licença, e
+ * por isso diz-se quantos destes radares ela conhece.
  */
 export function radarCheckMessage({ radars, responding, error }) {
     if (error) {
@@ -82,9 +76,8 @@ export function radarCheckMessage({ radars, responding, error }) {
 }
 
 /**
- * A linha aberta. Num telefone sai da indentação da árvore e toma o cartão todo, e dos
- * quatro botões só os dois que se usam ficam na primeira linha: quatro seguidos numa calha
- * de 330px dão setenta pixéis cada.
+ * A linha aberta. Num telefone sai da indentação e toma o cartão todo, e só os dois botões que
+ * se usam ficam na primeira linha.
  */
 export function radarCredentialsEditorRow(license) {
     const stored = state.settingsModal.radarCredentials;

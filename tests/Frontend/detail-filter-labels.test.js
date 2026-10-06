@@ -8,13 +8,8 @@ const { detailFilterChipLabels, filterDetailItems } =
     await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
 
 /**
- * A actividade fala português em todo o lado menos onde interessa.
- *
- * A linha mostra "Bateria", o select do tipo mostra "Bateria", mas a pesquisa comparava com
- * o `fieldLabel`, que é o dicionário dos campos do payload -- `speedKmh`, `pressType` -- e
- * não das capacidades. Sem entrada para `battery`, caía no `titleize` e o que estava lá era
- * "Battery": procurar por "bateria" não devolvia nada. A pastilha do filtro aplicado tinha o
- * mesmo problema e mostrava BATTERY ao lado de um select que dizia Bateria.
+ * A pesquisa e a pastilha do filtro usam a etiqueta da capacidade, «Bateria», e não o
+ * `fieldLabel`, que é o dicionário dos campos do payload.
  */
 
 function battery(percent) {

@@ -12,10 +12,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * O encaminhamento de uma pulseira W6B pelo ingress do gateway MOKO.
- *
- * A forma da observação é a que um MKGW3 publica de facto: os beacons MOKO chegam já
- * interpretados, sem bytes de anúncio.
+ * Encaminhamento de uma W6B pelo gateway MOKO, na forma que um MKGW3 publica de facto: os beacons
+ * MOKO chegam já interpretados, sem bytes de anúncio.
  */
 final class BridgeW6bTest extends TestCase
 {
@@ -183,10 +181,8 @@ final class BridgeW6bTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        // O mesmo dispositivo, os mesmos valores, dois gateways -- mas RSSI diferente, porque
-        // quem o mede é o receptor. Estrangular só por dispositivo colapsava isto numa
-        // publicação, e o gateway que ganhasse a corrida ficava com o payload: o
-        // `source.gatewayId` saía arbitrário e o outro gateway desaparecia.
+        // O mesmo aparelho em dois gateways mede RSSI diferente: estrangular só por aparelho
+        // colapsava isto numa publicação com um `source.gatewayId` arbitrário.
         $this->deliver($bridge, $this->scanPayload(['rssi' => -82], self::GATEWAY), self::GATEWAY);
         $this->deliver($bridge, $this->scanPayload(['rssi' => -66], self::GATEWAY2), self::GATEWAY2);
 

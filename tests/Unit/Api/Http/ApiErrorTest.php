@@ -11,9 +11,7 @@ use PHPUnit\Framework\TestCase;
 final class ApiErrorTest extends TestCase
 {
     /**
-     * O contrato que vai no fio, construtor a construtor. É um detector de mudanças: estes
-     * códigos e mensagens estão na especificação e nos clientes, e alterar um é alterar a API
-     * pública.
+     * Detector de mudanças: estes códigos e mensagens estão na especificação e nos clientes.
      *
      * @return array<string, array{callable(): ApiError, string, string, int}>
      */
@@ -88,9 +86,8 @@ final class ApiErrorTest extends TestCase
     }
 
     /**
-     * O `codes()` é o que a especificação usa para declarar cada rota. Um construtor fora do
-     * mapa respondia 400 por omissão sem nenhuma rota o poder declarar, e um código no mapa
-     * sem construtor prometia um estado que ninguém envia -- os dois são silenciosos.
+     * O `codes()` declara cada rota na especificação: um construtor fora do mapa não se pode
+     * declarar, e um código sem construtor promete um estado que ninguém envia.
      */
     public function testTheDeclaredCodesAreExactlyTheOnesTheConstructorsProduce(): void
     {
@@ -115,9 +112,8 @@ final class ApiErrorTest extends TestCase
     }
 
     /**
-     * O estado não se infere da forma do nome. O `result()` é leniente de propósito -- a um
-     * engano em execução responde o 400 que ele quase de certeza queria dizer; quem não
-     * perdoa é o `declaredStatus()`, que rebenta a montar a especificação.
+     * O `result()` é leniente de propósito e responde 400 a um engano; quem não perdoa é o
+     * `declaredStatus()`, que rebenta a montar a especificação.
      */
     public function testAnUndeclaredCodeIsFourHundredInsteadOfInferredFromItsShape(): void
     {

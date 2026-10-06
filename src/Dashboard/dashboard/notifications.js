@@ -13,11 +13,8 @@ import { loadSettingsModal } from "./settings/index.js";
 const POLL_INTERVAL_MS = 15_000;
 
 /**
- * Cada `type` traz o seu título e o seu ícone: um aviso de que o hub se reiniciou sozinho,
- * com o título de um dispositivo não autorizado, não diz nada a ninguém.
- *
- * O identificador só se mostra quando é de facto um dispositivo; para o hub, o que interessa
- * é a razão.
+ * Cada `type` traz o seu título e o seu ícone. O identificador só se mostra quando é de facto
+ * um dispositivo; para o hub, o que interessa é a razão.
  */
 const NOTIFICATION_TYPES = {
     device_not_authorized: {
@@ -59,12 +56,8 @@ const renderBadge = (count) => {
 };
 
 /**
- * Uma notificação e o que se pode fazer com ela.
- *
- * As acções estão por ordem do que se quer fazer: um aparelho estranho que aparece aqui é,
- * na maioria dos casos, um que se quer registar. O «Registar» leva o nome escrito porque é a
- * saída normal; os outros dois são ícones, e o vermelho está no que cala o aparelho de vez e
- * não no que dispensa um aviso.
+ * Uma notificação e o que se pode fazer com ela, por ordem: registar é a saída normal e leva
+ * nome escrito; o vermelho está no que cala o aparelho de vez.
  */
 export function notificationRow(notification) {
     const id = Number(notification.id) || 0;
@@ -170,10 +163,7 @@ const load = async () => {
     return true;
 };
 
-/**
- * O poll de fundo só precisa da contagem para a pastilha. Puxar as 20 e repintar a lista
- * escondida a cada 15 s era desperdício; a lista só se refaz quando o menu abre.
- */
+/** O poll de fundo só pede a contagem para a pastilha; a lista refaz-se quando o menu abre. */
 const refreshBadge = async () => {
     if (
         document.body.dataset.dashboardAuthRequired === "true" &&
@@ -331,8 +321,7 @@ export function initNotifications({ els, openAddDevice }) {
     window.addEventListener("hub-dashboard-api-token-updated", () => {
         void load();
     });
-    // Um separador escondido não sonda, como o `devices/stream.js` também não. Ao voltar
-    // relê-se já, senão o crachá ficava até 15 segundos a mostrar uma contagem velha.
+    // Um separador escondido não sonda, como o `devices/stream.js`, e ao voltar relê-se já.
     const refreshBadgeWhenVisible = () => {
         if (!document.hidden) {
             void refreshBadge();

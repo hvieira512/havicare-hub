@@ -59,7 +59,7 @@ final class CatalogCoherenceTest extends TestCase
 
     /**
      * O `isEventType` resolve pela chave e não pelo par aparelho/chave: uma chave que fosse
-     * acontecimento num aparelho e leitura noutro saía no canal MQTT errado num dos dois.
+     * acontecimento num aparelho e leitura noutro sairia no canal MQTT errado num dos dois.
      */
     public function testNoKeyIsAnEventHereAndTelemetryThere(): void
     {
@@ -97,9 +97,8 @@ final class CatalogCoherenceTest extends TestCase
     }
 
     /**
-     * Um `setting` viaja num comando nativo e um `hubSetting` é aplicado pelo hub. Sem esta
-     * guarda, uma configuração sem comando passava por definição normal e o painel desenhava
-     * um campo que não mandava nada a lado nenhum.
+     * Um `setting` viaja num comando nativo e um `hubSetting` é aplicado pelo hub: uma
+     * configuração sem comando seria um campo que não manda nada a lado nenhum.
      */
     public function testASettingTravelsInANativeCommandAndAHubSettingDoesNot(): void
     {

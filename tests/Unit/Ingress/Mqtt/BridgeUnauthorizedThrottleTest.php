@@ -11,12 +11,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * O travão que espaça os avisos de dispositivo não registado guarda uma entrada por
- * identidade, e essa entrada tem de acabar por sair.
- *
- * As identidades não são nossas: vêm do tópico, e o serviço corre meses. Podar pelo tempo não
- * custa comportamento nenhum -- uma entrada mais velha do que a janela já deixava passar o
- * aviso seguinte.
+ * O travão dos avisos de dispositivo não registado guarda uma entrada por identidade, vinda do
+ * tópico; o serviço corre meses, e a que é mais velha do que a janela tem de sair.
  */
 final class BridgeUnauthorizedThrottleTest extends TestCase
 {

@@ -4,12 +4,8 @@ import "./support/browser-env.js";
 import { installStreamHarness } from "./support/device-stream-harness.js";
 
 /**
- * O stream deixou de mandar o histórico inteiro a cada actualização.
- *
- * Um radar publica cerca de vinte mensagens por segundo, e mandar as cem entradas de cada
- * lista quatro vezes por segundo eram dezenas de KB por segundo por separador aberto -- foi
- * essa pressão que encheu o buffer do servidor até rebentar o limite de memória do PHP. Agora
- * o servidor manda só o que entrou desde a última vez, e é aqui que o cliente as junta.
+ * O servidor manda só o que entrou desde a última vez, e é aqui que o cliente junta: um radar
+ * publica cerca de vinte mensagens por segundo.
  */
 
 const harness = installStreamHarness();

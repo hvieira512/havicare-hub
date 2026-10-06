@@ -60,9 +60,8 @@ final class LicenseServiceTest extends MysqlDashboardTestCase
     }
 
     /**
-     * Quantos aparelhos usam a licença é o que se quer saber antes de a apagar, e tem de vir
-     * com a listagem: contado do lado do ecrã, quem abrisse as Definições sem ter passado
-     * pela lista de dispositivos via zero em todas.
+     * Quantos aparelhos usam a licença tem de vir com a listagem: contado do lado do ecrã, daria
+     * zero a quem não passou pela lista de dispositivos.
      */
     public function testTheListingCountsTheDevicesOnEachLicense(): void
     {

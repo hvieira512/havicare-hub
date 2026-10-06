@@ -7,10 +7,8 @@ namespace Tests\Unit\Dashboard;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Deitada, a régua de um modal soma mais do que a calha de um telemóvel. O que passa dela
- * tem de continuar alcançável -- a contagem de cada separador não aparece em mais lado
- * nenhum --, e há duas maneiras de o garantir: quebrar para a linha de baixo, ou deslizar.
- * A que não faz nenhuma das duas corta e esconde.
+ * O que passa da calha de um modal tem de continuar alcançável, quebrando ou deslizando: a
+ * contagem de cada separador não aparece em mais lado nenhum.
  */
 final class ModalSideNavReachTest extends TestCase
 {

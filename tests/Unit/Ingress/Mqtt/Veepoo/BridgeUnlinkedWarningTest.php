@@ -13,13 +13,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * Um aparelho que um gateway ouve e não é dele avisa uma vez, e não a cada trama.
- *
- * Um gateway MOKO no terreno anuncia tudo o que o rodeia, e o hub recusa o que não lhe está
- * ligado -- correctamente. Mas escrevia o aviso por mensagem: no diário local, um só par
- * aparelho/gateway dava uma linha por segundo, e o registo do hub deixava de servir para
- * diagnosticar seja o que for. É o mesmo travão que os aparelhos não autorizados já têm, e
- * pela mesma razão.
+ * Um gateway MOKO anuncia tudo o que o rodeia e o hub recusa o que não lhe está ligado; o aviso
+ * leva o mesmo travão que os aparelhos não autorizados.
  */
 final class BridgeUnlinkedWarningTest extends TestCase
 {

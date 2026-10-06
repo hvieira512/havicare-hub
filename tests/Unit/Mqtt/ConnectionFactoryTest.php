@@ -43,7 +43,7 @@ final class ConnectionFactoryTest extends TestCase
         self::assertSame('hub-pub-' . getmypid(), $client->getClientId());
     }
 
-    /** Encurtar o id fundia prefixos que se queriam distintos, e o broker expulsava um deles. */
+    /** Encurtar o id fundiria prefixos distintos, e o broker expulsaria um deles. */
     public function testALongClientIdIsSentWhole(): void
     {
         $client = $this->factory('a-very-long-client-prefix')->create('subscriber', true);

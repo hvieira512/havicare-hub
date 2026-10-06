@@ -7,18 +7,11 @@ namespace Hub\Ingress\Mqtt\Veepoo;
 use Hub\Support\Values;
 
 /**
- * Traduz uma medição ao vivo da pulseira para o tipo e os campos do hub.
- *
- * É uma tabela de tradução e mais nada: o tipo do SDK diz qual é a grandeza, e cada grandeza
- * diz o que conta como leitura válida. A `DailyBlockNormalizer` faz o mesmo para o histórico
- * que a pulseira reproduz; esta faz o das medições pedidas por comando.
+ * Traduz uma medição ao vivo da pulseira, pedida por comando, para o tipo e os campos do hub.
  */
 final class MeasurementNormalizer
 {
-    /**
-     * O pedido do ECG, que a onda também precisa de nomear: ela chega por `ecg_wave` e não
-     * traz tipo do SDK nenhum, mas quem a mandou fazer é sempre este.
-     */
+    /** O pedido do ECG, que também nomeia a onda: ela chega por `ecg_wave` sem tipo do SDK. */
     public const ECG_OPERATION = 'measure.ecg.start';
 
     /** Intervalo válido documentado pelo fabricante; fora dele o firmware devolve sentinelas. */
@@ -26,13 +19,8 @@ final class MeasurementNormalizer
     private const HEART_RATE_MAX = 250;
 
     /**
-     * Traduz uma medição ao vivo para o tipo e os campos do hub, ou `null` se não houver
-     * leitura que publicar.
-     *
-     * O tipo do SDK é que diz qual é a grandeza -- 51 frequência cardíaca, 31 oxigénio, 22
-     * glicemia, 6 temperatura, 58 stress, 18 e 28 tensão. Enquanto a medição decorre o
-     * firmware repete a mesma trama com o valor a zero, e daí cada grandeza dizer o que é
-     * uma leitura válida.
+     * O tipo e os campos do hub, ou `null` sem leitura: enquanto mede, o firmware repete a
+     * trama com o valor a zero.
      *
      * @param array<string, mixed> $payload
      * @return array{0: string, 1: array<string, float|int>}|null
@@ -72,26 +60,20 @@ final class MeasurementNormalizer
     }
 
     /**
-     * O que um exame de ECG mediu, resumido das tramas de estado que o acompanharam.
-     *
-     * O relatório final que o fabricante documenta (secção 9.28.5) não existe neste firmware,
-     * e estas tramas, uma por segundo, são o único resumo possível. A mediana e não a média,
-     * porque o algoritmo produz artefactos; o `--` é o sentinela de «sem leitura». A
-     * respiração e a velocidade da onda de pulso não entram: vêm sempre a zero.
+     * O resumo de um ECG pelas tramas de estado, que este firmware não traz o relatório final.
+     * Mediana e não média, contra os artefactos; `--` é «sem leitura».
      *
      * @param list<array<string, mixed>> $status
      * @return array<string, int>
      */
     public static function ecgSummary(array $status): array
     {
-        // Intervalos plausíveis para um adulto. O QTc normal anda entre 350 e 450 ms; acima
-        // de 600 não é uma leitura, é o algoritmo a enganar-se.
+        // Intervalos plausíveis para um adulto: um QTc acima de 600 ms é erro do algoritmo.
         $fields = [
             'HR2PerMinute' => ['heartRateBpm', self::HEART_RATE_MIN, self::HEART_RATE_MAX, 1],
             'Hrv' => ['hrvMilliseconds', 1, 500, 1],
             'QTC' => ['qtcMilliseconds', 200, 600, 1],
-            // Em unidades de dez milissegundos, como nos blocos diários: 100 são os 1000 ms
-            // de um coração a sessenta batimentos.
+            // Em dezenas de milissegundos, como nos blocos diários.
             'RR1PerSecond' => ['rrIntervalMilliseconds', 24, 200, 10],
         ];
 
@@ -121,13 +103,7 @@ final class MeasurementNormalizer
         return $values[intdiv(count($values), 2)];
     }
 
-    /**
-     * O pedido que mandou fazer esta medição, pelo tipo do SDK.
-     *
-     * É a tabela do `forSdkType` vista do outro lado: o tipo do SDK é o único identificador
-     * que a resposta traz. Só as medições -- os totais do dia e a procura da pulseira
-     * respondem sempre, e nunca precisam de ser encerradas por falha.
-     */
+    /** O pedido que mandou fazer esta medição, pelo tipo do SDK, o único identificador da resposta. */
     public static function operationForSdkType(int $sdkType): ?string
     {
         return match ($sdkType) {
@@ -144,10 +120,7 @@ final class MeasurementNormalizer
     }
 
     /**
-     * O estado de quem manda a pulseira vibrar.
-     *
-     * `timeout` é ela a desistir sozinha ao fim de cerca de um minuto, e é a única maneira de
-     * saber que parou sem ninguém lhe ter pedido.
+     * O estado da procura da pulseira; `timeout` é ela a desistir sozinha ao fim de um minuto.
      *
      * @param array<string, mixed> $payload
      * @return array{0: string, 1: array<string, string>}|null
@@ -165,10 +138,8 @@ final class MeasurementNormalizer
     }
 
     /**
-     * O acumulado do dia, contado pela própria pulseira.
-     *
-     * É o mesmo que `activity` significa nos relógios -- passos, distância e calorias desde a
-     * meia-noite. As calorias vêm em décimas: 146 são 14,6 kcal.
+     * O acumulado do dia desde a meia-noite, como a `activity` dos relógios; as calorias vêm
+     * em décimas.
      *
      * @param array<string, mixed> $payload
      * @return array{0: string, 1: array<string, float|int>}|null
@@ -188,10 +159,7 @@ final class MeasurementNormalizer
     }
 
     /**
-     * Composição corporal, medida pelos elétrodos do ECG.
-     *
-     * Os nomes do fabricante não distinguem percentagem de quilos -- `muscleRate` e
-     * `muscleMass` são a mesma palavra com sufixos que não dizem a unidade. Os do hub dizem.
+     * Composição corporal pelos elétrodos do ECG; `muscleRate` é percentagem, `muscleMass` quilos.
      *
      * @param array<string, mixed> $payload
      * @return array{0: string, 1: array<string, float>}|null

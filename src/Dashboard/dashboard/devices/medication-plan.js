@@ -1,9 +1,6 @@
 /**
- * As horas de todos os planos de medicação, achatadas, com o compartimento e o estado.
- *
- * Um plano é um medicamento com as suas horas; quem desenha o dispensador quer as horas. Vive
- * fora do `config/` porque o cartão do dispositivo lê-o no arranque, e o cluster das
- * configurações só entra quando alguém abre o separador.
+ * As horas de todos os planos de medicação, achatadas. Fica fora do `config/` porque o cartão
+ * lê-as no arranque, e o `config/` só carrega quando se abre o separador.
  */
 export function medicationPlanTimes(plans) {
     if (!Array.isArray(plans)) {

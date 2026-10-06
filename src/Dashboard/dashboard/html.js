@@ -1,9 +1,8 @@
 import { esc } from "./format.js";
 
 /**
- * O `html` escapa cada interpolação e devolve um `Fragment`, que passa intacto noutro `html`.
- * O que não é fragmento é texto, e texto sai escapado: nomes de modelo, IMEI e texto de alarme
- * chegam à base de dados pelo MQTT e pelo TCP sem passar por ninguém.
+ * O `html` escapa cada interpolação e devolve um `Fragment`, que passa intacto noutro `html`;
+ * o resto sai escapado, porque chega pelo MQTT e pelo TCP sem passar por ninguém.
  */
 
 /** Marcação em que se confia, e que por isso não volta a ser escapada. */

@@ -34,12 +34,8 @@ final class HubConfigurationValidator
     }
 
     /**
-     * O prefixo vazio pertence à produção, e é o valor que o `.env.example` distribui. Uma
-     * instância de desenvolvimento que arranque com ele escreve por cima de `hub:dashboard:*`
-     * e de `hub:api-tokens` sem dar um único sinal.
-     *
-     * A verificação é a mais barata que existe para este risco: rever cada sítio que constrói
-     * um cliente Redis é um instantâneo que envelhece, e recusar o arranque não.
+     * O prefixo vazio é da produção e é o que o `.env.example` distribui: uma instância de
+     * desenvolvimento com ele escreveria em `hub:*` sem sinal, por isso recusa-se o arranque.
      *
      * @param array<string, mixed> $config
      */
@@ -66,11 +62,8 @@ final class HubConfigurationValidator
     }
 
     /**
-     * O nome do directório da instância, resolvido sem tocar no disco.
-     *
-     * O ponto de entrada passa `__DIR__ . '/..'`, e o `basename` disso é `..`. A resolução é
-     * lexical de propósito: o `realpath` devolveria `false` para um caminho que não existe, e
-     * o guarda ficaria dependente de correr na própria máquina.
+     * O nome do directório da instância, resolvido lexicalmente: o ponto de entrada passa
+     * `__DIR__ . '/..'`, e o `realpath` falharia num caminho que não existe.
      */
     private function instanceDirectory(string $projectRoot): string
     {

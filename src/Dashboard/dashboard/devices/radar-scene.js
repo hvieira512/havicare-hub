@@ -2,11 +2,8 @@ import { areaTypeStyle, postureStyle } from "../radar-style.js";
 import { fieldValue } from "../format.js";
 
 /**
- * A planta da divisão de um radar, em Konva.
- *
- * Portado do `_js/radar/scene/radar-scene.js` do cliente, com o mesmo desenho. As formas
- * chegam já lidas pelo `LayoutParser` em PHP, os campos são os do hub (`xPositionDm`,
- * `posture`), e o rasto do modo de reprodução não veio.
+ * A planta da divisão de um radar em Konva, portada do `_js/radar/scene/radar-scene.js` do
+ * cliente, com as formas já lidas pelo `LayoutParser` e os campos do hub.
  */
 
 /** O ar entre a divisão e a borda da tela. */
@@ -38,12 +35,7 @@ function createTransform(bounds, cw, ch) {
     };
 }
 
-/**
- * Os limites cobrem a sala **e** as áreas.
- *
- * O cliente calcula-os só a partir da sala, e por isso corta o que fica fora dela -- 30 das 73
- * áreas declaradas nos radares em produção, que é o caso comum e não a excepção.
- */
+/** Os limites cobrem a sala **e** as áreas: é comum uma área declarada sair da sala. */
 function boundsOf(layout) {
     const boxes = [layout.room, ...layout.areas];
     const minX = Math.min(...boxes.map((box) => box.x_min_dm));
@@ -54,25 +46,15 @@ function boundsOf(layout) {
     return { minX, minY, width: maxX - minX, height: maxY - minY };
 }
 
-/**
- * A tela toma a proporção da divisão. A escala é uniforme nos dois eixos: numa tela quadrada,
- * uma sala de 6,0 × 2,8 m desenha-se ao meio e deixa duas faixas de nada em cima e em baixo.
- * O mínimo evita que uma sala muito comprida fique numa tira de trinta pixéis.
- */
+/** A tela toma a proporção da divisão; o mínimo impede uma sala comprida de virar uma tira. */
 const MIN_STAGE_HEIGHT = 180;
 
-/**
- * Abaixo disto a planta deixa de se ler: a escala é uniforme, portanto apertar a altura
- * encolhe o desenho também na largura, e num portátil de 14" sobravam 316px de altura para
- * um desenho de 235 de largura numa tela de 887.
- */
+/** Abaixo disto a planta deixa de se ler: com escala uniforme, a altura aperta também a largura. */
 const COMFORTABLE_STAGE_HEIGHT = 420;
 
 /**
- * A altura da tela: a proporção da divisão, travada pelo que sobra do ecrã -- mas nunca
- * apertada ao ponto de a planta deixar de se ler. Sem tecto, uma sala mais alta do que larga
- * pedia dois mil pixéis num monitor largo; com o tecto colado ao ecrã, ficava do tamanho de um
- * selo. Onde o ecrã não chega para a medida de conforto, é o diálogo que rola.
+ * A proporção da divisão, travada pelo que sobra do ecrã mas nunca abaixo da altura de
+ * conforto; quando o ecrã não chega, é o diálogo que rola.
  */
 export function stageHeightFor(bounds, width, available) {
     if (!width || !bounds.width) return null;
@@ -87,9 +69,8 @@ export function stageHeightFor(bounds, width, available) {
 }
 
 /**
- * O que a tela pode ocupar do que se vê de uma vez, já sem a legenda por baixo dela. Não conta
- * com os sinais vitais: em ecrã largo ficam ao lado, e abaixo do `xl` empilham e alcançam-se a
- * rolar -- apertar a planta para eles caberem deixava-a do tamanho de um selo.
+ * O que a tela pode ocupar do que se vê, já sem a legenda. Não conta com os sinais vitais:
+ * abaixo do `xl` empilham e alcançam-se a rolar.
  */
 function availableHeight(container) {
     const scroller = container.closest(".modal-body") || document.documentElement;
@@ -103,7 +84,7 @@ function availableHeight(container) {
 
 function fitStageToLayout(state, layout) {
     const container = state.stage.container();
-    // Medir sem a altura da vez anterior: com ela, o que sobra do ecrã saía do desenho velho.
+    // Medir sem a altura da vez anterior, para o que sobra do ecrã não sair do desenho velho.
     container.style.height = "";
     const height = stageHeightFor(
         boundsOf(layout),
@@ -270,9 +251,8 @@ function drawRoom(state, layout) {
             fontSize: 14,
             fontFamily: "Poppins",
             fill: color,
-            // Uma área pode atravessar a parede, e o nome fica por cima da linha. O contorno
-            // branco por baixo do preenchimento abre-lhe espaço. Sem sombra ao lado dele:
-            // as duas juntas mandam o Konva para uma tela intermédia que sai a zero.
+            // Contorno branco por baixo do preenchimento, para o nome se ler sobre a parede. Sem
+            // sombra: as duas juntas mandam o Konva para uma tela intermédia que sai a zero.
             stroke: "white",
             strokeWidth: 3,
             fillAfterStrokeEnabled: true,

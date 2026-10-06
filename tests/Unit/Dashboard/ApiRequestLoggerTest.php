@@ -46,8 +46,8 @@ final class ApiRequestLoggerTest extends TestCase
     }
 
     /**
-     * A dashboard serve o JS e o CSS inteiros a cada carregamento. Registá-los enchia o
-     * ficheiro do canal `api` sem nada em troca, e é isto que cai se o filtro desaparecer.
+     * A dashboard serve o JS e o CSS inteiros a cada carregamento, e registá-los encheria o canal
+     * `api` sem nada em troca.
      */
     public function testOnlyApiPathsReachTheApiChannel(): void
     {

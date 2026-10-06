@@ -9,13 +9,8 @@ const { initCreateWizard, createDeviceFromWizard } =
     await import("../../src/Dashboard/dashboard/devices/create-wizard.js");
 
 /**
- * Criar um dispositivo retransmitido são duas escritas em sequência: o dispositivo, e depois
- * a autorização de cada gateway escolhido. A segunda pode falhar com a primeira já feita.
- *
- * A partir daí o dispositivo **existe** e não há como o desfazer daqui. Devolver o erro sem
- * fechar deixava o assistente aberto com o botão activo: carregar outra vez reenviava a mesma
- * criação, o servidor recusava-a com 409, e a mensagem passava a «Já existe um dispositivo
- * com esta identidade» -- a contradizer a que estava no ecrã, e sem saída nenhuma.
+ * Criar um dispositivo retransmitido é escrever o dispositivo e depois autorizar cada gateway;
+ * se a segunda falhar, o dispositivo já existe e reenviar só daria 409.
  */
 const els = new Proxy({}, {
     get(target, name) {
@@ -85,10 +80,7 @@ test("criar sem gateways fecha o assistente e não devolve erro", async () => {
     assert.equal(hidden, 1, "o assistente fecha-se");
 });
 
-/**
- * O dispositivo ficou criado: o assistente não pode continuar a oferecer «Criar», que só
- * podia dar 409 e uma segunda mensagem a contradizer a primeira.
- */
+/** O dispositivo ficou criado: oferecer «Criar» outra vez só daria 409. */
 test("um gateway que falhe a autorizar não deixa o assistente aberto", async () => {
     respondWith((url) => {
         if (url.includes("/links")) return jsonResponse(500, { error: { code: "gateway_gone" } });

@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 
-// Sem temporizadores reais: o refresh de token agenda com window.setTimeout, e um timer de
-// uma hora deixava o processo de teste pendurado.
+// Sem temporizadores reais: o refresh de token agenda com `window.setTimeout`, e um timer de
+// uma hora deixaria o processo de teste pendurado.
 window.setTimeout = () => 0;
 window.clearTimeout = () => {};
 
@@ -77,10 +77,7 @@ test("um 401 dispara o refresh e repete o pedido com o token novo", async () => 
     clearDashboardApiToken();
 });
 
-/**
- * Sair com uma renovação no ar: a resposta chega depois e repunha o token, o que acendia o
- * stream outra vez com o ecrã de entrada à frente de quem opera.
- */
+/** Uma renovação no ar ao sair reacenderia o stream com o ecrã de entrada à frente. */
 test("uma renovação que chega depois do logout não repõe o token", async () => {
     setDashboardApiToken({ access_token: "velho", expires_at: "2099-01-01T00:00:00Z" });
 

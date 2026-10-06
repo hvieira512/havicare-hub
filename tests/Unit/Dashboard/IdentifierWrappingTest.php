@@ -7,12 +7,8 @@ namespace Tests\Unit\Dashboard;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Um identificador não parte a meio. O `text-break` do Bootstrap é
- * `word-break: break-word !important`, que serve texto corrido e não um IMEI de quinze
- * dígitos nem um nome de licença: com ele, o `351266770073676` sai em duas linhas e a
- * `gerpi1.casabrancaresidencial` fica `…casabrancaresid` / `encial`.
- *
- * Quem não cabe corta-se com reticências e leva o valor inteiro no `title`.
+ * Um identificador não parte a meio, como o `text-break` do Bootstrap faz a um IMEI: quem não
+ * cabe corta-se com reticências e leva o valor inteiro no `title`.
  */
 final class IdentifierWrappingTest extends TestCase
 {

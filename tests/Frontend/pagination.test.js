@@ -6,12 +6,8 @@ import "./support/browser-env.js";
 const { renderPagination } = await import("../../src/Dashboard/dashboard/pagination.js");
 
 /**
- * O paginador partilhado. Desenha uma janela de páginas com um número fixo de lugares: uma
- * página por botão dava catorze botões em duzentos eventos, que quebravam para duas filas e
- * mudavam a altura da lista, e cresciam sem limite com o histórico.
- *
- * O que estes testes prendem é a largura constante. Um paginador com sete lugares na página 1
- * e nove na página 7 muda de tamanho debaixo do rato de quem carregou nele.
+ * O paginador partilhado desenha uma janela com um número fixo de lugares, para a largura não
+ * mudar de página para página.
  */
 
 function render(pagination) {

@@ -1,8 +1,6 @@
 import { html, raw } from "../../html.js";
 
-/**
- * Os cartões do sensor de fralda: humidade, bandas e canais afetados.
- */
+/** Os cartões do sensor de fralda: humidade, bandas e canais afetados. */
 
 // O limiar vem no payload, por sensor; 12 é o preset normal, para leituras sem o campo.
 const DIAPER_WET_DELTA_FALLBACK = 12;
@@ -39,8 +37,8 @@ export function diaperMoistureBody(data) {
     }
 
     const wetDelta = diaperWetDelta(data);
-    // Os deltas são de 6 bits, mas a decisão está no limiar: escalar à gama toda achatava
-    // todas as leituras reais, por isso a tira escala ao dobro do limiar e corta aí.
+    // Os deltas são de 6 bits, mas a decisão está no limiar: a tira escala ao dobro do limiar e
+    // corta aí.
     const scaleDelta = wetDelta * 2;
 
     const columns = channels

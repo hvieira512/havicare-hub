@@ -8,10 +8,8 @@ use Hub\Infrastructure\Persistence\InventorySeeder;
 use PHPUnit\Framework\TestCase;
 
 /**
- * As imagens dos modelos viajam em `database/seed-model-images` porque o `var/` está no
- * gitignore, e é o seeder que as põe onde o painel as serve. Numa instalação que já tem
- * inventário o seeder não semeia -- mas as imagens que entraram no repositório entretanto
- * continuam a ter de chegar ao destino.
+ * As imagens dos modelos viajam em `database/seed-model-images`, porque o `var/` está no
+ * gitignore, e o seeder copia-as mesmo numa instalação que já tem inventário.
  */
 final class InventorySeederImagesTest extends TestCase
 {

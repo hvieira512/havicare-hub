@@ -14,17 +14,13 @@ import {
 } from "../readers.js";
 
 /**
- * Os campos que mais do que um fornecedor declara: interruptores, números, texto, telefones e
- * listas de contactos. Um campo aqui é desenhado da mesma maneira venha de onde vier -- o que
- * muda entre protocolos é o nome nativo, e disso trata a definição, não o desenho.
+ * Os campos que mais do que um fornecedor declara, desenhados da mesma maneira venham de onde
+ * vierem; o nome nativo resolve-o a definição.
  */
 
 /**
- * O nome do campo no valor guardado, que nem sempre é o nome nativo da definição.
- *
- * A Wonlex declara `switchState` e o hub entrega `enabled`: o `fromNative` da capacidade
- * renomeia e apaga o original. Quem procurar o nome nativo não encontra nada e desenha o
- * interruptor ligado, seja qual for o valor guardado.
+ * O nome do campo no valor guardado: a Wonlex declara `switchState`, mas o `fromNative` da
+ * capacidade entrega-o como `enabled`.
  */
 export function toggleField(entry, protocol = "") {
     const nativeField = entry.fields?.[0] || "enabled";
@@ -55,8 +51,7 @@ export function toggleInput(entry, desired, protocol = "") {
  */
 function numberControl(entry, desired) {
     const key = entry.fields?.[0] || "value";
-    // A escala vem da definição quando ela a declara -- o tom de pele vai de 1 a 6, e partir
-    // de zero oferecia um valor que o aparelho recusa.
+    // A escala parte do mínimo declarado: o tom de pele vai de 1 a 6.
     const { min = 0, max = "" } = entry.options ?? {};
     return numberField(key, desired[key] ?? min, {
         min,
@@ -189,12 +184,7 @@ export function createContactRow(section) {
     return wrapper;
 }
 
-/**
- * As opções que a definição declara para um campo, já normalizadas.
- *
- * O catálogo traz `options: { campo: [{value, label}] }`, que é o mesmo formato que a
- * sensibilidade de queda dos relógios usava no seu campo próprio.
- */
+/** As opções que a definição declara em `options: { campo: [{value, label}] }`. */
 export function selectOptions(entry) {
     const name = entry.fields?.[0] || "value";
     const options = Array.isArray(entry.options?.[name]) ? entry.options[name] : [];
@@ -209,13 +199,7 @@ export function selectOptions(entry) {
     };
 }
 
-/**
- * Um valor escolhido de uma lista, com o significado à vista.
- *
- * Existe porque cada fornecedor trazia o seu campo para fazer isto -- e sem um genérico, uma
- * definição com `options` caía num número solto: o utilizador via "2" sem saber que 2 é
- * "Baixo", e o significado ficava só na cabeça de quem escreveu o adaptador.
- */
+/** Um valor escolhido de uma lista, com o significado à vista em vez de um número solto. */
 function selectInput(entry, desired) {
     const { name, options, fallback } = selectOptions(entry);
     const current = String(desired?.[name] ?? fallback);
@@ -225,8 +209,7 @@ function selectInput(entry, desired) {
             return html`<option value="${value}"${value === current ? raw(" selected") : ""}>${String(option.label ?? value)}</option>`;
         });
 
-    // Sem rótulo: o cartão da configuração já mostra o nome por cima, e um rótulo aqui
-    // repetia-o — ou, pior, mostrava o nome do campo do protocolo, que está em inglês.
+    // Sem rótulo: o cartão da configuração já mostra o nome por cima.
     return html`<select class="form-select" data-config-field="${name}">${choices}</select>`;
 }
 

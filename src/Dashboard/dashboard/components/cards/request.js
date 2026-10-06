@@ -6,9 +6,8 @@ import { cardIcon, cardTone, uplinkCardContent } from "./telemetry.js";
 import { locationCoordinates } from "./location.js";
 
 /**
- * O cartão de pedido (downlink): o que se *pede* a um dispositivo, com a última leitura da
- * categoria e o estado do comando mais recente. É a contraparte do catálogo de uplink -- usa a
- * mesma casca e os mesmos renderizadores, mas o que o move é o comando, não a telemetria.
+ * O cartão de pedido (downlink): o que se pede a um dispositivo, com a última leitura da
+ * categoria e o estado do comando mais recente. Usa a casca e os renderizadores do uplink.
  */
 
 const COMMAND_FEATURE_RULES = [
@@ -179,9 +178,8 @@ export function requestCardShell(
                 occurredAt: lastTelemetry.occurredAt || lastTelemetry.recordedAt,
             })
         : null;
-    // Sem leitura não há valor, e o mosaico não leva etiqueta nenhuma a dizê-lo: o lugar do
-    // valor vazio, ao lado dos irmãos que têm um, já se lê como ausência de leitura. Escrevê-lo
-    // por palavras era repetir o que o vazio diz, multiplicado pelos mosaicos vazios do ecrã.
+    // Sem leitura não há valor, e o mosaico não leva etiqueta a dizê-lo: o vazio já se lê como
+    // ausência de leitura.
     const lastValue = lastContent ? lastContent.value : "";
     // Um ícone tirado da leitura vence o estático: um gateway com fios não mostra Wi-Fi.
     const icon = lastContent?.icon || card.icon;

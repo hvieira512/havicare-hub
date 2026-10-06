@@ -19,12 +19,7 @@ use Hub\Api\Services\RadarCredentialsService;
 use Hub\Api\Services\RadarLayoutService;
 use Hub\Api\Services\SupplierService;
 
-/**
- * Os serviços que servem as rotas, num objecto só.
- *
- * É o mesmo que o `ApiDataAccess` faz aos repositórios: cada rota vai buscar o seu por nome,
- * e acrescentar um serviço deixa de obrigar a mexer na assinatura do `ApiKernel`.
- */
+/** Os serviços das rotas num objecto só, como o `ApiDataAccess` faz aos repositórios. */
 final class ApiServices
 {
     public function __construct(

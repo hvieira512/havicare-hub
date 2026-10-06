@@ -76,13 +76,6 @@ final class IngressRunnerTest extends TestCase
         self::assertSame(0.001, $ingress->lastTimeout);
     }
 
-    /**
-     * Uma ingestão com fila para entregar é drenada por um temporizador do runner.
-     *
-     * Antes o `bin/server-hub.php` guardava a bridge Veepoo numa variável só para lhe
-     * pendurar este temporizador, e o ficheiro de arranque passava a ter de saber que aquele
-     * fornecedor -- e só aquele -- tinha uma fila. Quem sabe conduzir ingestões é o runner.
-     */
     public function testAnIngressWithAQueueIsDrainedByTheRunner(): void
     {
         $loop = new StreamSelectLoop();

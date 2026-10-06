@@ -7,12 +7,10 @@ import { cardContent as uplinkCardContent } from "./support/cards.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/shell.js";
 
 /**
- * Os cartões do radar. A frequência cardíaca e a respiratória não aparecem aqui de propósito:
- * o radar manda `heart_rate {bpm}` e `breath_rate {breathsPerMinute}`, as mesmas chaves e
- * formas de um relógio, e por isso usa os cartões dele. Aqui está o que só o radar mede.
+ * O radar manda `heart_rate` e `breath_rate` com as chaves e formas de um relógio, e usa os
+ * cartões dele; aqui está o que só o radar mede.
  */
 
-/** A frequência respiratória mostra a leitura, e não um "há dados de". */
 test("a frequência respiratória mostra a leitura e não um texto fixo", () => {
     assert.equal(uplinkCardContent("breath_rate", { breathsPerMinute: 17 }).value, "17 rpm");
     assert.equal(uplinkCardContent("breath_rate", {}).value, "- rpm");
@@ -42,8 +40,8 @@ test("um radar que não vê ninguém está a funcionar", () => {
 });
 
 /**
- * Cada pessoa leva a sua postura, e não há cartão de postura: uma divisão com duas pessoas
- * tem duas posturas, e um cartão do aparelho obrigava a escolher uma delas.
+ * Cada pessoa leva a sua postura, e não há cartão de postura: uma divisão com duas pessoas tem
+ * duas posturas.
  */
 const person = (index, posture) => ({
     personIndex: index,
@@ -140,10 +138,7 @@ test("os alarmes dizem o que aconteceu, não só a categoria", () => {
     );
 });
 
-/**
- * O grau vem do hub em enumeração inglesa, como todo o resto do envelope, e é aqui que se
- * traduz. Saía já em português do lado do hub, o que deixava a tradução sem sítio.
- */
+/** O grau vem do hub em enumeração inglesa, como todo o envelope, e traduz-se aqui. */
 test("o grau de um alarme é traduzido no ecrã, não no fio", () => {
     assert.equal(
         String(uplinkCardContent("vitals_alarm", { detectionType: "apnea", detectionLevel: "danger" }).details),
@@ -160,10 +155,7 @@ test("o grau de um alarme é traduzido no ecrã, não no fio", () => {
     );
 });
 
-/**
- * Os quatro estados do `hbstatics` passaram a enumeração no hub, e por isso passam a precisar
- * de tradução aqui -- como o `posture` e o `sleep_state` já precisavam.
- */
+/** Os quatro estados do `hbstatics` chegam em enumeração, como o `posture` e o `sleep_state`. */
 test("os estados por minuto saem em português a partir da enumeração", () => {
     const details = uplinkCardContent("vitals_minute_stats", {
         realTimeHeartRate: 70,
@@ -178,10 +170,7 @@ test("os estados por minuto saem em português a partir da enumeração", () => 
     assert.match(details, /Fraco/);
 });
 
-/**
- * O mosaico desenha o `details` que o `uplinkCardContent` devolve, e não só o `value`: sem
- * isto, o estado de sono era calculado a cada leitura e deitado fora antes de chegar ao ecrã.
- */
+/** O mosaico desenha o `details` que o `uplinkCardContent` devolve, e não só o `value`. */
 test("o mosaico mostra o detalhe em vez de o deitar fora", () => {
     const root = parseFragment(
         telemetryCard({ icon: "fa-bed", title: "Presença", value: "2 pessoas", details: "Pessoa 1 · x 3 dm" }),

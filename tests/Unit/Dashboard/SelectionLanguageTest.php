@@ -7,12 +7,8 @@ namespace Tests\Unit\Dashboard;
 use PHPUnit\Framework\TestCase;
 
 /**
- * As cinco caixas que se escolhem com o rato dizem todas o mesmo em repouso, por cima, no
- * foco e escolhidas. Isso vive numa regra partilhada no `shell.css`; o ficheiro da área de
- * cada uma leva só a geometria.
- *
- * Falharam-no uma vez: duas passavam a borda cheia da marca por cima e as outras três a
- * subtil, com tempos diferentes, e só duas desenhavam anel de foco.
+ * As cinco caixas que se escolhem com o rato partilham os estados numa regra do `shell.css`;
+ * o ficheiro da área de cada uma leva só a geometria.
  */
 final class SelectionLanguageTest extends TestCase
 {

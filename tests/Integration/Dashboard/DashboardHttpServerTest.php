@@ -10,12 +10,8 @@ use Hub\Dashboard\DashboardHttpServer;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
- * O que o servidor entrega: a página, os recursos estáticos, as imagens dos modelos e as
- * regras de cache das rotas.
- *
- * A autenticação está no `DashboardApiAuthTest`, o isolamento entre clientes no
- * `DashboardApiTenancyTest`, o detalhe do dispositivo no `DashboardDeviceDetailTest` e o
- * streaming no `DashboardStreamTest`.
+ * O que o servidor entrega: a página, os recursos estáticos, as imagens dos modelos e as regras
+ * de cache das rotas.
  */
 final class DashboardHttpServerTest extends DashboardHttpTestCase
 {
@@ -125,18 +121,15 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         }
     }
 
-    /**
-     * A constelação do ecrã de entrada desenha a frota, e por isso sai do catálogo. Escrita à
-     * mão, um tipo novo entrava no hub e ficava de fora do único ecrã que os mostra todos.
-     */
+    /** A constelação do ecrã de entrada desenha a frota, e por isso sai do catálogo. */
     public function testTheLoginScreenNamesEveryDeviceTypeInTheCatalog(): void
     {
         $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
 
         $html = (string)$server(new ServerRequest('GET', '/dashboard'))->getBody();
 
-        // Só a secção da entrada: a página serve o catálogo inteiro numa ilha JSON, e contra
-        // o documento todo a asserção passava sem a constelação existir.
+        // Só a secção da entrada: a página serve o catálogo inteiro numa ilha JSON, e contra o
+        // documento todo a asserção passaria sem a constelação existir.
         $start = strpos($html, '<section id="dashboardLogin"');
         $end = strpos($html, '</section>', $start === false ? 0 : $start);
         self::assertIsInt($start);

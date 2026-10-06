@@ -10,15 +10,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Da chave pública aos bytes, pelo caminho que a API percorre.
- *
- * O `DeviceConfigurationUpdateService` faz quatro passos — encontra a definição, valida o
- * payload, constrói o comando, constrói a trama — e cada um tinha os seus testes em separado.
- * Uma chave renomeada a meio passava nos dois lados e partia no meio, e o que sai daqui vai
- * para um aparelho que dispensa comprimidos.
- *
- * As TAGs esperadas estão escritas à mão, da tabela da secção 5 da especificação. Derivá-las
- * do código fazia o teste concordar consigo próprio.
+ * Da chave pública aos bytes, pelo caminho da API. As TAGs esperadas são escritas à mão da secção 5
+ * da especificação: derivá-las do código fazia o teste concordar consigo próprio.
  */
 final class PillDispenserDownlinkEndToEndTest extends TestCase
 {
@@ -86,11 +79,7 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
     }
 
     /**
-     * O valor escolhido chega à trama.
-     *
-     * As TAGs certas com zeros dentro são o pior caso: uma definição que o validador não
-     * conheça sai com payload vazio, o construtor põe o valor por omissão, e o aparelho
-     * responde «aceite» a um zero que ninguém pediu.
+     * Uma definição que o validador não conheça sai vazia, e o aparelho aceita o zero por omissão.
      *
      * @return iterable<string, array{string, array<string, mixed>, int, int}>
      */
@@ -148,9 +137,7 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
     /**
      * Nenhuma definição do catálogo fica pelo caminho.
      *
-     * É o que apanha uma chave nova que ninguém ligou às duas pontas: o provider acima é
-     * escrito à mão, e sem isto uma definição acrescentada ao catálogo não tinha quem a
-     * exercitasse.
+     * O provider acima é escrito à mão; isto exercita uma definição nova que ninguém lá pôs.
      */
     public function testEveryStoredConfigurationIsCovered(): void
     {
@@ -172,11 +159,8 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
     }
 
     /**
-     * O que a definição promete como resposta é o que o pacote enviado permite.
-     *
-     * Uma escrita `0x06` é reconhecida por um `0x86`, e uma ordem `0x08` por um `0x88`. Os
-     * dois mapas estavam declarados em sítios diferentes e nada os obrigava a concordar: uma
-     * escrita à espera de `control_ack` ficava pendente para sempre.
+     * Uma escrita `0x06` é reconhecida por um `0x86` e uma ordem `0x08` por um `0x88`; a resposta
+     * errada deixa o pedido pendente para sempre.
      */
     public function testTheExpectedReplyMatchesThePacketThatIsSent(): void
     {

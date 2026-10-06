@@ -5,38 +5,28 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Veepoo;
 
 /**
- * O ciclo de vida de uma medição a assentar, entre a primeira trama e a confirmação.
- *
- * Não publica nada: guarda o que há para publicar e diz quando é que sai. Quem emite é a
- * bridge, que é quem tem o MQTT e a dashboard.
+ * O ciclo de vida de uma medição a assentar, entre a primeira trama e a confirmação. Não
+ * publica: guarda e diz quando sai, e quem emite é a bridge.
  */
 final class SettlingReadings
 {
     /**
-     * Quanto tempo uma leitura espera pela confirmação antes de sair sozinha.
-     *
-     * Mais do que qualquer medição desta pulseira: a mais lenta, a composição corporal, leva
-     * dois minutos. O prazo existe para uma confirmação perdida não levar com ela um valor
-     * que o aparelho chegou a medir.
+     * Quanto tempo uma leitura espera pela confirmação antes de sair sozinha: mais do que a
+     * medição mais lenta, a composição corporal, de dois minutos.
      */
     private const HOLD_SECONDS = 180;
 
     /**
-     * A leitura mais recente de cada pedido em curso, por aparelho.
-     *
-     * Enquanto mede, o firmware manda uma trama por segundo e o valor anda. Isso é a medição
-     * a assentar, e o resultado é o valor com que ela assentou -- o mesmo que a app mostra.
+     * A leitura mais recente de cada pedido em curso, por aparelho: o resultado é o valor com
+     * que a medição assentou, o mesmo que a app mostra.
      *
      * @var array<string, array<string, array{at: float, telemetry: array<string, mixed>, context: BraceletContext}>>
      */
     private array $settling = [];
 
     /**
-     * Pedidos já encerrados, à espera da confirmação que ainda vem a caminho.
-     *
-     * A pulseira diz `notWear` a meio da medição e o pedido morre aí; a confirmação do
-     * gateway chega a seguir, e sem esta lista dava o mesmo toque no botão por falhado duas
-     * vezes, com razões diferentes.
+     * Pedidos já encerrados, à espera da confirmação que ainda vem a caminho, para não
+     * falharem duas vezes.
      *
      * @var array<string, array<string, float>>
      */
@@ -68,12 +58,7 @@ final class SettlingReadings
         unset($this->settling[$deviceKey][$operation]);
     }
 
-    /**
-     * Se esta confirmação é de um pedido já encerrado, e por isso não é para ninguém.
-     *
-     * Consome a marca e a leitura pendente: o pedido morre uma vez só, e um valor que tenha
-     * chegado depois dele é do sensor a medir o que já não interessa.
-     */
+    /** Se esta confirmação é de um pedido já encerrado; consome a marca e a leitura pendente. */
     public function discardConfirmation(string $deviceKey, string $operation): bool
     {
         if (!isset($this->closed[$deviceKey][$operation])) {
@@ -102,11 +87,8 @@ final class SettlingReadings
     }
 
     /**
-     * As leituras cuja confirmação nunca chegou e já passaram do prazo.
-     *
-     * O valor foi medido; se a caixa morrer entre a última trama e a confirmação, ele tem de
-     * sair na mesma. Larga uma de cada vez, para que uma publicação que rebente deixe as
-     * restantes onde estão.
+     * As leituras cuja confirmação passou do prazo, uma de cada vez: uma publicação que
+     * rebente deixa as restantes onde estão.
      *
      * @return \Generator<int, array{context: BraceletContext, telemetry: array<string, mixed>}>
      */
@@ -114,8 +96,7 @@ final class SettlingReadings
     {
         $now = ($this->clock)();
 
-        // Uma confirmação que nunca chega não pode deixar um pedido marcado como morto para
-        // sempre: o seguinte tem de poder falhar por si.
+        // A marca de encerrado também expira, para o pedido seguinte poder falhar por si.
         foreach ($this->closed as $deviceKey => $operations) {
             foreach ($operations as $operation => $at) {
                 if ($now - $at >= self::HOLD_SECONDS) {

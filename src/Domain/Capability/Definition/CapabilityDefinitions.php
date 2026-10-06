@@ -7,18 +7,14 @@ namespace Hub\Domain\Capability\Definition;
 use Hub\Domain\ProtocolRegistry;
 
 /**
- * A base dos sete ficheiros de definições, um por tipo de aparelho.
- *
- * Cada linha do catálogo declara quatro bandeiras, mas em todas elas só aparecem
- * cinco combinações. São um eixo só, e é esse eixo que os ficheiros escrevem: o papel.
+ * A base dos sete ficheiros de definições, um por tipo de aparelho. As quatro bandeiras de cada
+ * linha só aparecem em cinco combinações, e os ficheiros escrevem esse eixo: o papel.
  */
 abstract class CapabilityDefinitions
 {
     /**
-     * O que cada papel liga no contrato. O `isTelemetry` não está aqui: é a secção, e sai
-     * dela em `all()` para os dois não poderem discordar.
-     *
-     * Um papel que não esteja nesta tabela rebenta em `all()`.
+     * O que cada papel liga no contrato. O `isTelemetry` sai da secção, em `all()`, e um papel que
+     * não esteja aqui rebenta.
      */
     private const FLAGS = [
         // O aparelho mede e reporta.
@@ -48,11 +44,8 @@ abstract class CapabilityDefinitions
     abstract protected static function rows(): array;
 
     /**
-     * Que protocolos publicam cada capacidade, para as que não seguem a regra do ficheiro.
-     *
-     * Publicar é sair no `telemetry` ou no `events`, e é diferente de suportar: um relógio
-     * aceita escrever o `alarm_clock` e nunca o publica. A lista vazia quer dizer que
-     * nenhum protocolo a publica.
+     * Que protocolos publicam cada capacidade fora da regra do ficheiro. Publicar -- sair em
+     * `telemetry` ou `events` -- não é suportar, e a lista vazia quer dizer nenhum.
      *
      * @return array<string, list<string>> chave => protocolos
      */
@@ -73,10 +66,8 @@ abstract class CapabilityDefinitions
     }
 
     /**
-     * Se o aparelho devolve no fio a sua própria configuração, e não só o que mede.
-     *
-     * A pulseira Veepoo faz isso: cada interruptor que ela aceita volta a sair em
-     * `telemetry`. Nos relógios a configuração escreve-se e nunca mais se vê.
+     * Se o aparelho devolve no fio a sua própria configuração, como a pulseira Veepoo; nos relógios
+     * escreve-se e nunca mais se vê.
      */
     protected static function publishesOwnConfiguration(): bool
     {

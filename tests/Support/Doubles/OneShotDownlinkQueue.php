@@ -7,12 +7,7 @@ namespace Tests\Support\Doubles;
 use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
 
-/**
- * Uma fila com um comando lá dentro, para exercitar a entrega sem Redis.
- *
- * O que interessa nos testes de entrega é o que a ponte faz com o que estava em fila, e não
- * como a fila o guardou.
- */
+/** Uma fila com um comando lá dentro, para exercitar a entrega sem Redis. */
 final class OneShotDownlinkQueue implements PendingDownlinkQueue
 {
     /** @var list<PendingDownlink> */

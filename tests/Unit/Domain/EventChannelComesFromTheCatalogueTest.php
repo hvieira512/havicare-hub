@@ -21,10 +21,7 @@ final class EventChannelComesFromTheCatalogueTest extends TestCase
         }
     }
 
-    /**
-     * Alteração de contrato: quem subscrevia `.../watch/+/telemetry` à espera do relatório de
-     * sistema deixa de o receber aí. Registada na tabela do capítulo 8.
-     */
+    /** O relatório de sistema do relógio sai por `events`, e não por `telemetry` (capítulo 8). */
     public function testTheWatchSystemReportMovedToTheEventChannel(): void
     {
         self::assertTrue(CapabilityCatalog::isEventType('device_state'));
@@ -44,13 +41,12 @@ final class EventChannelComesFromTheCatalogueTest extends TestCase
         self::assertTrue(CapabilityCatalog::isEventType('medication_alarm_change'));
     }
 
-    /** O alerta do ambiente também, que foi o caso que denunciou as duas fontes de verdade. */
     public function testTheStorageAlertTravelsAsAnEvent(): void
     {
         self::assertTrue(CapabilityCatalog::isEventType('storage_environment'));
     }
 
-    /** Um tipo que o catálogo não conhece é leitura: é o que sempre foi o caso por omissão. */
+    /** Um tipo que o catálogo não conhece é leitura. */
     public function testAnUnknownTypeIsNotAnEvent(): void
     {
         self::assertFalse(CapabilityCatalog::isEventType('heartbeat'));

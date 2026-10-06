@@ -14,9 +14,8 @@ const namesIn = (row) =>
     [...row.querySelectorAll("input[name], select[name], textarea[name]")].map((el) => el.name);
 
 /**
- * A linha do alarme traz `id` e `name` próprios, e nasce por clonagem. Com os `id` repetidos,
- * os rádios dos dois alarmes formam um grupo só -- marcar a recorrência de um desmarcava a do
- * outro -- e os `for` dos dias do segundo apontavam para as caixas do primeiro.
+ * A linha do alarme nasce por clonagem: com `id` repetidos, os rádios dos dois alarmes formam
+ * um grupo só e os `for` do segundo apontam para as caixas do primeiro.
  */
 test("um alarme acrescentado não repete os id nem os grupos do anterior", () => {
     const section = configSection(renderConfigInputs, ENTRY, {}, { limit: 3 });
@@ -32,7 +31,6 @@ test("um alarme acrescentado não repete os id nem os grupos do anterior", () =>
     assert.deepEqual(sharedNames, [], "nenhum grupo de rádio é partilhado");
 });
 
-/** Cada `for` tem de apontar para uma caixa da sua própria linha. */
 test("as etiquetas de um alarme apontam para dentro da própria linha", () => {
     const section = configSection(renderConfigInputs, ENTRY, {}, { limit: 3 });
     appendRepeatRow(section, "alarm_clock");

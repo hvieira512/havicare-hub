@@ -8,13 +8,8 @@ import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/dev
 import { changedConfigEntries } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 
 /**
- * As dez medições da Wonlex são a mesma decisão dita dez vezes: com que frequência é que o
- * relógio reporta cada grandeza. Em cartões, cada uma repetia a mesma frase de ajuda e
- * levava o seu próprio botão de envio -- dez frases iguais e dez envios para uma decisão.
- *
- * É a única corrida em que unir compensa, e o que a identifica é a forma da definição: o
- * mesmo comando nativo e a mesma legenda. Duas definições de número com comandos diferentes
- * continuam a ser dois cartões, e é isso que a segunda metade deste ficheiro prende.
+ * As dez medições da Wonlex são a mesma decisão dita dez vezes e juntam-se num grupo; o que as
+ * identifica é o mesmo comando nativo e a mesma legenda, e sem isso ficam cartões.
  */
 const HELP = "Periodicidade de envio desta medição, em minutos. Use 0 para desativar.";
 
@@ -90,9 +85,8 @@ test("cada linha continua a ter o seu campo e a sua pastilha de entrega", () => 
 });
 
 /**
- * A fotografia que cada linha traz tem de bater certo com o que o leitor devolve. Um `"0"`
- * onde o leitor devolve `0` fazia o rodapé contar uma alteração a quem não tinha mexido em
- * nada -- e, pior, mandava ao aparelho o que ele já tinha.
+ * A fotografia de cada linha tem de bater certo com o que o leitor devolve: um `"0"` contra um
+ * `0` conta uma alteração que ninguém fez e manda ao aparelho o que ele já tem.
  */
 test("só viaja a linha que alguém mexeu", () => {
     // Com valor guardado: sem ele, todas contam como por enviar, que é outra regra e já tem
@@ -113,11 +107,8 @@ test("só viaja a linha que alguém mexeu", () => {
 });
 
 /**
- * Num relógio que nunca teve as medições configuradas, o rodapé dizia «10 definições no
- * valor padrão, por enviar» e o botão ficava aceso. O valor padrão de um intervalo é `0`, e
- * `0` desactiva -- um clique desligava as dez medições de uma vez, sem ninguém ter escrito
- * um número. Em cartões, o mesmo enganado custava um clique por medição; em grupo, custa as
- * dez.
+ * O padrão de um intervalo é `0`, e `0` desactiva: enviar o grupo sem ninguém escrever
+ * desligaria as dez medições de uma vez.
  */
 test("um grupo de campos nunca enviados não envia nada sem alguém escrever um valor", () => {
     const group = render(INTERVALS).querySelector("[data-config-group]");

@@ -8,10 +8,8 @@ use Hub\Api\Http\ApiError;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**
- * A imagem de um modelo: recebe o upload, reduz, grava e apaga.
- *
- * Saiu do `ModelService` porque nada disto é catálogo -- é GD, bytes de PNG e ficheiros em
- * disco. O serviço continua a decidir *quando* guardar e apagar; o *como* vive aqui.
+ * A imagem de um modelo: recebe o upload, reduz, grava e apaga. O `ModelService` decide
+ * *quando*; o *como* vive aqui.
  */
 final class ModelImageStore
 {
@@ -22,17 +20,13 @@ final class ModelImageStore
     private const MAX_DIMENSION = 640;
 
     /**
-     * O tecto do que se aceita descodificar, em píxeis.
-     *
-     * O `MAX_BYTES` mede o ficheiro comprimido e não diz nada sobre o custo de o abrir: o GD
-     * aloca `largura × altura × 4` bytes antes de devolver seja o que for. Vinte e cinco
-     * megapíxeis limitam-no a cerca de 100 MB, que este processo aguenta.
+     * O tecto do que se aceita descodificar, em píxeis: o GD aloca `largura × altura × 4` bytes, e
+     * 25 megapíxeis limitam-no a cerca de 100 MB.
      */
     private const MAX_PIXELS = 25_000_000;
 
     /**
-     * O array é sempre um erro do `ApiError`, cuja forma passou a poder trazer o detalhe por
-     * campo além do código e da mensagem.
+     * O array é sempre um erro do `ApiError`.
      *
      * @return string|array{error: array<string, mixed>}|null
      */
@@ -63,14 +57,12 @@ final class ModelImageStore
             return null;
         }
 
-        // Limpar primeiro e medir depois, sobre os mesmos bytes que o GD vai receber. Pela
-        // ordem contrária, um `iCCP` colocado antes do `IHDR` empurra o cabeçalho e as
-        // dimensões lidas são lixo -- uma imagem de 20x20 chegou a ser recusada por isso.
+        // Limpar primeiro e medir depois, sobre os bytes que o GD vai receber: um `iCCP` antes do
+        // `IHDR` desloca o cabeçalho e as dimensões lidas.
         $bytes = $this->stripPngColorProfiles($bytes);
 
-        // O cabeçalho antes da descodificação: o `getimagesizefromstring` lê as dimensões
-        // declaradas sem alocar a imagem, e é a única oportunidade de recusar uma bomba de
-        // descompressão antes de o GD pedir os gigabytes que ela anuncia.
+        // O `getimagesizefromstring` lê as dimensões declaradas sem alocar a imagem: é aqui que se
+        // recusa uma bomba de descompressão.
         $declared = @\getimagesizefromstring($bytes);
         if (is_array($declared) && ((int)$declared[0] * (int)$declared[1]) > self::MAX_PIXELS) {
             return ApiError::imageDimensionsTooLarge()->toArray();
@@ -149,10 +141,8 @@ final class ModelImageStore
     }
 
     /**
-     * O nome do ficheiro, e não um caminho: é o que a base guarda.
-     *
-     * A forma continua a ser verificada antes de tocar no disco. Aqui não é sobre limpar a
-     * base -- é sobre não deixar que um nome vindo de fora escolha que ficheiro apagar.
+     * O nome do ficheiro, que é o que a base guarda. A forma verifica-se antes de tocar no disco,
+     * para um nome vindo de fora não escolher que ficheiro apagar.
      */
     public function delete(string $filename): void
     {

@@ -10,9 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 
 /**
- * Os tópicos publicados são um contrato externo -- quem consome subscreve estas strings. O
- * `licenseId` é um inteiro no domínio e só se torna texto aqui, e por isso isto prende a
- * escrita dele nessa fronteira.
+ * Os tópicos publicados são contrato externo, e o `licenseId`, inteiro no domínio, só se torna
+ * texto aqui.
  */
 final class DeviceTopicShapeTest extends TestCase
 {
@@ -47,8 +46,7 @@ final class DeviceTopicShapeTest extends TestCase
 
     public function testCompanyCasingIsNormalisedSoOneTenantIsOneTopicSpace(): void
     {
-        // Os tópicos distinguem maiúsculas: para quem subscreve, "hitCare" e "hitcare" eram
-        // dois clientes diferentes.
+        // Os tópicos distinguem maiúsculas: "hitCare" e "hitcare" seriam dois clientes diferentes.
         self::assertSame('hitcare', DeviceMetadata::normalizeCompany('hitCare'));
         self::assertSame('havicare', DeviceMetadata::normalizeCompany(' haviCare '));
         self::assertSame('null', DeviceMetadata::normalizeCompany(''));

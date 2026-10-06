@@ -3,21 +3,12 @@
 declare(strict_types=1);
 
 /**
- * Abre N streams de inquilino em simultâneo e diz o que aconteceu.
- *
- * Serve para responder à única pergunta que o raciocínio não responde: como é que o processo
- * se porta com muitas ligações abertas ao mesmo tempo. Corre-se de preferência **na própria
- * máquina**, contra `127.0.0.1`, para medir o hub e não a rede pelo caminho.
- *
- * Não usa bilhetes de stream: manda o cabeçalho `Authorization`, como qualquer cliente que
- * não seja um `EventSource` do browser. Assim uma ligação custa um pedido em vez de dois.
+ * Abre N streams de inquilino em simultâneo, com `Authorization` em vez de bilhete (um pedido
+ * por ligação). Corre-se na própria máquina, contra `127.0.0.1`; o servidor observa-se de fora.
  *
  * Uso:
  *   php simulator/stream-stress-probe.php --url=http://127.0.0.1:8091 \
  *     --user=hitcare-1001 --password=… --connections=500 --step=50 --hold=20
- *
- * As contagens do lado do servidor -- RSS, descritores, latência do loop -- observam-se de
- * fora enquanto isto corre, porque é o servidor que interessa e não este cliente.
  */
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -52,12 +43,10 @@ if ($user === '' || $password === '') {
 
 $loop = Loop::get();
 $browser = (new Browser())
-    // Sem tempo limite: um stream é uma resposta que nunca acaba, e o cliente não a pode
-    // cortar.
+    // Sem tempo limite: um stream é uma resposta que nunca acaba.
     ->withTimeout(false)
-    // Por omissão o `Browser` rejeita a promessa em qualquer resposta que não seja 2xx, e um
-    // `503` do teto chegava aqui como erro de ligação -- contado como falha quando é o
-    // servidor a funcionar como devia. Assim as respostas resolvem e o estado é lido.
+    // As respostas não-2xx resolvem em vez de rejeitar: o `503` do teto é o servidor a
+    // funcionar, e não uma falha de ligação.
     ->withRejectErrorResponse(false);
 
 $state = [

@@ -1,10 +1,6 @@
 /**
- * Um `fetch` conduzível para o stream de dispositivo.
- *
- * O cliente deixou de usar `EventSource` -- que não deixa pôr cabeçalhos, e por isso obrigava
- * a um bilhete no URL -- e passou a ler o corpo de um `fetch`. Os testes precisam de empurrar
- * frames para um stream que fica aberto, e não de emitir eventos num objecto falso: é o corte
- * do corpo em frames que está sob teste.
+ * Um `fetch` conduzível para o stream de dispositivo: empurram-se frames para um corpo que fica
+ * aberto, porque é o corte do corpo em frames que está sob teste.
  */
 
 /** Um stream aberto, com uma torneira para lhe empurrar frames. */
@@ -25,10 +21,8 @@ export class FakeStream {
     }
 
     /**
-     * Escreve texto em cru, para se poder cortar um frame onde apetecer.
-     *
-     * Silencioso num stream já fechado: um teste pode largar o dispositivo e só depois mandar
-     * o servidor desligar, e essa ordem não é um erro do teste.
+     * Escreve texto em cru, para se poder cortar um frame onde apetecer; num stream já fechado
+     * não faz nada, porque largar o dispositivo antes de o servidor desligar não é erro.
      */
     write(text) {
         if (this.closed) {
@@ -55,10 +49,8 @@ export class FakeStream {
 }
 
 /**
- * Instala o `fetch` falso e devolve o que os testes precisam de conduzir.
- *
- * Substitui também o `window.setTimeout`, porque é com ele que o módulo agenda as religações
- * -- os temporizadores do node não lhe tocam.
+ * Instala o `fetch` falso e substitui o `window.setTimeout`, com que o módulo agenda as
+ * religações.
  */
 export function installStreamHarness() {
     const streams = [];
@@ -90,8 +82,8 @@ export function installStreamHarness() {
         const stream = new FakeStream(url, options);
         streams.push(stream);
 
-        // O `fetch` a sério liga o `signal` ao corpo: um `abort()` cancela-o. Sem isto, um
-        // stream largado por se ter trocado de dispositivo ficava a servir no lado de cá.
+        // O `fetch` a sério liga o `signal` ao corpo: um `abort()` cancela-o, e o stream largado
+        // ao trocar de dispositivo não fica a servir.
         options?.signal?.addEventListener("abort", () => {
             if (!stream.closed) {
                 stream.closed = true;

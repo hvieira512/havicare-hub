@@ -8,11 +8,8 @@ use Hub\Api\OpenApi\Parameters;
 use Hub\Api\OpenApi\Responses;
 
 /**
- * O stream de um inquilino inteiro.
- *
- * Ao contrário do stream de um dispositivo, este é público: é a via pela qual uma aplicação
- * externa lê em tempo real o que o MQTT transporta da sua empresa e licença, sem precisar de
- * uma credencial de broker no código do cliente.
+ * O stream de um inquilino inteiro, público ao contrário do de um dispositivo: lê em tempo real o
+ * que o MQTT leva da empresa e licença, sem credencial de broker no cliente.
  */
 final class StreamPaths
 {

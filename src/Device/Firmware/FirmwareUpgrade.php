@@ -5,14 +5,8 @@ declare(strict_types=1);
 namespace Hub\Device\Firmware;
 
 /**
- * A transferência de firmware do dispensador, pacote a pacote.
- *
- * O aparelho é que liga ao hub, por isso tudo sai pela sessão dele: manda-se o arranque
- * (`0x0E`), e cada pedaço (`0x0F`) só sai depois de o anterior ser confirmado. Quem sequencia
- * é o offset no corpo — os campos de subpacote do cabeçalho ficam a zero, como a secção dos
- * modos de interacção manda para um pedido partido em vários pacotes.
- *
- * Sem estado guardado aqui: recebe o que sabe, devolve o que sai e o que passa a saber.
+ * A transferência de firmware do dispensador: o arranque (`0x0E`) e cada pedaço (`0x0F`) só
+ * depois de o anterior confirmado, sequenciados pelo offset no corpo. Não guarda estado.
  */
 final class FirmwareUpgrade
 {

@@ -9,11 +9,8 @@ use Hub\Device\DeviceSession;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A camada TCP não pode ter um tipo de dispositivo por omissão.
- *
- * Um `deviceType = 'watch'` por omissão não dá erro nenhum: dá telemetria publicada no tópico
- * errado, e quem consome o contrato recebe um dispensador debaixo de `/watch/` e acredita. O
- * tipo sai da whitelist, e quem não estiver na whitelist não chega aqui.
+ * A camada TCP não tem tipo de dispositivo por omissão: um `'watch'` por omissão publica um
+ * dispensador debaixo de `/watch/` sem erro nenhum. O tipo sai da whitelist.
  */
 final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
 {
@@ -55,10 +52,7 @@ final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
         self::assertSame([], $assuming, 'Estes métodos assumem que um aparelho TCP é um relógio.');
     }
 
-    /**
-     * E o código também não. O `?? 'watch'` é o mesmo defeito escrito de outra maneira, e
-     * escapa a qualquer verificação de assinaturas.
-     */
+    /** Nem no código: um `?? 'watch'` escapa a qualquer verificação de assinaturas. */
     public function testNoSourceLineFallsBackToWatch(): void
     {
         $files = [

@@ -6,12 +6,8 @@ import { CONFIG_INPUTS as INPUTS } from "../../src/Dashboard/dashboard/devices/c
 import { parseFragment } from "./support/dom.js";
 
 /**
- * As horas do dispensador escrevem-se num seletor de horas, e não em dois campos numéricos.
- *
- * Quatro caixas de número para dizer «das 22:00 às 07:00» obrigam quem configura a somar duas
- * parcelas de cabeça, e deixam escrever `25` e `99` até o aparelho recusar. O contrato para
- * fora não muda -- continua a sair hora e minuto separados, que é o que as TAGs levam --, e
- * por isso o que interessa provar é a ida e volta.
+ * As horas do dispensador escrevem-se num seletor de horas, mas continuam a sair em hora e
+ * minuto separados, que é o que as TAGs levam: o que se prova é a ida e volta.
  */
 
 const render = (input, desired) => parseFragment(INPUTS[input].render({ fields: [] }, desired));
@@ -66,8 +62,7 @@ test("um alarme definido volta com a hora que se escolheu", () => {
         ],
     });
 
-    // O `slot` é o número do alarme e não a posição: sem ele, o enésimo plano caía no
-    // enésimo alarme e escolher o 5 escrevia no 3.
+    // O `slot` é o número do alarme e não a posição: sem ele, escolher o 5 escreveria no 3.
     assert.deepEqual(INPUTS.pillDispenserAlarms.read(root), {
         plans: [
             { times: [{ time: "08:30", enabled: true, slot: 1, recurrence: { kind: "daily" } }] },
@@ -77,8 +72,8 @@ test("um alarme definido volta com a hora que se escolheu", () => {
 });
 
 /**
- * O aparelho devolve `24` e `60` nos slots que nunca foram definidos -- não são uma hora, são
- * o sentinela dele. Desenhá-los à letra dava um alarme às 24:60 no ecrã.
+ * O `24` e o `60` que o aparelho devolve nos slots nunca definidos são o sentinela dele, e
+ * não uma hora.
  */
 test("as horas sentinela do aparelho não se desenham como hora", () => {
     const root = render("pillDispenserAlarms", {

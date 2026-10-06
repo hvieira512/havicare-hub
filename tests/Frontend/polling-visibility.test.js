@@ -5,12 +5,8 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 
 /**
- * Dois temporizadores sondavam o servidor com o separador escondido: as notificações de 15 em
- * 15 segundos e o dispositivo escolhido de 30 em 30. Numa dashboard deixada aberta o dia todo
- * num separador de fundo são centenas de pedidos por nada.
- *
- * O padrão é o do `devices/stream.js`: escondido não se sonda, e ao voltar relê-se de imediato,
- * porque esperar pelo tique seguinte deixava dados velhos no ecrã.
+ * Com o separador escondido não se sonda, e ao voltar relê-se de imediato, como no
+ * `devices/stream.js`.
  */
 let hidden = false;
 Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });

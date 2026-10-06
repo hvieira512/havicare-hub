@@ -7,12 +7,8 @@ import { fileURLToPath } from "node:url";
 import { reachableFrom } from "./support/module-graph.js";
 
 /**
- * Quem está parado no formulário de entrada não usa nada da dashboard, e descarregava-a
- * inteira na mesma: 92 módulos ES e 720 KB de JavaScript medidos contra o hub local, pagos
- * antes de haver sessão.
- *
- * O `app.js` entra por `import()`, e a carga arranca no clique do login -- em paralelo com o
- * pedido de autenticação, que é espera que já se estava a gastar.
+ * O `app.js` entra por `import()` no clique do login, em paralelo com a autenticação: o
+ * formulário de entrada não precisa dos 92 módulos e 720 KB da dashboard.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MAIN = path.join(here, "../../src/Dashboard/main.js");

@@ -6,9 +6,8 @@ import { parseFragment } from "./support/dom.js";
 import { unsentConfigChanges } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 
 /**
- * Os leitores validam e lançam com a mensagem que o utilizador precisa de ler. Um bloco cuja
- * leitura não se consegue tirar tem de contar como alteração por enviar, como já acontece na
- * fotografia e no acender do botão -- senão o rodapé cala-se e ninguém chega à mensagem.
+ * Um bloco cuja leitura lança conta como alteração por enviar, como na fotografia e no botão:
+ * senão o rodapé cala-se e ninguém chega à mensagem.
  */
 function root(json) {
     return parseFragment(`

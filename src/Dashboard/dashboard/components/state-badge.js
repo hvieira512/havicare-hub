@@ -1,20 +1,14 @@
 import { html, raw } from "../html.js";
 
 /**
- * A pastilha de estado da plataforma: o ponto, o rótulo e um tom.
- *
- * É feita das classes do Bootstrap e não de CSS próprio. A altura de linha é fixada por
- * utilitário e não herdada, e é isso que a mantém do seu tamanho dentro de uma célula do AG
- * Grid. A leitura nunca pode depender da cor, e por isso o rótulo diz sempre qual é o estado.
+ * A pastilha de estado da plataforma: o ponto, o rótulo e um tom, só com classes do Bootstrap.
+ * A altura de linha é fixada para caber numa célula do AG Grid; o rótulo diz sempre o estado.
  */
 const TONES = ["primary", "secondary", "success", "warning", "danger", "info"];
 
 /**
- * O `state-badge` não veste nada: é o gancho por onde um ecrã a posiciona no seu layout.
- *
- * Os três utilitários no fim corrigem o `badge` cru, que é mais pesado e mais baixo do que a
- * pastilha da plataforma: 600 em vez de 700, a caixa a 1,25 em vez de colada às letras, e
- * 8px de lado em vez de 6,8. São degraus que o Bootstrap já tem, e por isso não há CSS.
+ * O `state-badge` é só o gancho para o layout de cada ecrã. Os três utilitários no fim põem o
+ * `badge` cru no peso, na altura e no enchimento da pastilha da plataforma.
  */
 const BASE =
     "state-badge badge rounded-pill d-inline-flex align-items-center gap-1 text-uppercase fw-semibold lh-sm px-2";
@@ -22,19 +16,11 @@ const BASE =
 /** Um tom que o Bootstrap não tem geraria uma classe que não existe, e a pastilha ficava nua. */
 const toneOf = (tone) => (TONES.includes(tone) ? tone : "secondary");
 
-/**
- * O texto de ênfase do secundário é quase preto, e um estado neutro pintado assim lê-se com o
- * peso de um alarme. O `text-body-secondary` é o cinzento suave do corpo, que é o que um
- * estado sem cor própria deve ter.
- */
+/** Um estado neutro leva o cinzento suave do corpo, e não a ênfase do secundário, quase preta. */
 const textOf = (name) =>
     name === "secondary" ? "text-body-secondary" : `text-${name}-emphasis`;
 
-/**
- * O terceiro parâmetro nasceu classe extra e continua a aceitá-la em texto. Um ícone precisa
- * de outra opção ao lado dela, e um objecto nomeia as duas onde uma quarta posição obrigava
- * a passar vazio o que não interessa.
- */
+/** O terceiro parâmetro aceita a classe extra em texto, ou um objecto com a classe e o ícone. */
 const optionsOf = (options) =>
     typeof options === "string" ? { class: options } : options ?? {};
 

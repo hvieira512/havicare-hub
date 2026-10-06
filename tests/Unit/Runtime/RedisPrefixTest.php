@@ -9,11 +9,8 @@ use PHPUnit\Framework\TestCase;
 use Predis\Client as RedisClient;
 
 /**
- * O prefixo das chaves do Redis, que é o que permite dois hubs no mesmo servidor.
- *
- * As chaves do hub vivem sob `hub:`, e essa raiz já é partilhada com o reencaminhador. Uma
- * segunda instância a escrever nas mesmas chaves não dava erro nenhum. O prefixo vai no
- * cliente e não em cada store, senão o espaço de chaves seguinte nascia sem ele.
+ * O prefixo das chaves do Redis permite dois hubs no mesmo servidor, e vai no cliente para
+ * nenhum store nascer sem ele.
  */
 final class RedisPrefixTest extends TestCase
 {
@@ -31,10 +28,8 @@ final class RedisPrefixTest extends TestCase
     }
 
     /**
-     * O prefixo apanha as chaves de todos os stores, e não só as do primeiro.
-     *
-     * Não fala com nenhum Redis: constrói o comando pelo cliente, que é onde o Predis aplica
-     * o prefixo, e olha para o argumento que sairia no fio.
+     * O prefixo apanha as chaves de todos os stores. Não fala com o Redis: olha para o argumento
+     * que o cliente poria no fio.
      *
      * @dataProvider hubKeyspaces
      */
@@ -48,10 +43,8 @@ final class RedisPrefixTest extends TestCase
     }
 
     /**
-     * As raízes que o hub usa hoje, uma por store.
-     *
-     * Não se conta o número aqui: o `testTheKeyspaceListCoversEveryRootDeclaredInTheCode`
-     * compara esta lista com o que o código declara, e é ele que avisa quando nasce outra.
+     * As raízes que o hub usa, uma por store; o
+     * `testTheKeyspaceListCoversEveryRootDeclaredInTheCode` compara-as com o código.
      *
      * @return array<string, array{string}>
      */
@@ -69,12 +62,7 @@ final class RedisPrefixTest extends TestCase
         ];
     }
 
-    /**
-     * Sem prefixo, a chave sai intacta.
-     *
-     * É o que garante que ligar isto não mexe em produção: o cliente sem a opção não tem
-     * processador nenhum para aplicar.
-     */
+    /** Sem prefixo, a chave sai intacta: o cliente sem a opção não tem processador. */
     public function testWithoutAPrefixTheKeyIsUntouched(): void
     {
         $client = new RedisClient([], HubServices::redisOptions(['prefix' => '']));
@@ -83,10 +71,8 @@ final class RedisPrefixTest extends TestCase
     }
 
     /**
-     * O passo anterior ao mecanismo do Predis: **quem constrói o cliente tem de lhe dar as
-     * opções.** Um `new RedisClient($parametros)` sem o segundo argumento fica sem processador
-     * de prefixo e escreve na raiz da produção. Os testes ficam de fora de propósito -- um
-     * teste pode querer o seu próprio espaço de chaves, fora de `hub:`.
+     * Quem constrói o cliente tem de lhe dar as opções, senão escreve na raiz da produção. Os
+     * testes ficam de fora de propósito: podem querer o seu próprio espaço de chaves.
      */
     public function testEveryClientBuiltByTheApplicationReceivesTheOptions(): void
     {
@@ -108,11 +94,7 @@ final class RedisPrefixTest extends TestCase
         self::assertSame([], $offenders, 'cliente Redis construído sem as opções do prefixo');
     }
 
-    /**
-     * A lista acima é escrita à mão, e uma lista à mão envelhece: quando este teste foi
-     * escrito havia seis raízes, e a `hub:login-throttle` nasceu depois sem lá entrar. Isto
-     * compara-a com o que o código realmente declara.
-     */
+    /** A lista acima é escrita à mão, e isto compara-a com o que o código declara. */
     public function testTheKeyspaceListCoversEveryRootDeclaredInTheCode(): void
     {
         $declared = [];

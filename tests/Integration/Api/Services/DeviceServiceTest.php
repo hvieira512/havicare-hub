@@ -195,9 +195,8 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O Redis é uma projecção do inventário, e por isso é escrito primeiro: uma falha do SQL
-     * a seguir deixa lá uma entrada que nada lista, enquanto pela ordem contrária ficava uma
-     * linha de inventário sem projecção -- o dispositivo que a dashboard nunca conhece.
+     * O Redis é uma projecção do inventário e escreve-se primeiro: pela ordem contrária, uma
+     * falha deixaria uma linha de inventário que a dashboard nunca conhece.
      */
     public function testCreateWritesTheProjectionBeforeTheInventory(): void
     {

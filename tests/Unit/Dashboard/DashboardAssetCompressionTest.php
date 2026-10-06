@@ -9,13 +9,8 @@ use Hub\Dashboard\DashboardHttpServer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A dashboard são 92 módulos ES servidos em cru, e o browser puxa-os todos: 876 KB de texto
- * por cada arranque. Comprimidos passam a cerca de um quinto disso, e o `Accept-Encoding` do
- * pedido é que decide -- um cliente que não anuncie `gzip` continua a receber os bytes tal e
- * qual.
- *
- * O corpo comprimido é outro corpo, e por isso leva ETag próprio: sem isso uma cache pelo
- * meio guardava um dos dois sob a mesma etiqueta e entregava-o ao cliente que pediu o outro.
+ * O `Accept-Encoding` decide se o estático sai comprimido, e o corpo comprimido leva ETag
+ * próprio para uma cache pelo meio não entregar uma variante a quem pediu a outra.
  */
 final class DashboardAssetCompressionTest extends TestCase
 {

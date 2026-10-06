@@ -40,7 +40,7 @@ test("o próprio não conta como vizinho de si mesmo", () => {
 });
 
 test("fica sempre um punhado de dígitos a cheio, mesmo entre quase-gémeos", () => {
-    // Estes dois diferem no antepenúltimo dígito; esbater até lá deixava dois a cheio.
+    // Estes dois diferem no antepenúltimo dígito; esbater até lá deixaria dois a cheio.
     const { prefix, suffix } = imeiEmphasis("861265061009822", ["861265061009830"]);
 
     assert.equal(suffix.length, 4);
@@ -48,7 +48,7 @@ test("fica sempre um punhado de dígitos a cheio, mesmo entre quase-gémeos", ()
 });
 
 test("um prefixo curto não vale o realce", () => {
-    // Dois dígitos em comum não são um padrão; esbatê-los era ruído.
+    // Dois dígitos em comum não são um padrão; esbatê-los seria ruído.
     const { prefix } = imeiEmphasis("59ABCDEF", ["59123456"]);
 
     assert.equal(prefix, "");

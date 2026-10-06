@@ -27,14 +27,7 @@ final class Responses
 
     /**
      * O mapa de respostas de uma rota: o sucesso, mais os erros dos **códigos** que ela pode
-     * devolver. O estado de cada código vem do `ApiError` e não se escreve aqui, senão as
-     * duas listas divergiam sem nada as confrontar.
-     *
-     * Vários códigos com o mesmo estado colapsam numa entrada só. A junção é com `+` e não
-     * com `...`: as chaves são estados HTTP, e o desdobramento renumera chaves inteiras.
-     *
-     * A chave é `array-key` e não `string`: o PHP converte `'200'` em inteiro ao pô-lo num
-     * array, e quem chama escreve-a como texto.
+     * devolver, com o estado tirado do `ApiError`. Junta-se com `+` porque as chaves são estados HTTP.
      *
      * @param array<array-key, mixed> $success as respostas de sucesso, já com o seu estado
      * @return array<array-key, mixed>

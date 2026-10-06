@@ -12,10 +12,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * A manutenção do tique publica -- expira gateways parados e pares silenciosos --, e uma
- * publicação que falha é do publicador e não da ingestão. Sem protecção própria subia até ao
- * `IngressRunner`, que a registava como se o ingresso tivesse caído, e levava com ela a
- * varredura dos gateways seguintes.
+ * A manutenção do tique publica, e uma publicação que falha é do publicador: não sobe ao
+ * `IngressRunner` como queda do ingresso nem leva a varredura dos gateways seguintes.
  */
 final class BridgeMaintenanceFailureTest extends TestCase
 {
@@ -69,9 +67,8 @@ final class BridgeMaintenanceFailureTest extends TestCase
             );
         }
 
-        // Cala os dois para além do limite de inactividade, e só a partir daqui é que o
-        // publicador recusa: o `online` de cada gateway tinha de passar para eles entrarem
-        // na lista que a manutenção varre.
+        // Cala os dois para além do limite de inactividade, e só daqui o publicador recusa:
+        // o `online` de cada gateway tem de passar para entrarem na varredura.
         $this->now += 10_000.0;
         $mqtt->failing = true;
         $mqtt->attempts = 0;

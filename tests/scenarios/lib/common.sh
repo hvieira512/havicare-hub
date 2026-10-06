@@ -18,25 +18,15 @@ export COMPOSE_FILE="$ROOT_DIR/docker-compose.yml:$ROOT_DIR/docker-compose.scena
 DASHBOARD_BASE_URL="http://127.0.0.1:8181"
 export DASHBOARD_BASE_URL
 
-# Um cenário fala sempre com o mosquitto do compose, aconteça o que acontecer ao `.env`.
-#
-# O nome que conta é o `HUB_MQTT_HOST`, e não o `MQTT_HOST`: é esse que o
-# `docker-compose.yml` lê para o contentor do hub, de propósito, para apontar ao broker
-# remoto ser um pedido explícito. Cada cenário fixava só o `MQTT_HOST` -- que serve os
-# `mosquitto_pub` e mais nada -- e por isso o hub que eles levantavam ficava ligado ao
-# broker que o `.env` mandasse. Numa máquina com `HUB_MQTT_HOST` apontado a produção, era
-# a produção.
-#
-# Fica aqui e não em cada cenário porque seis cópias de uma guarda é uma guarda que o
-# sétimo cenário se esquece de trazer.
+# Um cenário fala sempre com o mosquitto do compose: o hub do contentor lê o `HUB_MQTT_HOST`, e
+# um `.env` apontado à produção levaria lá o cenário. Fica aqui para nenhum cenário o esquecer.
 export HUB_MQTT_HOST="mosquitto"
 export HUB_MQTT_PORT="1883"
 export MQTT_HOST="mosquitto"
 export MQTT_PORT="1883"
 export MQTT_TOPIC_PREFIX=""
-# Sem ingress da Qinglanst: nenhum cenário exercita o radar, e um host herdado do `.env`
-# punha o hub subscrito nos tópicos de outra pessoa. Desligar é pelo `QINGLANST_ENABLED` --
-# esvaziar só o host deixa o validador a recusar arrancar, que é o que ele deve fazer.
+# Sem ingress da Qinglanst, que nenhum cenário exercita: desliga-se pelo `QINGLANST_ENABLED`,
+# porque esvaziar só o host faz o validador recusar arrancar.
 export QINGLANST_ENABLED="false"
 export QINGLANST_MQTT_HOST=""
 
@@ -125,10 +115,8 @@ wait_for_mosquitto() {
   scenario_fail "stream_failure" "mosquitto did not become ready"
 }
 
-# O contentor arrancar não é o hub estar a ouvir: entre um e outro correm migrações, abrem-se
-# as subscrições MQTT e só então o socket. Quem se ligue antes disso leva «connection
-# refused» e o cenário falha por uma razão que nada tem a ver com o que está a testar --
-# tanto mais quanto mais ingressos o hub tiver para levantar.
+# O contentor arrancar não é o hub estar a ouvir: entre um e outro correm migrações e abrem-se
+# as subscrições MQTT, e ligar antes leva «connection refused».
 wait_for_hub_tcp() {
   local probe='$s=@fsockopen("127.0.0.1", 9000, $e, $m, 1); if ($s) { fclose($s); exit(0); } exit(1);'
 

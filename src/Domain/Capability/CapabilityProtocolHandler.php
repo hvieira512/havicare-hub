@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Hub\Domain\Capability;
 
 /**
- * O contrato de conversão específica de protocolo, para uma capacidade genérica.
- *
- * Um contrato genérico pode delegar num ou mais handlers a codificação, a descodificação, os
- * valores por omissão, os metadados e a forma da resposta. O contrato público da API fica
- * estável enquanto o leque de fornecedores e os nomes de fio variam por baixo dele.
+ * A conversão de uma capacidade genérica para um protocolo: codificar, descodificar, valores
+ * por omissão, metadados e forma da resposta.
  */
 interface CapabilityProtocolHandler
 {

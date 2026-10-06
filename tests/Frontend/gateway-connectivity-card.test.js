@@ -10,9 +10,8 @@ import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/com
 const requestCardShell = (...args) => String(buildCard(...args));
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
-// O nome de uma capacidade vem do catálogo do tipo do dispositivo escolhido, e não de um
-// mapa escrito no frontend. Um cartão desenhado sem catálogo mostra a chave humanizada,
-// por isso o teste põe o gateway em cima da mesa antes de desenhar.
+// O nome de uma capacidade vem do catálogo do tipo escolhido: sem ele o cartão mostra a
+// chave humanizada.
 state.capabilityCatalogByType.gateway = [
     { key: "connectivity", label: "Conectividade" },
 ];

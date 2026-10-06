@@ -10,11 +10,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A resposta ao `0x05` diz o que o aparelho **tem**, e não o que lhe pedimos.
- *
- * Cada configuração volta com o seu valor, pela chave do contrato, para a projeção a guardar
- * como reportada. As chaves e as formas são as mesmas com que a configuração é enviada: é o
- * que permite desenhar o reportado com o mesmo componente que desenha o desejado.
+ * A resposta ao `0x05` diz o que o aparelho **tem**, com as chaves e formas com que se envia:
+ * o reportado desenha-se com o mesmo componente que o desejado.
  */
 final class PillDispenserReportedConfigurationTest extends TestCase
 {
@@ -39,7 +36,7 @@ final class PillDispenserReportedConfigurationTest extends TestCase
         self::assertSame(['enabled' => false], $settings['early_dispense']);
     }
 
-    /** O plano volta com o número do alarme, senão o 3 aparecia como se fosse o 2. */
+    /** O plano volta com o número do alarme, senão o 3 apareceria como se fosse o 2. */
     public function testThePlanKeepsTheAlarmNumbers(): void
     {
         $settings = $this->readConfiguration([
@@ -79,13 +76,7 @@ final class PillDispenserReportedConfigurationTest extends TestCase
         ], $settings['do_not_disturb']);
     }
 
-    /**
-     * Nove slots vazios é um plano, e tem de ser publicado como tal.
-     *
-     * A lista só saía quando havia pelo menos um alarme definido. Esvaziar os nove não
-     * publicava plano nenhum, a projeção não tocava na linha, e a dashboard continuava a
-     * mostrar o plano antigo como reportado — para sempre.
-     */
+    /** Nove slots vazios é um plano, e publica-se para a projeção substituir o anterior. */
     public function testAnEmptyPlanIsAlsoAPlan(): void
     {
         $tlv = [];
@@ -98,10 +89,8 @@ final class PillDispenserReportedConfigurationTest extends TestCase
     }
 
     /**
-     * Um alarme com o interruptor a zero mas com hora é um alarme.
-     *
-     * Esta firmware ignora o `0x1041`: um alarme posto no próprio aparelho pode chegar com o
-     * interruptor a zero e tocar na mesma, e esconder-lho era mostrar-lhe um plano falso.
+     * Esta firmware ignora o `0x1041`: um alarme posto no aparelho pode chegar com o interruptor
+     * a zero e tocar na mesma.
      */
     public function testAnAlarmWithTheSwitchOffIsStillReported(): void
     {

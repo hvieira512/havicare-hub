@@ -9,11 +9,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O alarme fica no slot que foi pedido, e não na posição que calhou na lista.
- *
- * Um construtor que ponha o enésimo plano no enésimo slot manda o alarme 5 para o 3, por cima
- * do que lá estivesse. O slot vai dentro de cada plano; quem não o mandar continua a ser
- * colocado por posição, que é o que os planos já guardados trazem.
+ * O slot vai dentro de cada plano; um plano sem slot é colocado por posição, que é o que os planos
+ * já guardados trazem.
  */
 final class PillDispenserAlarmSlotTest extends TestCase
 {
@@ -34,10 +31,8 @@ final class PillDispenserAlarmSlotTest extends TestCase
     }
 
     /**
-     * Os nove vão sempre, e um slot que o plano não use vai vazio.
-     *
-     * O vazio do aparelho é `24:60`, não `00:00`: a hora a zero é a meia-noite, e oito slots
-     * por preencher gastavam uma dose todos os dias à meia-noite.
+     * Os nove vão sempre, e um slot que o plano não use vai vazio: `24:60`, porque `00:00` é a
+     * meia-noite e gastaria uma dose.
      */
     public function testTheUnusedSlotsAreEmptyAndNotMidnight(): void
     {
@@ -53,10 +48,8 @@ final class PillDispenserAlarmSlotTest extends TestCase
     }
 
     /**
-     * Um plano guardado com o interruptor desligado passa a ir vazio.
-     *
-     * O interruptor nunca calou nada — a firmware ignora-o —, e quem o desligou queria o
-     * alarme calado. O `24:60` é o que finalmente lho dá.
+     * Um plano com o interruptor desligado vai vazio: a firmware ignora o interruptor, e quem o
+     * desligou quer o alarme calado.
      */
     public function testASlotSwitchedOffInAStoredPlanGoesOutEmpty(): void
     {
@@ -66,7 +59,7 @@ final class PillDispenserAlarmSlotTest extends TestCase
         self::assertSame(60, $this->byte($tlv, 0x1031));
     }
 
-    /** Um plano guardado antes desta mudança não traz slot, e continua a valer por posição. */
+    /** Um plano guardado sem slot continua a valer por posição. */
     public function testAPlanWithoutSlotsKeepsItsPositions(): void
     {
         $tlv = $this->plan([

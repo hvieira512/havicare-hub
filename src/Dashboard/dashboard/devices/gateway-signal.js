@@ -3,9 +3,8 @@ import { html } from "../html.js";
 import { normalizeKey } from "./gateway-links.js";
 
 /**
- * O último sinal de cada ligação a um gateway. O RSSI pertence ao par e não ao dispositivo --
- * um sensor ouvido por três gateways tem três valores ao mesmo tempo --, e por isso viaja em
- * `source.rssiDbm` em vez de ser capacidade própria.
+ * O último sinal de cada ligação a um gateway. O RSSI pertence ao par e não ao dispositivo,
+ * por isso viaja em `source.rssiDbm` e não como capacidade própria.
  */
 
 /** A leitura que a linha traz, ou null quando esse par nunca foi ouvido. */
@@ -37,11 +36,8 @@ const SIGNAL_BANDS = [
 const NO_SIGNAL = { label: "Sem sinal", bars: 0, tone: "secondary" };
 
 /**
- * A partir de quando uma leitura deixa de dizer alguma coisa sobre agora.
- *
- * São os 30 s que o hub tolera antes de dar o par por calado -- o `stalenessSeconds` do
- * `ProximityTracker` -- mais os 30 s a que a dashboard sonda o dispositivo. Mais apertado do
- * que isto e um aparelho vivo dizia «sem sinal» só por atraso da sondagem.
+ * Os 30 s que o hub tolera antes de dar o par por calado (`stalenessSeconds` do
+ * `ProximityTracker`) mais os 30 s a que a dashboard sonda o dispositivo.
  */
 const SIGNAL_MAX_AGE_SECONDS = 60;
 

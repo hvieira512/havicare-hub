@@ -170,12 +170,8 @@ final class DeviceConfigurationRepository
     }
 
     /**
-     * As colunas de instante são `DATETIME NULL` e saem daqui em ISO com `Z`, ou vazias.
-     *
-     * A conversão acontece **antes** da desduplicação e da ordenação, de propósito: o
-     * `isNewerRow` e o `usort` comparam texto, e assim continuam a ver exactamente o mesmo
-     * que viam quando a coluna era texto. O ISO ordena lexicograficamente, e a ausência
-     * continua a ser a cadeia vazia, que ordena primeiro.
+     * As colunas de instante saem em ISO com `Z`, ou vazias, antes da desduplicação e da
+     * ordenação: ambas comparam texto, o ISO ordena bem e o vazio fica primeiro.
      *
      * @param array<string, mixed> $row
      * @return array<string, mixed>

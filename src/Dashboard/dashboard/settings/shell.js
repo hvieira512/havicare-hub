@@ -7,11 +7,8 @@ import { state } from "../state.js";
 import { resolvePaginationPage } from "../pagination.js";
 
 /**
- * A casca do modal de definições: o menu da esquerda com as suas contagens, a troca de
- * separador, e a paginação que as listagens partilham.
- *
- * Não conhece nenhuma secção -- cada secção importa daqui o que precisa --, e é por isso que
- * pode ser importado por todas sem ciclo nenhum. Quem sabe que secções existem é o `index.js`.
+ * A casca do modal de definições: o menu com as contagens, a troca de separador e a paginação
+ * partilhada. Não conhece nenhuma secção, e por isso todas a podem importar.
  */
 let els;
 let ui;
@@ -40,11 +37,8 @@ export function activateSettingsSection(section) {
 }
 
 /**
- * As contagens do menu, todas, ao abrir o modal: cada separador enche a sua quando carrega,
- * mas só carrega quando se abre, e o menu ficaria com um número e nada nos outros.
- *
- * Falha em silêncio: um número que não se sabe não aparece, e a contagem do separador
- * enche-a quando ele abrir.
+ * As contagens do menu, todas, ao abrir o modal, porque cada separador só carrega quando se
+ * abre. Falha em silêncio: o separador enche a sua quando abrir.
  */
 export async function loadSettingsNavCounts() {
     const asks = [

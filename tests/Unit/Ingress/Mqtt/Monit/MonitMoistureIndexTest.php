@@ -9,11 +9,8 @@ use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O que se protege aqui não é a fórmula do índice, que é apresentação e pode ser afinada, mas
- * duas propriedades:
- *
- *   1. O índice nunca contradiz o estado -- os dois aparecem lado a lado no mesmo ecrã.
- *   2. As fronteiras das bandas caem nos limiares que decidem o estado.
+ * Não se prende a fórmula do índice, que é apresentação: prende-se que ele nunca contradiz o estado
+ * ao lado no ecrã, e que as fronteiras das bandas caem nos limiares do estado.
  */
 final class MonitMoistureIndexTest extends TestCase
 {
@@ -97,9 +94,8 @@ final class MonitMoistureIndexTest extends TestCase
 
     public function testTheFourthWetChannelLandsExactlyOnTheAlertIndex(): void
     {
-        // Quatro canais molhados é o limiar de muda. O índice tem de cair na fronteira da
-        // banda, não um ponto acima nem abaixo, senão a marca de alerta fica ao lado da
-        // mudança de cor do badge.
+        // Quatro canais molhados é o limiar de muda: o índice cai na fronteira da banda, senão a
+        // marca de alerta fica ao lado da mudança de cor do badge.
         $level = $this->level([12, 12, 12, 12]);
 
         self::assertSame(40, $level['index']);
@@ -136,9 +132,8 @@ final class MonitMoistureIndexTest extends TestCase
 
     public function testTheAttentionBandKeepsResolutionInsteadOfPilingAtTheTop(): void
     {
-        // O caso extremo de atenção: todos os canais um ponto abaixo de molhado. Tem de dar o
-        // topo da banda e não mais, e tem de ser distinguível de uma atenção moderada -- se
-        // fosse cortado em vez de reescalado, os dois davam o mesmo número.
+        // Todos os canais um ponto abaixo de molhado: o topo da banda e não mais, e distinto de
+        // uma atenção moderada, que um corte em vez de reescala confundiria.
         $almostWet = $this->level(array_fill(0, 10, 11))['index'];
         $moderate = $this->level([1, 2, 5, 6, 7, 6, 6, 6, 6, 7])['index'];
 
@@ -160,9 +155,8 @@ final class MonitMoistureIndexTest extends TestCase
 
     public function testAWetterSensorNeverReadsLowerThanADrierOne(): void
     {
-        // A propriedade que obriga ao clamp. Um único canal a meio caminho dá-lhe `attention`
-        // com uma saturação média baixíssima (5), enquanto um seco no limite dá 25. Sem o
-        // limite inferior da banda o ecrã mostrava "5 · Verificar" ao lado de "25 · Limpa".
+        // Um canal a meio caminho dá `attention` com saturação 5, e um seco no limite dá 25: sem
+        // o limite inferior da banda lia-se "5 · Verificar" ao lado de "25 · Limpa".
         $attentionOnOneChannel = $this->level([6])['index'];
         $dryAtLimit = $this->level(array_fill(0, 10, 3))['index'];
 

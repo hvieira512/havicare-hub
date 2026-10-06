@@ -40,9 +40,8 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
     public function testShowSeparatesSupportedFromRequestableTelemetry(): void
     {
-        // O `requestableCapabilityKeys` é o que a capacidade permite pedir; o
-        // `requestableCapabilities` é o que este modelo responde. Um firmware pode anunciar
-        // uma leitura e ignorar o pedido dela, e isso é decisão por modelo.
+        // O `requestableCapabilityKeys` é o que a capacidade permite pedir e o
+        // `requestableCapabilities` o que este modelo responde: é decisão por modelo.
         [$api, $db] = $this->makeApi();
         $model = $db->models->find('Wonlex', 'HW20PRO');
         self::assertIsArray($model);
@@ -204,12 +203,8 @@ final class ModelsApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * A lista de fornecedores por tipo sai dos modelos catalogados, e não de uma tabela à
-     * parte que era mantida à mão.
-     *
-     * A `supplier_device_types` só era escrita pelo `ModelRepository`, e só a inserir: apagar
-     * o último relógio de um fornecedor, ou mudar-lhe o tipo, deixava lá o par a afirmar que
-     * ele ainda fazia relógios. Este caso reproduz esse par.
+     * A lista de fornecedores por tipo sai dos modelos catalogados: apagar o último relógio de
+     * um fornecedor tira-o da lista de relógios.
      */
     public function testFiltersStopListingASupplierWhenItsLastModelOfThatTypeIsDeleted(): void
     {
@@ -373,8 +368,8 @@ final class ModelsApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * A chave única já o recusava na base, mas sem ninguém perguntar antes a excepção do PDO
-     * subia até ao kernel e o cliente levava um 500 para uma recusa previsível.
+     * A chave única já o recusa na base, mas a excepção do PDO subiria até ao kernel como 500
+     * para uma recusa previsível.
      */
     public function testCreateRejectsADuplicateSupplierAndInternalModel(): void
     {

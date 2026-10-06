@@ -59,13 +59,7 @@ const PHONE_COUNTRIES = [
 
 const DEFAULT_COUNTRY = "PT";
 
-/**
- * O campo do número não leva placeholder.
- *
- * Levava um número real com indicativo, e um número cinzento dentro de um campo vazio lê-se
- * como um número já lá escrito. O que o campo é já se percebe do seletor de país ao lado e do
- * rótulo por cima.
- */
+/** O campo do número não leva placeholder: um número cinzento lê-se como já escrito. */
 export function renderPhoneControl({
     value = "",
     configField = "",

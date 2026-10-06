@@ -1,12 +1,8 @@
 import { html, raw } from "../../../html.js";
 
 /**
- * Uma escala curta com todas as posições à vista, à largura de quem a recebe.
- *
- * Serve as enumerações em que a ordem diz alguma coisa e a lista fechada a esconde -- o
- * volume do dispensador tem quatro posições e está invertido, `0` é o mais alto.
- *
- * O `name` vem de fora: sem nomes distintos, dois grupos na mesma página comportam-se como um.
+ * Uma escala curta com as posições à vista, para enumerações em que a ordem conta. O `name`
+ * vem de fora: com nomes iguais, dois grupos na mesma página comportam-se como um.
  */
 export function segmentedScale({ name, field, value, options, label = "" }) {
     const current = String(value ?? "");

@@ -5,31 +5,23 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Gateway;
 
 /**
- * Se uma observação já foi vista antes, com prazo.
- *
- * Serve qualquer gateway que repita: o MOKO relê o mesmo anúncio enquanto o aparelho o
- * emitir, e o nó Veepoo relê o histórico do dia a cada ciclo. O que muda é a impressão
- * digital e o prazo, não a pergunta.
+ * Se uma observação já foi vista antes, com prazo, para gateways que repetem o que já enviaram.
  */
 interface ObservationStateStore
 {
     public function acceptObservation(string $deviceKey, string $fingerprint, int $ttlSeconds): bool;
 
     /**
-     * O `$observedBy` restringe o estrangulamento a quem fez a observação: cada gateway em
-     * alcance é uma medição distinta, e sem esse âmbito o primeiro a publicar suprime os
-     * outros, numa corrida entre eles.
-     *
-     * Vazio para um dispositivo que reporta sobre si próprio.
+     * O `$observedBy` restringe o estrangulamento a cada gateway, que é uma medição distinta;
+     * vazio para um dispositivo que reporta sobre si próprio.
      *
      * @param array<string, mixed> $payload
      */
     public function shouldPublish(string $deviceKey, string $capability, array $payload, int $refreshSeconds, string $observedBy = ''): bool;
 
     /**
-     * Devolve null quando a condição não mudou, e a transição caso contrário. O `previous` é
-     * null na primeira observação, que é uma transição como outra qualquer -- devolver null
-     * também aí engolia o alarme de um dispositivo visto pela primeira vez.
+     * Null quando a condição não mudou, e a transição caso contrário; a primeira observação é
+     * uma transição, com `previous` null.
      *
      * @return array{previous: ?string}|null
      */

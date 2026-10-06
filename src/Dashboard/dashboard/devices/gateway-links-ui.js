@@ -10,11 +10,7 @@ import { eligibleGateways, gatewayLinkChanges, normalizeKey } from "./gateway-li
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { linkSignal, signalMeter } from "./gateway-signal.js";
 
-/**
- * O escolhedor de gateways no modal do dispositivo: com que gateways um sensor pode falar,
- * em cards seleccionáveis. Recebe o mapa de elementos pelo `initGatewayLinksUi`, como os
- * outros módulos de vista.
- */
+/** O escolhedor de gateways do modal do dispositivo: com que gateways um sensor pode falar. */
 
 let els;
 
@@ -84,10 +80,7 @@ const GATEWAY_THUMB_PLACEHOLDER = `<svg class="gateway-card-thumb-icon text-seco
     <path d="M12 10.5v-7M8.75 6.75 12 3.5l3.25 3.25"></path>
 </svg>`;
 
-/**
- * O card de um gateway. Exportado para o assistente de adicionar o reutilizar: as classes e
- * os estados de foco vivem no CSS, e duplicar a marcação era duplicar essa contratação.
- */
+/** Exportado para o assistente de adicionar usar a mesma marcação. */
 export function gatewayCardMarkup(gateway, checked, signal = null) {
     const key = normalizeKey(gateway.imei);
     const model = String(gateway.model || "").trim();
@@ -108,9 +101,8 @@ export function gatewayCardMarkup(gateway, checked, signal = null) {
 }
 
 /**
- * Os sinais viajam nas linhas de ligação do próprio sensor, por isso só se aplicam enquanto
- * o modal estiver a editar o dispositivo escolhido na coluna de detalhe. A editar outro não
- * mostra sinal nenhum, em vez de mostrar o de outro dispositivo.
+ * Os sinais vêm das ligações do dispositivo escolhido no detalhe: a editar outro, não se
+ * mostra sinal nenhum.
  */
 function signalsForEditedDevice() {
     const editing = normalizeKey(els.deviceImei?.value);
@@ -158,9 +150,8 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
 }
 
 /**
- * A empresa e a licença lêem-se antes do pedido e filtram a resposta, por isso só a última
- * escolha pode desenhar. Trocar de licença duas vezes depressa punha no ecrã os gateways da
- * licença anterior, e marcar um ligava o sensor a um gateway de outro cliente.
+ * A empresa e a licença filtram a resposta, por isso só a última escolha desenha: senão podia
+ * ligar-se o sensor a um gateway de outro cliente.
  */
 let gatewayOptionsGeneration = 0;
 

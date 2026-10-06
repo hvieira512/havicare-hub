@@ -89,9 +89,8 @@ test("um nome de empresa com marcação sai inerte do cartão da licença", () =
 });
 
 /**
- * O `detectionLevel` vem no payload do radar e chega à base de dados pelo MQTT sem passar por
- * ninguém. Ia para os `details`, que o cartão e a linha da lista injectam sem escapar, e o
- * `titleize` não escapa nada -- era XSS guardado, disparado a abrir a ficha do dispositivo.
+ * O `detectionLevel` chega do radar pelo MQTT sem passar por ninguém, e os `details` são
+ * injectados sem escapar.
  */
 test("o grau de uma detecção não consegue escrever marcação no cartão", () => {
     const content = uplinkCardContent("fall", {
@@ -232,7 +231,7 @@ test("o título de um dispensador não passa pelo escapamento duas vezes", () =>
     );
 });
 
-/* ---- o campo de formulário deixa de confiar em quem o chama ---- */
+/* ---- o campo de formulário não confia em quem o chama ---- */
 
 test("um controlo construído com html passa intacto", () => {
     const rendered = markup(field("Nome", html`<input class="form-control">`));

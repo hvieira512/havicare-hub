@@ -16,9 +16,8 @@ class ProtocolService
     public function list(): array
     {
         return [
-            // O domínio diz o que o protocolo é; a camada de apresentação diz o que a
-            // dashboard precisa para o desenhar. A resposta junta as duas e mantém a forma
-            // que sempre teve.
+            // O domínio diz o que o protocolo é e a apresentação o que a dashboard precisa; a resposta
+            // junta as duas.
             'data' => array_map(
                 static fn(string $protocol): array => ProtocolRegistry::describe($protocol) + [
                     'dashboard' => ProtocolDashboardMeta::forProtocol($protocol),

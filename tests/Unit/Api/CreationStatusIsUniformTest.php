@@ -7,11 +7,8 @@ namespace Tests\Unit\Api;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Criar um recurso devolve sempre `201`, e o estado é declarado na rota.
- *
- * Eram duas convenções a conviver: umas rotas declaravam `status: 201` e outras devolviam
- * `200` por omissão, e o `/api/devices` punha o `201` dentro do controlador -- onde o estado
- * da rota deixa de valer, porque um handler que devolve uma `Response` já traz o seu.
+ * Criar um recurso devolve sempre `201`, declarado na rota: um handler que devolve uma
+ * `Response` já traz o seu estado, e o da rota deixa de valer.
  */
 final class CreationStatusIsUniformTest extends TestCase
 {

@@ -12,11 +12,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * Um bloco que já saiu não volta a sair.
- *
- * A MF91 não empurra nada: guarda blocos de cinco minutos e só responde a quem lhe pergunta,
- * e o gateway relê o dia corrente de cinco em cinco minutos. Sem porta, cada entrega
- * republica as mesmas medições com o mesmo instante, no MQTT e no histórico.
+ * A MF91 guarda blocos de cinco minutos e o gateway relê o dia corrente de cinco em cinco minutos:
+ * sem porta, cada entrega republicava as mesmas medições.
  */
 final class BridgeDailyBlockReplayTest extends TestCase
 {
@@ -44,9 +41,8 @@ final class BridgeDailyBlockReplayTest extends TestCase
     }
 
     /**
-     * O bloco do minuto a decorrer chega incompleto e é preenchido na leitura seguinte. A
-     * porta compara o conteúdo e não só o carimbo: com a data sozinha, a primeira versão
-     * congelava o bloco e os minutos que faltavam nunca chegavam a sair.
+     * O bloco do minuto a decorrer chega incompleto e é preenchido na leitura seguinte: a
+     * porta compara o conteúdo e não só o carimbo.
      */
     public function testABlockThatGrewIsPublishedAgain(): void
     {

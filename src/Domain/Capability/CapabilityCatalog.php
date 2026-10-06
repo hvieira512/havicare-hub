@@ -19,12 +19,8 @@ use Hub\Domain\DeviceTypeCatalog;
 use Hub\Domain\ProtocolRegistry;
 
 /**
- * O catálogo autoritativo da identidade de cada capacidade genérica e do suporte por
- * protocolo.
- *
- * As definições de configuração nativas de cada protocolo são assunto do transporte e vivem
- * no `DeviceConfigurationCatalog`. Este catálogo é o único sítio que as mapeia no contrato
- * público de capacidades genéricas.
+ * O catálogo autoritativo da identidade de cada capacidade genérica e do suporte por protocolo.
+ * As definições nativas vivem no `DeviceConfigurationCatalog`; só aqui se mapeiam no contrato.
  */
 final class CapabilityCatalog
 {
@@ -90,9 +86,8 @@ final class CapabilityCatalog
     }
 
     /**
-     * Se a capacidade é acontecimento — canal `events`, QoS 1 — ou leitura, `telemetry` a
-     * QoS 0. Pela chave e não pelo par chave/aparelho: um teste prende que a bandeira não
-     * discorda entre catálogos.
+     * Se a capacidade é acontecimento -- canal `events`, QoS 1 -- ou leitura, `telemetry` a QoS 0.
+     * Pela chave: um teste prende que a bandeira não discorda entre catálogos.
      */
     public static function isEventType(string $type): bool
     {
@@ -368,9 +363,8 @@ final class CapabilityCatalog
             'wonlexContinuousTempSwitch' => 'temperature_continuous',
             'wonlexStepTarget' => 'step_goal',
             'wonlexSleepIntervalOrSwitch' => 'sleep_monitoring',
-            // Protocolos cujo comando é a própria chave genérica: o `veepoo-ble` não monta
-            // tramas no hub -- manda o nome da operação ao gateway, que tem a sessão BLE.
-            // Aí o nativo e o genérico são a mesma coisa e a tradução é a identidade.
+            // Protocolos cujo comando é a própria chave genérica: o `veepoo-ble` manda o nome da
+            // operação ao gateway, que tem a sessão BLE.
             'heart_rate_continuous',
             'blood_pressure_trend',
             'temperature_continuous',

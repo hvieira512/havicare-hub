@@ -13,11 +13,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * Routing a W6 bracelet through the MOKO gateway ingress.
- *
- * At rest a W6 advertises its accelerometer frame, which the gateway types `bxp-acc`. A
- * press instead switches on the Eddystone-UID slot carrying that mode's instance id, for
- * thirty seconds, with no cumulative counter to compare against.
+ * Em repouso a W6 anuncia a trama do acelerómetro (`bxp-acc`); um toque liga durante trinta
+ * segundos o slot Eddystone-UID com o instance id desse modo, sem contador cumulativo.
  */
 final class BridgeW6Test extends TestCase
 {

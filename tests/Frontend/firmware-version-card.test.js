@@ -20,12 +20,6 @@ const firmwareCard = (version) => requestCardShell(
     [{ type: "firmware_version", occurredAt: "2026-09-24T08:13:26Z", data: { version } }],
 );
 
-/**
- * O cartão da versão do firmware mostra a versão, e não o nome da categoria.
- *
- * Sem renderizador próprio caía no genérico, que põe a etiqueta da capacidade no lugar do
- * valor: o cartão dizia «Versão do firmware» por cima e «Versão do firmware» por baixo.
- */
 test("o valor do cartão é a versão", () => {
     assert.equal(
         uplinkCardContent("firmware_version", { version: "0x0502" }).value,
@@ -44,8 +38,7 @@ test("sem versão não se inventa nenhuma", () => {
     assert.equal(uplinkCardContent("firmware_version", {}).value, "—");
 });
 
-// O cartão desenhado, e não só o renderizador: a versão estava a ser lida e deitada fora
-// antes de chegar ao ecrã.
+// O cartão desenhado, e não só o renderizador, para a versão chegar mesmo ao ecrã.
 test("o cartão desenhado mostra a versão que chegou na telemetria", () => {
     assert.match(firmwareCard("0x0502"), /0x0502/);
 });

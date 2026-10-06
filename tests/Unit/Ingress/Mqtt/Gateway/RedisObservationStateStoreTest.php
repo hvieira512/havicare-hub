@@ -9,13 +9,8 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
 /**
- * O estado de observação dos gateways vive em Redis, e as suas chaves têm de expirar.
- *
- * O espaço de chaves é dispositivo × capacidade × gateway (para o `last`) e dispositivo (para
- * o `condition`); sem prazo, uma etiqueta que muda de gateway ou desaparece deixa a sua chave
- * lá para sempre. As chaves só servem para comparar com a leitura anterior dentro da janela de
- * refrescamento, portanto o prazo não altera a decisão de publicar -- só limpa o que já não
- * é consultado.
+ * Uma etiqueta que muda de gateway ou desaparece deixaria a chave para sempre; as chaves só servem
+ * dentro da janela de refrescamento, e o prazo não altera a decisão de publicar.
  */
 final class RedisObservationStateStoreTest extends TestCase
 {

@@ -14,19 +14,13 @@ use Hub\Ingress\Tcp\TcpProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Um protocolo é uma convenção espalhada por cinco registos independentes -- o
- * `AdapterRegistry`, o `TcpProtocolRegistry`, o `ProtocolRegistry`, o
- * `DeviceConfigurationCatalog` e o `CapabilityRegistry` --, e nada os liga: um fornecedor
- * registado em quatro dos cinco compila e falha num caminho só.
+ * Um protocolo vive em cinco registos que nada liga, e um fornecedor registado em quatro
+ * compila e falha num caminho só.
  */
 final class ProtocolRegistrationCompletenessTest extends TestCase
 {
     /**
-     * Os protocolos do tipo de dispositivo `watch`, e só esses.
-     *
-     * Filtra por tipo de dispositivo e não por transporte, e por isso o dispensador -- que
-     * fala TCP como eles -- fica de fora. Quem quiser todos os que entram pelo socket tem o
-     * `testEveryTcpProtocolIsCompletelyRegistered` mais abaixo.
+     * Os protocolos do tipo `watch`, e só esses: o dispensador fala TCP mas fica de fora.
      *
      * @return list<string>
      */
@@ -77,12 +71,7 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
         }
     }
 
-    /**
-     * O mesmo, para tudo o que entra pelo socket e não só para os relógios.
-     *
-     * As asserções acima filtram por tipo de dispositivo `watch`. Esta parte-se do registo
-     * das sessões, que é a lista de quem efectivamente fala pelo socket.
-     */
+    /** O mesmo para tudo o que entra pelo socket, a partir do registo das sessões. */
     public function testEveryTcpProtocolIsCompletelyRegistered(): void
     {
         $adapters = new AdapterRegistry();
@@ -168,11 +157,8 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
     }
 
     /**
-     * O sexto registo: o contrato da capacidade tem de conhecer o protocolo que a declara.
-     *
-     * Um protocolo em falta no `match` só rebenta ao carregar em Enviar. Distinguem-se duas
-     * recusas pelo início da mensagem: `Unsupported` é sempre um defeito, e tudo o resto é a
-     * validação a trabalhar sobre um valor por omissão incompleto.
+     * Um protocolo em falta no `match` só rebenta ao carregar em Enviar. `Unsupported` é sempre
+     * defeito; o resto é a validação sobre um valor por omissão incompleto.
      */
     public function testEveryDeclaredConfigurationReachesItsCapabilityContract(): void
     {
@@ -188,9 +174,8 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
                     continue;
                 }
 
-                // A API só aceita chaves que sejam mesmo capacidades configuráveis, e recusa
-                // as outras antes de chegar ao contrato. Verificar o que ela nunca lhe entrega
-                // dava falsos positivos.
+                // A API recusa antes do contrato as chaves que não são configuráveis, e verificá-las
+                // daria falsos positivos.
                 $section = CapabilityCatalog::sectionForCapabilityKey($genericKey);
                 if ($section === null || $section === 'telemetry') {
                     continue;

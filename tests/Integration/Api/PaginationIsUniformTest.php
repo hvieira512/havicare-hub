@@ -12,15 +12,8 @@ use Hub\Infrastructure\Persistence\Repository\CapabilityDiscoveryRepository;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * Toda a colecção que cresce com o uso devolve o mesmo envelope.
- *
- * Quatro listagens ficam de fora de propósito, e não por esquecimento:
- *
- * - o `/api/capabilities` e o `/api/protocols` são catálogos de tamanho fixo, escritos em
- *   código; paginar uma enumeração que não cresce é cerimónia, e quem a consome quer-a inteira;
- * - o `/api/notifications` é um feed de "os últimos N", sem página nenhuma, e o `unreadCount`
- *   que devolve ao lado dos dados é o que alimenta o emblema da dashboard;
- * - os `links` de um dispositivo são do dispositivo, e limitam-se aos que ele tem.
+ * Toda a colecção que cresce com o uso devolve o mesmo envelope; ficam de fora os catálogos
+ * fixos, o feed de notificações e os `links` de um dispositivo.
  */
 final class PaginationIsUniformTest extends MysqlDashboardTestCase
 {

@@ -9,15 +9,8 @@ use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * O `database/schema.sql` descreve a base de dados actual, sozinho. Corre **antes** das
- * migrações e em todas as invocações, o que faz dos dois ficheiros uma descrição só com duas
- * metades que têm de concordar. Divergindo, falham em silêncio nos dois sentidos:
- *
- * - o `schema.sql` a declarar o que uma migração larga recria-o na execução seguinte;
- * - o `schema.sql` a omitir o que uma migração acrescenta deixa uma base nova sem isso no dia
- *   em que a migração for apagada.
- *
- * Compara estrutura e não dados: o catálogo e o inventário têm passos próprios.
+ * O `database/schema.sql` corre antes das migrações e tem de concordar com elas: divergindo,
+ * recria o que uma migração largou, ou falta numa base nova quando a migração for apagada.
  */
 final class SchemaCompletenessTest extends MysqlDashboardTestCase
 {
@@ -60,13 +53,8 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O `device_type` é uma referência para a `device_types`, cujo conteúdo vem do
-     * `config/device-types.json`, e não um `ENUM` repetido em três tabelas.
-     *
-     * O que este caso prende é o que sobra por prender: a tabela tem de reproduzir o ficheiro
-     * -- o `DeviceTypeCatalog` é servido ao frontend, e uma linha a mais ou a menos aqui
-     * deixava passar um tipo que o ecrã não conhece --, e as três chaves estrangeiras têm de
-     * existir, senão a integridade que substituiu o `ENUM` não existe.
+     * O `device_type` referencia a `device_types`, que tem de reproduzir o
+     * `config/device-types.json`, e as três chaves estrangeiras têm de existir.
      */
     public function testEveryDeviceTypeColumnPointsAtTheCatalogTable(): void
     {
@@ -104,15 +92,8 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O `device_type` distingue maiúsculas, e um tipo mal escrito é recusado.
-     *
-     * A coluna está em `ascii_bin`, que compara byte a byte: é a colação mais rápida para
-     * identificadores ASCII, e o `key_len` do índice cai de 135 bytes para 39. O efeito
-     * secundário é este, e é desejado -- com uma colação `_ci`, um `Watch` casava em silêncio
-     * com o `watch` do catálogo, e o valor errado entrava na tabela.
-     *
-     * Os dez caminhos de escrita passam todos pelo `DeviceMetadata::normalizeDeviceType()`,
-     * que faz `strtolower`, pelo que nada de legítimo chega aqui em maiúsculas.
+     * A coluna está em `ascii_bin`, que compara byte a byte: um `Watch` não casa com o `watch`.
+     * Os caminhos de escrita passam todos pelo `normalizeDeviceType()`, que faz `strtolower`.
      */
     public function testADeviceTypeInTheWrongCaseIsRefused(): void
     {
@@ -138,8 +119,6 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
 
     public function testTheDroppedDiaperTableStaysDropped(): void
     {
-        // A `2026082802` largou-a e o `schema.sql` recriava-a na execução seguinte. Este
-        // caso concreto fica preso à parte do teste geral porque foi o que o revelou.
         $pdo = $this->createDashboardDatabase()->pdo();
 
         self::assertNotContains('diaper_sensor_settings', $this->tableNames($pdo));

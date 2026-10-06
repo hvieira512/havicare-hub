@@ -63,7 +63,7 @@ test("escolher as leituras passa o ecrã à atividade, e voltar à telemetria de
     assert.equal(els.deviceTabReadings.classList.contains("active"), false);
 });
 
-/** Um radar não recebe pedido nenhum, e o separador apontava para uma lista sempre vazia. */
+/** Um radar não recebe pedido nenhum. */
 test("sem pedidos, o separador dos pedidos sai da régua", () => {
     const els = tabEls();
     initDeviceDetailView({ els });

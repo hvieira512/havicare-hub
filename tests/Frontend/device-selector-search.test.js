@@ -8,9 +8,8 @@ const { initDeviceList, openDeviceSelector } =
     await import("../../src/Dashboard/dashboard/devices/list.js");
 
 /**
- * O selector desenha-se inteiro -- lista, filtros, paginação -- e o painel de detalhe sai
- * pelo caminho vazio quando não há dispositivo escolhido. Cada nome pedido devolve um
- * elemento a sério, para não haver uma lista de trinta `createElement` aqui.
+ * O selector desenha-se inteiro e o detalhe sai pelo caminho vazio; cada nome pedido devolve um
+ * elemento a sério.
  */
 const els = new Proxy({}, {
     get(target, name) {
@@ -38,11 +37,7 @@ beforeEach(() => {
     state.selectedDetail = null;
 });
 
-/**
- * A pesquisa ficava no campo de uma abertura para a outra. Reabrir o selector logo a seguir
- * a escolher um dispositivo mostrava esse dispositivo e mais nenhum, com as pastilhas de
- * tipo todas a dizer «nenhum» -- lê-se como se a frota tivesse desaparecido.
- */
+/** Com a pesquisa anterior no campo, a frota parece ter desaparecido. */
 test("abrir o selector limpa a pesquisa da abertura anterior", async () => {
     state.deviceSearchQuery = "868705080304889";
     els.deviceListSearch.value = "868705080304889";

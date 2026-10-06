@@ -2,9 +2,7 @@ import { ago } from "../../format.js";
 import { html } from "../../html.js";
 import { joinMarkup } from "./shared.js";
 
-/**
- * Os cartões de localização: coordenadas, tipo de fix, precisão e a evidência rádio.
- */
+/** Os cartões de localização: coordenadas, tipo de fix, precisão e a evidência rádio. */
 
 /**
  * Lê o `lat`/`lon` e não o `hasCoordinates`, que falta nos eventos antigos do Redis. O par

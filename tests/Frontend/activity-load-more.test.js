@@ -12,9 +12,8 @@ const { handleTelemetryPagerClick } = await import(
 );
 
 /**
- * O «Carregar mais» do telemóvel acrescenta a página seguinte ao fim da lista, enquanto a
- * paginação numerada do desktop a substitui. As duas andam sobre a mesma página, e é só isso
- * que as distingue.
+ * O «Carregar mais» do telemóvel acrescenta a página seguinte e a paginação do desktop
+ * substitui-a; as duas andam sobre a mesma página.
  */
 
 const PAGE_SIZE = 4;

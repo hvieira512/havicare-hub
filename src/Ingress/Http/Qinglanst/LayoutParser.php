@@ -5,15 +5,8 @@ declare(strict_types=1);
 namespace Hub\Ingress\Http\Qinglanst;
 
 /**
- * O layout de um radar, como o `thirdparty/v2/deviceProp` do fabricante o devolve.
- *
- * Três armadilhas, e as três aparecem juntas na mesma resposta: o `declare_area` fecha com uma
- * vírgula pendurada, o `declare_area_name` vem lista ou objeto conforme as chaves das áreas
- * sejam seguidas ou tenham buracos, e o prefixo de cada nome é o tipo da área -- que já vem no
- * `declare_area` -- e não uma sequência.
- *
- * Sai daqui uma sala e um punhado de caixas em decímetros: nenhuma string do fabricante
- * sobrevive à fronteira.
+ * O layout de um radar, do `thirdparty/v2/deviceProp`, reduzido a uma sala e caixas em decímetros.
+ * O prefixo de cada nome em `declare_area_name` é o tipo da área, e não uma sequência.
  */
 final class LayoutParser
 {
@@ -50,8 +43,7 @@ final class LayoutParser
     }
 
     /**
-     * Os pares `{x,y;x,y}` e `{chave,tipo,x,y,...}` separam com `;` ou com `,` conforme a
-     * mensagem, e as chavetas não distinguem nada.
+     * O separador é `;` ou `,` conforme a mensagem, e as chavetas não distinguem nada.
      *
      * @return list<int>
      */
@@ -69,8 +61,7 @@ final class LayoutParser
     }
 
     /**
-     * A vírgula pendurada no fim deixa um pedaço vazio, que cai aqui por não ter sequer chave
-     * e tipo.
+     * O `declare_area` fecha com uma vírgula pendurada; o pedaço vazio cai por não ter chave e tipo.
      *
      * @return list<array{0: int, 1: int, 2: list<int>}>
      */
@@ -92,9 +83,8 @@ final class LayoutParser
     }
 
     /**
-     * Guardamos caixas e não polígonos: as 63 áreas dos 13 radares em produção são todas
-     * caixas alinhadas aos eixos. Duas coordenadas distintas em cada eixo é o que define uma,
-     * independentemente de quantos pontos a descrevam.
+     * Caixas alinhadas aos eixos e não polígonos: duas coordenadas distintas em cada eixo,
+     * independentemente de quantos pontos as descrevam.
      *
      * @param list<int> $points
      * @return array{x_min_dm: int, y_min_dm: int, x_max_dm: int, y_max_dm: int}|null
@@ -129,10 +119,8 @@ final class LayoutParser
     }
 
     /**
-     * Lista e objeto indexam-se da mesma maneira: as chaves numéricas do objeto viram inteiros
-     * ao descodificar, e numa lista seguida o índice coincide com a chave da área. O que não
-     * pode acontecer é ligar pela posição -- com buracos nas chaves, a área 5 ficaria com o
-     * nome da 3.
+     * Vem lista ou objeto conforme as chaves das áreas tenham buracos; liga-se pela chave e
+     * nunca pela posição.
      *
      * @return array<int, string>
      */

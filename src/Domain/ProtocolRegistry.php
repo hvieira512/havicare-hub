@@ -7,9 +7,8 @@ namespace Hub\Domain;
 final class ProtocolRegistry
 {
     /**
-     * Os metadados canónicos de cada protocolo. O que a dashboard precisa para desenhar os
-     * campos vive no `Api\Http\ProtocolDashboardMeta`, porque são decisões sobre formulários
-     * e esta camada não deve depender de quem os desenha.
+     * Os metadados canónicos de cada protocolo; o que a dashboard precisa vive no
+     * `Api\Http\ProtocolDashboardMeta`.
      *
      * @return array<string, array{
      *     label: string,
@@ -47,9 +46,8 @@ final class ProtocolRegistry
                 'deviceType' => 'radar',
                 'supportsConfigCatalog' => false,
             ],
-            // A pulseira aceita downlink de verdade: a sessão GATT é bidirecional e o
-            // firmware confirma cada escrita. É o que a distingue das W6/W6B, que só
-            // anunciam e nada recebem.
+            // A pulseira aceita downlink: a sessão GATT é bidirecional e o firmware confirma cada escrita,
+            // ao contrário das W6/W6B.
             'veepoo-ble' => [
                 'label' => 'Veepoo',
                 'deviceType' => 'bracelet',
@@ -65,9 +63,8 @@ final class ProtocolRegistry
                 'deviceType' => 'gateway',
                 'supportsConfigCatalog' => false,
             ],
-            // `true` e não `false`: o sensor não aceita downlink, mas tem configurações, e
-            // são coisas diferentes. Quem decide se algo viaja é cada capacidade, pelo
-            // `HubAppliedCapability`, e não o protocolo inteiro.
+            // `true`: o sensor não aceita downlink mas tem configurações, e quem decide se algo viaja é a
+            // capacidade, pelo `HubAppliedCapability`.
             'monit-mecs-pro-ble' => [
                 'label' => 'MONIT',
                 'deviceType' => 'diaper_sensor',

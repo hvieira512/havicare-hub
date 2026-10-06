@@ -13,23 +13,13 @@ import {
 } from "./inputs/wonlex.js";
 
 /**
- * Acrescentar e remover as linhas repetíveis de uma secção de configuração.
- *
- * Um contrato só para as sete listas: `data-repeat-list="<tipo>"` no contentor,
- * `data-repeat-row="<tipo>"` em cada linha, e o limite opcional em `data-repeat-limit`. Não
- * toca no estado dos módulos da dashboard, o que o torna testável à parte.
- *
- * O que cada tipo de linha sabe de si -- desenhá-la, renumerá-la, mantê-la coerente -- vem do
- * módulo do campo a que pertence, e é aqui declarado no `REPEAT_ROW_KINDS`.
+ * Linhas repetíveis de uma secção: `data-repeat-list="<tipo>"` no contentor, `data-repeat-row`
+ * em cada linha e `data-repeat-limit` opcional.
  */
 
 /**
- * Como nasce e como morre a linha de cada tipo.
- *
- * `render` desenha-a de novo, preciso quando a linha traz `id` próprios -- um clone
- * repetia-os. Sem ele, clona-se a última e limpa-se, o que preserva o que a marcação trouxe.
- *
- * `keepLast` limpa a última em vez de a apagar: sem linha nenhuma não há molde para clonar.
+ * `render` desenha a linha de novo; sem ele clona-se a última e limpa-se. `keepLast` limpa a
+ * última em vez de a apagar, para haver sempre molde para clonar.
  */
 const REPEAT_ROW_KINDS = {
     contacts: { keepLast: true, template: createContactRow },
@@ -65,9 +55,8 @@ export function appendRepeatRow(section, kind) {
     const limit = parseInt(list.dataset.repeatLimit || "", 10);
     if (Number.isFinite(limit) && rows.length >= limit) return;
 
-    // Os dois caminhos passam pelo `restampRowIds` com a linha ainda fora do documento: o
-    // `resetRowFields` marca rádios, e com os grupos por renomear isso desmarcava os da linha
-    // que os partilhasse.
+    // O `restampRowIds` corre com a linha ainda fora do documento: o `resetRowFields` marca
+    // rádios, e com os grupos por renomear desmarcaria os da linha irmã.
     let added = null;
     if (spec.render) {
         const holder = document.createElement("template");
@@ -94,11 +83,8 @@ export function appendRepeatRow(section, kind) {
 }
 
 /**
- * Renomeia os `id`, os `name` e os `for` de uma linha acabada de nascer.
- *
- * Um clone traz os do original; o `render` numera-os pela contagem de linhas, que volta atrás
- * quando se remove uma do meio. Repetidos, os rádios de duas linhas formam um grupo só e as
- * etiquetas dos dias apontam para as caixas da outra.
+ * Renomeia os `id`, `name` e `for` de uma linha nova: repetidos, os rádios de duas linhas
+ * formam um grupo só e as etiquetas apontam para as caixas da outra.
  */
 function restampRowIds(row) {
     const suffix = nextUid("copy");
@@ -110,8 +96,7 @@ function restampRowIds(row) {
     for (const element of row.querySelectorAll("[id]")) {
         element.id = rename(element.id);
     }
-    // O `name` de um `<details>` é o grupo que o fecha quando outro abre: renomeá-lo tirava a
-    // linha nova do grupo das irmãs.
+    // O `name` de um `<details>` fica: é o grupo que o fecha quando uma irmã abre.
     for (const element of row.querySelectorAll("input[name], select[name], textarea[name]")) {
         element.name = rename(element.name);
     }
@@ -196,8 +181,6 @@ function resetRowFields(row) {
 /** O botão de acrescentar apaga-se no limite. */
 function syncAddButton(section, kind) {
     const list = section?.querySelector(`[data-repeat-list="${kind}"]`);
-    // O botão é `addRepeatRow` distinguido pelo `data-repeat-kind`; procurar um `data-action`
-    // com o nome do tipo não casava com nada, e o sync saía sempre sem tocar no botão.
     const addButton = section?.querySelector(`[data-action="addRepeatRow"][data-repeat-kind="${kind}"]`);
     if (!list || !addButton) return;
 

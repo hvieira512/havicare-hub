@@ -40,16 +40,12 @@ final class DashboardHttpServer
 {
     private const MODEL_IMAGE_ROUTE = ModelImageStore::ROUTE;
     private const PUBLIC_ASSET_EXTENSIONS = ['css', 'ico', 'jpeg', 'jpg', 'js', 'png', 'svg', 'woff2'];
-    // Só texto, e só o que passa pelo `staticFile()`: as imagens e o `woff2` já vêm
-    // comprimidos, e passá-los por gzip gasta CPU para não poupar fio nenhum. A página fica
-    // de fora porque é o `html()` que a serve, e não este caminho.
+    // Só texto: as imagens e o `woff2` já vêm comprimidos.
     private const COMPRESSIBLE_EXTENSIONS = ['css', 'js', 'svg'];
     private ApiKernel $apiKernel;
     /** @var array<string, string> */
     private array $assetCache = [];
-    // Nula e não promovida: a página desenha-se sem o servidor montado -- é o que o teste dos
-    // componentes faz, com `newInstanceWithoutConstructor()` --, e uma propriedade promovida
-    // ficava por inicializar nesse caminho. O `options()` devolve os valores por omissão.
+    // Nula e não promovida: o teste dos componentes monta isto sem construtor.
     private ?DashboardHttpOptions $options = null;
 
     public function __construct(
@@ -59,13 +55,11 @@ final class DashboardHttpServer
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
         ?DashboardHttpOptions $options = null,
-        // A mesma instância que a ingestão usa para anunciar uma publicação. Quando falta, o
-        // stream de inquilino existe e nunca recebe nada -- o que é o que os testes que não
-        // se ocupam dele querem.
+        // A mesma instância com que a ingestão anuncia uma publicação; sem ela o stream de
+        // inquilino nunca recebe nada.
         private ?MessageFanout $messages = null,
         private ?LoginThrottle $loginThrottle = null,
-        // A mesma instância que o processo do hub monta. Quando falta, monta-se uma daqui: a
-        // sincronização só acontece quando alguém carrega no botão, e até lá não custa nada.
+        // A mesma instância que o processo do hub monta; quando falta, monta-se aqui.
         ?RadarLayoutSync $radarLayoutSync = null,
     ) {
         $this->options = $options ??= new DashboardHttpOptions();
@@ -76,8 +70,6 @@ final class DashboardHttpServer
             $this->db->radarCredentials,
             $this->db->whitelist,
         );
-        // O store anuncia as suas próprias escritas, e por isso o stream tem de subscrever
-        // esse notificador exacto, e não um seu.
         $deviceService = new DeviceService(
             $this->store,
             $this->whitelist,
@@ -199,10 +191,8 @@ final class DashboardHttpServer
 
     private function html(string $body): Response
     {
-        // A página é quem diz que versão dos módulos carregar, e por isso é a única peça que
-        // não pode ficar guardada: guardada, apontava para a versão anterior e o deploy não
-        // chegava a quem já lá tinha estado. Dizê-lo é preciso -- sem cabeçalho nenhum, a
-        // decisão fica ao critério de quem estiver pelo meio.
+        // A página diz que versão dos módulos carregar, e por isso nunca fica guardada:
+        // guardada, o deploy não chegava a quem já lá esteve.
         return new Response(
             200,
             ['Content-Type' => 'text/html; charset=utf-8', 'Cache-Control' => 'no-cache'],
@@ -223,11 +213,8 @@ final class DashboardHttpServer
     }
 
     /**
-     * A impressão digital do conjunto de ficheiros que servimos com `no-cache`.
-     *
-     * Vai no caminho, e não numa etiqueta de revalidação, porque a Cloudflare à frente do hub
-     * reescreve o `no-cache` para quatro horas de cache no browser. Não se guarda entre
-     * pedidos: um ficheiro alterado por baixo do processo tem de mudar a versão logo.
+     * A impressão digital dos ficheiros servidos com `no-cache`. Vai no caminho porque a
+     * Cloudflare reescreve o `no-cache` para quatro horas; não se guarda entre pedidos.
      */
     private function assetVersion(): string
     {
@@ -290,22 +277,18 @@ final class DashboardHttpServer
             default => 'text/plain',
         };
 
-        // Quem não anuncia `gzip` recebe os bytes tal e qual. O `Vary` vai sempre, mesmo em
-        // cru: sem ele uma cache partilhada serve a variante errada ao pedido seguinte.
+        // O `Vary` vai sempre, mesmo em cru: sem ele uma cache partilhada serve a variante errada.
         $gzip = in_array($ext, self::COMPRESSIBLE_EXTENSIONS, true)
             && str_contains(strtolower($request->getHeaderLine('Accept-Encoding')), 'gzip');
         $encoding = $gzip
             ? ['Content-Encoding' => 'gzip', 'Vary' => 'Accept-Encoding']
             : ['Vary' => 'Accept-Encoding'];
 
-        // O corpo comprimido é outro corpo, e por isso leva sufixo no ETag. A etiqueta
-        // calcula-se sempre, mesmo onde não vai no cabeçalho: é ela que indexa a cache do
-        // corpo.
+        // O corpo comprimido é outro corpo e leva sufixo no ETag, que indexa também a cache do corpo.
         $etag = sprintf('"%x-%x%s"', (int)filemtime($path), (int)filesize($path), $gzip ? '-gz' : '');
 
-        // Guarda-se para sempre o que não pode mudar debaixo do URL por onde foi pedido: os
-        // recursos de terceiros, cujo caminho muda quando eles mudam, e o que a página pediu
-        // com a impressão digital do conjunto. O resto revalida pelo ETag.
+        // Fica para sempre o que não muda debaixo do URL: os recursos de terceiros e o que a página
+        // pediu com impressão digital. O resto revalida pelo ETag.
         $requestPath = $request->getUri()->getPath();
         $fingerprinted = $requestPath !== self::withoutAssetVersion($requestPath);
         if ($fingerprinted || str_contains($path, '/assets/vendor/') || str_contains($path, '/assets/fonts/')) {
@@ -321,8 +304,6 @@ final class DashboardHttpServer
             return new Response(304, ['Cache-Control' => 'no-cache', 'ETag' => $etag] + $encoding);
         }
 
-        // A cache do corpo é indexada pelo ETag: um ficheiro alterado debaixo do processo muda
-        // o ETag e o corpo servido acompanha-o, em vez de ficar preso aos bytes velhos.
         return new Response(200, $headers, $this->assetContents($path, $path . $etag, $gzip));
     }
 
@@ -344,8 +325,7 @@ final class DashboardHttpServer
         // sobra passa pelas mesmas verificações de sempre.
         $requestPath = self::withoutAssetVersion($requestPath);
 
-        // Rotas nomeadas, uma a uma. O `html` fica fora das extensões públicas de propósito:
-        // acrescentá-lo serviria qualquer ficheiro HTML de dentro de `assets/`.
+        // O `html` fica fora das extensões públicas: serviria qualquer HTML de dentro de `assets/`.
         $routes = [
             '/main.css' => [__DIR__, 'main.css'],
             '/main.js' => [__DIR__, 'main.js'],

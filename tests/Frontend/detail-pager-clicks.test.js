@@ -11,12 +11,8 @@ const {
 } = await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
 
 /**
- * Os dois paginadores do detalhe correm sobre o mesmo algoritmo e declaram cada um o que o
- * distingue: a lista a que pertence, o tamanho de página, a página actual, o prefixo da
- * acção, quem guarda a página e quem redesenha.
- *
- * Trocar dois desses valores entre eles não parte nada que se veja num teste de render. O que
- * se afirma aqui é que cada clique mexe no painel certo.
+ * Os dois paginadores correm sobre o mesmo algoritmo, cada um com a sua lista, tamanho, página e
+ * acção; trocar dois desses valores não se vê num render, e por isso afirma-se o clique.
  */
 const els = new Proxy({}, {
     get(target, name) {
@@ -100,7 +96,6 @@ test("cada painel recebe as linhas do seu tipo, e não as do outro", () => {
     assert.equal(drawn.telemetry.length, 4);
 });
 
-/** Um clique fora dos botões do paginador não mexe em nada. */
 test("um clique que não é do paginador é ignorado", () => {
     handleDownlinkPagerClick(pagerClick("outraCoisa"));
 

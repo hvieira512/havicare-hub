@@ -10,11 +10,8 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O hub não expõe a reposição de fábrica do dispensador, e isso tem de continuar assim.
- *
- * O M228 só aponta para o hub porque o fornecedor lhe mandou essa configuração, e uma
- * reposição devolve-o ao servidor dele. Nos relógios a mesma acção continua a existir, porque
- * lá é recuperável: o que sai do catálogo é só a exposição do dispensador.
+ * Uma reposição devolve o M228 ao servidor do fornecedor; nos relógios a acção fica, porque lá é
+ * recuperável.
  */
 final class PillDispenserNoFactoryResetTest extends TestCase
 {

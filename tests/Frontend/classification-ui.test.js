@@ -16,9 +16,8 @@ const {
 } = await import("../../src/Dashboard/dashboard/devices/classification-ui.js");
 
 /**
- * O desenho da classificacao -- trilha, tipo, fornecedor, modelo -- que o assistente de
- * adicionar e o modal de editar partilham. Sao construtores de HTML puros: testam-se pelo
- * que produzem, e não por como o produzem.
+ * A classificação -- trilha, tipo, fornecedor, modelo -- que o assistente e o modal de editar
+ * partilham; são construtores de HTML puros, testados pelo que produzem.
  */
 
 const TRAIL_QUESTIONS = [
@@ -32,8 +31,7 @@ function trail(badges, currentKey = "") {
 }
 
 test("uma resposta na trilha é um botão que volta àquela pergunta", () => {
-    // Cada badge volta à sua pergunta, o que evita refazer tudo o que
-    // vinha depois para se voltar ao tipo.
+    // Cada badge volta à sua pergunta, sem refazer as que vêm depois.
     const root = trail([{ key: "type", label: "Tipo", value: "Relógio" }], "model");
 
     const answered = root.querySelector("[data-wizard-reopen]");
@@ -44,7 +42,7 @@ test("uma resposta na trilha é um botão que volta àquela pergunta", () => {
 });
 
 test("as perguntas por responder ficam na trilha, e a activa distingue-se", () => {
-    // Mostrar só as respondidas deixava a linha vazia ao abrir e não dizia quanto faltava.
+    // Todas as perguntas aparecem: só as respondidas deixariam a linha vazia ao abrir.
     const root = trail([], "type");
 
     assert.equal(root.querySelectorAll(".wizard-badge").length, 3);
@@ -107,9 +105,8 @@ test("o card escolhido fica marcado, e é o único", () => {
 });
 
 /**
- * Um botão de alternar diz sempre em que estado está. Sem o atributo, o leitor de ecrã
- * anuncia os não escolhidos como botões normais: não se percebe que são escolhíveis nem que
- * estão desligados.
+ * Um botão de alternar diz sempre o seu estado; sem o atributo, o leitor de ecrã anuncia os
+ * não escolhidos como botões normais.
  */
 test("os cards por escolher dizem que estão por escolher", () => {
     const root = parseFragment(
@@ -193,11 +190,8 @@ test("o fornecedor escolhido é o que está marcado, e a contagem é opcional", 
 });
 
 /**
- * A licença que uma notificação traz, resolvida na árvore.
- *
- * O radar publica em `radar/{licenseId}/{uid}`, por isso o hub sabe a licença de um radar
- * que ainda não está registado e a notificação leva-a. O assistente pré-selecciona-a -- mas
- * a escolha é o par empresa+licença, e o número sozinho pode não chegar.
+ * O radar publica em `radar/{licenseId}/{uid}` e a notificação traz a licença de um radar por
+ * registar; a escolha é o par empresa+licença, e o número sozinho pode não chegar.
  */
 test("a licença da notificação ganha a empresa a que pertence", () => {
     const tree = [
@@ -224,15 +218,11 @@ test("o mesmo número em duas empresas fica por escolher", () => {
         { company: "hitcare", licenses: [{ licenseId: "22", name: "outra" }] },
     ];
 
-    // Escolher mal aqui poe o dispositivo na empresa errada sem ninguem reparar.
+    // Escolher mal aqui põe o dispositivo na empresa errada sem ninguém reparar.
     assert.equal(ownerFromLicense(22, tree), null);
 });
 
-/**
- * O par é o que desempata, e é por isso que a notificação passou a guardar a empresa: sem
- * ela o número sozinho desiste, e o assistente deixava de pré-seleccionar no dia em que dois
- * clientes tivessem o mesmo número.
- */
+/** Com dois clientes no mesmo número de licença, só a empresa desempata. */
 test("a empresa da notificação desempata o número repetido", () => {
     const tree = [
         { company: "havicare", licenses: [{ licenseId: "1001", name: "hc" }] },

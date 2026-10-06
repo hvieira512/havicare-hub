@@ -9,11 +9,8 @@ use Hub\Support\Values;
 final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 {
     /**
-     * O tecto do áudio aceite, antes de ser descodificado.
-     *
-     * A conversão corre o `ffmpeg` num subprocesso síncrono, dentro do event loop que também
-     * serve a ingestão e a dashboard. É generoso de propósito: a dashboard não limita a
-     * duração da gravação, e o `ffmpeg` já a corta aos 15 segundos na saída.
+     * O tecto do áudio aceite, antes de descodificar. É generoso porque a dashboard não limita a
+     * gravação, e o `ffmpeg`, que corre síncrono no event loop, já a corta aos 15 segundos.
      */
     private const MAX_VOICE_AUDIO_BYTES = 2 * 1024 * 1024;
 

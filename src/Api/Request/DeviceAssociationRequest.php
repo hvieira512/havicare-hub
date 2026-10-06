@@ -8,13 +8,8 @@ use Hub\Api\OpenApi\Example;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * O corpo que prende um dispositivo a uma empresa e a uma licença.
- *
- * As duas mensagens são a mesma de propósito: `company and licenseId are required` é o texto
- * que os clientes conhecem e que a especificação promete.
- *
- * O `licenseId` é inteiro, e a rota converte-o a partir de texto porque `"1001"` é o que os
- * clientes mandam.
+ * O corpo que prende um dispositivo a uma empresa e a uma licença. As duas mensagens são a
+ * mesma de propósito: é o texto que os clientes conhecem e que a especificação promete.
  */
 final class DeviceAssociationRequest
 {

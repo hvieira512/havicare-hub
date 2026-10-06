@@ -10,9 +10,8 @@ use DOMXPath;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Onde mora o «Eliminar» do modal do dispositivo. Não é uma escolha de aspecto: o que está
- * na zona do polegar acerta-se por engano, e o que está no rodapé alcança-se de qualquer
- * separador -- incluindo o das configurações, onde ninguém veio apagar o aparelho.
+ * O «Eliminar» não fica na zona do polegar, onde se acerta por engano, e no rodapé só aparece
+ * no separador geral.
  */
 final class DeviceModalLayoutTest extends TestCase
 {

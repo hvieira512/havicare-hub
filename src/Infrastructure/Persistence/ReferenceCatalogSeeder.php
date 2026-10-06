@@ -13,13 +13,7 @@ final class ReferenceCatalogSeeder
 {
     private const SUPPLIERS = ['Wonlex', 'Vivistar', '4P Touch', 'Voerka', 'Qinglanst', 'MOKO', 'MONIT', 'Zayata'];
 
-    /**
-     * O catálogo de modelos tal como produção o tem, a 2026-09-29.
-     *
-     * É a lista toda e não um subconjunto provisório: uma instalação nova nasce com os mesmos
-     * modelos, nomes comerciais e fotografias que o hub a correr, e não há uma segunda lista
-     * a completá-la depois.
-     */
+    /** O catálogo de modelos completo, tal como a produção o tem a 2026-09-29. */
     private const MODELS = [
         ['4P Touch', 'D41', 'D41', 'watch', '9201181e4f07060bd5ded5e48ca8e20a.jpg'],
         ['4P Touch', 'D44S', 'R05', 'watch', 'be4e5160e602a993f519011e6c9f796c.jpg'],
@@ -123,12 +117,8 @@ final class ReferenceCatalogSeeder
     }
 
     /**
-     * Põe a tabela a dizer exactamente o que o `CapabilityCatalog` declara, e devolve o que
-     * mudou.
-     *
-     * Corre a cada arranque, ao contrário do resto do semeador. Pode fazê-lo porque ninguém
-     * escreve nesta tabela fora daqui e das migrações -- o que a dashboard edita é a
-     * `model_capabilities`, que diz o que cada modelo tem ligado e não se toca aqui.
+     * Põe a tabela a dizer exactamente o que o `CapabilityCatalog` declara, a cada arranque, e
+     * devolve o que mudou. A dashboard só edita a `model_capabilities`, que aqui não se toca.
      *
      * @return array{added: list<string>, changed: list<string>, removed: list<string>}
      */
@@ -208,11 +198,8 @@ final class ReferenceCatalogSeeder
     }
 
     /**
-     * Dá a cada modelo as capacidades que o protocolo suporta e que ainda não tem. Lacuna a
-     * lacuna e não modelo a modelo, senão uma capacidade nova nunca chegava aos já semeados.
-     *
-     * Só insere o que falta: uma desligada à mão tem `enabled = 0` e não uma linha ausente,
-     * e o `INSERT IGNORE` não lhe toca. Preenche buracos, não liga nada.
+     * Dá a cada modelo as capacidades do protocolo que ainda não tem, lacuna a lacuna. Uma
+     * desligada à mão tem `enabled = 0`, e o `INSERT IGNORE` não lhe toca.
      */
     private function seedModelCapabilities(PDO $pdo): void
     {

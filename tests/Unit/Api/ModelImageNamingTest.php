@@ -9,11 +9,8 @@ use Hub\Api\Services\ModelImageStore;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A base de dados guarda o nome do ficheiro, e a rota vive no código.
- *
- * Um prefixo `/model-images/` repetido em todas as linhas obriga a um `UPDATE` a toda a
- * tabela para mudar onde as imagens são servidas, e obriga quem lê a desmontá-lo. O que varia
- * por linha fica na linha; o que é igual em todas fica no código.
+ * A base de dados guarda o nome do ficheiro, e a rota vive no código: o que é igual em todas
+ * as linhas não se repete em cada uma.
  */
 final class ModelImageNamingTest extends TestCase
 {
@@ -50,12 +47,7 @@ final class ModelImageNamingTest extends TestCase
         self::assertNull((new ModelImageUrl())->resolve('', 'https://hub.havicare.com'));
     }
 
-    /**
-     * Um valor antigo, com o prefixo, continua a resolver.
-     *
-     * A migração limpa a tabela, mas um hub que ainda não tenha migrado não pode ficar com as
-     * imagens todas partidas entre o deploy e a migração.
-     */
+    /** Um hub ainda por migrar tem o prefixo nas linhas, e as imagens não podem partir até lá. */
     public function testAStoredValueWithTheOldPrefixStillResolves(): void
     {
         self::assertSame(
@@ -77,10 +69,8 @@ final class ModelImageNamingTest extends TestCase
     }
 
     /**
-     * Um nome que não é um dos nossos não apaga nada, venha de onde vier.
-     *
-     * Cada nome recusado tem um isco no caminho que ele atingiria: sem ficheiro lá, um
-     * `delete` que apagasse tudo o que lhe dessem também não deixava rasto.
+     * Cada nome recusado tem um isco no caminho que atingiria: sem ele, um `delete` que apagasse
+     * tudo também não deixava rasto.
      */
     public function testDeleteIgnoresAnythingThatIsNotOneOfOurNames(): void
     {

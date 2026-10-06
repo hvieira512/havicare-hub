@@ -118,12 +118,8 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
     }
 
     /**
-     * O histórico guarda que houve gravação, não a gravação.
-     *
-     * Um aviso de medicação de 42 s são 978 KB de base64, e o histórico guardava uma cópia
-     * por revisão -- eram 69% da base de produção. O estado corrente mantém o áudio porque é
-     * a base de fusão de uma alteração parcial: sem ele, mudar só a hora apagava a voz do
-     * relógio.
+     * O histórico guarda a marca da gravação e não o base64; o estado corrente mantém o áudio,
+     * que é a base de fusão de uma alteração parcial.
      */
     public function testTheHistoryKeepsTheMarkerAndTheCurrentStateKeepsTheAudio(): void
     {

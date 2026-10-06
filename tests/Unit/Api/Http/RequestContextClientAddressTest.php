@@ -9,11 +9,8 @@ use Hub\Api\Http\RequestContext;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O endereço do cliente atrás do proxy.
- *
- * Com o nginx à frente, o `REMOTE_ADDR` é sempre `127.0.0.1`, e o `LoginThrottle` conta
- * por endereço: sem isto, todos os utilizadores partilham o mesmo balde de vinte
- * tentativas por minuto e a vigésima primeira tranca toda a gente.
+ * Com o nginx à frente o `REMOTE_ADDR` é sempre `127.0.0.1`, e o `LoginThrottle` conta por
+ * endereço: sem o endereço real, todos partilham o mesmo balde de tentativas.
  */
 final class RequestContextClientAddressTest extends TestCase
 {
@@ -38,11 +35,8 @@ final class RequestContextClientAddressTest extends TestCase
     }
 
     /**
-     * O caso que decide a segurança disto. O nginx usa `$proxy_add_x_forwarded_for`, que
-     * **acrescenta** o endereço da ligação ao que o cliente tiver mandado. Um cliente que
-     * forje o cabeçalho produz `1.2.3.4, <endereço real>` -- portanto o valor de confiança
-     * é o **último**, e não o primeiro. Ler o primeiro deixava qualquer pessoa escolher o
-     * seu endereço e escapar ao estrangulamento de tentativas.
+     * O nginx **acrescenta** o endereço da ligação ao `X-Forwarded-For` que o cliente mandou, e
+     * por isso só o último é de confiança: o primeiro forja-se.
      */
     public function testTakesTheLastEntrySoAClientCannotForgeItsAddress(): void
     {

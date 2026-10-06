@@ -56,11 +56,8 @@ final class WonlexConfigurationDefinitions
     }
 
     /**
-     * Uma das grandezas cuja periodicidade de envio se configura.
-     *
-     * São dez, com o mesmo comando nativo e a mesma legenda -- é a mesma decisão repetida
-     * para grandezas diferentes, e a dashboard agrupa-as por reconhecer essa forma. A frase
-     * vive aqui, uma vez, e não dez vezes no ecrã.
+     * Uma das dez grandezas cuja periodicidade de envio se configura, todas com o mesmo comando e
+     * a mesma legenda: a dashboard agrupa-as por reconhecer essa forma.
      *
      * @return array<string, mixed>
      */

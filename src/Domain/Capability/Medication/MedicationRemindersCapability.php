@@ -7,16 +7,8 @@ namespace Hub\Domain\Capability\Medication;
 use Hub\Domain\Capability\CapabilityContract;
 
 /**
- * Os lembretes de medicação (`take_pills`).
- *
- * Mapeia em formas nativas diferentes por protocolo:
- * - wonlex-json: `{ dnMedicationPlan: { plans: [...] } }`
- * - four-p-touch: `{ takePills: { reminderSettings: [...], reminderText, voiceData } }`, com
- *   o campo nativo `number` derivado do `reminderSettings`.
- * - zayata-m228: `{ medication_reminders: { plans: [...] } }`, os nove alarmes do aparelho.
- *
- * Os tratadores estão num mapa e não em `match` repetidos, e o `supportedProtocols` sai do
- * mesmo mapa, para não poder anunciar o que o despacho recusa.
+ * Os lembretes de medicação (`take_pills`): `dnMedicationPlan` na Wonlex, `takePills` no 4P
+ * Touch e os nove alarmes do M228. O `supportedProtocols` sai do mapa dos tratadores.
  */
 final class MedicationRemindersCapability implements CapabilityContract
 {
@@ -60,11 +52,7 @@ final class MedicationRemindersCapability implements CapabilityContract
         return $this->require($protocol)->toNative($value);
     }
 
-    /**
-     * Um protocolo sem tratador devolve o que lá está, em vez de o passar por um tratador
-     * qualquer. A leitura desenha o ecrã e não pode rebentar; inventar uma descodificação
-     * seria pior do que não fazer nenhuma.
-     */
+    /** Um protocolo sem tratador devolve o que lá está: a leitura desenha o ecrã e não pode rebentar. */
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
         return ($this->handlers[$protocol] ?? null)?->fromNative($desired) ?? $desired;

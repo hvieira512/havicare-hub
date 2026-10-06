@@ -255,14 +255,8 @@ final class PillDispenserDownlinkTest extends TestCase
 
 
     /**
-     * Cada TFLV declara o tipo do parâmetro nos bits 0--4 do Flag, e o aparelho recusa com
-     * «tipo de parâmetro inválido» tudo o que lhe chegue como `UNKONW`.
-     *
-     * Isto não se via a construir e descodificar a trama connosco próprios: o `packTlv` e o
-     * `parseTlv` concordavam no zero e o round-trip fechava. Foi o M228 real que discordou --
-     * devolveu as vinte e sete TAGs de um plano com estado `010`. Por isso os tipos esperados
-     * estão aqui escritos à mão, da tabela «TAG Definition - Device Type 02», e não lidos da
-     * tabela do adaptador: um teste que se sirva da mesma fonte que o código não prova nada.
+     * Os tipos esperados vêm à mão da tabela «TAG Definition - Device Type 02»: o `packTlv` e o
+     * `parseTlv` concordam um com o outro, e o aparelho recusa como inválido o tipo `UNKONW`.
      */
     public function testEveryDownlinkTagDeclaresTheParameterTypeTheSpecRequires(): void
     {

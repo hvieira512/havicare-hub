@@ -13,10 +13,7 @@ import {
 } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { resetConfigPane } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
 
-/**
- * No 4P Touch Y6M eram vinte e nove botões de enviar num painel só. O envio passa a ser da
- * secção; o que continua a ter botão próprio é o que dispara em vez de se guardar.
- */
+/** O envio é da secção; só tem botão próprio o que dispara em vez de se guardar. */
 
 const setting = (key, field) => ({
     key,

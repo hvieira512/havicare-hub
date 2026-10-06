@@ -31,9 +31,8 @@ beforeEach(() => {
 });
 
 /**
- * O rascunho é o que está nos campos antes de se carregar em «Aplicar». Apagar a data e
- * esperar por uma mensagem do stream -- que redesenha o ecrã -- devolvia a data ao campo,
- * porque um `""` de propósito não se distinguia de «não há rascunho».
+ * O rascunho é o que está nos campos antes de «Aplicar», e um `""` de propósito é diferente de
+ * «não há rascunho».
  */
 test("uma data apagada no rascunho não é ressuscitada pelo valor aplicado", () => {
     updateDetailFiltersDraft({ from: "" });

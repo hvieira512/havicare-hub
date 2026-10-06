@@ -8,12 +8,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceTypeCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O descritor dos tipos de dispositivo, que o PHP e o JavaScript lêem do mesmo ficheiro.
- *
- * O que se prende aqui é que há uma fonte só, e que a forma que os dois lados esperam se
- * mantém.
- */
+/** O descritor dos tipos de dispositivo, que o PHP e o JavaScript lêem do mesmo ficheiro. */
 final class DeviceTypeCatalogTest extends TestCase
 {
     public function testEveryTypeDeclaresTheShapeBothSidesRead(): void
@@ -39,7 +34,7 @@ final class DeviceTypeCatalogTest extends TestCase
         }
     }
 
-    /** O catálogo de capacidades deixou de ter a sua própria lista de tipos. */
+    /** O catálogo de capacidades não tem lista de tipos própria. */
     public function testCapabilityCatalogReadsTheSameList(): void
     {
         self::assertSame(DeviceTypeCatalog::keys(), CapabilityCatalog::deviceTypes());
@@ -50,11 +45,7 @@ final class DeviceTypeCatalogTest extends TestCase
         self::assertSame(['diaper_sensor', 'bracelet'], DeviceTypeCatalog::linkedToGateway());
     }
 
-    /**
-     * O gateway identifica-se por MAC e leva SIM: é o cartão dele que faz o backhaul. As duas
-     * coisas andaram juntas enquanto o `sim` foi um `deviceType !== "watch"`, e por isso
-     * guardar um gateway apagava-lhe o número.
-     */
+    /** O gateway identifica-se por MAC e leva SIM: é o cartão dele que faz o backhaul. */
     public function testTheGatewayHasASimEvenThoughItIsNotIdentifiedByImei(): void
     {
         self::assertTrue(DeviceTypeCatalog::hasSim('gateway'));

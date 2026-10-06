@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Hub\Api\Http;
 
 /**
- * As listagens que cabem em memória: filtra, ordena, conta e só depois pagina.
- *
- * A ordem dos quatro passos não é indiferente: contar antes de filtrar dá números que não
- * correspondem ao que se vê, e paginar antes de ordenar dá à página 2 as linhas da ordem
- * anterior. As listagens grandes -- a de dispositivos -- paginam no SQL e não passam aqui.
+ * As listagens que cabem em memória: filtra, ordena, conta e só depois pagina, por esta ordem.
+ * As grandes -- a de dispositivos -- paginam no SQL.
  */
 final class CollectionPresenter
 {
@@ -40,9 +37,7 @@ final class CollectionPresenter
         [$filtered, $applied] = $this->filter($items, $columns, $params);
         $sorted = $this->sort($filtered, $columns, $params);
 
-        // Cada faceta conta-se sem o seu próprio filtro: escolher um fornecedor estreita os
-        // modelos, mas os outros fornecedores continuam à escolha. Contá-la depois de tudo
-        // deixava quem escolheu preso na escolha que fez.
+        // Cada faceta conta-se sem o seu próprio filtro, para os outros valores continuarem à escolha.
         [$available, $counts] = $this->facets($items, $columns, $params);
 
         $response = $this->responder->respond(
@@ -193,9 +188,8 @@ final class CollectionPresenter
     }
 
     /**
-     * Um filtro de texto pode olhar para mais do que uma coluna, e basta uma delas conter o
-     * que se procura: quem procura um modelo não sabe se tem na mão o código do fabricante
-     * ou o nome comercial.
+     * Basta uma das colunas conter o texto: quem procura um modelo não sabe se tem o código do
+     * fabricante ou o nome comercial.
      *
      * @param array<string, mixed> $row
      * @param list<string> $fields

@@ -111,9 +111,8 @@ final class DashboardStreamTest extends DashboardHttpTestCase
     }
 
     /**
-     * O token de acesso não abre nada a partir de um URL: é uma credencial de uma hora e boa
-     * para a API toda, e num endereço acabaria no registo de acessos de um proxy. No
-     * cabeçalho continua a valer.
+     * O token de acesso não abre nada a partir de um URL: vale uma hora para a API toda, e num
+     * endereço acabaria no registo de acessos de um proxy.
      */
     public function testAnAccessTokenInTheQueryStringNoLongerAuthenticates(): void
     {
@@ -151,9 +150,8 @@ final class DashboardStreamTest extends DashboardHttpTestCase
     }
 
     /**
-     * Um cliente que deixa de ler não pode obrigar o servidor a guardar-lhe tudo. Sem esta
-     * contrapressão o buffer crescia até rebentar o limite de memória do processo, e isso
-     * derrubou a produção doze vezes em catorze dias.
+     * Um cliente que deixa de ler não pode obrigar o servidor a guardar-lhe tudo: o buffer
+     * cresceria até rebentar o limite de memória do processo.
      */
     public function testAStreamStopsWritingWhileTheClientIsNotDrainingAndRecoversAfterwards(): void
     {
@@ -186,8 +184,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         // O cliente pára de ler. É o que um separador em segundo plano faz.
         $body->pause();
 
-        // Uma escrita por janela de coalescência, e não quarenta de enfiada: essas colapsam
-        // num envio só, e o teste passava com e sem a correcção.
+        // Uma escrita por janela de coalescência: quarenta de enfiada colapsariam num envio só.
         for ($round = 0; $round < 5; $round++) {
             $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 60 + $round]);
             // Um pouco acima do `DeviceController::STREAM_COALESCE_SECONDS`, que é 0.25.
@@ -283,9 +280,8 @@ final class DashboardStreamTest extends DashboardHttpTestCase
             }
         });
 
-        // O prazo tem de ser cancelado quando o frame chega primeiro. O loop é um singleton
-        // partilhado pela suite: um temporizador que sobrevive a este método fica armado e já
-        // fora de prazo, e mata o `run()` do teste seguinte antes de ele publicar.
+        // O prazo cancela-se quando o frame chega primeiro: o loop é partilhado pela suite, e um
+        // temporizador que sobreviva mata o `run()` do teste seguinte.
         $timeout = $loop->addTimer(0.2, static function () use ($body, $loop): void {
             if (method_exists($body, 'close')) {
                 $body->close();
@@ -300,9 +296,8 @@ final class DashboardStreamTest extends DashboardHttpTestCase
     }
 
     /**
-     * Lê o instantâneo, corre o `$write`, e continua a ler até a actualização chegar. O prazo
-     * está muito abaixo do recurso periódico do stream, e por isso um frame aqui só pode ter
-     * vindo do store a anunciar a escrita.
+     * Lê o instantâneo, corre o `$write` e lê até a actualização chegar; o prazo fica abaixo do
+     * recurso periódico, e um frame aqui só pode vir do store a anunciar a escrita.
      */
     private function collectSseFramesUntilUpdate(
         \Psr\Http\Message\ResponseInterface $response,

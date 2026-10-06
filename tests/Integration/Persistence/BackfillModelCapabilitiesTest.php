@@ -9,12 +9,8 @@ use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * Uma capacidade acrescentada ao catálogo depois de um modelo ser semeado tem de lhe
- * chegar. Enquanto o seeder saltava os modelos que já tinham linhas, não chegava: o
- * aparelho suportava a coisa e a API recusava-se a configurá-la.
- *
- * A semeadura enche lacunas e corre a cada `migrate`, e por isso o mesmo problema deixa de
- * precisar de uma migração de cada vez que acontece.
+ * Uma capacidade acrescentada ao catálogo depois de um modelo ser semeado tem de lhe chegar: a
+ * semeadura enche lacunas a cada `migrate`, sem precisar de migração própria.
  */
 final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
 {
@@ -73,7 +69,7 @@ final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
 
         $this->fillGaps($pdo);
 
-        // Filling gaps must not undo a deliberate decision.
+        // Encher lacunas não desfaz uma decisão deliberada.
         self::assertSame(0, $this->capabilities($pdo, $modelId)['blood_pressure'] ?? null);
     }
 
@@ -91,7 +87,7 @@ final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
     public function testAModelThatWasNeverSeededGetsItsWholeTemplate(): void
     {
         // O outro lado da mesma função: um modelo criado no separador Catálogo entra sem
-        // capacidade nenhuma, e os cartões dele ficavam vazios até alguém as ligar à mão.
+        // capacidade nenhuma, e sem isto os cartões dele ficariam vazios.
         $pdo = $this->createDashboardDatabase()->pdo();
         $supplier = $pdo->query("SELECT id FROM suppliers WHERE name = 'Vivistar'")->fetchColumn();
         $pdo->prepare('

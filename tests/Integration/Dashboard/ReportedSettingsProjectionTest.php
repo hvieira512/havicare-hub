@@ -9,13 +9,8 @@ use Hub\State\DeviceConfigurationProjection;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * Uma leitura que traz várias configurações de uma vez guarda-se uma a uma.
- *
- * A projeção resolvia a chave a partir do tipo da resposta, o que serve quando cada resposta
- * confirma uma configuração — é assim nos relógios. O dispensador M228 responde ao `0x05` com
- * **todas** de uma vez, e o mapeamento por tipo punha o bloco inteiro debaixo de uma chave só:
- * a dashboard continuava sem saber o valor de nenhuma delas, que era exactamente o problema
- * que ler a configuração ao aparelho devia resolver.
+ * Uma leitura que traz várias configurações de uma vez guarda-se uma a uma: o M228 responde
+ * ao `0x05` com todas, e o mapeamento pelo tipo da resposta só serve uma.
  */
 final class ReportedSettingsProjectionTest extends MysqlDashboardTestCase
 {
@@ -44,12 +39,8 @@ final class ReportedSettingsProjectionTest extends MysqlDashboardTestCase
     }
 
     /**
-     * Sem mapa de configurações, o caminho antigo continua a valer — e a recusar-se a
-     * adivinhar.
-     *
-     * No dispensador, nove configurações declaram o `write_config_ack`: o tipo não nomeia
-     * nenhuma, e nada se guarda. A regra está no `AmbiguousReplyTypeTest`; aqui prende-se só
-     * que o caminho novo não ficou a escrever por cima do antigo.
+     * Sem mapa de configurações vale o caminho pelo tipo, que se recusa a adivinhar; a regra
+     * está no `AmbiguousReplyTypeTest`, e aqui prende-se que o caminho novo não o sobrepõe.
      */
     public function testAPayloadWithoutSettingsKeepsTheOldBehaviour(): void
     {

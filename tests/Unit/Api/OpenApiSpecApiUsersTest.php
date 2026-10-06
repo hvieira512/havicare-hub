@@ -9,9 +9,7 @@ use Hub\Api\OpenApiSpec;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A listagem de utilizadores da API passou a ordenar-se, a filtrar-se por coluna e a
- * descrever as próprias colunas. É superfície pública, e quem integra lê a especificação:
- * um parâmetro que o serviço aceita e o documento não menciona é uma capacidade que
+ * Um parâmetro que o serviço aceita e a especificação não menciona é uma capacidade que
  * ninguém sabe que existe.
  */
 final class OpenApiSpecApiUsersTest extends TestCase

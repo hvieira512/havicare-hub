@@ -11,11 +11,8 @@ use Tests\Support\DashboardHttpTestCase;
 use Tests\Support\Doubles\WavFixture;
 
 /**
- * A forma do detalhe de um dispositivo: as capacidades que ele declara, os valores guardados,
- * e o estado de sincronização de cada configuração.
- *
- * É a resposta mais larga da API e a que mais clientes lêem campo a campo, e por isso os
- * testes comparam estruturas inteiras em vez de espreitarem uma chave.
+ * A forma do detalhe de um dispositivo, a resposta que mais clientes lêem campo a campo: os
+ * testes comparam estruturas inteiras em vez de espreitar uma chave.
  */
 final class DashboardDeviceDetailTest extends DashboardHttpTestCase
 {

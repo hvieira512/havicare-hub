@@ -12,11 +12,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * O sinal de um avistamento que nenhum decoder soube ler. O RSSI é medido pelo gateway e
- * existe quer se saiba interpretar o anúncio, quer não.
- *
- * A W6 é o caso que o expôs: anuncia em seis slots e o decoder lê dois, e por isso rendia
- * um quarto das mensagens de proximidade da W6B a partir de mais avistamentos.
+ * O sinal de um avistamento que nenhum decoder leu: o RSSI é medido pelo gateway e existe na
+ * mesma. A W6 anuncia em seis slots e o decoder lê dois.
  */
 final class BridgeUnclaimedSightingTest extends TestCase
 {
@@ -115,12 +112,8 @@ final class BridgeUnclaimedSightingTest extends TestCase
     }
 
     /**
-     * Um gateway MOKO vê tudo o que anuncia à volta, incluindo pulseiras de outra marca.
-     *
-     * A MF91 fala Veepoo e nenhum decoder MOKO lhe toca, mas está registada e o RSSI é
-     * medido na mesma -- e é por aqui que ela cai. Etiquetá-la pelo tipo dava-lhe o
-     * protocolo da W6B, e um cliente que o lesse iria descodificar tramas Veepoo com o
-     * formato de um botão MOKO.
+     * A MF91 fala Veepoo e nenhum decoder MOKO lhe toca, mas está registada; etiquetá-la pelo tipo
+     * dava-lhe o protocolo da W6B.
      */
     public function testABraceletOfAnotherSupplierKeepsItsOwnProtocol(): void
     {
@@ -153,8 +146,8 @@ final class BridgeUnclaimedSightingTest extends TestCase
     }
 
     /**
-     * Uma frame reclamada continua a dar uma mensagem e não duas: o caminho novo é a saída
-     * de quem não foi reclamado, não um segundo relato por cima do primeiro.
+     * Uma frame reclamada continua a dar uma mensagem e não duas: este caminho é só para o que
+     * ninguém reclamou.
      */
     public function testAClaimedFrameIsNotReportedTwice(): void
     {

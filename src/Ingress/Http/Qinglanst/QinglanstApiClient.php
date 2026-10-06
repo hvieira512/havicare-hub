@@ -10,16 +10,8 @@ use React\Http\Message\ResponseException;
 use React\Promise\PromiseInterface;
 
 /**
- * A cloud do fabricante dos radares, por HTTP.
- *
- * Assíncrono como o resto do processo: o hub tem um event loop só, e quinze radares a duzentos
- * milissegundos cada de chamada bloqueante eram três segundos sem ingestão TCP nem MQTT.
- *
- * O endereço e as credenciais vêm por parâmetro e não de configuração: são da licença, e não
- * há conta que veja a frota toda -- com a conta errada, os radares das outras respondem `777`,
- * "dispositivo offline", mesmo a publicar telemetria nesse minuto.
- *
- * Sem `final` só para os testes da sincronização a poderem substituir.
+ * A cloud dos radares, por HTTP assíncrono. Endereço e credenciais vêm por parâmetro por serem da
+ * licença: com as de outra, os radares respondem `777` mesmo a publicar. Sem `final` para os testes.
  */
 class QinglanstApiClient
 {
@@ -67,11 +59,8 @@ class QinglanstApiClient
     }
 
     /**
-     * O layout declarado no aparelho.
-     *
-     * Devolve o corpo descodificado tal como veio, `code` incluído. Um `777` não é avaria: é a
-     * cloud a dizer que não conhece aquele aparelho, e quem chama é que sabe o que fazer com
-     * isso -- lançar excepção punha uma resposta normal no caminho dos erros.
+     * O layout declarado no aparelho, com o `code` tal como veio: um `777` é a cloud a não
+     * conhecer o aparelho, e não uma avaria.
      *
      * @param array<string, string> $credentials `base_url`, `app_id`, `app_secret`
      * @param array{access_token: string, token_type: string} $token

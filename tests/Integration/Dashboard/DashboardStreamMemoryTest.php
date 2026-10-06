@@ -11,11 +11,8 @@ use React\Stream\ReadableStreamInterface;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
- * O orçamento de memória de um stream aberto.
- *
- * Existe porque o teto de ligações não é um número escolhido a gosto: é o orçamento dividido
- * pelo custo de uma ligação. Sem esta medição presa por um teste, uma alteração que engorde
- * uma ligação move o teto sem ninguém dar por isso.
+ * O teto de ligações é o orçamento dividido pelo custo de uma ligação, e por isso esse custo
+ * fica medido aqui.
  */
 final class DashboardStreamMemoryTest extends DashboardHttpTestCase
 {
@@ -41,9 +38,8 @@ final class DashboardStreamMemoryTest extends DashboardHttpTestCase
         gc_collect_cycles();
         $perConnection = (memory_get_usage() - $before) / self::CONNECTIONS;
 
-        // Medido: 19,8 KB a 50 ligações e 15,4 KB a 200 -- a diferença é o custo fixo a
-        // amortizar. O teto está a 32 KB, que dá folga sem deixar passar uma alteração que
-        // engorde a ligação. O socket em si é orçamento do kernel, não deste número.
+        // Medido: 19,8 KB a 50 ligações e 15,4 KB a 200; o teto de 32 KB dá folga sem deixar
+        // passar uma ligação mais gorda. O socket é orçamento do kernel, não deste número.
         self::assertLessThan(
             32 * 1024,
             $perConnection,
@@ -100,12 +96,8 @@ final class DashboardStreamMemoryTest extends DashboardHttpTestCase
         gc_collect_cycles();
         $perConnection = (memory_get_usage() - $before) / self::CONNECTIONS;
 
-        // Medido: 111 KB, que são os 256 frames da fila a ~440 bytes cada. Com os ~15 KB da
-        // ligação inerte, dá ~128 KB de pior caso -- e é isso que diz que a memória **não** é
-        // o que limita o teto de ligações: 400 × 128 KB são 51 MB. O que limita é o
-        // `FD_SETSIZE` de 1024 do `select()`, e está explicado no `Config.php`.
-        //
-        // O limite está a 192 KB para não passar a ser um teste sobre o tamanho do payload.
+        // Medido: 111 KB, os 256 frames da fila a ~440 bytes; o teto de ligações é limitado pelo
+        // `FD_SETSIZE` do `select()`, e não pela memória. Os 192 KB não prendem o payload.
         self::assertLessThan(
             192 * 1024,
             $perConnection,

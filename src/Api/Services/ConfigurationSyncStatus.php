@@ -8,12 +8,8 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Decide se um dispositivo aplicou o que o hub lhe pediu.
- *
- * As árvores de capacidades pretendida e reportada são achatadas em caminhos comparáveis
- * `secção.chave`, comparadas, e cada diferença é reportada com o estado do ciclo de vida do
- * comando que a devia ter entregado. Vive à parte do `DeviceCapabilityPresenter` porque não
- * precisa do registo nem da base de dados.
+ * Decide se um dispositivo aplicou o que o hub lhe pediu: compara as árvores pretendida e
+ * reportada, achatadas em `secção.chave`, com o estado do comando de cada diferença.
  */
 final class ConfigurationSyncStatus
 {
@@ -30,11 +26,8 @@ final class ConfigurationSyncStatus
     ];
 
     /**
-     * Quanto de uma capacidade entregue em vários comandos é que o aparelho já confirmou.
-     *
-     * A lista telefónica do 4P Touch é o caso que obriga a isto: cada contacto viaja no seu
-     * próprio comando, e «não convergida» sozinho não distinguia um contacto por confirmar de
-     * cinco. Quem só entrega um comando não tem nada para detalhar, e recebe `null`.
+     * Quanto de uma capacidade entregue em vários comandos o aparelho já confirmou, como os
+     * contactos da lista telefónica do 4P Touch. Com um comando só, `null`.
      *
      * @param list<array<string, mixed>> $operations
      * @return array{confirmed: int, total: int}|null

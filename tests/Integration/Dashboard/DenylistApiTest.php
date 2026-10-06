@@ -22,7 +22,6 @@ final class DenylistApiTest extends DashboardHttpTestCase
         $db->dashboardNotifications->record('device_not_authorized', '357000000000123', 'four-p-touch', '4P-TOUCH', '7000000123', 'device_not_authorized');
         self::assertNotSame([], $db->dashboardNotifications->latest(100));
 
-        // Bloquear.
         $block = $server(new ServerRequest(
             'POST',
             '/api/denylist',
@@ -41,7 +40,6 @@ final class DenylistApiTest extends DashboardHttpTestCase
         $listed = array_column(json_decode((string)$list->getBody(), true, 512, JSON_THROW_ON_ERROR)['data'] ?? [], 'identity');
         self::assertContains('357000000000123', $listed);
 
-        // Desbloquear.
         $unblock = $server(new ServerRequest('DELETE', '/api/denylist/357000000000123', ['Authorization' => 'Bearer ' . $token]));
         self::assertSame(200, $unblock->getStatusCode(), (string)$unblock->getBody());
 

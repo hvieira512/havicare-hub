@@ -9,12 +9,8 @@ use Hub\Device\HubMqttBridge;
 use Hub\Device\RawPayload;
 
 /**
- * Diz porque é que uma medição da pulseira não produziu valor.
- *
- * É um acontecimento e não telemetria: não há nada a registar, há uma razão a mostrar. Sem
- * isto, um pedido que morreu por bateria fraca ou por sensor avariado ficava em fila até
- * expirar sem ninguém saber porquê -- que é o tipo de silêncio que faz um cuidador carregar
- * no botão três vezes.
+ * Diz porque é que uma medição da pulseira não produziu valor, como acontecimento e não
+ * como telemetria.
  */
 final class MeasurementFailureReporter
 {
@@ -34,13 +30,7 @@ final class MeasurementFailureReporter
     ) {
     }
 
-    /**
-     * Diz porque é que uma medição não produziu valor.
-     *
-     * É um acontecimento e não telemetria: não há nada a registar, há uma razão a mostrar.
-     *
-     * @param array<string, mixed> $device
-     */
+    /** @param array<string, mixed> $device */
     public function report(
         string $deviceKey,
         array $device,
@@ -48,9 +38,7 @@ final class MeasurementFailureReporter
         string $company,
         string $reason,
     ): void {
-        // Uma medição falhada não é um acontecimento por trama. O ECG manda dezenas seguidas
-        // com a mesma queixa enquanto o dedo não está no elétrodo, e relatar cada uma
-        // afogava o histórico do aparelho no aviso em vez de o mostrar.
+        // Uma vez por janela e não por trama: o ECG repete a queixa enquanto não há contacto.
         $key = $deviceKey . '|' . $reason;
         $now = time();
         if ($now - ($this->lastFailureAt[$key] ?? 0) < self::FAILURE_REPEAT_SECONDS) {
@@ -58,8 +46,7 @@ final class MeasurementFailureReporter
         }
         $this->lastFailureAt[$key] = $now;
 
-        // O motivo vai em `error` e não em `command`: descreve porque é que a medição não
-        // saiu, e não o comando que a pediu -- que aqui nem sequer se conhece.
+        // O motivo vai em `error`: o comando que pediu a medição aqui não se conhece.
         $event = RawPayload::event(
             $deviceKey,
             (string)($device['supplier'] ?? ''),

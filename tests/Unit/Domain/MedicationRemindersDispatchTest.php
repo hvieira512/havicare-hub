@@ -9,11 +9,8 @@ use Hub\Domain\Capability\Medication\MedicationRemindersHandler;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Cada protocolo é servido pelo seu tratador, e o contrato não escolhe por ele.
- *
- * Os lembretes de medicação são a capacidade com mais protocolos. Estes testes prendem o
- * encaminhamento com tratadores falsos que dizem quem são, para não dependerem do que cada
- * fornecedor real faz com os dados.
+ * Cada protocolo é servido pelo seu tratador. Os tratadores falsos dizem quem são, para não
+ * depender do que cada fornecedor real faz com os dados.
  */
 final class MedicationRemindersDispatchTest extends TestCase
 {
@@ -54,13 +51,7 @@ final class MedicationRemindersDispatchTest extends TestCase
         );
     }
 
-    /**
-     * A lista de protocolos suportados tem de sair do mesmo sítio que o despacho.
-     *
-     * Declarada à parte, podia dizer que suporta um protocolo que o despacho recusa -- e o
-     * contrário, servir um que não anuncia. São duas afirmações sobre a mesma coisa e só uma
-     * delas pode ser a fonte.
-     */
+    /** A lista de protocolos suportados sai do mesmo sítio que o despacho, para não discordarem. */
     public function testTheAdvertisedProtocolsAreExactlyTheOnesItServes(): void
     {
         $capability = $this->capability();
@@ -81,10 +72,8 @@ final class MedicationRemindersDispatchTest extends TestCase
     }
 
     /**
-     * E na leitura devolve o que lá está, em vez de o descodificar com um tratador ao calhas.
-     *
-     * Um `default` que caia no tratador do 4P Touch dá descodificação de 4P Touch em silêncio
-     * ao protocolo seguinte. A leitura não pode rebentar, mas também não pode inventar.
+     * Na leitura, um protocolo sem tratador devolve o que lá está: não rebenta, mas também não
+     * descodifica com o tratador de outro.
      */
     public function testAnUnknownProtocolIsNotDecodedBySomebodyElsesHandler(): void
     {

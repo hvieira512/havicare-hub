@@ -63,8 +63,8 @@ export function medicationDoseStrip(alarms) {
     const hours = planHours();
     const bySlot = new Map(alarms.map((entry) => [Number(entry?.alarm), String(entry?.state || "idle")]));
 
-    // Uma dose é um slot que o plano marcou. Sem plano, é um slot que o aparelho reportou
-    // fora do repouso -- senão a faixa abria com nove colunas a dizer «Sem toma marcada».
+    // Uma dose é um slot que o plano marcou; sem plano, um slot que o aparelho reportou fora do
+    // repouso.
     const marked = Array.from({ length: ALARM_SLOTS }, (_unused, index) => index + 1)
         .filter((slot) => (hours.size > 0 ? hours.has(slot) : (bySlot.get(slot) || "idle") !== "idle"))
         .sort((left, right) => (hours.get(left) || "").localeCompare(hours.get(right) || "") || left - right);
@@ -99,14 +99,8 @@ export function medicationDoseStrip(alarms) {
 }
 
 /**
- * A posição do carrossel na linguagem do prato.
- *
- * O prato não tem números: tem um autocolante de esquema com grupos de doses e uma marca de
- * início. O `21` que o aparelho conta por dentro não se encontra lá, mas «dia 7» conta-se em
- * sete grupos a partir da marca. As doses por dia vêm do plano que o aparelho confirmou ter.
- *
- * Sem plano não se inventa dia nenhum: fica o número cru, que é verdade mesmo quando não
- * ajuda.
+ * A posição do carrossel na linguagem do prato, que conta grupos de doses a partir de uma
+ * marca: «dia 7» em vez do `21` do aparelho. Sem plano fica o número cru.
  */
 export function cyclePosition(current) {
     const plans = state.selectedDetail?.effectiveConfigurations?.medication_reminders?.plans;
@@ -137,11 +131,8 @@ export function cycleRunout(remaining) {
 }
 
 /**
- * As doses do dia, tal como o aparelho as reporta numa leitura dos nove alarmes.
- *
- * Uma toma falhada é o que faz alguém olhar para o cartão, e por isso ganha o valor
- * principal; sem falhas, o que vale é quantas foram tomadas. O corpo é a faixa do dia, uma
- * coluna por dose marcada, na ordem das horas.
+ * As doses do dia numa leitura dos nove alarmes: uma toma falhada ganha o valor principal, e
+ * sem falhas vale quantas foram tomadas.
  */
 export function medicationAlarmContent(data) {
     const alarms = Array.isArray(data?.alarms) ? data.alarms : [];
@@ -158,9 +149,7 @@ export function medicationAlarmContent(data) {
 
     return {
         value: counts.length > 0 ? counts.join(" · ") : "Sem tomas registadas",
-        // O texto das doses vivas só aparece onde a faixa não chega -- a linha da lista de
-        // actividade, que não desenha corpo nenhum. No cartão seria a mesma informação duas
-        // vezes, uma em cima da outra.
+        // O texto das doses vivas só aparece onde a faixa não chega: a linha da lista de actividade.
         details: strip === ""
             ? live
                     .map((entry) => html`${doseLabel(entry.alarm)}: ${fieldValue("state", entry.state)}`)

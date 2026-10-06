@@ -247,9 +247,8 @@ class DeviceHubServer
         if ($identity === null) {
             if (!$session->unidentifiedWarningLogged) {
                 $session->unidentifiedWarningLogged = true;
-                // A origem vai junto de propósito: sem ela, um varredor de portas e um
-                // dispositivo cujo protocolo não estamos a saber ler dão exactamente a mesma
-                // linha, e é o segundo que é preciso ver.
+                // A origem vai junto: separa um varredor de portas de um dispositivo cujo protocolo não
+                // sabemos ler.
                 $from = $conn->remoteAddress() ?? 'desconhecida';
                 Logger::channel('hub')->warning(
                     "Connection id={$conn->resourceId} from={$from} sent data before identifiable login"
@@ -367,9 +366,8 @@ class DeviceHubServer
             $company = $this->currentCompany($session->imei, $session->company);
             $type = $event['type'] ?? null;
 
-            // Os eventos saem por `events`, a QoS 1, e as leituras por `telemetry`, a QoS 0. A
-            // `location` do mesmo frame de um alarme fica em `telemetry`, com
-            // `reportKind: "alarm"` a ligar as duas. Quem decide é o `isEvent` do catálogo.
+            // Os eventos saem por `events` (QoS 1) e as leituras por `telemetry` (QoS 0); a `location` de
+            // um alarme fica em `telemetry`, ligada por `reportKind: "alarm"`. Decide o `isEvent` do catálogo.
             $channel = CapabilityCatalog::isEventType((string)$type) ? 'events' : 'telemetry';
             if ($channel === 'events') {
                 $this->mqtt->publishEvent($session->imei, $event, $session->deviceType, $licenseId, $company);
@@ -377,10 +375,8 @@ class DeviceHubServer
                 $this->mqtt->publishTelemetry($session->imei, $event, $session->deviceType, $licenseId, $company);
             }
 
-            // O heartbeat continua a sair no MQTT, para quem o subscreve, mas não entra no
-            // histórico do dashboard: a lista de cada dispositivo guarda cem eventos, e um
-            // terço deles seriam keep-alives a repetir a bateria e os passos que já chegam
-            // como eventos próprios no mesmo instante.
+            // O heartbeat sai no MQTT mas não entra no histórico do dashboard: seria um terço dos cem
+            // eventos guardados, a repetir a bateria e os passos que chegam como eventos próprios.
             if ($type !== 'heartbeat') {
                 $this->deviceStore?->append($session->imei, $channel, array_merge(
                     $event,
@@ -421,9 +417,8 @@ class DeviceHubServer
 
         $error = $this->errorPayload($reason);
         try {
-            // `retain: false` -- uma recusa é um acontecimento, não um estado. Retida, ficava
-            // no tópico `status` e o próximo subscritor recebia a rejeição de um aparelho que
-            // já nem está a tentar ligar.
+            // `retain: false`: uma recusa é um acontecimento e não um estado, e retida chegava a quem
+            // subscrevesse depois.
             $this->mqtt->publishStatus($identity->imei, RawPayload::status($identity->imei, '', '', 'error', $error), false);
             $this->mqtt->publishEvent($identity->imei, RawPayload::event($identity->imei, '', '', 'device.rejected', $error));
         } catch (\Throwable $e) {
@@ -484,9 +479,7 @@ class DeviceHubServer
         }
     }
 
-    /**
-     * Chamado quando o cliente de um dispositivo muda, com o cliente que ele está a deixar.
-     */
+    /** Chamado quando o cliente de um dispositivo muda, com o cliente que ele está a deixar. */
     public function clearRetainedStatus(string $company, int $licenseId, string $deviceType, string $imei): void
     {
         try {
@@ -612,11 +605,8 @@ class DeviceHubServer
     }
 
     /**
-     * O tipo de aparelho sai da whitelist, e não de um valor por omissão.
-     *
-     * Um tipo assumido aqui não dá erro: dá telemetria publicada no tópico errado, e quem
-     * consome o contrato recebe um dispensador de comprimidos debaixo de `/watch/` e acredita.
-     * Quem não está na whitelist não chega a ter sessão, por isso há sempre metadados.
+     * O tipo de aparelho sai da whitelist e não de um valor por omissão: um tipo assumido publica
+     * no tópico errado sem erro. Sem whitelist não há sessão, por isso há sempre metadados.
      */
     private function currentDeviceType(string $imei, ?string $fallback = null): string
     {

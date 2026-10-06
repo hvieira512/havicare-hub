@@ -10,10 +10,6 @@ use Predis\Command\CommandInterface;
 /**
  * O substituto em memória do Predis, a cobrir o subconjunto de comandos que a store da
  * dashboard usa.
- *
- * Num sítio só: em três cópias quase iguais, cada comando novo tinha de ser acrescentado três
- * vezes, e acrescentá-lo à lista de métodos mas não ao despachante falhava de uma forma que
- * só aparecia em execução.
  */
 final class InMemoryRedisClient implements ClientInterface
 {

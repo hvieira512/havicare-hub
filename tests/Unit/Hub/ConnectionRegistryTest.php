@@ -39,9 +39,8 @@ final class ConnectionRegistryTest extends TestCase
     }
 
     /**
-     * O caso que os logs de produção revelaram: um relógio celular reconecta com uma ligação
-     * nova antes de a antiga fechar, e a antiga fica órfã com o socket aberto até expirar por
-     * inatividade. Ao reautenticar o mesmo IMEI, a ligação anterior tem de ser fechada.
+     * Um relógio celular reconecta antes de a ligação antiga fechar, e reautenticar o mesmo IMEI
+     * fecha a anterior.
      */
     public function testReauthenticatingAnImeiClosesThePreviousConnection(): void
     {
@@ -62,9 +61,8 @@ final class ConnectionRegistryTest extends TestCase
     }
 
     /**
-     * O que não pode quebrar: fechar a ligação anterior não pode arrastar a nova. A anterior já
-     * não é devolvida como expirável -- foi encerrada em cima, não por inatividade --, senão o
-     * `DeviceHubServer` publicava um `device.disconnected` para um IMEI que está online.
+     * A anterior, encerrada ao reautenticar, não volta como expirável, senão sairia um
+     * `device.disconnected` para um IMEI que está online.
      */
     public function testTheSupersededConnectionDoesNotResurfaceAsAnExpiredSession(): void
     {

@@ -1,10 +1,7 @@
 import { html, raw } from "../html.js";
 import { deviceTypeFields, deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 
-/**
- * O ícone de cada tipo, tirado do catálogo. Estava aqui numa tabela à parte, e a entrada
- * desenha a mesma constelação em PHP, que não lê módulos ES: duas cópias, uma adição.
- */
+/** O ícone de cada tipo, tirado do catálogo, que a entrada em PHP também lê. */
 export function deviceTypeIcon(deviceType) {
     // O que não se reconhece cai no tipo por omissão, como em todo o `domain.js`; o
     // `fa-microchip` é só para o caso de uma entrada do catálogo chegar sem ícone.
@@ -12,10 +9,8 @@ export function deviceTypeIcon(deviceType) {
 }
 
 /**
- * O mosaico de tipos de dispositivo. O `multiple` separa o filtro da escolha única, e decide
- * que atributos saem. As contagens são opcionais: ao criar um modelo não há o que contar.
- *
- * Vive ao lado do ícone porque partilha o mapa e porque o desenha em cada mosaico.
+ * O mosaico de tipos de dispositivo. O `multiple` separa o filtro da escolha única; as
+ * contagens são opcionais, porque ao criar um modelo não há o que contar.
  */
 export function deviceTypeTiles(
     options,

@@ -8,10 +8,8 @@ use Hub\Api\Services\ConfigurationSyncStatus;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Prende o comportamento que decide se um dispositivo aplicou o que o hub lhe pediu: achatar
- * a árvore de capacidades em caminhos comparáveis, decidir quando é que um valor pretendido e
- * um reportado contam como iguais, e transformar o estado do último comando no estado de
- * ciclo de vida que a API serve.
+ * Se um dispositivo aplicou o que o hub pediu: o achatamento em caminhos comparáveis, a
+ * igualdade entre pretendido e reportado, e o estado de ciclo de vida que a API serve.
  */
 final class ConfigurationSyncStatusTest extends TestCase
 {

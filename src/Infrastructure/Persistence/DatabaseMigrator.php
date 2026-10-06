@@ -31,15 +31,8 @@ final class DatabaseMigrator
     }
 
     /**
-     * O catálogo de referência vindo do código.
-     *
-     * **Só numa base vazia:** fornecedores, modelos e empresas são editáveis na dashboard, e
-     * semeá-los a cada arranque fazia voltar o que alguém apagou. O inventário tem passo
-     * próprio (`bin/seed-inventory.php`).
-     *
-     * O **catálogo de capacidades** é a excepção e reconcilia-se sempre: ninguém lhe escreve
-     * fora daqui, e as duas cópias -- o código decide o canal do MQTT, a base decide o que a
-     * dashboard mostra -- só se juntavam por uma migração à mão que, faltando, não dava erro.
+     * O catálogo de referência vindo do código, só numa base vazia, para não repor o que a
+     * dashboard apagou. O catálogo de capacidades é a excepção e reconcilia-se sempre.
      */
     private function syncReferenceCatalog(): void
     {

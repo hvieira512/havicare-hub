@@ -19,9 +19,8 @@ final class DiaperSensorCapabilityDefinitions extends CapabilityDefinitions
                 'measurement' => [
                     'battery' => 'Bateria',
                     'diaper_moisture' => 'Humidade da fralda',
-                    // Genérica de propósito: qualquer medidor de fraldas tem um nível de
-                    // humidade, ao contrário dos 10 canais capacitivos da `diaper_moisture`,
-                    // que são do MONIT.
+                    // Genérica: qualquer medidor de fraldas tem um nível de humidade, ao contrário dos 10 canais
+                    // da `diaper_moisture`, que são do MONIT.
                     'diaper_moisture_level' => 'Nível de humidade',
                     'diaper_condition' => 'Estado da fralda',
                 ],

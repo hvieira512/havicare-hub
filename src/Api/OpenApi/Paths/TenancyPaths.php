@@ -114,9 +114,6 @@ final class TenancyPaths
                     'tags' => ['Companies'],
                     'summary' => 'Create company',
                     'requestBody' => Requests::json('CompanyWriteRequest'),
-                    // O 409 do nome repetido: o `duplicate` passou a 409 quando o
-                    // `STATUS_BY_CODE` deixou de o inferir do nome, e este bloco continuou a
-                    // prometer só 200 e 400. É o engano que o `Responses::map()` acaba.
                     'responses' => Responses::map(
                         ['201' => Responses::json('Company created', 'IdCreateResponse')],
                         'invalid_request',

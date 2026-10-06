@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace Hub\Domain\Capability;
 
 /**
- * O payload de que uma capacidade parte quando um dispositivo nunca guardou nenhum.
- *
- * Indexado pelo tipo de campo da entrada de configuração do protocolo, para a dashboard
- * desenhar um formulário utilizável em vez de um vazio.
+ * O payload de que uma capacidade parte quando o dispositivo nunca guardou nenhum, por tipo de
+ * campo, para a dashboard desenhar um formulário utilizável.
  */
 final class ConfigurationInputDefaults
 {
     /**
-     * @param array<string, mixed> $entry a protocol configuration catalog entry
+     * @param array<string, mixed> $entry uma entrada do catálogo de configuração do protocolo
      * @return array<string, mixed>
      */
     public static function forEntry(array $entry): array
@@ -44,10 +42,8 @@ final class ConfigurationInputDefaults
             'makeCall' => ['phone' => ''],
             'action' => [],
             'intervalToggle' => ['enabled' => true, 'intervalMinutes' => 60],
-            // A janela é sempre acompanhada de um número quando a definição o declara: o
-            // intervalo de um lembrete, o brilho do ecrã. O nome do campo vem da definição, e
-            // o ponto de partida também -- um lembrete para beber água a partir das 22:00 de
-            // cinco em cinco minutos é um formulário que ninguém quer gravar como está.
+            // A janela leva o número que a definição declarar -- o intervalo de um lembrete, o brilho --,
+            // com o nome e o ponto de partida que ela der.
             'windowToggle' => (static function () use ($entry): array {
                 $default = $entry['options']['default'] ?? [];
                 $payload = [
@@ -110,10 +106,8 @@ final class ConfigurationInputDefaults
                 'exerciseHRMax' => 140,
                 'exerciseRemindValue' => 140,
             ],
-            // As capacidades que se servem como um cartão só declaram o campo desse cartão.
-            // A forma do payload não vem do nome delas: vem do campo nativo que o protocolo
-            // usa -- a lista branca do 4P Touch são números soltos, a da Vivistar são
-            // contactos com nome.
+            // As capacidades de um cartão só declaram o campo dele, e a forma vem do campo nativo: números
+            // soltos no 4P Touch, contactos com nome na Vivistar.
             'sos_contacts', 'phonebook', 'call_whitelist' => $field(0) === 'numbers'
                 ? ['numbers' => array_fill(0, max(1, (int)($entry['limit'] ?? 3)), '')]
                 : ['contacts' => [['name' => '', 'phone' => '']]],

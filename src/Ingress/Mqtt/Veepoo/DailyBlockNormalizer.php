@@ -7,45 +7,25 @@ namespace Hub\Ingress\Mqtt\Veepoo;
 use Hub\Support\Values;
 
 /**
- * Traz um bloco diário da pulseira Veepoo para as formas genéricas do hub.
- *
- * A pulseira agrupa cinco minutos num só bloco e devolve, para cada grandeza, cinco leituras
- * — uma por minuto. O carimbo do bloco é o do primeiro minuto, por isso cada leitura é
- * datada somando o seu índice.
- *
- * O firmware usa dois sentinelas para «não medido»: 0xFF nas grandezas de um byte e 0 nas
- * que nunca valem zero num ser vivo. O sono fica de fora, apesar de o bloco trazer um campo
- * com esse nome: os códigos que o firmware devolve não batem certo com a documentação.
+ * Bloco diário Veepoo: cinco minutos, uma leitura por minuto e grandeza, datado pelo primeiro. «Não
+ * medido» é 0xFF num byte, ou 0 onde um ser vivo nunca dá zero; o sono fica de fora, por decifrar.
  */
 final class DailyBlockNormalizer
 {
     private const NO_DATA = 255;
 
-    /**
-     * Fator de conversão da glicemia: 1 mmol/L equivale a 18,016 mg/dL.
-     *
-     * Público porque a medição ao vivo chega pelo `VeepooBridge` e não por aqui, e as duas têm de
-     * converter da mesma maneira -- uma glicemia do histórico e uma pedida agora não podem
-     * sair em unidades diferentes.
-     */
+    /** 1 mmol/L de glicemia equivale a 18,016 mg/dL; público para a medição ao vivo converter igual. */
     public const MMOL_PER_L_TO_MG_PER_DL = 18.016;
 
-    /**
-     * De quantos em quantos segundos o bloco guarda um intervalo R-R.
-     *
-     * São cinquenta lugares a cobrir os trezentos segundos do bloco, e o modo de teste do
-     * fabricante chama `RR2Per6Second` ao campo equivalente.
-     */
+    /** De quantos em quantos segundos o bloco guarda um intervalo R-R: cinquenta em trezentos. */
     private const RR_SLOT_SECONDS = 6;
 
     /** Quanto tempo cobre um bloco. */
     private const BLOCK_SECONDS = 300;
 
     /**
-     * O código de uso que significa «detecção passou».
-     *
-     * O javadoc chama ao campo «bits de bandeira de uso» e não publica a tabela. A regra
-     * observada é a bandeira a zero sempre que há leitura ótica, e não cada código de per si.
+     * O código de uso que significa «detecção passou»: observado a zero sempre que há leitura
+     * ótica, que o fabricante não publica a tabela.
      */
     private const WEAR_OK = 0;
 
@@ -69,8 +49,6 @@ final class DailyBlockNormalizer
             return [];
         }
 
-        // O envelope é sempre o mesmo menos o tipo, o instante e os dados; montá-lo aqui uma
-        // vez deixa o resto do método a falar só das grandezas.
         $at = static fn(int $offsetMinutes): string => gmdate('Y-m-d\TH:i:s\Z', $start + ($offsetMinutes * 60));
         $envelope = static fn(string $type, int $offsetMinutes, array $data): array => [
             'type' => $type,
@@ -98,13 +76,10 @@ final class DailyBlockNormalizer
 
         $intervals = $this->rrIntervals($block['rr50'] ?? null, $start);
         if ($intervals !== []) {
-            // A cadência sai dos instantes de cada intervalo; um campo à parte a repeti-la
-            // era mais uma coisa a poder discordar de si mesma.
             $out[] = $envelope('rr_interval', 0, ['intervals' => $intervals]);
         }
 
-        // O oxigénio vem num objeto com as leituras e os derivados de apneia; só as leituras
-        // têm tipo no hub. Os cinco valores são por minuto, como as restantes grandezas.
+        // Do objeto do oxigénio, só as leituras por minuto têm tipo no hub.
         $oxygen = $block['bloodOxygen'] ?? null;
         if (is_array($oxygen)) {
             foreach (self::readings($oxygen['oxygens'] ?? null) as $minute => $value) {
@@ -112,8 +87,7 @@ final class DailyBlockNormalizer
             }
         }
 
-        // Derivados de apneia e carga cardíaca vêm no mesmo objeto do oxigénio. São contagens
-        // acumuladas do bloco e não leituras por minuto, por isso levam o carimbo do bloco.
+        // Apneia e carga cardíaca são contagens acumuladas do bloco, com o carimbo do bloco.
         if (is_array($oxygen)) {
             $counters = [
                 'sleep_apnea' => ['apneaResults' => 'episodes', 'hypoxiaTimes' => 'hypoxiaSeconds'],
@@ -133,9 +107,7 @@ final class DailyBlockNormalizer
             }
         }
 
-        // O stress vem como inteiro e o MET com uma casa decimal implícita, tal como os R-R.
-        // A app do fabricante mostra 0,9 MET onde o bloco traz 9, e nove equivalentes
-        // metabólicos seriam corrida a bom ritmo -- não alguém sentado a uma secretária.
+        // O stress vem inteiro e o MET com uma casa decimal implícita: 9 são 0,9 MET.
         $scored = [
             'stress' => ['pressure', 'score', 1],
             'met' => ['meiTuo', 'value', 10],
@@ -198,10 +170,8 @@ final class DailyBlockNormalizer
     }
 
     /**
-     * Os cinquenta intervalos R-R do bloco, na forma que o hub já usa para esta grandeza.
-     *
-     * O firmware conta-os em unidades de dez milissegundos e não em milissegundos. Vão sem
-     * instante próprio de propósito: a posição na lista não diz onde caem dentro do bloco.
+     * Os cinquenta intervalos R-R do bloco, que o firmware conta em dezenas de milissegundos.
+     * Sem instante próprio: a posição na lista não diz onde caem no bloco.
      *
      * @return list<array{milliseconds: int}>
      */
@@ -219,10 +189,8 @@ final class DailyBlockNormalizer
     }
 
     /**
-     * Soma as leituras de um contador do bloco, ignorando os sentinelas.
-     *
-     * Devolve `null` quando não houve leitura nenhuma -- distinto de zero episódios, que é uma
-     * afirmação e não uma ausência.
+     * Soma as leituras de um contador do bloco, sem os sentinelas; `null` sem leitura nenhuma,
+     * que zero episódios é uma afirmação.
      */
     private static function sum(mixed $values): ?int
     {
@@ -243,10 +211,7 @@ final class DailyBlockNormalizer
     }
 
     /**
-     * Lípidos e ácido úrico, separados em duas capacidades.
-     *
-     * Vêm juntos numa trama só, mas o ácido úrico não é um lípido e tem unidade própria --
-     * agrupá-los obrigaria quem consome a saber que `blood_lipids` traz algo que não o é.
+     * Lípidos e ácido úrico, que vêm na mesma trama, separados em duas capacidades.
      *
      * @return array<string, array<string, float>>
      */
@@ -289,12 +254,8 @@ final class DailyBlockNormalizer
     }
 
     /**
-     * Glicemia do bloco, com o nível de risco que o firmware lhe atribui.
-     *
-     * O firmware usa duas formas para o mesmo campo: um objeto com valor e nível, e um número
-     * solto quando só tem o valor -- é assim que o MF91 o envia. O nível vem como 1, 2 ou 3 e
-     * traduz-se para as enumerações inglesas; a pulseira reporta em mmol/L e o contrato é
-     * mg/dL, por isso converte-se aqui.
+     * Glicemia do bloco, de mmol/L para mg/dL, com o nível de risco 1-3 em enumeração. Vem como
+     * objeto com valor e nível, ou como número solto (o MF91).
      *
      * @return array{glucoseMgDl: float, riskLevel?: string}|null
      */
@@ -322,11 +283,8 @@ final class DailyBlockNormalizer
     }
 
     /**
-     * Temperatura do bloco: corporal e de superfície, como o firmware as rotula.
-     *
-     * Vem em texto decimal e o sentinela de «não medido» é `0.0` em ambas. Os nomes são os
-     * dos relógios -- o contrato já tinha `bodyCelsius` e `surfaceCelsius`, e a pulseira não
-     * tem razão para inventar outros.
+     * Temperatura corporal e de superfície do bloco, com os nomes dos relógios; vem em texto
+     * decimal, e `0.0` é «não medido».
      *
      * @return array{bodyCelsius?: float, surfaceCelsius?: float}|null
      */
@@ -373,13 +331,8 @@ final class DailyBlockNormalizer
     }
 
     /**
-     * Quantos passos naquela janela de cinco minutos.
-     *
-     * Zero passos é uma leitura verdadeira, ao contrário de zero batimentos; o que se
-     * descarta é o bloco que não traz sequer a contagem.
-     *
-     * A distância, as calorias e a `amountOfExercise` ficam de fora porque não são medições:
-     * as duas primeiras são os passos vezes uma constante, e a terceira não tem unidade.
+     * Passos na janela de cinco minutos, onde zero é leitura. Distância, calorias e
+     * `amountOfExercise` ficam de fora: são derivados dos passos ou não têm unidade.
      *
      * @return array{count: int, periodSeconds: int}|null
      */
@@ -393,11 +346,7 @@ final class DailyBlockNormalizer
     }
 
     /**
-     * Se a pulseira estava a ser usada durante o bloco.
-     *
-     * Sai em cada bloco, mesmo quando é igual ao anterior. Colapsar repetições parece
-     * poupança e é decisão de quem integra: o hub entrega o que o aparelho mediu naquela
-     * janela, e quem consome compara com o que leu da vez anterior se lhe interessar.
+     * Se a pulseira estava a ser usada durante o bloco; sai em cada bloco, mesmo igual ao anterior.
      *
      * @return array{state: string}|null
      */
@@ -411,11 +360,8 @@ final class DailyBlockNormalizer
     }
 
     /**
-     * O firmware data os blocos como `YYYY-MM-DD-HH-mm`, e sem fuso.
-     *
-     * O relógio da pulseira é acertado pelo gateway com a hora local dele, portanto é nessa
-     * que os blocos vêm. O desvio chega na mensagem e é subtraído aqui: lê-los como UTC dava
-     * um histórico deslocado -- em Portugal, no verão, uma hora no futuro.
+     * O firmware data os blocos como `YYYY-MM-DD-HH-mm` na hora local do gateway, sem fuso; o
+     * desvio chega na mensagem e é subtraído aqui.
      */
     private static function parseDate(string $date, int $tzOffsetMinutes): ?int
     {

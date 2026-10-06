@@ -10,11 +10,8 @@ use Hub\Domain\Capability\AlarmClock\Vivistar;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Dois despertadores concorrentes acumulam-se; um não substitui o outro.
- *
- * A regra estava escrita três vezes, uma por classe, e agora vem do `AlarmClockHelpers` que
- * as três já partilhavam. O teste percorre as três para que a partilha não possa regredir
- * para uma delas em silêncio -- um método declarado na classe ganha ao do trait sem erro.
+ * Dois despertadores concorrentes acumulam-se. Percorre as três classes porque um método
+ * declarado na classe ganha ao do trait sem erro.
  */
 final class AlarmClockMergeTest extends TestCase
 {

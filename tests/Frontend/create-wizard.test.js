@@ -7,9 +7,8 @@ import "./support/browser-env.js";
 import { deviceTypeFields } from "../../src/Dashboard/dashboard/domain.js";
 
 /**
- * A moldura do assistente de adicionar um dispositivo. O motor está no `wizard.test.js` e o
- * desenho da classificação no `classification-ui.test.js`; aqui prende-se o markup, que é a
- * única parte que nenhum dos dois vê.
+ * A moldura do assistente; o motor está no `wizard.test.js` e a classificação no
+ * `classification-ui.test.js`, e aqui prende-se o markup.
  */
 
 const WIZARD = readFileSync(
@@ -18,8 +17,7 @@ const WIZARD = readFileSync(
 );
 
 test("o corpo do assistente é vazio, porque é desenhado a partir da pergunta", () => {
-    // Se isto crescer, é sinal de que voltaram campos estáticos para o markup e que a
-    // revelação progressiva passou a ser esconder e mostrar.
+    // Os campos são desenhados pelo motor, passo a passo, e não escondidos no markup.
     assert.deepEqual(WIZARD.match(/<input|<select/g), null);
 
     // Sem separador de configurações: um dispositivo por criar não pode ter configuração

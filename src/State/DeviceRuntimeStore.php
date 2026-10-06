@@ -94,9 +94,8 @@ final class DeviceRuntimeStore
     }
 
     /**
-     * A última vez que um gateway ouviu um dispositivo retransmitido, e com que força.
-     * Indexado pelo dispositivo, para os dois lados da ligação lerem o mesmo registo. O sinal
-     * pertence ao par e não a nenhum deles, e por isso não vive no hash do dispositivo.
+     * A última vez que um gateway ouviu um dispositivo retransmitido, e com que força. O sinal é
+     * do par, e por isso fica indexado pelo dispositivo e fora do hash dele.
      */
     public function recordGatewaySighting(string $deviceKey, string $gatewayKey, ?int $rssiDbm): void
     {
@@ -110,7 +109,7 @@ final class DeviceRuntimeStore
         ));
     }
 
-    /** @return array<string, array<string, mixed>> gateway key => sighting */
+    /** @return array<string, array<string, mixed>> chave do gateway => avistamento */
     public function gatewaySightings(string $deviceKey): array
     {
         $sightings = [];
@@ -195,9 +194,8 @@ final class DeviceRuntimeStore
     }
 
     /**
-     * Os dispositivos ligados. Os candidatos vêm do conjunto ordenado por última vez visto,
-     * que é o que torna isto barato, mas quem decide é a bandeira de estado -- a mesma que a
-     * pastilha do painel lê, para o filtro e a pastilha nunca discordarem.
+     * Os dispositivos ligados: candidatos do conjunto ordenado por última vez visto, decididos pela
+     * bandeira de estado que a pastilha do painel lê, para nunca discordarem.
      *
      * @return list<string>
      */

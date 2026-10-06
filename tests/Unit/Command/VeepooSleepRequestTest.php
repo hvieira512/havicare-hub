@@ -9,14 +9,8 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O sono da pulseira tem de se poder pedir.
- *
- * É a única grandeza sem outro caminho: os blocos de cinco minutos são relidos de cinco em
- * cinco minutos, mas o registo de sono entra uma vez só, quando o gateway arranca. Com o
- * gateway ligado há horas, a única maneira de obter a noite de ontem era matar o processo e
- * voltar a ligar -- três minutos, e a sessão BLE pelo caminho.
- *
- * A pulseira responde ao pedido a qualquer momento; faltava o hub sabê-lo pedir.
+ * Os blocos de cinco minutos são relidos sozinhos, mas o registo de sono só entra quando o gateway
+ * arranca; a pulseira responde ao pedido a qualquer momento.
  */
 final class VeepooSleepRequestTest extends TestCase
 {
@@ -33,8 +27,7 @@ final class VeepooSleepRequestTest extends TestCase
 
     /**
      * O pedido fecha-se quando a trama chega, e ela produz duas capacidades: a noite e as
-     * pontuações que o firmware lhe atribui. Sem as duas declaradas, o registo do comando
-     * ficava à espera de uma resposta que já tinha chegado.
+     * pontuações. As duas têm de estar declaradas para o registo do comando fechar.
      */
     public function testTheRequestExpectsBothHalvesOfTheRecord(): void
     {
@@ -56,9 +49,8 @@ final class VeepooSleepRequestTest extends TestCase
     }
 
     /**
-     * Ler não é medir: o sono é um registo que o firmware já tem, como a bateria e os totais
-     * do dia. Um `measure.` punha-o debaixo da vigilância que dá um pedido por falhado quando
-     * a pulseira não produz leitura -- e não ter dormido não é uma falha da pulseira.
+     * Ler não é medir: o sono é um registo que o firmware já tem. Um `measure.` dava o pedido
+     * por falhado sem leitura -- e não ter dormido não é falha da pulseira.
      */
     public function testItIsAReadAndNotAMeasurement(): void
     {

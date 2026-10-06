@@ -7,11 +7,7 @@ import { parseFragment } from "./support/dom.js";
 const { numberField } =
     await import("../../src/Dashboard/dashboard/devices/config/inputs/shared.js");
 
-/**
- * A unidade cola-se ao campo em vez de andar solta no nome da definição. «Intervalo
- * (minutos)» com uma caixa a dizer `60` obriga a ler duas coisas em sítios diferentes para
- * saber uma; `60` seguido de `min` é uma medida só.
- */
+/** A unidade cola-se ao campo: `60` seguido de `min` é uma medida só. */
 
 test("sem unidade o campo fica como está, sem embrulho nenhum", () => {
     const root = parseFragment(numberField("intervalMinutes", 60));

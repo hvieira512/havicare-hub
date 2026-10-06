@@ -8,11 +8,8 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
- * O que cada cliente vê e pode fazer: o âmbito por licença, o que o perfil permite, e as
- * associações de dispositivos.
- *
- * É a parte da API onde um engano não dá erro nenhum -- dá os dados de outra pessoa --, e por
- * isso os casos negativos contam tanto como os positivos.
+ * O âmbito por licença, o que o perfil permite e as associações de dispositivos: aqui um engano
+ * dá os dados de outra pessoa, e os casos negativos contam tanto como os positivos.
  */
 final class DashboardApiTenancyTest extends DashboardHttpTestCase
 {
@@ -40,13 +37,8 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
     }
 
     /**
-     * O 201 do criar, nas três rotas que a especificação o promete.
-     *
-     * O estado de sucesso é o único argumento do `result()` que ninguém verificava: havia uma
-     * asserção de 201 em toda a suite, e era num teste unitário do `ApiError`. Bastava o 201
-     * cair para dentro dos parênteses da chamada ao serviço -- que é onde ele *parece* estar,
-     * num ternário de várias linhas -- e as três rotas passavam a responder 200 com tudo a
-     * continuar verde. É o mesmo engano silencioso do estado de erro, do lado do sucesso.
+     * O 201 é argumento do `result()` e cai facilmente para dentro dos parênteses da chamada ao
+     * serviço num ternário de várias linhas, passando a 200 sem nada ficar vermelho.
      */
     public function testTheCreateRoutesAnswerTwoHundredAndOne(): void
     {
@@ -181,8 +173,8 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
     }
 
     /**
-     * Um `hub_admin` não tem licença, e a tabela di-lo com NULL como já dizia no
-     * `license_ref_id`. O `license_client` ao lado prova que a licença a sério continua lá.
+     * Um `hub_admin` não tem licença, e a tabela di-lo com NULL; o `license_client` ao lado
+     * prova que a licença a sério continua lá.
      */
     public function testAdminHasNoLicenceInTheTableAndTheClientKeepsItsOwn(): void
     {
@@ -221,9 +213,8 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
     }
 
     /**
-     * O inverso do teste abaixo, e o que exercita de facto o âmbito por licença: mesma
-     * empresa, licença diferente. O âmbito por empresa não apanha isto, e sem este teste a
-     * cláusula da licença podia desaparecer inteira com todos os outros a passar.
+     * Mesma empresa, licença diferente: o âmbito por empresa não apanha isto, e é este teste que
+     * prende a cláusula da licença.
      */
     public function testTenantClientCannotAccessAnotherLicenseWithinItsOwnCompany(): void
     {

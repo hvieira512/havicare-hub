@@ -30,8 +30,7 @@ test("o plano parte vazio sem rebentar", () => {
 });
 
 test("o som, o idioma e o fuso são escolhas e não números soltos", () => {
-    // Estes quatro eram números sem significado no ecrã. Passaram a usar o campo de escolha
-    // genérico, com os valores e os rótulos que a especificação define.
+    // Usam o campo de escolha genérico, com os valores e os rótulos da especificação.
     for (const name of ["pillDispenserSound", "pillDispenserRegion"]) {
         assert.equal(CONFIG_INPUTS[name], undefined, `${name} devia ter desaparecido`);
     }

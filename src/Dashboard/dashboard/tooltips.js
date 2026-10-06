@@ -4,12 +4,8 @@
  */
 
 /**
- * Liga uma tooltip a cada elemento que a pediu dentro de um contentor.
- *
- * A animação está desligada de propósito. Um contentor que redesenha destrói estas
- * instâncias, e uma tooltip animada agenda o fim do `hide` na transição de fade -- o
- * `dispose()` não cancela esse callback, que depois corre contra uma instância nula e
- * estoura. Esconder de forma síncrona não deixa nada pendente.
+ * Liga uma tooltip a cada elemento que a pediu. Sem animação: o `dispose()` não cancela o fim
+ * do `hide` agendado no fade, que depois estoura contra uma instância nula.
  */
 export function refreshTooltips(root) {
     const bootstrap = window.bootstrap;

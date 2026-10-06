@@ -115,16 +115,13 @@ final class DeviceConfigurationUpdateService
                 ];
             }
 
-            // O `sanitizeInput` entra no mesmo `try` que o `toNative`: uma capacidade que
-            // valida a entrada ali rejeita-a com a mesma excepção, e fora do `try` isso dava
-            // um 500 em vez de um `invalid_config` com a razão.
+            // O `sanitizeInput` entra no mesmo `try` que o `toNative`, para a sua recusa sair como
+            // `invalid_config` com a razão e não como 500.
             try {
                 $payload = $this->capabilities->sanitizeInput($protocol, $genericKey, $payload);
 
-                // Uma capacidade que o hub aplica sozinho não tem comandos para entregar: o
-                // valor desejado guarda-se e da-se por aplicado. O `stage` ja sabe o que
-                // fazer com uma alteracao sem operacoes -- marca-a `confirmed` e a linha
-                // `acked` --, por isso o resto do ciclo de vida e o mesmo das outras.
+                // Uma capacidade que o hub aplica sozinho não tem comandos: o `stage` marca a alteração sem
+                // operações como `confirmed` e a linha como `acked`.
                 if (!$this->capabilities->travelsToDevice($genericKey)) {
                     $results[] = $this->stageHubApplied(
                         $imei,
@@ -139,13 +136,12 @@ final class DeviceConfigurationUpdateService
 
                 $nativeUpdates = $this->capabilities->toNative($protocol, $genericKey, $payload);
 
-                // A lista telefónica do 4P Touch guarda-se indexada, porque o índice é o
-                // endereço do contacto no aparelho e é dele que sai o delta da alteração
-                // seguinte. A forma pública continua a ser a lista, sem índices.
                 // Uma ordem, não um valor: consome-se aqui e não chega ao que fica guardado,
                 // seja qual for o protocolo.
                 $commandContext = ['resync' => ($payload['resync'] ?? false) === true];
                 unset($payload['resync']);
+                // A lista telefónica do 4P Touch guarda-se indexada pelo endereço do contacto no aparelho, de
+                // onde sai o delta seguinte; a forma pública é a lista, sem índices.
                 if ($protocol === 'four-p-touch' && is_array($nativeUpdates['phonebook'] ?? null)) {
                     $previousContacts = FourPTouchPhonebookDelta::trustedPrevious(
                         $currentByKey['phonebook']['desired_payload']['contacts'] ?? null,
@@ -231,12 +227,8 @@ final class DeviceConfigurationUpdateService
     }
 
     /**
-     * Guarda o valor de uma capacidade que não viaja, e dá-a por aplicada.
-     *
-     * A chave nativa é a genérica: não há comando nativo nenhum de que ela seja tradução,
-     * e o `native_key` faz parte da chave primaria da `device_configurations`, por isso
-     * tem de ser alguma coisa. O `confirmation_mode` diz `local`, que é o que distingue
-     * estas linhas de uma que foi confirmada por um dispositivo.
+     * Guarda o valor de uma capacidade que não viaja, e dá-a por aplicada. A chave nativa é a
+     * genérica, porque o `native_key` é chave primária; o `confirmation_mode` `local` distingue-as.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
@@ -318,9 +310,8 @@ final class DeviceConfigurationUpdateService
                 'nativeType' => $command,
                 'protocol' => $protocol,
                 'bytes' => $bytes,
-                // O valor desejado segue com a operação. Há protocolos em que os bytes já o
-                // levam dentro, mas os que entregam a um gateway mandam só o nome do comando
-                // -- e sem isto o gateway não sabia se era para ligar ou desligar.
+                // O valor desejado segue com a operação: os protocolos que entregam a um gateway mandam só o
+                // nome do comando.
                 'payload' => $commandPayload['payload'],
                 'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
                 'confirmationMode' => $confirmationMode,

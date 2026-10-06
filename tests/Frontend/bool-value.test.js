@@ -4,14 +4,7 @@ import test from "node:test";
 import "./support/browser-env.js";
 import { boolValue } from "../../src/Dashboard/dashboard/devices/config/normalizers.js";
 
-/**
- * O que um aparelho manda por «ligado» não é só `true` e `1`.
- *
- * Havia dois leitores com este nome e semânticas diferentes: este, que só conhecia
- * `true`/`1`/`"1"`, e um privado do editor de tomas do 4P Touch, que também lia `"true"`,
- * `"yes"` e `"on"`. Com dois nomes iguais e regras diferentes no mesmo subsistema, o valor
- * que um lia como desligado o outro lia como o que o `fallback` mandasse.
- */
+/** O que um aparelho manda por «ligado» não é só `true` e `1`. */
 
 test("os valores canónicos decidem, venham como booleano, número ou texto", () => {
     for (const on of [true, 1, "1"]) {

@@ -2,10 +2,8 @@ import { html } from "../../html.js";
 import { joinMarkup } from "./shared.js";
 
 /**
- * Os cartões do sono: a noite e as pontuações que o firmware lhe atribui.
- *
- * A noite não é uma leitura -- é um relatório, com fronteiras, duração e os troços de cada
- * fase. O que cabe na linha é quanto se dormiu; o resto abre na gaveta.
+ * Os cartões do sono. A noite é um relatório, com fronteiras, duração e os troços de cada
+ * fase: na linha cabe quanto se dormiu, e o resto abre na gaveta.
  */
 
 const PHASE_LABEL = {

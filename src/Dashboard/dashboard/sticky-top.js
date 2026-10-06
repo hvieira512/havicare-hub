@@ -1,7 +1,6 @@
 /**
- * O que está colado ao topo, em pixéis, para quem cola por baixo. Mede-se em vez de se
- * fixar: a barra de navegação quebra em duas linhas num ecrã estreito, e a régua de
- * separadores só existe enquanto os dois painéis da atividade não cabem lado a lado.
+ * O que está colado ao topo, em pixéis, para quem cola por baixo. Mede-se, porque a barra quebra
+ * num ecrã estreito e a régua só existe enquanto os painéis não cabem lado a lado.
  */
 export function trackStickyTop({ navbar, tabs = [] }) {
     // São duas réguas, e nunca as duas ao mesmo tempo: a do telemóvel e a do cartão. A que

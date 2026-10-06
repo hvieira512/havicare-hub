@@ -13,8 +13,8 @@ const {
 } = await import("../../src/Dashboard/dashboard/devices/edit-wizard.js");
 
 /**
- * A classificacao no modal de editar: as respostas em etiquetas, e uma pergunta de cada
- * vez quando se toca numa delas.
+ * A classificação no modal de editar: as respostas em etiquetas, e uma pergunta de cada vez
+ * quando se toca numa delas.
  */
 
 const LICENSES = [
@@ -74,8 +74,8 @@ test("abre no passo do aparelho, com a classificação em etiquetas", () => {
         [...classification()].map((b) => b.dataset.wizardReopen),
         ["type", "model", "owner"],
     );
-    // Sem contador de passos: um dispositivo que já existe não está a meio de uma sequência,
-    // e "Passo 2 de 2" anunciava uma que ninguém começou. As etiquetas é que dizem o que ele é.
+    // Sem contador de passos: um dispositivo que já existe não está a meio de uma sequência, e
+    // são as etiquetas que dizem o que ele é.
     assert.equal(root.querySelector(".wizard-trail-step"), null);
     assert.equal(els.deviceStep1.classList.contains("d-none"), true);
     assert.equal(els.deviceStep2.classList.contains("d-none"), false);
@@ -113,9 +113,8 @@ test("tocar numa linha abre aquela pergunta, e só aquela", () => {
         classification("[aria-expanded=\"true\"]").length,
         1,
     );
-    // O `Guardar` fica. Está no rodapé do modal e não desaparece por se ter tocado numa
-    // etiqueta -- um botão que foge quando se mexe noutra coisa é o que faz procurá-lo.
-    // Guardar com a pergunta aberta fecha-a primeiro, para a validação se ver.
+    // O `Guardar` fica no rodapé mesmo com uma pergunta aberta, e guardar fecha-a primeiro
+    // para a validação se ver.
     assert.equal(els.saveDeviceBtn.classList.contains("d-none"), false);
 });
 
@@ -171,11 +170,8 @@ test("\"Sem licença\" limpa a empresa e não deixa o número anterior", () => {
 });
 
 /**
- * Sair de uma pergunta sem lhe mexer.
- *
- * Sem "Anterior": num dispositivo que existe não há um passo atrás para onde ir, e quem quer
- * mudar a classificação toca na etiqueta que a diz. Este botão serve o contrário -- abrir uma
- * pergunta por engano e querer sair dela.
+ * Num dispositivo que existe não há passo atrás: este botão serve para sair de uma pergunta
+ * aberta por engano.
  */
 test("sair de uma pergunta aberta devolve os campos do aparelho, sem apagar respostas", () => {
     const { els, openQuestion, classification } = harness();
@@ -192,8 +188,8 @@ test("sair de uma pergunta aberta devolve os campos do aparelho, sem apagar resp
 });
 
 test("enquanto o dispositivo não chegou, as linhas não inventam uma classificação", () => {
-    // O formulario ainda tem o que la estava por omissao -- Relogio, o primeiro modelo,
-    // sem licença -- e isso é a classificação de outro aparelho.
+    // O formulário ainda tem o que lá estava por omissão -- Relógio, o primeiro modelo, sem
+    // licença -- e isso é a classificação de outro aparelho.
     const { state } = stateModule;
     const { classification } = harness();
     state.deviceModal.loading = true;

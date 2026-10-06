@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Hub\Command\Configuration\Payload;
 
 /**
- * Traduz uma lista telefónica desejada nos comandos que a levam ao aparelho.
- *
- * O `PHBX2` endereça um contacto por índice e o `DPHBX` remove um índice sem renumerar os
- * restantes, e por isso o hub é dono dos índices. O telefone é a identidade de um contacto:
- * mudar o nome mantém o índice, mudar o número custa uma remoção mais uma escrita.
+ * Traduz a lista telefónica desejada nos comandos que a levam ao aparelho. O `DPHBX` remove
+ * sem renumerar, por isso o hub é dono dos índices; o telefone é a identidade do contacto.
  */
 final class FourPTouchPhonebookDelta
 {
@@ -29,10 +26,8 @@ final class FourPTouchPhonebookDelta
     }
 
     /**
-     * A reescrita total, para quando o estado do aparelho e o do hub divergiram.
-     *
-     * Não há comando de leitura no protocolo, e a única forma de apagar um contacto escrito
-     * por fora é varrer os índices todos. É caro de propósito: serve de reparação.
+     * A reescrita total, para quando aparelho e hub divergiram: sem comando de leitura, só varrer
+     * os índices todos apaga um contacto escrito por fora.
      *
      * @param list<array<string, mixed>> $desired
      * @return list<array{command: string, fields: list<string>}>
@@ -56,11 +51,8 @@ final class FourPTouchPhonebookDelta
     }
 
     /**
-     * O estado anterior em que o delta pode assentar.
-     *
-     * Só descreve o aparelho se a última entrega tiver sido confirmada: depois de uma falha
-     * não se sabe que escritas chegaram. Uma lista escrita antes de os índices existirem tem
-     * chaves 0..n, que são posições e não endereços, e também não serve de base.
+     * O estado anterior em que o delta pode assentar: só com a última entrega confirmada, e
+     * nunca uma lista de chaves 0..n, que são posições e não índices.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -98,9 +90,8 @@ final class FourPTouchPhonebookDelta
      */
     private static function resolve(array $previous, array $desired): array
     {
-        // Uma lista escrita antes de os índices existirem tem chaves 0..n, que são posições e
-        // não endereços no aparelho. Tomá-las por índices escrevia no índice 0, fora da gama
-        // que o comando aceita — sem índices de confiança, reescreve-se tudo de raiz.
+        // Chaves 0..n são posições e não índices do aparelho: sem índices de confiança, reescreve-se
+        // tudo de raiz.
         if (array_is_list($previous)) {
             $previous = [];
         }

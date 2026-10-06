@@ -11,9 +11,8 @@ const {
 } = await import("../../src/Dashboard/dashboard/devices/detail.js");
 
 /**
- * Os dois paginadores do detalhe saem do mesmo `renderPagination`, e cada um tem de levar o
- * seu prefixo nas acções -- é por esse nome que os handlers do `app.js` estão registados, e
- * uma troca deixava os botões a não fazer nada sem erro nenhum.
+ * Os dois paginadores saem do mesmo `renderPagination`, e cada um leva o seu prefixo nas
+ * acções: é por esse nome que os handlers do `app.js` estão registados.
  */
 function fakeElement() {
     return document.createElement("div");
@@ -66,7 +65,7 @@ function downlinkEls() {
     };
 }
 
-// A forma que o DeviceEventStore guarda, tal como a vi em produção.
+// A forma que o DeviceEventStore guarda em produção.
 function telemetryEvent(index) {
     const minute = String(index % 60).padStart(2, "0");
     return {

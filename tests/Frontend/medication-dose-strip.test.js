@@ -10,13 +10,8 @@ const { uplinkCardContent } = await import(
 );
 
 /**
- * A faixa do dia: uma coluna por dose marcada, na ordem das horas.
- *
- * O que identifica uma dose é a hora dela, que está no plano de medicação que o hub já guarda;
- * o número do alarme fica pequeno ao lado, para quando for preciso falar do aparelho.
- *
- * Os slots por marcar colapsam num só: nove posições a dizer «Sem toma marcada» são nove
- * posições a dizer nada.
+ * Uma coluna por dose marcada, identificada pela hora que está no plano de medicação; os slots
+ * por marcar colapsam num só.
  */
 const PLAN = {
     plans: [
@@ -106,7 +101,7 @@ test("sem plano sincronizado, a coluna vale pelo número do alarme", () => {
     assert.match(doses[0].textContent, /Alarme 4/);
 });
 
-/** O cartão ocupa a linha toda: em meia, as colunas ficavam com quarenta pixéis cada. */
+/** O cartão ocupa a linha toda: em meia, as colunas teriam quarenta pixéis cada. */
 test("o cartão pede a linha inteira", () => {
     assert.equal(
         uplinkCardContent("medication_alarm_status", {

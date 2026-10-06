@@ -9,12 +9,6 @@ use Hub\Api\Request\DeviceAssociationRequest;
 use Hub\Api\Request\RequestBinder;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O que o `RequestBinder` promete em relação ao `fields()` que substituiu.
- *
- * Estas rotas não tinham teste nenhum -- é por isso que a migração não partiu nada, e não
- * porque nada tenha mudado.
- */
 final class RequestBinderTest extends TestCase
 {
     private RequestBinder $binder;
@@ -38,10 +32,7 @@ final class RequestBinderTest extends TestCase
         );
     }
 
-    /**
-     * O `(int)"abc"` dava `0`, e o `0` quer dizer alguma coisa nas regras de licença: uma
-     * entrada inválida entrava como válida.
-     */
+    /** O `0` quer dizer alguma coisa nas regras de licença, e por isso `"abc"` não se converte nele. */
     public function testAValueOfTheWrongTypeIsRejectedInsteadOfCoerced(): void
     {
         $result = $this->binder->bind(
@@ -53,7 +44,7 @@ final class RequestBinderTest extends TestCase
         self::assertSame(['must be of type ?int'], $result['error']['fields']['licenseRefId']);
     }
 
-    /** O erro do construtor sem caminho repetia o do atributo, sem dizer de que campo era. */
+    /** O erro diz de que campo é. */
     public function testATypeErrorIsReportedOnceAndNamesItsField(): void
     {
         $result = $this->binder->bind(
@@ -65,7 +56,7 @@ final class RequestBinderTest extends TestCase
         self::assertSame(['licenseRefId'], array_keys($result['error']['fields']));
     }
 
-    /** As duas grafias eram aceites com um `??` à mão por campo; agora é uma regra só. */
+    /** As duas grafias aceitam-se por uma regra só, e não campo a campo. */
     public function testSnakeCaseKeysAreAcceptedForTheSameField(): void
     {
         $request = $this->binder->bind(
@@ -105,7 +96,7 @@ final class RequestBinderTest extends TestCase
         self::assertInstanceOf(ApiUserWriteRequest::class, $updated);
     }
 
-    /** Os valores por omissão do serviço antigo continuam a ser os mesmos. */
+    /** Os valores por omissão fazem parte do contrato com os clientes. */
     public function testAnOmittedRoleStillDefaultsToLicenseClientAndEnabledToTrue(): void
     {
         $request = $this->binder->bind(['username' => 'tenant'], ApiUserWriteRequest::class);
@@ -116,8 +107,8 @@ final class RequestBinderTest extends TestCase
     }
 
     /**
-     * A validação por constraints quer devolver `invalid_request` para tudo, e isso apagava o
-     * `invalid_role` que os clientes distinguem.
+     * A validação por constraints devolve `invalid_request` para tudo, e os clientes distinguem o
+     * `invalid_role`.
      */
     public function testASingleFieldFailureKeepsItsOwnErrorCode(): void
     {
@@ -155,10 +146,7 @@ final class RequestBinderTest extends TestCase
         self::assertSame(['username is required'], $result['error']['fields']['username']);
     }
 
-    /**
-     * `company and licenseId are required` é uma mensagem só para dois campos: contar os
-     * campos em vez das mensagens mandava-a para a genérica.
-     */
+    /** `company and licenseId are required` é uma mensagem só para dois campos, e conta como uma. */
     public function testFieldsThatShareOneMessageKeepIt(): void
     {
         $result = $this->binder->bind([], DeviceAssociationRequest::class);
@@ -170,8 +158,8 @@ final class RequestBinderTest extends TestCase
     }
 
     /**
-     * Com vários campos a falhar não há como dois códigos viajarem numa resposta, e por isso
-     * é o `invalid_request` a cobrir todos. É situação que antes não existia.
+     * Com vários campos a falhar não há como dois códigos viajarem numa resposta, e por isso é o
+     * `invalid_request` a cobrir todos.
      */
     public function testSeveralFailuresFallBackToTheGenericCode(): void
     {

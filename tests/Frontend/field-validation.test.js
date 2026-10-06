@@ -8,9 +8,8 @@ const { bindInvalidClearing, clearInvalid, markInvalid } = await import(
 );
 
 /**
- * A validação de um formulário escreve-se no campo e não num diálogo. O que se garante aqui
- * é o que faz a diferença entre isso e o `alert()` que substituiu: a mensagem sai quando o
- * utilizador começa a corrigir, e o foco vai para o primeiro problema e não para o último.
+ * A mensagem sai quando o utilizador começa a corrigir, e o foco vai para o primeiro problema e
+ * não para o último.
  */
 function form(html) {
     document.body.innerHTML = `<form id="f">${html}</form>`;

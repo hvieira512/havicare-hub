@@ -18,9 +18,8 @@ use Tests\Support\DashboardHttpTestCase;
 final class DashboardTenantStreamTest extends DashboardHttpTestCase
 {
     /**
-     * O teste que prende o isolamento. O arnês tem de propósito uma licença `otherCare/1001`
-     * com o mesmo número da `hitcare/1001`: se a chave de encaminhamento fosse a licença
-     * sozinha, este inquilino recebia dados de outro cliente.
+     * O arnês tem uma `otherCare/1001` com o mesmo número da `hitcare/1001`: com a licença
+     * sozinha como chave, este inquilino receberia dados de outro cliente.
      */
     public function testATenantOnlyReceivesItsOwnCompanyAndLicence(): void
     {
@@ -65,9 +64,8 @@ final class DashboardTenantStreamTest extends DashboardHttpTestCase
     }
 
     /**
-     * O envelope do frame devolve o que no MQTT vive no tópico -- a empresa, a licença, o tipo
-     * e o dispositivo --, e mantém o `payload` idêntico ao que vai para o fio, para quem já
-     * tem código escrito contra o MQTT reutilizar a desserialização.
+     * O envelope do frame traz o que no MQTT vive no tópico, e o `payload` fica idêntico ao do
+     * fio para quem já desserializa o MQTT.
      */
     public function testTheFrameCarriesTheTopicMetadataAndAnUntouchedPayload(): void
     {
@@ -154,10 +152,6 @@ final class DashboardTenantStreamTest extends DashboardHttpTestCase
         self::assertSame(0, $messages->listenerCount());
     }
 
-    /**
-     * Nada limitava o número de ligações abertas, e o teto real eram os descritores de
-     * ficheiro do processo -- descobertos em produção.
-     */
     public function testTooManyStreamsForOneUserAreRefusedWithAReadableReason(): void
     {
         [$server] = $this->makeServerWithDatabase(maxOpenStreamsPerUser: 2);
@@ -198,13 +192,8 @@ final class DashboardTenantStreamTest extends DashboardHttpTestCase
     }
 
     /**
-     * Um administrador abre o stream de um inquilino nomeando-o.
-     *
-     * O âmbito de um `hub_admin` seria o sistema inteiro, e disso não há implementação: o
-     * fanout é indexado por âmbito e não tem wildcard. Mas recusar o admin por completo era
-     * uma restrição sem contrapartida -- ele já pode ler os dispositivos desse inquilino por
-     * todas as outras rotas. Nomeando a empresa e a licença, o âmbito fica tão limitado como
-     * o de um cliente, e é uma subscrição só.
+     * Um administrador abre o stream de um inquilino nomeando-o: o fanout é indexado por âmbito,
+     * sem wildcard, e nomear a empresa e a licença dá-lhe o âmbito de um cliente.
      */
     public function testAnAdminOpensTheStreamOfANamedTenant(): void
     {
@@ -291,9 +280,8 @@ final class DashboardTenantStreamTest extends DashboardHttpTestCase
     }
 
     /**
-     * Corre o `$publish` e deixa o loop andar. A dispersão é diferida para fora do tique da
-     * ingestão, e por isso um frame só aparece depois de o loop girar -- é isso que este
-     * método espera.
+     * Corre o `$publish` e deixa o loop andar: a dispersão é diferida para fora do tique da
+     * ingestão, e um frame só aparece depois de o loop girar.
      */
     private function collect(ResponseInterface $response, callable $publish): string
     {

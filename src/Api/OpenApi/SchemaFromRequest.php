@@ -9,12 +9,8 @@ use Symfony\Component\Validator\Mapping\ClassMetadataInterface;
 use Symfony\Component\Validator\Validation;
 
 /**
- * O esquema OpenAPI de um pedido, derivado do objecto que o descreve, para a declaração ser
- * uma só.
- *
- * Traduz as constraints que este projecto usa, e mais nada: uma que não esteja na lista
- * continua a validar em execução mas não fica descrita. O `SchemaFromRequestTest` prende cada
- * tradução, para esse silêncio não crescer sem ninguém reparar.
+ * O esquema OpenAPI de um pedido, derivado do objecto que o descreve. Só traduz as constraints
+ * que o projecto usa, e o `SchemaFromRequestTest` prende cada tradução.
  */
 final class SchemaFromRequest
 {
@@ -81,9 +77,8 @@ final class SchemaFromRequest
             };
         }
 
-        // Um campo obrigatório não tem valor por omissão que se documente: o valor com que
-        // nasce é precisamente o que as regras recusam -- a string vazia do `NotBlank`, o
-        // zero do `Positive` --, e anunciá-lo dizia a quem lê que omitir o campo é legítimo.
+        // Um campo obrigatório não documenta valor por omissão: o valor com que nasce é o que as
+        // regras recusam, e anunciá-lo diria que omitir o campo é legítimo.
         $default = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
         if (!$required && $default !== null) {
             $property['default'] = $default;
@@ -123,12 +118,8 @@ final class SchemaFromRequest
     }
 
     /**
-     * Obrigatório é o campo cujo valor por omissão as próprias regras recusam. Pergunta-se ao
-     * validador em vez de enumerar classes de constraint, senão cada regra nova teria de ser
-     * acrescentada aqui à mão e o esquema mentia até alguém reparar.
-     *
-     * Exige que o objecto de pedido instancie sem argumentos: é assim que um campo omitido se
-     * representa.
+     * Obrigatório é o campo cujo valor por omissão as próprias regras recusam, perguntado ao
+     * validador. Exige que o objecto de pedido instancie sem argumentos.
      *
      * @param class-string $requestClass
      * @param list<string> $groups
@@ -150,10 +141,8 @@ final class SchemaFromRequest
     }
 
     /**
-     * As constraints de uma propriedade que correm nos grupos que a rota usa.
-     *
-     * É o que faz o `password` ser obrigatório no `POST` e opcional no `PUT` a partir da
-     * mesma declaração: a regra está no grupo `create`, e só o esquema do criar o pede.
+     * As constraints de uma propriedade nos grupos da rota: é o que torna o `password` obrigatório
+     * no `POST` e opcional no `PUT`.
      *
      * @param list<string> $groups
      * @return list<object>

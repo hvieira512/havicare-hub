@@ -8,16 +8,8 @@ use Hub\Domain\Capability\CapabilityContract;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * A whitelist de chamadas.
- *
- * Forma pública:
- * - GET /api/devices/{imei}: o Vivistar devolve contactos como `[{name, phone}]`, o 4P Touch
- *   devolve uma lista de números.
- * - PATCH /api/devices/{imei}/configurations:
- *   - o Vivistar aceita `{contacts:[{name, phone}]}`
- *   - o 4P Touch aceita uma lista simples de números
- *
- * O interruptor que a liga e desliga é exposto à parte, como `whitelist_enabled`.
+ * A whitelist de chamadas: contactos `[{name, phone}]` na Vivistar e números soltos no 4P Touch.
+ * O interruptor que a liga é o `whitelist_enabled`.
  */
 final class CallWhitelistCapability implements CapabilityContract
 {
@@ -63,9 +55,8 @@ final class CallWhitelistCapability implements CapabilityContract
             throw new \InvalidArgumentException("Unsupported protocol {$protocol} for call_whitelist");
         }
 
-        // Sem `default`: a guarda acima já recusa o desconhecido, e sem braço de recurso um
-        // protocolo acrescentado ao `PROTOCOLS` é apanhado pelo analisador em vez de sair com
-        // os comandos nativos do 4P Touch.
+        // Sem `default`: a guarda acima recusa o desconhecido, e um protocolo novo no `PROTOCOLS` é
+        // apanhado pelo analisador.
         return match ($protocol) {
             // O payload nativo guardado fica estruturado: quem serializa os contactos como
             // `UTF-16BE(nome)|telefone` para o BP14 é só o construtor de payloads Vivistar.

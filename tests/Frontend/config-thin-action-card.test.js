@@ -7,12 +7,7 @@ import { parseFragment } from "./support/dom.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { syncConfigSectionDirty } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 
-/**
- * Uma acção sem parâmetros não tem valor para editar: tem um verbo e o estado do último
- * pedido. O cartão gastava quatro linhas a dizer isso -- um alerta a repetir o título, uma
- * legenda «sem parâmetros» e um botão de repor que não tinha o que repor -- e ficava com a
- * altura de um formulário para uma palavra.
- */
+/** Uma acção sem parâmetros tem um verbo e o estado do último pedido, e nada para editar. */
 // O `command` entra porque as vinte e uma acções do catálogo o têm: sem ele o cartão toma-a
 // por uma definição que o hub aplica sozinho, e o botão diz «Guardar» em vez de «Enviar».
 const FIND_DEVICE = {
@@ -66,11 +61,7 @@ test("o botão de enviar fica na linha do título", () => {
     );
 });
 
-/**
- * O que o botão diz por omissão está preso no `config-action-button-label.test.js`. Aqui
- * prende-se o caso em que a definição declara o verbo, que é o que justifica o campo existir:
- * «Reposição de fábrica» num botão não diz o que o clique vai fazer.
- */
+/** «Reposição de fábrica» num botão não diz o que o clique faz: manda o verbo declarado. */
 test("um rótulo que é um nome leva o verbo declarado na definição", () => {
     const section = sectionOf({
         key: "resetCommand",

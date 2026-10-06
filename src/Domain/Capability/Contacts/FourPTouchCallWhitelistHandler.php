@@ -7,9 +7,7 @@ namespace Hub\Domain\Capability\Contacts;
 use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityProtocolHandler;
 
-/**
- * 4P Touch strategy for call whitelist.
- */
+/** A estratégia do 4P Touch para a whitelist de chamadas. */
 final class FourPTouchCallWhitelistHandler implements CapabilityProtocolHandler
 {
     use CapabilityHelpers;

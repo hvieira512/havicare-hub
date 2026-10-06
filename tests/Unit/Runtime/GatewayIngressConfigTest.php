@@ -8,14 +8,8 @@ use Hub\Config;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A secção que configura a ingestão de gateways.
- *
- * Chamava-se `moko` e as definições lá dentro são genéricas — o filtro de tópicos, a janela
- * de deduplicação, o tempo de inatividade. O nome do fornecedor na chave fazia a ingestão das
- * pulseiras Veepoo parecer refém do MOKO, quando o que ela precisa é do gateway.
- *
- * As variáveis de ambiente antigas continuam a valer: estão nos `.env` das duas máquinas, e
- * renomeá-las sem mais era desligar os gateways no arranque seguinte.
+ * A secção `gateway` configura a ingestão de gateways, de que as pulseiras Veepoo também
+ * dependem, e por isso não leva o nome de um fornecedor.
  */
 final class GatewayIngressConfigTest extends TestCase
 {
@@ -46,8 +40,7 @@ final class GatewayIngressConfigTest extends TestCase
 
     public function testTheDeployedEnvironmentVariablesKeepWorking(): void
     {
-        // As duas máquinas têm `MOKO_GATEWAY_*` no `.env`. Deixar de as ler era desligar os
-        // gateways silenciosamente no arranque seguinte.
+        // As duas máquinas têm `MOKO_GATEWAY_*` no `.env`, e deixar de as ler desligaria os gateways.
         $this->env('MOKO_GATEWAY_TOPIC_FILTER', 'antigo/#');
         $this->env('MOKO_GATEWAY_IDLE_TIMEOUT_SECONDS', '999');
 
@@ -67,9 +60,7 @@ final class GatewayIngressConfigTest extends TestCase
 
     public function testTheGatewaySwitchIsWhatTheBraceletIngressFollows(): void
     {
-        // A dependência é real: as pulseiras Veepoo são retransmitidas pelo gateway, e sem a
-        // ingestão dele não há tópico nenhum para ouvir. Quem manda é o gateway, e é o nome
-        // dele que a variável leva.
+        // As pulseiras Veepoo são retransmitidas pelo gateway, e por isso a variável leva o nome dele.
         $this->env('MOKO_GATEWAY_ENABLED', 'false');
 
         self::assertFalse(Config::load()->all()['gateway']['enabled']);

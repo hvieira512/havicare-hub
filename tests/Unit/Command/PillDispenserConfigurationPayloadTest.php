@@ -8,12 +8,8 @@ use Hub\Command\DeviceConfigurationCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O que o utilizador escreveu no ecrã chega inteiro ao construtor da trama.
- *
- * Entre a configuração guardada e os bytes há um validador por protocolo, e uma definição que
- * ele não conheça pelo nome sai com payload vazio: o aparelho recebe zero e responde
- * «ACEITE», sem nada falhar em lado nenhum. Este teste entra pelo degrau por onde a dashboard
- * entra, e não pelo `DeviceCommandCatalog`, que é o de baixo.
+ * Uma definição que o validador do protocolo não conheça sai com payload vazio e o aparelho aceita
+ * o zero; por isso entra-se pelo degrau da dashboard.
  */
 final class PillDispenserConfigurationPayloadTest extends TestCase
 {
@@ -57,9 +53,7 @@ final class PillDispenserConfigurationPayloadTest extends TestCase
     /**
      * O alarme que o plano escolheu não se perde no caminho.
      *
-     * O construtor da trama coloca cada plano no slot que ele pede, e o validador tem de lhe
-     * entregar o `slot`: sem ele o plano vale por posição, que é o que o slot existe para
-     * evitar.
+     * Sem o `slot` vindo do validador, o construtor coloca o plano por posição.
      */
     public function testTheAlarmSlotSurvivesTheValidator(): void
     {
@@ -71,12 +65,8 @@ final class PillDispenserConfigurationPayloadTest extends TestCase
     }
 
     /**
-     * A guarda contra a próxima definição esquecida.
-     *
-     * Uma entrada que declara campos tem de sair do validador com esses campos, nem que seja
-     * com os valores de fábrica. Sair vazia é o defeito que passou despercebido: não dá erro,
-     * não falha o envio, e o aparelho responde «ACEITE» ao zero que recebeu. Uma acção não
-     * declara campos nenhuns e não entra nesta conta.
+     * Uma entrada que declara campos sai do validador com eles, nem que seja com os valores de
+     * fábrica: vazia, o aparelho aceita um zero sem erro. Uma acção não declara campos.
      */
     public function testEverySettingWithFieldsComesBackWithThem(): void
     {

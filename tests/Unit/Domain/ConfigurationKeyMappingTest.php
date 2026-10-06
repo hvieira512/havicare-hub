@@ -10,11 +10,8 @@ use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
- * As duas direcções da tradução de chaves vivem em ficheiros diferentes e não se conhecem: o
- * `DeviceConfigurationCatalog` declara as chaves nativas, e o `mapConfigurationKey()` traduz.
- *
- * Divergirem falha em silêncio -- uma chave nativa sem tradução compila, passa no PHPStan, e
- * nunca chega à API como capacidade.
+ * O `DeviceConfigurationCatalog` declara as chaves nativas e o `mapConfigurationKey()`
+ * traduz-as: uma chave sem tradução compila e nunca chega à API.
  */
 final class ConfigurationKeyMappingTest extends TestCase
 {
@@ -24,10 +21,8 @@ final class ConfigurationKeyMappingTest extends TestCase
      * @var array<string, string>
      */
     private const INTENTIONALLY_UNMAPPED = [
-        // Envelope em bruto do bloco `configs` das medições. As definições que a interface
-        // apresenta são as irmãs com o mesmo comando -- `wonlexHeartRateInterval`,
-        // `wonlexBPInterval`, ... -- e essas mapeiam. Traduzi-la duplicava o mesmo comando
-        // numa capacidade que apresentava o blob inteiro.
+        // Envelope em bruto do bloco `configs` das medições: as irmãs com o mesmo comando
+        // (`wonlexHeartRateInterval`, ...) é que mapeiam.
         'deviceMeasuringFrequency' => 'envelope json do comando; as sub-definições é que mapeiam',
         // Mesmo caso: o `deviceConfig` é o envelope do bloco `configs` de sistema, e cada
         // definição dentro dele (`wonlexStepTarget`, `wonlexLowPower`, ...) tem a sua chave.

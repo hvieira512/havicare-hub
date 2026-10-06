@@ -2,33 +2,23 @@ import { fieldValue } from "../format.js";
 import { loadScript } from "../load-script.js";
 
 /**
- * Os sinais vitais de um radar, ao lado da planta: o estado do sono e os dois gráficos.
- *
- * Os gráficos vieram do `live/info-panel.js` do hitCare. O que mudou foi a origem dos pontos:
- * aqui vêm do histórico que o stream traz ao abrir e das leituras que chegam a seguir.
+ * Os sinais vitais de um radar ao lado da planta, com os gráficos do `live/info-panel.js` do
+ * hitCare; os pontos vêm do histórico do stream e das leituras que chegam a seguir.
  */
 
 const licenseIsland = globalThis.document?.getElementById("hub-amcharts-license");
 const AMCHARTS_LICENSE = licenseIsland ? JSON.parse(licenseIsland.textContent) : "";
 
 /**
- * Cada sinal vital: onde está o valor no payload, e de que cor se desenha.
- *
- * Sem limites de escala: fixá-los deixa a linha colada ao fundo e faz desaparecer variações
- * de poucos batimentos. Quem diz se o valor é normal são os números ao lado e os alarmes.
+ * Sem limites de escala: fixá-los cola a linha ao fundo e esconde variações de poucos
+ * batimentos.
  */
 const VITALS = {
     heart_rate: { field: "bpm", color: "#dc3545", unit: "bpm" },
     breath_rate: { field: "breathsPerMinute", color: "#0d6efd", unit: "rpm" },
 };
 
-/**
- * O tom da faixa do estado do sono.
- *
- * Só tons do Bootstrap, e a escala vai escurecendo com a profundidade: acordado é verde, o
- * sono leve é o navy da casa e o profundo é o escuro. O ícone acompanha, e o que não se sabe
- * fica cinzento e com a interrogação, em vez de fingir uma leitura.
- */
+/** Tons do Bootstrap a escurecer com a profundidade do sono; o desconhecido fica cinzento. */
 const SLEEP_STATE = {
     awake: { tone: "success", icon: "fa-eye" },
     light_sleep: { tone: "primary", icon: "fa-moon" },
@@ -41,21 +31,14 @@ const NO_SLEEP_READING = "Sem leitura do sono";
 
 let charts = {};
 
-/**
- * A biblioteca já está de pé?
- *
- * O stream continua a entregar enquanto o modal abre, e o primeiro render chegava antes de o
- * amCharts ter acabado de carregar -- eram duas excepções por abertura. Quem é dono da
- * biblioteca é que sabe responder a isto, e por isso a guarda vive aqui e não em quem chama.
- */
+/** O stream entrega enquanto o modal abre, e um render pode chegar antes do amCharts. */
 function chartsReady() {
     return Boolean(globalThis.am5?.Root && globalThis.am5xy && globalThis.am5themes_Animated);
 }
 
 /**
- * O amCharts são 650 kB que só este ecrã usa, e entram quando alguém abre a planta.
- *
- * O `index.js` tem de estar de pé antes do `xy.js` e do tema, que se registam nele.
+ * O amCharts só este ecrã o usa, e entra quando se abre a planta. O `index.js` tem de estar
+ * de pé antes do `xy.js` e do tema, que se registam nele.
  */
 export async function loadCharts() {
     if (chartsReady()) return;
@@ -97,16 +80,14 @@ function createChart(container, { color, unit }) {
         paddingLeft: 0,
         paddingRight: 0,
         paddingTop: 4,
-        // Seis pixéis e não zero: com zero, o rótulo mais baixo do eixo ficava cortado a meio
-        // pelo canto do cartão. A esta distância continua a ler-se como colado.
+        // Seis pixéis e não zero, para o canto do cartão não cortar o rótulo mais baixo do eixo.
         paddingBottom: 6,
         // Sem zoom nem roda: é uma janela de minutos que anda sozinha, e não um gráfico
         // para explorar.
         wheelX: "none",
         wheelY: "none",
     }));
-    // O `visible` não chega: o amCharts volta a mostrá-lo sempre que a série muda de âmbito,
-    // e aparecia uma bola azul por cima do gráfico. O `forceHidden` é que o cala de vez.
+    // O `visible` não chega: o amCharts volta a mostrá-lo sempre que a série muda de âmbito.
     chart.zoomOutButton.set("forceHidden", true);
 
     // Sem eixos à vista, a tooltip é a única maneira de ler um ponto -- e por isso fica.
@@ -124,8 +105,7 @@ function createChart(container, { color, unit }) {
         groupData: false,
     }));
     stripAxis(xAxis);
-    // `forceHidden` e não `visible`: invisível, o rótulo continua a reservar a altura dele, e
-    // sobrava uma tira branca entre o gráfico e o fundo do cartão.
+    // `forceHidden` e não `visible`: invisível, o rótulo continua a reservar a altura dele.
     xAxis.get("renderer").labels.template.set("forceHidden", true);
 
     const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
@@ -133,15 +113,12 @@ function createChart(container, { color, unit }) {
         // leitura constante o amCharts abre o intervalo por si, e a linha fica ao centro.
         extraMin: 0.4,
         extraMax: 0.4,
-        // Batimentos e respirações contam-se por inteiros. Sem isto, uma leitura constante de
-        // 9 rpm abria o eixo em 8,8 / 8,9 / 9,0 / 9,1 -- precisão que a medição não tem.
+        // Batimentos e respirações contam-se por inteiros.
         maxPrecision: 0,
         renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0 }),
     }));
     stripAxis(yAxis);
-    // Os valores ficam: sem eles a linha sobe e desce sem se saber entre que números. No tom
-    // da categoria, como o título e a moldura -- mas esbatidos, senão disputavam a leitura
-    // com o número grande do cabeçalho.
+    // No tom da categoria, mas esbatidos, para não disputarem com o número grande do cabeçalho.
     yAxis.get("renderer").labels.template.setAll({
         fontSize: 11,
         fill: am5.color(color),
@@ -168,10 +145,8 @@ function createChart(container, { color, unit }) {
 }
 
 /**
- * As leituras de um tipo, da mais antiga para a mais recente.
- *
- * O zero não é leitura nenhuma: é o radar a dizer que não deteta ninguém, e desenhá-lo punha
- * a linha a cair a pique até ao fundo do eixo de cada vez que a divisão esvazia.
+ * As leituras de um tipo, da mais antiga para a mais recente. O zero fica de fora: é o radar a
+ * dizer que não deteta ninguém.
  */
 function seriesFrom(telemetry, type) {
     const { field } = VITALS[type];
@@ -243,11 +218,8 @@ export function destroyVitals() {
 }
 
 /**
- * Refaz os gráficos contra o tamanho que o contentor tem agora.
- *
- * O amCharts mede o contentor ao montar, e o modal ainda não tem tamanho nenhum quando a
- * planta se manda abrir: os gráficos nasciam com altura zero e a linha ficava colada ao topo.
- * Chamado do `shown.bs.modal`, que é o instante em que o tamanho passa a ser o final.
+ * O amCharts mede o contentor ao montar, e o modal só tem o tamanho final no `shown.bs.modal`,
+ * de onde isto é chamado.
  */
 export function resizeVitals(els, telemetry) {
     destroyVitals();

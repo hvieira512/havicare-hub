@@ -43,6 +43,6 @@ interface DeviceRegistry
      */
     public function onlineDeviceImeis(): array;
 
-    /** @return array<string, array<string, mixed>> gateway key => sighting */
+    /** @return array<string, array<string, mixed>> chave do gateway => avistamento */
     public function gatewaySightings(string $deviceKey): array;
 }

@@ -9,12 +9,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O relógio calibra-se com a hora local do aparelho, não com UTC.
- *
- * A TAG `0xA101` leva uma string `2001-01-02T20:05:04` sem marca de fuso, e o M228 toma-a à
- * letra. As horas dos alarmes (`0x1021`--`0x1029`) também são locais, e por isso mandar UTC
- * punha-os todos a tocar fora de horas. O fuso vem do que o hub tem configurado para o
- * aparelho, na mesma unidade da TAG `0x1015`: INT16S em HHMM, `+100` é uma hora à frente.
+ * A TAG `0xA101` não leva fuso e as horas dos alarmes são locais. O fuso é o configurado no hub, em
+ * INT16S HHMM como a TAG `0x1015`: `+100` é uma hora à frente.
  */
 final class PillDispenserClockCalibrationTest extends TestCase
 {
@@ -47,10 +43,8 @@ final class PillDispenserClockCalibrationTest extends TestCase
     }
 
     /**
-     * Sem fuso conhecido fica UTC, que é o que o hub sabe de certeza.
-     *
-     * Adivinhar um fuso seria pôr o relógio do aparelho a uma hora inventada; UTC está errado
-     * por um valor conhecido e igual para toda a gente.
+     * Sem fuso conhecido fica UTC: errado por um valor conhecido, e não por uma hora
+     * inventada.
      */
     public function testWithoutAKnownZoneItStaysUtc(): void
     {

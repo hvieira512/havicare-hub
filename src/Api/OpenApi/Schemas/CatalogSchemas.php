@@ -116,9 +116,7 @@ final class CatalogSchemas
                     'capabilities' => Responses::ref('ModelCapabilitiesMatrix'),
                 ],
             ],
-            // Derivado do `ModelWriteRequest`. A imagem entra à mão porque não é um campo do
-            // corpo -- viaja como ficheiro no multipart e a rota lê-a do
-            // `getUploadedFiles()`, não do payload que o modelo descreve.
+            // Derivado do `ModelWriteRequest`; a imagem entra à mão porque viaja como ficheiro no multipart.
             'ModelWriteRequest' => array_merge_recursive(
                 SchemaFromRequest::schema(ModelWriteRequest::class),
                 ['properties' => ['image' => ['type' => 'string', 'format' => 'binary']]],

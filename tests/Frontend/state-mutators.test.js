@@ -13,13 +13,8 @@ const {
 } = await import("../../src/Dashboard/dashboard/state.js");
 
 /**
- * Os mutadores do estado partilhado.
- *
- * O que se prende aqui não é o valor que cada um escreve -- isso lê-se no `state.js` --, mas
- * os pares que não se podem separar: o `recent` que sobrevive a uma releitura, o object URL
- * que se revoga antes de ser substituído, a página que volta a 1 quando o filtro muda, e o
- * rascunho que é cópia e não a mesma referência. São exactamente as quatro coisas que se
- * esqueciam quando cada sítio escrevia no `state` por sua conta.
+ * Os pares inseparáveis: o `recent` que sobrevive à releitura, o object URL revogado ao ser
+ * substituído, a página que volta a 1 com o filtro, e o rascunho que é cópia e não referência.
  */
 beforeEach(() => {
     state.selectedDetail = null;
@@ -113,7 +108,7 @@ test("o rascunho é cópia do que está aplicado, e não a mesma referência", (
     assert.notEqual(state.detailFiltersDraft, state.detailFilters);
 });
 
-// O selo não impede escrever num campo que já existe: só apanha a gralha que criava uma
+// O selo não impede escrever num campo que já existe: só apanha a gralha que criaria uma
 // chave nova e calada. Os objectos aninhados ficam de fora, e são mexidos em todo o lado.
 test("o estado selado atira numa chave que não existe e deixa passar as aninhadas", () => {
     assert.throws(() => {

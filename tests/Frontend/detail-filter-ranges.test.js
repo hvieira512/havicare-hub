@@ -96,7 +96,7 @@ test("limpar os filtros larga o alcance escolhido", () => {
     assert.deepEqual(detailFilterChipLabels(state.detailFilters), []);
 });
 
-/** O «Aplicar» vive dentro das «Datas…»: com elas fechadas, um tipo à espera dele nunca chegava à lista. */
+/** O «Aplicar» vive dentro das «Datas…», que podem estar fechadas. */
 test("o tipo aplica-se ao escolher, sem passar pelo Aplicar", () => {
     const els = filterEls();
     els.detailFilterType.innerHTML = "<option value=\"all\">Todos</option><option value=\"sleep_state\">Estado do sono</option>";

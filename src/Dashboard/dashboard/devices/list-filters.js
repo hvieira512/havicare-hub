@@ -17,12 +17,8 @@ import {
 } from "../domain.js";
 
 /**
- * O painel de filtros da listagem: as listas de tipos, de fornecedores e de licenças, o
- * estado de ligação, e o que cada clique faz a eles.
- *
- * Desenho e comportamento no mesmo sítio, porque marcar um valor e mostrá-lo marcado são a
- * mesma ideia. O que falta é quem volta a pedir a lista: entra por um `onChange` entregue no
- * arranque, e não por um import de volta ao `list.js` -- o grafo de módulos não tem ciclos.
+ * O painel de filtros da listagem, desenho e comportamento. Quem volta a pedir a lista entra
+ * pelo `onChange` do arranque, e não por um import do `list.js`, para não haver ciclos.
  */
 
 let els;
@@ -36,11 +32,8 @@ export function initListFilters(context) {
 const repeatMarkup = (count, markup) => Array.from({ length: count }, () => markup).join("");
 
 /**
- * As três colunas de filtro sem afirmarem nada.
- *
- * Serve as duas situações em que não se sabe o que lá deve estar: a espera e a falha. Dizer
- * «não há licenças» em qualquer delas é afirmar uma ausência que ninguém mediu, e lê-se como
- * resposta quando é a falta de uma.
+ * As colunas de filtro sem afirmarem nada, na espera e na falha: «não há licenças» seria
+ * afirmar uma ausência que ninguém mediu.
  */
 export function renderDeviceFilterSkeleton() {
     els.deviceTypeFilter.innerHTML = `
@@ -133,9 +126,8 @@ function filterOptionMarkup({
 }
 
 /**
- * A árvore de fornecedores e modelos, com a forma da das licenças. A diferença é que aqui os
- * dois níveis continuam a ser dois filtros distintos, `supplier` e `model` -- só o desenho é
- * que é comum.
+ * A árvore de fornecedores e modelos, com o desenho da das licenças, mas os dois níveis são
+ * filtros distintos, `supplier` e `model`.
  */
 function renderDeviceSupplierFilter() {
     const tree = state.summary.deviceFilterCounts?.supplierModels || { suppliers: [] };
@@ -189,9 +181,8 @@ function renderDeviceSupplierFilter() {
 }
 
 /**
- * A árvore de empresas e licenças. Marcar a empresa marca-a toda; marcar algumas deixa-a no
- * traço do meio. O "sem licença" é a primeira e é folha, para não ficar atrás de uma lista
- * que cresce.
+ * Marcar a empresa marca-a toda; marcar algumas licenças deixa-a no traço do meio. O «sem
+ * licença» vem primeiro, para não ficar atrás de uma lista que cresce.
  */
 function renderDeviceLicenseFilter() {
     const tree = state.summary.deviceFilterCounts?.license || { companies: [], none: 0 };
@@ -370,19 +361,15 @@ export async function handleDeviceFilterChipRemove(event) {
 }
 
 /**
- * Marcar ou desmarcar um valor de filtro. Nada marcado quer dizer tudo, e por isso não há
- * opção "Todos": desmarcar o último valor é o que a repõe.
- *
- * Marcar uma empresa apaga as licenças dela marcadas à parte, senão a condição levava a mesma
- * empresa duas vezes; marcar uma licença de uma empresa inteira troca-a pelas suas licenças.
+ * Nada marcado quer dizer tudo, por isso não há «Todos». Marcar uma empresa absorve as licenças
+ * dela; clicar numa licença de uma empresa marcada troca a empresa pelas outras licenças.
  */
 async function toggleDeviceFilter(key, value) {
     const current = state.deviceFilters[key] || [];
     let next;
 
-    // O modelo mostra-se marcado quando o fornecedor dele está marcado, mas não está na lista
-    // do filtro `model` -- quem lá está é o fornecedor. Clicá-lo quer dizer "tira este", e
-    // por isso troca-se o fornecedor pelos irmãos, como a licença faz com a empresa.
+    // Um modelo coberto pelo fornecedor marcado não está no filtro `model`: clicá-lo troca o
+    // fornecedor pelos irmãos, como a licença faz com a empresa.
     const supplierOfClickedModel = key === "model" ? supplierOwningModel(value) : null;
     const clickedModelIsCoveredBySupplier =
         supplierOfClickedModel !== null &&
@@ -419,8 +406,7 @@ async function toggleDeviceFilter(key, value) {
     }
 
     changeDeviceFilter(key, next);
-    // Marcar o fornecedor absorve os modelos dele: tê-los na lista ao lado significaria o
-    // mesmo fornecedor duas vezes na condição, e a lista estreitava em vez de alargar.
+    // Marcar o fornecedor absorve os modelos dele, para a condição não o levar duas vezes.
     if (key === "supplier" && next.includes(value)) {
         const owned = modelsForSupplier(value);
         changeDeviceFilter(

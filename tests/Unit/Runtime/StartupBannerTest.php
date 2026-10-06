@@ -11,12 +11,8 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 
 /**
- * O banner de arranque é o que diz, meses depois, com que configuração se estava a correr.
- *
- * A ingestão Veepoo é o caso que obriga a testá-lo: lê o espaço de tópicos dos gateways,
- * partilhado com o MOKO, e por isso a secção de configuração de onde sai o filtro não tem o
- * nome dela. Enquanto a chave da ingestão servia de índice à configuração, a linha da Veepoo
- * não podia sequer existir -- `$config['veepoo']` não existe.
+ * O banner de arranque diz, meses depois, com que configuração se corria. A Veepoo lê a
+ * secção de configuração dos gateways, que não tem o nome dela.
  */
 final class StartupBannerTest extends TestCase
 {
@@ -41,11 +37,8 @@ final class StartupBannerTest extends TestCase
     }
 
     /**
-     * Os identificadores de cliente MQTT saem no arranque.
-     *
-     * Dois hubs com o mesmo identificador no mesmo broker expulsam-se em ciclo, e cada
-     * expulsão tira a ingestão do ar. O `journalctl` de ambas diz «connection lost», que é o
-     * sintoma e não a causa.
+     * Dois hubs com o mesmo identificador de cliente expulsam-se do broker em ciclo, e o
+     * `journalctl` só diz «connection lost».
      */
     public function testTheBannerNamesTheMqttClientIdentities(): void
     {

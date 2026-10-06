@@ -35,11 +35,8 @@ class HubMqttBridge
     }
 
     /**
-     * Quem serve os streams pede-o aqui, e não a uma raiz de composição.
-     *
-     * A instância tem de ser a mesma dos dois lados, e é o grafo de objectos que o garante: a
-     * ingestão e o servidor HTTP partilham este bridge, portanto partilham este fan-out. Uma
-     * segunda instância em qualquer sítio não falhava nenhum teste -- ficava só calada.
+     * Quem serve os streams pede-o aqui: a ingestão e o servidor HTTP têm de partilhar este
+     * fan-out, e uma segunda instância ficaria calada sem falhar nenhum teste.
      */
     public function messages(): MessageFanout
     {
@@ -121,9 +118,8 @@ class HubMqttBridge
             throw new \RuntimeException('Failed to encode MQTT payload');
         }
 
-        // A derivação para os streams vem antes do fio: a mensagem já está em memória, e por
-        // isso nada tem de a voltar a ler do broker. O `hasListeners()` guarda a composição
-        // da chave, que de outro modo se pagava por mensagem sem ninguém à escuta.
+        // A derivação para os streams vem antes do fio, com a mensagem já em memória; o
+        // `hasListeners()` poupa a composição da chave quando ninguém escuta.
         if ($this->messages->hasListeners()) {
             $this->messages->dispatch(MessageFanout::scope($company, $licenseId, $channel), $topic, $json);
         }
@@ -141,11 +137,8 @@ class HubMqttBridge
     }
 
     /**
-     * Entrega uma instrução a um gateway, no espaço de tópicos por onde ele já fala.
-     *
-     * Não passa pelo prefixo da instância: um gateway publica e escuta no espaço fixo com que
-     * foi provisionado, e é lá que tem de encontrar o que lhe é dirigido. Quem cria comandos
-     * continua a ser só a API REST -- isto é a entrega, o equivalente ao socket de um relógio.
+     * Entrega uma instrução a um gateway, no espaço de tópicos fixo com que foi provisionado e
+     * sem o prefixo da instância. É a entrega, o equivalente ao socket de um relógio.
      *
      * @param array<string, mixed> $payload
      */
@@ -167,12 +160,8 @@ class HubMqttBridge
     }
 
     /**
-     * Apaga o estado retido que um dispositivo deixou no tópico de um cliente.
-     *
-     * O estado é publicado como retido, e por isso um dispositivo que muda de cliente
-     * continua a anunciar-se em todos os tópicos que já usou -- quem subscreve o cliente
-     * antigo continua a recebê-lo. O MQTT apaga uma mensagem retida com um payload de
-     * comprimento zero; um documento JSON vazio só a substituiria.
+     * Apaga o estado retido que um dispositivo deixou no tópico de um cliente que já não é o dele.
+     * O MQTT só apaga uma retida com payload de comprimento zero; um JSON vazio substituía-a.
      */
     public function clearRetainedStatus(string $company, int $licenseId, string $deviceType, string $imei): void
     {
@@ -196,11 +185,8 @@ class HubMqttBridge
     }
 
     /**
-     * Processa os PUBACK pendentes do publicador. Sem isto, cada publicação QoS 1 -- os
-     * `status` e os `events` -- deixa um `PublishedMessage` à espera para sempre; aos 65 535
-     * o cliente rebenta, é lido como queda, reconecta e perde os pendentes. Corrido de um
-     * temporizador do loop, mantém a fila drenada e o keepalive vivo. Não bloqueia: o
-     * `loopOnce` lê só o que já está no socket.
+     * Processa os PUBACK pendentes: cada QoS 1 deixa um `PublishedMessage` à espera, e aos 65 535
+     * o cliente rebenta. Não bloqueia, porque o `loopOnce` só lê o que já está no socket.
      */
     public function drainPublisher(): void
     {

@@ -15,10 +15,8 @@ use Hub\Registry\Whitelist;
 use Hub\Support\Values;
 
 /**
- * Põe no fio o que um gateway ouviu de um aparelho retransmitido.
- *
- * Nada aqui decide: recebe o que os decoders já reconheceram e escolhe apenas o destino -- o
- * MQTT, que leva tudo, e o histórico da dashboard, que leva uma amostra.
+ * Põe no fio o que um gateway ouviu de um aparelho retransmitido: o MQTT leva tudo, o
+ * histórico da dashboard uma amostra.
  */
 final class RelayPublisher
 {
@@ -54,10 +52,8 @@ final class RelayPublisher
     }
 
     /**
-     * Guarda a observação crua no histórico do aparelho retransmitido, para debugging.
-     *
-     * No histórico **dele** e não do gateway: as observações são de alta frequência e
-     * afogariam as tramas de estado do gateway. Só para aparelhos já autorizados.
+     * Guarda a observação crua no histórico do aparelho retransmitido, e não no do gateway,
+     * que ficaria afogado. Só para aparelhos já autorizados.
      *
      * @param array<string, mixed> $device
      * @param array<string, mixed> $gateway
@@ -82,8 +78,7 @@ final class RelayPublisher
                 'gatewayId' => (string)$gateway['imei'],
             ],
         ];
-        // O MQTT leva todas as observações -- é o debugging ao vivo; o histórico da dashboard
-        // leva uma amostra por dispositivo, para não afogar a janela nem somar escritas.
+        // O MQTT leva todas as observações; o histórico, uma amostra por dispositivo.
         $this->mqttBridge->publishRaw($deviceKey, $raw, $deviceType, $licenseId, $company);
         if ($this->deviceStore !== null && $this->shouldStoreRaw($deviceKey)) {
             $this->deviceStore->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
@@ -175,11 +170,8 @@ final class RelayPublisher
     }
 
     /**
-     * O protocolo por que um aparelho retransmitido reporta.
-     *
-     * O tipo sozinho não chega: uma pulseira tanto é W6 como W6B, e nem sequer é
-     * necessariamente MOKO. Quem sabe isto é o `DeviceProtocol`, que resolve pelo par
-     * fornecedor/modelo; o tipo fica como último recurso.
+     * O protocolo de um aparelho retransmitido, pelo par fornecedor/modelo no `DeviceProtocol`;
+     * o tipo sozinho não chega e fica como último recurso.
      *
      * @param array<string, mixed> $device
      */
@@ -207,11 +199,8 @@ final class RelayPublisher
     }
 
     /**
-     * O sinal entre um dispositivo retransmitido e o gateway que o ouviu.
-     *
-     * Publicado por avistamento, fora do `shouldPublish()`: esse compara os dados de
-     * telemetria, e o sinal mexe-se quando as leituras não mexem. Não entra no histórico do
-     * dispositivo, que a quarenta avistamentos por minuto ficaria só com isto.
+     * O sinal entre um dispositivo retransmitido e o gateway, publicado por avistamento fora do
+     * `shouldPublish()`; não entra no histórico, que ficaria só com isto.
      *
      * @param array<string, mixed> $device o dispositivo retransmitido, já autorizado
      * @param array<string, mixed> $gateway

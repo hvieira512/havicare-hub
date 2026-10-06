@@ -13,11 +13,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * A fronteira entre clientes nos dois ingressos que retransmitem por um gateway.
- *
- * Um gateway só fala por aparelhos do mesmo cliente e da mesma licença, e a ligação estar
- * activa não chega. A regra está escrita duas vezes -- em `MokoBridge::linkedDevice()` e em
- * linha no `VeepooBridge::handleMessage()` --, e por isso este teste exercita os dois.
+ * Um gateway só fala por aparelhos do mesmo cliente e licença; a regra está escrita duas vezes, em
+ * `MokoBridge::linkedDevice()` e no `VeepooBridge::handleMessage()`.
  */
 final class GatewayTenantBoundaryTest extends TestCase
 {

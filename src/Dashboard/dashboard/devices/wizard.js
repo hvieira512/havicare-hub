@@ -1,9 +1,6 @@
 /**
- * O motor do assistente: qual é a pergunta activa, que respostas há, e se pode avançar. A
- * pergunta activa é a primeira sem resposta, o que faz a revelação progressiva cair por si.
- *
- * O `clears` é a única coisa que não é derivável -- responder ao tipo invalida o modelo --, e
- * declara-se em vez de se espalhar por quem trata cada clique.
+ * O motor do assistente: a pergunta activa é a primeira sem resposta. O `clears` declara o que
+ * cada resposta invalida, que é a única coisa que não se deriva.
  */
 
 export function createWizard({ questions, steps }) {
@@ -18,10 +15,7 @@ export function createWizard({ questions, steps }) {
         return questions.filter((question) => question.step === number);
     }
 
-    /**
-     * Uma pergunta `optional` não trava o passo: não lhe responder é, em si, uma resposta.
-     * A licença é assim, e continua a ser feita, com a omissão escolhida à partida.
-     */
+    /** Uma pergunta `optional` não trava o passo: não lhe responder é, em si, uma resposta. */
     function blocks(question) {
         return !question.optional && !isAnswered(question);
     }
@@ -31,10 +25,7 @@ export function createWizard({ questions, steps }) {
         return !inStep(number).some(blocks);
     }
 
-    /**
-     * A primeira pergunta sem resposta dentro do passo actual. Limitada ao passo de
-     * propósito: derivar o passo da pergunta fazia a barra de progresso saltar sozinha.
-     */
+    /** A primeira pergunta sem resposta, só no passo actual, para a barra não saltar sozinha. */
     function current() {
         return inStep(step).find((question) => !isAnswered(question)) ?? null;
     }
@@ -81,9 +72,8 @@ export function createWizard({ questions, steps }) {
         answer: applyAnswer,
 
         /**
-         * Responde e, se não sobrar nenhuma aberta, avança. "Nenhuma aberta" e não "passo
-         * completo": uma pergunta opcional não trava o passo mas continua a ser feita, e o
-         * "Anterior" leva a um passo completo onde não se pode avançar.
+         * Avança só se não sobrar nenhuma aberta, e não por o passo estar completo: uma
+         * opcional não trava o passo mas continua a ser feita.
          */
         answerAndAdvance(key, value) {
             applyAnswer(key, value);

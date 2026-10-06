@@ -6,9 +6,7 @@ namespace Hub\Command\Downlink;
 
 use Hub\Protocol\Adapter\WonlexAdapter;
 
-/**
- * A descida dos relógios Wonlex, em JSON.
- */
+/** A descida dos relógios Wonlex, em JSON. */
 final class WonlexDownlink
 {
     /**

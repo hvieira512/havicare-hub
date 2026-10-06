@@ -14,11 +14,8 @@ use Hub\State\DeviceStoreContract;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * Apagar o que não existe diz que não existe.
- *
- * As empresas, as licenças, os utilizadores, as notificações e a denylist já respondiam
- * `not_found`; os dispositivos e os modelos respondiam `ok`. Quem apagou o aparelho errado
- * recebia a mesma resposta de quem apagou o certo.
+ * Apagar o que não existe diz que não existe, em todos os recursos: quem apagou o aparelho
+ * errado não pode receber a mesma resposta de quem apagou o certo.
  */
 final class DeleteOfSomethingAbsentTest extends MysqlDashboardTestCase
 {

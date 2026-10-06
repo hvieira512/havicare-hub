@@ -8,12 +8,8 @@ use ReflectionClass;
 use ReflectionParameter;
 
 /**
- * O que uma listagem deixa ordenar, filtrar e editar, dito à máquina que a consome em vez
- * de escrito de novo em cada cliente.
- *
- * Nada aqui é uma lista à mão: o que se ordena vem do mapa do `ORDER BY`, o que se edita vem
- * dos campos que o pedido de escrita aceita, e as opções de escolha vêm das contagens que a
- * listagem apurou. Não leva etiquetas -- traduzir é de quem desenha a interface.
+ * O que uma listagem deixa ordenar, filtrar e editar, derivado do `ORDER BY`, do pedido de
+ * escrita e das contagens. Sem etiquetas: traduzir é de quem desenha a interface.
  */
 final class CollectionColumns
 {
@@ -40,9 +36,8 @@ final class CollectionColumns
      */
     public function describe(array $counts = []): array
     {
-        // O pedido de escrita diz o que se *edita*, e não que colunas existem. Derivá-lo
-        // para as duas coisas punha a password e a matriz de capacidades como colunas de
-        // uma tabela -- campos que a resposta nem traz.
+        // O pedido de escrita diz o que se *edita*, e não que colunas existem: a password e a matriz
+        // de capacidades não são colunas.
         $writable = $this->writableFields();
 
         $fields = array_values(array_unique(array_merge(
@@ -99,9 +94,8 @@ final class CollectionColumns
             return null;
         }
 
-        // O conjunto é fechado e oferece-se inteiro, mas a contagem vem dos dados: com
-        // todas as linhas num dos valores, um dropdown tirado delas deixaria o outro
-        // inalcançável.
+        // O conjunto fechado oferece-se inteiro e só a contagem vem dos dados, para nenhum valor
+        // ficar inalcançável.
         return [
             'type' => 'select',
             'param' => $field,

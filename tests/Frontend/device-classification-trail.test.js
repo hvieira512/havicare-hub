@@ -8,9 +8,8 @@ const { classificationTrailHtml } =
     await import("../../src/Dashboard/dashboard/devices/classification-ui.js");
 
 /**
- * A classificação de um aparelho já escolhido — tipo, modelo e licença — em pastilhas
- * ligadas. Cada uma abre a sua escolha, e a que está aberta não repete o valor: ele está
- * marcado na grelha por baixo.
+ * A classificação de um aparelho escolhido em pastilhas ligadas; a que está aberta não repete o
+ * valor, que está marcado na grelha por baixo.
  */
 
 const QUESTIONS = [
@@ -61,9 +60,8 @@ test("enquanto o dispositivo não chegou não se afirma classificação nenhuma"
 });
 
 /**
- * A objecção que matou as pastilhas da primeira vez: entre duas havia uma seta, e quando a
- * fila quebrava ela ficava a apontar para o vazio. Deitadas há uma para a direita e
- * empilhadas uma para baixo -- nunca as duas, e nunca nenhuma.
+ * Deitadas há uma seta para a direita e empilhadas uma para baixo: nunca as duas, e nunca a
+ * apontar para o vazio quando a fila quebra.
  */
 test("entre duas pastilhas há uma seta para cada arranjo, e nenhuma antes da primeira", () => {
     const root = trail();

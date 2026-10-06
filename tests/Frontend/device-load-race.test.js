@@ -34,11 +34,7 @@ beforeEach(() => {
     state.selectedDetail = null;
 });
 
-/**
- * Escolher o dispositivo A e logo a seguir o B, com a resposta de A a chegar depois da de B,
- * escrevia o detalhe de A por baixo da identidade de B: telemetria clínica atribuída ao utente
- * errado.
- */
+/** O detalhe de A por baixo da identidade de B é telemetria clínica no utente errado. */
 test("a resposta atrasada de um dispositivo não sobrepõe o que foi escolhido a seguir", async () => {
     const fetches = installDeferredFetch();
 

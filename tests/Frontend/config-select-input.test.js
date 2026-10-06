@@ -5,12 +5,8 @@ import "./support/browser-env.js";
 import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/index.js";
 
 /**
- * O campo de escolha genérico.
- *
- * Cada fornecedor tinha o seu -- a sensibilidade de queda da Vivistar, a do 4P Touch -- e
- * todos faziam a mesma coisa: desenhar as opções que a definição declara. Sem um genérico,
- * uma definição com `options` e sem campo próprio caía num número solto, e o utilizador via
- * "2" sem saber que 2 é "Baixo".
+ * O campo de escolha genérico desenha as opções que a definição declara, para o utilizador ver
+ * «Baixo» e não `2`.
  */
 // Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
 const select = {
@@ -59,8 +55,7 @@ test("sem valor guardado escolhe a primeira opção, que é o que o formulário 
 });
 
 test("a definição pode dizer de onde parte, e não a ponta da lista", () => {
-    // Os fusos horários vão de −12 a +14 por ordem de valor: partir da primeira opção
-    // punha toda a gente em UTC−12:00.
+    // Os fusos vão de −12 a +14 por ordem de valor: partir da primeira opção daria UTC−12:00.
     const zones = entry("timeZone", [
         { value: -1200, label: "UTC−12:00" },
         { value: 0, label: "UTC+00:00" },

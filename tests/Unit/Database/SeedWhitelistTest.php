@@ -7,12 +7,8 @@ namespace Tests\Unit\Database;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O seed não pode escrever na base os sentinelas que só valem em memória. O `0` e o texto
- * `'null'` dizem "sem dono" enquanto o valor viaja, e o `WhitelistRepository` converte-os na
- * fronteira -- na base, sem dono é `NULL`.
- *
- * Saltar essa fronteira via-se no filtro de licenças, com uma empresa chamada "Sem empresa"
- * lá dentro: para o resto do sistema, uma empresa chamada `null` é uma empresa a sério.
+ * O `0` e o `'null'` são sentinelas de memória que o `WhitelistRepository` converte na
+ * fronteira: na base, sem dono é `NULL`.
  */
 final class SeedWhitelistTest extends TestCase
 {
@@ -52,11 +48,8 @@ final class SeedWhitelistTest extends TestCase
     }
 
     /**
-     * Uma licença não existe sem a empresa a que pertence.
-     *
-     * A regra é do domínio: o número da licença identifica-a dentro de um CRM, e é o par
-     * empresa+número que aponta para um inquilino. Metade do par não quer dizer nada, e o
-     * seed tinha uma linha com a licença 1001 e a empresa a `null`.
+     * Uma licença só identifica um inquilino no par empresa+número, e metade do par não quer
+     * dizer nada.
      */
     public function testNoRowHasALicenceWithoutACompanyOrTheReverse(): void
     {

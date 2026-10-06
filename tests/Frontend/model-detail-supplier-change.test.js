@@ -12,9 +12,8 @@ const { renderModelDetailInfo, saveModelDetail } = await import(
 );
 
 /**
- * Trocar o fornecedor faz o servidor substituir as capacidades pelo template do fornecedor
- * novo. Sem recarregar a ficha, a metade de baixo do ecrã continuava a mostrar a selecção
- * que já não existe, e o «Guardar capacidades» seguinte era recusado.
+ * Trocar o fornecedor faz o servidor substituir as capacidades pelo template do novo, e a ficha
+ * tem de recarregar para mostrar e gravar a selecção que existe.
  */
 const MODEL = {
     id: 42,

@@ -6,8 +6,7 @@ namespace Hub\Ingress\Mqtt\Qinglanst;
 
 final class DashboardWritePolicy
 {
-    // Teto por mapa: sem ele, cada dispositivo distinto deixa uma marca que nunca sai, e o
-    // processo de ingestão não reinicia. A mais antiga é descartada quando é ultrapassado.
+    // Teto por mapa, porque o processo não reinicia: ultrapassado, sai a marca mais antiga.
     private const MAX_TRACKED = 10000;
 
     /** @var array<string, int> */
@@ -38,11 +37,7 @@ final class DashboardWritePolicy
     }
 
 
-    /**
-     * O raw vai para o histórico no máximo uma vez por janela, por dispositivo. Um radar
-     * publica muitas mensagens por segundo; no MQTT saem todas, mas o histórico da dashboard
-     * leva só uma amostra, para não se afogar nem somar escritas ao caminho quente.
-     */
+    /** O raw vai para o histórico no máximo uma vez por janela e por dispositivo. */
     public function shouldStoreRaw(string $deviceKey, int $nowMs): bool
     {
         if ($this->rawHistorySampleMs <= 0) {

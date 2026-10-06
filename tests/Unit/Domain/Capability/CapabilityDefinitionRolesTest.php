@@ -73,7 +73,7 @@ final class CapabilityDefinitionRolesTest extends TestCase
         $subject::all();
     }
 
-    /** Um papel mal escrito dava uma capacidade com as bandeiras todas a false. */
+    /** Um papel mal escrito daria uma capacidade com as bandeiras todas a false. */
     public function testAnUnknownRoleIsRefusedInsteadOfSilentlyLosingTheFlags(): void
     {
         $subject = new class extends CapabilityDefinitions {

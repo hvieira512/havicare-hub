@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Hub\Device;
 
 /**
- * O envelope de uma leitura normalizada, tal como sai no MQTT.
- *
- * A forma é contrato público: o `type` é o nome da capacidade em snake_case, tem de coincidir
- * com o que o `CapabilityCatalog` declara, e os campos do `data` são camelCase com a unidade
- * no nome. É o par do `RawPayload`, que faz o mesmo para o `status` e para o `event`.
+ * O envelope de uma leitura normalizada, tal como sai no MQTT. É contrato público, e o par do
+ * `RawPayload`, que faz o mesmo para o `status` e o `event`.
  */
 final class TelemetryEnvelope
 {

@@ -14,12 +14,8 @@ SCENARIOS=(
 )
 PER_SCENARIO_TIMEOUT_SECONDS="${PER_SCENARIO_TIMEOUT_SECONDS:-240}"
 
-# Deita abaixo a pilha dos cenários no fim, corra ela bem ou mal. Sem isto ficavam quatro
-# contentores e meio giga de memória à espera da corrida seguinte. É `down` e não `stop`
-# porque um contentor parado continua na lista do Docker, que é metade do incómodo.
-#
-# O `-v` fica de fora de propósito: o volume `scenario_mysql_data` é o que evita migrar e
-# semear a base de dados de raiz a cada corrida.
+# Deita abaixo a pilha dos cenários no fim, corra ela bem ou mal. O `-v` fica de fora: o
+# volume `scenario_mysql_data` evita migrar e semear a base de raiz a cada corrida.
 cleanup() {
   tests/scenarios/cleanup-artifacts.sh
   COMPOSE_PROJECT_NAME=havicare-scenarios \

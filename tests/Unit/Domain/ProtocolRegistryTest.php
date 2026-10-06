@@ -9,11 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 final class ProtocolRegistryTest extends TestCase
 {
-    /**
-     * O que a dashboard precisa para desenhar os campos saiu daqui para o
-     * `ProtocolDashboardMeta`, e as asserções que o cobriam foram com ele: ver o
-     * `tests/Unit/Api/Http/ProtocolDashboardMetaTest.php`.
-     */
     public function testDescribeReturnsCanonicalMetadataForFourPTouch(): void
     {
         $protocol = ProtocolRegistry::describe('four-p-touch');
@@ -24,7 +19,7 @@ final class ProtocolRegistryTest extends TestCase
         self::assertTrue($protocol['supportsConfigCatalog']);
     }
 
-    /** O domínio deixou de decidir com que aspecto fica um campo. */
+    /** O domínio não decide com que aspecto fica um campo. */
     public function testDescribeCarriesNoPresentationConcerns(): void
     {
         foreach (ProtocolRegistry::keys() as $protocolKey) {
@@ -45,9 +40,8 @@ final class ProtocolRegistryTest extends TestCase
         self::assertNotContains('qinglanst-radar', ProtocolRegistry::protocolsWithConfigCatalog());
         self::assertNotContains('moko-mkgw3', ProtocolRegistry::protocolsWithConfigCatalog());
         self::assertNotContains('moko-mkgw4', ProtocolRegistry::protocolsWithConfigCatalog());
-        // O MONIT tem catálogo sem ter downlink: a sensibilidade dos alertas é uma
-        // configuração aplicada pelo hub. O flag diz se há o que configurar, e não se a
-        // alteração viaja -- isso é de cada capacidade, pelo `HubAppliedCapability`.
+        // O MONIT tem catálogo sem ter downlink: o flag diz se há o que configurar, e não se a
+        // alteração viaja.
         self::assertContains('monit-mecs-pro-ble', ProtocolRegistry::protocolsWithConfigCatalog());
     }
 

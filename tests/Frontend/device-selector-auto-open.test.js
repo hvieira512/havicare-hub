@@ -3,13 +3,10 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 
-/**
- * Sem dispositivo escolhido não há coluna de atividade nenhuma para mostrar, e o arranque
- * ficava num ecrã à espera de um clique. O selector passa a abrir-se sozinho.
- */
+/** Sem dispositivo escolhido não há atividade para mostrar, e o selector abre-se sozinho. */
 
-// A listagem fica pendurada de propósito: o que aqui se prende é a abertura, que acontece
-// antes do pedido, e uma resposta a sério arrastava metade da marcação da dashboard.
+// A listagem fica pendurada de propósito: a abertura acontece antes do pedido, e uma resposta
+// a sério arrastaria metade da marcação da dashboard.
 globalThis.fetch = () => new Promise(() => {});
 
 const IDS = [

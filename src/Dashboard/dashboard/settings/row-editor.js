@@ -1,15 +1,11 @@
 /**
  * A edição em linha das listagens das definições: a vaga do que está aberto, a escolha entre
- * a linha de ver e a de editar, a leitura dos `data-field` e o foco depois de repintar.
- *
- * O que varia entre listagens é o que cada uma desenha e o que grava.
+ * ver e editar, a leitura dos `data-field` e o foco depois de repintar.
  */
 
 /**
- * A linha aberta para edição, numa listagem onde só pode estar uma. O `kind` deixa uma
- * listagem ter vários tipos de linha editável na mesma vaga -- abrir uma fecha a outra.
- *
- * O id vazio é o rascunho: a linha que ainda não existe.
+ * A linha aberta para edição, numa listagem onde só pode estar uma; o `kind` deixa vários
+ * tipos de linha partilharem a vaga. O id vazio é o rascunho.
  *
  * @param {() => void} render o que repintar quando a vaga muda
  */
@@ -18,11 +14,8 @@ export function inlineEditor(render) {
 
     return {
         /**
-         * Abre a linha `id` do tipo `kind`. Sem `id` não faz nada em vez de abrir o
-         * rascunho, que se pede pelo nome com o `draft()`.
-         *
-         * O `extra` vem primeiro no espalhamento, senão podia substituir a identidade já
-         * normalizada e a linha deixava de abrir sem erro nenhum.
+         * Abre a linha `id` do tipo `kind`; sem `id` não faz nada, e o rascunho pede-se com o
+         * `draft()`. O `extra` vem primeiro no espalhamento para não substituir a identidade.
          */
         edit(kind, id, extra = {}) {
             if (id === null || id === undefined || String(id) === "") return;
@@ -59,10 +52,8 @@ export function inlineEditor(render) {
 }
 
 /**
- * O invólucro aberto a que este botão pertence, e os seus campos.
- *
- * Devolve `null` quando o botão não está dentro de um editor deste tipo -- que não acontece
- * com o HTML que estes módulos desenham, mas um clique delegado apanha o que lá estiver.
+ * O invólucro aberto a que este botão pertence, e os seus campos; `null` fora de um editor
+ * deste tipo.
  */
 export function editorOf(button, kind) {
     const el = button.closest(`[data-editor="${kind}"]`);
@@ -86,8 +77,8 @@ export function focusEditor(root) {
 }
 
 /**
- * Corre o que o botão dispara com ele desligado até acabar. Sem isto, dois cliques seguidos
- * em «Guardar» numa linha por criar criavam dois registos iguais.
+ * Corre o que o botão dispara com ele desligado até acabar, para dois cliques seguidos não
+ * criarem dois registos.
  */
 export async function whileBusy(button, work) {
     if (!button || button.disabled) return;

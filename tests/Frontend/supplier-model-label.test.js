@@ -6,8 +6,8 @@ import "./support/browser-env.js";
 const { supplierModelLabel } = await import("../../src/Dashboard/dashboard/domain.js");
 
 /**
- * Seis dos vinte modelos da frota já trazem o fornecedor no nome comercial -- todos os MOKO
- * e o MONIT. O cabeçalho do modal juntava os dois em cru e lia-se "MONIT MONIT MECS Pro".
+ * Seis dos vinte modelos da frota já trazem o fornecedor no nome comercial, como o MONIT:
+ * juntar os dois em cru daria «MONIT MONIT MECS Pro».
  */
 
 test("o fornecedor não se repete quando o nome comercial já começa por ele", () => {

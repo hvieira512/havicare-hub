@@ -91,9 +91,8 @@ final class WhitelistRepository
         return [
             'items' => $items,
             'total' => $this->countDevices($filters, $licenseScope, $companyScope),
-            // `available` é a lista de valores, e `counts` os mesmos valores com o número de
-            // dispositivos de cada um -- que é o que a coluna de filtros mostra ao lado de
-            // cada caixa. Os dois, porque o primeiro é contrato público.
+            // `available` é a lista de valores e `counts` os mesmos com o número de dispositivos de
+            // cada um; os dois, porque o primeiro é contrato público.
             'available' => [
                 'deviceType' => self::optionValues($deviceTypes),
                 'licenseId' => $this->distinctValues('w.license_id', 'licenseId', $filters, 'licenseId', $licenseScope, $companyScope),
@@ -105,9 +104,8 @@ final class WhitelistRepository
                 'deviceType' => $deviceTypes,
                 'supplier' => $suppliers,
                 'model' => $models,
-                // O fornecedor com os seus modelos por baixo, para a coluna de filtros os
-                // desenhar numa árvore só. As duas listas planas ficam: são elas que dão a
-                // contagem de cada caixa quando o outro filtro está aplicado.
+                // O fornecedor com os modelos por baixo, para a árvore de filtros. As listas planas ficam
+                // porque dão a contagem de cada caixa com o outro filtro aplicado.
                 'supplierModels' => $this->supplierTree($filters, $licenseScope, $companyScope),
                 'license' => $this->licenseTree($filters, $licenseScope, $companyScope),
             ],
@@ -214,9 +212,8 @@ final class WhitelistRepository
     }
 
     /**
-     * Tira um dispositivo do registo e com ele as suas configurações, senão um IMEI registado
-     * outra vez herdava os valores do dono anterior. Sem `ON DELETE CASCADE`, que
-     * transformaria uma mensagem em voo numa excepção no caminho quente do MQTT.
+     * Tira um dispositivo do registo com as suas configurações, para um IMEI registado outra vez
+     * não herdar as do dono anterior. Sem `ON DELETE CASCADE`, que rebentaria no caminho do MQTT.
      */
     public function unregister(string $imei): void
     {
@@ -227,9 +224,8 @@ final class WhitelistRepository
             $this->pdo->beginTransaction();
         }
 
-        // Só as remoções vão dentro do `try`: aqui, se falhar, a transacção está aberta com
-        // certeza, e o `rollBack()` dispensa perguntar. O `commit()` fica de fora porque uma
-        // falha *dele* já não deixa nada para desfazer.
+        // Só as remoções vão no `try`, onde a transacção está aberta com certeza; uma falha do
+        // `commit()` já não deixa nada para desfazer.
         try {
             foreach (['device_configurations', 'device_configuration_changes'] as $table) {
                 $this->pdo->prepare("DELETE FROM `{$table}` WHERE imei = ?")->execute([$imei]);
@@ -329,9 +325,8 @@ final class WhitelistRepository
             }
         }
 
-        // O modelo compara por igualdade e não por semelhança: as opções vêm da própria lista
-        // de modelos existentes, logo o que chega é um nome inteiro, e com `LIKE` escolher
-        // "L08" trazia também "L08 Pro Max".
+        // O modelo compara por igualdade: as opções vêm da lista de modelos, e um `LIKE` com "L08"
+        // traria também "L08 Pro Max".
         $models = $this->filterValues($filters, 'model');
         if ($models !== []) {
             $clauses[] = 'w.model IN (' . $this->placeholders(count($models)) . ')';
@@ -373,9 +368,8 @@ final class WhitelistRepository
             $clauses[] = '(' . implode(' OR ', $pairClauses) . ')';
         }
 
-        // Os IMEI que o estado de ligação deixa passar. A presença vive em runtime e não na
-        // base de dados, por isso entra como lista -- mas nesta mesma cláusula, que é o que
-        // mantém a paginação, o total e as listas de opções certos.
+        // Os IMEI que o estado de ligação deixa passar: a presença vive em runtime, e entra como lista
+        // nesta cláusula para a paginação, o total e as opções saírem certos.
         if (array_key_exists('imeiIn', $filters) && is_array($filters['imeiIn'])) {
             $imeis = array_values(array_filter(array_map('strval', $filters['imeiIn'])));
             if ($imeis === []) {
@@ -621,9 +615,8 @@ final class WhitelistRepository
             }
 
             $licenseId = DeviceMetadata::normalizeLicenseId($row['license_id'] ?? 0);
-            // A chave ignora maiúsculas, porque a comparação que o filtro faz também as
-            // ignora: com "hitcare" e "hitCare" como duas entradas, a árvore mostrava 9 numa
-            // delas e clicar-lhe devolvia 10. O nome é a primeira grafia vista.
+            // A chave ignora maiúsculas como a comparação do filtro, para a contagem da árvore bater com
+            // o resultado do clique. O nome é a primeira grafia vista.
             $key = mb_strtolower($company);
             if (!isset($companies[$key])) {
                 $companies[$key] = ['company' => $company, 'count' => 0, 'licenses' => []];

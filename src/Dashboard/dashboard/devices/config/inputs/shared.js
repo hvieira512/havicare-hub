@@ -1,11 +1,7 @@
 import { html } from "../../../html.js";
 import { boolValue } from "../normalizers.js";
 
-/**
- * As peças que os campos de todos os fornecedores partilham: um contador de identificadores,
- * um campo numérico, o interruptor que acompanha um valor, os botões de escolha e a hora de
- * 24 horas -- a marcação que as desenha e o comportamento que as mantém coerentes.
- */
+/** As peças que os campos de todos os fornecedores partilham. */
 
 /** Cresce por processo. Só tem de ser único dentro da página, não estável entre carregamentos. */
 let uidCounter = 0;
@@ -44,10 +40,8 @@ export function enabledSwitch(enabled, cls = "") {
 }
 
 /**
- * Um interruptor e o intervalo dele, lado a lado.
- *
- * Um campo só: o nome da definição já está na linha de cima e a unidade está colada ao campo,
- * e por isso o rótulo sai e o campo encosta à direita.
+ * Um interruptor e o intervalo dele, sem rótulo: o nome está na linha de cima e a unidade
+ * colada ao campo.
  */
 export function intervalToggle(desired, field, { fallback, unit, bounds = {} }) {
     return html`
@@ -95,9 +89,8 @@ function applyConfigPreset(section, button) {
 }
 
 export function updateConfigChoice(section, button) {
-    // Um preset preenche mais do que um campo de uma vez -- a sensibilidade das fraldas são
-    // dois inteiros --, e o botão carrega o par em vez de um valor só. O estado activo lê-se
-    // dos campos: nenhum preset activo já diz que os valores não são de nenhum deles.
+    // Um preset preenche vários campos de uma vez, como os dois inteiros da sensibilidade das
+    // fraldas; nenhum preset activo quer dizer valores próprios.
     if (button.dataset.configPreset) {
         applyConfigPreset(section, button);
         return;

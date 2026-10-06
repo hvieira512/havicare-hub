@@ -4,16 +4,10 @@
 declare(strict_types=1);
 
 /**
- * Observa um dispositivo BLE até ele anunciar alguma coisa.
+ * Observa um dispositivo BLE até ele anunciar: uma W6B sem slot de anúncio é visível mas
+ * vazia, e o primeiro payload a sério é descodificado logo. Corre até Ctrl-C.
  *
- * Uma W6B sem slot de anúncio configurado é visível ao gateway mas não traz dados de anúncio
- * nenhuns, e por isso isto reporta o estado vazio como um heartbeat e grita assim que um
- * payload a sério aparece -- e descodifica-o logo, para se ver de imediato se o frame é o que
- * esperamos.
- *
- * Corre até Ctrl-C.
- *
- * Usage:
+ * Uso:
  *   php simulator/w6b-watch.php
  *   php simulator/w6b-watch.php --mac=fbd87c59ba8b --heartbeat=30
  */

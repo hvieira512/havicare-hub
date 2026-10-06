@@ -1,9 +1,6 @@
 /**
- * Um `fetch` falso que não responde sozinho: os pedidos ficam em fila e é o teste que decide
- * a ordem por que as respostas chegam.
- *
- * Uma corrida só se reproduz assim. Com temporizadores, a ordem depende do relógio da máquina
- * e o teste passa a falhar de vez em quando em vez de provar alguma coisa.
+ * Um `fetch` falso que não responde sozinho: é o teste que decide a ordem das respostas, e só
+ * assim uma corrida se reproduz sem depender do relógio.
  */
 export function installDeferredFetch() {
     const pending = [];

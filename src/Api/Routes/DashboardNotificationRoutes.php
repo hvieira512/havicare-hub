@@ -13,8 +13,7 @@ return static function (
     return [
         new ApiRoute('GET', '/api/notifications', static fn(array $params, ServerRequestInterface $request): array
             => $notifications->list((string)$request->getUri()->getQuery())),
-        // Não declara corpo: um corpo ilegível segue como array vazio em vez de erro próprio,
-        // porque esta rota sempre respondeu "ids array is required" a um corpo que não é JSON.
+        // Não declara corpo: um corpo ilegível segue como array vazio e responde "ids array is required".
         new ApiRoute('PATCH', '/api/notifications/read', static fn(array $params, ServerRequestInterface $request): array
             => $notifications->markRead(RequestContext::jsonBody($request) ?? [])),
         new ApiRoute('DELETE', '/api/notifications/{id:\d+}', static fn(array $params): array

@@ -8,9 +8,8 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * «De quanto em quanto tempo o relógio mede ou envia X» é sempre a mesma pergunta, e por isso
- * vive sempre na mesma secção do painel. O intervalo da localização estava em Sistema, ao lado
- * da palavra-passe e do idioma, enquanto o dos passos estava com os outros dez.
+ * «De quanto em quanto tempo o relógio mede ou envia X» é sempre a mesma pergunta, e vive
+ * sempre na mesma secção do painel.
  */
 final class IntervalSectionTest extends TestCase
 {

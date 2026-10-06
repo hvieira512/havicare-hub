@@ -6,10 +6,8 @@ import "./support/browser-env.js";
 import { deviceListEmptyState } from "../../src/Dashboard/dashboard/devices/list.js";
 
 /**
- * O vazio tem de dizer o que o está a causar.
- *
- * Os filtros do selector persistem entre sessões, e um «Ligados» guardado de uma vez anterior
- * faz «Não há dispositivos para o filtro selecionado» ler-se como «esse aparelho não existe».
+ * Os filtros persistem entre sessões: o vazio tem de dizer que é deles, senão lê-se como «esse
+ * aparelho não existe».
  */
 /** O `online` é booleano, como o `changeDeviceFilter` o guarda: `null` é não filtrar. */
 const filters = (overrides = {}) => ({

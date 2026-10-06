@@ -14,12 +14,8 @@ use PHPUnit\Framework\TestCase;
 abstract class MysqlDashboardTestCase extends TestCase
 {
     /**
-     * Construir o esquema a cada teste custa ~820ms e domina a suite, por isso constrói-se
-     * uma vez por processo numa base-modelo e cada teste clona-a.
-     *
-     * O clone é um só `exec` com o DDL e as inserções já prontos: o MySQL aceita várias
-     * instruções por chamada, e ler o DDL tabela a tabela a cada teste custava sessenta
-     * idas ao servidor.
+     * Construir o esquema custa ~820ms, por isso constrói-se uma vez por processo numa
+     * base-modelo; o clone é um só `exec` com o DDL e as inserções já prontos.
      */
     private static ?string $templateCloneSql = null;
 
@@ -39,12 +35,7 @@ abstract class MysqlDashboardTestCase extends TestCase
         return new DashboardDatabase($this->dashboardDatabaseConfig($databaseName));
     }
 
-    /**
-     * Copia a base-modelo para uma base nova.
-     *
-     * O clone é uma cópia de estrutura e dados, por isso cada teste continua a ter a sua
-     * base isolada e pode correr DDL ou abrir mais ligações contra ela.
-     */
+    /** Copia a base-modelo, estrutura e dados, para uma base nova e isolada. */
     private function cloneTemplateInto(string $databaseName): void
     {
         $admin = $this->adminPdo();
@@ -56,18 +47,15 @@ abstract class MysqlDashboardTestCase extends TestCase
                 $this->templateCloneSql()
             ));
         } finally {
-            // A bandeira é da ligação, e esta ligação serve os testes todos do processo: se
-            // o clone rebentar a meio, deixá-la a zero calava as chaves estrangeiras no
-            // resto da corrida.
+            // A bandeira é da ligação, que serve os testes todos do processo: deixá-la a zero
+            // num clone que rebente calaria as chaves estrangeiras no resto da corrida.
             $admin->exec('SET FOREIGN_KEY_CHECKS = 1');
         }
     }
 
     /**
-     * O DDL e as inserções que reconstroem a base-modelo, montados uma vez por processo.
-     *
-     * O `CREATE TABLE ... LIKE` larga as chaves estrangeiras, e a `gateway_device_links`
-     * depende do `ON DELETE CASCADE`: daí repetir o DDL a sério.
+     * O DDL e as inserções que reconstroem a base-modelo, montados uma vez por processo; o
+     * `CREATE TABLE ... LIKE` larga as chaves estrangeiras, e daí repetir o DDL a sério.
      */
     private function templateCloneSql(): string
     {
@@ -115,7 +103,7 @@ abstract class MysqlDashboardTestCase extends TestCase
                 ->query(sprintf('SHOW CREATE TABLE `%s`.`%s`', $templateName, $table))
                 ->fetch(PDO::FETCH_NUM)[1] . ';';
 
-            // A maior parte das tabelas do modelo está vazia; copiá-las custava uma ida ao
+            // A maior parte das tabelas do modelo está vazia, e copiá-las custaria uma ida ao
             // servidor por tabela e por teste.
             $rowCount = (int)$admin
                 ->query(sprintf('SELECT COUNT(*) FROM `%s`.`%s`', $templateName, $table))
@@ -194,12 +182,8 @@ abstract class MysqlDashboardTestCase extends TestCase
     }
 
     /**
-     * Larga as bases que este teste criou.
-     *
-     * Em `#[After]` e não no `tearDown`, porque um `tearDown` numa subclasse que se esqueça
-     * do `parent::tearDown()` deixava as bases todas para trás em silêncio -- foi o que o
-     * `DevicesApiTest` e o `DiaperSensitivityApiTest` fizeram durante meses, e cada corrida
-     * deixava umas noventa. O `#[After]` corre além do `tearDown` e não se sobrepõe.
+     * Larga as bases que este teste criou, em `#[After]` e não no `tearDown`: uma subclasse que
+     * se esqueça do `parent::tearDown()` deixaria as bases para trás.
      */
     #[After]
     protected function dropTemporaryDatabases(): void
@@ -243,11 +227,7 @@ abstract class MysqlDashboardTestCase extends TestCase
     }
 
     /**
-     * A estrutura de uma base de dados, para se poder comparar duas.
-     *
-     * Vive aqui e não num teste porque há mais do que uma pergunta a fazer com ela: se o
-     * `schema.sql` sozinho descreve a base actual, e se uma base legada actualizada fica
-     * igual a uma nova. As duas comparam estrutura e nenhuma quer saber dos dados.
+     * A estrutura de uma base de dados, para se poder comparar duas sem olhar para os dados.
      *
      * @return list<string>
      */
@@ -277,11 +257,8 @@ abstract class MysqlDashboardTestCase extends TestCase
     }
 
     /**
-     * Os índices pela forma e não pelo nome.
-     *
-     * Uma chave única em `(a, b)` é a mesma restrição venha ela do `schema.sql` com um
-     * nome escolhido ou de um `ALTER TABLE` que deixou o MySQL nomeá-la. Comparar nomes
-     * dava diferenças que não são diferenças.
+     * Os índices pela forma e não pelo nome: uma chave única em `(a, b)` é a mesma venha do
+     * `schema.sql` ou de um `ALTER TABLE` que deixou o MySQL nomeá-la.
      *
      * @return array<string, mixed>
      */

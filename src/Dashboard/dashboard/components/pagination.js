@@ -4,9 +4,8 @@ import { esc } from "../format.js";
 const WINDOW_SLOTS = 7;
 
 /**
- * A janela de páginas: as duas pontas, a vizinhança da página actual, e reticências a marcar
- * o que ficou de fora (`null`). São sempre `WINDOW_SLOTS` lugares -- um paginador com sete
- * botões numa página e nove noutra muda de tamanho debaixo do rato de quem carregou nele.
+ * A janela de páginas: as pontas, a vizinhança da actual e reticências (`null`) no que fica de
+ * fora. Sempre `WINDOW_SLOTS` lugares, para não mudar de tamanho debaixo do rato.
  */
 function pageWindow(currentPage, totalPages) {
     if (totalPages <= WINDOW_SLOTS) {

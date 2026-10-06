@@ -9,14 +9,8 @@ use Hub\Infrastructure\Persistence\ReferenceCatalogSeeder;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * O catálogo em código é a verdade, e a base segue-o a cada arranque.
- *
- * São duas cópias com dois leitores — o PHP decide o canal do MQTT pelo `isEvent`, a base
- * decide o que a dashboard mostra. Sem reconciliação a cada arranque, as duas afastam-se sem
- * erro nenhum: o hub trata uma capacidade que o ecrã nunca mostra.
- *
- * Em produção isso já tinha acontecido em dez linhas, uma delas a bandeira de pedível da
- * bateria da pulseira.
+ * O catálogo em código é a verdade, e a base segue-o a cada arranque: o PHP decide o canal do
+ * MQTT pelo `isEvent` e a base decide o que a dashboard mostra.
  */
 final class CatalogueReconciliationTest extends MysqlDashboardTestCase
 {
@@ -63,12 +57,6 @@ final class CatalogueReconciliationTest extends MysqlDashboardTestCase
         self::assertSame('Células restantes', $this->label($pdo, 'pill_dispenser', 'cells_remaining'));
     }
 
-    /**
-     * Uma que o código já não declara sai.
-     *
-     * Sem isto, uma capacidade removida ficava na base a ser mostrada no ecrã enquanto o hub
-     * nunca mais publicava nada por ela.
-     */
     public function testACapabilityTheCodeNoLongerDeclaresIsRemoved(): void
     {
         $pdo = $this->createDashboardDatabase()->pdo();
@@ -86,10 +74,8 @@ final class CatalogueReconciliationTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O que cada modelo tem ligado é escolha de quem opera, e não se toca.
-     *
-     * É a distinção que faz esta reconciliação ser segura: a `capabilities` é o catálogo, que
-     * ninguém edita fora do código; a `model_capabilities` é a configuração, e essa é dele.
+     * A `capabilities` é o catálogo, que ninguém edita fora do código; a `model_capabilities` é
+     * a configuração de quem opera, e não se toca.
      */
     public function testWhatEachModelHasEnabledIsLeftAlone(): void
     {

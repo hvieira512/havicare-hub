@@ -6,9 +6,7 @@ namespace Hub\Ingress\Mqtt\Gateway;
 
 /**
  * O espaço de tópicos por onde um gateway publica: `{prefixo}/{empresa}/{licenca}/gw/{mac}/raw`.
- *
- * É do hub e não de um fornecedor -- todos os gateways publicam sob o seu próprio MAC, e cada
- * ingestão reclama do espaço partilhado só o que sabe ler.
+ * É partilhado por todos os fornecedores; cada ingestão reclama só o que sabe ler.
  */
 final class GatewayTopic
 {

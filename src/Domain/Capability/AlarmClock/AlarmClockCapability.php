@@ -7,21 +7,18 @@ namespace Hub\Domain\Capability\AlarmClock;
 use Hub\Domain\Capability\CapabilityContract;
 
 /**
- * O contrato da capacidade `alarm_clock`.
- *
- * Define a forma genérica (`items`, `meta`, `merge`). Uma lista vazia é válida e limpa os
- * alarmes guardados. A conversão por fornecedor é delegada nas implementações de
- * `AlarmClockHandler`.
+ * O contrato da capacidade `alarm_clock`: `items`, `meta` e `merge`, em que a lista vazia limpa
+ * os alarmes. A conversão por fornecedor é dos `AlarmClockHandler`.
  */
 final class AlarmClockCapability implements CapabilityContract
 {
     use AlarmClockHelpers;
 
-    /** @var array<string, AlarmClockHandler> protocol → handler */
+    /** @var array<string, AlarmClockHandler> protocolo → handler */
     private array $handlers;
 
     /**
-     * @param array<string, AlarmClockHandler> $handlers  Keyed by protocol
+     * @param array<string, AlarmClockHandler> $handlers  indexados pelo protocolo
      */
     public function __construct(array $handlers = [])
     {
@@ -47,10 +44,6 @@ final class AlarmClockCapability implements CapabilityContract
     {
         return array_keys($this->handlers);
     }
-
-    // ------------------------------------------------------------------
-    // delegação nos handlers
-    // ------------------------------------------------------------------
 
     public function toNative(string $protocol, mixed $value): array
     {
@@ -79,10 +72,6 @@ final class AlarmClockCapability implements CapabilityContract
     {
         return ($this->handlers[$protocol] ?? null)?->defaultValue() ?? [];
     }
-
-    // ------------------------------------------------------------------
-    // a forma da resposta
-    // ------------------------------------------------------------------
 
     public function meta(string $protocol, array $accumulatedMeta = []): array
     {

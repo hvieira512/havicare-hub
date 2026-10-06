@@ -69,7 +69,6 @@ final class MessageNormalizer
 
     /**
      * @param array<string, mixed> $message
-     * @param array<string, mixed> $message
      * @param array<string, mixed> $device
      * @param array<string, mixed> $raw
      * @return array{raw: array<string, mixed>, event?: array<string, mixed>}

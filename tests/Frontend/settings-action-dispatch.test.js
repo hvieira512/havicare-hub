@@ -5,12 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * O despacho das definições é por `data-action`: um handler procura o botão pelo nome, e quem
- * desenha o botão escreve o mesmo nome. Os dois lados são texto solto, e um nome mal escrito
- * de um dos lados não dá erro nenhum -- o clique simplesmente não faz nada.
- *
- * Os botões vivem tanto no JS que os constrói como nos templates PHP do modal, e varrer só um
- * dos lados faz passar por código morto um ouvinte cujo botão está do outro.
+ * O despacho das definições é por `data-action`, texto solto dos dois lados: um nome mal
+ * escrito não dá erro, e os botões vivem tanto no JS como nos templates PHP do modal.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = (relative) => path.join(here, "../../src/Dashboard", relative);
@@ -52,12 +48,8 @@ test("cada data-action que as definições procuram é escrito por quem desenha"
 });
 
 /**
- * O sentido inverso. Um `data-action` num botão que ninguém procura não parte nada -- o botão
- * até costuma funcionar, ligado pelo `id` --, mas anuncia um despacho delegado que não
- * existe, e quem o procurar não encontra do outro lado.
- *
- * Só se varre o JS que constrói a dashboard: os `data-action` escritos em `tests/` são
- * cenários, e não botões a sério.
+ * O sentido inverso: um `data-action` que ninguém procura anuncia um despacho que não existe.
+ * Os de `tests/` são cenários, e não botões.
  */
 const PHP_ACTION = /data-action="([\w-]+)"/g;
 

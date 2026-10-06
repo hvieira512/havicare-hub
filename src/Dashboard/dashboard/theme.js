@@ -1,11 +1,8 @@
 import { loadTextStorage, saveTextStorage, THEME_STORAGE_KEY } from "./storage.js";
 
 /**
- * O tema claro/escuro.
- *
- * Quem faz o trabalho é o Bootstrap 5.3: o `data-bs-theme` no `<html>` troca-lhe os tokens
- * todos. O que é nosso tem o seu par no bloco `[data-bs-theme="dark"]` de cada ficheiro.
- * Sem preferência guardada segue-se a do sistema; guardada, ganha ela.
+ * O tema claro/escuro: o `data-bs-theme` no `<html>` troca os tokens do Bootstrap. Sem
+ * preferência guardada segue-se a do sistema.
  */
 
 export const LIGHT = "light";
@@ -36,15 +33,11 @@ export function applyTheme(theme) {
     const resolved = theme === DARK ? DARK : LIGHT;
     document.documentElement.setAttribute("data-bs-theme", resolved);
 
-    // O SweetAlert veste-se pelo seu próprio atributo. Vai no `<body>` e não no `<html>`
-    // porque a folha do SweetAlert põe os valores base no `:root` e entra depois desta: o
-    // que está mais perto do diálogo é que ganha. O sufixo é explícito porque o
-    // `bootstrap-5` sozinho segue o sistema operativo, e aqui quem manda é o botão.
+    // O SweetAlert veste-se pelo seu atributo, no `<body>` para ganhar à folha dele no `:root`; o
+    // sufixo é explícito porque o `bootstrap-5` sozinho segue o sistema operativo.
     document.body?.setAttribute("data-swal2-theme", `bootstrap-5-${resolved}`);
 
-    // O ícone diz para onde se vai, não onde se está: no claro mostra-se a lua porque é a
-    // lua que se vai buscar. O `fa-fw` mantém a largura ao trocar -- sem ele o botão mudava
-    // de tamanho ao ser carregado, e um controlo não se mexe por ter sido usado.
+    // O ícone diz para onde se vai, não onde se está. O `fa-fw` mantém a largura ao trocar.
     const goingToDark = resolved === LIGHT;
     const label = goingToDark ? "Mudar para o tema escuro" : "Mudar para o tema claro";
 

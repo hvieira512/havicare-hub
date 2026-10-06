@@ -10,21 +10,12 @@ use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O que um contrato anuncia e o que ele serve são a mesma lista.
- *
- * Cada contrato diz, no `supportedProtocols`, com que protocolos sabe lidar, e despacha-os
- * depois num `match`. São duas afirmações escritas à mão em sítios diferentes, e este teste
- * prende as duas direcções para todos os contratos de uma vez.
+ * O que cada contrato anuncia no `supportedProtocols` e o que o seu `match` despacha são a
+ * mesma lista, nas duas direcções.
  */
 final class CapabilityContractDispatchTest extends TestCase
 {
-    /**
-     * Um protocolo que o contrato não anuncia tem de ser recusado **por ser esse protocolo**,
-     * e não por causa do valor.
-     *
-     * Validar antes de despachar dá a mensagem errada e manda quem depura à procura do valor
-     * em vez do protocolo. Despacha-se primeiro, valida-se depois.
-     */
+    /** Despacha-se antes de validar, para a recusa apontar o protocolo e não o valor. */
     public function testAnUnadvertisedProtocolIsRefusedForBeingUnsupported(): void
     {
         $registry = new CapabilityRegistry();
@@ -63,11 +54,8 @@ final class CapabilityContractDispatchTest extends TestCase
     }
 
     /**
-     * E a outra direcção: o que é anunciado tem de ser servido.
-     *
-     * Um protocolo declarado no `supportedProtocols` mas em falta no despacho passa por todos
-     * os outros testes, e o `Unsupported` só aparece ao carregar em Enviar. Só se olha para a
-     * razão da recusa: um valor vazio recusado pela validação é o comportamento certo.
+     * Um protocolo anunciado e em falta no despacho só falha ao carregar em Enviar. Um valor vazio
+     * recusado pela validação é o comportamento certo.
      */
     public function testEveryAdvertisedProtocolIsActuallyServed(): void
     {

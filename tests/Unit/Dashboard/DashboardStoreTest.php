@@ -42,8 +42,7 @@ final class DashboardStoreTest extends TestCase
         $store = new DeviceStore($redis, prefix: 'test:dashboard');
         $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
 
-        // Sem `sentAt`: nada mais o tiraria de "à espera", e ficava pendente na dashboard
-        // para sempre.
+        // Sem `sentAt`, nada mais o tiraria de "à espera".
         $store->recordCommand('861265061009822', 'cmd-1', [
             'status' => 'waiting',
             'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 7200),
@@ -60,8 +59,8 @@ final class DashboardStoreTest extends TestCase
         $store = new DeviceStore($redis, prefix: 'test:dashboard');
         $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
 
-        // A varredura de repetição salta o que não é repetível, e por isso sem isto o
-        // command has no path to a terminal state at all.
+        // A varredura de repetição salta o que não é repetível: é a expiração que o leva a um
+        // estado final.
         $store->recordCommand('861265061009822', 'cmd-1', [
             'status' => 'queued',
             'retryable' => false,

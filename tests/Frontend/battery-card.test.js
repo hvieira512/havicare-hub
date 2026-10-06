@@ -9,7 +9,6 @@ import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/sh
 
 const battery = (data) => uplinkCardContent("battery", data);
 
-/** O ícone era uma constante: a mesma bateria a três quartos aos 100% e aos 4%. */
 test("o ícone segue a carga", () => {
     assert.equal(battery({ percent: 100 }).icon, "fa-battery-full");
     assert.equal(battery({ percent: 80 }).icon, "fa-battery-three-quarters");
@@ -40,7 +39,7 @@ test("quem não está a carregar não leva relâmpago", () => {
     assert.equal(battery({ percent: 40 }).iconBadge, "");
 });
 
-/** O ícone passou a dizê-lo, e repeti-lo por baixo era ocupar a linha com o mesmo. */
+/** O ícone diz o estado de carga; repeti-lo por baixo ocupa a linha com o mesmo. */
 test("o estado de carga sai da linha de detalhes", () => {
     assert.equal(String(battery({ percent: 100, chargingState: "full" }).details), "");
     assert.equal(String(battery({ percent: 40, chargingState: "charging" }).details), "");
@@ -52,7 +51,7 @@ test("mas «sem bateria» fica, que nenhum ícone o diz", () => {
     assert.match(String(battery({ chargingState: "absent" }).details), /Sem bateria/);
 });
 
-/** A corrente passou para o canto do ícone: a linha de baixo não a repete em estado nenhum. */
+/** A corrente mostra-se no canto do ícone. */
 test("a corrente não se escreve por baixo", () => {
     for (const data of [
         { percent: 99, chargingState: "charging", mainsPowered: true },
@@ -60,13 +59,12 @@ test("a corrente não se escreve por baixo", () => {
         { percent: 80, mainsPowered: true },
         { percent: 92, chargingState: "full", mainsPowered: false },
     ]) {
-        // Igualdade e não `doesNotMatch`: numa linha vazia, não encontrar «corrente» é fácil
-        // de mais, e o teste passava na mesma se a linha passasse a dizer outra coisa.
+        // Igualdade e não `doesNotMatch`: não encontrar «corrente» passaria com qualquer outro texto.
         assert.equal(String(battery(data).details), "");
     }
 });
 
-/** Cheio na ficha não carrega, e sem marca ficava igual a um aparelho fora da ficha. */
+/** Cheio na ficha não carrega, e sem marca seria igual a um aparelho fora da ficha. */
 test("na ficha sem carregar, a tomada ocupa o canto", () => {
     assert.equal(battery({ percent: 100, chargingState: "full", mainsPowered: true }).iconBadge, "fa-plug");
     assert.equal(battery({ percent: 80, mainsPowered: true }).iconBadge, "fa-plug");
@@ -82,7 +80,7 @@ test("fora da ficha o canto fica vazio", () => {
     assert.equal(battery({ percent: 92, chargingState: "full" }).iconBadge, "");
 });
 
-/** Um fragmento vazio é um objecto, e um objecto é verdadeiro: a linha ficava lá, vazia. */
+/** Um fragmento vazio é um objecto, e um objecto é verdadeiro. */
 test("sem detalhes o cartão não abre linha nenhuma", () => {
     const content = battery({ percent: 100, chargingState: "full" });
     const card = String(telemetryCard({
@@ -95,7 +93,7 @@ test("sem detalhes o cartão não abre linha nenhuma", () => {
     assert.doesNotMatch(card, /telemetry-row-details/);
 });
 
-/** O `compactDetails` devolve um fragmento mesmo quando está vazio, e o filtro deixava-o passar. */
+/** O `compactDetails` devolve um fragmento mesmo quando está vazio. */
 test("uma peça vazia não deixa o separador pendurado", () => {
     assert.equal(String(battery({ percent: 80, mainsPowered: true }).details), "");
 });

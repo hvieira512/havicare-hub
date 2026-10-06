@@ -7,10 +7,8 @@ namespace Tests\Support\Doubles;
 use PhpMqtt\Client\MqttClient;
 
 /**
- * Um `MqttClient` que nunca toca num socket.
- *
- * Os bridges de ingress subscrevem no construtor ou no `start()`, e por isso os testes
- * precisam de um cliente que aceite a chamada e não faça nada.
+ * Um `MqttClient` que nunca toca num socket, para os bridges de ingress que subscrevem no
+ * construtor ou no `start()`.
  */
 final class FakeMqttSubscriber extends MqttClient
 {

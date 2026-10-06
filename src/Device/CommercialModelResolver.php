@@ -27,8 +27,7 @@ class CommercialModelResolver
     }
 
     /**
-     * O nome comercial acrescentado ao dispositivo, quando se sabe. Omite-se quando não se
-     * sabe, como todo o descritor.
+     * O nome comercial acrescentado ao dispositivo, omitido quando não se sabe.
      *
      * @param array<string, mixed> $device
      * @return array<string, mixed>

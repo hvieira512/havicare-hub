@@ -115,9 +115,8 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * Cada detecção sai na capacidade a que pertence, com o tipo específico dentro: com as
-     * quinze a saírem como `detection`, uma queda vista por um radar e um SOS de uma pulseira
-     * não se conseguiam listar nem alertar pela mesma regra.
+     * Cada detecção sai na capacidade a que pertence, com o tipo dentro: assim uma queda de
+     * radar e um SOS de pulseira listam-se e alertam-se pela mesma regra.
      */
     public function testDetectionsCarryTheCapabilityTheyBelongTo(): void
     {
@@ -321,7 +320,7 @@ final class MessageNormalizerTest extends TestCase
         ];
     }
 
-    /** Sentado no chão é estado a assinalar, e estava declarado sem ninguém o produzir. */
+    /** Sentado no chão é estado a assinalar. */
     public function testSittingOnTheGroundRaisesItsAlarm(): void
     {
         $normalizer = new MessageNormalizer();
@@ -427,8 +426,7 @@ final class MessageNormalizerTest extends TestCase
 
     /**
      * Dois alarmes na mesma mensagem saem os dois: uma apneia e uma bradicardia no mesmo
-     * minuto é precisamente quando alguém está pior, e com um campo só o segundo desaparecia
-     * sem deixar rasto no log nem no Redis.
+     * minuto é precisamente quando alguém está pior.
      */
     public function testEveryAlarmInOneMessageSurvives(): void
     {
@@ -455,8 +453,8 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * Um vocabulário só no payload: os quatro estados do `hbstatics` saem em enumeração,
-     * como o `posture` e o `sleep_state` já saíam.
+     * Um vocabulário só no payload: os quatro estados do `hbstatics` saem em enumeração, como
+     * o `posture` e o `sleep_state`.
      */
     public function testTheMinuteStatsCarryEnumsAndNotVendorLabels(): void
     {
@@ -485,8 +483,8 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * O grau de um alarme é uma enumeração inglesa, como todo o resto do envelope. Saía
-     * `aviso` e `perigo`, que punha português no fio e deixava a tradução sem sítio.
+     * O grau de um alarme é uma enumeração inglesa, como todo o resto do envelope: a tradução
+     * é de quem desenha a interface.
      */
     public function testTheDetectionLevelIsAnEnglishEnum(): void
     {
@@ -512,10 +510,8 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * A chave do mapa de telemetria é a capacidade, e o `type` do envelope é o que sai no
-     * fio. Divergirem faz o catálogo declarar uma capacidade que ninguém recebe, e é uma
-     * falha calada: o `hbstatics` e o `minute_stats` -- nomes das mensagens do fabricante --
-     * saíam onde o catálogo promete `vitals_minute_stats` e `position_minute_stats`.
+     * A chave do mapa de telemetria é a capacidade e tem de ser o `type` do envelope: senão o
+     * catálogo declara uma capacidade que ninguém recebe, e a falha é calada.
      *
      * @dataProvider everyMessageType
      * @param array<string, mixed> $decoded

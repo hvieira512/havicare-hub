@@ -1,7 +1,5 @@
 /* ===== modal do dispositivo: cabeçalho e painel de configuração =====
-   A marcação vive em `components/modals/device.php`, em `devices/device-modal.js` e em
-   `devices/config/index.js`. Carrega depois do `device.css`, e é daí que vem a precedência
-   sobre as regras de configuração que lá estão. */
+   Carrega depois do `device.css`, e é daí que vem a precedência sobre as regras de lá. */
 
 /* O cabeçalho é navy como a barra de navegação: a identidade do aparelho e os separadores
    ficam lá dentro, e por isso empilham em vez de partilharem uma linha. */
@@ -108,9 +106,8 @@
     min-height: 100%;
 }
 
-/* A coluna das secções: largura fixa, porque é uma lista de nomes curtos e crescer com o
-   diálogo só lhe punha branco ao lado. Nem cresce nem encolhe -- um nome comprido corta com
-   reticências, e a coluna mede o mesmo em todas as secções. */
+/* A coluna das secções tem largura fixa: um nome comprido corta com reticências, e a coluna
+   mede o mesmo em todas as secções. */
 @media (min-width: 992px) {
     .config-section-nav {
         flex: 0 0 186px;
@@ -136,11 +133,11 @@
 }
 
 /* A régua das secções em lista: chegam a seis e variam por fornecedor, e em tira horizontal
-   a 342 px media 466 numa calha de 295. */
+   não cabem num telemóvel. */
 .config-section-nav .config-section-link {
     gap: .75rem;
-    /* O mesmo recuo lateral das definições: a régua e a lista são a mesma coluna, e num
-       telemóvel de barra de rolagem flutuante os .75rem punham a contagem por baixo dela. */
+    /* O mesmo recuo lateral das definições: a régua e a lista são a mesma coluna, e a barra de
+       rolagem flutuante tapa a contagem com menos. */
     padding: .5rem 1rem;
     border: 0;
     border-left: 2.5px solid transparent;
@@ -167,9 +164,7 @@
     display: none;
 }
 
-/* O controlo de uma definição que cabe numa linha: cede à linha, mas não abaixo do que
-   mostra um número de quatro dígitos com a unidade ao lado. O Bootstrap não tem utilitários
-   de largura mínima. */
+/* O controlo de uma definição numa linha cede, mas não abaixo de quatro dígitos com a unidade. */
 .config-line-control {
     min-width: 7rem;
 }
@@ -179,11 +174,9 @@
     background: var(--bs-warning-bg-subtle);
 }
 
-/* O enchimento e o recuo são daqui, e por isso não há `p-*` nem `m-*` na marcação: o recuo
-   de um pixel põe a borda do rodapé por cima da da última definição -- sem ele são dois
-   traços encostados a fingir de um --, e um utilitário do Bootstrap ganhava-lhe. */
-/* O rodapé acompanha a leitura até ao fim da lista: com trinta definições, os dois botões
-   ficavam a um ecrã e meio de distância do que se acabou de alterar. */
+/* O enchimento e o recuo ficam aqui e não em utilitários, que lhes ganhavam: o recuo de um
+   pixel põe a borda do rodapé por cima da da última definição. */
+/* O rodapé acompanha a leitura até ao fim da lista, para os botões ficarem perto do que se alterou. */
 .config-section-footer {
     padding: .75rem 1rem;
     margin: -1px 0 0;

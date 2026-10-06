@@ -48,12 +48,7 @@ const renderAuthenticatedUsername = (token) => {
     authenticatedUsername.textContent = String(token?.username || "Administrador");
 };
 
-/**
- * O que a dashboard aceita como sessão: um token de acesso de administrador por expirar.
- *
- * Já não há token de renovação a validar aqui -- esse vive no cookie `HttpOnly` e este código
- * nunca o vê.
- */
+/** O que a dashboard aceita como sessão: um token de acesso de administrador por expirar. */
 export const validAdminToken = (token) => {
     if (!token || typeof token !== "object" || token.role !== ADMIN_ROLE) {
         return false;
@@ -205,9 +200,8 @@ const startDashboard = async () => {
         try {
             await onAuthenticated();
         } catch {
-            // A aplicação não chegou a arrancar -- o grafo dela entra por `import()` e esse
-            // pedido pode falhar. A mensagem pede para recarregar e não para tentar de novo:
-            // o browser guarda a falha no mapa de módulos, e só um documento novo a desfaz.
+            // A aplicação não chegou a arrancar: pede-se para recarregar porque o browser guarda a falha
+            // do `import()` no mapa de módulos, e só um documento novo a desfaz.
             dashboardStarted = false;
             showLogin("Não foi possível carregar a aplicação. Recarregue a página.");
         }
@@ -232,13 +226,8 @@ const revokeSession = async () => {
 };
 
 /**
- * Fecha a sessão. Com `notifyServer`, manda apagar o cookie e revogar os dois tokens.
- *
- * Sem o pedido, o cookie fica e o separador seguinte entra sem palavra-passe. O
- * `notifyServer` a falso é para quem já soube por outro separador que a sessão acabou.
- *
- * Sai-se primeiro e pergunta-se depois: o `fetch` não tem prazo, e esperar por ele deixa a
- * dashboard no ecrã -- com os dados lá -- enquanto a rede caída não desistir.
+ * Fecha a sessão; com `notifyServer`, manda apagar o cookie e revogar os dois tokens. Sai-se
+ * primeiro e pergunta-se depois, porque o `fetch` não tem prazo.
  */
 const logout = async (message = "", notifyServer = true) => {
     clearTimers();
@@ -274,8 +263,7 @@ const scheduleIdleTimers = () => {
     if (idleMs >= WARNING_AFTER_MS) {
         showTimeoutWarning();
     } else {
-        // Houve atividade -- aqui ou noutro separador -- e o aviso que estivesse aberto
-        // deixou de ser verdade.
+        // Houve atividade, aqui ou noutro separador: o aviso aberto já não é verdade.
         hideTimeoutWarning();
         warningTimer = window.setTimeout(
             scheduleIdleTimers,
@@ -314,9 +302,8 @@ const bindActivityTracking = () => {
         scheduleIdleTimers();
     });
 
-    // Terminar sessão num separador termina-a em todos: o `storage` só dispara nos outros, e
-    // a chave apagada é o sinal. Sem isto, o outro separador ficava a mostrar dados com um
-    // token que ainda valia até expirar.
+    // Terminar sessão num separador termina-a em todos: o `storage` só dispara nos outros, e a
+    // chave apagada é o sinal.
     window.addEventListener("storage", (event) => {
         if (event.key === LAST_ACTIVITY_STORAGE_KEY && event.newValue === null && getDashboardApiToken()) {
             void logout("A sessão foi terminada noutro separador.", false);
@@ -347,8 +334,7 @@ const login = async (event) => {
         const payload = await response.json().catch(() => null);
         const token = payload?.token;
         if (!response.ok || !token?.access_token) {
-            // Um 5xx (ou uma página não-JSON de um proxy) foi contactado e falhou: não é
-            // credencial errada, e dizê-lo assim enganava.
+            // Um 5xx, ou uma página não-JSON de um proxy, não é credencial errada.
             toast("danger", response.status >= 500
                 ? "O Hub respondeu com um erro. Volte a tentar."
                 : "Utilizador ou palavra-passe inválidos.");
@@ -375,9 +361,8 @@ const login = async (event) => {
 };
 
 /**
- * A sessão não está em lado nenhum que este código possa ler: pergunta-se ao Hub, que a
- * reconhece pelo cookie. É isto que faz um separador novo abrir já autenticado, e o que
- * devolve um token de acesso novo a cada separador.
+ * A sessão está num cookie que este código não lê: pergunta-se ao Hub, e é assim que um
+ * separador novo abre já autenticado, com o seu token de acesso.
  */
 const restoreSession = async () => {
     let token = null;

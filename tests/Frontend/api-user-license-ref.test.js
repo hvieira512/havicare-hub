@@ -6,9 +6,8 @@ import "./support/browser-env.js";
 const { licenseRefIdFor } = await import("../../src/Dashboard/dashboard/settings/api-users.js");
 
 /**
- * O `licenseRefId` é `?int` na fronteira da API, e o binder recusa a string em vez de a
- * converter -- um `(int)"abc"` daria `0`, que quer dizer alguma coisa nas regras de licença.
- * O `<select>` vazio dá `""`, e é aqui que ele passa a valer `null`.
+ * O binder recusa a string em vez de a converter (`(int)"abc"` dá `0`, que tem significado nas
+ * licenças); o `<select>` vazio dá `""`, e é aqui que passa a `null`.
  */
 test("um admin do hub não fica preso a licença nenhuma", () => {
     assert.equal(licenseRefIdFor("hub_admin", ""), null);

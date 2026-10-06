@@ -193,10 +193,7 @@ final class FourPTouchAdapterTest extends TestCase
         self::assertSame('ABC123', $payload['data']['firmware']);
     }
 
-    /**
-     * A resposta ao `TS` é um bloco `chave:valor` e não um carimbo de tempo -- este teste
-     * prendia um `deviceTime` que o aparelho nunca devolve.
-     */
+    /** A resposta ao `TS` é um bloco `chave:valor`, e não um carimbo de tempo. */
     public function testDecodeIncomingParsesDeviceStatus(): void
     {
         $adapter = new FourPTouchAdapter();

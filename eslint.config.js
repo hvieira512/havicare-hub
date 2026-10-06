@@ -37,18 +37,12 @@ export default [
         rules: {
             ...js.configs.recommended.rules,
             ...style.rules,
-            // Duas regras onde o default do preset ia contra o codigo: as aspas nas
-            // chaves so onde sao precisas -- o `consistent-as-needed` obrigava a
-            // cita-las todas por causa de um `"device.connected"` -- e o operador no
-            // fim da linha, menos o `?` e o `:` do ternario, que este codigo poe
-            // sempre no inicio.
+            // Duas regras onde o default do preset ia contra o código: aspas nas chaves só onde são
+            // precisas, e o operador no fim da linha, menos o `?` e o `:` do ternário.
             "@stylistic/quote-props": ["error", "as-needed"],
             "@stylistic/operator-linebreak": ["error", "after", {overrides: {"?": "before", ":": "before"}}],
-            // Ligado como aviso e nao erro: os imports nao usados e os exports sem
-            // chamadores eram invisiveis, e foi assim que o codigo morto se acumulou --
-            // o teste do grafo de modulos so prova que cada ficheiro e alcancavel, nao
-            // que cada nome importado e usado. Os argumentos ficam de fora porque as
-            // assinaturas dos handlers de eventos nao usam sempre o `event`.
+            // Aviso e não erro: apanha imports e exports sem uso, que o teste do grafo de módulos não vê.
+            // Os argumentos ficam de fora pelos handlers que não usam o `event`.
             "no-unused-vars": ["warn", {args: "none"}],
             "no-empty": ["error", {allowEmptyCatch: true}],
         },

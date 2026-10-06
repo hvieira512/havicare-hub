@@ -23,11 +23,8 @@ final class TimestampFormatter
     }
 
     /**
-     * Como o `toIso`, mas a ausência continua ausência.
-     *
-     * O `toIso` devolve o instante actual quando não lhe dão nada, o que serve para colunas
-     * `NOT NULL` mas mentia num `applied_at` por aplicar. As colunas do ciclo de vida da
-     * configuração são `DATETIME NULL`, e a API diz "ainda não" com cadeia vazia.
+     * Como o `toIso`, mas a ausência continua ausência: o `toIso` devolve o instante actual, que
+     * mentia num `applied_at` por aplicar.
      */
     public static function toIsoOrEmpty(mixed $value): string
     {

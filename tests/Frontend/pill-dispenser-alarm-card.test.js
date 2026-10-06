@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
-// esse caminho passa pelo api/http.js, que toca em window ao carregar.
+// Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e
+// esse caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
 
@@ -21,10 +21,7 @@ const card = (data) => requestCardShell(
     [{ type: "medication_alarm_status", occurredAt: "2026-09-22T09:38:34Z", data }],
 );
 
-/**
- * O estado dos nove alarmes traz uma lista, e o renderizador genérico não sabe desenhar
- * listas: escrevia `Alarms: [object Object],[object Object]` no cartão, em produção.
- */
+/** O estado dos nove alarmes traz uma lista, que o renderizador genérico não sabe desenhar. */
 test("a lista de alarmes nunca aparece como [object Object]", () => {
     const rendered = card({
         takenCount: 1,
@@ -97,11 +94,8 @@ test("com tudo parado o cartão diz que não há tomas, e em português", () => 
 });
 
 /**
- * A notificação de um alarme deixou de viajar dentro da leitura dos nove.
- *
- * Vinha marcada com `complete: false` e o cartão tinha de a distinguir a tempo de não a
- * rotular «1 tomada» -- o que apagava do ecrã as falhas que a leitura anterior mostrava. Agora
- * é capacidade própria, e o cartão dos nove só recebe leituras dos nove.
+ * A mudança de uma dose é capacidade própria: o cartão dos nove alarmes só recebe leituras dos
+ * nove.
  */
 test("a mudança de uma dose é outra capacidade, e lê-se numa linha", () => {
     const rendered = requestCardShell(

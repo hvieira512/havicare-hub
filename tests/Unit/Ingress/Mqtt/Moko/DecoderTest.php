@@ -84,9 +84,8 @@ final class DecoderTest extends TestCase
     }
 
     /**
-     * Uma entrada 0x30A0 real, capturada do MKGW4 c5e390f30bce a retransmitir a W6B
-     * fbd87c59ba8b. Um MKGW4 nunca envia dados de anúncio crus de um `bxp-button`, só os
-     * campos interpretados, e por isso é este o único caminho que chega ao `W6bDecoder`.
+     * Uma entrada 0x30A0 real do MKGW4 c5e390f30bce a retransmitir a W6B fbd87c59ba8b: um MKGW4
+     * só manda os campos interpretados, e é o único caminho até ao `W6bDecoder`.
      */
     public function testDecodesMkgw4ButtonScanEntryTheSameWayAsAMkgw3(): void
     {

@@ -65,7 +65,7 @@ final class ModelImagesAreOnDiskTest extends MysqlDashboardTestCase
             $images[(string)$row['model']] = (string)$row['image_path'];
         }
 
-        // Sem modelos não há invariante nenhum a prender, e o teste passava por vazio.
+        // Sem modelos não há invariante nenhum a prender, e o teste passaria por vazio.
         self::assertNotSame([], $images);
 
         return $images;

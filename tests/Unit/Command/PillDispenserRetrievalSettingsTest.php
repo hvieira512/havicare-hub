@@ -10,11 +10,9 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * As definições da toma que o aparelho suporta e o hub não expunha.
+ * As definições da toma: quando avisar de atraso e quando desistir de uma dose por tomar.
  *
- * Os dois tempos — quando avisar de atraso e quando desistir — decidem se uma dose por tomar
- * chega a alguém como alerta. São expostos em **minutos** e não nos segundos que o aparelho
- * quer: a conversão é trabalho do hub.
+ * Expostas em minutos e não nos segundos do aparelho: a conversão é trabalho do hub.
  */
 final class PillDispenserRetrievalSettingsTest extends TestCase
 {
@@ -68,13 +66,7 @@ final class PillDispenserRetrievalSettingsTest extends TestCase
         }
     }
 
-    /**
-     * Rodar até um compartimento e pausar a medicação não entram.
-     *
-     * Estão na especificação da série M2, mas foram acrescentadas numa versão posterior à que
-     * o aparelho de ensaio corre: ele recusa-as com «TAG inválida» e a descoberta de
-     * parâmetros não as anuncia. O hub ficava a retentá-las de minuto a minuto.
-     */
+    /** São de uma versão da série M2 posterior à do aparelho de ensaio, que as recusa com «TAG inválida». */
     public function testTheOnesThisFirmwareRefusesAreNotOffered(): void
     {
         $keys = array_column(DeviceConfigurationCatalog::configsForProtocol('zayata-m228'), 'key');

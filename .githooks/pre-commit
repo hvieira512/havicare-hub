@@ -1,10 +1,7 @@
 #!/bin/sh
 #
-# As verificações do `composer test` que não precisam de base de dados, de Redis
-# nem de contentores: phpcs, phpstan e eslint, em poucos segundos. As outras
-# cinco ficam de fora porque levantam contentores e um `git commit` que demora
-# minutos deixa de ser usado. Isto não substitui o `composer test` antes de
-# empurrar; para saltar num commit intermédio, `git commit --no-verify`.
+# As verificações do `composer test` que não precisam de base de dados, Redis nem contentores:
+# phpcs, phpstan e eslint. Não substitui o `composer test` antes do push; `--no-verify` salta-o.
 
 set -e
 

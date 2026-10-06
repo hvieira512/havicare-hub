@@ -39,10 +39,6 @@ beforeEach(() => {
     state.capabilityCatalogByType.watch = [];
 });
 
-/**
- * Abrir o dispositivo A, fechar, abrir o B, e a resposta de A chegar depois: as configurações
- * e as capacidades do A ficavam escritas por baixo da identidade do B.
- */
 test("a resposta atrasada de um dispositivo não pinta o modal de outro", async () => {
     const fetches = installDeferredFetch();
 

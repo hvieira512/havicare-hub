@@ -9,9 +9,8 @@ const { closeDashboardOverlays } = await import(
 );
 
 /**
- * Cair para o ecrã de entrada com um modal aberto deixava o backdrop por cima do login e o
- * `modal-open` no `body`: um ecrã escuro que não recebia cliques. Limpar isto é do lado de
- * quem mostra o login, porque é ele que sabe que a sessão acabou.
+ * Cair para o ecrã de entrada limpa o backdrop e o `modal-open` de um modal aberto: é quem
+ * mostra o login que sabe que a sessão acabou.
  */
 
 function dashboardWithAnOpenModal() {

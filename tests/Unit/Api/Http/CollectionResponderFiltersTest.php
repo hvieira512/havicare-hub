@@ -8,12 +8,8 @@ use Hub\Api\Http\CollectionResponder;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A forma de `filters` na resposta de uma colecção.
- *
- * O esquema declara `filters.applied` e `filters.available` como objectos. Um array PHP vazio
- * serializa como `[]`, e um cliente com tipos estritos rebenta ao receber uma lista onde
- * esperava um objecto. As listagens sem filtros -- `/api/companies`, `/api/suppliers` --
- * passavam `[]`, e é esse o caso que isto prende.
+ * O `filters.applied` e o `filters.available` saem como objecto mesmo vazios: um array PHP
+ * vazio serializa como `[]`, e um cliente com tipos estritos rebenta.
  */
 final class CollectionResponderFiltersTest extends TestCase
 {
@@ -29,7 +25,7 @@ final class CollectionResponderFiltersTest extends TestCase
         self::assertStringNotContainsString('"available":[]', $json);
     }
 
-    /** Com filtros preenchidos a forma continua a ser objecto, como já era. */
+    /** Com filtros preenchidos a forma também é objecto. */
     public function testPopulatedFiltersStayObjects(): void
     {
         $responder = new CollectionResponder();

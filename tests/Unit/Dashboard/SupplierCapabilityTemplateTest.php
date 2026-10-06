@@ -120,7 +120,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
         );
     }
 
-    /** O nome é o que o normalizador publica, e não o `pager_call` que o catálogo teve. */
+    /** O nome é o que o normalizador publica, e não `pager_call`. */
     public function testVoerkaNcsTemplateReturnsHelpCall(): void
     {
         $actual = SupplierCapabilityTemplate::keysForSupplierDeviceType('Voerka', 'ncs');

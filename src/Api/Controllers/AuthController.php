@@ -22,10 +22,7 @@ final class AuthController
     }
 
     /**
-     * O estado era 401 para qualquer erro, e por isso um corpo sem password -- ou que nem
-     * sequer era JSON -- saía como "credencial recusada" em vez de "pedido mal formado". A
-     * credencial errada continua a responder 401, que é o que o `invalid_credentials` e o
-     * `invalid_refresh_token` declaram; o resto passa a responder o que o seu código diz.
+     * A credencial errada responde 401; o resto responde o estado do seu código.
      *
      * @param array<string, string> $params
      */
@@ -36,15 +33,13 @@ final class AuthController
             return $this->json->result(ApiError::invalidJson()->toArray());
         }
 
-        // A dashboard pede `session: cookie` e a partir daí não volta a falar de renovação: o
-        // token vai e vem no cookie, que o browser reenvia em qualquer separador. Quem integra
-        // pela API não pede nada disto e continua a receber o par no corpo.
+        // A dashboard pede `session: cookie` e o token de renovação passa a ir e vir no cookie; quem
+        // integra pela API continua a receber o par no corpo.
         $session = SessionCookie::read($request);
         $wantsCookie = $session !== '' || ($payload['session'] ?? '') === 'cookie';
 
         // O cookie só entra quando o corpo não traz credenciais: escrever a palavra-passe é
-        // dizer «esquece a sessão que aí está». O `AuthService` renova antes de olhar para o
-        // utilizador, e o ramo da renovação também não passa pelo teto de tentativas.
+        // dizer «esquece a sessão que aí está».
         $usedSession = $session !== ''
             && trim((string)($payload['refresh_token'] ?? '')) === ''
             && trim((string)($payload['username'] ?? '')) === ''
@@ -84,10 +79,8 @@ final class AuthController
     }
 
     /**
-     * Termina a sessão do cookie: apaga-o e queima as duas credenciais que ele representa.
-     *
-     * A rota é pública porque o cookie é a credencial -- exigir um token de acesso válido
-     * deixava um separador com o token expirado sem maneira de fechar a sessão.
+     * Termina a sessão do cookie: apaga-o e queima as duas credenciais. É pública porque o
+     * cookie é a credencial, e o token de acesso pode já ter expirado.
      *
      * @param array<string, string> $params
      */

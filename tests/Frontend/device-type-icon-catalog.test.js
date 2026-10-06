@@ -6,8 +6,8 @@ import "./support/browser-env.js";
 import { deviceTypeIcon } from "../../src/Dashboard/dashboard/components/device-type-tiles.js";
 
 /**
- * O ícone de cada tipo vem do catálogo, e não de uma tabela à parte no JavaScript: a entrada
- * desenha-o em PHP, que não lê módulos ES, e as duas cópias divergiam à primeira adição.
+ * O ícone de cada tipo vem do catálogo, e não de uma tabela no JavaScript: a entrada desenha-o
+ * em PHP, que não lê módulos ES.
  */
 const catalog = JSON.parse(
     readFileSync(new URL("../../config/device-types.json", import.meta.url), "utf8"),

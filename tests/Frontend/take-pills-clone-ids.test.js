@@ -17,9 +17,8 @@ const rowsOf = (section) =>
 const attrsIn = (row, attr) => [...row.querySelectorAll(`[${attr}]`)].map((el) => el.getAttribute(attr));
 
 /**
- * O lembrete é desenhado de novo com `rows.length` no `id` e no `name`. Tirar um do meio faz
- * o seguinte reutilizar um índice ainda vivo: os rádios dos dois passam a ser um grupo só, e
- * o `readTakePills` não encontra nenhum marcado no grupo que perdeu -- gravava «Uma vez».
+ * O lembrete é desenhado com `rows.length` no `id` e no `name`: tirar um do meio faria o
+ * seguinte reutilizar um índice vivo e juntar os rádios de duas linhas num grupo.
  */
 test("um lembrete acrescentado depois de remover outro não reutiliza os id", () => {
     const section = configSection(renderConfigInputs, ENTRY, {}, { limit: 3 });
@@ -39,9 +38,8 @@ test("um lembrete acrescentado depois de remover outro não reutiliza os id", ()
     const ids = rows.flatMap((row) => attrsIn(row, "id"));
     assert.equal(new Set(ids).size, ids.length, `id repetidos: ${ids.filter((id, i) => ids.indexOf(id) !== i)}`);
 
-    // Dentro de uma linha os rádios partilham o `name` de propósito -- é o que os torna um
-    // grupo. O que não pode acontecer é duas linhas caírem no mesmo.
-    // O `name` do `<details>` fica de fora: esse é o grupo que fecha as irmãs, e é partilhado.
+    // Os rádios de uma linha partilham o `name` de propósito, mas duas linhas não; o `name` do
+    // `<details>` fica de fora, porque é o grupo que fecha as irmãs.
     const groupsPerRow = rows.map((row) => new Set(
         [...row.querySelectorAll("input[name], select[name], textarea[name]")]
             .map((element) => element.getAttribute("name")),

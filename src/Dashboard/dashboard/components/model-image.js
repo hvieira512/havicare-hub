@@ -1,10 +1,8 @@
 import { html } from "../html.js";
 
 /**
- * A imagem de um modelo, pequena para uma listagem e grande para uma ficha.
- *
- * As duas partilham a cadeia que escolhe o nome: o comercial, depois o interno, depois o do
- * modelo. É a mesma peça com dois tamanhos, e por isso vivem no mesmo ficheiro.
+ * A imagem de um modelo, pequena para uma listagem e grande para uma ficha, com a mesma
+ * cadeia de nome: o comercial, o interno, e o do modelo.
  */
 
 const modelLabel = (modelInfo, fallback) =>

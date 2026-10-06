@@ -23,10 +23,7 @@ const client = {
     license_id: "22",
 };
 
-/**
- * A coluna «Estado» da grelha encolhia até só sobrar o ponto verde, que não distingue ativo
- * de pausado.
- */
+/** O ponto verde sozinho não distingue ativo de pausado. */
 test("o estado sai por extenso e não só em cor", () => {
     assert.match(apiUserRow(admin), />Ativo</);
     assert.match(apiUserRow(client), />Pausado</);
@@ -54,7 +51,7 @@ test("as ações da linha vivem num menu com os verbos escritos", () => {
     assert.match(row, /text-danger[^>]*data-action="deleteApiUser"[^>]*>Eliminar utilizador</);
 });
 
-/** Mudar o perfil ou a licença é o que a edição em célula dava, e não pode ficar sem caminho. */
+/** Mudar o perfil ou a licença tem de ter caminho pelo menu. */
 test("o menu abre pela edição do utilizador", () => {
     const row = apiUserRow(admin);
 
@@ -67,7 +64,7 @@ test("o verbo da pausa segue o estado do utilizador", () => {
     assert.match(apiUserRow(client), />Retomar acesso</);
 });
 
-/** O que a grelha dava no cabeçalho passa para cima da lista, do mesmo descritor. */
+/** Os filtros saem do mesmo descritor das colunas e ficam por cima da lista. */
 const COLUMNS = [
     { field: "username", filter: { type: "text", param: "username" } },
     {
@@ -110,14 +107,13 @@ test("as opções trazem a etiqueta em português e a contagem da faceta", () =>
     assert.match(bar, /<option value="0">Pausado \(1\)</);
 });
 
-/** O filtro escolhido fica marcado, senão o controlo dizia «Todos» com a lista estreitada. */
+/** Sem marcar o escolhido, o controlo diria «Todos» com a lista estreitada. */
 test("o valor escolhido fica selecionado", () => {
     const bar = apiUserFilterControls(COLUMNS, { role: "hub_admin" });
 
     assert.match(bar, /<option value="hub_admin" selected>/);
 });
 
-/** Uma coluna sem filtro no descritor não gera controlo nenhum. */
 test("uma coluna sem filtro não aparece na barra", () => {
     assert.doesNotMatch(apiUserFilterControls(COLUMNS, {}), /company_name/);
 });

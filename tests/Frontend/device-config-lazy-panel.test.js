@@ -6,11 +6,8 @@ import { fileURLToPath } from "node:url";
 import { reachableFrom } from "./support/module-graph.js";
 
 /**
- * O separador «Configurações» do modal de um dispositivo é servido por vinte e dois módulos
- * ES e 209 KB, e não é tocado até alguém abrir um dispositivo **e** clicar nesse separador.
- * Eram 29% dos bytes do arranque, pagos por toda a gente para servir uma minoria das visitas.
- *
- * Entra por `import()` no `device-modal.js`, pedido pelo gancho do separador.
+ * O separador «Configurações» são vinte e dois módulos ES e 209 KB, que só entram por `import()`
+ * no `device-modal.js` quando alguém o abre.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const APP = path.join(here, "../../src/Dashboard/dashboard/app.js");
@@ -21,9 +18,8 @@ const configModulesIn = (files) =>
     [...files].filter((file) => file.startsWith(CONFIG_ROOT + path.sep));
 
 /**
- * O `protocol-catalog.js` fica de fora da regra por uma razão nomeada: o `detail.js` lê-lhe o
- * `protocolHelpCallPressModes` para desenhar o detalhe de um dispositivo, que é ecrã de
- * arranque. É um módulo e 2,7 KB -- isolá-lo do resto do cluster custava mais do que rende.
+ * O `protocol-catalog.js` é de arranque: o `detail.js` lê-lhe o `protocolHelpCallPressModes`, e
+ * isolar 2,7 KB custa mais do que rende.
  */
 const EAGER_BY_DESIGN = ["protocol-catalog.js"];
 

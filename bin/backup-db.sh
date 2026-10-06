@@ -7,9 +7,7 @@ set -euo pipefail
 #   backup-db.sh rotate     só a rotação
 #   backup-db.sh install    escreve as unidades de systemd e liga o temporizador
 #
-# A instância vem do diretório em que o script está, como nos alvos do Makefile: em
-# `/opt/havicare-hub` copia a produção e em `/opt/havicare-hub-dev` a de desenvolvimento.
-# Não há argumento nenhum que a escolha, e por isso não há escolha que se faça mal.
+# A instância vem do diretório do script, como nos alvos do Makefile: nenhum argumento a escolhe.
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="$ROOT_DIR/.env"
@@ -29,9 +27,7 @@ DB_PASSWORD="${DB_PASSWORD:-$(env_value DB_PASSWORD)}"
 
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/$DB_NAME}"
 
-# Quinze diárias e doze mensais: um ano de alcance por 27 ficheiros. O teto de espaço é
-# esse número vezes o tamanho de um dump, e não cresce com o tempo nem com o número de
-# vezes que a rotação corre.
+# Quinze diárias e doze mensais: um ano de alcance em 27 ficheiros, com teto de espaço fixo.
 DAILY_KEEP=15
 MONTHLY_KEEP=12
 
@@ -63,9 +59,8 @@ dump() {
     umask 077
     mkdir -p "$BACKUP_DIR"
 
-    # O ficheiro só ganha o nome definitivo depois de estar completo. Um dump interrompido
-    # a meio deixaria um `.gz` truncado com aparência de cópia boa, que é pior do que
-    # cópia nenhuma -- e é `pipefail` que faz a falha do dump derrubar o `gzip` à frente.
+    # O ficheiro só ganha o nome definitivo depois de completo, para um dump interrompido não
+    # parecer uma cópia boa; o `pipefail` faz a falha do dump derrubar o `gzip`.
     trap 'rm -f "$file.part"' EXIT
     MYSQL_PWD="$DB_PASSWORD" "$dump_bin" \
         --single-transaction --quick \
@@ -86,9 +81,8 @@ rotate() {
     require_db_name
     [ -d "$BACKUP_DIR" ] || return 0
 
-    # A data está no nome, e por isso a ordem alfabética é a cronológica. O critério é o
-    # nome e não a data do ficheiro de propósito: copiar o diretório para outra máquina
-    # reescreve as datas dos ficheiros, e uma rotação por `-mtime` passava a poupar tudo.
+    # A data está no nome e a ordem alfabética é a cronológica; não se usa `-mtime` porque copiar
+    # o diretório para outra máquina reescreve as datas dos ficheiros.
     find "$BACKUP_DIR" -name "$DB_NAME-????-??-??.sql.gz" ! -name '*-01.sql.gz' \
         | keep_newest "$DAILY_KEEP"
     find "$BACKUP_DIR" -name "$DB_NAME-????-??-01.sql.gz" \

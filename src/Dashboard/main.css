@@ -1,28 +1,23 @@
 /* ===== modais, definições e assistente =====
-   É o último `<link>` da página: `/main.css` é rota fixa do servidor e há testes que o lêem
-   pelo nome, por isso ficou com a cauda da folha original em vez de mudar de nome. */
+   É o último `<link>` da página, e o `/main.css` é rota fixa do servidor. */
 
-/* `.75rem` não é um degrau do Bootstrap: entre `gap-2` e `gap-3` há quatro pixéis para
-   qualquer dos lados. */
+/* `.75rem` não é um degrau do Bootstrap. */
 .modal-device-identity {
     gap: .75rem;
 }
 
-/* A chapa da fotografia é clara nos dois temas de propósito: as imagens vêm com fundo
-   branco, e sobre uma superfície escura liam-se como um rectângulo a flutuar. Não é
+/* A chapa da fotografia é clara nos dois temas, porque as imagens vêm com fundo branco; não é
    `bg-body-tertiary` porque essa vira com o tema. */
 .showcase-preview {
     min-height: 280px;
 }
 
-/* Só com fotografia. Sem ela não há branco a que encostar, e a chapa clara ficava uma laje
-   com o ícone de reserva -- que é claro -- a desaparecer lá dentro. */
+/* Só com fotografia: sem ela, o ícone de reserva, que é claro, desaparece na chapa clara. */
 .showcase-preview:has(img) {
     background-color: #fff;
 }
 
-/* No escuro a chapa não muda de cor: baixa de brilho com a fotografia, para os dois
-   descerem juntos. Acinzentá-la fazia reaparecer o rectângulo. */
+/* No escuro a chapa não muda de cor: baixa de brilho com a fotografia, para descerem juntos. */
 [data-bs-theme="dark"] .showcase-preview {
     filter: brightness(.84);
 }
@@ -31,8 +26,7 @@
     max-height: 260px;
 }
 
-/* Num telefone a chapa é uma tira. A esmagadora maioria dos modelos não tem fotografia, e
-   280px para mostrar um ícone cinzento e um nome é um terço do ecrã. */
+/* Num telefone a chapa é uma tira: a maioria dos modelos não tem fotografia. */
 @media (max-width: 767.98px) {
     .showcase-preview {
         min-height: 0;
@@ -68,8 +62,7 @@
     max-height: 56px;
 }
 
-/* As chapas pequenas, pela mesma razão do `.showcase-preview` acima. Só onde há fotografia:
-   sem ela fica o ícone de reserva, que é claro e desaparecia sobre o branco. */
+/* As chapas pequenas, pela mesma razão do `.showcase-preview`, e só onde há fotografia. */
 [data-bs-theme="dark"] .modal-device-thumb:has(img),
 [data-bs-theme="dark"] .selected-device-preview:has(img),
 [data-bs-theme="dark"] .gateway-card-thumb:has(img),
@@ -181,9 +174,8 @@
     border-top: 0;
 }
 
-/* A faixa do dia: uma coluna por dose marcada, na ordem das horas. As colunas repartem a
-   largura em partes iguais e embrulham quando não cabem — com cinco doses e o cartão a meia
-   largura ficariam com quarenta pixéis cada, e por isso o cartão pede a linha inteira. */
+/* A faixa do dia: uma coluna por dose marcada, na ordem das horas, em partes iguais e a
+   embrulhar quando não cabem; por isso o cartão pede a linha inteira. */
 .dose-strip {
     grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
     gap: .4rem;
@@ -276,8 +268,7 @@
     pointer-events: none;
 }
 
-/* No min-height: a dry channel reading 0 must paint nothing at all, otherwise
-   an empty strip still looks faintly wet. */
+/* Sem `min-height`: um canal seco a 0 não pinta nada, senão a faixa vazia parece húmida. */
 .diaper-channel-fill {
     border-radius: .35rem .35rem 0 0;
     background: var(--moisture-dry);
@@ -306,9 +297,8 @@
     width: min(24rem, calc(100vw - 2rem));
 }
 
-/* Num ecrã estreito o menu é quase tão largo como ele, e alinhado pela direita do sino --
-   que não está na ponta da barra -- saía 153px para fora pela esquerda. Dentro de uma navbar
-   o Bootstrap não chama o Popper, por isso quem o trava tem de ser o CSS. */
+/* Num ecrã estreito o menu sairia pela esquerda, e dentro de uma navbar o Bootstrap não chama
+   o Popper: quem o trava é o CSS. */
 @media (max-width: 575.98px) {
     /* Dois nomes de classe para empatar com o `[data-bs-popper]` do Bootstrap, que é quem
        põe o `top: 100%` e o `right: 0` desta posição estática. */
@@ -325,17 +315,15 @@
     max-height: min(28rem, calc(100vh - 8rem));
 }
 
-/* O mesmo tecto de leitura do ecrã principal: o modal continua de ecrã inteiro, e é o
-   conteúdo que para. A 3399px uma linha da árvore do catálogo media 2739px, com o nome do
-   modelo numa ponta e o chevron na outra. Ver o `--content-max` no `base.css`. */
+/* O mesmo tecto de leitura do ecrã principal: o modal continua de ecrã inteiro, e é o conteúdo
+   que para. Ver o `--content-max` no `base.css`. */
 #settingsModal .modal-body>.settings-modal-shell {
     max-width: var(--content-max);
     margin-inline: auto;
 }
 
-/* Quem rola é o corpo do diálogo, e por isso a altura é dele: a régua cola-se ao topo e a
-   barra de gravar ao fundo contra esta caixa, e não contra o invólucro. Resolvida e não um
-   tecto, como no `.device-selector-body`: a caixa mede o mesmo em todos os separadores. */
+/* Quem rola é o corpo do diálogo, e por isso a altura resolvida é dele: a régua e a barra de
+   gravar colam-se contra esta caixa, que mede o mesmo em todos os separadores. */
 #settingsModal .modal-body {
     height: clamp(26rem, 68vh, 46rem);
 }
@@ -360,9 +348,8 @@
     }
 }
 
-/* Abaixo disso o menu passa para cima do conteúdo, e as duas deixam de estar lado a lado. Em
-   coluna, o conteúdo fica com a altura que sobra; a altura toda da linha punha-o a acabar
-   por baixo do rodapé, com a última caixa escondida. */
+/* Abaixo disso o menu passa para cima do conteúdo, que fica com a altura que sobra, para não
+   acabar por baixo do rodapé. */
 @media (max-width: 991.98px) {
     .device-modal-shell>.row {
         flex-direction: column;
@@ -396,8 +383,8 @@
     color: var(--brand-on);
 }
 
-/* Abaixo do ecrã médio a régua deita-se, e é uma tira de uma linha que desliza -- a mesma
-   da `.capability-section-nav`. Embrulhada dava três linhas num telefone. */
+/* Abaixo do ecrã médio a régua deita-se numa tira de uma linha que desliza, como a
+   `.capability-section-nav`. */
 @media (max-width: 767.98px) {
     .modal-side-nav {
         align-items: center;
@@ -428,8 +415,8 @@
     height: .25rem;
 }
 
-/* A migalha: cinco nomes em linha e sem fundo. O peso e a cor bastam para distinguir o
-   passo dado, o actual e o que falta -- cinco pastilhas cheias eram uma parede. */
+/* A migalha: cinco nomes em linha e sem fundo; o peso e a cor distinguem o passo dado, o
+   actual e o que falta. */
 .wizard-trail {
     min-height: 1.9rem;
 }
@@ -477,7 +464,7 @@
     to { opacity: 1; transform: none; }
 }
 
-/* A pergunta activa a esquerda, a imagem do modelo a direita quando ja se sabe qual e. */
+/* A pergunta activa à esquerda, a imagem do modelo à direita quando já se sabe qual é. */
 .wizard-stage {
     grid-template-columns: minmax(0, 1fr) 13rem;
 }
@@ -551,7 +538,7 @@
 }
 
 /* A miniatura tem altura fixa para os cards de uma linha ficarem alinhados mesmo com
-   fotografias de proporcoes diferentes. */
+   fotografias de proporções diferentes. */
 .wizard-card-thumb {
     height: 3.75rem;
 }
@@ -571,9 +558,8 @@
 
 /* ===== pastilha de estado ===== */
 
-/* A pastilha é o `badge` do Bootstrap com `bg-*-subtle` e `text-*-emphasis`, montada no
-   `components/state-badge.js`; sobra aqui o ponto, para que não há medida. O rótulo diz
-   sempre o estado, para a leitura não depender da cor. */
+/* A pastilha é o `badge` do Bootstrap, montada no `components/state-badge.js`; sobra aqui o
+   ponto. O rótulo diz sempre o estado, para a leitura não depender da cor. */
 .state-badge-dot {
     width: 6px;
     height: 6px;
@@ -590,15 +576,10 @@
 
 /* ===== catálogo de capacidades ===== */
 
-/* A tira das secções fica colada ao topo enquanto a lista corre por baixo, e cada pastilha
-   aponta para o `id` da sua secção. Com cinco cabeçalhos dentro de milhares de pixéis de
-   scroll, saber onde está uma secção exigia procurá-la. */
-/* Uma linha só, que desliza quando não cabe. Em telefone as cinco secções partiam-se em
-   duas e três linhas, e o cabeçalho de um painel passava a ocupar meio ecrã.
-
-   Sem barra à vista e com encaixe: uma pastilha meio cortada ao lado de uma barra de
-   rolagem lê-se como conteúdo partido, e a mesma pastilha meio cortada sozinha lê-se como
-   «há mais para o lado». O encaixe garante que nenhuma fica a meio depois de se arrastar. */
+/* A tira das secções cola ao topo enquanto a lista corre por baixo, e cada pastilha aponta
+   para o `id` da sua secção. */
+/* Uma linha só, que desliza quando não cabe, sem barra à vista e com encaixe: uma pastilha
+   meio cortada sozinha lê-se como «há mais para o lado». */
 .capability-section-nav {
     gap: .375rem;
     flex-wrap: nowrap;
@@ -638,8 +619,8 @@
     grid-template-columns: 1fr;
 }
 
-/* Os dois filtros lado a lado só quando há largura para eles: a partir de 768 a régua das
-   secções está ao lado e sobram 560px, que divididos em 7/5 davam mosaicos de 80px. */
+/* Os dois filtros lado a lado só a partir do `lg`: abaixo disso, com a régua das secções ao
+   lado, os mosaicos ficam estreitos demais. */
 @media (min-width: 992px) {
     .capability-filter-row {
         grid-template-columns: 7fr 5fr;

@@ -9,9 +9,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O aparelho declara no `0x8003` o tamanho de trama que aceita e deixa cair em silêncio o que
- * passe dele — sem erro, sem resposta. A leitura da configuração é a única trama que cresce
- * com cada definição nova, e foi assim que passou dos 300 ao fim de seis TAGs.
+ * O aparelho deixa cair em silêncio uma trama maior do que o `0x8003` declara, e a leitura da
+ * configuração é a única que cresce com cada definição nova.
  */
 final class PillDispenserReadFitsThePacketTest extends TestCase
 {

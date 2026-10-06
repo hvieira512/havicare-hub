@@ -27,12 +27,8 @@ import {
 } from "../readers.js";
 
 /**
- * Os campos das capacidades genéricas do hub -- alarmes, contactos SOS, lista de chamadas autorizadas, dados
- * pessoais, sensibilidade da fralda.
- *
- * Não pertencem a nenhum fornecedor: são a forma que o hub dá a uma capacidade, e cada
- * protocolo liga-se-lhes pelo seu nome nativo. É por isso que o `normalizeConfigEntry` os
- * escolhe pela chave de capacidade e não pelo `input` declarado.
+ * Os campos das capacidades genéricas do hub, de nenhum fornecedor: o `normalizeConfigEntry`
+ * escolhe-os pela chave de capacidade e não pelo `input` declarado.
  */
 
 function diaperSensitivityInput(desired, meta = {}) {
@@ -95,7 +91,6 @@ function windowToggleInput(_entry, desired) {
 }
 
 /** Os limiares que o aparelho avalia sobre a medição dele. */
-
 function heartRateThresholdsInput(_entry, desired) {
     return html`
         <div class="row g-3 align-items-end">
@@ -105,12 +100,7 @@ function heartRateThresholdsInput(_entry, desired) {
         </div>`;
 }
 
-/**
- * O corpo com que a pulseira calcula.
- *
- * Não identifica quem a usa: alimenta as fórmulas das calorias e da composição corporal, que
- * sem isto correm sobre valores de fábrica.
- */
+/** O corpo com que a pulseira calcula calorias e composição corporal; não identifica ninguém. */
 
 function personalInfoInput(_entry, desired) {
     const sex = desired.sex === "male" ? "male" : "female";
@@ -131,8 +121,6 @@ function personalInfoInput(_entry, desired) {
             ${field("Meta de sono (min)", numberField("sleepGoalMinutes", desired.sleepGoalMinutes ?? 480, { min: 60, max: 900, step: 15 }), { cls: "col-md-4" })}
         </div>`;
 }
-
-/** O interruptor de ligado. O `mt-4` alinha-o por baixo de um campo com etiqueta ao lado. */
 
 function sosContactsInput(entry, desired, meta = {}) {
     if (meta.sourceCapability === "phonebook") {
@@ -244,10 +232,7 @@ function phoneRepeaterInput(entry, desired, options) {
         </div>`;
 }
 
-/**
- * O interruptor que desliga os lembretes todos de uma vez, para quem o declara. Sem ele, o
- * payload ia sempre ligado e não havia como parar o aparelho sem apagar os alarmes.
- */
+/** O interruptor que desliga os lembretes todos sem os apagar, para quem o declara. */
 function alarmClockMasterSwitch(desired) {
     const enabled = boolValue(desired?.masterEnabled, true);
 
@@ -493,13 +478,7 @@ function readAlarmClock(section) {
     return master === null ? { items } : { masterEnabled: master.checked, items };
 }
 
-/**
- * Os descritores dos campos de capacidade genérica.
- *
- * Cada tipo de campo declara aqui as suas quatro faces juntas -- desenhar, ler de volta, o
- * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
- * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
- */
+/** Cada tipo de campo declara as suas faces juntas: desenhar, ler, valor inicial e legenda. */
 export const INPUTS = {
     diaperSensitivity: {
         render: (_entry, desired, meta) => diaperSensitivityInput(desired, meta),
@@ -587,8 +566,7 @@ export const INPUTS = {
     alarm_clock: {
         render: (entry, desired, meta) => alarmClockInput(entry, desired, meta),
         read: (section) => readAlarmClock(section),
-        // Sem `help`: o limite real e a nota da recorrência já estão no topo do bloco, e o
-        // texto fixo que aqui estava dizia três alarmes a quem tem dez.
+        // Sem `help`: o limite real e a nota da recorrência já estão no topo do bloco.
         defaults: () => ({ items: [] }),
     },
 };

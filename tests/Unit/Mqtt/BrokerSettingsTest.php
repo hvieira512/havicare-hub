@@ -108,13 +108,8 @@ final class BrokerSettingsTest extends TestCase
     }
 
     /**
-     * O radar publica no mesmo broker que o hub -- o `QINGLANST_MQTT_HOST` e o `MQTT_HOST`
-     * apontam ambos para o mesmo servidor, e o que os separa são os tópicos e as credenciais.
-     *
-     * Enquanto se acreditou que eram dois brokers, esta ligação nunca ter TLS lia-se como uma
-     * diferença legítima entre um servidor nosso e um de terceiros. Não é: ligar o TLS no hub
-     * deixava a subscrição do radar em texto simples contra o mesmo servidor, a mandar
-     * utilizador e password pelo fio.
+     * O radar publica no mesmo broker que o hub, e a ligação dele leva o TLS que lhe derem: sem
+     * ele, utilizador e password iriam em claro.
      */
     public function testQinglanstHonoursTheTlsItIsGiven(): void
     {

@@ -29,8 +29,7 @@ final class CapabilityPaths
                     'tags' => ['Capabilities'],
                     'summary' => 'List device-type capability catalog',
                     'parameters' => [
-                        // Do catálogo e não de uma lista à mão: um tipo novo entrava no hub e
-                        // ficava de fora do contrato publicado, que é onde ninguém repara.
+                        // Do catálogo e não de uma lista à mão, para um tipo novo não ficar fora do contrato publicado.
                         Parameters::query('deviceType', [
                             'type' => 'string',
                             'enum' => DeviceTypeCatalog::keys(),

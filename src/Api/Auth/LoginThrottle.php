@@ -7,24 +7,10 @@ namespace Hub\Api\Auth;
 use Predis\ClientInterface;
 
 /**
- * Os tetos de tentativas de autenticação.
+ * Os tetos de tentativas de autenticação: por endereço, por utilizador e global. O
+ * `password_verify` custa ~146 ms síncronos no event loop, e o global trava a rotação de IP.
  *
- * O `password_verify` está a custo 12 -- 145,6 ms no servidor --, é síncrono, e corre no mesmo
- * event loop que serve a ingestão TCP e a API. O custo é pago quando a tentativa **falha**,
- * e não só quando acerta.
- *
- * São três tetos porque cada um fecha uma porta que os outros deixam aberta:
- *
- * - **Por endereço** trava o atacante único, que é o caso comum.
- * - **Por utilizador** trava quem distribui as tentativas contra uma conta só.
- * - **Global** fixa o tempo de loop gasto em bcrypt, e sem ele os outros dois caem por
- *   rotação de IP.
- *
- * A janela vive na chave, e o `expire` só serve para o Redis não guardar janelas passadas.
- *
- * ponytail: janela fixa, e quem calhar numa fronteira consegue o dobro do orçamento num
- * intervalo curto. Aceitável, porque o pior caso é um atraso e não uma recusa; apertá-lo faz-se
- * com uma janela deslizante (contadores por sub-intervalo), não com um teto mais baixo.
+ * ponytail: janela fixa, que numa fronteira deixa passar o dobro; apertar com janela deslizante.
  */
 final class LoginThrottle
 {
@@ -42,10 +28,8 @@ final class LoginThrottle
     }
 
     /**
-     * Regista uma tentativa e diz se ela pode seguir para a verificação da password.
-     *
-     * Conta-se **antes** de verificar, e conta-se toda a tentativa: uma que acerte custa ao
-     * loop exactamente o mesmo que uma que falhe. O caminho do `refresh_token` não passa aqui.
+     * Regista uma tentativa e diz se ela pode seguir para a verificação da password. Conta-se
+     * antes de verificar, e conta-se toda a tentativa, acerte ou falhe.
      */
     public function allows(string $address, string $username): bool
     {

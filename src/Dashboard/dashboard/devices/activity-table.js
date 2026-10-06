@@ -4,21 +4,16 @@ import { renderInto } from "../dom.js";
 import { dayKey, dayLabel } from "../format.js";
 
 /**
- * A tabela genérica de atividade -- a de telemetria e a de pedidos usam-na igual. Recebe as
- * linhas já prontas (o descritor de cada uma), pinta-as, e trata da gaveta que abre por
- * baixo. Não sabe nada do detalhe do dispositivo.
+ * Tabela de atividade partilhada pela telemetria e pelos pedidos: pinta as linhas já prontas
+ * e trata da gaveta que abre por baixo.
  */
 
-/**
- * As linhas abertas, por chave do registo e não por posição: a lista redesenha-se a cada
- * mensagem do stream, e um índice apontaria para outra linha assim que chegasse um evento.
- */
+/** Por chave do registo e não por posição: a lista redesenha-se a cada mensagem do stream. */
 const openActivityRows = new Set();
 
 /**
- * As larguras das colunas. Com `table-layout: fixed` o browser mede-as pela primeira linha,
- * e a primeira é o cabeçalho de um dia, com `colspan` a atravessar a tabela toda -- sem isto
- * as quatro colunas saíam todas iguais. O nome é o que sobra, e por isso não leva `col`.
+ * Com `table-layout: fixed` as larguras saem da primeira linha, que é um cabeçalho de dia com
+ * `colspan`; daí o `colgroup`. O nome fica com o que sobra.
  */
 const COLGROUP = `<colgroup>
     <col class="telemetry-col-icon">
@@ -45,13 +40,7 @@ export function activityTable(rootEl, rows, emptyText, idPrefix) {
     }
 }
 
-/**
- * As linhas, com um cabeçalho por dia pelo meio. O cabeçalho conta as linhas daquele dia,
- * que é o que faz dele um cabeçalho e não uma data solta.
- *
- * Uma linha sem instante não abre grupo nenhum: há tipos que chegam sem data e não vale a
- * pena inventar-lhes um dia.
- */
+/** As linhas com um cabeçalho por dia; uma linha sem instante não abre grupo nenhum. */
 function groupedByDay(rows, idPrefix) {
     const counts = new Map();
     rows.forEach((row) => {
@@ -93,8 +82,8 @@ export function toggleActivityRow(event) {
         event.preventDefault();
     }
 
-    // A gaveta é a linha logo a seguir, e é assim que se procura: por `getElementById` só se
-    // acha o que já está pendurado no documento, e as duas listas desenham-se antes disso.
+    // A gaveta é a linha seguinte: o `getElementById` só acha o que já está no documento, e as
+    // listas desenham-se antes disso.
     const panel = row.nextElementSibling;
     const key = row.dataset.rowKey || "";
     const open = row.getAttribute("aria-expanded") !== "true";
@@ -110,11 +99,8 @@ export function toggleActivityRow(event) {
 }
 
 /**
- * Uma linha da lista de actividade, e a linha escondida que a abre.
- *
- * Todas medem o mesmo, e os detalhes cortam-se numa linha: sem isso a altura de uma página
- * dependia dos tipos que lhe calhassem. O que fica de fora vê-se abrindo a linha, e não numa
- * tooltip, que por teclado e em telemóvel não existe.
+ * Uma linha e a gaveta escondida que ela abre. Os detalhes cortam-se numa linha e o resto
+ * vê-se abrindo-a, não numa tooltip, que por teclado e em telemóvel não existe.
  */
 function activityRow({
     icon,
@@ -134,8 +120,7 @@ function activityRow({
     time,
     timeTitle = "",
 }, panelId) {
-    // Abaixo do `lg` a hora desce para baixo do nome, ao lado do que já lá estava: a calha
-    // fixa reservava-lhe 132px que o nome não tinha, e é aí que o valor passa a caber.
+    // Abaixo do `lg` a hora desce para baixo do nome, para o valor caber na linha.
     const stackedTime = html`<span class="d-lg-none">${raw(sub ? " · " : "")}${time}</span>`;
     const subClass = sub ? "telemetry-row-details" : "telemetry-row-time d-lg-none";
     const subLine = html`<span class="${subClass} text-secondary lh-sm fw-normal d-block text-truncate"${subTitle ? html` title="${subTitle}"` : ""}>${sub}${stackedTime}</span>`;

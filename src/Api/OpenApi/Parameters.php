@@ -75,10 +75,8 @@ final class Parameters
     }
 
     /**
-     * Um filtro que aceita vários valores.
-     *
-     * `explode: true` sem `style` dá `chave[]=a&chave[]=b`, que é a forma que o `parse_str`
-     * do lado do servidor lê como array.
+     * Um filtro que aceita vários valores: `explode: true` sem `style` dá `chave[]=a&chave[]=b`,
+     * que o `parse_str` do servidor lê como array.
      *
      * @return array<string, mixed>
      */
@@ -94,7 +92,7 @@ final class Parameters
     }
 
     /**
-     * @return array<int, array<string, mixed>> page and limit query parameters
+     * @return array<int, array<string, mixed>> os parâmetros de query `page` e `limit`
      */
     public static function pagination(int $defaultLimit = 20): array
     {

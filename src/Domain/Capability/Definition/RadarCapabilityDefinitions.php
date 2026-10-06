@@ -5,13 +5,8 @@ declare(strict_types=1);
 namespace Hub\Domain\Capability\Definition;
 
 /**
- * As capacidades do radar nomeiam o que se mede, e não as mensagens do fabricante. A
- * frequência cardíaca e a respiratória partilham chaves e formas com as do relógio, e por
- * isso reaproveitam os mesmos cartões.
- *
- * O `sleep_state` não é o `sleep` do relógio -- aquele é um relatório, este é o estado num
- * instante -- e o `presence` não é o `location`, que é geográfico. A postura não é
- * capacidade: é de cada pessoa, e vive dentro do `presence` ao lado da posição.
+ * As capacidades do radar nomeiam o que se mede, e as frequências partilham chaves e cartões com
+ * o relógio. O `sleep_state` é um instante e não o relatório `sleep`; a postura vive no `presence`.
  */
 final class RadarCapabilityDefinitions extends CapabilityDefinitions
 {

@@ -8,13 +8,8 @@ import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/dev
 import { parseFragment } from "./support/dom.js";
 
 /**
- * Uma capacidade de telemetria que também se pede tem de ter de onde ser pedida.
- *
- * O `device_status` do dispensador pergunta ao aparelho o estado que ele tem agora, em vez de
- * se esperar pelo próximo heartbeat -- e no M228, cujos heartbeats vêm cifrados, é o único
- * caminho que há para a telemetria. O painel colocava cada entrada pela secção da capacidade,
- * e `telemetry` não é uma secção de configuração: a entrada era deitada fora em silêncio. Na
- * dashboard ficava declarada como pedível e sem nenhum botão que a pedisse.
+ * O `device_status` do dispensador pede o estado de agora, e no M228, de heartbeats cifrados, é
+ * o único caminho para a telemetria: tem de ter botão, apesar de `telemetry` não ser secção.
  */
 
 const render = (context) => parseFragment(renderDeviceConfigurationRoot({

@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Hub\Command\Configuration\Payload;
 
 /**
- * A lista telefónica na forma antiga, para os aparelhos que não entendem o `PHBX2`.
- *
- * O `PHB` leva a lista inteira numa trama, em pares número/nome, e o `PHB2` continua-a da
- * sexta à décima posição. O que passa daí não cabe no comando e fica de fora.
+ * A lista telefónica para os aparelhos sem `PHBX2`: o `PHB` leva as cinco primeiras posições
+ * e o `PHB2` da sexta à décima; o resto não cabe.
  */
 final class FourPTouchPhonebookFallback
 {
@@ -46,9 +44,8 @@ final class FourPTouchPhonebookFallback
     }
 
     /**
-     * O recuo só se justifica quando o aparelho não confirmou uma única escrita. Um envio
-     * perdido entre vários confirmados é isso mesmo, e repete-se como qualquer outro — recuar
-     * aí reescrevia a lista inteira na forma antiga e cortava-a nos cinco primeiros.
+     * Só se recua quando o aparelho não confirmou uma única escrita: um envio perdido entre
+     * vários confirmados repete-se, e recuar cortava a lista nos cinco primeiros.
      *
      * @param list<array<string, mixed>> $commands os comandos da lista telefónica do aparelho
      */

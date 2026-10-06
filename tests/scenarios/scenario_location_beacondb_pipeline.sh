@@ -16,9 +16,8 @@ docker compose up -d --force-recreate --remove-orphans mosquitto hub >/dev/null
 wait_for_mosquitto
 wait_for_hub_tcp
 start_mqtt_subscriber
-# O padrão leva o prefixo da instância. Hoje isto só alcança o contentor local, mas a linha é
-# destrutiva e copia-se com facilidade: apontada a um Redis de servidor sem o prefixo, apagava a
-# cache de localização e o estado dos disjuntores da produção.
+# O padrão leva o prefixo da instância: a linha é destrutiva e, apontada a um Redis de servidor
+# sem o prefixo, apagaria a cache de localização e os disjuntores da produção.
 docker compose exec -T redis sh -lc "redis-cli --scan --pattern '${REDIS_PREFIX:-}hub:location:*' | xargs -r redis-cli del >/dev/null"
 docker compose exec -T hub php -r 'require "vendor/autoload.php"; $pdo=(new Hub\Infrastructure\Persistence\DashboardDatabase(Hub\Config::load()->all()["database"]))->pdo(); $pdo->exec("DELETE FROM private_radio_map_access_points");'
 
@@ -201,9 +200,8 @@ if [ -z "$CACHE_KEYS" ]; then
 fi
 REQUEST_COUNT_BEFORE="$(docker compose exec -T hub sh -lc "wc -l < /tmp/beacondb-requests.log" | tr -d '[:space:]')"
 
-# Reiniciar o hub também pára o fornecedor simulado. A mesma evidência tem de continuar a
-# resolver a partir do Redis, sem pedido nenhum ao fornecedor: é a prova de que a cache
-# persiste.
+# Reiniciar o hub também pára o fornecedor simulado: resolver a mesma evidência sem pedido ao
+# fornecedor prova que a cache persiste no Redis.
 docker compose restart hub >/dev/null
 for _ in $(seq 1 20); do
   if docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1",9000,$e,$m,1); if ($s) { fclose($s); exit(0); } exit(1);'; then

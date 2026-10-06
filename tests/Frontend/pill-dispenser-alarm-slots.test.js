@@ -5,11 +5,8 @@ import "./support/browser-env.js";
 import { INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/pill-dispenser.js";
 
 /**
- * O número do alarme na dashboard tem de ser o alarme que chega ao aparelho.
- *
- * A leitura deixava cair os slots vazios e o plano seguia como lista compacta, com o backend
- * a colocar o enésimo plano no enésimo alarme. Escolher o 5 escrevia no 3, por cima do que lá
- * estivesse. Confirmou-se contra o aparelho: pediu-se o 5 e saíram os bytes do 3.
+ * O número do alarme na dashboard tem de ser o alarme que chega ao aparelho: com os slots
+ * vazios de fora, escolher o 5 escreveria no 3.
  */
 
 const section = (times) => {
@@ -54,7 +51,7 @@ test("os slots por preencher não entram no plano", () => {
     assert.deepEqual(read.plans, []);
 });
 
-/** E o desenho tem de ler pelo número, senão um plano só do alarme 5 aparecia na primeira caixa. */
+/** O desenho lê pelo número: um plano só do alarme 5 vai para a quinta caixa. */
 test("o alarme 5 é desenhado na caixa 5", () => {
     const rendered = INPUTS.pillDispenserAlarms.render(
         {},

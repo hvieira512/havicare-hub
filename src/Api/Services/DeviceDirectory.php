@@ -12,13 +12,7 @@ use Hub\Domain\DeviceMetadata;
 use Hub\Domain\DeviceProtocol;
 use Hub\Registry\Whitelist;
 
-/**
- * Encontrar um dispositivo e decidir quem o pode ver.
- *
- * Todas as partes da API de dispositivos precisam disto -- ler um, pedir-lhe uma
- * funcionalidade, projectar a sua configuração --, e por isso vive num colaborador em vez de
- * só se alcançar de dentro do `DeviceService`.
- */
+/** Encontrar um dispositivo e decidir quem o pode ver, para todas as partes da API de dispositivos. */
 final class DeviceDirectory
 {
     public function __construct(
@@ -49,9 +43,8 @@ final class DeviceDirectory
     }
 
     /**
-     * A precedência entre as duas fontes que sabem quem um aparelho é: o instantâneo da
-     * dashboard primeiro, a whitelist a seguir. Um aparelho registado que ainda não falou só
-     * existe na segunda, e por isso nenhuma delas chega sozinha.
+     * As fontes de quem um aparelho é: o instantâneo da dashboard primeiro, a whitelist a seguir,
+     * onde está o aparelho registado que ainda não falou.
      */
     public function identify(string $imei): DeviceIdentity
     {

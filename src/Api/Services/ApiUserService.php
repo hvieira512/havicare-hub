@@ -135,11 +135,8 @@ class ApiUserService
     }
 
     /**
-     * A licença a que o utilizador fica preso, resolvida contra a base. Fica aqui e não numa
-     * constraint: isto é uma pergunta ao MySQL, e escondê-la numa regra sobre o corpo punha
-     * uma consulta onde ninguém a procura.
-     *
-     * Um `hub_admin` não tem licença, e é aqui que os dois campos voltam a zero.
+     * A licença a que o utilizador fica preso, resolvida contra a base e não numa constraint. Um
+     * `hub_admin` não tem licença, e é aqui que os dois campos voltam a zero.
      *
      * @return array{licenseRefId: int|null}|array{error: array<string, mixed>}
      */

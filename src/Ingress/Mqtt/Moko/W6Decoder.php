@@ -8,23 +8,11 @@ use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Support\Values;
 
 /**
- * Reconhece uma MOKO W6 retransmitida por um gateway.
+ * Reconhece uma MOKO W6 (firmware BXP Nordic, sem frame de alarme): o toque é *qual* slot UID
+ * aparece, anunciado 30 segundos e sem contador, e quem chama estrangula por tempo.
  *
- * O firmware é o BXP Nordic, que não tem frame de alarme. Tem seis slots de anúncio, cada um
- * com um trigger opcional:
- *
- *   SLOT1  3-axis Acc   sempre         -> presença, aceleração e bateria
- *   SLOT2  TLM          sempre
- *   SLOT4  UID  ...0001 sempre         -> identidade
- *   SLOT3  UID  ...0011 clique simples -> anuncia 30s
- *   SLOT5  UID  ...0012 clique duplo   -> anuncia 30s
- *   SLOT6  UID  ...0013 clique triplo  -> anuncia 30s
- *
- * O toque não vem no payload: identifica-o *qual* slot apareceu. Sem contador cumulativo e
- * com a frame a repetir-se 30 segundos, quem chama tem de estrangular por tempo.
- *
- * ponytail: os Instance ID são uma convenção que a pulseira tem de ser configurada para
- * cumprir. Uma W6 configurada de outra maneira é vista, mas os toques dela não são lidos.
+ * ponytail: os Instance ID são uma convenção da nossa configuração; uma W6 configurada de
+ * outra maneira é vista, mas os toques não são lidos.
  */
 final class W6Decoder
 {
@@ -39,11 +27,7 @@ final class W6Decoder
         '000000000013' => 'triple',
     ];
 
-    /**
-     * O namespace que a nossa configuração escreve: oito zeros e o próprio MAC. É isto que
-     * impede uma W6 de ser confundida com qualquer outro beacon Eddystone em alcance -- e há
-     * vários, com namespaces que nada têm a ver.
-     */
+    /** O namespace que a nossa configuração escreve, oito zeros e o MAC, distingue-a de outros Eddystone. */
     private const NAMESPACE_PREFIX = '00000000';
 
     /**
@@ -67,8 +51,7 @@ final class W6Decoder
             return null;
         }
 
-        // O RSSI é medido pelo gateway, não pela pulseira, por isso só existe na observação
-        // -- tal como em W6bDecoder e MonitMecsProDecoder.
+        // O RSSI é medido pelo gateway e só existe na observação.
         return Values::withoutNulls(
             [
                 'mac' => $mac,
@@ -108,8 +91,7 @@ final class W6Decoder
     }
 
     /**
-     * Um slot UID é ou a identidade permanente da pulseira, ou um toque. Um UID de outro
-     * dispositivo qualquer não é reclamado.
+     * Um slot UID é a identidade permanente da pulseira ou um toque; outro UID não é reclamado.
      *
      * @param array<string, mixed> $observation
      * @return array<string, mixed>|null

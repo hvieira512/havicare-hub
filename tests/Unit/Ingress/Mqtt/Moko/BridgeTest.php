@@ -47,9 +47,8 @@ final class BridgeTest extends TestCase
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/d48c49f7909c/raw', $payload);
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/d48c49f7909c/raw', $payload);
 
-        // Quatro: cada scan gera o raw do gateway e o raw da observação do sensor. O raw sai
-        // antes do dedup -- para debugging, o registo cru mostra tudo o que chegou, incluindo
-        // a mensagem repetida que a telemetria normalizada deduplica.
+        // Quatro: cada scan gera o raw do gateway e o do sensor. O raw sai antes do dedup,
+        // para o registo cru mostrar também a mensagem repetida.
         self::assertCount(4, $mqtt->raw);
         // A proximidade é reportada uma vez por avistamento aceite, à frente da telemetria
         // normalizada; a mensagem repetida é deduplicada antes dela.
@@ -140,9 +139,8 @@ final class BridgeTest extends TestCase
     }
 
     /**
-     * O assistente de registo tira do protocolo o fornecedor, o tipo de dispositivo e a lista
-     * de modelos. Com uma chave que o `ProtocolRegistry` não conhece não tira nada, e o
-     * formulário abre vazio.
+     * O assistente de registo tira do protocolo o fornecedor, o tipo e os modelos: com uma
+     * chave que o `ProtocolRegistry` não conheça, o formulário abre vazio.
      */
     public function testAnUnregisteredJsonGatewayIsReportedAsMkgw3(): void
     {

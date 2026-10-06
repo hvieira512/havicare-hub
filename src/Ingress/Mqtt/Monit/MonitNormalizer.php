@@ -10,8 +10,8 @@ use Hub\Domain\DiaperSensitivity;
 final class MonitNormalizer
 {
     /**
-     * Banda do índice por estado: [mínimo, máximo]. O 39 do `attention` é um 39 e não um 40
-     * de propósito -- os 40 são a marca de alerta e pertencem só ao `change_required`.
+     * Banda do índice por estado: [mínimo, máximo]. O `attention` acaba em 39: o 40 é a marca
+     * de alerta, só do `change_required`.
      *
      * @var array<string, array{int, int}>
      */
@@ -29,8 +29,7 @@ final class MonitNormalizer
      */
     public function normalize(array $decoded, array $device, string $gatewayId, array $sensitivity): array
     {
-        // Sem valor por omissão de propósito: quem se esqueça do lookup falha na análise
-        // estática, em vez de decidir alarmes com limiares que ninguém escolheu.
+        // Sem valor por omissão, para um lookup esquecido falhar na análise estática.
         $pollutionValue = $sensitivity['pollutionValue'];
         $pollutionRange = $sensitivity['pollutionRange'];
         $cleanMaxDelta = DiaperSensitivity::cleanMaxDelta($pollutionValue);
@@ -69,13 +68,11 @@ final class MonitNormalizer
                     'channels' => $channels,
                     'affectedChannelCount' => $affected,
                     'maximumDelta' => max($decoded['normalized']),
-                    // Viajam com a leitura: quem mostra "3 de 4 canais" precisa do 4, e ele
-                    // é por sensor.
+                    // O total de canais é por sensor, e quem mostra "3 de 4" precisa dele.
                     'requiredChannelCount' => $pollutionRange,
                     'wetDelta' => $pollutionValue,
                 ]] + $common,
-                // Capacidade própria e não um campo da `diaper_moisture`: o nível é o
-                // contrato genérico, os dez canais são o detalhe do MONIT.
+                // Capacidade própria: o nível é o contrato genérico, os canais o detalhe do MONIT.
                 'diaper_moisture_level' => ['type' => 'diaper_moisture_level', 'data' => [
                     'index' => $this->buildMoistureIndex($decoded['normalized'], $condition, $pollutionValue),
                     'alertIndex' => self::MOISTURE_INDEX_BANDS['change_required'][0],
@@ -86,11 +83,8 @@ final class MonitNormalizer
     }
 
     /**
-     * Índice 0-100 de quanta humidade o sensor vê, construído por bandas de estado -- não é uma
-     * medição física de enchimento nem comparável entre sensores diferentes. Ver
-     * `docs/17-sensor-de-fralda.md` §2 para a derivação e para os dois invariantes que o
-     * `MonitMoistureIndexTest` prova. Como a interface o apresenta -- com `%`, por decisão de
-     * UI -- é assunto dela.
+     * Índice 0-100 por bandas de estado, não uma medição física nem comparável entre sensores.
+     * A derivação está em `docs/17-sensor-de-fralda.md` §2.
      *
      * @param list<int> $deltas delta por canal, já normalizado contra a linha de base
      */

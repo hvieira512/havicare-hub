@@ -40,9 +40,8 @@ final class HubMqttBridgeDrainTest extends TestCase
     }
 
     /**
-     * O `connect` é bloqueante no event loop que serve o HTTP e envia o sinal de vida ao
-     * systemd. Sem recuo, o drain reconecta a cada segundo, o loop deixa de correr os outros
-     * temporizadores, e o watchdog mata o processo -- o que a dashboard mostra como um 502.
+     * O `connect` bloqueia o loop que envia o sinal de vida ao systemd: sem recuo, o watchdog
+     * mata o processo.
      */
     public function testTheDrainBacksOffInsteadOfReconnectingOnEveryTick(): void
     {
@@ -67,9 +66,8 @@ final class HubMqttBridgeDrainTest extends TestCase
     }
 
     /**
-     * O socket é não-bloqueante e a biblioteca lê qualquer escrita parcial como queda. Com o
-     * buffer de saída cheio, um PINGREQ de dois bytes devolve zero e chega para isso -- e
-     * reconectar ali descarta a mensagem que estava a ser publicada, numa ligação que está viva.
+     * A biblioteca lê qualquer escrita parcial no socket não-bloqueante como queda, e reconectar
+     * descarta a mensagem a meio de publicar numa ligação viva.
      */
     public function testAFailedWriteDoesNotReconnectBecauseTheConnectionIsAlive(): void
     {

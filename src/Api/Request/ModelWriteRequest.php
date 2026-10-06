@@ -8,11 +8,8 @@ use Hub\Api\OpenApi\Example;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * O corpo do criar e do actualizar de um modelo. Chega em `multipart/form-data` por trazer a
- * imagem, e o multipart não tem tipos: tudo o que dele sai é string.
- *
- * Os arrays são `null` por omissão porque "não mandou o campo" e "mandou vazio" decidem
- * coisas diferentes, e `[]` é um valor legítimo que quer dizer "nenhuma capacidade".
+ * O corpo do criar e do actualizar de um modelo, em multipart, onde tudo é string. Os arrays
+ * são `null` por omissão porque `[]` quer dizer "nenhuma capacidade".
  */
 final class ModelWriteRequest
 {
@@ -42,9 +39,8 @@ final class ModelWriteRequest
     }
 
     /**
-     * Se o pedido tomou posição sobre as capacidades. Mandar a lista é uma forma; a outra é o
-     * `capabilitiesConfigured`, que diz que a lista vazia é deliberada -- sem ele, desmarcar
-     * tudo não se distinguia de não tocar em nada.
+     * Se o pedido tomou posição sobre as capacidades: mandou a lista, ou o `capabilitiesConfigured`
+     * diz que a lista vazia é deliberada.
      */
     public function choseCapabilities(): bool
     {

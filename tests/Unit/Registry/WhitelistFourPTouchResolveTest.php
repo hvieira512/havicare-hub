@@ -8,9 +8,8 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 
 /**
- * O `deviceId` de um 4P Touch deriva do IMEI por `substr`, portanto é dedutível. Se o ramo
- * `four-p-touch` do `resolve()` não restringir o tipo, um frame de relógio autentica-se como
- * um radar ou um NCS que partilhe aquele alias — como os ramos `ncs` e `radar` já impedem.
+ * O `deviceId` de um 4P Touch deduz-se do IMEI, e por isso o ramo `four-p-touch` do
+ * `resolve()` restringe o tipo, como os ramos `ncs` e `radar`.
  */
 final class WhitelistFourPTouchResolveTest extends TestCase
 {

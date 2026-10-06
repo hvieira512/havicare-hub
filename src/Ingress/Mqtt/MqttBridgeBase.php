@@ -59,13 +59,7 @@ abstract class MqttBridgeBase implements MqttIngress
         $this->clock = $clock !== null ? \Closure::fromCallable($clock) : static fn(): float => microtime(true);
     }
 
-    /**
-     * O relógio do ingress, em segundos com fracção.
-     *
-     * Vive na base e não em cada subclasse porque o travão dos avisos aqui em cima também
-     * precisa dele, e dois relógios no mesmo objecto são dois relógios que um teste pode
-     * adiantar em desacordo.
-     */
+    /** O relógio do ingress, em segundos com fracção; na base porque o travão dos avisos também o usa. */
     protected function clockNow(): float
     {
         return (float)($this->clock)();
@@ -74,11 +68,8 @@ abstract class MqttBridgeBase implements MqttIngress
     abstract protected function handleMessage(string $topic, string $payload): void;
 
     /**
-     * Escreve um aviso uma vez por assunto e por janela.
-     *
-     * Há queixas que se repetem a cada trama porque a causa se repete a cada trama: um gateway
-     * anuncia tudo o que o rodeia, e o hub recusa o que não lhe está ligado. O `$subject` é o
-     * que se considera a mesma queixa -- o par aparelho/gateway, e não a mensagem.
+     * Escreve um aviso uma vez por assunto e por janela. O `$subject` é o que conta como a
+     * mesma queixa, como o par aparelho/gateway.
      */
     protected function warnRepeatedly(string $subject, string $message): void
     {
@@ -117,10 +108,8 @@ abstract class MqttBridgeBase implements MqttIngress
     }
 
     /**
-     * O dono só é conhecido por quem o consegue tirar do que recebeu. O radar consegue --
-     * publica em `radar/{licenseId}/{uid}` --, e é o que permite à dashboard pré-seleccionar
-     * a licença ao registar. Quem se identifica só por MAC ou por endereço não passa nenhum
-     * dos dois: a empresa e a licença vêm juntas ou não vêm.
+     * O dono só o passa quem o tira do que recebeu, como o radar pelo tópico; a empresa e a
+     * licença vêm juntas ou não vêm.
      */
     protected function recordUnauthorizedDevice(
         string $identity,
@@ -130,21 +119,17 @@ abstract class MqttBridgeBase implements MqttIngress
         int $licenseId = 0,
         ?string $company = null,
     ): void {
-        // Uma trama sem identidade não é um aparelho por autorizar -- é uma mensagem
-        // malformada, e não há nada que quem opera possa fazer com ela. Registá-la dava uma
-        // notificação no sino com um botão «Registar» sem nada para registar.
+        // Uma trama sem identidade é malformada, e não um aparelho por autorizar.
         if ($identity === '') {
             return;
         }
 
-        // Bloqueado de propósito: cala-se na fonte, sem notificação nem sequer a escrita do
-        // estrangulamento em memória.
+        // Bloqueado cala-se na fonte, sem notificação nem escrita no estrangulamento.
         if ($this->denylist?->contains($identity)) {
             return;
         }
 
-        // Um aparelho não registado que insiste -- um radar publica ~20 msg/s -- não pode dar
-        // uma escrita ao MySQL por mensagem. O aviso regista-se uma vez por identidade e janela.
+        // Um radar publica ~20 msg/s: o aviso regista-se uma vez por identidade e janela.
         $now = (int)$this->clockNow();
         $this->forgetExpiredUnauthorized($now);
         $last = $this->lastUnauthorizedAt[$identity] ?? null;
@@ -171,11 +156,8 @@ abstract class MqttBridgeBase implements MqttIngress
     }
 
     /**
-     * Esquece as identidades que já saíram da janela do travão.
-     *
-     * As identidades chegam do tópico -- o MAC do gateway, o UID do radar -- e o processo
-     * corre meses. Corre uma vez por janela e não por mensagem, porque o varrimento é linear
-     * e isto está no caminho da ingestão.
+     * Esquece as identidades que já saíram da janela do travão, uma vez por janela: o processo
+     * corre meses e o varrimento é linear.
      */
     private function forgetExpiredUnauthorized(int $now): void
     {
@@ -192,24 +174,20 @@ abstract class MqttBridgeBase implements MqttIngress
     }
 
     /**
-     * Acrescenta o nome comercial ao dispositivo, quando o resolvedor o conhece e ele ainda
-     * não o traz. Comum aos três ingressos MQTT, que subscrevem o mesmo resolvedor.
+     * Acrescenta o nome comercial ao dispositivo, quando o resolvedor o conhece e ele não o traz.
      *
      * @param array<string, mixed> $device
      * @return array<string, mixed>
      */
     protected function enrichWithCommercialName(array $device): array
     {
-        // A resolução corre por mensagem, mas assenta num lookup O(1) no índice em memória do
-        // ModelRepository, invalidado quando um modelo muda -- não justifica um memo à parte.
+        // Lookup O(1) no índice em memória do ModelRepository; não precisa de memo.
         return $this->commercialModelResolver?->enrich($device) ?? $device;
     }
 
     /**
-     * Se um gateway e um aparelho retransmitido pertencem ao mesmo cliente.
-     *
-     * A ligação diz que o gateway *ouve* o aparelho; isto diz que pode *falar* por ele. O
-     * `'null'` é a sentinela de sem dono, e vale dos dois lados.
+     * Se um gateway pode *falar* por um aparelho retransmitido: pertencem ao mesmo cliente,
+     * com `'null'` como sentinela de sem dono dos dois lados.
      *
      * @param array<string, mixed> $gateway
      * @param array<string, mixed> $device

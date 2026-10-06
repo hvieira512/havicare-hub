@@ -18,9 +18,8 @@ import { resetModelWizard } from "./form.js";
 import { getSettingsModelsRuntime, modelsCarousel } from "./shell.js";
 
 /**
- * O catálogo: um nível por tipo de dispositivo, e o modelo como folha. O fornecedor é um
- * dado da linha e não uma pasta -- como pasta custava um nível de indentação a dizer o que
- * cabe em duas palavras ao lado do nome.
+ * O catálogo: um nível por tipo de dispositivo, e o modelo como folha. O fornecedor é um dado
+ * da linha e não uma pasta.
  */
 
 function plural(count, singular, pluralWord) {
@@ -44,9 +43,8 @@ function catalogGroups() {
 }
 
 /**
- * O que a linha diz a seguir ao nome comercial. O nome interno é o código do fabricante e
- * repete-se muitas vezes com o comercial (D41/D41): quando é outro, diz-se que é interno,
- * porque de outro modo nada distingue os dois nomes.
+ * O que a linha diz a seguir ao nome comercial. O nome interno repete-se muitas vezes com o
+ * comercial (D41/D41), e só se diz quando é outro.
  */
 function modelRowMeta(model, showType) {
     const internal = modelInternalName(model);
@@ -62,8 +60,8 @@ function modelRow(model, { showType = false } = {}) {
 
     const name = modelCommercialName(model);
 
-    // Numa linha a partir do `sm`, e em duas abaixo dela: numa calha de telemóvel o nome
-    // comercial come a linha toda e o fornecedor -- que é o que a linha ganhou -- desaparecia.
+    // Numa linha a partir do `sm`, e em duas abaixo: num telemóvel o nome comercial come a linha
+    // toda e o fornecedor desapareceria.
     return `
         <div class="tree-row catalog-model position-relative d-flex align-items-center" data-action="modelCapabilities" data-id="${esc(model.id)}" role="button" tabindex="0">
         <span class="catalog-model-image flex-shrink-0 d-flex align-items-center justify-content-center">${modelImageHtml(model, 28)}</span>
@@ -197,15 +195,13 @@ async function loadSettingsModelsSection() {
 function handleModelsListSearchInput() {
     const { els } = getSettingsModelsRuntime();
     state.settingsModal.modelsSearchQuery = els.modelsListSearch.value.trim();
-    // Sem espera: o filtro é local, e um debounce sobre uma lista em memória era atraso a
-    // fingir de rede.
+    // Sem espera: o filtro é local, e um debounce sobre uma lista em memória seria só atraso.
     renderModelsSection();
 }
 
 /**
- * Volta ao primeiro slide, que é a lista. Só a vai buscar outra vez quando alguma coisa que
- * a árvore mostra -- nome, fornecedor, tipo, imagem -- mudou; quem a mudou di-lo baixando o
- * `sectionLoaded.models`. Ligar capacidades não mexe em nada disso.
+ * Volta ao primeiro slide, a lista, e só a vai buscar outra vez se quem mudou o que a árvore
+ * mostra baixou o `sectionLoaded.models`.
  */
 function backToModelList() {
     const carousel = state.settingsModal.modelsCarousel;
@@ -228,9 +224,8 @@ function backToModelList() {
 }
 
 /**
- * Põe o separador no seu ecrã de entrada. Vale para quem volta da ficha e para quem carrega
- * o separador, que é o que acontece ao reabrir o modal: a abertura limpa o estado, e a ficha
- * sem modelo não tem nada para mostrar.
+ * Põe o separador no seu ecrã de entrada, ao voltar da ficha e ao carregar o separador: a
+ * abertura limpa o estado, e a ficha sem modelo não tem nada para mostrar.
  */
 function showModelListSlide() {
     const { els } = getSettingsModelsRuntime();

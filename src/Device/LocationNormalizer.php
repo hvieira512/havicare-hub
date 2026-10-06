@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Device;
 
-/**
- * A capacidade `location`: GPS, células e pontos WiFi reduzidos à mesma forma.
- */
+/** A capacidade `location`: GPS, células e pontos WiFi reduzidos à mesma forma. */
 final class LocationNormalizer
 {
     /**

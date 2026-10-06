@@ -6,13 +6,8 @@ import { changedConfigEntries } from "../../src/Dashboard/dashboard/devices/conf
 import { parseFragment } from "./support/dom.js";
 
 /**
- * Num grupo de interruptores, cada linha envia o **seu** valor.
- *
- * A toma antecipada e o bloqueio de criança do dispensador são duas definições `toggle`
- * seguidas, e a dashboard junta-as numa caixa com um «Enviar alterações» só. As duas declaram
- * o mesmo nome de campo -- `enabled` --, e foi aí que se perdeu: desligar o bloqueio e enviar
- * mandava `0x100C = 01` ao aparelho, que obedecia e o mantinha trancado. Do lado de quem
- * configura parecia que o aparelho ignorava a ordem.
+ * A toma antecipada e o bloqueio de criança do dispensador declaram ambos o campo `enabled` e
+ * partilham um «Enviar»: cada linha tem de enviar o **seu** valor.
  */
 
 const toggleGroup = (rows) => parseFragment(`

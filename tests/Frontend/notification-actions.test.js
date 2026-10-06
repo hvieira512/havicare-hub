@@ -9,9 +9,8 @@ import { notificationRow as buildRow } from "../../src/Dashboard/dashboard/notif
 const notificationRow = (...args) => String(buildRow(...args));
 
 /**
- * A cor de cada acção acompanha o risco dela: «Bloquear dispositivo» escreve na denylist e
- * cala o aparelho; «Eliminar notificação» dispensa um item transitório. E registar o
- * aparelho, que é o que se quer fazer na maioria dos casos, tem botão próprio.
+ * A cor de cada acção acompanha o risco: «Bloquear dispositivo» cala o aparelho, «Eliminar
+ * notificação» dispensa um item transitório, e registar tem botão próprio.
  */
 const notAuthorized = {
     id: 7,

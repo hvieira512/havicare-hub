@@ -3,9 +3,8 @@
 
 declare(strict_types=1);
 
-// Pede uma actualização de firmware a um dispensador. Não envia nada: regista o pedido, e a
-// transferência anda à medida que o aparelho fala — o arranque no primeiro heartbeat, cada
-// pedaço na confirmação do anterior.
+// Pede firmware novo para um dispensador. Só regista o pedido: a transferência avança à
+// medida que o aparelho fala, um pedaço por confirmação.
 //
 // Uso: php bin/upgrade-firmware.php <imei> <ficheiro.bin> [--apply]
 

@@ -11,9 +11,8 @@ import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inpu
 import { configSection } from "./support/dom.js";
 
 /**
- * O que o leitor devolve para um valor por omissão é o que vai para o aparelho na primeira
- * gravação de uma secção que ninguém tocou. A lista era escolhida à mão e cobria seis de
- * trinta; o segundo teste aqui obriga qualquer descritor novo a entrar nela.
+ * O valor por omissão que o leitor devolve vai para o aparelho na primeira gravação de uma
+ * secção intocada; o segundo teste obriga qualquer descritor novo a entrar na lista.
  */
 const OPTIONS = { enabled: [{ value: 1, label: "Um" }, { value: 2, label: "Dois" }] };
 

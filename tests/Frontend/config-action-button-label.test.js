@@ -6,10 +6,8 @@ import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/confi
 import { parseFragment } from "./support/dom.js";
 
 /**
- * O título diz o que a definição é; o botão diz o que o clique faz. Repetir a mesma frase nos
- * dois é escrevê-la duas vezes na mesma linha, e das vinte e uma acções do catálogo vinte têm
- * o rótulo como frase do verbo. Nas que são nomes -- «Versão de firmware», «Estado do
- * dispositivo» -- o botão deixava mesmo de dizer o que acontece ao carregar.
+ * O título diz o que a definição é e o botão o que o clique faz: repetir o rótulo no botão não
+ * diz o que acontece quando o rótulo é um nome, como «Versão de firmware».
  */
 const action = (over = {}) => ({
     key: "restart_device",

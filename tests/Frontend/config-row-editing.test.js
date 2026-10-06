@@ -10,12 +10,8 @@ import {
 import { parseFragment } from "./support/dom.js";
 
 /**
- * O motor das linhas repetíveis, nas duas estratégias que ele tem de servir: clonar a última
- * linha e limpá-la, e desenhar uma de raiz.
- *
- * Os casos que interessam são as fronteiras em que se bate constantemente: o limite de
- * repetições, e remover a única linha que resta -- que numa lista que se clona tem de ficar
- * lá, senão fica-se sem molde e nunca mais se acrescenta nenhuma.
+ * O motor das linhas repetíveis, a clonar a última linha ou a desenhar uma de raiz; numa lista
+ * que se clona, a única linha que resta não se remove, porque é o molde.
  */
 const phoneList = (rowCount, limit) =>
     parseFragment(`
@@ -110,7 +106,7 @@ test("remover uma linha de várias apaga-a", () => {
 });
 
 test("na lista que se clona, remover a última linha limpa-a em vez de a apagar", () => {
-    // Apagá-la deixava a secção sem linha de onde clonar, e nunca mais se acrescentava uma.
+    // Apagá-la deixaria a secção sem linha de onde clonar.
     const section = phoneList(1, 3);
 
     removeRepeatRow(removeButtonIn(rowsIn(section, "numbers")[0]));

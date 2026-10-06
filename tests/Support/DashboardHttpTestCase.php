@@ -18,19 +18,14 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 
 /**
- * A cadeia HTTP da dashboard montada como em produção, com o registo de API a ser escrito
- * para um ficheiro que o teste possa ler. As classes que a usam repartem um assunto cada.
- *
- * Sem `declare(strict_types=1)` de propósito: o `makeServerWithDatabase()` regista licenças
- * com o número em texto, como ele chega pelo ficheiro da whitelist, e a coerção é parte do
- * que estes testes exercitam.
+ * A cadeia HTTP da dashboard montada como em produção, com o registo de API num ficheiro que o
+ * teste lê. Sem `strict_types` de propósito: a coerção da licença em texto faz parte do teste.
  */
 abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
 {
     /**
-     * O `password_hash` com o custo por omissão leva ~190ms, e cada teste semeia dois
-     * utilizadores. O que conta é ser um hash válido daquela palavra-passe, por isso
-     * guarda-se um por palavra-passe durante o processo.
+     * O `password_hash` com o custo por omissão leva ~190ms, e por isso guarda-se um hash por
+     * palavra-passe durante o processo.
      *
      * @var array<string, string>
      */
@@ -85,11 +80,8 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
     }
 
     /**
-     * Devolve a cadeia inteira, e não só a dashboard: o CORS e o registo do `/api/` são
-     * middleware, e é a `DashboardServerFactory` que os monta -- aqui como em produção.
-     *
-     * O `MessageFanout` vem no quarto lugar por ser o que a ingestão usa para anunciar uma
-     * publicação: um teste que queira exercitar um stream de inquilino publica através dele.
+     * Devolve a cadeia inteira: o CORS e o registo do `/api/` são middleware montado pela
+     * `DashboardServerFactory`. O `MessageFanout` é o que a ingestão usa para publicar.
      *
      * @return array{0: callable, 1: ApiDataAccess, 2: DeviceStore, 3: MessageFanout}
      */

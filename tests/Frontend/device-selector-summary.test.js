@@ -7,11 +7,8 @@ const { deviceSelectorSummary } =
     await import("../../src/Dashboard/dashboard/devices/list.js");
 
 /**
- * O contador do cabeçalho do selector.
- *
- * Dizia «49 dispositivos · 26 ligados» com quatro linhas na lista: a contagem é da frota
- * toda e ignora os filtros, e os filtros sobrevivem à sessão. Quem abre o selector com dois
- * filtros herdados de ontem lê um número que não tem nada a ver com o que está a ver.
+ * O contador do cabeçalho segue os filtros, que sobrevivem à sessão: a contagem da frota toda
+ * não tem nada a ver com o que está na lista.
  */
 
 const totals = { total: 49, online: 26 };

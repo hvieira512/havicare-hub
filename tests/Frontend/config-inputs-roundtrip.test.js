@@ -10,12 +10,8 @@ import {
 import { configSection } from "./support/dom.js";
 
 /**
- * A ida e volta dos tipos de campo de configuração que o outro ficheiro não cobre. O que o
- * formulário desenha tem de ser o que o leitor devolve, porque é esse payload que vai escrito
- * para o dispositivo.
- *
- * Onde o leitor renomeia um campo de propósito, o teste di-lo: a dashboard fala o dialecto
- * genérico e o hub mapeia-o nos nomes nativos do protocolo.
+ * O que o formulário desenha tem de ser o que o leitor devolve, porque é esse o payload escrito
+ * no dispositivo; onde o leitor renomeia um campo, o hub mapeia-o para o nome nativo.
  */
 const roundTrip = (entry, desired, meta = {}) =>
     readConfigPayload(configSection(renderConfigInputs, entry, desired, meta));
@@ -69,9 +65,8 @@ test("blood pressure keeps both readings", () => {
 });
 
 test("the wonlex blood pressure alert keeps both thresholds", () => {
-    // Quem desenha oferece o `hpWarn` e o `LPWarn`, a definição da Wonlex declara-os, e o
-    // `WonlexPayloadBuilder` exige-os. Um leitor que devolva outra coisa faz com que os
-    // limiares escritos nunca cheguem ao dispositivo.
+    // O `hpWarn` e o `LPWarn` são os que a definição da Wonlex declara e o
+    // `WonlexPayloadBuilder` exige.
     assert.deepEqual(
         roundTrip(entryFor("wonlexBloodPressureWarning", ["switchState", "hpWarn", "LPWarn"]), {
             switchState: true,

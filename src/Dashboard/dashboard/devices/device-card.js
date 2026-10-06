@@ -5,14 +5,10 @@ import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 import { ago } from "../format.js";
 
 /**
- * O cartão de um dispositivo: a marcação, o esqueleto e o nome da acção que emite. Estão
- * juntos porque mudam juntos -- o esqueleto é o cartão com as mesmas classes.
- *
- * O CSS fica no bloco `.device-card*` do `assets/css/device.css`, e o ouvinte fica delegado
- * na raiz da lista: as opções redesenham-se a cada resposta.
+ * O cartão, o esqueleto e a acção que emite ficam juntos porque mudam juntos. O ouvinte fica
+ * delegado na raiz da lista, que se redesenha a cada resposta.
  */
 
-/** O `data-action` que o cartão escreve, e que o ouvinte delegado procura. */
 export const DEVICE_CARD_ACTION = "select";
 
 /** Repetem-se no cartão e no bloco da licença, que os recebe por parâmetro. */
@@ -22,7 +18,6 @@ const DEVICE_CARD_WHEN = "device-card-when text-secondary tabular-nums lh-sm";
 /** Quantas linhas de esqueleto no máximo: a moldura mais alta leva doze cartões. */
 const SKELETON_MAX_ROWS = 12;
 
-/** Quantos caracteres duas cadeias partilham desde o princípio. */
 function commonPrefixLength(a, b) {
     const limit = Math.min(a.length, b.length);
     let i = 0;

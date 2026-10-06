@@ -1,9 +1,6 @@
 /**
- * A raiz de composição da dashboard: cacheia os elementos, cria os modais, entrega o `els` a
- * cada funcionalidade pelo seu `init`, liga os ouvintes e repõe o que ficou da sessão.
- *
- * É o único sítio que conhece toda a gente, e uma funcionalidade nunca importa outra -- é essa
- * regra que mantém o grafo de módulos sem ciclos.
+ * A raiz de composição da dashboard, e o único sítio que conhece toda a gente: uma
+ * funcionalidade nunca importa outra, e é isso que mantém o grafo sem ciclos.
  */
 import { getDashboardApiToken, getDevice as apiGetDevice } from "./api/index.js";
 import { refreshSelectedDetail, setDeviceFilters, state } from "./state.js";
@@ -37,7 +34,7 @@ import { initNotifications } from "./notifications.js";
 import { initRadarMapModal } from "./devices/radar-map-modal.js";
 import { initSettings } from "./settings/index.js";
 
-/** De quanto em quanto tempo se relê o dispositivo escolhido. Ver a nota no `startDashboard`. */
+/** De quanto em quanto tempo se relê o dispositivo escolhido. */
 const DEVICE_REFRESH_MS = 30000;
 
 let els = {};
@@ -112,9 +109,8 @@ function wireDashboard() {
     initSettings({ els, ui });
     initDeviceStream({
         renderSelection,
-        // Esta chamada não só desenha: escreve o estado de entrega de cada comando. Com o
-        // modal aberto manda-se vir o painel; sem ele não há nada a que aplicar o estado, e
-        // o `editDevice` relê tudo.
+        // Esta chamada também escreve o estado de entrega de cada comando; sem modal aberto não há
+        // onde o aplicar, e o `editDevice` relê tudo.
         onCommandsUpdated: (imei, commands) => {
             const loaded = configPanelIfLoaded();
             if (loaded) {
@@ -141,11 +137,8 @@ function wireDashboard() {
 }
 
 /**
- * Relê o registo do dispositivo -- estado de ligação, modelo, configuração -- e não o
- * histórico: o `recent` preserva-se de propósito porque só o stream o traz, e é o `stream.js`
- * que garante que ele volta a ligar-se quando cai.
- *
- * Um separador escondido não sonda, como o `stream.js` também não, e ao voltar relê-se já.
+ * Relê o registo do dispositivo e não o histórico, que só o stream traz. Um separador
+ * escondido não sonda, e ao voltar relê-se já.
  */
 export function startSelectedDevicePolling() {
     const refreshWhenVisible = () => {

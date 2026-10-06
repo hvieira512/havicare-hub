@@ -1,9 +1,6 @@
 /**
- * Todos os elementos com `id`, por `id`.
- *
- * A casca é servida inteira pelo PHP e isto corre no `DOMContentLoaded`, por isso não há
- * elemento por nascer. Um `id` renomeado na marcação e não aqui rebenta o arranque, que é o
- * que se quer; quem o apanha antes do browser é o `DashboardElementIdsTest`.
+ * Todos os elementos com `id`, por `id`. Um `id` renomeado só na marcação rebenta o arranque,
+ * e o `DashboardElementIdsTest` apanha-o antes.
  */
 export function cacheElements() {
     const els = {};
@@ -14,10 +11,8 @@ export function cacheElements() {
 const lastHtml = new WeakMap();
 
 /**
- * Escreve a marcação no contentor, e só quando ela difere da anterior: o stream redesenha o
- * detalhe a cada mensagem, e substituir o `innerHTML` tira do documento quem tem o foco.
- *
- * O `beforeWrite` corre só quando se escreve -- é por ali que passa o desfazer dos tooltips.
+ * Escreve a marcação só quando difere da anterior: substituir o `innerHTML` tira o foco a quem
+ * o tem. O `beforeWrite` corre só quando se escreve.
  */
 export function renderInto(container, markup, beforeWrite = null) {
     // Pelo texto: o `html` devolve um `Fragment` novo a cada render.

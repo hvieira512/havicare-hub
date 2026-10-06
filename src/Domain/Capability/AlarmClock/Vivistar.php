@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Hub\Domain\Capability\AlarmClock;
 
 /**
- * Handler do `alarm_clock` do Vivistar / Wonlex.
- *
- * Chave nativa: 'reminders'
- * Forma nativa: { reminders: { masterEnabled: bool, items: [{time, days, enabled, type}] } }
+ * Handler do `alarm_clock` do Vivistar / Wonlex, na chave nativa `reminders`:
+ * `{ reminders: { masterEnabled: bool, items: [{time, days, enabled, type}] } }`.
  */
 final class Vivistar implements AlarmClockHandler
 {
@@ -95,10 +93,6 @@ final class Vivistar implements AlarmClockHandler
         ];
     }
 
-    // ------------------------------------------------------------------
-    // Normalização
-    // ------------------------------------------------------------------
-
     /** @return array{time: string, days: string, enabled: bool, type: int} */
     private static function normalizeItemForNative(mixed $item): array
     {
@@ -155,8 +149,7 @@ final class Vivistar implements AlarmClockHandler
             return [];
         }
 
-        // Os dois lados aceitam as duas formas: a máscara de dígitos e a lista de dias. Uma
-        // lista a cair no `(string)` saía como `Array`, sem dígito nenhum.
+        // Os dois lados aceitam as duas formas: a máscara de dígitos e a lista de dias.
         $daysValue = $item['days'] ?? '';
         $days = self::parseDayList(
             is_array($daysValue) ? self::formatDayList($daysValue) : (string)$daysValue

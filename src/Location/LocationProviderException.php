@@ -18,11 +18,8 @@ final class LocationProviderException extends \RuntimeException
     }
 
     /**
-     * O fornecedor respondeu, e a resposta foi "não sei onde isto está" -- na ichnaea, um 404
-     * quer dizer que a evidência não casa com nada que ela conheça.
-     *
-     * É um resultado normal e não uma avaria, e distingui-lo importa para o registo: no meio
-     * das falhas a sério, é assim que uma avaria de verdade passa despercebida.
+     * O fornecedor respondeu "não sei onde isto está" (na ichnaea, um 404): é um resultado normal,
+     * e separá-lo das avarias impede que uma verdadeira passe despercebida.
      */
     public function isNoMatch(): bool
     {

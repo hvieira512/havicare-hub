@@ -7,23 +7,14 @@ namespace Tests\Unit\Dashboard;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Prova que cada `els.qualquerCoisa` que o JavaScript lê existe mesmo na página.
- *
- * O `cacheElements()` devolve `undefined` para um `id` que não exista, e a maior parte dos
- * leitores não se protege: renomear um `id` num template rebenta o arranque da dashboard e
- * devolve o ecrã de entrada. Onde há `?.`, o botão fica calado em vez de rebentar -- o que é
- * pior, porque ninguém dá por ele.
- *
- * Uma falha aqui é um `id` renomeado só de um lado, ou um `els.x` que ficou para trás.
+ * Cada `els.qualquerCoisa` que o JavaScript lê existe na página: um `id` em falta rebenta o
+ * arranque da dashboard, ou cala um botão onde há `?.`.
  */
 final class DashboardElementIdsTest extends TestCase
 {
     /**
-     * Os `id` que o JavaScript compõe a partir de um prefixo, e quem os compõe. Quem
-     * acrescentar um par de prefixos escreve-os aqui, senão ficam sem rede.
-     *
-     * Os dois `PagerSummary` ficam de fora: o `pagination_component(..., withSummary: false)`
-     * não os desenha, e o `detail.js` já conta com isso.
+     * Os `id` que o JavaScript compõe a partir de um prefixo, e quem os compõe. Os dois
+     * `PagerSummary` ficam de fora: com `withSummary: false` não se desenham.
      */
     private const COMPOSED_IDS = [
         'telemetryPagerControls' => 'devices/detail.js',
@@ -73,11 +64,8 @@ final class DashboardElementIdsTest extends TestCase
     }
 
     /**
-     * Os nomes que o JavaScript lê da página, e onde os lê: o `els.nome` e o
-     * `getElementById("nome")`, com que o ecrã de entrada e os modais apanham os seus.
-     *
-     * Um `getElementById` com variável não se apanha, e é isso que se quer -- esses são `id`
-     * que o próprio JavaScript acabou de desenhar. Os compostos estão em `COMPOSED_IDS`.
+     * Os nomes que o JavaScript lê da página (`els.nome` e `getElementById("nome")`), e onde. Um
+     * `getElementById` com variável é de um `id` que o próprio JavaScript desenhou.
      *
      * @return array<string, list<string>> nome do elemento => ficheiros que o lêem
      */
@@ -120,10 +108,8 @@ final class DashboardElementIdsTest extends TestCase
     }
 
     /**
-     * A página inteira, desenhada uma vez por processo.
-     *
-     * O `index.php` espera o `$dashboardApiAuthRequired` de quem o inclui, tal como o
-     * `DashboardHttpServer::page()` lho dá.
+     * A página inteira, desenhada uma vez por processo, com o `$dashboardApiAuthRequired` que o
+     * `DashboardHttpServer::page()` lhe dá.
      */
     private function page(): string
     {

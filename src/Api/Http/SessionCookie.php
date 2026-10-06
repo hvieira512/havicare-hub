@@ -8,12 +8,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
 
 /**
- * O cookie onde vive a sessão da dashboard: o token de renovação, fora do alcance do
- * JavaScript.
- *
- * `HttpOnly` tira-o a quem conseguisse injectar script na página, `SameSite=Strict` impede
- * que outro sítio o faça viajar, e o `Path` prende-o às rotas de autenticação -- o resto da
- * API nunca o recebe, e continua a autenticar-se pelo cabeçalho `Authorization`.
+ * O cookie da sessão da dashboard, com o token de renovação: `HttpOnly`, `SameSite=Strict`, e o
+ * `Path` preso às rotas de autenticação, para o resto da API continuar no `Authorization`.
  */
 final class SessionCookie
 {

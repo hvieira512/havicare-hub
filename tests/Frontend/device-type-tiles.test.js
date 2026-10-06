@@ -6,10 +6,8 @@ import { parseFragment } from "./support/dom.js";
 import { deviceTypeTiles } from "../../src/Dashboard/dashboard/components/device-type-tiles.js";
 
 /**
- * O mosaico de tipos de dispositivo, a devolver HTML em vez de o escrever no contentor.
- *
- * O `multiple` separa o filtro da escolha única e decide que atributos saem; as contagens são
- * opcionais, porque ao criar um modelo não há o que contar.
+ * O `multiple` separa o filtro da escolha única; as contagens são opcionais, porque ao criar um
+ * modelo não há o que contar.
  */
 const OPTIONS = ["watch", "radar", "gateway"];
 

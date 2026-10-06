@@ -1,10 +1,6 @@
 /**
- * A ligação dos ouvintes do modal de definições: modelos, capacidades, utilizadores da API e
- * empresas com as suas licenças.
- *
- * Vale aqui a mesma nota que está no `devices.js`: isto é raiz de composição e não uma
- * funcionalidade, e por isso pode importar de toda a gente. A regra de que uma funcionalidade
- * nunca importa outra continua de pé.
+ * A ligação dos ouvintes do modal de definições. É raiz de composição, como o `devices.js`, e
+ * pode importar de toda a gente.
  */
 import { state } from "../state.js";
 import { loadSettingsModal } from "../settings/index.js";

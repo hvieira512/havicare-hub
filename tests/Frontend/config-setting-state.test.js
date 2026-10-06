@@ -12,9 +12,8 @@ import {
 } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 
 /**
- * A pastilha diz o que aconteceu ao valor do lado do aparelho; o «Alterado» diz o que
- * aconteceu do lado de cá e ainda não saiu. São coisas diferentes e por isso não se
- * substituem: o segundo sobrepõe-se ao primeiro enquanto a edição estiver por enviar.
+ * A pastilha diz o que aconteceu ao valor do lado do aparelho e o «Alterado» o que está por
+ * enviar do lado de cá; o segundo sobrepõe-se ao primeiro enquanto houver edição.
  */
 
 const INTERVAL = {
@@ -52,10 +51,7 @@ test("o valor diz-se em palavras por baixo do nome", () => {
     assert.match(section.querySelector("[data-config-summary]").textContent, /a cada 60 minutos/);
 });
 
-/**
- * Quem o diz é a pastilha «Padrão» ao lado. Uma frase a dizer o mesmo por palavras rouba a
- * linha ao que o campo tem para explicar.
- */
+/** Quem o diz é a pastilha «Padrão» ao lado. */
 test("uma definição que o hub nunca guardou não repete a pastilha por palavras", () => {
     const section = sectionOf(INTERVAL, null, false);
 

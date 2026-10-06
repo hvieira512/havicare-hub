@@ -11,15 +11,7 @@ use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Uma configuração escrita tem de passar a «confirmada» quando o aparelho a confirma.
- *
- * O M228 respondia `SUCESSO` a tudo e a dashboard mostrava «falhou, tentativas esgotadas» em
- * todas as configurações -- e o hub reenviava de minuto a minuto, indefinidamente. Faltavam
- * três coisas ao mesmo tempo, e qualquer uma delas sozinha chegava para o ciclo nunca fechar:
- * as definições não diziam que resposta esperar, as tramas saíam todas com o número de série a
- * zero, e o protocolo não sabia ler o resultado que vinha no Flag de cada TAG.
- */
+/** Uma configuração escrita passa a «confirmada» quando o aparelho a confirma. */
 final class PillDispenserConfigurationLifecycleTest extends TestCase
 {
     private const IMEI = '869243062262262';
@@ -39,13 +31,8 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
     }
 
     /**
-     * O nome do comando não serve de resposta esperada.
-     *
-     * Por omissão uma definição espera uma resposta com o nome do próprio comando --
-     * `alarmVolume` --, e é o que a maioria dos protocolos faz. O M2 não: responde pelo tipo
-     * de pacote, e um `0x06` volta sempre como `write_config_ack`, seja qual for a TAG que
-     * levou. Com o valor por omissão o `markCommandReply` procurava um pendente à espera de
-     * `alarmVolume`, não encontrava nenhum, e saía sem marcar coisa nenhuma.
+     * O M2 responde pelo tipo de pacote e não pelo nome do comando: um `0x06` volta sempre como
+     * `write_config_ack`, seja qual for a TAG que levou.
      */
     public function testEveryConfigurationWaitsForTheAcknowledgementOfItsPacketType(): void
     {
@@ -97,7 +84,7 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
     {
         $protocol = $this->protocol();
 
-        // `001` é «TAG inválida», que foi o que o M228 devolveu ao `0x8005`.
+        // `001` é «TAG inválida».
         $recusado = (new PillDispenserAdapter())->encodeOutgoing([
             'imei' => self::IMEI,
             'packetType' => 0x86,
@@ -111,12 +98,8 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
     }
 
     /**
-     * Numa leitura, uma TAG recusada é informação e não uma falha.
-     *
-     * O M228 de produção é a variante 4G e não tem WiFi: responde ao `0x07` com tudo o resto
-     * preenchido e o `0x810A` em `001`. A leitura correu bem -- trouxe bateria, temperatura,
-     * humidade e células --, e marcá-la como recusada punha «o aparelho recusou» num pedido
-     * que devolveu toda a telemetria que havia para devolver.
+     * O M228 4G não tem WiFi e recusa o `0x810A` numa leitura que trouxe o resto da telemetria:
+     * isso não é o aparelho a recusar o pedido.
      */
     public function testAReadThatAnswersIsAcceptedEvenComARefusedTag(): void
     {
@@ -138,8 +121,7 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
     {
         $protocol = $this->protocol();
 
-        // `null` não é «recusou», é «não disse»: um heartbeat não comenta configuração
-        // nenhuma, e tratá-lo como recusa marcava como falhada uma escrita ainda a caminho.
+        // `null` não é «recusou», é «não disse»: um heartbeat não comenta configuração nenhuma.
         self::assertNull($protocol->replyAccepted(['type' => 'heartbeat', 'tlv' => []]));
         self::assertNull($protocol->replyAccepted(['type' => 'write_config_ack', 'tlv' => []]));
     }
@@ -153,9 +135,8 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
             DeviceCommandCatalog::buildDownlink('zayata-m228', self::IMEI, 'alarmRingtone', ['ringtone' => 2])
         );
 
-        // O número de série é o que o aparelho ecoa na resposta, e é por ele que se sabe a
-        // qual dos pedidos pendentes ela pertence. Todos a zero e duas escritas ao mesmo
-        // tempo ficavam indistinguíveis.
+        // O aparelho ecoa o número de série na resposta, e é por ele que se sabe a que pedido
+        // pendente ela pertence.
         self::assertNotSame('0', $first['ident']);
         self::assertNotSame($first['ident'], $second['ident']);
     }

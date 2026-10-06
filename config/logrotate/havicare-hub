@@ -1,6 +1,6 @@
-# Limita o log do hub por tamanho, nao por calendario: o volume e que cresce sem parar.
-# copytruncate e obrigatorio -- o processo mantem os descritores abertos e o Monolog nao os reabre.
-# O padrao apanha as duas instancias: /opt/havicare-hub e /opt/havicare-hub-dev.
+# Limita o log do hub por tamanho, não por calendário: é o volume que cresce sem parar.
+# `copytruncate` é obrigatório: o processo mantém os descritores abertos e o Monolog não os reabre.
+# O padrão apanha as duas instâncias: /opt/havicare-hub e /opt/havicare-hub-dev.
 /opt/havicare-hub*/var/log/api.log {
     size 64M
     rotate 40

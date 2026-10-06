@@ -1,12 +1,8 @@
--- Collect LSP diagnostics for every file passed on the command line.
---
--- Intelephense only publishes diagnostics for open documents, so a whole-project
--- report means loading every file and waiting for the server to answer. Run it as:
+-- Recolhe os diagnósticos LSP de cada ficheiro passado na linha de comandos. O Intelephense
+-- só os publica para documentos abertos, e por isso abrem-se todos, em lotes. Uso:
 --
 --   nvim --headless -u ~/.config/nvim/init.lua \
 --     -l scripts/lsp-diagnostics.lua $(git ls-files '*.php')
---
--- Files are opened in batches so the server is not handed 400 documents at once.
 
 local files = vim.v.argv
 local targets = {}
@@ -24,9 +20,8 @@ if #targets == 0 then
   vim.cmd("cquit 2")
 end
 
--- Diagnostics arrive asynchronously, so a batch is only considered done once the
--- count has stopped moving for several consecutive polls. Too short a settle and
--- the run silently under-reports, which is worse than being slow.
+-- Os diagnósticos chegam assíncronos: um lote só acaba quando a contagem pára durante várias
+-- sondagens seguidas, porque esperar pouco subnotifica em silêncio.
 local BATCH = 40
 local SETTLE_MS = 500
 local STABLE_POLLS = 4
@@ -82,7 +77,7 @@ for start = 1, #targets, BATCH do
     end
   end
 
-  -- Release the batch so the server is not holding every document at once.
+  -- Liberta o lote, para o servidor não segurar todos os documentos.
   for _, buf in ipairs(bufs) do
     pcall(vim.api.nvim_buf_delete, buf, { force = true })
   end

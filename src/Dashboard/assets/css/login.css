@@ -1,11 +1,8 @@
 /* ===== entrada =====
-   O ecrã de autenticação e mais nada: uma regra `dashboard-login-*` só existe aqui.
+   Só o que não tem utilitária: medidas exactas, os fundos do painel e os tons fora do tema. */
 
-   O que o Bootstrap sabe fazer fica na marcação, em utilitárias. Aqui só entra o que não
-   tem utilitária: medidas exactas, os fundos do painel e os tons que não são do tema. */
-
-/* O cinzento claro da maqueta é a superfície deste ecrã, e estava escrito duas vezes.
-   O painel da esquerda não leva par escuro: já é escuro nos dois temas, de propósito. */
+/* O cinzento claro da maqueta é a superfície deste ecrã. O painel da esquerda é escuro nos
+   dois temas, de propósito. */
 :root {
     --login-surface: #f4f5f7;
     /* O painel da esquerda é escuro nos dois temas: estes tons são a identidade e não o
@@ -29,8 +26,7 @@
         var(--login-surface);
 }
 
-/* 55/45, que é a divisão da Havicare e não existe na grelha do Bootstrap -- o `col-lg-7` que
-   lá estava dava 58/42. */
+/* 55/45, que é a divisão da Havicare e não existe na grelha do Bootstrap. */
 @media (min-width: 992px) {
     .dashboard-login-atmosphere {
         flex: 0 0 55%;
@@ -43,8 +39,8 @@
     }
 }
 
-/* O cinzento claro da maqueta, e não branco: o cartão é branco, e sobre branco puro
-   desaparecia. A sombra é de um lado só, e as utilitárias do Bootstrap são a toda a volta. */
+/* O cinzento claro da maqueta, e não branco, para o cartão branco se ver. A sombra é de um
+   lado só, e as utilitárias do Bootstrap são a toda a volta. */
 .dashboard-login-panel {
     background: var(--login-surface);
     box-shadow: -1.5rem 0 4rem var(--login-panel-shadow);
@@ -56,9 +52,8 @@
     max-width: 26rem;
 }
 
-/* Num telemóvel não há cartão: a moldura e o seu avanço tiravam 100px de largura ao
-   formulário num ecrã de 348px, e o `col-12` já lhe dá o ecrã todo. O Bootstrap não tem
-   utilitárias de moldura, sombra ou canto por ponto de quebra, e por isso isto é daqui. */
+/* Num telemóvel não há cartão: a moldura tirava largura ao formulário, e o Bootstrap não tem
+   utilitárias de moldura, sombra ou canto por ponto de quebra. */
 @media (min-width: 576px) {
     .dashboard-login-card {
         border: var(--bs-border-width) solid var(--bs-border-color);
@@ -72,8 +67,7 @@
     width: 136px;
 }
 
-/* O logótipo tem duas versões, e é o único sítio que segue o tema: o texto escuro sobre a
-   superfície escura não se lia. */
+/* O logótipo tem duas versões, e é o único sítio que segue o tema. */
 [data-bs-theme="dark"] .dashboard-login-brand img {
     content: url("/assets/logo-dark.png");
 }
@@ -102,9 +96,8 @@
     background-size: 80px 80px;
 }
 
-/* O halo por trás do discurso, no lugar das órbitas: dá profundidade sem competir com o
-   texto que lhe fica por cima. Segue a coluna centrada, senão num ecrã largo ficava a
-   iluminar a margem em vez do texto. */
+/* O halo por trás do discurso dá profundidade sem competir com o texto; segue a coluna
+   centrada para iluminar o texto e não a margem. */
 .dashboard-login-atmosphere::after {
     content: "";
     position: absolute;
@@ -123,8 +116,8 @@
     height: 26px;
 }
 
-/* Os três blocos do painel partilham a mesma coluna centrada. Encostados à esquerda, num
-   ultrawide o texto ficava com 520px de um lado e 1391px de nada do outro. */
+/* Os três blocos do painel partilham a mesma coluna centrada, para num ultrawide o texto não
+   ficar encostado a um lado. */
 .dashboard-login-column {
     max-width: 34rem;
 }
@@ -181,18 +174,16 @@
 
 /* ----- a constelação dos tipos de dispositivo ----- */
 
-/* Fundo do painel e não conteúdo: entra na árvore como decoração, e sai do caminho do rato.
-   Mede o painel exactamente, para as percentagens da tabela serem do painel; quem corta os
-   cartões que saem pela aresta é o `overflow-hidden` do painel. */
+/* Fundo do painel e não conteúdo: decoração, fora do caminho do rato, e mede o painel exacto
+   para as percentagens da tabela serem do painel. */
 .dashboard-login-constellation {
     inset: 0;
     opacity: .42;
     pointer-events: none;
 }
 
-/* Cada cartão traz o seu ângulo, o seu compasso e o seu curso: inclinar o grupo todo dava
-   sete cartões paralelos a subir e a descer em uníssono. O passo é até ao centro do painel e
-   de volta, e vem antes da rotação para ser em linha recta no ecrã e não no eixo do cartão. */
+/* Cada cartão traz o seu ângulo, compasso e curso, para não subirem em uníssono. O passo vem
+   antes da rotação para ser em linha recta no ecrã e não no eixo do cartão. */
 .dashboard-login-device {
     left: var(--x);
     top: var(--y);

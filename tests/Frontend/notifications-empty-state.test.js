@@ -4,10 +4,7 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 import { notificationsPanel } from "../../src/Dashboard/dashboard/notifications.js";
 
-/**
- * «Sem notificações.» não diz o que apareceria ali nem onde ver o que se bloqueou. O estado
- * vazio nomeia as duas coisas que o sino recebe, e o rodapé leva ao sítio delas.
- */
+/** O vazio nomeia o que o sino recebe, e o rodapé leva ao que se bloqueou. */
 test("o vazio diz o que vai aparecer ali", () => {
     const markup = notificationsPanel([]);
 

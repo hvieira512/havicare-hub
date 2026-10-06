@@ -9,10 +9,8 @@ use Hub\Dashboard\DashboardHttpServer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O corpo de um recurso estático é cacheado, mas a cache tem de acompanhar o ETag. Um ficheiro
- * que muda debaixo do processo passa a ter ETag novo -- ele deriva do `mtime` e do tamanho --
- * e o corpo servido tem de ser o novo, não os bytes velhos presos na cache. Sem isso o browser
- * recebia 200 com ETag novo e corpo velho, e a partir daí 304 para sempre.
+ * O corpo cacheado de um estático acompanha o ETag, que deriva do `mtime` e do tamanho: um
+ * ficheiro que muda debaixo do processo serve o corpo novo.
  */
 final class DashboardAssetCacheTest extends TestCase
 {

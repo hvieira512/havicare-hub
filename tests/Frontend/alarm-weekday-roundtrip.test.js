@@ -9,14 +9,8 @@ import {
 import { configSection } from "./support/dom.js";
 
 /**
- * Os sete dias da semana, por marca, ida e volta.
- *
- * Cada fabricante escreve os dias de uma maneira: o Vivistar em dígitos dos dias escolhidos,
- * o Wonlex numa máscara de sete com a segunda na posição 0, e o 4P Touch numa máscara de sete
- * com o **domingo** na posição 0. A interface marca sempre 1 a 7, de segunda a domingo, e é
- * na fronteira que a conversão acontece.
- *
- * Errar aqui é um alarme a tocar no dia errado, e por isso a tabela é exaustiva.
+ * Vivistar escreve os dias em dígitos, Wonlex numa máscara com a segunda na posição 0 e 4P
+ * Touch com o **domingo** na posição 0; errar é um alarme a tocar no dia errado.
  */
 
 const WEEKDAYS = [
@@ -51,9 +45,8 @@ for (const { day, name } of WEEKDAYS) {
 /* ---------- o 4P Touch: lembrete de comprimidos ---------- */
 
 /*
- * A máscara nativa deixou de se ver aqui: a tradução para ela passou para o contrato, e é lá
- * que a posição do dia é prendida. O que este bloco prende é o dia sobreviver à ida ao
- * formulário e de volta.
+ * A posição do dia na máscara nativa prende-se no contrato; aqui prende-se a ida e volta ao
+ * formulário.
  */
 
 const TAKE_PILLS_ENTRY = { input: "takePills", key: "take_pills" };

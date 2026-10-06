@@ -24,9 +24,7 @@ final class ApiRequestLogger
 
     public function __invoke(ServerRequestInterface $request, callable $next): mixed
     {
-        // Só o `/api/` entra no canal `api`. A dashboard serve o JS e o CSS inteiros a cada
-        // carregamento, e o `/`, o `/dashboard` e as imagens dos modelos vêm pelo mesmo
-        // manipulador: registá-los enchia o ficheiro antes de servir para alguma coisa.
+        // Só o `/api/` entra no canal `api`: a dashboard, os estáticos e as imagens encheriam o ficheiro.
         if (!str_starts_with($request->getUri()->getPath(), '/api/')) {
             return $next($request);
         }

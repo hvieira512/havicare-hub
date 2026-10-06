@@ -7,12 +7,8 @@ namespace Hub\Registry;
 use Hub\Infrastructure\Persistence\Repository\DenylistRepository;
 
 /**
- * As identidades bloqueadas, em memória, consultadas no caminho de rejeição para calar um
- * aparelho estranho na fonte -- sem notificação, sem evento.
- *
- * O conjunto recarrega da base de dados a cada janela de TTL, como a `Whitelist`: um bloqueio
- * feito pela API torna-se visível ao caminho da ingestão dentro de segundos. Como é o mesmo
- * processo, a escrita própria (`block()`/`unblock()`) muda o conjunto de imediato.
+ * As identidades bloqueadas, consultadas no caminho de rejeição para calar um aparelho na
+ * fonte. Recarregam da base a cada TTL, como a `Whitelist`; `block()`/`unblock()` mudam-nas já.
  */
 final class Denylist
 {

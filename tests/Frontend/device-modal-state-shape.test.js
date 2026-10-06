@@ -5,9 +5,8 @@ import "./support/browser-env.js";
 import { blankDeviceModal, state } from "../../src/Dashboard/dashboard/state.js";
 
 /**
- * O `editDevice` substitui o `state.deviceModal` inteiro. Enquanto escrevia o literal à mão
- * faltava-lhe o `actionDeliveries`, e o `panel.js` escreve nele sem guarda: disparar uma
- * acção num aparelho aberto para edição rebentava com um `TypeError`.
+ * O `editDevice` substitui o `state.deviceModal` inteiro, e o `panel.js` escreve sem guarda no
+ * `actionDeliveries`.
  */
 test("a forma em branco traz todas as chaves do estado inicial", () => {
     assert.deepEqual(

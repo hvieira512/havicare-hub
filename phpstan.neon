@@ -6,17 +6,14 @@ includes:
     - vendor/phpstan/phpstan-phpunit/extension.neon
 
 parameters:
-    # O nível 6 exige a forma dos arrays, que é onde os tipos deste projecto eram
-    # uma promessa vaga: um `array` sem forma não diz nada a quem o recebe.
+    # O nível 6 exige a forma dos arrays: um `array` sem forma não diz nada a quem o recebe.
     level: 6
     paths:
         - src
         - bin
         - tests
-        # `simulator/` fica de fora: os 8 scripts são pontos de entrada CLI independentes
-        # que partilham 20 nomes de função globais (`describe`, `waitForMessages`, ...) com
-        # assinaturas diferentes. Analisados no mesmo processo colidem, e o PHPStan verifica
-        # cada chamada contra a definição do ficheiro errado.
+        # `simulator/` fica de fora: os scripts CLI partilham nomes de função globais com assinaturas
+        # diferentes, que colidem quando analisados no mesmo processo.
     tmpDir: var/phpstan
 
     ignoreErrors:
@@ -32,23 +29,19 @@ parameters:
             identifier: function.alreadyNarrowedType
             path: tests/*
 
-        # notIdentical.alwaysTrue is deliberately NOT here: it is what would
-        # have caught an int licenseId compared against the string '0', and
-        # silencing it cost a live bug.
-        # Defensive style rather than defects: `?? ` on an offset that happens to
-        # always exist, a redundant is_array() on a known array, `?->` on a value
-        # this call site cannot receive as null. Removing them would make the code
-        # more brittle against inputs the type system only *believes* are narrow.
+        # O notIdentical.alwaysTrue não está aqui de propósito: é o que apanha um licenseId inteiro
+        # comparado com a string '0'.
+        # Estilo defensivo e não defeitos: `??` num offset que existe sempre, um is_array() redundante,
+        # `?->` num valor que este sítio não recebe nulo.
         - identifier: nullCoalesce.offset
         - identifier: nullsafe.neverNull
         - identifier: function.alreadyNarrowedType
         - identifier: booleanAnd.rightAlwaysTrue
         - identifier: instanceof.alwaysTrue
-        # A nullable return kept because the interface it implements allows null.
+        # Um retorno anulável que a interface implementada permite.
         - identifier: return.unusedType
-        # A generic mixed-value callback and a regex capture: PHPStan narrows
-        # these from the literal at the call site, but the guards are the
-        # function's own contract with any future caller.
+        # Um callback genérico e uma captura de regex: o PHPStan estreita-os pelo literal da chamada,
+        # mas as guardas são o contrato da função.
         -
             identifier: notIdentical.alwaysTrue
             paths:
@@ -56,15 +49,13 @@ parameters:
                 - src/Device/DeviceEventDecoder.php
                 - src/Device/Decoder/VivistarEventDecoder.php
                 - src/Protocol/Adapter/VivistarAdapter.php
-        # Predis declares pipeline() on Client, not on ClientInterface. Narrowing
-        # our hints to Client would break the in-memory doubles the tests use,
-        # which implement the interface.
+        # O Predis declara o pipeline() no Client e não no ClientInterface, e os duplos dos testes
+        # implementam a interface.
         -
             message: '#Call to an undefined method Predis\\ClientInterface::pipeline\(\)#'
 
-        # The subscriber is assigned after the closure that reads it is built, so
-        # the by-reference capture is populated by the time it runs. The `?->`
-        # is the guard for the window before that.
+        # O subscritor é atribuído depois de construída a closure que o lê; o `?->` guarda a janela
+        # antes disso.
         -
             message: '#Cannot call method handleReceivedMessage\(\) on null#'
             path: src/Ingress/Mqtt/SubscriberFactory.php

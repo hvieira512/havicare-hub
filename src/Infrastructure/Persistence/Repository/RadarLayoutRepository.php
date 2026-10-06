@@ -7,10 +7,8 @@ namespace Hub\Infrastructure\Persistence\Repository;
 use PDO;
 
 /**
- * A planta de cada radar: a divisão e as áreas declaradas no aparelho.
- *
- * A `area_key` é a chave do fabricante, e é também o `regionId` que a telemetria de presença
- * reporta -- é por ela que se sabe em que cama está quem lá está.
+ * A planta de cada radar: a divisão e as áreas declaradas no aparelho. A `area_key` é também o
+ * `regionId` da telemetria de presença, que diz em que cama está quem lá está.
  */
 final class RadarLayoutRepository
 {
@@ -19,11 +17,8 @@ final class RadarLayoutRepository
     }
 
     /**
-     * Grava a planta inteira, sala e áreas, de uma vez.
-     *
-     * As áreas são apagadas antes de entrarem as novas, e dentro da mesma transação: uma sala
-     * reconfigurada com menos áreas deixava as antigas para trás, e o mapa passava a desenhar
-     * uma cama que já ninguém declarou.
+     * Grava a planta inteira de uma vez, apagando as áreas antigas na mesma transação, para uma
+     * sala com menos áreas não manter camas que ninguém declarou.
      *
      * @param array{room: array<string, int>, areas: list<array<string, int|string>>} $layout
      */

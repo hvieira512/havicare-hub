@@ -7,13 +7,8 @@ namespace Hub\Domain\Capability;
 use Hub\Domain\DiaperSensitivity;
 
 /**
- * A sensibilidade dos alertas de um medidor de fraldas. O valor é
- * `{pollutionRange, pollutionValue}` nos dois sentidos, e o `_meta` leva os presets, as gamas
- * e a graduação.
- *
- * `HubAppliedCapability` porque não há downlink: o que estes valores mudam é a regra com que
- * o `Moko\MokoBridge` interpreta a leitura. Os limiares e a validação estão no
- * `DiaperSensitivity`.
+ * A sensibilidade dos alertas de um medidor de fraldas, `{pollutionRange, pollutionValue}`, sem
+ * downlink: muda a regra com que o `Moko\MokoBridge` lê. Os limiares estão no `DiaperSensitivity`.
  */
 final class DiaperSensitivityCapability implements
     CapabilityContract,
@@ -43,9 +38,8 @@ final class DiaperSensitivityCapability implements
     }
 
     /**
-     * Nunca chamado: uma capacidade aplicada no hub não passa pela conversão para nativo.
-     * Fica explícito em vez de devolver vazio, para que um caminho novo que a chame por
-     * engano falhe em vez de gravar nada em silêncio.
+     * Nunca chamado: uma capacidade aplicada no hub não passa pela conversão, e um caminho novo que
+     * a chame por engano falha em vez de gravar nada.
      */
     public function toNative(string $protocol, mixed $value): array
     {

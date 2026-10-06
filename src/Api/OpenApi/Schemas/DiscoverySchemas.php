@@ -7,8 +7,8 @@ namespace Hub\Api\OpenApi\Schemas;
 use Hub\Api\OpenApi\Responses;
 
 /**
- * As descobertas de capacidades: o rascunho produzido a partir de um dispositivo ao vivo e o
- * model capability change it proposes.
+ * As descobertas de capacidades: o rascunho produzido a partir de um dispositivo ao vivo e a
+ * mudança de capacidades do modelo que ele propõe.
  */
 final class DiscoverySchemas
 {

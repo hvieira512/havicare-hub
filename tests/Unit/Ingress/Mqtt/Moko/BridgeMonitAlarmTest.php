@@ -16,10 +16,8 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 
 /**
- * O alarme `change_required` do medidor de fraldas MONIT MECS-PRO.
- *
- * O caminho da telemetria está coberto pelo `BridgeTest`; este cobre o dos eventos, que é
- * onde um alarme de primeira observação se pode perder sem ninguém dar por isso.
+ * O alarme `change_required` do MONIT MECS-PRO pelo caminho dos eventos, onde um alarme de
+ * primeira observação se pode perder; a telemetria está no `BridgeTest`.
  */
 final class BridgeMonitAlarmTest extends TestCase
 {
@@ -116,9 +114,8 @@ final class BridgeMonitAlarmTest extends TestCase
 
     public function testLooseningAndTighteningAgainDoesNotSwallowTheAlarm(): void
     {
-        // Com a sensibilidade na CHAVE do estado em vez de no valor, voltar a um preset já
-        // usado reencontrava o `change_required` antigo, não via transição, e a fralda suja
-        // ficava sem alarme.
+        // A sensibilidade vai no valor do estado e não na chave: voltar a um preset já usado
+        // tem de ver a transição.
         $mqtt = new RecordingHubMqttBridge();
         $sensitivity = new MutableDiaperSensitivity();
         $bridge = $this->bridge($mqtt, $sensitivity);
@@ -140,9 +137,8 @@ final class BridgeMonitAlarmTest extends TestCase
 
     public function testTheSensitivityNeverLeaksIntoThePublishedEvent(): void
     {
-        // A sensibilidade vive dentro do estado guardado para que uma alteração conte como
-        // transição. O `previousState` é contrato publicado e continua a ser um dos três
-        // estados, ou nulo -- nunca "attention@7-15".
+        // A sensibilidade vive no estado guardado para uma alteração contar como transição, mas
+        // o `previousState` publicado é um dos três estados ou nulo, nunca "attention@7-15".
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt, new MutableDiaperSensitivity());
 
@@ -156,9 +152,8 @@ final class BridgeMonitAlarmTest extends TestCase
 
     public function testWithoutALookupTheHubKeepsItsHistoricalThresholds(): void
     {
-        // Sem lookup ligado -- que e como todos os outros testes deste ficheiro constroem o
-        // bridge -- a sensibilidade é a do preset normal. É o que garante que um sensor que
-        // ninguém configurou continua a comportar-se como sempre se comportou.
+        // Sem lookup ligado a sensibilidade é a do preset normal: um sensor que ninguém
+        // configurou comporta-se como sempre.
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
@@ -204,10 +199,8 @@ final class BridgeMonitAlarmTest extends TestCase
     }
 
     /**
-     * O payload de 20 bytes do fabricante, construído para uma condição pretendida.
-     *
-     * Quem decide é o normalizador: delta máximo < 4 é `clean`, quatro ou mais canais com
-     * delta >= 12 é `change_required`, e o que fica entre os dois é `attention`.
+     * Payload de 20 bytes do fabricante para uma condição: delta máximo < 4 é `clean`, quatro ou mais
+     * canais com delta >= 12 é `change_required`, e o resto é `attention`.
      */
     private function advertisement(string $condition, int $battery): string
     {

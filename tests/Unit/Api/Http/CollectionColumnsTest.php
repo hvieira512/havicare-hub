@@ -9,12 +9,8 @@ use Hub\Api\Request\ApiUserWriteRequest;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O descritor que qualquer listagem usa para dizer a quem consome o que pode ordenar,
- * filtrar e editar.
- *
- * Cada listagem declara-o uma vez a partir de onde a capacidade vive mesmo -- as colunas
- * que o repositório sabe ordenar, os campos que o pedido de escrita aceita -- em vez de o
- * escrever à mão e o deixar divergir.
+ * O descritor com que cada listagem diz o que se ordena, filtra e edita, derivado de onde a
+ * capacidade vive em vez de escrito à mão.
  */
 final class CollectionColumnsTest extends TestCase
 {
@@ -59,9 +55,8 @@ final class CollectionColumnsTest extends TestCase
     }
 
     /**
-     * O pedido de escrita diz o que se *edita*, e não que colunas existem. Deriva-lo para
-     * as duas coisas punha a password, o `licenseRefId` e a matriz de capacidades como
-     * colunas de uma tabela -- campos que a resposta nem traz.
+     * O pedido de escrita diz o que se *edita*, e não que colunas existem: a password e o
+     * `licenseRefId` não são colunas.
      */
     public function testAWriteOnlyFieldDoesNotBecomeAColumn(): void
     {
@@ -81,9 +76,8 @@ final class CollectionColumnsTest extends TestCase
     }
 
     /**
-     * O conjunto é fechado e sai inteiro; a contagem é que vem dos dados. Um valor que o
-     * filtro actual não deixou em nenhuma linha sai com zero em vez de desaparecer -- senão
-     * ficava inalcançável, que é a razão de o conjunto ser declarado e não descoberto.
+     * O conjunto é fechado e sai inteiro; só a contagem vem dos dados. Um valor sem linhas sai
+     * com zero, senão ficava inalcançável.
      */
     public function testAClosedSetOffersEveryValueAndZeroForTheOnesTheDataLacks(): void
     {

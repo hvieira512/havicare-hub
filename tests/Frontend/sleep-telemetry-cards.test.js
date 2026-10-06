@@ -5,10 +5,7 @@ import "./support/browser-env.js";
 import { cardContent as uplinkCardContent } from "./support/cards.js";
 import { commandError, commandLabel, fieldLabel } from "../../src/Dashboard/dashboard/format.js";
 
-/**
- * Os cartões do sono. A noite chega inteira -- fronteiras, duração e os troços de cada fase --
- * e o ecrã mostrava "Dados de sono": um anúncio de que há dados, com os dados ao lado.
- */
+/** A noite chega inteira -- fronteiras, duração e os troços de cada fase -- e o cartão mostra-a. */
 
 const NIGHT = {
     startTime: "2026-09-16T00:11:00Z",

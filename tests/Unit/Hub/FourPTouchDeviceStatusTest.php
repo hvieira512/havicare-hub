@@ -10,10 +10,8 @@ use Hub\Protocol\Adapter\FourPTouchAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A resposta ao `TS`, apanhada de um D45 Pro em produção a 2026-09-28.
- *
- * Nem todos os modelos respondem: o Y6M e o Y6L devolvem o comando tal e qual, e a própria
- * especificação avisa que a validade depende do firmware.
+ * A resposta ao `TS` de um D45 Pro real. Nem todos os modelos respondem: o Y6M e o Y6L
+ * devolvem o comando tal e qual.
  */
 final class FourPTouchDeviceStatusTest extends TestCase
 {
@@ -50,9 +48,8 @@ final class FourPTouchDeviceStatusTest extends TestCase
     }
 
     /**
-     * O `GPS:OK(2)` e o `NET:OK(100)` ficam de fora: a especificação dá o formato e nunca
-     * diz o que os números são, e o `100` é o mesmo no exemplo dela e no aparelho real. Uma
-     * grandeza sem unidade conhecida não entra no contrato.
+     * O `GPS:OK(2)` e o `NET:OK(100)` ficam de fora: a especificação nunca diz o que os números
+     * são, e uma grandeza sem unidade conhecida não entra no contrato.
      */
     public function testTheUndocumentedNumbersDoNotBecomeAContract(): void
     {

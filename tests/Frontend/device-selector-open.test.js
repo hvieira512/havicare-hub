@@ -8,11 +8,7 @@ import {
     openDeviceSelector,
 } from "../../src/Dashboard/dashboard/devices/list.js";
 
-/**
- * O modal de escolha abre antes de a resposta chegar. O pedido fica pendurado de propósito:
- * com o `show()` atrás do `await loadSummary()`, é o caso que deixa o ecrã sem modal e o
- * botão clicável, a pedir outra vez a cada clique.
- */
+/** O modal abre antes de a resposta chegar, e o pedido fica pendurado para o provar. */
 function setUpSelector() {
     document.body.innerHTML = `
         <div id="deviceList" class="device-card-list"></div>

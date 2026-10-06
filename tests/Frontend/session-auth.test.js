@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 
-// Sem temporizadores reais: os relógios de inatividade são de minutos e deixavam o processo
+// Sem temporizadores reais: os relógios de inatividade são de minutos e deixariam o processo
 // de teste pendurado.
 window.setTimeout = () => 0;
 window.clearTimeout = () => {};
@@ -13,10 +13,8 @@ const { validAdminToken, initializeDashboardSession } = await import(
 );
 
 /**
- * As guardas que decidem se uma sessão vale, e o arranque que a vai buscar ao cookie.
- *
- * A credencial não vive no `sessionStorage`, que é por separador: no `sessionStorage`, o
- * segundo separador pede login com a sessão do primeiro aberta.
+ * As guardas que decidem se uma sessão vale, e o arranque que a vai buscar ao cookie; no
+ * `sessionStorage`, que é por separador, o segundo separador pediria login.
  */
 const future = () => new Date(Date.now() + 3_600_000).toISOString();
 const past = () => new Date(Date.now() - 1_000).toISOString();

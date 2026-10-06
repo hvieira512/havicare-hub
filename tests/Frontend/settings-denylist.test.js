@@ -49,7 +49,7 @@ test("a tab lista os bloqueados com um botão de desbloquear por linha", async (
     assert.match(els.denylistTabSummary.textContent, /1 aparelho bloqueado/);
 });
 
-/** A listagem passou a paginar: contar as linhas recebidas dizia vinte a quem tem trinta. */
+/** A listagem pagina: contar as linhas recebidas diria vinte a quem tem trinta. */
 test("o número vem do total da API e não das linhas da página", async () => {
     const els = setupDom();
     globalThis.fetch = async () => jsonResponse({
@@ -90,11 +90,7 @@ test("desbloquear chama o DELETE da API e tira a linha", async () => {
     assert.match(els.denylistListBody.innerHTML, /notificação/i);
 });
 
-/**
- * Um painel vazio que só diz que está vazio não responde à pergunta de quem lá chegou. Este é
- * o único separador onde não se faz nada -- bloquear é gesto da notificação --, e era também
- * o único que não o dizia.
- */
+/** É o único separador onde não se faz nada: bloquear é gesto da notificação. */
 test("uma lista vazia diz de onde vêm os bloqueios em vez de só dizer que não há", async () => {
     const els = setupDom();
     globalThis.fetch = async () => jsonResponse({ data: [] });

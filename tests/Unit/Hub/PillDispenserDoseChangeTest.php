@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class PillDispenserDoseChangeTest extends TestCase
 {
-    /** A resposta ao `0x07` continua a ser a leitura dos nove, com os totais. */
+    /** A resposta ao `0x07` é a leitura dos nove, com os totais. */
     public function testTheStatusReplyIsStillTheReadingOfTheNine(): void
     {
         $byFeature = $this->decode(0x87, [0x8131 => "\x07", 0x8133 => "\x06"]);
@@ -47,7 +47,6 @@ final class PillDispenserDoseChangeTest extends TestCase
         self::assertSame(['alarm' => 3, 'state' => 'missed'], $byFeature['medication_alarm_change'] ?? null);
     }
 
-    /** E a bandeira que os distinguia deixa de ser precisa. */
     public function testTheCompleteFlagIsGone(): void
     {
         self::assertArrayNotHasKey(
@@ -56,7 +55,7 @@ final class PillDispenserDoseChangeTest extends TestCase
         );
     }
 
-    /** Dois acontecimentos numa mensagem obrigavam quem consome a desempacotar uma lista. */
+    /** Dois acontecimentos numa mensagem obrigariam quem consome a desempacotar uma lista. */
     public function testTwoChangesInOneNotificationAreTwoEvents(): void
     {
         $adapter = new PillDispenserAdapter();

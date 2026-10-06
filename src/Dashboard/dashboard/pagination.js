@@ -4,13 +4,8 @@ import { paginationControls } from "./components/pagination.js";
 const defaultSummary = (start, end, total) => `A mostrar de ${start} até ${end} | ${total}`;
 
 /**
- * Escreve o paginador nos três elementos que o compõem: o contentor, que se esconde quando
- * não há para onde ir, o resumo e os controlos. Os botões vêm do componente; o que vive aqui
- * é o que toca no DOM.
- *
- * `summary` existe porque as duas famílias de listagem dizem a mesma coisa de formas
- * diferentes e ambas estão certas: uma listagem servida em páginas anuncia-se por extenso, e
- * os painéis estreitos do dispositivo escolhido só têm largura para "1–12 de 30".
+ * Escreve o paginador no contentor, no resumo e nos controlos. O `summary` é por extenso numa
+ * listagem em páginas, e curto nos painéis estreitos do dispositivo: «1–12 de 30».
  */
 export function renderPagination({
     pagination,
@@ -25,8 +20,7 @@ export function renderPagination({
 
     if (controls === "") {
         rootEl.classList.add("d-none");
-        // Sem resumo não há elemento nenhum: onde o total já vive numa pastilha ao lado do
-        // título, repeti-lo aqui era escrever o mesmo número duas vezes no mesmo ecrã.
+        // Sem resumo não há elemento: o total já vive numa pastilha ao lado do título.
         if (summaryEl) {
             summaryEl.textContent = "";
         }

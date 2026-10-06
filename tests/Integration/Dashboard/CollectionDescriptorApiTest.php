@@ -13,9 +13,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * As quatro listagens que montavam a paginação à mão descrevem-se agora como a de
- * utilizadores: `columns` diz o que se ordena e filtra, `filters.counts` diz quantas linhas
- * cada valor de escolha tem.
+ * As quatro listagens descrevem-se como a de utilizadores: `columns` diz o que se ordena e
+ * filtra, `filters.counts` quantas linhas cada valor de escolha tem.
  */
 final class CollectionDescriptorApiTest extends MysqlDashboardTestCase
 {
@@ -51,7 +50,6 @@ final class CollectionDescriptorApiTest extends MysqlDashboardTestCase
         self::assertArrayHasKey('counts', $response['filters']);
     }
 
-    /** O nome do parâmetro e o conteúdo das linhas não mudam com a migração. */
     public function testTheModelFiltersKeepTheirParameterNamesAndRows(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());

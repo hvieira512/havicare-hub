@@ -32,8 +32,7 @@ final class PillDispenserNoEncryptionSwitchTest extends TestCase
     /**
      * E o `0x8005` não entra em nenhuma das duas listas que o hub pergunta.
      *
-     * É a afirmação que vale: `buildDownlink` recusa qualquer nome que não conheça, e por isso
-     * um comando inventado a lançar não provava nada sobre a cifra em particular.
+     * `buildDownlink` recusa qualquer nome desconhecido, e por isso lançar não provava nada.
      */
     public function testTheHubNeverEvenAsksAboutTheCipherTag(): void
     {

@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Hub\Domain;
 
 /**
- * Os dois limiares que decidem quando uma fralda conta como suja, com os presets e as gamas
- * num só sítio.
- *
- * Não há downlink: o sensor é um beacon não-conectável, e o que estes valores mudam é a regra
- * com que o hub interpreta a mesma leitura física. Ver `docs/17-sensor-de-fralda.md` §3.
+ * Os dois limiares que decidem quando uma fralda conta como suja, com os presets e as gamas. Sem
+ * downlink: mudam a regra com que o hub lê a leitura (`docs/17-sensor-de-fralda.md` §3).
  */
 final class DiaperSensitivity
 {
@@ -60,11 +57,8 @@ final class DiaperSensitivity
     }
 
     /**
-     * O limiar que separa `clean` de `attention`. É do hub e não da MONIT, e é derivado para
-     * acompanhar o valor de molhado em vez de ficar absoluto.
-     *
-     * A divisão por 4 é o que mantém o índice de `clean` dentro da banda 0-25; o `+1` vem de
-     * a comparação ser `<`. Ver `docs/17-sensor-de-fralda.md` §2.
+     * O limiar entre `clean` e `attention`, do hub e derivado do valor de molhado. O `/4` mantém o
+     * `clean` na banda 0-25, e o `+1` vem do `<` (`docs/17-sensor-de-fralda.md` §2).
      */
     public static function cleanMaxDelta(int $pollutionValue): int
     {

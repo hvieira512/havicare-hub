@@ -60,9 +60,8 @@ mqtt-logs:
 smoke-hub:
 	tests/scenarios/scenario_hub_raw_mqtt_roundtrip.sh
 
-# Os testes correm-se pelo `composer`, que é onde estão declarados: `composer test` é o
-# portão completo, e os passos avulsos são `composer test:unit`, `test:integration`,
-# `test:frontend`, `test:scenarios`, `analyse` e `style`. Ver `docs/16-testes.md`.
+# Os testes correm-se pelo `composer test` (o portão completo) ou pelos passos avulsos
+# `test:unit`, `test:integration`, `test:frontend`, `test:scenarios`, `analyse` e `style`.
 
 clean-test-artifacts:
 	tests/scenarios/cleanup-artifacts.sh

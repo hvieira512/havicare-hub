@@ -54,14 +54,8 @@ test("a reading without a timestamp still shows band and strength", () => {
 });
 
 /**
- * Uma pulseira vista pela última vez há 28 dias aparecia com quatro barras verdes e
- * «Excelente · -32 dBm · há 28d». A leitura não expira: o hub declara o par calado ao fim de
- * 30 s e publica `unknown`, mas o registo em Redis guarda o último dBm para sempre, e depois
- * de um reinício do hub nem chega a haver quem o expire.
- *
- * O limite de apresentação é a soma do que o hub tolera (30 s) com o intervalo a que a
- * dashboard sonda (30 s): mais apertado do que isso e um aparelho vivo dizia «sem sinal» só
- * por atraso da sondagem.
+ * O registo em Redis guarda o último dBm para sempre: acima de 60 s -- os 30 s que o hub tolera
+ * mais os 30 s da sondagem -- a leitura já não se mostra como sinal.
  */
 const secondsAgo = (seconds) => new Date(Date.now() - (seconds * 1000)).toISOString();
 
@@ -149,9 +143,8 @@ test("every link gets a row, heard or not", () => {
 });
 
 test("a gateway's own page shows the sensors it relays", () => {
-    // As mesmas linhas vistas do outro lado da ligação: é isto que uma derivação do lado do
-    // browser não consegue fazer, porque a telemetria de um gateway não traz leitura nenhuma
-    // dos sensores que ele retransmite.
+    // As mesmas linhas vistas do lado do gateway: a telemetria dele não traz leitura nenhuma
+    // dos sensores que retransmite.
     const html = gatewaySignalRows([
         link("fbd87c59ba8b", "W6B", { rssiDbm: -75, signalSeenAt: new Date().toISOString() }),
     ]);

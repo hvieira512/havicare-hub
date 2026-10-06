@@ -7,12 +7,7 @@ const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initListFilters, renderDeviceFilterControls } =
     await import("../../src/Dashboard/dashboard/devices/list-filters.js");
 
-/**
- * O botão do rodapé do painel de filtros, que diz quantos dispositivos ficam.
- *
- * No telemóvel o painel cobre a lista: sem este número, filtra-se às cegas e só se sabe o
- * efeito depois de fechar.
- */
+/** No telemóvel o painel de filtros cobre a lista, e o botão diz quantos dispositivos ficam. */
 const els = new Proxy({}, {
     get(target, name) {
         if (typeof name !== "string") return undefined;

@@ -7,10 +7,8 @@ namespace Tests\Unit\Dashboard;
 use PHPUnit\Framework\TestCase;
 
 /**
- * As leituras e os pedidos são duas colunas lado a lado a partir do `xl`. Abaixo disso
- * empilham, e quem abre um dispositivo no telemóvel passa a lista inteira das leituras
- * antes de chegar ao primeiro pedido. Passam a separadores, e as duas colunas do `xl`
- * ficam como estavam.
+ * Abaixo do `xl` as leituras e os pedidos são separadores, senão no telemóvel a lista inteira
+ * das leituras fica antes do primeiro pedido.
  */
 final class ActivityTabsTest extends TestCase
 {

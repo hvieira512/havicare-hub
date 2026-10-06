@@ -8,11 +8,8 @@ use Hub\Command\DeviceConfigurationCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * As configurações da pulseira que levam valores, e não só um interruptor.
- *
- * O payload de uma pulseira viaja até ao gateway tal e qual, sem construtor de tramas pelo
- * meio. Sem validação aqui, uma janela mal escrita só é apanhada no fim do caminho -- pelo
- * SDK, que a aceita em silêncio e não configura nada.
+ * As configurações da pulseira que levam valores. O SDK aceita em silêncio uma janela mal escrita
+ * sem configurar nada, e não há construtor de tramas: a validação é aqui.
  */
 final class VeepooConfigurationTest extends TestCase
 {
@@ -79,10 +76,8 @@ final class VeepooConfigurationTest extends TestCase
     }
 
     /**
-     * O que a pulseira deixa configurar e o hub não expõe, por decisão.
-     *
-     * Alarmes, lembretes, brilho do ecrã e unidades existem no aparelho e não alteram uma
-     * leitura -- é comportamento de relógio de pulso e não de sensor.
+     * Alarmes, lembretes, brilho do ecrã e unidades existem no aparelho mas não alteram uma leitura:
+     * é comportamento de relógio de pulso e não de sensor.
      */
     public function testWhatDoesNotChangeAMeasurementIsNotOffered(): void
     {

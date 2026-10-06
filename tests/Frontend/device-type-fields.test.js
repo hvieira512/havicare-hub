@@ -1,17 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos modulos do dashboard: o api/http.js toca em window ao carregar.
+// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
 import "./support/browser-env.js";
 import { deviceTypeFields, deviceTypeOptions } from "../../src/Dashboard/dashboard/domain.js";
 
-/**
- * REDE DE SEGURANCA, escrita antes de tocar no modal.
- *
- * Estas expectativas são o comportamento que está em produção: se for preciso mudar uma delas,
- * mudou o comportamento e não só a forma. O que se fixa é que campos aparecem por tipo, e que
- * rotulo, ajuda e placeholder tem o campo de identidade.
- */
+/** Que campos aparecem por tipo, e o rótulo, a ajuda e o placeholder da identidade. */
 
 const TYPES = ["watch", "ncs", "radar", "gateway", "diaper_sensor", "bracelet"];
 
@@ -36,9 +30,8 @@ test("os outros tipos identificam-se por deviceId", () => {
 });
 
 /**
- * Identificar-se por MAC e levar SIM são duas perguntas distintas, e o gateway responde
- * diferente às duas: é o cartão dele que faz o backhaul. Enquanto foram a mesma pergunta --
- * um `deviceType !== "watch"` -- guardar um gateway apagava-lhe o número.
+ * Identificar-se por MAC e levar SIM são perguntas distintas: o gateway responde sim às duas,
+ * porque é o cartão dele que faz o backhaul.
  */
 test("o SIM não acompanha o tipo de identidade: o gateway tem os dois", () => {
     assert.equal(deviceTypeFields("gateway").identity.field, "deviceId");
@@ -111,7 +104,6 @@ test("nenhum rótulo, ajuda ou placeholder do catálogo está em inglês", () =>
 });
 
 test("um tipo desconhecido cai no relogio, como o normalizeDeviceType", () => {
-    // O modal chamava sempre normalizeDeviceType antes de decidir, e a tabela mantem
-    // esse contrato para nenhum chamador ter de o repetir.
+    // A tabela normaliza o tipo, para nenhum chamador ter de o fazer.
     assert.equal(deviceTypeFields("nao-existe").identity.field, "imei");
 });

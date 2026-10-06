@@ -1,9 +1,8 @@
 import { state } from "../../state.js";
 
 /**
- * O contexto e a navegação do separador do catálogo: três slides de um carrossel -- a lista,
- * o formulário de um modelo novo, e a ficha de um modelo -- que precisam do mesmo `els` e do
- * mesmo carrossel. Ficam num módulo que não importa nenhum dos três.
+ * O contexto e a navegação do separador do catálogo: os três slides do carrossel -- a lista, o
+ * formulário e a ficha -- num módulo que não importa nenhum deles.
  */
 let els;
 let ui;

@@ -49,9 +49,8 @@ class AuthService
             return ApiError::invalidRequest('username and password are required')->toArray();
         }
 
-        // O teto vem antes da verificação, e é isso que o torna útil: o custo que ele existe
-        // para travar -- 146 ms de loop bloqueado -- é pago por qualquer tentativa, acerte ou
-        // falhe. Verificado depois, já não travava nada.
+        // O teto vem antes da verificação: o custo que ele trava, 146 ms de loop bloqueado, paga-se
+        // acerte ou falhe.
         if ($this->throttle !== null && !$this->throttle->allows($remoteAddress, $username)) {
             Logger::channel('api')->warning('API login throttled', [
                 'request_id' => $requestId,
@@ -96,10 +95,8 @@ class AuthService
     }
 
     /**
-     * Fecha a sessão: as duas credenciais deixam de valer imediatamente.
-     *
-     * Revogar o token de acesso é o que distingue isto de apagar o cookie -- sem a revogação,
-     * quem ficasse com ele tinha a API aberta até ele expirar por si.
+     * Fecha a sessão: as duas credenciais deixam de valer já. Revogar o token de acesso é o que
+     * distingue isto de apagar o cookie.
      */
     public function logout(string $refreshToken, string $accessToken, string $requestId = ''): void
     {
@@ -116,9 +113,8 @@ class AuthService
     /** @return array<string, mixed> */
     private function refresh(string $refreshToken, string $requestId = ''): array
     {
-        // Consome o token de renovação primeiro -- é de uso único -- e só depois revalida. Um
-        // utilizador desactivado, apagado ou com o papel mudado não renova, e o token gasta-se
-        // na mesma, por isso uma renovação recusada não fica a poder repetir-se.
+        // Consome o token primeiro, por ser de uso único, e só depois revalida: uma renovação recusada
+        // não se pode repetir.
         $context = $this->tokens->consumeRefreshToken($refreshToken);
         $identity = $context !== null ? $this->identityForRefresh($context) : null;
         if ($identity === null) {
@@ -155,9 +151,8 @@ class AuthService
     }
 
     /**
-     * A identidade com que se renova sai de `api_users`, relida agora, e não do que o token
-     * guardou: um utilizador desactivado ou com o papel mudado deixa de renovar. Sem `userId`
-     * não há linha a reler, e o token de inquilino segue com o contexto que trazia.
+     * A identidade relê-se de `api_users`, e não do token: um utilizador desactivado ou com o papel
+     * mudado deixa de renovar. Sem `userId`, segue o contexto que o token trazia.
      *
      * @return array<string, mixed>|null
      */
@@ -190,12 +185,8 @@ class AuthService
     }
 
     /**
-     * Emite um token de inquilino a pedido de um administrador.
-     *
-     * Serve para a plataforma de um cliente entregar credenciais do hub às aplicações dela sem
-     * guardar uma password por inquilino. O que sai é sempre mais fraco do que aquilo com que
-     * se pediu, e fechar a rota a não-administradores é do `RouteAccessPolicy`. Não há teto de
-     * tentativas porque não há password para verificar.
+     * Emite um token de inquilino a pedido de um administrador, para a plataforma de um cliente
+     * entregar credenciais às aplicações dela. Sai sempre mais fraco do que quem o pediu.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
@@ -209,9 +200,8 @@ class AuthService
             return ApiError::invalidRequest('company and licenseId are required')->toArray();
         }
 
-        // As duas metades respondem separadamente: uma empresa conhecida sem aquela licença é
-        // o engano provável -- o inquilino ainda não foi criado no hub -- e dizê-lo poupa a
-        // quem integra a adivinhação.
+        // As duas metades respondem separadamente: uma empresa conhecida sem aquela licença é o
+        // engano provável.
         $companyRow = $this->db->companies->findByName($company);
         if ($companyRow === null) {
             return ApiError::companyNotFound()->toArray();
@@ -222,9 +212,8 @@ class AuthService
             return ApiError::licenseNotFound()->toArray();
         }
 
-        // O nome sai do par e não de quem emitiu. O tecto de streams simultâneos conta por
-        // `username`, e com o nome do administrador os inquilinos todos partilhavam um balde
-        // -- o primeiro a abrir cem ligações fechava a porta aos outros.
+        // O nome sai do par e não de quem emitiu: o teto de streams conta por `username`, e cada
+        // inquilino tem de ter o seu.
         $username = $company . '/' . $licenseId;
 
         Logger::channel('api')->info('API license token issued', [
@@ -253,11 +242,8 @@ class AuthService
     }
 
     /**
-     * Um hash de referência, para uma tentativa contra uma conta que não existe custar o mesmo
-     * que uma contra uma que existe.
-     *
-     * É gerado e não escrito à mão de propósito: acompanha o custo que o `PASSWORD_DEFAULT`
-     * tiver na altura, e um custo menor aqui reabria o oráculo.
+     * Um hash de referência, para uma conta que não existe custar o mesmo que uma que existe. É
+     * gerado para acompanhar o custo do `PASSWORD_DEFAULT`.
      */
     private ?string $referenceHash = null;
 
@@ -272,9 +258,8 @@ class AuthService
         $user = $this->db->apiUsers->findByUsername($username);
         $storedHash = is_array($user) ? (string)($user['password_hash'] ?? '') : '';
 
-        // A verificação corre **sempre**, e sempre uma vez, aconteça o que acontecer a seguir.
-        // Um curto-circuito antes do `password_verify` responde em 0,5 ms em vez de ~175 ms, e
-        // essa diferença diz a quem perguntar que contas existem e quais estão saudáveis.
+        // A verificação corre sempre, e uma vez: um curto-circuito responde em 0,5 ms em vez de
+        // ~175 ms, e diz a quem pergunta que contas existem.
         $passwordMatches = password_verify($password, $storedHash !== '' ? $storedHash : $this->referenceHash());
 
         if (!is_array($user) || $storedHash === '' || !$passwordMatches) {
@@ -285,11 +270,8 @@ class AuthService
     }
 
     /**
-     * A linha de `api_users` transformada na identidade que emite um token, ou `null` se a conta
-     * não serve: desactivada, com um papel que não existe, ou um inquilino sem licença completa.
-     *
-     * É o mesmo molde no login e na renovação -- as duas têm de aceitar exactamente as mesmas
-     * contas, e uma regra escrita duas vezes divergiria.
+     * A linha de `api_users` como identidade que emite um token, ou `null` se a conta não serve.
+     * O mesmo molde no login e na renovação, que têm de aceitar as mesmas contas.
      *
      * @param array<string, mixed> $user
      * @return array<string, mixed>|null

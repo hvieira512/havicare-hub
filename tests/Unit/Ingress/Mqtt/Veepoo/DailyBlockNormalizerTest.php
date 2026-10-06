@@ -80,12 +80,8 @@ final class DailyBlockNormalizerTest extends TestCase
             $byType[$e['type']][] = $e;
         }
 
-        // Os cinquenta R-R vão numa mensagem só, e a posição na lista é o instante: são
-        // cinquenta lugares a cobrir os cinco minutos do bloco, um de seis em seis segundos.
-        // O fabricante chama `RR2Per6Second` ao campo equivalente do modo de teste.
-        //
-        // A cadência não leva campo próprio: sai dos instantes, e dizê-la duas vezes era
-        // arriscar que um dia discordassem.
+        // Os cinquenta R-R vão numa mensagem, e a posição é o instante: um de seis em seis
+        // segundos (o `RR2Per6Second` do fabricante). A cadência sai dos instantes.
         self::assertCount(1, $byType['rr_interval']);
         self::assertSame('2026-09-09T03:20:00Z', $byType['rr_interval'][0]['occurredAt']);
         self::assertSame(
@@ -100,12 +96,8 @@ final class DailyBlockNormalizerTest extends TestCase
     }
 
     /**
-     * A pulseira diz em cada bloco se estava a ser usada, e isso é telemetria por si.
-     *
-     * Sem ela, um bloco de zeros por estar na mesinha de cabeceira é indistinguível de um
-     * bloco de zeros de alguém sentado -- e são a mesma leitura com significados opostos.
-     * O javadoc do fabricante chama-lhe bits de bandeira e não documenta a tabela; num dia
-     * inteiro de captura só apareceram `0` com a pulseira ao pulso e `6` com ela fora dele.
+     * Sem ele um bloco de zeros na mesinha é igual a alguém sentado. A tabela não está documentada:
+     * ao pulso só se viu `0`, e fora dele `6`.
      */
     public function testWearStateSaysWhetherTheBandWasOnTheWrist(): void
     {
@@ -125,11 +117,8 @@ final class DailyBlockNormalizerTest extends TestCase
     }
 
     /**
-     * Cada bloco traz o seu estado de uso, mesmo quando é igual ao anterior.
-     *
-     * Colapsar repetições é o hub a decidir o que vale a pena dizer, e muda o significado do
-     * silêncio: deixa de se distinguir «não mudou» de «não houve leitura». Quem consome é que
-     * compara com o que leu da vez anterior.
+     * Colapsar repetições confundia «não mudou» com «não houve leitura»; quem consome compara com
+     * o que leu antes.
      */
     public function testEveryBlockCarriesItsOwnWearState(): void
     {
@@ -156,11 +145,8 @@ final class DailyBlockNormalizerTest extends TestCase
     }
 
     /**
-     * A bandeira a zero é a única que diz «ao pulso»; os outros códigos são razões.
-     *
-     * `1` apanhou-se nos dois blocos em que a pulseira estava a ser calçada, entre um `6` de
-     * noite inteira fora do pulso e o `0` do bloco seguinte, já com movimento. `2` veio de
-     * uma captura anterior com ela pousada na secretária. Nenhum deles traz leitura ótica.
+     * Só o zero diz «ao pulso»: `1` viu-se com a pulseira a ser calçada e `2` com ela pousada na
+     * secretária, e nenhum traz leitura ótica.
      */
     public function testEveryNonZeroWearFlagMeansNotWorn(): void
     {
@@ -176,14 +162,8 @@ final class DailyBlockNormalizerTest extends TestCase
     }
 
     /**
-     * O bloco conta passos numa janela, e é só isso que ele mede.
-     *
-     * A distância e as calorias do bloco são o número de passos vezes uma constante -- em
-     * quatrocentos e dezasseis blocos capturados, 0,86 m e 0,067 kcal por passo, e zero
-     * sempre que os passos são zero. Publicá-las era dizer a mesma medição três vezes.
-     *
-     * O acumulado do dia é outra coisa e tem tipo próprio: aqui vai o que se andou nestes
-     * cinco minutos, e a janela viaja com o valor para ninguém ter de a adivinhar.
+     * A distância e as calorias do bloco são os passos vezes uma constante (0,86 m e 0,067 kcal em
+     * 416 blocos capturados), e não se publicam; a janela viaja com o valor.
      */
     public function testABlockCountsStepsOverItsWindow(): void
     {
@@ -220,10 +200,8 @@ final class DailyBlockNormalizerTest extends TestCase
     }
 
     /**
-     * O MET tem uma casa decimal implícita e o stress não.
-     *
-     * Publicar o inteiro em cru dava nove equivalentes metabólicos a quem está sentado a uma
-     * secretária -- corrida a bom ritmo. A app do fabricante mostra 0,9 para o mesmo bloco.
+     * O MET traz uma casa decimal implícita: em cru dava nove MET a quem está sentado a uma
+     * secretária, e a app do fabricante mostra 0,9 para o mesmo bloco.
      */
     public function testMetIsScaledButStressIsNot(): void
     {
@@ -240,12 +218,8 @@ final class DailyBlockNormalizerTest extends TestCase
     }
 
     /**
-     * O bloco traz `sleepData` e o hub não o publica.
-     *
-     * A documentação promete seis estados de sono; num histórico de 733 blocos o firmware só
-     * devolveu 0, 112, 136, 144, 200 e 208, e a distribuição é a mesma de manhã e de tarde --
-     * não distingue sequer o dia da noite. Traduzi-los para acordado ou sono profundo era
-     * inventar, e é por isso que este bloco não produz nada.
+     * Em 733 blocos o firmware só devolveu 0, 112, 136, 144, 200 e 208, com a mesma distribuição de
+     * dia e de noite: traduzi-los era inventar.
      */
     public function testSleepCodesAreNotPublishedWhileTheirMeaningIsUnknown(): void
     {
@@ -272,11 +246,8 @@ final class DailyBlockNormalizerTest extends TestCase
     }
 
     /**
-     * O bloco traz os dois valores, e são o que os nomes dizem.
-     *
-     * Captura da MF91 ao pulso: 36,2 °C e 34,0 °C às 09:40, 36,6 e 35,0 às 10:40 -- e a app
-     * do fabricante mostra 36,2 °C como temperatura corporal nesse mesmo minuto. Os nomes
-     * são os dos relógios, que é onde o contrato já os tinha.
+     * Captura da MF91 ao pulso: 36,2 °C e 34,0 °C às 09:40, com a app a mostrar 36,2 °C de
+     * temperatura corporal. Os nomes são os dos relógios.
      */
     public function testBlockTemperatureCarriesBodyAndSurface(): void
     {

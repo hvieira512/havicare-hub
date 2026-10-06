@@ -6,9 +6,6 @@ namespace Hub\Command\Downlink;
 
 use Hub\Protocol\Adapter\VivistarAdapter;
 
-/**
- * A descida dos relógios Vivistar.
- */
 final class VivistarDownlink
 {
     /**

@@ -29,11 +29,8 @@ class Config
     }
 
     /**
-     * Uma definição da ingestão de gateways, pelo nome novo ou pelo antigo.
-     *
-     * As duas máquinas têm `MOKO_GATEWAY_*` no `.env`, e deixar de as ler era desligar os
-     * gateways no arranque seguinte -- em silêncio, porque um filtro de tópicos vazio não dá
-     * erro, dá uma ingestão que não recebe nada.
+     * Uma definição da ingestão de gateways, pelo nome novo ou pelo antigo `MOKO_GATEWAY_*` que
+     * as máquinas têm no `.env`. Um filtro de tópicos vazio não dá erro, só não recebe nada.
      */
     private static function gatewayEnv(string $suffix, string $default): string
     {
@@ -53,9 +50,8 @@ class Config
         $mqttTlsEnabled = in_array($mqttTlsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $mqttTlsVerifyPeerRaw = strtolower(trim((string)(getenv('MQTT_TLS_VERIFY_PEER') ?: 'true')));
         $mqttTlsVerifyPeer = in_array($mqttTlsVerifyPeerRaw, ['1', 'true', 'yes', 'on'], true);
-        // O radar publica no mesmo broker que o hub, e por isso herda a postura de TLS dele.
-        // O `QINGLANST_MQTT_TLS_ENABLED` existe para o dia em que deixarem de ser o mesmo
-        // servidor -- até lá, esquecer de o pôr não deixa a segunda sessão em texto simples.
+        // O radar publica no mesmo broker que o hub e herda a postura de TLS dele; o
+        // `QINGLANST_MQTT_TLS_ENABLED` é para quando deixarem de ser o mesmo servidor.
         $qinglanstTlsRaw = trim((string)(getenv('QINGLANST_MQTT_TLS_ENABLED') ?: ''));
         $qinglanstTlsEnabled = $qinglanstTlsRaw === ''
             ? $mqttTlsEnabled
@@ -99,39 +95,23 @@ class Config
                 'api_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_TOKEN_TTL_SECONDS') ?: 3600),
                 'api_refresh_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_REFRESH_TOKEN_TTL_SECONDS') ?: 2592000),
                 'history_limit' => (int)(getenv('DASHBOARD_HISTORY_LIMIT') ?: 100),
-                // A licença do amCharts, que desenha os sinais vitais de um radar. Sem ela a
-                // biblioteca põe o logótipo dela em cima de cada gráfico; é a mesma chave que
-                // o gucc usa, e não vive no repositório.
+                // A licença do amCharts, que desenha os sinais vitais de um radar sem o logótipo dela. É a
+                // chave do gucc, e não vive no repositório.
                 'amcharts_license' => (string)(getenv('AMCHARTS_LICENSE') ?: ''),
-                // Vazio mantém a política aberta, que é o que a API sempre teve e continua a
-                // ser seguro enquanto a autenticação for `Bearer` em cabeçalho e não cookie.
+                // Vazio mantém a política aberta, segura enquanto a autenticação for `Bearer` em cabeçalho
+                // e não cookie.
                 'cors_allowed_origins' => array_values(array_filter(array_map(
                     'trim',
                     explode(',', (string)(getenv('CORS_ALLOWED_ORIGINS') ?: '')),
                 ))),
                 'command_timeout_seconds' => (int)(getenv('DASHBOARD_COMMAND_TIMEOUT_SECONDS') ?: 3600),
                 'device_idle_timeout_seconds' => (int)(getenv('DASHBOARD_DEVICE_IDLE_TIMEOUT_SECONDS') ?: 1800),
-                // Uma ligação de eventos é um pedido que nunca termina, e sem estes tetos o
-                // número de streams abertos não tinha limite algum.
-                //
-                // O que manda não é a memória: sem as extensões `ev`, `event` ou `uv`, o
-                // ReactPHP usa o `StreamSelectLoop`, que é `select(2)` com o `FD_SETSIZE`
-                // fixo em 1024, partilhado com a ingestão TCP, o MQTT e o HTTP. Daí 400, que
-                // deixa ~600 descritores para o resto; ver `config/systemd/limit-nofile.conf`
-                // para o caminho de subida.
-                //
-                // O teto por utilizador é, na prática, por **inquilino**: a 25% do global, um
-                // inquilino grande cresce sem conseguir esfomear os outros.
+                // Sem `ev`, `event` ou `uv` o loop é `select(2)`, com `FD_SETSIZE` 1024 partilhado com TCP, MQTT e
+                // HTTP: 400 streams deixam ~600. O teto por inquilino, a 25% do global, não deixa um esfomear os outros.
                 'max_open_streams' => max(1, (int)(getenv('DASHBOARD_MAX_OPEN_STREAMS') ?: 400)),
                 'max_open_streams_per_user' => max(1, (int)(getenv('DASHBOARD_MAX_OPEN_STREAMS_PER_USER') ?: 100)),
-                // O login é a única rota pública que verifica uma password, e o bcrypt a custo
-                // 12 bloqueia o event loop inteiro. Medido na instância de desenvolvimento com
-                // um utilizador real e password errada: 172 a 187 ms por tentativa, com uma
-                // sonda concorrente a esperar exactamente esse tempo contra 0,3 ms em repouso.
-                // A 175 ms, 5,7 tentativas por segundo saturam o loop a 100%.
-                //
-                // O teto global é o que fixa quanto desse tempo se gasta, por mais endereços
-                // que o atacante tenha: 10 por 10 s deixa o pior caso em ~18% do loop.
+                // O bcrypt a custo 12 bloqueia o loop ~175 ms por tentativa de login. O teto global fixa
+                // quanto desse tempo se gasta: 10 por 10 s deixa o pior caso em ~18% do loop.
                 'login_max_per_address' => max(1, (int)(getenv('DASHBOARD_LOGIN_MAX_PER_ADDRESS') ?: 20)),
                 'login_max_per_username' => max(1, (int)(getenv('DASHBOARD_LOGIN_MAX_PER_USERNAME') ?: 10)),
                 'login_max_global' => max(1, (int)(getenv('DASHBOARD_LOGIN_MAX_GLOBAL') ?: 10)),
@@ -167,10 +147,8 @@ class Config
                 'enabled' => !in_array(strtolower(trim((string)(getenv('NCS_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),
                 'topic_filter' => getenv('NCS_TOPIC_FILTER') ?: '/voerka/#',
             ],
-            // A ingestão de gateways, e não a de um fornecedor: o espaço de tópicos `.../gw/`
-            // é do hub, e mais do que uma ingestão o lê -- a do MOKO e a das pulseiras
-            // Veepoo, que o gateway retransmite. Chamar-lhe `moko` fazia a segunda parecer
-            // refém da primeira, quando o que ela segue é o gateway.
+            // A ingestão de gateways e não de um fornecedor: o espaço de tópicos `.../gw/` é do hub, e
+            // leem-no a ingestão MOKO e a das pulseiras Veepoo.
             'gateway' => [
                 'enabled' => !in_array(strtolower(trim((string)self::gatewayEnv('ENABLED', 'true'))), ['0', 'false', 'no', 'off'], true),
                 'topic_filter' => self::gatewayEnv('TOPIC_FILTER', 'havicare-hub/null/0/gw/+/raw'),
@@ -218,10 +196,8 @@ class Config
                 'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
                 'port' => (int)(getenv('REDIS_PORT') ?: 6379),
                 'password' => getenv('REDIS_PASSWORD') ?: '',
-                // Antepõe-se a todas as chaves do hub, para uma segunda instância correr
-                // contra o mesmo Redis sem pisar a primeira. Vazio é produção. A raiz `hub:`
-                // já é partilhada com o reencaminhador, e por isso separar aqui é mais seguro
-                // do que inventar uma raiz por store.
+                // Antepõe-se a todas as chaves do hub, para uma segunda instância partilhar o Redis; vazio
+                // é produção. A raiz `hub:` já é partilhada com o reencaminhador.
                 'prefix' => getenv('REDIS_PREFIX') ?: '',
             ],
             'database' => [

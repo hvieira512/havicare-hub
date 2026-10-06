@@ -1,9 +1,8 @@
 import { JSDOM } from "jsdom";
 
 /**
- * Os leitores de configuração percorrem nós de DOM a sério, e por isso testá-los precisa de
- * um documento. Tudo aqui é por chamada: não se instala `window` global nenhum, o que evita
- * que estes testes vazem estado uns para os outros.
+ * Os leitores de configuração percorrem nós de DOM a sério; tudo aqui é por chamada, sem
+ * `window` global, para os testes não vazarem estado uns para os outros.
  */
 export function parseFragment(html) {
     return new JSDOM(`<!doctype html><body><div id="root">${html}</div></body>`)

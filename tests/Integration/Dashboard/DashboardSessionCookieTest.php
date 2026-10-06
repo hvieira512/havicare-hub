@@ -8,12 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Http\SessionCookie;
 use Tests\Support\DashboardHttpTestCase;
 
-/**
- * A sessão da dashboard vive num cookie `HttpOnly`, e é isso que a faz atravessar separadores.
- *
- * O token de renovação estava no `sessionStorage`, que é por aba: abrir a dashboard num
- * separador novo mostrava o login outra vez, com a sessão do primeiro ainda aberta.
- */
+/** A sessão da dashboard vive num cookie `HttpOnly`, e é isso que a faz atravessar separadores. */
 final class DashboardSessionCookieTest extends DashboardHttpTestCase
 {
     public function testLoginPutsTheRefreshTokenInAnHttpOnlyCookieAndNotInTheBody(): void
@@ -88,8 +83,8 @@ final class DashboardSessionCookieTest extends DashboardHttpTestCase
     }
 
     /**
-     * A renovação é de uso único e o cookie fica morto por pouco -- uma resposta perdida, o
-     * Redis limpo. Ignorar o corpo por haver cookie trancava a entrada a quem sabia a senha.
+     * A renovação é de uso único e o cookie pode ficar morto: ignorar o corpo por haver cookie
+     * trancaria a entrada a quem sabe a senha.
      */
     public function testCredentialsInTheBodyWinOverAStaleCookie(): void
     {
@@ -129,10 +124,8 @@ final class DashboardSessionCookieTest extends DashboardHttpTestCase
     }
 
     /**
-     * Terminar sessão apaga o cookie e queima as duas credenciais.
-     *
-     * Um logout que deixasse o token de acesso vivo dava uma hora de API a quem ficasse com
-     * ele, e o cookie por apagar reabria a sessão no separador seguinte.
+     * Um token de acesso vivo daria uma hora de API a quem ficasse com ele, e o cookie por
+     * apagar reabriria a sessão no separador seguinte.
      */
     public function testLogoutClearsTheCookieAndRevokesBothTokens(): void
     {

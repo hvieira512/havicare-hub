@@ -15,9 +15,8 @@ const downlinkActivityRow = (payload) => {
 };
 
 /**
- * Um pedido confirmado tem valor -- numa localização são as coordenadas -- e a coluna do
- * valor está ocupada pela pastilha do estado. O valor entra por baixo do nome e a gaveta
- * guarda o resto.
+ * A coluna do valor é da pastilha do estado: o valor de um pedido confirmado, como as
+ * coordenadas, entra por baixo do nome e a gaveta guarda o resto.
  */
 const locationReport = {
     payload: {
@@ -94,7 +93,6 @@ test("uma leitura anterior ao pedido não conta como resposta", () => {
     assert.equal(downlinkActivityRow(locationRequest).sub, "");
 });
 
-/** A gaveta escapa o que recebe: marcação em texto aparecia à letra. */
 test("a gaveta não recebe marcação", () => {
     const row = downlinkActivityRow(locationRequest);
 

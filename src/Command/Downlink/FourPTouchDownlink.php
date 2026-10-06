@@ -6,9 +6,6 @@ namespace Hub\Command\Downlink;
 
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 
-/**
- * A descida dos relógios 4P Touch.
- */
 final class FourPTouchDownlink
 {
     /**

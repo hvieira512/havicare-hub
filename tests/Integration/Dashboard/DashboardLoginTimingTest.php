@@ -10,18 +10,14 @@ use Tests\Support\DashboardHttpTestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
 /**
- * O tempo de resposta do login não pode dizer se uma conta existe.
- *
- * Um curto-circuito antes do `password_verify` responde em 0,5 ms em vez de ~175 ms, e essa
- * diferença é um oráculo: descobre-se que contas existem só pelo relógio. Fechá-lo torna
- * **todas** as tentativas caras, e por isso depende dos tetos do `LoginThrottle`.
+ * O tempo de resposta do login não pode dizer se uma conta existe: todas as tentativas custam
+ * o hash, e por isso dependem dos tetos do `LoginThrottle`.
  */
 final class DashboardLoginTimingTest extends DashboardHttpTestCase
 {
     /**
-     * O limite é inferior de propósito: afirma que houve trabalho de hash, e não que ele coube
-     * numa janela. Uma máquina lenta torna a asserção mais fácil, não mais frágil -- que é o
-     * sentido certo para um teste que envolve o relógio.
+     * O limite é inferior de propósito: afirma que houve trabalho de hash, e uma máquina lenta
+     * torna a asserção mais fácil e não mais frágil.
      */
     private const BCRYPT_FLOOR_SECONDS = 0.03;
 

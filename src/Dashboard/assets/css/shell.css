@@ -1,6 +1,5 @@
 /* ===== moldura e primitivas =====
-   A armação da página e as peças que qualquer ecrã usa. Uma regra entra aqui quando serve
-   mais do que uma área; se só serve uma, vive no ficheiro dessa área. */
+   Uma regra entra aqui quando serve mais do que uma área; se só serve uma, vive no ficheiro dela. */
 
 /* As duas colunas do ecrã principal chegam ao fundo, para as duas listas terem espaço para
    crescer. `min-height` e não `height`: quando o conteúdo passa do ecrã, a página cresce. */
@@ -10,16 +9,14 @@
     min-height: 100dvh;
 }
 
-/* O tecto de leitura entra aqui e não no `container-fluid`: a moldura -- a barra de
-   navegação e o fundo -- continua de ponta a ponta, e é o conteúdo que para. Ver o
-   `--content-max` no `base.css`. */
+/* O tecto de leitura entra aqui e não no `container-fluid`: a moldura continua de ponta a
+   ponta e é o conteúdo que para. */
 .dashboard-main {
     max-width: var(--content-max);
 }
 
-/* Empilhado, a atividade sobe para debaixo da identidade e os cartões de telemetria descem:
-   com eles pelo meio, passava-se o cartão do aparelho e sete cartões antes do primeiro
-   evento. A coluna do aparelho desfaz-se para os seus cartões poderem ser ordenados. */
+/* Empilhado, a atividade sobe para debaixo da identidade e os cartões de telemetria descem; a
+   coluna do aparelho desfaz-se para os seus cartões poderem ser ordenados. */
 @media (max-width: 991.98px) {
     /* A régua entrega a telemetria com um respiro -- sem ele a etiqueta da secção fica
        colada aos separadores --, e o `g-3` da linha anula a margem do primeiro cartão. */
@@ -56,7 +53,7 @@
         order: 2;
     }
 
-    /* A banda do topo diz o que o cartão da identidade dizia, e diz-o sempre à vista. */
+    /* A banda do topo diz o que diz o cartão da identidade, sempre à vista. */
     .device-screen > #deviceColumn > .card:has(#selectedDevicePanel:not(.d-none)) {
         display: none;
     }
@@ -75,9 +72,8 @@
 
 /* ===== primitivas do sistema ===== */
 
-/* A barra de navegação é o navy da marca -- a superfície, e não a cor que reage ao toque:
-   as duas separam-se no escuro, onde o `--brand` sobe para se ver como botão e a barra tem
-   de ficar em baixo para continuar a ser a barra. */
+/* A barra de navegação é o navy da marca, separado do `--brand`, que no escuro sobe para se
+   ver como botão enquanto a barra fica em baixo. */
 .dashboard-navbar {
     background-color: var(--brand-bar);
 }
@@ -179,9 +175,8 @@
     color: var(--brand-on);
 }
 
-/* A coluna rola só na vertical. Com `overflow-y: auto` o eixo x sobe de `visible` a `auto`,
-   e a meia goteira negativa de qualquer `.row` lá dentro -- que as colunas repõem em
-   `padding` -- vira barra horizontal. O `clip` corta-a. */
+/* Com `overflow-y: auto` o eixo x passa a `auto` e a goteira negativa de um `.row` vira barra
+   horizontal; o `clip` corta-a. */
 .device-modal-content {
     overflow-x: clip;
 }
@@ -213,13 +208,10 @@
     --bs-btn-active-border-color: rgba(var(--brand-on-rgb), .32);
 }
 
-/* Uma elevação só: a página é cinzenta, o cartão é branco, e dentro do cartão separa-se com
-   linha e espaço. O contorno do cartão é mais claro que o das linhas interiores, para a
-   moldura exterior não competir com as divisórias que estruturam o conteúdo. */
+/* Uma elevação só: a página é cinzenta e o cartão branco. O contorno do cartão é mais claro que
+   as linhas interiores, para não competir com as divisórias. */
 .card {
-    /* O `secondary-bg` é o `#e9ecef` que aqui estava escrito à mão, e é um degrau mais claro
-       que o `border-color` que separa as linhas lá dentro -- que é a relação que se queria.
-       Vindo do token, vira sozinho quando o tema virar. */
+    /* O `secondary-bg` é um degrau mais claro que o `border-color` das linhas, e vira com o tema. */
     --bs-card-border-color: var(--bs-secondary-bg);
 }
 
@@ -231,8 +223,7 @@
 
 /* A linha vertical é o que diz que um filho pertence ao cabeçalho acima. As margens
    negativas valem o `p-3` do `card-body`, para a linha atravessar o cartão de lado a lado. */
-/* O `gap` fica aqui: `.75rem` não é um degrau do Bootstrap -- entre `gap-2` e `gap-3` há
-   quatro pixéis de diferença para qualquer dos lados. */
+/* O `gap` fica aqui: `.75rem` não é um degrau do Bootstrap. */
 .tree-row {
     margin: .75rem -1rem 0;
     padding: .75rem 1rem 0 2rem;
@@ -276,9 +267,8 @@
         left: .625rem;
     }
 
-    /* O formulário das credenciais sai da indentação e toma o cartão de lado a lado: cinco
-       campos dentro da linha, dentro do cartão, dentro do painel não são um formulário. O
-       fundo é o que o separa da licença a que pertence, já que o traço da árvore sai. */
+    /* O formulário das credenciais sai da indentação e toma o cartão de lado a lado; o fundo
+       separa-o da licença a que pertence. */
     .radar-credentials-row {
         padding: 1rem;
         background: var(--bs-tertiary-bg);
@@ -305,9 +295,8 @@
     height: 28px;
 }
 
-/* A chapa acompanha a fotografia no escuro -- ver o comentário das chapas pequenas no
-   `main.css`. Aqui a chapa não existia, e o raio é o que a torna uma chapa e não um
-   rectângulo branco do tamanho exacto da imagem. */
+/* A chapa acompanha a fotografia no escuro, como as chapas pequenas do `main.css`; o raio
+   torna-a uma chapa e não um rectângulo do tamanho da imagem. */
 [data-bs-theme="dark"] .catalog-model-image:has(img) {
     background: #fff;
     border-radius: .375rem;
@@ -347,16 +336,14 @@
     min-height: 0;
 }
 
-/* O Bootstrap 5 não traz utilitário de cursor, e a marcação já o pedia em dois sítios: os
-   `input[type=file]` invisíveis por cima da imagem de um modelo, onde o ponteiro é a única
-   pista de que a zona se clica. */
+/* O Bootstrap 5 não traz utilitário de cursor: num `input[type=file]` invisível o ponteiro é
+   a única pista de que a zona se clica. */
 .cursor-pointer {
     cursor: pointer;
 }
 
-/* Sem medida mínima os botões medem o que o número mede, e treze caixas de larguras
-   diferentes lêem-se desalinhadas. A medida é a do "13" com `px-1`. O Bootstrap só tem
-   utilitários de largura em percentagem, e o `flex-fill` mantém a base de cada um. */
+/* Medida mínima, a do "13" com `px-1`, para as treze caixas não se lerem desalinhadas; o
+   `flex-fill` mantém a base de cada uma. */
 .pagination .page-link {
     min-width: 1.5rem;
 }
@@ -370,9 +357,8 @@
     }
 }
 
-/* A divisória entre blocos de um cartão vai de bordo a bordo. Encolhida à largura do
-   conteúdo lê-se como a moldura de outra caixa dentro do cartão; a sangrar até ao contorno é
-   a mesma linha que separa duas linhas de uma tabela, e o cartão continua um. */
+/* A divisória entre blocos de um cartão vai de bordo a bordo, como a linha de uma tabela, para
+   não parecer outra caixa dentro do cartão. */
 .card-section {
     margin-inline: calc(-1 * var(--bs-card-spacer-x, 1rem));
     padding-inline: var(--bs-card-spacer-x, 1rem);
@@ -398,24 +384,22 @@
     display: none;
 }
 
-/* Um número ao lado de uma etiqueta, sem pastilha à volta: o mosaico de tipos, as opções de
-   filtro e as pastilhas de secção escreviam as mesmas três declarações cada um. */
+/* Um número ao lado de uma etiqueta, sem pastilha: o mosaico de tipos, as opções de filtro e
+   as pastilhas de secção. */
 .count-number {
     font-size: var(--fs-label);
     color: var(--bs-secondary-color);
     font-variant-numeric: tabular-nums;
 }
 
-/* No botão de filtros a pastilha diz quantos estão ligados, e essa é a única cor do painel:
-   sobre o cinzento das outras não se distinguia de uma contagem qualquer. */
+/* No botão de filtros a pastilha diz quantos estão ligados, e é a única cor do painel. */
 .count-chip-strong {
     background: var(--bs-primary);
     color: var(--brand-on);
 }
 
-/* A pastilha de um filtro aplicado, neutra: o filtro não é um estado do sistema, e a única
-   cor do painel é o contador do botão. A forma é a das pastilhas de estado -- ponto,
-   maiúsculas, mesma altura -- porque um filtro aplicado também é uma condição ligada. */
+/* A pastilha de um filtro aplicado é neutra, porque o filtro não é um estado do sistema; a
+   forma é a das pastilhas de estado, porque também é uma condição ligada. */
 /* O `bg-body-secondary` na marcação e não o terciário: a um tom do branco do cartão a
    pastilha não se lê como pastilha, é texto em maiúsculas com um ponto à frente. */
 .filter-chip {
@@ -442,8 +426,7 @@
     font-size: var(--fs-micro);
 }
 
-/* O fundo do realce é mais escuro que o da pastilha, senão não se via: a pastilha já é o
-   `secondary-bg`, que era tambem o realce. */
+/* O fundo do realce é mais escuro que o da pastilha, que já é o `secondary-bg`. */
 .filter-chip-remove:hover,
 .filter-chip-remove:focus-visible {
     background: var(--bs-tertiary-color);
@@ -469,8 +452,7 @@ label.section-label {
 }
 
 /* ===== a linguagem de selecção =====
-   Os quatro estados das caixas que se escolhem com o rato. A geometria de cada uma fica no
-   ficheiro da sua área; quem redeclarar um estado lá parte a língua. */
+   Os quatro estados das caixas que se escolhem; a geometria fica no ficheiro de cada área. */
 .device-type-tile,
 .device-card,
 .capability-section-chip,

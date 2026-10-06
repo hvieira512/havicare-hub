@@ -10,9 +10,8 @@ use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * A sensibilidade por sensor, guardada em MySQL. O contrato de que a ingestão depende: há
- * sempre um par utilizável para devolver, e uma alteração pela API é vista dentro do TTL da
- * cache sem reiniciar nada.
+ * O contrato de que a ingestão depende: há sempre um par utilizável para devolver, e uma
+ * alteração pela API vê-se dentro do TTL da cache sem reiniciar nada.
  */
 final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
 {
@@ -40,8 +39,8 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
 
     public function testAnUnknownSensorAlsoReadsTheNormalPreset(): void
     {
-        // A ingestao chama isto antes de qualquer garantia de que a linha existe. Devolver
-        // null obrigaria o `MokoBridge` a decidir limiares, que é onde eles não devem viver.
+        // A ingestão chama isto antes de qualquer garantia de que a linha existe; devolver null
+        // obrigaria o `MokoBridge` a decidir limiares, que é onde eles não devem viver.
         $repository = new DiaperSensitivityRepository($this->createDashboardDatabase()->pdo());
 
         self::assertSame(DiaperSensitivity::normal(), $repository->forDevice('nao-existe'));
@@ -49,8 +48,8 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
 
     public function testAWrittenValueIsReadBack(): void
     {
-        // A escrita e do `PATCH /configurations`, que passa pelo ciclo de vida das
-        // configurações. O que este repositório faz é a leitura no caminho quente.
+        // A escrita é do `PATCH /configurations`, que passa pelo ciclo de vida das
+        // configurações; este repositório faz a leitura no caminho quente.
         $pdo = $this->pdoWithSensor();
         $this->storeSensitivity($pdo, 3, 7);
 
@@ -62,9 +61,8 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
 
     public function testTheCacheHoldsForItsTtlAndTheDatabaseIsTheSourceOfTruth(): void
     {
-        // A escrita é feita por fora do repositório, que é o caso real: a API escreve num
-        // processo e a ingestão lê noutro. Uma instância com TTL longo não vê a escrita --
-        // essa é a latência que o TTL define -- e uma instância nova vê-a.
+        // A API escreve num processo e a ingestão lê noutro: uma instância com TTL longo não vê
+        // a escrita, que é a latência que o TTL define, e uma instância nova vê-a.
         $pdo = $this->pdoWithSensor();
         $cached = new DiaperSensitivityRepository($pdo, 3600);
 

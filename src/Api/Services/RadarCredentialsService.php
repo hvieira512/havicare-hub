@@ -14,18 +14,12 @@ use React\Promise\PromiseInterface;
 use function React\Promise\resolve;
 
 /**
- * As credenciais da cloud do fabricante dos radares, que são de cada licença.
- *
- * Não existe conta que veja a frota toda: com a conta de uma licença, os radares das outras
- * respondem `777` -- "dispositivo offline" -- mesmo a publicar telemetria nesse minuto. Nem o
- * endereço base é comum entre elas.
+ * As credenciais da cloud do fabricante dos radares, que são de cada licença: com a conta de
+ * outra, os radares respondem `777` mesmo a publicar, e nem o endereço base é comum.
  */
 class RadarCredentialsService
 {
-    /**
-     * Quantos radares se experimentam. O que se quer saber é se a conta é desta licença, e a
-     * primeira dezena já o diz -- percorrer a frota era uma espera de botão a crescer com ela.
-     */
+    /** Quantos radares se experimentam: a primeira dezena já diz se a conta é desta licença. */
     private const SAMPLE = 10;
 
     private RequestBinder $binder;
@@ -39,9 +33,8 @@ class RadarCredentialsService
     }
 
     /**
-     * A palavra-passe e o segredo não entram na resposta. São reversíveis por necessidade --
-     * servem para fazer login no fornecedor --, e não saírem é o que resta como defesa; quem
-     * desenha o ecrã só precisa de saber se já lá estão.
+     * A palavra-passe e o segredo não entram na resposta: são reversíveis por necessidade, e o
+     * ecrã só precisa de saber se já lá estão.
      *
      * @return array<string, mixed>
      */
@@ -134,11 +127,8 @@ class RadarCredentialsService
     }
 
     /**
-     * Os radares desta licença, pelo identificador com que o fabricante os conhece -- que é o
-     * `device_id` e não o IMEI canónico do hub.
-     *
-     * Um aparelho aponta para a licença pelo par número + empresa: o mesmo número existe em
-     * empresas diferentes, e a amostra tem de ser desta.
+     * Os radares desta licença, pelo `device_id` do fabricante e não pelo IMEI do hub. Pelo par
+     * número + empresa, porque o mesmo número existe em empresas diferentes.
      *
      * @param array<string, mixed> $license
      * @return list<array{imei: string, uid: string}>

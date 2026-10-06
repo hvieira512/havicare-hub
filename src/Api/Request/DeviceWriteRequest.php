@@ -8,12 +8,8 @@ use Hub\Api\OpenApi\Example;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * O corpo do criar e do actualizar de um dispositivo. O que daqui se *deriva* -- o tipo a
- * partir do modelo, a licença em função do tipo, o `deviceId` em função dos quatro -- é
- * domínio e fica no serviço.
- *
- * O `imei` é o único campo cuja regra difere entre as duas rotas: a criar é obrigatório, a
- * actualizar vem do endereço. Daí o grupo, e daí ser anulável.
+ * O corpo do criar e do actualizar de um dispositivo; o que dele se deriva é domínio e fica no
+ * serviço. O `imei` é anulável e vive num grupo porque a actualizar vem do endereço.
  */
 final class DeviceWriteRequest
 {

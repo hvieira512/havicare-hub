@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace Hub\Device\Decoder;
 
-/**
- * Os leitores do corpo TFLV do dispensador, um por tipo que a especificação usa.
- */
+/** Os leitores do corpo TFLV do dispensador, um por tipo que a especificação usa. */
 final class Tlv
 {
     /**
-     * O valor de uma TAG, ou `null` quando não há valor nenhum a ler.
-     *
-     * O estado nos bits 5--7 do Flag distingue uma leitura de um eco: uma TAG recusada volta
-     * com os bytes que lhe mandámos -- zeros -- e um estado diferente de `000`.
+     * O valor de uma TAG, ou `null` sem valor a ler: uma TAG recusada volta com os zeros que lhe
+     * mandámos e um estado diferente de `000` nos bits 5--7 do Flag.
      *
      * @param array<int, array{value?: string, state?: int}> $tlv
      */

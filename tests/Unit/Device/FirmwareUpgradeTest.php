@@ -58,8 +58,8 @@ final class FirmwareUpgradeTest extends TestCase
     }
 
     /**
-     * A tabela do documento dá `0x8D` como resposta ao arranque e a secção 26 dá `0x8E`. O
-     * fornecedor já disse que vai corrigir o documento; aceitar as duas evita ficar à espera.
+     * A tabela do documento dá `0x8D` como resposta ao arranque e a secção 26 dá `0x8E`:
+     * aceitam-se as duas.
      */
     public function testEitherAcknowledgementOpensTheTransfer(): void
     {
@@ -128,12 +128,7 @@ final class FirmwareUpgradeTest extends TestCase
         }
     }
 
-    /**
-     * Uma ligação nova a meio da transferência manda recomeçar do princípio.
-     *
-     * O fornecedor foi claro: uma transferência interrompida não grava nada e a seguinte
-     * recomeça do zero. Sem isto, o estado ficava parado num offset que já não vale.
-     */
+    /** Uma transferência interrompida não grava nada, e a seguinte recomeça do zero. */
     public function testAFreshRegistrationRestartsTheTransfer(): void
     {
         foreach (['starting', 'sending', 'finishing'] as $status) {
@@ -146,10 +141,8 @@ final class FirmwareUpgradeTest extends TestCase
     }
 
     /**
-     * Cada pacote leva o número de série seguinte, como a especificação pede.
-     *
-     * Um número repetido a meio de 839 pacotes arrisca o aparelho tomar um por duplicado e
-     * deitá-lo fora, e a transferência encalha sem dizer porquê.
+     * Um número de série repetido arrisca o aparelho deitar fora um pacote como duplicado, e a
+     * transferência encalha sem dizer porquê.
      */
     public function testEachPacketCarriesTheNextSerial(): void
     {

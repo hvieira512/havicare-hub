@@ -165,8 +165,7 @@ const TELEMETRY_REQUEST_HIDDEN_FEATURES = new Set([
     "diaper_moisture_level",
     "position_minute_stats",
     "vitals_minute_stats",
-    // O resumo já a mostra em «Dispositivos ligados», uma linha por gateway e com barras. O
-    // mosaico dizia-a pior: um só, e sem nomear o gateway que a ouviu.
+    // O resumo já a mostra em «Dispositivos ligados», uma linha por gateway e com barras.
     "proximity",
 ]);
 
@@ -235,8 +234,8 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         });
     }
 
-    // A imagem do modelo é estável, mas o render corre a cada mensagem do stream: recriar o
-    // `<img>` fazia o browser recarregá-lo e piscar. Só se refaz quando muda.
+    // O render corre a cada mensagem do stream: o `<img>` só se refaz quando a imagem muda,
+    // para não recarregar e piscar.
     const previewKey = image || "__none__";
     if (els.selectedDevicePreview.dataset.previewKey !== previewKey) {
         els.selectedDevicePreview.dataset.previewKey = previewKey;
@@ -311,8 +310,7 @@ function renderTelemetryList(telemetryRows) {
         els.telemetryList,
         listedRows.map(telemetryActivityRow),
         "Ainda não há leituras.",
-        // O prefixo é por lista: as duas desenham-se ao mesmo tempo no mesmo documento, e
-        // com o mesmo `activityRowDetail0` em cada uma ficavam dois elementos com o mesmo id.
+        // O prefixo é por lista: as duas desenham-se no mesmo documento e os ids não se repetem.
         "telemetryRowDetail",
     );
     renderClientPager("telemetry", telemetry.length, totalPages);
@@ -351,10 +349,7 @@ function renderClientPager(prefix, totalRows, totalPages) {
     }
 }
 
-/**
- * O que a gaveta de uma linha mostra, em texto simples e uma linha por campo. A gaveta escapa
- * o que recebe, e por isso não pode levar marcação — um `<br>` aparecia à letra no ecrã.
- */
+/** A gaveta escapa o que recebe, por isso leva texto simples, uma linha por campo. */
 function detailExpanded(card, plainDetail) {
     if (card.detailsTitle) {
         return card.detailsTitle;
@@ -434,8 +429,7 @@ function renderRequestCards(
                 )
                 .join("")
         : "";
-    // Um W812 não aceita pedido nenhum, e o cartão vazio a dizê-lo ocupava a coluna com uma
-    // grelha que nunca teria mosaicos. Sem nada para mostrar, a secção não existe.
+    // Sem nada para mostrar, como num W812, que não aceita pedidos, a secção não existe.
     const grid = falls + helpCalls + cards;
     els.requestCardsCard?.classList.toggle("d-none", grid === "");
     if (renderInto(els.requestGrid, grid, disposeTooltips)) refreshTooltips(els.requestGrid);
@@ -465,10 +459,8 @@ function renderRequestCardGroup(
         return joinMarkup(cards, "");
     }
 
-    // O rótulo separa os grupos sem os meter dentro de outra caixa. A caixa com borda e
-    // enchimento custava trinta e quatro pixéis de largura, e a grelha precisa de 464 numa
-    // coluna que tem 481: com ela, os mosaicos caíam de dois por linha para um -- e só nos
-    // aparelhos com mais do que um grupo, que são os únicos que a mostram.
+    // O rótulo separa os grupos sem outra caixa, cuja borda e enchimento não deixariam caber
+    // dois mosaicos por linha.
     return html`
         <div class="telemetry-card-wide min-w-0">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -496,8 +488,7 @@ function renderNcsEventCards(rows = []) {
 }
 
 /**
- * Mesma forma dos mosaicos de telemetria -- nome, valor, detalhe -- e não um corpo próprio
- * com duas linhas de texto corrido: o que aconteceu titula, o comando é o valor, e a hora
+ * Mesma forma dos mosaicos de telemetria: o que aconteceu titula, o comando é o valor e a hora
  * fica no detalhe.
  */
 function renderNcsEventCard({ type, latest }) {
@@ -520,18 +511,14 @@ function renderDownlinkRequests(commands) {
     els.downlinkTabCount.textContent = downlinkTotal;
     els.deviceTabRequestsCount.textContent = downlinkTotal;
 
-    // A maioria dos aparelhos -- radares, gateways, medidores de fralda -- não recebe pedido
-    // nenhum, e metade do painel dizia permanentemente que não havia pedidos enquanto a lista
-    // ao lado cortava "Alarme de sinais vit..." numa coluna de 34%. Sem pedidos, os eventos
-    // ficam com a linha toda; com eles, volta a divisão a meio.
+    // A maioria dos aparelhos não recebe pedidos: sem eles, os eventos ficam com a linha toda.
     const hasRequests = commands.length > 0;
     els.downlinkColumn?.classList.toggle("d-none", !hasRequests);
     els.telemetryColumn?.classList.toggle("col-xl-6", hasRequests);
     els.telemetryColumn?.classList.toggle("pe-xl-3", hasRequests);
 
-    // Um separador só não é escolha nenhuma: a régua sai, e quem estava nos pedidos volta
-    // aos eventos em vez de ficar num painel escondido. No telemóvel resta-lhe a telemetria,
-    // e por isso só sai o separador dos pedidos.
+    // Um separador só não é escolha: a régua sai e quem estava nos pedidos volta aos eventos.
+    // No telemóvel resta a telemetria, e só sai o separador dos pedidos.
     els.activityTabs?.classList.toggle("d-none", !hasRequests);
     els.deviceTabRequests?.classList.toggle("d-none", !hasRequests);
     if (!hasRequests && els.downlinkColumn?.classList.contains("active")) {
@@ -566,9 +553,8 @@ function renderDownlinkRequests(commands) {
 }
 
 /**
- * A leitura que respondeu ao pedido: a primeira da capacidade pedida a partir do instante em
- * que se pediu. Uma mais antiga respondeu a outro pedido, e a última de todas seria a de
- * agora e não a desta linha.
+ * A primeira leitura da capacidade pedida desde o instante do pedido: uma mais antiga
+ * respondeu a outro, e a última de todas pode ser de agora.
  */
 function commandReply(command) {
     const feature = String(command.feature || "");

@@ -10,9 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Como uma rota chama o seu handler.
- *
- * A assinatura é uma só -- os parâmetros do caminho e depois o pedido --, e quem não quer os
+ * Uma rota chama o handler com os parâmetros do caminho e depois o pedido, e quem não quer os
  * argumentos declara menos. Trocá-los só falharia em execução.
  */
 final class ApiRouteInvocationTest extends TestCase

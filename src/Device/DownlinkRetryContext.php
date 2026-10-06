@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Hub\Device;
 
 /**
- * O contexto com que uma repetição volta à fila.
- *
- * Nos protocolos que entregam a um gateway, os bytes em fila são só o nome da operação e o
- * valor viaja ao lado. Repetir com os bytes e mais nada põe em fila um comando sem valor --
- * e o gateway executa-o com os campos por preencher.
+ * O contexto com que uma repetição volta à fila: nos protocolos de gateway os bytes em fila
+ * são só o nome da operação, e o valor viaja ao lado.
  */
 final class DownlinkRetryContext
 {

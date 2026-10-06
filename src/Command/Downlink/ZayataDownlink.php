@@ -7,18 +7,14 @@ namespace Hub\Command\Downlink;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 
 /**
- * A descida do dispensador M228.
- *
- * A configuração vai num pacote `0x06` e o controlo num `0x08`, ambos em TFLV. O que os
- * distingue é o tipo de pacote e não o conteúdo.
+ * A descida do M228: a configuração vai num pacote `0x06` e o controlo num `0x08`, ambos em
+ * TFLV.
  */
 final class ZayataDownlink
 {
     /**
-     * O número de série de cada trama de descida, que o aparelho ecoa na resposta.
-     *
-     * É por ele que se sabe a qual dos pedidos pendentes uma resposta pertence. Começa em 1
-     * porque o zero é o que a trama tem quando ninguém lhe mexeu.
+     * O número de série de cada trama de descida, que o aparelho ecoa para se casar a resposta
+     * com o pedido. Começa em 1 porque zero é o que a trama tem quando ninguém lhe mexeu.
      */
     private static int $pillSerial = 0;
 
@@ -50,10 +46,8 @@ final class ZayataDownlink
             return self::pillFrame($imei, 0x08, [$control => ['value' => "\x01"]]);
         }
 
-        // As leituras. O aparelho devolve o mesmo corpo preenchido, com o resultado de cada
-        // TAG no estado do Flag.
-        // A leitura vai partida porque já não cabe numa trama. Quem fecha a conta é o teste
-        // que exige que os comandos declarados cubram as TAGs todas.
+        // As leituras: o aparelho devolve o mesmo corpo, com o resultado de cada TAG no Flag. Vão
+        // partidas porque não cabem numa trama, e um teste exige que cubram as TAGs todas.
         $chunk = ['readConfiguration' => 0, 'readConfiguration2' => 1][$command] ?? null;
         if ($chunk !== null) {
             $chunks = PillDispenserAdapter::configurationReadChunks();
@@ -116,8 +110,7 @@ final class ZayataDownlink
             throw new \InvalidArgumentException('o M228 tem nove alarmes, e o plano traz ' . count($plans));
         }
 
-        // Cada plano diz em que alarme fica. Um plano guardado antes disto não traz slot e
-        // continua a valer por posição.
+        // Cada plano diz em que alarme fica; um plano sem slot vale pela posição.
         $bySlot = [];
         foreach ($plans as $position => $plan) {
             $slot = isset($plan['slot']) ? (int)$plan['slot'] : $position + 1;
@@ -133,8 +126,7 @@ final class ZayataDownlink
         $tlv = [];
         for ($offset = 0; $offset < PillDispenserAdapter::ALARM_SLOTS; $offset++) {
             $plan = $bySlot[$offset + 1] ?? null;
-            // Um plano guardado antes de o interruptor sair do cartão pode trazê-lo
-            // desligado. Ele nunca calou nada, e é o vazio que finalmente o faz.
+            // Um plano com o interruptor desligado vai como slot vazio: o vazio é o que cala o alarme.
             $set = $plan !== null && ($plan['enabled'] ?? true) !== false;
             $tlv[0x1021 + $offset] = ['value' => $set
                 ? self::pillByte($plan['hour'] ?? 0, 23)
@@ -198,10 +190,8 @@ final class ZayataDownlink
     }
 
     /**
-     * A hora a que o aparelho se deve pôr, no fuso dele.
-     *
-     * A TAG `0xA101` leva uma string sem marca de fuso e o M228 toma-a à letra. O fuso vem na
-     * mesma unidade da TAG `0x1015`: INT16S em HHMM, `+100` é uma hora à frente.
+     * A hora a que o aparelho se deve pôr, no fuso dele: a `0xA101` não leva fuso e o M228
+     * toma-a à letra. O fuso é como o da `0x1015`, INT16S em HHMM.
      */
     private static function pillLocalTime(mixed $timeZone): string
     {
@@ -213,11 +203,7 @@ final class ZayataDownlink
             ->format('Y-m-d\TH:i:s');
     }
 
-    /**
-     * Minutos para os segundos que o aparelho quer, em INT32U.
-     *
-     * O tecto é o da especificação: 86400 segundos, que são as vinte e quatro horas de um dia.
-     */
+    /** Minutos para os segundos que o aparelho quer, em INT32U, até aos 86400 da especificação. */
     private static function pillSeconds(mixed $minutes): string
     {
         $number = (int)$minutes;

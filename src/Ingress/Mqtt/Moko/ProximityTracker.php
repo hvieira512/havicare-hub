@@ -5,12 +5,8 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Moko;
 
 /**
- * Uma janela curta de leituras de sinal por par (dispositivo, gateway). O hub reporta o
- * sinal; o cliente decide o que ele significa -- ver `docs/05-gateways-ble.md` §5.
- *
- * Três estatísticas e não uma: o ruído é assimétrico -- corpos e paredes atenuam e quase nada
- * amplifica --, e uma passagem a andar só se apanha pelo máximo. A janela vive em memória e
- * reenche-se em `windowSeconds` depois de um reinício.
+ * Uma janela curta, em memória, de leituras de sinal por par (dispositivo, gateway). Três
+ * estatísticas: o ruído quase só atenua, e uma passagem só se apanha pelo máximo.
  */
 final class ProximityTracker
 {
@@ -51,8 +47,7 @@ final class ProximityTracker
             'state' => 'measured',
             'rssiDbm' => $rssiDbm,
             'rssiMaxDbm' => $readings[count($readings) - 1],
-            // Com contagem par fica a menor das duas leituras do meio em vez da média, para
-            // o valor ser sempre um que a rádio viu de facto.
+            // Com contagem par fica a menor das duas do meio, para ser um valor que a rádio viu.
             'rssiMedianDbm' => $readings[count($readings) % 2 === 1 ? $middle : $middle - 1],
             'rssiMinDbm' => $readings[0],
             'samples' => count($readings),
@@ -61,8 +56,7 @@ final class ProximityTracker
     }
 
     /**
-     * Os pares que se calaram, esquecidos à medida que são reportados: um cliente que não
-     * recebe nada não tem a que reagir. Um par que reapareça começa uma janela nova.
+     * Os pares que se calaram, esquecidos ao serem reportados; um que reapareça começa janela nova.
      *
      * @return list<array{deviceKey: string, gatewayKey: string}>
      */

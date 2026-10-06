@@ -6,11 +6,8 @@ import { parseFragment } from "./support/dom.js";
 import { paginationControls } from "../../src/Dashboard/dashboard/components/pagination.js";
 
 /**
- * O paginador num ecrã estreito.
- *
- * Os botões de página medem 24×31px, e catorze deles numa página são catorze alvos abaixo do
- * mínimo de 44. Num telemóvel ficam as duas setas, que aí têm tamanho de dedo; os números
- * voltam a partir de `md`, onde há rato e largura para eles.
+ * Os números de página medem 24×31px, abaixo do mínimo de 44: num telemóvel ficam as duas
+ * setas, e os números voltam a partir de `md`.
  */
 const controls = (page, totalPages) =>
     parseFragment(paginationControls({

@@ -9,12 +9,8 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Quem abre a dashboard sem conhecer o aparelho tem de conseguir administrá-lo.
- *
- * Metade dos nomes deste catálogo não se explica a si própria — «Repor o prato», «Parâmetros
- * de controlo» —, e sem uma frase por baixo quem opera fica a adivinhar sobre a medicação de
- * alguém. E a categoria tem de ser uma só: o catálogo de capacidades e as definições
- * declaram-na cada um por seu lado, e é a definição que manda no modal.
+ * Metade dos nomes («Repor o prato», «Parâmetros de controlo») não se explica a si própria; a
+ * categoria é uma só, a da definição, que manda no modal.
  */
 final class PillDispenserCatalogueIsLegibleTest extends TestCase
 {
@@ -30,12 +26,7 @@ final class PillDispenserCatalogueIsLegibleTest extends TestCase
         self::assertSame([], $unexplained);
     }
 
-    /**
-     * A frase tem de dizer alguma coisa.
-     *
-     * Um texto de três palavras a repetir a etiqueta não é ajuda nenhuma, e passava neste
-     * teste se ele só verificasse que existe.
-     */
+    /** A frase tem de dizer mais do que a etiqueta: três palavras a repeti-la não são ajuda. */
     public function testTheExplanationIsAnActualSentence(): void
     {
         $tooShort = [];
@@ -52,9 +43,8 @@ final class PillDispenserCatalogueIsLegibleTest extends TestCase
     /** O catálogo de capacidades e as definições têm de concordar sobre onde cada coisa vive. */
     public function testTheCategoryIsTheSameOnBothSides(): void
     {
-        // Uma capacidade de telemetria que também se pede vive nos dois sítios de propósito: o
-        // cartão fica onde a leitura se mostra, e o botão onde se carrega. O `device_status` é
-        // isso — telemetria com uma acção «Atualizar estado» em Sistema.
+        // Uma telemetria que também se pede vive nos dois sítios de propósito: o cartão onde se
+        // lê, e o botão onde se carrega (o `device_status` em Sistema).
         $capabilitySection = [];
         foreach (CapabilityCatalog::definitionsForDeviceType('pill_dispenser') as $definition) {
             if (($definition['isTelemetry'] ?? false) === true) {

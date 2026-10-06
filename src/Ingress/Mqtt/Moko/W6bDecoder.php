@@ -8,18 +8,8 @@ use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Support\Values;
 
 /**
- * Descodifica as observações de uma MOKO W6B (BXP-B / "MK Button") retransmitidas por um
- * gateway.
- *
- * Um MKGW3 reconhece os beacons MOKO e reporta-os já interpretados, sem bytes crus de
- * anúncio nenhuns:
- *
- *   {"type":"bxp-button","frame_type":0,"trigger_count":69,"alarm_status":1,
- *    "batt_vol":98,"x_axis_data":-4,"y_axis_data":-20,"z_axis_data":1052, ...}
- *
- * e é essa a entrada principal. Os gateways que entregam dados de anúncio crus continuam a
- * ser descodificados a partir do formato BXP-B documentado no "MOKO Beacon - ADV Format
- * Summary Sheet", e os dois caminhos produzem o mesmo resultado.
+ * Descodifica uma MOKO W6B (BXP-B) retransmitida: já interpretada pelo gateway (`bxp-button`),
+ * ou em bytes crus pelo "MOKO Beacon - ADV Format Summary Sheet", com o mesmo resultado.
  */
 final class W6bDecoder
 {
@@ -27,10 +17,7 @@ final class W6bDecoder
     private const ALARM_SERVICE = 'e0fe';
     private const INFO_SERVICE = '00ea';
 
-    /**
-     * O gateway reporta o tipo de frame de alarme com a base 0x20 retirada, e por isso o
-     * 0x20 ("modo de toque simples") chega como 0.
-     */
+    /** O gateway tira a base 0x20 ao tipo de frame de alarme: o toque simples chega como 0. */
     private const PRESS_MODES = [
         0 => 'single',
         1 => 'double',
@@ -56,9 +43,7 @@ final class W6bDecoder
             return null;
         }
 
-        // Quem mede o RSSI é o gateway e não o beacon, e por isso ele só chega na
-        // observação. Passa por aqui para quem consome a proximidade o ver, tal como o
-        // `MonitMecsProDecoder` faz para o medidor de fraldas.
+        // O RSSI é medido pelo gateway e só existe na observação.
         return Values::withoutNulls(
             ['mac' => $mac, 'rssiDbm' => is_numeric($observation['rssi'] ?? null) ? (int)$observation['rssi'] : null] + $decoded,
         );
@@ -88,8 +73,7 @@ final class W6bDecoder
 
         return Values::withoutNulls([
             'alarm' => $alarm,
-            // A resposta ao scan não é sempre capturada, e por isso estes só chegam em
-            // alguns avistamentos do mesmo dispositivo.
+            // Só chegam nos avistamentos em que a resposta ao scan foi capturada.
             'info' => $this->gatewayInfo($observation),
         ]);
     }

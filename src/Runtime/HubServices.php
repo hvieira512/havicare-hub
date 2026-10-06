@@ -27,11 +27,8 @@ use Predis\Client as RedisClient;
 use Predis\ClientInterface;
 
 /**
- * A raiz de composição dos serviços de vida longa do hub.
- *
- * Tudo aqui é um singleton do processo, partilhado por referência, incluindo uma ligação
- * Redis só: cada consumidor usa um prefixo de chaves disjunto e apenas comandos síncronos
- * simples, e por isso uma ligação serve-os a todos.
+ * A raiz de composição dos serviços de vida longa do hub, singletons do processo. Uma só
+ * ligação Redis serve todos: prefixos disjuntos e só comandos síncronos simples.
  */
 final class HubServices
 {
@@ -52,7 +49,7 @@ final class HubServices
     }
 
     /**
-     * @param array<string, mixed> $config the full hub config
+     * @param array<string, mixed> $config a configuração completa do hub
      */
     public static function boot(array $config, ConnectionFactory $connections): self
     {
@@ -125,7 +122,7 @@ final class HubServices
     }
 
     /**
-     * @param array<string, mixed> $redisConfig the `redis` section of the hub config
+     * @param array<string, mixed> $redisConfig a secção `redis` da configuração do hub
      *
      * @return array<string, mixed>
      */
@@ -145,11 +142,8 @@ final class HubServices
     }
 
     /**
-     * O prefixo vai no cliente e não em cada store, para qualquer store novo o receber sem
-     * ninguém se lembrar disso. O processador do Predis cobre tudo o que o hub faz em Redis --
-     * não há `SCAN`, `KEYS`, `EVAL` nem pub/sub.
-     *
-     * Vazio não se declara: seria uma opção a processar para nada acrescentar.
+     * O prefixo vai no cliente e não em cada store, para um store novo o receber sozinho; o
+     * processador do Predis cobre tudo o que o hub faz (sem `SCAN`, `KEYS`, `EVAL` nem pub/sub).
      *
      * @param array<string, mixed> $redisConfig a secção `redis` da configuração
      *

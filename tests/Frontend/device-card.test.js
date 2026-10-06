@@ -12,11 +12,6 @@ import {
 const deviceCard = (...args) => String(buildCard(...args));
 const deviceCardSkeletonList = (...args) => String(buildSkeletonList(...args));
 
-/**
- * O cartão saiu do meio do `list.js` para um módulo seu, e isto é metade do porquê: passou a
- * poder ser exercitado sem montar a lista, o modal e o estado à volta dele.
- */
-
 const device = {
     imei: "861265061009822",
     deviceType: "watch",

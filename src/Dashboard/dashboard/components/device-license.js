@@ -19,11 +19,8 @@ export function deviceLicenseLabel(device) {
 }
 
 /**
- * A licença de um aparelho: o nome em cima, a empresa e o número em baixo.
- *
- * A empresa fica porque o mesmo sítio pode ter licença em duas empresas, e só o nome deixava
- * as duas linhas indistinguíveis. As classes são de quem chama: o cartão trunca numa coluna
- * estreita, o painel de detalhe quebra.
+ * A licença de um aparelho: o nome em cima, a empresa e o número em baixo, porque o mesmo
+ * sítio pode ter licença em duas empresas. As classes são de quem chama.
  */
 export function deviceLicenseBlock(device, { valueClass = "", noteClass = "" } = {}) {
     if (!hasLicense(device)) {

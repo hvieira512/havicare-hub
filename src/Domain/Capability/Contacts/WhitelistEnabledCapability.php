@@ -7,15 +7,7 @@ namespace Hub\Domain\Capability\Contacts;
 use Hub\Domain\Capability\CapabilityContract;
 use Hub\Domain\Capability\CapabilityHelpers;
 
-/**
- * O interruptor que liga e desliga a whitelist.
- *
- * Forma pública:
- * - GET /api/devices/{imei}: o valor é um objecto com `enabled => bool`
- * - PATCH /api/devices/{imei}/configurations: envia-se `{ enabled: bool }`
- *
- * É o interruptor do lado do transporte que comanda a lista da whitelist.
- */
+/** O interruptor que liga e desliga a whitelist: `{ enabled: bool }` nos dois sentidos. */
 final class WhitelistEnabledCapability implements CapabilityContract
 {
     use CapabilityHelpers;
@@ -36,10 +28,8 @@ final class WhitelistEnabledCapability implements CapabilityContract
     }
 
     /**
-     * O nome de fio do interruptor em cada protocolo, e o campo que o transporta.
-     *
-     * Um protocolo novo é uma linha, e o `supportedProtocols` sai daqui para não poder
-     * anunciar o que o despacho recusa.
+     * O nome de fio do interruptor em cada protocolo, e o campo que o transporta. O
+     * `supportedProtocols` sai daqui, para não poder anunciar o que o despacho recusa.
      *
      * @var array<string, array{0: string, 1: string}>
      */

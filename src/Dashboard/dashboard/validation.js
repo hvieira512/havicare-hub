@@ -1,10 +1,6 @@
 /**
- * O erro de validação de um formulário, escrito no campo em vez de num diálogo.
- *
- * São as classes nativas do bootstrap: o `.invalid-feedback` só aparece quando o irmão
- * anterior tem `.is-invalid`, e é por isso que a mensagem pode ficar sempre no DOM. Nasce
- * ao lado do campo na primeira vez que é precisa, para os formulários montados em JS não
- * terem de a declarar.
+ * O erro de validação escrito no campo, com o `.invalid-feedback` do Bootstrap; nasce ao lado
+ * do campo na primeira vez que é preciso.
  */
 
 function feedbackFor(field) {

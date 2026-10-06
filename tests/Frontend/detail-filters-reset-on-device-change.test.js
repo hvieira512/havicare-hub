@@ -8,9 +8,8 @@ const { initDetailFilters, populateDetailFilterTypes } =
     await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
 
 /**
- * Os filtros são do histórico do aparelho que se estava a ver. Herdados pelo seguinte,
- * escondem as leituras dele e o painel diz «Ainda não há leituras» — a mesma frase de um
- * aparelho que nunca comunicou.
+ * Filtros herdados do aparelho anterior escondem as leituras do seguinte, e o painel diria
+ * «Ainda não há leituras».
  */
 const els = new Proxy({}, {
     get(target, name) {

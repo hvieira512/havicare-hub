@@ -9,11 +9,8 @@ const { initDeviceDetailView, renderDownlinkRequests } = await import(
 );
 
 /**
- * A divisão a meio do painel de atividade. Os radares, os gateways e os medidores de fralda
- * não recebem pedido nenhum, e metade do cartão dizia permanentemente que não havia pedidos
- * enquanto a lista ao lado cortava "Alarme de sinais vit…" numa coluna de 34%.
- *
- * O que estes testes prendem é que a divisão segue o conteúdo, e não o contrário.
+ * Radares, gateways e medidores de fralda não recebem pedidos: a divisão do painel de atividade
+ * segue o conteúdo, e não o contrário.
  */
 function column(...classes) {
     const element = document.createElement("div");
@@ -72,10 +69,7 @@ test("com pedidos, volta a divisão a meio", () => {
     assert.equal(els.telemetryColumn.classList.contains("pe-xl-3"), true);
 });
 
-/**
- * Empilhados, os dois painéis são separadores. Num radar o dos pedidos está escondido, e a
- * régua ficava com um separador só a apontar para um painel que não existe.
- */
+/** Empilhados, os painéis são separadores; num radar o dos pedidos está escondido. */
 test("sem pedidos, a régua de separadores sai", () => {
     const els = detailEls();
     initDeviceDetailView({ els });

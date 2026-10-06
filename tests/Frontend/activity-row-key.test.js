@@ -8,9 +8,8 @@ const { telemetryActivityRow } =
     await import("../../src/Dashboard/dashboard/devices/detail.js");
 
 /**
- * A lista de atividade junta as leituras e os alarmes, e o `seq` do Redis é contado por
- * lista: existe uma leitura com `seq=7` e um alarme com `seq=7`. Com a mesma chave, abrir a
- * gaveta de uma abria a da outra.
+ * O `seq` do Redis é contado por lista: uma leitura e um alarme podem ter ambos `seq=7`, e com
+ * a mesma chave abrir a gaveta de um abriria a do outro.
  */
 test("uma leitura e um alarme com o mesmo seq não partilham a chave", () => {
     state.selectedImei = "aaa111";

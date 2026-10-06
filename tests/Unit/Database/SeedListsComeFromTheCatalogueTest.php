@@ -7,18 +7,12 @@ namespace Tests\Unit\Database;
 use Hub\Infrastructure\Persistence\ReferenceCatalogSeeder;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Há uma só lista de fornecedores e de modelos, e é a do `ReferenceCatalogSeeder`.
- *
- * O `seed.sql` teve as suas durante algum tempo, e cada par divergiu: o dispensador ficou só
- * numa das listas de modelos e sete relógios só na outra, e o fornecedor dele só no catálogo.
- * Uma instalação nova nascia com menos do que produção, sem nada a denunciá-lo.
- */
+/** Há uma só lista de fornecedores e de modelos, e é a do `ReferenceCatalogSeeder`. */
 final class SeedListsComeFromTheCatalogueTest extends TestCase
 {
     private const SEED = __DIR__ . '/../../../database/seed.sql';
 
-    /** O ficheiro do inventário não volta a trazer uma lista de modelos. */
+    /** O ficheiro do inventário não traz lista de modelos. */
     public function testTheInventorySeedDoesNotWriteModels(): void
     {
         $sql = (string)file_get_contents(self::SEED);

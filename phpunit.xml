@@ -9,11 +9,11 @@
     failOnWarning="true"
 >
     <testsuites>
-        <!-- No external services: runs in seconds, use this while working. -->
+        <!-- Sem serviços externos: corre em segundos, é a de usar enquanto se trabalha. -->
         <testsuite name="unit">
             <directory>tests/Unit</directory>
         </testsuite>
-        <!-- Needs a reachable MySQL; skips itself when there is none. -->
+        <!-- Precisa de um MySQL acessível, e salta-se sozinha quando não há. -->
         <testsuite name="integration">
             <directory>tests/Integration</directory>
         </testsuite>

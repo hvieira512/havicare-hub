@@ -1,7 +1,4 @@
-/**
- * O modal de dispositivo em branco. O `editDevice` substitui o estado inteiro, e enquanto
- * repetia esta forma à mão as duas divergiam em silêncio.
- */
+/** O modal de dispositivo em branco: o `editDevice` substitui o estado inteiro. */
 export function blankDeviceModal(overrides = {}) {
     return {
         mode: "create",
@@ -225,10 +222,7 @@ export function setSelectedDetail(detail) {
     state.selectedDetail.recent = null;
 }
 
-/**
- * Reler o registo não é reler o histórico: o `GET /api/devices/{imei}` não devolve `recent`,
- * e sem o guardar de lado cada releitura limpava os painéis do detalhe.
- */
+/** Reler o registo não é reler o histórico: o `GET /api/devices/{imei}` não devolve `recent`. */
 export function refreshSelectedDetail(detail) {
     const recent = state.selectedDetail?.recent ?? null;
     state.selectedDetail = detail;
@@ -250,7 +244,7 @@ export function setDeviceListPage(page) {
     state.deviceListPage = page || 1;
 }
 
-/** Mudar o que a listagem mostra volta-a à primeira página: a página 4 era de outra lista. */
+/** Mudar o que a listagem mostra volta-a à primeira página: a página 4 é de outra lista. */
 export function resetDeviceListPage() {
     state.deviceListPage = 1;
 }
@@ -267,10 +261,7 @@ export function setDeviceFilters(filters) {
     state.deviceListPage = 1;
 }
 
-/**
- * O rascunho volta ao que está aplicado. Cópia e não a mesma referência: partilhá-la fazia o
- * filtro aplicar-se sem passar pelo botão.
- */
+/** O rascunho volta ao que está aplicado, por cópia: a mesma referência aplicava o filtro sem o botão. */
 export function resetDetailFiltersDraft() {
     state.detailFiltersDraft = { ...state.detailFilters };
 }

@@ -254,19 +254,14 @@ export const fieldLabel = (key) =>
     })[key] || titleize(key);
 
 /**
- * A unidade que o rótulo de um campo carrega entre parênteses: de «Intervalo (min)» sai
- * «min». Serve os cartões que põem o controlo na linha do título, onde o rótulo desaparece
- * por repetir o nome da definição -- a unidade é a parte dele que não se pode perder.
+ * A unidade que o rótulo de um campo carrega entre parênteses: de «Intervalo (min)» sai «min»,
+ * para os cartões onde o rótulo desaparece.
  */
 export const fieldUnit = (key) => fieldLabel(key).match(/\(([^)]+)\)\s*$/)?.[1] ?? "";
 
 /**
- * O valor de um campo cujo conteúdo é uma enumeração, em português. O `fieldLabel` acima
- * traduz o nome do campo; isto traduz o que lá está dentro, porque o hub envia enumerações
- * -- `awake`, `lying_down` -- e a tradução é deste lado.
- *
- * Por chave de campo e não num dicionário global: `low` e `high` querem dizer coisas
- * diferentes conforme se fale de uma frequência cardíaca ou de um nível de bateria.
+ * O valor de um campo de enumeração, em português. Por chave de campo e não global: `low` e
+ * `high` mudam de sentido entre uma frequência cardíaca e uma bateria.
  */
 const FIELD_VALUE_LABELS = {
     // O bit dos relógios e a enumeração do dispensador, que no contrato partilham o campo.
@@ -381,10 +376,7 @@ const FIELD_VALUE_LABELS = {
 // é o `state`, e o `sleepState` do `vitals_minute_stats`.
 FIELD_VALUE_LABELS.sleepState = FIELD_VALUE_LABELS.sleep_state;
 
-/**
- * A unidade vive no nome do campo, por contrato. Quem lê o ecrã não vê o nome, vê o rótulo em
- * português -- e "Distância: 187" não diz se são metros ou quilómetros.
- */
+/** A unidade vive no nome do campo, e quem lê o ecrã só vê o rótulo em português. */
 const FIELD_UNIT = {
     accuracyMeters: "m",
     distanceMeters: "m",
@@ -452,7 +444,7 @@ const FIELD_UNIT = {
 export const fieldValue = (key, value) => {
     if (value === undefined || value === null || value === "") return "-";
 
-    // Um booleano, que sem isto sai titleizado do inglês: "Queda: False".
+    // Um booleano, que de outro modo sairia titleizado do inglês.
     if (typeof value === "boolean") return value ? "Sim" : "Não";
 
     if (typeof value === "number" && FIELD_UNIT[key]) {
@@ -501,11 +493,8 @@ export const commandLabel = (command) =>
     command.command;
 
 /**
- * Por que razão um pedido falhou, em português.
- *
- * O hub manda um código -- `no_response`, `not_worn` -- e a tradução é deste lado, como a das
- * enumerações. Um código que não esteja aqui aparece como veio: esconder um motivo novo era
- * pior do que mostrá-lo em inglês.
+ * Por que razão um pedido falhou, em português. Um código que não esteja aqui aparece como
+ * veio, porque esconder um motivo novo é pior.
  */
 export const commandError = (code) =>
     ({
@@ -529,9 +518,7 @@ export const eventTime = (payload) => {
 export const rowPayload = (row) =>
     row?.payload && typeof row.payload === "object" ? row.payload : row;
 
-/**
- * As pessoas que o radar vê são numeradas a partir de zero, e ninguém conta assim.
- */
+/** As pessoas que o radar vê são numeradas a partir de zero, e ninguém conta assim. */
 export const displayPersonIndex = (value) => {
     const index = Number(value);
     return Number.isInteger(index) ? String(index + 1) : "-";

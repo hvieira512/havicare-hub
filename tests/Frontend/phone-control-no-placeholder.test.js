@@ -5,12 +5,7 @@ import "./support/browser-env.js";
 import { renderPhoneControl } from "../../src/Dashboard/dashboard/phone.js";
 import { parseFragment } from "./support/dom.js";
 
-/**
- * Um campo de telefone não sugere um número.
- *
- * Um número cinzento dentro de um campo vazio lê-se como um número lá escrito. O campo já diz
- * o que é pelo seletor de país ao lado e pelo rótulo por cima.
- */
+/** Um número cinzento num campo vazio lê-se como um número lá escrito. */
 
 const control = (options) => parseFragment(renderPhoneControl(options));
 
@@ -21,8 +16,7 @@ test("o campo do número não tem placeholder nenhum", () => {
 });
 
 test("nem quando quem o desenha insiste em passar um", () => {
-    // A remoção fica no controlo e não nos sítios que o chamam: um sítio novo não pode
-    // reintroduzir o que se tirou.
+    // A regra fica no controlo e não em quem o chama, para valer em qualquer sítio novo.
     const input = control({ placeholder: "+351912345678" }).querySelector("[data-phone-local]");
 
     assert.equal(input.getAttribute("placeholder"), null);

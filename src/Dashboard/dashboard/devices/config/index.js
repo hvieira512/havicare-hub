@@ -96,8 +96,7 @@ export function renderDeviceConfigurationRoot(context) {
                                 const stored = entry.requestOnly
                                     ? null
                                     : resolveConfigStored(entry, rowsByKey);
-                                // Uma acção não tem entrada no `configurationSync` -- não é
-                                // uma configuração guardada. O estado que ela tem é o do
+                                // Uma acção não é configuração guardada: o estado dela é o do
                                 // último pedido que disparou.
                                 const delivery = entry.requestOnly
                                     ? actionDeliveries[entry.capabilityKey || entry.key] || null
@@ -127,10 +126,8 @@ export function renderDeviceConfigurationRoot(context) {
 }
 
 /**
- * As secções em lista vertical, com a contagem de definições e a do que está alterado.
- *
- * A contagem do alterado é escrita pelo painel a partir do DOM -- é o que está no ecrã e
- * ainda não saiu --, e por isso nasce vazia.
+ * As secções em lista vertical. A contagem do alterado nasce vazia: escreve-a o painel a partir
+ * do DOM.
  */
 function sectionList(groups, currentCategory) {
     return `
@@ -149,11 +146,7 @@ function sectionList(groups, currentCategory) {
         </div>`;
 }
 
-/**
- * O envio de uma secção inteira: a conta, o «Repor» e o «Enviar ao dispositivo».
- *
- * Nasce desligado, e é o painel que o acende contando o que está alterado no ecrã.
- */
+/** O envio de uma secção inteira; nasce desligado e o painel acende-o contando o alterado. */
 function sectionFooter() {
     return `
         <div class="config-section-footer position-sticky bottom-0 mt-auto d-flex align-items-center justify-content-between gap-2 flex-wrap border-top bg-body">
@@ -165,11 +158,7 @@ function sectionFooter() {
         </div>`;
 }
 
-/**
- * Um interruptor que se guarda, e não uma acção nem um campo composto.
- *
- * É o único caso em que uma linha diz tudo: um nome, o que faz, e ligado ou desligado.
- */
+/** Um interruptor que se guarda, e não uma acção nem um campo composto: cabe numa linha. */
 function isPlainToggle(entry) {
     return entry.input === "toggle" &&
         entry.transient !== true &&
@@ -177,10 +166,8 @@ function isPlainToggle(entry) {
 }
 
 /**
- * A mesma definição repetida para grandezas diferentes: o mesmo comando nativo e a mesma
- * legenda declarada.
- *
- * É o que distingue as dez medições da Wonlex de dois números que por acaso ficaram vizinhos.
+ * A mesma definição repetida para grandezas diferentes, com o mesmo comando e a mesma legenda,
+ * como as dez medições da Wonlex.
  */
 function isRepeatedField(entry) {
     return entry.input === "number" &&
@@ -198,8 +185,6 @@ function configRunKind(entry) {
 }
 
 /**
- * As entradas por ordem, com as corridas marcadas para agrupar.
- *
  * Corridas e não «todos os interruptores da secção»: a ordem do catálogo é editorial.
  *
  * @returns {Array<{kind: string, grouped: boolean, entries: Array<object>}>}
@@ -224,11 +209,7 @@ function configRuns(entries) {
     }));
 }
 
-/**
- * A unidade ao lado do campo.
- *
- * A definição ganha ao nome nativo; só quando ela se cala é que se adivinha pelo campo.
- */
+/** A unidade declarada na definição ganha; só sem ela se adivinha pelo nome do campo. */
 function unitLabel(entry) {
     return String(entry.options?.label ?? "").trim() || fieldUnit(entry.fields?.[0] || "");
 }
@@ -249,15 +230,9 @@ const TIME_UNIT_WORDS = {
     h: ["hora", "horas"],
 };
 
-/**
- * O valor da definição em palavras, para a linha por baixo do nome.
- *
- * Numa unidade de tempo é sempre uma periodicidade -- é o que o catálogo declara nelas --, e
- * por isso lê-se «a cada». Um número sem unidade de tempo diz-se como está.
- */
+/** O valor em palavras: numa unidade de tempo é sempre uma periodicidade, e lê-se «a cada». */
 function valueSummary(entry, desired, isStored) {
-    // Por enviar não se diz nada: a pastilha «Padrão» ao lado já o diz, e repetir a mesma
-    // coisa em duas formas rouba a linha ao que o campo tem para explicar.
+    // Por enviar não se diz nada: a pastilha «Padrão» ao lado já o diz.
     if (!isStored) return "";
 
     const value = desired?.[entry.fields?.[0] || ""];
@@ -283,10 +258,8 @@ function previousValueSummary(entry, desired, isStored) {
 }
 
 /**
- * As duas leituras da mesma definição, e qual delas se vê.
- *
- * As duas são desenhadas juntas e é o CSS que escolhe, pelo `data-config-edited` do bloco:
- * trocar texto e pastilha a cada tecla era reescrever marcação dentro de um campo em uso.
+ * As duas leituras da definição, desenhadas juntas: o CSS escolhe pelo `data-config-edited`,
+ * para não se reescrever marcação a cada tecla dentro de um campo em uso.
  */
 function settingState(entry, desired, isStored, deliveryMeta, showBadge) {
     const summary = valueSummary(entry, desired, isStored);
@@ -311,10 +284,8 @@ function settingState(entry, desired, isStored, deliveryMeta, showBadge) {
 }
 
 /**
- * O valor de uma linha na forma em que o leitor do campo o devolve.
- *
- * Tem de bater certo ao caractere com o `readConfigPayload`: é contra ele que a fotografia
- * é comparada para saber se há alterações por enviar.
+ * Tem de bater certo ao caractere com o `readConfigPayload`: é contra ele que a fotografia se
+ * compara para saber se há alterações por enviar.
  */
 function readConfigEntryValue(entry, desired) {
     const field = entry.fields?.[0] || "value";
@@ -400,8 +371,7 @@ export function renderConfigSection(
         phonebookContacts: relatedConfigurations.phonebook || [],
     };
     const help = configHelp(entry);
-    // Uma acção com dois sentidos mostra os dois verbos em vez de um interruptor e um
-    // «Enviar». Sem verbos declarados, o cartão fica como estava.
+    // Uma acção com dois sentidos mostra os dois verbos em vez de um interruptor e um «Enviar».
     const verbs = configActionVerbs(entry);
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
     // Uma acção não tem valor guardado, mas o pedido que ela dispara tem estado: em fila, à
@@ -449,8 +419,7 @@ export function renderConfigSection(
             ? renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand, confirmText !== "", verb)
             : "";
     const state = settingState(entry, desired, isStored, deliveryMeta, showConfigurationBadge);
-    // Sem campos, o cartão é só uma acção, e o botão sobe à linha do título -- como o controlo
-    // de uma definição que cabe numa linha. Em linha própria ficava com o lado esquerdo vazio.
+    // Sem campos, o cartão é só uma acção, e o botão sobe à linha do título.
     const fields = drawsFields
         ? (verbs.length > 0 ? "" : renderConfigInputs(entry, desired, { ...meta, protocol }))
         : unitGroup(control, entry);
@@ -490,10 +459,7 @@ export function renderConfigSection(
 }
 
 /**
- * Os verbos de uma acção com dois sentidos, na ordem em que se lêem.
- *
- * Só para acções: uma definição guarda-se, e por isso o que ela precisa é do interruptor com
- * o estado desejado, não de dois botões que disparam.
+ * Os verbos de uma acção com dois sentidos; uma definição usa o interruptor e não verbos.
  *
  * @returns {Array<{value: string, label: string}>}
  */
@@ -517,10 +483,8 @@ function renderConfigActionVerbs(verbs, disabled) {
 
 function renderConfigActionButton(key, row, uiState, disabled = false, appliedByHub = false, destructive = false, verb = "") {
     const state = configButtonState(row, uiState);
-    // O verbo só se declara onde vale a pena dizê-lo outra vez no botão -- a reposição de
-    // fábrica é o caso: o rótulo é um nome e o botão tem de dizer o que o clique faz.
-    // "Guardar" e não "Enviar" quando não há nada a caminho do dispositivo: o botão não deve
-    // prometer um envio que não acontece.
+    // O verbo declarado (o da reposição de fábrica) ganha; «Guardar» quando nada segue para o
+    // dispositivo, para o botão não prometer um envio.
     const idleLabel = verb !== ""
         ? verb
         : appliedByHub
@@ -538,12 +502,7 @@ function renderConfigActionButton(key, row, uiState, disabled = false, appliedBy
         </button>`;
 }
 
-/**
- * A caixa de mensagem do cartão, que é para o que a pastilha não sabe dizer.
- *
- * Só falhas: um pedido que nem chega a criar comando não tem pastilha nenhuma, e sem isto o
- * clique morria em silêncio.
- */
+/** Só falhas: um pedido que nem chega a criar comando não tem pastilha que o diga. */
 function renderConfigFeedback(key, uiState) {
     if (!uiState?.feedback?.message || uiState.feedback.tone !== "danger") {
         return "";
@@ -564,8 +523,7 @@ function configButtonState(_row, uiState) {
 }
 
 export function renderConfigInputs(entry, desired, meta = {}) {
-    // Perguntado ao descritor e não ao resultado: um renderizador que devolva vazio de
-    // propósito -- uma acção, que não tem campos -- caía no editor de JSON.
+    // Perguntado ao descritor e não ao resultado: uma acção devolve vazio de propósito.
     const descriptor = CONFIG_INPUTS[entry.input || "json"];
     if (!descriptor) {
         return jsonInput(desired);
@@ -607,10 +565,8 @@ function resolveConfigRow(entry, rowsByKey) {
 }
 
 /**
- * Se já há valor guardado para esta entrada.
- *
- * O `configKeys` existe para as definições que o hub escreve em mais do que uma linha nativa:
- * basta uma delas ter valor. A chave própria é testada primeiro porque é o caso comum.
+ * O `configKeys` cobre as definições que o hub escreve em mais do que uma linha nativa: basta
+ * uma delas ter valor.
  */
 function resolveConfigStored(entry, rowsByKey) {
     if (Object.keys(rowsByKey[entry.key] || {}).length > 0) {

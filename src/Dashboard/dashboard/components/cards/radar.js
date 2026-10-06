@@ -4,11 +4,8 @@ import { html } from "../../html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
 
 /**
- * Os cartões do radar: presença, posturas e as estatísticas por minuto.
- *
- * Não se cruzam com nenhum outro aparelho -- uma postura ou uma contagem de pessoas não
- * existe num relógio --, e é essa a linha que os separa daqui. A do tipo de dispositivo não
- * serve: a frequência cardíaca sai de relógio, radar e pulseira.
+ * Os cartões do radar: presença, posturas e as estatísticas por minuto, que não existem em
+ * nenhum outro aparelho.
  */
 
 /**
@@ -43,10 +40,7 @@ function postureChip(posture) {
 /** Quantas pastilhas cabem antes de o mosaico crescer de mais. */
 const PRESENCE_CHIP_LIMIT = 3;
 
-/**
- * A postura de cada pessoa, em pastilhas. As coordenadas ficam na tooltip: num mosaico
- * estreito enchiam a linha, e não significam nada sem uma planta da divisão.
- */
+/** A postura de cada pessoa, em pastilhas; as coordenadas ficam na tooltip. */
 export function presenceDetails(data) {
     const people = Array.isArray(data?.people) ? data.people : [];
     const chips = people

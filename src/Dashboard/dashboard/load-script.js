@@ -1,8 +1,6 @@
 /**
- * Carrega um script de terceiros à primeira vez que alguém precisa dele: o Konva e o amCharts
- * são megabytes que a maioria das sessões nunca abre.
- *
- * A promessa fica guardada por `src`, e um erro apaga-a para a chamada seguinte tentar de novo.
+ * Carrega um script de terceiros à primeira vez que é preciso. A promessa fica guardada por
+ * `src`, e um erro apaga-a para a chamada seguinte tentar de novo.
  */
 const loading = new Map();
 

@@ -3,12 +3,8 @@ import { ago, displayPersonIndex, eventTime, fieldLabel, rowPayload, when } from
 import { DETECTION_TYPE_LABEL, PRESS_TYPE_LABEL } from "../domain.js";
 
 /**
- * Os dois cartões que resumem o histórico de eventos: a última chamada de ajuda por modo de
- * toque, e a última queda que o radar viu.
- *
- * Estão à parte do `components/cards/telemetry.js` porque são widgets e não entradas de um
- * catálogo -- aquele tem um cartão por tipo de telemetria, estes leem o histórico inteiro e
- * resumem-no. E ficam aqui, e não em `components/`, porque só a coluna de detalhe os desenha.
+ * Cartões que resumem o histórico de eventos inteiro, e por isso não são entradas do catálogo
+ * de `components/cards/telemetry.js`.
  */
 
 // O que separa os modos é quantos toques, ou quanto dura um, e é isso que o ícone diz.
@@ -23,11 +19,8 @@ const HELP_CALL_PRESS_ICON = {
 const HELP_CALL_PRESS_MODES = ["single", "double", "triple", "long"];
 
 /**
- * A última chamada de ajuda por modo de toque. A pulseira só anuncia enquanto está em alarme,
- * por isso não há como saber que uma chamada foi cancelada -- reporta-se quando aconteceu.
- *
- * Sem modos declarados não há cartão: quem chama por botão de comando, como o W812, não tem
- * por onde se resumir, e três colunas a dizer "nunca" só repetiam os eventos já listados.
+ * A última chamada de ajuda por modo de toque; não se sabe se foi cancelada. Sem modos
+ * declarados (botão de comando, como o W812) não há cartão.
  */
 export function helpCallSummaryCard(events = [], pressModes = []) {
     if (pressModes.length === 0) {
@@ -103,12 +96,7 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
 </div>`;
 }
 
-/**
- * A última queda que o radar viu, tirada do histórico de eventos e não de uma capacidade:
- * aparece só quando houve queda, e não ocupa o mosaico nos dias em que não houve.
- *
- * Ninguém está a olhar para o ecrã no instante em que alguém cai; o que fica é o registo.
- */
+/** A última queda do radar, tirada do histórico e não de uma capacidade: só aparece se houve. */
 export function fallSummaryCard(events) {
     const falls = (Array.isArray(events) ? events : [])
         .map(rowPayload)

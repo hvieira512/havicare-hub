@@ -10,12 +10,8 @@ use Hub\Api\Services\ModelImageStore;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O tamanho comprimido de uma imagem não diz nada sobre o que ela custa a abrir.
- *
- * Um PNG de poucos quilobytes pode declarar dezenas de milhares de píxeis por lado, e o GD
- * aloca `largura × altura × 4` bytes **antes** de alguém poder verificar seja o que for. O hub
- * é um processo só, e um `fatal` de memória aqui derruba as ligações de todos os dispositivos:
- * as dimensões declaradas lêem-se do cabeçalho e recusam-se antes da descodificação.
+ * O GD aloca `largura × altura × 4` bytes antes de qualquer verificação, e um fatal de memória
+ * derruba o hub inteiro: as dimensões lêem-se do cabeçalho e recusam-se antes de descodificar.
  */
 final class ModelImageStoreTest extends TestCase
 {
@@ -59,7 +55,7 @@ final class ModelImageStoreTest extends TestCase
         }
     }
 
-    /** Bytes que não são imagem nenhuma continuam a dar `invalid_image`, e não o erro novo. */
+    /** Bytes que não são imagem nenhuma dão `invalid_image`, e não o erro das dimensões. */
     public function testGarbageIsStillReportedAsAnInvalidImage(): void
     {
         $result = (new ModelImageStore())->store($this->upload('isto não é uma imagem'));

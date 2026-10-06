@@ -10,11 +10,8 @@ const { toggleActivityRow } =
     await import("../../src/Dashboard/dashboard/devices/activity-table.js");
 
 /**
- * A altura de uma linha da lista de actividade, e a gaveta que a abre.
- *
- * Sem corte, uma página de doze linhas media 708px ou 1920px conforme os tipos que lhe
- * calhassem. O que se prende aqui: os detalhes cortam-se numa linha, o que fica de fora
- * abre-se, e a linha aberta continua aberta enquanto o histórico anda por baixo dela.
+ * Os detalhes cortam-se numa linha, o que fica de fora abre-se, e a linha aberta continua
+ * aberta enquanto o histórico anda por baixo dela.
  */
 
 function fakeElement() {
@@ -33,7 +30,7 @@ function els() {
     };
 }
 
-// Um resumo por minuto de radar: os detalhes são a frase comprida que rebentava a altura.
+// Um resumo por minuto de radar: os detalhes são uma frase comprida.
 function minuteStats(index) {
     return {
         type: "position_minute_stats",

@@ -41,11 +41,7 @@ final class TenancySchemas
                 ],
             ],
             'ApiUserListResponse' => CommonSchemas::collection('ApiUserItem', withColumns: true),
-            // Derivados do `ApiUserWriteRequest`, que é onde as regras vivem e correm. Este
-            // bloco era escrito à mão e já não dizia o mesmo que o serviço: declarava o
-            // `role` obrigatório, quando o serviço lhe dá `license_client` por omissão, e
-            // não mencionava o `licenseId` nem o `companyId`, que o serviço lê para
-            // encontrar a licença.
+            // Derivados do `ApiUserWriteRequest`, que é onde as regras vivem e correm.
             'ApiUserCreateRequest' => SchemaFromRequest::schema(
                 ApiUserWriteRequest::class,
                 [ApiUserWriteRequest::GROUP_CREATE],
@@ -94,8 +90,8 @@ final class TenancySchemas
                 ],
             ],
             'LicenseListResponse' => CommonSchemas::collection('LicenseItem', withColumns: true),
-            // O criar exige a empresa e a licença; o actualizar aceita a ausência de ambos
-            // como "fica como está", e é por isso que passam a ser dois esquemas e não um.
+            // O criar exige a empresa e a licença; o actualizar lê a ausência de ambos como "fica como
+            // está", e por isso são dois esquemas.
             'LicenseCreateRequest' => SchemaFromRequest::schema(
                 LicenseWriteRequest::class,
                 [LicenseWriteRequest::GROUP_CREATE],

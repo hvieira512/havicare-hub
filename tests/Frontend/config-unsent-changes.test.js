@@ -6,12 +6,8 @@ import "./support/browser-env.js";
 import { unsentConfigChanges } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 
 /**
- * Fechar o diálogo com configuração escrita e não enviada deitava-a fora em silêncio.
- *
- * A conta tem de ser do que alguém editou, e só disso. Uma acção é sempre um pedido novo, e
- * uma definição que o aparelho ainda não recebeu está por enviar sem ninguém lhe ter tocado
- * -- avisar por causa delas era avisar em todos os relógios, todas as vezes, e um aviso que
- * aparece sempre deixa de se ler.
+ * A conta é só do que alguém editou: uma acção ou uma definição que o aparelho ainda não
+ * recebeu avisaria em todos os relógios, todas as vezes, e o aviso deixaria de se ler.
  */
 const root = () => {
     const element = document.createElement("div");

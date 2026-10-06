@@ -11,12 +11,8 @@ const { initializeDashboardSession } =
     await import("../../src/Dashboard/dashboard/auth/session.js");
 
 /**
- * O grafo da dashboard entra por `import()` depois de autenticar, e esse pedido pode falhar
- * -- a rede a oscilar, ou um deploy a trocar o ficheiro com o login em curso.
- *
- * Quando falhava, o ecrã ficava num estado sem saída: o formulário já estava escondido, o
- * `#app` visível e vazio, e a bandeira que impede um arranque duplo ficava levantada. O
- * aviso dizia «volte a tentar» e não havia onde carregar. Só um F5 saía dali.
+ * O grafo da dashboard entra por `import()` depois de autenticar, e esse pedido pode falhar: o
+ * ecrã tem de voltar ao formulário, com a bandeira do arranque baixada.
  */
 function mountScreens() {
     document.body.innerHTML = `

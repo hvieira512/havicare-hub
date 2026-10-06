@@ -7,13 +7,8 @@ import { parseFragment } from "./support/dom.js";
 import { defaultConfigPayload, renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 
 /**
- * Uma definição de um campo estreito -- um número, uma lista curta -- gastava quatro linhas
- * para uma escolha: o título, o rótulo do campo, o campo, e uma linha só para os botões. O
- * rótulo repetia o título, e a linha de ajuda repetia-se de cartão para cartão.
- *
- * A unidade é a parte do rótulo que não se pode perder: de «Intervalo (min)» sobrevive o
- * «min», ao lado do controlo. E sem rótulo visível o campo tem de continuar a ter nome para
- * quem o ouve em vez de o ver.
+ * Um campo estreito ocupa uma linha só, e do rótulo sobra a unidade ao lado do controlo; sem
+ * rótulo visível, o campo continua a ter nome para quem o ouve.
  */
 const LOCATION_INTERVAL = {
     key: "locationInterval",
@@ -37,12 +32,7 @@ test("o rótulo do campo desaparece", () => {
     assert.equal(sectionOf(LOCATION_INTERVAL).querySelectorAll("label").length, 0);
 });
 
-/**
- * O intervalo de localização da Wonlex viaja em `intervalTime`, que não estava na tabela de
- * nomes: o cartão ficava com uma caixa de número e nada ao lado, enquanto o cartão
- * equivalente do 4P Touch mostrava `s`. A mesma definição, dois protocolos, e só um dizia a
- * unidade. O protocolo diz segundos, e que zero desliga.
- */
+/** O protocolo da Wonlex diz que o `intervalTime` é em segundos, e que zero desliga. */
 test("o intervalo de localização da Wonlex diz a unidade", () => {
     const section = sectionOf(LOCATION_INTERVAL);
 
@@ -67,7 +57,7 @@ test("o campo continua a ter nome para quem não o vê", () => {
     assert.equal(input.getAttribute("aria-label"), "Intervalo de localização");
 });
 
-/** Quem envia uma definição é o rodapé da secção: um botão por definição eram vinte e nove. */
+/** Quem envia uma definição é o rodapé da secção. */
 test("uma definição não leva botão de enviar", () => {
     const section = sectionOf(LOCATION_INTERVAL);
 
@@ -80,10 +70,7 @@ test("um campo estreito não leva botão de repor", () => {
     assert.equal(section.querySelectorAll("button[type=\"reset\"]").length, 0);
 });
 
-/**
- * O tom de pele da Veepoo vai de 1 a 6. O valor por omissão era sempre zero, e o cartão
- * abria com um número que o aparelho recusa.
- */
+/** O tom de pele da Veepoo vai de 1 a 6, e o aparelho recusa o zero. */
 test("o valor por omissão respeita o mínimo que a definição declara", () => {
     const skinTone = {
         key: "skin_tone",

@@ -4,10 +4,7 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 import { whileBusy } from "../../src/Dashboard/dashboard/settings/row-editor.js";
 
-/**
- * Dois cliques seguidos em «Guardar» numa linha nova criavam dois registos iguais: o pedido
- * viaja e o botão continua a aceitar cliques.
- */
+/** Enquanto o pedido viaja, um segundo clique em «Guardar» criaria um registo igual. */
 function deferred() {
     let settle;
     const promise = new Promise((resolve) => {

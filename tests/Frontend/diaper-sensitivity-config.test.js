@@ -3,21 +3,14 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 
-// Tem de vir antes dos modulos do dashboard: o api/http.js toca em window ao carregar.
+// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
 import "./support/browser-env.js";
 import {
     readConfigPayload,
     renderConfigInputs,
 } from "../../src/Dashboard/dashboard/devices/config/index.js";
 
-/**
- * A sensibilidade dos alertas de um medidor de fraldas, no painel de configuração.
- *
- * É um bloco de configuração como os outros, desde que o pipeline passou a saber exprimir uma
- * configuração que não viaja. O que estes testes prendem é o que a
- * mudança tinha de preservar: os três presets, os dois inteiros, e as gamas vindas do
- * servidor em vez de escritas aqui.
- */
+/** Os três presets, os dois inteiros, e as gamas vindas do servidor em vez de escritas aqui. */
 
 const MODAL = readFileSync(
     new URL("../../src/Dashboard/components/modals/device.php", import.meta.url),
@@ -69,8 +62,7 @@ test("os três presets aparecem, e o que bate certo com os valores fica aceso", 
 });
 
 test("valores que não são de nenhum preset não acendem nenhum botão", () => {
-    // O quarto botão "Personalizado" do bloco anterior deixa de ser preciso: o estado
-    // lê-se dos números, e nenhum preset activo já diz que são à medida.
+    // Sem botão «Personalizado»: nenhum preset activo já diz que os números são à medida.
     const { section } = sectionFor({ pollutionRange: 6, pollutionValue: 20 });
 
     assert.equal(section.querySelectorAll("[data-config-preset].active").length, 0);

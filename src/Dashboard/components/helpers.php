@@ -59,7 +59,6 @@ function tab_pane_header(
     string $trailingHtml = '',
     string $titleId = '',
 ): string {
-    // O `titleId` é para os separadores cujo título muda com o que a lista trouxe.
     $id = $titleId === '' ? '' : ' id="' . h($titleId) . '"';
 
     return '<div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">'

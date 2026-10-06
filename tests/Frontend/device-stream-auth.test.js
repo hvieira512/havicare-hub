@@ -4,12 +4,8 @@ import "./support/browser-env.js";
 import { installStreamHarness } from "./support/device-stream-harness.js";
 
 /**
- * Um token morto não melhora com tentativas.
- *
- * O stream tratava qualquer resposta que não fosse `ok` da mesma maneira -- religava com
- * recuo exponencial. Com a sessão expirada isso dava uma dashboard a bater à porta para
- * sempre, calada, em vez de pedir autenticação. O 401 e o 403 pedem o contrário: avisar
- * quem trata da sessão e ficar quieto.
+ * Um token morto não melhora com tentativas: o 401 e o 403 avisam quem trata da sessão e ficam
+ * quietos, em vez de religar.
  */
 
 const harness = installStreamHarness();

@@ -8,14 +8,8 @@ use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * O catálogo de referência de uma base de dados acabada de construir.
- *
- * Estes factos -- que etiqueta tem cada capacidade, que capacidades tem cada tipo de
- * aparelho, o que o template de cada modelo liga -- são o destino, e não o caminho: uma base
- * nova tem de nascer aqui a partir do `CapabilityCatalog` e do `SupplierCapabilityTemplate`.
- *
- * Se alguém mudar o catálogo em código e partir uma destas afirmações, parte-se aqui e não
- * em produção passado um deploy.
+ * O catálogo de referência de uma base acabada de construir, que nasce do `CapabilityCatalog` e
+ * do `SupplierCapabilityTemplate`: uma mudança que os parta parte aqui, e não em produção.
  */
 final class ReferenceCatalogTest extends MysqlDashboardTestCase
 {
@@ -37,11 +31,8 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
     }
 
     /**
-     * A ordem dentro de uma secção é alfabética pela etiqueta, que é o que quem lê tem à
-     * frente. Um inteiro escolhido à mão e guardado na base é invisível no ecrã, e dá à lista
-     * uma ordem que nada do que lá está explica.
-     *
-     * A ordem das secções não vem daqui -- é uma lista fixa na consulta -- e continua igual.
+     * A ordem dentro de uma secção é alfabética pela etiqueta, que é o que quem lê tem à frente;
+     * a ordem das secções é uma lista fixa na consulta.
      */
     public function testCapabilitiesComeBackAlphabeticalWithinTheirSection(): void
     {
@@ -65,8 +56,8 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
 
         self::assertSame($sorted, $labels, 'a telemetria de um relógio sai fora de ordem');
         self::assertSame('Atividade', $labels[0] ?? null);
-        // Em bytes o "VFC" vinha antes da "Versão", por a maiúscula pesar menos que a
-        // minúscula. É o caso que distingue ordem portuguesa de ordem de tabela ASCII.
+        // Em bytes o «VFC» viria antes da «Versão», por a maiúscula pesar menos: é o caso que
+        // distingue a ordem portuguesa da ordem ASCII.
         self::assertGreaterThan(
             array_search('Versão do firmware', $labels, true),
             array_search('VFC', $labels, true),
@@ -93,7 +84,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
 
     public function testTheCatalogueHasNoCapabilityTheHubCannotServe(): void
     {
-        // O tempo saiu do catálogo quando se percebeu que nenhum protocolo o entrega.
+        // Nenhum protocolo entrega o tempo, e por isso não está no catálogo.
         $pdo = $this->createDashboardDatabase()->pdo();
 
         self::assertSame(
@@ -131,9 +122,8 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O dispensador entrou depois das duas bases existirem, e por isso tem duas origens que
-     * têm de dar no mesmo: o seeder, numa base nova, e a migração, nas que já cá estavam.
-     * Isto afirma a primeira.
+     * O dispensador tem duas origens que têm de dar no mesmo: o seeder, numa base nova, e a
+     * migração, nas existentes. Isto afirma a primeira.
      */
     public function testThePillDispenserCatalogueIsComplete(): void
     {
@@ -144,7 +134,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'alarm_ringtone',
             'alarm_volume',
             // O ar onde o aparelho está, e não uma pessoa: a spec dá o `0x810E` como INT8S de
-            // -40 a 120 graus inteiros. Partilhavam chave com a temperatura corporal.
+            // -40 a 120 graus inteiros.
             'ambient_humidity',
             'ambient_temperature',
             // O aparelho acerta-se sozinho, sem esperar pelo `calibrate_clock`.
@@ -176,8 +166,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'key_tone',
             'loaded_cells',
             // A mudança de estado de uma dose é acontecimento próprio: é o único sinal de uma
-            // dose falhada, e viajava dentro da leitura dos nove, pelo canal sem garantia de
-            // entrega.
+            // dose falhada, e precisa de canal com garantia de entrega.
             'medication_alarm_change',
             // A toma lê-se por aqui sem a chave de cifra: o `medication_intake` é o evento
             // rico e chega cifrado, este é o estado dos nove alarmes e chega em claro.
@@ -191,26 +180,22 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             // se o desfecho `abnormal` do evento de toma chega a existir.
             'missed_dispense',
             'mute_alarm',
-            // Três acções não entram: a reposição de fábrica, que devolvia o aparelho ao
-            // servidor do fornecedor, desligar a cifra, que o firmware recusa sempre, e mudar
-            // o servidor a que ele se liga, que é a única que nos pode fazer perdê-lo.
+            // Ficam de fora a reposição de fábrica, que devolve o aparelho ao fornecedor, desligar
+            // a cifra, que o firmware recusa, e mudar o servidor, que nos pode fazer perdê-lo.
             'reset_tray',
             'restart_device',
-            // Rodar até um compartimento e pausar a medicação não entram: estão na
-            // especificação da série M2, mas este firmware recusa-as e a descoberta de
-            // parâmetros não as anuncia.
+            // Rodar até um compartimento e pausar a medicação ficam de fora: este firmware
+            // recusa-as e a descoberta de parâmetros não as anuncia.
             'retrieval_timeout',
             'retrieval_warning',
             'storage_environment',
-            // O cartão SIM não está cá: o CCID é um identificador que nunca muda, ninguém o
-            // consulta na dashboard, e cada leitura de estado repetia-o na lista de eventos.
-            // Uma por família: o aparelho separa configuração, estado e controlo, e cada
-            // pergunta é um pacote próprio.
+            // Sem o CCID do SIM, que nunca muda e ninguém consulta. Uma sincronização por
+            // família: configuração, estado e controlo são pacotes próprios.
             'sync_configuration',
             'time_format',
             'time_zone',
-            // O trinco do prato saiu de dentro do estado do dispositivo: destrancado é um
-            // estado sobre que se age. Não é a «tampa» — essa é a leitura do tipo 01.
+            // O trinco do prato é capacidade própria: destrancado é um estado sobre que se age.
+            // Não é a «tampa», que é a leitura do tipo 01.
         ];
 
         self::assertSame(
@@ -220,11 +205,8 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
 
-        // Dezoito configuráveis e sete pedíveis. Uma acção pede-se e não se configura, e por
-        // isso as duas bandeiras nunca estão ligadas ao mesmo tempo.
-        //
-        // As sete leituras que o `0x07` enche não se pedem sozinhas: a trama pede-as sempre a
-        // todas, e quem a manda é o `device_status`, que é a sétima pedível.
+        // Dezoito configuráveis e sete pedíveis, nunca as duas ao mesmo tempo; as leituras que o
+        // `0x07` enche pede-as todas o `device_status`, que é a sétima pedível.
         self::assertSame(
             ['18', '7'],
             array_map('strval', $pdo->query("
@@ -288,7 +270,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             WHERE device_type = 'watch'
         ")->fetchAll(\PDO::FETCH_UNIQUE | \PDO::FETCH_ASSOC);
 
-        // Estas eram mecanismos do protocolo a passar por capacidades do aparelho.
+        // Mecanismos do protocolo, e não capacidades do aparelho.
         self::assertArrayNotHasKey('device_binding', $rows);
         self::assertArrayNotHasKey('device_settings_sync', $rows);
         self::assertArrayNotHasKey('call_log', $rows);

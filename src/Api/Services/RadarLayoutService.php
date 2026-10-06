@@ -14,10 +14,8 @@ use React\Promise\PromiseInterface;
 use function React\Promise\resolve;
 
 /**
- * A planta de um radar: ler a que está guardada, e ir buscar outra quando alguém pede.
- *
- * Ir buscar acontece só a pedido. Não há relógio nenhum atrás disto: a planta de uma divisão
- * muda quando alguém lá vai mexer no aparelho, e quem carrega no botão é que sabe quando foi.
+ * A planta de um radar: ler a que está guardada, e ir buscar outra só quando alguém a pede,
+ * sem relógio nenhum atrás.
  */
 class RadarLayoutService
 {

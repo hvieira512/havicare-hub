@@ -7,9 +7,8 @@ namespace Tests\Unit\Dashboard;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Quem esconde uma pastilha de contagem vazia é o `.count-chip:empty` do `shell.css`, e mais
- * ninguém. Um `d-none` na marcação não tem quem o tire e deixa a contagem invisível para
- * sempre.
+ * Quem esconde uma pastilha de contagem vazia é só o `.count-chip:empty` do `shell.css`: um
+ * `d-none` na marcação não tem quem o tire.
  */
 final class CountChipVisibilityTest extends TestCase
 {

@@ -235,12 +235,7 @@ final class FeatureNormalizer
         return $start !== null && $end !== null && $end >= $start;
     }
 
-    /**
-     * O instante como o contrato o mostra: ISO-8601 em UTC, como o `occurredAt`.
-     *
-     * A conta interna fica em milissegundos -- é neles que as fronteiras e as durações se
-     * verificam -- e só a saída muda de forma.
-     */
+    /** O instante como o contrato o mostra, ISO-8601 em UTC; a conta interna fica em milissegundos. */
     private static function instantFromMilliseconds(?int $milliseconds): ?string
     {
         return $milliseconds === null ? null : gmdate('Y-m-d\TH:i:s\Z', intdiv($milliseconds, 1000));
@@ -354,9 +349,8 @@ final class FeatureNormalizer
     }
 
     /**
-     * Os motivos de alarme ativos, na ordem canónica. O relógio pode reportar
-     * vários em simultâneo (a máscara do 4P Touch), e cada um vira um evento
-     * próprio; máscara a zero devolve lista vazia, e não há alarme.
+     * Os motivos de alarme ativos, na ordem canónica: cada bit da máscara do 4P Touch vira um
+     * evento, e máscara a zero devolve lista vazia.
      *
      * @param array<string, mixed> $payload
      * @return list<string>

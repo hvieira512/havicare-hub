@@ -8,11 +8,8 @@ use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O tecto do áudio de voz do TAKEPILLS.
- *
- * A conversão para AMR corre o `ffmpeg` num subprocesso síncrono, dentro do event loop que
- * também serve a ingestão e a dashboard. Um lembrete são no máximo 15 segundos de áudio -- o
- * próprio comando do `ffmpeg` corta aí --, portanto o tecto não tira nada a ninguém.
+ * O tecto do áudio de voz do TAKEPILLS: o `ffmpeg` corre síncrono no event loop, e um lembrete
+ * tem no máximo 15 segundos.
  */
 final class FourPTouchVoiceDataLimitTest extends TestCase
 {
@@ -53,7 +50,6 @@ final class FourPTouchVoiceDataLimitTest extends TestCase
         self::assertSame('', $fields[3], 'o campo da voz fica vazio, e nenhum processo é lançado');
     }
 
-    /** E um plano vazio continua a desligar o slot nativo, como antes. */
     public function testAnEmptyPlanStillDisablesTheNativeSlot(): void
     {
         $fields = FourPTouchPayloadBuilder::build('takePills', ['reminderSettings' => []])['fields'];

@@ -6,19 +6,12 @@ namespace Hub\Device;
 
 interface ConnectionInterface
 {
-    /**
-     * Toda a gente já lê isto -- o registo, o servidor do hub e a sessão indexam as ligações
-     * por ele --, e por isso a interface tem de o dizer: sem ela, uma implementação a que
-     * falte a propriedade só falha em execução.
-     */
+    /** O registo, o servidor e a sessão indexam as ligações por isto. */
     public int $resourceId { get; }
 
     /**
-     * De onde veio esta ligação, quando se sabe.
-     *
-     * Existe por causa do aviso de quem se liga e fala sem se identificar: sem a origem, um
-     * varredor de portas e um dispositivo verdadeiro cujo protocolo não sabemos ler são a
-     * mesma linha no registo, e é o segundo caso que interessa.
+     * De onde veio a ligação, quando se sabe: separa no registo um varredor de portas de um
+     * dispositivo cujo protocolo não sabemos ler.
      */
     public function remoteAddress(): ?string;
 

@@ -9,11 +9,8 @@ use Hub\State\DeviceConfigurationProjection;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * A calibração do relógio encontra o fuso que o próprio aparelho reportou.
- *
- * A hora que se manda ao M228 é local, e o fuso vem do que o hub tem guardado. Um valor
- * **reportado** fica debaixo de `data`, que é como a projeção guarda qualquer leitura; só o
- * **desejado** é um mapa simples.
+ * A hora que se manda ao M228 é local, e o fuso vem do que o hub guardou: um valor reportado
+ * fica debaixo de `data`, e só o desejado é um mapa simples.
  */
 final class StoredTimeZoneTest extends MysqlDashboardTestCase
 {

@@ -12,9 +12,8 @@ const { telemetryRequestCards, renderRequestCardGroup: buildGroup } = await impo
 const renderRequestCardGroup = (...args) => String(buildGroup(...args));
 
 /**
- * Os cartões de "Pedir dados" separam-se em dois grupos: a telemetria, que o dispositivo
- * mede, e a informação do sistema, que ele diz sobre si próprio. São duas coisas de natureza
- * diferente e por isso não se misturam na mesma grelha.
+ * Os cartões de «Pedir dados» separam a telemetria, que o dispositivo mede, da informação do
+ * sistema, que ele diz sobre si próprio.
  */
 
 const supported = (requestable = true) => ({ supported: true, requestable });
@@ -60,11 +59,7 @@ test("o estado do dispositivo fica com a versão do firmware, e não entre as me
     );
 });
 
-/**
- * A proximidade é a força com que cada gateway ouve o aparelho, e o resumo já a mostra em
- * «Dispositivos ligados» -- uma linha por gateway, com barras. O mosaico dizia-a pior: um só,
- * e sem nomear o gateway que a produziu.
- */
+/** A proximidade já se mostra no resumo, uma linha por gateway em «Dispositivos ligados». */
 test("a proximidade não dá mosaico, que o resumo já a mostra por gateway", () => {
     const groups = telemetryRequestCards({
         battery: supported(false),
@@ -103,11 +98,7 @@ test("a faixa com o nome do grupo só existe quando há mais do que um grupo", (
     assert.match(accompanied, /count-chip[^>]*>1</);
 });
 
-/**
- * Um mosaico sem leitura fica com o ícone e o título e mais nada. O lugar do valor vazio, ao
- * lado dos irmãos que têm um, já se lê como ausência de leitura, e uma etiqueta a dizê-lo
- * repetia o que o vazio diz -- multiplicada pelos mosaicos vazios que o ecrã tiver.
- */
+/** O lugar vazio do valor, ao lado dos irmãos que têm um, já se lê como ausência de leitura. */
 test("um mosaico sem leitura não leva etiqueta a dizê-lo", () => {
     const [group] = telemetryRequestCards({ heart_rate: supported() });
 

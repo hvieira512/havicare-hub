@@ -8,12 +8,8 @@ use Hub\Ingress\Http\Qinglanst\RequestSignature;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A assinatura de cada pedido ao fabricante.
- *
- * Os valores esperados são constantes e não recalculados aqui: o que este teste tem de apanhar
- * é uma mudança na *forma* da cadeia assinada -- a ordem, os separadores, o cardinal final --,
- * e um esperado calculado da mesma maneira que o código passaria a concordar com o erro. O
- * fabricante recusa uma assinatura errada com um 401 seco, sem dizer porquê.
+ * Os esperados são constantes para apanhar uma mudança na forma da cadeia assinada; o fabricante
+ * recusa uma assinatura errada com um 401 seco.
  */
 final class RequestSignatureTest extends TestCase
 {

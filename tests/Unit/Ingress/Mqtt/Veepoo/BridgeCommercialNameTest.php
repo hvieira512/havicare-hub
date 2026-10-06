@@ -13,10 +13,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * O descritor do dispositivo é o mesmo em toda a telemetria que sai do hub.
- *
- * O `commercialName` vem do catálogo de modelos, e os campos que não se sabem omitem-se em
- * vez de saírem vazios.
+ * O `commercialName` vem do catálogo de modelos, e os campos que não se sabem omitem-se em vez de
+ * saírem vazios.
  */
 final class BridgeCommercialNameTest extends TestCase
 {

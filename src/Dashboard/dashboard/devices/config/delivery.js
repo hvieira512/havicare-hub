@@ -2,12 +2,8 @@ import { esc } from "../../format.js";
 import { stateBadge } from "../../components/state-badge.js";
 
 /**
- * O estado de entrega de uma configuração: o que aconteceu ao valor depois de o hub o
- * guardar.
- *
- * Guardar no hub e aplicar no aparelho são dois momentos distintos, e podem estar separados
- * por dias. O vocabulário e a tradução de um comando para ele vivem juntos porque são a mesma
- * coisa vista de dois lados: o que o ecrã diz e o que a fila de comandos reporta.
+ * O que aconteceu ao valor depois de o hub o guardar: guardar no hub e aplicar no aparelho
+ * podem estar separados por dias.
  */
 
 const CONFIGURATION_DELIVERY_META = {
@@ -66,12 +62,7 @@ const CONFIGURATION_FAILURE_LABELS = {
     failed: "O dispositivo não confirmou a aplicação do valor.",
 };
 
-/**
- * O estado de entrega correspondente ao estado de um comando.
- *
- * É a mesma tradução para configurações e para acções: ambas viajam pela mesma fila e o
- * operador não tem por que ler dois vocabulários para a mesma coisa.
- */
+/** A mesma tradução serve configurações e acções, que viajam pela mesma fila de comandos. */
 export function deliveryStatusFromCommand(commandStatus, confirmationMode = "") {
     const status = String(commandStatus || "");
     if (["failed", "dropped"].includes(status)) return "failed";
@@ -132,15 +123,11 @@ export function renderConfigurationDeliveryNotice(meta, delivery) {
 }
 
 /**
- * Acerta no sítio a pastilha de estado e o aviso de entrega de cada bloco.
- *
- * Uma mudança de estado de entrega chega pelo stream a qualquer momento, e redesenhar a raiz
- * por causa dela deitava fora o número de telefone, o nome ou a hora que estivessem a meio de
- * ser escritos noutro bloco -- precisamente enquanto se espera pelo envio de um.
+ * Acerta no sítio a pastilha e o aviso de cada bloco: redesenhar a raiz deitaria fora o que
+ * estivesse a meio de ser escrito noutro bloco.
  */
 export function patchConfigurationDeliveryStates(root, configurationSync) {
-    // As linhas entram a par das secções: um interruptor agrupado também tem pastilha, e sem
-    // isto ela ficava na que nasceu até alguém reabrir o modal.
+    // As linhas entram a par das secções: um interruptor agrupado também tem pastilha.
     for (const section of root.querySelectorAll("[data-config-section], [data-config-row]")) {
         const key = section.dataset.capabilityKey || section.dataset.configKey || "";
         if (key === "") continue;
@@ -151,15 +138,13 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
             delivery,
         );
 
-        // Trocada inteira pela do componente, e não remendada classe a classe: eram duas
-        // cópias da mesma marcação a ter de andar a par.
+        // Trocada inteira pela do componente, para a marcação ser uma só.
         const badge = section.querySelector(".state-badge");
         if (badge) {
             badge.outerHTML = stateBadge(meta.label, meta.tone);
         }
 
-        // A linha agrupada é compacta por desenho e não leva aviso: acrescentar-lho aqui
-        // punha no fim da linha o que a secção põe antes do formulário.
+        // A linha agrupada é compacta por desenho e não leva aviso.
         if (section.dataset.configRow !== undefined) {
             continue;
         }
@@ -173,9 +158,8 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
                 notice.outerHTML = noticeHtml;
             }
         } else if (noticeHtml !== "") {
-            // Antes do formulário, ou -- num cartão de acção, que não tem campos nem
-            // formulário -- antes da caixa de falha. É onde o desenho o põe de origem, e as
-            // duas ordens têm de coincidir.
+            // Onde o desenho o põe de origem: antes do formulário, ou da caixa de falha num
+            // cartão de acção.
             const anchor = section.querySelector("[data-config-form], [data-config-feedback-key]");
             if (anchor) {
                 anchor.insertAdjacentHTML("beforebegin", noticeHtml);
@@ -184,10 +168,8 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
             }
         }
 
-        // O estado de entrega decide se o «Enviar» pode voltar a acender: uma configuração
-        // que falhe enquanto o ecrã está aberto tem de ficar reenviável sem se lhe mexer no
-        // valor, tal como uma que já lá estivesse falhada ao desenhar. Quem reacende o botão
-        // é o painel -- ele importa daqui, e importá-lo de volta fechava um ciclo.
+        // Decide se o «Enviar» reacende sem se mexer no valor; quem o reacende é o painel, que
+        // importa daqui.
         section.dataset.configDelivery = String(delivery?.status || "");
     }
 }

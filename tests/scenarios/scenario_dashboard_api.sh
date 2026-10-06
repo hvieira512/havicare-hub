@@ -57,7 +57,7 @@ fi
 
 html="$(curl -s $DASHBOARD_BASE_URL/dashboard)"
 # Herestring e não `printf | grep`: com `pipefail`, o grep sai ao encontrar, o printf leva
-# SIGPIPE, e uma resposta maior que o buffer do tubo falhava com a asserção a passar.
+# SIGPIPE, e uma resposta maior que o buffer do tubo falharia com a asserção a passar.
 if ! grep -q 'Havicare Hub' <<<"$html"; then
   scenario_fail "dashboard_failure" "dashboard HTML did not render expected page"
 fi

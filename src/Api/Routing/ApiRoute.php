@@ -17,12 +17,8 @@ final class ApiRoute
     private string $regex;
 
     /**
-     * O handler tem sempre a mesma assinatura -- `fn(array $params, ServerRequestInterface $request)`
-     * --, e quem não quer os argumentos declara menos.
-     *
-     * O `$body` diz que esta rota leva corpo: o kernel descodifica-o uma vez e recusa o
-     * pedido com `invalid_json` antes de chamar o handler. O `$status` é o estado de sucesso
-     * de um handler que devolva o resultado do serviço em cru.
+     * O handler é `fn(array $params, ServerRequestInterface $request)`, e pode declarar menos. O
+     * `$body` faz o kernel descodificar e recusar `invalid_json`; o `$status` é o sucesso em cru.
      *
      * @param callable $handler
      */

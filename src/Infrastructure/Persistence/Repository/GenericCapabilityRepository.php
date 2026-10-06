@@ -19,12 +19,8 @@ final class GenericCapabilityRepository
     }
 
     /**
-     * A chave por que uma etiqueta se ordena: sem caixa e sem acentos, que é como o
-     * `utf8mb4_unicode_ci` da consulta as compara.
-     *
-     * Comparar os bytes em cru punha as maiúsculas antes das minúsculas -- o "VFC" aparecia
-     * antes de "Versão do firmware" --, e comparar com o `intl` obrigava a extensão que a
-     * imagem não traz. Isto acompanha o SQL sem depender de nenhuma.
+     * A chave por que uma etiqueta se ordena: sem caixa e sem acentos, como o `utf8mb4_unicode_ci`
+     * da consulta as compara, e sem o `intl`, que a imagem não traz.
      */
     private static function sortKey(string $label): string
     {
@@ -166,9 +162,8 @@ final class GenericCapabilityRepository
                 return $sectionIndex($leftSection) <=> $sectionIndex($rightSection);
             }
 
-            // Pela etiqueta, que é o que quem lê tem à frente: a ordem da lista explica-se
-            // pela própria lista. A chave desempata para duas etiquetas iguais não trocarem
-            // de lugar entre pedidos.
+            // Pela etiqueta, que é o que quem lê tem à frente; a chave desempata, para duas etiquetas
+            // iguais não trocarem de lugar entre pedidos.
             $comparison = strcmp(
                 self::sortKey((string)($left['label'] ?? '')),
                 self::sortKey((string)($right['label'] ?? '')),

@@ -8,15 +8,8 @@ use Hub\Log\Logger;
 use PhpMqtt\Client\Exceptions\DataTransferException;
 
 /**
- * Reconectar a um broker que largou a ligação, com recuo.
- *
- * O recuo só volta ao princípio quando a ligação anterior chegou a **durar**: ligar não é o
- * mesmo que ficar ligado, e um broker que aceita e larga logo a seguir devolvia sucesso na
- * mesma. Reposto a cada tentativa, o recuo nunca crescia e dava mais de uma reconexão por
- * segundo -- e o `connect` é bloqueante no mesmo event loop que serve o HTTP, por isso cada
- * tentativa parava a dashboard.
- *
- * Recuar não custa mensagens: as sessões são persistentes e o broker reentrega ao voltar.
+ * Reconexão a um broker que largou a ligação; o recuo só se repõe depois de a ligação durar,
+ * porque o `connect` bloqueia o event loop. As sessões persistentes não perdem mensagens.
  */
 trait ReconnectsOnLoopFailure
 {
@@ -39,8 +32,7 @@ trait ReconnectsOnLoopFailure
     }
 
     /**
-     * @param callable(): mixed $reconnect  liga de novo; o que devolver não é usado aqui --
-     *     uns guardam o cliente novo num campo, outros devolvem-no
+     * @param callable(): mixed $reconnect  liga de novo; o que devolver não é usado aqui
      * @param callable(): void  $resubscribe  volta a subscrever no cliente novo
      */
     private function reconnectAfterLoopFailure(
@@ -69,12 +61,11 @@ trait ReconnectsOnLoopFailure
 
         try {
             $reconnect();
-            // Sem repor o recuo aqui: e o `markConnected` do `resubscribe` que marca o
-            // instante a partir do qual se sabe se a ligacao durou.
+            // Sem repor o recuo aqui: é o `markConnected` do `resubscribe` que marca o instante a partir
+            // do qual se sabe se a ligação durou.
             $resubscribe();
-            // Dizer que voltou é metade da informação. Sem esta linha, um dia com vinte
-            // quedas por hora e vinte recuperações lê-se igual a um dia em que a ligação caiu
-            // de madrugada e nunca mais voltou: a mesma parede de avisos, sem nada a fechá-los.
+            // Regista também a recuperação, para vinte quedas por hora não se lerem como uma queda sem
+            // regresso.
             Logger::channel('hub')->info(sprintf(
                 '%s reconnected after %.1fs down',
                 $label,
@@ -86,12 +77,8 @@ trait ReconnectsOnLoopFailure
     }
 
     /**
-     * Uma escrita que não passa não é uma ligação perdida.
-     *
-     * O socket é não-bloqueante e a biblioteca lê qualquer escrita parcial como queda -- com o
-     * buffer de saída cheio, um PINGREQ de dois bytes devolve zero e chega para isso. Reconectar
-     * ali descarta a mensagem numa ligação que está viva; a seguinte passa, porque o broker
-     * entretanto leu. Só uma série que não pára é que denuncia um socket morto sem o dizer.
+     * Uma escrita que não passa não é uma ligação perdida: com o buffer de saída cheio, a
+     * biblioteca lê a escrita parcial como queda. Só uma série que não pára denuncia um socket morto.
      */
     private function toleratesWriteFailure(\Throwable $failure, float $now): bool
     {

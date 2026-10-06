@@ -9,11 +9,8 @@ use Hub\Domain\Capability\AlarmClock\Vivistar;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A leitura da lista de alarmes, e sobretudo a chave por que cada protocolo começa.
- *
- * O corpo é partilhado pelos dois handlers, mas a ordem de precedência é oposta: a 4P Touch
- * procura `alarms` primeiro e a Vivistar `items`. É a única diferença entre eles, e é
- * exactamente o que uma extracção descuidada achataria sem nada ficar vermelho.
+ * A 4P Touch procura `alarms` primeiro e a Vivistar `items`: é a única diferença entre os dois
+ * handlers, e é fácil de achatar sem nada ficar vermelho.
  */
 final class AlarmClockFromNativeTest extends TestCase
 {

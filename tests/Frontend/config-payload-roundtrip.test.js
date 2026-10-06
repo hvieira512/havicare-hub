@@ -10,11 +10,8 @@ import {
 import { configSection } from "./support/dom.js";
 
 /**
- * A ida e volta do payload de configuração.
- *
- * Estes payloads são escritos em dispositivos reais, e por isso o que interessa é que o que o
- * formulário desenha seja exactamente o que o leitor devolve. Descrevem o comportamento de
- * hoje e não um ideal, para haver contra o que verificar as peças em que o código se divida.
+ * Estes payloads são escritos em dispositivos reais: o que o formulário desenha tem de ser
+ * exactamente o que o leitor devolve. Descrevem o comportamento de hoje, e não um ideal.
  */
 const roundTrip = (entry, desired, meta = {}) =>
     readConfigPayload(configSection(renderConfigInputs, entry, desired, meta));
@@ -150,7 +147,7 @@ test("personal information survives the round trip", () => {
 });
 
 test("SOS contacts reject duplicates rather than silently collapsing them", () => {
-    // Dois números iguais pareciam aceites mas deixavam um slot sem uso.
+    // Dois números iguais deixariam um slot sem uso.
     assert.throws(
         () => roundTrip(
             { input: "sos_contacts", key: "sos", limit: 3 },

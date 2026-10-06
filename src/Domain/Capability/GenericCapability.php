@@ -9,11 +9,8 @@ use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\ProtocolRegistry;
 
 /**
- * A capacidade de quem não tem uma escrita à mão -- interruptores, números, intervalos,
- * mensagens. O que é preciso saber sobre elas está no `DeviceConfigurationCatalog`.
- *
- * Não ter contrato próprio é o caso normal, e é por isto ser um contrato como os outros que o
- * registo devolve sempre alguém.
+ * A capacidade de quem não tem contrato escrito à mão -- interruptores, números, intervalos,
+ * mensagens --, descritas no `DeviceConfigurationCatalog`.
  */
 final class GenericCapability implements CapabilityContract
 {
@@ -56,9 +53,7 @@ final class GenericCapability implements CapabilityContract
      */
     public function toNative(string $protocol, mixed $value): array
     {
-        // Sem recusa por omissão: esta é a capacidade de quem não tem contrato próprio, e
-        // anuncia todos os protocolos. Quem traduz nomes está aqui; para o resto, o nome
-        // nativo é a própria chave genérica e um fornecedor novo não toca neste ficheiro.
+        // Sem recusa por omissão: para quem não traduz nomes, o nativo é a própria chave genérica.
         return match ($protocol) {
             'vivistar-iw' => $this->vivistarToNative($value),
             'wonlex-json' => $this->wonlexGenericToNative($value),
@@ -68,10 +63,8 @@ final class GenericCapability implements CapabilityContract
     }
 
     /**
-     * Os protocolos cujo nome nativo é a própria chave genérica.
-     *
-     * Quem monta a trama recebe o nome da operação e o valor -- o gateway com a sessão BLE nas
-     * pulseiras Veepoo, o `DeviceCommandCatalog` no dispensador -- e não há tradução a fazer.
+     * Os protocolos cujo nome nativo é a chave genérica: quem monta a trama -- o gateway BLE da
+     * Veepoo, o `DeviceCommandCatalog` do dispensador -- recebe a operação e o valor.
      *
      * @return array<string, array<string, mixed>>
      */
@@ -113,11 +106,6 @@ final class GenericCapability implements CapabilityContract
         return ['value' => $value, '_meta' => $meta];
     }
 
-
-    // ------------------------------------------------------------------
-    // vivistar-iw
-    // ------------------------------------------------------------------
-
     /**
      * @return array<string, array<string, mixed>>
      */
@@ -134,10 +122,6 @@ final class GenericCapability implements CapabilityContract
             ),
         };
     }
-
-    // ------------------------------------------------------------------
-    // wonlex-json
-    // ------------------------------------------------------------------
 
     /**
      * @return array<string, array<string, mixed>>
@@ -216,10 +200,6 @@ final class GenericCapability implements CapabilityContract
 
         return trim((string)$entry['key']);
     }
-
-    // ------------------------------------------------------------------
-    // catálogo
-    // ------------------------------------------------------------------
 
     /**
      * A linha do catálogo do protocolo que corresponde a esta chave genérica.

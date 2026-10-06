@@ -12,11 +12,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * O que um exame de ECG desta pulseira diz, além do traçado.
- *
- * O relatório final que o fabricante documenta não existe neste firmware, e o que há são as
- * tramas de estado, uma por segundo. Os valores destes testes são de uma medição real, com os
- * artefactos que ela trouxe: a mediana sobrevive-lhes, a média deixava-os entrar.
+ * O que um exame de ECG diz além do traçado. Este firmware não tem o relatório final documentado,
+ * só tramas de estado por segundo; os valores são de uma medição real, com artefactos.
  */
 final class EcgSummaryTest extends TestCase
 {
@@ -42,10 +39,8 @@ final class EcgSummaryTest extends TestCase
     }
 
     /**
-     * As tramas a zero são o sinal a assentar, e não leituras.
-     *
-     * Nos primeiros segundos o firmware repete a trama inteira a zeros. Contá-las puxava a
-     * mediana para baixo de tudo o que o exame mediu de verdade.
+     * Nos primeiros segundos o firmware repete a trama a zeros, e contá-las puxava a mediana para
+     * baixo de tudo o que o exame mediu de verdade.
      */
     public function testFramesWhileTheSignalSettlesDoNotCount(): void
     {
@@ -60,10 +55,8 @@ final class EcgSummaryTest extends TestCase
     }
 
     /**
-     * Um QTc de 712 ms e um HRV de 8 ms são artefactos, e a mediana não os deixa passar.
-     *
-     * Ambos saíram da medição real. Um QTc acima de 600 ms não é uma leitura de um coração
-     * saudável a 59 batimentos -- é o algoritmo a falhar um complexo.
+     * Um QTc de 712 ms e um HRV de 8 ms, ambos da medição real, são o algoritmo a falhar um complexo:
+     * um QTc acima de 600 ms não é um coração saudável a 59 batimentos.
      */
     public function testAnOutlierDoesNotMoveTheResult(): void
     {
@@ -91,11 +84,8 @@ final class EcgSummaryTest extends TestCase
     }
 
     /**
-     * O que esta pulseira não mede não aparece.
-     *
-     * A respiração e a velocidade da onda de pulso vêm nas tramas e vieram a zero nas 34 da
-     * medição real, do princípio ao fim. Publicá-las dava uma respiração de zero ciclos por
-     * minuto a quem estava claramente a respirar.
+     * A respiração e a velocidade da onda de pulso vieram a zero nas 34 tramas da medição real:
+     * publicá-las dava zero ciclos por minuto a quem respirava.
      */
     public function testWhatTheBandNeverMeasuresIsNotPublished(): void
     {
@@ -105,7 +95,7 @@ final class EcgSummaryTest extends TestCase
         self::assertArrayNotHasKey('pulseWaveVelocity', $data);
     }
 
-    /** Sem tramas de estado o exame é só o traçado, como era antes. */
+    /** Sem tramas de estado o exame é só o traçado. */
     public function testAnExamWithoutStatusFramesIsStillATracing(): void
     {
         $data = $this->ecg([]);
@@ -115,11 +105,8 @@ final class EcgSummaryTest extends TestCase
     }
 
     /**
-     * As tramas por segundo continuam a não ser telemetria por si.
-     *
-     * São trinta e quatro por exame, e publicá-las uma a uma enchia o histórico do aparelho
-     * com o decorrer da medição em vez do resultado dela. Também não podem dar um aviso de
-     * tipo sem normalização: são reconhecidas, e resumidas no fim.
+     * São trinta e quatro por exame e enchiam o histórico com o decorrer em vez do resultado; não dão
+     * aviso de tipo sem normalização porque são reconhecidas e resumidas.
      */
     public function testTheLiveFramesAreNotPublishedOneByOne(): void
     {

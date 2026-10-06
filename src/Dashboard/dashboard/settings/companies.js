@@ -27,13 +27,8 @@ import {
 } from "./radar-credentials.js";
 
 /**
- * O separador das licenças, com as licenças de cada empresa dentro dela.
- *
- * A linha que se toca é a que se transforma: um formulário à parte ficaria longe da linha de
- * onde se veio, e sem título nenhum seria igual ao de criar.
- *
- * A empresa não é uma pergunta do formulário da licença: uma licença nasce dentro da empresa
- * em que se carregou no `+`, e a posição na árvore é que a diz.
+ * O separador das licenças, dentro de cada empresa. A linha que se toca é a que se transforma,
+ * e uma licença nasce na empresa em que se carregou no `+`.
  */
 let els;
 // A página de empresas que está à vista, para uma alteração numa licença a poder redesenhar
@@ -50,8 +45,8 @@ export function initSettingsCompanies(context) {
 }
 
 export async function loadSettingsCompanySection(companiesPage = 1) {
-    // As licenças vêm todas de uma vez porque são desenhadas dentro da empresa a que
-    // pertencem: paginá-las à parte deixava uma licença fora da página da sua empresa.
+    // As licenças vêm todas de uma vez porque se desenham dentro da empresa a que pertencem, e
+    // paginadas à parte ficariam fora da página da sua empresa.
     const [companyData, licenses] = await Promise.all([
         apiGetCompanies({ page: companiesPage }),
         ensureLicensesLoaded(),
@@ -89,10 +84,8 @@ async function reloadLicenses() {
 /* ---------- as linhas ---------- */
 
 /**
- * Os verbos de uma linha num menu só, com os nomes escritos. Em ícones soltos eram três por
- * linha, e o primeiro deles -- a cloud dos radares -- não se adivinha de um satélite.
- *
- * O `"divider"` no lugar de uma entrada dá a linha que separa o apagar do resto.
+ * Os verbos de uma linha num menu só, com os nomes escritos. O `"divider"` no lugar de uma
+ * entrada dá a linha que separa o apagar do resto.
  */
 function rowActionsMenu(label, items) {
     const entries = items.map((item) => (item === "divider"
@@ -144,10 +137,7 @@ function licenseViewRow(license) {
         </div>`;
 }
 
-/**
- * Uma licença aberta. Sem a pergunta da empresa: ela está a ser editada dentro da empresa a
- * que pertence, e repetir a pergunta era pedir outra vez o que a posição já diz.
- */
+/** Uma licença aberta, sem a pergunta da empresa: a posição na árvore já a diz. */
 function licenseEditorRow(license, companyId) {
     return html`
         <div class="tree-row position-relative d-flex align-items-center" data-editor="license" data-id="${license?.id || ""}" data-company-id="${companyId}">
@@ -279,10 +269,7 @@ async function saveCompanyRow(button) {
 }
 
 /**
- * O que a caixa diz antes de apagar.
- *
- * «Apagar licença?» não responde a nada a quem tem catorze na lista, e o que fica para trás
- * não estava escrito em lado nenhum: apagar a linha não apaga os dispositivos, deixa-os com
+ * O que a caixa diz antes de apagar: apagar a licença não apaga os dispositivos, deixa-os com
  * um número de licença que já não se resolve.
  */
 export function licenseDeletePrompt(license, deviceCount) {

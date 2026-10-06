@@ -52,8 +52,7 @@ test("escolher um dispositivo fecha o selector", async () => {
 
 /**
  * A listagem também relê o dispositivo escolhido quando a sua resposta chega, e essa leitura
- * ultrapassa a do clique. O selector ficava aberto por cima do detalhe já pintado: a escolha
- * vingou, só ninguém fechou a janela.
+ * pode ultrapassar a do clique.
  */
 test("o selector fecha-se mesmo quando outra leitura do mesmo dispositivo ultrapassa a do clique", async () => {
     const fetches = installDeferredFetch();

@@ -12,13 +12,8 @@ fi
 
 CHILD=""
 
-# O `docker compose stop` manda o sinal a este script, e o comando vigiado é um filho dele.
-# Sem reencaminhar, o filho morria com o contentor em vez de se desligar em condições -- e o
-# hub, que distingue as duas coisas por um ficheiro que apaga no `SIGTERM`, registava cada
-# paragem local como uma queda e enchia o sino da dashboard de avisos falsos.
-#
-# Em produção não se punha: lá o `ExecStart` do systemd é o próprio `php`, e o sinal chega-lhe
-# directamente. Isto é só para o ciclo de desenvolvimento.
+# Reencaminha o sinal do `docker compose stop` ao filho, para o hub desligar em condições e não
+# registar cada paragem local como queda. Em produção o systemd sinaliza o `php` directamente.
 terminate() {
     if [ -n "$CHILD" ]; then
         kill -TERM "$CHILD" 2>/dev/null

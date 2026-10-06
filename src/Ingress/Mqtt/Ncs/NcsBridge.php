@@ -68,9 +68,8 @@ final class NcsBridge extends MqttBridgeBase
 
         $device = $this->whitelist->resolve($from, 'ncs');
         if ($device === null || trim((string)($device['licenseId'] ?? '')) === '') {
-            // O âmbito do tópico é livre do lado da Voerka, e um gateway configurado com a
-            // licença dá à dashboard o campo que o protocolo não diz. Só uma pista para o
-            // assistente de registo: a atribuição continua a sair da whitelist.
+            // A licença no âmbito do tópico é só uma pista para o assistente de registo; a
+            // atribuição sai da whitelist.
             $this->recordUnauthorizedDevice(
                 $from,
                 'voerka-ncs',

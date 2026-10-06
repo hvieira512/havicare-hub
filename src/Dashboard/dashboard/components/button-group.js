@@ -1,10 +1,8 @@
 import { html } from "../html.js";
 
 /**
- * Um grupo de botões para uma escolha única, com o escolhido a cheio e os outros em
- * contorno. As chaves do valor e do rótulo são parâmetros porque as listas que passam por
- * aqui vêm de sítios diferentes -- fornecedores, tipos, protocolos -- e nem todas se chamam
- * `value` e `label`.
+ * Um grupo de botões de escolha única. As chaves do valor e do rótulo são parâmetros porque as
+ * listas vêm de sítios diferentes e nem todas se chamam `value` e `label`.
  */
 export function buttonGroup(
     items,

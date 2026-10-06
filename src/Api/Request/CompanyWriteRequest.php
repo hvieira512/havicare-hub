@@ -9,13 +9,8 @@ use Hub\Domain\DeviceMetadata;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * O corpo do criar e do actualizar de uma empresa.
- *
- * A regra vive aqui e não no serviço porque tem de olhar para o que o cliente escreveu, antes
- * de o `normalizeCompany()` lhe dar um nome que ele não pediu -- esse nunca devolve vazio,
- * devolve `'null'`, que é o nome dos dispositivos sem empresa.
- *
- * O `normalizer: 'trim'` porque um nome só de espaços é um nome em falta.
+ * O corpo do criar e do actualizar de uma empresa. A regra olha para o que o cliente escreveu,
+ * antes de o `normalizeCompany()` transformar o vazio em `'null'`.
  */
 final class CompanyWriteRequest
 {

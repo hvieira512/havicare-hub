@@ -32,10 +32,8 @@ final class SosSmsAlertCapability implements CapabilityContract
     }
 
     /**
-     * O nome de fio do interruptor em cada protocolo, e o campo que o transporta.
-     *
-     * Um protocolo novo é uma linha. O `supportedProtocols` sai daqui, para não poder anunciar
-     * o que o despacho recusa.
+     * O nome de fio do interruptor em cada protocolo, e o campo que o transporta. O
+     * `supportedProtocols` sai daqui, para não poder anunciar o que o despacho recusa.
      *
      * @var array<string, array{0: string, 1: string}>
      */

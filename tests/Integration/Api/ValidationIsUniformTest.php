@@ -12,19 +12,8 @@ use Hub\Infrastructure\Persistence\Repository\CapabilityDiscoveryRepository;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * Um corpo recusado diz que campo é que está mal.
- *
- * Havia dois padrões: sete serviços validavam por DTO e devolviam `error.fields`, e outros
- * validavam à mão e devolviam só uma frase. Quem integra tinha de descobrir o campo a partir
- * do texto da mensagem, que não é contrato.
- *
- * Quatro serviços ficam de fora de propósito, e não por esquecimento:
- *
- * - o `DeviceConfigurationUpdateService` e o `DeviceFeatureRequestService` recebem um corpo
- *   cuja forma é declarada pela capacidade em tempo de execução, e um DTO fixo não a exprime;
- * - o `RadarLayoutService` não leva corpo nenhum;
- * - o `AuthService::login` despacha entre três formas de corpo -- par de credenciais, token
- *   de renovação e sessão por cookie --, e um `NotBlank` no par recusaria uma renovação.
+ * Um corpo recusado diz que campo está mal, em `error.fields`. Ficam de fora os serviços cujo
+ * corpo a capacidade declara em execução, o que não leva corpo, e o login de três formas.
  */
 final class ValidationIsUniformTest extends MysqlDashboardTestCase
 {

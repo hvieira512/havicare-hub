@@ -9,11 +9,7 @@ use Hub\Device\HubMqttBridge;
 use Hub\Device\RawPayload;
 
 /**
- * Se cada pulseira está alcançável, e o que isso faz sair para fora.
- *
- * Ao contrário de um relógio, a pulseira não mantém ligação: está online enquanto um gateway
- * tiver sessão aberta com ela. Guardar esse estado, publicá-lo retido e anunciar a transição
- * são três coisas que andam sempre juntas, e é por isso que saíram juntas da `VeepooBridge`.
+ * Se cada pulseira está alcançável: está online enquanto um gateway tiver sessão aberta com ela.
  */
 final class BraceletPresence
 {
@@ -33,11 +29,7 @@ final class BraceletPresence
     }
 
     /**
-     * Marca a pulseira como online.
-     *
-     * Ao contrário de um relógio, ela não mantém ligação: está online enquanto um gateway
-     * tiver sessão aberta. O estado é publicado retido, para que quem subscreva a seguir o
-     * receba sem esperar pela próxima ronda.
+     * Marca a pulseira como online, com o estado publicado retido.
      *
      * @param array<string, mixed> $device
      */
@@ -49,8 +41,7 @@ final class BraceletPresence
         $wasOnline = $this->online[$deviceKey] ?? false;
         $this->online[$deviceKey] = true;
 
-        // É isto que a dashboard e a API leem para dizer se o aparelho está online. Sem
-        // esta linha o estado sai no MQTT e mais nada, e o ecrã continua a dizer offline.
+        // É isto que a dashboard e a API leem para dizer se o aparelho está online.
         $this->deviceStore?->deviceSeen($deviceKey, [
             'supplier' => $supplier,
             'model' => $model,
@@ -65,9 +56,7 @@ final class BraceletPresence
         $status = RawPayload::status($deviceKey, $supplier, $model, 'online', null, $commercial);
         $this->mqttBridge->publishStatus($deviceKey, $status, true, 'bracelet', $licenseId, $company);
 
-        // O estado é retido e vale a cada anúncio; o acontecimento é da transição. Repetir
-        // «Ligado» a cada batimento enchia o histórico e escondia o instante em que a
-        // pulseira se ligou de facto.
+        // O estado é retido e vale a cada anúncio; o acontecimento só sai na transição.
         if ($wasOnline) {
             return;
         }
@@ -77,10 +66,6 @@ final class BraceletPresence
 
     /**
      * A ligação BLE caiu: a pulseira afastou-se, ficou sem bateria ou foi desligada.
-     *
-     * Sem isto o ecrã continuava a mostrá-la ligada até o varrimento de aparelhos parados
-     * dar por ela, o que é bastante depois de já não haver ninguém a quem entregar um
-     * comando -- e a fila de espera continuaria a ser drenada contra um aparelho ausente.
      *
      * @param array<string, mixed> $device
      */

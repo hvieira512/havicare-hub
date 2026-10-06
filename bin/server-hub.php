@@ -54,9 +54,8 @@ try {
 $runner->scheduleTicks();
 MaintenanceScheduler::schedule($loop, $services, $config['dashboard']);
 
-// Drena os PUBACK do publicador MQTT. Cada `status`/`event` QoS 1 fica pendente até ser
-// confirmado; sem alguém a correr o loop do publicador, a fila enche até o cliente rebentar
-// e perder mensagens. Um segundo chega para a manter drenada ao ritmo real de publicação.
+// Drena os PUBACK do publicador MQTT: cada `status`/`event` QoS 1 fica pendente até ser
+// confirmado, e uma fila por drenar acaba a perder mensagens.
 $loop->addPeriodicTimer(1.0, static function () use ($services): void {
     try {
         $services->mqttBridge->drainPublisher();

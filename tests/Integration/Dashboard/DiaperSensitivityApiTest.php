@@ -14,12 +14,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * A sensibilidade do medidor de fraldas, pela via genérica das configurações. É uma
- * `HubAppliedCapability`: o sensor é um beacon não-conectável, e sem essa marca cada
- * alteração ficaria pendente à espera de um ack que nunca chega.
- *
- * Prende-se que grava, que se dá por aplicada sem comandos, que a ingestão a lê, e que um par
- * fora das gamas é recusado.
+ * A sensibilidade do medidor de fraldas é uma `HubAppliedCapability`: o sensor é um beacon
+ * não-conectável, e cada alteração ficaria pendente à espera de um ack que nunca chega.
  */
 final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 {
@@ -34,9 +30,8 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O serviço e o PDO da MESMA base de dados: cada `createDashboardDatabase()` clona o
-     * template para uma base nova, por isso chamá-lo duas vezes daria dois mundos que não
-     * se veem um ao outro.
+     * O serviço e o PDO da mesma base: cada `createDashboardDatabase()` clona o template para
+     * uma base nova.
      *
      * @return array{DeviceService, \PDO}
      */
@@ -81,9 +76,8 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 
     public function testAnUnconfiguredSensorReportsTheNormalPreset(): void
     {
-        // Sao os limiares que o hub tinha em hardcode, e por coincidencia exacta o preset
-        // "Normal Diaper Alerts" da app da MONIT. A ausencia de linha significa normal, que
-        // e porque nenhuma migracao fez backfill.
+        // Os limiares do preset «Normal Diaper Alerts» da app da MONIT; sem linha guardada, vale
+        // o normal.
         [$api, $pdo] = $this->api();
 
         self::assertSame(
@@ -148,7 +142,7 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         $result = $this->patch($api, ['pollutionRange' => $range, 'pollutionValue' => $value]);
 
         // `invalid_config` e não um código próprio: passa pela mesma rejeição das outras
-        // capacidades, porque a validacao e o `sanitizeInput` do contrato.
+        // capacidades, porque a validação é o `sanitizeInput` do contrato.
         self::assertSame('invalid_config', $result['error']['code'] ?? null);
     }
 

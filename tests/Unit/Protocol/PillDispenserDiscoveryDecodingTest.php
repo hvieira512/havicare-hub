@@ -10,12 +10,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O hub já não pergunta que parâmetros o firmware serve, mas tem de continuar a saber não ler
- * a resposta.
- *
- * O corpo de um `0x8A`–`0x8C` é uma lista de TAGs coladas e não TFLV. Lido como TFLV, dá
- * telemetria fabricada com identidade correcta e CRC válido — a pior falha calada que este
- * protocolo permite, porque nada a jusante tem como a distinguir de uma leitura verdadeira.
+ * O corpo de um `0x8A`–`0x8C` é uma lista de TAGs coladas e não TFLV: lido como TFLV, dá
+ * telemetria fabricada com identidade correcta e CRC válido.
  */
 final class PillDispenserDiscoveryDecodingTest extends TestCase
 {
@@ -38,12 +34,7 @@ final class PillDispenserDiscoveryDecodingTest extends TestCase
         self::assertSame([], (new DeviceEventDecoder())->decode($this->session(), $decoded));
     }
 
-    /**
-     * O `0x8D` é a resposta à lista de parâmetros de evento, e não fecha operação nenhuma.
-     *
-     * Esteve dentro da gama tratada como descoberta, o que o fazia fechar como aceite
-     * qualquer escrita pendente.
-     */
+    /** O `0x8D` é a resposta à lista de parâmetros de evento, e não fecha operação nenhuma. */
     public function testTheEventParameterReplyDoesNotCloseAnything(): void
     {
         $decoded = $this->decode(0x8D, pack('v*', 0x1001));

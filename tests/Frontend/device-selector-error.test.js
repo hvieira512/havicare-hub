@@ -9,12 +9,7 @@ import {
 } from "../../src/Dashboard/dashboard/devices/list.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
-/**
- * Uma falha a carregar produzia três respostas que se contradiziam: a lista dizia «não foi
- * possível carregar», a coluna dos filtros dizia «não há licenças para mostrar» e as seis
- * pastilhas de tipo diziam «nenhum». Duas das três leem-se como ausência de dados e não como
- * falha. É a distinção entre «não há» e «não sei».
- */
+/** Uma falha a carregar diz «não sei» na lista, nos filtros e nos tipos, e não «não há». */
 function setUpSelector(summary) {
     document.body.innerHTML = `
         <div id="deviceList" class="device-card-list"></div>

@@ -47,7 +47,7 @@ final class ModelRepository
 
         $this->index = [];
         foreach ($this->all() as $row) {
-            // A primeira linha vence, como o varrimento linear devolvia a primeira que casava.
+            // Em duplicado, vence a primeira linha.
             $this->index[self::modelKey((string)($row['supplier'] ?? ''), (string)($row['internal_model'] ?? ''))] ??= $row;
         }
 
@@ -144,19 +144,15 @@ final class ModelRepository
     }
 
     /**
-     * Que fornecedores fazem cada tipo de dispositivo, tirado dos modelos catalogados.
-     *
-     * Havia uma tabela `supplier_device_types` para isto, escrita só a inserir e só pelos
-     * caminhos daqui. Apagar o último relógio de um fornecedor, ou mudar-lhe o tipo, deixava
-     * lá o par a afirmar que ele ainda fazia relógios. Derivado não pode divergir.
+     * Que fornecedores fazem cada tipo de dispositivo, derivado dos modelos catalogados para não
+     * poder divergir deles.
      *
      * @return list<array{supplier_id: int, supplier: string, device_type: string}>
      */
     public function supplierDeviceTypes(): array
     {
-        // A ordem vem do catálogo e não de uma lista escrita aqui: um tipo acrescentado ao
-        // `device-types.json` ficava fora do `FIELD()` e ordenava-se à frente de todos, que
-        // é o que o zero devolvido por um `FIELD()` sem correspondência faz.
+        // A ordem vem do catálogo: um tipo fora do `FIELD()` devolve zero e ordenava-se à frente de
+        // todos.
         $order = implode(', ', array_map(
             static fn(string $deviceType): string => "'" . $deviceType . "'",
             array_filter(DeviceTypeCatalog::keys(), static fn(string $key): bool => preg_match('/^[a-z_]+$/', $key) === 1),

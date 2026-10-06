@@ -12,12 +12,8 @@ use PHPUnit\Framework\TestCase;
 use React\EventLoop\StreamSelectLoop;
 
 /**
- * O que a fábrica decide sem falar com broker nenhum: quem entra e quem fica de fora.
- *
- * Os caminhos ligados abrem sessão MQTT no construtor -- é a circularidade que o
- * `SubscriberFactory` documenta -- e por isso só se exercitam contra um broker a sério, no
- * `tests/scenarios`. O que se prende aqui é o outro lado: um fornecedor desligado não é
- * registado, e as chaves de configuração que decidem isso são as certas.
+ * Os caminhos ligados abrem sessão MQTT no construtor e só se exercitam no `tests/scenarios`;
+ * aqui prende-se que um fornecedor desligado não é registado, pelas chaves certas.
  */
 final class MqttIngressFactoryTest extends TestCase
 {
@@ -35,11 +31,8 @@ final class MqttIngressFactoryTest extends TestCase
     }
 
     /**
-     * O interruptor do MOKO comanda duas ingestões e não uma.
-     *
-     * As pulseiras Veepoo chegam pelo mesmo gateway e pelo mesmo espaço de tópicos, e por isso
-     * partilham o interruptor. Desligar o MOKO tem de as desligar às duas: meio ligadas são
-     * uma subscrição sem ninguém a alimentá-la.
+     * As pulseiras Veepoo chegam pelo mesmo gateway e tópicos: meio ligadas seriam uma subscrição
+     * sem ninguém a alimentá-la.
      */
     public function testTheMokoSwitchAlsoGovernsTheVeepooIngress(): void
     {

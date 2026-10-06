@@ -12,11 +12,8 @@ interface TcpProtocolInterface extends DeviceAdapterInterface
     public function handleIncoming(DeviceSession $session, string $raw): ?TcpMessage;
 
     /**
-     * Se esta trama é o aparelho a dizer que aceitou ou recusou uma configuração.
-     *
-     * `null` não é «recusou», é «não disse» — a esmagadora maioria das tramas não comenta
-     * configuração nenhuma, e tratar isso como recusa marcava como falhada uma escrita que o
-     * aparelho nem chegou a mencionar.
+     * Se esta trama é o aparelho a dizer que aceitou ou recusou uma configuração; `null` é
+     * «não disse», e não «recusou».
      *
      * @param array<string, mixed> $decoded
      */

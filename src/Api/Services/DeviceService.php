@@ -343,8 +343,7 @@ class DeviceService
     }
 
     /**
-     * Para quem já resolveu o dispositivo: o `configuration()` público volta a resolvê-lo, e
-     * dentro do `show()` isso era a segunda ida à base pelo mesmo aparelho.
+     * Para quem já resolveu o dispositivo, sem a segunda ida à base do `configuration()` público.
      *
      * @param array<int, array<string, mixed>>|null $configRows
      * @return array<string, mixed>
@@ -451,9 +450,8 @@ class DeviceService
             return ApiError::deviceExists()->toArray();
         }
         $deviceId = $this->directory->normalizeDeviceId($imei, $supplier, $model, $deviceType, $deviceId);
-        // Redis primeiro, inventário a seguir: o Redis é uma projecção, e uma entrada a mais
-        // lá é invisível. Pela ordem contrária, uma falha a meio deixava na lista um
-        // dispositivo que a dashboard nunca conheceu.
+        // Redis primeiro, inventário a seguir: uma entrada a mais na projecção é invisível, e a ordem
+        // contrária deixaria na lista um dispositivo que a dashboard não conhece.
         $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         try {
             $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
@@ -534,11 +532,8 @@ class DeviceService
         }
 
         $deviceId = $this->directory->normalizeDeviceId($newImei, $supplier, $model, $deviceType, $deviceId);
-        // A regra do `create` nos dois sentidos: a projecção ganha primeiro e perde por
-        // último, e o registo novo entra antes de o antigo sair. Uma falha a meio deixa no
-        // máximo uma entrada a mais no Redis, nunca um dispositivo sem inventário.
-        // Na própria linha: é o `ON UPDATE CASCADE` que leva as ligações de gateway e a
-        // planta do radar, que apontam para esta chave.
+        // Uma falha a meio deixa no máximo uma entrada a mais no Redis, nunca um dispositivo sem
+        // inventário; o `ON UPDATE CASCADE` leva as ligações de gateway e a planta do radar.
         if ($newImei !== $imei) {
             $this->whitelist->rename($imei, $newImei);
         }
@@ -613,11 +608,8 @@ class DeviceService
     }
 
     /**
-     * O histórico recente. O `$since` é o cursor do cliente, por lista: vazio devolve tudo,
-     * preenchido só o que entrou depois.
-     *
-     * Os comandos vão sempre por inteiro -- ao contrário da telemetria, que só cresce, um
-     * comando muda de estado, e isso não se manda por diferenças.
+     * O histórico recente; o `$since` é o cursor do cliente por lista, e vazio devolve tudo. Os
+     * comandos vão sempre inteiros porque mudam de estado.
      *
      * @param array<string, int> $since
      * @return array<string, mixed>

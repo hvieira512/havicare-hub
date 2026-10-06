@@ -5,11 +5,7 @@ let onRenderSelection = () => {};
 let onCommandsUpdated = () => {};
 let renderFramePending = false;
 
-/**
- * Coalesce os renders do stream: um radar publica várias mensagens por segundo, e uma rajada
- * (um instantâneo com o histórico atrás) redesenhava o detalhe por inteiro uma vez por cada.
- * Guardado atrás de um `requestAnimationFrame` já agendado, a rajada dá um render só.
- */
+/** Um radar publica várias mensagens por segundo: cada rajada dá um só render por frame. */
 function scheduleSelectionRender() {
     if (renderFramePending) {
         return;
@@ -92,11 +88,8 @@ export function connectDeviceStream(imei) {
 }
 
 /**
- * Abre o stream com a credencial no cabeçalho, como todas as outras chamadas da dashboard.
- *
- * O `fetch` obriga a cortar os frames à mão, mas dá acesso ao estado da resposta: um 401, um
- * 404 e um `503 too_many_streams` pedem tratamento diferente e o `EventSource` não os
- * distinguia.
+ * Por `fetch` e não `EventSource`: leva a credencial no cabeçalho e distingue o 401, o 404 e o
+ * `503 too_many_streams`, ao preço de cortar os frames à mão.
  */
 async function openStream(imei, generation) {
     const url = `/api/devices/${encodeURIComponent(imei)}/stream`;
@@ -114,8 +107,7 @@ async function openStream(imei, generation) {
             controller.abort();
             return;
         }
-        // Uma credencial recusada não melhora com tentativas: religar dava uma dashboard a
-        // bater à porta com recuo exponencial em vez de pedir autenticação.
+        // Uma credencial recusada não melhora com tentativas: pede-se autenticação, não se religa.
         if (response.status === 401 || response.status === 403) {
             window.dispatchEvent(new Event("hub-dashboard-auth-required"));
             return;
@@ -141,11 +133,8 @@ async function openStream(imei, generation) {
 }
 
 /**
- * Lê o corpo e corta-o em frames SSE, guardando o pedaço incompleto para o chunk seguinte.
- *
- * O `snapshot` traz até cem entradas de telemetria e cem de eventos, pelo que um frame partido
- * entre chunks é o caso normal. Descartar o resto do buffer truncava o histórico no ecrã sem
- * dar erro.
+ * Corta o corpo em frames SSE e guarda o pedaço incompleto para o chunk seguinte: com o
+ * `snapshot` de cem entradas, um frame partido entre chunks é o caso normal.
  */
 async function readFrames(body, generation, imei) {
     const reader = body.getReader();
@@ -235,8 +224,8 @@ function scheduleReconnect() {
 }
 
 /**
- * A espera acumulada só se apaga quando o stream **entrega**, e não quando abre. Um servidor
- * que aceita e fecha logo devolve 200, e repor o contador aí anulava o recuo.
+ * A espera acumulada só se apaga quando o stream **entrega**, e não quando abre: um servidor
+ * que aceita e fecha logo também devolve 200.
  */
 function markStreamServed() {
     streamLive = true;
@@ -262,10 +251,8 @@ function handleTokenUpdated() {
 }
 
 /**
- * Junta o que chegou ao que já cá estava. O `snapshot` substitui; as actualizações trazem só
- * o que é novo e empilham-se à frente, com a lista aparada ao limite do servidor.
- *
- * Os comandos vêm sempre por inteiro: mudam de estado, e isso não se manda por diferenças.
+ * O `snapshot` substitui; as actualizações empilham-se à frente, aparadas ao limite do
+ * servidor. Os comandos vêm sempre por inteiro, porque mudam de estado.
  */
 function mergeRecent(previous, data, isSnapshot) {
     const limit = Number(data.limit) > 0 ? Number(data.limit) : 100;

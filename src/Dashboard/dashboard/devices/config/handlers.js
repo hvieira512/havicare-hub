@@ -28,10 +28,8 @@ import {
 } from "./take-pills-audio.js";
 
 /**
- * Os handlers do painel de configuração de um dispositivo: três eventos delegados na raiz --
- * clique, `change` e `input` -- mais o fecho do aviso de resultado. Tudo o que precisam vem
- * do evento, e por isso este módulo não guarda `els` nenhum. O que fazem é encaminhar: as
- * regras de cada campo vivem com esse campo, e não aqui.
+ * Os handlers delegados do painel de configuração: só encaminham, e as regras de cada campo
+ * vivem com esse campo.
  */
 /** A raiz lê-se antes: há verbos que tiram o botão do DOM e depois já não se lá chega. */
 export function handleDeviceConfigClick(event) {
@@ -204,7 +202,7 @@ export function selectConfigSection(root, key) {
     }
 }
 
-/** As contagens acompanham quem escreve: acertadas só ao desenhar, mentiam entre teclas. */
+/** As contagens acompanham cada tecla, e não só o desenho. */
 function syncConfigCountsFrom(target) {
     const root = target.closest?.("[data-config-root]");
     if (root) syncConfigCounts(root);
@@ -218,13 +216,8 @@ export function handleConfigFeedbackClosed(event) {
 }
 
 /**
- * Devolve as definições da secção ao valor com que foram desenhadas.
- *
- * O `type="reset"` de um formulário não serve aqui: as linhas de um grupo não estão num
- * formulário, e o valor a repor é o que veio do hub e não o do atributo `checked` do HTML.
- *
- * As listas repetíveis -- contactos, alarmes -- ficam de fora e mantêm o seu próprio repor:
- * uma linha que alguém acrescentou não se tira campo a campo.
+ * Devolve as definições ao valor que veio do hub, que o `type="reset"` não conhece. As listas
+ * repetíveis ficam de fora: têm o seu próprio repor.
  */
 export function resetConfigPane(pane) {
     const blocks = pane.querySelectorAll("[data-config-row], [data-config-section]");
@@ -255,11 +248,8 @@ export function resetConfigPane(pane) {
 }
 
 /**
- * O «Repor» de um bloco é o `type="reset"` do formulário dele: o browser devolve os campos ao
- * estado inicial sem disparar `change`, e as etiquetas dos interruptores ficavam a dizer o
- * contrário do que eles mostram.
- *
- * A reposição acontece depois dos ouvintes, e por isso a leitura espera pela microtarefa.
+ * O `type="reset"` não dispara `change`, por isso as etiquetas dos interruptores acertam-se
+ * aqui, numa microtarefa: a reposição acontece depois dos ouvintes.
  */
 export function handleDeviceConfigReset(event) {
     const form = event.target.closest?.("form") || event.target;

@@ -40,9 +40,7 @@ final class SystemPaths
                             . 'Browser clients send session=cookie instead: the refresh token is then returned in an HttpOnly '
                             . 'cookie rather than in the body, and a later call with an empty body renews from that cookie.',
                     ]),
-                    // O 400 é o corpo mal formado -- sem utilizador, sem password, ou que nem
-                    // é JSON. O 401 é a credencial recusada, seja a palavra-passe ou o token
-                    // de renovação.
+                    // O 400 é o corpo mal formado; o 401 é a credencial recusada, palavra-passe ou token de renovação.
                     'responses' => Responses::map(
                         ['200' => Responses::json('Bearer and refresh tokens issued', 'AuthTokenResponse')],
                         'invalid_request',
@@ -78,9 +76,7 @@ final class SystemPaths
                             'licenseId' => ['type' => 'integer', 'example' => 1001],
                         ],
                     ]),
-                    // As duas metades do par respondem separadamente: a empresa conhecida sem
-                    // aquela licença é o engano provável, e um `invalid_request` genérico não
-                    // dizia qual delas falhou.
+                    // As duas metades do par respondem separadamente, para dizer qual delas falhou.
                     'responses' => Responses::map(
                         ['200' => Responses::json('Bearer and refresh tokens issued', 'AuthTokenResponse')],
                         'invalid_request',

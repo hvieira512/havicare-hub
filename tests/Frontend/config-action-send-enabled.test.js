@@ -7,12 +7,8 @@ import { syncConfigSectionDirty } from "../../src/Dashboard/dashboard/devices/co
 import { parseFragment } from "./support/dom.js";
 
 /**
- * O «Enviar» de uma acção sem parâmetros.
- *
- * O botão acende por diferença entre o que o formulário tem e a fotografia tirada ao
- * desenhar. Uma acção como «Encontrar dispositivo» não tem campos: o payload é sempre vazio,
- * a diferença nunca existe, e o botão ficava desactivado para sempre -- a acção não tinha
- * caminho nenhum na interface.
+ * O «Enviar» acende pela diferença ao formulário desenhado; uma acção sem campos nunca tem
+ * diferença, e por isso está sempre pronta.
  */
 function section(
     input,
@@ -68,12 +64,8 @@ test("uma configuração alterada pode ser enviada", () => {
 });
 
 /**
- * Uma acção com parâmetros também está sempre pronta.
- *
- * O «Encontrar dispositivo» da pulseira Veepoo é um interruptor: ligado manda vibrar,
- * desligado manda parar. Mas continua a ser uma acção e não uma definição -- não há estado
- * guardado com que comparar, e a regra da diferença deixava o botão apagado desde o
- * princípio. Quem manda aqui é ser transiente, não o tipo de campo.
+ * O «Encontrar dispositivo» da Veepoo é um interruptor mas é uma acção: sem estado guardado com
+ * que comparar, quem manda é ser transiente e não o tipo de campo.
  */
 test("uma acção com campos continua a poder ser enviada sem os mexer", () => {
     const root = section(
@@ -102,12 +94,8 @@ test("uma configuração sem alteração continua a ter o Enviar apagado", () =>
 });
 
 /**
- * Uma definição que o aparelho ainda não recebeu pode ser enviada tal como está.
- *
- * Enquanto nada foi gravado, o que o cartão mostra é o valor por omissão do catálogo e não o
- * que está no aparelho. A regra da diferença comparava-o consigo próprio e apagava o botão:
- * a pulseira ficava sem forma de receber a primeira configuração, e o ecrã dizia PADRÃO para
- * sempre sem caminho nenhum para sair daí.
+ * Sem nada gravado o cartão mostra o valor por omissão do catálogo, e não o do aparelho:
+ * compará-lo consigo próprio apagaria o botão para sempre.
  */
 test("uma definição por gravar pode ser enviada sem a mexer", () => {
     const root = section(

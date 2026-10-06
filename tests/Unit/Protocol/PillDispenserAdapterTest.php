@@ -123,7 +123,7 @@ final class PillDispenserAdapterTest extends TestCase
         self::assertSame('register', $name(0x01));
         self::assertSame('event', $name(0x03));
         // E os que o hub envia, que saem nos metadados do comando em fila: sem nome, a
-        // dashboard mostrava "unknown" ao lado de uma configuração que ela própria gravou.
+        // dashboard mostraria "unknown".
         self::assertSame('read_config', $name(0x05));
         self::assertSame('write_config', $name(0x06));
         self::assertSame('read_status', $name(0x07));

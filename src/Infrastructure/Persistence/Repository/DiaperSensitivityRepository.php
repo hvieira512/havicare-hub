@@ -9,12 +9,8 @@ use Hub\Domain\DiaperSensitivityLookup;
 use PDO;
 
 /**
- * A leitura da sensibilidade no caminho quente da ingestão. A escrita é a
- * `DiaperSensitivityCapability`, pelo `PATCH .../configurations` como qualquer outra.
- *
- * A cache curta é o padrão do `GatewayDeviceLinkRepository`, e o TTL é a latência com que uma
- * alteração pela API passa a ser aplicada -- sem reiniciar nada. MySQL é a fonte de verdade,
- * e por isso a cache nasce vazia depois de um reinício sem que nada se perca.
+ * A leitura da sensibilidade no caminho quente da ingestão, com cache curta: o TTL é a latência
+ * com que uma alteração pela API se aplica. A escrita é a `DiaperSensitivityCapability`.
  */
 final class DiaperSensitivityRepository implements DiaperSensitivityLookup
 {

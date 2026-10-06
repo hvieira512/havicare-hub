@@ -8,12 +8,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O M228 cifra tudo o que envia por iniciativa própria, e a chave sai do Device Number.
- *
- * O corpo vem em AES128-CFB quando o **bit 2 do Flag** está ligado. A chave e o IV são a mesma
- * coisa: o Device Number escrito como string hexadecimal de 16 caracteres, que é exactamente
- * o comprimento de uma chave AES-128. As tramas deste teste são reais, capturadas do aparelho
- * de ensaio.
+ * O M228 cifra em AES128-CFB o que envia por iniciativa própria, com o bit 2 do Flag; a chave
+ * e o IV são o Device Number em hexadecimal de 16 caracteres. As tramas são reais.
  */
 final class PillDispenserDecryptionTest extends TestCase
 {
@@ -38,12 +34,7 @@ final class PillDispenserDecryptionTest extends TestCase
         self::assertSame(48, ord($tlv[0x810F]['value']), '48 %RH');
     }
 
-    /**
-     * O evento de toma, por inteiro.
-     *
-     * É o que as TAGs de estado dos alarmes não conseguem dar: a hora prevista, a hora real e
-     * o compartimento de onde saiu o comprimido.
-     */
+    /** O evento de toma, por inteiro: a hora prevista, a hora real e o compartimento. */
     public function testTheMedicationEventIsReadable(): void
     {
         $tlv = $this->decode(self::INTAKE)['tlv'];
@@ -70,10 +61,8 @@ final class PillDispenserDecryptionTest extends TestCase
     }
 
     /**
-     * Uma trama cifrada que não abra não pode passar por telemetria vazia.
-     *
-     * Publicar um corpo ilegível como se não trouxesse nada é a falha calada que este
-     * protocolo torna fácil: identidade certa, CRC válido, e nenhum erro em lado nenhum.
+     * Uma trama cifrada que não abra não pode passar por telemetria vazia: identidade certa e CRC
+     * válido não denunciam nada.
      */
     public function testAFrameThatDoesNotOpenIsMarked(): void
     {

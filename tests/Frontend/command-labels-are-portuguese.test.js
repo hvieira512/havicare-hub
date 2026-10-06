@@ -5,11 +5,8 @@ import "./support/browser-env.js";
 import { commandLabel } from "../../src/Dashboard/dashboard/format.js";
 
 /**
- * Nada aparece em inglês na dashboard.
- *
- * As etiquetas do catálogo de comandos são inglesas por desenho -- o catálogo é código -- e a
- * tradução faz-se aqui, na fronteira. Uma etiqueta nova sem entrada no mapa chegava ao ecrã
- * como veio: o «Refresh telemetry» apareceu assim na lista de pedidos.
+ * As etiquetas do catálogo de comandos são inglesas por desenho e a tradução faz-se aqui: uma
+ * etiqueta nova sem entrada no mapa chega ao ecrã em inglês.
  */
 test("a etiqueta do recarregar chega traduzida", () => {
     assert.equal(

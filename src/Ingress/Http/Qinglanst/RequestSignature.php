@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Hub\Ingress\Http\Qinglanst;
 
 /**
- * A assinatura que o fabricante exige em cada pedido: `SHA1(segredo#timestamp#pares#)`, em
- * maiúsculas, com os pares `chave=valor` por ordem alfabética e um cardinal a fechar.
- *
- * Sem parâmetros a cadeia acaba no timestamp, sem cardinal nenhum -- e é a diferença entre
- * passar e levar um 401 sem explicação.
+ * `SHA1(segredo#timestamp#pares#)` em maiúsculas, pares `chave=valor` por ordem alfabética.
+ * Sem parâmetros a cadeia acaba no timestamp, sem cardinal nenhum.
  */
 final class RequestSignature
 {

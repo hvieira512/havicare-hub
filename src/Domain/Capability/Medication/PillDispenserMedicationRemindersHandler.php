@@ -7,11 +7,8 @@ namespace Hub\Domain\Capability\Medication;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Estratégia do dispensador M228 para o plano de medicação.
- *
- * A chave nativa é a genérica: ao contrário dos relógios, cujo plano viaja dentro de um
- * comando com nome próprio (`dnMedicationPlan`, `takePills`), o dispensador declara a
- * configuração já pela chave do contrato, e é o `command` da definição que monta a trama.
+ * A estratégia do dispensador M228 para o plano de medicação. A chave nativa é a genérica, e é
+ * o `command` da definição que monta a trama.
  */
 final class PillDispenserMedicationRemindersHandler implements MedicationRemindersHandler
 {
@@ -116,9 +113,8 @@ final class PillDispenserMedicationRemindersHandler implements MedicationReminde
     }
 
     /**
-     * O plano substitui-se, não se funde. Ele viaja inteiro para o aparelho, e fundir um
-     * plano parcial com o anterior dava um terceiro plano que ninguém pediu -- com alarmes
-     * de trás que o utilizador julgava ter removido.
+     * O plano substitui-se, não se funde: viaja inteiro, e fundir um plano parcial ressuscitava
+     * alarmes que o utilizador removeu.
      */
     public function merge(mixed $existing, mixed $incoming): mixed
     {

@@ -78,8 +78,7 @@ final class DeviceConfigurationLifecycleRepository
                 $now,
             ]);
 
-            // Sem o fornecedor nem o modelo: o dono do IMEI é a `whitelist`, e uma cópia aqui
-            // chegou a declarar dois modelos para o mesmo aparelho.
+            // Sem o fornecedor nem o modelo: o dono do IMEI é a `whitelist`.
             $upsert = $this->pdo->prepare('
                 INSERT INTO device_configurations (
                     imei, config_key, native_key, protocol, command,
@@ -106,9 +105,8 @@ final class DeviceConfigurationLifecycleRepository
                 ]);
             }
 
-            // Sem os bytes do comando: quem os entrega é a fila `hub:downlink` do Redis, e
-            // aqui fica o registo do que foi pedido e como correu. Sem o `imei` nem o
-            // `config_key`: são da alteração, e a chave estrangeira dá o caminho.
+            // Sem os bytes do comando, que a fila `hub:downlink` entrega, nem o `imei` e a `config_key`,
+            // que são da alteração e a chave estrangeira alcança.
             $insertOperation = $this->pdo->prepare('
                 INSERT INTO device_configuration_operations (
                     operation_id, change_id, native_key, native_type,

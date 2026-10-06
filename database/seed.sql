@@ -1,17 +1,10 @@
 -- O inventário de dispositivos, capturado do hub de produção (sockets.hitcare.net).
 --
--- Cada instrução é idempotente e resolve os ids por chave natural, para este ficheiro nunca
--- fixar um valor de auto-increment: os fornecedores e as empresas casam pelo nome UNIQUE, os
--- modelos pelo uq_models_supplier_internal_model, as licenças pelo
--- uq_licenses_company_license, e os dispositivos pelo whitelist.imei.
+-- Cada instrução é idempotente e resolve os ids por chave natural; os dispositivos e as
+-- ligações a gateways usam INSERT IGNORE, para não pisar edições feitas à mão.
 --
--- Os dispositivos e as ligações a gateways usam INSERT IGNORE: uma base nova recebe o
--- inventário todo, e uma base já editada à mão fica com as tuas edições.
---
--- Deliberadamente NÃO semeados: api_users (hashes de password), device_configurations e
--- device_configuration_changes/operations (estado de sincronização vivo por dispositivo, que
--- punha cada um a parecer ter alterações pendentes que não consegue confirmar),
--- private_radio_map_access_points (aprendidos em execução) e dashboard_notifications.
+-- Não se semeiam segredos nem estado vivo: api_users, device_configurations,
+-- device_configuration_changes/operations, private_radio_map_access_points e dashboard_notifications.
 
 -- As empresas ficam porque a licença logo a seguir junta-se a elas pelo nome.
 INSERT IGNORE INTO companies (name) VALUES
@@ -31,24 +24,12 @@ SELECT c.id, l.license_id, l.name FROM companies c JOIN (
 ) l ON l.company = c.name
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
--- Os fornecedores e os modelos não se semeiam aqui: as listas vivem no
--- `ReferenceCatalogSeeder`, que já as escreve inteiras -- com os nomes comerciais e as
--- fotografias -- antes de este ficheiro correr. Duas listas da mesma coisa divergiram uma
--- vez e não voltam a existir.
+-- Os fornecedores e os modelos não se semeiam aqui: escreve-os o `ReferenceCatalogSeeder`.
 
 -- Os pares fornecedor x tipo de dispositivo não se semeiam: saem dos modelos.
 
--- Um dispositivo sem dono tem `NULL` nas duas colunas, e não o `0` e o `'null'`.
---
--- Esses dois são os sentinelas de memória: é como o hub diz "sem licença" e "sem empresa"
--- enquanto o valor viaja, e é o que o ficheiro da whitelist escreve. Na base convertem-se,
--- e o `WhitelistRepository` tem uma função para cada -- `storedLicenseId()` e
--- `storedCompany()` -- precisamente para eles não chegarem aqui.
---
--- O seed saltava essa fronteira e gravava os sentinelas em cru. O resultado era visível: o
--- filtro de licenças mostrava uma empresa chamada "Sem empresa" com uma licença "Sem
--- Licença" lá dentro, em vez do "Sem licença" solto que a produção mostra -- porque uma
--- empresa cujo nome é o texto `null` é, para todo o resto do sistema, uma empresa a sério.
+-- Um dispositivo sem dono tem `NULL` nas duas colunas: o `0` e o `'null'` são sentinelas de
+-- memória, que o `WhitelistRepository` converte na fronteira.
 INSERT IGNORE INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, company) VALUES
     ('351266770073676', '4P Touch', 'Y6M', 'watch', 1, '+351962621694', '6677007367', 'havicare'),
     ('637507597567372', '4P Touch', 'D46', 'watch', NULL, '+351962621781', '0759756737', NULL),
@@ -63,9 +44,7 @@ INSERT IGNORE INTO whitelist (imei, supplier, model, device_type, license_id, si
     ('861728087056333', '4P Touch', 'Y6S', 'watch', 1, '', '2808705633', 'havicare'),
     ('861728087060467', '4P Touch', 'D44S', 'watch', 1, '', '2808706046', 'havicare'),
     ('861728087743062', '4P Touch', 'D41', 'watch', 1, '+351962621664', '2808774306', 'havicare'),
-    -- Tinha a licença 1001 e a empresa a `null`, que é combinação impossível: uma licença
-    -- não existe sem a empresa a que pertence. A 1001 é da hitcare, e é essa a leitura que
-    -- não deita fora informação -- a alternativa era largar a licença e deixá-lo sem dono.
+    -- A 1001 é da hitcare: uma licença não existe sem a empresa a que pertence.
     ('863737079757376', '4P Touch', 'D46', 'watch', 1001, '+351962621781', '3707975737', 'hitcare'),
     ('868160060298224', '4P Touch', 'D45 Pro', 'watch', NULL, '', '6006029822', NULL),
     ('868705080304889', 'Wonlex', 'HW20PRO', 'watch', 1, '', '', 'havicare'),
@@ -88,9 +67,8 @@ INSERT IGNORE INTO gateway_device_links (gateway_device_key, linked_device_key, 
     ('d48c49f7909c', 'fbd87c59ba8b', 1),
     ('dc1603ecf1f7', 'fbd87c59ba8b', 1);
 
--- Os overrides de capacidades do HW20PRO: o único sítio em que produção discorda do que o
--- catálogo semeado produz. São escolhas feitas à mão no separador das Capacidades, e estas
--- instruções reproduzem o estado final delas.
+-- Os overrides de capacidades do HW20PRO, o único sítio em que a produção discorda do catálogo
+-- semeado: escolhas feitas à mão no separador das Capacidades.
 UPDATE model_capabilities mc
 JOIN models m ON m.id = mc.model_id
 JOIN suppliers s ON s.id = m.supplier_id

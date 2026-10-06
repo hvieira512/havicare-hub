@@ -7,11 +7,8 @@ const { activityTable } =
     await import("../../src/Dashboard/dashboard/devices/activity-table.js");
 
 /**
- * A data sobe para um cabeçalho por dia, e a linha fica só com a hora.
- *
- * A coluna da hora reservava 8.25rem para `29/09, 15:04:10` repetido em todas as linhas,
- * e eram esses pixéis que faltavam à pastilha de estado ao lado. Agrupar por dia diz a
- * mesma coisa uma vez e devolve a largura a quem precisa dela.
+ * A data sobe para um cabeçalho por dia e a linha fica só com a hora: a largura que sobra vai
+ * para a pastilha de estado.
  */
 
 const row = (at, name, extra = {}) => ({

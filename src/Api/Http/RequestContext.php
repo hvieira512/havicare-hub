@@ -32,9 +32,6 @@ final class RequestContext
     /**
      * O corpo já descodificado, ou `null` quando não é um objecto JSON.
      *
-     * Descodificar é trabalho do transporte: assim os serviços recebem o array e não têm de
-     * saber que do outro lado da chamada havia texto.
-     *
      * @return array<mixed>|null
      */
     public static function jsonBody(ServerRequestInterface $request): ?array
@@ -45,10 +42,7 @@ final class RequestContext
     }
 
     /**
-     * O mesmo, para os pedidos que tanto chegam em JSON como em `multipart/form-data`.
-     *
-     * O upload da imagem de um modelo obriga ao formulário, e o corpo de um `multipart` não
-     * é JSON nenhum -- vem já partido pelo servidor.
+     * O mesmo, para os pedidos em JSON ou em `multipart/form-data`, como o upload da imagem de um modelo.
      *
      * @return array<mixed>|null
      */
@@ -79,11 +73,8 @@ final class RequestContext
     }
 
     /**
-     * O endereço de quem fez o pedido, e não o de quem o entregou.
-     *
-     * Com o nginx à frente, o `REMOTE_ADDR` é sempre o do proxy, e o `LoginThrottle` conta
-     * tentativas por endereço. O cabeçalho só vale vindo do loopback, e vale o **último**
-     * elemento da lista: tudo o que vem antes é escolha de quem ligou.
+     * O endereço de quem fez o pedido: atrás do nginx, o `REMOTE_ADDR` é o do proxy. O cabeçalho
+     * só vale vindo do loopback, e vale o **último** elemento da lista.
      */
     public static function clientAddress(ServerRequestInterface $request): string
     {

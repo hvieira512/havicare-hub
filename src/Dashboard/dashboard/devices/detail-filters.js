@@ -14,12 +14,8 @@ import { uplinkCardContent } from "../components/cards/telemetry.js";
 import { filterChips } from "../components/chips.js";
 
 /**
- * Os filtros do histórico de um dispositivo -- a janela de datas, o tipo e a pesquisa -- e os
- * paginadores dos dois painéis que eles reduzem.
- *
- * Não desenham o ecrã: tudo o que volta a desenhar entra pelo contexto do arranque, para o
- * grafo de módulos não ganhar um ciclo. Não confundir com o `devices/list-filters.js`, que
- * filtra a *listagem* de dispositivos; estes filtram o que um dispositivo já reportou.
+ * Filtros e paginadores do histórico de um dispositivo (a listagem é do `list-filters.js`). O
+ * que redesenha chega pelo contexto do arranque, para o grafo de módulos não ganhar um ciclo.
  */
 
 let els;
@@ -177,10 +173,8 @@ export function filterDetailItems(items) {
 }
 
 /**
- * O que a linha mostra, em minúsculas: o tipo e o valor formatado.
- *
- * A etiqueta é a mesma que a linha e o select do tipo apresentam -- português, vinda do
- * catálogo. A chave em inglês fica ao lado, porque quem opera o hub procura por ela.
+ * O que a linha mostra, em minúsculas: a etiqueta do catálogo e o valor formatado. A chave em
+ * inglês fica ao lado, porque quem opera o hub procura por ela.
  */
 function detailItemHaystack(item) {
     const itemType = detailItemType(item);
@@ -226,9 +220,8 @@ export function populateDetailFilterTypes() {
     );
     const signature = observedTypes.join("|");
 
-    // Refeito e não acrescentado: acrescentar deixava no selector os tipos do aparelho
-    // anterior, e um radar ficava a oferecer «Pressão arterial». Quem está escolhido volta
-    // logo abaixo.
+    // Refeito e não acrescentado, para não ficarem os tipos do aparelho anterior; quem está
+    // escolhido volta logo abaixo.
     if (select.dataset.detailFilterTypesSignature !== signature) {
         select.innerHTML = [
             "<option value=\"all\">Todos os tipos</option>",
@@ -258,11 +251,7 @@ function telemetryFilterLabel(type) {
     return capabilityLabel(type) || type;
 }
 
-/**
- * O rascunho manda mesmo quando está vazio: um campo apagado é uma escolha, e com `||` caía
- * no valor aplicado. Quem limpasse uma data via-a voltar à primeira mensagem do stream, e o
- * «Aplicar» seguinte lia o campo já repovoado e reaplicava-a.
- */
+/** O rascunho manda mesmo vazio, daí o `??` e não o `||`: um campo apagado é uma escolha. */
 export function syncDetailFilterControls() {
     els.detailFilterFrom.value = state.detailFiltersDraft?.from ?? state.detailFilters.from;
     els.detailFilterTo.value = state.detailFiltersDraft?.to ?? state.detailFilters.to;
@@ -317,8 +306,7 @@ export function clearDetailFilters() {
  */
 let detailSearchTimer = null;
 
-// A pesquisa filtra a cada tecla, mas o render é pesado -- lista, cartões e tooltips; espera-se
-// que a escrita pare, como já faz a lista de dispositivos.
+// O render é pesado: espera-se que a escrita pare.
 export function applyDetailSearch() {
     clearTimeout(detailSearchTimer);
     detailSearchTimer = setTimeout(applyDetailSearchNow, 150);
@@ -344,10 +332,7 @@ export function removeDetailFilter(key) {
     onChange();
 }
 
-/**
- * O que cada pastilha diz. A do tipo leva a mesma etiqueta do select que a escolheu: aplicar
- * um filtro em português e vê-lo voltar em inglês é a mesma coisa dita de duas maneiras.
- */
+/** O que cada pastilha diz; a do tipo leva a mesma etiqueta do select que a escolheu. */
 export function detailFilterChipLabels({ from, to, type, q }) {
     const labels = [];
     if (from || to) {
@@ -390,11 +375,8 @@ export function updateDetailFilterDraft() {
 }
 
 /**
- * Um clique num paginador de um painel do detalhe.
- *
- * Os dois painéis paginam do lado do cliente sobre o que os filtros deixaram passar, e por
- * isso a conta das páginas é feita aqui e não vem da API. O que os distingue é só o que cada
- * um deixa passar, o tamanho da página e onde escreve o resultado.
+ * Os dois painéis paginam no cliente sobre o que os filtros deixaram passar, por isso a conta
+ * das páginas faz-se aqui e não vem da API.
  */
 function paginateDetailPanel(event, { belongsToPanel, pageSize, page, actionPrefix, setPage, render }) {
     if (!state.selectedDetail) return;

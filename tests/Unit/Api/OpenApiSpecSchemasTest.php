@@ -8,10 +8,8 @@ use Hub\Api\OpenApiSpec;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A especificação é montada a partir de ficheiros por domínio, e por isso um esquema e a rota
- * que o referencia editam-se longe um do outro. Isto prende os dois: um nome de esquema mal
- * escrito ou apagado parte a build em vez de sair um documento cujos `$ref` não resolvem, e
- * um esquema que ninguém referencia não se acumula como documentação morta.
+ * Os esquemas e as rotas que os referenciam editam-se em ficheiros diferentes: um `$ref` que
+ * não resolve parte a build, e um esquema que ninguém referencia não se acumula.
  */
 final class OpenApiSpecSchemasTest extends TestCase
 {
@@ -55,10 +53,7 @@ final class OpenApiSpecSchemasTest extends TestCase
         self::assertNotEmpty($spec, 'the spec documents no paths at all');
     }
 
-    /**
-     * Um esquema que promete menos do que a resposta devolve engana quem gera tipos a partir
-     * da spec. Estes campos existem no serviço desde sempre; o portão prende-os ao esquema.
-     */
+    /** Um esquema que promete menos do que a resposta devolve engana quem gera tipos a partir dele. */
     public function testDetailAndErrorSchemasDeclareEveryReturnedField(): void
     {
         $schemas = OpenApiSpec::get()['components']['schemas'] ?? [];
@@ -74,7 +69,7 @@ final class OpenApiSpecSchemasTest extends TestCase
 
     /**
      * @param array<string, mixed> $spec
-     * @return list<string> schema names referenced anywhere in the document
+     * @return list<string> nomes de esquema referenciados em qualquer ponto do documento
      */
     private function referencedSchemas(array $spec): array
     {

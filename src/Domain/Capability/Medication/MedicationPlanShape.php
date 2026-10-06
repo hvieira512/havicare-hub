@@ -7,11 +7,8 @@ namespace Hub\Domain\Capability\Medication;
 use Hub\Domain\Capability\AlarmClock\AlarmClockHelpers;
 
 /**
- * A forma pública de um plano de medicação, partilhada pelos três fornecedores.
- *
- * Um plano é um medicamento com as suas horas. Quem não sabe o nome, a dose ou as datas
- * omite-os, como em todo o contrato: uma chave vazia obriga quem lê a distinguir o vazio do
- * ausente.
+ * A forma pública de um plano de medicação, partilhada pelos três fornecedores: um medicamento
+ * com as suas horas. O que não se sabe omite-se, em vez de sair vazio.
  */
 final class MedicationPlanShape
 {

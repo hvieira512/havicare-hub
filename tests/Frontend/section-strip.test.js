@@ -9,8 +9,7 @@ import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/dev
 import { parseFragment } from "./support/dom.js";
 
 /**
- * As secções escolhem-se sempre com o mesmo vocabulário: o ícone da secção, o nome e a
- * contagem. A forma é que muda com o número -- o catálogo tem-nas em tira, e o painel de
+ * As secções escolhem-se pelo ícone, nome e contagem; o catálogo tem-nas em tira e o painel de
  * configuração em lista, porque lá chegam a seis e uma tira corta.
  */
 test.afterEach(() => {

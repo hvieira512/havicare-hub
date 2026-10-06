@@ -5,12 +5,8 @@ declare(strict_types=1);
 namespace Hub\Device;
 
 /**
- * Entrega a quem tem um stream aberto as mensagens do seu próprio inquilino.
- *
- * A chave é o âmbito -- `empresa/licença/canal` --, e não o dispositivo: uma mensagem de outro
- * inquilino nunca chega a ser procurada. A licença sozinha não serve, porque a 1001 do hitcare
- * e a 1001 do havicare são clientes diferentes. A mensagem viaja com o ouvinte, porque um
- * espelho não tem estado autoritativo para reler.
+ * Entrega a quem tem um stream aberto as mensagens do seu inquilino, pela chave
+ * `empresa/licença/canal`: a 1001 do hitcare e a 1001 do havicare são clientes diferentes.
  */
 class MessageFanout
 {
@@ -57,11 +53,8 @@ class MessageFanout
     }
 
     /**
-     * A chave que o produtor e o consumidor têm de compor da mesma maneira, e é por isso que
-     * vive aqui em vez de nos dois lados.
-     *
-     * A empresa vem em minúsculas porque o `canAccessTenant` a compara sem distinguir caixa.
-     * Os outros dois segmentos são um inteiro e um de quatro literais.
+     * A chave que produtor e consumidor compõem da mesma maneira. A empresa vai em minúsculas
+     * porque o `canAccessTenant` a compara sem distinguir caixa.
      */
     public static function scope(string $company, int $licenseId, string $channel): string
     {

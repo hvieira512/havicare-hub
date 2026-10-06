@@ -301,13 +301,7 @@ function timeRangeInput(desired) {
         </div>`;
 }
 
-/**
- * Os descritores dos campos do 4P Touch.
- *
- * Cada tipo de campo declara aqui as suas quatro faces juntas -- desenhar, ler de volta, o
- * valor inicial e a legenda. Eram quatro mapas separados indexados pela mesma chave, e nada
- * garantia que ficassem alinhados: uma entrada em falta não dava erro, dava um campo genérico.
- */
+/** Cada tipo de campo declara as suas faces juntas: desenhar, ler de volta e valor inicial. */
 export const INPUTS = {
     makeCall: {
         render: makeCallInput,
@@ -373,7 +367,7 @@ export const INPUTS = {
     timeRange: {
         render: (_entry, desired) => timeRangeInput(desired),
         read: (section) => ({ range: readText(section, "range") }),
-        // As horas voltam a juntar-se no formato que o construtor valida.,
+        // No formato `HH:MM-HH:MM` que o construtor valida.
         defaults: () => ({ range: "21:10-07:30" }),
     },
     takePills: {

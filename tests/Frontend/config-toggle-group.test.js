@@ -8,11 +8,8 @@ import { changedConfigEntries } from "../../src/Dashboard/dashboard/devices/conf
 import { parseFragment } from "./support/dom.js";
 
 /**
- * Um interruptor não justifica um cartão.
- *
- * A MF91 tem dez definições e todas são um bit. Com um cartão cada -- cabeçalho, legenda,
- * selo de estado, «Enviar» e repor -- são cerca de dois mil pixéis de scroll e vinte botões
- * para dez bits. O cartão continua a existir para o que é rico: alarmes, agendas, listas.
+ * Um interruptor não justifica um cartão: as dez definições da MF91 são um bit cada. O cartão
+ * fica para o que é rico, como alarmes, agendas e listas.
  */
 const toggle = (key, label, order) => ({
     key,
@@ -81,7 +78,7 @@ test("o que não é interruptor continua a ser cartão", () => {
     assert.deepEqual(cards, ["auto_vitals_interval"]);
 });
 
-/** Uma acção dispara; agrupá-la com definições que se guardam misturava duas coisas. */
+/** Uma acção dispara e uma definição guarda-se: não se misturam no mesmo grupo. */
 test("uma acção transitória não entra no grupo", () => {
     const root = render([
         ...CATALOG.slice(0, 2),
@@ -92,12 +89,7 @@ test("uma acção transitória não entra no grupo", () => {
     assert.ok(root.querySelector("[data-config-section][data-config-key=\"find_device\"]"));
 });
 
-/**
- * Só o que mudou é que viaja.
- *
- * O envio passa a ser por secção, mas mandar as oito definições de cada vez transformava uma
- * alteração num lote de oito comandos para a pulseira executar um a um.
- */
+/** Mandar as oito definições de cada vez seriam oito comandos para a pulseira executar. */
 test("o grupo envia só as linhas alteradas", () => {
     const group = parseFragment(`
         <div data-config-group>
@@ -112,13 +104,7 @@ test("o grupo envia só as linhas alteradas", () => {
     assert.deepEqual(changedConfigEntries(group), { b: { enabled: false } });
 });
 
-/**
- * Um interruptor sozinho também é uma linha.
- *
- * Deixá-lo como cartão dava-lhe quatro linhas de altura para um bit -- o problema que isto
- * existe para resolver -- e punha dois desenhos na mesma lista, conforme a definição tivesse
- * ou não vizinhas do mesmo tipo.
- */
+/** Um interruptor sozinho também é uma linha, para a lista não ter dois desenhos. */
 test("um interruptor sozinho não volta a ser cartão", () => {
     const root = render([toggle("blood_oxygen_alert", "Alerta de oxigénio no sangue", 10)]);
 

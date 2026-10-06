@@ -8,11 +8,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * As TAGs de texto do M228 têm comprimento fixo, e o aparelho recusa-as com outro.
- *
- * A especificação declara `STRING` com comprimento **20** para todas elas — a calibração do
- * relógio (`0xA101`), o CCID do cartão SIM (`0x8009`), o identificador do prato (`0x8105`).
- * Mandar o comprimento do texto dá `011`, que é «comprimento não corresponde».
+ * A especificação declara `STRING` de 20 para todas (`0xA101`, `0x8009`, `0x8105`), e mandar o
+ * comprimento do texto dá `011`, «comprimento não corresponde».
  */
 final class PillDispenserStringLengthTest extends TestCase
 {
@@ -46,8 +43,7 @@ final class PillDispenserStringLengthTest extends TestCase
     /**
      * Um pedido de leitura de uma TAG de texto reserva os mesmos 20 bytes.
      *
-     * O pedido leva o valor a zeros com o comprimento certo, e é por isso que ele também
-     * falhava: o `0x8009` saía com um byte reservado em vez de vinte.
+     * O pedido leva o valor a zeros com o comprimento da TAG, e não com um byte.
      */
     public function testAReadRequestReservesTheFullStringLength(): void
     {

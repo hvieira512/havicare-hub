@@ -8,9 +8,8 @@ import { apiUserForm as buildForm } from "../../src/Dashboard/dashboard/settings
 const apiUserForm = (...args) => String(buildForm(...args));
 
 /**
- * O estado não está no formulário -- quem o muda é o verbo de pausar --, mas tem de viajar
- * com ele: procurá-lo na página carregada devolve `undefined` assim que a linha sai dela, e
- * um `PUT` com `enabled: false` pausa o utilizador sem o dizer.
+ * O estado muda pelo verbo de pausar mas viaja com o formulário: lido da página, sai `undefined`
+ * quando a linha já lá não está, e o `PUT` pausa o utilizador sem o dizer.
  */
 
 const active = { id: 7, username: "gucc", role: "hub_admin", enabled: 1 };

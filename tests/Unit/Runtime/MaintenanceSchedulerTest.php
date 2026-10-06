@@ -55,10 +55,7 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertSame('IWBP76,1', $this->hubServer->submitted[0]['bytes']);
     }
 
-    /**
-     * A passagem seguinte não o repete: entre duas tentativas há um minuto de espera, e sem
-     * ele a manutenção reenviava o mesmo comando de dez em dez segundos.
-     */
+    /** Entre duas tentativas há um minuto de espera, e a manutenção corre de dez em dez segundos. */
     public function testARetriedCommandIsNotRetriedAgainBeforeTheRetryInterval(): void
     {
         $this->recordWaitingCommand();
@@ -238,7 +235,7 @@ final class MaintenanceSchedulerTest extends TestCase
         };
     }
 
-    /** O agendador só toca em dois serviços, e construir os outros exigia MySQL e um broker. */
+    /** O agendador só toca em dois serviços, e construir os outros exigiria MySQL e um broker. */
     private function services(): HubServices
     {
         $reflection = new \ReflectionClass(HubServices::class);

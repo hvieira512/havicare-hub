@@ -15,12 +15,8 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 final class BridgeTest extends TestCase
 {
     /**
-     * A notificação de um radar desconhecido leva a licença do tópico.
-     *
-     * O tópico é `radar/{licenseId}/{uid}` e a licença é o único campo do assistente de
-     * registo que não se deduz do protocolo -- o tipo e o modelo já vinham. Vai como
-     * número e não dentro do `ident`, para a dashboard a poder pré-seleccionar em vez de
-     * ter de interpretar uma frase.
+     * A licença é o único campo do assistente que não se deduz do protocolo, e vai como número para a
+     * dashboard a poder pré-seleccionar.
      */
     public function testUnregisteredRadarNotificationCarriesTheTopicLicense(): void
     {
@@ -46,10 +42,8 @@ final class BridgeTest extends TestCase
     }
 
     /**
-     * Toda a telemetria vai para o histórico, sem amostragem.
-     *
-     * O histórico é também o que alimenta o stream em directo: travar escritas é travar o
-     * mapa, e a lista já está limitada a 100 entradas.
+     * O histórico também alimenta o stream em directo: travar escritas é travar o mapa, e a lista já
+     * está limitada a 100 entradas.
      */
     public function testEveryPositionReadingReachesTheHistory(): void
     {
@@ -90,9 +84,8 @@ final class BridgeTest extends TestCase
     }
 
     /**
-     * A notificação de um radar desconhecido é estrangulada: um radar por registar publica
-     * ~20 mensagens por segundo, e sem travão é uma escrita ao MySQL por cada, a reabrir um
-     * aviso que o operador nunca consegue marcar como lido.
+     * A notificação de um radar desconhecido é estrangulada: ele publica ~20 mensagens por
+     * segundo, cada uma uma escrita ao MySQL.
      */
     public function testUnregisteredRadarNotificationIsThrottled(): void
     {
@@ -111,9 +104,8 @@ final class BridgeTest extends TestCase
     }
 
     /**
-     * Um radar na denylist é ignorado na fonte: nem notificação, nem escrita. É o «não quero
-     * mesmo que apareça» -- cala o sino em definitivo, ao contrário do estrangulamento, que só
-     * espaça.
+     * Um radar na denylist é ignorado na fonte, sem notificação nem escrita: cala o sino em
+     * definitivo, ao contrário do estrangulamento, que só espaça.
      */
     public function testDenylistedRadarProducesNoNotification(): void
     {

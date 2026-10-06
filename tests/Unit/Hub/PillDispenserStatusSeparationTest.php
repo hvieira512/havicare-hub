@@ -10,18 +10,14 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Para onde vai cada leitura do estado, e porquê: reutiliza-se a capacidade que o hub já tem,
- * junta-se o que é a mesma pergunta, um alerta só fala quando dispara, e o que ninguém lê não
- * se publica.
+ * Para onde vai cada leitura do estado: reutiliza-se a capacidade que já existe, junta-se o
+ * que é a mesma pergunta, um alerta só fala quando dispara, e o que ninguém lê não sai.
  */
 final class PillDispenserStatusSeparationTest extends TestCase
 {
     /**
-     * O sinal sai como a `connectivity` dos gateways, e não num formato só deste aparelho.
-     *
-     * O `0x810B` de uma unidade 4G é o **CSQ do módulo**, não dBm: o fornecedor deu a tabela
-     * — `0` é menos de −113 dBm, `31` é mais de −51 — e ela é a do 3GPP, `−113 + 2 × CSQ`.
-     * Publicar o número em cru punha −25 dBm onde o sinal era −63.
+     * O `0x810B` de uma unidade 4G é o **CSQ do módulo**, e não dBm: converte-se pela tabela do
+     * 3GPP, `−113 + 2 × CSQ`.
      */
     public function testTheCellularSignalIsConvertedFromCsq(): void
     {
@@ -59,13 +55,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         );
     }
 
-    /**
-     * O `99` do CSQ é «não sei», e não um sinal excelente.
-     *
-     * A tabela que o fornecedor enviou dá-lhe −51 dBm, o mesmo que o `31`. No 3GPP TS 27.007
-     * é «not known or not detectable», e publicá-lo como o melhor valor da escala mostrava
-     * sinal de sobra a um aparelho que não tem nenhum.
-     */
+    /** O `99` do CSQ é «not known or not detectable» no 3GPP TS 27.007, e não o melhor sinal. */
     public function testAnUnknownCsqIsNotPublished(): void
     {
         self::assertArrayNotHasKey('connectivity', $this->telemetry([0x810B => pack('s', 99)]));
@@ -117,12 +107,8 @@ final class PillDispenserStatusSeparationTest extends TestCase
     }
 
     /**
-     * Os dois sensores de estado físico não saem do descodificador: nenhum lê a peça que diz
-     * ler, e cada um responde sempre o mesmo.
-     *
-     * O `0x8107` deu `0` com o prato trancado, com a fechadura de chave trancada e com o
-     * prato fora do aparelho; o `0x8106` deu `1` com o copo fora. Um cartão que só sabe dizer
-     * um valor ensina a não confiar nos outros.
+     * Os dois sensores de estado físico não saem do descodificador: nenhum lê a peça que diz ler,
+     * e cada um responde sempre o mesmo.
      */
     public function testThePhysicalStateTagsDoNotBecomeTelemetry(): void
     {
@@ -133,8 +119,8 @@ final class PillDispenserStatusSeparationTest extends TestCase
     }
 
     /**
-     * O `0x8105` diz ligado ou desligado e a janela vem só na resposta ao `0x05`. Na mesma
-     * chave, e como o `saveReported` substitui o payload inteiro, o meio apagava o todo.
+     * O `0x8105` diz ligado ou desligado e a janela vem só na resposta ao `0x05`. Na mesma chave,
+     * e como o `saveReported` substitui o payload inteiro, o meio apagaria o todo.
      */
     public function testTheStatusPacketDoesNotReportTheQuietHoursItOnlyHalfKnows(): void
     {

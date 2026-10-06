@@ -9,12 +9,8 @@ use PHPUnit\Framework\TestCase;
 use React\EventLoop\Loop;
 
 /**
- * O sinal de vida que o systemd espera.
- *
- * O `Restart=always` reage ao processo terminar, e o modo de falha que interessa não termina
- * nada: o processo fica vivo com um loop que não progride, e o systemd vê tudo bem. O ping
- * fecha essa lacuna precisamente porque sai de dentro do loop -- só é enviado se o loop estiver
- * a girar, e por isso é prova de vivacidade e não de existência.
+ * O sinal de vida sai de dentro do loop, e por isso prova que ele gira e não só que o
+ * processo existe.
  */
 final class SystemdWatchdogTest extends TestCase
 {
@@ -35,10 +31,7 @@ final class SystemdWatchdogTest extends TestCase
         parent::tearDown();
     }
 
-    /**
-     * Fora do systemd não há socket, e o watchdog tem de ser inerte -- senão quebrava a suite
-     * e o arranque em qualquer máquina de desenvolvimento.
-     */
+    /** Fora do systemd não há socket, e o watchdog tem de ser inerte. */
     public function testItIsInertWhenThereIsNoSystemdSocket(): void
     {
         self::assertNull(SystemdWatchdog::fromEnvironment(['WATCHDOG_USEC' => '30000000']));
@@ -97,8 +90,8 @@ final class SystemdWatchdogTest extends TestCase
     }
 
     /**
-     * O ponto todo: um loop que não gira não manda ping. É isto que faz o systemd reiniciar um
-     * processo pendurado, em vez de o deixar vivo e calado para sempre.
+     * Um loop que não gira não manda ping, e é isso que faz o systemd reiniciar um processo
+     * pendurado.
      */
     public function testAStalledLoopSendsNothing(): void
     {

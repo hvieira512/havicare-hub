@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Hub\Domain\Capability;
 
 /**
- * O contrato de uma capacidade genérica.
- *
- * Cada capacidade (`alarm_clock`, `call_whitelist`, `fall_detection`, ...) implementa esta
- * interface para o `DeviceService` e o `DeviceConfigurationCatalog` delegarem num objecto em
- * vez de espalharem a lógica por braços de `match`.
+ * O contrato de uma capacidade genérica (`alarm_clock`, `call_whitelist`, ...), em que o
+ * `DeviceService` e o `DeviceConfigurationCatalog` delegam.
  */
 interface CapabilityContract
 {
@@ -41,14 +38,8 @@ interface CapabilityContract
     public function toNative(string $protocol, mixed $value): array;
 
     /**
-     * Converte um payload pretendido guardado em `device_configurations` de volta à forma
-     * genérica pública, para a resposta da API.
-     *
-     * Leva o protocolo pela mesma razão que o `toNative`: a mesma chave nativa quer dizer
-     * coisas diferentes em fornecedores diferentes, e sem ele descodificar é adivinhar.
-     *
-     * A chave é `array-key`: o apresentador chama isto duas vezes na mesma leitura, e à
-     * segunda o que chega já é a lista pública, sem o invólucro nativo à volta.
+     * Converte o payload pretendido guardado na forma genérica pública. Leva o protocolo porque a
+     * mesma chave nativa difere entre fornecedores; `array-key` porque à segunda leitura já é a lista.
      *
      * @param array<array-key, mixed> $desired
      */
@@ -60,7 +51,7 @@ interface CapabilityContract
     /**
      * Constrói o `_meta` da resposta da API.
      *
-     * @param array<string, mixed> $accumulatedMeta  Meta accumulated from config rows
+     * @param array<string, mixed> $accumulatedMeta  o meta acumulado das linhas de configuração
      * @return array<string, mixed>
      */
     public function meta(string $protocol, array $accumulatedMeta = []): array;

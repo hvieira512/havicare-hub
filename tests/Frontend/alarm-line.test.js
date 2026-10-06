@@ -94,7 +94,7 @@ test("a linha fechada mostra o que se acabou de escrever, e não o que lá estav
     assert.equal(textOf(row, "trailing"), "21:15");
 });
 
-/** Sem isto a linha fechada só acertava até à primeira tecla, e o módulo é quem a liga. */
+/** A escuta que refaz a linha fechada é do módulo, e não de quem desenha o campo. */
 test("escrever num campo aberto refaz a linha fechada, sem ninguém chamar nada", () => {
     const section = configSection(renderConfigInputs, ALARM, { items: [{ time: "08:40", label: "Antigo" }] }, WONLEX_META);
     document.body.appendChild(section);

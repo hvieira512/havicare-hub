@@ -7,12 +7,8 @@ namespace Hub\Infrastructure\Persistence;
 use PDO;
 
 /**
- * O inventário capturado do hub de produção: dispositivos, modelos, fornecedores, licenças e
- * ligações aos gateways.
- *
- * Fora do plano de migrações de propósito: o `DatabaseMigrator` corre também na base-modelo
- * que os testes clonam. O esquema é migração; os dados de arranque são um passo à parte. As
- * imagens viajam em `database/seed-model-images` porque o `var/` está no gitignore.
+ * O inventário capturado da produção, fora das migrações porque os testes clonam a base
+ * migrada. As imagens viajam em `database/seed-model-images`, porque o `var/` é ignorado.
  */
 final class InventorySeeder
 {
@@ -29,12 +25,7 @@ final class InventorySeeder
         $this->imageTarget = $imageTarget ?? self::IMAGE_TARGET;
     }
 
-    /**
-     * Devolve false quando já havia inventário e não fez nada.
-     *
-     * O seed em si é idempotente -- resolve os ids por chave natural --, mas verificar antes
-     * evita reescrever o que o painel possa ter mudado desde então.
-     */
+    /** Devolve false quando já havia inventário, para não reescrever o que o painel mudou. */
     public function seed(PDO $pdo): bool
     {
         // Fora da guarda do inventário: as imagens são um passo idempotente, e prendê-las à
@@ -78,7 +69,7 @@ final class InventorySeeder
         $copied = 0;
         foreach (glob($this->imageSource . '/*.jpg') ?: [] as $image) {
             $target = $this->imageTarget . '/' . basename($image);
-            // Nunca substituir uma imagem que o painel ja tenha trocado.
+            // Nunca substituir uma imagem que o painel já tenha trocado.
             if (!file_exists($target) && copy($image, $target)) {
                 $copied++;
             }

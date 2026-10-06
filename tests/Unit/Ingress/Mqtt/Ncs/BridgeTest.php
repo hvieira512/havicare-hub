@@ -44,12 +44,8 @@ final class BridgeTest extends TestCase
     }
 
     /**
-     * A notificação de um W812 desconhecido leva a licença do tópico.
-     *
-     * O âmbito de `/voerka/{âmbito}/devices/…` é configurável no gateway, e pô-lo a valer a
-     * licença dá à dashboard o único campo do assistente de registo que não se deduz do
-     * protocolo. Continua a ser só uma pista: a atribuição sai da whitelist, porque o tópico
-     * é escrito por quem publica no broker.
+     * O âmbito de `/voerka/{âmbito}/devices/…` dá a licença, o único campo do assistente que não se
+     * deduz do protocolo; é só uma pista, porque a atribuição sai da whitelist.
      */
     public function testUnregisteredNcsNotificationCarriesTheTopicLicense(): void
     {
@@ -77,10 +73,6 @@ final class BridgeTest extends TestCase
         );
     }
 
-    /**
-     * O caminho feliz do bridge só estava coberto pelo cenário que precisa da pilha Docker
-     * inteira; os testes unitários eram só de rejeição. Isto prende um NCS registado a publicar.
-     */
     public function testRegisteredNcsPublishesTheHelpCallEvent(): void
     {
         $mqtt = new RecordingHubMqttBridge();

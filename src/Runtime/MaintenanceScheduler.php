@@ -18,7 +18,7 @@ final class MaintenanceScheduler
     private const COMMAND_MAX_ATTEMPTS = 3;
 
     /**
-     * @param array<string, mixed> $dashboardConfig the `dashboard` section of the hub config
+     * @param array<string, mixed> $dashboardConfig a secção `dashboard` da configuração do hub
      */
     public static function schedule(LoopInterface $loop, HubServices $services, array $dashboardConfig): void
     {

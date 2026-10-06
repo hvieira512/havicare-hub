@@ -7,9 +7,8 @@ const { radarCheckMessage } =
     await import("../../src/Dashboard/dashboard/settings/radar-credentials.js");
 
 /**
- * Autenticar não prova que a conta é desta licença: a de outra autentica à mesma e só depois
- * dá estes radares por offline. O que se diz a quem carrega em «Testar ligação» é quantos
- * destes radares a conta conhece.
+ * Autenticar não prova que a conta é desta licença: o que se diz a quem testa a ligação é
+ * quantos destes radares a conta conhece.
  */
 
 test("todos respondem, e diz-se que ligou", () => {

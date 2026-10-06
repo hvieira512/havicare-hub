@@ -173,14 +173,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame(1, (int)$stored->fetchColumn());
     }
 
-    /**
-     * Renomear uma capacidade leva as ligações por modelo atrás.
-     *
-     * A `model_capabilities` referenciava o `capabilities.id`, e por isso um `UPDATE` à chave
-     * não lhe tocava -- quem renomeasse tinha de preservar o id à mão, ou as ligações
-     * desapareciam. Agora a chave estrangeira é o par natural, com `ON UPDATE CASCADE`, e é a
-     * base que as leva.
-     */
+    /** A chave estrangeira da `model_capabilities` é o par natural, com `ON UPDATE CASCADE`. */
     public function testRenamingACapabilityCarriesItsModelLinks(): void
     {
         $database = $this->createDashboardDatabase();

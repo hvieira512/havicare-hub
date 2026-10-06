@@ -15,10 +15,7 @@ final class MessageNormalizer
     private const SOURCE_POSITION = 'position';
     private const SOURCE_HEARTBREATH = 'heartbreath';
 
-    /**
-     * As detecções que contam como alarme e não como acontecimento. As restantes -- entradas
-     * e saídas de divisão ou de área -- descrevem movimento e não perigo.
-     */
+    /** As detecções que contam como alarme; entradas e saídas de divisão ou área são acontecimentos. */
     private const ALARM_DETECTION_TYPES = [
         'fall_confirmed',
         'heart_rate_high_critical',
@@ -64,10 +61,7 @@ final class MessageNormalizer
         ]],
     ];
 
-    /**
-     * A capacidade a que cada detecção pertence. Três e não quinze: cada evento leva o tipo
-     * específico dentro, e o separador das Capacidades não ganha quinze linhas.
-     */
+    /** A capacidade de cada detecção: três, e cada evento leva dentro o tipo específico. */
     private const DETECTION_CAPABILITY = [
         'fall_confirmed' => 'fall',
         'sitting_confirmed' => 'fall',
@@ -87,9 +81,7 @@ final class MessageNormalizer
     ];
 
     /**
-     * Uma mensagem do fabricante dá uma ou mais telemetrias, e zero ou mais alarmes: o
-     * `heartbreath` traz frequência cardíaca, respiratória e estado de sono, e uma apneia com
-     * uma taquicardia no mesmo minuto são dois alarmes.
+     * Uma mensagem do fabricante dá uma ou mais telemetrias, e zero ou mais alarmes.
      *
      * @param array{type: string, device_code: string, ...} $decoded
      * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string} $device
@@ -115,11 +107,8 @@ final class MessageNormalizer
     {
         $people = $this->occupiedPeople($decoded['people']);
 
-        // A postura e o último evento são de cada pessoa e ficam dentro dela, senão era
-        // preciso escolher uma entre as presentes.
-        //
-        // Não é o `location` canónico: as coordenadas do radar são em decímetros relativos a
-        // si próprio, e só valem dentro da divisão onde está montado.
+        // A postura e o último evento ficam dentro de cada pessoa. Não é o `location` canónico:
+        // as coordenadas são decímetros relativos ao radar.
         $telemetry = [
             'presence' => $this->telemetry($topic, $device, 'presence', 'position', [
                 'count' => count($people),
@@ -199,9 +188,8 @@ final class MessageNormalizer
         $breathing = (int)($decoded['breathing'] ?? 0);
         $heartRate = (int)($decoded['heart_rate'] ?? 0);
 
-        // As formas são as do `FeatureNormalizer`, para o radar e o relógio partilharem os
-        // cartões. Um zero não é leitura: é o radar a dizer que não mediu ninguém, e "0 bpm"
-        // lê-se como um coração parado.
+        // As formas são as do `FeatureNormalizer`. Um zero é o radar a não medir ninguém, e não
+        // uma leitura.
         $telemetry = [];
         if ($heartRate > 0) {
             $telemetry['heart_rate'] = $this->telemetry($topic, $device, 'heart_rate', 'heartbreath', [
@@ -312,9 +300,7 @@ final class MessageNormalizer
                     [
                         'version' => $decoded['version'],
                         'people' => $decoded['people'],
-                        // A unidade da distância não está confirmada: o documento do
-                        // fabricante não está no repositório, e em produção o valor foi
-                        // sempre zero. Fica sem sufixo até alguém a poder confirmar.
+                        // Sem sufixo: a unidade da distância não está confirmada.
                         'walkingDistance' => $decoded['walking_distance'],
                         'walkingTimeS' => $decoded['walking_time'],
                         'meditationTimeS' => $decoded['meditation_time'],
@@ -336,8 +322,7 @@ final class MessageNormalizer
      */
     private function normalizeHbStatics(array $decoded, QinglanstTopic $topic, array $device): array
     {
-        // Sem `PerMinute` no nome de cada campo: a capacidade já se chama
-        // `vitals_minute_stats`, e nenhuma outra repete o próprio nome dentro dos campos.
+        // Sem `PerMinute` nos campos: a capacidade já se chama `vitals_minute_stats`.
         $telemetry = $this->telemetry($topic, $device, 'vitals_minute_stats', 'hbstatics', [
             'realTimeBreathing' => $decoded['real_time_breathing'],
             'realTimeHeartRate' => $decoded['real_time_heart_rate'],

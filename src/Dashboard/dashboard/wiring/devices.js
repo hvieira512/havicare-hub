@@ -1,9 +1,6 @@
 /**
- * Os ouvintes da coluna dos dispositivos: a lista, os filtros, o modal, o painel de
- * configuração e o detalhe.
- *
- * É raiz de composição e não uma funcionalidade, e por isso pode importar de onde precisar.
- * Vivem aqui porque quase todos atravessam duas ou três funcionalidades.
+ * Os ouvintes da coluna dos dispositivos. É raiz de composição, e por isso pode importar de
+ * onde precisar: quase todos atravessam duas ou três funcionalidades.
  */
 import { state } from "../state.js";
 import { syncPhoneControl } from "../phone.js";
@@ -83,12 +80,7 @@ export function bindDeviceEvents(context) {
     bindRadarMap();
 }
 
-/**
- * A planta da divisão de um radar.
- *
- * O `shown` é preciso porque o Konva mede o contentor ao montar a tela, e antes de o modal
- * abrir ele tem largura zero -- a planta nascia num canto.
- */
+/** A planta de um radar, montada no `shown` porque o Konva mede o contentor ao montar a tela. */
 function bindRadarMap() {
     els.radarMapSyncBtn?.addEventListener("click", () => void syncRadarMap());
     const root = document.getElementById("radarMapModal");
@@ -129,10 +121,8 @@ function bindEntryPoints() {
 }
 
 /**
- * A régua do telemóvel. As leituras e os pedidos são os separadores que o cartão da atividade
- * já tem, e esta manda na régua de lá para as duas nunca divergirem; a telemetria não é
- * separador nenhum -- são os cartões da coluna do aparelho, e quem os mostra é o atributo na
- * raiz da aplicação.
+ * A régua do telemóvel manda na régua do cartão da atividade, para as duas não divergirem; a
+ * telemetria são os cartões da coluna do aparelho, mostrados pelo atributo na raiz.
  */
 function bindDeviceTabs() {
     for (const button of els.deviceTabs.querySelectorAll(".nav-link")) {
@@ -191,19 +181,14 @@ function bindDeviceForm() {
 }
 
 /**
- * A acção do botão que dá a saída depois de a carga do painel falhar.
- *
- * Recarrega a página, e não pede o módulo outra vez: o browser guarda no mapa de módulos a
- * falha por URL, e um segundo `import()` resolve para a entrada nula **sem voltar à rede**.
+ * A saída depois de a carga do painel falhar: recarrega a página, porque um segundo `import()`
+ * resolve para a falha guardada sem voltar à rede.
  */
 const CONFIG_RETRY_ACTION = "reloadForConfigPanel";
 
 /**
- * Abrir o separador é o que manda vir o painel de configurações.
- *
- * Entre o clique e o módulo chegar há rede pelo meio, e a raiz não pode ficar vazia: escreve
- * a mesma frase que o painel escreve enquanto vai buscar o catálogo, para as duas esperas se
- * lerem como uma só.
+ * Abrir o separador manda vir o painel de configurações; enquanto não chega, a raiz mostra a
+ * mesma frase de espera que o painel, para as duas esperas se lerem como uma.
  */
 async function openConfigPanel() {
     els.deviceConfigRoot.innerHTML = emptyPanel("A carregar configurações...");
@@ -212,7 +197,6 @@ async function openConfigPanel() {
     try {
         ({ panel } = await loadConfigPanel());
     } catch {
-        // Sem isto a raiz ficava com a frase da espera para sempre, e sem caminho de volta.
         els.deviceConfigRoot.innerHTML = html`<div class="text-secondary py-3">
             Não foi possível carregar as configurações.
             <button type="button" class="btn btn-sm btn-outline-secondary ms-2" data-action="${CONFIG_RETRY_ACTION}">Recarregar a página</button>
@@ -224,7 +208,7 @@ async function openConfigPanel() {
     panel.renderDeviceConfigurationModal();
 }
 
-/** Fechar com configuração escrita e por enviar deitava-a fora em silêncio. */
+/** Fechar com configuração escrita e por enviar pede confirmação antes de a deitar fora. */
 function bindUnsentConfigGuard() {
     let confirmedClose = false;
 
@@ -255,8 +239,7 @@ function bindUnsentConfigGuard() {
 function bindListAndFilters() {
     els.deviceListLimit.addEventListener("change", handleDeviceListLimitChange);
     els.deviceListSearch.addEventListener("input", handleDeviceListSearchInput);
-    // Um ouvinte por coluna e não um por controlo: as opções são redesenhadas a cada
-    // resposta, e ligar o ouvinte a cada botão obrigava a religá-los todos de cada vez.
+    // Um ouvinte por coluna e não por controlo: as opções são redesenhadas a cada resposta.
     for (const root of [
         els.deviceTypeFilter,
         els.deviceSupplierFilter,
@@ -277,9 +260,8 @@ function bindListAndFilters() {
 }
 
 function bindDetail() {
-    // As duas listas abrem a linha carregada, ao rato e ao teclado. O ouvinte fica na lista
-    // e não em cada linha: elas voltam a desenhar-se a cada mensagem do stream, e prender
-    // ouvintes a linhas que se deitam fora a cada segundo era prendê-los ao lixo.
+    // As duas listas abrem a linha carregada, ao rato e ao teclado, com o ouvinte na lista porque
+    // as linhas se redesenham a cada mensagem do stream.
     for (const list of [els.telemetryList, els.downlinkRequests]) {
         list?.addEventListener("click", toggleActivityRow);
         list?.addEventListener("keydown", toggleActivityRow);

@@ -4,17 +4,14 @@
 declare(strict_types=1);
 
 /**
- * Observa os dispositivos BLE que um gateway MOKO está a ver e reporta os que se conseguem
- * identificar pelo payload de anúncio.
+ * Reporta os dispositivos BLE que um gateway MOKO vê e que o payload de anúncio identifica;
+ * o MAC sozinho não serve, porque a maioria dos telefones roda endereços aleatórios.
  *
- * A identificação é sempre pelo payload: a maioria dos telefones usa endereços aleatórios que
- * rodam a cada poucos minutos, e por isso o MAC sozinho não quer dizer nada.
- *
- * Usage:
- *   php simulator/ble-scan-probe.php                     # run until Ctrl-C
- *   php simulator/ble-scan-probe.php --seconds=120       # stop after 2 minutes
- *   php simulator/ble-scan-probe.php --all               # include unidentified devices
- *   php simulator/ble-scan-probe.php --mac=eec5000202f9  # follow one device
+ * Uso:
+ *   php simulator/ble-scan-probe.php                     # corre até Ctrl-C
+ *   php simulator/ble-scan-probe.php --seconds=120       # pára ao fim de 2 minutos
+ *   php simulator/ble-scan-probe.php --all               # inclui os não identificados
+ *   php simulator/ble-scan-probe.php --mac=eec5000202f9  # segue um dispositivo
  */
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -41,10 +38,8 @@ $config = CliBootstrap::config(__DIR__ . '/..');
 $topicFilter = trim((string)($options['topic'] ?? $config['moko']['topic_filter']));
 
 /**
- * As assinaturas que se conseguem identificar com certeza. Os UUID de service-data estão
- * escritos como aparecem no fio (little endian), que é como são comparados.
- *
- * O BXP-B / MK Button vem do "MOKO Beacon - ADV Format Summary Sheet", separador BXP-B Series.
+ * As assinaturas identificáveis com certeza, com os UUID de service-data como vêm no fio
+ * (little endian). O BXP-B vem do "MOKO Beacon - ADV Format Summary Sheet".
  */
 const SERVICE_SIGNATURES = [
     'e0fe' => 'MOKO BXP-B (MK Button) — alarm frame',

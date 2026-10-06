@@ -38,10 +38,7 @@ const mount = () => {
 const visible = (el) => !el.hidden && !el.classList.contains("d-none");
 const warnings = () => fired.filter((options) => options.icon === "warning");
 
-/**
- * Esperar pela resposta antes de esconder a dashboard deixava os dados de doentes no ecrã
- * enquanto o pedido não caísse -- e o `fetch` não tem prazo.
- */
+/** Esperar pela resposta deixaria os dados de doentes no ecrã, e o `fetch` não tem prazo. */
 test("sai-se do ecrã antes de esperar pelo Hub, e não depois", async () => {
     const { login, logoutButton } = mount();
     await initializeDashboardSession(async () => {});

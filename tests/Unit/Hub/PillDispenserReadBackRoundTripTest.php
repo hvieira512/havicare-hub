@@ -11,11 +11,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O que se escreve no aparelho volta a ler-se com o mesmo valor.
- *
- * Um escritor que empacote em `V` e um leitor que desempacote em `v` passam os dois nos seus
- * testes e discordam no meio. Aqui a trama escrita é a que se lê: monta-se o `0x06` com o
- * construtor real e devolve-se como se fosse a resposta `0x86` do aparelho.
+ * O que se escreve no aparelho volta a ler-se igual: o `0x06` montado pelo construtor real
+ * lê-se como se fosse a resposta `0x86`.
  */
 final class PillDispenserReadBackRoundTripTest extends TestCase
 {

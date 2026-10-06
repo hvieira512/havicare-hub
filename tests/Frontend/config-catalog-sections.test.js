@@ -8,10 +8,8 @@ import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/dev
 import { parseFragment } from "./support/dom.js";
 
 /**
- * O modelo do catálogo: o que sobrevive, em que secção cai, com que rótulo e por que ordem.
- *
- * Entra-se pela porta pública -- o `renderDeviceConfigurationRoot` --, e não pelas funções do
- * modelo: é assim que o teste continua a valer depois de elas mudarem de ficheiro.
+ * O que sobrevive, em que secção cai, com que rótulo e por que ordem; entra-se pelo
+ * `renderDeviceConfigurationRoot` para o teste valer quando as funções mudarem de ficheiro.
  */
 
 const render = (context) => parseFragment(renderDeviceConfigurationRoot({

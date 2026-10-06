@@ -41,13 +41,7 @@ final class ApiUserRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
-    /**
-     * A licença entra só pelo `licenseRefId`.
-     *
-     * O `licenseId` está na linha de `licenses` que a referência aponta, e por isso não se
-     * guarda a par. Fica a referência, que é a que desambigua duas empresas com o mesmo
-     * número de licença.
-     */
+    /** A licença entra só pelo `licenseRefId`, que desambigua duas empresas com o mesmo número. */
     public function create(string $username, string $passwordHash, string $role, bool $enabled, ?int $licenseRefId = null): int
     {
         $stmt = $this->pdo->prepare('

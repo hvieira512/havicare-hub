@@ -21,10 +21,8 @@ interface DeviceHistoryStore
     public function historyLimit(): int;
 
     /**
-     * Os streams subscrevem aqui para saber quando o histórico de um dispositivo muda.
-     *
-     * Vive no contrato para quem consome o tirar do store que já tem: um notificador
-     * injectado à parte pode ser a instância errada em silêncio, e nada dispararia nunca.
+     * Os streams subscrevem aqui para saber quando o histórico de um dispositivo muda. Vive no
+     * contrato para não haver um notificador injectado à parte que seja a instância errada.
      */
     public function updates(): DeviceUpdateNotifier;
 }

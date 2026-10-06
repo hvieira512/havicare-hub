@@ -25,10 +25,7 @@ final class CorsMiddleware
 
         $response = $next($request);
 
-        // Uma regra só, sem excepções por caminho: antes o `/api/` e os erros JSON da
-        // dashboard levavam os cabeçalhos e os recursos estáticos não. Agora levam-nos
-        // também -- são públicos e servidos sem credenciais, e a política aberta não abre
-        // nada que um pedido directo já não abrisse.
+        // Uma regra só, também nos estáticos: são públicos e servidos sem credenciais.
         return $response instanceof ResponseInterface ? $this->cors->apply($response, $request) : $response;
     }
 }

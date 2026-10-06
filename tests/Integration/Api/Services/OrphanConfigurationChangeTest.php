@@ -12,9 +12,8 @@ use Hub\Domain\Capability\CapabilityRegistry;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * Tirar uma capacidade do catálogo deixa para trás as mudanças por confirmar dela: nada as
- * suplanta, porque a suplantação só acontece quando alguém volta a escrever a mesma chave.
- * O `rotate_to_cell` do M228 ficou assim três dias a manter o aparelho a vermelho.
+ * Tirar uma capacidade do catálogo deixa para trás as mudanças por confirmar dela: a
+ * suplantação só acontece quando alguém volta a escrever a mesma chave.
  */
 final class OrphanConfigurationChangeTest extends MysqlDashboardTestCase
 {

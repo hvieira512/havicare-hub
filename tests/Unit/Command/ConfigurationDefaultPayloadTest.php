@@ -10,17 +10,12 @@ use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Uma capacidade que o dispositivo nunca configurou é servida com um payload por omissão, e
- * a dashboard oferece-o como ponto de partida do formulário. Se o construtor de payloads do
- * protocolo o rejeitar, a capacidade não se consegue gravar num dispositivo novo.
+ * O payload por omissão é o ponto de partida do formulário de uma capacidade nunca
+ * configurada, e o construtor do protocolo tem de o aceitar.
  */
 final class ConfigurationDefaultPayloadTest extends TestCase
 {
-    /**
-     * Campos cujo valor por omissão é deliberadamente um vazio que o utilizador tem de
-     * preencher: um número, uma mensagem, um nome. Não se espera que sejam enviáveis como
-     * estão.
-     */
+    /** Campos que o utilizador tem de preencher: o vazio por omissão não se espera enviável. */
     private const INPUTS_AWAITING_USER_INPUT = [
         'call_whitelist',
         'makeCall',
@@ -33,9 +28,8 @@ final class ConfigurationDefaultPayloadTest extends TestCase
     ];
 
     /**
-     * O `uploadInterval` do four-p-touch tem 0 por omissão e o construtor dele exige um
-     * intervalo positivo, por isso gravar o formulário intocado dá erro. Falha alto em vez de
-     * enviar coisa errada, e por isso fica registado aqui em vez de corrigido às cegas.
+     * O `uploadInterval` do four-p-touch tem 0 por omissão e o construtor exige-o positivo:
+     * gravar o formulário intocado falha alto em vez de enviar coisa errada.
      */
     private const KNOWN_UNSENDABLE_DEFAULTS = [
         'four-p-touch.uploadInterval',

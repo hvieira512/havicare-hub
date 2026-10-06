@@ -7,13 +7,8 @@ import { fileURLToPath } from "node:url";
 import { reachableFrom } from "./support/module-graph.js";
 
 /**
- * Guarda contra um grafo de módulos ES partido: um nome que um módulo importa e nenhum
- * exporta derruba a dashboard numa página branca, e o `node --check` não o apanha porque cada
- * ficheiro é individualmente válido.
- *
- * Avaliá-los em node falha em globais como o `window` -- isso é esperado e ignorado. O que
- * não se ignora são as duas formas de um import partido: um nome que ninguém exporta
- * (`SyntaxError`) e um caminho que não existe (`ERR_MODULE_NOT_FOUND`).
+ * Um nome que nenhum módulo exporta (`SyntaxError`) ou um caminho que não existe
+ * (`ERR_MODULE_NOT_FOUND`) derruba a dashboard; as falhas por globais como o `window` ignoram-se.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ENTRY = path.join(here, "../../src/Dashboard/main.js");
@@ -23,13 +18,8 @@ const CONFIG_PANEL = path.join(MODULE_ROOT, "devices/config/panel.js");
 const CONFIG_HANDLERS = path.join(MODULE_ROOT, "devices/config/handlers.js");
 
 /**
- * As portas de entrada do grafo. Cada uma está aqui porque quem a traz, traz-na por
- * `import()`: avaliar quem chama não liga nada do que está por trás, e sem a nomear aqui um
- * import partido lá dentro passava sem ninguém dar por ele.
- *
- * O `app.js` pendura-se no `main.js` assim; o painel de configurações pendura-se no
- * `device-modal.js` pela mesma via, e os dois módulos abaixo são as suas duas portas -- entre
- * elas alcançam o cluster inteiro.
+ * As portas de entrada do grafo: cada uma é trazida por `import()`, que avaliar quem chama não
+ * segue, e entre elas alcançam o cluster inteiro.
  */
 const ENTRY_POINTS = [ENTRY, APP, CONFIG_PANEL, CONFIG_HANDLERS];
 

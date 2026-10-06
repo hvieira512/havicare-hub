@@ -6,13 +6,8 @@ import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inpu
 import { parseFragment } from "./support/dom.js";
 
 /**
- * Uma escolha curta com significado mostra-se toda de uma vez, e à largura do cartão.
- *
- * O volume do dispensador tem quatro posições e a escala está invertida -- `0` é o mais alto
- * e `3` é silêncio. Numa lista fechada vê-se uma opção de cada vez e a escala não se lê; num
- * grupo espremido a um canto também não. À largura do cartão, com um ícone por posição,
- * vêem-se as quatro pela ordem em que existem -- que é a forma que a sensibilidade de queda
- * e o perfil de som já usavam.
+ * O volume do dispensador tem quatro posições com a escala invertida (`0` é o mais alto, `3` é
+ * silêncio), e por isso mostram-se todas à largura do cartão, pela ordem em que existem.
  */
 
 const entry = {
@@ -77,7 +72,7 @@ test("os botões do mesmo cartão não se misturam com os de outro", () => {
     const second = render({ volume: 0 });
     const groupName = (root) => root.querySelector("input[type=radio]").getAttribute("name");
 
-    // Sem nomes distintos, dois grupos na mesma página comportavam-se como um só e escolher
-    // num desmarcava o outro.
+    // Com o mesmo nome, dois grupos na mesma página seriam um só, e escolher num desmarcaria
+    // o outro.
     assert.notEqual(groupName(first), groupName(second));
 });

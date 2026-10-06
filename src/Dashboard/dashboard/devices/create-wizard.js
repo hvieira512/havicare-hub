@@ -38,9 +38,8 @@ import {
 } from "./list.js";
 
 /**
- * O assistente de adicionar um dispositivo: cinco perguntas, uma por passo, e cada resposta
- * a colapsar numa migalha. O que varia por tipo vem da tabela `DEVICE_TYPES` e não de
- * ramificações aqui -- a identificação de um relógio tem IMEI e SIM, a de um medidor tem MAC.
+ * O assistente de adicionar um dispositivo, uma pergunta por passo. O que varia por tipo vem
+ * da tabela `DEVICE_TYPES` e não de ramificações aqui.
  */
 
 let els;
@@ -127,9 +126,8 @@ export function initCreateWizard(context) {
 }
 
 /**
- * Abre o assistente. `seed` são respostas de partida, e existe por causa das notificações:
- * o aviso de um dispositivo não autorizado leva ao assistente com o tipo, o modelo e a
- * identidade que ele reportou já preenchidos. São respostas normais, alteráveis na trilha.
+ * `seed` são respostas de partida, tiradas da notificação de um dispositivo não autorizado;
+ * alteram-se na trilha como as outras.
  */
 function openCreateWizard(licenseList = [], seed = {}) {
     licenseGroups = licenseList;
@@ -193,9 +191,8 @@ function renderArt() {
 }
 
 /**
- * A pergunta do passo em que se está, respondida ou não: voltar a um passo abre-o com a
- * escolha marcada. O `handleInput` responde sem redesenhar de propósito, para não tirar o
- * cursor de baixo dos dedos.
+ * A pergunta do passo actual, com a escolha marcada. O `handleInput` responde sem redesenhar,
+ * para não tirar o cursor de baixo dos dedos.
  */
 function renderAsk() {
     const question = questionOfStep(wizard.step());
@@ -332,9 +329,8 @@ function renderIdentity(answers) {
 }
 
 /**
- * Os gateways da mesma empresa e licença: a autorização é por par, não global. A ausência
- * escreve-se de duas maneiras, e sem as normalizar um gateway sem dono não aparecia a um
- * sensor sem dono.
+ * Os gateways da mesma empresa e licença: a autorização é por par, não global. A ausência de
+ * dono escreve-se de duas maneiras, e as chaves normalizam-nas.
  */
 function eligibleGatewayList(answers) {
     const owner = answers.owner || {};
@@ -355,7 +351,7 @@ function licenseIdKey(value) {
     return id === "" ? "0" : id;
 }
 
-/** Os dois botões nomeiam o passo para onde levam: "Seguinte" sozinho não dizia para onde. */
+/** Os dois botões nomeiam o passo para onde levam. */
 function renderFooter() {
     const step = wizard.step();
     const last = wizard.isLastStep();
@@ -368,8 +364,7 @@ function renderFooter() {
     els.wizardNextBtn.innerHTML = last
         ? "<i class=\"fa-solid fa-plus me-2\"></i>Criar dispositivo"
         : `Seguinte: ${STEPS[step]}<i class="fa-solid fa-arrow-right ms-2"></i>`;
-    // Com um POST no ar o botão fica desligado: escrever num campo redesenha o rodapé, e sem
-    // isto reacendia-o a meio da criação.
+    // Com um POST no ar o botão fica desligado, mesmo que escrever num campo redesenhe o rodapé.
     els.wizardNextBtn.disabled = creating ||
         (last ? !wizard.isComplete() : !wizard.canAdvance());
 }
@@ -461,11 +456,7 @@ async function create() {
 
 /* ---------- o que o assistente precisa do resto da aplicação ---------- */
 
-/**
- * Abre o assistente, com as licenças e os gateways carregados antes de mostrar. As
- * licenças vêm todas de uma vez e não empresa a empresa: a árvore mostra-as ao mesmo
- * tempo, e uma licença acabada de criar é a que se quer usar.
- */
+/** Abre o assistente com as licenças, todas de uma vez, e os gateways já carregados. */
 export async function openWizard(source = "") {
     await ensureDeviceTypeSuppliersModelsLoaded();
     const licenses = await ensureLicensesLoaded();
@@ -525,13 +516,8 @@ async function loadWizardGateways() {
 }
 
 /**
- * Cria o dispositivo e, se for retransmitido, autoriza os gateways escolhidos. Devolve a
- * mensagem de erro ou null: o erro desenha-se no lugar do assistente.
- *
- * São duas escritas em sequência, e a segunda pode falhar com a primeira já feita. A partir
- * daí o dispositivo existe e não há como o desfazer daqui: o assistente fecha-se na mesma e
- * o que faltou diz-se por aviso. Deixá-lo aberto oferecia um «Criar» que só podia dar 409, e
- * a mensagem seguinte contradizia a que estava no ecrã.
+ * Cria o dispositivo e autoriza os gateways escolhidos; devolve a mensagem de erro ou null. Se
+ * só a autorização falha, o dispositivo já existe: o assistente fecha e avisa o que faltou.
  */
 export async function createDeviceFromWizard(answers) {
     const fields = deviceTypeFields(answers.type);

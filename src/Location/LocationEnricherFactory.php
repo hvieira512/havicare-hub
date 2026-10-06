@@ -10,16 +10,15 @@ use Predis\ClientInterface;
 use React\Http\Browser;
 
 /**
- * Monta o pipeline de resolução de localização: um cliente da BeaconDB atrás de um disjuntor
- * e de um limitador de concorrência, à frente dele uma cache em camadas e, opcionalmente, o
- * mapa de rádio privado.
+ * Monta a resolução de localização: a BeaconDB atrás de disjuntor e limitador de concorrência,
+ * com uma cache em camadas à frente e, opcionalmente, o mapa de rádio privado.
  */
 final class LocationEnricherFactory
 {
     /**
-     * @param array<string, mixed> $config the `location_resolution` section of the hub config
+     * @param array<string, mixed> $config a secção `location_resolution` da configuração do hub
      *
-     * @return LocationTelemetryEnricherContract|null null when resolution is disabled
+     * @return LocationTelemetryEnricherContract|null null quando a resolução está desligada
      */
     public static function create(
         array $config,

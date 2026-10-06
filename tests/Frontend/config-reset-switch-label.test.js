@@ -7,9 +7,8 @@ import { handleDeviceConfigReset } from "../../src/Dashboard/dashboard/devices/c
 import { configSection } from "./support/dom.js";
 
 /**
- * O «Repor» é o `type="reset"` do formulário do bloco: o browser devolve os campos ao estado
- * inicial sem disparar `change`, e a etiqueta do interruptor ficava a dizer o contrário do
- * que ele mostra.
+ * O «Repor» é o `type="reset"` do formulário: o browser devolve os campos sem disparar `change`,
+ * e a etiqueta do interruptor tem de acompanhar na mesma.
  */
 const ENTRY = { input: "alarm_clock", key: "alarm_clock", fields: ["masterEnabled", "items"] };
 

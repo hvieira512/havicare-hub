@@ -9,11 +9,7 @@ use Hub\Api\Services\DeviceCapabilityPresenter;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Tests\Support\MysqlDashboardTestCase;
 
-/**
- * As regras que a projecção de capacidades segue, afirmadas contra a própria projecção e não
- * contra o texto-fonte do apresentador -- que se partia em refactors sem alteração nenhuma
- * na saída.
- */
+/** As regras da projecção de capacidades, afirmadas contra a projecção e não contra o código-fonte. */
 final class DeviceCapabilityPresenterTest extends MysqlDashboardTestCase
 {
     private ApiDataAccess $db;
@@ -64,11 +60,8 @@ final class DeviceCapabilityPresenterTest extends MysqlDashboardTestCase
     {
         $model = $this->model('Wonlex', 'HW20PRO');
         $rows = [[
-            // `alarmClock` e não `reminders`: o `reminders` é a chave nativa da Vivistar, e
-            // esta linha é de um relógio Wonlex. Passava à mesma porque a descodificação
-            // procurava o handler pela chave nativa e ignorava o protocolo -- o alarme de um
-            // Wonlex saía pelo descodificador de outro fornecedor, e aqui as duas formas
-            // coincidiam. Agora quem manda é o protocolo, e a linha tem de ser coerente.
+            // `alarmClock` e não `reminders`, que é a chave nativa da Vivistar: a descodificação
+            // escolhe o handler pelo protocolo, e esta linha é de um relógio Wonlex.
             'native_key' => 'alarmClock',
             'config_key' => 'alarm_clock',
             'desired_payload' => ['items' => [['time' => '07:30', 'enabled' => true, 'recurrence' => ['kind' => 'daily']]]],

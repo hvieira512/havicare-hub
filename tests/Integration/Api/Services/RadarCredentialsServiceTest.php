@@ -21,11 +21,8 @@ use function React\Promise\reject;
 use function React\Promise\resolve;
 
 /**
- * As credenciais da cloud do fabricante dos radares, que são de cada licença.
- *
- * Não há conta que veja a frota toda: com a conta de uma licença, os radares das outras
- * respondem `777` a dizer que o aparelho está offline mesmo quando está a publicar. É por isso
- * que isto pende da licença e não do ambiente do processo.
+ * As credenciais da cloud dos radares são de cada licença: com a conta de outra, os radares
+ * respondem `777`, offline, mesmo quando estão a publicar.
  */
 final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
 {
@@ -47,9 +44,8 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
     }
 
     /**
-     * A palavra-passe e o segredo da aplicação entram e não voltam a sair. Têm de ficar
-     * reversíveis -- são para fazer login --, e a linha de defesa é não os devolver a ninguém:
-     * quem pergunta só precisa de saber se já lá estão.
+     * A palavra-passe e o segredo ficam reversíveis, porque servem para fazer login, e a defesa
+     * é não os devolver: quem pergunta só precisa de saber se já lá estão.
      */
     public function testNeverGivesTheSecretsBack(): void
     {
@@ -76,9 +72,8 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
     }
 
     /**
-     * Corolário do anterior: como o ecrã nunca recebe os segredos, também não os pode
-     * reenviar. Gravar sem eles é «fica como está» e não «apaga» -- caso contrário, corrigir
-     * uma gralha no endereço deixava a licença sem conseguir autenticar.
+     * O ecrã nunca recebe os segredos e não os pode reenviar: gravar sem eles é «fica como
+     * está», e não «apaga».
      */
     public function testKeepsTheStoredSecretsWhenTheyAreNotResent(): void
     {
@@ -107,10 +102,8 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
     }
 
     /**
-     * Guardar um token novo não pode levar as credenciais atrás. A sincronização corre por
-     * licença e escreve aqui o `access_token` que o fabricante devolveu; se isso passasse pelo
-     * mesmo caminho do formulário, um token renovado a meio de uma edição reescrevia o que o
-     * utilizador estava a escrever.
+     * A sincronização por licença escreve aqui o `access_token` do fabricante por outro caminho:
+     * um token renovado a meio de uma edição não pode reescrever as credenciais.
      */
     public function testStoringAFreshTokenLeavesTheCredentialsAlone(): void
     {
@@ -175,9 +168,8 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
     }
 
     /**
-     * Uma conta de outra licença autentica à mesma, e só depois os radares desta respondem
-     * `777`. Experimentar antes de gravar é o que apanha a conta trocada, e por isso o que
-     * volta é a contagem de quantos responderam -- não um "ligou".
+     * Uma conta de outra licença autentica à mesma e só depois os radares desta respondem `777`:
+     * por isso volta a contagem dos que responderam, e não um «ligou».
      */
     public function testTheConnectionCheckCountsTheRadarsThatAnswer(): void
     {
@@ -207,10 +199,8 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O mesmo número de licença existe em empresas diferentes, e um aparelho aponta para a
-     * licença pelo par número + empresa. Experimentar contra os radares da outra empresa
-     * respondia à pergunta errada -- e responderia «nenhum destes é desta conta» a uma conta
-     * que está certa.
+     * O mesmo número de licença existe em empresas diferentes, e um aparelho aponta para o par
+     * número + empresa: os radares da outra empresa responderiam à pergunta errada.
      */
     public function testTheConnectionCheckOnlyTriesTheRadarsOfThisCompany(): void
     {

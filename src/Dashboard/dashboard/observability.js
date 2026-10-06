@@ -1,10 +1,6 @@
 /**
- * Observabilidade mínima do cliente. Erros por apanhar e promessas rejeitadas não deixavam
- * rasto nenhum -- um catch deliberado a engolir, um render a rebentar sobre um payload
- * estranho -- e o operador ficava sem nada para ver. Isto dá-lhes um rasto.
- *
- * Por agora vai para a consola, com prefixo, para quem abre as ferramentas de programador. O
- * `report` é injetável para um dia POST a um endpoint do hub sem mexer nos chamadores.
+ * Observabilidade mínima do cliente: dá rasto na consola aos erros por apanhar e às promessas
+ * rejeitadas. O `report` é injetável para um dia ir a um endpoint do hub.
  */
 export function installErrorReporting(report = reportToConsole) {
     window.addEventListener("error", (event) => {

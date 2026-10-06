@@ -10,14 +10,8 @@ use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityInputSanitizer;
 
 /**
- * A lista telefónica de um 4P Touch.
- *
- * Forma pública:
- * - GET /api/devices/{imei}: o valor é uma lista de contactos, com `_meta.limit` opcional
- * - PATCH /api/devices/{imei}/configurations: envia-se `{ contacts: [...] }`. Uma lista vazia
- *   é válida e limpa a lista guardada.
- *
- * O hub traduz esse contrato nos comandos de fio do 4P Touch.
+ * A lista telefónica de um 4P Touch: lista de contactos com `_meta.limit` opcional, escrita
+ * como `{ contacts: [...] }`, em que a lista vazia limpa a guardada.
  */
 final class PhonebookCapability implements CapabilityContract, CapabilityInputSanitizer
 {

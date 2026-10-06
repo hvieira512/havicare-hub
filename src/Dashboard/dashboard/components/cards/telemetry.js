@@ -137,9 +137,8 @@ const UPLINK_CARD_RENDERERS = {
     sleep_state: (data) => ({
         value: fieldValue("sleep_state", data?.state),
     }),
-    // Sem isto caía no genérico, que põe a etiqueta da capacidade no lugar do valor -- e em
-    // inglês, porque a etiqueta vem da chave. A forma varia com o fabricante: os relógios
-    // mandam texto livre, o dispensador manda dois bytes que saem em hexadecimal.
+    // Um cartão próprio para não cair no genérico: os relógios mandam texto livre, e o
+    // dispensador dois bytes que saem em hexadecimal.
     firmware_version: (data) => ({
         value: String(data?.version ?? "").trim() || "—",
     }),
@@ -191,16 +190,8 @@ const UPLINK_CARD_RENDERERS = {
     ambient_humidity: (data) => ({
         value: data.humidityPercent != null ? `${data.humidityPercent}%` : "-",
     }),
-    // Quantas doses faltam, que é a pergunta que se faz a um dispensador; o total é o
-    // denominador que lhe dá escala. O nível é o juízo do aparelho sobre esse mesmo número --
-    // é ele que sabe que 4 de 28 já é pouco -- e por isso vem como legenda e não como cartão
-    // à parte a dizer a mesma coisa sem número nenhum.
-    // O `remaining` é `carregados − posição`: quantas doses faltam sair a partir de onde o
-    // carrossel está, e não quantos compartimentos ainda têm comprimidos. Ao lado do total
-    // lia-se como a segunda coisa, que é outra e é falsa.
-    //
-    // A posição vai nos detalhes porque é o que se precisa para carregar o prato: sem ela,
-    // quem põe a medicação não sabe em que compartimento o aparelho vai pegar a seguir.
+    // Quantas doses faltam sair desde a posição do carrossel, com o total por denominador e o
+    // nível do aparelho como legenda; a posição vai nos detalhes, para quem carrega o prato.
     cells_remaining: (data) => {
         const cell = data.current != null && data.total != null
             ? `Compartimento ${data.current} de ${data.total}`
@@ -215,11 +206,8 @@ const UPLINK_CARD_RENDERERS = {
                 : data.remaining === 0
                     ? "Nenhuma por dispensar"
                     : `${data.remaining} por dispensar`,
-            // A data primeiro: é ela que diz quando alguém tem de lá ir recarregar. A posição
-            // e o compartimento ficam no `title`, que é onde se vai ver onde carregar.
-            //
-            // As peças são texto do aparelho: os detalhes escapam-nas uma a uma, e o título
-            // fica em texto porque vai para um atributo, que quem o monta escapa.
+            // A data primeiro, porque diz quando é preciso recarregar; a posição fica no `title`, em
+            // texto, porque quem monta o atributo escapa-o.
             details: joinMarkup(
                 [runout ? `Acaba ${runout}` : inCycle || cell, level]
                     .filter(Boolean)
@@ -239,9 +227,7 @@ const UPLINK_CARD_RENDERERS = {
         value: `${doseLabel(data?.alarm)}: ${fieldValue("state", data?.state)}`,
     }),
     device_config: (data) => deviceConfigContent(data),
-    // Um alerta e não uma leitura: só chega quando dispara, e por isso o valor diz o que
-    // aconteceu em vez de dizer em que estado se está. Sem legenda fixa, que se repetiria
-    // linha após linha sem nunca mudar.
+    // Um alerta e não uma leitura: o valor diz o que aconteceu, e não leva legenda fixa.
     storage_environment: () => ({
         value: "Temperatura ou humidade fora da gama",
     }),
@@ -381,8 +367,7 @@ const UPLINK_CARD_RENDERERS = {
             : sampleCount(data),
         details: compactDetails(data, ["qtcMilliseconds", "hrvMilliseconds", "frequencyHz"]),
     }),
-    // A VFC é um escalar em milissegundos e não uma série: anunciá-la como "Dados de VFC"
-    // escondia o número que já vinha na mensagem.
+    // A VFC é um escalar em milissegundos e não uma série: mostra-se o número.
     hrv: (data) => ({
         value:
             data?.milliseconds != null
@@ -447,10 +432,8 @@ export function uplinkCardContent(type, data, meta = {}) {
 }
 
 /**
- * O valor reportado de uma configuração.
- *
- * O `device_config` traz um mapa: a chave é a definição e o valor é o que o aparelho diz ter
- * lá dentro. Sem isto caía no cartão genérico e saía como «[object Object]».
+ * O valor reportado de uma configuração: o `device_config` traz um mapa da definição para o
+ * que o aparelho diz ter lá dentro.
  */
 function deviceConfigContent(data) {
     const settings = Object.entries(data?.settings ?? {});
@@ -508,9 +491,8 @@ function settingSummary(key, value) {
 }
 
 /**
- * Os intervalos R-R chegam em lote e sem instante próprio, e por isso não há um valor
- * único para mostrar. A média é o que permite conferir a leitura de relance: o seu inverso
- * é a frequência cardíaca, e um lote absurdo salta à vista sem abrir a mensagem.
+ * Os intervalos R-R chegam em lote e sem instante próprio: mostra-se a média, cujo inverso é
+ * a frequência cardíaca, e um lote absurdo salta à vista.
  */
 function rrIntervalValue(data) {
     const intervals = (data?.intervals || [])
@@ -550,9 +532,7 @@ const isCharging = (state) => state === 1 || state === "charging";
 
 /**
  * O canto do ícone diz de onde vem a energia: o relâmpago a carregar, a tomada ligado à ficha
- * sem carregar -- que é o que faz um aparelho cheio --, e nada fora da ficha.
- *
- * O relâmpago manda sobre a tomada: é a mesma corrente, e diz mais.
+ * sem carregar, e nada fora da ficha. O relâmpago manda sobre a tomada.
  */
 function batteryBadge(data) {
     if (isCharging(data.chargingState)) return "fa-bolt";
@@ -561,8 +541,7 @@ function batteryBadge(data) {
 }
 
 function batteryDetails(data) {
-    // «A carregar», «Carregada» e a corrente estão agora no ícone. Ficam os dois estados que
-    // ele não sabe desenhar -- no Font Awesome free não há bateria rasurada.
+    // A carga e a corrente estão no ícone; ficam os dois estados que ele não sabe desenhar.
     const state = BATTERY_STATE_LABEL[data.chargingState] ||
         (data.chargingState == null ? compactDetails(data, ["batteryType"]) : "");
 
@@ -586,11 +565,8 @@ function detectionValue(data) {
 }
 
 /**
- * O grau separa um aviso de um perigo. O `info` não se mostra: é o grau de um acontecimento
- * que não é alarme nenhum.
- *
- * Escapado: os `details` são injectados sem escapar, e o `detectionLevel` vem do radar sem
- * passar por ninguém.
+ * O grau separa um aviso de um perigo, e o `info` não se mostra. Escapado, porque os `details`
+ * entram sem escapar e o `detectionLevel` vem do radar tal e qual.
  */
 function detectionDetails(data) {
     const level = String(data?.detectionLevel || "");

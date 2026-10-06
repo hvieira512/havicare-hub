@@ -5,11 +5,7 @@ import {
 import { state } from "./state.js";
 import { capabilityLabelByKey, normalizeDeviceType } from "./domain.js";
 
-/**
- * O ícone de cada secção de capacidades. Vive aqui, no módulo partilhado das capacidades, e
- * não numa pasta de funcionalidade: tanto as definições como a configuração de dispositivo o
- * usam, e uma pasta não importa da outra.
- */
+/** O ícone de cada secção de capacidades: as definições e a configuração de dispositivo usam-no. */
 export const CAPABILITY_SECTION_ICONS = {
     telemetry: "fa-chart-line",
     health: "fa-heart-pulse",
@@ -19,10 +15,8 @@ export const CAPABILITY_SECTION_ICONS = {
 };
 
 /**
- * O catálogo de capacidades de cada tipo de dispositivo, e o nome por que se chama cada uma.
- *
- * O nome vem na `label` do `/api/capabilities`, que é a única fonte. O que fica escrito aqui
- * são os nomes que *não* são capacidades: eventos de protocolo como `device.connected`.
+ * O catálogo de capacidades de cada tipo e o nome de cada uma, que vem da `label` do
+ * `/api/capabilities`. Aqui só ficam os eventos de protocolo, como `device.connected`.
  */
 const PROTOCOL_EVENT_LABELS = {
     alarm: "Alarme",
@@ -48,7 +42,7 @@ export async function ensureCapabilityCatalog(deviceType) {
         return cached;
     }
 
-    // Um pedido por tipo: duas teclas seguidas no IMEI pediam o mesmo catálogo duas vezes.
+    // Um pedido por tipo, partilhado por quem pede ao mesmo tempo.
     if (!inFlightByType.has(normalized)) {
         inFlightByType.set(
             normalized,
@@ -94,10 +88,8 @@ function capabilityCatalogFor(deviceType) {
 }
 
 /**
- * O nome de uma capacidade ou de um evento, para o dispositivo que está escolhido.
- *
- * Por esta ordem: o catálogo do tipo deste dispositivo, os eventos de protocolo, e por fim
- * a chave humanizada -- que é o que sobra para uma chave que o hub ainda não conhece.
+ * O nome de uma capacidade ou de um evento, para o dispositivo escolhido: o catálogo do tipo,
+ * os eventos de protocolo, e por fim a chave humanizada.
  */
 export function capabilityLabel(key) {
     const deviceType = state.selectedDetail?.model?.deviceType;

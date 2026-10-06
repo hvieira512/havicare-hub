@@ -27,10 +27,8 @@ final class DeviceConfigurationProjection
             return;
         }
 
-        // Uma leitura que traz várias configurações de uma vez guarda-se uma a uma. Resolver
-        // a chave pelo tipo da resposta serve quando cada resposta confirma uma configuração
-        // -- é assim nos relógios --, mas o dispensador responde ao `0x05` com todas, e o
-        // bloco inteiro ficava debaixo de uma chave só.
+        // Uma leitura com várias configurações guarda-se uma a uma: o dispensador responde ao `0x05`
+        // com todas, e a chave pelo tipo da resposta só serve quando ela confirma uma.
         $settings = $payload['data']['settings'] ?? null;
         if (is_array($settings) && $settings !== []) {
             foreach ($settings as $settingKey => $value) {
@@ -49,10 +47,8 @@ final class DeviceConfigurationProjection
             return;
         }
 
-        // Um tipo de resposta que identifica **uma** configuração nomeia-a. Um que várias
-        // declarem não nomeia nenhuma: ficar pela primeira do catálogo era escolher à sorte, e
-        // o valor de uma escrita ia parar à linha de outra configuração qualquer, que passava
-        // a mostrar um reportado que nunca foi dela. Melhor não guardar do que guardar errado.
+        // Um tipo de resposta que identifica uma configuração nomeia-a; um que várias declarem não
+        // nomeia nenhuma, porque guardar na errada é pior do que não guardar.
         $candidates = [];
         foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
             if (in_array($nativeType, $entry['expectedReplyTypes'] ?? [], true)) {

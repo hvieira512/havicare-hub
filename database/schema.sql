@@ -3,20 +3,11 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
     applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Os tipos de dispositivo, num sítio só.
---
--- Eram um `ENUM` repetido em três tabelas, e acrescentar um tipo eram três `ALTER TABLE` que
--- tinham de concordar -- a discordância não dava erro, dava um dispositivo registado e sem
--- capacidade nenhuma. O conteúdo vem do `config/device-types.json`, que o `DeviceTypeCatalog`
--- serve e que o frontend também lê; esta tabela existe para as chaves estrangeiras terem
--- destino, e o semeador mantém-na igual ao ficheiro.
+-- Os tipos de dispositivo, num sítio só, para as chaves estrangeiras terem destino. O conteúdo
+-- vem do `config/device-types.json`, e o semeador mantém a tabela igual ao ficheiro.
 CREATE TABLE IF NOT EXISTS device_types (
-    -- `ascii_bin` de propósito: os tipos são identificadores ASCII em minúsculas, e uma
-    -- colação binária compara byte a byte em vez de pesar caracteres pela UCA. Mede-se: num
-    -- meio milhão de linhas, um `IN` de três tipos custa 28,7 ms em vez de 42,9, e o
-    -- `key_len` do índice cai de 135 bytes para 39. O efeito secundário é distinguir
-    -- maiúsculas, o que é desejado -- um `Watch` mal escrito passa a ser recusado pela chave
-    -- estrangeira em vez de casar em silêncio.
+    -- `ascii_bin`: os tipos são identificadores ASCII em minúsculas, e a colação binária é mais
+    -- rápida, encurta o índice e faz a chave estrangeira recusar um `Watch` mal escrito.
     device_type VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -34,9 +25,7 @@ CREATE TABLE IF NOT EXISTS models (
     internal_model VARCHAR(96) NOT NULL,
     commercial_name VARCHAR(96) NOT NULL,
     device_type VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'watch',
-    -- Só o nome do ficheiro. A rota por onde ele se serve é constante e vive no código, no
-    -- `ModelImageStore::ROUTE`: repeti-la em cada linha obrigava a um `UPDATE` a toda a
-    -- tabela para a mudar, e deixava a coluna aceitar caminhos inconsistentes.
+    -- Só o nome do ficheiro: a rota por onde se serve vive no `ModelImageStore::ROUTE`.
     image_path VARCHAR(255) NOT NULL DEFAULT '',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -57,8 +46,7 @@ CREATE TABLE IF NOT EXISTS capabilities (
     section ENUM('telemetry', 'health', 'contacts', 'alarms', 'settings_system') NOT NULL,
     capability_key VARCHAR(64) NOT NULL,
     label VARCHAR(96) NOT NULL,
-    -- Sem `is_telemetry`: era `section = 'telemetry'` escrito outra vez, e é assim que a
-    -- consulta o calcula. As outras duas bandeiras não são redutíveis à secção.
+    -- Sem `is_telemetry`: deriva da `section`. As outras duas bandeiras não são redutíveis a ela.
     is_configurable TINYINT(1) NOT NULL DEFAULT 0,
     is_requestable TINYINT(1) NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -69,14 +57,8 @@ CREATE TABLE IF NOT EXISTS capabilities (
     CONSTRAINT fk_capabilities_device_type FOREIGN KEY (device_type) REFERENCES device_types(device_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- A ligação modelo x capacidade, pelo par natural.
---
--- Referenciava o `capabilities.id`, que o código nunca fala: todas as leituras juntavam a
--- `capabilities` só para traduzir o id de volta à chave, e todas as escritas faziam a
--- tradução inversa antes. Renomear uma capacidade obrigava a preservar o `id` à mão, ou as
--- ligações desapareciam por cascata -- agora é o `ON UPDATE CASCADE` que as leva.
---
--- O `capabilities.id` fica onde estava: é o identificador que a API expõe.
+-- A ligação modelo x capacidade, pelo par natural: o código fala em chaves, e o `ON UPDATE
+-- CASCADE` leva as ligações quando uma capacidade muda de nome. A API expõe o `capabilities.id`.
 CREATE TABLE IF NOT EXISTS model_capabilities (
     model_id BIGINT UNSIGNED NOT NULL,
     device_type VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
@@ -106,8 +88,7 @@ CREATE TABLE IF NOT EXISTS whitelist (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY idx_whitelist_supplier_model (supplier, model),
-    -- A licença à cabeça: o âmbito do inquilino filtra por ela sozinha, e com o
-    -- `device_type` à frente o optimizador não conseguia procurar.
+    -- A licença à cabeça: o âmbito do inquilino filtra por ela sozinha.
     KEY idx_whitelist_license_device_type (license_id, device_type),
     KEY idx_whitelist_company (company),
     KEY idx_whitelist_device_id (device_id),
@@ -133,21 +114,18 @@ CREATE TABLE IF NOT EXISTS device_configurations (
     config_key VARCHAR(64) NOT NULL,
     native_key VARCHAR(64) NOT NULL,
     protocol VARCHAR(64) NOT NULL,
-    -- Sem fornecedor nem modelo: o dono do IMEI é a `whitelist`. A cópia que aqui existia
-    -- chegou a declarar dois modelos para o mesmo aparelho.
+    -- Sem fornecedor nem modelo: o dono do IMEI é a `whitelist`.
     command VARCHAR(64) NOT NULL DEFAULT '',
     desired_payload LONGTEXT NOT NULL,
     reported_payload LONGTEXT NOT NULL,
-    -- Sem `confirmed_revision`: quem responde "este dispositivo está atrasado?" é o
-    -- `sync_status` da alteração, e a coluna era escrita e nunca lida.
+    -- Sem `confirmed_revision`: o atraso de um dispositivo diz-se pelo `sync_status` da alteração.
     desired_revision BIGINT UNSIGNED NOT NULL DEFAULT 0,
     current_change_id VARCHAR(64) NOT NULL DEFAULT '',
     confirmation_mode VARCHAR(32) NOT NULL DEFAULT 'execution_ack',
     last_status VARCHAR(32) NOT NULL DEFAULT '',
     last_error VARCHAR(64) NOT NULL DEFAULT '',
     last_command_id VARCHAR(64) NOT NULL DEFAULT '',
-    -- Instantes em `DATETIME NULL`: a ausência é `NULL` e não a cadeia vazia, que era o
-    -- segundo vocabulário para "ainda não" neste esquema. A API continua a falar ISO.
+    -- Instantes em `DATETIME NULL`: a ausência é `NULL`, e a API fala ISO.
     desired_updated_at DATETIME NULL DEFAULT NULL,
     reported_at DATETIME NULL DEFAULT NULL,
     applied_at DATETIME NULL DEFAULT NULL,
@@ -217,11 +195,8 @@ CREATE TABLE IF NOT EXISTS licenses (
     CONSTRAINT fk_licenses_company FOREIGN KEY (company_id) REFERENCES companies(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- As credenciais da cloud do fabricante dos radares, uma linha por licença.
---
--- Não há conta que veja a frota toda: com a conta de uma licença, os radares das outras
--- respondem `777` -- "dispositivo offline" -- mesmo quando estão a publicar telemetria nesse
--- minuto. Nem o endereço base é comum, que é o que a coluna `base_url` diz.
+-- As credenciais da cloud do fabricante dos radares, uma linha por licença: a conta de uma
+-- licença não vê os radares das outras (`777`), e o endereço base também varia.
 --
 -- A referência é a da licença e não uma cópia do número dela, como no `api_users`.
 CREATE TABLE IF NOT EXISTS radar_api_credentials (
@@ -233,9 +208,8 @@ CREATE TABLE IF NOT EXISTS radar_api_credentials (
     password VARCHAR(255) NOT NULL,
     app_id VARCHAR(96) NOT NULL,
     app_secret VARCHAR(255) NOT NULL,
-    -- O token do fornecedor dura uma hora e a resposta traz o de renovação. Fica na base e
-    -- não em ficheiro: são duas instâncias do hub na mesma máquina, e um ficheiro de um
-    -- processo só não lhes serve às duas.
+    -- O token do fornecedor dura uma hora e a resposta traz o de renovação. Fica na base porque as
+    -- duas instâncias do hub o partilham.
     access_token VARCHAR(512) NOT NULL DEFAULT '',
     refresh_token VARCHAR(512) NOT NULL DEFAULT '',
     token_expires_at DATETIME NULL DEFAULT NULL,
@@ -245,14 +219,8 @@ CREATE TABLE IF NOT EXISTS radar_api_credentials (
         REFERENCES licenses(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- A divisão onde um radar está montado, em decímetros relativos a ele -- que está sempre na
--- origem. Uma linha por radar: o que o fabricante devolve é o layout de agora, e o hub não
--- reproduz o passado.
---
--- O `source_payload` guarda a resposta tal como veio. É o que permite reprocessar no dia em
--- que o fabricante mudar de forma sem avisar, e a resposta dele já é inconsistente hoje: o
--- `declare_area_name` chega em lista ou em objeto conforme as chaves das áreas sejam seguidas
--- ou tenham buracos.
+-- A divisão onde um radar está montado, em decímetros relativos a ele; uma linha por radar. O
+-- `source_payload` guarda a resposta tal como veio, para a reprocessar se a forma mudar.
 CREATE TABLE IF NOT EXISTS radar_layouts (
     imei VARCHAR(64) NOT NULL PRIMARY KEY,
     room_x_min_dm SMALLINT NOT NULL,
@@ -266,13 +234,9 @@ CREATE TABLE IF NOT EXISTS radar_layouts (
         REFERENCES whitelist(imei) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- As áreas declaradas no aparelho: camas, portas, zonas de alarme. São caixas e não polígonos
--- -- as 73 áreas dos radares em produção são todas caixas alinhadas aos eixos --, e 30 delas
--- ficam fora do retângulo da sala, pelo que os limites do desenho têm de cobrir as duas coisas.
---
--- A `area_key` é a chave do fabricante, e é também o `regionId` que a telemetria de presença
--- reporta: é por ela que se sabe em que cama está quem lá está. O `area_type` fica no número
--- do fabricante; a enumeração inglesa nasce na fronteira da API.
+-- As áreas declaradas no aparelho (camas, portas, zonas de alarme), caixas alinhadas aos eixos
+-- que podem sair do retângulo da sala. A `area_key` é o `regionId` da telemetria de presença,
+-- e o `area_type` fica no número do fabricante.
 CREATE TABLE IF NOT EXISTS radar_layout_areas (
     imei VARCHAR(64) NOT NULL,
     area_key TINYINT UNSIGNED NOT NULL,
@@ -292,9 +256,8 @@ CREATE TABLE IF NOT EXISTS api_users (
     username VARCHAR(96) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('hub_admin', 'license_client') NOT NULL,
-    -- A licença é só a referência. Um `hub_admin` não tem: NULL. O número da licença sai da
-    -- linha apontada, e não de uma cópia que se pudesse desencontrar dela -- é ele que decide
-    -- o âmbito do inquilino, onde NULL não é "desconhecido" mas "sem filtro".
+    -- A licença é só a referência, NULL num `hub_admin`. O número sai da linha apontada e decide o
+    -- âmbito do inquilino, onde NULL quer dizer "sem filtro".
     license_ref_id BIGINT UNSIGNED NULL,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -326,10 +289,8 @@ CREATE TABLE IF NOT EXISTS dashboard_notifications (
     KEY idx_dashboard_notifications_latest (last_seen_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Identidades a ignorar de propósito: um aparelho estranho que fala connosco e que não
--- queremos registar nem voltar a ver no sino. Consultada só no caminho de rejeição, para
--- calar a notificação na fonte. `identity` é o que o aparelho anuncia (IMEI, MAC ou uid), a
--- mesma largura da `whitelist.imei`.
+-- Identidades a ignorar de propósito, consultadas só no caminho de rejeição para calar a
+-- notificação na fonte. `identity` é o que o aparelho anuncia (IMEI, MAC ou uid).
 CREATE TABLE IF NOT EXISTS denylist (
     identity VARCHAR(64) NOT NULL PRIMARY KEY,
     protocol VARCHAR(64) NOT NULL DEFAULT '',

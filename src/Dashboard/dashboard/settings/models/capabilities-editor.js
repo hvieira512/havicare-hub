@@ -18,18 +18,13 @@ import { getSettingsModelsRuntime } from "./shell.js";
 import { backToModelList } from "./list.js";
 
 /**
- * O editor das capacidades de um modelo, na metade de baixo da ficha: que capacidades o
- * modelo suporta, e quais delas se podem pedir ao aparelho em vez de só esperar por elas.
- *
- * Desenhar, acertar nos interruptores e gravar ficam juntos porque leem e escrevem o mesmo
- * estado -- as capacidades ligadas e as solicitáveis -- que não é de mais ninguém. A vista de
- * leitura do catálogo de um tipo de dispositivo é outra coisa, e vive no `settings/capabilities.js`.
+ * O editor das capacidades de um modelo: que capacidades suporta, e quais se podem pedir ao
+ * aparelho. A vista de leitura do catálogo de um tipo vive no `settings/capabilities.js`.
  */
 
 /**
- * As secções que a ficha mostra e as chaves de cada uma. O template do fornecedor manda
- * quando existe; sem ele, a lista é a das capacidades que o modelo tem ligadas -- e então
- * desligar uma tira-lhe a linha, que é o que obriga a redesenhar em vez de acertar no sítio.
+ * As secções da ficha e as chaves de cada uma: as do template do fornecedor, ou sem ele as que
+ * o modelo tem ligadas -- e então desligar uma tira-lhe a linha.
  */
 function capabilitySections(enabled) {
     const templateKeys = state.settingsModal.capabilityModelTemplateKeys || [];
@@ -67,10 +62,7 @@ const capabilitySummaryText = (sections, enabled) =>
     `${sections.reduce((total, item) => total + activeCount(item.entries, enabled), 0)}` +
     `/${sections.reduce((total, item) => total + item.entries.length, 0)} ativos`;
 
-/**
- * O template traz mais do que se liga aqui: as acções -- desligar, encontrar -- só se pedem
- * ao aparelho, e sem as nomear os dois números do cabeçalho contradiziam-se.
- */
+/** O template traz também as acções, que só se pedem ao aparelho e não se ligam aqui. */
 function capabilitySubtitleText(supplier, templateCount, shownCount) {
     if (templateCount === 0) return supplier;
     const actions = templateCount - shownCount;
@@ -97,8 +89,8 @@ function telemetryProtocolNote(supplier, entries, protocolRequestable) {
 }
 
 /**
- * Acerta no sítio em vez de redesenhar a secção, que tirava o foco ao interruptor acabado de
- * premir. Sem template do fornecedor a linha desaparece ao desligar, e aí quem chama redesenha.
+ * Acerta no sítio em vez de redesenhar, para não tirar o foco ao interruptor. Sem template a
+ * linha desaparece ao desligar, e aí quem chama redesenha.
  */
 function syncCapabilitySwitches(feature) {
     const { els } = getSettingsModelsRuntime();
@@ -148,9 +140,8 @@ function capabilityRowsDependOnSelection() {
 }
 
 /**
- * Os dois interruptores de uma linha, num ouvinte só delegado na raiz das secções. Desligar o
- * suporte desliga o pedido com ele: pedir uma leitura que o modelo não oferece não é estado
- * que se possa guardar.
+ * Os dois interruptores de uma linha, num ouvinte delegado na raiz das secções. Desligar o
+ * suporte desliga o pedido com ele.
  */
 function handleCapabilityGroupsChange(event) {
     const checkbox = event.target.closest([

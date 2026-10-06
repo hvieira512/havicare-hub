@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Hub\Command\Configuration\Definition;
 
 /**
- * O que se configura num dispensador de comprimidos Zayata M228.
- *
- * O aparelho tem nove alarmes **fixos**: não se criam nem se apagam, preenchem-se e
- * esvaziam-se, e é por isso que o plano viaja inteiro de cada vez.
+ * O que se configura num dispensador Zayata M228. Os nove alarmes são fixos — preenchem-se e
+ * esvaziam-se —, e por isso o plano viaja inteiro de cada vez.
  */
 final class ZayataConfigurationDefinitions
 {
@@ -45,9 +43,8 @@ final class ZayataConfigurationDefinitions
                 false,
                 'Entre que datas o plano vale; desligado, tocam sempre. Não há dias da semana.',
             ),
-            // Dois interruptores independentes, e por isso duas definições: a dashboard
-            // agrupa interruptores seguidos em linhas compactas, com a pastilha e o switch
-            // à direita. Um bloco só com os dois lá dentro fugia a esse padrão.
+            // Dois interruptores independentes, duas definições: a dashboard agrupa interruptores
+            // seguidos em linhas compactas.
             self::toggle('early_dispense', 'earlyRetrieval', 'Toma antecipada', 20, 'Deixa o utente levantar a medicação antes da hora marcada.'),
             self::toggle('child_lock', 'childLock', 'Bloqueio de criança', 21, 'Tranca o prato para não ser aberto por quem não deve.'),
             self::toggle('missed_dispense', 'missedDispense', 'Dispensar depois de falhar', 22, 'Deixa levantar a dose depois de ela já contar como falhada.'),
@@ -60,8 +57,7 @@ final class ZayataConfigurationDefinitions
                 . ' produzir a chamada.',
                 'alerts',
             ),
-            // Os dois tempos decidem se uma dose por tomar chega a alguém como alerta ou fica
-            // em silêncio, e até agora só se mudavam por script.
+            // Os dois tempos decidem se uma dose por tomar chega a alguém como alerta ou fica em silêncio.
             self::number(
                 'retrieval_warning',
                 'retrievalWarning',
@@ -98,10 +94,8 @@ final class ZayataConfigurationDefinitions
                 'de 28',
                 'O último compartimento que encheu, e não quantos encheu: o aparelho não vê lá dentro.',
             ),
-            // O volume é uma enumeração e não uma escala: na especificação, 0 é o mais alto
-            // e 3 é silêncio.
-            // Num grupo de botões e não numa lista fechada: são quatro posições e a ordem é
-            // que diz que a escala está invertida. Uma de cada vez escondia isso.
+            // O volume é uma enumeração: na especificação, 0 é o mais alto e 3 é silêncio. Num grupo de
+            // botões, para a ordem mostrar que a escala está invertida.
             self::choice('alarm_volume', 'alarmVolume', 'Volume', 'alerts', 20, 'volume', [
                 [0, 'Alto'],
                 [1, 'Médio'],
@@ -182,15 +176,11 @@ final class ZayataConfigurationDefinitions
                 5,
                 'Confirma que o que está no ecrã é o que o aparelho ficou a ter. Não muda nada.',
             ),
-            // «Atualizar estado» não está aqui: pede-se do mosaico dele, no ecrã principal.
-            // Desligar a cifra também não entra: o `0x8005` aparece na tabela dos parâmetros
-            // escrevíveis, mas o fornecedor respondeu que o aparelho o recusa e que a chave sai
-            // da codificação dele — ou cifra tudo o que envia, ou não cifra nada, e a decisão
-            // não é deste lado. O botão só prometia uma saída que o firmware não tem.
+            // «Atualizar estado» pede-se do mosaico dele. Desligar a cifra (`0x8005`) não entra: o
+            // fornecedor confirma que o aparelho o recusa.
 
-            // As acções. O relógio calibra-se à mão: o aparelho deriva, e um alarme das 12:55
-            // chega a ficar registado às 11:45.
-            // Dispensar fica em Saúde e não em Sistema: é um acto sobre a medicação do utente.
+            // O relógio calibra-se à mão porque o aparelho deriva. Dispensar fica em Saúde e não em
+            // Sistema: é um acto sobre a medicação do utente.
             self::action(
                 'dispense_now',
                 'dispenseNow',
@@ -200,9 +190,8 @@ final class ZayataConfigurationDefinitions
                 'Empurra já a dose do próximo alarme de hoje e dá-o como tomado. Sem alarme por vir, não faz nada.',
                 'Isto gasta a dose do próximo alarme e dá-a como tomada. Confirma?',
             ),
-            // Rodar até um compartimento (`0xA124`) e pausar a medicação (`0xA125`) não estão
-            // aqui: a especificação descreve-as, mas este firmware recusa-as com «TAG
-            // inválida» e a descoberta de parâmetros não as anuncia.
+            // Rodar até um compartimento (`0xA124`) e pausar a medicação (`0xA125`) não entram: este
+            // firmware recusa-os com «TAG inválida».
             self::action(
                 'calibrate_clock',
                 'calibrateClock',
@@ -237,18 +226,14 @@ final class ZayataConfigurationDefinitions
                 'Não apaga configurações nem o plano. Uma toma agendada para o minuto do arranque não sai.',
                 'O dispensador fica sem comunicar enquanto arranca. Uma toma agendada para esse minuto não é dispensada.',
             ),
-            // A reposição de fábrica não entra. O aparelho só aponta para o hub porque o
-            // fornecedor lhe mandou essa configuração, e uma reposição devolve-o ao servidor
-            // dele: perde-se o controlo do aparelho e recuperá-lo depende de outra pessoa,
-            // noutro fuso horário. Não há nada que ela resolva que justifique o botão.
+            // A reposição de fábrica não entra: devolve o aparelho ao servidor do fornecedor, e perde-se
+            // o controlo dele.
         ];
     }
 
     /**
-     * A resposta que um comando espera é a do seu tipo de pacote, e não o nome dele.
-     *
-     * O M228 responde a um `0x06` com `write_config_ack` seja qual for a TAG que ele levou,
-     * e por isso o valor por omissão -- uma resposta com o nome do comando -- nunca casava.
+     * A resposta esperada é a do tipo de pacote e não a do comando: o M228 responde a um `0x06`
+     * com `write_config_ack` seja qual for a TAG.
      *
      * @return list<string>
      */

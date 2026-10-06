@@ -6,9 +6,6 @@ namespace Hub\Ingress\Mqtt\Veepoo;
 
 /**
  * A pulseira e o gateway que a serve, resolvidos uma vez por mensagem.
- *
- * Tudo o que sai desta ingestão precisa dos mesmos cinco campos, e são eles que dizem por
- * conta de quem se publica.
  */
 final readonly class BraceletContext
 {

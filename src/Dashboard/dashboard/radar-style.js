@@ -1,17 +1,9 @@
 /**
  * Como se pinta o que um radar vê: a postura de uma pessoa e o tipo de área da divisão.
- *
- * Fica fora do `domain.js` porque não é vocabulário da plataforma -- não sabe de tipos de
- * dispositivo, de licenças nem de modelos. É apresentação de um fornecedor só, partilhada
- * pelos três sítios que a desenham: o cartão de presença, a cena do radar e a planta.
+ * Apresentação de um fornecedor só, e por isso fora do `domain.js`.
  */
 
-/**
- * Os tons em hexadecimal, para quem desenha fora do CSS.
- *
- * A planta é uma tela, e a uma tela não chegam as classes do Bootstrap. São os mesmos tons
- * das pastilhas: uma pessoa deitada não pode ser azul no mapa e verde no cartão ao lado.
- */
+/** Os tons em hexadecimal, para a tela da planta; são os mesmos das pastilhas. */
 const TONE_HEX = {
     success: "#198754",
     info: "#0dcaf0",
@@ -21,11 +13,8 @@ const TONE_HEX = {
 };
 
 /**
- * A postura de uma pessoa vista por um radar: o ícone, o tom e o glifo.
- *
- * O `icon` é a classe do Font Awesome para a marcação e o `glyph` é o mesmo ícone em ponto de
- * código, que é o que a tela precisa. Vão escritos como escape porque o caractere é da área
- * de uso privado. A etiqueta vive no `FIELD_VALUE_LABELS.posture` do `format.js`.
+ * A postura de uma pessoa vista por um radar. O `glyph` é o `icon` em ponto de código, para a
+ * tela, escrito como escape porque é da área de uso privado.
  */
 const POSTURE_STYLE = {
     standing: { icon: "fa-person", glyph: "", tone: "success" },

@@ -16,11 +16,8 @@ import { initSettingsModels } from "./models/shell.js";
 import { loadSettingsModelsSection } from "./models/list.js";
 
 /**
- * A raiz de composição do modal de definições, e o único módulo que conhece as quatro
- * secções -- catálogo, capacidades, empresas e utilizadores da API. Nenhuma secção importa
- * daqui, e é por isso que este ficheiro as pode importar todas sem fechar um ciclo.
- *
- * O que as secções partilham -- o menu, as contagens, a paginação -- vive no `shell.js`.
+ * A raiz de composição do modal de definições, o único módulo que conhece as quatro secções;
+ * nenhuma importa daqui. O que partilham vive no `shell.js`.
  */
 export function initSettings(context) {
     initSettingsShell(context);

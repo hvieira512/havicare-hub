@@ -10,9 +10,8 @@ use Hub\Support\Values;
 final class PillDispenserEventDecoder
 {
     /**
-     * O dispensador M228 traz o corpo já descodificado num mapa de TAGs TFLV. O evento
-     * `0x03` é uma toma; os restantes pacotes carregam estado. Não passa pelo
-     * FeatureNormalizer: cada TAG lê-se com o tipo que a especificação lhe dá.
+     * O M228 traz o corpo já descodificado em TAGs TFLV: o `0x03` é uma toma e os restantes
+     * carregam estado. Cada TAG lê-se com o tipo da especificação, sem o FeatureNormalizer.
      *
      * @param array<string, mixed> $payload
      * @return list<array<string, mixed>>
@@ -69,20 +68,15 @@ final class PillDispenserEventDecoder
     }
 
     /**
-     * A configuração que o aparelho diz ter.
-     *
-     * Sai como `device_config`, que é o que os relógios já usam para o mesmo.
+     * A configuração que o aparelho diz ter, como `device_config`, tal como nos relógios.
      *
      * @param array<int, array{value?: string, state?: int}> $tlv
      * @return array<string, mixed>|null
      */
     private static function configuration(string $nativeType, array $tlv): ?array
     {
-        // Só os alarmes definidos: os outros seriam nove linhas vazias. O número do alarme vai
-        // junto, senão o terceiro voltava como se fosse o segundo.
-        //
-        // Quem decide é a hora e não o interruptor: esta firmware ignora o `0x1041`, e um
-        // alarme posto no próprio aparelho podia vir com ele a zero e tocar na mesma.
+        // Só os alarmes definidos, com o número de cada um. Decide a hora e não o interruptor: este
+        // firmware ignora o `0x1041`.
         $plans = [];
         // Se a trama falou das horas, ela diz o plano inteiro — mesmo que o plano inteiro
         // seja nove slots vazios.
@@ -299,8 +293,7 @@ final class PillDispenserEventDecoder
             default => null,
         };
 
-        // O `0x811B` conta posições: a zero é a de repouso e não leva medicação. O aparelho
-        // responde 29, e o contrato publica os 28 compartimentos.
+        // O `0x811B` conta posições e não compartimentos: a zero é a de repouso.
         $capacity = Tlv::u8($tlv, 0x811B);
         $cells = Values::withoutNulls([
             'remaining' => Tlv::u8($tlv, 0x811D),
@@ -312,10 +305,8 @@ final class PillDispenserEventDecoder
             $events[] = ['feature' => 'cells_remaining', 'nativeType' => $nativeType, 'value' => $cells];
         }
 
-        // Os dois sensores de estado físico não entram: neste firmware nenhum deles lê a peça
-        // que diz ler. O `0x8107` («Pill Tray Lock Status») responde sempre `0` — medido com o
-        // prato trancado, com a fechadura de chave trancada e com o prato fora — e o `0x8106`
-        // («Medication Cup Status») responde sempre `1`, com o copo fora.
+        // Os sensores do prato (`0x8107`) e do copo (`0x8106`) não entram: neste firmware respondem
+        // sempre o mesmo, com a peça no sítio ou fora.
 
         // O juízo do aparelho sobre a temperatura e a humidade que ele mede. Só sai quando
         // dispara, como a avaria aqui ao lado.
@@ -327,11 +318,8 @@ final class PillDispenserEventDecoder
             ];
         }
 
-        // Sai como a `connectivity` dos gateways, em dBm. Não vai a contagem de barras do
-        // `0x810D`: o `signalQuality` do contrato é o CSQ de 0 a 31, e as barras vão de 0 a 3.
-        //
-        // As duas interfaces medem em escalas diferentes: o WiFi dá dBm e o 4G dá o CSQ do
-        // módulo, confirmado pelo fornecedor a 2026-09-28.
+        // Sai como a `connectivity` dos gateways, em dBm: o WiFi dá dBm e o 4G o CSQ do módulo. As
+        // barras do `0x810D` não vão: o `signalQuality` do contrato é o CSQ de 0 a 31.
         $cellular = self::cellularSignal(Tlv::i16($tlv, 0x810B));
         $wifi = self::negativeSignal(Tlv::i16($tlv, 0x810A));
         if ($cellular !== null || $wifi !== null) {
@@ -341,10 +329,8 @@ final class PillDispenserEventDecoder
             ]];
         }
 
-        // Os interruptores que o aparelho reporta são configuração e não leitura: o que eles
-        // dizem é o que nós lá pusemos. O `0x8105` fica de fora: sabe o ligado/desligado do
-        // «não incomodar» mas não a janela, e escrever meia configuração na chave apaga a
-        // outra metade, que só a resposta ao `0x05` traz.
+        // Os interruptores reportados são configuração e não leitura. O `0x8105` fica de fora: só
+        // traz o interruptor do «não incomodar», e escrevê-lo sozinho apagava a janela.
         $reported = Values::withoutNulls([
             'child_lock' => self::switchSetting($tlv, 0x8102),
         ]);
@@ -409,13 +395,8 @@ final class PillDispenserEventDecoder
     }
 
     /**
-     * O sinal móvel em dBm, venha ele como dBm ou como o CSQ do módulo.
-     *
-     * O sinal do número é que os separa, e não se sobrepõem: dBm de rádio é sempre negativo e
-     * o CSQ vai de 0 a 31. A escala é a do 3GPP — `0` é menos de −113 e `31` é mais de −51.
-     *
-     * O resto não é leitura nenhuma. O `99` é o «não sei» do CSQ, e publicá-lo como os −51 dBm
-     * que a tabela do fornecedor lhe dá mostrava sinal de sobra a quem não tem nenhum.
+     * O sinal móvel em dBm, venha como dBm (negativo) ou como CSQ (0 a 31, escala do 3GPP). O
+     * `99` é o «não sei» do CSQ, e não é leitura.
      */
     private static function cellularSignal(?int $value): ?int
     {

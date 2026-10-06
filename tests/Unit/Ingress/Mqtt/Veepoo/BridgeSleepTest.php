@@ -14,10 +14,7 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 /**
  * O registo de sono chega ao hub e tem de sair dele.
  *
- * O gateway publica-o em espécie própria -- não vem nos blocos de cinco minutos --, e a
- * `VeepooBridge` não tinha ramo nenhum para ela: a trama caía no aviso de «kind sem normalização»,
- * uma vez por aparelho, e a noite inteira desaparecia. É exactamente o caso que o comentário
- * desse aviso descreve como já tendo acontecido.
+ * O gateway publica-o em espécie própria, fora dos blocos de cinco minutos.
  */
 final class BridgeSleepTest extends TestCase
 {
@@ -57,12 +54,8 @@ final class BridgeSleepTest extends TestCase
     }
 
     /**
-     * O formato que a pulseira usa de facto, medido contra ela.
-     *
-     * O `payload` é a lista das noites lidas, e a curva vem em inteiros -- um por minuto --,
-     * e não um objecto com a curva em texto, que é o que a documentação do fabricante deixa
-     * supor. Com a leitura errada o normalizador não encontrava um único campo, e a noite
-     * atravessava o hub sem produzir telemetria nenhuma.
+     * O `payload` é a lista das noites e a curva vem em inteiros, um por minuto -- e não um objecto
+     * com a curva em texto, como a documentação do fabricante deixa supor.
      */
     public function testANightArrivesWrappedInAListWithTheCurveInIntegers(): void
     {
@@ -79,11 +72,8 @@ final class BridgeSleepTest extends TestCase
     }
 
     /**
-     * Os instantes vêm no relógio da pulseira, e do hub tem de sair UTC.
-     *
-     * A trama declara o desvio do fuso e o normalizador desconta-o: ignorá-lo publica uma
-     * noite começada à 01:00 em Lisboa como 01:00 UTC, uma hora à frente. É o mesmo desconto
-     * que os blocos de cinco minutos fazem.
+     * A trama declara o desvio do fuso e o normalizador desconta-o: uma noite começada à 01:00 em
+     * Lisboa não sai como 01:00 UTC.
      */
     public function testTheInstantsAreConvertedFromTheBraceletClockToUtc(): void
     {
@@ -104,11 +94,8 @@ final class BridgeSleepTest extends TestCase
     }
 
     /**
-     * Uma noite com a forma exacta da que a MF91 devolveu.
-     *
-     * Dez minutos em vez de seiscentos e trinta e nove, para caber à vista; o que importa é
-     * que a curva tem uma entrada por minuto e que as contagens de cada valor somam os troços
-     * declarados -- dois profundos, seis leves e dois de outro, como na noite verdadeira.
+     * A forma da noite que a MF91 devolveu, com dez minutos em vez de 639: uma entrada de curva por
+     * minuto, e as contagens somam os troços declarados.
      */
     private static function sleepAsTheBraceletSendsIt(): string
     {

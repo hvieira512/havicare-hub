@@ -7,10 +7,8 @@ namespace Hub\Domain;
 final class DeviceProtocol
 {
     /**
-     * Os fornecedores cujos modelos não partilham um protocolo só.
-     *
-     * A MOKO vende gateways e pulseiras, e a Wonlex vende relógios TCP e a MF91, que é BLE:
-     * resolver só pelo fornecedor dava a protocolo errado a metade deles. Chaves em minúsculas.
+     * Os fornecedores cujos modelos não partilham um protocolo, como a MOKO (gateways e pulseiras)
+     * e a Wonlex (relógios TCP e a MF91 BLE). Chaves em minúsculas.
      *
      * @var array<string, array<string, string>>
      */

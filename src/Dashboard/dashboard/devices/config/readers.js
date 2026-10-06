@@ -3,11 +3,8 @@ import { normalizePhoneControl } from "../../phone.js";
 import { protocolPhonebookConstraints } from "./protocol-catalog.js";
 
 /**
- * Os leitores que servem qualquer campo: transformam uma secção de configuração desenhada no
- * payload que vai para o dispositivo. O que só um campo lê vive com esse campo.
- *
- * São a metade que toca no DOM, e a metade onde um erro é silencioso: um campo perdido
- * parece uma gravação com sucesso. A ida e volta está no `config-payload-roundtrip.test.js`.
+ * Leitores partilhados, da secção desenhada ao payload. Um campo perdido aqui parece gravado;
+ * a ida e volta prende-se no `config-payload-roundtrip.test.js`.
  */
 
 export function firstFieldName(section) {

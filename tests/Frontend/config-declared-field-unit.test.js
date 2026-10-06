@@ -7,13 +7,8 @@ import { parseFragment } from "./support/dom.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 
 /**
- * A unidade que a definição declara ganha à que se adivinha pelo nome do campo.
- *
- * O cartão estreito tira a unidade do nome nativo do campo -- de «Intervalo (min)» sobrevive
- * o «min» ao lado da caixa. Para um campo que a tabela de nomes não conhece não sobrava nada,
- * e quem abrisse «Avisar de atraso ao fim de» via uma caixa com `30` e nada que dissesse se
- * eram minutos, horas ou segundos. A definição sempre soube a resposta: declara-a em
- * `options.label`, e ninguém a estava a ler.
+ * A unidade declarada em `options.label` ganha à que se adivinha pelo nome do campo, que para
+ * um nome desconhecido não dá nenhuma.
  */
 const section = (entry) => parseFragment(renderConfigSection("zayata-m228", entry, null));
 

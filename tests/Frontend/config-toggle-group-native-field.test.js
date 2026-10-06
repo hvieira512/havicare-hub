@@ -6,12 +6,8 @@ import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/dev
 import { parseFragment } from "./support/dom.js";
 
 /**
- * O nome do campo na definição é o nativo; o valor guardado chega com o nome do contrato.
- *
- * A Wonlex declara `fields: ["switchState"]` e o `GenericCapability::wonlexFromNative`
- * entrega `{enabled: false}` -- o `switchState` já não existe no valor. A linha do grupo
- * procurava o nome nativo, não encontrava nada, e desenhava o interruptor ligado. Sete
- * definições Wonlex passam por aqui, e uma delas é a deteção de queda.
+ * A definição declara o nome nativo (`switchState`) e o valor guardado chega com o do contrato
+ * (`enabled`); a deteção de queda é uma das sete definições Wonlex que passam por aqui.
  */
 const toggle = (key, label, order) => ({
     key,

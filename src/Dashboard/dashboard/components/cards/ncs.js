@@ -1,9 +1,7 @@
 import { capabilityLabel } from "../../capability-catalog.js";
 import { PRESS_TYPE_LABEL } from "../../domain.js";
 
-/**
- * Os cartões da chamada de enfermagem Voerka: o pedido de ajuda e o pager.
- */
+/** Os cartões da chamada de enfermagem Voerka: o pedido de ajuda e o pager. */
 
 const NCS_PAGER_EVENT_VALUE = {
     help_call: "Chamada de ajuda",

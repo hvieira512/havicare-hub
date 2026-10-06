@@ -2,10 +2,8 @@ import { getProtocolConfigCatalog } from "../../api/index.js";
 import { state } from "../../state.js";
 
 /**
- * O catálogo de configuração de cada protocolo, e os metadados da dashboard que vêm com ele.
- *
- * Separado do código que desenha e que lê porque é a única parte que fala com a API e que
- * tem cache: o resto é função pura do que isto devolve.
+ * O catálogo de configuração de cada protocolo e os metadados da dashboard: é a única parte
+ * que fala com a API e tem cache.
  */
 
 // Pedidos em curso, para N secções que peçam o mesmo protocolo ao mesmo tempo partilharem

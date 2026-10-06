@@ -1,13 +1,7 @@
 import { titleize } from "../../format.js";
 import { protocolGroupedCapabilities } from "./protocol-catalog.js";
 
-/**
- * O modelo do catálogo de configuração: do catálogo cru do protocolo às secções prontas a
- * desenhar.
- *
- * Separado do desenho porque não tem interface nenhuma -- é função pura do catálogo, do
- * catálogo de capacidades e dos metadados do protocolo.
- */
+/** Do catálogo cru do protocolo às secções prontas a desenhar, em funções puras. */
 
 const CONFIG_SECTION_ORDER = [
     "health",
@@ -119,9 +113,8 @@ function assignCapabilitySection(entry, capabilityCatalog) {
         return null;
     }
 
-    // Uma grandeza que também se pede vive na secção `telemetry`, que não é uma secção de
-    // configuração. Pedi-la é uma acção sobre o aparelho, e é em Sistema que ela cabe; sem
-    // isto ficava declarada como pedível e sem nenhum botão que a pedisse.
+    // Uma grandeza pedível declarada em `telemetry` não tem secção de configuração: o pedido
+    // cabe em Sistema.
     const declared = String(definition.section || "");
     const section = CONFIG_SECTION_ORDER.includes(declared)
         ? declared

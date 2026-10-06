@@ -10,17 +10,13 @@ use Hub\Device\RawPayload;
 use Hub\Domain\DeviceMetadata;
 
 /**
- * Se cada gateway está vivo, e o que isso faz sair para fora.
- *
- * Um gateway não se despede: a ligação MQTT dele pode cair sem um `will`, e por isso a única
- * prova de que continua ali é falar. Estar vivo é ter falado há pouco, e quem passa do prazo é
- * dado como desligado por um varrimento -- o irmão do `BraceletPresence`, que responde à mesma
- * pergunta para as pulseiras.
+ * Se cada gateway está vivo: um gateway pode cair sem `will`, e por isso estar vivo é ter
+ * falado há pouco. Quem passa do prazo é dado como desligado por um varrimento.
  */
 final class GatewayPresence
 {
     /**
-     * Os gateways que já se anunciaram, pela forma com que a whitelist os resolve.
+     * Os gateways que já se anunciaram, como a whitelist os resolve.
      *
      * @var array<string, array<string, mixed>>
      */
@@ -47,10 +43,8 @@ final class GatewayPresence
     }
 
     /**
-     * Anuncia o gateway como ligado, se ainda não estava.
-     *
-     * O estado sai retido e vale a cada anúncio; o acontecimento é da transição. Repetir
-     * «Ligado» a cada trama enchia o histórico e escondia o instante em que ele apareceu.
+     * Anuncia o gateway como ligado, se ainda não estava: o estado sai retido a cada anúncio,
+     * o acontecimento só na transição.
      *
      * @param array<string, mixed> $gateway
      */
@@ -89,8 +83,7 @@ final class GatewayPresence
             $status = RawPayload::status($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'offline', null, $commercial);
             $event = RawPayload::event($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'device.disconnected', null, null, $commercial);
 
-            // Uma publicação que não passa não leva consigo os gateways seguintes; e o
-            // gateway só sai da lista depois de o `offline` ter saído, para se retentar.
+            // Só sai da lista depois de o `offline` sair, para se retentar; os outros seguem.
             try {
                 $this->mqttBridge->publishStatus($deviceKey, $status, true, $deviceType, $licenseId, $company);
                 $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);

@@ -9,11 +9,8 @@ import {
 } from "../../src/Dashboard/dashboard/settings/row-editor.js";
 
 /**
- * A vaga única do editor em linha.
- *
- * As três listagens que a usam -- empresa, licença e utilizador da API -- tinham cada uma a
- * sua cópia disto, e nenhuma tinha teste: a mecânica só se via a funcionar no ecrã. O que se
- * verifica aqui é o que as três precisam que seja verdade.
+ * A vaga única do editor em linha, partilhada pelas listagens de empresa, licença e utilizador
+ * da API.
  */
 
 test("abrir uma linha fecha a que estava aberta, mesmo sendo de outro tipo", () => {
@@ -23,7 +20,6 @@ test("abrir uma linha fecha a que estava aberta, mesmo sendo de outro tipo", () 
     editor.edit("company", 7);
     assert.equal(editor.at("company", 7), true);
 
-    // É isto que os `editingCompany = null` espalhados pelos abridores faziam à mão.
     editor.edit("license", 3);
     assert.equal(editor.at("company", 7), false);
     assert.equal(editor.at("license", 3), true);
@@ -57,11 +53,7 @@ test("o extra viaja com a linha aberta", () => {
     assert.equal(editor.open.companyId, "4");
 });
 
-/**
- * Um botão de editar sem `data-id` abria a linha de criar em branco no topo da lista, e
- * gravá-la criava um registo em vez de editar aquele em que se carregou. O rascunho passou a
- * pedir-se pelo nome.
- */
+/** Um editar sem `data-id` gravaria um registo novo; o rascunho pede-se pelo nome. */
 test("o edit sem id não abre nada, e não cai no rascunho", () => {
     let renders = 0;
     const editor = inlineEditor(() => renders++);
@@ -108,8 +100,8 @@ test("o cancel repinta e o reset não", () => {
     assert.equal(renders, 2);
 
     editor.edit("company", 1);
-    // O `reset` é para quem vai recarregar e repintar a seguir: repintar aqui era pintar
-    // duas vezes, e a segunda por cima de dados já velhos.
+    // O `reset` é para quem vai recarregar e repintar a seguir: repintar aqui seria pintar
+    // duas vezes, e a segunda por cima de dados velhos.
     editor.reset();
     assert.equal(editor.open, null);
     assert.equal(renders, 3);

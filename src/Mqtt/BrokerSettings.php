@@ -5,15 +5,8 @@ declare(strict_types=1);
 namespace Hub\Mqtt;
 
 /**
- * Os parâmetros de ligação de um broker MQTT.
- *
- * O hub abre duas sessões: a sua, configurada pelas `MQTT_*`, e a da ingestão dos radares
- * Qinglanst, que tem outras credenciais, outro identificador de cliente e tempos fixos.
- *
- * Duas sessões e não dois servidores: o `QINGLANST_MQTT_HOST` e o `MQTT_HOST` apontam para o
- * mesmo broker, e o que as separa são os tópicos. É por isso que as duas partilham a postura
- * de TLS por omissão -- e é por se ter acreditado no contrário que a segunda esteve incapaz
- * de a acompanhar.
+ * Os parâmetros de ligação de um broker MQTT. O hub abre duas sessões no mesmo broker, a sua
+ * (`MQTT_*`) e a dos radares Qinglanst, e por isso partilham a postura de TLS por omissão.
  */
 final class BrokerSettings
 {
@@ -38,7 +31,7 @@ final class BrokerSettings
     }
 
     /**
-     * @param array<string, mixed> $mqttConfig the `mqtt` section of the hub config
+     * @param array<string, mixed> $mqttConfig a secção `mqtt` da configuração do hub
      */
     public static function fromHubConfig(array $mqttConfig): self
     {
@@ -67,15 +60,10 @@ final class BrokerSettings
     }
 
     /**
-     * A ligação de ingestão dos radares: keepalive e tempos fixos, e o resto vindo da
-     * configuração como em qualquer outra.
+     * A ligação de ingestão dos radares: keepalive e tempos fixos, e o resto da configuração. O
+     * TLS não está preso a `false` porque o radar publica no mesmo broker que o hub.
      *
-     * O TLS vem daqui e não está preso a `false`. O radar publica no mesmo servidor que o hub
-     * -- o `QINGLANST_MQTT_HOST` e o `MQTT_HOST` apontam para o mesmo sítio, e o que os separa
-     * são os tópicos e as credenciais. Uma segunda sessão para o mesmo broker incapaz de subir
-     * para TLS mandava utilizador e password em claro no dia em que a primeira subisse.
-     *
-     * @param array<string, mixed> $qinglanstConfig the `qinglanst` section of the hub config
+     * @param array<string, mixed> $qinglanstConfig a secção `qinglanst` da configuração do hub
      */
     public static function fromQinglanstConfig(array $qinglanstConfig): self
     {

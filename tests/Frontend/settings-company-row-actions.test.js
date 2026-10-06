@@ -98,7 +98,7 @@ test("a linha de uma empresa junta os três verbos no mesmo menu", async () => {
     );
 });
 
-/** Os data-action não mudam de nome ao mudar de sítio: o despacho é o mesmo de antes. */
+/** Os `data-action` são os mesmos dentro do menu: o despacho não muda. */
 test("nenhuma linha continua a mostrar acções em ícones soltos", async () => {
     const els = setupDom();
     await loadSettingsCompanySection();

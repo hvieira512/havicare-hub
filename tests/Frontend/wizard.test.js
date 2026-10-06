@@ -95,8 +95,8 @@ test("não avança para além do último passo", () => {
 });
 
 test("o passo só muda ao avançar, e não ao responder", () => {
-    // Derivar o passo da pergunta activa fazia a barra saltar para o 2 no instante em que a
-    // última resposta do 1 entrava, antes de alguém premir Seguinte.
+    // O passo não se deriva da pergunta activa: a barra saltaria para o 2 com a última
+    // resposta do 1, antes de alguém premir Seguinte.
     const w = wizard();
     w.answer("type", "x");
     w.answer("model", "y");
@@ -248,9 +248,8 @@ test("o passo 1 completa-se com as suas três perguntas e não com a do passo 2"
 });
 
 test("uma pergunta opcional não trava o passo, mas continua a ser feita", () => {
-    // A licença é assim: um dispositivo pode não ter nenhuma, e por isso não lhe responder
-    // tem de deixar avançar -- sem que a pergunta desapareça do ecrã, que é o que
-    // aconteceria se a omissão contasse como resposta.
+    // Um dispositivo pode não ter licença: não lhe responder deixa avançar, sem a pergunta
+    // desaparecer do ecrã, como desapareceria se a omissão contasse como resposta.
     const w = createWizard({
         steps: STEPS,
         questions: [
@@ -307,7 +306,7 @@ test("responder à última pergunta do passo avança-o", () => {
 
 test("não avança por cima de uma pergunta opcional por responder", () => {
     // Uma opcional não trava o passo, mas continua a ser feita: avançar assim que o passo
-    // ficasse completo era saltar-lhe por cima sem a mostrar.
+    // ficasse completo seria saltar-lhe por cima sem a mostrar.
     const w = createWizard({
         steps: STEPS,
         questions: [
@@ -346,7 +345,7 @@ test("não avança por cima de uma pergunta opcional por responder", () => {
 
 test("o Anterior leva a um passo completo e não ressalta para a frente", () => {
     // O avanço automático é consequência de responder e não de o passo estar completo: se
-    // fosse do segundo, voltar atrás era impossível.
+    // fosse do segundo, voltar atrás seria impossível.
     const w = wizard();
     w.answerAndAdvance("type", "x");
     w.answerAndAdvance("model", "y");
@@ -359,12 +358,8 @@ test("o Anterior leva a um passo completo e não ressalta para a frente", () => 
 });
 
 /**
- * Um seed que responde a tudo deixa o assistente no último passo.
- *
- * O `answer` responde e fica quieto, que é o que se quer quando alguém clica numa opção. Mas
- * uma notificação de dispositivo não autorizado responde a tudo de uma vez, e o
- * `openCreateWizard` avança enquanto não houver nada por perguntar -- é esse contrato do
- * motor que isto prende.
+ * Uma notificação de dispositivo não autorizado responde a tudo de uma vez, e o
+ * `openCreateWizard` avança enquanto não houver nada por perguntar.
  */
 test("responder a tudo e avançar enquanto não há pergunta leva ao último passo", () => {
     const w = wizard();

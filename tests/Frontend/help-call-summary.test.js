@@ -26,9 +26,8 @@ test("a device that never called for help gets no card", () => {
 });
 
 test("a protocol that declares no press modes gets no card", () => {
-    // O W812 da Voerka chama por botão de comando e não por modo de toque: o cartão dos
-    // toques desenhava três colunas a dizer "nunca" ao lado dos eventos que mostram a
-    // chamada verdadeira. Sem modos declarados não há resumo por modo.
+    // O W812 da Voerka chama por botão de comando e não por modo de toque: sem modos
+    // declarados não há resumo por modo.
     const ncsCall = {
         type: "help_call",
         occurredAt: "2026-09-04T11:45:16Z",
@@ -134,7 +133,7 @@ test("a mode that has fired carries a tooltip with the exact timestamp", () => {
     assert.match(html, /data-bs-toggle="tooltip"/);
     // A hora desenhada depende da locale, e por isso só se afirma a presença dela.
     assert.match(html, /data-bs-title="[^"]+"/);
-    // Alcançável pelo teclado: só com o rato, ficava escondido de alguns utilizadores.
+    // Alcançável pelo teclado, e não só pelo rato.
     assert.match(html, /tabindex="0"/);
 });
 

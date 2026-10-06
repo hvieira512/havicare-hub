@@ -7,10 +7,7 @@ import { deviceListBody as buildBody } from "../../src/Dashboard/dashboard/devic
 // O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
 const deviceListBody = (...args) => String(buildBody(...args));
 
-/**
- * Um backend em baixo devolvia `{error}` e o código fazia `data || []`, pintando o mesmo
- * painel de "lista vazia" que um filtro sem resultados. As duas coisas não se leem igual.
- */
+/** «Não foi possível carregar» e «lista vazia» não se leem igual. */
 test("uma falha a carregar mostra estado de erro com repetição, não 'lista vazia'", () => {
     const body = deviceListBody({ devices: [], devicesError: { code: "network_error" } });
 

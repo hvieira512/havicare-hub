@@ -8,9 +8,8 @@ import "./support/browser-env.js";
 import { notificationRow } from "../../src/Dashboard/dashboard/notifications.js";
 
 /**
- * O destrutivo que se repete por linha leva `btn-quiet-danger`: neutro em repouso, vermelho ao
- * ser apontado ou focado. A repetição gasta o significado da cor -- onde tudo é vermelho, nada
- * é. O que aparece uma vez continua vermelho, porque não compete com cópias de si próprio.
+ * O destrutivo que se repete por linha é neutro em repouso e vermelho ao apontar ou focar:
+ * onde tudo é vermelho, nada é. O que aparece uma vez continua vermelho.
  */
 const css = readFileSync(
     fileURLToPath(new URL("../../src/Dashboard/assets/css/base.css", import.meta.url)),

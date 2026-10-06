@@ -9,11 +9,8 @@ const { handleDeviceFilterClick, initListFilters } =
     await import("../../src/Dashboard/dashboard/devices/list-filters.js");
 
 /**
- * O que um clique numa caixa de filtro faz ao estado, sem passar pelo desenho.
- *
- * As árvores desenham o filho marcado quando o pai está marcado, mas quem está na lista é só o
- * pai: um clique num filho marcado é «troca o pai pelos irmãos», e marcar o pai tem de apagar
- * os filhos marcados à parte. Nada disto se vê no ecrã antes de estar errado.
+ * Quem está na lista é só o pai marcado: um clique num filho é «troca o pai pelos irmãos», e
+ * marcar o pai apaga os filhos marcados à parte.
  */
 const els = new Proxy({}, {
     get(target, name) {

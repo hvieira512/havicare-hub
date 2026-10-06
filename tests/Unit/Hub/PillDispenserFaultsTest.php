@@ -9,12 +9,7 @@ use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * As cinco avarias que o aparelho sabe reportar, uma a uma.
- *
- * Só a reposição do prato tinha teste. A rotação — o prato encravado, que é a avaria que
- * impede a medicação de sair — podia deixar de ser descodificada sem nada ficar vermelho.
- */
+/** As cinco avarias que o aparelho sabe reportar, uma a uma. */
 final class PillDispenserFaultsTest extends TestCase
 {
     /**

@@ -6,11 +6,8 @@ import { INPUTS as vivistar } from "./vivistar.js";
 import { INPUTS as wonlex } from "./wonlex.js";
 
 /**
- * Todos os tipos de campo de configuração, por chave.
- *
- * Cada entrada traz as suas quatro faces juntas -- `render`, `read`, `defaults` e `help` --
- * para acrescentar um tipo ser tocar num sítio só. A partição sai das definições em
- * `src/Command/Configuration/Definition/`, que dizem que tipo de campo cada protocolo declara.
+ * Todos os tipos de campo, cada um com `render`, `read`, `defaults` e `help` juntos. Que tipo
+ * cada protocolo declara diz-o `src/Command/Configuration/Definition/`.
  */
 export const CONFIG_INPUTS = {
     ...generic,

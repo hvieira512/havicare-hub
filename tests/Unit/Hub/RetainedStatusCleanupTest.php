@@ -9,13 +9,8 @@ use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O estado de um dispositivo é publicado como retido, e por isso um dispositivo que muda de
- * cliente continua a anunciar-se no tópico que deixou. Quem subscreve o cliente antigo
- * continua a receber um dispositivo que já não é dele -- o que é uma fuga entre clientes, e
- * não só dados velhos.
- *
- * O MQTT apaga uma mensagem retida com um payload de comprimento zero. Um documento JSON
- * vazio substituía-a por "[]" e a fuga mantinha-se.
+ * O estado retido de um dispositivo que muda de cliente apaga-se do tópico que deixou, senão
+ * é uma fuga entre clientes; só um payload de comprimento zero o apaga.
  */
 final class RetainedStatusCleanupTest extends TestCase
 {

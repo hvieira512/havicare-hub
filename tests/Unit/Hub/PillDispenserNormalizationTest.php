@@ -142,7 +142,7 @@ final class PillDispenserNormalizationTest extends TestCase
     public function testARefusedWriteIsVisibleInTheAnswer(): void
     {
         // O aparelho responde ao `0x06` com o mesmo corpo e o resultado de cada TAG nos bits
-        // de estado do Flag. Um valor recusado ficava calado se ninguém os lesse.
+        // de estado do Flag.
         $adapter = new PillDispenserAdapter();
         $frame = $adapter->encodeOutgoing([
             'packetType' => 0x86,
@@ -183,12 +183,8 @@ final class PillDispenserNormalizationTest extends TestCase
     }
 
     /**
-     * A força do sinal sai como a `connectivity` que os gateways já publicam.
-     *
-     * O `0x810B` é a força do sinal. Numa unidade 4G vem como o CSQ do módulo, e o `25` daqui
-     * são −63 dBm. Fica só ela: o `0x810D` é uma contagem de barras de 0 a 3, e o
-     * `signalQuality` do contrato é o CSQ de 0 a 31 -- enfiar um no outro dava um número que
-     * ninguém sabe interpretar, e as barras são um arredondamento do dBm.
+     * O `0x810B` é o CSQ do módulo e sai como a `connectivity` dos gateways; o `0x810D` são
+     * barras de 0 a 3, que não cabem no `signalQuality` de 0 a 31.
      */
     public function testTheStatusQueryBringsTheSignalAsConnectivity(): void
     {
@@ -216,11 +212,8 @@ final class PillDispenserNormalizationTest extends TestCase
     }
 
     /**
-     * O estado do bloqueio volta como valor reportado da configuração, e não ao lado dela.
-     *
-     * São a mesma coisa vista de dois ângulos -- o `0x100C` é o que se pede e o `0x8102` é o
-     * que o aparelho tem --, e publicá-lo também como telemetria dava duas verdades sem nada
-     * que as obrigasse a concordar.
+     * O `0x8102` é o que o aparelho tem do que o `0x100C` pede: volta como valor reportado da
+     * configuração, e não como telemetria ao lado dela.
      */
     public function testTheLockStateComesBackAsTheReportedConfiguration(): void
     {
@@ -237,13 +230,8 @@ final class PillDispenserNormalizationTest extends TestCase
     }
 
     /**
-     * Uma TAG que o aparelho recusa não tem valor nenhum, e o que lá está é o que nós lhe
-     * mandámos de volta.
-     *
-     * O M228 de produção é a variante 4G e não tem WiFi: respondeu ao `0x07` com o `0x810A`
-     * em `001`, «TAG inválida», e o hub publicou `wifiSignalDbm: 0`. Um zero é uma leitura
-     * plausível -- ninguém desconfia dele -- e estávamos a inventá-lo. Vale para todas as
-     * TAGs: o estado no Flag diz se há valor, e sem isso lê-se o eco do pedido.
+     * Uma TAG recusada não tem valor: o que lá está é o eco do que mandámos, e é o estado no Flag
+     * que diz se há valor.
      */
     public function testARefusedTagIsNotReadAsAValue(): void
     {
@@ -287,16 +275,7 @@ final class PillDispenserNormalizationTest extends TestCase
         return $decoded;
     }
 
-    /**
-     * O prato tem 28 compartimentos, e o firmware conta 29.
-     *
-     * A ficha do aparelho diz 28 e a especificação numera o compartimento de 0 a 28 — são 29
-     * posições porque a zero é a de repouso, onde o prato assenta e onde não vai medicação
-     * nenhuma. O `0x811B` reporta as posições, e o cartão da dashboard mostrava «0 de 29» ao
-     * lado de uma definição que só aceita 28. Uma das duas estava a mentir.
-     *
-     * Apanhou-se com o aparelho na mesa: pedido o estado, ele respondeu `0x811B = 29`.
-     */
+    /** O `0x811B` conta posições e não compartimentos: a zero é a de repouso. */
     public function testTheTrayCapacityLeavesOutTheRestingPosition(): void
     {
         $decoded = $this->decode([

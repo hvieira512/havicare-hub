@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Hub\State;
 
 /**
- * Diz aos streams abertos que o histórico de um dispositivo mudou. A ingestão e o servidor
- * HTTP partilham processo, e por isso a escrita anuncia-se em vez de ser sondada.
- *
- * Diz-se qual o dispositivo, nunca o quê: o stream relê o estado autoritativo, e assim uma
- * notificação perdida ou duplicada custa uma leitura a mais e não um payload errado.
+ * Diz aos streams abertos qual o dispositivo cujo histórico mudou, nunca o quê: o stream relê o
+ * estado, e uma notificação perdida ou duplicada custa só uma leitura.
  */
 class DeviceUpdateNotifier
 {

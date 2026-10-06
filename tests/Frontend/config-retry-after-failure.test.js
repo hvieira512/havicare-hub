@@ -6,11 +6,8 @@ import { syncConfigSectionDirty } from "../../src/Dashboard/dashboard/devices/co
 import { parseFragment } from "./support/dom.js";
 
 /**
- * Uma configuração cuja entrega falhou tem de poder ser reenviada.
- *
- * O «Enviar» de um cartão acende-se por diferença, com três excepções: uma acção, que é sempre
- * um pedido novo; uma definição que o aparelho nunca recebeu; e uma definição **guardada**
- * cuja entrega falhou, que coincide consigo própria e ficaria sem caminho para sair do ecrã.
+ * O «Enviar» acende por diferença, excepto numa acção, numa definição que o aparelho nunca
+ * recebeu e numa definição guardada cuja entrega falhou.
  */
 
 const section = ({ stored = "1", delivery = "", pristine = { volume: 1 }, value = 1 } = {}) =>

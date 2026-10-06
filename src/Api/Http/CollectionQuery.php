@@ -39,10 +39,8 @@ final class CollectionQuery
     }
 
     /**
-     * Um filtro que aceita vários valores.
-     *
-     * Lê tanto `?supplier[]=a&supplier[]=b` como `?supplier=a,b`. "all" continua a querer
-     * dizer "sem filtro", como no filtro de valor único.
+     * Um filtro que aceita vários valores, em `?supplier[]=a&supplier[]=b` ou `?supplier=a,b`.
+     * "all" quer dizer "sem filtro", como no filtro de valor único.
      *
      * @param array<string, mixed> $params
      * @return list<string>
@@ -71,13 +69,8 @@ final class CollectionQuery
     }
 
     /**
-     * As colunas por que se ordena e o sentido de cada uma, escritos por extenso e separados
-     * por vírgula, pela ordem em que mandam: `company:desc,model:asc` ordena por empresa
-     * descendente e desempata por modelo ascendente. Sem sentido escrito, é ascendente.
-     *
-     * O valor acaba num `ORDER BY`, onde não pode entrar como parâmetro ligado: a allowlist é
-     * a fronteira, e o que não estiver nela cai fora em vez de ser limpo. Uma coluna má no
-     * meio de boas leva só a si própria.
+     * As colunas e o sentido, pela ordem em que mandam: `company:desc,model:asc`; sem sentido é
+     * ascendente. Acaba num `ORDER BY` sem parâmetro ligado, e o que não estiver na allowlist cai fora.
      *
      * @param array<string, mixed> $params
      * @param list<string> $allowed
@@ -115,10 +108,8 @@ final class CollectionQuery
     }
 
     /**
-     * O estado de ligação: `online`, `offline`, ou nada quando não se filtra.
-     *
-     * É o único filtro de valor único desta listagem, porque escolher os dois é o mesmo que
-     * não escolher nenhum -- e isso já é a ausência do parâmetro.
+     * O estado de ligação: `online`, `offline`, ou nada. Valor único, porque escolher os dois é
+     * não filtrar.
      *
      * @param array<string, mixed> $params
      */

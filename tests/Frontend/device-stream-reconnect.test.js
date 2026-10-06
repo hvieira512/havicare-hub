@@ -4,13 +4,8 @@ import "./support/browser-env.js";
 import { installStreamHarness } from "./support/device-stream-harness.js";
 
 /**
- * O stream do dispositivo é o único caminho por onde a telemetria, os eventos e os comandos
- * chegam: o `GET /api/devices/{imei}` traz o dispositivo, o modelo e a configuração, e a
- * sondagem de 30 em 30 segundos preserva de propósito o `recent` que já tinha.
- *
- * Estes testes prendem a religação: sem ela o histórico ficava congelado no ecrã, sem erro
- * nenhum à vista. Com `fetch` em vez de `EventSource`, o fim do corpo é o que assinala a
- * queda -- e ao contrário do `onerror`, traz o estado da resposta consigo.
+ * O stream é o único caminho da telemetria, dos eventos e dos comandos, e sem religar o
+ * histórico congela calado; com `fetch`, é o fim do corpo que assinala a queda, com o estado.
  */
 
 const harness = installStreamHarness();
@@ -79,7 +74,7 @@ test("o servidor a fechar o corpo religa em vez de desistir", async () => {
 
 test("uma recusa do servidor religa, e o estado dela é visível", async () => {
     reset();
-    // O `503 too_many_streams` era indistinguível de um 404 no `onerror` do `EventSource`.
+    // O `503 too_many_streams` é temporário, e não se confunde com um 404.
     harness.refuseWith(503);
     await connect("223");
 

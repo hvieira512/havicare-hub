@@ -58,11 +58,8 @@ final class FourPTouchConfigurationDefinitions
             $entry('powerOffCommand', 'POWEROFF', 'Desligar dispositivo', 'action', [], ['POWEROFF'], 'system', 5, transient: true, confirm: 'O relógio desliga-se e só volta a ligar no botão do próprio aparelho.'),
             $entry('findDeviceCommand', 'FIND', 'Localizar dispositivo', 'action', [], ['FIND'], 'system', 5, transient: true),
             $entry('doNotDisturb', 'SILENCETIME', 'Não perturbar', 'toggle', ['enabled'], ['SILENCETIME'], 'system', 60),
-            // Estas duas perguntam em vez de mandar, e o rótulo delas é um nome: sem o verbo
-            // o botão dizia «Enviar», que descreve mal o que o clique faz.
-            // Sem `deviceStatus`: o `TS` pede-se no mosaico «Estado do dispositivo», em
-            // Informação do sistema. Uma entrada aqui seria a segunda porta para o mesmo
-            // comando.
+            // Estas duas perguntam em vez de mandar, e o rótulo delas é um nome: daí o verbo.
+            // Sem `deviceStatus`: o `TS` pede-se no mosaico «Estado do dispositivo».
             $entry('alarmClock', 'REMIND', 'Alarmes', 'alarm_clock', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Uma vez'],

@@ -11,15 +11,8 @@ use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
- * As capacidades que o hub serve como um cartão só declaram o campo que esse cartão usa.
- *
- * São capacidades em que várias entradas nativas se fundem -- as duas listas brancas de
- * cinco números do 4P Touch dão um cartão de dez --, e por isso o editor não é o do campo
- * nativo: é um por capacidade, que sabe juntar e voltar a separar.
- *
- * Uma tabela de nomes no lado da dashboard funcionava no ecrã e deixava o catálogo da API a
- * publicar um campo que ninguém honrava. Há uma fonte só -- a definição --, e é este teste
- * que a prende.
+ * Várias entradas nativas fundem-se num cartão (as duas listas brancas de cinco números do 4P Touch
+ * dão um de dez), e quem sabe juntar e separar é o editor da capacidade.
  */
 final class MergedCapabilityInputTest extends TestCase
 {
@@ -54,9 +47,8 @@ final class MergedCapabilityInputTest extends TestCase
     }
 
     /**
-     * O nome do campo é lido em dois sítios -- aqui, para desenhar, e na tabela de payloads
-     * por omissão, para semear o formulário. Renomeá-lo num e esquecer o outro não parte
-     * nada à vista: o formulário abre vazio em vez de abrir com as linhas por preencher.
+     * O nome do campo é lido aqui e na tabela de payloads por omissão: renomeá-lo só num abre o
+     * formulário vazio sem nada partir à vista.
      */
     public function testMergedCapabilitiesKeepTheirSeedPayload(): void
     {

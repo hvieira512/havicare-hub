@@ -6,9 +6,8 @@ import { parseFragment } from "./support/dom.js";
 import { resetConfigPane } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
 
 /**
- * Num grupo de rádios o que distingue as opções é o `value`, e o que o Repor devolve é qual
- * delas está marcada. Escrever o valor guardado em todas deixa o grupo a enviar sempre o
- * mesmo, e as etiquetas a dizer o contrário.
+ * Num grupo de rádios o Repor devolve qual opção está marcada; escrever o valor guardado em
+ * todas faria o grupo enviar sempre o mesmo.
  */
 function pane(pristine) {
     return parseFragment(`

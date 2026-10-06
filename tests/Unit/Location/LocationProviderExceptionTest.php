@@ -8,11 +8,8 @@ use Hub\Location\LocationProviderException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A diferença entre "não sei onde isto está" e "não consegui perguntar".
- *
- * A primeira é um resultado normal -- o dispositivo andou por um sítio que o BeaconDB ainda
- * não conhece --, e saía no registo como `WARNING` ao lado das avarias a sério: dezasseis em
- * dois dias. É assim que uma avaria de verdade passa despercebida.
+ * "Não sei onde isto está" é um resultado normal e "não consegui perguntar" é uma avaria, e
+ * os dois não podem sair no registo ao mesmo nível.
  */
 final class LocationProviderExceptionTest extends TestCase
 {
@@ -39,10 +36,7 @@ final class LocationProviderExceptionTest extends TestCase
         self::assertFalse((new LocationProviderException('connection refused', 'beacondb'))->isNoMatch());
     }
 
-    /**
-     * O disjuntor já tratava o 404 como não repetível, e o `recordFailure` limpa o estado
-     * nesse caso. Isto prende esse acordo: mudar o nível do registo não pode ter mexido nele.
-     */
+    /** O 404 não é repetível, e o `recordFailure` limpa o estado nesse caso. */
     public function testANoMatchIsNotRetryable(): void
     {
         $error = new LocationProviderException('BeaconDB request failed (HTTP 404)', 'beacondb', 404, false);

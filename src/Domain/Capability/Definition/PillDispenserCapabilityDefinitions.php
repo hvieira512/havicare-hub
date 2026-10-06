@@ -34,9 +34,8 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
                     // O nível de medicação viaja como campo desta: é o juízo do aparelho
                     // sobre a mesma contagem, e sozinho não trazia número nenhum.
                     'cells_remaining' => 'Células restantes',
-                    // O ar onde o aparelho está, e portanto onde a medicação está guardada.
-                    // A spec dá `0x810E` como INT8S de -40 a 120 graus inteiros: não é um
-                    // sensor corporal, e por isso não partilha a chave `temperature`.
+                    // O ar onde a medicação está guardada: o `0x810E` é INT8S de -40 a 120 graus, não é sensor
+                    // corporal, e por isso não partilha a chave `temperature`.
                     'ambient_temperature' => 'Temperatura ambiente',
                     'ambient_humidity' => 'Humidade ambiente',
                     // A mesma `connectivity` que os gateways publicam, e não um formato só
@@ -49,9 +48,8 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
                     // claro — o `0x03`, que traz a hora e a célula, vem cifrado.
                     'medication_alarm_status' => 'Estado dos alarmes',
                 ],
-                // O `0x07` pede as `STATUS_TAGS` todas de uma vez, e a resposta enche as
-                // leituras acima em vez de trazer valor próprio. Por isso é o único pedível
-                // daqui: as outras não se pedem sozinhas.
+                // O `0x07` pede as `STATUS_TAGS` todas e a resposta enche as leituras acima: é o único
+                // pedível daqui.
                 'measurementOnRequest' => [
                     'device_status' => 'Estado do dispositivo',
                 ],
@@ -63,9 +61,8 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
                     // `abnormal` do evento de toma nunca chega a existir.
                     'missed_dispense' => 'Dispensar depois de falhar',
                     'child_lock' => 'Bloqueio de criança',
-                    // Os dois tempos decidem se uma dose por tomar chega a alguém como
-                    // alerta, e as células carregadas são o que permite ao aparelho avisar
-                    // que está a acabar.
+                    // Os dois tempos decidem se uma dose por tomar chega como alerta, e as células carregadas
+                    // deixam o aparelho avisar que está a acabar.
                     'retrieval_warning' => 'Avisar de atraso ao fim de',
                     'retrieval_timeout' => 'Dar como falhada ao fim de',
                     'loaded_cells' => 'Carregado até ao compartimento',

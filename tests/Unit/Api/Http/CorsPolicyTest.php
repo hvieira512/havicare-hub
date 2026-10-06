@@ -10,12 +10,8 @@ use PHPUnit\Framework\TestCase;
 use React\Http\Message\Response;
 
 /**
- * Que origens podem falar com a API a partir de um browser.
- *
- * O `*` de sempre continua a ser o valor por omissão, e é seguro enquanto a autenticação for
- * `Bearer` em cabeçalho: o browser não anexa credenciais sozinho, portanto não há CSRF a
- * partir de uma página de terceiros. O que faltava era essa decisão estar declarada em vez de
- * ser uma propriedade acidental de um ficheiro que ninguém abre.
+ * O `*` por omissão é seguro enquanto a autenticação for `Bearer` em cabeçalho: o browser não
+ * anexa credenciais sozinho, e não há CSRF a partir de uma página de terceiros.
  */
 final class CorsPolicyTest extends TestCase
 {
@@ -41,7 +37,7 @@ final class CorsPolicyTest extends TestCase
         $response = $policy->apply(new Response(200), self::from('https://app.havicare.com'));
 
         self::assertSame('https://app.havicare.com', $response->getHeaderLine('Access-Control-Allow-Origin'));
-        // Sem isto, uma cache pelo meio servia a origem de outra pessoa.
+        // Uma cache pelo meio não pode servir a origem de outra pessoa.
         self::assertSame('Origin', $response->getHeaderLine('Vary'));
     }
 

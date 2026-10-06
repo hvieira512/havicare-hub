@@ -6,13 +6,7 @@ import "./support/browser-env.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { deliveryStatusFromCommand } from "../../src/Dashboard/dashboard/devices/config/delivery.js";
 
-/**
- * Uma acção também tem estado, e o cartão tem de o dizer.
- *
- * Um pedido passa por em fila, à espera, confirmado ou falhado, e isso aparece na lista de
- * pedidos do dispositivo. No cartão que o disparou não aparecia nada: carregava-se em «Fazer
- * vibrar» e o ecrã ficava igual, sem dizer se a ordem tinha sequer saído do hub.
- */
+/** O cartão que disparou um pedido diz se ele está em fila, à espera, confirmado ou falhado. */
 const ACTION = {
     key: "find_device",
     capabilityKey: "find_device",

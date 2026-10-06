@@ -9,13 +9,8 @@ use PDOException;
 use PDOStatement;
 
 /**
- * Um PDO que refaz a ligação quando o MySQL a larga — um `wait_timeout` de inactividade ou um
- * reinício do servidor. É uma fachada com o tipo `PDO`, mas a ligação real vive no `$inner` e
- * pode ser refeita; por isso o construtor **não** chama o pai.
- *
- * A repetição é só para operações idempotentes: o `prepare` e o `query` voltam a correr na
- * ligação nova. O `exec` e as transacções reconectam mas **não** repetem, para não duplicar
- * uma escrita que já tinha ido antes da queda.
+ * Um PDO que refaz a ligação quando o MySQL a larga; a ligação real vive no `$inner`, e por
+ * isso o construtor não chama o pai. Só o `prepare` e o `query` repetem depois de reconectar.
  */
 final class ReconnectingPdo extends PDO
 {

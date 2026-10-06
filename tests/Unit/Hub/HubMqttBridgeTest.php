@@ -90,8 +90,8 @@ final class HubMqttBridgeTest extends TestCase
     }
 
     /**
-     * Um dispositivo com dono, que é o caso normal. Os outros testes usam os sentinelas, e
-     * com eles um erro na ordem dos dois primeiros segmentos não se via.
+     * Um dispositivo com dono: com os sentinelas dos outros testes, um erro na ordem dos dois
+     * primeiros segmentos não se vê.
      */
     public function testATopicCarriesTheCompanyAndTheLicenceInThatOrder(): void
     {
@@ -177,9 +177,8 @@ final class HubMqttBridgeTest extends TestCase
     }
 
     /**
-     * A licença 1001 do hitcare e a 1001 do havicare são clientes diferentes, e por isso a
-     * chave de encaminhamento é o par empresa+licença. Se fosse só o número, este ouvinte
-     * recebia dados de outro cliente.
+     * A 1001 do hitcare e a 1001 do havicare são clientes diferentes, e por isso a chave de
+     * encaminhamento é o par empresa+licença.
      */
     public function testTheSameLicenceNumberInAnotherCompanyIsADifferentScope(): void
     {

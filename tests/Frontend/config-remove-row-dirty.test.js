@@ -10,11 +10,8 @@ import {
 } from "../../src/Dashboard/dashboard/devices/config/index.js";
 
 /**
- * Remover uma linha tem de acender o «Enviar» da secção.
- *
- * O botão que remove a linha sai do DOM com ela, e um ouvinte que só depois procure a secção
- * a partir do alvo do evento não a encontra. Sem isto, tirar um contacto SOS e carregar em
- * guardar não enviava nada.
+ * O botão que remove a linha sai do DOM com ela: um ouvinte que só depois procure a secção a
+ * partir do alvo do evento já não a encontra.
  */
 const sosSection = (numbers) => {
     document.body.innerHTML = `

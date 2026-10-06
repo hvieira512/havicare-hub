@@ -11,20 +11,14 @@ use Hub\Device\PendingDownlinkQueue;
 use Hub\Log\Logger;
 
 /**
- * Entrega às pulseiras o que a API ou o ecrã puseram em fila, e fecha o ciclo quando o
- * gateway confirma.
- *
- * Publica no canal de comandos do próprio gateway, e não no do aparelho: quem executa é a
- * caixa, que tem a sessão BLE. Isto é entrega, não criação.
+ * Entrega às pulseiras o que está em fila, pelo canal de comandos do gateway, que tem a
+ * sessão BLE, e fecha o ciclo quando ele confirma.
  */
 final class DownlinkDispatcher
 {
     /**
-     * Quanto tempo um comando entregue e não confirmado espera antes de ser repetido.
-     *
-     * O gateway ignora a mesma chave durante minutos para não executar duas vezes a mesma
-     * entrega, por isso repeti-la a cada volta do temporizador não o acordaria -- só encheria
-     * o tópico. A repetição serve para o caso de a entrega se ter perdido.
+     * Espera de um comando entregue e não confirmado antes de se repetir, para o caso de a
+     * entrega se ter perdido: o gateway ignora a mesma chave durante minutos.
      */
     private const RESEND_SECONDS = 30;
 
@@ -61,23 +55,18 @@ final class DownlinkDispatcher
             $this->mqttBridge->publishGatewayCommand($this->commandTopicFor($gatewayKey), [
                 'deviceId' => $deviceKey,
                 'operation' => $operation,
-                // O nome da operação diz o que fazer e não com que valor. Sem isto, desligar
-                // um interruptor chegava ao gateway indistinguível de o ligar, e uma ordem de
-                // parar -- como a de deixar de procurar a pulseira -- não existia de todo.
+                // O nome da operação diz o que fazer, e o valor é que distingue ligar de desligar.
                 'payload' => $command['payload'] ?? null,
                 'dedupeKey' => $downlink->dedupeKey,
                 'commandId' => $command['id'] ?? null,
                 'expiresAt' => $downlink->expiresAt,
             ]);
 
-            // Só depois de sair. Marcar ao perguntar se era devida deixava uma ordem que
-            // estoirou a publicar calada trinta segundos sem nunca ter saído.
+            // Só depois de sair: uma publicação que rebenta não fica marcada como entregue.
             $this->markSent($downlink->dedupeKey);
 
-            // Fica em fila de propósito. Entregar não é executar: se o gateway não chegar a
-            // correr o comando, a sessão seguinte volta a recebê-lo, e o TTL da política é
-            // que decide quando deixa de fazer sentido. Sai da fila em `resolvePending`,
-            // quando a caixa confirma -- caso contrário perdia-se em silêncio.
+            // Fica em fila: entregar não é executar. Sai em `resolvePending`, quando o gateway
+            // confirma, ou pelo TTL da política.
             $this->deviceStore?->markLatestCommand($deviceKey, $operation, [
                 'status' => 'waiting',
                 'sentAt' => gmdate('Y-m-d\TH:i:s\Z'),
@@ -102,8 +91,7 @@ final class DownlinkDispatcher
             }
 
             $this->downlinks->remove($downlink);
-            // Confirmado é caso encerrado: a chave sai do travão de repetição para que a
-            // ordem seguinte -- mandar vibrar outra vez, por exemplo -- saia na hora.
+            // Confirmada, a chave sai do travão para a ordem seguinte sair na hora.
             unset($this->sentAt[$dedupeKey]);
             $operation = self::operationOf($downlink);
             if ($operation !== '') {
@@ -118,13 +106,7 @@ final class DownlinkDispatcher
         }
     }
 
-    /**
-     * Fecha o pedido que a pulseira não consegue cumprir.
-     *
-     * O acontecimento de falha diz a razão, mas dizer não é encerrar: sem isto o comando
-     * ficava em fila a ser reentregue até expirar. Só o pedido daquela grandeza -- uma falha
-     * de contacto no ECG não diz nada sobre a leitura da bateria.
-     */
+    /** Fecha o pedido que a pulseira não consegue cumprir, e só o daquela operação. */
     public function failPending(string $deviceKey, string $operation, string $reason): void
     {
         if ($this->downlinks === null || $operation === '') {
@@ -150,18 +132,13 @@ final class DownlinkDispatcher
         }
     }
 
-    /**
-     * O nome da operação de um comando em fila.
-     *
-     * Para este protocolo os bytes em fila são o próprio nome, e o `command` só existe quando
-     * a ordem leva valor -- uma configuração. As duas formas convivem na mesma fila.
-     */
+    /** O nome da operação: os bytes em fila, ou o `command` quando a ordem leva valor. */
     private static function operationOf(PendingDownlink $downlink): string
     {
         return (string)(($downlink->command['command'] ?? null) ?? $downlink->bytes);
     }
 
-    /** Se esta chave já saiu há pouco. Pergunta e mais nada -- quem marca é o `markSent`. */
+    /** Só pergunta; quem marca é o `markSent`. */
     private function dueForSending(string $dedupeKey): bool
     {
         return !isset($this->sentAt[$dedupeKey]);
@@ -183,10 +160,7 @@ final class DownlinkDispatcher
         }
     }
 
-    /**
-     * O canal de comandos vive ao lado do de entrada, no mesmo espaço fixo do gateway:
-     * `.../gw/{mac}/raw` para o que sobe, `.../gw/{mac}/cmd` para o que desce.
-     */
+    /** `.../gw/{mac}/raw` para o que sobe, `.../gw/{mac}/cmd` para o que desce. */
     private function commandTopicFor(string $gatewayKey): string
     {
         $base = preg_replace('#/\+/raw$#', '', trim($this->topicFilter, '/')) ?? '';

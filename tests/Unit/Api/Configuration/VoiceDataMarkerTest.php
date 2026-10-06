@@ -65,8 +65,7 @@ final class VoiceDataMarkerTest extends TestCase
 
     public function testAnEmptyVoiceDataIsAnAbsenceAndNotAMarker(): void
     {
-        // O ecrã envia `voiceData: ""` quando a voz está desligada. Marcar isso como
-        // disponível fazia a dashboard oferecer um leitor para nada.
+        // O ecrã envia `voiceData: ""` com a voz desligada, e isso não é áudio disponível.
         $marked = (new VoiceDataMarker())->mark(['voiceData' => '', 'voiceMimeType' => '']);
 
         self::assertArrayNotHasKey('voiceDataAvailable', $marked);

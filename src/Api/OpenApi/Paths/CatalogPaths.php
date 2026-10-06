@@ -15,9 +15,8 @@ use Hub\Domain\ProtocolRegistry;
 final class CatalogPaths
 {
     /**
-     * Os erros que o criar e o actualizar de um modelo partilham, porque partilham o
-     * `ModelService::modelFields()` e o `storeModelImage()` que os produzem, mais o par
-     * fornecedor+modelo repetido que ambos recusam.
+     * Os erros que o criar e o actualizar de um modelo partilham: os do `modelFields()`, os do
+     * `storeModelImage()` e o par fornecedor+modelo repetido.
      *
      * @var list<string>
      */

@@ -6,10 +6,7 @@ namespace Hub\Ingress\Mqtt\Qinglanst;
 
 final class PayloadDecoder
 {
-    /**
-     * Os códigos do documento do fabricante, já na enumeração que sai no MQTT. Traduzir para
-     * o idioma de quem lê é trabalho de quem desenha o ecrã.
-     */
+    /** Os códigos do documento do fabricante, já na enumeração que sai no MQTT. */
     private const POSTURE = [
         0 => 'initialization',
         1 => 'walking',

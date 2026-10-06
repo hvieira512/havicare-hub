@@ -12,13 +12,8 @@ use React\Promise\PromiseInterface;
 use function React\Promise\resolve;
 
 /**
- * Traz da cloud do fabricante a planta de cada radar e guarda-a.
- *
- * Corre por licença, com um login por licença e não um por radar: são quinze radares numa
- * delas, e o fabricante não distingue quinze logins legítimos de uma tentativa de força bruta.
- *
- * Os radares de uma licença são percorridos por ordem e não em paralelo: a cloud é de
- * terceiros e a sincronização não tem pressa nenhuma.
+ * Traz da cloud do fabricante a planta de cada radar e guarda-a. Um login por licença e não por
+ * radar, que o fabricante lê muitos logins como força bruta; os radares vão por ordem.
  */
 final class RadarLayoutSync
 {
@@ -40,10 +35,7 @@ final class RadarLayoutSync
     }
 
     /**
-     * A planta de um radar, a pedido.
-     *
-     * É o único caminho por onde a sincronização acontece: não há relógio nenhum atrás dela.
-     * Quem carrega no botão é que decide quando se vai falar com a cloud do fabricante.
+     * A planta de um radar, a pedido: é o único caminho da sincronização, sem nada periódico.
      *
      * @return PromiseInterface<array{synced: int, skipped: int, failed: int, codes: array<string, int>, error: string|null}>
      */
@@ -59,8 +51,7 @@ final class RadarLayoutSync
             return resolve($this->tally(failed: 1, error: 'license_has_no_radar_credentials'));
         }
 
-        // O fabricante indexa por `uid`, o hub por IMEI canónico, e as duas colunas não têm de
-        // coincidir. É o `device_id` que vale lá fora.
+        // O fabricante indexa por `uid` e o hub por IMEI canónico, que não têm de coincidir.
         $uid = trim((string)($device['device_id'] ?? ''));
 
         return $this->syncLicense($credentials, [[
@@ -82,8 +73,7 @@ final class RadarLayoutSync
 
         return $this->client->login($credentials)->then(
             fn(array $token): PromiseInterface => $this->syncRadars($credentials, $token, $radars),
-            // Um login que falha não são quinze falhas de radar com a mesma causa: a licença
-            // inteira fica por sincronizar, e o motivo é um só.
+            // Um login falhado deixa a licença inteira por sincronizar, com um só motivo.
             fn(mixed $error): PromiseInterface => resolve($this->tally(
                 failed: count($radars),
                 error: $error instanceof \Throwable ? $error->getMessage() : (string)$error,
@@ -106,8 +96,7 @@ final class RadarLayoutSync
                 ->deviceProp($credentials, $token, $radar['uid'])
                 ->then(
                     fn(array $response): array => $this->absorb($tally, $radar['imei'], $response),
-                    // Um radar que rebenta não leva os seguintes atrás: a resposta dele conta
-                    // como falha e a licença é percorrida até ao fim.
+                    // Um radar que rebenta conta como falha e não pára os seguintes.
                     static fn(mixed $error): array => [...$tally, 'failed' => $tally['failed'] + 1],
                 ));
         }
@@ -130,9 +119,7 @@ final class RadarLayoutSync
             ? $this->parser->parse($data)
             : null;
 
-        // Nem um `777` nem uma resposta sem sala apagam o que está guardado: o aparelho pode
-        // ter saído da conta ou estar mesmo em baixo, e a planta continua a valer até alguém
-        // declarar outra.
+        // Nem um `777` nem uma resposta sem sala apagam a planta guardada: vale até haver outra.
         if ($layout === null) {
             return [...$tally, 'skipped' => $tally['skipped'] + 1];
         }

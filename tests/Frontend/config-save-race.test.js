@@ -26,10 +26,6 @@ beforeEach(() => {
     state.deviceModal.configurations = { aaa111: {} };
 });
 
-/**
- * Gravar no aparelho A e trocar para o B antes de a resposta chegar: as configurações do A
- * ficavam escritas no modal do B.
- */
 test("a resposta de uma gravação não escreve no dispositivo que entretanto se abriu", async () => {
     const fetches = installDeferredFetch();
 

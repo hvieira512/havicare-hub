@@ -8,11 +8,8 @@ use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\Support\Values;
 
 /**
- * Valida o que se configura num dispensador Zayata M228.
- *
- * Não monta a trama -- isso é do `ZayataDownlink`, que conhece as TAGs. Recusa aqui o
- * que o aparelho recusaria lá: uma hora acima das 23, mais alarmes do que os nove que ele
- * tem, um fuso fora do mapa.
+ * Valida o que se configura num M228 e recusa o que o aparelho recusaria: hora acima das 23,
+ * mais de nove alarmes, fuso fora do mapa. A trama é do `ZayataDownlink`.
  */
 final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
 {
@@ -25,17 +22,14 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
         return match ($key) {
             'medication_reminders' => ['plans' => self::plans($payload['plans'] ?? [])],
             'medication_period' => self::period($payload),
-            // Os valores em falta caem no que o aparelho traz de fábrica, e não em erro: o
-            // painel pede o payload por omissão antes de alguém escolher seja o que for, e
-            // um por omissão que não passa na própria validação não é um por omissão.
+            // Os valores em falta caem nos de fábrica, e não em erro: o painel pede o payload por
+            // omissão antes de alguém escolher, e esse tem de passar na validação.
             'early_dispense', 'child_lock', 'missed_dispense', 'emergency_call',
             'key_tone', 'auto_clock' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
             ],
-            // As gamas são as do tipo de dispositivo 02 da especificação: quatro níveis de
-            // volume, em que 0 é o mais alto e 3 é silêncio, e quatro toques a contar com o
-            // «nenhum». A tabela do 0x1012 ainda lista um «Ringtone 4» que ficou do tipo 01,
-            // mas o máximo do tipo 02 é 3 e o aparelho recusa o 4.
+            // Gamas do tipo de dispositivo 02: volume de 0 (mais alto) a 3 (silêncio) e toque até 3. O
+            // «Ringtone 4» da tabela do 0x1012 é do tipo 01, e o aparelho recusa-o.
             'alarm_volume' => ['volume' => self::zeroBasedRangeInt($payload['volume'] ?? 0, 0, 3, 'volume')],
             'alarm_ringtone' => ['ringtone' => self::zeroBasedRangeInt($payload['ringtone'] ?? 0, 0, 3, 'ringtone')],
             'date_format' => ['format' => self::zeroBasedRangeInt($payload['format'] ?? 0, 0, 2, 'format')],
@@ -64,11 +58,8 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
     }
 
     /**
-     * O intervalo em que o plano vale.
-     *
-     * O aparelho leva as duas datas em TAGs separadas e aceita-as sem reclamar da ordem. Um
-     * intervalo ao contrário é um plano que nunca chega a valer, sem erro em lado nenhum:
-     * os alarmes não tocam.
+     * O intervalo em que o plano vale. O aparelho aceita as datas em qualquer ordem, e um
+     * intervalo ao contrário nunca vale nem dá erro: os alarmes não tocam.
      *
      * @param array<string, mixed> $payload
      * @return array{enabled: bool, startDate: string, endDate: string}

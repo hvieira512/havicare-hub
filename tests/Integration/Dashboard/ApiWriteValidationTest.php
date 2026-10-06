@@ -8,11 +8,8 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
- * O que a API recusa num corpo de escrita, e com que forma o diz -- o estado, o `code`, a
- * `message` e o `fields`, que é a parte que é contrato.
- *
- * A regra trancada aqui: um campo a falhar responde o código e a mensagem de sempre, com o
- * `fields` por acréscimo. Só com vários é que a mensagem passa a genérica.
+ * Um campo a falhar responde o código e a mensagem de sempre, com o `fields` por acréscimo; só
+ * com vários é que a mensagem passa a genérica.
  */
 final class ApiWriteValidationTest extends DashboardHttpTestCase
 {
@@ -44,10 +41,8 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
     }
 
     /**
-     * O caso que existia antes: um campo a falhar, e a resposta é a de sempre.
-     *
-     * O `username` nunca teve código próprio -- é `invalid_request` como sempre foi --, mas
-     * tinha mensagem, e é essa que um cliente mostra a quem preenche o formulário.
+     * O `username` não tem código próprio, mas tem a mensagem que um cliente mostra a quem
+     * preenche o formulário.
      */
     public function testASingleMissingFieldAnswersExactlyWhatItAlwaysDid(): void
     {
@@ -80,7 +75,6 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
         self::assertSame('role must be hub_admin or license_client', $result['body']['error']['message'] ?? null);
     }
 
-    /** Vários campos numa resposta só: é o que a API antiga não sabia fazer. */
     public function testSeveralInvalidFieldsComeBackTogether(): void
     {
         [$server, $token] = $this->serverAndAdminToken();
@@ -96,10 +90,7 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
         );
     }
 
-    /**
-     * O `normalizeCompany()` nunca devolve vazio -- devolve `'null'` --, e por isso um nome
-     * em branco chegava a criar uma empresa chamada `null`.
-     */
+    /** O `normalizeCompany()` nunca devolve vazio, devolve `'null'`: o vazio verifica-se antes. */
     public function testCreatingACompanyWithoutANameIsRejected(): void
     {
         [$server, $token] = $this->serverAndAdminToken();
@@ -146,10 +137,8 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
     }
 
     /**
-     * Renomear para um nome que já é de outra empresa é 409, e não 500.
-     *
-     * O `companies.name` é `UNIQUE`: a base recusava-o, mas só depois, com a excepção do PDO
-     * a subir até ao kernel e a sair como `server_error`.
+     * Renomear para um nome que já é de outra empresa é 409: o `companies.name` é `UNIQUE`, e a
+     * excepção do PDO sairia como `server_error`.
      */
     public function testRenamingACompanyOntoAnotherIsAConflictAndNotACrash(): void
     {
@@ -205,12 +194,7 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
         self::assertSame('ok', $result['body']['status'] ?? null);
     }
 
-    /**
-     * O actualizar de uma licença herda o que o pedido não trouxer, e valida o que trouxer.
-     *
-     * O `companyId` a zero era escrito na mesma e a chave estrangeira rebentava a seguir: o
-     * cliente levava um 500 onde lhe pertencia um 400.
-     */
+    /** Um `companyId` a zero recusa-se com 400, antes de a chave estrangeira rebentar em 500. */
     public function testUpdatingALicenseInheritsWhatIsAbsentAndRejectsWhatIsInvalid(): void
     {
         [$server, $db] = $this->makeServerWithDatabase();
@@ -246,8 +230,8 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
     }
 
     /**
-     * A rota de escrita mais usada da API, e a que tinha menos rede: os outros testes de
-     * dispositivos chamam os serviços directamente e não passam por esta validação.
+     * A rota de escrita mais usada da API: os outros testes de dispositivos chamam os serviços
+     * directamente e não passam por esta validação.
      */
     public function testCreatingADeviceRequiresItsIdentityFields(): void
     {
@@ -293,12 +277,7 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
         }
     }
 
-    /**
-     * O actualizar herda o IMEI do caminho quando o corpo não o traz.
-     *
-     * É o `?? $imei` do serviço, e é comportamento que os clientes usam: um `PUT` que só
-     * queira mudar o fornecedor não repete o IMEI que já está no endereço.
-     */
+    /** É o `?? $imei` do serviço: um `PUT` que só mude o fornecedor não repete o IMEI do endereço. */
     public function testUpdatingADeviceInheritsTheImeiFromThePath(): void
     {
         [$server, $token] = $this->serverAndAdminToken();

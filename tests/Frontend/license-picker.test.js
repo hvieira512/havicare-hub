@@ -10,10 +10,8 @@ import {
 } from "../../src/Dashboard/dashboard/devices/classification-ui.js";
 
 /**
- * O selector de licença: a árvore por onde se escolhe o dono de um dispositivo.
- *
- * As linhas vêm da `/api/licenses` tal como ela as devolve -- já ordenadas por empresa e
- * com o nome dela em cada uma.
+ * O selector de licença: as linhas vêm da `/api/licenses` já ordenadas por empresa e com o
+ * nome dela em cada uma.
  */
 const ROWS = [
     { id: 1, company_id: 2, company_name: "havicare", license_id: 1, name: "hc.dev" },

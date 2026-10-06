@@ -6,11 +6,8 @@ import "./support/browser-env.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 
 /**
- * A caixa de mensagem do cartão é para o que a pastilha não sabe dizer.
- *
- * A pastilha conta a história toda de um pedido e vai mudando com ela; uma caixa de sucesso
- * congela um instante e fica a contradizê-la. A falha é outra coisa: um pedido que nem chega
- * a criar comando não tem pastilha nenhuma, e sem esta caixa o clique morria em silêncio.
+ * A caixa de mensagem é só para falhas: um sucesso congelado contradiz a pastilha, e um pedido
+ * que nem cria comando não tem pastilha nenhuma.
  */
 const ACTION = {
     key: "find_device",

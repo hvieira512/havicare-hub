@@ -7,14 +7,8 @@ namespace Hub\Ingress\Mqtt\Veepoo;
 use Hub\Support\Values;
 
 /**
- * Traduz o registo de sono preciso da pulseira para os nomes do hub.
- *
- * Não é uma sequência de leituras: é o relatório de uma noite, já calculado pelo firmware.
- * Saem duas capacidades da mesma trama -- o `sleep` é a noite, e o `sleep_quality` são as
- * pontuações que o firmware lhe atribui.
- *
- * Os significados vêm da documentação do fabricante (`VeepooUniAppSDK`, secção 9.4) e não dos
- * nomes dos campos, que enganam.
+ * Traduz o relatório de uma noite, calculado pelo firmware, em `sleep` e `sleep_quality`. Os
+ * significados vêm do `VeepooUniAppSDK` §9.4, e não dos nomes dos campos, que enganam.
  */
 final class SleepNormalizer
 {
@@ -63,8 +57,7 @@ final class SleepNormalizer
             'device' => $device,
             'source' => [
                 'protocol' => 'veepoo-ble',
-                // O nome por que se vai à documentação do fabricante, e que distingue isto do
-                // sono que os blocos de cinco minutos codificam e que continua por decifrar.
+                // O nome na documentação do fabricante, que distingue isto do sono dos blocos.
                 'nativeType' => 'precise_sleep',
                 'gatewayId' => $gatewayId,
             ],
@@ -88,11 +81,8 @@ final class SleepNormalizer
     }
 
     /**
-     * As noites que a trama traz.
-     *
-     * A pulseira responde a um dia por pedido, mas embrulha a resposta numa lista e o gateway
-     * entrega-a como veio. Um registo solto continua a ser aceite: é a forma que a
-     * documentação do fabricante mostra.
+     * As noites que a trama traz: numa lista, como a pulseira envia, ou num registo solto,
+     * como a documentação mostra.
      *
      * @param array<mixed> $content
      * @return list<array<string, mixed>>
@@ -120,8 +110,7 @@ final class SleepNormalizer
         $start = self::instant($content['fallAsleepTime'] ?? null, $now, $tzOffsetMinutes);
         $end = self::instant($content['exitSleepTime'] ?? null, $now, $tzOffsetMinutes);
 
-        // A mesma regra dos relógios: o fim tem de vir depois do começo, senão os dois
-        // instantes caem e fica a dizer-se que não são de confiar.
+        // Como nos relógios: um fim antes do começo derruba os dois instantes.
         $timingValid = $start !== null && $end !== null && $end > $start;
         if (!$timingValid) {
             $start = null;
@@ -148,11 +137,8 @@ final class SleepNormalizer
     }
 
     /**
-     * A curva como lista de valores, um por intervalo.
-     *
-     * A pulseira envia-a em inteiros; a documentação do fabricante mostra-a como cadeia de
-     * caracteres. Aceitam-se as duas formas aqui, para o resto do código não ter de saber qual
-     * delas veio.
+     * A curva como lista de valores, um por intervalo; chega em inteiros ou, como a
+     * documentação mostra, em cadeia de caracteres.
      *
      * @return list<string>
      */
@@ -166,11 +152,8 @@ final class SleepNormalizer
     }
 
     /**
-     * Os troços da noite, tirados da curva.
-     *
-     * Um valor por intervalo, e intervalos seguidos do mesmo valor são um troço só. A duração
-     * de cada intervalo sai das fronteiras da noite a dividir pelo número deles, porque o
-     * fabricante não a declara.
+     * Os troços da noite, com intervalos seguidos do mesmo valor num só. A duração de cada
+     * intervalo, que o fabricante não declara, é a noite a dividir pelo número deles.
      *
      * @param list<string> $curve
      * @return list<array<string, mixed>>
@@ -209,11 +192,8 @@ final class SleepNormalizer
     }
 
     /**
-     * Os troços que restam quando não há curva, ou quando os instantes não são de confiar.
-     *
-     * O firmware dá o total de cada fase à parte da curva, e eles chegam para saber quanto se
-     * dormiu de cada maneira mesmo sem saber quando. `otherSleepTime` é o tempo acordado
-     * dentro da noite -- o fabricante chama-lhe «outro sono».
+     * Os totais por fase, sem quando, se não há curva ou os instantes não são de confiar.
+     * `otherSleepTime` é o tempo acordado dentro da noite.
      *
      * @param array<string, mixed> $content
      * @return list<array<string, mixed>>
@@ -241,9 +221,7 @@ final class SleepNormalizer
     {
         $out = [];
 
-        // Primeiro, e com a escala no nome: o firmware conta de 0 a 4 e a app do fabricante
-        // mostra de uma a cinco estrelas. Publicar o valor cru dava uma noite perfeita a
-        // parecer uma nota de 4 em 5.
+        // Com a escala no nome: o firmware conta de 0 a 4, e a app mostra de uma a cinco estrelas.
         $stars = self::count($content['sleepQuality'] ?? null);
         if ($stars !== null && $stars <= 4) {
             $out['qualityStars'] = $stars + 1;
@@ -268,10 +246,8 @@ final class SleepNormalizer
     }
 
     /**
-     * O instante que o firmware datou com mês, dia, hora e minuto -- e mais nada.
-     *
-     * O ano vem de quando o registo foi lido: a data é sempre a mais recente que não esteja
-     * no futuro. Quatro partes que não sirvam como data devolvem `null`.
+     * O instante datado só com mês, dia, hora e minuto: o ano é o da data mais recente que não
+     * esteja no futuro.
      */
     private static function instant(mixed $value, int $now, int $tzOffsetMinutes): ?int
     {
@@ -294,8 +270,7 @@ final class SleepNormalizer
 
         $at -= $offset;
 
-        // Uma folga de um dia: o gateway lê o registo depois de a noite acabar, mas os
-        // relógios do aparelho e do servidor não estão ao segundo um do outro.
+        // Um dia de folga: os relógios do aparelho e do servidor não estão acertados ao segundo.
         if ($at <= $now + 86400) {
             return $at;
         }

@@ -43,10 +43,8 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     }
 
     /**
-     * O arranque não come a confirmação do heartbeat que o trouxe.
-     *
-     * O aparelho espera o `0x82` por cada `0x02`. Sem ele retransmite, e ao fim das tentativas
-     * corta a ligação — a meio de uma transferência de firmware.
+     * O aparelho espera o `0x82` por cada `0x02`, e sem ele acaba por cortar a ligação a meio da
+     * transferência.
      */
     public function testTheHeartbeatIsStillAcknowledgedWhileTheUpgradeStarts(): void
     {
@@ -64,10 +62,8 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     }
 
     /**
-     * Os campos de subpacote vão a zero nos pacotes do upgrade.
-     *
-     * A secção 4 manda-o para um pedido partido em vários pacotes, em que cada um é tratado
-     * como pedido independente. O resto do protocolo manda `subtotal` a 1, e aqui não serve.
+     * A secção 4 manda os campos de subpacote a zero num pedido partido em vários pacotes; o
+     * resto do protocolo manda `subtotal` a 1.
      */
     public function testTheUpgradePacketsCarryNoSubpacketFields(): void
     {

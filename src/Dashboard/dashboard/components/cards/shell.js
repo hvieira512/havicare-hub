@@ -2,9 +2,8 @@ import { html, raw } from "../../html.js";
 import { stateBadge } from "../state-badge.js";
 
 /**
- * A casca de um cartão: o ícone, o título, e o corpo que quem chama traz. É só a moldura --
- * o uplink (o que um dispositivo reporta) e o downlink (o cartão de pedido) partilham-na, e o
- * que cada um diz vem de quem a chama.
+ * A casca de um cartão: o ícone, o título e o corpo que quem chama traz. O uplink e o
+ * downlink partilham-na.
  */
 export function telemetryCard({
     span = 6,
@@ -49,8 +48,7 @@ export function telemetryCard({
             ? `<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid ${action ? "fa-up-right-and-down-left-from-center" : "fa-paper-plane"}"></i></span>`
             : "";
 
-    // Pelo texto, e não pelo valor: um `Fragment` vazio é um objecto, e um objecto é sempre
-    // verdadeiro -- a linha abria à mesma, vazia e com a margem toda.
+    // Pelo texto, e não pelo valor: um `Fragment` vazio é um objecto, e é sempre verdadeiro.
     const hasText = (part) => String(part ?? "") !== "";
 
     // Fora da linha do ícone, para ter a largura toda do cartão.

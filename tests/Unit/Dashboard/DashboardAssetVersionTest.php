@@ -9,12 +9,8 @@ use Hub\Dashboard\DashboardHttpServer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Os módulos da dashboard entram pelo caminho e não por uma etiqueta de revalidação.
- *
- * A origem pede `no-cache`, mas a Cloudflare à frente do hub reescreve-o para `max-age=14400`
- * e o browser mistura duas versões no mesmo arranque. A impressão digital no caminho resolve-o
- * sem depender de ninguém, e o prefixo é herdado pelos `import` relativos -- é o que faz o
- * grafo inteiro acompanhar sem haver um passo de compilação.
+ * A versão dos módulos vai no caminho porque a Cloudflare reescreve o `no-cache` da origem, e
+ * o prefixo herda-se pelos `import` relativos sem passo de compilação.
  */
 final class DashboardAssetVersionTest extends TestCase
 {
@@ -32,8 +28,8 @@ final class DashboardAssetVersionTest extends TestCase
     }
 
     /**
-     * O que já tem impressão digital própria não a leva outra vez: uma versão nossa nova
-     * obrigava a puxar o Bootstrap e as fontes de novo sem eles terem mudado.
+     * O que já tem impressão digital própria não a leva outra vez: uma versão nossa nova não pode
+     * obrigar a puxar o Bootstrap e as fontes de novo.
      */
     public function testThirdPartyAssetsKeepTheirOwnPaths(): void
     {
@@ -74,9 +70,8 @@ final class DashboardAssetVersionTest extends TestCase
     }
 
     /**
-     * É esta que prende o defeito: acrescentar, apagar ou alterar um módulo tem de mudar a
-     * versão. Se não mudasse, o URL ficava igual com `immutable` por cima -- que é pior do
-     * que o que se está a corrigir.
+     * Acrescentar, apagar ou alterar um módulo muda a versão, senão o URL ficava igual com
+     * `immutable` por cima.
      */
     public function testTheVersionChangesWithEveryShapeOfChange(): void
     {
@@ -119,10 +114,8 @@ final class DashboardAssetVersionTest extends TestCase
     }
 
     /**
-     * O `immutable` é uma promessa sobre o endereço, não sobre o processo: o corpo guardado
-     * em memória tem de acompanhar o ficheiro. No hub local cada gravação muda a versão, e o
-     * endereço novo tinha de servir bytes novos -- servir os velhos era pior do que o defeito
-     * que isto corrige, porque aí nem recarregar resolvia.
+     * O `immutable` promete o endereço e não o processo: o corpo em memória acompanha o ficheiro,
+     * senão um endereço novo servia bytes velhos que nem recarregar resolvia.
      */
     public function testAVersionedAssetStillServesTheBytesOnDisk(): void
     {
@@ -153,10 +146,7 @@ final class DashboardAssetVersionTest extends TestCase
         }
     }
 
-    /**
-     * A página é quem nomeia a versão a carregar. Guardada, apontava para a anterior, e o
-     * deploy não chegava a quem já tivesse estado lá.
-     */
+    /** A página nomeia a versão a carregar, e guardada apontaria para a anterior. */
     public function testThePageItselfIsNeverKept(): void
     {
         $method = new \ReflectionMethod(DashboardHttpServer::class, 'html');

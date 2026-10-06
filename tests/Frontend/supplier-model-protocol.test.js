@@ -6,12 +6,8 @@ import "./support/browser-env.js";
 import { supplierProtocol } from "../../src/Dashboard/dashboard/domain.js";
 
 /**
- * Um fornecedor pode vender aparelhos que falam protocolos diferentes.
- *
- * A Wonlex é o caso: os relógios falam TCP (`wonlex-json`) e a pulseira MF91 fala BLE
- * (`veepoo-ble`). Resolver só pelo fornecedor devolvia o protocolo do primeiro modelo da
- * lista, e o painel de configurações da pulseira mostrava o catálogo dos relógios --
- * interruptores que ela não tem, e a falta dos que tem.
+ * Um fornecedor pode vender aparelhos de protocolos diferentes: os relógios Wonlex falam TCP
+ * (`wonlex-json`) e a pulseira MF91 fala BLE (`veepoo-ble`).
  */
 const MODELS = [
     { supplier: "Wonlex", internal_model: "HW20PRO", protocol: "wonlex-json" },

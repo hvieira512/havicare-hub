@@ -28,8 +28,7 @@ class LicenseService
     public function list(string $query = ''): array
     {
         $params = $this->presenter->params($query);
-        // O `companyId` é o nome antigo do parâmetro, e é público: continua a valer ao lado
-        // da coluna que o descritor agora anuncia.
+        // O `companyId` é o nome antigo e público do parâmetro, e continua a valer.
         if (isset($params['companyId']) && !isset($params['company_id'])) {
             $params['company_id'] = $params['companyId'];
         }
@@ -80,7 +79,7 @@ class LicenseService
     }
 
     /**
-     * O que não vier no corpo fica como está: é o que o `?? $existing` fazia à mão.
+     * O que não vier no corpo fica como está.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>

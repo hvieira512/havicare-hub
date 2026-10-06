@@ -11,11 +11,8 @@ use Hub\Domain\Capability\HubAppliedCapability;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O `supportedProtocols()` não pode anunciar o que o despacho recusa, nem o despacho aceitar
- * o que ele não anuncia.
- *
- * Uma lista à parte do despacho deriva em silêncio: um protocolo acrescentado à lista cai no
- * `default` do `match` e sai com os comandos nativos de outro fornecedor.
+ * O `supportedProtocols()` e o despacho anunciam e aceitam os mesmos protocolos: um a mais na
+ * lista cai no `default` do `match` e sai com os comandos de outro fornecedor.
  */
 final class DeclaredProtocolsAreDispatchedTest extends TestCase
 {
@@ -40,9 +37,8 @@ final class DeclaredProtocolsAreDispatchedTest extends TestCase
                     continue;
                 }
 
-                // A chave nativa que sai tem de ser uma que este protocolo declare. Absorvido
-                // pelo `default` de outro fornecedor, sairia a chave nativa do fornecedor
-                // errado -- que é a forma silenciosa de isto falhar.
+                // A chave nativa que sai tem de ser deste protocolo: absorvido pelo `default` de outro,
+                // sairia a do fornecedor errado.
                 foreach (array_keys($native) as $nativeKey) {
                     if (!in_array((string)$nativeKey, $own, true)) {
                         $wrong[] = "{$key}/{$protocol}: a chave nativa `{$nativeKey}` não é deste protocolo";

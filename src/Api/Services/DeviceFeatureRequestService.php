@@ -18,11 +18,8 @@ use Hub\Domain\DeviceMetadata;
 use Hub\Log\Logger;
 
 /**
- * Pedir a um dispositivo que faça algo: pedidos de telemetria e acções de capacidades, os
- * comandos em que se transformam, e o estado de um já enviado.
- *
- * É o lado de escrita da API de dispositivos, e a única parte que vai ao hub. Ler um
- * dispositivo não pertence aqui.
+ * Pedir a um dispositivo que faça algo: telemetria, acções de capacidades, os comandos em que
+ * se transformam e o seu estado. É o lado de escrita da API de dispositivos.
  */
 final class DeviceFeatureRequestService
 {
@@ -195,9 +192,8 @@ final class DeviceFeatureRequestService
                 'timeZone' => $timeZone,
             ]);
             $id = bin2hex(random_bytes(8));
-            // O valor segue com o comando: uma acção como «procurar a pulseira» distingue-se
-            // de «deixar de a procurar» só por ele, e os protocolos que entregam a um gateway
-            // mandam o nome da operação e mais nada.
+            // O valor segue com o comando: «procurar a pulseira» só se distingue de «deixar de a
+            // procurar» por ele, e um gateway recebe só o nome da operação.
             $status = $this->hub->submitDownlink($imei, $bytes, [
                 'id' => $id,
                 'command' => $command,
@@ -271,11 +267,8 @@ final class DeviceFeatureRequestService
                 'deviceId' => $metadata !== null ? $metadata->deviceId : (string)($device['deviceId'] ?? ''),
             ]);
             $id = bin2hex(random_bytes(8));
-            // O identificador viaja com o pedido: é por ele que o gateway distingue uma
-            // reentrega -- que o hub faz de sessenta em sessenta segundos enquanto espera
-            // confirmação -- de alguém a carregar no botão outra vez. Não entra na chave de
-            // de-duplicação da fila, que continua a dizer *o que* está em fila e não quem o
-            // pediu.
+            // O identificador deixa o gateway distinguir a reentrega de 60 em 60 s de um novo toque no
+            // botão; não entra na chave de de-duplicação da fila, que diz *o que* está em fila.
             $status = $this->hub->submitDownlink($imei, $bytes, ['id' => $id]);
             $requestedAt = time();
             $record = [
@@ -340,12 +333,7 @@ final class DeviceFeatureRequestService
         }
     }
 
-    /**
-     * O fuso que o hub tem guardado para o aparelho, em HHMM como a TAG `0x1015` o declara.
-     *
-     * Só a calibração do relógio precisa disto, e precisa mesmo: a hora que se manda ao
-     * aparelho é local, e sem fuso ele fica atrasado pelo desvio todo.
-     */
+    /** O fuso que o hub guardou para o aparelho, em HHMM como a TAG `0x1015`: a calibração manda hora local. */
     private function storedTimeZone(string $imei): ?int
     {
         foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
@@ -353,9 +341,8 @@ final class DeviceFeatureRequestService
                 continue;
             }
 
-            // Um valor reportado fica debaixo de `data` — é a forma com que a projeção guarda
-            // qualquer leitura. Só o desejado é um mapa simples, e ler só esse deixava a
-            // calibração em UTC num aparelho cujo fuso nunca tenha sido escrito por aqui.
+            // O reportado fica debaixo de `data`, como a projeção guarda qualquer leitura; o desejado é
+            // um mapa simples, e nem sempre foi escrito daqui.
             $reported = $row['reported_payload'] ?? null;
             $candidates = [
                 is_array($reported) ? ($reported['data'] ?? null) : null,

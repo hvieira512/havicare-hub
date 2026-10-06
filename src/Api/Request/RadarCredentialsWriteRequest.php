@@ -8,11 +8,8 @@ use Hub\Api\OpenApi\Example;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * O corpo das credenciais da cloud dos radares de uma licença.
- *
- * A palavra-passe e o segredo nunca saem na resposta, e por isso o ecrã não os pode reenviar
- * ao corrigir o endereço. Vazios querem dizer "fica como está", e a obrigatoriedade só vale
- * quando ainda não há nada guardado -- daí o grupo `create`, como no pedido das licenças.
+ * O corpo das credenciais da cloud dos radares de uma licença. Os segredos nunca saem na
+ * resposta, e vazios querem dizer "fica como está": só são obrigatórios no grupo `create`.
  */
 final class RadarCredentialsWriteRequest
 {

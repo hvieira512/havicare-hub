@@ -38,8 +38,7 @@ final class RedisObservationStateStore implements ObservationStateStore
         if (is_array($stored) && ($stored['fingerprint'] ?? '') === $fingerprint && $now - (int)($stored['publishedAt'] ?? 0) < max(1, $refreshSeconds)) {
             return false;
         }
-        // A chave só é consultada dentro da janela de refrescamento; o prazo é várias vezes essa
-        // janela, para expirar bem depois de deixar de ser útil e não virar telemetria repetida.
+        // O prazo é várias vezes a janela de refrescamento, para expirar bem depois de servir.
         $this->redis->set(
             $key,
             json_encode(['fingerprint' => $fingerprint, 'publishedAt' => $now], JSON_THROW_ON_ERROR),

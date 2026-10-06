@@ -13,14 +13,8 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * Uma trama sem aparelho não é um aparelho por autorizar.
- *
- * O gateway só sabe com que pulseira está a falar depois de ela se autenticar, e uma trama
- * que chegue antes disso -- ou logo depois de a ligação cair -- vem sem MAC. O hub registava
- * isso como «dispositivo não autorizado» com identidade vazia: uma notificação no sino, com
- * um botão «Registar» que não podia funcionar porque não havia o que registar.
- *
- * Oito delas em cinco horas, numa manhã de reinícios do gateway.
+ * Uma trama de antes de a pulseira se autenticar, ou de logo depois de a ligação cair, vem sem MAC:
+ * não há aparelho a registar.
  */
 final class BridgeUnidentifiedDeviceTest extends TestCase
 {

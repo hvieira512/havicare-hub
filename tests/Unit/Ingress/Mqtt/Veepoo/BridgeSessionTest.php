@@ -15,13 +15,8 @@ use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * A sessão do gateway com a pulseira, e o que dela chega ao hub.
- *
- * O gateway repete-a enquanto a ligação BLE durar -- é assim que o hub sabe que o aparelho
- * continua alcançável e que lhe pode entregar o que está em fila. Repetir o anúncio não é
- * ligar-se de novo, e a diferença tem de aparecer no histórico: senão um dia de pulseira ao
- * pulso enche-o de milhares de «Ligado» e o momento em que ela se ligou mesmo perde-se lá no
- * meio.
+ * A sessão do gateway com a pulseira repete-se enquanto a ligação BLE durar, e o histórico só
+ * regista «Ligado» quando ela começa mesmo.
  */
 final class BridgeSessionTest extends TestCase
 {
@@ -42,9 +37,8 @@ final class BridgeSessionTest extends TestCase
     }
 
     /**
-     * A pulseira sai de alcance sempre que quem a usa se afasta, e o gateway di-lo. Sem
-     * tratar isto o ecrã continuava a mostrá-la ligada até o varrimento de aparelhos
-     * parados dar por ela -- muito depois de já não haver ninguém a quem responder.
+     * A pulseira sai de alcance sempre que quem a usa se afasta, e o gateway di-lo: o ecrã
+     * deixa de a mostrar ligada sem esperar pelo varrimento de aparelhos parados.
      */
     public function testLosingTheSessionAnnouncesTheDisconnection(): void
     {
@@ -77,11 +71,8 @@ final class BridgeSessionTest extends TestCase
     }
 
     /**
-     * O valor tem de viajar com o comando.
-     *
-     * O que o hub põe em fila é o nome da operação, e o gateway precisa de saber se é para
-     * ligar ou desligar. Sem o valor a viajar junto, desligar um interruptor chegava lá como
-     * a ordem de o ligar -- e o «encontrar dispositivo» nunca poderia ser parado.
+     * O gateway precisa do valor para saber se liga ou desliga, senão o «encontrar dispositivo» nunca
+     * se pararia.
      */
     public function testTheDesiredValueTravelsWithTheCommand(): void
     {
@@ -100,13 +91,7 @@ final class BridgeSessionTest extends TestCase
         );
     }
 
-    /**
-     * A versão sai em cada sessão, mesmo repetida.
-     *
-     * A pulseira di-la a cada batimento, e o hub publica o que recebe: comparar com a
-     * anterior para decidir se vale a pena é a conta de quem integra, que tem o valor que
-     * leu da vez passada.
-     */
+    /** O hub publica o que recebe: comparar com a anterior é conta de quem integra. */
     public function testTheFirmwareVersionIsPublishedOnEverySession(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -132,12 +117,8 @@ final class BridgeSessionTest extends TestCase
     }
 
     /**
-     * O histórico de consulta guarda a versão quando ela muda, e não a cada batimento.
-     *
-     * A sessão repete-se de trinta em trinta segundos enquanto a ligação BLE durar, e com ela
-     * a versão de firmware. No MQTT isso é de propósito -- quem integra compara com o que leu
-     * da vez passada. No histórico da dashboard, que guarda cem entradas por aparelho, é uma
-     * hora a expulsar tudo o resto: cem entradas iguais, e nem uma medição à vista.
+     * A sessão e a versão repetem-se de trinta em trinta segundos, e num histórico de cem entradas
+     * expulsariam tudo o resto numa hora.
      */
     public function testTheDashboardKeepsTheFirmwareOnlyWhenItChanges(): void
     {

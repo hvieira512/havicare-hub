@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 
 // Sem temporizadores reais: o `http.js` agenda um refresh de token só por ser importado, e
-// um timer de uma hora deixava o processo de teste pendurado.
+// um timer de uma hora deixaria o processo de teste pendurado.
 window.setTimeout = () => 0;
 window.clearTimeout = () => {};
 
@@ -15,14 +15,8 @@ const { ensureCapabilityCatalog } =
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 
 /**
- * As licenças e o catálogo de capacidades são as duas caches partilhadas da dashboard -- seis
- * ecrãs pedem-nas -- e não tinham teste nenhum. As três regras que ambas seguem são as
- * mesmas: guardar o que chegou, juntar num só pedido os que forem feitos ao mesmo tempo, e
- * nunca pôr um erro em cache.
- *
- * A última encosta ao `api/http.js`: uma resposta de erro com o corpo vazio tem de trazer
- * `error`, ou o `response.data || []` destas duas guardava a lista vazia para o resto da
- * sessão.
+ * As licenças e o catálogo de capacidades são as caches partilhadas: guardam o que chegou,
+ * juntam pedidos simultâneos num só, e nunca põem um erro em cache.
  */
 
 /** Uma resposta do `fetch` tal como o `http.js` a lê: o estado e o corpo em texto. */
