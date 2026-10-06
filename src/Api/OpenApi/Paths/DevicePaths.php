@@ -15,6 +15,7 @@ final class DevicePaths
 {
     private const TAG = 'Devices';
 
+    /** @return array<string, mixed> */
     public static function paths(): array
     {
         $imei = Parameters::imei();

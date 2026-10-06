@@ -22,6 +22,7 @@ final class DenylistService
         $this->presenter = new CollectionPresenter();
     }
 
+    /** @return array<string, mixed> */
     public function list(string $query = ''): array
     {
         return $this->presenter->present(
@@ -32,6 +33,10 @@ final class DenylistService
         );
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function block(array $payload, string $createdBy = ''): array
     {
         $request = (new RequestBinder())->bind($payload, DenylistBlockRequest::class, coerceStrings: true);
@@ -54,6 +59,7 @@ final class DenylistService
         ];
     }
 
+    /** @return array<string, mixed> */
     public function unblock(string $identity): array
     {
         $identity = trim($identity);

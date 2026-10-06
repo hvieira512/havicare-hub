@@ -15,11 +15,13 @@ use Hub\Api\Request\RadarCredentialsWriteRequest;
  */
 final class TenancySchemas
 {
+    /** @return array<string, mixed> */
     public static function schemas(): array
     {
         return array_merge(self::apiUsers(), self::companies(), self::licenses());
     }
 
+    /** @return array<string, mixed> */
     private static function apiUsers(): array
     {
         return [
@@ -54,6 +56,7 @@ final class TenancySchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function companies(): array
     {
         return [
@@ -72,6 +75,7 @@ final class TenancySchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function licenses(): array
     {
         return [

@@ -54,6 +54,7 @@ final class StreamController
     ) {
     }
 
+    /** @param array<string, string> $params */
     public function stream(array $params, ServerRequestInterface $request): Response
     {
         $auth = RequestContext::auth($request);

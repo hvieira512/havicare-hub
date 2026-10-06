@@ -24,7 +24,9 @@ final class ConfigurationLifecyclePresenter
     }
 
     /**
+     * @param array<string, mixed>|null $model
      * @param list<array<string,mixed>> $configRows
+     * @param array<string, mixed> $desired
      * @return array{effectiveConfigurations:array<string,mixed>,configurationSync:array<string,mixed>}
      */
     public function present(
@@ -153,6 +155,11 @@ final class ConfigurationLifecyclePresenter
         return CapabilityCatalog::sectionForCapabilityKey($key) === null;
     }
 
+    /**
+     * @param array<string, mixed>|null $model
+     * @param list<array<string, mixed>> $configRows
+     * @return array<string, mixed>
+     */
     private function pendingConfiguration(?array $model, string $protocol, array $configRows): array
     {
         $desiredCapabilities = $this->capabilities->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'desired_payload', false);

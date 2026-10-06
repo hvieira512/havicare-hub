@@ -11,6 +11,7 @@ use Hub\Api\OpenApi\Responses;
  */
 final class CapabilitySchemas
 {
+    /** @return array<string, mixed> */
     public static function schemas(): array
     {
         return array_merge(
@@ -21,6 +22,7 @@ final class CapabilitySchemas
         );
     }
 
+    /** @return array<string, mixed> */
     private static function catalog(): array
     {
         return [
@@ -71,6 +73,7 @@ final class CapabilitySchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function deviceMatrix(): array
     {
         $section = Responses::ref('DeviceConfiguredCapabilitiesSection');
@@ -145,6 +148,7 @@ final class CapabilitySchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function alarmClock(): array
     {
         return [
@@ -224,6 +228,7 @@ final class CapabilitySchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function phonebook(): array
     {
         return [

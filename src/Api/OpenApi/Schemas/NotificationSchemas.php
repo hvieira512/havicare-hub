@@ -11,6 +11,7 @@ use Hub\Api\OpenApi\Responses;
  */
 final class NotificationSchemas
 {
+    /** @return array<string, mixed> */
     public static function schemas(): array
     {
         return [

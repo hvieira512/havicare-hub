@@ -19,6 +19,7 @@ class SupplierService
         $this->presenter = new CollectionPresenter();
     }
 
+    /** @return array<string, mixed> */
     public function list(string $query = ''): array
     {
         return $this->presenter->present(

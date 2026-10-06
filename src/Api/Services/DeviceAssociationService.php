@@ -28,6 +28,10 @@ final class DeviceAssociationService
         $this->binder = $binder ?? new RequestBinder();
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function associate(string $imei, array $payload, ?ApiAuthContext $auth = null): array
     {
         $existing = $this->whitelist->getMetadata($imei);
@@ -67,6 +71,7 @@ final class DeviceAssociationService
         return ['status' => 'ok', 'imei' => $imei, 'association' => ['company' => $company, 'licenseId' => $licenseId]];
     }
 
+    /** @return array<string, mixed> */
     public function remove(string $imei, ?ApiAuthContext $auth = null): array
     {
         $existing = $this->whitelist->getMetadata($imei);
@@ -103,6 +108,7 @@ final class DeviceAssociationService
         $this->whitelist->updateAssociation($imei, $company, $licenseId);
     }
 
+    /** @return array<string, mixed>|null */
     private function license(string $company, int $licenseId, bool $createIfMissing): ?array
     {
         $companyRow = $this->db->companies->findByName($company);

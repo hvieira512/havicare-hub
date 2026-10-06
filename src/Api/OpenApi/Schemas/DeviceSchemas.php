@@ -14,6 +14,7 @@ use Hub\Api\Request\DeviceWriteRequest;
  */
 final class DeviceSchemas
 {
+    /** @return array<string, mixed> */
     public static function schemas(): array
     {
         return array_merge(
@@ -26,6 +27,7 @@ final class DeviceSchemas
         );
     }
 
+    /** @return array<string, mixed> */
     private static function device(): array
     {
         return [
@@ -121,6 +123,7 @@ final class DeviceSchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function links(): array
     {
         return [
@@ -217,6 +220,7 @@ final class DeviceSchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function commands(): array
     {
         return [
@@ -254,6 +258,7 @@ final class DeviceSchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function configurations(): array
     {
         return [
@@ -366,6 +371,7 @@ final class DeviceSchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function association(): array
     {
         $association = [
@@ -399,6 +405,7 @@ final class DeviceSchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function telemetry(): array
     {
         return [

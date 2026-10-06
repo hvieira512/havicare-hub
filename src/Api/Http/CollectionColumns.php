@@ -65,19 +65,30 @@ final class CollectionColumns
         return $columns;
     }
 
-    /** As colunas por que a listagem se deixa ordenar. */
+    /**
+     * As colunas por que a listagem se deixa ordenar.
+     *
+     * @return array<string, string>
+     */
     public function sortableColumns(): array
     {
         return $this->sortable;
     }
 
-    /** As colunas que se estreitam por texto livre. */
+    /**
+     * As colunas que se estreitam por texto livre.
+     *
+     * @return array<string, string|list<string>>
+     */
     public function textFilterColumns(): array
     {
         return $this->textFilters;
     }
 
-    /** @return array<string, mixed>|null */
+    /**
+     * @param array<string, list<array{value: string, count?: int}>> $counts
+     * @return array<string, mixed>|null
+     */
     private function filterFor(string $field, array $counts): ?array
     {
         if (isset($this->textFilters[$field])) {
@@ -114,13 +125,17 @@ final class CollectionColumns
             $byValue[(string)($option['value'] ?? '')] = (int)($option['count'] ?? 0);
         }
 
-        return array_values(array_map(
+        return array_map(
             static fn(string $value): array => ['value' => $value, 'count' => $byValue[$value] ?? 0],
             $values,
-        ));
+        );
     }
 
-    /** Os campos de conjunto fechado, que o motor conta como conta os outros. */
+    /**
+     * Os campos de conjunto fechado, que o motor conta como conta os outros.
+     *
+     * @return array<string, list<string>>
+     */
     public function fixedOptionFields(): array
     {
         return $this->fixedOptions;

@@ -15,6 +15,7 @@ class CapabilityService
     {
     }
 
+    /** @return array<string, mixed> */
     public function list(string $query = ''): array
     {
         parse_str($query, $params);
@@ -31,6 +32,7 @@ class CapabilityService
         ];
     }
 
+    /** @return array<string, mixed> */
     public function show(int $id): array
     {
         $row = $this->db->genericCapabilities->findById($id);
@@ -41,6 +43,10 @@ class CapabilityService
         return $this->serializeCapability($row);
     }
 
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
     private function serializeCapability(array $row): array
     {
         $section = (string)($row['section'] ?? '');

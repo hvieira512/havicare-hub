@@ -32,6 +32,7 @@ class ApiUserService
         $this->binder = new RequestBinder();
     }
 
+    /** @return array<string, mixed> */
     public function list(string $query = ''): array
     {
         return $this->presenter->present(
@@ -42,6 +43,10 @@ class ApiUserService
         );
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function create(array $payload): array
     {
         $request = $this->binder->bind(
@@ -74,6 +79,10 @@ class ApiUserService
         return ['status' => 'ok', 'id' => $id];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function update(int $id, array $payload): array
     {
         if ($this->db->apiUsers->findById($id) === null) {
@@ -113,6 +122,7 @@ class ApiUserService
         return ['status' => 'ok', 'id' => $id];
     }
 
+    /** @return array<string, mixed> */
     public function delete(int $id): array
     {
         if ($this->db->apiUsers->findById($id) === null) {

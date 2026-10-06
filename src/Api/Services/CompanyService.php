@@ -24,6 +24,7 @@ class CompanyService
         $this->binder = new RequestBinder();
     }
 
+    /** @return array<string, mixed> */
     public function list(string $query = ''): array
     {
         return $this->presenter->present(
@@ -38,6 +39,9 @@ class CompanyService
      * O nome repetido responde 409. A pergunta é feita antes de chamar o repositório, porque
      * o `create()` dele nunca devolve zero para um nome repetido -- devolve o id da linha que
      * já existe, e é idempotente de propósito para quem o chama por dentro.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
      */
     public function create(array $payload): array
     {
@@ -60,6 +64,9 @@ class CompanyService
      * O `companies.name` é `UNIQUE`, e por isso a base recusava-o -- mas só depois, com uma
      * excepção do PDO a subir até ao kernel e a sair como `server_error`. É uma recusa
      * previsível e tem código próprio; não tem de derrubar o pedido para o dizer.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
      */
     public function update(int $id, array $payload): array
     {
@@ -84,6 +91,7 @@ class CompanyService
         return ['status' => 'ok'];
     }
 
+    /** @return array<string, mixed> */
     public function delete(int $id): array
     {
         $existing = $this->db->companies->findById($id);

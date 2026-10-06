@@ -12,6 +12,7 @@ use Hub\Api\OpenApi\Responses;
  */
 final class DiscoverySchemas
 {
+    /** @return array<string, mixed> */
     public static function schemas(): array
     {
         return [

@@ -24,6 +24,7 @@ class LicenseService
         $this->binder = new RequestBinder();
     }
 
+    /** @return array<string, mixed> */
     public function list(string $query = ''): array
     {
         $params = $this->presenter->params($query);
@@ -46,7 +47,12 @@ class LicenseService
         );
     }
 
-    /** O `licenseId` chega como texto tantas vezes como inteiro, e por isso converte-se. */
+    /**
+     * O `licenseId` chega como texto tantas vezes como inteiro, e por isso converte-se.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function create(array $payload): array
     {
         $request = $this->binder->bind(
@@ -73,7 +79,12 @@ class LicenseService
         return ['status' => 'ok', 'id' => $id];
     }
 
-    /** O que não vier no corpo fica como está: é o que o `?? $existing` fazia à mão. */
+    /**
+     * O que não vier no corpo fica como está: é o que o `?? $existing` fazia à mão.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function update(int $id, array $payload): array
     {
         $existing = $this->db->licenses->findById($id);
@@ -117,6 +128,7 @@ class LicenseService
             : null;
     }
 
+    /** @return array<string, mixed> */
     public function delete(int $id): array
     {
         $existing = $this->db->licenses->findById($id);

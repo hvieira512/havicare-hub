@@ -13,6 +13,7 @@ use Hub\Api\Request\ModelWriteRequest;
  */
 final class CatalogSchemas
 {
+    /** @return array<string, mixed> */
     public static function schemas(): array
     {
         return array_merge(
@@ -23,6 +24,7 @@ final class CatalogSchemas
         );
     }
 
+    /** @return array<string, mixed> */
     private static function suppliers(): array
     {
         return [
@@ -40,6 +42,7 @@ final class CatalogSchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function models(): array
     {
         $capabilitySection = Responses::ref('ModelCapabilitySection');
@@ -123,6 +126,7 @@ final class CatalogSchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function deviceTypes(): array
     {
         return [
@@ -173,6 +177,7 @@ final class CatalogSchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function protocols(): array
     {
         return [

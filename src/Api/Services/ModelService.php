@@ -34,6 +34,7 @@ class ModelService
         $this->images = new ModelImageStore();
     }
 
+    /** @return array<string, mixed> */
     public function list(string $query = '', string $baseUrl = ''): array
     {
         $models = $this->presentRows($this->db->models->all(), $baseUrl);
@@ -80,6 +81,7 @@ class ModelService
         }, $rows);
     }
 
+    /** @return array<string, mixed> */
     public function filters(): array
     {
         $groups = [];
@@ -107,6 +109,7 @@ class ModelService
         ];
     }
 
+    /** @return array<string, mixed> */
     public function deviceTypeSuppliersModels(string $baseUrl = ''): array
     {
         $groups = [];
@@ -151,6 +154,7 @@ class ModelService
         ];
     }
 
+    /** @return array<string, mixed> */
     public function show(int $id, string $baseUrl = ''): array
     {
         $entry = $this->db->models->findById($id);
@@ -190,6 +194,7 @@ class ModelService
         ];
     }
 
+    /** @return array<string, mixed> */
     public function template(string $query = ''): array
     {
         $params = $this->presenter->params($query);
@@ -228,6 +233,10 @@ class ModelService
         ];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function create(array $payload, mixed $imageUpload = null): array
     {
         $fields = $this->modelFields($payload, 'create');
@@ -276,6 +285,10 @@ class ModelService
         return ['status' => 'ok'];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function update(int $id, array $payload, mixed $imageUpload = null): array
     {
         $current = $this->db->models->findById($id);
@@ -314,6 +327,7 @@ class ModelService
         return ['status' => 'ok'];
     }
 
+    /** @return array<string, mixed> */
     public function delete(int $id): array
     {
         $model = $this->db->models->findById($id);
@@ -328,6 +342,10 @@ class ModelService
     }
 
 
+    /**
+     * @param array<string, mixed> $decoded
+     * @return array<string, mixed>
+     */
     private function modelFields(array $decoded, string $mode, ?int $modelId = null): array
     {
         // O corpo chega em JSON ou em `multipart/form-data`, e por isso a conversão de

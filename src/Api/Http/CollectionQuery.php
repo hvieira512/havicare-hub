@@ -6,6 +6,7 @@ namespace Hub\Api\Http;
 
 final class CollectionQuery
 {
+    /** @return array<string, mixed> */
     public function params(string $query): array
     {
         if ($query === '') {
@@ -17,16 +18,19 @@ final class CollectionQuery
         return is_array($params) ? $params : [];
     }
 
+    /** @param array<string, mixed> $params */
     public function page(array $params): int
     {
         return max(1, (int)($params['page'] ?? 1));
     }
 
+    /** @param array<string, mixed> $params */
     public function limit(array $params, int $default): int
     {
         return max(1, (int)($params['limit'] ?? $default));
     }
 
+    /** @param array<string, mixed> $params */
     public function filter(array $params, string $key, ?string $default = null): ?string
     {
         $value = trim((string)($params[$key] ?? ''));
@@ -40,6 +44,7 @@ final class CollectionQuery
      * Lê tanto `?supplier[]=a&supplier[]=b` como `?supplier=a,b`. "all" continua a querer
      * dizer "sem filtro", como no filtro de valor único.
      *
+     * @param array<string, mixed> $params
      * @return list<string>
      */
     public function filterList(array $params, string $key): array
@@ -114,6 +119,8 @@ final class CollectionQuery
      *
      * É o único filtro de valor único desta listagem, porque escolher os dois é o mesmo que
      * não escolher nenhum -- e isso já é a ausência do parâmetro.
+     *
+     * @param array<string, mixed> $params
      */
     public function onlineFilter(array $params): ?bool
     {

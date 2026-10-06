@@ -27,6 +27,7 @@ final class DeviceController
     ) {
     }
 
+    /** @param array<string, string> $params */
     public function list(array $params, ServerRequestInterface $request): Response
     {
         $auth = RequestContext::auth($request);
@@ -34,6 +35,7 @@ final class DeviceController
         return $this->json->result($this->service->list((string)$request->getUri()->getQuery(), $auth, RequestContext::baseUrl($request)));
     }
 
+    /** @param array<string, string> $params */
     public function show(array $params, ServerRequestInterface $request): Response
     {
         $auth = RequestContext::auth($request);
@@ -41,6 +43,7 @@ final class DeviceController
         return $this->json->result($this->service->show($params['imei'], $auth, RequestContext::baseUrl($request)));
     }
 
+    /** @param array<string, string> $params */
     public function stream(array $params, ServerRequestInterface $request): Response
     {
         $imei = $params['imei'];
@@ -152,6 +155,7 @@ final class DeviceController
         ], $stream);
     }
 
+    /** @param array<string, string> $params */
     public function requestFeature(array $params, ServerRequestInterface $request): Response
     {
         $payload = RequestContext::jsonBody($request);
@@ -161,6 +165,7 @@ final class DeviceController
             : $this->service->requestFeature($params['imei'], $payload, RequestContext::auth($request), RequestContext::requestId($request)));
     }
 
+    /** @param array<string, string> $params */
     public function links(array $params, ServerRequestInterface $request): Response
     {
         return $this->json->result($this->service->links($params['imei'], RequestContext::auth($request)));
@@ -169,6 +174,7 @@ final class DeviceController
     /**
      * Em cru, para o estado de sucesso ser o que a rota declara.
      *
+     * @param array<string, string> $params
      * @return array<string, mixed>
      */
     public function createLink(array $params, ServerRequestInterface $request): array
@@ -176,11 +182,13 @@ final class DeviceController
         return $this->service->createLink($params['imei'], $params['linkedImei'], RequestContext::auth($request));
     }
 
+    /** @param array<string, string> $params */
     public function deleteLink(array $params, ServerRequestInterface $request): Response
     {
         return $this->json->result($this->service->deleteLink($params['imei'], $params['linkedImei'], RequestContext::auth($request)));
     }
 
+    /** @param array<string, string> $params */
     public function patchAssociation(array $params, ServerRequestInterface $request): Response
     {
         $payload = RequestContext::jsonBody($request);
@@ -190,11 +198,13 @@ final class DeviceController
             : $this->service->patchAssociation($params['imei'], $payload, RequestContext::auth($request)));
     }
 
+    /** @param array<string, string> $params */
     public function deleteAssociation(array $params, ServerRequestInterface $request): Response
     {
         return $this->json->result($this->service->deleteAssociation($params['imei'], RequestContext::auth($request)));
     }
 
+    /** @param array<string, string> $params */
     public function commandStatus(array $params, ServerRequestInterface $request): Response
     {
         return $this->json->result($this->service->commandStatus($params['id'], RequestContext::auth($request)));
@@ -203,6 +213,7 @@ final class DeviceController
     /**
      * Em cru, para o estado de sucesso ser o que a rota declara.
      *
+     * @param array<string, string> $params
      * @return array<string, mixed>
      */
     public function create(array $params, ServerRequestInterface $request): array
@@ -214,6 +225,7 @@ final class DeviceController
             : $this->service->create($payload, RequestContext::auth($request));
     }
 
+    /** @param array<string, string> $params */
     public function update(array $params, ServerRequestInterface $request): Response
     {
         $payload = RequestContext::jsonBody($request);
@@ -223,6 +235,7 @@ final class DeviceController
             : $this->service->update($params['imei'], $payload, RequestContext::auth($request), RequestContext::requestId($request)));
     }
 
+    /** @param array<string, string> $params */
     public function updateConfigurations(array $params, ServerRequestInterface $request): Response
     {
         $payload = RequestContext::jsonBody($request);
@@ -232,6 +245,7 @@ final class DeviceController
             : $this->service->updateConfigurations($params['imei'], $payload, RequestContext::auth($request), RequestContext::requestId($request)));
     }
 
+    /** @param array<string, string> $params */
     public function delete(array $params, ServerRequestInterface $request): Response
     {
         return $this->json->result($this->service->delete($params['imei'], RequestContext::auth($request)));

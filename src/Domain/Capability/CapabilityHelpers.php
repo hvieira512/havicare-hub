@@ -7,7 +7,10 @@ namespace Hub\Domain\Capability;
 /** Os ajudantes de validação e normalização partilhados pelas capacidades. */
 trait CapabilityHelpers
 {
-    /** @return list<string> */
+    /**
+     * @param array<array-key, mixed> $values
+     * @return list<string>
+     */
     public static function stringList(array $values): array
     {
         $normalized = [];
@@ -160,6 +163,7 @@ trait CapabilityHelpers
         return $merged;
     }
 
+    /** @return list<mixed> */
     public static function mergeListValues(mixed $existing, mixed $incoming): array
     {
         $existingList = is_array($existing) ? array_values($existing) : [];
@@ -168,6 +172,7 @@ trait CapabilityHelpers
         return array_merge($existingList, $incomingList);
     }
 
+    /** @param array<array-key, mixed> $value */
     protected function stringifyPhoneList(array $value): mixed
     {
         if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {

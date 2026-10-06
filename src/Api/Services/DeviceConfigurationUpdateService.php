@@ -268,6 +268,13 @@ final class DeviceConfigurationUpdateService
         ];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $metadata
+     * @param array<string, mixed> $device
+     * @param array<string, mixed> $commandContext
+     * @return array<string, mixed>
+     */
     private function prepareNative(
         string $imei,
         string $nativeKey,
@@ -337,7 +344,10 @@ final class DeviceConfigurationUpdateService
         ];
     }
 
-    /** @param array<string,mixed> $operation */
+    /**
+     * @param array<string,mixed> $operation
+     * @return array<string, mixed>
+     */
     private function dispatchOperation(string $imei, array $operation): array
     {
         $id = (string)$operation['operationId'];
@@ -445,7 +455,7 @@ final class DeviceConfigurationUpdateService
         }
         $contacts = $payload['contacts'] ?? $payload['familyNumbers'] ?? $payload;
 
-        return is_array($contacts) && array_is_list($contacts) ? array_values($contacts) : [];
+        return is_array($contacts) && array_is_list($contacts) ? $contacts : [];
     }
 
     /**

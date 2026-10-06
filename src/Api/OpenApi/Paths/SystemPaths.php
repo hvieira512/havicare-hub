@@ -13,11 +13,13 @@ use Hub\Api\OpenApi\Responses;
  */
 final class SystemPaths
 {
+    /** @return array<string, mixed> */
     public static function paths(): array
     {
         return array_merge(self::auth(), self::notifications(), self::denylist(), self::documentation());
     }
 
+    /** @return array<string, mixed> */
     private static function auth(): array
     {
         return [
@@ -91,6 +93,7 @@ final class SystemPaths
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function notifications(): array
     {
         return [
@@ -139,6 +142,7 @@ final class SystemPaths
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function denylist(): array
     {
         return [
@@ -207,6 +211,7 @@ final class SystemPaths
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function documentation(): array
     {
         return [

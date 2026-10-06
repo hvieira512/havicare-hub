@@ -79,6 +79,7 @@ class DeviceService
         );
     }
 
+    /** @return array<string, mixed> */
     public function list(string $query = '', ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
     {
         $params = $this->query->params($query);
@@ -174,6 +175,7 @@ class DeviceService
         ];
     }
 
+    /** @return array<string, mixed> */
     public function show(string $imei, ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
     {
         $device = $this->directory->deviceSnapshot($imei);
@@ -259,6 +261,7 @@ class DeviceService
         return $links;
     }
 
+    /** @return array<string, mixed> */
     public function links(string $imei, ?ApiAuthContext $auth = null): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
@@ -267,6 +270,7 @@ class DeviceService
         return ['data' => $this->db->gatewayDeviceLinks->forDevice($imei)];
     }
 
+    /** @return array<string, mixed> */
     public function createLink(string $imei, string $linkedImei, ?ApiAuthContext $auth = null): array
     {
         $validation = $this->validateGatewayLink($imei, $linkedImei, $auth);
@@ -277,6 +281,7 @@ class DeviceService
         return ['status' => 'ok', 'gatewayDeviceKey' => $imei, 'linkedDeviceKey' => $linkedImei];
     }
 
+    /** @return array<string, mixed> */
     public function deleteLink(string $imei, string $linkedImei, ?ApiAuthContext $auth = null): array
     {
         $validation = $this->validateGatewayLink($imei, $linkedImei, $auth);
@@ -287,6 +292,7 @@ class DeviceService
         return ['status' => 'ok', 'gatewayDeviceKey' => $imei, 'linkedDeviceKey' => $linkedImei];
     }
 
+    /** @return array<string, mixed> */
     private function validateGatewayLink(string $imei, string $linkedImei, ?ApiAuthContext $auth): array
     {
         $gateway = $this->whitelist->getMetadata($imei);
@@ -303,11 +309,16 @@ class DeviceService
         return ['status' => 'ok'];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function requestFeature(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         return $this->featureRequests->requestFeature($imei, $payload, $auth, $requestId);
     }
 
+    /** @return array<string, mixed> */
     public function commandStatus(string $id, ?ApiAuthContext $auth = null): array
     {
         return $this->featureRequests->commandStatus($id, $auth);
@@ -316,6 +327,7 @@ class DeviceService
     /**
      * @param list<array<string, mixed>>|null $configRows As linhas já lidas pelo chamador, para
      *   não repetir a consulta. O detalhe passa-as; os chamadores diretos deixam-nas a `null`.
+     * @return array<string, mixed>
      */
     public function configuration(string $imei, ?ApiAuthContext $auth = null, ?array $configRows = null): array
     {
@@ -342,6 +354,10 @@ class DeviceService
         return $this->configurationQueries->current($imei, $protocol, $configRows);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function updateConfigurations(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
@@ -400,6 +416,10 @@ class DeviceService
         ];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function create(array $payload, ?ApiAuthContext $auth = null): array
     {
         $request = $this->binder->bind(
@@ -447,6 +467,10 @@ class DeviceService
         return ['status' => 'ok', 'imei' => $imei];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function update(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         $audit = new DeviceWriteAudit($imei, $requestId);
@@ -537,16 +561,22 @@ class DeviceService
         return ['status' => 'ok', 'imei' => $newImei];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function patchAssociation(string $imei, array $payload, ?ApiAuthContext $auth = null): array
     {
         return $this->associations->associate($imei, $payload, $auth);
     }
 
+    /** @return array<string, mixed> */
     public function deleteAssociation(string $imei, ?ApiAuthContext $auth = null): array
     {
         return $this->associations->remove($imei, $auth);
     }
 
+    /** @return array<string, mixed> */
     public function delete(string $imei, ?ApiAuthContext $auth = null): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
@@ -590,6 +620,7 @@ class DeviceService
      * comando muda de estado, e isso não se manda por diferenças.
      *
      * @param array<string, int> $since
+     * @return array<string, mixed>
      */
     public function recent(string $imei, ?ApiAuthContext $auth = null, array $since = []): array
     {

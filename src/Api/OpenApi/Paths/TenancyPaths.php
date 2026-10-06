@@ -26,11 +26,13 @@ final class TenancyPaths
         'user_exists',
     ];
 
+    /** @return array<string, mixed> */
     public static function paths(): array
     {
         return array_merge(self::apiUsers(), self::companies(), self::licenses());
     }
 
+    /** @return array<string, mixed> */
     private static function apiUsers(): array
     {
         $id = Parameters::id('API user ID');
@@ -90,6 +92,7 @@ final class TenancyPaths
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function companies(): array
     {
         $id = Parameters::id('Company ID');
@@ -147,6 +150,7 @@ final class TenancyPaths
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function licenses(): array
     {
         $id = Parameters::id('License ID');

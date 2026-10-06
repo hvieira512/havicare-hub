@@ -27,6 +27,7 @@ final class AuthController
      * credencial errada continua a responder 401, que é o que o `invalid_credentials` e o
      * `invalid_refresh_token` declaram; o resto passa a responder o que o seu código diz.
      */
+    /** @param array<string, string> $params */
     public function login(array $params, ServerRequestInterface $request): Response
     {
         $payload = RequestContext::jsonBody($request);
@@ -87,6 +88,7 @@ final class AuthController
      * A rota é pública porque o cookie é a credencial -- exigir um token de acesso válido
      * deixava um separador com o token expirado sem maneira de fechar a sessão.
      */
+    /** @param array<string, string> $params */
     public function logout(array $params, ServerRequestInterface $request): Response
     {
         $this->service->logout(
@@ -99,6 +101,7 @@ final class AuthController
     }
 
     /** Só administradores chegam aqui: o `RouteAccessPolicy` nega esta rota a toda a gente. */
+    /** @param array<string, string> $params */
     public function licenseToken(array $params, ServerRequestInterface $request): Response
     {
         $payload = RequestContext::jsonBody($request);

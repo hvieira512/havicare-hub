@@ -25,6 +25,7 @@ use Hub\Api\OpenApi\Schemas\TenancySchemas;
  */
 class OpenApiSpec
 {
+    /** @return array<string, mixed> */
     public static function get(): array
     {
         return [

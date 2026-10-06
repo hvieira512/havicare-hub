@@ -29,6 +29,7 @@ final class CapabilityDiscoveryService
         $this->presenter = new CollectionPresenter();
     }
 
+    /** @return array<string, mixed> */
     public function list(string $query = ''): array
     {
         return $this->presenter->present(
@@ -39,6 +40,7 @@ final class CapabilityDiscoveryService
         );
     }
 
+    /** @return array<string, mixed> */
     public function show(string $id): array
     {
         $run = $this->repository->find($id);
@@ -49,6 +51,10 @@ final class CapabilityDiscoveryService
         return $run;
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function preview(array $payload, ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
     {
         $request = (new RequestBinder())->bind($payload, CapabilityDiscoveryRequest::class, coerceStrings: true);
@@ -128,6 +134,7 @@ final class CapabilityDiscoveryService
         return $this->repository->save($run);
     }
 
+    /** @return array<string, mixed> */
     public function apply(string $id): array
     {
         $run = $this->repository->find($id);

@@ -14,11 +14,13 @@ use Hub\Domain\DeviceTypeCatalog;
  */
 final class CapabilityPaths
 {
+    /** @return array<string, mixed> */
     public static function paths(): array
     {
         return array_merge(self::catalog(), self::discovery());
     }
 
+    /** @return array<string, mixed> */
     private static function catalog(): array
     {
         return [
@@ -53,6 +55,7 @@ final class CapabilityPaths
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function discovery(): array
     {
         $runId = Parameters::pathSchema('id', ['type' => 'string']);

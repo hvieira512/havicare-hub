@@ -70,11 +70,16 @@ final class DeviceDirectory
         );
     }
 
+    /**
+     * @param array<string, mixed> $device
+     * @return array<string, mixed>|null
+     */
     public function modelForDevice(array $device): ?array
     {
         return $this->modelForSupplierAndName((string)($device['supplier'] ?? ''), (string)($device['model'] ?? ''));
     }
 
+    /** @return array<string, mixed>|null */
     public function modelForSupplierAndName(string $supplier, string $model): ?array
     {
         if (trim($supplier) === '' || trim($model) === '') {
@@ -85,6 +90,7 @@ final class DeviceDirectory
     }
 
 
+    /** @param array<string, mixed>|null $device */
     public function canAccessDevice(string $imei, ?ApiAuthContext $auth, ?array $device = null): bool
     {
         if ($auth === null || $auth->isAdmin()) {
@@ -98,6 +104,7 @@ final class DeviceDirectory
         return $auth->canAccessTenant($company, $licenseId);
     }
 
+    /** @param array<string, mixed> $device */
     private function deviceLicenseId(string $imei, array $device): int
     {
         $licenseId = trim((string)($device['licenseId'] ?? ''));
@@ -108,6 +115,7 @@ final class DeviceDirectory
         return $this->whitelist->getMetadata($imei)?->licenseId ?? 0;
     }
 
+    /** @param array<string, mixed> $device */
     private function deviceCompany(string $imei, array $device): string
     {
         $company = trim((string)($device['company'] ?? ''));
@@ -130,6 +138,7 @@ final class DeviceDirectory
     }
 
 
+    /** @return array<string, mixed> */
     public function deviceSnapshot(string $imei): array
     {
         $device = $this->db->whitelist->getDevice($imei) ?? ['imei' => $imei];
@@ -172,7 +181,9 @@ final class DeviceDirectory
     }
 
     /**
+     * @param array<string, mixed> $device
      * @param array<string, array<string, mixed>> $runtimeStates
+     * @return array<string, mixed>
      */
     public function overlayRuntimeState(array $device, array $runtimeStates): array
     {

@@ -63,6 +63,8 @@ final class ApiKernel
      * `Hub\Api\Http\Middleware`. A resolução da identidade ficou: alimenta ao mesmo tempo o
      * registo e a política de acesso à rota, e separá-la obrigava a correr o encaminhamento
      * duas vezes -- num middleware para saber a rota e aqui para a despachar.
+     *
+     * @return Response|PromiseInterface<Response>
      */
     public function handle(ServerRequestInterface $request): Response|PromiseInterface
     {
@@ -173,6 +175,7 @@ final class ApiKernel
         ];
     }
 
+    /** @return array{context: ApiAuthContext|null, state: string} */
     private function resolveApiAuthContext(ServerRequestInterface $request): array
     {
         if (!$this->apiAuthRequired) {
@@ -190,6 +193,10 @@ final class ApiKernel
         return ['context' => $context, 'state' => 'bearer'];
     }
 
+    /**
+     * @param array{route: ApiRoute, parameters: array<string, string>}|null $match
+     * @return Response|PromiseInterface<Response>
+     */
     private function dispatch(ServerRequestInterface $request, ?ApiAuthContext $authContext, ?array $match = null): Response|PromiseInterface
     {
         $match = $match ?? $this->router->match(strtoupper($request->getMethod()), $request->getUri()->getPath());

@@ -31,6 +31,7 @@ final class DeviceCapabilityPresenter
     }
 
     /**
+     * @param array<string, mixed>|null $model
      * @return list<array<string, mixed>>
      */
     public function enabledRequestCommandsForModel(?array $model, string $protocol): array
@@ -53,6 +54,7 @@ final class DeviceCapabilityPresenter
     }
 
     /**
+     * @param array<string, mixed>|null $model
      * @param list<array<string, mixed>> $configRows
      * @return array<string, array<string, mixed>>
      */
@@ -62,6 +64,7 @@ final class DeviceCapabilityPresenter
     }
 
     /**
+     * @param array<string, mixed>|null $model
      * @param list<array<string, mixed>> $configRows
      * @return array<string, array<string, mixed>>
      */
@@ -101,6 +104,7 @@ final class DeviceCapabilityPresenter
      * O que o modelo declara suportar, ou o que o protocolo suporta quando o dispositivo não
      * tem modelo registado.
      *
+     * @param array<string, mixed>|null $model
      * @return array<string, array<string, bool>>
      */
     private function supportedCapabilityMatrix(?array $model, string $protocol, string $deviceType): array
@@ -389,6 +393,7 @@ final class DeviceCapabilityPresenter
             || $this->capabilityRegistry->supportsProtocol($genericKey, $protocol);
     }
 
+    /** @return array<string, mixed> */
     private function defaultCapabilityEntry(string $protocol, string $genericKey): array
     {
         $entry = $this->configurationEntryForGenericKey($protocol, $genericKey);
@@ -425,6 +430,7 @@ final class DeviceCapabilityPresenter
         return $capability;
     }
 
+    /** @return array<string, mixed>|null */
     private function configurationEntryForGenericKey(string $protocol, string $genericKey): ?array
     {
         foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
@@ -456,6 +462,7 @@ final class DeviceCapabilityPresenter
     }
 
     /**
+     * @param array<string, mixed>|null $model
      * @param array<string, mixed>|null $matrix
      * @return array<string, array{supported: bool, requestable: bool}>
      */
@@ -492,6 +499,7 @@ final class DeviceCapabilityPresenter
         return $telemetry;
     }
 
+    /** @param array<string, mixed> $desired */
     public function normalizeCapabilityValue(
         string $protocol,
         string $genericKey,

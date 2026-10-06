@@ -36,6 +36,10 @@ final class DeviceFeatureRequestService
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function requestFeature(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
@@ -114,6 +118,10 @@ final class DeviceFeatureRequestService
         ];
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private function requestCapabilityAction(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         $capability = trim((string)($payload['capability'] ?? ''));
@@ -232,6 +240,10 @@ final class DeviceFeatureRequestService
         ];
     }
 
+    /**
+     * @param array<string, mixed> $device
+     * @return array<string, mixed>
+     */
     private function sendFeatureCommands(
         string $imei,
         string $protocol,
@@ -361,6 +373,7 @@ final class DeviceFeatureRequestService
         return null;
     }
 
+    /** @return array<string, mixed> */
     public function commandStatus(string $id, ?ApiAuthContext $auth = null): array
     {
         $result = $this->store->findCommand($id);

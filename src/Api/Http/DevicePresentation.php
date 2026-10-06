@@ -10,6 +10,11 @@ final class DevicePresentation
     {
     }
 
+    /**
+     * @param array<string, mixed> $device
+     * @param array<string, mixed>|null $modelRow
+     * @return array<string, mixed>
+     */
     public function attachImage(array $device, ?array $modelRow, string $baseUrl): array
     {
         $device['image'] = $this->modelImage($modelRow, $baseUrl);
@@ -17,6 +22,7 @@ final class DevicePresentation
         return $device;
     }
 
+    /** @param array<string, mixed>|null $modelRow */
     public function modelImage(?array $modelRow, string $baseUrl): ?string
     {
         if ($modelRow === null) {

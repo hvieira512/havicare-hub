@@ -37,6 +37,7 @@ final class CatalogPaths
         'image_save_failed',
     ];
 
+    /** @return array<string, mixed> */
     public static function paths(): array
     {
         return array_merge(
@@ -47,6 +48,7 @@ final class CatalogPaths
         );
     }
 
+    /** @return array<string, mixed> */
     private static function suppliers(): array
     {
         return [
@@ -66,6 +68,7 @@ final class CatalogPaths
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function models(): array
     {
         $id = Parameters::id('Model ID');
@@ -157,6 +160,7 @@ final class CatalogPaths
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function deviceTypes(): array
     {
         return [
@@ -187,6 +191,7 @@ final class CatalogPaths
         ];
     }
 
+    /** @return array<string, mixed> */
     private static function protocols(): array
     {
         return [

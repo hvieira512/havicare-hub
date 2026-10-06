@@ -62,6 +62,7 @@ final class CollectionPresenter
 
     /**
      * @param list<array<string, mixed>> $items
+     * @param array<string, mixed> $params
      * @return array{list<array<string, mixed>>, array<string, mixed>}
      */
     private function filter(array $items, CollectionColumns $columns, array $params): array
@@ -97,6 +98,7 @@ final class CollectionPresenter
 
     /**
      * @param list<array<string, mixed>> $items
+     * @param array<string, mixed> $params
      * @return list<array<string, mixed>>
      */
     private function sort(array $items, CollectionColumns $columns, array $params): array
@@ -145,6 +147,7 @@ final class CollectionPresenter
      * Os valores possíveis de cada coluna de escolha, com a contagem de cada um.
      *
      * @param list<array<string, mixed>> $items
+     * @param array<string, mixed> $params
      * @return array{array<string, list<string>>, array<string, list<array{value: string, count: int}>>}
      */
     private function facets(array $items, CollectionColumns $columns, array $params): array

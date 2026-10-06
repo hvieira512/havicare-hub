@@ -12,6 +12,7 @@ use Hub\Domain\ProtocolRegistry;
 
 class ProtocolService
 {
+    /** @return array<string, mixed> */
     public function list(): array
     {
         return [
@@ -27,6 +28,10 @@ class ProtocolService
         ];
     }
 
+    /**
+     * @param array<string, string> $params
+     * @return array<string, mixed>
+     */
     public function configCatalog(array $params): array
     {
         $protocol = (string)($params['protocol'] ?? '');

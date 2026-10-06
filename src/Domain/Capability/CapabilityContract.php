@@ -46,6 +46,8 @@ interface CapabilityContract
      *
      * Leva o protocolo pela mesma razão que o `toNative`: a mesma chave nativa quer dizer
      * coisas diferentes em fornecedores diferentes, e sem ele descodificar é adivinhar.
+     *
+     * @param array<string, mixed> $desired
      */
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed;
 
@@ -56,6 +58,7 @@ interface CapabilityContract
      * Constrói o `_meta` da resposta da API.
      *
      * @param array<string, mixed> $accumulatedMeta  Meta accumulated from config rows
+     * @return array<string, mixed>
      */
     public function meta(string $protocol, array $accumulatedMeta = []): array;
 
@@ -65,6 +68,11 @@ interface CapabilityContract
      */
     public function merge(mixed $existing, mixed $incoming): mixed;
 
-    /** Constrói a entrada completa da capacidade, para a resposta da API. */
+    /**
+     * Constrói a entrada completa da capacidade, para a resposta da API.
+     *
+     * @param array<string, mixed> $meta
+     * @return array<string, mixed>
+     */
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array;
 }

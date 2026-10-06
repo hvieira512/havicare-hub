@@ -18,6 +18,7 @@ final class DashboardNotificationService
     {
     }
 
+    /** @return array<string, mixed> */
     public function list(string $query = ''): array
     {
         parse_str($query, $params);
@@ -33,6 +34,9 @@ final class DashboardNotificationService
      * Um corpo que não é JSON chega aqui como array vazio, e não à parte: este endpoint
      * sempre respondeu "ids array is required" a um corpo ilegível, e é o que os clientes
      * esperam ver.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
      */
     public function markRead(array $payload): array
     {
@@ -55,6 +59,7 @@ final class DashboardNotificationService
         ];
     }
 
+    /** @return array<string, mixed> */
     public function delete(int $id): array
     {
         if ($id <= 0) {

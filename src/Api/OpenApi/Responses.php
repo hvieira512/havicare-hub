@@ -9,12 +9,17 @@ use Hub\Api\Http\ApiError;
 /** As formas de resposta partilhadas pelas definições de rotas. */
 final class Responses
 {
+    /** @return array<string, string> */
     public static function ref(string $schema): array
     {
         return ['$ref' => '#/components/schemas/' . $schema];
     }
 
-    /** O payload partilhado `components/responses/Error`. */
+    /**
+     * O payload partilhado `components/responses/Error`.
+     *
+     * @return array<string, string>
+     */
     public static function error(): array
     {
         return ['$ref' => '#/components/responses/Error'];
@@ -28,8 +33,11 @@ final class Responses
      * Vários códigos com o mesmo estado colapsam numa entrada só. A junção é com `+` e não
      * com `...`: as chaves são estados HTTP, e o desdobramento renumera chaves inteiras.
      *
-     * @param array<string, mixed> $success as respostas de sucesso, já com o seu estado
-     * @return array<string, mixed>
+     * A chave é `array-key` e não `string`: o PHP converte `'200'` em inteiro ao pô-lo num
+     * array, e quem chama escreve-a como texto.
+     *
+     * @param array<array-key, mixed> $success as respostas de sucesso, já com o seu estado
+     * @return array<array-key, mixed>
      */
     public static function map(array $success, string ...$codes): array
     {
@@ -42,6 +50,10 @@ final class Responses
         return $success + $errors;
     }
 
+    /**
+     * @param array<string, mixed> $schema
+     * @return array<string, mixed>
+     */
     public static function content(string $description, array $schema, string $mediaType = 'application/json'): array
     {
         return [
@@ -50,6 +62,7 @@ final class Responses
         ];
     }
 
+    /** @return array<string, mixed> */
     public static function json(string $description, string $schema): array
     {
         return self::content($description, self::ref($schema));

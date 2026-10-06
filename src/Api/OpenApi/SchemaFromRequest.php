@@ -29,6 +29,10 @@ final class SchemaFromRequest
             ->enableAttributeMapping()
             ->getValidator()
             ->getMetadataFor($requestClass);
+        // O `getMetadataFor` promete `MetadataInterface`, e só a de classe tem propriedades.
+        if (!$metadata instanceof ClassMetadataInterface) {
+            throw new \RuntimeException("No class metadata for {$requestClass}");
+        }
 
         $required = self::requiredFields($requestClass, $groups);
         $properties = [];

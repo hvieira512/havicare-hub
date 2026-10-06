@@ -24,6 +24,10 @@ class AuthService
     }
 
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public function login(array $payload, string $requestId = '', string $remoteAddress = ''): array
     {
         $refreshToken = trim((string)($payload['refresh_token'] ?? ''));
@@ -109,6 +113,7 @@ class AuthService
         ]);
     }
 
+    /** @return array<string, mixed> */
     private function refresh(string $refreshToken, string $requestId = ''): array
     {
         // Consome o token de renovação primeiro -- é de uso único -- e só depois revalida. Um
@@ -153,6 +158,8 @@ class AuthService
      * A identidade com que se renova sai de `api_users`, relida agora, e não do que o token
      * guardou: um utilizador desactivado ou com o papel mudado deixa de renovar. Sem `userId`
      * não há linha a reler, e o token de inquilino segue com o contexto que trazia.
+     *
+     * @return array<string, mixed>|null
      */
     private function identityForRefresh(ApiAuthContext $context): ?array
     {
@@ -189,6 +196,9 @@ class AuthService
      * guardar uma password por inquilino. O que sai é sempre mais fraco do que aquilo com que
      * se pediu, e fechar a rota a não-administradores é do `RouteAccessPolicy`. Não há teto de
      * tentativas porque não há password para verificar.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
      */
     public function licenseToken(array $payload, string $requestId = ''): array
     {
@@ -256,6 +266,7 @@ class AuthService
         return $this->referenceHash ??= password_hash('', PASSWORD_DEFAULT);
     }
 
+    /** @return array<string, mixed>|null */
     private function identityForCredentials(string $username, string $password): ?array
     {
         $user = $this->db->apiUsers->findByUsername($username);
@@ -279,6 +290,9 @@ class AuthService
      *
      * É o mesmo molde no login e na renovação -- as duas têm de aceitar exactamente as mesmas
      * contas, e uma regra escrita duas vezes divergiria.
+     *
+     * @param array<string, mixed> $user
+     * @return array<string, mixed>|null
      */
     private function identityFromUserRow(array $user): ?array
     {

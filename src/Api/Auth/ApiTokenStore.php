@@ -18,6 +18,7 @@ final class ApiTokenStore
         $this->prefix = trim($this->prefix, ':');
     }
 
+    /** @return array<string, mixed> */
     public function issue(
         string $username,
         string $role,
@@ -54,6 +55,7 @@ final class ApiTokenStore
         ];
     }
 
+    /** @return array<string, mixed> */
     public function issueTokenPair(
         string $username,
         string $role,
@@ -138,6 +140,7 @@ final class ApiTokenStore
         return $this->context($token) instanceof ApiAuthContext;
     }
 
+    /** @return array{string, array<string, mixed>} */
     private function issueStoredToken(
         string $username,
         string $role,
@@ -171,6 +174,7 @@ final class ApiTokenStore
         return [$token, $payload];
     }
 
+    /** @return array<string, mixed>|null */
     private function payload(string $token): ?array
     {
         $token = trim($token);
@@ -191,6 +195,7 @@ final class ApiTokenStore
         return $payload;
     }
 
+    /** @param array<string, mixed> $payload */
     private function contextFromPayload(array $payload): ?ApiAuthContext
     {
         $username = trim((string)($payload['username'] ?? ''));

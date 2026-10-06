@@ -16,6 +16,7 @@ use Hub\Api\OpenApi\Responses;
  */
 final class StreamPaths
 {
+    /** @return array<string, mixed> */
     public static function paths(): array
     {
         return [

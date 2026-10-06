@@ -16,6 +16,8 @@ final class CommonSchemas
      *
      * O `$withColumns` é opcional porque só algumas listagens se descrevem a si próprias:
      * pô-lo em todas documentava um campo que a maioria não devolve.
+     *
+     * @return array<string, mixed>
      */
     public static function collection(string $itemSchema, bool $withColumns = false): array
     {
@@ -36,6 +38,8 @@ final class CommonSchemas
 
     /**
      * Unpaginated {data: [...]} envelope.
+     *
+     * @return array<string, mixed>
      */
     public static function list(string $itemSchema): array
     {
@@ -47,6 +51,7 @@ final class CommonSchemas
         ];
     }
 
+    /** @return array<string, mixed> */
     public static function schemas(): array
     {
         return [

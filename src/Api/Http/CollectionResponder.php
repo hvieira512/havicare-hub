@@ -6,6 +6,12 @@ namespace Hub\Api\Http;
 
 final class CollectionResponder
 {
+    /**
+     * @param list<array<string, mixed>> $items
+     * @param array<string, mixed> $appliedFilters
+     * @param array<string, mixed> $availableFilters
+     * @return array<string, mixed>
+     */
     public function respond(array $items, int $page, int $limit, array $appliedFilters, array $availableFilters): array
     {
         $total = count($items);
@@ -14,7 +20,7 @@ final class CollectionResponder
         $offset = ($currentPage - 1) * $limit;
 
         return [
-            'data' => array_values(array_slice($items, $offset, $limit)),
+            'data' => array_slice($items, $offset, $limit),
             'pagination' => [
                 'limit' => $limit,
                 'page' => $currentPage,

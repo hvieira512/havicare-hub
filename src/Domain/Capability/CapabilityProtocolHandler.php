@@ -15,15 +15,25 @@ interface CapabilityProtocolHandler
 {
     public function nativeKey(): string;
 
+    /** @return array<string, mixed> */
     public function toNative(mixed $value): array;
 
+    /** @param array<string, mixed> $desired */
     public function fromNative(array $desired): mixed;
 
     public function defaultValue(): mixed;
 
+    /**
+     * @param array<string, mixed> $accumulatedMeta
+     * @return array<string, mixed>
+     */
     public function meta(array $accumulatedMeta = []): array;
 
     public function merge(mixed $existing, mixed $incoming): mixed;
 
+    /**
+     * @param array<string, mixed> $meta
+     * @return array<string, mixed>
+     */
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array;
 }
