@@ -24,7 +24,7 @@ final class MedicationRemindersDispatchTest extends TestCase
     }
 
     /** @return list<array{0: string, 1: string}> */
-    public static function protocolos(): array
+    public static function protocols(): array
     {
         return [
             ['wonlex-json', 'wonlex'],
@@ -34,7 +34,7 @@ final class MedicationRemindersDispatchTest extends TestCase
     }
 
     /**
-     * @dataProvider protocolos
+     * @dataProvider protocols
      */
     public function testEachProtocolIsServedByItsOwnHandler(string $protocol, string $expected): void
     {
