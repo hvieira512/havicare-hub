@@ -63,6 +63,18 @@ class AdapterRegistry
         return $this->adapters[$protocol] ?? null;
     }
 
+    /**
+     * O adaptador deste protocolo, ou uma avaria.
+     *
+     * Quem precisa dele não tem caminho alternativo: construir um de recurso dava uma segunda
+     * instância, fora do registo e sem o estado que o registo partilha.
+     */
+    public function require(string $protocol): DeviceAdapterInterface
+    {
+        return $this->adapters[$protocol]
+            ?? throw new \RuntimeException("Nenhum adaptador registado para o protocolo {$protocol}");
+    }
+
     public function protocols(): array
     {
         return array_keys($this->adapters);

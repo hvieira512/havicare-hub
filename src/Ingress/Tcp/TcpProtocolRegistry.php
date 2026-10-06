@@ -7,10 +7,6 @@ namespace Hub\Ingress\Tcp;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Protocol\AdapterRegistry;
-use Hub\Protocol\Adapter\FourPTouchAdapter;
-use Hub\Protocol\Adapter\PillDispenserAdapter;
-use Hub\Protocol\Adapter\VivistarAdapter;
-use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Ingress\Tcp\Supplier\FourPTouch\FourPTouchTcpProtocol;
 use Hub\Ingress\Tcp\Supplier\Vivistar\VivistarTcpProtocol;
 use Hub\Ingress\Tcp\Supplier\Wonlex\WonlexTcpProtocol;
@@ -38,14 +34,14 @@ final class TcpProtocolRegistry
         $eventDecoder = new DeviceEventDecoder();
 
         $this->register(new WonlexTcpProtocol(
-            $adapters->get('wonlex-json') ?? new WonlexAdapter(),
+            $adapters->require('wonlex-json'),
             $eventDecoder,
             $wonlexStateProvider
         ));
-        $this->register(new VivistarTcpProtocol($adapters->get('vivistar-iw') ?? new VivistarAdapter(), $eventDecoder));
-        $this->register(new FourPTouchTcpProtocol($adapters->get('four-p-touch') ?? new FourPTouchAdapter(), $eventDecoder));
+        $this->register(new VivistarTcpProtocol($adapters->require('vivistar-iw'), $eventDecoder));
+        $this->register(new FourPTouchTcpProtocol($adapters->require('four-p-touch'), $eventDecoder));
         $this->register(new PillDispenserTcpProtocol(
-            $adapters->get('zayata-m228') ?? new PillDispenserAdapter(),
+            $adapters->require('zayata-m228'),
             $eventDecoder,
             $firmwareUpgrades,
         ));
