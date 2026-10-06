@@ -333,10 +333,18 @@
     margin-inline: auto;
 }
 
-/* Quem rola é o corpo do diálogo, e por isso o tecto é dele: a régua cola-se ao topo e a
-   barra de gravar ao fundo contra esta caixa, e não contra o invólucro. */
+/* Quem rola é o corpo do diálogo, e por isso a altura é dele: a régua cola-se ao topo e a
+   barra de gravar ao fundo contra esta caixa, e não contra o invólucro. Resolvida e não um
+   tecto, como no `.device-selector-body`: a caixa mede o mesmo em todos os separadores. */
 #settingsModal .modal-body {
-    max-height: clamp(26rem, 68vh, 46rem);
+    height: clamp(26rem, 68vh, 46rem);
+}
+
+/* Abaixo de lg o diálogo é o ecrã inteiro, e quem manda na altura é ele. */
+@media (max-width: 991.98px) {
+    #settingsModal .modal-body {
+        height: auto;
+    }
 }
 
 /* No modal do dispositivo quem rola é a coluna do conteúdo, e não o corpo. */
