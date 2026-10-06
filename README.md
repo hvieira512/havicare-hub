@@ -17,10 +17,12 @@ distintos:
 | 4P Touch   | TCP                     | Texto delimitado por parênteses retos, com identificador próprio de 10 dígitos |
 | Voerka     | MQTT                    | JSON                                                                           |
 | Qinglanst  | MQTT _(tópicos próprios)_ | JSON com corpo binário em base64                                             |
+| Zayata     | TCP                     | Trama binária iniciada em `0xAA`, tipo-comprimento-valor, com o corpo cifrado em AES128-CFB |
 | MOKO       | MQTT                    | JSON (MKGW3) ou binário tipo-comprimento-valor (MKGW4)                         |
+| Veepoo     | BLE via gateway         | Sessão GATT bidirecional, encaminhada em JSON pelo gateway                     |
 | MONIT      | BLE via gateway         | Anúncio de 20 bytes com campos de 6 bits                                       |
 
-Sem uma camada de integração, cada aplicação cliente teria de implementar os dez
+Sem uma camada de integração, cada aplicação cliente teria de implementar os doze
 protocolos. O hub implementa-os uma vez e publica o resultado num envelope
 único:
 
@@ -47,6 +49,7 @@ firmware de origem — `heartRate`, `heart_rate`, `hr`, `bpm`, `pulse`, `value`,
 flowchart LR
   subgraph campo["Dispositivos"]
     W["Relógios<br/>Wonlex · Vivistar · 4P Touch"]
+    P["Dispensador de comprimidos<br/>Zayata M228"]
     N["Chamada de enfermagem<br/>Voerka NCS"]
     R["Radar<br/>Qinglanst"]
     B["Dispositivos BLE<br/>Pulseiras · Sensor de fralda"]
@@ -61,6 +64,7 @@ flowchart LR
   end
 
   W -->|TCP, protocolo nativo| HUB
+  P -->|TCP, protocolo nativo| HUB
   N -->|MQTT| HUB
   R -->|MQTT, tópicos próprios| HUB
   B -.->|anúncio BLE| G
@@ -86,8 +90,9 @@ aplicações que integram.
 | Chamada de enfermagem | MQTT                    | Voerka W812                | Chamadas de ajuda e estado de ligação                                                                                                                                                  |
 | Radar                 | MQTT _(tópicos próprios)_ | Qinglanst                  | Presença e posição sem câmara, frequência cardíaca e respiratória, estado de sono, deteção de queda                                                                                    |
 | Gateway               | MQTT                    | MOKO MKGW3, MKGW4          | Conectividade, bateria, localização; retransmite os anúncios BLE que recebe                                                                                                            |
-| Pulseira              | BLE via gateway         | MOKO W6, W6B               | Botão de ajuda, movimento, bateria                                                                                                                                                     |
+| Pulseira              | BLE via gateway         | Veepoo, MOKO W6, W6B       | Veepoo: as mesmas medições do relógio mais stress, composição corporal, ácido úrico, apneia do sono e estado de uso. W6/W6B: botão de ajuda, movimento, bateria                        |
 | Sensor de fralda      | BLE via gateway         | MONIT MECS-PRO             | Humidade por canal, índice de humidade, estado, bateria                                                                                                                                |
+| Dispensador de comprimidos | TCP                | Zayata M228                | Tomas e doses falhadas, estado dos nove alarmes, células restantes, temperatura e humidade do compartimento, avarias, botão de emergência, bateria                                     |
 
 ## Interfaces de integração
 
