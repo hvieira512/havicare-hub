@@ -47,16 +47,10 @@ final class DashboardHttpServer
     private ApiKernel $apiKernel;
     /** @var array<string, string> */
     private array $assetCache = [];
-    // Não é promovida: com um valor por omissão declarado, uma instância criada por
-    // `newInstanceWithoutConstructor()` -- como fazem os testes dos recursos estáticos --
-    // continua a lê-la sem fatal, e o `page()` dispensa o `isset()`.
-    private bool $apiAuthRequired = true;
-    /* Com valor por omissão e não promovida no construtor: a página desenha-se sem o servidor
-     * montado -- é o que o teste dos componentes faz -- e uma propriedade promovida ficaria
-     * por inicializar nesse caminho. */
-    /* Com valor por omissão pela mesma razão das duas acima: a página desenha-se sem o
-     * servidor montado. Vazia, o amCharts desenha o logótipo dele em cada gráfico. */
-    private string $amchartsLicense = '';
+    // Nula e não promovida: a página desenha-se sem o servidor montado -- é o que o teste dos
+    // componentes faz, com `newInstanceWithoutConstructor()` --, e uma propriedade promovida
+    // ficava por inicializar nesse caminho. O `options()` devolve os valores por omissão.
+    private ?DashboardHttpOptions $options = null;
 
     public function __construct(
         private DeviceStore $store,
@@ -64,22 +58,17 @@ final class DashboardHttpServer
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
-        bool $apiAuthRequired = true,
-        private int $apiTokenTtlSeconds = 3600,
-        private int $apiRefreshTokenTtlSeconds = 2592000,
+        ?DashboardHttpOptions $options = null,
         // A mesma instância que a ingestão usa para anunciar uma publicação. Quando falta, o
         // stream de inquilino existe e nunca recebe nada -- o que é o que os testes que não
         // se ocupam dele querem.
         private ?MessageFanout $messages = null,
-        private int $maxOpenStreams = 200,
-        private int $maxOpenStreamsPerUser = 5,
         private ?LoginThrottle $loginThrottle = null,
         // A mesma instância que o processo do hub monta. Quando falta, monta-se uma daqui: a
         // sincronização só acontece quando alguém carrega no botão, e até lá não custa nada.
         ?RadarLayoutSync $radarLayoutSync = null,
-        string $amchartsLicense = '',
     ) {
-        $this->amchartsLicense = $amchartsLicense;
+        $this->options = $options ??= new DashboardHttpOptions();
         $radarLayoutSync ??= new RadarLayoutSync(
             new QinglanstApiClient(new Browser()),
             new LayoutParser(),
@@ -87,8 +76,6 @@ final class DashboardHttpServer
             $this->db->radarCredentials,
             $this->db->whitelist,
         );
-        $this->apiAuthRequired = $apiAuthRequired;
-
         // O store anuncia as suas próprias escritas, e por isso o stream tem de subscrever
         // esse notificador exacto, e não um seu.
         $deviceService = new DeviceService(
@@ -98,13 +85,13 @@ final class DashboardHttpServer
             $this->db,
         );
         $this->apiKernel = new ApiKernel(
-            $this->apiAuthRequired,
+            $options->apiAuthRequired,
             new \Hub\Api\ApiServices(
                 new AuthService(
                     $this->tokens,
                     $this->db,
-                    $this->apiTokenTtlSeconds,
-                    $this->apiRefreshTokenTtlSeconds,
+                    $options->apiTokenTtlSeconds,
+                    $options->apiRefreshTokenTtlSeconds,
                     $this->loginThrottle,
                 ),
                 $deviceService,
@@ -130,9 +117,15 @@ final class DashboardHttpServer
             new \Hub\Api\Auth\BearerTokenResolver($this->tokens),
             new \Hub\Api\Auth\RouteAccessPolicy(),
             $this->messages ?? new MessageFanout(),
-            $this->maxOpenStreams,
-            $this->maxOpenStreamsPerUser,
+            $options->maxOpenStreams,
+            $options->maxOpenStreamsPerUser,
         );
+    }
+
+    /** Os valores afinados, ou os de origem numa instância montada sem construtor. */
+    private function options(): DashboardHttpOptions
+    {
+        return $this->options ??= new DashboardHttpOptions();
     }
 
     /**
@@ -214,8 +207,9 @@ final class DashboardHttpServer
 
     private function page(): string
     {
-        $dashboardApiAuthRequired = $this->apiAuthRequired;
-        $amchartsLicense = $this->amchartsLicense;
+        $dashboardApiAuthRequired = $this->options()->apiAuthRequired;
+        // Vazia, o amCharts desenha o logótipo dele em cada gráfico.
+        $amchartsLicense = $this->options()->amchartsLicense;
         $assetVersion = $this->assetVersion();
 
         ob_start();

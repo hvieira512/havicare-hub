@@ -8,6 +8,7 @@ use Hub\State\DeviceStoreContract;
 use Hub\Device\HubMqttBridge;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
+use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
@@ -199,7 +200,7 @@ final class BridgeTest extends TestCase
             $mqtt,
             IngressFixtures::links($linked),
             new ArrayObservationStateStore(),
-            gatewayIdleTimeoutSeconds: $idleTimeout,
+            options: new MokoGatewayOptions(gatewayIdleTimeoutSeconds: $idleTimeout),
             clock: $clock,
         );
     }

@@ -7,6 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 use Hub\State\DeviceStore;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
+use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use Hub\Ingress\Mqtt\Moko\ProximityTracker;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
@@ -72,7 +73,9 @@ final class BridgeProximityTest extends TestCase
             new ArrayObservationStateStore(),
             deviceStore: $store,
             clock: fn(): float => $this->now,
-            proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 30),
+            options: new MokoGatewayOptions(
+                proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 30),
+            ),
         );
 
         return [$bridge, $mqtt, $store];
@@ -241,7 +244,9 @@ final class BridgeProximityTest extends TestCase
             new ArrayObservationStateStore(),
             deviceStore: new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:maint'),
             clock: fn(): float => $this->now,
-            proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 2),
+            options: new MokoGatewayOptions(
+                proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 2),
+            ),
         );
 
         // Um par ouvido, depois calado; a manutenção corre e reporta-o `unknown`.

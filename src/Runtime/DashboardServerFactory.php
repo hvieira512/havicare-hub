@@ -9,6 +9,7 @@ use Hub\Api\Auth\LoginThrottle;
 use Hub\Api\Http\CorsPolicy;
 use Hub\Api\Http\Middleware\ApiRequestLogger;
 use Hub\Api\Http\Middleware\CorsMiddleware;
+use Hub\Dashboard\DashboardHttpOptions;
 use Hub\Dashboard\DashboardHttpServer;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\HttpServer as ReactHttpServer;
@@ -36,14 +37,10 @@ final class DashboardServerFactory
             $services->whitelist,
             $services->hubServer,
             $services->dataAccess,
-            (bool)$dashboardConfig['api_auth_required'],
-            (int)$dashboardConfig['api_token_ttl_seconds'],
-            (int)$dashboardConfig['api_refresh_token_ttl_seconds'],
+            DashboardHttpOptions::fromConfig($dashboardConfig),
             // O fan-out vem do bridge de propósito: é o mesmo objecto que a ingestão usa para
             // publicar, e por isso não há duas instâncias possíveis.
             $services->mqttBridge->messages(),
-            (int)$dashboardConfig['max_open_streams'],
-            (int)$dashboardConfig['max_open_streams_per_user'],
             new LoginThrottle(
                 $services->redis,
                 maxPerAddress: (int)$dashboardConfig['login_max_per_address'],
@@ -51,7 +48,6 @@ final class DashboardServerFactory
                 maxGlobal: (int)$dashboardConfig['login_max_global'],
             ),
             $services->radarLayoutSync,
-            (string)($dashboardConfig['amcharts_license'] ?? ''),
         );
         // O construtor já não escreve no Redis: quem serve é que semeia, e só aqui.
         $dashboard->warmUp();

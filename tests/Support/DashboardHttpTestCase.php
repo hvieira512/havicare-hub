@@ -6,6 +6,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Auth\ApiTokenStore;
 use Hub\Api\Auth\LoginThrottle;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\Dashboard\DashboardHttpOptions;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\State\DeviceStore;
 use Hub\Device\MessageFanout;
@@ -135,12 +136,14 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
             new Whitelist($this->whitelistPath, $db->whitelist),
             $hub,
             $db,
-            $apiAuthRequired,
-            $apiTokenTtlSeconds,
-            $apiRefreshTokenTtlSeconds,
+            new DashboardHttpOptions(
+                apiAuthRequired: $apiAuthRequired,
+                apiTokenTtlSeconds: $apiTokenTtlSeconds,
+                apiRefreshTokenTtlSeconds: $apiRefreshTokenTtlSeconds,
+                maxOpenStreams: $maxOpenStreams,
+                maxOpenStreamsPerUser: $maxOpenStreamsPerUser,
+            ),
             $messages,
-            $maxOpenStreams,
-            $maxOpenStreamsPerUser,
             $loginThrottle
         );
         $dashboard->warmUp();

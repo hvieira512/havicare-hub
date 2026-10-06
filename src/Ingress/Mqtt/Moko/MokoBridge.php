@@ -7,7 +7,6 @@ namespace Hub\Ingress\Mqtt\Moko;
 use Hub\Domain\DeviceMetadata;
 use Hub\Device\CommercialModelResolver;
 use Hub\Domain\DiaperSensitivity;
-use Hub\Domain\DiaperSensitivityLookup;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
@@ -45,13 +44,8 @@ final class MokoBridge extends MqttBridgeBase
         ?callable $reconnectSubscriber = null,
         ?\Hub\State\DeviceReportStore $deviceStore = null,
         ?CommercialModelResolver $commercialModelResolver = null,
-        private readonly int $dedupeTtlSeconds = 5,
-        private readonly int $telemetryRefreshSeconds = 60,
-        private readonly int $gatewayIdleTimeoutSeconds = 180,
-        private readonly int $rawHistorySampleSeconds = 30,
+        private readonly MokoGatewayOptions $options = new MokoGatewayOptions(),
         ?callable $clock = null,
-        private readonly ?ProximityTracker $proximityTracker = null,
-        private readonly ?DiaperSensitivityLookup $diaperSensitivity = null,
         ?\Hub\Registry\Denylist $denylist = null,
     ) {
         parent::__construct(
@@ -74,12 +68,12 @@ final class MokoBridge extends MqttBridgeBase
             $state,
             $whitelist,
             $commercialModelResolver,
-            $telemetryRefreshSeconds,
-            $rawHistorySampleSeconds,
-            $proximityTracker,
+            $options->telemetryRefreshSeconds,
+            $options->rawHistorySampleSeconds,
+            $options->proximityTracker,
             $clock,
         );
-        $this->gateways = new GatewayPresence($mqttBridge, $deviceStore, $gatewayIdleTimeoutSeconds, $clock);
+        $this->gateways = new GatewayPresence($mqttBridge, $deviceStore, $options->gatewayIdleTimeoutSeconds, $clock);
         $this->messageDecoder = new MokoMessageDecoder();
         $this->monitDecoder = new MonitMecsProDecoder();
         $this->monitNormalizer = new MonitNormalizer();
@@ -241,7 +235,7 @@ final class MokoBridge extends MqttBridgeBase
         }
 
         foreach ($this->gatewayNormalizer->telemetry($decoded, $gateway) as $telemetry) {
-            if (!$this->state->shouldPublish($deviceKey, (string)$telemetry['type'], $telemetry, $this->telemetryRefreshSeconds)) {
+            if (!$this->state->shouldPublish($deviceKey, (string)$telemetry['type'], $telemetry, $this->options->telemetryRefreshSeconds)) {
                 continue;
             }
             $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
@@ -428,14 +422,14 @@ final class MokoBridge extends MqttBridgeBase
             return;
         }
         $this->relay->recordRaw($sensor, $gateway, 'monit-mecs-pro-ble', $observation);
-        if (!$this->state->acceptObservation($sensorKey, hash('sha256', (string)$decoded['raw20']), $this->dedupeTtlSeconds)) {
+        if (!$this->state->acceptObservation($sensorKey, hash('sha256', (string)$decoded['raw20']), $this->options->dedupeTtlSeconds)) {
             return;
         }
 
         // Sem lookup ligado, a sensibilidade é a do preset normal. O valor por omissão está
         // aqui e não no normalizador, onde um parâmetro opcional esconderia uma ligação
         // esquecida.
-        $sensitivity = $this->diaperSensitivity?->forDevice($sensorKey) ?? DiaperSensitivity::normal();
+        $sensitivity = $this->options->diaperSensitivity?->forDevice($sensorKey) ?? DiaperSensitivity::normal();
         $normalized = $this->monitNormalizer
             ->normalize($decoded, $sensor, (string)$gateway['imei'], $sensitivity);
         $this->relay->publishTelemetry($sensor, $gateway, 'monit-mecs-pro-ble', $normalized, $decoded['rssiDbm'] ?? null);

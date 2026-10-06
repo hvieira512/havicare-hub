@@ -6,6 +6,7 @@ namespace Hub\Ingress\Mqtt;
 
 use Hub\Ingress\Mqtt\Gateway\RedisObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
+use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use Hub\Ingress\Mqtt\Ncs\NcsBridge;
 use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy as QinglanstDashboardWritePolicy;
 use Hub\Ingress\Mqtt\Qinglanst\IngestStats as QinglanstIngestStats;
@@ -100,11 +101,10 @@ final class MqttIngressFactory
                 $reconnect,
                 $services->deviceStore,
                 $services->commercialModelResolver,
-                (int)$config['gateway']['dedupe_ttl_seconds'],
-                (int)$config['gateway']['telemetry_refresh_seconds'],
-                (int)$config['gateway']['idle_timeout_seconds'],
-                (int)$config['gateway']['raw_history_sample_seconds'],
-                diaperSensitivity: $services->dataAccess->diaperSensitivity,
+                MokoGatewayOptions::fromConfig(
+                    $config['gateway'],
+                    $services->dataAccess->diaperSensitivity,
+                ),
                 denylist: $services->denylist,
             ),
         );

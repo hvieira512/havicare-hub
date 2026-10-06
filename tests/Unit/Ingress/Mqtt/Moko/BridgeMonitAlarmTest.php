@@ -8,6 +8,7 @@ use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
+use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\MutableDiaperSensitivity;
@@ -250,7 +251,7 @@ final class BridgeMonitAlarmTest extends TestCase
             $mqtt,
             IngressFixtures::links(),
             new ArrayObservationStateStore(),
-            diaperSensitivity: $sensitivity,
+            options: new MokoGatewayOptions(diaperSensitivity: $sensitivity),
         );
     }
 }
