@@ -64,11 +64,12 @@ test("uma linha cujo resumo esconde alguma coisa abre", () => {
 /** A gaveta escapa o que recebe: marcação em texto aparecia à letra, `<br>` incluído. */
 test("a gaveta não recebe marcação", () => {
     const row = telemetryActivityRow({
-        type: "battery",
-        // O estado de carga está no ícone; os dois campos que sobram à bateria são estes.
-        data: { percent: 0, chargingState: "absent", mainsPowered: false },
+        type: "motion",
+        data: { magnitudeMg: 120, xMg: 10, yMg: 20, zMg: 30 },
         occurredAt: "2026-09-23T10:00:00Z",
     });
 
+    // Sem esta, uma linha que deixasse de abrir passava o teste com a gaveta vazia.
+    assert.notEqual(row.expanded, "", "a gaveta devia ter conteúdo para haver o que escapar");
     assert.doesNotMatch(row.expanded, /<br|&lt;/);
 });

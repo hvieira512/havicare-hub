@@ -49,6 +49,22 @@ test("a tab lista os bloqueados com um botão de desbloquear por linha", async (
     assert.match(els.denylistTabSummary.textContent, /1 aparelho bloqueado/);
 });
 
+/** A listagem passou a paginar: contar as linhas recebidas dizia vinte a quem tem trinta. */
+test("o número vem do total da API e não das linhas da página", async () => {
+    const els = setupDom();
+    globalThis.fetch = async () => jsonResponse({
+        data: [
+            { identity: "357000000000123", created_at: "2026-09-07T10:00:00Z" },
+            { identity: "357000000000124", created_at: "2026-09-07T10:00:00Z" },
+        ],
+        pagination: { limit: 2, page: 1, total_pages: 15, total: 30 },
+    });
+
+    await loadSettingsDenylistSection();
+
+    assert.match(els.denylistTabSummary.textContent, /30 aparelhos bloqueados/);
+});
+
 test("desbloquear chama o DELETE da API e tira a linha", async () => {
     const els = setupDom();
     const calls = [];

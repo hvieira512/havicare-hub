@@ -60,7 +60,9 @@ test("a corrente não se escreve por baixo", () => {
         { percent: 80, mainsPowered: true },
         { percent: 92, chargingState: "full", mainsPowered: false },
     ]) {
-        assert.doesNotMatch(String(battery(data).details), /corrente/i);
+        // Igualdade e não `doesNotMatch`: numa linha vazia, não encontrar «corrente» é fácil
+        // de mais, e o teste passava na mesma se a linha passasse a dizer outra coisa.
+        assert.equal(String(battery(data).details), "");
     }
 });
 
