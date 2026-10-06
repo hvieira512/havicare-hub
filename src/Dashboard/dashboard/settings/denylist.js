@@ -12,6 +12,7 @@ import { setSettingsNavCount } from "./shell.js";
  */
 let els;
 let current = [];
+let blockedCount = 0;
 
 export function initSettingsDenylist(context) {
     els = context.els;
@@ -25,6 +26,7 @@ export async function loadSettingsDenylistSection() {
         return;
     }
     current = Array.isArray(result?.data) ? result.data : [];
+    blockedCount = Number(result?.pagination?.total ?? current.length);
     state.settingsModal.sectionLoaded.denylist = true;
     renderDenylistSection();
 }
@@ -53,7 +55,7 @@ function denylistRow(entry) {
 }
 
 function renderDenylistSection() {
-    const total = current.length;
+    const total = blockedCount;
     setSettingsNavCount("Denylist", total);
 
     // Sem bloqueados, o vazio é um estado só: o título di-lo e a frase por baixo explica de
@@ -81,6 +83,7 @@ async function unblock(identity) {
         return;
     }
     current = current.filter((entry) => String(entry.identity) !== String(identity));
+    blockedCount = Math.max(0, blockedCount - 1);
     renderDenylistSection();
 }
 

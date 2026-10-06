@@ -129,12 +129,24 @@ abstract class CapabilityDefinitions
             }
         }
 
+        $ours = ProtocolRegistry::protocolsForDeviceType(static::deviceType());
         foreach ($declared as $key => $protocols) {
             if (!isset($publishers[$key]) && $protocols !== []) {
                 throw new \LogicException(sprintf(
                     '%s: o `publishedBy` declara "%s", que o ficheiro não define.',
                     static::class,
                     $key,
+                ));
+            }
+            // Um protocolo de outro tipo de aparelho nunca casaria, e o catálogo ficava a
+            // declarar uma capacidade que ninguém publica.
+            foreach (array_diff($protocols, $ours) as $foreign) {
+                throw new \LogicException(sprintf(
+                    '%s: "%s" é publicada por "%s", que não serve %s.',
+                    static::class,
+                    $key,
+                    $foreign,
+                    static::deviceType(),
                 ));
             }
         }

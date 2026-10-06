@@ -49,6 +49,15 @@ final class PublishedKeysComeFromTheDefinitionsTest extends TestCase
         DefinitionsDeclaringAnUndefinedKey::publishers();
     }
 
+    /** E nomear um protocolo de outro tipo de aparelho também: nunca casaria com nada. */
+    public function testDeclaringAPublisherFromAnotherDeviceTypeFails(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('moko-mkgw4');
+
+        DefinitionsDeclaringAForeignProtocol::publishers();
+    }
+
     /** @return list<string> */
     private static function protocolsPublishing(string $key, string $deviceType): array
     {
@@ -77,6 +86,24 @@ final class DefinitionsDeclaringAnUndefinedKey extends CapabilityDefinitions
     protected static function publishedBy(): array
     {
         return ['capacidade_que_nao_existe' => ['wonlex-json']];
+    }
+
+    protected static function rows(): array
+    {
+        return ['telemetry' => ['measurement' => ['battery' => 'Bateria']]];
+    }
+}
+
+final class DefinitionsDeclaringAForeignProtocol extends CapabilityDefinitions
+{
+    protected static function deviceType(): string
+    {
+        return 'watch';
+    }
+
+    protected static function publishedBy(): array
+    {
+        return ['battery' => ['moko-mkgw4']];
     }
 
     protected static function rows(): array

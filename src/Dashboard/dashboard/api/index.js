@@ -114,7 +114,9 @@ export const deleteApiUser = (userId) => requestJson(`/api/users/${id(userId)}`,
 
 /* ---------- bloqueados ---------- */
 
-export const getDenylist = () => requestJson("/api/denylist");
+// O painel não tem paginação: mostra a lista toda, e o `pagination.total` diz se ficou algum
+// de fora.
+export const getDenylist = () => requestJson("/api/denylist", { query: { limit: 500 } });
 export const blockDevice = (identity, protocol = "", note = "") =>
     requestJson("/api/denylist", {
         method: "POST",
