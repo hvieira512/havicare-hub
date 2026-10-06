@@ -352,7 +352,8 @@ export const INPUTS = {
     timeRanges: {
         render: timeRangesInput,
         read: (section) => ({ ranges: readTextArray(section, "ranges") }),
-        defaults: () => ({ ranges: ["08:10-09:30"] }),
+        // Um horário de silêncio pré-preenchido recusava chamadas a quem nunca o pediu.
+        defaults: (entry) => ({ ranges: entry?.key === "doNotDisturb" ? [] : ["08:10-09:30"] }),
     },
     timeRange: {
         render: (_entry, desired) => timeRangeInput(desired),

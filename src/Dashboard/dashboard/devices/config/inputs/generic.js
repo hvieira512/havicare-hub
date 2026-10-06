@@ -86,8 +86,12 @@ function pushMessageInput(_entry, desired) {
     );
 }
 
-function intervalToggleInput(_entry, desired) {
-    return intervalToggle(desired, "intervalMinutes", { fallback: 60, unit: "min" });
+function intervalToggleInput(entry, desired) {
+    return intervalToggle(desired, "intervalMinutes", {
+        fallback: 60,
+        unit: "min",
+        bounds: { min: entry.options?.min ?? 0 },
+    });
 }
 
 export function contactsInput(entry, desired, meta = {}) {

@@ -20,7 +20,7 @@ final class ConfigurationInputDefaults
         $field = static fn(int $index = 0): string => (string)($entry['fields'][$index] ?? '');
 
         return match ($input) {
-            'toggle', 'whitelist_enabled' => [($field(0) ?: 'enabled') => true],
+            'toggle' => [($field(0) ?: 'enabled') => true],
             // Zero só serve quando está dentro da escala: um tom de pele vai de 1 a 6, e o
             // formulário partia de um valor que o aparelho recusa.
             'number' => [($field(0) ?: 'value') => (int)($entry['options']['min'] ?? 0)],
@@ -89,7 +89,8 @@ final class ConfigurationInputDefaults
             'languageTimezone' => ['language' => 0, 'timeZone' => '0'],
             'dualToggle' => ['enabled' => true, 'callCenterOnFall' => false],
             'fallSensitivityLevels' => ['sensitivity' => 5, 'levels' => 8],
-            'timeRanges' => ['ranges' => ['08:10-09:30']],
+            // Um horário de silêncio pré-preenchido recusava chamadas a quem nunca o pediu.
+            'timeRanges' => ['ranges' => ($entry['key'] ?? '') === 'doNotDisturb' ? [] : ['08:10-09:30']],
             'timeRange' => ['range' => '21:10-07:30'],
             'wonlexSleepSettings' => [
                 'switchState' => true,
