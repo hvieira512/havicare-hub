@@ -77,6 +77,7 @@ com as instâncias de desenvolvimento e produção estão no
 | [20 — O frontend da dashboard](20-frontend-da-dashboard.md) | As regras de organização, a árvore de módulos e a composição de um ecrã |
 | [17 — Sensor de fralda](17-sensor-de-fralda.md) | Capacidades, derivação do estado, sensibilidade e contrato congelado |
 | [19 — Dispensador de comprimidos](19-dispensador-de-comprimidos.md) | Zayata M228: protocolo TCP, o que o hub já descodifica, API do fabricante e armadilhas |
+| [19a — Parâmetros do M228](19a-dispensador-parametros.md) | O anexo de consulta: as TAGs do tipo `0x02`, uma a uma |
 
 ### Infraestrutura
 
