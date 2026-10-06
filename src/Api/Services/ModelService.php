@@ -317,10 +317,12 @@ class ModelService
     public function delete(int $id): array
     {
         $model = $this->db->models->findById($id);
-        $this->db->models->delete($id);
-        if (is_array($model)) {
-            $this->images->delete((string)($model['image_path'] ?? ''));
+        if (!is_array($model)) {
+            return ApiError::modelNotFound()->toArray();
         }
+
+        $this->db->models->delete($id);
+        $this->images->delete((string)($model['image_path'] ?? ''));
 
         return ['status' => 'ok'];
     }

@@ -554,10 +554,15 @@ class DeviceService
         }
 
         $metadata = $this->whitelist->getMetadata($imei);
+        // Apagar o que não existe diz que não existe: um `ok` dava a quem errou o IMEI a
+        // mesma resposta de quem acertou.
+        if ($metadata === null) {
+            return ApiError::deviceNotFound()->toArray();
+        }
         $this->hub->clearRetainedStatus(
-            $metadata?->company ?? 'null',
-            $metadata?->licenseId ?? 0,
-            $metadata?->deviceType ?? 'watch',
+            $metadata->company,
+            $metadata->licenseId,
+            $metadata->deviceType,
             $imei
         );
         // Ordem inversa do registo: inventário primeiro, projecção a seguir. Uma falha no

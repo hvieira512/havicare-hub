@@ -33,6 +33,7 @@ return static function (
                 $request->getUploadedFiles()['image'] ?? null,
             ),
             body: ApiRoute::FORM_BODY,
+            status: 201,
         ),
         new ApiRoute(
             'PUT',

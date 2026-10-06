@@ -166,12 +166,14 @@ final class DeviceController
         return $this->json->result($this->service->links($params['imei'], RequestContext::auth($request)));
     }
 
-    public function createLink(array $params, ServerRequestInterface $request): Response
+    /**
+     * Em cru, para o estado de sucesso ser o que a rota declara.
+     *
+     * @return array<string, mixed>
+     */
+    public function createLink(array $params, ServerRequestInterface $request): array
     {
-        return $this->json->result(
-            $this->service->createLink($params['imei'], $params['linkedImei'], RequestContext::auth($request)),
-            201,
-        );
+        return $this->service->createLink($params['imei'], $params['linkedImei'], RequestContext::auth($request));
     }
 
     public function deleteLink(array $params, ServerRequestInterface $request): Response
@@ -198,16 +200,18 @@ final class DeviceController
         return $this->json->result($this->service->commandStatus($params['id'], RequestContext::auth($request)));
     }
 
-    public function create(array $params, ServerRequestInterface $request): Response
+    /**
+     * Em cru, para o estado de sucesso ser o que a rota declara.
+     *
+     * @return array<string, mixed>
+     */
+    public function create(array $params, ServerRequestInterface $request): array
     {
         $payload = RequestContext::jsonBody($request);
 
-        return $this->json->result(
-            $payload === null
-                ? ApiError::invalidJson()->toArray()
-                : $this->service->create($payload, RequestContext::auth($request)),
-            201,
-        );
+        return $payload === null
+            ? ApiError::invalidJson()->toArray()
+            : $this->service->create($payload, RequestContext::auth($request));
     }
 
     public function update(array $params, ServerRequestInterface $request): Response

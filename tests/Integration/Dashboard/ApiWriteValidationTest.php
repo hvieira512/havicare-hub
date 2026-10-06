@@ -198,7 +198,7 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
             'name' => 'texto.dev',
         ]);
 
-        self::assertSame(200, $result['status'], json_encode($result['body']));
+        self::assertSame(201, $result['status'], json_encode($result['body']));
         self::assertSame('ok', $result['body']['status'] ?? null);
     }
 

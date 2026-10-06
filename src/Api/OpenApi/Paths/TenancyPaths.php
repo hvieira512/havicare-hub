@@ -115,7 +115,7 @@ final class TenancyPaths
                     // `STATUS_BY_CODE` deixou de o inferir do nome, e este bloco continuou a
                     // prometer só 200 e 400. É o engano que o `Responses::map()` acaba.
                     'responses' => Responses::map(
-                        ['200' => Responses::json('Company created', 'IdCreateResponse')],
+                        ['201' => Responses::json('Company created', 'IdCreateResponse')],
                         'invalid_request',
                         'duplicate',
                     ),
@@ -173,7 +173,7 @@ final class TenancyPaths
                     'summary' => 'Create license',
                     'requestBody' => Requests::json('LicenseCreateRequest'),
                     'responses' => Responses::map(
-                        ['200' => Responses::json('License created', 'IdCreateResponse')],
+                        ['201' => Responses::json('License created', 'IdCreateResponse')],
                         'invalid_request',
                         'company_not_found',
                     ),

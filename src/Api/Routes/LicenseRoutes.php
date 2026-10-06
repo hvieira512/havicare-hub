@@ -19,6 +19,7 @@ return static function (
             static fn(array $params, ServerRequestInterface $request): array
                 => $licenses->create(RequestContext::body($request)),
             body: ApiRoute::JSON_BODY,
+            status: 201,
         ),
         new ApiRoute(
             'PUT',

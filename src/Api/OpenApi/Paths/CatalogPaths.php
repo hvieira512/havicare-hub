@@ -97,7 +97,7 @@ final class CatalogPaths
                     'summary' => 'Create model',
                     'requestBody' => Requests::multipartOrJson('ModelWriteRequest'),
                     'responses' => Responses::map(
-                        ['200' => Responses::json('Model created', 'StatusResponse')],
+                        ['201' => Responses::json('Model created', 'StatusResponse')],
                         ...self::MODEL_WRITE_ERRORS,
                     ),
                 ],
