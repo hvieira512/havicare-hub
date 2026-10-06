@@ -333,10 +333,29 @@ configuração não faz nada.
 | Capacidade | TAGs | Notas |
 |---|---|---|
 | `medication_reminders` | `0x1021`–`0x1049` | **os nove alarmes de cada vez.** A forma pública é a partilhada com os relógios — um plano por compartimento, com o número dele no `slot` da hora; ver o [capítulo 10](10-configuracao-de-dispositivos.md#uma-capacidade-partilhada-por-três-protocolos-medication_reminders). Os slots que o plano não usa saem a `24:60` de propósito — o aparelho tem nove fixos, e um que sobrasse de um plano anterior continuava a tocar. O interruptor vai a `1` onde há hora e a `0` onde não há, mas quem decide é a hora: o `0x1041`–`0x1049` é inerte |
-| `dispense_mode` | `0x100C` / `0x100D` | bloqueio de criança e toma antecipada |
-| `sound_profile` | `0x1012` / `0x1013` | tipo de toque e volume |
+| `medication_period` | `0x1004`–`0x100A` | a janela de datas do plano, e o interruptor dela |
+| `loaded_cells` | `0x101C` | quantos compartimentos estão carregados, 0 a 28 |
+| `dispense_now` | `0xA123` | dispensa já, fora do plano |
+| `child_lock` | `0x100C` | bloqueio de criança |
+| `early_dispense` | `0x100D` | toma antecipada |
+| `missed_dispense` | `0x1019` | aviso de toma falhada |
+| `retrieval_warning` | `0x1017` | quanto tempo até avisar que não se retirou, em minutos |
+| `retrieval_timeout` | `0x1018` | quanto tempo até desistir, em minutos |
+| `alarm_ringtone` | `0x1012` | tipo de toque, 0 a 3 |
+| `alarm_volume` | `0x1013` | volume, 0 a 3 |
+| `key_tone` | `0x100B` | som das teclas |
+| `mute_alarm` | `0xA102` | silencia o alarme que está a tocar |
 | `do_not_disturb` | `0x1051`–`0x1055` | interruptor e janela |
-| `language_timezone` | `0x1001` / `0x1015` | o fuso é INT16S: a oeste é negativo |
+| `emergency_call` | `0x100E` | chamada de emergência — existe no protocolo e é serviço pago |
+| `device_language` | `0x1001` | 0 ou 1 |
+| `date_format` | `0x1002` | três ordens possíveis |
+| `time_format` | `0x1003` | 12 ou 24 horas |
+| `time_zone` | `0x1015` | INT16S em HHMM: a oeste é negativo |
+| `auto_clock` | `0x1014` | acertar a hora sozinho |
+| `calibrate_clock` | `0xA101` | manda a hora local — a única TAG de controlo que é STRING |
+| `reset_tray` | `0xA103` | repõe o prato |
+| `restart_device` | `0xA001` | reinicia. A reposição de fábrica, `0xA002`, **não está declarada de propósito** |
+| `sync_configuration` | — | relê a configuração ao aparelho, em dois blocos |
 
 > **O bloqueio de criança funciona**, e é o único dos interruptores de saída sobre
 > o qual não havia nada escrito.
