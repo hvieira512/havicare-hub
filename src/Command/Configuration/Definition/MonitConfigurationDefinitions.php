@@ -32,6 +32,7 @@ final class MonitConfigurationDefinitions
                         array_keys(DiaperSensitivity::PRESETS),
                     ),
                 ],
+                help: 'Alta avisa com menos humidade; Baixa espera por mais.',
             ),
         ];
     }
