@@ -59,6 +59,18 @@ test("e a corrente também, que é outra pergunta", () => {
     );
 });
 
+/** O relâmpago já diz que está ligado: a carregar, ninguém carrega sem corrente. */
+test("a carregar, a corrente não se repete por baixo", () => {
+    assert.equal(
+        String(battery({ percent: 99, chargingState: "charging", mainsPowered: true }).details),
+        "",
+    );
+    assert.equal(
+        String(battery({ percent: 40, chargingState: 1, mainsPowered: true }).details),
+        "",
+    );
+});
+
 /** Um fragmento vazio é um objecto, e um objecto é verdadeiro: a linha ficava lá, vazia. */
 test("sem detalhes o cartão não abre linha nenhuma", () => {
     const content = battery({ percent: 100, chargingState: "full" });

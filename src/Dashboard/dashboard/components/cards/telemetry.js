@@ -549,9 +549,10 @@ function batteryTone(percent) {
 const isCharging = (state) => state === 1 || state === "charging";
 
 function batteryDetails(data) {
-    // A corrente vem com a bateria no dispensador, e é outra pergunta: um aparelho cheio e
-    // ligado à ficha não carrega nada, mas continua a interessar que esteja ligado.
-    const mains = data.mainsPowered == null
+    // A corrente é outra pergunta que o relâmpago não responde: um aparelho cheio e ligado à
+    // ficha não carrega nada, e continua a interessar que esteja ligado. A carregar é que não
+    // se diz — ninguém carrega sem corrente, e o relâmpago já lá está.
+    const mains = data.mainsPowered == null || isCharging(data.chargingState)
         ? ""
         : data.mainsPowered
             ? "Ligado à corrente"

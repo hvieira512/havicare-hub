@@ -24,11 +24,11 @@ test("o sinal desenha-se como conectividade", () => {
     assert.match(value, /[Rr]ede móvel/);
 });
 
-/** A corrente viaja com a bateria, que é a mesma pergunta feita do outro lado. */
+/** A corrente viaja com a bateria, e cheio na ficha não carrega: o relâmpago não a diz. */
 test("a bateria diz se está ligada à corrente", () => {
     const { details } = uplinkCardContent("battery", {
         percent: 100,
-        chargingState: "charging",
+        chargingState: "full",
         mainsPowered: true,
     });
 
