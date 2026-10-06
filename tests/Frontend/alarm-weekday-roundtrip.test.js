@@ -29,12 +29,6 @@ const WEEKDAYS = [
     { day: 7, name: "domingo" },
 ];
 
-/** A máscara do 4P Touch: sete posições a começar no domingo. */
-const fourPTouchMask = (day) => {
-    const position = day === 7 ? 0 : day;
-    return Array.from({ length: 7 }, (_, index) => (index === position ? "1" : "0")).join("");
-};
-
 const renderAndRead = (entry, desired, meta = {}) =>
     readConfigPayload(configSection(renderConfigInputs, entry, desired, meta));
 
@@ -56,6 +50,12 @@ for (const { day, name } of WEEKDAYS) {
 
 /* ---------- o 4P Touch: lembrete de comprimidos ---------- */
 
+/*
+ * A máscara nativa deixou de se ver aqui: a tradução para ela passou para o contrato, e é lá
+ * que a posição do dia é prendida. O que este bloco prende é o dia sobreviver à ida ao
+ * formulário e de volta.
+ */
+
 const TAKE_PILLS_ENTRY = { input: "takePills", key: "take_pills" };
 
 for (const { day, name } of WEEKDAYS) {
@@ -64,14 +64,14 @@ for (const { day, name } of WEEKDAYS) {
             TAKE_PILLS_ENTRY,
             {
                 reminderText: "Tomar",
-                reminderSettings: [
-                    { time: "08:00", enabled: true, frequency: 3, recurrence: { kind: "custom", days: [day] } },
+                plans: [
+                    { times: [{ time: "08:00", enabled: true, recurrence: { kind: "custom", days: [day] } }] },
                 ],
             },
             { limit: 3 },
         );
 
-        assert.equal(payload.reminderSettings[0].custom, fourPTouchMask(day), name);
+        assert.deepEqual(payload.plans[0].times[0].recurrence, { kind: "custom", days: [day] }, name);
     });
 }
 

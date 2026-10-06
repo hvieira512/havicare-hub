@@ -20,10 +20,10 @@ const { uplinkCardContent } = await import(
  */
 const PLAN = {
     plans: [
-        { slot: 1, hour: 9, minute: 35, enabled: true },
-        { slot: 2, hour: 9, minute: 50, enabled: true },
-        { slot: 3, hour: 10, minute: 10, enabled: true },
-        { slot: 4, hour: 20, minute: 0, enabled: true },
+        { times: [{ time: "09:35", enabled: true, slot: 1, recurrence: { kind: "daily" } }] },
+        { times: [{ time: "09:50", enabled: true, slot: 2, recurrence: { kind: "daily" } }] },
+        { times: [{ time: "10:10", enabled: true, slot: 3, recurrence: { kind: "daily" } }] },
+        { times: [{ time: "20:00", enabled: true, slot: 4, recurrence: { kind: "daily" } }] },
     ],
 };
 
@@ -55,8 +55,8 @@ test("cada dose marcada é uma coluna, com a hora dela", () => {
 test("a ordem é a das horas e não a dos números de alarme", () => {
     state.selectedDetail.effectiveConfigurations.medication_reminders = {
         plans: [
-            { slot: 1, hour: 20, minute: 0, enabled: true },
-            { slot: 2, hour: 8, minute: 0, enabled: true },
+            { times: [{ time: "20:00", enabled: true, slot: 1, recurrence: { kind: "daily" } }] },
+            { times: [{ time: "08:00", enabled: true, slot: 2, recurrence: { kind: "daily" } }] },
         ],
     };
 

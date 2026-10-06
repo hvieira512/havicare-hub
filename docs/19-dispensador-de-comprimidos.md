@@ -930,7 +930,7 @@ configuração não faz nada.
 
 | Capacidade | TAGs | Notas |
 |---|---|---|
-| `medication_reminders` | `0x1021`–`0x1049` | **os nove alarmes de cada vez.** Os slots que o plano não usa saem a `24:60` de propósito — o aparelho tem nove fixos, e um que sobrasse de um plano anterior continuava a tocar. O interruptor vai a `1` onde há hora e a `0` onde não há, mas quem decide é a hora: o `0x1041`–`0x1049` é inerte |
+| `medication_reminders` | `0x1021`–`0x1049` | **os nove alarmes de cada vez.** A forma pública é a partilhada com os relógios — um plano por compartimento, com o número dele no `slot` da hora; ver o [capítulo 10](10-configuracao-de-dispositivos.md#uma-capacidade-partilhada-por-três-protocolos-medication_reminders). Os slots que o plano não usa saem a `24:60` de propósito — o aparelho tem nove fixos, e um que sobrasse de um plano anterior continuava a tocar. O interruptor vai a `1` onde há hora e a `0` onde não há, mas quem decide é a hora: o `0x1041`–`0x1049` é inerte |
 | `dispense_mode` | `0x100C` / `0x100D` | bloqueio de criança e toma antecipada |
 | `sound_profile` | `0x1012` / `0x1013` | tipo de toque e volume |
 | `do_not_disturb` | `0x1051`–`0x1055` | interruptor e janela |

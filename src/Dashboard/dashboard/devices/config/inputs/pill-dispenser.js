@@ -1,4 +1,5 @@
 import { field } from "../../../components/form-field.js";
+import { medicationPlanTimes } from "../../medication-plan.js";
 import { html, raw } from "../../../html.js";
 import { segmentedScale } from "./segmented-scale.js";
 import { enabledSwitch, nextUid } from "./shared.js";
@@ -65,11 +66,10 @@ const slotCell = (index, plan) =>
  * repeti-lo dava o mesmo texto duas vezes seguidas.
  */
 function alarmsInput(entry, desired) {
-    const plans = Array.isArray(desired?.plans) ? desired.plans : [];
     // Pelo número do alarme, não pela posição na lista: pela posição, um plano só do alarme 5
     // cai na primeira caixa e mostra um número que não é o dele.
     const bySlot = new Map(
-        plans.map((plan, position) => [Number(plan?.slot ?? position + 1), plan]),
+        medicationPlanTimes(desired?.plans).map((entry) => [entry.slot, entry]),
     );
     const cells = Array.from({ length: SLOTS }, (_, index) =>
         slotCell(index, bySlot.get(index + 1)),
@@ -90,7 +90,15 @@ function readAlarms(section) {
     for (let index = 0; index < SLOTS; index++) {
         const value = readText(section, `time-${index}`);
         if (isBlank(value)) continue;
-        plans.push({ slot: index + 1, ...fromTimeValue(value) });
+        const { hour, minute } = fromTimeValue(value);
+        plans.push({
+            times: [{
+                time: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+                enabled: true,
+                slot: index + 1,
+                recurrence: { kind: "daily" },
+            }],
+        });
     }
 
     return { plans };

@@ -50,7 +50,7 @@ test("as horas de silêncio voltam separadas em hora e minuto", () => {
 
 test("cada alarme tem um seletor de horas, e os nove aparecem sempre", () => {
     const root = render("pillDispenserAlarms", {
-        plans: [{ hour: 8, minute: 30 }],
+        plans: [{ times: [{ time: "08:30", enabled: true, slot: 1, recurrence: { kind: "daily" } }] }],
     });
 
     const times = [...root.querySelectorAll("input[type=time]")];
@@ -60,15 +60,18 @@ test("cada alarme tem um seletor de horas, e os nove aparecem sempre", () => {
 
 test("um alarme definido volta com a hora que se escolheu", () => {
     const root = render("pillDispenserAlarms", {
-        plans: [{ hour: 8, minute: 30 }, { hour: 20, minute: 5 }],
+        plans: [
+            { times: [{ time: "08:30", enabled: true, slot: 1, recurrence: { kind: "daily" } }] },
+            { times: [{ time: "20:05", enabled: true, slot: 2, recurrence: { kind: "daily" } }] },
+        ],
     });
 
     // O `slot` é o número do alarme e não a posição: sem ele, o enésimo plano caía no
     // enésimo alarme e escolher o 5 escrevia no 3.
     assert.deepEqual(INPUTS.pillDispenserAlarms.read(root), {
         plans: [
-            { slot: 1, hour: 8, minute: 30 },
-            { slot: 2, hour: 20, minute: 5 },
+            { times: [{ time: "08:30", enabled: true, slot: 1, recurrence: { kind: "daily" } }] },
+            { times: [{ time: "20:05", enabled: true, slot: 2, recurrence: { kind: "daily" } }] },
         ],
     });
 });

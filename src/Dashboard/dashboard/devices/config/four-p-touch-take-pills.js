@@ -96,12 +96,12 @@ export function readTakePills(section) {
     const groups = Array.from(
         section.querySelectorAll("[data-takepills-reminder-group]"),
     );
-    const number = groups.length;
+
     const voiceEnabled = readCheckbox(section, "voiceEnabled");
     const voiceData = readText(section, "voiceData");
     const voiceMimeType = readText(section, "voiceMimeType");
 
-    const reminderSettings = groups.map((group) => {
+    const plans = groups.map((group) => {
         // `:checked` porque a recorrência é um grupo de rádios, como no bloco dos alarmes.
         const frequency =
             parseInt(
@@ -112,23 +112,26 @@ export function readTakePills(section) {
                 ),
                 10,
             ) || 1;
+        const days = frequency === 3 ? fourPTouchMaskToWeekdays(readFourPTouchAlarmDays(group)) : [];
+        const kind = frequency === 2 ? "daily" : (frequency === 3 ? "custom" : "once");
+
         return {
-            time:
-                    group.querySelector(
-                        "[data-takepills-field=\"reminderTime\"]",
-                    )?.value || "",
-            enabled:
-                    group.querySelector(
-                        "[data-takepills-field=\"reminderEnabled\"]",
-                    )?.checked || false,
-            frequency,
-            custom: frequency === 3 ? readFourPTouchAlarmDays(group) : "",
+            times: [{
+                time:
+                        group.querySelector(
+                            "[data-takepills-field=\"reminderTime\"]",
+                        )?.value || "",
+                enabled:
+                        group.querySelector(
+                            "[data-takepills-field=\"reminderEnabled\"]",
+                        )?.checked || false,
+                recurrence: days.length > 0 ? { kind, days } : { kind },
+            }],
         };
     });
 
     const payload = {
-        reminderSettings,
-        number,
+        plans,
         reminderText: readText(section, "reminderText"),
     };
 
@@ -151,6 +154,14 @@ function normalizeVoiceEnabled(desired, hasVoiceData) {
 }
 
 function normalizeReminderSettings(desired) {
+    // A forma pública: um plano por lembrete, com uma hora cada.
+    if (Array.isArray(desired?.plans)) {
+        return desired.plans
+            .map((plan) => (Array.isArray(plan?.times) ? plan.times[0] : plan))
+            .filter(Boolean)
+            .map(normalizeReminder);
+    }
+
     const base = desired?.reminderSettings;
     if (Array.isArray(base)) return base.map(normalizeReminder);
     if (typeof base === "string" && base.trim() !== "") return parseReminderString(base);
@@ -169,7 +180,17 @@ function normalizeReminder(item) {
         ? weekdaysToFourPTouchMask(item.recurrence.days)
         : String(item.custom ?? item.reminderCustom ?? "");
 
-    return { time: String(item.time ?? item.reminderTime ?? "08:00"), enabled: boolValue(item.enabled ?? item.switchState, true), frequency: parseInt(String(item.frequency ?? item.frequencies ?? 1), 10) || 1, custom };
+    // Sem `frequency`, o modo nativo sai do `kind`: a forma pública só tem a recorrência.
+    const kind = String(item.recurrence?.kind ?? "");
+    const fromKind = kind === "daily" ? 2 : (kind === "custom" ? 3 : 1);
+    const frequency = item.frequency ?? item.frequencies;
+
+    return {
+        time: String(item.time ?? item.reminderTime ?? "08:00"),
+        enabled: boolValue(item.enabled ?? item.switchState, true),
+        frequency: frequency === undefined ? fromKind : (parseInt(String(frequency), 10) || 1),
+        custom,
+    };
 }
 
 function parseReminderString(value) {

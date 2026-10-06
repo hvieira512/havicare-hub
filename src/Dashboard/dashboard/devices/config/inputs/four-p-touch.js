@@ -380,7 +380,7 @@ export const INPUTS = {
         render: (_entry, desired, meta) => takePillsInput(desired, meta),
         read: (section) => readTakePills(section),
         defaults: () => ({
-            reminderSettings: [],
+            plans: [],
             number: 0,
             reminderText: "",
             voiceData: "",

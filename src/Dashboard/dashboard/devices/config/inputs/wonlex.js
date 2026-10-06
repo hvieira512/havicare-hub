@@ -3,6 +3,10 @@ import { html } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
 import { addAlarmButton, alarmDisclosure, shortDate } from "../alarm-fields.js";
 import {
+    MEDICATION_CONDITIONS,
+    MEDICATION_DOSE_UNITS,
+    MEDICATION_MEAL_TIMINGS,
+    MEDICATION_PERIODS,
     WONLEX_MEDICATION_PERIODS,
     boolValue,
     numericValue,
@@ -358,23 +362,26 @@ function readWonlexMedicationPlans(section) {
             throw new Error(`Medicamento ${index + 1}: dose e intervalo não podem ser negativos`);
         }
 
+        const mealValue = parseInt(String(
+            row.querySelector("[data-medication-field=\"mealTiming\"]:checked")?.value || "0",
+        ), 10);
+        const meal = mealValue === 1 ? 1 : 0;
+
         return {
-            drugType: parseInt(value("drugType"), 10) || 0,
-            drugName,
-            drugDose: dose,
-            drugUnit: value("drugUnit") || "5",
-            drugStartTime: start,
-            drugEndTime: end,
-            drugInterval: interval,
-            drugTime: {
-                alarmClock,
-                checkboxes: selected,
-                radio: parseInt(String(
-                    row.querySelector("[data-medication-field=\"mealTiming\"]:checked")?.value || "0",
-                ), 10) === 1
-                    ? 1
-                    : 0,
-            },
+            name: drugName,
+            condition: MEDICATION_CONDITIONS[parseInt(value("drugType"), 10) || 0],
+            doseCount: dose,
+            doseUnit: MEDICATION_DOSE_UNITS[parseInt(value("drugUnit"), 10)] ?? "other",
+            startDate: start,
+            endDate: end,
+            intervalDays: interval,
+            mealTiming: MEDICATION_MEAL_TIMINGS[meal],
+            times: selected.map((periodIndex) => ({
+                time: alarmClock[WONLEX_MEDICATION_PERIODS[periodIndex].key],
+                enabled: true,
+                period: MEDICATION_PERIODS[periodIndex],
+                recurrence: { kind: "daily" },
+            })),
         };
     });
 

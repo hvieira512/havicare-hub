@@ -13,7 +13,7 @@ const entry = (fields, overrides = {}) => ({ fields, ...overrides });
 
 test("os nove alarmes são desenhados, ocupados ou não", () => {
     const html = alarms.render(entry(["plans"]), {
-        plans: [{ hour: 8, minute: 30, enabled: true }],
+        plans: [{ times: [{ time: "08:30", enabled: true, slot: 1, recurrence: { kind: "daily" } }] }],
     });
 
     // Nove linhas: o aparelho tem nove slots fixos e mostra-os todos, senão não há como

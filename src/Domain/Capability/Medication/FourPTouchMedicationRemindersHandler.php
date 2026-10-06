@@ -21,14 +21,20 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
     public function toNative(mixed $value): array
     {
         $desired = self::requireObjectValue($value, 'medication_reminders');
-        $settings = $desired['reminderSettings'] ?? [];
-        if (is_string($settings)) {
-            $settings = $this->parseReminderSettings($settings);
-        } elseif (is_array($settings) && !array_is_list($settings)) {
-            $settings = [$settings];
-        }
-        if (!is_array($settings)) {
-            throw new \InvalidArgumentException('medication_reminders.reminderSettings must be a list');
+        if (array_key_exists('plans', $desired)) {
+            $plans = is_array($desired['plans']) ? $desired['plans'] : [];
+            unset($desired['plans']);
+            $settings = array_values(array_map(self::nativeSetting(...), array_filter($plans, 'is_array')));
+        } else {
+            $settings = $desired['reminderSettings'] ?? [];
+            if (is_string($settings)) {
+                $settings = $this->parseReminderSettings($settings);
+            } elseif (is_array($settings) && !array_is_list($settings)) {
+                $settings = [$settings];
+            }
+            if (!is_array($settings)) {
+                throw new \InvalidArgumentException('medication_reminders.reminderSettings must be a list');
+            }
         }
 
         $desired['reminderSettings'] = $settings;
@@ -47,8 +53,10 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
         }
 
         $value = [
-            'reminderSettings' => $settings,
-            'number' => count($settings),
+            'plans' => array_values(array_map(
+                self::publicPlan(...),
+                array_filter(is_array($settings) ? $settings : [], 'is_array'),
+            )),
             'reminderText' => $desired['reminderText'] ?? '',
             'voiceData' => $desired['voiceData'] ?? '',
         ];
@@ -62,8 +70,7 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
     public function defaultValue(): mixed
     {
         return [
-            'reminderSettings' => [],
-            'number' => 0,
+            'plans' => [],
             'reminderText' => '',
             'voiceData' => '',
             'voiceMimeType' => 'audio/webm',
@@ -79,10 +86,9 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
     {
         if (
             is_array($incoming)
-            && array_key_exists('reminderSettings', $incoming)
-            && $incoming['reminderSettings'] === []
+            && array_key_exists('plans', $incoming)
+            && $incoming['plans'] === []
         ) {
-            $incoming['number'] = 0;
             $incoming['reminderText'] = $incoming['reminderText'] ?? '';
             $incoming['voiceData'] = $incoming['voiceData'] ?? '';
             $incoming['voiceMimeType'] = $incoming['voiceMimeType'] ?? '';
@@ -97,6 +103,49 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
             'value' => $value,
             '_meta' => $meta,
         ];
+    }
+
+    /**
+     * O `number` é derivado e fica no nativo; um plano do 4P Touch tem uma hora só.
+     *
+     * @param array<string, mixed> $plan
+     * @return array{time: string, enabled: bool, frequency: int, custom: string}
+     */
+    private static function nativeSetting(array $plan): array
+    {
+        $entry = is_array($plan['times'][0] ?? null) ? $plan['times'][0] : $plan;
+        $recurrence = is_array($entry['recurrence'] ?? null) ? $entry['recurrence'] : [];
+        [$frequency, $custom] = MedicationPlanShape::modeFromRecurrence($recurrence);
+
+        return [
+            'time' => MedicationPlanShape::time((string)($entry['time'] ?? '')),
+            'enabled' => MedicationPlanShape::enabled($entry['enabled'] ?? true),
+            'frequency' => $frequency,
+            'custom' => $custom,
+        ];
+    }
+
+    /**
+     * Um lembrete é um plano sem nome com uma hora: o 4P Touch não agrupa por medicamento.
+     * O modo nativo é o mesmo dos alarmes, e por isso a recorrência também.
+     *
+     * @param array<string, mixed> $setting
+     * @return array<string, mixed>
+     */
+    private static function publicPlan(array $setting): array
+    {
+        if (array_key_exists('times', $setting)) {
+            return $setting;
+        }
+
+        return MedicationPlanShape::plan([], [MedicationPlanShape::timeEntry(
+            (string)($setting['time'] ?? ''),
+            MedicationPlanShape::enabled($setting['enabled'] ?? true),
+            MedicationPlanShape::recurrenceFromMode(
+                (int)($setting['frequency'] ?? 1),
+                (string)($setting['custom'] ?? ''),
+            ),
+        )]);
     }
 
     /**

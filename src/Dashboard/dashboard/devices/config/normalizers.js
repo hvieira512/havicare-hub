@@ -26,37 +26,54 @@ export function normalizeWonlexMedicationPlans(desired) {
         : [];
 }
 
+export const MEDICATION_CONDITIONS = ["hypertension", "diabetes", "cholesterol", "uric_acid"];
+export const MEDICATION_DOSE_UNITS = ["tablet", "ampoule", "ml", "mg", "iu", "other"];
+export const MEDICATION_MEAL_TIMINGS = ["before_meal", "after_meal"];
+export const MEDICATION_PERIODS = ["morning", "midday", "night", "before_sleep"];
+
+/**
+ * A forma pública de um plano, trazida para os nomes com que os campos da Wonlex trabalham.
+ *
+ * A já normalizada volta aqui -- a lista normaliza, e a linha normaliza outra vez --, e por
+ * isso as duas formas são aceites.
+ */
 export function normalizeWonlexMedicationPlan(plan) {
-    const drugTime = plan.drugTime && typeof plan.drugTime === "object"
-        ? plan.drugTime
-        : {};
-    // A forma já normalizada volta aqui -- a lista normaliza, e a linha normaliza outra vez --
-    // e nela o `drugTime` não existe: sem estas segundas leituras a segunda passagem perdia
-    // todos os períodos menos o primeiro.
-    const alarmClock = pickObject(drugTime.alarmClock) ?? pickObject(plan.alarmClock) ?? {};
-    const checkboxes = Array.isArray(drugTime.checkboxes) ? drugTime.checkboxes : plan.periods;
-    let periods = Array.isArray(checkboxes)
-        ? checkboxes
-                .map((value) => parseInt(String(value), 10))
-                .filter((value) => Number.isFinite(value) && value >= 0 && value <= 3)
+    const alarmClock = pickObject(plan.alarmClock) ?? {};
+    let periods = Array.isArray(plan.periods)
+        ? plan.periods.map((value) => parseInt(String(value), 10)).filter((value) => value >= 0 && value <= 3)
         : [];
+
+    for (const entry of Array.isArray(plan.times) ? plan.times : []) {
+        const index = MEDICATION_PERIODS.indexOf(String(entry?.period ?? ""));
+        if (index < 0) continue;
+        alarmClock[WONLEX_MEDICATION_PERIODS[index].key] = String(entry?.time ?? "");
+        if (!periods.includes(index)) periods.push(index);
+    }
+
     if (periods.length === 0) {
         periods = WONLEX_MEDICATION_PERIODS
             .filter((period) => String(alarmClock[period.key] || "").trim() !== "")
             .map((period) => period.index);
     }
 
+    const indexOf = (table, value, fallback) => {
+        const found = table.indexOf(String(value ?? ""));
+        return found < 0 ? fallback : found;
+    };
+
     return {
-        drugType: parseInt(String(plan.drugType ?? 0), 10) || 0,
-        drugName: String(plan.drugName || ""),
-        drugDose: numericValue(plan.drugDose, 0),
-        drugUnit: String(plan.drugUnit ?? "0"),
-        drugStartTime: String(plan.drugStartTime || ""),
-        drugEndTime: String(plan.drugEndTime || ""),
-        drugInterval: numericValue(plan.drugInterval, 1),
+        drugType: plan.drugType ?? indexOf(MEDICATION_CONDITIONS, plan.condition, 0),
+        drugName: String(plan.drugName ?? plan.name ?? ""),
+        drugDose: numericValue(plan.drugDose ?? plan.doseCount, 0),
+        drugUnit: plan.drugUnit ?? String(indexOf(MEDICATION_DOSE_UNITS, plan.doseUnit, 0)),
+        drugStartTime: String(plan.drugStartTime ?? plan.startDate ?? ""),
+        drugEndTime: String(plan.drugEndTime ?? plan.endDate ?? ""),
+        drugInterval: numericValue(plan.drugInterval ?? plan.intervalDays, 1),
         alarmClock,
-        periods: periods.length > 0 ? periods : [0],
-        mealTiming: parseInt(String(drugTime.radio ?? plan.mealTiming ?? 0), 10) === 1 ? 1 : 0,
+        periods: periods.length > 0 ? periods.sort((a, b) => a - b) : [0],
+        mealTiming: plan.mealTiming === undefined
+            ? 0
+            : (parseInt(String(plan.mealTiming), 10) || indexOf(MEDICATION_MEAL_TIMINGS, plan.mealTiming, 0)),
     };
 }
 
@@ -64,18 +81,15 @@ const pickObject = (value) => (value && typeof value === "object" ? value : null
 
 export function defaultWonlexMedicationPlan() {
     return normalizeWonlexMedicationPlan({
-        drugType: 0,
-        drugName: "",
-        drugDose: 1,
-        drugUnit: "0",
-        drugStartTime: "",
-        drugEndTime: "",
-        drugInterval: 1,
-        drugTime: {
-            alarmClock: { Morning: "08:00" },
-            checkboxes: [0],
-            radio: 0,
-        },
+        name: "",
+        condition: "hypertension",
+        doseCount: 1,
+        doseUnit: "tablet",
+        startDate: "",
+        endDate: "",
+        intervalDays: 1,
+        mealTiming: "before_meal",
+        times: [{ time: "08:00", enabled: true, period: "morning", recurrence: { kind: "daily" } }],
     });
 }
 

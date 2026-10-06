@@ -29,14 +29,18 @@ final class PillDispenserMedicationRemindersTest extends TestCase
     {
         $registry = new CapabilityRegistry();
         $plan = ['plans' => [
-            ['hour' => 8, 'minute' => 30, 'enabled' => true],
-            ['hour' => 20, 'minute' => 5, 'enabled' => false],
+            ['times' => [['time' => '08:30', 'enabled' => true, 'slot' => 1, 'recurrence' => ['kind' => 'daily']]]],
+            ['times' => [['time' => '20:05', 'enabled' => false, 'slot' => 2, 'recurrence' => ['kind' => 'daily']]]],
         ]];
 
         $native = $registry->toNative('zayata-m228', 'medication_reminders', $plan);
 
         self::assertArrayHasKey('medication_reminders', $native);
-        self::assertSame($plan['plans'], $native['medication_reminders']['plans']);
+        // O `enabled` é o que o downlink lê para limpar o compartimento, e tem de chegar lá.
+        self::assertSame([
+            ['slot' => 1, 'hour' => 8, 'minute' => 30, 'enabled' => true],
+            ['slot' => 2, 'hour' => 20, 'minute' => 5, 'enabled' => false],
+        ], $native['medication_reminders']['plans']);
 
         // E de volta: é o que a dashboard lê para desenhar o formulário do que já está
         // gravado, e tem de dar o mesmo que se enviou.

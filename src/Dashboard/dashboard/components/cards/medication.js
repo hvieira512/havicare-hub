@@ -1,4 +1,5 @@
 import { fieldValue } from "../../format.js";
+import { medicationPlanTimes } from "../../devices/medication-plan.js";
 import { html, raw } from "../../html.js";
 import { runoutAt, runoutLabel } from "../../devices/medication-runout.js";
 import { state } from "../../state.js";
@@ -31,20 +32,15 @@ const DOSE_BAND = {
 function planHours() {
     const plans = state.selectedDetail?.effectiveConfigurations?.medication_reminders?.plans;
     const hours = new Map();
-    if (!Array.isArray(plans)) {
-        return hours;
-    }
 
-    plans.forEach((plan, position) => {
-        if (plan?.enabled === false) {
+    medicationPlanTimes(plans).forEach((entry) => {
+        if (!entry.enabled || entry.slot < 1 || entry.slot > ALARM_SLOTS) {
             return;
         }
-        const slot = Number(plan?.slot ?? position + 1);
-        const hour = Number(plan?.hour ?? 0);
-        const minute = Number(plan?.minute ?? 0);
-        if (slot >= 1 && slot <= ALARM_SLOTS) {
-            hours.set(slot, `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`);
-        }
+        hours.set(
+            entry.slot,
+            `${String(entry.hour).padStart(2, "0")}:${String(entry.minute).padStart(2, "0")}`,
+        );
     });
 
     return hours;

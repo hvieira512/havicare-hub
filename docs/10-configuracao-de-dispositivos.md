@@ -231,6 +231,48 @@ absorve as diferenças entre fabricantes:
 é suportado naquele dispositivo, e o `limit` diz quantas entradas cabem. Um
 `items` vazio é válido e apaga os alarmes guardados.
 
+### Uma capacidade partilhada por três protocolos: `medication_reminders`
+
+Os três aparelhos que lembram medicação — os relógios Wonlex e 4P Touch, e o
+dispensador M228 — falavam formas públicas diferentes com a mesma chave. Hoje
+**um plano é um medicamento com as suas horas**, e lê-se sem saber o fornecedor:
+
+```json
+{
+  "plans": [
+    {
+      "name": "Paracetamol",
+      "doseCount": 2,
+      "startDate": "2026-10-01",
+      "endDate": "2026-10-10",
+      "times": [
+        { "time": "08:00", "enabled": true, "recurrence": { "kind": "daily" } }
+      ]
+    }
+  ]
+}
+```
+
+O núcleo de um plano é `name`, `doseCount`, `startDate`, `endDate` e `times`; o
+de uma hora é `time`, `enabled` e `recurrence`. **O que um fornecedor não sabe
+omite-se**, como em todo o contrato: o M228 e o 4P Touch não agrupam por
+medicamento e dão um plano sem nome por lembrete.
+
+O resto é extensão de fornecedor, e sai declarada no `_meta`:
+
+| Campo | Onde | O que é |
+|---|---|---|
+| `condition` | Wonlex, no plano | A condição que o medicamento trata |
+| `doseUnit` | Wonlex, no plano | A unidade da dose |
+| `intervalDays` | Wonlex, no plano | De quantos em quantos dias |
+| `mealTiming` | Wonlex, no plano | Antes ou depois da refeição |
+| `period` | Wonlex, na hora | A altura do dia que o protocolo dele nomeia |
+| `slot` | M228, na hora | O compartimento que abre |
+| `reminderText` · `voiceData` | 4P Touch, ao lado dos planos | O texto e o áudio do lembrete |
+
+O `period` e o `slot` **não se adivinham da hora**: são campos do aparelho, e
+inferi-los punha as 19:00 da Wonlex no período do meio-dia.
+
 ## 5. Descoberta de capacidades
 
 Um modelo novo chega sem se saber o que suporta. Em vez de o adivinhar, o hub

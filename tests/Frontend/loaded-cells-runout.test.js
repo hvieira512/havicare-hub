@@ -26,8 +26,8 @@ const detail = (overrides = {}) => ({
     effectiveConfigurations: {
         medication_reminders: {
             plans: [
-                { slot: 1, hour: 10, minute: 47 },
-                { slot: 2, hour: 10, minute: 50 },
+                { times: [{ time: "10:47", enabled: true, slot: 1, recurrence: { kind: "daily" } }] },
+                { times: [{ time: "10:50", enabled: true, slot: 2, recurrence: { kind: "daily" } }] },
             ],
         },
         ...overrides.effectiveConfigurations,
@@ -157,7 +157,7 @@ test("um período já terminado não deixa data, e a frase cala-se", () => {
     const ended = {
         effectiveConfigurations: {
             medication_reminders: {
-                plans: [{ slot: 1, hour: 10, minute: 47 }],
+                plans: [{ times: [{ time: "10:47", enabled: true, slot: 1, recurrence: { kind: "daily" } }] }],
             },
             medication_period: { enabled: true, startDate: "2026-09-01", endDate: "2026-09-30" },
         },

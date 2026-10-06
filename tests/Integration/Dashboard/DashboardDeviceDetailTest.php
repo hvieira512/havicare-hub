@@ -202,15 +202,13 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
         self::assertSame(
             [
-                'reminderSettings' => [
-                    [
+                'plans' => [
+                    ['times' => [[
                         'time' => '11:25',
                         'enabled' => true,
-                        'frequency' => 3,
-                        'custom' => '1010101',
-                    ],
+                        'recurrence' => ['kind' => 'custom', 'days' => [7, 2, 4, 6]],
+                    ]]],
                 ],
-                'number' => 1,
                 'reminderText' => 'meds',
                 'voiceData' => 'data:audio/wav;base64,' . WavFixture::silenceBase64(),
                 'voiceMimeType' => 'audio/wav',
@@ -262,12 +260,15 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
         self::assertSame(
             [
-                'reminderSettings' => [
-                    ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
-                    ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
-                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010101'],
+                'plans' => [
+                    ['times' => [['time' => '11:25', 'enabled' => true, 'recurrence' => ['kind' => 'daily']]]],
+                    ['times' => [['time' => '14:30', 'enabled' => false, 'recurrence' => ['kind' => 'once']]]],
+                    ['times' => [[
+                        'time' => '18:00',
+                        'enabled' => true,
+                        'recurrence' => ['kind' => 'custom', 'days' => [7, 2, 4, 6]],
+                    ]]],
                 ],
-                'number' => 3,
                 'reminderText' => 'meds',
                 'voiceData' => '',
                 'voiceMimeType' => '',

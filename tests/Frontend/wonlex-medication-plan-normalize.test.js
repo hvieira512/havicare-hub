@@ -8,17 +8,17 @@ import {
 
 /**
  * O plano passa pelo normalizador duas vezes -- uma na lista, outra na linha -- e a segunda
- * não pode desfazer a primeira: os períodos deixam de vir em `drugTime` e cairiam para um só.
+ * não pode desfazer a primeira: os períodos deixam de vir em `times` e cairiam para um só.
  */
 test("normalizar um plano já normalizado não lhe tira os períodos", () => {
     const [once] = normalizeWonlexMedicationPlans({
         plans: [{
-            drugName: "Paracetamol",
-            drugTime: {
-                alarmClock: { Morning: "08:00", Midday: "12:00" },
-                checkboxes: [0, 1],
-                radio: 1,
-            },
+            name: "Paracetamol",
+            mealTiming: "after_meal",
+            times: [
+                { time: "08:00", enabled: true, period: "morning", recurrence: { kind: "daily" } },
+                { time: "12:00", enabled: true, period: "midday", recurrence: { kind: "daily" } },
+            ],
         }],
     });
 

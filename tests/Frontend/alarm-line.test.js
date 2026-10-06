@@ -111,10 +111,13 @@ test("escrever num campo aberto refaz a linha fechada, sem ninguém chamar nada"
 test("o plano de medicação mostra a frequência à direita, porque tem várias horas", () => {
     const section = configSection(renderConfigInputs, MEDICATION, {
         plans: [{
-            drugName: "Paracetamol",
-            drugDose: 500,
-            drugUnit: "3",
-            drugTime: { alarmClock: { Morning: "08:00", Noon: "12:00" }, checkboxes: [0, 1], radio: 0 },
+            name: "Paracetamol",
+            doseCount: 500,
+            doseUnit: "mg",
+            times: [
+                { time: "08:00", enabled: true, period: "morning", recurrence: { kind: "daily" } },
+                { time: "12:00", enabled: true, period: "midday", recurrence: { kind: "daily" } },
+            ],
         }],
     });
     const [row] = rowsOf(section, "wonlexMedicationPlan");

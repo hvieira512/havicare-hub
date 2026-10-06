@@ -204,8 +204,7 @@ test("take pills keeps its reminders and drops the mime type of unchanged audio"
         roundTrip(
             entryFor("takePills", [], { limit: 3 }),
             {
-                reminderSettings: [{ time: "08:00", enabled: true, frequency: 1, custom: "" }],
-                number: 1,
+                plans: [{ times: [{ time: "08:00", enabled: true, recurrence: { kind: "once" } }] }],
                 reminderText: "Tomar comprimido",
                 voiceData: "",
                 voiceMimeType: "audio/webm",
@@ -213,8 +212,7 @@ test("take pills keeps its reminders and drops the mime type of unchanged audio"
             { limit: 3 },
         ),
         {
-            reminderSettings: [{ time: "08:00", enabled: true, frequency: 1, custom: "" }],
-            number: 1,
+            plans: [{ times: [{ time: "08:00", enabled: true, recurrence: { kind: "once" } }] }],
             reminderText: "Tomar comprimido",
             voiceData: "",
         },

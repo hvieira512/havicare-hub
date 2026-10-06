@@ -3,6 +3,8 @@
  * agora. Dividir a capacidade do prato pelas doses só bate certo com o carrossel no zero.
  */
 
+import { medicationPlanTimes } from "./medication-plan.js";
+
 const WEEKDAYS = ["dom.", "seg.", "ter.", "qua.", "qui.", "sex.", "sáb."];
 const MONTHS = [
     "jan.", "fev.", "mar.", "abr.", "mai.", "jun.",
@@ -24,14 +26,9 @@ function localDate(text, hour, minute) {
 }
 
 function planHours(plans) {
-    if (!Array.isArray(plans)) {
-        return [];
-    }
-
-    return plans
-        .filter((plan) => plan?.enabled !== false &&
-            Number.isInteger(plan?.hour) && Number.isInteger(plan?.minute))
-        .map((plan) => ({ hour: plan.hour, minute: plan.minute }))
+    return medicationPlanTimes(plans)
+        .filter((entry) => entry.enabled)
+        .map((entry) => ({ hour: entry.hour, minute: entry.minute }))
         .sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
 }
 

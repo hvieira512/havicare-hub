@@ -6,8 +6,8 @@ import { runoutAt, runoutLabel } from "../../src/Dashboard/dashboard/devices/med
 // Quinta, 1 de outubro de 2026, depois dos dois alarmes do dia já terem tocado.
 const now = new Date(2026, 9, 1, 10, 52);
 const plans = [
-    { slot: 1, hour: 10, minute: 47 },
-    { slot: 2, hour: 10, minute: 50 },
+    { times: [{ time: "10:47", enabled: true, slot: 1, recurrence: { kind: "daily" } }] },
+    { times: [{ time: "10:50", enabled: true, slot: 2, recurrence: { kind: "daily" } }] },
 ];
 
 test("a data sai de percorrer os alarmes do plano, e não de uma divisão", () => {
@@ -61,8 +61,8 @@ test("um plano que ainda não começou conta a partir do início do período", (
 
 test("os alarmes desligados do plano não gastam compartimentos", () => {
     const comDesligado = [
-        { slot: 1, hour: 10, minute: 47 },
-        { slot: 2, hour: 10, minute: 50, enabled: false },
+        { times: [{ time: "10:47", enabled: true, slot: 1, recurrence: { kind: "daily" } }] },
+        { times: [{ time: "10:50", enabled: false, slot: 2, recurrence: { kind: "daily" } }] },
     ];
 
     assert.deepEqual(runoutAt({ doses: 2, plans: comDesligado, now }), new Date(2026, 9, 3, 10, 47));

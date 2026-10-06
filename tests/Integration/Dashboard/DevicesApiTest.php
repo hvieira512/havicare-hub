@@ -923,15 +923,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         self::assertSame(
             [
-                'reminderSettings' => [
-                    [
+                'plans' => [
+                    ['times' => [[
                         'time' => '11:25',
                         'enabled' => true,
-                        'frequency' => 3,
-                        'custom' => '1010101',
-                    ],
+                        'recurrence' => ['kind' => 'custom', 'days' => [7, 2, 4, 6]],
+                    ]]],
                 ],
-                'number' => 1,
                 'reminderText' => 'meds',
                 'voiceData' => 'QUJDRA==',
             ],
@@ -1013,12 +1011,15 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         self::assertSame(
             [
-                'reminderSettings' => [
-                    ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
-                    ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
-                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010101'],
+                'plans' => [
+                    ['times' => [['time' => '11:25', 'enabled' => true, 'recurrence' => ['kind' => 'daily']]]],
+                    ['times' => [['time' => '14:30', 'enabled' => false, 'recurrence' => ['kind' => 'once']]]],
+                    ['times' => [[
+                        'time' => '18:00',
+                        'enabled' => true,
+                        'recurrence' => ['kind' => 'custom', 'days' => [7, 2, 4, 6]],
+                    ]]],
                 ],
-                'number' => 3,
                 'reminderText' => 'meds',
                 'voiceData' => 'QUJDRA==',
             ],
@@ -1789,13 +1790,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'medication_reminders' => [
-                    'reminderSettings' => [
-                        'time' => '11:25',
-                        'enabled' => true,
-                        'frequency' => 3,
-                        'custom' => '1010101',
+                    'plans' => [
+                        ['times' => [[
+                            'time' => '11:25',
+                            'enabled' => true,
+                            'recurrence' => ['kind' => 'custom', 'days' => [7, 2, 4, 6]],
+                        ]]],
                     ],
-                    'number' => 3,
                     'reminderText' => 'meds',
                 ],
             ],
@@ -1820,7 +1821,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'medication_reminders' => [
-                    'reminderSettings' => [],
+                    'plans' => [],
                     'reminderText' => '',
                     'voiceData' => '',
                 ],
@@ -1828,8 +1829,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ]);
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertSame([], $response['configurations']['medication_reminders']['reminderSettings'] ?? null);
-        self::assertSame(0, $response['configurations']['medication_reminders']['number'] ?? null);
+        self::assertSame([], $response['configurations']['medication_reminders']['plans'] ?? null);
         self::assertCount(1, $submitted);
         self::assertStringContainsString('TAKEPILLS,00:00-0-1,1,004D,]', $submitted[0]['bytes']);
     }

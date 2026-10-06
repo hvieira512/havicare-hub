@@ -33,7 +33,7 @@ const nine = (overrides) => Array.from({ length: 9 }, (_, index) => overrides[in
 test("o alarme escolhido leva o seu número, e não a posição na lista", () => {
     const read = INPUTS.pillDispenserAlarms.read(section(nine({ 4: "10:24" })));
 
-    assert.deepEqual(read.plans, [{ slot: 5, hour: 10, minute: 24 }]);
+    assert.deepEqual(read.plans, [{ times: [{ time: "10:24", enabled: true, slot: 5, recurrence: { kind: "daily" } }] }]);
 });
 
 test("vários alarmes mantêm cada um o seu número", () => {
@@ -42,7 +42,7 @@ test("vários alarmes mantêm cada um o seu número", () => {
     );
 
     assert.deepEqual(
-        read.plans.map((plan) => plan.slot),
+        read.plans.map((plan) => plan.times[0].slot),
         [1, 5, 9],
     );
 });
@@ -58,7 +58,7 @@ test("os slots por preencher não entram no plano", () => {
 test("o alarme 5 é desenhado na caixa 5", () => {
     const rendered = INPUTS.pillDispenserAlarms.render(
         {},
-        { plans: [{ slot: 5, hour: 10, minute: 24 }] },
+        { plans: [{ times: [{ time: "10:24", enabled: true, slot: 5, recurrence: { kind: "daily" } }] }] },
     );
 
     const cells = rendered.split("data-alarm-slot=\"").slice(1);
@@ -73,7 +73,7 @@ test("o alarme 5 é desenhado na caixa 5", () => {
  */
 test("o cartão não desenha interruptores", () => {
     const rendered = String(
-        INPUTS.pillDispenserAlarms.render({}, { plans: [{ slot: 1, hour: 8, minute: 0 }] }),
+        INPUTS.pillDispenserAlarms.render({}, { plans: [{ times: [{ time: "08:00", enabled: true, slot: 1, recurrence: { kind: "daily" } }] }] }),
     );
 
     assert.doesNotMatch(rendered, /type="checkbox"/);

@@ -92,9 +92,9 @@ test("com um plano de três doses por dia, a posição lê-se em dias", (t) => {
         effectiveConfigurations: {
             medication_reminders: {
                 plans: [
-                    { slot: 1, hour: 8, minute: 0 },
-                    { slot: 2, hour: 13, minute: 0 },
-                    { slot: 3, hour: 20, minute: 0 },
+                    { times: [{ time: "08:00", enabled: true, slot: 1, recurrence: { kind: "daily" } }] },
+                    { times: [{ time: "13:00", enabled: true, slot: 2, recurrence: { kind: "daily" } }] },
+                    { times: [{ time: "20:00", enabled: true, slot: 3, recurrence: { kind: "daily" } }] },
                 ],
             },
         },
@@ -209,8 +209,8 @@ test("com plano, a linha visível do cartão diz quando a medicação acaba", (t
         effectiveConfigurations: {
             medication_reminders: {
                 plans: [
-                    { slot: 1, hour: 8, minute: 0 },
-                    { slot: 2, hour: 20, minute: 0 },
+                    { times: [{ time: "08:00", enabled: true, slot: 1, recurrence: { kind: "daily" } }] },
+                    { times: [{ time: "20:00", enabled: true, slot: 2, recurrence: { kind: "daily" } }] },
                 ],
             },
         },
@@ -232,7 +232,7 @@ test("com o período do plano terminado, o cartão volta a falar em compartiment
     });
     state.selectedDetail = {
         effectiveConfigurations: {
-            medication_reminders: { plans: [{ slot: 1, hour: 8, minute: 0 }] },
+            medication_reminders: { plans: [{ times: [{ time: "08:00", enabled: true, slot: 1, recurrence: { kind: "daily" } }] }] },
             medication_period: { enabled: true, startDate: "2020-01-01", endDate: "2020-01-02" },
         },
     };
