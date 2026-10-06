@@ -563,6 +563,10 @@ export function syncConfigCounts(root) {
  * A fotografia de cada bloco logo depois de desenhar, para o «Enviar» só acender quando o
  * valor muda. Falha aberta: sem leitura, o botão fica activo.
  */
+function drawnFieldValue(input) {
+    return input.type === "checkbox" || input.type === "radio" ? input.checked : input.value;
+}
+
 export function captureConfigPristine(root) {
     for (const section of root.querySelectorAll("[data-config-section]")) {
         try {
@@ -570,6 +574,11 @@ export function captureConfigPristine(root) {
         } catch {
             delete section.dataset.configPristine;
         }
+        // O Repor devolve cada campo tal como foi desenhado: o nome e o formato do campo nem
+        // sempre são os do valor guardado (`range` em duas horas, `220000` em `22:00`).
+        section.dataset.configPristineFields = JSON.stringify(
+            [...section.querySelectorAll("[data-config-field]")].map(drawnFieldValue),
+        );
         syncConfigSectionDirty(section);
     }
 }

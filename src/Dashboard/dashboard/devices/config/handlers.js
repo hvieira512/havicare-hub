@@ -219,10 +219,33 @@ export function handleConfigFeedbackClosed(event) {
  * Devolve as definições ao valor que veio do hub, que o `type="reset"` não conhece. As listas
  * repetíveis ficam de fora: têm o seu próprio repor.
  */
+function restoreDrawnFields(block) {
+    let drawn;
+    try {
+        drawn = JSON.parse(block.dataset.configPristineFields ?? "null");
+    } catch {
+        return false;
+    }
+    const inputs = [...block.querySelectorAll("[data-config-field]")];
+    if (!Array.isArray(drawn) || drawn.length !== inputs.length) return false;
+
+    inputs.forEach((input, index) => {
+        if (input.type === "checkbox" || input.type === "radio") {
+            input.checked = drawn[index] === true;
+            if (input.type === "checkbox") syncSwitchLabel(input);
+            return;
+        }
+        input.value = String(drawn[index] ?? "");
+    });
+
+    return true;
+}
+
 export function resetConfigPane(pane) {
     const blocks = pane.querySelectorAll("[data-config-row], [data-config-section]");
     for (const block of blocks) {
         if (block.querySelector("[data-repeat-list]")) continue;
+        if (restoreDrawnFields(block)) continue;
 
         let pristine;
         try {
