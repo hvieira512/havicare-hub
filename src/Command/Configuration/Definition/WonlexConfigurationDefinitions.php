@@ -38,7 +38,7 @@ final class WonlexConfigurationDefinitions
             $entry('wonlexLowPower', 'deviceConfig', 'Limiar de bateria fraca', 'number', ['Battery'], ['deviceConfig'], 'alerts', 10),
             $entry('wonlexFallWarnSwitch', 'deviceConfig', 'Deteção de queda', 'toggle', ['switchState'], ['deviceConfig'], 'alerts', 20),
             $entry('wonlexSOSSwitch', 'deviceConfig', 'SMS SOS', 'toggle', ['switchState'], ['deviceConfig'], 'alerts', 30, help: 'Carregar no SOS também envia um SMS.'),
-            $entry('wonlexCallInLimitSwitch', 'deviceConfig', 'Restringir chamadas recebidas', 'toggle', ['switchState'], ['deviceConfig'], 'system', 20, help: 'Só a lista telefónica e os números SOS conseguem ligar.'),
+            $entry('wonlexCallInLimitSwitch', 'deviceConfig', 'Restringir chamadas recebidas', 'toggle', ['switchState'], ['deviceConfig'], 'contacts', 35, help: 'Só a lista telefónica e os números SOS conseguem ligar.'),
             $entry('alarmClock', 'alarmClock', 'Alarmes', 'alarm_clock', ['alarmClockList'], ['alarmClock'], 'alerts', 10, 10, help: 'Repetem-se por dias da semana; não há alarme de uma só vez.'),
             $entry('familyNumber', 'familyNumber', 'Contactos familiares', 'phonebook', ['contacts'], ['familyNumber'], 'contacts', 5, 10),
             $entry('SOSNumber', 'SOSNumber', 'Números SOS', 'sos_contacts', ['numbers'], ['SOSNumber'], 'contacts', 10, 10),

@@ -32,10 +32,6 @@ final class ProtocolDashboardMeta
                         'label' => 'Contactos SOS',
                         'limit' => 10,
                     ],
-                    'whitelist_enabled' => [
-                        'label' => 'Restringir chamadas recebidas',
-                        'limit' => 0,
-                    ],
                 ],
                 'fieldConstraints' => [
                     'phonebook' => [
@@ -54,10 +50,6 @@ final class ProtocolDashboardMeta
                     'call_whitelist' => [
                         'label' => 'Lista de chamadas autorizadas',
                         'limit' => 10,
-                    ],
-                    'whitelist_enabled' => [
-                        'label' => 'Restringir chamadas recebidas',
-                        'limit' => 0,
                     ],
                 ],
                 'fieldConstraints' => [

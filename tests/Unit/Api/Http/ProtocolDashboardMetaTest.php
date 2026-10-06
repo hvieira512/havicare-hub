@@ -32,9 +32,17 @@ final class ProtocolDashboardMetaTest extends TestCase
 
         self::assertSame(10, $dashboard['groupedCapabilities']['phonebook']['limit'] ?? null);
         self::assertSame(10, $dashboard['groupedCapabilities']['sos_contacts']['limit'] ?? null);
-        self::assertArrayHasKey('whitelist_enabled', $dashboard['groupedCapabilities']);
         self::assertArrayNotHasKey('call_whitelist', $dashboard['groupedCapabilities']);
         self::assertSame(4, $dashboard['fieldConstraints']['phonebook']['name']['maxLength'] ?? null);
+    }
+
+    /** Um cartão agrupado desenha-se pelo nome da capacidade, e o interruptor é um `toggle` simples. */
+    public function testTheCallRestrictionSwitchIsNotAGroupedCard(): void
+    {
+        foreach (['wonlex-json', 'vivistar-iw', 'four-p-touch'] as $protocol) {
+            $grouped = ProtocolDashboardMeta::forProtocol($protocol)['groupedCapabilities'] ?? [];
+            self::assertArrayNotHasKey('whitelist_enabled', $grouped, $protocol);
+        }
     }
 
     public function testTheDashboardMetadataDoesNotDefineASecondCapabilityTaxonomy(): void
