@@ -46,4 +46,10 @@ final class WhitelistEnabledCapabilityTest extends TestCase
             $capability->meta('wonlex-json')['allowedContactSources'] ?? null
         );
     }
+
+    /** Spec DEVREFUSEPHONESWITCH: vem desligado de fábrica. */
+    public function testFourPTouchStartsOffWhenNothingIsStored(): void
+    {
+        self::assertSame(['enabled' => false], (new WhitelistEnabledCapability())->defaultValue('four-p-touch'));
+    }
 }

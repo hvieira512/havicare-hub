@@ -144,6 +144,14 @@ final class CapabilityCatalogTest extends TestCase
         self::assertSame('uploadInterval', FourPTouchGenericHandler::publicKeyToNativeKey('location_reporting_interval'));
     }
 
+    public function testFourPTouchDoNotDisturbCarriesTimeRanges(): void
+    {
+        self::assertSame(
+            ['doNotDisturb' => ['ranges' => ['21:10-07:30']]],
+            (new FourPTouchGenericHandler())->toNative('do_not_disturb', ['ranges' => ['21:10-07:30']])
+        );
+    }
+
     public function testFourPTouchFallbackCanRehydrateFallSensitivity(): void
     {
         $handler = new FourPTouchGenericHandler();

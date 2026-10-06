@@ -65,12 +65,9 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
             ],
             'takePills' => self::takePills($payload),
-            'healthAutoMeasurement' => [
-                1,
-                self::boolInt($payload['enabled'] ?? null, 'enabled'),
-                self::nonNegativeInt($payload['intervalMinutes'] ?? null, 'intervalMinutes'),
-            ],
+            'healthAutoMeasurement' => self::healthAutoMeasurement($payload),
             'walkTime' => self::timeRanges($payload, 3, 'ranges'),
+            'doNotDisturb' => self::timeRanges($payload, 4, 'ranges'),
             'sleepTime' => [self::timeRange($payload['range'] ?? null, 'range')],
             'fallDownAlert' => [
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
@@ -84,7 +81,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             'makeCall', 'centerNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
             'pushMessage' => [self::utf16Hex(self::requiredString($payload['message'] ?? null, 'message'))],
             'resetCommand', 'powerOffCommand', 'findDeviceCommand', 'firmwareVersion', 'deviceStatus' => [],
-            'doNotDisturb', 'rejectUnknownCalls' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
+            'rejectUnknownCalls' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
             'alarmClock' => self::alarmClock($payload),
             'phonebook' => self::phonebook($payload),
             'profile' => [self::soundProfileMode($payload['mode'] ?? null)],
@@ -309,6 +306,22 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         }
 
         return $ranges;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<int>
+     */
+    private static function healthAutoMeasurement(array $payload): array
+    {
+        $enabled = self::boolInt($payload['enabled'] ?? null, 'enabled');
+        $interval = self::nonNegativeInt($payload['intervalMinutes'] ?? null, 'intervalMinutes');
+        // Spec HEALTHAUTOSET: mínimo de 5 minutos; desligado, o intervalo não conta.
+        if ($enabled === 1 && $interval < 5) {
+            throw new \InvalidArgumentException('intervalMinutes must be at least 5');
+        }
+
+        return [1, $enabled, $interval];
     }
 
     private static function timeRange(mixed $value, string $field): string

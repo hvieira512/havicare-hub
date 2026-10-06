@@ -28,18 +28,12 @@ function makeCallInput(entry, desired) {
                     })}
                 </div>
             </div>
-            <div class="form-text">Envia um comando para o relógio fazer uma chamada para o número indicado.</div>
         </div>`;
 }
 
 function voiceMonitorInput(entry, desired) {
     return html`
         <div>
-            <div class="alert alert-warning small py-2 px-3 mb-3">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i>
-                O relógio liga de imediato para este número e abre o microfone, sem mostrar
-                nada a quem o traz no pulso. Não fica guardado como contacto.
-            </div>
             <label class="form-label-sm">Número de telefone</label>
             ${renderPhoneControl({
                 value: String(desired.phone || ""),
@@ -79,7 +73,6 @@ function soundProfileInput(desired) {
 
     return html`
         <div class="vstack gap-2">
-            <div class="small text-secondary">Escolha o perfil de som do dispositivo.</div>
             <div class="row row-cols-2 g-2" role="radiogroup" aria-label="Perfil de som">
                 ${options
                         .map(
@@ -145,7 +138,6 @@ function languageTimezoneInput(desired) {
                         )
                 }
             </select>
-            <div class="form-text">Escolha a combinação suportada pelo dispositivo.</div>
         </div>`;
 }
 
@@ -160,7 +152,7 @@ function dualToggleInput(desired) {
             </div>
             <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" role="switch" data-config-field="callCenterOnFall" ${callCenterOnFall ? "checked" : ""}>
-                <label class="form-check-label" data-switch-label data-switch-on="Liga para o centro" data-switch-off="Não liga para o centro">${callCenterOnFall ? "Liga para o centro" : "Não liga para o centro"}</label>
+                <label class="form-check-label" data-switch-label data-switch-on="Liga para a central" data-switch-off="Não liga para a central">${callCenterOnFall ? "Liga para a central" : "Não liga para a central"}</label>
             </div>
         </div>`;
 }
@@ -223,7 +215,6 @@ function fallSensitivityLevelsInput(desired) {
                     <option value="6" ${totalLevels === 6 ? "selected" : ""}>6 níveis</option>
                     <option value="8" ${totalLevels === 8 ? "selected" : ""}>8 níveis</option>
                 </select>
-                <div class="form-text">Escolha a escala indicada para o firmware deste dispositivo.</div>
             </div>
         </div>`;
 }
@@ -278,7 +269,6 @@ function timeRangesInput(entry, desired) {
     );
     return html`
         <div class="vstack gap-2">
-            <div class="small text-secondary">Formato HH:MM-HH:MM. Envie pelo menos um intervalo.</div>
             <div class="row row-cols-1 row-cols-sm-auto g-3">
                 ${values
                         .map(

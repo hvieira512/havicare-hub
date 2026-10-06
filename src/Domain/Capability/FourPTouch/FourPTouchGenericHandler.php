@@ -119,7 +119,7 @@ final class FourPTouchGenericHandler
             'remove_watch_alarm' => ['removeWatchAlarm' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
             'remove_watch_sms_alert' => ['removeWatchSmsAlerts' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
             'whitelist_enabled' => ['rejectUnknownCalls' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
-            'do_not_disturb' => ['doNotDisturb' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
+            'do_not_disturb' => ['doNotDisturb' => ['ranges' => self::requireListValue(is_array($value) && array_key_exists('ranges', $value) ? $value['ranges'] : $value, 'ranges')]],
             'fall_detection' => ['fallDownAlert' => self::requireObjectValue($value, 'fallDownAlert')],
             'fall_sensitivity' => ['fallDownSensitivity' => $this->fallSensitivityPayload($value)],
             'auto_vitals_interval' => ['healthAutoMeasurement' => self::requireObjectValue($value, 'healthAutoMeasurement')],

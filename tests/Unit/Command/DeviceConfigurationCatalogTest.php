@@ -967,6 +967,32 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('[3G*8800000015*0008*WALKTIME]', $wire);
     }
 
+    public function testFourPTouchDoNotDisturbSendsUpToFourTimeRanges(): void
+    {
+        $config = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'doNotDisturb');
+        self::assertSame('timeRanges', $config['input'] ?? null);
+        self::assertSame(4, $config['limit'] ?? null);
+
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'doNotDisturb', [
+            'ranges' => ['21:10-07:30', '', '12:00-13:00', '14:00-15:00', '16:00-17:00', '18:00-19:00'],
+        ]);
+
+        self::assertSame('SILENCETIME', $payload['command']);
+        self::assertSame(['fields' => ['21:10-07:30', '12:00-13:00', '14:00-15:00']], $payload['payload']);
+    }
+
+    /** O campo impõe os mínimos da spec: 60 s no UPLOAD e 5 minutos no HEALTHAUTOSET. */
+    public function testFourPTouchIntervalFieldsDeclareTheProtocolMinimums(): void
+    {
+        self::assertSame(60, DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'uploadInterval')['options']['min'] ?? null);
+        self::assertSame(5, DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'healthAutoMeasurement')['options']['min'] ?? null);
+    }
+
+    public function testFourPTouchRejectUnknownCallsIsAPlainToggle(): void
+    {
+        self::assertSame('toggle', DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'rejectUnknownCalls')['input'] ?? null);
+    }
+
     public function testFourPTouchCommandsExposeSplitHealthRequests(): void
     {
         $commands = DeviceCommandCatalog::commandsForProtocol('four-p-touch');
@@ -1392,7 +1418,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'low battery sms alerts' => ['four-p-touch', 'lowBatterySmsAlerts', 'LOWBAT'];
         yield 'remove watch alarm' => ['four-p-touch', 'removeWatchAlarm', 'REMOVE'];
         yield 'remove watch sms alerts' => ['four-p-touch', 'removeWatchSmsAlerts', 'REMOVESMS'];
-        yield 'do not disturb' => ['four-p-touch', 'doNotDisturb', 'SILENCETIME'];
         yield 'reject unknown calls' => ['four-p-touch', 'rejectUnknownCalls', 'DEVREFUSEPHONESWITCH'];
     }
 
@@ -1448,6 +1473,10 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield '4P Touch upload interval below the protocol minimum' => [
             'four-p-touch', 'uploadInterval', ['intervalSeconds' => 59],
             'intervalSeconds must be between 60 and 65535',
+        ];
+        yield '4P Touch health measurement below five minutes' => [
+            'four-p-touch', 'healthAutoMeasurement', ['enabled' => true, 'intervalMinutes' => 4],
+            'intervalMinutes must be at least 5',
         ];
         yield '4P Touch sos contact given an array' => [
             'four-p-touch', 'sosContacts', ['numbers' => [['123456789']]],

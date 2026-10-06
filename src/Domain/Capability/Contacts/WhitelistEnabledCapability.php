@@ -59,7 +59,8 @@ final class WhitelistEnabledCapability implements CapabilityContract
 
     public function defaultValue(string $protocol): mixed
     {
-        return ['enabled' => true];
+        // O 4P Touch vem de fábrica com a restrição desligada.
+        return ['enabled' => $protocol !== 'four-p-touch'];
     }
 
     public function meta(string $protocol, array $accumulatedMeta = []): array
