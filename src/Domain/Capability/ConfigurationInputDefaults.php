@@ -97,15 +97,19 @@ final class ConfigurationInputDefaults
                 'sleepEndTime' => '100000',
                 'sleepTarget' => 480,
             ],
-            'wonlexReminderThreshold' => ['switchState' => true, ($field(1) ?: 'reminderValue') => 90],
-            'wonlexHeartRateRange' => [
+            // O `RemindValue` é o da temperatura, em °C; o `reminderValue` é o do oxigénio, em %.
+            'wonlexReminderThreshold' => $field(1) === 'RemindValue'
+                ? ['switchState' => true, 'RemindValue' => 38.5]
+                : ['switchState' => true, ($field(1) ?: 'reminderValue') => 90],
+            // O limite do alerta baixo fica por preencher: a spec só dá o exemplo da alta.
+            'wonlexHeartRateRange' => array_filter([
                 'switchState' => true,
-                'remindValue' => 120,
+                'remindValue' => ($entry['key'] ?? '') === 'wonlexHeartRateLowRemind' ? null : 120,
                 'exerciseSwitchState' => true,
                 'exerciseHRMin' => 100,
                 'exerciseHRMax' => 140,
                 'exerciseRemindValue' => 140,
-            ],
+            ], static fn(mixed $value): bool => $value !== null),
             // As capacidades de um cartão só declaram o campo dele, e a forma vem do campo nativo: números
             // soltos no 4P Touch, contactos com nome na Vivistar.
             'sos_contacts', 'phonebook', 'call_whitelist' => $field(0) === 'numbers'

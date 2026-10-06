@@ -21,7 +21,6 @@ final class MergedCapabilityInputTest extends TestCase
         'phonebook',
         'sos_contacts',
         'call_whitelist',
-        'whitelist_enabled',
     ];
 
     public function testMergedCapabilitiesDeclareTheirOwnInput(): void

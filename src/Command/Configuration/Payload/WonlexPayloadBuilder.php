@@ -20,7 +20,6 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
 
         return match ($key) {
             'locationInterval' => ['intervalTime' => self::nonNegativeInt($payload['intervalTime'] ?? null, 'intervalTime')],
-            'deviceMeasuringFrequency', 'deviceConfig' => ['configs' => self::arrayField($payload['configs'] ?? null, 'configs')],
             'wonlexHeartRateInterval' => self::measurementInterval('upHeartRate', $payload),
             'wonlexBPInterval' => self::measurementInterval('upBP', $payload),
             'wonlexBOInterval' => self::measurementInterval('upBO', $payload),
