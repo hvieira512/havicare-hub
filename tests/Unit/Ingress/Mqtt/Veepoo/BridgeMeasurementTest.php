@@ -28,7 +28,7 @@ final class BridgeMeasurementTest extends TestCase
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
     /**
-     * @return list<array{0: string, 1: array<string, mixed>, 2: string, 3: array<string, mixed>}>
+     * @return array<string, array{0: string, 1: array<string, mixed>, 2: string, 3: array<string, mixed>}>
      */
     public static function measurements(): array
     {

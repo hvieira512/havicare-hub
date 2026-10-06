@@ -109,9 +109,9 @@ abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $hitcareId = $db->companies->create('hitcare');
         $otherCareId = $db->companies->create('otherCare');
-        $hitcareLicenseRef = $db->licenses->create($hitcareId, '1001', 'hitcare-license');
-        $db->licenses->create($otherCareId, '2002', 'othercare-license');
-        $db->licenses->create($otherCareId, '1001', 'overlapping-license-number');
+        $hitcareLicenseRef = $db->licenses->create($hitcareId, 1001, 'hitcare-license');
+        $db->licenses->create($otherCareId, 2002, 'othercare-license');
+        $db->licenses->create($otherCareId, 1001, 'overlapping-license-number');
         $db->apiUsers->create('admin', self::passwordHash('secret'), 'hub_admin', true);
         // A licença entra pela referência: é ela que separa a 1001 da hitcare da 1001 da
         // otherCare, criada acima de propósito para o isolamento não poder passar por sorte.

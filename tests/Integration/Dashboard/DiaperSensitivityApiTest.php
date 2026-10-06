@@ -60,7 +60,10 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         return [$api, $pdo];
     }
 
-    /** @param array<string, mixed> $value */
+    /**
+     * @param array<string, mixed> $value
+     * @return array<string, mixed>
+     */
     private function patch(DeviceService $api, array $value): array
     {
         return $api->updateConfigurations(self::SENSOR, [

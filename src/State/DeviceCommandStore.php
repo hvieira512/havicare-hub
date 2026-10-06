@@ -53,9 +53,6 @@ final class DeviceCommandStore
         }
     }
 
-    /**
-     * @param callable(string, string, array): string $dispatch
-     */
     /** @param callable(string, string, array<string, mixed>): string $dispatch */
     public function retryWaitingCommands(int $retryAfterSeconds, int $timeoutSeconds, int $maxAttempts, callable $dispatch): void
     {

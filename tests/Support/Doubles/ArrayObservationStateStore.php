@@ -8,8 +8,11 @@ use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 
 final class ArrayObservationStateStore implements ObservationStateStore
 {
+    /** @var array<string, int> */
     private array $observations = [];
+    /** @var array<string, array{fingerprint: string, publishedAt: int}> */
     private array $published = [];
+    /** @var array<string, string> */
     private array $conditions = [];
 
     public function acceptObservation(string $deviceKey, string $fingerprint, int $ttlSeconds): bool

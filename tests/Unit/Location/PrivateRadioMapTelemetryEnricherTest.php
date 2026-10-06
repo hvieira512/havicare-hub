@@ -94,6 +94,7 @@ final class PrivateRadioMapTelemetryEnricherTest extends TestCase
         self::assertNotNull($map->resolveTelemetry($this->telemetry()));
     }
 
+    /** @return array<string, mixed> */
     private function telemetry(): array
     {
         return [

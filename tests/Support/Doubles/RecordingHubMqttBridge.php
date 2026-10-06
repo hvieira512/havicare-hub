@@ -70,7 +70,7 @@ class RecordingHubMqttBridge extends HubMqttBridge
 
     /**
      * @param array<string, mixed> $payload
-     * @return array{type: ?string, imei: string, payload: array<string, mixed>, deviceType: string, licenseId: string, company: string}
+     * @return array{type: ?string, imei: string, payload: array<string, mixed>, deviceType: string, licenseId: int, company: string}
      */
     private static function entry(string $imei, array $payload, string $deviceType, int $licenseId, string $company): array
     {

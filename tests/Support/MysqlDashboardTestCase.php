@@ -263,6 +263,7 @@ abstract class MysqlDashboardTestCase extends TestCase
         return array_map('strval', $tables === false ? [] : $tables->fetchAll(PDO::FETCH_COLUMN));
     }
 
+    /** @return array<string, mixed> */
     protected function columnStructure(PDO $pdo, string $table): array
     {
         $stmt = $pdo->prepare('
@@ -281,6 +282,8 @@ abstract class MysqlDashboardTestCase extends TestCase
      * Uma chave única em `(a, b)` é a mesma restrição venha ela do `schema.sql` com um
      * nome escolhido ou de um `ALTER TABLE` que deixou o MySQL nomeá-la. Comparar nomes
      * dava diferenças que não são diferenças.
+     *
+     * @return array<string, mixed>
      */
     protected function indexStructure(PDO $pdo, string $table): array
     {
@@ -309,6 +312,7 @@ abstract class MysqlDashboardTestCase extends TestCase
         return $normalized;
     }
 
+    /** @return array<string, mixed> */
     protected function foreignKeyStructure(PDO $pdo, string $table): array
     {
         $stmt = $pdo->prepare('

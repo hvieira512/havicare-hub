@@ -189,7 +189,6 @@ final class SleepNormalizerTest extends TestCase
     /**
      * Uma noite verdadeira, com os nomes do fabricante.
      *
-     * @param array<string, mixed> $override
      * @return array<string, mixed>
      */
     private static function night(

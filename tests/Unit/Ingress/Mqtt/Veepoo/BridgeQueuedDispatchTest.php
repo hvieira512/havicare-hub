@@ -157,44 +157,9 @@ final class BridgeQueuedDispatchTest extends TestCase
         self::assertSame('measure.heartRate.start', $mqtt->gatewayCommands[0]['payload']['operation']);
     }
 
-    private static function queue(): PendingDownlinkQueue
+    private static function queue(): QueueWithPush
     {
-        return new class implements PendingDownlinkQueue {
-            /** @var list<PendingDownlink> */
-            private array $items = [];
-
-            /** @param array<string, mixed>|null $command */
-            public function push(string $bytes, ?array $command): void
-            {
-                $this->items[] = new PendingDownlink('', 'test-dedupe', $bytes, $command, 0, 0);
-            }
-
-            public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
-            {
-                return new PendingDownlink($imei, 'test-dedupe', $bytes, $command, 0, $ttlSeconds);
-            }
-
-            /** @return list<PendingDownlink> */
-            public function pendingFor(string $imei): array
-            {
-                return array_map(
-                    static fn(PendingDownlink $d): PendingDownlink => new PendingDownlink(
-                        $imei,
-                        $d->dedupeKey,
-                        $d->bytes,
-                        $d->command,
-                        $d->queuedAt,
-                        $d->expiresAt,
-                    ),
-                    $this->items,
-                );
-            }
-
-            public function remove(PendingDownlink $downlink): void
-            {
-                $this->items = [];
-            }
-        };
+        return new QueueWithPush();
     }
 
     private static function session(bool $authenticated): string
@@ -221,5 +186,44 @@ final class BridgeQueuedDispatchTest extends TestCase
             new ArrayObservationStateStore(),
             'havicare-hub/null/0/gw/+/raw',
         );
+    }
+}
+
+/** A fila em memória, com um `push` para o teste encher a fila depois da sessão aberta. */
+final class QueueWithPush implements PendingDownlinkQueue
+{
+    /** @var list<PendingDownlink> */
+    private array $items = [];
+
+    /** @param array<string, mixed>|null $command */
+    public function push(string $bytes, ?array $command): void
+    {
+        $this->items[] = new PendingDownlink('', 'test-dedupe', $bytes, $command, 0, 0);
+    }
+
+    public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
+    {
+        return new PendingDownlink($imei, 'test-dedupe', $bytes, $command, 0, $ttlSeconds);
+    }
+
+    /** @return list<PendingDownlink> */
+    public function pendingFor(string $imei): array
+    {
+        return array_map(
+            static fn(PendingDownlink $d): PendingDownlink => new PendingDownlink(
+                $imei,
+                $d->dedupeKey,
+                $d->bytes,
+                $d->command,
+                $d->queuedAt,
+                $d->expiresAt,
+            ),
+            $this->items,
+        );
+    }
+
+    public function remove(PendingDownlink $downlink): void
+    {
+        $this->items = [];
     }
 }

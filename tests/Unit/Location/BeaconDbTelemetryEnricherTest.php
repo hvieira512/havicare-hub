@@ -309,6 +309,7 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         self::assertNotEmpty($result['data']['wifiAccessPoints']);
     }
 
+    /** @return array<string, mixed> */
     private function nonGpsTelemetry(): array
     {
         return [

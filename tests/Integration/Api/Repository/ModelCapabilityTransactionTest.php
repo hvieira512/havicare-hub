@@ -43,6 +43,7 @@ final class ModelCapabilityTransactionTest extends MysqlDashboardTestCase
             {
             }
 
+            /** @param array<int, mixed> $options */
             public function prepare(string $query, array $options = []): PDOStatement|false
             {
                 if (str_contains($query, 'INSERT INTO model_capabilities')) {

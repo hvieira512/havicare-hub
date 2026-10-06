@@ -103,7 +103,7 @@ final class ApiErrorTest extends TestCase
         $declared = ApiError::codes();
         sort($declared);
 
-        self::assertSame($declared, array_values($fromConstructors));
+        self::assertSame($declared, $fromConstructors);
     }
 
     public function testAResultWithoutAnErrorKeepsTheSuccessStatus(): void

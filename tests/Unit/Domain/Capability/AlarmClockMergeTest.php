@@ -18,7 +18,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class AlarmClockMergeTest extends TestCase
 {
-    /** @return list<array{0: object}> */
+    /** @return array<string, array{0: object}> */
     public static function handlers(): array
     {
         return [

@@ -82,7 +82,10 @@ final class PillDispenserFirmwareVersionTest extends TestCase
         self::fail('firmware_version não está declarada');
     }
 
-    /** @return list<array{feature: string, nativeType: string, value: array<string, mixed>}> */
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<array{feature: string, nativeType: string, value: array<string, mixed>}>
+     */
     private function decodeAndNormalize(array $payload): array
     {
         $adapter = new PillDispenserAdapter();

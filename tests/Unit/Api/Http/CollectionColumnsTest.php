@@ -18,7 +18,10 @@ use PHPUnit\Framework\TestCase;
  */
 final class CollectionColumnsTest extends TestCase
 {
-    /** @return array<string, array<string, mixed>> */
+    /**
+     * @param array<string, list<array{value: string, count?: int}>> $counts
+     * @return array<string, array<string, mixed>>
+     */
     private function describedByField(CollectionColumns $columns, array $counts = []): array
     {
         $byField = [];

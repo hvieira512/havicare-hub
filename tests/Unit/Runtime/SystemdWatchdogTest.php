@@ -20,7 +20,7 @@ final class SystemdWatchdogTest extends TestCase
 {
     private string $socketPath = '';
 
-    /** @var resource|\Socket|null */
+    /** @var \Socket|null */
     private $receiver = null;
 
     protected function tearDown(): void

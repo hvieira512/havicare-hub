@@ -1385,6 +1385,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         );
     }
 
+    /** @return iterable<string, array{string, string, string}> */
     public static function nativeToggleProvider(): iterable
     {
         yield 'sos sms alerts' => ['four-p-touch', 'sosSmsAlerts', 'SOSSMS'];
@@ -1415,6 +1416,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['0']], $off['payload']);
     }
 
+    /** @return iterable<string, array{string, string, array<string, mixed>, string}> */
     public static function rejectedConfigurationProvider(): iterable
     {
         yield 'vivistar push message without text' => [

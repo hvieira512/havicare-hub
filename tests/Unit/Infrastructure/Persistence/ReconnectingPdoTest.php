@@ -38,6 +38,7 @@ final class ReconnectingPdoTest extends TestCase
                     public function __construct()
                     {
                     }
+                    /** @param array<int, mixed> $options */
                     public function prepare(string $query, array $options = []): PDOStatement|false
                     {
                         throw new PDOException('SQLSTATE[HY000]: MySQL server has gone away');

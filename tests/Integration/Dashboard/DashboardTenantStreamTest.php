@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Device\MessageFanout;
 use Psr\Http\Message\ResponseInterface;
 use React\EventLoop\Loop;
+use React\Stream\ReadableStreamInterface;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
@@ -297,6 +298,7 @@ final class DashboardTenantStreamTest extends DashboardHttpTestCase
     private function collect(ResponseInterface $response, callable $publish): string
     {
         $body = $response->getBody();
+        self::assertInstanceOf(ReadableStreamInterface::class, $body);
         $frames = '';
         $loop = Loop::get();
 

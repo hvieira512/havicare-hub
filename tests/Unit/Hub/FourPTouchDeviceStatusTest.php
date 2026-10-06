@@ -129,7 +129,10 @@ final class FourPTouchDeviceStatusTest extends TestCase
         self::assertSame([], FourPTouchEventDecoder::decode('TS', $decoded['data'] ?? []));
     }
 
-    /** @param list<array<string, mixed>> $events */
+    /**
+     * @param list<array<string, mixed>> $events
+     * @return array<string, mixed>|null
+     */
     private function firstOf(array $events, string $feature): ?array
     {
         foreach ($events as $event) {

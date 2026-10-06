@@ -7,6 +7,7 @@ namespace Tests\Integration\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Device\MessageFanout;
 use Psr\Http\Message\ResponseInterface;
+use React\Stream\ReadableStreamInterface;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
@@ -69,8 +70,10 @@ final class DashboardStreamMemoryTest extends DashboardHttpTestCase
         $streams = [];
         for ($i = 0; $i < self::CONNECTIONS; $i++) {
             $response = $this->open($server, $token);
+            $body = $response->getBody();
+            self::assertInstanceOf(ReadableStreamInterface::class, $body);
             // Um separador em segundo plano faz exactamente isto: deixa de drenar.
-            $response->getBody()->pause();
+            $body->pause();
             $streams[] = $response;
         }
 

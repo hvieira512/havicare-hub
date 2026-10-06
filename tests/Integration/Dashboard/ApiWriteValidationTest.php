@@ -24,7 +24,10 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
         return [$server, $this->loginToken($server, 'admin', 'secret')];
     }
 
-    /** @param array<string, mixed> $body */
+    /**
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>
+     */
     private function write(callable $server, string $method, string $path, string $token, array $body): array
     {
         $response = $server(new ServerRequest(

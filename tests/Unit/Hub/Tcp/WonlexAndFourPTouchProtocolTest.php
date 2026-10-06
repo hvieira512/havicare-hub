@@ -126,6 +126,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
         self::assertNull($protocol->commandMetadata('nada disto é uma trama'));
     }
 
+    /** @param array<string, mixed> $payload */
     private function wonlexFrame(array $payload): string
     {
         return (new WonlexAdapter())->encodeOutgoing($payload);
@@ -141,7 +142,7 @@ final class TcpFakeConnection implements \Hub\Device\ConnectionInterface
         return null;
     }
 
-    public function send($data): static
+    public function send(string $data): static
     {
         return $this;
     }

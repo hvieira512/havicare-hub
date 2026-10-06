@@ -130,6 +130,7 @@ final class ConnectionRegistryTest extends TestCase
 final class FakeHubConnection implements ConnectionInterface
 {
     public int $resourceId;
+    /** @var list<string> */
     public array $sent = [];
     public bool $closed = false;
 
@@ -143,7 +144,7 @@ final class FakeHubConnection implements ConnectionInterface
         return null;
     }
 
-    public function send($data): static
+    public function send(string $data): static
     {
         $this->sent[] = $data;
         return $this;

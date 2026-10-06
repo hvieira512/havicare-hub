@@ -64,7 +64,10 @@ final class IngressFixtures
     }
 
     /**
-     * @param array<string, array<string, mixed>> $devices indexados pela chave do dispositivo
+     * A chave é `array-key` e não `string`: um IMEI é só dígitos, e o PHP converte-o em
+     * inteiro ao pô-lo num array.
+     *
+     * @param array<array-key, array<string, mixed>> $devices indexados pela chave do dispositivo
      */
     public static function whitelist(array $devices = []): Whitelist
     {
@@ -78,7 +81,7 @@ final class IngressFixtures
      * O ficheiro sai do temporário do sistema no fim do processo, e não no fim do teste: um
      * teste que estoura não chega ao fim e deixaria o ficheiro para trás.
      *
-     * @param array<string, array<string, mixed>> $devices indexados pela chave do dispositivo
+     * @param array<array-key, array<string, mixed>> $devices indexados pela chave do dispositivo
      */
     public static function whitelistPath(array $devices = []): string
     {

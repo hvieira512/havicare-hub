@@ -6,6 +6,7 @@ namespace Tests\Integration\Dashboard;
 
 use GuzzleHttp\Psr7\ServerRequest;
 use React\EventLoop\Loop;
+use React\Stream\ReadableStreamInterface;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
@@ -163,6 +164,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         self::assertSame(200, $response->getStatusCode());
 
         $body = $response->getBody();
+        self::assertInstanceOf(ReadableStreamInterface::class, $body);
         $writes = 0;
         $body->on('data', static function () use (&$writes): void {
             $writes++;
@@ -269,6 +271,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
     private function readSseFrame(\Psr\Http\Message\ResponseInterface $response): string
     {
         $body = $response->getBody();
+        self::assertInstanceOf(ReadableStreamInterface::class, $body);
         $frame = '';
         $loop = Loop::get();
 
@@ -306,6 +309,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         callable $write
     ): string {
         $body = $response->getBody();
+        self::assertInstanceOf(ReadableStreamInterface::class, $body);
         $frames = '';
         $loop = Loop::get();
 
@@ -329,6 +333,7 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         return $frames;
     }
 
+    /** @return array<string, mixed> */
     private function decodeSseFrame(string $frame): array
     {
         foreach (explode("\n", trim($frame)) as $line) {

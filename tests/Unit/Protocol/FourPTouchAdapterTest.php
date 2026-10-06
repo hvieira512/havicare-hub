@@ -216,6 +216,7 @@ final class FourPTouchAdapterTest extends TestCase
         self::assertArrayNotHasKey('deviceTime', $payload['data']);
     }
 
+    /** @param list<string> $fields */
     private function frame(FourPTouchAdapter $adapter, string $type, array $fields): string
     {
         return $adapter->encodeOutgoing([

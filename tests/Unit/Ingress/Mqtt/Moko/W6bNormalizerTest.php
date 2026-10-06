@@ -16,7 +16,10 @@ final class W6bNormalizerTest extends TestCase
         'commercialName' => 'MOKO W6B',
     ];
 
-    /** @return array<string, mixed> */
+    /**
+     * @param array<string, mixed>|null $info
+     * @return array<string, mixed>
+     */
     private function decoded(string $pressMode = 'single', int $count = 5, ?array $info = null): array
     {
         $frameType = ['single' => 0x20, 'double' => 0x21, 'long' => 0x22, 'inactivity' => 0x23][$pressMode];

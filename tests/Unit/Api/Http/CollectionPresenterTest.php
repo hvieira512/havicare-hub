@@ -39,12 +39,19 @@ final class CollectionPresenterTest extends TestCase
         );
     }
 
+    /**
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
     private function present(array $params): array
     {
         return (new CollectionPresenter())->present($this->users(), $this->columns(), $params);
     }
 
-    /** @return list<string> */
+    /**
+     * @param array<string, mixed> $result
+     * @return list<string>
+     */
     private function names(array $result): array
     {
         return array_map(static fn(array $row): string => $row['username'], $result['data']);

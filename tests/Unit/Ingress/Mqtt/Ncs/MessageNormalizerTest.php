@@ -107,7 +107,7 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * @return array{imei: string, supplier: string, model: string, commercialName: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string}
+     * @return array{imei: string, supplier: string, model: string, commercialName: string, deviceType: string, licenseId: int, simNumber: string, deviceId: string}
      */
     private function device(): array
     {
@@ -117,7 +117,7 @@ final class MessageNormalizerTest extends TestCase
             'model' => 'RD-V1',
             'commercialName' => 'Qinglanst RD-V1 Pro',
             'deviceType' => 'radar',
-            'licenseId' => '1001',
+            'licenseId' => 1001,
             'simNumber' => '',
             'deviceId' => 'radar-topic-uid',
         ];

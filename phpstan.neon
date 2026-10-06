@@ -1,7 +1,6 @@
-# O que já estava por anotar fica congelado no baseline, e vai-se limpando ficheiro a
-# ficheiro. Código novo não pode acrescentar mais.
+# Sem baseline: o nível 6 passa limpo em `src`, `bin` e `tests`. O que estava congelado
+# -- 940 entradas -- foi anotado, e o que fica por anotar passa a ser erro.
 includes:
-    - phpstan-baseline.neon
     # Ensina o analisador a ler os duplos do PHPUnit: sem isto, cada `->method()` num
     # stub é um `method.notFound` que não é defeito nenhum.
     - vendor/phpstan/phpstan-phpunit/extension.neon

@@ -10,13 +10,18 @@ use Hub\State\DeviceStoreContract;
 use Hub\Device\DeviceHubServer;
 use Hub\Domain\DeviceMetadata;
 use Hub\Registry\Whitelist;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DeviceServiceTest extends MysqlDashboardTestCase
 {
     private DeviceService $service;
+    /** @var DeviceStoreContract&MockObject */
     private DeviceStoreContract $store;
+    /** @var Whitelist&MockObject */
     private Whitelist $whitelist;
+    /** @var DeviceHubServer&Stub */
     private DeviceHubServer $hub;
     private ApiDataAccess $db;
     private int $modelId;
@@ -25,9 +30,10 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
     {
         parent::setUp();
 
-        $this->store = $this->createStub(DeviceStoreContract::class);
+        // Mock e não stub: as duas prendem o argumento com `with()`, que é do mock.
+        $this->store = $this->createMock(DeviceStoreContract::class);
 
-        $this->whitelist = $this->createStub(Whitelist::class);
+        $this->whitelist = $this->createMock(Whitelist::class);
         $this->hub = $this->createStub(DeviceHubServer::class);
         $this->db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
 
@@ -235,6 +241,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         ]);
     }
 
+    /** @param list<string> $capabilities */
     private function mockModelCapabilities(array $capabilities): void
     {
         $this->db->modelCapabilities->replaceForModelId($this->modelId, $capabilities);

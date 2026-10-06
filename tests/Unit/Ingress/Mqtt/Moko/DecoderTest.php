@@ -159,6 +159,7 @@ final class DecoderTest extends TestCase
         self::assertSame(['state' => 'change_required'], $result['telemetry']['diaper_condition']['data']);
     }
 
+    /** @return array<string, mixed> */
     private function device(string $type): array
     {
         return ['imei' => $type === 'gateway' ? 'd48c49f7909c' : 'eec5000202f9', 'supplier' => $type === 'gateway' ? 'MOKO' : 'MONIT', 'model' => $type === 'gateway' ? 'MKGW3' : 'MECS-PRO', 'deviceType' => $type, 'licenseId' => '1001', 'company' => 'hitcare'];

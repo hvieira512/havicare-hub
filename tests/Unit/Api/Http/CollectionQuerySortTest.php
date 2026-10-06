@@ -16,7 +16,10 @@ final class CollectionQuerySortTest extends TestCase
         $this->query = new CollectionQuery();
     }
 
-    /** @param array<string, mixed> $params */
+    /**
+     * @param array<string, mixed> $params
+     * @return list<array{column: string, descending: bool}>
+     */
     private function sort(array $params): array
     {
         return $this->query->sort($params, ['imei', 'company', 'model'], 'imei');
@@ -120,6 +123,7 @@ final class CollectionQuerySortTest extends TestCase
      * `imei DESC` não está na allowlist e cai, e sobra o `company` que estava.
      *
      * @dataProvider injectionsThatCarryAValidColumn
+     * @param list<array{column: string, descending: bool}> $expected
      */
     public function testAnInjectionKeepsOnlyTheColumnsTheAllowlistRecognises(string $value, array $expected): void
     {

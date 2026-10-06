@@ -96,6 +96,7 @@ final class PrivateRadioMapTest extends TestCase
         );
     }
 
+    /** @return array<string, mixed> */
     private function gpsTelemetry(): array
     {
         $telemetry = $this->nonGpsTelemetry();
@@ -109,6 +110,7 @@ final class PrivateRadioMapTest extends TestCase
         return $telemetry;
     }
 
+    /** @return array<string, mixed> */
     private function nonGpsTelemetry(): array
     {
         return [

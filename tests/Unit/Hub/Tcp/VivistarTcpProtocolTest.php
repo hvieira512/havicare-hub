@@ -52,7 +52,7 @@ final class VivistarFakeConnection implements \Hub\Device\ConnectionInterface
         return null;
     }
 
-    public function send($data): static
+    public function send(string $data): static
     {
         return $this;
     }

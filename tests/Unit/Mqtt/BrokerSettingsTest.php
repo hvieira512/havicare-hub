@@ -9,7 +9,10 @@ use PHPUnit\Framework\TestCase;
 
 final class BrokerSettingsTest extends TestCase
 {
-    /** @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $overrides
+     * @return array<string, mixed>
+     */
     private function hubConfig(array $overrides = []): array
     {
         return array_merge([

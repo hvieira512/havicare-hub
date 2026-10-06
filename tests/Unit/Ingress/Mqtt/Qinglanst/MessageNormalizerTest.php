@@ -410,6 +410,7 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame(1, $result['events'][0]['data']['details']['personIndex']);
     }
 
+    /** @return array<string, mixed> */
     private function person(int $index, string $posture, string $lastEvent = 'no_event'): array
     {
         return [
@@ -517,6 +518,7 @@ final class MessageNormalizerTest extends TestCase
      * saíam onde o catálogo promete `vitals_minute_stats` e `position_minute_stats`.
      *
      * @dataProvider everyMessageType
+     * @param array<string, mixed> $decoded
      */
     public function testTheEnvelopeTypeIsAlwaysTheCapabilityItIsFiledUnder(array $decoded): void
     {
@@ -536,6 +538,7 @@ final class MessageNormalizerTest extends TestCase
      * dois vocabulários, e no radar é fácil o segundo escorregar para o primeiro.
      *
      * @dataProvider everyMessageType
+     * @param array<string, mixed> $decoded
      */
     public function testNoPublishedFieldIsSnakeCase(array $decoded): void
     {
@@ -622,7 +625,7 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company: string}
+     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company: string}
      */
     private function device(): array
     {
@@ -632,7 +635,7 @@ final class MessageNormalizerTest extends TestCase
             'model' => 'RD-V1',
             'commercialName' => 'Qinglanst RD-V1 Pro',
             'deviceType' => 'radar',
-            'licenseId' => '1001',
+            'licenseId' => 1001,
             'company' => 'hitcare',
         ];
     }

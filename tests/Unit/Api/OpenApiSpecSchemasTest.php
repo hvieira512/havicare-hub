@@ -73,6 +73,7 @@ final class OpenApiSpecSchemasTest extends TestCase
     }
 
     /**
+     * @param array<string, mixed> $spec
      * @return list<string> schema names referenced anywhere in the document
      */
     private function referencedSchemas(array $spec): array

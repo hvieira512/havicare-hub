@@ -120,6 +120,7 @@ final class ApiRequestLoggerTest extends TestCase
     {
         $logger = new ApiRequestLogger();
         $exploding = new class ('GET', '/api/devices') extends ServerRequest {
+            /** @return array<string, mixed> */
             public function getServerParams(): array
             {
                 throw new \RuntimeException('boom');

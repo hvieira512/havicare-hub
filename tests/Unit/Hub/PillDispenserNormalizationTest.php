@@ -274,6 +274,10 @@ final class PillDispenserNormalizationTest extends TestCase
         );
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     private function decode(array $payload): array
     {
         $adapter = new PillDispenserAdapter();

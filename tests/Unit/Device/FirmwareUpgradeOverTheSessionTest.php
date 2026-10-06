@@ -106,10 +106,7 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
         self::assertSame('heartbeat_ack', $ack['type']);
     }
 
-    /**
-     * @param array<string, mixed> $state
-     * @return array{type: string, body: string}
-     */
+    /** @return array{type: string, body: string} */
     private function respondTo(FirmwareUpgradeStore $store, int $packetType, int $status): array
     {
         $protocol = new PillDispenserTcpProtocol(new PillDispenserAdapter(), new DeviceEventDecoder(), $store);
@@ -140,32 +137,17 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     }
 
     /** @param array<string, mixed> $state */
-    private function store(array $state): FirmwareUpgradeStore
+    private function store(array $state): InMemoryFirmwareUpgradeStore
     {
         $path = tempnam(sys_get_temp_dir(), 'fw');
         file_put_contents((string)$path, str_repeat('f', self::SIZE));
 
-        return new class ($state + [
+        return new InMemoryFirmwareUpgradeStore($state + [
             'path' => $path,
             'size' => self::SIZE,
             'checksum' => 123456,
             'timeout' => 1800,
-        ]) implements FirmwareUpgradeStore {
-            /** @param array<string, mixed> $state */
-            public function __construct(public array $state)
-            {
-            }
-
-            public function load(string $imei): ?array
-            {
-                return $this->state;
-            }
-
-            public function save(string $imei, array $state): void
-            {
-                $this->state = $state;
-            }
-        };
+        ]);
     }
 
     private function session(): DeviceSession
@@ -181,5 +163,26 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
             'Zayata M228',
             'pill_dispenser',
         );
+    }
+}
+
+/** O estado da transferência em memória, com o `$state` à vista para o teste o ler. */
+final class InMemoryFirmwareUpgradeStore implements FirmwareUpgradeStore
+{
+    /** @param array<string, mixed> $state */
+    public function __construct(public array $state)
+    {
+    }
+
+    /** @return array<string, mixed>|null */
+    public function load(string $imei): ?array
+    {
+        return $this->state;
+    }
+
+    /** @param array<string, mixed> $state */
+    public function save(string $imei, array $state): void
+    {
+        $this->state = $state;
     }
 }

@@ -52,6 +52,8 @@ final class RedisPrefixTest extends TestCase
      *
      * Não se conta o número aqui: o `testTheKeyspaceListCoversEveryRootDeclaredInTheCode`
      * compara esta lista com o que o código declara, e é ele que avisa quando nasce outra.
+     *
+     * @return array<string, array{string}>
      */
     public static function hubKeyspaces(): array
     {
@@ -134,7 +136,10 @@ final class RedisPrefixTest extends TestCase
         );
     }
 
-    /** @return list<string> */
+    /**
+     * @param list<string> $directories
+     * @return list<string>
+     */
     private static function phpFilesIn(array $directories): array
     {
         $root = dirname(__DIR__, 3);

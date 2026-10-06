@@ -239,30 +239,9 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
     }
 
     /** @param array<string, mixed> $responses uid => corpo descodificado, ou a excepção a lançar */
-    private function clientAnswering(array $responses): QinglanstApiClient
+    private function clientAnswering(array $responses): CountingQinglanstApiClient
     {
-        return new class ($responses) extends QinglanstApiClient {
-            public int $logins = 0;
-
-            /** @param array<string, mixed> $responses */
-            public function __construct(private array $responses)
-            {
-            }
-
-            public function login(array $credentials): PromiseInterface
-            {
-                $this->logins++;
-
-                return resolve(['access_token' => 't', 'refresh_token' => 'r', 'token_type' => 'bearer', 'expires_in' => 3600]);
-            }
-
-            public function deviceProp(array $credentials, array $token, string $uid): PromiseInterface
-            {
-                $response = $this->responses[$uid] ?? ['code' => 777];
-
-                return $response instanceof \Throwable ? reject($response) : resolve($response);
-            }
-        };
+        return new CountingQinglanstApiClient($responses);
     }
 
     /** @return array<string, mixed> */
@@ -309,5 +288,35 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
         self::assertNotNull($resolved, 'a promessa não resolveu de imediato');
 
         return $resolved;
+    }
+}
+
+/** O cliente da cloud com as respostas escritas, e a contar quantas vezes se autenticou. */
+final class CountingQinglanstApiClient extends QinglanstApiClient
+{
+    public int $logins = 0;
+
+    /** @param array<string, mixed> $responses */
+    public function __construct(private array $responses)
+    {
+    }
+
+    /** @param array<string, mixed> $credentials */
+    public function login(array $credentials): PromiseInterface
+    {
+        $this->logins++;
+
+        return resolve(['access_token' => 't', 'refresh_token' => 'r', 'token_type' => 'bearer', 'expires_in' => 3600]);
+    }
+
+    /**
+     * @param array<string, mixed> $credentials
+     * @param array<string, mixed> $token
+     */
+    public function deviceProp(array $credentials, array $token, string $uid): PromiseInterface
+    {
+        $response = $this->responses[$uid] ?? ['code' => 777];
+
+        return $response instanceof \Throwable ? reject($response) : resolve($response);
     }
 }

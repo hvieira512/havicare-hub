@@ -863,7 +863,7 @@ final class DecoderFakeConnection implements ConnectionInterface
         return null;
     }
 
-    public function send($data): static
+    public function send(string $data): static
     {
         return $this;
     }

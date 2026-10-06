@@ -210,7 +210,10 @@ final class DailyBlockNormalizerTest extends TestCase
         self::assertSame(['state' => 'worn'], self::ofType($out, 'wear_state')[0]['data']);
     }
 
-    /** @return list<array<string, mixed>> */
+    /**
+     * @param list<array<string, mixed>> $out
+     * @return list<array<string, mixed>>
+     */
     private static function ofType(array $out, string $type): array
     {
         return array_values(array_filter($out, static fn(array $e): bool => $e['type'] === $type));

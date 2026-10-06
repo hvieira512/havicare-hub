@@ -494,9 +494,6 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame('unsupported_capability', $result['error']['code'] ?? null);
     }
 
-    /**
-     * @return array{0: ModelService, 1: ApiDataAccess}
-     */
     public function testModelWriteInvalidatesTheMemoisedRows(): void
     {
         [, $db] = $this->makeApi();
@@ -540,6 +537,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame('veepoo-ble', DeviceProtocol::forModel('Wonlex', (string)$model['internal_model']));
     }
 
+    /** @return array{0: ModelService, 1: ApiDataAccess} */
     private function makeApi(): array
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());

@@ -19,7 +19,7 @@ use PHPUnit\Framework\TestCase;
 final class PillDispenserRequestCardsTest extends TestCase
 {
     /**
-     * @return array<string, array<string, mixed>>
+     * @return array<string, list<array<string, mixed>>>
      */
     private function requests(): array
     {

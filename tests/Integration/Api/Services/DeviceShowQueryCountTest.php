@@ -57,6 +57,7 @@ final class DeviceShowQueryCountTest extends MysqlDashboardTestCase
             {
             }
 
+            /** @param array<int, mixed> $options */
             public function prepare(string $query, array $options = []): PDOStatement|false
             {
                 $this->test->record($query);

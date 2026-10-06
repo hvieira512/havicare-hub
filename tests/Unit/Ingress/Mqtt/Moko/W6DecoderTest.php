@@ -15,7 +15,10 @@ final class W6DecoderTest extends TestCase
 {
     private const MAC = 'fa05c2c70fc6';
 
-    /** @param array<string, mixed> $overrides */
+    /**
+     * @param array<string, mixed> $overrides
+     * @return array<string, mixed>
+     */
     private function uid(array $overrides = []): array
     {
         return $overrides + [

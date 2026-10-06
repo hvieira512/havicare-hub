@@ -82,11 +82,11 @@ final class ExpiringRedisClientForApiTokenStoreTest implements ClientInterface
         throw new \BadMethodCallException('Not implemented');
     }
 
-    public function connect()
+    public function connect(): void
     {
     }
 
-    public function disconnect()
+    public function disconnect(): void
     {
     }
 
@@ -95,6 +95,7 @@ final class ExpiringRedisClientForApiTokenStoreTest implements ClientInterface
         throw new \BadMethodCallException('Not implemented');
     }
 
+    /** @param array<int, mixed> $arguments */
     public function createCommand($method, $arguments = [])
     {
         throw new \BadMethodCallException('Not implemented');
@@ -110,6 +111,7 @@ final class ExpiringRedisClientForApiTokenStoreTest implements ClientInterface
         $callback($this);
     }
 
+    /** @param array<int, mixed> $arguments */
     public function __call($method, $arguments)
     {
         return match (strtolower((string)$method)) {
@@ -138,6 +140,7 @@ final class ExpiringRedisClientForApiTokenStoreTest implements ClientInterface
         return $this->strings[$key] ?? null;
     }
 
+    /** @param list<string>|string $keys */
     private function del($keys): int
     {
         $keys = is_array($keys) ? $keys : [$keys];

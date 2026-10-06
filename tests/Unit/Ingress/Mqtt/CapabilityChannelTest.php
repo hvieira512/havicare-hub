@@ -244,7 +244,11 @@ final class CapabilityChannelTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    /** Uma pessoa na trama de posições: o byte 13 é a postura e o 5 é a queda confirmada. */
+    /**
+     * Uma pessoa na trama de posições: o byte 13 é a postura e o 5 é a queda confirmada.
+     *
+     * @return list<int>
+     */
     private static function person(int $postureCode): array
     {
         $bytes = array_fill(0, 16, 0);
