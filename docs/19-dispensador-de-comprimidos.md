@@ -334,7 +334,7 @@ configuração não faz nada.
 |---|---|---|
 | `medication_reminders` | `0x1021`–`0x1049` | **os nove alarmes de cada vez.** A forma pública é a partilhada com os relógios — um plano por compartimento, com o número dele no `slot` da hora; ver o [capítulo 10](10-configuracao-de-dispositivos.md#uma-capacidade-partilhada-por-três-protocolos-medication_reminders). Os slots que o plano não usa saem a `24:60` de propósito — o aparelho tem nove fixos, e um que sobrasse de um plano anterior continuava a tocar. O interruptor vai a `1` onde há hora e a `0` onde não há, mas quem decide é a hora: o `0x1041`–`0x1049` é inerte |
 | `medication_period` | `0x1004`–`0x100A` | a janela de datas do plano, e o interruptor dela |
-| `loaded_cells` | `0x101C` | quantos compartimentos estão carregados, 0 a 28 |
+| `loaded_cells` | `0x101C` | até que compartimento o prato está cheio, 0 a 28 — um índice, e não uma contagem; ver o [19a](19a-dispensador-parametros.md#a-data-em-que-a-medicação-acaba) |
 | `dispense_now` | `0xA123` | dispensa já, fora do plano |
 | `child_lock` | `0x100C` | bloqueio de criança |
 | `early_dispense` | `0x100D` | toma antecipada |
@@ -546,8 +546,9 @@ Pela API REST, cada alarme leva uma lista de medicamentos com nome e quantidade,
 em texto livre, sem catálogo nem dosagem estruturada. O protocolo TCP não carrega
 nomes de medicamentos — trata de horas, células e resultados.
 
-**Dispensa.** O prato avança uma célula por toma, em sequência. O número de
-células carregadas é o que o aparelho usa para saber quando parar.
+**Dispensa.** O prato avança uma célula por toma, em sequência. O «carregado
+até» não o faz parar: esgotados os compartimentos cheios, continua a rodar e a
+dispensar os vazios — ver o [19a](19a-dispensador-parametros.md#o-prato-acabar-não-pára-nada).
 
 **Registo.** Cada toma fica como a horas, tardia, anormal ou falhada.
 
@@ -567,7 +568,8 @@ células carregadas é o que o aparelho usa para saber quando parar.
 O aparelho tem botão de emergência e anuncia "Emergency call" ao ser premido. No
 protocolo existe como configuração (`0x100E`) e estado (`0x8112`).
 
-Está desligado na unidade de ensaio, e o manual explica porquê:
+Na unidade de ensaio o `0x100E` lê `1`, ligado. O manual diz de que depende a
+chamada:
 
 > *"The [Emergency Call] function is supported in some versions... requires the
 > payment of a certain service fee."*
@@ -692,7 +694,7 @@ ele pertence.
 
 Uma edição de alarme feita pelo hub tem de reenviar o `ceil_used` corrente, lido
 antes pelo `get_plan`. Enviar só o alarme apaga a contagem de células — e a
-contagem de células é o que o aparelho usa para saber quando parar de dispensar.
+contagem de células é o ponto de partida dos compartimentos restantes que o aparelho reporta.
 
 **As datas vazias vêm a `0000-00-00`** na API REST. É a data-zero do MySQL,
 devolvida quando o plano é sempre válido, e parte qualquer conversão ingénua.

@@ -26,8 +26,7 @@ final class ZayataConfigurationDefinitions
                 9,
                 null,
                 false,
-                'Enviado em bloco: um slot em branco fica vazio. O número é etiqueta e não'
-                . ' ordem — quem manda é a hora.',
+                'Cada hora preenchida gasta um compartimento; saem pela ordem da hora, não do número.',
             ),
             ConfigurationDefinition::make(
                 'medication_period',
@@ -41,23 +40,19 @@ final class ZayataConfigurationDefinitions
                 null,
                 null,
                 false,
-                'Entre que datas o plano vale; desligado, tocam sempre. Não há dias da semana.',
+                'Desligado, vale sempre. Não há escolha de dias da semana.',
             ),
-            // Dois interruptores independentes, duas definições: a dashboard agrupa interruptores
-            // seguidos em linhas compactas.
-            self::toggle('early_dispense', 'earlyRetrieval', 'Toma antecipada', 20, 'Deixa o utente levantar a medicação antes da hora marcada.'),
-            self::toggle('child_lock', 'childLock', 'Bloqueio de criança', 21, 'Tranca o prato para não ser aberto por quem não deve.'),
-            self::toggle('missed_dispense', 'missedDispense', 'Dispensar depois de falhar', 22, 'Deixa levantar a dose depois de ela já contar como falhada.'),
+            self::toggle('early_dispense', 'earlyRetrieval', 'Toma antecipada', 20, 'Com pressão longa no botão sai já a dose do próximo alarme, dada como tomada.'),
+            self::toggle('child_lock', 'childLock', 'Bloqueio de criança', 21, 'Tranca as teclas do aparelho.'),
+            self::toggle('missed_dispense', 'missedDispense', 'Dispensar depois de falhar', 22, 'Levantada depois de falhada, a toma fica registada como anormal.'),
             self::toggle(
                 'emergency_call',
                 'emergencyCall',
                 'Chamada de emergência',
                 30,
-                'Decide se o botão do aparelho chega a pedir ajuda. Desligado, ele deixa de'
-                . ' produzir a chamada.',
+                'O aparelho não telefona: o pedido chega ao hub, que o encaminha.',
                 'alerts',
             ),
-            // Os dois tempos decidem se uma dose por tomar chega a alguém como alerta ou fica em silêncio.
             self::number(
                 'retrieval_warning',
                 'retrievalWarning',
@@ -68,7 +63,7 @@ final class ZayataConfigurationDefinitions
                 0,
                 1440,
                 'Minutos',
-                'Depois de o alarme tocar, quanto espera antes de marcar a toma como atrasada.',
+                '0 usa o valor de fábrica. Levantada depois disto, a toma fica como tardia.',
             ),
             self::number(
                 'retrieval_timeout',
@@ -80,7 +75,7 @@ final class ZayataConfigurationDefinitions
                 0,
                 1440,
                 'Minutos',
-                'Quanto espera antes de dar a toma como falhada. Tem de ser maior do que o aviso de atraso.',
+                '0 usa o valor de fábrica.',
             ),
             self::number(
                 'loaded_cells',
@@ -92,22 +87,22 @@ final class ZayataConfigurationDefinitions
                 0,
                 28,
                 'de 28',
-                'O último compartimento que encheu, e não quantos encheu: o aparelho não vê lá dentro.',
+                'O último compartimento cheio, e não quantos. Levantada a dose desse, o prato volta ao início;'
+                . ' se falhar, segue para os vazios.',
             ),
-            // O volume é uma enumeração: na especificação, 0 é o mais alto e 3 é silêncio. Num grupo de
-            // botões, para a ordem mostrar que a escala está invertida.
+            // Na especificação 0 é o mais alto e 3 é silêncio.
             self::choice('alarm_volume', 'alarmVolume', 'Volume', 'alerts', 20, 'volume', [
                 [0, 'Alto'],
                 [1, 'Médio'],
                 [2, 'Baixo'],
                 [3, 'Silêncio'],
-            ], 'Em silêncio não toca de todo, e a dose continua a contar como falhada.', input: 'volumeScale'),
+            ], input: 'volumeScale'),
             self::choice('alarm_ringtone', 'alarmRingtone', 'Tipo de toque', 'alerts', 21, 'ringtone', [
                 [0, 'Nenhum'],
                 [1, 'Toque 1'],
                 [2, 'Toque 2'],
                 [3, 'Toque 3'],
-            ], 'Qual dos quatro toques chama a pessoa à hora da medicação.'),
+            ]),
             ConfigurationDefinition::make(
                 'do_not_disturb',
                 'doNotDisturb',
@@ -120,30 +115,27 @@ final class ZayataConfigurationDefinitions
                 null,
                 null,
                 false,
-                'Uma janela em que não toca. Os alarmes lá dentro dispensam na mesma.',
+                'Os alarmes dentro da janela dispensam na mesma, sem som.',
             ),
-            // Duas opções e mais nada: o aparelho só fala a língua de fábrica ou inglês. O
-            // português existe, mas só instalado de origem — não é configurável.
             self::choice('device_language', 'deviceLanguage', 'Idioma do ecrã', 'system', 10, 'language', [
                 [0, 'Do aparelho'],
                 [1, 'Inglês'],
-            ], 'A língua do ecrã do aparelho, não a da dashboard.'),
+            ], '«Do aparelho» é a língua instalada de fábrica.'),
             self::choice('date_format', 'dateFormat', 'Formato da data', 'system', 11, 'format', [
-                [0, 'YYYY-MM-DD'],
-                [1, 'DD-MM-YYYY'],
-                [2, 'MM-DD-YYYY'],
-            ], 'A ordem por que o aparelho escreve a data no ecrã. Não muda a da dashboard.'),
+                [0, 'AAAA-MM-DD'],
+                [1, 'DD-MM-AAAA'],
+                [2, 'MM-DD-AAAA'],
+            ]),
             self::choice('time_format', 'timeFormat', 'Formato da hora', 'system', 12, 'format', [
                 [0, '24 horas'],
                 [1, '12 horas'],
-            ], 'Relógio de 24 ou de 12 horas no ecrã do aparelho.'),
+            ]),
             self::toggle(
                 'auto_clock',
                 'autoClock',
                 'Acertar-se sozinho',
                 13,
-                'O aparelho corrige a própria hora sem ninguém lhe pedir. Desligado, só muda'
-                . ' com o «Acertar o relógio do aparelho», aqui em baixo.',
+                '',
                 'system',
             ),
             self::toggle(
@@ -151,7 +143,7 @@ final class ZayataConfigurationDefinitions
                 'keyTone',
                 'Som das teclas',
                 14,
-                'O apito que o aparelho dá quando alguém carrega num botão.',
+                '',
                 'system',
             ),
             self::choice(
@@ -162,52 +154,42 @@ final class ZayataConfigurationDefinitions
                 11,
                 'timeZone',
                 self::timeZones(),
-                'O relógio do aparelho deriva, e o fuso é o que dá sentido às horas que ele reporta.',
-                // Parte de Lisboa no inverno, e não da ponta da lista.
-                0,
+                default: 0,
             ),
-            // As leituras. Sem elas o hub sabe o que *pediu* ao aparelho e não o que ele
-            // *tem* — e a especificação manda ler os parâmetros no primeiro registo.
             self::action(
                 'sync_configuration',
                 'readConfiguration',
                 'Sincronizar configuração',
                 'system',
                 5,
-                'Confirma que o que está no ecrã é o que o aparelho ficou a ter. Não muda nada.',
+                'Relê o que o aparelho tem guardado; não escreve nada.',
             ),
-            // «Atualizar estado» pede-se do mosaico dele. Desligar a cifra (`0x8005`) não entra: o
-            // fornecedor confirma que o aparelho o recusa.
-
-            // O relógio calibra-se à mão porque o aparelho deriva. Dispensar fica em Saúde e não em
-            // Sistema: é um acto sobre a medicação do utente.
+            // Sem desligar a cifra: o aparelho recusa o `0x8005`.
             self::action(
                 'dispense_now',
                 'dispenseNow',
                 'Dispensar agora',
                 'health',
                 40,
-                'Empurra já a dose do próximo alarme de hoje e dá-o como tomado. Sem alarme por vir, não faz nada.',
+                'Sem alarme por vir hoje, não faz nada.',
                 'Isto gasta a dose do próximo alarme e dá-a como tomada. Confirma?',
             ),
-            // Rodar até um compartimento (`0xA124`) e pausar a medicação (`0xA125`) não entram: este
-            // firmware recusa-os com «TAG inválida».
+            // Sem `0xA124` nem `0xA125`: este firmware recusa-os com «TAG inválida».
             self::action(
                 'calibrate_clock',
                 'calibrateClock',
                 'Acertar o relógio do aparelho',
                 'system',
                 30,
-                'Os alarmes disparam pelo relógio do aparelho, e ele deriva: atrasado, as doses saem à hora errada sem erro nenhum.',
+                'Os alarmes tocam pelo relógio do aparelho, que deriva.',
             ),
-            // Em Alarmes e não em Sistema: o que isto faz é calar um alarme que está a tocar.
             self::action(
                 'mute_alarm',
                 'muteAlarm',
                 'Silenciar o alarme a tocar',
                 'alerts',
                 30,
-                'Cala o alarme que está a tocar agora. A dose continua por tomar.',
+                '',
             ),
             self::action(
                 'reset_tray',
@@ -215,7 +197,7 @@ final class ZayataConfigurationDefinitions
                 'Repor o prato',
                 'system',
                 50,
-                'Reassenta o carrossel na origem, para quando o prato ficou desalinhado.',
+                'Assenta o prato sem mexer na contagem; não limpa a avaria do prato.',
             ),
             self::action(
                 'restart_device',
@@ -223,17 +205,16 @@ final class ZayataConfigurationDefinitions
                 'Reiniciar',
                 'system',
                 60,
-                'Não apaga configurações nem o plano. Uma toma agendada para o minuto do arranque não sai.',
-                'O dispensador fica sem comunicar enquanto arranca. Uma toma agendada para esse minuto não é dispensada.',
+                'Sem nada preso no prato, limpa a avaria do prato à distância.',
+                'Reiniciar o dispensador?',
             ),
-            // A reposição de fábrica não entra: devolve o aparelho ao servidor do fornecedor, e perde-se
-            // o controlo dele.
+            // Sem reposição de fábrica: devolve o aparelho ao servidor do fornecedor.
         ];
     }
 
     /**
-     * A resposta esperada é a do tipo de pacote e não a do comando: o M228 responde a um `0x06`
-     * com `write_config_ack` seja qual for a TAG.
+     * A resposta que um comando espera é a do seu tipo de pacote, e não o nome dele: o M228
+     * responde a um `0x06` com `write_config_ack` seja qual for a TAG.
      *
      * @return list<string>
      */
@@ -382,12 +363,7 @@ final class ZayataConfigurationDefinitions
         );
     }
 
-    /**
-     * Uma acção leva sempre uma frase a dizer o que faz: metade destes nomes — «Repor o
-     * prato», «Parâmetros de controlo» — não se explica a si própria.
-     *
-     * @return array<string, mixed>
-     */
+    /** @return array<string, mixed> */
     private static function action(
         string $key,
         string $command,

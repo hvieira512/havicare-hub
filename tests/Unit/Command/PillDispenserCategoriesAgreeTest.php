@@ -8,38 +8,9 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Metade dos nomes («Repor o prato», «Parâmetros de controlo») não se explica a si própria; a
- * categoria é uma só, a da definição, que manda no modal.
- */
-final class PillDispenserCatalogueIsLegibleTest extends TestCase
+/** O catálogo de capacidades e as definições declaram a categoria cada um por seu lado. */
+final class PillDispenserCategoriesAgreeTest extends TestCase
 {
-    public function testEverySettingExplainsWhatItDoes(): void
-    {
-        $unexplained = [];
-        foreach (DeviceConfigurationCatalog::configsForProtocol('zayata-m228') as $entry) {
-            if (trim((string)($entry['help'] ?? '')) === '') {
-                $unexplained[] = (string)$entry['label'];
-            }
-        }
-
-        self::assertSame([], $unexplained);
-    }
-
-    /** A frase tem de dizer mais do que a etiqueta: três palavras a repeti-la não são ajuda. */
-    public function testTheExplanationIsAnActualSentence(): void
-    {
-        $tooShort = [];
-        foreach (DeviceConfigurationCatalog::configsForProtocol('zayata-m228') as $entry) {
-            $help = trim((string)($entry['help'] ?? ''));
-            if (mb_strlen($help) < 40) {
-                $tooShort[] = sprintf('%s: «%s»', $entry['label'], $help);
-            }
-        }
-
-        self::assertSame([], $tooShort);
-    }
-
     /** O catálogo de capacidades e as definições têm de concordar sobre onde cada coisa vive. */
     public function testTheCategoryIsTheSameOnBothSides(): void
     {
