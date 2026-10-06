@@ -52,23 +52,32 @@ test("mas «sem bateria» fica, que nenhum ícone o diz", () => {
     assert.match(String(battery({ chargingState: "absent" }).details), /Sem bateria/);
 });
 
-test("e a corrente também, que é outra pergunta", () => {
-    assert.match(
-        String(battery({ percent: 100, chargingState: "full", mainsPowered: true }).details),
-        /Ligado à corrente/,
-    );
+/** A corrente passou para o canto do ícone: a linha de baixo não a repete em estado nenhum. */
+test("a corrente não se escreve por baixo", () => {
+    for (const data of [
+        { percent: 99, chargingState: "charging", mainsPowered: true },
+        { percent: 100, chargingState: "full", mainsPowered: true },
+        { percent: 80, mainsPowered: true },
+        { percent: 92, chargingState: "full", mainsPowered: false },
+    ]) {
+        assert.doesNotMatch(String(battery(data).details), /corrente/i);
+    }
 });
 
-/** O relâmpago já diz que está ligado: a carregar, ninguém carrega sem corrente. */
-test("a carregar, a corrente não se repete por baixo", () => {
-    assert.equal(
-        String(battery({ percent: 99, chargingState: "charging", mainsPowered: true }).details),
-        "",
-    );
-    assert.equal(
-        String(battery({ percent: 40, chargingState: 1, mainsPowered: true }).details),
-        "",
-    );
+/** Cheio na ficha não carrega, e sem marca ficava igual a um aparelho fora da ficha. */
+test("na ficha sem carregar, a tomada ocupa o canto", () => {
+    assert.equal(battery({ percent: 100, chargingState: "full", mainsPowered: true }).iconBadge, "fa-plug");
+    assert.equal(battery({ percent: 80, mainsPowered: true }).iconBadge, "fa-plug");
+});
+
+/** A carregar manda sobre a ficha: são a mesma corrente, e o relâmpago diz mais. */
+test("a carregar, o relâmpago ganha à tomada", () => {
+    assert.equal(battery({ percent: 99, chargingState: "charging", mainsPowered: true }).iconBadge, "fa-bolt");
+});
+
+test("fora da ficha o canto fica vazio", () => {
+    assert.equal(battery({ percent: 92, chargingState: "full", mainsPowered: false }).iconBadge, "");
+    assert.equal(battery({ percent: 92, chargingState: "full" }).iconBadge, "");
 });
 
 /** Um fragmento vazio é um objecto, e um objecto é verdadeiro: a linha ficava lá, vazia. */
@@ -86,7 +95,7 @@ test("sem detalhes o cartão não abre linha nenhuma", () => {
 
 /** O `compactDetails` devolve um fragmento mesmo quando está vazio, e o filtro deixava-o passar. */
 test("uma peça vazia não deixa o separador pendurado", () => {
-    assert.equal(String(battery({ percent: 80, mainsPowered: true }).details), "Ligado à corrente");
+    assert.equal(String(battery({ percent: 80, mainsPowered: true }).details), "");
 });
 
 test("o relâmpago chega ao cartão desenhado", () => {

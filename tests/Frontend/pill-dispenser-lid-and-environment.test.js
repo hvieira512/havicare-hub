@@ -24,13 +24,13 @@ test("o sinal desenha-se como conectividade", () => {
     assert.match(value, /[Rr]ede móvel/);
 });
 
-/** A corrente viaja com a bateria, e cheio na ficha não carrega: o relâmpago não a diz. */
+/** A corrente viaja com a bateria, e diz-se no canto do ícone: cheio na ficha não carrega. */
 test("a bateria diz se está ligada à corrente", () => {
-    const { details } = uplinkCardContent("battery", {
+    const { iconBadge } = uplinkCardContent("battery", {
         percent: 100,
         chargingState: "full",
         mainsPowered: true,
     });
 
-    assert.match(details, /corrente/i);
+    assert.equal(iconBadge, "fa-plug");
 });

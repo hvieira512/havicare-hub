@@ -305,7 +305,7 @@ const UPLINK_CARD_RENDERERS = {
                     ? `${data.voltageMv} mV`
                     : "-",
         icon: batteryIcon(data.percent),
-        iconBadge: isCharging(data.chargingState) ? "fa-bolt" : "",
+        iconBadge: batteryBadge(data),
         tone: batteryTone(data.percent),
         details: batteryDetails(data),
     }),
@@ -548,21 +548,25 @@ function batteryTone(percent) {
 /** Os relógios mandam um bit e o dispensador uma enumeração. O `full` já acabou de carregar. */
 const isCharging = (state) => state === 1 || state === "charging";
 
+/**
+ * O canto do ícone diz de onde vem a energia: o relâmpago a carregar, a tomada ligado à ficha
+ * sem carregar -- que é o que faz um aparelho cheio --, e nada fora da ficha.
+ *
+ * O relâmpago manda sobre a tomada: é a mesma corrente, e diz mais.
+ */
+function batteryBadge(data) {
+    if (isCharging(data.chargingState)) return "fa-bolt";
+
+    return data.mainsPowered === true ? "fa-plug" : "";
+}
+
 function batteryDetails(data) {
-    // A corrente é outra pergunta que o relâmpago não responde: um aparelho cheio e ligado à
-    // ficha não carrega nada, e continua a interessar que esteja ligado. A carregar é que não
-    // se diz — ninguém carrega sem corrente, e o relâmpago já lá está.
-    const mains = data.mainsPowered == null || isCharging(data.chargingState)
-        ? ""
-        : data.mainsPowered
-            ? "Ligado à corrente"
-            : "Sem corrente";
-    // «A carregar», «Carregada» e «Não está a carregar» estão agora no ícone. Ficam os dois
-    // estados que ele não sabe desenhar -- no Font Awesome free não há bateria rasurada.
+    // «A carregar», «Carregada» e a corrente estão agora no ícone. Ficam os dois estados que
+    // ele não sabe desenhar -- no Font Awesome free não há bateria rasurada.
     const state = BATTERY_STATE_LABEL[data.chargingState] ||
         (data.chargingState == null ? compactDetails(data, ["batteryType"]) : "");
 
-    return joinMarkup([state, mains]);
+    return joinMarkup([state]);
 }
 
 /** A cor da categoria, para o ícone. Sem entrada na tabela, o ícone fica neutro. */
