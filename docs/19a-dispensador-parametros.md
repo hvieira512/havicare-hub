@@ -344,8 +344,11 @@ nunca as emite.
 > confusão que o aviso da secção 5 descreve.
 
 Também não estão anunciados o `0x1011` (duração do toque) nem o `0x1061` (tempo
-de pressão para a chamada de emergência), pela mesma razão que o `0xA124` e o
-`0xA125`: existem na especificação da série, não no firmware deste aparelho.
+de pressão para a chamada de emergência), e a razão é a mesma do `0xA124` e do
+`0xA125`: **são da secção 8.3, do tipo 01**. Nenhum dos dois aparece na 8.4, e o
+`0x1011` nem sequer existe já — o histórico de revisões da especificação
+regista-o como *«Removed parameter - Alarm Ringtone Hold Duration (0x1011)»* na
+v1.18, de 2022-05-13, a mesma revisão que acrescentou o `0x1061` ao tipo 01.
 
 ## Controlo
 
@@ -371,11 +374,19 @@ três vezes, com a avaria `0x8122` activa e depois com ela limpa, para excluir q
 fosse o índice do prato a ser recusado.
 
 A razão é o **tipo de dispositivo**, e são TAGs que este aparelho nunca vai ter.
-O `0xA124`, o `0xA125` e ainda o `0xA121`/`0xA122` (SSID e palavra-passe de WiFi)
-estão na secção **8.3, «TAG Definition - Device Type 01»**, que vai da linha 1522
-à 1951 do documento. A secção **8.4**, que é a nossa, começa na 1952 e a lista de
-controlo dela acaba mesmo no `0xA123`. O fornecedor confirmou-o a 2026-09-28:
-*«The parameters mentioned in question 1 are all non-M2 series parameters»*.
+O `0xA124`, o `0xA125`, o `0xA121`/`0xA122` (SSID e palavra-passe de WiFi) e
+ainda o `0x1011`/`0x1061` estão na secção **8.3, «TAG Definition - Device Type
+01»**, que vai da linha 1522 à 1951 do documento. A secção **8.4**, que é a
+nossa, começa na 1952 e a lista de controlo dela acaba mesmo no `0xA123`. O
+fornecedor confirmou-o a 2026-09-28: *«The parameters mentioned in question 1
+are all non-M2 series parameters»*.
+
+> **A contagem por secção é o que resolve isto, e faz-se sem o aparelho.** Com o
+> `Network_Equipment_Communication_Protocol_V1.0_M2_Series_EN.pdf` em texto, uma
+> TAG do tipo 02 aparece **duas** vezes — uma em cada secção — e uma do tipo 01
+> aparece só **uma**. O `0x101C`, o `0x1055` e o `0x1063` aparecem nas duas; as
+> seis acima, só na 8.3. É o mesmo critério que a linha 2072 do `0x1063` já dava,
+> aplicado a todas de uma vez.
 
 > Uma versão anterior deste capítulo dizia exactamente isto, e eu «corrigi-a» a
 > 25/09 para a idade do firmware, sem reabrir o documento. Estava certa e ficou
