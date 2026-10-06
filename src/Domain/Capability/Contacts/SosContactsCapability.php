@@ -69,10 +69,13 @@ final class SosContactsCapability implements CapabilityContract
             ? $value['numbers']
             : $value;
 
+        // Sem `default`: a guarda acima já recusa o desconhecido, e sem braço de recurso um
+        // protocolo acrescentado ao `PROTOCOLS` é apanhado pelo analisador em vez de sair com
+        // os comandos nativos do 4P Touch.
         return match ($protocol) {
             'vivistar-iw' => ['sosContacts' => ['numbers' => self::requireUniqueStringListValue($numbers, 'numbers')]],
             'wonlex-json' => $this->wonlexNative($value),
-            default => $this->fourPTouch->toNative($value),
+            'four-p-touch' => $this->fourPTouch->toNative($value),
         };
     }
 
@@ -110,6 +113,9 @@ final class SosContactsCapability implements CapabilityContract
     {
         return match ($protocol) {
             'four-p-touch' => $this->fourPTouch->defaultValue(),
+            // A forma pública é uma lista de números, e o omisso é ela vazia. Na Wonlex não
+            // é escrevível assim -- os contactos SOS são uma selecção da lista telefónica, e
+            // o `toNative` exige-a --, mas o omisso é de leitura e não de escrita.
             default => [],
         };
     }

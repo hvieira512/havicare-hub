@@ -63,11 +63,14 @@ final class CallWhitelistCapability implements CapabilityContract
             throw new \InvalidArgumentException("Unsupported protocol {$protocol} for call_whitelist");
         }
 
+        // Sem `default`: a guarda acima já recusa o desconhecido, e sem braço de recurso um
+        // protocolo acrescentado ao `PROTOCOLS` é apanhado pelo analisador em vez de sair com
+        // os comandos nativos do 4P Touch.
         return match ($protocol) {
             // O payload nativo guardado fica estruturado: quem serializa os contactos como
             // `UTF-16BE(nome)|telefone` para o BP14 é só o construtor de payloads Vivistar.
             'vivistar-iw' => ['call_whitelist' => ['contacts' => self::normalizeContactsList($value)]],
-            default => $this->fourPTouch->toNative($value),
+            'four-p-touch' => $this->fourPTouch->toNative($value),
         };
     }
 
@@ -142,6 +145,8 @@ final class CallWhitelistCapability implements CapabilityContract
         return match ($protocol) {
             'vivistar-iw' => [['name' => '', 'phone' => '']],
             'four-p-touch' => $this->fourPTouch->defaultValue(),
+            // Ao contrário do `toNative`, aqui o desconhecido não lança: o apresentador pede
+            // o omisso antes de saber se a capacidade serve o protocolo.
             default => [],
         };
     }
