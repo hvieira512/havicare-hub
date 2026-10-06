@@ -5,19 +5,31 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
+use Hub\Api\Http\CollectionPresenter;
+use Hub\Api\Http\DenylistColumns;
 use Hub\Api\Request\DenylistBlockRequest;
 use Hub\Api\Request\RequestBinder;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
 final class DenylistService
 {
+    private const DEFAULT_COLLECTION_LIMIT = 20;
+
+    private CollectionPresenter $presenter;
+
     public function __construct(private ApiDataAccess $db)
     {
+        $this->presenter = new CollectionPresenter();
     }
 
-    public function list(): array
+    public function list(string $query = ''): array
     {
-        return ['data' => $this->db->denylist->all()];
+        return $this->presenter->present(
+            $this->db->denylist->all(),
+            DenylistColumns::definition(),
+            $this->presenter->params($query),
+            self::DEFAULT_COLLECTION_LIMIT,
+        );
     }
 
     public function block(array $payload, string $createdBy = ''): array

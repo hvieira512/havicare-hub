@@ -62,6 +62,11 @@ final class CapabilityPaths
                 'get' => [
                     'tags' => ['Discovery'],
                     'summary' => 'List capability discovery runs',
+                    'parameters' => array_merge(Parameters::pagination(), [
+                        Parameters::stringQuery('id'),
+                        Parameters::query('status', ['type' => 'string', 'example' => 'draft']),
+                        Parameters::query('sort', ['type' => 'string', 'example' => 'createdAt:desc']),
+                    ]),
                     'responses' => [
                         '200' => Responses::json('Discovery run list', 'CapabilityDiscoveryListResponse'),
                     ],

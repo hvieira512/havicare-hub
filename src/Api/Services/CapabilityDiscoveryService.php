@@ -6,6 +6,8 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
+use Hub\Api\Http\CollectionPresenter;
+use Hub\Api\Http\DiscoveryColumns;
 use Hub\Api\Request\CapabilityDiscoveryRequest;
 use Hub\Api\Request\RequestBinder;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
@@ -15,18 +17,26 @@ use Hub\Domain\DeviceMetadata;
 
 final class CapabilityDiscoveryService
 {
+    private const DEFAULT_COLLECTION_LIMIT = 20;
+
+    private CollectionPresenter $presenter;
+
     public function __construct(
         private ApiDataAccess $db,
         private DeviceService $devices,
         private CapabilityDiscoveryRepository $repository,
     ) {
+        $this->presenter = new CollectionPresenter();
     }
 
-    public function list(): array
+    public function list(string $query = ''): array
     {
-        return [
-            'data' => $this->repository->all(),
-        ];
+        return $this->presenter->present(
+            $this->repository->all(),
+            DiscoveryColumns::definition(),
+            $this->presenter->params($query),
+            self::DEFAULT_COLLECTION_LIMIT,
+        );
     }
 
     public function show(string $id): array

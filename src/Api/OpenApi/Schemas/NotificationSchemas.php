@@ -42,6 +42,18 @@ final class NotificationSchemas
                     'unreadCount' => ['type' => 'integer', 'example' => 1],
                 ],
             ],
+            'DenylistEntry' => [
+                'type' => 'object',
+                'required' => ['identity', 'protocol', 'created_by', 'created_at'],
+                'properties' => [
+                    'identity' => ['type' => 'string', 'example' => '357000000000123'],
+                    'protocol' => ['type' => 'string', 'example' => 'four-p-touch'],
+                    'note' => ['type' => ['string', 'null']],
+                    'created_by' => ['type' => 'string', 'example' => 'admin'],
+                    'created_at' => ['type' => 'string', 'format' => 'date-time'],
+                ],
+            ],
+            'DenylistListResponse' => CommonSchemas::collection('DenylistEntry', withColumns: true),
             'DashboardNotificationReadRequest' => [
                 'type' => 'object',
                 'required' => ['ids'],

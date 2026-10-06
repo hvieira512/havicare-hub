@@ -91,7 +91,7 @@ final class DiscoverySchemas
                     'telemetry' => ['type' => 'boolean', 'example' => true],
                 ],
             ],
-            'CapabilityDiscoveryListResponse' => CommonSchemas::list('CapabilityDiscoveryRun'),
+            'CapabilityDiscoveryListResponse' => CommonSchemas::collection('CapabilityDiscoveryRun', withColumns: true),
         ];
     }
 }

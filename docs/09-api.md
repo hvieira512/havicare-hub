@@ -433,6 +433,12 @@ já tinha gerado.
 
 O `limit` por omissão é **20**, com uma exceção: o `/api/devices` usa **5**.
 
+Toda a coleção que cresce com o uso devolve este envelope. Ficam de fora quatro,
+por serem outra coisa: o `/api/capabilities` e o `/api/protocols` são catálogos
+de tamanho fixo escritos em código, o `/api/notifications` é um feed dos últimos
+N — sem página, e com o `unreadCount` ao lado dos dados —, e os `links` de um
+dispositivo limitam-se aos que esse dispositivo tem.
+
 O `filters.available` diz que valores fazem sentido pedir — a dashboard constrói
 os menus a partir dele, sem os ter escritos à mão.
 
@@ -445,8 +451,9 @@ contenha `D41` no nome interno ou no comercial.
 
 ### Colunas que se descrevem
 
-Cinco listagens acrescentam um `columns` ao envelope: `/api/users`,
-`/api/models`, `/api/companies`, `/api/licenses` e `/api/suppliers`. Cada
+Sete listagens acrescentam um `columns` ao envelope: `/api/users`,
+`/api/models`, `/api/companies`, `/api/licenses`, `/api/suppliers`,
+`/api/denylist` e `/api/capability-discovery`. Cada
 entrada diz o que se pode fazer àquela coluna, e nada sobre como ela se desenha
 — o nome visível é de quem constrói a interface.
 

@@ -11,7 +11,8 @@ return static function (
     CapabilityDiscoveryService $discovery,
 ): array {
     return [
-        new ApiRoute('GET', '/api/capability-discovery', static fn(): array => $discovery->list()),
+        new ApiRoute('GET', '/api/capability-discovery', static fn(array $params, ServerRequestInterface $request): array
+            => $discovery->list((string)$request->getUri()->getQuery())),
         new ApiRoute(
             'POST',
             '/api/capability-discovery',

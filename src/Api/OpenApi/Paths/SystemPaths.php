@@ -147,25 +147,12 @@ final class SystemPaths
                     'tags' => ['Notifications'],
                     'summary' => 'List blocked device identities',
                     'description' => 'Administrator only.',
+                    'parameters' => array_merge(Parameters::pagination(), [
+                        Parameters::stringQuery('identity'),
+                        Parameters::query('sort', ['type' => 'string', 'example' => 'created_at:desc']),
+                    ]),
                     'responses' => [
-                        '200' => Responses::content('Blocked device identities', [
-                            'type' => 'object',
-                            'properties' => [
-                                'data' => [
-                                    'type' => 'array',
-                                    'items' => [
-                                        'type' => 'object',
-                                        'properties' => [
-                                            'identity' => ['type' => 'string'],
-                                            'protocol' => ['type' => 'string'],
-                                            'note' => ['type' => 'string', 'nullable' => true],
-                                            'created_by' => ['type' => 'string'],
-                                            'created_at' => ['type' => 'string'],
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ]),
+                        '200' => Responses::json('Paginated blocked identity collection', 'DenylistListResponse'),
                     ],
                 ],
                 'post' => [

@@ -11,7 +11,8 @@ return static function (
     DenylistService $denylist,
 ): array {
     return [
-        new ApiRoute('GET', '/api/denylist', static fn(): array => $denylist->list()),
+        new ApiRoute('GET', '/api/denylist', static fn(array $params, ServerRequestInterface $request): array
+            => $denylist->list((string)$request->getUri()->getQuery())),
         new ApiRoute(
             'POST',
             '/api/denylist',
