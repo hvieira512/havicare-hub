@@ -366,6 +366,15 @@ sincronização forçada · `0xA004` novo registo · `0xA101` calibrar relógio 
 > aparelho se autentica, e até aqui a única forma de o provocar era reiniciar o
 > serviço. Com o `0xA004` ao fim de cada lote, o lote seguinte entrega-se sozinho.
 
+> **Tirar a ficha não reinicia o aparelho.** Tem bateria, e passa a alimentar-se
+> dela: a capacidade `battery` publica `chargingState` e o cartão da dashboard
+> mostra «Sem corrente», mas a sessão TCP não se interrompe e não há `0x01` novo.
+> Medido a 06/10/2026 com três cortes seguidos, nenhum com registo a seguir.
+>
+> Para quem use a fila numa sonda avulsa: o `flushPendingDownlinks` descarta como
+> `superseded` qualquer trama cujo `operationId` o ciclo de vida de configurações
+> não conheça, e remove-a **sem a enviar**. Uma sonda vai sem comando nenhum.
+
 A lista acaba aqui. O `0xA124` (rodar para uma célula indicada) e o `0xA125`
 (pausa da medicação) **não existem neste firmware**: um `0xA124` mandado à mão é
 acusado com o valor ecoado — `0E`, `05`, `19` — sem que o prato mexa e sem que o
