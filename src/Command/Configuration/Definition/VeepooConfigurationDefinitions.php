@@ -10,19 +10,24 @@ namespace Hub\Command\Configuration\Definition;
  */
 final class VeepooConfigurationDefinitions
 {
-    /** Chave genérica do hub => [rótulo, secção, o que faz ao aparelho], pela ordem de leitura. */
+    /**
+     * Chave genérica do hub => [rótulo, secção, o que faz ao aparelho].
+     *
+     * A terceira coluna é o que o operador precisa de saber e o nome sozinho não diz; vazia
+     * quando o rótulo basta. A ordem é a que faz sentido ler.
+     */
     private const SWITCHES = [
-        'heart_rate_continuous' => ['Frequência cardíaca contínua', 'health', 'Mede ao longo do dia, um valor por minuto.'],
-        'blood_pressure_trend' => ['Tendência da pressão arterial', 'health', 'Estima a tensão de dez em dez minutos.'],
-        'temperature_continuous' => ['Temperatura contínua', 'health', 'Amostra a temperatura da pele. A do corpo só existe a pedido.'],
-        'hrv_continuous' => ['VFC contínua', 'health', 'Variabilidade cardíaca ao longo do dia.'],
-        'blood_sugar_continuous' => ['Glicemia contínua', 'health', 'Estimativa ótica, sem picada. Não é clinicamente validada.'],
-        'blood_lipids_continuous' => ['Composição sanguínea contínua', 'health', 'Estima lípidos e ácido úrico. Não é clinicamente validada.'],
-        'stress_continuous' => ['Stress contínuo', 'health', 'Índice calculado a partir da variabilidade cardíaca.'],
-        'sleep_monitoring' => ['Monitorização do sono', 'health', 'Grava as fases de sono enquanto a pulseira estiver ao pulso.'],
+        'heart_rate_continuous' => ['Frequência cardíaca contínua', 'health', 'Um valor por minuto.'],
+        'blood_pressure_trend' => ['Tendência da pressão arterial', 'health', 'Um par sistólica/diastólica a cada cinco minutos.'],
+        'temperature_continuous' => ['Temperatura contínua', 'health', 'Corporal e de superfície, a cada cinco minutos.'],
+        'hrv_continuous' => ['Variabilidade cardíaca contínua', 'health', ''],
+        'blood_sugar_continuous' => ['Glicemia contínua', 'health', 'Estimativa ótica, sem picada.'],
+        'blood_lipids_continuous' => ['Lípidos e ácido úrico contínuos', 'health', 'Estima colesterol, triglicéridos e ácido úrico.'],
+        'stress_continuous' => ['Stress contínuo', 'health', 'Índice de 0 a 100.'],
+        'sleep_monitoring' => ['Monitorização do sono', 'health', ''],
         // Não é medição contínua de oxigénio: essa a pulseira faz sempre e vem nos blocos.
         // Este é o despertar por hipoxia, e por isso vive entre os alarmes.
-        'blood_oxygen_alert' => ['Alerta de oxigénio no sangue', 'alarms', 'Acorda quem a usa se a saturação descer demasiado durante o sono.'],
+        'blood_oxygen_alert' => ['Alerta de oxigénio no sangue', 'alarms', 'Acorda quem a usa com a saturação baixa; o hub não recebe o alerta.'],
     ];
 
     /**
@@ -47,8 +52,6 @@ final class VeepooConfigurationDefinitions
             $order += 10;
         }
 
-        // A janela é o que faz a diferença entre a série de dia inteiro trazer apneia e
-        // hipóxia ou vir vazia: sem ela a monitorização fica ligada a não medir nada.
         $configs[] = ConfigurationDefinition::make(
             'blood_oxygen_window',
             'config:blood_oxygen_window',
@@ -58,7 +61,7 @@ final class VeepooConfigurationDefinitions
             ['monitoring'],
             'health',
             $order,
-            help: 'Mede a saturação dentro da janela indicada. Daqui saem a apneia, a hipóxia e a carga cardíaca.',
+            help: 'Daqui saem a apneia, a hipóxia e a carga cardíaca.',
         );
         $order += 10;
 
@@ -72,7 +75,7 @@ final class VeepooConfigurationDefinitions
             ['monitoring'],
             'alarms',
             $order,
-            help: 'Avisa quem a usa quando a frequência cardíaca sai destes limites.',
+            help: 'O aviso fica na pulseira; o hub não é avisado.',
         );
         $order += 10;
 
@@ -103,7 +106,7 @@ final class VeepooConfigurationDefinitions
             ['monitoring'],
             'health',
             $order,
-            help: 'Altura, peso, idade e sexo entram no cálculo das calorias e da composição corporal.',
+            help: 'Entram no cálculo das calorias e da composição corporal.',
         );
         $order += 10;
 
@@ -119,7 +122,7 @@ final class VeepooConfigurationDefinitions
             'settings_system',
             $order,
             transient: true,
-            help: 'Faz a pulseira vibrar. Pára sozinha ao fim de cerca de um minuto.',
+            help: 'Pára sozinha ao fim de cerca de um minuto.',
             actions: ['on' => 'Fazer vibrar', 'off' => 'Parar'],
         );
 
