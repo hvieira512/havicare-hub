@@ -6,6 +6,7 @@ namespace Hub\Device;
 
 class RawPayload
 {
+    /** @return array<string, mixed> */
     public static function raw(
         string $imei,
         string $supplier,
@@ -44,6 +45,10 @@ class RawPayload
         return $payload;
     }
 
+    /**
+     * @param array<string, mixed>|null $error
+     * @return array<string, mixed>
+     */
     public static function status(string $imei, string $supplier, string $model, string $state, ?array $error = null, string $commercialName = ''): array
     {
         $payload = [
@@ -59,6 +64,11 @@ class RawPayload
         return $payload;
     }
 
+    /**
+     * @param array<string, mixed>|null $command
+     * @param array<string, mixed>|null $error
+     * @return array<string, mixed>
+     */
     public static function event(
         string $imei,
         string $supplier,
@@ -125,6 +135,7 @@ class RawPayload
         return preg_match('/[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]/', $raw) !== 1;
     }
 
+    /** @return array<string, mixed>|null */
     private static function decodedPayload(string $protocol, string $raw): ?array
     {
         if ($protocol !== 'wonlex-json' || strlen($raw) < 4) {

@@ -18,6 +18,10 @@ final class CapabilityDiscoveryRepository
         }
     }
 
+    /**
+     * @param array<string, mixed> $run
+     * @return array<string, mixed>
+     */
     public function save(array $run): array
     {
         $id = (string)($run['id'] ?? '');
@@ -36,6 +40,7 @@ final class CapabilityDiscoveryRepository
         return $run;
     }
 
+    /** @return array<string, mixed>|null */
     public function find(string $id): ?array
     {
         $path = $this->pathFor($id);

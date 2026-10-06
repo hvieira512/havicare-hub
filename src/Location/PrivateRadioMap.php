@@ -219,7 +219,10 @@ final class PrivateRadioMap
         ];
     }
 
-    /** @param list<array<string, mixed>> $candidates @return list<array<string, mixed>> */
+    /**
+     * @param list<array<string, mixed>> $candidates
+     * @return list<array<string, mixed>>
+     */
     private function largestCluster(array $candidates): array
     {
         $best = [];
@@ -244,7 +247,10 @@ final class PrivateRadioMap
         return $best;
     }
 
-    /** @param list<array<string, mixed>> $wifi @return array<string, string> */
+    /**
+     * @param list<array<string, mixed>> $wifi
+     * @return array<string, string>
+     */
     private function hashes(array $wifi): array
     {
         $hashes = [];

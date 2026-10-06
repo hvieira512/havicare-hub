@@ -14,6 +14,7 @@ class HubTcpIngress
 {
     private DeviceHubServer $hubServer;
     private SocketServer $socket;
+    /** @var array<int, string> */
     private array $buffers = [];
     private int $nextResourceId = 1000000;
 
@@ -51,19 +52,21 @@ class HubTcpIngress
     {
         $this->buffers[$resourceId] = ($this->buffers[$resourceId] ?? '') . $data;
 
-        while (isset($this->buffers[$resourceId]) && ($packetLength = $this->nextPacketLength($this->buffers[$resourceId])) !== null) {
+        // O `onMessage` pode fechar a ligação e apagar o buffer a meio do ciclo, e o
+        // analisador não vê esse efeito: daí verificar a chave em vez de confiar no tipo.
+        while (array_key_exists($resourceId, $this->buffers) && ($packetLength = $this->nextPacketLength($this->buffers[$resourceId])) !== null) {
             $packet = substr($this->buffers[$resourceId], 0, $packetLength);
             $this->buffers[$resourceId] = substr($this->buffers[$resourceId], $packetLength);
             if ($packet !== '' && trim($packet) !== '') {
                 $binaryFrame = $this->isWonlexFrame($packet) || $this->isPillFrame($packet);
                 $this->hubServer->onMessage($client, $binaryFrame ? $packet : trim($packet));
-                if (!isset($this->buffers[$resourceId])) {
+                if (!array_key_exists($resourceId, $this->buffers)) {
                     return;
                 }
             }
         }
 
-        if (isset($this->buffers[$resourceId]) && strlen($this->buffers[$resourceId]) > 65535) {
+        if (array_key_exists($resourceId, $this->buffers) && strlen($this->buffers[$resourceId]) > 65535) {
             Logger::channel('hub')->warning("TCP buffer overflow for connection=$resourceId; resetting buffer");
             $this->buffers[$resourceId] = '';
         }

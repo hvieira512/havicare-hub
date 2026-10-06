@@ -50,6 +50,7 @@ final class ReconnectingPdo extends PDO
             || str_contains($e->getMessage(), 'Lost connection');
     }
 
+    /** @param array<int, mixed> $options */
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
         try {

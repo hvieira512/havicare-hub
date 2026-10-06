@@ -13,6 +13,9 @@ final class PillDispenserEventDecoder
      * O dispensador M228 traz o corpo já descodificado num mapa de TAGs TFLV. O evento
      * `0x03` é uma toma; os restantes pacotes carregam estado. Não passa pelo
      * FeatureNormalizer: cada TAG lê-se com o tipo que a especificação lhe dá.
+     *
+     * @param array<string, mixed> $payload
+     * @return list<array<string, mixed>>
      */
     public static function decode(string $nativeType, array $payload): array
     {
@@ -35,6 +38,10 @@ final class PillDispenserEventDecoder
         return self::statusEvents($nativeType, $tlv);
     }
 
+    /**
+     * @param array<int, array{value?: string, state?: int}> $tlv
+     * @return array<string, mixed>|null
+     */
     private static function medicationIntake(string $nativeType, array $tlv): ?array
     {
         $slot = Tlv::u8($tlv, 0xC201);
@@ -65,6 +72,9 @@ final class PillDispenserEventDecoder
      * A configuração que o aparelho diz ter.
      *
      * Sai como `device_config`, que é o que os relógios já usam para o mesmo.
+     *
+     * @param array<int, array{value?: string, state?: int}> $tlv
+     * @return array<string, mixed>|null
      */
     private static function configuration(string $nativeType, array $tlv): ?array
     {
@@ -235,7 +245,8 @@ final class PillDispenserEventDecoder
     }
 
     /**
-     * @return list<array{feature: string, nativeType: string, value: array}>
+     * @param array<int, array{value?: string, state?: int}> $tlv
+     * @return list<array{feature: string, nativeType: string, value: array<string, mixed>}>
      */
     private static function statusEvents(string $nativeType, array $tlv): array
     {

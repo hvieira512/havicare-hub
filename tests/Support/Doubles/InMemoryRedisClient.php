@@ -78,7 +78,7 @@ final class InMemoryRedisClient implements ClientInterface
     public function __call($method, $arguments)
     {
         return match (strtolower((string)$method)) {
-            'sadd' => $this->sadd((string)$arguments[0], (string)$arguments[1]),
+            'sadd' => $this->sadd((string)$arguments[0], $arguments[1]),
             'srem' => $this->srem((string)$arguments[0], (string)$arguments[1]),
             'smembers' => $this->smembers((string)$arguments[0]),
             'hmset' => $this->hmset((string)$arguments[0], $arguments[1]),
@@ -116,12 +116,19 @@ final class InMemoryRedisClient implements ClientInterface
         return $next;
     }
 
-    private function sadd(string $key, string $member): int
+    /** @param list<string>|string $members */
+    private function sadd(string $key, $members): int
     {
-        $exists = isset($this->sets[$key][$member]);
-        $this->sets[$key][$member] = true;
+        $added = 0;
+        foreach (is_array($members) ? $members : [$members] as $member) {
+            $member = (string)$member;
+            if (!isset($this->sets[$key][$member])) {
+                $added++;
+            }
+            $this->sets[$key][$member] = true;
+        }
 
-        return $exists ? 0 : 1;
+        return $added;
     }
 
     private function srem(string $key, string $member): int

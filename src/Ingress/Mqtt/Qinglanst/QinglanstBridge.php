@@ -256,6 +256,7 @@ final class QinglanstBridge extends MqttBridgeBase
         return null;
     }
 
+    /** @return array<string, mixed>|null */
     private function extractUpstreamPayload(string $payload): ?array
     {
         $decoded = json_decode($payload, true);
@@ -267,6 +268,7 @@ final class QinglanstBridge extends MqttBridgeBase
         return is_array($wrapped) ? $wrapped : null;
     }
 
+    /** @param array<string, mixed> $payload */
     private function messageType(array $payload): ?string
     {
         $presentTypes = [];

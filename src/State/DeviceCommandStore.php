@@ -21,6 +21,7 @@ final class DeviceCommandStore
         $this->limit = max(1, $this->limit);
     }
 
+    /** @param array<string, mixed> $record */
     public function recordCommand(string $imei, string $id, array $record): void
     {
         $lifecycleAlreadyPersisted = ($record['lifecycleStatusPersisted'] ?? false) === true;
@@ -55,6 +56,7 @@ final class DeviceCommandStore
     /**
      * @param callable(string, string, array): string $dispatch
      */
+    /** @param callable(string, string, array<string, mixed>): string $dispatch */
     public function retryWaitingCommands(int $retryAfterSeconds, int $timeoutSeconds, int $maxAttempts, callable $dispatch): void
     {
         $retryAfterSeconds = max(1, $retryAfterSeconds);
@@ -233,6 +235,7 @@ final class DeviceCommandStore
         }
     }
 
+    /** @param array<string, mixed> $fields */
     public function markLatestCommand(string $imei, string $nativeType, array $fields): void
     {
         foreach ($this->commands($imei) as $command) {
@@ -247,6 +250,7 @@ final class DeviceCommandStore
         }
     }
 
+    /** @param array<string, mixed> $fields */
     public function markCommand(string $imei, string $id, array $fields): void
     {
         foreach ($this->commands($imei) as $command) {
@@ -359,6 +363,7 @@ final class DeviceCommandStore
         return 0;
     }
 
+    /** @return list<array<string, mixed>> */
     public function commands(string $imei): array
     {
         $ids = $this->redis->lrange($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
@@ -385,6 +390,7 @@ final class DeviceCommandStore
         return $commands;
     }
 
+    /** @param array<string, mixed> $record */
     private function projectConfigurationStatus(string $imei, string $id, array $record): void
     {
         if ($this->projection === null || !isset($record['configKey'])) {
@@ -404,6 +410,7 @@ final class DeviceCommandStore
         );
     }
 
+    /** @param array<string, mixed> $command */
     private function completeCommandReply(
         string $imei,
         array $command,
@@ -434,6 +441,7 @@ final class DeviceCommandStore
         ]));
     }
 
+    /** @return array<string, mixed>|null */
     public function findCommand(string $id): ?array
     {
         $imei = (string)($this->redis->hget($this->commandIndexKey(), $id) ?? '');
@@ -443,7 +451,7 @@ final class DeviceCommandStore
 
         $raw = $this->redis->hget($this->commandHashKey($imei), $id);
         if (!is_string($raw)) {
-            $this->redis->hdel($this->commandIndexKey(), $id);
+            $this->redis->hdel($this->commandIndexKey(), [$id]);
             return null;
         }
 

@@ -16,6 +16,7 @@ final class DeviceConfigurationProjection
         $this->db = $db;
     }
 
+    /** @param array<string, mixed> $payload */
     public function saveReported(
         string $imei,
         string $protocol,

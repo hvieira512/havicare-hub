@@ -14,6 +14,7 @@ final class DeviceConfigurationRepository
     {
     }
 
+    /** @return list<array<string, mixed>> */
     public function allForImei(string $imei): array
     {
         $stmt = $this->pdo->prepare('
@@ -56,6 +57,7 @@ final class DeviceConfigurationRepository
         return $rows;
     }
 
+    /** @param array<string, mixed> $payload */
     public function saveDesired(
         string $imei,
         string $key,
@@ -103,6 +105,7 @@ final class DeviceConfigurationRepository
         $stmt->execute([$status, $commandId, $status, $now, $imei, $key, $nativeKey]);
     }
 
+    /** @param array<string, mixed> $payload */
     public function saveReported(
         string $imei,
         string $key,
@@ -173,6 +176,9 @@ final class DeviceConfigurationRepository
      * `isNewerRow` e o `usort` comparam texto, e assim continuam a ver exactamente o mesmo
      * que viam quando a coluna era texto. O ISO ordena lexicograficamente, e a ausência
      * continua a ser a cadeia vazia, que ordena primeiro.
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
      */
     private function normalizeRow(array $row): array
     {
@@ -182,6 +188,10 @@ final class DeviceConfigurationRepository
         return TimestampFormatter::isoColumns($row, ['desired_updated_at', 'reported_at', 'applied_at']);
     }
 
+    /**
+     * @param array<string, mixed> $candidate
+     * @param array<string, mixed> $existing
+     */
     private function isNewerRow(array $candidate, array $existing): bool
     {
         $candidateTimestamp = $this->rowTimestamp($candidate);
@@ -198,6 +208,7 @@ final class DeviceConfigurationRepository
         return $candidateIsCanonical && !$existingIsCanonical;
     }
 
+    /** @param array<string, mixed> $row */
     private function rowTimestamp(array $row): string
     {
         return max(

@@ -13,6 +13,7 @@ final class RadarApiCredentialsRepository
     {
     }
 
+    /** @return array<string, mixed>|null */
     public function findByLicenseRefId(int $licenseRefId): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM radar_api_credentials WHERE license_ref_id = ?');

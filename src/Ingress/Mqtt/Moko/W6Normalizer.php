@@ -64,7 +64,10 @@ final class W6Normalizer
         ] + $common];
     }
 
-    /** @param array<string, mixed> $device @return array<string, string> */
+    /**
+     * @param array<string, mixed> $device
+     * @return array<string, string>
+     */
     private function device(array $device): array
     {
         return DeviceDescriptor::of((string)$device['imei'], $device);

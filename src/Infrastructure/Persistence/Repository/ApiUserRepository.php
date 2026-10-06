@@ -13,6 +13,7 @@ final class ApiUserRepository
     {
     }
 
+    /** @return list<array<string, mixed>> */
     public function all(): array
     {
         return TimestampFormatter::normalizeRows($this->pdo
@@ -20,6 +21,7 @@ final class ApiUserRepository
             ->fetchAll());
     }
 
+    /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
         $stmt = $this->pdo->prepare($this->selectSql(true) . ' WHERE u.id = ?');
@@ -29,6 +31,7 @@ final class ApiUserRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
+    /** @return array<string, mixed>|null */
     public function findByUsername(string $username): ?array
     {
         $stmt = $this->pdo->prepare($this->selectSql(true) . ' WHERE lower(u.username) = lower(?)');

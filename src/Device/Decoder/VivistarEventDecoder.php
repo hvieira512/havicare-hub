@@ -8,6 +8,10 @@ use Hub\Device\DeviceEventDecoder;
 
 final class VivistarEventDecoder
 {
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<array<string, mixed>>
+     */
     public static function decode(string $nativeType, array $payload): array
     {
         return match ($nativeType) {
@@ -48,6 +52,10 @@ final class VivistarEventDecoder
         };
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>|null
+     */
     private static function decodeAp02(array $payload): ?array
     {
         $fields = isset($payload['fields']) && is_array($payload['fields']) ? $payload['fields'] : [];

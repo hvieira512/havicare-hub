@@ -10,6 +10,10 @@ use Hub\Support\Values;
 
 final class FourPTouchEventDecoder
 {
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<array<string, mixed>>
+     */
     public static function decode(string $nativeType, array $payload): array
     {
         return match (true) {

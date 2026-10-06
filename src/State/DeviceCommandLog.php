@@ -7,10 +7,13 @@ namespace Hub\State;
 /** O ciclo de vida de um comando, do envio à confirmação ou à desistência. */
 interface DeviceCommandLog
 {
+    /** @param array<string, mixed> $record */
     public function recordCommand(string $imei, string $id, array $record): void;
 
+    /** @param array<string, mixed> $fields */
     public function markLatestCommand(string $imei, string $nativeType, array $fields): void;
 
+    /** @param array<string, mixed> $fields */
     public function markCommand(string $imei, string $id, array $fields): void;
 
     public function isCurrentOperation(string $operationId): bool;
@@ -29,7 +32,7 @@ interface DeviceCommandLog
      * Reenvia os comandos de configuração em fila e repete os enviados que ainda não foram
      * confirmados.
      *
-     * @param callable(string, string, array): string $dispatch
+     * @param callable(string, string, array<string, mixed>): string $dispatch
      */
     public function retryWaitingCommands(
         int $retryAfterSeconds,
@@ -38,8 +41,10 @@ interface DeviceCommandLog
         callable $dispatch
     ): void;
 
+    /** @return list<array<string, mixed>> */
     public function commands(string $imei): array;
 
+    /** @return array<string, mixed>|null */
     public function findCommand(string $id): ?array;
 
     /**

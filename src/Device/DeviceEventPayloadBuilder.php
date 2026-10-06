@@ -6,6 +6,10 @@ namespace Hub\Device;
 
 final class DeviceEventPayloadBuilder
 {
+    /**
+     * @param array<string, mixed> $decodedEvent
+     * @return array<string, mixed>
+     */
     public static function decoded(DeviceSession $session, array $decodedEvent): array
     {
         $feature = (string)$decodedEvent['feature'];

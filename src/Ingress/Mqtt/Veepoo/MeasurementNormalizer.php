@@ -227,7 +227,10 @@ final class MeasurementNormalizer
         return isset($data['bmi']) ? ['body_composition', $data] : null;
     }
 
-    /** @param array<string, mixed> $payload @return array{0: string, 1: array<string, int>}|null */
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{0: string, 1: array<string, int>}|null
+     */
     private static function bloodPressureReading(array $payload): ?array
     {
         $high = self::withinRange($payload['bloodPressureHigh'] ?? null, 1, 300);

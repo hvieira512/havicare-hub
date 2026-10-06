@@ -199,7 +199,10 @@ final class MokoBridge extends MqttBridgeBase
         }
     }
 
-    /** @param array<string, mixed> $gateway @param array<string, mixed> $decoded */
+    /**
+     * @param array<string, mixed> $gateway
+     * @param array<string, mixed> $decoded
+     */
     private function recordGateway(array $gateway, array $decoded, string $sourceTopic, string $originalPayload): void
     {
         $deviceKey = (string)$gateway['imei'];
@@ -249,7 +252,8 @@ final class MokoBridge extends MqttBridgeBase
      * Cada observação é oferecida aos decoders por ordem; o primeiro que a reconhece fica
      * com o payload.
      *
-     * @param array<string, mixed> $gateway @param array<string, mixed> $observation
+     * @param array<string, mixed> $gateway
+     * @param array<string, mixed> $observation
      */
     private function handleObservation(array $gateway, array $observation): void
     {
@@ -280,7 +284,8 @@ final class MokoBridge extends MqttBridgeBase
      *
      * Só para dispositivos já registados e ligados a este gateway.
      *
-     * @param array<string, mixed> $gateway @param array<string, mixed> $observation
+     * @param array<string, mixed> $gateway
+     * @param array<string, mixed> $observation
      */
     private function recordUnclaimedSighting(array $gateway, array $observation): void
     {
@@ -342,7 +347,9 @@ final class MokoBridge extends MqttBridgeBase
     /**
      * Uma W6B premida anuncia 30 segundos: cada modo tem contador, e só uma mudança é toque.
      *
-     * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
+     * @param array<string, mixed> $gateway
+     * @param array<string, mixed> $decoded
+     * @param array<string, mixed> $observation
      */
     private function handleW6bObservation(array $gateway, array $decoded, array $observation): void
     {
@@ -381,7 +388,8 @@ final class MokoBridge extends MqttBridgeBase
      * A W6 não tem contador cumulativo, e por isso o toque é estrangulado por tempo: o
      * primeiro avistamento de um modo dá o alarme, os seguintes calam-se até a janela fechar.
      *
-     * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
+     * @param array<string, mixed> $gateway
+     * @param array<string, mixed> $decoded
      * @param array<string, mixed> $observation
      */
     private function handleW6Observation(array $gateway, array $decoded, array $observation): void
@@ -411,7 +419,8 @@ final class MokoBridge extends MqttBridgeBase
     }
 
     /**
-     * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
+     * @param array<string, mixed> $gateway
+     * @param array<string, mixed> $decoded
      * @param array<string, mixed> $observation
      */
     private function handleMonitObservation(array $gateway, array $decoded, array $observation): void
@@ -455,5 +464,4 @@ final class MokoBridge extends MqttBridgeBase
         }
     }
 
-    /** @param array<string, mixed> $device @return array<string, mixed> */
 }

@@ -7,7 +7,11 @@ namespace Hub\State;
 /** A leitura do histórico e o aviso de que ele mudou. Quem escreve nele é o `DeviceReportStore`. */
 interface DeviceHistoryStore
 {
-    /** Com `$sinceSeq` maior que zero, só o que entrou depois desse número de ordem. */
+    /**
+     * Com `$sinceSeq` maior que zero, só o que entrou depois desse número de ordem.
+     *
+     * @return list<array<string, mixed>>
+     */
     public function recent(string $imei, string $list, int $sinceSeq = 0): array;
 
     /** O número de ordem da entrada mais recente, para o cliente saber onde ficou. */

@@ -13,6 +13,7 @@ final class CompanyRepository
     {
     }
 
+    /** @return list<array<string, mixed>> */
     public function all(): array
     {
         return TimestampFormatter::normalizeRows($this->pdo
@@ -20,6 +21,7 @@ final class CompanyRepository
             ->fetchAll());
     }
 
+    /** @return array<string, mixed>|null */
     public function findByName(string $name): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM companies WHERE name = ?');
@@ -29,6 +31,7 @@ final class CompanyRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
+    /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM companies WHERE id = ?');

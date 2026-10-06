@@ -46,6 +46,7 @@ class HubMqttBridge
         return $this->messages;
     }
 
+    /** @param array<string, mixed> $payload */
     public function publishRaw(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
     {
         $this->publish(
@@ -57,6 +58,7 @@ class HubMqttBridge
         );
     }
 
+    /** @param array<string, mixed> $payload */
     public function publishStatus(
         string $imei,
         array $payload,
@@ -78,6 +80,7 @@ class HubMqttBridge
         );
     }
 
+    /** @param array<string, mixed> $payload */
     public function publishEvent(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
     {
         $this->publish(
@@ -91,6 +94,7 @@ class HubMqttBridge
         );
     }
 
+    /** @param array<string, mixed> $payload */
     public function publishTelemetry(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
     {
         $this->publish(
@@ -102,6 +106,7 @@ class HubMqttBridge
         );
     }
 
+    /** @param array<string, mixed> $payload */
     private function publish(
         string $topic,
         array $payload,

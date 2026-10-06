@@ -8,6 +8,10 @@ final class DeviceCommandRecord
 {
     public const BASE64_ENCODING = 'base64';
 
+    /**
+     * @param array<string, mixed> $record
+     * @return array<string, mixed>
+     */
     public static function makeJsonSafe(array $record): array
     {
         $bytes = $record['bytes'] ?? null;
@@ -21,6 +25,7 @@ final class DeviceCommandRecord
         return $record;
     }
 
+    /** @param array<string, mixed> $record */
     public static function wireBytes(array $record): string
     {
         $bytes = (string)($record['bytes'] ?? '');

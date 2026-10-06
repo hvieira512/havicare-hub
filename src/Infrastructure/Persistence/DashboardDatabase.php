@@ -10,6 +10,7 @@ final class DashboardDatabase
 {
     private PDO $pdo;
 
+    /** @param array<string, mixed> $config */
     public function __construct(array $config)
     {
         $driver = strtolower(trim((string)($config['driver'] ?? '')));

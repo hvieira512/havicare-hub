@@ -39,6 +39,7 @@ final class GenericCapabilityRepository
     }
 
     // Memo permanente: o único escritor destas linhas é o semeador, noutro processo.
+    /** @return list<array<string, mixed>> */
     public function all(?string $deviceType = null): array
     {
         return $this->catalogs[(string)$deviceType] ??= $this->load($deviceType);
@@ -62,6 +63,7 @@ final class GenericCapabilityRepository
         return $this->appendMissingDefinitions(TimestampFormatter::normalizeRows($stmt->fetchAll()), $deviceType);
     }
 
+    /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
         $stmt = $this->pdo->prepare('SELECT id, device_type, section, capability_key, label, (section = \'telemetry\') AS is_telemetry, is_configurable, is_requestable, created_at, updated_at FROM capabilities WHERE id = ?');

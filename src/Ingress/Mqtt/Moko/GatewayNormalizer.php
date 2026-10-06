@@ -9,7 +9,11 @@ use Hub\Support\Values;
 
 final class GatewayNormalizer
 {
-    /** @param array<string, mixed> $message @param array<string, mixed> $device @return list<array<string, mixed>> */
+    /**
+     * @param array<string, mixed> $message
+     * @param array<string, mixed> $device
+     * @return list<array<string, mixed>>
+     */
     public function telemetry(array $message, array $device): array
     {
         if (!is_array($message['data'] ?? null)) {

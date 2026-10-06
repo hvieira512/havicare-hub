@@ -285,7 +285,11 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
         ];
     }
 
-    /** @template T @param PromiseInterface<T> $promise @return T */
+    /**
+     * @template T
+     * @param PromiseInterface<T> $promise
+     * @return T
+     */
     private function await(PromiseInterface $promise): mixed
     {
         $resolved = null;

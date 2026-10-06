@@ -12,7 +12,8 @@ use Hub\Device\Decoder\WonlexEventDecoder;
 final class DeviceEventDecoder
 {
     /**
-     * @return array<int, array{feature: string, nativeType: string, value: array, extra?: array}>
+     * @param array<string, mixed> $decoded
+     * @return list<array{feature: string, nativeType: string, value: array<string, mixed>, extra?: array<string, mixed>}>
      */
     public function decode(DeviceSession $session, array $decoded): array
     {
@@ -41,6 +42,10 @@ final class DeviceEventDecoder
         return array_values(array_filter($events, 'is_array'));
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{feature: string, nativeType: string, value: array<string, mixed>}|null
+     */
     public static function event(string $feature, string $nativeType, array $payload): ?array
     {
         $value = FeatureNormalizer::normalize($feature, $payload);
@@ -59,6 +64,7 @@ final class DeviceEventDecoder
      * Um evento `alarm` por motivo ativo — vários bits da máscara do 4P Touch
      * dão vários eventos; máscara a zero não dá nenhum.
      *
+     * @param array<string, mixed> $payload
      * @return list<array{feature: string, nativeType: string, value: array{reason: string}}>
      */
     public static function alarmEvents(string $nativeType, array $payload): array
@@ -73,6 +79,10 @@ final class DeviceEventDecoder
         );
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{feature: string, nativeType: string, value: array<string, mixed>}|null
+     */
     public static function locationEvent(string $nativeType, array $payload): ?array
     {
         $payload['radioType'] = $payload['radioType'] ?? $payload['networkType'] ?? match ($nativeType) {
@@ -96,6 +106,10 @@ final class DeviceEventDecoder
         return self::event('location', $nativeType, $payload);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{feature: string, nativeType: string, value: array<string, mixed>}|null
+     */
     public static function heartRateFromBloodPressure(string $nativeType, array $payload): ?array
     {
         $pulse = $payload['pulse'] ?? $payload['pulseBpm'] ?? $payload['heartRate'] ?? $payload['hr'] ?? null;

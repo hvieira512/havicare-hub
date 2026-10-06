@@ -28,7 +28,11 @@ final class RelayPublisher
         'diaper_sensor' => 'monit-mecs-pro-ble',
     ];
 
-    /** Quando o último `raw` de cada aparelho foi guardado no histórico. @var array<string, float> */
+    /**
+     * Quando o último `raw` de cada aparelho foi guardado no histórico.
+     *
+     * @var array<string, float>
+     */
     private array $lastRelayedRawAt = [];
 
     private ?ProximityTracker $proximity = null;
@@ -55,7 +59,8 @@ final class RelayPublisher
      * No histórico **dele** e não do gateway: as observações são de alta frequência e
      * afogariam as tramas de estado do gateway. Só para aparelhos já autorizados.
      *
-     * @param array<string, mixed> $device @param array<string, mixed> $gateway
+     * @param array<string, mixed> $device
+     * @param array<string, mixed> $gateway
      * @param array<string, mixed> $observation
      */
     public function recordRaw(array $device, array $gateway, string $protocol, array $observation): void
@@ -86,7 +91,8 @@ final class RelayPublisher
     }
 
     /**
-     * @param array<string, mixed> $device @param array<string, mixed> $gateway
+     * @param array<string, mixed> $device
+     * @param array<string, mixed> $gateway
      * @param array<string, mixed> $normalized
      */
     public function publishTelemetry(
@@ -119,7 +125,8 @@ final class RelayPublisher
     /**
      * Publica os eventos de um aparelho retransmitido no MQTT e no histórico dele.
      *
-     * @param array<string, mixed> $device @param array<string, mixed> $gateway
+     * @param array<string, mixed> $device
+     * @param array<string, mixed> $gateway
      * @param list<array<string, mixed>> $events
      */
     public function publishEvents(array $device, array $gateway, array $events): void

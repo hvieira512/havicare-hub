@@ -10,10 +10,12 @@ namespace Hub\State;
  */
 interface DeviceReportStore
 {
+    /** @param array<string, mixed> $fields */
     public function deviceSeen(string $imei, array $fields): void;
 
     public function deviceOffline(string $imei): void;
 
+    /** @param array<string, mixed> $payload */
     public function append(string $imei, string $list, array $payload): void;
 
     /**

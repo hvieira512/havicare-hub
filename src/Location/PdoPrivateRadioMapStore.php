@@ -127,7 +127,10 @@ final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
         }
     }
 
-    /** @param array<string, mixed> $row @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
     private function normalize(array $row): array
     {
         return [

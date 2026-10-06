@@ -6,6 +6,7 @@ namespace Hub\Device;
 
 class ConnectionRegistry
 {
+    /** @var \SplObjectStorage<ConnectionInterface, mixed> */
     private \SplObjectStorage $connections;
     /** @var array<int, DeviceSession> */
     private array $sessions = [];

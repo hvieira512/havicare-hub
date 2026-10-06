@@ -33,6 +33,7 @@ class DeviceSession
         return (string)$this->connection->resourceId;
     }
 
+    /** @return array<string, mixed> */
     public function identityContext(): array
     {
         return [

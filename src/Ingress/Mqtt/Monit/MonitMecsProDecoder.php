@@ -62,7 +62,10 @@ final class MonitMecsProDecoder
         ];
     }
 
-    /** @param list<int> $bytes @return list<int>|null */
+    /**
+     * @param list<int> $bytes
+     * @return list<int>|null
+     */
     private function adStructure(array $bytes, int $wantedType): ?array
     {
         for ($offset = 0, $count = count($bytes); $offset < $count;) {

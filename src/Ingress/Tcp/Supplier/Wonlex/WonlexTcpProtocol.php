@@ -104,6 +104,7 @@ final class WonlexTcpProtocol extends AbstractTcpProtocol
         return $responses;
     }
 
+    /** @return array<string, mixed> */
     private function state(DeviceSession $session): array
     {
         if (!is_callable($this->stateProvider)) {
@@ -114,6 +115,7 @@ final class WonlexTcpProtocol extends AbstractTcpProtocol
         return is_array($state) ? $state : [];
     }
 
+    /** @param array<string, mixed> $data */
     private function downlink(
         DeviceSession $session,
         string $type,
@@ -179,6 +181,7 @@ final class WonlexTcpProtocol extends AbstractTcpProtocol
         ];
     }
 
+    /** @param array<string, mixed> $sleep */
     private function sleepSummary(array $sleep): string
     {
         $totals = ['deepSleep' => 0, 'lightSleep' => 0, 'sober' => 0];

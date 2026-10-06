@@ -18,6 +18,7 @@ final class DeviceEventStore
         $this->limit = max(1, $this->limit);
     }
 
+    /** @param array<string, mixed> $payload */
     public function append(string $imei, string $list, array $payload): void
     {
         // O número de ordem é o que permite ao stream mandar só o que é novo. O `recordedAt`
@@ -50,6 +51,8 @@ final class DeviceEventStore
      * As entradas mais recentes, da mais nova para a mais velha. Com `$sinceSeq` maior que
      * zero devolve só o que entrou depois; as gravadas antes de haver `seq` contam como
      * anteriores a qualquer cursor e só aparecem no instantâneo inicial.
+     *
+     * @return list<array<string, mixed>>
      */
     public function recent(string $imei, string $list, int $sinceSeq = 0): array
     {

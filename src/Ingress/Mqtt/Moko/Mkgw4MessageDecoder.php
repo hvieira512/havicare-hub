@@ -79,7 +79,10 @@ final class Mkgw4MessageDecoder implements MessageDecoder
         return $items;
     }
 
-    /** @param list<array{tag: int, value: string}> $tlvs @return array<string, mixed> */
+    /**
+     * @param list<array{tag: int, value: string}> $tlvs
+     * @return array<string, mixed>
+     */
     private function deviceStatus(array $tlvs): array
     {
         $data = [];
@@ -104,7 +107,10 @@ final class Mkgw4MessageDecoder implements MessageDecoder
         return $data;
     }
 
-    /** @param list<array{tag: int, value: string}> $tlvs @return array<string, mixed> */
+    /**
+     * @param list<array{tag: int, value: string}> $tlvs
+     * @return array<string, mixed>
+     */
     private function gpsData(array $tlvs): array
     {
         $fixModes = ['off', 'periodic', 'motion'];
@@ -136,7 +142,10 @@ final class Mkgw4MessageDecoder implements MessageDecoder
         return $data;
     }
 
-    /** @param list<array{tag: int, value: string}> $tlvs @return list<array<string, mixed>> */
+    /**
+     * @param list<array{tag: int, value: string}> $tlvs
+     * @return list<array<string, mixed>>
+     */
     private function scanDevices(array $tlvs): array
     {
         $devices = [];

@@ -91,6 +91,7 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
         return $responses;
     }
 
+    /** @param array<string, mixed> $decoded */
     private function acknowledgement(array $decoded): string
     {
 
@@ -108,6 +109,8 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
      * O aparelho é que liga ao hub, por isso a transferência só anda quando ele fala: o
      * arranque sai no primeiro heartbeat depois do pedido, e cada pedaço na confirmação do
      * anterior.
+     *
+     * @param array<string, mixed> $decoded
      */
     private function upgradeResponse(array $decoded): ?TcpResponse
     {

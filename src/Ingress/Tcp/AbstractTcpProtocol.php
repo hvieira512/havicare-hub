@@ -82,6 +82,7 @@ abstract class AbstractTcpProtocol implements TcpProtocolInterface
     }
 
     /**
+     * @param array<string, mixed> $decoded
      * @return array<int, TcpResponse>
      */
     abstract protected function responsesForDecoded(DeviceSession $session, array $decoded): array;

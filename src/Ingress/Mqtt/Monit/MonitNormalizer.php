@@ -117,7 +117,10 @@ final class MonitNormalizer
         return max($floor, min($ceiling, $index));
     }
 
-    /** @param array<string, mixed> $device */
+    /**
+     * @param array<string, mixed> $device
+     * @return array<string, mixed>
+     */
     private function device(array $device): array
     {
         return DeviceDescriptor::of((string)$device['imei'], $device);

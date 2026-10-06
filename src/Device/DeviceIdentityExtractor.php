@@ -15,6 +15,7 @@ class DeviceIdentityExtractor
         $this->adapters = $adapters ?? new AdapterRegistry();
     }
 
+    /** @param array<string, mixed> $session */
     public function identify(string $raw, array $session = []): ?DeviceIdentity
     {
         $decoded = $this->adapters->decodeAny($raw, ['session' => $session]);

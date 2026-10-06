@@ -24,10 +24,16 @@ interface DeviceRegistry
 
     public function expireStaleDevices(int $timeoutSeconds): void;
 
+    /** @return list<array<string, mixed>> */
     public function devices(): array;
 
+    /** @return array<string, mixed> */
     public function device(string $imei): array;
 
+    /**
+     * @param list<string> $imeis
+     * @return array<string, array<string, mixed>>
+     */
     public function runtimeStates(array $imeis): array;
 
     /**

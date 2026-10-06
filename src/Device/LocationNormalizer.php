@@ -9,6 +9,10 @@ namespace Hub\Device;
  */
 final class LocationNormalizer
 {
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public static function location(array $payload): array
     {
         $gps = isset($payload['gps']) && is_array($payload['gps']) ? $payload['gps'] : [];
@@ -87,6 +91,12 @@ final class LocationNormalizer
         return $location;
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $gps
+     * @param array<int, array<string, mixed>> $baseStations
+     * @param array<int, array<string, mixed>> $wifiAccessPoints
+     */
     private static function normalizeLocationSource(
         array $payload,
         array $gps,

@@ -11,6 +11,7 @@ use Hub\Support\Values;
 final class MessageNormalizer
 {
     /**
+     * @param array<string, mixed> $message
      * @param array{imei: string, supplier: string, model: string, commercialName?: string, deviceType: string, licenseId: int} $device
      * @return array{raw: array<string, mixed>, status?: array<string, mixed>, event?: array<string, mixed>}
      */
@@ -28,6 +29,7 @@ final class MessageNormalizer
     /**
      * @param array<string, mixed> $message
      * @param array<string, mixed> $device
+     * @param array<string, mixed> $raw
      * @return array{raw: array<string, mixed>, status?: array<string, mixed>, event?: array<string, mixed>}
      */
     private function normalizeStatus(NcsTopic $topic, array $message, array $device, array $raw): array
@@ -67,7 +69,9 @@ final class MessageNormalizer
 
     /**
      * @param array<string, mixed> $message
+     * @param array<string, mixed> $message
      * @param array<string, mixed> $device
+     * @param array<string, mixed> $raw
      * @return array{raw: array<string, mixed>, event?: array<string, mixed>}
      */
     private function normalizeEvent(array $message, array $device, array $raw): array

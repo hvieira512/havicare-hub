@@ -22,6 +22,7 @@ final class ModelRepository
     }
 
     // A linha é o superset das três leituras, para o `find` e o `findById` saírem daqui.
+    /** @return list<array<string, mixed>> */
     public function all(): array
     {
         return $this->rows ??= TimestampFormatter::normalizeRows($this->pdo
@@ -29,6 +30,7 @@ final class ModelRepository
             ->fetchAll());
     }
 
+    /** @return array<string, mixed>|null */
     public function find(string $supplier, string $internalModel): ?array
     {
         return $this->index()[self::modelKey($supplier, $internalModel)] ?? null;
@@ -57,6 +59,7 @@ final class ModelRepository
         return mb_strtolower($supplier) . "\0" . mb_strtolower($internalModel);
     }
 
+    /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
         foreach ($this->all() as $row) {
@@ -131,6 +134,7 @@ final class ModelRepository
         $this->rows = $this->index = null;
     }
 
+    /** @return array<string, mixed>|null */
     private function findBySupplierId(int $supplierId, string $internalModel): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM models WHERE supplier_id = ? AND lower(internal_model) = lower(?)');

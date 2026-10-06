@@ -46,7 +46,10 @@ final class MonitMoistureIndexTest extends TestCase
         ];
     }
 
-    /** @param list<int> $deltas @return array<string, array<string, mixed>> */
+    /**
+     * @param list<int> $deltas
+     * @return array<string, array<string, mixed>>
+     */
     private function telemetry(array $deltas): array
     {
         $result = (new MonitNormalizer())->normalize(
@@ -59,13 +62,23 @@ final class MonitMoistureIndexTest extends TestCase
         return array_map(static fn(array $message): array => $message['data'], $result['telemetry']);
     }
 
-    /** O nível, na sua própria capacidade. @param list<int> $deltas @return array<string, mixed> */
+    /**
+     * O nível, na sua própria capacidade.
+     *
+     * @param list<int> $deltas
+     * @return array<string, mixed>
+     */
     private function level(array $deltas): array
     {
         return $this->telemetry($deltas)['diaper_moisture_level'];
     }
 
-    /** Os canais crus, na capacidade do fornecedor. @param list<int> $deltas @return array<string, mixed> */
+    /**
+     * Os canais crus, na capacidade do fornecedor.
+     *
+     * @param list<int> $deltas
+     * @return array<string, mixed>
+     */
     private function moisture(array $deltas): array
     {
         return $this->telemetry($deltas)['diaper_moisture'];

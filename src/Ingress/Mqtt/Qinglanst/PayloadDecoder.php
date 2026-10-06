@@ -87,7 +87,7 @@ final class PayloadDecoder
     }
 
     /**
-     * @return array{type: string, device_code: string, people: array}
+     * @return array{type: string, device_code: string, people: list<array<string, mixed>>}
      */
     private function decodePosition(string $raw, ?string $deviceCode): array
     {

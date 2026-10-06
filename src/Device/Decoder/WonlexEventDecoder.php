@@ -8,6 +8,10 @@ use Hub\Device\DeviceEventDecoder;
 
 final class WonlexEventDecoder
 {
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<array<string, mixed>>
+     */
     public static function decode(string $nativeType, array $payload): array
     {
         return match ($nativeType) {
@@ -40,6 +44,10 @@ final class WonlexEventDecoder
         };
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<array<string, mixed>>
+     */
     private static function decodeBatch(string $nativeType, array $payload): array
     {
         $dataType = trim((string)($payload['dataType'] ?? ''));

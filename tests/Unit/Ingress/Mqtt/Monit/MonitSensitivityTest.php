@@ -42,7 +42,10 @@ final class MonitSensitivityTest extends TestCase
         [1, 3, 5, 7, 8, 7, 7, 7, 7, 8],
     ];
 
-    /** @param list<int> $deltas @return array<string, mixed> */
+    /**
+     * @param list<int> $deltas
+     * @return array<string, mixed>
+     */
     private function decoded(array $deltas): array
     {
         $deltas = array_slice(array_pad($deltas, 10, 0), 0, 10);

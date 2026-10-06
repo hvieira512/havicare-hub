@@ -154,6 +154,7 @@ class DeviceHubServer
     }
 
     /**
+     * @param array<string, mixed>|null $context
      * @return 'sent'|'queued'|'dropped'
      */
     public function submitDownlink(string $imei, string $bytes, ?array $context = null): string
@@ -195,6 +196,7 @@ class DeviceHubServer
         }
     }
 
+    /** @param array<string, mixed>|null $context */
     public function queueDownlink(string $imei, string $bytes, ?array $context = null): bool
     {
         if ($this->downlinkQueue === null) {
@@ -357,6 +359,7 @@ class DeviceHubServer
         }
     }
 
+    /** @param array<string, mixed> $event */
     private function publishTelemetryEvent(DeviceSession $session, array $event): bool
     {
         try {
@@ -552,6 +555,7 @@ class DeviceHubServer
         ));
     }
 
+    /** @param array<string, mixed>|null $command */
     private function recordEvent(
         string $imei,
         string $supplier,
@@ -568,6 +572,7 @@ class DeviceHubServer
         ));
     }
 
+    /** @param array<string, mixed>|null $command */
     private function recordDownlinkEvent(
         string $imei,
         string $supplier,
@@ -621,6 +626,7 @@ class DeviceHubServer
         return $deviceType !== '' ? $deviceType : (string)$fallback;
     }
 
+    /** @return array<string, mixed> */
     private function wonlexState(DeviceSession $session): array
     {
         $state = [
@@ -636,6 +642,7 @@ class DeviceHubServer
         return $state;
     }
 
+    /** @return array<string, mixed>|null */
     private function commandMetadata(string $bytes, ?string $protocol = null): ?array
     {
         return $this->tcpProtocols->commandMetadata($bytes, $protocol);
@@ -681,6 +688,7 @@ class DeviceHubServer
         return $metadata;
     }
 
+    /** @return array<string, string> */
     private function errorPayload(string $code): array
     {
         return [

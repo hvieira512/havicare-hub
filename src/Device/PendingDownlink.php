@@ -6,6 +6,7 @@ namespace Hub\Device;
 
 final class PendingDownlink
 {
+    /** @param array<string, mixed>|null $command */
     public function __construct(
         public readonly string $imei,
         public readonly string $dedupeKey,

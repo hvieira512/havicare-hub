@@ -42,7 +42,7 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
         }
 
         $this->redis->setex($this->entryKey($imei, $downlink->dedupeKey), $ttlSeconds, $payload);
-        $this->redis->sadd($this->indexKey($imei), $downlink->dedupeKey);
+        $this->redis->sadd($this->indexKey($imei), [$downlink->dedupeKey]);
         $this->redis->expire($this->indexKey($imei), $ttlSeconds);
 
         return $downlink;
@@ -106,6 +106,7 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
         $this->redis->srem($this->indexKey($downlink->imei), $downlink->dedupeKey);
     }
 
+    /** @param array<string, mixed>|null $command */
     private function dedupeKey(string $bytes, ?array $command): string
     {
         $operationId = is_array($command) ? (string)($command['operationId'] ?? '') : '';

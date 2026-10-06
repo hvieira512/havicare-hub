@@ -76,7 +76,10 @@ final class BridgeUnclaimedSightingTest extends TestCase
         );
     }
 
-    /** @param list<array<string, mixed>> $published @return list<array<string, mixed>> */
+    /**
+     * @param list<array<string, mixed>> $published
+     * @return list<array<string, mixed>>
+     */
     private function proximity(array $published): array
     {
         return array_values(array_filter(

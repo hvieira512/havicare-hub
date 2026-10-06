@@ -23,6 +23,7 @@ final class LicenseRepository
         // linha: o mesmo número existe em empresas diferentes.
         . ' (SELECT COUNT(*) FROM whitelist w WHERE w.license_id = l.license_id AND w.company = c.name) AS device_count';
 
+    /** @return list<array<string, mixed>> */
     public function all(?int $companyId = null): array
     {
         if ($companyId !== null) {
@@ -35,6 +36,7 @@ final class LicenseRepository
         return TimestampFormatter::normalizeRows($stmt->fetchAll());
     }
 
+    /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE id = ?');
@@ -44,6 +46,7 @@ final class LicenseRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
+    /** @return list<array<string, mixed>> */
     public function findByLicenseId(int $licenseId): array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE license_id = ? ORDER BY company_id');
@@ -52,6 +55,7 @@ final class LicenseRepository
         return TimestampFormatter::normalizeRows($stmt->fetchAll());
     }
 
+    /** @return array<string, mixed>|null */
     public function findByCompanyAndLicense(int $companyId, int $licenseId): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE company_id = ? AND license_id = ?');
@@ -61,6 +65,7 @@ final class LicenseRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
+    /** @return list<array<string, mixed>> */
     public function findByCompanyId(int $companyId): array
     {
         $stmt = $this->pdo->prepare("SELECT l.id, l.company_id, l.license_id, l.name, l.created_at, l.updated_at, c.name AS company_name FROM licenses l LEFT JOIN companies c ON c.id = l.company_id WHERE l.company_id = ? ORDER BY l.license_id");

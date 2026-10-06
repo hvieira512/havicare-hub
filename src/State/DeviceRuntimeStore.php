@@ -48,7 +48,7 @@ final class DeviceRuntimeStore
     public function deleteDevice(string $imei): void
     {
         foreach ($this->redis->lrange($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1) as $id) {
-            $this->redis->hdel($this->commandIndexKey(), (string)$id);
+            $this->redis->hdel($this->commandIndexKey(), [(string)$id]);
         }
 
         $this->redis->srem($this->key('devices'), $imei);
@@ -77,6 +77,7 @@ final class DeviceRuntimeStore
         });
     }
 
+    /** @param array<string, mixed> $fields */
     public function deviceSeen(string $imei, array $fields): void
     {
         $now = gmdate('Y-m-d\\TH:i:s\\Z');
@@ -143,6 +144,7 @@ final class DeviceRuntimeStore
         return $devices;
     }
 
+    /** @return array<string, mixed> */
     public function device(string $imei): array
     {
         return $this->normalizeDevice($this->redis->hgetall($this->deviceKey($imei)) ?: ['imei' => $imei]);
@@ -219,6 +221,10 @@ final class DeviceRuntimeStore
         return $online;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function normalizeDevice(array $data): array
     {
         $data['online'] = ((string)($data['online'] ?? '0')) === '1';

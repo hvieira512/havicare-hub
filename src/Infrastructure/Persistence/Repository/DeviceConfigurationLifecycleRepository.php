@@ -18,6 +18,7 @@ final class DeviceConfigurationLifecycleRepository
     }
 
     /**
+     * @param array<string,mixed> $desired
      * @param list<array<string,mixed>> $nativeRows
      * @param list<array<string,mixed>> $operations
      * @return array{changeId:string,revision:int,operations:list<array<string,mixed>>}
@@ -262,11 +263,13 @@ final class DeviceConfigurationLifecycleRepository
         $rows->execute([$sync, $error, $confirm ? 1 : 0, $now, $changeId]);
     }
 
+    /** @param array<string, mixed> $value */
     private function encode(array $value): string
     {
         return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
     }
 
+    /** @return array<string, mixed> */
     private function decode(string $value): array
     {
         $decoded = json_decode($value, true);

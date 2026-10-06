@@ -93,7 +93,7 @@ final class MessageNormalizer
      *
      * @param array{type: string, device_code: string, ...} $decoded
      * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string} $device
-     * @return array{telemetry: array<string, array>, events: list<array>}
+     * @return array{telemetry: array<string, array<string, mixed>>, events: list<array<string, mixed>>}
      */
     public function normalize(array $decoded, QinglanstTopic $topic, array $device): array
     {
@@ -107,9 +107,9 @@ final class MessageNormalizer
     }
 
     /**
-     * @param array $decoded
-     * @param array $device
-     * @return array{telemetry: array<string, array>, events: list<array>}
+     * @param array<string, mixed> $decoded
+     * @param array<string, mixed> $device
+     * @return array{telemetry: array<string, array<string, mixed>>, events: list<array<string, mixed>>}
      */
     private function normalizePosition(array $decoded, QinglanstTopic $topic, array $device): array
     {
@@ -147,8 +147,8 @@ final class MessageNormalizer
     }
 
     /**
-     * @param array<int, array> $people
-     * @return array<int, array>
+     * @param array<int, array<string, mixed>> $people
+     * @return list<array<string, mixed>>
      */
     private function occupiedPeople(array $people): array
     {
@@ -160,7 +160,8 @@ final class MessageNormalizer
     /**
      * Uma detecção por mensagem, da primeira pessoa que acertar.
      *
-     * @param array<int, array> $people
+     * @param array<string, mixed> $device
+     * @param array<int, array<string, mixed>> $people
      * @return array<string, mixed>|null
      */
     private function detectPositionEvent(QinglanstTopic $topic, array $device, array $people): ?array
@@ -189,7 +190,9 @@ final class MessageNormalizer
     }
 
     /**
-     * @return array{telemetry: array<string, array>, events: list<array>}
+     * @param array<string, mixed> $decoded
+     * @param array<string, mixed> $device
+     * @return array{telemetry: array<string, array<string, mixed>>, events: list<array<string, mixed>>}
      */
     private function normalizeVitals(array $decoded, QinglanstTopic $topic, array $device): array
     {
@@ -277,6 +280,7 @@ final class MessageNormalizer
     /**
      * O envelope comum de uma leitura: só o `type` e o `data` mudam entre capacidades.
      *
+     * @param array<string, mixed> $device
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
@@ -292,7 +296,9 @@ final class MessageNormalizer
     }
 
     /**
-     * @return array{telemetry: array<string, array>, events: list<array>}
+     * @param array<string, mixed> $decoded
+     * @param array<string, mixed> $device
+     * @return array{telemetry: array<string, array<string, mixed>>, events: list<array<string, mixed>>}
      */
     private function normalizeMinuteStats(array $decoded, QinglanstTopic $topic, array $device): array
     {
@@ -324,7 +330,9 @@ final class MessageNormalizer
     }
 
     /**
-     * @return array{telemetry: array<string, array>, events: list<array>}
+     * @param array<string, mixed> $decoded
+     * @param array<string, mixed> $device
+     * @return array{telemetry: array<string, array<string, mixed>>, events: list<array<string, mixed>>}
      */
     private function normalizeHbStatics(array $decoded, QinglanstTopic $topic, array $device): array
     {
@@ -364,8 +372,9 @@ final class MessageNormalizer
     }
 
     /**
+     * @param array<string, mixed> $device
      * @param array<string, mixed> $data
-     * @return array
+     * @return array<string, mixed>
      */
     private function detectionEvent(QinglanstTopic $topic, array $device, string $type, string $level, string $source, array $data): array
     {

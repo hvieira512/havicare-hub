@@ -93,7 +93,10 @@ final class BridgeW6Test extends TestCase
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/' . self::GATEWAY . '/raw', $payload);
     }
 
-    /** @param list<array<string, mixed>> $published @return list<array<string, mixed>> */
+    /**
+     * @param list<array<string, mixed>> $published
+     * @return list<array<string, mixed>>
+     */
     private function forBracelet(array $published): array
     {
         return array_values(array_filter(

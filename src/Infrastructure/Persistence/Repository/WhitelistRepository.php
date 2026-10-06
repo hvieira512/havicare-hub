@@ -14,6 +14,7 @@ final class WhitelistRepository
     {
     }
 
+    /** @return list<array<string, mixed>> */
     public function all(): array
     {
         return $this->pdo
@@ -21,6 +22,7 @@ final class WhitelistRepository
             ->fetchAll();
     }
 
+    /** @return array<string, mixed>|null */
     public function get(string $imei): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM whitelist WHERE imei = ?');
@@ -30,6 +32,7 @@ final class WhitelistRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
+    /** @return array<string, mixed>|null */
     public function findByDeviceId(string $deviceId, ?string $deviceType = null): ?array
     {
         $sql = 'SELECT * FROM whitelist WHERE device_id = ?';
@@ -47,6 +50,7 @@ final class WhitelistRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
+    /** @return array<string, mixed>|null */
     public function getDevice(string $imei): ?array
     {
         $stmt = $this->pdo->prepare($this->deviceSelectSql() . ' WHERE w.imei = ?');
@@ -417,6 +421,7 @@ final class WhitelistRepository
      * Lista ou valor único: um cliente que ainda envie `deviceType=watch` continua a
      * funcionar em vez de ser ignorado em silêncio.
      *
+     * @param array<string, mixed> $filters
      * @return list<string>
      */
     private function filterValues(array $filters, string $key): array
@@ -446,6 +451,7 @@ final class WhitelistRepository
      * Cada entrada é `empresa`, `empresa:licença`, ou `none` para os que não têm dono. A
      * empresa sozinha quer dizer todas as licenças dela.
      *
+     * @param array<string, mixed> $filters
      * @return list<array{company: ?string, licenseId: ?int}>
      */
     private function licensePairs(array $filters): array
@@ -588,6 +594,10 @@ final class WhitelistRepository
         return ['suppliers' => $suppliers];
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<string, mixed>
+     */
     private function licenseTree(array $filters, ?int $licenseScope = null, ?string $companyScope = null): array
     {
         $candidateFilters = $filters;
@@ -636,6 +646,10 @@ final class WhitelistRepository
         return ['companies' => $companies, 'none' => $none];
     }
 
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
     private function normalizeDeviceRow(array $row): array
     {
         $row['deviceType'] = DeviceMetadata::normalizeDeviceType((string)($row['deviceType'] ?? 'watch'));

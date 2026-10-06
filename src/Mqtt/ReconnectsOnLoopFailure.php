@@ -6,7 +6,6 @@ namespace Hub\Mqtt;
 
 use Hub\Log\Logger;
 use PhpMqtt\Client\Exceptions\DataTransferException;
-use PhpMqtt\Client\MqttClient;
 
 /**
  * Reconectar a um broker que largou a ligação, com recuo.
@@ -40,8 +39,9 @@ trait ReconnectsOnLoopFailure
     }
 
     /**
-     * @param callable(): MqttClient $reconnect  devolve um cliente novo, já ligado
-     * @param callable(): void       $resubscribe  volta a subscrever no cliente novo
+     * @param callable(): mixed $reconnect  liga de novo; o que devolver não é usado aqui --
+     *     uns guardam o cliente novo num campo, outros devolvem-no
+     * @param callable(): void  $resubscribe  volta a subscrever no cliente novo
      */
     private function reconnectAfterLoopFailure(
         \Throwable $failure,
