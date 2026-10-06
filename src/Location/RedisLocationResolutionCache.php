@@ -43,6 +43,7 @@ final class RedisLocationResolutionCache implements LocationResolutionCacheContr
         $this->put($evidenceKey, ['status' => 'unresolved'], $ttlSeconds);
     }
 
+    /** @param array<string, mixed> $entry */
     private function put(string $evidenceKey, array $entry, int $ttlSeconds): void
     {
         if ($ttlSeconds <= 0) {

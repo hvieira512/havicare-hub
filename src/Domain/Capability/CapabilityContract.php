@@ -47,7 +47,10 @@ interface CapabilityContract
      * Leva o protocolo pela mesma razão que o `toNative`: a mesma chave nativa quer dizer
      * coisas diferentes em fornecedores diferentes, e sem ele descodificar é adivinhar.
      *
-     * @param array<string, mixed> $desired
+     * A chave é `array-key`: o apresentador chama isto duas vezes na mesma leitura, e à
+     * segunda o que chega já é a lista pública, sem o invólucro nativo à volta.
+     *
+     * @param array<array-key, mixed> $desired
      */
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed;
 

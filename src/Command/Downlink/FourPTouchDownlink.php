@@ -11,6 +11,11 @@ use Hub\Protocol\Adapter\FourPTouchAdapter;
  */
 final class FourPTouchDownlink
 {
+    /**
+     * @param array<string, mixed> $entry
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $context
+     */
     public static function build(
         string $imei,
         string $command,

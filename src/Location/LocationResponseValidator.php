@@ -10,7 +10,10 @@ final class LocationResponseValidator
     {
     }
 
-    /** @return array{hasCoordinates: true, lat: float, lon: float, accuracyMeters: float} */
+    /**
+     * @param array<string, mixed> $response
+     * @return array{hasCoordinates: true, lat: float, lon: float, accuracyMeters: float}
+     */
     public function coordinates(array $response): array
     {
         $status = (int)($response['httpStatus'] ?? 0);

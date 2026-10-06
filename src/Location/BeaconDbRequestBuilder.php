@@ -9,6 +9,9 @@ final class BeaconDbRequestBuilder
     /**
      * Constrói um pedido de geolocalização compatível com MLS/Ichnaea a partir de um envelope
      * de telemetria de localização normalizado (ou directamente do seu objecto `data`).
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>|null
      */
     public function build(array $payload): ?array
     {
@@ -35,7 +38,10 @@ final class BeaconDbRequestBuilder
         return isset($request['cellTowers']) || isset($request['wifiAccessPoints']) ? $request : null;
     }
 
-    /** @return array<int, array<string, int|string>> */
+    /**
+     * @param array<string, mixed> $data
+     * @return array<int, array<string, int|string>>
+     */
     private function cells(array $data): array
     {
         $stations = isset($data['baseStations']) && is_array($data['baseStations'])
@@ -77,7 +83,10 @@ final class BeaconDbRequestBuilder
         return array_values($cells);
     }
 
-    /** @return array<int, array<string, int|string>> */
+    /**
+     * @param array<string, mixed> $data
+     * @return array<int, array<string, int|string>>
+     */
     private function wifi(array $data): array
     {
         $points = isset($data['wifiAccessPoints']) && is_array($data['wifiAccessPoints'])

@@ -132,6 +132,7 @@ class VivistarAdapter implements DeviceAdapterInterface
         return $this->formatLine('BP03');
     }
 
+    /** @param list<string|int> $fields */
     private function formatLine(string $command, array $fields = []): string
     {
         $serialized = empty($fields) ? '' : ',' . implode(',', array_map(
@@ -147,6 +148,7 @@ class VivistarAdapter implements DeviceAdapterInterface
         return "IW{$command}{$tail}#";
     }
 
+    /** @param list<string> $fields */
     private function resolveIdent(array $fields): string
     {
         $candidate = $fields[0] ?? '';
@@ -161,6 +163,10 @@ class VivistarAdapter implements DeviceAdapterInterface
         return '';
     }
 
+    /**
+     * @param list<string> $fields
+     * @param array<string, mixed> $data
+     */
     private function enrichMeasurements(string $type, array $fields, array &$data): void
     {
         if ($type === 'AP49') {
@@ -207,6 +213,10 @@ class VivistarAdapter implements DeviceAdapterInterface
         }
     }
 
+    /**
+     * @param list<string> $fields
+     * @param array<string, mixed> $data
+     */
     private function enrichLocationPacket(array $fields, array &$data): void
     {
         $compact = trim((string)($fields[0] ?? ''));
@@ -278,6 +288,10 @@ class VivistarAdapter implements DeviceAdapterInterface
         }
     }
 
+    /**
+     * @param list<string> $fields
+     * @param array<string, mixed> $data
+     */
     private function enrichAlarmLocation(array $fields, array &$data): void
     {
         $compact = trim((string)($fields[0] ?? ''));
@@ -376,6 +390,7 @@ class VivistarAdapter implements DeviceAdapterInterface
         ];
     }
 
+    /** @param array<string, mixed> $data */
     private function enrichStatusBlock(string $status, array &$data): void
     {
         if (preg_match('/^\d{11,14}$/', $status) !== 1) {

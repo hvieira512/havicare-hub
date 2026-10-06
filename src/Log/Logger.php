@@ -11,6 +11,7 @@ use Monolog\Formatter\LineFormatter;
 
 class Logger
 {
+    /** @var array<string, MonologLogger> */
     private static array $instances = [];
 
     public static function channel(string $name = 'app'): MonologLogger

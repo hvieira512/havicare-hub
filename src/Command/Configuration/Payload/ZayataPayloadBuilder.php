@@ -16,6 +16,10 @@ use Hub\Support\Values;
  */
 final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
 {
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public static function build(string $key, array $payload): array
     {
         return match ($key) {

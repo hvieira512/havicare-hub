@@ -11,6 +11,10 @@ use Hub\Protocol\Adapter\WonlexAdapter;
  */
 final class WonlexDownlink
 {
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $context
+     */
     public static function build(string $imei, string $command, array $payload = [], array $context = []): string
     {
         $timestamp = (int)round(microtime(true) * 1000);

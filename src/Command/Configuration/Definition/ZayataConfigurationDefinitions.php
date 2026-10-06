@@ -12,6 +12,7 @@ namespace Hub\Command\Configuration\Definition;
  */
 final class ZayataConfigurationDefinitions
 {
+    /** @return list<array<string, mixed>> */
     public static function all(): array
     {
         return [
@@ -270,6 +271,7 @@ final class ZayataConfigurationDefinitions
      * configura vê o que ele quer dizer.
      *
      * @param list<array{0: int, 1: string}> $choices
+     * @return array<string, mixed>
      */
     private static function choice(
         string $key,
@@ -339,6 +341,8 @@ final class ZayataConfigurationDefinitions
 
     /**
      * Um número com gama, e a etiqueta e a ajuda que dizem o que ele significa.
+     *
+     * @return array<string, mixed>
      */
     private static function number(
         string $key,
@@ -368,6 +372,7 @@ final class ZayataConfigurationDefinitions
         );
     }
 
+    /** @return array<string, mixed> */
     private static function toggle(
         string $key,
         string $command,
@@ -395,6 +400,8 @@ final class ZayataConfigurationDefinitions
     /**
      * Uma acção leva sempre uma frase a dizer o que faz: metade destes nomes — «Repor o
      * prato», «Parâmetros de controlo» — não se explica a si própria.
+     *
+     * @return array<string, mixed>
      */
     private static function action(
         string $key,

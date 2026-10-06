@@ -11,6 +11,10 @@ use Hub\Protocol\Adapter\VivistarAdapter;
  */
 final class VivistarDownlink
 {
+    /**
+     * @param array<string, mixed> $entry
+     * @param array<string, mixed> $payload
+     */
     public static function build(string $imei, string $command, array $entry, array $payload = []): string
     {
         return (new VivistarAdapter())->encodeOutgoing([

@@ -99,6 +99,7 @@ final class Vivistar implements AlarmClockHandler
     // Normalização
     // ------------------------------------------------------------------
 
+    /** @return array{time: string, days: string, enabled: bool, type: int} */
     private static function normalizeItemForNative(mixed $item): array
     {
         if (!is_array($item)) {
@@ -124,6 +125,7 @@ final class Vivistar implements AlarmClockHandler
         ];
     }
 
+    /** @param array<string, mixed> $item */
     private static function resolveDaysForNative(array $item): string
     {
         $recurrence = is_array($item['recurrence'] ?? null) ? $item['recurrence'] : [];
@@ -146,6 +148,7 @@ final class Vivistar implements AlarmClockHandler
         return preg_replace('/[^0-9]/', '', (string)$daysValue);
     }
 
+    /** @return array<string, mixed> */
     public static function publicItem(mixed $item): array
     {
         if (!is_array($item)) {

@@ -46,6 +46,7 @@ class Whitelist
         }
     }
 
+    /** @param array<string, mixed> $value */
     private function loadEntry(string $imei, array $value): void
     {
         $imei = trim($imei);
@@ -256,6 +257,10 @@ class Whitelist
         $this->databaseCacheLoadedAt = time();
     }
 
+    /**
+     * @param array<string, mixed>|null $row
+     * @return array<string, mixed>|null
+     */
     private function resolvedDatabaseAlias(?array $row): ?array
     {
         if ($row === null) {

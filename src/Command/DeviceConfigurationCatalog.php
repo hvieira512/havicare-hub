@@ -59,6 +59,7 @@ final class DeviceConfigurationCatalog
         return $cache[$protocol] = $configs;
     }
 
+    /** @return array<string, mixed>|null */
     public static function configForProtocol(string $protocol, string $key): ?array
     {
         $key = self::resolvePublicKeyAlias($protocol, $key);
@@ -71,6 +72,7 @@ final class DeviceConfigurationCatalog
         return null;
     }
 
+    /** @return array<string, mixed>|null */
     public static function configForCommand(string $protocol, string $command): ?array
     {
         foreach (self::configsForProtocol($protocol) as $entry) {
@@ -91,6 +93,7 @@ final class DeviceConfigurationCatalog
     }
 
     /**
+     * @param array<string, mixed> $payload
      * @return array{command: string, payload: array<string, mixed>}
      */
     public static function commandPayload(string $protocol, string $key, array $payload): array
@@ -107,6 +110,8 @@ final class DeviceConfigurationCatalog
      * Algumas configurações públicas expandem-se em vários comandos de protocolo. Os planos
      * de medicação da Wonlex são um caso desses: o relógio aceita um plano por frame.
      *
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $context
      * @return list<array{command: string, payload: array<string, mixed>}>
      */
     public static function commandPayloads(
@@ -178,6 +183,7 @@ final class DeviceConfigurationCatalog
         ], $payloads);
     }
 
+    /** @param array<string, mixed> $payload */
     public static function validate(string $protocol, string $key, array $payload): ?string
     {
         $key = self::resolvePublicKeyAlias($protocol, $key);

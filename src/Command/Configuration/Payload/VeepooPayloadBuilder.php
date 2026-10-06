@@ -13,6 +13,10 @@ namespace Hub\Command\Configuration\Payload;
  */
 final class VeepooPayloadBuilder extends ConfigurationPayloadBuilder
 {
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
     public static function build(string $key, array $payload): array
     {
         return match ($key) {
@@ -34,6 +38,9 @@ final class VeepooPayloadBuilder extends ConfigurationPayloadBuilder
      * A pulseira calcula calorias e composição corporal a partir disto. Os limites são de
      * plausibilidade humana e não do protocolo: o que está em causa é telemetria calculada
      * sobre um corpo que não existe.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
      */
     private static function personalInfo(array $payload): array
     {
@@ -58,6 +65,7 @@ final class VeepooPayloadBuilder extends ConfigurationPayloadBuilder
      * Quem os avalia é o aparelho, sobre a medição dele. Um mínimo acima do máximo passava
      * nas validações de cada campo e deixava o alarme impossível de disparar.
      *
+     * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
     private static function heartRateThresholds(array $payload): array

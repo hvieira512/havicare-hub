@@ -84,6 +84,7 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         return sprintf('[%s*%s*%04X*%s]', $manufacturer, $deviceId, $contentLength, $content);
     }
 
+    /** @return array<string, mixed>|null */
     private function parseFrame(string $raw): ?array
     {
         $message = trim($raw);
@@ -110,6 +111,10 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         return str_replace(['[', ']', '*'], '', trim($value));
     }
 
+    /**
+     * @param list<string> $fields
+     * @param array<string, mixed> $data
+     */
     private function enrichData(string $type, array $fields, array &$data): void
     {
         if ($type === 'LK') {
@@ -243,6 +248,10 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         ]);
     }
 
+    /**
+     * @param list<string> $fields
+     * @param array<string, mixed> $data
+     */
     private function enrichPosition(string $type, array $fields, array &$data): void
     {
         $gpsValid = strtoupper((string) ($fields[2] ?? '')) === 'A';
@@ -300,7 +309,7 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         $accuracy = null;
         if ($remaining !== []) {
             $last = end($remaining);
-            if ($last !== false && is_numeric((string) $last)) {
+            if (is_numeric((string) $last)) {
                 $accuracy = $this->float($last);
                 array_pop($remaining);
             }
@@ -336,6 +345,7 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         }
     }
 
+    /** @param array<string, mixed> $data */
     private function enrichAlarm(array &$data): void
     {
         $alarm = isset($data['alarmCode']) ? hexdec((string) $data['alarmCode']) : 0;

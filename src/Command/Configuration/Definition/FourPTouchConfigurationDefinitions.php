@@ -6,6 +6,7 @@ namespace Hub\Command\Configuration\Definition;
 
 final class FourPTouchConfigurationDefinitions
 {
+    /** @return list<array<string, mixed>> */
     public static function all(): array
     {
         $entry = ConfigurationDefinition::make(...);

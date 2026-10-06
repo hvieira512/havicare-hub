@@ -87,6 +87,7 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         );
     }
 
+    /** @param array<string, mixed> $data */
     private function hasTrustedGpsCoordinates(array $data): bool
     {
         return strtolower(trim((string)($data['source'] ?? ''))) === 'gps'
@@ -101,6 +102,7 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
             && !((float)$data['lat'] === 0.0 && (float)$data['lon'] === 0.0);
     }
 
+    /** @param array<string, mixed> $request */
     private function cacheKey(array $request): string
     {
         $identity = $request;
@@ -127,6 +129,7 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         return hash('sha256', json_encode($identity, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
     }
 
+    /** @return array<string, mixed>|null */
     private function cacheGet(string $key): ?array
     {
         try {
@@ -156,6 +159,7 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         }
     }
 
+    /** @param array<string, mixed> $telemetry */
     private function logFailure(array $telemetry, \Throwable $error): void
     {
         $imei = (string)($telemetry['device']['id'] ?? 'unknown');
@@ -182,6 +186,10 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         );
     }
 
+    /**
+     * @param array<string, mixed> $telemetry
+     * @return array<string, mixed>
+     */
     private function withoutUntrustedCoordinates(array $telemetry): array
     {
         $data = isset($telemetry['data']) && is_array($telemetry['data']) ? $telemetry['data'] : [];
@@ -192,7 +200,11 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         return $telemetry;
     }
 
-    /** @param array<string, float|bool> $coordinates */
+    /**
+     * @param array<string, mixed> $telemetry
+     * @param array<string, float|bool> $coordinates
+     * @return array<string, mixed>
+     */
     private function withCoordinates(array $telemetry, array $coordinates): array
     {
         $data = isset($telemetry['data']) && is_array($telemetry['data']) ? $telemetry['data'] : [];

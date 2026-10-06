@@ -18,7 +18,7 @@ interface CapabilityProtocolHandler
     /** @return array<string, mixed> */
     public function toNative(mixed $value): array;
 
-    /** @param array<string, mixed> $desired */
+    /** @param array<array-key, mixed> $desired */
     public function fromNative(array $desired): mixed;
 
     public function defaultValue(): mixed;

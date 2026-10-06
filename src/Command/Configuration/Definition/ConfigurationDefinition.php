@@ -6,6 +6,13 @@ namespace Hub\Command\Configuration\Definition;
 
 final class ConfigurationDefinition
 {
+    /**
+     * @param list<string> $fields
+     * @param list<string> $expectedReplyTypes
+     * @param array<string, mixed>|null $options
+     * @param array<string, mixed>|null $actions
+     * @return array<string, mixed>
+     */
     public static function make(
         string $key,
         string $command,

@@ -97,6 +97,10 @@ final class DeviceCommandCatalog
         ));
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $context
+     */
     public static function buildDownlink(string $protocol, string $imei, string $command, array $payload = [], array $context = []): string
     {
         $entry = self::commandForProtocol($protocol, $command);
@@ -203,6 +207,7 @@ final class DeviceCommandCatalog
         ];
     }
 
+    /** @return list<array<string, mixed>> */
     private static function wonlexCommands(): array
     {
         return [

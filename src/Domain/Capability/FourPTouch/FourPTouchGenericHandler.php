@@ -84,6 +84,7 @@ final class FourPTouchGenericHandler
         };
     }
 
+    /** @param array<array-key, mixed> $desired */
     public function fromNative(string $genericKey, string $nativeKey, array $desired): mixed
     {
         if ($genericKey === 'fall_sensitivity' && $nativeKey === 'fallDownSensitivity') {

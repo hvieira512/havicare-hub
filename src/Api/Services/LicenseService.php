@@ -41,7 +41,7 @@ class LicenseService
 
         return $this->presenter->present(
             $this->db->licenses->all(),
-            LicenseColumns::definition(array_values($companyIds)),
+            LicenseColumns::definition($companyIds),
             $params,
             self::DEFAULT_COLLECTION_LIMIT,
         );

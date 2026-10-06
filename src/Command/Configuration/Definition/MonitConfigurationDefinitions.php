@@ -19,6 +19,7 @@ use Hub\Domain\DiaperSensitivity;
  */
 final class MonitConfigurationDefinitions
 {
+    /** @return list<array<string, mixed>> */
     public static function all(): array
     {
         return [

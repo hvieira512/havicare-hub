@@ -148,7 +148,11 @@ final class DashboardHttpServer
         }
     }
 
-    /** Uma rota que espera por um serviço de terceiros devolve a promessa, e o React drena-a. */
+    /**
+     * Uma rota que espera por um serviço de terceiros devolve a promessa, e o React drena-a.
+     *
+     * @return Response|PromiseInterface<Response>
+     */
     public function __invoke(ServerRequestInterface $request): Response|PromiseInterface
     {
         $method = strtoupper($request->getMethod());
@@ -187,6 +191,7 @@ final class DashboardHttpServer
         return $this->json(['error' => ['code' => 'not_found', 'message' => 'Not found']], 404);
     }
 
+    /** @param array<string, mixed> $payload */
     private function json(array $payload, int $status = 200): Response
     {
         return new Response($status, ['Content-Type' => 'application/json'], json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));

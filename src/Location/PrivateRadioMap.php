@@ -20,6 +20,7 @@ final class PrivateRadioMap
     ) {
     }
 
+    /** @param array<string, mixed> $telemetry */
     public function learnFromTelemetry(array $telemetry): int
     {
         $data = isset($telemetry['data']) && is_array($telemetry['data']) ? $telemetry['data'] : [];
@@ -146,7 +147,10 @@ final class PrivateRadioMap
         return count($wifi);
     }
 
-    /** @return array{hasCoordinates: true, lat: float, lon: float, accuracyMeters: float}|null */
+    /**
+     * @param array<string, mixed> $telemetry
+     * @return array{hasCoordinates: true, lat: float, lon: float, accuracyMeters: float}|null
+     */
     public function resolveTelemetry(array $telemetry): ?array
     {
         $request = $this->requestBuilder->build($telemetry);
@@ -156,7 +160,10 @@ final class PrivateRadioMap
         return $this->resolveRequest($request);
     }
 
-    /** @return array{hasCoordinates: true, lat: float, lon: float, accuracyMeters: float}|null */
+    /**
+     * @param array<string, mixed> $request
+     * @return array{hasCoordinates: true, lat: float, lon: float, accuracyMeters: float}|null
+     */
     public function resolveRequest(array $request): ?array
     {
         $wifi = isset($request['wifiAccessPoints']) && is_array($request['wifiAccessPoints'])
@@ -266,7 +273,10 @@ final class PrivateRadioMap
         return $hashes;
     }
 
-    /** @return array{lat: float, lon: float, accuracyMeters: float}|null */
+    /**
+     * @param array<string, mixed> $data
+     * @return array{lat: float, lon: float, accuracyMeters: float}|null
+     */
     private function trustedGpsFix(array $data): ?array
     {
         if (

@@ -42,6 +42,10 @@ class AdapterRegistry
         return null;
     }
 
+    /**
+     * @param array<string, mixed> $context
+     * @return array<string, mixed>|null
+     */
     public function decodeAny(string $raw, array $context = []): ?array
     {
         $adapter = $this->detectFromMessage($raw);
@@ -75,6 +79,7 @@ class AdapterRegistry
             ?? throw new \RuntimeException("Nenhum adaptador registado para o protocolo {$protocol}");
     }
 
+    /** @return list<string> */
     public function protocols(): array
     {
         return array_keys($this->adapters);

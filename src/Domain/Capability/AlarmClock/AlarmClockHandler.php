@@ -15,7 +15,12 @@ interface AlarmClockHandler extends CapabilityProtocolHandler
     /** Converte o valor genérico da API no mapa `chave de protocolo => payload`. */
     public function toNative(mixed $value): array;
 
-    /** Converte o payload pretendido do protocolo numa lista de itens públicos. */
+    /**
+     * Converte o payload pretendido do protocolo numa lista de itens públicos.
+     *
+     * @param array<array-key, mixed> $desired
+     * @return list<array<string, mixed>>
+     */
     public function fromNative(array $desired): array;
 
     /** O payload pretendido por omissão, para este protocolo. */

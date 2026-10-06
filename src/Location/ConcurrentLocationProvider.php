@@ -13,7 +13,7 @@ final class ConcurrentLocationProvider implements LocationProviderContract
 {
     private int $active = 0;
 
-    /** @var list<array{request: array<string, mixed>, deferred: Deferred}> */
+    /** @var list<array{request: array<string, mixed>, deferred: Deferred<array{httpStatus: int, body: array<string, mixed>, provider?: string}>}> */
     private array $queue = [];
 
     public function __construct(

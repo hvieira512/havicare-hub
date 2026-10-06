@@ -51,10 +51,10 @@ final class DeviceTypeCatalog
      */
     public static function linkedToGateway(): array
     {
-        return array_values(array_keys(array_filter(
+        return array_keys(array_filter(
             self::all(),
             static fn (array $descriptor): bool => (bool)($descriptor['gatewayLinks'] ?? false),
-        )));
+        ));
     }
 
     public static function hasSim(string $deviceType): bool

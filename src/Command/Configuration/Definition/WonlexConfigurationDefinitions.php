@@ -6,6 +6,7 @@ namespace Hub\Command\Configuration\Definition;
 
 final class WonlexConfigurationDefinitions
 {
+    /** @return list<array<string, mixed>> */
     public static function all(): array
     {
         $entry = ConfigurationDefinition::make(...);
@@ -60,6 +61,8 @@ final class WonlexConfigurationDefinitions
      * São dez, com o mesmo comando nativo e a mesma legenda -- é a mesma decisão repetida
      * para grandezas diferentes, e a dashboard agrupa-as por reconhecer essa forma. A frase
      * vive aqui, uma vez, e não dez vezes no ecrã.
+     *
+     * @return array<string, mixed>
      */
     private static function measurementInterval(string $key, string $label, int $order): array
     {

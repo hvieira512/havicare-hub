@@ -463,5 +463,4 @@ final class MokoBridge extends MqttBridgeBase
             $this->relay->publishEvents($sensor, $gateway, [$event]);
         }
     }
-
 }

@@ -602,6 +602,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return $count;
     }
 
+    /** @param array<string, mixed> $payload */
     private static function fallDownSensitivity(array $payload): string
     {
         $level = self::positiveInt($payload['sensitivity'] ?? $payload['sensitivityLevel'] ?? null, 'sensitivity');

@@ -64,6 +64,7 @@ final class FourPTouch implements AlarmClockHandler
     // Normalização da entrada nativa
     // ------------------------------------------------------------------
 
+    /** @return list<array{time: string, enabled: bool, mode: int, custom: string}> */
     private function normalizeInput(mixed $desired): array
     {
         if (is_string($desired)) {
@@ -94,7 +95,10 @@ final class FourPTouch implements AlarmClockHandler
         return $this->normalizeList([$desired]);
     }
 
-    /** @return list<array{time: string, enabled: bool, mode: int, custom: string}> */
+    /**
+     * @param array<array-key, mixed> $alarms
+     * @return list<array{time: string, enabled: bool, mode: int, custom: string}>
+     */
     private function normalizeList(array $alarms): array
     {
         $normalized = [];
@@ -105,6 +109,7 @@ final class FourPTouch implements AlarmClockHandler
         return $normalized;
     }
 
+    /** @return array{time: string, enabled: bool, mode: int, custom: string} */
     private function normalizeItem(mixed $value): array
     {
         if (is_string($value)) {
@@ -143,6 +148,7 @@ final class FourPTouch implements AlarmClockHandler
         return ['time' => $time, 'enabled' => $enabled, 'mode' => $frequency, 'custom' => $custom];
     }
 
+    /** @param array<string, mixed> $value */
     private function resolveFrequency(array $value): int
     {
         $recurrence = is_array($value['recurrence'] ?? null) ? $value['recurrence'] : [];
@@ -233,7 +239,10 @@ final class FourPTouch implements AlarmClockHandler
     // Parsing de string
     // ------------------------------------------------------------------
 
-    /** @return list<array{time: string, enabled: bool, mode: int, custom: string}> */
+    /**
+     * @param array<array-key, mixed> $fields
+     * @return list<array{time: string, enabled: bool, mode: int, custom: string}>
+     */
     private function parseFields(array $fields): array
     {
         $result = [];
@@ -280,6 +289,7 @@ final class FourPTouch implements AlarmClockHandler
     // Nativo → Público
     // ------------------------------------------------------------------
 
+    /** @return array<string, mixed> */
     public static function publicItem(mixed $item): array
     {
         if (!is_array($item)) {

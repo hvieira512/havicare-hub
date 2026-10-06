@@ -8,6 +8,7 @@ use PDO;
 
 final class PrivateRadioMapFactory
 {
+    /** @param array<string, mixed> $config */
     public static function create(PDO $pdo, array $config, ?BeaconDbRequestBuilder $requestBuilder = null): PrivateRadioMap
     {
         return new PrivateRadioMap(

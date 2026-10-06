@@ -22,6 +22,10 @@ final class ZayataDownlink
      */
     private static int $pillSerial = 0;
 
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $context
+     */
     public static function build(string $imei, string $command, array $payload = [], array $context = []): string
     {
 
@@ -102,6 +106,7 @@ final class ZayataDownlink
      * Os nove alarmes, sempre os nove. O aparelho não os cria nem apaga, e um slot que o
      * plano não use tem de ser desligado explicitamente.
      *
+     * @param array<string, mixed> $payload
      * @return array<int, array{value: string}>
      */
     private static function pillMedicationPlan(array $payload): array
@@ -147,6 +152,7 @@ final class ZayataDownlink
      * O período em que o plano vale. O aparelho só sabe "todos os dias entre duas datas".
      * Sem período fica o interruptor a zero, e não as datas: essas ele leria como intervalo.
      *
+     * @param array<string, mixed> $payload
      * @return array<int, array{value: string}>
      */
     private static function pillMedicationPeriod(array $payload): array

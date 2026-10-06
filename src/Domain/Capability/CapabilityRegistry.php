@@ -124,12 +124,18 @@ final class CapabilityRegistry
     /**
      * O protocolo vem à frente e sem valor por omissão, como no `toNative` e no
      * `responseEntry`: descodificar sem saber de que fornecedor é o payload é adivinhar.
+     *
+     * @param array<array-key, mixed> $desired
      */
     public function fromNative(string $protocol, string $genericKey, string $nativeKey, array $desired): mixed
     {
         return $this->contract($genericKey)->fromNative($protocol, $nativeKey, $desired);
     }
 
+    /**
+     * @param array<string, mixed> $meta
+     * @return array<string, mixed>
+     */
     public function responseEntry(string $protocol, string $genericKey, string $nativeKey, mixed $value, array $meta): array
     {
         return $this->contract($genericKey)->responseEntry($protocol, $nativeKey, $value, $meta);

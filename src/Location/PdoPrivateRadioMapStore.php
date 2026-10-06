@@ -12,7 +12,7 @@ final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
     // distinto que o processo de longa vida chega a ver.
     private const MAX_CACHED = 10000;
 
-    /** @var array<string, array{expiresAt: float, entry: ?array}> */
+    /** @var array<string, array{expiresAt: float, entry: array<string, mixed>|null}> */
     private array $cache = [];
 
     public function __construct(

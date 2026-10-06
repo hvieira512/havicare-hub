@@ -12,7 +12,10 @@ final class BeaconDbClient
     ) {
     }
 
-    /** @return array{httpStatus: int, body: array<string, mixed>} */
+    /**
+     * @param array<string, mixed> $request
+     * @return array{httpStatus: int, body: array<string, mixed>}
+     */
     public function resolve(array $request, string $userAgent): array
     {
         $userAgent = trim($userAgent);
