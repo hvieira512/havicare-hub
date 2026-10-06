@@ -214,7 +214,10 @@ final class DeviceCapabilityPresenter
 
             if (isset($entry['options'])) {
                 foreach ($entry['options'] as $field => $options) {
-                    $meta[$genericKey][$field] = ['options' => $options];
+                    // Só as listas são escolhas de um campo; `min`, `max` e `label` são do controlo.
+                    if (is_array($options) && array_is_list($options)) {
+                        $meta[$genericKey][$field] = ['options' => $options];
+                    }
                 }
             }
 
@@ -448,7 +451,9 @@ final class DeviceCapabilityPresenter
         $meta = [];
         if (isset($entry['options']) && is_array($entry['options'])) {
             foreach ($entry['options'] as $field => $options) {
-                $meta[(string)$field] = ['options' => $options];
+                if (is_array($options) && array_is_list($options)) {
+                    $meta[(string)$field] = ['options' => $options];
+                }
             }
         }
         if (isset($entry['limit'])) {
