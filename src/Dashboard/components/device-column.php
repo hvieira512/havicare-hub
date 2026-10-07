@@ -21,7 +21,7 @@
                                 <div class="d-flex align-items-start gap-3 pt-2 pt-sm-3">
                                     <div id="selectedDevicePreview" class="selected-device-preview d-flex align-items-center justify-content-center flex-shrink-0 text-center rounded-4"></div>
                                     <div class="min-w-0 flex-grow-1">
-                                        <div class="mb-1" id="selectedDeviceBadge"></div>
+                                        <div class="d-flex align-items-center gap-2 mb-1" id="selectedDeviceBadge"></div>
                                         <h1 class="h4 mb-1 text-truncate tabular-nums lh-sm" id="selectedDeviceTitle"></h1>
                                         <div id="selectedDeviceMeta" class="text-secondary small"></div>
                                     </div>

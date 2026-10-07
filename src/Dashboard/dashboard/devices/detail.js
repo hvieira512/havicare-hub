@@ -13,6 +13,7 @@ import {
     commandLabel,
     eventTime,
     rowPayload,
+    ago,
     timeOnly,
     when,
 } from "../format.js";
@@ -215,10 +216,6 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
                 noteClass: "d-block small text-body-secondary text-truncate",
             }),
         },
-        {
-            label: "Última ligação",
-            value: when(device.lastSeenAt) || "Sem registo",
-        },
     ];
 
     if (device.simNumber) {
@@ -248,7 +245,9 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     els.selectedDeviceTitle.title = device.imei;
     // O estado é a primeira coisa que se pergunta sobre um dispositivo, e por isso vem
     // antes do identificador.
-    els.selectedDeviceBadge.innerHTML = onlineBadge(device.online);
+    els.selectedDeviceBadge.innerHTML = onlineBadge(device.online) + (device.lastSeenAt
+        ? html`<span class="text-secondary small tabular-nums" title="${when(device.lastSeenAt)}">${ago(device.lastSeenAt)}</span>`
+        : "");
     els.selectedDeviceMeta.textContent = `${typeLabel} · ${supplier || "Sem fornecedor"} · ${model || "Sem modelo interno"}`;
     // A banda do telemóvel diz o mesmo numa linha: o estado primeiro, que é o que se
     // pergunta, e o fornecedor de fora, que o modelo já o implica.
