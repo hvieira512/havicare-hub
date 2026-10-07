@@ -64,9 +64,8 @@
                                     </div>
                                 </div>
                                 <div class="d-flex flex-column flex-fill min-h-0">
-                                    <section id="connectionSection" class="card-section mt-3 pt-3 border-top flex-shrink-0">
-                                        <?= section_header('Ligações ao servidor') ?>
-                                        <div id="connectionTimeline"></div>
+                                    <section class="card-section mt-3 pt-3 border-top flex-shrink-0">
+                                        <div id="connectionHistory"></div>
                                     </section>
                                     <div class="card-section activity-section mt-3 pt-lg-3 d-flex flex-column flex-grow-1 min-h-0">
                                         <div class="nav nav-pills activity-tabs d-xl-none flex-nowrap gap-2 mb-3" id="activityTabs" role="tablist">

@@ -37,6 +37,7 @@ import {
     updateDetailFilterDraft,
 } from "../devices/detail-filters.js";
 import { toggleActivityRow } from "../devices/activity-table.js";
+import { handleConnectionHistoryClick } from "../devices/connection-history.js";
 import { DEVICE_CARD_ACTION } from "../devices/device-card.js";
 import {
     closeRadarMap,
@@ -270,6 +271,7 @@ function bindDetail() {
     els.downlinkPager?.addEventListener("click", handleDownlinkPagerClick);
     els.telemetryLoadMore?.addEventListener("click", handleTelemetryPagerClick);
     els.downlinkLoadMore?.addEventListener("click", handleDownlinkPagerClick);
+    els.connectionHistory.addEventListener("click", handleConnectionHistoryClick);
     els.activityTabs?.addEventListener("shown.bs.tab", syncDetailSearchPlaceholder);
     globalThis
         .matchMedia?.("(min-width: 1200px)")

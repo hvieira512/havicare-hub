@@ -288,33 +288,75 @@
     display: block;
 }
 
-/* A série de ligações: uma linha do tempo com um ponto por evento. As cores são as do tema,
-   e por isso acompanham o modo claro e o escuro. */
-.connection-timeline {
-    height: 68px;
-    margin: 0 6px;
+/* As ligações: uma faixa ligada a verde com as quebras a vermelho, que também diferem na
+   luminosidade. Abaixo do `lg` cada quebra junta o «caiu» e o «voltou» numa coluna. */
+.connection-band {
+    height: 12px;
+    background: rgba(var(--bs-success-rgb), .6);
 }
 
-.connection-timeline-track {
-    height: 2px;
-    background: var(--bs-secondary-color);
-    opacity: .45;
+.connection-band-empty {
+    background: var(--bs-tertiary-bg);
+    border: 1px dashed var(--bs-border-color);
 }
 
-.connection-timeline-dot {
-    width: 10px;
-    height: 10px;
-    margin: -5px 0 0 -5px;
-    background: var(--bs-success);
-    border: 1px solid var(--bs-body-bg);
+.connection-band-gap {
+    z-index: 1;
+    background: var(--bs-danger-text-emphasis);
 }
 
-.connection-timeline-dot.off {
-    background: var(--bs-danger);
-}
-
-.connection-timeline-scale {
+.connection-band-scale,
+.connection-summary {
     font-size: var(--fs-sm);
+}
+
+.connection-toggle {
+    width: 1.75rem;
+    height: 1.75rem;
+    margin: -.5rem 0;
+    font-size: var(--fs-sm);
+}
+
+.connection-outage {
+    display: grid;
+    grid-template-columns: .625rem 1fr auto;
+    grid-template-areas: "dot from span" "dot to span";
+    column-gap: .75rem;
+    align-items: center;
+    padding: .5rem 0;
+    border-top: 1px solid var(--bs-border-color-translucent);
+}
+
+.connection-outage-dot {
+    grid-area: dot;
+    width: .625rem;
+    height: .625rem;
+    background: var(--bs-danger-text-emphasis);
+}
+
+.connection-outage-from { grid-area: from; }
+.connection-outage-to { grid-area: to; font-size: var(--fs-sm); }
+.connection-outage-span { grid-area: span; }
+
+@media (max-width: 991.98px) {
+    .connection-toggle {
+        width: 2.75rem;
+        height: 2.75rem;
+        margin: -1rem 0;
+    }
+}
+
+@media (min-width: 992px) {
+    .connection-outage {
+        grid-template-columns: .625rem 1fr 1fr 7rem;
+        grid-template-areas: "dot from to span";
+    }
+
+    .connection-outage-to { font-size: inherit; }
+}
+
+.connection-outage-head {
+    padding-top: .25rem;
 }
 
 /* A pastilha do ícone numa linha de evento: a mesma ideia do cartão, em 26px. */

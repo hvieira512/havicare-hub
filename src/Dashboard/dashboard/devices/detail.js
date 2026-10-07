@@ -17,7 +17,7 @@ import {
     timeOnly,
     when,
 } from "../format.js";
-import { html, raw } from "../html.js";
+import { html } from "../html.js";
 import { joinMarkup } from "../components/cards/shared.js";
 import { renderInto } from "../dom.js";
 import { capabilityLabel } from "../capability-catalog.js";
@@ -40,6 +40,7 @@ import { loadMoreButton, pagedRows } from "../components/pagination.js";
 import { SELECTED_DEVICE_STORAGE_KEY, clearStorageKey, saveTextStorage } from "../storage.js";
 import { disposeTooltips, refreshTooltips } from "../tooltips.js";
 import { gatewaySignalRows } from "./gateway-signal.js";
+import { renderConnectionHistory } from "./connection-history.js";
 import {
     allDetailItems,
     filterDetailItems,
@@ -135,7 +136,12 @@ function renderSelection() {
         els.ncsEventSection.classList.add("d-none");
     }
     renderDownlinkRequests(commands);
-    renderConnectionTimeline(connectionEvents);
+    // Com um «Até» aplicado a faixa acaba nele, e não em agora.
+    const to = Date.parse(state.detailFilters.to || "");
+    renderConnectionHistory(els.connectionHistory, connectionEvents.map(rowPayload), {
+        end: Number.isNaN(to) ? undefined : to,
+        reported: allItems.some((item) => item._source === "connection"),
+    });
     // A planta aberta acompanha o stream: as posições que acabaram de chegar são as mesmas
     // que o mosaico da presença acabou de desenhar.
     onRadarPresence(device.imei);
@@ -643,78 +649,6 @@ const UNESCAPED = {
     "&quot;": "\"",
     "&#039;": "'",
 };
-
-function renderConnectionTimeline(rows) {
-    const events = rows
-        .map(rowPayload)
-        .filter((event) =>
-            ["device.connected", "device.disconnected"].includes(
-                String(event?.type || ""),
-            ),
-        )
-        .sort((a, b) => eventTime(a) - eventTime(b));
-
-    // Um evento só não é uma série, e a pastilha do dispositivo já diz se está ligado: a
-    // secção fica escondida até haver o que desenhar.
-    els.connectionSection.classList.toggle("d-none", events.length < 2);
-
-    // Redesenhar é deitar o gráfico abaixo e construir outro, e isto passa por aqui a cada
-    // tecla e a cada mensagem do stream.
-    const signature = events
-        .map((event) => `${event.type}@${eventTime(event)}`)
-        .join("|");
-    if (els.connectionTimeline.dataset.connectionSignature === signature) {
-        return;
-    }
-    els.connectionTimeline.dataset.connectionSignature = signature;
-
-    if (events.length < 2) {
-        els.connectionTimeline.innerHTML = "";
-        return;
-    }
-
-    els.connectionTimeline.innerHTML = connectionTimelineHtml(events);
-}
-
-/**
- * A série de ligações: um ponto por evento, verde a ligar e vermelho a desligar, com as duas
- * pontas datadas. As cores saem das variáveis do tema, para seguir o modo claro e o escuro.
- */
-function connectionTimelineHtml(events) {
-    const points = events
-        .map((event) => ({
-            time: eventTime(event),
-            at: event.occurredAt || event.recordedAt || "",
-            connected: event.type === "device.connected",
-        }))
-        .filter((point) => point.time > 0);
-    if (points.length < 2) {
-        return "";
-    }
-
-    const first = points[0].time;
-    // Nunca zero: dois eventos no mesmo milissegundo dividiriam por zero.
-    const span = Math.max(1, points[points.length - 1].time - first);
-
-    const dots = points
-        .map((point) => {
-            const label = point.connected ? "Ligado" : "Desligado";
-            return html`<span class="connection-timeline-dot position-absolute top-50 rounded-circle${point.connected ? "" : " off"}"
-                        style="left:${((point.time - first) / span) * 100}%"
-                        title="${label} em ${when(point.at)}"></span>`;
-        })
-        .join("");
-
-    return html`
-        <div class="connection-timeline position-relative">
-            <div class="connection-timeline-track position-absolute top-50 start-0 end-0"></div>
-            ${raw(dots)}
-        </div>
-        <div class="connection-timeline-scale d-flex justify-content-between gap-2 text-secondary tabular-nums">
-            <span>${when(points[0].at)}</span>
-            <span>${when(points[points.length - 1].at)}</span>
-        </div>`;
-}
 
 function expectedReplies(command) {
     return Array.isArray(command.expectedReplyTypes) &&
