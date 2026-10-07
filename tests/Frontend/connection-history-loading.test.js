@@ -86,3 +86,22 @@ test("um aparelho calado desde antes de haver histórico mostra a quebra desde a
     assert.equal(els.connectionHistory.querySelectorAll(".connection-band-gap").length, 1);
     assert.match(els.connectionHistory.textContent, /0 %/);
 });
+
+test("um aparelho desligado cujo último registo é «ligado» acaba a faixa em quebra desde que se calou", () => {
+    const els = detailEls();
+    connectionSection(els);
+    initDeviceDetailView({ els });
+    const at = (hoursAgo) => new Date(Date.now() - hoursAgo * 3600000).toISOString();
+    setSelectedDetail({ ...detail(), device: { imei: "c5e390f30bce", online: false, lastSeenAt: at(24) } });
+    state.selectedDetail.recent = {
+        telemetry: [],
+        events: [],
+        connections: [{ type: "device.connected", occurredAt: at(48) }],
+        commands: [],
+    };
+
+    renderSelection();
+
+    assert.equal(els.connectionHistory.querySelectorAll(".connection-band-gap").length, 1);
+    assert.match(els.connectionHistory.textContent, /(49,9|50) %/);
+});

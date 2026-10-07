@@ -139,18 +139,34 @@ function renderSelection() {
     // Com um «Até» aplicado a faixa acaba nele, e não em agora.
     const to = Date.parse(state.detailFilters.to || "");
     const reported = allItems.some((item) => item._source === "connection");
-    // Calado desde antes de haver histórico de ligações: a quebra conta da última vez que falou.
-    const silent = !reported && state.selectedDetail.recent && device.online === false && device.lastSeenAt;
     renderConnectionHistory(
         els.connectionHistory,
-        silent
-            ? [{ type: "device.disconnected", occurredAt: device.lastSeenAt }]
-            : connectionEvents.map(rowPayload),
-        { end: Number.isNaN(to) ? undefined : to, reported: reported || !!silent },
+        [...connectionEvents.map(rowPayload), ...silentSince(device, allItems)],
+        {
+            end: Number.isNaN(to) ? undefined : to,
+            reported: reported || silentSince(device, allItems).length > 0,
+        },
     );
     // A planta aberta acompanha o stream: as posições que acabaram de chegar são as mesmas
     // que o mosaico da presença acabou de desenhar.
     onRadarPresence(device.imei);
+}
+
+/**
+ * Um aparelho desligado cujo último registo de ligação não o diz — sem histórico, ou com o
+ * desligar perdido — fica em quebra desde a última vez que falou.
+ */
+function silentSince(device, allItems) {
+    if (!state.selectedDetail?.recent || device.online !== false || !device.lastSeenAt) return [];
+
+    const last = allItems
+        .filter((item) => item._source === "connection")
+        .map((item) => item.payload)
+        .sort((a, b) => eventTime(b) - eventTime(a))[0];
+    if (last?.type === "device.disconnected") return [];
+
+    const since = Math.max(Date.parse(device.lastSeenAt) || 0, last ? eventTime(last) : 0);
+    return since > 0 ? [{ type: "device.disconnected", occurredAt: new Date(since).toISOString() }] : [];
 }
 
 const TELEMETRY_REQUEST_GROUPS = [
