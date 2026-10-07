@@ -119,3 +119,27 @@ test("religar volta a receber um instantâneo, e ele manda", async () => {
         "o instantâneo é a verdade nova, não se junta ao que estava",
     );
 });
+
+test("as ligações juntam-se como os eventos, na sua própria lista", async () => {
+    const source = await open("333");
+    await emit(source, "snapshot", {
+        telemetry: [],
+        events: [],
+        connections: [{ seq: 1, type: "device.disconnected" }],
+        commands: [],
+        limit: 100,
+    });
+
+    await emit(source, "update", {
+        telemetry: [],
+        events: [],
+        connections: [{ seq: 2, type: "device.connected" }],
+        commands: [],
+        limit: 100,
+    });
+
+    assert.deepEqual(
+        state.selectedDetail.recent.connections.map((entry) => entry.type),
+        ["device.connected", "device.disconnected"],
+    );
+});

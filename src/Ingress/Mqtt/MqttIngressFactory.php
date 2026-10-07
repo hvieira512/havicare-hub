@@ -177,6 +177,7 @@ final class MqttIngressFactory
                 ),
                 commercialModelResolver: $services->commercialModelResolver,
                 denylist: $services->denylist,
+                idleTimeoutSeconds: (int)$config['qinglanst']['idle_timeout_seconds'],
             ),
         );
     }

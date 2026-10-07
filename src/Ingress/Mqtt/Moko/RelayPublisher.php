@@ -6,6 +6,7 @@ namespace Hub\Ingress\Mqtt\Moko;
 
 use Hub\State\DeviceReportStore;
 use Hub\Device\CommercialModelResolver;
+use Hub\Device\ConnectionAnnouncer;
 use Hub\Device\DeviceDescriptor;
 use Hub\Device\HubMqttBridge;
 use Hub\Domain\DeviceMetadata;
@@ -37,6 +38,8 @@ final class RelayPublisher
 
     private \Closure $clock;
 
+    private readonly ConnectionAnnouncer $connections;
+
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
         private readonly ?DeviceReportStore $deviceStore,
@@ -49,6 +52,7 @@ final class RelayPublisher
         ?callable $clock = null,
     ) {
         $this->clock = $clock !== null ? \Closure::fromCallable($clock) : static fn(): float => microtime(true);
+        $this->connections = new ConnectionAnnouncer($mqttBridge, $deviceStore);
     }
 
     /**
@@ -101,11 +105,15 @@ final class RelayPublisher
         $deviceType = (string)$device['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
-        $this->deviceStore?->deviceSeen($deviceKey, [
+        $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => $protocol, 'transport' => 'ble_gateway', 'online' => '1',
         ]);
+        // Desligado dá-o a manutenção do hub, quando nenhum gateway o ouve durante o prazo.
+        if ($cameOnline === true) {
+            $this->connections->announce($deviceKey, $device, true);
+        }
         $this->recordSignal($device, $gateway, $protocol, $rssiDbm);
 
         foreach ($normalized['telemetry'] as $capability => $telemetry) {

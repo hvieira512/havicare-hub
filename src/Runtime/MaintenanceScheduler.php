@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Runtime;
 
+use Hub\Device\ConnectionAnnouncer;
 use Hub\Device\DownlinkRetryContext;
 use React\EventLoop\LoopInterface;
 
@@ -26,10 +27,11 @@ final class MaintenanceScheduler
         $deviceIdleTimeout = (int)$dashboardConfig['device_idle_timeout_seconds'];
         $store = $services->deviceStore;
         $hubServer = $services->hubServer;
+        $connections = new ConnectionAnnouncer($services->mqttBridge, $store);
 
         $loop->addPeriodicTimer(
             self::INTERVAL_SECONDS,
-            static function () use ($store, $hubServer, $commandTimeout, $deviceIdleTimeout): void {
+            static function () use ($store, $hubServer, $connections, $commandTimeout, $deviceIdleTimeout): void {
                 $store->retryWaitingCommands(
                     self::COMMAND_RETRY_AFTER_SECONDS,
                     $commandTimeout,
@@ -40,7 +42,13 @@ final class MaintenanceScheduler
                         => $hubServer->submitDownlink($imei, $bytes, DownlinkRetryContext::forCommand($command))
                 );
                 $store->expireWaitingCommands($commandTimeout);
-                $store->expireStaleDevices($deviceIdleTimeout);
+                // As ligações TCP anuncia-as o servidor ao fechar o socket; as outras, aqui.
+                foreach ($store->expireStaleDevices($deviceIdleTimeout) as $imei) {
+                    $device = $store->device($imei);
+                    if (($device['transport'] ?? '') !== 'tcp') {
+                        $connections->announce($imei, $device, false);
+                    }
+                }
             }
         );
 

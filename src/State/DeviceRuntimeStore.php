@@ -77,9 +77,15 @@ final class DeviceRuntimeStore
         });
     }
 
-    /** @param array<string, mixed> $fields */
-    public function deviceSeen(string $imei, array $fields): void
+    /**
+     * Devolve se estava desligado: a transição lê-se do Redis, e não da memória de quem chama,
+     * para um reinício do hub não passar por reconexão.
+     *
+     * @param array<string, mixed> $fields
+     */
+    public function deviceSeen(string $imei, array $fields): bool
     {
+        $wasOnline = $this->redis->hget($this->deviceKey($imei), 'online') === '1';
         $now = gmdate('Y-m-d\\TH:i:s\\Z');
         $payload = array_merge($fields, [
             'imei' => $imei,
@@ -91,6 +97,8 @@ final class DeviceRuntimeStore
             $pipe->hmset($this->deviceKey($imei), $payload);
             $pipe->zadd($this->onlineDeviceSetKey(), [$imei => $score]);
         });
+
+        return !$wasOnline;
     }
 
     /**
@@ -122,14 +130,18 @@ final class DeviceRuntimeStore
         return $sightings;
     }
 
-    public function deviceOffline(string $imei): void
+    /** Devolve se estava ligado. */
+    public function deviceOffline(string $imei): bool
     {
+        $wasOnline = $this->redis->hget($this->deviceKey($imei), 'online') === '1';
         $this->redis->hmset($this->deviceKey($imei), [
             'imei' => $imei,
             'online' => '0',
             'lastStateAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
         ]);
         $this->redis->zrem($this->onlineDeviceSetKey(), $imei);
+
+        return $wasOnline;
     }
 
     /**
@@ -185,12 +197,24 @@ final class DeviceRuntimeStore
         return $states;
     }
 
-    public function expireStaleDevices(int $timeoutSeconds): void
+    /**
+     * Dá por desligado quem está calado há mais do que o prazo, só do tipo pedido quando há um.
+     *
+     * @return list<string> os que estavam ligados e deixaram de estar
+     */
+    public function expireStaleDevices(int $timeoutSeconds, ?string $deviceType = null): array
     {
         $cutoff = time() - max(1, $timeoutSeconds);
-        foreach ($this->redis->zrangebyscore($this->onlineDeviceSetKey(), '-inf', (string)$cutoff) as $imei) {
-            $this->deviceOffline((string)$imei);
+        $stale = array_map('strval', $this->redis->zrangebyscore($this->onlineDeviceSetKey(), '-inf', (string)$cutoff));
+        if ($deviceType !== null && $stale !== []) {
+            $states = $this->runtimeStates($stale);
+            $stale = array_values(array_filter(
+                $stale,
+                static fn(string $imei): bool => ($states[$imei]['deviceType'] ?? null) === $deviceType,
+            ));
         }
+
+        return array_values(array_filter($stale, fn(string $imei): bool => $this->deviceOffline($imei)));
     }
 
     /**

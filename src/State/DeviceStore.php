@@ -12,6 +12,12 @@ use Predis\ClientInterface;
 
 final class DeviceStore implements DeviceStoreContract
 {
+    /** As mudanças de ligação têm lista própria: os alarmes de um radar enchem os eventos em horas. */
+    private const CONNECTION_TYPES = ['device.connected', 'device.disconnected'];
+
+    /** @var array<string, true> quem já se sabe ter histórico de ligações, para não o perguntar a cada mensagem */
+    private array $withConnectionHistory = [];
+
     private ?ApiDataAccess $db = null;
     private DeviceRuntimeStore $runtime;
     private DeviceEventStore $events;
@@ -92,9 +98,23 @@ final class DeviceStore implements DeviceStoreContract
         $this->runtime->updateDeviceAssociation($imei, $company, $licenseId);
     }
 
-    public function deviceSeen(string $imei, array $fields): void
+    public function deviceSeen(string $imei, array $fields): bool
     {
-        $this->runtime->deviceSeen($imei, $fields);
+        $cameOnline = $this->runtime->deviceSeen($imei, $fields);
+        // Quem já estava ligado antes de haver histórico começa-o aqui, só no histórico: no
+        // MQTT não houve ligação nenhuma.
+        if (!$cameOnline && !isset($this->withConnectionHistory[$imei])) {
+            if ($this->events->latest($imei, 'connections') === null) {
+                $this->appendConnection($imei, [
+                    'type' => 'device.connected',
+                    'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+                    'device' => ['id' => $imei],
+                ]);
+            }
+            $this->withConnectionHistory[$imei] = true;
+        }
+
+        return $cameOnline;
     }
 
     public function recordGatewaySighting(string $deviceKey, string $gatewayKey, ?int $rssiDbm): void
@@ -108,19 +128,40 @@ final class DeviceStore implements DeviceStoreContract
         return $this->runtime->gatewaySightings($deviceKey);
     }
 
-    public function deviceOffline(string $imei): void
+    public function deviceOffline(string $imei): bool
     {
-        $this->runtime->deviceOffline($imei);
+        return $this->runtime->deviceOffline($imei);
     }
 
     public function append(string $imei, string $list, array $payload): void
     {
+        if ($list === 'events' && in_array($payload['type'] ?? null, self::CONNECTION_TYPES, true)) {
+            $this->appendConnection($imei, $payload);
+            return;
+        }
+
         $this->events->append($imei, $list, $payload);
         // O `DeviceService::recent()` serve telemetria, eventos e comandos; a lista crua não vai para
         // o stream, e anunciá-la acordava os ouvintes a cada mensagem de gateway.
         if ($list === 'telemetry' || $list === 'events') {
             $this->updates->notify($imei);
         }
+    }
+
+    /**
+     * Só as mudanças de estado: um gateway que se reanuncia a cada reinício não é uma reconexão.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function appendConnection(string $imei, array $payload): void
+    {
+        $this->withConnectionHistory[$imei] = true;
+        if (($this->events->latest($imei, 'connections')['type'] ?? null) === $payload['type']) {
+            return;
+        }
+
+        $this->events->append($imei, 'connections', $payload);
+        $this->updates->notify($imei);
     }
 
     public function recordCommand(string $imei, string $id, array $record): void
@@ -184,9 +225,9 @@ final class DeviceStore implements DeviceStoreContract
         $this->updates->notifyAll();
     }
 
-    public function expireStaleDevices(int $timeoutSeconds): void
+    public function expireStaleDevices(int $timeoutSeconds, ?string $deviceType = null): array
     {
-        $this->runtime->expireStaleDevices($timeoutSeconds);
+        return $this->runtime->expireStaleDevices($timeoutSeconds, $deviceType);
     }
 
     /**

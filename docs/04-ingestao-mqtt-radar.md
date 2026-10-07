@@ -248,6 +248,21 @@ Um tipo que a tabela não conheça aparece como «Tipo N» e fica cinzento, em v
 de desaparecer da planta — foi assim que o 7 se deu a conhecer. A tabela está em
 [`radar-style.js`](../src/Dashboard/dashboard/radar-style.js).
 
+## 7. Ligado e desligado
+
+O radar não abre sessão nem se despede: está **ligado** enquanto fala e
+**desligado** quando se cala durante `QINGLANST_IDLE_TIMEOUT_SECONDS` — 180 s
+por omissão. Fala a cada poucos segundos; em Outubro de 2026 o maior silêncio
+medido em produção foi de cinco minutos.
+
+- A primeira mensagem depois de desligado publica `status online` retido e o
+  evento `device.connected`.
+- Um varrimento de dez em dez segundos dá por desligados os que passaram o prazo,
+  com `status offline` e `device.disconnected`.
+
+O estado anterior lê-se do Redis e não da memória do processo, e por isso um
+reinício do hub não passa por reconexão.
+
 ## Implementação
 
 | Ficheiro | Responsabilidade |

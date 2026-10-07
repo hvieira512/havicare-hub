@@ -622,14 +622,17 @@ class DeviceService
 
         $telemetrySince = max(0, (int)($since['telemetry'] ?? 0));
         $eventsSince = max(0, (int)($since['events'] ?? 0));
+        $connectionsSince = max(0, (int)($since['connections'] ?? 0));
 
         return [
             'telemetry' => $this->store->recent($imei, 'telemetry', $telemetrySince),
             'events' => $this->store->recent($imei, 'events', $eventsSince),
+            'connections' => $this->store->recent($imei, 'connections', $connectionsSince),
             'commands' => $this->store->commands($imei),
             'cursor' => [
                 'telemetry' => $this->store->latestSequence($imei, 'telemetry'),
                 'events' => $this->store->latestSequence($imei, 'events'),
+                'connections' => $this->store->latestSequence($imei, 'connections'),
             ],
             // Quantas entradas o histórico guarda, para o cliente aparar a lista ao juntar
             // uma diferença sem ter de adivinhar o limite do servidor.

@@ -82,7 +82,9 @@ configurações do aparelho. O desenho de cada uma está em
 
 O detalhe de um dispositivo abre um stream de eventos do servidor contra
 `GET /api/devices/{imei}/stream`, com um cursor incremental: um `snapshot`
-inicial e depois `update` a cada novidade.
+inicial e depois `update` a cada novidade. Cada frame leva `telemetry`, `events`,
+`connections` e `commands`; as três primeiras só com o que entrou desde o frame
+anterior, os comandos sempre inteiros.
 
 O stream é lido com `fetch` e um `ReadableStream`, e não com `EventSource`: a
 credencial vai no cabeçalho `Authorization`, que o `EventSource` não deixa

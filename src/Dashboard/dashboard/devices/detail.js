@@ -138,10 +138,16 @@ function renderSelection() {
     renderDownlinkRequests(commands);
     // Com um «Até» aplicado a faixa acaba nele, e não em agora.
     const to = Date.parse(state.detailFilters.to || "");
-    renderConnectionHistory(els.connectionHistory, connectionEvents.map(rowPayload), {
-        end: Number.isNaN(to) ? undefined : to,
-        reported: allItems.some((item) => item._source === "connection"),
-    });
+    const reported = allItems.some((item) => item._source === "connection");
+    // Calado desde antes de haver histórico de ligações: a quebra conta da última vez que falou.
+    const silent = !reported && state.selectedDetail.recent && device.online === false && device.lastSeenAt;
+    renderConnectionHistory(
+        els.connectionHistory,
+        silent
+            ? [{ type: "device.disconnected", occurredAt: device.lastSeenAt }]
+            : connectionEvents.map(rowPayload),
+        { end: Number.isNaN(to) ? undefined : to, reported: reported || !!silent },
+    );
     // A planta aberta acompanha o stream: as posições que acabaram de chegar são as mesmas
     // que o mosaico da presença acabou de desenhar.
     onRadarPresence(device.imei);

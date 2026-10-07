@@ -10,10 +10,21 @@ namespace Hub\State;
  */
 interface DeviceReportStore
 {
-    /** @param array<string, mixed> $fields */
-    public function deviceSeen(string $imei, array $fields): void;
+    /**
+     * @param array<string, mixed> $fields
+     * @return bool se estava desligado
+     */
+    public function deviceSeen(string $imei, array $fields): bool;
 
-    public function deviceOffline(string $imei): void;
+    /** @return bool se estava ligado */
+    public function deviceOffline(string $imei): bool;
+
+    /**
+     * Dá por desligado quem se calou há mais do que o prazo, só do tipo pedido quando há um.
+     *
+     * @return list<string> os que estavam ligados
+     */
+    public function expireStaleDevices(int $timeoutSeconds, ?string $deviceType = null): array;
 
     /** @param array<string, mixed> $payload */
     public function append(string $imei, string $list, array $payload): void;

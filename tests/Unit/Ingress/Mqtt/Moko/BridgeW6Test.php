@@ -120,8 +120,9 @@ final class BridgeW6Test extends TestCase
         $deviceStore = $this->createMock(DeviceStoreContract::class);
         $deviceStore->expects(self::never())->method('recordRejectedDevice');
         $deviceStore->method('deviceSeen')
-            ->willReturnCallback(function (string $imei, array $state) use (&$seen): void {
+            ->willReturnCallback(function (string $imei, array $state) use (&$seen): bool {
                 $seen[$imei] = $state;
+                return false;
             });
 
         $this->deliver(

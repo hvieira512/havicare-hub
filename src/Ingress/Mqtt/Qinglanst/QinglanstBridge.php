@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Qinglanst;
 
+use Hub\Device\ConnectionAnnouncer;
 use Hub\Device\DeviceDescriptor;
 use Hub\Domain\DeviceMetadata;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
@@ -15,6 +16,10 @@ final class QinglanstBridge extends MqttBridgeBase
     private readonly MessageNormalizer $normalizer;
     private readonly IngestStats $stats;
     private readonly DashboardWritePolicy $dashboardWritePolicy;
+    private readonly ConnectionAnnouncer $connections;
+    /** O varrimento dos radares calados corre no máximo de dez em dez segundos. */
+    private const MAINTENANCE_INTERVAL_SECONDS = 10.0;
+    private float $lastMaintenanceAt = 0.0;
     private const SUPPORTED_TYPES = ['position', 'heartbreath', 'posstatics', 'hbstatics'];
     /** O tópico traz a licença e não a empresa, e estes radares só existem para a hitcare. */
     private const RADAR_COMPANY = 'hitcare';
@@ -30,6 +35,7 @@ final class QinglanstBridge extends MqttBridgeBase
         ?DashboardWritePolicy $dashboardWritePolicy = null,
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
         ?\Hub\Registry\Denylist $denylist = null,
+        private readonly int $idleTimeoutSeconds = 180,
     ) {
         parent::__construct(
             $subscriber,
@@ -46,6 +52,28 @@ final class QinglanstBridge extends MqttBridgeBase
         $this->normalizer = new MessageNormalizer();
         $this->stats = $stats ?? new IngestStats($topicFilter);
         $this->dashboardWritePolicy = $dashboardWritePolicy ?? new DashboardWritePolicy();
+        $this->connections = new ConnectionAnnouncer($mqttBridge, $deviceStore);
+    }
+
+    public function tick(float $timeout = 0.01): void
+    {
+        parent::tick($timeout);
+        if ($this->clockNow() - $this->lastMaintenanceAt >= self::MAINTENANCE_INTERVAL_SECONDS) {
+            $this->lastMaintenanceAt = $this->clockNow();
+            $this->expireIdleRadars();
+        }
+    }
+
+    /** O radar não abre sessão: está desligado quando se cala para lá do prazo. Público para os testes. */
+    public function expireIdleRadars(): void
+    {
+        foreach ($this->deviceStore?->expireStaleDevices($this->idleTimeoutSeconds, 'radar') ?? [] as $imei) {
+            $device = $this->whitelist->resolve($imei, 'qinglanst-radar');
+            $this->connections->announce($imei, $device !== null ? $this->enrichWithCommercialName($device) : [
+                'deviceType' => 'radar',
+                'company' => self::RADAR_COMPANY,
+            ], false);
+        }
     }
 
     protected function handleMessage(string $topic, string $payload): void
@@ -160,7 +188,7 @@ final class QinglanstBridge extends MqttBridgeBase
         $redisSeenDuration = 0;
         if ($this->deviceStore !== null && $this->dashboardWritePolicy->shouldUpdateSeen($deviceKey, $nowMs)) {
             $redisSeenStart = hrtime(true);
-            $this->deviceStore->deviceSeen($deviceKey, [
+            $cameOnline = $this->deviceStore->deviceSeen($deviceKey, [
                 'supplier' => (string)$device['supplier'],
                 'model' => (string)$device['model'],
                 'deviceType' => $deviceType,
@@ -170,6 +198,9 @@ final class QinglanstBridge extends MqttBridgeBase
                 'transport' => 'mqtt',
                 'online' => '1',
             ]);
+            if ($cameOnline) {
+                $this->connections->announce($deviceKey, $device, true);
+            }
             $redisSeenDuration = hrtime(true) - $redisSeenStart;
         }
 

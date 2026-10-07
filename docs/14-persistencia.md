@@ -229,9 +229,15 @@ começava com 26 dispositivos lá dentro.
 
 ### O histórico é limitado, não é um arquivo
 
-Cada dispositivo tem quatro listas — `raw`, `telemetry`, `events`, `commands` — e
-cada uma guarda as últimas **100** entradas (`DASHBOARD_HISTORY_LIMIT`). O corte
-é feito no mesmo pipeline da escrita.
+Cada dispositivo tem cinco listas — `raw`, `telemetry`, `events`, `connections`,
+`commands` — e cada uma guarda as últimas **100** entradas
+(`DASHBOARD_HISTORY_LIMIT`). O corte é feito no mesmo pipeline da escrita.
+
+As `connections` são os `device.connected` e `device.disconnected`, que o `append`
+desvia de `events` e guarda só quando mudam o estado. Têm lista própria porque os
+alarmes de um radar enchem os cem eventos em poucas horas. Um aparelho já ligado
+que ainda não tenha nenhuma começa-a com um `device.connected` na primeira vez que
+é visto, só no histórico.
 
 A retenção é dimensionada para a apresentação do passado recente na dashboard.
 **A conservação de série temporal cabe às aplicações que subscrevem o MQTT.**
@@ -242,7 +248,7 @@ os sinais de vida dos relógios e os relatórios de varrimento dos gateways.
 ### O histórico é também o transporte do stream
 
 A escrita no histórico é o que acorda o stream em directo. O `append` de uma
-entrada de `telemetry` ou de `events` chama o `DeviceUpdateNotifier`, a que o
+entrada de `telemetry`, de `events` ou de `connections` chama o `DeviceUpdateNotifier`, a que o
 `GET /api/devices/{imei}/stream` está subscrito, e é esse aviso que faz a
 dashboard voltar a desenhar — o mapa da planta de um radar incluído.
 

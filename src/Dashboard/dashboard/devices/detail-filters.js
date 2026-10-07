@@ -142,6 +142,11 @@ export function allDetailItems() {
         )
             items.push({ _source: "connection", raw: row, payload });
     }
+    // As ligações têm lista própria; as dos eventos são as antigas, de antes de a haver.
+    for (const row of recent.connections || []) {
+        const payload = rowPayload(row);
+        if (payload) items.push({ _source: "connection", raw: row, payload });
+    }
     for (const row of recent.commands || []) {
         const payload = rowPayload(row);
         if (payload) items.push({ _source: "command", raw: row, payload });

@@ -22,8 +22,6 @@ interface DeviceRegistry
 
     public function updateDeviceAssociation(string $imei, string $company, int $licenseId): void;
 
-    public function expireStaleDevices(int $timeoutSeconds): void;
-
     /** @return list<array<string, mixed>> */
     public function devices(): array;
 

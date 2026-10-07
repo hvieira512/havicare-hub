@@ -66,7 +66,7 @@ final class DeviceController
 
         // O cursor deste cliente, por lista: o instantâneo leva o histórico todo, e as actualizações
         // só o que entrou depois.
-        $cursor = ['telemetry' => 0, 'events' => 0];
+        $cursor = ['telemetry' => 0, 'events' => 0, 'connections' => 0];
         $lastCommands = null;
 
         $send = function (string $event) use ($imei, $auth, $stream, &$cursor, &$lastCommands, &$blocked): void {
@@ -82,13 +82,14 @@ final class DeviceController
             $cursor = [
                 'telemetry' => (int)($data['cursor']['telemetry'] ?? 0),
                 'events' => (int)($data['cursor']['events'] ?? 0),
+                'connections' => (int)($data['cursor']['connections'] ?? 0),
             ];
             unset($data['cursor']);
 
             // Os comandos vão sempre inteiros porque mudam de estado, e é a comparação deles que decide
             // se uma actualização sem linhas novas tem algo a dizer.
             $commands = json_encode($data['commands'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-            $hasNewEntries = $data['telemetry'] !== [] || $data['events'] !== [];
+            $hasNewEntries = $data['telemetry'] !== [] || $data['events'] !== [] || $data['connections'] !== [];
             if (!$hasNewEntries && $commands === $lastCommands) {
                 // Nada mudou: mantém a ligação viva sem obrigar o cliente a redesenhar o
                 // mesmo histórico.

@@ -200,6 +200,7 @@ publicado dezenas de vezes por minuto.
 | **De-duplicação** | O mesmo anúncio, byte a byte, ouvido outra vez é descartado | sensor de fralda | 5 s |
 | **Refrescamento** | Suprime telemetria de conteúdo idêntico até decorrer este período, findo o qual volta a ser publicada | aparelhos MOKO | 60 s |
 | **Inatividade do gateway** | Transição para `offline`, com `status` retido | gateways | 180 s |
+| **Inatividade do retransmitido** | `device.disconnected` quando nenhum gateway o ouve; o `device.connected` sai quando um o volta a ouvir | aparelhos atrás do gateway | 30 min (`DASHBOARD_DEVICE_IDLE_TIMEOUT_SECONDS`) |
 
 O refrescamento tem âmbito **por gateway** e não por dispositivo. Com âmbito por
 dispositivo, o primeiro gateway a publicar suprimiria os restantes, eliminando a

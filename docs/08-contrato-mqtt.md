@@ -138,8 +138,8 @@ com o comando que saiu ou ficou em fila — ou um `error`. Os segundos acrescent
 
 | `type` | Condição de emissão |
 |---|---|
-| `device.connected` | Um aparelho autenticou-se, ou um NCS reportou-se online |
-| `device.disconnected` | Ligação fechada, inatividade, ou gateway calado |
+| `device.connected` | Um aparelho autenticou-se, um NCS reportou-se online, ou um radar ou aparelho retransmitido voltou a falar |
+| `device.disconnected` | Ligação fechada, inatividade, gateway calado, radar calado 3 minutos, ou retransmitido sem gateway que o ouça durante 30 |
 | `device.rejected` | Um aparelho não registado tentou entrar |
 | `device.downlink.sent` | Um comando saiu para o aparelho |
 | `device.downlink.queued` | O aparelho estava offline; o comando ficou em fila |

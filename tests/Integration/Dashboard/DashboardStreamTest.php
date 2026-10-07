@@ -55,6 +55,28 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         self::assertSame(0, $store->updates()->listenerCount());
     }
 
+    /** As ligações têm lista própria no stream, e uma actualização só leva as que entraram depois. */
+    public function testTheStreamCarriesTheConnectionHistoryOnItsOwn(): void
+    {
+        [$server, , $store] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+        $store->append('861265061009822', 'events', ['type' => 'device.disconnected']);
+
+        $response = $this->openDeviceStream($server, '861265061009822', $token);
+        $frames = $this->collectSseFramesUntilUpdate($response, function () use ($store): void {
+            $store->append('861265061009822', 'events', ['type' => 'device.connected']);
+        });
+
+        $snapshot = $this->decodeSseFrame($frames);
+        self::assertSame(['device.disconnected'], array_column($snapshot['connections'] ?? [], 'type'));
+        self::assertSame([], $snapshot['events'] ?? null);
+
+        $update = $this->decodeSseFrame(substr($frames, (int)strpos($frames, 'event: update')));
+        self::assertSame(['device.connected'], array_column($update['connections'] ?? [], 'type'));
+
+        $response->getBody()->close();
+    }
+
     public function testClosingTheStreamDuringABurstLeavesNoTimersOrListeners(): void
     {
         [$server, , $store] = $this->makeServerWithDatabase();

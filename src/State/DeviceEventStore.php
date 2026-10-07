@@ -80,6 +80,15 @@ final class DeviceEventStore
         return $entries;
     }
 
+    /** @return array<string, mixed>|null a entrada mais recente, sem ler a lista inteira */
+    public function latest(string $imei, string $list): ?array
+    {
+        $line = $this->redis->lrange($this->deviceListKey($imei, $list), 0, 0)[0] ?? null;
+        $entry = is_string($line) ? json_decode($line, true) : null;
+
+        return is_array($entry) ? $entry : null;
+    }
+
     /** O número de ordem da entrada mais recente, que é o cursor a devolver ao cliente. */
     public function latestSequence(string $imei, string $list): int
     {
