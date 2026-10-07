@@ -208,8 +208,19 @@ class DeviceHubServer
         $command = self::withoutBinaryValues(array_merge($this->commandMetadata($bytes) ?? [], $context ?? []));
         $commercialName = (string)($metadata['commercialName'] ?? '');
 
+        // A manutenção renova de minuto a minuto o comando que espera pelo aparelho: o anúncio
+        // é do pedido, e só sai quando ele entra na fila.
+        $id = (string)($command['id'] ?? '');
+        $renewal = $id !== '' && array_filter(
+            $this->downlinkQueue->pendingFor($imei),
+            static fn (PendingDownlink $pending): bool => (string)($pending->command['id'] ?? '') === $id,
+        ) !== [];
+
         try {
             $this->downlinkQueue->enqueue($imei, $bytes, $command, $this->downlinkQueueTtlSeconds);
+            if ($renewal) {
+                return true;
+            }
             $this->mqtt->publishEvent($imei, RawPayload::event(
                 $imei,
                 $metadata['supplier'],

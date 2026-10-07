@@ -142,7 +142,7 @@ com o comando que saiu ou ficou em fila — ou um `error`. Os segundos acrescent
 | `device.disconnected` | Ligação fechada, inatividade, gateway calado, radar calado 3 minutos, ou retransmitido sem gateway que o ouça durante 30 |
 | `device.rejected` | Um aparelho não registado tentou entrar |
 | `device.downlink.sent` | Um comando saiu para o aparelho |
-| `device.downlink.queued` | O aparelho estava offline; o comando ficou em fila |
+| `device.downlink.queued` | O aparelho estava offline; o comando ficou em fila. Sai uma vez por pedido: renovar a fila enquanto o aparelho não volta não o repete |
 | `device.downlink.dropped` | O comando não foi entregue nem guardado |
 | `device.measurement_failed` | Pulseira — uma medição pedida não produziu valor, e o aparelho disse porquê |
 

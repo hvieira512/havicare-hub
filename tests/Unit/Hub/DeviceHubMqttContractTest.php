@@ -226,6 +226,25 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame(300, $queue->lastTtl);
     }
 
+    /**
+     * A manutenção renova de minuto a minuto a entrada de um comando à espera do aparelho; o
+     * anúncio é do pedido, e sai uma vez.
+     */
+    public function testRenewingAQueuedCommandDoesNotAnnounceItAgain(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $queue = new ContractFakePendingDownlinkQueue();
+        $hub = new DeviceHubServer($this->whitelist, $mqtt, downlinkQueue: $queue, downlinkQueueTtlSeconds: 300);
+        $context = ['id' => 'cmd-44807b18', 'command' => 'BPXY', 'nativeType' => 'BPXY', 'protocol' => 'vivistar-iw'];
+
+        for ($renewal = 0; $renewal < 3; $renewal++) {
+            self::assertTrue($hub->queueDownlink('865028000000308', 'IWBPXY,865028000000308,080835#', $context));
+        }
+
+        self::assertSame(['device.downlink.queued'], array_map(static fn(array $event): string => $event[1]['type'], $mqtt->events));
+        self::assertCount(1, $queue->pendingFor('865028000000308'));
+    }
+
     public function testOfflineDownlinkDropsWithQueueUnavailableWhenRedisFails(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
