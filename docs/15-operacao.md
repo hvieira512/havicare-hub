@@ -248,11 +248,17 @@ php -d extension=ev -r 'require "vendor/autoload.php";
     echo get_class(React\EventLoop\Loop::get()), PHP_EOL;'
 ```
 
-> O pacote instala `/etc/php.d/40-ev.ini`, carregado por **todos** os processos
-> PHP da máquina. Com ele activo, a instância de produção troca de loop no
-> próximo reinício, qualquer que seja o motivo. O
->  `config/systemd/ev-loop.conf` existe para evitar isso: desactiva-se o ini
-> global e carrega-se a extensão pela linha de comando de uma unit só.
+> O pacote instala um ini global, carregado por **todos** os processos PHP da
+> máquina: `/etc/php.d/40-ev.ini` no Fedora, `/etc/php/8.4/cli/conf.d/20-ev.ini`
+> no Debian. Com ele activo, qualquer instância troca de loop no próximo
+> reinício. O `config/systemd/ev-loop.conf` serve para quem quiser a troca por
+> instância: desactiva-se o ini global e carrega-se a extensão pela linha de
+> comando de uma unit só.
+>
+> **No `hub-prod` o ini global fica activo, e o drop-in não se instala.** Os
+> reencaminhadores, os workers e a integração correm na mesma máquina e usam o
+> `ev` por esse ini. Com os dois ao mesmo tempo, a extensão carregava duas vezes
+> e cada arranque deixava `Module "ev" is already loaded` no journal.
 
 ### Reiniciar um processo que não morreu
 
