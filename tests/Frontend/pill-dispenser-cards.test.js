@@ -126,7 +126,6 @@ test("os estados da toma e das avarias são traduzidos", () => {
     assert.equal(fieldValue("method", "early"), "Antecipada");
     assert.equal(fieldValue("level", "empty"), "Sem medicação");
     assert.equal(fieldValue("fault", "tray_reset"), "Reposição do prato");
-    assert.equal(fieldValue("state", "in_progress"), "Em curso");
 });
 
 test("o sinal do dispensador sai em dBm", () => {
@@ -160,7 +159,7 @@ test("a toma e a avaria chegam à lista de atividade", () => {
         events: [
             { type: "medication_intake", severity: "alert", occurredAt: "2026-09-18T20:07:31Z", data: { result: "missed" } },
             { type: "device_fault", severity: "alert", occurredAt: "2026-09-18T20:08:00Z", data: { fault: "tray_reset" } },
-            { type: "help_call", severity: "alarm", occurredAt: "2026-09-18T20:09:00Z", data: { state: "in_progress" } },
+            { type: "help_call", severity: "alarm", occurredAt: "2026-09-18T20:09:00Z", data: {} },
         ],
     };
 

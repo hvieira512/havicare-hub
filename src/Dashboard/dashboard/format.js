@@ -308,7 +308,6 @@ const FIELD_VALUE_LABELS = {
     // O `state` é partilhado por várias capacidades, e por isso só entra aqui o valor que
     // ainda não tinha tradução; os outros continuam a passar pelo `titleize`.
     state: {
-        in_progress: "Em curso",
         // O estado de cada alarme do dispensador, como o aparelho o classifica.
         idle: "Sem toma marcada",
         preparing: "A preparar",

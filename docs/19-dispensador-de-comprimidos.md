@@ -301,7 +301,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | `0x8131`–`0x8139` **num `0x87`** | `medication_alarm_status` | `takenCount`, `missedCount`, `alarms[{alarm, state}]` — a leitura dos nove, que só a resposta ao `0x07` traz |
 | `0x8131`–`0x8139` **num `0x04`/`0x02`** | `medication_alarm_change` | `alarm`, `state` — o alarme que mudou, um evento por alarme |
 | `0x8121`–`0x8125` | `device_fault` | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
-| `0x8112` | `help_call` | `state` |
+| `0x8112` | `help_call` | — · o `1` (chamada em curso) é o pedido de ajuda; o `0` não gera nada |
 | `0x8002` **num `0x01`** | `firmware_version` | `version` — em hexadecimal, `0x0502`. Só o registo a traz, e por isso não é pedível |
 
 **Por que canal sai cada coisa.** O que o `CapabilityCatalog` declara com
@@ -584,12 +584,15 @@ chamada:
 configuração.
 
 **O que é pago é a chamada, não o aviso.** O botão reporta-nos na mesma: medido a
-29/09/2026, uma pressão fez chegar o `0x8112` e o hub publicou `help_call` com
-`state: in_progress` — a mesma capacidade do NCS e da pulseira. É a primeira vez
-que este evento saiu deste aparelho, e não precisou de serviço nenhum contratado.
+29/09/2026, uma pressão fez chegar o `0x8112` e o hub publicou `help_call` — a
+mesma capacidade do NCS e da pulseira. É a primeira vez que este evento saiu deste
+aparelho, e não precisou de serviço nenhum contratado.
 
-Fica por ver o fim: só se observou o `in_progress`, e não se sabe se há transição
-quando a chamada termina ou é cancelada.
+**A chamada não sinaliza o fim.** Medido a 08/10/2026: a pressão chega numa
+notificação `0x04`, e seis minutos depois a resposta ao `0x07` ainda trazia o
+`0x8112` a `1`. O heartbeat deste firmware não traz a TAG. Por isso o hub publica
+o `help_call` quando a TAG acende, e não o repete enquanto ela fica acesa — nem
+nas consultas de estado.
 
 **Quem decide para quem se liga somos nós.** A tabela do tipo `0x02` tem seis
 TAGs de texto e nenhuma é um número de telefone: o CCID do SIM (`0x8009`), o IP e

@@ -179,7 +179,7 @@ final class PillDispenserNormalizationTest extends TestCase
         }
 
         self::assertSame(['fault' => 'tray_reset'], $byFeature['device_fault']);
-        self::assertSame(['state' => 'in_progress'], $byFeature['help_call']);
+        self::assertSame([], $byFeature['help_call']);
     }
 
     /**

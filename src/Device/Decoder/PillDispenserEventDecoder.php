@@ -23,7 +23,7 @@ final class PillDispenserEventDecoder
     /** O evento de cada condição: o juízo do ambiente, a chamada de ajuda, e cada avaria. */
     public const CONDITIONS = [
         'storage_environment' => ['feature' => 'storage_environment', 'value' => ['outOfRange' => true]],
-        'help_call' => ['feature' => 'help_call', 'value' => ['state' => 'in_progress']],
+        'help_call' => ['feature' => 'help_call', 'value' => []],
         'device_fault:rotation' => ['feature' => 'device_fault', 'value' => ['fault' => 'rotation']],
         'device_fault:tray_reset' => ['feature' => 'device_fault', 'value' => ['fault' => 'tray_reset']],
         'device_fault:pusher' => ['feature' => 'device_fault', 'value' => ['fault' => 'pusher']],
