@@ -320,8 +320,7 @@ function renderIdentity(answers) {
                                         ),
                                     ),
                                 )
-                                .join("")
-                        : "<div class=\"gateway-picker-empty small text-secondary\">Nenhum gateway nesta empresa e licença.</div>"}
+                        : html`<div class="gateway-picker-empty small text-secondary">Nenhum gateway nesta empresa e licença.</div>`}
                 </div>
                 <div class="form-text">Só os selecionados podem reportar dados deste sensor.</div>
                </div>`

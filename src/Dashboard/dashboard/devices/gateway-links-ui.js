@@ -4,6 +4,7 @@ import {
     getDevices as apiGetDevices,
 } from "../api/index.js";
 import { esc } from "../format.js";
+import { html, raw } from "../html.js";
 import { state } from "../state.js";
 import { linksToGateway, normalizeDeviceType } from "../domain.js";
 import { eligibleGateways, gatewayLinkChanges, normalizeKey } from "./gateway-links.js";
@@ -86,15 +87,15 @@ export function gatewayCardMarkup(gateway, checked, signal = null) {
     const model = String(gateway.model || "").trim();
     const image = String(gateway.image || "").trim();
     const thumb = image
-        ? `<img class="object-fit-contain" src="${esc(image)}" alt="" loading="lazy" decoding="async">`
-        : GATEWAY_THUMB_PLACEHOLDER;
+        ? html`<img class="object-fit-contain" src="${image}" alt="" loading="lazy" decoding="async">`
+        : raw(GATEWAY_THUMB_PLACEHOLDER);
 
-    return `<label class="gateway-card d-flex align-items-center m-0 py-2">
-        <input class="form-check-input gateway-card-check flex-shrink-0 m-0" type="checkbox" data-gateway-key="${esc(key)}"${checked ? " checked" : ""}>
+    return html`<label class="gateway-card d-flex align-items-center m-0 py-2">
+        <input class="form-check-input gateway-card-check flex-shrink-0 m-0" type="checkbox" data-gateway-key="${key}"${checked ? raw(" checked") : ""}>
         <span class="gateway-card-thumb d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden rounded-3">${thumb}</span>
         <span class="min-w-0">
-            <span class="d-block fw-semibold text-truncate lh-sm">${esc(key)}</span>
-            <span class="gateway-card-model d-block text-secondary text-truncate lh-sm">${esc(model || "Modelo desconhecido")}</span>
+            <span class="d-block fw-semibold text-truncate lh-sm">${key}</span>
+            <span class="gateway-card-model d-block text-secondary text-truncate lh-sm">${model || "Modelo desconhecido"}</span>
         </span>
         ${signalMeter(signal)}
     </label>`;

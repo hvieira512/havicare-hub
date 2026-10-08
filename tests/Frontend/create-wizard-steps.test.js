@@ -153,3 +153,31 @@ test("num telemóvel fica só o passo actual, e o contador diz em que ponto se e
     assert.deepEqual(visible.map(text), ["Fornecedor"]);
     assert.equal(els.wizardProgress.classList.contains("d-none"), false);
 });
+
+/** Os gateways autorizados de um sensor entram como marcação, e não como texto à letra. */
+function walkToDiaperIdentity() {
+    pick("[data-wizard-type=\"diaper_sensor\"]");
+    pick("[data-wizard-model=\"MECS-PRO\"]");
+    pick("[data-license-id=\"1001\"]");
+}
+
+test("sem gateways na licença, o aviso aparece como texto e não como marcação", () => {
+    state.wizardGateways = [];
+    walkToDiaperIdentity();
+
+    const empty = root.querySelector("#wizardAsk .gateway-picker-empty");
+    assert.notEqual(empty, null);
+    assert.equal(text(empty), "Nenhum gateway nesta empresa e licença.");
+    assert.doesNotMatch(text(els.wizardAsk), /<div/);
+});
+
+test("um gateway da mesma licença aparece como cartão a escolher", () => {
+    state.wizardGateways = [
+        { imei: "d48c49f7909c", model: "MKGW3", company: "hitcare", licenseId: "1001" },
+    ];
+    walkToDiaperIdentity();
+
+    const check = root.querySelector("#wizardAsk .gateway-card [data-gateway-key=\"d48c49f7909c\"]");
+    assert.notEqual(check, null);
+    assert.doesNotMatch(text(els.wizardAsk), /<label/);
+});
