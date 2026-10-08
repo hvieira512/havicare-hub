@@ -285,22 +285,30 @@ nenhum dado é descartado.
 ## 6. Códigos de alarme
 
 Os dois protocolos que reportam alarmes usam representações distintas: a
-Vivistar um código numérico, a 4P Touch uma máscara de bits.
+Vivistar um código numérico, a 4P Touch uma máscara de bits. Cada um vira o
+evento do que aconteceu, com o mesmo nome que os outros aparelhos usam:
 
-| Significado | Vivistar | 4P Touch |
-|---|---|---|
-| SOS | `01` | `0x00010000` |
-| Bateria fraca | `02` | `0x00020000` |
-| Queda | `06` | `0x00200000` |
-| Aviso de uso | `04` | `0x00100000` *(remoção)* |
-| Cerca virtual | — | `0x00040000` / `0x00080000` |
-| Frequência cardíaca anormal | — | `0x00400000` |
+| Significado | Vivistar | 4P Touch | Evento | `data` |
+|---|---|---|---|---|
+| SOS | `01` | `0x00010000` | `help_call` | — |
+| Bateria fraca | `02` | `0x00020000` | `low_battery` | — |
+| Queda | `06` | `0x00200000` | `fall` | `confirmed: true` |
+| Aviso de uso / remoção | `04` | `0x00100000` | `device_removed` | — |
+| Saiu da cerca | — | `0x00040000` | `zone_exit` | `zone: geofence` |
+| Entrou na cerca | — | `0x00080000` | `zone_entry` | `zone: geofence` |
+| Frequência cardíaca anormal | — | `0x00400000` | `heart_rate_abnormal` | — |
 
-Ambos são normalizados na capacidade `alarm`, cada motivo ativo num evento
-próprio com um único `data.reason` (`sos`, `low_battery`, `fall`,
-`watch_removed`, `geofence_exit`, `geofence_entry`, `abnormal_heart_rate`). Uma
-máscara do 4P Touch com vários bits produz vários eventos `alarm`; a zero,
-nenhum.
+Uma máscara do 4P Touch com vários bits produz vários eventos; a zero, nenhum.
+O 4P Touch não diz se a frequência cardíaca está alta ou baixa, nem o valor, e
+por isso é o único a publicar `heart_rate_abnormal`.
+
+**A bateria fraca tem mais duas origens**, além do alarme:
+
+- **4P Touch:** o bit 0 do campo de estado das tramas `UD*`, que fica aceso
+  enquanto a bateria está fraca. Sai como `battery.lowBattery`, e o `low_battery`
+  só sai quando acende.
+- **Wonlex:** o `batteryType` 3 no `upBattery` e no `heartbeat` é o próprio
+  relógio a dar o alarme. Sai o `low_battery`, com a percentagem.
 
 **O alarme sai no canal `events`, a QoS 1**, e não em `telemetry`. É um
 acontecimento e não uma medição, e a garantia de entrega é a mesma que a de uma

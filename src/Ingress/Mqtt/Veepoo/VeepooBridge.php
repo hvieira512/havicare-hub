@@ -9,6 +9,7 @@ use Hub\State\DeviceReportStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceDescriptor;
 use Hub\Device\HubMqttBridge;
+use Hub\Device\LowBatteryTransitions;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\GatewayDeviceLinkLookup;
@@ -80,6 +81,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 
     private readonly SettlingReadings $readings;
 
+    private readonly LowBatteryTransitions $lowBattery;
+
     public function __construct(
         MqttClient $subscriber,
         Whitelist $whitelist,
@@ -105,6 +108,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             commercialModelResolver: $commercialModelResolver,
         );
         $this->normalizer = new DailyBlockNormalizer();
+        $this->lowBattery = new LowBatteryTransitions();
         $this->downlinkDispatcher = new DownlinkDispatcher(
             $downlinks,
             $mqttBridge,
@@ -370,33 +374,51 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 
     /**
      * Percentagem de bateria, só quando `VPDeviceIsPercent` o diz: sem a curva da célula, a
-     * tensão não se converte.
+     * tensão não se converte. A bateria fraca vem à parte, e sai nos dois modos.
      *
      * @param array<string, mixed>|null $payload
      */
     private function publishBattery(mixed $payload, BraceletContext $context): void
     {
-        if (!is_array($payload) || ($payload['VPDeviceIsPercent'] ?? false) !== true) {
+        if (!is_array($payload)) {
             return;
         }
 
         $percent = $payload['VPDeviceElectricPercent'] ?? null;
-        if (!is_int($percent) || $percent < 0 || $percent > 100) {
+        $percent = ($payload['VPDeviceIsPercent'] ?? false) === true && is_int($percent) && $percent >= 0 && $percent <= 100
+            ? $percent
+            : null;
+        $data = Values::withoutNulls([
+            'percent' => $percent,
+            'lowBattery' => match ($payload['VPDeviceElectricTypeIsLowVoltage'] ?? null) {
+                'lowVoltage' => true,
+                'normal' => false,
+                default => null,
+            },
+        ]);
+        if ($data === []) {
             return;
         }
 
-        $this->emitTelemetry($context, TelemetryEnvelope::for(
+        $battery = TelemetryEnvelope::for(
             'battery',
             $context->deviceKey,
             $context->device,
             self::PROTOCOL,
             'battery',
-            Values::withoutNulls([
-                'percent' => $percent,
-                'lowBattery' => ($payload['VPDeviceElectricTypeIsLowVoltage'] ?? null) === 'lowVoltage' ? true : null,
-            ]),
+            $data,
             $context->gatewayKey,
-        ));
+        );
+        $this->emitTelemetry($context, $battery);
+
+        $lowBattery = $this->lowBattery->observe($context->deviceKey, $battery);
+        if ($lowBattery !== null) {
+            $this->mqttBridge->publishEvent($context->deviceKey, $lowBattery, 'bracelet', $context->licenseId, $context->company);
+            $this->deviceStore?->append($context->deviceKey, 'events', $lowBattery + [
+                'deviceType' => 'bracelet',
+                'licenseId' => $context->licenseId,
+            ]);
+        }
     }
 
     /** A versão de firmware, tal como a sessão a traz; sai em cada sessão, mesmo repetida. */

@@ -16,7 +16,7 @@ const els = new Proxy({}, {
         if (typeof name !== "string") return undefined;
         if (!(name in target)) {
             target[name] = document.createElement(
-                name === "detailFilterType"
+                name === "detailFilterType" || name === "detailFilterSeverity"
                     ? "select"
                     : name.startsWith("detailFilter") || name === "detailSearch"
                         ? "input"
@@ -51,8 +51,8 @@ beforeEach(() => {
 test("escolher outro dispositivo larga os filtros aplicados ao anterior", () => {
     selectImei("bbb222");
 
-    assert.deepEqual(state.detailFilters, { from: "", to: "", type: "all", q: "" });
-    assert.deepEqual(state.detailFiltersDraft, { from: "", to: "", type: "all", q: "" });
+    assert.deepEqual(state.detailFilters, { from: "", to: "", type: "all", severity: "all", q: "" });
+    assert.deepEqual(state.detailFiltersDraft, { from: "", to: "", type: "all", severity: "all", q: "" });
 });
 
 test("voltar a escolher o mesmo dispositivo não mexe nos filtros", () => {

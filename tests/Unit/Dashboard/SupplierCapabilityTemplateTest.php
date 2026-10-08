@@ -25,7 +25,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertTrue($match[0]['isRequestable'] ?? false);
     }
 
-    public function testWatchCatalogPlacesMedicationRemindersInAlarms(): void
+    public function testWatchCatalogPlacesMedicationRemindersInReminders(): void
     {
         $definitions = CapabilityCatalog::definitionsForDeviceType('watch');
         $match = array_values(array_filter(
@@ -34,7 +34,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
         ));
 
         self::assertCount(1, $match);
-        self::assertSame('alarms', $match[0]['section'] ?? null);
+        self::assertSame('reminders', $match[0]['section'] ?? null);
         self::assertTrue($match[0]['isConfigurable'] ?? false);
         self::assertFalse($match[0]['isTelemetry'] ?? true);
     }
@@ -107,8 +107,14 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertSame(
             [
                 'fall',
-                'vitals_alarm',
-                'presence_event',
+                'heart_rate_high',
+                'heart_rate_low',
+                'breath_rate_high',
+                'breath_rate_low',
+                'apnea',
+                'weak_vital_signs',
+                'zone_entry',
+                'zone_exit',
                 'heart_rate',
                 'breath_rate',
                 'sleep_state',
@@ -120,12 +126,12 @@ final class SupplierCapabilityTemplateTest extends TestCase
         );
     }
 
-    /** O nome é o que o normalizador publica, e não `pager_call`. */
-    public function testVoerkaNcsTemplateReturnsHelpCall(): void
+    /** Os nomes são os que o normalizador publica: `help_call`, e não `pager_call`, e o `reset` que a fecha. */
+    public function testVoerkaNcsTemplateReturnsHelpCallAndReset(): void
     {
         $actual = SupplierCapabilityTemplate::keysForSupplierDeviceType('Voerka', 'ncs');
 
-        self::assertSame(['help_call'], $actual);
+        self::assertSame(['help_call', 'reset'], $actual);
     }
 
     public function testMokoGatewayCapabilitiesAreModelSpecific(): void
@@ -135,7 +141,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
             SupplierCapabilityTemplate::keysForModel('MOKO', 'MKGW3', 'gateway')
         );
         self::assertSame(
-            ['connectivity', 'battery', 'location'],
+            ['low_battery', 'connectivity', 'battery', 'location'],
             SupplierCapabilityTemplate::keysForModel('MOKO', 'MKGW4', 'gateway')
         );
     }

@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS models (
 CREATE TABLE IF NOT EXISTS capabilities (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     device_type VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'watch',
-    section ENUM('telemetry', 'health', 'contacts', 'alarms', 'settings_system') NOT NULL,
+    section ENUM('telemetry', 'health', 'contacts', 'alarms', 'reminders', 'settings_system') NOT NULL,
     capability_key VARCHAR(64) NOT NULL,
     label VARCHAR(96) NOT NULL,
     -- Sem `is_telemetry`: deriva da `section`. As outras duas bandeiras não são redutíveis a ela.

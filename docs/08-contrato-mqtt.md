@@ -149,84 +149,115 @@ com o comando que saiu ou ficou em fila — ou um `error`. Os segundos acrescent
 Os `dropped` levam `error.code`, que vale `device_offline` ou `queue_unavailable`.
 
 O `measurement_failed` leva `error.reason`, que vale `not_worn` quando a deteção de uso
-não passou, `low_battery` e `sensor_fault` quando é o firmware a recusar, e `no_signal`
-quando o traçado saiu todo a zeros. A mesma queixa do mesmo aparelho fica calada durante
+não passou, `low_battery` e `sensor_fault` quando é o firmware a recusar, `no_signal`
+quando o traçado saiu todo a zeros, e `no_response` ou `no_reading` quando a pulseira não
+respondeu ou respondeu sem valor. É a resposta a um pedido, e não um alerta: a bateria
+fraca da pulseira sai em `low_battery`. A mesma queixa do mesmo aparelho fica calada durante
 um minuto, para uma medição que insiste não encher o histórico.
 
 ### Eventos de domínio
 
-| `type` | Origem |
-|---|---|
-| `alarm` | Relógio — SOS, queda, bateria fraca ou aviso de uso |
-| `help_call` | Pulseira, NCS e dispensador de comprimidos |
-| `reset` | NCS |
-| `change_required` | Sensor de fralda |
-| `fall` · `vitals_alarm` · `presence_event` | Radar |
-| `medication_intake` · `device_fault` | Dispensador de comprimidos |
-
-Um alarme de relógio leva em `data` um único `reason`, e vai acompanhado de uma
-`location` no canal `telemetry` com `data.reportKind: "alarm"` — a posição
-pertence à telemetria, e é esse campo que volta a ligar as duas metades do mesmo
-acontecimento:
+O `type` diz **o que aconteceu**, com o mesmo nome em todos os aparelhos que o
+reportam: quem subscreve `fall` recebe as quedas dos relógios e dos radares sem
+conhecer nenhum dos dois. O `data` traz o pormenor, e a `severity` diz quão grave
+é.
 
 ```json
 {
-  "type": "alarm",
-  "occurredAt": "2026-09-01T10:35:10Z",
-  "device": { "id": "861265061009822", "supplier": "Vivistar", "model": "L08 Pro" },
-  "data": { "reason": "sos" },
-  "source": { "protocol": "vivistar-iw", "nativeType": "AP10" }
-}
-```
-
-Cada alarme tem **um** motivo. Um aparelho pode reportar vários em simultâneo — a
-trama do 4P Touch é uma máscara de bits —, e nesse caso saem **vários eventos
-`alarm`**, um por motivo, com o mesmo `occurredAt`. Os motivos são `sos`,
-`low_battery`, `fall`, `watch_removed`, `geofence_exit`, `geofence_entry` e
-`abnormal_heart_rate`.
-
-### As detecções do radar
-
-As três capacidades do radar partilham a forma do `data`, e o tipo concreto da
-deteção viaja lá dentro — são quinze tipos para três capacidades, e o
-agrupamento está no [capítulo 04](04-ingestao-mqtt-radar.md):
-
-```json
-{
-  "type": "vitals_alarm",
-  "occurredAt": "2026-09-01T10:35:10Z",
-  "device": { "id": "594B3CF100A7", "supplier": "Qinglanst", "model": "RD-V1" },
-  "data": {
-    "detectionType": "heart_rate_high",
-    "detectionCategory": "alarm",
-    "detectionLevel": "warning",
-    "detectionSource": "heartbreath",
-    "details": { "heartRate": 134 }
-  },
+  "type": "heart_rate_high",
+  "severity": "alarm",
+  "occurredAt": "2026-10-08T10:35:10Z",
+  "device": { "id": "594B3CD2D097", "supplier": "Qinglanst", "model": "RD-V1" },
+  "data": { "bpm": 172 },
   "source": { "protocol": "qinglanst-radar", "nativeType": "heartbreath", "topic": "…" }
 }
 ```
 
-| Campo | Valores |
+#### A gravidade
+
+Todo o evento de domínio leva `severity`, logo a seguir ao `type`. Os eventos de
+ligação (`device.*`) não a levam.
+
+| `severity` | Quer dizer |
 |---|---|
-| `detectionType` | O tipo concreto da deteção |
-| `detectionCategory` | `alarm` · `event` — entradas e saídas descrevem movimento, e não perigo |
-| `detectionLevel` | `info` · `warning` · `danger` |
-| `detectionSource` | `position` · `heartbreath` — de que lado do aparelho veio |
-| `details` | O que justifica a deteção. É `data` como qualquer outro, e os campos são camelCase |
+| `alarm` | Perigo para a pessoa: pede alguém já |
+| `alert` | Pede atenção, mas não é urgente |
+| `info` | Um facto, sem nada a fazer |
 
-O `details` muda com o tipo e com a mensagem que o produziu. O
-`detectionSource` não separa o `heartbreath` do `hbstatics` — quem precisa dessa
-distinção lê o `source.nativeType`:
+Quem a decide é o hub, num sítio só (`EventSeverity`), e não o fabricante. Os
+eventos guardados no histórico da dashboard levam-na igual.
 
-| `source.nativeType` | `detectionType` | `details` |
-|---|---|---|
-| `position` | `fall_confirmed` · `room_entry` · `room_exit` · `area_entry` · `area_exit` | `personIndex` |
-| `heartbreath` | os quatro de frequência cardíaca | `heartRate` |
-| `heartbreath` | `vitals_signal_lost` | `breathsPerMinute` · `heartRate` |
-| `hbstatics` | `heart_rate_high` · `heart_rate_low` | `heartRateStatus` |
-| `hbstatics` | `apnea` | `breathingStatus` |
-| `hbstatics` | `vitals_signal_lost` | `vitalSignsStatus` |
+#### Os tipos
+
+| `type` | `data` | Quem o publica | `severity` |
+|---|---|---|---|
+| `help_call` | `pressType` (pulseira), `state` (dispensador), `pagerId` (NCS) | relógio (SOS), pulseira, NCS, dispensador | `alarm` |
+| `fall` | `confirmed`, `posture` (`lying` · `sitting_on_ground`), `personIndex` | relógio, radar | `alarm`; `alert` com `confirmed: false` |
+| `heart_rate_high` | `bpm`, quando há | radar | `alarm` acima de 160 bpm, `alert` abaixo ou sem valor |
+| `heart_rate_low` | `bpm`, quando há | radar | `alarm` abaixo de 20 bpm, `alert` acima ou sem valor |
+| `heart_rate_abnormal` | — | relógio 4P Touch | `alert` |
+| `breath_rate_high` · `breath_rate_low` | `breathsPerMinute`, quando há | radar | `alert` |
+| `apnea` | — | radar | `alarm` |
+| `weak_vital_signs` | — | radar | `alert` |
+| `zone_entry` · `zone_exit` | `zone` (`room` · `area` · `geofence`), `personIndex`, `areaId`, `areaName`, `areaType` | radar, relógio 4P Touch | `alert` a sair da cerca; `info` o resto |
+| `device_removed` | — | relógio | `alert` |
+| `low_battery` | `percent` ou `voltageMv`, quando há | relógios, pulseira Veepoo, dispensador, MKGW4 | `alert` |
+| `change_required` | `previousState` | sensor de fralda | `alarm` |
+| `check_required` | `previousState` | sensor de fralda | `alert` |
+| `device_fault` | `fault` | dispensador | `alert` |
+| `storage_environment` | `outOfRange` | dispensador | `alert` |
+| `device_state` | `state` | relógio Wonlex | `alert` |
+| `medication_alarm_change` | `alarm`, `state` | dispensador | `alert` numa dose falhada; `info` o resto |
+| `medication_intake` | `result`, … | dispensador | `alert` numa toma anormal ou falhada; `info` o resto |
+| `reset` | `pagerId` | NCS | `info` |
+
+O 4P Touch diz só que a frequência cardíaca está anormal, sem o valor e sem dizer
+para que lado: é a única origem do `heart_rate_abnormal`.
+
+Um relógio pode reportar vários alarmes de uma vez — a trama do 4P Touch é uma
+máscara de bits —, e nesse caso sai **um evento por bit**, com o mesmo
+`occurredAt`. A posição de um alarme de relógio vai à parte, como `location` no
+canal `telemetry` com `data.reportKind: "alarm"`.
+
+#### Entradas e saídas
+
+`zone` diz de onde: a divisão que o radar cobre, uma das áreas desenhadas na
+planta dele, ou a cerca do relógio. Numa área, o `areaId` é o número dela na
+planta, e o `areaName` e o `areaType` vêm da planta que o hub guardou desse radar
+— sem planta sincronizada, fica só o número.
+
+| `areaType` | Na planta do fabricante |
+|---|---|
+| `custom` | Customize |
+| `bed` | Bed |
+| `interference` | Exclusive area |
+| `door` | Door |
+| `monitoring_bed` | Monitoring Bed |
+| `alarm_area` | Sensing area |
+| `furniture` | Furniture |
+
+```json
+{ "type": "zone_exit", "severity": "info",
+  "data": { "zone": "area", "personIndex": 0, "areaId": 2, "areaName": "Porta", "areaType": "door" } }
+```
+
+#### O que dura sai uma vez
+
+Um evento sai quando a condição **começa**, e não enquanto dura:
+
+- **O radar** repete a postura e os vitais em cada trama, uma por segundo. Uma
+  queda, uma frequência alta ou uma apneia saem quando aparecem, e voltam a poder
+  sair depois de desaparecerem.
+- **O dispensador** repete as TAGs de estado em cada heartbeat. Uma avaria, a
+  chamada de ajuda e o ambiente fora da gama saem quando acendem, e voltam a
+  poder sair depois de o aparelho os dar por apagados.
+- **A bateria fraca** sai quando a bandeira acende: o alarme do próprio aparelho
+  (relógios, MKGW4) ou a passagem do `battery.lowBattery` a verdadeiro (4P Touch,
+  Veepoo, dispensador). O `battery` na telemetria leva `lowBattery` sempre que o
+  aparelho o diz.
+
+O estado vive em memória: um reinício do hub volta a anunciar o que estiver
+ativo. Quem consome a QoS 1 já tem de tolerar repetidos.
 
 ## 5. `status`
 
@@ -242,9 +273,10 @@ distinção lê o `source.nativeType`:
 o código, e é o **único** que não é retido — uma recusa é um acontecimento, não
 um estado que valha a pena guardar.
 
-Quem tem `status`: relógios, NCS e gateways. **Não têm:** radares, pulseiras e
-sensores de fralda. A presença de um sensor BLE não é acompanhada — sabe-se pela
-mensagem de `proximity` a passar a `unknown`, ou pela ausência de telemetria.
+Quem tem `status`: relógios, NCS, gateways, radares e a pulseira Veepoo.
+**Não têm:** as pulseiras W6/W6B e os sensores de fralda, que só se ouvem através de
+um gateway — sabe-se deles pela `proximity` a passar a `unknown`, ou pela ausência
+de telemetria.
 
 ### O estado retido e a mudança de cliente
 
@@ -344,6 +376,10 @@ As versões anteriores do contrato contêm as seguintes incorreções:
 | Os alarmes dos relógios saem em `telemetry` | Saem em `events`, a QoS 1 |
 | O `device_state` dos relógios sai em `telemetry` | Sai em `events`, a QoS 1. Está declarado como acontecimento desde sempre; o que o mandava para o outro canal era a lista à mão que o `isEvent` substituiu |
 | O estado de toma dos alarmes do dispensador é sempre `medication_alarm_status` | A **leitura dos nove** continua a sê-lo, em `telemetry`; a **mudança de um** é `medication_alarm_change`, em `events` a QoS 1. Uma dose falhada não gera `medication_intake` nenhum, e esta mudança é o único sinal dela |
+| Os alarmes dos relógios saem num `type: "alarm"` com um `reason` | Cada motivo é um tipo: `help_call`, `fall`, `low_battery`, `device_removed`, `zone_entry`/`zone_exit`, `heart_rate_abnormal` |
+| As detecções do radar saem em `fall`, `vitals_alarm` e `presence_event`, com `detectionType`, `detectionCategory`, `detectionLevel`, `detectionSource` e `details` | Cada detecção é um tipo, com os campos no `data`; o grau é a `severity` |
+| O radar publica `vitals_signal_lost` quando não mede ninguém | Um quarto vazio não publica nada; o sinal fraco do `hbstatics` é `weak_vital_signs` |
+| A bateria fraca sai em `alarm`, em `battery.lowBattery`, em `batteryType` ou em `chargingState` | Sai em `low_battery`, igual para todos, e o `battery` leva `lowBattery` |
 | O radar publica com o `uid` do tópico de origem | Publica com o IMEI canónico, como as restantes ingestões |
 | Existe um tópico de downlink por MQTT | Foi removido; os comandos entram pela API REST |
 
@@ -367,6 +403,9 @@ publicado.
 | `src/Device/HubMqttBridge.php` | Compõe todos os tópicos e publica os quatro canais |
 | `src/Device/RawPayload.php` | As formas de `raw`, `status` e do ciclo de vida |
 | `src/Device/DeviceEventPayloadBuilder.php` | A forma de `telemetry` e dos alarmes |
+| `src/Domain/Capability/EventSeverity.php` | A `severity` de cada evento, carimbada no `HubMqttBridge::publishEvent` e no histórico |
+| `src/Device/LowBatteryTransitions.php` | O `low_battery` de quem repete a bandeira em cada leitura |
+| `src/Ingress/Mqtt/Qinglanst/ActiveDetections.php` | As detecções do radar que duram saem uma vez |
 | `src/Device/DeviceHubServer.php` | A escolha do canal na ingestão TCP, que pergunta ao `CapabilityCatalog::isEventType()` |
 | `src/Domain/Capability/CapabilityCatalog.php` | O `isEvent` de cada definição, que é quem decide o canal |
 | `src/Mqtt/BrokerSettings.php` · `ConnectionFactory.php` | Ligação, TLS, identificadores de cliente |

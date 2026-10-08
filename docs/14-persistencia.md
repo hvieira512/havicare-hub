@@ -161,10 +161,16 @@ aconteceu às onze de setembro de 2026, da auditoria ao esquema, e é por isso q
 não estão em `src/Infrastructure/Persistence/Migration/` — o que elas fizeram
 está descrito abaixo porque explica o esquema de hoje, não porque ainda corra.
 
-O plano em vigor é o `DatabaseMigrationPlan`, uma classe por versão, e **está
-vazio**: todas as migrações já correram na frota e foram dobradas na linha de
-base. O `DatabaseSchemaGuard` só exige o que estiver no plano, e por isso as
-linhas que sobram na `schema_migrations` não incomodam.
+O plano em vigor é o `DatabaseMigrationPlan`, uma classe por versão, com o que
+ainda não foi dobrado na linha de base:
+
+| Versão | O que faz |
+|---|---|
+| `whitelist_key_cascades_on_rename` | As chaves que apontam para o `whitelist.imei` passam a acompanhar a renomeação |
+| `capability_sections_include_reminders` | A `capabilities.section` ganha o valor `reminders`, a secção «Lembretes» |
+
+O `DatabaseSchemaGuard` só exige o que estiver no plano, e por isso as linhas que
+sobram na `schema_migrations` não incomodam.
 
 ### O que a linha de base já traz feito
 

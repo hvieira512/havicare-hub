@@ -121,6 +121,7 @@ final class BraceletCapabilityDefinitions extends CapabilityDefinitions
                 ],
                 'event' => [
                     'help_call' => 'Chamada de ajuda',
+                    'low_battery' => 'Bateria fraca',
                 ],
             ],
             'settings_system' => [

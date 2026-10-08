@@ -45,6 +45,14 @@ final class GatewayNormalizer
             ] + $common];
         }
 
+        // O alarme de bateria fraca do MKGW4 é um acontecimento, com a tensão que o levantou.
+        if ($messageId === '3011') {
+            return [[
+                'type' => 'low_battery',
+                'data' => is_numeric($data['battery_voltage_mv'] ?? null) ? ['voltageMv' => (int)$data['battery_voltage_mv']] : [],
+            ] + $common];
+        }
+
         if ($messageId !== '3004') {
             return [];
         }

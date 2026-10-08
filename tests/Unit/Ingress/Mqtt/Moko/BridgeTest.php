@@ -100,6 +100,22 @@ final class BridgeTest extends TestCase
         self::assertSame(['online'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
     }
 
+    /** O alarme de bateria fraca do MKGW4 é um acontecimento, e sai com a tensão que o levantou. */
+    public function testTheMkgw4LowPowerAlarmIsALowBatteryEvent(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $data = chr(0) . pack('n', 4) . pack('N', 1759917600) . chr(1) . pack('n', 2) . pack('n', 3380);
+        $frame = hex2bin('ef3011c5e390f30bce' . sprintf('%04x', strlen($data))) . $data;
+
+        $this->bridge($mqtt, true)->handleReceivedMessage('havicare-hub/null/0/gw/c5e390f30bce/raw', (string)$frame);
+
+        $lowBattery = array_values(array_filter($mqtt->events, static fn (array $event): bool => $event['type'] === 'low_battery'));
+        self::assertSame([], $mqtt->telemetry);
+        self::assertCount(1, $lowBattery);
+        self::assertSame(['voltageMv' => 3380], $lowBattery[0]['payload']['data']);
+        self::assertSame('3011', $lowBattery[0]['payload']['source']['nativeType']);
+    }
+
     public function testUnlinkedSensorDoesNotPublishSensorTelemetry(): void
     {
         $mqtt = new RecordingHubMqttBridge();

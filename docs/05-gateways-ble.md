@@ -81,6 +81,7 @@ de mensagem são tratados:
 | Tipo | O que traz |
 |---|---|
 | `3004` | Estado do gateway: hora, tipo de rede, qualidade do sinal, tensão da bateria, aceleração, IMEI |
+| `3011` | Alarme de bateria fraca, com a tensão: sai como o evento `low_battery`, com `voltageMv` |
 | `3089` | GPS do gateway: longitude e latitude ×10⁻⁷, antena, HDOP |
 | `30a0`, `30b2` | Relatórios de varrimento: tudo o que o gateway ouviu |
 
@@ -199,7 +200,7 @@ publicado dezenas de vezes por minuto.
 |---|---|---|---|
 | **De-duplicação** | O mesmo anúncio, byte a byte, ouvido outra vez é descartado | sensor de fralda | 5 s |
 | **Refrescamento** | Suprime telemetria de conteúdo idêntico até decorrer este período, findo o qual volta a ser publicada | aparelhos MOKO | 60 s |
-| **Inatividade do gateway** | Transição para `offline`, com `status` retido | gateways | 180 s |
+| **Inatividade do gateway** | Transição para `offline`, com `status` retido. Vale também para um gateway que se calou antes de um reinício do hub: o Redis lembra-se dele | gateways | 180 s |
 | **Inatividade do retransmitido** | `device.disconnected` quando nenhum gateway o ouve; o `device.connected` sai quando um o volta a ouvir | aparelhos atrás do gateway | 30 min (`DASHBOARD_DEVICE_IDLE_TIMEOUT_SECONDS`) |
 
 O refrescamento tem âmbito **por gateway** e não por dispositivo. Com âmbito por

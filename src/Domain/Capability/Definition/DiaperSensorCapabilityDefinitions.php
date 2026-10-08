@@ -32,6 +32,7 @@ final class DiaperSensorCapabilityDefinitions extends CapabilityDefinitions
             'alarms' => [
                 'event' => [
                     'change_required' => 'Mudança necessária',
+                    'check_required' => 'Verificação recomendada',
                 ],
             ],
             'settings_system' => [

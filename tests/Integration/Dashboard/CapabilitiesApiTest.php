@@ -22,7 +22,7 @@ final class CapabilitiesApiTest extends MysqlDashboardTestCase
         self::assertSame('watch', $response['data'][0]['deviceType'] ?? null);
         self::assertContains(
             $response['data'][0]['sectionLabel'] ?? null,
-            ['Telemetria', 'Saúde', 'Contactos', 'Alarmes', 'Sistema']
+            ['Telemetria', 'Saúde', 'Contactos', 'Alarmes e alertas', 'Lembretes', 'Sistema']
         );
         self::assertContains('heart_rate', array_column($response['data'], 'key'));
     }
@@ -45,7 +45,7 @@ final class CapabilitiesApiTest extends MysqlDashboardTestCase
         self::assertTrue($porChave['heart_rate']['isTelemetry'] ?? false);
 
         self::assertArrayHasKey('alarm_clock', $porChave);
-        self::assertSame('alarms', $porChave['alarm_clock']['section'] ?? null);
+        self::assertSame('reminders', $porChave['alarm_clock']['section'] ?? null);
         self::assertFalse($porChave['alarm_clock']['isTelemetry'] ?? true);
 
         foreach ($porChave as $key => $row) {

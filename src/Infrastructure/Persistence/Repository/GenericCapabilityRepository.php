@@ -140,7 +140,7 @@ final class GenericCapabilityRepository
             // Do catálogo: uma lista à mão deixava um tipo novo a ordenar como se não
             // existisse, no topo e sem se perceber porquê.
             $deviceTypeOrder = DeviceTypeCatalog::keys();
-            $sectionOrder = ['telemetry', 'health', 'contacts', 'alarms', 'settings_system'];
+            $sectionOrder = ['telemetry', 'health', 'contacts', 'alarms', 'reminders', 'settings_system'];
             $deviceIndex = static function (string $deviceType) use ($deviceTypeOrder): int {
                 $index = array_search($deviceType, $deviceTypeOrder, true);
                 return $index === false ? count($deviceTypeOrder) : (int)$index;

@@ -588,7 +588,7 @@ function capabilityForEntry(entry, capabilities) {
         }
     }
 
-    for (const sectionKey of ["telemetry", "health", "contacts", "alarms", "settings_system"]) {
+    for (const sectionKey of ["telemetry", "health", "contacts", "alarms", "reminders", "settings_system"]) {
         if (sectionKeys.includes(sectionKey)) {
             continue;
         }

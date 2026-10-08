@@ -1,5 +1,5 @@
-import { fieldLabel, fieldValue } from "../../format.js";
-import { DETECTION_TYPE_LABEL } from "../../domain.js";
+import { displayPersonIndex, fieldLabel, fieldValue } from "../../format.js";
+import { fallLabel, zoneLabel } from "../../domain.js";
 import { html, raw } from "../../html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
 import { connectivityIcon, connectivityValue } from "./gateway.js";
@@ -75,9 +75,17 @@ const CARD_STYLE = {
     help_call: ["fa-triangle-exclamation", "danger"],
     // Eventos e não leituras, mas o tom sai daqui como o de todos os outros.
     fall: ["fa-person-falling", "danger"],
-    alarm: ["fa-triangle-exclamation", "danger"],
-    vitals_alarm: ["fa-heart-crack", "danger"],
-    presence_event: ["fa-door-open", "info"],
+    heart_rate_high: ["fa-heart-circle-exclamation", "danger"],
+    heart_rate_low: ["fa-heart-circle-minus", "danger"],
+    heart_rate_abnormal: ["fa-heart-crack", "danger"],
+    breath_rate_high: ["fa-lungs", "warning"],
+    breath_rate_low: ["fa-lungs", "warning"],
+    apnea: ["fa-lungs", "danger"],
+    weak_vital_signs: ["fa-wave-square", "warning"],
+    zone_entry: ["fa-door-open", "info"],
+    zone_exit: ["fa-door-closed", "info"],
+    device_removed: ["fa-hand", "warning"],
+    low_battery: ["fa-battery-quarter", "warning"],
     medication_intake: ["fa-pills", "primary"],
     device_fault: ["fa-triangle-exclamation", "warning"],
     medication_alarm_status: ["fa-clock-rotate-left", "primary"],
@@ -142,19 +150,23 @@ const UPLINK_CARD_RENDERERS = {
     firmware_version: (data) => ({
         value: String(data?.version ?? "").trim() || "—",
     }),
-    // O tipo específico vai no valor: "Queda" não distingue uma queda de alguém no chão.
+    // "Queda" sozinho não distingue uma confirmada de uma suspeita, nem de alguém sentado no chão.
     fall: (data) => ({
-        value: detectionValue(data),
-        details: detectionDetails(data),
+        value: fallLabel(data),
+        details: personDetails(data),
     }),
-    vitals_alarm: (data) => ({
-        value: detectionValue(data),
-        details: detectionDetails(data),
+    zone_entry: (data) => ({
+        value: zoneLabel("zone_entry", data),
+        details: personDetails(data),
     }),
-    presence_event: (data) => ({
-        value: detectionValue(data),
-        details: detectionDetails(data),
+    zone_exit: (data) => ({
+        value: zoneLabel("zone_exit", data),
+        details: personDetails(data),
     }),
+    heart_rate_high: (data) => vitalValue(data?.bpm, "bpm", "heart_rate_high"),
+    heart_rate_low: (data) => vitalValue(data?.bpm, "bpm", "heart_rate_low"),
+    breath_rate_high: (data) => vitalValue(data?.breathsPerMinute, "rpm", "breath_rate_high"),
+    breath_rate_low: (data) => vitalValue(data?.breathsPerMinute, "rpm", "breath_rate_low"),
     position_minute_stats: (data) => ({
         value: radarPositionMinuteStatsValue(data),
         details: radarPositionMinuteStatsDetails(data),
@@ -292,7 +304,7 @@ const UPLINK_CARD_RENDERERS = {
                     : "-",
         icon: batteryIcon(data.percent),
         iconBadge: batteryBadge(data),
-        tone: batteryTone(data.percent),
+        tone: batteryTone(data),
         details: batteryDetails(data),
     }),
     connectivity: (data) => ({
@@ -334,10 +346,6 @@ const UPLINK_CARD_RENDERERS = {
     location: (data, meta) => ({
         value: locationValue(data),
         details: locationDetails(data, meta),
-    }),
-    alarm: (data) => ({
-        icon: "fa-triangle-exclamation",
-        value: alarmValue(data),
     }),
     sleep: (data) => ({
         value: sleepValue(data),
@@ -405,17 +413,6 @@ const UPLINK_CARD_RENDERERS = {
 const BATTERY_STATE_LABEL = {
     low: "Bateria fraca",
     absent: "Sem bateria",
-};
-
-// O alarme traz um só motivo; a etiqueta é a única coisa que o cartão mostra.
-const ALARM_REASON_LABEL = {
-    sos: "SOS",
-    low_battery: "Bateria fraca",
-    fall: "Queda detetada",
-    watch_removed: "Relógio removido",
-    geofence_exit: "Saiu da zona segura",
-    geofence_entry: "Entrou na zona segura",
-    abnormal_heart_rate: "Frequência cardíaca anormal",
 };
 
 /**
@@ -521,10 +518,10 @@ function batteryIcon(percent) {
 }
 
 /** A cor é do estado, e numa bateria o estado é quanto falta para alguém ter de lá ir. */
-function batteryTone(percent) {
-    if (typeof percent !== "number") return "success";
-    if (percent < 10) return "danger";
-    return percent < 25 ? "warning" : "success";
+function batteryTone({ percent, lowBattery }) {
+    if (typeof percent === "number" && percent < 10) return "danger";
+    if (lowBattery === true || (typeof percent === "number" && percent < 25)) return "warning";
+    return "success";
 }
 
 /** Os relógios mandam um bit e o dispensador uma enumeração. O `full` já acabou de carregar. */
@@ -542,6 +539,7 @@ function batteryBadge(data) {
 
 function batteryDetails(data) {
     // A carga e a corrente estão no ícone; ficam os dois estados que ele não sabe desenhar.
+    if (data.lowBattery === true) return BATTERY_STATE_LABEL.low;
     const state = BATTERY_STATE_LABEL[data.chargingState] ||
         (data.chargingState == null ? compactDetails(data, ["batteryType"]) : "");
 
@@ -553,24 +551,12 @@ export function cardTone(type) {
     return CARD_STYLE[type]?.[1] || "";
 }
 
-function alarmValue(data) {
-    return ALARM_REASON_LABEL[data?.reason] ?? "Alarme";
+/** Quem o radar viu. Escapado, porque os `details` entram sem escapar. */
+function personDetails(data) {
+    return data?.personIndex === undefined ? "" : html`Pessoa ${displayPersonIndex(data.personIndex)}`;
 }
 
-function detectionValue(data) {
-    return (
-        DETECTION_TYPE_LABEL[String(data?.detectionType || "")] ||
-        fieldLabel(String(data?.detectionType || "unknown"))
-    );
-}
-
-/**
- * O grau separa um aviso de um perigo, e o `info` não se mostra. Escapado, porque os `details`
- * entram sem escapar e o `detectionLevel` vem do radar tal e qual.
- */
-function detectionDetails(data) {
-    const level = String(data?.detectionLevel || "");
-    return level === "" || level === "info"
-        ? ""
-        : html`${fieldValue("detectionLevel", level)}`;
+/** O valor que levantou o evento; sem ele, o nome. */
+function vitalValue(value, unit, type) {
+    return { value: value == null ? capabilityLabel(type) : `${value} ${unit}` };
 }

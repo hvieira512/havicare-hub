@@ -153,15 +153,14 @@ test("a toma e a avaria têm ícone próprio", () => {
     assert.equal(cardIcon("device_fault"), "fa-triangle-exclamation");
 });
 
-// A lista de atividade só mostra os tipos de evento da sua lista branca: uma toma falhada fora
-// do histórico é o pior caso desta integração.
+// Uma toma falhada fora do histórico é o pior caso desta integração.
 test("a toma e a avaria chegam à lista de atividade", () => {
     state.selectedDetail.recent = {
         telemetry: [],
         events: [
-            { type: "medication_intake", occurredAt: "2026-09-18T20:07:31Z", data: { result: "missed" } },
-            { type: "device_fault", occurredAt: "2026-09-18T20:08:00Z", data: { fault: "tray_reset" } },
-            { type: "help_call", occurredAt: "2026-09-18T20:09:00Z", data: { state: "in_progress" } },
+            { type: "medication_intake", severity: "alert", occurredAt: "2026-09-18T20:07:31Z", data: { result: "missed" } },
+            { type: "device_fault", severity: "alert", occurredAt: "2026-09-18T20:08:00Z", data: { fault: "tray_reset" } },
+            { type: "help_call", severity: "alarm", occurredAt: "2026-09-18T20:09:00Z", data: { state: "in_progress" } },
         ],
     };
 

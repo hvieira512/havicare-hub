@@ -7,6 +7,7 @@ const CONFIG_SECTION_ORDER = [
     "health",
     "contacts",
     "alarms",
+    "reminders",
     "settings_system",
 ];
 
@@ -147,7 +148,7 @@ function normalizeConfigEntry(entry) {
     const key = capabilityKey || String(entry.key || "");
     const input = String(entry.input || "json");
     const label = capabilityKey === "alarm_clock"
-        ? "Alarmes"
+        ? "Despertadores"
         : String(entry.label || key || "");
     const configKind = capabilityKey === "alarm_clock"
         ? "capability"
@@ -160,6 +161,6 @@ function normalizeConfigEntry(entry) {
         label,
         capabilityKey: capabilityKey || key,
         configKind,
-        configSectionName: capabilityKey === "alarm_clock" ? "alarms" : entry.configSectionName,
+        configSectionName: capabilityKey === "alarm_clock" ? "reminders" : entry.configSectionName,
     };
 }

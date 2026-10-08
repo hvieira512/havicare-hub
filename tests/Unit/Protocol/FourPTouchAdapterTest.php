@@ -101,6 +101,20 @@ final class FourPTouchAdapterTest extends TestCase
         self::assertArrayNotHasKey('sos', $payload['data']);
         self::assertArrayNotHasKey('fall', $payload['data']);
         self::assertArrayNotHasKey('alarmCode', $payload['data']);
+        // O bit 0 é a condição de bateria fraca, que fica acesa enquanto dura.
+        self::assertFalse($payload['data']['batteryLow']);
+    }
+
+    public function testThePositionStatusCarriesTheLowBatteryCondition(): void
+    {
+        $adapter = new FourPTouchAdapter();
+        $payload = $adapter->decodeIncoming($this->frame($adapter, 'UD_LTE', [
+            '240617', '101530', 'V', '0.0', 'N', '0.0', 'E', '0.0', '0', '0', '0', '55', '12', '0', '0',
+            '00000001', '0', '0', '268', '01',
+        ]));
+
+        self::assertIsArray($payload);
+        self::assertTrue($payload['data']['batteryLow']);
     }
 
     public function testDecodeIncomingParsesAlarmWithWifiPayload(): void

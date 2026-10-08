@@ -77,7 +77,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         )));
 
         self::assertSame(
-            ['telemetry', 'health', 'contacts', 'alarms', 'settings_system'],
+            ['telemetry', 'health', 'contacts', 'alarms', 'reminders', 'settings_system'],
             $sections,
         );
     }
@@ -99,13 +99,13 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         $pdo = $database->pdo();
 
         self::assertSame(
-            ['battery', 'connectivity', 'location'],
+            ['battery', 'connectivity', 'location', 'low_battery'],
             array_values(array_unique(array_map('strval', $pdo->query(
                 "SELECT capability_key FROM capabilities WHERE device_type = 'gateway' ORDER BY capability_key"
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
         self::assertSame(
-            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity', 'proximity'],
+            ['battery', 'change_required', 'check_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity', 'proximity'],
             array_values(array_unique(array_map('strval', $pdo->query(
                 "SELECT capability_key FROM capabilities WHERE device_type = 'diaper_sensor' ORDER BY capability_key"
             )->fetchAll(\PDO::FETCH_COLUMN))))
@@ -165,6 +165,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             'help_call',
             'key_tone',
             'loaded_cells',
+            'low_battery',
             // A mudança de estado de uma dose é acontecimento próprio: é o único sinal de uma
             // dose falhada, e precisa de canal com garantia de entrega.
             'medication_alarm_change',
@@ -251,11 +252,11 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             $db->modelCapabilities->enabledFeaturesForModelId((int)$mkgw3['id'])
         );
         self::assertSame(
-            ['battery', 'connectivity', 'location'],
+            ['battery', 'connectivity', 'location', 'low_battery'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$mkgw4['id'])
         );
         self::assertSame(
-            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity', 'proximity'],
+            ['battery', 'change_required', 'check_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity', 'proximity'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$sensor['id'])
         );
     }

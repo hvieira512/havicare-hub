@@ -16,16 +16,16 @@ final class CapabilityCatalogTest extends TestCase
         // reordena por secção e etiqueta.
         $expected = [
             // O `device_status` é o `TS` dos 4P Touch, e a `connectivity` chega na resposta a ele.
-            'watch' => [69, 'f5f4233f0087097003e031ff68c2af49180dd334b20d5ae56f911e1f31abf408'],
-            'ncs' => [1, '213f35a9295bacacfdaa5570451707a23ee59416ebc3ac1de062f1b6ca7685a4'],
-            'radar' => [9, '45dfaa71313e4da275fca1da9536b826bf0fe6a442cf462d3d2534db1499fa65'],
-            'gateway' => [3, '044f4b1de47b562638442dc3fc8be22b3ab76043721211a47f478ee68124a91f'],
-            'diaper_sensor' => [7, '1aabeb619dd84c1e60cb25bc6d43fe88ea8b3b708365ad38f39a3c13bf5c4fd2'],
+            'watch' => [75, '8116e8ab83dd1fc22267f63ca134fe77dcbb979cc6b8376d402e55192bb22af5'],
+            'ncs' => [2, 'd09943de9daace8dd8dfbbe279d42028501bd114ce5cefe7f51ca6170f3ab1b9'],
+            'radar' => [15, '568b9f853799c52eea961a7b40d6f002961b9e48989d0d9629611049a21ddd0e'],
+            'gateway' => [4, '4570cd67448bac0d35f327326ab0221e3a5d64534310ccb7b0eb479d20ec3028'],
+            'diaper_sensor' => [8, '42c78c7d9722820650efd37ba508ce95f223fb31651e05aa8cd008fce660ec4e'],
             // As W6/W6B só anunciam bateria, movimento, proximidade e botão; o resto é da Veepoo MF91.
-            'bracelet' => [41, 'b79cd852c68f3900fef80612e135d2e46652e12ca8eb50a52fdd9bae8d39e463'],
+            'bracelet' => [42, 'd0a3561ab20dda3fe89663b815399e286998454aed9fc3de9f195c8515738d14'],
             // Ficam de fora a reposição de fábrica, desligar a cifra e mudar o servidor, que nos podem
             // tirar o aparelho.
-            'pill_dispenser' => [37, 'ecee40eac03cdaf7efb85bcb0a2584579a2958b59ff7b2cfdfbda8a5dc41aca0'],
+            'pill_dispenser' => [38, '9c02bd16aee9914055c934fcf1e8d3209be4eed55fb44de9f63f47b5c1c6eec7'],
         ];
 
         // Um tipo de dispositivo sem hash aqui fica sem guarda.
@@ -43,13 +43,33 @@ final class CapabilityCatalogTest extends TestCase
         }
     }
 
+    /**
+     * Um despertador, o plano de medicação e o toque do lembrete não são alarmes de perigo: vivem
+     * em «Lembretes», e «Alarmes e alertas» fica com o que dispara e com os seus interruptores.
+     */
+    public function testRemindersLiveApartFromAlarms(): void
+    {
+        $sections = [];
+        foreach (CapabilityCatalog::definitions() as $definition) {
+            $sections[$definition['deviceType'] . '.' . $definition['key']] = $definition['section'];
+        }
+
+        foreach (['watch.alarm_clock', 'watch.medication_reminders', 'pill_dispenser.medication_reminders', 'pill_dispenser.medication_period', 'pill_dispenser.alarm_volume', 'pill_dispenser.alarm_ringtone', 'pill_dispenser.mute_alarm'] as $key) {
+            self::assertSame('reminders', $sections[$key] ?? null, $key);
+        }
+        foreach (['watch.fall_detection', 'watch.low_battery_alert', 'watch.help_call', 'pill_dispenser.emergency_call', 'pill_dispenser.help_call'] as $key) {
+            self::assertSame('alarms', $sections[$key] ?? null, $key);
+        }
+    }
+
     public function testDefinitionsHaveUniqueKeysAndRequiredMetadata(): void
     {
         self::assertSame([
             'telemetry' => 'Telemetria',
             'health' => 'Saúde',
             'contacts' => 'Contactos',
-            'alarms' => 'Alarmes',
+            'alarms' => 'Alarmes e alertas',
+            'reminders' => 'Lembretes',
             'settings_system' => 'Sistema',
         ], CapabilityCatalog::sections());
 

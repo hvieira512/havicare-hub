@@ -8,6 +8,9 @@ use Hub\Support\Values;
 
 final class FeatureNormalizer
 {
+    /** O `batteryType` com que a Wonlex manda o relatório de pouca energia. */
+    public const WONLEX_LOW_POWER_REPORT = 3;
+
     /**
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
@@ -139,7 +142,23 @@ final class FeatureNormalizer
             'percent' => $value === null ? null : (int)$value,
             'chargingState' => self::int($payload['chargingState'] ?? $payload['batteryState'] ?? null),
             'batteryType' => self::int($payload['batteryType'] ?? null),
+            'lowBattery' => self::lowBattery($payload),
         ]);
+    }
+
+    /**
+     * A bandeira comum de bateria fraca: a condição do 4P Touch, ou o relatório de pouca energia
+     * da Wonlex. Sem nenhum dos dois, não se sabe.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private static function lowBattery(array $payload): ?bool
+    {
+        if (is_bool($payload['batteryLow'] ?? null)) {
+            return $payload['batteryLow'];
+        }
+
+        return self::int($payload['batteryType'] ?? null) === self::WONLEX_LOW_POWER_REPORT ? true : null;
     }
 
     /**
@@ -349,38 +368,34 @@ final class FeatureNormalizer
     }
 
     /**
-     * Os motivos de alarme ativos, na ordem canónica: cada bit da máscara do 4P Touch vira um
-     * evento, e máscara a zero devolve lista vazia.
+     * Os alarmes ativos, cada um já com o tipo do que aconteceu: cada bit da máscara do 4P Touch
+     * vira um evento, e máscara a zero devolve lista vazia.
      *
      * @param array<string, mixed> $payload
-     * @return list<string>
+     * @return list<array{feature: string, value: array<string, mixed>}>
      */
-    public static function alarmReasons(array $payload): array
+    public static function alarms(array $payload): array
     {
-        $reasons = [];
-        if (!empty($payload['sos'])) {
-            $reasons[] = 'sos';
-        }
-        if (!empty($payload['lowBattery'])) {
-            $reasons[] = 'low_battery';
-        }
-        if (!empty($payload['fall'])) {
-            $reasons[] = 'fall';
-        }
-        if (!empty($payload['wearingNotice']) || !empty($payload['removeAlarm'])) {
-            $reasons[] = 'watch_removed';
-        }
-        if (!empty($payload['outFenceAlarm'])) {
-            $reasons[] = 'geofence_exit';
-        }
-        if (!empty($payload['inFenceAlarm'])) {
-            $reasons[] = 'geofence_entry';
-        }
-        if (!empty($payload['abnormalHeartRateAlarm'])) {
-            $reasons[] = 'abnormal_heart_rate';
+        $active = [
+            'sos' => ['help_call', []],
+            'lowBattery' => ['low_battery', []],
+            'fall' => ['fall', ['confirmed' => true]],
+            'wearingNotice' => ['device_removed', []],
+            'removeAlarm' => ['device_removed', []],
+            'outFenceAlarm' => ['zone_exit', ['zone' => 'geofence']],
+            'inFenceAlarm' => ['zone_entry', ['zone' => 'geofence']],
+            // O 4P não diz se é alta ou baixa, nem traz o valor.
+            'abnormalHeartRateAlarm' => ['heart_rate_abnormal', []],
+        ];
+
+        $alarms = [];
+        foreach ($active as $flag => [$feature, $value]) {
+            if (!empty($payload[$flag])) {
+                $alarms[$feature . json_encode($value)] = ['feature' => $feature, 'value' => $value];
+            }
         }
 
-        return $reasons;
+        return array_values($alarms);
     }
 
     /**

@@ -31,8 +31,14 @@ final class RadarCapabilityDefinitions extends CapabilityDefinitions
             'alarms' => [
                 'event' => [
                     'fall' => 'Queda',
-                    'vitals_alarm' => 'Alarme de sinais vitais',
-                    'presence_event' => 'Entradas e saídas',
+                    'heart_rate_high' => 'Frequência cardíaca alta',
+                    'heart_rate_low' => 'Frequência cardíaca baixa',
+                    'breath_rate_high' => 'Frequência respiratória alta',
+                    'breath_rate_low' => 'Frequência respiratória baixa',
+                    'apnea' => 'Apneia',
+                    'weak_vital_signs' => 'Sinais vitais fracos',
+                    'zone_entry' => 'Entrada numa zona',
+                    'zone_exit' => 'Saída de uma zona',
                 ],
             ],
         ];

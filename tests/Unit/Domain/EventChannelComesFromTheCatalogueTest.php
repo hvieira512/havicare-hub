@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Domain;
 
+use Hub\Device\FeatureNormalizer;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
@@ -16,8 +17,31 @@ final class EventChannelComesFromTheCatalogueTest extends TestCase
     /** O que o catálogo declara como acontecimento sai por `events`. */
     public function testWhatTheCatalogueCallsAnEventIsAnEvent(): void
     {
-        foreach (['alarm', 'medication_intake', 'device_fault', 'help_call'] as $type) {
+        foreach (['medication_intake', 'device_fault', 'help_call', 'fall', 'apnea'] as $type) {
             self::assertTrue(CapabilityCatalog::isEventType($type), $type);
+        }
+    }
+
+    /**
+     * O que os relógios disparam sai com o tipo do que aconteceu, e cada um tem de estar no
+     * catálogo: um que falte sai em `telemetry`, a QoS 0, sem erro nenhum.
+     */
+    public function testEveryWatchAlarmIsADeclaredEvent(): void
+    {
+        $payload = [
+            'sos' => true, 'lowBattery' => true, 'fall' => true, 'removeAlarm' => true,
+            'outFenceAlarm' => true, 'inFenceAlarm' => true, 'abnormalHeartRateAlarm' => true,
+        ];
+        foreach (FeatureNormalizer::alarms($payload) as $alarm) {
+            self::assertTrue(CapabilityCatalog::isEventType($alarm['feature']), $alarm['feature']);
+        }
+    }
+
+    /** Os sacos de antes já não existem: o tipo diz o que aconteceu. */
+    public function testTheOldAlarmBagsAreGone(): void
+    {
+        foreach (['alarm', 'vitals_alarm', 'presence_event'] as $type) {
+            self::assertFalse(CapabilityCatalog::isEventType($type), $type);
         }
     }
 

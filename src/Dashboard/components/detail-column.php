@@ -42,7 +42,13 @@
                                             <?php endforeach; ?>
                                             <button class="btn btn-sm btn-outline-secondary rounded-pill" type="button" data-bs-toggle="collapse" data-bs-target="#detailFilterDates" aria-expanded="false" aria-controls="detailFilterDates">Datas&hellip;</button>
                                             <label for="detailFilterType" class="visually-hidden">Tipo</label>
-                                            <select id="detailFilterType" class="form-select form-select-sm w-auto mw-100 ms-auto">
+                                            <label for="detailFilterSeverity" class="visually-hidden">Gravidade</label>
+                                            <select id="detailFilterSeverity" class="form-select form-select-sm w-auto mw-100 ms-auto">
+                                                <option value="all">Todas as gravidades</option>
+                                                <option value="alarm">Alarmes</option>
+                                                <option value="alert">Alertas</option>
+                                            </select>
+                                            <select id="detailFilterType" class="form-select form-select-sm w-auto mw-100">
                                                 <option value="all">Todos os tipos</option>
                                             </select>
                                         </div>

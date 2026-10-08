@@ -169,9 +169,8 @@ test("na lista cronológica não aparece a idade: a hora já tem coluna própria
     assert.equal(content.details, "1 antena · 1 rede WiFi");
 });
 
-test("o alarme mostra o motivo em português", () => {
-    // O envelope traz um só motivo em snake_case; o cartão dá-lhe a etiqueta.
-    const content = uplinkCardContent("alarm", { reason: "low_battery" });
+test("a cerca do relógio diz o sentido em português", () => {
+    const content = uplinkCardContent("zone_exit", { zone: "geofence" });
 
-    assert.equal(content.value, "Bateria fraca");
+    assert.equal(content.value, "Saiu da zona segura");
 });

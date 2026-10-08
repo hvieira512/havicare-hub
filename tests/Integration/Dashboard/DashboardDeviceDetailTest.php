@@ -210,17 +210,17 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
                 'voiceData' => 'data:audio/wav;base64,' . WavFixture::silenceBase64(),
                 'voiceMimeType' => 'audio/wav',
             ],
-            $body['capabilities']['alarms']['medication_reminders']['value'] ?? null
+            $body['capabilities']['reminders']['medication_reminders']['value'] ?? null
         );
-        self::assertArrayNotHasKey('_nativeKey', $body['capabilities']['alarms']['medication_reminders']);
-        self::assertSame(3, $body['capabilities']['alarms']['medication_reminders']['_meta']['limit'] ?? null);
+        self::assertArrayNotHasKey('_nativeKey', $body['capabilities']['reminders']['medication_reminders']);
+        self::assertSame(3, $body['capabilities']['reminders']['medication_reminders']['_meta']['limit'] ?? null);
         self::assertSame(
             [
                 ['value' => 1, 'label' => 'Uma vez'],
                 ['value' => 2, 'label' => 'Diariamente'],
                 ['value' => 3, 'label' => 'Personalizado'],
             ],
-            $body['capabilities']['alarms']['medication_reminders']['_meta']['frequency']['options'] ?? null
+            $body['capabilities']['reminders']['medication_reminders']['_meta']['frequency']['options'] ?? null
         );
     }
 
@@ -270,8 +270,8 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
                 'voiceData' => '',
                 'voiceMimeType' => '',
             ],
-            $body['capabilities']['alarms']['medication_reminders']['value'] ?? null
+            $body['capabilities']['reminders']['medication_reminders']['value'] ?? null
         );
-        self::assertArrayNotHasKey('_nativeKey', $body['capabilities']['alarms']['medication_reminders']);
+        self::assertArrayNotHasKey('_nativeKey', $body['capabilities']['reminders']['medication_reminders']);
     }
 }

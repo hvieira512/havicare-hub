@@ -41,7 +41,8 @@ final class CapabilityCatalog
             'telemetry' => 'Telemetria',
             'health' => 'Saúde',
             'contacts' => 'Contactos',
-            'alarms' => 'Alarmes',
+            'alarms' => 'Alarmes e alertas',
+            'reminders' => 'Lembretes',
             'settings_system' => 'Sistema',
         ];
     }

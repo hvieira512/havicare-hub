@@ -164,6 +164,60 @@ final class BridgeMonitAlarmTest extends TestCase
         self::assertCount(1, $this->alarms($mqtt));
     }
 
+    /** Húmida mas sem precisar de troca é um alerta: convém ir ver. */
+    public function testAWetDiaperRaisesTheCheckAlertOnce(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('clean'));
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('attention'));
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('attention', battery: 79));
+
+        $checks = $this->events($mqtt, 'check_required');
+        self::assertCount(1, $checks);
+        self::assertSame(['previousState' => 'clean'], $checks[0]['payload']['data']);
+        self::assertSame([], $this->alarms($mqtt));
+    }
+
+    /** Uma fralda que vai molhando dá primeiro o alerta e depois o alarme. */
+    public function testWettingStepByStepRaisesTheAlertAndThenTheAlarm(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('clean'));
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('attention'));
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required'));
+
+        self::assertSame(
+            ['check_required', 'change_required'],
+            array_column($this->events($mqtt, 'check_required', 'change_required'), 'type'),
+        );
+    }
+
+    /** De seca a suja de uma vez não há alerta pelo meio: só o alarme. */
+    public function testWettingAtOnceRaisesOnlyTheAlarm(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('clean'));
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required'));
+
+        self::assertSame([], $this->events($mqtt, 'check_required'));
+        self::assertCount(1, $this->alarms($mqtt));
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function events(RecordingHubMqttBridge $mqtt, string ...$types): array
+    {
+        return array_values(array_filter(
+            $mqtt->events,
+            static fn(array $event): bool => in_array($event['type'] ?? '', $types, true)
+        ));
+    }
+
     /**
      * Só os alarmes da fralda. O gateway publica o seu `device.connected` na primeira
      * mensagem em que é visto, e não é isso que estes testes medem.

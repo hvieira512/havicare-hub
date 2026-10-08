@@ -36,6 +36,16 @@ final class DashboardStoreTest extends TestCase
         self::assertSame([], $store->commands('861265061009822'));
     }
 
+    /** O histórico guarda o evento como o broker o recebe, com a gravidade. */
+    public function testAStoredDomainEventCarriesItsSeverity(): void
+    {
+        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
+
+        $store->append('861265061009822', 'events', ['type' => 'low_battery', 'data' => []]);
+
+        self::assertSame('alert', $store->recent('861265061009822', 'events')[0]['severity'] ?? null);
+    }
+
     public function testWaitingCommandWithoutSentAtStillExpires(): void
     {
         $redis = new InMemoryRedisClient();

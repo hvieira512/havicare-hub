@@ -17,6 +17,7 @@ final class QinglanstBridge extends MqttBridgeBase
     private readonly IngestStats $stats;
     private readonly DashboardWritePolicy $dashboardWritePolicy;
     private readonly ConnectionAnnouncer $connections;
+    private readonly ActiveDetections $activeDetections;
     /** O varrimento dos radares calados corre no máximo de dez em dez segundos. */
     private const MAINTENANCE_INTERVAL_SECONDS = 10.0;
     private float $lastMaintenanceAt = 0.0;
@@ -36,6 +37,7 @@ final class QinglanstBridge extends MqttBridgeBase
         ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
         ?\Hub\Registry\Denylist $denylist = null,
         private readonly int $idleTimeoutSeconds = 180,
+        private readonly ?\Closure $layouts = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -53,6 +55,45 @@ final class QinglanstBridge extends MqttBridgeBase
         $this->stats = $stats ?? new IngestStats($topicFilter);
         $this->dashboardWritePolicy = $dashboardWritePolicy ?? new DashboardWritePolicy();
         $this->connections = new ConnectionAnnouncer($mqttBridge, $deviceStore);
+        $this->activeDetections = new ActiveDetections();
+    }
+
+    /** Os tipos de área da planta do fabricante, pelo número com que vêm. */
+    private const AREA_TYPES = [
+        1 => 'custom',
+        2 => 'bed',
+        3 => 'interference',
+        4 => 'door',
+        5 => 'monitoring_bed',
+        6 => 'alarm_area',
+        7 => 'furniture',
+    ];
+
+    /**
+     * Uma entrada ou saída de área leva o nome e o tipo que a planta guardada lhe dá. Sem planta
+     * sincronizada, fica só o número.
+     *
+     * @param array<string, mixed> $event
+     * @return array<string, mixed>
+     */
+    private function withArea(string $deviceKey, array $event): array
+    {
+        $areaId = $event['data']['areaId'] ?? null;
+        if ($areaId === null || $this->layouts === null) {
+            return $event;
+        }
+
+        foreach (($this->layouts)($deviceKey)['areas'] ?? [] as $area) {
+            if ((int)$area['key'] === (int)$areaId) {
+                $event['data'] += array_filter([
+                    'areaName' => (string)$area['name'],
+                    'areaType' => self::AREA_TYPES[(int)$area['type']] ?? null,
+                ], static fn (?string $value): bool => $value !== null && $value !== '');
+                break;
+            }
+        }
+
+        return $event;
     }
 
     public function tick(float $timeout = 0.01): void
@@ -229,7 +270,8 @@ final class QinglanstBridge extends MqttBridgeBase
             $publishedTelemetry = true;
         }
 
-        foreach ($normalized['events'] as $event) {
+        foreach ($this->activeDetections->fresh($deviceKey, $messageType, $normalized['events']) as $event) {
+            $event = $this->withArea($deviceKey, $event);
             $mqttEventStart = hrtime(true);
             $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
             $mqttEventDuration += hrtime(true) - $mqttEventStart;

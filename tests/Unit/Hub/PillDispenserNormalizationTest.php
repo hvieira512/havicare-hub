@@ -66,7 +66,7 @@ final class PillDispenserNormalizationTest extends TestCase
         }
 
         self::assertSame('low', $byFeature['cells_remaining']['level'] ?? null);
-        self::assertSame(['percent' => 80, 'chargingState' => 'charging'], $byFeature['battery']);
+        self::assertSame(['percent' => 80, 'chargingState' => 'charging', 'lowBattery' => false], $byFeature['battery']);
         self::assertSame(['environmentCelsius' => -5], $byFeature['ambient_temperature']);
         self::assertSame(['humidityPercent' => 47], $byFeature['ambient_humidity']);
         // Com os dois rádios a reportar, a interface é aquela por onde ele está mesmo a

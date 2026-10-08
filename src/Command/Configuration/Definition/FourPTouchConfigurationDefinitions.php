@@ -60,7 +60,7 @@ final class FourPTouchConfigurationDefinitions
             $entry('doNotDisturb', 'SILENCETIME', 'Não perturbar', 'timeRanges', ['ranges'], ['SILENCETIME'], 'system', 60, 4, help: 'Rejeita chamadas e bloqueia o ecrã nestes horários; o SOS continua a funcionar.'),
             // Estas duas perguntam em vez de mandar, e o rótulo delas é um nome: daí o verbo.
             // Sem `deviceStatus`: o `TS` pede-se no mosaico «Estado do dispositivo».
-            $entry('alarmClock', 'REMIND', 'Alarmes', 'alarm_clock', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
+            $entry('alarmClock', 'REMIND', 'Despertadores', 'alarm_clock', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Uma vez'],
                     ['value' => 2, 'label' => 'Todos os dias'],

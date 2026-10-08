@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Device;
 
+use Hub\Domain\Capability\EventSeverity;
 use Hub\Log\Logger;
 use Hub\Mqtt\ReconnectsOnLoopFailure;
 use PhpMqtt\Client\MqttClient;
@@ -82,7 +83,7 @@ class HubMqttBridge
     {
         $this->publish(
             $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'events')),
-            $payload,
+            EventSeverity::stamp($payload),
             $company,
             $licenseId,
             'events',

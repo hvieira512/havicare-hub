@@ -159,7 +159,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertIsArray($wonlex['capabilities'] ?? null);
         self::assertTrue($wonlex['capabilities']['telemetry']['ecg'] ?? false);
         self::assertTrue($wonlex['capabilities']['health']['heart_rate_measurement_interval'] ?? false);
-        self::assertTrue($wonlex['capabilities']['alarms']['alarm_clock'] ?? false);
+        self::assertTrue($wonlex['capabilities']['reminders']['alarm_clock'] ?? false);
         self::assertTrue($wonlex['capabilities']['health']['location_reporting_interval'] ?? false);
     }
 
@@ -310,7 +310,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         self::assertSame(
-            ['help_call'],
+            ['help_call', 'reset'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
         );
     }

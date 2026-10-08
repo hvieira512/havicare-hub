@@ -148,8 +148,8 @@ test("o alarm_clock traz rótulo, espécie e secção próprios, seja qual for o
         }],
         capabilityCatalog: [{
             key: "alarm_clock",
-            section: "alarms",
-            sectionLabel: "Alarmes",
+            section: "reminders",
+            sectionLabel: "Lembretes",
             isConfigurable: true,
         }],
     });
@@ -158,7 +158,7 @@ test("o alarm_clock traz rótulo, espécie e secção próprios, seja qual for o
     assert.equal(section.dataset.configKey, "alarm_clock");
     assert.equal(section.dataset.configKind, "capability");
     assert.equal(section.dataset.configInput, "alarm_clock");
-    assert.equal(section.dataset.configSectionName, "alarms");
-    assert.equal(section.querySelector(".fw-semibold").textContent.trim(), "Alarmes");
-    assert.deepEqual(sectionTabs(root), ["alarms"]);
+    assert.equal(section.dataset.configSectionName, "reminders");
+    assert.equal(section.querySelector(".fw-semibold").textContent.trim(), "Despertadores");
+    assert.deepEqual(sectionTabs(root), ["reminders"]);
 });

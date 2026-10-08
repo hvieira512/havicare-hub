@@ -389,7 +389,7 @@ function vivistarUplinks(): array
         ['command' => 'AP02', 'origin' => 'scheduled/request', 'features' => ['location'], 'responds' => 'BP02', 'notes' => 'Multi-base-station location packet.'],
         ['command' => 'AP03', 'origin' => 'scheduled', 'features' => ['heartbeat', 'battery', 'activity'], 'responds' => 'BP03', 'notes' => 'Heartbeat used to keep the long TCP connection alive.'],
         ['command' => 'AP07', 'origin' => 'device-init', 'features' => ['audio'], 'responds' => 'BP07', 'notes' => 'Upload audio message.'],
-        ['command' => 'AP10', 'origin' => 'alarm', 'features' => ['alarm', 'location'], 'responds' => 'BP10', 'notes' => 'Alarm and return-address packet.'],
+        ['command' => 'AP10', 'origin' => 'alarm', 'features' => ['help_call', 'fall', 'low_battery', 'device_removed', 'location'], 'responds' => 'BP10', 'notes' => 'Alarm and return-address packet.'],
         ['command' => 'AP49', 'origin' => 'scheduled/request/manual', 'features' => ['heart_rate'], 'responds' => 'BP49', 'notes' => 'Heart-rate upload.'],
         ['command' => 'APHT', 'origin' => 'scheduled/request/manual', 'features' => ['heart_rate', 'blood_pressure'], 'responds' => 'BPHT', 'notes' => 'Heart-rate and blood-pressure upload.'],
         ['command' => 'APHP', 'origin' => 'scheduled/request/manual', 'features' => ['heart_rate', 'blood_pressure', 'blood_oxygen', 'blood_sugar'], 'responds' => 'BPHP', 'notes' => 'Combined health upload.'],

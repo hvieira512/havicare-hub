@@ -126,33 +126,32 @@ test("uma postura que o firmware invente não escreve atributos", () => {
     assert.equal(chip.querySelector("i").className, "fa-solid fa-question");
 });
 
-test("os alarmes dizem o que aconteceu, não só a categoria", () => {
-    // "Queda" sozinho não distingue uma queda confirmada de alguém no chão.
-    assert.equal(
-        uplinkCardContent("fall", { detectionType: "fall_confirmed", detectionLevel: "danger" }).value,
-        "Queda confirmada",
-    );
-    assert.equal(
-        uplinkCardContent("presence_event", { detectionType: "room_exit", detectionLevel: "info" }).value,
-        "Saiu da divisão",
-    );
+test("uma queda diz se foi confirmada e como a pessoa ficou", () => {
+    // "Queda" sozinho não distingue uma queda confirmada de uma suspeita, nem de alguém sentado no chão.
+    const fall = (data) => uplinkCardContent("fall", data).value;
+
+    assert.equal(fall({ confirmed: true, posture: "lying", personIndex: 0 }), "Queda confirmada");
+    assert.equal(fall({ confirmed: false, posture: "lying", personIndex: 0 }), "Queda suspeita");
+    assert.equal(fall({ confirmed: true, posture: "sitting_on_ground", personIndex: 0 }), "Sentado no chão");
+    // O relógio não diz a postura: só que detetou a queda.
+    assert.equal(fall({ confirmed: true }), "Queda detetada");
+    assert.equal(uplinkCardContent("fall", { confirmed: true, posture: "lying", personIndex: 1 }).details, "Pessoa 2");
 });
 
-/** O grau vem do hub em enumeração inglesa, como todo o envelope, e traduz-se aqui. */
-test("o grau de um alarme é traduzido no ecrã, não no fio", () => {
-    assert.equal(
-        String(uplinkCardContent("vitals_alarm", { detectionType: "apnea", detectionLevel: "danger" }).details),
-        "Perigo",
-    );
-    assert.equal(
-        String(uplinkCardContent("vitals_alarm", { detectionType: "heart_rate_high", detectionLevel: "warning" }).details),
-        "Aviso",
-    );
-    // O `info` não se mostra: é o grau de um acontecimento que não é alarme nenhum.
-    assert.equal(
-        uplinkCardContent("presence_event", { detectionType: "room_exit", detectionLevel: "info" }).details,
-        "",
-    );
+test("uma entrada ou saída diz a zona, e a área pelo nome que lhe deram", () => {
+    const value = (type, data) => uplinkCardContent(type, data).value;
+
+    assert.equal(value("zone_exit", { zone: "room", personIndex: 0 }), "Saiu da divisão");
+    assert.equal(value("zone_entry", { zone: "area", personIndex: 0, areaId: 2, areaName: "Porta", areaType: "door" }), "Entrou na área «Porta»");
+    // Sem planta sincronizada não há nome, e não se inventa um.
+    assert.equal(value("zone_entry", { zone: "area", personIndex: 0, areaId: 5 }), "Entrou na área");
+    assert.equal(value("zone_exit", { zone: "geofence" }), "Saiu da zona segura");
+});
+
+test("os vitais fora do normal mostram o valor que os levantou", () => {
+    assert.equal(uplinkCardContent("heart_rate_high", { bpm: 172 }).value, "172 bpm");
+    assert.equal(uplinkCardContent("heart_rate_low", { bpm: 32 }).value, "32 bpm");
+    assert.equal(uplinkCardContent("breath_rate_low", { breathsPerMinute: 6 }).value, "6 rpm");
 });
 
 /** Os quatro estados do `hbstatics` chegam em enumeração, como o `posture` e o `sleep_state`. */

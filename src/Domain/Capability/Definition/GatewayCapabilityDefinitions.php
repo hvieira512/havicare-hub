@@ -17,6 +17,7 @@ final class GatewayCapabilityDefinitions extends CapabilityDefinitions
         return [
             'battery' => ['moko-mkgw4'],
             'location' => ['moko-mkgw4'],
+            'low_battery' => ['moko-mkgw4'],
         ];
     }
 
@@ -28,6 +29,11 @@ final class GatewayCapabilityDefinitions extends CapabilityDefinitions
                     'connectivity' => 'Conectividade',
                     'battery' => 'Bateria',
                     'location' => 'Localização',
+                ],
+            ],
+            'alarms' => [
+                'event' => [
+                    'low_battery' => 'Bateria fraca',
                 ],
             ],
         ];

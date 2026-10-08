@@ -365,11 +365,6 @@ const FIELD_VALUE_LABELS = {
         weak: "Fraco",
         undefined: "Indefinido",
     },
-    detectionLevel: {
-        info: "Informação",
-        warning: "Aviso",
-        danger: "Perigo",
-    },
 };
 
 // O estado de sono é a mesma grandeza em dois sítios: a capacidade `sleep_state`, cujo campo

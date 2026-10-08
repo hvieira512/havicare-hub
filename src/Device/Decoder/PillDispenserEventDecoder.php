@@ -9,6 +9,48 @@ use Hub\Support\Values;
 
 final class PillDispenserEventDecoder
 {
+    /** As condições que o aparelho mantém acesas enquanto duram, pela TAG que as diz. */
+    private const CONDITION_TAGS = [
+        0x8111 => 'storage_environment',
+        0x8112 => 'help_call',
+        0x8121 => 'device_fault:rotation',
+        0x8122 => 'device_fault:tray_reset',
+        0x8123 => 'device_fault:pusher',
+        0x8124 => 'device_fault:cell_door',
+        0x8125 => 'device_fault:keys',
+    ];
+
+    /** O evento de cada condição: o juízo do ambiente, a chamada de ajuda, e cada avaria. */
+    public const CONDITIONS = [
+        'storage_environment' => ['feature' => 'storage_environment', 'value' => ['outOfRange' => true]],
+        'help_call' => ['feature' => 'help_call', 'value' => ['state' => 'in_progress']],
+        'device_fault:rotation' => ['feature' => 'device_fault', 'value' => ['fault' => 'rotation']],
+        'device_fault:tray_reset' => ['feature' => 'device_fault', 'value' => ['fault' => 'tray_reset']],
+        'device_fault:pusher' => ['feature' => 'device_fault', 'value' => ['fault' => 'pusher']],
+        'device_fault:cell_door' => ['feature' => 'device_fault', 'value' => ['fault' => 'cell_door']],
+        'device_fault:keys' => ['feature' => 'device_fault', 'value' => ['fault' => 'keys']],
+    ];
+
+    /**
+     * As condições que o pacote traz, acesas ou apagadas. Uma TAG que o pacote não traz não diz
+     * nada, e fica de fora.
+     *
+     * @param array<int|string, mixed> $tlv
+     * @return array<string, bool>
+     */
+    public static function conditions(array $tlv): array
+    {
+        $conditions = [];
+        foreach (self::CONDITION_TAGS as $tag => $condition) {
+            $state = Tlv::u8($tlv, $tag);
+            if ($state !== null) {
+                $conditions[$condition] = $state !== 0;
+            }
+        }
+
+        return $conditions;
+    }
+
     /**
      * O M228 traz o corpo já descodificado em TAGs TFLV: o `0x03` é uma toma e os restantes
      * carregam estado. Cada TAG lê-se com o tipo da especificação, sem o FeatureNormalizer.
@@ -258,9 +300,10 @@ final class PillDispenserEventDecoder
         }
 
         // A corrente viaja com a bateria: é a mesma pergunta feita de dois lados.
+        $chargingState = Tlv::u8($tlv, 0x8104);
         $battery = Values::withoutNulls([
             'percent' => Tlv::u8($tlv, 0x8103),
-            'chargingState' => match (Tlv::u8($tlv, 0x8104)) {
+            'chargingState' => match ($chargingState) {
                 0 => 'normal',
                 1 => 'full',
                 2 => 'low',
@@ -269,6 +312,8 @@ final class PillDispenserEventDecoder
                 default => null,
             },
             'mainsPowered' => self::flag($tlv, 0x8109),
+            // Sem bateria (4) não é bateria fraca, e sem a TAG não se sabe.
+            'lowBattery' => $chargingState === null || $chargingState === 4 ? null : $chargingState === 2,
         ]);
         if ($battery !== []) {
             $events[] = ['feature' => 'battery', 'nativeType' => $nativeType, 'value' => $battery];
@@ -308,15 +353,6 @@ final class PillDispenserEventDecoder
         // Os sensores do prato (`0x8107`) e do copo (`0x8106`) não entram: neste firmware respondem
         // sempre o mesmo, com a peça no sítio ou fora.
 
-        // O juízo do aparelho sobre a temperatura e a humidade que ele mede. Só sai quando
-        // dispara, como a avaria aqui ao lado.
-        if (self::flag($tlv, 0x8111) === true) {
-            $events[] = [
-                'feature' => 'storage_environment',
-                'nativeType' => $nativeType,
-                'value' => ['outOfRange' => true],
-            ];
-        }
 
         // Sai como a `connectivity` dos gateways, em dBm: o WiFi dá dBm e o 4G o CSQ do módulo. As
         // barras do `0x810D` não vão: o `signalQuality` do contrato é o CSQ de 0 a 31.
@@ -343,16 +379,10 @@ final class PillDispenserEventDecoder
             ];
         }
 
-        foreach ([0x8121 => 'rotation', 0x8122 => 'tray_reset', 0x8123 => 'pusher', 0x8124 => 'cell_door', 0x8125 => 'keys'] as $tag => $fault) {
-            $state = Tlv::u8($tlv, $tag);
-            if ($state !== null && $state !== 0) {
-                $events[] = ['feature' => 'device_fault', 'nativeType' => $nativeType, 'value' => ['fault' => $fault]];
+        foreach (self::conditions($tlv) as $condition => $active) {
+            if ($active) {
+                $events[] = ['nativeType' => $nativeType] + self::CONDITIONS[$condition];
             }
-        }
-
-        $emergency = Tlv::u8($tlv, 0x8112);
-        if ($emergency !== null && $emergency !== 0) {
-            $events[] = ['feature' => 'help_call', 'nativeType' => $nativeType, 'value' => ['state' => 'in_progress']];
         }
 
         // A resposta ao `0x07` traz os nove e é leitura; tudo o resto traz o alarme que mudou

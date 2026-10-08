@@ -108,12 +108,14 @@ export const state = {
         from: "",
         to: "",
         type: "all",
+        severity: "all",
         q: "",
     },
     detailFiltersDraft: {
         from: "",
         to: "",
         type: "all",
+        severity: "all",
         q: "",
     },
     // Listas, porque os filtros aceitam vários valores. A licença guarda pares "empresa" ou
@@ -176,7 +178,7 @@ function resetActivityPaging() {
     state.downlinkCumulative = false;
 }
 
-const blankDetailFilters = () => ({ from: "", to: "", type: "all", q: "" });
+const blankDetailFilters = () => ({ from: "", to: "", type: "all", severity: "all", q: "" });
 
 export function selectImei(imei) {
     if (state.selectedImei !== imei) {

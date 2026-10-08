@@ -109,17 +109,11 @@ const DETAIL_ITEM_TYPES = {
     "device.disconnected": () => "device.disconnected",
 };
 
-/** O que chegar em `events` e não estiver aqui é descartado em silêncio. */
-const ALARM_EVENT_TYPES = new Set([
-    "alarm",
-    "help_call",
-    "reset",
-    "fall",
-    "vitals_alarm",
-    "presence_event",
-    "medication_intake",
-    "device_fault",
-]);
+/** As gravidades que o filtro oferece, com a etiqueta da pastilha. */
+export const DETAIL_SEVERITIES = {
+    alarm: "Alarmes",
+    alert: "Alertas",
+};
 
 export function allDetailItems() {
     const items = [];
@@ -134,7 +128,8 @@ export function allDetailItems() {
     for (const row of recent.events || []) {
         const payload = rowPayload(row);
         if (!payload) continue;
-        if (ALARM_EVENT_TYPES.has(payload.type))
+        // Os acontecimentos de domínio levam a gravidade que o hub lhes deu; as ligações não.
+        if (payload.severity)
             items.push({ _source: "event", raw: row, payload });
         if (
             payload.type === "device.connected" ||
@@ -155,7 +150,7 @@ export function allDetailItems() {
 }
 
 export function filterDetailItems(items) {
-    const { from, to, type, q } = state.detailFilters;
+    const { from, to, type, severity, q } = state.detailFilters;
     // A pesquisa corre sobre o que está carregado, que é a janela escolhida nas datas, e
     // compara com o que a pessoa vê na linha: o tipo e o valor formatado.
     const needle = String(q || "").trim().toLowerCase();
@@ -163,6 +158,9 @@ export function filterDetailItems(items) {
         if (type !== "all" && type !== "") {
             const itemType = detailItemType(item);
             if (itemType !== type) return false;
+        }
+        if (severity && severity !== "all" && item.payload?.severity !== severity) {
+            return false;
         }
         if (from || to) {
             const time = itemTime(item);
@@ -261,6 +259,7 @@ export function syncDetailFilterControls() {
     els.detailFilterFrom.value = state.detailFiltersDraft?.from ?? state.detailFilters.from;
     els.detailFilterTo.value = state.detailFiltersDraft?.to ?? state.detailFilters.to;
     els.detailFilterType.value = state.detailFiltersDraft?.type ?? state.detailFilters.type;
+    els.detailFilterSeverity.value = state.detailFiltersDraft?.severity ?? state.detailFilters.severity;
     syncDetailRangeButtons();
     renderDetailActiveFilters();
 }
@@ -281,6 +280,7 @@ export function applyDetailFilters() {
         from: els.detailFilterFrom.value,
         to: els.detailFilterTo.value,
         type: els.detailFilterType.value,
+        severity: els.detailFilterSeverity.value,
         q: state.detailFilters.q,
     };
     resetDetailFiltersDraft();
@@ -288,9 +288,13 @@ export function applyDetailFilters() {
     onChange();
 }
 
-/** O tipo aplica-se ao escolher, como os alcances: não há nada a meio de escrever. */
+/** O tipo e a gravidade aplicam-se ao escolher, como os alcances: não há nada a meio de escrever. */
 export function applyDetailType() {
-    state.detailFilters = { ...state.detailFilters, type: els.detailFilterType.value };
+    state.detailFilters = {
+        ...state.detailFilters,
+        type: els.detailFilterType.value,
+        severity: els.detailFilterSeverity.value,
+    };
     resetDetailFiltersDraft();
     restartTelemetryPaging();
     onChange();
@@ -298,7 +302,7 @@ export function applyDetailType() {
 
 export function clearDetailFilters() {
     activeRange = "";
-    state.detailFilters = { from: "", to: "", type: "all", q: "" };
+    state.detailFilters = { from: "", to: "", type: "all", severity: "all", q: "" };
     resetDetailFiltersDraft();
     restartTelemetryPaging();
     if (els.detailSearch) els.detailSearch.value = "";
@@ -329,7 +333,7 @@ function applyDetailSearchNow() {
 
 export function removeDetailFilter(key) {
     if (key === "from" || key === "to") activeRange = "";
-    const cleared = key === "type" ? "all" : "";
+    const cleared = key === "type" || key === "severity" ? "all" : "";
     state.detailFilters = { ...state.detailFilters, [key]: cleared };
     resetDetailFiltersDraft();
     restartTelemetryPaging();
@@ -338,7 +342,7 @@ export function removeDetailFilter(key) {
 }
 
 /** O que cada pastilha diz; a do tipo leva a mesma etiqueta do select que a escolheu. */
-export function detailFilterChipLabels({ from, to, type, q }) {
+export function detailFilterChipLabels({ from, to, type, severity, q }) {
     const labels = [];
     if (from || to) {
         const range = DETAIL_RANGES[activeRange];
@@ -351,6 +355,9 @@ export function detailFilterChipLabels({ from, to, type, q }) {
     }
     if (type && type !== "all") {
         labels.push({ key: "type", label: telemetryFilterLabel(type) });
+    }
+    if (DETAIL_SEVERITIES[severity]) {
+        labels.push({ key: "severity", label: DETAIL_SEVERITIES[severity] });
     }
     if (String(q || "").trim() !== "") {
         labels.push({ key: "q", label: `"${q.trim()}"` });
@@ -375,6 +382,7 @@ export function updateDetailFilterDraft() {
         from: els.detailFilterFrom.value,
         to: els.detailFilterTo.value,
         type: els.detailFilterType.value,
+        severity: els.detailFilterSeverity.value,
         q: state.detailFilters.q,
     });
 }

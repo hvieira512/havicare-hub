@@ -101,6 +101,7 @@ final class CatalogSchemas
                     'health' => $capabilitySection,
                     'contacts' => $capabilitySection,
                     'alarms' => $capabilitySection,
+                    'reminders' => $capabilitySection,
                     'settings_system' => $capabilitySection,
                 ],
             ],

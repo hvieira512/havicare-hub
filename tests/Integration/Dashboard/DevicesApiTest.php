@@ -403,15 +403,15 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $response = $api->show('864293000000222');
 
         self::assertSame([], $response['configurations'] ?? []);
-        self::assertArrayHasKey('alarm_clock', $response['capabilities']['alarms'] ?? []);
-        self::assertSame(3, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
+        self::assertArrayHasKey('alarm_clock', $response['capabilities']['reminders'] ?? []);
+        self::assertSame(3, $response['capabilities']['reminders']['alarm_clock']['_meta']['limit'] ?? null);
         self::assertSame(
             [
                 ['value' => 'once', 'label' => 'Uma vez'],
                 ['value' => 'daily', 'label' => 'Todos os dias'],
                 ['value' => 'custom', 'label' => 'Personalizado'],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['_meta']['recurrence']['options'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['_meta']['recurrence']['options'] ?? null
         );
         self::assertSame(
             [
@@ -421,7 +421,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'recurrence' => ['kind' => 'once'],
                 ],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['value'] ?? null
         );
         self::assertArrayHasKey('phonebook', $response['capabilities']['contacts'] ?? []);
         self::assertSame(100, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
@@ -629,13 +629,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
         self::assertSame('Medicine', $response['configurations']['alarm_clock'][0]['label'] ?? null);
         self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
-        self::assertSame(10, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
-        self::assertTrue($response['capabilities']['alarms']['alarm_clock']['_meta']['label']['supported'] ?? false);
-        self::assertArrayNotHasKey('required', $response['capabilities']['alarms']['alarm_clock']['_meta']['label'] ?? []);
-        self::assertTrue($response['capabilities']['alarms']['alarm_clock']['_meta']['url']['supported'] ?? false);
+        self::assertSame(10, $response['capabilities']['reminders']['alarm_clock']['_meta']['limit'] ?? null);
+        self::assertTrue($response['capabilities']['reminders']['alarm_clock']['_meta']['label']['supported'] ?? false);
+        self::assertArrayNotHasKey('required', $response['capabilities']['reminders']['alarm_clock']['_meta']['label'] ?? []);
+        self::assertTrue($response['capabilities']['reminders']['alarm_clock']['_meta']['url']['supported'] ?? false);
         self::assertSame(
             ['http', 'https'],
-            $response['capabilities']['alarms']['alarm_clock']['_meta']['url']['schemes'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['_meta']['url']['schemes'] ?? null
         );
         self::assertSame(
             [
@@ -647,14 +647,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 ['value' => 6, 'label' => 'Sáb'],
                 ['value' => 7, 'label' => 'Dom'],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['_meta']['days']['options'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['_meta']['days']['options'] ?? null
         );
         self::assertSame(
             [
                 ['value' => 'daily', 'label' => 'Todos os dias'],
                 ['value' => 'custom', 'label' => 'Personalizado'],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['_meta']['recurrence']['options'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['_meta']['recurrence']['options'] ?? null
         );
         self::assertArrayHasKey('sos_contacts', $response['capabilities']['contacts'] ?? []);
     }
@@ -931,18 +931,18 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 'reminderText' => 'meds',
                 'voiceData' => 'QUJDRA==',
             ],
-            $response['capabilities']['alarms']['medication_reminders']['value'] ?? null
+            $response['capabilities']['reminders']['medication_reminders']['value'] ?? null
         );
-        self::assertSame(3, $response['capabilities']['alarms']['medication_reminders']['_meta']['limit'] ?? null);
+        self::assertSame(3, $response['capabilities']['reminders']['medication_reminders']['_meta']['limit'] ?? null);
         self::assertSame(
             [
                 ['value' => 1, 'label' => 'Uma vez'],
                 ['value' => 2, 'label' => 'Diariamente'],
                 ['value' => 3, 'label' => 'Personalizado'],
             ],
-            $response['capabilities']['alarms']['medication_reminders']['_meta']['frequency']['options'] ?? null
+            $response['capabilities']['reminders']['medication_reminders']['_meta']['frequency']['options'] ?? null
         );
-        self::assertArrayNotHasKey('_nativeKey', $response['capabilities']['alarms']['medication_reminders']);
+        self::assertArrayNotHasKey('_nativeKey', $response['capabilities']['reminders']['medication_reminders']);
     }
 
     public function testShowCompactsOversizedTakePillsVoiceData(): void
@@ -973,8 +973,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         foreach (
             [
             $response['configurations']['medication_reminders'] ?? [],
-            $response['capabilities']['alarms']['medication_reminders']['value'] ?? [],
-            $response['configurationSync']['entries']['alarms']['medication_reminders']['desired'] ?? [],
+            $response['capabilities']['reminders']['medication_reminders']['value'] ?? [],
+            $response['configurationSync']['entries']['reminders']['medication_reminders']['desired'] ?? [],
             ] as $value
         ) {
             self::assertArrayNotHasKey('voiceData', $value);
@@ -1021,7 +1021,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 'reminderText' => 'meds',
                 'voiceData' => 'QUJDRA==',
             ],
-            $response['capabilities']['alarms']['medication_reminders']['value'] ?? null
+            $response['capabilities']['reminders']['medication_reminders']['value'] ?? null
         );
     }
 
@@ -1064,7 +1064,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'type' => 2,
                 ],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['value'] ?? null
         );
         self::assertSame(
             [
@@ -1090,7 +1090,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 ['value' => 6, 'label' => 'Sáb'],
                 ['value' => 7, 'label' => 'Dom'],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['_meta']['days']['options'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['_meta']['days']['options'] ?? null
         );
         self::assertSame(
             [
@@ -1098,7 +1098,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 ['value' => 2, 'label' => 'Água'],
                 ['value' => 3, 'label' => 'Sedentarismo'],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['_meta']['type']['options'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['_meta']['type']['options'] ?? null
         );
     }
 
@@ -1147,16 +1147,16 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                 ],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['value'] ?? null
         );
-        self::assertSame(3, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
+        self::assertSame(3, $response['capabilities']['reminders']['alarm_clock']['_meta']['limit'] ?? null);
         self::assertSame(
             [
                 ['value' => 'once', 'label' => 'Uma vez'],
                 ['value' => 'daily', 'label' => 'Todos os dias'],
                 ['value' => 'custom', 'label' => 'Personalizado'],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['_meta']['recurrence']['options'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['_meta']['recurrence']['options'] ?? null
         );
         self::assertSame(
             [
@@ -1168,9 +1168,9 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 ['value' => 6, 'label' => 'Sáb'],
                 ['value' => 7, 'label' => 'Dom'],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['_meta']['days']['options'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['_meta']['days']['options'] ?? null
         );
-        self::assertArrayNotHasKey('type', $response['capabilities']['alarms']['alarm_clock']['_meta'] ?? []);
+        self::assertArrayNotHasKey('type', $response['capabilities']['reminders']['alarm_clock']['_meta'] ?? []);
         self::assertSame(
             [
                 [
@@ -1429,7 +1429,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'type' => 1,
                 ],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
+            $response['capabilities']['reminders']['alarm_clock']['value'] ?? null
         );
     }
 
@@ -2700,7 +2700,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
         self::assertSame(
             'awaiting_ack',
-            $response['configurationSync']['entries']['alarms']['medication_reminders']['status'] ?? null
+            $response['configurationSync']['entries']['reminders']['medication_reminders']['status'] ?? null
         );
         self::assertSame(
             'dnMedicationPlan',

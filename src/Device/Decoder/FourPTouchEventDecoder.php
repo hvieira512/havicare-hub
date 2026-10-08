@@ -35,18 +35,32 @@ final class FourPTouchEventDecoder
             self::isPosition($nativeType) => array_values(array_filter([
                 DeviceEventDecoder::locationEvent($nativeType, $payload),
                 DeviceEventDecoder::event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
-                DeviceEventDecoder::event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
+                self::battery($nativeType, $payload),
             ])),
             self::isAlarm($nativeType) => array_values(array_filter([
                 DeviceEventDecoder::locationEvent($nativeType, $payload),
                 ...DeviceEventDecoder::alarmEvents($nativeType, $payload),
-                DeviceEventDecoder::event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
+                self::battery($nativeType, $payload),
             ])),
             $nativeType === 'CONFIG', $nativeType === 'TAKEPILLS' => [DeviceEventDecoder::event('device_config', $nativeType, $payload)],
             $nativeType === 'VERNO' => [DeviceEventDecoder::event('firmware_version', $nativeType, $payload)],
             $nativeType === 'TS' => self::deviceStatus($nativeType, $payload),
             default => [],
         };
+    }
+
+    /**
+     * A percentagem, e a condição de bateria fraca que as tramas de posição e de alarme trazem.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>|null
+     */
+    private static function battery(string $nativeType, array $payload): ?array
+    {
+        return DeviceEventDecoder::event('battery', $nativeType, [
+            'batteryPercent' => $payload['batteryPercent'] ?? null,
+            'batteryLow' => $payload['batteryLow'] ?? null,
+        ]);
     }
 
     /**

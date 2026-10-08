@@ -178,6 +178,8 @@ final class MqttIngressFactory
                 commercialModelResolver: $services->commercialModelResolver,
                 denylist: $services->denylist,
                 idleTimeoutSeconds: (int)$config['qinglanst']['idle_timeout_seconds'],
+                // ponytail: uma leitura à base por entrada ou saída de área; com cache se o ritmo subir.
+                layouts: static fn (string $imei): ?array => $services->dataAccess->radarLayouts->findByImei($imei),
             ),
         );
     }

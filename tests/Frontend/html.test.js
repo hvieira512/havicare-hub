@@ -89,13 +89,14 @@ test("um nome de empresa com marcação sai inerte do cartão da licença", () =
 });
 
 /**
- * O `detectionLevel` chega do radar pelo MQTT sem passar por ninguém, e os `details` são
- * injectados sem escapar.
+ * O `personIndex` chega do radar pelo MQTT sem passar por ninguém, o nome da área vem de quem a
+ * desenhou na planta, e os `details` são injectados sem escapar.
  */
-test("o grau de uma detecção não consegue escrever marcação no cartão", () => {
-    const content = uplinkCardContent("fall", {
-        detectionType: "fall_confirmed",
-        detectionLevel: "\"><img src=x onerror=alert(1)>",
+test("a pessoa de uma detecção não consegue escrever marcação no cartão", () => {
+    const content = uplinkCardContent("zone_entry", {
+        zone: "area",
+        areaName: "\"><img src=x onerror=alert(1)>",
+        personIndex: "\"><img src=x onerror=alert(1)>",
     });
 
     assert.doesNotMatch(String(content.details), /<img/i);
@@ -110,9 +111,6 @@ test("o grau de uma detecção não consegue escrever marcação no cartão", ()
     );
 
     assert.equal(root.querySelector("img"), null);
-    // Um grau que a tabela não conheça passa intacto, e o que interessa é que fica texto e
-    // não uma tag.
-    assert.match(root.textContent, /"><img src=x onerror=alert\(1\)>/);
 });
 
 test("o valor e o título de um cartão saem escapados", () => {

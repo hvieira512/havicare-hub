@@ -700,18 +700,50 @@ final class DeviceHubMqttContractTest extends TestCase
             static fn (array $entry): bool => ($entry[1]['type'] ?? null) === $type,
         ));
 
-        $alarms = $byType($mqtt->events, 'alarm');
-        self::assertCount(1, $alarms);
-        self::assertSame('fall', $alarms[0][1]['data']['reason']);
-        self::assertArrayNotHasKey('code', $alarms[0][1]['data']);
-        self::assertSame('AP10', $alarms[0][1]['source']['nativeType']);
-        self::assertArrayNotHasKey('schemaVersion', $alarms[0][1]);
+        $falls = $byType($mqtt->events, 'fall');
+        self::assertCount(1, $falls);
+        self::assertSame(['confirmed' => true], $falls[0][1]['data']);
+        self::assertSame('AP10', $falls[0][1]['source']['nativeType']);
+        self::assertArrayNotHasKey('schemaVersion', $falls[0][1]);
 
-        self::assertSame([], $byType($mqtt->telemetry, 'alarm'));
+        self::assertSame([], $byType($mqtt->telemetry, 'fall'));
 
         $locations = $byType($mqtt->telemetry, 'location');
         self::assertCount(1, $locations);
         self::assertSame('alarm', $locations[0][1]['data']['reportKind']);
+    }
+
+    /**
+     * O 4P Touch repete a condição de bateria fraca em cada posição: sai um `low_battery` quando
+     * ela acende, e outro só depois de ela ter apagado.
+     */
+    public function testARepeatedLowBatteryConditionRaisesTheEventOncePerDischarge(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+        $connection = new ContractFakeConnection(22);
+        $position = static function (string $status, int $battery): string {
+            $content = 'UD_LTE,240617,101530,V,0.0,N,0.0,E,0.0,0,0,0,55,' . $battery . ',0,0,' . $status . ',0,0,268,01';
+
+            return sprintf('[3G*7597567372*%04X*%s]', strlen($content), $content);
+        };
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, '[3G*7597567372*000D*LK,50,100,100]');
+        $hub->onMessage($connection, $position('00000001', 12));
+        $hub->onMessage($connection, $position('00000001', 11));
+        $lowBattery = static fn (): array => array_values(array_filter(
+            $mqtt->events,
+            static fn (array $entry): bool => ($entry[1]['type'] ?? null) === 'low_battery',
+        ));
+
+        self::assertCount(1, $lowBattery());
+        self::assertSame(['percent' => 12], $lowBattery()[0][1]['data']);
+
+        $hub->onMessage($connection, $position('00000000', 60));
+        $hub->onMessage($connection, $position('00000001', 13));
+
+        self::assertCount(2, $lowBattery());
     }
 
     public function testNonGpsLocationIsPublishedWithResolvedCoordinatesInsideData(): void

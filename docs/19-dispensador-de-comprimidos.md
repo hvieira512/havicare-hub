@@ -290,7 +290,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 | TAG | Capacidade | Campos |
 |---|---|---|
 | `0xC201`–`0xC206` | `medication_intake` | `alarmSlot`, `scheduledAt`, `takenAt`, `cellNumber`, `method`, `result` |
-| `0x8103` / `0x8104` / `0x8109` | `battery` | `percent`, `chargingState`, `mainsPowered` — a corrente vai com a bateria porque «ligado à corrente» e «a carregar» são a mesma pergunta |
+| `0x8103` / `0x8104` / `0x8109` | `battery` | `percent`, `chargingState`, `mainsPowered`, `lowBattery` — a corrente vai com a bateria porque «ligado à corrente» e «a carregar» são a mesma pergunta. O `lowBattery` é o `0x8104` a `2`, e quando acende sai também o evento `low_battery`, uma vez. Sem bateria (`4`) não é bateria fraca |
 | `0x811A` / `0x811B` / `0x811D` / `0x8101` | `cells_remaining` | `current`, `total`, `remaining`, `level` (`ok` · `low` · `empty`). **O `remaining` é `carregados − posição`**, com corte a zero — quantas doses faltam sair a partir de onde o carrossel está, e **não** quantos compartimentos ainda têm comprimidos. Confirmado no aparelho: 28 carregados na posição 20 deram 8, e a posição 21 deu 7. Por isso o cartão não os põe lado a lado: diz «8 por dispensar» e manda a posição para os detalhes, que é o que se precisa para saber onde carregar o prato |
 | `0x810E` | `ambient_temperature` | `environmentCelsius` — o ar onde o aparelho está, e não uma pessoa. A spec dá-o como INT8S de −40 a 120 **graus inteiros**, que não é gama nem resolução de sensor corporal; por isso não partilha a chave `temperature` dos relógios |
 | `0x810F` | `ambient_humidity` | `humidityPercent` |
@@ -320,6 +320,12 @@ Daí a separação entre `medication_alarm_status` — a leitura dos nove, que s
 
 O sinal sai como `connectivity`, que é a capacidade genérica que os gateways já
 usam. A `help_call` é a mesma chave do NCS e da pulseira.
+
+**O que dura sai uma vez.** O heartbeat repete as TAGs de estado a cada minuto, e
+uma avaria do prato chegou a ficar acesa dias. A avaria, a chamada de ajuda e o
+ambiente fora da gama saem quando acendem, e só voltam a sair depois de o
+aparelho os dar por apagados — com a TAG a zero. Um pacote que não traz a TAG
+não diz nada, e não a apaga.
 
 **As respostas.** Registo, heartbeat, evento e notificação são confirmados com o
 mesmo tipo mais o bit alto (`0x81`–`0x84`), corpo vazio e estado `0x00`, ecoando
@@ -578,7 +584,7 @@ chamada:
 configuração.
 
 **O que é pago é a chamada, não o aviso.** O botão reporta-nos na mesma: medido a
-29/09/2026, uma pressão fez chegar o `0x8123` e o hub publicou `help_call` com
+29/09/2026, uma pressão fez chegar o `0x8112` e o hub publicou `help_call` com
 `state: in_progress` — a mesma capacidade do NCS e da pulseira. É a primeira vez
 que este evento saiu deste aparelho, e não precisou de serviço nenhum contratado.
 

@@ -51,6 +51,24 @@ test("mas «sem bateria» fica, que nenhum ícone o diz", () => {
     assert.match(String(battery({ chargingState: "absent" }).details), /Sem bateria/);
 });
 
+/** A bandeira é a mesma em todos os aparelhos, e diz-se igual em todos. */
+test("a bateria fraca diz-se por baixo e tinge o azulejo, venha de que aparelho vier", () => {
+    for (const data of [
+        { percent: 30, lowBattery: true },
+        { percent: 14, batteryType: 3, lowBattery: true },
+        { percent: 12, chargingState: "low", lowBattery: true },
+        { lowBattery: true },
+    ]) {
+        assert.equal(String(battery(data).details), "Bateria fraca", JSON.stringify(data));
+        assert.notEqual(battery(data).tone, "success", JSON.stringify(data));
+    }
+});
+
+test("sem a bandeira acesa, nada se diz", () => {
+    assert.equal(String(battery({ percent: 80, lowBattery: false }).details), "");
+    assert.equal(battery({ percent: 80, lowBattery: false }).tone, "success");
+});
+
 /** A corrente mostra-se no canto do ícone. */
 test("a corrente não se escreve por baixo", () => {
     for (const data of [

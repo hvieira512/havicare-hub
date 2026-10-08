@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\State;
 
+use Hub\Domain\Capability\EventSeverity;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Log\Logger;
@@ -140,7 +141,7 @@ final class DeviceStore implements DeviceStoreContract
             return;
         }
 
-        $this->events->append($imei, $list, $payload);
+        $this->events->append($imei, $list, $list === 'events' ? EventSeverity::stamp($payload) : $payload);
         // O `DeviceService::recent()` serve telemetria, eventos e comandos; a lista crua não vai para
         // o stream, e anunciá-la acordava os ouvintes a cada mensagem de gateway.
         if ($list === 'telemetry' || $list === 'events') {

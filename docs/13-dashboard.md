@@ -51,8 +51,18 @@ Um ficheiro por recurso, e nada fora dali sabe o que é um pedido HTTP.
 - À esquerda, o dispositivo: seletor, ficha com imagem e estado, os factos do
   registo, os botões de pedir uma medição, e os eventos de chamada quando é um
   NCS.
-- À direita, o detalhe: filtros por data e por tipo, a cronologia de ligações, a
-  telemetria recebida, e os comandos enviados.
+- À direita, o detalhe: filtros por data, por tipo e por gravidade, a cronologia
+  de ligações, a telemetria recebida, e os comandos enviados.
+
+**Leituras, alarmes e alertas na mesma lista.** Entra nela todo o evento a que o
+hub deu uma `severity`, sem lista de tipos escrita à mão. Um alarme pinta-se a
+vermelho e um alerta a âmbar, venha de que aparelho vier; o resto fica com a cor
+da capacidade. O filtro de gravidade deixa ver só os alarmes ou só os alertas.
+
+**As secções da configuração.** «Alarmes e alertas» tem o que dispara e os
+interruptores disso — deteção de queda, SMS de SOS, limiares. «Lembretes» tem os
+despertadores, o plano de medicação e o toque do lembrete, que não são alarmes de
+perigo.
 
 Na barra de topo, o sino de notificações — dispositivos recusados, reinícios
 sujos do hub — e o seletor de tema.

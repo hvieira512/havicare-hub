@@ -44,6 +44,30 @@ final class HubMqttBridgeTest extends TestCase
         self::assertSame(MqttClient::QOS_AT_LEAST_ONCE, $publisher->lastQualityOfService);
     }
 
+    /** A gravidade carimba-se aqui, por onde passa todo o evento, e não em cada normalizador. */
+    public function testADomainEventLeavesWithItsSeverity(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'prefix');
+
+        $bridge->publishEvent('8800000015', ['type' => 'fall', 'data' => ['confirmed' => false]]);
+
+        self::assertSame(
+            ['type' => 'fall', 'severity' => 'alert', 'data' => ['confirmed' => false]],
+            json_decode((string)$publisher->lastMessage, true),
+        );
+    }
+
+    public function testAConnectionEventLeavesWithoutSeverity(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'prefix');
+
+        $bridge->publishEvent('8800000015', ['type' => 'device.connected']);
+
+        self::assertSame(['type' => 'device.connected'], json_decode((string)$publisher->lastMessage, true));
+    }
+
     public function testStatusPublishesWithQosOneAndStaysRetained(): void
     {
         $publisher = new FakeMqttPublisher();
@@ -268,6 +292,7 @@ final class FakeMqttPublisher extends MqttClient
     public int $publishCalls = 0;
     public int $disconnectCalls = 0;
     public ?string $lastTopic = null;
+    public ?string $lastMessage = null;
     public ?int $lastQualityOfService = null;
     public ?bool $lastRetain = null;
 
@@ -279,6 +304,7 @@ final class FakeMqttPublisher extends MqttClient
     {
         $this->publishCalls++;
         $this->lastTopic = $topic;
+        $this->lastMessage = $message;
         $this->lastQualityOfService = $qualityOfService;
         $this->lastRetain = $retain;
 

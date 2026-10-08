@@ -8,76 +8,41 @@ use Hub\Device\DeviceDescriptor;
 
 final class MessageNormalizer
 {
-    private const LEVEL_INFO = 'info';
-    private const LEVEL_WARNING = 'warning';
-    private const LEVEL_DANGER = 'danger';
-
-    private const SOURCE_POSITION = 'position';
-    private const SOURCE_HEARTBREATH = 'heartbreath';
-
-    /** As detecções que contam como alarme; entradas e saídas de divisão ou área são acontecimentos. */
-    private const ALARM_DETECTION_TYPES = [
-        'fall_confirmed',
-        'heart_rate_high_critical',
-        'heart_rate_high',
-        'heart_rate_low_critical',
-        'heart_rate_low',
-        'apnea',
-        'breathing_high',
-        'breathing_low',
-        'vitals_signal_lost',
-        'sitting_confirmed',
-        'on_floor',
-    ];
-
     /** O que cada postura e cada movimento levantam. A ordem é a da procura: a postura ganha. */
     private const POSITION_DETECTIONS = [
         'posture_state' => [
-            'fall_confirmation' => ['fall_confirmed', self::LEVEL_DANGER],
-            'suspected_fall' => ['fall_confirmed', self::LEVEL_WARNING],
-            'confirmed_sitting_on_ground' => ['sitting_confirmed', self::LEVEL_WARNING],
+            'fall_confirmation' => ['fall', ['confirmed' => true, 'posture' => 'lying']],
+            'suspected_fall' => ['fall', ['confirmed' => false, 'posture' => 'lying']],
+            'confirmed_sitting_on_ground' => ['fall', ['confirmed' => true, 'posture' => 'sitting_on_ground']],
         ],
         'last_event' => [
-            'enter_room' => ['room_entry', self::LEVEL_INFO],
-            'leave_room' => ['room_exit', self::LEVEL_INFO],
-            'enter_area' => ['area_entry', self::LEVEL_INFO],
-            'leave_area' => ['area_exit', self::LEVEL_INFO],
+            'enter_room' => ['zone_entry', ['zone' => 'room']],
+            'leave_room' => ['zone_exit', ['zone' => 'room']],
+            'enter_area' => ['zone_entry', ['zone' => 'area']],
+            'leave_area' => ['zone_exit', ['zone' => 'area']],
         ],
     ];
 
-    /** Campo descodificado, chave no `details`, e o estado que levanta cada alarme. */
+    /** Campo descodificado, o evento que cada estado levanta, e a média que o justifica. */
     private const VITALS_STATUS_DETECTIONS = [
-        ['breathing_status_per_minute', 'breathingStatus', [
-            'apnea' => ['apnea', self::LEVEL_DANGER],
-            'hyperpnea' => ['breathing_high', self::LEVEL_WARNING],
-            'hypopnea' => ['breathing_low', self::LEVEL_WARNING],
+        ['breathing_status_per_minute', [
+            'apnea' => ['apnea', null],
+            'hyperpnea' => ['breath_rate_high', 'breathsPerMinute'],
+            'hypopnea' => ['breath_rate_low', 'breathsPerMinute'],
         ]],
-        ['heart_rate_status_per_minute', 'heartRateStatus', [
-            'high' => ['heart_rate_high', self::LEVEL_WARNING],
-            'low' => ['heart_rate_low', self::LEVEL_WARNING],
+        ['heart_rate_status_per_minute', [
+            'high' => ['heart_rate_high', 'bpm'],
+            'low' => ['heart_rate_low', 'bpm'],
         ]],
-        ['vital_signs_status', 'vitalSignsStatus', [
-            'weak' => ['vitals_signal_lost', self::LEVEL_WARNING],
+        ['vital_signs_status', [
+            'weak' => ['weak_vital_signs', null],
         ]],
     ];
 
-    /** A capacidade de cada detecção: três, e cada evento leva dentro o tipo específico. */
-    private const DETECTION_CAPABILITY = [
-        'fall_confirmed' => 'fall',
-        'sitting_confirmed' => 'fall',
-        'on_floor' => 'fall',
-        'heart_rate_high_critical' => 'vitals_alarm',
-        'heart_rate_high' => 'vitals_alarm',
-        'heart_rate_low_critical' => 'vitals_alarm',
-        'heart_rate_low' => 'vitals_alarm',
-        'apnea' => 'vitals_alarm',
-        'breathing_high' => 'vitals_alarm',
-        'breathing_low' => 'vitals_alarm',
-        'vitals_signal_lost' => 'vitals_alarm',
-        'room_entry' => 'presence_event',
-        'room_exit' => 'presence_event',
-        'area_entry' => 'presence_event',
-        'area_exit' => 'presence_event',
+    /** A média do minuto que acompanha cada campo do `data`. */
+    private const VITALS_AVERAGES = [
+        'breathsPerMinute' => 'avg_breathing_per_minute',
+        'bpm' => 'avg_heart_rate_per_minute',
     ];
 
     /**
@@ -110,7 +75,7 @@ final class MessageNormalizer
         // A postura e o último evento ficam dentro de cada pessoa. Não é o `location` canónico:
         // as coordenadas são decímetros relativos ao radar.
         $telemetry = [
-            'presence' => $this->telemetry($topic, $device, 'presence', 'position', [
+            'presence' => $this->envelope($topic, $device, 'presence', 'position', [
                 'count' => count($people),
                 'people' => array_map(static function (array $person): array {
                     return [
@@ -127,11 +92,9 @@ final class MessageNormalizer
             ]),
         ];
 
-        $event = $this->detectPositionEvent($topic, $device, $people);
-
         return [
             'telemetry' => $telemetry,
-            'events' => $event === null ? [] : [$event],
+            'events' => $this->detectPositionEvents($topic, $device, $people),
         ];
     }
 
@@ -147,14 +110,16 @@ final class MessageNormalizer
     }
 
     /**
-     * Uma detecção por mensagem, da primeira pessoa que acertar.
+     * Uma detecção por pessoa: a postura ganha ao movimento da mesma pessoa, e uma entrada não
+     * esconde a queda de outra.
      *
      * @param array<string, mixed> $device
      * @param array<int, array<string, mixed>> $people
-     * @return array<string, mixed>|null
+     * @return list<array<string, mixed>>
      */
-    private function detectPositionEvent(QinglanstTopic $topic, array $device, array $people): ?array
+    private function detectPositionEvents(QinglanstTopic $topic, array $device, array $people): array
     {
+        $events = [];
         foreach ($people as $person) {
             foreach (self::POSITION_DETECTIONS as $field => $detections) {
                 $detection = $detections[(string)($person[$field] ?? '')] ?? null;
@@ -162,20 +127,17 @@ final class MessageNormalizer
                     continue;
                 }
 
-                [$type, $level] = $detection;
-
-                return $this->detectionEvent(
-                    $topic,
-                    $device,
-                    $type,
-                    $level,
-                    self::SOURCE_POSITION,
-                    ['personIndex' => $person['person_index']]
-                );
+                [$type, $data] = $detection;
+                $data['personIndex'] = $person['person_index'];
+                if (($data['zone'] ?? null) === 'area') {
+                    $data['areaId'] = $person['region_id'];
+                }
+                $events[] = $this->envelope($topic, $device, $type, 'position', $data);
+                break;
             }
         }
 
-        return null;
+        return $events;
     }
 
     /**
@@ -192,87 +154,42 @@ final class MessageNormalizer
         // uma leitura.
         $telemetry = [];
         if ($heartRate > 0) {
-            $telemetry['heart_rate'] = $this->telemetry($topic, $device, 'heart_rate', 'heartbreath', [
+            $telemetry['heart_rate'] = $this->envelope($topic, $device, 'heart_rate', 'heartbreath', [
                 'bpm' => $heartRate,
             ]);
         }
         if ($breathing > 0) {
-            $telemetry['breath_rate'] = $this->telemetry($topic, $device, 'breath_rate', 'heartbreath', [
+            $telemetry['breath_rate'] = $this->envelope($topic, $device, 'breath_rate', 'heartbreath', [
                 'breathsPerMinute' => $breathing,
             ]);
         }
 
         $sleepState = (string)($decoded['sleep_state'] ?? 'undefined');
         if ($sleepState !== 'undefined') {
-            $telemetry['sleep_state'] = $this->telemetry($topic, $device, 'sleep_state', 'heartbreath', [
+            $telemetry['sleep_state'] = $this->envelope($topic, $device, 'sleep_state', 'heartbreath', [
                 'state' => $sleepState,
             ]);
         }
 
+        // Os limites de 120 e 40 são do hub, e quão grave é decide-o a `severity`.
         $events = [];
-
-        if ($heartRate > 160) {
-            $events[] = $this->detectionEvent(
-                $topic,
-                $device,
-                'heart_rate_high_critical',
-                self::LEVEL_DANGER,
-                self::SOURCE_HEARTBREATH,
-                ['heartRate' => $heartRate]
-            );
-        } elseif ($heartRate > 120) {
-            $events[] = $this->detectionEvent(
-                $topic,
-                $device,
-                'heart_rate_high',
-                self::LEVEL_WARNING,
-                self::SOURCE_HEARTBREATH,
-                ['heartRate' => $heartRate]
-            );
-        }
-
-        if ($heartRate > 0 && $heartRate < 20) {
-            $events[] = $this->detectionEvent(
-                $topic,
-                $device,
-                'heart_rate_low_critical',
-                self::LEVEL_DANGER,
-                self::SOURCE_HEARTBREATH,
-                ['heartRate' => $heartRate]
-            );
+        if ($heartRate > 120) {
+            $events[] = $this->envelope($topic, $device, 'heart_rate_high', 'heartbreath', ['bpm' => $heartRate]);
         } elseif ($heartRate > 0 && $heartRate < 40) {
-            $events[] = $this->detectionEvent(
-                $topic,
-                $device,
-                'heart_rate_low',
-                self::LEVEL_WARNING,
-                self::SOURCE_HEARTBREATH,
-                ['heartRate' => $heartRate]
-            );
-        }
-
-        if ($breathing === 0 && $heartRate === 0) {
-            $events[] = $this->detectionEvent(
-                $topic,
-                $device,
-                'vitals_signal_lost',
-                self::LEVEL_DANGER,
-                self::SOURCE_HEARTBREATH,
-                ['breathsPerMinute' => $breathing, 'heartRate' => $heartRate]
-            );
+            $events[] = $this->envelope($topic, $device, 'heart_rate_low', 'heartbreath', ['bpm' => $heartRate]);
         }
 
         return ['telemetry' => $telemetry, 'events' => $events];
     }
 
     /**
-     * O envelope comum de uma leitura: só o `type` e o `data` mudam entre capacidades.
+     * O envelope comum de uma leitura ou de um evento: só o `type` e o `data` mudam.
      *
      * @param array<string, mixed> $device
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
-    private function telemetry(QinglanstTopic $topic, array $device, string $capability, string $nativeType, array $data): array
+    private function envelope(QinglanstTopic $topic, array $device, string $capability, string $nativeType, array $data): array
     {
         return [
             'type' => $capability,
@@ -292,7 +209,7 @@ final class MessageNormalizer
     {
         return [
             'telemetry' => [
-                'position_minute_stats' => $this->telemetry(
+                'position_minute_stats' => $this->envelope(
                     $topic,
                     $device,
                     'position_minute_stats',
@@ -323,7 +240,7 @@ final class MessageNormalizer
     private function normalizeHbStatics(array $decoded, QinglanstTopic $topic, array $device): array
     {
         // Sem `PerMinute` nos campos: a capacidade já se chama `vitals_minute_stats`.
-        $telemetry = $this->telemetry($topic, $device, 'vitals_minute_stats', 'hbstatics', [
+        $telemetry = $this->envelope($topic, $device, 'vitals_minute_stats', 'hbstatics', [
             'realTimeBreathing' => $decoded['real_time_breathing'],
             'realTimeHeartRate' => $decoded['real_time_heart_rate'],
             'avgBreathing' => $decoded['avg_breathing_per_minute'],
@@ -335,47 +252,24 @@ final class MessageNormalizer
         ]);
 
         $events = [];
-        foreach (self::VITALS_STATUS_DETECTIONS as [$field, $detailKey, $detections]) {
-            $status = (string)($decoded[$field] ?? '');
-            $detection = $detections[$status] ?? null;
+        foreach (self::VITALS_STATUS_DETECTIONS as [$field, $detections]) {
+            $detection = $detections[(string)($decoded[$field] ?? '')] ?? null;
             if ($detection === null) {
                 continue;
             }
 
-            [$type, $level] = $detection;
-            $events[] = $this->detectionEvent(
+            [$type, $valueKey] = $detection;
+            $average = $valueKey === null ? 0 : (int)($decoded[self::VITALS_AVERAGES[$valueKey]] ?? 0);
+            $events[] = $this->envelope(
                 $topic,
                 $device,
                 $type,
-                $level,
-                self::SOURCE_HEARTBREATH,
-                [$detailKey => $status]
+                'hbstatics',
+                $average > 0 ? [$valueKey => $average] : [],
             );
         }
 
         return ['telemetry' => ['vitals_minute_stats' => $telemetry], 'events' => $events];
-    }
-
-    /**
-     * @param array<string, mixed> $device
-     * @param array<string, mixed> $data
-     * @return array<string, mixed>
-     */
-    private function detectionEvent(QinglanstTopic $topic, array $device, string $type, string $level, string $source, array $data): array
-    {
-        return [
-            'type' => self::DETECTION_CAPABILITY[$type] ?? 'vitals_alarm',
-            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => $this->deviceInfo($topic, $device),
-            'source' => $this->source($topic, $source),
-            'data' => [
-                'detectionType' => $type,
-                'detectionCategory' => in_array($type, self::ALARM_DETECTION_TYPES, true) ? 'alarm' : 'event',
-                'detectionLevel' => $level,
-                'detectionSource' => $source,
-                'details' => $data,
-            ],
-        ];
     }
 
     /**

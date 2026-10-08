@@ -281,6 +281,7 @@ function bindDetail() {
     els.detailFilterFrom.addEventListener("change", updateDetailFilterDraft);
     els.detailFilterTo.addEventListener("change", updateDetailFilterDraft);
     els.detailFilterType.addEventListener("change", applyDetailType);
+    els.detailFilterSeverity.addEventListener("change", applyDetailType);
     els.detailSearch.addEventListener("input", applyDetailSearch);
     els.detailActiveFilters.addEventListener("click", (event) => {
         const button = event.target.closest("[data-action=\"removeDetailFilter\"]");

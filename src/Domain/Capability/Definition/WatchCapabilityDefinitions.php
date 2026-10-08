@@ -32,8 +32,14 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
             // comandos.
             'firmware_version' => [],
             'device_status' => [],
-            // O alarme disparado: `AP10` na Vivistar e os `AL*` na 4P Touch.
-            'alarm' => ['vivistar-iw', 'four-p-touch'],
+            // O que o aparelho dispara: `AP10` na Vivistar e os `AL*` na 4P Touch.
+            'help_call' => ['vivistar-iw', 'four-p-touch'],
+            'fall' => ['vivistar-iw', 'four-p-touch'],
+            'low_battery' => ['vivistar-iw', 'four-p-touch', 'wonlex-json'],
+            'device_removed' => ['vivistar-iw', 'four-p-touch'],
+            'zone_entry' => ['four-p-touch'],
+            'zone_exit' => ['four-p-touch'],
+            'heart_rate_abnormal' => ['four-p-touch'],
             'device_state' => ['wonlex-json'],
         ];
     }
@@ -102,10 +108,14 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
                     'center_number' => 'Número da central',
                 ],
             ],
+            'reminders' => [
+                'setting' => [
+                    'alarm_clock' => 'Despertadores',
+                    'medication_reminders' => 'Plano de medicação',
+                ],
+            ],
             'alarms' => [
                 'setting' => [
-                    'alarm_clock' => 'Alarmes',
-                    'medication_reminders' => 'Plano de medicação',
                     'low_battery_alert' => 'Alerta de bateria fraca',
                     'fall_detection' => 'Deteção de queda',
                     'fall_sensitivity' => 'Sensibilidade de queda',
@@ -120,9 +130,13 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
                     'remove_watch_sms_alert' => 'SMS de remoção do relógio',
                 ],
                 'event' => [
-                    // O alarme disparado, e não um dos interruptores acima. Sai em `events`
-                    // a partir do `AP10` da Vivistar e dos `AL*` da 4P Touch.
-                    'alarm' => 'Alarme do dispositivo',
+                    'help_call' => 'Chamada de ajuda',
+                    'fall' => 'Queda',
+                    'low_battery' => 'Bateria fraca',
+                    'device_removed' => 'Dispositivo retirado',
+                    'zone_entry' => 'Entrada numa zona',
+                    'zone_exit' => 'Saída de uma zona',
+                    'heart_rate_abnormal' => 'Frequência cardíaca anormal',
                 ],
             ],
             'settings_system' => [

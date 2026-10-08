@@ -156,8 +156,11 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `device_state` | `state`, `resetStatus`, `reason` |
 | `firmware_version` | `version` |
 | `device_config` | `status`, `ack`, `settings` |
-| `alarm` | `reason` |
 | `location` | ver a secção 4 |
+
+Os alarmes e alertas — `help_call`, `fall`, `low_battery`, `zone_entry` e os
+outros — são eventos, com o tipo do que aconteceu e uma `severity`. A lista e o
+`data` de cada um estão no [contrato MQTT](08-contrato-mqtt.md).
 
 #### A bateria, campo a campo
 
@@ -171,7 +174,7 @@ manda tudo. Quem integra tem de contar com a ausência de qualquer um deles.
 | `chargingState` | relógios Wonlex e o dispensador | Se está a carregar. Chega em **duas formas** — ver abaixo |
 | `batteryType` | relógios Wonlex | **Apesar do nome, não é o tipo da bateria**: é o motivo do envio. `0` ao ligar, `1` ao desligar, `2` envio periódico, `3` bateria fraca |
 | `mainsPowered` | dispensador | Se está ligado à ficha. É outra pergunta: um aparelho cheio e ligado não carrega nada |
-| `lowBattery` | pulseiras Veepoo | É o firmware a dizê-lo, e não um limiar nosso sobre a percentagem |
+| `lowBattery` | relógios 4P Touch e Wonlex, pulseiras Veepoo, dispensador | A bandeira comum de bateria fraca. É sempre o aparelho a dizê-lo, e nunca um limiar nosso sobre a percentagem: o bit 0 do estado no 4P Touch, o `batteryType` 3 na Wonlex, o `lowVoltage` na Veepoo, o `0x8104` a `2` no dispensador. Sem a informação, falta |
 
 O `chargingState` tem dois tipos no mesmo campo, e quem o lê tem de aceitar os
 dois: os relógios Wonlex mandam o **inteiro** `0` ou `1` — o `batteryState` do
@@ -181,6 +184,9 @@ dele não passa pelo `FeatureNormalizer`, que converteria a palavra em `null`.
 
 Os relógios 4P Touch e Vivistar **não reportam carga** — as especificações dos
 dois não têm bit nenhum para ela, só a percentagem e um alarme de bateria fraca.
+
+Quando a bandeira acende sai também o evento `low_battery`, uma vez, e só volta a
+sair depois de ela ter apagado.
 
 ### Só de alguns tipos de aparelho
 
@@ -210,7 +216,6 @@ dois não têm bit nenhum para ela, só a percentagem e um alarme de bateria fra
 | `ambient_temperature` | dispensador | `environmentCelsius` — o ar onde a caixa está, e não uma pessoa |
 | `ambient_humidity` | dispensador | `humidityPercent` — a humidade do ar onde a caixa está, e não a da fralda |
 | `device_fault` | dispensador | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |
-| `help_call` | pulseira, NCS, dispensador | `state` |
 
 ### Capacidade `sleep`
 
@@ -400,14 +405,9 @@ excluídas do catálogo:
 | `device_config` | Confirmação de uma configuração, não leitura |
 | `reset` | Reinício de um botão do NCS (códigos 0–2), acontecimento e não medição |
 
-As capacidades `alarm` e `proximity` foram acrescentadas ao catálogo em setembro
-de 2026, corrigindo duas omissões: o catálogo declarava a `fall_detection`, que
-ativa a deteção de queda, sem declarar o alarme resultante, e a `proximity`
-sustenta os alarmes de proximidade sem constar em qualquer declaração.
-
-A migração descrita na [persistência](14-persistencia.md) cria as linhas
-correspondentes na tabela `capabilities` das bases de dados preexistentes e
-associa-as aos modelos cujo protocolo as suporta.
+O catálogo na base de dados segue o código a cada arranque: uma capacidade que o
+código declare passa a existir na tabela `capabilities`, e é associada aos
+modelos cujo protocolo a publica (ver a [persistência](14-persistencia.md)).
 
 ## Implementação
 

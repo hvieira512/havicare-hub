@@ -52,8 +52,14 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
             'position_minute_stats',
             'vitals_minute_stats',
             'fall',
-            'vitals_alarm',
-            'presence_event',
+            'heart_rate_high',
+            'heart_rate_low',
+            'breath_rate_high',
+            'breath_rate_low',
+            'apnea',
+            'weak_vital_signs',
+            'zone_entry',
+            'zone_exit',
         ];
         $actualRadar = $db->modelCapabilities->enabledFeaturesForModelId((int)$qinglanst['id']);
         sort($expectedRadar);
@@ -63,7 +69,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $mkgw4 = $db->models->find('MOKO', 'MKGW4');
         self::assertIsArray($mkgw4);
         self::assertSame('gateway', $mkgw4['device_type'] ?? null);
-        $expectedGateway = ['battery', 'connectivity', 'location'];
+        $expectedGateway = ['battery', 'connectivity', 'location', 'low_battery'];
         $actualGateway = $db->modelCapabilities->enabledFeaturesForModelId((int)$mkgw4['id']);
         sort($expectedGateway);
         sort($actualGateway);

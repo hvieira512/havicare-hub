@@ -71,20 +71,24 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
                     'dispense_now' => 'Dispensar agora',
                 ],
             ],
-            'alarms' => [
+            'reminders' => [
                 'setting' => [
-                    // O plano reaproveita a chave que os relógios já usam, e fica com eles
-                    // em Alarmes: é o horário das doses, e é o que faz o aparelho tocar.
+                    // O plano reaproveita a chave que os relógios já usam: é o horário das
+                    // doses, e é o que faz o aparelho tocar.
                     'medication_reminders' => 'Plano de medicação',
                     'medication_period' => 'Período do plano',
                     'alarm_volume' => 'Volume',
                     'alarm_ringtone' => 'Tipo de toque',
-                    // Fica ao lado do evento que produz, a chamada de ajuda, e não em
-                    // Sistema: é segurança e não configuração de aparelho.
-                    'emergency_call' => 'Chamada de emergência',
                 ],
                 'action' => [
                     'mute_alarm' => 'Silenciar o alarme a tocar',
+                ],
+            ],
+            'alarms' => [
+                'setting' => [
+                    // Fica ao lado do evento que produz, a chamada de ajuda, e não em
+                    // Sistema: é segurança e não configuração de aparelho.
+                    'emergency_call' => 'Chamada de emergência',
                 ],
                 'event' => [
                     'medication_intake' => 'Toma de medicação',
@@ -98,6 +102,7 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
                     // A mesma chave do NCS e da pulseira: o botão de emergência é uma
                     // chamada de ajuda.
                     'help_call' => 'Chamada de ajuda',
+                    'low_battery' => 'Bateria fraca',
                 ],
             ],
             'settings_system' => [

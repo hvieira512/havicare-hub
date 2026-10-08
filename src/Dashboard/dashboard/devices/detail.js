@@ -387,6 +387,9 @@ function detailExpanded(card, plainDetail) {
     return fields.length > 1 ? fields.join("\n") : "";
 }
 
+/** A cor de um alarme e de um alerta é a mesma em todos os aparelhos. */
+const SEVERITY_TONE = { alarm: "danger", alert: "warning" };
+
 export function telemetryActivityRow(payload) {
     const type = payload?.type || "telemetry";
     const data =
@@ -407,7 +410,7 @@ export function telemetryActivityRow(payload) {
         badge: card.iconBadge || "",
         // O tom tirado da leitura vence o estático, como já acontece com o ícone: uma bateria
         // quase vazia não se lê no mesmo verde de uma cheia.
-        tone: card.tone || cardTone(type),
+        tone: SEVERITY_TONE[payload?.severity] || card.tone || cardTone(type),
         name: capabilityLabel(type),
         value: html`${card.rowValue || card.value}`,
         detail,

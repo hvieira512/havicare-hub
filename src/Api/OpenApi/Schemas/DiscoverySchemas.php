@@ -81,7 +81,7 @@ final class DiscoverySchemas
                 'properties' => [
                     'section' => [
                         'type' => 'string',
-                        'enum' => ['telemetry', 'health', 'contacts', 'alarms', 'settings_system'],
+                        'enum' => ['telemetry', 'health', 'contacts', 'alarms', 'reminders', 'settings_system'],
                         'example' => 'telemetry',
                     ],
                     'key' => ['type' => 'string', 'example' => 'heart_rate'],

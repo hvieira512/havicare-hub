@@ -28,6 +28,7 @@ final class PillDispenserCategoriesAgreeTest extends TestCase
         $equivalent = [
             'health' => 'health',
             'alerts' => 'alarms',
+            'reminders' => 'reminders',
             'system' => 'settings_system',
         ];
 

@@ -11,6 +11,7 @@ export const CAPABILITY_SECTION_ICONS = {
     health: "fa-heart-pulse",
     contacts: "fa-address-book",
     alarms: "fa-bell",
+    reminders: "fa-clock",
     settings_system: "fa-gear",
 };
 

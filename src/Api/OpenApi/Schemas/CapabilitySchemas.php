@@ -33,7 +33,7 @@ final class CapabilitySchemas
                     'deviceType' => ['type' => 'string', 'example' => 'watch'],
                     'section' => [
                         'type' => 'string',
-                        'enum' => ['telemetry', 'health', 'contacts', 'alarms', 'settings_system'],
+                        'enum' => ['telemetry', 'health', 'contacts', 'alarms', 'reminders', 'settings_system'],
                         'example' => 'telemetry',
                     ],
                     'sectionLabel' => ['type' => 'string', 'example' => 'Telemetria'],
@@ -142,6 +142,7 @@ final class CapabilitySchemas
                     'health' => $section,
                     'contacts' => $section,
                     'alarms' => $section,
+                    'reminders' => $section,
                     'settings_system' => $section,
                 ],
             ],

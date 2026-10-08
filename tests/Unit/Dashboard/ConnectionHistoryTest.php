@@ -27,10 +27,10 @@ final class ConnectionHistoryTest extends TestCase
     public function testAConnectionEventGoesToTheConnectionHistoryAndNotToTheEvents(): void
     {
         $this->store->append(self::IMEI, 'events', ['type' => 'device.disconnected']);
-        $this->store->append(self::IMEI, 'events', ['type' => 'vitals_alarm']);
+        $this->store->append(self::IMEI, 'events', ['type' => 'apnea']);
 
         self::assertSame(['device.disconnected'], $this->types('connections'));
-        self::assertSame(['vitals_alarm'], $this->types('events'));
+        self::assertSame(['apnea'], $this->types('events'));
     }
 
     public function testARepeatedConnectionStateIsKeptOnce(): void

@@ -1,6 +1,6 @@
 import { html, raw } from "../html.js";
-import { ago, displayPersonIndex, eventTime, fieldLabel, rowPayload, when } from "../format.js";
-import { DETECTION_TYPE_LABEL, PRESS_TYPE_LABEL } from "../domain.js";
+import { ago, displayPersonIndex, eventTime, rowPayload, when } from "../format.js";
+import { PRESS_TYPE_LABEL, fallLabel } from "../domain.js";
 
 /**
  * Cartões que resumem o histórico de eventos inteiro, e por isso não são entradas do catálogo
@@ -109,9 +109,8 @@ export function fallSummaryCard(events) {
     }
 
     const occurredAt = latest.occurredAt || latest.recordedAt || "";
-    const detectionType = String(latest?.data?.detectionType || "");
-    const label = DETECTION_TYPE_LABEL[detectionType] || fieldLabel(detectionType);
-    const person = latest?.data?.details?.personIndex;
+    const label = fallLabel(latest?.data);
+    const person = latest?.data?.personIndex;
     const who =
         person === undefined || person === null
             ? ""

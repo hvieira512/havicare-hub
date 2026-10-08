@@ -21,7 +21,7 @@ final class ZayataConfigurationDefinitions
                 'pillDispenserAlarms',
                 ['plans'],
                 self::replyTo('medicationPlan'),
-                'alerts',
+                'reminders',
                 10,
                 9,
                 null,
@@ -35,7 +35,7 @@ final class ZayataConfigurationDefinitions
                 'pillDispenserPeriod',
                 ['enabled', 'startDate', 'endDate'],
                 self::replyTo('medicationPeriod'),
-                'alerts',
+                'reminders',
                 11,
                 null,
                 null,
@@ -91,13 +91,13 @@ final class ZayataConfigurationDefinitions
                 . ' se falhar, segue para os vazios.',
             ),
             // Na especificação 0 é o mais alto e 3 é silêncio.
-            self::choice('alarm_volume', 'alarmVolume', 'Volume', 'alerts', 20, 'volume', [
+            self::choice('alarm_volume', 'alarmVolume', 'Volume', 'reminders', 20, 'volume', [
                 [0, 'Alto'],
                 [1, 'Médio'],
                 [2, 'Baixo'],
                 [3, 'Silêncio'],
             ], input: 'volumeScale'),
-            self::choice('alarm_ringtone', 'alarmRingtone', 'Tipo de toque', 'alerts', 21, 'ringtone', [
+            self::choice('alarm_ringtone', 'alarmRingtone', 'Tipo de toque', 'reminders', 21, 'ringtone', [
                 [0, 'Nenhum'],
                 [1, 'Toque 1'],
                 [2, 'Toque 2'],
@@ -187,7 +187,7 @@ final class ZayataConfigurationDefinitions
                 'mute_alarm',
                 'muteAlarm',
                 'Silenciar o alarme a tocar',
-                'alerts',
+                'reminders',
                 30,
                 '',
             ),

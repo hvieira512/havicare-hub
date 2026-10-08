@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Device\Decoder;
 
 use Hub\Device\DeviceEventDecoder;
+use Hub\Device\FeatureNormalizer;
 
 final class WonlexEventDecoder
 {
@@ -28,9 +29,13 @@ final class WonlexEventDecoder
             'upHRV' => [DeviceEventDecoder::event('hrv', $nativeType, $payload)],
             'upPPG' => [DeviceEventDecoder::event('ppg', $nativeType, $payload)],
             'upRR' => [DeviceEventDecoder::event('rr_interval', $nativeType, $payload)],
-            'upBattery' => [DeviceEventDecoder::event('battery', $nativeType, $payload)],
+            'upBattery' => array_values(array_filter([
+                self::lowPower($nativeType, $payload),
+                DeviceEventDecoder::event('battery', $nativeType, $payload),
+            ])),
             'heartbeat' => array_values(array_filter([
                 DeviceEventDecoder::event('heartbeat', $nativeType, $payload),
+                self::lowPower($nativeType, $payload),
                 DeviceEventDecoder::event('battery', $nativeType, $payload),
             ])),
             'upLocation' => [DeviceEventDecoder::locationEvent($nativeType, $payload)],
@@ -42,6 +47,27 @@ final class WonlexEventDecoder
             'upBatch' => self::decodeBatch($nativeType, $payload),
             default => [],
         };
+    }
+
+    /**
+     * O relatório de pouca energia é o próprio relógio a dar o alarme, e sai antes da leitura.
+     *
+     * @param array<string, mixed> $payload
+     * @return array{feature: string, nativeType: string, value: array<string, mixed>}|null
+     */
+    private static function lowPower(string $nativeType, array $payload): ?array
+    {
+        if ((int)($payload['batteryType'] ?? -1) !== FeatureNormalizer::WONLEX_LOW_POWER_REPORT) {
+            return null;
+        }
+
+        $percent = FeatureNormalizer::normalize('battery', $payload)['percent'] ?? null;
+
+        return [
+            'feature' => 'low_battery',
+            'nativeType' => $nativeType,
+            'value' => $percent === null ? [] : ['percent' => $percent],
+        ];
     }
 
     /**

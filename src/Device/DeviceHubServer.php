@@ -30,6 +30,7 @@ class DeviceHubServer
     private int $downlinkQueueTtlSeconds;
     private ?LocationTelemetryEnricherContract $locationTelemetryEnricher;
     private ?Denylist $denylist;
+    private LowBatteryTransitions $lowBattery;
 
     public function __construct(
         Whitelist $whitelist,
@@ -58,6 +59,7 @@ class DeviceHubServer
         $this->downlinkQueue = $downlinkQueue;
         $this->downlinkQueueTtlSeconds = max(1, $downlinkQueueTtlSeconds);
         $this->locationTelemetryEnricher = $locationTelemetryEnricher;
+        $this->lowBattery = new LowBatteryTransitions();
     }
 
     public function onOpen(ConnectionInterface $conn): void
@@ -393,6 +395,11 @@ class DeviceHubServer
                     $event,
                     ['deviceType' => $session->deviceType, 'licenseId' => $licenseId]
                 ));
+            }
+
+            $lowBattery = $this->lowBattery->observe($session->imei, $event);
+            if ($lowBattery !== null) {
+                $this->publishTelemetryEvent($session, $lowBattery);
             }
             return true;
         } catch (\Throwable $e) {

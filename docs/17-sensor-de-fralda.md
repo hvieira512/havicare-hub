@@ -28,7 +28,8 @@ sempre uma verificação do `type` do lado do cliente.
 | `diaper_moisture_level` | `telemetry` | O nível genérico, de 0 a 100 |
 | `diaper_condition` | `telemetry` | O estado: `clean`, `attention` ou `change_required` |
 | `proximity` | `telemetry` | O sinal para cada gateway que o ouviu |
-| `change_required` | `events` | A transição para o estado de muda |
+| `check_required` | `events` | A transição para húmida: convém ir ver. `severity: alert` |
+| `change_required` | `events` | A transição para o estado de muda. `severity: alarm` |
 
 ### `diaper_moisture` — o detalhe do fornecedor
 
@@ -98,11 +99,12 @@ canais.
 | `attention` | Húmida em algum ponto, ainda não é muda |
 | `change_required` | Precisa de ser mudada |
 
-### `change_required` — o evento
+### `check_required` e `change_required` — os eventos
 
 ```json
 {
   "type": "change_required",
+  "severity": "alarm",
   "occurredAt": "2026-09-01T10:35:10Z",
   "device": { "id": "eec5000202f9", "supplier": "MONIT", "model": "MECS-PRO" },
   "data": { "previousState": "attention" },
@@ -110,10 +112,20 @@ canais.
 }
 ```
 
-Publicado **na transição para** `change_required`, uma vez. Não se repete
+Um evento por estado que pede alguém:
+
+| Estado | Evento | `severity` | Quer dizer |
+|---|---|---|---|
+| `clean` | — | — | Seca |
+| `attention` | `check_required` | `alert` | Húmida. Não é preciso trocar, mas convém verificar |
+| `change_required` | `change_required` | `alarm` | É preciso trocar |
+
+Cada um é publicado **na transição para** o seu estado, uma vez. Não se repete
 enquanto o estado se mantiver, por muitas observações que cheguem. Sair do
 estado não produz evento — para levantar um alarme segue-se o evento, para o
-limpar segue-se a telemetria `diaper_condition`.
+limpar segue-se a telemetria `diaper_condition`. Uma fralda que molha aos poucos
+dá o alerta e depois o alarme; uma que passa de seca a suja de uma vez dá só o
+alarme.
 
 O `previousState` vale `clean`, `attention` ou `null`. **O `null` significa que
 o hub não tinha estado anterior para este sensor** — uma primeira observação, ou
@@ -289,5 +301,5 @@ Para as outras instâncias, o mesmo broker com o prefixo correspondente — ver 
 | `src/Domain/DiaperSensitivityLookup.php` | O valor em vigor para cada sensor |
 | `src/Domain/Capability/DiaperSensitivityCapability.php` | A capacidade, na API |
 | `src/Api/Repository/DiaperSensitivityRepository.php` | A persistência do par de valores |
-| `src/Ingress/Mqtt/Moko/MokoBridge.php` | A transição de estado e o evento `change_required` |
+| `src/Ingress/Mqtt/Moko/MokoBridge.php` | A transição de estado e os eventos `check_required` e `change_required` |
 | `src/Domain/Capability/Definition/DiaperSensorCapabilityDefinitions.php` | As capacidades no catálogo |

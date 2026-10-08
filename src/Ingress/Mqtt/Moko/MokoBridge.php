@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Moko;
 
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceMetadata;
 use Hub\Device\CommercialModelResolver;
+use Hub\Device\ConnectionAnnouncer;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
@@ -133,6 +135,13 @@ final class MokoBridge extends MqttBridgeBase
     public function expireIdleGateways(): void
     {
         $this->gateways->expireIdle();
+
+        // Os que se calaram antes de um reinício não estão na lista em memória; o Redis lembra-se deles.
+        $announcer = new ConnectionAnnouncer($this->mqttBridge, $this->deviceStore);
+        foreach ($this->deviceStore?->expireStaleDevices($this->options->gatewayIdleTimeoutSeconds, 'gateway') ?? [] as $imei) {
+            $gateway = $this->whitelist->resolve($imei);
+            $announcer->announce($imei, $gateway !== null ? $this->enrichWithCommercialName($gateway) : ['deviceType' => 'gateway'], false);
+        }
     }
 
     /** Idem: um par que se calou é reportado uma vez, e o teste quer provocá-lo. */
@@ -223,6 +232,11 @@ final class MokoBridge extends MqttBridgeBase
         }
 
         foreach ($this->gatewayNormalizer->telemetry($decoded, $gateway) as $telemetry) {
+            if (CapabilityCatalog::isEventType((string)$telemetry['type'])) {
+                $this->mqttBridge->publishEvent($deviceKey, $telemetry, $deviceType, $licenseId, $company);
+                $this->deviceStore?->append($deviceKey, 'events', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+                continue;
+            }
             if (!$this->state->shouldPublish($deviceKey, (string)$telemetry['type'], $telemetry, $this->options->telemetryRefreshSeconds)) {
                 continue;
             }
@@ -429,12 +443,14 @@ final class MokoBridge extends MqttBridgeBase
             $sensorKey,
             $normalized['condition'] . '@' . $sensitivity['pollutionRange'] . '-' . $sensitivity['pollutionValue'],
         );
-        if ($normalized['condition'] === 'change_required' && $transition !== null) {
+        // Húmida pede que se vá ver; suja pede a troca. A fralda seca não levanta nada.
+        $eventType = ['attention' => 'check_required', 'change_required' => 'change_required'][$normalized['condition']] ?? null;
+        if ($eventType !== null && $transition !== null) {
             // A sensibilidade não sai no evento: o `previousState` publicado é um dos três estados.
             $stored = $transition['previous'];
             $previous = is_string($stored) ? explode('@', $stored, 2)[0] : null;
             $event = [
-                'type' => 'change_required', 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
+                'type' => $eventType, 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
                 'device' => RelayPublisher::describe($sensor), 'data' => ['previousState' => $previous],
                 'source' => ['protocol' => 'monit-mecs-pro-ble', 'gatewayId' => (string)$gateway['imei']],
             ];

@@ -61,21 +61,17 @@ final class DeviceEventDecoder
     }
 
     /**
-     * Um evento `alarm` por motivo ativo — vários bits da máscara do 4P Touch
-     * dão vários eventos; máscara a zero não dá nenhum.
+     * Um evento por alarme ativo — vários bits da máscara do 4P Touch dão vários eventos;
+     * máscara a zero não dá nenhum.
      *
      * @param array<string, mixed> $payload
-     * @return list<array{feature: string, nativeType: string, value: array{reason: string}}>
+     * @return list<array{feature: string, nativeType: string, value: array<string, mixed>}>
      */
     public static function alarmEvents(string $nativeType, array $payload): array
     {
         return array_map(
-            static fn (string $reason): array => [
-                'feature' => 'alarm',
-                'nativeType' => $nativeType,
-                'value' => ['reason' => $reason],
-            ],
-            FeatureNormalizer::alarmReasons($payload)
+            static fn (array $alarm): array => $alarm + ['nativeType' => $nativeType],
+            FeatureNormalizer::alarms($payload)
         );
     }
 

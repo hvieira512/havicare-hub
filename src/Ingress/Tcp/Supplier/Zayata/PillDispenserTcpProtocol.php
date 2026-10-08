@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Tcp\Supplier\Zayata;
 
+use Hub\Device\Decoder\PillDispenserEventDecoder;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Device\DeviceSession;
 use Hub\Device\Firmware\FirmwareUpgrade;
 use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Ingress\Tcp\AbstractTcpProtocol;
+use Hub\Ingress\Tcp\TcpMessage;
 use Hub\Ingress\Tcp\TcpResponse;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
 
@@ -19,6 +21,10 @@ use Hub\Protocol\Adapter\DeviceAdapterInterface;
 final class PillDispenserTcpProtocol extends AbstractTcpProtocol
 {
     private const ACKNOWLEDGED_TYPES = ['register', 'heartbeat', 'event', 'change'];
+
+    // ponytail: em memória, por processo; um reinício volta a anunciar o que estiver aceso.
+    /** @var array<string, true> */
+    private array $activeConditions = [];
 
     public function __construct(
         DeviceAdapterInterface $adapter,
@@ -62,6 +68,47 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
         }
 
         return true;
+    }
+
+    /**
+     * O heartbeat repete as condições que duram: a avaria, a chamada e o ambiente saem quando
+     * acendem, e voltam a poder sair depois de o aparelho as dar por apagadas.
+     */
+    public function handleIncoming(DeviceSession $session, string $raw): ?TcpMessage
+    {
+        $message = parent::handleIncoming($session, $raw);
+        if ($message === null) {
+            return null;
+        }
+
+        $tlv = is_array($message->decoded['tlv'] ?? null) ? $message->decoded['tlv'] : [];
+        $raised = [];
+        foreach (PillDispenserEventDecoder::conditions($tlv) as $condition => $active) {
+            $key = $session->imei . '|' . $condition;
+            if ($active && !isset($this->activeConditions[$key])) {
+                $raised[$condition] = true;
+            }
+            if ($active) {
+                $this->activeConditions[$key] = true;
+            } else {
+                unset($this->activeConditions[$key]);
+            }
+        }
+
+        $telemetry = array_values(array_filter(
+            $message->telemetry,
+            static function (array $event) use ($raised): bool {
+                $condition = array_search(
+                    ['feature' => $event['type'], 'value' => $event['data']],
+                    PillDispenserEventDecoder::CONDITIONS,
+                    true,
+                );
+
+                return $condition === false || isset($raised[$condition]);
+            },
+        ));
+
+        return new TcpMessage(decoded: $message->decoded, telemetry: $telemetry, responses: $message->responses);
     }
 
     /**

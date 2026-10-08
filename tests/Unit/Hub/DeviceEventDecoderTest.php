@@ -623,10 +623,8 @@ final class DeviceEventDecoderTest extends TestCase
             ]
         );
 
-        self::assertSame(['alarm', 'location', 'battery'], array_column($events, 'feature'));
-        self::assertSame('fall', $events[0]['value']['reason']);
-        self::assertArrayNotHasKey('code', $events[0]['value']);
-        self::assertArrayNotHasKey('fall', $events[0]['value']);
+        self::assertSame(['fall', 'location', 'battery'], array_column($events, 'feature'));
+        self::assertSame(['confirmed' => true], $events[0]['value']);
         self::assertTrue($events[1]['value']['hasCoordinates']);
         self::assertSame(22.549676666666667, $events[1]['value']['lat']);
         self::assertSame(114.08225833333333, $events[1]['value']['lon']);
@@ -769,20 +767,19 @@ final class DeviceEventDecoderTest extends TestCase
             ]
         );
 
-        self::assertSame(['location', 'alarm', 'battery'], array_column($events, 'feature'));
+        self::assertSame(['location', 'fall', 'battery'], array_column($events, 'feature'));
         self::assertSame('cell', $events[0]['value']['source']);
         self::assertSame('lte', $events[0]['value']['radioType']);
         self::assertSame('alarm', $events[0]['value']['reportKind']);
         self::assertFalse($events[0]['value']['hasCoordinates']);
         self::assertArrayNotHasKey('lat', $events[0]['value']);
         self::assertArrayNotHasKey('lon', $events[0]['value']);
-        self::assertSame('fall', $events[1]['value']['reason']);
-        self::assertArrayNotHasKey('code', $events[1]['value']);
+        self::assertSame(['confirmed' => true], $events[1]['value']);
         self::assertSame('13011', $events[0]['value']['lac']);
         self::assertSame(44, $events[2]['value']['percent']);
     }
 
-    public function testFourPTouchAlarmEmitsOneEventPerActiveReason(): void
+    public function testFourPTouchAlarmEmitsOneEventPerActiveBit(): void
     {
         $events = (new DeviceEventDecoder())->decode(
             $this->session('four-p-touch'),
@@ -802,11 +799,84 @@ final class DeviceEventDecoderTest extends TestCase
             ]
         );
 
-        $alarms = array_values(array_filter($events, static fn (array $event): bool => $event['feature'] === 'alarm'));
-        self::assertCount(2, $alarms);
-        self::assertSame(['sos', 'low_battery'], array_column(array_column($alarms, 'value'), 'reason'));
-        self::assertArrayNotHasKey('code', $alarms[0]['value']);
-        self::assertArrayNotHasKey('sos', $alarms[0]['value']);
+        $alarms = array_values(array_filter(
+            $events,
+            static fn (array $event): bool => !in_array($event['feature'], ['location', 'battery'], true),
+        ));
+        self::assertSame(['help_call', 'low_battery'], array_column($alarms, 'feature'));
+        self::assertSame([[], []], array_column($alarms, 'value'));
+    }
+
+    /**
+     * Cada bit da 4P Touch vira o tipo do que aconteceu, com o mesmo nome que o radar e a
+     * pulseira usam para a mesma coisa.
+     *
+     * @dataProvider fourPTouchAlarmBits
+     * @param array<string, mixed> $expectedValue
+     */
+    public function testEachFourPTouchAlarmBitIsTypedByWhatHappened(string $flag, string $expectedFeature, array $expectedValue): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('four-p-touch'),
+            ['type' => 'AL', 'data' => ['gpsValid' => false, 'lat' => 0.0, 'lon' => 0.0, $flag => true]]
+        );
+
+        $alarms = array_values(array_filter(
+            $events,
+            static fn (array $event): bool => !in_array($event['feature'], ['location', 'battery'], true),
+        ));
+        self::assertSame([$expectedFeature], array_column($alarms, 'feature'));
+        self::assertSame($expectedValue, $alarms[0]['value']);
+    }
+
+    /** @return array<string, array{0: string, 1: string, 2: array<string, mixed>}> */
+    public static function fourPTouchAlarmBits(): array
+    {
+        return [
+            'SOS' => ['sos', 'help_call', []],
+            'bateria fraca' => ['lowBattery', 'low_battery', []],
+            'queda' => ['fall', 'fall', ['confirmed' => true]],
+            'retirado' => ['removeAlarm', 'device_removed', []],
+            'saiu da cerca' => ['outFenceAlarm', 'zone_exit', ['zone' => 'geofence']],
+            'entrou na cerca' => ['inFenceAlarm', 'zone_entry', ['zone' => 'geofence']],
+            'frequência cardíaca' => ['abnormalHeartRateAlarm', 'heart_rate_abnormal', []],
+        ];
+    }
+
+    /** O `batteryType` 3 da Wonlex é o próprio aparelho a dar o alarme de bateria fraca. */
+    public function testAWonlexLowPowerReportIsTheLowBatteryAlarm(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            ['type' => 'upBattery', 'data' => ['batteryLevel' => 14, 'batteryState' => 0, 'batteryType' => 3]]
+        );
+
+        self::assertSame(['low_battery', 'battery'], array_column($events, 'feature'));
+        self::assertSame(['percent' => 14], $events[0]['value']);
+        self::assertTrue($events[1]['value']['lowBattery']);
+    }
+
+    /** Um relatório a horas não diz nada da bateria fraca, nem para um lado nem para o outro. */
+    public function testAWonlexScheduledReportLeavesTheFlagOut(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            ['type' => 'upBattery', 'data' => ['batteryLevel' => 60, 'batteryType' => 2]]
+        );
+
+        self::assertSame(['battery'], array_column($events, 'feature'));
+        self::assertArrayNotHasKey('lowBattery', $events[0]['value']);
+    }
+
+    public function testAFourPTouchPositionCarriesTheLowBatteryFlag(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('four-p-touch'),
+            ['type' => 'UD_LTE', 'data' => ['gpsValid' => false, 'lat' => 0.0, 'lon' => 0.0, 'batteryPercent' => 12, 'batteryLow' => true]]
+        );
+
+        $battery = array_values(array_filter($events, static fn (array $event): bool => $event['feature'] === 'battery'));
+        self::assertSame(['percent' => 12, 'lowBattery' => true], $battery[0]['value']);
     }
 
     public function testFourPTouchAlarmWithNoActiveReasonEmitsNoAlarmEvent(): void
@@ -829,7 +899,7 @@ final class DeviceEventDecoderTest extends TestCase
             ]
         );
 
-        self::assertSame([], array_values(array_filter($events, static fn (array $event): bool => $event['feature'] === 'alarm')));
+        self::assertSame(['location', 'battery'], array_column($events, 'feature'));
     }
 
     public function testSkipsUnknownNativePackets(): void

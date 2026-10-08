@@ -13,12 +13,19 @@ const { applyDetailRange, applyDetailType, clearDetailFilters, detailFilterChipL
  */
 let changes;
 
+function severitySelect() {
+    const select = document.createElement("select");
+    select.innerHTML = "<option value=\"all\">Todas</option><option value=\"alarm\">Alarmes</option>";
+    return select;
+}
+
 function filterEls() {
     const element = (tag) => document.createElement(tag);
     return {
         detailFilterFrom: element("input"),
         detailFilterTo: element("input"),
         detailFilterType: element("select"),
+        detailFilterSeverity: severitySelect(),
         detailSearch: element("input"),
         detailRangePresets: element("div"),
         detailActiveFilters: element("div"),

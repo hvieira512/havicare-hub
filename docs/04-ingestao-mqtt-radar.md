@@ -114,8 +114,8 @@ independente da origem da medição.
 
 **O valor zero não constitui uma leitura**, mas a indicação de ausência de
 deteção. A sua publicação como telemetria apresentaria "0 bpm", interpretável
-como paragem cardíaca. Os valores nulos são, por isso, convertidos em evento de
-alarme e não em telemetria.
+como paragem cardíaca. Também não é alarme: com a respiração e a frequência a
+zero o radar está a olhar para um quarto vazio, e não sai nada.
 
 ### `posstatics` e `hbstatics` — estatísticas por minuto
 
@@ -138,38 +138,41 @@ os quatro estados de postura somam no máximo 60 entre si.
 > que o campo fica sem sufixo de unidade até alguém a poder confirmar. A
 > dashboard apresenta-o como metros, o que é uma suposição e não um facto.
 
-## 3. Alarmes
+## 3. Detecções
 
-O radar reporta alguns acontecimentos por si; outros são derivados pelo hub a
-partir dos valores.
+Cada detecção sai com o tipo do que aconteceu, o mesmo que um relógio usa para a
+mesma coisa, e a gravidade vai na `severity` (ver o [contrato MQTT](08-contrato-mqtt.md)).
 
-| Limiar | Evento | `detectionLevel` |
-|---|---|---|
-| frequência cardíaca > 160 | `heart_rate_high_critical` | `danger` |
-| frequência cardíaca > 120 | `heart_rate_high` | `warning` |
-| frequência cardíaca < 20 *(e > 0)* | `heart_rate_low_critical` | `danger` |
-| frequência cardíaca < 40 *(e > 0)* | `heart_rate_low` | `warning` |
-| respiração **e** frequência a zero | `vitals_signal_lost` | `danger` |
+| Origem | O que o radar diz | `type` | `data` |
+|---|---|---|---|
+| `position` | `fall_confirmation` | `fall` | `confirmed: true`, `posture: lying`, `personIndex` |
+| `position` | `suspected_fall` | `fall` | `confirmed: false`, `posture: lying`, `personIndex` |
+| `position` | `confirmed_sitting_on_ground` | `fall` | `confirmed: true`, `posture: sitting_on_ground`, `personIndex` |
+| `position` | `enter_room` · `leave_room` | `zone_entry` · `zone_exit` | `zone: room`, `personIndex` |
+| `position` | `enter_area` · `leave_area` | `zone_entry` · `zone_exit` | `zone: area`, `personIndex`, `areaId`, `areaName`, `areaType` |
+| `heartbreath` | frequência cardíaca > 120 | `heart_rate_high` | `bpm` |
+| `heartbreath` | frequência cardíaca < 40 *(e > 0)* | `heart_rate_low` | `bpm` |
+| `hbstatics` | `heartRateStatus` `high` · `low` | `heart_rate_high` · `heart_rate_low` | `bpm`, a média do minuto |
+| `hbstatics` | `breathingStatus` `hyperpnea` · `hypopnea` | `breath_rate_high` · `breath_rate_low` | `breathsPerMinute`, a média do minuto |
+| `hbstatics` | `breathingStatus` `apnea` | `apnea` | — |
+| `hbstatics` | `vitalSignsStatus` `weak` | `weak_vital_signs` | — |
 
-Os quinze tipos de deteção agrupam-se em **três** capacidades, e o tipo
-específico viaja dentro do evento:
+Os limites de 120 e 40 bpm são do hub, e decidem só que há evento. Quão grave é
+decide-o a `severity`: acima de 160 ou abaixo de 20 bpm é alarme, o resto é
+alerta.
 
-| Capacidade | Tipos que a compõem |
-|---|---|
-| `fall` | `fall_confirmed`, `sitting_confirmed`, `on_floor` |
-| `vitals_alarm` | os cinco da tabela acima, mais `apnea`, `breathing_high`, `breathing_low` |
-| `presence_event` | `room_entry`, `room_exit`, `area_entry`, `area_exit` |
+**Uma detecção por pessoa.** Numa trama com duas pessoas, a entrada de uma não
+esconde a queda da outra. Dentro da mesma pessoa, a postura ganha ao movimento.
 
-O agrupamento em três capacidades, e não em quinze, mantém a matriz por modelo
-proporcional às funcionalidades do equipamento.
+**O que dura sai uma vez.** O radar repete a postura e os vitais a cada segundo:
+uma queda que se mantém um minuto eram sessenta eventos. A ponte guarda o que
+estava ativo na trama anterior do mesmo tipo e só publica o que é novo — a queda
+que começa, e não a que continua. Os valores medidos não contam para isto: uma
+frequência alta que passa de 130 para 134 é a mesma.
 
-Um dos quinze — `on_floor` — está declarado e **nenhuma mensagem o produz**. É o
-mesmo estado que o `sitting_confirmed`: no hitCare, `on_floor` é o nome com que o
-frontend mostra a postura que o backend chama `sitting_confirmed`, e o hub herdou
-os dois como se fossem detecções distintas.
-
-A forma do `data` de uma deteção, com os campos `detection*` e o `details` que
-varia com o tipo, está no [contrato MQTT](08-contrato-mqtt.md).
+**A área vem da planta.** O radar diz o número da área; o nome e o tipo são os
+da [planta sincronizada](#6-os-tipos-de-área-da-planta). Sem planta, o evento
+leva só o `areaId`.
 
 **Todos os valores publicados são [enumerações em inglês](06-normalizacao.md),
 em minúsculas com underscores** —
@@ -180,9 +183,9 @@ quem desenha a interface.
 Um estado que o firmware acrescente numa versão nova sai na mesma forma, derivada
 da etiqueta, em vez de se perder num `unknown`.
 
-> A publicação de um `fall_confirmed` constitui o relato de uma deteção do
-> equipamento, e não o levantamento de um alarme. A decisão sobre a resposta
-> cabe à aplicação que integra.
+> A publicação de uma `fall` constitui o relato de uma deteção do equipamento. A
+> `severity` diz quão grave o hub a considera; a decisão sobre a resposta cabe à
+> aplicação que integra.
 
 ## 4. Limitação da taxa de escrita
 

@@ -273,7 +273,10 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         $data['mnc'] = isset($fields[19]) ? (string) $fields[19] : null;
 
         // Os 16 bits baixos do campo 15 são condições; cada uma tem o seu alarme nos 16 bits altos,
-        // que o `enrichAlarm` lê do frame `AL`.
+        // que o `enrichAlarm` lê do frame `AL`. Só a de bateria fraca se usa: o bit 0.
+        if (isset($fields[15]) && ctype_xdigit((string) $fields[15])) {
+            $data['batteryLow'] = (hexdec((string) $fields[15]) & 0x1) !== 0;
+        }
 
         $cursor = 20;
         $baseStations = [];

@@ -8,7 +8,7 @@ use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 
 final class Mkgw4MessageDecoder implements MessageDecoder
 {
-    private const SUPPORTED_MESSAGES = ['3004', '3089', '30a0', '30b2'];
+    private const SUPPORTED_MESSAGES = ['3004', '3011', '3089', '30a0', '30b2'];
 
     /** @return array<string, mixed>|null */
     public function decode(string $payload): ?array
@@ -32,6 +32,7 @@ final class Mkgw4MessageDecoder implements MessageDecoder
 
         $data = match ($messageId) {
             '3004' => $this->deviceStatus($tlvs),
+            '3011' => $this->lowPowerAlarm($tlvs),
             '3089' => $this->gpsData($tlvs),
             '30a0', '30b2' => $this->scanDevices($tlvs),
         };
@@ -101,6 +102,23 @@ final class Mkgw4MessageDecoder implements MessageDecoder
                 5 => $data['accelerometer_status'] = $this->unsigned($value),
                 6 => $data['imei'] = $value,
                 7 => $data['heartbeat_index'] = $this->unsigned($value),
+                default => null,
+            };
+        }
+        return $data;
+    }
+
+    /**
+     * @param list<array{tag: int, value: string}> $tlvs
+     * @return array<string, mixed>
+     */
+    private function lowPowerAlarm(array $tlvs): array
+    {
+        $data = [];
+        foreach ($tlvs as $tlv) {
+            match ($tlv['tag']) {
+                0 => $data['timestamp'] = $this->unsigned($tlv['value']),
+                1 => $data['battery_voltage_mv'] = $this->unsigned($tlv['value']),
                 default => null,
             };
         }

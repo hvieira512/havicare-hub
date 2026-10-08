@@ -261,21 +261,20 @@ export const PRESS_TYPE_LABEL = {
     long: "toque longo",
 };
 
-/** O que cada detecção do radar diz. */
-export const DETECTION_TYPE_LABEL = {
-    fall_confirmed: "Queda confirmada",
-    on_floor: "No chão",
-    sitting_confirmed: "Sentado no chão",
-    apnea: "Apneia",
-    heart_rate_high: "Frequência cardíaca alta",
-    heart_rate_high_critical: "Frequência cardíaca muito alta",
-    heart_rate_low: "Frequência cardíaca baixa",
-    heart_rate_low_critical: "Frequência cardíaca muito baixa",
-    breathing_high: "Respiração acelerada",
-    breathing_low: "Respiração lenta",
-    vitals_signal_lost: "Sem sinais vitais",
-    room_entry: "Entrou na divisão",
-    room_exit: "Saiu da divisão",
-    area_entry: "Entrou na área",
-    area_exit: "Saiu da área",
+/** O que uma queda diz: confirmada ou suspeita, e como a pessoa ficou. Sem postura é a do relógio. */
+export function fallLabel(data) {
+    if (data?.posture === "sitting_on_ground") return "Sentado no chão";
+    if (data?.confirmed === false) return "Queda suspeita";
+    return data?.posture ? "Queda confirmada" : "Queda detetada";
+}
+
+const ZONE_LABEL = {
+    zone_entry: { room: "Entrou na divisão", area: "Entrou na área", geofence: "Entrou na zona segura" },
+    zone_exit: { room: "Saiu da divisão", area: "Saiu da área", geofence: "Saiu da zona segura" },
 };
+
+/** Uma entrada ou saída numa frase, com a área pelo nome que lhe deram na planta. */
+export function zoneLabel(type, data) {
+    const label = ZONE_LABEL[type]?.[String(data?.zone || "")] || (type === "zone_exit" ? "Saiu de uma zona" : "Entrou numa zona");
+    return data?.zone === "area" && data?.areaName ? `${label} «${data.areaName}»` : label;
+}

@@ -85,6 +85,14 @@ final class PillDispenserStatusSeparationTest extends TestCase
         self::assertTrue($battery['mainsPowered'] ?? null);
     }
 
+    /** A bateria fraca é a mesma bandeira em todos os aparelhos; sem bateria não é bateria fraca. */
+    public function testALowBatteryRaisesTheCommonFlag(): void
+    {
+        self::assertTrue($this->telemetry([0x8103 => "\x0C", 0x8104 => "\x02"])['battery']['lowBattery'] ?? null);
+        self::assertFalse($this->telemetry([0x8103 => "\x50", 0x8104 => "\x00"])['battery']['lowBattery'] ?? null);
+        self::assertArrayNotHasKey('lowBattery', $this->telemetry([0x8104 => "\x04"])['battery'] ?? []);
+    }
+
     /** O `0x8101` é o juízo do aparelho sobre a contagem do `0x811D`: viaja como campo dela. */
     public function testTheMedicationLevelTravelsWithTheCellCount(): void
     {
