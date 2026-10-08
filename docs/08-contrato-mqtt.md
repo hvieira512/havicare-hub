@@ -195,7 +195,7 @@ eventos guardados no histórico da dashboard levam-na igual.
 | `fall` | `confirmed`, `posture` (`lying` · `sitting_on_ground`), `personIndex` | relógio, radar | `alarm`; `alert` com `confirmed: false` |
 | `heart_rate_high` | `bpm`, quando há | radar | `alarm` acima de 160 bpm, `alert` abaixo ou sem valor |
 | `heart_rate_low` | `bpm`, quando há | radar | `alarm` abaixo de 20 bpm, `alert` acima ou sem valor |
-| `heart_rate_abnormal` | — | relógio 4P Touch | `alert` |
+| `heart_rate_abnormal` | — | relógio 4P Touch, **por confirmar** | `alert` |
 | `breath_rate_high` · `breath_rate_low` | `breathsPerMinute`, quando há | radar | `alert` |
 | `apnea` | — | radar | `alarm` |
 | `weak_vital_signs` | — | radar | `alert` |
@@ -211,8 +211,10 @@ eventos guardados no histórico da dashboard levam-na igual.
 | `medication_intake` | `result`, … | dispensador | `alert` numa toma anormal ou falhada; `info` o resto |
 | `reset` | `pagerId` | NCS | `info` |
 
-O 4P Touch diz só que a frequência cardíaca está anormal, sem o valor e sem dizer
-para que lado: é a única origem do `heart_rate_abnormal`.
+O `heart_rate_abnormal` vem do bit 22 do alarme da 4P Touch, que diz só que a
+frequência cardíaca está anormal, sem o valor e sem o sentido. **Nenhum relógio o
+mostrou até hoje**, e o protocolo não tem comando que o ligue nem diz quando
+dispara. O hub descodifica-o e publica-o se chegar, mas nenhum modelo o anuncia.
 
 Um relógio pode reportar vários alarmes de uma vez — a trama do 4P Touch é uma
 máscara de bits —, e nesse caso sai **um evento por bit**, com o mesmo

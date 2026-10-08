@@ -6,6 +6,7 @@ namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\CapabilitySectionsIncludeReminders;
 use Hub\Infrastructure\Persistence\Migration\Migration;
+use Hub\Infrastructure\Persistence\Migration\UnconfirmedHeartRateAlarmIsUnlinked;
 use Hub\Infrastructure\Persistence\Migration\WhitelistKeyCascadesOnRename;
 
 /**
@@ -20,6 +21,7 @@ final class DatabaseMigrationPlan
         return [
             new WhitelistKeyCascadesOnRename(),
             new CapabilitySectionsIncludeReminders(),
+            new UnconfirmedHeartRateAlarmIsUnlinked(),
         ];
     }
 

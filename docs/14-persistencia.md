@@ -168,6 +168,7 @@ ainda não foi dobrado na linha de base:
 |---|---|
 | `whitelist_key_cascades_on_rename` | As chaves que apontam para o `whitelist.imei` passam a acompanhar a renomeação |
 | `capability_sections_include_reminders` | A `capabilities.section` ganha o valor `reminders`, a secção «Lembretes» |
+| `unconfirmed_heart_rate_alarm_is_unlinked` | Tira dos modelos o `heart_rate_abnormal`, que o primeiro deploy ligou antes de se saber que nenhum relógio o manda |
 
 O `DatabaseSchemaGuard` só exige o que estiver no plano, e por isso as linhas que
 sobram na `schema_migrations` não incomodam.

@@ -299,8 +299,12 @@ evento do que aconteceu, com o mesmo nome que os outros aparelhos usam:
 | Frequência cardíaca anormal | — | `0x00400000` | `heart_rate_abnormal` | — |
 
 Uma máscara do 4P Touch com vários bits produz vários eventos; a zero, nenhum.
-O 4P Touch não diz se a frequência cardíaca está alta ou baixa, nem o valor, e
-por isso é o único a publicar `heart_rate_abnormal`.
+
+**O bit 22 está por confirmar.** Em outubro de 2026, nas 14 tramas `AL` guardadas
+de 10 relógios 4P (quedas, SOS e bateria fraca), nenhuma o trazia; o Y6L não tem
+no menu nenhum alerta de frequência cardíaca, e o protocolo não tem comando que o
+configure — põe o juízo da frequência no servidor. O hub descodifica-o, mas o
+`heart_rate_abnormal` não se anuncia em modelo nenhum até haver um disparo real.
 
 **A bateria fraca tem mais duas origens**, além do alarme:
 

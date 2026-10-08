@@ -39,7 +39,8 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
             'device_removed' => ['vivistar-iw', 'four-p-touch'],
             'zone_entry' => ['four-p-touch'],
             'zone_exit' => ['four-p-touch'],
-            'heart_rate_abnormal' => ['four-p-touch'],
+            // O bit 22 do `AL` da 4P Touch: nenhum relógio o mostrou e o protocolo não diz como se liga.
+            'heart_rate_abnormal' => [],
             'device_state' => ['wonlex-json'],
         ];
     }
