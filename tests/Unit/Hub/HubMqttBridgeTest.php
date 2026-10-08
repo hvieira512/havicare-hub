@@ -58,6 +58,17 @@ final class HubMqttBridgeTest extends TestCase
         );
     }
 
+    /** Um evento sem campos leva `data` como objecto vazio, e não como lista vazia. */
+    public function testAnEventWithoutFieldsCarriesAnEmptyObject(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'prefix');
+
+        $bridge->publishEvent('8800000015', ['type' => 'apnea', 'data' => []]);
+
+        self::assertStringContainsString('"data":{}', (string)$publisher->lastMessage);
+    }
+
     public function testAConnectionEventLeavesWithoutSeverity(): void
     {
         $publisher = new FakeMqttPublisher();

@@ -114,6 +114,10 @@ class HubMqttBridge
         bool $retain = false,
         int $qualityOfService = MqttClient::QOS_AT_MOST_ONCE,
     ): void {
+        // O `data` é sempre um objecto: vazio, o PHP codifica-o como lista.
+        if (($payload['data'] ?? null) === []) {
+            $payload['data'] = new \stdClass();
+        }
         $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
             throw new \RuntimeException('Failed to encode MQTT payload');
