@@ -235,6 +235,18 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         self::assertSame(0, $store->updates()->listenerCount());
     }
 
+    /** Um evento sem campos sai com o `data` como objecto, como no MQTT, e não como lista. */
+    public function testAnEventWithoutFieldsReachesTheStreamWithAnEmptyObject(): void
+    {
+        [$server, , $store] = $this->makeServerWithDatabase();
+        $store->append('861265061009822', 'events', ['type' => 'help_call', 'data' => []]);
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+
+        $frame = $this->readSseFrame($this->openDeviceStream($server, '861265061009822', $token));
+
+        self::assertStringContainsString('"type":"help_call","severity":"alarm","data":{}', $frame);
+    }
+
     public function testTenantClientCanUseRecentRequestAndStreamRoutes(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();

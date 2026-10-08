@@ -625,8 +625,8 @@ class DeviceService
         $connectionsSince = max(0, (int)($since['connections'] ?? 0));
 
         return [
-            'telemetry' => $this->store->recent($imei, 'telemetry', $telemetrySince),
-            'events' => $this->store->recent($imei, 'events', $eventsSince),
+            'telemetry' => self::withObjectData($this->store->recent($imei, 'telemetry', $telemetrySince)),
+            'events' => self::withObjectData($this->store->recent($imei, 'events', $eventsSince)),
             'connections' => $this->store->recent($imei, 'connections', $connectionsSince),
             'commands' => $this->store->commands($imei),
             'cursor' => [
@@ -638,5 +638,23 @@ class DeviceService
             // uma diferença sem ter de adivinhar o limite do servidor.
             'limit' => $this->store->historyLimit(),
         ];
+    }
+
+    /**
+     * O `data` sai sempre como objecto, como no MQTT: vazio, o histórico lido do Redis volta como lista.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private static function withObjectData(array $rows): array
+    {
+        foreach ($rows as &$row) {
+            if (($row['data'] ?? null) === []) {
+                $row['data'] = new \stdClass();
+            }
+        }
+        unset($row);
+
+        return $rows;
     }
 }
