@@ -42,6 +42,21 @@ final class FourPTouchContactHandlersTest extends TestCase
         );
     }
 
+    public function testSosContactsCapabilityReadsBackTheGenericListOfARevision(): void
+    {
+        $capability = new SosContactsCapability();
+
+        self::assertSame(
+            ['+351962621726'],
+            $capability->fromNative('four-p-touch', 'sosContacts', ['+351962621726']),
+        );
+        self::assertSame([], $capability->fromNative('four-p-touch', 'sosContacts', []));
+        self::assertSame(
+            ['+351962621726'],
+            $capability->fromNative('four-p-touch', 'sosContacts', ['numbers' => ['+351962621726', '', '']]),
+        );
+    }
+
     public function testSosContactsCapabilityRejectsMoreThanThreeNumbers(): void
     {
         $capability = new SosContactsCapability();
