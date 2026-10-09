@@ -71,6 +71,10 @@ final class SosContactsCapability implements CapabilityContract
 
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
+        // A revisão de uma alteração guarda a lista genérica de números, e também passa por aqui.
+        if (array_is_list($desired)) {
+            return self::stringList($desired);
+        }
         if (isset($desired['numbers']) && is_array($desired['numbers'])) {
             return self::stringList($desired['numbers']);
         }
