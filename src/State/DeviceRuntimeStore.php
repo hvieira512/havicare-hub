@@ -199,19 +199,25 @@ final class DeviceRuntimeStore
 
     /**
      * Dá por desligado quem está calado há mais do que o prazo, só do tipo pedido quando há um.
+     * Um aparelho que dorme traz o seu `idleTimeoutSeconds`, e esse prazo, se for maior, ganha.
      *
      * @return list<string> os que estavam ligados e deixaram de estar
      */
     public function expireStaleDevices(int $timeoutSeconds, ?string $deviceType = null): array
     {
-        $cutoff = time() - max(1, $timeoutSeconds);
-        $stale = array_map('strval', $this->redis->zrangebyscore($this->onlineDeviceSetKey(), '-inf', (string)$cutoff));
-        if ($deviceType !== null && $stale !== []) {
-            $states = $this->runtimeStates($stale);
-            $stale = array_values(array_filter(
-                $stale,
-                static fn(string $imei): bool => ($states[$imei]['deviceType'] ?? null) === $deviceType,
-            ));
+        $now = time();
+        /** @var array<string, string|float> $lastSeen */
+        $lastSeen = $this->redis->zrangebyscore($this->onlineDeviceSetKey(), '-inf', (string)($now - max(1, $timeoutSeconds)), ['withscores' => true]);
+        $states = $lastSeen !== [] ? $this->runtimeStates(array_map('strval', array_keys($lastSeen))) : [];
+        $stale = [];
+        foreach ($lastSeen as $imei => $seenAt) {
+            $state = $states[(string)$imei] ?? [];
+            if ($deviceType !== null && ($state['deviceType'] ?? null) !== $deviceType) {
+                continue;
+            }
+            if ((float)$seenAt <= $now - max($timeoutSeconds, (int)($state['idleTimeoutSeconds'] ?? 0))) {
+                $stale[] = (string)$imei;
+            }
         }
 
         return array_values(array_filter($stale, fn(string $imei): bool => $this->deviceOffline($imei)));

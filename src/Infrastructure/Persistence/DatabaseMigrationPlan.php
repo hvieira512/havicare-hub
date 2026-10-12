@@ -8,6 +8,7 @@ use Hub\Infrastructure\Persistence\Migration\CapabilitySectionsIncludeReminders;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\UnconfirmedHeartRateAlarmIsUnlinked;
 use Hub\Infrastructure\Persistence\Migration\WhitelistKeyCascadesOnRename;
+use Hub\Infrastructure\Persistence\Migration\WifiSosButtonCatalog;
 
 /**
  * As migrações posteriores à baseline (`schema.sql` e catálogo semeado), sem o de capacidades.
@@ -22,6 +23,7 @@ final class DatabaseMigrationPlan
             new WhitelistKeyCascadesOnRename(),
             new CapabilitySectionsIncludeReminders(),
             new UnconfirmedHeartRateAlarmIsUnlinked(),
+            new WifiSosButtonCatalog(),
         ];
     }
 

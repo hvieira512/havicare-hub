@@ -80,6 +80,12 @@ final class ProtocolRegistry
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => false,
             ],
+            // A pulseira dorme e só fala com a cloud da Tuya, que a entrega ao hub pelo Pulsar.
+            'tuya-cloud' => [
+                'label' => 'PST',
+                'deviceType' => 'bracelet',
+                'supportsConfigCatalog' => false,
+            ],
             'zayata-m228' => [
                 'label' => 'Zayata',
                 'deviceType' => 'pill_dispenser',

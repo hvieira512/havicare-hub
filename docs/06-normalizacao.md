@@ -80,7 +80,7 @@ e `source`, como um `device.connected`, que só leva a identidade.
 | `device.supplier` · `device.model` | O que a whitelist diz. Omitidos se vazios |
 | `device.commercialName` | Do catálogo de modelos. Omitido quando o modelo não está lá |
 | `data` | A forma partilhada da capacidade |
-| `source.protocol` | Quem descodificou: `vivistar-iw`, `wonlex-json`, `four-p-touch`, `voerka-ncs`, `qinglanst-radar`, `moko-mkgw3`, `moko-mkgw4`, `monit-mecs-pro-ble`, `moko-w6`, `moko-w6b` |
+| `source.protocol` | Quem descodificou: `vivistar-iw`, `wonlex-json`, `four-p-touch`, `voerka-ncs`, `qinglanst-radar`, `moko-mkgw3`, `moko-mkgw4`, `monit-mecs-pro-ble`, `moko-w6`, `moko-w6b`, `tuya-cloud` |
 | `source.nativeType` | O tipo original do fabricante: `AP49`, `upHeartRate`, `UD_LTE`, `LK`, `heartbreath`… Nas pulseiras Veepoo é `type-{n}`, o número com que o fabricante numera os seus retornos, ou `daily_block`, `session`, `battery` e `ecg_wave` para o que não tem número |
 | `source.gatewayId` · `source.rssiDbm` | Só em BLE: que gateway ouviu, e com que força |
 | `source.topic` | Só no radar: o tópico de origem |

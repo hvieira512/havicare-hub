@@ -89,7 +89,7 @@ final class InMemoryRedisClient implements ClientInterface
             'lrem' => $this->lrem((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
             'zadd' => $this->zadd((string)$arguments[0], $arguments[1]),
             'zrem' => $this->zrem((string)$arguments[0], $arguments[1]),
-            'zrangebyscore' => $this->zrangebyscore((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
+            'zrangebyscore' => $this->zrangebyscore((string)$arguments[0], (string)$arguments[1], (string)$arguments[2], (array)($arguments[3] ?? [])),
             'setex' => $this->setex((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
             'set' => $this->set($arguments),
             'get' => $this->get((string)$arguments[0]),
@@ -276,8 +276,11 @@ final class InMemoryRedisClient implements ClientInterface
         return $deleted;
     }
 
-    /** @return list<string> */
-    private function zrangebyscore(string $key, string $min, string $max): array
+    /**
+     * @param array{withscores?: bool} $options
+     * @return list<string>|array<string, float> os membros, ou membro => score com `withscores`
+     */
+    private function zrangebyscore(string $key, string $min, string $max, array $options = []): array
     {
         $items = $this->sortedSets[$key] ?? [];
         $lower = $min === '-inf' ? -INF : (float)$min;
@@ -285,7 +288,7 @@ final class InMemoryRedisClient implements ClientInterface
         $filtered = array_filter($items, static fn(float $score): bool => $score >= $lower && $score <= $upper);
         asort($filtered, SORT_NUMERIC);
 
-        return array_keys($filtered);
+        return ($options['withscores'] ?? false) ? $filtered : array_keys($filtered);
     }
 
     private function setex(string $key, int $seconds, string $value): string

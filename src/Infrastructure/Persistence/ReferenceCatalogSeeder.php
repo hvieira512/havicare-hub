@@ -11,7 +11,7 @@ use PDO;
 
 final class ReferenceCatalogSeeder
 {
-    private const SUPPLIERS = ['Wonlex', 'Vivistar', '4P Touch', 'Voerka', 'Qinglanst', 'MOKO', 'MONIT', 'Zayata'];
+    private const SUPPLIERS = ['Wonlex', 'Vivistar', '4P Touch', 'Voerka', 'Qinglanst', 'MOKO', 'MONIT', 'Zayata', 'PST'];
 
     /** O catálogo de modelos completo, tal como a produção o tem a 2026-09-29. */
     private const MODELS = [
@@ -29,6 +29,7 @@ final class ReferenceCatalogSeeder
         ['MOKO', 'W6', 'MOKO W6', 'bracelet', '78888c5376784c64ca05b691c4686ecd.jpg'],
         ['MOKO', 'W6B', 'MOKO W6B', 'bracelet', '78888c5376784c64ca05b691c4686ecd.jpg'],
         ['MONIT', 'MECS-PRO', 'MONIT MECS Pro', 'diaper_sensor', 'c7a8992a69d659ef06e853f6befecd42.jpg'],
+        ['PST', 'CF103W', 'CF103W', 'bracelet', ''],
         ['Qinglanst', 'RD-V1', 'W01', 'radar', '2a87616691f4878b9ac4f8cfd816a615.jpg'],
         ['Vivistar', 'L08 Pro', 'R05', 'watch', '019cb6bcc40ef15ffe98a2f4ca1d2679.jpg'],
         ['Vivistar', 'VL16P', 'R04', 'watch', '45465accf3d7b8c10279225d089cf227.jpg'],

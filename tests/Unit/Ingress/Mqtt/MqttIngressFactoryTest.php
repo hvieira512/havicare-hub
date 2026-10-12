@@ -52,6 +52,7 @@ final class MqttIngressFactoryTest extends TestCase
                 'position_history_sample_ms' => 1000,
                 'raw_history_sample_ms' => 30000,
             ],
+            'tuya' => ['enabled' => false],
         ];
     }
 
