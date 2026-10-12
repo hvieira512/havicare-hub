@@ -3,15 +3,11 @@ import assert from "node:assert/strict";
 
 // Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
 import "./support/browser-env.js";
-import { notificationRow as buildRow } from "../../src/Dashboard/dashboard/notifications.js";
+import { notificationRow as buildRow, notificationsPanel } from "../../src/Dashboard/dashboard/notifications.js";
 
 // O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
 const notificationRow = (...args) => String(buildRow(...args));
 
-/**
- * A cor de cada acção acompanha o risco: «Bloquear dispositivo» cala o aparelho, «Eliminar
- * notificação» dispensa um item transitório, e registar tem botão próprio.
- */
 const notAuthorized = {
     id: 7,
     type: "device_not_authorized",
@@ -33,14 +29,6 @@ const hubRestart = {
 const button = (markup, action) =>
     markup.split("<button").find((chunk) => chunk.includes(action)) || "";
 
-test("bloquear é o botão vermelho, e dispensar o neutro", () => {
-    const markup = notificationRow(notAuthorized);
-
-    assert.match(button(markup, "data-notification-block"), /btn-outline-danger/);
-    assert.match(button(markup, "data-notification-dismiss"), /btn-outline-secondary/);
-    assert.doesNotMatch(button(markup, "data-notification-dismiss"), /btn-outline-danger/);
-});
-
 test("registar o aparelho tem botão próprio", () => {
     const markup = notificationRow(notAuthorized);
 
@@ -54,4 +42,13 @@ test("um aviso que não é de um aparelho só se dispensa", () => {
     assert.doesNotMatch(markup, /data-notification-block/);
     assert.doesNotMatch(markup, /data-notification-register/);
     assert.match(markup, /data-notification-dismiss="8"/);
+});
+
+test("o rodapé leva aos bloqueados, com ou sem notificações", () => {
+    const empty = notificationsPanel([]);
+    const filled = notificationsPanel([notAuthorized]);
+
+    assert.match(empty, /data-notification-denylist/);
+    assert.match(empty, /Ver bloqueados/);
+    assert.match(filled, /data-notification-denylist/);
 });

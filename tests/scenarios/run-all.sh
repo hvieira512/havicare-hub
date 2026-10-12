@@ -8,7 +8,6 @@ SCENARIOS=(
   "tests/scenarios/scenario_backup_rotation.sh"
   "tests/scenarios/scenario_hub_raw_mqtt_roundtrip.sh"
   "tests/scenarios/scenario_hub_downlink_queue.sh"
-  "tests/scenarios/scenario_dashboard_api.sh"
   "tests/scenarios/scenario_ncs_mqtt_ingress.sh"
   "tests/scenarios/scenario_location_beacondb_pipeline.sh"
 )

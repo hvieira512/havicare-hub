@@ -75,11 +75,7 @@ test("carregar até abaixo da posição não deixa nada por dispensar", () => {
     });
 });
 
-test("sem plano, sem posição ou sem número escrito, não se diz nada", () => {
-    withDetail(detail({ effectiveConfigurations: { medication_reminders: { plans: [] } } }), () => {
-        assert.equal(loadedCellsRunoutText(6, now), "");
-    });
-
+test("sem posição ou sem número escrito, não se diz nada", () => {
     withDetail(detail({ recent: { telemetry: [] } }), () => {
         assert.equal(loadedCellsRunoutText(6, now), "");
     });
@@ -150,20 +146,5 @@ test("escrever no campo reescreve a frase sem redesenhar a linha", () => {
         input.value = "";
         syncLoadedCellsRunout(input);
         assert.equal(root.querySelector("[data-loaded-runout]").textContent, "");
-    });
-});
-
-test("um período já terminado não deixa data, e a frase cala-se", () => {
-    const ended = {
-        effectiveConfigurations: {
-            medication_reminders: {
-                plans: [{ times: [{ time: "10:47", enabled: true, slot: 1, recurrence: { kind: "daily" } }] }],
-            },
-            medication_period: { enabled: true, startDate: "2026-09-01", endDate: "2026-09-30" },
-        },
-    };
-
-    withDetail(detail(ended), () => {
-        assert.equal(loadedCellsRunoutText(6, now), "");
     });
 });

@@ -4,37 +4,47 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Command;
 
-use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Uma reposição devolve o M228 ao servidor do fornecedor; nos relógios a acção fica, porque lá é
- * recuperável.
+ * O que o dispensador não oferece. Uma reposição devolve o M228 ao servidor do fornecedor (nos
+ * relógios fica, porque lá é recuperável), e a cifra o firmware recusa-se a desligar.
  */
 final class PillDispenserNoFactoryResetTest extends TestCase
 {
-    public function testTheDispenserCatalogDoesNotOfferAFactoryReset(): void
+    public function testTheDispenserCatalogDoesNotOfferThem(): void
     {
         $keys = array_column(DeviceConfigurationCatalog::configsForProtocol('zayata-m228'), 'key');
 
         self::assertNotContains('reset_device', $keys);
+        self::assertNotContains('disable_encryption', $keys);
     }
 
-    public function testTheDispenserDoesNotAdvertiseTheCapability(): void
+    public function testTheDispenserDoesNotAdvertiseTheCapabilities(): void
     {
         $keys = array_column(CapabilityCatalog::definitionsForDeviceType('pill_dispenser'), 'key');
 
         self::assertNotContains('reset_device', $keys);
+        self::assertNotContains('disable_encryption', $keys);
     }
 
-    public function testTheFrameCannotEvenBeBuilt(): void
+    /** O fornecedor respondeu «0x8005 cannot be set»: o hub nem pergunta pela TAG da cifra. */
+    public function testTheHubNeverEvenAsksAboutTheCipherTag(): void
     {
-        // A última linha de defesa: mesmo que alguém chame o comando à mão, não há trama.
-        $this->expectException(\InvalidArgumentException::class);
+        self::assertNotContains(0x8005, PillDispenserAdapter::CONFIGURATION_TAGS);
+        self::assertNotContains(0x8005, PillDispenserAdapter::STATUS_TAGS);
+    }
 
-        DeviceCommandCatalog::buildDownlink('zayata-m228', '869243062262262', 'factoryReset', []);
+    /** São de uma versão da série M2 posterior à do aparelho de ensaio, que as recusa com «TAG inválida». */
+    public function testTheOnesThisFirmwareRefusesAreNotOffered(): void
+    {
+        $keys = array_column(DeviceConfigurationCatalog::configsForProtocol('zayata-m228'), 'key');
+
+        self::assertNotContains('rotate_to_cell', $keys);
+        self::assertNotContains('medication_pause', $keys);
     }
 
     public function testTheWatchesKeepTheirs(): void

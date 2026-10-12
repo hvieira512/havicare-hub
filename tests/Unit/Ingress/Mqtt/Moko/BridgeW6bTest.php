@@ -154,18 +154,6 @@ final class BridgeW6bTest extends TestCase
         self::assertSame([], $this->forBracelet($mqtt->telemetry));
     }
 
-    public function testAnAlarmWithoutTheScanResponseStillRaisesTheHelpCall(): void
-    {
-        $mqtt = new RecordingHubMqttBridge();
-        $bridge = $this->bridge($mqtt);
-        $alarmOnly = ['batt_vol' => null, 'x_axis_data' => null, 'y_axis_data' => null, 'z_axis_data' => null];
-
-        $this->deliver($bridge, $this->scanPayload($alarmOnly + ['trigger_count' => 69]));
-        $this->deliver($bridge, $this->scanPayload($alarmOnly + ['trigger_count' => 70]));
-
-        self::assertSame(['help_call'], array_column($this->forBracelet($mqtt->events), 'type'));
-    }
-
     public function testTheGatewayItselfIsStillReported(): void
     {
         $mqtt = new RecordingHubMqttBridge();

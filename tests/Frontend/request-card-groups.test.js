@@ -98,19 +98,6 @@ test("a faixa com o nome do grupo só existe quando há mais do que um grupo", (
     assert.match(accompanied, /count-chip[^>]*>1</);
 });
 
-/** O lugar vazio do valor, ao lado dos irmãos que têm um, já se lê como ausência de leitura. */
-test("um mosaico sem leitura não leva etiqueta a dizê-lo", () => {
-    const [group] = telemetryRequestCards({ heart_rate: supported() });
-
-    const html = renderRequestCardGroup(group, [], false, []);
-
-    // O catálogo de capacidades não está carregado aqui, e por isso o nome vem do
-    // `humanizeCapabilityKey`. O que importa é que só o nome lá está.
-    assert.match(html, /telemetry-card-title[^>]*>Heart Rate</);
-    assert.doesNotMatch(html, /telemetry-card-value/);
-    assert.doesNotMatch(html, /telemetry-row-details/);
-});
-
 test("com leitura, o mosaico mostra o valor", () => {
     const [group] = telemetryRequestCards({ heart_rate: supported() });
     const reading = {

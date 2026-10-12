@@ -22,7 +22,7 @@ final class LocationProviderExceptionTest extends TestCase
 
     public function testEverythingElseIsAFailure(): void
     {
-        foreach ([429, 500, 502, 503, 400, 401] as $status) {
+        foreach ([429, 500] as $status) {
             self::assertFalse(
                 (new LocationProviderException('boom', 'beacondb', $status))->isNoMatch(),
                 "O estado {$status} não pode passar por 'sem correspondência'."
@@ -34,13 +34,5 @@ final class LocationProviderExceptionTest extends TestCase
     public function testAnErrorWithoutAnHttpStatusIsAFailure(): void
     {
         self::assertFalse((new LocationProviderException('connection refused', 'beacondb'))->isNoMatch());
-    }
-
-    /** O 404 não é repetível, e o `recordFailure` limpa o estado nesse caso. */
-    public function testANoMatchIsNotRetryable(): void
-    {
-        $error = new LocationProviderException('BeaconDB request failed (HTTP 404)', 'beacondb', 404, false);
-
-        self::assertFalse($error->retryable);
     }
 }

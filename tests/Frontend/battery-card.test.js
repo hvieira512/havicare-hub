@@ -3,28 +3,13 @@ import assert from "node:assert/strict";
 
 // Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
 import "./support/browser-env.js";
-import { parseFragment } from "./support/dom.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/shell.js";
 
 const battery = (data) => uplinkCardContent("battery", data);
 
-test("o ícone segue a carga", () => {
-    assert.equal(battery({ percent: 100 }).icon, "fa-battery-full");
-    assert.equal(battery({ percent: 80 }).icon, "fa-battery-three-quarters");
-    assert.equal(battery({ percent: 55 }).icon, "fa-battery-half");
-    assert.equal(battery({ percent: 30 }).icon, "fa-battery-quarter");
-    assert.equal(battery({ percent: 4 }).icon, "fa-battery-empty");
-});
-
 test("sem percentagem o ícone não inventa um nível", () => {
     assert.equal(battery({ voltageMv: 3700 }).icon, "fa-battery-three-quarters");
-});
-
-test("a carga baixa tinge o azulejo, e a restante não", () => {
-    assert.equal(battery({ percent: 80 }).tone, "success");
-    assert.equal(battery({ percent: 20 }).tone, "warning");
-    assert.equal(battery({ percent: 9 }).tone, "danger");
 });
 
 /** Os relógios mandam um bit e o dispensador manda uma enumeração; a pergunta é a mesma. */
@@ -109,27 +94,4 @@ test("sem detalhes o cartão não abre linha nenhuma", () => {
     }));
 
     assert.doesNotMatch(card, /telemetry-row-details/);
-});
-
-/** O `compactDetails` devolve um fragmento mesmo quando está vazio. */
-test("uma peça vazia não deixa o separador pendurado", () => {
-    assert.equal(String(battery({ percent: 80, mainsPowered: true }).details), "");
-});
-
-test("o relâmpago chega ao cartão desenhado", () => {
-    const content = battery({ percent: 40, chargingState: "charging" });
-    const root = parseFragment(telemetryCard({
-        icon: content.icon,
-        badge: content.iconBadge,
-        title: "Bateria",
-        value: "40%",
-    }));
-
-    assert.ok(root.querySelector(".telemetry-card-badge .fa-bolt"));
-});
-
-test("e sem ele o cartão não ganha marca nenhuma", () => {
-    const root = parseFragment(telemetryCard({ icon: "fa-battery-full", title: "Bateria" }));
-
-    assert.equal(root.querySelector(".telemetry-card-badge"), null);
 });

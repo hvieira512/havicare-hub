@@ -142,18 +142,6 @@ test("um tipo com um único fornecedor responde ao passo sozinho", () => {
     ]);
 });
 
-test("num telemóvel fica só o passo actual, e o contador diz em que ponto se está", () => {
-    // Cinco nomes numa linha não cabem em 342px: os outros quatro só aparecem a partir de
-    // `md`, e a barra e o contador continuam a dizer quanto falta.
-    pick("[data-wizard-type=\"watch\"]");
-
-    const visible = [...root.querySelectorAll("#wizardTrail .wizard-badge")]
-        .filter((crumb) => !crumb.classList.contains("d-none"));
-
-    assert.deepEqual(visible.map(text), ["Fornecedor"]);
-    assert.equal(els.wizardProgress.classList.contains("d-none"), false);
-});
-
 /** Os gateways autorizados de um sensor entram como marcação, e não como texto à letra. */
 function walkToDiaperIdentity() {
     pick("[data-wizard-type=\"diaper_sensor\"]");

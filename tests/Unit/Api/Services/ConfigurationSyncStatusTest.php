@@ -42,26 +42,6 @@ final class ConfigurationSyncStatusTest extends TestCase
         self::assertSame(['settings_system.volume'], array_keys($flat));
     }
 
-    /** O achatamento não toca no valor: ele chega já na forma pública do contrato. */
-    public function testFlatteningKeepsTheContractValueUntouched(): void
-    {
-        $flat = $this->subject()->flattenWritableCapabilities([
-            'contacts' => [
-                'sos_contacts' => ['value' => ['+351911111111'], '_meta' => []],
-                'call_whitelist' => [
-                    'value' => [['name' => 'Suporte', 'phone' => '+351278710140']],
-                    '_meta' => [],
-                ],
-            ],
-        ]);
-
-        self::assertSame(['+351911111111'], $flat['contacts.sos_contacts']);
-        self::assertSame(
-            [['name' => 'Suporte', 'phone' => '+351278710140']],
-            $flat['contacts.call_whitelist'],
-        );
-    }
-
     public function testValuesCompareEqualAcrossOrderingAndScalarFormatting(): void
     {
         $subject = $this->subject();
@@ -168,6 +148,28 @@ final class ConfigurationSyncStatusTest extends TestCase
         self::assertSame([], $this->subject()->genericCapabilityRowMeta([
             ['native_key' => '', 'config_key' => '', 'desired_updated_at' => '2026-01-01 10:00:00'],
         ]));
+    }
+
+    public function testACapabilityDeliveredInSeveralCommandsReportsHowFarItGot(): void
+    {
+        $detail = ConfigurationSyncStatus::operationDetail([
+            ['deliveryStatus' => 'acked'],
+            ['deliveryStatus' => 'acked'],
+            ['deliveryStatus' => 'acked'],
+            ['deliveryStatus' => 'waiting'],
+            ['deliveryStatus' => 'failed'],
+        ]);
+
+        self::assertSame(['confirmed' => 3, 'total' => 5], $detail);
+    }
+
+    public function testACapabilityThatTravelsInASingleCommandHasNothingToDetail(): void
+    {
+        self::assertNull(
+            ConfigurationSyncStatus::operationDetail([['deliveryStatus' => 'acked']]),
+            'com um só comando o estado de topo já diz tudo'
+        );
+        self::assertNull(ConfigurationSyncStatus::operationDetail([]));
     }
 
     private function subject(): ConfigurationSyncStatus

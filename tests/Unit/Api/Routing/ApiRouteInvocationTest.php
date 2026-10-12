@@ -34,24 +34,6 @@ final class ApiRouteInvocationTest extends TestCase
         self::assertSame('865028000000306', $route->invoke(['imei' => '865028000000306'], self::request()));
     }
 
-    /** O corpo e o estado de sucesso são declarados na rota, e é o kernel que lhes pega. */
-    public function testARouteDeclaresWhetherItTakesABodyAndWithWhichStatus(): void
-    {
-        $plain = new ApiRoute('GET', '/api/things', static fn(): array => []);
-        $created = new ApiRoute(
-            'POST',
-            '/api/things',
-            static fn(): array => [],
-            body: ApiRoute::JSON_BODY,
-            status: 201,
-        );
-
-        self::assertNull($plain->body());
-        self::assertSame(200, $plain->status());
-        self::assertSame(ApiRoute::JSON_BODY, $created->body());
-        self::assertSame(201, $created->status());
-    }
-
     private static function request(string $path = '/api/thing'): ServerRequest
     {
         return new ServerRequest('GET', 'http://localhost:8081' . $path);

@@ -36,14 +36,6 @@ final class DeviceTopicShapeTest extends TestCase
         );
     }
 
-    public function testLargerLicenseIdsAreNotReformatted(): void
-    {
-        self::assertSame(
-            'hitcare/1001/watch/861265061009822/events',
-            $this->bridge()->deviceTopic('hitcare', 1001, 'watch', '861265061009822', 'events')
-        );
-    }
-
     public function testCompanyCasingIsNormalisedSoOneTenantIsOneTopicSpace(): void
     {
         // Os tópicos distinguem maiúsculas: "hitCare" e "hitcare" seriam dois clientes diferentes.

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 import { cardContent as uplinkCardContent } from "./support/cards.js";
-import { commandError, commandLabel, fieldLabel } from "../../src/Dashboard/dashboard/format.js";
+import { commandError } from "../../src/Dashboard/dashboard/format.js";
 
 /** A noite chega inteira -- fronteiras, duração e os troços de cada fase -- e o cartão mostra-a. */
 
@@ -64,14 +64,6 @@ test("as pontuações aparecem em português, e não com o nome do campo", () =>
     assert.match(details, /Despertares: 0/);
 });
 
-test("os pedidos da pulseira não ficam em inglês no ecrã", () => {
-    assert.equal(commandLabel({ label: "Sleep" }), "Sono");
-    assert.equal(commandLabel({ label: "Daily totals" }), "Totais do dia");
-    assert.equal(commandLabel({ label: "Body composition" }), "Composição corporal");
-    assert.equal(commandLabel({ label: "Firmware version" }), "Versão de firmware");
-    assert.equal(commandLabel({ label: "Device status" }), "Estado do dispositivo");
-});
-
 test("os lípidos no sangue não mostram o nome do campo em inglês", () => {
     const details = uplinkCardContent("blood_lipids", {
         totalCholesterolMmolPerL: 4.3,
@@ -83,10 +75,6 @@ test("os lípidos no sangue não mostram o nome do campo em inglês", () => {
     assert.doesNotMatch(details, /MmolPerL/);
     assert.match(details, /Triglicéridos: 1.03 mmol\/L/);
     assert.match(details, /HDL: 1.05 mmol\/L/);
-});
-
-test("a versão de firmware não se anuncia em inglês", () => {
-    assert.equal(fieldLabel("version"), "Versão");
 });
 
 test("a razão de um pedido falhado diz-se em português", () => {

@@ -55,7 +55,7 @@ final class SleepNormalizerTest extends TestCase
 
         self::assertCount(2, $segments);
         self::assertSame('deep_sleep', $segments[0]['type']);
-        self::assertSame(4, $segments[0]['slots'] ?? 4);
+        self::assertSame([333, 167], array_column($segments, 'durationMinutes'), 'os 500 minutos da noite repartidos 4 para 2');
         self::assertSame($segments[0]['endTime'], $segments[1]['startTime'], 'não há buracos entre troços');
         self::assertSame($out['data']['startTime'], $segments[0]['startTime']);
         self::assertSame($out['data']['endTime'], $segments[1]['endTime']);

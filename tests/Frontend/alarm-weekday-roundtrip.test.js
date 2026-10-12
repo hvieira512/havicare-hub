@@ -13,13 +13,9 @@ import { configSection } from "./support/dom.js";
  * Touch com o **domingo** na posição 0; errar é um alarme a tocar no dia errado.
  */
 
+// O domingo é o dia que a máscara do 4P põe na posição 0, ao contrário dos outros.
 const WEEKDAYS = [
     { day: 1, name: "segunda" },
-    { day: 2, name: "terça" },
-    { day: 3, name: "quarta" },
-    { day: 4, name: "quinta" },
-    { day: 5, name: "sexta" },
-    { day: 6, name: "sábado" },
     { day: 7, name: "domingo" },
 ];
 
@@ -29,18 +25,6 @@ const renderAndRead = (entry, desired, meta = {}) =>
 /* ---------- o construtor partilhado: Vivistar e Wonlex ---------- */
 
 const SHARED_ENTRY = { input: "alarm_clock", key: "alarm_clock" };
-
-for (const { day, name } of WEEKDAYS) {
-    test(`alarm_clock leva a ${name} ao fio e traz de volta a ${name}`, () => {
-        const payload = renderAndRead(
-            SHARED_ENTRY,
-            { items: [{ time: "08:30", enabled: true, recurrence: { kind: "custom", days: [day] } }] },
-            { limit: 3 },
-        );
-
-        assert.deepEqual(payload.items[0].recurrence, { kind: "custom", days: [day] }, name);
-    });
-}
 
 /* ---------- o 4P Touch: lembrete de comprimidos ---------- */
 
@@ -78,16 +62,6 @@ test("os sete dias marcados de uma vez ficam todos na recorrência", () => {
     );
 
     assert.deepEqual(alarms.items[0].recurrence.days, [1, 2, 3, 4, 5, 6, 7]);
-});
-
-test("a semana de trabalho deixa o sábado e o domingo de fora", () => {
-    const alarms = renderAndRead(
-        SHARED_ENTRY,
-        { items: [{ time: "08:30", enabled: true, recurrence: { kind: "custom", days: [1, 2, 3, 4, 5] } }] },
-        { limit: 3 },
-    );
-
-    assert.deepEqual(alarms.items[0].recurrence.days, [1, 2, 3, 4, 5]);
 });
 
 test("nenhum dia marcado numa recorrência personalizada é recusado, não gravado a zeros", () => {

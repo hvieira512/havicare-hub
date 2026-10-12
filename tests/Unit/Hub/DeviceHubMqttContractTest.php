@@ -6,8 +6,8 @@ namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceHubServer;
 use Hub\Device\HubMqttBridge;
-use Hub\Device\PendingDownlink;
 use Hub\Device\PendingDownlinkQueue;
+use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
@@ -16,6 +16,7 @@ use Hub\State\DeviceStoreContract;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\BeaconDbTelemetryEnricher;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\WavFixture;
 
@@ -107,20 +108,6 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertCount(0, $mqtt->events, 'sem evento no broker');
     }
 
-    /** O contraste: um `online`/`offline` é estado, e esse fica retido. */
-    public function testOnlineStatusIsRetained(): void
-    {
-        $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $connection = new ContractFakeConnection(2);
-
-        $hub->onOpen($connection);
-        $hub->onMessage($connection, 'IWAP00865028000000308#');
-
-        self::assertSame('online', $mqtt->statuses[0][1]['state']);
-        self::assertTrue($mqtt->statuses[0][2], 'o online fica retido');
-    }
-
     public function testNotificationPersistenceFailureDoesNotInterruptDeviceRejection(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
@@ -155,6 +142,7 @@ final class DeviceHubMqttContractTest extends TestCase
         // O `online` e depois o `offline`, ambos estado, ambos retidos.
         self::assertCount(2, $mqtt->statuses);
         self::assertSame('online', $mqtt->statuses[0][1]['state']);
+        self::assertTrue($mqtt->statuses[0][2], 'o online fica retido');
         self::assertSame('865028000000308', $mqtt->statuses[1][0]);
         self::assertSame('offline', $mqtt->statuses[1][1]['state']);
         self::assertTrue($mqtt->statuses[1][2], 'o offline é estado e fica retido');
@@ -187,7 +175,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testOfflineDownlinkQueuesLatestCommandPerDeviceAndNativeType(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $queue = new ContractFakePendingDownlinkQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $hub = new DeviceHubServer(
             $this->whitelist,
             $mqtt,
@@ -222,8 +210,9 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('device.downlink.queued', $mqtt->events[0][1]['type']);
         self::assertSame('dnHeartRate', $mqtt->events[0][1]['command']['nativeType']);
         self::assertSame('device.downlink.queued', $mqtt->events[2][1]['type']);
-        self::assertCount(2, $queue->pendingFor('868705080300697'));
-        self::assertSame(300, $queue->lastTtl);
+        $pending = $queue->pendingFor('868705080300697');
+        self::assertCount(2, $pending);
+        self::assertSame(300, $pending[0]->expiresAt - $pending[0]->queuedAt);
     }
 
     /**
@@ -233,7 +222,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testRenewingAQueuedCommandDoesNotAnnounceItAgain(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $queue = new ContractFakePendingDownlinkQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $hub = new DeviceHubServer($this->whitelist, $mqtt, downlinkQueue: $queue, downlinkQueueTtlSeconds: 300);
         $context = ['id' => 'cmd-44807b18', 'command' => 'BPXY', 'nativeType' => 'BPXY', 'protocol' => 'vivistar-iw'];
 
@@ -248,8 +237,8 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testOfflineDownlinkDropsWithQueueUnavailableWhenRedisFails(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $queue = new ContractFakePendingDownlinkQueue();
-        $queue->failEnqueue = true;
+        $queue = $this->createStub(PendingDownlinkQueue::class);
+        $queue->method('enqueue')->willThrowException(new \RuntimeException('Redis unavailable'));
         $hub = new DeviceHubServer(
             $this->whitelist,
             $mqtt,
@@ -326,7 +315,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testPendingDownlinksFlushAfterDeviceLogin(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $queue = new ContractFakePendingDownlinkQueue();
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $hub = new DeviceHubServer(
             $this->whitelist,
             $mqtt,
@@ -406,66 +395,6 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame(274611, $ack['ident']);
         self::assertSame('s:reply', $ack['ref']);
         self::assertSame('868705080300697', $ack['imei']);
-    }
-
-    public function testWonlexDataListSleepPublishesReliableNormalizedContract(): void
-    {
-        $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer($this->whitelist, $mqtt);
-        $connection = new ContractFakeConnection(13);
-        $adapter = new WonlexAdapter();
-
-        $hub->onOpen($connection);
-        $hub->onMessage($connection, $adapter->encodeOutgoing([
-            'type' => 'login',
-            'imei' => '868705080300697',
-            'data' => ['deviceModel' => 'HW20PRO'],
-        ]));
-        $hub->onMessage($connection, $adapter->encodeOutgoing([
-            'type' => 'upSleep',
-            'ident' => 111714,
-            'ref' => 'w:update',
-            'imei' => '868705080300697',
-            'data' => [
-                'type' => 'upSleep',
-                'imei' => '868705080300697',
-                'deviceModel' => 'HW20PRO',
-                'startTime' => 136860420,
-                'endTime' => 172800420,
-                'dataList' => [
-                    [
-                        'startTime' => 136860420,
-                        'endTime' => 146100420,
-                        'duration' => 3.5,
-                        'sleepType' => 'deepSleep',
-                    ],
-                    [
-                        'startTime' => 146100420,
-                        'endTime' => 172800420,
-                        'duration' => 580.5,
-                        'sleepType' => 'lightSleep',
-                    ],
-                ],
-                'timestamp' => 1785725511420,
-            ],
-            'isAccumulative' => 0,
-            'timestamp' => 1785725511420,
-        ]));
-
-        $sleep = $mqtt->telemetry[array_key_last($mqtt->telemetry)][1];
-        self::assertSame('sleep', $sleep['type']);
-        self::assertSame('upSleep', $sleep['source']['nativeType']);
-        self::assertSame([
-            'isAccumulative' => false,
-            'totalDurationMinutes' => 584,
-            'timingValid' => false,
-            'segments' => [
-                ['durationMinutes' => 3.5, 'type' => 'deep_sleep'],
-                ['durationMinutes' => 580.5, 'type' => 'light_sleep'],
-            ],
-        ], $sleep['data']);
-        self::assertArrayNotHasKey('startTime', $sleep['data']);
-        self::assertArrayNotHasKey('endTime', $sleep['data']);
     }
 
     public function testOnlineDownlinkPublishesCommandMetadata(): void
@@ -602,7 +531,7 @@ final class DeviceHubMqttContractTest extends TestCase
             self::markTestSkipped('ffmpeg with AMR-NB support is not available');
         }
         $mqtt = new ContractRecordingHubMqttBridge();
-        $queue = new \Hub\Device\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
         $hub = new DeviceHubServer($this->whitelist, $mqtt, downlinkQueue: $queue);
 
         $payload = \Hub\Command\DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
@@ -801,7 +730,6 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame(300.0, $location['data']['accuracyMeters']);
     }
 
-
     private function commercialResolver(): \Hub\Device\CommercialModelResolver
     {
         return new class extends \Hub\Device\CommercialModelResolver {
@@ -907,49 +835,5 @@ final class ContractFakeConnection implements ConnectionInterface
     {
         $this->closed = true;
         return $this;
-    }
-}
-
-final class ContractFakePendingDownlinkQueue implements PendingDownlinkQueue
-{
-    /** @var array<string, array<string, PendingDownlink>> */
-    private array $items = [];
-    public bool $failEnqueue = false;
-    public int $lastTtl = 0;
-
-    /** @param array<string, mixed>|null $command */
-    public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
-    {
-        if ($this->failEnqueue) {
-            throw new \RuntimeException('Redis unavailable');
-        }
-
-        $this->lastTtl = $ttlSeconds;
-        $dedupeKey = $this->dedupeKey($bytes, $command);
-        $downlink = new PendingDownlink($imei, $dedupeKey, $bytes, $command, time(), time() + $ttlSeconds);
-        $this->items[$imei][$dedupeKey] = $downlink;
-
-        return $downlink;
-    }
-
-    public function pendingFor(string $imei): array
-    {
-        return array_values($this->items[$imei] ?? []);
-    }
-
-    public function remove(PendingDownlink $downlink): void
-    {
-        unset($this->items[$downlink->imei][$downlink->dedupeKey]);
-    }
-
-    /** @param array<string, mixed>|null $command */
-    private function dedupeKey(string $bytes, ?array $command): string
-    {
-        $nativeType = is_array($command) ? (string)($command['nativeType'] ?? '') : '';
-        if ($nativeType !== '') {
-            return 'command:' . (string)($command['protocol'] ?? 'unknown') . ':' . $nativeType;
-        }
-
-        return 'raw:' . hash('sha256', $bytes);
     }
 }

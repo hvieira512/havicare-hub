@@ -42,17 +42,6 @@ final class BridgeUnlinkedWarningTest extends TestCase
         @unlink($this->logFile);
     }
 
-    public function testTheSamePairIsWarnedAboutOncePerWindow(): void
-    {
-        $bridge = $this->bridge();
-
-        for ($i = 0; $i < 20; $i++) {
-            $bridge->handleReceivedMessage(self::TOPIC, self::session());
-        }
-
-        self::assertSame(1, $this->warnings());
-    }
-
     /** Passada a janela, volta a avisar: o par continua a insistir e isso é para se saber. */
     public function testItWarnsAgainOnceTheWindowHasPassed(): void
     {

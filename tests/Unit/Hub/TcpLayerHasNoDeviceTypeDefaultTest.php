@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceHubServer;
-use Hub\Device\DeviceSession;
+use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
  * A camada TCP não tem tipo de dispositivo por omissão: um `'watch'` por omissão publica um
@@ -14,65 +16,26 @@ use PHPUnit\Framework\TestCase;
  */
 final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
 {
-    public function testTheSessionDoesNotInventADeviceType(): void
+    public function testADispenserPublishesUnderItsOwnDeviceType(): void
     {
-        $reflection = new \ReflectionClass(DeviceSession::class);
+        $mqtt = new RecordingHubMqttBridge();
+        $hub = new DeviceHubServer(IngressFixtures::whitelist([
+            'AABBCCDDEEFF' => IngressFixtures::device('Zayata', 'M228', 'pill_dispenser'),
+        ]), $mqtt);
+        $adapter = new PillDispenserAdapter();
+        $connection = new PillFakeConnection();
 
-        foreach ($reflection->getMethods() as $method) {
-            foreach ($method->getParameters() as $parameter) {
-                if ($parameter->getName() !== 'deviceType' || !$parameter->isDefaultValueAvailable()) {
-                    continue;
-                }
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, $adapter->encodeOutgoing(['packetType' => 0x01, 'serial' => 1, 'mac' => 'AABBCCDDEEFF']));
+        $hub->onMessage($connection, $adapter->encodeOutgoing([
+            'packetType' => 0x02,
+            'serial' => 2,
+            'mac' => 'AABBCCDDEEFF',
+            'tlv' => [0x8103 => ['value' => "\x50"]],
+        ]));
 
-                self::assertNotSame(
-                    'watch',
-                    $parameter->getDefaultValue(),
-                    "DeviceSession::{$method->getName()} assume que um aparelho TCP é um relógio.",
-                );
-            }
-        }
-    }
-
-    public function testTheHubServerDoesNotInventADeviceType(): void
-    {
-        $reflection = new \ReflectionClass(DeviceHubServer::class);
-        $assuming = [];
-
-        foreach ($reflection->getMethods() as $method) {
-            foreach ($method->getParameters() as $parameter) {
-                if ($parameter->getName() !== 'deviceType' || !$parameter->isDefaultValueAvailable()) {
-                    continue;
-                }
-                if ($parameter->getDefaultValue() === 'watch') {
-                    $assuming[] = $method->getName();
-                }
-            }
-        }
-
-        self::assertSame([], $assuming, 'Estes métodos assumem que um aparelho TCP é um relógio.');
-    }
-
-    /** Nem no código: um `?? 'watch'` escapa a qualquer verificação de assinaturas. */
-    public function testNoSourceLineFallsBackToWatch(): void
-    {
-        $files = [
-            'src/Device/DeviceHubServer.php',
-            'src/Device/DeviceSession.php',
-            'src/Ingress/Tcp/HubTcpIngress.php',
-        ];
-
-        $lines = [];
-        foreach ($files as $file) {
-            $contents = file_get_contents(dirname(__DIR__, 3) . '/' . $file);
-            self::assertIsString($contents, $file);
-
-            foreach (explode("\n", $contents) as $number => $line) {
-                if (str_contains($line, "'watch'")) {
-                    $lines[] = $file . ':' . ($number + 1) . ' -> ' . trim($line);
-                }
-            }
-        }
-
-        self::assertSame([], $lines);
+        $published = [...$mqtt->statuses, ...$mqtt->events, ...$mqtt->telemetry, ...$mqtt->raw];
+        self::assertNotSame([], $mqtt->telemetry, 'a leitura tem de chegar à telemetria');
+        self::assertSame(['pill_dispenser'], array_values(array_unique(array_column($published, 'deviceType'))));
     }
 }

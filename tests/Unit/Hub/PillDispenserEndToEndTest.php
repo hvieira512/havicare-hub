@@ -19,47 +19,57 @@ use Tests\Support\Doubles\LocalTcpPort;
 /** Do socket ao canal do MQTT, com as tramas na forma em que o aparelho as manda: cifradas. */
 final class PillDispenserEndToEndTest extends TestCase
 {
-    private const DEVICE_NUMBER = 0x0000AABBCCDDEEFF;
+    private const IMEI = '869243062262262';
+
+    /** Heartbeat real, cifrado: bateria a 100% e 25 °C. */
+    private const HEARTBEAT = 'AA30000001031F000004026222266230246948021EB35A0509D9B171F6D2BB1C'
+        . 'EAEA70649DE296A02754B4507058B69C05F08AEF35';
+
+    /** Evento real de toma, cifrado: alarme 3, compartimento 9, tomada a horas. */
+    private const INTAKE = 'AA55000001C71E000004026222266230246948031CF05A056FDBF271F6D3B25F'
+        . 'E2FC5B54DFE6B4BE413A69CBD368BD964E43F81F121A5C6C6518C2A2B0ECE99A'
+        . 'DDC28D49E1BA0E24781E513A88DC37ED79CE63A4F8904AF71B31';
 
     private Whitelist $whitelist;
 
     protected function setUp(): void
     {
         $this->whitelist = IngressFixtures::whitelist([
-            'AABBCCDDEEFF' => IngressFixtures::device('Zayata', 'M228', 'pill_dispenser'),
+            self::IMEI => IngressFixtures::device('Zayata', 'M228', 'pill_dispenser'),
         ]);
     }
 
-    /** A chave e o IV são o Device Number em hexadecimal maiúsculo de dezasseis caracteres. */
     public function testAnEncryptedIntakeReachesTheEventChannel(): void
     {
-        $mqtt = $this->exchange([
-            $this->frame(0x01, 1),
-            $this->encrypt($this->frame(0x03, 2, [
-                0xC201 => "\x02",
-                0xC203 => '2026-09-18T20:05:04',
-                0xC204 => "\x0C",
-                0xC206 => "\x03",
-            ])),
-        ], 2);
+        $received = '';
+        $mqtt = $this->exchange([$this->frame(0x01, 1), (string)hex2bin(self::INTAKE)], 2, $received);
+
+        self::assertCount(1, $mqtt->statuses);
+        self::assertSame('online', $mqtt->statuses[0]['payload']['state']);
+        self::assertSame('device.connected', $mqtt->events[0]['payload']['type']);
+
+        // O primeiro ACK mede-se pelo seu campo de comprimento: o 0xAA também aparece dentro da trama.
+        $ack = (new PillDispenserAdapter())->decodeIncoming(
+            substr($received, 0, 3 + unpack('v', substr($received, 1, 2))[1] + 2)
+        );
+        self::assertIsArray($ack);
+        self::assertSame('register_ack', $ack['type']);
+        self::assertSame(self::IMEI, $ack['imei']);
 
         $intake = $this->ofType($mqtt->events, 'medication_intake');
         self::assertCount(1, $intake, 'a toma cifrada não chegou ao canal de eventos');
-        self::assertSame('missed', $intake[0]['data']['result']);
+        self::assertSame('on_time', $intake[0]['data']['result']);
         self::assertSame(3, $intake[0]['data']['alarmSlot']);
-        self::assertSame(12, $intake[0]['data']['cellNumber']);
+        self::assertSame(9, $intake[0]['data']['cellNumber']);
     }
 
     /** Uma leitura sai por `telemetry`, e não pelo canal com garantia de entrega. */
     public function testAReadingReachesTheTelemetryChannel(): void
     {
-        $mqtt = $this->exchange([
-            $this->frame(0x01, 1),
-            $this->encrypt($this->frame(0x02, 2, [0x8103 => "\x50", 0x810E => "\x19"])),
-        ], 2);
+        $mqtt = $this->exchange([$this->frame(0x01, 1), (string)hex2bin(self::HEARTBEAT)], 2);
 
         self::assertCount(1, $this->ofType($mqtt->telemetry, 'battery'));
-        self::assertSame(80, $this->ofType($mqtt->telemetry, 'battery')[0]['data']['percent']);
+        self::assertSame(100, $this->ofType($mqtt->telemetry, 'battery')[0]['data']['percent']);
         self::assertCount(1, $this->ofType($mqtt->telemetry, 'ambient_temperature'));
 
         self::assertSame([], $this->ofType($mqtt->events, 'battery'));
@@ -71,7 +81,7 @@ final class PillDispenserEndToEndTest extends TestCase
     {
         $mqtt = $this->exchange([
             $this->frame(0x01, 1),
-            $this->encrypt($this->frame(0x04, 2, [0x8135 => "\x06"])),
+            $this->frame(0x04, 2, [0x8135 => ['value' => "\x06"]]),
         ], 2);
 
         $change = $this->ofType($mqtt->events, 'medication_alarm_change');
@@ -84,62 +94,23 @@ final class PillDispenserEndToEndTest extends TestCase
     /** Sem a guarda do TFLV, ruído passaria por TAGs inventadas e viraria telemetria fabricada. */
     public function testABodyThatDoesNotDecryptPublishesNothing(): void
     {
-        $frame = $this->frame(0x02, 2, [0x8103 => "\x50"]);
-        $body = substr($frame, 20, -2);
-        $broken = substr($frame, 0, 9)
-            . chr(ord($frame[9]) | 0x04)
-            . substr($frame, 10, 10)
-            . strrev($body)
-            . substr($frame, -2);
-
-        $mqtt = $this->exchange([$this->frame(0x01, 1), $this->withCrc($broken)], 2);
+        $noise = strrev(substr((string)hex2bin(self::HEARTBEAT), 20, -2));
+        $mqtt = $this->exchange([$this->frame(0x01, 1), $this->frame(0x02, 2, flag: 0x04, appDataRaw: $noise)], 2);
 
         self::assertSame([], $this->ofType($mqtt->telemetry, 'battery'));
     }
 
     /**
-     * @param array<int, string> $tlv
+     * @param array<int, array{value: string}> $tlv
      */
-    private function frame(int $packetType, int $serial, array $tlv = []): string
+    private function frame(int $packetType, int $serial, array $tlv = [], int $flag = 0, ?string $appDataRaw = null): string
     {
-        $entries = [];
-        foreach ($tlv as $tag => $value) {
-            $entries[$tag] = ['value' => $value];
+        $payload = ['packetType' => $packetType, 'serial' => $serial, 'imei' => self::IMEI, 'tlv' => $tlv];
+        if ($appDataRaw !== null) {
+            $payload += ['flag' => $flag, 'appDataRaw' => $appDataRaw];
         }
 
-        return (new PillDispenserAdapter())->encodeOutgoing([
-            'packetType' => $packetType,
-            'serial' => $serial,
-            'mac' => 'AABBCCDDEEFF',
-            'tlv' => $entries,
-        ]);
-    }
-
-    /** Liga a bandeira da cifra e cifra o corpo, como o aparelho faz. */
-    private function encrypt(string $frame): string
-    {
-        $key = sprintf('%016X', self::DEVICE_NUMBER);
-        $cipher = openssl_encrypt(
-            substr($frame, 20, -2),
-            'aes-128-cfb',
-            $key,
-            OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING,
-            $key,
-        );
-        self::assertIsString($cipher);
-
-        return $this->withCrc(
-            substr($frame, 0, 9) . chr(ord($frame[9]) | 0x04) . substr($frame, 10, 10) . $cipher . '  '
-        );
-    }
-
-    /** Reescreve o comprimento e o CRC depois de o corpo mudar de tamanho. */
-    private function withCrc(string $frame): string
-    {
-        $body = substr($frame, 3, -2);
-        $withLength = "\xAA" . pack('v', strlen($body)) . $body;
-
-        return $withLength . pack('v', PillDispenserAdapter::crc16Modbus(substr($withLength, 1)));
+        return (new PillDispenserAdapter())->encodeOutgoing($payload);
     }
 
     /**
@@ -155,11 +126,11 @@ final class PillDispenserEndToEndTest extends TestCase
     }
 
     /**
-     * Escreve as tramas no socket e devolve o que o hub publicou.
+     * Escreve as tramas no socket e devolve o que o hub publicou; os bytes de volta ficam em `$received`.
      *
      * @param list<string> $frames
      */
-    private function exchange(array $frames, int $expectedAcks): RecordingHubMqttBridge
+    private function exchange(array $frames, int $expectedAcks, string &$received = ''): RecordingHubMqttBridge
     {
         $loop = new StreamSelectLoop();
         $port = LocalTcpPort::free();
@@ -172,10 +143,9 @@ final class PillDispenserEndToEndTest extends TestCase
 
         $error = null;
         $connector = new Connector($loop);
-        $loop->addTimer(0.01, static function () use ($connector, $port, $frames, $expectedAcks, &$error, $loop): void {
+        $loop->addTimer(0.01, static function () use ($connector, $port, $frames, $expectedAcks, &$received, &$error, $loop): void {
             $connector->connect("tcp://127.0.0.1:$port")->then(
-                static function (ConnectionInterface $connection) use ($frames, $expectedAcks, $loop): void {
-                    $received = '';
+                static function (ConnectionInterface $connection) use ($frames, $expectedAcks, &$received, $loop): void {
                     $connection->on('data', static function (string $data) use (&$received, $connection, $loop, $expectedAcks): void {
                         $received .= $data;
                         if (substr_count($received, "\xAA") >= $expectedAcks) {

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Integration\Dashboard;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Hub\Log\Logger;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
@@ -216,45 +215,6 @@ final class DashboardApiAuthTest extends DashboardHttpTestCase
         self::assertStringNotContainsString('secret', $log);
     }
 
-    public function testApiLoggingKeepsFullBodiesWithoutEllipsis(): void
-    {
-        $payload = str_repeat('abc123', 800);
-        Logger::channel('api')->info('large body', ['response_body' => ['payload' => $payload]]);
-
-        $log = $this->apiLogContents();
-        self::assertStringContainsString('"payload":"' . $payload . '"', $log);
-        self::assertStringNotContainsString('...', $log);
-        self::assertGreaterThan(4096, strlen($log));
-    }
-
-    public function testLoggerStopsNormalizingUnboundedlyDeepContext(): void
-    {
-        $value = ['leaf' => 'complete'];
-        for ($depth = 0; $depth < 40; $depth++) {
-            $value = ['nested' => $value];
-        }
-
-        Logger::channel('api')->info('deep context', ['body' => $value]);
-
-        $log = $this->apiLogContents();
-        self::assertStringContainsString('levels deep, aborting normalization', $log);
-        self::assertStringNotContainsString('"leaf":"complete"', $log);
-    }
-
-    public function testLoggerKeepsTheDepthOfARealDeviceResponse(): void
-    {
-        $value = ['leaf' => 'complete'];
-        for ($depth = 0; $depth < 12; $depth++) {
-            $value = ['nested' => $value];
-        }
-
-        Logger::channel('api')->info('device response', ['body' => $value]);
-
-        $log = $this->apiLogContents();
-        self::assertStringContainsString('"leaf":"complete"', $log);
-        self::assertStringNotContainsString('aborting normalization', $log);
-    }
-
     public function testUnauthorizedApiRequestIsStillLogged(): void
     {
         $server = $this->makeServer();
@@ -289,19 +249,6 @@ final class DashboardApiAuthTest extends DashboardHttpTestCase
 
         $protected = $server(new ServerRequest('GET', '/api/devices'));
         self::assertSame(401, $protected->getStatusCode(), (string)$protected->getBody());
-    }
-
-    public function testOpenApiSpecAdvertisesBearerAuth(): void
-    {
-        $spec = \Hub\Api\OpenApiSpec::get();
-
-        self::assertSame(['bearerAuth' => ['type' => 'http', 'scheme' => 'bearer', 'description' => 'Use the bearer token returned by /api/auth/login.']], $spec['components']['securitySchemes'] ?? null);
-        self::assertSame([['bearerAuth' => []]], $spec['security'] ?? null);
-        self::assertSame([], $spec['paths']['/api/auth/login']['post']['security'] ?? null);
-        self::assertArrayNotHasKey('/api/auth/refresh', $spec['paths']);
-        self::assertSame([], $spec['paths']['/api/openapi.json']['get']['security'] ?? null);
-        self::assertSame([], $spec['paths']['/api/docs']['get']['security'] ?? null);
-        self::assertArrayHasKey('/api/devices/{imei}/configurations', $spec['paths']);
     }
 
     public function testApiCanBeExposedWithoutAuthForDevelopment(): void

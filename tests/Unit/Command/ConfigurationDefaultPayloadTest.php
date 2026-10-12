@@ -68,6 +68,12 @@ final class ConfigurationDefaultPayloadTest extends TestCase
         self::assertSame([], $rejected, 'default payloads their own protocol cannot send');
     }
 
+    /** Um horário de silêncio pré-preenchido recusaria chamadas a quem nunca o pediu. */
+    public function testNeverSavedDoNotDisturbHasNoRanges(): void
+    {
+        self::assertSame(['ranges' => []], ConfigurationInputDefaults::forEntry($this->entry('four-p-touch', 'doNotDisturb')));
+    }
+
     public function testTheWonlexBloodPressureAlertDefaultCarriesBothThresholds(): void
     {
         // O valor por omissão leva os dois limiares que o construtor precisa, e não um

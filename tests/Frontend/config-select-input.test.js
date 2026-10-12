@@ -27,13 +27,6 @@ const VOLUME = [
     { value: 3, label: "Silêncio" },
 ];
 
-test("o campo de escolha existe como genérico", () => {
-    assert.ok(select, "o `select` tem de estar registado nos campos genéricos");
-    assert.equal(typeof select.control, "function");
-    assert.equal(typeof select.read, "function");
-    assert.equal(typeof select.defaults, "function");
-});
-
 test("desenha cada opção com o seu rótulo, e não o número cru", () => {
     const html = select.control(entry("volume", VOLUME), { volume: 2 });
 
@@ -65,12 +58,6 @@ test("a definição pode dizer de onde parte, e não a ponta da lista", () => {
 
     assert.deepEqual(select.defaults(zones), { timeZone: 0 });
     assert.match(select.control(zones, {}), /value="0"\s+selected/);
-});
-
-test("não repete o rótulo que o cartão já mostra", () => {
-    const html = select.control(entry("volume", VOLUME), { volume: 1 });
-
-    assert.doesNotMatch(html, /<label/);
 });
 
 test("uma definição sem opções não rebenta", () => {

@@ -8,16 +8,7 @@ const { initDeviceDetailView, renderDownlinkRequests } = await import(
     "../../src/Dashboard/dashboard/devices/detail.js",
 );
 
-/**
- * Radares, gateways e medidores de fralda não recebem pedidos: a divisão do painel de atividade
- * segue o conteúdo, e não o contrário.
- */
-function column(...classes) {
-    const element = document.createElement("div");
-    element.className = ["col-12", ...classes].join(" ");
-    return element;
-}
-
+/** Radares, gateways e medidores de fralda não recebem pedidos: o painel deles sai. */
 function detailEls() {
     return {
         downlinkRequestCount: document.createElement("div"),
@@ -31,8 +22,8 @@ function detailEls() {
         downlinkPager: document.createElement("div"),
         downlinkPagerSummary: document.createElement("div"),
         downlinkPagerControls: document.createElement("ul"),
-        telemetryColumn: column("col-xl-6", "pe-xl-3"),
-        downlinkColumn: column("col-xl-6", "ps-xl-4"),
+        telemetryColumn: document.createElement("div"),
+        downlinkColumn: document.createElement("div"),
     };
 }
 
@@ -43,44 +34,21 @@ const downlinkRequest = {
     occurredAt: "2026-08-25T11:04:00Z",
 };
 
-test("sem pedidos, os eventos ficam com a linha toda", () => {
+const hidden = (element) => element.classList.contains("d-none");
+
+test("sem pedidos saem a coluna, a régua e o separador dos pedidos", () => {
     const els = detailEls();
     initDeviceDetailView({ els });
     state.downlinkPage = 1;
 
     renderDownlinkRequests([]);
 
-    assert.equal(els.downlinkColumn.classList.contains("d-none"), true);
-    assert.equal(els.telemetryColumn.classList.contains("col-xl-6"), false);
-    assert.equal(els.telemetryColumn.classList.contains("pe-xl-3"), false);
-    // A coluna nunca deixa de ser uma coluna da linha: só deixa de ser metade dela.
-    assert.equal(els.telemetryColumn.classList.contains("col-12"), true);
+    assert.equal(hidden(els.downlinkColumn), true);
+    assert.equal(hidden(els.activityTabs), true);
+    assert.equal(hidden(els.deviceTabRequests), true);
 });
 
-test("com pedidos, volta a divisão a meio", () => {
-    const els = detailEls();
-    initDeviceDetailView({ els });
-    state.downlinkPage = 1;
-
-    renderDownlinkRequests([downlinkRequest]);
-
-    assert.equal(els.downlinkColumn.classList.contains("d-none"), false);
-    assert.equal(els.telemetryColumn.classList.contains("col-xl-6"), true);
-    assert.equal(els.telemetryColumn.classList.contains("pe-xl-3"), true);
-});
-
-/** Empilhados, os painéis são separadores; num radar o dos pedidos está escondido. */
-test("sem pedidos, a régua de separadores sai", () => {
-    const els = detailEls();
-    initDeviceDetailView({ els });
-    state.downlinkPage = 1;
-
-    renderDownlinkRequests([]);
-
-    assert.equal(els.activityTabs.classList.contains("d-none"), true);
-});
-
-test("com pedidos, a régua volta", () => {
+test("com pedidos voltam os três", () => {
     const els = detailEls();
     initDeviceDetailView({ els });
     state.downlinkPage = 1;
@@ -88,19 +56,7 @@ test("com pedidos, a régua volta", () => {
     renderDownlinkRequests([]);
     renderDownlinkRequests([downlinkRequest]);
 
-    assert.equal(els.activityTabs.classList.contains("d-none"), false);
-});
-
-test("desenhar duas vezes o mesmo não muda a largura", () => {
-    // O detalhe redesenha-se a cada mensagem do stream, e o painel não pode saltar de
-    // largura por isso.
-    const els = detailEls();
-    initDeviceDetailView({ els });
-    state.downlinkPage = 1;
-
-    renderDownlinkRequests([downlinkRequest]);
-    const first = els.telemetryColumn.className;
-    renderDownlinkRequests([downlinkRequest]);
-
-    assert.equal(els.telemetryColumn.className, first);
+    assert.equal(hidden(els.downlinkColumn), false);
+    assert.equal(hidden(els.activityTabs), false);
+    assert.equal(hidden(els.deviceTabRequests), false);
 });

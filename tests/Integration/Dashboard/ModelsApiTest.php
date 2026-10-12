@@ -7,7 +7,6 @@ namespace Tests\Integration\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\ModelService;
-use Hub\Domain\DeviceProtocol;
 use Hub\Domain\SupplierCapabilityTemplate;
 use Psr\Http\Message\ServerRequestInterface;
 use Tests\Support\MysqlDashboardTestCase;
@@ -291,30 +290,6 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         )));
     }
 
-    public function testBootstrapSeedsVoerkaW812AsNcsModel(): void
-    {
-        [, $db] = $this->makeApi();
-        $model = $db->models->find('Voerka', 'W812');
-
-        self::assertIsArray($model);
-        self::assertSame('Voerka', $model['supplier_name'] ?? null);
-        self::assertSame('W812', $model['internal_model'] ?? null);
-        self::assertSame('W812', $model['commercial_name'] ?? null);
-        self::assertSame('ncs', $model['device_type'] ?? null);
-    }
-
-    public function testBootstrapSeedsVoerkaW812HelpCallCapability(): void
-    {
-        [, $db] = $this->makeApi();
-        $model = $db->models->find('Voerka', 'W812');
-
-        self::assertIsArray($model);
-        self::assertSame(
-            ['help_call', 'reset'],
-            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
-        );
-    }
-
     public function testUpdateAcceptsGenericCapabilityKeys(): void
     {
         [$api, $db] = $this->makeApi();
@@ -506,30 +481,6 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $reloaded = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($reloaded);
         self::assertSame('L08 Pro Renomeado', $reloaded['commercial_name']);
-    }
-
-    public function testTheMkgwMiniPlugGatewayIsInTheCatalogAsAMokoGateway(): void
-    {
-        [, $db] = $this->makeApi();
-
-        $model = $db->models->find('MOKO', 'MKGW-mini 03-20D');
-
-        self::assertIsArray($model);
-        self::assertSame('gateway', (string)$model['device_type']);
-        // Fala o JSON do MKGW3, e por isso não tem protocolo próprio.
-        self::assertSame('moko-mkgw3', DeviceProtocol::forModel('MOKO', (string)$model['internal_model']));
-    }
-
-    public function testTheMf91IsInTheCatalogAsAWonlexBracelet(): void
-    {
-        [, $db] = $this->makeApi();
-
-        $model = $db->models->find('Wonlex', 'MF91');
-
-        self::assertIsArray($model);
-        self::assertSame('bracelet', (string)$model['device_type']);
-        // A Wonlex vende relógios TCP, e esta pulseira fala BLE.
-        self::assertSame('veepoo-ble', DeviceProtocol::forModel('Wonlex', (string)$model['internal_model']));
     }
 
     /** @return array{0: ModelService, 1: ApiDataAccess} */

@@ -5,6 +5,7 @@ import test from "node:test";
 import "./support/browser-env.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { deliveryStatusFromCommand } from "../../src/Dashboard/dashboard/devices/config/delivery.js";
+import { parseFragment } from "./support/dom.js";
 
 /** O cartão que disparou um pedido diz se ele está em fila, à espera, confirmado ou falhado. */
 const ACTION = {
@@ -33,7 +34,7 @@ test("um aparelho que só acusa a receção não diz confirmado", () => {
 });
 
 test("o cartão da acção mostra o estado do último pedido", () => {
-    const html = renderConfigSection(
+    const badge = parseFragment(renderConfigSection(
         "veepoo-ble",
         ACTION,
         null,
@@ -42,18 +43,15 @@ test("o cartão da acção mostra o estado do último pedido", () => {
         null,
         null,
         { status: "awaiting_ack" },
-    );
+    )).querySelector(".state-badge");
 
-    assert.ok(html.includes("badge"), "devia haver uma pastilha de estado");
-    assert.ok(
-        /aguardar|espera/i.test(html),
-        "a pastilha devia dizer que se está à espera do dispositivo",
-    );
+    assert.ok(badge, "devia haver uma pastilha de estado");
+    assert.match(badge.textContent, /aguardar|espera/i);
 });
 
 /** Sem pedido nenhum ainda, não há estado que inventar. */
 test("uma acção que nunca foi pedida não mostra pastilha", () => {
-    const html = renderConfigSection("veepoo-ble", ACTION, null);
+    const section = parseFragment(renderConfigSection("veepoo-ble", ACTION, null));
 
-    assert.ok(!/badge/.test(html), "não devia haver pastilha antes do primeiro pedido");
+    assert.equal(section.querySelector(".state-badge"), null);
 });

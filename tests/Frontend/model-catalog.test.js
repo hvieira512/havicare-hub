@@ -3,11 +3,34 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 
+/** Os slides para onde se mandou o carrossel: o 0 é a lista. */
+const slides = [];
+
+/** O carrossel do Bootstrap, reduzido ao que estes módulos lhe pedem. */
+globalThis.bootstrap = {
+    Carousel: class {
+        constructor(element) {
+            this._element = element;
+        }
+
+        to(index) {
+            slides.push(index);
+        }
+    },
+};
+
+globalThis.fetch = () =>
+    Promise.resolve({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve("{\"data\":[]}"),
+    });
+
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initSettingsModels } = await import(
     "../../src/Dashboard/dashboard/settings/models/shell.js",
 );
-const { renderModelsSection } = await import(
+const { backToModelList, loadSettingsModelsSection, renderModelsSection } = await import(
     "../../src/Dashboard/dashboard/settings/models/list.js",
 );
 
@@ -164,12 +187,62 @@ test("uma busca sem resultados diz que não encontrou, e não fica em branco", (
     assert.equal(summary.textContent, "Sem resultados");
 });
 
-test("cada tipo abre e fecha o seu grupo", () => {
-    const { root } = render();
+const elementWithId = (id) => {
+    const element = document.createElement("div");
+    element.id = id;
+    document.body.append(element);
+    return element;
+};
 
-    const target = root
-        .querySelector(".card-body > button[data-bs-target]")
-        .getAttribute("data-bs-target");
-    assert.equal(target, "#catalogType-watch");
-    assert.equal(root.querySelectorAll(`${target} .catalog-model`).length, 3);
+const els = {
+    modelsCarousel: (() => {
+        const carousel = elementWithId("modelsCarousel");
+        carousel.innerHTML =
+            "<div class=\"carousel-inner\"><div class=\"carousel-item\"></div>" +
+            "<div class=\"carousel-item\"></div><div class=\"carousel-item active\"></div></div>";
+        return carousel;
+    })(),
+    modelsBreadcrumb: elementWithId("modelsBreadcrumb"),
+    modelsBreadcrumbModels: elementWithId("modelsBreadcrumbModels"),
+    modelsBreadcrumbNew: elementWithId("modelsBreadcrumbNew"),
+    modelsBreadcrumbCurrent: elementWithId("modelsBreadcrumbCurrent"),
+    settingsCloseBtn: elementWithId("settingsCloseBtn"),
+    modelDetailActionBar: elementWithId("modelDetailActionBar"),
+    modelCatalog: elementWithId("modelCatalog"),
+    modelsTabSummary: elementWithId("modelsTabSummary"),
+    modelsListSearch: elementWithId("modelsListSearch"),
+};
+
+const onTheModelSheet = () => {
+    slides.length = 0;
+    els.modelDetailActionBar.className = "d-flex";
+    els.modelsBreadcrumb.classList.remove("d-none");
+    els.modelsBreadcrumbCurrent.textContent = "R03";
+    state.settingsModal.modelsCarousel = new bootstrap.Carousel(els.modelsCarousel);
+    state.settingsModal.currentCapabilitiesModel = { id: 92 };
+};
+
+test("voltar à lista fecha a ficha, a migalha e a barra de gravar", () => {
+    initSettingsModels({ els, ui: {} });
+    onTheModelSheet();
+    state.settingsModal.sectionLoaded.models = true;
+
+    backToModelList();
+
+    assert.deepEqual(slides, [0]);
+    assert.equal(els.modelDetailActionBar.className, "d-none");
+    assert.equal(els.modelsBreadcrumb.classList.contains("d-none"), true);
+    assert.equal(state.settingsModal.currentCapabilitiesModel, null);
+});
+
+/** Carregar o separador é o que reabrir o modal faz, e a entrada dele é a lista. */
+test("carregar o catálogo traz o carrossel de volta à lista", async () => {
+    initSettingsModels({ els, ui: {} });
+    onTheModelSheet();
+
+    await loadSettingsModelsSection();
+
+    assert.deepEqual(slides, [0], "o carrossel ficou na ficha de um modelo que já não existe");
+    assert.equal(els.modelDetailActionBar.className, "d-none");
+    assert.equal(state.settingsModal.currentCapabilitiesModel, null);
 });

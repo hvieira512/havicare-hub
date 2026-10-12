@@ -118,22 +118,4 @@ final class DashboardNotificationRepositoryTest extends MysqlDashboardTestCase
             );
         }
     }
-
-    public function testDeleteRemovesNotification(): void
-    {
-        $this->repository->record(
-            'device_not_authorized',
-            '861265062544868',
-            'vivistar-iw',
-            '',
-            '',
-            'device_not_authorized'
-        );
-        $id = (int)$this->repository->latest(20)[0]['id'];
-
-        self::assertTrue($this->repository->delete($id));
-        self::assertFalse($this->repository->delete($id));
-        self::assertSame([], $this->repository->latest(20));
-        self::assertSame(0, $this->repository->unreadCount());
-    }
 }

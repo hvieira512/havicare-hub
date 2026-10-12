@@ -22,15 +22,6 @@ final class BridgeMaintenanceFailureTest extends TestCase
 
     private float $now = 1000.0;
 
-    public function testAFailedPublishDuringMaintenanceDoesNotEscape(): void
-    {
-        [$bridge, $mqtt] = $this->bridgeWithTwoIdleGateways();
-
-        $bridge->runDueMaintenance();
-
-        self::assertGreaterThan(0, $mqtt->attempts, 'a manutenção chegou a tentar publicar');
-    }
-
     public function testTheSecondGatewayIsStillExpiredWhenTheFirstPublishFails(): void
     {
         [$bridge, $mqtt] = $this->bridgeWithTwoIdleGateways();

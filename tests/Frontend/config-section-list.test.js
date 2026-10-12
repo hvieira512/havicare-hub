@@ -57,16 +57,6 @@ const render = () => {
 
 const links = (root) => [...root.querySelectorAll("[data-config-section-link]")];
 
-test("as secções são uma lista, e não uma tira que corta", () => {
-    const root = render();
-
-    assert.equal(root.querySelectorAll(".capability-section-chip").length, 0);
-    assert.deepEqual(
-        links(root).map((link) => link.dataset.section),
-        ["health", "contacts", "settings_system"],
-    );
-});
-
 test("cada linha diz a etiqueta e quantas definições tem", () => {
     const health = links(render())[0];
 

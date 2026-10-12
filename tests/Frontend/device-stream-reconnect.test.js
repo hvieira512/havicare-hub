@@ -207,3 +207,47 @@ test("sem credencial não se insiste", async () => {
     const pending = harness.scheduled.filter((entry) => !entry.cancelled && !entry.done);
     assert.deepEqual(pending, [], "sem token a religação só produzia 401 em série");
 });
+
+/** Um token morto não melhora com tentativas: o 401 e o 403 avisam a sessão e não religam. */
+const resetWithExpiredToken = () => {
+    reset();
+    document.body.dataset.dashboardAuthRequired = "true";
+    setDashboardApiToken({ access_token: "token-expirado" });
+};
+
+/** Conta os pedidos de autenticação emitidos enquanto corre o que lhe for dado. */
+const countingAuthRequired = async (run) => {
+    let requested = 0;
+    const listener = () => {
+        requested += 1;
+    };
+    window.addEventListener("hub-dashboard-auth-required", listener);
+    try {
+        await run();
+    } finally {
+        window.removeEventListener("hub-dashboard-auth-required", listener);
+    }
+    return requested;
+};
+
+const livePendingTimers = () => harness.scheduled.filter((entry) => !entry.cancelled && !entry.done);
+
+for (const status of [401, 403]) {
+    test(`um ${status} pede autenticação em vez de religar`, async () => {
+        resetWithExpiredToken();
+        harness.refuseWith(status);
+
+        const requested = await countingAuthRequired(async () => {
+            stream.connectDeviceStream("123");
+            await harness.settle();
+        });
+
+        assert.equal(requested, 1, "quem trata da sessão tem de ser avisado");
+        assert.deepEqual(
+            livePendingTimers(),
+            [],
+            "com a credencial recusada, religar só repete a recusa",
+        );
+        assert.equal(stream.isDeviceStreamLive(), false);
+    });
+}

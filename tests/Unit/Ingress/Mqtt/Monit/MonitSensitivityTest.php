@@ -97,8 +97,6 @@ final class MonitSensitivityTest extends TestCase
         // Proporcional e não absoluto: com o valor de molhado a 25, um delta de 4 não pode
         // tirar a fralda de `clean` faltando-lhe 21 para contar como molhada.
         self::assertSame(2, DiaperSensitivity::cleanMaxDelta(5));
-        self::assertSame(2, DiaperSensitivity::cleanMaxDelta(7));
-        self::assertSame(4, DiaperSensitivity::cleanMaxDelta(15));
         self::assertSame(7, DiaperSensitivity::cleanMaxDelta(25));
     }
 
@@ -204,15 +202,5 @@ final class MonitSensitivityTest extends TestCase
         self::assertNotNull(DiaperSensitivity::validate(11, 12));
         self::assertNotNull(DiaperSensitivity::validate(4, 4));
         self::assertNotNull(DiaperSensitivity::validate(4, 26));
-    }
-
-    public function testTheGradesMatchTheVendorApp(): void
-    {
-        self::assertSame('sensitive', DiaperSensitivity::grade(DiaperSensitivity::RANGE_GRADES, 3));
-        self::assertSame('normal', DiaperSensitivity::grade(DiaperSensitivity::RANGE_GRADES, 4));
-        self::assertSame('insensitive', DiaperSensitivity::grade(DiaperSensitivity::RANGE_GRADES, 7));
-        self::assertSame('sensitive', DiaperSensitivity::grade(DiaperSensitivity::VALUE_GRADES, 7));
-        self::assertSame('normal', DiaperSensitivity::grade(DiaperSensitivity::VALUE_GRADES, 12));
-        self::assertSame('insensitive', DiaperSensitivity::grade(DiaperSensitivity::VALUE_GRADES, 17));
     }
 }

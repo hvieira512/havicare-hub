@@ -41,4 +41,16 @@ final class DeviceProtocolTest extends TestCase
     {
         self::assertSame('', DeviceProtocol::forModel('Nobody', 'X1'));
     }
+
+    /** Fala o JSON do MKGW3, e por isso não tem protocolo próprio. */
+    public function testTheMkgwMiniPlugGatewaySpeaksTheMkgw3Protocol(): void
+    {
+        self::assertSame('moko-mkgw3', DeviceProtocol::forModel('MOKO', 'MKGW-mini 03-20D'));
+    }
+
+    /** A Wonlex vende relógios TCP, e esta pulseira fala BLE. */
+    public function testTheMf91BraceletSpeaksBleAndNotTheWonlexWatchProtocol(): void
+    {
+        self::assertSame('veepoo-ble', DeviceProtocol::forModel('Wonlex', 'MF91'));
+    }
 }

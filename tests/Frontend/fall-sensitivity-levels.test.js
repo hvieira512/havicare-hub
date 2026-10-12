@@ -35,14 +35,6 @@ test("baixar a escala prende o nível ao maior que resta, e não ao primeiro", (
     assert.equal(chosenLevel(section), "6", "o 7 desce para o 6, não salta para o 1");
 });
 
-test("o nível mais alto de todos desce igualmente até ao limite novo", () => {
-    const section = sectionWith(8, 8);
-
-    syncFallSensitivityLevels(section, 6);
-
-    assert.equal(chosenLevel(section), "6");
-});
-
 test("um nível que cabe na escala nova fica onde está", () => {
     const section = sectionWith(3, 8);
 

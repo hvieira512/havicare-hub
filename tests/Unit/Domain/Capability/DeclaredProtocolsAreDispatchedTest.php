@@ -8,6 +8,7 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\HubAppliedCapability;
+use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -68,25 +69,44 @@ final class DeclaredProtocolsAreDispatchedTest extends TestCase
         return $keys;
     }
 
-    /** Um protocolo que a capacidade não anuncia tem de ser recusado, e não absorvido. */
-    public function testAnUndeclaredProtocolIsRefused(): void
+    /**
+     * Um protocolo que a capacidade não anuncia é recusado, e antes de validar: a recusa aponta
+     * o protocolo e não o valor.
+     */
+    public function testAnUndeclaredProtocolIsRefusedForBeingUnsupported(): void
     {
-        $absorbed = [];
-        foreach ($this->contracts() as $key => $capability) {
-            $protocol = $capability->supportedProtocols()[0] ?? null;
-            if ($protocol === null) {
+        $registry = new CapabilityRegistry();
+        $all = array_keys(ProtocolRegistry::all());
+        $wrong = [];
+        $checked = 0;
+
+        foreach (CapabilityCatalog::keys() as $key) {
+            $contract = $registry->get($key);
+            if ($contract === null) {
                 continue;
             }
 
-            try {
-                $capability->toNative('nao-existe-este-protocolo', $capability->defaultValue($protocol));
-                $absorbed[] = $key;
-            } catch (\InvalidArgumentException) {
-                // recusado, que é o que se pede
+            $declared = $contract->supportedProtocols();
+            // A capacidade genérica anuncia todos os protocolos de propósito.
+            if (count($declared) === count($all)) {
+                continue;
+            }
+
+            foreach (array_diff($all, $declared) as $protocol) {
+                $checked++;
+                try {
+                    $contract->toNative($protocol, []);
+                    $wrong[] = "{$key} serve `{$protocol}` sem o anunciar.";
+                } catch (\Throwable $e) {
+                    if (!str_contains($e->getMessage(), 'Unsupported protocol')) {
+                        $wrong[] = "{$key} recusa `{$protocol}` pela razão errada: {$e->getMessage()}";
+                    }
+                }
             }
         }
 
-        self::assertSame([], $absorbed);
+        self::assertGreaterThan(0, $checked, 'Nenhum par contrato/protocolo foi verificado.');
+        self::assertSame([], $wrong);
     }
 
     /** @return array<string, \Hub\Domain\Capability\CapabilityContract> */

@@ -41,19 +41,8 @@ final class RequestBinderTest extends TestCase
         );
 
         self::assertIsArray($result);
-        self::assertSame(['must be of type ?int'], $result['error']['fields']['licenseRefId']);
-    }
-
-    /** O erro diz de que campo é. */
-    public function testATypeErrorIsReportedOnceAndNamesItsField(): void
-    {
-        $result = $this->binder->bind(
-            ['username' => 'tenant', 'licenseRefId' => 'abc'],
-            ApiUserWriteRequest::class
-        );
-
-        self::assertIsArray($result);
         self::assertSame(['licenseRefId'], array_keys($result['error']['fields']));
+        self::assertSame(['must be of type ?int'], $result['error']['fields']['licenseRefId']);
     }
 
     /** As duas grafias aceitam-se por uma regra só, e não campo a campo. */

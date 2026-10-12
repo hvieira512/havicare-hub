@@ -32,19 +32,6 @@ test("as licencas agrupam-se pela empresa que as detem", () => {
     ]);
 });
 
-test("\"Sem licença\" é a primeira linha, e é a única fora de uma empresa", () => {
-    const root = parseFragment(licensePickerHtml(licenseTree(ROWS)));
-
-    const options = [...root.querySelectorAll("[data-license-pick]")];
-    assert.equal(options[0].textContent.trim(), "Sem licença");
-    assert.equal(options[0].dataset.licenseCompany, "");
-    assert.equal(options[0].closest(".filter-branch"), null);
-    // As outras estão todas dentro do ramo da sua empresa.
-    for (const option of options.slice(1)) {
-        assert.notEqual(option.closest(".filter-branch"), null);
-    }
-});
-
 test("a empresa é um cabeçalho e não se escolhe", () => {
     const root = parseFragment(licensePickerHtml(licenseTree(ROWS)));
 

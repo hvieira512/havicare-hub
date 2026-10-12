@@ -60,33 +60,6 @@ final class ConnectionRegistryTest extends TestCase
         self::assertTrue($registry->isOnline($imei), 'o dispositivo continua online');
     }
 
-    /**
-     * A anterior, encerrada ao reautenticar, não volta como expirável, senão sairia um
-     * `device.disconnected` para um IMEI que está online.
-     */
-    public function testTheSupersededConnectionDoesNotResurfaceAsAnExpiredSession(): void
-    {
-        $registry = new ConnectionRegistry();
-        $imei = '865028000000321';
-
-        $first = new FakeHubConnection(30);
-        $registry->open($first);
-        $registry->authenticate($first, new DeviceIdentity($imei, 'wonlex-json', 'D'), 'Wonlex', 'HW20PRO');
-
-        $second = new FakeHubConnection(31);
-        $registry->open($second);
-        $registry->authenticate($second, new DeviceIdentity($imei, 'wonlex-json', 'D'), 'Wonlex', 'HW20PRO');
-
-        // A nova mantém-se activa; só a antiga estaria inactiva -- e essa já não existe.
-        sleep(2);
-        $registry->touch($second);
-        $expired = $registry->expireIdleConnections(1);
-
-        self::assertSame([], $expired, 'nenhuma sessão expira: a antiga foi fechada, a nova está activa');
-        self::assertTrue($registry->isOnline($imei));
-        self::assertSame($second, $registry->connectionFor($imei));
-    }
-
     /** Uma ligação diferente, de outro IMEI, não é tocada quando um IMEI reautentica. */
     public function testReauthenticationLeavesOtherDevicesAlone(): void
     {

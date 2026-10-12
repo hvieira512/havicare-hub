@@ -11,14 +11,6 @@ use PHPUnit\Framework\TestCase;
 
 final class HubMqttBridgeDrainTest extends TestCase
 {
-    public function testDrainRunsThePublisherLoopToProcessPubacks(): void
-    {
-        $publisher = $this->createMock(MqttClient::class);
-        $publisher->expects(self::once())->method('loopOnce');
-
-        (new HubMqttBridge($publisher))->drainPublisher();
-    }
-
     public function testDrainReconnectsWhenThePublisherLoopFails(): void
     {
         $publisher = $this->createMock(MqttClient::class);

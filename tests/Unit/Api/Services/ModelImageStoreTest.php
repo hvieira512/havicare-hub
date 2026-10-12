@@ -31,30 +31,6 @@ final class ModelImageStoreTest extends TestCase
         );
     }
 
-    /** Uma imagem normal continua a passar: o travão não pode fechar a porta a toda a gente. */
-    public function testAnOrdinaryImageStillPasses(): void
-    {
-        if (!function_exists('imagecreatetruecolor') || !function_exists('imagejpeg')) {
-            self::markTestSkipped('o GD com JPEG é preciso para gravar a imagem reduzida');
-        }
-
-        $canvas = \imagecreatetruecolor(800, 600);
-        ob_start();
-        \imagepng($canvas);
-        $png = (string)ob_get_clean();
-
-        $result = (new ModelImageStore())->store($this->upload($png));
-
-        self::assertIsString($result, 'uma imagem de 800x600 está muito abaixo do orçamento');
-        // Só o nome do ficheiro: a rota por onde ele se serve é constante e vive no código.
-        self::assertMatchesRegularExpression('#^[a-f0-9]{32}\.jpg$#', $result);
-
-        $stored = __DIR__ . '/../../../../var/dashboard/model-images/' . basename($result);
-        if (is_file($stored)) {
-            unlink($stored);
-        }
-    }
-
     /** Bytes que não são imagem nenhuma dão `invalid_image`, e não o erro das dimensões. */
     public function testGarbageIsStillReportedAsAnInvalidImage(): void
     {

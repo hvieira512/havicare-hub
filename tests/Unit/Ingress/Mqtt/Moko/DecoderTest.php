@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Ingress\Mqtt\Moko\GatewayNormalizer;
-use Hub\Ingress\Mqtt\Moko\Mkgw3MessageDecoder;
 use Hub\Ingress\Mqtt\Moko\Mkgw4MessageDecoder;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Ingress\Mqtt\Monit\MonitMecsProDecoder;
@@ -24,21 +23,6 @@ final class DecoderTest extends TestCase
         $topic = GatewayTopic::parse('havicare-hub/null/0/gw/d4:8c:49:f7:90:9c/raw');
         self::assertSame('d48c49f7909c', $topic?->gatewayMac);
         self::assertNull(GatewayTopic::parse('havicare-hub/null/0/gateway/d48c49f7909c/raw'));
-    }
-
-    public function testDecodesMkgw3HeartbeatAndNormalizesConnectivity(): void
-    {
-        $decoded = (new Mkgw3MessageDecoder())->decode(json_encode([
-            'msg_id' => 3004,
-            'device_info' => ['mac' => 'd48c49f7909c'],
-            'data' => ['timestamp' => 0, 'net_interface' => 1, 'wifi_rssi' => -54],
-        ], JSON_THROW_ON_ERROR));
-        self::assertSame(3004, $decoded['messageId'] ?? null);
-
-        $telemetry = (new GatewayNormalizer())->telemetry($decoded, $this->device('gateway'));
-        self::assertSame('connectivity', $telemetry[0]['type'] ?? null);
-        self::assertSame(['interface' => 'wifi', 'signalStrengthDbm' => -54], $telemetry[0]['data'] ?? null);
-        self::assertSame('moko-mkgw3', $telemetry[0]['source']['protocol'] ?? null);
     }
 
     public function testDecodesLiveMkgw4HeartbeatAndNormalizesCellularTelemetry(): void
@@ -142,20 +126,6 @@ final class DecoderTest extends TestCase
         self::assertSame(['state' => 'clean'], $result['telemetry']['diaper_condition']['data']);
         self::assertSame(1, $result['telemetry']['diaper_moisture']['data']['maximumDelta']);
         self::assertSame(['percent' => 87], $result['telemetry']['battery']['data']);
-    }
-
-    public function testDerivesChangeRequiredFromFourAffectedChannels(): void
-    {
-        $decoded = [
-            'batteryPercent' => 80,
-            'baseline' => array_fill(0, 10, 1),
-            'raw' => [13, 13, 13, 13, 1, 1, 1, 1, 1, 1],
-            'normalized' => [12, 12, 12, 12, 0, 0, 0, 0, 0, 0],
-            'rssiDbm' => -70,
-        ];
-        $result = (new MonitNormalizer())->normalize($decoded, $this->device('diaper_sensor'), 'd48c49f7909c', DiaperSensitivity::normal());
-        self::assertSame('change_required', $result['condition']);
-        self::assertSame(['state' => 'change_required'], $result['telemetry']['diaper_condition']['data']);
     }
 
     /** @return array<string, mixed> */

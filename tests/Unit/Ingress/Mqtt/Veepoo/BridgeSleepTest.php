@@ -22,37 +22,6 @@ final class BridgeSleepTest extends TestCase
     private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
-    public function testTheNightIsPublishedAsSleepAndAsItsScores(): void
-    {
-        $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::sleep());
-
-        $types = array_map(
-            static fn(array $e): string => (string)($e['payload']['type'] ?? ''),
-            $mqtt->telemetry,
-        );
-
-        self::assertContains('sleep', $types);
-        self::assertContains('sleep_quality', $types);
-    }
-
-    /** E leva a identidade do aparelho, como toda a telemetria que sai daqui. */
-    public function testTheRecordCarriesTheDeviceAndTheGateway(): void
-    {
-        $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::sleep());
-
-        $sleep = array_values(array_filter(
-            $mqtt->telemetry,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'sleep',
-        ));
-
-        self::assertCount(1, $sleep);
-        self::assertSame('MF91', $sleep[0]['payload']['device']['model']);
-        self::assertSame(self::GATEWAY, $sleep[0]['payload']['source']['gatewayId']);
-        self::assertSame(480, $sleep[0]['payload']['data']['totalDurationMinutes']);
-    }
-
     /**
      * O `payload` é a lista das noites e a curva vem em inteiros, um por minuto -- e não um objecto
      * com a curva em texto, como a documentação do fabricante deixa supor.
@@ -114,49 +83,6 @@ final class BridgeSleepTest extends TestCase
                 'sleepTotalTime' => 10,
                 'sleepCurve' => [0, 0, 1, 1, 1, 1, 2, 2, 1, 1],
             ]],
-        ], JSON_THROW_ON_ERROR);
-    }
-
-    /** Uma trama de sono vazia não publica uma noite de nada. */
-    public function testAnEmptyRecordPublishesNoTelemetry(): void
-    {
-        $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'sleep',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => [],
-        ], JSON_THROW_ON_ERROR));
-
-        self::assertSame([], $mqtt->telemetry);
-    }
-
-    private static function sleep(): string
-    {
-        return json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'sleep',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => [
-                'fallAsleepTime' => '09-14-23-10',
-                'exitSleepTime' => '09-15-07-30',
-                'nightScore' => 88,
-                'deepSleepScore' => 82,
-                'sleepEfficiencyScore' => 75,
-                'fallAsleepEfficiencyScore' => 90,
-                'sleepTimeScore' => 70,
-                'sleepQuality' => 3,
-                'deepSleepTime' => 120,
-                'lightSleepTime' => 330,
-                'otherSleepTime' => 30,
-                'sleepTotalTime' => 480,
-                'firstDeepSleepTime' => 22,
-                'nightTotalTime' => 18,
-                'nightDeepSleepMeanValue' => 6,
-                'insomniaScore' => 65,
-                'insomniaCount' => 2,
-                'sleepCurve' => '00112234',
-            ],
         ], JSON_THROW_ON_ERROR);
     }
 

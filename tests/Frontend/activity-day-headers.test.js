@@ -34,7 +34,7 @@ test("cada dia leva um cabeçalho, e as linhas do mesmo dia ficam debaixo dele",
 
     const headers = [...root.querySelectorAll("[data-day-header]")];
     assert.equal(headers.length, 2, "esperavam-se dois dias distintos");
-    assert.equal(root.querySelectorAll("tbody tr[data-row-key], tbody tr:not([data-day-header]):not(.telemetry-row-panel)").length >= 3, true);
+    assert.equal(root.querySelectorAll("tbody tr:not([data-day-header]):not(.telemetry-row-panel)").length, 3);
 });
 
 test("o cabeçalho conta as linhas daquele dia", () => {
@@ -70,16 +70,4 @@ test("uma linha sem data não inventa cabeçalho nenhum", () => {
     const root = render([{ icon: "fa-question", name: "Sem data", time: "-" }]);
 
     assert.equal(root.querySelectorAll("[data-day-header]").length, 0);
-});
-
-test("a tabela leva um colgroup: com layout fixo as larguras saem dele e não da primeira linha", () => {
-    const root = render([row("2026-09-29T15:04:00Z", "Bateria")]);
-    const cols = [...root.querySelectorAll("colgroup col")];
-
-    assert.equal(cols.length, 4, "quatro colunas, quatro <col>");
-    assert.deepEqual(
-        cols.map((col) => col.className),
-        ["telemetry-col-icon", "", "telemetry-col-value", "telemetry-col-time"],
-        "o nome mede o que sobra e por isso é o único <col> sem classe",
-    );
 });

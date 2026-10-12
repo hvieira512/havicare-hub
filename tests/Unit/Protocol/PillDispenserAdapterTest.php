@@ -129,30 +129,4 @@ final class PillDispenserAdapterTest extends TestCase
         self::assertSame('read_status', $name(0x07));
         self::assertSame('control', $name(0x08));
     }
-
-    public function testDecodesMedicationEventTlv(): void
-    {
-        $adapter = new PillDispenserAdapter();
-        $frame = $adapter->encodeOutgoing([
-            'packetType' => 0x03,
-            'mac' => 'AABBCCDDEEFF',
-            'tlv' => [
-                0xC201 => ['value' => "\x02"],                       // alarme 3 (0-8)
-                0xC202 => ['value' => '2026-09-18T20:05:00'],        // hora prevista
-                0xC203 => ['value' => '2026-09-18T20:05:04'],        // hora da toma
-                0xC204 => ['value' => "\x0C"],                       // célula 12
-                0xC205 => ['value' => "\x00"],                       // método: a horas
-                0xC206 => ['value' => "\x00"],                       // resultado: a horas
-            ],
-        ]);
-
-        $decoded = $adapter->decodeIncoming($frame);
-
-        self::assertIsArray($decoded);
-        self::assertSame('event', $decoded['type']);
-        self::assertArrayHasKey(0xC201, $decoded['tlv']);
-        self::assertSame("\x02", $decoded['tlv'][0xC201]['value']);
-        self::assertSame('2026-09-18T20:05:04', $decoded['tlv'][0xC203]['value']);
-        self::assertSame("\x0C", $decoded['tlv'][0xC204]['value']);
-    }
 }

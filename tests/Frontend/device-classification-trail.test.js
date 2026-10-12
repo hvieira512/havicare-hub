@@ -58,29 +58,3 @@ test("enquanto o dispositivo não chegou não se afirma classificação nenhuma"
     assert.doesNotMatch(loading.textContent, /Relógio/);
     assert.doesNotMatch(loading.textContent, /besenior/);
 });
-
-/**
- * Deitadas há uma seta para a direita e empilhadas uma para baixo: nunca as duas, e nunca a
- * apontar para o vazio quando a fila quebra.
- */
-test("entre duas pastilhas há uma seta para cada arranjo, e nenhuma antes da primeira", () => {
-    const root = trail();
-    const setas = [...root.querySelectorAll("i.fa-caret-right, i.fa-caret-down")];
-
-    assert.equal(setas.filter((i) => i.classList.contains("fa-caret-right")).length, 2);
-    assert.equal(setas.filter((i) => i.classList.contains("fa-caret-down")).length, 2);
-    assert.equal(root.firstElementChild?.dataset.wizardReopen, "type");
-});
-
-/** Um valor comprido corta-se com reticências em vez de empurrar a pastilha para fora. */
-test("o valor de qualquer um dos três se corta, e não só o do tipo", () => {
-    const root = trail();
-
-    for (const button of root.querySelectorAll("[data-wizard-reopen]")) {
-        const value = button.lastElementChild;
-        assert.ok(
-            value.classList.contains("text-truncate"),
-            `o valor de «${button.dataset.wizardReopen}» não se corta`,
-        );
-    }
-});

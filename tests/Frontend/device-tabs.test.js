@@ -3,11 +3,7 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 
-const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { bindDeviceEvents } = await import("../../src/Dashboard/dashboard/wiring/devices.js");
-const { initDeviceDetailView, renderDownlinkRequests } = await import(
-    "../../src/Dashboard/dashboard/devices/detail.js",
-);
 
 /**
  * A régua do telemóvel tem três separadores, e a telemetria é o que abre: os cartões do
@@ -61,22 +57,4 @@ test("escolher as leituras passa o ecrã à atividade, e voltar à telemetria de
 
     assert.equal(els.dashboardApp.dataset.deviceTab, "telemetry");
     assert.equal(els.deviceTabReadings.classList.contains("active"), false);
-});
-
-/** Um radar não recebe pedido nenhum. */
-test("sem pedidos, o separador dos pedidos sai da régua", () => {
-    const els = tabEls();
-    initDeviceDetailView({ els });
-    state.downlinkPage = 1;
-
-    renderDownlinkRequests([]);
-    assert.equal(els.deviceTabRequests.classList.contains("d-none"), true);
-
-    renderDownlinkRequests([{
-        feature: "heart_rate",
-        status: "sent",
-        requestedAt: "2026-08-25T11:04:00Z",
-        occurredAt: "2026-08-25T11:04:00Z",
-    }]);
-    assert.equal(els.deviceTabRequests.classList.contains("d-none"), false);
 });

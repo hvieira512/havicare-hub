@@ -8,41 +8,15 @@ use Hub\Ingress\Mqtt\MqttIngress;
 use Hub\Ingress\Mqtt\SubscriberFactory;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
-use PhpMqtt\Client\ConnectionSettings;
 use PhpMqtt\Client\Contracts\Repository;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
 
 final class SubscriberFactoryTest extends TestCase
 {
-    private function factory(): SubscriberFactory
+    private function connections(): RecordingConnectionFactory
     {
-        return new SubscriberFactory(
-            new RecordingConnectionFactory(new BrokerSettings(
-                'broker.internal',
-                1883,
-                '',
-                '',
-                'hub',
-                keepalive: 30,
-                connectTimeout: 5,
-                socketTimeout: 5,
-            )),
-        );
-    }
-
-    public function testReturnsTheIngressBuiltByTheCallback(): void
-    {
-        $ingress = new RecordingIngress();
-
-        $bound = $this->factory()->bind('ncs-sub', '/voerka/#', static fn (): MqttIngress => $ingress);
-
-        self::assertSame($ingress, $bound);
-    }
-
-    public function testSubscriberIsCreatedWithTheTopicSubscriptionAndConnected(): void
-    {
-        $connections = new RecordingConnectionFactory(new BrokerSettings(
+        return new RecordingConnectionFactory(new BrokerSettings(
             'broker.internal',
             1883,
             '',
@@ -52,6 +26,11 @@ final class SubscriberFactoryTest extends TestCase
             connectTimeout: 5,
             socketTimeout: 5,
         ));
+    }
+
+    public function testSubscriberIsCreatedWithTheTopicSubscriptionAndConnected(): void
+    {
+        $connections = $this->connections();
 
         (new SubscriberFactory($connections))->bind(
             'ncs-sub',
@@ -73,16 +52,7 @@ final class SubscriberFactoryTest extends TestCase
 
     public function testDispatchesReceivedMessagesToTheIngressBuiltAfterwards(): void
     {
-        $connections = new RecordingConnectionFactory(new BrokerSettings(
-            'broker.internal',
-            1883,
-            '',
-            '',
-            'hub',
-            keepalive: 30,
-            connectTimeout: 5,
-            socketTimeout: 5,
-        ));
+        $connections = $this->connections();
 
         $ingress = new RecordingIngress();
         (new SubscriberFactory($connections))->bind(
@@ -105,16 +75,7 @@ final class SubscriberFactoryTest extends TestCase
      */
     public function testSubscriberClientIdsNeverCarryThePid(): void
     {
-        $connections = new RecordingConnectionFactory(new BrokerSettings(
-            'radar.internal',
-            1883,
-            '',
-            '',
-            'qinglanst-radar',
-            keepalive: 60,
-            connectTimeout: 5,
-            socketTimeout: 5,
-        ));
+        $connections = $this->connections();
 
         (new SubscriberFactory($connections))->bind(
             'sub',
@@ -122,23 +83,14 @@ final class SubscriberFactoryTest extends TestCase
             static fn (): MqttIngress => new RecordingIngress(),
         );
 
-        self::assertSame('qinglanst-radar-sub', $connections->created[0]->getClientId());
+        self::assertSame('hub-sub', $connections->created[0]->getClientId());
         self::assertSame([false], $connections->cleanSessions);
     }
 
     /** A reconexão tem de reutilizar o mesmo id, ou o recuo trocava a sessão a cada tentativa. */
     public function testReconnectingKeepsTheSameClientId(): void
     {
-        $connections = new RecordingConnectionFactory(new BrokerSettings(
-            'radar.internal',
-            1883,
-            '',
-            '',
-            'qinglanst-radar',
-            keepalive: 60,
-            connectTimeout: 5,
-            socketTimeout: 5,
-        ));
+        $connections = $this->connections();
 
         $reconnect = null;
         (new SubscriberFactory($connections))->bind(

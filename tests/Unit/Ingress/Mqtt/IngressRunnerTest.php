@@ -35,18 +35,7 @@ final class IngressRunnerTest extends TestCase
         self::assertSame(1, $ncs->starts);
     }
 
-    public function testStartFailureIsLabelledWithTheIngressName(): void
-    {
-        $runner = new IngressRunner(new StreamSelectLoop());
-        $runner->add('NCS ingress', new StartableIngress(new \RuntimeException('broker unreachable')));
-
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('NCS ingress subscription failed: broker unreachable');
-
-        $runner->start();
-    }
-
-    public function testStartFailurePreservesTheOriginalException(): void
+    public function testStartFailureIsLabelledAndKeepsTheOriginal(): void
     {
         $original = new \RuntimeException('broker unreachable');
         $runner = new IngressRunner(new StreamSelectLoop());
@@ -56,6 +45,7 @@ final class IngressRunnerTest extends TestCase
             $runner->start();
             self::fail('Expected the runner to rethrow');
         } catch (\RuntimeException $e) {
+            self::assertSame('NCS ingress subscription failed: broker unreachable', $e->getMessage());
             self::assertSame($original, $e->getPrevious());
         }
     }
@@ -89,22 +79,6 @@ final class IngressRunnerTest extends TestCase
         $loop->run();
 
         self::assertGreaterThan(0, $ingress->dispatches, 'a fila tem de ser drenada sem o entrypoint pedir');
-    }
-
-    /** Uma ingestão sem fila não ganha temporizador nenhum por causa disto. */
-    public function testAnIngressWithoutAQueueIsLeftAlone(): void
-    {
-        $loop = new StreamSelectLoop();
-        $ingress = new StartableIngress();
-
-        $runner = new IngressRunner($loop);
-        $runner->add('NCS ingress', $ingress);
-        $runner->scheduleTicks(0.01, 0.001, 0.01);
-
-        $loop->addTimer(0.05, static fn () => $loop->stop());
-        $loop->run();
-
-        self::assertGreaterThan(0, $ingress->ticks);
     }
 
     /** Uma entrega que estoira não pode derrubar o loop, como já acontece com o tick. */

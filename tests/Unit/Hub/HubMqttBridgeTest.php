@@ -174,20 +174,6 @@ final class HubMqttBridgeTest extends TestCase
     }
 
     /**
-     * O `licenseId` é o único sítio do hub onde o número da licença é texto, e a conversão
-     * acontece aqui -- em memória, na base de dados e na API é sempre inteiro.
-     */
-    public function testTheLicenceIsTheOnlyPlaceAnIntegerBecomesText(): void
-    {
-        $bridge = new HubMqttBridge(new FakeMqttPublisher(), '');
-
-        self::assertSame(
-            'hitcare/0/watch/861265061009822/telemetry',
-            $bridge->deviceTopic('hitcare', 0, 'watch', '861265061009822', 'telemetry'),
-        );
-    }
-
-    /**
      * A derivação para os streams acontece no mesmo sítio onde a mensagem é publicada, e
      * leva o payload já serializado -- o mesmo que vai para o fio, sem segunda codificação.
      */
@@ -262,17 +248,6 @@ final class HubMqttBridgeTest extends TestCase
         $bridge->publishRaw('861265061009844', ['direction' => 'uplink']);
 
         self::assertSame(['havicare-hub/null/0/watch/861265061009844/raw'], $seen);
-    }
-
-    /** Sem ninguém à escuta, publicar não custa mais do que uma procura falhada. */
-    public function testPublishingWithNoListenersIsHarmless(): void
-    {
-        $fanout = new MessageFanout();
-        $bridge = new HubMqttBridge(new FakeMqttPublisher(), 'havicare-hub', null, $fanout);
-
-        $bridge->publishTelemetry('861265061009822', ['type' => 'heart_rate'], 'watch', 1001, 'hitcare');
-
-        self::assertSame(0, $fanout->listenerCount());
     }
 
     /** O `unsubscribe` devolvido tem de largar o ouvinte, ou uma ligação fechada continua a receber. */

@@ -75,25 +75,6 @@ final class CollectionColumnsTest extends TestCase
         self::assertSame('username', $filter['param']);
     }
 
-    /**
-     * O conjunto é fechado e sai inteiro; só a contagem vem dos dados. Um valor sem linhas sai
-     * com zero, senão ficava inalcançável.
-     */
-    public function testAClosedSetOffersEveryValueAndZeroForTheOnesTheDataLacks(): void
-    {
-        $described = $this->describedByField(
-            $this->columns(),
-            ['role' => [['value' => 'hub_admin', 'count' => 4]]],
-        );
-
-        self::assertSame('role', $described['role']['filter']['param']);
-        self::assertFalse($described['role']['filter']['multiple']);
-        self::assertSame(
-            [['value' => 'hub_admin', 'count' => 4], ['value' => 'license_client', 'count' => 0]],
-            $described['role']['filter']['options'],
-        );
-    }
-
     /** Uma listagem sem campos editáveis declara-o, em vez de mentir que tudo se edita. */
     public function testAReadOnlyListingDeclaresNothingEditable(): void
     {
@@ -109,14 +90,5 @@ final class CollectionColumnsTest extends TestCase
         $columns = new CollectionColumns(sortable: ['createdAt' => 'u.created_at'], writable: null);
 
         self::assertNull($this->describedByField($columns)['createdAt']['filter']);
-    }
-
-    /** O descritor descreve estrutura: traduzir é de quem desenha a interface. */
-    public function testItCarriesNoUserFacingLabels(): void
-    {
-        foreach ($this->columns()->describe() as $column) {
-            self::assertArrayNotHasKey('title', $column);
-            self::assertArrayNotHasKey('label', $column);
-        }
     }
 }

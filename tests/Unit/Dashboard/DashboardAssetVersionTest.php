@@ -60,15 +60,6 @@ final class DashboardAssetVersionTest extends TestCase
         self::assertStringContainsString('immutable', $response->getHeaderLine('Cache-Control'));
     }
 
-    /** Sem versão no caminho não há nada que garanta o conteúdo: revalida-se sempre. */
-    public function testAnAssetWithoutAVersionKeepsRevalidating(): void
-    {
-        $response = $this->serve('/dashboard/app.js');
-
-        self::assertSame('no-cache', $response->getHeaderLine('Cache-Control'));
-        self::assertNotSame('', $response->getHeaderLine('ETag'));
-    }
-
     /**
      * Acrescentar, apagar ou alterar um módulo muda a versão, senão o URL ficava igual com
      * `immutable` por cima.

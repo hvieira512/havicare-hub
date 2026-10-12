@@ -76,38 +76,11 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         self::assertSame($telemetry, $result);
     }
 
-    public function testCachesRepeatedEvidence(): void
-    {
-        $calls = 0;
-        $enricher = new BeaconDbTelemetryEnricher(
-            new BeaconDbRequestBuilder(),
-            function () use (&$calls) {
-                $calls++;
-                return resolve([
-                    'httpStatus' => 200,
-                    'body' => ['location' => ['lat' => 41.7, 'lng' => -8.8], 'accuracy' => 100],
-                ]);
-            },
-            cacheTtlSeconds: 300,
-        );
-
-        $enricher->enrich($this->nonGpsTelemetry());
-        $enricher->enrich($this->nonGpsTelemetry());
-
-        self::assertSame(1, $calls);
-    }
-
     public function testSharedCacheSurvivesEnricherRecreation(): void
     {
         $calls = 0;
         $cache = new ArrayLocationResolutionCache();
-        $resolver = function () use (&$calls) {
-            $calls++;
-            return resolve([
-                'httpStatus' => 200,
-                'body' => ['location' => ['lat' => 41.7, 'lng' => -8.8], 'accuracy' => 100],
-            ]);
-        };
+        $resolver = $this->resolvesTo($calls);
         $first = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
             $resolver,
@@ -135,13 +108,7 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         $calls = 0;
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            function () use (&$calls) {
-                $calls++;
-                return resolve([
-                    'httpStatus' => 200,
-                    'body' => ['location' => ['lat' => 41.7, 'lng' => -8.8], 'accuracy' => 100],
-                ]);
-            },
+            $this->resolvesTo($calls),
         );
         $first = $this->nonGpsTelemetry();
         $second = $first;
@@ -159,13 +126,7 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         $calls = 0;
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            function () use (&$calls) {
-                $calls++;
-                return resolve([
-                    'httpStatus' => 200,
-                    'body' => ['location' => ['lat' => 41.7, 'lng' => -8.8], 'accuracy' => 100],
-                ]);
-            },
+            $this->resolvesTo($calls),
         );
         $telemetry = $this->nonGpsTelemetry();
         $telemetry['data']['gpsValid'] = false;
@@ -187,13 +148,7 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         $calls = 0;
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
-            function () use (&$calls) {
-                $calls++;
-                return resolve([
-                    'httpStatus' => 200,
-                    'body' => ['location' => ['lat' => 41.7, 'lng' => -8.8], 'accuracy' => 100],
-                ]);
-            },
+            $this->resolvesTo($calls),
         );
         $telemetry = $this->nonGpsTelemetry();
         $telemetry['data']['source'] = 'cell';
@@ -307,6 +262,18 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         self::assertSame('cell_wifi', $result['data']['source']);
         self::assertNotEmpty($result['data']['baseStations']);
         self::assertNotEmpty($result['data']['wifiAccessPoints']);
+    }
+
+    /** Um BeaconDB que acerta sempre no mesmo sítio, e conta as perguntas. */
+    private function resolvesTo(int &$calls): \Closure
+    {
+        return function () use (&$calls) {
+            $calls++;
+            return resolve([
+                'httpStatus' => 200,
+                'body' => ['location' => ['lat' => 41.7, 'lng' => -8.8], 'accuracy' => 100],
+            ]);
+        };
     }
 
     /** @return array<string, mixed> */

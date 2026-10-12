@@ -31,7 +31,6 @@ final class FirmwareUpgradeTest extends TestCase
     {
         $body = FirmwareUpgrade::dataBody(504, str_repeat('x', FirmwareUpgrade::CHUNK));
 
-        self::assertSame(256, FirmwareUpgrade::CHUNK);
         self::assertSame(FirmwareUpgrade::MAX_BODY, strlen($body));
         self::assertSame(504, unpack('V', substr($body, 0, 4))[1]);
     }

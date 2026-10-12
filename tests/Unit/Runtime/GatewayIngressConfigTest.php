@@ -30,14 +30,6 @@ final class GatewayIngressConfigTest extends TestCase
         putenv("{$name}={$value}");
     }
 
-    public function testTheSectionIsNamedForTheGatewayAndNotForOneVendor(): void
-    {
-        $config = Config::load()->all();
-
-        self::assertArrayHasKey('gateway', $config, 'a ingestão de gateways tem secção própria');
-        self::assertArrayNotHasKey('moko', $config, 'e já não se chama pelo fornecedor');
-    }
-
     public function testTheDeployedEnvironmentVariablesKeepWorking(): void
     {
         // As duas máquinas têm `MOKO_GATEWAY_*` no `.env`, e deixar de as ler desligaria os gateways.

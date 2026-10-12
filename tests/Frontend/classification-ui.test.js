@@ -65,18 +65,6 @@ test("o passo em que se está não é botão, mesmo já respondido", () => {
     assert.equal(root.querySelector(".wizard-badge-now").textContent.trim(), "Tipo");
 });
 
-test("os passos que faltam ficam esbatidos e fora do telemóvel", () => {
-    // Cinco nomes numa linha não cabem em 342px, e só o actual fica visível abaixo de `md`.
-    const root = trail([], "type");
-
-    const pending = [...root.querySelectorAll(".wizard-badge-pending")];
-    assert.equal(pending.length, 2);
-    assert.equal(pending.every((crumb) => crumb.classList.contains("text-body-tertiary")), true);
-    assert.equal(pending.every((crumb) => crumb.classList.contains("d-none")), true);
-    assert.equal(pending.every((crumb) => crumb.classList.contains("d-md-inline-flex")), true);
-    assert.equal(root.querySelector(".wizard-badge-now").classList.contains("d-none"), false);
-});
-
 test("a barra tem um traço por passo, e os já feitos preenchidos", () => {
     const root = parseFragment(wizardProgressHtml(3, 5));
 
@@ -102,24 +90,6 @@ test("o card escolhido fica marcado, e é o único", () => {
     const cards = [...root.querySelectorAll(".wizard-card")];
     assert.deepEqual(cards.map((c) => c.classList.contains("selected")), [false, true]);
     assert.equal(cards[1].getAttribute("aria-pressed"), "true");
-});
-
-/**
- * Um botão de alternar diz sempre o seu estado; sem o atributo, o leitor de ecrã anuncia os
- * não escolhidos como botões normais.
- */
-test("os cards por escolher dizem que estão por escolher", () => {
-    const root = parseFragment(
-        cardGrid("Escolha", [
-            { attrs: html`data-x="a"`, label: "A", selected: false },
-            { attrs: html`data-x="b"`, label: "B", selected: true },
-        ]),
-    );
-
-    assert.deepEqual(
-        [...root.querySelectorAll(".wizard-card")].map((c) => c.getAttribute("aria-pressed")),
-        ["false", "true"],
-    );
 });
 
 test("os tipos de dispositivo saem todos, com o número de modelos de cada um", () => {

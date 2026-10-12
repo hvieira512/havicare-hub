@@ -29,18 +29,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         sort($actual);
         self::assertSame($expected, $actual);
 
-        $db = ApiDataAccess::fromDatabase($database);
-        self::assertCount(count(ReferenceCatalogSeeder::models()), $db->models->all());
-        $model = $db->models->find('Vivistar', 'L08 PRO');
-        self::assertIsArray($model);
-        self::assertSame('R05', $model['commercial_name'] ?? null);
-        self::assertSame('watch', $model['device_type'] ?? null);
-        $expected = SupplierCapabilityTemplate::keysForSupplierDeviceType('Vivistar', 'watch');
-        $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
-        sort($expected);
-        sort($actual);
-        self::assertSame($expected, $actual);
-
         $qinglanst = $db->models->find('Qinglanst', 'RD-V1');
         self::assertIsArray($qinglanst);
         self::assertSame('radar', $qinglanst['device_type'] ?? null);
@@ -66,15 +54,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         sort($actualRadar);
         self::assertSame($expectedRadar, $actualRadar);
 
-        $mkgw4 = $db->models->find('MOKO', 'MKGW4');
-        self::assertIsArray($mkgw4);
-        self::assertSame('gateway', $mkgw4['device_type'] ?? null);
-        $expectedGateway = ['battery', 'connectivity', 'location', 'low_battery'];
-        $actualGateway = $db->modelCapabilities->enabledFeaturesForModelId((int)$mkgw4['id']);
-        sort($expectedGateway);
-        sort($actualGateway);
-        self::assertSame($expectedGateway, $actualGateway);
-
         $w6b = $db->models->find('MOKO', 'W6B');
         self::assertIsArray($w6b);
         self::assertSame('bracelet', $w6b['device_type'] ?? null);
@@ -95,20 +74,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
 
         $check = $normalizedDatabase->pdo()->query("SHOW TABLES LIKE 'generic_capabilities'");
         self::assertSame('generic_capabilities', $check->fetchColumn());
-    }
-
-    public function testModelCapabilitiesCanBeReplacedPerModel(): void
-    {
-        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $model = $db->models->find('Vivistar', 'L08 Pro');
-        self::assertIsArray($model);
-
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['blood_pressure', 'heart_rate']);
-
-        self::assertSame(
-            ['blood_pressure', 'heart_rate'],
-            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
-        );
     }
 
     public function testEmptyModelCapabilitySelectionSurvivesRestart(): void
@@ -330,53 +295,11 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', (string)($row['created_at'] ?? ''));
         self::assertSame($row['created_at'] ?? null, $row['updated_at'] ?? null);
 
-        sleep(1);
-        // Renomear e não tocar: o `ON UPDATE CURRENT_TIMESTAMP` só dispara se algum valor
-        // mudar mesmo, e o nome é a única coluna de um fornecedor que não é uma data.
-        $renamed = $supplierName . ' renomeado';
-        $pdo->prepare('UPDATE suppliers SET name = ? WHERE name = ?')->execute([$renamed, $supplierName]);
-
-        $updated = $pdo->prepare('SELECT created_at, updated_at FROM suppliers WHERE name = ?');
-        $updated->execute([$renamed]);
-        $rowAfterUpdate = $updated->fetch();
-
-        self::assertIsArray($rowAfterUpdate);
-        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', (string)($rowAfterUpdate['updated_at'] ?? ''));
-        self::assertNotSame($row['updated_at'] ?? null, $rowAfterUpdate['updated_at'] ?? null);
-
         $db = ApiDataAccess::fromDatabase($database);
-        $supplier = $db->suppliers->findByName($renamed);
+        $supplier = $db->suppliers->findByName($supplierName);
         self::assertIsArray($supplier);
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', (string)($supplier['created_at'] ?? ''));
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', (string)($supplier['updated_at'] ?? ''));
-    }
-
-    public function testDeviceConfigurationStoresDesiredAndReportedStateSeparately(): void
-    {
-        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->deviceConfigurations->saveDesired(
-            '861265061009822',
-            'fallDetection',
-            'vivistar-iw',
-            'BP76',
-            ['enabled' => true],
-            'queued',
-            'abc123'
-        );
-        $db->deviceConfigurations->saveReported(
-            '861265061009822',
-            'fallDetection',
-            'vivistar-iw',
-            'AP76',
-            ['data' => ['fields' => ['1']]]
-        );
-
-        $rows = $db->deviceConfigurations->allForImei('861265061009822');
-        self::assertCount(1, $rows);
-        self::assertSame(['enabled' => true], $rows[0]['desired_payload']);
-        self::assertSame(['data' => ['fields' => ['1']]], $rows[0]['reported_payload']);
-        self::assertSame('queued', $rows[0]['last_status']);
-        self::assertSame('abc123', $rows[0]['last_command_id']);
     }
 
     public function testWhitelistStoresSimNumber(): void

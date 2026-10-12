@@ -49,8 +49,6 @@ final class BridgeMeasurementTest extends TestCase
             // O estado de quem a manda vibrar. Fecha o pedido: é o `expectedReplyTypes` do
             // comando, e sem ele o registo ficava à espera de uma resposta que já tinha vindo.
             'a procurar' => ['a procurar', ['sdkType' => 17, 'value' => 'search'], 'find_device', ['state' => 'searching']],
-            'parada' => ['parada', ['sdkType' => 17, 'value' => 'find'], 'find_device', ['state' => 'stopped']],
-            'desistiu' => ['desistiu', ['sdkType' => 17, 'value' => 'timeout'], 'find_device', ['state' => 'timed_out']],
             // O acumulado do dia, que é o que `activity` significa nos relógios. A app mostra
             // estes três números no ecrã principal, e as calorias vêm em décimas.
             'totais do dia' => [
@@ -188,29 +186,6 @@ final class BridgeMeasurementTest extends TestCase
         self::assertSame(['reason' => 'not_worn'], $failures[0]['payload']['error']);
     }
 
-    /**
-     * A onda chega em array, quatro pacotes por segundo, e o gateway junta-os num traçado só: uma
-     * medição é um exame, não trezentos fragmentos.
-     */
-    public function testEcgWaveformBecomesOneTracing(): void
-    {
-        $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, json_encode([
-            'source' => 'veepoo-node',
-            'kind' => 'ecg_wave',
-            'device' => ['mac' => self::BRACELET],
-            'payload' => ['samples' => [12, -4, 33, 128, -71]],
-        ], JSON_THROW_ON_ERROR));
-
-        $ecg = array_values(array_filter(
-            $mqtt->telemetry,
-            static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'ecg',
-        ));
-
-        self::assertCount(1, $ecg);
-        self::assertSame(['samples' => [12, -4, 33, 128, -71]], $ecg[0]['payload']['data']);
-    }
-
     /** A pulseira grava os trinta segundos mesmo sem sinal, e o que o operador tem de ler é a falta dele. */
     public function testAnAllZeroTracingIsReportedAsFailureAndNotAsAnExam(): void
     {
@@ -306,20 +281,6 @@ final class BridgeMeasurementTest extends TestCase
         $readings = self::ofType($mqtt, 'heart_rate');
         self::assertCount(1, $readings);
         self::assertSame(90, $readings[0]['payload']['data']['bpm']);
-    }
-
-    /**
-     * Os totais do dia e o estado de quem manda a pulseira vibrar são contadores que o firmware já
-     * tem: respondem numa trama e não têm medição a assentar.
-     */
-    public function testAnInstantReadIsPublishedAtOnce(): void
-    {
-        $mqtt = new RecordingHubMqttBridge();
-        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::message([
-            'sdkType' => 9, 'step' => 216, 'calorie' => 146, 'distance' => 187, 'day' => 'today',
-        ]));
-
-        self::assertCount(1, self::ofType($mqtt, 'activity'));
     }
 
     /**

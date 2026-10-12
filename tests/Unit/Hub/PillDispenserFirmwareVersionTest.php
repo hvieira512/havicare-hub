@@ -31,21 +31,6 @@ final class PillDispenserFirmwareVersionTest extends TestCase
         self::assertSame(['version' => '0x0502'], $events[0]['value']);
     }
 
-    /**
-     * Em hexadecimal porque a especificação não diz como se lê o número, e o decimal `1282`
-     * perde a única estrutura visível nele.
-     */
-    public function testTheVersionKeepsTheFormTheSpecificationUses(): void
-    {
-        $events = $this->decodeAndNormalize([
-            'packetType' => 0x01,
-            'mac' => 'AABBCCDDEEFF',
-            'tlv' => [0x8002 => ['value' => pack('v', 1)]],
-        ]);
-
-        self::assertSame(['version' => '0x0001'], $events[0]['value']);
-    }
-
     /** Sem a TAG não há leitura: um registo antigo não passa a dizer «versão 0». */
     public function testARegistrationWithoutTheTagSaysNothing(): void
     {

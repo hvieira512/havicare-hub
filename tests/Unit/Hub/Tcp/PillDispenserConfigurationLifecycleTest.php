@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub\Tcp;
 
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Device\DeviceEventDecoder;
 use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
@@ -28,40 +27,6 @@ final class PillDispenserConfigurationLifecycleTest extends TestCase
         self::assertIsArray($decoded);
 
         return $decoded;
-    }
-
-    /**
-     * O M2 responde pelo tipo de pacote e não pelo nome do comando: um `0x06` volta sempre como
-     * `write_config_ack`, seja qual for a TAG que levou.
-     */
-    public function testEveryConfigurationWaitsForTheAcknowledgementOfItsPacketType(): void
-    {
-        $expected = [
-            'alarm_volume' => 'write_config_ack',
-            'alarm_ringtone' => 'write_config_ack',
-            'do_not_disturb' => 'write_config_ack',
-            'medication_reminders' => 'write_config_ack',
-            'medication_period' => 'write_config_ack',
-            'early_dispense' => 'write_config_ack',
-            'child_lock' => 'write_config_ack',
-            'device_language' => 'write_config_ack',
-            'time_zone' => 'write_config_ack',
-            'sync_configuration' => 'read_config_ack',
-            'dispense_now' => 'control_ack',
-            'calibrate_clock' => 'control_ack',
-            'mute_alarm' => 'control_ack',
-            'reset_tray' => 'control_ack',
-            'restart_device' => 'control_ack',
-        ];
-
-        $actual = [];
-        foreach (DeviceConfigurationCatalog::configsForProtocol('zayata-m228') as $entry) {
-            $actual[(string)$entry['key']] = $entry['expectedReplyTypes'] ?? [];
-        }
-
-        foreach ($expected as $key => $reply) {
-            self::assertSame([$reply], $actual[$key] ?? null, $key);
-        }
     }
 
     public function testTheDeviceConfirmingEveryTagIsAnAcceptedReply(): void

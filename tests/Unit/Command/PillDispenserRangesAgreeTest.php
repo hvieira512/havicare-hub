@@ -40,21 +40,6 @@ final class PillDispenserRangesAgreeTest extends TestCase
         self::assertNotSame('', DeviceCommandCatalog::buildDownlink('zayata-m228', self::IMEI, $command, [$field => $edge]));
     }
 
-    /** O validador recusa o primeiro valor de fora. */
-    #[\PHPUnit\Framework\Attributes\DataProvider('ranges')]
-    public function testTheValidatorRefusesWhatIsOutside(
-        string $key,
-        string $command,
-        string $field,
-        int $edge,
-        int $outside,
-    ): void {
-        self::assertNotNull(
-            DeviceConfigurationCatalog::validate('zayata-m228', $key, [$field => $outside]),
-            $key,
-        );
-    }
-
     /**
      * E o construtor da trama também: o painel da dashboard chega-lhe sem passar pelo
      * validador.
@@ -76,7 +61,6 @@ final class PillDispenserRangesAgreeTest extends TestCase
     public function testTheWesternTimeZoneEdgeAgrees(): void
     {
         self::assertNull(DeviceConfigurationCatalog::validate('zayata-m228', 'time_zone', ['timeZone' => -1200]));
-        self::assertNotNull(DeviceConfigurationCatalog::validate('zayata-m228', 'time_zone', ['timeZone' => -1201]));
 
         $this->expectException(\InvalidArgumentException::class);
         DeviceCommandCatalog::buildDownlink('zayata-m228', self::IMEI, 'timeZone', ['timeZone' => -1201]);

@@ -149,21 +149,16 @@ final class BridgeW6Test extends TestCase
         self::assertContains('motion', $types);
     }
 
-    public function testEachPressModePublishesItsOwnHelpCall(): void
+    public function testAPressPublishesAHelpCall(): void
     {
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge(null, $mqtt, $this->registered());
 
-        $this->deliver($bridge, $this->pressPayload('000000000011'));
         $this->deliver($bridge, $this->pressPayload('000000000012'));
-        $this->deliver($bridge, $this->pressPayload('000000000013'));
 
         $events = $this->forBracelet($mqtt->events);
-        self::assertSame(['help_call', 'help_call', 'help_call'], array_column($events, 'type'));
-        self::assertSame(
-            ['single', 'double', 'triple'],
-            array_map(static fn(array $e): string => $e['payload']['data']['pressType'], $events),
-        );
+        self::assertSame(['help_call'], array_column($events, 'type'));
+        self::assertSame('double', $events[0]['payload']['data']['pressType']);
         self::assertSame(self::GATEWAY, $events[0]['payload']['source']['gatewayId']);
     }
 

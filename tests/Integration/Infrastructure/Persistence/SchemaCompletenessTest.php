@@ -116,11 +116,4 @@ final class SchemaCompletenessTest extends MysqlDashboardTestCase
 
         self::assertSame(['ascii_bin'], $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
-
-    public function testTheDroppedDiaperTableStaysDropped(): void
-    {
-        $pdo = $this->createDashboardDatabase()->pdo();
-
-        self::assertNotContains('diaper_sensor_settings', $this->tableNames($pdo));
-    }
 }

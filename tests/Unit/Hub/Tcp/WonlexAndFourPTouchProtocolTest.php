@@ -77,6 +77,23 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
         self::assertSame('[3G*7597567372*0002*LK]', $message->responses[0]->bytes);
     }
 
+    public function testFourPTouchAlarmProducesProtocolAck(): void
+    {
+        $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
+        $session = new DeviceSession(new TcpFakeConnection(), 'tcp', true, '637507597567372', 'four-p-touch');
+        $alarm = (new FourPTouchAdapter())->encodeOutgoing([
+            'type' => 'AL',
+            'imei' => '7597567372',
+            'manufacturer' => '3G',
+            'data' => ['fields' => ['240617', '101530', 'V', '0.0', 'N', '0.0', 'E', '0.0', '0', '0', '0', '55', '44', '0', '0', '00200000']],
+        ]);
+
+        $message = $protocol->handleIncoming($session, $alarm);
+
+        self::assertNotNull($message);
+        self::assertSame(['[3G*7597567372*0002*AL]'], array_map(static fn($response): string => $response->bytes, $message->responses));
+    }
+
     public function testFourPTouchFirmwareVersionDoesNotProduceProtocolAck(): void
     {
         $protocol = new FourPTouchTcpProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());

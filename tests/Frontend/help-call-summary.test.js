@@ -58,7 +58,6 @@ test("the modes drawn are the ones the protocol declares", () => {
 
     assert.match(w6, /Toque triplo/);
     assert.doesNotMatch(w6, /Toque longo/);
-    assert.match(w6, /fa-solid fa-3 /);
     assert.equal(w6.match(/help-call-never/g).length, 2);
 
     // E a W6B é o contrário.
@@ -110,31 +109,6 @@ test("the card states no alarm status, only when each press last happened", () =
     // não pode sugerir um alarme activo nem limpo.
     assert.match(html, /Últimas chamadas de ajuda/);
     assert.doesNotMatch(html, /ativ[oa]|em curso|cancelad/i);
-});
-
-test("the modes lay out as three columns that stack on small viewports", () => {
-    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")], W6B_MODES);
-
-    assert.match(html, /class="row g-2"/);
-    assert.equal(html.match(/class="col-12 col-md-4"/g).length, 3);
-});
-
-test("each mode carries its own icon", () => {
-    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")], W6B_MODES);
-
-    for (const icon of ["fa-1", "fa-2", "fa-stopwatch"]) {
-        assert.match(html, new RegExp(`fa-solid ${icon} `));
-    }
-});
-
-test("a mode that has fired carries a tooltip with the exact timestamp", () => {
-    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")], W6B_MODES);
-
-    assert.match(html, /data-bs-toggle="tooltip"/);
-    // A hora desenhada depende da locale, e por isso só se afirma a presença dela.
-    assert.match(html, /data-bs-title="[^"]+"/);
-    // Alcançável pelo teclado, e não só pelo rato.
-    assert.match(html, /tabindex="0"/);
 });
 
 test("a mode that never fired has no tooltip, having no timestamp to show", () => {

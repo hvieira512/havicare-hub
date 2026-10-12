@@ -37,12 +37,11 @@ test("o grafo da dashboard continua pendurado no main.js", () => {
 });
 
 test("o relato de erros instala-se antes de tudo", () => {
-    const source = readFileSync(MAIN, "utf8");
+    const statements = readFileSync(MAIN, "utf8")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith("import ") && !/^(\/\/|\/\*|\*)/.test(line));
 
-    // Um erro no arranque só se apanha se o repórter já lá estiver; nem o `import()` do
-    // `app.js` nem o `DOMContentLoaded` podem passar-lhe à frente.
-    assert.ok(
-        source.indexOf("installErrorReporting()") < source.indexOf("addEventListener"),
-        "o installErrorReporting() corre antes de se ligar seja o que for",
-    );
+    // Um erro no arranque só se apanha se o repórter já lá estiver.
+    assert.equal(statements[0], "installErrorReporting();");
 });

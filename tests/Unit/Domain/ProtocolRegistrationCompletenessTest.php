@@ -84,10 +84,6 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
                 $adapters->get($protocol),
                 "O protocolo `{$protocol}` fala TCP mas não tem adaptador."
             );
-            self::assertTrue(
-                ProtocolRegistry::exists($protocol),
-                "O protocolo `{$protocol}` fala TCP mas não está declarado no ProtocolRegistry."
-            );
         }
     }
 

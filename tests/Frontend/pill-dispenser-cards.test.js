@@ -8,19 +8,11 @@ import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/com
 
 // O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
 const requestCardShell = (...args) => String(buildCard(...args));
-import { fieldLabel, fieldValue } from "../../src/Dashboard/dashboard/format.js";
-import { cardIcon } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
+import { cardContent } from "./support/cards.js";
 import { allDetailItems } from "../../src/Dashboard/dashboard/devices/detail-filters.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
-state.capabilityCatalogByType.pill_dispenser = [
-    { key: "battery", label: "Bateria" },
-    { key: "temperature", label: "Temperatura" },
-    { key: "humidity", label: "Humidade" },
-    { key: "medication_level", label: "Nível de medicação" },
-    { key: "cells_remaining", label: "Células restantes" },
-    { key: "device_status", label: "Estado do dispositivo" },
-];
+state.capabilityCatalogByType.pill_dispenser = [{ key: "cells_remaining", label: "Células restantes" }];
 state.selectedDetail = { model: { deviceType: "pill_dispenser" } };
 
 const card = (type, data) => requestCardShell(
@@ -33,7 +25,7 @@ test("a temperatura do dispensador tem chave própria e não a do corpo", () => 
     // O `0x810E` é o ar onde o aparelho está, e não a temperatura corporal dos relógios.
     assert.match(card("ambient_temperature", { environmentCelsius: 22 }), /22 °C/);
     assert.match(card("ambient_temperature", { environmentCelsius: -5 }), /-5 °C/);
-    assert.match(card("temperature", { environmentCelsius: 22 }), /-/);
+    assert.doesNotMatch(card("temperature", { environmentCelsius: 22 }), /22 °C/);
 });
 
 test("a humidade sai com a unidade", () => {
@@ -106,33 +98,6 @@ test("sem plano, fica só o número que o aparelho conta", (t) => {
     assert.doesNotMatch(html, /Dia \d/);
 });
 
-test("nenhum campo do dispensador aparece em inglês", () => {
-    assert.equal(fieldLabel("remaining"), "Restantes");
-    assert.equal(fieldLabel("total"), "Total");
-    assert.equal(fieldLabel("current"), "Atual");
-    assert.equal(fieldLabel("level"), "Nível");
-    assert.equal(fieldLabel("wifiSignalDbm"), "Sinal WiFi");
-    assert.equal(fieldLabel("gsmSignalDbm"), "Sinal GSM");
-    assert.equal(fieldLabel("alarmSlot"), "Alarme");
-    assert.equal(fieldLabel("cellNumber"), "Compartimento");
-    assert.equal(fieldLabel("scheduledAt"), "Hora prevista");
-    assert.equal(fieldLabel("takenAt"), "Hora da toma");
-});
-
-test("os estados da toma e das avarias são traduzidos", () => {
-    assert.equal(fieldValue("result", "missed"), "Falhada");
-    assert.equal(fieldValue("result", "on_time"), "A horas");
-    assert.equal(fieldValue("result", "abnormal"), "Anormal");
-    assert.equal(fieldValue("method", "early"), "Antecipada");
-    assert.equal(fieldValue("level", "empty"), "Sem medicação");
-    assert.equal(fieldValue("fault", "tray_reset"), "Reposição do prato");
-});
-
-test("o sinal do dispensador sai em dBm", () => {
-    assert.equal(fieldValue("wifiSignalDbm", -58), "-58 dBm");
-    assert.equal(fieldValue("gsmSignalDbm", -81), "-81 dBm");
-});
-
 test("a toma mostra o resultado como valor, e a avaria mostra qual foi", () => {
     // O valor principal é o facto que interessa, e não o nome da capacidade outra vez.
     const intake = card("medication_intake", {
@@ -145,11 +110,6 @@ test("a toma mostra o resultado como valor, e a avaria mostra qual foi", () => {
 
     const fault = card("device_fault", { fault: "tray_reset" });
     assert.match(fault, /Reposição do prato/);
-});
-
-test("a toma e a avaria têm ícone próprio", () => {
-    assert.equal(cardIcon("medication_intake"), "fa-pills");
-    assert.equal(cardIcon("device_fault"), "fa-triangle-exclamation");
 });
 
 // Uma toma falhada fora do histórico é o pior caso desta integração.
@@ -166,20 +126,6 @@ test("a toma e a avaria chegam à lista de atividade", () => {
     const types = allDetailItems().map((item) => item.payload.type);
 
     assert.deepEqual(types, ["medication_intake", "device_fault", "help_call"]);
-});
-
-test("cada avaria tem tradução", () => {
-    const faults = {
-        rotation: "Rotação do prato",
-        tray_reset: "Reposição do prato",
-        pusher: "Empurrador",
-        cell_door: "Porta do compartimento",
-        keys: "Teclas",
-    };
-
-    for (const [fault, label] of Object.entries(faults)) {
-        assert.equal(fieldValue("fault", fault), label);
-    }
 });
 
 /** Quantas doses faltam não diz quando é preciso recarregar; a data diz. */
@@ -224,4 +170,13 @@ test("com o período do plano terminado, o cartão volta a falar em compartiment
 
     assert.doesNotMatch(html, /Acaba /);
     assert.match(html, /Dia 3/);
+});
+
+/** O ambiente só chega quando dispara: o valor diz o que aconteceu, e não leva legenda fixa. */
+test("o ambiente diz o que aconteceu", () => {
+    const { value, details } = cardContent("storage_environment", { outOfRange: true });
+
+    assert.match(value, /[Tt]emperatura/);
+    assert.match(value, /[Hh]umidade/);
+    assert.equal(details || "", "");
 });

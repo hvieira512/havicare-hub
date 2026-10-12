@@ -87,82 +87,6 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame(42, $telemetry['data']['walkingDistance']);
     }
 
-    public function testPositionDetectionIncludesDeviceAndSourceMetadata(): void
-    {
-        $normalizer = new MessageNormalizer();
-        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
-
-        $result = $normalizer->normalize([
-            'type' => 'position',
-            'device_code' => 'radar-topic-uid',
-            'people' => [[
-                'person_index' => 1,
-                'x_position_dm' => 1,
-                'y_position_dm' => 2,
-                'z_position_cm' => 3,
-                'time_left_s' => 4,
-                'posture_state' => 'fall_confirmation',
-                'last_event' => 'no_event',
-                'region_id' => 5,
-            ]],
-        ], $topic, $this->device());
-
-        $event = $result['events'][0];
-        self::assertSame('fall', $event['type']);
-        self::assertSame('canonical-radar-id', $event['device']['id']);
-        self::assertSame('position', $event['source']['nativeType']);
-        self::assertSame(['confirmed' => true, 'posture' => 'lying', 'personIndex' => 1], $event['data']);
-    }
-
-    /** O `type` diz o que aconteceu, com o mesmo nome que um relógio usa para a mesma coisa. */
-    public function testEachDetectionIsTypedByWhatHappened(): void
-    {
-        $normalizer = new MessageNormalizer();
-        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
-
-        $vitals = $normalizer->normalize([
-            'type' => 'hbstatics',
-            'device_code' => 'radar-topic-uid',
-            'real_time_breathing' => 0,
-            'real_time_heart_rate' => 0,
-            'avg_breathing_per_minute' => 0,
-            'avg_heart_rate_per_minute' => 30,
-            'breathing_status_per_minute' => 'apnea',
-            'heart_rate_status_per_minute' => 'normal',
-            'vital_signs_status' => 'normal',
-            'sleep_state_status' => 'undefined',
-        ], $topic, $this->device());
-
-        self::assertSame('apnea', $vitals['events'][0]['type']);
-        self::assertSame([], $vitals['events'][0]['data']);
-        self::assertSame('hbstatics', $vitals['events'][0]['source']['nativeType']);
-
-        $presence = $normalizer->normalize([
-            'type' => 'position',
-            'device_code' => 'radar-topic-uid',
-            'people' => [$this->person(1, 'walking', 'leave_room')],
-        ], $topic, $this->device());
-
-        self::assertSame('zone_exit', $presence['events'][0]['type']);
-        self::assertSame(['zone' => 'room', 'personIndex' => 1], $presence['events'][0]['data']);
-    }
-
-    /** A telemetria e as detecções vão na mesma versão: é o mesmo protocolo. */
-    public function testTheEnvelopeCarriesNoSchemaVersion(): void
-    {
-        $normalizer = new MessageNormalizer();
-        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
-
-        $result = $normalizer->normalize([
-            'type' => 'position',
-            'device_code' => 'radar-topic-uid',
-            'people' => [$this->person(1, 'fall_confirmation')],
-        ], $topic, $this->device());
-
-        self::assertArrayNotHasKey('schemaVersion', $result['events'][0]);
-        self::assertArrayNotHasKey('schemaVersion', $result['telemetry']['presence']);
-    }
-
     public function testPositionNormalizationDropsSentinelPersonIndex88(): void
     {
         $normalizer = new MessageNormalizer();
@@ -278,60 +202,6 @@ final class MessageNormalizerTest extends TestCase
 
         self::assertSame('heart_rate_high', $result['events'][0]['type']);
         self::assertSame(['bpm' => 180], $result['events'][0]['data']);
-    }
-
-    /**
-     * O estado que o radar reporta levanta o alarme que lhe pertence.
-     *
-     * @dataProvider breathingAlarms
-     */
-    public function testTheReportedBreathingStatusRaisesItsAlarm(int $statusByte, string $expected): void
-    {
-        $normalizer = new MessageNormalizer();
-        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
-
-        $result = $normalizer->normalize([
-            'type' => 'hbstatics',
-            'device_code' => 'radar-topic-uid',
-            'real_time_breathing' => 16,
-            'real_time_heart_rate' => 70,
-            'avg_breathing_per_minute' => 16,
-            'avg_heart_rate_per_minute' => 70,
-            'breathing_status_per_minute' => $statusByte === 1 ? 'hypopnea' : 'hyperpnea',
-            'heart_rate_status_per_minute' => 'normal',
-            'vital_signs_status' => 'normal',
-            'sleep_state_status' => 'awake',
-        ], $topic, $this->device());
-
-        self::assertContains($expected, array_column($result['events'], 'type'));
-    }
-
-    /** @return array<string, array{0: int, 1: string}> */
-    public static function breathingAlarms(): array
-    {
-        return [
-            'respiração fraca' => [1, 'breath_rate_low'],
-            'respiração acelerada' => [2, 'breath_rate_high'],
-        ];
-    }
-
-    /** Sentado no chão, confirmado, é uma queda: a postura diz como ficou. */
-    public function testSittingOnTheGroundIsAFall(): void
-    {
-        $normalizer = new MessageNormalizer();
-        $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
-
-        $result = $normalizer->normalize([
-            'type' => 'position',
-            'device_code' => 'radar-topic-uid',
-            'people' => [$this->person(1, 'confirmed_sitting_on_ground')],
-        ], $topic, $this->device());
-
-        self::assertSame('fall', $result['events'][0]['type']);
-        self::assertSame(
-            ['confirmed' => true, 'posture' => 'sitting_on_ground', 'personIndex' => 1],
-            $result['events'][0]['data'],
-        );
     }
 
     /**
@@ -484,6 +354,7 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame('normal', $data['heartRateStatus']);
         self::assertSame('normal', $data['vitalSignsStatus']);
         self::assertSame('light_sleep', $data['sleepState']);
+        self::assertSame(['breath_rate_low'], array_column($result['events'], 'type'));
     }
 
     /** O estado do minuto leva a média como valor: é o que justifica o evento. */

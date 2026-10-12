@@ -8,6 +8,9 @@ const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { uplinkCardContent } = await import(
     "../../src/Dashboard/dashboard/components/cards/telemetry.js",
 );
+const { requestCardShell } = await import(
+    "../../src/Dashboard/dashboard/components/cards/request.js",
+);
 
 /**
  * Uma coluna por dose marcada, identificada pela hora que está no plano de medicação; os slots
@@ -101,22 +104,105 @@ test("sem plano sincronizado, a coluna vale pelo número do alarme", () => {
     assert.match(doses[0].textContent, /Alarme 4/);
 });
 
-/** O cartão ocupa a linha toda: em meia, as colunas teriam quarenta pixéis cada. */
-test("o cartão pede a linha inteira", () => {
-    assert.equal(
-        uplinkCardContent("medication_alarm_status", {
-            takenCount: 0,
-            missedCount: 0,
-            alarms: NINE(),
-        }).span,
-        12,
-    );
-});
-
 /** E a mudança de uma dose é um evento, com a sua própria leitura de uma linha. */
 test("a alteração de uma dose diz a hora e o estado novo", () => {
     const content = uplinkCardContent("medication_alarm_change", { alarm: 3, state: "missed" });
 
     assert.match(content.value, /10:10/);
     assert.match(content.value, /[Ff]alhada/);
+});
+
+/** O cartão inteiro, sem plano lido: os alarmes valem pelo número. */
+const shell = (type, data) => {
+    state.selectedDetail = { model: { deviceType: "pill_dispenser" } };
+    return String(requestCardShell(
+        { feature: type, requestable: false },
+        false,
+        [{ type, occurredAt: "2026-09-22T09:38:34Z", data }],
+    ));
+};
+const card = (data) => shell("medication_alarm_status", data);
+
+/** O estado dos nove alarmes traz uma lista, que o renderizador genérico não sabe desenhar. */
+test("a lista de alarmes nunca aparece como [object Object]", () => {
+    const rendered = card({
+        takenCount: 1,
+        missedCount: 1,
+        alarms: [
+            { alarm: 1, state: "taken" },
+            { alarm: 3, state: "missed" },
+        ],
+    });
+
+    assert.doesNotMatch(rendered, /\[object Object\]/);
+});
+
+/** Uma toma falhada é o que faz alguém olhar para o cartão, e por isso é o valor principal. */
+test("uma toma falhada é o valor principal", () => {
+    const rendered = card({
+        takenCount: 2,
+        missedCount: 1,
+        alarms: [
+            { alarm: 1, state: "taken" },
+            { alarm: 2, state: "taken" },
+            { alarm: 3, state: "missed" },
+        ],
+    });
+
+    assert.match(rendered, /1 falhada/);
+});
+
+test("sem falhas, o valor principal são as tomas", () => {
+    const rendered = card({
+        takenCount: 2,
+        missedCount: 0,
+        alarms: [
+            { alarm: 1, state: "taken" },
+            { alarm: 2, state: "taken" },
+        ],
+    });
+
+    assert.match(rendered, /2 tomadas/);
+    assert.doesNotMatch(rendered, /falhada/);
+});
+
+/** Nove linhas de «Sem toma marcada» não são detalhe nenhum: só os alarmes vivos entram. */
+test("os alarmes parados não enchem o cartão", () => {
+    const rendered = card({
+        takenCount: 0,
+        missedCount: 0,
+        alarms: [
+            { alarm: 1, state: "idle" },
+            { alarm: 2, state: "waiting" },
+            { alarm: 3, state: "idle" },
+        ],
+    });
+
+    assert.match(rendered, /Alarme 2/);
+    assert.doesNotMatch(rendered, /Alarme 1/);
+    assert.doesNotMatch(rendered, /Alarme 3/);
+});
+
+/** Nada em curso continua a ser uma leitura válida, e o cartão tem de a dizer em português. */
+test("com tudo parado o cartão diz que não há tomas, e em português", () => {
+    const rendered = card({
+        takenCount: 0,
+        missedCount: 0,
+        alarms: [{ alarm: 1, state: "idle" }],
+    });
+
+    assert.doesNotMatch(rendered, /TakenCount|MissedCount|Alarms/);
+    assert.match(rendered, /Sem tomas/);
+});
+
+/**
+ * A mudança de uma dose é capacidade própria: o cartão dos nove alarmes só recebe leituras dos
+ * nove.
+ */
+test("a mudança de uma dose é outra capacidade, e lê-se numa linha", () => {
+    const rendered = shell("medication_alarm_change", { alarm: 3, state: "missed" });
+
+    assert.match(rendered, /Alarme 3/);
+    assert.match(rendered, /falhada/i);
+    assert.doesNotMatch(rendered, /\[object Object\]/);
 });

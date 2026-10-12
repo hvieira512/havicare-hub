@@ -132,67 +132,6 @@ final class DashboardStoreTest extends TestCase
         self::assertSame('cmd-2', $store->findCommand('cmd-2')['command']['id'] ?? null);
     }
 
-    public function testExpireStaleDevicesMarksOldOnlineDevicesOffline(): void
-    {
-        $redis = new InMemoryRedisClient();
-        $store = new DeviceStore($redis, prefix: 'test:dashboard');
-
-        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
-        $store->deviceSeen('861265061009822', ['online' => '1']);
-        $redis->hmset('test:dashboard:device:861265061009822', [
-            'lastSeenAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 7200),
-        ]);
-        $redis->zadd('test:dashboard:online-devices-by-last-seen', ['861265061009822' => time() - 7200]);
-
-        $store->expireStaleDevices(60);
-
-        self::assertFalse($store->device('861265061009822')['online']);
-    }
-
-    public function testRegisterDevicePersistsDeviceTypeAndLicenseId(): void
-    {
-        $redis = new InMemoryRedisClient();
-        $store = new DeviceStore($redis, prefix: 'test:dashboard');
-
-        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE', 'radar', 12);
-
-        $device = $store->device('861265061009822');
-        self::assertSame('radar', $device['deviceType']);
-        self::assertSame(12, $device['licenseId']);
-    }
-
-    public function testRetryWaitingCommandsResendsRetryableCommands(): void
-    {
-        $redis = new InMemoryRedisClient();
-        $store = new DeviceStore($redis, prefix: 'test:dashboard');
-        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
-        $store->recordCommand('861265061009822', 'cmd-1', [
-            'status' => 'waiting',
-            'retryable' => true,
-            'bytes' => 'IWBP76,1',
-            'attempts' => 1,
-            'maxAttempts' => 3,
-            'retryDelaySeconds' => 60,
-            'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
-        ]);
-
-        $calls = [];
-        $store->retryWaitingCommands(60, 3600, 3, function (string $imei, string $bytes, array $command) use (&$calls): string {
-            $calls[] = [$imei, $bytes, $command['id'] ?? null];
-            return 'sent';
-        });
-
-        self::assertCount(1, $calls);
-        self::assertSame(['861265061009822', 'IWBP76,1', 'cmd-1'], $calls[0]);
-
-        $command = $store->commands('861265061009822')[0] ?? [];
-        self::assertSame('waiting', $command['status'] ?? null);
-        self::assertSame(2, $command['attempts'] ?? null);
-        self::assertNotEmpty($command['lastAttemptAt'] ?? null);
-        self::assertNotEmpty($command['nextRetryAt'] ?? null);
-    }
-
     public function testBinaryCommandBytesAreStoredAsBase64AndDecodedForRetry(): void
     {
         $redis = new InMemoryRedisClient();
@@ -345,38 +284,6 @@ final class DashboardStoreTest extends TestCase
         self::assertSame('failed', $command['status'] ?? null);
         self::assertSame('device_rejected', $command['error'] ?? null);
         self::assertSame('TAKEPILLS', $command['replyNativeType'] ?? null);
-    }
-
-    public function testRetryWaitingCommandsDispatchesQueuedRetryableCommands(): void
-    {
-        $redis = new InMemoryRedisClient();
-        $store = new DeviceStore($redis, prefix: 'test:dashboard');
-        $store->registerDevice('861728087743062', '4P Touch', 'D41');
-        $store->recordCommand('861728087743062', 'cmd-queued', [
-            'status' => 'queued',
-            'retryable' => true,
-            'bytes' => '[3G*2808774306*0009*LSSET,3+6]',
-            'attempts' => 1,
-            'maxAttempts' => 3,
-            'retryDelaySeconds' => 60,
-            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
-        ]);
-
-        $calls = [];
-        $store->retryWaitingCommands(60, 3600, 3, function (string $imei, string $bytes, array $command) use (&$calls): string {
-            $calls[] = [$imei, $bytes, $command['id'] ?? null];
-            return 'sent';
-        });
-
-        self::assertSame([
-            ['861728087743062', '[3G*2808774306*0009*LSSET,3+6]', 'cmd-queued'],
-        ], $calls);
-
-        $command = $store->commands('861728087743062')[0] ?? [];
-        self::assertSame('waiting', $command['status'] ?? null);
-        self::assertSame(1, $command['attempts'] ?? null);
-        self::assertNotEmpty($command['sentAt'] ?? null);
-        self::assertGreaterThan(time(), strtotime((string)($command['nextRetryAt'] ?? '')));
     }
 
     public function testQueuedRedispatchDoesNotConsumeAttemptsWhileDeviceRemainsOffline(): void

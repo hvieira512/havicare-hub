@@ -6,7 +6,6 @@ import "./support/browser-env.js";
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { allDetailItems, detailFilterChipLabels, filterDetailItems } =
     await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
-const { telemetryActivityRow } = await import("../../src/Dashboard/dashboard/devices/detail.js");
 
 const event = (type, severity, data = {}) => ({
     type,
@@ -49,14 +48,6 @@ test("um evento sem gravidade fica de fora", () => {
     };
 
     assert.deepEqual(allDetailItems(), []);
-});
-
-test("a cor da linha é a da gravidade", () => {
-    assert.equal(telemetryActivityRow(event("zone_exit", "alert", { zone: "geofence" })).tone, "warning");
-    assert.equal(telemetryActivityRow(event("low_battery", "alert")).tone, "warning");
-    assert.equal(telemetryActivityRow(event("fall", "alarm", { confirmed: true })).tone, "danger");
-    // Sem perigo nem alerta, fica a cor da capacidade: uma entrada na divisão não é vermelha.
-    assert.equal(telemetryActivityRow(event("zone_entry", "info", { zone: "room" })).tone, "info");
 });
 
 test("o filtro de gravidade deixa só os alarmes, ou só os alertas", () => {

@@ -134,6 +134,45 @@ final class ApiRequestLoggerTest extends TestCase
         self::assertStringContainsString('Failed to log API request completion', $this->logContents());
     }
 
+    public function testApiLoggingKeepsFullBodiesWithoutEllipsis(): void
+    {
+        $payload = str_repeat('abc123', 800);
+        Logger::channel('api')->info('large body', ['response_body' => ['payload' => $payload]]);
+
+        $log = $this->logContents();
+        self::assertStringContainsString('"payload":"' . $payload . '"', $log);
+        self::assertStringNotContainsString('...', $log);
+        self::assertGreaterThan(4096, strlen($log));
+    }
+
+    public function testLoggerStopsNormalizingUnboundedlyDeepContext(): void
+    {
+        $value = ['leaf' => 'complete'];
+        for ($depth = 0; $depth < 40; $depth++) {
+            $value = ['nested' => $value];
+        }
+
+        Logger::channel('api')->info('deep context', ['body' => $value]);
+
+        $log = $this->logContents();
+        self::assertStringContainsString('levels deep, aborting normalization', $log);
+        self::assertStringNotContainsString('"leaf":"complete"', $log);
+    }
+
+    public function testLoggerKeepsTheDepthOfARealDeviceResponse(): void
+    {
+        $value = ['leaf' => 'complete'];
+        for ($depth = 0; $depth < 12; $depth++) {
+            $value = ['nested' => $value];
+        }
+
+        Logger::channel('api')->info('device response', ['body' => $value]);
+
+        $log = $this->logContents();
+        self::assertStringContainsString('"leaf":"complete"', $log);
+        self::assertStringNotContainsString('aborting normalization', $log);
+    }
+
     private function logContents(): string
     {
         clearstatcache(true, $this->logPath);

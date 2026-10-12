@@ -131,13 +131,13 @@ final class MedicationRemindersPublicFormTest extends TestCase
         self::assertSame($public, $capability->fromNative('wonlex-json', 'dnMedicationPlan', $native));
     }
 
-    /** O slot do dispensador sobrevive à ida ao fio. */
+    /** O slot do dispensador sobrevive à ida ao fio, e o `enabled` também: é o que limpa o compartimento. */
     public function testTheDispenserSlotSurvivesTheRoundTrip(): void
     {
         $capability = new MedicationRemindersCapability();
         $public = ['plans' => [
             ['times' => [['time' => '08:00', 'enabled' => true, 'slot' => 1, 'recurrence' => ['kind' => 'daily']]]],
-            ['times' => [['time' => '20:30', 'enabled' => true, 'slot' => 3, 'recurrence' => ['kind' => 'daily']]]],
+            ['times' => [['time' => '20:30', 'enabled' => false, 'slot' => 3, 'recurrence' => ['kind' => 'daily']]]],
         ]];
 
         $native = $capability->toNative('zayata-m228', $public)['medication_reminders'];
@@ -145,12 +145,21 @@ final class MedicationRemindersPublicFormTest extends TestCase
         self::assertSame(
             [
                 ['slot' => 1, 'hour' => 8, 'minute' => 0, 'enabled' => true],
-                ['slot' => 3, 'hour' => 20, 'minute' => 30, 'enabled' => true],
+                ['slot' => 3, 'hour' => 20, 'minute' => 30, 'enabled' => false],
             ],
             $native['plans'],
             'o nativo do M228',
         );
         self::assertSame($public, $capability->fromNative('zayata-m228', 'medication_reminders', $native));
+    }
+
+    /** Vazio são os nove alarmes desligados, o ponto de partida de um dispensador por configurar. */
+    public function testAnEmptyDispenserPlanIsAValidPlan(): void
+    {
+        self::assertSame(
+            ['plans' => []],
+            (new MedicationRemindersCapability())->toNative('zayata-m228', ['plans' => []])['medication_reminders'],
+        );
     }
 
     /** A forma pública do 4P Touch volta ao formato nativo que ele partilha com os alarmes. */

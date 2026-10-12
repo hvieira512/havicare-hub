@@ -109,19 +109,6 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         self::assertSame(0, $store->updates()->listenerCount());
     }
 
-    /** A rota do bilhete de stream não existe: a credencial vai no cabeçalho, e só lá. */
-    public function testTheStreamTicketRouteIsGone(): void
-    {
-        [$server] = $this->makeServerWithDatabase();
-        $token = $this->loginToken($server, 'admin', 'secret');
-
-        $minted = $server(
-            (new ServerRequest('POST', '/api/auth/stream-ticket'))
-                ->withHeader('Authorization', 'Bearer ' . $token)
-        );
-        self::assertSame(404, $minted->getStatusCode(), (string)$minted->getBody());
-    }
-
     /** Sem credencial nenhuma não abre. */
     public function testAStreamWithoutACredentialIsStillRejected(): void
     {

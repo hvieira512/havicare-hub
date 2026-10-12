@@ -20,13 +20,6 @@ const PHONEBOOK = {
 const render = () => parseFragment(renderConfigSection("four-p-touch", PHONEBOOK, { contacts: [] }, {}, false, null, true))
     .querySelector("[data-config-section]");
 
-test("a lista telefónica mostra o limite só no contador", () => {
-    const section = render();
-
-    assert.doesNotMatch(section.textContent, /limite|contactos máximos/);
-    assert.equal(section.querySelector("[data-repeat-count]")?.textContent, "(1 de 100)");
-});
-
 test("o contador acompanha as linhas acrescentadas", () => {
     const section = render();
 

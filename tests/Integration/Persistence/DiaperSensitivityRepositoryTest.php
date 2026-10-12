@@ -28,15 +28,6 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
         return $pdo;
     }
 
-    public function testAnUnconfiguredSensorReadsTheNormalPreset(): void
-    {
-        // Não há backfill: a ausência de linha significa o preset normal, que é o
-        // comportamento com que todos os sensores em produção correm.
-        $repository = new DiaperSensitivityRepository($this->pdoWithSensor());
-
-        self::assertSame(DiaperSensitivity::normal(), $repository->forDevice(self::SENSOR));
-    }
-
     public function testAnUnknownSensorAlsoReadsTheNormalPreset(): void
     {
         // A ingestão chama isto antes de qualquer garantia de que a linha existe; devolver null
@@ -44,19 +35,6 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
         $repository = new DiaperSensitivityRepository($this->createDashboardDatabase()->pdo());
 
         self::assertSame(DiaperSensitivity::normal(), $repository->forDevice('nao-existe'));
-    }
-
-    public function testAWrittenValueIsReadBack(): void
-    {
-        // A escrita é do `PATCH /configurations`, que passa pelo ciclo de vida das
-        // configurações; este repositório faz a leitura no caminho quente.
-        $pdo = $this->pdoWithSensor();
-        $this->storeSensitivity($pdo, 3, 7);
-
-        self::assertSame(
-            ['pollutionRange' => 3, 'pollutionValue' => 7],
-            (new DiaperSensitivityRepository($pdo))->forDevice(self::SENSOR)
-        );
     }
 
     public function testTheCacheHoldsForItsTtlAndTheDatabaseIsTheSourceOfTruth(): void

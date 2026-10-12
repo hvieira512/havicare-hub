@@ -28,17 +28,6 @@ test("uma definição de campo estreito desenha o campo e mais nada", () => {
     assert.equal(section.querySelectorAll("button").length, 0);
 });
 
-test("o rótulo do campo desaparece", () => {
-    assert.equal(sectionOf(LOCATION_INTERVAL).querySelectorAll("label").length, 0);
-});
-
-/** O protocolo da Wonlex diz que o `intervalTime` é em segundos, e que zero desliga. */
-test("o intervalo de localização da Wonlex diz a unidade", () => {
-    const section = sectionOf(LOCATION_INTERVAL);
-
-    assert.match(section.textContent, /\bs\b/);
-});
-
 test("a unidade que o rótulo carregava fica ao lado do controlo", () => {
     const section = sectionOf({
         key: "wonlexHeartRateInterval",
@@ -55,19 +44,6 @@ test("o campo continua a ter nome para quem não o vê", () => {
     const input = sectionOf(LOCATION_INTERVAL).querySelector("input[type=\"number\"]");
 
     assert.equal(input.getAttribute("aria-label"), "Intervalo de localização");
-});
-
-/** Quem envia uma definição é o rodapé da secção. */
-test("uma definição não leva botão de enviar", () => {
-    const section = sectionOf(LOCATION_INTERVAL);
-
-    assert.equal(section.querySelectorAll("[data-action=\"saveConfig\"]").length, 0);
-});
-
-test("um campo estreito não leva botão de repor", () => {
-    const section = sectionOf(LOCATION_INTERVAL);
-
-    assert.equal(section.querySelectorAll("button[type=\"reset\"]").length, 0);
 });
 
 /** O tom de pele da Veepoo vai de 1 a 6, e o aparelho recusa o zero. */

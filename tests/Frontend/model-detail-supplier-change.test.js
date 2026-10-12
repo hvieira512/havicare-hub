@@ -7,9 +7,11 @@ const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initSettingsModels } = await import(
     "../../src/Dashboard/dashboard/settings/models/shell.js",
 );
-const { renderModelDetailInfo, saveModelDetail } = await import(
-    "../../src/Dashboard/dashboard/settings/models/detail.js",
-);
+const {
+    handleModelDetailImageChange,
+    renderModelDetailInfo,
+    saveModelDetail,
+} = await import("../../src/Dashboard/dashboard/settings/models/detail.js");
 
 /**
  * Trocar o fornecedor faz o servidor substituir as capacidades pelo template do novo, e a ficha
@@ -116,4 +118,42 @@ test("gravar sem trocar o fornecedor não recarrega a ficha", async () => {
     await saveModelDetail();
 
     assert.equal(urls.filter((url) => /\/api\/models\/42(\?|$)/.test(url)).length, 0);
+});
+
+function pick(els, name = "images.jpeg") {
+    const file = new File([new Uint8Array([1, 2, 3])], name, { type: "image/jpeg" });
+    Object.defineProperty(els.modelDetailImageInput, "files", { value: [file], configurable: true });
+    return file;
+}
+
+test("escolher uma imagem na ficha do modelo deixa o Guardar à vista", async () => {
+    globalThis.fetch = async () => jsonResponse({ data: [], pagination: { total: 0 } });
+    const els = setupDom();
+    renderModelDetailInfo(MODEL);
+    assert.ok(els.modelDetailSaveBtn.classList.contains("d-none"), "sem alterações não há Guardar");
+
+    pick(els);
+    handleModelDetailImageChange();
+
+    assert.ok(!els.modelDetailSaveBtn.classList.contains("d-none"));
+    assert.match(els.modelDetailImage.innerHTML, /<img/);
+});
+
+test("gravar a ficha envia a imagem escolhida", async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, method: options.method || "GET", body: options.body });
+        return jsonResponse({ status: "ok" });
+    };
+    const els = setupDom();
+    renderModelDetailInfo(MODEL);
+    const file = pick(els);
+    handleModelDetailImageChange();
+
+    await saveModelDetail();
+
+    const put = calls.find((call) => call.method === "PUT");
+    assert.ok(put, "gravou a ficha por PUT");
+    assert.match(put.url, /\/api\/models\/42/);
+    assert.equal(put.body.get("image"), file);
 });

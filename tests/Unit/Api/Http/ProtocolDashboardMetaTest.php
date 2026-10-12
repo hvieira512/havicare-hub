@@ -45,15 +45,6 @@ final class ProtocolDashboardMetaTest extends TestCase
         }
     }
 
-    public function testTheDashboardMetadataDoesNotDefineASecondCapabilityTaxonomy(): void
-    {
-        foreach (['wonlex-json', 'vivistar-iw', 'four-p-touch'] as $protocol) {
-            $dashboard = ProtocolDashboardMeta::forProtocol($protocol);
-            self::assertArrayNotHasKey('categoryLabels', $dashboard);
-            self::assertArrayNotHasKey('categoryOrder', $dashboard);
-        }
-    }
-
     public function testTheBraceletsKeepTheirPressModes(): void
     {
         self::assertSame(

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 // Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
 import "./support/browser-env.js";
+import { parseFragment } from "./support/dom.js";
 import { unsentConfigChanges } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 
 /**
@@ -74,4 +75,22 @@ test("as linhas de um grupo contam uma a uma", () => {
     }
 
     assert.equal(unsentConfigChanges(host), 1);
+});
+
+/**
+ * Um bloco cuja leitura lança conta como alteração por enviar, como na fotografia e no botão:
+ * senão o rodapé cala-se e ninguém chega à mensagem.
+ */
+function jsonRoot(json) {
+    return parseFragment(`
+        <div data-config-pane="geral">
+            <section data-config-section data-config-key="raw" data-config-input="json"
+                     data-config-pristine='{"a":1}'>
+                <textarea data-config-field="json">${json}</textarea>
+            </section>
+        </div>`);
+}
+
+test("um bloco com leitura inválida conta como alteração por enviar", () => {
+    assert.equal(unsentConfigChanges(jsonRoot("{ nao e json")), 1);
 });

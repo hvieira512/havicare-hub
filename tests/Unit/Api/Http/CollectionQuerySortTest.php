@@ -43,12 +43,6 @@ final class CollectionQuerySortTest extends TestCase
     }
 
 
-    /** Sem sentido escrito, ascendente -- que é o que ordenar por uma coluna quer dizer. */
-    public function testAColumnWithoutADirectionIsAscending(): void
-    {
-        self::assertSame([['column' => 'company', 'descending' => false]], $this->sort(['sort' => 'company']));
-    }
-
     /** Várias colunas por vírgula, pela ordem em que se escreveram: a primeira manda. */
     public function testSeveralColumnsAreAcceptedInTheOrderTheyWereWritten(): void
     {

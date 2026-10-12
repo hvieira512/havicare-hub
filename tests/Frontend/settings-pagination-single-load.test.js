@@ -2,7 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
-import { handleSettingsPaginationClick } from "../../src/Dashboard/dashboard/settings/shell.js";
+import {
+    handleSettingsPaginationClick,
+    initSettingsShell,
+    setSettingsNavCount,
+} from "../../src/Dashboard/dashboard/settings/shell.js";
 import { renderPagination } from "../../src/Dashboard/dashboard/pagination.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
@@ -38,4 +42,40 @@ test("um clique no paginador das definições pede uma página só", () => {
         .dispatchEvent(new window.Event("click", { bubbles: true }));
 
     assert.deepEqual(loaded, [3]);
+});
+
+/**
+ * A pastilha de contagem de um separador diz quantos são. A zero não diz nada que a lista
+ * vazia já não diga, e por isso esconde-se -- em todos, e não só nos que nunca lá chegam.
+ */
+function setUpNav() {
+    document.body.innerHTML = "<span id=\"settingsDenylistCount\" class=\"d-none\"></span>";
+    const element = document.getElementById("settingsDenylistCount");
+    initSettingsShell({ els: { settingsDenylistCount: element } });
+    return element;
+}
+
+test("uma contagem conhecida aparece", () => {
+    const badge = setUpNav();
+
+    setSettingsNavCount("Denylist", 3);
+
+    assert.equal(badge.textContent, "3");
+    assert.equal(badge.classList.contains("d-none"), false);
+});
+
+test("a zero, a pastilha esconde-se", () => {
+    const badge = setUpNav();
+
+    setSettingsNavCount("Denylist", 0);
+
+    assert.equal(badge.classList.contains("d-none"), true);
+});
+
+test("desconhecida, esconde-se também", () => {
+    const badge = setUpNav();
+
+    setSettingsNavCount("Denylist", null);
+
+    assert.equal(badge.classList.contains("d-none"), true);
 });

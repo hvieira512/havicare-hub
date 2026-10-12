@@ -13,18 +13,6 @@ use PHPUnit\Framework\TestCase;
  */
 final class PillDispenserPeriodValidationTest extends TestCase
 {
-    public function testAValidPeriodPassesThrough(): void
-    {
-        self::assertSame(
-            ['enabled' => true, 'startDate' => '2026-01-01', 'endDate' => '2026-12-31'],
-            ZayataPayloadBuilder::build('medication_period', [
-                'enabled' => true,
-                'startDate' => '2026-01-01',
-                'endDate' => '2026-12-31',
-            ]),
-        );
-    }
-
     public function testTheSameDayAtBothEndsIsAValidPeriod(): void
     {
         // Um dia só: o plano vale nesse dia e mais nenhum.

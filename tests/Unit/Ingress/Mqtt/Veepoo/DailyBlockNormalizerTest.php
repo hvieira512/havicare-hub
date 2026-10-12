@@ -96,27 +96,6 @@ final class DailyBlockNormalizerTest extends TestCase
     }
 
     /**
-     * Sem ele um bloco de zeros na mesinha é igual a alguém sentado. A tabela não está documentada:
-     * ao pulso só se viu `0`, e fora dele `6`.
-     */
-    public function testWearStateSaysWhetherTheBandWasOnTheWrist(): void
-    {
-        $worn = (new DailyBlockNormalizer())->normalize(
-            ['date' => '2026-09-09-09-40', 'step' => ['stepCount' => 37, 'wear' => 0]],
-            self::DEVICE,
-            'bef341903987',
-        );
-        $off = (new DailyBlockNormalizer())->normalize(
-            ['date' => '2026-09-09-03-20', 'step' => ['stepCount' => 0, 'wear' => 6]],
-            self::DEVICE,
-            'bef341903987',
-        );
-
-        self::assertSame(['state' => 'worn'], self::ofType($worn, 'wear_state')[0]['data']);
-        self::assertSame(['state' => 'not_worn'], self::ofType($off, 'wear_state')[0]['data']);
-    }
-
-    /**
      * Colapsar repetições confundia «não mudou» com «não houve leitura»; quem consome compara com
      * o que leu antes.
      */
@@ -142,23 +121,6 @@ final class DailyBlockNormalizerTest extends TestCase
             '09:05 worn',
             '09:10 worn',
         ], $states);
-    }
-
-    /**
-     * Só o zero diz «ao pulso»: `1` viu-se com a pulseira a ser calçada e `2` com ela pousada na
-     * secretária, e nenhum traz leitura ótica.
-     */
-    public function testEveryNonZeroWearFlagMeansNotWorn(): void
-    {
-        foreach ([1, 2, 6] as $flag) {
-            $out = (new DailyBlockNormalizer())->normalize(
-                ['date' => '2026-09-09-09-40', 'step' => ['stepCount' => 0, 'wear' => $flag]],
-                self::DEVICE,
-                'bef341903987',
-            );
-
-            self::assertSame(['state' => 'not_worn'], self::ofType($out, 'wear_state')[0]['data'], "wear={$flag}");
-        }
     }
 
     /**

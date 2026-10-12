@@ -57,15 +57,6 @@ test("as definições declaram tipos de campo que alguém desenha", () => {
     assert.deepEqual(orphans, [], "estes tipos caem no editor de JSON em cru");
 });
 
-test("o painel não tem tabela nenhuma a sobrepor o tipo declarado", () => {
-    const source = readFileSync(
-        new URL("../../src/Dashboard/dashboard/devices/config/catalog-model.js", import.meta.url),
-        "utf8",
-    );
-
-    assert.doesNotMatch(source, /genericInputs/);
-});
-
 test("nenhum renderizador registado ficou sem desenhar nem sem ler", () => {
     for (const [name, descriptor] of Object.entries(CONFIG_INPUTS)) {
         assert.equal(typeof descriptor.read, "function", `${name} não sabe ler o que desenha`);

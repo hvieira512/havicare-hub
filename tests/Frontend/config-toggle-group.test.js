@@ -89,25 +89,57 @@ test("uma acção transitória não entra no grupo", () => {
     assert.ok(root.querySelector("[data-config-section][data-config-key=\"find_device\"]"));
 });
 
-/** Mandar as oito definições de cada vez seriam oito comandos para a pulseira executar. */
-test("o grupo envia só as linhas alteradas", () => {
-    const group = parseFragment(`
-        <div data-config-group>
-            <div data-config-row data-config-key="a" data-config-input="toggle" data-config-pristine='{"enabled":true}'>
-                <input type="checkbox" data-config-field="enabled" checked>
-            </div>
-            <div data-config-row data-config-key="b" data-config-input="toggle" data-config-pristine='{"enabled":true}'>
-                <input type="checkbox" data-config-field="enabled">
-            </div>
-        </div>`).firstElementChild;
-
-    assert.deepEqual(changedConfigEntries(group), { b: { enabled: false } });
-});
-
 /** Um interruptor sozinho também é uma linha, para a lista não ter dois desenhos. */
 test("um interruptor sozinho não volta a ser cartão", () => {
     const root = render([toggle("blood_oxygen_alert", "Alerta de oxigénio no sangue", 10)]);
 
     assert.equal(root.querySelectorAll("[data-config-group] [data-config-row]").length, 1);
     assert.equal(root.querySelectorAll("[data-config-section]").length, 0);
+});
+
+/**
+ * A toma antecipada e o bloqueio de criança do dispensador declaram ambos o campo `enabled` e
+ * partilham um «Enviar»: cada linha tem de enviar o **seu** valor.
+ */
+
+const toggleGroup = (rows) => parseFragment(`
+    <section data-config-group data-config-protocol="zayata-m228">
+        ${rows.map(({ key, on, stored }) => `
+            <div data-config-row data-config-key="${key}" data-config-input="toggle"
+                 data-config-stored="${stored ? "1" : "0"}"
+                 data-config-pristine='${JSON.stringify({ enabled: stored })}'>
+                <input type="checkbox" role="switch" data-config-field="enabled" ${on ? "checked" : ""}>
+            </div>`).join("")}
+    </section>`).querySelector("[data-config-group]");
+
+test("desligar um interruptor envia esse e não o vizinho", () => {
+    const group = toggleGroup([
+        { key: "early_dispense", on: true, stored: true },
+        { key: "child_lock", on: false, stored: true },
+    ]);
+
+    assert.deepEqual(changedConfigEntries(group), {
+        child_lock: { enabled: false },
+    });
+});
+
+test("com os dois alterados, cada um leva o seu valor", () => {
+    const group = toggleGroup([
+        { key: "early_dispense", on: false, stored: true },
+        { key: "child_lock", on: true, stored: false },
+    ]);
+
+    assert.deepEqual(changedConfigEntries(group), {
+        early_dispense: { enabled: false },
+        child_lock: { enabled: true },
+    });
+});
+
+test("sem alterações não se envia nada", () => {
+    const group = toggleGroup([
+        { key: "early_dispense", on: true, stored: true },
+        { key: "child_lock", on: true, stored: true },
+    ]);
+
+    assert.deepEqual(changedConfigEntries(group), {});
 });

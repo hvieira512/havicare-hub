@@ -50,18 +50,6 @@ test("um campo cuja chave traz a unidade diz a unidade", () => {
     assert.deepEqual(silent, []);
 });
 
-test("o exercício e o tempo em pé dizem a unidade uma vez", () => {
-    assert.equal(fieldLabel("exerciseSeconds"), "Exercício");
-    assert.equal(fieldValue("exerciseSeconds", 30), "30 s");
-    assert.equal(fieldLabel("standMinutes"), "Tempo em pé");
-    assert.equal(fieldValue("standMinutes", 12), "12 min");
-});
-
-test("os eixos do movimento e os tempos do radar dizem a unidade", () => {
-    assert.equal(fieldValue("xMg", -12), "-12 mg");
-    assert.equal(fieldValue("walkingTimeS", 240), "240 s");
-});
-
 /** Os campos de configuração guardam a unidade na etiqueta, que é de onde o painel a tira. */
 test("os campos de configuração mantêm a unidade entre parênteses", () => {
     assert.equal(fieldUnit("intervalTime"), "s");

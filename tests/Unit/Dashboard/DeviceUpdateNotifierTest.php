@@ -39,41 +39,6 @@ final class DeviceUpdateNotifierTest extends TestCase
         self::assertSame(2, $calls);
     }
 
-    public function testEveryListenerOfADeviceIsCalled(): void
-    {
-        $notifier = new DeviceUpdateNotifier();
-        $calls = 0;
-        // Duas abas do browser no mesmo dispositivo.
-        $notifier->subscribe('aaa', static function () use (&$calls): void {
-            $calls++;
-        });
-        $notifier->subscribe('aaa', static function () use (&$calls): void {
-            $calls++;
-        });
-
-        $notifier->notify('aaa');
-
-        self::assertSame(2, $calls);
-    }
-
-    public function testNotifyAllReachesEveryDevice(): void
-    {
-        $notifier = new DeviceUpdateNotifier();
-        $calls = [];
-        $notifier->subscribe('aaa', static function () use (&$calls): void {
-            $calls[] = 'aaa';
-        });
-        $notifier->subscribe('bbb', static function () use (&$calls): void {
-            $calls[] = 'bbb';
-        });
-
-        // Varreduras como expirar comandos não nomeiam os dispositivos que tocam.
-        $notifier->notifyAll();
-
-        sort($calls);
-        self::assertSame(['aaa', 'bbb'], $calls);
-    }
-
     public function testUnsubscribingStopsDeliveryAndReleasesTheDevice(): void
     {
         $notifier = new DeviceUpdateNotifier();
@@ -108,14 +73,5 @@ final class DeviceUpdateNotifierTest extends TestCase
 
         self::assertSame(1, $calls);
         self::assertSame(1, $notifier->listenerCount());
-    }
-
-    public function testNotifyingADeviceNobodyWatchesIsHarmless(): void
-    {
-        $notifier = new DeviceUpdateNotifier();
-
-        $notifier->notify('nobody-is-watching');
-
-        self::assertSame(0, $notifier->listenerCount());
     }
 }

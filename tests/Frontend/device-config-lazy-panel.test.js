@@ -1,12 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { reachableFrom } from "./support/module-graph.js";
 
 /**
- * O separador «Configurações» são vinte e dois módulos ES e 209 KB, que só entram por `import()`
+ * O separador «Configurações» são duas dezenas de módulos ES e 209 KB, que só entram por `import()`
  * no `device-modal.js` quando alguém o abre.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -46,9 +47,13 @@ test("o painel de configurações continua pendurado no modal do dispositivo", (
         full.has(PANEL),
         "seguindo o import() dinâmico, o painel tem de continuar alcançável",
     );
-    assert.equal(
-        configModulesIn(full).length,
-        22,
-        "os vinte e dois módulos do cluster continuam a fazer parte do grafo",
+    const onDisk = readdirSync(CONFIG_ROOT, { recursive: true })
+        .filter((file) => file.endsWith(".js"))
+        .map((file) => path.join(CONFIG_ROOT, file));
+
+    assert.deepEqual(
+        configModulesIn(full).sort(),
+        onDisk.sort(),
+        "todos os módulos do cluster continuam a fazer parte do grafo",
     );
 });

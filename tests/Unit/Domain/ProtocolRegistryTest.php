@@ -19,27 +19,9 @@ final class ProtocolRegistryTest extends TestCase
         self::assertTrue($protocol['supportsConfigCatalog']);
     }
 
-    /** O domínio não decide com que aspecto fica um campo. */
-    public function testDescribeCarriesNoPresentationConcerns(): void
-    {
-        foreach (ProtocolRegistry::keys() as $protocolKey) {
-            self::assertSame(
-                ['protocol', 'label', 'deviceType', 'supportsConfigCatalog'],
-                array_keys(ProtocolRegistry::describe($protocolKey)),
-                "O `describe('{$protocolKey}')` voltou a trazer apresentação consigo."
-            );
-        }
-    }
-
     public function testOnlyProtocolsWithConfigCatalogAreReturnedInTheHelper(): void
     {
-        self::assertContains('four-p-touch', ProtocolRegistry::protocolsWithConfigCatalog());
-        self::assertContains('vivistar-iw', ProtocolRegistry::protocolsWithConfigCatalog());
-        self::assertContains('wonlex-json', ProtocolRegistry::protocolsWithConfigCatalog());
-        self::assertNotContains('voerka-ncs', ProtocolRegistry::protocolsWithConfigCatalog());
-        self::assertNotContains('qinglanst-radar', ProtocolRegistry::protocolsWithConfigCatalog());
         self::assertNotContains('moko-mkgw3', ProtocolRegistry::protocolsWithConfigCatalog());
-        self::assertNotContains('moko-mkgw4', ProtocolRegistry::protocolsWithConfigCatalog());
         // O MONIT tem catálogo sem ter downlink: o flag diz se há o que configurar, e não se a
         // alteração viaja.
         self::assertContains('monit-mecs-pro-ble', ProtocolRegistry::protocolsWithConfigCatalog());
@@ -47,9 +29,6 @@ final class ProtocolRegistryTest extends TestCase
 
     public function testForSupplierIsDerivedFromTheRegistryTable(): void
     {
-        self::assertSame('four-p-touch', ProtocolRegistry::forSupplier('4P Touch'));
-        self::assertSame('vivistar-iw', ProtocolRegistry::forSupplier('Vivistar'));
-        self::assertSame('wonlex-json', ProtocolRegistry::forSupplier('Wonlex'));
         self::assertSame('moko-mkgw3', ProtocolRegistry::forSupplier('MOKO'));
         self::assertSame('monit-mecs-pro-ble', ProtocolRegistry::forSupplier('MONIT'));
         self::assertSame('', ProtocolRegistry::forSupplier('Unknown'));

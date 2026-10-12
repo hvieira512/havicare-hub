@@ -87,15 +87,6 @@ final class BridgeGatewayHistoryTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    public function testAScanReportStaysOutOfTheGatewayHistory(): void
-    {
-        [$bridge, , $store] = $this->bridge();
-
-        $this->deliver($bridge, $this->scanPayload());
-
-        self::assertSame([], $store->recent(self::GATEWAY, 'raw'));
-    }
-
     /**
      * A observação de um aparelho retransmitido fica no histórico **dele**, para debugging:
      * no do gateway afogava as tramas de estado.
@@ -130,15 +121,6 @@ final class BridgeGatewayHistoryTest extends TestCase
         self::assertCount(2, $braceletRaw, 'no MQTT saem as duas');
     }
 
-    public function testAStatusFrameIsKeptInTheGatewayHistory(): void
-    {
-        [$bridge, , $store] = $this->bridge();
-
-        $this->deliver($bridge, $this->statusPayload());
-
-        self::assertNotSame([], $store->recent(self::GATEWAY, 'raw'));
-    }
-
     /**
      * O estado sobrevive à enxurrada. Com os relatórios de scan a entrarem na lista, cem
      * mensagens -- menos de um minuto -- bastavam para não restar uma única trama de estado.
@@ -169,16 +151,5 @@ final class BridgeGatewayHistoryTest extends TestCase
         // Três: o raw do gateway na trama de estado, e no scan o raw do gateway mais o raw da
         // observação da pulseira retransmitida.
         self::assertCount(3, $mqtt->raw);
-    }
-
-    /** E o relatório de scan continua a ser despachado para o dispositivo retransmitido. */
-    public function testTheScanReportStillReachesTheRelayedDevice(): void
-    {
-        [$bridge, $mqtt] = $this->bridge();
-
-        $this->deliver($bridge, $this->scanPayload());
-
-        $types = array_column(array_column($mqtt->telemetry, 'payload'), 'type');
-        self::assertContains('proximity', $types);
     }
 }

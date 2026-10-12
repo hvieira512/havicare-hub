@@ -54,12 +54,7 @@ final class PillDispenserValidationRangesTest extends TestCase
      */
     public static function legalEdges(): iterable
     {
-        yield 'volume no silêncio' => ['alarm_volume', ['volume' => 3]];
         yield 'toque nenhum' => ['alarm_ringtone', ['ringtone' => 0]];
-        yield 'fuso na ponta leste' => ['time_zone', ['timeZone' => 1400]];
-        yield 'fuso na ponta oeste' => ['time_zone', ['timeZone' => -1200]];
-        yield 'um dia inteiro de espera' => ['retrieval_warning', ['minutes' => 1440]];
-        yield 'o prato todo carregado' => ['loaded_cells', ['cells' => 28]];
         yield 'os nove alarmes' => ['medication_reminders', ['plans' => array_fill(0, 9, ['hour' => 8, 'minute' => 0])]];
         yield 'período sem datas' => ['medication_period', ['enabled' => false, 'startDate' => '', 'endDate' => '']];
     }

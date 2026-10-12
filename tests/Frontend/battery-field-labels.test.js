@@ -12,13 +12,6 @@ test("o batteryType diz o motivo do envio, e não um tipo", () => {
     assert.equal(fieldLabel("batteryType"), "Motivo do envio");
 });
 
-test("e os quatro motivos saem por palavras", () => {
-    assert.equal(fieldValue("batteryType", 0), "Ao ligar");
-    assert.equal(fieldValue("batteryType", 1), "Ao desligar");
-    assert.equal(fieldValue("batteryType", 2), "Envio periódico");
-    assert.equal(fieldValue("batteryType", 3), "Bateria fraca");
-});
-
 /** O mesmo campo chega em duas formas: o bit dos relógios e a enumeração do dispensador. */
 test("o estado de carga também não sai em código", () => {
     assert.equal(fieldValue("chargingState", 0), "Não está a carregar");

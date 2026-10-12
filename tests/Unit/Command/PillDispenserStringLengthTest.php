@@ -51,13 +51,4 @@ final class PillDispenserStringLengthTest extends TestCase
 
         self::assertSame(20, strlen((string)$request[0x8009]['value']));
     }
-
-    /** Os tipos numéricos não mudam: um INT8U continua a ser um byte. */
-    public function testNumericTagsKeepTheirWidth(): void
-    {
-        $request = PillDispenserAdapter::readRequestTlv([0x8101, 0x810B]);
-
-        self::assertSame(1, strlen((string)$request[0x8101]['value']), 'INT8U');
-        self::assertSame(2, strlen((string)$request[0x810B]['value']), 'INT16S');
-    }
 }

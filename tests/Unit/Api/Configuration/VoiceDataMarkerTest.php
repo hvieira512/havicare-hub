@@ -82,4 +82,14 @@ final class VoiceDataMarkerTest extends TestCase
 
         self::assertSame($payload, $marked);
     }
+
+    public function testMarksTheAudioAboveTheInlineBudget(): void
+    {
+        $audio = str_repeat('audio', 20000);
+
+        $marked = (new VoiceDataMarker(65536))->mark(['voiceData' => base64_encode($audio)]);
+
+        self::assertArrayNotHasKey('voiceData', $marked);
+        self::assertSame(strlen($audio), $marked['voiceDataBytes']);
+    }
 }

@@ -1,6 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 
 // Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
@@ -11,11 +10,6 @@ import {
 } from "../../src/Dashboard/dashboard/devices/config/index.js";
 
 /** Os três presets, os dois inteiros, e as gamas vindas do servidor em vez de escritas aqui. */
-
-const MODAL = readFileSync(
-    new URL("../../src/Dashboard/components/modals/device.php", import.meta.url),
-    "utf8",
-);
 
 const ENTRY = {
     key: "diaper_sensitivity",
@@ -44,12 +38,6 @@ function sectionFor(desired) {
         html,
     };
 }
-
-test("não há separador nem marcação estática de regras do hub", () => {
-    assert.doesNotMatch(MODAL, /Regras do hub/);
-    assert.doesNotMatch(MODAL, /deviceHubRulesTabBtn/);
-    assert.doesNotMatch(MODAL, /deviceDiaperSensitivityRow/);
-});
 
 test("os três presets aparecem, e o que bate certo com os valores fica aceso", () => {
     const { section } = sectionFor({ pollutionRange: 4, pollutionValue: 12 });

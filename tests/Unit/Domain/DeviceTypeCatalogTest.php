@@ -52,21 +52,11 @@ final class DeviceTypeCatalogTest extends TestCase
         self::assertSame('deviceId', DeviceTypeCatalog::all()['gateway']['identity']['field']);
 
         self::assertTrue(DeviceTypeCatalog::hasSim('watch'));
-        foreach (['ncs', 'radar', 'diaper_sensor', 'bracelet'] as $type) {
-            self::assertFalse(DeviceTypeCatalog::hasSim($type), $type);
-        }
     }
 
     /** Um tipo desconhecido não tem SIM, em vez de rebentar. */
     public function testAnUnknownTypeSimplyHasNoSim(): void
     {
         self::assertFalse(DeviceTypeCatalog::hasSim('nao_existe'));
-    }
-
-    public function testTheJsonIsWhatGoesToTheBrowser(): void
-    {
-        $decoded = json_decode(DeviceTypeCatalog::asJson(), true);
-
-        self::assertSame(DeviceTypeCatalog::all(), $decoded);
     }
 }

@@ -91,31 +91,6 @@ final class BridgeSessionTest extends TestCase
         );
     }
 
-    /** O hub publica o que recebe: comparar com a anterior é conta de quem integra. */
-    public function testTheFirmwareVersionIsPublishedOnEverySession(): void
-    {
-        $mqtt = new RecordingHubMqttBridge();
-        $bridge = $this->bridge($mqtt);
-
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.73.01.00-5966'));
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.73.01.00-5966'));
-        $bridge->handleReceivedMessage(self::TOPIC, self::session(true, '02.74.00.00-5966'));
-
-        $versions = array_map(
-            static fn(array $e): mixed => $e['payload']['data']['version'] ?? null,
-            array_values(array_filter(
-                $mqtt->telemetry,
-                static fn(array $e): bool => ($e['payload']['type'] ?? null) === 'firmware_version',
-            )),
-        );
-
-        self::assertSame([
-            '02.73.01.00-5966',
-            '02.73.01.00-5966',
-            '02.74.00.00-5966',
-        ], $versions);
-    }
-
     /**
      * A sessão e a versão repetem-se de trinta em trinta segundos, e num histórico de cem entradas
      * expulsariam tudo o resto numa hora.

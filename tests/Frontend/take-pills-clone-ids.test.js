@@ -9,7 +9,7 @@ import {
 } from "../../src/Dashboard/dashboard/devices/config/row-editing.js";
 import { configSection } from "./support/dom.js";
 
-const ENTRY = { input: "takePills", key: "take_pills", fields: [] };
+const TAKE_PILLS = { input: "takePills", key: "take_pills", fields: [] };
 
 const rowsOf = (section) =>
     [...section.querySelectorAll("[data-repeat-row=\"takePillsReminder\"]")];
@@ -21,7 +21,7 @@ const attrsIn = (row, attr) => [...row.querySelectorAll(`[${attr}]`)].map((el) =
  * seguinte reutilizar um índice vivo e juntar os rádios de duas linhas num grupo.
  */
 test("um lembrete acrescentado depois de remover outro não reutiliza os id", () => {
-    const section = configSection(renderConfigInputs, ENTRY, {}, { limit: 3 });
+    const section = configSection(renderConfigInputs, TAKE_PILLS, {}, { limit: 3 });
     while (rowsOf(section).length < 3) {
         const before = rowsOf(section).length;
         appendRepeatRow(section, "takePillsReminder");
@@ -50,5 +50,30 @@ test("um lembrete acrescentado depois de remover outro não reutiliza os id", ()
             const shared = [...groups].filter((name) => otherGroups.has(name));
             assert.deepEqual(shared, [], `linhas ${index} e ${other} partilham ${shared}`);
         }
+    }
+});
+
+const threeReminders = () => configSection(renderConfigInputs, TAKE_PILLS, {
+    reminderSettings: [{ time: "09:00" }, { time: "13:00" }, { time: "21:00" }],
+    voiceData: "AAAA",
+});
+
+/** O 4P Touch aplica a mesma gravação a todos os lembretes, e nenhum deles tem a sua. */
+test("a gravação de voz é uma só para todos os lembretes", () => {
+    const section = threeReminders();
+
+    assert.equal(section.querySelectorAll("[data-repeat-row=\"takePillsReminder\"]").length, 3);
+    assert.equal(section.querySelectorAll("[data-config-field=\"voiceData\"]").length, 1);
+    assert.equal(section.querySelectorAll("[data-action=\"takePillsRecord\"]").length, 1);
+});
+
+test("nenhum lembrete traz voz dentro nem sinal de a ter", () => {
+    for (const row of threeReminders().querySelectorAll("[data-repeat-row=\"takePillsReminder\"]")) {
+        assert.equal(row.querySelector("[data-takepills-audio]"), null, "voz dentro do lembrete");
+        assert.equal(
+            row.querySelector("[data-alarm-line-badges]").textContent.trim(),
+            "",
+            "sinal de voz na linha fechada",
+        );
     }
 });

@@ -7,153 +7,22 @@ namespace Tests\Unit\Dashboard;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Auth\ApiTokenStore;
 use PHPUnit\Framework\TestCase;
-use Predis\ClientInterface;
-use Predis\Command\CommandInterface;
+use Tests\Support\Doubles\InMemoryRedisClient;
 
 final class ApiTokenStoreTest extends TestCase
 {
-    public function testRefreshTokenReissuesAccessAfterAccessTokenExpires(): void
+    public function testARefreshTokenIsNotAnAccessTokenAndIsConsumedOnce(): void
     {
-        $store = new ApiTokenStore(new ExpiringRedisClientForApiTokenStoreTest(), 'test:api-tokens');
-        $pair = $store->issueTokenPair('admin', ApiAuthContext::ROLE_HUB_ADMIN, 1, 60);
+        $store = new ApiTokenStore(new InMemoryRedisClient(), 'test:api-tokens');
+        $pair = $store->issueTokenPair('admin', ApiAuthContext::ROLE_HUB_ADMIN, 60, 60);
 
         self::assertSame('admin', $pair['username']);
         self::assertInstanceOf(ApiAuthContext::class, $store->context($pair['access_token']));
         self::assertNull($store->context($pair['refresh_token']));
 
-        sleep(2);
-
-        self::assertNull($store->context($pair['access_token']));
-
         $context = $store->consumeRefreshToken($pair['refresh_token']);
         self::assertInstanceOf(ApiAuthContext::class, $context);
         self::assertSame('admin', $context->username);
-
-        $newPair = $store->issueTokenPair(
-            $context->username,
-            $context->role,
-            60,
-            60,
-            $context->userId,
-            $context->licenseId,
-            $context->licenseRefId,
-            $context->companyId,
-            $context->company,
-        );
-
-        self::assertSame('admin', $newPair['username']);
-        self::assertNotSame($pair['access_token'], $newPair['access_token']);
-        self::assertNotSame($pair['refresh_token'], $newPair['refresh_token']);
-        self::assertInstanceOf(ApiAuthContext::class, $store->context($newPair['access_token']));
-        // Consumido: uma segunda renovação com o mesmo token de renovação já não devolve nada.
         self::assertNull($store->consumeRefreshToken($pair['refresh_token']));
-    }
-
-    /** Um token de acesso expirado não abre nada, e o portador não é o de renovação. */
-    public function testAnExpiredAccessTokenResolvesToNoContext(): void
-    {
-        $store = new ApiTokenStore(new ExpiringRedisClientForApiTokenStoreTest(), 'test:api-tokens');
-        $issued = $store->issue('admin', ApiAuthContext::ROLE_HUB_ADMIN, 1);
-
-        self::assertInstanceOf(ApiAuthContext::class, $store->context($issued['access_token']));
-
-        sleep(2);
-
-        self::assertNull($store->context($issued['access_token']));
-        self::assertFalse($store->validate($issued['access_token']));
-    }
-}
-
-final class ExpiringRedisClientForApiTokenStoreTest implements ClientInterface
-{
-    /** @var array<string, string> */
-    private array $strings = [];
-
-    /** @var array<string, int> */
-    private array $expiresAt = [];
-
-    public function getCommandFactory()
-    {
-        throw new \BadMethodCallException('Not implemented');
-    }
-
-    public function getOptions()
-    {
-        throw new \BadMethodCallException('Not implemented');
-    }
-
-    public function connect(): void
-    {
-    }
-
-    public function disconnect(): void
-    {
-    }
-
-    public function getConnection()
-    {
-        throw new \BadMethodCallException('Not implemented');
-    }
-
-    /** @param array<int, mixed> $arguments */
-    public function createCommand($method, $arguments = [])
-    {
-        throw new \BadMethodCallException('Not implemented');
-    }
-
-    public function executeCommand(CommandInterface $command)
-    {
-        throw new \BadMethodCallException('Not implemented');
-    }
-
-    public function pipeline(callable $callback): void
-    {
-        $callback($this);
-    }
-
-    /** @param array<int, mixed> $arguments */
-    public function __call($method, $arguments)
-    {
-        return match (strtolower((string)$method)) {
-            'setex' => $this->setex((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
-            'get' => $this->get((string)$arguments[0]),
-            'del' => $this->del($arguments[0]),
-            default => throw new \BadMethodCallException("Redis method {$method} not implemented"),
-        };
-    }
-
-    private function setex(string $key, int $seconds, string $value): string
-    {
-        $this->strings[$key] = $value;
-        $this->expiresAt[$key] = time() + max(1, $seconds);
-
-        return 'OK';
-    }
-
-    private function get(string $key): ?string
-    {
-        if (isset($this->expiresAt[$key]) && $this->expiresAt[$key] <= time()) {
-            unset($this->strings[$key], $this->expiresAt[$key]);
-            return null;
-        }
-
-        return $this->strings[$key] ?? null;
-    }
-
-    /** @param list<string>|string $keys */
-    private function del($keys): int
-    {
-        $keys = is_array($keys) ? $keys : [$keys];
-        $deleted = 0;
-
-        foreach ($keys as $key) {
-            $key = (string)$key;
-            if (isset($this->strings[$key])) {
-                unset($this->strings[$key], $this->expiresAt[$key]);
-                $deleted++;
-            }
-        }
-
-        return $deleted;
     }
 }

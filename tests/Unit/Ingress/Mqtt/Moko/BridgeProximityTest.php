@@ -142,25 +142,6 @@ final class BridgeProximityTest extends TestCase
         self::assertSame(5, $data['windowSeconds']);
     }
 
-    public function testEachGatewayReportsItsOwnSignalForTheSameDevice(): void
-    {
-        [$bridge, $mqtt] = $this->bridge();
-
-        $this->deliver($bridge, $this->scanPayload(['rssi' => -85], self::GATEWAY), self::GATEWAY);
-        $this->deliver($bridge, $this->scanPayload(['rssi' => -52], self::GATEWAY2), self::GATEWAY2);
-
-        $proximity = $this->proximity($mqtt->telemetry);
-        self::assertSame(
-            [[self::GATEWAY, -85], [self::GATEWAY2, -52]],
-            array_map(
-                static fn(array $e): array => [$e['payload']['data']['gatewayId'], $e['payload']['data']['rssiMaxDbm']],
-                $proximity,
-            ),
-        );
-        // A janela de uma porta nunca é alimentada pela de outra.
-        self::assertSame(1, $proximity[1]['payload']['data']['samples']);
-    }
-
     public function testSignalReportsStayOutOfTheDeviceHistory(): void
     {
         [$bridge, , $store] = $this->bridge();
@@ -197,26 +178,6 @@ final class BridgeProximityTest extends TestCase
         self::assertSame(self::GATEWAY, $unknown['gatewayId']);
         // O desconhecido não pode passar por leitura, e por isso não leva sinal nenhum.
         self::assertArrayNotHasKey('rssiMedianDbm', $unknown);
-    }
-
-    public function testNothingIsReportedForADeviceTheGatewayMayNotRelay(): void
-    {
-        $mqtt = new RecordingHubMqttBridge();
-        $bridge = new MokoBridge(
-            new FakeMqttSubscriber(),
-            IngressFixtures::whitelist([
-                self::GATEWAY => IngressFixtures::gateway('MKGW3'),
-                self::BRACELET => IngressFixtures::bracelet('W6B'),
-            ]),
-            $mqtt,
-            IngressFixtures::links(linked: false),
-            new ArrayObservationStateStore(),
-            clock: fn(): float => $this->now,
-        );
-
-        $this->deliver($bridge, $this->scanPayload(['rssi' => -52]));
-
-        self::assertSame([], $this->proximity($mqtt->telemetry));
     }
 
     /**

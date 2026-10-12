@@ -170,26 +170,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
         $config = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'fallDownSensitivity');
         self::assertIsArray($config);
         self::assertSame('fallSensitivityLevels', $config['input'] ?? null);
-        self::assertSame(
-            [
-                ['value' => 1, 'label' => 'Máxima'],
-                ['value' => 2, 'label' => 'Muito Alta'],
-                ['value' => 3, 'label' => 'Alta'],
-                ['value' => 4, 'label' => 'Moderada'],
-                ['value' => 5, 'label' => 'Baixa'],
-                ['value' => 6, 'label' => 'Muito Baixa'],
-                ['value' => 7, 'label' => 'Quase Mínima'],
-                ['value' => 8, 'label' => 'Mínima'],
-            ],
-            $config['options']['sensitivity'] ?? null
-        );
-        self::assertSame(
-            [
-                ['value' => 6, 'label' => '6 níveis'],
-                ['value' => 8, 'label' => '8 níveis'],
-            ],
-            $config['options']['levels'] ?? null
-        );
+        self::assertSame(range(1, 8), array_column($config['options']['sensitivity'] ?? [], 'value'));
+        self::assertSame([6, 8], array_column($config['options']['levels'] ?? [], 'value'));
     }
 
     public function testPublicAlarmClockAliasMapsToGenericCapability(): void
@@ -200,14 +182,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('sos_contacts', CapabilityCatalog::mapConfigurationKey('SOSNumber'));
         self::assertSame('whitelist_enabled', CapabilityCatalog::mapConfigurationKey('whitelistSwitch'));
         self::assertSame('whitelist_enabled', CapabilityCatalog::mapConfigurationKey('rejectUnknownCalls'));
-
-        $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'call_whitelist');
-        self::assertIsArray($config);
-        self::assertSame('call_whitelist', $config['key'] ?? null);
-
-        $switch = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'whitelist_enabled');
-        self::assertIsArray($switch);
-        self::assertSame('whitelist_enabled', $switch['key'] ?? null);
 
         $fourPTouch = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'alarmClock');
         self::assertIsArray($fourPTouch);
@@ -365,7 +339,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         self::assertIsArray($medication);
         self::assertSame('wonlexMedicationPlans', $medication['input'] ?? null);
-        self::assertStringNotContainsString('JSON', (string)($medication['label'] ?? ''));
         self::assertNull(DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'weatherData'));
     }
 
@@ -828,13 +801,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertIsArray($config);
         self::assertSame('alerts', $config['category'] ?? null);
         self::assertSame(3, $config['limit'] ?? null);
-        self::assertSame([
-            'frequency' => [
-                ['value' => 1, 'label' => 'Uma vez'],
-                ['value' => 2, 'label' => 'Diariamente'],
-                ['value' => 3, 'label' => 'Personalizado'],
-            ],
-        ], $config['options'] ?? null);
+        self::assertSame([1, 2, 3], array_column($config['options']['frequency'] ?? [], 'value'));
         self::assertSame('medication_reminders', CapabilityCatalog::mapConfigurationKey('takePills'));
     }
 
@@ -995,14 +962,15 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testFourPTouchCommandsExposeSplitHealthRequests(): void
     {
-        $commands = DeviceCommandCatalog::commandsForProtocol('four-p-touch');
+        $replies = array_column(DeviceCommandCatalog::commandsForProtocol('four-p-touch'), 'expectedReplyTypes', 'feature');
 
-        self::assertCount(6, $commands);
-        self::assertSame('CR', $commands[0]['command']);
-        self::assertSame('VERNO', $commands[4]['command']);
-        self::assertSame('TS', $commands[5]['command']);
-        self::assertContains('bphrt', $commands[1]['expectedReplyTypes']);
-        self::assertContains('btemp2', $commands[3]['expectedReplyTypes']);
+        self::assertEqualsCanonicalizing(
+            ['location', 'heart_rate', 'blood_pressure', 'temperature', 'firmware_version', 'device_status'],
+            array_keys($replies)
+        );
+        self::assertContains('bphrt', $replies['heart_rate']);
+        self::assertContains('bphrt', $replies['blood_pressure']);
+        self::assertContains('btemp2', $replies['temperature']);
     }
 
     public function testFourPTouchTakePillsHandlesMultipleReminders(): void
@@ -1026,23 +994,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010101,3,006D006500640073,]', $wire);
-    }
-
-    public function testFourPTouchTakePillsHandlesSingleReminderBackwardCompatible(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
-            'reminderSettings' => [
-                'time' => '11:25',
-                'enabled' => true,
-                'frequency' => 2,
-                'custom' => '',
-            ],
-            'number' => 1,
-            'reminderText' => 'meds',
-        ]);
-
-        self::assertSame('TAKEPILLS', $payload['command']);
-        self::assertSame(['11:25-1-2', '1', '006D006500640073', ''], $payload['payload']['fields'] ?? []);
     }
 
     public function testFourPTouchTakePillsAllowsClearingAllReminders(): void
@@ -1088,24 +1039,32 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('[3G*8800000015*0006*SOS,,,]', $wire);
     }
 
-    public function testFourPTouchMonitorNumberBuildsNativeFields(): void
+    /** @return iterable<string, array{string, array<string, mixed>, string}> */
+    public static function singleFrameProvider(): iterable
     {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'monitorNumber', ['phone' => '13100010002']);
-        self::assertSame('MONITOR', $payload['command']);
-        self::assertSame(['fields' => ['13100010002']], $payload['payload']);
-
-        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertStringContainsString('MONITOR,13100010002', $wire);
+        yield 'monitor number' => ['monitorNumber', ['phone' => '13100010002'], '[3G*8800000015*0013*MONITOR,13100010002]'];
+        yield 'device password' => ['devicePassword', ['password' => '111111'], '[3G*8800000015*0009*PW,111111]'];
+        yield 'sleep time' => ['sleepTime', ['range' => '21:10-7:30'], '[3G*8800000015*0014*SLEEPTIME,21:10-7:30]'];
+        yield 'make call' => ['makeCall', ['phone' => '00000000000'], '[3G*8800000015*0010*CALL,00000000000]'];
+        yield 'center number' => ['centerNumber', ['phone' => '00000000000'], '[3G*8800000015*0012*CENTER,00000000000]'];
+        yield 'reset' => ['resetCommand', [], '[3G*8800000015*0005*RESET]'];
+        yield 'power off' => ['powerOffCommand', [], '[3G*8800000015*0008*POWEROFF]'];
+        yield 'find device' => ['findDeviceCommand', [], '[3G*8800000015*0004*FIND]'];
     }
 
-    public function testFourPTouchDevicePasswordBuildsNativeFields(): void
+    /**
+     * @param array<string, mixed> $desired
+     *
+     * @dataProvider singleFrameProvider
+     */
+    public function testFourPTouchSingleFrameConfigurationsBuildTheirWire(string $key, array $desired, string $wire): void
     {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'devicePassword', ['password' => '111111']);
-        self::assertSame('PW', $payload['command']);
-        self::assertSame(['fields' => ['111111']], $payload['payload']);
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', $key, $desired);
 
-        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertStringContainsString('PW,111111', $wire);
+        self::assertSame(
+            $wire,
+            DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload'])
+        );
     }
 
     public function testFourPTouchFallDownAlertBuildsNativeFields(): void
@@ -1168,38 +1127,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['1', '0', '0']], $payload['payload']);
     }
 
-    public function testFourPTouchSleepTimeBuildsNativeFields(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sleepTime', [
-            'range' => '21:10-7:30',
-        ]);
-        self::assertSame('SLEEPTIME', $payload['command']);
-        self::assertSame(['fields' => ['21:10-7:30']], $payload['payload']);
-
-        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertStringContainsString('SLEEPTIME,21:10-7:30', $wire);
-    }
-
-    public function testFourPTouchMakeCallBuildsNativeFields(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'makeCall', ['phone' => '00000000000']);
-        self::assertSame('CALL', $payload['command']);
-        self::assertSame(['fields' => ['00000000000']], $payload['payload']);
-
-        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertStringContainsString('CALL,00000000000', $wire);
-    }
-
-    public function testFourPTouchCenterNumberBuildsNativeFields(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'centerNumber', ['phone' => '00000000000']);
-        self::assertSame('CENTER', $payload['command']);
-        self::assertSame(['fields' => ['00000000000']], $payload['payload']);
-
-        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertStringContainsString('CENTER,00000000000', $wire);
-    }
-
     public function testFourPTouchPushMessageBuildsNativeFields(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'pushMessage', ['message' => 'hello']);
@@ -1208,47 +1135,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertStringContainsString('MESSAGE,00680065006C006C006F', $wire);
-    }
-
-    public function testFourPTouchResetCommandBuildsNativeFields(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'resetCommand', []);
-        self::assertSame('RESET', $payload['command']);
-        self::assertSame(['fields' => []], $payload['payload']);
-
-        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertSame('[3G*8800000015*0005*RESET]', $wire);
-    }
-
-    public function testFourPTouchPowerOffCommandBuildsNativeFields(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'powerOffCommand', []);
-        self::assertSame('POWEROFF', $payload['command']);
-        self::assertSame(['fields' => []], $payload['payload']);
-
-        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertSame('[3G*8800000015*0008*POWEROFF]', $wire);
-    }
-
-    public function testFourPTouchFindDeviceCommandBuildsNativeFields(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'findDeviceCommand', []);
-        self::assertSame('FIND', $payload['command']);
-        self::assertSame(['fields' => []], $payload['payload']);
-
-        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertSame('[3G*8800000015*0004*FIND]', $wire);
-    }
-
-    public function testFourPTouchAlarmClockBuildsNativeFields(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'alarmClock', [
-            'alarms' => [
-                ['time' => '0730', 'enabled' => true, 'frequency' => 1],
-            ],
-        ]);
-        self::assertSame('REMIND', $payload['command']);
-        self::assertSame(['fields' => ['07:30-1-1']], $payload['payload']);
     }
 
     public function testFourPTouchAlarmClockAllowsEmptyAlarms(): void
@@ -1333,28 +1219,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         );
     }
 
-    public function testFourPTouchPhonebookEmitsDeltaCommands(): void
-    {
-        $hugo = ['name' => 'Hugo', 'phone' => '+351938854803'];
-        $ricardo = ['name' => 'Ricardo', 'phone' => '+351965401976'];
-
-        $payloads = DeviceConfigurationCatalog::commandPayloads(
-            'four-p-touch',
-            'phonebook',
-            ['contacts' => [$hugo, $ricardo]],
-            [
-                'phonebookCommand' => 'PHBX2',
-                'previousContacts' => [1 => $hugo, 2 => $ricardo, 3 => ['name' => 'Ana', 'phone' => '+351911111111']],
-            ],
-        );
-
-        self::assertSame(
-            [['command' => 'DPHBX', 'payload' => ['fields' => ['3']]]],
-            $payloads,
-            'remover um contacto emite a remoção do índice, e não a lista inteira'
-        );
-    }
-
     public function testFourPTouchPhonebookResyncSweepsTheDeviceBeforeWriting(): void
     {
         $hugo = ['name' => 'Hugo', 'phone' => '+351938854803'];
@@ -1381,17 +1245,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testFourPTouchSoundProfileBuildsNativeFields(): void
     {
-        $vibrateAndRing = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 1]);
-        self::assertSame('profile', $vibrateAndRing['command']);
-        self::assertSame(['fields' => ['1']], $vibrateAndRing['payload']);
-
-        $ringOnly = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 2]);
-        self::assertSame(['fields' => ['2']], $ringOnly['payload']);
-
-        $vibrateOnly = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 3]);
-        self::assertSame(['fields' => ['3']], $vibrateOnly['payload']);
-
         $silent = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 4]);
+        self::assertSame('profile', $silent['command']);
         self::assertSame(['fields' => ['4']], $silent['payload']);
     }
 

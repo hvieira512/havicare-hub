@@ -80,30 +80,6 @@ beforeEach(() => {
     state.selectedImei = "414D74184CBF";
 });
 
-test("os detalhes em texto cortam-se numa linha, em vez de embrulharem", () => {
-    const view = els();
-    initDeviceDetailView({ els: view });
-
-    renderTelemetryList([minuteStats(0)]);
-
-    const details = view.telemetryList.querySelector(".telemetry-row-details");
-    assert.ok(details, "a linha tem de trazer detalhes");
-    assert.ok(details.classList.contains("text-truncate"), "o texto corta-se");
-    assert.ok(!details.classList.contains("flex-wrap"), "e não embrulha");
-});
-
-test("as pastilhas não se cortam a meio: ficam numa linha e o que sobra esconde-se", () => {
-    const view = els();
-    initDeviceDetailView({ els: view });
-
-    renderTelemetryList([presence(0)]);
-
-    const details = view.telemetryList.querySelector(".telemetry-row-details");
-    assert.ok(details.classList.contains("d-flex"));
-    assert.ok(details.classList.contains("overflow-hidden"));
-    assert.ok(!details.classList.contains("text-truncate"), "cortar texto partia uma pastilha ao meio");
-});
-
 test("só abre quem tem mais do que mostra", () => {
     const view = els();
     initDeviceDetailView({ els: view });

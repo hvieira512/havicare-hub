@@ -49,35 +49,6 @@ final class BridgeUnauthorizedThrottleTest extends TestCase
         );
     }
 
-    /**
-     * Podar não pode custar o travão: uma identidade repetida dentro da janela continua a
-     * dar um registo só, que é a razão de o mapa existir.
-     */
-    public function testAnIdentityInsideTheWindowIsStillThrottled(): void
-    {
-        $now = 1_000_000.0;
-        $store = $this->createMock(\Hub\State\DeviceStoreContract::class);
-        $store->expects(self::once())->method('recordRejectedDevice');
-        $bridge = new ThrottleProbeBridge(
-            new FakeMqttSubscriber(),
-            IngressFixtures::whitelist(),
-            new RecordingHubMqttBridge(),
-            'test/topic',
-            'test',
-            null,
-            $store,
-            null,
-            static function () use (&$now): float {
-                return $now;
-            },
-        );
-
-        $bridge->reject('AA:00');
-        $now += 5.0;
-        $bridge->reject('AA:00');
-        $now += 5.0;
-        $bridge->reject('AA:00');
-    }
 
     /** O tamanho do travão, que é privado na base por não ser contrato de ninguém. */
     private static function throttled(MqttBridgeBase $bridge): int

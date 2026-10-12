@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Integration\Dashboard;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardHttpServer;
 use Tests\Support\DashboardHttpTestCase;
 
@@ -51,16 +50,6 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
             $first,
         );
         self::assertSame($first, $second);
-    }
-
-    /** As etiquetas que o utilizador lê são portuguesas; o nome do campo no fio não muda. */
-    public function testDeviceModalLabelsAreWrittenInPortuguese(): void
-    {
-        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
-        $page = (new \ReflectionMethod(DashboardHttpServer::class, 'page'))->invoke($server);
-
-        self::assertStringNotContainsString('>Device ID<', $page);
-        self::assertStringContainsString('>ID do dispositivo<', $page);
     }
 
     public function testDashboardOnlyServesExplicitPublicAssets(): void
@@ -118,29 +107,6 @@ final class DashboardHttpServerTest extends DashboardHttpTestCase
         ) {
             $response = $server(new ServerRequest('GET', $path));
             self::assertSame(404, $response->getStatusCode(), $path);
-        }
-    }
-
-    /** A constelação do ecrã de entrada desenha a frota, e por isso sai do catálogo. */
-    public function testTheLoginScreenNamesEveryDeviceTypeInTheCatalog(): void
-    {
-        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
-
-        $html = (string)$server(new ServerRequest('GET', '/dashboard'))->getBody();
-
-        // Só a secção da entrada: a página serve o catálogo inteiro numa ilha JSON, e contra o
-        // documento todo a asserção passaria sem a constelação existir.
-        $start = strpos($html, '<section id="dashboardLogin"');
-        $end = strpos($html, '</section>', $start === false ? 0 : $start);
-        self::assertIsInt($start);
-        self::assertIsInt($end);
-        $login = substr($html, $start, $end - $start);
-
-        foreach (\Hub\Domain\DeviceTypeCatalog::all() as $deviceType => $descriptor) {
-            self::assertArrayHasKey('icon', $descriptor, $deviceType);
-            self::assertNotSame('', $descriptor['icon'], $deviceType);
-            self::assertStringContainsString((string)$descriptor['label'], $login, $deviceType);
-            self::assertStringContainsString($descriptor['icon'], $login, $deviceType);
         }
     }
 

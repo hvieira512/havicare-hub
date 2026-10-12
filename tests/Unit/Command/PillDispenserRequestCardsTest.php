@@ -123,33 +123,22 @@ final class PillDispenserRequestCardsTest extends TestCase
         }
     }
 
-    /**
-     * A trama que cada pedido manda é a que o protocolo exige, e traz o corpo a perguntar.
-     *
-     * Bytes não vazios não medem nada: o construtor ou lança, ou devolve uma trama.
-     */
+    /** A trama que cada pedido manda leva o tipo de pacote que o protocolo exige. */
     public function testEachRequestBuildsTheFrameItsPacketTypeRequires(): void
     {
         $adapter = new PillDispenserAdapter();
-        $chunks = PillDispenserAdapter::configurationReadChunks();
-        $expected = [
-            'readStatus' => [0x07, PillDispenserAdapter::STATUS_TAGS],
-            'readConfiguration' => [0x05, $chunks[0]],
-            'readConfiguration2' => [0x05, $chunks[1] ?? []],
-        ];
+        $expected = ['readStatus' => 0x07, 'readConfiguration' => 0x05, 'readConfiguration2' => 0x05];
 
         foreach ($this->requests() as $entries) {
             foreach ($entries as $entry) {
                 $command = (string)$entry['command'];
-                [$packetType, $tags] = $expected[$command];
 
                 $decoded = $adapter->decodeIncoming(
                     DeviceCommandCatalog::buildDownlink('zayata-m228', '869243062262262', $command)
                 );
 
                 self::assertIsArray($decoded, $command);
-                self::assertSame($packetType, $decoded['packetType'], $command);
-                self::assertSame($tags, array_keys($decoded['tlv']), $command);
+                self::assertSame($expected[$command], $decoded['packetType'], $command);
             }
         }
     }

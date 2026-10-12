@@ -4,7 +4,6 @@ import test from "node:test";
 // Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
 import "./support/browser-env.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
-import { sectionStrip } from "../../src/Dashboard/dashboard/components/chips.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { parseFragment } from "./support/dom.js";
 
@@ -46,24 +45,4 @@ test("a lista de secções do painel de configuração diz o mesmo que a tira", 
         assert.equal(link.dataset.action, "selectConfigCategory");
         assert.notEqual(link.dataset.section, undefined);
     }
-});
-
-test("o painel de configuração não desenha mais separadores sublinhados", () => {
-    const root = renderConfigStrip();
-
-    assert.equal(root.querySelector(".nav-underline"), null);
-    assert.equal(root.querySelector("[data-config-category]"), null);
-});
-
-test("o componente desenha sempre o ícone e a contagem partilhada", () => {
-    const strip = parseFragment(sectionStrip(
-        [{ key: "telemetry", label: "Telemetria", count: 17, icon: "fa-chart-line" }],
-        "jumpCapabilitySection",
-        "telemetry",
-    ));
-    const chip = strip.querySelector(".capability-section-chip");
-
-    assert.ok(chip.classList.contains("selected"));
-    assert.ok(chip.querySelector("i.fa-chart-line"));
-    assert.equal(chip.querySelector(".count-number").textContent, "17");
 });

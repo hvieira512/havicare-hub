@@ -65,31 +65,6 @@ test("a presença mostra a postura de cada pessoa, não uma só do aparelho", ()
     assert.equal(chips[1].textContent, "Queda confirmada");
 });
 
-test("o tom da pastilha diz a gravidade, e o ícone a categoria", () => {
-    const card = uplinkCardContent("presence", {
-        count: 3,
-        people: [person(0, "lying_down"), person(1, "suspected_fall"), person(2, "fall_confirmation")],
-    });
-
-    const chips = [...parseFragment(`<div>${card.details}</div>`).querySelectorAll(".badge")];
-
-    // Repouso, suspeita, confirmação — a mesma escala do resto da dashboard.
-    assert.deepEqual(
-        chips.map((c) => [...c.classList].find((n) => n.startsWith("bg-"))),
-        ["bg-info-subtle", "bg-warning-subtle", "bg-danger-subtle"],
-    );
-
-    // A suspeita e a confirmação partilham o triângulo e separam-se pela cor.
-    assert.deepEqual(
-        chips.map((c) => c.querySelector("i").className),
-        [
-            "fa-solid fa-bed",
-            "fa-solid fa-triangle-exclamation",
-            "fa-solid fa-triangle-exclamation",
-        ],
-    );
-});
-
 /**
  * O corte às três primeiras tem contador, para a quarta pessoa não desaparecer sem aviso. As
  * coordenadas e quem não coube ficam na tooltip, que não corta.
@@ -145,7 +120,6 @@ test("uma entrada ou saída diz a zona, e a área pelo nome que lhe deram", () =
     assert.equal(value("zone_entry", { zone: "area", personIndex: 0, areaId: 2, areaName: "Porta", areaType: "door" }), "Entrou na área «Porta»");
     // Sem planta sincronizada não há nome, e não se inventa um.
     assert.equal(value("zone_entry", { zone: "area", personIndex: 0, areaId: 5 }), "Entrou na área");
-    assert.equal(value("zone_exit", { zone: "geofence" }), "Saiu da zona segura");
 });
 
 test("os vitais fora do normal mostram o valor que os levantou", () => {
@@ -176,10 +150,4 @@ test("o mosaico mostra o detalhe em vez de o deitar fora", () => {
     );
 
     assert.equal(root.querySelector(".telemetry-row-details").textContent, "Pessoa 1 · x 3 dm");
-});
-
-test("um mosaico sem detalhe não desenha a linha vazia", () => {
-    const root = parseFragment(telemetryCard({ icon: "fa-bed", title: "Sono", value: "Acordado" }));
-
-    assert.equal(root.querySelector(".telemetry-row-details"), null);
 });

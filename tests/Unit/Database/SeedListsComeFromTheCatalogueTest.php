@@ -12,19 +12,12 @@ final class SeedListsComeFromTheCatalogueTest extends TestCase
 {
     private const SEED = __DIR__ . '/../../../database/seed.sql';
 
-    /** O ficheiro do inventário não traz lista de modelos. */
-    public function testTheInventorySeedDoesNotWriteModels(): void
+    /** O inventário não traz modelos nem fornecedores: o catálogo escreve-os antes de ele correr. */
+    public function testTheInventorySeedDoesNotWriteModelsOrSuppliers(): void
     {
         $sql = (string)file_get_contents(self::SEED);
 
         self::assertStringNotContainsString('INTO models', $sql);
-    }
-
-    /** Nem de fornecedores: o catálogo escreve-os antes de este ficheiro correr. */
-    public function testTheInventorySeedDoesNotWriteSuppliers(): void
-    {
-        $sql = (string)file_get_contents(self::SEED);
-
         self::assertStringNotContainsString('INTO suppliers', $sql);
     }
 

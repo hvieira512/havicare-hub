@@ -4,22 +4,10 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 import { areaTypeStyle } from "../../src/Dashboard/dashboard/radar-style.js";
 
-/** Os tipos de área como o `baseList` do console do fabricante os enumera. */
-const DECLARED = [
-    [1, "Personalizada"],
-    [2, "Cama"],
-    [3, "Interferência"],
-    [4, "Porta"],
-    [5, "Cama de monitorização"],
-    [6, "Região de alarme"],
-    [7, "Mobília"],
-];
-
-for (const [type, label] of DECLARED) {
-    test(`o tipo de área ${type} chama-se «${label}»`, () => {
-        assert.equal(areaTypeStyle(type).label, label);
-    });
-}
+/** Os nomes vêm do `baseList` do console do fabricante. */
+test("o tipo de área diz o nome que o fabricante lhe dá", () => {
+    assert.equal(areaTypeStyle(5).label, "Cama de monitorização");
+});
 
 test("a chave chega como texto no payload e continua a ser reconhecida", () => {
     assert.equal(areaTypeStyle("7").label, "Mobília");

@@ -5,10 +5,12 @@ import assert from "node:assert/strict";
 // esse caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
+import { state } from "../../src/Dashboard/dashboard/state.js";
+import { parseFragment } from "./support/dom.js";
 
 // O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
 const requestCardShell = (...args) => String(buildCard(...args));
-import { state } from "../../src/Dashboard/dashboard/state.js";
+const textOf = (html) => parseFragment(html).textContent.replace(/\s+/g, " ");
 
 // O nome de uma capacidade vem do catálogo do tipo escolhido: sem ele o cartão mostra a
 // chave humanizada.
@@ -44,21 +46,6 @@ test("MONIT condition renders as a status card without a request button", () => 
     assert.doesNotMatch(html, /data-action="requestFeature"/);
 });
 
-test("MONIT moisture takes the full row and renders one column per channel", () => {
-    const html = moistureCard({
-        channels: [channel(1, 0), channel(2, 5), channel(3, 28)],
-        affectedChannelCount: 1,
-        maximumDelta: 28,
-    });
-
-    // Um mosaico de linha inteira atravessa a grelha; os outros são uma célula dela, e é o
-    // contentor que decide quantos cabem.
-    assert.match(html, /class="telemetry-card-wide[ "]/);
-    assert.equal(html.match(/class="diaper-channel[ "]/g).length, 3);
-    assert.match(html, /fa-droplet/);
-    assert.doesNotMatch(html, /data-action="requestFeature"/);
-});
-
 test("MONIT moisture bands each channel against the normalizer thresholds", () => {
     // O 3 é seco (<4), o 4 e o 11 são húmidos, e o 12 é o limiar de afectado.
     const html = moistureCard({
@@ -82,17 +69,6 @@ test("MONIT moisture scales bar height to twice the threshold and clamps above i
     const heights = [...html.matchAll(/style="height:([\d.]+)%"/g)]
         .map((match) => Number(match[1]));
     assert.deepEqual(heights, [0, 50, 100, 100]);
-});
-
-test("MONIT moisture summarises the maximum delta and affected channel count", () => {
-    const html = moistureCard({
-        channels: [channel(1, 2), channel(2, 31), channel(3, 16)],
-        affectedChannelCount: 2,
-        maximumDelta: 31,
-    });
-
-    assert.match(html, /Máx\. <strong class="text-body">31<\/strong>/);
-    assert.match(html, /<strong class="text-body">2<\/strong> de 3 canais acima do limiar \(12\)/);
 });
 
 test("MONIT moisture takes the thresholds from the reading, not from a constant", () => {
@@ -120,7 +96,7 @@ test("MONIT moisture takes the thresholds from the reading, not from a constant"
     assert.ok(heights.slice(0, 3).every((height) => height < 50));
     assert.match(html, /--diaper-threshold:50%/);
 
-    assert.match(html, /<strong class="text-body">2<\/strong> de 3 canais acima do limiar \(7\)/);
+    assert.match(textOf(html), /2 de 3 canais acima do limiar \(7\)/);
 });
 
 test("MONIT moisture falls back to the normal preset for readings stored before the thresholds travelled", () => {

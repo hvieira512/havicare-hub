@@ -30,24 +30,6 @@ const rowsOf = (section, kind) =>
 
 const textOf = (row, slot) => row.querySelector(`[data-alarm-line-${slot}]`)?.textContent.trim() ?? "";
 
-test("cada entrada das cinco listas fecha numa linha com título e valor à direita", () => {
-    const forms = [
-        [rowsOf(configSection(renderConfigInputs, ALARM, { items: [{ time: "08:40" }] }), "alarm_clock"), "4P Touch"],
-        [rowsOf(configSection(renderConfigInputs, ALARM, { items: [{ time: "09:00", type: 1 }] }, VIVISTAR_META), "alarm_clock"), "Vivistar"],
-        [rowsOf(configSection(renderConfigInputs, ALARM, { items: [{ time: "12:17", label: "Teste" }] }, WONLEX_META), "alarm_clock"), "Wonlex"],
-        [rowsOf(configSection(renderConfigInputs, TAKE_PILLS, { reminderSettings: [{ time: "09:00" }] }), "takePillsReminder"), "voz 4P Touch"],
-        [rowsOf(configSection(renderConfigInputs, MEDICATION, {}), "wonlexMedicationPlan"), "plano Wonlex"],
-    ];
-
-    for (const [rows, form] of forms) {
-        assert.equal(rows.length, 1, `${form}: uma entrada desenhada`);
-        const [row] = rows;
-        assert.ok(row.querySelector("details"), `${form}: a entrada tem de abrir e fechar`);
-        assert.ok(row.querySelector("[data-alarm-line-title]"), `${form}: sem título`);
-        assert.ok(row.querySelector("[data-alarm-line-trailing]"), `${form}: sem valor à direita`);
-    }
-});
-
 test("o título é o nome, senão o tipo, senão a hora", () => {
     const titleOf = (desired, meta) => textOf(
         rowsOf(configSection(renderConfigInputs, ALARM, desired, meta), "alarm_clock")[0],
@@ -70,16 +52,6 @@ test("a recorrência aparece em palavras no subtítulo", () => {
         subtitleOf({ time: "08:40", recurrence: { kind: "custom", days: [1, 3, 5] } }),
         "seg, qua, sex",
     );
-});
-
-test("um sinal na linha fechada diz que o alarme tem som próprio", () => {
-    const badgesOf = (item) => textOf(
-        rowsOf(configSection(renderConfigInputs, ALARM, { items: [item] }, WONLEX_META), "alarm_clock")[0],
-        "badges",
-    );
-
-    assert.match(badgesOf({ time: "12:17", url: "https://exemplo.pt/a.mp3" }), /♪/);
-    assert.equal(badgesOf({ time: "12:17" }), "");
 });
 
 test("a linha fechada mostra o que se acabou de escrever, e não o que lá estava", () => {

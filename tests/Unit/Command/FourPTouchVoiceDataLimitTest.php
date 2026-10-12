@@ -36,25 +36,4 @@ final class FourPTouchVoiceDataLimitTest extends TestCase
             'voiceData' => 'data:audio/webm;base64,' . str_repeat('A', 4_000_000),
         ]);
     }
-
-    /**
-     * O que não pode partir: um lembrete sem voz continua a produzir o comando, e sem chegar
-     * ao `ffmpeg`. É o caminho que a dashboard usa na esmagadora maioria dos casos.
-     */
-    public function testAReminderWithoutVoiceStillBuilds(): void
-    {
-        $fields = FourPTouchPayloadBuilder::build('takePills', self::REMINDER)['fields'];
-
-        self::assertSame('08:00-1-1', $fields[0]);
-        self::assertSame('1', $fields[1]);
-        self::assertSame('', $fields[3], 'o campo da voz fica vazio, e nenhum processo é lançado');
-    }
-
-    public function testAnEmptyPlanStillDisablesTheNativeSlot(): void
-    {
-        $fields = FourPTouchPayloadBuilder::build('takePills', ['reminderSettings' => []])['fields'];
-
-        self::assertSame('00:00-0-1', $fields[0]);
-        self::assertSame('', $fields[3]);
-    }
 }

@@ -80,7 +80,6 @@ final class InMemoryRedisClient implements ClientInterface
             'hmset' => $this->hmset((string)$arguments[0], $arguments[1]),
             'hgetall' => $this->hgetall((string)$arguments[0]),
             'hset' => $this->hset((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
-            'hsetnx' => $this->hsetnx((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
             'hdel' => $this->hdel((string)$arguments[0], $arguments[1]),
             'hget' => $this->hget((string)$arguments[0], (string)$arguments[1]),
             'hmget' => $this->hmget((string)$arguments[0], (array)$arguments[1]),
@@ -161,17 +160,6 @@ final class InMemoryRedisClient implements ClientInterface
         $this->hashes[$key][$field] = $value;
 
         return $exists ? 0 : 1;
-    }
-
-    /** Escreve só se o campo ainda não existir, e devolve 1 quando foi esta chamada a escrever. */
-    private function hsetnx(string $key, string $field, string $value): int
-    {
-        if (array_key_exists($field, $this->hashes[$key] ?? [])) {
-            return 0;
-        }
-        $this->hashes[$key][$field] = $value;
-
-        return 1;
     }
 
     /** @param list<string>|string $fields */

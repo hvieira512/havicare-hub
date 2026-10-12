@@ -75,47 +75,6 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertSame(['remaining' => 16, 'total' => 28, 'current' => 12, 'level' => 'low'], $byFeature['cells_remaining']);
     }
 
-    public function testTheConfigurationReadBackBecomesADeviceConfigEvent(): void
-    {
-        // A resposta ao `0x05` traz o corpo pedido já preenchido. Sem a ler, o hub saberia o
-        // que pediu ao aparelho e nunca o que ele tem.
-        $decoded = $this->decode([
-            'packetType' => 0x85,
-            'mac' => 'AABBCCDDEEFF',
-            'tlv' => [
-                0x1021 => ['value' => "\x08"],          // alarme 1 às 08:30, ligado
-                0x1031 => ['value' => "\x1E"],
-                0x1041 => ['value' => "\x01"],
-                0x1042 => ['value' => "\x00"],          // alarme 2 desligado
-                0x1013 => ['value' => "\x01"],          // volume médio
-                0x1012 => ['value' => "\x02"],          // toque 2
-                0x1001 => ['value' => "\x01"],          // inglês
-                0x1015 => ['value' => pack('s', 100)],  // Lisboa no verão
-                0x100C => ['value' => "\x01"],          // bloqueio de criança ligado
-                0x100D => ['value' => "\x00"],
-            ],
-        ]);
-
-        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
-
-        self::assertCount(1, $events);
-        self::assertSame('device_config', $events[0]['feature']);
-        // Cada configuração volta pela chave do contrato e com a forma com que é enviada: é o
-        // que permite guardá-la como reportada e compará-la com o desejado sem traduzir.
-        $settings = $events[0]['value']['settings'];
-        self::assertSame(['volume' => 1], $settings['alarm_volume']);
-        self::assertSame(['ringtone' => 2], $settings['alarm_ringtone']);
-        self::assertSame(['language' => 1], $settings['device_language']);
-        self::assertSame(['timeZone' => 100], $settings['time_zone']);
-        self::assertSame(['enabled' => true], $settings['child_lock']);
-        self::assertSame(['enabled' => false], $settings['early_dispense']);
-        // O plano volta só com os alarmes definidos: os outros oito seriam ruído.
-        self::assertSame(
-            ['plans' => [['slot' => 1, 'hour' => 8, 'minute' => 30]]],
-            $settings['medication_reminders'],
-        );
-    }
-
     public function testAStatusQueryAnswerIsReadLikeAHeartbeat(): void
     {
         // A resposta ao `0x07` traz as mesmas TAGs de estado que o heartbeat, e por isso é
@@ -183,53 +142,6 @@ final class PillDispenserNormalizationTest extends TestCase
     }
 
     /**
-     * O `0x810B` é o CSQ do módulo e sai como a `connectivity` dos gateways; o `0x810D` são
-     * barras de 0 a 3, que não cabem no `signalQuality` de 0 a 31.
-     */
-    public function testTheStatusQueryBringsTheSignalAsConnectivity(): void
-    {
-        $decoded = $this->decode([
-            'packetType' => 0x07 | 0x80,
-            'mac' => 'AABBCCDDEEFF',
-            'tlv' => [
-                0x8102 => ['value' => "\x00", 'state' => 0],       // destrancado
-                // O aparelho manda a magnitude; o sinal é nosso, porque um sinal recebido é
-                // sempre negativo e o fornecedor confirmou-o.
-                0x810B => ['value' => "\x19\x00", 'state' => 0],   // 25
-                0x810D => ['value' => "\x03", 'state' => 0],       // três barras
-            ],
-        ]);
-
-        $events = [];
-        foreach ((new DeviceEventDecoder())->decode($this->session(), $decoded) as $event) {
-            $events[$event['feature']] = $event['value'];
-        }
-
-        self::assertSame([
-            'interface' => 'cellular',
-            'signalStrengthDbm' => -63,
-        ], $events['connectivity'] ?? null);
-    }
-
-    /**
-     * O `0x8102` é o que o aparelho tem do que o `0x100C` pede: volta como valor reportado da
-     * configuração, e não como telemetria ao lado dela.
-     */
-    public function testTheLockStateComesBackAsTheReportedConfiguration(): void
-    {
-        $decoded = $this->decode([
-            'packetType' => 0x07 | 0x80,
-            'mac' => 'AABBCCDDEEFF',
-            'tlv' => [0x8102 => ['value' => "\x01", 'state' => 0]],
-        ]);
-
-        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
-
-        self::assertSame('device_config', $events[0]['feature']);
-        self::assertSame(['enabled' => true], $events[0]['value']['settings']['child_lock']);
-    }
-
-    /**
      * Uma TAG recusada não tem valor: o que lá está é o eco do que mandámos, e é o estado no Flag
      * que diz se há valor.
      */
@@ -273,32 +185,6 @@ final class PillDispenserNormalizationTest extends TestCase
         self::assertIsArray($decoded);
 
         return $decoded;
-    }
-
-    /** O `0x811B` conta posições e não compartimentos: a zero é a de repouso. */
-    public function testTheTrayCapacityLeavesOutTheRestingPosition(): void
-    {
-        $decoded = $this->decode([
-            'packetType' => 0x87,
-            'mac' => 'AABBCCDDEEFF',
-            'tlv' => [
-                0x811A => ['value' => "\x10"],
-                0x811B => ['value' => "\x1D"],
-                0x811D => ['value' => "\x00"],
-            ],
-        ]);
-
-        $events = (new DeviceEventDecoder())->decode($this->session(), $decoded);
-        $cells = [];
-        foreach ($events as $event) {
-            if ($event['feature'] === 'cells_remaining') {
-                $cells = $event['value'];
-            }
-        }
-
-        self::assertSame(28, $cells['total'] ?? null);
-        self::assertSame(16, $cells['current'] ?? null);
-        self::assertSame(0, $cells['remaining'] ?? null);
     }
 
     private function session(): DeviceSession

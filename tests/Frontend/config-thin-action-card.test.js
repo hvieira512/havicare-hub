@@ -49,18 +49,6 @@ test("uma acção sem campos não tem botão de repor", () => {
     assert.equal(section.querySelectorAll("button[type=\"reset\"]").length, 0);
 });
 
-test("o botão de enviar fica na linha do título", () => {
-    const section = sectionOf(FIND_DEVICE);
-    const buttons = section.querySelectorAll("[data-action=\"saveConfig\"]");
-
-    assert.equal(buttons.length, 1);
-    const row = buttons[0].closest("div").parentElement;
-    assert.ok(
-        row.querySelector(".fw-semibold"),
-        "o botão devia partilhar a linha com o nome da definição",
-    );
-});
-
 /** «Reposição de fábrica» num botão não diz o que o clique faz: manda o verbo declarado. */
 test("um rótulo que é um nome leva o verbo declarado na definição", () => {
     const section = sectionOf({
@@ -92,4 +80,10 @@ test("uma acção destrutiva pinta-se de perigo, e continua assim depois de sinc
         "o peso de uma acção destrutiva não pode ser apagado pelo estado do botão",
     );
     assert.ok(!button.classList.contains("btn-primary"));
+});
+
+test("sem verbo declarado, o botão diz Enviar e não repete o título", () => {
+    const button = sectionOf(FIND_DEVICE).querySelector("[data-action=\"saveConfig\"]");
+
+    assert.equal(button.textContent.trim(), "Enviar");
 });

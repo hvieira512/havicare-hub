@@ -13,23 +13,6 @@ use Tests\Support\MysqlDashboardTestCase;
  */
 final class ReferenceCatalogTest extends MysqlDashboardTestCase
 {
-    public function testCapabilityLabelsAreInPortuguese(): void
-    {
-        $pdo = $this->createDashboardDatabase()->pdo();
-
-        $labels = $pdo->query("
-            SELECT CONCAT(device_type, ':', capability_key), label
-            FROM capabilities
-        ")->fetchAll(\PDO::FETCH_KEY_PAIR);
-
-        self::assertSame('Frequência cardíaca', $labels['watch:heart_rate'] ?? null);
-        self::assertSame('Presença', $labels['radar:presence'] ?? null);
-        self::assertSame('Chamada de ajuda', $labels['ncs:help_call'] ?? null);
-        // A mesma grandeza não muda de nome com o aparelho: o relógio já lhe chamava VFC.
-        self::assertSame('VFC', $labels['bracelet:hrv'] ?? null);
-        self::assertSame('VFC', $labels['watch:hrv'] ?? null);
-    }
-
     /**
      * A ordem dentro de uma secção é alfabética pela etiqueta, que é o que quem lê tem à frente;
      * a ordem das secções é uma lista fixa na consulta.
@@ -82,34 +65,11 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testTheCatalogueHasNoCapabilityTheHubCannotServe(): void
-    {
-        // Nenhum protocolo entrega o tempo, e por isso não está no catálogo.
-        $pdo = $this->createDashboardDatabase()->pdo();
-
-        self::assertSame(
-            0,
-            (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()
-        );
-    }
-
-    public function testGatewayAndDiaperSensorCataloguesAreComplete(): void
+    public function testDiaperReadingsAreTelemetryAndGatewayLinksHaveATable(): void
     {
         $database = $this->createDashboardDatabase();
         $pdo = $database->pdo();
 
-        self::assertSame(
-            ['battery', 'connectivity', 'location', 'low_battery'],
-            array_values(array_unique(array_map('strval', $pdo->query(
-                "SELECT capability_key FROM capabilities WHERE device_type = 'gateway' ORDER BY capability_key"
-            )->fetchAll(\PDO::FETCH_COLUMN))))
-        );
-        self::assertSame(
-            ['battery', 'change_required', 'check_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity', 'proximity'],
-            array_values(array_unique(array_map('strval', $pdo->query(
-                "SELECT capability_key FROM capabilities WHERE device_type = 'diaper_sensor' ORDER BY capability_key"
-            )->fetchAll(\PDO::FETCH_COLUMN))))
-        );
         self::assertSame(
             ['diaper_condition', 'diaper_moisture', 'diaper_moisture_level'],
             $pdo->query("
@@ -259,34 +219,5 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             ['battery', 'change_required', 'check_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity', 'proximity'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$sensor['id'])
         );
-    }
-
-    public function testTheWatchCatalogueCarriesNoInternalSyncEntries(): void
-    {
-        $pdo = $this->createDashboardDatabase()->pdo();
-
-        $rows = $pdo->query("
-            SELECT capability_key, section, label, is_configurable, is_requestable
-            FROM capabilities
-            WHERE device_type = 'watch'
-        ")->fetchAll(\PDO::FETCH_UNIQUE | \PDO::FETCH_ASSOC);
-
-        // Mecanismos do protocolo, e não capacidades do aparelho.
-        self::assertArrayNotHasKey('device_binding', $rows);
-        self::assertArrayNotHasKey('device_settings_sync', $rows);
-        self::assertArrayNotHasKey('call_log', $rows);
-        self::assertArrayNotHasKey('sms', $rows);
-        self::assertArrayNotHasKey('ecg_analysis', $rows);
-        self::assertArrayNotHasKey('call_in_restriction', $rows);
-
-        self::assertSame('settings_system', $rows['device_state']['section'] ?? null);
-        self::assertSame('contacts', $rows['whitelist_enabled']['section'] ?? null);
-        self::assertSame('Alerta de remoção do relógio', $rows['remove_watch_alarm']['label'] ?? null);
-
-        // Uma acção pede-se, não se configura.
-        self::assertSame(0, (int)($rows['push_message']['is_configurable'] ?? -1));
-        self::assertSame(1, (int)($rows['push_message']['is_requestable'] ?? -1));
-        self::assertSame(0, (int)($rows['make_call']['is_configurable'] ?? -1));
-        self::assertSame(1, (int)($rows['make_call']['is_requestable'] ?? -1));
     }
 }

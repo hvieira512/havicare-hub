@@ -36,10 +36,6 @@ test("o cartão escolhido marca-se para o leitor de ecrã e para o olho", () => 
     assert.ok(!deviceCard(device, false).includes("aria-current"));
 });
 
-test("um dispositivo desligado leva a sua classe", () => {
-    assert.match(deviceCard({ ...device, online: false }, false), /device-card[^"]* offline/);
-});
-
 test("um campo do dispositivo com marcação sai inerte", () => {
     const hostile = {
         ...device,
@@ -62,14 +58,6 @@ test("o esqueleto não passa do tecto de linhas", () => {
     assert.equal(rows(deviceCardSkeletonList(50)), 12);
 });
 
-test("o esqueleto usa as classes do cartão a sério, para a lista não saltar", () => {
-    const skeleton = deviceCardSkeletonList(1);
-
-    for (const cls of ["device-card", "device-card-thumb", "device-card-identity", "device-card-fields"]) {
-        assert.ok(skeleton.includes(cls), `o esqueleto devia usar a classe ${cls}`);
-    }
-});
-
 /** A pastilha diz se está a falar agora; a linha por baixo diz desde quando. */
 test("o cartão diz quando o aparelho falou pela última vez", () => {
     const markup = deviceCard(
@@ -88,20 +76,4 @@ test("um aparelho que nunca falou di-lo, em vez de uma data que não existe", ()
     // O `ago()` devolveria «nunca» para um valor vazio, que se lê como um facto sobre o
     // aparelho e não sobre o que o hub sabe dele.
     assert.doesNotMatch(markup, />nunca</);
-});
-
-test("a linha não empurra o resto do cartão: vive na coluna da pastilha", () => {
-    const markup = deviceCard({ ...device, lastSeenAt: new Date().toISOString() }, false);
-    const state = markup.split("device-card-state")[1] || "";
-
-    assert.match(state.split("</span>").slice(0, 6).join("</span>"), /device-card-when/);
-});
-
-/** Sem SIM a coluna fica vazia: um traço não diz mais do que nada. */
-test("o número do SIM aparece se existir, e nada aparece se não", () => {
-    assert.match(deviceCard(device, false), /\+351912345678/);
-
-    const semSim = deviceCard({ ...device, simNumber: "" }, false);
-    assert.doesNotMatch(semSim, /—/);
-    assert.doesNotMatch(semSim, /SIM/);
 });

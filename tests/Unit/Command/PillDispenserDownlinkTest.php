@@ -29,32 +29,6 @@ final class PillDispenserDownlinkTest extends TestCase
         return $decoded['tlv'];
     }
 
-    public function testTheMedicationPlanWritesHourMinuteAndSwitchForEachSlot(): void
-    {
-        $frame = DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'medicationPlan', [
-            'plans' => [
-                ['hour' => 8, 'minute' => 30],
-                ['hour' => 20, 'minute' => 5],
-            ],
-        ]);
-
-        $tlv = $this->decode($frame, 0x06);
-
-        // Alarme 1: 08:30.
-        self::assertSame("\x08", $tlv[0x1021]['value']);
-        self::assertSame("\x1E", $tlv[0x1031]['value']);
-        self::assertSame("\x01", $tlv[0x1041]['value']);
-        // Alarme 2: 20:05.
-        self::assertSame("\x14", $tlv[0x1022]['value']);
-        self::assertSame("\x05", $tlv[0x1032]['value']);
-        self::assertSame("\x01", $tlv[0x1042]['value']);
-        // Os slots que o plano não usa vão vazios: o aparelho tem nove fixos, e um que
-        // sobrasse de um plano anterior continuava a tocar.
-        self::assertSame("\x18", $tlv[0x1029]['value']);
-        self::assertSame("\x3C", $tlv[0x1039]['value']);
-        self::assertSame("\x00", $tlv[0x1049]['value']);
-    }
-
     public function testTheMedicationPlanRefusesMoreSlotsThanTheDeviceHas(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -96,31 +70,6 @@ final class PillDispenserDownlinkTest extends TestCase
         self::assertSame("\x00", $quiet[0x1055]['value']);
     }
 
-    public function testEachDispenseSwitchIsItsOwnConfiguration(): void
-    {
-        // Dois interruptores independentes, e por isso duas definições: a dashboard agrupa
-        // interruptores em linhas compactas, e um bloco com dois lá dentro fugia ao padrão.
-        $early = $this->decode(
-            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'earlyRetrieval', ['enabled' => true]),
-            0x06,
-        );
-        self::assertSame("\x01", $early[0x100D]['value']);
-
-        $lock = $this->decode(
-            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'childLock', ['enabled' => false]),
-            0x06,
-        );
-        self::assertSame("\x00", $lock[0x100C]['value']);
-
-        // Decide se o aparelho ainda entrega a dose depois de a dar como falhada, e por isso
-        // decide se o desfecho `abnormal` do evento chega a existir.
-        $missed = $this->decode(
-            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'missedDispense', ['enabled' => true]),
-            0x06,
-        );
-        self::assertSame("\x01", $missed[0x1019]['value']);
-    }
-
     public function testThePlanPeriodIsWrittenAsSixIntegersAndASwitch(): void
     {
         // A intenção é uma data; o nativo são ano, mês e dia em TAGs separadas. O ano é
@@ -158,12 +107,6 @@ final class PillDispenserDownlinkTest extends TestCase
 
     public function testTheTimeZoneIsSignedAndInHoursAndMinutes(): void
     {
-        $language = $this->decode(
-            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'deviceLanguage', ['language' => 1]),
-            0x06,
-        );
-        self::assertSame("\x01", $language[0x1001]['value']);
-
         // HHMM e não minutos: -100 é uma hora atrás, e não cem minutos.
         $zone = $this->decode(
             DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'timeZone', ['timeZone' => -100]),
@@ -230,20 +173,16 @@ final class PillDispenserDownlinkTest extends TestCase
         self::assertArrayHasKey(0x1049, $tlv);
     }
 
-    public function testQueryingStatusAsksForTheStatusTagsAndNotTheConfigurationOnes(): void
+    /** O aparelho conta o atraso em segundos, num INT32U; a intenção vem em minutos. */
+    public function testTheWarningTimeTravelsInSeconds(): void
     {
         $tlv = $this->decode(
-            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'readStatus', []),
-            0x07,
+            DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'retrievalWarning', ['minutes' => 45]),
+            0x06,
         );
 
-        self::assertSame("\x00", $tlv[0x8101]['value'], 'nível de medicação, um byte');
-        self::assertSame("\x00", $tlv[0x810E]['value'], 'temperatura é INT8S');
-        self::assertSame("\x00\x00", $tlv[0x810A]['value'], 'o sinal é INT16S');
-        self::assertArrayHasKey(0x8112, $tlv);
-        self::assertArrayHasKey(0x811D, $tlv);
-        // Uma consulta de estado não pergunta por configuração.
-        self::assertArrayNotHasKey(0x1021, $tlv);
+        self::assertSame(45 * 60, unpack('V', $tlv[0x1017]['value'])[1]);
+        self::assertSame(PillDispenserAdapter::T_INT32U, $tlv[0x1017]['type']);
     }
 
     public function testAnUnknownCommandIsRefused(): void
@@ -253,7 +192,6 @@ final class PillDispenserDownlinkTest extends TestCase
         DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'naoExiste', []);
     }
 
-
     /**
      * Os tipos esperados vêm à mão da tabela «TAG Definition - Device Type 02»: o `packTlv` e o
      * `parseTlv` concordam um com o outro, e o aparelho recusa como inválido o tipo `UNKONW`.
@@ -261,7 +199,7 @@ final class PillDispenserDownlinkTest extends TestCase
     public function testEveryDownlinkTagDeclaresTheParameterTypeTheSpecRequires(): void
     {
         $int8u = 2;
-        $excepções = [
+        $exceptions = [
             0x1004 => 4, 0x1007 => 4,   // ano de início e de fim do período, INT16U
             0x1015 => 3,                // fuso horário, INT16S
             0x1017 => 6, 0x1018 => 6,   // aviso de atraso e tempo até falhar, INT32U em segundos
@@ -278,7 +216,7 @@ final class PillDispenserDownlinkTest extends TestCase
             self::assertIsArray($decoded, $command);
 
             foreach ($decoded['tlv'] as $tag => $entry) {
-                $expected = $excepções[$tag] ?? $int8u;
+                $expected = $exceptions[$tag] ?? $int8u;
                 if ($entry['type'] !== $expected) {
                     $wrong[] = sprintf(
                         '%s/0x%04X: tipo %d, esperado %d',

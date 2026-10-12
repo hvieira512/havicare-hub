@@ -30,26 +30,6 @@ final class MqttIngressFactoryTest extends TestCase
         self::assertSame([], $runner->keys());
     }
 
-    /**
-     * As pulseiras Veepoo chegam pelo mesmo gateway e tópicos: meio ligadas seriam uma subscrição
-     * sem ninguém a alimentá-la.
-     */
-    public function testTheMokoSwitchAlsoGovernsTheVeepooIngress(): void
-    {
-        $config = self::config();
-        $config['gateway']['enabled'] = false;
-
-        $runner = MqttIngressFactory::build(
-            $config,
-            self::services(),
-            new ConnectionFactory(self::settings()),
-            new StreamSelectLoop(),
-        );
-
-        self::assertNotContains('veepoo', $runner->keys());
-        self::assertNotContains('gateway', $runner->keys());
-    }
-
     /** @return array<string, mixed> */
     private static function config(): array
     {

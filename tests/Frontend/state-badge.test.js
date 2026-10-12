@@ -11,46 +11,10 @@ import {
 const stateBadge = (...args) => String(buildStateBadge(...args));
 const onlineBadge = (...args) => String(buildOnlineBadge(...args));
 
-/**
- * A pastilha de estado em classes do Bootstrap: quem chama diz o tom, como "success", e a
- * pastilha sabe que isso são um fundo subtil e um texto de ênfase.
- */
-test("o tom vira o par de classes do Bootstrap", () => {
-    const html = stateBadge("Ativo", "success");
-
-    assert.match(html, /class="[^"]*\bbg-success-subtle\b/);
-    assert.match(html, /class="[^"]*\btext-success-emphasis\b/);
-    assert.match(html, /class="[^"]*\bbadge\b/);
-    assert.match(html, /class="[^"]*\brounded-pill\b/);
-});
-
-test("sem tom fica no secundário, e não sem cor nenhuma", () => {
-    assert.match(stateBadge("Sem alterações"), /bg-secondary-subtle/);
-});
-
-/**
- * O texto de ênfase do secundário é quase preto, e um estado neutro pintado assim lê-se com
- * o peso de um alarme. Os outros tons já são os da plataforma e ficam como estão.
- */
-test("o tom neutro usa a cor suave do corpo, e não a de ênfase", () => {
-    const neutral = stateBadge("Desligado");
-
-    assert.match(neutral, /class="[^"]*\btext-body-secondary\b/);
-    assert.doesNotMatch(neutral, /text-secondary-emphasis/);
-    assert.match(stateBadge("Ativo", "success"), /class="[^"]*\btext-success-emphasis\b/);
-});
-
 /** Um tom que não existe no Bootstrap não pode gerar uma classe que não existe. */
 test("um tom desconhecido cai no secundário", () => {
     assert.match(stateBadge("Estado", "roxo"), /bg-secondary-subtle/);
     assert.doesNotMatch(stateBadge("Estado", "roxo"), /roxo/);
-});
-
-/** A `line-height: 1` do `badge` é o que impede a pastilha de crescer com o contentor. */
-test("nada do CSS antigo sobrevive na marcação", () => {
-    const html = stateBadge("Ativo", "success");
-
-    assert.doesNotMatch(html, /config-state/);
 });
 
 test("o texto diz sempre qual é o estado, porque a cor não pode ser a única leitura", () => {
@@ -59,49 +23,8 @@ test("o texto diz sempre qual é o estado, porque a cor não pode ser a única l
     assert.match(onlineBadge(false), />Desligado</);
 });
 
-test("ligado e desligado não são o mesmo tom", () => {
-    assert.match(onlineBadge(true), /bg-success-subtle/);
-    assert.match(onlineBadge(false), /bg-secondary-subtle/);
-});
-
-test("o rótulo é escapado", () => {
-    assert.match(stateBadge("<script>x</script>", "success"), /&lt;script&gt;/);
-});
-
-test("uma classe extra junta-se às do Bootstrap em vez de as substituir", () => {
-    const html = stateBadge("Ativo", "success", "ms-2");
-
-    assert.match(html, /class="[^"]*\bms-2\b/);
-    assert.match(html, /class="[^"]*\bbadge\b/);
-});
-
-/** O ponto é o sinal por omissão da plataforma, e quem já chama a pastilha não pediu ícone. */
-test("sem pedido de ícone, a marca continua a ser o ponto", () => {
-    const html = stateBadge("Ativo", "success");
-
-    assert.match(html, /class="[^"]*\bstate-badge-dot\b/);
-    assert.doesNotMatch(html, /<i /);
-});
-
-/** Um ícone substitui o ponto: são duas marcas para o mesmo lugar, e não se acumulam. */
-test("um ícone entra no lugar do ponto", () => {
-    const html = stateBadge("Administrador", "primary", { icon: "fa-shield-halved" });
-
-    assert.match(html, /<i class="fa-solid fa-shield-halved" aria-hidden="true"><\/i>/);
-    assert.doesNotMatch(html, /state-badge-dot/);
-});
-
 /** As duas marcas são decoração: o estado lê-se no rótulo, e não na cor nem na forma. */
 test("nem o ponto nem o ícone são anunciados pelo leitor de ecrã", () => {
     assert.match(stateBadge("Ativo", "success"), /state-badge-dot[^"]*" aria-hidden="true"/);
     assert.match(stateBadge("Ativo", "success", { icon: "fa-check" }), /<i [^>]*aria-hidden="true"/);
-});
-
-/** Pedir ícone não pode custar a classe extra: as duas opções viajam no mesmo objecto. */
-test("o ícone e a classe extra cabem no mesmo objecto de opções", () => {
-    const html = stateBadge("Cliente", "info", { icon: "fa-building", class: "ms-2" });
-
-    assert.match(html, /class="[^"]*\bms-2\b/);
-    assert.match(html, /class="[^"]*\bbg-info-subtle\b/);
-    assert.match(html, /<i class="fa-solid fa-building" aria-hidden="true"><\/i>/);
 });

@@ -51,20 +51,6 @@ final class DeviceAuthorizerTest extends TestCase
         );
     }
 
-    public function testIgnoresDeviceClaimedModelAndReturnsWhitelistMetadata(): void
-    {
-        $authorizer = new DeviceAuthorizer(
-            $this->whitelist,
-            $this->commercialResolver()
-        );
-
-        $result = $authorizer->authorize(new DeviceIdentity('865028000000306', 'wonlex-json', 'DEVICE-CLAIMED-MODEL'));
-
-        self::assertTrue($result->allowed);
-        self::assertSame('Wonlex', $result->supplier);
-        self::assertSame('HW20PRO', $result->model);
-    }
-
     public function testResolvesFourPTouchProtocolIdToCanonicalImei(): void
     {
         $authorizer = new DeviceAuthorizer(

@@ -34,6 +34,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
 
         self::assertSame(409, $response->getStatusCode(), (string)$response->getBody());
         self::assertSame('device_exists', $body['error']['code'] ?? null);
+        self::assertSame('Device with this IMEI already exists', $body['error']['message'] ?? null);
     }
 
     /**

@@ -22,14 +22,12 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     private const IMEI = '869243062262262';
     private const SIZE = 600;
 
-    public function testTheRequestLeavesOnTheNextHeartbeat(): void
-    {
-        $store = $this->store(['status' => 'requested', 'offset' => 0]);
-        $sent = $this->respondTo($store, 0x02, 0);
+    /** @var list<string> */
+    private array $files = [];
 
-        self::assertSame('upgrade_start', $sent['type']);
-        self::assertSame(self::SIZE, unpack('V', substr($sent['body'], 0, 4))[1]);
-        self::assertSame('starting', $store->state['status']);
+    protected function tearDown(): void
+    {
+        array_map(unlink(...), $this->files);
     }
 
     public function testTheFirstChunkLeavesOnTheStartAcknowledgement(): void
@@ -137,6 +135,7 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
     {
         $path = tempnam(sys_get_temp_dir(), 'fw');
         file_put_contents((string)$path, str_repeat('f', self::SIZE));
+        $this->files[] = (string)$path;
 
         return new InMemoryFirmwareUpgradeStore($state + [
             'path' => $path,

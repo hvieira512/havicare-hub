@@ -173,24 +173,6 @@ final class PillDispenserStatusSeparationTest extends TestCase
         self::assertArrayNotHasKey('simCcid', $byFeature['connectivity'] ?? []);
     }
 
-    /** O bloqueio é uma configuração: o que o aparelho reporta é o valor dela, não telemetria. */
-    public function testTheChildLockIsNotTelemetry(): void
-    {
-        $byFeature = $this->telemetry([0x8102 => "\x01", 0x810D => "\x03"]);
-
-        self::assertArrayNotHasKey('childLockEngaged', $byFeature['connectivity'] ?? []);
-        self::assertSame(['enabled' => true], $byFeature['device_config']['settings']['child_lock'] ?? null);
-    }
-
-    /** Uma trama sem nada disto não publica capacidade nenhuma vazia. */
-    public function testNothingIsPublishedWithoutReadings(): void
-    {
-        $byFeature = $this->telemetry([0x8103 => "\x64"]);
-
-        self::assertArrayNotHasKey('sim_card', $byFeature);
-        self::assertArrayNotHasKey('device_status', $byFeature);
-    }
-
     /** Uma TAG recusada volta com os zeros que lhe mandámos: o estado no Flag é que decide. */
     public function testARefusedTagIsNotPublished(): void
     {
@@ -208,7 +190,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
             $byFeature[$event['feature']] = $event['value'];
         }
 
-        self::assertArrayNotHasKey('temperature', $byFeature);
+        self::assertArrayNotHasKey('ambient_temperature', $byFeature);
         self::assertSame(-63, $byFeature['connectivity']['signalStrengthDbm'] ?? null);
     }
 

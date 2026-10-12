@@ -42,4 +42,20 @@ final class DashboardWritePolicyTest extends TestCase
         self::assertFalse($policy->shouldUpdateSeen('radar-1', 4999));
         self::assertTrue($policy->shouldUpdateSeen('radar-1', 5000));
     }
+
+    /** A marca do «visto há» é por dispositivo e tem teto: ao passá-lo, sai a mais antiga. */
+    public function testTheSeenThrottleDropsTheOldestDeviceOnceTheCapIsReached(): void
+    {
+        $policy = new DashboardWritePolicy(deviceSeenMinIntervalMs: 5000);
+        $now = 1000;
+
+        // Espelha DashboardWritePolicy::MAX_TRACKED.
+        for ($i = 0; $i < 10000; $i++) {
+            self::assertTrue($policy->shouldUpdateSeen("d$i", $now));
+        }
+        self::assertFalse($policy->shouldUpdateSeen('d0', $now + 1));
+
+        self::assertTrue($policy->shouldUpdateSeen('overflow', $now + 1));
+        self::assertTrue($policy->shouldUpdateSeen('d0', $now + 2), 'o d0 foi despejado');
+    }
 }

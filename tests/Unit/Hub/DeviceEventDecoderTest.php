@@ -127,7 +127,7 @@ final class DeviceEventDecoderTest extends TestCase
         $decoder = new DeviceEventDecoder();
         $session = $this->session('wonlex-json');
 
-        foreach (['upCallLog', 'upSMS', 'upECGAnalysis'] as $nativeType) {
+        foreach (['upCallLog', 'upSMS', 'upECGAnalysis', 'upWeather'] as $nativeType) {
             self::assertSame([], $decoder->decode($session, [
                 'type' => $nativeType,
                 'data' => ['value' => 'raw-only'],
@@ -485,19 +485,6 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertCount(1, $events);
         self::assertSame('failed', $events[0]['value']['status']);
         self::assertSame('0', $events[0]['value']['ack']);
-    }
-
-    public function testIgnoresWonlexWeatherRequestAsTelemetry(): void
-    {
-        $events = (new DeviceEventDecoder())->decode(
-            $this->session('wonlex-json'),
-            [
-                'type' => 'upWeather',
-                'data' => [],
-            ]
-        );
-
-        self::assertSame([], $events);
     }
 
     public function testIgnoresVivistarRequestAckTypesAsTelemetry(): void

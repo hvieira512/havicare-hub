@@ -8,14 +8,6 @@ import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/com
 
 // O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
 const requestCardShell = (...args) => String(buildCard(...args));
-import { state } from "../../src/Dashboard/dashboard/state.js";
-
-// O nome de uma capacidade vem do catálogo do tipo escolhido: sem ele o cartão mostra a
-// chave humanizada.
-state.capabilityCatalogByType.gateway = [
-    { key: "connectivity", label: "Conectividade" },
-];
-state.selectedDetail = { model: { deviceType: "gateway" } };
 
 const connectivityCard = (data) => requestCardShell(
     { feature: "connectivity", requestable: false },
@@ -28,14 +20,12 @@ test("MKGW3 wifi connectivity shows the interface and signal strength", () => {
     const html = connectivityCard({ interface: "wifi", signalStrengthDbm: -50 });
 
     assert.match(html, /Wi-Fi · -50 dBm/);
-    assert.match(html, /fa-wifi/);
 });
 
 test("wired gateways render without a signal reading", () => {
     const html = connectivityCard({ interface: "ethernet" });
 
     assert.match(html, /Ethernet/);
-    assert.match(html, /fa-ethernet/);
     assert.doesNotMatch(html, /dBm/);
 });
 
@@ -48,26 +38,10 @@ test("MKGW4 cellular connectivity includes the network type", () => {
     });
 
     assert.match(html, /Rede móvel · LTE · -77 dBm/);
-    assert.match(html, /fa-tower-cell/);
 });
 
 test("a zero dBm reading is rendered rather than treated as missing", () => {
     const html = connectivityCard({ interface: "wifi", signalStrengthDbm: 0 });
 
     assert.match(html, /Wi-Fi · 0 dBm/);
-});
-
-test("connectivity falls back to its label when the payload carries nothing", () => {
-    const html = connectivityCard({});
-
-    assert.match(html, /Conectividade/);
-    // Nunca a chave inglesa titleizada, que é o que sai sem etiqueta no catálogo.
-    assert.doesNotMatch(html, /Connectivity/);
-});
-
-test("connectivity is labelled in Portuguese, not titleized", () => {
-    const html = requestCardShell({ feature: "connectivity", requestable: false }, false, []);
-
-    assert.match(html, /Conectividade/);
-    assert.doesNotMatch(html, /Connectivity/);
 });

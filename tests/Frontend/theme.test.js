@@ -98,17 +98,6 @@ test("o ícone do botão diz para onde se vai, não onde se está", () => {
     assert.equal(button.getAttribute("aria-pressed"), "true");
 });
 
-test("o botão mantém a largura ao trocar de ícone", () => {
-    reset();
-    const button = mountButton();
-
-    applyTheme(LIGHT);
-    applyTheme(DARK);
-
-    // O `fa-fw` é o que garante que um controlo não muda de tamanho por ter sido usado.
-    assert.ok(button.querySelector("i").classList.contains("fa-fw"));
-});
-
 test("carregar no botão troca o tema e guarda a escolha", () => {
     reset();
     const button = mountButton();

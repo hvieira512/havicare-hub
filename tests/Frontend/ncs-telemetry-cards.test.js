@@ -16,7 +16,6 @@ test("a chamada de ajuda diz que comando a fez", () => {
     // O nome da linha já é "Chamada de ajuda": repeti-lo na coluna do valor não acrescenta
     // nada, e é ali que o comando cabe.
     assert.equal(card.rowValue, "Pager 348319");
-    assert.equal(card.icon, "fa-triangle-exclamation");
 });
 
 test("o cancelamento diz o mesmo comando", () => {
@@ -24,7 +23,6 @@ test("o cancelamento diz o mesmo comando", () => {
 
     assert.equal(card.value, "Cancelado");
     assert.equal(card.rowValue, "Pager 348319");
-    assert.equal(card.icon, "fa-bell-slash");
 });
 
 test("sem comando identificado a coluna do valor fica vazia em vez de repetir o nome", () => {

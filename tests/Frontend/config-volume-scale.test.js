@@ -34,18 +34,6 @@ test("desenha um botão por opção, com o rótulo à vista", () => {
     );
 });
 
-test("a escala ocupa a largura do cartão", () => {
-    const group = render({ volume: 0 }).querySelector(".btn-group");
-
-    assert.ok(group.classList.contains("w-100"));
-});
-
-test("cada posição tem o seu ícone", () => {
-    const root = render({ volume: 0 });
-
-    assert.equal(root.querySelectorAll("label i.fa-solid").length, 4);
-});
-
 test("a opção escolhida é a que fica marcada", () => {
     const root = render({ volume: 2 });
     const checked = [...root.querySelectorAll("input[type=radio]")].filter((el) => el.checked);

@@ -8,9 +8,13 @@ import "./support/browser-env.js";
 window.setTimeout = () => 0;
 window.clearTimeout = () => {};
 
-const { validAdminToken, initializeDashboardSession } = await import(
-    "../../src/Dashboard/dashboard/auth/session.js",
-);
+const {
+    closeDashboardOverlays,
+    initializeDashboardSession,
+    initializePasswordVisibility,
+    resetPasswordVisibility,
+    validAdminToken,
+} = await import("../../src/Dashboard/dashboard/auth/session.js");
 
 /**
  * As guardas que decidem se uma sessão vale, e o arranque que a vai buscar ao cookie; no
@@ -112,4 +116,107 @@ test("um separador novo entra pelo cookie, sem credencial nenhuma guardada", asy
     assert.equal(sessionStorage.length, 0);
     const stored = Object.keys(localStorage).map((key) => localStorage.getItem(key)).join("|");
     assert.equal(stored.includes(token.access_token), false);
+});
+
+/**
+ * Cair para o ecrã de entrada limpa o backdrop e o `modal-open` de um modal aberto: é quem
+ * mostra o login que sabe que a sessão acabou.
+ */
+function dashboardWithAnOpenModal() {
+    document.body.innerHTML = `
+        <div id="dashboardApp">
+            <div id="deviceModal" class="modal show" role="dialog" aria-modal="true"></div>
+        </div>
+        <div class="modal-backdrop show"></div>
+        <div class="offcanvas-backdrop show"></div>`;
+    document.body.classList.add("modal-open");
+    document.body.style.overflow = "hidden";
+    document.body.style.paddingRight = "17px";
+}
+
+test("mostrar o login fecha o modal aberto e não deixa backdrop nenhum", () => {
+    dashboardWithAnOpenModal();
+
+    closeDashboardOverlays();
+
+    const modal = document.getElementById("deviceModal");
+    assert.equal(modal.classList.contains("show"), false);
+    assert.equal(modal.style.display, "none");
+    assert.equal(modal.getAttribute("aria-hidden"), "true");
+    // O modal escondido sai da árvore de acessibilidade: sem `role` nem `aria-modal`, um
+    // leitor de ecrã não anuncia um diálogo que já não está lá.
+    assert.equal(modal.hasAttribute("aria-modal"), false);
+    assert.equal(modal.hasAttribute("role"), false);
+    assert.equal(document.querySelectorAll(".modal-backdrop, .offcanvas-backdrop").length, 0);
+});
+
+test("o body volta a poder rolar", () => {
+    dashboardWithAnOpenModal();
+
+    closeDashboardOverlays();
+
+    assert.equal(document.body.classList.contains("modal-open"), false);
+    assert.equal(document.body.style.overflow, "");
+    assert.equal(document.body.style.paddingRight, "");
+});
+
+test("sem nada aberto não estraga o que está no ecrã", () => {
+    document.body.innerHTML = `<div id="dashboardApp"><div class="modal"></div></div>`;
+    document.body.classList.remove("modal-open");
+
+    closeDashboardOverlays();
+
+    assert.equal(document.querySelectorAll("#dashboardApp .modal").length, 1);
+    assert.equal(document.body.classList.contains("modal-open"), false);
+});
+
+/**
+ * O olho que mostra a palavra-passe. O que importa prender é fechar-se ao sair: o ecrã
+ * seguinte é de outra pessoa.
+ */
+const mount = () => {
+    document.body.innerHTML = `
+        <input id="dashboardLoginPassword" type="password">
+        <button type="button" data-password-toggle="dashboardLoginPassword"
+                aria-pressed="false" aria-label="Mostrar a palavra-passe">
+            <i class="fa-solid fa-eye"></i>
+        </button>
+    `;
+
+    return {
+        input: document.getElementById("dashboardLoginPassword"),
+        button: document.querySelector("[data-password-toggle]"),
+    };
+};
+
+test("carregar no olho mostra a palavra-passe e voltar a carregar esconde-a", () => {
+    const { input, button } = mount();
+    initializePasswordVisibility();
+
+    button.click();
+    assert.equal(input.getAttribute("type"), "text");
+
+    button.click();
+    assert.equal(input.getAttribute("type"), "password");
+});
+
+test("voltar ao ecrã de entrada esconde outra vez a palavra-passe", () => {
+    const { input, button } = mount();
+    initializePasswordVisibility();
+
+    button.click();
+    assert.equal(input.getAttribute("type"), "text");
+
+    resetPasswordVisibility();
+
+    assert.equal(input.getAttribute("type"), "password");
+    assert.equal(button.getAttribute("aria-pressed"), "false");
+    assert.ok(button.querySelector("i").classList.contains("fa-eye"));
+});
+
+test("sem olho na página, ligar o comportamento não rebenta", () => {
+    document.body.innerHTML = "";
+
+    assert.doesNotThrow(() => initializePasswordVisibility());
+    assert.doesNotThrow(() => resetPasswordVisibility());
 });

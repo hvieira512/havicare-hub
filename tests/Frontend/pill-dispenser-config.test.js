@@ -2,95 +2,97 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
+import { parseFragment } from "./support/dom.js";
 import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/index.js";
 
-// O `render` devolve um fragmento de marcação; as assertivas de texto querem texto.
-const alarms = {
-    ...CONFIG_INPUTS.pillDispenserAlarms,
-    render: (...args) => String(CONFIG_INPUTS.pillDispenserAlarms.render(...args)),
-};
-const entry = (fields, overrides = {}) => ({ fields, ...overrides });
+const { pillDispenserAlarms: alarms, pillDispenserPeriod: period, pillDispenserQuietHours: quietHours } =
+    CONFIG_INPUTS;
 
-test("os nove alarmes são desenhados, ocupados ou não", () => {
-    const html = alarms.render(entry(["plans"]), {
-        plans: [{ times: [{ time: "08:30", enabled: true, slot: 1, recurrence: { kind: "daily" } }] }],
-    });
-
-    // Nove linhas: o aparelho tem nove slots fixos e mostra-os todos, senão não há como
-    // ligar o décimo — que não existe — nem desligar um que ficou de um plano anterior.
-    assert.equal((html.match(/data-alarm-slot/g) || []).length, 9);
-    assert.match(html, /value="08:30"/);
-});
+const entry = (fields) => ({ fields });
+const render = (input, desired) => parseFragment(input.render({ fields: [] }, desired));
+const daily = (time, slot) => ({ times: [{ time, enabled: true, slot, recurrence: { kind: "daily" } }] });
 
 test("o plano parte vazio sem rebentar", () => {
-    const html = alarms.render(entry(["plans"]), {});
+    const html = String(alarms.render(entry(["plans"]), {}));
 
     assert.equal((html.match(/data-alarm-slot/g) || []).length, 9);
     assert.deepEqual(alarms.defaults(entry(["plans"])), { plans: [] });
 });
 
-test("o som, o idioma e o fuso são escolhas e não números soltos", () => {
-    // Usam o campo de escolha genérico, com os valores e os rótulos da especificação.
-    for (const name of ["pillDispenserSound", "pillDispenserRegion"]) {
-        assert.equal(CONFIG_INPUTS[name], undefined, `${name} devia ter desaparecido`);
-    }
-    assert.equal(typeof CONFIG_INPUTS.select.control, "function");
-});
-
-test("o não incomodar desenha a janela inteira", () => {
-    const html = CONFIG_INPUTS.pillDispenserQuietHours.render(
-        entry(["enabled", "startHour", "startMinute", "endHour", "endMinute"]),
-        { enabled: true, startHour: 22, startMinute: 0, endHour: 7, endMinute: 30 },
-    );
-
-    // Dois seletores de horas, e não quatro caixas de número: a janela lê-se de uma vez.
-    for (const f of ["start", "end"]) {
-        assert.match(html, new RegExp(`data-config-field="${f}"`));
-    }
-    assert.match(html, /value="22:00"/);
-    assert.match(html, /value="07:30"/);
-});
-
-test("os interruptores do dispensador usam o campo padrão e não um bespoke", () => {
-    // A toma antecipada e o bloqueio de criança são duas definições `toggle`, para caírem
-    // no agrupamento compacto que a dashboard já faz aos interruptores seguidos.
-    assert.equal(CONFIG_INPUTS.pillDispenserDispenseMode, undefined);
-    assert.equal(typeof CONFIG_INPUTS.toggle.render, "function");
-});
-
 test("o período do plano desenha as duas datas e o interruptor", () => {
-    const html = CONFIG_INPUTS.pillDispenserPeriod.render(
+    const html = String(period.render(
         entry(["enabled", "startDate", "endDate"]),
         { enabled: true, startDate: "2026-09-18", endDate: "2026-12-31" },
-    );
+    ));
 
     assert.match(html, /type="date"[^>]*data-config-field="startDate"/);
     assert.match(html, /data-config-field="endDate"/);
     assert.match(html, /2026-12-31/);
     // Sem período é um estado legítimo, e não um formulário por preencher.
-    assert.deepEqual(CONFIG_INPUTS.pillDispenserPeriod.defaults(), {
-        enabled: false,
-        startDate: "",
-        endDate: "",
-    });
+    assert.deepEqual(period.defaults(), { enabled: false, startDate: "", endDate: "" });
 });
 
-test("o plano de medicação não repete o rótulo que o cartão já mostra", () => {
-    const html = alarms.render(entry(["plans"]), { plans: [] });
+/** O número do alarme tem de ser o que chega ao aparelho: sem os vazios, escolher o 5 escreveria no 3. */
+test("o alarme escolhido leva o seu número, e não a posição na lista", () => {
+    const values = new Map([["time-4", "10:24"]]);
+    const section = {
+        querySelector: (selector) => {
+            const field = selector.match(/\[data-config-field="([^"]+)"\]/)?.[1];
+            if (field === undefined || !/^time-[0-8]$/.test(field)) return null;
 
-    assert.doesNotMatch(html, /Plano de medicação/);
+            return { value: values.get(field) ?? "", checked: false };
+        },
+    };
+
+    assert.deepEqual(alarms.read(section).plans, [daily("10:24", 5)]);
 });
 
-test("todos os campos do dispensador declaram as quatro faces", () => {
-    for (const name of [
-        "pillDispenserAlarms",
-        "pillDispenserPeriod",
-        "pillDispenserQuietHours",
-    ]) {
-        const input = CONFIG_INPUTS[name];
-        assert.ok(input, `${name} não está registado`);
-        assert.equal(typeof input.render, "function", `${name}.render`);
-        assert.equal(typeof input.read, "function", `${name}.read`);
-        assert.equal(typeof input.defaults, "function", `${name}.defaults`);
-    }
+test("o alarme 5 é desenhado na caixa 5", () => {
+    const cells = String(alarms.render({}, { plans: [daily("10:24", 5)] }))
+        .split("data-alarm-slot=\"")
+        .slice(1);
+
+    assert.equal(cells.length, 9);
+    assert.match(cells[4], /value="10:24"/);
+    assert.doesNotMatch(cells[0], /value="10:24"/);
+});
+
+/** Esta firmware ignora o `0x1041`--`0x1049`: um interruptor faria julgar calado o que toca. */
+test("o cartão não desenha interruptores", () => {
+    assert.doesNotMatch(String(alarms.render({}, { plans: [daily("08:00", 1)] })), /type="checkbox"/);
+});
+
+test("um alarme definido volta com a hora que se escolheu", () => {
+    const plans = [daily("08:30", 1), daily("20:05", 2)];
+
+    assert.deepEqual(alarms.read(render(alarms, { plans })), { plans });
+});
+
+/** O `24` e o `60` são o sentinela do aparelho para um slot nunca definido. */
+test("as horas sentinela do aparelho não se desenham como hora", () => {
+    const root = render(alarms, { plans: [{ hour: 24, minute: 60 }] });
+
+    assert.equal(root.querySelectorAll("input[type=time]")[0].getAttribute("value"), "");
+});
+
+/** Um slot desenhado em branco não volta como plano nenhum, que é o que o esvazia. */
+test("um slot em branco não volta no plano", () => {
+    const root = render(alarms, { plans: [{ hour: 8, minute: 30 }] });
+
+    root.querySelectorAll("input[type=time]")[0].setAttribute("value", "");
+
+    assert.deepEqual(alarms.read(root), { plans: [] });
+});
+
+const QUIET = { enabled: true, startHour: 22, startMinute: 30, endHour: 7, endMinute: 5 };
+
+test("as horas de silêncio desenham dois seletores de horas", () => {
+    const times = [...render(quietHours, QUIET).querySelectorAll("input[type=time]")];
+
+    assert.deepEqual(times.map((el) => el.getAttribute("value")), ["22:30", "07:05"]);
+});
+
+/** Saem em hora e minuto separados, que é o que as TAGs levam. */
+test("as horas de silêncio voltam separadas em hora e minuto", () => {
+    assert.deepEqual(quietHours.read(render(quietHours, QUIET)), QUIET);
 });

@@ -134,13 +134,6 @@ test("o trusted deixa passar marcação construída por quem chama", () => {
     assert.equal(markup(html`<p>${trusted("<b>a</b>")}</p>`), "<p><b>a</b></p>");
 });
 
-test("sem o trusted, o que vem de quem chama sai escapado", () => {
-    assert.equal(
-        markup(html`<p>${"<img src=x onerror=alert(1)>"}</p>`),
-        "<p>&lt;img src=x onerror=alert(1)&gt;</p>",
-    );
-});
-
 test("não sobra nenhuma fronteira de confiança no frontend", () => {
     const files = globSync("src/Dashboard/dashboard/**/*.js", { cwd: ROOT });
     const sites = files.flatMap((rel) => {

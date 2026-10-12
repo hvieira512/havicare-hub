@@ -9,13 +9,17 @@ use PHPUnit\Framework\TestCase;
 
 final class WhitelistEnabledCapabilityTest extends TestCase
 {
-    public function testVivistarUsesCatalogKeyForWritesAndBp84ForReads(): void
+    public function testVivistarRoundTripsUnderTheCatalogKey(): void
     {
         $capability = new WhitelistEnabledCapability();
 
         self::assertSame(
             ['whitelist_enabled' => ['enabled' => false]],
             $capability->toNative('vivistar-iw', ['enabled' => false])
+        );
+        self::assertSame(
+            ['enabled' => true],
+            $capability->fromNative('vivistar-iw', 'whitelist_enabled', ['enabled' => true])
         );
     }
 

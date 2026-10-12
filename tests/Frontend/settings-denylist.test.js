@@ -89,36 +89,3 @@ test("desbloquear chama o DELETE da API e tira a linha", async () => {
     assert.doesNotMatch(els.denylistListBody.innerHTML, /357000000000123/);
     assert.match(els.denylistListBody.innerHTML, /notificação/i);
 });
-
-/** É o único separador onde não se faz nada: bloquear é gesto da notificação. */
-test("uma lista vazia diz de onde vêm os bloqueios em vez de só dizer que não há", async () => {
-    const els = setupDom();
-    globalThis.fetch = async () => jsonResponse({ data: [] });
-
-    await loadSettingsDenylistSection();
-
-    assert.match(els.denylistListBody.innerHTML, /notificação/i);
-});
-
-/** O vazio é um estado só: o título di-lo, e por baixo fica a frase. Nada de contar zero. */
-test("sem bloqueados, o título é «Nenhum aparelho bloqueado» e não há contagem a zero", async () => {
-    const els = setupDom();
-    globalThis.fetch = async () => jsonResponse({ data: [] });
-
-    await loadSettingsDenylistSection();
-
-    assert.equal(els.denylistTabTitle.textContent, "Nenhum aparelho bloqueado");
-    assert.equal(els.denylistTabSummary.textContent, "");
-});
-
-test("com bloqueados, o título volta a «Aparelhos bloqueados» e a contagem aparece", async () => {
-    const els = setupDom();
-    globalThis.fetch = async () => jsonResponse({
-        data: [{ identity: "357000000000123" }, { identity: "357000000000124" }],
-    });
-
-    await loadSettingsDenylistSection();
-
-    assert.equal(els.denylistTabTitle.textContent, "Aparelhos bloqueados");
-    assert.equal(els.denylistTabSummary.textContent, "2 aparelhos bloqueados");
-});

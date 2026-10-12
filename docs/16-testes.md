@@ -12,10 +12,10 @@ sustentar.
 
 | Suite | Onde | Ficheiros | Precisa de |
 |---|---|---|---|
-| Unitários (PHP) | `tests/Unit/` | ~170 | nada |
-| Integração (PHP) | `tests/Integration/` | ~40 | MySQL e Redis |
-| Frontend (Node) | `tests/Frontend/` | ~130 | nada |
-| Cenários (shell) | `tests/scenarios/` | 6 | a pilha Docker inteira, menos um |
+| Unitários (PHP) | `tests/Unit/` | ~200 | nada |
+| Integração (PHP) | `tests/Integration/` | ~60 | MySQL e Redis |
+| Frontend (Node) | `tests/Frontend/` | ~140 | nada |
+| Cenários (shell) | `tests/scenarios/` | 5 | a pilha Docker inteira, menos um |
 
 ```bash
 composer test:unit          # ~6 s
@@ -38,8 +38,8 @@ confirma-se com `composer test:unit:serial` ou `composer test:integration:serial
 que correm a mesma suite num processo só.
 
 Uma classe de teste é a unidade de repartição, por isso uma classe muito maior do
-que as outras fixa o chão do tempo: a `DevicesApiTest`, com 89 testes, demora
-sozinha tanto como as restantes 42 juntas.
+que as outras fixa o chão do tempo. A API dos dispositivos está por isso em três
+classes — listagem, detalhe e configuração — que partilham o `DevicesApiFixture`.
 
 ## O que cada uma cobre
 
@@ -64,7 +64,6 @@ JavaScript, impedindo a rutura silenciosa do contrato entre o PHP e o JS.
 | `backup_rotation` | A [rotação das cópias](18-backups.md) guarda o que tem de guardar ao fim de 400 dias — é a única parte do backup que apaga ficheiros |
 | `hub_raw_mqtt_roundtrip` | Um [dispositivo TCP](02-ingestao-tcp-relogios.md) simulado chega ao [MQTT](08-contrato-mqtt.md), e um comando da API chega-lhe de volta |
 | `hub_downlink_queue` | Um [comando para um aparelho offline](11-comandos-e-downlink.md) fica em fila e é entregue quando ele volta |
-| `dashboard_api` | 401 sem token, login, listagem, [pedido de medição](09-api.md) |
 | `ncs_mqtt_ingress` | A [ingestão Voerka](03-ingestao-mqtt-ncs.md) |
 | `location_beacondb_pipeline` | A [resolução de localização](12-localizacao-sem-gps.md), com um servidor falso |
 

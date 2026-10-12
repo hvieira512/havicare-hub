@@ -45,15 +45,6 @@ final class AlarmClockFromNativeTest extends TestCase
         ]));
     }
 
-    /** Um item que já é público sai como entrou: é o que torna a leitura idempotente. */
-    public function testAlreadyPublicItemsPassThroughUntouched(): void
-    {
-        $public = [['time' => '07:30', 'enabled' => true, 'recurrence' => [1, 2, 3]]];
-
-        self::assertSame($public, (new FourPTouch())->fromNative(['alarms' => $public]));
-        self::assertSame($public, (new Vivistar())->fromNative(['items' => $public]));
-    }
-
     public function testASingleItemIsWrappedIntoAList(): void
     {
         $result = (new FourPTouch())->fromNative(['alarms' => self::ALARM]);

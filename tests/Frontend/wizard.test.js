@@ -46,6 +46,23 @@ function wizard() {
     });
 }
 
+/** Um dispositivo pode não ter licença: a empresa é opcional. */
+function wizardWithOptionalOwner() {
+    const question = (key, step, extra = {}) => ({
+        key,
+        step,
+        clears: [],
+        isAnswered: (a) => Boolean(a[key]),
+        badges: () => [],
+        ...extra,
+    });
+
+    return createWizard({
+        steps: STEPS,
+        questions: [question("type", 1), question("owner", 1, { optional: true }), question("identity", 2)],
+    });
+}
+
 test("a pergunta activa é a primeira sem resposta", () => {
     const w = wizard();
     assert.equal(w.current().key, "type");
@@ -55,18 +72,6 @@ test("a pergunta activa é a primeira sem resposta", () => {
 
     w.answer("model", "MECS-PRO");
     assert.equal(w.current().key, "owner");
-});
-
-test("responder tudo deixa de ter pergunta activa", () => {
-    const w = wizard();
-    w.answer("type", "diaper_sensor");
-    w.answer("model", "MECS-PRO");
-    w.answer("owner", { company: "hitcare", license: "1001" });
-    w.advance();
-    w.answer("identity", "eec5000202f9");
-
-    assert.equal(w.current(), null);
-    assert.equal(w.isComplete(), true);
 });
 
 test("não avança com o passo incompleto", () => {
@@ -109,16 +114,6 @@ test("o passo só muda ao avançar, e não ao responder", () => {
     w.advance();
     assert.equal(w.step(), 2);
     assert.equal(w.current().key, "identity");
-});
-
-test("a pergunta activa nunca e de outro passo", () => {
-    const w = wizard();
-    w.answer("type", "x");
-    w.answer("model", "y");
-    w.answer("owner", { company: "c", license: "l" });
-
-    // A identidade está sem resposta, mas é do passo 2 e o assistente está no 1.
-    assert.equal(w.current(), null);
 });
 
 test("voltar atrás e depois avançar preserva as respostas", () => {
@@ -207,13 +202,6 @@ test("as badges saem na ordem das perguntas, e uma pergunta pode dar duas", () =
     ]);
 });
 
-test("uma pergunta sem resposta não produz badges", () => {
-    const w = wizard();
-    w.answer("type", "x");
-
-    assert.equal(w.badges().length, 1);
-});
-
 test("reset volta ao inicio", () => {
     const w = wizard();
     w.answer("type", "x");
@@ -250,33 +238,7 @@ test("o passo 1 completa-se com as suas três perguntas e não com a do passo 2"
 test("uma pergunta opcional não trava o passo, mas continua a ser feita", () => {
     // Um dispositivo pode não ter licença: não lhe responder deixa avançar, sem a pergunta
     // desaparecer do ecrã, como desapareceria se a omissão contasse como resposta.
-    const w = createWizard({
-        steps: STEPS,
-        questions: [
-            {
-                key: "type",
-                step: 1,
-                clears: [],
-                isAnswered: (a) => Boolean(a.type),
-                badges: () => [],
-            },
-            {
-                key: "owner",
-                step: 1,
-                clears: [],
-                optional: true,
-                isAnswered: (a) => Boolean(a.owner),
-                badges: () => [],
-            },
-            {
-                key: "identity",
-                step: 2,
-                clears: [],
-                isAnswered: (a) => Boolean(a.identity),
-                badges: () => [],
-            },
-        ],
-    });
+    const w = wizardWithOptionalOwner();
 
     assert.equal(w.canAdvance(), false, "a obrigatoria ainda trava");
 
@@ -307,33 +269,7 @@ test("responder à última pergunta do passo avança-o", () => {
 test("não avança por cima de uma pergunta opcional por responder", () => {
     // Uma opcional não trava o passo, mas continua a ser feita: avançar assim que o passo
     // ficasse completo seria saltar-lhe por cima sem a mostrar.
-    const w = createWizard({
-        steps: STEPS,
-        questions: [
-            {
-                key: "type",
-                step: 1,
-                clears: [],
-                isAnswered: (a) => Boolean(a.type),
-                badges: () => [],
-            },
-            {
-                key: "owner",
-                step: 1,
-                clears: [],
-                optional: true,
-                isAnswered: (a) => Boolean(a.owner),
-                badges: () => [],
-            },
-            {
-                key: "identity",
-                step: 2,
-                clears: [],
-                isAnswered: (a) => Boolean(a.identity),
-                badges: () => [],
-            },
-        ],
-    });
+    const w = wizardWithOptionalOwner();
 
     w.answerAndAdvance("type", "x");
     assert.equal(w.step(), 1, "a opcional ainda esta por fazer");

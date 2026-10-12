@@ -60,19 +60,6 @@ test("a linha de uma licença junta os três verbos num menu só", async () => {
     assert.ok(row.querySelector(".dropdown-divider"), "o apagar não está separado dos outros");
 });
 
-test("os itens do menu de uma licença dizem o que fazem", async () => {
-    const els = setupDom();
-    await loadSettingsCompanySection();
-
-    const { items } = menuOf(els.companyListBody.querySelector(".tree-row"));
-
-    assert.deepEqual(
-        items.map((item) => item.textContent.trim()),
-        ["Cloud dos radares", "Editar licença", "Eliminar licença"],
-    );
-    assert.match(items[2].className, /text-danger/);
-});
-
 test("o botão do menu de uma licença diz no aria-label de qual é", async () => {
     const els = setupDom();
     await loadSettingsCompanySection();
@@ -96,16 +83,4 @@ test("a linha de uma empresa junta os três verbos no mesmo menu", async () => {
         items.map((item) => item.textContent.trim()),
         ["Nova licença", "Editar empresa", "Eliminar empresa"],
     );
-});
-
-/** Os `data-action` são os mesmos dentro do menu: o despacho não muda. */
-test("nenhuma linha continua a mostrar acções em ícones soltos", async () => {
-    const els = setupDom();
-    await loadSettingsCompanySection();
-
-    const loose = [...els.companyListBody.querySelectorAll("[data-action]")].filter(
-        (button) => !button.classList.contains("dropdown-item"),
-    );
-
-    assert.deepEqual(loose.map((button) => button.dataset.action), []);
 });

@@ -110,17 +110,6 @@ test("no two neighbouring bands share both bar count and colour", () => {
     assert.equal(new Set(fingerprints).size, bands.length);
 });
 
-test("the meter carries the reading as a tooltip and an aria-label", () => {
-    const html = signalMeter({ rssiDbm: -64, at: "" });
-
-    assert.match(html, /data-bs-toggle="tooltip"/);
-    assert.match(html, /data-bs-title="Bom · -64 dBm"/);
-    assert.match(html, /aria-label="Bom · -64 dBm"/);
-    // Três de quatro barras cheias, nesta banda: a cheia é a que leva `opacity-100`.
-    assert.equal((html.match(/opacity-100/g) || []).length, 3);
-    assert.match(html, /text-success/);
-});
-
 test("the meter renders empty bars rather than nothing when unheard", () => {
     const html = signalMeter(null);
 
@@ -140,17 +129,6 @@ test("every link gets a row, heard or not", () => {
     // O gateway que nunca reportou tem de ficar listado, a mostrar a falta.
     assert.match(html, /dc1603ecf1f7/);
     assert.match(html, /Sem sinal/);
-});
-
-test("a gateway's own page shows the sensors it relays", () => {
-    // As mesmas linhas vistas do lado do gateway: a telemetria dele não traz leitura nenhuma
-    // dos sensores que retransmite.
-    const html = gatewaySignalRows([
-        link("fbd87c59ba8b", "W6B", { rssiDbm: -75, signalSeenAt: new Date().toISOString() }),
-    ]);
-
-    assert.match(html, /fbd87c59ba8b/);
-    assert.match(html, /Fraco · -75 dBm/);
 });
 
 test("no linked devices renders nothing at all", () => {

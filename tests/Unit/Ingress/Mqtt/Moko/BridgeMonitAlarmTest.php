@@ -135,35 +135,6 @@ final class BridgeMonitAlarmTest extends TestCase
         self::assertSame('attention', $alarms[1]['payload']['data']['previousState']);
     }
 
-    public function testTheSensitivityNeverLeaksIntoThePublishedEvent(): void
-    {
-        // A sensibilidade vive no estado guardado para uma alteração contar como transição, mas
-        // o `previousState` publicado é um dos três estados ou nulo, nunca "attention@7-15".
-        $mqtt = new RecordingHubMqttBridge();
-        $bridge = $this->bridge($mqtt, new MutableDiaperSensitivity());
-
-        $bridge->handleReceivedMessage($this->topic(), $this->scan('attention'));
-        $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required'));
-
-        $previous = $this->alarms($mqtt)[0]['payload']['data']['previousState'];
-        self::assertSame('attention', $previous);
-        self::assertStringNotContainsString('@', (string)$previous);
-    }
-
-    public function testWithoutALookupTheHubKeepsItsHistoricalThresholds(): void
-    {
-        // Sem lookup ligado a sensibilidade é a do preset normal: um sensor que ninguém
-        // configurou comporta-se como sempre.
-        $mqtt = new RecordingHubMqttBridge();
-        $bridge = $this->bridge($mqtt);
-
-        $bridge->handleReceivedMessage($this->topic(), $this->scan('three_wet'));
-        self::assertCount(0, $this->alarms($mqtt));
-
-        $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required'));
-        self::assertCount(1, $this->alarms($mqtt));
-    }
-
     /** Húmida mas sem precisar de troca é um alerta: convém ir ver. */
     public function testAWetDiaperRaisesTheCheckAlertOnce(): void
     {

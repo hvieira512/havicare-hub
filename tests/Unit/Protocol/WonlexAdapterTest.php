@@ -57,13 +57,12 @@ final class WonlexAdapterTest extends TestCase
     {
         $adapter = new WonlexAdapter();
 
-        $frame = $adapter->encodeOutgoing(
-            ['type' => 'upText', 'data' => ['value' => 'á']],
-            ['jsonOptions' => 0]
-        );
-        $decoded = $adapter->decodeIncoming($frame);
+        $payload = ['type' => 'upText', 'data' => ['value' => 'á']];
 
-        self::assertIsArray($decoded);
-        self::assertSame('á', $decoded['data']['value']);
+        self::assertStringEndsWith('{"type":"upText","data":{"value":"á"}}', $adapter->encodeOutgoing($payload));
+        self::assertStringEndsWith(
+            '{"type":"upText","data":{"value":"\\u00e1"}}',
+            $adapter->encodeOutgoing($payload, ['jsonOptions' => 0])
+        );
     }
 }

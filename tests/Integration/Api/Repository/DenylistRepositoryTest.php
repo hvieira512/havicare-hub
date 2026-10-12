@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Api\Repository;
 
 use Hub\Infrastructure\Persistence\Repository\DenylistRepository;
+use Hub\Registry\Denylist;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -45,13 +46,19 @@ final class DenylistRepositoryTest extends MysqlDashboardTestCase
         self::assertSame('outro', $rows[0]['created_by']);
     }
 
-    public function testAllListsBlockedIdentities(): void
+    public function testRefreshPicksUpAnExternalBlockWithinTtl(): void
     {
-        $this->repository->add('357000000000002', 'four-p-touch', null, 'admin');
-        $this->repository->add('357000000000003', 'qinglanst-radar', null, 'admin');
+        // TTL zero: cada `contains` relê. Simula o bloqueio feito noutro caminho (a API) a
+        // tornar-se visível ao caminho da ingestão.
+        $denylist = new Denylist($this->repository, ttlSeconds: 0);
+        self::assertFalse($denylist->contains('357000000000009'));
 
-        $identities = array_column($this->repository->all(), 'identity');
-        self::assertContains('357000000000002', $identities);
-        self::assertContains('357000000000003', $identities);
+        $this->repository->add('357000000000009', 'four-p-touch', null, 'admin');
+        self::assertTrue($denylist->contains('357000000000009'));
+    }
+
+    public function testEmptyIdentityIsNeverBlocked(): void
+    {
+        self::assertFalse((new Denylist($this->repository))->contains(''));
     }
 }

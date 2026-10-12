@@ -15,17 +15,6 @@ use PHPUnit\Framework\TestCase;
  */
 final class PillDispenserDoseChangeTest extends TestCase
 {
-    /** A resposta ao `0x07` é a leitura dos nove, com os totais. */
-    public function testTheStatusReplyIsStillTheReadingOfTheNine(): void
-    {
-        $byFeature = $this->decode(0x87, [0x8131 => "\x07", 0x8133 => "\x06"]);
-
-        self::assertArrayNotHasKey('medication_alarm_change', $byFeature);
-        self::assertSame(1, $byFeature['medication_alarm_status']['takenCount'] ?? null);
-        self::assertSame(1, $byFeature['medication_alarm_status']['missedCount'] ?? null);
-        self::assertCount(2, $byFeature['medication_alarm_status']['alarms'] ?? []);
-    }
-
     /** Sem contagens: um total tirado de um alarme não é total nenhum. */
     public function testANotificationIsADoseChange(): void
     {
@@ -45,14 +34,6 @@ final class PillDispenserDoseChangeTest extends TestCase
 
         self::assertArrayNotHasKey('medication_alarm_status', $byFeature);
         self::assertSame(['alarm' => 3, 'state' => 'missed'], $byFeature['medication_alarm_change'] ?? null);
-    }
-
-    public function testTheCompleteFlagIsGone(): void
-    {
-        self::assertArrayNotHasKey(
-            'complete',
-            $this->decode(0x87, [0x8131 => "\x07"])['medication_alarm_status'] ?? [],
-        );
     }
 
     /** Dois acontecimentos numa mensagem obrigariam quem consome a desempacotar uma lista. */

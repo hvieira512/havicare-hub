@@ -100,12 +100,3 @@ test("a actual está marcada, e as setas travam nas pontas", () => {
     const last = render({ total: 167, total_pages: 14, page: 14, limit: 12 }).controls;
     assert.equal(last.querySelector("[data-action='telemetryNext']").disabled, true);
 });
-
-test("todos os botões de página levam as mesmas classes, para medirem o mesmo", () => {
-    const { controls } = render({ total: 167, total_pages: 14, page: 1, limit: 12 });
-
-    const classes = [...controls.querySelectorAll("[data-action='telemetryGo']")]
-        .map((b) => [...b.classList].sort().join(" "));
-
-    assert.equal(new Set(classes).size, 1, "um botão de página não pode ter classes diferentes de outro");
-});

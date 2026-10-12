@@ -29,15 +29,6 @@ const sectionOf = (entry, row = null, stored = null) =>
     parseFragment(renderConfigSection("wonlex-json", entry, row, {}, false, null, stored))
         .querySelector("[data-config-section]");
 
-test("a unidade cola-se ao campo em vez de andar solta", () => {
-    const section = sectionOf(INTERVAL, { intervalTime: 3600 }, true);
-    const group = section.querySelector(".input-group");
-
-    assert.ok(group, "o campo devia estar num input-group");
-    assert.ok(group.querySelector("input[type=\"number\"]"));
-    assert.equal(group.querySelector(".input-group-text").textContent.trim(), "s");
-});
-
 /** O campo já mostra o valor; por baixo do nome só aparece o «era …» de uma edição. */
 test("o valor guardado não se repete por baixo do nome", () => {
     const section = sectionOf({

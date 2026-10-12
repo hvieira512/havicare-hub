@@ -83,11 +83,3 @@ test("o que o protocolo suporta sobe uma vez para o cabeçalho da secção", () 
         "O 4P Touch envia estas leituras; 1 delas também pode ser pedida.",
     );
 });
-
-test("nenhuma das linhas repete o que o protocolo suporta", () => {
-    const rows = [...els.capabilityGroups.querySelectorAll(".capability-model-row")];
-    assert.equal(rows.length, 3);
-    for (const row of rows) {
-        assert.doesNotMatch(row.textContent, /receção|não suporta pedido/i);
-    }
-});

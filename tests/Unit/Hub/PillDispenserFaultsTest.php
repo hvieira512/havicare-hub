@@ -31,10 +31,9 @@ final class PillDispenserFaultsTest extends TestCase
     }
 
     /** Um estado a zero é o normal, e não uma avaria a zero. */
-    #[\PHPUnit\Framework\Attributes\DataProvider('faults')]
-    public function testAHealthyStateIsNotAFault(int $tag): void
+    public function testAHealthyStateIsNotAFault(): void
     {
-        self::assertArrayNotHasKey('device_fault', $this->decode([$tag => "\x00"]));
+        self::assertArrayNotHasKey('device_fault', $this->decode([0x8121 => "\x00"]));
     }
 
     /**

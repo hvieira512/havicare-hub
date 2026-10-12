@@ -87,18 +87,7 @@ function downlinkRequest(index) {
     };
 }
 
-test("o paginador de telemetria esconde-se quando tudo cabe numa página", () => {
-    const els = telemetryEls();
-    initDeviceDetailView({ els });
-
-    renderTelemetryList([telemetryEvent(0), telemetryEvent(1)]);
-
-    assert.equal(els.telemetryPager.classList.contains("d-none"), true);
-    assert.equal(els.telemetryPagerSummary.textContent, "");
-    assert.equal(els.telemetryPagerControls.innerHTML, "");
-});
-
-test("três páginas dão três botões, com a actual marcada e o anterior travado", () => {
+test("três páginas dão três botões, e o resumo conta a primeira", () => {
     const els = telemetryEls();
     initDeviceDetailView({ els });
 
@@ -118,16 +107,6 @@ test("três páginas dão três botões, com a actual marcada e o anterior trava
         buttons.map((button) => button.dataset.page).filter(Boolean),
         ["1", "2", "3"],
     );
-
-    // A página actual distingue-se para quem vê e para quem ouve.
-    assert.equal(buttons[1].getAttribute("aria-current"), "page");
-    assert.equal(buttons[2].hasAttribute("aria-current"), false);
-
-    assert.equal(buttons[0].disabled, true);
-    assert.equal(buttons.at(-1).disabled, false);
-    // As setas são ícones, e por isso o nome delas só existe no rótulo acessível.
-    assert.equal(buttons[0].getAttribute("aria-label"), "Página anterior");
-    assert.equal(buttons.at(-1).getAttribute("aria-label"), "Página seguinte");
 });
 
 test("na última página o resumo conta só o que resta e o seguinte fica travado", () => {

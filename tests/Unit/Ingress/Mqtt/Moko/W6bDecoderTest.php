@@ -94,14 +94,6 @@ final class W6bDecoderTest extends TestCase
         self::assertSame(['single', 'double', 'long', 'inactivity'], $modes);
     }
 
-    public function testEachPressModeCarriesItsOwnCounter(): void
-    {
-        $decoder = new W6bDecoder();
-
-        self::assertSame(69, $decoder->decode(self::SINGLE_PRESS)['alarm']['triggerCount']);
-        self::assertSame(42, $decoder->decode(self::DOUBLE_PRESS_ALARM_ONLY)['alarm']['triggerCount']);
-    }
-
     public function testDecodesAccelerationAndBatteryPercentage(): void
     {
         $decoded = (new W6bDecoder())->decode(self::SINGLE_PRESS);

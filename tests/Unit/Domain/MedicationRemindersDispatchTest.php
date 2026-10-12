@@ -51,18 +51,6 @@ final class MedicationRemindersDispatchTest extends TestCase
         );
     }
 
-    /** A lista de protocolos suportados sai do mesmo sítio que o despacho, para não discordarem. */
-    public function testTheAdvertisedProtocolsAreExactlyTheOnesItServes(): void
-    {
-        $capability = $this->capability();
-
-        foreach ($capability->supportedProtocols() as $protocol) {
-            $capability->toNative($protocol, []);
-        }
-
-        self::assertSame(['wonlex-json', 'four-p-touch', 'zayata-m228'], $capability->supportedProtocols());
-    }
-
     public function testAnUnknownProtocolIsRefusedOnTheWayIn(): void
     {
         $this->expectException(\InvalidArgumentException::class);

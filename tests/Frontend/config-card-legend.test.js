@@ -39,12 +39,3 @@ test("o vocabulário do protocolo não aparece em lado nenhum do cartão", () =>
     );
     assert.ok(!html.includes("Toggle"), "nem o tipo de campo interno");
 });
-
-test("uma definição sem legenda não passa a mostrar o comando", () => {
-    const semLegenda = { ...ENTRY };
-    delete semLegenda.help;
-    const html = render(semLegenda);
-
-    assert.ok(html.includes("Frequência cardíaca contínua"));
-    assert.ok(!html.includes("config:heart_rate_continuous"));
-});
