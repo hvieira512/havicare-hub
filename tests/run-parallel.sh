@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Corre uma suite de PHPUnit repartida por vários processos, um ficheiro de teste de cada vez.
-# O paratest para o PHPUnit 10 exige PHP 8.4 ou menos, e a máquina corre 8.5.
 #
 # Uso: tests/run-parallel.sh tests/Integration
 set -uo pipefail

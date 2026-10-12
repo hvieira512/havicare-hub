@@ -123,16 +123,15 @@ As quatro suites e o que cada uma cobre estão no [capítulo 16](docs/16-testes.
 
 ## A verificação é o `composer test`
 
-São **oito** coisas: `style` (phpcs), `analyse` (phpstan), `lint:frontend`
-(eslint), `test:unit`, `test:integration`, `test:frontend`, `test:php84` e
-`test:scenarios`. Correr o `phpunit`, o `npm test` e o `phpstan` à mão parece
-equivalente e não é — deixa de fora o phpcs, o eslint, o 8.4 e os cenários.
+São **sete** coisas: `style` (phpcs), `analyse` (phpstan), `lint:frontend`
+(eslint), `test:unit`, `test:integration`, `test:frontend` e `test:scenarios`.
+Correr o `phpunit`, o `npm test` e o `phpstan` à mão parece equivalente e não é —
+deixa de fora o phpcs, o eslint e os cenários.
 
-**O `test:php84` é a razão de não haver CI no GitHub.** A máquina corre PHP 8.5
-e a produção corre 8.4; esse alvo repete o estilo, a análise e as duas suites de
-PHP dentro do contentor `hub`, que é 8.4. Leva cerca de 90 segundos e corre em
-série, porque o corredor paralelo colide no Redis que o contentor partilha. Era
-a única coisa que o CI dava e a máquina não.
+**O PHP corre sempre no contentor `hub`**, que é 8.4 como a produção. O
+[`bin/in-hub`](bin/in-hub) leva para lá o phpcs, o phpstan e as duas suites; na
+máquina só correm o `composer`, o node e o Docker. O PHP do Homebrew segue a
+versão mais recente e não é a da produção — não se usa para nada do hub.
 
 > Em setembro de 2026 uma linha em branco num bloco de `use` manteve o CI
 > vermelho dez horas e meia, com onze commits a irem para produção por cima. O
@@ -140,9 +139,9 @@ a única coisa que o CI dava e a máquina não.
 > deixa de ter rede: **o `composer test` corre antes de cada push**, e não depois.
 
 O `.githooks/pre-commit` corre as três verificações que não precisam de base de
-dados, de Redis nem de contentores — phpcs, phpstan e eslint — e fica ligado
+dados nem de Redis — phpcs e phpstan no contentor, e eslint — e fica ligado
 sozinho, porque o `composer install` aponta o `core.hooksPath` para lá. As
-outras quatro ficam de fora: levantam contentores, e um `git commit` que demora
+outras quatro ficam de fora: levantam a pilha, e um `git commit` que demora
 minutos deixa de ser usado. Num commit intermédio, `git commit --no-verify`.
 
 ## Uma migração nova aplica-se logo

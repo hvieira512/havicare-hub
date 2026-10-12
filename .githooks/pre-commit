@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # As verificações do `composer test` que não precisam de base de dados, Redis nem contentores:
-# phpcs, phpstan e eslint. Não substitui o `composer test` antes do push; `--no-verify` salta-o.
+# phpcs e phpstan, no contentor, e eslint. Não substitui o `composer test` antes do push; `--no-verify` salta-o.
 
 set -e
 
@@ -9,7 +9,7 @@ root=$(git rev-parse --show-toplevel)
 cd "$root"
 
 if [ -x vendor/bin/phpcs ]; then
-    if ! vendor/bin/phpcs src tests simulator bin; then
+    if ! bin/in-hub vendor/bin/phpcs src tests simulator bin; then
         echo ""
         echo "pre-commit: o estilo do PHP não passa. 'composer style:fix' corrige a maioria."
         exit 1
@@ -17,7 +17,7 @@ if [ -x vendor/bin/phpcs ]; then
 fi
 
 if [ -x vendor/bin/phpstan ]; then
-    if ! php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress; then
+    if ! bin/in-hub php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress; then
         echo ""
         echo "pre-commit: a análise estática não passa."
         exit 1

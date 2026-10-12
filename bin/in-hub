@@ -1,0 +1,11 @@
+#!/bin/sh
+# Corre um comando no contentor `hub`, que tem o PHP da produção; já lá dentro, corre-o direto.
+set -e
+
+if [ -f /.dockerenv ]; then
+    exec "$@"
+fi
+
+cd "$(dirname "$0")/.."
+docker compose up -d hub > /dev/null 2>&1
+exec docker compose exec -T hub "$@"

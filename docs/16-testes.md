@@ -22,12 +22,15 @@ composer test:unit          # ~6 s
 composer test:integration   # precisa de base de dados
 composer test:frontend
 composer test:scenarios     # levanta mosquitto, redis, mysql e o hub
-composer test:php84         # o mesmo no 8.4 da produção, dentro do contentor
 composer test               # o portão completo
 ```
 
 O `composer test` é o portão completo: estilo, análise estática, lint do
-frontend, as duas suites PHP, a do frontend, o 8.4 da produção e os cenários.
+frontend, as duas suites PHP, a do frontend e os cenários.
+
+Tudo o que é PHP corre no contentor `hub`, que tem o 8.4 da produção: os alvos
+passam pelo [`bin/in-hub`](../bin/in-hub), que levanta o contentor se for
+preciso. Na máquina correm só o `composer`, o node e o Docker.
 
 As duas suites PHP correm repartidas por vários processos, um ficheiro de teste
 de cada vez ([`tests/run-parallel.sh`](../tests/run-parallel.sh)), e no fim somam
@@ -110,14 +113,8 @@ ficheiros, nomeados um a um; o `booleanAnd.rightAlwaysTrue` e o
 ## Não há integração contínua
 
 A verificação é local e corre inteira antes de cada push. O CI do GitHub foi
-removido a 01/10/2026: dava uma coisa que a máquina não dava — o **PHP 8.4**, que
-é o da produção, contra o 8.5 que corre aqui — e essa passou para o
-`composer test:php84`, que repete o estilo, a análise e as duas suites de PHP
-dentro do contentor `hub`. São cerca de 90 segundos.
-
-Esse alvo corre em **série** e não pelo corredor paralelo: o contentor partilha
-o Redis com a máquina, e duas corridas a escrever nas mesmas chaves de token
-davam falhas que desapareciam à segunda tentativa.
+removido a 01/10/2026: o que dava de único era o **PHP 8.4** da produção, e esse
+é agora o de todas as corridas, porque o PHP corre no contentor.
 
 O que se perdeu com o CI, e vale a pena ter presente:
 
@@ -127,12 +124,9 @@ O que se perdeu com o CI, e vale a pena ter presente:
 - **A exigência de base de dados.** A suite de integração ignora-se a si própria
   quando o MySQL não responde, e um verde por omissão não é verificação. Quem
   corre a suite é que tem de reparar nos testes ignorados.
-- **O MariaDB.** O CI corria a suite contra o motor da produção. O `test:php84`
-  corre MySQL dentro do contentor, e por isso a divergência entre os dois
+- **O MariaDB.** O CI corria a suite contra o motor da produção. Aqui a suite
+  corre contra o MySQL do compose, e por isso a divergência entre os dois
   motores **não está provada em lado nenhum**.
-
-**Os cenários ficam de fora do `test:php84`**, pela razão de sempre: requerem a
-pilha Docker completa, e correm no `composer test` da máquina.
 
 ## Motores de base de dados
 
@@ -162,6 +156,7 @@ regressão involuntária.
 | `phpunit.xml` | As duas suites PHP |
 | `tests/run-parallel.sh` | Reparte uma suite PHP por vários processos |
 | `phpstan.neon` · `phpcs.xml.dist` · `eslint.config.js` | As três ferramentas, com as exclusões justificadas |
-| `composer.json` | O portão: os oito alvos que o `composer test` encadeia |
+| `composer.json` | O portão: os sete alvos que o `composer test` encadeia |
+| `bin/in-hub` | Leva os alvos de PHP para o contentor `hub` |
 | `tests/scenarios/run-all.sh` | Os seis cenários |
 | `tests/Support/` | Casos-base e duplos partilhados |
