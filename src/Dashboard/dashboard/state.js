@@ -4,6 +4,8 @@ export function blankDeviceModal(overrides = {}) {
         mode: "create",
         activeTab: "general",
         activeCategory: "",
+        // No telemóvel, se a secção ativa está aberta ou se se está a ver a lista delas.
+        configSectionOpen: false,
         // A falso, o formulário tem valores de arranque e não representa registo nenhum.
         detailLoaded: false,
         imei: "",

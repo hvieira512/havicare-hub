@@ -10,7 +10,11 @@ import {
     initDeviceConfigPanel,
     syncConfigCounts,
 } from "../../src/Dashboard/dashboard/devices/config/panel.js";
-import { selectConfigSection } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
+import {
+    handleDeviceConfigClick,
+    selectConfigSection,
+} from "../../src/Dashboard/dashboard/devices/config/handlers.js";
+import { blankDeviceModal, state } from "../../src/Dashboard/dashboard/state.js";
 
 /** As secções variam por fornecedor e chegam a seis: em tira horizontal não cabem a 342 px. */
 
@@ -113,4 +117,36 @@ test("o separador conta as alterações por enviar de todas as secções", () =>
 
     assert.equal(badge.textContent, "2");
     assert.equal(badge.classList.contains("d-none"), false);
+});
+
+const click = (target) => handleDeviceConfigClick({ target, preventDefault() {} });
+
+/** No telemóvel a lista e as definições não cabem juntas: escolher uma secção troca uma pela outra. */
+test("escolher uma secção abre-a, e o voltar regressa à lista sem perder o escrito", () => {
+    state.deviceModal = blankDeviceModal();
+    const root = render();
+    const configRoot = root.querySelector("[data-config-root]");
+    const field = root.querySelector("[data-config-section][data-config-key=\"phonebook\"] [data-config-field]");
+
+    click(links(root)[1]);
+    assert.equal(configRoot.hasAttribute("data-config-section-open"), true);
+    assert.equal(state.deviceModal.configSectionOpen, true);
+
+    field.value = "3";
+    click(root.querySelector("[data-config-pane=\"contacts\"] [data-action=\"closeConfigSection\"]"));
+    assert.equal(configRoot.hasAttribute("data-config-section-open"), false);
+    assert.equal(state.deviceModal.configSectionOpen, false);
+    assert.equal(field.value, "3");
+});
+
+test("um redesenho mantém aberta a secção que estava aberta", () => {
+    const html = renderDeviceConfigurationRoot({
+        protocol: "veepoo-ble",
+        catalog: [entry("heart_rate", "health", "interval")],
+        capabilityCatalog: CAPABILITIES,
+        configurations: { heart_rate: { interval: 60 } },
+        sectionOpen: true,
+    });
+
+    assert.match(html, /data-config-section-open/);
 });

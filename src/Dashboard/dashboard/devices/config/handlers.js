@@ -46,9 +46,16 @@ function dispatchConfigClick(event) {
         event.preventDefault();
         const key = button.dataset.section || "";
         state.deviceModal.activeCategory = key;
+        state.deviceModal.configSectionOpen = true;
         // Trocado no sítio e não redesenhado: as secções estão todas no DOM, e redesenhar
         // deitava fora o que estivesse escrito nas outras e ainda por enviar.
         selectConfigSection(button.closest("[data-config-root]"), key);
+        return;
+    }
+
+    if (button.dataset.action === "closeConfigSection") {
+        state.deviceModal.configSectionOpen = false;
+        button.closest("[data-config-root]")?.removeAttribute("data-config-section-open");
         return;
     }
 
@@ -190,6 +197,7 @@ export function handleDeviceConfigInput(event) {
 export function selectConfigSection(root, key) {
     if (!root) return;
 
+    root.setAttribute("data-config-section-open", "");
     for (const link of root.querySelectorAll("[data-config-section-link]")) {
         const selected = link.dataset.section === key;
         link.classList.toggle("selected", selected);

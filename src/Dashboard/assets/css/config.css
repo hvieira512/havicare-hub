@@ -106,41 +106,34 @@
     min-height: 100%;
 }
 
-/* A coluna das secções tem largura fixa: um nome comprido corta com reticências, e a coluna
-   mede o mesmo em todas as secções. */
-@media (min-width: 992px) {
+/* A coluna das secções tem largura fixa, e mede o mesmo em todas as secções. Num tablet já
+   cabe ao lado das definições. */
+@media (min-width: 768px) {
     .config-section-nav {
-        flex: 0 0 186px;
+        flex: 0 0 232px;
         border-right: 1px solid var(--bs-border-color);
     }
 }
 
-@media (max-width: 991.98px) {
-    .config-section-nav {
-        border-bottom: 1px solid var(--bs-border-color);
+/* No telemóvel a lista e a secção aberta não cabem juntas: uma toma o lugar da outra. */
+@media (max-width: 767.98px) {
+    [data-config-root][data-config-section-open] .config-section-nav,
+    [data-config-root]:not([data-config-section-open]) .config-panel-content {
+        display: none !important;
     }
 }
 
 .config-section-nav {
-    background: var(--bs-tertiary-bg);
+    gap: .25rem;
+    padding: .75rem;
 }
 
-.config-section-nav-label {
-    padding: .625rem .875rem .25rem;
-    color: var(--bs-secondary-color);
-    font-size: var(--fs-label);
-    letter-spacing: .1em;
-}
-
-/* A régua das secções em lista: chegam a seis e variam por fornecedor, e em tira horizontal
-   não cabem num telemóvel. */
 .config-section-nav .config-section-link {
     gap: .75rem;
-    /* O mesmo recuo lateral das definições: a régua e a lista são a mesma coluna, e a barra de
-       rolagem flutuante tapa a contagem com menos. */
-    padding: .5rem 1rem;
+    min-height: 44px;
+    padding: 0 .75rem;
     border: 0;
-    border-left: 2.5px solid transparent;
+    border-radius: var(--bs-border-radius-lg);
     background: transparent;
     color: var(--bs-body-color);
     font-size: var(--fs-sm);
@@ -152,16 +145,29 @@
     background: var(--bs-tertiary-bg);
 }
 
-/* A secção aberta é a que tem o fundo do conteúdo: a lista fica atrás dela e ela à frente. */
 .config-section-nav .config-section-link.selected {
-    border-left-color: var(--bs-primary);
-    background: var(--bs-body-bg);
+    background: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
     font-weight: 600;
 }
 
-/* O chevron só aparece onde não há contagem de alteradas a ocupar-lhe o lugar. */
-[data-config-section-changed]:not(:empty)~.config-section-chevron {
-    display: none;
+/* Sobre o fundo da secção aberta, a pastilha do terciário desaparecia. */
+.config-section-link.selected .count-chip {
+    background: var(--bs-body-bg);
+    color: var(--bs-primary-text-emphasis);
+}
+
+.config-section-chevron {
+    color: var(--bs-tertiary-color);
+    font-size: var(--fs-label);
+}
+
+.config-section-back {
+    gap: .5rem;
+    min-height: 44px;
+    padding: 0 1rem;
+    color: var(--bs-primary-text-emphasis);
+    font-size: var(--fs-sm);
 }
 
 /* O controlo de uma definição numa linha cede, mas não abaixo de quatro dígitos com a unidade. */
