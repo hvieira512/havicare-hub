@@ -32,6 +32,10 @@ trait FourPTouchContactSupport
      */
     protected static function normalizeNumbersValue(mixed $value): array
     {
+        // Uma lista já é a forma pública: é o que o ciclo de vida guarda e volta a normalizar.
+        if (is_array($value) && array_is_list($value)) {
+            return self::stringList($value);
+        }
         if (is_array($value) && array_key_exists('numbers', $value)) {
             return self::stringList(is_array($value['numbers']) ? $value['numbers'] : []);
         }

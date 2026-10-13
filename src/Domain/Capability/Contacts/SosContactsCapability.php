@@ -71,6 +71,10 @@ final class SosContactsCapability implements CapabilityContract
 
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
+        // Uma lista já é a forma pública: é o que o ciclo de vida guarda e volta a normalizar.
+        if (array_is_list($desired)) {
+            return self::stringList($desired);
+        }
         if (isset($desired['numbers']) && is_array($desired['numbers'])) {
             return self::stringList($desired['numbers']);
         }
