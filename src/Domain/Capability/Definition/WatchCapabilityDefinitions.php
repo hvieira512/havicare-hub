@@ -143,7 +143,6 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
             'settings_system' => [
                 'setting' => [
                     'working_mode' => 'Modo de funcionamento',
-                    'device_password' => 'Palavra-passe do dispositivo',
                     'language_timezone' => 'Idioma e fuso horário',
                     'do_not_disturb' => 'Não incomodar',
                     'sound_profile' => 'Perfil de som',

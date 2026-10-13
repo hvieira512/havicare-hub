@@ -16,7 +16,6 @@ final class FourPTouchConfigurationDefinitions
             $entry('sosContacts', 'SOS', 'Contactos SOS', 'sos_contacts', ['numbers'], ['SOS'], 'contacts', 10, 3, help: 'Num SOS liga a um de cada vez, por esta ordem, até alguém atender.'),
             $entry('whitelistGroup1', 'WHITELIST1', 'Lista de chamadas autorizadas 1-5', 'call_whitelist', ['numbers'], ['WHITELIST1'], 'contacts', 40, 5),
             $entry('whitelistGroup2', 'WHITELIST2', 'Lista de chamadas autorizadas 6-10', 'call_whitelist', ['numbers'], ['WHITELIST2'], 'contacts', 50, 5),
-            $entry('devicePassword', 'PW', 'Palavra-passe do dispositivo', 'text', ['password'], ['PW'], 'system', 10, help: 'Pedida nos comandos por SMS vindos de números que não o da central.'),
             $entry('languageTimezone', 'LZ', 'Idioma e fuso horário', 'languageTimezone', ['language', 'timeZone'], ['LZ'], 'system', 20, help: 'O idioma só muda se o firmware o tiver.'),
             $entry('sosSmsAlerts', 'SOSSMS', 'SMS em alarme SOS', 'toggle', ['enabled'], ['SOSSMS'], 'alerts', 10, help: 'Vai para os contactos SOS, sem a localização.'),
             $entry('lowBatterySmsAlerts', 'LOWBAT', 'SMS em bateria fraca', 'toggle', ['enabled'], ['LOWBAT'], 'alerts', 20, help: 'Vai para o número da central abaixo de 20%.'),

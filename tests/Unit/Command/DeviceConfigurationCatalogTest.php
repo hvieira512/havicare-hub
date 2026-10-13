@@ -887,7 +887,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'push message' => ['push_message', 'pushMessage'];
         yield 'make call' => ['make_call', 'makeCall'];
         yield 'restart device' => ['restart_device', 'restartCommand'];
-        yield 'device password' => ['device_password', 'devicePassword'];
         yield 'language timezone' => ['language_timezone', 'languageTimezone'];
         yield 'whitelist enabled' => ['whitelist_enabled', 'rejectUnknownCalls'];
         yield 'sound profile' => ['sound_profile', 'profile'];
@@ -1043,7 +1042,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public static function singleFrameProvider(): iterable
     {
         yield 'monitor number' => ['monitorNumber', ['phone' => '13100010002'], '[3G*8800000015*0013*MONITOR,13100010002]'];
-        yield 'device password' => ['devicePassword', ['password' => '111111'], '[3G*8800000015*0009*PW,111111]'];
         yield 'sleep time' => ['sleepTime', ['range' => '21:10-7:30'], '[3G*8800000015*0014*SLEEPTIME,21:10-7:30]'];
         yield 'make call' => ['makeCall', ['phone' => '00000000000'], '[3G*8800000015*0010*CALL,00000000000]'];
         yield 'center number' => ['centerNumber', ['phone' => '00000000000'], '[3G*8800000015*0012*CENTER,00000000000]'];

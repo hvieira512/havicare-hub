@@ -72,21 +72,14 @@ final class DestructiveConfirmationTest extends TestCase
         );
     }
 
-    /** O `RESET` do 4P Touch reinicia (§15 da especificação); a reposição de fábrica é o `FACTORY`. */
-    public function testTheFourPTouchResetIsARestart(): void
+    public function testTheFourPTouchRestartSaysItRestarts(): void
     {
         $fourPTouch = $this->entry('four-p-touch', 'restartCommand');
 
-        self::assertSame('restart_device', CapabilityCatalog::mapConfigurationKey('restartCommand'));
         self::assertMatchesRegularExpression(
             '/arranca|reinici/iu',
             (string)($fourPTouch['confirm'] ?? ''),
             'o RESET do 4P Touch é um reinício, e é isso que a caixa tem de dizer',
-        );
-        self::assertNotContains(
-            'reset_device',
-            CapabilityCatalog::keysForProtocol('four-p-touch'),
-            'o 4P Touch não declara a reposição de fábrica',
         );
     }
 

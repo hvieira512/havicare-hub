@@ -27,7 +27,6 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
             'location',
             'call_whitelist',
             'whitelist_enabled',
-            'device_password',
         ]);
         $db->deviceConfigurations->saveDesired(
             '861265061009822',
@@ -42,13 +41,6 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
             'vivistar',
             'WHITELIST_ENABLED',
             ['enabled' => true]
-        );
-        $db->deviceConfigurations->saveDesired(
-            '861265061009822',
-            'devicePassword',
-            'four-p-touch',
-            'PASSWORD',
-            ['password' => '2468']
         );
 
         $token = $this->loginToken($server, 'tenant', 'tenant-secret');
@@ -87,15 +79,10 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
         self::assertTrue($body['capabilities']['contacts']['call_whitelist']['_meta']['phone']['asciiOnly'] ?? false);
         self::assertTrue($body['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
         self::assertArrayNotHasKey('_nativeKey', $body['capabilities']['contacts']['whitelist_enabled']);
-        self::assertSame(
-            ['password' => '2468'],
-            $body['capabilities']['settings_system']['device_password']['value'] ?? null
-        );
         self::assertArrayNotHasKey('blood_pressure', $body['capabilities']['telemetry'] ?? []);
         self::assertArrayNotHasKey('auto_vitals_interval', $body['capabilities']['health'] ?? []);
         self::assertSame('never_reported', $body['configurationSync']['entries']['contacts']['call_whitelist']['status'] ?? null);
         self::assertSame('never_reported', $body['configurationSync']['entries']['contacts']['whitelist_enabled']['status'] ?? null);
-        self::assertSame('never_reported', $body['configurationSync']['entries']['settings_system']['device_password']['status'] ?? null);
         self::assertArrayNotHasKey('pending', $body);
         self::assertArrayNotHasKey('transportPending', $body);
     }

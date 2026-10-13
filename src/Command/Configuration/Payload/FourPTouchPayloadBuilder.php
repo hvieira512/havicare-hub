@@ -56,7 +56,6 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             'sosContacts' => self::sosNumbers($payload['numbers'] ?? []),
             'monitorNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
             'whitelistGroup1', 'whitelistGroup2' => self::stringList($payload['numbers'] ?? [], 5, 'numbers'),
-            'devicePassword' => [self::requiredString($payload['password'] ?? null, 'password')],
             'languageTimezone' => [
                 self::zeroBasedRangeInt($payload['language'] ?? null, 0, 36, 'language'),
                 self::requiredString($payload['timeZone'] ?? null, 'timeZone'),

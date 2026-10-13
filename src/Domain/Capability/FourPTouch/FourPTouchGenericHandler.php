@@ -38,7 +38,6 @@ final class FourPTouchGenericHandler
             'find_device' => 'findDeviceCommand',
             'firmwareVersion' => 'firmwareVersion',
             'deviceStatus' => 'deviceStatus',
-            'device_password' => 'devicePassword',
             'language_timezone' => 'languageTimezone',
             'sound_profile' => 'profile',
             'whitelist_enabled' => 'rejectUnknownCalls',
@@ -75,7 +74,6 @@ final class FourPTouchGenericHandler
             'findDeviceCommand' => 'find_device',
             'firmwareVersion' => 'firmwareVersion',
             'deviceStatus' => 'deviceStatus',
-            'devicePassword' => 'device_password',
             'languageTimezone' => 'language_timezone',
             'callInRestriction' => 'whitelist_enabled',
             'profile' => 'sound_profile',
@@ -112,7 +110,6 @@ final class FourPTouchGenericHandler
         return match ($genericKey) {
             'location_reporting_interval' => ['uploadInterval' => self::requireObjectValue($value, 'uploadInterval')],
             'monitor_number' => ['monitorNumber' => ['phone' => self::requireStringValue($value, 'phone')]],
-            'device_password' => ['devicePassword' => self::requireObjectValue($value, 'devicePassword')],
             'language_timezone' => ['languageTimezone' => self::requireObjectValue($value, 'languageTimezone')],
             'sos_sms_alert' => ['sosSmsAlerts' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
             'low_battery_alert' => ['lowBatterySmsAlerts' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
