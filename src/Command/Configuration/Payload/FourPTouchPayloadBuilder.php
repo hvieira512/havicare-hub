@@ -80,7 +80,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             ],
             'makeCall', 'centerNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
             'pushMessage' => [self::utf16Hex(self::requiredString($payload['message'] ?? null, 'message'))],
-            'resetCommand', 'powerOffCommand', 'findDeviceCommand', 'firmwareVersion', 'deviceStatus' => [],
+            'restartCommand', 'powerOffCommand', 'findDeviceCommand', 'firmwareVersion', 'deviceStatus' => [],
             'rejectUnknownCalls' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
             'alarmClock' => self::alarmClock($payload),
             'phonebook' => self::phonebook($payload),

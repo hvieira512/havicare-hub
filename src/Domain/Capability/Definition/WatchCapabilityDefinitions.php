@@ -153,7 +153,7 @@ final class WatchCapabilityDefinitions extends CapabilityDefinitions
                     'make_call' => 'Efetuar chamada',
                     // Acção e não contacto: o relógio liga para o número mal recebe o comando, em escuta silenciosa.
                     'monitor_number' => 'Número de monitorização',
-                    'reset_device' => 'Repor dispositivo',
+                    'reset_device' => 'Reposição de fábrica',
                     'restart_device' => 'Reiniciar dispositivo',
                     'power_off' => 'Desligar dispositivo',
                     'find_device' => 'Encontrar dispositivo',

@@ -129,7 +129,7 @@ final class GenericCapability implements CapabilityContract
     private function wonlexGenericToNative(mixed $value): array
     {
         return match ($this->genericKey) {
-            'reset_device' => ['resetCommand' => []],
+            'reset_device' => ['factoryResetCommand' => []],
             'restart_device' => ['restartCommand' => []],
             'power_off' => ['powerOffCommand' => []],
             'find_device' => ['findDeviceCommand' => []],

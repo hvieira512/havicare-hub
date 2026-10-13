@@ -54,7 +54,7 @@ final class FourPTouchConfigurationDefinitions
             $entry('monitorNumber', 'MONITOR', 'Escuta remota', 'voiceMonitor', ['phone'], ['MONITOR'], 'system', 5, transient: true, help: 'Liga para este número e abre o microfone sem aviso no relógio.', confirm: 'Abrir a escuta remota agora?'),
             $entry('centerNumber', 'CENTER', 'Número da central', 'phone', ['phone'], ['CENTER'], 'contacts', 5, help: 'Recebe os SMS de alarme e pode configurar o relógio por SMS sem palavra-passe.'),
             $entry('pushMessage', 'MESSAGE', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], ['MESSAGE'], 'system', 5, transient: true, help: 'Aparece no ecrã do relógio.'),
-            $entry('resetCommand', 'RESET', 'Reiniciar dispositivo', 'action', [], ['RESET'], 'system', 5, transient: true, help: 'Reinicia sem mostrar nada a quem o usa.', confirm: 'O relógio fica sem comunicar enquanto arranca.'),
+            $entry('restartCommand', 'RESET', 'Reiniciar dispositivo', 'action', [], ['RESET'], 'system', 5, transient: true, help: 'Reinicia sem mostrar nada a quem o usa.', confirm: 'O relógio fica sem comunicar enquanto arranca.'),
             $entry('powerOffCommand', 'POWEROFF', 'Desligar dispositivo', 'action', [], ['POWEROFF'], 'system', 5, transient: true, confirm: 'O relógio desliga-se e só volta a ligar no botão do próprio aparelho.'),
             $entry('findDeviceCommand', 'FIND', 'Fazer tocar', 'action', [], ['FIND'], 'system', 5, transient: true, help: 'Toca durante 1 minuto; pára ao carregar no botão.'),
             $entry('doNotDisturb', 'SILENCETIME', 'Não perturbar', 'timeRanges', ['ranges'], ['SILENCETIME'], 'system', 60, 4, help: 'Rejeita chamadas e bloqueia o ecrã nestes horários; o SOS continua a funcionar.'),

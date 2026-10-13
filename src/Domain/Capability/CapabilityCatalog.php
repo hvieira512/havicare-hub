@@ -386,7 +386,7 @@ final class CapabilityCatalog
             'wonlexCallInLimitSwitch' => 'whitelist_enabled',
             'rejectUnknownCalls', 'whitelistSwitch', 'callInRestriction' => 'whitelist_enabled',
             'whitelist_enabled' => 'whitelist_enabled',
-            'resetCommand' => 'reset_device',
+            'factoryResetCommand' => 'reset_device',
             'restartCommand' => 'restart_device',
             'powerOffCommand' => 'power_off',
             'findDeviceCommand' => 'find_device',

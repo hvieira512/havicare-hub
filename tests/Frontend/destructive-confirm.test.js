@@ -141,8 +141,7 @@ test("os comandos que não se desfazem têm caixa, e os inofensivos não", () =>
 });
 
 /**
- * A mesma capacidade `reset_device` é reposição de fábrica na Wonlex e reinício no 4P Touch: a
- * caixa não se escolhe pela chave.
+ * A caixa da reposição de fábrica diz que repõe de fábrica, e não o texto de um reinício.
  */
 test("a caixa da reposição de fábrica não promete um reinício", () => {
     const section = sectionFor({
@@ -159,7 +158,7 @@ test("a caixa da reposição de fábrica não promete um reinício", () => {
 
 test("o cartão leva consigo a frase que a definição declarou", () => {
     const html = renderConfigSection("wonlex-json", {
-        key: "resetCommand",
+        key: "factoryResetCommand",
         capabilityKey: "reset_device",
         label: "Reposição de fábrica",
         input: "action",

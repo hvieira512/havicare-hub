@@ -10,8 +10,8 @@ use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O `reset_device` da Wonlex repõe a fábrica e o do 4P Touch reinicia: quem sabe o efeito é o
- * adaptador, e por isso a frase de confirmação vive na definição.
+ * `reset_device` é sempre a reposição de fábrica e `restart_device` sempre o reinício. A frase
+ * de confirmação vive na definição porque o efeito exato é do aparelho de cada protocolo.
  */
 final class DestructiveConfirmationTest extends TestCase
 {
@@ -58,7 +58,7 @@ final class DestructiveConfirmationTest extends TestCase
 
     public function testTheFactoryResetDoesNotPromiseARestart(): void
     {
-        $reset = $this->entry('wonlex-json', 'resetCommand');
+        $reset = $this->entry('wonlex-json', 'factoryResetCommand');
 
         self::assertMatchesRegularExpression(
             '/f[áa]brica/iu',
@@ -72,14 +72,21 @@ final class DestructiveConfirmationTest extends TestCase
         );
     }
 
-    public function testTheSameCapabilityIsConfirmedByWhatEachProtocolDoes(): void
+    /** O `RESET` do 4P Touch reinicia (§15 da especificação); a reposição de fábrica é o `FACTORY`. */
+    public function testTheFourPTouchResetIsARestart(): void
     {
-        $fourPTouch = $this->entry('four-p-touch', 'resetCommand');
+        $fourPTouch = $this->entry('four-p-touch', 'restartCommand');
 
+        self::assertSame('restart_device', CapabilityCatalog::mapConfigurationKey('restartCommand'));
         self::assertMatchesRegularExpression(
             '/arranca|reinici/iu',
             (string)($fourPTouch['confirm'] ?? ''),
-            'no 4P Touch a mesma capacidade é um reinício, e é isso que a caixa tem de dizer',
+            'o RESET do 4P Touch é um reinício, e é isso que a caixa tem de dizer',
+        );
+        self::assertNotContains(
+            'reset_device',
+            CapabilityCatalog::keysForProtocol('four-p-touch'),
+            'o 4P Touch não declara a reposição de fábrica',
         );
     }
 

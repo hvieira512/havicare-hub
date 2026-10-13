@@ -50,7 +50,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'familyNumber' => ['familyNumbers' => self::familyNumbers($payload['contacts'] ?? $payload['familyNumbers'] ?? null)],
             'SOSNumber' => ['sosNumbers' => self::sosNumbers($payload['contacts'] ?? $payload['numbers'] ?? $payload['sosNumbers'] ?? [])],
             'dnMedicationPlan' => self::medicationPlan($payload),
-            'resetCommand', 'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
+            'factoryResetCommand', 'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
             'pushMessage' => [
                 'msgType' => 'msg',
                 'msg' => self::requiredString($payload['message'] ?? null, 'message'),

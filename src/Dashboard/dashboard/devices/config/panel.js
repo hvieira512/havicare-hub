@@ -168,8 +168,8 @@ export async function saveDeviceConfigurations(container) {
 }
 
 /**
- * A frase vem da definição do protocolo e não da capacidade: o `reset_device` da Wonlex repõe
- * de fábrica e o do 4P Touch reinicia. Sem frase declarada não há caixa.
+ * A frase vem da definição do protocolo e não da capacidade: o mesmo `restart_device` tem
+ * efeitos diferentes no relógio e no dispensador. Sem frase declarada não há caixa.
  */
 export function dangerousCommandPrompt(section, imei) {
     const text = String(section?.dataset?.configConfirm || "");

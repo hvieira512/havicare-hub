@@ -63,8 +63,8 @@ final class ConfigurationDefinition
         if ($actions !== null) {
             $entry['actions'] = $actions;
         }
-        // O que o utilizador autoriza, neste protocolo: o `reset_device` da Wonlex repõe de fábrica
-        // e o do 4P Touch reinicia, e por isso a frase não se escolhe pela capacidade.
+        // O que o utilizador autoriza, dito pelo efeito no aparelho deste protocolo: o mesmo
+        // `restart_device` deixa um relógio sem comunicar e limpa a avaria do prato no dispensador.
         if ($confirm !== '') {
             $entry['confirm'] = $confirm;
         }

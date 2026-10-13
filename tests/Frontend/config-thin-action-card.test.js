@@ -52,7 +52,7 @@ test("uma acção sem campos não tem botão de repor", () => {
 /** «Reposição de fábrica» num botão não diz o que o clique faz: manda o verbo declarado. */
 test("um rótulo que é um nome leva o verbo declarado na definição", () => {
     const section = sectionOf({
-        key: "resetCommand",
+        key: "factoryResetCommand",
         capabilityKey: "reset_device",
         label: "Reposição de fábrica",
         verb: "Repor de fábrica",

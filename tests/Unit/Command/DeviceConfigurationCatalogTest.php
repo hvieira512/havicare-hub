@@ -886,7 +886,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'power off' => ['power_off', 'powerOffCommand'];
         yield 'push message' => ['push_message', 'pushMessage'];
         yield 'make call' => ['make_call', 'makeCall'];
-        yield 'reset device' => ['reset_device', 'resetCommand'];
+        yield 'restart device' => ['restart_device', 'restartCommand'];
         yield 'device password' => ['device_password', 'devicePassword'];
         yield 'language timezone' => ['language_timezone', 'languageTimezone'];
         yield 'whitelist enabled' => ['whitelist_enabled', 'rejectUnknownCalls'];
@@ -1047,7 +1047,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'sleep time' => ['sleepTime', ['range' => '21:10-7:30'], '[3G*8800000015*0014*SLEEPTIME,21:10-7:30]'];
         yield 'make call' => ['makeCall', ['phone' => '00000000000'], '[3G*8800000015*0010*CALL,00000000000]'];
         yield 'center number' => ['centerNumber', ['phone' => '00000000000'], '[3G*8800000015*0012*CENTER,00000000000]'];
-        yield 'reset' => ['resetCommand', [], '[3G*8800000015*0005*RESET]'];
+        yield 'restart' => ['restartCommand', [], '[3G*8800000015*0005*RESET]'];
         yield 'power off' => ['powerOffCommand', [], '[3G*8800000015*0008*POWEROFF]'];
         yield 'find device' => ['findDeviceCommand', [], '[3G*8800000015*0004*FIND]'];
     }
