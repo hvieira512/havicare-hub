@@ -8,7 +8,7 @@ import { appendRepeatRow } from "../../src/Dashboard/dashboard/devices/config/ro
 import { configSection } from "./support/dom.js";
 
 /**
- * A gramática comum das cinco listas de alarmes: cada entrada é uma linha fechada com
+ * A gramática comum das quatro listas de alarmes: cada entrada é uma linha fechada com
  * interruptor, título e valor à direita, e abre-se para mostrar o resto.
  */
 const ALARM = { input: "alarm_clock", key: "alarm_clock", fields: [] };
@@ -23,7 +23,6 @@ const VIVISTAR_META = {
 };
 const WONLEX_META = { label: { supported: true }, url: { supported: true }, limit: 10 };
 const TAKE_PILLS = { input: "takePills", key: "take_pills", fields: [] };
-const MEDICATION = { input: "wonlexMedicationPlans", key: "medication_plan", fields: [] };
 
 const rowsOf = (section, kind) =>
     [...section.querySelectorAll(`[data-repeat-row="${kind}"]`)];
@@ -78,24 +77,6 @@ test("escrever num campo aberto refaz a linha fechada, sem ninguém chamar nada"
 
     assert.equal(textOf(row, "title"), "Novo");
     section.remove();
-});
-
-test("o plano de medicação mostra a frequência à direita, porque tem várias horas", () => {
-    const section = configSection(renderConfigInputs, MEDICATION, {
-        plans: [{
-            name: "Paracetamol",
-            doseCount: 500,
-            doseUnit: "mg",
-            times: [
-                { time: "08:00", enabled: true, period: "morning", recurrence: { kind: "daily" } },
-                { time: "12:00", enabled: true, period: "midday", recurrence: { kind: "daily" } },
-            ],
-        }],
-    });
-    const [row] = rowsOf(section, "wonlexMedicationPlan");
-
-    assert.match(textOf(row, "title"), /Paracetamol/);
-    assert.equal(textOf(row, "trailing"), "2×/dia");
 });
 
 test("o acrescentar diz quantas entradas já lá estão", () => {
@@ -163,18 +144,6 @@ test("nenhuma das cinco formas perdeu um campo", () => {
             "[data-action=\"takePillsClear\"]",
             "[data-action=\"takePillsFile\"]",
             "[data-takepills-preview]",
-        ]],
-        ["plano Wonlex", configSection(renderConfigInputs, MEDICATION, {}), [
-            "[data-medication-field=\"drugType\"]",
-            "[data-medication-field=\"drugName\"]",
-            "[data-medication-field=\"drugDose\"]",
-            "[data-medication-field=\"drugUnit\"]",
-            "[data-medication-field=\"drugStartTime\"]",
-            "[data-medication-field=\"drugEndTime\"]",
-            "[data-medication-field=\"drugInterval\"]",
-            "[data-medication-field=\"mealTiming\"]",
-            "[data-medication-period]",
-            "[data-medication-period-time=\"0\"]",
         ]],
     ];
 

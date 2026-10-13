@@ -107,8 +107,7 @@ final class DeviceConfigurationCatalog
     }
 
     /**
-     * Algumas configurações públicas expandem-se em vários comandos de protocolo. Os planos
-     * de medicação da Wonlex são um caso desses: o relógio aceita um plano por frame.
+     * Algumas configurações públicas expandem-se em vários comandos de protocolo.
      *
      * @param array<string, mixed> $payload
      * @param array<string, mixed> $context
@@ -148,36 +147,18 @@ final class DeviceConfigurationCatalog
             );
         }
 
-        $payloads = [$payload];
-        if ($protocol === 'wonlex-json' && $key === 'dnMedicationPlan' && isset($payload['plans'])) {
-            if (!is_array($payload['plans'])) {
-                throw new \InvalidArgumentException('plans must be a list of medication plans');
-            }
-            if ($payload['plans'] === []) {
-                $payloads = [['plans' => []]];
-            } else {
-                $payloads = array_map(static function (mixed $plan): array {
-                    if (!is_array($plan)) {
-                        throw new \InvalidArgumentException('plans items must be objects');
-                    }
-
-                    return ['plan' => $plan];
-                }, array_values($payload['plans']));
-            }
-        }
-
-        return array_map(static fn(array $item): array => [
+        return [[
             'command' => (string)$entry['command'],
             'payload' => match ($protocol) {
-                'wonlex-json' => WonlexPayloadBuilder::build($key, $item),
-                'vivistar-iw' => VivistarPayloadBuilder::build($key, $item),
-                'four-p-touch' => FourPTouchPayloadBuilder::build($key, $item),
+                'wonlex-json' => WonlexPayloadBuilder::build($key, $payload),
+                'vivistar-iw' => VivistarPayloadBuilder::build($key, $payload),
+                'four-p-touch' => FourPTouchPayloadBuilder::build($key, $payload),
                 // A pulseira só valida: quem monta a trama é o SDK no gateway, e o payload chega lá genérico.
-                'veepoo-ble' => VeepooPayloadBuilder::build($key, $item),
-                'zayata-m228' => ZayataPayloadBuilder::build($key, $item),
+                'veepoo-ble' => VeepooPayloadBuilder::build($key, $payload),
+                'zayata-m228' => ZayataPayloadBuilder::build($key, $payload),
                 default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
             },
-        ], $payloads);
+        ]];
     }
 
     /** @param array<string, mixed> $payload */

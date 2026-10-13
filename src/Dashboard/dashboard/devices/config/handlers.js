@@ -17,7 +17,6 @@ import {
     updateConfigChoice,
 } from "./inputs/shared.js";
 import { syncWorkingModeExtra } from "./inputs/vivistar.js";
-import { syncWonlexMedicationPeriod } from "./inputs/wonlex.js";
 import {
     clearTakePillsRecording,
     loadTakePillsAudio,
@@ -147,10 +146,6 @@ function dispatchConfigChange(event) {
 
     if (event.target.matches("[data-takepills-field=\"reminderFrequency\"]")) {
         syncTakePillsCustomVisibility(section);
-    }
-
-    if (event.target.matches("[data-medication-period]")) {
-        syncWonlexMedicationPeriod(event.target);
     }
 
     if (event.target.matches("[data-config-field=\"mode\"]")) {

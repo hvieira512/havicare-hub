@@ -537,18 +537,8 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
             'sos_contacts',
             'whitelist_enabled',
             'sos_sms_alert',
-            'medication_reminders',
             'heart_rate_measurement_interval',
         ]);
-        $plan = [
-            'drugType' => 0,
-            'drugDose' => 1,
-            'drugUnit' => '0',
-            'drugStartTime' => '2026-07-28',
-            'drugEndTime' => '2026-08-28',
-            'drugInterval' => 1,
-            'drugTime' => ['alarmClock' => ['Morning' => '08:00'], 'checkboxes' => [0], 'radio' => 0],
-        ];
         $response = $api->updateConfigurations($imei, [
             'configurations' => [
                 'heart_rate_measurement_interval' => ['interval' => 15],
@@ -566,15 +556,11 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
                 'sos_contacts' => ['+351210000000'],
                 'whitelist_enabled' => ['enabled' => true],
                 'sos_sms_alert' => ['enabled' => true],
-                'medication_reminders' => ['plans' => [
-                    $plan + ['drugName' => 'Morning medicine'],
-                    $plan + ['drugName' => 'Evening medicine'],
-                ]],
             ],
         ]);
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertCount(8, $submitted);
+        self::assertCount(6, $submitted);
         $adapter = new \Hub\Protocol\Adapter\WonlexAdapter();
         $frames = array_map(
             static fn(array $item): array => $adapter->decodeIncoming($item['bytes']) ?? [],
@@ -587,8 +573,6 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
             'SOSNumber',
             'deviceConfig',
             'deviceConfig',
-            'dnMedicationPlan',
-            'dnMedicationPlan',
         ], array_column($frames, 'type'));
         self::assertSame('351', $frames[0]['data']['familyNumbers'][0]['areaCode'] ?? null);
         self::assertSame('Rodr', $frames[0]['data']['familyNumbers'][0]['name'] ?? null);
@@ -602,8 +586,6 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertSame('210000000', $frames[3]['data']['sosNumbers'][0]['phone'] ?? null);
         self::assertSame(1, $frames[4]['data']['configs']['CallInLimitSwitch']['switchState'] ?? null);
         self::assertSame(1, $frames[5]['data']['configs']['SOSSwitch']['switchState'] ?? null);
-        self::assertSame('Morning medicine', $frames[6]['data']['drugName'] ?? null);
-        self::assertSame('Evening medicine', $frames[7]['data']['drugName'] ?? null);
         self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
         self::assertSame(
             [['name' => 'Rodr', 'phone' => '+351210000000']],
@@ -612,7 +594,6 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertSame(['+351210000000'], $response['configurations']['sos_contacts'] ?? null);
         self::assertTrue($response['configurations']['whitelist_enabled']['enabled'] ?? false);
         self::assertTrue($response['configurations']['sos_sms_alert']['enabled'] ?? false);
-        self::assertCount(2, $response['configurations']['medication_reminders']['plans'] ?? []);
     }
 
     public function testRecentReturnsTelemetryEventsAndCommands(): void

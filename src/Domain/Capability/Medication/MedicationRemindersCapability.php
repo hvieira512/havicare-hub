@@ -5,23 +5,24 @@ declare(strict_types=1);
 namespace Hub\Domain\Capability\Medication;
 
 use Hub\Domain\Capability\CapabilityContract;
+use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Os lembretes de medicação (`take_pills`): `dnMedicationPlan` na Wonlex, `takePills` no 4P
- * Touch e os nove alarmes do M228. O `supportedProtocols` sai do mapa dos tratadores.
+ * Os lembretes de medicação (`take_pills`): `takePills` no 4P Touch e os nove alarmes do M228.
+ * O `supportedProtocols` sai do mapa dos tratadores.
  */
 final class MedicationRemindersCapability implements CapabilityContract
 {
+    use CapabilityHelpers;
+
     /** @var array<string, MedicationRemindersHandler> */
     private array $handlers;
 
     public function __construct(
-        ?MedicationRemindersHandler $wonlex = null,
         ?MedicationRemindersHandler $fourPTouch = null,
         ?MedicationRemindersHandler $pillDispenser = null,
     ) {
         $this->handlers = [
-            'wonlex-json' => $wonlex ?? new WonlexMedicationRemindersHandler(),
             'four-p-touch' => $fourPTouch ?? new FourPTouchMedicationRemindersHandler(),
             'zayata-m228' => $pillDispenser ?? new PillDispenserMedicationRemindersHandler(),
         ];
@@ -68,14 +69,11 @@ final class MedicationRemindersCapability implements CapabilityContract
         return ($this->handlers[$protocol] ?? null)?->meta($accumulatedMeta) ?? $accumulatedMeta;
     }
 
-    /**
-     * O plano da Wonlex reconhece-se pela forma e não pelo protocolo: quem chama o `merge` tem
-     * o valor antigo e o novo, e não o protocolo por onde eles vieram.
-     */
+    /** Quem chama o `merge` tem o valor antigo e o novo, e não o protocolo por onde vieram. */
     public function merge(mixed $existing, mixed $incoming): mixed
     {
         return is_array($incoming) && array_key_exists('plans', $incoming)
-            ? $this->handlers['wonlex-json']->merge($existing, $incoming)
+            ? self::mergeAssociativeValues($existing, $incoming)
             : $this->handlers['four-p-touch']->merge($existing, $incoming);
     }
 

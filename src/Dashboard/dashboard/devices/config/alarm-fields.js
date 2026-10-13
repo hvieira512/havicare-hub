@@ -145,20 +145,9 @@ function checkedLabel(row, selector) {
     return row.querySelector(`label[for="${checked.id}"]`)?.textContent.trim() ?? "";
 }
 
-const selectedLabel = (row, selector) => {
-    const select = row.querySelector(selector);
-    return select?.options?.[select.selectedIndex]?.textContent.trim() ?? "";
-};
-
 const fieldValue = (row, selector) => String(row.querySelector(selector)?.value || "").trim();
 
 const TAKE_PILLS_FREQUENCIES = { 1: "once", 2: "daily", 3: "custom" };
-
-/** O campo guarda a data em ISO; na linha fechada ela lê-se como cá se escreve. */
-export function shortDate(value) {
-    const parts = String(value || "").trim().split("-");
-    return parts.length === 3 ? `${parts[2]}/${parts[1]}` : String(value || "").trim();
-}
 
 /**
  * O que enche cada encaixe da linha fechada, por tipo de lista. Aqui, e não espalhado por
@@ -192,24 +181,6 @@ const ALARM_LINE_SUMMARIES = {
             title: text || time || "Lembrete por preencher",
             subtitle: recurrenceWords(TAKE_PILLS_FREQUENCIES[frequency] || "once", readWeekdays(row)),
             trailing: time,
-            badges: "",
-        };
-    },
-    wonlexMedicationPlan: (row) => {
-        const name = fieldValue(row, "[data-medication-field=\"drugName\"]");
-        const dose = fieldValue(row, "[data-medication-field=\"drugDose\"]");
-        const unit = selectedLabel(row, "[data-medication-field=\"drugUnit\"]");
-        const times = [...row.querySelectorAll("[data-medication-period]:checked")]
-            .map((period) => fieldValue(row, `[data-medication-period-time="${period.value}"]`))
-            .filter((time) => time !== "")
-            .sort();
-        const end = fieldValue(row, "[data-medication-field=\"drugEndTime\"]");
-
-        return {
-            title: [name, dose === "" ? "" : `${dose} ${unit}`.trim()].filter(Boolean).join(" ") ||
-                "Medicamento por preencher",
-            subtitle: [times.join(" · "), end === "" ? "" : `até ${shortDate(end)}`].filter(Boolean).join(" · "),
-            trailing: times.length === 0 ? "" : `${times.length}×/dia`,
             badges: "",
         };
     },

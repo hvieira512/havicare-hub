@@ -27,13 +27,13 @@ const phoneList = (rowCount, limit) =>
             </div>
         </section>`).firstElementChild;
 
-const medicationList = (rowCount) =>
+const reminderList = (rowCount) =>
     parseFragment(`
         <section data-config-section>
-            <div data-repeat-list="wonlexMedicationPlan">
+            <div data-repeat-list="takePillsReminder">
                 ${Array.from({ length: rowCount }, () => `
-                    <div data-repeat-row="wonlexMedicationPlan">
-                        <span data-medication-plan-number>?</span>
+                    <div data-repeat-row="takePillsReminder">
+                        <span data-takepills-reminder-number>?</span>
                         <button data-action="removeRepeatRow"></button>
                     </div>`).join("")}
             </div>
@@ -64,23 +64,23 @@ test("clonar: o indicativo volta ao inicial em vez de herdar o anterior", () => 
 });
 
 test("desenhar: a linha nova é construída de raiz", () => {
-    const section = medicationList(1);
+    const section = reminderList(1);
 
-    appendRepeatRow(section, "wonlexMedicationPlan");
+    appendRepeatRow(section, "takePillsReminder");
 
-    const rows = rowsIn(section, "wonlexMedicationPlan");
+    const rows = rowsIn(section, "takePillsReminder");
     assert.equal(rows.length, 2);
     // A linha do molde não tem campo nenhum: clonada, a nova também não teria.
-    assert.ok(rows[1].querySelector("[data-medication-field=\"drugName\"]"));
+    assert.ok(rows[1].querySelector("[data-takepills-field=\"reminderTime\"]"));
 });
 
 test("sem limite declarado acrescenta-se sempre", () => {
-    const section = medicationList(1);
+    const section = reminderList(1);
 
-    appendRepeatRow(section, "wonlexMedicationPlan");
-    appendRepeatRow(section, "wonlexMedicationPlan");
+    appendRepeatRow(section, "takePillsReminder");
+    appendRepeatRow(section, "takePillsReminder");
 
-    assert.equal(rowsIn(section, "wonlexMedicationPlan").length, 3);
+    assert.equal(rowsIn(section, "takePillsReminder").length, 3);
 });
 
 test("um tipo desconhecido é ignorado em vez de rebentar", () => {
@@ -111,11 +111,11 @@ test("na lista que se clona, remover a última linha limpa-a em vez de a apagar"
 });
 
 test("na lista que se desenha, remover a última linha apaga-a", () => {
-    const section = medicationList(1);
+    const section = reminderList(1);
 
-    removeRepeatRow(removeButtonIn(rowsIn(section, "wonlexMedicationPlan")[0]));
+    removeRepeatRow(removeButtonIn(rowsIn(section, "takePillsReminder")[0]));
 
-    assert.equal(rowsIn(section, "wonlexMedicationPlan").length, 0);
+    assert.equal(rowsIn(section, "takePillsReminder").length, 0);
 });
 
 test("remover a partir de um botão solto é inofensivo", () => {
@@ -129,19 +129,19 @@ test("remover a partir de um botão solto é inofensivo", () => {
  * O sync é genérico -- corre para qualquer tipo repetível -- e por isso vale também para os
  * `keepLast`, como os contactos SOS e a whitelist.
  */
-test("the add-item button tracks the limit for a rendered kind (wonlexMedicationPlan)", () => {
+test("the add-item button tracks the limit for a rendered kind (takePillsReminder)", () => {
     const section = parseFragment(`
         <div data-config-section>
-            <button data-action="addRepeatRow" data-repeat-kind="wonlexMedicationPlan">Adicionar item</button>
-            <div data-repeat-list="wonlexMedicationPlan" data-repeat-limit="2"></div>
+            <button data-action="addRepeatRow" data-repeat-kind="takePillsReminder">Adicionar item</button>
+            <div data-repeat-list="takePillsReminder" data-repeat-limit="2"></div>
         </div>
     `).firstElementChild;
     const button = section.querySelector("[data-action=\"addRepeatRow\"]");
 
-    appendRepeatRow(section, "wonlexMedicationPlan");
+    appendRepeatRow(section, "takePillsReminder");
     assert.equal(button.disabled, false, "abaixo do limite o botão fica ligado");
 
-    appendRepeatRow(section, "wonlexMedicationPlan");
+    appendRepeatRow(section, "takePillsReminder");
     assert.equal(button.disabled, true, "no limite o botão desativa");
 
     const removeButton = section.querySelector("[data-action=\"removeRepeatRow\"]");

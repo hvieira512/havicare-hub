@@ -49,7 +49,6 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'alarmClock' => ['alarmClockList' => self::alarmClockList($payload)],
             'familyNumber' => ['familyNumbers' => self::familyNumbers($payload['contacts'] ?? $payload['familyNumbers'] ?? null)],
             'SOSNumber' => ['sosNumbers' => self::sosNumbers($payload['contacts'] ?? $payload['numbers'] ?? $payload['sosNumbers'] ?? [])],
-            'dnMedicationPlan' => self::medicationPlan($payload),
             'factoryResetCommand', 'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
             'pushMessage' => [
                 'msgType' => 'msg',
@@ -277,47 +276,5 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                 'phone' => $phone,
             ];
         }, $contacts);
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    private static function medicationPlan(array $payload): array
-    {
-        if (array_key_exists('plans', $payload) && $payload['plans'] === []) {
-            return ['plans' => []];
-        }
-
-        $plan = $payload['plan'] ?? $payload['medicationPlan'] ?? null;
-        if ($plan === null && isset($payload['plans'])) {
-            if (!is_array($payload['plans']) || count($payload['plans']) !== 1 || !is_array($payload['plans'][0])) {
-                throw new \InvalidArgumentException('Wonlex sends one medication plan per command');
-            }
-            $plan = $payload['plans'][0];
-        }
-        if ($plan === null) {
-            $plan = $payload;
-        }
-        if (!is_array($plan)) {
-            throw new \InvalidArgumentException('plan must be an object');
-        }
-
-        foreach (['drugType', 'drugName', 'drugStartTime', 'drugEndTime', 'drugInterval', 'drugTime'] as $field) {
-            if (!array_key_exists($field, $plan)) {
-                throw new \InvalidArgumentException("{$field} is required");
-            }
-        }
-
-        return [
-            'drugType' => self::nonNegativeInt($plan['drugType'], 'drugType'),
-            'drugName' => self::requiredString($plan['drugName'], 'drugName'),
-            'drugDose' => self::nonNegativeFloat($plan['drugDose'] ?? 0, 'drugDose'),
-            'drugUnit' => (string)($plan['drugUnit'] ?? '5'),
-            'drugStartTime' => self::requiredString($plan['drugStartTime'], 'drugStartTime'),
-            'drugEndTime' => self::requiredString($plan['drugEndTime'], 'drugEndTime'),
-            'drugInterval' => self::nonNegativeFloat($plan['drugInterval'], 'drugInterval'),
-            'drugTime' => self::arrayField($plan['drugTime'], 'drugTime'),
-        ];
     }
 }

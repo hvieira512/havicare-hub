@@ -17,7 +17,6 @@ final class MedicationRemindersDispatchTest extends TestCase
     private function capability(): MedicationRemindersCapability
     {
         return new MedicationRemindersCapability(
-            new NamedRemindersHandler('wonlex'),
             new NamedRemindersHandler('4p'),
             new NamedRemindersHandler('dispensador'),
         );
@@ -27,7 +26,6 @@ final class MedicationRemindersDispatchTest extends TestCase
     public static function protocols(): array
     {
         return [
-            ['wonlex-json', 'wonlex'],
             ['four-p-touch', '4p'],
             ['zayata-m228', 'dispensador'],
         ];

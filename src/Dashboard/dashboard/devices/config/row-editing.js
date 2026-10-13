@@ -7,10 +7,6 @@ import {
 import { syncAlarmClockCustomVisibility } from "./inputs/capability.js";
 import { createContactRow } from "./inputs/generic.js";
 import { nextUid } from "./inputs/shared.js";
-import {
-    renumberWonlexMedicationPlans,
-    wonlexMedicationPlanRow,
-} from "./inputs/wonlex.js";
 
 /**
  * Linhas repetíveis de uma secção: `data-repeat-list="<tipo>"` no contentor, `data-repeat-row`
@@ -27,10 +23,6 @@ const REPEAT_ROW_KINDS = {
     call_whitelist: { keepLast: true },
     numbers: { keepLast: true },
     alarm_clock: { keepLast: true },
-    wonlexMedicationPlan: {
-        render: (index) => wonlexMedicationPlanRow({}, index),
-        after: renumberWonlexMedicationPlans,
-    },
     takePillsReminder: {
         render: (index) => takePillsReminderGroup(
             { time: "08:00", enabled: true, frequency: 1, custom: "" },

@@ -333,12 +333,11 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ], $payload['payload']);
     }
 
-    public function testWonlexComplexDashboardConfigurationsUseStructuredEditors(): void
+    /** O HW20Pro ignora o `dnMedicationPlan` documentado: não responde nem toca, e confirma os outros comandos. */
+    public function testWonlexDoesNotOfferTheMedicationPlan(): void
     {
-        $medication = DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'dnMedicationPlan');
-
-        self::assertIsArray($medication);
-        self::assertSame('wonlexMedicationPlans', $medication['input'] ?? null);
+        self::assertNull(DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'dnMedicationPlan'));
+        self::assertNull(DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'medication_reminders'));
         self::assertNull(DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'weatherData'));
     }
 
@@ -395,22 +394,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ]);
         self::assertArrayHasKey('sosNumbers', $sos['payload']);
         self::assertSame('+351210000000', $sos['payload']['sosNumbers'][0]['phone']);
-
-        $medication = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'dnMedicationPlan', [
-            'plans' => [[
-                'drugType' => 0,
-                'drugName' => 'Medicine',
-                'drugDose' => 1.5,
-                'drugUnit' => '0',
-                'drugStartTime' => '2026-07-28',
-                'drugEndTime' => '2026-08-28',
-                'drugInterval' => 1,
-                'drugTime' => ['alarmClock' => ['Morning' => '08:00'], 'checkboxes' => [0], 'radio' => 0],
-            ]],
-        ]);
-        self::assertArrayNotHasKey('plans', $medication['payload']);
-        self::assertSame('Medicine', $medication['payload']['drugName']);
-        self::assertSame(1.5, $medication['payload']['drugDose']);
     }
 
     public function testWonlexAlarmClockRejectsValuesOutsideTheDocumentedContract(): void
@@ -471,56 +454,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
                 'url' => 'file:///tmp/alarm.mp3',
             ]],
         ]);
-    }
-
-    public function testWonlexMedicationPlansExpandToOneWireCommandPerPlan(): void
-    {
-        $base = [
-            'drugType' => 0,
-            'drugDose' => 1,
-            'drugUnit' => '0',
-            'drugStartTime' => '2026-07-28',
-            'drugEndTime' => '2026-08-28',
-            'drugInterval' => 1,
-            'drugTime' => ['alarmClock' => ['Morning' => '08:00'], 'checkboxes' => [0], 'radio' => 0],
-        ];
-
-        $commands = DeviceConfigurationCatalog::commandPayloads('wonlex-json', 'dnMedicationPlan', [
-            'plans' => [
-                $base + ['drugName' => 'Morning medicine'],
-                $base + ['drugName' => 'Evening medicine'],
-            ],
-        ]);
-
-        self::assertCount(2, $commands);
-        self::assertSame(['dnMedicationPlan', 'dnMedicationPlan'], array_column($commands, 'command'));
-        self::assertSame('Morning medicine', $commands[0]['payload']['drugName']);
-        self::assertSame('Evening medicine', $commands[1]['payload']['drugName']);
-        self::assertArrayNotHasKey('plans', $commands[0]['payload']);
-    }
-
-    public function testEmptyWonlexMedicationPlanListProducesEmptyListWireCommand(): void
-    {
-        $commands = DeviceConfigurationCatalog::commandPayloads(
-            'wonlex-json',
-            'dnMedicationPlan',
-            ['plans' => []]
-        );
-
-        self::assertCount(1, $commands);
-        self::assertSame('dnMedicationPlan', $commands[0]['command']);
-        self::assertSame(['plans' => []], $commands[0]['payload']);
-
-        $wire = DeviceCommandCatalog::buildDownlink(
-            'wonlex-json',
-            '868705080304889',
-            $commands[0]['command'],
-            $commands[0]['payload']
-        );
-        $decoded = (new \Hub\Protocol\Adapter\WonlexAdapter())->decodeIncoming($wire);
-
-        self::assertSame('dnMedicationPlan', $decoded['type'] ?? null);
-        self::assertSame([], $decoded['data']['plans'] ?? null);
     }
 
     public function testWonlexSleepAndThresholdConfigsBuildStructuredPayloads(): void

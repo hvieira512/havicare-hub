@@ -6,16 +6,6 @@ namespace Hub\Command\Configuration\Payload;
 
 abstract class ConfigurationPayloadBuilder
 {
-    /** @return array<array-key, mixed> */
-    protected static function arrayField(mixed $value, string $field): array
-    {
-        if (!is_array($value)) {
-            throw new \InvalidArgumentException("{$field} must be an object or array");
-        }
-
-        return $value;
-    }
-
     /** @return list<string> */
     protected static function stringList(mixed $value, int $max, string $field): array
     {

@@ -7,18 +7,12 @@ namespace Hub\Domain\Capability\Medication;
 use Hub\Domain\Capability\AlarmClock\AlarmClockHelpers;
 
 /**
- * A forma pública de um plano de medicação, partilhada pelos três fornecedores: um medicamento
+ * A forma pública de um plano de medicação, partilhada pelos fornecedores: um medicamento
  * com as suas horas. O que não se sabe omite-se, em vez de sair vazio.
  */
 final class MedicationPlanShape
 {
     use AlarmClockHelpers;
-
-    /** As horas do dia que a Wonlex nomeia, pela ordem do índice que ela usa nos períodos. */
-    public const WONLEX_PERIODS = [0 => 'Morning', 1 => 'Midday', 2 => 'Night', 3 => 'Before sleep'];
-
-    /** Os mesmos quatro períodos, com o nome que sai no contrato. */
-    public const PERIODS = [0 => 'morning', 1 => 'midday', 2 => 'night', 3 => 'before_sleep'];
 
     /** `0800`, `8:00` ou `08:00` passam todos a `08:00`; o que não é hora sai vazio. */
     public static function time(string $value): string
@@ -39,7 +33,7 @@ final class MedicationPlanShape
 
     /**
      * Uma hora do plano, com o que o fornecedor lhe acrescenta: o `slot` é o compartimento do
-     * dispensador e o `period` é a altura do dia que a Wonlex nomeia. Nenhum se adivinha.
+     * dispensador, e não se adivinha da hora.
      *
      * @param array<string, mixed> $recurrence
      * @param array<string, mixed> $extras
@@ -61,37 +55,6 @@ final class MedicationPlanShape
     {
         return array_filter($core, static fn(mixed $value): bool => $value !== null && $value !== '')
             + ['times' => $times];
-    }
-
-    /** A condição que o medicamento trata, como a Wonlex a numera. */
-    public const CONDITIONS = [0 => 'hypertension', 1 => 'diabetes', 2 => 'cholesterol', 3 => 'uric_acid'];
-
-    /** A unidade da dose, como a Wonlex a numera. */
-    public const DOSE_UNITS = ['0' => 'tablet', '1' => 'ampoule', '2' => 'ml', '3' => 'mg', '4' => 'iu', '5' => 'other'];
-
-    public const MEAL_TIMINGS = [0 => 'before_meal', 1 => 'after_meal'];
-
-    /**
-     * O nome inglês de um código nativo, ou `null` se o código não for conhecido -- que é o
-     * mesmo que não saber, e por isso omite-se.
-     *
-     * @param array<array-key, string> $table
-     */
-    public static function nameOf(array $table, mixed $code): ?string
-    {
-        return $table[is_int($code) ? $code : (string)$code] ?? null;
-    }
-
-    /**
-     * O código nativo de um nome inglês.
-     *
-     * @param array<array-key, string> $table
-     */
-    public static function codeOf(array $table, mixed $name, int|string $fallback): int|string
-    {
-        $found = array_search((string)$name, $table, true);
-
-        return $found === false ? $fallback : $found;
     }
 
     /** O nativo manda `1`/`0` e `"1"`/`"0"` tanto como booleanos. */

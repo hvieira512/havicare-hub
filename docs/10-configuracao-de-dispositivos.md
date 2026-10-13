@@ -231,10 +231,10 @@ absorve as diferenças entre fabricantes:
 é suportado naquele dispositivo, e o `limit` diz quantas entradas cabem. Um
 `items` vazio é válido e apaga os alarmes guardados.
 
-### Uma capacidade partilhada por três protocolos: `medication_reminders`
+### Uma capacidade partilhada por dois protocolos: `medication_reminders`
 
-Os três aparelhos que lembram medicação — os relógios Wonlex e 4P Touch, e o
-dispensador M228 — falavam formas públicas diferentes com a mesma chave. Hoje
+Os dois aparelhos que lembram medicação — o relógio 4P Touch e o dispensador
+M228 — falavam formas públicas diferentes com a mesma chave. Hoje
 **um plano é um medicamento com as suas horas**, e lê-se sem saber o fornecedor:
 
 ```json
@@ -262,16 +262,14 @@ O resto é extensão de fornecedor, e sai declarada no `_meta`:
 
 | Campo | Onde | O que é |
 |---|---|---|
-| `condition` | Wonlex, no plano | A condição que o medicamento trata |
-| `doseUnit` | Wonlex, no plano | A unidade da dose |
-| `intervalDays` | Wonlex, no plano | De quantos em quantos dias |
-| `mealTiming` | Wonlex, no plano | Antes ou depois da refeição |
-| `period` | Wonlex, na hora | A altura do dia que o protocolo dele nomeia |
 | `slot` | M228, na hora | O compartimento que abre |
 | `reminderText` · `voiceData` | 4P Touch, ao lado dos planos | O texto e o áudio do lembrete |
 
-O `period` e o `slot` **não se adivinham da hora**: são campos do aparelho, e
-inferi-los punha as 19:00 da Wonlex no período do meio-dia.
+O `slot` **não se adivinha da hora**: é um campo do aparelho.
+
+A Wonlex documenta um `dnMedicationPlan`, mas o HW20Pro ignora-o: não responde
+e o lembrete não toca, embora confirme os outros comandos na mesma sessão. Por
+isso a capacidade não existe no protocolo `wonlex-json`.
 
 ## 5. Descoberta de capacidades
 

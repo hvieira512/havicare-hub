@@ -26,7 +26,6 @@ const FIXTURES = {
 const READ_DIFFERS = {
     call_whitelist: { kind: "reads", why: "o leitor tira as posições em branco dos dez lugares" },
     takePills: { kind: "reads", why: "o tipo do áudio só viaja quando há áudio" },
-    wonlexMedicationPlans: { kind: "throws", why: "um plano sem nome não se envia" },
 };
 
 const entryFor = (input) => ({ input, key: input, fields: ["enabled"], ...FIXTURES[input] });

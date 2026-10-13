@@ -335,7 +335,6 @@ final class CapabilityCatalog
             'alarm_clock' => 'alarm_clock',
             'familyNumber' => 'phonebook',
             'SOSNumber' => 'sos_contacts',
-            'dnMedicationPlan' => 'medication_reminders',
             'wonlexLowPower' => 'low_battery_alert',
             'wonlexFallWarnSwitch', 'fallDetection' => 'fall_detection',
             'wonlexSOSSwitch' => 'sos_sms_alert',
