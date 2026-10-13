@@ -110,7 +110,9 @@
    cabe ao lado das definições. */
 @media (min-width: 768px) {
     .config-section-nav {
-        flex: 0 0 232px;
+        flex: 0 0 248px;
+        /* Sem isto o nome mais comprido alarga a coluna, e mais ainda a negrito, ao escolhê-lo. */
+        min-width: 0;
         border-right: 1px solid var(--bs-border-color);
     }
 }
@@ -124,16 +126,14 @@
 }
 
 .config-section-nav {
-    gap: .25rem;
-    padding: .75rem;
+    padding: .5rem 0;
 }
 
 .config-section-nav .config-section-link {
     gap: .75rem;
     min-height: 44px;
-    padding: 0 .75rem;
+    padding: 0 1rem;
     border: 0;
-    border-radius: var(--bs-border-radius-lg);
     background: transparent;
     color: var(--bs-body-color);
     font-size: var(--fs-sm);

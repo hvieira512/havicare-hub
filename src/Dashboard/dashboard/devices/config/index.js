@@ -139,7 +139,7 @@ function sectionList(groups, currentCategory) {
                     data-action="selectConfigCategory" data-section="${esc(group.key)}" data-config-section-link
                     aria-pressed="${group.key === currentCategory ? "true" : "false"}">
                 <i class="fa-solid ${esc(CAPABILITY_SECTION_ICONS[group.key] || "fa-gear")} fa-fw" aria-hidden="true"></i>
-                <span class="text-truncate flex-grow-1">${esc(group.label)}</span>
+                <span class="text-truncate flex-grow-1 min-w-0">${esc(group.label)}</span>
                 <span class="count-chip flex-shrink-0" data-config-section-total>${group.entries.length}</span><span class="small flex-shrink-0 text-nowrap" data-config-section-changed></span>
                 <i class="config-section-chevron fa-solid fa-chevron-right d-md-none" aria-hidden="true"></i>
             </button>`).join("")}
