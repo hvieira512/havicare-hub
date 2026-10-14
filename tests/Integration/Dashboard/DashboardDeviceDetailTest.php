@@ -153,6 +153,36 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
         self::assertArrayNotHasKey('transportPending', $detailBody);
     }
 
+    /** Um aparelho que perdeu a configuração recebe-a de novo: o `resync` não confia no registo do hub. */
+    public function testResyncSendsAnUnchangedValueAgain(): void
+    {
+        $submitted = 0;
+        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function () use (&$submitted): string {
+            $submitted++;
+            return 'sent';
+        });
+        [$server, $db] = $this->makeServerWithDatabase($hub);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+        $patch = fn (array $value) => $server(new ServerRequest(
+            'PATCH',
+            '/api/devices/861265061009822/configurations',
+            ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
+            json_encode(['configurations' => ['fall_detection' => $value]], JSON_THROW_ON_ERROR)
+        ));
+
+        $patch(['enabled' => true]);
+        $patch(['enabled' => true]);
+        self::assertSame(1, $submitted);
+
+        $resync = $patch(['enabled' => true, 'resync' => true]);
+        self::assertSame(200, $resync->getStatusCode(), (string)$resync->getBody());
+        self::assertSame(2, $submitted);
+    }
+
     public function testDeviceDetailExposesTakePillsMetaForFourPTouch(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();

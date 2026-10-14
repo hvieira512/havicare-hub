@@ -97,6 +97,8 @@ final class DevicePaths
                 'patch' => [
                     'tags' => [self::TAG],
                     'summary' => 'Partially update device configurations',
+                    'description' => 'A value equal to the stored one is not sent again. Add `"resync": true` next to a '
+                        . "capability's value to send it anyway, for a device that lost its configuration.",
                     'parameters' => [$imei],
                     'requestBody' => Requests::json('DeviceConfigurationsUpdateRequest'),
                     'responses' => Responses::map(

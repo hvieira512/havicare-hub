@@ -115,6 +115,10 @@ final class DeviceConfigurationUpdateService
                 ];
             }
 
+            // Uma ordem, não um valor: consome-se aqui e não chega ao que fica guardado.
+            $commandContext = ['resync' => ($payload['resync'] ?? false) === true];
+            unset($payload['resync']);
+
             // O `sanitizeInput` entra no mesmo `try` que o `toNative`, para a sua recusa sair como
             // `invalid_config` com a razão e não como 500.
             try {
@@ -136,10 +140,6 @@ final class DeviceConfigurationUpdateService
 
                 $nativeUpdates = $this->capabilities->toNative($protocol, $genericKey, $payload);
 
-                // Uma ordem, não um valor: consome-se aqui e não chega ao que fica guardado,
-                // seja qual for o protocolo.
-                $commandContext = ['resync' => ($payload['resync'] ?? false) === true];
-                unset($payload['resync']);
                 // A lista telefónica do 4P Touch guarda-se indexada pelo endereço do contacto no aparelho, de
                 // onde sai o delta seguinte; a forma pública é a lista, sem índices.
                 if ($protocol === 'four-p-touch' && is_array($nativeUpdates['phonebook'] ?? null)) {
@@ -165,8 +165,10 @@ final class DeviceConfigurationUpdateService
                     ? $currentByKey[$normalizedNativeKey]['desired_payload']
                     : null;
                 $existingStatus = (string)($currentByKey[$normalizedNativeKey]['last_status'] ?? '');
+                // Com `resync` o registo do hub não conta: o valor vai ao aparelho mesmo igual.
                 if (
-                    $existingPayload !== null
+                    !$commandContext['resync']
+                    && $existingPayload !== null
                     && $this->valuesEqual($existingPayload, $nativePayload)
                     && !in_array($existingStatus, ['created', 'failed', 'retry_exhausted', 'response_timeout'], true)
                 ) {

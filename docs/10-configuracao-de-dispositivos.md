@@ -194,6 +194,11 @@ A resposta traz as chaves alteradas, cada uma com as `operations[]` que foram
 criadas para as entregar — incluindo o `nativeKey` de cada uma, que é onde a
 identidade de protocolo aparece, e só ali.
 
+Um valor igual ao que o hub tem guardado não volta a sair. Para repor no aparelho
+uma configuração que ele perdeu, a capacidade leva `"resync": true` ao lado do
+valor: o hub deixa de confiar no próprio registo e envia-a na mesma. O `resync`
+não fica guardado.
+
 ### Uma capacidade a fundo: `alarm_clock`
 
 Serve de exemplo do padrão que todas seguem. A resposta do
