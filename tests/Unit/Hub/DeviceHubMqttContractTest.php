@@ -352,6 +352,42 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertCount(0, $queue->pendingFor('868705080300697'));
     }
 
+    /**
+     * O pedido em fila sai para o aparelho e passa a esperar a resposta. É pelo `id` que se encontra:
+     * o tipo da trama não é o nome com que o pedido foi registado.
+     */
+    public function testAQueuedRequestWaitsForTheReplyOnceItIsFlushed(): void
+    {
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $store = new \Hub\State\DeviceStore(new InMemoryRedisClient(), 100);
+        $hub = new DeviceHubServer($this->whitelist, new ContractRecordingHubMqttBridge(), downlinkQueue: $queue, deviceStore: $store);
+        $connection = new ContractFakeConnection(7);
+        $adapter = new WonlexAdapter();
+
+        $store->recordCommand('868705080300697', 'req-1', [
+            'status' => 'queued',
+            'nativeType' => 'heartRateRequest',
+            'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+        ]);
+        $queue->enqueue('868705080300697', $adapter->encodeOutgoing([
+            'type' => 'dnHeartRate',
+            'ident' => 555555,
+            'ref' => 's:down',
+            'imei' => '868705080300697',
+            'data' => ['type' => 'dnHeartRate', 'imei' => '868705080300697'],
+        ]), ['nativeType' => 'dnHeartRate', 'protocol' => 'wonlex-json', 'id' => 'req-1'], 300);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, $adapter->encodeOutgoing([
+            'type' => 'login',
+            'imei' => '868705080300697',
+            'data' => ['deviceModel' => 'IGNORED'],
+        ]));
+
+        $command = $store->findCommand('req-1');
+        self::assertSame('waiting', $command['command']['status'] ?? $command['status'] ?? null);
+    }
+
     public function testAuthenticatedMeasurementPublishesDecodedEventWithoutDebugFields(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();

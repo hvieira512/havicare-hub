@@ -508,8 +508,10 @@ class DeviceHubServer
                     continue;
                 }
                 $nativeType = is_array($downlink->command) ? (string)($downlink->command['nativeType'] ?? '') : '';
-                if ($operationId !== '') {
-                    $this->deviceStore?->markCommand($session->imei, $operationId, [
+                // O pedido encontra-se pelo seu identificador; o tipo da trama não é o nome com que foi registado.
+                $commandId = $operationId !== '' ? $operationId : (is_array($downlink->command) ? (string)($downlink->command['id'] ?? '') : '');
+                if ($commandId !== '') {
+                    $this->deviceStore?->markCommand($session->imei, $commandId, [
                         'status' => 'waiting',
                         'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
                     ]);
