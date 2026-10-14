@@ -11,6 +11,7 @@ import {
     clearSelection,
     resetDetailFiltersDraft,
     resetDeviceListPage,
+    refreshSelectedDetail,
     selectImei,
     setDeviceListPage,
     setSelectedDetail,
@@ -419,10 +420,12 @@ async function loadDevice(imei) {
     if (generation !== deviceLoadGeneration) {
         return false;
     }
-    // Recarregar o dispositivo já escolhido não é trocar de aparelho: o stream fica aberto.
+    // Recarregar o dispositivo já escolhido não é trocar de aparelho: o stream fica aberto, e o
+    // histórico que ele já entregou também.
     const changingDevice = !isDeviceStreamFor(imei);
     if (changingDevice) disconnectDeviceStream();
-    setSelectedDetail(detail);
+    if (changingDevice) setSelectedDetail(detail);
+    else refreshSelectedDetail(detail);
     resetDetailFiltersDraft();
     renderSelectionDetail();
     if (changingDevice) connectDeviceStream(imei);

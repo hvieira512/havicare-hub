@@ -113,6 +113,24 @@ test("recarregar o mesmo dispositivo não volta a abrir o stream", async () => {
     assert.equal(streamRequests(fetches), 1);
 });
 
+/** Abrir o selector relê o escolhido; com o stream aberto, o histórico não volta a chegar. */
+test("recarregar o mesmo dispositivo mantém as leituras e os pedidos que o stream entregou", async () => {
+    const fetches = installDeferredFetch();
+
+    selectImei("aaa111");
+    const first = loadDevice("aaa111");
+    await fetches.respond("/api/devices/aaa111", detailFor("aaa111"));
+    await first;
+    const recent = { telemetry: [{ type: "battery", data: { percent: 80 } }], events: [], commands: [] };
+    state.selectedDetail.recent = recent;
+
+    const again = loadDevice("aaa111");
+    await fetches.respond("/api/devices/aaa111", detailFor("aaa111"));
+    await again;
+
+    assert.equal(state.selectedDetail.recent, recent);
+});
+
 test("escolher outro dispositivo abre o stream dele", async () => {
     const fetches = installDeferredFetch();
 
