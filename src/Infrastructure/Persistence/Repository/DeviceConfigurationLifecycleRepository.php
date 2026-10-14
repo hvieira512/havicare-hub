@@ -223,6 +223,27 @@ final class DeviceConfigurationLifecycleRepository
     }
 
     /**
+     * O valor pedido de cada chave, na forma em que foi pedido.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function desiredPayloads(string $imei): array
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT config_key, desired_payload FROM device_configuration_changes
+            WHERE imei = ? AND superseded_at IS NULL
+        ');
+        $stmt->execute([$imei]);
+
+        $payloads = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $payloads[(string)$row['config_key']] = $this->decode((string)$row['desired_payload']);
+        }
+
+        return $payloads;
+    }
+
+    /**
      * Os aparelhos cujo fuso pedido é uma zona com nome, como `Europe/Lisbon`.
      *
      * @return list<array{imei: string, zone: string}>

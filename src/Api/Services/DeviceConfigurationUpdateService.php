@@ -60,6 +60,7 @@ final class DeviceConfigurationUpdateService
                 $currentByKey[$normalizedKey] = $row;
             }
         }
+        $desiredByKey = $this->db->configurationLifecycle->desiredPayloads($imei);
         if ($protocol === 'wonlex-json' && array_key_exists('phonebook', $configurations)) {
             $phonebook = ['phonebook' => $configurations['phonebook']];
             unset($configurations['phonebook']);
@@ -165,11 +166,13 @@ final class DeviceConfigurationUpdateService
                     ? $currentByKey[$normalizedNativeKey]['desired_payload']
                     : null;
                 $existingStatus = (string)($currentByKey[$normalizedNativeKey]['last_status'] ?? '');
-                // Com `resync` o registo do hub não conta: o valor vai ao aparelho mesmo igual.
+                // Com `resync` o registo do hub não conta: o valor vai ao aparelho mesmo igual. Um
+                // pedido diferente do anterior também sai: uma zona com nome pode dar o desvio que já lá está.
                 if (
                     !$commandContext['resync']
                     && $existingPayload !== null
                     && $this->valuesEqual($existingPayload, $nativePayload)
+                    && (!isset($desiredByKey[$genericKey]) || $this->valuesEqual($desiredByKey[$genericKey], $payload))
                     && !in_array($existingStatus, ['created', 'failed', 'retry_exhausted', 'response_timeout'], true)
                 ) {
                     continue;

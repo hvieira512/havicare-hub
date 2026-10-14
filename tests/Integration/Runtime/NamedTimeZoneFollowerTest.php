@@ -31,6 +31,15 @@ final class NamedTimeZoneFollowerTest extends DashboardHttpTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['time_zone', 'calibrate_clock']);
 
         $token = $this->loginToken($server, 'admin', 'secret');
+        // O desvio de agora já lá está: escolher a zona tem de ficar guardado na mesma.
+        $now = \Hub\Domain\Capability\TimeZoneOffset::hhmm('Europe/Lisbon', new \DateTimeImmutable());
+        $server(new ServerRequest(
+            'PATCH',
+            '/api/devices/' . self::IMEI . '/configurations',
+            ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
+            json_encode(['configurations' => ['time_zone' => ['timeZone' => $now]]], JSON_THROW_ON_ERROR)
+        ));
+        $sent = [];
         $patch = $server(new ServerRequest(
             'PATCH',
             '/api/devices/' . self::IMEI . '/configurations',
@@ -46,13 +55,13 @@ final class NamedTimeZoneFollowerTest extends DashboardHttpTestCase
             static fn (): array => [self::IMEI],
         );
 
-        self::assertSame([], $follower->tick(), 'com o desvio igual não sai nada');
+        self::assertCount(0, $follower->tick(), 'com o desvio igual não sai nada');
 
         // O desvio que ficou guardado é o da outra estação do ano.
         $db->deviceConfigurations->saveDesired(self::IMEI, 'time_zone', 'zayata-m228', 'time_zone', ['timeZone' => 999]);
 
         self::assertSame([self::IMEI], $follower->tick());
         self::assertSame(['timeZone', 'timeZone', 'calibrateClock'], $sent);
-        self::assertSame([], $follower->tick());
+        self::assertCount(0, $follower->tick());
     }
 }
