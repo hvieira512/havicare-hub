@@ -289,7 +289,7 @@ function renderOwner(owner) {
 }
 
 function renderIdentity(answers) {
-    const fields = deviceTypeFields(answers.type);
+    const fields = deviceTypeFields(answers.type, answers.model?.protocol);
     const gateways = eligibleGatewayList(answers);
 
     return html`
@@ -519,7 +519,7 @@ async function loadWizardGateways() {
  * só a autorização falha, o dispositivo já existe: o assistente fecha e avisa o que faltou.
  */
 export async function createDeviceFromWizard(answers) {
-    const fields = deviceTypeFields(answers.type);
+    const fields = deviceTypeFields(answers.type, answers.model?.protocol);
     const identity = String(answers.identity || "").trim();
     const byImei = fields.identity.field === "imei";
 

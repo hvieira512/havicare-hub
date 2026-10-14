@@ -23,12 +23,14 @@ export const deviceTypeOptions = Object.entries(DEVICE_TYPES).map(
 );
 
 /** A linha de um tipo, sempre utilizável, normalizada como no `normalizeDeviceType`. */
-export function deviceTypeFields(deviceType) {
-    return DEVICE_TYPES[normalizeDeviceType(deviceType)];
+/** Com o protocolo, o que ele corrige: a pulseira PST é Wi-Fi e não tem MAC nem gateways. */
+export function deviceTypeFields(deviceType, protocol = "") {
+    const fields = DEVICE_TYPES[normalizeDeviceType(deviceType)];
+    return { ...fields, ...(fields.byProtocol?.[protocol] || {}) };
 }
 
-export function linksToGateway(deviceType) {
-    return deviceTypeFields(deviceType).gatewayLinks;
+export function linksToGateway(deviceType, protocol = "") {
+    return deviceTypeFields(deviceType, protocol).gatewayLinks;
 }
 
 export function normalizeDeviceType(deviceType) {

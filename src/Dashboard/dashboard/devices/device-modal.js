@@ -350,6 +350,8 @@ export async function renderDeviceSelectors(
     updateDevicePreview();
     renderEditWizard();
     await syncDeviceModalContext();
+    applyDeviceTypeFields();
+    applyFourPTouchDeviceIdUi();
     configPanelIfLoaded()?.panel.renderDeviceConfigurationModal();
 }
 
@@ -362,7 +364,12 @@ export function renderDeviceTypeSelector(selectedType = "watch") {
             html`data-action="selectDeviceType" data-value="${value}"`,
     });
 
-    const fields = deviceTypeFields(deviceType);
+    applyDeviceTypeFields();
+}
+
+/** Os campos do tipo, corrigidos pelo protocolo do modelo quando ele já se conhece. */
+function applyDeviceTypeFields() {
+    const fields = deviceTypeFields(els.deviceForm.dataset.deviceType, state.deviceModal.protocol);
     const byImei = fields.identity.field === "imei";
     els.deviceImeiRow?.classList.toggle("d-none", !byImei);
     els.deviceSimRow?.classList.toggle("d-none", !fields.sim);
@@ -477,7 +484,7 @@ export async function saveDevice() {
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
     // A identidade e o SIM são perguntas distintas: o gateway identifica-se por MAC e leva SIM.
-    const fields = deviceTypeFields(deviceType);
+    const fields = deviceTypeFields(deviceType, state.deviceModal.protocol);
     const identifiedByImei = fields.identity.field === "imei";
     const deviceId = isFourPTouchSelection(
         supplier,
@@ -518,7 +525,7 @@ export async function saveDevice() {
 
     const originalImei = els.deviceImei.dataset.originalImei || "";
     const company = els.deviceCompany.value || "null";
-    const desiredGatewayKeys = linksToGateway(deviceType)
+    const desiredGatewayKeys = linksToGateway(deviceType, state.deviceModal.protocol)
         ? selectedGatewayKeys()
         : [];
     if (deviceType !== "watch" && (licenseId === "" || licenseId === "0")) {
@@ -549,7 +556,7 @@ export async function saveDevice() {
         return;
     }
 
-    if (linksToGateway(deviceType)) {
+    if (linksToGateway(deviceType, state.deviceModal.protocol)) {
         const currentGatewayKeys = originalImei && originalImei !== imei
             ? []
             : state.deviceModal.linkedGatewayKeys || [];
