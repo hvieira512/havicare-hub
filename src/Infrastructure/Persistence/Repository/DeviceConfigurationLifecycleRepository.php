@@ -244,14 +244,14 @@ final class DeviceConfigurationLifecycleRepository
     }
 
     /**
-     * Os aparelhos cujo fuso pedido é uma zona com nome, como `Europe/Lisbon`.
+     * Os aparelhos cujo fuso pedido é uma zona com nome, como `Europe/Lisbon`, e quando foi escrito.
      *
-     * @return list<array{imei: string, zone: string}>
+     * @return list<array{imei: string, zone: string, writtenAt: \DateTimeImmutable}>
      */
     public function namedTimeZones(?string $imei = null): array
     {
         $stmt = $this->pdo->prepare("
-            SELECT imei, JSON_UNQUOTE(JSON_EXTRACT(desired_payload, '$.timeZone')) AS zone
+            SELECT imei, JSON_UNQUOTE(JSON_EXTRACT(desired_payload, '$.timeZone')) AS zone, created_at
             FROM device_configuration_changes
             WHERE config_key = 'time_zone' AND superseded_at IS NULL
               AND JSON_TYPE(JSON_EXTRACT(desired_payload, '$.timeZone')) = 'STRING'
@@ -261,7 +261,11 @@ final class DeviceConfigurationLifecycleRepository
 
         $zones = [];
         foreach ($stmt->fetchAll() as $row) {
-            $zones[] = ['imei' => (string)$row['imei'], 'zone' => (string)$row['zone']];
+            $zones[] = [
+                'imei' => (string)$row['imei'],
+                'zone' => (string)$row['zone'],
+                'writtenAt' => new \DateTimeImmutable((string)$row['created_at'], new \DateTimeZone('UTC')),
+            ];
         }
 
         return $zones;

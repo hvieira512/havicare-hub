@@ -70,14 +70,7 @@ final class GenericCapability implements CapabilityContract
      */
     private function passThroughToNative(mixed $value): array
     {
-        $value = self::requireObjectValue($value, $this->genericKey);
-        // Um fuso com nome vai ao aparelho como o desvio de agora; o `NamedTimeZoneFollower`
-        // reescreve-o quando a hora muda.
-        if ($this->genericKey === 'time_zone' && is_string($value['timeZone'] ?? null)) {
-            $value['timeZone'] = TimeZoneOffset::hhmm($value['timeZone'], new \DateTimeImmutable());
-        }
-
-        return [$this->genericKey => $value];
+        return [$this->genericKey => self::requireObjectValue($value, $this->genericKey)];
     }
 
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed

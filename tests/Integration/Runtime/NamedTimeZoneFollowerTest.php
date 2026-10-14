@@ -57,8 +57,13 @@ final class NamedTimeZoneFollowerTest extends DashboardHttpTestCase
 
         self::assertCount(0, $follower->tick(), 'com o desvio igual não sai nada');
 
-        // O desvio que ficou guardado é o da outra estação do ano.
-        $db->deviceConfigurations->saveDesired(self::IMEI, 'time_zone', 'zayata-m228', 'time_zone', ['timeZone' => 999]);
+        // O fuso foi escrito na outra estação do ano, com o outro desvio.
+        $otherSeason = $now === 100 ? '2026-01-15 12:00:00' : '2026-07-15 12:00:00';
+        $pdo = (new \ReflectionProperty($db->configurationLifecycle, 'pdo'))->getValue($db->configurationLifecycle);
+        $pdo->prepare("
+            UPDATE device_configuration_changes SET created_at = ?
+            WHERE imei = ? AND config_key = 'time_zone' AND superseded_at IS NULL
+        ")->execute([$otherSeason, self::IMEI]);
 
         self::assertSame([self::IMEI], $follower->tick());
         self::assertSame(['timeZone', 'timeZone', 'calibrateClock'], $sent);

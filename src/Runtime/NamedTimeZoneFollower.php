@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Hub\Runtime;
 
 use Closure;
+use DateTimeImmutable;
 use Hub\Api\Services\DeviceService;
+use Hub\Domain\Capability\TimeZoneOffset;
 use Hub\Infrastructure\Persistence\Repository\DeviceConfigurationLifecycleRepository;
 
 /**
@@ -26,20 +28,17 @@ final class NamedTimeZoneFollower
     public function tick(): array
     {
         $online = array_flip(($this->onlineImeis)());
+        $now = new DateTimeImmutable();
         $changed = [];
-        foreach ($this->configurations->namedTimeZones() as ['imei' => $imei, 'zone' => $zone]) {
-            if (!isset($online[$imei])) {
+        foreach ($this->configurations->namedTimeZones() as ['imei' => $imei, 'zone' => $zone, 'writtenAt' => $writtenAt]) {
+            if (!isset($online[$imei]) || TimeZoneOffset::hhmm($zone, $now) === TimeZoneOffset::hhmm($zone, $writtenAt)) {
                 continue;
             }
 
-            // O hub não reenvia um valor igual ao guardado: só sai alguma coisa quando o desvio mudou.
-            $result = $this->devices->updateConfigurations($imei, [
-                'configurations' => ['time_zone' => ['timeZone' => $zone]],
+            // O pedido é o mesmo nome: o `resync` fá-lo sair com o desvio novo.
+            $this->devices->updateConfigurations($imei, [
+                'configurations' => ['time_zone' => ['timeZone' => $zone, 'resync' => true]],
             ]);
-            if (($result['results'] ?? []) === []) {
-                continue;
-            }
-
             $this->devices->requestFeature($imei, ['capability' => 'calibrate_clock', 'value' => []]);
             $changed[] = $imei;
         }
