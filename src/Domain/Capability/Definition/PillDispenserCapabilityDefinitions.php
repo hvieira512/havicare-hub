@@ -44,8 +44,8 @@ final class PillDispenserCapabilityDefinitions extends CapabilityDefinitions
                     // Chega no pacote de registo e em mais lado nenhum: a única altura em
                     // que muda é depois de uma actualização, que acaba em religar.
                     'firmware_version' => 'Versão do firmware',
-                    // O estado dos nove alarmes é a única leitura da toma que chega em
-                    // claro — o `0x03`, que traz a hora e a célula, vem cifrado.
+                    // O estado dos nove alarmes vem na resposta ao `0x07`; a toma, com a hora e a
+                    // célula, é o evento `0x03`.
                     'medication_alarm_status' => 'Estado dos alarmes',
                 ],
                 // O `0x07` pede as `STATUS_TAGS` todas e a resposta enche as leituras acima: é o único

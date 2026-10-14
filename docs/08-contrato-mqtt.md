@@ -191,7 +191,7 @@ eventos guardados no histórico da dashboard levam-na igual.
 
 | `type` | `data` | Quem o publica | `severity` |
 |---|---|---|---|
-| `help_call` | `pressType` (pulseira), `state` (dispensador), `pagerId` (NCS) | relógio (SOS), pulseira, NCS, dispensador | `alarm` |
+| `help_call` | `pressType` (pulseira), `pagerId` (NCS); vazio no relógio e no dispensador | relógio (SOS), pulseira, NCS, dispensador | `alarm` |
 | `fall` | `confirmed`, `posture` (`lying` · `sitting_on_ground`), `personIndex` | relógio, radar | `alarm`; `alert` com `confirmed: false` |
 | `heart_rate_high` | `bpm`, quando há | radar | `alarm` acima de 160 bpm, `alert` abaixo ou sem valor |
 | `heart_rate_low` | `bpm`, quando há | radar | `alarm` abaixo de 20 bpm, `alert` acima ou sem valor |

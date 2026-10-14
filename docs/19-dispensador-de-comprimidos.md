@@ -401,13 +401,10 @@ resposta dele enche de uma vez as leituras que traz: bateria, temperatura,
 humidade, ligação à rede, compartimentos, trinco, copo, não incomodar e o estado
 dos nove alarmes. Essas mostram o valor, mas não se pedem sozinhas.
 
-> **O «Atualizar» não é uma capacidade.** Foi-o, com o nome `device_status`, e
-> era uma capacidade declarada como telemetria que nunca publicava nada — quem
-> lesse o catálogo pela API via um tipo anunciado que o MQTT nunca carrega.
-> Recarregar a telemetria é uma função do ecrã: o comando tem `kind` `refresh` no
-> catálogo, não tem capacidade por trás, e o painel oferece-o como botão à cabeça
-> dos mosaicos que ele actualiza. O preço é não se poder desligar por modelo,
-> como se desliga uma capacidade.
+> **O «Atualizar» é a capacidade `device_status`.** É pedível — o comando
+> `readStatus`, com `kind` `request` no catálogo — e não é anunciada: não há
+> leitura com esse nome no MQTT, o que chega são as leituras que a resposta
+> enche. O painel oferece-a como botão à cabeça dos mosaicos que ela actualiza.
 
 A regra para as que **são** capacidades é a mesma que os relógios seguem: **uma
 capacidade é pedível quando carregar nela faz acontecer alguma coisa distinta no
@@ -445,8 +442,8 @@ A resposta `0x86` fecha o ciclo de vida de uma escrita: uma configuração escri
 fica em `confirmed` com `applied_at` quando o aparelho a reconhece.
 
 **Onde está.** `src/Protocol/Adapter/PillDispenserAdapter.php` (a trama),
-`src/Device/DeviceEventDecoder.php` (as TAGs), o protocolo de sessão em
-`src/Device/Tcp/Supplier/Zayata/`, e as capacidades em
+`src/Device/Decoder/PillDispenserEventDecoder.php` (as TAGs), o protocolo de sessão em
+`src/Ingress/Tcp/Supplier/Zayata/`, e as capacidades em
 `src/Domain/Capability/Definition/PillDispenserCapabilityDefinitions.php`.
 
 ## 7. A API de parceiro (Case 1)
