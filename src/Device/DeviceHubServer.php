@@ -6,6 +6,7 @@ namespace Hub\Device;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\Capability\Medication\MedicationRunout;
 use Hub\Log\Logger;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\State\DeviceStoreContract;
@@ -31,6 +32,8 @@ class DeviceHubServer
     private ?LocationTelemetryEnricherContract $locationTelemetryEnricher;
     private ?Denylist $denylist;
     private LowBatteryTransitions $lowBattery;
+    /** @var (\Closure(string): array<string, mixed>)|null */
+    private ?\Closure $effectiveConfiguration;
 
     public function __construct(
         Whitelist $whitelist,
@@ -42,7 +45,9 @@ class DeviceHubServer
         ?LocationTelemetryEnricherContract $locationTelemetryEnricher = null,
         ?Denylist $denylist = null,
         ?FirmwareUpgradeStore $firmwareUpgrades = null,
+        ?\Closure $effectiveConfiguration = null,
     ) {
+        $this->effectiveConfiguration = $effectiveConfiguration;
         $this->whitelist = $whitelist;
         $this->denylist = $denylist;
         $this->connections = new ConnectionRegistry();
@@ -362,13 +367,37 @@ class DeviceHubServer
                     }
                 );
             } else {
-                $this->publishTelemetryEvent($session, $event);
+                $this->publishTelemetryEvent($session, $this->withRunout($session, $event));
             }
         }
 
         foreach ($message->responses as $response) {
             $this->sendTcpResponse($session, $response, $conn, $connectionId);
         }
+    }
+
+    /**
+     * O `cells_remaining` leva a data em que o prato acaba, calculada com a configuração que o hub guardou.
+     *
+     * @param array<string, mixed> $event
+     * @return array<string, mixed>
+     */
+    private function withRunout(DeviceSession $session, array $event): array
+    {
+        $remaining = $event['data']['remaining'] ?? null;
+        if (($event['type'] ?? null) !== 'cells_remaining' || !is_int($remaining) || $this->effectiveConfiguration === null) {
+            return $event;
+        }
+
+        try {
+            $configurations = ($this->effectiveConfiguration)($session->imei);
+        } catch (\Throwable $error) {
+            Logger::channel('hub')->warning("Runout configuration unavailable IMEI={$session->imei}: {$error->getMessage()}");
+            return $event;
+        }
+        $event['data']['runoutAt'] = MedicationRunout::at($remaining, $configurations, new \DateTimeImmutable());
+
+        return $event;
     }
 
     /** @param array<string, mixed> $event */

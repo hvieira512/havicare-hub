@@ -212,7 +212,7 @@ sair depois de ela ter apagado.
 | `connectivity` | gateway | `interface`, `networkType`, `signalQuality`, `signalStrengthDbm` |
 | `diaper_moisture` · `diaper_moisture_level` · `diaper_condition` | sensor de fralda | ver o [capítulo 17](17-sensor-de-fralda.md) |
 | `medication_intake` | dispensador | `alarmSlot` (1–9), `scheduledAt`, `takenAt`, `cellNumber`, `method`: `on_time` · `early` · `late`, `result`: `on_time` · `late` · `abnormal` · `missed` |
-| `cells_remaining` | dispensador | `current`, `total`, `remaining`, `level`: `ok` · `low` · `empty` — o `total` é a capacidade do prato, não quantas células vão carregadas, e o `level` é o juízo grosseiro do aparelho sobre a mesma contagem |
+| `cells_remaining` | dispensador | `current`, `total`, `remaining`, `level`: `ok` · `low` · `empty`, e `runoutAt` — o `total` é a capacidade do prato, não quantas células vão carregadas, o `level` é o juízo grosseiro do aparelho sobre a mesma contagem, e o `runoutAt` é quando sai a última dose (ISO 8601 no fuso do aparelho; `null` sem plano ou depois do fim do período) |
 | `ambient_temperature` | dispensador | `environmentCelsius` — o ar onde a caixa está, e não uma pessoa |
 | `ambient_humidity` | dispensador | `humidityPercent` — a humidade do ar onde a caixa está, e não a da fralda |
 | `device_fault` | dispensador | `fault`: `rotation` · `tray_reset` · `pusher` · `cell_door` · `keys` |

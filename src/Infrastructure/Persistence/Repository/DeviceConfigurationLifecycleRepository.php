@@ -195,6 +195,33 @@ final class DeviceConfigurationLifecycleRepository
         return $changes;
     }
 
+    /**
+     * O valor confirmado de cada chave pedida; as que o aparelho ainda não confirmou ficam de fora.
+     *
+     * @param list<string> $keys
+     * @return array<string, array<string, mixed>>
+     */
+    public function effectivePayloads(string $imei, array $keys): array
+    {
+        if ($keys === []) {
+            return [];
+        }
+
+        $stmt = $this->pdo->prepare('
+            SELECT config_key, effective_payload FROM device_configuration_changes
+            WHERE imei = ? AND superseded_at IS NULL AND effective_payload IS NOT NULL
+              AND config_key IN (' . implode(', ', array_fill(0, count($keys), '?')) . ')
+        ');
+        $stmt->execute([$imei, ...$keys]);
+
+        $payloads = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $payloads[(string)$row['config_key']] = $this->decode((string)$row['effective_payload']);
+        }
+
+        return $payloads;
+    }
+
     /** @return list<array<string,mixed>> */
     private function operations(string $changeId): array
     {

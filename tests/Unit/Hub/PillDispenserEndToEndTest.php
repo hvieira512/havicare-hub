@@ -91,6 +91,22 @@ final class PillDispenserEndToEndTest extends TestCase
         self::assertSame([], $this->ofType($mqtt->telemetry, 'medication_alarm_change'));
     }
 
+    /** Quem integra não repete o plano para saber quando é preciso recarregar o prato. */
+    public function testCellsRemainingCarriesTheRunoutDate(): void
+    {
+        $plan = ['medication_reminders' => ['plans' => [['hour' => 8, 'minute' => 0]]], 'time_zone' => ['timeZone' => 100]];
+        $mqtt = $this->exchange(
+            [$this->frame(0x01, 1), $this->frame(0x02, 2, [0x811D => ['value' => "\x02"]])],
+            2,
+            effectiveConfiguration: static fn (string $imei): array => $imei === self::IMEI ? $plan : [],
+        );
+
+        $cells = $this->ofType($mqtt->telemetry, 'cells_remaining');
+        self::assertCount(1, $cells);
+        self::assertSame(2, $cells[0]['data']['remaining']);
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T08:00:00\+01:00$/', $cells[0]['data']['runoutAt']);
+    }
+
     /** Sem a guarda do TFLV, ruído passaria por TAGs inventadas e viraria telemetria fabricada. */
     public function testABodyThatDoesNotDecryptPublishesNothing(): void
     {
@@ -130,8 +146,12 @@ final class PillDispenserEndToEndTest extends TestCase
      *
      * @param list<string> $frames
      */
-    private function exchange(array $frames, int $expectedAcks, string &$received = ''): RecordingHubMqttBridge
-    {
+    private function exchange(
+        array $frames,
+        int $expectedAcks,
+        string &$received = '',
+        ?\Closure $effectiveConfiguration = null,
+    ): RecordingHubMqttBridge {
         $loop = new StreamSelectLoop();
         $port = LocalTcpPort::free();
         if ($port === null) {
@@ -139,7 +159,7 @@ final class PillDispenserEndToEndTest extends TestCase
         }
 
         $mqtt = new RecordingHubMqttBridge();
-        new HubTcpIngress(new DeviceHubServer($this->whitelist, $mqtt), $loop, '127.0.0.1', $port);
+        new HubTcpIngress(new DeviceHubServer($this->whitelist, $mqtt, effectiveConfiguration: $effectiveConfiguration), $loop, '127.0.0.1', $port);
 
         $error = null;
         $connector = new Connector($loop);

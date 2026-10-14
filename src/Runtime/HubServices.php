@@ -12,6 +12,7 @@ use Hub\Device\Firmware\RedisFirmwareUpgradeStore;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\RedisPendingDownlinkQueue;
+use Hub\Domain\Capability\Medication\MedicationRunout;
 use Hub\Infrastructure\Persistence\DashboardDatabase;
 use Hub\Ingress\Http\Qinglanst\LayoutParser;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
@@ -92,6 +93,8 @@ final class HubServices
             locationTelemetryEnricher: $locationEnricher,
             denylist: $denylist,
             firmwareUpgrades: new RedisFirmwareUpgradeStore($redis),
+            effectiveConfiguration: static fn (string $imei): array => $dataAccess->configurationLifecycle
+                ->effectivePayloads($imei, MedicationRunout::CONFIGURATION_KEYS),
         );
 
         $radarLayoutSync = new RadarLayoutSync(

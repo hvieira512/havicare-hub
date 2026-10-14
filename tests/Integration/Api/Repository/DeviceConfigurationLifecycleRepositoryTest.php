@@ -76,6 +76,44 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         self::assertNotSame('', $stored[0]['applied_at']);
     }
 
+    /** Só o que o aparelho confirmou conta, e só das chaves pedidas. */
+    public function testEffectivePayloadsReturnsTheConfirmedValueOfTheRequestedKeys(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $stage = static function (string $key, array $payload, string $operationId) use ($db): void {
+            $db->configurationLifecycle->stage('869243062262262', $key, $payload, [[
+                'nativeKey' => $key,
+                'protocol' => 'zayata-m228',
+                'supplier' => 'Zayata',
+                'model' => 'M228',
+                'command' => 'writeConfiguration',
+                'payload' => $payload,
+                'confirmationMode' => 'execution_ack',
+                'operationId' => $operationId,
+            ]], [[
+                'operationId' => $operationId,
+                'nativeKey' => $key,
+                'nativeType' => 'write_config',
+                'protocol' => 'zayata-m228',
+                'bytes' => 'x',
+                'expectedReplyTypes' => ['write_config_ack'],
+                'confirmationMode' => 'execution_ack',
+                'label' => $key,
+            ]]);
+        };
+
+        $stage('time_zone', ['timeZone' => 100], 'op-zone');
+        $stage('medication_period', ['enabled' => true, 'startDate' => '2026-10-01', 'endDate' => ''], 'op-period');
+        $stage('child_lock', ['enabled' => true], 'op-lock');
+        $db->configurationLifecycle->updateOperation('op-zone', 'acked');
+        $db->configurationLifecycle->updateOperation('op-lock', 'acked');
+
+        self::assertSame(
+            ['time_zone' => ['timeZone' => 100]],
+            $db->configurationLifecycle->effectivePayloads('869243062262262', ['time_zone', 'medication_period']),
+        );
+    }
+
     public function testFailureKeepsDetailedErrorWithoutClaimingEffectiveValue(): void
     {
         $database = $this->createDashboardDatabase();
