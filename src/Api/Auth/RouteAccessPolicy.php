@@ -25,6 +25,8 @@ final class RouteAccessPolicy
         // da licença dele. Quem decide o aparelho é o `RadarLayoutService`, não esta lista.
         'GET /api/devices/{imei}/radar-layout',
         'POST /api/devices/{imei}/radar-layout/sync',
+        // O catálogo é o mesmo para todos: traz os limites e o tipo de cada campo, sem dados de ninguém.
+        'GET /api/protocols/{protocol}/config-catalog',
     ];
 
     public function allows(ApiAuthContext $context, string $method, string $pattern): bool
