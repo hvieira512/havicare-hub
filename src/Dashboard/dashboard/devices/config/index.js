@@ -271,11 +271,13 @@ function settingState(entry, desired, isStored, deliveryMeta, showBadge) {
  * Tem de bater certo ao caractere com o `readConfigPayload`: é contra ele que a fotografia se
  * compara para saber se há alterações por enviar.
  */
-function readConfigEntryValue(entry, desired) {
+export function readConfigEntryValue(entry, desired) {
     const field = entry.fields?.[0] || "value";
     // O mesmo recuo do controlo: quem desenha parte do mínimo declarado, e a fotografia tem
     // de partir de lá também.
-    return { [field]: Number(desired?.[field] ?? entry.options?.min ?? 0) };
+    const value = desired?.[field] ?? entry.options?.min ?? 0;
+    // Como o leitor da lista: só o que não parece número fica texto, como um fuso com nome.
+    return { [field]: Number.isNaN(Number(value)) ? value : Number(value) };
 }
 
 function renderConfigGroup(protocol, entries, ctx) {

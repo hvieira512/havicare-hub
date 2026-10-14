@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Command\Configuration\Definition;
 
+use Hub\Domain\Capability\TimeZoneOffset;
+
 /**
  * O que se configura num dispensador Zayata M228. Os nove alarmes são fixos — preenchem-se e
  * esvaziam-se —, e por isso o plano viaja inteiro de cada vez.
@@ -154,7 +156,7 @@ final class ZayataConfigurationDefinitions
                 11,
                 'timeZone',
                 self::timeZones(),
-                default: 0,
+                default: 'Europe/Lisbon',
             ),
             self::action(
                 'sync_configuration',
@@ -236,7 +238,7 @@ final class ZayataConfigurationDefinitions
      * Uma escolha de uma lista, com o significado à vista. O aparelho recebe o número; quem
      * configura vê o que ele quer dizer.
      *
-     * @param list<array{0: int, 1: string}> $choices
+     * @param list<array{0: int|string, 1: string}> $choices
      * @return array<string, mixed>
      */
     private static function choice(
@@ -248,7 +250,7 @@ final class ZayataConfigurationDefinitions
         string $field,
         array $choices,
         string $help = '',
-        ?int $default = null,
+        int|string|null $default = null,
         string $input = 'select',
     ): array {
         $options = [$field => array_map(
@@ -276,33 +278,26 @@ final class ZayataConfigurationDefinitions
     }
 
     /**
-     * Os fusos que existem, no formato do aparelho: HHMM com sinal, de −1200 a +1400. Não são
-     * minutos — `+100` é uma hora à frente, e não cem minutos.
+     * As zonas da IANA, que o hub converte para o desvio do aparelho e reescreve quando a hora
+     * muda. A etiqueta leva o desvio de agora.
      *
-     * @return list<array{0: int, 1: string}>
+     * @return list<array{0: string, 1: string}>
      */
     private static function timeZones(): array
     {
-        $offsets = [
-            -1200, -1100, -1000, -930, -900, -800, -700, -600, -500, -400, -330, -300, -200, -100,
-            0,
-            100, 200, 300, 330, 400, 430, 500, 530, 545, 600, 630, 700, 800, 845, 900, 930,
-            1000, 1030, 1100, 1200, 1245, 1300, 1400,
-        ];
+        $now = new \DateTimeImmutable();
 
-        return array_map(static function (int $offset): array {
-            $sign = $offset < 0 ? '−' : '+';
-            $hours = intdiv(abs($offset), 100);
-            $minutes = abs($offset) % 100;
-            $label = sprintf('UTC%s%02d:%02d', $sign, $hours, $minutes);
+        return array_map(static function (string $zone) use ($now): array {
+            $offset = TimeZoneOffset::hhmm($zone, $now);
 
-            // Portugal continental tem os dois, e é onde os aparelhos estão.
-            return [$offset, match ($offset) {
-                0 => $label . ' — Lisboa (inverno)',
-                100 => $label . ' — Lisboa (verão)',
-                default => $label,
-            }];
-        }, $offsets);
+            return [$zone, sprintf(
+                '%s — UTC%s%02d:%02d',
+                $zone,
+                $offset < 0 ? '−' : '+',
+                intdiv(abs($offset), 100),
+                abs($offset) % 100,
+            )];
+        }, \DateTimeZone::listIdentifiers());
     }
 
     /**

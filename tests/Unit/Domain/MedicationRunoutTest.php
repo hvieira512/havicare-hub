@@ -51,6 +51,20 @@ final class MedicationRunoutTest extends TestCase
         ]));
     }
 
+    /** Um fuso com nome segue a mudança de hora, como o aparelho depois de o hub lha mandar. */
+    public function testANamedZoneCrossesTheChangeOfHour(): void
+    {
+        $configurations = [
+            'medication_reminders' => ['plans' => [['hour' => 8, 'minute' => 0]]],
+            'time_zone' => ['timeZone' => 'Europe/Lisbon'],
+        ];
+
+        $now = new DateTimeImmutable('2026-10-24T05:00:00Z');
+
+        self::assertSame('2026-10-24T08:00:00+01:00', MedicationRunout::at(1, $configurations, $now));
+        self::assertSame('2026-10-25T08:00:00+00:00', MedicationRunout::at(2, $configurations, $now));
+    }
+
     public function testWithoutPlanOrDosesThereIsNoDate(): void
     {
         self::assertNull($this->runout(5, []));

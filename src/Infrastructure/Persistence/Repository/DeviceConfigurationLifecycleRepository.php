@@ -222,6 +222,30 @@ final class DeviceConfigurationLifecycleRepository
         return $payloads;
     }
 
+    /**
+     * Os aparelhos cujo fuso pedido é uma zona com nome, como `Europe/Lisbon`.
+     *
+     * @return list<array{imei: string, zone: string}>
+     */
+    public function namedTimeZones(?string $imei = null): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT imei, JSON_UNQUOTE(JSON_EXTRACT(desired_payload, '$.timeZone')) AS zone
+            FROM device_configuration_changes
+            WHERE config_key = 'time_zone' AND superseded_at IS NULL
+              AND JSON_TYPE(JSON_EXTRACT(desired_payload, '$.timeZone')) = 'STRING'
+              AND (? IS NULL OR imei = ?)
+        ");
+        $stmt->execute([$imei, $imei]);
+
+        $zones = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $zones[] = ['imei' => (string)$row['imei'], 'zone' => (string)$row['zone']];
+        }
+
+        return $zones;
+    }
+
     /** @return list<array<string,mixed>> */
     private function operations(string $changeId): array
     {

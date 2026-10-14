@@ -356,7 +356,7 @@ configuração não faz nada.
 | `device_language` | `0x1001` | 0 ou 1 |
 | `date_format` | `0x1002` | três ordens possíveis |
 | `time_format` | `0x1003` | 12 ou 24 horas |
-| `time_zone` | `0x1015` | INT16S em HHMM: a oeste é negativo |
+| `time_zone` | `0x1015` | uma zona da IANA (`Europe/Lisbon`); o aparelho só guarda um desvio fixo, INT16S em HHMM, e o hub escreve o de agora. De hora a hora o `NamedTimeZoneFollower` reescreve-o aos aparelhos ligados cujo desvio mudou, e acerta-lhes o relógio. Um desvio numérico continua aceite, e esse não muda de hora |
 | `auto_clock` | `0x1014` | acertar a hora sozinho |
 | `calibrate_clock` | `0xA101` | manda a hora local — a única TAG de controlo que é STRING |
 | `reset_tray` | `0xA103` | repõe o prato |

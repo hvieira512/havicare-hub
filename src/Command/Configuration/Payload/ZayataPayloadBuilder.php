@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Command\Configuration\Payload;
 
+use Hub\Domain\Capability\TimeZoneOffset;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use Hub\Support\Values;
 
@@ -50,8 +51,15 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             // Duas línguas e mais nada: a de fábrica e o inglês.
             'device_language' => ['language' => self::zeroBasedRangeInt($payload['language'] ?? 0, 0, 1, 'language')],
             // HHMM com sinal, e não minutos: `+100` é uma hora à frente. A gama é a da
-            // especificação, de −1200 a +1400.
-            'time_zone' => ['timeZone' => self::zeroBasedRangeInt($payload['timeZone'] ?? 0, -1200, 1400, 'timeZone')],
+            // especificação, de −1200 a +1400; uma zona com nome vai como o desvio de agora.
+            'time_zone' => ['timeZone' => self::zeroBasedRangeInt(
+                is_string($payload['timeZone'] ?? null) && !is_numeric($payload['timeZone'])
+                    ? TimeZoneOffset::hhmm($payload['timeZone'], new \DateTimeImmutable())
+                    : $payload['timeZone'] ?? 0,
+                -1200,
+                1400,
+                'timeZone',
+            )],
             // As acções não levam payload: o que as distingue é o comando.
             default => [],
         };

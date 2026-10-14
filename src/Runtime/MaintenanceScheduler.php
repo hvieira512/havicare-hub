@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Hub\Runtime;
 
+use Hub\Api\Services\DeviceService;
 use Hub\Device\ConnectionAnnouncer;
 use Hub\Device\DownlinkRetryContext;
+use Hub\Log\Logger;
 use React\EventLoop\LoopInterface;
 
 /**
@@ -17,6 +19,7 @@ final class MaintenanceScheduler
     private const INTERVAL_SECONDS = 10;
     private const COMMAND_RETRY_AFTER_SECONDS = 60;
     private const COMMAND_MAX_ATTEMPTS = 3;
+    private const TIME_ZONE_INTERVAL_SECONDS = 3600;
 
     /**
      * @param array<string, mixed> $dashboardConfig a secção `dashboard` da configuração do hub
@@ -56,6 +59,25 @@ final class MaintenanceScheduler
             self::INTERVAL_SECONDS,
             static function () use ($hubServer, $deviceIdleTimeout): void {
                 $hubServer->expireIdleConnections($deviceIdleTimeout);
+            }
+        );
+
+        $timeZones = null;
+        $loop->addPeriodicTimer(
+            self::TIME_ZONE_INTERVAL_SECONDS,
+            static function () use (&$timeZones, $services, $store, $hubServer): void {
+                try {
+                    $timeZones ??= new NamedTimeZoneFollower(
+                        new DeviceService($store, $services->whitelist, $hubServer, $services->dataAccess),
+                        $services->dataAccess->configurationLifecycle,
+                        static fn (): array => $store->onlineDeviceImeis(),
+                    );
+                    foreach ($timeZones->tick() as $imei) {
+                        Logger::channel('hub')->info("Time zone offset rewritten IMEI={$imei}");
+                    }
+                } catch (\Throwable $error) {
+                    Logger::channel('hub')->error("Time zone follow failed: {$error->getMessage()}");
+                }
             }
         );
     }

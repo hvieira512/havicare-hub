@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
+use Hub\Domain\Capability\TimeZoneOffset;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
@@ -336,6 +337,12 @@ final class DeviceFeatureRequestService
     /** O fuso que o hub guardou para o aparelho, em HHMM como a TAG `0x1015`: a calibração manda hora local. */
     private function storedTimeZone(string $imei): ?int
     {
+        // Uma zona com nome é a regra, e vale pelo desvio de agora: o reportado pode ser o da outra estação.
+        $named = $this->db->configurationLifecycle->namedTimeZones($imei)[0]['zone'] ?? null;
+        if ($named !== null) {
+            return TimeZoneOffset::hhmm($named, new \DateTimeImmutable());
+        }
+
         foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
             if (trim((string)($row['config_key'] ?? '')) !== 'time_zone') {
                 continue;

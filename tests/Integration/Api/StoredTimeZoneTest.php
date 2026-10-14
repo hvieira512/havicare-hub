@@ -47,6 +47,33 @@ final class StoredTimeZoneTest extends MysqlDashboardTestCase
         self::assertSame(-300, $this->storedZone($db));
     }
 
+    /** Uma zona com nome vale pelo desvio de agora, mesmo com o aparelho ainda no da outra estação. */
+    public function testANamedZoneWinsOverWhatTheDeviceReported(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $projection = new DeviceConfigurationProjection();
+        $projection->setDataAccess($db);
+        $projection->saveReported(self::IMEI, 'zayata-m228', 'read_config_ack', [
+            'type' => 'device_config',
+            'data' => ['settings' => ['time_zone' => ['timeZone' => 999]]],
+        ]);
+        $db->configurationLifecycle->stage(self::IMEI, 'time_zone', ['timeZone' => 'Europe/Lisbon'], [[
+            'nativeKey' => 'time_zone',
+            'protocol' => 'zayata-m228',
+            'supplier' => 'Zayata',
+            'model' => 'M228',
+            'command' => 'timeZone',
+            'payload' => ['timeZone' => 0],
+            'confirmationMode' => 'execution_ack',
+            'operationId' => 'op-zone',
+        ]], []);
+
+        self::assertSame(
+            \Hub\Domain\Capability\TimeZoneOffset::hhmm('Europe/Lisbon', new \DateTimeImmutable()),
+            $this->storedZone($db),
+        );
+    }
+
     /** Sem fuso guardado fica `null`, e quem calibra usa UTC — errado por um valor conhecido. */
     public function testWithoutAnyZoneItIsNull(): void
     {
