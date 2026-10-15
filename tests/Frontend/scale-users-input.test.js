@@ -36,17 +36,19 @@ test("cada pessoa é um cartão com o perfil, sem formulário aberto nem identif
     assert.match(card(section, "Maria").textContent, /atleta/);
     assert.equal(section.querySelector("[data-scale-user-form]").hidden, true);
     assert.doesNotMatch(section.textContent, /u-0a1b2c3d/);
+    // O estado de cada pedido já diz se espera pela balança: não há faixa a repeti-lo.
+    assert.doesNotMatch(section.textContent, /A dormir|Acordada/);
     assert.deepEqual(readConfigPayload(section), { items: [hugo, maria] });
 });
 
-test("o estado de cada pessoa sai da operação que lhe diz respeito", () => {
+test("o estado de cada pessoa sai da operação que lhe diz respeito, e só aparece enquanto não está aplicada", () => {
     state.deviceModal.configurationSync = { entries: { health: { scale_users: { operations: [
         { target: hugo.id, deliveryStatus: "acked", error: "" },
         { target: maria.id, deliveryStatus: "failed", error: "memory_full" },
     ] } } } };
     const section = render([hugo, maria]);
 
-    assert.match(card(section, "Hugo").textContent, /Na balança/);
+    assert.equal(card(section, "Hugo").querySelector(".badge"), null);
     assert.match(card(section, "Maria").textContent, /Falhou/);
     assert.match(card(section, "Maria").textContent, /memória cheia/);
 });

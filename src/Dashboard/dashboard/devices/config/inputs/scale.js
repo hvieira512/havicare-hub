@@ -29,13 +29,13 @@ function meta(user) {
     ].filter(Boolean).join(" · ");
 }
 
-/** A última operação de cada pessoa diz se ela já está na balança. */
+/** O que falta à última operação de cada pessoa; aplicada, não há nada a dizer. */
 function deliveryOf(user) {
     const operations = state.deviceModal?.configurationSync?.entries?.health?.scale_users?.operations ?? [];
     const own = operations.filter((operation) => operation?.target === user.id &&
         operation.command !== "selectScaleUser" && operation.deliveryStatus !== "superseded");
     const last = own[own.length - 1];
-    if (!last || last.deliveryStatus === "acked") return { label: "Na balança", tone: "success" };
+    if (!last || last.deliveryStatus === "acked") return null;
     if (FAILED.includes(last.deliveryStatus)) {
         return { label: "Falhou", tone: "danger", error: FAILURE[last.error] ?? "A balança recusou o registo." };
     }
@@ -66,10 +66,10 @@ function userCard(user, { dirty = false, online = "", group = "" } = {}) {
             <div class="flex-grow-1 min-w-0">
                 <div class="fw-semibold d-flex flex-wrap align-items-center gap-2">${user.name}${isOnline ? onlineBadge(user.id) : ""}</div>
                 <div class="small text-secondary">${meta(user)}</div>
-                ${delivery.error ? html`<div class="small text-danger">${delivery.error}</div>` : ""}
+                ${delivery?.error ? html`<div class="small text-danger">${delivery.error}</div>` : ""}
             </div>
             <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
-                ${stateBadge(delivery.label, delivery.tone)}
+                ${delivery ? stateBadge(delivery.label, delivery.tone) : ""}
                 <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none" data-action="scaleUserEdit">Editar</button>
             </div>
         </div>`;
@@ -105,18 +105,6 @@ function form() {
         </div>`;
 }
 
-function awakeStrip() {
-    if (state.deviceModal?.online) {
-        return html`<div class="small border rounded px-3 py-2 bg-body-tertiary"><span class="fw-semibold">Acordada</span> · o que enviar sai agora.</div>`;
-    }
-    const lastSeen = Date.parse(String(state.deviceModal?.lastSeenAt ?? ""));
-    const when = Number.isNaN(lastSeen)
-        ? ""
-        : ` · acordada pela última vez às ${new Date(lastSeen).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}`;
-
-    return html`<div class="small border rounded px-3 py-2 bg-body-tertiary"><span class="fw-semibold">A dormir</span>${when}. O que enviar espera até 5 minutos que alguém suba para a balança.</div>`;
-}
-
 function scaleUsersInput(_entry, desired) {
     const users = Array.isArray(desired?.items) ? desired.items : [];
     const online = String(desired?.onlineUserId ?? "");
@@ -124,7 +112,6 @@ function scaleUsersInput(_entry, desired) {
     return html`
         <div class="vstack gap-2" data-scale-users>
             <div class="d-flex justify-content-end"><button type="button" class="btn btn-outline-secondary btn-sm" data-action="scaleUserAdd">Adicionar</button></div>
-            ${awakeStrip()}
             <div class="vstack gap-2" data-scale-user-list data-scale-group="${group}">${users.map((user) => userCard(user, { online, group }))}</div>
             ${form()}
         </div>`;

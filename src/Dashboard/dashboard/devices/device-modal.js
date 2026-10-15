@@ -254,7 +254,6 @@ export async function editDevice(imei, supplier, model) {
         state.deviceModal.capabilities = detail.capabilities || {};
         state.deviceModal.enabledCapabilityKeys = detail.enabledCapabilityKeys || [];
         state.deviceModal.online = Boolean(device.online);
-        state.deviceModal.lastSeenAt = String(device.lastSeenAt || "");
         state.deviceModal.detailLoaded = true;
         renderDeviceModalIdentity(device, deviceModel, deviceType);
     } finally {
