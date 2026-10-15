@@ -230,8 +230,9 @@ dá 29,32 %.
 **O modo atleta não se reproduz.** Com o perfil de atleta (homem, 23 anos, 181 cm,
 96,95 kg, Z100 390,6 Ω), a app deu 22,1 % de gordura, 3,7 kg de osso e 53,6 % de
 água; a fórmula normal dá 29,6 %. Nem o fator de atleta da OneByone (×1,0958) nem um
-fator único na massa magra acertam em todos os campos. A gordura subcutânea (2/3)
-e o controlo de gordura continuam a seguir as regras de cima.
+fator único na massa magra acertam em todos os campos. Na app, a gordura
+subcutânea (2/3 da gordura dela) e o controlo de gordura continuam a seguir as regras
+de cima. O hub não calcula nada disto para atletas: um perfil atleta fica só com o IMC.
 
 **Só a biblioteca nativa dá:** metabolismo basal, gordura visceral, proteína,
 músculo esquelético, pontuação e idade corporal. Nos casos medidos, a proteína ficou
@@ -262,14 +263,18 @@ utilizador a pesagem seguinte. As respostas (`processSyncUserInfo`) chegam como
 falha, "a escolher utilizador na balança", "falta o nome" ou "memória cheia".
 
 **Histórico** (`historyItem`). O histórico pede-se por utilizador:
-`02 03 07 <comprimento LE>`, depois o `memberID`, e no fim `02 01 08`. Cada
-registo tem 16 bytes:
+`02 03 07 <comprimento LE>`, depois o `memberID`, e no fim `02 01 08`. Na CF632,
+cada registo tem 20 bytes (confirmado no aparelho):
 
 ```
-timestamp(4 LE)  peso(2 LE)  FC(1)  tipo_impedância(1)  impedância cifrada(4 LE) …
+timestamp(4 LE)  peso(2 LE)  FC(1)  tipo_impedância(1)
+cifrada_50k(4 LE)  em_claro_50k(2 LE)  cifrada_100k(4 LE)  em_claro_100k(2 LE)
 ```
 
-O tipo de impedância usa os mesmos códigos da trama `02`. O SDK descarta
+O tipo de impedância usa os mesmos códigos da trama `02`; as impedâncias em claro
+estão em décimos de Ω, como na medição. O SDK só lê os primeiros 8 bytes e as
+cifradas (nos modelos de 8 elétrodos lê mais canais), por isso o tamanho do registo
+não se tira do código. O SDK descarta
 registos anteriores a 2023-02-03.
 
 Isto resolve a atribuição de uma pesagem a uma pessoa: o hub regista cada
