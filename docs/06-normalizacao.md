@@ -211,7 +211,7 @@ sair depois de ela ter apagado.
 | `body_impedance` | balança | `impedance50KhzOhm`, `impedance100KhzOhm` (em claro) e, quando a trama `02` chegou na mesma pesagem, `electrodes` (`four` · `four_dual_frequency` · `eight`), `encodedImpedance50Khz` e `encodedImpedance100Khz` — as cifradas são o que o algoritmo da Lefu precisa para a composição corporal |
 | `body_impedance_channel` | balança | `channel`, `impedanceOhm`: a impedância em claro canal a canal (trama `03`) |
 | `body_impedance_failure` | balança | `limb`: `left_leg` · `right_leg` · `left_arm` · `right_arm`; sem `limb` quando a pesagem acaba com mau contacto |
-| `weighing_status` | balança | `weightKg`, `weight` (`settling` · `stable` · `overload`), `impedance` e `heartRate` (`idle` · `measuring` · `measured` · `failed`), `displayUnit` (`kg` · `lb` · `jin` · `st` · `st_lb`), `shuttingDown`. Sai só quando muda |
+| `weighing_status` | balança | `weightKg`, `weight` (`idle` · `settling` · `stable` · `overload`), `impedance` e `heartRate` (`idle` · `measuring` · `measured` · `failed`), `displayUnit` (`kg` · `lb` · `jin` · `st` · `st_lb`), `shuttingDown`. Sai só quando muda a fase, e não a cada oscilação do peso |
 | `scale_motion` | balança | — : o G-sensor disparou |
 | `scale_history_available` | balança | — : a balança tem histórico novo |
 | `scale_user_selection` | balança | `stateCode`, o byte em bruto: o SDK não o descodifica |

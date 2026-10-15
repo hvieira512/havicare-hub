@@ -249,7 +249,8 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     {
         $deviceKey = $context->deviceKey;
         $status = ['weightKg' => $frame['weightKg']] + $frame['status'];
-        $signature = json_encode($status);
+        // O peso oscila enquanto estabiliza: o estado sai quando muda a fase, e não o número.
+        $signature = json_encode($frame['status']);
         if (($this->lastStatus[$deviceKey] ?? null) !== $signature) {
             $this->lastStatus[$deviceKey] = (string)$signature;
             $this->emit($context, 'weighing_status', $nativeType, $status);

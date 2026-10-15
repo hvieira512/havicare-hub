@@ -96,9 +96,11 @@ final class TorreFrameDecoder
             0xC0 => 'failed',
             default => 'idle',
         };
-        $weight = match (true) {
-            ($state & 0x08) !== 0 => 'overload',
-            ($state & 0x04) !== 0 => 'stable',
+        // Os dois bits acesos vêm com a balança vazia: ninguém em cima.
+        $weight = match ($state & 0x0C) {
+            0x0C => 'idle',
+            0x08 => 'overload',
+            0x04 => 'stable',
             default => 'settling',
         };
 

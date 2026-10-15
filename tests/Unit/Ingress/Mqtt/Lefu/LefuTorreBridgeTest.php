@@ -60,6 +60,19 @@ final class LefuTorreBridgeTest extends TestCase
         self::assertCount(2, self::telemetry($mqtt, 'weighing_status'));
     }
 
+    /** O peso oscila enquanto estabiliza: o estado só sai quando muda a fase. */
+    public function testTheStatusLeavesOnlyWhenThePhaseChanges(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        foreach (['010d0100750300000000000000000000', '010d0100700300000000000000000000', '010d0100750300000000000000000000', '010d0500750300000000000000000000'] as $hex) {
+            $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', $hex));
+        }
+
+        self::assertSame(['settling', 'stable'], array_column(array_column(self::telemetry($mqtt, 'weighing_status'), 'data'), 'weight'));
+    }
+
     /** Mau contacto: a impedância em claro vem implausível e não sai como leitura. */
     public function testAFailedImpedanceIsReportedAndNotPublishedAsAReading(): void
     {

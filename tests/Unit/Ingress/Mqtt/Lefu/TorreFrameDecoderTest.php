@@ -56,7 +56,10 @@ final class TorreFrameDecoderTest extends TestCase
         self::assertSame('settling', $settling['status']['weight']);
         self::assertSame(96.25, $settling['weightKg']);
 
-        self::assertTrue($decoder->decode('fff3', '010d0d40000000000000000000000000')['status']['shuttingDown']);
+        // Com a balança vazia acendem os dois bits do peso: ninguém em cima, e não excesso de peso.
+        $empty = $decoder->decode('fff3', '010d0d40000000000000000000000000');
+        self::assertTrue($empty['status']['shuttingDown']);
+        self::assertSame('idle', $empty['status']['weight']);
     }
 
     public function testTheEncodedImpedanceIsTwoUnsignedLittleEndianWords(): void

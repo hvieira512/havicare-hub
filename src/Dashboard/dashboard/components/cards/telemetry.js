@@ -108,7 +108,7 @@ const CARD_STYLE = {
 };
 
 const WEIGHING_PHASE = {
-    weight: { settling: "A estabilizar", stable: "Peso estável", overload: "Excesso de peso" },
+    weight: { idle: "Balança vazia", settling: "A estabilizar", stable: "Peso estável", overload: "Excesso de peso" },
     impedance: { measuring: "A medir a impedância", measured: "Impedância medida", failed: "Impedância falhou" },
     heartRate: { measuring: "A medir a FC", measured: "FC medida", failed: "FC falhou" },
 };
