@@ -43,11 +43,11 @@ function deliveryOf(user) {
     return { label: "A enviar", tone: "warning" };
 }
 
-/** Em que pé está pôr em linha quem a lista diz que está, pela operação que o fez. */
+/** O que falta a pôr em linha quem o rádio marca; aceite, o rádio chega. */
 function onlineBadge(id) {
     const operations = state.deviceModal?.configurationSync?.entries?.health?.scale_users?.operations ?? [];
     const last = operations.filter((operation) => operation?.command === "selectScaleUser" && operation.target === id).pop();
-    if (!last || last.deliveryStatus === "acked") return stateBadge("Em linha", "success");
+    if (!last || last.deliveryStatus === "acked") return "";
     if (FAILED.includes(last.deliveryStatus)) return stateBadge("Não ficou em linha", "danger");
 
     return stateBadge("A pôr em linha", "warning");

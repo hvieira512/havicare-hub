@@ -53,15 +53,22 @@ test("o estado de cada pessoa sai da operação que lhe diz respeito, e só apar
     assert.match(card(section, "Maria").textContent, /memória cheia/);
 });
 
-test("quem está em linha na lista fica destacado quando a balança o aceitou", () => {
+test("quem está em linha fica marcado no rádio, sem emblema, quando a balança o aceitou", () => {
     state.deviceModal.configurationSync = { entries: { health: { scale_users: { operations: [
         { command: "selectScaleUser", target: hugo.id, deliveryStatus: "acked", error: "" },
     ] } } } };
     const section = render([hugo, maria], hugo.id);
 
-    assert.match(card(section, "Hugo").textContent, /Em linha/);
-    assert.doesNotMatch(card(section, "Maria").textContent, /Em linha/);
+    assert.equal(card(section, "Hugo").querySelector(".badge"), null);
     assert.equal(card(section, "Hugo").querySelector("input[type=\"radio\"]").checked, true);
+});
+
+test("pôr em linha mostra o estado enquanto a balança não o aceitou", () => {
+    state.deviceModal.configurationSync = { entries: { health: { scale_users: { operations: [
+        { command: "selectScaleUser", target: hugo.id, deliveryStatus: "waiting", error: "" },
+    ] } } } };
+
+    assert.match(card(render([hugo, maria], hugo.id), "Hugo").textContent, /A pôr em linha/);
 });
 
 test("acrescentar abre o formulário, e guardar junta um cartão por enviar e sem identificador", () => {
