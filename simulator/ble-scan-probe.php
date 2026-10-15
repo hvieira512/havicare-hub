@@ -17,7 +17,7 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 use Hub\Ingress\Mqtt\Moko\MokoMessageDecoder;
-use Hub\Ingress\Mqtt\Moko\MonitMecsProDecoder;
+use Hub\Ingress\Mqtt\Monit\MonitMecsProDecoder;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
 use Hub\Runtime\CliBootstrap;
