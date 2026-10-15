@@ -1,4 +1,3 @@
-import { requestCapability } from "../../../api/index.js";
 import { stateBadge } from "../../../components/state-badge.js";
 import { html, raw } from "../../../html.js";
 import { state } from "../../../state.js";
@@ -71,7 +70,6 @@ function userCard(user, { dirty = false, online = "", group = "" } = {}) {
             </div>
             <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
                 ${stateBadge(delivery.label, delivery.tone)}
-                ${saved ? html`<button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none" data-action="scaleUserHistory">Pedir histórico</button>` : ""}
                 <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none" data-action="scaleUserEdit">Editar</button>
             </div>
         </div>`;
@@ -200,16 +198,6 @@ function cardElement(section, user) {
     return holder.content.firstElementChild;
 }
 
-async function request(button, capability) {
-    const user = userOf(button.closest("[data-scale-user]"));
-    button.disabled = true;
-    button.textContent = "A enviar…";
-    const result = await requestCapability(state.deviceModal.imei, capability, { id: user.id });
-    button.textContent = result?.error
-        ? result.error.message || "Não foi possível pedir."
-        : result?.status === "queued" ? "Em fila" : "Pedido";
-}
-
 /** As ações da lista. Devolve se mexeu no que vai ser enviado. */
 export function handleScaleUserAction(section, button) {
     const action = button.dataset.action;
@@ -220,7 +208,6 @@ export function handleScaleUserAction(section, button) {
     if (action === "scaleUserCancel") closeForm(section);
     if (action === "scaleUserSex") pick(formElement, "sex", button.dataset.value);
     if (action === "scaleUserAthlete") pick(formElement, "athlete", button.dataset.value);
-    if (action === "scaleUserHistory") void request(button, "read_scale_history");
 
     if (action === "scaleUserDelete") {
         section.querySelector("[data-scale-user-editing]")?.remove();
@@ -250,6 +237,17 @@ export function handleScaleUserAction(section, button) {
     return false;
 }
 
+function scaleUserChoiceInput() {
+    const users = registeredUsers();
+    if (users.length === 0) {
+        return html`<div class="small text-secondary">Registe primeiro um utilizador da balança.</div>`;
+    }
+
+    return html`<select class="form-select" data-config-field="id" aria-label="Utilizador">
+        ${users.map((user) => html`<option value="${user.id}">${user.name}</option>`)}
+    </select>`;
+}
+
 function registeredUsers() {
     const items = state.deviceModal?.configurations?.scale_users?.items;
     return Array.isArray(items) ? items.filter((user) => user?.id) : [];
@@ -266,7 +264,13 @@ export const INPUTS = {
         },
         defaults: () => ({ items: [] }),
     },
-    // «Pôr em linha» e «Pedir histórico» vivem em cada cartão da lista: não têm secção própria.
+    // Ler o histórico de uma pessoa: escolhe-se pelo nome, e sem ninguém registado não há envio.
+    scaleUserChoice: {
+        render: scaleUserChoiceInput,
+        read: (section) => ({ id: String(section.querySelector("select[data-config-field=\"id\"]")?.value ?? "") }),
+        ready: () => registeredUsers().length > 0,
+    },
+    // Quem está em linha escolhe-se no rádio da lista: o pedido avulso não tem secção própria.
     scaleUserAction: {
         embedded: true,
         render: () => "",

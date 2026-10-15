@@ -63,7 +63,7 @@ final class LefuTorreConfigurationDefinitions
                 'read_scale_history',
                 'readScaleHistory',
                 'Ler o histórico',
-                'scaleUserAction',
+                'scaleUserChoice',
                 ['id'],
                 ['torre_history_0a'],
                 'health',

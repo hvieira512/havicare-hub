@@ -398,7 +398,9 @@ export function renderConfigSection(
     const verb = drawsFields || control !== "" ? "" : String(entry.verb || "");
     // Uma definição guarda-se e sai no envio da secção; uma acção dispara, e o botão dela é o
     // único sítio onde isso acontece.
-    const isCommand = entry.transient === true || entry.requestOnly === true;
+    // Um campo que ainda não tem o que escolher, como o histórico sem utilizadores, não envia nada.
+    const isCommand = (entry.transient === true || entry.requestOnly === true) &&
+        (CONFIG_INPUTS[entry.input || "json"]?.ready?.() ?? true);
     const commands = verbs.length > 0
         ? renderConfigActionVerbs(verbs, disabled)
         : isCommand

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 import { renderConfigInputs, readConfigPayload } from "../../src/Dashboard/dashboard/devices/config/index.js";
+import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/index.js";
 import { handleScaleUserAction } from "../../src/Dashboard/dashboard/devices/config/inputs/scale.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 import { configSection } from "./support/dom.js";
@@ -129,4 +130,23 @@ test("uma pessoa por enviar ainda não pode ficar em linha", () => {
     click(section, "scaleUserSave");
 
     assert.equal(card(section, "Ana").querySelector("input[type=\"radio\"]").disabled, true);
+});
+
+test("o histórico pede-se noutra entrada: os cartões só gerem a lista", () => {
+    const section = render([hugo, maria], hugo.id);
+
+    assert.doesNotMatch(section.textContent, /histórico/i);
+});
+
+test("ler o histórico escolhe o utilizador pelo nome, e sem ninguém registado não há o que enviar", () => {
+    const history = { input: "scaleUserChoice", key: "read_scale_history", fields: ["id"] };
+    state.deviceModal.configurations = { scale_users: { items: [hugo, maria] } };
+    const section = configSection(renderConfigInputs, history, {});
+
+    assert.deepEqual([...section.querySelectorAll("option")].map((option) => option.textContent), ["Hugo", "Maria"]);
+    assert.deepEqual(readConfigPayload(section), { id: hugo.id });
+    assert.equal(CONFIG_INPUTS.scaleUserChoice.ready(), true);
+
+    state.deviceModal.configurations = {};
+    assert.equal(CONFIG_INPUTS.scaleUserChoice.ready(), false);
 });
