@@ -626,6 +626,7 @@ class DeviceService
 
         return [
             'telemetry' => self::withObjectData($this->store->recent($imei, 'telemetry', $telemetrySince)),
+            'latestTelemetry' => self::withObjectData($this->store->latestOfEachType($imei, 'telemetry')),
             'events' => self::withObjectData($this->store->recent($imei, 'events', $eventsSince)),
             'connections' => $this->store->recent($imei, 'connections', $connectionsSince),
             'commands' => $this->store->commands($imei),

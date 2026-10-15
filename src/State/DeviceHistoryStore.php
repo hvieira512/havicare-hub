@@ -14,6 +14,13 @@ interface DeviceHistoryStore
      */
     public function recent(string $imei, string $list, int $sinceSeq = 0): array;
 
+    /**
+     * A última entrada de cada tipo, também as que já saíram da lista.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function latestOfEachType(string $imei, string $list): array;
+
     /** O número de ordem da entrada mais recente, para o cliente saber onde ficou. */
     public function latestSequence(string $imei, string $list): int;
 

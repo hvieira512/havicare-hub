@@ -45,4 +45,19 @@ final class DeviceEventStoreRecentTest extends TestCase
             $store->recent('imei1', 'telemetry', 0),
         ));
     }
+
+    /** Uma leitura rara não pode sumir do cartão só porque outras encheram a lista. */
+    public function testKeepsTheLatestOfEachTypeBeyondTheLimit(): void
+    {
+        $store = new DeviceEventStore(new InMemoryRedisClient(), limit: 2, prefix: 'test:events');
+        $store->append('imei1', 'telemetry', ['type' => 'heart_rate', 'data' => ['bpm' => 78]]);
+        foreach ([40, 41, 42] as $percent) {
+            $store->append('imei1', 'telemetry', ['type' => 'battery', 'data' => ['percent' => $percent]]);
+        }
+
+        $latest = array_column($store->latestOfEachType('imei1', 'telemetry'), 'data', 'type');
+
+        self::assertSame(['bpm' => 78], $latest['heart_rate']);
+        self::assertSame(['percent' => 42], $latest['battery']);
+    }
 }

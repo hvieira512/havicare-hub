@@ -120,12 +120,17 @@ function renderSelection() {
         .filter((item) => item._source === "connection")
         .map((item) => item.raw);
 
+    // O cartão leva também a última de cada tipo, para uma leitura rara não sumir com a lista.
+    const latest = filterDetailItems((state.selectedDetail.recent?.latestTelemetry || [])
+        .map((row) => ({ _source: "telemetry", raw: row, payload: rowPayload(row) })))
+        .map((item) => item.raw);
+
     renderTelemetryList([...telemetry, ...alarmEvents]);
     renderRequestCards(
         telemetryRequestCards(
             state.selectedDetail?.capabilities?.telemetry || {},
         ),
-        telemetry,
+        [...telemetry, ...latest],
         alarmEvents,
         commands,
     );

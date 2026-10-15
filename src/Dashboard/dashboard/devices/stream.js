@@ -262,6 +262,7 @@ function mergeRecent(previous, data, isSnapshot) {
 
     return {
         telemetry: merge(data.telemetry || [], previous?.telemetry || []),
+        latestTelemetry: data.latestTelemetry || previous?.latestTelemetry || [],
         events: merge(data.events || [], previous?.events || []),
         connections: merge(data.connections || [], previous?.connections || []),
         commands: data.commands || [],

@@ -143,3 +143,12 @@ test("as ligações juntam-se como os eventos, na sua própria lista", async () 
         ["device.connected", "device.disconnected"],
     );
 });
+
+test("a última de cada tipo vem do servidor e substitui a anterior", async () => {
+    const source = await open("777");
+    await emit(source, "snapshot", { telemetry: [], latestTelemetry: [row(1)], events: [], commands: [], limit: 100 });
+
+    await emit(source, "update", { telemetry: [row(2)], latestTelemetry: [row(2)], events: [], commands: [], limit: 100 });
+
+    assert.deepEqual(state.selectedDetail.recent.latestTelemetry.map((entry) => entry.seq), [2]);
+});

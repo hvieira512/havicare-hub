@@ -30,9 +30,14 @@ final class DeviceEventStore
             return;
         }
         $key = $this->deviceListKey($imei, $list);
-        $this->redis->pipeline(function ($pipe) use ($key, $encoded): void {
+        $type = (string)($payload['type'] ?? '');
+        $this->redis->pipeline(function ($pipe) use ($key, $encoded, $type): void {
             $pipe->lpush($key, [$encoded]);
             $pipe->ltrim($key, 0, $this->limit - 1);
+            // A lista guarda as últimas N; a última de cada tipo fica à parte, para não sair dela.
+            if ($type !== '') {
+                $pipe->hset($key . ':latest', $type, $encoded);
+            }
         });
 
         if ($this->projection !== null && $list === 'telemetry' && ($payload['type'] ?? '') === 'device_config') {
@@ -78,6 +83,17 @@ final class DeviceEventStore
         }
 
         return $entries;
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function latestOfEachType(string $imei, string $list): array
+    {
+        $entries = array_map(
+            static fn (string $line): mixed => json_decode($line, true),
+            array_values($this->redis->hgetall($this->deviceListKey($imei, $list) . ':latest')),
+        );
+
+        return array_values(array_filter($entries, 'is_array'));
     }
 
     /** @return array<string, mixed>|null a entrada mais recente, sem ler a lista inteira */

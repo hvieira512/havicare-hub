@@ -266,6 +266,11 @@ final class DeviceStore implements DeviceStoreContract
         return $this->events->recent($imei, $list, $sinceSeq);
     }
 
+    public function latestOfEachType(string $imei, string $list): array
+    {
+        return $this->events->latestOfEachType($imei, $list);
+    }
+
     public function latestSequence(string $imei, string $list): int
     {
         return $this->events->latestSequence($imei, $list);
