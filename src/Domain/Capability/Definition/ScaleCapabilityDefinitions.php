@@ -22,6 +22,8 @@ final class ScaleCapabilityDefinitions extends CapabilityDefinitions
                     'heart_rate' => 'Frequência cardíaca',
                     'body_impedance' => 'Impedância corporal',
                     'body_impedance_channel' => 'Impedância por canal',
+                    // Calculada no hub pela impedância e pelo perfil de quem está em linha.
+                    'body_composition' => 'Composição corporal',
                     'weighing_status' => 'Estado da pesagem',
                 ],
             ],

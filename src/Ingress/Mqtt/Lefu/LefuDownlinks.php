@@ -32,10 +32,7 @@ final class LefuDownlinks
     ) {
     }
 
-    /**
-     * @param callable(string, array<string, mixed>): void $onSent quem foi entregue, com o payload
-     */
-    public function dispatchPending(string $deviceKey, string $gatewayKey, int $mtu, int $offsetMinutes, callable $onSent): void
+    public function dispatchPending(string $deviceKey, string $gatewayKey, int $mtu, int $offsetMinutes): void
     {
         if ($this->downlinks === null) {
             return;
@@ -60,7 +57,6 @@ final class LefuDownlinks
             $this->publish($gatewayKey, $deviceKey, $operation, $downlink->dedupeKey, self::commandId($downlink), $writes, $downlink->expiresAt);
             $this->sentAt[$downlink->dedupeKey] = $now;
             $this->mark($deviceKey, $downlink, ['status' => 'waiting', 'sentAt' => gmdate('Y-m-d\TH:i:s\Z')]);
-            $onSent($operation, $payload);
         }
     }
 

@@ -65,15 +65,8 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
      */
     private array $encodedImpedance = [];
 
-    /**
-     * O utilizador que se pôs em linha e o que a balança já aceitou.
-     *
-     * @var array<string, array<string, string>>
-     */
-    private array $pendingUser = [];
-
-    /** @var array<string, array<string, string>> */
-    private array $activeUser = [];
+    /** @var null|\Closure(string): ?array<string, mixed> os utilizadores da balança, como ela os confirmou */
+    private readonly ?\Closure $scaleUsers;
 
     private readonly TorreFrameDecoder $decoder;
 
@@ -94,6 +87,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,
         ?CommercialModelResolver $commercialModelResolver = null,
+        ?callable $scaleUsers = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -107,6 +101,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
             commercialModelResolver: $commercialModelResolver,
         );
         $this->commands = $deviceStore;
+        $this->scaleUsers = $scaleUsers !== null ? \Closure::fromCallable($scaleUsers) : null;
         $this->decoder = new TorreFrameDecoder();
         $this->downlinks = new LefuDownlinks($queue, $mqttBridge, $deviceStore, $topicFilter);
         $this->presence = new BraceletPresence($mqttBridge, $deviceStore, self::PROTOCOL, self::DEVICE_TYPE);
@@ -179,7 +174,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     private function session(ScaleContext $context, array $data, int $offsetMinutes): void
     {
         if (($data['connected'] ?? false) !== true) {
-            unset($this->sessions[$context->deviceKey], $this->activeUser[$context->deviceKey], $this->encodedImpedance[$context->deviceKey]);
+            unset($this->sessions[$context->deviceKey], $this->encodedImpedance[$context->deviceKey]);
             $this->presence->markOffline($context->deviceKey, $context->device, $context->licenseId, $context->company);
             return;
         }
@@ -210,11 +205,6 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
             $session['gateway'],
             $session['mtu'],
             $session['offset'],
-            function (string $operation, array $payload) use ($deviceKey): void {
-                if ($operation === 'selectScaleUser') {
-                    $this->pendingUser[$deviceKey] = ['scaleUserId' => (string)($payload['id'] ?? '')];
-                }
-            },
         );
     }
 
@@ -261,10 +251,12 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         }
         $this->lastFinalAt[$deviceKey] = $now;
 
-        $user = $this->activeUser[$deviceKey] ?? [];
-        $this->emit($context, 'weight', $nativeType, ['weightKg' => $frame['weightKg']] + $user);
+        $at = gmdate('Y-m-d\TH:i:s\Z', (int)$now);
+        $profile = $this->onlineUser($deviceKey);
+        $user = $profile !== null ? ['scaleUserId' => (string)$profile['id']] : [];
+        $this->emit($context, 'weight', $nativeType, ['weightKg' => $frame['weightKg']] + $user, $at);
         if ($frame['heartRateBpm'] !== null) {
-            $this->emit($context, 'heart_rate', $nativeType, ['bpm' => $frame['heartRateBpm']] + $user);
+            $this->emit($context, 'heart_rate', $nativeType, ['bpm' => $frame['heartRateBpm']] + $user, $at);
         }
 
         $encoded = $this->encodedImpedance[$deviceKey] ?? null;
@@ -276,8 +268,31 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
                 'electrodes' => $encoded['electrodes'] ?? null,
                 'encodedImpedance50Khz' => $encoded['encoded50Khz'] ?? null,
                 'encodedImpedance100Khz' => $encoded['encoded100Khz'] ?? null,
-            ], static fn (mixed $value): bool => $value !== null) + $user);
+            ], static fn (mixed $value): bool => $value !== null) + $user, $at);
+
+            $composition = $profile !== null ? BodyComposition::of($frame['weightKg'], $frame['impedance100KhzOhm'], $profile) : null;
+            if ($composition !== null) {
+                $this->emit($context, 'body_composition', $nativeType, $composition + $user, $at);
+            }
         }
+    }
+
+    /**
+     * Quem está em linha é o último que a balança aceitou, e ela lembra-se dele entre ligações.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function onlineUser(string $deviceKey): ?array
+    {
+        $users = $this->scaleUsers !== null ? ($this->scaleUsers)($deviceKey) : null;
+        $online = (string)($users['onlineUserId'] ?? '');
+        foreach ($online !== '' && is_array($users['items'] ?? null) ? $users['items'] : [] as $user) {
+            if (is_array($user) && ($user['id'] ?? null) === $online) {
+                return $user;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -318,13 +333,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     /** @param array<string, mixed> $frame */
     private function reply(ScaleContext $context, array $frame): void
     {
-        $deviceKey = $context->deviceKey;
-        if ($frame['replyType'] === 'torre_user_07' && $frame['accepted'] && isset($this->pendingUser[$deviceKey])) {
-            $this->activeUser[$deviceKey] = $this->pendingUser[$deviceKey];
-            unset($this->pendingUser[$deviceKey]);
-        }
-
-        $this->commands?->markCommandReply($deviceKey, (string)$frame['replyType'], null, '', (bool)$frame['accepted']);
+        $this->commands?->markCommandReply($context->deviceKey, (string)$frame['replyType'], null, '', (bool)$frame['accepted']);
     }
 
     /** @param array<string, mixed> $data */

@@ -30,9 +30,19 @@ membro — são descodificadas e não saem; uma falha da FC ou da impedância fi
 `weighing_status`. Uma pesagem completa dá `weight`, `heart_rate`
 (só se a FC foi medida) e `body_impedance` com o mesmo `occurredAt`.
 
-A composição corporal não sai: a balança mostra-a no visor mas não a envia, e o
-cálculo precisa da biblioteca da Lefu, com licença. As impedâncias cifradas vão no
-`body_impedance` para se poder calcular mais tarde.
+A balança não envia a composição corporal: o hub calcula-a com as fórmulas do SDK
+da Lefu (`CalculateUtil`), pela impedância de 100 kHz em claro e pelo sexo, idade e
+altura de quem está em linha, e publica-a como `body_composition` com o mesmo
+`occurredAt` da pesagem. Ficou dentro de 0,1 da app do fabricante em três pesagens
+de homem, na CF632 e na CF621; o ramo feminino ainda não foi comparado. O
+metabolismo basal, a gordura visceral, a proteína, o músculo esquelético, a
+pontuação e a idade corporal só existem na biblioteca nativa licenciada, e não
+saem. As impedâncias cifradas vão no `body_impedance` para se poder calcular mais
+tarde com ela.
+
+A pesagem ao vivo é de quem a balança tem em linha: o último utilizador que ela
+aceitou, tal como ficou confirmado na configuração `scale_users`. A balança
+lembra-se dele entre ligações, e o hub também.
 
 ## Comandos
 

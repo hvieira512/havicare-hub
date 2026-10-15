@@ -138,6 +138,8 @@ final class MqttIngressFactory
                 $reconnect,
                 $services->deviceStore,
                 commercialModelResolver: $services->commercialModelResolver,
+                scaleUsers: static fn (string $imei): ?array => $services->dataAccess->configurationLifecycle
+                    ->effectivePayloads($imei, ['scale_users'])['scale_users'] ?? null,
             ),
         );
     }

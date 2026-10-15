@@ -130,19 +130,40 @@ final class LefuTorreBridgeTest extends TestCase
         self::assertSame([['char' => 'fff1', 'hex' => '06020100']], $command['payload']['writes']);
     }
 
-    /** Com um utilizador posto em linha e aceite pela balança, a pesagem leva o identificador dele. */
-    public function testTheWeighingCarriesTheUserThatTheScaleAccepted(): void
+    /** A balança lembra-se de quem está em linha entre ligações: vale o que ela confirmou por último. */
+    public function testTheWeighingCarriesTheConfirmedOnlineUserAcrossConnections(): void
     {
         $mqtt = new RecordingHubMqttBridge();
-        $queue = new OneShotDownlinkQueue('selectScaleUser:u-0a1b2c3d', ['id' => 'cmd-1', 'command' => 'selectScaleUser', 'payload' => ['id' => 'u-0a1b2c3d']]);
-        $bridge = $this->bridge($mqtt, $queue);
+        $bridge = $this->bridge($mqtt, users: self::users('u-0a1b2c3d'));
 
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => false]));
         $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true, 'mtu' => 61]));
-        $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff2', '05020700'));
         $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010da580942500 4a0032a00f64330e'));
 
         self::assertSame([['weightKg' => 96.2, 'scaleUserId' => 'u-0a1b2c3d']], array_column(self::telemetry($mqtt, 'weight'), 'data'));
         self::assertSame('u-0a1b2c3d', self::telemetry($mqtt, 'heart_rate')[0]['data']['scaleUserId']);
+    }
+
+    /** Com impedância medida e um utilizador com perfil, a pesagem traz a composição dele. */
+    public function testAWeighingWithImpedanceCarriesTheBodyCompositionOfTheOnlineUser(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $this->bridge($mqtt, users: self::users('u-0a1b2c3d'))->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010da580942500 4a0032a00f64330e'));
+
+        $composition = self::telemetry($mqtt, 'body_composition');
+        self::assertCount(1, $composition);
+        self::assertSame('u-0a1b2c3d', $composition[0]['data']['scaleUserId']);
+        self::assertSame(29.3, $composition[0]['data']['bmi']);
+        self::assertSame(self::telemetry($mqtt, 'weight')[0]['occurredAt'], $composition[0]['occurredAt']);
+    }
+
+    public function testWithoutAnOnlineUserTheWeighingHasNoOwnerNorComposition(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $this->bridge($mqtt, users: self::users(''))->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010da580942500 4a0032a00f64330e'));
+
+        self::assertSame([['weightKg' => 96.2]], array_column(self::telemetry($mqtt, 'weight'), 'data'));
+        self::assertSame([], self::telemetry($mqtt, 'body_composition'));
     }
 
     /** O histórico sai pelas mesmas capacidades, com a data da pesagem e não a da leitura. */
@@ -197,11 +218,21 @@ final class LefuTorreBridgeTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
+    /** @return callable(string): array<string, mixed> */
+    private static function users(string $onlineUserId): callable
+    {
+        return static fn (string $imei): array => [
+            'items' => [['id' => 'u-0a1b2c3d', 'name' => 'Hugo', 'ageYears' => 23, 'sex' => 'male', 'heightCm' => 181, 'athlete' => false, 'weightKg' => 96]],
+            'onlineUserId' => $onlineUserId,
+        ];
+    }
+
     private function bridge(
         RecordingHubMqttBridge $mqtt,
         ?PendingDownlinkQueue $queue = null,
         ?DeviceStoreContract $store = null,
         bool $links = true,
+        ?callable $users = null,
     ): LefuTorreBridge {
         return new LefuTorreBridge(
             new FakeMqttSubscriber(),
@@ -216,6 +247,7 @@ final class LefuTorreBridgeTest extends TestCase
             null,
             $store,
             fn (): float => $this->now,
+            scaleUsers: $users,
         );
     }
 }

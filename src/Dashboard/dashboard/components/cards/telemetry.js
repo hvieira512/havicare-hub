@@ -103,6 +103,9 @@ const CARD_STYLE = {
     unknown: ["fa-bell", ""],
 };
 
+const oneDecimal = (data) => Object.fromEntries(Object.entries(data ?? {})
+    .map(([key, value]) => [key, typeof value === "number" ? Math.round(value * 10) / 10 : value]));
+
 const WEIGHING_PHASE = {
     weight: { idle: "Balança vazia", settling: "A estabilizar", stable: "Peso estável", overload: "Excesso de peso" },
     impedance: { measuring: "A medir a impedância", measured: "Impedância medida", failed: "Impedância falhou" },
@@ -314,12 +317,22 @@ const UPLINK_CARD_RENDERERS = {
                     .find(Boolean) ?? capabilityLabel("weighing_status"),
         details: data?.weightKg ? `${data.weightKg} kg` : "",
     }),
-    // O IMC é o número que resume a medição; o resto cabe nos detalhes.
+    // O IMC é o número que resume a medição; o resto cabe nos detalhes, com uma casa como na app.
     body_composition: (data) => ({
         value: data?.bmi != null ? `${data.bmi} IMC` : capabilityLabel("body_composition"),
-        details: compactDetails(data, [
+        details: compactDetails(oneDecimal(data), [
             "bodyFatPercent",
+            "fatMassKg",
+            "subcutaneousFatPercent",
             "musclePercent",
+            "muscleMassKg",
+            "leanMassKg",
+            "bodyWaterPercent",
+            "boneMassKg",
+            "idealWeightKg",
+            "weightControlKg",
+            "fatControlKg",
+            "muscleControlKg",
             "basalMetabolicRateKcal",
         ]),
     }),
