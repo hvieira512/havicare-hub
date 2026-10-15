@@ -21,6 +21,12 @@ final class GatewayCapabilityDefinitions extends CapabilityDefinitions
         ];
     }
 
+    /** O gateway por software da Havicare não publica nada sobre si: só serve as sessões GATT. */
+    protected static function defaultPublishedBy(): ?array
+    {
+        return ['moko-mkgw3', 'moko-mkgw4'];
+    }
+
     protected static function rows(): array
     {
         return [

@@ -117,6 +117,9 @@ final class DeviceCommandCatalog
             // Não há trama a montar: o destinatário é o gateway, e o que ele precisa é do
             // nome da operação para chamar o SDK. Os bytes em fila são esse nome.
             'veepoo-ble' => $command,
+            // Como na Veepoo, os bytes em fila são o nome da operação; as escritas monta-as a
+            // ponte na entrega, com o MTU da sessão.
+            'lefu-torre' => $command,
             'zayata-m228' => ZayataDownlink::build($imei, $command, $payload, $context),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };

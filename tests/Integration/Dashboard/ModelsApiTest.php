@@ -8,16 +8,10 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Services\ModelService;
 use Hub\Domain\SupplierCapabilityTemplate;
-use Psr\Http\Message\ServerRequestInterface;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class ModelsApiTest extends MysqlDashboardTestCase
 {
-    private function request(): ServerRequestInterface
-    {
-        return new ServerRequest('GET', 'http://localhost/api/models');
-    }
-
     public function testShowReturnsGroupedGenericCapabilitiesWithoutLegacyFields(): void
     {
         [$api, $db] = $this->makeApi();
@@ -144,7 +138,8 @@ final class ModelsApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $response = $api->list((string)$this->request()->getUri()->getQuery(), 'http://localhost');
+        // O catálogo já não cabe na página por omissão.
+        $response = $api->list('limit=100', 'http://localhost');
         $wonlex = null;
         foreach ($response['data'] ?? [] as $entry) {
             if (($entry['supplier'] ?? '') === 'Wonlex' && ($entry['internalModel'] ?? '') === 'HW20PRO') {
@@ -252,7 +247,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $response = $api->filters();
         $groups = $response['data'] ?? [];
 
-        self::assertCount(7, $groups);
+        self::assertCount(8, $groups);
         self::assertSame('watch', $groups[0]['deviceType'] ?? null);
         self::assertSame('ncs', $groups[1]['deviceType'] ?? null);
         self::assertSame('radar', $groups[2]['deviceType'] ?? null);
@@ -260,6 +255,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame('diaper_sensor', $groups[4]['deviceType'] ?? null);
         self::assertSame('bracelet', $groups[5]['deviceType'] ?? null);
         self::assertSame('pill_dispenser', $groups[6]['deviceType'] ?? null);
+        self::assertSame('scale', $groups[7]['deviceType'] ?? null);
         self::assertSame(['4P Touch', 'Vivistar', 'Wonlex'], array_values(array_map(
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[0]['suppliers'] ?? []
@@ -272,7 +268,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[2]['suppliers'] ?? []
         )));
-        self::assertSame(['MOKO'], array_values(array_map(
+        self::assertSame(['Havicare', 'MOKO'], array_values(array_map(
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[3]['suppliers'] ?? []
         )));

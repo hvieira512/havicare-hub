@@ -11,7 +11,7 @@ use PDO;
 
 final class ReferenceCatalogSeeder
 {
-    private const SUPPLIERS = ['Wonlex', 'Vivistar', '4P Touch', 'Voerka', 'Qinglanst', 'MOKO', 'MONIT', 'Zayata', 'PST'];
+    private const SUPPLIERS = ['Wonlex', 'Vivistar', '4P Touch', 'Voerka', 'Qinglanst', 'MOKO', 'MONIT', 'Zayata', 'PST', 'Unique Scales', 'Havicare'];
 
     /** O catálogo de modelos completo, tal como a produção o tem a 2026-09-29. */
     private const MODELS = [
@@ -39,6 +39,10 @@ final class ReferenceCatalogSeeder
         ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', 'eed091a62f83e3ef03c7090ce09ea262.jpg'],
         ['Wonlex', 'MF91', 'MF91', 'bracelet', '4d62bc6aac04e660f06f1de7d0ab6a4f.jpg'],
         ['Zayata', 'M228', 'M228', 'pill_dispenser', '464e9b90a30f30aee389cd9de5926977.jpg'],
+        ['Unique Scales', 'HC-CF632BLE', 'HC-CF632BLE', 'scale', ''],
+        // Nunca testada: não se sabe se também fala Torre.
+        ['Unique Scales', 'HC-CF621BLE', 'HC-CF621BLE', 'scale', ''],
+        ['Havicare', 'BLE Gateway', 'Gateway BLE', 'gateway', ''],
     ];
 
     /**

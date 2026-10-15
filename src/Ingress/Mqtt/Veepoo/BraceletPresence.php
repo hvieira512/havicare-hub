@@ -9,12 +9,11 @@ use Hub\Device\HubMqttBridge;
 use Hub\Device\RawPayload;
 
 /**
- * Se cada pulseira está alcançável: está online enquanto um gateway tiver sessão aberta com ela.
+ * Se cada aparelho servido por gateway GATT está alcançável: está online enquanto um gateway
+ * tiver sessão aberta com ele.
  */
 final class BraceletPresence
 {
-    private const PROTOCOL = 'veepoo-ble';
-
     /**
      * Se cada pulseira estava alcançável da última vez que o gateway falou dela.
      *
@@ -25,6 +24,8 @@ final class BraceletPresence
     public function __construct(
         private readonly HubMqttBridge $mqttBridge,
         private readonly ?DeviceReportStore $deviceStore,
+        private readonly string $protocol = 'veepoo-ble',
+        private readonly string $deviceType = 'bracelet',
     ) {
     }
 
@@ -45,16 +46,16 @@ final class BraceletPresence
         $this->deviceStore?->deviceSeen($deviceKey, [
             'supplier' => $supplier,
             'model' => $model,
-            'deviceType' => 'bracelet',
+            'deviceType' => $this->deviceType,
             'licenseId' => $licenseId,
             'company' => $company,
-            'protocol' => self::PROTOCOL,
+            'protocol' => $this->protocol,
             'transport' => 'ble_gateway',
             'online' => '1',
         ]);
 
         $status = RawPayload::status($deviceKey, $supplier, $model, 'online', null, $commercial);
-        $this->mqttBridge->publishStatus($deviceKey, $status, true, 'bracelet', $licenseId, $company);
+        $this->mqttBridge->publishStatus($deviceKey, $status, true, $this->deviceType, $licenseId, $company);
 
         // O estado é retido e vale a cada anúncio; o acontecimento só sai na transição.
         if ($wasOnline) {
@@ -86,7 +87,7 @@ final class BraceletPresence
             null,
             (string)($device['commercialName'] ?? ''),
         );
-        $this->mqttBridge->publishStatus($deviceKey, $status, true, 'bracelet', $licenseId, $company);
+        $this->mqttBridge->publishStatus($deviceKey, $status, true, $this->deviceType, $licenseId, $company);
 
         $this->announce($deviceKey, $device, $licenseId, $company, 'device.disconnected');
     }
@@ -108,9 +109,9 @@ final class BraceletPresence
             (string)($device['commercialName'] ?? ''),
         );
 
-        $this->mqttBridge->publishEvent($deviceKey, $event, 'bracelet', $licenseId, $company);
+        $this->mqttBridge->publishEvent($deviceKey, $event, $this->deviceType, $licenseId, $company);
         $this->deviceStore?->append($deviceKey, 'events', $event + [
-            'deviceType' => 'bracelet',
+            'deviceType' => $this->deviceType,
             'licenseId' => $licenseId,
         ]);
     }

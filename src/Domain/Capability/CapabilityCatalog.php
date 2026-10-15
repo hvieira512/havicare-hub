@@ -9,6 +9,7 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\Definition\NcsCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\RadarCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\ScaleCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\GatewayCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\BraceletCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\DiaperSensorCapabilityDefinitions;
@@ -62,6 +63,7 @@ final class CapabilityCatalog
             DiaperSensorCapabilityDefinitions::all(),
             BraceletCapabilityDefinitions::all(),
             PillDispenserCapabilityDefinitions::all(),
+            ScaleCapabilityDefinitions::all(),
         );
     }
 
@@ -226,6 +228,7 @@ final class CapabilityCatalog
             DiaperSensorCapabilityDefinitions::publishers(),
             BraceletCapabilityDefinitions::publishers(),
             PillDispenserCapabilityDefinitions::publishers(),
+            ScaleCapabilityDefinitions::publishers(),
         ];
 
         foreach ($files as $publishers) {
@@ -419,6 +422,11 @@ final class CapabilityCatalog
             'mute_alarm',
             'reset_tray',
             'restart_device',
+            // A balança Torre também declara pela chave genérica.
+            'heart_rate_measurement',
+            'impedance_measurement',
+            'weight_unit',
+            'select_scale_user',
             'reset_device' => $key,
             default => null,
         };

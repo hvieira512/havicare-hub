@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Hub\Domain\Capability\Definition;
+
+final class ScaleCapabilityDefinitions extends CapabilityDefinitions
+{
+    protected static function deviceType(): string
+    {
+        return 'scale';
+    }
+
+    protected static function rows(): array
+    {
+        return [
+            'telemetry' => [
+                'measurement' => [
+                    'battery' => 'Bateria',
+                    'weight' => 'Peso',
+                    // A mesma da pulseira e do relógio: a balança mede-a pelos elétrodos.
+                    'heart_rate' => 'Frequência cardíaca',
+                    'body_impedance' => 'Impedância corporal',
+                    'body_impedance_channel' => 'Impedância por canal',
+                    'body_impedance_failure' => 'Falha da impedância',
+                    'weighing_status' => 'Estado da pesagem',
+                    'scale_motion' => 'Movimento na balança',
+                    'scale_history_available' => 'Histórico novo na balança',
+                    'scale_user_selection' => 'Escolha de utilizador na balança',
+                ],
+            ],
+            'health' => [
+                'setting' => [
+                    'heart_rate_measurement' => 'Medir a frequência cardíaca',
+                    'impedance_measurement' => 'Medir a impedância',
+                ],
+                // Pôr em linha é o que atribui a pesagem seguinte, e sem ele a FC não é medida.
+                'action' => [
+                    'select_scale_user' => 'Pôr utilizador em linha',
+                ],
+            ],
+            'settings_system' => [
+                'setting' => [
+                    'weight_unit' => 'Unidade do visor',
+                ],
+                'action' => [
+                    'sync_configuration' => 'Sincronizar configuração',
+                    'calibrate_clock' => 'Acertar o relógio do aparelho',
+                    'restart_device' => 'Reiniciar dispositivo',
+                ],
+            ],
+        ];
+    }
+}

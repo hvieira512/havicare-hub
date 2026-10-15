@@ -7,6 +7,7 @@ namespace Hub\Infrastructure\Persistence;
 use Hub\Infrastructure\Persistence\Migration\CapabilitySectionsIncludeReminders;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\UnconfirmedHeartRateAlarmIsUnlinked;
+use Hub\Infrastructure\Persistence\Migration\UniqueScalesCatalog;
 use Hub\Infrastructure\Persistence\Migration\WhitelistKeyCascadesOnRename;
 use Hub\Infrastructure\Persistence\Migration\WifiSosButtonCatalog;
 use Hub\Infrastructure\Persistence\Migration\WifiSosButtonImage;
@@ -26,6 +27,7 @@ final class DatabaseMigrationPlan
             new UnconfirmedHeartRateAlarmIsUnlinked(),
             new WifiSosButtonCatalog(),
             new WifiSosButtonImage(),
+            new UniqueScalesCatalog(),
         ];
     }
 

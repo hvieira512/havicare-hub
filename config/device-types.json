@@ -93,5 +93,17 @@
         },
         "sim": true,
         "gatewayLinks": false
+    },
+    "scale": {
+        "label": "Balança",
+        "icon": "fa-weight-scale",
+        "identity": {
+            "field": "deviceId",
+            "label": "MAC",
+            "help": "Endereço MAC canónico, sem separadores (12 caracteres hexadecimais).",
+            "placeholder": "cfe908067329"
+        },
+        "sim": false,
+        "gatewayLinks": true
     }
 }

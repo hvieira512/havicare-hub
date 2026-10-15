@@ -86,6 +86,18 @@ final class ProtocolRegistry
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => false,
             ],
+            // A balança fala por GATT com um gateway por software, e não por anúncio.
+            'lefu-torre' => [
+                'label' => 'Unique Scales',
+                'deviceType' => 'scale',
+                'supportsConfigCatalog' => true,
+            ],
+            // O gateway BLE que a Havicare corre num computador, com as sessões GATT.
+            'havicare-ble-gateway' => [
+                'label' => 'Havicare',
+                'deviceType' => 'gateway',
+                'supportsConfigCatalog' => false,
+            ],
             'zayata-m228' => [
                 'label' => 'Zayata',
                 'deviceType' => 'pill_dispenser',

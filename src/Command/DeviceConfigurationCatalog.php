@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Command;
 
 use Hub\Command\Configuration\Definition\FourPTouchConfigurationDefinitions;
+use Hub\Command\Configuration\Definition\LefuTorreConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\MonitConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\VeepooConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\VivistarConfigurationDefinitions;
@@ -12,6 +13,7 @@ use Hub\Command\Configuration\Definition\WonlexConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\ZayataConfigurationDefinitions;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookDelta;
+use Hub\Command\Configuration\Payload\LefuTorrePayloadBuilder;
 use Hub\Command\Configuration\Payload\VeepooPayloadBuilder;
 use Hub\Command\Configuration\Payload\VivistarPayloadBuilder;
 use Hub\Command\Configuration\Payload\WonlexPayloadBuilder;
@@ -37,6 +39,7 @@ final class DeviceConfigurationCatalog
             'monit-mecs-pro-ble' => MonitConfigurationDefinitions::all(),
             'veepoo-ble' => VeepooConfigurationDefinitions::all(),
             'zayata-m228' => ZayataConfigurationDefinitions::all(),
+            'lefu-torre' => LefuTorreConfigurationDefinitions::all(),
             default => [],
         };
 
@@ -156,6 +159,7 @@ final class DeviceConfigurationCatalog
                 // A pulseira só valida: quem monta a trama é o SDK no gateway, e o payload chega lá genérico.
                 'veepoo-ble' => VeepooPayloadBuilder::build($key, $payload),
                 'zayata-m228' => ZayataPayloadBuilder::build($key, $payload),
+                'lefu-torre' => LefuTorrePayloadBuilder::build($key, $payload),
                 default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
             },
         ]];

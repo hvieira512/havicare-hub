@@ -96,8 +96,24 @@ const CARD_STYLE = {
     ambient_temperature: ["fa-temperature-half", "info"],
     ambient_humidity: ["fa-droplet", "info"],
     reset: ["fa-bell-slash", "warning"],
+    weight: ["fa-weight-scale", "primary"],
+    body_impedance: ["fa-bolt", "secondary"],
+    body_impedance_channel: ["fa-bolt", "secondary"],
+    body_impedance_failure: ["fa-triangle-exclamation", "warning"],
+    weighing_status: ["fa-scale-balanced", "secondary"],
+    scale_motion: ["fa-person-walking", "secondary"],
+    scale_history_available: ["fa-clock-rotate-left", "info"],
+    scale_user_selection: ["fa-user", "secondary"],
     unknown: ["fa-bell", ""],
 };
+
+const WEIGHING_PHASE = {
+    weight: { settling: "A estabilizar", stable: "Peso estável", overload: "Excesso de peso" },
+    impedance: { measuring: "A medir a impedância", measured: "Impedância medida", failed: "Impedância falhou" },
+    heartRate: { measuring: "A medir a FC", measured: "FC medida", failed: "FC falhou" },
+};
+
+const LIMB = { left_leg: "Perna esquerda", right_leg: "Perna direita", left_arm: "Braço esquerdo", right_arm: "Braço direito" };
 
 /** O ícone de uma capacidade. Sem entrada na tabela, o genérico. */
 export function cardIcon(type) {
@@ -285,6 +301,30 @@ const UPLINK_CARD_RENDERERS = {
         value:
             { worn: "Ao pulso", not_worn: "Fora do pulso" }[data?.state] ??
             capabilityLabel("wear_state"),
+    }),
+    weight: (data) => ({
+        value: data?.weightKg != null ? `${data.weightKg} kg` : capabilityLabel("weight"),
+        details: compactDetails(data, ["memberId"]),
+    }),
+    body_impedance: (data) => ({
+        value: data?.impedance50KhzOhm != null ? `${data.impedance50KhzOhm} Ω` : capabilityLabel("body_impedance"),
+        details: compactDetails(data, ["impedance100KhzOhm"]),
+    }),
+    body_impedance_channel: (data) => ({
+        value: data?.impedanceOhm != null ? `Canal ${data.channel} · ${data.impedanceOhm} Ω` : capabilityLabel("body_impedance_channel"),
+    }),
+    body_impedance_failure: (data) => ({
+        value: LIMB[data?.limb] ?? "Mau contacto",
+    }),
+    weighing_status: (data) => ({
+        value: data?.shuttingDown
+            ? "A desligar"
+            : [WEIGHING_PHASE.heartRate[data?.heartRate], WEIGHING_PHASE.impedance[data?.impedance], WEIGHING_PHASE.weight[data?.weight]]
+                    .find(Boolean) ?? capabilityLabel("weighing_status"),
+        details: data?.weightKg ? `${data.weightKg} kg` : "",
+    }),
+    scale_user_selection: (data) => ({
+        value: data?.stateCode != null ? `Código ${data.stateCode}` : capabilityLabel("scale_user_selection"),
     }),
     // O IMC é o número que resume a medição; o resto cabe nos detalhes.
     body_composition: (data) => ({

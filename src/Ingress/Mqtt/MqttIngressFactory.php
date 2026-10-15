@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt;
 
 use Hub\Ingress\Mqtt\Gateway\RedisObservationStateStore;
+use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use Hub\Ingress\Mqtt\Ncs\NcsBridge;
@@ -41,6 +42,7 @@ final class MqttIngressFactory
         $gatewayTopicFilter = trim((string)$config['gateway']['topic_filter']);
         $runner->add('MOKO gateway ingress', self::moko($config, $services, $subscribers, $gatewayTopicFilter), 'gateway');
         $runner->add('Veepoo bracelet ingress', self::veepoo($config, $services, $subscribers, $gatewayTopicFilter), 'veepoo');
+        $runner->add('Lefu scale ingress', self::lefu($config, $services, $subscribers, $gatewayTopicFilter), 'lefu');
 
         $runner->add('Qinglanst ingress', self::qinglanst($config, $services), 'qinglanst');
         $runner->add('Tuya ingress', self::tuya($config, $services, $loop), 'tuya');
@@ -112,6 +114,35 @@ final class MqttIngressFactory
      *
      * @param array<string, mixed> $config
      */
+    /** @param array<string, mixed> $config */
+    private static function lefu(
+        array $config,
+        HubServices $services,
+        SubscriberFactory $subscribers,
+        string $topicFilter,
+    ): ?MqttIngress {
+        if (!$config['gateway']['enabled']) {
+            return null;
+        }
+
+        return $subscribers->bind(
+            'lefu-sub',
+            $topicFilter,
+            fn ($subscriber, $reconnect) => new LefuTorreBridge(
+                $subscriber,
+                $services->whitelist,
+                $services->mqttBridge,
+                $services->dataAccess->gatewayDeviceLinks,
+                $services->downlinkQueue,
+                $topicFilter,
+                $reconnect,
+                $services->deviceStore,
+                commercialModelResolver: $services->commercialModelResolver,
+            ),
+        );
+    }
+
+    /** @param array<string, mixed> $config */
     private static function veepoo(
         array $config,
         HubServices $services,
