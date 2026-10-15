@@ -26,6 +26,11 @@ final class BodyComposition
         $male = $sex === 'male';
         $w = $weightKg;
         $metres = $height / 100;
+        $bmi = max(10, floor($w / ($metres * $metres) * 10) / 10);
+        // O modo atleta é um algoritmo fechado da biblioteca nativa: só o IMC não depende dele.
+        if (($user['athlete'] ?? false) === true) {
+            return ['bmi' => $bmi];
+        }
 
         $c0 = $height * 9.058 / 100 * $metres + $w * 0.32 + 12.226 - $impedanceOhm * 0.0068 - $age * 0.0542;
         $sub = $male ? 0.8 : ($age <= 49 ? 9.25 : 7.25);
@@ -50,7 +55,6 @@ final class BodyComposition
         $fatKg = $w * $fat / 100;
         $lean = $w - $fatKg;
         $muscleKg = $lean - $bone;
-        $bmi = max(10, floor($w / ($metres * $metres) * 10) / 10);
         // A app trunca o peso ideal a uma casa, e os controlos partem do valor truncado.
         $ideal = floor(22 * $metres * $metres * 10) / 10;
 

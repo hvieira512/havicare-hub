@@ -37,7 +37,8 @@ altura de quem está em linha, e publica-a como `body_composition` com o mesmo
 de homem e de mulher, na CF632 e na CF621. O
 metabolismo basal, a gordura visceral, a proteína, o músculo esquelético, a
 pontuação e a idade corporal só existem na biblioteca nativa licenciada, e não
-saem. As impedâncias cifradas vão no `body_impedance` para se poder calcular mais
+saem. O modo atleta usa um algoritmo fechado do fabricante, e um utilizador atleta
+fica só com o `bmi` na `body_composition`. As impedâncias cifradas vão no `body_impedance` para se poder calcular mais
 tarde com ela.
 
 A pesagem ao vivo é de quem a balança tem em linha: o último utilizador que ela

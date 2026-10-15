@@ -55,6 +55,14 @@ final class BodyCompositionTest extends TestCase
         }
     }
 
+    /** O modo atleta é um algoritmo fechado da Lefu: fica só o IMC, que não depende dele. */
+    public function testAnAthleteGetsOnlyTheBmi(): void
+    {
+        $composition = BodyComposition::of(96.95, 390.6, ['sex' => 'male', 'ageYears' => 23, 'heightCm' => 181, 'athlete' => true]);
+
+        self::assertSame(['bmi' => 29.5], $composition);
+    }
+
     public function testWithoutSexAgeOrHeightThereIsNoComposition(): void
     {
         self::assertNull(BodyComposition::of(80.0, 400.0, ['sex' => 'male', 'ageYears' => 40]));
