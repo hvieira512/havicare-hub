@@ -22,11 +22,7 @@ final class ScaleCapabilityDefinitions extends CapabilityDefinitions
                     'heart_rate' => 'Frequência cardíaca',
                     'body_impedance' => 'Impedância corporal',
                     'body_impedance_channel' => 'Impedância por canal',
-                    'body_impedance_failure' => 'Falha da impedância',
                     'weighing_status' => 'Estado da pesagem',
-                    'scale_motion' => 'Movimento na balança',
-                    'scale_history_available' => 'Histórico novo na balança',
-                    'scale_user_selection' => 'Escolha de utilizador na balança',
                 ],
             ],
             'health' => [

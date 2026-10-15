@@ -210,11 +210,7 @@ sair depois de ela ter apagado.
 | `weight` | balança | `weightKg`, sempre em quilogramas seja qual for a unidade do visor; `scaleUserId`, o identificador que o hub deu ao utilizador da balança, quando há um em linha confirmado nessa sessão. Só sai a trama final da pesagem, e a repetida nos 2 s seguintes é ignorada. Do histórico sai com o `occurredAt` da pesagem e `fromHistory: true`; o `heart_rate` e o `body_impedance` seguem a mesma regra |
 | `body_impedance` | balança | `impedance50KhzOhm`, `impedance100KhzOhm` (em claro) e, quando a trama `02` chegou na mesma pesagem, `electrodes` (`four` · `four_dual_frequency` · `eight`), `encodedImpedance50Khz` e `encodedImpedance100Khz` — as cifradas são o que o algoritmo da Lefu precisa para a composição corporal |
 | `body_impedance_channel` | balança | `channel`, `impedanceOhm`: a impedância em claro canal a canal (trama `03`) |
-| `body_impedance_failure` | balança | `limb`: `left_leg` · `right_leg` · `left_arm` · `right_arm`; sem `limb` quando a pesagem acaba com mau contacto |
 | `weighing_status` | balança | `weightKg`, `weight` (`idle` · `settling` · `stable` · `overload`), `impedance` e `heartRate` (`idle` · `measuring` · `measured` · `failed`), `displayUnit` (`kg` · `lb` · `jin` · `st` · `st_lb`), `shuttingDown`. Sai só quando muda a fase, e não a cada oscilação do peso |
-| `scale_motion` | balança | — : o G-sensor disparou |
-| `scale_history_available` | balança | — : a balança tem histórico novo |
-| `scale_user_selection` | balança | `stateCode`, o byte em bruto: o SDK não o descodifica |
 | `motion` | pulseira | `xMg`, `yMg`, `zMg`, `magnitudeMg` |
 | `proximity` | pulseira, sensor de fralda | `gatewayId`, `state`, `rssiDbm`, `rssiMaxDbm`, `rssiMedianDbm`, `rssiMinDbm`, `samples`, `windowSeconds` |
 | `connectivity` | gateway | `interface`, `networkType`, `signalQuality`, `signalStrengthDbm` |

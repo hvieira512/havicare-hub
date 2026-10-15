@@ -73,15 +73,28 @@ final class LefuTorreBridgeTest extends TestCase
         self::assertSame(['settling', 'stable'], array_column(array_column(self::telemetry($mqtt, 'weighing_status'), 'data'), 'weight'));
     }
 
-    /** Mau contacto: a impedância em claro vem implausível e não sai como leitura. */
-    public function testAFailedImpedanceIsReportedAndNotPublishedAsAReading(): void
+    /** Mau contacto: a impedância em claro vem implausível, e a falha fica no estado da pesagem. */
+    public function testAFailedImpedanceStaysInTheWeighingStatusAndIsNotPublishedAsAReading(): void
     {
         $mqtt = new RecordingHubMqttBridge();
         $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010d3580fd25000000320000640000'));
 
         self::assertSame([], self::telemetry($mqtt, 'body_impedance'));
-        self::assertCount(1, self::telemetry($mqtt, 'body_impedance_failure'));
+        self::assertSame('failed', self::telemetry($mqtt, 'weighing_status')[0]['data']['impedance']);
         self::assertSame([['weightKg' => 97.25]], array_column(self::telemetry($mqtt, 'weight'), 'data'));
+    }
+
+    /** Sem medição, não servem a ninguém: o movimento, o histórico novo, a escolha no aparelho e a falha por membro. */
+    public function testFramesWithoutAMeasurementAreNotPublished(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        foreach (['0400', '0500', '060102', '1603000002'] as $hex) {
+            $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', $hex));
+        }
+
+        self::assertSame([], $mqtt->telemetry);
     }
 
     public function testTheScaleAnswerClosesTheCommandAndAReadIsReportedConfiguration(): void

@@ -233,10 +233,6 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
                 'channel' => $frame['channel'],
                 'impedanceOhm' => $frame['impedanceOhm'],
             ]),
-            'motion' => $this->emit($context, 'scale_motion', $nativeType, []),
-            'history_available' => $this->emit($context, 'scale_history_available', $nativeType, []),
-            'user_selection' => $this->emit($context, 'scale_user_selection', $nativeType, ['stateCode' => $frame['stateCode']]),
-            'impedance_failure' => $this->emit($context, 'body_impedance_failure', $nativeType, array_filter(['limb' => $frame['limb']])),
             'setting' => $this->setting($context, $frame, $nativeType),
             'history' => $this->history($context, $frame, $nativeType),
             'reply' => $this->reply($context, $frame),
@@ -281,9 +277,6 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
                 'encodedImpedance50Khz' => $encoded['encoded50Khz'] ?? null,
                 'encodedImpedance100Khz' => $encoded['encoded100Khz'] ?? null,
             ], static fn (mixed $value): bool => $value !== null) + $user);
-        } elseif ($frame['status']['impedance'] === 'failed') {
-            // Mau contacto: os valores em claro vêm implausíveis, e não saem.
-            $this->emit($context, 'body_impedance_failure', $nativeType, []);
         }
     }
 

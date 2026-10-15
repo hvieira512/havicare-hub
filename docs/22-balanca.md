@@ -24,9 +24,10 @@ Uma ordem dada com ela a dormir espera na fila do hub, com o prazo de sempre
 ## O que sai no MQTT
 
 As capacidades estão no [capítulo 06](06-normalizacao.md): `weight`, `heart_rate`,
-`body_impedance`, `body_impedance_channel`, `body_impedance_failure`,
-`weighing_status`, `scale_motion`, `scale_history_available`,
-`scale_user_selection` e `battery`. Uma pesagem completa dá `weight`, `heart_rate`
+`body_impedance`, `body_impedance_channel`, `weighing_status` e `battery`. As tramas
+sem medição — movimento, histórico novo, escolha de utilizador no aparelho e falha por
+membro — são descodificadas e não saem; uma falha da FC ou da impedância fica no
+`weighing_status`. Uma pesagem completa dá `weight`, `heart_rate`
 (só se a FC foi medida) e `body_impedance` com o mesmo `occurredAt`.
 
 A composição corporal não sai: a balança mostra-a no visor mas não a envia, e o
