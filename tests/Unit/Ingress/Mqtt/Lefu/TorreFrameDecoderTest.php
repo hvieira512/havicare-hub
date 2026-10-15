@@ -121,6 +121,38 @@ final class TorreFrameDecoderTest extends TestCase
         self::assertSame(['kind' => 'impedance_failure', 'limb' => 'right_leg'], $decoder->decode('fff3', '1603000002'));
     }
 
+    /** O histórico da captura do Marcus: o membro e seis registos de 20 bytes. */
+    public function testTheHistoryBlockIsTheMemberAndTwentyByteRecords(): void
+    {
+        $block = (new TorreFrameDecoder())->decode('fff2', bin2hex(str_repeat('0', 64))
+            . 'b13644692e0400025f14cf000000ae55df000000f53644692b075402b755e900310f0822fc00440e'
+            . '4637446990060002000000000000000000000000ad3744691c074f0259746f00150fd1661e00290e'
+            . '50384469ce044d02ee36d100700f3953cf00810e74384469ce04520210135700740fcb461600870e');
+
+        self::assertSame('history', $block['kind']);
+        self::assertSame(str_repeat('0', 64), $block['memberId']);
+        self::assertCount(6, $block['records']);
+        self::assertSame([
+            'at' => 1766078381,
+            'weightKg' => 18.2,
+            'heartRateBpm' => 79,
+            'electrodes' => 'four_dual_frequency',
+            'encodedImpedance50Khz' => 7304281,
+            'impedance50KhzOhm' => 386.1,
+            'encodedImpedance100Khz' => 1992401,
+            'impedance100KhzOhm' => 362.5,
+        ], $block['records'][3]);
+        self::assertNull($block['records'][0]['heartRateBpm']);
+    }
+
+    public function testTheHistorySteps(): void
+    {
+        $decoder = new TorreFrameDecoder();
+
+        self::assertSame(['kind' => 'reply', 'replyType' => 'torre_history_07', 'accepted' => true, 'error' => null], $decoder->decode('fff2', '02020700'));
+        self::assertSame(['kind' => 'reply', 'replyType' => 'torre_history_0a', 'accepted' => true, 'error' => null], $decoder->decode('fff2', '02020a01'));
+    }
+
     /** O MTU e o que não se conhece não são leituras. */
     public function testWhatIsNotAReadingDecodesToNothing(): void
     {

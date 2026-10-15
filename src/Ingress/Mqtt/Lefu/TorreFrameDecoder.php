@@ -12,6 +12,10 @@ final class TorreFrameDecoder
 {
     public const UNITS = [0 => 'kg', 1 => 'lb', 2 => 'jin', 3 => 'st', 4 => 'st_lb'];
 
+    private const ID_BYTES = 64;
+
+    private const HISTORY_RECORD = 20;
+
     /** O byte do membro na trama `16`: cada membro tem dois bits, um por elétrodo. */
     private const LIMBS = [
         0x01 => 'left_leg', 0x04 => 'left_leg',
@@ -53,11 +57,7 @@ final class TorreFrameDecoder
             0x01, 0x11 => count($b) >= 15 ? $this->weighing($b) : null,
             0x02 => count($b) >= 12 ? [
                 'kind' => 'encoded_impedance',
-                'electrodes' => match ($b[3]) {
-                    0x01 => 'four',
-                    0x02 => 'four_dual_frequency',
-                    default => 'eight',
-                },
+                'electrodes' => self::electrodes($b[3]),
                 'encoded50Khz' => self::uint32($b, 4),
                 'encoded100Khz' => self::uint32($b, 8),
             ] : null,
@@ -164,16 +164,69 @@ final class TorreFrameDecoder
      */
     private function user(array $b): ?array
     {
-        if (($b[0] ?? null) !== 0x05 || ($b[1] ?? null) !== 0x02 || !isset($b[3])) {
-            return null;
+        $flow = match ($b[0] ?? null) {
+            0x05 => 'user',
+            0x02 => 'history',
+            default => null,
+        };
+        if ($flow === null || ($b[1] ?? null) !== 0x02 || count($b) !== 4) {
+            return $this->history($b);
         }
+
+        // O fim do envio do histórico responde `01`: é o sinal, e não uma falha.
+        $accepted = $b[3] === 0x00 || ($flow === 'history' && $b[2] === 0x0a);
 
         return [
             'kind' => 'reply',
-            'replyType' => sprintf('torre_user_%02x', $b[2]),
-            'accepted' => $b[3] === 0x00,
-            'error' => $b[3] === 0x00 ? null : (self::USER_ERRORS[$b[3]] ?? 'failed'),
+            'replyType' => sprintf('torre_%s_%02x', $flow, $b[2]),
+            'accepted' => $accepted,
+            'error' => $accepted ? null : (self::USER_ERRORS[$b[3]] ?? 'failed'),
         ];
+    }
+
+    /**
+     * Os pacotes do histórico, já juntos pelo gateway: o membro (64 bytes) e registos de 20 bytes
+     * -- data, peso, FC, tipo, e as duas impedâncias, cifrada e em claro.
+     *
+     * @param list<int> $b
+     * @return array<string, mixed>|null
+     */
+    private function history(array $b): ?array
+    {
+        $count = count($b) - self::ID_BYTES;
+        if ($count < self::HISTORY_RECORD || $count % self::HISTORY_RECORD !== 0) {
+            return null;
+        }
+
+        $records = [];
+        for ($at = self::ID_BYTES; $at < count($b); $at += self::HISTORY_RECORD) {
+            $heartRate = $b[$at + 6];
+            $records[] = [
+                'at' => self::uint32($b, $at),
+                'weightKg' => round(self::uint16($b, $at + 4) / 100, 2),
+                'heartRateBpm' => $heartRate > 0 && $heartRate < 0xFF ? $heartRate : null,
+                'electrodes' => self::electrodes($b[$at + 7]),
+                'encodedImpedance50Khz' => self::uint32($b, $at + 8),
+                'impedance50KhzOhm' => round(self::uint16($b, $at + 12) / 10, 1),
+                'encodedImpedance100Khz' => self::uint32($b, $at + 14),
+                'impedance100KhzOhm' => round(self::uint16($b, $at + 18) / 10, 1),
+            ];
+        }
+
+        return [
+            'kind' => 'history',
+            'memberId' => rtrim(implode('', array_map('chr', array_slice($b, 0, self::ID_BYTES))), "\0"),
+            'records' => $records,
+        ];
+    }
+
+    private static function electrodes(int $type): string
+    {
+        return match ($type) {
+            0x01 => 'four',
+            0x02 => 'four_dual_frequency',
+            default => 'eight',
+        };
     }
 
     /** @param list<int> $b */

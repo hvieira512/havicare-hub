@@ -33,10 +33,13 @@ final class ScaleCapabilityDefinitions extends CapabilityDefinitions
                 'setting' => [
                     'heart_rate_measurement' => 'Medir a frequência cardíaca',
                     'impedance_measurement' => 'Medir a impedância',
+                    // O mesmo registo que os «Dados para cálculo» da pulseira, em lista.
+                    'scale_users' => 'Utilizadores da balança',
                 ],
                 // Pôr em linha é o que atribui a pesagem seguinte, e sem ele a FC não é medida.
                 'action' => [
                     'select_scale_user' => 'Pôr utilizador em linha',
+                    'read_scale_history' => 'Ler o histórico',
                 ],
             ],
             'settings_system' => [

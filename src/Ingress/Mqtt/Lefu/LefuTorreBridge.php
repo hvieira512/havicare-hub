@@ -31,6 +31,9 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     /** O SDK ignora uma segunda trama completa que chegue neste intervalo. */
     private const REPEATED_FINAL_SECONDS = 2.0;
 
+    /** 2023-02-03: o SDK descarta os registos de histórico anteriores. */
+    private const HISTORY_EPOCH = 1675382400;
+
     /** O MTU que a CF632 dá, quando a sessão não o trouxer. */
     private const DEFAULT_MTU = 61;
 
@@ -209,10 +212,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
             $session['offset'],
             function (string $operation, array $payload) use ($deviceKey): void {
                 if ($operation === 'selectScaleUser') {
-                    $this->pendingUser[$deviceKey] = [
-                        'userId' => (string)($payload['userId'] ?? ''),
-                        'memberId' => (string)($payload['memberId'] ?? ''),
-                    ];
+                    $this->pendingUser[$deviceKey] = ['scaleUserId' => (string)($payload['id'] ?? '')];
                 }
             },
         );
@@ -238,6 +238,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
             'user_selection' => $this->emit($context, 'scale_user_selection', $nativeType, ['stateCode' => $frame['stateCode']]),
             'impedance_failure' => $this->emit($context, 'body_impedance_failure', $nativeType, array_filter(['limb' => $frame['limb']])),
             'setting' => $this->setting($context, $frame, $nativeType),
+            'history' => $this->history($context, $frame, $nativeType),
             'reply' => $this->reply($context, $frame),
             default => null,
         };
@@ -266,7 +267,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         $user = $this->activeUser[$deviceKey] ?? [];
         $this->emit($context, 'weight', $nativeType, ['weightKg' => $frame['weightKg']] + $user);
         if ($frame['heartRateBpm'] !== null) {
-            $this->emit($context, 'heart_rate', $nativeType, ['bpm' => $frame['heartRateBpm']]);
+            $this->emit($context, 'heart_rate', $nativeType, ['bpm' => $frame['heartRateBpm']] + $user);
         }
 
         $encoded = $this->encodedImpedance[$deviceKey] ?? null;
@@ -282,6 +283,34 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         } elseif ($frame['status']['impedance'] === 'failed') {
             // Mau contacto: os valores em claro vêm implausíveis, e não saem.
             $this->emit($context, 'body_impedance_failure', $nativeType, []);
+        }
+    }
+
+    /**
+     * Os registos que a balança guardou de um membro, pelas mesmas capacidades da pesagem ao vivo
+     * e com a data dela. O SDK descarta os anteriores a 2023-02-03, e o hub também.
+     *
+     * @param array<string, mixed> $frame
+     */
+    private function history(ScaleContext $context, array $frame, string $nativeType): void
+    {
+        $user = ['scaleUserId' => (string)$frame['memberId'], 'fromHistory' => true];
+        foreach ($frame['records'] as $record) {
+            if ($record['at'] < self::HISTORY_EPOCH) {
+                continue;
+            }
+            $at = gmdate('Y-m-d\TH:i:s\Z', $record['at']);
+            $this->emit($context, 'weight', $nativeType, ['weightKg' => $record['weightKg']] + $user, $at);
+            if ($record['heartRateBpm'] !== null) {
+                $this->emit($context, 'heart_rate', $nativeType, ['bpm' => $record['heartRateBpm']] + $user, $at);
+            }
+            $this->emit($context, 'body_impedance', $nativeType, [
+                'impedance50KhzOhm' => $record['impedance50KhzOhm'],
+                'impedance100KhzOhm' => $record['impedance100KhzOhm'],
+                'electrodes' => $record['electrodes'],
+                'encodedImpedance50Khz' => $record['encodedImpedance50Khz'],
+                'encodedImpedance100Khz' => $record['encodedImpedance100Khz'],
+            ] + $user, $at);
         }
     }
 
@@ -305,7 +334,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /** @param array<string, mixed> $data */
-    private function emit(ScaleContext $context, string $type, string $nativeType, array $data): void
+    private function emit(ScaleContext $context, string $type, string $nativeType, array $data, ?string $occurredAt = null): void
     {
         $telemetry = TelemetryEnvelope::for(
             $type,
@@ -316,6 +345,9 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
             $data,
             $context->gatewayKey,
         );
+        if ($occurredAt !== null) {
+            $telemetry['occurredAt'] = $occurredAt;
+        }
         $this->mqttBridge->publishTelemetry($context->deviceKey, $telemetry, self::DEVICE_TYPE, $context->licenseId, $context->company);
         $this->deviceStore?->append($context->deviceKey, 'telemetry', $telemetry + [
             'deviceType' => self::DEVICE_TYPE,

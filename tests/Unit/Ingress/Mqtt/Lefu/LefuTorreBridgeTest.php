@@ -104,6 +104,38 @@ final class LefuTorreBridgeTest extends TestCase
         self::assertSame([['char' => 'fff1', 'hex' => '06020100']], $command['payload']['writes']);
     }
 
+    /** Com um utilizador posto em linha e aceite pela balança, a pesagem leva o identificador dele. */
+    public function testTheWeighingCarriesTheUserThatTheScaleAccepted(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new OneShotDownlinkQueue('selectScaleUser:u-0a1b2c3d', ['id' => 'cmd-1', 'command' => 'selectScaleUser', 'payload' => ['id' => 'u-0a1b2c3d']]);
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true, 'mtu' => 61]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff2', '05020700'));
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010da580942500 4a0032a00f64330e'));
+
+        self::assertSame([['weightKg' => 96.2, 'scaleUserId' => 'u-0a1b2c3d']], array_column(self::telemetry($mqtt, 'weight'), 'data'));
+        self::assertSame('u-0a1b2c3d', self::telemetry($mqtt, 'heart_rate')[0]['data']['scaleUserId']);
+    }
+
+    /** O histórico sai pelas mesmas capacidades, com a data da pesagem e não a da leitura. */
+    public function testTheHistoryLeavesAsWeighingsDatedByTheScale(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::frame('fff2', bin2hex(str_pad('u-0a1b2c3d', 64, "\0"))
+            . 'ad3744691c074f0259746f00150fd1661e00290e'
+            // Anterior a 2023-02-03: o SDK descarta-o, e o hub também.
+            . '0000000064000000000000000000000000000000'));
+
+        $weights = self::telemetry($mqtt, 'weight');
+        self::assertCount(1, $weights);
+        self::assertSame('2025-12-18T17:19:41Z', $weights[0]['occurredAt']);
+        self::assertSame(['weightKg' => 18.2, 'scaleUserId' => 'u-0a1b2c3d', 'fromHistory' => true], $weights[0]['data']);
+        self::assertSame(79, self::telemetry($mqtt, 'heart_rate')[0]['data']['bpm']);
+        self::assertSame(386.1, self::telemetry($mqtt, 'body_impedance')[0]['data']['impedance50KhzOhm']);
+    }
+
     public function testAScaleOfAnotherSourceOrNotLinkedIsIgnored(): void
     {
         $mqtt = new RecordingHubMqttBridge();

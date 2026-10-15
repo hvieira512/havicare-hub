@@ -119,7 +119,8 @@ final class DeviceCommandCatalog
             'veepoo-ble' => $command,
             // Como na Veepoo, os bytes em fila são o nome da operação; as escritas monta-as a
             // ponte na entrega, com o MTU da sessão.
-            'lefu-torre' => $command,
+            // Com o utilizador na chave: dois registos de pessoas diferentes não se substituem na fila.
+            'lefu-torre' => isset($payload['id']) ? $command . ':' . $payload['id'] : $command,
             'zayata-m228' => ZayataDownlink::build($imei, $command, $payload, $context),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };

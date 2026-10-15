@@ -8,6 +8,7 @@ use Hub\Api\Http\ApiError;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookDelta;
+use Hub\Command\Configuration\Payload\LefuTorreScaleUsers;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\State\DeviceCommandLog;
@@ -124,6 +125,13 @@ final class DeviceConfigurationUpdateService
             // `invalid_config` com a razão e não como 500.
             try {
                 $payload = $this->capabilities->sanitizeInput($protocol, $genericKey, $payload);
+                // Os utilizadores da balança recebem aqui o identificador do hub, uma vez, antes de a
+                // lista ser guardada; os comandos saem da diferença para a lista anterior.
+                if ($protocol === 'lefu-torre' && $genericKey === 'scale_users') {
+                    $payload = LefuTorreScaleUsers::withIds($payload);
+                    $previous = $desiredByKey['scale_users']['items'] ?? [];
+                    $commandContext['previousUsers'] = is_array($previous) ? $previous : [];
+                }
 
                 // Uma capacidade que o hub aplica sozinho não tem comandos: o `stage` marca a alteração sem
                 // operações como `confirmed` e a linha como `acked`.

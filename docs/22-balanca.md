@@ -44,11 +44,13 @@ como nos fluxos de utilizador do `FFF2`.
 | --- | --- | --- |
 | `heart_rate_measurement` | Saúde | Liga e desliga a medição da FC (`06`) |
 | `impedance_measurement` | Saúde | Liga e desliga a impedância (`07`); desligada, a balança só pesa |
-| `select_scale_user` | Saúde, ação | Põe um utilizador já registado em linha; sem isto a FC não é medida |
+| `scale_users` | Saúde | A lista de quem se pesa: `{items: [{id, name, ageYears, sex, heightCm, athlete, weightKg}]}`. O hub dá o `id` a quem não o tem e usa-o como `userID` e `memberID` na balança; o nome é só do hub. Regista os novos e os que mudaram de perfil, e apaga os que saíram |
+| `select_scale_user` | Saúde, ação | `{id}`: põe esse utilizador em linha. A pesagem seguinte sai com o `scaleUserId` dele, e sem isto a FC não é medida |
+| `read_scale_history` | Saúde, ação | `{id}`: lê as pesagens que a balança guardou desse utilizador, em registos de 20 bytes. Saem pelas mesmas capacidades, datadas pela balança |
 | `weight_unit` | Sistema | A unidade do visor (`05`) |
 | `sync_configuration` | Sistema, ação | Relê os três; a leitura sai em `device_config` |
 | `calibrate_clock` | Sistema, ação | Acerta o relógio (`04`); o hub também o faz a cada ligação |
 | `restart_device` | Sistema, ação | Reinicia (`09`) |
 
-A reposição de fábrica (`16 01 00`) nunca entra. Ficam para a fase seguinte o
-registo e a remoção de utilizadores, o histórico por membro e apagar o histórico.
+A reposição de fábrica (`16 01 00`) nunca entra. Fica para depois apagar o
+histórico (`16 01 02`).

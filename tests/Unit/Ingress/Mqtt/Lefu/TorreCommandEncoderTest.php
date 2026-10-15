@@ -41,7 +41,7 @@ final class TorreCommandEncoderTest extends TestCase
     /** O registo do utilizador em linha da sonda: 128 bytes em três pacotes, à espera de cada passo. */
     public function testSelectingTheUserIsChunkedByMtuAndWaitsForEachStep(): void
     {
-        $writes = $this->writes('selectScaleUser', ['userId' => 'havicare-hub-probe', 'memberId' => 'probe-member-1']);
+        $writes = $this->writes('selectScaleUser', ['id' => 'havicare-hub-probe']);
 
         self::assertSame(['char' => 'fff2', 'hex' => '0503068000', 'await' => ['char' => 'fff2', 'prefix' => '050206', 'timeoutMs' => 3000]], $writes[0]);
         self::assertSame('0000' . bin2hex(str_pad('havicare-hub-probe', 59, "\0")), $writes[1]['hex']);
@@ -49,6 +49,36 @@ final class TorreCommandEncoderTest extends TestCase
         self::assertSame(12, strlen((string)hex2bin($writes[3]['hex'])));
         self::assertStringStartsWith('0002', $writes[3]['hex']);
         self::assertSame(['char' => 'fff2', 'hex' => '050107', 'await' => ['char' => 'fff2', 'prefix' => '050207', 'timeoutMs' => 3000]], $writes[4]);
+    }
+
+    /** O registo da captura do Marcus: 60 anos, homem, 169 cm; 135 bytes em três pacotes. */
+    public function testRegisteringAUserSendsTheProfileAfterBothIdentifiers(): void
+    {
+        $writes = $this->writes('registerScaleUser', ['id' => 'u-0a1b2c3d', 'ageYears' => 60, 'sex' => 'male', 'heightCm' => 169, 'athlete' => false, 'weightKg' => 0]);
+
+        self::assertSame(['char' => 'fff2', 'hex' => '0503018700', 'await' => ['char' => 'fff2', 'prefix' => '050201', 'timeoutMs' => 3000]], $writes[0]);
+        $record = implode('', array_map(static fn (array $w): string => substr($w['hex'], 4), array_slice($writes, 1, 3)));
+        self::assertSame(str_repeat(bin2hex(str_pad('u-0a1b2c3d', 64, "\0")), 2) . '3c01a900000000', $record);
+        self::assertSame(['char' => 'fff2', 'hex' => '050102', 'await' => ['char' => 'fff2', 'prefix' => '050202', 'timeoutMs' => 3000]], $writes[4]);
+    }
+
+    public function testDeletingAUserSendsBothIdentifiers(): void
+    {
+        $writes = $this->writes('deleteScaleUser', ['id' => 'u-0a1b2c3d']);
+
+        self::assertSame('0503038000', $writes[0]['hex']);
+        self::assertSame('050203', $writes[0]['await']['prefix']);
+        self::assertSame(['char' => 'fff2', 'hex' => '050104', 'await' => ['char' => 'fff2', 'prefix' => '050204', 'timeoutMs' => 3000]], end($writes));
+    }
+
+    /** Pede, espera pelo envio e confirma-o, como a app do Marcus. */
+    public function testReadingTheHistoryAsksForTheMemberAndConfirmsTheTransfer(): void
+    {
+        $hex = array_column($this->writes('readScaleHistory', ['id' => 'u-0a1b2c3d']), 'hex');
+
+        self::assertSame('0203074000', $hex[0]);
+        self::assertSame('0000' . bin2hex(str_pad('u-0a1b2c3d', 59, "\0")), $hex[1]);
+        self::assertSame(['0001' . str_repeat('00', 5), '020108', '020109', '02020a00'], array_slice($hex, 2));
     }
 
     public function testRestartIsTheOnlyResetOnOffer(): void

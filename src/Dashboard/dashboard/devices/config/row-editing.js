@@ -6,6 +6,7 @@ import {
 } from "./four-p-touch-take-pills.js";
 import { syncAlarmClockCustomVisibility } from "./inputs/capability.js";
 import { createContactRow } from "./inputs/generic.js";
+import { scaleUserRow } from "./inputs/scale.js";
 import { nextUid } from "./inputs/shared.js";
 
 /**
@@ -23,6 +24,7 @@ const REPEAT_ROW_KINDS = {
     call_whitelist: { keepLast: true },
     numbers: { keepLast: true },
     alarm_clock: { keepLast: true },
+    scale_users: { render: () => scaleUserRow() },
     takePillsReminder: {
         render: (index) => takePillsReminderGroup(
             { time: "08:00", enabled: true, frequency: 1, custom: "" },

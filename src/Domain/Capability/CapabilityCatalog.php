@@ -427,6 +427,8 @@ final class CapabilityCatalog
             'impedance_measurement',
             'weight_unit',
             'select_scale_user',
+            'scale_users',
+            'read_scale_history',
             'reset_device' => $key,
             default => null,
         };

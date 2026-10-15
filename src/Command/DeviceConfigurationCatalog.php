@@ -14,6 +14,7 @@ use Hub\Command\Configuration\Definition\ZayataConfigurationDefinitions;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use Hub\Command\Configuration\Payload\FourPTouchPhonebookDelta;
 use Hub\Command\Configuration\Payload\LefuTorrePayloadBuilder;
+use Hub\Command\Configuration\Payload\LefuTorreScaleUsers;
 use Hub\Command\Configuration\Payload\VeepooPayloadBuilder;
 use Hub\Command\Configuration\Payload\VivistarPayloadBuilder;
 use Hub\Command\Configuration\Payload\WonlexPayloadBuilder;
@@ -126,6 +127,14 @@ final class DeviceConfigurationCatalog
         $entry = self::configForProtocol($protocol, $key);
         if ($entry === null) {
             throw new \InvalidArgumentException("Unsupported {$protocol} configuration {$key}");
+        }
+
+        // Os utilizadores da balança são estado desejado: regista-se o que mudou e apaga-se o que saiu.
+        if ($protocol === 'lefu-torre' && $key === 'scale_users') {
+            return LefuTorreScaleUsers::commands(
+                is_array($context['previousUsers'] ?? null) ? $context['previousUsers'] : [],
+                LefuTorreScaleUsers::withIds($payload)['items'],
+            );
         }
 
         // A lista telefónica por índice é o único caso em que os comandos de uma configuração

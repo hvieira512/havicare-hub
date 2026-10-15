@@ -20,10 +20,8 @@ final class LefuTorrePayloadBuilder extends ConfigurationPayloadBuilder
             'heart_rate_measurement', 'impedance_measurement' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? null, 'enabled'),
             ],
-            'select_scale_user' => [
-                'userId' => self::identifier($payload['userId'] ?? null, 'userId'),
-                'memberId' => self::identifier($payload['memberId'] ?? null, 'memberId'),
-            ],
+            'select_scale_user', 'read_scale_history' => ['id' => self::identifier($payload['id'] ?? null, 'id')],
+            'scale_users' => LefuTorreScaleUsers::withIds($payload),
             default => [],
         };
     }
