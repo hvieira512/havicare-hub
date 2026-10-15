@@ -9,6 +9,7 @@ use Hub\Infrastructure\Persistence\Migration\ConfigurationOperationTarget;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\UnconfirmedHeartRateAlarmIsUnlinked;
 use Hub\Infrastructure\Persistence\Migration\UniqueScalesCatalog;
+use Hub\Infrastructure\Persistence\Migration\UniqueScalesImages;
 use Hub\Infrastructure\Persistence\Migration\WhitelistKeyCascadesOnRename;
 use Hub\Infrastructure\Persistence\Migration\WifiSosButtonCatalog;
 use Hub\Infrastructure\Persistence\Migration\WifiSosButtonImage;
@@ -30,6 +31,7 @@ final class DatabaseMigrationPlan
             new WifiSosButtonImage(),
             new UniqueScalesCatalog(),
             new ConfigurationOperationTarget(),
+            new UniqueScalesImages(),
         ];
     }
 

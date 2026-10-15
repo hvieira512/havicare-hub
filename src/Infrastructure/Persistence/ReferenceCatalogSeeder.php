@@ -39,9 +39,9 @@ final class ReferenceCatalogSeeder
         ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', 'eed091a62f83e3ef03c7090ce09ea262.jpg'],
         ['Wonlex', 'MF91', 'MF91', 'bracelet', '4d62bc6aac04e660f06f1de7d0ab6a4f.jpg'],
         ['Zayata', 'M228', 'M228', 'pill_dispenser', '464e9b90a30f30aee389cd9de5926977.jpg'],
-        ['Unique Scales', 'HC-CF632BLE', 'HC-CF632BLE', 'scale', ''],
+        ['Unique Scales', 'HC-CF632BLE', 'HC-CF632BLE', 'scale', '50754bfc972b5d94a5af67695b01fffb.jpg'],
         // Nunca testada: não se sabe se também fala Torre.
-        ['Unique Scales', 'HC-CF621BLE', 'HC-CF621BLE', 'scale', ''],
+        ['Unique Scales', 'HC-CF621BLE', 'HC-CF621BLE', 'scale', '1d024ba99d692a5fefbc8dad0dce563d.jpg'],
         ['Havicare', 'BLE Gateway', 'Gateway BLE', 'gateway', ''],
     ];
 
