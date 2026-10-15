@@ -11,10 +11,11 @@ namespace Hub\Command\Configuration\Payload;
 final class LefuTorreScaleUsers extends ConfigurationPayloadBuilder
 {
     /**
-     * A lista validada, com identificador para quem ainda não o tinha.
+     * A lista validada, com identificador para quem ainda não o tinha, e quem está em linha, que
+     * tem de ser um dos já registados.
      *
      * @param array<string, mixed> $payload
-     * @return array{items: list<array<string, mixed>>}
+     * @return array{items: list<array<string, mixed>>, onlineUserId?: string}
      */
     public static function withIds(array $payload): array
     {
@@ -28,17 +29,26 @@ final class LefuTorreScaleUsers extends ConfigurationPayloadBuilder
             $users[] = self::user(is_array($item) ? $item : [], "items[{$index}]");
         }
 
-        return ['items' => $users];
+        $online = $payload['onlineUserId'] ?? null;
+        if ($online === null || $online === '') {
+            return ['items' => $users];
+        }
+        if (!in_array($online, array_column($users, 'id'), true)) {
+            throw new \InvalidArgumentException('onlineUserId must be a registered user');
+        }
+
+        return ['items' => $users, 'onlineUserId' => $online];
     }
 
     /**
-     * Regista os novos e os que mudaram de perfil e apaga os que saíram, por esta ordem.
+     * Regista os novos e os que mudaram de perfil, apaga os que saíram, e põe em linha quem foi
+     * escolhido, por esta ordem.
      *
      * @param list<array<string, mixed>> $previous
      * @param list<array<string, mixed>> $current
      * @return list<array{command: string, payload: array<string, mixed>}>
      */
-    public static function commands(array $previous, array $current): array
+    public static function commands(array $previous, array $current, string $previousOnline = '', string $currentOnline = ''): array
     {
         $before = [];
         foreach ($previous as $user) {
@@ -61,6 +71,9 @@ final class LefuTorreScaleUsers extends ConfigurationPayloadBuilder
             if (!isset($kept[$id])) {
                 $commands[] = ['command' => 'deleteScaleUser', 'payload' => ['id' => (string)$id]];
             }
+        }
+        if ($currentOnline !== '' && $currentOnline !== $previousOnline) {
+            $commands[] = ['command' => 'selectScaleUser', 'payload' => ['id' => $currentOnline]];
         }
 
         return $commands;

@@ -43,7 +43,7 @@ final class LefuTorreConfigurationDefinitions
                 'scaleUsers',
                 ['items'],
                 // A lista entrega-se em registos e remoções: os dois comandos vêm declarados aqui.
-                ['torre_user_02', 'torre_user_04', 'registerScaleUser', 'deleteScaleUser'],
+                ['torre_user_02', 'torre_user_04', 'torre_user_07', 'registerScaleUser', 'deleteScaleUser', 'selectScaleUser'],
                 'health',
                 30,
                 help: 'Quem se pesa nesta balança. O utilizador em linha fica com a pesagem seguinte, e é o que deixa medir a FC.',

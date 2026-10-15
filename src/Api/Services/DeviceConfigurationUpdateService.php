@@ -131,6 +131,7 @@ final class DeviceConfigurationUpdateService
                     $payload = LefuTorreScaleUsers::withIds($payload);
                     $previous = $desiredByKey['scale_users']['items'] ?? [];
                     $commandContext['previousUsers'] = is_array($previous) ? $previous : [];
+                    $commandContext['previousOnlineUserId'] = (string)($desiredByKey['scale_users']['onlineUserId'] ?? '');
                 }
 
                 // Uma capacidade que o hub aplica sozinho não tem comandos: o `stage` marca a alteração sem

@@ -131,9 +131,13 @@ final class DeviceConfigurationCatalog
 
         // Os utilizadores da balança são estado desejado: regista-se o que mudou e apaga-se o que saiu.
         if ($protocol === 'lefu-torre' && $key === 'scale_users') {
+            $users = LefuTorreScaleUsers::withIds($payload);
+
             return LefuTorreScaleUsers::commands(
                 is_array($context['previousUsers'] ?? null) ? $context['previousUsers'] : [],
-                LefuTorreScaleUsers::withIds($payload)['items'],
+                $users['items'],
+                (string)($context['previousOnlineUserId'] ?? ''),
+                $users['onlineUserId'] ?? '',
             );
         }
 

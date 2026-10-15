@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 import { renderConfigInputs, readConfigPayload } from "../../src/Dashboard/dashboard/devices/config/index.js";
-import { handleScaleUserAction, showOnlineUser } from "../../src/Dashboard/dashboard/devices/config/inputs/scale.js";
+import { handleScaleUserAction } from "../../src/Dashboard/dashboard/devices/config/inputs/scale.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 import { configSection } from "./support/dom.js";
 
@@ -12,7 +12,7 @@ const entry = { input: "scaleUsers", key: "scale_users", fields: ["items"] };
 const hugo = { id: "u-0a1b2c3d", name: "Hugo", ageYears: 23, sex: "male", heightCm: 181, athlete: false, weightKg: 96 };
 const maria = { id: "u-00000002", name: "Maria", ageYears: 61, sex: "female", heightCm: 158, athlete: true, weightKg: 64.5 };
 
-const render = (items) => configSection(renderConfigInputs, entry, { items });
+const render = (items, onlineUserId = undefined) => configSection(renderConfigInputs, entry, onlineUserId ? { items, onlineUserId } : { items });
 const click = (section, action, scope = section) => {
     const button = scope.querySelector(`[data-action="${action}"]`);
     assert.ok(button, `sem botão ${action}`);
@@ -50,15 +50,15 @@ test("o estado de cada pessoa sai da operação que lhe diz respeito", () => {
     assert.match(card(section, "Maria").textContent, /memória cheia/);
 });
 
-test("quem a balança aceitou em linha por último fica destacado", () => {
-    state.selectedDetail = { device: { imei: "cfe908067329" }, recent: { commands: [
-        { nativeType: "selectScaleUser", status: "acked", bytes: `selectScaleUser:${maria.id}`, requestedAt: "2026-10-15T10:00:00Z" },
-        { nativeType: "selectScaleUser", status: "acked", bytes: `selectScaleUser:${hugo.id}`, requestedAt: "2026-10-15T11:00:00Z" },
-    ] } };
-    const section = render([hugo, maria]);
+test("quem está em linha na lista fica destacado quando a balança o aceitou", () => {
+    state.deviceModal.configurationSync = { entries: { health: { scale_users: { operations: [
+        { command: "selectScaleUser", target: hugo.id, deliveryStatus: "acked", error: "" },
+    ] } } } };
+    const section = render([hugo, maria], hugo.id);
 
     assert.match(card(section, "Hugo").textContent, /Em linha/);
     assert.doesNotMatch(card(section, "Maria").textContent, /Em linha/);
+    assert.equal(card(section, "Hugo").querySelector("input[type=\"radio\"]").checked, true);
 });
 
 test("acrescentar abre o formulário, e guardar junta um cartão por enviar e sem identificador", () => {
@@ -105,22 +105,28 @@ test("sem nome não se guarda", () => {
     assert.deepEqual(readConfigPayload(section), { items: [] });
 });
 
-test("o círculo de cada pessoa é o que a põe em linha, e não há botão à parte", () => {
-    const section = render([hugo, maria]);
+test("o círculo é um rádio da lista: marcar não envia, e a escolha vai com a lista", () => {
+    const section = render([hugo, maria], hugo.id);
+    const radios = [...section.querySelectorAll("input[type=\"radio\"]")];
 
-    assert.equal(section.querySelectorAll("[data-action=\"scaleUserSelect\"][role=\"radio\"]").length, 2);
+    assert.equal(radios.length, 2);
+    assert.equal(new Set(radios.map((radio) => radio.name)).size, 1);
     assert.doesNotMatch(section.textContent, /Pôr em linha/);
+    assert.equal(readConfigPayload(section).onlineUserId, hugo.id);
+
+    card(section, "Maria").querySelector("input[type=\"radio\"]").checked = true;
+    assert.equal(readConfigPayload(section).onlineUserId, maria.id);
 });
 
-test("quando a balança aceita, a pessoa passa a estar em linha e a anterior deixa de estar", () => {
-    state.selectedDetail = { device: { imei: "cfe908067329" }, recent: { commands: [
-        { nativeType: "selectScaleUser", status: "acked", bytes: `selectScaleUser:${hugo.id}`, requestedAt: "2026-10-15T11:00:00Z" },
-    ] } };
-    const section = render([hugo, maria]);
+test("uma pessoa por enviar ainda não pode ficar em linha", () => {
+    const section = render([hugo]);
 
-    showOnlineUser(section, maria.id);
+    click(section, "scaleUserAdd");
+    section.querySelector("[data-scale-field=\"name\"]").value = "Ana";
+    section.querySelector("[data-scale-field=\"ageYears\"]").value = "45";
+    section.querySelector("[data-scale-field=\"heightCm\"]").value = "165";
+    section.querySelector("[data-scale-field=\"weightKg\"]").value = "70";
+    click(section, "scaleUserSave");
 
-    assert.match(card(section, "Maria").textContent, /Em linha/);
-    assert.doesNotMatch(card(section, "Hugo").textContent, /Em linha/);
-    assert.equal(card(section, "Maria").querySelector("[role=\"radio\"]").getAttribute("aria-checked"), "true");
+    assert.equal(card(section, "Ana").querySelector("input[type=\"radio\"]").disabled, true);
 });

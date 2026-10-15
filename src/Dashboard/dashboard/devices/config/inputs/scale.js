@@ -1,7 +1,8 @@
-import { getCommand, requestCapability } from "../../../api/index.js";
+import { requestCapability } from "../../../api/index.js";
 import { stateBadge } from "../../../components/state-badge.js";
 import { html, raw } from "../../../html.js";
 import { state } from "../../../state.js";
+import { nextUid } from "./shared.js";
 
 /**
  * Os utilizadores da balança: um cartão por pessoa, com o estado dela e as ações do dia, e um
@@ -32,7 +33,8 @@ function meta(user) {
 /** A última operação de cada pessoa diz se ela já está na balança. */
 function deliveryOf(user) {
     const operations = state.deviceModal?.configurationSync?.entries?.health?.scale_users?.operations ?? [];
-    const own = operations.filter((operation) => operation?.target === user.id && operation.deliveryStatus !== "superseded");
+    const own = operations.filter((operation) => operation?.target === user.id &&
+        operation.command !== "selectScaleUser" && operation.deliveryStatus !== "superseded");
     const last = own[own.length - 1];
     if (!last || last.deliveryStatus === "acked") return { label: "Na balança", tone: "success" };
     if (FAILED.includes(last.deliveryStatus)) {
@@ -42,18 +44,17 @@ function deliveryOf(user) {
     return { label: "A enviar", tone: "warning" };
 }
 
-/** Quem a balança aceitou em linha por último: o pedido traz o identificador nos bytes. */
-function onlineUserId() {
-    const detail = state.selectedDetail;
-    if (String(detail?.device?.imei ?? "") !== String(state.deviceModal?.imei ?? "")) return "";
-    const accepted = (detail?.recent?.commands ?? [])
-        .filter((command) => command?.nativeType === "selectScaleUser" && command.status === "acked")
-        .sort((a, b) => String(b.requestedAt ?? "").localeCompare(String(a.requestedAt ?? "")));
+/** Em que pé está pôr em linha quem a lista diz que está, pela operação que o fez. */
+function onlineBadge(id) {
+    const operations = state.deviceModal?.configurationSync?.entries?.health?.scale_users?.operations ?? [];
+    const last = operations.filter((operation) => operation?.command === "selectScaleUser" && operation.target === id).pop();
+    if (!last || last.deliveryStatus === "acked") return stateBadge("Em linha", "success");
+    if (FAILED.includes(last.deliveryStatus)) return stateBadge("Não ficou em linha", "danger");
 
-    return String(accepted[0]?.bytes ?? "").split(":")[1] ?? "";
+    return stateBadge("A pôr em linha", "warning");
 }
 
-function userCard(user, { dirty = false, online = "" } = {}) {
+function userCard(user, { dirty = false, online = "", group = "" } = {}) {
     const saved = Boolean(user.id) && !dirty;
     const delivery = dirty || !user.id ? { label: "Por enviar", tone: "warning" } : deliveryOf(user);
     const isOnline = saved && user.id === online;
@@ -61,10 +62,10 @@ function userCard(user, { dirty = false, online = "" } = {}) {
     return html`
         <div class="scale-user d-flex align-items-center gap-3 border rounded px-3 py-2${raw(isOnline ? " scale-user-online" : "")}"
              data-scale-user="${JSON.stringify(user)}"${raw(dirty ? " data-scale-user-dirty" : "")}>
-            <button type="button" class="scale-user-radio flex-shrink-0" role="radio" data-action="scaleUserSelect"
-                    aria-checked="${isOnline ? "true" : "false"}" aria-label="Pôr ${user.name} em linha"${raw(saved ? "" : " disabled")}></button>
+            <input class="form-check-input scale-user-radio flex-shrink-0 m-0" type="radio" name="${group}" value="${user.id || ""}"
+                   aria-label="${user.name} em linha"${raw(isOnline ? " checked" : "")}${raw(saved ? "" : " disabled")}>
             <div class="flex-grow-1 min-w-0">
-                <div class="fw-semibold d-flex flex-wrap align-items-center gap-2">${user.name}<span data-scale-online>${isOnline ? stateBadge("Em linha", "success") : ""}</span></div>
+                <div class="fw-semibold d-flex flex-wrap align-items-center gap-2">${user.name}${isOnline ? onlineBadge(user.id) : ""}</div>
                 <div class="small text-secondary">${meta(user)}</div>
                 ${delivery.error ? html`<div class="small text-danger">${delivery.error}</div>` : ""}
             </div>
@@ -120,12 +121,13 @@ function awakeStrip() {
 
 function scaleUsersInput(_entry, desired) {
     const users = Array.isArray(desired?.items) ? desired.items : [];
-    const online = onlineUserId();
+    const online = String(desired?.onlineUserId ?? "");
+    const group = nextUid("scale-online");
     return html`
         <div class="vstack gap-2" data-scale-users>
             <div class="d-flex justify-content-end"><button type="button" class="btn btn-outline-secondary btn-sm" data-action="scaleUserAdd">Adicionar</button></div>
             ${awakeStrip()}
-            <div class="vstack gap-2" data-scale-user-list>${users.map((user) => userCard(user, { online }))}</div>
+            <div class="vstack gap-2" data-scale-user-list data-scale-group="${group}">${users.map((user) => userCard(user, { online, group }))}</div>
             ${form()}
         </div>`;
 }
@@ -191,54 +193,11 @@ function closeForm(section) {
     section.querySelector("[data-scale-user-editing]")?.removeAttribute("data-scale-user-editing");
 }
 
-function replaceCard(element, user) {
+function cardElement(section, user) {
+    const group = section.querySelector("[data-scale-user-list]").dataset.scaleGroup || "";
     const holder = document.createElement("template");
-    holder.innerHTML = String(userCard(user, { dirty: true }));
-    element.replaceWith(holder.content.firstElementChild);
-}
-
-/** Quem a balança aceitou em linha: só um cartão de cada vez. */
-export function showOnlineUser(section, id) {
-    for (const element of section.querySelectorAll("[data-scale-user]")) {
-        const online = userOf(element).id === id;
-        element.classList.toggle("scale-user-online", online);
-        element.querySelector("[role=\"radio\"]")?.setAttribute("aria-checked", online ? "true" : "false");
-        element.querySelector("[data-scale-online]").innerHTML = online ? String(stateBadge("Em linha", "success")) : "";
-    }
-}
-
-/** A balança tem de aceitar: o círculo marca logo, e o «Em linha» só quando ela responde. */
-async function select(section, radio) {
-    const element = radio.closest("[data-scale-user]");
-    const user = userOf(element);
-    const previous = section.querySelector("[data-scale-user].scale-user-online");
-    const previousId = previous ? userOf(previous).id : "";
-    for (const other of section.querySelectorAll("[role=\"radio\"]")) {
-        other.setAttribute("aria-checked", other === radio ? "true" : "false");
-    }
-    const slot = element.querySelector("[data-scale-online]");
-    slot.innerHTML = String(stateBadge(state.deviceModal?.online ? "A pôr em linha" : "Em fila", "warning"));
-
-    const result = await requestCapability(state.deviceModal.imei, "select_scale_user", { id: user.id });
-    const commandId = result?.commands?.[0]?.id;
-    const status = commandId ? await settled(commandId) : "failed";
-    if (status === "acked") {
-        showOnlineUser(section, user.id);
-        return;
-    }
-    showOnlineUser(section, previousId);
-    slot.innerHTML = String(stateBadge(status === "queued" ? "Em fila" : "Não ficou em linha", status === "queued" ? "warning" : "danger"));
-}
-
-/** Espera pela resposta da balança, um minuto no máximo. */
-async function settled(commandId) {
-    for (let attempt = 0; attempt < 30; attempt += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        const status = (await getCommand(commandId))?.command?.status;
-        if (["acked", "failed", "dropped", "superseded"].includes(status)) return status;
-    }
-
-    return "queued";
+    holder.innerHTML = String(userCard(user, { dirty: true, group }));
+    return holder.content.firstElementChild;
 }
 
 async function request(button, capability) {
@@ -261,7 +220,6 @@ export function handleScaleUserAction(section, button) {
     if (action === "scaleUserCancel") closeForm(section);
     if (action === "scaleUserSex") pick(formElement, "sex", button.dataset.value);
     if (action === "scaleUserAthlete") pick(formElement, "athlete", button.dataset.value);
-    if (action === "scaleUserSelect") void select(section, button);
     if (action === "scaleUserHistory") void request(button, "read_scale_history");
 
     if (action === "scaleUserDelete") {
@@ -281,11 +239,9 @@ export function handleScaleUserAction(section, button) {
         const editing = section.querySelector("[data-scale-user-editing]");
         if (editing) {
             const id = userOf(editing).id;
-            replaceCard(editing, id ? { id, ...user } : user);
+            editing.replaceWith(cardElement(section, id ? { id, ...user } : user));
         } else {
-            const holder = document.createElement("template");
-            holder.innerHTML = String(userCard(user, { dirty: true }));
-            section.querySelector("[data-scale-user-list]").appendChild(holder.content.firstElementChild);
+            section.querySelector("[data-scale-user-list]").appendChild(cardElement(section, user));
         }
         closeForm(section);
         return true;
@@ -302,9 +258,12 @@ function registeredUsers() {
 export const INPUTS = {
     scaleUsers: {
         render: scaleUsersInput,
-        read: (section) => ({
-            items: [...section.querySelectorAll("[data-scale-user]")].map(userOf),
-        }),
+        // Quem está em linha vai com a lista: marcar o círculo não envia nada sozinho.
+        read: (section) => {
+            const online = section.querySelector("[data-scale-user] input[type=\"radio\"]:checked:not(:disabled)")?.value || "";
+            const items = [...section.querySelectorAll("[data-scale-user]")].map(userOf);
+            return online ? { items, onlineUserId: online } : { items };
+        },
         defaults: () => ({ items: [] }),
     },
     // «Pôr em linha» e «Pedir histórico» vivem em cada cartão da lista: não têm secção própria.

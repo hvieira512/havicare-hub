@@ -72,4 +72,33 @@ final class LefuTorreScaleUsersTest extends TestCase
             ['previousUsers' => [$user]],
         ));
     }
+
+    /** A pessoa em linha é parte da lista: muda-se como o resto, e sai depois dos registos. */
+    public function testChoosingWhoIsOnlineIsSentWithTheList(): void
+    {
+        $hugo = ['id' => 'u-00000001', 'athlete' => false] + self::HUGO;
+
+        self::assertSame(
+            [['command' => 'selectScaleUser', 'payload' => ['id' => 'u-00000001']]],
+            DeviceConfigurationCatalog::commandPayloads(
+                'lefu-torre',
+                'scale_users',
+                ['items' => [$hugo], 'onlineUserId' => 'u-00000001'],
+                ['previousUsers' => [$hugo], 'previousOnlineUserId' => ''],
+            ),
+        );
+        self::assertSame([], DeviceConfigurationCatalog::commandPayloads(
+            'lefu-torre',
+            'scale_users',
+            ['items' => [$hugo], 'onlineUserId' => 'u-00000001'],
+            ['previousUsers' => [$hugo], 'previousOnlineUserId' => 'u-00000001'],
+        ));
+    }
+
+    public function testOnlyARegisteredUserCanBeOnline(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        LefuTorreScaleUsers::withIds(['items' => [self::HUGO], 'onlineUserId' => 'u-99999999']);
+    }
 }
