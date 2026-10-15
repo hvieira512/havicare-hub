@@ -51,7 +51,8 @@ final class BodyComposition
         $lean = $w - $fatKg;
         $muscleKg = $lean - $bone;
         $bmi = max(10, floor($w / ($metres * $metres) * 10) / 10);
-        $ideal = 22 * $metres * $metres;
+        // A app trunca o peso ideal a uma casa, e os controlos partem do valor truncado.
+        $ideal = floor(22 * $metres * $metres * 10) / 10;
 
         return array_map(static fn (float $value): float => round($value, 2), [
             'bmi' => $bmi,
