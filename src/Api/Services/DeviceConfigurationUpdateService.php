@@ -321,6 +321,8 @@ final class DeviceConfigurationUpdateService
                 'operationId' => $id,
                 'nativeKey' => $nativeKey,
                 'nativeType' => $command,
+                // A quem a operação se refere, quando a configuração se entrega por pessoa.
+                'target' => (string)($commandPayload['payload']['id'] ?? ''),
                 'protocol' => $protocol,
                 'bytes' => $bytes,
                 // O valor desejado segue com a operação: os protocolos que entregam a um gateway mandam só o

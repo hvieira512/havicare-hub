@@ -157,6 +157,8 @@ CREATE TABLE IF NOT EXISTS device_configuration_operations (
     -- Sem `imei` nem `config_key`: são da alteração, e a chave estrangeira dá o caminho.
     native_key VARCHAR(64) NOT NULL,
     native_type VARCHAR(64) NOT NULL,
+    -- A quem a operação se refere, quando a configuração se entrega por pessoa.
+    target VARCHAR(64) NOT NULL DEFAULT '',
     protocol VARCHAR(64) NOT NULL,
     confirmation_mode VARCHAR(32) NOT NULL DEFAULT 'execution_ack',
     delivery_status VARCHAR(32) NOT NULL DEFAULT 'created',

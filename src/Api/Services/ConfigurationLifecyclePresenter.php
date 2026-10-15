@@ -46,6 +46,7 @@ final class ConfigurationLifecyclePresenter
                 'operationId' => (string)$operation['operation_id'],
                 'nativeKey' => (string)$operation['native_key'],
                 'command' => (string)$operation['native_type'],
+                'target' => (string)($operation['target'] ?? ''),
                 'confirmationMode' => (string)$operation['confirmation_mode'],
                 'deliveryStatus' => (string)$operation['delivery_status'],
                 'error' => (string)$operation['error_code'],

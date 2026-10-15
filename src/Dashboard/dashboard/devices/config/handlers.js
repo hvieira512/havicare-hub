@@ -17,6 +17,7 @@ import {
     updateConfigChoice,
 } from "./inputs/shared.js";
 import { syncWorkingModeExtra } from "./inputs/vivistar.js";
+import { handleScaleUserAction } from "./inputs/scale.js";
 import {
     clearTakePillsRecording,
     loadTakePillsAudio,
@@ -77,6 +78,12 @@ function dispatchConfigClick(event) {
         // Os verbos de uma acção trazem o valor no próprio botão; o «Enviar» normal não traz
         // nenhum e o cartão continua a ler os seus campos.
         void saveDeviceConfiguration(section, button.dataset.actionValue || "");
+        return;
+    }
+
+    // A lista de utilizadores da balança tem os seus próprios cartões e formulário.
+    if (String(button.dataset.action || "").startsWith("scaleUser")) {
+        if (handleScaleUserAction(section, button)) syncConfigSectionDirty(section);
         return;
     }
 

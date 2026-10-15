@@ -42,6 +42,11 @@ final class ScaleUsersApiTest extends DashboardHttpTestCase
         self::assertCount(2, $users, json_encode($first));
         self::assertMatchesRegularExpression('/^registerScaleUser:u-[0-9a-f]{8}$/', $sent[0]);
         self::assertSame(['registerScaleUser:' . $users[0]['id'], 'registerScaleUser:' . $users[1]['id']], $sent);
+        // Cada operação diz de quem é: é o que dá o estado de cada pessoa na lista.
+        self::assertSame(
+            [$users[0]['id'], $users[1]['id']],
+            array_column($first['configurationSync']['entries']['health']['scale_users']['operations'], 'target'),
+        );
 
         $sent = [];
         $patch([$users[0]]);

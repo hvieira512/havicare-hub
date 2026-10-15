@@ -14,6 +14,7 @@ import { emptyPanel } from "../../components/empty-panel.js";
 import { confirmDestructive, toast } from "../../dialogs.js";
 import { resetPhoneControls } from "../../phone.js";
 import { state } from "../../state.js";
+import { CONFIG_INPUTS } from "./inputs/index.js";
 
 /** O painel de configuração do modal: gravar e a fase da interface de cada secção. */
 
@@ -475,13 +476,13 @@ export function renderDeviceConfigurationModal() {
     }
 
     const enabledCapKeys = state.deviceModal.enabledCapabilityKeys;
-    const filteredCatalog = enabledCapKeys.length
-        ? state.deviceModal.catalog.filter(
-                (entry) =>
-                    entry.capabilityKey &&
-                    enabledCapKeys.includes(entry.capabilityKey),
-            )
-        : state.deviceModal.catalog.filter((entry) => entry.capabilityKey);
+    // As que vivem dentro de outra, como o «Pôr em linha» nos cartões da balança, não têm secção.
+    const filteredCatalog = state.deviceModal.catalog.filter(
+        (entry) =>
+            entry.capabilityKey &&
+            (!enabledCapKeys.length || enabledCapKeys.includes(entry.capabilityKey)) &&
+            !CONFIG_INPUTS[entry.input]?.embedded,
+    );
 
     els.deviceConfigRoot.innerHTML = renderDeviceConfigurationRoot({
         protocol: state.deviceModal.protocol,

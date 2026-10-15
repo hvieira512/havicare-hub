@@ -109,10 +109,10 @@ final class DeviceConfigurationLifecycleRepository
             // que são da alteração e a chave estrangeira alcança.
             $insertOperation = $this->pdo->prepare('
                 INSERT INTO device_configuration_operations (
-                    operation_id, change_id, native_key, native_type,
+                    operation_id, change_id, native_key, native_type, target,
                     protocol, confirmation_mode,
                     delivery_status, created_at, updated_at, sequence_number
-                ) VALUES (?, ?, ?, ?, ?, ?, \'created\', ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, \'created\', ?, ?, ?)
             ');
             foreach ($operations as $index => &$operation) {
                 $operation['changeId'] = $changeId;
@@ -120,7 +120,7 @@ final class DeviceConfigurationLifecycleRepository
                 $operation['configKey'] = $genericKey;
                 $insertOperation->execute([
                     $operation['operationId'], $changeId,
-                    $operation['nativeKey'], $operation['nativeType'], $operation['protocol'],
+                    $operation['nativeKey'], $operation['nativeType'], (string)($operation['target'] ?? ''), $operation['protocol'],
                     $operation['confirmationMode'], $now, $now, $index,
                 ]);
             }
@@ -275,7 +275,7 @@ final class DeviceConfigurationLifecycleRepository
     private function operations(string $changeId): array
     {
         $stmt = $this->pdo->prepare('
-            SELECT operation_id, native_key, native_type, confirmation_mode, delivery_status,
+            SELECT operation_id, native_key, native_type, target, confirmation_mode, delivery_status,
                    error_code, attempts, max_attempts, created_at, updated_at, sent_at, acknowledged_at
             FROM device_configuration_operations
             WHERE change_id = ? ORDER BY sequence_number

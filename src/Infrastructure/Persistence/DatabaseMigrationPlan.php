@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\CapabilitySectionsIncludeReminders;
+use Hub\Infrastructure\Persistence\Migration\ConfigurationOperationTarget;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\UnconfirmedHeartRateAlarmIsUnlinked;
 use Hub\Infrastructure\Persistence\Migration\UniqueScalesCatalog;
@@ -28,6 +29,7 @@ final class DatabaseMigrationPlan
             new WifiSosButtonCatalog(),
             new WifiSosButtonImage(),
             new UniqueScalesCatalog(),
+            new ConfigurationOperationTarget(),
         ];
     }
 
