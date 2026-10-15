@@ -1,4 +1,4 @@
-import { requestCapability } from "../../../api/index.js";
+import { getCommand, requestCapability } from "../../../api/index.js";
 import { stateBadge } from "../../../components/state-badge.js";
 import { html, raw } from "../../../html.js";
 import { state } from "../../../state.js";
@@ -61,15 +61,15 @@ function userCard(user, { dirty = false, online = "" } = {}) {
     return html`
         <div class="scale-user d-flex align-items-center gap-3 border rounded px-3 py-2${raw(isOnline ? " scale-user-online" : "")}"
              data-scale-user="${JSON.stringify(user)}"${raw(dirty ? " data-scale-user-dirty" : "")}>
-            <span class="scale-user-radio flex-shrink-0" aria-hidden="true"></span>
+            <button type="button" class="scale-user-radio flex-shrink-0" role="radio" data-action="scaleUserSelect"
+                    aria-checked="${isOnline ? "true" : "false"}" aria-label="Pôr ${user.name} em linha"${raw(saved ? "" : " disabled")}></button>
             <div class="flex-grow-1 min-w-0">
-                <div class="fw-semibold d-flex flex-wrap align-items-center gap-2">${user.name}${isOnline ? stateBadge("Em linha", "success") : ""}</div>
+                <div class="fw-semibold d-flex flex-wrap align-items-center gap-2">${user.name}<span data-scale-online>${isOnline ? stateBadge("Em linha", "success") : ""}</span></div>
                 <div class="small text-secondary">${meta(user)}</div>
                 ${delivery.error ? html`<div class="small text-danger">${delivery.error}</div>` : ""}
             </div>
             <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
                 ${stateBadge(delivery.label, delivery.tone)}
-                ${saved && !isOnline ? html`<button type="button" class="btn btn-outline-secondary btn-sm" data-action="scaleUserSelect">Pôr em linha</button>` : ""}
                 ${saved ? html`<button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none" data-action="scaleUserHistory">Pedir histórico</button>` : ""}
                 <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none" data-action="scaleUserEdit">Editar</button>
             </div>
@@ -197,6 +197,50 @@ function replaceCard(element, user) {
     element.replaceWith(holder.content.firstElementChild);
 }
 
+/** Quem a balança aceitou em linha: só um cartão de cada vez. */
+export function showOnlineUser(section, id) {
+    for (const element of section.querySelectorAll("[data-scale-user]")) {
+        const online = userOf(element).id === id;
+        element.classList.toggle("scale-user-online", online);
+        element.querySelector("[role=\"radio\"]")?.setAttribute("aria-checked", online ? "true" : "false");
+        element.querySelector("[data-scale-online]").innerHTML = online ? String(stateBadge("Em linha", "success")) : "";
+    }
+}
+
+/** A balança tem de aceitar: o círculo marca logo, e o «Em linha» só quando ela responde. */
+async function select(section, radio) {
+    const element = radio.closest("[data-scale-user]");
+    const user = userOf(element);
+    const previous = section.querySelector("[data-scale-user].scale-user-online");
+    const previousId = previous ? userOf(previous).id : "";
+    for (const other of section.querySelectorAll("[role=\"radio\"]")) {
+        other.setAttribute("aria-checked", other === radio ? "true" : "false");
+    }
+    const slot = element.querySelector("[data-scale-online]");
+    slot.innerHTML = String(stateBadge(state.deviceModal?.online ? "A pôr em linha" : "Em fila", "warning"));
+
+    const result = await requestCapability(state.deviceModal.imei, "select_scale_user", { id: user.id });
+    const commandId = result?.commands?.[0]?.id;
+    const status = commandId ? await settled(commandId) : "failed";
+    if (status === "acked") {
+        showOnlineUser(section, user.id);
+        return;
+    }
+    showOnlineUser(section, previousId);
+    slot.innerHTML = String(stateBadge(status === "queued" ? "Em fila" : "Não ficou em linha", status === "queued" ? "warning" : "danger"));
+}
+
+/** Espera pela resposta da balança, um minuto no máximo. */
+async function settled(commandId) {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const status = (await getCommand(commandId))?.command?.status;
+        if (["acked", "failed", "dropped", "superseded"].includes(status)) return status;
+    }
+
+    return "queued";
+}
+
 async function request(button, capability) {
     const user = userOf(button.closest("[data-scale-user]"));
     button.disabled = true;
@@ -217,7 +261,7 @@ export function handleScaleUserAction(section, button) {
     if (action === "scaleUserCancel") closeForm(section);
     if (action === "scaleUserSex") pick(formElement, "sex", button.dataset.value);
     if (action === "scaleUserAthlete") pick(formElement, "athlete", button.dataset.value);
-    if (action === "scaleUserSelect") void request(button, "select_scale_user");
+    if (action === "scaleUserSelect") void select(section, button);
     if (action === "scaleUserHistory") void request(button, "read_scale_history");
 
     if (action === "scaleUserDelete") {

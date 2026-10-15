@@ -32,6 +32,7 @@ export const requestFeature = (imei, feature) =>
         method: "POST",
         body: JSON.stringify({ feature }),
     });
+export const getCommand = (commandId) => requestJson(`/api/commands/${id(commandId)}`);
 export const requestCapability = (imei, capability, value) =>
     requestJson(`/api/devices/${id(imei)}/requests`, {
         method: "POST",

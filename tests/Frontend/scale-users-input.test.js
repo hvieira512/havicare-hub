@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 import { renderConfigInputs, readConfigPayload } from "../../src/Dashboard/dashboard/devices/config/index.js";
-import { handleScaleUserAction } from "../../src/Dashboard/dashboard/devices/config/inputs/scale.js";
+import { handleScaleUserAction, showOnlineUser } from "../../src/Dashboard/dashboard/devices/config/inputs/scale.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 import { configSection } from "./support/dom.js";
 
@@ -103,4 +103,24 @@ test("sem nome não se guarda", () => {
 
     assert.equal(section.querySelector("[data-scale-user-form]").hidden, false);
     assert.deepEqual(readConfigPayload(section), { items: [] });
+});
+
+test("o círculo de cada pessoa é o que a põe em linha, e não há botão à parte", () => {
+    const section = render([hugo, maria]);
+
+    assert.equal(section.querySelectorAll("[data-action=\"scaleUserSelect\"][role=\"radio\"]").length, 2);
+    assert.doesNotMatch(section.textContent, /Pôr em linha/);
+});
+
+test("quando a balança aceita, a pessoa passa a estar em linha e a anterior deixa de estar", () => {
+    state.selectedDetail = { device: { imei: "cfe908067329" }, recent: { commands: [
+        { nativeType: "selectScaleUser", status: "acked", bytes: `selectScaleUser:${hugo.id}`, requestedAt: "2026-10-15T11:00:00Z" },
+    ] } };
+    const section = render([hugo, maria]);
+
+    showOnlineUser(section, maria.id);
+
+    assert.match(card(section, "Maria").textContent, /Em linha/);
+    assert.doesNotMatch(card(section, "Hugo").textContent, /Em linha/);
+    assert.equal(card(section, "Maria").querySelector("[role=\"radio\"]").getAttribute("aria-checked"), "true");
 });
