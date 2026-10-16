@@ -7,8 +7,9 @@ namespace Hub\Domain;
 final class DeviceProtocol
 {
     /**
-     * Os fornecedores cujos modelos não partilham um protocolo, como a MOKO (gateways e pulseiras)
-     * e a Wonlex (relógios TCP e a MF91 BLE). Chaves em minúsculas.
+     * Os fornecedores cujos modelos não partilham um protocolo, como a MOKO (gateways e pulseiras),
+     * a Wonlex (relógios TCP e a MF91 BLE) e a JoyTech (tensiómetro e termómetro). Chaves em
+     * minúsculas.
      *
      * @var array<string, array<string, string>>
      */
@@ -21,6 +22,9 @@ final class DeviceProtocol
         ],
         'wonlex' => [
             'mf91' => 'veepoo-ble',
+        ],
+        'joytech' => [
+            'hc-3018b' => 'joytech-et',
         ],
     ];
 

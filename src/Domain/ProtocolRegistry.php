@@ -105,6 +105,12 @@ final class ProtocolRegistry
                 'deviceType' => 'blood_pressure_monitor',
                 'supportsConfigCatalog' => true,
             ],
+            // Do mesmo fornecedor: o modelo escolhe-o no DeviceProtocol.
+            'joytech-et' => [
+                'label' => 'JoyTech',
+                'deviceType' => 'thermometer',
+                'supportsConfigCatalog' => false,
+            ],
             'zayata-m228' => [
                 'label' => 'Zayata',
                 'deviceType' => 'pill_dispenser',

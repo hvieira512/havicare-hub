@@ -6,7 +6,7 @@ namespace Hub\Ingress\Mqtt\JoyTech;
 
 use DateTimeImmutable;
 
-/** As escritas no `FFF2` de cada operação, que o gateway faz pela ordem. */
+/** As escritas no `FFF2` de cada operação dos aparelhos JoyTech, que o gateway faz pela ordem. */
 final class JoyTechCommandEncoder
 {
     /** A sonda leu 175 registos em 15 s. */
@@ -19,13 +19,16 @@ final class JoyTechCommandEncoder
     public function writes(string $operation, array $payload, int $mtu, DateTimeImmutable $now, int $offsetMinutes): array
     {
         return match ($operation) {
-            'calibrateClock' => [['char' => 'fff2', 'hex' => BpFrame::encode(0x04, self::localTime($now, $offsetMinutes))]],
+            'calibrateClock' => [['char' => 'fff2', 'hex' => JoyTechFrame::encode(0x04, self::localTime($now, $offsetMinutes))]],
             'readBloodPressureHistory' => [[
                 'char' => 'fff2',
-                'hex' => BpFrame::encode(0x0a),
-                'await' => ['char' => 'fff1', 'prefix' => substr(BpFrame::encode(0x8b), 0, 14), 'timeoutMs' => self::MEMORY_TRANSFER_MS],
+                'hex' => JoyTechFrame::encode(0x0a),
+                'await' => ['char' => 'fff1', 'prefix' => substr(JoyTechFrame::encode(0x8b), 0, 14), 'timeoutMs' => self::MEMORY_TRANSFER_MS],
             ]],
-            default => throw new \InvalidArgumentException("Unsupported joytech-bp operation {$operation}"),
+            // O termómetro: a hora pedida por ele, e a confirmação da memória, que não a apaga.
+            'answerClock' => [['char' => 'fff2', 'hex' => JoyTechFrame::encode(0x86, self::localTime($now, $offsetMinutes))]],
+            'acknowledgeMeasurements' => [['char' => 'fff2', 'hex' => JoyTechFrame::encode(0x83)]],
+            default => throw new \InvalidArgumentException("Unsupported JoyTech operation {$operation}"),
         };
     }
 

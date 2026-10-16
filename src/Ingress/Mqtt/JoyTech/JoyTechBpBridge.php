@@ -12,7 +12,6 @@ use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\DispatchesQueued;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
-use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
 use Hub\Registry\Whitelist;
@@ -122,42 +121,19 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
     protected function handleMessage(string $topic, string $payload): void
     {
         $message = json_decode($payload, true);
-        // O mesmo tópico serve gateways de outras marcas; só reclamamos o que é nosso.
-        if (!is_array($message) || ($message['source'] ?? null) !== 'joytech-node') {
-            return;
-        }
-
-        $parsed = GatewayTopic::parse($topic);
-        $gateway = $parsed === null ? null : $this->whitelist->resolve($parsed->gatewayMac);
-        if ($gateway === null || ($gateway['deviceType'] ?? '') !== 'gateway') {
-            return;
-        }
-
-        $mac = GatewayTopic::normalizeMac((string)($message['device']['mac'] ?? ''));
-        $device = $mac === null ? null : $this->whitelist->resolve($mac);
-        if ($device === null || ($device['deviceType'] ?? '') !== self::DEVICE_TYPE) {
-            $this->recordUnauthorizedDevice((string)$mac, self::PROTOCOL, (string)($message['device']['model'] ?? ''), ident: (string)$mac);
-            return;
-        }
+        // O mesmo tópico serve outras marcas, e a mesma fonte os termómetros: o nome distingue-os.
         if (
-            !$this->links->isEnabled((string)$gateway['imei'], (string)$device['imei'])
-            || !$this->sameTenant($gateway, $device)
+            !is_array($message)
+            || ($message['source'] ?? null) !== 'joytech-node'
+            || !str_starts_with(trim((string)($message['device']['model'] ?? '')), 'DBP')
         ) {
-            $this->warnRepeatedly(
-                "unlinked:{$mac}:{$gateway['imei']}",
-                "Ignoring unlinked joytech device={$mac} gateway={$gateway['imei']}"
-            );
             return;
         }
 
-        $device = $this->enrichWithCommercialName($device);
-        $context = new GattDeviceContext(
-            (string)$device['imei'],
-            (string)$gateway['imei'],
-            $device,
-            (int)($device['licenseId'] ?? 0),
-            (string)($device['company'] ?? 'null'),
-        );
+        $context = $this->resolveGattDevice($topic, $message, $this->links, self::PROTOCOL, self::DEVICE_TYPE);
+        if ($context === null) {
+            return;
+        }
 
         $this->mqttBridge->publishRaw($context->deviceKey, $message, self::DEVICE_TYPE, $context->licenseId, $context->company);
 
@@ -234,7 +210,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
     private function frame(GattDeviceContext $context, string $hex, int $offsetMinutes): void
     {
-        $frame = BpFrame::decode($hex);
+        $frame = JoyTechFrame::decode($hex);
         if ($frame === null) {
             return;
         }
@@ -266,7 +242,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
         $group = (int)$fields['group'];
-        $at = self::deviceTime($fields, $offsetMinutes);
+        $at = JoyTechFrame::unixTime((int)$fields['year'], (int)$fields['month'], (int)$fields['day'], (int)$fields['hour'], (int)$fields['minute'], $offsetMinutes);
         $plausible = $at !== null && $at >= self::HISTORY_EPOCH && $at <= $now + self::FUTURE_TOLERANCE_SECONDS;
 
         $reading = $this->reading[$deviceKey] ?? null;
@@ -316,21 +292,6 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         $this->seen[$deviceKey][$data] = $now;
 
         return $repeated;
-    }
-
-    /**
-     * A hora local do aparelho, em unix.
-     *
-     * @param array<string, mixed> $fields
-     */
-    private static function deviceTime(array $fields, int $offsetMinutes): ?int
-    {
-        [$year, $month, $day, $hour, $minute] = [2000 + (int)$fields['year'], (int)$fields['month'], (int)$fields['day'], (int)$fields['hour'], (int)$fields['minute']];
-        if (!checkdate($month, $day, $year) || $hour > 23 || $minute > 59) {
-            return null;
-        }
-
-        return gmmktime($hour, $minute, 0, $month, $day, $year) - $offsetMinutes * 60;
     }
 
     /** @param array<string, mixed> $data */

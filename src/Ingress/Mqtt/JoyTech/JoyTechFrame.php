@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\JoyTech;
 
 /**
- * As tramas do protocolo BP da JoyTech: `FA AA AA AF`, o tamanho da trama inteira em 2 B, a
- * função, os dados, a soma do tamanho aos dados (módulo 256) e `F5 5F`.
+ * As tramas dos aparelhos JoyTech, tensiómetro e termómetro: `FA AA AA AF`, o tamanho da trama
+ * inteira em 2 B, a função, os dados, a soma do tamanho aos dados (módulo 256) e `F5 5F`.
  */
-final class BpFrame
+final class JoyTechFrame
 {
     private const HEAD = 'faaaaaaf';
 
@@ -33,6 +33,16 @@ final class BpFrame
         }
 
         return ['function' => ord($body[2]), 'data' => substr($body, 3)];
+    }
+
+    /** A hora local que o aparelho guarda, com o ano em dois dígitos, em unix. */
+    public static function unixTime(int $year, int $month, int $day, int $hour, int $minute, int $offsetMinutes): ?int
+    {
+        if (!checkdate($month, $day, 2000 + $year) || $hour > 23 || $minute > 59) {
+            return null;
+        }
+
+        return gmmktime($hour, $minute, 0, $month, $day, 2000 + $year) - $offsetMinutes * 60;
     }
 
     /** @param string $data em binário */

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 
 use DateTimeImmutable;
-use Hub\Ingress\Mqtt\JoyTech\BpFrame;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechCommandEncoder;
+use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use PHPUnit\Framework\TestCase;
 
-/** As tramas são as que a sonda escreveu e leu no DBP-6292B a 2026-10-16. */
+/** As tramas são as que a sonda escreveu e leu no DBP-6292B e no DET-3018B a 2026-10-16. */
 final class JoyTechCommandEncoderTest extends TestCase
 {
     /** As 14:46 de Lisboa: a hora vai em hora local, ano em dois dígitos. */
@@ -30,12 +30,24 @@ final class JoyTechCommandEncoderTest extends TestCase
         );
     }
 
+    /** O termómetro pede a hora e recebe-a no `0x86`; a memória confirma-se com o `0x83`. */
+    public function testTheThermometerGetsItsClockAndTheMemoryReceipt(): void
+    {
+        $encoder = new JoyTechCommandEncoder();
+
+        self::assertSame(
+            [['char' => 'fff2', 'hex' => 'faaaaaaf000f861a0a10102a03f55f']],
+            $encoder->writes('answerClock', [], 23, new DateTimeImmutable('2026-10-16T15:42:00Z'), 60),
+        );
+        self::assertSame([['char' => 'fff2', 'hex' => 'faaaaaaf000a838df55f']], $encoder->writes('acknowledgeMeasurements', [], 23, new DateTimeImmutable(), 60));
+    }
+
     public function testAFrameIsDecodedOnlyWhenItsChecksumAgrees(): void
     {
-        self::assertSame(['function' => 0x8b, 'data' => ''], BpFrame::decode('fa aa aa af 00 0a 8b 95 f5 5f'));
-        self::assertSame(0x83, BpFrame::decode('faaaaaaf0016830088 00494c001a0a100e33012cf55f')['function'] ?? null);
-        self::assertNull(BpFrame::decode('faaaaaaf0016830088 00494c001a0a100e33012df55f'));
+        self::assertSame(['function' => 0x8b, 'data' => ''], JoyTechFrame::decode('fa aa aa af 00 0a 8b 95 f5 5f'));
+        self::assertSame(0x83, JoyTechFrame::decode('faaaaaaf0016830088 00494c001a0a100e33012cf55f')['function'] ?? null);
+        self::assertNull(JoyTechFrame::decode('faaaaaaf0016830088 00494c001a0a100e33012df55f'));
         // A metade que chega sem o fim, quando o gateway não a juntou.
-        self::assertNull(BpFrame::decode('faaaaaaf00168300880049 4c001a0a100e33012c'));
+        self::assertNull(JoyTechFrame::decode('faaaaaaf00168300880049 4c001a0a100e33012c'));
     }
 }

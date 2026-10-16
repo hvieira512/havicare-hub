@@ -6,7 +6,7 @@ namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
-use Hub\Ingress\Mqtt\JoyTech\BpFrame;
+use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
@@ -225,6 +225,22 @@ final class JoyTechBpBridgeTest extends TestCase
         self::assertSame('op-1', $commands[1]['commandId']);
     }
 
+    /** O gateway entrega o termómetro pela mesma fonte: não é um tensiómetro por autorizar. */
+    public function testAThermometerIsLeftToItsOwnBridge(): void
+    {
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->expects(self::never())->method('recordRejectedDevice');
+        $message = json_encode([
+            'gatewayId' => self::GATEWAY,
+            'source' => 'joytech-node',
+            'kind' => 'frame',
+            'device' => ['mac' => '748b34830e5b', 'model' => 'DET-3018 '],
+            'payload' => ['char' => 'fff1', 'hex' => 'faaaaaaf000a0610f55f'],
+        ], JSON_THROW_ON_ERROR);
+
+        $this->bridge(new RecordingHubMqttBridge(), store: $store)->handleReceivedMessage(self::TOPIC, $message);
+    }
+
     public function testAMonitorNotLinkedToTheGatewayIsIgnored(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -255,7 +271,7 @@ final class JoyTechBpBridgeTest extends TestCase
 
     private static function reading(int $systolic, int $diastolic, int $pulse, int ...$timeAndGroup): string
     {
-        return BpFrame::encode(0x83, pack('nnCC', $systolic, $diastolic, $pulse, 0) . pack('C*', ...$timeAndGroup));
+        return JoyTechFrame::encode(0x83, pack('nnCC', $systolic, $diastolic, $pulse, 0) . pack('C*', ...$timeAndGroup));
     }
 
     private static function frame(string $hex): string

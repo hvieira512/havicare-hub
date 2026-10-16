@@ -10,7 +10,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\SupplierCapabilityTemplate;
 use PHPUnit\Framework\TestCase;
 
-/** O tensiómetro mede e tem uma só ação: o relógio acerta-se sozinho a cada ligação. */
+/** O tensiómetro mede e tem uma só ação: o relógio acerta-se sozinho a cada ligação. O termómetro só mede. */
 final class JoyTechBloodPressureMonitorTest extends TestCase
 {
     public function testTheModelHasTheMeasurementsAndReadingTheMemory(): void
@@ -19,6 +19,13 @@ final class JoyTechBloodPressureMonitorTest extends TestCase
             ['blood_pressure', 'heart_rate', 'read_blood_pressure_history'],
             SupplierCapabilityTemplate::keysForModel('JoyTech', 'HC-6292B', 'blood_pressure_monitor'),
         );
+    }
+
+    /** O termómetro é do mesmo fornecedor e tem outro protocolo: só mede, sem ações nem configurações. */
+    public function testTheThermometerOnlyMeasuresTemperature(): void
+    {
+        self::assertSame(['temperature'], SupplierCapabilityTemplate::keysForModel('JoyTech', 'HC-3018B', 'thermometer'));
+        self::assertSame([], DeviceConfigurationCatalog::configsForProtocol('joytech-et'));
     }
 
     public function testReadingTheMemoryIsAnActionQueuedByItsOperation(): void

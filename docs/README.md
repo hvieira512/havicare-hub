@@ -59,6 +59,7 @@ com as instâncias de desenvolvimento e produção estão no
 | [21 — Pulseira SOS Wi-Fi](21-pulseira-sos-wifi.md) | PST CF103W pela cloud da Tuya: Pulsar por WebSocket, ligado e desligado de quem dorme |
 | [22 — Balança de análise corporal](22-balanca.md) | Unique Scales CF632: protocolo Torre por GATT, através do gateway da Havicare |
 | [23 — Tensiómetro de braço](23-tensiometro.md) | JoyTech HC-6292B: protocolo BP por GATT, através do gateway da Havicare, e a memória sem repetições |
+| [24 — Termómetro de testa](24-termometro.md) | JoyTech HC-3018B: a hora pedida pelo aparelho e as últimas 30 medições a cada ligação |
 
 ### Contratos públicos
 
@@ -112,7 +113,7 @@ fonte primária para o que não estiver coberto nesta documentação.
 | [Zayata](fornecedores/Zayata/) | Dispensador de comprimidos | [19](19-dispensador-de-comprimidos.md) |
 | PST | Pulseira SOS Wi-Fi | [21](21-pulseira-sos-wifi.md) — **sem documentação do fabricante** |
 | [Unique Scales](fornecedores/UniqueScales/) | Balança de análise corporal | [22](22-balanca.md) |
-| [JoyTech](fornecedores/JoyTech/) | Tensiómetro de braço | [23](23-tensiometro.md) |
+| [JoyTech](fornecedores/JoyTech/) | Tensiómetro de braço e termómetro de testa | [23](23-tensiometro.md), [24](24-termometro.md) |
 
 O [`model-capabilities.xlsx`](fornecedores/model-capabilities.xlsx) fica na raiz
 porque cruza a frota toda, e a análise de tramas do gateway está em

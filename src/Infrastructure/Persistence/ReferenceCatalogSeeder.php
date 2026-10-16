@@ -44,6 +44,7 @@ final class ReferenceCatalogSeeder
         ['Unique Scales', 'HC-CF621BLE', 'HC-CF621BLE', 'scale', '1d024ba99d692a5fefbc8dad0dce563d.jpg'],
         ['Havicare', 'BLE Gateway', 'Gateway BLE', 'gateway', ''],
         ['JoyTech', 'HC-6292B', 'HC-6292B', 'blood_pressure_monitor', 'cbae0ad7a44f97f1d4993e551e03a28b.jpg'],
+        ['JoyTech', 'HC-3018B', 'HC-3018B', 'thermometer', '82f686a2fa076ea0bebc7e7cb7a9d676.jpg'],
     ];
 
     /**

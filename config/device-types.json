@@ -117,5 +117,17 @@
         },
         "sim": false,
         "gatewayLinks": true
+    },
+    "thermometer": {
+        "label": "Termómetro",
+        "icon": "fa-temperature-half",
+        "identity": {
+            "field": "deviceId",
+            "label": "MAC",
+            "help": "Endereço MAC canónico, sem separadores (12 caracteres hexadecimais).",
+            "placeholder": "748b34830e5b"
+        },
+        "sim": false,
+        "gatewayLinks": true
     }
 }

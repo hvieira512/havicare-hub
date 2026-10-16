@@ -7,6 +7,9 @@ namespace Hub\Ingress\Mqtt;
 use Hub\State\DeviceReportStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
+use Hub\Domain\GatewayDeviceLinkLookup;
+use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
+use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Log\Logger;
 use Hub\Mqtt\ReconnectsOnLoopFailure;
 use Hub\Registry\Denylist;
@@ -196,6 +199,46 @@ abstract class MqttBridgeBase implements MqttIngress
     {
         return (string)($gateway['company'] ?? 'null') === (string)($device['company'] ?? 'null')
             && (string)($gateway['licenseId'] ?? '') === (string)($device['licenseId'] ?? '');
+    }
+
+    /**
+     * O aparelho de uma mensagem de um gateway GATT, com o gateway que o serve: os dois na
+     * whitelist, ligados e do mesmo cliente. Um aparelho desconhecido fica registado como
+     * não autorizado.
+     *
+     * @param array<string, mixed> $message
+     */
+    protected function resolveGattDevice(string $topic, array $message, GatewayDeviceLinkLookup $links, string $protocol, string $deviceType): ?GattDeviceContext
+    {
+        $parsed = GatewayTopic::parse($topic);
+        $gateway = $parsed === null ? null : $this->whitelist->resolve($parsed->gatewayMac);
+        if ($gateway === null || ($gateway['deviceType'] ?? '') !== 'gateway') {
+            return null;
+        }
+
+        $mac = GatewayTopic::normalizeMac((string)($message['device']['mac'] ?? ''));
+        $device = $mac === null ? null : $this->whitelist->resolve($mac);
+        if ($device === null || ($device['deviceType'] ?? '') !== $deviceType) {
+            $this->recordUnauthorizedDevice((string)$mac, $protocol, trim((string)($message['device']['model'] ?? '')), ident: (string)$mac);
+            return null;
+        }
+        if (!$links->isEnabled((string)$gateway['imei'], (string)$device['imei']) || !$this->sameTenant($gateway, $device)) {
+            $this->warnRepeatedly(
+                "unlinked:{$mac}:{$gateway['imei']}",
+                "Ignoring unlinked {$protocol} device={$mac} gateway={$gateway['imei']}"
+            );
+            return null;
+        }
+
+        $device = $this->enrichWithCommercialName($device);
+
+        return new GattDeviceContext(
+            (string)$device['imei'],
+            (string)$gateway['imei'],
+            $device,
+            (int)($device['licenseId'] ?? 0),
+            (string)($device['company'] ?? 'null'),
+        );
     }
 
     private function subscribe(): void

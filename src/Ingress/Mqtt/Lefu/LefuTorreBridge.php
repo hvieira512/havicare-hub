@@ -12,7 +12,6 @@ use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\DispatchesQueued;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
-use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
 use Hub\Registry\Whitelist;
@@ -124,37 +123,10 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        $parsed = GatewayTopic::parse($topic);
-        $gateway = $parsed === null ? null : $this->whitelist->resolve($parsed->gatewayMac);
-        if ($gateway === null || ($gateway['deviceType'] ?? '') !== 'gateway') {
+        $context = $this->resolveGattDevice($topic, $message, $this->links, self::PROTOCOL, self::DEVICE_TYPE);
+        if ($context === null) {
             return;
         }
-
-        $mac = GatewayTopic::normalizeMac((string)($message['device']['mac'] ?? ''));
-        $device = $mac === null ? null : $this->whitelist->resolve($mac);
-        if ($device === null || ($device['deviceType'] ?? '') !== self::DEVICE_TYPE) {
-            $this->recordUnauthorizedDevice((string)$mac, self::PROTOCOL, (string)($message['device']['model'] ?? ''), ident: (string)$mac);
-            return;
-        }
-        if (
-            !$this->links->isEnabled((string)$gateway['imei'], (string)$device['imei'])
-            || !$this->sameTenant($gateway, $device)
-        ) {
-            $this->warnRepeatedly(
-                "unlinked:{$mac}:{$gateway['imei']}",
-                "Ignoring unlinked lefu device={$mac} gateway={$gateway['imei']}"
-            );
-            return;
-        }
-
-        $device = $this->enrichWithCommercialName($device);
-        $context = new GattDeviceContext(
-            (string)$device['imei'],
-            (string)$gateway['imei'],
-            $device,
-            (int)($device['licenseId'] ?? 0),
-            (string)($device['company'] ?? 'null'),
-        );
 
         $this->mqttBridge->publishRaw($context->deviceKey, $message, self::DEVICE_TYPE, $context->licenseId, $context->company);
 

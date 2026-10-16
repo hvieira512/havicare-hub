@@ -130,7 +130,7 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `blood_oxygen` | `spo2Percent` |
 | `blood_sugar` | `glucoseMgDl` |
 | `breath_rate` | `breathsPerMinute` |
-| `temperature` | `bodyCelsius`, `surfaceCelsius`, `environmentCelsius` |
+| `temperature` | `bodyCelsius`, `surfaceCelsius`, `environmentCelsius`. O termómetro de testa junta `site` (`ear`, `forehead`), e da memória `fromHistory: true` — ver o [capítulo 24](24-termometro.md) |
 
 > **A capacidade `blood_pressure` não inclui a frequência de pulso.** Um valor
 > transmitido como `"120/80/74"` é decomposto nos três números, mas o terceiro é

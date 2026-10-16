@@ -20,8 +20,9 @@ hora e espera resposta; no ECG, sem resposta da app, não envia dados em tempo
 real.
 
 Os gateways MOKO só ouvem anúncios ([capítulo 05](../../05-gateways-ble.md)). O
-tensiómetro HC-6292B entra pelo gateway BLE da Havicare, que abre a sessão GATT
-([capítulo 23](../../23-tensiometro.md)); os outros ainda não entram.
+tensiómetro HC-6292B e o termómetro HC-3018B entram pelo gateway BLE da Havicare,
+que abre a sessão GATT ([capítulos 23](../../23-tensiometro.md) e
+[24](../../24-termometro.md)); os outros ainda não entram.
 
 ## Versões
 
