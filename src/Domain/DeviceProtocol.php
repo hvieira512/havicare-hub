@@ -25,6 +25,7 @@ final class DeviceProtocol
         ],
         'joytech' => [
             'hc-3018b' => 'joytech-et',
+            'hc-6679b' => 'joytech-bp-ecg',
         ],
     ];
 

@@ -11,6 +11,12 @@ final class BloodPressureMonitorCapabilityDefinitions extends CapabilityDefiniti
         return 'blood_pressure_monitor';
     }
 
+    /** O ECG só o mede o HC-6679B. */
+    protected static function publishedBy(): array
+    {
+        return ['ecg' => ['joytech-bp-ecg']];
+    }
+
     protected static function rows(): array
     {
         return [
@@ -19,6 +25,7 @@ final class BloodPressureMonitorCapabilityDefinitions extends CapabilityDefiniti
                     'blood_pressure' => 'Pressão arterial',
                     // O pulso de cada medição, à parte como nos relógios.
                     'heart_rate' => 'Frequência cardíaca',
+                    'ecg' => 'ECG',
                 ],
             ],
             'health' => [

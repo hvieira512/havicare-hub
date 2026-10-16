@@ -7,6 +7,7 @@ namespace Hub\Infrastructure\Persistence;
 use Hub\Infrastructure\Persistence\Migration\CapabilitySectionsIncludeReminders;
 use Hub\Infrastructure\Persistence\Migration\ConfigurationOperationTarget;
 use Hub\Infrastructure\Persistence\Migration\JoyTechCatalog;
+use Hub\Infrastructure\Persistence\Migration\JoyTechEcgMonitorCatalog;
 use Hub\Infrastructure\Persistence\Migration\JoyTechThermometerCatalog;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\QinglanstRadarIsHc2;
@@ -38,6 +39,7 @@ final class DatabaseMigrationPlan
             new QinglanstRadarIsHc2(),
             new JoyTechCatalog(),
             new JoyTechThermometerCatalog(),
+            new JoyTechEcgMonitorCatalog(),
         ];
     }
 

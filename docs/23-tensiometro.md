@@ -1,6 +1,7 @@
 # 23 — Tensiómetro de braço
 
-O JoyTech DBP-6292B, que a Havicare vende como **HC-6292B**. Fala por GATT com o
+O JoyTech DBP-6292B, que a Havicare vende como **HC-6292B**, e o DBP-6679B
+(**HC-6679B**), que também faz ECG. Fala por GATT com o
 gateway BLE da Havicare, como a [balança](22-balanca.md): o gateway só liga,
 junta as notificações e escreve o que o hub manda; as tramas são todas do hub
 (`src/Ingress/Mqtt/JoyTech/`). O protocolo é o `BP bluetooth protocol.xlsx`, em
@@ -66,3 +67,29 @@ frente. As medições feitas com o relógio por acertar ficam de fora.
 **Limites conhecidos.** Se o relógio do aparelho voltar a 2021 (pilhas trocadas)
 e se medir sem gateway por perto, essas medições ficam abaixo da data mínima e
 perdem-se. Duas medições no mesmo grupo e no mesmo minuto contam como uma.
+
+## O HC-6679B, com ECG
+
+O JoyTech DBP-6679B, vendido como **HC-6679B**, é o mesmo tensiómetro: a tensão
+segue tudo o que está acima. O nome `DBP-6679…` em `device.model` não muda a
+ponte; é o modelo registado que lhe dá o protocolo `joytech-bp-ecg`, e com ele a
+capacidade `ecg`.
+
+| Função | Sentido | O que é |
+|---|---|---|
+| `0x85` | aparelho → hub | A contagem antes do exame, uma por segundo |
+| `0x05` | hub → aparelho | Começar. Sem ele, durante a contagem, o aparelho não manda nada |
+| `0x87` | aparelho → hub | 30 s de traçado a 250 Hz, 50 tramas por segundo: 4 a 6 amostras em int16 com sinal, e dois bytes de estado no fim |
+| `0x86` | aparelho → hub | O fim: estado, FC, um byte a zero, a hora do aparelho e o grupo. Repete-se de 2 em 2 s |
+| `0x06` | hub → aparelho | A confirmação do fim |
+
+O hub responde à primeira trama da contagem e à primeira do fim, e ignora as
+repetições. O exame sai num só `ecg`, no formato do da pulseira para o traçado
+se desenhar igual: `samples` (cerca de 7500), `frequencyHz` 250 e `heartRateBpm`
+do `0x86`, com a hora do aparelho no `occurredAt`. O pulso não sai à parte. As
+amostras vão como chegam: **a unidade não é conhecida**, e pediu-se à JoyTech o
+fator para mV.
+
+Um exame interrompido não sai: a sessão a cair antes do `0x86`, ou mais de 1 s
+sem amostras depois da primeira. A memória dos ECG do aparelho (`0x0E`) não
+responde, e fica de fora.

@@ -58,7 +58,7 @@ com as instâncias de desenvolvimento e produção estão no
 | [05 — Gateways e dispositivos BLE](05-gateways-ble.md) | MOKO MKGW3/MKGW4, pulseiras W6/W6B e Veepoo, e sensor de fralda MONIT |
 | [21 — Pulseira SOS Wi-Fi](21-pulseira-sos-wifi.md) | PST CF103W pela cloud da Tuya: Pulsar por WebSocket, ligado e desligado de quem dorme |
 | [22 — Balança de análise corporal](22-balanca.md) | Unique Scales CF632: protocolo Torre por GATT, através do gateway da Havicare |
-| [23 — Tensiómetro de braço](23-tensiometro.md) | JoyTech HC-6292B: protocolo BP por GATT, através do gateway da Havicare, e a memória sem repetições |
+| [23 — Tensiómetro de braço](23-tensiometro.md) | JoyTech HC-6292B e HC-6679B: protocolo BP por GATT, através do gateway da Havicare, a memória sem repetições e o ECG |
 | [24 — Termómetro de testa](24-termometro.md) | JoyTech HC-3018B: a hora pedida pelo aparelho e as últimas 30 medições a cada ligação |
 
 ### Contratos públicos

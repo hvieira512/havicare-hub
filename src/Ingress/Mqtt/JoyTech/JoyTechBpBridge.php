@@ -8,6 +8,7 @@ use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\TelemetryEnvelope;
+use Hub\Domain\DeviceProtocol;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\DispatchesQueued;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
@@ -43,6 +44,8 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
     /** Depois das 6 repetições do resultado ao vivo, de 2 em 2 s. */
     private const READ_AFTER_RESULT_SECONDS = 15.0;
 
+    private const ECG_HZ = 250;
+
     /** Uma hora do aparelho mais à frente do que isto não é plausível. */
     private const FUTURE_TOLERANCE_SECONDS = 300;
 
@@ -66,7 +69,12 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
     private readonly GattDownlinks $downlinks;
 
-    private readonly BraceletPresence $presence;
+    /** @var array<string, BraceletPresence> por protocolo */
+    private array $presences = [];
+
+    private readonly EcgRecordings $ecg;
+
+    private readonly ?DeviceReportStore $reports;
 
     private readonly ?DeviceCommandLog $commands;
 
@@ -96,7 +104,8 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         );
         $this->commands = $deviceStore;
         $this->downlinks = new GattDownlinks($queue, $mqttBridge, $deviceStore, $topicFilter, (new JoyTechCommandEncoder())->writes(...));
-        $this->presence = new BraceletPresence($mqttBridge, $deviceStore, self::PROTOCOL, self::DEVICE_TYPE);
+        $this->reports = $deviceStore;
+        $this->ecg = new EcgRecordings();
     }
 
     public function dispatchQueued(): void
@@ -157,13 +166,14 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         $deviceKey = $context->deviceKey;
         if (!$connected) {
             $this->finishReading($deviceKey);
+            $this->ecg->drop($deviceKey);
             unset($this->sessions[$deviceKey]);
-            $this->presence->markOffline($deviceKey, $context->device, $context->licenseId, $context->company);
+            $this->presence($context)->markOffline($deviceKey, $context->device, $context->licenseId, $context->company);
             return;
         }
 
         $this->sessions[$deviceKey] = ['gateway' => $context->gatewayKey, 'offset' => $offsetMinutes, 'memoryRead' => false, 'readAt' => null];
-        $this->presence->markOnline($deviceKey, $context->device, $context->licenseId, $context->company);
+        $this->presence($context)->markOnline($deviceKey, $context->device, $context->licenseId, $context->company);
 
         // O aparelho não pede a hora, e a memória é datada por ela: acerta-se a cada ligação.
         $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'calibrateClock', [], 0, $offsetMinutes);
@@ -225,7 +235,53 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         }
         if ($frame['function'] === 0x83 && strlen($frame['data']) >= 12) {
             $this->result($context, $frame['data'], $offsetMinutes);
+            return;
         }
+        $this->ecgFrame($context, $frame['function'], $frame['data'], $offsetMinutes);
+    }
+
+    /** O ECG do DBP-6679B: sem o `0x05` na contagem o aparelho não manda nada, e o fim só pára com o `0x06`. */
+    private function ecgFrame(GattDeviceContext $context, int $function, string $data, int $offsetMinutes): void
+    {
+        $deviceKey = $context->deviceKey;
+        $now = $this->clockNow();
+        if ($function === 0x85 && $this->ecg->countdown($deviceKey, $now)) {
+            $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'startEcg', [], 0, $offsetMinutes);
+        } elseif ($function === 0x87) {
+            $this->ecg->samples($deviceKey, $data, $now);
+        } elseif ($function === 0x86 && strlen($data) >= 9) {
+            $end = $this->ecg->end($deviceKey, $now);
+            if ($end['answer']) {
+                $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'acknowledgeEcg', [], 0, $offsetMinutes);
+            }
+            if ($end['samples'] === null) {
+                return;
+            }
+            // Estado, FC, um byte a zero, ano, mês, dia, hora, minuto e grupo.
+            $fields = array_values(unpack('C9', $data) ?: []);
+            $at = JoyTechFrame::unixTime($fields[3], $fields[4], $fields[5], $fields[6], $fields[7], $offsetMinutes);
+            $plausible = $at !== null && $at >= self::HISTORY_EPOCH && $at <= $now + self::FUTURE_TOLERANCE_SECONDS;
+            $this->emit($context, 'ecg', 'fff1:86', [
+                'samples' => $end['samples'],
+                'frequencyHz' => self::ECG_HZ,
+                'heartRateBpm' => $fields[1],
+            ], gmdate('Y-m-d\TH:i:s\Z', $plausible ? (int)$at : (int)$now));
+        }
+    }
+
+    private function presence(GattDeviceContext $context): BraceletPresence
+    {
+        $protocol = self::protocolOf($context);
+
+        return $this->presences[$protocol] ??= new BraceletPresence($this->mqttBridge, $this->reports, $protocol, self::DEVICE_TYPE);
+    }
+
+    /** O 6292B e o 6679B partilham a ponte; o protocolo diz qual mede o ECG. */
+    private static function protocolOf(GattDeviceContext $context): string
+    {
+        $protocol = DeviceProtocol::forModel((string)($context->device['supplier'] ?? ''), (string)($context->device['model'] ?? ''));
+
+        return $protocol !== '' ? $protocol : self::PROTOCOL;
     }
 
     /** @param string $data sistólica e diastólica em 2 B, pulso, arritmia, ano, mês, dia, hora, minuto, grupo */
@@ -301,7 +357,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
             $type,
             $context->deviceKey,
             $context->device,
-            self::PROTOCOL,
+            self::protocolOf($context),
             $nativeType,
             $data,
             $context->gatewayKey,

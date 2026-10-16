@@ -25,6 +25,9 @@ final class JoyTechCommandEncoder
                 'hex' => JoyTechFrame::encode(0x0a),
                 'await' => ['char' => 'fff1', 'prefix' => substr(JoyTechFrame::encode(0x8b), 0, 14), 'timeoutMs' => self::MEMORY_TRANSFER_MS],
             ]],
+            // O ECG do DBP-6679B: começar na contagem, e confirmar o fim.
+            'startEcg' => [['char' => 'fff2', 'hex' => JoyTechFrame::encode(0x05)]],
+            'acknowledgeEcg' => [['char' => 'fff2', 'hex' => JoyTechFrame::encode(0x06)]],
             // O termómetro: a hora pedida por ele, e a confirmação da memória, que não a apaga.
             'answerClock' => [['char' => 'fff2', 'hex' => JoyTechFrame::encode(0x86, self::localTime($now, $offsetMinutes))]],
             'acknowledgeMeasurements' => [['char' => 'fff2', 'hex' => JoyTechFrame::encode(0x83)]],

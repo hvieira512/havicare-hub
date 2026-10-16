@@ -45,7 +45,7 @@ final class DeviceConfigurationCatalog
             'zayata-m228' => ZayataConfigurationDefinitions::all(),
             'lefu-torre' => LefuTorreConfigurationDefinitions::all(),
             'qinglanst-radar' => QinglanstConfigurationDefinitions::all(),
-            'joytech-bp' => JoyTechConfigurationDefinitions::all(),
+            'joytech-bp', 'joytech-bp-ecg' => JoyTechConfigurationDefinitions::all(),
             default => [],
         };
 
@@ -180,7 +180,7 @@ final class DeviceConfigurationCatalog
                 'lefu-torre' => LefuTorrePayloadBuilder::build($key, $payload),
                 'qinglanst-radar' => QinglanstPayloadBuilder::build($key, $payload),
                 // A única ação não leva dados.
-                'joytech-bp' => [],
+                'joytech-bp', 'joytech-bp-ecg' => [],
                 default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
             },
         ]];

@@ -125,7 +125,7 @@ final class DeviceCommandCatalog
             // Os bytes em fila são o nome da configuração: os pedidos à cloud monta-os a entrega.
             'qinglanst-radar' => $command,
             // Como na balança: as escritas monta-as a ponte na entrega.
-            'joytech-bp' => $command,
+            'joytech-bp', 'joytech-bp-ecg' => $command,
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };
     }

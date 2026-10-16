@@ -21,6 +21,17 @@ final class JoyTechBloodPressureMonitorTest extends TestCase
         );
     }
 
+    /** O HC-6679B é o mesmo tensiómetro com ECG, e lê a memória como o outro. */
+    public function testTheEcgModelAlsoHasTheEcg(): void
+    {
+        self::assertSame(
+            ['blood_pressure', 'heart_rate', 'ecg', 'read_blood_pressure_history'],
+            SupplierCapabilityTemplate::keysForModel('JoyTech', 'HC-6679B', 'blood_pressure_monitor'),
+        );
+        self::assertNull(DeviceConfigurationCatalog::validate('joytech-bp-ecg', 'read_blood_pressure_history', []));
+        self::assertSame('readBloodPressureHistory', DeviceCommandCatalog::buildDownlink('joytech-bp-ecg', '748b3483cda4', 'readBloodPressureHistory'));
+    }
+
     /** O termómetro é do mesmo fornecedor e tem outro protocolo: só mede, sem ações nem configurações. */
     public function testTheThermometerOnlyMeasuresTemperature(): void
     {

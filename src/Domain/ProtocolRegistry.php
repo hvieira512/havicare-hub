@@ -106,6 +106,11 @@ final class ProtocolRegistry
                 'supportsConfigCatalog' => true,
             ],
             // Do mesmo fornecedor: o modelo escolhe-o no DeviceProtocol.
+            'joytech-bp-ecg' => [
+                'label' => 'JoyTech',
+                'deviceType' => 'blood_pressure_monitor',
+                'supportsConfigCatalog' => true,
+            ],
             'joytech-et' => [
                 'label' => 'JoyTech',
                 'deviceType' => 'thermometer',

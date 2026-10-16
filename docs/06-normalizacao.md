@@ -202,7 +202,7 @@ sair depois de ela ter apagado.
 | `blood_lipids` | pulseira | `totalCholesterolMmolPerL`, `triglyceridesMmolPerL`, `hdlMmolPerL`, `ldlMmolPerL` |
 | `uric_acid` | pulseira | `umolPerL` |
 | `sleep_apnea` | pulseira | `episodes`, `hypoxiaSeconds` — contagens do bloco, e não leituras por minuto |
-| `ecg` | pulseira | `samples`, `frequencyHz` e, nas pulseiras, `heartRateBpm`, `hrvMilliseconds`, `qtcMilliseconds`, `rrIntervalMilliseconds` — o que o exame apurou, junto com o traçado |
+| `ecg` | pulseira, tensiómetro HC-6679B | `samples`, `frequencyHz` e, no tensiómetro, `heartRateBpm` (as amostras em unidade por conhecer — [capítulo 23](23-tensiometro.md)); nas pulseiras, `heartRateBpm`, `hrvMilliseconds`, `qtcMilliseconds`, `rrIntervalMilliseconds` — o que o exame apurou, junto com o traçado |
 | `sleep_quality` | pulseira | `qualityStars`, `deepSleepScore`, `efficiencyScore`, `fallAsleepScore`, `durationScore`, `nightWakingScore`, `insomniaScore`, `awakeningCount`, `firstDeepSleepMinutes`, `nightAwakeMinutes`, `returnToDeepSleepMeanMinutes` — as pontuações que o firmware atribui à noite |
 | `cardiac_load` | pulseira | `value` — sem unidade nem escala documentadas pelo fabricante |
 | `find_device` | pulseira | `state`: `searching`, `stopped` ou `timed_out`. A pulseira desiste sozinha ao fim de cerca de um minuto, e é `timed_out` que o diz |
