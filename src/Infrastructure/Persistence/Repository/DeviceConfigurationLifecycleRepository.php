@@ -169,6 +169,67 @@ final class DeviceConfigurationLifecycleRepository
         return (int)$stmt->fetchColumn() > 0;
     }
 
+    /**
+     * O valor que se leu do aparelho, guardado como aplicado: a configuração passa a mostrar o que
+     * ele tem. Uma alteração ainda a caminho fica, e um valor igual ao aplicado não abre revisão.
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function recordRead(string $imei, string $genericKey, array $payload, string $protocol): bool
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT sync_status, effective_payload FROM device_configuration_changes
+            WHERE imei = ? AND config_key = ? AND superseded_at IS NULL
+        ');
+        $stmt->execute([$imei, $genericKey]);
+        $current = $stmt->fetch();
+        if ($current !== false) {
+            if (in_array((string)$current['sync_status'], ['pending_delivery', 'awaiting_ack'], true)) {
+                return false;
+            }
+            $effective = $current['effective_payload'] === null ? null : $this->decode((string)$current['effective_payload']);
+            if ($effective !== null && self::canonical($effective) === self::canonical($payload)) {
+                return false;
+            }
+        }
+
+        $staged = $this->stage($imei, $genericKey, $payload, [[
+            'nativeKey' => $genericKey,
+            'protocol' => $protocol,
+            'command' => '',
+            'payload' => $payload,
+            'confirmationMode' => 'local',
+            'operationId' => '',
+        ]], []);
+        $now = gmdate('Y-m-d H:i:s');
+        $this->pdo->prepare('
+            UPDATE device_configuration_changes SET effective_payload = ?, confirmed_at = ?, updated_at = ?
+            WHERE change_id = ?
+        ')->execute([$this->encode($payload), $now, $now, $staged['changeId']]);
+        $this->pdo->prepare('
+            UPDATE device_configurations SET applied_at = ? WHERE imei = ? AND config_key = ?
+        ')->execute([$now, $imei, $genericKey]);
+
+        return true;
+    }
+
+    /** @param array<array-key, mixed> $value */
+    private static function canonical(array $value): string
+    {
+        $sorted = static function (mixed $node) use (&$sorted): mixed {
+            if (!is_array($node)) {
+                return $node;
+            }
+            if (!array_is_list($node)) {
+                ksort($node);
+            }
+
+            return array_map($sorted, $node);
+        };
+
+        return json_encode($sorted($value)) ?: '';
+    }
+
     /** @return list<array<string,mixed>> */
     public function currentForImei(string $imei): array
     {

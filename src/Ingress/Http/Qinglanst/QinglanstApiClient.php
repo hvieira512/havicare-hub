@@ -59,8 +59,8 @@ class QinglanstApiClient
     }
 
     /**
-     * O layout declarado no aparelho, com o `code` tal como veio: um `777` é a cloud a não
-     * conhecer o aparelho, e não uma avaria.
+     * As propriedades do radar, com o `code` tal como veio: um `777` é o radar desligado, e não
+     * uma avaria.
      *
      * @param array<string, string> $credentials `base_url`, `app_id`, `app_secret`
      * @param array{access_token: string, token_type: string} $token
@@ -68,9 +68,31 @@ class QinglanstApiClient
      */
     public function deviceProp(array $credentials, array $token, string $uid): PromiseInterface
     {
-        $params = ['uid' => $uid];
-        $timestamp = time();
+        return $this->call($credentials, $token, 'GET', '/thirdparty/v2/deviceProp', ['uid' => $uid]);
+    }
 
+    /**
+     * Uma escrita da API: o corpo vai em JSON e assina-se como os parâmetros de um GET.
+     *
+     * @param array<string, string> $credentials
+     * @param array{access_token: string, token_type: string} $token
+     * @param array<string, scalar> $body
+     * @return PromiseInterface<array<string, mixed>>
+     */
+    public function post(array $credentials, array $token, string $path, array $body): PromiseInterface
+    {
+        return $this->call($credentials, $token, 'POST', $path, $body);
+    }
+
+    /**
+     * @param array<string, string> $credentials
+     * @param array{access_token: string, token_type: string} $token
+     * @param array<string, scalar> $params
+     * @return PromiseInterface<array<string, mixed>>
+     */
+    private function call(array $credentials, array $token, string $method, string $path, array $params): PromiseInterface
+    {
+        $timestamp = time();
         $headers = [
             'appid' => $credentials['app_id'],
             'timestamp' => (string)$timestamp,
@@ -78,18 +100,21 @@ class QinglanstApiClient
             'Authorization' => ucfirst($token['token_type']) . ' ' . $token['access_token'],
             'Content-Type' => 'application/json',
         ];
-        $url = $this->url($credentials, '/thirdparty/v2/deviceProp') . '?' . http_build_query($params);
+        $url = $this->url($credentials, $path);
+        $request = $method === 'GET'
+            ? $this->browser->get($url . '?' . http_build_query($params), $headers)
+            : $this->browser->post($url, $headers, json_encode($params, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
 
-        return $this->browser->get($url, $headers)->then(
-            static function (ResponseInterface $response): array {
+        return $request->then(
+            static function (ResponseInterface $response) use ($path): array {
                 $decoded = json_decode((string)$response->getBody(), true);
                 if (!is_array($decoded)) {
-                    throw new QinglanstApiException('Qinglanst returned a non-JSON deviceProp response');
+                    throw new QinglanstApiException("Qinglanst returned a non-JSON response to {$path}");
                 }
 
                 return $decoded;
             },
-            static fn(mixed $error) => throw self::failure('Qinglanst deviceProp failed', $error),
+            static fn(mixed $error) => throw self::failure("Qinglanst {$path} failed", $error),
         );
     }
 

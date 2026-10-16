@@ -234,6 +234,25 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertCount(1, $queue->pendingFor('865028000000308'));
     }
 
+    /** Quem entrega fora do socket (a cloud dos radares) sabe logo que há trabalho, e também nas renovações. */
+    public function testAQueuedCommandIsAnnouncedToWhoeverDeliversIt(): void
+    {
+        $queued = [];
+        $hub = new DeviceHubServer(
+            $this->whitelist,
+            new ContractRecordingHubMqttBridge(),
+            downlinkQueue: new RedisPendingDownlinkQueue(new InMemoryRedisClient()),
+            downlinkQueued: static function (string $imei) use (&$queued): void {
+                $queued[] = $imei;
+            },
+        );
+
+        $hub->queueDownlink('865028000000308', 'IWBPXY,865028000000308,080835#', ['id' => 'cmd-1']);
+        $hub->queueDownlink('865028000000308', 'IWBPXY,865028000000308,080835#', ['id' => 'cmd-1']);
+
+        self::assertSame(['865028000000308', '865028000000308'], $queued);
+    }
+
     public function testOfflineDownlinkDropsWithQueueUnavailableWhenRedisFails(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();

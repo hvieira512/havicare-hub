@@ -113,6 +113,24 @@ final class BridgeRepeatedDetectionTest extends TestCase
         self::assertSame(['zone' => 'area', 'personIndex' => 1, 'areaId' => 2], $mqtt->events[0]['payload']['data']);
     }
 
+    /** Cada mensagem diz que o radar está ligado: o que ficou em fila à espera dele pode sair. */
+    public function testEveryMessageAnnouncesTheRadarByItsCanonicalImei(): void
+    {
+        $heard = [];
+        $bridge = new QinglanstBridge(
+            new FakeMqttSubscriber(),
+            IngressFixtures::whitelist([self::RADAR => IngressFixtures::radar() + ['deviceId' => self::RADAR_UID]]),
+            new RecordingHubMqttBridge(),
+            onMessage: static function (string $imei) use (&$heard): void {
+                $heard[] = $imei;
+            },
+        );
+
+        $bridge->handleReceivedMessage(self::topic(), self::message('position', self::person(4)));
+
+        self::assertSame([self::RADAR], $heard);
+    }
+
     private function bridge(RecordingHubMqttBridge $mqtt, ?\Closure $layouts = null): QinglanstBridge
     {
         return new QinglanstBridge(
