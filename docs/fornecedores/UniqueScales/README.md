@@ -11,7 +11,7 @@ isso o que está aqui vem de três fontes:
   descodifica as tramas e `TorreDelegate` envia os comandos. O código-fonte do SDK é
   privado; o que se lê é o AAR descompilado.
 - **2026-10-15:** sondas GATT ligadas a uma CF632BLE (`probes/lefu-scale.mjs`, no
-  `veepoo-linux-spike`), com pesagens filmadas para comparar com o visor.
+  `havicare-ble-gateway`), com pesagens filmadas para comparar com o visor.
 - **2025-12:** HCI snoop da app Unique Health feito pelo Marcus.
 - **2026-10-15, à tarde:** pesagens emparelhadas, primeiro na app do fabricante
   (`com.lefu.xin`) e logo a seguir no gateway, com perfis diferentes, para validar
