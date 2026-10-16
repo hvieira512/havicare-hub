@@ -29,7 +29,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         sort($actual);
         self::assertSame($expected, $actual);
 
-        $qinglanst = $db->models->find('Qinglanst', 'RD-V1');
+        $qinglanst = $db->models->find('Qinglanst', 'HC2');
         self::assertIsArray($qinglanst);
         self::assertSame('radar', $qinglanst['device_type'] ?? null);
         $expectedRadar = [
@@ -214,7 +214,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $normalizedDb = ApiDataAccess::fromDatabase($normalizedDatabase);
 
         self::assertNull($normalizedDb->suppliers->findByName('Qinglanst'));
-        self::assertNull($normalizedDb->models->find('Qinglanst', 'RD-V1'));
+        self::assertNull($normalizedDb->models->find('Qinglanst', 'HC2'));
     }
 
     public function testModelImagePathIsStoredAndPreservedWhenNoReplacementIsProvided(): void

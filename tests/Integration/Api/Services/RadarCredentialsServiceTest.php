@@ -210,7 +210,7 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
         $this->db->whitelist->register(
             imei: 'FFFFFFFFFFFF',
             supplier: 'Qinglanst',
-            model: 'RD-V1',
+            model: 'HC2',
             deviceType: 'radar',
             company: 'gerpi',
             licenseId: 2103,
@@ -284,7 +284,7 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
             $this->db->whitelist->register(
                 imei: $imei,
                 supplier: 'Qinglanst',
-                model: 'RD-V1',
+                model: 'HC2',
                 deviceType: 'radar',
                 company: 'hitcare',
                 licenseId: 2103,

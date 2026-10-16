@@ -150,16 +150,16 @@ mesma coisa, e a gravidade vai na `severity` (ver o [contrato MQTT](08-contrato-
 | `position` | `confirmed_sitting_on_ground` | `fall` | `confirmed: true`, `posture: sitting_on_ground`, `personIndex` |
 | `position` | `enter_room` · `leave_room` | `zone_entry` · `zone_exit` | `zone: room`, `personIndex` |
 | `position` | `enter_area` · `leave_area` | `zone_entry` · `zone_exit` | `zone: area`, `personIndex`, `areaId`, `areaName`, `areaType` |
-| `heartbreath` | frequência cardíaca > 120 | `heart_rate_high` | `bpm` |
-| `heartbreath` | frequência cardíaca < 40 *(e > 0)* | `heart_rate_low` | `bpm` |
 | `hbstatics` | `heartRateStatus` `high` · `low` | `heart_rate_high` · `heart_rate_low` | `bpm`, a média do minuto |
 | `hbstatics` | `breathingStatus` `hyperpnea` · `hypopnea` | `breath_rate_high` · `breath_rate_low` | `breathsPerMinute`, a média do minuto |
 | `hbstatics` | `breathingStatus` `apnea` | `apnea` | — |
 | `hbstatics` | `vitalSignsStatus` `weak` | `weak_vital_signs` | — |
 
-Os limites de 120 e 40 bpm são do hub, e decidem só que há evento. Quão grave é
-decide-o a `severity`: acima de 160 ou abaixo de 20 bpm é alarme, o resto é
-alerta.
+Os alarmes de frequência alta ou baixa são o estado de cada minuto do `hbstatics`,
+que o radar calcula com os limites configurados nele (as configurações
+`heart_rate_alert` e `breath_rate_alert`). O hub não compara amostras com números
+seus. Quão grave é decide-o a `severity`: acima de 160 ou abaixo de 20 bpm é
+alarme, o resto é alerta.
 
 **Uma detecção por pessoa.** Numa trama com duas pessoas, a entrada de uma não
 esconde a queda da outra. Dentro da mesma pessoa, a postura ganha ao movimento.

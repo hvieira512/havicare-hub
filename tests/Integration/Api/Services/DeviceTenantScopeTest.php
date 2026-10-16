@@ -50,7 +50,7 @@ final class DeviceTenantScopeTest extends MysqlDashboardTestCase
         ));
 
         $this->whitelist->register(self::OWNER_IMEI, '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
-        $this->whitelist->register(self::RADAR_IMEI, 'Qinglanst', 'RD-V1', 'radar', 1001, '', self::RADAR_IMEI, 'hitcare');
+        $this->whitelist->register(self::RADAR_IMEI, 'Qinglanst', 'HC2', 'radar', 1001, '', self::RADAR_IMEI, 'hitcare');
     }
 
     public function testAnotherTenantCannotDeleteTheDevice(): void

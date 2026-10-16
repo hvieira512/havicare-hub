@@ -57,14 +57,14 @@ final class BridgeRepeatedDetectionTest extends TestCase
         self::assertSame([false, true], array_column(array_column(array_column($mqtt->events, 'payload'), 'data'), 'confirmed'));
     }
 
-    /** O valor muda a cada segundo, mas a frequência alta é a mesma enquanto dura. */
+    /** A média muda a cada minuto, mas a frequência alta é a mesma enquanto dura. */
     public function testAHighHeartRateThatLastsRaisesOneEvent(): void
     {
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
         foreach ([130, 134, 131] as $bpm) {
-            $bridge->handleReceivedMessage(self::topic(), self::message('heartbreath', self::heartBreath($bpm)));
+            $bridge->handleReceivedMessage(self::topic(), self::message('hbstatics', self::minuteWithHighHeartRate($bpm)));
         }
 
         self::assertSame(['heart_rate_high'], array_column($mqtt->events, 'type'));
@@ -77,9 +77,9 @@ final class BridgeRepeatedDetectionTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        $bridge->handleReceivedMessage(self::topic(), self::message('heartbreath', self::heartBreath(130)));
+        $bridge->handleReceivedMessage(self::topic(), self::message('hbstatics', self::minuteWithHighHeartRate(130)));
         $bridge->handleReceivedMessage(self::topic(), self::message('position', self::person(4)));
-        $bridge->handleReceivedMessage(self::topic(), self::message('heartbreath', self::heartBreath(132)));
+        $bridge->handleReceivedMessage(self::topic(), self::message('hbstatics', self::minuteWithHighHeartRate(132)));
 
         self::assertSame(['heart_rate_high'], array_column($mqtt->events, 'type'));
     }
@@ -160,12 +160,17 @@ final class BridgeRepeatedDetectionTest extends TestCase
         return $bytes;
     }
 
-    /** @return list<int> */
-    private static function heartBreath(int $bpm): array
+    /**
+     * O minuto de vitais: a média no byte 6 e, nos bits 3 e 2 do byte 13, a frequência alta.
+     *
+     * @return list<int>
+     */
+    private static function minuteWithHighHeartRate(int $averageBpm): array
     {
         $bytes = array_fill(0, 16, 0);
-        $bytes[1] = 16;
-        $bytes[2] = $bpm;
+        $bytes[0] = 0xff;
+        $bytes[6] = $averageBpm;
+        $bytes[13] = 0b00001000;
 
         return $bytes;
     }

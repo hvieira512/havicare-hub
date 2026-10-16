@@ -28,9 +28,9 @@ final class MessageNormalizerTest extends TestCase
         self::assertArrayNotHasKey('source', $result['status'] ?? []);
         self::assertSame('device.connected', $result['event']['type'] ?? null);
         self::assertArrayNotHasKey('source', $result['event'] ?? []);
-        self::assertSame('Qinglanst RD-V1 Pro', $result['status']['device']['commercialName'] ?? null);
-        self::assertSame('Qinglanst RD-V1 Pro', $result['event']['device']['commercialName'] ?? null);
-        self::assertSame('Qinglanst RD-V1 Pro', $result['raw']['device']['commercialName'] ?? null);
+        self::assertSame('Qinglanst HC2 Pro', $result['status']['device']['commercialName'] ?? null);
+        self::assertSame('Qinglanst HC2 Pro', $result['event']['device']['commercialName'] ?? null);
+        self::assertSame('Qinglanst HC2 Pro', $result['raw']['device']['commercialName'] ?? null);
     }
 
     public function testNormalizesHelpCallPagerEventWithoutTelemetryOrSource(): void
@@ -114,8 +114,8 @@ final class MessageNormalizerTest extends TestCase
         return [
             'imei' => 'radar-canonical-1',
             'supplier' => 'Qinglanst',
-            'model' => 'RD-V1',
-            'commercialName' => 'Qinglanst RD-V1 Pro',
+            'model' => 'HC2',
+            'commercialName' => 'Qinglanst HC2 Pro',
             'deviceType' => 'radar',
             'licenseId' => 1001,
             'simNumber' => '',

@@ -39,7 +39,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
         foreach (['594B3CCBA56B', '414D74184CBF'] as $imei) {
             $this->pdo->exec("
                 INSERT INTO whitelist (imei, supplier, model, device_type, license_id)
-                VALUES ('$imei', 'Qinglanst', 'RD-V1', 'radar', 2103)
+                VALUES ('$imei', 'Qinglanst', 'HC2', 'radar', 2103)
             ");
         }
     }

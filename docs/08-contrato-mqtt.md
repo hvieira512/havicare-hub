@@ -167,9 +167,9 @@ conhecer nenhum dos dois. O `data` traz o pormenor, e a `severity` diz quão gra
   "type": "heart_rate_high",
   "severity": "alarm",
   "occurredAt": "2026-10-08T10:35:10Z",
-  "device": { "id": "594B3CD2D097", "supplier": "Qinglanst", "model": "RD-V1" },
+  "device": { "id": "594B3CD2D097", "supplier": "Qinglanst", "model": "HC2" },
   "data": { "bpm": 172 },
-  "source": { "protocol": "qinglanst-radar", "nativeType": "heartbreath", "topic": "…" }
+  "source": { "protocol": "qinglanst-radar", "nativeType": "hbstatics", "topic": "…" }
 }
 ```
 

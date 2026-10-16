@@ -92,8 +92,8 @@ final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
     public function testATenantReadsOnlyItsOwnRadarLayout(): void
     {
         [$server, $db] = $this->makeServerWithDatabase();
-        $db->whitelist->register('861265061009901', 'Qinglanst', 'RD-V1', 'radar', 1001, '', '861265061009901', 'hitcare');
-        $db->whitelist->register('861265061009902', 'Qinglanst', 'RD-V1', 'radar', 2002, '', '861265061009902', 'otherCare');
+        $db->whitelist->register('861265061009901', 'Qinglanst', 'HC2', 'radar', 1001, '', '861265061009901', 'hitcare');
+        $db->whitelist->register('861265061009902', 'Qinglanst', 'HC2', 'radar', 2002, '', '861265061009902', 'otherCare');
         $auth = ['Authorization' => 'Bearer ' . $this->loginToken($server, 'tenant', 'tenant-secret')];
 
         $own = $server(new ServerRequest('GET', '/api/devices/861265061009901/radar-layout', $auth));

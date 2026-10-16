@@ -56,7 +56,7 @@ final class IngressFixtures
     /** @return array<string, string> */
     public static function radar(): array
     {
-        return self::device('Qinglanst', 'RD-V1', 'radar');
+        return self::device('Qinglanst', 'HC2', 'radar');
     }
 
     /**

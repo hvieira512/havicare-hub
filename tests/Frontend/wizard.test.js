@@ -301,7 +301,7 @@ test("responder a tudo e avançar enquanto não há pergunta leva ao último pas
     const w = wizard();
 
     w.answer("type", "radar");
-    w.answer("model", "RD-V1");
+    w.answer("model", "HC2");
     w.answer("owner", { company: "hitcare", license: "2004" });
     w.answer("identity", "594B3CB301AB");
 
@@ -320,7 +320,7 @@ test("um seed sem licença fica no passo em que a pergunta está", () => {
     const w = wizard();
 
     w.answer("type", "radar");
-    w.answer("model", "RD-V1");
+    w.answer("model", "HC2");
     w.answer("identity", "594B3CB301AB");
 
     while (w.current() === null && w.canAdvance()) w.advance();
