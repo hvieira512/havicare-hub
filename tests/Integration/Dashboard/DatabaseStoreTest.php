@@ -48,6 +48,21 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
             'weak_vital_signs',
             'zone_entry',
             'zone_exit',
+            'connectivity',
+            'tilt',
+            'firmware_version',
+            'vital_sign_sensitivity',
+            'breath_rate_alert',
+            'heart_rate_alert',
+            'weak_vital_signs_alarm',
+            'fall_alarm',
+            'sitting_on_floor_alarm',
+            'working_mode',
+            'radar_installation',
+            'detection_boundary',
+            'radar_areas',
+            'measure_boundary',
+            'read_device_state',
         ];
         $actualRadar = $db->modelCapabilities->enabledFeaturesForModelId((int)$qinglanst['id']);
         sort($expectedRadar);

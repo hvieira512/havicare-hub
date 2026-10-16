@@ -266,6 +266,55 @@ medido em produção foi de cinco minutos.
 O estado anterior lê-se do Redis e não da memória do processo, e por isso um
 reinício do hub não passa por reconexão.
 
+## 8. Configurações, pela cloud
+
+O radar não aceita comandos pelo MQTT: configura-se pela API Cloud2cloud do
+fabricante (`thirdparty/v2`), com as credenciais da licença. Um radar só se
+configura no hub depois de existir na conta da cloud dessa licença
+(qinglanst.com, ou radarconsole.com nas licenças CVP, emeis e CBS). O modelo é o
+que o `getDeviceInfo` devolve: `modelNumber` 2, **HC2**, nos radares todos.
+
+| Secção | Configuração | Campos | Pedido à cloud |
+|---|---|---|---|
+| Saúde | `vital_sign_sensitivity` | `sensitivity` 1–99 | `threshold` |
+| Alarmes e alertas | `breath_rate_alert` | `minPerMinute`, `maxPerMinute` (0–255, o baixo abaixo do alto) | `threshold` |
+| | `heart_rate_alert` | `minBpm`, `maxBpm` | `threshold` |
+| | `weak_vital_signs_alarm` | `enabled`, `afterMinutes` | `prop` (`suddenDeathSwitch`, com o `scene`) e `threshold` (`suddenDuration`) |
+| | `fall_alarm` | `afterSeconds`, 10–300 em blocos de 10 | `prop` (`postureParams`, primeiro número) |
+| | `sitting_on_floor_alarm` | `enabled`, `afterSeconds` | `prop` (`postureParams`, bit 0 e terceiro número) |
+| Sistema | `working_mode` | `mode`: `full_function` · `fall_detection` · `people_tracking` · `sleep_monitoring` | `prop` (`scene` 1–4) |
+| | `radar_installation` | `mounting` `ceiling` · `wall`, `heightCm` 150–330 | `prop` (`installType` e `height` em dm, juntos) |
+| | `detection_boundary` | `leftM`, `rightM`, `frontM`, `backM` | `border` (quatro vértices em dm; na parede o Y começa no radar) |
+| | `radar_areas` | `items[]`: `key` 0–15, `type` 1–6, `name`, `xMinDm`, `yMinDm`, `xMaxDm`, `yMaxDm` | `coords`, um por área que mudou; a que desaparece vai com o tipo 0 |
+| | `measure_boundary` *(ação)* | `enabled`: começar ou parar | `border` com −127 ou 127 nos quatro vértices |
+| | `read_device_state` *(ação)* | — | `deviceProp` |
+
+**Cada escrita parte do que o radar tem.** O `QinglanstCloudCommands` lê o
+`deviceProp` e monta os pedidos sobre ele: o `threshold` leva sempre os sete
+números, porque um que falte volta ao valor de fábrica, e o `postureParams` é uma
+cadeia `queda,bits,sentado` em que cada configuração mexe só na sua parte. O tempo
+da queda vai sempre pelo `postureParams` e nunca pelo `susFallDuration`, que é o
+mesmo valor por outro campo; um tempo a zero é escrito explícito.
+
+**A entrega.** A alteração entra na fila de downlinks como a de qualquer aparelho
+(`PATCH /api/devices/{imei}/configurations`, ou `POST …/requests` para as ações).
+O `QinglanstCloudDownlinks` tira-a de lá logo que entra e, depois, de cada vez que
+o radar manda uma mensagem (a fila lê-se no máximo de 5 em 5 s). A resposta
+fecha-a: **200** aplicado; **777** radar desligado, fica em fila e volta a sair ao
+fim de 30 s na mensagem seguinte; **778** modo que o modelo não aceita,
+`mode_not_supported`, sem repetir; outro código, `cloud_rejected` com a mensagem
+da cloud.
+
+**A leitura.** Depois de cada escrita, e no pedido «Ler do radar» — que a dashboard
+faz ao abrir o separador Configurações —, o hub volta a ler o radar. O
+`RadarStateAbsorber` guarda as configurações como aplicadas (sem apagar uma
+alteração ainda a caminho, e sem nova revisão se o valor não mudou), publica
+`connectivity`, `tilt` e `firmware_version` como telemetria, e guarda a planta. A
+API não escreve nomes de áreas: o nome dado no hub ganha ao que a cloud tem.
+
+Ninguém mais escreve nestes radares; o hub é a forma de os administradores os
+configurarem. O callback HTTP da cloud não se liga.
+
 ## Implementação
 
 | Ficheiro | Responsabilidade |
@@ -288,3 +337,8 @@ pelo `POST /api/devices/{imei}/radar-layout/sync`.
 | `src/Ingress/Http/Qinglanst/RequestSignature.php` | A assinatura que o fornecedor exige em cada pedido |
 | `src/Ingress/Http/Qinglanst/LayoutParser.php` | A planta crua para a forma que a dashboard desenha |
 | `src/Ingress/Http/Qinglanst/QinglanstApiException.php` | As avarias da cloud, distintas das recusas do pedido |
+| `src/Ingress/Http/Qinglanst/QinglanstCloudCommands.php` | As configurações de e para os campos do `deviceProp` e os pedidos de escrita |
+| `src/Ingress/Http/Qinglanst/QinglanstCloudDownlinks.php` | A entrega pela cloud, e o fecho pela resposta |
+| `src/Ingress/Http/Qinglanst/RadarStateAbsorber.php` | Uma leitura do radar guardada como configuração e telemetria |
+| `src/Command/Configuration/Definition/QinglanstConfigurationDefinitions.php` | O catálogo das configurações |
+| `src/Command/Configuration/Payload/QinglanstPayloadBuilder.php` | Os limites da API |
