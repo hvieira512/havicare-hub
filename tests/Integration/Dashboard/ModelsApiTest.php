@@ -247,7 +247,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $response = $api->filters();
         $groups = $response['data'] ?? [];
 
-        self::assertCount(8, $groups);
+        self::assertCount(9, $groups);
         self::assertSame('watch', $groups[0]['deviceType'] ?? null);
         self::assertSame('ncs', $groups[1]['deviceType'] ?? null);
         self::assertSame('radar', $groups[2]['deviceType'] ?? null);
@@ -256,6 +256,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame('bracelet', $groups[5]['deviceType'] ?? null);
         self::assertSame('pill_dispenser', $groups[6]['deviceType'] ?? null);
         self::assertSame('scale', $groups[7]['deviceType'] ?? null);
+        self::assertSame('blood_pressure_monitor', $groups[8]['deviceType'] ?? null);
         self::assertSame(['4P Touch', 'Vivistar', 'Wonlex'], array_values(array_map(
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[0]['suppliers'] ?? []

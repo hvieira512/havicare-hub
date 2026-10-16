@@ -19,8 +19,9 @@ pelo `FFF1` (notify) e recebe pelo `FFF2` (write). As tramas começam por
 hora e espera resposta; no ECG, sem resposta da app, não envia dados em tempo
 real.
 
-Os gateways MOKO só ouvem anúncios ([capítulo 05](../../05-gateways-ble.md)), por
-isso estes aparelhos não entram pelo caminho atual.
+Os gateways MOKO só ouvem anúncios ([capítulo 05](../../05-gateways-ble.md)). O
+tensiómetro HC-6292B entra pelo gateway BLE da Havicare, que abre a sessão GATT
+([capítulo 23](../../23-tensiometro.md)); os outros ainda não entram.
 
 ## Versões
 

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt;
 
 use Hub\Ingress\Mqtt\Gateway\RedisObservationStateStore;
+use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
+use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
@@ -43,6 +45,7 @@ final class MqttIngressFactory
         $runner->add('MOKO gateway ingress', self::moko($config, $services, $subscribers, $gatewayTopicFilter), 'gateway');
         $runner->add('Veepoo bracelet ingress', self::veepoo($config, $services, $subscribers, $gatewayTopicFilter), 'veepoo');
         $runner->add('Lefu scale ingress', self::lefu($config, $services, $subscribers, $gatewayTopicFilter), 'lefu');
+        $runner->add('JoyTech blood pressure ingress', self::joyTech($config, $services, $subscribers, $gatewayTopicFilter), 'joytech');
 
         $runner->add('Qinglanst ingress', self::qinglanst($config, $services), 'qinglanst');
         $runner->add('Tuya ingress', self::tuya($config, $services, $loop), 'tuya');
@@ -140,6 +143,35 @@ final class MqttIngressFactory
                 commercialModelResolver: $services->commercialModelResolver,
                 scaleUsers: static fn (string $imei): ?array => $services->dataAccess->configurationLifecycle
                     ->effectivePayloads($imei, ['scale_users'])['scale_users'] ?? null,
+            ),
+        );
+    }
+
+    /** @param array<string, mixed> $config */
+    private static function joyTech(
+        array $config,
+        HubServices $services,
+        SubscriberFactory $subscribers,
+        string $topicFilter,
+    ): ?MqttIngress {
+        if (!$config['gateway']['enabled']) {
+            return null;
+        }
+
+        return $subscribers->bind(
+            'joytech-sub',
+            $topicFilter,
+            fn ($subscriber, $reconnect) => new JoyTechBpBridge(
+                $subscriber,
+                $services->whitelist,
+                $services->mqttBridge,
+                $services->dataAccess->gatewayDeviceLinks,
+                $services->downlinkQueue,
+                $topicFilter,
+                $reconnect,
+                $services->deviceStore,
+                commercialModelResolver: $services->commercialModelResolver,
+                marks: new BloodPressureHistoryMarks($services->redis),
             ),
         );
     }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hub\Ingress\Mqtt\Lefu;
+namespace Hub\Ingress\Mqtt\Gateway;
 
 use DateTimeImmutable;
 use Hub\Device\HubMqttBridge;
@@ -12,10 +12,10 @@ use Hub\Log\Logger;
 use Hub\State\DeviceCommandLog;
 
 /**
- * Entrega à balança, pelo gateway com a sessão GATT, o que está em fila. A entrega não fecha o
- * comando: fecha-o a resposta da balança, ou o gateway quando a ordem não tem resposta.
+ * Entrega a um aparelho, pelo gateway com a sessão GATT, o que está em fila. A entrega não fecha o
+ * comando: fecha-o a resposta do aparelho, ou o gateway quando a ordem não tem resposta.
  */
-final class LefuDownlinks
+final class GattDownlinks
 {
     /** Uma entrega sem `command_result` volta a sair ao fim disto. */
     private const RESEND_SECONDS = 30;
@@ -23,20 +23,27 @@ final class LefuDownlinks
     /** @var array<string, int> */
     private array $sentAt = [];
 
+    /**
+     * @param \Closure(string, array<string, mixed>, int, DateTimeImmutable, int): list<array<string, mixed>> $encoder
+     *     as escritas GATT de cada operação, montadas pelo protocolo do aparelho
+     */
     public function __construct(
         private readonly ?PendingDownlinkQueue $downlinks,
         private readonly HubMqttBridge $mqttBridge,
         private readonly ?DeviceCommandLog $deviceStore,
         private readonly string $topicFilter,
-        private readonly TorreCommandEncoder $encoder = new TorreCommandEncoder(),
+        private readonly \Closure $encoder,
     ) {
     }
 
-    public function dispatchPending(string $deviceKey, string $gatewayKey, int $mtu, int $offsetMinutes): void
+    /** @return list<string> as operações que saíram */
+    public function dispatchPending(string $deviceKey, string $gatewayKey, int $mtu, int $offsetMinutes): array
     {
         if ($this->downlinks === null) {
-            return;
+            return [];
         }
+
+        $sent = [];
 
         $now = time();
         foreach ($this->downlinks->pendingFor($deviceKey) as $downlink) {
@@ -47,7 +54,7 @@ final class LefuDownlinks
             $payload = is_array($downlink->command['payload'] ?? null) ? $downlink->command['payload'] : [];
 
             try {
-                $writes = $this->encoder->writes($operation, $payload, $mtu, new DateTimeImmutable(), $offsetMinutes);
+                $writes = $this->writes($operation, $payload, $mtu, $offsetMinutes);
             } catch (\InvalidArgumentException $error) {
                 $this->downlinks->remove($downlink);
                 $this->mark($deviceKey, $downlink, ['status' => 'failed', 'error' => $error->getMessage()]);
@@ -57,7 +64,10 @@ final class LefuDownlinks
             $this->publish($gatewayKey, $deviceKey, $operation, $downlink->dedupeKey, self::commandId($downlink), $writes, $downlink->expiresAt);
             $this->sentAt[$downlink->dedupeKey] = $now;
             $this->mark($deviceKey, $downlink, ['status' => 'waiting', 'sentAt' => gmdate('Y-m-d\TH:i:s\Z')]);
+            $sent[] = $operation;
         }
+
+        return $sent;
     }
 
     /**
@@ -68,7 +78,7 @@ final class LefuDownlinks
      */
     public function sendDirect(string $deviceKey, string $gatewayKey, string $operation, array $payload, int $mtu, int $offsetMinutes): void
     {
-        $writes = $this->encoder->writes($operation, $payload, $mtu, new DateTimeImmutable(), $offsetMinutes);
+        $writes = $this->writes($operation, $payload, $mtu, $offsetMinutes);
         $this->publish($gatewayKey, $deviceKey, $operation, $operation . ':' . $deviceKey . ':' . time(), null, $writes, time() + 60);
     }
 
@@ -95,6 +105,15 @@ final class LefuDownlinks
         }
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return list<array<string, mixed>>
+     */
+    private function writes(string $operation, array $payload, int $mtu, int $offsetMinutes): array
+    {
+        return ($this->encoder)($operation, $payload, $mtu, new DateTimeImmutable(), $offsetMinutes);
+    }
+
     /** @param list<array<string, mixed>> $writes */
     private function publish(string $gatewayKey, string $deviceKey, string $operation, string $dedupeKey, ?string $commandId, array $writes, int $expiresAt): void
     {
@@ -106,7 +125,7 @@ final class LefuDownlinks
             'payload' => ['writes' => $writes],
             'expiresAt' => $expiresAt,
         ]);
-        Logger::channel('hub')->info("Lefu downlink {$operation} entregue ao gateway {$gatewayKey} para {$deviceKey}");
+        Logger::channel('hub')->info("Downlink GATT {$operation} entregue ao gateway {$gatewayKey} para {$deviceKey}");
     }
 
     /** @param array<string, mixed> $fields */

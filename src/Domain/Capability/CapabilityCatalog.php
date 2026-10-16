@@ -11,6 +11,7 @@ use Hub\Domain\Capability\Definition\NcsCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\RadarCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\ScaleCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\GatewayCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\BloodPressureMonitorCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\BraceletCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\DiaperSensorCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\PillDispenserCapabilityDefinitions;
@@ -64,6 +65,7 @@ final class CapabilityCatalog
             BraceletCapabilityDefinitions::all(),
             PillDispenserCapabilityDefinitions::all(),
             ScaleCapabilityDefinitions::all(),
+            BloodPressureMonitorCapabilityDefinitions::all(),
         );
     }
 
@@ -229,6 +231,7 @@ final class CapabilityCatalog
             BraceletCapabilityDefinitions::publishers(),
             PillDispenserCapabilityDefinitions::publishers(),
             ScaleCapabilityDefinitions::publishers(),
+            BloodPressureMonitorCapabilityDefinitions::publishers(),
         ];
 
         foreach ($files as $publishers) {
@@ -429,6 +432,7 @@ final class CapabilityCatalog
             'select_scale_user',
             'scale_users',
             'read_scale_history',
+            'read_blood_pressure_history',
             // O radar também: a chave é a operação que a entrega traduz para a cloud.
             'vital_sign_sensitivity',
             'working_mode',

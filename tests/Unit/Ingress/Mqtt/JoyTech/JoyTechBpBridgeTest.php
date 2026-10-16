@@ -1,0 +1,222 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit\Ingress\Mqtt\JoyTech;
+
+use Hub\Device\PendingDownlinkQueue;
+use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
+use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
+use Hub\State\DeviceStoreContract;
+use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\FakeMqttSubscriber;
+use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\OneShotDownlinkQueue;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
+
+/** Do gateway ao MQTT, com as tramas que o DBP-6292B mandou à sonda a 2026-10-16. */
+final class JoyTechBpBridgeTest extends TestCase
+{
+    private const GATEWAY = 'bef341903987';
+    private const MONITOR = 'c000748b3483';
+    private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
+
+    /** 136/73 mmHg, 76 bpm, sem arritmia, 2026-10-16 14:51, grupo 1. */
+    private const LIVE = 'faaaaaaf00168300880049 4c001a0a100e33012cf55f';
+    /** 123/87 mmHg, 89 bpm, 2026-05-13 09:41, grupo 2. */
+    private const MAY = 'faaaaaaf0016830 07b0057590 01a050d092902 24f55f';
+    /** 142/79 mmHg, 88 bpm, com arritmia, 2021-01-01 00:01: o relógio estava por acertar. */
+    private const UNSET_CLOCK = 'faaaaaaf001683008e004f58ff150101000101e6f55f';
+    private const MEMORY_END = 'faaaaaaf000a8b95f55f';
+
+    private float $now;
+
+    private BloodPressureHistoryMarks $marks;
+
+    protected function setUp(): void
+    {
+        $this->now = (float)strtotime('2026-10-16T13:51:40Z');
+        $this->marks = new BloodPressureHistoryMarks();
+    }
+
+    /** O aparelho não pede a hora: acerta-se a cada ligação, e logo a seguir lê-se a memória. */
+    public function testTheSessionPutsItOnlineSetsTheClockAndReadsTheMemory(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+
+        self::assertSame('online', $mqtt->statuses[0]['payload']['state']);
+        self::assertSame(['calibrateClock', 'readBloodPressureHistory'], array_column(array_column($mqtt->gatewayCommands, 'payload'), 'operation'));
+        self::assertStringStartsWith('faaaaaaf000f04', $mqtt->gatewayCommands[0]['payload']['payload']['writes'][0]['hex']);
+    }
+
+    /** O resultado ao vivo vem 6 vezes, de 2 em 2 s, e sai uma só, com a hora de chegada. */
+    public function testALiveResultLeavesOnceWithItsArrivalTime(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        for ($i = 0; $i < 6; $i++) {
+            $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+            $this->now += 2;
+        }
+
+        $pressures = self::telemetry($mqtt, 'blood_pressure');
+        self::assertSame([['systolicMmHg' => 136, 'diastolicMmHg' => 73, 'irregularHeartbeat' => false, 'memoryGroup' => 1]], array_column($pressures, 'data'));
+        self::assertSame('2026-10-16T13:51:40Z', $pressures[0]['occurredAt']);
+        self::assertSame([['bpm' => 76]], array_column(self::telemetry($mqtt, 'heart_rate'), 'data'));
+    }
+
+    /**
+     * Da memória sai com a hora do aparelho e `fromHistory`. As de antes de 2025 têm a data
+     * errada e ficam.
+     */
+    public function testTheMemoryLeavesDatedByTheMonitor(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $this->readMemory($bridge, [self::UNSET_CLOCK, self::MAY]);
+
+        $pressures = self::telemetry($mqtt, 'blood_pressure');
+        self::assertSame([['systolicMmHg' => 123, 'diastolicMmHg' => 87, 'irregularHeartbeat' => false, 'memoryGroup' => 2, 'fromHistory' => true]], array_column($pressures, 'data'));
+        self::assertSame('2026-05-13T08:41:00Z', $pressures[0]['occurredAt']);
+        self::assertSame([['bpm' => 89, 'fromHistory' => true]], array_column(self::telemetry($mqtt, 'heart_rate'), 'data'));
+    }
+
+    /** Ler a memória não a apaga: a segunda leitura, mesmo depois de reiniciar o hub, não repete nada. */
+    public function testASecondReadOfTheMemoryRepeatsNothing(): void
+    {
+        $this->readMemory($this->bridge(new RecordingHubMqttBridge()), [self::MAY]);
+        $this->now += 60;
+
+        $mqtt = new RecordingHubMqttBridge();
+        $this->readMemory($this->bridge($mqtt), [self::MAY]);
+
+        self::assertSame([], $mqtt->telemetry);
+    }
+
+    /** O que saiu ao vivo também está na memória, e a leitura seguinte não o traz outra vez. */
+    public function testALiveResultIsNotRepeatedByTheNextRead(): void
+    {
+        $bridge = $this->bridge(new RecordingHubMqttBridge());
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+        $this->now += 60;
+
+        $mqtt = new RecordingHubMqttBridge();
+        $this->readMemory($this->bridge($mqtt), [self::LIVE]);
+
+        self::assertSame([], $mqtt->telemetry);
+    }
+
+    /** A medição em curso ignora a leitura da memória; o resultado que chega a seguir é ao vivo. */
+    public function testAResultLongAfterTheReadIsLive(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        $this->now += 30;
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+
+        self::assertArrayNotHasKey('fromHistory', self::telemetry($mqtt, 'blood_pressure')[0]['data']);
+    }
+
+    /** O fim da memória fecha o pedido de a ler. */
+    public function testTheMemoryEndClosesTheRequest(): void
+    {
+        $replies = [];
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->method('markCommandReply')->willReturnCallback(
+            static function (string $imei, string $type, mixed $ident, string $ref, ?bool $accepted) use (&$replies): void {
+                $replies[] = [$type, $accepted];
+            }
+        );
+
+        $this->bridge(new RecordingHubMqttBridge(), store: $store)->handleReceivedMessage(self::TOPIC, self::frame(self::MEMORY_END));
+
+        self::assertSame([['joytech_8b', true]], $replies);
+    }
+
+    public function testAQueuedReadLeavesWhenTheMonitorConnects(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new OneShotDownlinkQueue('readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []]);
+
+        $this->bridge($mqtt, $queue)->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+
+        // A leitura pedida substitui a automática: o aparelho não lê a memória duas vezes.
+        $commands = array_column($mqtt->gatewayCommands, 'payload');
+        self::assertSame(['calibrateClock', 'readBloodPressureHistory'], array_column($commands, 'operation'));
+        self::assertSame('op-1', $commands[1]['commandId']);
+    }
+
+    public function testAMonitorNotLinkedToTheGatewayIsIgnored(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $this->bridge($mqtt, links: false)->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+
+        self::assertSame([], $mqtt->telemetry);
+    }
+
+    /** @param list<string> $records */
+    private function readMemory(JoyTechBpBridge $bridge, array $records): void
+    {
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        foreach ($records as $hex) {
+            $this->now += 0.1;
+            $bridge->handleReceivedMessage(self::TOPIC, self::frame($hex));
+        }
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::MEMORY_END));
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function telemetry(RecordingHubMqttBridge $mqtt, string $type): array
+    {
+        return array_values(array_map(
+            static fn (array $entry): array => $entry['payload'],
+            array_filter($mqtt->telemetry, static fn (array $entry): bool => ($entry['payload']['type'] ?? null) === $type),
+        ));
+    }
+
+    private static function frame(string $hex): string
+    {
+        return self::message('frame', ['char' => 'fff1', 'hex' => str_replace(' ', '', $hex)]);
+    }
+
+    /** @param array<string, mixed> $payload */
+    private static function message(string $kind, array $payload): string
+    {
+        return json_encode([
+            'gatewayId' => self::GATEWAY,
+            'source' => 'joytech-node',
+            'kind' => $kind,
+            'device' => ['mac' => self::MONITOR, 'model' => 'DBP-6292B'],
+            'payload' => $payload,
+            'tzOffsetMinutes' => 60,
+        ], JSON_THROW_ON_ERROR);
+    }
+
+    private function bridge(
+        RecordingHubMqttBridge $mqtt,
+        ?PendingDownlinkQueue $queue = null,
+        ?DeviceStoreContract $store = null,
+        bool $links = true,
+    ): JoyTechBpBridge {
+        return new JoyTechBpBridge(
+            new FakeMqttSubscriber(),
+            IngressFixtures::whitelist([
+                self::GATEWAY => IngressFixtures::device('Havicare', 'BLE Gateway', 'gateway'),
+                self::MONITOR => IngressFixtures::device('JoyTech', 'HC-6292B', 'blood_pressure_monitor'),
+            ]),
+            $mqtt,
+            IngressFixtures::links($links),
+            $queue,
+            'havicare-hub/null/0/gw/+/raw',
+            null,
+            $store,
+            fn (): float => $this->now,
+            marks: $this->marks,
+        );
+    }
+}

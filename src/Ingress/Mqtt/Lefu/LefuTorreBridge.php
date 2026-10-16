@@ -10,6 +10,8 @@ use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\TelemetryEnvelope;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\DispatchesQueued;
+use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
+use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
 use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
@@ -70,7 +72,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
 
     private readonly TorreFrameDecoder $decoder;
 
-    private readonly LefuDownlinks $downlinks;
+    private readonly GattDownlinks $downlinks;
 
     private readonly BraceletPresence $presence;
 
@@ -103,7 +105,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         $this->commands = $deviceStore;
         $this->scaleUsers = $scaleUsers !== null ? \Closure::fromCallable($scaleUsers) : null;
         $this->decoder = new TorreFrameDecoder();
-        $this->downlinks = new LefuDownlinks($queue, $mqttBridge, $deviceStore, $topicFilter);
+        $this->downlinks = new GattDownlinks($queue, $mqttBridge, $deviceStore, $topicFilter, (new TorreCommandEncoder())->writes(...));
         $this->presence = new BraceletPresence($mqttBridge, $deviceStore, self::PROTOCOL, self::DEVICE_TYPE);
     }
 
@@ -146,7 +148,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         }
 
         $device = $this->enrichWithCommercialName($device);
-        $context = new ScaleContext(
+        $context = new GattDeviceContext(
             (string)$device['imei'],
             (string)$gateway['imei'],
             $device,
@@ -171,7 +173,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /** @param array<string, mixed> $data */
-    private function session(ScaleContext $context, array $data, int $offsetMinutes): void
+    private function session(GattDeviceContext $context, array $data, int $offsetMinutes): void
     {
         if (($data['connected'] ?? false) !== true) {
             unset($this->sessions[$context->deviceKey], $this->encodedImpedance[$context->deviceKey]);
@@ -208,7 +210,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         );
     }
 
-    private function frame(ScaleContext $context, string $characteristic, string $hex): void
+    private function frame(GattDeviceContext $context, string $characteristic, string $hex): void
     {
         $frame = $this->decoder->decode($characteristic, $hex);
         if ($frame === null) {
@@ -231,7 +233,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /** @param array<string, mixed> $frame */
-    private function weighing(ScaleContext $context, array $frame, string $nativeType): void
+    private function weighing(GattDeviceContext $context, array $frame, string $nativeType): void
     {
         $deviceKey = $context->deviceKey;
         $status = ['weightKg' => $frame['weightKg']] + $frame['status'];
@@ -301,7 +303,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
      *
      * @param array<string, mixed> $frame
      */
-    private function history(ScaleContext $context, array $frame, string $nativeType): void
+    private function history(GattDeviceContext $context, array $frame, string $nativeType): void
     {
         $user = ['scaleUserId' => (string)$frame['memberId'], 'fromHistory' => true];
         foreach ($frame['records'] as $record) {
@@ -324,20 +326,20 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /** @param array<string, mixed> $frame */
-    private function setting(ScaleContext $context, array $frame, string $nativeType): void
+    private function setting(GattDeviceContext $context, array $frame, string $nativeType): void
     {
         $this->emit($context, 'device_config', $nativeType, ['settings' => $frame['settings']]);
         $this->commands?->markCommandReply($context->deviceKey, (string)$frame['replyType'], null, '', true);
     }
 
     /** @param array<string, mixed> $frame */
-    private function reply(ScaleContext $context, array $frame): void
+    private function reply(GattDeviceContext $context, array $frame): void
     {
         $this->commands?->markCommandReply($context->deviceKey, (string)$frame['replyType'], null, '', (bool)$frame['accepted']);
     }
 
     /** @param array<string, mixed> $data */
-    private function emit(ScaleContext $context, string $type, string $nativeType, array $data, ?string $occurredAt = null): void
+    private function emit(GattDeviceContext $context, string $type, string $nativeType, array $data, ?string $occurredAt = null): void
     {
         $telemetry = TelemetryEnvelope::for(
             $type,

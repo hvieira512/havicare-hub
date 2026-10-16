@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Command;
 
 use Hub\Command\Configuration\Definition\FourPTouchConfigurationDefinitions;
+use Hub\Command\Configuration\Definition\JoyTechConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\LefuTorreConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\MonitConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\QinglanstConfigurationDefinitions;
@@ -44,6 +45,7 @@ final class DeviceConfigurationCatalog
             'zayata-m228' => ZayataConfigurationDefinitions::all(),
             'lefu-torre' => LefuTorreConfigurationDefinitions::all(),
             'qinglanst-radar' => QinglanstConfigurationDefinitions::all(),
+            'joytech-bp' => JoyTechConfigurationDefinitions::all(),
             default => [],
         };
 
@@ -177,6 +179,8 @@ final class DeviceConfigurationCatalog
                 'zayata-m228' => ZayataPayloadBuilder::build($key, $payload),
                 'lefu-torre' => LefuTorrePayloadBuilder::build($key, $payload),
                 'qinglanst-radar' => QinglanstPayloadBuilder::build($key, $payload),
+                // A única ação não leva dados.
+                'joytech-bp' => [],
                 default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
             },
         ]];

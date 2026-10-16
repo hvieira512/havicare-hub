@@ -126,7 +126,7 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `type` | `data` |
 |---|---|
 | `heart_rate` | `bpm` |
-| `blood_pressure` | `systolicMmHg`, `diastolicMmHg` |
+| `blood_pressure` | `systolicMmHg`, `diastolicMmHg`. O tensiómetro junta `irregularHeartbeat` e `memoryGroup` (1–4), e da memória `fromHistory: true` — ver o [capítulo 23](23-tensiometro.md) |
 | `blood_oxygen` | `spo2Percent` |
 | `blood_sugar` | `glucoseMgDl` |
 | `breath_rate` | `breathsPerMinute` |

@@ -11,7 +11,7 @@ use PDO;
 
 final class ReferenceCatalogSeeder
 {
-    private const SUPPLIERS = ['Wonlex', 'Vivistar', '4P Touch', 'Voerka', 'Qinglanst', 'MOKO', 'MONIT', 'Zayata', 'PST', 'Unique Scales', 'Havicare'];
+    private const SUPPLIERS = ['Wonlex', 'Vivistar', '4P Touch', 'Voerka', 'Qinglanst', 'MOKO', 'MONIT', 'Zayata', 'PST', 'Unique Scales', 'Havicare', 'JoyTech'];
 
     /** O catálogo de modelos completo, tal como a produção o tem a 2026-09-29. */
     private const MODELS = [
@@ -43,6 +43,7 @@ final class ReferenceCatalogSeeder
         // Nunca testada: não se sabe se também fala Torre.
         ['Unique Scales', 'HC-CF621BLE', 'HC-CF621BLE', 'scale', '1d024ba99d692a5fefbc8dad0dce563d.jpg'],
         ['Havicare', 'BLE Gateway', 'Gateway BLE', 'gateway', ''],
+        ['JoyTech', 'HC-6292B', 'HC-6292B', 'blood_pressure_monitor', 'cbae0ad7a44f97f1d4993e551e03a28b.jpg'],
     ];
 
     /**

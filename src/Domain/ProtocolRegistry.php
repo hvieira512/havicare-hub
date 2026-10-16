@@ -99,6 +99,12 @@ final class ProtocolRegistry
                 'deviceType' => 'gateway',
                 'supportsConfigCatalog' => false,
             ],
+            // Como a balança: GATT por um gateway por software, com o protocolo todo no hub.
+            'joytech-bp' => [
+                'label' => 'JoyTech',
+                'deviceType' => 'blood_pressure_monitor',
+                'supportsConfigCatalog' => true,
+            ],
             'zayata-m228' => [
                 'label' => 'Zayata',
                 'deviceType' => 'pill_dispenser',

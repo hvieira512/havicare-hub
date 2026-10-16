@@ -105,5 +105,17 @@
         },
         "sim": false,
         "gatewayLinks": true
+    },
+    "blood_pressure_monitor": {
+        "label": "Tensiómetro",
+        "icon": "fa-stethoscope",
+        "identity": {
+            "field": "deviceId",
+            "label": "MAC",
+            "help": "Endereço MAC canónico, sem separadores (12 caracteres hexadecimais).",
+            "placeholder": "c000748b3483"
+        },
+        "sim": false,
+        "gatewayLinks": true
     }
 }
