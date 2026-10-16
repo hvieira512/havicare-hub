@@ -62,6 +62,7 @@ const CARD_STYLE = {
     sleep_apnea: ["fa-bed-pulse", "warning"],
     // A versão de firmware é ficha técnica e não uma leitura: fica no cinzento do sistema.
     firmware_version: ["fa-microchip", "secondary"],
+    tilt: ["fa-ruler-combined", "secondary"],
     proximity: ["fa-tower-broadcast", "info"],
     presence: ["fa-location-crosshairs", "success"],
     ecg: ["fa-wave-square", "danger"],

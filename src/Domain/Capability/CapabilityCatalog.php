@@ -429,6 +429,18 @@ final class CapabilityCatalog
             'select_scale_user',
             'scale_users',
             'read_scale_history',
+            // O radar também: a chave é a operação que a entrega traduz para a cloud.
+            'vital_sign_sensitivity',
+            'working_mode',
+            'breath_rate_alert',
+            'weak_vital_signs_alarm',
+            'fall_alarm',
+            'sitting_on_floor_alarm',
+            'radar_installation',
+            'detection_boundary',
+            'radar_areas',
+            'measure_boundary',
+            'read_device_state',
             'reset_device' => $key,
             default => null,
         };
