@@ -162,7 +162,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
     {
         $deviceKey = $context->deviceKey;
         if (!$connected) {
-            $this->finishReading($deviceKey);
+            unset($this->reading[$deviceKey]);
             $this->ecg->drop($deviceKey);
             unset($this->sessions[$deviceKey]);
             $this->presence($context)->markOffline($deviceKey, $context->device, $context->licenseId, $context->company);
@@ -199,7 +199,6 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
     private function startReading(string $deviceKey): void
     {
-        $this->finishReading($deviceKey);
         $marks = [];
         foreach ([1, 2, 3, 4] as $group) {
             $marks[$group] = $this->marks->mark($deviceKey, $group);
@@ -207,6 +206,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         $this->reading[$deviceKey] = ['until' => $this->clockNow() + self::MEMORY_SILENCE_SECONDS, 'marks' => $marks, 'latest' => []];
     }
 
+    /** Só no `0x8B`: uma leitura interrompida deixa a marca onde estava, e o que já saiu está na lista. */
     private function finishReading(string $deviceKey): void
     {
         foreach ($this->reading[$deviceKey]['latest'] ?? [] as $group => $at) {
@@ -221,6 +221,8 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         if ($frame === null) {
             return;
         }
+        // Um hub reiniciado com o aparelho ligado não viu a `session`.
+        $this->sessions[$context->deviceKey] ??= ['gateway' => $context->gatewayKey, 'offset' => $offsetMinutes, 'memoryRead' => false, 'readAt' => null];
 
         if ($frame['function'] === 0x8b) {
             $this->finishReading($context->deviceKey);
@@ -288,7 +290,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         $reading = $this->reading[$deviceKey] ?? null;
         $fromHistory = $reading !== null && $now <= $reading['until'];
         if ($reading !== null && !$fromHistory) {
-            $this->finishReading($deviceKey);
+            unset($this->reading[$deviceKey]);
         }
         // Uma repetição também é um registo da leitura, e mantém-na aberta.
         if ($fromHistory) {
@@ -303,25 +305,27 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
         $group = (int)$fields['group'];
-        $at = JoyTechFrame::unixTime((int)$fields['year'], (int)$fields['month'], (int)$fields['day'], (int)$fields['hour'], (int)$fields['minute'], $offsetMinutes);
+        // A marca e a lista guardam a hora local do aparelho, que a mudança de hora não mexe.
+        $local = JoyTechFrame::unixTime((int)$fields['year'], (int)$fields['month'], (int)$fields['day'], (int)$fields['hour'], (int)$fields['minute'], 0);
+        $at = $local === null ? null : $local - $offsetMinutes * 60;
         $plausible = $at !== null && $at >= self::HISTORY_EPOCH && $at <= $now + self::FUTURE_TOLERANCE_SECONDS;
 
         if ($fromHistory) {
-            if (!$plausible || $at <= ($reading['marks'][$group] ?? 0)) {
+            if (!$plausible || $local <= ($reading['marks'][$group] ?? 0)) {
                 return;
             }
-            $this->reading[$deviceKey]['latest'][$group] = max($at, $reading['latest'][$group] ?? 0);
-            if ($this->marks->wasLive($deviceKey, $group, $data)) {
-                return;
-            }
-        } else {
-            if ($plausible) {
-                // A marca não avança ao vivo: o que se mediu sem gateway antes disto ainda está na memória.
-                $this->marks->rememberLive($deviceKey, $group, $data, $at);
-            }
-            if (isset($this->sessions[$deviceKey]) && !$this->sessions[$deviceKey]['memoryRead']) {
-                $this->sessions[$deviceKey]['readAt'] = $now + self::READ_AFTER_RESULT_SECONDS;
-            }
+            $this->reading[$deviceKey]['latest'][$group] = max($local, $reading['latest'][$group] ?? 0);
+        }
+        // Já saiu, ou é da memória fora de uma leitura: um ao vivo é sempre mais recente do que a marca.
+        if ($plausible && ($this->marks->wasLive($deviceKey, $group, $data) || (!$fromHistory && $local <= $this->marks->mark($deviceKey, $group)))) {
+            return;
+        }
+        if ($plausible) {
+            // A marca só avança no fim de uma leitura; até lá, o que saiu fica nesta lista e não se repete.
+            $this->marks->rememberLive($deviceKey, $group, $data, (int)$local);
+        }
+        if (!$fromHistory && isset($this->sessions[$deviceKey]) && !$this->sessions[$deviceKey]['memoryRead']) {
+            $this->sessions[$deviceKey]['readAt'] = $now + self::READ_AFTER_RESULT_SECONDS;
         }
 
         // Ao vivo, a hora de chegada: o relógio do aparelho pode estar por acertar.

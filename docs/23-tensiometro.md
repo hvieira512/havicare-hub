@@ -56,16 +56,20 @@ Cada resultado sai como `blood_pressure` (`systolicMmHg`, `diastolicMmHg`,
   ou não; 3 s de silêncio quer dizer que a leitura não começou.
 
 **Marca por aparelho e grupo.** O hub guarda no Redis
-(`hub:joytech:history-mark:{mac}`), por grupo, a hora do aparelho do registo
-mais recente que leu da memória. Da memória só sai o que for mais recente do que
-a marca quando a leitura começou. A memória é um anel e não vem por ordem, por
-isso cada registo compara-se sozinho e a marca só avança no fim da leitura.
+(`hub:joytech:history-mark:{mac}`), por grupo, a hora local do aparelho do
+registo mais recente que leu da memória — local para a mudança de hora não a
+mexer. Da memória só sai o que for mais recente do que a marca quando a leitura
+começou. A memória é um anel e não vem por ordem, por isso cada registo
+compara-se sozinho, e a marca só avança no `0x8B`: uma leitura interrompida
+deixa-a onde estava, e o que dela já saiu fica na lista de baixo.
 
 Cada ligação começa com uma medição, porque o aparelho só se anuncia quando se
 carrega em Start, e ela chega antes da memória. Por isso o ao vivo **não** avança
 a marca: o que se mediu sem gateway antes dele ainda tem de entrar. Fica guardado
-tal como veio (`hub:joytech:live:{mac}:{grupo}`), a memória não o repete, e sai
-dessa lista quando a marca o ultrapassa. A lista expira 90 dias depois da última
+tal como veio (`hub:joytech:live:{mac}:{grupo}`), com o que já saiu de uma
+leitura por acabar; a memória não o repete, e sai dessa lista quando a marca o
+ultrapassa. Um registo que chegue fora de uma leitura e não seja mais recente do
+que a marca é da memória, e não sai como ao vivo. A lista expira 90 dias depois da última
 escrita; a marca não expira, porque sem ela a memória toda voltava a sair.
 
 Só contam horas plausíveis: desde 1 de janeiro de 2025 e não mais de 5 minutos à
@@ -74,7 +78,9 @@ frente. As medições feitas com o relógio por acertar ficam de fora.
 **Limites conhecidos.** Se o relógio do aparelho voltar a 2021 (pilhas trocadas)
 e se medir sem gateway por perto, essas medições ficam abaixo da data mínima e
 perdem-se. Duas medições no mesmo grupo e no mesmo minuto contam como uma. Na
-mudança de hora, um registo medido antes e lido depois fica com uma hora de erro.
+mudança de hora, um registo medido antes e lido depois fica com uma hora de erro
+no `occurredAt`, mas não se repete. Um hub reiniciado com o aparelho ligado
+refaz a sessão com a primeira trama que chegar.
 
 ## O HC-6679B, com ECG
 

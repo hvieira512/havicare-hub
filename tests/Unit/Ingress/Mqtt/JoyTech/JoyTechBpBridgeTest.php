@@ -34,10 +34,13 @@ final class JoyTechBpBridgeTest extends TestCase
 
     private BloodPressureHistoryMarks $marks;
 
+    private static int $offset = 60;
+
     protected function setUp(): void
     {
         $this->now = (float)strtotime('2026-10-16T13:51:40Z');
         $this->marks = new BloodPressureHistoryMarks();
+        self::$offset = 60;
     }
 
     /** O aparelho não pede a hora: acerta-se a cada ligação, e logo a seguir lê-se a memória. */
@@ -144,6 +147,68 @@ final class JoyTechBpBridgeTest extends TestCase
         $this->readMemory($this->bridge($mqtt), [$later, $earlier]);
 
         self::assertSame([], $mqtt->telemetry);
+    }
+
+    /** A ligação cai a meio da memória: o que ficou por ler entra na seguinte, e o que já saiu não se repete. */
+    public function testAnInterruptedReadLosesNothing(): void
+    {
+        [$first, $second, $third] = [
+            self::reading(121, 80, 70, 26, 9, 1, 9, 0, 1),
+            self::reading(122, 81, 71, 26, 9, 2, 9, 0, 1),
+            self::reading(123, 82, 72, 26, 9, 3, 9, 0, 1),
+        ];
+        $bridge = $this->bridge(new RecordingHubMqttBridge());
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        $this->now += 0.1;
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame($third));
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => false]));
+        $this->now += 60;
+
+        $mqtt = new RecordingHubMqttBridge();
+        $this->readMemory($this->bridge($mqtt), [$third, $second, $first]);
+
+        self::assertSame([122, 121], array_column(array_column(self::telemetry($mqtt, 'blood_pressure'), 'data'), 'systolicMmHg'));
+    }
+
+    /** Um registo da memória que chegue fora da leitura não passa por medição nova. */
+    public function testAnOldRecordOutsideARead(): void
+    {
+        $april = self::reading(119, 77, 66, 26, 4, 2, 9, 0, 2);
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $this->readMemory($bridge, [self::MAY]);
+        $this->now += 60;
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame($april));
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::MAY));
+
+        self::assertCount(1, self::telemetry($mqtt, 'blood_pressure'));
+    }
+
+    /** Na mudança de hora o aparelho guarda a mesma hora local, e a memória não volta a sair. */
+    public function testTheClockChangeDoesNotBringTheMemoryBack(): void
+    {
+        $this->readMemory($this->bridge(new RecordingHubMqttBridge()), [self::MAY]);
+        $this->now += 86400;
+        self::$offset = 0;
+
+        $mqtt = new RecordingHubMqttBridge();
+        $this->readMemory($this->bridge($mqtt), [self::MAY]);
+
+        self::assertSame([], self::telemetry($mqtt, 'blood_pressure'));
+    }
+
+    /** O hub reiniciou com o aparelho ligado: o primeiro resultado refaz a sessão, e a memória pede-se. */
+    public function testARestartedHubPicksTheSessionUpFromTheFrames(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+        $this->now += 16;
+
+        $bridge->dispatchQueued();
+
+        self::assertSame(['readBloodPressureHistory'], array_column(array_column($mqtt->gatewayCommands, 'payload'), 'operation'));
     }
 
     /** A medição em curso ignora a leitura da memória; o resultado que chega a seguir é ao vivo. */
@@ -319,7 +384,7 @@ final class JoyTechBpBridgeTest extends TestCase
             'kind' => $kind,
             'device' => ['mac' => self::MONITOR, 'model' => 'DBP-6292B'],
             'payload' => $payload,
-            'tzOffsetMinutes' => 60,
+            'tzOffsetMinutes' => self::$offset,
         ], JSON_THROW_ON_ERROR);
     }
 
