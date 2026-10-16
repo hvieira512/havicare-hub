@@ -154,6 +154,15 @@ test("os limites de deteção partem dos de fábrica do teto e aceitam décimas"
     assert.equal(readConfigPayload(root).frontM, 2.7);
 });
 
+test("mudar a montagem para parede põe os limites de fábrica da parede", async () => {
+    const { applyFactoryBoundary } = await import("../../src/Dashboard/dashboard/devices/config/inputs/radar.js");
+    const pane = parseFragment(`<div data-config-pane>${renderConfigSection(PROTOCOL, boundary, null)}</div>`).firstElementChild;
+
+    applyFactoryBoundary(pane, "wall");
+
+    assert.deepEqual(readConfigPayload(pane.querySelector("[data-config-section]")), { leftM: 3, rightM: 3, frontM: 4, backM: 0 });
+});
+
 test("as áreas não se editam no cartão e voltam tal como vieram", () => {
     const items = [
         { key: 0, type: 5, name: "Cama de monitorização", xMinDm: -4, yMinDm: -6, xMaxDm: 6, yMaxDm: 13 },

@@ -809,6 +809,16 @@
     --bs-modal-width: min(1680px, 96vw);
 }
 
+/* Aberta das configurações, a planta fica por cima do modal do dispositivo, e o segundo fundo
+   entre os dois. */
+#radarMapModal {
+    z-index: 1065;
+}
+
+.modal-backdrop ~ .modal-backdrop {
+    z-index: 1060;
+}
+
 /* A altura sai da proporção da divisão e é o `radar-scene.js` que a escreve, depois de saber
    quanto mede a sala. Aqui fica só o chão para o instante entre abrir e desenhar. */
 .radar-map-canvas {
@@ -831,6 +841,51 @@
    `shown.bs.modal` porque o amCharts mede o contentor uma vez -- ver `resizeVitals`. */
 .radar-vital-chart {
     min-height: 6rem;
+}
+
+/* O editor das áreas: ver `devices/radar-area-editor.js`. A cor do tipo vem na borda esquerda. */
+.radar-area-chip {
+    gap: 0;
+    line-height: 1.2;
+    padding: .3rem .6rem;
+    background: var(--bs-body-bg);
+}
+
+.radar-area-chip.active {
+    background: var(--brand-subtle);
+    border-color: var(--brand) !important;
+}
+
+.radar-area-chip-name {
+    font-size: .8rem;
+    white-space: nowrap;
+}
+
+.radar-area-chip.deleted .radar-area-chip-name {
+    text-decoration: line-through;
+    opacity: .6;
+}
+
+.radar-area-chip-type {
+    font-size: .65rem;
+    white-space: nowrap;
+}
+
+.radar-area-chip-dot {
+    width: .45rem;
+    height: .45rem;
+    border-radius: 50%;
+    background: var(--bs-warning);
+}
+
+.radar-area-inspector {
+    width: 250px;
+    z-index: 3;
+}
+
+.radar-map-canvas:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
 }
 
 /* O nome ocupa duas linhas antes de cortar, e leva o valor inteiro no `title`. */
