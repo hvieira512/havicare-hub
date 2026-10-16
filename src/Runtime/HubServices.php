@@ -23,6 +23,7 @@ use Hub\Ingress\Http\Qinglanst\RadarStateAbsorber;
 use Hub\Location\LocationEnricherFactory;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Mqtt\ConnectionFactory;
+use React\EventLoop\Loop;
 use React\Http\Browser;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
@@ -142,7 +143,10 @@ final class HubServices
             firmwareUpgrades: new RedisFirmwareUpgradeStore($redis),
             effectiveConfiguration: static fn (string $imei): array => $dataAccess->configurationLifecycle
                 ->effectivePayloads($imei, MedicationRunout::CONFIGURATION_KEYS),
-            downlinkQueued: static fn (string $imei) => $qinglanstCloudDownlinks->dispatchPending($imei, now: true),
+            // Na volta seguinte do ciclo: quem pôs na fila ainda vai gravar o registo do comando.
+            downlinkQueued: static fn (string $imei) => Loop::futureTick(
+                static fn () => $qinglanstCloudDownlinks->dispatchPending($imei, now: true),
+            ),
         );
 
         return new self(

@@ -82,6 +82,28 @@ final class QinglanstCloudDownlinksTest extends TestCase
         self::assertSame('acked', $this->lastMark('op-4')['status']);
     }
 
+    /** Uma leitura sem resposta (a cloud a passar o tempo limite) diz isso, com o motivo. */
+    public function testAReadTheCloudNeverAnsweredSaysSo(): void
+    {
+        $queue = new InMemoryRadarQueue();
+        $queue->enqueue(self::IMEI, 'read_device_state', ['id' => 'op-9', 'command' => 'read_device_state', 'payload' => []], 300);
+        $downlinks = new QinglanstCloudDownlinks(
+            $queue,
+            new ScriptedCloudClient(prop: 200, writes: []),
+            new QinglanstCloudCommands(),
+            static fn (string $imei): ?array => ['uid' => $imei, 'credentials' => []],
+            static fn (string $imei): PromiseInterface => resolve(['codes' => [], 'error' => 'Qinglanst login failed: timed out']),
+            fn (string $imei, string $id, array $fields) => $this->marks[] = ['id' => $id, 'fields' => $fields],
+        );
+
+        $this->await($downlinks->dispatchPending(self::IMEI, now: true));
+
+        self::assertSame(
+            ['status' => 'failed', 'error' => 'cloud_unreachable', 'errorMessage' => 'Qinglanst login failed: timed out'],
+            array_intersect_key($this->lastMark('op-9'), ['status' => 1, 'error' => 1, 'errorMessage' => 1]),
+        );
+    }
+
     public function testARadarWhoseLicenceHasNoCredentialsFails(): void
     {
         $queue = new InMemoryRadarQueue();
@@ -98,6 +120,22 @@ final class QinglanstCloudDownlinksTest extends TestCase
         $this->await($downlinks->dispatchPending(self::IMEI, now: true));
 
         self::assertSame('license_has_no_radar_credentials', $this->lastMark('op-5')['error']);
+    }
+
+    /** O que entra enquanto o radar está ocupado sai logo a seguir, sem esperar pela próxima mensagem dele. */
+    public function testWhatIsQueuedWhileBusyGoesRightAfter(): void
+    {
+        $queue = new InMemoryRadarQueue();
+        $client = new DeferredCloudClient();
+        $downlinks = $this->downlinks($queue, $client);
+        $queue->enqueue(self::IMEI, 'fall_alarm', ['id' => 'op-7', 'command' => 'fall_alarm', 'payload' => ['afterSeconds' => 60]], 300);
+        $downlinks->dispatchPending(self::IMEI, now: true);
+
+        $queue->enqueue(self::IMEI, 'working_mode', ['id' => 'op-8', 'command' => 'working_mode', 'payload' => ['mode' => 'fall_detection']], 300);
+        $downlinks->dispatchPending(self::IMEI, now: true);
+        $client->answerAll();
+
+        self::assertSame('acked', $this->lastMark('op-8')['status'] ?? null);
     }
 
     /** Um aparelho que não é radar fica na fila para quem o entrega pelo socket. */
@@ -210,6 +248,42 @@ final class ScriptedCloudClient extends QinglanstApiClient
         $this->posts[] = [$path, $body];
 
         return resolve(['code' => array_shift($this->writes) ?? 200, 'msg' => '']);
+    }
+}
+
+/** A cloud que só responde quando o teste manda, para haver um radar ocupado. */
+final class DeferredCloudClient extends QinglanstApiClient
+{
+    /** @var list<\React\Promise\Deferred<array<string, mixed>>> */
+    private array $pending = [];
+
+    public function __construct()
+    {
+    }
+
+    public function login(array $credentials): PromiseInterface
+    {
+        return resolve(['access_token' => 't', 'refresh_token' => '', 'token_type' => 'bearer', 'expires_in' => 3600]);
+    }
+
+    public function deviceProp(array $credentials, array $token, string $uid): PromiseInterface
+    {
+        return resolve(['code' => 200, 'data' => ['radar_func_ctrl' => '15', 'postureParams' => '2,3,3']]);
+    }
+
+    public function post(array $credentials, array $token, string $path, array $body): PromiseInterface
+    {
+        $deferred = new \React\Promise\Deferred();
+        $this->pending[] = $deferred;
+
+        return $deferred->promise();
+    }
+
+    public function answerAll(): void
+    {
+        while ($this->pending !== []) {
+            array_shift($this->pending)->resolve(['code' => 200, 'msg' => '']);
+        }
     }
 }
 

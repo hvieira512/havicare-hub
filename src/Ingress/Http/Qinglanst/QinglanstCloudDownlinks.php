@@ -37,6 +37,9 @@ final class QinglanstCloudDownlinks
     /** @var array<string, true> um radar de cada vez: as escritas leem o que a anterior deixou */
     private array $busy = [];
 
+    /** @var array<string, true> o que entrou na fila enquanto o radar estava ocupado */
+    private array $again = [];
+
     /** @var \Closure(string): (array{uid: string, credentials: array<string, string>|null}|null) */
     private \Closure $radar;
 
@@ -73,7 +76,13 @@ final class QinglanstCloudDownlinks
     public function dispatchPending(string $imei, bool $now = false): PromiseInterface
     {
         $time = time();
-        if (isset($this->busy[$imei]) || (!$now && $time - ($this->checkedAt[$imei] ?? 0) < self::CHECK_EVERY_SECONDS)) {
+        if (isset($this->busy[$imei])) {
+            if ($now) {
+                $this->again[$imei] = true;
+            }
+            return resolve(null);
+        }
+        if (!$now && $time - ($this->checkedAt[$imei] ?? 0) < self::CHECK_EVERY_SECONDS) {
             return resolve(null);
         }
         $this->checkedAt[$imei] = $time;
@@ -100,6 +109,10 @@ final class QinglanstCloudDownlinks
         return $chain->then(
             function () use ($imei): null {
                 unset($this->busy[$imei]);
+                if (isset($this->again[$imei])) {
+                    unset($this->again[$imei]);
+                    $this->dispatchPending($imei, now: true);
+                }
 
                 return null;
             },
@@ -125,9 +138,10 @@ final class QinglanstCloudDownlinks
         $this->mark($imei, $downlink, ['status' => 'waiting', 'sentAt' => gmdate('Y-m-d\TH:i:s\Z')]);
 
         if ($operation === 'read_device_state') {
-            return ($this->readRadar)($imei)->then(
-                fn (array $tally) => $this->close($imei, $downlink, self::readCode($tally), ''),
-            );
+            // Sem código nenhum, a cloud não respondeu: o motivo é o que a leitura contou.
+            return ($this->readRadar)($imei)->then(fn (array $tally) => self::readCode($tally) === 0
+                ? $this->fail($imei, $downlink, 'cloud_unreachable', (string)($tally['error'] ?? ''))
+                : $this->close($imei, $downlink, self::readCode($tally), ''));
         }
 
         $credentials = $radar['credentials'];

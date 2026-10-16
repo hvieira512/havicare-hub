@@ -240,7 +240,9 @@ function previousValueSummary(entry, desired, isStored) {
     const unit = unitLabel(entry);
     if (typeof value !== "number" || unit === "") return "alterada e por enviar";
 
-    return `era ${value} ${unit}`;
+    // Um intervalo diz-se pelos dois extremos.
+    const upper = entry.input === "valueRange" ? desired?.[entry.fields?.[1] || ""] : undefined;
+    return typeof upper === "number" ? `era ${value}–${upper} ${unit}` : `era ${value} ${unit}`;
 }
 
 /**
