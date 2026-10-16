@@ -159,6 +159,43 @@ final class JoyTechBpBridgeTest extends TestCase
         self::assertArrayNotHasKey('fromHistory', self::telemetry($mqtt, 'blood_pressure')[0]['data']);
     }
 
+    /**
+     * O aparelho só se liga quando se carrega em Start, e a leitura ao ligar chega a meio da
+     * medição: pede-se outra vez depois das repetições do resultado.
+     */
+    public function testTheMemoryIsReadAgainAfterTheLiveResult(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        $this->now += 30;
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+
+        $this->now += 10;
+        $bridge->dispatchQueued();
+        self::assertCount(2, $mqtt->gatewayCommands);
+
+        $this->now += 5;
+        $bridge->dispatchQueued();
+        $bridge->dispatchQueued();
+        self::assertSame(['calibrateClock', 'readBloodPressureHistory', 'readBloodPressureHistory'], array_column(array_column($mqtt->gatewayCommands, 'payload'), 'operation'));
+    }
+
+    /** Uma leitura que já chegou ao fim nesta ligação não se repete. */
+    public function testAMemoryAlreadyReadInTheSessionIsNotReadAgain(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $this->readMemory($bridge, []);
+        $this->now += 30;
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::LIVE));
+
+        $this->now += 20;
+        $bridge->dispatchQueued();
+
+        self::assertCount(2, $mqtt->gatewayCommands);
+    }
+
     /** O fim da memória fecha o pedido de a ler. */
     public function testTheMemoryEndClosesTheRequest(): void
     {

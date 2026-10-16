@@ -41,10 +41,17 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
     /** 2025-01-01: as medições com o relógio por acertar vêm de 2021. */
     private const HISTORY_EPOCH = 1735689600;
 
+    /** Depois das 6 repetições do resultado ao vivo, de 2 em 2 s. */
+    private const READ_AFTER_RESULT_SECONDS = 15.0;
+
     /** Uma hora do aparelho mais à frente do que isto não é plausível. */
     private const FUTURE_TOLERANCE_SECONDS = 300;
 
-    /** @var array<string, array{gateway: string, offset: int}> */
+    /**
+     * Por sessão: o gateway, o fuso, se a memória já foi lida até ao fim e quando se volta a pedir.
+     *
+     * @var array<string, array{gateway: string, offset: int, memoryRead: bool, readAt: ?float}>
+     */
     private array $sessions = [];
 
     /**
@@ -95,9 +102,21 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
     public function dispatchQueued(): void
     {
-        foreach (array_keys($this->sessions) as $deviceKey) {
-            $this->dispatch((string)$deviceKey);
+        foreach ($this->sessions as $deviceKey => $session) {
+            $deviceKey = (string)$deviceKey;
+            if ($session['readAt'] !== null && $this->clockNow() >= $session['readAt']) {
+                $this->sessions[$deviceKey]['readAt'] = null;
+                $this->readMemory($deviceKey);
+            }
+            $this->dispatch($deviceKey);
         }
+    }
+
+    private function readMemory(string $deviceKey): void
+    {
+        $session = $this->sessions[$deviceKey];
+        $this->downlinks->sendDirect($deviceKey, $session['gateway'], self::READ_MEMORY, [], 0, $session['offset']);
+        $this->startReading($deviceKey);
     }
 
     protected function handleMessage(string $topic, string $payload): void
@@ -167,15 +186,14 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        $this->sessions[$deviceKey] = ['gateway' => $context->gatewayKey, 'offset' => $offsetMinutes];
+        $this->sessions[$deviceKey] = ['gateway' => $context->gatewayKey, 'offset' => $offsetMinutes, 'memoryRead' => false, 'readAt' => null];
         $this->presence->markOnline($deviceKey, $context->device, $context->licenseId, $context->company);
 
         // O aparelho não pede a hora, e a memória é datada por ela: acerta-se a cada ligação.
         $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'calibrateClock', [], 0, $offsetMinutes);
         if (!$this->dispatch($deviceKey)) {
-            // A meio de uma medição o aparelho ignora o pedido: lê-se na ligação seguinte.
-            $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, self::READ_MEMORY, [], 0, $offsetMinutes);
-            $this->startReading($deviceKey);
+            // A meio de uma medição o aparelho ignora-o, e volta a pedir-se depois do resultado.
+            $this->readMemory($deviceKey);
         }
     }
 
@@ -223,6 +241,9 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
         if ($frame['function'] === 0x8b) {
             $this->finishReading($context->deviceKey);
+            if (isset($this->sessions[$context->deviceKey])) {
+                $this->sessions[$context->deviceKey]['memoryRead'] = true;
+            }
             $this->commands?->markCommandReply($context->deviceKey, 'joytech_8b', null, '', true);
             return;
         }
@@ -262,9 +283,14 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
             if ($this->marks->wasLive($deviceKey, $group, $data)) {
                 return;
             }
-        } elseif ($plausible) {
-            // A marca não avança ao vivo: o que se mediu sem gateway antes disto ainda está na memória.
-            $this->marks->rememberLive($deviceKey, $group, $data, $at);
+        } else {
+            if ($plausible) {
+                // A marca não avança ao vivo: o que se mediu sem gateway antes disto ainda está na memória.
+                $this->marks->rememberLive($deviceKey, $group, $data, $at);
+            }
+            if (isset($this->sessions[$deviceKey]) && !$this->sessions[$deviceKey]['memoryRead']) {
+                $this->sessions[$deviceKey]['readAt'] = $now + self::READ_AFTER_RESULT_SECONDS;
+            }
         }
 
         // Ao vivo, a hora de chegada: o relógio do aparelho pode estar por acertar.

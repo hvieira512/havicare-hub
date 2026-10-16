@@ -29,8 +29,11 @@ deitada fora.
 
 O aparelho não pede a hora e o relógio dele começa em 2021. O hub manda o `0x04`
 em cada `session` ligada e logo a seguir o `0x0A`, que lê a memória sem a apagar.
-A meio de uma medição o aparelho ignora o `0x0A`; não chega o `0x8B`, a espera
-do gateway acaba sem erro visível, e a memória lê-se na ligação seguinte. Na
+Como o aparelho só se liga quando se carrega em Start, esse `0x0A` chega quase
+sempre a meio da medição e é ignorado: não chega o `0x8B`, e a espera do gateway
+acaba sem erro visível. Por isso o hub volta a pedir a memória 15 s depois do
+resultado ao vivo, já passadas as repetições, a não ser que a leitura dessa
+ligação já tenha chegado ao fim. Na
 dashboard, «Ler a memória» faz o mesmo a pedido, e fecha com o `0x8B`.
 
 ## O que sai no MQTT
