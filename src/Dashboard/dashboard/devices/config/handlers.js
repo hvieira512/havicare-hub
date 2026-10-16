@@ -18,6 +18,8 @@ import {
 } from "./inputs/shared.js";
 import { syncWorkingModeExtra } from "./inputs/vivistar.js";
 import { handleScaleUserAction } from "./inputs/scale.js";
+import { applyFactoryBoundary, syncSwitchValueDim } from "./inputs/radar.js";
+import { openRadarMap } from "../radar-map-modal.js";
 import {
     clearTakePillsRecording,
     loadTakePillsAudio,
@@ -84,6 +86,11 @@ function dispatchConfigClick(event) {
     // A lista de utilizadores da balança tem os seus próprios cartões e formulário.
     if (String(button.dataset.action || "").startsWith("scaleUser")) {
         if (handleScaleUserAction(section, button)) syncConfigSectionDirty(section);
+        return;
+    }
+
+    if (button.dataset.action === "openRadarAreas") {
+        void openRadarMap(String(state.deviceModal.imei || ""), { editAreas: true });
         return;
     }
 
@@ -172,6 +179,11 @@ function dispatchConfigChange(event) {
         )
     ) {
         syncSwitchLabel(event.target);
+        syncSwitchValueDim(section);
+    }
+
+    if (section.dataset.configInput === "radarInstallation" && event.target.type === "radio") {
+        applyFactoryBoundary(section.closest("[data-config-pane]"), event.target.value);
     }
 
     if (event.target.matches("[data-action=\"fallTotalLevels\"]")) {
@@ -190,6 +202,11 @@ export function handleDeviceConfigInput(event) {
 
     if (event.target.matches("[data-config-field=\"cells\"]")) {
         syncLoadedCellsRunout(event.target);
+    }
+
+    // A barra e o número da sensibilidade são o mesmo valor.
+    for (const twin of event.target.closest("[data-twin-fields]")?.querySelectorAll(`[data-config-field="${CSS.escape(event.target.dataset.configField || "")}"]`) ?? []) {
+        if (twin !== event.target) twin.value = event.target.value;
     }
 
     syncConfigCountsFrom(event.target);
@@ -255,7 +272,10 @@ export function resetConfigPane(pane) {
     const blocks = pane.querySelectorAll("[data-config-row], [data-config-section]");
     for (const block of blocks) {
         if (block.querySelector("[data-repeat-list]")) continue;
-        if (restoreDrawnFields(block)) continue;
+        if (restoreDrawnFields(block)) {
+            syncSwitchValueDim(block);
+            continue;
+        }
 
         let pristine;
         try {

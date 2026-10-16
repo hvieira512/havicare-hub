@@ -23,7 +23,7 @@ function createTransform(bounds, cw, ch) {
     const centerOffsetX = (cw - bounds.width * scale) / 2;
     const centerOffsetY = (ch - bounds.height * scale) / 2;
 
-    return function (coords) {
+    const toPixels = function (coords) {
         const result = [];
         for (let i = 0; i < coords.length; i += 2) {
             result.push(
@@ -33,11 +33,22 @@ function createTransform(bounds, cw, ch) {
         }
         return result;
     };
+    // O caminho inverso, para o editor saber em que decímetro caiu o ponteiro.
+    toPixels.toDm = (x, y) => [
+        (x - centerOffsetX) / scale - offsetX,
+        (ch - y - centerOffsetY) / scale - offsetY,
+    ];
+    toPixels.scale = scale;
+
+    return toPixels;
 }
 
-/** Os limites cobrem a sala **e** as áreas: é comum uma área declarada sair da sala. */
+/**
+ * Os limites cobrem a sala **e** as áreas: é comum uma área declarada sair da sala. O editor fixa
+ * o `extent`, para a escala não mudar enquanto se arrasta uma área.
+ */
 function boundsOf(layout) {
-    const boxes = [layout.room, ...layout.areas];
+    const boxes = layout.extent ? [layout.extent] : [layout.room, ...layout.areas];
     const minX = Math.min(...boxes.map((box) => box.x_min_dm));
     const minY = Math.min(...boxes.map((box) => box.y_min_dm));
     const maxX = Math.max(...boxes.map((box) => box.x_max_dm));
@@ -288,10 +299,79 @@ function drawRoom(state, layout) {
     state.layer.draw();
 }
 
+const EDIT_HANDLE = 10;
+
+/** Uma área do rascunho do editor, já no formato do contrato. */
+function drawDraftArea(state, area, { original, selected, warned }) {
+    const { color } = areaTypeStyle(area.type);
+    const box = { x_min_dm: area.xMinDm, y_min_dm: area.yMinDm, x_max_dm: area.xMaxDm, y_max_dm: area.yMaxDm };
+    const layer = state.editLayer;
+
+    if (original) {
+        layer.add(new Konva.Line({
+            points: state.transformCoords(corners(original)),
+            stroke: "#6c757d",
+            strokeWidth: 1,
+            dash: [4, 4],
+            closed: true,
+            listening: false,
+        }));
+    }
+
+    const shape = new Konva.Line({
+        points: state.transformCoords(corners(box)),
+        stroke: warned ? "#dc3545" : color,
+        strokeWidth: selected ? 3 : 2,
+        dash: area.deleted ? [8, 6] : undefined,
+        fill: `${color}${area.deleted ? "10" : "33"}`,
+        closed: true,
+        areaKey: area.key,
+    });
+    layer.add(shape);
+
+    const [cx, cy] = state.transformCoords([(area.xMinDm + area.xMaxDm) / 2, (area.yMinDm + area.yMaxDm) / 2]);
+    const width = (area.xMaxDm - area.xMinDm) * state.transformCoords.scale;
+    layer.add(new Konva.Text({
+        x: cx - Math.max(width, 60) / 2,
+        y: cy - 7,
+        width: Math.max(width, 60),
+        align: "center",
+        text: area.name,
+        fontSize: 13,
+        fontFamily: "Poppins",
+        fill: color,
+        opacity: area.deleted ? 0.5 : 1,
+        stroke: "white",
+        strokeWidth: 3,
+        fillAfterStrokeEnabled: true,
+        listening: false,
+    }));
+
+    if (!selected || area.deleted) return;
+    for (const corner of ["00", "10", "01", "11"]) {
+        const [x, y] = state.transformCoords([
+            corner[0] === "1" ? area.xMaxDm : area.xMinDm,
+            corner[1] === "1" ? area.yMaxDm : area.yMinDm,
+        ]);
+        layer.add(new Konva.Rect({
+            x: x - EDIT_HANDLE / 2,
+            y: y - EDIT_HANDLE / 2,
+            width: EDIT_HANDLE,
+            height: EDIT_HANDLE,
+            fill: "white",
+            stroke: "#0b163f",
+            strokeWidth: 1.5,
+            areaKey: area.key,
+            corner,
+        }));
+    }
+}
+
 export function createRadarScene(options = {}) {
     const state = {
         stage: null,
         layer: null,
+        editLayer: null,
         peopleLayer: null,
         transformCoords: null,
         currentLayout: null,
@@ -316,8 +396,11 @@ export function createRadarScene(options = {}) {
             height: container.offsetHeight,
         });
         state.layer = new Konva.Layer();
-        state.peopleLayer = new Konva.Layer();
+        state.editLayer = new Konva.Layer();
+        // As pessoas ficam por cima das áreas sem lhes roubar o ponteiro.
+        state.peopleLayer = new Konva.Layer({ listening: false });
         state.stage.add(state.layer);
+        state.stage.add(state.editLayer);
         state.stage.add(state.peopleLayer);
     }
 
@@ -357,16 +440,57 @@ export function createRadarScene(options = {}) {
         renderRoom(state.currentLayout);
     }
 
+    /**
+     * As áreas do editor, por cima da sala. Cada forma leva o `areaKey`, e os cantos o `corner`:
+     * é por eles que o editor sabe o que o ponteiro apanhou.
+     */
+    function drawAreas(areas, { originals = new Map(), selectedKey = null, warnKeys = new Set() } = {}) {
+        if (!state.editLayer || !state.transformCoords) return;
+
+        state.editLayer.destroyChildren();
+        const ordered = [...areas].sort((a, b) => Number(a.key === selectedKey) - Number(b.key === selectedKey));
+        for (const area of ordered) {
+            const original = originals.get(area.key);
+            drawDraftArea(state, area, {
+                original: original && !area.deleted
+                    ? { x_min_dm: original.xMinDm, y_min_dm: original.yMinDm, x_max_dm: original.xMaxDm, y_max_dm: original.yMaxDm }
+                    : null,
+                selected: area.key === selectedKey,
+                warned: warnKeys.has(area.key),
+            });
+        }
+        state.editLayer.batchDraw();
+    }
+
+    function toDm(x, y) {
+        return state.transformCoords ? state.transformCoords.toDm(x, y) : null;
+    }
+
+    function toPixels(x, y) {
+        return state.transformCoords ? state.transformCoords([x, y]) : null;
+    }
+
     function destroy() {
         clearPeopleNodes(state);
         state.stage?.destroy();
         state.stage = null;
         state.layer = null;
+        state.editLayer = null;
         state.peopleLayer = null;
         state.transformCoords = null;
         state.currentLayout = null;
         state.currentPeople = [];
     }
 
-    return { init, renderRoom, updatePeople, resize, destroy };
+    return {
+        init,
+        renderRoom,
+        updatePeople,
+        resize,
+        destroy,
+        drawAreas,
+        toDm,
+        toPixels,
+        stage: () => state.stage,
+    };
 }

@@ -104,6 +104,10 @@ const CARD_STYLE = {
     unknown: ["fa-bell", ""],
 };
 
+const degrees = (value) => Number.isFinite(value)
+    ? `${value.toLocaleString("pt-PT", { maximumFractionDigits: 1 })}°`
+    : "-";
+
 const oneDecimal = (data) => Object.fromEntries(Object.entries(data ?? {})
     .map(([key, value]) => [key, typeof value === "number" ? Math.round(value * 10) / 10 : value]));
 
@@ -163,6 +167,11 @@ const UPLINK_CARD_RENDERERS = {
     // dispensador dois bytes que saem em hexadecimal.
     firmware_version: (data) => ({
         value: String(data?.version ?? "").trim() || "—",
+        details: compactDetails(data, ["communicationVersion"]),
+    }),
+    tilt: (data) => ({
+        value: `X ${degrees(data?.xDegrees)} · Y ${degrees(data?.yDegrees)}`,
+        details: data?.factoryCalibrated ? "Calibrado de fábrica" : "Sem calibração de fábrica",
     }),
     // "Queda" sozinho não distingue uma confirmada de uma suspeita, nem de alguém sentado no chão.
     fall: (data) => ({

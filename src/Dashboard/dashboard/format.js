@@ -118,6 +118,7 @@ export const fieldLabel = (key) =>
         zMg: "Eixo Z",
         magnitudeMg: "Intensidade",
         interface: "Interface",
+        communicationVersion: "Firmware de comunicação",
         networkType: "Rede",
         signalQuality: "Qualidade do sinal",
         signalStrengthDbm: "Intensidade do sinal",

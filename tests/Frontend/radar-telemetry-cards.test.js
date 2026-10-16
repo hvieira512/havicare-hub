@@ -151,3 +151,25 @@ test("o mosaico mostra o detalhe em vez de o deitar fora", () => {
 
     assert.equal(root.querySelector(".telemetry-row-details").textContent, "Pessoa 1 · x 3 dm");
 });
+
+test("o radar em 4G diz a rede e a qualidade do sinal", () => {
+    const card = uplinkCardContent("connectivity", { interface: "4g", signalQuality: 21 });
+
+    assert.match(card.value, /^4G/);
+    assert.equal(card.icon, "fa-tower-cell");
+    assert.match(card.details, /Qualidade do sinal: 21/);
+});
+
+test("a inclinação mostra os dois eixos em graus e se veio calibrada de fábrica", () => {
+    const card = uplinkCardContent("tilt", { xDegrees: 1.2, yDegrees: 0.9, zDegrees: 88, factoryCalibrated: true });
+
+    assert.equal(card.value, "X 1,2° · Y 0,9°");
+    assert.equal(card.details, "Calibrado de fábrica");
+});
+
+test("o firmware do radar mostra também o de comunicação", () => {
+    const card = uplinkCardContent("firmware_version", { version: "V1.3.2", communicationVersion: "C2.0.1" });
+
+    assert.equal(card.value, "V1.3.2");
+    assert.match(card.details, /Firmware de comunicação: C2\.0\.1/);
+});

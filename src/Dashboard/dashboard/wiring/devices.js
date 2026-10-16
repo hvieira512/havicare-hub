@@ -86,8 +86,25 @@ function bindRadarMap() {
     els.radarMapSyncBtn?.addEventListener("click", () => void syncRadarMap());
     const root = document.getElementById("radarMapModal");
     root?.addEventListener("shown.bs.modal", () => resizeRadarMap());
-    root?.addEventListener("hidden.bs.modal", () => closeRadarMap());
+    root?.addEventListener("hidden.bs.modal", () => {
+        closeRadarMap();
+        refreshConfigAfterRadarMap();
+    });
     globalThis.addEventListener("resize", () => resizeRadarMap());
+}
+
+/**
+ * Fechada a planta por cima das configurações, o cartão das áreas mostra o que se enviou; com
+ * outras edições por enviar fica como está, para não as deitar fora.
+ */
+function refreshConfigAfterRadarMap() {
+    // A planta fechou-se e levou o `modal-open`; o modal do dispositivo continua aberto.
+    if (els.deviceModal.classList.contains("show")) document.body.classList.add("modal-open");
+
+    const loaded = configPanelIfLoaded();
+    if (!loaded || state.deviceModal.activeTab !== "config") return;
+    if (loaded.panel.unsentConfigChanges(els.deviceConfigRoot) > 0) return;
+    loaded.panel.renderDeviceConfigurationModal();
 }
 
 /** Os botões que abrem o assistente e o selector, e o atalho de editar o escolhido. */
@@ -207,6 +224,7 @@ async function openConfigPanel() {
 
     await ensureDeviceConfigurationCatalogLoaded();
     panel.renderDeviceConfigurationModal();
+    panel.requestRadarStateOnOpen();
 }
 
 /** Fechar com configuração escrita e por enviar pede confirmação antes de a deitar fora. */

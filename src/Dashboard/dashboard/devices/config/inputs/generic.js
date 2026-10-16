@@ -52,10 +52,11 @@ export function toggleInput(entry, desired, protocol = "") {
 function numberControl(entry, desired) {
     const key = entry.fields?.[0] || "value";
     // A escala parte do mínimo declarado: o tom de pele vai de 1 a 6.
-    const { min = 0, max = "" } = entry.options ?? {};
+    const { min = 0, max = "", step = 1 } = entry.options ?? {};
     return numberField(key, desired[key] ?? min, {
         min,
         max,
+        step,
         ariaLabel: entry.label || fieldLabel(key),
     });
 }
