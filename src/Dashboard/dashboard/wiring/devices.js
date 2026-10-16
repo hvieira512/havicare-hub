@@ -207,6 +207,7 @@ async function openConfigPanel() {
 
     await ensureDeviceConfigurationCatalogLoaded();
     panel.renderDeviceConfigurationModal();
+    panel.requestRadarStateOnOpen();
 }
 
 /** Fechar com configuração escrita e por enviar pede confirmação antes de a deitar fora. */

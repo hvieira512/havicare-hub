@@ -20,6 +20,17 @@ const OPTIONS = { enabled: [{ value: 1, label: "Um" }, { value: 2, label: "Dois"
 const FIXTURES = {
     select: { options: OPTIONS },
     volumeScale: { options: OPTIONS },
+    valueRange: { fields: ["minBpm", "maxBpm"], options: { default: { minBpm: 50, maxBpm: 90 } } },
+    switchWithValue: { fields: ["enabled", "afterMinutes"], options: { default: { enabled: false, afterMinutes: 10 } } },
+    optionCards: { fields: ["mode"], options: { mode: [{ value: "full_function", label: "Completo" }], default: "full_function" } },
+    radarInstallation: {
+        fields: ["mounting", "heightCm"],
+        options: { mounting: [{ value: "ceiling", label: "Teto" }], default: { mounting: "ceiling", heightCm: 280 } },
+    },
+    radarBoundary: {
+        fields: ["leftM", "rightM", "frontM", "backM"],
+        options: { default: { leftM: 3, rightM: 3, frontM: 2, backM: 2 } },
+    },
 };
 
 /** Os que não devolvem o que receberam: `reads` devolve outra coisa, `throws` estoira. */

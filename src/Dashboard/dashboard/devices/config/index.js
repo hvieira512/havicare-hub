@@ -220,7 +220,7 @@ function configRuns(entries) {
 
 /** A unidade declarada na definição ganha; só sem ela se adivinha pelo nome do campo. */
 function unitLabel(entry) {
-    return String(entry.options?.label ?? "").trim() || fieldUnit(entry.fields?.[0] || "");
+    return String(entry.options?.label ?? entry.options?.unit ?? "").trim() || fieldUnit(entry.fields?.[0] || "");
 }
 
 /** O controlo com a unidade colada: «5» e «min» separados deixam de ser uma medida. */
