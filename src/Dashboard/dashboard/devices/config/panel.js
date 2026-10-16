@@ -286,6 +286,18 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
     }
 }
 
+/** O radar mostra o que tem quando lho perguntam: abrir as configurações pergunta, uma vez por abertura. */
+export function requestRadarStateOnOpen() {
+    if (state.deviceModal.protocol !== "qinglanst-radar") return;
+
+    const section = els?.deviceConfigRoot?.querySelector("[data-config-section][data-config-key=\"read_device_state\"]");
+    if (!section ||
+        state.deviceModal.actionDeliveries[section.dataset.capabilityKey || "read_device_state"] ||
+        state.deviceModal.configUi.read_device_state?.phase) return;
+
+    void saveDeviceConfiguration(section);
+}
+
 export function syncDeviceModalCommandStates(imei, commands) {
     if (String(state.deviceModal.imei || "") !== String(imei || "")) {
         return;

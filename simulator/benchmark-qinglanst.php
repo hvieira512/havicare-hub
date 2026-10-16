@@ -320,7 +320,7 @@ function syntheticRadarDevice(string $deviceUid, string $licenseId): array
     return [
         'imei' => $deviceUid,
         'supplier' => 'Qinglanst',
-        'model' => 'RD-V1',
+        'model' => 'HC2',
         'deviceType' => 'radar',
         'licenseId' => trim($licenseId) !== '' ? $licenseId : '0',
         'company' => 'benchmark',

@@ -199,3 +199,33 @@
     border-style: dashed !important;
     border-color: var(--brand) !important;
 }
+
+/* Os limites de deteção em cruz à volta do radar: frente em cima, trás em baixo. */
+.radar-boundary {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-areas: ". front ." "left radar right" ". back .";
+    gap: .5rem 1rem;
+    align-items: center;
+    justify-items: center;
+}
+
+.radar-boundary-front { grid-area: front; }
+.radar-boundary-back { grid-area: back; }
+.radar-boundary-left { grid-area: left; justify-self: end; }
+.radar-boundary-right { grid-area: right; justify-self: start; }
+
+.radar-boundary-radar {
+    grid-area: radar;
+    width: 4rem;
+    height: 4rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 2px dashed var(--brand);
+    color: var(--brand);
+}
+
+.radar-boundary-field {
+    width: 7.5rem;
+}

@@ -3,12 +3,13 @@ import { titleize } from "../../format.js";
 
 /** Os cartões do gateway: que interfaces tem, e por qual está a falar. */
 
-// As interfaces que o `Hub\Ingress\Mqtt\Moko\GatewayNormalizer` emite.
+// As interfaces que o `Hub\Ingress\Mqtt\Moko\GatewayNormalizer` e o radar emitem.
 const CONNECTIVITY_INTERFACE_LABELS = {
     wifi: "Wi-Fi",
     ethernet: "Ethernet",
     ethernet_wifi: "Ethernet + Wi-Fi",
     cellular: "Rede móvel",
+    "4g": "4G",
 };
 
 const CONNECTIVITY_INTERFACE_ICONS = {
@@ -16,6 +17,7 @@ const CONNECTIVITY_INTERFACE_ICONS = {
     ethernet: "fa-ethernet",
     ethernet_wifi: "fa-network-wired",
     cellular: "fa-tower-cell",
+    "4g": "fa-tower-cell",
 };
 
 export function connectivityIcon(data) {

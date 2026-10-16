@@ -171,15 +171,8 @@ final class MessageNormalizer
             ]);
         }
 
-        // Os limites de 120 e 40 são do hub, e quão grave é decide-o a `severity`.
-        $events = [];
-        if ($heartRate > 120) {
-            $events[] = $this->envelope($topic, $device, 'heart_rate_high', 'heartbreath', ['bpm' => $heartRate]);
-        } elseif ($heartRate > 0 && $heartRate < 40) {
-            $events[] = $this->envelope($topic, $device, 'heart_rate_low', 'heartbreath', ['bpm' => $heartRate]);
-        }
-
-        return ['telemetry' => $telemetry, 'events' => $events];
+        // O alarme alto ou baixo é o estado de cada minuto do `hbstatics`, com os limites do radar.
+        return ['telemetry' => $telemetry, 'events' => []];
     }
 
     /**

@@ -1,13 +1,16 @@
 import {
     getRadarLayout as apiGetRadarLayout,
+    saveConfiguration as apiSaveConfiguration,
     syncRadarLayout as apiSyncRadarLayout,
 } from "../api/index.js";
 import { areaTypeStyle } from "../radar-style.js";
 import { esc, when } from "../format.js";
 import { html } from "../html.js";
-import { apiError, toast } from "../dialogs.js";
+import { apiError, confirmDestructive, toast } from "../dialogs.js";
 import { refreshTooltips } from "../tooltips.js";
 import { createRadarScene } from "./radar-scene.js";
+import { createAreaEditor } from "./radar-area-editor.js";
+import { areasFromLayout } from "./radar-area-draft.js";
 import { destroyVitals, loadCharts, renderVitals, resizeVitals } from "./radar-vitals.js";
 import { loadScript } from "../load-script.js";
 import { state } from "../state.js";
@@ -20,9 +23,32 @@ import { state } from "../state.js";
 let els;
 let modal;
 let scene = null;
+let editor = null;
+let editButton = null;
+const reloadTimers = new Set();
+
+/** Depois do envio a planta volta a ler-se duas vezes, à espera de o radar ter aplicado. */
+const RELOAD_AFTER_SEND_MS = [5000, 20000];
+
+/** O espaço à volta da sala no editor, para se poder puxar uma área para fora dela. */
+const EDIT_MARGIN_DM = 10;
+
 export function initRadarMapModal(context) {
     els = context.els;
     modal = context.modals.radarMap;
+
+    editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "btn btn-sm btn-outline-secondary flex-shrink-0";
+    editButton.textContent = "Editar áreas";
+    editButton.addEventListener("click", () => void toggleEditing());
+    const sync = els.radarMapSyncBtn;
+    if (sync) {
+        const buttons = document.createElement("div");
+        buttons.className = "d-flex gap-2 flex-shrink-0";
+        sync.replaceWith(buttons);
+        buttons.append(editButton, sync);
+    }
 }
 
 /** O Konva são 175 kB que só este ecrã usa: entra quando alguém abre a planta. */
@@ -76,13 +102,106 @@ function showLayout(layout) {
         scene.init(els.radarMapCanvas);
     }
 
-    scene.renderRoom(layout);
+    scene.renderRoom(editor ? editingLayout(layout) : layout);
     renderLegend(layout.areas);
     scene.updatePeople(currentPeople());
 }
 
+/** A sala sem as áreas, que são do editor, e com a escala presa ao que a planta tinha. */
+function editingLayout(layout) {
+    const boxes = [layout.room, ...layout.areas];
+    return {
+        ...layout,
+        areas: [],
+        extent: {
+            x_min_dm: Math.min(...boxes.map((box) => box.x_min_dm)) - EDIT_MARGIN_DM,
+            y_min_dm: Math.min(...boxes.map((box) => box.y_min_dm)) - EDIT_MARGIN_DM,
+            x_max_dm: Math.max(...boxes.map((box) => box.x_max_dm)) + EDIT_MARGIN_DM,
+            y_max_dm: Math.max(...boxes.map((box) => box.y_max_dm)) + EDIT_MARGIN_DM,
+        },
+    };
+}
+
+function startEditing() {
+    const layout = state.radarMap.layout;
+    if (!scene || !layout?.room) {
+        toast("warning", "Sincronize primeiro a planta do radar.");
+        return;
+    }
+
+    editor = createAreaEditor({
+        scene,
+        host: els.radarMapCanvas.parentElement,
+        canvas: els.radarMapCanvas,
+        draft: areasFromLayout(layout),
+        onSend: sendAreas,
+    });
+    showLayout(layout);
+    editor.redraw();
+    els.radarMapLegend?.classList.add("d-none");
+    syncEditControls();
+}
+
+function stopEditing() {
+    editor?.destroy();
+    editor = null;
+    syncEditControls();
+    if (state.radarMap.layout) showLayout(state.radarMap.layout);
+}
+
+function syncEditControls() {
+    if (editButton) editButton.textContent = editor ? "Fechar edição" : "Editar áreas";
+    if (els.radarMapSyncBtn) els.radarMapSyncBtn.disabled = Boolean(editor);
+}
+
+async function toggleEditing() {
+    if (!editor) {
+        startEditing();
+        return;
+    }
+    const pending = editor.pending();
+    if (pending > 0) {
+        const { isConfirmed } = await confirmDestructive(
+            "Fechar sem enviar?",
+            `${pending} ${pending === 1 ? "área fica" : "áreas ficam"} por enviar ao radar.`,
+            "Fechar sem enviar",
+        );
+        if (!isConfirmed) return;
+    }
+    stopEditing();
+}
+
+/** O backend compara com o que o radar tem e apaga as que faltam: vão todas as que ficam. */
+async function sendAreas(items) {
+    const imei = state.radarMap.imei;
+    const result = await apiSaveConfiguration(imei, { configurations: { radar_areas: { items } } });
+    if (state.radarMap.imei !== imei) return;
+    if (result.error) {
+        toast("error", apiError(result));
+        return;
+    }
+
+    // O separador das configurações, por baixo, passa a mostrar o que se enviou.
+    if (state.deviceModal.imei === imei) {
+        state.deviceModal.configurations = result.configurations || state.deviceModal.configurations;
+        state.deviceModal.configurationSync = result.configurationSync || state.deviceModal.configurationSync;
+    }
+
+    toast("success", "Áreas enviadas ao radar. A planta atualiza-se quando ele as aplicar.");
+    stopEditing();
+    for (const delay of RELOAD_AFTER_SEND_MS) {
+        const timer = setTimeout(() => {
+            reloadTimers.delete(timer);
+            if (state.radarMap.imei === imei && !editor) void load(imei);
+        }, delay);
+        reloadTimers.add(timer);
+    }
+}
+
 /** O que o stream trouxe para o dispositivo escolhido, da mais recente para a mais antiga. */
 function recentTelemetry() {
+    // Aberta pelas configurações, a planta pode ser de outro radar que não o do detalhe.
+    if (String(state.selectedDetail?.device?.imei ?? "") !== state.radarMap.imei) return [];
     const telemetry = state.selectedDetail?.recent?.telemetry;
 
     return Array.isArray(telemetry) ? telemetry : [];
@@ -125,7 +244,7 @@ async function load(imei) {
     showLayout(response.data);
 }
 
-export async function openRadarMap(imei) {
+export async function openRadarMap(imei, { editAreas = false } = {}) {
     state.radarMap.imei = imei;
     state.radarMap.layout = null;
 
@@ -152,6 +271,7 @@ export async function openRadarMap(imei) {
 
     renderVitals(els, recentTelemetry());
     await load(imei);
+    if (editAreas && state.radarMap.imei === imei) startEditing();
 }
 
 /** O botão: é o único caminho por onde se vai à cloud do fabricante. */
@@ -207,10 +327,16 @@ export function onRadarPresence(imei) {
 /** As telas não se redimensionam sozinhas, e o modal só tem tamanho depois de aberto. */
 export function resizeRadarMap() {
     if (scene && els.radarMapCanvas) scene.resize(els.radarMapCanvas);
+    editor?.redraw();
     resizeVitals(els, recentTelemetry());
 }
 
 export function closeRadarMap() {
+    for (const timer of reloadTimers) clearTimeout(timer);
+    reloadTimers.clear();
+    editor?.destroy();
+    editor = null;
+    syncEditControls();
     scene?.destroy();
     scene = null;
     destroyVitals();

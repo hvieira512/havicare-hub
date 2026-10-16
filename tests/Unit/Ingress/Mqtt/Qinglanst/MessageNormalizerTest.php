@@ -36,7 +36,7 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame(['state' => 'light_sleep'], $result['telemetry']['sleep_state']['data']);
 
         self::assertSame('canonical-radar-id', $result['telemetry']['heart_rate']['device']['id']);
-        self::assertSame('Qinglanst RD-V1 Pro', $result['telemetry']['heart_rate']['device']['commercialName']);
+        self::assertSame('Qinglanst HC2 Pro', $result['telemetry']['heart_rate']['device']['commercialName']);
         self::assertSame('heartbreath', $result['telemetry']['heart_rate']['source']['nativeType']);
     }
 
@@ -187,21 +187,26 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame('fall', $result['events'][0]['type']);
     }
 
-    /** O valor leva o nome e a unidade da telemetria `heart_rate`. */
-    public function testAHighHeartRateCarriesTheBpmThatRaisedIt(): void
+    /**
+     * Uma amostra fora do normal não é alarme: o alarme é o estado de cada minuto, que o radar
+     * calcula com os limites configurados nele.
+     */
+    public function testASampleOutsideTheUsualRangeRaisesNoAlarm(): void
     {
         $normalizer = new MessageNormalizer();
         $topic = QinglanstTopic::parse('radar/1001/radar-topic-uid');
 
-        $result = $normalizer->normalize([
-            'type' => 'heartbreath',
-            'device_code' => 'radar-topic-uid',
-            'breathing' => 14,
-            'heart_rate' => 180,
-        ], $topic, $this->device());
+        foreach ([180, 30] as $bpm) {
+            $result = $normalizer->normalize([
+                'type' => 'heartbreath',
+                'device_code' => 'radar-topic-uid',
+                'breathing' => 14,
+                'heart_rate' => $bpm,
+            ], $topic, $this->device());
 
-        self::assertSame('heart_rate_high', $result['events'][0]['type']);
-        self::assertSame(['bpm' => 180], $result['events'][0]['data']);
+            self::assertSame([], $result['events']);
+            self::assertSame(['bpm' => $bpm], $result['telemetry']['heart_rate']['data']);
+        }
     }
 
     /**
@@ -499,8 +504,8 @@ final class MessageNormalizerTest extends TestCase
         return [
             'imei' => 'canonical-radar-id',
             'supplier' => 'Qinglanst',
-            'model' => 'RD-V1',
-            'commercialName' => 'Qinglanst RD-V1 Pro',
+            'model' => 'HC2',
+            'commercialName' => 'Qinglanst HC2 Pro',
             'deviceType' => 'radar',
             'licenseId' => 1001,
             'company' => 'hitcare',

@@ -122,6 +122,8 @@ final class DeviceCommandCatalog
             // Com o utilizador na chave: dois registos de pessoas diferentes não se substituem na fila.
             'lefu-torre' => isset($payload['id']) ? $command . ':' . $payload['id'] : $command,
             'zayata-m228' => ZayataDownlink::build($imei, $command, $payload, $context),
+            // Os bytes em fila são o nome da configuração: os pedidos à cloud monta-os a entrega.
+            'qinglanst-radar' => $command,
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };
     }

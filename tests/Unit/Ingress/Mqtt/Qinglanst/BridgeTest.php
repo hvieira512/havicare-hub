@@ -143,7 +143,7 @@ final class BridgeTest extends TestCase
 
                 public function resolveCommercialName(string $supplier, string $model): string
                 {
-                    return $supplier === 'Qinglanst' && $model === 'RD-V1' ? 'Qinglanst RD-V1 Pro' : '';
+                    return $supplier === 'Qinglanst' && $model === 'HC2' ? 'Qinglanst HC2 Pro' : '';
                 }
             },
         );
@@ -163,7 +163,7 @@ final class BridgeTest extends TestCase
         self::assertSame('radar-canonical-1', $mqttBridge->lastTelemetry()['imei']);
         self::assertSame('radar-canonical-1', $mqttBridge->lastTelemetry()['payload']['device']['id'] ?? null);
         self::assertSame('position_minute_stats', $mqttBridge->lastTelemetry()['payload']['type'] ?? null);
-        self::assertSame('Qinglanst RD-V1 Pro', $mqttBridge->lastTelemetry()['payload']['device']['commercialName'] ?? null);
+        self::assertSame('Qinglanst HC2 Pro', $mqttBridge->lastTelemetry()['payload']['device']['commercialName'] ?? null);
     }
 
     /**
@@ -201,7 +201,7 @@ final class BridgeTest extends TestCase
         // O descritor omite o que não sabe: uma chave vazia obriga quem lê a distinguir o
         // vazio do ausente.
         self::assertSame(
-            ['id' => 'radar-canonical-1', 'supplier' => 'Qinglanst', 'model' => 'RD-V1'],
+            ['id' => 'radar-canonical-1', 'supplier' => 'Qinglanst', 'model' => 'HC2'],
             $raw['payload']['device'],
         );
         // O original preservado: o deviceCode que chegou no payload MQTT tem de estar lá.

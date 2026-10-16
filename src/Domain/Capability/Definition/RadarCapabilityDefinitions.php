@@ -26,9 +26,25 @@ final class RadarCapabilityDefinitions extends CapabilityDefinitions
                     'presence' => 'Presença',
                     'position_minute_stats' => 'Estatísticas de posições por minuto',
                     'vitals_minute_stats' => 'Estatísticas de sinais vitais por minuto',
+                    // As três chegam quando alguém lê o radar, e não sozinhas.
+                    'connectivity' => 'Conectividade',
+                    'tilt' => 'Inclinação',
+                    'firmware_version' => 'Versão do firmware',
+                ],
+            ],
+            'health' => [
+                'setting' => [
+                    'vital_sign_sensitivity' => 'Sensibilidade dos sinais vitais',
                 ],
             ],
             'alarms' => [
+                'setting' => [
+                    'breath_rate_alert' => 'Alerta de frequência respiratória',
+                    'heart_rate_alert' => 'Alerta de frequência cardíaca',
+                    'weak_vital_signs_alarm' => 'Sinais vitais fracos',
+                    'fall_alarm' => 'Queda',
+                    'sitting_on_floor_alarm' => 'Sentado no chão',
+                ],
                 'event' => [
                     'fall' => 'Queda',
                     'heart_rate_high' => 'Frequência cardíaca alta',
@@ -39,6 +55,18 @@ final class RadarCapabilityDefinitions extends CapabilityDefinitions
                     'weak_vital_signs' => 'Sinais vitais fracos',
                     'zone_entry' => 'Entrada numa zona',
                     'zone_exit' => 'Saída de uma zona',
+                ],
+            ],
+            'settings_system' => [
+                'setting' => [
+                    'working_mode' => 'Modo de funcionamento',
+                    'radar_installation' => 'Montagem e altura',
+                    'detection_boundary' => 'Limites de deteção',
+                    'radar_areas' => 'Áreas',
+                ],
+                'action' => [
+                    'measure_boundary' => 'Medir os limites',
+                    'read_device_state' => 'Ler do radar',
                 ],
             ],
         ];

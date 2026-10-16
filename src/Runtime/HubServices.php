@@ -16,10 +16,14 @@ use Hub\Domain\Capability\Medication\MedicationRunout;
 use Hub\Infrastructure\Persistence\DashboardDatabase;
 use Hub\Ingress\Http\Qinglanst\LayoutParser;
 use Hub\Ingress\Http\Qinglanst\QinglanstApiClient;
+use Hub\Ingress\Http\Qinglanst\QinglanstCloudCommands;
+use Hub\Ingress\Http\Qinglanst\QinglanstCloudDownlinks;
 use Hub\Ingress\Http\Qinglanst\RadarLayoutSync;
+use Hub\Ingress\Http\Qinglanst\RadarStateAbsorber;
 use Hub\Location\LocationEnricherFactory;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Mqtt\ConnectionFactory;
+use React\EventLoop\Loop;
 use React\Http\Browser;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
@@ -46,6 +50,7 @@ final class HubServices
         public readonly DeviceHubServer $hubServer,
         public readonly ?LocationTelemetryEnricherContract $locationEnricher,
         public readonly RadarLayoutSync $radarLayoutSync,
+        public readonly QinglanstCloudDownlinks $qinglanstCloudDownlinks,
     ) {
     }
 
@@ -83,6 +88,49 @@ final class HubServices
             $redis,
         );
 
+        // As configurações dos radares vão à cloud do fabricante: lê-se o radar, escreve-se, e a
+        // leitura seguinte fica como o que o hub mostra.
+        $qinglanstClient = new QinglanstApiClient(
+            new Browser(),
+            (float)$config['qinglanst']['layout_sync_timeout_seconds'],
+        );
+        $qinglanstCommands = new QinglanstCloudCommands();
+        $radarState = new RadarStateAbsorber(
+            $dataAccess->configurationLifecycle,
+            $qinglanstCommands,
+            $dataAccess->whitelist,
+            $mqttBridge,
+            $deviceStore,
+        );
+        $radarLayoutSync = new RadarLayoutSync(
+            $qinglanstClient,
+            new LayoutParser(),
+            $dataAccess->radarLayouts,
+            $dataAccess->radarCredentials,
+            $dataAccess->whitelist,
+            onProps: $radarState->absorb(...),
+            areaNames: $radarState->areaNames(...),
+        );
+        $qinglanstCloudDownlinks = new QinglanstCloudDownlinks(
+            $downlinkQueue,
+            $qinglanstClient,
+            $qinglanstCommands,
+            static function (string $imei) use ($dataAccess): ?array {
+                $device = $dataAccess->whitelist->get($imei);
+                if ($device === null || ($device['device_type'] ?? '') !== 'radar') {
+                    return null;
+                }
+                $uid = trim((string)($device['device_id'] ?? ''));
+
+                return [
+                    'uid' => $uid !== '' ? $uid : $imei,
+                    'credentials' => $dataAccess->radarCredentials->findByLicenseId((int)$device['license_id']),
+                ];
+            },
+            $radarLayoutSync->syncDevice(...),
+            $deviceStore->markCommand(...),
+        );
+
         $hubServer = new DeviceHubServer(
             $whitelist,
             $mqttBridge,
@@ -95,17 +143,10 @@ final class HubServices
             firmwareUpgrades: new RedisFirmwareUpgradeStore($redis),
             effectiveConfiguration: static fn (string $imei): array => $dataAccess->configurationLifecycle
                 ->effectivePayloads($imei, MedicationRunout::CONFIGURATION_KEYS),
-        );
-
-        $radarLayoutSync = new RadarLayoutSync(
-            new QinglanstApiClient(
-                new Browser(),
-                (float)$config['qinglanst']['layout_sync_timeout_seconds'],
+            // Na volta seguinte do ciclo: quem pôs na fila ainda vai gravar o registo do comando.
+            downlinkQueued: static fn (string $imei) => Loop::futureTick(
+                static fn () => $qinglanstCloudDownlinks->dispatchPending($imei, now: true),
             ),
-            new LayoutParser(),
-            $dataAccess->radarLayouts,
-            $dataAccess->radarCredentials,
-            $dataAccess->whitelist,
         );
 
         return new self(
@@ -121,6 +162,7 @@ final class HubServices
             $hubServer,
             $locationEnricher,
             $radarLayoutSync,
+            $qinglanstCloudDownlinks,
         );
     }
 

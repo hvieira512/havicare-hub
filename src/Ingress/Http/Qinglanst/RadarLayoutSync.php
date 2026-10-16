@@ -23,6 +23,12 @@ final class RadarLayoutSync
     /** @var callable(): string */
     private $now;
 
+    /** @var (\Closure(string, array<string, mixed>): void)|null o resto da leitura: configurações e estado */
+    private ?\Closure $onProps;
+
+    /** @var (\Closure(string): array<int, string>)|null os nomes que as áreas têm no hub */
+    private ?\Closure $areaNames;
+
     public function __construct(
         private QinglanstApiClient $client,
         private LayoutParser $parser,
@@ -30,8 +36,12 @@ final class RadarLayoutSync
         private RadarApiCredentialsRepository $credentials,
         private WhitelistRepository $whitelist,
         ?callable $now = null,
+        ?callable $onProps = null,
+        ?callable $areaNames = null,
     ) {
         $this->now = $now ?? static fn(): string => gmdate('Y-m-d H:i:s');
+        $this->onProps = $onProps === null ? null : $onProps(...);
+        $this->areaNames = $areaNames === null ? null : $areaNames(...);
     }
 
     /**
@@ -115,14 +125,23 @@ final class RadarLayoutSync
         $tally['codes'][$code] = ($tally['codes'][$code] ?? 0) + 1;
 
         $data = $response['data'] ?? null;
-        $layout = (int)($response['code'] ?? 0) === self::CODE_OK && is_array($data)
-            ? $this->parser->parse($data)
-            : null;
+        $answered = (int)($response['code'] ?? 0) === self::CODE_OK && is_array($data);
+        if ($answered && $this->onProps !== null) {
+            ($this->onProps)($imei, $data);
+        }
+        $layout = $answered ? $this->parser->parse($data) : null;
 
         // Nem um `777` nem uma resposta sem sala apagam a planta guardada: vale até haver outra.
         if ($layout === null) {
             return [...$tally, 'skipped' => $tally['skipped'] + 1];
         }
+
+        // A API não escreve nomes: o que se deu à área no hub ganha ao nome que a cloud guarda.
+        $names = $this->areaNames === null ? [] : ($this->areaNames)($imei);
+        $layout['areas'] = array_map(
+            static fn(array $area): array => array_replace($area, ['name' => $names[(int)$area['key']] ?? $area['name']]),
+            $layout['areas'],
+        );
 
         $this->layouts->store(
             $imei,

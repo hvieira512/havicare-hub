@@ -38,6 +38,7 @@ final class QinglanstBridge extends MqttBridgeBase
         ?\Hub\Registry\Denylist $denylist = null,
         private readonly int $idleTimeoutSeconds = 180,
         private readonly ?\Closure $layouts = null,
+        private readonly ?\Closure $onMessage = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -201,6 +202,10 @@ final class QinglanstBridge extends MqttBridgeBase
 
         // O `uid` do tópico só encontra o dispositivo; daqui em diante vale o IMEI canónico.
         $deviceKey = (string)$device['imei'];
+        // Uma mensagem é o radar ligado: o que espera por ele na fila da cloud pode sair.
+        if ($this->onMessage !== null) {
+            ($this->onMessage)($deviceKey);
+        }
         $deviceType = (string)$device['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');

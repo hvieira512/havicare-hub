@@ -24,7 +24,7 @@ final class DeviceImeiRenameTest extends MysqlDashboardTestCase
         $renamed = '861265061009899';
 
         $whitelist->register($gateway, 'MOKO', 'MKGW3', 'gateway', 1001, '', $gateway, 'hitcare');
-        $whitelist->register($radar, 'Qinglanst', 'RD-V1', 'radar', 1001, '', $radar, 'hitcare');
+        $whitelist->register($radar, 'Qinglanst', 'HC2', 'radar', 1001, '', $radar, 'hitcare');
         $db->gatewayDeviceLinks->upsert($gateway, $radar);
         $db->radarLayouts->store($radar, $this->layout(), '{}', '2026-10-02 12:00:00');
 
@@ -38,7 +38,7 @@ final class DeviceImeiRenameTest extends MysqlDashboardTestCase
         $result = $service->update($radar, [
             'imei' => $renamed,
             'supplier' => 'Qinglanst',
-            'model' => 'RD-V1',
+            'model' => 'HC2',
             'licenseId' => '1001',
             'company' => 'hitcare',
         ]);

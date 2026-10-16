@@ -20,7 +20,7 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
         $this->repository = new RadarLayoutRepository($this->pdo);
         $this->pdo->exec("
             INSERT INTO whitelist (imei, supplier, model, device_type, license_id)
-            VALUES ('594B3CCBA56B', 'Qinglanst', 'RD-V1', 'radar', 2103)
+            VALUES ('594B3CCBA56B', 'Qinglanst', 'HC2', 'radar', 2103)
         ");
     }
 
@@ -65,7 +65,7 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
     {
         $this->pdo->exec("
             INSERT INTO whitelist (imei, supplier, model, device_type, license_id)
-            VALUES ('414D74184CBF', 'Qinglanst', 'RD-V1', 'radar', 2103)
+            VALUES ('414D74184CBF', 'Qinglanst', 'HC2', 'radar', 2103)
         ");
         $this->repository->store('594B3CCBA56B', $this->layout(), '{}', '2026-09-17 15:00:00');
         $this->repository->store('414D74184CBF', $this->layout(), '{}', '2026-09-17 15:00:00');

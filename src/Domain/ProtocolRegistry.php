@@ -41,10 +41,11 @@ final class ProtocolRegistry
                 'deviceType' => 'ncs',
                 'supportsConfigCatalog' => false,
             ],
+            // As configurações vão à cloud do fabricante, e não ao aparelho.
             'qinglanst-radar' => [
                 'label' => 'Qinglanst',
                 'deviceType' => 'radar',
-                'supportsConfigCatalog' => false,
+                'supportsConfigCatalog' => true,
             ],
             // A pulseira aceita downlink: a sessão GATT é bidirecional e o firmware confirma cada escrita,
             // ao contrário das W6/W6B.

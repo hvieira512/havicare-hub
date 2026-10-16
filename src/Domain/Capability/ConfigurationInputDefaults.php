@@ -23,7 +23,7 @@ final class ConfigurationInputDefaults
             'toggle' => [($field(0) ?: 'enabled') => true],
             // Zero só serve quando está dentro da escala: um tom de pele vai de 1 a 6, e o
             // formulário partia de um valor que o aparelho recusa.
-            'number' => [($field(0) ?: 'value') => (int)($entry['options']['min'] ?? 0)],
+            'number' => [($field(0) ?: 'value') => (int)($entry['options']['default'] ?? $entry['options']['min'] ?? 0)],
             // A primeira opção que a definição declara: é a que o `select` mostra escolhida
             // antes de alguém mexer, e um número inventado aqui podia nem existir na lista.
             'select' => (static function () use ($entry, $field): array {
@@ -128,6 +128,11 @@ final class ConfigurationInputDefaults
                 'voiceMimeType' => 'audio/webm',
             ],
             'soundProfile' => ['mode' => 1],
+            // Os campos do radar declaram o ponto de partida na definição, com os valores de fábrica da API.
+            'valueRange', 'switchWithValue', 'radarInstallation', 'radarBoundary' => (array)($entry['options']['default'] ?? []),
+            'sensitivitySlider' => [($field(0) ?: 'sensitivity') => (int)($entry['options']['default'] ?? 5)],
+            'optionCards' => [($field(0) ?: 'value') => $entry['options']['default'] ?? ''],
+            'radarAreas' => ['items' => []],
             default => [],
         };
     }

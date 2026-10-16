@@ -46,6 +46,7 @@ class DeviceHubServer
         ?Denylist $denylist = null,
         ?FirmwareUpgradeStore $firmwareUpgrades = null,
         ?\Closure $effectiveConfiguration = null,
+        private readonly ?\Closure $downlinkQueued = null,
     ) {
         $this->effectiveConfiguration = $effectiveConfiguration;
         $this->whitelist = $whitelist;
@@ -225,6 +226,10 @@ class DeviceHubServer
 
         try {
             $this->downlinkQueue->enqueue($imei, $bytes, $command, $this->downlinkQueueTtlSeconds);
+            // Quem entrega fora do socket, como a cloud dos radares, não espera pelo aparelho.
+            if ($this->downlinkQueued !== null) {
+                ($this->downlinkQueued)($imei);
+            }
             if ($renewal) {
                 return true;
             }

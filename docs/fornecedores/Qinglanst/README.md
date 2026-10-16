@@ -8,5 +8,6 @@ lido das tramas e está no [capítulo 04](../../04-ingestao-mqtt-radar.md).
 
 Os limiares dos alarmes de sinais vitais estão na secção 5.3.5
 (`setBreathHeartParam`). Os valores por omissão do radar são: respiração 8–24/min
-e ritmo cardíaco 50–90 bpm, com alarme após 1 minuto fora do intervalo. O hub e
-o hitCare ainda usam números diferentes para a mesma leitura.
+e ritmo cardíaco 50–90 bpm, com alarme após 1 minuto fora do intervalo. O hub não
+tem limiares seus: o alarme alto ou baixo é o estado de cada minuto do radar, e os
+limiares configuram-se por radar (secção 8 do capítulo 04).

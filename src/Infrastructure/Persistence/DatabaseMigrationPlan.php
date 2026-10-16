@@ -7,6 +7,7 @@ namespace Hub\Infrastructure\Persistence;
 use Hub\Infrastructure\Persistence\Migration\CapabilitySectionsIncludeReminders;
 use Hub\Infrastructure\Persistence\Migration\ConfigurationOperationTarget;
 use Hub\Infrastructure\Persistence\Migration\Migration;
+use Hub\Infrastructure\Persistence\Migration\QinglanstRadarIsHc2;
 use Hub\Infrastructure\Persistence\Migration\UnconfirmedHeartRateAlarmIsUnlinked;
 use Hub\Infrastructure\Persistence\Migration\UniqueScalesCatalog;
 use Hub\Infrastructure\Persistence\Migration\UniqueScalesImages;
@@ -32,6 +33,7 @@ final class DatabaseMigrationPlan
             new UniqueScalesCatalog(),
             new ConfigurationOperationTarget(),
             new UniqueScalesImages(),
+            new QinglanstRadarIsHc2(),
         ];
     }
 

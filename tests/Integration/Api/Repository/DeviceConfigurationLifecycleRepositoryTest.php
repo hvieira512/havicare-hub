@@ -76,6 +76,52 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         self::assertNotSame('', $stored[0]['applied_at']);
     }
 
+    /** O que se lê de um radar fica como o valor aplicado, para o ecrã mostrar o que ele tem. */
+    public function testWhatIsReadFromTheDeviceBecomesTheAppliedValue(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+
+        self::assertTrue($db->configurationLifecycle->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar'));
+
+        $current = $db->configurationLifecycle->currentForImei('AD8A613B0493');
+        self::assertSame('confirmed', $current[0]['sync_status']);
+        self::assertSame(['afterSeconds' => 20], $current[0]['effective_payload']);
+        self::assertSame(['fall_alarm' => ['afterSeconds' => 20]], $db->configurationLifecycle->effectivePayloads('AD8A613B0493', ['fall_alarm']));
+    }
+
+    /** Ler o mesmo valor outra vez não cria revisão nova. */
+    public function testReadingTheSameValueAgainChangesNothing(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db->configurationLifecycle->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar');
+
+        self::assertFalse($db->configurationLifecycle->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar'));
+        self::assertSame(1, (int)$db->configurationLifecycle->currentForImei('AD8A613B0493')[0]['desired_revision']);
+    }
+
+    /** Uma alteração a caminho do aparelho não é apagada pelo que se leu antes de ela chegar. */
+    public function testAReadDoesNotOverwriteAChangeOnItsWay(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db->configurationLifecycle->stage('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 60], [[
+            'nativeKey' => 'fall_alarm',
+            'protocol' => 'qinglanst-radar',
+            'command' => 'fall_alarm',
+            'payload' => ['afterSeconds' => 60],
+            'confirmationMode' => 'execution_ack',
+            'operationId' => 'op-fall',
+        ]], [[
+            'operationId' => 'op-fall',
+            'nativeKey' => 'fall_alarm',
+            'nativeType' => 'fall_alarm',
+            'protocol' => 'qinglanst-radar',
+            'confirmationMode' => 'execution_ack',
+        ]]);
+
+        self::assertFalse($db->configurationLifecycle->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar'));
+        self::assertSame(['afterSeconds' => 60], $db->configurationLifecycle->currentForImei('AD8A613B0493')[0]['desired_payload']);
+    }
+
     /** Só o que o aparelho confirmou conta, e só das chaves pedidas. */
     public function testEffectivePayloadsReturnsTheConfirmedValueOfTheRequestedKeys(): void
     {

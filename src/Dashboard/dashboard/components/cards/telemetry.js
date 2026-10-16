@@ -62,6 +62,7 @@ const CARD_STYLE = {
     sleep_apnea: ["fa-bed-pulse", "warning"],
     // A versão de firmware é ficha técnica e não uma leitura: fica no cinzento do sistema.
     firmware_version: ["fa-microchip", "secondary"],
+    tilt: ["fa-ruler-combined", "secondary"],
     proximity: ["fa-tower-broadcast", "info"],
     presence: ["fa-location-crosshairs", "success"],
     ecg: ["fa-wave-square", "danger"],
@@ -102,6 +103,10 @@ const CARD_STYLE = {
     weighing_status: ["fa-scale-balanced", "secondary"],
     unknown: ["fa-bell", ""],
 };
+
+const degrees = (value) => Number.isFinite(value)
+    ? `${value.toLocaleString("pt-PT", { maximumFractionDigits: 1 })}°`
+    : "-";
 
 const oneDecimal = (data) => Object.fromEntries(Object.entries(data ?? {})
     .map(([key, value]) => [key, typeof value === "number" ? Math.round(value * 10) / 10 : value]));
@@ -162,6 +167,11 @@ const UPLINK_CARD_RENDERERS = {
     // dispensador dois bytes que saem em hexadecimal.
     firmware_version: (data) => ({
         value: String(data?.version ?? "").trim() || "—",
+        details: compactDetails(data, ["communicationVersion"]),
+    }),
+    tilt: (data) => ({
+        value: `X ${degrees(data?.xDegrees)} · Y ${degrees(data?.yDegrees)}`,
+        details: data?.factoryCalibrated ? "Calibrado de fábrica" : "Sem calibração de fábrica",
     }),
     // "Queda" sozinho não distingue uma confirmada de uma suspeita, nem de alguém sentado no chão.
     fall: (data) => ({

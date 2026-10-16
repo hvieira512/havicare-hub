@@ -39,7 +39,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
         foreach (['594B3CCBA56B', '414D74184CBF'] as $imei) {
             $this->pdo->exec("
                 INSERT INTO whitelist (imei, supplier, model, device_type, license_id)
-                VALUES ('$imei', 'Qinglanst', 'RD-V1', 'radar', 2103)
+                VALUES ('$imei', 'Qinglanst', 'HC2', 'radar', 2103)
             ");
         }
     }
@@ -185,6 +185,31 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
 
         self::assertSame(1, $result['synced']);
         self::assertNotNull($this->layouts->findByImei('594B3CCBA56B'));
+    }
+
+    /** A leitura serve também as configurações e o estado, e o nome dado no hub fica. */
+    public function testTheReadFeedsTheRestOfTheHubAndKeepsTheHubNames(): void
+    {
+        $this->giveTheLicenceCredentials();
+        $client = $this->clientAnswering(['594B3CCBA56B' => $this->deviceProp()]);
+        $read = [];
+        $sync = new RadarLayoutSync(
+            $client,
+            new LayoutParser(),
+            $this->layouts,
+            new RadarApiCredentialsRepository($this->pdo),
+            new WhitelistRepository($this->pdo),
+            static fn(): string => '2026-09-17 15:00:00',
+            function (string $imei, array $props) use (&$read): void {
+                $read[$imei] = $props;
+            },
+            static fn(string $imei): array => [4 => 'Entrada'],
+        );
+
+        $this->await($sync->syncDevice('594B3CCBA56B'));
+
+        self::assertSame($this->deviceProp()['data'], $read['594B3CCBA56B']);
+        self::assertSame(['CAMA 1', 'Entrada'], array_column($this->layouts->findByImei('594B3CCBA56B')['areas'], 'name'));
     }
 
     /** Sem credenciais na licença não há a quem perguntar, e dizê-lo é melhor do que um 500. */

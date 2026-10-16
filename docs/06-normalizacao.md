@@ -154,7 +154,7 @@ o acumulado do dia é `activity` em toda a frota, e os passos de uma janela são
 | `battery` | `percent` **ou** `voltageMv`, `chargingState`, `batteryType`, `mainsPowered`, `lowBattery` — ver a tabela abaixo, que diz quem manda o quê |
 | `heartbeat` | `status`, `steps`, `gsmSignal`, `satelliteCount`, `batteryPercent`, `chargingState`, `batteryType`, `rollFrequency`, `remainingSpace`, `fortificationState`, `workMode` |
 | `device_state` | `state`, `resetStatus`, `reason` |
-| `firmware_version` | `version` |
+| `firmware_version` | `version` e, no radar, `communicationVersion` |
 | `device_config` | `status`, `ack`, `settings` |
 | `location` | ver a secção 4 |
 
@@ -213,7 +213,8 @@ sair depois de ela ter apagado.
 | `weighing_status` | balança | `weightKg`, `weight` (`idle` · `settling` · `stable` · `overload`), `impedance` e `heartRate` (`idle` · `measuring` · `measured` · `failed`), `displayUnit` (`kg` · `lb` · `jin` · `st` · `st_lb`), `shuttingDown`. Sai só quando muda a fase, e não a cada oscilação do peso |
 | `motion` | pulseira | `xMg`, `yMg`, `zMg`, `magnitudeMg` |
 | `proximity` | pulseira, sensor de fralda | `gatewayId`, `state`, `rssiDbm`, `rssiMaxDbm`, `rssiMedianDbm`, `rssiMinDbm`, `samples`, `windowSeconds` |
-| `connectivity` | gateway | `interface`, `networkType`, `signalQuality`, `signalStrengthDbm` |
+| `connectivity` | gateway, radar | `interface`, `networkType`, `signalQuality`, `signalStrengthDbm`. No radar vem da leitura `deviceProp`: `interface` `wifi` com `signalStrengthDbm`, ou `4g` com `signalQuality` (CSQ, 0–31) |
+| `tilt` | radar | `xDegrees`, `yDegrees`, `zDegrees`, `factoryCalibrated` — o ângulo do radar com os três eixos; no teto o X e o Y ficam dentro de ±10° |
 | `diaper_moisture` · `diaper_moisture_level` · `diaper_condition` | sensor de fralda | ver o [capítulo 17](17-sensor-de-fralda.md) |
 | `medication_intake` | dispensador | `alarmSlot` (1–9), `scheduledAt`, `takenAt`, `cellNumber`, `method`: `on_time` · `early` · `late`, `result`: `on_time` · `late` · `abnormal` · `missed` |
 | `cells_remaining` | dispensador | `current`, `total`, `remaining`, `level`: `ok` · `low` · `empty`, e `runoutAt` — o `total` é a capacidade do prato, não quantas células vão carregadas, o `level` é o juízo grosseiro do aparelho sobre a mesma contagem, e o `runoutAt` é quando sai a última dose (ISO 8601 no fuso do aparelho; `null` sem plano ou depois do fim do período) |

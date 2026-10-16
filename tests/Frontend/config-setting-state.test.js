@@ -81,3 +81,21 @@ test("e ao ser editada diz que mudou, em vez do código que lá estava", () => {
 
     assert.equal(section.querySelector(".config-when-changed").textContent.trim(), "alterada e por enviar");
 });
+
+/** Um intervalo tem dois números: o que lá estava diz-se inteiro, e não só o mínimo. */
+test("um intervalo editado mostra os dois extremos que lá estavam", () => {
+    const range = {
+        key: "heart_rate_alert",
+        capabilityKey: "heart_rate_alert",
+        command: "heart_rate_alert",
+        label: "Frequência cardíaca fora do intervalo",
+        input: "valueRange",
+        fields: ["minBpm", "maxBpm"],
+        options: { min: 0, max: 255, unit: "bpm" },
+    };
+    const section = parseFragment(
+        renderConfigSection("qinglanst-radar", range, { minBpm: 50, maxBpm: 90 }, {}, false, null, true),
+    ).querySelector("[data-config-section]");
+
+    assert.match(section.querySelector(".config-when-changed").textContent, /era 50–90\s+bpm/);
+});
