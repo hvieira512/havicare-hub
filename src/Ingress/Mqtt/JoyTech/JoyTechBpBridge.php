@@ -76,8 +76,6 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
     private readonly ?DeviceReportStore $reports;
 
-    private readonly ?DeviceCommandLog $commands;
-
     public function __construct(
         MqttClient $subscriber,
         Whitelist $whitelist,
@@ -102,7 +100,6 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
             clock: $clock,
             commercialModelResolver: $commercialModelResolver,
         );
-        $this->commands = $deviceStore;
         $this->downlinks = new GattDownlinks($queue, $mqttBridge, $deviceStore, $topicFilter, (new JoyTechCommandEncoder())->writes(...));
         $this->reports = $deviceStore;
         $this->ecg = new EcgRecordings();
@@ -230,7 +227,6 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
             if (isset($this->sessions[$context->deviceKey])) {
                 $this->sessions[$context->deviceKey]['memoryRead'] = true;
             }
-            $this->commands?->markCommandReply($context->deviceKey, 'joytech_8b', null, '', true);
             return;
         }
         if ($frame['function'] === 0x83 && strlen($frame['data']) >= 12) {
@@ -289,6 +285,15 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
     {
         $deviceKey = $context->deviceKey;
         $now = $this->clockNow();
+        $reading = $this->reading[$deviceKey] ?? null;
+        $fromHistory = $reading !== null && $now <= $reading['until'];
+        if ($reading !== null && !$fromHistory) {
+            $this->finishReading($deviceKey);
+        }
+        // Uma repetição também é um registo da leitura, e mantém-na aberta.
+        if ($fromHistory) {
+            $this->reading[$deviceKey]['until'] = $now + self::MEMORY_SILENCE_SECONDS;
+        }
         if ($this->repeated($deviceKey, $data, $now)) {
             return;
         }
@@ -301,13 +306,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         $at = JoyTechFrame::unixTime((int)$fields['year'], (int)$fields['month'], (int)$fields['day'], (int)$fields['hour'], (int)$fields['minute'], $offsetMinutes);
         $plausible = $at !== null && $at >= self::HISTORY_EPOCH && $at <= $now + self::FUTURE_TOLERANCE_SECONDS;
 
-        $reading = $this->reading[$deviceKey] ?? null;
-        $fromHistory = $reading !== null && $now <= $reading['until'];
-        if ($reading !== null && !$fromHistory) {
-            $this->finishReading($deviceKey);
-        }
         if ($fromHistory) {
-            $this->reading[$deviceKey]['until'] = $now + self::MEMORY_SILENCE_SECONDS;
             if (!$plausible || $at <= ($reading['marks'][$group] ?? 0)) {
                 return;
             }

@@ -12,6 +12,12 @@ use Predis\ClientInterface;
  */
 final class BloodPressureHistoryMarks
 {
+    /**
+     * Os ao vivo só saem da lista quando a marca os passa; numa memória que nunca se lê até ao
+     * fim, sai-se por aqui. A marca fica: sem ela, a memória toda voltava a sair.
+     */
+    private const LIVE_TTL_SECONDS = 90 * 86400;
+
     /** @var array<string, int> sem Redis, só enquanto o processo vive */
     private array $localMarks = [];
 
@@ -61,6 +67,7 @@ final class BloodPressureHistoryMarks
         }
 
         $this->redis->zadd($this->liveKey($imei, $group), [$key => $at]);
+        $this->redis->expire($this->liveKey($imei, $group), self::LIVE_TTL_SECONDS);
     }
 
     public function wasLive(string $imei, int $group, string $key): bool

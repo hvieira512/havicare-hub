@@ -13,8 +13,8 @@ final class EcgRecordings
     /** As tramas chegam a 50 por segundo; um buraco disto é um exame interrompido. */
     private const GAP_SECONDS = 1.0;
 
-    /** Uma repetição do mesmo `0x85` ou `0x86` chega dentro disto. */
-    private const REPEAT_SECONDS = 10.0;
+    /** O `0x85` repete-se 4 vezes, de segundo a segundo, e o `0x86` de 2 em 2 s. */
+    private const REPEAT_SECONDS = 5.0;
 
     /** @var array<string, array{samples: list<int>, lastAt: float, broken: bool}> */
     private array $open = [];

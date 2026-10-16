@@ -44,11 +44,29 @@ final class JoyTechEcgTest extends TestCase
         self::assertSame(['ecg'], array_values(array_unique(array_column(array_column($mqtt->telemetry, 'payload'), 'type'))));
     }
 
-    /** Sem o `0x05` na contagem o aparelho não manda nada, e o fim só pára com o `0x06`: uma resposta a cada. */
+    /**
+     * Sem o `0x05` na contagem o aparelho não manda nada, e o fim só pára com o `0x06`: a contagem
+     * repete-se de segundo a segundo e o fim de 2 em 2 s, e cada um tem uma resposta.
+     */
     public function testTheCountdownAndTheEndAreAnsweredOnce(): void
     {
+        $capture = self::capture();
+        $countdown = array_values(array_filter($capture, static fn (array $frame): bool => str_starts_with($frame[1], 'faaaaaaf000a85')))[0];
+        $end = $capture[count($capture) - 1];
+        $repeated = [];
+        foreach ($capture as $frame) {
+            if ($frame === $countdown) {
+                foreach ([-3000, -2000, -1000] as $before) {
+                    $repeated[] = [$frame[0] + $before, $frame[1]];
+                }
+            }
+            $repeated[] = $frame;
+        }
+        foreach ([2000, 4000] as $after) {
+            $repeated[] = [$end[0] + $after, $end[1]];
+        }
         $mqtt = new RecordingHubMqttBridge();
-        $this->replay($this->bridge($mqtt), self::capture());
+        $this->replay($this->bridge($mqtt), $repeated);
 
         self::assertSame(
             [['startEcg', 'faaaaaaf000a050ff55f'], ['acknowledgeEcg', 'faaaaaaf000a0610f55f']],
@@ -57,6 +75,18 @@ final class JoyTechEcgTest extends TestCase
                 $mqtt->gatewayCommands,
             ),
         );
+    }
+
+    /** Um exame cancelado e começado logo a seguir: a contagem nova tem resposta. */
+    public function testASecondExamSoonAfterIsStarted(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $countdown = 'faaaaaaf000a858ff55f';
+
+        $this->replay($bridge, [[0, $countdown], [6000, $countdown]]);
+
+        self::assertCount(2, $mqtt->gatewayCommands);
     }
 
     /** Um exame interrompido não é um traçado: não sai. */

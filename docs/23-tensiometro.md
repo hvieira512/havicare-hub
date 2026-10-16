@@ -34,8 +34,14 @@ Como o aparelho só se liga quando se carrega em Start, esse `0x0A` chega quase
 sempre a meio da medição e é ignorado: não chega o `0x8B`, e a espera do gateway
 acaba sem erro visível. Por isso o hub volta a pedir a memória 15 s depois do
 resultado ao vivo, já passadas as repetições, a não ser que a leitura dessa
-ligação já tenha chegado ao fim. Na
-dashboard, «Ler a memória» faz o mesmo a pedido, e fecha com o `0x8B`.
+ligação já tenha chegado ao fim. Na dashboard, «Ler a memória» faz o mesmo a
+pedido. Fecha-o o gateway, que só responde depois do `0x8B` dessa leitura; pedido
+a meio de uma medição, falha por tempo, e os dados chegam depois pela leitura
+automática.
+
+A hora vai no fuso do gateway: o `tzOffsetMinutes` de cada mensagem é o da
+máquina onde ele corre, e é o mesmo que converte a hora do aparelho em
+`occurredAt`.
 
 ## O que sai no MQTT
 
@@ -46,8 +52,8 @@ Cada resultado sai como `blood_pressure` (`systolicMmHg`, `diastolicMmHg`,
 - **Ao vivo** o resultado vem 6 vezes, de 2 em 2 s; sai uma, com a hora de
   chegada no `occurredAt`.
 - **Da memória** sai com a hora do aparelho e `fromHistory: true`. Um `0x83` é da
-  memória enquanto os registos chegarem seguidos depois de um `0x0A`; 3 s de
-  silêncio quer dizer que a leitura não começou.
+  memória enquanto os registos chegarem seguidos depois de um `0x0A`, repetidos
+  ou não; 3 s de silêncio quer dizer que a leitura não começou.
 
 **Marca por aparelho e grupo.** O hub guarda no Redis
 (`hub:joytech:history-mark:{mac}`), por grupo, a hora do aparelho do registo
@@ -59,14 +65,16 @@ Cada ligação começa com uma medição, porque o aparelho só se anuncia quand
 carrega em Start, e ela chega antes da memória. Por isso o ao vivo **não** avança
 a marca: o que se mediu sem gateway antes dele ainda tem de entrar. Fica guardado
 tal como veio (`hub:joytech:live:{mac}:{grupo}`), a memória não o repete, e sai
-dessa lista quando a marca o ultrapassa.
+dessa lista quando a marca o ultrapassa. A lista expira 90 dias depois da última
+escrita; a marca não expira, porque sem ela a memória toda voltava a sair.
 
 Só contam horas plausíveis: desde 1 de janeiro de 2025 e não mais de 5 minutos à
 frente. As medições feitas com o relógio por acertar ficam de fora.
 
 **Limites conhecidos.** Se o relógio do aparelho voltar a 2021 (pilhas trocadas)
 e se medir sem gateway por perto, essas medições ficam abaixo da data mínima e
-perdem-se. Duas medições no mesmo grupo e no mesmo minuto contam como uma.
+perdem-se. Duas medições no mesmo grupo e no mesmo minuto contam como uma. Na
+mudança de hora, um registo medido antes e lido depois fica com uma hora de erro.
 
 ## O HC-6679B, com ECG
 
@@ -84,7 +92,7 @@ capacidade `ecg`.
 | `0x06` | hub → aparelho | A confirmação do fim |
 
 O hub responde à primeira trama da contagem e à primeira do fim, e ignora as
-repetições. O exame sai num só `ecg`, no formato do da pulseira para o traçado
+repetições dos 5 s seguintes. O exame sai num só `ecg`, no formato do da pulseira para o traçado
 se desenhar igual: `samples` (cerca de 7500), `frequencyHz` 250 e `heartRateBpm`
 do `0x86`, com a hora do aparelho no `occurredAt`. O pulso não sai à parte. As
 amostras vão como chegam: **a unidade não é conhecida**, e pediu-se à JoyTech o
@@ -93,3 +101,6 @@ fator para mV.
 Um exame interrompido não sai: a sessão a cair antes do `0x86`, ou mais de 1 s
 sem amostras depois da primeira. A memória dos ECG do aparelho (`0x0E`) não
 responde, e fica de fora.
+
+Um HC-6679B por registar aparece nas notificações com o protocolo `joytech-bp`:
+o protocolo sai do modelo registado, e ainda não há nenhum.

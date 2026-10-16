@@ -20,7 +20,8 @@ final class JoyTechConfigurationDefinitions
                 'Ler a memória',
                 'action',
                 [],
-                ['joytech_8b'],
+                // Fecha-o o gateway, que espera pelo `0x8B` desta leitura: o de outra não conta.
+                [],
                 'health',
                 10,
                 transient: true,

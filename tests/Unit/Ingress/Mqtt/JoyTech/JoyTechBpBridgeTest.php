@@ -196,20 +196,51 @@ final class JoyTechBpBridgeTest extends TestCase
         self::assertCount(2, $mqtt->gatewayCommands);
     }
 
-    /** O fim da memória fecha o pedido de a ler. */
-    public function testTheMemoryEndClosesTheRequest(): void
+    /**
+     * O pedido da dashboard fecha-o o gateway, que só responde depois do `0x8B` dele; o fim de uma
+     * leitura automática não fecha o pedido de ninguém.
+     */
+    public function testOnlyTheGatewayClosesTheRequestedRead(): void
     {
-        $replies = [];
+        $marked = [];
         $store = $this->createMock(DeviceStoreContract::class);
-        $store->method('markCommandReply')->willReturnCallback(
-            static function (string $imei, string $type, mixed $ident, string $ref, ?bool $accepted) use (&$replies): void {
-                $replies[] = [$type, $accepted];
+        $store->expects(self::never())->method('markCommandReply');
+        $store->method('markCommand')->willReturnCallback(
+            static function (string $imei, string $id, array $fields) use (&$marked): void {
+                $marked[] = [$id, $fields['status']];
             }
         );
+        $queue = new OneShotDownlinkQueue('readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []]);
+        $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue, $store);
 
-        $this->bridge(new RecordingHubMqttBridge(), store: $store)->handleReceivedMessage(self::TOPIC, self::frame(self::MEMORY_END));
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame(self::MEMORY_END));
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('command_result', ['dedupeKey' => 'test-dedupe', 'ok' => true]));
 
-        self::assertSame([['joytech_8b', true]], $replies);
+        self::assertSame([['op-1', 'waiting'], ['op-1', 'acked']], $marked);
+    }
+
+    /**
+     * Duas leituras seguidas: os registos que a primeira já trouxe são repetições, mas continuam a
+     * ser da memória, e o que vem depois deles também.
+     */
+    public function testRepeatedRecordsKeepTheReadOpen(): void
+    {
+        $october = self::reading(131, 84, 72, 26, 10, 1, 9, 0, 1);
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $this->readMemory($bridge, [self::UNSET_CLOCK, self::MAY]);
+
+        $this->now += 5;
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        foreach ([self::UNSET_CLOCK, self::MAY, $october] as $hex) {
+            $this->now += 2.6;
+            $bridge->handleReceivedMessage(self::TOPIC, self::frame($hex));
+        }
+
+        $last = self::telemetry($mqtt, 'blood_pressure')[1]['data'];
+        self::assertSame(131, $last['systolicMmHg']);
+        self::assertTrue($last['fromHistory'] ?? false);
     }
 
     public function testAQueuedReadLeavesWhenTheMonitorConnects(): void
