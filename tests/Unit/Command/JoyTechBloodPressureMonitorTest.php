@@ -24,7 +24,7 @@ final class JoyTechBloodPressureMonitorTest extends TestCase
     public function testReadingTheMemoryIsAnActionQueuedByItsOperation(): void
     {
         self::assertNull(DeviceConfigurationCatalog::validate('joytech-bp', 'read_blood_pressure_history', []));
-        self::assertSame('readBloodPressureHistory', DeviceCommandCatalog::buildDownlink('joytech-bp', 'c000748b3483', 'readBloodPressureHistory'));
+        self::assertSame('readBloodPressureHistory', DeviceCommandCatalog::buildDownlink('joytech-bp', '748b34837b1e', 'readBloodPressureHistory'));
         self::assertSame('health', CapabilityCatalog::sectionForCapabilityKey('read_blood_pressure_history'));
     }
 }

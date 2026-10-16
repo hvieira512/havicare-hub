@@ -113,7 +113,7 @@
             "field": "deviceId",
             "label": "MAC",
             "help": "Endereço MAC canónico, sem separadores (12 caracteres hexadecimais).",
-            "placeholder": "c000748b3483"
+            "placeholder": "748b34837b1e"
         },
         "sim": false,
         "gatewayLinks": true

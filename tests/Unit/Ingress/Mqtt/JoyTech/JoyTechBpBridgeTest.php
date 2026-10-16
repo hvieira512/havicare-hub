@@ -6,6 +6,7 @@ namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
+use Hub\Ingress\Mqtt\JoyTech\BpFrame;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
@@ -18,7 +19,7 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 final class JoyTechBpBridgeTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';
-    private const MONITOR = 'c000748b3483';
+    private const MONITOR = '748b34837b1e';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
     /** 136/73 mmHg, 76 bpm, sem arritmia, 2026-10-16 14:51, grupo 1. */
@@ -109,6 +110,42 @@ final class JoyTechBpBridgeTest extends TestCase
         self::assertSame([], $mqtt->telemetry);
     }
 
+    /**
+     * Cada ligação começa com uma medição, que chega antes da memória: o que se mediu sem gateway
+     * antes dela continua a entrar.
+     */
+    public function testWhatWasMeasuredOfflineBeforeALiveResultStillComesFromTheMemory(): void
+    {
+        $later = self::reading(118, 79, 70, 26, 10, 16, 15, 0, 1);
+        $bridge = $this->bridge(new RecordingHubMqttBridge());
+        $this->now = (float)strtotime('2026-10-16T14:00:56Z');
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame($later));
+        $this->now += 60;
+
+        $mqtt = new RecordingHubMqttBridge();
+        $this->readMemory($this->bridge($mqtt), [self::LIVE, $later]);
+
+        self::assertSame([136], array_column(array_column(self::telemetry($mqtt, 'blood_pressure'), 'data'), 'systolicMmHg'));
+    }
+
+    /** A memória é um anel: um registo mais recente à frente não faz esquecer os ao vivo que vêm atrás. */
+    public function testTheMemoryOrderDoesNotBringBackLiveResults(): void
+    {
+        $earlier = self::reading(121, 80, 66, 26, 10, 16, 14, 30, 1);
+        $later = self::reading(118, 79, 70, 26, 10, 16, 15, 0, 1);
+        $bridge = $this->bridge(new RecordingHubMqttBridge());
+        $this->now = (float)strtotime('2026-10-16T13:30:56Z');
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame($earlier));
+        $this->now = (float)strtotime('2026-10-16T14:00:56Z');
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame($later));
+        $this->now += 60;
+
+        $mqtt = new RecordingHubMqttBridge();
+        $this->readMemory($this->bridge($mqtt), [$later, $earlier]);
+
+        self::assertSame([], $mqtt->telemetry);
+    }
+
     /** A medição em curso ignora a leitura da memória; o resultado que chega a seguir é ao vivo. */
     public function testAResultLongAfterTheReadIsLive(): void
     {
@@ -177,6 +214,11 @@ final class JoyTechBpBridgeTest extends TestCase
             static fn (array $entry): array => $entry['payload'],
             array_filter($mqtt->telemetry, static fn (array $entry): bool => ($entry['payload']['type'] ?? null) === $type),
         ));
+    }
+
+    private static function reading(int $systolic, int $diastolic, int $pulse, int ...$timeAndGroup): string
+    {
+        return BpFrame::encode(0x83, pack('nnCC', $systolic, $diastolic, $pulse, 0) . pack('C*', ...$timeAndGroup));
     }
 
     private static function frame(string $hex): string

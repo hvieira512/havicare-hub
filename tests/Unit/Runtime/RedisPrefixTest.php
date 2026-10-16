@@ -59,7 +59,7 @@ final class RedisPrefixTest extends TestCase
             'location resolution' => ['hub:location:resolution:861265061009822'],
             'login throttle' => ['hub:login-throttle:ip:203.0.113.9:29123456'],
             'firmware upgrade' => ['hub:firmware-upgrade:869243062262262'],
-            'blood pressure history' => ['hub:joytech:history-mark:c000748b3483'],
+            'blood pressure history' => ['hub:joytech:history-mark:748b34837b1e'],
         ];
     }
 

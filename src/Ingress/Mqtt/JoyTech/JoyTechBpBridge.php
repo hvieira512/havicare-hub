@@ -48,9 +48,10 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
     private array $sessions = [];
 
     /**
-     * Até quando uma trama `0x83` é da memória, e as marcas como estavam quando a leitura começou.
+     * Até quando uma trama `0x83` é da memória, as marcas como estavam quando a leitura começou e
+     * a hora mais recente lida de cada grupo, que só passa a marca no fim: a memória é um anel.
      *
-     * @var array<string, array{until: float, marks: array<int, int>}>
+     * @var array<string, array{until: float, marks: array<int, int>, latest: array<int, int>}>
      */
     private array $reading = [];
 
@@ -160,7 +161,8 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
     {
         $deviceKey = $context->deviceKey;
         if (!$connected) {
-            unset($this->sessions[$deviceKey], $this->reading[$deviceKey]);
+            $this->finishReading($deviceKey);
+            unset($this->sessions[$deviceKey]);
             $this->presence->markOffline($deviceKey, $context->device, $context->licenseId, $context->company);
             return;
         }
@@ -196,11 +198,20 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
     private function startReading(string $deviceKey): void
     {
+        $this->finishReading($deviceKey);
         $marks = [];
         foreach ([1, 2, 3, 4] as $group) {
-            $marks[$group] = $this->marks->get($deviceKey, $group);
+            $marks[$group] = $this->marks->mark($deviceKey, $group);
         }
-        $this->reading[$deviceKey] = ['until' => $this->clockNow() + self::MEMORY_SILENCE_SECONDS, 'marks' => $marks];
+        $this->reading[$deviceKey] = ['until' => $this->clockNow() + self::MEMORY_SILENCE_SECONDS, 'marks' => $marks, 'latest' => []];
+    }
+
+    private function finishReading(string $deviceKey): void
+    {
+        foreach ($this->reading[$deviceKey]['latest'] ?? [] as $group => $at) {
+            $this->marks->advance($deviceKey, $group, $at);
+        }
+        unset($this->reading[$deviceKey]);
     }
 
     private function frame(GattDeviceContext $context, string $hex, int $offsetMinutes): void
@@ -211,7 +222,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         }
 
         if ($frame['function'] === 0x8b) {
-            unset($this->reading[$context->deviceKey]);
+            $this->finishReading($context->deviceKey);
             $this->commands?->markCommandReply($context->deviceKey, 'joytech_8b', null, '', true);
             return;
         }
@@ -239,14 +250,21 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
         $reading = $this->reading[$deviceKey] ?? null;
         $fromHistory = $reading !== null && $now <= $reading['until'];
+        if ($reading !== null && !$fromHistory) {
+            $this->finishReading($deviceKey);
+        }
         if ($fromHistory) {
             $this->reading[$deviceKey]['until'] = $now + self::MEMORY_SILENCE_SECONDS;
             if (!$plausible || $at <= ($reading['marks'][$group] ?? 0)) {
                 return;
             }
-        }
-        if ($plausible) {
-            $this->marks->advance($deviceKey, $group, (int)$at);
+            $this->reading[$deviceKey]['latest'][$group] = max($at, $reading['latest'][$group] ?? 0);
+            if ($this->marks->wasLive($deviceKey, $group, $data)) {
+                return;
+            }
+        } elseif ($plausible) {
+            // A marca não avança ao vivo: o que se mediu sem gateway antes disto ainda está na memória.
+            $this->marks->rememberLive($deviceKey, $group, $data, $at);
         }
 
         // Ao vivo, a hora de chegada: o relógio do aparelho pode estar por acertar.

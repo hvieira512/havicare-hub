@@ -46,10 +46,16 @@ Cada resultado sai como `blood_pressure` (`systolicMmHg`, `diastolicMmHg`,
   silêncio quer dizer que a leitura não começou.
 
 **Marca por aparelho e grupo.** O hub guarda no Redis
-(`hub:joytech:history-mark:{mac}`) a hora do aparelho da medição mais recente que
-já publicou, por grupo, e avança-a também com as medições ao vivo. Da memória só
-sai o que for mais recente do que a marca quando a leitura começou; a memória é
-um anel e não vem por ordem, por isso cada registo compara-se sozinho.
+(`hub:joytech:history-mark:{mac}`), por grupo, a hora do aparelho do registo
+mais recente que leu da memória. Da memória só sai o que for mais recente do que
+a marca quando a leitura começou. A memória é um anel e não vem por ordem, por
+isso cada registo compara-se sozinho e a marca só avança no fim da leitura.
+
+Cada ligação começa com uma medição, porque o aparelho só se anuncia quando se
+carrega em Start, e ela chega antes da memória. Por isso o ao vivo **não** avança
+a marca: o que se mediu sem gateway antes dele ainda tem de entrar. Fica guardado
+tal como veio (`hub:joytech:live:{mac}:{grupo}`), a memória não o repete, e sai
+dessa lista quando a marca o ultrapassa.
 
 Só contam horas plausíveis: desde 1 de janeiro de 2025 e não mais de 5 minutos à
 frente. As medições feitas com o relógio por acertar ficam de fora.
