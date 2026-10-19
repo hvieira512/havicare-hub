@@ -64,7 +64,9 @@ final class LefuTorreScaleUsers extends ConfigurationPayloadBuilder
             $kept[$id] = true;
             $profile = self::profile($user);
             if (($before[$id] ?? null) !== $profile) {
-                $commands[] = ['command' => 'registerScaleUser', 'payload' => ['id' => $id] + $profile, 'expectedReplyTypes' => ['torre_user_02']];
+                unset($profile['birthDate']);
+                $payload = ['id' => $id, 'ageYears' => self::ageOn($user, gmdate('Y-m-d'))] + $profile;
+                $commands[] = ['command' => 'registerScaleUser', 'payload' => $payload, 'expectedReplyTypes' => ['torre_user_02']];
             }
         }
         foreach (array_keys($before) as $id) {
@@ -77,6 +79,21 @@ final class LefuTorreScaleUsers extends ConfigurationPayloadBuilder
         }
 
         return $commands;
+    }
+
+    /**
+     * A idade num dia `Y-m-d`; quem foi guardado só com a idade fica com ela.
+     *
+     * @param array<string, mixed> $user
+     */
+    public static function ageOn(array $user, string $date): int
+    {
+        $birth = \DateTimeImmutable::createFromFormat('!Y-m-d', (string)($user['birthDate'] ?? ''));
+        if ($birth === false) {
+            return (int)($user['ageYears'] ?? 0);
+        }
+
+        return $birth->diff(new \DateTimeImmutable($date))->y;
     }
 
     /**
@@ -105,7 +122,7 @@ final class LefuTorreScaleUsers extends ConfigurationPayloadBuilder
         return [
             'id' => $id ?? 'u-' . bin2hex(random_bytes(4)),
             'name' => $name,
-            'ageYears' => self::rangeInt($item['ageYears'] ?? null, 1, 120, "{$field}.ageYears"),
+            'birthDate' => self::birthDate($item['birthDate'] ?? null, "{$field}.birthDate"),
             'sex' => $sex,
             'heightCm' => self::rangeInt($item['heightCm'] ?? null, 50, 250, "{$field}.heightCm"),
             'athlete' => (bool)self::boolInt($item['athlete'] ?? false, "{$field}.athlete"),
@@ -113,8 +130,19 @@ final class LefuTorreScaleUsers extends ConfigurationPayloadBuilder
         ];
     }
 
+    private static function birthDate(mixed $value, string $field): string
+    {
+        $date = is_string($value) ? \DateTimeImmutable::createFromFormat('!Y-m-d', $value) : false;
+        $age = $date !== false && $date->format('Y-m-d') === $value ? self::ageOn(['birthDate' => $value], gmdate('Y-m-d')) : 0;
+        if ($age < 1 || $age > 120) {
+            throw new \InvalidArgumentException("{$field} must be a YYYY-MM-DD date, 1 to 120 years ago");
+        }
+
+        return (string)$value;
+    }
+
     /**
-     * O que vai à balança, com os tipos com que se compara; o nome não vai.
+     * O que muda o registo na balança, com os tipos com que se compara; o nome não vai.
      *
      * @param array<string, mixed> $user
      * @return array<string, mixed>
@@ -122,7 +150,7 @@ final class LefuTorreScaleUsers extends ConfigurationPayloadBuilder
     private static function profile(array $user): array
     {
         return [
-            'ageYears' => (int)($user['ageYears'] ?? 0),
+            'birthDate' => (string)($user['birthDate'] ?? ''),
             'sex' => (string)($user['sex'] ?? ''),
             'heightCm' => (int)($user['heightCm'] ?? 0),
             'athlete' => ($user['athlete'] ?? false) === true,

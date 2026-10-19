@@ -35,8 +35,8 @@ final class ScaleUsersApiTest extends DashboardHttpTestCase
         ))->getBody(), true);
 
         $first = $patch([
-            ['name' => 'Hugo', 'ageYears' => 23, 'sex' => 'male', 'heightCm' => 181, 'weightKg' => 96],
-            ['name' => 'Maria', 'ageYears' => 61, 'sex' => 'female', 'heightCm' => 158, 'weightKg' => 64],
+            ['name' => 'Hugo', 'birthDate' => '2003-05-10', 'sex' => 'male', 'heightCm' => 181, 'weightKg' => 96],
+            ['name' => 'Maria', 'birthDate' => '1965-02-01', 'sex' => 'female', 'heightCm' => 158, 'weightKg' => 64],
         ]);
         $users = $first['configurationSync']['entries']['health']['scale_users']['desired']['items'] ?? [];
         self::assertCount(2, $users, json_encode($first));

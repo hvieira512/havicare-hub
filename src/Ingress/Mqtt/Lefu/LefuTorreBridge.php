@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Lefu;
 
+use Hub\Command\Configuration\Payload\LefuTorreScaleUsers;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
@@ -277,7 +278,9 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
                 'encodedImpedance100Khz' => $encoded['encoded100Khz'] ?? null,
             ], static fn (mixed $value): bool => $value !== null) + $user, $at);
 
-            $composition = $profile !== null ? BodyComposition::of($frame['weightKg'], $frame['impedance100KhzOhm'], $profile) : null;
+            $composition = $profile !== null
+                ? BodyComposition::of($frame['weightKg'], $frame['impedance100KhzOhm'], ['ageYears' => LefuTorreScaleUsers::ageOn($profile, gmdate('Y-m-d', (int)$now))] + $profile)
+                : null;
             if ($composition !== null) {
                 $this->emit($context, 'body_composition', $nativeType, $composition + $user, $at);
             }

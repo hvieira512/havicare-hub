@@ -222,6 +222,19 @@ final class LefuTorreBridgeTest extends TestCase
         self::assertSame(self::telemetry($mqtt, 'weight')[0]['occurredAt'], $composition[0]['occurredAt']);
     }
 
+    /** A composição usa a idade que a pessoa tem no dia da pesagem. */
+    public function testTheCompositionUsesTheAgeOnTheDayOfTheWeighing(): void
+    {
+        $this->now = (float)strtotime('2026-10-19T10:00:00Z');
+        $frame = self::frame('fff3', '010da580942500 4a0032a00f64330e');
+        $byAge = new RecordingHubMqttBridge();
+        $this->bridge($byAge, users: self::users('u-0a1b2c3d'))->handleReceivedMessage(self::TOPIC, $frame);
+        $byBirthDate = new RecordingHubMqttBridge();
+        $this->bridge($byBirthDate, users: self::users('u-0a1b2c3d', ['birthDate' => '2003-05-10']))->handleReceivedMessage(self::TOPIC, $frame);
+
+        self::assertSame(self::telemetry($byAge, 'body_composition')[0]['data'], self::telemetry($byBirthDate, 'body_composition')[0]['data']);
+    }
+
     public function testWithoutAnOnlineUserTheWeighingHasNoOwnerNorComposition(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -324,11 +337,14 @@ final class LefuTorreBridgeTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    /** @return callable(string): array<string, mixed> */
-    private static function users(string $onlineUserId): callable
+    /**
+     * @param array<string, mixed> $age a idade guardada, ou a data de nascimento no lugar dela
+     * @return callable(string): array<string, mixed>
+     */
+    private static function users(string $onlineUserId, array $age = ['ageYears' => 23]): callable
     {
         return static fn (string $imei): array => [
-            'items' => [['id' => 'u-0a1b2c3d', 'name' => 'Hugo', 'ageYears' => 23, 'sex' => 'male', 'heightCm' => 181, 'athlete' => false, 'weightKg' => 96]],
+            'items' => [['id' => 'u-0a1b2c3d', 'name' => 'Hugo'] + $age + ['sex' => 'male', 'heightCm' => 181, 'athlete' => false, 'weightKg' => 96]],
             'onlineUserId' => $onlineUserId,
         ];
     }

@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 /** A lista é o estado desejado: o hub dá identificador a quem não tem e escreve só o que mudou. */
 final class LefuTorreScaleUsersTest extends TestCase
 {
-    private const HUGO = ['name' => 'Hugo', 'ageYears' => 23, 'sex' => 'male', 'heightCm' => 181, 'weightKg' => 96];
+    private const HUGO = ['name' => 'Hugo', 'birthDate' => '2003-05-10', 'sex' => 'male', 'heightCm' => 181, 'weightKg' => 96];
 
     public function testANewUserGetsAnIdentifierAndTheAthleteModeOffByDefault(): void
     {
@@ -42,19 +42,19 @@ final class LefuTorreScaleUsersTest extends TestCase
     {
         $previous = [
             ['id' => 'u-00000001', 'athlete' => false] + self::HUGO,
-            ['id' => 'u-00000002', 'name' => 'Maria', 'ageYears' => 61, 'sex' => 'female', 'heightCm' => 158, 'athlete' => false, 'weightKg' => 64],
+            ['id' => 'u-00000002', 'name' => 'Maria', 'birthDate' => '1965-02-01', 'sex' => 'female', 'heightCm' => 158, 'athlete' => false, 'weightKg' => 64],
         ];
         $current = [
             ['id' => 'u-00000001', 'athlete' => false] + ['weightKg' => 95] + self::HUGO,
-            ['id' => 'u-00000003', 'name' => 'João', 'ageYears' => 74, 'sex' => 'male', 'heightCm' => 170, 'athlete' => false, 'weightKg' => 82],
+            ['id' => 'u-00000003', 'name' => 'João', 'birthDate' => '1952-03-01', 'sex' => 'male', 'heightCm' => 170, 'athlete' => false, 'weightKg' => 82],
         ];
 
         $commands = DeviceConfigurationCatalog::commandPayloads('lefu-torre', 'scale_users', ['items' => $current], ['previousUsers' => $previous]);
 
         self::assertSame(
             [
-                ['command' => 'registerScaleUser', 'payload' => ['id' => 'u-00000001', 'ageYears' => 23, 'sex' => 'male', 'heightCm' => 181, 'athlete' => false, 'weightKg' => 95.0], 'expectedReplyTypes' => ['torre_user_02']],
-                ['command' => 'registerScaleUser', 'payload' => ['id' => 'u-00000003', 'ageYears' => 74, 'sex' => 'male', 'heightCm' => 170, 'athlete' => false, 'weightKg' => 82.0], 'expectedReplyTypes' => ['torre_user_02']],
+                ['command' => 'registerScaleUser', 'payload' => ['id' => 'u-00000001', 'ageYears' => self::age('2003-05-10'), 'sex' => 'male', 'heightCm' => 181, 'athlete' => false, 'weightKg' => 95.0], 'expectedReplyTypes' => ['torre_user_02']],
+                ['command' => 'registerScaleUser', 'payload' => ['id' => 'u-00000003', 'ageYears' => self::age('1952-03-01'), 'sex' => 'male', 'heightCm' => 170, 'athlete' => false, 'weightKg' => 82.0], 'expectedReplyTypes' => ['torre_user_02']],
                 ['command' => 'deleteScaleUser', 'payload' => ['id' => 'u-00000002'], 'expectedReplyTypes' => ['torre_user_04']],
             ],
             $commands,
@@ -93,6 +93,52 @@ final class LefuTorreScaleUsersTest extends TestCase
             ['items' => [$hugo], 'onlineUserId' => 'u-00000001'],
             ['previousUsers' => [$hugo], 'previousOnlineUserId' => 'u-00000001'],
         ));
+    }
+
+    /** A idade vem da data de nascimento, e só conta o aniversário quando ele chega. */
+    public function testTheAgeIsCountedFromTheBirthDate(): void
+    {
+        self::assertSame(22, LefuTorreScaleUsers::ageOn(['birthDate' => '2003-05-10'], '2026-05-09'));
+        self::assertSame(23, LefuTorreScaleUsers::ageOn(['birthDate' => '2003-05-10'], '2026-05-10'));
+    }
+
+    /** Uma pessoa guardada antes de haver data de nascimento continua com a idade que tinha. */
+    public function testAUserSavedWithAnAgeKeepsIt(): void
+    {
+        self::assertSame(23, LefuTorreScaleUsers::ageOn(['ageYears' => 23], '2026-10-19'));
+    }
+
+    /** @return iterable<string, array{mixed}> */
+    public static function badBirthDates(): iterable
+    {
+        yield 'sem data' => [null];
+        yield 'idade em vez da data' => [23];
+        yield 'data que não existe' => ['2003-02-30'];
+        yield 'no futuro' => ['2999-01-01'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('badBirthDates')]
+    public function testTheBirthDateMustBeARealDateInThePast(mixed $birthDate): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        LefuTorreScaleUsers::withIds(['items' => [['birthDate' => $birthDate] + self::HUGO]]);
+    }
+
+    /** Mudar a data de nascimento regista a pessoa outra vez, com a idade nova. */
+    public function testChangingTheBirthDateRegistersAgain(): void
+    {
+        $before = ['id' => 'u-00000001', 'athlete' => false] + self::HUGO;
+        $after = ['birthDate' => '1990-01-01'] + $before;
+
+        $commands = DeviceConfigurationCatalog::commandPayloads('lefu-torre', 'scale_users', ['items' => [$after]], ['previousUsers' => [$before]]);
+
+        self::assertSame(self::age('1990-01-01'), $commands[0]['payload']['ageYears']);
+    }
+
+    private static function age(string $birthDate): int
+    {
+        return LefuTorreScaleUsers::ageOn(['birthDate' => $birthDate], gmdate('Y-m-d'));
     }
 
     public function testOnlyARegisteredUserCanBeOnline(): void

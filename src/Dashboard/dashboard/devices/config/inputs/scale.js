@@ -19,9 +19,19 @@ const FAILURE = {
 
 const FAILED = ["failed", "retry_exhausted", "response_timeout"];
 
+/** A idade de hoje; quem foi guardado antes da data de nascimento tem só a idade. */
+function age(user) {
+    if (!user.birthDate) return user.ageYears;
+    const [year, month, day] = user.birthDate.split("-").map(Number);
+    const today = new Date();
+    const birthdayPassed = today.getMonth() + 1 > month || (today.getMonth() + 1 === month && today.getDate() >= day);
+    return today.getFullYear() - year - (birthdayPassed ? 0 : 1);
+}
+
 function meta(user) {
+    const years = age(user);
     return [
-        user.ageYears ? `${user.ageYears} anos` : "",
+        years ? `${years} anos` : "",
         SEX[user.sex]?.toLowerCase() ?? "",
         user.heightCm ? `${user.heightCm} cm` : "",
         user.weightKg || user.weightKg === 0 ? `${user.weightKg} kg` : "",
@@ -90,7 +100,7 @@ function form() {
             <div class="fw-semibold" data-scale-form-title>Novo utilizador</div>
             <div class="row g-2">
                 <label class="col-12 col-md-6 form-label-sm">Nome<input class="form-control" type="text" maxlength="64" data-scale-field="name"></label>
-                <label class="col-6 col-md-3 form-label-sm">Idade<input class="form-control" type="number" min="1" max="120" data-scale-field="ageYears"></label>
+                <label class="col-6 col-md-3 form-label-sm">Data de nascimento<input class="form-control" type="date" data-scale-field="birthDate"></label>
                 <div class="col-6 col-md-3 form-label-sm d-flex flex-column gap-1">Sexo${segmented("sex", [["male", "Homem"], ["female", "Mulher"]], "male")}</div>
                 <label class="col-6 col-md-3 form-label-sm">Altura (cm)<input class="form-control" type="number" min="50" max="250" data-scale-field="heightCm"></label>
                 <label class="col-6 col-md-3 form-label-sm">Peso inicial (kg)<input class="form-control" type="number" min="0" max="250" step="0.1" data-scale-field="weightKg"></label>
@@ -120,7 +130,7 @@ function scaleUsersInput(_entry, desired) {
 const userOf = (element) => JSON.parse(element.dataset.scaleUser || "{}");
 
 function fill(formElement, user) {
-    for (const field of ["name", "ageYears", "heightCm", "weightKg"]) {
+    for (const field of ["name", "birthDate", "heightCm", "weightKg"]) {
         formElement.querySelector(`input[data-scale-field="${field}"]`).value = user[field] ?? "";
     }
     pick(formElement, "sex", user.sex ?? "male");
@@ -148,15 +158,15 @@ function readForm(formElement) {
     };
     const user = {
         name: String(formElement.querySelector("input[data-scale-field=\"name\"]").value).trim(),
-        ageYears: number("ageYears"),
+        birthDate: String(formElement.querySelector("input[data-scale-field=\"birthDate\"]").value),
         sex: picked(formElement, "sex"),
         heightCm: number("heightCm"),
         athlete: picked(formElement, "athlete") === "true",
         weightKg: number("weightKg"),
     };
     if (user.name === "") return { error: "O nome é obrigatório." };
-    if (user.ageYears === null || user.heightCm === null || user.weightKg === null) {
-        return { error: "Preencha a idade, a altura e o peso inicial." };
+    if (user.birthDate === "" || user.heightCm === null || user.weightKg === null) {
+        return { error: "Preencha a data de nascimento, a altura e o peso inicial." };
     }
 
     return { user };

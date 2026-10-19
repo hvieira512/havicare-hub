@@ -10,8 +10,9 @@ import { configSection } from "./support/dom.js";
 
 /** Os utilizadores da balança, como a alternativa A: um cartão por pessoa, e o formulário só a editar. */
 const entry = { input: "scaleUsers", key: "scale_users", fields: ["items"] };
-const hugo = { id: "u-0a1b2c3d", name: "Hugo", ageYears: 23, sex: "male", heightCm: 181, athlete: false, weightKg: 96 };
-const maria = { id: "u-00000002", name: "Maria", ageYears: 61, sex: "female", heightCm: 158, athlete: true, weightKg: 64.5 };
+const yearsAgo = (years) => `${new Date().getFullYear() - years}-01-01`;
+const hugo = { id: "u-0a1b2c3d", name: "Hugo", birthDate: yearsAgo(23), sex: "male", heightCm: 181, athlete: false, weightKg: 96 };
+const maria = { id: "u-00000002", name: "Maria", birthDate: yearsAgo(61), sex: "female", heightCm: 158, athlete: true, weightKg: 64.5 };
 
 const render = (items, onlineUserId = undefined) => configSection(renderConfigInputs, entry, onlineUserId ? { items, onlineUserId } : { items });
 const click = (section, action, scope = section) => {
@@ -78,7 +79,7 @@ test("acrescentar abre o formulário, e guardar junta um cartão por enviar e se
     const form = section.querySelector("[data-scale-user-form]");
     assert.equal(form.hidden, false);
     form.querySelector("[data-scale-field=\"name\"]").value = "Ana";
-    form.querySelector("[data-scale-field=\"ageYears\"]").value = "45";
+    form.querySelector("[data-scale-field=\"birthDate\"]").value = "1981-04-02";
     form.querySelector("[data-scale-field=\"heightCm\"]").value = "165";
     form.querySelector("[data-scale-field=\"weightKg\"]").value = "70";
     handleScaleUserAction(section, form.querySelector("[data-action=\"scaleUserSex\"][data-value=\"female\"]"));
@@ -87,7 +88,7 @@ test("acrescentar abre o formulário, e guardar junta um cartão por enviar e se
     assert.equal(form.hidden, true);
     assert.match(card(section, "Ana").textContent, /Por enviar/);
     assert.deepEqual(readConfigPayload(section).items[1], {
-        name: "Ana", ageYears: 45, sex: "female", heightCm: 165, athlete: false, weightKg: 70,
+        name: "Ana", birthDate: "1981-04-02", sex: "female", heightCm: 165, athlete: false, weightKg: 70,
     });
 });
 
@@ -103,6 +104,15 @@ test("editar mantém o identificador, e apagar tira a pessoa da lista", () => {
     click(section, "scaleUserEdit", card(section, "Maria"));
     click(section, "scaleUserDelete");
     assert.deepEqual(readConfigPayload(section).items.map((user) => user.name), ["Hugo"]);
+});
+
+test("quem foi guardado só com a idade mostra-a, e editar pede a data de nascimento", () => {
+    const section = render([{ id: "u-00000009", name: "Rui", ageYears: 40, sex: "male", heightCm: 175, athlete: false, weightKg: 80 }]);
+
+    assert.match(card(section, "Rui").textContent, /40 anos/);
+    click(section, "scaleUserEdit", card(section, "Rui"));
+    click(section, "scaleUserSave");
+    assert.match(section.querySelector("[data-scale-form-error]").textContent, /data de nascimento/);
 });
 
 test("sem nome não se guarda", () => {
@@ -133,7 +143,7 @@ test("uma pessoa por enviar ainda não pode ficar em linha", () => {
 
     click(section, "scaleUserAdd");
     section.querySelector("[data-scale-field=\"name\"]").value = "Ana";
-    section.querySelector("[data-scale-field=\"ageYears\"]").value = "45";
+    section.querySelector("[data-scale-field=\"birthDate\"]").value = "1981-04-02";
     section.querySelector("[data-scale-field=\"heightCm\"]").value = "165";
     section.querySelector("[data-scale-field=\"weightKg\"]").value = "70";
     click(section, "scaleUserSave");
