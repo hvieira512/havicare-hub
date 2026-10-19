@@ -58,3 +58,15 @@ test("sem unidade declarada vale a do nome nativo", () => {
         fields: ["intervalTime"],
     }), "s");
 });
+
+/** Na balança, `unit` é o nome do campo e o que lá está são as escolhas do seletor. */
+test("um campo chamado unit não passa as escolhas por unidade", () => {
+    assert.equal(unitOf("lefu-torre", {
+        key: "weight_unit",
+        command: "weightUnit",
+        label: "Unidade do visor",
+        input: "select",
+        fields: ["unit"],
+        options: { unit: [{ value: "kg", label: "Quilogramas" }, { value: "lb", label: "Libras" }], default: "kg" },
+    }), undefined);
+});

@@ -218,9 +218,13 @@ function configRuns(entries) {
     }));
 }
 
-/** A unidade declarada na definição ganha; só sem ela se adivinha pelo nome do campo. */
+/**
+ * A unidade declarada na definição ganha; só sem ela se adivinha pelo nome do campo. Só um texto
+ * é unidade: num campo chamado `unit` as opções são as escolhas do seletor.
+ */
 function unitLabel(entry) {
-    return String(entry.options?.label ?? entry.options?.unit ?? "").trim() || fieldUnit(entry.fields?.[0] || "");
+    const declared = [entry.options?.label, entry.options?.unit].find((value) => typeof value === "string") ?? "";
+    return declared.trim() || fieldUnit(entry.fields?.[0] || "");
 }
 
 /** O controlo com a unidade colada: «5» e «min» separados deixam de ser uma medida. */
