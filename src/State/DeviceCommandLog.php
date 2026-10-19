@@ -24,6 +24,7 @@ interface DeviceCommandLog
         string|int|null $ident = null,
         string $ref = '',
         ?bool $accepted = null,
+        string $error = '',
     ): void;
 
     public function expireWaitingCommands(int $timeoutSeconds): void;

@@ -103,7 +103,7 @@ export const fieldLabel = (key) =>
         buttonId: "Botão",
         gatewayId: "Gateway",
         weightKg: "Peso",
-        memberId: "Membro",
+        scaleUserId: "Utilizador",
         userId: "Utilizador",
         impedance50KhzOhm: "Impedância a 50 kHz",
         impedance100KhzOhm: "Impedância a 100 kHz",

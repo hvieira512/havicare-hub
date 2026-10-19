@@ -60,6 +60,7 @@ final class RedisPrefixTest extends TestCase
             'login throttle' => ['hub:login-throttle:ip:203.0.113.9:29123456'],
             'firmware upgrade' => ['hub:firmware-upgrade:869243062262262'],
             'blood pressure history' => ['hub:joytech:history-mark:748b34837b1e'],
+            'scale' => ['hub:lefu:online-user'],
         ];
     }
 

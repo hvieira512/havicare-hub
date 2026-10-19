@@ -42,8 +42,10 @@ fica só com o `bmi` na `body_composition`. As impedâncias cifradas vão no `bo
 tarde com ela.
 
 A pesagem ao vivo é de quem a balança tem em linha: o último utilizador que ela
-aceitou, tal como ficou confirmado na configuração `scale_users`. A balança
-lembra-se dele entre ligações, e o hub também.
+aceitou pôr em linha (resposta `07`), venha o pedido da lista `scale_users` ou do
+`select_scale_user`. O hub guarda-o no Redis (`hub:lefu:online-user`), porque a
+balança se lembra dele entre ligações; antes de ela aceitar algum, vale o da lista.
+Escolher o utilizador no próprio aparelho não muda isto: a trama `06` não diz quem.
 
 ## Comandos
 
@@ -56,9 +58,9 @@ como nos fluxos de utilizador do `FFF2`.
 | --- | --- | --- |
 | `heart_rate_measurement` | Saúde | Liga e desliga a medição da FC (`06`) |
 | `impedance_measurement` | Saúde | Liga e desliga a impedância (`07`); desligada, a balança só pesa |
-| `scale_users` | Saúde | A lista de quem se pesa: `{items: [{id, name, ageYears, sex, heightCm, athlete, weightKg}]}`. O hub dá o `id` a quem não o tem e usa-o como `userID` e `memberID` na balança; o nome é só do hub. Regista os novos e os que mudaram de perfil, e apaga os que saíram |
+| `scale_users` | Saúde | A lista de quem se pesa: `{items: [{id, name, ageYears, sex, heightCm, athlete, weightKg}]}`. O hub dá o `id` a quem não o tem e usa-o como `userID` e `memberID` na balança; o nome é só do hub. Regista os novos e os que mudaram de perfil, e apaga os que saíram, um de cada vez e por esta ordem; cada operação fecha só com a resposta dela, e uma recusa diz porquê (`memory_full`, `user_selection_in_progress`) |
 | `select_scale_user` | Saúde, ação | `{id}`: põe esse utilizador em linha. A pesagem seguinte sai com o `scaleUserId` dele, e sem isto a FC não é medida |
-| `read_scale_history` | Saúde, ação | `{id}`: lê as pesagens que a balança guardou desse utilizador, em registos de 20 bytes. Saem pelas mesmas capacidades, datadas pela balança |
+| `read_scale_history` | Saúde, ação | `{id}`: lê as pesagens que a balança guardou desse utilizador, em registos de 20 bytes. Saem pelas mesmas capacidades, datadas pela balança e com `fromHistory: true`. Cada leitura traz o histórico todo, e o que já saiu não sai outra vez (`hub:lefu:history-seen`, as últimas 500); uma pesagem calçada fica sem `body_impedance` |
 | `weight_unit` | Sistema | A unidade do visor (`05`) |
 | `sync_configuration` | Sistema, ação | Relê os três; a leitura sai em `device_config` |
 | `calibrate_clock` | Sistema, ação | Acerta o relógio (`04`); o hub também o faz a cada ligação |

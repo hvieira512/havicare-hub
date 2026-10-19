@@ -53,9 +53,9 @@ final class LefuTorreScaleUsersTest extends TestCase
 
         self::assertSame(
             [
-                ['command' => 'registerScaleUser', 'payload' => ['id' => 'u-00000001', 'ageYears' => 23, 'sex' => 'male', 'heightCm' => 181, 'athlete' => false, 'weightKg' => 95.0]],
-                ['command' => 'registerScaleUser', 'payload' => ['id' => 'u-00000003', 'ageYears' => 74, 'sex' => 'male', 'heightCm' => 170, 'athlete' => false, 'weightKg' => 82.0]],
-                ['command' => 'deleteScaleUser', 'payload' => ['id' => 'u-00000002']],
+                ['command' => 'registerScaleUser', 'payload' => ['id' => 'u-00000001', 'ageYears' => 23, 'sex' => 'male', 'heightCm' => 181, 'athlete' => false, 'weightKg' => 95.0], 'expectedReplyTypes' => ['torre_user_02']],
+                ['command' => 'registerScaleUser', 'payload' => ['id' => 'u-00000003', 'ageYears' => 74, 'sex' => 'male', 'heightCm' => 170, 'athlete' => false, 'weightKg' => 82.0], 'expectedReplyTypes' => ['torre_user_02']],
+                ['command' => 'deleteScaleUser', 'payload' => ['id' => 'u-00000002'], 'expectedReplyTypes' => ['torre_user_04']],
             ],
             $commands,
         );
@@ -79,7 +79,7 @@ final class LefuTorreScaleUsersTest extends TestCase
         $hugo = ['id' => 'u-00000001', 'athlete' => false] + self::HUGO;
 
         self::assertSame(
-            [['command' => 'selectScaleUser', 'payload' => ['id' => 'u-00000001']]],
+            [['command' => 'selectScaleUser', 'payload' => ['id' => 'u-00000001'], 'expectedReplyTypes' => ['torre_user_07']]],
             DeviceConfigurationCatalog::commandPayloads(
                 'lefu-torre',
                 'scale_users',

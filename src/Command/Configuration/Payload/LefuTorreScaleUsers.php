@@ -46,7 +46,7 @@ final class LefuTorreScaleUsers extends ConfigurationPayloadBuilder
      *
      * @param list<array<string, mixed>> $previous
      * @param list<array<string, mixed>> $current
-     * @return list<array{command: string, payload: array<string, mixed>}>
+     * @return list<array{command: string, payload: array<string, mixed>, expectedReplyTypes: list<string>}>
      */
     public static function commands(array $previous, array $current, string $previousOnline = '', string $currentOnline = ''): array
     {
@@ -64,16 +64,16 @@ final class LefuTorreScaleUsers extends ConfigurationPayloadBuilder
             $kept[$id] = true;
             $profile = self::profile($user);
             if (($before[$id] ?? null) !== $profile) {
-                $commands[] = ['command' => 'registerScaleUser', 'payload' => ['id' => $id] + $profile];
+                $commands[] = ['command' => 'registerScaleUser', 'payload' => ['id' => $id] + $profile, 'expectedReplyTypes' => ['torre_user_02']];
             }
         }
         foreach (array_keys($before) as $id) {
             if (!isset($kept[$id])) {
-                $commands[] = ['command' => 'deleteScaleUser', 'payload' => ['id' => (string)$id]];
+                $commands[] = ['command' => 'deleteScaleUser', 'payload' => ['id' => (string)$id], 'expectedReplyTypes' => ['torre_user_04']];
             }
         }
         if ($currentOnline !== '' && $currentOnline !== $previousOnline) {
-            $commands[] = ['command' => 'selectScaleUser', 'payload' => ['id' => $currentOnline]];
+            $commands[] = ['command' => 'selectScaleUser', 'payload' => ['id' => $currentOnline], 'expectedReplyTypes' => ['torre_user_07']];
         }
 
         return $commands;

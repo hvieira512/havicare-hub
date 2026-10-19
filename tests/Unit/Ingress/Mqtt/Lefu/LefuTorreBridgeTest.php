@@ -116,6 +116,42 @@ final class LefuTorreBridgeTest extends TestCase
         self::assertSame(['settings' => ['impedance_measurement' => ['enabled' => true]]], self::telemetry($mqtt, 'device_config')[0]['data']);
     }
 
+    /** A razão da recusa chega ao comando, para o ecrã a dizer. */
+    public function testTheScaleRefusalReasonReachesTheCommand(): void
+    {
+        $errors = [];
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->method('markCommandReply')->willReturnCallback(
+            static function (string $imei, string $type, mixed $ident, string $ref, ?bool $accepted, string $error = '') use (&$errors): void {
+                $errors[] = [$type, $accepted, $error];
+            }
+        );
+
+        $this->bridge(new RecordingHubMqttBridge(), null, $store)->handleReceivedMessage(self::TOPIC, self::frame('fff2', '05020204'));
+
+        self::assertSame([['torre_user_02', false, 'memory_full']], $errors);
+    }
+
+    /** Quem a balança aceitou em linha é dono da pesagem, mesmo que a lista do hub diga outro. */
+    public function testTheWeighingBelongsToTheUserTheScaleAccepted(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->method('commands')->willReturn([
+            ['status' => 'waiting', 'nativeType' => 'selectScaleUser', 'payload' => ['id' => 'u-2']],
+        ]);
+        $users = static fn (string $imei): array => [
+            'items' => [['id' => 'u-0a1b2c3d', 'name' => 'Hugo'], ['id' => 'u-2', 'name' => 'Ana']],
+            'onlineUserId' => 'u-0a1b2c3d',
+        ];
+        $bridge = $this->bridge($mqtt, null, $store, users: $users);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff2', '05020700'));
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010da580942500 4a0032a00f64330e'));
+
+        self::assertSame('u-2', self::telemetry($mqtt, 'weight')[0]['data']['scaleUserId']);
+    }
+
     /** O hub monta as escritas; o gateway só as faz, e só com sessão aberta. */
     public function testAQueuedSettingLeavesAsWritesWhenTheScaleConnects(): void
     {
@@ -128,6 +164,35 @@ final class LefuTorreBridgeTest extends TestCase
         self::assertSame('heartRateMeasurement', $command['operation']);
         self::assertSame('op-1', $command['commandId']);
         self::assertSame([['char' => 'fff1', 'hex' => '06020100']], $command['payload']['writes']);
+    }
+
+    /** Um hub reiniciado com a balança ligada retoma a sessão pela primeira trama, e entrega a fila. */
+    public function testAFrameAfterARestartResumesTheSession(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new OneShotDownlinkQueue('heartRateMeasurement', ['id' => 'op-1', 'command' => 'heartRateMeasurement', 'payload' => ['enabled' => true]]);
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010d0c00000000000000000000000000'));
+        $bridge->dispatchQueued();
+
+        self::assertSame(['heartRateMeasurement'], array_column(array_column($mqtt->gatewayCommands, 'payload'), 'operation'));
+    }
+
+    /** Uma sessão de que não se ouve nada há 2 minutos acabou, mesmo sem o `connected: false`. */
+    public function testASilentSessionEnds(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new \Hub\Device\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
+        $bridge = $this->bridge($mqtt, $queue);
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true, 'mtu' => 61]));
+        $mqtt->gatewayCommands = [];
+
+        $this->now += 121;
+        $queue->enqueue(self::SCALE, 'heartRateMeasurement', ['command' => 'heartRateMeasurement', 'payload' => ['enabled' => true]], 300);
+        $bridge->dispatchQueued();
+
+        self::assertSame([], $mqtt->gatewayCommands);
     }
 
     /** A balança lembra-se de quem está em linha entre ligações: vale o que ela confirmou por último. */
@@ -181,6 +246,47 @@ final class LefuTorreBridgeTest extends TestCase
         self::assertSame(['weightKg' => 18.2, 'scaleUserId' => 'u-0a1b2c3d', 'fromHistory' => true], $weights[0]['data']);
         self::assertSame(79, self::telemetry($mqtt, 'heart_rate')[0]['data']['bpm']);
         self::assertSame(386.1, self::telemetry($mqtt, 'body_impedance')[0]['data']['impedance50KhzOhm']);
+    }
+
+    /** Ler o histórico outra vez não repete o que já saiu, e uma pesagem sem impedância não a inventa a zero. */
+    public function testReadingTheHistoryAgainRepeatsNothingAndAWeighingWithoutImpedanceHasNone(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $history = self::frame('fff2', bin2hex(str_pad('u-0a1b2c3d', 64, "\0"))
+            . 'ad3744691c074f0259746f00150fd1661e00290e'
+            // Descalço não: a balança guardou o peso e o pulso, e as impedâncias a zero.
+            . 'b13744691c074f02' . str_repeat('00', 12));
+
+        $bridge->handleReceivedMessage(self::TOPIC, $history);
+        $bridge->handleReceivedMessage(self::TOPIC, $history);
+
+        self::assertCount(2, self::telemetry($mqtt, 'weight'));
+        self::assertCount(1, self::telemetry($mqtt, 'body_impedance'));
+    }
+
+    /** A impedância cifrada é de quem estava em cima: com a balança vazia, já não é de ninguém. */
+    public function testTheEncodedImpedanceDoesNotPassToTheNextPerson(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', '020a180210536f00ff16db00'));
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010d0c00000000000000000000000000'));
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010da580942500 4a0032a00f64330e'));
+
+        self::assertArrayNotHasKey('encodedImpedance50Khz', self::telemetry($mqtt, 'body_impedance')[0]['data']);
+    }
+
+    /** Uma ligação nova começa sem estado: o primeiro da pesagem seguinte sai, mesmo igual ao último. */
+    public function testEachConnectionStartsItsOwnWeighingStatus(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010d0c00000000000000000000000000'));
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => false]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010d0c00000000000000000000000000'));
+
+        self::assertCount(2, self::telemetry($mqtt, 'weighing_status'));
     }
 
     public function testAScaleOfAnotherSourceOrNotLinkedIsIgnored(): void

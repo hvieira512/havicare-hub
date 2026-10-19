@@ -268,6 +268,7 @@ final class DeviceCommandStore
         string|int|null $ident = null,
         string $ref = '',
         ?bool $accepted = null,
+        string $error = '',
     ): void {
         $uncorrelatedMatch = null;
         $wonlexSemanticMatch = null;
@@ -283,7 +284,7 @@ final class DeviceCommandStore
             $commandIdent = $command['ident'] ?? null;
 
             if ($commandIdent !== null && $ident !== null && (string)$commandIdent === (string)$ident) {
-                $this->completeCommandReply($imei, $command, $replyNativeType, $ident, $ref, $accepted);
+                $this->completeCommandReply($imei, $command, $replyNativeType, $ident, $ref, $accepted, $error);
                 return;
             }
 
@@ -302,7 +303,7 @@ final class DeviceCommandStore
 
         $command = $uncorrelatedMatch ?? $wonlexSemanticMatch;
         if (is_array($command)) {
-            $this->completeCommandReply($imei, $command, $replyNativeType, $ident, $ref, $accepted);
+            $this->completeCommandReply($imei, $command, $replyNativeType, $ident, $ref, $accepted, $error);
         }
     }
 
@@ -408,6 +409,7 @@ final class DeviceCommandStore
         string|int|null $ident,
         string $ref,
         ?bool $accepted,
+        string $error = '',
     ): void {
         $id = (string)$command['id'];
         $replyFields = [
@@ -419,8 +421,8 @@ final class DeviceCommandStore
             $this->recordCommand($imei, $id, array_merge($command, $replyFields, [
                 'status' => 'failed',
                 'failedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-                'error' => 'device_rejected',
-                'lastError' => 'device_rejected',
+                'error' => $error !== '' ? $error : 'device_rejected',
+                'lastError' => $error !== '' ? $error : 'device_rejected',
             ]));
             return;
         }

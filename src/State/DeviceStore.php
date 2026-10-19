@@ -215,8 +215,9 @@ final class DeviceStore implements DeviceStoreContract
         string|int|null $ident = null,
         string $ref = '',
         ?bool $accepted = null,
+        string $error = '',
     ): void {
-        $this->commands->markCommandReply($imei, $replyNativeType, $ident, $ref, $accepted);
+        $this->commands->markCommandReply($imei, $replyNativeType, $ident, $ref, $accepted, $error);
         $this->updates->notify($imei);
     }
 

@@ -120,7 +120,7 @@ final class DeviceConfigurationCatalog
      *
      * @param array<string, mixed> $payload
      * @param array<string, mixed> $context
-     * @return list<array{command: string, payload: array<string, mixed>}>
+     * @return list<array{command: string, payload: array<string, mixed>, expectedReplyTypes?: list<string>}>
      */
     public static function commandPayloads(
         string $protocol,

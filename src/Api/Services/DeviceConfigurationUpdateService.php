@@ -329,7 +329,8 @@ final class DeviceConfigurationUpdateService
                 // O valor desejado segue com a operação: os protocolos que entregam a um gateway mandam só o
                 // nome do comando.
                 'payload' => $commandPayload['payload'],
-                'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
+                // Quando uma configuração se entrega em várias operações, cada uma pode esperar a sua.
+                'expectedReplyTypes' => $commandPayload['expectedReplyTypes'] ?? $entry['expectedReplyTypes'] ?? [],
                 'confirmationMode' => $confirmationMode,
                 'label' => (string)($entry['label'] ?? $nativeKey),
             ];

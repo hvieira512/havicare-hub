@@ -48,8 +48,15 @@ final class ScaleUsersApiTest extends DashboardHttpTestCase
             array_column($first['configurationSync']['entries']['health']['scale_users']['operations'], 'target'),
         );
 
+        // Cada operação espera só a resposta dela: a de outra pessoa não a fecha.
+        self::assertSame(
+            [['torre_user_02'], ['torre_user_02']],
+            array_column(array_reverse($store->commands(self::SCALE)), 'expectedReplyTypes'),
+        );
+
         $sent = [];
         $patch([$users[0]]);
         self::assertSame(['deleteScaleUser:' . $users[1]['id']], $sent);
+        self::assertSame(['torre_user_04'], $store->commands(self::SCALE)[0]['expectedReplyTypes']);
     }
 }

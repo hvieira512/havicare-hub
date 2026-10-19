@@ -12,6 +12,7 @@ use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\DispatchesQueued;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
+use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
 use Hub\Registry\Denylist;
@@ -39,12 +40,21 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     /** O MTU que a CF632 dá, quando a sessão não o trouxer. */
     private const DEFAULT_MTU = 61;
 
+    /** Sem mensagens deste tempo, a sessão acabou mesmo sem o `connected: false`. */
+    private const SESSION_SILENCE_SECONDS = 120;
+
+    /** A balança aceitou pôr em linha. */
+    private const SELECT_REPLY = 'torre_user_07';
+
     /**
      * Por cada balança com sessão: o gateway, o MTU e o fuso dele.
      *
      * @var array<string, array{gateway: string, mtu: int, offset: int}>
      */
     private array $sessions = [];
+
+    /** @var array<string, float> quando se ouviu cada balança pela última vez */
+    private array $heardAt = [];
 
     /**
      * O último estado de pesagem publicado, para só sair quando muda.
@@ -91,6 +101,8 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         ?CommercialModelResolver $commercialModelResolver = null,
         ?callable $scaleUsers = null,
         ?Denylist $denylist = null,
+        private readonly ScaleOnlineUsers $onlineUsers = new ScaleOnlineUsers(),
+        private readonly RecentMeasurementKeys $historySeen = new RecentMeasurementKeys(prefix: 'hub:lefu:history-seen', keep: 500),
     ) {
         parent::__construct(
             $subscriber,
@@ -114,7 +126,12 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     public function dispatchQueued(): void
     {
         foreach (array_keys($this->sessions) as $deviceKey) {
-            $this->dispatch((string)$deviceKey);
+            $deviceKey = (string)$deviceKey;
+            if ($this->clockNow() - ($this->heardAt[$deviceKey] ?? 0) > self::SESSION_SILENCE_SECONDS) {
+                unset($this->sessions[$deviceKey]);
+                continue;
+            }
+            $this->dispatch($deviceKey);
         }
     }
 
@@ -134,24 +151,31 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         $this->mqttBridge->publishRaw($context->deviceKey, $message, self::DEVICE_TYPE, $context->licenseId, $context->company);
 
         $data = is_array($message['payload'] ?? null) ? $message['payload'] : [];
+        $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;
+        $this->heardAt[$context->deviceKey] = $this->clockNow();
         match ($message['kind'] ?? null) {
-            'session' => $this->session($context, $data, is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0),
-            'frame' => $this->frame($context, (string)($data['char'] ?? ''), (string)($data['hex'] ?? '')),
-            'command_result' => $this->downlinks->delivered(
-                $context->deviceKey,
-                (string)($data['dedupeKey'] ?? ''),
-                ($data['ok'] ?? false) === true,
-                (string)($data['error'] ?? ''),
-            ),
+            'session' => $this->session($context, $data, $offset),
+            'frame' => $this->frame($context, (string)($data['char'] ?? ''), (string)($data['hex'] ?? ''), $offset),
+            'command_result' => $this->commandResult($context, $data),
             default => null,
         };
+    }
+
+    /** @param array<string, mixed> $data */
+    private function commandResult(GattDeviceContext $context, array $data): void
+    {
+        $error = (string)($data['error'] ?? '');
+        $this->downlinks->delivered($context->deviceKey, (string)($data['dedupeKey'] ?? ''), ($data['ok'] ?? false) === true, $error);
+        if ($error === GattDownlinks::NOT_CONNECTED) {
+            unset($this->sessions[$context->deviceKey]);
+        }
     }
 
     /** @param array<string, mixed> $data */
     private function session(GattDeviceContext $context, array $data, int $offsetMinutes): void
     {
         if (($data['connected'] ?? false) !== true) {
-            unset($this->sessions[$context->deviceKey], $this->encodedImpedance[$context->deviceKey]);
+            unset($this->sessions[$context->deviceKey], $this->encodedImpedance[$context->deviceKey], $this->lastStatus[$context->deviceKey]);
             $this->presence->markOffline($context->deviceKey, $context->device, $context->licenseId, $context->company);
             return;
         }
@@ -185,12 +209,14 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         );
     }
 
-    private function frame(GattDeviceContext $context, string $characteristic, string $hex): void
+    private function frame(GattDeviceContext $context, string $characteristic, string $hex, int $offsetMinutes): void
     {
         $frame = $this->decoder->decode($characteristic, $hex);
         if ($frame === null) {
             return;
         }
+        // Um hub reiniciado com a balança ligada não viu a sessão abrir: a primeira trama abre-a.
+        $this->sessions[$context->deviceKey] ??= ['gateway' => $context->gatewayKey, 'mtu' => self::DEFAULT_MTU, 'offset' => $offsetMinutes];
         $nativeType = $characteristic . ':' . substr(strtolower(preg_replace('/\s+/', '', $hex) ?? ''), 0, 2);
 
         match ($frame['kind']) {
@@ -217,6 +243,10 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         if (($this->lastStatus[$deviceKey] ?? null) !== $signature) {
             $this->lastStatus[$deviceKey] = (string)$signature;
             $this->emit($context, 'weighing_status', $nativeType, $status);
+        }
+        // Com a balança vazia, a impedância cifrada da pessoa anterior já não é de ninguém.
+        if ($frame['status']['weight'] === 'idle') {
+            unset($this->encodedImpedance[$deviceKey]);
         }
 
         if (!$frame['complete']) {
@@ -255,14 +285,15 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     }
 
     /**
-     * Quem está em linha é o último que a balança aceitou, e ela lembra-se dele entre ligações.
+     * Quem está em linha é o último que a balança aceitou, e ela lembra-se dele entre ligações; antes
+     * de ela aceitar algum, vale o da lista do hub.
      *
      * @return array<string, mixed>|null
      */
     private function onlineUser(string $deviceKey): ?array
     {
         $users = $this->scaleUsers !== null ? ($this->scaleUsers)($deviceKey) : null;
-        $online = (string)($users['onlineUserId'] ?? '');
+        $online = $this->onlineUsers->get($deviceKey) ?: (string)($users['onlineUserId'] ?? '');
         foreach ($online !== '' && is_array($users['items'] ?? null) ? $users['items'] : [] as $user) {
             if (is_array($user) && ($user['id'] ?? null) === $online) {
                 return $user;
@@ -281,14 +312,25 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     private function history(GattDeviceContext $context, array $frame, string $nativeType): void
     {
         $user = ['scaleUserId' => (string)$frame['memberId'], 'fromHistory' => true];
+        // O relógio leva a parte do fuso abaixo da hora (`TorreCommandEncoder::clock`), e sai aqui.
+        $halfHour = (($this->sessions[$context->deviceKey]['offset'] ?? 0) % 60) * 60;
+        $seen = array_flip($this->historySeen->all($context->deviceKey));
         foreach ($frame['records'] as $record) {
-            if ($record['at'] < self::HISTORY_EPOCH) {
+            // Cada leitura traz o histórico todo do membro: o que já saiu não sai outra vez.
+            $key = $frame['memberId'] . '|' . $record['at'];
+            if ($record['at'] < self::HISTORY_EPOCH || isset($seen[$key])) {
                 continue;
             }
-            $at = gmdate('Y-m-d\TH:i:s\Z', $record['at']);
+            $seen[$key] = true;
+            $this->historySeen->add($context->deviceKey, $key);
+            $at = gmdate('Y-m-d\TH:i:s\Z', $record['at'] - $halfHour);
             $this->emit($context, 'weight', $nativeType, ['weightKg' => $record['weightKg']] + $user, $at);
             if ($record['heartRateBpm'] !== null) {
                 $this->emit($context, 'heart_rate', $nativeType, ['bpm' => $record['heartRateBpm']] + $user, $at);
+            }
+            // Calçado não se mede a impedância, e a balança guarda-a a zero.
+            if ($record['impedance50KhzOhm'] <= 0) {
+                continue;
             }
             $this->emit($context, 'body_impedance', $nativeType, [
                 'impedance50KhzOhm' => $record['impedance50KhzOhm'],
@@ -310,7 +352,22 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
     /** @param array<string, mixed> $frame */
     private function reply(GattDeviceContext $context, array $frame): void
     {
-        $this->commands?->markCommandReply($context->deviceKey, (string)$frame['replyType'], null, '', (bool)$frame['accepted']);
+        if ($frame['replyType'] === self::SELECT_REPLY && $frame['accepted']) {
+            $this->rememberSelected($context->deviceKey);
+        }
+        $this->commands?->markCommandReply($context->deviceKey, (string)$frame['replyType'], null, '', (bool)$frame['accepted'], (string)($frame['error'] ?? ''));
+    }
+
+    /** O `07` não diz quem: é o do pedido de pôr em linha que está à espera dele. */
+    private function rememberSelected(string $deviceKey): void
+    {
+        foreach ($this->commands?->commands($deviceKey) ?? [] as $command) {
+            $id = $command['payload']['id'] ?? null;
+            if (($command['status'] ?? '') === 'waiting' && ($command['nativeType'] ?? '') === 'selectScaleUser' && is_string($id)) {
+                $this->onlineUsers->set($deviceKey, $id);
+                return;
+            }
+        }
     }
 
     /** @param array<string, mixed> $data */

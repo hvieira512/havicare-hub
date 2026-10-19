@@ -2,6 +2,7 @@ import { displayPersonIndex, fieldLabel, fieldValue } from "../../format.js";
 import { fallLabel, zoneLabel } from "../../domain.js";
 import { html, raw } from "../../html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
+import { state } from "../../state.js";
 import { connectivityIcon, connectivityValue } from "./gateway.js";
 import { diaperMoistureBody, diaperMoistureRowValue } from "./diaper.js";
 import { cyclePosition, cycleRunout, doseLabel, medicationAlarmContent } from "./medication.js";
@@ -110,6 +111,13 @@ const degrees = (value) => Number.isFinite(value)
 
 const oneDecimal = (data) => Object.fromEntries(Object.entries(data ?? {})
     .map(([key, value]) => [key, typeof value === "number" ? Math.round(value * 10) / 10 : value]));
+
+/** O nome com que a pessoa está na lista da balança; quem já saiu dela fica pelo identificador. */
+function scaleUserName(id) {
+    if (!id) return null;
+    const users = state.selectedDetail?.configurations?.scale_users?.items ?? [];
+    return users.find((user) => user?.id === id)?.name || id;
+}
 
 const WEIGHING_PHASE = {
     weight: { idle: "Balança vazia", settling: "A estabilizar", stable: "Peso estável", overload: "Excesso de peso" },
@@ -317,7 +325,7 @@ const UPLINK_CARD_RENDERERS = {
     }),
     weight: (data) => ({
         value: data?.weightKg != null ? `${data.weightKg} kg` : capabilityLabel("weight"),
-        details: compactDetails(data, ["memberId"]),
+        details: compactDetails({ ...data, scaleUserId: scaleUserName(data?.scaleUserId) }, ["scaleUserId", "fromHistory"]),
     }),
     body_impedance: (data) => ({
         value: data?.impedance50KhzOhm != null ? `${data.impedance50KhzOhm} Ω` : capabilityLabel("body_impedance"),
