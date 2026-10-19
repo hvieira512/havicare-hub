@@ -11,8 +11,13 @@ namespace Hub\Command\Configuration\Definition;
 final class JoyTechConfigurationDefinitions
 {
     /** @return list<array<string, mixed>> */
-    public static function all(): array
+    public static function all(string $protocol): array
     {
+        // O HC-6679B só manda a memória com o ecrã MEM aberto, e o hub não a pede sozinho.
+        $help = $protocol === 'joytech-bp-ecg'
+            ? 'Abre a memória no aparelho (MEM) antes de pedir. As medições que o hub já tem não se repetem.'
+            : 'As medições que o aparelho guardou; as que o hub já tem não se repetem. Também se lê a cada ligação.';
+
         return [
             ConfigurationDefinition::make(
                 'read_blood_pressure_history',
@@ -25,7 +30,7 @@ final class JoyTechConfigurationDefinitions
                 'health',
                 10,
                 transient: true,
-                help: 'As medições que o aparelho guardou; as que o hub já tem não se repetem. Também se lê a cada ligação.',
+                help: $help,
                 verb: 'Ler',
             ),
         ];

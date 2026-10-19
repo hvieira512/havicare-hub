@@ -174,7 +174,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
         // O aparelho não pede a hora, e a memória é datada por ela: acerta-se a cada ligação.
         $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'calibrateClock', [], 0, $offsetMinutes);
-        if (!$this->dispatch($deviceKey)) {
+        if (!$this->dispatch($deviceKey) && self::readsMemoryUnasked($context)) {
             // A meio de uma medição o aparelho ignora-o, e volta a pedir-se depois do resultado.
             $this->readMemory($deviceKey);
         }
@@ -282,6 +282,12 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         return $protocol !== '' ? $protocol : self::PROTOCOL;
     }
 
+    /** O HC-6679B só manda a memória com o ecrã MEM aberto, e lê-se só a pedido. */
+    private static function readsMemoryUnasked(GattDeviceContext $context): bool
+    {
+        return self::protocolOf($context) !== 'joytech-bp-ecg';
+    }
+
     /** @param string $data sistólica e diastólica em 2 B, pulso, arritmia, ano, mês, dia, hora, minuto, grupo */
     private function result(GattDeviceContext $context, string $data, int $offsetMinutes): void
     {
@@ -324,7 +330,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
             // A marca só avança no fim de uma leitura; até lá, o que saiu fica nesta lista e não se repete.
             $this->marks->rememberLive($deviceKey, $group, $data, (int)$local);
         }
-        if (!$fromHistory && isset($this->sessions[$deviceKey]) && !$this->sessions[$deviceKey]['memoryRead']) {
+        if (!$fromHistory && isset($this->sessions[$deviceKey]) && !$this->sessions[$deviceKey]['memoryRead'] && self::readsMemoryUnasked($context)) {
             $this->sessions[$deviceKey]['readAt'] = $now + self::READ_AFTER_RESULT_SECONDS;
         }
 

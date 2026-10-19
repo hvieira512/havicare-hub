@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 
+use Hub\Device\PendingDownlinkQueue;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
+use Hub\Ingress\Mqtt\JoyTech\JoyTechFrame;
 use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
@@ -43,6 +46,32 @@ final class JoyTechEcgTest extends TestCase
         self::assertSame('2026-10-16T16:32:00Z', $ecg[0]['occurredAt']);
         self::assertSame('joytech-bp-ecg', $ecg[0]['source']['protocol']);
         self::assertSame(['ecg'], array_values(array_unique(array_column(array_column($mqtt->telemetry, 'payload'), 'type'))));
+    }
+
+    /** O HC-6679B só manda a memória com o ecrã MEM aberto: o hub não a pede sozinho. */
+    public function testTheMemoryIsNotReadUnasked(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('frame', [
+            'char' => 'fff1',
+            'hex' => JoyTechFrame::encode(0x83, pack('nnCC', 119, 86, 71, 0) . pack('C*', 26, 10, 16, 17, 31, 1)),
+        ]));
+        $this->now += 30;
+        $bridge->dispatchQueued();
+
+        self::assertSame(['calibrateClock'], array_column(array_column($mqtt->gatewayCommands, 'payload'), 'operation'));
+    }
+
+    public function testARequestedReadLeavesWhenTheMonitorConnects(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new OneShotDownlinkQueue('readBloodPressureHistory', ['id' => 'op-1', 'command' => 'readBloodPressureHistory', 'payload' => []]);
+
+        $this->bridge($mqtt, queue: $queue)->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+
+        self::assertSame(['calibrateClock', 'readBloodPressureHistory'], array_column(array_column($mqtt->gatewayCommands, 'payload'), 'operation'));
     }
 
     /** O traçado só sai pelo MQTT: a lista da dashboard guarda quantas amostras são. */
@@ -164,7 +193,7 @@ final class JoyTechEcgTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt, ?DeviceStoreContract $store = null): JoyTechBpBridge
+    private function bridge(RecordingHubMqttBridge $mqtt, ?DeviceStoreContract $store = null, ?PendingDownlinkQueue $queue = null): JoyTechBpBridge
     {
         return new JoyTechBpBridge(
             new FakeMqttSubscriber(),
@@ -174,7 +203,7 @@ final class JoyTechEcgTest extends TestCase
             ]),
             $mqtt,
             IngressFixtures::links(),
-            null,
+            $queue,
             'havicare-hub/null/0/gw/+/raw',
             null,
             $store,

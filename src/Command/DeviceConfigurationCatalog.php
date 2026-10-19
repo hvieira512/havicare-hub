@@ -45,7 +45,7 @@ final class DeviceConfigurationCatalog
             'zayata-m228' => ZayataConfigurationDefinitions::all(),
             'lefu-torre' => LefuTorreConfigurationDefinitions::all(),
             'qinglanst-radar' => QinglanstConfigurationDefinitions::all(),
-            'joytech-bp', 'joytech-bp-ecg' => JoyTechConfigurationDefinitions::all(),
+            'joytech-bp', 'joytech-bp-ecg' => JoyTechConfigurationDefinitions::all($protocol),
             default => [],
         };
 

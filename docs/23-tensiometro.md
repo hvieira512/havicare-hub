@@ -106,7 +106,14 @@ fator para mV.
 
 Um exame interrompido não sai: a sessão a cair antes do `0x86`, ou mais de 1 s
 sem amostras depois da primeira. A memória dos ECG do aparelho (`0x0E`) não
-responde, e fica de fora.
+responde, e fica de fora. A lista da dashboard guarda a contagem das amostras
+(`sampleCount`) e não o traçado, como a da pulseira.
+
+**A memória só a pedido.** O HC-6679B só manda a memória com o ecrã MEM aberto
+(«memory mode» nas duas folhas do protocolo): fora dele ignora o `0x0A`, e a
+espera do gateway ocupa-o 30 s. Por isso o hub não lha pede sozinho, nem ao
+ligar nem depois do resultado. O «Ler a memória» da dashboard diz para abrir a
+memória no aparelho antes de pedir, e fica à espera até ele se ligar.
 
 Um HC-6679B por registar aparece nas notificações com o protocolo `joytech-bp`:
 o protocolo sai do modelo registado, e ainda não há nenhum.
