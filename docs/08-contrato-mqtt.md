@@ -275,10 +275,18 @@ ativo. Quem consome a QoS 1 já tem de tolerar repetidos.
 o código, e é o **único** que não é retido — uma recusa é um acontecimento, não
 um estado que valha a pena guardar.
 
-Quem tem `status`: relógios, NCS, gateways, radares e a pulseira Veepoo.
-**Não têm:** as pulseiras W6/W6B e os sensores de fralda, que só se ouvem através de
-um gateway — sabe-se deles pela `proximity` a passar a `unknown`, ou pela ausência
-de telemetria.
+Todos os dispositivos têm `status`, e é o mesmo estado que a API devolve em
+`device.online`. O que muda é o que o desliga:
+
+| Dispositivos | `online` | `offline` |
+| --- | --- | --- |
+| Relógios e dispensador (TCP) | Ao autenticar | Ao fechar a ligação, ou sem mensagens no prazo da ligação |
+| Pulseiras W6/W6B e sensores de fralda | Na primeira mensagem que um gateway retransmite | Nenhum gateway os ouve durante 30 min |
+| Pulseira Veepoo, balança, tensiómetro, termómetro e oxímetro | Quando o gateway liga ao aparelho | Quando a ligação BLE cai |
+| Radares | Na primeira mensagem | 3 min calados |
+| Gateways | Na primeira mensagem | 3 min calados |
+| Pulseira Tuya | Na primeira mensagem | 8 h 30 min caladas |
+| NCS | Pelo estado que o próprio aparelho publica | Idem |
 
 ### O estado retido e a mudança de cliente
 
