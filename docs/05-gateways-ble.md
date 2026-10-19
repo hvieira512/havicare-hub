@@ -315,8 +315,12 @@ Cada ponte só lê a sua `source`; a JoyTech separa o tensiómetro do termómetr
 
 | `kind` | `payload` | O que o hub faz |
 |---|---|---|
-| `session` | `connected`, e na pulseira também `authenticated` | Online e entrega a fila; `connected: false` (ou `authenticated: false`) põe-no offline |
-| `command_result` | `dedupeKey`, `ok`, `error`; na pulseira também `operation` e `outcome` | Tira o comando da fila; `ok: false` falha-o com o `error` |
+| `session` | `connected`, e outros campos de cada aparelho (`authenticated` na pulseira, `battery` e `mtu` na balança) | Online e entrega a fila; `connected: false` (ou `authenticated: false`) põe-no offline |
+| `command_result` | `dedupeKey`, `commandId`, `operation` e `ok`; `error` quando `ok` é `false`; `step`, o índice da escrita, na balança e na JoyTech; `outcome` só na pulseira | Tira o comando da fila; `ok: false` falha-o com o `error` |
+
+Um comando pode ficar sem `command_result` — na pulseira, uma configuração que não
+pegou ou uma operação que o gateway não conhece. Fica na fila, e o hub volta a
+mandá-lo de 30 em 30 s até expirar.
 
 Os outros são de cada aparelho: `frame` na balança e na JoyTech, com a trama em
 `hex`, e na pulseira `battery`, `measurement`, `ecg_wave`, `sleep` e
