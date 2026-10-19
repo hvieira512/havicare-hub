@@ -527,6 +527,10 @@ export const commandError = (code) =>
         retry_exhausted: "Tentativas esgotadas",
         never_reported: "O aparelho nunca o reportou",
         diverged: "O aparelho tem outro valor",
+        disconnected: "O aparelho desligou-se do gateway",
+        not_connected: "O aparelho não estava ligado ao gateway",
+        await_timeout: "O aparelho não respondeu a tempo",
+        write_failed: "O gateway não conseguiu escrever no aparelho",
     })[String(code ?? "")] || String(code ?? "");
 
 export const eventTime = (payload) => {

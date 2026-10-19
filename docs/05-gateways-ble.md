@@ -281,6 +281,84 @@ proximidade também não. Ambos são publicados no MQTT, mas um gateway que capt
 vinte dispositivos esgotaria a lista de 100 entradas em segundos, eliminando o
 seu valor de consulta.
 
+## 7. O gateway BLE da Havicare
+
+O MOKO só ouve anúncios. Para os aparelhos que é preciso ligar — a pulseira
+Veepoo, a [balança](22-balanca.md), o [tensiómetro](23-tensiometro.md) e o
+[termómetro](24-termometro.md) — há um gateway por software da Havicare (modelo
+`Havicare BLE Gateway`), que se liga ao aparelho, reencaminha o que ele manda e
+escreve o que o hub lhe pede. Usa o mesmo espaço de tópicos:
+
+| Sentido | Tópico |
+|---|---|
+| gateway → hub | `havicare-hub/null/0/gw/{gateway}/raw` |
+| hub → gateway | `havicare-hub/null/0/gw/{gateway}/cmd` |
+
+O gateway identifica-se pelo tópico e o aparelho pelo `device.mac`; os dois têm de
+estar registados e ligados um ao outro. Um aparelho por registar dá a notificação
+de «dispositivo por autorizar», a não ser que esteja na lista de bloqueados.
+
+### O que sobe
+
+Todas as mensagens têm o mesmo envelope:
+
+| Campo | O que é |
+|---|---|
+| `source` | Quem fala: `veepoo-node`, `lefu-torre-node` ou `joytech-node` |
+| `kind` | O tipo da mensagem |
+| `device` | `mac`, `model` e, quando o gateway o sabe, `firmware` |
+| `payload` | Os dados do `kind` |
+| `tzOffsetMinutes` | O fuso da máquina do gateway, que data o que vem na hora do aparelho |
+
+Cada ponte só lê a sua `source`; a JoyTech separa o tensiómetro do termómetro pelo
+`device.model` (`DBP…` e `DET…`). Dois `kind` são comuns a todas:
+
+| `kind` | `payload` | O que o hub faz |
+|---|---|---|
+| `session` | `connected`, e na pulseira também `authenticated` | Online e entrega a fila; `connected: false` (ou `authenticated: false`) põe-no offline |
+| `command_result` | `dedupeKey`, `ok`, `error`; na pulseira também `operation` e `outcome` | Tira o comando da fila; `ok: false` falha-o com o `error` |
+
+Os outros são de cada aparelho: `frame` na balança e na JoyTech, com a trama em
+`hex`, e na pulseira `battery`, `measurement`, `ecg_wave`, `sleep` e
+`daily_block`, já descodificados pelo SDK. Estão nos capítulos de cada um.
+
+O gateway antigo da pulseira só manda o `authenticated` na sessão e o `outcome`
+no resultado, e o hub continua a aceitá-los: sem `ok`, o `outcome` `no_response`
+falha o comando e qualquer outro confirma-o.
+
+### O que desce
+
+```json
+{
+  "deviceId": "748b34837b1e",
+  "commandId": "…",
+  "dedupeKey": "…",
+  "operation": "readBloodPressureHistory",
+  "payload": {"writes": [{"char": "fff2", "hex": "faaaaaaf000a0a14f55f", "await": {"char": "fff1", "prefix": "faaaaaaf000a8b", "timeoutMs": 30000}}]},
+  "expiresAt": 1792405140
+}
+```
+
+Na balança e na JoyTech o `payload.writes` são as escritas GATT, por ordem, já
+codificadas pelo hub; o `await` opcional manda o gateway esperar por uma
+notificação que comece pelo `prefix` antes de responder. Na pulseira o
+`operation` é a operação do SDK (`measure.heartRate.start`,
+`config:find_device`) e o `payload` é o valor a escrever.
+
+### Os erros
+
+O `error` de um `command_result` é uma lista fechada, em inglês e snake_case:
+
+| `error` | Quando |
+|---|---|
+| `not_connected` | O aparelho não estava ligado quando o comando chegou |
+| `disconnected` | Desligou-se a meio |
+| `write_failed` | A escrita GATT falhou |
+| `await_timeout` | A notificação do `await` não chegou a tempo |
+| `no_response` | A pulseira não respondeu à operação |
+
+A dashboard traduz-os; um valor fora da lista aparece como veio.
+
 ## Diagnóstico
 
 Três ferramentas de linha de comandos operam sobre um broker real:
@@ -321,9 +399,8 @@ conteúdo se altere.
 | `src/Ingress/Mqtt/Monit/MonitNormalizer.php` | Humidade, índice e estado |
 | `src/Ingress/Mqtt/Moko/W6bDecoder.php` · `W6Decoder.php` | As duas pulseiras |
 
-As pulseiras Veepoo não passam por um gateway MOKO: falam com a sua própria
-aplicação, que publica no broker. É a única ingestão com downlink, e a única a
-implementar o `DispatchesQueued`.
+As pulseiras Veepoo não passam por um gateway MOKO: falam com o gateway BLE da
+Havicare (secção 7), como a balança e a JoyTech.
 
 | Ficheiro | Responsabilidade |
 |---|---|

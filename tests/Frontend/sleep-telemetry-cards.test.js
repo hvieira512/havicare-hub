@@ -81,6 +81,10 @@ test("a razão de um pedido falhado diz-se em português", () => {
     assert.equal(commandError("no_response"), "O aparelho não respondeu");
     assert.equal(commandError("not_worn"), "A pulseira não estava ao pulso");
     assert.equal(commandError("response_timeout"), "Sem resposta dentro do prazo");
+    assert.equal(commandError("disconnected"), "O aparelho desligou-se do gateway");
+    assert.equal(commandError("not_connected"), "O aparelho não estava ligado ao gateway");
+    assert.equal(commandError("await_timeout"), "O aparelho não respondeu a tempo");
+    assert.equal(commandError("write_failed"), "O gateway não conseguiu escrever no aparelho");
     // Um código novo do hub não se esconde: aparece como veio, para se poder procurar.
     assert.equal(commandError("motivo_novo"), "motivo_novo");
     assert.equal(commandError(""), "");
