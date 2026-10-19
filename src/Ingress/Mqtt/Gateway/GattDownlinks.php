@@ -20,7 +20,7 @@ final class GattDownlinks
     /** Uma entrega sem `command_result` volta a sair ao fim disto. */
     private const RESEND_SECONDS = 30;
 
-    /** @var array<string, int> */
+    /** @var array<string, int> por aparelho e chave: a mesma ordem a dois aparelhos tem a mesma chave */
     private array $sentAt = [];
 
     /**
@@ -47,7 +47,7 @@ final class GattDownlinks
 
         $now = time();
         foreach ($this->downlinks->pendingFor($deviceKey) as $downlink) {
-            if ($now - ($this->sentAt[$downlink->dedupeKey] ?? 0) < self::RESEND_SECONDS) {
+            if ($now - ($this->sentAt[$deviceKey . '|' . $downlink->dedupeKey] ?? 0) < self::RESEND_SECONDS) {
                 continue;
             }
             $operation = self::operationOf($downlink);
@@ -62,7 +62,7 @@ final class GattDownlinks
             }
 
             $this->publish($gatewayKey, $deviceKey, $operation, $downlink->dedupeKey, self::commandId($downlink), $writes, $downlink->expiresAt);
-            $this->sentAt[$downlink->dedupeKey] = $now;
+            $this->sentAt[$deviceKey . '|' . $downlink->dedupeKey] = $now;
             $this->mark($deviceKey, $downlink, ['status' => 'waiting', 'sentAt' => gmdate('Y-m-d\TH:i:s\Z')]);
             $sent[] = $operation;
         }
@@ -94,7 +94,7 @@ final class GattDownlinks
                 continue;
             }
             $this->downlinks->remove($downlink);
-            unset($this->sentAt[$dedupeKey]);
+            unset($this->sentAt[$deviceKey . '|' . $dedupeKey]);
             if (!$ok) {
                 $this->mark($deviceKey, $downlink, ['status' => 'failed', 'error' => $error !== '' ? $error : 'write_failed']);
             } elseif ($this->expectsNoReply($downlink)) {

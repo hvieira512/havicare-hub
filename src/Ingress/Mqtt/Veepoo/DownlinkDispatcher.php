@@ -23,7 +23,7 @@ final class DownlinkDispatcher
     private const RESEND_SECONDS = 30;
 
     /**
-     * Quando cada comando em fila foi entregue pela última vez.
+     * Quando cada comando em fila foi entregue pela última vez, por aparelho e chave.
      *
      * @var array<string, int>
      */
@@ -48,7 +48,7 @@ final class DownlinkDispatcher
         foreach ($this->downlinks->pendingFor($deviceKey) as $downlink) {
             $command = $downlink->command ?? [];
             $operation = self::operationOf($downlink);
-            if ($operation === '' || !$this->dueForSending($downlink->dedupeKey)) {
+            if ($operation === '' || !$this->dueForSending($deviceKey, $downlink->dedupeKey)) {
                 continue;
             }
 
@@ -63,7 +63,7 @@ final class DownlinkDispatcher
             ]);
 
             // Só depois de sair: uma publicação que rebenta não fica marcada como entregue.
-            $this->markSent($downlink->dedupeKey);
+            $this->markSent($deviceKey, $downlink->dedupeKey);
 
             // Fica em fila: entregar não é executar. Sai em `resolvePending`, quando o gateway
             // confirma, ou pelo TTL da política.
@@ -92,7 +92,7 @@ final class DownlinkDispatcher
 
             $this->downlinks->remove($downlink);
             // Confirmada, a chave sai do travão para a ordem seguinte sair na hora.
-            unset($this->sentAt[$dedupeKey]);
+            unset($this->sentAt[$deviceKey . '|' . $dedupeKey]);
             $operation = self::operationOf($downlink);
             if ($operation !== '') {
                 $this->deviceStore?->markLatestCommand($deviceKey, $operation, [
@@ -119,7 +119,7 @@ final class DownlinkDispatcher
             }
 
             $this->downlinks->remove($downlink);
-            unset($this->sentAt[$downlink->dedupeKey]);
+            unset($this->sentAt[$deviceKey . '|' . $downlink->dedupeKey]);
             $this->deviceStore?->markLatestCommand($deviceKey, $operation, [
                 'status' => 'failed',
                 'error' => $reason,
@@ -139,14 +139,14 @@ final class DownlinkDispatcher
     }
 
     /** Só pergunta; quem marca é o `markSent`. */
-    private function dueForSending(string $dedupeKey): bool
+    private function dueForSending(string $deviceKey, string $dedupeKey): bool
     {
-        return !isset($this->sentAt[$dedupeKey]);
+        return !isset($this->sentAt[$deviceKey . '|' . $dedupeKey]);
     }
 
-    private function markSent(string $dedupeKey): void
+    private function markSent(string $deviceKey, string $dedupeKey): void
     {
-        $this->sentAt[$dedupeKey] = time();
+        $this->sentAt[$deviceKey . '|' . $dedupeKey] = time();
     }
 
     /** As chaves que já saíram da janela deixam de travar a entrega seguinte. */
