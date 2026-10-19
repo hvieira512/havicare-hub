@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\JoyTech;
 
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
+use Hub\State\DeviceStoreContract;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
@@ -42,6 +43,24 @@ final class JoyTechEcgTest extends TestCase
         self::assertSame('2026-10-16T16:32:00Z', $ecg[0]['occurredAt']);
         self::assertSame('joytech-bp-ecg', $ecg[0]['source']['protocol']);
         self::assertSame(['ecg'], array_values(array_unique(array_column(array_column($mqtt->telemetry, 'payload'), 'type'))));
+    }
+
+    /** O traçado só sai pelo MQTT: a lista da dashboard guarda quantas amostras são. */
+    public function testTheDashboardKeepsTheSampleCountInsteadOfTheTrace(): void
+    {
+        $appended = [];
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->method('append')->willReturnCallback(
+            static function (string $imei, string $list, array $payload) use (&$appended): void {
+                $appended[] = $payload;
+            }
+        );
+        $this->replay($this->bridge(new RecordingHubMqttBridge(), $store), self::capture());
+
+        $shown = array_values(array_filter($appended, static fn (array $t): bool => ($t['type'] ?? null) === 'ecg'));
+        self::assertCount(1, $shown);
+        self::assertArrayNotHasKey('samples', $shown[0]['data']);
+        self::assertSame(7504, $shown[0]['data']['sampleCount']);
     }
 
     /**
@@ -145,7 +164,7 @@ final class JoyTechEcgTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt): JoyTechBpBridge
+    private function bridge(RecordingHubMqttBridge $mqtt, ?DeviceStoreContract $store = null): JoyTechBpBridge
     {
         return new JoyTechBpBridge(
             new FakeMqttSubscriber(),
@@ -158,7 +177,7 @@ final class JoyTechEcgTest extends TestCase
             null,
             'havicare-hub/null/0/gw/+/raw',
             null,
-            null,
+            $store,
             fn (): float => $this->now,
         );
     }

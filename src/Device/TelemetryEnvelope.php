@@ -40,4 +40,24 @@ final class TelemetryEnvelope
             'data' => $data,
         ];
     }
+
+    /**
+     * A mesma telemetria, sem o que não cabe num histórico de consulta: o traçado de um ECG
+     * só sai pelo MQTT, e a dashboard guarda quantas amostras são.
+     *
+     * @param array<string, mixed> $telemetry
+     * @return array<string, mixed>
+     */
+    public static function forDashboard(array $telemetry): array
+    {
+        $samples = $telemetry['data']['samples'] ?? null;
+        if (!is_array($samples)) {
+            return $telemetry;
+        }
+
+        $telemetry['data']['sampleCount'] = count($samples);
+        unset($telemetry['data']['samples']);
+
+        return $telemetry;
+    }
 }

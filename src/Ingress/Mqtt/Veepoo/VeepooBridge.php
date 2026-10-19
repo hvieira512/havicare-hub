@@ -312,30 +312,10 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
 
-        $this->deviceStore?->append($context->deviceKey, 'telemetry', self::forDashboard($telemetry) + [
+        $this->deviceStore?->append($context->deviceKey, 'telemetry', TelemetryEnvelope::forDashboard($telemetry) + [
             'deviceType' => 'bracelet',
             'licenseId' => $context->licenseId,
         ]);
-    }
-
-    /**
-     * A mesma telemetria, sem o que não cabe num histórico de consulta: o traçado de um ECG,
-     * dezasseis mil amostras, só sai pelo MQTT.
-     *
-     * @param array<string, mixed> $telemetry
-     * @return array<string, mixed>
-     */
-    private static function forDashboard(array $telemetry): array
-    {
-        $samples = $telemetry['data']['samples'] ?? null;
-        if (!is_array($samples)) {
-            return $telemetry;
-        }
-
-        $telemetry['data']['sampleCount'] = count($samples);
-        unset($telemetry['data']['samples']);
-
-        return $telemetry;
     }
 
     /**

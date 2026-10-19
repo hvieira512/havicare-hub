@@ -367,7 +367,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         );
         $telemetry['occurredAt'] = $occurredAt;
         $this->mqttBridge->publishTelemetry($context->deviceKey, $telemetry, self::DEVICE_TYPE, $context->licenseId, $context->company);
-        $this->deviceStore?->append($context->deviceKey, 'telemetry', $telemetry + [
+        $this->deviceStore?->append($context->deviceKey, 'telemetry', TelemetryEnvelope::forDashboard($telemetry) + [
             'deviceType' => self::DEVICE_TYPE,
             'licenseId' => $context->licenseId,
         ]);
