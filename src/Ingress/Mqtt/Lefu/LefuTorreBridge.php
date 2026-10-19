@@ -14,6 +14,7 @@ use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
+use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceCommandLog;
 use Hub\State\DeviceReportStore;
@@ -89,6 +90,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
         ?callable $clock = null,
         ?CommercialModelResolver $commercialModelResolver = null,
         ?callable $scaleUsers = null,
+        ?Denylist $denylist = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -98,6 +100,7 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
             'lefu',
             $reconnectSubscriber,
             $deviceStore,
+            denylist: $denylist,
             clock: $clock,
             commercialModelResolver: $commercialModelResolver,
         );

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Mqtt\Veepoo;
 
-use Hub\State\DeviceCommandLog;
-use Hub\State\DeviceReportStore;
 use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceDescriptor;
 use Hub\Device\HubMqttBridge;
@@ -18,7 +16,10 @@ use Hub\Ingress\Mqtt\Gateway\GatewayTopic;
 use Hub\Ingress\Mqtt\Gateway\ObservationStateStore;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Log\Logger;
+use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
+use Hub\State\DeviceCommandLog;
+use Hub\State\DeviceReportStore;
 use Hub\Support\Values;
 use PhpMqtt\Client\MqttClient;
 
@@ -95,6 +96,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
         null|(DeviceReportStore&DeviceCommandLog) $deviceStore = null,
         ?callable $clock = null,
         ?CommercialModelResolver $commercialModelResolver = null,
+        ?Denylist $denylist = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -104,6 +106,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             'veepoo',
             $reconnectSubscriber,
             $deviceStore,
+            denylist: $denylist,
             clock: $clock,
             commercialModelResolver: $commercialModelResolver,
         );

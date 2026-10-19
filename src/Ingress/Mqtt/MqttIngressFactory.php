@@ -144,6 +144,7 @@ final class MqttIngressFactory
                 $reconnect,
                 $services->deviceStore,
                 commercialModelResolver: $services->commercialModelResolver,
+                denylist: $services->denylist,
                 scaleUsers: static fn (string $imei): ?array => $services->dataAccess->configurationLifecycle
                     ->effectivePayloads($imei, ['scale_users'])['scale_users'] ?? null,
             ),
@@ -174,6 +175,7 @@ final class MqttIngressFactory
                 $reconnect,
                 $services->deviceStore,
                 commercialModelResolver: $services->commercialModelResolver,
+                denylist: $services->denylist,
                 marks: new BloodPressureHistoryMarks($services->redis),
             ),
         );
@@ -202,6 +204,7 @@ final class MqttIngressFactory
                 $reconnect,
                 $services->deviceStore,
                 commercialModelResolver: $services->commercialModelResolver,
+                denylist: $services->denylist,
                 seen: new RecentMeasurementKeys($services->redis),
             ),
         );
@@ -234,6 +237,7 @@ final class MqttIngressFactory
                 $reconnect,
                 $services->deviceStore,
                 commercialModelResolver: $services->commercialModelResolver,
+                denylist: $services->denylist,
             ),
         );
     }
