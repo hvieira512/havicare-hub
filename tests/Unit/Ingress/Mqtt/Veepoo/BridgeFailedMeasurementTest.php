@@ -193,6 +193,24 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame([], self::failures($mqtt), 'não é uma medição');
     }
 
+    /** Vibrar e parar são a mesma operação: a falha de um não leva o outro. */
+    public function testAFailedCommandTakesOnlyItsOwnKeyOutOfTheQueue(): void
+    {
+        $queue = new \Hub\Device\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
+        $start = $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => true]], 300);
+        $stop = $queue->enqueue(self::BRACELET, 'config:find_device', ['command' => 'config:find_device', 'payload' => ['enabled' => false]], 300);
+        $bridge = $this->bridge(new RecordingHubMqttBridge(), $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
+            'source' => 'veepoo-node',
+            'kind' => 'command_result',
+            'device' => ['mac' => self::BRACELET],
+            'payload' => ['dedupeKey' => $start->dedupeKey, 'operation' => 'config:find_device', 'ok' => false, 'error' => 'not_connected'],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame([$stop->dedupeKey], array_map(static fn ($d): string => $d->dedupeKey, $queue->pendingFor(self::BRACELET)));
+    }
+
     /** Numa medição, a razão do gateway chega ao ecrã em vez de «sem leitura». */
     public function testAMeasurementTheGatewayCouldNotDeliverFailsWithItsReason(): void
     {

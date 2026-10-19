@@ -157,6 +157,20 @@ final class JoyTechEcgTest extends TestCase
         self::assertSame([], array_filter(array_column($dropped->telemetry, 'payload'), static fn (array $t): bool => $t['type'] === 'ecg'));
     }
 
+    /** Um atraso a caminho do hub não interrompe o exame: as amostras chegam todas, só que tarde. */
+    public function testADelayOnTheWayIsNotAnInterruption(): void
+    {
+        $late = array_map(
+            static fn (array $frame, int $index): array => [$frame[0] + ($index >= 700 ? 2000 : 0), $frame[1]],
+            self::capture(),
+            array_keys(self::capture()),
+        );
+        $mqtt = new RecordingHubMqttBridge();
+        $this->replay($this->bridge($mqtt), $late);
+
+        self::assertCount(1, array_filter(array_column($mqtt->telemetry, 'payload'), static fn (array $t): bool => $t['type'] === 'ecg'));
+    }
+
     /** @param list<array{0: int, 1: string}> $frames */
     private function replay(JoyTechBpBridge $bridge, array $frames): void
     {

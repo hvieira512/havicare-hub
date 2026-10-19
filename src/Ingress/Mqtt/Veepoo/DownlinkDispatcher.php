@@ -106,15 +106,18 @@ final class DownlinkDispatcher
         }
     }
 
-    /** Fecha o pedido que a pulseira não consegue cumprir, e só o daquela operação. */
-    public function failPending(string $deviceKey, string $operation, string $reason): void
+    /**
+     * Fecha o pedido que a pulseira não consegue cumprir, e só o daquela operação; com a chave, só
+     * esse, porque vibrar e parar são a mesma operação.
+     */
+    public function failPending(string $deviceKey, string $operation, string $reason, string $dedupeKey = ''): void
     {
         if ($this->downlinks === null || $operation === '') {
             return;
         }
 
         foreach ($this->downlinks->pendingFor($deviceKey) as $downlink) {
-            if (self::operationOf($downlink) !== $operation) {
+            if (self::operationOf($downlink) !== $operation || ($dedupeKey !== '' && $downlink->dedupeKey !== $dedupeKey)) {
                 continue;
             }
 

@@ -79,7 +79,8 @@ frente. As medições feitas com o relógio por acertar ficam de fora.
 e se medir sem gateway por perto, essas medições ficam abaixo da data mínima e
 perdem-se. Duas medições no mesmo grupo e no mesmo minuto contam como uma. Na
 mudança de hora, um registo medido antes e lido depois fica com uma hora de erro
-no `occurredAt`, mas não se repete. Um hub reiniciado com o aparelho ligado
+no `occurredAt`, mas não se repete; e na hora repetida do outono, uma medição ao
+vivo com a hora do aparelho abaixo da marca é tomada por memória e não sai. Um hub reiniciado com o aparelho ligado
 refaz a sessão com a primeira trama que chegar.
 
 ## O HC-6679B, com ECG
@@ -104,8 +105,10 @@ do `0x86`, com a hora do aparelho no `occurredAt`. O pulso não sai à parte. As
 amostras vão como chegam: **a unidade não é conhecida**, e pediu-se à JoyTech o
 fator para mV.
 
-Um exame interrompido não sai: a sessão a cair antes do `0x86`, ou mais de 1 s
-sem amostras depois da primeira. A memória dos ECG do aparelho (`0x0E`) não
+Um exame interrompido não sai: a sessão a cair antes do `0x86`, ou menos de 95%
+das 7500 amostras quando ele chega. Conta-se o que o aparelho mandou e não quando
+chegou, para um atraso a caminho do hub não deitar fora o exame; o que sai fora
+fica no log. A memória dos ECG do aparelho (`0x0E`) não
 responde, e fica de fora. A lista da dashboard guarda a contagem das amostras
 (`sampleCount`) e não o traçado, como a da pulseira.
 

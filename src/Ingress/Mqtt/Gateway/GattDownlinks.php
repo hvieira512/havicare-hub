@@ -17,8 +17,10 @@ use Hub\State\DeviceCommandLog;
  */
 final class GattDownlinks
 {
-    /** Uma entrega sem `command_result` volta a sair ao fim disto. */
-    private const RESEND_SECONDS = 30;
+    /** Uma entrega sem `command_result` volta a sair ao fim disto: mais do que os 30 s de um `await`. */
+    private const RESEND_SECONDS = 40;
+
+    public const NOT_CONNECTED = 'not_connected';
 
     /** @var array<string, int> por aparelho e chave: a mesma ordem a dois aparelhos tem a mesma chave */
     private array $sentAt = [];
@@ -46,9 +48,12 @@ final class GattDownlinks
         $sent = [];
 
         $now = time();
-        foreach ($this->downlinks->pendingFor($deviceKey) as $downlink) {
+        $pending = $this->downlinks->pendingFor($deviceKey);
+        $this->forgetGone($deviceKey, $pending);
+        // O gateway faz uma ordem de cada vez: com uma a caminho, a seguinte espera por ela.
+        foreach ($pending as $downlink) {
             if ($now - ($this->sentAt[$deviceKey . '|' . $downlink->dedupeKey] ?? 0) < self::RESEND_SECONDS) {
-                continue;
+                return $sent;
             }
             $operation = self::operationOf($downlink);
             $payload = is_array($downlink->command['payload'] ?? null) ? $downlink->command['payload'] : [];
@@ -65,9 +70,29 @@ final class GattDownlinks
             $this->sentAt[$deviceKey . '|' . $downlink->dedupeKey] = $now;
             $this->mark($deviceKey, $downlink, ['status' => 'waiting', 'sentAt' => gmdate('Y-m-d\TH:i:s\Z')]);
             $sent[] = $operation;
+
+            return $sent;
         }
 
         return $sent;
+    }
+
+    /**
+     * O travão de quem já saiu da fila, por expirar ou por outro caminho, não trava nada.
+     *
+     * @param list<PendingDownlink> $pending
+     */
+    private function forgetGone(string $deviceKey, array $pending): void
+    {
+        $keep = [];
+        foreach ($pending as $downlink) {
+            $keep[$deviceKey . '|' . $downlink->dedupeKey] = true;
+        }
+        foreach (array_keys($this->sentAt) as $key) {
+            if (str_starts_with($key, $deviceKey . '|') && !isset($keep[$key])) {
+                unset($this->sentAt[$key]);
+            }
+        }
     }
 
     /**
@@ -93,8 +118,12 @@ final class GattDownlinks
             if ($downlink->dedupeKey !== $dedupeKey) {
                 continue;
             }
-            $this->downlinks->remove($downlink);
             unset($this->sentAt[$deviceKey . '|' . $dedupeKey]);
+            // O aparelho já não estava ligado: a ordem espera pela ligação seguinte.
+            if (!$ok && $error === self::NOT_CONNECTED) {
+                return;
+            }
+            $this->downlinks->remove($downlink);
             if (!$ok) {
                 $this->mark($deviceKey, $downlink, ['status' => 'failed', 'error' => $error !== '' ? $error : 'write_failed']);
             } elseif ($this->expectsNoReply($downlink)) {

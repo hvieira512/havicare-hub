@@ -10,13 +10,16 @@ namespace Hub\Ingress\Mqtt\JoyTech;
  */
 final class EcgRecordings
 {
-    /** As tramas chegam a 50 por segundo; um buraco disto é um exame interrompido. */
-    private const GAP_SECONDS = 1.0;
+    /**
+     * Um exame são 30 s a 250 Hz, 7500 amostras; com menos do que isto foi interrompido. Conta-se o
+     * que o aparelho mandou, e não quando chegou: um atraso a caminho do hub não é um buraco.
+     */
+    private const MIN_SAMPLES = 7125;
 
     /** O `0x85` repete-se 4 vezes, de segundo a segundo, e o `0x86` de 2 em 2 s. */
     private const REPEAT_SECONDS = 5.0;
 
-    /** @var array<string, array{samples: list<int>, lastAt: float, broken: bool}> */
+    /** @var array<string, array{samples: list<int>}> */
     private array $open = [];
 
     /** @var array<string, float> */
@@ -28,33 +31,27 @@ final class EcgRecordings
         if (!$this->first($deviceKey . ':85', $now)) {
             return false;
         }
-        $this->open[$deviceKey] = ['samples' => [], 'lastAt' => $now, 'broken' => false];
+        $this->open[$deviceKey] = ['samples' => []];
 
         return true;
     }
 
     /** @param string $data as amostras em int16 com sinal, e no fim dois bytes de estado */
-    public function samples(string $deviceKey, string $data, float $now): void
+    public function samples(string $deviceKey, string $data): void
     {
-        $recording = $this->open[$deviceKey] ?? null;
-        if ($recording === null) {
+        if (!isset($this->open[$deviceKey])) {
             return;
-        }
-        // A contagem dura uns segundos: o buraco conta-se a partir da primeira amostra.
-        if ($recording['samples'] !== [] && $now - $recording['lastAt'] > self::GAP_SECONDS) {
-            $this->open[$deviceKey]['broken'] = true;
         }
         $count = intdiv(strlen($data) - 2, 2);
         foreach ($count > 0 ? array_values(unpack("n{$count}", $data) ?: []) : [] as $value) {
             $this->open[$deviceKey]['samples'][] = $value >= 0x8000 ? $value - 0x10000 : $value;
         }
-        $this->open[$deviceKey]['lastAt'] = $now;
     }
 
     /**
      * O `0x86`: se é o primeiro, e o traçado se estiver inteiro.
      *
-     * @return array{answer: bool, samples: list<int>|null}
+     * @return array{answer: bool, samples: list<int>|null, count?: int}
      */
     public function end(string $deviceKey, float $now): array
     {
@@ -63,9 +60,9 @@ final class EcgRecordings
         }
         $recording = $this->open[$deviceKey] ?? null;
         unset($this->open[$deviceKey]);
-        $complete = $recording !== null && !$recording['broken'] && $recording['samples'] !== [];
+        $complete = $recording !== null && count($recording['samples']) >= self::MIN_SAMPLES;
 
-        return ['answer' => true, 'samples' => $complete ? $recording['samples'] : null];
+        return ['answer' => true, 'samples' => $complete ? $recording['samples'] : null, 'count' => count($recording['samples'] ?? [])];
     }
 
     public function drop(string $deviceKey): void

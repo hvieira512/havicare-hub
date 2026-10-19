@@ -173,6 +173,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 
         $device = $this->enrichWithCommercialName($device);
         $deviceKey = (string)$device['imei'];
+        $this->recordLinkSignal($deviceKey, (string)$gateway['imei'], $message);
         $licenseId = (int)($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
         $context = new BraceletContext($deviceKey, (string)$gateway['imei'], $device, $licenseId, $company);
@@ -233,10 +234,11 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             $outcome = (string)($message['payload']['outcome'] ?? '');
             if (($message['payload']['ok'] ?? null) === false || $outcome === self::SILENT_OUTCOME) {
                 $reason = (string)($message['payload']['error'] ?? '') ?: $outcome ?: 'write_failed';
+                $dedupeKey = (string)($message['payload']['dedupeKey'] ?? '');
                 if (str_starts_with($operation, 'measure.')) {
-                    $this->fail($context, $reason, $operation);
+                    $this->fail($context, $reason, $operation, $dedupeKey);
                 } else {
-                    $this->downlinkDispatcher->failPending($deviceKey, $operation, $reason);
+                    $this->downlinkDispatcher->failPending($deviceKey, $operation, $reason, $dedupeKey);
                 }
 
                 return;
@@ -554,7 +556,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 
 
     /** Diz porque é que a medição não saiu, e encerra o pedido que a mandou fazer. */
-    private function fail(BraceletContext $context, string $reason, ?string $operation): void
+    private function fail(BraceletContext $context, string $reason, ?string $operation, string $dedupeKey = ''): void
     {
         $this->failures->report(
             $context->deviceKey,
@@ -564,7 +566,7 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
             $reason,
         );
         if ($operation !== null) {
-            $this->downlinkDispatcher->failPending($context->deviceKey, $operation, $reason);
+            $this->downlinkDispatcher->failPending($context->deviceKey, $operation, $reason, $dedupeKey);
             $this->readings->close($context->deviceKey, $operation);
         }
     }

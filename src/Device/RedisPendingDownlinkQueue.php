@@ -35,6 +35,8 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
             'encoding' => 'base64',
             'command' => $downlink->command,
             'queuedAt' => $downlink->queuedAt,
+            // O segundo não chega para ordenar o que um só pedido pôs em fila.
+            'queuedAtMicro' => microtime(true),
             'expiresAt' => $downlink->expiresAt,
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if ($payload === false) {
@@ -51,6 +53,7 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
     public function pendingFor(string $imei): array
     {
         $items = [];
+        $order = [];
         $now = time();
         $dedupeKeys = $this->redis->smembers($this->indexKey($imei));
 
@@ -82,6 +85,7 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
             }
 
             $command = $decoded['command'] ?? null;
+            $order[$dedupeKey] = (float)($decoded['queuedAtMicro'] ?? $decoded['queuedAt'] ?? 0);
             $items[] = new PendingDownlink(
                 $imei,
                 $dedupeKey,
@@ -94,7 +98,7 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
 
         usort(
             $items,
-            static fn (PendingDownlink $a, PendingDownlink $b): int => $a->queuedAt <=> $b->queuedAt
+            static fn (PendingDownlink $a, PendingDownlink $b): int => $order[$a->dedupeKey] <=> $order[$b->dedupeKey]
         );
 
         return $items;

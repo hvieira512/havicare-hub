@@ -375,6 +375,22 @@ final class JoyTechBpBridgeTest extends TestCase
         return self::message('frame', ['char' => 'fff1', 'hex' => str_replace(' ', '', $hex)]);
     }
 
+    /** Uma sessão de que não se ouve nada há 2 minutos acabou: a ordem espera pela ligação seguinte. */
+    public function testASilentSessionEnds(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new \Hub\Device\RedisPendingDownlinkQueue(new \Tests\Support\Doubles\InMemoryRedisClient());
+        $bridge = $this->bridge($mqtt, $queue);
+        $bridge->handleReceivedMessage(self::TOPIC, self::message('session', ['connected' => true]));
+        $mqtt->gatewayCommands = [];
+
+        $this->now += 121;
+        $queue->enqueue(self::MONITOR, 'readBloodPressureHistory', ['command' => 'readBloodPressureHistory'], 300);
+        $bridge->dispatchQueued();
+
+        self::assertSame([], $mqtt->gatewayCommands);
+    }
+
     /** @param array<string, mixed> $payload */
     private static function message(string $kind, array $payload): string
     {

@@ -135,9 +135,17 @@ final class InMemoryRedisClient implements ClientInterface
     }
 
     /** @return list<string> */
+    /**
+     * Ordenados, e não pela ordem de entrada: o Redis não promete ordem nenhuma num conjunto.
+     *
+     * @return list<string>
+     */
     private function smembers(string $key): array
     {
-        return array_keys($this->sets[$key] ?? []);
+        $members = array_map('strval', array_keys($this->sets[$key] ?? []));
+        sort($members);
+
+        return $members;
     }
 
     /** @param array<string, mixed> $dictionary */

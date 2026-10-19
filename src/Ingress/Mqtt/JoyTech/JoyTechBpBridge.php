@@ -15,6 +15,7 @@ use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
 use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
 use Hub\Ingress\Mqtt\MqttBridgeBase;
 use Hub\Ingress\Mqtt\Veepoo\BraceletPresence;
+use Hub\Log\Logger;
 use Hub\Registry\Denylist;
 use Hub\Registry\Whitelist;
 use Hub\State\DeviceCommandLog;
@@ -56,6 +57,12 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
      * @var array<string, array{gateway: string, offset: int, memoryRead: bool, readAt: ?float}>
      */
     private array $sessions = [];
+
+    /** @var array<string, float> quando se ouviu cada tensiómetro pela última vez */
+    private array $heardAt = [];
+
+    /** Sem mensagens deste tempo, a sessão acabou mesmo sem o `connected: false`. */
+    private const SESSION_SILENCE_SECONDS = 120;
 
     /**
      * Até quando uma trama `0x83` é da memória, as marcas como estavam quando a leitura começou e
@@ -112,6 +119,10 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
     {
         foreach ($this->sessions as $deviceKey => $session) {
             $deviceKey = (string)$deviceKey;
+            if ($this->clockNow() - ($this->heardAt[$deviceKey] ?? 0) > self::SESSION_SILENCE_SECONDS) {
+                unset($this->sessions[$deviceKey]);
+                continue;
+            }
             if ($session['readAt'] !== null && $this->clockNow() >= $session['readAt']) {
                 $this->sessions[$deviceKey]['readAt'] = null;
                 $this->readMemory($deviceKey);
@@ -148,17 +159,23 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
         $data = is_array($message['payload'] ?? null) ? $message['payload'] : [];
         $offset = is_int($message['tzOffsetMinutes'] ?? null) ? $message['tzOffsetMinutes'] : 0;
+        $this->heardAt[$context->deviceKey] = $this->clockNow();
         match ($message['kind'] ?? null) {
             'session' => $this->session($context, ($data['connected'] ?? false) === true, $offset),
             'frame' => $this->frame($context, (string)($data['hex'] ?? ''), $offset),
-            'command_result' => $this->downlinks->delivered(
-                $context->deviceKey,
-                (string)($data['dedupeKey'] ?? ''),
-                ($data['ok'] ?? false) === true,
-                (string)($data['error'] ?? ''),
-            ),
+            'command_result' => $this->commandResult($context, $data),
             default => null,
         };
+    }
+
+    /** @param array<string, mixed> $data */
+    private function commandResult(GattDeviceContext $context, array $data): void
+    {
+        $error = (string)($data['error'] ?? '');
+        $this->downlinks->delivered($context->deviceKey, (string)($data['dedupeKey'] ?? ''), ($data['ok'] ?? false) === true, $error);
+        if ($error === GattDownlinks::NOT_CONNECTED) {
+            unset($this->sessions[$context->deviceKey]);
+        }
     }
 
     private function session(GattDeviceContext $context, bool $connected, int $offsetMinutes): void
@@ -249,13 +266,16 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
         if ($function === 0x85 && $this->ecg->countdown($deviceKey, $now)) {
             $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'startEcg', [], 0, $offsetMinutes);
         } elseif ($function === 0x87) {
-            $this->ecg->samples($deviceKey, $data, $now);
+            $this->ecg->samples($deviceKey, $data);
         } elseif ($function === 0x86 && strlen($data) >= 9) {
             $end = $this->ecg->end($deviceKey, $now);
             if ($end['answer']) {
                 $this->downlinks->sendDirect($deviceKey, $context->gatewayKey, 'acknowledgeEcg', [], 0, $offsetMinutes);
             }
             if ($end['samples'] === null) {
+                if ($end['answer']) {
+                    Logger::channel('hub')->warning("ECG de {$deviceKey} interrompido: " . ($end['count'] ?? 0) . ' amostras');
+                }
                 return;
             }
             // Estado, FC, um byte a zero, ano, mês, dia, hora, minuto e grupo.

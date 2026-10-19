@@ -34,3 +34,6 @@ o registo de 8 B tal como veio — e só publica o que não estiver lá. Duas
 medições no mesmo minuto são duas, porque o valor faz parte da chave; duas no
 mesmo minuto, no mesmo sítio e com o mesmo valor contam como uma. A lista não
 expira, porque sem ela as 30 voltavam a sair.
+
+A hora do aparelho converte-se com o fuso do gateway no momento da leitura: uma
+medição feita antes de uma mudança de hora e lida depois fica com uma hora de erro.

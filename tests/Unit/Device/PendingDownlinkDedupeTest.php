@@ -33,6 +33,18 @@ final class PendingDownlinkDedupeTest extends TestCase
         self::assertCount(2, $queue->pendingFor(self::DEVICE));
     }
 
+    /** Registar e pôr em linha saem pela ordem em que se pediram, mesmo no mesmo segundo. */
+    public function testCommandsQueuedInTheSameSecondKeepTheirOrder(): void
+    {
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $operations = ['registerScaleUser:u-1', 'registerScaleUser:u-2', 'deleteScaleUser:u-3', 'selectScaleUser:u-1'];
+        foreach ($operations as $bytes) {
+            $queue->enqueue(self::DEVICE, $bytes, null, 300);
+        }
+
+        self::assertSame($operations, array_map(static fn ($downlink): string => $downlink->bytes, $queue->pendingFor(self::DEVICE)));
+    }
+
     /** O mesmo comando com o mesmo valor continua a ser um só: é para isso que a fila junta. */
     public function testTheSameCommandWithTheSameValueStaysOne(): void
     {
