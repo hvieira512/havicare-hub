@@ -39,8 +39,8 @@ final class JoyTechOximeterBridge extends MqttBridgeBase implements DispatchesQu
     /** Menos do que isto é o dedo a entrar e a sair. */
     private const MIN_DURATION_SECONDS = 3.0;
 
-    /** Na barra, o aparelho ainda à procura do pulso. */
-    private const SEARCHING_BIT = 0x20;
+    /** A barra de uma leitura vai de 0 a 9; à procura do pulso traz o `0x20`, e fica acima. */
+    private const MAX_BAR = 9;
 
     /** @var array<string, array{context: GattDeviceContext, firstAt: float, lastAt: float, samples: list<array{float, int, int}>}> */
     private array $measurements = [];
@@ -131,7 +131,7 @@ final class JoyTechOximeterBridge extends MqttBridgeBase implements DispatchesQu
         }
 
         [$spo2, $pulse, , $bar] = array_values(unpack('C4', $frame['data']) ?: []);
-        if ($spo2 === 0 || $pulse === 0 || ($bar & self::SEARCHING_BIT) !== 0) {
+        if ($spo2 === 0 || $spo2 > 100 || $pulse === 0 || $bar > self::MAX_BAR) {
             return;
         }
 

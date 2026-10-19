@@ -97,6 +97,20 @@ final class JoyTechOximeterBridgeTest extends TestCase
         self::assertSame([], $mqtt->telemetry);
     }
 
+    /** Fora do que o aparelho mede — SpO2 acima de 100, barra fora de 0 a 9 — não é leitura. */
+    public function testValuesOutsideTheDeviceRangeAreNotReadings(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+        $this->stream($bridge, 4.0, JoyTechFrame::encode(0x88, pack('C5', 127, 84, 0, 9, 0)));
+        $this->stream($bridge, 4.0, JoyTechFrame::encode(0x88, pack('C5', 98, 84, 0, 0x4a, 0)));
+
+        $this->now += 6;
+        $bridge->dispatchQueued();
+
+        self::assertSame([], $mqtt->telemetry);
+    }
+
     /** Depois de uma medição, o dedo de volta é outra. */
     public function testTheNextMeasurementIsANewOne(): void
     {

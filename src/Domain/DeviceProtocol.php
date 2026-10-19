@@ -24,6 +24,7 @@ final class DeviceProtocol
             'mf91' => 'veepoo-ble',
         ],
         'joytech' => [
+            'hc-6292b' => 'joytech-bp',
             'hc-3018b' => 'joytech-et',
             'hc-6679b' => 'joytech-bp-ecg',
             'hc-101' => 'joytech-spo2',
