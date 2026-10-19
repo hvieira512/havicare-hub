@@ -7,6 +7,7 @@ namespace Hub\Ingress\Mqtt;
 use Hub\Ingress\Mqtt\Gateway\RedisObservationStateStore;
 use Hub\Ingress\Mqtt\JoyTech\BloodPressureHistoryMarks;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechBpBridge;
+use Hub\Ingress\Mqtt\JoyTech\JoyTechOximeterBridge;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechThermometerBridge;
 use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
 use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
@@ -49,6 +50,7 @@ final class MqttIngressFactory
         $runner->add('Lefu scale ingress', self::lefu($config, $services, $subscribers, $gatewayTopicFilter), 'lefu');
         $runner->add('JoyTech blood pressure ingress', self::joyTech($config, $services, $subscribers, $gatewayTopicFilter), 'joytech');
         $runner->add('JoyTech thermometer ingress', self::joyTechThermometer($config, $services, $subscribers, $gatewayTopicFilter), 'joytech-thermometer');
+        $runner->add('JoyTech oximeter ingress', self::joyTechOximeter($config, $services, $subscribers, $gatewayTopicFilter), 'joytech-oximeter');
 
         $runner->add('Qinglanst ingress', self::qinglanst($config, $services), 'qinglanst');
         $runner->add('Tuya ingress', self::tuya($config, $services, $loop), 'tuya');
@@ -206,6 +208,34 @@ final class MqttIngressFactory
                 commercialModelResolver: $services->commercialModelResolver,
                 denylist: $services->denylist,
                 seen: new RecentMeasurementKeys($services->redis),
+            ),
+        );
+    }
+
+    /** @param array<string, mixed> $config */
+    private static function joyTechOximeter(
+        array $config,
+        HubServices $services,
+        SubscriberFactory $subscribers,
+        string $topicFilter,
+    ): ?MqttIngress {
+        if (!$config['gateway']['enabled']) {
+            return null;
+        }
+
+        return $subscribers->bind(
+            'joytech-oximeter-sub',
+            $topicFilter,
+            fn ($subscriber, $reconnect) => new JoyTechOximeterBridge(
+                $subscriber,
+                $services->whitelist,
+                $services->mqttBridge,
+                $services->dataAccess->gatewayDeviceLinks,
+                $topicFilter,
+                $reconnect,
+                $services->deviceStore,
+                commercialModelResolver: $services->commercialModelResolver,
+                denylist: $services->denylist,
             ),
         );
     }

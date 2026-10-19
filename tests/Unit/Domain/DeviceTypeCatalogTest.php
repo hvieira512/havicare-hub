@@ -42,7 +42,7 @@ final class DeviceTypeCatalogTest extends TestCase
 
     public function testOnlyTheRelayedTypesLinkToAGateway(): void
     {
-        self::assertSame(['diaper_sensor', 'bracelet', 'scale', 'blood_pressure_monitor', 'thermometer'], DeviceTypeCatalog::linkedToGateway());
+        self::assertSame(['diaper_sensor', 'bracelet', 'scale', 'blood_pressure_monitor', 'thermometer', 'pulse_oximeter'], DeviceTypeCatalog::linkedToGateway());
     }
 
     /** O gateway identifica-se por MAC e leva SIM: é o cartão dele que faz o backhaul. */

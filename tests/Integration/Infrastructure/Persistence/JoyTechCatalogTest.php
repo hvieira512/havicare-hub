@@ -6,6 +6,7 @@ namespace Tests\Integration\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\JoyTechCatalog;
 use Hub\Infrastructure\Persistence\Migration\JoyTechEcgMonitorCatalog;
+use Hub\Infrastructure\Persistence\Migration\JoyTechOximeterCatalog;
 use Hub\Infrastructure\Persistence\Migration\JoyTechThermometerCatalog;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -17,11 +18,12 @@ final class JoyTechCatalogTest extends MysqlDashboardTestCase
         $pdo = $this->createDashboardDatabase()->pdo();
         $pdo->exec("DELETE m FROM models m JOIN suppliers s ON s.id = m.supplier_id WHERE s.name = 'JoyTech'");
 
-        foreach ([new JoyTechCatalog(), new JoyTechThermometerCatalog(), new JoyTechEcgMonitorCatalog(), new JoyTechCatalog(), new JoyTechThermometerCatalog(), new JoyTechEcgMonitorCatalog()] as $migration) {
+        foreach ([new JoyTechCatalog(), new JoyTechThermometerCatalog(), new JoyTechEcgMonitorCatalog(), new JoyTechOximeterCatalog(), new JoyTechCatalog(), new JoyTechThermometerCatalog(), new JoyTechEcgMonitorCatalog(), new JoyTechOximeterCatalog()] as $migration) {
             $migration->up($pdo);
         }
 
         self::assertSame([
+            ['HC-101', 'HC-101', 'pulse_oximeter', '905f5c5c9c5d86b12794db17a4aa682b.jpg'],
             ['HC-3018B', 'HC-3018B', 'thermometer', '82f686a2fa076ea0bebc7e7cb7a9d676.jpg'],
             ['HC-6292B', 'HC-6292B', 'blood_pressure_monitor', 'cbae0ad7a44f97f1d4993e551e03a28b.jpg'],
             ['HC-6679B', 'HC-6679B', 'blood_pressure_monitor', '596253ec02242209fd77291087cc18f6.jpg'],

@@ -129,5 +129,17 @@
         },
         "sim": false,
         "gatewayLinks": true
+    },
+    "pulse_oximeter": {
+        "label": "Oxímetro",
+        "icon": "fa-droplet",
+        "identity": {
+            "field": "deviceId",
+            "label": "MAC",
+            "help": "Endereço MAC canónico, sem separadores (12 caracteres hexadecimais).",
+            "placeholder": "748b34838278"
+        },
+        "sim": false,
+        "gatewayLinks": true
     }
 }

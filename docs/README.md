@@ -60,6 +60,7 @@ com as instâncias de desenvolvimento e produção estão no
 | [22 — Balança de análise corporal](22-balanca.md) | Unique Scales CF632: protocolo Torre por GATT, através do gateway da Havicare |
 | [23 — Tensiómetro de braço](23-tensiometro.md) | JoyTech HC-6292B e HC-6679B: protocolo BP por GATT, através do gateway da Havicare, a memória sem repetições e o ECG |
 | [24 — Termómetro de testa](24-termometro.md) | JoyTech HC-3018B: a hora pedida pelo aparelho e as últimas 30 medições a cada ligação |
+| [25 — Oxímetro de dedo](25-oximetro.md) | JoyTech HC-101: a leitura corrente 11 vezes por segundo, e uma medição quando o dedo sai |
 
 ### Contratos públicos
 
@@ -113,7 +114,7 @@ fonte primária para o que não estiver coberto nesta documentação.
 | [Zayata](fornecedores/Zayata/) | Dispensador de comprimidos | [19](19-dispensador-de-comprimidos.md) |
 | PST | Pulseira SOS Wi-Fi | [21](21-pulseira-sos-wifi.md) — **sem documentação do fabricante** |
 | [Unique Scales](fornecedores/UniqueScales/) | Balança de análise corporal | [22](22-balanca.md) |
-| [JoyTech](fornecedores/JoyTech/) | Tensiómetro de braço e termómetro de testa | [23](23-tensiometro.md), [24](24-termometro.md) |
+| [JoyTech](fornecedores/JoyTech/) | Tensiómetro de braço, termómetro de testa e oxímetro de dedo | [23](23-tensiometro.md), [24](24-termometro.md), [25](25-oximetro.md) |
 
 O [`model-capabilities.xlsx`](fornecedores/model-capabilities.xlsx) fica na raiz
 porque cruza a frota toda, e a análise de tramas do gateway está em

@@ -10,6 +10,7 @@ use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\Definition\NcsCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\RadarCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\ScaleCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\PulseOximeterCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\ThermometerCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\GatewayCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\BloodPressureMonitorCapabilityDefinitions;
@@ -68,6 +69,7 @@ final class CapabilityCatalog
             ScaleCapabilityDefinitions::all(),
             BloodPressureMonitorCapabilityDefinitions::all(),
             ThermometerCapabilityDefinitions::all(),
+            PulseOximeterCapabilityDefinitions::all(),
         );
     }
 
@@ -235,6 +237,7 @@ final class CapabilityCatalog
             ScaleCapabilityDefinitions::publishers(),
             BloodPressureMonitorCapabilityDefinitions::publishers(),
             ThermometerCapabilityDefinitions::publishers(),
+            PulseOximeterCapabilityDefinitions::publishers(),
         ];
 
         foreach ($files as $publishers) {

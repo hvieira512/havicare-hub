@@ -116,6 +116,11 @@ final class ProtocolRegistry
                 'deviceType' => 'thermometer',
                 'supportsConfigCatalog' => false,
             ],
+            'joytech-spo2' => [
+                'label' => 'JoyTech',
+                'deviceType' => 'pulse_oximeter',
+                'supportsConfigCatalog' => false,
+            ],
             'zayata-m228' => [
                 'label' => 'Zayata',
                 'deviceType' => 'pill_dispenser',

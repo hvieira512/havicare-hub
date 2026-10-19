@@ -8,7 +8,7 @@ final class DeviceProtocol
 {
     /**
      * Os fornecedores cujos modelos não partilham um protocolo, como a MOKO (gateways e pulseiras),
-     * a Wonlex (relógios TCP e a MF91 BLE) e a JoyTech (tensiómetro e termómetro). Chaves em
+     * a Wonlex (relógios TCP e a MF91 BLE) e a JoyTech (tensiómetro, termómetro e oxímetro). Chaves em
      * minúsculas.
      *
      * @var array<string, array<string, string>>
@@ -26,6 +26,7 @@ final class DeviceProtocol
         'joytech' => [
             'hc-3018b' => 'joytech-et',
             'hc-6679b' => 'joytech-bp-ecg',
+            'hc-101' => 'joytech-spo2',
         ],
     ];
 

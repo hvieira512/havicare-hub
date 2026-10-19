@@ -284,8 +284,8 @@ seu valor de consulta.
 ## 7. O gateway BLE da Havicare
 
 O MOKO só ouve anúncios. Para os aparelhos que é preciso ligar — a pulseira
-Veepoo, a [balança](22-balanca.md), o [tensiómetro](23-tensiometro.md) e o
-[termómetro](24-termometro.md) — há um gateway por software da Havicare (modelo
+Veepoo, a [balança](22-balanca.md), o [tensiómetro](23-tensiometro.md), o
+[termómetro](24-termometro.md) e o [oxímetro](25-oximetro.md) — há um gateway por software da Havicare (modelo
 `Havicare BLE Gateway`), que se liga ao aparelho, reencaminha o que ele manda e
 escreve o que o hub lhe pede. Usa o mesmo espaço de tópicos:
 
@@ -310,8 +310,8 @@ Todas as mensagens têm o mesmo envelope:
 | `payload` | Os dados do `kind` |
 | `tzOffsetMinutes` | O fuso da máquina do gateway, que data o que vem na hora do aparelho |
 
-Cada ponte só lê a sua `source`; a JoyTech separa o tensiómetro do termómetro pelo
-`device.model` (`DBP…` e `DET…`). Dois `kind` são comuns a todas:
+Cada ponte só lê a sua `source`; a JoyTech separa o tensiómetro, o termómetro e o
+oxímetro pelo `device.model` (`DBP…`, `DET…` e `XM…`). Dois `kind` são comuns a todas:
 
 | `kind` | `payload` | O que o hub faz |
 |---|---|---|

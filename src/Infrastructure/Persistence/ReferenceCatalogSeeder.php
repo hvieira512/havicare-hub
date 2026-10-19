@@ -46,6 +46,7 @@ final class ReferenceCatalogSeeder
         ['JoyTech', 'HC-6292B', 'HC-6292B', 'blood_pressure_monitor', 'cbae0ad7a44f97f1d4993e551e03a28b.jpg'],
         ['JoyTech', 'HC-6679B', 'HC-6679B', 'blood_pressure_monitor', '596253ec02242209fd77291087cc18f6.jpg'],
         ['JoyTech', 'HC-3018B', 'HC-3018B', 'thermometer', '82f686a2fa076ea0bebc7e7cb7a9d676.jpg'],
+        ['JoyTech', 'HC-101', 'HC-101', 'pulse_oximeter', '905f5c5c9c5d86b12794db17a4aa682b.jpg'],
     ];
 
     /**

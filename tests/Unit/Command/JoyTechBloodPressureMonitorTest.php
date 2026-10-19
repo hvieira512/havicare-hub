@@ -48,6 +48,13 @@ final class JoyTechBloodPressureMonitorTest extends TestCase
         self::assertSame([], DeviceConfigurationCatalog::configsForProtocol('joytech-et'));
     }
 
+    /** O oxímetro também só mede: o oxigénio e o pulso. */
+    public function testTheOximeterOnlyMeasuresOxygenAndPulse(): void
+    {
+        self::assertSame(['blood_oxygen', 'heart_rate'], SupplierCapabilityTemplate::keysForModel('JoyTech', 'HC-101', 'pulse_oximeter'));
+        self::assertSame([], DeviceConfigurationCatalog::configsForProtocol('joytech-spo2'));
+    }
+
     public function testReadingTheMemoryIsAnActionQueuedByItsOperation(): void
     {
         self::assertNull(DeviceConfigurationCatalog::validate('joytech-bp', 'read_blood_pressure_history', []));
