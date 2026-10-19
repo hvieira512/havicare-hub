@@ -168,6 +168,46 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame([], self::failures($mqtt));
     }
 
+    /** Um comando que o gateway não conseguiu entregar fica falhado, com a razão dele. */
+    public function testACommandTheGatewayCouldNotDeliverFailsWithItsReason(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('config:find_device');
+        $marked = [];
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->method('markLatestCommand')->willReturnCallback(
+            static function (string $imei, string $nativeType, array $fields) use (&$marked): void {
+                $marked[] = $fields;
+            }
+        );
+        $bridge = $this->bridge($mqtt, $queue, $store);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, self::commandResult('config:find_device', ['ok' => false, 'error' => 'disconnected']));
+
+        self::assertSame([], $queue->operations());
+        $last = end($marked);
+        self::assertSame('failed', $last['status'] ?? null);
+        self::assertSame('disconnected', $last['error'] ?? null);
+        self::assertSame([], self::failures($mqtt), 'não é uma medição');
+    }
+
+    /** Numa medição, a razão do gateway chega ao ecrã em vez de «sem leitura». */
+    public function testAMeasurementTheGatewayCouldNotDeliverFailsWithItsReason(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $queue = new FakeQueue();
+        $queue->add('measure.heartRate.start');
+        $bridge = $this->bridge($mqtt, $queue);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session());
+        $bridge->handleReceivedMessage(self::TOPIC, self::commandResult('measure.heartRate.start', ['ok' => false, 'error' => 'not_connected']));
+
+        self::assertSame([], $queue->operations());
+        self::assertSame(['reason' => 'not_connected'], self::failures($mqtt)[0]['payload']['error']);
+    }
+
     /**
      * Fora do pulso a pulseira responde com tramas a zero e o gateway confirma; quem sabe o que conta
      * como leitura é o hub, e não publicou nenhuma.
@@ -352,6 +392,17 @@ final class BridgeFailedMeasurementTest extends TestCase
                 'operation' => $operation,
                 'outcome' => $outcome,
             ], static fn(mixed $v): bool => $v !== null),
+        ], JSON_THROW_ON_ERROR);
+    }
+
+    /** @param array<string, mixed> $fields */
+    private static function commandResult(string $operation, array $fields): string
+    {
+        return json_encode([
+            'source' => 'veepoo-node',
+            'kind' => 'command_result',
+            'device' => ['mac' => self::BRACELET],
+            'payload' => ['dedupeKey' => $operation . '-key', 'operation' => $operation] + $fields,
         ], JSON_THROW_ON_ERROR);
     }
 

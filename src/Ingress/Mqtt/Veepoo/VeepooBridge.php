@@ -181,8 +181,8 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
 
         // A sessão aberta é quando a pulseira é alcançável, e é aqui que a fila é drenada.
         if (($message['kind'] ?? null) === 'session') {
-            // A sessão repete-se enquanto a ligação BLE durar, e a perda chega como não autenticada.
-            if (($message['payload']['authenticated'] ?? true) === false) {
+            // A sessão repete-se enquanto a ligação BLE durar; um gateway antigo só manda o `authenticated`.
+            if (($message['payload']['connected'] ?? true) === false || ($message['payload']['authenticated'] ?? true) === false) {
                 unset($this->sessionGateway[$deviceKey]);
                 $this->presence->markOffline($deviceKey, $device, $licenseId, $company);
                 return;
@@ -227,18 +227,21 @@ final class VeepooBridge extends MqttBridgeBase implements DispatchesQueued
         }
 
         if (($message['kind'] ?? null) === 'command_result') {
-            // Executar não é medir: sem valor nem razão da pulseira, o pedido falha.
-            if ((string)($message['payload']['outcome'] ?? '') === self::SILENT_OUTCOME) {
-                $this->fail(
-                    $context,
-                    self::SILENT_OUTCOME,
-                    (string)($message['payload']['operation'] ?? '') ?: null,
-                );
+            $operation = (string)($message['payload']['operation'] ?? '');
+            // Executar não é medir: sem valor nem razão da pulseira, o pedido falha. Um gateway
+            // antigo só manda o `outcome`.
+            $outcome = (string)($message['payload']['outcome'] ?? '');
+            if (($message['payload']['ok'] ?? null) === false || $outcome === self::SILENT_OUTCOME) {
+                $reason = (string)($message['payload']['error'] ?? '') ?: $outcome ?: 'write_failed';
+                if (str_starts_with($operation, 'measure.')) {
+                    $this->fail($context, $reason, $operation);
+                } else {
+                    $this->downlinkDispatcher->failPending($deviceKey, $operation, $reason);
+                }
 
                 return;
             }
 
-            $operation = (string)($message['payload']['operation'] ?? '');
             // Responder não é medir: fora do pulso responde com zeros, e o que conta como
             // leitura decide-se deste lado.
             if (str_starts_with($operation, 'measure.')) {

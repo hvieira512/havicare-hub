@@ -57,6 +57,23 @@ final class BridgeSessionTest extends TestCase
         self::assertCount(1, $status);
     }
 
+    /** O gateway diz a ligação em `connected`; o `authenticated` sozinho é o de um gateway antigo. */
+    public function testASessionThatIsNoLongerConnectedAnnouncesTheDisconnection(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $bridge->handleReceivedMessage(self::TOPIC, self::session(true));
+        $bridge->handleReceivedMessage(self::TOPIC, json_encode([
+            'source' => 'veepoo-node',
+            'kind' => 'session',
+            'device' => ['mac' => self::BRACELET],
+            'payload' => ['connected' => false],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertCount(1, self::eventsOfType($mqtt, 'device.disconnected'));
+    }
+
     /** Uma sessão nova depois de a perder volta a ser um acontecimento. */
     public function testConnectingAgainIsAnnouncedAgain(): void
     {
