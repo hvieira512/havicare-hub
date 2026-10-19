@@ -62,18 +62,23 @@ final class DeviceConfigurationLifecycleRepository
             $insertChange = $this->pdo->prepare('
                 INSERT INTO device_configuration_changes (
                     change_id, imei, config_key, desired_revision, desired_payload,
-                    sync_status, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    sync_status, effective_payload, confirmed_at, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ');
+            // O histórico leva a marca do áudio e não o áudio: quem lê uma revisão quer
+            // saber o que mudou. O estado corrente, abaixo, guarda-o por inteiro.
+            $history = $this->encode($this->voiceDataMarker->mark($desired));
+            // Sem nada a escrever no aparelho, a alteração vale logo.
+            $applied = $operations === [];
             $insertChange->execute([
                 $changeId,
                 $imei,
                 $genericKey,
                 $revision,
-                // O histórico leva a marca do áudio e não o áudio: quem lê uma revisão quer
-                // saber o que mudou. O estado corrente, abaixo, guarda-o por inteiro.
-                $this->encode($this->voiceDataMarker->mark($desired)),
-                $operations === [] ? 'confirmed' : 'pending_delivery',
+                $history,
+                $applied ? 'confirmed' : 'pending_delivery',
+                $applied ? $history : null,
+                $applied ? $now : null,
                 $now,
                 $now,
             ]);
@@ -257,7 +262,8 @@ final class DeviceConfigurationLifecycleRepository
     }
 
     /**
-     * O valor confirmado de cada chave pedida; as que o aparelho ainda não confirmou ficam de fora.
+     * O último valor que o aparelho confirmou de cada chave pedida, mesmo com outro a caminho; as
+     * que nunca confirmou ficam de fora.
      *
      * @param list<string> $keys
      * @return array<string, array<string, mixed>>
@@ -270,8 +276,9 @@ final class DeviceConfigurationLifecycleRepository
 
         $stmt = $this->pdo->prepare('
             SELECT config_key, effective_payload FROM device_configuration_changes
-            WHERE imei = ? AND superseded_at IS NULL AND effective_payload IS NOT NULL
+            WHERE imei = ? AND effective_payload IS NOT NULL
               AND config_key IN (' . implode(', ', array_fill(0, count($keys), '?')) . ')
+            ORDER BY desired_revision
         ');
         $stmt->execute([$imei, ...$keys]);
 

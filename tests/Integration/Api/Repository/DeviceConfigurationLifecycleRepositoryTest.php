@@ -99,6 +99,40 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         self::assertSame(1, (int)$db->configurationLifecycle->currentForImei('AD8A613B0493')[0]['desired_revision']);
     }
 
+    /** Mudar o nome de um utilizador da balança não escreve nada nela, e vale logo. */
+    public function testAChangeWithoutOperationsIsAppliedAtOnce(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $users = ['items' => [['id' => 'u-1', 'name' => 'Ana']], 'onlineUserId' => 'u-1'];
+
+        $db->configurationLifecycle->stage('cfe908067329', 'scale_users', $users, [], []);
+
+        self::assertSame(['scale_users' => $users], $db->configurationLifecycle->effectivePayloads('cfe908067329', ['scale_users']));
+    }
+
+    /** Enquanto a alteração seguinte espera pelo aparelho, vale a que ele já tem. */
+    public function testThePreviousValueHoldsWhileTheNextIsOnItsWay(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db->configurationLifecycle->recordRead('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 20], 'qinglanst-radar');
+        $db->configurationLifecycle->stage('AD8A613B0493', 'fall_alarm', ['afterSeconds' => 60], [[
+            'nativeKey' => 'fall_alarm',
+            'protocol' => 'qinglanst-radar',
+            'command' => 'fall_alarm',
+            'payload' => ['afterSeconds' => 60],
+            'confirmationMode' => 'execution_ack',
+            'operationId' => 'op-fall',
+        ]], [[
+            'operationId' => 'op-fall',
+            'nativeKey' => 'fall_alarm',
+            'nativeType' => 'fall_alarm',
+            'protocol' => 'qinglanst-radar',
+            'confirmationMode' => 'execution_ack',
+        ]]);
+
+        self::assertSame(['fall_alarm' => ['afterSeconds' => 20]], $db->configurationLifecycle->effectivePayloads('AD8A613B0493', ['fall_alarm']));
+    }
+
     /** Uma alteração a caminho do aparelho não é apagada pelo que se leu antes de ela chegar. */
     public function testAReadDoesNotOverwriteAChangeOnItsWay(): void
     {
