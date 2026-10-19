@@ -251,6 +251,10 @@ export const fieldLabel = (key) =>
         rrIntervalMilliseconds: "Intervalo RR",
         frequencyHz: "Amostragem",
         sampleCount: "Amostras",
+        irregularHeartbeat: "Batimento irregular",
+        memoryGroup: "Grupo de memória",
+        fromHistory: "Da memória",
+        site: "Local",
         durationMinutes: "Duração",
         startTime: "Início",
         endTime: "Fim",
@@ -276,6 +280,7 @@ export const fieldUnit = (key) => fieldLabel(key).match(/\(([^)]+)\)\s*$/)?.[1] 
  * `high` mudam de sentido entre uma frequência cardíaca e uma bateria.
  */
 const FIELD_VALUE_LABELS = {
+    site: { forehead: "Testa", ear: "Ouvido" },
     // O bit dos relógios e a enumeração do dispensador, que no contrato partilham o campo.
     chargingState: {
         0: "Não está a carregar",

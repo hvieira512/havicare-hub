@@ -15,7 +15,7 @@ test("o cartão de ECG mostra a frequência que o exame apurou", () => {
     });
 
     assert.equal(card.value, "68 bpm");
-    assert.equal(card.details, "QTc: 410 ms · VFC: 35 ms · Amostragem: 250 Hz");
+    assert.equal(card.details, "QTc: 410 ms · VFC: 35 ms · Amostragem: 250 Hz · Amostras: 16000");
 });
 
 /** Nada aparece em inglês na dashboard, e os detalhes destes dois são nomes de contrato. */

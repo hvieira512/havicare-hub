@@ -126,10 +126,14 @@ export function cardIcon(type) {
  * O tamanho do lote, que é o que há a dizer de uma onda sem escalar nenhum. O `sampleCount`
  * vem primeiro: o `VeepooBridge::forDashboard()` troca as amostras por ele antes de guardar.
  */
-function sampleCount(data) {
-    const count = Number.isFinite(data?.sampleCount)
+function sampleTotal(data) {
+    return Number.isFinite(data?.sampleCount)
         ? data.sampleCount
         : (Array.isArray(data?.samples) ? data.samples.length : 0);
+}
+
+function sampleCount(data) {
+    const count = sampleTotal(data);
 
     return count === 0 ? "Sem amostras" : `${count} amostras`;
 }
@@ -203,6 +207,7 @@ const UPLINK_CARD_RENDERERS = {
     }),
     blood_pressure: (data) => ({
         value: `${data.systolicMmHg ?? "-"} / ${data.diastolicMmHg ?? "-"} mmHg`,
+        details: compactDetails(data, ["irregularHeartbeat", "memoryGroup", "fromHistory"]),
     }),
     blood_oxygen: (data) => ({
         value: `${data.spo2Percent ?? "-"}%`,
@@ -218,6 +223,7 @@ const UPLINK_CARD_RENDERERS = {
                 : data.surfaceCelsius != null
                     ? `${data.surfaceCelsius} °C na pele`
                     : "-",
+        details: compactDetails(data, ["site"]),
     }),
     ambient_temperature: (data) => ({
         value: data.environmentCelsius != null ? `${data.environmentCelsius} °C` : "-",
@@ -424,7 +430,10 @@ const UPLINK_CARD_RENDERERS = {
         value: data?.heartRateBpm != null
             ? `${data.heartRateBpm} bpm`
             : sampleCount(data),
-        details: compactDetails(data, ["qtcMilliseconds", "hrvMilliseconds", "frequencyHz"]),
+        details: compactDetails(
+            { ...data, sampleCount: sampleTotal(data) || null },
+            ["qtcMilliseconds", "hrvMilliseconds", "frequencyHz", "sampleCount"],
+        ),
     }),
     // A VFC é um escalar em milissegundos e não uma série: mostra-se o número.
     hrv: (data) => ({
