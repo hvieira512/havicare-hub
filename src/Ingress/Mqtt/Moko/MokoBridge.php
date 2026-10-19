@@ -89,6 +89,11 @@ final class MokoBridge extends MqttBridgeBase
     private readonly ObservationStateStore $state;
     private readonly RelayPublisher $relay;
     private readonly GatewayPresence $gateways;
+
+    /** @var array<string, float> */
+    private array $relayingSeenAt = [];
+
+    private const RELAYING_SEEN_SECONDS = 60;
     private readonly MessageDecoder $messageDecoder;
     private readonly MonitMecsProDecoder $monitDecoder;
     private readonly MonitNormalizer $monitNormalizer;
@@ -99,6 +104,30 @@ final class MokoBridge extends MqttBridgeBase
     private readonly W6Normalizer $w6Normalizer;
 
     /** Diz se a mensagem é de outra ingestão: as tramas MOKO, em JSON ou TLV, nunca trazem `source`. */
+    /** Um gateway que reencaminha sessões GATT está vivo enquanto publica, como um MOKO. */
+    private function relayingGatewaySeen(string $gatewayMac): void
+    {
+        $gateway = $this->whitelist->resolve($gatewayMac);
+        if ($gateway === null || ($gateway['deviceType'] ?? '') !== 'gateway') {
+            return;
+        }
+
+        $deviceKey = (string)$gateway['imei'];
+        $this->gateways->touch($deviceKey);
+        // Reencaminha dezenas de tramas por segundo: o «visto» guarda-se de minuto a minuto.
+        $now = $this->clockNow();
+        if ($now - ($this->relayingSeenAt[$deviceKey] ?? -INF) >= self::RELAYING_SEEN_SECONDS) {
+            $this->relayingSeenAt[$deviceKey] = $now;
+            $this->deviceStore?->deviceSeen($deviceKey, [
+                'supplier' => (string)$gateway['supplier'], 'model' => (string)$gateway['model'],
+                'deviceType' => 'gateway', 'licenseId' => DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0),
+                'company' => (string)($gateway['company'] ?? 'null'),
+                'protocol' => 'havicare-ble-gateway', 'transport' => 'mqtt', 'online' => '1',
+            ]);
+        }
+        $this->gateways->markOnline($this->enrichWithCommercialName($gateway));
+    }
+
     private static function declaresForeignSource(string $payload): bool
     {
         if (!str_contains($payload, '"source"')) {
@@ -158,9 +187,10 @@ final class MokoBridge extends MqttBridgeBase
             return;
         }
 
-        // O `.../gw/{mac}/raw` é partilhado com gateways que não são MOKO: o que é de outra
-        // origem recusa-se em silêncio, sem aviso no log.
+        // O `.../gw/{mac}/raw` é partilhado com o gateway BLE da Havicare: o que ele reencaminha é
+        // das outras pontes, e daqui só sai que ele está vivo.
         if (self::declaresForeignSource($payload)) {
+            $this->relayingGatewaySeen($parsedTopic->gatewayMac);
             return;
         }
 

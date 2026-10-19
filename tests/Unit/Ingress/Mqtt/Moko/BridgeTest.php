@@ -38,6 +38,30 @@ final class BridgeTest extends TestCase
         self::assertSame([], $mqtt->telemetry);
     }
 
+    /**
+     * O gateway BLE da Havicare não fala MOKO, mas está vivo enquanto publica: o que ele reencaminha
+     * não é dele, e a presença é.
+     */
+    public function testTheHavicareGatewayIsOnlineWhileItRelays(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $now = 1000.0;
+        $bridge = $this->bridge($mqtt, true, static function () use (&$now): float {
+            return $now;
+        });
+        $relayed = json_encode(['source' => 'joytech-node', 'kind' => 'session', 'device' => ['mac' => '748b34838278']]) ?: '';
+
+        $bridge->handleReceivedMessage('havicare-hub/null/0/gw/bef341903987/raw', $relayed);
+        $bridge->handleReceivedMessage('havicare-hub/null/0/gw/bef341903987/raw', $relayed);
+
+        self::assertSame(['online'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
+        self::assertSame([], $mqtt->raw);
+
+        $now += 181;
+        $bridge->expireIdleGateways();
+        self::assertSame(['online', 'offline'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
+    }
+
     public function testAuthorizedLinkedSensorPublishesIndependentTelemetryAndDeduplicatesReplay(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -206,6 +230,7 @@ final class BridgeTest extends TestCase
         $whitelist = IngressFixtures::whitelist([
             'd48c49f7909c' => IngressFixtures::gateway('MKGW3'),
             'c5e390f30bce' => IngressFixtures::gateway('MKGW4'),
+            'bef341903987' => IngressFixtures::device('Havicare', 'BLE Gateway', 'gateway'),
             'eec5000202f9' => IngressFixtures::diaperSensor(),
         ]);
         return new MokoBridge(

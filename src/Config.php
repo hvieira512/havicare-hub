@@ -153,6 +153,8 @@ class Config
             'gateway' => [
                 'enabled' => !in_array(strtolower(trim((string)self::gatewayEnv('ENABLED', 'true'))), ['0', 'false', 'no', 'off'], true),
                 'topic_filter' => self::gatewayEnv('TOPIC_FILTER', 'havicare-hub/null/0/gw/+/raw'),
+                // A dev lê os gateways reais: com isto a `false`, não lhes escreve.
+                'commands_enabled' => !in_array(strtolower(trim((string)self::gatewayEnv('COMMANDS_ENABLED', 'true'))), ['0', 'false', 'no', 'off'], true),
                 'dedupe_ttl_seconds' => max(1, (int)self::gatewayEnv('DEDUPE_TTL_SECONDS', '5')),
                 'telemetry_refresh_seconds' => max(1, (int)self::gatewayEnv('TELEMETRY_REFRESH_SECONDS', '60')),
                 'idle_timeout_seconds' => max(10, (int)self::gatewayEnv('IDLE_TIMEOUT_SECONDS', '180')),

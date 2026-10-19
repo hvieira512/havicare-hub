@@ -80,6 +80,7 @@ final class HubServices
             $connections->build('pub'),
             trim((string)$config['mqtt']['topic_prefix'], '/'),
             static fn (): MqttClient => $connections->build('pub'),
+            gatewayCommands: (bool)$config['gateway']['commands_enabled'],
         );
 
         $locationEnricher = LocationEnricherFactory::create(

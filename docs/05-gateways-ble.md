@@ -298,6 +298,13 @@ O gateway identifica-se pelo tópico e o aparelho pelo `device.mac`; os dois tê
 estar registados e ligados um ao outro. Um aparelho por registar dá a notificação
 de «dispositivo por autorizar», a não ser que esteja na lista de bloqueados.
 
+O gateway está ligado enquanto publica: a ingestão MOKO, que lê o mesmo tópico,
+marca-o como um MOKO e dá-o por desligado ao fim do mesmo prazo sem mensagens. Sem
+aparelhos por perto, só um sinal de vida dele o mantém ligado.
+
+A instância de dev lê os gateways reais. Com `GATEWAY_COMMANDS_ENABLED=false` não
+lhes escreve nada ([capítulo 15](15-operacao.md)).
+
 ### O que sobe
 
 Todas as mensagens têm o mesmo envelope:
@@ -306,7 +313,7 @@ Todas as mensagens têm o mesmo envelope:
 |---|---|
 | `source` | Quem fala: `veepoo-node`, `lefu-torre-node` ou `joytech-node` |
 | `kind` | O tipo da mensagem |
-| `device` | `mac`, `model` e, quando o gateway o sabe, `firmware` |
+| `device` | `mac`, `model` e, quando o gateway os sabe, `firmware` e `rssiDbm`. O `rssiDbm` é o sinal da ligação entre os dois, e dá as barras do par na dashboard, como o de um MOKO |
 | `payload` | Os dados do `kind` |
 | `tzOffsetMinutes` | O fuso da máquina do gateway, que data o que vem na hora do aparelho |
 
@@ -320,7 +327,14 @@ oxímetro pelo `device.model` (`DBP…`, `DET…` e `XM…`). Dois `kind` são c
 
 Um comando pode ficar sem `command_result` — na pulseira, uma configuração que não
 pegou ou uma operação que o gateway não conhece. Fica na fila, e o hub volta a
-mandá-lo de 30 em 30 s até expirar.
+mandá-lo até expirar: de 30 em 30 s na pulseira, e de 40 em 40 s na balança e na
+JoyTech, mais do que os 30 s de um `await`.
+
+Na balança e na JoyTech sai **uma ordem de cada vez** por aparelho, pela ordem em
+que se pediram: a seguinte espera pelo `command_result` da anterior. Um
+`not_connected` não falha a ordem: o aparelho já se tinha ido, e ela espera pela
+ligação seguinte. Uma sessão de que não se ouve nada há 2 minutos acabou, mesmo sem
+o `connected: false`, e um hub reiniciado retoma-a pela primeira trama.
 
 Os outros são de cada aparelho: `frame` na balança e na JoyTech, com a trama em
 `hex`, e na pulseira `battery`, `measurement`, `ecg_wave`, `sleep` e
@@ -420,8 +434,12 @@ Havicare (secção 7), como a balança e a JoyTech.
 | `src/Ingress/Mqtt/Moko/BraceletTelemetry.php` | Bateria e movimento, comuns às duas |
 | `src/Ingress/Mqtt/Moko/ProximityTracker.php` | A janela de RSSI |
 | `src/Ingress/Mqtt/Gateway/RedisObservationStateStore.php` | De-duplicação, refrescamento, transições |
+| `src/Ingress/Mqtt/Gateway/GattDownlinks.php` | As escritas GATT da balança e da JoyTech: uma de cada vez, e o reenvio |
+| `src/Ingress/Mqtt/Gateway/GattDeviceContext.php` | O aparelho e o gateway, resolvidos uma vez por mensagem |
+| `src/Ingress/Mqtt/Lefu/` | A balança ([capítulo 22](22-balanca.md)) |
+| `src/Ingress/Mqtt/JoyTech/` | O tensiómetro, o termómetro e o oxímetro ([23](23-tensiometro.md) a [25](25-oximetro.md)) |
 
-As duas em `Gateway/` não são MOKO: o espaço de tópicos `gw/{mac}/raw` é do hub, e
+As de `Gateway/` não são MOKO: o espaço de tópicos `gw/{mac}/raw` é do hub, e
 o estado de observação serve qualquer gateway que repita — o MOKO relê o anúncio,
 o nó Veepoo relê o histórico do dia.
 

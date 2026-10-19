@@ -11,6 +11,7 @@ use Hub\Ingress\Mqtt\JoyTech\JoyTechOximeterBridge;
 use Hub\Ingress\Mqtt\JoyTech\JoyTechThermometerBridge;
 use Hub\Ingress\Mqtt\JoyTech\RecentMeasurementKeys;
 use Hub\Ingress\Mqtt\Lefu\LefuTorreBridge;
+use Hub\Ingress\Mqtt\Lefu\ScaleOnlineUsers;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use Hub\Ingress\Mqtt\Ncs\NcsBridge;
@@ -116,12 +117,6 @@ final class MqttIngressFactory
         );
     }
 
-    /**
-     * Pulseiras Veepoo entregues por um gateway BLE: partilham o tópico e o interruptor do MOKO,
-     * porque é o mesmo gateway que as serve.
-     *
-     * @param array<string, mixed> $config
-     */
     /** @param array<string, mixed> $config */
     private static function lefu(
         array $config,
@@ -149,6 +144,8 @@ final class MqttIngressFactory
                 denylist: $services->denylist,
                 scaleUsers: static fn (string $imei): ?array => $services->dataAccess->configurationLifecycle
                     ->effectivePayloads($imei, ['scale_users'])['scale_users'] ?? null,
+                onlineUsers: new ScaleOnlineUsers($services->redis),
+                historySeen: new RecentMeasurementKeys($services->redis, 'hub:lefu:history-seen', 500),
             ),
         );
     }
@@ -240,7 +237,12 @@ final class MqttIngressFactory
         );
     }
 
-    /** @param array<string, mixed> $config */
+    /**
+     * Pulseiras Veepoo entregues por um gateway BLE: partilham o tópico e o interruptor do MOKO,
+     * porque é o mesmo gateway que as serve.
+     *
+     * @param array<string, mixed> $config
+     */
     private static function veepoo(
         array $config,
         HubServices $services,

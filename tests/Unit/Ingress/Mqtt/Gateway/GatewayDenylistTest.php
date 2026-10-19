@@ -54,13 +54,48 @@ final class GatewayDenylistTest extends TestCase
         ], JSON_THROW_ON_ERROR));
     }
 
-    /** @param 'veepoo'|'lefu'|'joytech-bp'|'joytech-thermometer' $name */
-    private static function bridge(string $name, DeviceStoreContract $store, Denylist $denylist): MqttBridgeBase
+    /**
+     * O sinal com que o gateway ouve o aparelho é o da ligação entre os dois, como o de um MOKO.
+     *
+     * @dataProvider bridges
+     * @param 'veepoo'|'lefu'|'joytech-bp'|'joytech-thermometer' $bridge
+     */
+    public function testTheSignalTheGatewayReportsIsKeptForTheLink(string $bridge, string $source, string $model): void
+    {
+        $sightings = [];
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->method('recordGatewaySighting')->willReturnCallback(
+            static function (string $device, string $gateway, ?int $rssiDbm) use (&$sightings): void {
+                $sightings[] = [$device, $gateway, $rssiDbm];
+            }
+        );
+        $whitelist = [self::STRANGER => IngressFixtures::device('X', $model, match ($bridge) {
+            'veepoo' => 'bracelet',
+            'lefu' => 'scale',
+            'joytech-bp' => 'blood_pressure_monitor',
+            'joytech-thermometer' => 'thermometer',
+        })];
+
+        self::bridge($bridge, $store, new Denylist(), $whitelist)->handleReceivedMessage(self::TOPIC, json_encode([
+            'source' => $source,
+            'kind' => 'session',
+            'device' => ['mac' => self::STRANGER, 'model' => $model, 'rssiDbm' => -63],
+            'payload' => ['connected' => true, 'authenticated' => true],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame([[self::STRANGER, self::GATEWAY, -63]], $sightings);
+    }
+
+    /**
+     * @param 'veepoo'|'lefu'|'joytech-bp'|'joytech-thermometer' $name
+     * @param array<string, array<string, mixed>> $devices
+     */
+    private static function bridge(string $name, DeviceStoreContract $store, Denylist $denylist, array $devices = []): MqttBridgeBase
     {
         $subscriber = new FakeMqttSubscriber();
         $whitelist = IngressFixtures::whitelist([
             self::GATEWAY => IngressFixtures::device('Havicare', 'BLE Gateway', 'gateway'),
-        ]);
+        ] + $devices);
         $mqtt = new RecordingHubMqttBridge();
         $links = IngressFixtures::links();
         $topic = 'havicare-hub/null/0/gw/+/raw';

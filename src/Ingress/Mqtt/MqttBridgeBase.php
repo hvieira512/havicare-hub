@@ -43,6 +43,11 @@ abstract class MqttBridgeBase implements MqttIngress
 
     private int $lastUnauthorizedPruneAt = 0;
 
+    private const LINK_SIGNAL_SECONDS = 10.0;
+
+    /** @var array<string, float> */
+    private array $linkSignalAt = [];
+
     private \Closure $clock;
 
     public function __construct(
@@ -231,6 +236,7 @@ abstract class MqttBridgeBase implements MqttIngress
         }
 
         $device = $this->enrichWithCommercialName($device);
+        $this->recordLinkSignal((string)$device['imei'], (string)$gateway['imei'], $message);
 
         return new GattDeviceContext(
             (string)$device['imei'],
@@ -239,6 +245,26 @@ abstract class MqttBridgeBase implements MqttIngress
             (int)($device['licenseId'] ?? 0),
             (string)($device['company'] ?? 'null'),
         );
+    }
+
+    /**
+     * O sinal com que um gateway BLE ouve o aparelho, quando o diz em `device.rssiDbm`: é da ligação
+     * entre os dois, como o de um MOKO. Guarda-se de 10 em 10 s, porque há aparelhos a 11 tramas por segundo.
+     *
+     * @param array<string, mixed> $message
+     */
+    protected function recordLinkSignal(string $deviceKey, string $gatewayKey, array $message): void
+    {
+        $rssiDbm = $message['device']['rssiDbm'] ?? null;
+        if (!is_int($rssiDbm)) {
+            return;
+        }
+        $now = $this->clockNow();
+        if ($now - ($this->linkSignalAt[$deviceKey . '|' . $gatewayKey] ?? -INF) < self::LINK_SIGNAL_SECONDS) {
+            return;
+        }
+        $this->linkSignalAt[$deviceKey . '|' . $gatewayKey] = $now;
+        $this->deviceStore?->recordGatewaySighting($deviceKey, $gatewayKey, $rssiDbm);
     }
 
     private function subscribe(): void

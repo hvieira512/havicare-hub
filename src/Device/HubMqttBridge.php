@@ -28,6 +28,7 @@ class HubMqttBridge
         string $topicPrefix = '',
         ?callable $reconnectPublisher = null,
         ?MessageFanout $messages = null,
+        private readonly bool $gatewayCommands = true,
     ) {
         $this->publisher = $publisher;
         $this->topicPrefix = trim($topicPrefix, '/');
@@ -149,6 +150,11 @@ class HubMqttBridge
      */
     public function publishGatewayCommand(string $topic, array $payload): void
     {
+        // Desligado na instância que lê os gateways reais sem ser a que os comanda.
+        if (!$this->gatewayCommands) {
+            Logger::channel('hub')->debug("Gateway commands off: {$topic} " . (string)($payload['operation'] ?? ''));
+            return;
+        }
         $this->publish($topic, $payload, 'null', 0, 'cmd', false, MqttClient::QOS_AT_LEAST_ONCE);
     }
 

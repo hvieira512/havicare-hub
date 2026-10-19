@@ -307,6 +307,7 @@ visível no `systemctl status`.
 | `DASHBOARD_API_AUTH_REQUIRED` | `true` | **A autenticação inteira.** A `false`, tudo é administrador anónimo |
 | `NCS_ENABLED` | `true` | Ingestão Voerka |
 | `GATEWAY_ENABLED` | `true` | Ingestão de gateways e do que eles retransmitem por BLE. Chamava-se `MOKO_GATEWAY_ENABLED`, e esse nome continua a ser lido |
+| `GATEWAY_COMMANDS_ENABLED` | `true` | Se a instância escreve nos gateways BLE. A dev lê os gateways reais, e com isto a `false` não lhes manda nada: nem as ordens da dashboard nem as automáticas, como acertar o relógio |
 | `QINGLANST_ENABLED` | **`false`** | Ingestão de radares |
 | `LOCATION_RESOLUTION_ENABLED` | `true` | Localização sem GPS |
 | `RADIO_MAP_ENABLED` | `true` | Mapa privado — **desliga-se sozinho** sem `RADIO_MAP_HASH_KEY` |
