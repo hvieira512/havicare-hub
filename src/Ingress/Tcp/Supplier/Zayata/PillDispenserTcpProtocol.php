@@ -108,7 +108,7 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
             },
         ));
 
-        return new TcpMessage(decoded: $message->decoded, telemetry: $telemetry, responses: $message->responses);
+        return new TcpMessage(decoded: $message->decoded, telemetry: $telemetry, responses: $message->responses, repliesConfirmDelivery: true);
     }
 
     /**
@@ -119,7 +119,12 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
         // A confirmação primeiro, e o pacote de upgrade com ela: sem o `0x82` o aparelho corta.
         $responses = [];
         $type = (string)($decoded['type'] ?? '');
-        if (in_array($type, self::ACKNOWLEDGED_TYPES, true) && ($decoded['waivesReply'] ?? false) !== true) {
+        // Um corpo que não se decifrou não foi lido: confirmado, o aparelho apagava-o.
+        if (
+            in_array($type, self::ACKNOWLEDGED_TYPES, true)
+            && ($decoded['waivesReply'] ?? false) !== true
+            && ($decoded['decrypted'] ?? true) !== false
+        ) {
             $responses[] = new TcpResponse($this->acknowledgement($decoded));
         }
 

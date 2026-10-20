@@ -360,6 +360,7 @@ class DeviceHubServer
             $protocol->replyAccepted($message->decoded),
         );
 
+        $published = true;
         foreach ($message->telemetry as $event) {
             if (($event['type'] ?? null) === 'location' && $this->locationTelemetryEnricher !== null) {
                 $this->locationTelemetryEnricher->enrich($event)->then(
@@ -372,8 +373,14 @@ class DeviceHubServer
                     }
                 );
             } else {
-                $this->publishTelemetryEvent($session, $this->withRunout($session, $event));
+                $published = $this->publishTelemetryEvent($session, $this->withRunout($session, $event)) && $published;
             }
+        }
+
+        // Sem resposta, o aparelho guarda o evento e volta a mandá-lo.
+        if (!$published && $message->repliesConfirmDelivery) {
+            Logger::channel('hub')->warning("Reply withheld until the event is published IMEI={$session->imei}");
+            return;
         }
 
         foreach ($message->responses as $response) {

@@ -239,6 +239,11 @@ São o coração da integração e chegam em pacotes `0x03`.
 > segunda oportunidade nem histórico a pedir — um `0x83` enviado sobre um evento
 > que o hub não conseguiu guardar perde a toma para sempre.
 
+Por isso o hub só confirma um pacote do M228 depois de publicar tudo o que ele
+trouxe. Se uma publicação falha, ou se o corpo não se decifra, não responde, e o
+aparelho guarda o evento e volta a mandá-lo. A garantia vai até o cliente MQTT
+aceitar a mensagem sem erro; o PUBACK do broker não se espera.
+
 | TAG | Campo | Tipo | Valores |
 |---|---|---|---|
 | `0xC201` | identificador do alarme | INT8U | 0–8, para os alarmes 1 a 9 |
