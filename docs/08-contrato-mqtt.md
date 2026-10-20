@@ -279,8 +279,8 @@ eventos guardados no histórico da dashboard levam-na igual.
 | `device_fault` | `fault` | dispensador | `alert` |
 | `storage_environment` | `outOfRange` | dispensador | `alert` |
 | `device_state` | `state` | relógio Wonlex | `alert` |
-| `medication_alarm_change` | `alarm`, `state` | dispensador | `alert` numa dose falhada; `info` o resto |
-| `medication_intake` | `result`, … | dispensador | `alert` numa toma anormal ou falhada; `info` o resto |
+| `medication_alarm_change` | `alarm`, `state` | dispensador | `alert` numa dose falhada (`missed`, `timed_out`, `retrieval_timed_out`); `info` o resto |
+| `medication_intake` | `result`, `scheduledAt`, `takenAt`, … | dispensador | `alert` numa toma anormal ou falhada (`abnormal`, `missed`); `info` o resto. O `scheduledAt` e o `takenAt` são a hora local do aparelho, sem fuso (`2026-10-19T18:05:00`), tal como ele a guarda |
 | `reset` | `pagerId` | NCS | `info` |
 
 O `heart_rate_abnormal` vem do bit 22 do alarme da 4P Touch, que diz só que a
@@ -457,7 +457,7 @@ As versões anteriores do contrato contêm as seguintes incorreções:
 | O envelope leva `schemaVersion` | O campo foi removido; ver abaixo |
 | Os alarmes dos relógios saem em `telemetry` | Saem em `events`, a QoS 1 |
 | O `device_state` dos relógios sai em `telemetry` | Sai em `events`, a QoS 1. Está declarado como acontecimento desde sempre; o que o mandava para o outro canal era a lista à mão que o `isEvent` substituiu |
-| O estado de toma dos alarmes do dispensador é sempre `medication_alarm_status` | A **leitura dos nove** continua a sê-lo, em `telemetry`; a **mudança de um** é `medication_alarm_change`, em `events` a QoS 1. Uma dose falhada não gera `medication_intake` nenhum, e esta mudança é o único sinal dela |
+| O estado de toma dos alarmes do dispensador é sempre `medication_alarm_status` | A **leitura dos nove** continua a sê-lo, em `telemetry`; a **mudança de um** é `medication_alarm_change`, em `events` a QoS 1. Uma dose falhada chega pelos dois: a mudança do alarme para `missed`, e um `medication_intake` com `result: "missed"` |
 | Os alarmes dos relógios saem num `type: "alarm"` com um `reason` | Cada motivo é um tipo: `help_call`, `fall`, `low_battery`, `device_removed`, `zone_entry`/`zone_exit`, `heart_rate_abnormal` |
 | As detecções do radar saem em `fall`, `vitals_alarm` e `presence_event`, com `detectionType`, `detectionCategory`, `detectionLevel`, `detectionSource` e `details` | Cada detecção é um tipo, com os campos no `data`; o grau é a `severity` |
 | O radar publica `vitals_signal_lost` quando não mede ninguém | Um quarto vazio não publica nada; o sinal fraco do `hbstatics` é `weak_vital_signs` |

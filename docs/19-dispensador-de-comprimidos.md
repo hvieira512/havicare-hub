@@ -294,7 +294,7 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 
 | TAG | Capacidade | Campos |
 |---|---|---|
-| `0xC201`–`0xC206` | `medication_intake` | `alarmSlot`, `scheduledAt`, `takenAt`, `cellNumber`, `method`, `result` |
+| `0xC201`–`0xC206` | `medication_intake` | `alarmSlot`, `scheduledAt`, `takenAt`, `cellNumber`, `method`, `result` — as horas como o aparelho as guarda, em hora local e sem fuso |
 | `0x8103` / `0x8104` / `0x8109` | `battery` | `percent`, `chargingState`, `mainsPowered`, `lowBattery` — a corrente vai com a bateria porque «ligado à corrente» e «a carregar» são a mesma pergunta. O `lowBattery` é o `0x8104` a `2`, e quando acende sai também o evento `low_battery`, uma vez. Sem bateria (`4`) não é bateria fraca |
 | `0x811A` / `0x811B` / `0x811D` / `0x8101` | `cells_remaining` | `current`, `total`, `remaining`, `level` (`ok` · `low` · `empty`). **O `remaining` é `carregados − posição`**, com corte a zero — quantas doses faltam sair a partir de onde o carrossel está, e **não** quantos compartimentos ainda têm comprimidos. Confirmado no aparelho: 28 carregados na posição 20 deram 8, e a posição 21 deu 7. Por isso o cartão não os põe lado a lado: diz «8 por dispensar» e manda a posição para os detalhes, que é o que se precisa para saber onde carregar o prato. O hub junta-lhe o `runoutAt`: percorre os alarmes do plano confirmado, dentro do período, no fuso do aparelho, até gastar o `remaining` |
 | `0x810E` | `ambient_temperature` | `environmentCelsius` — o ar onde o aparelho está, e não uma pessoa. A spec dá-o como INT8S de −40 a 120 **graus inteiros**, que não é gama nem resolução de sensor corporal; por isso não partilha a chave `temperature` dos relógios |
@@ -314,11 +314,10 @@ que impede um `0xAA` perdido numa dessincronização de passar por trama.
 decisão vinha de uma lista escrita à mão dentro do `DeviceHubServer`, e as duas
 fontes de verdade discordavam.
 
-> **O que isso custava.** Uma dose falhada não gera `medication_intake` nenhum —
-> não houve toma a registar — e o único sinal dela é o alarme a passar a `missed`
-> numa notificação `0x04`. Enquanto isso viajava dentro do
-> `medication_alarm_status`, saía por telemetria: o acontecimento mais importante
-> que este aparelho produz era o único dos três que se podia perder.
+> **O que isso custava.** Uma dose falhada chega como o alarme a passar a `missed`
+> numa notificação `0x04`, e também como um `0x03` com `result` `missed` (visto a
+> 2026-10-19, alarme 2 às 18:05). Enquanto a mudança do alarme viajava dentro do
+> `medication_alarm_status`, saía por telemetria e podia perder-se.
 
 Daí a separação entre `medication_alarm_status` — a leitura dos nove, que se pede
 — e `medication_alarm_change`, o que aconteceu entre duas leituras.
