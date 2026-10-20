@@ -43,15 +43,38 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         );
     }
 
-    /** Um corpo que não se decifra não chega a ser lido: confirmá-lo apagava-o sem ninguém o ver. */
-    public function testAnEventThatDoesNotDecryptIsNotAcknowledged(): void
+    /**
+     * Um corpo que não se decifra dá o mesmo a cada repetição, e prendia os eventos de trás: confirma-se
+     * depois de os bytes ficarem no canal `raw`, para se decifrarem mais tarde.
+     */
+    public function testAnEventThatDoesNotDecryptIsAcknowledgedOnceItsBytesAreInRaw(): void
     {
-        $noise = str_repeat("\x5A", 32);
+        $mqtt = new RecordingHubMqttBridge();
 
-        self::assertSame(['register_ack'], $this->acks(new RecordingHubMqttBridge(), [
-            $this->frame(0x01, 1),
-            (new PillDispenserAdapter())->encodeOutgoing(['packetType' => 0x03, 'serial' => 2, 'imei' => self::IMEI, 'tlv' => [], 'flag' => 0x04, 'appDataRaw' => $noise]),
-        ]));
+        self::assertSame(['register_ack', 'event_ack'], $this->acks($mqtt, [$this->frame(0x01, 1), $this->undecryptable()]));
+        self::assertCount(2, $mqtt->raw);
+    }
+
+    public function testAnEventThatDoesNotDecryptWaitsWhileItsBytesAreNotInRaw(): void
+    {
+        $mqtt = new class extends RecordingHubMqttBridge {
+            public int $calls = 0;
+
+            public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+            {
+                if (++$this->calls > 1) {
+                    throw new \RuntimeException('broker unavailable');
+                }
+                parent::publishRaw($imei, $payload, $deviceType, $licenseId, $company);
+            }
+        };
+
+        self::assertSame(['register_ack'], $this->acks($mqtt, [$this->frame(0x01, 1), $this->undecryptable()]));
+    }
+
+    private function undecryptable(): string
+    {
+        return (new PillDispenserAdapter())->encodeOutgoing(['packetType' => 0x03, 'serial' => 2, 'imei' => self::IMEI, 'tlv' => [], 'flag' => 0x04, 'appDataRaw' => str_repeat("\x5A", 32)]);
     }
 
     /** O histórico da dashboard é um extra: sem o Redis, o evento publicado confirma-se na mesma. */

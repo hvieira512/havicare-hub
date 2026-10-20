@@ -240,9 +240,15 @@ São o coração da integração e chegam em pacotes `0x03`.
 > que o hub não conseguiu guardar perde a toma para sempre.
 
 Por isso o hub só confirma um pacote do M228 depois de publicar tudo o que ele
-trouxe. Se uma publicação falha, ou se o corpo não se decifra, não responde, e o
-aparelho guarda o evento e volta a mandá-lo. A garantia vai até o cliente MQTT
-aceitar a mensagem sem erro; o PUBACK do broker não se espera.
+trouxe. Se uma publicação falha, não responde, e o aparelho guarda o evento e
+volta a mandá-lo; o que esse pacote tinha acendido (uma avaria, a bateria fraca,
+o arranque de uma actualização) volta a sair na repetição. A garantia vai até o
+cliente MQTT aceitar a mensagem sem erro; o PUBACK do broker não se espera.
+
+Um corpo que não se decifra é a exceção: decifrá-lo outra vez dá o mesmo, e o
+pacote prendia os que vêm atrás. Confirma-se assim que os bytes saem no canal
+`raw`, e fica um erro no log com eles em hexadecimal, para se decifrarem mais
+tarde.
 
 | TAG | Campo | Tipo | Valores |
 |---|---|---|---|

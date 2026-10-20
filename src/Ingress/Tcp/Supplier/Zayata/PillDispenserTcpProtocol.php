@@ -12,6 +12,7 @@ use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Ingress\Tcp\AbstractTcpProtocol;
 use Hub\Ingress\Tcp\TcpMessage;
 use Hub\Ingress\Tcp\TcpResponse;
+use Hub\Log\Logger;
 use Hub\Protocol\Adapter\DeviceAdapterInterface;
 
 /**
@@ -128,12 +129,19 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
             }
         };
 
+        // Decifrar dá o mesmo a cada repetição, e o pacote prendia os de trás: fica nos bytes do `raw` e no log.
+        $undecrypted = ($message->decoded['decrypted'] ?? true) === false;
+        if ($undecrypted) {
+            Logger::channel('hub')->error("Pill dispenser packet not decrypted IMEI={$imei} hex=" . bin2hex($raw));
+        }
+
         return new TcpMessage(
             decoded: $message->decoded,
             telemetry: $telemetry,
             responses: $message->responses,
             repliesConfirmDelivery: true,
             withheld: $withheld,
+            onlyInRaw: $undecrypted,
         );
     }
 
@@ -145,12 +153,7 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
         // A confirmação primeiro, e o pacote de upgrade com ela: sem o `0x82` o aparelho corta.
         $responses = [];
         $type = (string)($decoded['type'] ?? '');
-        // Um corpo que não se decifrou não foi lido: confirmado, o aparelho apagava-o.
-        if (
-            in_array($type, self::ACKNOWLEDGED_TYPES, true)
-            && ($decoded['waivesReply'] ?? false) !== true
-            && ($decoded['decrypted'] ?? true) !== false
-        ) {
+        if (in_array($type, self::ACKNOWLEDGED_TYPES, true) && ($decoded['waivesReply'] ?? false) !== true) {
             $responses[] = new TcpResponse($this->acknowledgement($decoded));
         }
 

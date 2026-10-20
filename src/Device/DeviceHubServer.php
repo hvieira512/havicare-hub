@@ -28,6 +28,9 @@ class DeviceHubServer
     private HubMqttBridge $mqtt;
     private ?PendingDownlinkQueue $downlinkQueue;
     private ?DeviceStoreContract $deviceStore;
+
+    /** @var array<string, int> */
+    private array $withheldWarnedAt = [];
     private int $downlinkQueueTtlSeconds;
     private ?LocationTelemetryEnricherContract $locationTelemetryEnricher;
     private ?Denylist $denylist;
@@ -109,6 +112,17 @@ class DeviceHubServer
     {
         Logger::channel('hub')->error("Connection error id={$conn->resourceId}: {$e->getMessage()}");
         $conn->close();
+    }
+
+    /** Com o broker em baixo, o aparelho repete cada pacote: o aviso sai uma vez por minuto. */
+    private function warnWithheld(string $imei): void
+    {
+        $now = time();
+        if ($now - ($this->withheldWarnedAt[$imei] ?? 0) < 60) {
+            return;
+        }
+        $this->withheldWarnedAt[$imei] = $now;
+        Logger::channel('hub')->warning("Reply withheld until the event is published IMEI={$imei}");
     }
 
     public function isConnected(string $imei): bool
@@ -337,6 +351,7 @@ class DeviceHubServer
     /** Devolve se as respostas saíram: só não saem quando o aparelho apagaria o que não ficou publicado. */
     private function handleAuthenticatedMessage(ConnectionInterface $conn, DeviceSession $session, string $raw, string $connectionId): bool
     {
+        $rawPublished = false;
         try {
             $this->mqtt->publishRaw(
                 $session->imei,
@@ -345,6 +360,7 @@ class DeviceHubServer
                 $this->currentLicenseId($session->imei, $session->licenseId),
                 $this->currentCompany($session->imei, $session->company),
             );
+            $rawPublished = true;
             $this->recordRaw($session, $raw, $connectionId);
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $session->imei, $e);
@@ -388,8 +404,11 @@ class DeviceHubServer
         }
 
         // Sem resposta, o aparelho guarda o evento e volta a mandá-lo.
+        if ($message->onlyInRaw && !$rawPublished) {
+            $published = false;
+        }
         if (!$published && $message->repliesConfirmDelivery) {
-            Logger::channel('hub')->warning("Reply withheld until the event is published IMEI={$session->imei}");
+            $this->warnWithheld($session->imei);
             if ($message->withheld !== null) {
                 ($message->withheld)();
             }

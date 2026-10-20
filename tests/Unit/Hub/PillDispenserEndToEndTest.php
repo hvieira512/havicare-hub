@@ -111,7 +111,7 @@ final class PillDispenserEndToEndTest extends TestCase
     public function testABodyThatDoesNotDecryptPublishesNothing(): void
     {
         $noise = strrev(substr((string)hex2bin(self::HEARTBEAT), 20, -2));
-        $mqtt = $this->exchange([$this->frame(0x01, 1), $this->frame(0x02, 2, flag: 0x04, appDataRaw: $noise)], 1);
+        $mqtt = $this->exchange([$this->frame(0x01, 1), $this->frame(0x02, 2, flag: 0x04, appDataRaw: $noise)], 2);
 
         self::assertSame([], $this->ofType($mqtt->telemetry, 'battery'));
     }
