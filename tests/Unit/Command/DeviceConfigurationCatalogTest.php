@@ -873,11 +873,11 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(4, $config['limit'] ?? null);
 
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'doNotDisturb', [
-            'ranges' => ['21:10-07:30', '', '12:00-13:00', '14:00-15:00', '16:00-17:00', '18:00-19:00'],
+            'ranges' => ['21:10-07:30', '', '12:00-13:00', '14:00-15:00', '16:00-17:00'],
         ]);
 
         self::assertSame('SILENCETIME', $payload['command']);
-        self::assertSame(['fields' => ['21:10-07:30', '12:00-13:00', '14:00-15:00']], $payload['payload']);
+        self::assertSame(['fields' => ['21:10-07:30', '12:00-13:00', '14:00-15:00', '16:00-17:00']], $payload['payload']);
     }
 
     /** O campo impõe os mínimos da spec: 60 s no UPLOAD e 5 minutos no HEALTHAUTOSET. */

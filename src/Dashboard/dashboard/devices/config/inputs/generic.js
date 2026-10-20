@@ -18,26 +18,18 @@ import {
  * vierem; o nome nativo resolve-o a definição.
  */
 
-/**
- * O nome do campo no valor guardado: a Wonlex declara `switchState`, mas o `fromNative` da
- * capacidade entrega-o como `enabled`.
- */
-export function toggleField(entry, protocol = "") {
-    const nativeField = entry.fields?.[0] || "enabled";
-    return protocol === "wonlex-json" && nativeField === "switchState"
-        ? "enabled"
-        : nativeField;
+export function toggleField(entry) {
+    return entry.fields?.[0] || "enabled";
 }
 
 /** Sem valor guardado nasce ligado, que é como o aparelho vem de fábrica. */
-export function toggleValue(entry, desired, protocol = "") {
-    const nativeField = entry.fields?.[0] || "enabled";
-    return boolValue(desired[toggleField(entry, protocol)] ?? desired[nativeField], true);
+export function toggleValue(entry, desired) {
+    return boolValue(desired[toggleField(entry)], true);
 }
 
-export function toggleInput(entry, desired, protocol = "") {
-    const field = toggleField(entry, protocol);
-    const checked = toggleValue(entry, desired, protocol);
+export function toggleInput(entry, desired) {
+    const field = toggleField(entry);
+    const checked = toggleValue(entry, desired);
     return html`
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" data-config-field="${field}" ${checked ? "checked" : ""}>
@@ -233,16 +225,12 @@ export const INPUTS = {
         },
     },
     toggle: {
-        render: (entry, desired, meta) => toggleInput(entry, desired, meta?.protocol),
+        render: (entry, desired) => toggleInput(entry, desired),
         read: (section) => {
             const field = firstFieldName(section);
             return { [field]: readCheckbox(section, field) };
         },
-        defaults: (entry, protocol) => ({
-            [protocol === "wonlex-json" && entry.fields?.[0] === "switchState"
-                ? "enabled"
-                : entry.fields?.[0] || "value"]: true,
-        }),
+        defaults: (entry) => ({ [entry.fields?.[0] || "value"]: true }),
     },
     number: {
         control: numberControl,

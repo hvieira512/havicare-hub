@@ -12,11 +12,11 @@ final class FourPTouchConfigurationDefinitions
         $entry = ConfigurationDefinition::make(...);
 
         return [
-            $entry('uploadInterval', 'UPLOAD', 'Intervalo de localização', 'number', ['intervalSeconds'], ['UPLOAD'], 'intervals', 10, options: ['min' => 60], help: 'Só envia com o relógio em movimento: parado 2 minutos, deixa de enviar.'),
+            $entry('uploadInterval', 'UPLOAD', 'Intervalo de localização', 'number', ['intervalSeconds'], ['UPLOAD'], 'intervals', 10, options: ['min' => 60], help: 'Só envia com o relógio em movimento: parado 2 minutos, deixa de enviar.', bounds: ['intervalSeconds' => ['min' => 60, 'max' => 65535]]),
             $entry('sosContacts', 'SOS', 'Contactos SOS', 'sos_contacts', ['numbers'], ['SOS'], 'contacts', 10, 3, help: 'Num SOS liga a um de cada vez, por esta ordem, até alguém atender.'),
             $entry('whitelistGroup1', 'WHITELIST1', 'Lista de chamadas autorizadas 1-5', 'call_whitelist', ['numbers'], ['WHITELIST1'], 'contacts', 40, 5),
             $entry('whitelistGroup2', 'WHITELIST2', 'Lista de chamadas autorizadas 6-10', 'call_whitelist', ['numbers'], ['WHITELIST2'], 'contacts', 50, 5),
-            $entry('languageTimezone', 'LZ', 'Idioma e fuso horário', 'languageTimezone', ['language', 'timeZone'], ['LZ'], 'system', 20, help: 'O idioma só muda se o firmware o tiver.'),
+            $entry('languageTimezone', 'LZ', 'Idioma e fuso horário', 'languageTimezone', ['language', 'timeZone'], ['LZ'], 'system', 20, help: 'O idioma só muda se o firmware o tiver.', bounds: ['language' => ['min' => 0, 'max' => 36]]),
             $entry('sosSmsAlerts', 'SOSSMS', 'SMS em alarme SOS', 'toggle', ['enabled'], ['SOSSMS'], 'alerts', 10, help: 'Vai para os contactos SOS, sem a localização.'),
             $entry('lowBatterySmsAlerts', 'LOWBAT', 'SMS em bateria fraca', 'toggle', ['enabled'], ['LOWBAT'], 'alerts', 20, help: 'Vai para o número da central abaixo de 20%.'),
             $entry('removeWatchAlarm', 'REMOVE', 'Alarme ao retirar relógio', 'toggle', ['enabled'], ['REMOVE'], 'alerts', 30, help: 'Só em relógios com sensor de luz.'),
@@ -45,10 +45,10 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 3, 'label' => 'Personalizado'],
                 ],
             ], help: 'A gravação é cortada aos 15 segundos.'),
-            $entry('healthAutoMeasurement', 'HEALTHAUTOSET', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['HEALTHAUTOSET'], 'health', 10, options: ['min' => 5], help: 'Ritmo cardíaco e tensão arterial; mínimo 5 minutos.'),
+            $entry('healthAutoMeasurement', 'HEALTHAUTOSET', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['HEALTHAUTOSET'], 'health', 10, options: ['min' => 5], help: 'Ritmo cardíaco e tensão arterial; mínimo 5 minutos.', bounds: ['intervalMinutes' => ['min' => 5]]),
             $entry('walkTime', 'WALKTIME', 'Horário de contagem de passos', 'timeRanges', ['ranges'], ['WALKTIME'], 'health', 20, 3, help: 'Fora destes horários não conta passos.'),
             $entry('sleepTime', 'SLEEPTIME', 'Horário de sono', 'timeRange', ['range'], ['SLEEPTIME'], 'health', 30, help: 'Pode passar a meia-noite.'),
-            $entry('bodyTemperatureInterval', 'bodytemp', 'Temperatura periódica', 'intervalHoursToggle', ['enabled', 'intervalHours'], ['bodytemp'], 'health', 40, help: 'Só em relógios com sensor de temperatura; não mede em modo noturno.'),
+            $entry('bodyTemperatureInterval', 'bodytemp', 'Temperatura periódica', 'intervalHoursToggle', ['enabled', 'intervalHours'], ['bodytemp'], 'health', 40, help: 'Só em relógios com sensor de temperatura; não mede em modo noturno.', bounds: ['intervalHours' => ['min' => 1, 'max' => 12]]),
             $entry('makeCall', 'CALL', 'Fazer chamada', 'makeCall', ['phone'], ['CALL'], 'system', 5, transient: true),
             $entry('monitorNumber', 'MONITOR', 'Escuta remota', 'voiceMonitor', ['phone'], ['MONITOR'], 'system', 5, transient: true, help: 'Liga para este número e abre o microfone sem aviso no relógio.', confirm: 'Abrir a escuta remota agora?'),
             $entry('centerNumber', 'CENTER', 'Número da central', 'phone', ['phone'], ['CENTER'], 'contacts', 5, help: 'Recebe os SMS de alarme e pode configurar o relógio por SMS sem palavra-passe.'),

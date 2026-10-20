@@ -212,13 +212,8 @@ final class DeviceCapabilityPresenter
                 continue;
             }
 
-            if (isset($entry['options'])) {
-                foreach ($entry['options'] as $field => $options) {
-                    // Só as listas são escolhas de um campo; `min`, `max` e `label` são do controlo.
-                    if (is_array($options) && array_is_list($options)) {
-                        $meta[$genericKey][$field] = ['options' => $options];
-                    }
-                }
+            foreach (self::fieldMeta($entry) as $field => $fieldMeta) {
+                $meta[$genericKey][$field] = $fieldMeta;
             }
 
             if (isset($entry['limit'])) {
@@ -448,14 +443,7 @@ final class DeviceCapabilityPresenter
      */
     private function defaultCapabilityMetaForEntry(string $genericKey, string $protocol, array $entry): array
     {
-        $meta = [];
-        if (isset($entry['options']) && is_array($entry['options'])) {
-            foreach ($entry['options'] as $field => $options) {
-                if (is_array($options) && array_is_list($options)) {
-                    $meta[(string)$field] = ['options' => $options];
-                }
-            }
-        }
+        $meta = self::fieldMeta($entry);
         if (isset($entry['limit'])) {
             $meta['limit'] = (int)$entry['limit'];
         }
@@ -509,6 +497,28 @@ final class DeviceCapabilityPresenter
         array $desired
     ): mixed {
         return $this->capabilityRegistry->fromNative($protocol, $genericKey, $nativeKey, $desired);
+    }
+
+    /**
+     * As escolhas e os limites de cada campo da entrada do catálogo. Das `options` só as listas
+     * são escolhas de um campo; `min`, `max` e `label` soltos são do controlo da dashboard.
+     *
+     * @param array<string, mixed> $entry
+     * @return array<string, array<string, mixed>>
+     */
+    private static function fieldMeta(array $entry): array
+    {
+        $meta = [];
+        foreach (is_array($entry['options'] ?? null) ? $entry['options'] : [] as $field => $options) {
+            if (is_array($options) && array_is_list($options)) {
+                $meta[(string)$field] = ['options' => $options];
+            }
+        }
+        foreach (is_array($entry['bounds'] ?? null) ? $entry['bounds'] : [] as $field => $bounds) {
+            $meta[(string)$field] = ($meta[(string)$field] ?? []) + $bounds;
+        }
+
+        return $meta;
     }
 
     /**

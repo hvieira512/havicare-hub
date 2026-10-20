@@ -74,6 +74,28 @@ final class DeviceCapabilityPresenterTest extends MysqlDashboardTestCase
         self::assertSame('07:30', $alarm['value'][0]['time'] ?? null);
     }
 
+    /** Os limites de um número saem no `_meta`, para quem integra não ter de os copiar. */
+    public function testANumericFieldPublishesTheLimitsTheHubEnforces(): void
+    {
+        $fourPTouch = $this->model('4P Touch', 'D46');
+        $stored = [[
+            'native_key' => 'uploadInterval',
+            'config_key' => 'location_reporting_interval',
+            'desired_payload' => ['intervalSeconds' => 600],
+            'desired_updated_at' => '2026-01-01 10:00:00',
+            'last_status' => 'acked',
+        ]];
+
+        $default = $this->presenter->deviceCapabilities($fourPTouch, 'four-p-touch', []);
+        $saved = $this->presenter->deviceCapabilities($fourPTouch, 'four-p-touch', $stored);
+        $wonlex = $this->presenter->deviceCapabilities($this->model('Wonlex', 'HW20PRO'), 'wonlex-json', []);
+
+        $limits = ['min' => 60, 'max' => 65535];
+        self::assertSame($limits, $default['health']['location_reporting_interval']['_meta']['intervalSeconds'] ?? null);
+        self::assertSame($limits, $saved['health']['location_reporting_interval']['_meta']['intervalSeconds'] ?? null);
+        self::assertSame(['min' => 0], $wonlex['alarms']['low_battery_alert']['_meta']['Battery'] ?? null);
+    }
+
     public function testRowsWhoseKeyResolvesToNoCapabilityAreIgnored(): void
     {
         $model = $this->model('Wonlex', 'HW20PRO');

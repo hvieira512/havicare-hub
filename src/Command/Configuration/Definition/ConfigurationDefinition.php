@@ -11,6 +11,7 @@ final class ConfigurationDefinition
      * @param list<string> $expectedReplyTypes
      * @param array<string, mixed>|null $options
      * @param array<string, mixed>|null $actions
+     * @param array<string, array{min: int, max?: int}>|null $bounds
      * @return array<string, mixed>
      */
     public static function make(
@@ -29,6 +30,7 @@ final class ConfigurationDefinition
         ?array $actions = null,
         string $confirm = '',
         string $verb = '',
+        ?array $bounds = null,
     ): array {
         $entry = [
             'key' => $key,
@@ -72,6 +74,10 @@ final class ConfigurationDefinition
         // fábrica», que num botão não diz o que o clique faz.
         if ($verb !== '') {
             $entry['verb'] = $verb;
+        }
+        // Os limites de cada campo numérico, os mesmos que o construtor do protocolo aplica.
+        if ($bounds !== null) {
+            $entry['bounds'] = $bounds;
         }
 
         return $entry;

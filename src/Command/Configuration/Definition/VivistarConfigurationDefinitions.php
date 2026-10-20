@@ -51,7 +51,7 @@ final class VivistarConfigurationDefinitions
                     ['value' => 3, 'label' => 'Sedentarismo'],
                 ],
             ]),
-            $entry('autoHealthMeasurement', 'BP86', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['AP86'], 'health', 10, help: 'Mede todos os sinais vitais de uma vez e envia-os.'),
+            $entry('autoHealthMeasurement', 'BP86', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['AP86'], 'health', 10, help: 'Mede todos os sinais vitais de uma vez e envia-os.', bounds: ['intervalMinutes' => ['min' => 0]]),
         ];
     }
 }

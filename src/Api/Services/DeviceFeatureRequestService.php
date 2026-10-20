@@ -137,6 +137,17 @@ final class DeviceFeatureRequestService
             return ApiError::invalidRequest('capability is required')->toArray();
         }
 
+        // A reposição de fábrica devolve o aparelho ao servidor do fornecedor: só o hub a pede.
+        if ($capability === 'reset_device' && $auth !== null && !$auth->isAdmin()) {
+            Logger::channel('api')->warning('API capability request rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'capability' => $capability,
+                'error_code' => 'forbidden',
+            ]);
+            return ApiError::forbidden()->toArray();
+        }
+
         $identity = $this->directory->identify($imei);
         $protocol = $identity->protocol;
         $enabled = array_flip($identity->modelRow !== null

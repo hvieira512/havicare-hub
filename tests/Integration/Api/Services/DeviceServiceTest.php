@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Api\Services;
 
+use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Services\DeviceService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\State\DeviceStoreContract;
@@ -62,6 +63,26 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         self::assertCount(1, $result['commands']);
         self::assertSame('waiting', $result['commands'][0]['status']);
         self::assertSame('CALL', $result['commands'][0]['nativeType']);
+    }
+
+    /** Um cliente nunca repõe de fábrica: o relógio volta ao servidor do fornecedor e o hub perde-o. */
+    public function testALicenseClientCannotFactoryResetADevice(): void
+    {
+        $imei = '8800000016';
+        $this->whitelist->method('getMetadata')->with($imei)->willReturn(new DeviceMetadata('Wonlex', 'Y20', 'watch', 1001, 'hitcare'));
+        $supplierId = $this->db->suppliers->create('Wonlex');
+        $this->db->models->add($supplierId, 'Y20', 'Y20', 'watch');
+        $this->modelId = (int)($this->db->models->find('Wonlex', 'Y20')['id'] ?? 0);
+        $this->store->method('device')->with($imei)->willReturn([
+            'imei' => $imei, 'supplier' => 'Wonlex', 'model' => 'Y20', 'protocol' => 'wonlex-json',
+            'company' => 'hitcare', 'licenseId' => '1001',
+        ]);
+        $this->mockModelCapabilities(['reset_device']);
+        $client = new ApiAuthContext(7, 'havicare', ApiAuthContext::ROLE_LICENSE_CLIENT, 1001, 1, 1, 'hitcare');
+
+        $result = $this->service->requestFeature($imei, ['capability' => 'reset_device'], $client);
+
+        self::assertSame('forbidden', $result['error']['code'] ?? null);
     }
 
     public function testPatchAssociationCreatesMissingLicenseForExistingCompany(): void

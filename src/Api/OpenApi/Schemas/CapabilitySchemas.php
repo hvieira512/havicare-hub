@@ -68,6 +68,8 @@ final class CapabilitySchemas
                 'type' => 'object',
                 'properties' => [
                     'options' => ['type' => 'array', 'items' => Responses::ref('CapabilityOption')],
+                    'min' => ['type' => 'integer', 'description' => 'Smallest value the hub accepts for a numeric field.'],
+                    'max' => ['type' => 'integer', 'description' => 'Largest value the hub accepts; absent when the vendor spec gives none.'],
                 ],
             ],
         ];

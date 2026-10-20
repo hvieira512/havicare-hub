@@ -15,7 +15,7 @@ final class WonlexConfigurationDefinitionsTest extends TestCase
         $entry = $this->entry('wonlexCallInLimitSwitch');
 
         self::assertSame('toggle', $entry['input']);
-        self::assertSame(['switchState'], $entry['fields']);
+        self::assertSame(['enabled'], $entry['fields']);
     }
 
     /** Os comandos continuam a sair pelas definições guiadas que os partilham. */

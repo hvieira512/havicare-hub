@@ -439,7 +439,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $response = $api->show('861728087060467');
 
         self::assertSame(
-            ['value' => ['intervalSeconds' => 300], '_meta' => []],
+            ['value' => ['intervalSeconds' => 300], '_meta' => ['intervalSeconds' => ['min' => 60, 'max' => 65535]]],
             $response['capabilities']['health']['location_reporting_interval'] ?? null
         );
         self::assertSame(

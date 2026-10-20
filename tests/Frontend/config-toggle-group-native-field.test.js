@@ -6,17 +6,14 @@ import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/dev
 import { changedConfigEntries } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { parseFragment } from "./support/dom.js";
 
-/**
- * A definição declara o nome nativo (`switchState`) e o valor guardado chega com o do contrato
- * (`enabled`); a deteção de queda é uma das sete definições Wonlex que passam por aqui.
- */
+/** Os interruptores Wonlex em linhas de um cartão: a definição e o valor falam `enabled`. */
 const toggle = (key, label, order) => ({
     key,
     capabilityKey: key,
     command: "deviceConfig",
     label,
     input: "toggle",
-    fields: ["switchState"],
+    fields: ["enabled"],
     category: "health",
     order,
 });

@@ -187,6 +187,7 @@ final class DevicePaths
                         'invalid_config',
                         'unsupported_feature',
                         'feature_not_requestable',
+                        'forbidden',
                         'not_found',
                     ),
                 ],

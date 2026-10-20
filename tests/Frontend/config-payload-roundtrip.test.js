@@ -29,17 +29,6 @@ test("toggle uses the entry's own field name", () => {
     assert.deepEqual(roundTrip(entry, { screenOn: true }), { screenOn: true });
 });
 
-test("wonlex switchState is presented and read back as enabled", () => {
-    // O campo nativo é renomeado só neste protocolo: o leitor tem de concordar com quem
-    // desenha, senão o payload perde o valor em silêncio.
-    const entry = { input: "toggle", key: "x", fields: ["switchState"] };
-
-    assert.deepEqual(
-        roundTrip(entry, { switchState: true }, { protocol: "wonlex-json" }),
-        { enabled: true },
-    );
-});
-
 test("number survives the round trip", () => {
     const entry = { input: "number", key: "interval", fields: ["interval"] };
 

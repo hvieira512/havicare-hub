@@ -159,6 +159,25 @@ As entradas escrevíveis trazem ainda `value`, com o valor público atual, e
 desenhar. **Nenhuma entrada pública expõe identidade de protocolo** — os nomes
 nativos só aparecem nas `operations[]` da resposta a um `PATCH`.
 
+Um campo numérico traz no `_meta` os limites que o hub aplica — os mesmos que
+recusam um `PATCH` fora deles com `invalid_config`:
+
+```json
+"location_reporting_interval": {
+  "value": { "intervalSeconds": 600 },
+  "_meta": { "intervalSeconds": { "min": 60, "max": 65535 } }
+}
+```
+
+Só se publica o que a especificação do fabricante dá. Onde ela não dá máximo —
+a Wonlex em todos os números, o Vivistar na medição automática — sai só o
+`min`, e é 0. O valor de um `PATCH` é sempre a forma pública: um `data` ou um
+`fields` com a trama nativa é recusado.
+
+A reposição de fábrica (`reset_device`) só a pede um `hub_admin`. A um
+`license_client` responde `403 forbidden`: o aparelho volta a apontar para o
+servidor do fornecedor e o hub perde-o.
+
 ### Pedir uma medição
 
 ```http

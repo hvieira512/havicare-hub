@@ -97,6 +97,11 @@ final class CapabilityRegistry
      */
     public function toNative(string $protocol, string $genericKey, mixed $value): array
     {
+        // O `data` e o `fields` são a trama nativa já montada, que os construtores mandam sem validar.
+        if (is_array($value) && (array_key_exists('data', $value) || array_key_exists('fields', $value))) {
+            throw new \InvalidArgumentException("{$genericKey} does not accept a native payload");
+        }
+
         return $this->contract($genericKey)->toNative($protocol, $value);
     }
 

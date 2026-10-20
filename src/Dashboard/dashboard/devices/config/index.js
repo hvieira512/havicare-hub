@@ -298,8 +298,8 @@ function renderConfigGroup(protocol, entries, ctx) {
         const capability = capabilityForEntry(entry, capabilities);
         const desired = normalizeDesired(entry, resolveConfigRow(entry, rowsByKey), capability ? extractCapabilityValue(capability) : null, protocol);
         const isToggle = isPlainToggle(entry);
-        const field = toggleField(entry, protocol);
-        const on = toggleValue(entry, desired, protocol);
+        const field = toggleField(entry);
+        const on = toggleValue(entry, desired);
         const stored = resolveConfigStored(entry, rowsByKey);
         const delivery = resolveConfigDelivery(entry, configurationSync);
         const deliveryMeta = configurationDeliveryMeta(stored, delivery);

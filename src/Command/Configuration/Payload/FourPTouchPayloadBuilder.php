@@ -295,13 +295,13 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             throw new \InvalidArgumentException("{$field} must be an array");
         }
         $ranges = [];
-        foreach (array_slice($value, 0, $max) as $item) {
+        foreach ($value as $item) {
             if (trim((string)$item) !== '') {
                 $ranges[] = self::timeRange($item, $field);
             }
         }
-        if ($ranges === []) {
-            return [];
+        if (count($ranges) > $max) {
+            throw new \InvalidArgumentException("{$field} accepts at most {$max} ranges");
         }
 
         return $ranges;

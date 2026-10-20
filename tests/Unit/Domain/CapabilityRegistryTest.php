@@ -24,6 +24,29 @@ final class CapabilityRegistryTest extends TestCase
         self::assertTrue($registry->travelsToDevice('uma_capacidade_que_nao_existe'));
     }
 
+    /**
+     * O `data` e o `fields` são a trama nativa já montada; vindos da API, chegavam ao relógio sem
+     * passar pela validação do construtor.
+     */
+    public function testAPublicValueCannotCarryARawNativePayload(): void
+    {
+        $registry = new CapabilityRegistry();
+
+        $raw = [
+            ['four-p-touch', 'location_reporting_interval', ['fields' => ['5']]],
+            ['vivistar-iw', 'auto_vitals_interval', ['fields' => ['1', '0']]],
+            ['wonlex-json', 'low_battery_alert', ['data' => ['Battery' => -1]]],
+        ];
+        foreach ($raw as [$protocol, $key, $value]) {
+            try {
+                $registry->toNative($protocol, $key, $value);
+                self::fail("{$protocol} {$key} aceitou a trama nativa");
+            } catch (\InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
     public function testWonlexPushMessageMapsToMessageNoticePayload(): void
     {
         $registry = new CapabilityRegistry();
