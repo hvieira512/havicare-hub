@@ -402,4 +402,46 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             $confirmedAt[0],
         );
     }
+
+    /**
+     * Um 4P Touch que não fala o comando novo recebe a lista no formato antigo: esses comandos são
+     * operações da mesma alteração, e a confirmação do relógio fecha-a.
+     */
+    public function testTheLegacyPhonebookClosesTheChangeItReplaces(): void
+    {
+        $imei = '637507597567372';
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $store = new DeviceStore(new InMemoryRedisClient());
+        $store->setDataAccess($db);
+        $store->deviceSeen($imei, ['deviceType' => 'watch', 'online' => '1']);
+        $settled = [];
+        $db->configurationLifecycle->announceOutcomesTo(static function (array $change) use (&$settled): void {
+            $settled[] = $change['status'];
+        });
+        $contacts = ['items' => [['name' => 'Hugo', 'phone' => '+351938854803']]];
+        $operation = ['operationId' => 'op-phbx2', 'nativeKey' => 'phonebook', 'nativeType' => 'PHBX2', 'protocol' => 'four-p-touch', 'confirmationMode' => 'execution_ack'];
+        $staged = $db->configurationLifecycle->stage(
+            $imei,
+            'phonebook',
+            $contacts,
+            [['nativeKey' => 'phonebook', 'protocol' => 'four-p-touch', 'command' => 'PHBX2', 'payload' => $contacts, 'confirmationMode' => 'execution_ack', 'operationId' => 'op-phbx2']],
+            [$operation],
+        );
+        $store->recordCommand($imei, 'op-phbx2', [
+            'status' => 'failed', 'error' => 'response_timeout', 'protocol' => 'four-p-touch', 'nativeKey' => 'phonebook',
+            'nativeType' => 'PHBX2', 'configKey' => 'phonebook', 'genericConfigKey' => 'phonebook', 'operationId' => 'op-phbx2',
+            'changeId' => $staged['changeId'], 'desiredRevision' => $staged['revision'], 'retryable' => true, 'expectedReplyTypes' => ['PHBX2'],
+            'payload' => ['fields' => ['1', '004800750067006F', '+351938854803']], 'bytes' => '[3G*1234567890*0010*PHBX2,1]',
+        ]);
+
+        $store->retryWaitingCommands(60, 3600, 3, static fn (): string => 'sent');
+        foreach ($store->commands($imei) as $command) {
+            if (($command['nativeType'] ?? '') === 'PHB') {
+                $store->markCommand($imei, (string)$command['id'], ['status' => 'acked']);
+            }
+        }
+
+        self::assertSame('confirmed', $db->configurationLifecycle->currentForImei($imei)[0]['sync_status']);
+        self::assertSame(['failed', 'confirmed'], $settled);
+    }
 }

@@ -249,6 +249,11 @@ hub tinha, como a de um radar, também sai `confirmed`, com o valor lido. Uma
 alteração substituída por outra mais recente não tem evento próprio: o desfecho
 que conta é o da mais recente.
 
+A exceção é a lista telefónica do 4P Touch. Num relógio que não fala a escrita por
+posição, as escritas falham e a alteração sai `failed`; o hub reenvia então a
+lista no formato antigo, como parte da mesma alteração, e quando o relógio a
+aceita a mesma alteração sai `confirmed`. Vale sempre o último desfecho.
+
 O `measurement_failed` leva `error.reason`, que vale `not_worn` quando a deteção de uso
 não passou, `low_battery` e `sensor_fault` quando é o firmware a recusar, `no_signal`
 quando o traçado saiu todo a zeros, e `no_response` ou `no_reading` quando a pulseira não

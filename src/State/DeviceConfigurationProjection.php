@@ -87,6 +87,12 @@ final class DeviceConfigurationProjection
         }
     }
 
+    /** Acrescenta uma operação a uma alteração ainda em curso; devolve se ela a aceitou. */
+    public function addOperation(string $changeId, string $operationId, string $nativeKey, string $nativeType, string $protocol): bool
+    {
+        return $this->db?->configurationLifecycle->addOperation($changeId, $operationId, $nativeKey, $nativeType, $protocol) ?? false;
+    }
+
     public function isCurrentOperation(string $operationId): bool
     {
         return $this->db === null || $this->db->configurationLifecycle->isCurrentOperation($operationId);

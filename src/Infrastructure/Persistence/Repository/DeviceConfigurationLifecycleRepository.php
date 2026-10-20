@@ -178,6 +178,26 @@ final class DeviceConfigurationLifecycleRepository
         return true;
     }
 
+    /** Uma operação a mais numa alteração ainda em curso, como o recuo da lista telefónica do 4P Touch. */
+    public function addOperation(string $changeId, string $operationId, string $nativeKey, string $nativeType, string $protocol): bool
+    {
+        $now = gmdate('Y-m-d H:i:s');
+        $stmt = $this->pdo->prepare('
+            INSERT INTO device_configuration_operations (
+                operation_id, change_id, native_key, native_type, target,
+                protocol, confirmation_mode,
+                delivery_status, created_at, updated_at, sequence_number
+            )
+            SELECT ?, change_row.change_id, ?, ?, \'\', ?, \'execution_ack\', \'created\', ?, ?,
+                   (SELECT COALESCE(MAX(sequence_number), -1) + 1 FROM device_configuration_operations WHERE change_id = ?)
+            FROM device_configuration_changes change_row
+            WHERE change_row.change_id = ? AND change_row.superseded_at IS NULL
+        ');
+        $stmt->execute([$operationId, $nativeKey, $nativeType, $protocol, $now, $now, $changeId, $changeId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
     public function isCurrentOperation(string $operationId): bool
     {
         $stmt = $this->pdo->prepare('
@@ -383,7 +403,11 @@ final class DeviceConfigurationLifecycleRepository
         if ($changeId === '') {
             return;
         }
-        $operations = $this->operations($changeId);
+        // Numa alteração em curso, uma operação substituída deu lugar a outras da mesma alteração.
+        $operations = array_values(array_filter(
+            $this->operations($changeId),
+            static fn (array $operation): bool => $operation['delivery_status'] !== 'superseded',
+        ));
         $statuses = array_column($operations, 'delivery_status');
         $modes = array_column($operations, 'confirmation_mode');
         $sync = 'pending_delivery';

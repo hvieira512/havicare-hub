@@ -240,7 +240,17 @@ final class DeviceCommandStore
             return;
         }
 
+        // As escritas indexadas saem primeiro: a lista antiga toma o lugar delas na mesma alteração.
+        foreach ($phonebook as $command) {
+            $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
+                'status' => 'superseded',
+                'error' => '',
+                'lastError' => '',
+            ]));
+        }
+
         $template = $phonebook[0];
+        $changeId = (string)($template['changeId'] ?? '');
         $contacts = FourPTouchPhonebookFallback::contactsFromCommands($phonebook);
         foreach (FourPTouchPhonebookFallback::commands($contacts) as $legacy) {
             $payload = ['fields' => $legacy['fields']];
@@ -252,14 +262,18 @@ final class DeviceCommandStore
                 ['deviceId' => $deviceId]
             );
             $id = bin2hex(random_bytes(16));
+            // Operação da alteração que substitui, para a confirmação do relógio a fechar.
+            $operationId = $changeId !== '' && $this->projection?->addOperation($changeId, $id, 'phonebook', $legacy['command'], 'four-p-touch') === true
+                ? $id
+                : '';
             $record = array_merge($template, [
                 'id' => $id,
-                'operationId' => '',
+                'operationId' => $operationId,
                 'nativeType' => $legacy['command'],
                 'payload' => $payload,
                 'bytes' => $bytes,
                 'attempts' => 1,
-                'status' => match ((string)$dispatch($imei, $bytes, array_merge($template, ['id' => $id, 'operationId' => '']))) {
+                'status' => match ((string)$dispatch($imei, $bytes, array_merge($template, ['id' => $id, 'operationId' => $operationId]))) {
                     'sent' => 'waiting',
                     'dropped' => 'dropped',
                     default => 'queued',
@@ -270,14 +284,6 @@ final class DeviceCommandStore
             ]);
             unset($record['bytesEncoding'], $record['ackedAt'], $record['failedAt']);
             $this->recordCommand($imei, $id, $record);
-        }
-
-        foreach ($phonebook as $command) {
-            $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
-                'status' => 'superseded',
-                'error' => '',
-                'lastError' => '',
-            ]));
         }
     }
 
