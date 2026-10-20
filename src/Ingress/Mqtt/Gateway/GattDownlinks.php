@@ -68,7 +68,7 @@ final class GattDownlinks
 
             $this->publish($gatewayKey, $deviceKey, $operation, $downlink->dedupeKey, self::commandId($downlink), $writes, $downlink->expiresAt);
             $this->sentAt[$deviceKey . '|' . $downlink->dedupeKey] = $now;
-            $this->mark($deviceKey, $downlink, ['status' => 'waiting', 'sentAt' => gmdate('Y-m-d\TH:i:s\Z')]);
+            $this->mark($deviceKey, $downlink, ['status' => 'waiting', 'sentAt' => gmdate('Y-m-d\TH:i:s\Z'), 'announceSent' => true]);
             $sent[] = $operation;
 
             return $sent;

@@ -135,7 +135,7 @@ final class QinglanstCloudDownlinks
         $operation = (string)($downlink->command['command'] ?? $downlink->bytes);
         $payload = is_array($downlink->command['payload'] ?? null) ? $downlink->command['payload'] : [];
         $this->sentAt[$downlink->dedupeKey] = time();
-        $this->mark($imei, $downlink, ['status' => 'waiting', 'sentAt' => gmdate('Y-m-d\TH:i:s\Z')]);
+        $this->mark($imei, $downlink, ['status' => 'waiting', 'sentAt' => gmdate('Y-m-d\TH:i:s\Z'), 'announceSent' => true]);
 
         if ($operation === 'read_device_state') {
             // Sem código nenhum, a cloud não respondeu: o motivo é o que a leitura contou.

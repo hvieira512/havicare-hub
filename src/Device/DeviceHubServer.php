@@ -111,7 +111,8 @@ class DeviceHubServer
         $conn->close();
     }
 
-    public function sendDownlink(string $imei, string $bytes): bool
+    /** @param array<string, mixed>|null $context o pedido de onde o comando vem; o `id` segue no evento */
+    public function sendDownlink(string $imei, string $bytes, ?array $context = null): bool
     {
         $conn = $this->connections->connectionFor($imei);
         if (!$conn instanceof ConnectionInterface) {
@@ -124,7 +125,7 @@ class DeviceHubServer
         $company = $this->currentCompany($imei, $session?->company ?? 'null');
         $commercialName = $this->currentCommercialName($imei, $session?->commercialName ?? '');
         try {
-            $command = $this->commandMetadata($bytes, $session?->protocol);
+            $command = self::withRequestId($this->commandMetadata($bytes, $session?->protocol), $context);
             $this->mqtt->publishEvent($imei, RawPayload::event(
                 $imei,
                 $session?->supplier ?? '',
@@ -167,19 +168,20 @@ class DeviceHubServer
      */
     public function submitDownlink(string $imei, string $bytes, ?array $context = null): string
     {
-        if ($this->sendDownlink($imei, $bytes)) {
+        if ($this->sendDownlink($imei, $bytes, $context)) {
             return 'sent';
         }
 
         return $this->queueDownlink($imei, $bytes, $context) ? 'queued' : 'dropped';
     }
 
-    public function reportDownlinkDropped(string $imei, string $reason, ?string $bytes = null): void
+    /** @param array<string, mixed>|null $context */
+    public function reportDownlinkDropped(string $imei, string $reason, ?string $bytes = null, ?array $context = null): void
     {
         $error = $this->errorPayload($reason);
         $metadata = $this->authorizer->metadataFor($imei);
         try {
-            $command = $bytes !== null ? $this->commandMetadata($bytes) : null;
+            $command = self::withRequestId($bytes !== null ? $this->commandMetadata($bytes) : null, $context);
             $this->mqtt->publishEvent($imei, RawPayload::event(
                 $imei,
                 $metadata['supplier'],
@@ -208,7 +210,7 @@ class DeviceHubServer
     public function queueDownlink(string $imei, string $bytes, ?array $context = null): bool
     {
         if ($this->downlinkQueue === null) {
-            $this->reportDownlinkDropped($imei, 'device_offline', $bytes);
+            $this->reportDownlinkDropped($imei, 'device_offline', $bytes, $context);
             return false;
         }
 
@@ -246,7 +248,7 @@ class DeviceHubServer
             return true;
         } catch (\Throwable $e) {
             Logger::channel('hub')->error("Failed to queue downlink for IMEI={$imei}: {$e->getMessage()}");
-            $this->reportDownlinkDropped($imei, 'queue_unavailable', $bytes);
+            $this->reportDownlinkDropped($imei, 'queue_unavailable', $bytes, $context);
             return false;
         }
     }
@@ -516,7 +518,7 @@ class DeviceHubServer
                     $this->downlinkQueue->remove($downlink);
                     continue;
                 }
-                if (!$this->sendDownlink($session->imei, $downlink->bytes)) {
+                if (!$this->sendDownlink($session->imei, $downlink->bytes, is_array($downlink->command) ? $downlink->command : null)) {
                     continue;
                 }
                 $nativeType = is_array($downlink->command) ? (string)($downlink->command['nativeType'] ?? '') : '';
@@ -691,6 +693,18 @@ class DeviceHubServer
         }
 
         return $state;
+    }
+
+    /**
+     * @param array<string, mixed>|null $command
+     * @param array<string, mixed>|null $context
+     * @return array<string, mixed>|null
+     */
+    private static function withRequestId(?array $command, ?array $context): ?array
+    {
+        $id = (string)($context['operationId'] ?? $context['id'] ?? '');
+
+        return $id === '' ? $command : ['id' => $id] + ($command ?? []);
     }
 
     /** @return array<string, mixed>|null */

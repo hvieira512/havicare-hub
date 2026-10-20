@@ -70,6 +70,7 @@ final class DownlinkDispatcher
             $this->deviceStore?->markLatestCommand($deviceKey, $operation, [
                 'status' => 'waiting',
                 'sentAt' => gmdate('Y-m-d\TH:i:s\Z'),
+                'announceSent' => true,
             ]);
 
             Logger::channel('hub')->info(

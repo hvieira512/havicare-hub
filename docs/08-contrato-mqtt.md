@@ -130,8 +130,8 @@ havicare-hub/hitcare/1001/watch/861265061009822/# um dispositivo, todos os canai
 Este canal transporta duas coisas diferentes: o **ciclo de vida** de um
 dispositivo, que descreve a ligação, e os **acontecimentos de domínio**, que
 descrevem o que aconteceu a uma pessoa. Os primeiros levam `type`, `occurredAt` e
-`device`, e ainda, quando se aplica, um objecto `command` — nos `device.downlink.*`,
-com o comando que saiu ou ficou em fila — ou um `error`. Os segundos acrescentam
+`device`, e ainda, quando se aplica, um objecto `command` — nos `device.downlink.*` —,
+um `configuration` — nos `device.configuration.*` — ou um `error`. Os segundos acrescentam
 `data` e `source`, com a mesma forma da telemetria.
 
 ### Eventos de ciclo de vida
@@ -141,12 +141,84 @@ com o comando que saiu ou ficou em fila — ou um `error`. Os segundos acrescent
 | `device.connected` | Um aparelho autenticou-se, um NCS reportou-se online, ou um radar ou aparelho retransmitido voltou a falar |
 | `device.disconnected` | Ligação fechada, inatividade, gateway calado, radar calado 3 minutos, ou retransmitido sem gateway que o ouça durante 30 |
 | `device.rejected` | Um aparelho não registado tentou entrar |
-| `device.downlink.sent` | Um comando saiu para o aparelho |
 | `device.downlink.queued` | O aparelho estava offline; o comando ficou em fila. Sai uma vez por pedido: renovar a fila enquanto o aparelho não volta não o repete |
+| `device.downlink.sent` | O comando saiu para o aparelho, por socket, por gateway ou pela cloud do fabricante. Sai a cada tentativa |
+| `device.downlink.acked` | O aparelho confirmou o comando |
+| `device.downlink.failed` | O comando acabou sem confirmação; o motivo vem em `error.code` |
+| `device.downlink.superseded` | Um pedido mais recente para a mesma configuração tomou o lugar deste antes de ele acabar |
 | `device.downlink.dropped` | O comando não foi entregue nem guardado |
+| `device.configuration.confirmed` | Uma alteração de configuração ficou aplicada no aparelho |
+| `device.configuration.failed` | Uma alteração de configuração não ficou aplicada |
+| `device.configuration.confirmation_unavailable` | O aparelho recebeu a alteração, mas não tem forma de confirmar que a aplicou |
 | `device.measurement_failed` | Pulseira — uma medição pedida não produziu valor, e o aparelho disse porquê |
 
-Os `dropped` levam `error.code`, que vale `device_offline` ou `queue_unavailable`.
+### O ciclo de um comando
+
+Todo o comando pedido pela API acaba num, e só num, de `acked`, `failed`,
+`superseded` ou `dropped`. Pelo caminho pode passar por `queued` e por um ou mais
+`sent`. A exceção são os comandos de um relógio a que o protocolo dele não prevê
+resposta: acabam no `sent`, e o `GET /api/commands/{id}` mostra-os com
+`status: "sent"`. O que os liga é o `command.id`, que é o mesmo `id` que a API devolveu ao
+pedido e que `GET /api/commands/{id}` aceita.
+
+```json
+{
+  "type": "device.downlink.failed",
+  "occurredAt": "2026-10-20T09:03:10Z",
+  "device": { "id": "861728087056333", "supplier": "Vivistar", "model": "L08 Pro" },
+  "error": { "code": "retry_exhausted" },
+  "command": {
+    "id": "5f0c2a91d7e44b3c",
+    "nativeType": "BP84",
+    "protocol": "vivistar-iw",
+    "configKey": "whitelist_enabled",
+    "status": "failed",
+    "attempts": 3,
+    "sentAt": "2026-10-20T09:01:10Z"
+  }
+}
+```
+
+O `command` traz sempre o `id`. Nos desfechos traz também o `nativeType`, o
+`protocol`, o `status` e, quando existem, o `configKey` (de uma configuração), o
+`feature` (de um pedido avulso), as `attempts`, o `sentAt` e o `ackedAt`. Nos
+`sent`, `queued` e `dropped` traz o que o protocolo sabe do comando que saiu.
+
+O `error.code` de um `failed` vale `device_rejected` (o aparelho recusou),
+`response_timeout` (não respondeu a tempo), `retry_exhausted` (esgotou as
+tentativas), `delivery_failed` (não chegou ao aparelho) ou um código do próprio
+aparelho, como o `memory_full` da balança. Os `dropped` levam `device_offline`
+ou `queue_unavailable`.
+
+### O desfecho de uma configuração
+
+Uma alteração feita pela API pode precisar de vários comandos. O evento
+`device.configuration.*` sai uma vez, quando a alteração inteira acaba, com a
+revisão e o valor que ficou aplicado:
+
+```json
+{
+  "type": "device.configuration.confirmed",
+  "occurredAt": "2026-10-20T09:01:12Z",
+  "device": { "id": "861728087056333", "supplier": "Vivistar", "model": "L08 Pro" },
+  "configuration": {
+    "key": "whitelist_enabled",
+    "changeId": "3b1f4e0a9c2d4f6e8a7b5c3d1e0f9a8b",
+    "desiredRevision": 7,
+    "status": "confirmed",
+    "effective": { "enabled": true }
+  }
+}
+```
+
+O `configuration.effective` só existe no `confirmed`, e é o valor que o `GET
+/api/devices/{imei}` passa a devolver em `effectiveConfigurations`. O `failed`
+traz `error.code` com o motivo do primeiro comando que falhou. Uma alteração que
+não precisa de escrever nada no aparelho, como mudar o nome de um utilizador da
+balança, sai `confirmed` logo. Uma leitura que mostra um valor diferente do que o
+hub tinha, como a de um radar, também sai `confirmed`, com o valor lido. Uma
+alteração substituída por outra mais recente não tem evento próprio: o desfecho
+que conta é o da mais recente.
 
 O `measurement_failed` leva `error.reason`, que vale `not_worn` quando a deteção de uso
 não passou, `low_battery` e `sensor_fault` quando é o firmware a recusar, `no_signal`

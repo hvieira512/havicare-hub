@@ -49,6 +49,12 @@ final class DeviceStore implements DeviceStoreContract
         return $this->updates;
     }
 
+    /** @param callable(string, string, array<string, mixed>): void $announce */
+    public function announceCommandsTo(callable $announce): void
+    {
+        $this->commands->announceTo($announce);
+    }
+
     public function setDataAccess(?ApiDataAccess $db): void
     {
         $this->db = $db;

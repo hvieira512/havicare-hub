@@ -10,11 +10,23 @@ use PDO;
 
 final class DeviceConfigurationLifecycleRepository
 {
+    /** Os estados em que uma alteração acabou, e que se anunciam. */
+    private const OUTCOMES = ['confirmed', 'failed', 'confirmation_unavailable'];
+
     private VoiceDataMarker $voiceDataMarker;
+
+    /** @var null|\Closure(array{imei: string, configKey: string, changeId: string, desiredRevision: int, status: string, effective: mixed, error: string}): void */
+    private ?\Closure $announce = null;
 
     public function __construct(private PDO $pdo)
     {
         $this->voiceDataMarker = new VoiceDataMarker();
+    }
+
+    /** @param callable(array{imei: string, configKey: string, changeId: string, desiredRevision: int, status: string, effective: mixed, error: string}): void $announce */
+    public function announceOutcomesTo(callable $announce): void
+    {
+        $this->announce = $announce(...);
     }
 
     /**
@@ -131,6 +143,9 @@ final class DeviceConfigurationLifecycleRepository
             }
             unset($operation);
             $this->pdo->commit();
+            if ($applied) {
+                $this->announceOutcome($changeId);
+            }
             return ['changeId' => $changeId, 'revision' => $revision, 'operations' => $operations];
         } catch (\Throwable $e) {
             if ($this->pdo->inTransaction()) {
@@ -380,6 +395,9 @@ final class DeviceConfigurationLifecycleRepository
         } elseif ($statuses !== [] && count(array_unique($statuses)) === 1 && $statuses[0] === 'acked') {
             $sync = in_array('ack_only', $modes, true) ? 'confirmation_unavailable' : 'confirmed';
         }
+        $previous = $this->pdo->prepare('SELECT sync_status FROM device_configuration_changes WHERE change_id = ? AND superseded_at IS NULL');
+        $previous->execute([$changeId]);
+        $before = $previous->fetchColumn();
         $now = gmdate('Y-m-d H:i:s');
         $confirm = $sync === 'confirmed';
         $update = $this->pdo->prepare('
@@ -403,6 +421,39 @@ final class DeviceConfigurationLifecycleRepository
             }
         }
         $rows->execute([$sync, $error, $confirm ? 1 : 0, $now, $changeId]);
+        if ($before !== false && $before !== $sync && in_array($sync, self::OUTCOMES, true)) {
+            $this->announceOutcome($changeId);
+        }
+    }
+
+    private function announceOutcome(string $changeId): void
+    {
+        if ($this->announce === null) {
+            return;
+        }
+        $stmt = $this->pdo->prepare('
+            SELECT change_row.imei, change_row.config_key, change_row.desired_revision, change_row.sync_status,
+                   change_row.effective_payload,
+                   (SELECT operation_row.error_code FROM device_configuration_operations operation_row
+                    WHERE operation_row.change_id = change_row.change_id AND operation_row.error_code <> \'\'
+                    ORDER BY operation_row.sequence_number LIMIT 1) AS error_code
+            FROM device_configuration_changes change_row
+            WHERE change_row.change_id = ?
+        ');
+        $stmt->execute([$changeId]);
+        $row = $stmt->fetch();
+        if ($row === false) {
+            return;
+        }
+        ($this->announce)([
+            'imei' => (string)$row['imei'],
+            'configKey' => (string)$row['config_key'],
+            'changeId' => $changeId,
+            'desiredRevision' => (int)$row['desired_revision'],
+            'status' => (string)$row['sync_status'],
+            'effective' => $row['effective_payload'] === null ? null : $this->decode((string)$row['effective_payload']),
+            'error' => (string)($row['error_code'] ?? ''),
+        ]);
     }
 
     /** @param array<string, mixed> $value */

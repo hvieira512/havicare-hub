@@ -7,6 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Gateway;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Ingress\Mqtt\Gateway\GattDownlinks;
 use Hub\Ingress\Mqtt\Veepoo\DownlinkDispatcher;
+use Hub\State\DeviceStore;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\OneShotDownlinkQueue;
@@ -76,6 +77,24 @@ final class ResendThrottleTest extends TestCase
         $downlinks->delivered('cfe908067329', (string)$mqtt->gatewayCommands[0]['payload']['dedupeKey'], false, 'not_connected');
 
         self::assertCount(1, $queue->pendingFor('cfe908067329'));
+    }
+
+    /** Quem integra sabe que a ordem saiu pelo gateway, como sabe de uma que sai por socket. */
+    public function testASendThroughTheGatewayIsAnnounced(): void
+    {
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $queue->enqueue('cfe908067329', 'weightUnit', ['id' => 'c-1'], 300);
+        $store = new DeviceStore(new InMemoryRedisClient());
+        $store->recordCommand('cfe908067329', 'c-1', ['status' => 'queued', 'nativeType' => 'weightUnit']);
+        $announced = [];
+        $store->announceCommandsTo(static function (string $imei, string $type) use (&$announced): void {
+            $announced[] = $type;
+        });
+
+        (new GattDownlinks($queue, new RecordingHubMqttBridge(), $store, self::TOPIC, static fn (): array => [['char' => 'fff1', 'hex' => '00']]))
+            ->dispatchPending('cfe908067329', self::GATEWAY, 61, 0);
+
+        self::assertSame(['device.downlink.sent'], $announced);
     }
 
     /** @return list<string> */

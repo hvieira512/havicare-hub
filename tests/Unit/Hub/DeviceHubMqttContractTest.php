@@ -452,6 +452,26 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('868705080300697', $ack['imei']);
     }
 
+    /** O id do pedido liga o envio ao desfecho que vem depois. */
+    public function testASubmittedDownlinkCarriesTheRequestId(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+        $connection = new ContractFakeConnection(4);
+        $adapter = new WonlexAdapter();
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, $adapter->encodeOutgoing(['type' => 'login', 'imei' => '868705080300697', 'data' => ['deviceModel' => 'IGNORED']]));
+
+        $hub->submitDownlink('868705080300697', $adapter->encodeOutgoing([
+            'type' => 'dnHeartRate', 'ident' => 1, 'ref' => 's:down', 'imei' => '868705080300697', 'data' => ['type' => 'dnHeartRate'],
+        ]), ['id' => 'c-1']);
+        $hub->submitDownlink('865028000000308', 'IWBP03#', ['id' => 'c-2']);
+
+        $downlinks = array_values(array_filter($mqtt->events, static fn (array $event): bool => str_starts_with((string)($event[1]['type'] ?? ''), 'device.downlink.')));
+        self::assertSame(['device.downlink.sent', 'device.downlink.dropped'], array_map(static fn (array $event): string => $event[1]['type'], $downlinks));
+        self::assertSame(['c-1', 'c-2'], array_map(static fn (array $event): string => (string)($event[1]['command']['id'] ?? ''), $downlinks));
+    }
+
     public function testOnlineDownlinkPublishesCommandMetadata(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();

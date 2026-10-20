@@ -10,6 +10,7 @@ use Hub\Device\CommercialModelResolver;
 use Hub\Device\DeviceHubServer;
 use Hub\Device\Firmware\RedisFirmwareUpgradeStore;
 use Hub\Device\HubMqttBridge;
+use Hub\Device\LifecycleEvents;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\RedisPendingDownlinkQueue;
 use Hub\Domain\Capability\Medication\MedicationRunout;
@@ -82,6 +83,10 @@ final class HubServices
             static fn (): MqttClient => $connections->build('pub'),
             gatewayCommands: (bool)$config['gateway']['commands_enabled'],
         );
+
+        $lifecycleEvents = new LifecycleEvents($mqttBridge, $whitelist, $commercialModelResolver);
+        $deviceStore->announceCommandsTo($lifecycleEvents->command(...));
+        $dataAccess->configurationLifecycle->announceOutcomesTo($lifecycleEvents->configuration(...));
 
         $locationEnricher = LocationEnricherFactory::create(
             $config['location_resolution'],

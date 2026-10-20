@@ -326,4 +326,38 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         self::assertArrayNotHasKey('voiceData', $effective);
         self::assertTrue($effective['voiceDataAvailable']);
     }
+
+    /** Só o desfecho de uma alteração se anuncia: aplicada, recusada, ou entregue sem confirmação possível. */
+    public function testOnlyTheOutcomeOfAChangeIsAnnounced(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $settled = [];
+        $db->configurationLifecycle->announceOutcomesTo(static function (array $change) use (&$settled): void {
+            $settled[] = [$change['configKey'], $change['status'], $change['effective'], $change['error'], $change['desiredRevision']];
+        });
+        $stage = static fn (string $operationId, bool $enabled, string $mode = 'execution_ack') => $db->configurationLifecycle->stage(
+            '861728087056333',
+            'whitelist_enabled',
+            ['enabled' => $enabled],
+            [['nativeKey' => 'rejectUnknownCalls', 'protocol' => 'vivistar-iw', 'command' => 'BP84', 'payload' => ['enabled' => $enabled], 'confirmationMode' => $mode, 'operationId' => $operationId]],
+            [['operationId' => $operationId, 'nativeKey' => 'rejectUnknownCalls', 'nativeType' => 'BP84', 'protocol' => 'vivistar-iw', 'confirmationMode' => $mode]],
+        );
+
+        $stage('op-one', true);
+        $db->configurationLifecycle->updateOperation('op-one', 'waiting');
+        $db->configurationLifecycle->updateOperation('op-one', 'acked');
+        $db->configurationLifecycle->updateOperation('op-one', 'acked');
+        $stage('op-two', false);
+        $db->configurationLifecycle->updateOperation('op-two', 'failed', 'device_rejected');
+        $stage('op-three', false, 'ack_only');
+        $db->configurationLifecycle->updateOperation('op-three', 'acked');
+        $db->configurationLifecycle->stage('cfe908067329', 'scale_users', ['items' => []], [], []);
+
+        self::assertSame([
+            ['whitelist_enabled', 'confirmed', ['enabled' => true], '', 1],
+            ['whitelist_enabled', 'failed', null, 'device_rejected', 2],
+            ['whitelist_enabled', 'confirmation_unavailable', null, '', 3],
+            ['scale_users', 'confirmed', ['items' => []], '', 1],
+        ], $settled);
+    }
 }

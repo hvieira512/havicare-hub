@@ -10,6 +10,9 @@ use Predis\ClientInterface;
 
 final class DeviceCommandStore
 {
+    /** @var null|\Closure(string, string, array<string, mixed>): void */
+    private ?\Closure $announce = null;
+
     public function __construct(
         private ClientInterface $redis,
         private DeviceRuntimeStore $runtime,
@@ -21,11 +24,40 @@ final class DeviceCommandStore
         $this->limit = max(1, $this->limit);
     }
 
+    /** @param callable(string, string, array<string, mixed>): void $announce recebe o aparelho, o `type` do evento e o registo */
+    public function announceTo(callable $announce): void
+    {
+        $this->announce = $announce(...);
+    }
+
+    /**
+     * O evento que a mudança de estado de um comando publica. O envio por socket anuncia-o o
+     * servidor TCP; quem entrega por gateway ou pela cloud pede-o com `announceSent`.
+     */
+    private static function outcome(string $before, string $after, bool $announceSent): ?string
+    {
+        if ($announceSent && in_array($after, ['waiting', 'sent'], true)) {
+            return 'device.downlink.sent';
+        }
+        if ($before === $after) {
+            return null;
+        }
+
+        return match ($after) {
+            'acked' => 'device.downlink.acked',
+            'failed' => 'device.downlink.failed',
+            'superseded' => 'device.downlink.superseded',
+            default => null,
+        };
+    }
+
     /** @param array<string, mixed> $record */
     public function recordCommand(string $imei, string $id, array $record): void
     {
         $lifecycleAlreadyPersisted = ($record['lifecycleStatusPersisted'] ?? false) === true;
-        unset($record['lifecycleStatusPersisted']);
+        $announceSent = ($record['announceSent'] ?? false) === true;
+        unset($record['lifecycleStatusPersisted'], $record['announceSent']);
+        $before = json_decode((string)$this->redis->hget($this->commandHashKey($imei), $id), true);
         $record['id'] = $id;
         $record['updatedAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
         $record = DeviceCommandRecord::makeJsonSafe($record);
@@ -50,6 +82,11 @@ final class DeviceCommandStore
         });
         if (!$lifecycleAlreadyPersisted) {
             $this->projectConfigurationStatus($imei, $id, $record);
+        }
+
+        $type = self::outcome((string)(is_array($before) ? $before['status'] ?? '' : ''), (string)($record['status'] ?? ''), $announceSent);
+        if ($type !== null && $this->announce !== null) {
+            ($this->announce)($imei, $type, $record);
         }
     }
 
