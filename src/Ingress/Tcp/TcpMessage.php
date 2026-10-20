@@ -11,12 +11,14 @@ final class TcpMessage
      * @param array<int, array<string, mixed>> $telemetry
      * @param array<int, TcpResponse> $responses
      * @param bool $repliesConfirmDelivery o aparelho apaga o que mandou quando recebe a resposta
+     * @param \Closure(): void|null $withheld desfaz o que o protocolo deu por feito, quando as respostas não saem
      */
     public function __construct(
         public readonly array $decoded,
         public readonly array $telemetry = [],
         public readonly array $responses = [],
         public readonly bool $repliesConfirmDelivery = false,
+        public readonly ?\Closure $withheld = null,
     ) {
     }
 }

@@ -31,6 +31,9 @@ final class InMemoryRedisClient implements ClientInterface
     /** @var array<string, array<string, float>> */
     private array $sortedSets = [];
 
+    /** O comando que rebenta, para provar o que acontece com o Redis em baixo. */
+    public ?string $failOn = null;
+
     public function getCommandFactory()
     {
         throw new \BadMethodCallException('Not implemented');
@@ -73,6 +76,10 @@ final class InMemoryRedisClient implements ClientInterface
     /** @param array<int, mixed> $arguments */
     public function __call($method, $arguments)
     {
+        if ($this->failOn !== null && strtolower((string)$method) === $this->failOn) {
+            throw new \RuntimeException("redis {$this->failOn} failed");
+        }
+
         return match (strtolower((string)$method)) {
             'sadd' => $this->sadd((string)$arguments[0], $arguments[1]),
             'srem' => $this->srem((string)$arguments[0], (string)$arguments[1]),

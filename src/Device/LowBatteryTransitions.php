@@ -46,4 +46,9 @@ final class LowBatteryTransitions
             'data' => array_intersect_key($data, ['percent' => true, 'voltageMv' => true]),
         ] + $event;
     }
+
+    public function forget(string $deviceKey): void
+    {
+        unset($this->low[$deviceKey]);
+    }
 }

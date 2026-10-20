@@ -321,13 +321,16 @@ class DeviceHubServer
         $this->publishStatus($identity->imei, $session->supplier, $session->model, 'online', $session->deviceType, $licenseId, $company, $commercialName);
         $this->publishEvent($identity->imei, $session->supplier, $session->model, 'device.connected', $session->deviceType, $licenseId, $company, $commercialName);
 
-        $this->handleAuthenticatedMessage($conn, $session, $raw, (string)$conn->resourceId);
-        $this->flushPendingDownlinks($session);
+        // Um registo por confirmar ainda não deixou o aparelho pronto: as ordens esperam.
+        if ($this->handleAuthenticatedMessage($conn, $session, $raw, (string)$conn->resourceId)) {
+            $this->flushPendingDownlinks($session);
+        }
 
         Logger::channel('hub')->info("Device online IMEI={$identity->imei} protocol={$identity->protocol}");
     }
 
-    private function handleAuthenticatedMessage(ConnectionInterface $conn, DeviceSession $session, string $raw, string $connectionId): void
+    /** Devolve se as respostas saíram: só não saem quando o aparelho apagaria o que não ficou publicado. */
+    private function handleAuthenticatedMessage(ConnectionInterface $conn, DeviceSession $session, string $raw, string $connectionId): bool
     {
         try {
             $this->mqtt->publishRaw(
@@ -344,12 +347,12 @@ class DeviceHubServer
 
         $protocol = $this->tcpProtocols->get($session->protocol);
         if ($protocol === null) {
-            return;
+            return true;
         }
 
         $message = $protocol->handleIncoming($session, $raw);
         if (!($message instanceof TcpMessage)) {
-            return;
+            return true;
         }
 
         // Se a trama confirma uma configuração é conhecimento do protocolo: aqui serve-se
@@ -382,12 +385,17 @@ class DeviceHubServer
         // Sem resposta, o aparelho guarda o evento e volta a mandá-lo.
         if (!$published && $message->repliesConfirmDelivery) {
             Logger::channel('hub')->warning("Reply withheld until the event is published IMEI={$session->imei}");
-            return;
+            if ($message->withheld !== null) {
+                ($message->withheld)();
+            }
+            return false;
         }
 
         foreach ($message->responses as $response) {
             $this->sendTcpResponse($session, $response, $conn, $connectionId);
         }
+
+        return true;
     }
 
     /**
@@ -430,25 +438,33 @@ class DeviceHubServer
             } else {
                 $this->mqtt->publishTelemetry($session->imei, $event, $session->deviceType, $licenseId, $company);
             }
-
-            // O heartbeat sai no MQTT mas não entra no histórico do dashboard: seria um terço dos cem
-            // eventos guardados, a repetir a bateria e os passos que chegam como eventos próprios.
-            if ($type !== 'heartbeat') {
-                $this->deviceStore?->append($session->imei, $channel, array_merge(
-                    $event,
-                    ['deviceType' => $session->deviceType, 'licenseId' => $licenseId]
-                ));
-            }
-
-            $lowBattery = $this->lowBattery->observe($session->imei, $event);
-            if ($lowBattery !== null) {
-                $this->publishTelemetryEvent($session, $lowBattery);
-            }
-            return true;
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $session->imei, $e);
             return false;
         }
+
+        // O heartbeat sai no MQTT mas não entra no histórico do dashboard: seria um terço dos cem
+        // eventos guardados, a repetir a bateria e os passos que chegam como eventos próprios.
+        if ($type !== 'heartbeat') {
+            // O histórico é um extra: falhar aqui não desfaz o que saiu.
+            try {
+                $this->deviceStore?->append($session->imei, $channel, array_merge(
+                    $event,
+                    ['deviceType' => $session->deviceType, 'licenseId' => $licenseId]
+                ));
+            } catch (\Throwable $e) {
+                Logger::channel('hub')->error("Failed to record {$type} IMEI={$session->imei}: {$e->getMessage()}");
+            }
+        }
+
+        $lowBattery = $this->lowBattery->observe($session->imei, $event);
+        if ($lowBattery !== null && !$this->publishTelemetryEvent($session, $lowBattery)) {
+            // Por publicar, o alerta tem de voltar a acender na repetição.
+            $this->lowBattery->forget($session->imei);
+            return false;
+        }
+
+        return true;
     }
 
     private function reject(ConnectionInterface $conn, DeviceIdentity $identity, string $reason): void

@@ -26,6 +26,13 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
     /** @var array<string, true> */
     private array $activeConditions = [];
 
+    /**
+     * O estado da actualização antes de a trama corrente o avançar, por aparelho.
+     *
+     * @var array<string, array<string, mixed>>
+     */
+    private array $upgradeBefore = [];
+
     public function __construct(
         DeviceAdapterInterface $adapter,
         DeviceEventDecoder $eventDecoder,
@@ -108,7 +115,26 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
             },
         ));
 
-        return new TcpMessage(decoded: $message->decoded, telemetry: $telemetry, responses: $message->responses, repliesConfirmDelivery: true);
+        $imei = $session->imei;
+        $upgradeBefore = $this->upgradeBefore[$imei] ?? null;
+        unset($this->upgradeBefore[$imei]);
+        // Retida a resposta, o aparelho repete o pacote: o que aqui se deu por anunciado ou enviado volta atrás.
+        $withheld = function () use ($imei, $raised, $upgradeBefore): void {
+            foreach (array_keys($raised) as $condition) {
+                unset($this->activeConditions[$imei . '|' . $condition]);
+            }
+            if ($upgradeBefore !== null) {
+                $this->upgrades?->save($imei, $upgradeBefore);
+            }
+        };
+
+        return new TcpMessage(
+            decoded: $message->decoded,
+            telemetry: $telemetry,
+            responses: $message->responses,
+            repliesConfirmDelivery: true,
+            withheld: $withheld,
+        );
     }
 
     /**
@@ -181,6 +207,7 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
         );
 
         if ($step['state'] !== $state) {
+            $this->upgradeBefore[$imei] = $state;
             $this->upgrades->save($imei, $step['state']);
         }
 

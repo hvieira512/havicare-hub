@@ -11,6 +11,7 @@ use Hub\Device\Firmware\FirmwareUpgradeStore;
 use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryFirmwareUpgradeStore;
 use Tests\Unit\Hub\PillFakeConnection;
 
 /**
@@ -158,26 +159,5 @@ final class FirmwareUpgradeOverTheSessionTest extends TestCase
             'Zayata M228',
             'pill_dispenser',
         );
-    }
-}
-
-/** O estado da transferência em memória, com o `$state` à vista para o teste o ler. */
-final class InMemoryFirmwareUpgradeStore implements FirmwareUpgradeStore
-{
-    /** @param array<string, mixed> $state */
-    public function __construct(public array $state)
-    {
-    }
-
-    /** @return array<string, mixed>|null */
-    public function load(string $imei): ?array
-    {
-        return $this->state;
-    }
-
-    /** @param array<string, mixed> $state */
-    public function save(string $imei, array $state): void
-    {
-        $this->state = $state;
     }
 }
