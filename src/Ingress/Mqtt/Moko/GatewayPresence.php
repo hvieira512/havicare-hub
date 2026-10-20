@@ -44,14 +44,14 @@ final class GatewayPresence
 
     /**
      * Anuncia o gateway como ligado, se ainda não estava: o estado sai retido a cada anúncio,
-     * o acontecimento só na transição.
+     * o acontecimento só na transição. `$cameOnline` diz que o Redis o tinha por desligado.
      *
      * @param array<string, mixed> $gateway
      */
-    public function markOnline(array $gateway): void
+    public function markOnline(array $gateway, bool $cameOnline = false): void
     {
         $deviceKey = (string)$gateway['imei'];
-        if (isset($this->online[$deviceKey])) {
+        if (isset($this->online[$deviceKey]) && !$cameOnline) {
             return;
         }
         $this->online[$deviceKey] = $gateway;

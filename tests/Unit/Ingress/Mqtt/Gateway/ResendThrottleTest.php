@@ -97,6 +97,58 @@ final class ResendThrottleTest extends TestCase
         self::assertSame(['device.downlink.sent'], $announced);
     }
 
+    /** Sem o aparelho ligado não houve tentativa: o comando volta à fila, e não conta para o limite. */
+    public function testANotConnectedReplyPutsTheCommandBackInTheQueue(): void
+    {
+        [$store, $downlinks, $mqtt] = $this->gattWithStore(static fn (): array => [['char' => 'fff1', 'hex' => '00']]);
+        $downlinks->dispatchPending('cfe908067329', self::GATEWAY, 61, 0);
+
+        $downlinks->delivered('cfe908067329', (string)$mqtt->gatewayCommands[0]['payload']['dedupeKey'], false, 'not_connected');
+
+        self::assertSame('queued', $store->findCommand('c-1')['command']['status'] ?? null);
+    }
+
+    /** O código do erro é uma enumeração; o texto do motivo segue à parte. */
+    public function testAnOrderThatCannotBeBuiltFailsWithACode(): void
+    {
+        [$store, $downlinks] = $this->gattWithStore(static fn (): array => throw new \InvalidArgumentException('unit must be one of kg, lb'));
+
+        $downlinks->dispatchPending('cfe908067329', self::GATEWAY, 61, 0);
+
+        $command = $store->findCommand('c-1')['command'] ?? [];
+        self::assertSame(['failed', 'invalid_payload', 'unit must be one of kg, lb'], [$command['status'] ?? null, $command['error'] ?? null, $command['errorMessage'] ?? null]);
+    }
+
+    /** Duas ordens com a mesma operação são dois pedidos: a confirmação de uma fecha essa, e não a outra. */
+    public function testABraceletConfirmationClosesItsOwnRequest(): void
+    {
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $queue->enqueue('9f69c4866e6c', 'find_device', ['id' => 'c-on', 'command' => 'find_device', 'payload' => ['enabled' => true]], 300);
+        $queue->enqueue('9f69c4866e6c', 'find_device', ['id' => 'c-off', 'command' => 'find_device', 'payload' => ['enabled' => false]], 300);
+        $store = new DeviceStore(new InMemoryRedisClient());
+        $store->recordCommand('9f69c4866e6c', 'c-on', ['status' => 'queued', 'nativeType' => 'find_device']);
+        $store->recordCommand('9f69c4866e6c', 'c-off', ['status' => 'queued', 'nativeType' => 'find_device']);
+        $first = $queue->pendingFor('9f69c4866e6c')[0];
+
+        (new DownlinkDispatcher($queue, new RecordingHubMqttBridge(), $store, self::TOPIC))->resolvePending('9f69c4866e6c', $first->dedupeKey);
+
+        $closed = (string)($first->command['id'] ?? '');
+        $open = $closed === 'c-on' ? 'c-off' : 'c-on';
+        self::assertSame(['acked', 'queued'], [$store->findCommand($closed)['command']['status'] ?? null, $store->findCommand($open)['command']['status'] ?? null]);
+    }
+
+    /** @return array{DeviceStore, GattDownlinks, RecordingHubMqttBridge} */
+    private function gattWithStore(callable $writes): array
+    {
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $queue->enqueue('cfe908067329', 'weightUnit', ['id' => 'c-1'], 300);
+        $store = new DeviceStore(new InMemoryRedisClient());
+        $store->recordCommand('cfe908067329', 'c-1', ['status' => 'queued', 'nativeType' => 'weightUnit', 'expectedReplyTypes' => ['torre_unit']]);
+        $mqtt = new RecordingHubMqttBridge();
+
+        return [$store, new GattDownlinks($queue, $mqtt, $store, self::TOPIC, $writes), $mqtt];
+    }
+
     /** @return list<string> */
     private static function operations(RecordingHubMqttBridge $mqtt): array
     {

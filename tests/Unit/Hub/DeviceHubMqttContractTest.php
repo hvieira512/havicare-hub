@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Device\DeviceHubServer;
+use Hub\State\DeviceStore;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\RedisPendingDownlinkQueue;
@@ -170,6 +171,31 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('device_offline', $mqtt->events[0][1]['error']['code']);
         self::assertCount(0, $mqtt->statuses);
         self::assertCount(0, $mqtt->raw);
+    }
+
+    /**
+     * A ordem que esperava pelo relógio sai quando ele volta: sem resposta prevista, fica enviada; com ela,
+     * fica à espera e a repetição só vem depois do prazo.
+     */
+    public function testAQueuedCommandLeavesWhenTheWatchReconnects(): void
+    {
+        $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
+        $store = new DeviceStore(new InMemoryRedisClient());
+        $hub = new DeviceHubServer($this->whitelist, new ContractRecordingHubMqttBridge(), downlinkQueue: $queue, deviceStore: $store, downlinkQueueTtlSeconds: 300);
+        $adapter = new WonlexAdapter();
+        foreach (['c-push' => [], 'c-hr' => ['upHeartRate']] as $id => $replies) {
+            $bytes = $adapter->encodeOutgoing(['type' => $id === 'c-push' ? 'dnPushMessage' : 'dnHeartRate', 'ident' => 1, 'ref' => 's:down', 'imei' => '868705080300697', 'data' => []]);
+            $store->recordCommand('868705080300697', $id, ['status' => 'queued', 'expectedReplyTypes' => $replies, 'nextRetryAt' => '2000-01-01T00:00:00Z']);
+            $hub->queueDownlink('868705080300697', $bytes, ['id' => $id]);
+        }
+
+        $connection = new ContractFakeConnection(9);
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, $adapter->encodeOutgoing(['type' => 'login', 'imei' => '868705080300697', 'data' => ['deviceModel' => 'IGNORED']]));
+
+        self::assertSame('sent', $store->findCommand('c-push')['command']['status'] ?? null);
+        self::assertSame('waiting', $store->findCommand('c-hr')['command']['status'] ?? null);
+        self::assertGreaterThan(time(), strtotime((string)($store->findCommand('c-hr')['command']['nextRetryAt'] ?? '')));
     }
 
     public function testOfflineDownlinkQueuesLatestCommandPerDeviceAndNativeType(): void

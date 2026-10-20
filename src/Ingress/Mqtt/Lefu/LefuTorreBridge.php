@@ -217,7 +217,10 @@ final class LefuTorreBridge extends MqttBridgeBase implements DispatchesQueued
             return;
         }
         // Um hub reiniciado com a balança ligada não viu a sessão abrir: a primeira trama abre-a.
-        $this->sessions[$context->deviceKey] ??= ['gateway' => $context->gatewayKey, 'mtu' => self::DEFAULT_MTU, 'offset' => $offsetMinutes];
+        if (!isset($this->sessions[$context->deviceKey])) {
+            $this->sessions[$context->deviceKey] = ['gateway' => $context->gatewayKey, 'mtu' => self::DEFAULT_MTU, 'offset' => $offsetMinutes];
+            $this->presence->markOnline($context->deviceKey, $context->device, $context->licenseId, $context->company);
+        }
         $nativeType = $characteristic . ':' . substr(strtolower(preg_replace('/\s+/', '', $hex) ?? ''), 0, 2);
 
         match ($frame['kind']) {

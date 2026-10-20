@@ -67,7 +67,7 @@ final class DownlinkDispatcher
 
             // Fica em fila: entregar não é executar. Sai em `resolvePending`, quando o gateway
             // confirma, ou pelo TTL da política.
-            $this->deviceStore?->markLatestCommand($deviceKey, $operation, [
+            $this->mark($deviceKey, $downlink, [
                 'status' => 'waiting',
                 'sentAt' => gmdate('Y-m-d\TH:i:s\Z'),
                 'announceSent' => true,
@@ -94,13 +94,10 @@ final class DownlinkDispatcher
             $this->downlinks->remove($downlink);
             // Confirmada, a chave sai do travão para a ordem seguinte sair na hora.
             unset($this->sentAt[$deviceKey . '|' . $dedupeKey]);
-            $operation = self::operationOf($downlink);
-            if ($operation !== '') {
-                $this->deviceStore?->markLatestCommand($deviceKey, $operation, [
-                    'status' => 'acked',
-                    'ackedAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                ]);
-            }
+            $this->mark($deviceKey, $downlink, [
+                'status' => 'acked',
+                'ackedAt' => gmdate('Y-m-d\TH:i:s\Z'),
+            ]);
 
             Logger::channel('hub')->info("Veepoo downlink {$dedupeKey} confirmado por {$deviceKey}");
             return;
@@ -124,7 +121,7 @@ final class DownlinkDispatcher
 
             $this->downlinks->remove($downlink);
             unset($this->sentAt[$deviceKey . '|' . $downlink->dedupeKey]);
-            $this->deviceStore?->markLatestCommand($deviceKey, $operation, [
+            $this->mark($deviceKey, $downlink, [
                 'status' => 'failed',
                 'error' => $reason,
                 'failedAt' => gmdate('Y-m-d\TH:i:s\Z'),
@@ -133,6 +130,21 @@ final class DownlinkDispatcher
             Logger::channel('hub')->info(
                 "Veepoo downlink {$operation} de {$deviceKey} encerrado por {$reason}"
             );
+        }
+    }
+
+    /**
+     * O pedido de onde a ordem veio, pelo identificador; sem ele, o último pedido da operação.
+     *
+     * @param array<string, mixed> $fields
+     */
+    private function mark(string $deviceKey, PendingDownlink $downlink, array $fields): void
+    {
+        $id = (string)($downlink->command['operationId'] ?? $downlink->command['id'] ?? '');
+        if ($id !== '') {
+            $this->deviceStore?->markCommand($deviceKey, $id, $fields);
+        } elseif (self::operationOf($downlink) !== '') {
+            $this->deviceStore?->markLatestCommand($deviceKey, self::operationOf($downlink), $fields);
         }
     }
 

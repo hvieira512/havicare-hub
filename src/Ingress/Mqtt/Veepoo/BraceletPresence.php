@@ -42,8 +42,9 @@ final class BraceletPresence
         $wasOnline = $this->online[$deviceKey] ?? false;
         $this->online[$deviceKey] = true;
 
-        // É isto que a dashboard e a API leem para dizer se o aparelho está online.
-        $this->deviceStore?->deviceSeen($deviceKey, [
+        // É isto que a dashboard e a API leem para dizer se o aparelho está online; a manutenção
+        // também o desliga, e por isso é por aqui que se sabe se isto é uma ligação nova.
+        $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
             'supplier' => $supplier,
             'model' => $model,
             'deviceType' => $this->deviceType,
@@ -58,7 +59,7 @@ final class BraceletPresence
         $this->mqttBridge->publishStatus($deviceKey, $status, true, $this->deviceType, $licenseId, $company);
 
         // O estado é retido e vale a cada anúncio; o acontecimento só sai na transição.
-        if ($wasOnline) {
+        if ($wasOnline && $cameOnline !== true) {
             return;
         }
 
@@ -72,7 +73,8 @@ final class BraceletPresence
      */
     public function markOffline(string $deviceKey, array $device, int $licenseId, string $company): void
     {
-        if (($this->online[$deviceKey] ?? false) === false) {
+        // Sem memória, como depois de um reinício, a queda conta: o estado retido pode dizer `online`.
+        if (($this->online[$deviceKey] ?? null) === false) {
             return;
         }
         $this->online[$deviceKey] = false;

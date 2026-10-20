@@ -205,7 +205,7 @@ final class QinglanstCloudDownlinks
     {
         if ($code === self::CODE_OFFLINE) {
             // Fica em fila: sai outra vez na próxima mensagem do radar, quando ele voltar.
-            $this->mark($imei, $downlink, ['status' => 'waiting', 'error' => 'device_offline']);
+            $this->mark($imei, $downlink, ['status' => 'queued', 'error' => 'device_offline']);
             return null;
         }
 

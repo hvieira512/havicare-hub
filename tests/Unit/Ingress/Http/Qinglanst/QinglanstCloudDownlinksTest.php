@@ -42,7 +42,7 @@ final class QinglanstCloudDownlinksTest extends TestCase
         self::assertSame([self::IMEI], $this->reads, 'depois de escrever, o hub volta a ler o radar');
     }
 
-    public function testAnOfflineRadarKeepsTheChangeWaiting(): void
+    public function testAnOfflineRadarKeepsTheChangeQueued(): void
     {
         $queue = new InMemoryRadarQueue();
         $queue->enqueue(self::IMEI, 'fall_alarm', ['id' => 'op-2', 'command' => 'fall_alarm', 'payload' => ['afterSeconds' => 60]], 300);
@@ -53,7 +53,7 @@ final class QinglanstCloudDownlinksTest extends TestCase
         $this->await($downlinks->dispatchPending(self::IMEI, now: true));
 
         self::assertCount(1, $queue->pendingFor(self::IMEI));
-        self::assertSame(['status' => 'waiting', 'error' => 'device_offline'], array_intersect_key($this->lastMark('op-2'), ['status' => 1, 'error' => 1]));
+        self::assertSame(['status' => 'queued', 'error' => 'device_offline'], array_intersect_key($this->lastMark('op-2'), ['status' => 1, 'error' => 1]));
         self::assertSame(1, $client->propReads, 'enquanto espera, não volta a perguntar a cada mensagem');
     }
 

@@ -11,6 +11,8 @@ use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\InMemoryRedisClient;
+use Hub\State\DeviceStore;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\FakeMqttSubscriber;
@@ -60,6 +62,25 @@ final class BridgeTest extends TestCase
         $now += 181;
         $bridge->expireIdleGateways();
         self::assertSame(['online', 'offline'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
+    }
+
+    /** Dado por desligado pela manutenção, o gateway que volta a reencaminhar volta a estar ligado. */
+    public function testTheHavicareGatewayComesBackAfterTheHubGaveItUp(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $store = new DeviceStore(new InMemoryRedisClient());
+        $now = 1000.0;
+        $bridge = $this->bridge($mqtt, true, static function () use (&$now): float {
+            return $now;
+        }, store: $store);
+        $relayed = json_encode(['source' => 'joytech-node', 'kind' => 'session', 'device' => ['mac' => '748b34838278']]) ?: '';
+
+        $bridge->handleReceivedMessage('havicare-hub/null/0/gw/bef341903987/raw', $relayed);
+        $store->deviceOffline('bef341903987');
+        $now += 61;
+        $bridge->handleReceivedMessage('havicare-hub/null/0/gw/bef341903987/raw', $relayed);
+
+        self::assertSame(['online', 'online'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
     }
 
     public function testAuthorizedLinkedSensorPublishesIndependentTelemetryAndDeduplicatesReplay(): void
@@ -225,7 +246,7 @@ final class BridgeTest extends TestCase
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/' . $mac . '/raw', $payload);
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt, bool $linked, ?callable $clock = null, int $idleTimeout = 180): MokoBridge
+    private function bridge(RecordingHubMqttBridge $mqtt, bool $linked, ?callable $clock = null, int $idleTimeout = 180, ?DeviceStore $store = null): MokoBridge
     {
         $whitelist = IngressFixtures::whitelist([
             'd48c49f7909c' => IngressFixtures::gateway('MKGW3'),
@@ -241,6 +262,7 @@ final class BridgeTest extends TestCase
             new ArrayObservationStateStore(),
             options: new MokoGatewayOptions(gatewayIdleTimeoutSeconds: $idleTimeout),
             clock: $clock,
+            deviceStore: $store,
         );
     }
 

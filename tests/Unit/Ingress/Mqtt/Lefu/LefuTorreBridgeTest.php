@@ -235,6 +235,16 @@ final class LefuTorreBridgeTest extends TestCase
         self::assertSame(self::telemetry($byAge, 'body_composition')[0]['data'], self::telemetry($byBirthDate, 'body_composition')[0]['data']);
     }
 
+    /** Um hub reiniciado com a balança ligada só a vê pela primeira trama, e é aí que ela fica ligada. */
+    public function testAFrameWithoutASessionMarksTheScaleOnline(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+
+        $this->bridge($mqtt)->handleReceivedMessage(self::TOPIC, self::frame('fff3', '010da580942500 4a0032a00f64330e'));
+
+        self::assertSame(['online'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
+    }
+
     public function testWithoutAnOnlineUserTheWeighingHasNoOwnerNorComposition(): void
     {
         $mqtt = new RecordingHubMqttBridge();

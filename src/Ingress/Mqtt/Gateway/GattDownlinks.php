@@ -62,7 +62,7 @@ final class GattDownlinks
                 $writes = $this->writes($operation, $payload, $mtu, $offsetMinutes);
             } catch (\InvalidArgumentException $error) {
                 $this->downlinks->remove($downlink);
-                $this->mark($deviceKey, $downlink, ['status' => 'failed', 'error' => $error->getMessage()]);
+                $this->mark($deviceKey, $downlink, ['status' => 'failed', 'error' => 'invalid_payload', 'errorMessage' => $error->getMessage()]);
                 continue;
             }
 
@@ -119,8 +119,9 @@ final class GattDownlinks
                 continue;
             }
             unset($this->sentAt[$deviceKey . '|' . $dedupeKey]);
-            // O aparelho já não estava ligado: a ordem espera pela ligação seguinte.
+            // O aparelho já não estava ligado: a ordem espera pela ligação seguinte, sem contar como tentativa.
             if (!$ok && $error === self::NOT_CONNECTED) {
+                $this->mark($deviceKey, $downlink, ['status' => 'queued']);
                 return;
             }
             $this->downlinks->remove($downlink);

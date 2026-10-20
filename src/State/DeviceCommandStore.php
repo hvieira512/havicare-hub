@@ -10,6 +10,9 @@ use Predis\ClientInterface;
 
 final class DeviceCommandStore
 {
+    /** Os estados de que um comando não sai. */
+    private const FINISHED = ['acked', 'failed', 'dropped', 'superseded'];
+
     /** @var null|\Closure(string, string, array<string, mixed>): void */
     private ?\Closure $announce = null;
 
@@ -36,6 +39,9 @@ final class DeviceCommandStore
      */
     private static function outcome(string $before, string $after, bool $announceSent): ?string
     {
+        if (in_array($before, self::FINISHED, true)) {
+            return null;
+        }
         if ($announceSent && in_array($after, ['waiting', 'sent'], true)) {
             return 'device.downlink.sent';
         }
@@ -170,7 +176,9 @@ final class DeviceCommandStore
 
                 $status = (string)$dispatch($imei, $bytes, $command);
                 $updatedAttempts = $attempts;
-                if ($status === 'sent' && $commandStatus === 'waiting') {
+                // Um comando que já tinha saído conta como tentativa, também quando volta à fila de um
+                // gateway ou da cloud, que o entregam de novo sem resposta do aparelho.
+                if (in_array($status, ['sent', 'queued'], true) && $commandStatus === 'waiting') {
                     $updatedAttempts++;
                 }
                 $updated = array_merge($command, [
@@ -195,7 +203,8 @@ final class DeviceCommandStore
                     continue;
                 }
 
-                $updated['status'] = 'failed';
+                // O `device.downlink.dropped` já saiu de quem não conseguiu pôr na fila.
+                $updated['status'] = 'dropped';
                 $updated['error'] = 'delivery_failed';
                 $updated['lastError'] = 'delivery_failed';
                 $this->recordCommand($imei, (string)$command['id'], $updated);
@@ -250,7 +259,11 @@ final class DeviceCommandStore
                 'payload' => $payload,
                 'bytes' => $bytes,
                 'attempts' => 1,
-                'status' => (string)$dispatch($imei, $bytes, $template) === 'sent' ? 'waiting' : 'queued',
+                'status' => match ((string)$dispatch($imei, $bytes, array_merge($template, ['id' => $id, 'operationId' => '']))) {
+                    'sent' => 'waiting',
+                    'dropped' => 'dropped',
+                    default => 'queued',
+                },
                 'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
                 'error' => '',
                 'lastError' => '',
@@ -275,7 +288,7 @@ final class DeviceCommandStore
             if (($command['nativeType'] ?? '') !== $nativeType) {
                 continue;
             }
-            if (in_array((string)($command['status'] ?? ''), ['acked', 'failed', 'dropped', 'superseded'], true)) {
+            if (in_array((string)($command['status'] ?? ''), self::FINISHED, true)) {
                 continue;
             }
             $this->recordCommand($imei, (string)$command['id'], array_merge($command, $fields));
@@ -288,7 +301,9 @@ final class DeviceCommandStore
     {
         foreach ($this->commands($imei) as $command) {
             if ((string)($command['id'] ?? '') === $id) {
-                $this->recordCommand($imei, $id, array_merge($command, $fields));
+                if (!in_array((string)($command['status'] ?? ''), self::FINISHED, true)) {
+                    $this->recordCommand($imei, $id, array_merge($command, $fields));
+                }
                 return;
             }
         }
@@ -434,7 +449,7 @@ final class DeviceCommandStore
             (string)$record['configKey'],
             $status,
             $id,
-            (string)($record['lastError'] ?? $record['error'] ?? '')
+            (string)(($record['lastError'] ?? '') ?: ($record['error'] ?? ''))
         );
     }
 

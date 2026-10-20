@@ -68,4 +68,52 @@ final class LifecycleEventsTest extends TestCase
         self::assertSame(['code' => 'device_rejected'], $mqtt->events[0]['payload']['error']);
         self::assertArrayNotHasKey('effective', $mqtt->events[0]['payload']['configuration']);
     }
+
+    public function testAFeatureRequestSaysWhichFeature(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        (new LifecycleEvents($mqtt, IngressFixtures::whitelist([self::DEVICE => IngressFixtures::device('Vivistar', 'L08 Pro', 'watch')])))
+            ->command(self::DEVICE, 'device.downlink.acked', ['id' => 'c-1', 'feature' => 'find_device', 'status' => 'acked']);
+
+        self::assertSame('find_device', $mqtt->events[0]['payload']['command']['feature']);
+    }
+
+    /** Publicar o desfecho nunca parte quem regista o comando. */
+    public function testAFailureToPublishDoesNotEscape(): void
+    {
+        $mqtt = new class extends RecordingHubMqttBridge {
+            public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+            {
+                throw new \RuntimeException('broker unavailable');
+            }
+        };
+        $whitelist = $this->createStub(\Hub\Registry\Whitelist::class);
+        $whitelist->method('getMetadata')->willThrowException(new \RuntimeException('database unavailable'));
+
+        (new LifecycleEvents($mqtt, $whitelist))->command(self::DEVICE, 'device.downlink.acked', ['id' => 'c-1', 'status' => 'acked']);
+        (new LifecycleEvents($mqtt, IngressFixtures::whitelist([])))->command(self::DEVICE, 'device.downlink.acked', ['id' => 'c-1', 'status' => 'acked']);
+
+        $this->addToAssertionCount(1);
+    }
+
+    /** O `confirmedAt` é o mesmo que a API devolve, e é por ele que se data a versão. */
+    public function testAConfirmedConfigurationCarriesWhenItWasConfirmed(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        (new LifecycleEvents($mqtt, IngressFixtures::whitelist([self::DEVICE => IngressFixtures::device('Vivistar', 'L08 Pro', 'watch')])))->configuration([
+            'imei' => self::DEVICE, 'configKey' => 'whitelist_enabled', 'changeId' => 'ch-1', 'desiredRevision' => 2,
+            'status' => 'confirmed', 'effective' => ['enabled' => true], 'error' => '', 'confirmedAt' => '2026-10-20T09:01:12Z',
+        ]);
+
+        self::assertSame('2026-10-20T09:01:12Z', $mqtt->events[0]['payload']['configuration']['confirmedAt']);
+    }
+
+    public function testAFailureWithAReasonCarriesIt(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        (new LifecycleEvents($mqtt, IngressFixtures::whitelist([self::DEVICE => IngressFixtures::device('Vivistar', 'L08 Pro', 'watch')])))
+            ->command(self::DEVICE, 'device.downlink.failed', ['id' => 'c-1', 'status' => 'failed', 'error' => 'invalid_payload', 'errorMessage' => 'unit must be one of kg, lb']);
+
+        self::assertSame(['code' => 'invalid_payload', 'message' => 'unit must be one of kg, lb'], $mqtt->events[0]['payload']['error']);
+    }
 }

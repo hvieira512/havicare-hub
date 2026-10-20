@@ -30,19 +30,21 @@ final class LifecycleEvents
             'nativeType' => $record['nativeType'] ?? null,
             'protocol' => $record['protocol'] ?? null,
             'configKey' => $record['genericConfigKey'] ?? null,
-            'feature' => $record['capability'] ?? null,
+            'feature' => $record['capability'] ?? $record['feature'] ?? null,
             'status' => $record['status'] ?? null,
             'attempts' => $record['attempts'] ?? null,
             'sentAt' => $record['sentAt'] ?? null,
             'ackedAt' => $record['ackedAt'] ?? null,
         ]);
-        $error = $type === 'device.downlink.failed' ? ['code' => (string)($record['error'] ?? '') ?: 'failed'] : null;
+        $error = $type === 'device.downlink.failed'
+            ? self::present(['code' => (string)($record['error'] ?? '') ?: 'failed', 'message' => $record['errorMessage'] ?? null])
+            : null;
 
         $this->publish($imei, $type, $error, ['command' => $command]);
     }
 
     /**
-     * @param array{imei: string, configKey: string, changeId: string, desiredRevision: int, status: string, effective: mixed, error: string} $change
+     * @param array{imei: string, configKey: string, changeId: string, desiredRevision: int, status: string, effective: mixed, error: string, confirmedAt?: string} $change
      */
     public function configuration(array $change): void
     {
@@ -56,6 +58,7 @@ final class LifecycleEvents
                 'desiredRevision' => $change['desiredRevision'],
                 'status' => $change['status'],
                 'effective' => $change['effective'],
+                'confirmedAt' => $change['confirmedAt'] ?? null,
             ])],
         );
     }
@@ -66,8 +69,8 @@ final class LifecycleEvents
      */
     private function publish(string $imei, string $type, ?array $error, array $body): void
     {
-        $device = $this->devices->metadataFor($imei);
         try {
+            $device = $this->devices->metadataFor($imei);
             $this->mqtt->publishEvent(
                 $imei,
                 RawPayload::event($imei, $device['supplier'], $device['model'], $type, $error, null, $device['commercialName']) + $body,

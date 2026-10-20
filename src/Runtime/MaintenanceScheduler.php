@@ -45,10 +45,10 @@ final class MaintenanceScheduler
                         => $hubServer->submitDownlink($imei, $bytes, DownlinkRetryContext::forCommand($command))
                 );
                 $store->expireWaitingCommands($commandTimeout);
-                // As ligações TCP anuncia-as o servidor ao fechar o socket; as outras, aqui.
+                // Uma ligação TCP aberta anuncia-a o servidor ao fechar o socket; as outras, aqui.
                 foreach ($store->expireStaleDevices($deviceIdleTimeout) as $imei) {
                     $device = $store->device($imei);
-                    if (($device['transport'] ?? '') !== 'tcp') {
+                    if (($device['transport'] ?? '') !== 'tcp' || !$hubServer->isConnected($imei)) {
                         $connections->announce($imei, $device, false);
                     }
                 }

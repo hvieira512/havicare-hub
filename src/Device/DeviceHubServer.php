@@ -111,6 +111,11 @@ class DeviceHubServer
         $conn->close();
     }
 
+    public function isConnected(string $imei): bool
+    {
+        return $this->connections->connectionFor($imei) instanceof ConnectionInterface;
+    }
+
     /** @param array<string, mixed>|null $context o pedido de onde o comando vem; o `id` segue no evento */
     public function sendDownlink(string $imei, string $bytes, ?array $context = null): bool
     {
@@ -541,9 +546,12 @@ class DeviceHubServer
                 // O pedido encontra-se pelo seu identificador; o tipo da trama não é o nome com que foi registado.
                 $commandId = $operationId !== '' ? $operationId : (is_array($downlink->command) ? (string)($downlink->command['id'] ?? '') : '');
                 if ($commandId !== '') {
+                    $record = $this->deviceStore?->findCommand($commandId)['command'] ?? [];
+                    // Sem resposta prevista, sair é o fim; com ela, a repetição conta o prazo a partir de agora.
                     $this->deviceStore?->markCommand($session->imei, $commandId, [
-                        'status' => 'waiting',
+                        'status' => ($record['expectedReplyTypes'] ?? null) === [] ? 'sent' : 'waiting',
                         'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+                        'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() + (int)($record['retryDelaySeconds'] ?? 60)),
                     ]);
                 } elseif ($nativeType !== '') {
                     $this->deviceStore?->markLatestCommand($session->imei, $nativeType, [

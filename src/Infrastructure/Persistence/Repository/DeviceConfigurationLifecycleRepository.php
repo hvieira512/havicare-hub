@@ -15,7 +15,7 @@ final class DeviceConfigurationLifecycleRepository
 
     private VoiceDataMarker $voiceDataMarker;
 
-    /** @var null|\Closure(array{imei: string, configKey: string, changeId: string, desiredRevision: int, status: string, effective: mixed, error: string}): void */
+    /** @var null|\Closure(array{imei: string, configKey: string, changeId: string, desiredRevision: int, status: string, effective: mixed, error: string, confirmedAt: string}): void */
     private ?\Closure $announce = null;
 
     public function __construct(private PDO $pdo)
@@ -23,7 +23,7 @@ final class DeviceConfigurationLifecycleRepository
         $this->voiceDataMarker = new VoiceDataMarker();
     }
 
-    /** @param callable(array{imei: string, configKey: string, changeId: string, desiredRevision: int, status: string, effective: mixed, error: string}): void $announce */
+    /** @param callable(array{imei: string, configKey: string, changeId: string, desiredRevision: int, status: string, effective: mixed, error: string, confirmedAt: string}): void $announce */
     public function announceOutcomesTo(callable $announce): void
     {
         $this->announce = $announce(...);
@@ -143,16 +143,17 @@ final class DeviceConfigurationLifecycleRepository
             }
             unset($operation);
             $this->pdo->commit();
-            if ($applied) {
-                $this->announceOutcome($changeId);
-            }
-            return ['changeId' => $changeId, 'revision' => $revision, 'operations' => $operations];
         } catch (\Throwable $e) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
             throw $e;
         }
+        if ($applied) {
+            $this->announceOutcome($changeId);
+        }
+
+        return ['changeId' => $changeId, 'revision' => $revision, 'operations' => $operations];
     }
 
     public function updateOperation(string $operationId, string $status, string $error = ''): bool
@@ -433,7 +434,7 @@ final class DeviceConfigurationLifecycleRepository
         }
         $stmt = $this->pdo->prepare('
             SELECT change_row.imei, change_row.config_key, change_row.desired_revision, change_row.sync_status,
-                   change_row.effective_payload,
+                   change_row.effective_payload, change_row.confirmed_at,
                    (SELECT operation_row.error_code FROM device_configuration_operations operation_row
                     WHERE operation_row.change_id = change_row.change_id AND operation_row.error_code <> \'\'
                     ORDER BY operation_row.sequence_number LIMIT 1) AS error_code
@@ -453,6 +454,7 @@ final class DeviceConfigurationLifecycleRepository
             'status' => (string)$row['sync_status'],
             'effective' => $row['effective_payload'] === null ? null : $this->decode((string)$row['effective_payload']),
             'error' => (string)($row['error_code'] ?? ''),
+            'confirmedAt' => (string)TimestampFormatter::isoColumns($row, ['confirmed_at'])['confirmed_at'],
         ]);
     }
 

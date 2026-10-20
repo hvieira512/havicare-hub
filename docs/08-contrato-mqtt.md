@@ -156,10 +156,24 @@ um `configuration` — nos `device.configuration.*` — ou um `error`. Os segund
 
 Todo o comando pedido pela API acaba num, e só num, de `acked`, `failed`,
 `superseded` ou `dropped`. Pelo caminho pode passar por `queued` e por um ou mais
-`sent`. A exceção são os comandos de um relógio a que o protocolo dele não prevê
-resposta: acabam no `sent`, e o `GET /api/commands/{id}` mostra-os com
-`status: "sent"`. O que os liga é o `command.id`, que é o mesmo `id` que a API devolveu ao
-pedido e que `GET /api/commands/{id}` aceita.
+`sent`. O que os liga é o `command.id`, que é o mesmo `id` que a API devolveu ao
+pedido e que `GET /api/commands/{id}` aceita; numa configuração é o `operationId`
+da operação. Os comandos que o hub manda por iniciativa própria, como o acerto do
+relógio a cada ligação, não têm ciclo publicado.
+
+Três regras dizem quando é que um comando acaba:
+
+- **Em fila, espera.** Um comando para um aparelho desligado fica `queued` o tempo
+  que for preciso, e só acaba quando o aparelho volta e responde, ou quando um
+  pedido mais recente para a mesma coisa o substitui (`superseded`).
+- **Entregue, tem três tentativas.** Um comando que saiu e ficou sem resposta é
+  repetido de minuto a minuto; à terceira entrega sem resposta acaba em `failed`
+  com `retry_exhausted`. Vale igual por socket, por gateway e pela cloud. Quando o
+  gateway diz que o aparelho já não estava ligado, a entrega não conta: o comando
+  volta à fila.
+- **Sem resposta prevista, acaba no envio.** Os comandos de um relógio a que o
+  protocolo dele não prevê resposta acabam no `sent`, e o `GET /api/commands/{id}`
+  mostra-os com `status: "sent"`.
 
 ```json
 {
@@ -184,11 +198,21 @@ O `command` traz sempre o `id`. Nos desfechos traz também o `nativeType`, o
 `feature` (de um pedido avulso), as `attempts`, o `sentAt` e o `ackedAt`. Nos
 `sent`, `queued` e `dropped` traz o que o protocolo sabe do comando que saiu.
 
-O `error.code` de um `failed` vale `device_rejected` (o aparelho recusou),
-`response_timeout` (não respondeu a tempo), `retry_exhausted` (esgotou as
-tentativas), `delivery_failed` (não chegou ao aparelho) ou um código do próprio
-aparelho, como o `memory_full` da balança. Os `dropped` levam `device_offline`
-ou `queue_unavailable`.
+O `error.code` de um `failed` é sempre uma enumeração em snake_case:
+
+| `error.code` | Quer dizer |
+| --- | --- |
+| `device_rejected` | O aparelho recusou |
+| `response_timeout` | Não respondeu a tempo |
+| `retry_exhausted` | Esgotou as três entregas sem resposta |
+| `delivery_failed` | Não chegou ao aparelho |
+| `invalid_payload` | O valor não cabe no que o aparelho aceita; o motivo vem em `error.message` quando o há |
+| `mode_not_supported`, `cloud_rejected` | Radar — a cloud do fabricante recusou |
+| um código do gateway | A lista fechada do [capítulo 05](05-gateways-ble.md), como `write_failed` |
+| um código do aparelho | Como o `memory_full` da balança |
+| `failed` | Falhou sem motivo conhecido |
+
+Os `dropped` levam `device_offline` ou `queue_unavailable`.
 
 ### O desfecho de uma configuração
 
@@ -206,13 +230,18 @@ revisão e o valor que ficou aplicado:
     "changeId": "3b1f4e0a9c2d4f6e8a7b5c3d1e0f9a8b",
     "desiredRevision": 7,
     "status": "confirmed",
-    "effective": { "enabled": true }
+    "effective": { "enabled": true },
+    "confirmedAt": "2026-10-20T09:01:12Z"
   }
 }
 ```
 
-O `configuration.effective` só existe no `confirmed`, e é o valor que o `GET
-/api/devices/{imei}` passa a devolver em `effectiveConfigurations`. O `failed`
+O `configuration.effective` e o `configuration.confirmedAt` só existem no
+`confirmed`. O `effective` é o valor que o `GET /api/devices/{imei}` passa a
+devolver em `effectiveConfigurations`, e o `confirmedAt` é o mesmo instante que
+ele devolve em `configurationSync`: é por ele que se data uma versão, e não pelo
+`occurredAt`, que é a hora da publicação. Uma alteração com várias chaves dá um
+evento por chave, cada uma com o seu `changeId` e a sua `desiredRevision`. O `failed`
 traz `error.code` com o motivo do primeiro comando que falhou. Uma alteração que
 não precisa de escrever nada no aparelho, como mudar o nome de um utilizador da
 balança, sai `confirmed` logo. Uma leitura que mostra um valor diferente do que o
@@ -358,7 +387,10 @@ Todos os dispositivos têm `status`, e é o mesmo estado que a API devolve em
 | Radares | Na primeira mensagem | 3 min calados |
 | Gateways | Na primeira mensagem | 3 min calados |
 | Pulseira Tuya | Na primeira mensagem | 8 h 30 min caladas |
-| NCS | Pelo estado que o próprio aparelho publica | Idem |
+| NCS | Pelo estado que o próprio aparelho publica | Pelo estado que publica, ou 30 min calado |
+
+Um relógio ligado quando o hub reinicia e que não volta a ligar passa a `offline`
+pela mesma varredura dos 30 minutos: sem socket aberto, não há fecho que o anuncie.
 
 ### O estado retido e a mudança de cliente
 

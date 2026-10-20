@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Integration\Api\Repository;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\State\DeviceStore;
+use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTestCase
@@ -359,5 +361,45 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
             ['whitelist_enabled', 'confirmation_unavailable', null, '', 3],
             ['scale_users', 'confirmed', ['items' => []], '', 1],
         ], $settled);
+    }
+
+    /** A falha diz o motivo também depois de uma repetição, que limpa o último erro. */
+    public function testAFailureAfterARetryKeepsItsReason(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $store = new DeviceStore(new InMemoryRedisClient());
+        $store->setDataAccess($db);
+        $settled = [];
+        $db->configurationLifecycle->announceOutcomesTo(static function (array $change) use (&$settled): void {
+            $settled[] = [$change['status'], $change['error'], $change['confirmedAt'] !== ''];
+        });
+        $db->configurationLifecycle->stage(
+            'cfe908067329',
+            'weight_unit',
+            ['unit' => 'kg'],
+            [['nativeKey' => 'weightUnit', 'protocol' => 'lefu-torre', 'command' => 'weightUnit', 'payload' => ['unit' => 'kg'], 'confirmationMode' => 'execution_ack', 'operationId' => 'op-w']],
+            [['operationId' => 'op-w', 'nativeKey' => 'weightUnit', 'nativeType' => 'weightUnit', 'protocol' => 'lefu-torre', 'confirmationMode' => 'execution_ack']],
+        );
+        $store->recordCommand('cfe908067329', 'op-w', ['status' => 'queued', 'configKey' => 'weightUnit', 'operationId' => 'op-w', 'error' => '', 'lastError' => '']);
+
+        $store->markCommand('cfe908067329', 'op-w', ['status' => 'failed', 'error' => 'write_failed']);
+
+        self::assertSame([['failed', 'write_failed', false]], $settled);
+    }
+
+    public function testAConfirmationSaysWhenItHappened(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $confirmedAt = [];
+        $db->configurationLifecycle->announceOutcomesTo(static function (array $change) use (&$confirmedAt): void {
+            $confirmedAt[] = $change['confirmedAt'];
+        });
+
+        $db->configurationLifecycle->stage('cfe908067329', 'scale_users', ['items' => []], [], []);
+
+        self::assertSame(
+            $db->configurationLifecycle->currentForImei('cfe908067329')[0]['confirmed_at'],
+            $confirmedAt[0],
+        );
     }
 }

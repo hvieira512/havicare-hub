@@ -31,8 +31,7 @@ final class MaintenanceSchedulerTest extends TestCase
 
     private RecordingHubMqttBridge $mqtt;
 
-    /** @var DeviceHubServer&object{submitted: list<array<string, mixed>>, idleSeconds: list<int>} */
-    private DeviceHubServer $hubServer;
+    private RecordingMaintenanceHubServer $hubServer;
 
     protected function setUp(): void
     {
@@ -173,9 +172,10 @@ final class MaintenanceSchedulerTest extends TestCase
         self::assertSame(['device.disconnected'], array_column($this->store->recent('eec5000202f9', 'connections'), 'type'));
     }
 
-    /** As ligações TCP anuncia-as o servidor ao fechar o socket; aqui só se apagam. */
-    public function testASilentTcpDeviceExpiresWithoutAnAnnouncement(): void
+    /** Uma ligação TCP aberta anuncia-a o servidor ao fechar o socket; aqui só se apaga. */
+    public function testASilentConnectedTcpDeviceExpiresWithoutAnAnnouncement(): void
     {
+        $this->hubServer->connected = true;
         $this->store->deviceSeen(self::IMEI, ['online' => '1', 'deviceType' => 'watch', 'transport' => 'tcp']);
         $this->rewindLastSeen(self::IMEI);
 
@@ -183,6 +183,18 @@ final class MaintenanceSchedulerTest extends TestCase
 
         self::assertSame([], $this->mqtt->events);
         self::assertFalse($this->store->device(self::IMEI)['online']);
+    }
+
+    /** Depois de um reinício do hub, um relógio que não voltou não tem socket que o anuncie: anuncia-o a manutenção. */
+    public function testATcpDeviceThatNeverReconnectedIsAnnouncedDisconnected(): void
+    {
+        $this->store->deviceSeen(self::IMEI, ['online' => '1', 'deviceType' => 'watch', 'transport' => 'tcp']);
+        $this->rewindLastSeen(self::IMEI);
+
+        $this->tick();
+
+        self::assertSame(['device.disconnected'], array_column($this->mqtt->events, 'type'));
+        self::assertSame(['offline'], array_column(array_column($this->mqtt->statuses, 'payload'), 'state'));
     }
 
     private function rewindLastSeen(string $imei): void
@@ -250,31 +262,11 @@ final class MaintenanceSchedulerTest extends TestCase
         return $loop;
     }
 
-    /** @return DeviceHubServer&object{submitted: list<array<string, mixed>>, idleSeconds: list<int>} */
-    private function recordingHubServer(): DeviceHubServer
+    private function recordingHubServer(): RecordingMaintenanceHubServer
     {
-        return new class (IngressFixtures::whitelist(), new RecordingHubMqttBridge()) extends DeviceHubServer {
-            /** @var list<array<string, mixed>> */
-            public array $submitted = [];
-
-            /** @var list<int> */
-            public array $idleSeconds = [];
-
-            public function submitDownlink(string $imei, string $bytes, ?array $context = null): string
-            {
-                $this->submitted[] = ['imei' => $imei, 'bytes' => $bytes, 'context' => $context];
-
-                return 'sent';
-            }
-
-            public function expireIdleConnections(int $idleSeconds): void
-            {
-                $this->idleSeconds[] = $idleSeconds;
-            }
-        };
+        return new RecordingMaintenanceHubServer(IngressFixtures::whitelist(), new RecordingHubMqttBridge());
     }
 
-    /** O agendador só toca em dois serviços, e construir os outros exigiria MySQL e um broker. */
     private function services(): HubServices
     {
         $reflection = new \ReflectionClass(HubServices::class);
@@ -284,5 +276,34 @@ final class MaintenanceSchedulerTest extends TestCase
         $reflection->getProperty('mqttBridge')->setValue($services, $this->mqtt);
 
         return $services;
+    }
+}
+
+/** O servidor TCP sem sockets: guarda o que a manutenção lhe pede. */
+final class RecordingMaintenanceHubServer extends DeviceHubServer
+{
+    /** @var list<array<string, mixed>> */
+    public array $submitted = [];
+
+    /** @var list<int> */
+    public array $idleSeconds = [];
+
+    public bool $connected = false;
+
+    public function isConnected(string $imei): bool
+    {
+        return $this->connected;
+    }
+
+    public function submitDownlink(string $imei, string $bytes, ?array $context = null): string
+    {
+        $this->submitted[] = ['imei' => $imei, 'bytes' => $bytes, 'context' => $context];
+
+        return 'sent';
+    }
+
+    public function expireIdleConnections(int $idleSeconds): void
+    {
+        $this->idleSeconds[] = $idleSeconds;
     }
 }

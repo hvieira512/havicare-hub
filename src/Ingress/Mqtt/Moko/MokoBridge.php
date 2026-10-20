@@ -116,16 +116,17 @@ final class MokoBridge extends MqttBridgeBase
         $this->gateways->touch($deviceKey);
         // Reencaminha dezenas de tramas por segundo: o «visto» guarda-se de minuto a minuto.
         $now = $this->clockNow();
+        $cameOnline = false;
         if ($now - ($this->relayingSeenAt[$deviceKey] ?? -INF) >= self::RELAYING_SEEN_SECONDS) {
             $this->relayingSeenAt[$deviceKey] = $now;
-            $this->deviceStore?->deviceSeen($deviceKey, [
+            $cameOnline = $this->deviceStore?->deviceSeen($deviceKey, [
                 'supplier' => (string)$gateway['supplier'], 'model' => (string)$gateway['model'],
                 'deviceType' => 'gateway', 'licenseId' => DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0),
                 'company' => (string)($gateway['company'] ?? 'null'),
                 'protocol' => 'havicare-ble-gateway', 'transport' => 'mqtt', 'online' => '1',
             ]);
         }
-        $this->gateways->markOnline($this->enrichWithCommercialName($gateway));
+        $this->gateways->markOnline($this->enrichWithCommercialName($gateway), $cameOnline === true);
     }
 
     private static function declaresForeignSource(string $payload): bool
