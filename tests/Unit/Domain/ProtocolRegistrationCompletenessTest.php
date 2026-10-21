@@ -51,8 +51,9 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
         $adapters = new AdapterRegistry();
 
         foreach (self::watchProtocols() as $protocol) {
-            self::assertNotNull(
-                $adapters->get($protocol),
+            self::assertSame(
+                $protocol,
+                $adapters->require($protocol)->protocol(),
                 "O protocolo `{$protocol}` está declarado no ProtocolRegistry mas não tem adaptador."
             );
         }
@@ -80,8 +81,9 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
         self::assertContains('zayata-m228', $protocols, 'o dispensador fala TCP e tem de estar aqui');
 
         foreach ($protocols as $protocol) {
-            self::assertNotNull(
-                $adapters->get($protocol),
+            self::assertSame(
+                $protocol,
+                $adapters->require($protocol)->protocol(),
                 "O protocolo `{$protocol}` fala TCP mas não tem adaptador."
             );
         }

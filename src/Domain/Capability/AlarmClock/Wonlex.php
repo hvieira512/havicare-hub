@@ -106,14 +106,4 @@ final class Wonlex implements AlarmClockHandler
             ],
         ], $accumulatedMeta);
     }
-
-    public function merge(mixed $existing, mixed $incoming): mixed
-    {
-        return is_array($incoming) ? $incoming : [];
-    }
-
-    public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
-    {
-        return ['value' => $value, '_meta' => $this->meta($meta)];
-    }
 }

@@ -101,11 +101,6 @@ final class NamedRemindersHandler implements MedicationRemindersHandler
         return ['who' => $this->name];
     }
 
-    public function merge(mixed $existing, mixed $incoming): mixed
-    {
-        return $this->name;
-    }
-
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
         return ['who' => $this->name];

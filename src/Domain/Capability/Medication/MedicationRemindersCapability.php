@@ -69,12 +69,9 @@ final class MedicationRemindersCapability implements CapabilityContract
         return ($this->handlers[$protocol] ?? null)?->meta($accumulatedMeta) ?? $accumulatedMeta;
     }
 
-    /** Quem chama o `merge` tem o valor antigo e o novo, e não o protocolo por onde vieram. */
     public function merge(mixed $existing, mixed $incoming): mixed
     {
-        return is_array($incoming) && array_key_exists('plans', $incoming)
-            ? self::mergeAssociativeValues($existing, $incoming)
-            : $this->handlers['four-p-touch']->merge($existing, $incoming);
+        return self::mergeAssociativeValues($existing, $incoming);
     }
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array

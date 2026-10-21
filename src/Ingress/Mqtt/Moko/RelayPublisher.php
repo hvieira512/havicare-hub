@@ -48,7 +48,6 @@ final class RelayPublisher
         private readonly ?CommercialModelResolver $commercialModelResolver,
         private readonly int $telemetryRefreshSeconds,
         private readonly int $rawHistorySampleSeconds,
-        private readonly ?ProximityTracker $proximityTracker = null,
         ?callable $clock = null,
     ) {
         $this->clock = $clock !== null ? \Closure::fromCallable($clock) : static fn(): float => microtime(true);
@@ -281,7 +280,7 @@ final class RelayPublisher
     /** Guardado, ao contrário dos decoders: leva a janela de amostras. */
     private function proximity(): ProximityTracker
     {
-        return $this->proximity ??= $this->proximityTracker ?? new ProximityTracker();
+        return $this->proximity ??= new ProximityTracker();
     }
 
     /**

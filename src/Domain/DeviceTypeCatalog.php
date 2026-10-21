@@ -52,11 +52,6 @@ final class DeviceTypeCatalog
         ));
     }
 
-    public static function hasSim(string $deviceType): bool
-    {
-        return (bool)(self::all()[$deviceType]['sim'] ?? false);
-    }
-
     /**
      * O JSON tal e qual, para o `index.php` o servir sem o recodificar. Com `JSON_HEX_TAG`
      * porque o destino é o meio de um `<script>`, e um `</script>` no conteúdo fechava-o.

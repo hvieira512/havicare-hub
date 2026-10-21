@@ -80,21 +80,4 @@ final class DiaperSensitivity
 
         return null;
     }
-
-    /**
-     * A etiqueta de graduação de um valor, para a API não obrigar o cliente a
-     * reimplementar as fronteiras.
-     *
-     * @param list<array{int, int, string}> $grades
-     */
-    public static function grade(array $grades, int $value): string
-    {
-        foreach ($grades as [$minimum, $maximum, $label]) {
-            if ($value >= $minimum && $value <= $maximum) {
-                return $label;
-            }
-        }
-
-        return 'custom';
-    }
 }

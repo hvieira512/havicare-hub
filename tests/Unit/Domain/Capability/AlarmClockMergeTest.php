@@ -5,46 +5,34 @@ declare(strict_types=1);
 namespace Tests\Unit\Domain\Capability;
 
 use Hub\Domain\Capability\AlarmClock\AlarmClockCapability;
-use Hub\Domain\Capability\AlarmClock\FourPTouch;
-use Hub\Domain\Capability\AlarmClock\Vivistar;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Dois despertadores concorrentes acumulam-se. Percorre as três classes porque um método
- * declarado na classe ganha ao do trait sem erro.
- */
+/** Dois despertadores concorrentes acumulam-se. */
 final class AlarmClockMergeTest extends TestCase
 {
-    /** @return array<string, array{0: object}> */
-    public static function handlers(): array
+    public function testConcurrentAlarmsAccumulate(): void
     {
-        return [
-            'capability' => [new AlarmClockCapability()],
-            'four-p-touch' => [new FourPTouch()],
-            'vivistar' => [new Vivistar()],
-        ];
-    }
+        $handler = new AlarmClockCapability();
 
-    /** @dataProvider handlers */
-    public function testConcurrentAlarmsAccumulate(object $handler): void
-    {
         self::assertSame(
             [['at' => '07:00'], ['at' => '21:30']],
             $handler->merge([['at' => '07:00']], [['at' => '21:30']]),
         );
     }
 
-    /** @dataProvider handlers */
-    public function testANonListSideCountsAsEmpty(object $handler): void
+    public function testANonListSideCountsAsEmpty(): void
     {
+        $handler = new AlarmClockCapability();
+
         self::assertSame([['at' => '07:00']], $handler->merge(null, [['at' => '07:00']]));
         self::assertSame([['at' => '07:00']], $handler->merge([['at' => '07:00']], null));
         self::assertSame([], $handler->merge(null, null));
     }
 
-    /** @dataProvider handlers */
-    public function testTheResultIsAlwaysAList(object $handler): void
+    public function testTheResultIsAlwaysAList(): void
     {
+        $handler = new AlarmClockCapability();
+
         self::assertSame(
             ['a', 'b'],
             $handler->merge(['x' => 'a'], ['y' => 'b']),

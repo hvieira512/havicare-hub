@@ -7,8 +7,6 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 use Hub\State\DeviceStore;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
-use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
-use Hub\Ingress\Mqtt\Moko\ProximityTracker;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\InMemoryRedisClient;
@@ -71,9 +69,6 @@ final class BridgeProximityTest extends TestCase
             new ArrayObservationStateStore(),
             deviceStore: $store,
             clock: fn(): float => $this->now,
-            options: new MokoGatewayOptions(
-                proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 30),
-            ),
         );
 
         return [$bridge, $mqtt, $store];
@@ -180,10 +175,7 @@ final class BridgeProximityTest extends TestCase
         self::assertArrayNotHasKey('rssiMedianDbm', $unknown);
     }
 
-    /**
-     * A manutenção (limiares de 180 e 30 segundos) corre uma vez por janela e não a cada tique
-     * de 50 ms; prova-se pelo `unknown` que só sai quando a janela a deixa correr.
-     */
+    /** A manutenção corre uma vez por janela de cinco segundos, e não a cada tique. */
     public function testMaintenanceIsThrottledToOncePerWindow(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -198,30 +190,20 @@ final class BridgeProximityTest extends TestCase
             new ArrayObservationStateStore(),
             deviceStore: new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:maint'),
             clock: fn(): float => $this->now,
-            options: new MokoGatewayOptions(
-                proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 2),
-            ),
         );
 
-        // Um par ouvido, depois calado; a manutenção corre e reporta-o `unknown`.
+        // Ouvido às 1000 s, o par fica velho aos 30 s; a manutenção das 1029 s abre a janela.
         $this->deliver($bridge, $this->scanPayload(['rssi' => -52]));
-        $this->now = 1003.0;
+        $this->now = 1029.0;
         $bridge->runDueMaintenance();
 
-        // Re-ouvido e calado de novo, mas dentro da mesma janela de manutenção: repetir a
-        // manutenção não o volta a expirar, porque está estrangulada.
-        $this->deliver($bridge, $this->scanPayload(['rssi' => -52]));
-        $this->now = 1006.0;
+        $this->now = 1031.0;
         $bridge->runDueMaintenance();
-        $bridge->runDueMaintenance();
+        self::assertSame(0, $this->unknownCount($mqtt), 'dentro da janela, a manutenção não corre outra vez');
 
-        $unknowns = $this->unknownCount($mqtt);
-        self::assertSame(1, $unknowns, 'dentro da janela, a manutenção não corre outra vez');
-
-        // Passada a janela, corre e reporta o segundo silêncio.
-        $this->now = 1012.0;
+        $this->now = 1034.0;
         $bridge->runDueMaintenance();
-        self::assertSame(2, $this->unknownCount($mqtt), 'passada a janela, a manutenção corre');
+        self::assertSame(1, $this->unknownCount($mqtt), 'passada a janela, a manutenção corre');
     }
 
     private function unknownCount(RecordingHubMqttBridge $mqtt): int

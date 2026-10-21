@@ -58,11 +58,10 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
         ]);
     }
 
-    public function merge(mixed $existing, mixed $incoming): mixed
-    {
-        return self::mergeAssociativeValues($existing, $incoming, ['numbers']);
-    }
-
+    /**
+     * @param array<string, mixed> $meta
+     * @return array<string, mixed>
+     */
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
         $normalizedValue = $value;

@@ -206,15 +206,6 @@ final class PhonebookCapability implements CapabilityContract, CapabilityInputSa
 
     private static function truncateName(string $name, int $maxLength): string
     {
-        if (function_exists('mb_substr')) {
-            return mb_substr($name, 0, $maxLength, 'UTF-8');
-        }
-
-        $characters = preg_split('//u', $name, -1, PREG_SPLIT_NO_EMPTY);
-        if ($characters === false) {
-            return substr($name, 0, $maxLength);
-        }
-
-        return implode('', array_slice($characters, 0, $maxLength));
+        return mb_substr($name, 0, $maxLength, 'UTF-8');
     }
 }

@@ -246,9 +246,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
         if ($frame['function'] === 0x8b) {
             $this->finishReading($context->deviceKey);
-            if (isset($this->sessions[$context->deviceKey])) {
-                $this->sessions[$context->deviceKey]['memoryRead'] = true;
-            }
+            $this->sessions[$context->deviceKey]['memoryRead'] = true;
             return;
         }
         if ($frame['function'] === 0x83 && strlen($frame['data']) >= 12) {

@@ -112,15 +112,6 @@ final class PillDispenserMedicationRemindersHandler implements MedicationReminde
         return $accumulatedMeta + ['slots' => self::SLOTS];
     }
 
-    /**
-     * O plano substitui-se, não se funde: viaja inteiro, e fundir um plano parcial ressuscitava
-     * alarmes que o utilizador removeu.
-     */
-    public function merge(mixed $existing, mixed $incoming): mixed
-    {
-        return $incoming;
-    }
-
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
         return [

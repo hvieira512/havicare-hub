@@ -76,21 +76,6 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
         return $accumulatedMeta;
     }
 
-    public function merge(mixed $existing, mixed $incoming): mixed
-    {
-        if (
-            is_array($incoming)
-            && array_key_exists('plans', $incoming)
-            && $incoming['plans'] === []
-        ) {
-            $incoming['reminderText'] = $incoming['reminderText'] ?? '';
-            $incoming['voiceData'] = $incoming['voiceData'] ?? '';
-            $incoming['voiceMimeType'] = $incoming['voiceMimeType'] ?? '';
-        }
-
-        return self::mergeAssociativeValues($existing, $incoming);
-    }
-
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
         return [

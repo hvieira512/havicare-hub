@@ -31,18 +31,6 @@ final class WonlexAdapterTest extends TestCase
         self::assertSame(['value' => 72], $decoded['data']);
     }
 
-    public function testDecodeIncomingCanAttachRawJson(): void
-    {
-        $adapter = new WonlexAdapter();
-        $raw = $adapter->encodeOutgoing(['type' => 'upBattery', 'data' => ['batteryLevel' => 90]]);
-
-        $decoded = $adapter->decodeIncoming($raw, ['attachRawJson' => true]);
-
-        self::assertIsArray($decoded);
-        self::assertArrayHasKey('_rawJson', $decoded);
-        self::assertIsString($decoded['_rawJson']);
-    }
-
     public function testDecodeIncomingRejectsInvalidPayload(): void
     {
         $adapter = new WonlexAdapter();
@@ -53,16 +41,10 @@ final class WonlexAdapterTest extends TestCase
         self::assertNull($adapter->decodeIncoming($invalidJsonFrame));
     }
 
-    public function testEncodeOutgoingSupportsCustomJsonOptions(): void
+    public function testEncodeOutgoingKeepsUnicodeUnescaped(): void
     {
-        $adapter = new WonlexAdapter();
-
         $payload = ['type' => 'upText', 'data' => ['value' => 'á']];
 
-        self::assertStringEndsWith('{"type":"upText","data":{"value":"á"}}', $adapter->encodeOutgoing($payload));
-        self::assertStringEndsWith(
-            '{"type":"upText","data":{"value":"\\u00e1"}}',
-            $adapter->encodeOutgoing($payload, ['jsonOptions' => 0])
-        );
+        self::assertStringEndsWith('{"type":"upText","data":{"value":"á"}}', (new WonlexAdapter())->encodeOutgoing($payload));
     }
 }

@@ -16,7 +16,6 @@ use Hub\Ingress\Mqtt\Moko\MokoBridge;
 use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
 use Hub\Ingress\Mqtt\Ncs\NcsBridge;
 use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy as QinglanstDashboardWritePolicy;
-use Hub\Ingress\Mqtt\Qinglanst\IngestStats as QinglanstIngestStats;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
 use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Ingress\Tuya\TuyaBridge;
@@ -323,10 +322,6 @@ final class MqttIngressFactory
                 $topicFilter,
                 $reconnect,
                 $services->deviceStore,
-                stats: new QinglanstIngestStats(
-                    $topicFilter,
-                    (int)$config['qinglanst']['stats_flush_seconds'],
-                ),
                 dashboardWritePolicy: new QinglanstDashboardWritePolicy(
                     (int)$config['qinglanst']['dashboard_seen_min_interval_ms'],
                     (int)$config['qinglanst']['raw_history_sample_ms'],

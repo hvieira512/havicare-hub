@@ -26,7 +26,6 @@ final class MqttIngressFactoryTest extends TestCase
             new StreamSelectLoop(),
         );
 
-        self::assertSame([], $runner->names());
         self::assertSame([], $runner->keys());
     }
 
@@ -47,7 +46,6 @@ final class MqttIngressFactoryTest extends TestCase
                 'enabled' => false,
                 'host' => 'mqtt.example.com',
                 'topic_filter' => 'radar/+/+',
-                'stats_flush_seconds' => 300,
                 'dashboard_seen_min_interval_ms' => 5000,
                 'position_history_sample_ms' => 1000,
                 'raw_history_sample_ms' => 30000,

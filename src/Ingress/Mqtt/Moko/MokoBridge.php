@@ -71,7 +71,6 @@ final class MokoBridge extends MqttBridgeBase
             $commercialModelResolver,
             $options->telemetryRefreshSeconds,
             $options->rawHistorySampleSeconds,
-            $options->proximityTracker,
             $clock,
         );
         $this->gateways = new GatewayPresence($mqttBridge, $deviceStore, $options->gatewayIdleTimeoutSeconds, $clock);

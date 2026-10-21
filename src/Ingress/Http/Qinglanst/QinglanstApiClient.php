@@ -129,11 +129,11 @@ class QinglanstApiClient
         if ($error instanceof ResponseException) {
             $status = $error->getResponse()->getStatusCode();
 
-            return new QinglanstApiException("{$message} (HTTP {$status})", $status, $error);
+            return new QinglanstApiException("{$message} (HTTP {$status})", 0, $error);
         }
 
         $throwable = $error instanceof \Throwable ? $error : new \RuntimeException((string)$error);
 
-        return new QinglanstApiException($message . ': ' . $throwable->getMessage(), null, $throwable);
+        return new QinglanstApiException($message . ': ' . $throwable->getMessage(), 0, $throwable);
     }
 }
