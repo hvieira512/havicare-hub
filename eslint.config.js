@@ -2,8 +2,6 @@ import js from "@eslint/js";
 import stylistic from "@stylistic/eslint-plugin";
 import globals from "globals";
 
-// As opções do preset são as que o código já seguia na esmagadora maioria dos sítios:
-// 4 espaços, aspas duplas, ponto e vírgula, parênteses sempre no argumento da arrow.
 const style = stylistic.configs.customize({
     indent: 4,
     quotes: "double",
@@ -15,8 +13,7 @@ const style = stylistic.configs.customize({
 
 export default [
     {
-        // Todo o JavaScript da dashboard, e não uma lista de pastas: em flat config um
-        // ficheiro sem config correspondente é analisado sem regra nenhuma.
+        // Todo o JavaScript da dashboard: em flat config um ficheiro sem config não tem regras.
         files: ["src/Dashboard/**/*.js", "tests/Frontend/**/*.js"],
         plugins: style.plugins,
         languageOptions: {
@@ -24,7 +21,6 @@ export default [
             sourceType: "module",
             globals: {
                 ...globals.browser,
-                ...globals.node,
                 bootstrap: "readonly",
                 Swal: "readonly",
                 // Carregados a pedido pelo modal da planta do radar, e não no `<head>`.
@@ -34,14 +30,15 @@ export default [
         rules: {
             ...js.configs.recommended.rules,
             ...style.rules,
-            // Duas regras onde o default do preset ia contra o código: aspas nas chaves só onde são
-            // precisas, e o operador no fim da linha, menos o `?` e o `:` do ternário.
             "@stylistic/quote-props": ["error", "as-needed"],
             "@stylistic/operator-linebreak": ["error", "after", {overrides: {"?": "before", ":": "before"}}],
-            // Aviso e não erro: apanha imports e exports sem uso, que o teste do grafo de módulos não vê.
             // Os argumentos ficam de fora pelos handlers que não usam o `event`.
-            "no-unused-vars": ["warn", {args: "none"}],
+            "no-unused-vars": ["error", {args: "none"}],
             "no-empty": ["error", {allowEmptyCatch: true}],
         },
+    },
+    {
+        files: ["tests/Frontend/**/*.js"],
+        languageOptions: {globals: globals.node},
     },
 ];

@@ -2,10 +2,7 @@ import { html, raw } from "../html.js";
 import { ago, displayPersonIndex, eventTime, rowPayload, when } from "../format.js";
 import { PRESS_TYPE_LABEL, fallLabel } from "../domain.js";
 
-/**
- * Cartões que resumem o histórico de eventos inteiro, e por isso não são entradas do catálogo
- * de `components/cards/telemetry.js`.
- */
+/** Cartões que resumem o histórico de eventos inteiro, fora do catálogo de cartões. */
 
 // O que separa os modos é quantos toques, ou quanto dura um, e é isso que o ícone diz.
 const HELP_CALL_PRESS_ICON = {
@@ -15,13 +12,10 @@ const HELP_CALL_PRESS_ICON = {
     long: "fa-stopwatch",
 };
 
-/** Os modos que contam como chamada de ajuda. Um `pressType` fora disto ignora-se. */
+/** Um `pressType` fora disto ignora-se. */
 const HELP_CALL_PRESS_MODES = ["single", "double", "triple", "long"];
 
-/**
- * A última chamada de ajuda por modo de toque; não se sabe se foi cancelada. Sem modos
- * declarados (botão de comando, como o W812) não há cartão.
- */
+/** A última chamada de ajuda por modo de toque; sem modos declarados não há cartão. */
 export function helpCallSummaryCard(events = [], pressModes = []) {
     if (pressModes.length === 0) {
         return "";
@@ -49,11 +43,9 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
         }
     }
 
-    // Três lado a lado num ecrã grande, empilhadas no telemóvel.
     const columns = pressModes.map((mode) => {
         const call = latest[mode];
-        // A etiqueta partilhada lê-se como sufixo ("... (toque simples)"); aqui titula uma
-        // coluna, por isso vai capitalizada.
+        // A etiqueta partilhada é um sufixo; aqui titula, e vai capitalizada.
         const suffix = PRESS_TYPE_LABEL[mode];
         const label = suffix.charAt(0).toUpperCase() + suffix.slice(1);
         const icon = HELP_CALL_PRESS_ICON[mode];
@@ -96,7 +88,7 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
 </div>`;
 }
 
-/** A última queda do radar, tirada do histórico e não de uma capacidade: só aparece se houve. */
+/** A última queda do radar, do histórico: só aparece se houve. */
 export function fallSummaryCard(events) {
     const falls = (Array.isArray(events) ? events : [])
         .map(rowPayload)

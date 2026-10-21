@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 const { initSettingsCompanies, loadSettingsCompanySection } = await import(
     "../../src/Dashboard/dashboard/settings/companies.js",
 );
@@ -12,11 +10,7 @@ const { invalidateLicenses } = await import("../../src/Dashboard/dashboard/licen
  * Cada linha da árvore leva os seus verbos num menu e não em ícones soltos: três ícones sem
  * nome por linha não se adivinham, e o primeiro deles abre a cloud dos radares.
  */
-const jsonResponse = (obj) => ({
-    ok: true,
-    status: 200,
-    text: async () => JSON.stringify(obj),
-});
+const jsonResponse = (obj) => Response.json(obj);
 
 const COMPANIES = [{ id: 7, name: "hitcare" }];
 const LICENSES = [{ id: 31, license_id: 1001, company_id: 7, name: "gucc.dev" }];
@@ -48,7 +42,7 @@ function menuOf(row) {
     return { toggle, items, actions: items.map((item) => item.dataset.action) };
 }
 
-test("a linha de uma licença junta os três verbos num menu só", async () => {
+test("a licence row gathers its three verbs in one menu", async () => {
     const els = setupDom();
     await loadSettingsCompanySection();
 
@@ -60,7 +54,7 @@ test("a linha de uma licença junta os três verbos num menu só", async () => {
     assert.ok(row.querySelector(".dropdown-divider"), "o apagar não está separado dos outros");
 });
 
-test("o botão do menu de uma licença diz no aria-label de qual é", async () => {
+test("a licence menu button names its licence in aria-label", async () => {
     const els = setupDom();
     await loadSettingsCompanySection();
 
@@ -69,7 +63,7 @@ test("o botão do menu de uma licença diz no aria-label de qual é", async () =
     assert.match(toggle.getAttribute("aria-label"), /gucc\.dev/);
 });
 
-test("a linha de uma empresa junta os três verbos no mesmo menu", async () => {
+test("a company row gathers its three verbs in the same menu", async () => {
     const els = setupDom();
     await loadSettingsCompanySection();
 
@@ -83,4 +77,16 @@ test("a linha de uma empresa junta os três verbos no mesmo menu", async () => {
         items.map((item) => item.textContent.trim()),
         ["Nova licença", "Editar empresa", "Eliminar empresa"],
     );
+});
+
+test("a company list that fails to load says so instead of counting zero", async () => {
+    const els = setupDom();
+    globalThis.fetch = async (url) => (String(url).includes("/api/licenses")
+        ? jsonResponse({ data: LICENSES })
+        : Response.json({ error: { code: "internal_error" } }, { status: 500 }));
+
+    await loadSettingsCompanySection();
+
+    assert.doesNotMatch(els.companiesTabSummary.textContent, /0 empresas/);
+    assert.match(els.companyListBody.textContent, /Não foi possível carregar as empresas/);
 });

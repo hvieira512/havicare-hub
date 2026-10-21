@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { bindDeviceEvents } = await import("../../src/Dashboard/dashboard/wiring/devices.js");
 
@@ -26,14 +25,12 @@ function tabEls() {
     const cache = {};
     for (const element of root.querySelectorAll("[id]")) cache[element.id] = element;
 
-    return new Proxy(cache, {
-        get: (target, id) => (target[id] ??= document.createElement("div")),
-    });
+    return autoEls(undefined, cache);
 }
 
 const click = (button) => button.dispatchEvent(new window.Event("click", { bubbles: true }));
 
-test("a telemetria é o separador que abre", () => {
+test("telemetry is the tab that opens first", () => {
     const els = tabEls();
 
     bindDeviceEvents({ els, ui: {} });
@@ -42,7 +39,7 @@ test("a telemetria é o separador que abre", () => {
     assert.equal(els.deviceTabTelemetry.classList.contains("active"), true);
 });
 
-test("escolher as leituras passa o ecrã à atividade, e voltar à telemetria desfá-lo", () => {
+test("picking the readings switches the screen to activity, and going back to telemetry undoes it", () => {
     const els = tabEls();
     bindDeviceEvents({ els, ui: {} });
 

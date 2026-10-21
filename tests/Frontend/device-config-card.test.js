@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { cardContent as uplinkCardContent } from "./support/cards.js";
 
@@ -34,7 +33,7 @@ const REPORTED = {
 
 const body = (data) => parseFragment(uplinkCardContent("device_config", data).body || "");
 
-test("nenhuma definição sai como [object Object]", () => {
+test("no setting comes out as [object Object]", () => {
     const content = uplinkCardContent("device_config", REPORTED);
 
     assert.doesNotMatch(String(content.body || ""), /\[object/);
@@ -42,18 +41,18 @@ test("nenhuma definição sai como [object Object]", () => {
 });
 
 /** A gaveta da lista de actividade escapa tudo: marcação em texto aparece à letra. */
-test("os detalhes não levam marcação", () => {
+test("the details carry no markup", () => {
     const content = uplinkCardContent("device_config", REPORTED);
 
     assert.doesNotMatch(content.details || "", /&lt;|<br/);
 });
 
-test("cada definição tem a sua linha", () => {
+test("each setting has its own line", () => {
     assert.equal(body(REPORTED).querySelectorAll("[data-setting]").length, 12);
 });
 
 /** Um alarme desligado é um lugar vazio, e listá-lo como «00:00» é pior do que calá-lo. */
-test("o plano diz as horas marcadas", () => {
+test("the schedule says the set times", () => {
     const row = body(REPORTED).querySelector("[data-setting=\"medication_reminders\"]");
 
     assert.match(row.textContent, /09:35/);
@@ -61,26 +60,26 @@ test("o plano diz as horas marcadas", () => {
     assert.doesNotMatch(row.textContent, /00:00/);
 });
 
-test("o não incomodar diz a janela", () => {
+test("do-not-disturb says the window", () => {
     const row = body(REPORTED).querySelector("[data-setting=\"do_not_disturb\"]");
 
     assert.match(row.textContent, /18:00/);
     assert.match(row.textContent, /09:00/);
 });
 
-test("um plano sem alarmes marcados diz que não tem", () => {
+test("a schedule with no alarms set says it has none", () => {
     const row = body({ settings: { medication_reminders: { plans: [] } } })
         .querySelector("[data-setting=\"medication_reminders\"]");
 
     assert.match(row.textContent, /[Ss]em alarmes/);
 });
 
-test("o valor conta as definições", () => {
+test("the value counts the settings", () => {
     assert.match(uplinkCardContent("device_config", REPORTED).value, /12/);
 });
 
 /** Contar até um não diz nada: com uma só, o valor é o nome dela. */
-test("uma definição sozinha dá o nome dela", () => {
+test("a single setting gives its name", () => {
     const content = uplinkCardContent("device_config", {
         settings: { child_lock: { enabled: true } },
     });
@@ -88,7 +87,7 @@ test("uma definição sozinha dá o nome dela", () => {
     assert.doesNotMatch(content.value, /^1 /);
 });
 
-test("sem definições não há corpo", () => {
+test("without settings there is no body", () => {
     assert.equal(uplinkCardContent("device_config", { settings: {} }).body || "", "");
 });
 
@@ -96,7 +95,7 @@ test("sem definições não há corpo", () => {
  * O frame `CONFIG` do 4P Touch parte-se em `chave:valor` e a chave entra como vier. Uma que o
  * catálogo não conheça chega ao ecrã pelo `humanizeCapabilityKey`, que não escapa nada.
  */
-test("uma chave que o aparelho inventou chega escapada aos detalhes", () => {
+test("a key the device invented reaches the details escaped", () => {
     const content = uplinkCardContent("device_config", {
         settings: {
             "<img src=x onerror=alert(1)>": { enabled: true },

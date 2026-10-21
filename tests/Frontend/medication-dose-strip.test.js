@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
@@ -38,7 +37,7 @@ beforeEach(() => {
     state.selectedDetail = { effectiveConfigurations: { medication_reminders: PLAN } };
 });
 
-test("cada dose marcada é uma coluna, com a hora dela", () => {
+test("each scheduled dose is a column with its time", () => {
     const doses = strip({
         takenCount: 2,
         missedCount: 1,
@@ -50,7 +49,7 @@ test("cada dose marcada é uma coluna, com a hora dela", () => {
     assert.match(doses[3].textContent, /20:00/);
 });
 
-test("a ordem é a das horas e não a dos números de alarme", () => {
+test("the order follows the times, not the alarm numbers", () => {
     state.selectedDetail.effectiveConfigurations.medication_reminders = {
         plans: [
             { times: [{ time: "20:00", enabled: true, slot: 1, recurrence: { kind: "daily" } }] },
@@ -65,7 +64,7 @@ test("a ordem é a das horas e não a dos números de alarme", () => {
     assert.match(doses[0].textContent, /08:00/);
 });
 
-test("o estado de cada dose vai na coluna dela", () => {
+test("each dose's state goes in its column", () => {
     const doses = strip({
         takenCount: 1,
         missedCount: 1,
@@ -77,7 +76,7 @@ test("o estado de cada dose vai na coluna dela", () => {
     assert.match(doses[2].textContent, /[Ff]alhada/);
 });
 
-test("os slots por marcar colapsam num só", () => {
+test("unscheduled slots collapse into one", () => {
     const free = strip({ takenCount: 0, missedCount: 0, alarms: NINE() })
         .querySelector("[data-dose-free]");
 
@@ -90,7 +89,7 @@ test("os slots por marcar colapsam num só", () => {
  * Sem plano lido, a hora não se inventa: fica o número do alarme, que é o que o aparelho
  * garantidamente disse.
  */
-test("sem plano sincronizado, a coluna vale pelo número do alarme", () => {
+test("without a synced plan, the column goes by alarm number", () => {
     state.selectedDetail = {};
 
     const doses = strip({
@@ -105,7 +104,7 @@ test("sem plano sincronizado, a coluna vale pelo número do alarme", () => {
 });
 
 /** E a mudança de uma dose é um evento, com a sua própria leitura de uma linha. */
-test("a alteração de uma dose diz a hora e o estado novo", () => {
+test("a dose change says the time and the new state", () => {
     const content = uplinkCardContent("medication_alarm_change", { alarm: 3, state: "missed" });
 
     assert.match(content.value, /10:10/);
@@ -124,7 +123,7 @@ const shell = (type, data) => {
 const card = (data) => shell("medication_alarm_status", data);
 
 /** O estado dos nove alarmes traz uma lista, que o renderizador genérico não sabe desenhar. */
-test("a lista de alarmes nunca aparece como [object Object]", () => {
+test("the alarm list never shows as [object Object]", () => {
     const rendered = card({
         takenCount: 1,
         missedCount: 1,
@@ -138,7 +137,7 @@ test("a lista de alarmes nunca aparece como [object Object]", () => {
 });
 
 /** Uma toma falhada é o que faz alguém olhar para o cartão, e por isso é o valor principal. */
-test("uma toma falhada é o valor principal", () => {
+test("a missed dose is the main value", () => {
     const rendered = card({
         takenCount: 2,
         missedCount: 1,
@@ -152,7 +151,7 @@ test("uma toma falhada é o valor principal", () => {
     assert.match(rendered, /1 falhada/);
 });
 
-test("sem falhas, o valor principal são as tomas", () => {
+test("without misses, the main value is the doses taken", () => {
     const rendered = card({
         takenCount: 2,
         missedCount: 0,
@@ -167,7 +166,7 @@ test("sem falhas, o valor principal são as tomas", () => {
 });
 
 /** Nove linhas de «Sem toma marcada» não são detalhe nenhum: só os alarmes vivos entram. */
-test("os alarmes parados não enchem o cartão", () => {
+test("disabled alarms do not fill the card", () => {
     const rendered = card({
         takenCount: 0,
         missedCount: 0,
@@ -184,7 +183,7 @@ test("os alarmes parados não enchem o cartão", () => {
 });
 
 /** Nada em curso continua a ser uma leitura válida, e o cartão tem de a dizer em português. */
-test("com tudo parado o cartão diz que não há tomas, e em português", () => {
+test("with everything disabled the card says there are no doses, in Portuguese", () => {
     const rendered = card({
         takenCount: 0,
         missedCount: 0,
@@ -199,7 +198,7 @@ test("com tudo parado o cartão diz que não há tomas, e em português", () => 
  * A mudança de uma dose é capacidade própria: o cartão dos nove alarmes só recebe leituras dos
  * nove.
  */
-test("a mudança de uma dose é outra capacidade, e lê-se numa linha", () => {
+test("a dose change is another capability and reads in one line", () => {
     const rendered = shell("medication_alarm_change", { alarm: 3, state: "missed" });
 
     assert.match(rendered, /Alarme 3/);

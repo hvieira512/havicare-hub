@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { syncDeviceModalCommandStates } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 
@@ -18,7 +17,7 @@ function withAction(delivery) {
     state.deviceModal.actionDeliveries = { dispense_now: delivery };
 }
 
-test("uma acção confirmada deixa de dizer que aguarda", () => {
+test("a confirmed action stops saying it is waiting", () => {
     withAction({ id: "abc123", status: "awaiting_ack", error: "" });
 
     syncDeviceModalCommandStates(IMEI, [{ id: "abc123", status: "acked" }]);
@@ -26,7 +25,7 @@ test("uma acção confirmada deixa de dizer que aguarda", () => {
     assert.equal(state.deviceModal.actionDeliveries.dispense_now.status, "confirmed");
 });
 
-test("uma acção recusada mostra a razão", () => {
+test("a refused action shows the reason", () => {
     withAction({ id: "abc123", status: "awaiting_ack", error: "" });
 
     syncDeviceModalCommandStates(IMEI, [
@@ -37,7 +36,7 @@ test("uma acção recusada mostra a razão", () => {
     assert.equal(state.deviceModal.actionDeliveries.dispense_now.error, "O aparelho recusou");
 });
 
-test("só a acção do comando é tocada", () => {
+test("only the action of that command is touched", () => {
     withAction({ id: "abc123", status: "awaiting_ack", error: "" });
 
     syncDeviceModalCommandStates(IMEI, [{ id: "outro", status: "acked" }]);
@@ -45,7 +44,7 @@ test("só a acção do comando é tocada", () => {
     assert.equal(state.deviceModal.actionDeliveries.dispense_now.status, "awaiting_ack");
 });
 
-test("uma mensagem de outro aparelho é ignorada", () => {
+test("a message from another device is ignored", () => {
     withAction({ id: "abc123", status: "awaiting_ack", error: "" });
 
     syncDeviceModalCommandStates("861265061009822", [{ id: "abc123", status: "acked" }]);
@@ -70,7 +69,7 @@ function withSetting() {
 const currentStatus = () =>
     state.deviceModal.configurationSync.entries.health.step_goal.status;
 
-test("um comando confirmado pelo aparelho muda o estado guardado", () => {
+test("a command the device confirmed changes the stored state", () => {
     withSetting();
 
     syncDeviceModalCommandStates(IMEI, [{ id: "op-1", status: "acked" }]);
@@ -78,7 +77,7 @@ test("um comando confirmado pelo aparelho muda o estado guardado", () => {
     assert.notEqual(currentStatus(), "queued", "o estado tem de acompanhar o comando");
 });
 
-test("um comando que não corresponde a nenhuma operação deixa tudo como está", () => {
+test("a command that matches no operation leaves everything as it was", () => {
     withSetting();
 
     syncDeviceModalCommandStates(IMEI, [{ id: "op-desconhecida", status: "acked" }]);

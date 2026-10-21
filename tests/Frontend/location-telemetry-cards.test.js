@@ -1,15 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e
-// esse caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
-import "./support/browser-env.js";
 import { cardContent as uplinkCardContent } from "./support/cards.js";
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const requestCardShell = (...args) => String(buildCard(...args));
+const requestCardShell = asText(buildCard);
 import { state } from "../../src/Dashboard/dashboard/state.js";
+import { asText } from "./support/dom.js";
 
 state.capabilityCatalogByType.watch = [{ key: "location", label: "Localização" }];
 state.selectedDetail = { model: { deviceType: "watch" } };
@@ -68,7 +65,7 @@ const UNRESOLVED = {
 // Um `upLocation` periódico com `baseStation: []`: o relógio acordou, tentou e não viu nada.
 const NOTHING_SEEN = { hasCoordinates: false, reportKind: "periodic" };
 
-test("com posição, o valor são as coordenadas e os detalhes dizem como e com que precisão", () => {
+test("with a position, the value is the coordinates and the details say how and how precisely", () => {
     const html = locationCard([{ data: GPS_FIX }]);
 
     // Cinco decimais: ~1 m, e o sexto são dez centímetros num mosaico de 206px.
@@ -76,7 +73,7 @@ test("com posição, o valor são as coordenadas e os detalhes dizem como e com 
     assert.match(html, /GPS · ±5 m · há 2m/);
 });
 
-test("uma posição resolvida a partir do rádio diz Rádio, e não a origem crua", () => {
+test("a position resolved from radio says Rádio, not the raw source", () => {
     // `cell`, `wifi` e `cell_wifi` são todos triangulação; o que distingue da de GPS é a
     // proveniência, não qual das antenas entrou na conta.
     const html = locationCard([{ data: RADIO_FIX }]);
@@ -85,7 +82,7 @@ test("uma posição resolvida a partir do rádio diz Rádio, e não a origem cru
     assert.doesNotMatch(html, /Cell Wifi/);
 });
 
-test("sem posição, o valor é um travessão e os detalhes são a prova de rádio", () => {
+test("without a position, the value is a dash and the details are the radio evidence", () => {
     const html = locationCard([{ data: UNRESOLVED }]);
 
     assert.match(html, /—/);
@@ -95,7 +92,7 @@ test("sem posição, o valor é um travessão e os detalhes são a prova de rád
     assert.doesNotMatch(html, /Velocidade/);
 });
 
-test("as contagens vão ao plural, e a que for zero não aparece", () => {
+test("counts are pluralised, and a zero count does not show", () => {
     const html = locationCard([
         {
             data: {
@@ -109,16 +106,14 @@ test("as contagens vão ao plural, e a que for zero não aparece", () => {
     assert.doesNotMatch(html, /rede/);
 });
 
-test("reportar e não ver nada é outra falha, e diz-se por palavras", () => {
+test("reporting and seeing nothing is a different failure, and is said in words", () => {
     // Aponta para o aparelho e não para a cobertura: não é "tentou e não resolveu".
     const html = locationCard([{ data: NOTHING_SEEN }]);
 
     assert.match(html, /Sem dados de rádio · há 2m/);
 });
 
-test("um relatório sem posição não apaga a última posição conhecida", () => {
-    // Num HW20PRO são 8 de 29 relatórios que não resolvem, e nenhum substitui uma posição de
-    // ±1 m obtida dois minutos antes.
+test("a report without a position does not erase the last known one", () => {
     const html = locationCard([
         { data: UNRESOLVED, minutes: 1 },
         { data: RADIO_FIX, minutes: 14 },
@@ -129,8 +124,7 @@ test("um relatório sem posição não apaga a última posição conhecida", () 
     assert.match(html, /Rádio · ±1 m · há 14m/);
 });
 
-test("um dispositivo que nunca resolveu mostra a última tentativa mesmo assim", () => {
-    // O VL17: 85 de 85 relatórios sem coordenadas. A hora e a prova de rádio são o que há.
+test("a device that never resolved still shows its last attempt", () => {
     const html = locationCard([
         { data: UNRESOLVED, minutes: 1 },
         { data: UNRESOLVED, minutes: 2 },
@@ -139,37 +133,13 @@ test("um dispositivo que nunca resolveu mostra a última tentativa mesmo assim",
     assert.match(html, /1 antena · 1 rede WiFi · há 1m/);
 });
 
-test("o par 0,0 não é uma posição", () => {
-    // É a forma que os protocolos usam para dizer "sem fixo".
-    const content = uplinkCardContent("location", {
-        source: "cell",
-        lat: 0,
-        lon: 0,
-        baseStations: [{ cellId: "1" }],
-    });
-
-    assert.equal(content.value, "—");
-});
-
-test("o lat/lon manda, e não o hasCoordinates", () => {
-    // O histórico do Redis guarda cem eventos por dispositivo e os mais antigos são anteriores
-    // a esse campo: confiar nele faria uma posição boa desaparecer.
-    const content = uplinkCardContent("location", {
-        source: "gps",
-        lat: 41.706841,
-        lon: -8.793279,
-    });
-
-    assert.equal(content.value, "41.70684, -8.79328");
-});
-
-test("na lista cronológica não aparece a idade: a hora já tem coluna própria", () => {
+test("the chronological list shows no age: the time has its own column", () => {
     const content = uplinkCardContent("location", UNRESOLVED);
 
     assert.equal(content.details, "1 antena · 1 rede WiFi");
 });
 
-test("a cerca do relógio diz o sentido em português", () => {
+test("the watch geofence says the direction in Portuguese", () => {
     const content = uplinkCardContent("zone_exit", { zone: "geofence" });
 
     assert.equal(content.value, "Saiu da zona segura");

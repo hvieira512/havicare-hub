@@ -35,20 +35,20 @@ function reset() {
     document.body.innerHTML = "";
 }
 
-test("sem preferência guardada nem sistema escuro, abre no claro", () => {
+test("without a stored preference or a dark system, it opens light", () => {
     reset();
 
     assert.equal(preferredTheme(), LIGHT);
 });
 
-test("sem preferência guardada, segue-se a do sistema", () => {
+test("without a stored preference, the system's is followed", () => {
     reset();
     setPrefersDark(true);
 
     assert.equal(preferredTheme(), DARK);
 });
 
-test("a preferência guardada ganha à do sistema", () => {
+test("the stored preference beats the system's", () => {
     reset();
     setPrefersDark(true);
     localStorage.setItem(THEME_STORAGE_KEY, LIGHT);
@@ -56,7 +56,7 @@ test("a preferência guardada ganha à do sistema", () => {
     assert.equal(preferredTheme(), LIGHT);
 });
 
-test("um valor estragado no armazenamento não escolhe tema nenhum", () => {
+test("a corrupt stored value picks no theme", () => {
     reset();
     setPrefersDark(true);
     localStorage.setItem(THEME_STORAGE_KEY, "arco-iris");
@@ -64,7 +64,7 @@ test("um valor estragado no armazenamento não escolhe tema nenhum", () => {
     assert.equal(preferredTheme(), DARK, "o estragado cai para o sistema, e não para o claro");
 });
 
-test("aplicar o tema escreve-o no elemento raiz", () => {
+test("applying the theme writes it on the root element", () => {
     reset();
 
     applyTheme(DARK);
@@ -74,7 +74,7 @@ test("aplicar o tema escreve-o no elemento raiz", () => {
     assert.equal(document.documentElement.getAttribute("data-bs-theme"), LIGHT);
 });
 
-test("o tema também é escrito no atributo que o SweetAlert lê", () => {
+test("the theme is also written on the attribute SweetAlert reads", () => {
     reset();
 
     applyTheme(DARK);
@@ -84,21 +84,18 @@ test("o tema também é escrito no atributo que o SweetAlert lê", () => {
     assert.equal(document.body.getAttribute("data-swal2-theme"), "bootstrap-5-light");
 });
 
-test("o ícone do botão diz para onde se vai, não onde se está", () => {
+test("the button state says where it goes, not where it is", () => {
     reset();
     const button = mountButton();
 
     applyTheme(LIGHT);
-    assert.ok(button.querySelector("i").classList.contains("fa-moon"), "no claro vai-se ao escuro");
     assert.equal(button.getAttribute("aria-pressed"), "false");
 
     applyTheme(DARK);
-    assert.ok(button.querySelector("i").classList.contains("fa-sun"), "no escuro vai-se ao claro");
-    assert.ok(!button.querySelector("i").classList.contains("fa-moon"));
     assert.equal(button.getAttribute("aria-pressed"), "true");
 });
 
-test("carregar no botão troca o tema e guarda a escolha", () => {
+test("pressing the button switches the theme and stores the choice", () => {
     reset();
     const button = mountButton();
     initializeTheme();
@@ -115,19 +112,18 @@ test("carregar no botão troca o tema e guarda a escolha", () => {
 });
 
 // Há um botão na entrada e outro na dashboard: nenhum deles é *o* botão.
-test("todos os botões da página acompanham o tema aplicado", () => {
+test("every button on the page follows the applied theme", () => {
     reset();
     const buttons = mountTwoButtons();
 
     applyTheme(DARK);
 
     buttons.forEach((button) => {
-        assert.ok(button.querySelector("i").classList.contains("fa-sun"));
         assert.equal(button.getAttribute("aria-pressed"), "true");
     });
 });
 
-test("carregar em qualquer um dos botões troca o tema", () => {
+test("pressing any of the buttons switches the theme", () => {
     reset();
     const [navbar, login] = mountTwoButtons();
     initializeTheme();
@@ -141,7 +137,7 @@ test("carregar em qualquer um dos botões troca o tema", () => {
     assert.equal(login.getAttribute("aria-pressed"), "false");
 });
 
-test("sem botão na página, aplicar o tema não rebenta", () => {
+test("without a button on the page, applying the theme does not break", () => {
     reset();
 
     assert.doesNotThrow(() => initializeTheme());

@@ -1,13 +1,7 @@
 import { getProtocolConfigCatalog } from "../../api/index.js";
 import { state } from "../../state.js";
 
-/**
- * O catálogo de configuração de cada protocolo e os metadados da dashboard: é a única parte
- * que fala com a API e tem cache.
- */
-
-// Pedidos em curso, para N secções que peçam o mesmo protocolo ao mesmo tempo partilharem
-// um fetch em vez de correrem umas contra as outras.
+// Pedidos em curso, para quem pede o mesmo protocolo ao mesmo tempo partilhar um fetch.
 const protocolCatalogRequests = {};
 
 function isPlainObject(value) {
@@ -65,10 +59,7 @@ export function protocolFieldConstraints(protocol) {
     return protocolDashboardMeta(protocol).fieldConstraints || {};
 }
 
-/**
- * Que modos de toque este protocolo consegue emitir. Vazio quando o protocolo não o declara,
- * e nesse caso quem desenha fica com o seu padrão.
- */
+/** Os modos de toque que o protocolo emite; vazio quando não os declara, e vale o padrão. */
 export function protocolHelpCallPressModes(protocol) {
     return protocolDashboardMeta(protocol).helpCallPressModes || [];
 }

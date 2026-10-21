@@ -1,12 +1,4 @@
-/**
- * As tooltips do Bootstrap são por adesão: um contentor que redesenha a marcação tem de
- * voltar a entregar-lhe os elementos.
- */
-
-/**
- * Liga uma tooltip a cada elemento que a pediu. Sem animação: o `dispose()` não cancela o fim
- * do `hide` agendado no fade, que depois estoura contra uma instância nula.
- */
+/** Liga uma tooltip a cada elemento que a pediu; sem animação, que o `dispose()` não cancela o fade. */
 export function refreshTooltips(root) {
     const bootstrap = window.bootstrap;
     if (!bootstrap?.Tooltip || !root) return;

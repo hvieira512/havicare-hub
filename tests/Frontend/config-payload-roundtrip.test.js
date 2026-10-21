@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
-import "./support/browser-env.js";
 import {
     renderConfigInputs,
     readConfigPayload,
@@ -11,7 +9,7 @@ import { configSection } from "./support/dom.js";
 
 /**
  * Estes payloads são escritos em dispositivos reais: o que o formulário desenha tem de ser
- * exactamente o que o leitor devolve. Descrevem o comportamento de hoje, e não um ideal.
+ * exactamente o que o leitor devolve.
  */
 const roundTrip = (entry, desired, meta = {}) =>
     readConfigPayload(configSection(renderConfigInputs, entry, desired, meta));
@@ -118,6 +116,26 @@ test("heart rate thresholds survive the round trip", () => {
         roundTrip(entry, { enabled: true, maxBpm: 150, minBpm: 50 }),
         { enabled: true, maxBpm: 150, minBpm: 50 },
     );
+});
+
+test("heart rate thresholds refuse a minimum above the maximum", () => {
+    const entry = {
+        input: "heartRateThresholds",
+        key: "heart_rate_alert",
+        fields: ["enabled", "maxBpm", "minBpm"],
+    };
+
+    assert.throws(() => roundTrip(entry, { enabled: true, maxBpm: 60, minBpm: 90 }), /mínimo/);
+});
+
+test("a decimal weight keeps its decimals", () => {
+    const entry = {
+        input: "personalInfo",
+        key: "personal_info",
+        fields: ["heightCm", "weightKg", "age", "sex", "stepGoal", "sleepGoalMinutes"],
+    };
+
+    assert.equal(roundTrip(entry, { weightKg: 65.5 }).weightKg, 65.5);
 });
 
 test("personal information survives the round trip", () => {
@@ -270,7 +288,7 @@ test("language and timezone survive the round trip as a preset pair", () => {
 });
 
 test("a language and timezone combination with no preset falls back to the first one", () => {
-    // Deliberado: o formulário só oferece os presets que o firmware suporta.
+    // O formulário só oferece os presets que o firmware suporta.
     assert.deepEqual(
         roundTrip(entryFor("languageTimezone"), { language: 2, timeZone: "9" }),
         { language: 0, timeZone: "0" },

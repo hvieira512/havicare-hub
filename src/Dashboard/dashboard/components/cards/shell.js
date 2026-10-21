@@ -1,31 +1,25 @@
 import { html, raw } from "../../html.js";
 import { stateBadge } from "../state-badge.js";
 
-/**
- * A casca de um cartão: o ícone, o título e o corpo que quem chama traz. O uplink e o
- * downlink partilham-na.
- */
+/** A casca de um cartão, partilhada pelo uplink e pelo downlink. */
 export function telemetryCard({
     span = 6,
     icon,
-    // Um segundo ícone, pequeno, no canto do azulejo: o relâmpago de uma bateria a carregar.
+    // O ícone pequeno no canto, como o relâmpago de uma bateria a carregar.
     badge = "",
     title,
     value = "",
     details = "",
-    // O texto da tooltip, para quando diz mais do que a linha truncada.
     detailsTitle = "",
     body = "",
     feature = "",
-    // Um cartão que abre alguma coisa em vez de pedir uma medição -- a presença abre a planta
-    // da divisão. É o `data-action` que o ouvinte delegado da coluna resolve.
+    // Um cartão que abre alguma coisa em vez de pedir uma medição, como a planta da presença.
     action = "",
     pending = false,
     stateLabel = "",
     stateTone = "",
     tone = "",
 }) {
-    // Quando há um feature para pedir ou uma acção própria, é o cartão inteiro o botão.
     const clickable = feature !== "" || action !== "";
     const tag = clickable ? "button" : "div";
     const toneClass = tone ? ` telemetry-card-tone-${tone}` : "";
@@ -41,8 +35,7 @@ export function telemetryCard({
                 "align-self-start",
             )
         : "";
-    // Em repouso o avião de papel diz que o mosaico se pode pedir; a correr, a pastilha
-    // diz em que estado está. Um mosaico que não se pode pedir não tem nada ali.
+    // Em repouso o avião de papel diz que o mosaico se pode pedir; a correr, a pastilha o estado.
     const requestHint =
         clickable && !stateLabel
             ? `<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid ${action ? "fa-up-right-and-down-left-from-center" : "fa-paper-plane"}"></i></span>`
@@ -51,7 +44,6 @@ export function telemetryCard({
     // Pelo texto, e não pelo valor: um `Fragment` vazio é um objecto, e é sempre verdadeiro.
     const hasText = (part) => String(part ?? "") !== "";
 
-    // Fora da linha do ícone, para ter a largura toda do cartão.
     const detailsTitleAttr = hasText(detailsTitle) ? html` title="${detailsTitle}"` : "";
     const detailsHtml = hasText(details)
         ? html`<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details text-secondary lh-sm"${detailsTitleAttr}>${details}</div>`
@@ -60,12 +52,9 @@ export function telemetryCard({
         ? html`<div class="telemetry-card-value fw-semibold lh-sm tabular-nums text-break">${value}</div>`
         : "";
 
-    // A célula mede-se pelo contentor e não pela largura do ecrã: a grelha só abre uma
-    // segunda coluna quando há 11rem para ela. Ver `.telemetry-card-grid` no `device.css`.
+    // A célula mede-se pelo contentor, e não pelo ecrã: ver `.telemetry-card-grid` no `device.css`.
     const cell = span === 12 ? "telemetry-card-wide min-w-0" : "min-w-0";
 
-    // O corpo é uma coluna só para separar a linha do ícone do corpo que alguns mosaicos
-    // trazem -- a barra de humidade da fralda, por exemplo.
     return html`
     <div class="${cell}">
         <${tag}${raw(attrs)}>

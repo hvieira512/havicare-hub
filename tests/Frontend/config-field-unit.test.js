@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 
 const { numberField } =
@@ -11,14 +10,14 @@ const { renderConfigSection } =
 
 /** A unidade cola-se ao campo: `60` seguido de `min` é uma medida só. */
 
-test("sem unidade o campo fica como está, sem embrulho nenhum", () => {
+test("without a unit the field stays as it is, with no wrapper", () => {
     const root = parseFragment(numberField("intervalMinutes", 60));
 
     assert.equal(root.querySelector(".input-group"), null);
     assert.equal(root.querySelector("input").value, "60");
 });
 
-test("com unidade o campo entra num grupo, com a unidade ao lado", () => {
+test("with a unit the field goes into a group with the unit beside it", () => {
     const root = parseFragment(numberField("intervalMinutes", 60, { unit: "min" }));
 
     const group = root.querySelector(".input-group");
@@ -27,7 +26,7 @@ test("com unidade o campo entra num grupo, com a unidade ao lado", () => {
     assert.equal(group.querySelector(".input-group-text").textContent, "min");
 });
 
-test("a unidade é escapada: vem do catálogo e não do código", () => {
+test("the unit is escaped: it comes from the catalog, not the code", () => {
     const root = parseFragment(numberField("x", 1, { unit: "<b>h</b>" }));
 
     assert.equal(root.querySelector(".input-group-text").textContent, "<b>h</b>");
@@ -37,7 +36,7 @@ const unitOf = (protocol, entry) => parseFragment(renderConfigSection(protocol, 
     .querySelector(".input-group-text")?.textContent.trim();
 
 /** A unidade declarada em `options.label` ganha à que se adivinha pelo nome do campo. */
-test("a unidade declarada aparece ao lado do campo", () => {
+test("the declared unit appears beside the field", () => {
     assert.equal(unitOf("zayata-m228", {
         key: "retrieval_warning",
         command: "retrievalWarning",
@@ -49,7 +48,7 @@ test("a unidade declarada aparece ao lado do campo", () => {
 });
 
 /** O protocolo da Wonlex diz que o `intervalTime` é em segundos. */
-test("sem unidade declarada vale a do nome nativo", () => {
+test("without a declared unit the native name's unit applies", () => {
     assert.equal(unitOf("wonlex-json", {
         key: "locationInterval",
         command: "locationInterval",
@@ -60,7 +59,7 @@ test("sem unidade declarada vale a do nome nativo", () => {
 });
 
 /** Na balança, `unit` é o nome do campo e o que lá está são as escolhas do seletor. */
-test("um campo chamado unit não passa as escolhas por unidade", () => {
+test("a field called unit does not pass its choices off as a unit", () => {
     assert.equal(unitOf("lefu-torre", {
         key: "weight_unit",
         command: "weightUnit",

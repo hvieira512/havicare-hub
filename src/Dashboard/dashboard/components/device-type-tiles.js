@@ -6,17 +6,12 @@ import {
     normalizeDeviceType,
 } from "../domain.js";
 
-/** O ícone de cada tipo, tirado do catálogo, que a entrada em PHP também lê. */
 export function deviceTypeIcon(deviceType) {
-    // O que não se reconhece cai no tipo por omissão, como em todo o `domain.js`; o
-    // `fa-microchip` é só para o caso de uma entrada do catálogo chegar sem ícone.
+    // O `fa-microchip` é para uma entrada do catálogo que chegue sem ícone.
     return deviceTypeFields(deviceType).icon || "fa-microchip";
 }
 
-/**
- * O mosaico de tipos de dispositivo. O `multiple` separa o filtro da escolha única; as
- * contagens são opcionais, porque ao criar um modelo não há o que contar.
- */
+/** O mosaico de tipos: o `multiple` separa o filtro da escolha única. */
 export function deviceTypeTiles(
     options,
     {

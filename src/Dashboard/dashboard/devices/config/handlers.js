@@ -29,10 +29,6 @@ import {
     syncTakePillsVoiceVisibility,
 } from "./take-pills-audio.js";
 
-/**
- * Os handlers delegados do painel de configuração: só encaminham, e as regras de cada campo
- * vivem com esse campo.
- */
 /** A raiz lê-se antes: há verbos que tiram o botão do DOM e depois já não se lá chega. */
 export function handleDeviceConfigClick(event) {
     const root = event.target.closest?.("[data-config-root]") || null;
@@ -49,8 +45,7 @@ function dispatchConfigClick(event) {
         const key = button.dataset.section || "";
         state.deviceModal.activeCategory = key;
         state.deviceModal.configSectionOpen = true;
-        // Trocado no sítio e não redesenhado: as secções estão todas no DOM, e redesenhar
-        // deitava fora o que estivesse escrito nas outras e ainda por enviar.
+        // Trocado no sítio: redesenhar deitava fora o que está escrito nas outras secções.
         selectConfigSection(button.closest("[data-config-root]"), key);
         return;
     }
@@ -61,8 +56,7 @@ function dispatchConfigClick(event) {
         return;
     }
 
-    // A secção inteira envia-se de uma vez: uma alteração por definição, um comando por
-    // definição alterada, e um só pedido.
+    // A secção inteira num só pedido, com um comando por definição alterada.
     const pane = button.closest("[data-config-pane]");
     if (pane && button.dataset.action === "saveConfigPane") {
         void saveDeviceConfigurations(pane);
@@ -77,13 +71,11 @@ function dispatchConfigClick(event) {
     if (!section) return;
 
     if (button.dataset.action === "saveConfig") {
-        // Os verbos de uma acção trazem o valor no próprio botão; o «Enviar» normal não traz
-        // nenhum e o cartão continua a ler os seus campos.
+        // Os verbos de uma acção trazem o valor no botão; o «Enviar» lê os campos.
         void saveDeviceConfiguration(section, button.dataset.actionValue || "");
         return;
     }
 
-    // A lista de utilizadores da balança tem os seus próprios cartões e formulário.
     if (String(button.dataset.action || "").startsWith("scaleUser")) {
         if (handleScaleUserAction(section, button)) syncConfigSectionDirty(section);
         return;
@@ -99,8 +91,7 @@ function dispatchConfigClick(event) {
         return;
     }
 
-    // As sete listas repetíveis passam pelo mesmo par: o tipo vem no botão ao acrescentar, e
-    // da linha em que se está ao remover.
+    // O tipo da lista vem do botão ao acrescentar, e da linha ao remover.
     if (button.dataset.action === "addRepeatRow") {
         appendRepeatRow(section, button.dataset.repeatKind || "");
         return;
@@ -212,7 +203,6 @@ export function handleDeviceConfigInput(event) {
     syncConfigCountsFrom(event.target);
 }
 
-/** Acende a secção escolhida e abre o painel dela, sem tocar no que os outros têm escrito. */
 export function selectConfigSection(root, key) {
     if (!root) return;
 
@@ -229,7 +219,6 @@ export function selectConfigSection(root, key) {
     }
 }
 
-/** As contagens acompanham cada tecla, e não só o desenho. */
 function syncConfigCountsFrom(target) {
     const root = target.closest?.("[data-config-root]");
     if (root) syncConfigCounts(root);
@@ -242,10 +231,7 @@ export function handleConfigFeedbackClosed(event) {
     dismissConfigFeedback(alertEl.dataset.configFeedbackKey || "");
 }
 
-/**
- * Devolve as definições ao valor que veio do hub, que o `type="reset"` não conhece. As listas
- * repetíveis ficam de fora: têm o seu próprio repor.
- */
+/** Devolve as definições ao valor desenhado; as listas repetíveis têm o seu próprio repor. */
 function restoreDrawnFields(block) {
     let drawn;
     try {
@@ -298,21 +284,4 @@ export function resetConfigPane(pane) {
             input.value = value ?? "";
         }
     }
-}
-
-/**
- * O `type="reset"` não dispara `change`, por isso as etiquetas dos interruptores acertam-se
- * aqui, numa microtarefa: a reposição acontece depois dos ouvintes.
- */
-export function handleDeviceConfigReset(event) {
-    const form = event.target.closest?.("form") || event.target;
-
-    queueMicrotask(() => {
-        for (const input of form.querySelectorAll(
-            ".form-check-input[type=\"checkbox\"][role=\"switch\"]",
-        )) {
-            syncSwitchLabel(input);
-        }
-        syncConfigCountsFrom(form);
-    });
 }

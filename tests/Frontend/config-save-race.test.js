@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { flush, installDeferredFetch } from "./support/deferred-fetch.js";
 import { parseFragment } from "./support/dom.js";
 
@@ -26,7 +25,7 @@ beforeEach(() => {
     state.deviceModal.configurations = { aaa111: {} };
 });
 
-test("a resposta de uma gravação não escreve no dispositivo que entretanto se abriu", async () => {
+test("a save's response does not write into the device opened in the meantime", async () => {
     const fetches = installDeferredFetch();
 
     const saving = saveDeviceConfigurations(editedPane());

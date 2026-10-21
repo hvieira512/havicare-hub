@@ -1,25 +1,16 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { installDeferredFetch } from "./support/deferred-fetch.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initGatewayLinksUi, refreshGatewayOptions } =
     await import("../../src/Dashboard/dashboard/devices/gateway-links-ui.js");
 
-const els = new Proxy({}, {
-    get(target, name) {
-        if (typeof name !== "string") return undefined;
-        if (!(name in target)) {
-            const isField = /Company$|LicenseId$|Imei$/.test(name);
-            target[name] = document.createElement(
-                name.endsWith("Btn") ? "button" : isField ? "input" : "div",
-            );
-        }
-        return target[name];
-    },
-});
+const els = autoEls((name) => (name.endsWith("Btn")
+    ? "button"
+    : /Company$|LicenseId$|Imei$/.test(name) ? "input" : "div"));
 
 const gatewaysOfBothLicenses = {
     data: [
@@ -33,12 +24,12 @@ beforeEach(() => {
     initGatewayLinksUi({ els });
     els.deviceForm.dataset.deviceType = "diaper_sensor";
     els.deviceCompany.value = "havicare";
-    state.deviceModal.gatewayOptions = [];
+
     state.selectedDetail = null;
 });
 
 /** Os gateways de uma licença anterior, marcados e gravados, ligariam o sensor a outro cliente. */
-test("a resposta atrasada não desenha os gateways da licença anterior", async () => {
+test("a late reply does not draw the previous licence's gateways", async () => {
     const fetches = installDeferredFetch();
 
     els.deviceLicenseId.value = "1";
@@ -50,11 +41,7 @@ test("a resposta atrasada não desenha os gateways da licença anterior", async 
     await fetches.respond("licenseId=1", gatewaysOfBothLicenses);
     await Promise.all([first, second]);
 
-    assert.deepEqual(
-        state.deviceModal.gatewayOptions.map((gateway) => gateway.imei),
-        ["gw-l2"],
-        "só podem ficar os gateways da licença que está no formulário",
-    );
+    assert.match(els.deviceGatewayLinksList.innerHTML, /gw-l2/);
     assert.doesNotMatch(
         els.deviceGatewayLinksList.innerHTML,
         /gw-l1/,

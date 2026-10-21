@@ -3,10 +3,7 @@ import { paginationControls } from "./components/pagination.js";
 /** O resumo das listagens servidas pela API, que dizem quantos registos existem em total. */
 const defaultSummary = (start, end, total) => `A mostrar de ${start} até ${end} | ${total}`;
 
-/**
- * Escreve o paginador no contentor, no resumo e nos controlos. O `summary` é por extenso numa
- * listagem em páginas, e curto nos painéis estreitos do dispositivo: «1–12 de 30».
- */
+/** Escreve o paginador; o `summary` é por extenso numa listagem e curto nos painéis do dispositivo. */
 export function renderPagination({
     pagination,
     rootEl,

@@ -1,15 +1,8 @@
 import { formRequest, requestJson } from "./http.js";
 
-/**
- * Os endpoints do hub, um por linha. O transporte -- credencial, erros, query string -- vive
- * no `http.js`, e é o único módulo deste directório com lógica.
- */
-
-export { authHeaders, formRequest, getDashboardApiToken, requestJson } from "./http.js";
+/** Os endpoints do hub, um por linha; o transporte vive no `http.js`. */
 
 const id = encodeURIComponent;
-
-/* ---------- dispositivos ---------- */
 
 export const getDevices = (params = {}) => requestJson("/api/devices", { query: params });
 export const getDevice = (imei) => requestJson(`/api/devices/${id(imei)}`);
@@ -52,8 +45,6 @@ export const saveDevice = (imei, supplier, model, deviceType = "watch", licenseI
         }),
     });
 
-/* ---------- catálogo ---------- */
-
 export const getModels = (params = {}) => requestJson("/api/models", { query: params });
 export const getModel = (modelId) => requestJson(`/api/models/${id(modelId)}`);
 export const getModelFilters = () => requestJson("/api/device-types/suppliers");
@@ -69,8 +60,6 @@ export const getProtocols = () => requestJson("/api/protocols");
 export const getProtocolConfigCatalog = (protocol) =>
     requestJson(`/api/protocols/${id(protocol)}/config-catalog`);
 export const getCapabilities = (params = {}) => requestJson("/api/capabilities", { query: params });
-
-/* ---------- empresas e licenças ---------- */
 
 export const getCompanies = (params = {}) => requestJson("/api/companies", { query: params });
 export const createCompany = (name) =>
@@ -102,8 +91,6 @@ export const checkRadarCredentials = (licenseId, body) =>
         body: JSON.stringify(body),
     });
 
-/* ---------- utilizadores da API ---------- */
-
 export const getApiUsers = (params = {}) => requestJson("/api/users", { query: params });
 export const saveApiUser = (userId, body) =>
     requestJson(userId ? `/api/users/${id(userId)}` : "/api/users", {
@@ -112,10 +99,7 @@ export const saveApiUser = (userId, body) =>
     });
 export const deleteApiUser = (userId) => requestJson(`/api/users/${id(userId)}`, { method: "DELETE" });
 
-/* ---------- bloqueados ---------- */
-
-// O painel não tem paginação: mostra a lista toda, e o `pagination.total` diz se ficou algum
-// de fora.
+// Sem paginação no painel: o `pagination.total` diz se ficou algum de fora.
 export const getDenylist = () => requestJson("/api/denylist", { query: { limit: 500 } });
 export const blockDevice = (identity, protocol = "", note = "") =>
     requestJson("/api/denylist", {
@@ -124,8 +108,6 @@ export const blockDevice = (identity, protocol = "", note = "") =>
     });
 export const unblockDevice = (identity) =>
     requestJson(`/api/denylist/${id(identity)}`, { method: "DELETE" });
-
-/* ---------- notificações ---------- */
 
 export const getNotifications = (limit = 20) =>
     requestJson("/api/notifications", { query: { limit } });

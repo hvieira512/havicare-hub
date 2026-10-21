@@ -71,12 +71,7 @@ export function installStreamHarness() {
         requests.push({ url: String(url), options: options || {} });
 
         if (!nextResponse.ok) {
-            return {
-                ok: false,
-                status: nextResponse.status,
-                headers: { get: () => "application/json" },
-                text: async () => JSON.stringify({ error: { code: "recusado" } }),
-            };
+            return Response.json({ error: { code: "recusado" } }, { status: nextResponse.status });
         }
 
         const stream = new FakeStream(url, options);
@@ -91,12 +86,7 @@ export function installStreamHarness() {
             }
         });
 
-        return {
-            ok: true,
-            status: 200,
-            headers: { get: () => "text/event-stream" },
-            body: stream.body,
-        };
+        return new Response(stream.body, { headers: { "Content-Type": "text/event-stream" } });
     };
 
     /** Deixa correr as leituras do corpo, que são várias microtarefas por chunk. */

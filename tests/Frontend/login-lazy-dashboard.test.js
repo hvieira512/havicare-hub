@@ -14,7 +14,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const MAIN = path.join(here, "../../src/Dashboard/main.js");
 const APP = path.join(here, "../../src/Dashboard/dashboard/app.js");
 
-test("o ecrã de entrada não arrasta o grafo da dashboard", () => {
+test("the login screen does not pull in the dashboard graph", () => {
     const eager = reachableFrom([MAIN], { includeDynamic: false });
 
     assert.ok(
@@ -29,14 +29,14 @@ test("o ecrã de entrada não arrasta o grafo da dashboard", () => {
     );
 });
 
-test("o grafo da dashboard continua pendurado no main.js", () => {
+test("the dashboard graph still hangs off main.js", () => {
     assert.ok(
         reachableFrom([MAIN]).has(APP),
         "seguindo o import() dinâmico, o app.js tem de continuar alcançável",
     );
 });
 
-test("o relato de erros instala-se antes de tudo", () => {
+test("error reporting installs before anything else", () => {
     const statements = readFileSync(MAIN, "utf8")
         .split("\n")
         .map((line) => line.trim())

@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { changedConfigEntries } from "../../src/Dashboard/dashboard/devices/config/panel.js";
@@ -54,7 +52,7 @@ const INTERVALS = [
     interval("spo2_measurement_interval", "Intervalo de oxigénio no sangue"),
 ];
 
-test("as medições repetidas ficam num cartão só", () => {
+test("the repeated measurements share one card", () => {
     const root = render(INTERVALS);
 
     assert.equal(root.querySelectorAll("[data-config-group]").length, 1);
@@ -62,27 +60,27 @@ test("as medições repetidas ficam num cartão só", () => {
     assert.equal(root.querySelectorAll("[data-config-section]").length, 0);
 });
 
-test("sem legenda as medições continuam num cartão só", () => {
+test("without a caption the measurements still share one card", () => {
     const root = render(INTERVALS.map((entry) => ({ ...entry, help: "" })));
 
     assert.equal(root.querySelectorAll("[data-config-group]").length, 1);
     assert.equal(root.querySelectorAll("[data-config-row]").length, 3);
 });
 
-test("a frase de ajuda é dita uma vez, e não uma por medição", () => {
+test("the help sentence is said once, not once per measurement", () => {
     const occurrences = render(INTERVALS).textContent.split(HELP).length - 1;
 
     assert.equal(occurrences, 1);
 });
 
-test("um envio para as três, e não três", () => {
+test("one send for the three, not three", () => {
     const root = render(INTERVALS);
 
     assert.equal(root.querySelectorAll("[data-action=\"saveConfigPane\"]").length, 1);
     assert.equal(root.querySelectorAll("[data-action=\"saveConfig\"]").length, 0);
 });
 
-test("cada linha continua a ter o seu campo e a sua pastilha de entrega", () => {
+test("each row keeps its own field and delivery badge", () => {
     const rows = [...render(INTERVALS).querySelectorAll("[data-config-row]")];
 
     for (const row of rows) {
@@ -95,7 +93,7 @@ test("cada linha continua a ter o seu campo e a sua pastilha de entrega", () => 
  * A fotografia de cada linha tem de bater certo com o que o leitor devolve: um `"0"` contra um
  * `0` conta uma alteração que ninguém fez e manda ao aparelho o que ele já tem.
  */
-test("só viaja a linha que alguém mexeu", () => {
+test("only the row someone touched travels", () => {
     // Com valor guardado: sem ele, todas contam como por enviar, que é outra regra e já tem
     // teste próprio.
     const stored = Object.fromEntries(
@@ -117,7 +115,7 @@ test("só viaja a linha que alguém mexeu", () => {
  * O padrão de um intervalo é `0`, e `0` desactiva: enviar o grupo sem ninguém escrever
  * desligaria as dez medições de uma vez.
  */
-test("um grupo de campos nunca enviados não envia nada sem alguém escrever um valor", () => {
+test("a group of never-sent fields sends nothing until someone types a value", () => {
     const group = render(INTERVALS).querySelector("[data-config-group]");
 
     assert.deepEqual(changedConfigEntries(group), {});
@@ -130,9 +128,9 @@ test("um grupo de campos nunca enviados não envia nada sem alguém escrever um 
     });
 });
 
-test("um grupo de interruptores nunca enviados continua a poder ser enviado", () => {
+test("a group of never-sent switches can still be sent", () => {
     // O padrão de um interruptor é uma escolha a sério -- ligado --, e o grupo é o único
-    // caminho para a primeira gravação. É a diferença que justifica as duas regras.
+    // caminho para a primeira gravação.
     const toggles = ["fall_detection", "sos_sms"].map((key) => ({
         key,
         capabilityKey: key,
@@ -148,7 +146,7 @@ test("um grupo de interruptores nunca enviados continua a poder ser enviado", ()
     assert.equal(Object.keys(changedConfigEntries(group)).length, 2);
 });
 
-test("números de comandos diferentes continuam a ser cartões separados", () => {
+test("numbers from different commands stay as separate cards", () => {
     const root = render([
         interval("heart_rate_measurement_interval", "Intervalo de frequência cardíaca"),
         {

@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const {
@@ -11,13 +10,7 @@ const {
 } = await import("../../src/Dashboard/dashboard/devices/list-filters.js");
 
 /** Os filtros sobrevivem à sessão, e as pastilhas por cima da lista dizem quais estão aplicados. */
-const els = new Proxy({}, {
-    get(target, name) {
-        if (typeof name !== "string") return undefined;
-        if (!(name in target)) target[name] = document.createElement("div");
-        return target[name];
-    },
-});
+const els = autoEls();
 
 let changes;
 
@@ -53,7 +46,7 @@ beforeEach(() => {
     };
 });
 
-test("cada filtro aplicado dá uma pastilha, com o grupo e o valor na chave", () => {
+test("each applied filter gives a chip, with the group and value in the key", () => {
     state.deviceFilters = {
         deviceType: ["watch"],
         supplier: ["veepoo"],
@@ -73,17 +66,17 @@ test("cada filtro aplicado dá uma pastilha, com o grupo e o valor na chave", ()
     ]);
 });
 
-test("sem filtros não há pastilhas", () => {
+test("without filters there are no chips", () => {
     assert.deepEqual(deviceFilterChipLabels(state.deviceFilters), []);
 });
 
-test("os desligados também têm pastilha", () => {
+test("offline devices get a chip too", () => {
     assert.deepEqual(deviceFilterChipLabels({ ...state.deviceFilters, online: false }), [
         { key: "online:offline", label: "Desligados" },
     ]);
 });
 
-test("o × tira esse filtro e volta a pedir a lista", async () => {
+test("the × removes that filter and requests the list again", async () => {
     state.deviceFilters.deviceType = ["watch", "radar"];
 
     await removeChip("deviceType:watch");
@@ -92,7 +85,7 @@ test("o × tira esse filtro e volta a pedir a lista", async () => {
     assert.equal(changes, 1);
 });
 
-test("o × do estado repõe todos", async () => {
+test("the × on status resets all", async () => {
     state.deviceFilters.online = true;
 
     await removeChip("online:online");
@@ -102,7 +95,7 @@ test("o × do estado repõe todos", async () => {
 });
 
 /** O valor de uma licença já leva dois pontos: quem parte a chave parte-a no primeiro. */
-test("o × de uma licença tira a licença e não a empresa", async () => {
+test("the × on a licence removes the licence and not the company", async () => {
     state.deviceFilters.license = ["hitcare", "hitcare:1"];
 
     await removeChip("license:hitcare:1");

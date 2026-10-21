@@ -1,11 +1,6 @@
 import { html } from "../html.js";
 
-/** As duas tiras de pastilhas da plataforma: as secções de um catálogo e os filtros aplicados. */
-
-/**
- * Uma tira de pastilhas de secção, com ícone e contagem: a única forma de escolher uma secção
- * no hub. A acesa vem do estado e não do DOM, porque a tira é redesenhada.
- */
+/** Uma tira de pastilhas de secção. A acesa vem do estado e não do DOM, porque a tira é redesenhada. */
 export function sectionStrip(sections, action, activeKey = "") {
     return sections
         .map(({ key, label, count, icon }) => html`
@@ -16,10 +11,7 @@ export function sectionStrip(sections, action, activeKey = "") {
         .join("");
 }
 
-/**
- * As pastilhas dos filtros aplicados, com o x para remover cada um, por baixo da pesquisa e
- * do botão de filtros. Entre listagens varia só o nome da acção.
- */
+/** As pastilhas dos filtros aplicados, com o x para remover cada um. */
 export function filterChips(labels, action) {
     return labels
         .map(

@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 
 const { classificationTrailHtml } =
@@ -28,7 +27,7 @@ const trail = (openKey = "", known = true) =>
         known,
     }));
 
-test("são três pastilhas, e cada uma abre a sua escolha", () => {
+test("there are three chips, and each opens its own choice", () => {
     const buttons = [...trail().querySelectorAll("[data-wizard-reopen]")];
 
     assert.deepEqual(
@@ -37,7 +36,7 @@ test("são três pastilhas, e cada uma abre a sua escolha", () => {
     );
 });
 
-test("cada pastilha diz a etiqueta e o valor", () => {
+test("each chip says the label and the value", () => {
     const text = trail().textContent.replace(/\s+/g, " ");
 
     assert.match(text, /Tipo Relógio/);
@@ -45,14 +44,14 @@ test("cada pastilha diz a etiqueta e o valor", () => {
     assert.match(text, /Licença besenior\.havicare · 24/);
 });
 
-test("a pastilha que está aberta não repete o valor: a escolha está por baixo", () => {
+test("the open chip does not repeat the value: the choice is below it", () => {
     const open = trail("model");
 
     assert.doesNotMatch(open.textContent, /4P Touch Y6M/);
     assert.match(open.textContent.replace(/\s+/g, " "), /Modelo/);
 });
 
-test("enquanto o dispositivo não chegou não se afirma classificação nenhuma", () => {
+test("while the device has not arrived no classification is claimed", () => {
     const loading = trail("", false);
 
     assert.doesNotMatch(loading.textContent, /Relógio/);

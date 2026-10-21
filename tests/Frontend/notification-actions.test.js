@@ -1,12 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
-import "./support/browser-env.js";
 import { notificationRow as buildRow, notificationsPanel } from "../../src/Dashboard/dashboard/notifications.js";
+import { asText } from "./support/dom.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const notificationRow = (...args) => String(buildRow(...args));
+const notificationRow = asText(buildRow);
 
 const notAuthorized = {
     id: 7,
@@ -29,14 +27,14 @@ const hubRestart = {
 const button = (markup, action) =>
     markup.split("<button").find((chunk) => chunk.includes(action)) || "";
 
-test("registar o aparelho tem botão próprio", () => {
+test("registering the device has its own button", () => {
     const markup = notificationRow(notAuthorized);
 
     assert.match(markup, /data-notification-register="7"/);
     assert.match(button(markup, "data-notification-register"), /Registar/);
 });
 
-test("um aviso que não é de um aparelho só se dispensa", () => {
+test("a notice that is not about a device can only be dismissed", () => {
     const markup = notificationRow(hubRestart);
 
     assert.doesNotMatch(markup, /data-notification-block/);
@@ -44,7 +42,7 @@ test("um aviso que não é de um aparelho só se dispensa", () => {
     assert.match(markup, /data-notification-dismiss="8"/);
 });
 
-test("o rodapé leva aos bloqueados, com ou sem notificações", () => {
+test("the footer leads to the blocked list, with or without notifications", () => {
     const empty = notificationsPanel([]);
     const filled = notificationsPanel([notAuthorized]);
 

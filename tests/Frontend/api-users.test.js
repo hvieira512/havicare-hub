@@ -1,16 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import {
     apiUserFilterControls as buildFilterControls,
     apiUserForm as buildForm,
     licenseRefIdFor,
 } from "../../src/Dashboard/dashboard/settings/api-users.js";
+import { asText } from "./support/dom.js";
 
-// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
-const apiUserForm = (...args) => String(buildForm(...args));
-const apiUserFilterControls = (...args) => String(buildFilterControls(...args));
+const apiUserForm = asText(buildForm);
+const apiUserFilterControls = asText(buildFilterControls);
 
 const admin = { id: 1, username: "havicare-platform", role: "hub_admin", enabled: 1 };
 const client = {
@@ -44,7 +43,7 @@ const COLUMNS = [
     },
 ];
 
-test("a busca e os filtros de perfil e estado vêm do descritor", () => {
+test("the search and the role and status filters come from the descriptor", () => {
     const bar = apiUserFilterControls(COLUMNS, { username: "hav", role: "hub_admin", enabled: "" });
 
     assert.match(bar, /type="search"/);
@@ -56,7 +55,7 @@ test("a busca e os filtros de perfil e estado vêm do descritor", () => {
     assert.match(bar, /Todos os estados/);
 });
 
-test("as opções trazem a etiqueta em português e a contagem da faceta", () => {
+test("the options carry the Portuguese label and the facet count", () => {
     const bar = apiUserFilterControls(COLUMNS, {});
 
     assert.match(bar, /<option value="hub_admin">Administrador \(2\)</);
@@ -66,13 +65,13 @@ test("as opções trazem a etiqueta em português e a contagem da faceta", () =>
 });
 
 /** Sem marcar o escolhido, o controlo diria «Todos» com a lista estreitada. */
-test("o valor escolhido fica selecionado", () => {
+test("the chosen value stays selected", () => {
     const bar = apiUserFilterControls(COLUMNS, { role: "hub_admin" });
 
     assert.match(bar, /<option value="hub_admin" selected>/);
 });
 
-test("uma coluna sem filtro não aparece na barra", () => {
+test("a column without a filter is not in the bar", () => {
     assert.doesNotMatch(apiUserFilterControls(COLUMNS, {}), /company_name/);
 });
 
@@ -82,7 +81,7 @@ const LICENSES = [
 ];
 
 /** Criar e editar são o mesmo formulário: o que muda é o que vem preenchido. */
-test("editar traz o utilizador dentro do formulário", () => {
+test("editing puts the user inside the form", () => {
     const form = apiUserForm({ ...client, license_ref_id: 7 }, LICENSES);
 
     assert.match(form, /data-id="2"/);
@@ -93,7 +92,7 @@ test("editar traz o utilizador dentro do formulário", () => {
 });
 
 /** Nasce cliente, que é o perfil que a maioria leva, e sem licença nenhuma escolhida. */
-test("criar nasce vazio e no perfil de cliente", () => {
+test("creating starts empty with the client role", () => {
     const form = apiUserForm(null, LICENSES);
 
     assert.match(form, /data-id=""/);
@@ -104,13 +103,13 @@ test("criar nasce vazio e no perfil de cliente", () => {
 });
 
 /** A password só se pede a criar: trocá-la é outro verbo do mesmo menu. */
-test("só o formulário de criar pede palavra-passe", () => {
+test("only the create form asks for a password", () => {
     assert.match(apiUserForm(null, LICENSES), /data-field="password"/);
     assert.doesNotMatch(apiUserForm(client, LICENSES), /data-field="password"/);
 });
 
 /** Um admin manda em todas as licenças, e a escolha de uma não se lhe aplica. */
-test("a licença de um administrador entra desligada", () => {
+test("an administrator's licence starts disabled", () => {
     assert.match(apiUserForm(admin, LICENSES), /data-field="licenseRefId" disabled/);
     assert.doesNotMatch(apiUserForm(client, LICENSES), /data-field="licenseRefId" disabled/);
 });
@@ -123,15 +122,15 @@ test("a licença de um administrador entra desligada", () => {
 const active = { id: 7, username: "gucc", role: "hub_admin", enabled: 1 };
 const paused = { id: 8, username: "hitcare", role: "hub_admin", enabled: 0 };
 
-test("o editor de um utilizador ativo declara-o ativo", () => {
+test("the editor of an active user declares it active", () => {
     assert.match(apiUserForm(active, []), /data-enabled="1"/);
 });
 
-test("o editor de um utilizador pausado declara-o pausado", () => {
+test("the editor of a paused user declares it paused", () => {
     assert.match(apiUserForm(paused, []), /data-enabled="0"/);
 });
 
-test("criar um utilizador não declara estado nenhum", () => {
+test("creating a user declares no status", () => {
     assert.doesNotMatch(apiUserForm(null, []), /data-enabled=/);
 });
 
@@ -139,18 +138,18 @@ test("criar um utilizador não declara estado nenhum", () => {
  * O binder recusa a string em vez de a converter (`(int)"abc"` dá `0`, que tem significado nas
  * licenças); o `<select>` vazio dá `""`, e é aqui que passa a `null`.
  */
-test("um admin do hub não fica preso a licença nenhuma", () => {
+test("a hub admin is not tied to any licence", () => {
     assert.equal(licenseRefIdFor("hub_admin", ""), null);
     assert.equal(licenseRefIdFor("hub_admin", "1001"), null);
     assert.equal(licenseRefIdFor("hub_admin", 1001), null);
 });
 
-test("a licença de um cliente sai como inteiro e não como texto", () => {
+test("a client's licence goes out as an integer, not as text", () => {
     assert.equal(licenseRefIdFor("license_client", "1001"), 1001);
     assert.equal(licenseRefIdFor("license_client", 1001), 1001);
 });
 
-test("um cliente sem licença escolhida manda null, e não a string vazia", () => {
+test("a client with no licence chosen sends null, not the empty string", () => {
     assert.equal(licenseRefIdFor("license_client", ""), null);
     assert.equal(licenseRefIdFor("license_client", null), null);
     assert.equal(licenseRefIdFor("license_client", undefined), null);

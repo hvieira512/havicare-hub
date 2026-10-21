@@ -5,7 +5,8 @@ import {
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
 import { ensureLicensesLoaded } from "../licenses.js";
-import { toast } from "../dialogs.js";
+import { apiError, toast } from "../dialogs.js";
+import { allPages } from "../api/http.js";
 import { state } from "../state.js";
 import { field } from "../components/form-field.js";
 import { modelPreviewHtml } from "../components/model-image.js";
@@ -17,6 +18,7 @@ import {
     modelDeviceType,
     modelInternalName,
     modelsForSupplierAndType,
+    supplierProtocol,
     suppliersForDeviceType,
 } from "../domain.js";
 import { createWizard } from "./wizard.js";
@@ -37,20 +39,15 @@ import {
     loadSummary,
 } from "./list.js";
 
-/**
- * O assistente de adicionar um dispositivo, uma pergunta por passo. O que varia por tipo vem
- * da tabela `DEVICE_TYPES` e não de ramificações aqui.
- */
+/** O assistente de adicionar, uma pergunta por passo; o que varia por tipo vem do `DEVICE_TYPES`. */
 
 let els;
 let wizard;
 let wizardModal = null;
 let licenseGroups = [];
 
-/** Um passo por pergunta: é o que o contador, a barra e a migalha contam todos igual. */
 const STEPS = ["Tipo", "Fornecedor", "Modelo", "Licença", "Identificação"];
 
-/** Cada pergunta sabe quando está respondida, que badges produz e o que invalida. */
 const QUESTIONS = [
     {
         key: "type",
@@ -76,8 +73,7 @@ const QUESTIONS = [
     {
         key: "owner",
         step: 4,
-        // Os gateways autorizáveis são os da mesma empresa e licença, daí trocar de
-        // licença limpar os que já estavam escolhidos.
+        // Os gateways autorizáveis são os da mesma empresa e licença.
         clears: ["gateways"],
         // "Sem licença" é uma resposta como as outras, por isso não trava o avanço.
         optional: true,
@@ -125,10 +121,7 @@ export function initCreateWizard(context) {
     });
 }
 
-/**
- * `seed` são respostas de partida, tiradas da notificação de um dispositivo não autorizado;
- * alteram-se na trilha como as outras.
- */
+/** `seed` são respostas de partida, tiradas da notificação de um dispositivo não autorizado. */
 function openCreateWizard(licenseList = [], seed = {}) {
     licenseGroups = licenseList;
     wizard.reset();
@@ -136,8 +129,7 @@ function openCreateWizard(licenseList = [], seed = {}) {
         if (value) wizard.answer(key, value);
     }
     answerSingleSupplier();
-    // Abre onde há alguma coisa para fazer: para no primeiro passo com uma pergunta por
-    // responder, e nunca salta o último -- criar é um clique deliberado.
+    // Para no primeiro passo por responder, e nunca salta o último: criar é um clique deliberado.
     while (wizard.current() === null && wizard.canAdvance()) {
         wizard.advance();
     }
@@ -145,15 +137,13 @@ function openCreateWizard(licenseList = [], seed = {}) {
     render();
 }
 
-/** Um tipo com um só fornecedor não tem nada a perguntar: a única resposta dá-se sozinha. */
+/** Um tipo com um só fornecedor responde-se sozinho. */
 function answerSingleSupplier() {
     const answers = wizard.answers();
     if (!answers.type || answers.supplier) return;
     const suppliers = suppliersForDeviceType(answers.type, state.deviceTypeSuppliersModels);
     if (suppliers.length === 1) wizard.answerAndAdvance("supplier", suppliers[0]);
 }
-
-/* ---------- desenho ---------- */
 
 function render() {
     renderHead();
@@ -162,7 +152,6 @@ function render() {
     renderFooter();
 }
 
-/** O contador, a barra e a migalha dizem a mesma coisa em três formas: passo x de cinco. */
 function renderHead() {
     const step = wizard.step();
     els.wizardStepCount.textContent = `${step} de ${STEPS.length}`;
@@ -174,7 +163,6 @@ function renderHead() {
     });
 }
 
-/** A imagem do modelo, pelo `modelPreviewHtml` -- o mesmo desenho do modal de edição. */
 function renderArt() {
     const answers = wizard.answers();
     const chosen = answers.model;
@@ -184,20 +172,16 @@ function renderArt() {
         return;
     }
     const info = findModelInfo(chosen.supplier, chosen.model, state.deviceTypeSuppliersModels);
-    els.wizardArt.innerHTML = `
+    els.wizardArt.innerHTML = html`
         ${modelPreviewHtml(info, chosen.model)}
         <div class="wizard-art-name fw-semibold text-center">${chosen.supplier} ${chosen.model}</div>
-        <div class="wizard-art-sub text-secondary text-center">${(deviceTypeLabel(answers.type))}</div>`;
+        <div class="wizard-art-sub text-secondary text-center">${deviceTypeLabel(answers.type)}</div>`;
 }
 
-/**
- * A pergunta do passo actual, com a escolha marcada. O `handleInput` responde sem redesenhar,
- * para não tirar o cursor de baixo dos dedos.
- */
+/** O `handleInput` responde sem redesenhar a pergunta, para não tirar o cursor do campo. */
 function renderAsk() {
     const question = questionOfStep(wizard.step());
     els.wizardAsk.innerHTML = renderQuestion(question.key);
-    // Reinicia a animação de entrada a cada pergunta nova.
     els.wizardAsk.style.animation = "none";
     void els.wizardAsk.offsetHeight;
     els.wizardAsk.style.animation = "";
@@ -288,8 +272,18 @@ function renderOwner(owner) {
         ${licensePickerHtml(licenseGroups, owner)}`;
 }
 
+/** Os campos do tipo, corrigidos pelo protocolo do modelo. */
+function identityFields(answers) {
+    const protocol = supplierProtocol(
+        answers.model?.supplier,
+        state.deviceTypeSuppliersModels,
+        answers.model?.model,
+    );
+    return deviceTypeFields(answers.type, protocol);
+}
+
 function renderIdentity(answers) {
-    const fields = deviceTypeFields(answers.type, answers.model?.protocol);
+    const fields = identityFields(answers);
     const gateways = eligibleGatewayList(answers);
 
     return html`
@@ -327,10 +321,7 @@ function renderIdentity(answers) {
             : ""}`;
 }
 
-/**
- * Os gateways da mesma empresa e licença: a autorização é por par, não global. A ausência de
- * dono escreve-se de duas maneiras, e as chaves normalizam-nas.
- */
+/** A autorização é por empresa e licença; a ausência de dono escreve-se de duas maneiras. */
 function eligibleGatewayList(answers) {
     const owner = answers.owner || {};
     return (state.wizardGateways || []).filter(
@@ -350,13 +341,11 @@ function licenseIdKey(value) {
     return id === "" ? "0" : id;
 }
 
-/** Os dois botões nomeiam o passo para onde levam. */
 function renderFooter() {
     const step = wizard.step();
     const last = wizard.isLastStep();
 
-    // Escondido e não desactivado no primeiro passo: um botão cinzento que nunca serve
-    // convida a ser premido.
+    // Escondido e não desactivado: um botão cinzento que nunca serve convida a ser premido.
     els.wizardBackBtn.classList.toggle("d-none", !wizard.canGoBack());
     els.wizardBackBtn.innerHTML =
         html`<i class="fa-solid fa-arrow-left me-2"></i>${STEPS[step - 2] || ""}`;
@@ -367,8 +356,6 @@ function renderFooter() {
     els.wizardNextBtn.disabled = creating ||
         (last ? !wizard.isComplete() : !wizard.canAdvance());
 }
-
-/* ---------- interacção ---------- */
 
 function handleClick(event) {
     const type = event.target.closest("[data-wizard-type]");
@@ -453,9 +440,7 @@ async function create() {
     }
 }
 
-/* ---------- o que o assistente precisa do resto da aplicação ---------- */
-
-/** Abre o assistente com as licenças, todas de uma vez, e os gateways já carregados. */
+/** Abre com as licenças e os gateways já carregados. */
 export async function openWizard(source = "") {
     await ensureDeviceTypeSuppliersModelsLoaded();
     const licenses = await ensureLicensesLoaded();
@@ -465,10 +450,7 @@ export async function openWizard(source = "") {
     wizardModal.show();
 }
 
-/**
- * As respostas que uma notificação de dispositivo não autorizado já permite dar: o hub
- * disse o protocolo, o modelo reportado e a identidade. Sem notificação, começa do zero.
- */
+/** As respostas que a notificação de um não autorizado já dá: protocolo, modelo e identidade. */
 function seedFromNotification(source, tree = []) {
     const notification = source && typeof source === "object" ? source : null;
     const identity = String(notification?.imei || source || "").trim();
@@ -500,26 +482,24 @@ function seedFromNotification(source, tree = []) {
     };
 }
 
-/** Os gateways registados, para o assistente poder oferecer os da mesma empresa. */
 async function loadWizardGateways() {
-    const result = await apiGetDevices({ deviceType: "gateway", limit: 500 });
-    state.wizardGateways = result?.error
-        ? []
-        : (result.data || []).map((device) => ({
-                imei: String(device.imei || "").toLowerCase(),
-                model: device.model || "",
-                image: device.image || "",
-                company: device.company || "",
-                licenseId: device.licenseId ?? device.license_id ?? "",
-            }));
+    const result = await allPages(apiGetDevices, { deviceType: "gateway" });
+    if (result.error) toast("error", apiError(result));
+    state.wizardGateways = (result.data || []).map((device) => ({
+        imei: String(device.imei || "").toLowerCase(),
+        model: device.model || "",
+        image: device.image || "",
+        company: device.company || "",
+        licenseId: device.licenseId ?? device.license_id ?? "",
+    }));
 }
 
 /**
- * Cria o dispositivo e autoriza os gateways escolhidos; devolve a mensagem de erro ou null. Se
- * só a autorização falha, o dispositivo já existe: o assistente fecha e avisa o que faltou.
+ * Cria o dispositivo e autoriza os gateways; devolve o erro ou null. Se só a autorização
+ * falha, o dispositivo já existe: o assistente fecha e avisa o que faltou.
  */
 export async function createDeviceFromWizard(answers) {
-    const fields = deviceTypeFields(answers.type, answers.model?.protocol);
+    const fields = identityFields(answers);
     const identity = String(answers.identity || "").trim();
     const byImei = fields.identity.field === "imei";
 
@@ -528,7 +508,7 @@ export async function createDeviceFromWizard(answers) {
         answers.model.supplier,
         answers.model.model,
         answers.type,
-        // Sem empresa não há licença: é o "0" que a whitelist já usa para dizer isso.
+        // Sem empresa não há licença, e a whitelist escreve-o "0".
         String(answers.owner?.licenseId || "0"),
         fields.sim ? String(answers.sim || "") : "",
         byImei ? "" : identity,
@@ -552,7 +532,6 @@ export async function createDeviceFromWizard(answers) {
     wizardModal.hide();
     await loadSummary();
     if (unauthorized.length > 0) {
-        // Autoriza-se no modal de edição, que é onde os gateways de um dispositivo se mexem.
         toast(
             "warning",
             "Dispositivo criado, com gateways por autorizar",

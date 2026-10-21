@@ -1,7 +1,6 @@
 import test, { beforeEach, describe } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { cacheElements } = await import("../../src/Dashboard/dashboard/dom.js");
@@ -15,32 +14,14 @@ const {
 // Um pedido pendurado prova que o que se afirma acontece antes de a resposta chegar.
 const hangingFetch = () => new Promise(() => {});
 
-describe("pesquisa", () => {
-    /**
-     * O selector desenha-se inteiro e o detalhe sai pelo caminho vazio; cada nome pedido devolve um
-     * elemento a sério.
-     */
-    const els = new Proxy({}, {
-        get(target, name) {
-            if (typeof name !== "string") return undefined;
-            if (!(name in target)) {
-                target[name] = document.createElement(
-                    name.endsWith("Search") || name.endsWith("Limit") ? "input" : "div",
-                );
-            }
-            return target[name];
-        },
-    });
+describe("search", () => {
+    /** O selector desenha-se inteiro e o detalhe sai pelo caminho vazio. */
+    const els = autoEls((name) => (name.endsWith("Search") || name.endsWith("Limit") ? "input" : "div"));
 
     const ui = { deviceSelectorModal: { show() {} } };
 
     beforeEach(() => {
-        globalThis.fetch = async () => ({
-            ok: true,
-            status: 200,
-            text: async () => JSON.stringify({ data: [], pagination: { page: 1, total_pages: 1, total: 0, limit: 20 } }),
-            headers: { get: () => "application/json" },
-        });
+        globalThis.fetch = async () => Response.json({ data: [], pagination: { page: 1, total_pages: 1, total: 0, limit: 20 } });
         initDeviceList({ els, ui, onChange: () => {} });
         // Licenças já carregadas: a promessa partilhada pode ter ficado pendurada noutro bloco.
         state.licenses = [{ id: 1 }];
@@ -49,7 +30,7 @@ describe("pesquisa", () => {
     });
 
     /** Com a pesquisa anterior no campo, a frota parece ter desaparecido. */
-    test("abrir o selector limpa a pesquisa da abertura anterior", async () => {
+    test("opening the selector clears the previous opening's search", async () => {
         state.deviceSearchQuery = "868705080304889";
         els.deviceListSearch.value = "868705080304889";
 
@@ -59,7 +40,7 @@ describe("pesquisa", () => {
         assert.equal(els.deviceListSearch.value, "", "o campo devia ficar vazio");
     });
 
-    test("abrir o selector volta à primeira página", async () => {
+    test("opening the selector goes back to the first page", async () => {
         state.deviceListPage = 4;
 
         await openDeviceSelector();
@@ -68,7 +49,7 @@ describe("pesquisa", () => {
     });
 
     /** O pedido que sai na abertura não pode levar a pesquisa que se acabou de limpar. */
-    test("o pedido da abertura vai sem pesquisa", async () => {
+    test("the opening request goes without a search", async () => {
         state.deviceSearchQuery = "VL17";
         const urls = [];
         const originalFetch = globalThis.fetch;
@@ -86,7 +67,7 @@ describe("pesquisa", () => {
 });
 
 /** Sem dispositivo escolhido não há atividade para mostrar, e o selector abre-se sozinho. */
-describe("abertura automática", () => {
+describe("automatic opening", () => {
     const IDS = [
         "deviceList",
         "deviceListSearch",
@@ -120,7 +101,7 @@ describe("abertura automática", () => {
         return opened;
     }
 
-    test("sem dispositivo guardado o selector abre-se sozinho", () => {
+    test("without a saved device the selector opens on its own", () => {
         const opened = boot();
 
         restoreSelectedDevice("");
@@ -128,7 +109,7 @@ describe("abertura automática", () => {
         assert.deepEqual(opened, ["show"], "o arranque sem escolha tem de abrir o selector");
     });
 
-    test("com dispositivo guardado o selector fica fechado", () => {
+    test("with a saved device the selector stays closed", () => {
         const opened = boot();
 
         restoreSelectedDevice("351266770073676");
@@ -138,7 +119,7 @@ describe("abertura automática", () => {
     });
 });
 
-describe("falha a carregar", () => {
+describe("failure to load", () => {
     /** Uma falha a carregar diz «não sei» na lista, nos filtros e nos tipos, e não «não há». */
     function setUpSelector(summary) {
         document.body.innerHTML = `
@@ -178,7 +159,6 @@ describe("falha a carregar", () => {
 
         state.summary = {
             devices: [],
-            models: [],
             devicePagination: { limit: 20, page: 1, total_pages: 1, total: 0 },
             deviceFiltersAvailable: { deviceType: [], licenseId: [], company: [], supplier: [], model: [] },
             deviceFilterCounts: { deviceType: [], supplier: [], model: [], license: { companies: [], none: 0 } },
@@ -192,14 +172,14 @@ describe("falha a carregar", () => {
 
     const columns = (els) => [els.deviceLicenseFilter, els.deviceSupplierFilter, els.deviceTypeFilter];
 
-    test("a falha diz-se uma vez, na lista", () => {
+    test("the failure is said once, in the list", () => {
         const els = setUpSelector({ devicesError: { code: "unavailable" } });
 
         assert.match(els.deviceList.textContent, /Não foi possível carregar/);
         assert.ok(els.deviceList.querySelector("[data-action=\"retryDeviceList\"]"));
     });
 
-    test("as colunas que dependem da mesma resposta não afirmam um vazio que ninguém mediu", () => {
+    test("columns that depend on the same response do not claim an emptiness nobody measured", () => {
         const els = setUpSelector({ devicesError: { code: "unavailable" } });
 
         for (const column of columns(els)) {
@@ -208,7 +188,7 @@ describe("falha a carregar", () => {
         }
     });
 
-    test("o cabeçalho não afirma uma contagem que não recebeu", () => {
+    test("the header does not claim a count it did not receive", () => {
         const els = setUpSelector({
             devicesError: { code: "unavailable" },
             deviceTotals: { total: 49, online: 27 },
@@ -217,7 +197,7 @@ describe("falha a carregar", () => {
         assert.equal(els.deviceSelectorSummary.textContent, "");
     });
 
-    test("sem falha, o vazio continua a poder dizer-se vazio", () => {
+    test("without a failure, empty can still say empty", () => {
         const els = setUpSelector({ devicesError: null });
 
         assert.match(els.deviceLicenseFilter.textContent, /Não há licenças/);
@@ -227,7 +207,7 @@ describe("falha a carregar", () => {
     });
 });
 
-describe("abrir", () => {
+describe("opening", () => {
     /** O modal abre antes de a resposta chegar, e o pedido fica pendurado para o provar. */
     function setUpSelector() {
         document.body.innerHTML = `
@@ -263,7 +243,7 @@ describe("abrir", () => {
         return { els, wasShown: () => shown };
     }
 
-    test("o modal aparece antes de a lista chegar, com esqueleto no lugar dela", async () => {
+    test("the modal appears before the list arrives, with a skeleton in its place", async () => {
         const { els, wasShown } = setUpSelector();
 
         void openDeviceSelector();

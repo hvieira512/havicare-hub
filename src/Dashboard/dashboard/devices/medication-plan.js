@@ -1,7 +1,4 @@
-/**
- * As horas de todos os planos de medicação, achatadas. Fica fora do `config/` porque o cartão
- * lê-as no arranque, e o `config/` só carrega quando se abre o separador.
- */
+/** As horas dos planos, achatadas; fora do `config/`, que só carrega com o separador. */
 export function medicationPlanTimes(plans) {
     if (!Array.isArray(plans)) {
         return [];

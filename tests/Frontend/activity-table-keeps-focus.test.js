@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { activityTable } from "../../src/Dashboard/dashboard/devices/activity-table.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
@@ -31,7 +30,7 @@ function mounted() {
     return root;
 }
 
-test("redesenhar com as mesmas linhas não deita fora o elemento com o foco", () => {
+test("redrawing the same rows keeps the focused element", () => {
     const root = mounted();
     const openable = root.querySelector("[data-row-toggle]");
     assert.ok(openable, "a linha tinha de ser abrível");
@@ -44,7 +43,7 @@ test("redesenhar com as mesmas linhas não deita fora o elemento com o foco", ()
     assert.equal(document.activeElement, openable, "o foco tem de sobreviver ao redesenho");
 });
 
-test("uma linha nova continua a entrar", () => {
+test("a new row still comes in", () => {
     const root = mounted();
     const before = root.querySelectorAll("[data-row-toggle]").length;
 
@@ -56,7 +55,7 @@ test("uma linha nova continua a entrar", () => {
 });
 
 /** Com conteúdo novo a lista tem de ser reescrita, e o foco volta pela chave do registo. */
-test("uma leitura nova não rouba o foco à linha que estava escolhida", () => {
+test("a new reading does not steal focus from the chosen row", () => {
     const root = mounted();
     const openable = root.querySelector("[data-row-toggle]");
     const key = openable.dataset.rowKey;
@@ -73,7 +72,7 @@ test("uma leitura nova não rouba o foco à linha que estava escolhida", () => {
 });
 
 /** Sem foco na lista, redesenhar não vai roubá-lo a quem o tiver noutro sítio. */
-test("redesenhar não traz o foco para a lista", () => {
+test("redrawing does not pull focus into the list", () => {
     const root = mounted();
     const outside = document.createElement("button");
     document.body.append(outside);
@@ -85,7 +84,7 @@ test("redesenhar não traz o foco para a lista", () => {
 });
 
 /** A tooltip é texto e sai de marcação já escapada: o atributo escaparia as entidades outra vez. */
-test("a tooltip de uma linha não mostra entidades à letra", () => {
+test("a row tooltip does not show entities literally", () => {
     state.selectedImei = "aaa111";
     const row = telemetryActivityRow({
         type: "battery",

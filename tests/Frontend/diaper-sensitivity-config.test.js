@@ -2,8 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
-// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
-import "./support/browser-env.js";
 import {
     readConfigPayload,
     renderConfigInputs,
@@ -39,7 +37,7 @@ function sectionFor(desired) {
     };
 }
 
-test("os três presets aparecem, e o que bate certo com os valores fica aceso", () => {
+test("the three presets show, and the one matching the values is lit", () => {
     const { section } = sectionFor({ pollutionRange: 4, pollutionValue: 12 });
     const buttons = [...section.querySelectorAll("[data-config-preset]")];
 
@@ -49,14 +47,14 @@ test("os três presets aparecem, e o que bate certo com os valores fica aceso", 
     assert.deepEqual(JSON.parse(active[0].dataset.configPreset), META.presets.normal);
 });
 
-test("valores que não são de nenhum preset não acendem nenhum botão", () => {
+test("values that match no preset light no button", () => {
     // Sem botão «Personalizado»: nenhum preset activo já diz que os números são à medida.
     const { section } = sectionFor({ pollutionRange: 6, pollutionValue: 20 });
 
     assert.equal(section.querySelectorAll("[data-config-preset].active").length, 0);
 });
 
-test("as gamas vêm do servidor e não de uma cópia no frontend", () => {
+test("the ranges come from the server, not from a frontend copy", () => {
     const { section } = sectionFor({ pollutionRange: 4, pollutionValue: 12 });
     const range = section.querySelector("[data-config-field=\"pollutionRange\"]");
     const value = section.querySelector("[data-config-field=\"pollutionValue\"]");
@@ -67,7 +65,7 @@ test("as gamas vêm do servidor e não de uma cópia no frontend", () => {
     assert.equal(value.getAttribute("max"), "25");
 });
 
-test("o bloco lê-se de volta como o par que a API espera", () => {
+test("the block reads back as the pair the API expects", () => {
     const { section } = sectionFor({ pollutionRange: 3, pollutionValue: 7 });
 
     assert.deepEqual(readConfigPayload(section), {

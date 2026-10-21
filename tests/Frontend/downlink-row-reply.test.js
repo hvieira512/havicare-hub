@@ -1,14 +1,11 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { downlinkActivityRow: buildRow } = await import(
     "../../src/Dashboard/dashboard/devices/detail.js",
 );
 
-// Os campos de marcação do descritor são fragmentos; as assertivas de texto querem texto.
 const downlinkActivityRow = (payload) => {
     const row = buildRow(payload);
     return { ...row, sub: String(row.sub ?? ""), expanded: String(row.expanded ?? "") };
@@ -23,6 +20,7 @@ const locationReport = {
         type: "location",
         occurredAt: "2026-09-29T10:35:26Z",
         data: {
+            hasCoordinates: true,
             lat: 38.7369,
             lon: -9.1427,
             source: "gps",
@@ -45,20 +43,20 @@ beforeEach(() => {
     state.selectedDetail = { recent: { telemetry: [locationReport] } };
 });
 
-test("a resposta de uma localização põe as coordenadas por baixo do nome", () => {
+test("a location reply puts the coordinates under the name", () => {
     const row = downlinkActivityRow(locationRequest);
 
     assert.match(row.sub, /38\.73690, -9\.14270/);
 });
 
-test("a precisão e a fonte ficam na gaveta", () => {
+test("accuracy and source go in the drawer", () => {
     const row = downlinkActivityRow(locationRequest);
 
     assert.match(row.expanded, /GPS/);
     assert.match(row.expanded, /±12 m/);
 });
 
-test("a gaveta diz quando se pediu e quanto tempo a resposta demorou", () => {
+test("the drawer says when it was requested and how long the reply took", () => {
     const row = downlinkActivityRow(locationRequest);
 
     assert.match(row.expanded, /Pedido às \d{2}:\d{2}:\d{2}/);
@@ -66,7 +64,7 @@ test("a gaveta diz quando se pediu e quanto tempo a resposta demorou", () => {
 });
 
 /** Sem resposta não há valor nenhum a mostrar, e a gaveta diz o que se está à espera. */
-test("um pedido por responder não inventa valor", () => {
+test("an unanswered request does not make up a value", () => {
     const row = downlinkActivityRow({
         ...locationRequest,
         status: "queued",
@@ -80,7 +78,7 @@ test("um pedido por responder não inventa valor", () => {
 });
 
 /** Uma leitura anterior ao pedido é de outra resposta, e não desta. */
-test("uma leitura anterior ao pedido não conta como resposta", () => {
+test("a reading older than the request does not count as its reply", () => {
     state.selectedDetail.recent.telemetry = [
         {
             payload: {
@@ -93,7 +91,7 @@ test("uma leitura anterior ao pedido não conta como resposta", () => {
     assert.equal(downlinkActivityRow(locationRequest).sub, "");
 });
 
-test("a gaveta não recebe marcação", () => {
+test("the drawer takes no markup", () => {
     const row = downlinkActivityRow(locationRequest);
 
     assert.doesNotMatch(row.expanded, /<br|<span|&lt;/);

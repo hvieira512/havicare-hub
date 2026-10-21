@@ -1,10 +1,10 @@
 import {
     blockDevice,
     deleteNotification,
-    getDashboardApiToken,
     getNotifications,
     markNotificationsRead,
 } from "./api/index.js";
+import { getDashboardApiToken } from "./api/http.js";
 import { ago } from "./format.js";
 import { html, raw } from "./html.js";
 import { confirmDestructive, toast } from "./dialogs.js";
@@ -12,10 +12,7 @@ import { loadSettingsModal } from "./settings/index.js";
 
 const POLL_INTERVAL_MS = 15_000;
 
-/**
- * Cada `type` traz o seu título e o seu ícone. O identificador só se mostra quando é de facto
- * um dispositivo; para o hub, o que interessa é a razão.
- */
+/** O título e o ícone de cada `type`; o identificador só se mostra quando é um dispositivo. */
 const NOTIFICATION_TYPES = {
     device_not_authorized: {
         title: "Dispositivo não autorizado",
@@ -41,7 +38,6 @@ const DEFAULT_NOTIFICATION_TYPE = {
 const notificationType = (type) =>
     NOTIFICATION_TYPES[String(type || "")] || DEFAULT_NOTIFICATION_TYPE;
 
-let initialized = false;
 let elements = null;
 let addDevice = null;
 let notifications = [];
@@ -55,16 +51,12 @@ const renderBadge = (count) => {
         : `${normalized} ${normalized === 1 ? "não lida" : "não lidas"}`;
 };
 
-/**
- * Uma notificação e o que se pode fazer com ela, por ordem: registar é a saída normal e leva
- * nome escrito; o vermelho está no que cala o aparelho de vez.
- */
+/** Uma notificação e o que se pode fazer com ela: registar à frente, e o vermelho no que cala o aparelho. */
 export function notificationRow(notification) {
     const id = Number(notification.id) || 0;
     const attempts = Number(notification.occurrenceCount) || 1;
     const kind = notificationType(notification.type);
-    // A licença ganha ao modelo e à identidade: quando o hub a sabe, é a informação que
-    // falta a quem vai registar o dispositivo. A identidade já é a linha de cima.
+    // A licença ganha ao modelo: é o que falta a quem vai registar o dispositivo.
     const details = kind.showsDevice
         ? [
                 notification.protocol,
@@ -72,8 +64,7 @@ export function notificationRow(notification) {
                     ? `licença ${notification.licenseId}`
                     : notification.model || notification.ident,
             ].filter(Boolean).join(" · ")
-        // Para o hub, a razão é a notícia: diz qual foi o processo que caiu e quando
-        // tinha arrancado.
+        // Para o hub, a razão é a notícia.
         : String(notification.reason || "");
     const unreadClass = notification.readAt
         ? ""
@@ -117,10 +108,7 @@ export function notificationRow(notification) {
         </div>`;
 }
 
-/**
- * O que o sino mostra. Vazio, diz o que apareceria ali em vez de só dizer que não há nada; e
- * o rodapé leva sempre ao sítio onde o que se bloqueou vai parar.
- */
+/** O que o sino mostra; vazio, diz o que apareceria ali, e o rodapé leva aos bloqueados. */
 export function notificationsPanel(rows) {
     const empty = html`
         <div class="list-group-item text-center px-3 py-4">
@@ -228,7 +216,6 @@ const dismissNotification = async (id, button) => {
 };
 
 const blockDeviceAction = async (notification, button) => {
-    // O botão está a um clique do «dispensar», e o que faz não se parece nada com ele.
     const { isConfirmed } = await confirmDestructive(
         `Bloquear o dispositivo ${notification.imei}?`,
         "O que enviar deixa de ser aceite, e as notificações dele são apagadas.",
@@ -308,12 +295,6 @@ export function initNotifications({ els, openAddDevice }) {
     };
     addDevice = openAddDevice;
 
-    if (initialized) {
-        void load();
-        return;
-    }
-    initialized = true;
-
     elements.dropdown.addEventListener("shown.bs.dropdown", () => {
         void handleDropdownShown();
     });
@@ -321,7 +302,7 @@ export function initNotifications({ els, openAddDevice }) {
     window.addEventListener("hub-dashboard-api-token-updated", () => {
         void load();
     });
-    // Um separador escondido não sonda, como o `devices/stream.js`, e ao voltar relê-se já.
+    // Um separador escondido não sonda, e ao voltar relê-se já.
     const refreshBadgeWhenVisible = () => {
         if (!document.hidden) {
             void refreshBadge();

@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { flush } from "./support/deferred-fetch.js";
 import { parseFragment } from "./support/dom.js";
 
@@ -17,12 +16,7 @@ beforeEach(() => {
     requests = [];
     globalThis.fetch = async (url, init = {}) => {
         requests.push({ url: String(url), body: JSON.parse(init.body ?? "null") });
-        return {
-            ok: true,
-            status: 200,
-            text: async () => JSON.stringify({ commands: [{ id: "c1", status: "queued" }] }),
-            headers: { get: () => "application/json" },
-        };
+        return Response.json({ commands: [{ id: "c1", status: "queued" }] });
     };
     const root = parseFragment(`
         <section data-config-section data-config-key="read_device_state" data-capability-key="read_device_state"
@@ -33,7 +27,7 @@ beforeEach(() => {
     state.deviceModal.actionDeliveries = {};
 });
 
-test("abrir as configurações de um radar pede o estado uma vez", async () => {
+test("opening a radar's settings requests its state once", async () => {
     requestRadarStateOnOpen();
     await flush();
     requestRadarStateOnOpen();
@@ -44,7 +38,7 @@ test("abrir as configurações de um radar pede o estado uma vez", async () => {
     assert.equal(requests[0].body.capability, "read_device_state");
 });
 
-test("outro protocolo não pede nada", async () => {
+test("another protocol requests nothing", async () => {
     state.deviceModal.protocol = "four-p-touch";
 
     requestRadarStateOnOpen();

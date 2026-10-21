@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import {
     editorOf,
@@ -15,7 +14,7 @@ import {
  * da API.
  */
 
-test("abrir uma linha fecha a que estava aberta, mesmo sendo de outro tipo", () => {
+test("opening a row closes the open one, even of another kind", () => {
     let renders = 0;
     const editor = inlineEditor(() => renders++);
 
@@ -28,7 +27,7 @@ test("abrir uma linha fecha a que estava aberta, mesmo sendo de outro tipo", () 
     assert.equal(renders, 2);
 });
 
-test("o id compara-se como texto, venha número ou string", () => {
+test("the id compares as text, whether number or string", () => {
     const editor = inlineEditor(() => {});
 
     editor.edit("license", 1001);
@@ -37,7 +36,7 @@ test("o id compara-se como texto, venha número ou string", () => {
     assert.equal(editor.at("license", 100), false);
 });
 
-test("o rascunho é a linha sem id, e não se confunde com a linha de id vazio de outro tipo", () => {
+test("the draft is the row without id, and is not confused with another kind's empty-id row", () => {
     const editor = inlineEditor(() => {});
 
     editor.draft("apiUser");
@@ -46,7 +45,7 @@ test("o rascunho é a linha sem id, e não se confunde com a linha de id vazio d
     assert.equal(editor.at("company"), false, "nem o rascunho de outro tipo");
 });
 
-test("o extra viaja com a linha aberta", () => {
+test("the extra travels with the open row", () => {
     const editor = inlineEditor(() => {});
 
     // Uma licença nova nasce dentro da empresa em que se carregou no `+`.
@@ -56,7 +55,7 @@ test("o extra viaja com a linha aberta", () => {
 });
 
 /** Um editar sem `data-id` gravaria um registo novo; o rascunho pede-se pelo nome. */
-test("o edit sem id não abre nada, e não cai no rascunho", () => {
+test("edit without id opens nothing and does not fall into the draft", () => {
     let renders = 0;
     const editor = inlineEditor(() => renders++);
 
@@ -70,7 +69,7 @@ test("o edit sem id não abre nada, e não cai no rascunho", () => {
     assert.equal(editor.at("apiUser"), true, "o rascunho pedido pelo nome abre");
 });
 
-test("um extra com id ou kind não substitui a identidade da vaga", () => {
+test("an extra with id or kind does not replace the slot's identity", () => {
     const editor = inlineEditor(() => {});
 
     // O `extra` já carrega contexto da linha, e por isso passar-lhe um `id` é engano fácil.
@@ -81,7 +80,7 @@ test("um extra com id ou kind não substitui a identidade da vaga", () => {
     assert.equal(editor.open.companyId, "4", "o resto do extra viaja na mesma");
 });
 
-test("o `open` é uma cópia: mexer nele não mexe na vaga", () => {
+test("`open` is a copy: changing it does not change the slot", () => {
     const editor = inlineEditor(() => {});
     editor.edit("company", 1);
 
@@ -90,7 +89,7 @@ test("o `open` é uma cópia: mexer nele não mexe na vaga", () => {
     assert.equal(editor.at("company", 1), true);
 });
 
-test("o cancel repinta e o reset não", () => {
+test("cancel redraws and reset does not", () => {
     let renders = 0;
     const editor = inlineEditor(() => renders++);
 
@@ -109,7 +108,7 @@ test("o cancel repinta e o reset não", () => {
     assert.equal(renders, 3);
 });
 
-test("o editorOf lê o id e os campos do invólucro a que o botão pertence", () => {
+test("editorOf reads the id and fields of the wrapper the button belongs to", () => {
     const root = parseFragment(`
         <div data-editor="company" data-id="12">
             <input data-field="name" value="  hitcare  ">
@@ -122,16 +121,16 @@ test("o editorOf lê o id e os campos do invólucro a que o botão pertence", ()
     assert.equal(row.field("name").tagName, "INPUT");
 });
 
-test("o editorOf devolve null quando o botão não está num editor deste tipo", () => {
+test("editorOf returns null when the button is not in an editor of this kind", () => {
     const root = parseFragment(`
         <div data-editor="license" data-id="3"><button id="save">Guardar</button></div>
-        <button id="fora">Outro</button>`);
+        <button id="outside">Outro</button>`);
 
     assert.equal(editorOf(root.querySelector("#save"), "company"), null);
-    assert.equal(editorOf(root.querySelector("#fora"), "license"), null);
+    assert.equal(editorOf(root.querySelector("#outside"), "license"), null);
 });
 
-test("o rascunho não traz id, e o editorOf devolve string vazia e não undefined", () => {
+test("the draft has no id, and editorOf returns an empty string, not undefined", () => {
     const root = parseFragment(`
         <div data-editor="apiUser" data-id="">
             <input data-field="username" value="novo">
@@ -141,17 +140,17 @@ test("o rascunho não traz id, e o editorOf devolve string vazia e não undefine
     assert.equal(editorOf(root.querySelector("#save"), "apiUser").id, "");
 });
 
-test("o foco cai no primeiro campo do editor, e não na primeira linha da lista", () => {
+test("focus lands on the editor's first field, not the list's first row", () => {
     const root = parseFragment(`
-        <div class="linha"><input id="outra" value="linha de ver"></div>
+        <div class="row"><input id="other" value="view row"></div>
         <div data-editor="company" data-id="1">
-            <input id="primeiro" data-field="name">
-            <select id="segundo" data-field="role"></select>
+            <input id="first" data-field="name">
+            <select id="second" data-field="role"></select>
         </div>`);
 
     focusEditor(root);
 
-    assert.equal(root.ownerDocument.activeElement.id, "primeiro");
+    assert.equal(root.ownerDocument.activeElement.id, "first");
 });
 
 /** Enquanto o pedido viaja, um segundo clique em «Guardar» criaria um registo igual. */
@@ -164,7 +163,7 @@ function deferred() {
     return { promise, settle };
 }
 
-test("o segundo clique não corre enquanto o primeiro não acabar", async () => {
+test("the second click does not run until the first finishes", async () => {
     const button = document.createElement("button");
     const pending = deferred();
     let runs = 0;
@@ -187,7 +186,7 @@ test("o segundo clique não corre enquanto o primeiro não acabar", async () => 
     assert.equal(button.disabled, false, "o botão volta a aceitar cliques");
 });
 
-test("uma falha não deixa o botão desligado para sempre", async () => {
+test("a failure does not leave the button disabled forever", async () => {
     const button = document.createElement("button");
 
     await whileBusy(button, () => Promise.reject(new Error("falhou"))).catch(() => {});

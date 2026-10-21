@@ -56,7 +56,8 @@ autenticação, [âmbito por inquilino](07-multi-inquilino.md), validação de
 escrita, servidor HTTP e stream.
 
 **Frontend** — os [módulos da dashboard](20-frontend-da-dashboard.md), com
-`node --test`. Um dos testes renderiza
+`node --test`, num DOM do jsdom que o `--import` de
+`tests/Frontend/support/browser-env.js` instala antes de cada ficheiro. Um dos testes renderiza
 a página e verifica a existência no HTML de cada elemento referenciado pelo
 JavaScript, impedindo a rutura silenciosa do contrato entre o PHP e o JS.
 

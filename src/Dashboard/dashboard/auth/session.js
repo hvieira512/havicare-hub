@@ -200,8 +200,7 @@ const startDashboard = async () => {
         try {
             await onAuthenticated();
         } catch {
-            // A aplicação não chegou a arrancar: pede-se para recarregar porque o browser guarda a falha
-            // do `import()` no mapa de módulos, e só um documento novo a desfaz.
+            // O browser guarda a falha do `import()` no mapa de módulos: só um documento novo a desfaz.
             dashboardStarted = false;
             showLogin("Não foi possível carregar a aplicação. Recarregue a página.");
         }
@@ -213,22 +212,19 @@ const LOGOUT_FAILED_MESSAGE =
     "A sessão pode continuar aberta no Hub: o pedido para a fechar não chegou lá. " +
     "Volte a entrar e a sair quando houver ligação.";
 
-const revokeSession = async () => {
+const revokeSession = async (headers = authHeaders()) => {
     try {
         return (await fetch("/api/auth/logout", {
             method: "POST",
             credentials: "same-origin",
-            headers: authHeaders(),
+            headers,
         })).ok;
     } catch {
         return false;
     }
 };
 
-/**
- * Fecha a sessão; com `notifyServer`, manda apagar o cookie e revogar os dois tokens. Sai-se
- * primeiro e pergunta-se depois, porque o `fetch` não tem prazo.
- */
+/** Fecha a sessão já, e com `notifyServer` pede depois ao Hub para revogar os tokens. */
 const logout = async (message = "", notifyServer = true) => {
     clearTimers();
     hideTimeoutWarning();
@@ -237,8 +233,7 @@ const logout = async (message = "", notifyServer = true) => {
     clearDashboardApiToken();
     showLogin(message);
 
-    // O toast é instância única: este apaga o motivo da saída quando a rede falha antes de
-    // o primeiro se dissipar.
+    // O toast é instância única: este substitui o motivo da saída.
     if (!await pending) {
         toast("warning", LOGOUT_FAILED_MESSAGE);
     }
@@ -302,8 +297,7 @@ const bindActivityTracking = () => {
         scheduleIdleTimers();
     });
 
-    // Terminar sessão num separador termina-a em todos: o `storage` só dispara nos outros, e a
-    // chave apagada é o sinal.
+    // Terminar sessão num separador termina-a em todos: a chave apagada é o sinal.
     window.addEventListener("storage", (event) => {
         if (event.key === LAST_ACTIVITY_STORAGE_KEY && event.newValue === null && getDashboardApiToken()) {
             void logout("A sessão foi terminada noutro separador.", false);
@@ -323,8 +317,7 @@ const login = async (event) => {
 
     setLoginBusy(true);
     try {
-        // O `session: "cookie"` é o que pede a sessão de browser: o Hub devolve só o token de
-        // acesso e guarda a renovação no cookie `HttpOnly`, em vez de a entregar ao script.
+        // O `session: "cookie"` guarda a renovação no cookie `HttpOnly`, e não a entrega ao script.
         const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -341,6 +334,8 @@ const login = async (event) => {
             return;
         }
         if (token.role !== ADMIN_ROLE) {
+            // O login já deixou o cookie de renovação: sem revogar, ficava uma sessão viva.
+            void revokeSession({ Authorization: `Bearer ${token.access_token}` });
             toast("danger", "Esta conta não tem permissões de administrador do Hub.");
             return;
         }
@@ -360,10 +355,7 @@ const login = async (event) => {
     }
 };
 
-/**
- * A sessão está num cookie que este código não lê: pergunta-se ao Hub, e é assim que um
- * separador novo abre já autenticado, com o seu token de acesso.
- */
+/** Pergunta ao Hub pela sessão no cookie: é assim que um separador novo abre já autenticado. */
 const restoreSession = async () => {
     let token = null;
     try {

@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { deviceTypeTiles } from "../../src/Dashboard/dashboard/components/device-type-tiles.js";
 
@@ -13,7 +12,7 @@ const OPTIONS = ["watch", "radar", "gateway"];
 
 const tiles = (options, extra = {}) => parseFragment(deviceTypeTiles(options, extra));
 
-test("o tipo escolhido fica marcado", () => {
+test("the chosen type is marked", () => {
     const root = tiles(OPTIONS, { selected: "radar" });
     const [, radar] = root.querySelectorAll("button");
 
@@ -21,13 +20,13 @@ test("o tipo escolhido fica marcado", () => {
     assert.ok(radar.classList.contains("selected"));
 });
 
-test("sem contagens não sai pastilha de contagem", () => {
+test("without counts there is no count badge", () => {
     const root = tiles(OPTIONS);
 
     assert.equal(root.querySelectorAll(".count-number").length, 0);
 });
 
-test("um tipo sem nenhum dispositivo e não escolhido não se pode carregar", () => {
+test("a type with no devices that is not chosen cannot be pressed", () => {
     const root = tiles(OPTIONS, { counts: { watch: 3, radar: 0, gateway: 1 } });
     const [watch, radar] = root.querySelectorAll("button");
 
@@ -36,7 +35,7 @@ test("um tipo sem nenhum dispositivo e não escolhido não se pode carregar", ()
     assert.match(radar.textContent, /nenhum/);
 });
 
-test("em modo de filtro cada mosaico leva a chave e o valor do filtro", () => {
+test("in filter mode each tile carries the filter key and value", () => {
     const root = tiles(OPTIONS, { multiple: true, filterKey: "deviceType" });
     const firstTile = root.querySelector("button");
 

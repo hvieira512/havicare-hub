@@ -34,8 +34,7 @@ export const clearDashboardApiToken = () => {
         window.clearTimeout(tokenRefreshTimer);
         tokenRefreshTimer = null;
     }
-    // Invalida a renovação que estiver no ar: o pedido dela saiu antes do logout e o servidor
-    // ainda o honra, mas a resposta já não pode repor a credencial.
+    // Invalida a renovação no ar: a resposta dela já não pode repor a credencial.
     tokenEpoch += 1;
     apiToken = null;
     emitTokenUpdated();
@@ -137,8 +136,7 @@ const requestWithAuthRetry = async (url, options = {}) => {
     return response;
 };
 
-// O pedido que troca o cookie da sessão por um token de acesso novo. É o mesmo no arranque de
-// um separador e na renovação, e o corpo vazio é o que o diz: a credencial vai no cookie.
+// Troca o cookie da sessão por um token de acesso; o corpo vazio diz que a credencial vai no cookie.
 export const requestSessionToken = () => fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -146,10 +144,7 @@ export const requestSessionToken = () => fetch("/api/auth/login", {
     body: "{}",
 });
 
-/**
- * O cadeado que impede dois separadores de gastarem ao mesmo tempo o cookie, que é de uso
- * único: o segundo espera e lê o cookie rodado. Onde a API não existir corre sem ele.
- */
+/** O cookie é de uso único: o cadeado impede dois separadores de o gastarem ao mesmo tempo. */
 const withSessionLock = (task) => navigator.locks?.request
     ? navigator.locks.request("hub-dashboard-session", task)
     : task();
@@ -201,16 +196,24 @@ export const formRequest = (url, formData, options = {}) => requestWithAuthRetry
     .then(parseJsonResponse)
     .catch(networkError);
 
+/** Todas as páginas de uma listagem numa só, ou o primeiro erro tal como veio. */
+export async function allPages(fetchPage, params = {}) {
+    const data = [];
+    for (let page = 1; ; page += 1) {
+        const response = await fetchPage({ ...params, page, limit: 200 });
+        if (response?.error) return response;
+        data.push(...(response.data || []));
+        if (page >= Number(response.pagination?.total_pages || 1)) return { data };
+    }
+}
+
 scheduleTokenRefresh();
 
-// Interno ao http.js: os query params entram pelo `requestJson(url, { query })`, e não como
-// uma composição repetida em cada chamada.
 const withQuery = (url, params = {}) => {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
         if (value === undefined || value === null || value === "") return;
-        // Uma lista sai como `chave[]=a&chave[]=b`, que o `parse_str` lê como array; uma lista vazia
-        // não sai, porque é a ausência do filtro.
+        // Uma lista sai como `chave[]=a&chave[]=b`; uma lista vazia não sai.
         if (Array.isArray(value)) {
             value
                 .filter((entry) => entry !== undefined && entry !== null && entry !== "")

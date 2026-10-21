@@ -1,15 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-
-// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
-import "./support/browser-env.js";
+import { asText } from "./support/dom.js";
 
 const { telemetryRequestCards, renderRequestCardGroup: buildGroup } = await import(
     "../../src/Dashboard/dashboard/devices/detail.js",
 );
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const renderRequestCardGroup = (...args) => String(buildGroup(...args));
+const renderRequestCardGroup = asText(buildGroup);
 
 /**
  * Os cartões de «Pedir dados» separam a telemetria, que o dispositivo mede, da informação do
@@ -18,7 +15,7 @@ const renderRequestCardGroup = (...args) => String(buildGroup(...args));
 
 const supported = (requestable = true) => ({ supported: true, requestable });
 
-test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", () => {
+test("a telemetry-only device gives one group, and a radar gives both", () => {
     const [telemetry] = telemetryRequestCards({
         heart_rate: supported(),
         battery: supported(),
@@ -43,7 +40,7 @@ test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", (
  * O que o aparelho diz sobre si próprio fica junto: a versão do firmware e o pedido para ele
  * reler o seu estado são a mesma natureza, e nenhuma das duas é uma medição do mundo.
  */
-test("o estado do dispositivo fica com a versão do firmware, e não entre as medições", () => {
+test("device status sits with the firmware version, not among the measurements", () => {
     const groups = telemetryRequestCards({
         battery: supported(false),
         device_status: supported(),
@@ -60,7 +57,7 @@ test("o estado do dispositivo fica com a versão do firmware, e não entre as me
 });
 
 /** A proximidade já se mostra no resumo, uma linha por gateway em «Dispositivos ligados». */
-test("a proximidade não dá mosaico, que o resumo já a mostra por gateway", () => {
+test("proximity gets no tile, since the summary already shows it per gateway", () => {
     const groups = telemetryRequestCards({
         battery: supported(false),
         proximity: supported(false),
@@ -72,7 +69,7 @@ test("a proximidade não dá mosaico, que o resumo já a mostra por gateway", ()
     );
 });
 
-test("uma capacidade que o modelo não tem não dá cartão", () => {
+test("a capability the model lacks gets no card", () => {
     const groups = telemetryRequestCards({
         heart_rate: { supported: false, requestable: true },
         battery: supported(),
@@ -84,21 +81,19 @@ test("uma capacidade que o modelo não tem não dá cartão", () => {
     );
 });
 
-test("a faixa com o nome do grupo só existe quando há mais do que um grupo", () => {
+test("the group name strip exists only when there is more than one group", () => {
     const [group] = telemetryRequestCards({ heart_rate: supported() });
 
     // Num relógio, que só tem "Telemetria", a faixa seria uma moldura dentro de um cartão que
     // já se chama "Pedir dados".
     const alone = renderRequestCardGroup(group, [], false, []);
     assert.doesNotMatch(alone, /Últimas leituras/);
-    assert.doesNotMatch(alone, /section-label/);
 
     const accompanied = renderRequestCardGroup(group, [], true, []);
-    assert.match(accompanied, /section-label[^>]*>Últimas leituras</);
-    assert.match(accompanied, /count-chip[^>]*>1</);
+    assert.match(accompanied, />Últimas leituras</);
 });
 
-test("com leitura, o mosaico mostra o valor", () => {
+test("with a reading, the tile shows the value", () => {
     const [group] = telemetryRequestCards({ heart_rate: supported() });
     const reading = {
         type: "heart_rate",

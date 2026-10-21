@@ -26,18 +26,13 @@ import {
     tryRadarCredentials,
 } from "./radar-credentials.js";
 
-/**
- * O separador das licenças, dentro de cada empresa. A linha que se toca é a que se transforma,
- * e uma licença nasce na empresa em que se carregou no `+`.
- */
+/** As licenças, dentro de cada empresa; a linha que se toca é a que se transforma. */
 let els;
-// A página de empresas que está à vista, para uma alteração numa licença a poder redesenhar
-// sem ir buscar as empresas outra vez.
+// A página de empresas à vista, para redesenhar depois de mexer numa licença.
 let currentCompanies = [];
 let currentLicenses = [];
 
-// Uma vaga só para os dois tipos de linha: abrir uma empresa fecha a licença que estivesse
-// aberta, e ao contrário, sem ninguém se lembrar de o fazer.
+// Uma vaga só para os dois tipos de linha: abrir uma empresa fecha a licença aberta, e ao contrário.
 const editor = inlineEditor(() => renderCompanySection());
 
 export function initSettingsCompanies(context) {
@@ -45,12 +40,17 @@ export function initSettingsCompanies(context) {
 }
 
 export async function loadSettingsCompanySection(companiesPage = 1) {
-    // As licenças vêm todas de uma vez porque se desenham dentro da empresa a que pertencem, e
-    // paginadas à parte ficariam fora da página da sua empresa.
+    // As licenças vêm todas, porque se desenham dentro da empresa a que pertencem.
     const [companyData, licenses] = await Promise.all([
         apiGetCompanies({ page: companiesPage }),
         ensureLicensesLoaded(),
     ]);
+    if (companyData.error) {
+        els.companiesTabSummary.textContent = "";
+        els.companyListBody.innerHTML =
+            "<div class=\"text-center text-danger small p-4\">Não foi possível carregar as empresas.</div>";
+        return;
+    }
     currentCompanies = companyData.data || [];
     currentLicenses = licenses ?? [];
     state.settingsModal.sectionLoaded.company = true;
@@ -81,12 +81,7 @@ async function reloadLicenses() {
     renderCompanySection();
 }
 
-/* ---------- as linhas ---------- */
-
-/**
- * Os verbos de uma linha num menu só, com os nomes escritos. O `"divider"` no lugar de uma
- * entrada dá a linha que separa o apagar do resto.
- */
+/** Os verbos de uma linha num menu; o `"divider"` separa o apagar do resto. */
 function rowActionsMenu(label, items) {
     const entries = items.map((item) => (item === "divider"
         ? html`<li><hr class="dropdown-divider"></li>`
@@ -99,21 +94,14 @@ function rowActionsMenu(label, items) {
         </div>`;
 }
 
-/**
- * O que a linha diz por baixo do nome: o número da licença, quantos aparelhos a usam -- que
- * é o que se quer saber antes de a apagar -- e a cloud dos radares quando está configurada.
- */
+/** O número da licença, quantos aparelhos a usam e, quando configurada, a cloud dos radares. */
 function licenseMetaHtml(license) {
-    const devices = deviceCountForLicense(license);
-    const meta = devices === null
-        ? `licença ${license.license_id}`
-        : `licença ${license.license_id} · ${devices} ${devices === 1 ? "aparelho" : "aparelhos"}`;
+    const devices = Number(license.device_count);
+    const meta = `licença ${license.license_id} · ${devices} ${devices === 1 ? "aparelho" : "aparelhos"}`;
     const cloud = Number(license.radar_cloud_configured || 0) > 0
         ? html` · <span class="text-success">cloud dos radares ligada</span>`
         : "";
 
-    // Sem truncar: num telefone a linha inteira não cabe, e o que se perderia era «cloud dos
-    // radares ligada», que é o facto que só aqui se lê.
     return html`<div class="small text-secondary">${meta}${raw(cloud)}</div>`;
 }
 
@@ -199,8 +187,7 @@ function companyCard(company) {
     const rows = owned
         .map((license) => {
             if (editor.at("license", license.id)) return licenseEditorRow(license, company.id);
-            // A linha das credenciais abre por baixo da licença a que pertence, e não no
-            // lugar dela: o que se está a configurar continua à vista.
+            // As credenciais abrem por baixo da licença, que continua à vista.
             if (editor.at(RADAR_EDITOR_KIND, license.id)) {
                 return licenseViewRow(license) + radarCredentialsEditorRow(license);
             }
@@ -242,13 +229,9 @@ function renderCompanySection() {
     focusEditor(els.companyListBody);
 }
 
-/* ---------- abrir e fechar ---------- */
-
 export function newCompany() {
     editor.draft("company");
 }
-
-/* ---------- gravar e apagar ---------- */
 
 async function saveCompanyRow(button) {
     const row = editorOf(button, "company");
@@ -268,22 +251,14 @@ async function saveCompanyRow(button) {
     await reloadCompanies();
 }
 
-/**
- * O que a caixa diz antes de apagar: apagar a licença não apaga os dispositivos, deixa-os com
- * um número de licença que já não se resolve.
- */
+/** Apagar a licença não apaga os dispositivos: ficam com uma licença que já não existe. */
 export function licenseDeletePrompt(license, deviceCount) {
     const name = license.name ? ` — ${license.name}` : "";
-    const unknown = deviceCount === null || deviceCount === undefined;
     return {
         title: `Apagar a licença ${license.license_id}${name}?`,
-        // Não saber quantos são não é saber que são nenhuns, e é mesmo antes de apagar que
-        // a diferença conta.
-        text: unknown
-            ? "Não foi possível confirmar quantos dispositivos a usam."
-            : deviceCount > 0
-                ? `${deviceCount} ${deviceCount === 1 ? "dispositivo fica" : "dispositivos ficam"} com uma licença que já não existe.`
-                : "Não há dispositivos a usá-la.",
+        text: deviceCount > 0
+            ? `${deviceCount} ${deviceCount === 1 ? "dispositivo fica" : "dispositivos ficam"} com uma licença que já não existe.`
+            : "Não há dispositivos a usá-la.",
     };
 }
 
@@ -306,26 +281,6 @@ function deviceCountsByCompany() {
 function deviceCountForCompany(name) {
     const entry = deviceCountsByCompany().find((row) => String(row.company) === String(name));
     return Number(entry?.count || 0);
-}
-
-/**
- * A contagem vem com a própria licença. O resumo da frota é o caminho de recurso para quem
- * já o tem em memória; `null` quando nenhum dos dois sabe, que zero por não saber não é zero.
- */
-function deviceCountForLicense(license) {
-    if (license?.device_count !== undefined && license.device_count !== null) {
-        return Number(license.device_count);
-    }
-
-    const companies = deviceCountsByCompany();
-    if (companies.length === 0) return null;
-
-    for (const company of companies) {
-        for (const entry of company.licenses || []) {
-            if (String(entry.licenseId) === String(license?.license_id)) return Number(entry.count || 0);
-        }
-    }
-    return 0;
 }
 
 async function deleteCompany(id) {
@@ -371,8 +326,6 @@ async function saveLicenseRow(button) {
     await reloadLicenses();
 }
 
-/* ---------- as credenciais da cloud dos radares ---------- */
-
 async function openRadarCredentials(licenseRefId) {
     const result = await loadRadarCredentials(licenseRefId);
     if (result.error) {
@@ -393,12 +346,11 @@ async function saveRadarCredentialsRow(button) {
         return;
     }
     clearRadarCredentials();
-    // As licenças voltam a vir: é delas que a linha tira o estado da cloud.
     await reloadLicenses();
     toast("success", "Credenciais guardadas");
 }
 
-/** Experimenta antes de gravar, e escreve o resultado por cima dos botões. */
+/** Experimenta as credenciais antes de gravar, e escreve o resultado por cima dos botões. */
 async function checkRadarCredentialsRow(button) {
     const row = editorOf(button, RADAR_EDITOR_KIND);
     const slot = row?.el.querySelector("#radarCheckResult");
@@ -443,7 +395,7 @@ async function deleteLicense(id) {
     const license = currentLicenses.find((row) => Number(row.id) === Number(id));
     if (!license) return;
 
-    const prompt = licenseDeletePrompt(license, deviceCountForLicense(license));
+    const prompt = licenseDeletePrompt(license, Number(license.device_count));
     const { isConfirmed } = await confirmDestructive(prompt.title, prompt.text);
     if (!isConfirmed) return;
     const result = await apiDeleteLicense(id);
@@ -454,7 +406,6 @@ async function deleteLicense(id) {
     await reloadLicenses();
 }
 
-/** Os cliques da lista: as linhas das licenças estão dentro da empresa a que pertencem. */
 export function handleCompanyListClick(event) {
     const button = event.target.closest("button");
     if (!button) return;

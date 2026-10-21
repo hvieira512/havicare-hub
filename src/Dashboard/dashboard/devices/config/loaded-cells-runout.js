@@ -1,17 +1,20 @@
-/**
- * A consequência de «Carregado até ao compartimento», por baixo do campo: com o plano e a
- * posição do prato, o número que se escreve vira a data em que a medicação acaba.
- */
+/** Com o plano e a posição do prato, o «Carregado até ao compartimento» vira a data em que a medicação acaba. */
 
 import { runoutAt, runoutLabel } from "../medication-runout.js";
 import { state } from "../../state.js";
 
+/** O modal só tem a configuração: a telemetria vem do selecionado, e só quando é o mesmo aparelho. */
+function modalDetail() {
+    const detail = state.selectedDetail;
+    return detail?.device?.imei === state.deviceModal.imei ? detail : null;
+}
+
 /** A posição do carrossel na leitura mais recente; a lista não vem garantidamente ordenada. */
-function trayPosition() {
+function trayPosition(detail) {
     let position = null;
     let latest = "";
 
-    for (const entry of state.selectedDetail?.recent?.telemetry || []) {
+    for (const entry of detail?.recent?.telemetry || []) {
         const current = entry?.data?.current;
         const at = String(entry?.occurredAt || "");
         if (entry?.type === "cells_remaining" && Number.isInteger(current) && at >= latest) {
@@ -29,12 +32,13 @@ export function loadedCellsRunoutText(loaded, now = new Date()) {
     const value = written === "" || written === null || written === undefined
         ? Number.NaN
         : Number(written);
-    const position = trayPosition();
+    const detail = modalDetail();
+    const position = trayPosition(detail);
     if (!Number.isFinite(value) || position === null) {
         return "";
     }
 
-    const configurations = state.selectedDetail?.effectiveConfigurations;
+    const configurations = detail.effectiveConfigurations;
     const plans = (configurations?.medication_reminders?.plans || [])
         .filter((plan) => plan?.enabled !== false);
     if (plans.length === 0) {
@@ -57,7 +61,6 @@ export function loadedCellsRunoutText(loaded, now = new Date()) {
         : `Com ${plans.length} ${plans.length === 1 ? "dose" : "doses"} por dia, acaba ${runoutLabel(when, now)}.`;
 }
 
-/** Reescreve a frase da linha enquanto se escreve no campo. */
 export function syncLoadedCellsRunout(input) {
     const target = input
         ?.closest("[data-config-row], [data-config-section]")

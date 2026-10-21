@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { syncFallSensitivityLevels } from "../../src/Dashboard/dashboard/devices/config/inputs/four-p-touch.js";
@@ -27,7 +26,7 @@ const sectionWith = (sensitivity, levels) => parseFragment(
 const chosenLevel = (section) =>
     section.querySelector("[data-config-field=\"sensitivity\"]").value;
 
-test("baixar a escala prende o nível ao maior que resta, e não ao primeiro", () => {
+test("lowering the scale clamps the level to the highest left, not the first", () => {
     const section = sectionWith(7, 8);
 
     syncFallSensitivityLevels(section, 6);
@@ -35,7 +34,7 @@ test("baixar a escala prende o nível ao maior que resta, e não ao primeiro", (
     assert.equal(chosenLevel(section), "6", "o 7 desce para o 6, não salta para o 1");
 });
 
-test("um nível que cabe na escala nova fica onde está", () => {
+test("a level that fits the new scale stays where it is", () => {
     const section = sectionWith(3, 8);
 
     syncFallSensitivityLevels(section, 6);
@@ -44,7 +43,7 @@ test("um nível que cabe na escala nova fica onde está", () => {
 });
 
 /** O botão que fica escolhido tem de ser o que o valor diz, ou o ecrã e o payload divergem. */
-test("o botão activo acompanha o nível a que se desceu", () => {
+test("the active button follows the level it dropped to", () => {
     const section = sectionWith(8, 8);
 
     syncFallSensitivityLevels(section, 6);

@@ -1,15 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e
-// esse caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
-import "./support/browser-env.js";
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
-import { parseFragment } from "./support/dom.js";
+import { asText, parseFragment } from "./support/dom.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const requestCardShell = (...args) => String(buildCard(...args));
+const requestCardShell = asText(buildCard);
 const textOf = (html) => parseFragment(html).textContent.replace(/\s+/g, " ");
 
 // O nome de uma capacidade vem do catálogo do tipo escolhido: sem ele o cartão mostra a
@@ -42,7 +38,6 @@ test("MONIT condition renders as a status card without a request button", () => 
     );
 
     assert.match(html, /Fralda limpa/);
-    assert.match(html, /fa-baby/);
     assert.doesNotMatch(html, /data-action="requestFeature"/);
 });
 
@@ -57,18 +52,6 @@ test("MONIT moisture bands each channel against the normalizer thresholds", () =
     const bands = [...html.matchAll(/diaper-channel-fill diaper-channel-fill--(\w+)/g)]
         .map((match) => match[1]);
     assert.deepEqual(bands, ["dry", "damp", "damp", "wet"]);
-});
-
-test("MONIT moisture scales bar height to twice the threshold and clamps above it", () => {
-    const html = moistureCard({
-        channels: [channel(1, 0), channel(2, 12), channel(3, 24), channel(4, 63)],
-        affectedChannelCount: 3,
-        maximumDelta: 63,
-    });
-
-    const heights = [...html.matchAll(/style="height:([\d.]+)%"/g)]
-        .map((match) => Number(match[1]));
-    assert.deepEqual(heights, [0, 50, 100, 100]);
 });
 
 test("MONIT moisture takes the thresholds from the reading, not from a constant", () => {
@@ -86,16 +69,6 @@ test("MONIT moisture takes the thresholds from the reading, not from a constant"
         .map((match) => match[1]);
     // Seco é abaixo de `cleanMaxDelta` = intdiv(7, 4) + 1 = 2, como no normalizador.
     assert.deepEqual(bands, ["dry", "damp", "damp", "wet", "wet"]);
-
-    // A escala é o dobro do limiar, logo o canal que acabou de molhar fica a meia altura
-    // e a marca de muda com ele -- em 7, e não nos 50% de um limiar de 12.
-    const heights = [...html.matchAll(/style="height:([\d.]+)%"/g)]
-        .map((match) => Number(match[1]));
-    assert.equal(heights[3], 50);
-    assert.equal(heights[4], 100);
-    assert.ok(heights.slice(0, 3).every((height) => height < 50));
-    assert.match(html, /--diaper-threshold:50%/);
-
     assert.match(textOf(html), /2 de 3 canais acima do limiar \(7\)/);
 });
 

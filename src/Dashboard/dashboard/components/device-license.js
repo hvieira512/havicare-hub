@@ -18,10 +18,7 @@ export function deviceLicenseLabel(device) {
     return name === "" ? String(device.company).trim() : name;
 }
 
-/**
- * A licença de um aparelho: o nome em cima, a empresa e o número em baixo, porque o mesmo
- * sítio pode ter licença em duas empresas. As classes são de quem chama.
- */
+/** O nome em cima, a empresa e o número em baixo: o mesmo sítio pode ter licença em duas empresas. */
 export function deviceLicenseBlock(device, { valueClass = "", noteClass = "" } = {}) {
     if (!hasLicense(device)) {
         return html`<span class="${`${valueClass} text-body-secondary`.trim()}">Sem licença</span>`;

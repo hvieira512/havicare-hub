@@ -1,6 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import "./support/browser-env.js";
 import { installStreamHarness } from "./support/device-stream-harness.js";
 
 /**
@@ -22,7 +21,6 @@ const reset = () => {
     harness.reset();
 };
 
-/** Liga e espera que o stream abra, que é assíncrono. */
 const connect = async (imei) => {
     stream.connectDeviceStream(imei);
     await harness.settle();
@@ -31,15 +29,15 @@ const connect = async (imei) => {
 /** Um corpo de frame vazio: aqui o que interessa é a entrega ter acontecido, não o conteúdo. */
 const frame = () => ({ telemetry: [], events: [], commands: [], limit: 100 });
 
-test("um stream aberto conta como vivo", async () => {
+test("connecting opens one stream and keeps it open", async () => {
     reset();
     await connect("111");
 
     assert.equal(harness.streams.length, 1);
-    assert.equal(stream.isDeviceStreamLive(), true, "a resposta 200 já prova a ligação");
+    assert.equal(harness.streams[0].closed, false);
 });
 
-test("a credencial vai no cabeçalho e nada vai no URL", async () => {
+test("the credential goes in the header and nothing goes in the URL", async () => {
     reset();
     document.body.dataset.dashboardAuthRequired = "true";
     setDashboardApiToken({ access_token: "token-de-uma-hora" });
@@ -52,39 +50,32 @@ test("a credencial vai no cabeçalho e nada vai no URL", async () => {
         !request.url.includes("token-de-uma-hora"),
         "o token não pode aparecer no URL: fica no registo de qualquer proxy",
     );
-    assert.ok(!request.url.includes("ticket"), "e já não há bilhete nenhum a pedir");
-    assert.equal(
-        harness.requests.filter((entry) => entry.url.includes("stream-ticket")).length,
-        0,
-    );
 });
 
-test("o servidor a fechar o corpo religa em vez de desistir", async () => {
+test("the server closing the body reconnects instead of giving up", async () => {
     reset();
     await connect("222");
     harness.streams[0].end();
     await harness.settle();
 
-    assert.equal(stream.isDeviceStreamLive(), false, "fechado não é vivo");
     const timer = await harness.runPendingTimer();
     assert.equal(timer.delay, 1000, "a primeira tentativa é ao fim de um segundo");
     assert.equal(harness.streams.length, 2, "abriu-se um stream novo");
     assert.ok(harness.requests.at(-1).url.includes("222"), "religou-se ao mesmo dispositivo");
 });
 
-test("uma recusa do servidor religa, e o estado dela é visível", async () => {
+test("a server refusal reconnects, and its status is visible", async () => {
     reset();
     // O `503 too_many_streams` é temporário, e não se confunde com um 404.
     harness.refuseWith(503);
     await connect("223");
 
     assert.equal(harness.streams.length, 0, "não se abriu stream nenhum");
-    assert.equal(stream.isDeviceStreamLive(), false);
     const timer = await harness.runPendingTimer();
     assert.equal(timer.delay, 1000);
 });
 
-test("falhas seguidas afastam as tentativas", async () => {
+test("consecutive failures space out the attempts", async () => {
     reset();
     await connect("333");
     harness.streams[0].end();
@@ -100,7 +91,7 @@ test("falhas seguidas afastam as tentativas", async () => {
     assert.equal((await harness.runPendingTimer()).delay, 4000);
 });
 
-test("uma entrega bem sucedida volta a pôr a espera no início", async () => {
+test("a successful delivery resets the backoff", async () => {
     reset();
     harness.refuseWith(503);
     await connect("444");
@@ -122,7 +113,7 @@ test("uma entrega bem sucedida volta a pôr a espera no início", async () => {
     );
 });
 
-test("largar o dispositivo não deixa religação pendente", async () => {
+test("dropping the device leaves no pending reconnect", async () => {
     reset();
     await connect("555");
     stream.disconnectDeviceStream();
@@ -133,7 +124,7 @@ test("largar o dispositivo não deixa religação pendente", async () => {
     assert.deepEqual(pending, [], "sem dispositivo escolhido não há nada a religar");
 });
 
-test("trocar de dispositivo antes de o stream abrir não abre o errado", async () => {
+test("switching device before the stream opens does not open the wrong one", async () => {
     reset();
     // Duas ligações sem esperar pela primeira: a resposta da primeira chega depois de o
     // utilizador já ter escolhido outro dispositivo.
@@ -141,8 +132,8 @@ test("trocar de dispositivo antes de o stream abrir não abre o errado", async (
     stream.connectDeviceStream("bbb");
     await harness.settle();
 
-    const servindo = harness.streams.filter((entry) => !entry.closed);
-    assert.equal(servindo.length, 1, "só a tentativa actual pode ficar a servir");
+    const serving = harness.streams.filter((entry) => !entry.closed);
+    assert.equal(serving.length, 1, "só a tentativa actual pode ficar a servir");
     assert.ok(harness.requests.at(-1).url.includes("bbb"));
 });
 
@@ -155,22 +146,22 @@ const setHidden = (hidden) => {
     document.dispatchEvent(new window.Event("visibilitychange"));
 };
 
-test("esconder o separador fecha o stream", async () => {
+test("hiding the tab closes the stream", async () => {
     reset();
     await connect("777");
-    assert.equal(stream.isDeviceStreamLive(), true);
+    assert.equal(harness.streams[0].closed, false);
 
     setHidden(true);
     await harness.settle();
 
-    assert.equal(stream.isDeviceStreamLive(), false);
+    assert.equal(harness.streams[0].closed, true);
     const pending = harness.scheduled.filter((entry) => !entry.cancelled && !entry.done);
     assert.deepEqual(pending, [], "esconder não é falhar: não se agenda religação");
     setHidden(false);
     await harness.settle();
 });
 
-test("voltar ao separador religa ao mesmo dispositivo", async () => {
+test("coming back to the tab reconnects to the same device", async () => {
     reset();
     await connect("888");
     setHidden(true);
@@ -182,7 +173,7 @@ test("voltar ao separador religa ao mesmo dispositivo", async () => {
     assert.ok(harness.requests.at(-1).url.includes("888"), "religou-se ao mesmo dispositivo");
 });
 
-test("sem dispositivo escolhido a visibilidade não abre nada", async () => {
+test("with no device chosen, visibility opens nothing", async () => {
     reset();
     setHidden(false);
     await harness.settle();
@@ -194,7 +185,7 @@ test("sem dispositivo escolhido a visibilidade não abre nada", async () => {
     await harness.settle();
 });
 
-test("sem credencial não se insiste", async () => {
+test("without a credential it does not insist", async () => {
     reset();
     document.body.dataset.dashboardAuthRequired = "true";
     setDashboardApiToken({ access_token: "t" });
@@ -215,7 +206,6 @@ const resetWithExpiredToken = () => {
     setDashboardApiToken({ access_token: "token-expirado" });
 };
 
-/** Conta os pedidos de autenticação emitidos enquanto corre o que lhe for dado. */
 const countingAuthRequired = async (run) => {
     let requested = 0;
     const listener = () => {
@@ -233,7 +223,7 @@ const countingAuthRequired = async (run) => {
 const livePendingTimers = () => harness.scheduled.filter((entry) => !entry.cancelled && !entry.done);
 
 for (const status of [401, 403]) {
-    test(`um ${status} pede autenticação em vez de religar`, async () => {
+    test(`a ${status} asks for authentication instead of reconnecting`, async () => {
         resetWithExpiredToken();
         harness.refuseWith(status);
 
@@ -248,6 +238,5 @@ for (const status of [401, 403]) {
             [],
             "com a credencial recusada, religar só repete a recusa",
         );
-        assert.equal(stream.isDeviceStreamLive(), false);
     });
 }

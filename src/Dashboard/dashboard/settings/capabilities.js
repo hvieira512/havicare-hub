@@ -15,10 +15,7 @@ import {
     normalizeDeviceType,
 } from "../domain.js";
 
-/**
- * O separador das Capacidades: o catálogo de um tipo de dispositivo, só de leitura. As que o
- * fornecedor não declara ficam na lista, esbatidas.
- */
+/** O catálogo de um tipo de dispositivo, só de leitura; as que o fornecedor não declara ficam esbatidas. */
 let els;
 
 /** O que entra no catálogo: as acções -- desligar, reiniciar, encontrar -- são o quarto termo. */
@@ -31,10 +28,7 @@ export function showsInCatalog(entry) {
     );
 }
 
-/**
- * O que se diz de uma capacidade à direita do nome. Uma que só se pode pedir e não é
- * telemetria nem definição é uma acção, e não «Solicitável».
- */
+/** O que se diz à direita do nome; uma que só se pode pedir, sem ser telemetria nem definição, é acção. */
 export function capabilityFacts(entry) {
     if (entry.isRequestable && !entry.isTelemetry && !entry.isConfigurable) {
         return ["Ação"];
@@ -50,10 +44,7 @@ async function initSettingsCapabilities(context) {
     els = context.els;
 }
 
-/**
- * O catálogo do tipo escolhido. A cache e o pedido vivem no `capability-catalog.js` da
- * raiz, que a coluna de detalhe também usa; aqui só se escolhe qual está à vista.
- */
+/** O catálogo do tipo escolhido; a cache vive no `capability-catalog.js`. */
 async function loadCapabilityCatalog(deviceType) {
     const catalog = await ensureCapabilityCatalog(
         deviceType || state.settingsModal.capabilityDeviceType || "watch",
@@ -120,8 +111,7 @@ async function loadSettingsCapabilitiesSection(
     }
     state.settingsModal.sectionLoaded.capabilities = true;
     renderCapabilitiesCatalogSection();
-    // A caixa segue o estado, como a do catálogo de modelos: a marcação é estática e o texto
-    // sobrevive ao fecho do modal, mas o filtro que ele representa não.
+    // A caixa segue o estado: o texto sobrevive ao fecho do modal, e o filtro não.
     if (els.capabilityCatalogSearch) {
         els.capabilityCatalogSearch.value = state.settingsModal.capabilityQuery || "";
     }
@@ -181,7 +171,6 @@ function renderCapabilitiesCatalogSection() {
             const visibleEntries = entries
                 .filter(showsInCatalog)
                 .filter((entry) => matchesCapabilityQuery(entry))
-                // As que o fornecedor não declara ficam na lista: é a pergunta que se vem aqui fazer.
                 .map((entry) => ({
                     ...entry,
                     supported: !hasSupplierFilter || enabledSet.has(entry.key),
@@ -197,12 +186,10 @@ function renderCapabilitiesCatalogSection() {
         "d-none",
         visibleSections.length > 0,
     );
-    // Sem a chave nem o tipo: quem administra o hub não precisa do vocabulário do
-    // protocolo, e o ícone -- o mesmo dos cartões de pedido -- é o que se reconhece.
+    // Sem a chave nem o tipo: o vocabulário do protocolo não serve quem administra o hub.
     const supplierName = supplier ? supplier.name : "";
 
-    // Em telefone cada secção abre e fecha, e o catálogo reconstrói-se a cada tecla da pesquisa:
-    // isto mantém aberto o que estava aberto.
+    // O catálogo reconstrói-se a cada tecla: mantém-se aberto o que estava aberto.
     const openBodies = new Set(
         Array.from(els.capabilityCatalogViewer.querySelectorAll(".collapse.show"))
             .map((body) => body.id),
@@ -217,8 +204,7 @@ function renderCapabilitiesCatalogSection() {
                     const facts = entry.supported
                         ? capabilityFacts(entry)
                         : [supplierName ? `não oferecido pela ${supplierName}` : "não oferecido"];
-                    // Os ícones das secções irmãs vão na mesma cor: cores diferentes leem-se
-                    // como gravidades.
+                    // As secções irmãs vão na mesma cor, que cores diferentes leem-se como gravidades.
                     return html`
                 <div class="capability-row d-grid border rounded-2${entry.supported ? "" : " is-unsupported"}">
                     <span class="d-flex justify-content-center text-secondary"><i class="fa-solid ${capabilityIcon(entry, section)}"></i></span>
@@ -228,8 +214,7 @@ function renderCapabilitiesCatalogSection() {
                 })
                 .join("");
 
-            // Em telefone cada secção fecha; o `d-sm-block` ganha ao `display: none` do collapse, e a
-            // partir de `sm` estão todas abertas.
+            // Em telefone cada secção fecha; a partir de `sm`, o `d-sm-block` deixa-as todas abertas.
             const bodyId = `${catalogSectionId(section)}Body`;
             const count = supported === entries.length
                 ? `${supported} ${supported === 1 ? "capacidade" : "capacidades"}`
@@ -273,15 +258,11 @@ function capabilityIcon(entry, section) {
     return CAPABILITY_SECTION_ICONS[section] || "fa-circle-info";
 }
 
-/** O `id` da secção no catálogo, que é o destino das pastilhas da tira. */
 function catalogSectionId(section) {
     return `capabilityCatalog-${String(section).replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 }
 
-/**
- * A tira de secções: cada pastilha aponta para o `id` da sua secção e leva a contagem do
- * que o fornecedor suporta, para se saber o tamanho de uma secção antes de se ir lá.
- */
+/** A tira de secções, cada pastilha com a contagem do que o fornecedor suporta. */
 function renderCapabilityCatalogSectionNav(sections) {
     if (!els.capabilityCatalogSectionNav) return;
 
@@ -300,10 +281,7 @@ function renderCapabilityCatalogSectionNav(sections) {
         : "";
 }
 
-/**
- * Uma pastilha desloca a lista até à secção e não filtra: o catálogo fica todo numa
- * superfície, que é o que serve para auditar um fornecedor de ponta a ponta.
- */
+/** Uma pastilha desloca a lista até à secção, e não filtra: o catálogo fica todo à vista. */
 function scrollCapabilityCatalogSection(event) {
     const chip = event.target.closest(
         "[data-action=\"scrollCapabilityCatalogSection\"]",
@@ -331,7 +309,6 @@ function handleCapabilityCatalogSearch() {
     renderCapabilitiesCatalogSection();
 }
 
-/** A pesquisa do catálogo: compara com o nome e com a chave. */
 function matchesCapabilityQuery(entry) {
     const needle = String(state.settingsModal.capabilityQuery || "").trim().toLowerCase();
     if (needle === "") return true;

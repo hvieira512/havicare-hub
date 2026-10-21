@@ -3,15 +3,7 @@ import { postureStyle } from "../../radar-style.js";
 import { html } from "../../html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
 
-/**
- * Os cartões do radar: presença, posturas e as estatísticas por minuto, que não existem em
- * nenhum outro aparelho.
- */
-
-/**
- * Quantas pessoas o radar vê. O `count` vem do hub e não se conta o array aqui: um radar
- * que não vê ninguém está a funcionar, e diz "Ninguém" e não "Sem leituras".
- */
+/** Quantas pessoas o radar vê, pelo `count` do hub: sem ninguém, diz «Ninguém» e não «Sem leituras». */
 export function presenceValue(data) {
     const count = Number(data?.count ?? 0) || 0;
     if (count === 0) {
@@ -21,14 +13,10 @@ export function presenceValue(data) {
     return `${count} pessoa${count === 1 ? "" : "s"}`;
 }
 
-/** A pastilha é um `badge` do Bootstrap com o par de utilitários subtis do tom. */
 const CHIP_CLASS =
     "badge rounded-pill fw-normal d-inline-flex align-items-center gap-1";
 
-/**
- * Uma postura como pastilha. A enumeração vem do payload e vai parar a um `class`, por isso
- * sai escapada: um estado novo do firmware não pode escrever atributos.
- */
+/** Uma postura como pastilha, escapada: um estado novo do firmware não pode escrever atributos. */
 function postureChip(posture) {
     const style = postureStyle(posture);
     const tone = style.tone;
@@ -37,7 +25,6 @@ function postureChip(posture) {
     return html`<span class="${CHIP_CLASS} bg-${tone}-subtle text-${tone}-emphasis" title="${label}"><i class="fa-solid ${style.icon}" aria-hidden="true"></i>${label}</span>`;
 }
 
-/** Quantas pastilhas cabem antes de o mosaico crescer de mais. */
 const PRESENCE_CHIP_LIMIT = 3;
 
 /** A postura de cada pessoa, em pastilhas; as coordenadas ficam na tooltip. */
@@ -57,10 +44,7 @@ export function presenceDetails(data) {
     return joinMarkup(chips, "");
 }
 
-/**
- * As pessoas todas, com onde estão, sem corte: é aqui que as coordenadas e a quarta pessoa
- * em diante existem, para quem esteja a comparar com a especificação do fabricante.
- */
+/** As pessoas todas, com onde estão: as coordenadas e a quarta pessoa em diante só existem aqui. */
 export function presenceDetailsTitle(data) {
     const people = Array.isArray(data?.people) ? data.people : [];
 

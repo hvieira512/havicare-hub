@@ -2,33 +2,17 @@ import { ago } from "../../format.js";
 import { html } from "../../html.js";
 import { joinMarkup } from "./shared.js";
 
-/** Os cartões de localização: coordenadas, tipo de fix, precisão e a evidência rádio. */
-
-/**
- * Lê o `lat`/`lon` e não o `hasCoordinates`, que falta nos eventos antigos do Redis. O par
- * 0,0 é como os protocolos dizem "sem fixo".
- */
 export function locationCoordinates(data) {
-    const lat = Number(data?.lat);
-    const lon = Number(data?.lon);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-    if (lat === 0 && lon === 0) return null;
-    return { lat, lon };
+    return data?.hasCoordinates === true ? { lat: Number(data.lat), lon: Number(data.lon) } : null;
 }
 
-/**
- * Onde está, ou um travessão: o slot grande responde a uma pergunta só, e sem posição não
- * há resposta. Cinco decimais são ~1 m, a precisão do melhor fixo do mapa de rádio.
- */
+/** Onde está, ou um travessão. Cinco decimais são ~1 m, a precisão do melhor fixo do mapa de rádio. */
 export function locationValue(data) {
     const fix = locationCoordinates(data);
     return fix ? `${fix.lat.toFixed(5)}, ${fix.lon.toFixed(5)}` : "—";
 }
 
-/**
- * Como se obteve a posição: GPS, ou rádio, e não a origem crua. `cell`, `wifi` e
- * `cell_wifi` são todos triangulação, e o que os distingue do GPS é a proveniência.
- */
+/** GPS ou rádio: `cell`, `wifi` e `cell_wifi` são todos triangulação. */
 function locationFixLabel(data) {
     const source = String(data?.source || "").toLowerCase();
     if (source === "") return "";
@@ -41,10 +25,7 @@ function locationAccuracy(data) {
     return `±${Math.max(1, Math.round(meters))} m`;
 }
 
-/**
- * A prova de rádio de uma leitura que não deu posição. Sem antenas nem redes é outra falha:
- * o aparelho reportou e não viu nada, o que aponta para ele e não para a cobertura.
- */
+/** A prova de rádio de uma leitura sem posição; sem antenas nem redes, a falha é do aparelho. */
 function locationRadioEvidence(data) {
     const cells = Array.isArray(data?.baseStations)
         ? data.baseStations.length
@@ -62,10 +43,7 @@ function locationRadioEvidence(data) {
         .join(" · ");
 }
 
-/**
- * Com posição, como e com que precisão; sem posição, com que evidência se tentou. A idade só
- * aparece no mosaico -- na lista cronológica a hora já tem coluna.
- */
+/** Com posição, como e com que precisão; sem ela, com que evidência. A idade só no mosaico. */
 export function locationDetails(data, meta = {}) {
     const parts = locationCoordinates(data)
         ? [locationFixLabel(data), locationAccuracy(data)]

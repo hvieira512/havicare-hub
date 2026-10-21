@@ -1,9 +1,6 @@
 import { html, raw } from "../../../html.js";
 
-/**
- * Uma escala curta com as posições à vista, para enumerações em que a ordem conta. O `name`
- * vem de fora: com nomes iguais, dois grupos na mesma página comportam-se como um.
- */
+/** O `name` vem de fora: com nomes iguais, dois grupos na mesma página comportam-se como um. */
 export function segmentedScale({ name, field, value, options, label = "" }) {
     const current = String(value ?? "");
     const buttons = options.map((option) => {

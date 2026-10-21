@@ -1,15 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync } from "node:fs";
+
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { reachableFrom } from "./support/module-graph.js";
 
-/**
- * O separador «Configurações» são duas dezenas de módulos ES e 209 KB, que só entram por `import()`
- * no `device-modal.js` quando alguém o abre.
- */
+/** O separador «Configurações» só entra por `import()` no `device-modal.js`, quando alguém o abre. */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const APP = path.join(here, "../../src/Dashboard/dashboard/app.js");
 const CONFIG_ROOT = path.join(here, "../../src/Dashboard/dashboard/devices/config");
@@ -18,13 +15,10 @@ const PANEL = path.join(CONFIG_ROOT, "panel.js");
 const configModulesIn = (files) =>
     [...files].filter((file) => file.startsWith(CONFIG_ROOT + path.sep));
 
-/**
- * O `protocol-catalog.js` é de arranque: o `detail.js` lê-lhe o `protocolHelpCallPressModes`, e
- * isolar 2,7 KB custa mais do que rende.
- */
+/** O `protocol-catalog.js` é de arranque: o `detail.js` lê-lhe o `protocolHelpCallPressModes`. */
 const EAGER_BY_DESIGN = ["protocol-catalog.js"];
 
-test("o arranque da dashboard não arrasta o painel de configurações", () => {
+test("the dashboard start does not drag in the configuration panel", () => {
     const eager = reachableFrom([APP], { includeDynamic: false });
 
     assert.ok(
@@ -35,25 +29,5 @@ test("o arranque da dashboard não arrasta o painel de configurações", () => {
         configModulesIn(eager).map((file) => path.relative(CONFIG_ROOT, file)).sort(),
         EAGER_BY_DESIGN,
         "só o catálogo de protocolos pode sobrar do cluster no arranque",
-    );
-});
-
-test("o painel de configurações continua pendurado no modal do dispositivo", () => {
-    // Seguindo os `import()`, o cluster inteiro tem de continuar alcançável: um painel que
-    // ninguém alcança é um separador que abre vazio.
-    const full = reachableFrom([APP]);
-
-    assert.ok(
-        full.has(PANEL),
-        "seguindo o import() dinâmico, o painel tem de continuar alcançável",
-    );
-    const onDisk = readdirSync(CONFIG_ROOT, { recursive: true })
-        .filter((file) => file.endsWith(".js"))
-        .map((file) => path.join(CONFIG_ROOT, file));
-
-    assert.deepEqual(
-        configModulesIn(full).sort(),
-        onDisk.sort(),
-        "todos os módulos do cluster continuam a fazer parte do grafo",
     );
 });

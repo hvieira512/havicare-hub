@@ -4,10 +4,7 @@ import { html, raw } from "../../html.js";
 import { runoutAt, runoutLabel } from "../../devices/medication-runout.js";
 import { state } from "../../state.js";
 
-/**
- * A faixa do dia: as doses do dispensador, uma coluna cada, na ordem das horas. A hora é o que
- * identifica uma dose, e vem do plano de medicação; o número do alarme fica na legenda.
- */
+/** A faixa do dia: uma coluna por dose, na ordem das horas do plano de medicação. */
 
 /** Os nove do protocolo, em `PillDispenserAdapter::ALARM_SLOTS`. O frontend não os partilha. */
 const ALARM_SLOTS = 9;
@@ -23,12 +20,7 @@ const DOSE_BAND = {
     missed: "missed",
 };
 
-/**
- * A hora de cada alarme, do plano que o aparelho confirmou ter — do efectivo e não do
- * desejado, que é o que lhe pedimos e ele pode ainda não ter.
- *
- * @returns {Map<number, string>}
- */
+/** A hora de cada alarme, do plano efectivo: o desejado, o aparelho pode ainda não o ter. */
 function planHours() {
     const plans = state.selectedDetail?.effectiveConfigurations?.medication_reminders?.plans;
     const hours = new Map();
@@ -51,10 +43,6 @@ export function doseLabel(slot) {
     return planHours().get(Number(slot)) || `Alarme ${slot}`;
 }
 
-/**
- * @param {Array<{alarm: number, state: string}>} alarms
- * @returns {string}
- */
 export function medicationDoseStrip(alarms) {
     if (!Array.isArray(alarms) || alarms.length < ALARM_SLOTS) {
         return "";
@@ -85,8 +73,7 @@ export function medicationDoseStrip(alarms) {
 </div>`;
     }).join("");
 
-    // Os lugares por marcar num só: nove posições a dizer «Sem toma marcada» são nove
-    // posições a dizer nada.
+    // Os lugares por marcar juntam-se num só.
     const spare = free.length === 0
         ? ""
         : html`<div class="dose dose--free text-center" data-dose-free="${free.length}">
@@ -98,10 +85,7 @@ export function medicationDoseStrip(alarms) {
     return html`<div class="dose-strip d-grid mt-3">${raw(columns)}${raw(spare)}</div>`;
 }
 
-/**
- * A posição do carrossel na linguagem do prato, que conta grupos de doses a partir de uma
- * marca: «dia 7» em vez do `21` do aparelho. Sem plano fica o número cru.
- */
+/** A posição do carrossel como o prato a conta, «dia 7» e não `21`; sem plano, o número cru. */
 export function cyclePosition(current) {
     const plans = state.selectedDetail?.effectiveConfigurations?.medication_reminders?.plans;
     if (!Array.isArray(plans) || current == null || current < 1) {
@@ -130,10 +114,7 @@ export function cycleRunout(remaining) {
     }));
 }
 
-/**
- * As doses do dia numa leitura dos nove alarmes: uma toma falhada ganha o valor principal, e
- * sem falhas vale quantas foram tomadas.
- */
+/** As doses do dia: uma toma falhada ganha o valor principal; sem falhas, quantas se tomaram. */
 export function medicationAlarmContent(data) {
     const alarms = Array.isArray(data?.alarms) ? data.alarms : [];
     const live = alarms.filter((entry) => entry?.state && entry.state !== "idle");

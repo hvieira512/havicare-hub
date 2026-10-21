@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import {
     licenseBadgeValue,
@@ -19,7 +18,7 @@ const ROWS = [
     { id: 3, company_id: 1, company_name: "hitcare", license_id: 1001, name: "gucc.dev" },
 ];
 
-test("as licencas agrupam-se pela empresa que as detem", () => {
+test("licences group under the company that owns them", () => {
     assert.deepEqual(licenseTree(ROWS), [
         {
             company: "havicare",
@@ -32,7 +31,7 @@ test("as licencas agrupam-se pela empresa que as detem", () => {
     ]);
 });
 
-test("a empresa é um cabeçalho e não se escolhe", () => {
+test("the company is a header and cannot be picked", () => {
     const root = parseFragment(licensePickerHtml(licenseTree(ROWS)));
 
     assert.deepEqual(
@@ -43,7 +42,7 @@ test("a empresa é um cabeçalho e não se escolhe", () => {
     assert.equal(root.querySelector(".license-picker-company[data-license-pick]"), null);
 });
 
-test("é de escolha única, e só a escolhida fica marcada", () => {
+test("it is single choice, and only the chosen one is marked", () => {
     const root = parseFragment(
         licensePickerHtml(licenseTree(ROWS), { company: "hitcare", licenseId: "1001" }),
     );
@@ -55,7 +54,7 @@ test("é de escolha única, e só a escolhida fica marcada", () => {
     assert.equal(checked[0].dataset.licenseCompany, "hitcare");
 });
 
-test("duas empresas podem ter a mesma licença, e a escolha distingue-as", () => {
+test("two companies can share a licence number, and the choice tells them apart", () => {
     // `uq_licenses_company_license` é por empresa: o `license_id` sozinho não identifica.
     const shared = [
         { company_name: "havicare", license_id: 1, name: "hc.dev" },
@@ -70,7 +69,7 @@ test("duas empresas podem ter a mesma licença, e a escolha distingue-as", () =>
     assert.equal(checked[0].dataset.licenseCompany, "hitcare");
 });
 
-test("a badge da trilha diz a licença por palavras", () => {
+test("the trail badge names the licence in words", () => {
     const tree = licenseTree(ROWS);
     assert.equal(licenseBadgeValue(null, tree), "Sem licença");
     assert.equal(licenseBadgeValue({ company: "", licenseId: "0" }, tree), "Sem licença");

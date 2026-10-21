@@ -6,10 +6,7 @@ import { ensureLicensesLoaded } from "../licenses.js";
 import { state } from "../state.js";
 import { resolvePaginationPage } from "../pagination.js";
 
-/**
- * A casca do modal de definições: o menu com as contagens, a troca de separador e a paginação
- * partilhada. Não conhece nenhuma secção, e por isso todas a podem importar.
- */
+/** A casca do modal de definições; não conhece nenhuma secção, e por isso todas a importam. */
 let els;
 let ui;
 
@@ -22,7 +19,6 @@ export function showSettingsModal() {
     ui.settingsModal.show();
 }
 
-/** Abre o separador de uma secção. */
 export function activateSettingsSection(section) {
     state.settingsModal.section = section;
     const button =
@@ -36,10 +32,7 @@ export function activateSettingsSection(section) {
     bootstrap.Tab.getOrCreateInstance(button).show();
 }
 
-/**
- * As contagens do menu, todas, ao abrir o modal, porque cada separador só carrega quando se
- * abre. Falha em silêncio: o separador enche a sua quando abrir.
- */
+/** As contagens do menu ao abrir o modal; falha em silêncio, e cada separador enche a sua. */
 export async function loadSettingsNavCounts() {
     const asks = [
         ["Models", apiGetModels],
@@ -52,24 +45,18 @@ export async function loadSettingsNavCounts() {
             const total = response?.pagination?.total;
             if (Number.isFinite(Number(total))) setSettingsNavCount(key, total);
         }),
-        // O separador chama-se "Licenças" e conta licenças, não as empresas que as detêm.
+        // «Licenças» conta licenças, e não as empresas que as detêm.
         ensureLicensesLoaded().then((licenses) => {
             if (licenses !== null) setSettingsNavCount("Company", licenses.length);
         }),
     ]);
 }
 
-/**
- * A contagem de uma secção no menu. Cada carregador chama isto com o seu total, porque só
- * quem foi buscar a lista é que sabe quantos são.
- */
+/** A contagem de uma secção no menu, dada por quem foi buscar a lista. */
 export function setSettingsNavCount(key, total) {
-    // `els?.` e não `els.`: quem desenha uma secção não tem de saber se o modal já foi
-    // inicializado.
     const element = els?.[`settings${key}Count`];
     if (!element) return;
-    // A zero esconde-se como quando não se sabe: um «0» ao lado do nome não diz nada que a
-    // lista vazia não diga já, e chama a atenção para o separador que não tem nada.
+    // A zero esconde-se: um «0» ao lado do nome não diz nada que a lista vazia não diga.
     const count = Number(total);
     const shows = Number.isFinite(count) && count > 0;
     element.textContent = shows ? String(count) : "";

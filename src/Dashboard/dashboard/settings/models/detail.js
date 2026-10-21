@@ -13,6 +13,7 @@ import {
 } from "../../state.js";
 import { html } from "../../html.js";
 import { apiError, confirmDestructive, toast } from "../../dialogs.js";
+import { allPages } from "../../api/http.js";
 import { clearInvalid, markInvalid } from "../../validation.js";
 import { modelPreviewHtml } from "../../components/model-image.js";
 import {
@@ -23,14 +24,11 @@ import {
     modelInternalName,
 } from "../../domain.js";
 import { loadCapabilityCatalog } from "../capabilities.js";
-import { getSettingsModelsRuntime, modelsCarousel } from "./shell.js";
+import { getSettingsModelsRuntime, showModelsPane } from "./shell.js";
 import { backToModelList } from "./list.js";
 import { renderCapabilitiesSection } from "./capabilities-editor.js";
 
-/**
- * A ficha de um modelo: em cima a identidade, que este módulo desenha, e em baixo o editor de
- * capacidades. São dois botões para mexer no nome não reescrever as capacidades.
- */
+/** A ficha de um modelo: a identidade em cima e o editor de capacidades em baixo, cada um com o seu Guardar. */
 
 async function openModelDetail(modelId) {
     const { els } = getSettingsModelsRuntime();
@@ -41,7 +39,6 @@ async function openModelDetail(modelId) {
     );
 
     state.settingsModal.currentCapabilitiesModel = model;
-    state.settingsModal.capabilityModelId = Number(model.id);
     state.settingsModal.capabilityRequestableCapabilities = Array.isArray(
         model.requestableCapabilities,
     )
@@ -58,8 +55,7 @@ async function openModelDetail(modelId) {
                 tmpl.enabledCapabilities.map(String);
         }
     }
-    // O template do fornecedor manda: uma capacidade gravada no modelo que ele não oferece
-    // não se mostra ligada, porque não há por onde a usar.
+    // O template do fornecedor manda: o que ele não oferece não se mostra ligado.
     const templateSet = new Set(
         state.settingsModal.capabilityModelTemplateKeys || [],
     );
@@ -73,7 +69,6 @@ async function openModelDetail(modelId) {
         );
 
     els.settingsCloseBtn?.classList.remove("d-none");
-    // A barra de gravar vive fora do carrossel: o `overflow` dele corta o `position: sticky`.
     els.modelDetailActionBar?.classList.replace("d-none", "d-flex");
     els.modelsBreadcrumb.classList.remove("d-none");
     els.modelsBreadcrumbModels.classList.remove("active");
@@ -86,13 +81,10 @@ async function openModelDetail(modelId) {
     renderModelDetailInfo(model);
     renderCapabilitiesSection();
 
-    modelsCarousel()?.to(2);
+    showModelsPane(2);
 }
 
-/**
- * Um clique numa folha do catálogo abre a ficha. A linha é um `div` com `role="button"` para
- * fugir ao reset de tipografia do `<button>`, e o teclado é tratado à mão.
- */
+/** Um clique numa folha abre a ficha; a linha é um `div` com `role="button"`, e o teclado é tratado à mão. */
 function handleModelListClick(event) {
     const row = event.target.closest("[data-action=\"modelCapabilities\"]");
     if (!row) return;
@@ -136,18 +128,16 @@ function renderModelDetailInfo(model) {
     void renderModelDetailDeleteHint(model);
 }
 
-/**
- * Os fornecedores com o seu id, para o `supplier_id`: vêm do separador dos fornecedores, ou
- * carregam-se aqui, porque a ficha alcança-se sem lá passar.
- */
+/** Os fornecedores com o seu id, para o `supplier_id`; a ficha alcança-se sem passar pelo separador deles. */
 function modelDetailSuppliers() {
     return state.modelModalSuppliers || [];
 }
 
 async function ensureModelDetailSuppliers() {
     if ((state.modelModalSuppliers || []).length > 0) return;
-    const response = await apiGetSuppliers({ limit: 200 });
-    state.modelModalSuppliers = response?.error ? [] : response.data || [];
+    const response = await allPages(apiGetSuppliers);
+    if (response.error) toast("error", apiError(response));
+    state.modelModalSuppliers = response.data || [];
 }
 
 function renderModelDetailSelect(select, options, selected) {
@@ -172,7 +162,6 @@ function readModelDetailFields() {
     };
 }
 
-/** A imagem escolhida é mais um campo alterado da identidade, e grava com ela. */
 function handleModelDetailImageChange() {
     const { els } = getSettingsModelsRuntime();
     const model = state.settingsModal.currentCapabilitiesModel;
@@ -185,7 +174,6 @@ function handleModelDetailImageChange() {
     syncModelDetailDirty();
 }
 
-/** O "Guardar" aparece por diferença: sem alteração não há botão para premir. */
 function syncModelDetailDirty() {
     const { els } = getSettingsModelsRuntime();
     const pristine = state.settingsModal.modelDetailPristine;
@@ -259,13 +247,11 @@ async function saveModelDetail() {
     };
     state.settingsModal.currentCapabilitiesModel = saved;
     renderModelDetailInfo(saved);
-    // O nome, o fornecedor e o tipo são o que a árvore mostra, e o que o resto da dashboard
-    // usa para reconhecer o modelo: as duas listas em memória deixam de valer.
+    // O nome, o fornecedor e o tipo são o que a árvore mostra: as listas em memória deixam de valer.
     state.settingsModal.sectionLoaded.models = false;
     invalidateDeviceTypeSuppliersModels();
 
-    // Trocar o fornecedor ou o tipo faz o servidor substituir as capacidades pelo template novo,
-    // e a metade de baixo tem de o acompanhar.
+    // Trocar o fornecedor ou o tipo faz o servidor substituir as capacidades pelo template novo.
     const supplierChanged = Number(supplier?.id ?? 0) !== Number(model.supplier_id || 0);
     const typeChanged = fields.deviceType !== (model.device_type || model.deviceType);
     if (supplierChanged || typeChanged) {
@@ -273,10 +259,7 @@ async function saveModelDetail() {
     }
 }
 
-/**
- * Quantos dispositivos usam este modelo: a consequência de apagar escrita ao lado do botão,
- * e não depois de se premir. O total vem da paginação do endpoint de dispositivos.
- */
+/** Quantos dispositivos usam o modelo, ao lado do botão de apagar. */
 async function renderModelDetailDeleteHint(model) {
     const { els } = getSettingsModelsRuntime();
     if (!els.modelDetailDeleteHint) return;
@@ -294,7 +277,6 @@ async function renderModelDetailDeleteHint(model) {
 async function deleteCurrentModel() {
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) return;
-    // A dica ao lado do botão já traz a conta dos dispositivos afectados: é a mesma frase.
     const { els } = getSettingsModelsRuntime();
     const { isConfirmed } = await confirmDestructive(
         `Apagar o modelo ${modelCommercialName(model)}?`,
@@ -302,13 +284,16 @@ async function deleteCurrentModel() {
     );
     if (!isConfirmed) return;
 
-    await apiDeleteModel(model.id);
+    const result = await apiDeleteModel(model.id);
+    if (result.error) {
+        toast("error", apiError(result));
+        return;
+    }
     removeModelFromCatalog(model.id);
     invalidateDeviceTypeSuppliersModels();
     backToModelList();
 }
 
-/** Tira o modelo da árvore em memória, para a lista não ter de ser pedida outra vez. */
 function removeModelFromCatalog(modelId) {
     for (const group of state.settingsModal.modelCatalog || []) {
         for (const supplier of group?.suppliers || []) {

@@ -1,8 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 // O `showLogin` avisa por toast, e o toast fala com o SweetAlert, que não existe fora do
 // browser. Um duplo mudo chega: o que se afirma aqui é o ecrã, não o aviso.
 globalThis.Swal = { fire: () => Promise.resolve({}) };
@@ -32,7 +30,7 @@ beforeEach(() => {
     mountScreens();
 });
 
-test("se a aplicação falhar a carregar, volta-se ao ecrã de entrada", async () => {
+test("if the app fails to load, it goes back to the login screen", async () => {
     const { login, app } = mountScreens();
 
     await initializeDashboardSession(async () => {
@@ -44,7 +42,7 @@ test("se a aplicação falhar a carregar, volta-se ao ecrã de entrada", async (
 });
 
 /** A bandeira do arranque único tem de baixar, ou a segunda tentativa não corre nada. */
-test("depois de falhar, uma segunda tentativa volta a arrancar a aplicação", async () => {
+test("after a failure, a second attempt starts the app again", async () => {
     mountScreens();
     await initializeDashboardSession(async () => {
         throw new Error("Failed to fetch dynamically imported module");

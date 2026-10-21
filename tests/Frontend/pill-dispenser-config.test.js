@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/index.js";
 
@@ -12,14 +11,14 @@ const entry = (fields) => ({ fields });
 const render = (input, desired) => parseFragment(input.render({ fields: [] }, desired));
 const daily = (time, slot) => ({ times: [{ time, enabled: true, slot, recurrence: { kind: "daily" } }] });
 
-test("o plano parte vazio sem rebentar", () => {
+test("the plan starts empty without breaking", () => {
     const html = String(alarms.render(entry(["plans"]), {}));
 
     assert.equal((html.match(/data-alarm-slot/g) || []).length, 9);
     assert.deepEqual(alarms.defaults(entry(["plans"])), { plans: [] });
 });
 
-test("o período do plano desenha as duas datas e o interruptor", () => {
+test("the plan period draws both dates and the switch", () => {
     const html = String(period.render(
         entry(["enabled", "startDate", "endDate"]),
         { enabled: true, startDate: "2026-09-18", endDate: "2026-12-31" },
@@ -33,7 +32,7 @@ test("o período do plano desenha as duas datas e o interruptor", () => {
 });
 
 /** O número do alarme tem de ser o que chega ao aparelho: sem os vazios, escolher o 5 escreveria no 3. */
-test("o alarme escolhido leva o seu número, e não a posição na lista", () => {
+test("the chosen alarm carries its own number, not its list position", () => {
     const values = new Map([["time-4", "10:24"]]);
     const section = {
         querySelector: (selector) => {
@@ -47,7 +46,7 @@ test("o alarme escolhido leva o seu número, e não a posição na lista", () =>
     assert.deepEqual(alarms.read(section).plans, [daily("10:24", 5)]);
 });
 
-test("o alarme 5 é desenhado na caixa 5", () => {
+test("alarm 5 is drawn in box 5", () => {
     const cells = String(alarms.render({}, { plans: [daily("10:24", 5)] }))
         .split("data-alarm-slot=\"")
         .slice(1);
@@ -58,25 +57,25 @@ test("o alarme 5 é desenhado na caixa 5", () => {
 });
 
 /** Esta firmware ignora o `0x1041`--`0x1049`: um interruptor faria julgar calado o que toca. */
-test("o cartão não desenha interruptores", () => {
+test("the card draws no switches", () => {
     assert.doesNotMatch(String(alarms.render({}, { plans: [daily("08:00", 1)] })), /type="checkbox"/);
 });
 
-test("um alarme definido volta com a hora que se escolheu", () => {
+test("a set alarm reads back with the chosen time", () => {
     const plans = [daily("08:30", 1), daily("20:05", 2)];
 
     assert.deepEqual(alarms.read(render(alarms, { plans })), { plans });
 });
 
 /** O `24` e o `60` são o sentinela do aparelho para um slot nunca definido. */
-test("as horas sentinela do aparelho não se desenham como hora", () => {
+test("the device's sentinel times are not drawn as a time", () => {
     const root = render(alarms, { plans: [{ hour: 24, minute: 60 }] });
 
     assert.equal(root.querySelectorAll("input[type=time]")[0].getAttribute("value"), "");
 });
 
 /** Um slot desenhado em branco não volta como plano nenhum, que é o que o esvazia. */
-test("um slot em branco não volta no plano", () => {
+test("a blank slot does not come back in the plan", () => {
     const root = render(alarms, { plans: [{ hour: 8, minute: 30 }] });
 
     root.querySelectorAll("input[type=time]")[0].setAttribute("value", "");
@@ -86,13 +85,13 @@ test("um slot em branco não volta no plano", () => {
 
 const QUIET = { enabled: true, startHour: 22, startMinute: 30, endHour: 7, endMinute: 5 };
 
-test("as horas de silêncio desenham dois seletores de horas", () => {
+test("quiet hours draw two time pickers", () => {
     const times = [...render(quietHours, QUIET).querySelectorAll("input[type=time]")];
 
     assert.deepEqual(times.map((el) => el.getAttribute("value")), ["22:30", "07:05"]);
 });
 
 /** Saem em hora e minuto separados, que é o que as TAGs levam. */
-test("as horas de silêncio voltam separadas em hora e minuto", () => {
+test("quiet hours read back split into hour and minute", () => {
     assert.deepEqual(quietHours.read(render(quietHours, QUIET)), QUIET);
 });

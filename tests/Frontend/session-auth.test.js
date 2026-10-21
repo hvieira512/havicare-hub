@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 // Sem temporizadores reais: os relógios de inatividade são de minutos e deixariam o processo
 // de teste pendurado.
 window.setTimeout = () => 0;
@@ -30,19 +28,19 @@ const adminToken = (over = {}) => ({
     ...over,
 });
 
-test("validAdminToken aceita um admin com token de acesso por expirar", () => {
+test("validAdminToken accepts an admin with an unexpired access token", () => {
     assert.equal(validAdminToken(adminToken()), true);
 });
 
-test("validAdminToken recusa um papel que não é admin", () => {
+test("validAdminToken refuses a non-admin role", () => {
     assert.equal(validAdminToken(adminToken({ role: "viewer" })), false);
 });
 
-test("validAdminToken recusa um token de acesso já expirado", () => {
+test("validAdminToken refuses an expired access token", () => {
     assert.equal(validAdminToken(adminToken({ expires_at: past() })), false);
 });
 
-test("validAdminToken recusa tokens em falta ou lixo", () => {
+test("validAdminToken refuses missing or garbage tokens", () => {
     assert.equal(validAdminToken(adminToken({ access_token: "" })), false);
     assert.equal(validAdminToken(adminToken({ expires_at: "" })), false);
     assert.equal(validAdminToken(null), false);
@@ -74,13 +72,9 @@ const captureFetch = (respond) => {
     return calls;
 };
 
-const sessionResponse = (status, body) => ({
-    ok: status >= 200 && status < 300,
-    status,
-    json: async () => body,
-});
+const sessionResponse = (status, body) => Response.json(body, { status });
 
-test("sem sessão no cookie, o arranque mostra o login", async () => {
+test("without a session cookie, startup shows the login", async () => {
     installDom();
     const calls = captureFetch(() => sessionResponse(401, { error: { code: "invalid_refresh_token" } }));
     let started = false;
@@ -95,7 +89,7 @@ test("sem sessão no cookie, o arranque mostra o login", async () => {
     assert.equal(calls[0].url, "/api/auth/login");
 });
 
-test("um separador novo entra pelo cookie, sem credencial nenhuma guardada", async () => {
+test("a new tab signs in through the cookie, with no stored credential", async () => {
     installDom();
     localStorage.clear();
     sessionStorage.clear();
@@ -134,7 +128,7 @@ function dashboardWithAnOpenModal() {
     document.body.style.paddingRight = "17px";
 }
 
-test("mostrar o login fecha o modal aberto e não deixa backdrop nenhum", () => {
+test("showing the login closes the open modal and leaves no backdrop", () => {
     dashboardWithAnOpenModal();
 
     closeDashboardOverlays();
@@ -150,7 +144,7 @@ test("mostrar o login fecha o modal aberto e não deixa backdrop nenhum", () => 
     assert.equal(document.querySelectorAll(".modal-backdrop, .offcanvas-backdrop").length, 0);
 });
 
-test("o body volta a poder rolar", () => {
+test("the body can scroll again", () => {
     dashboardWithAnOpenModal();
 
     closeDashboardOverlays();
@@ -160,7 +154,7 @@ test("o body volta a poder rolar", () => {
     assert.equal(document.body.style.paddingRight, "");
 });
 
-test("sem nada aberto não estraga o que está no ecrã", () => {
+test("with nothing open it does not disturb the screen", () => {
     document.body.innerHTML = `<div id="dashboardApp"><div class="modal"></div></div>`;
     document.body.classList.remove("modal-open");
 
@@ -189,7 +183,7 @@ const mount = () => {
     };
 };
 
-test("carregar no olho mostra a palavra-passe e voltar a carregar esconde-a", () => {
+test("pressing the eye shows the password and pressing again hides it", () => {
     const { input, button } = mount();
     initializePasswordVisibility();
 
@@ -200,7 +194,7 @@ test("carregar no olho mostra a palavra-passe e voltar a carregar esconde-a", ()
     assert.equal(input.getAttribute("type"), "password");
 });
 
-test("voltar ao ecrã de entrada esconde outra vez a palavra-passe", () => {
+test("returning to the login screen hides the password again", () => {
     const { input, button } = mount();
     initializePasswordVisibility();
 
@@ -214,9 +208,29 @@ test("voltar ao ecrã de entrada esconde outra vez a palavra-passe", () => {
     assert.ok(button.querySelector("i").classList.contains("fa-eye"));
 });
 
-test("sem olho na página, ligar o comportamento não rebenta", () => {
+test("without an eye on the page, binding the behaviour does not break", () => {
     document.body.innerHTML = "";
 
     assert.doesNotThrow(() => initializePasswordVisibility());
     assert.doesNotThrow(() => resetPasswordVisibility());
+});
+
+test("a non-admin login revokes the session cookie it was just given", async () => {
+    installDom();
+    globalThis.Swal ??= { fire: async () => ({}) };
+    const token = { role: "viewer", access_token: "viewer-token", expires_at: future() };
+    const calls = captureFetch((url) => (url === "/api/auth/logout"
+        ? sessionResponse(200, { status: "ok" })
+        : sessionResponse(200, { status: "ok", token })));
+    await initializeDashboardSession(async () => {});
+    calls.length = 0;
+
+    document.getElementById("dashboardLoginUsername").value = "viewer";
+    document.getElementById("dashboardLoginPassword").value = "secret";
+    document.getElementById("dashboardLoginForm").dispatchEvent(new window.Event("submit", { cancelable: true }));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const logout = calls.find((call) => call.url === "/api/auth/logout");
+    assert.ok(logout, "the refresh cookie stays alive in the browser");
+    assert.equal(logout.options.headers.Authorization, "Bearer viewer-token");
 });

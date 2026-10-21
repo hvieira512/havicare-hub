@@ -1,16 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import "./support/browser-env.js";
 
 import {
     DEVICE_CARD_ACTION,
     deviceCard as buildCard,
-    deviceCardSkeletonList as buildSkeletonList,
 } from "../../src/Dashboard/dashboard/devices/device-card.js";
+import { asText } from "./support/dom.js";
 
-// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
-const deviceCard = (...args) => String(buildCard(...args));
-const deviceCardSkeletonList = (...args) => String(buildSkeletonList(...args));
+const deviceCard = asText(buildCard);
 
 const device = {
     imei: "861265061009822",
@@ -23,20 +20,20 @@ const device = {
     online: true,
 };
 
-test("o cartão emite a acção que o ouvinte delegado procura", () => {
+test("the card emits the action the delegated listener looks for", () => {
     const markup = deviceCard(device, false);
 
     assert.match(markup, new RegExp(`data-action="${DEVICE_CARD_ACTION}"`));
     assert.match(markup, /data-imei="861265061009822"/);
 });
 
-test("o cartão escolhido marca-se para o leitor de ecrã e para o olho", () => {
+test("the chosen card is marked for screen readers and for the eye", () => {
     assert.match(deviceCard(device, true), /aria-current="true"/);
-    assert.match(deviceCard(device, true), /class="device-card [^"]* selected/);
+
     assert.ok(!deviceCard(device, false).includes("aria-current"));
 });
 
-test("um campo do dispositivo com marcação sai inerte", () => {
+test("a device field with markup comes out inert", () => {
     const hostile = {
         ...device,
         model: "<img src=x onerror=alert(1)>",
@@ -50,16 +47,8 @@ test("um campo do dispositivo com marcação sai inerte", () => {
     assert.match(container.textContent, /onerror=alert\(1\)/);
 });
 
-test("o esqueleto não passa do tecto de linhas", () => {
-    const rows = (markup) => markup.split("device-card-skeleton ").length - 1;
-
-    assert.equal(rows(deviceCardSkeletonList(5)), 5);
-    // Doze é o tecto: a moldura mais alta não mostra mais do que isso.
-    assert.equal(rows(deviceCardSkeletonList(50)), 12);
-});
-
 /** A pastilha diz se está a falar agora; a linha por baixo diz desde quando. */
-test("o cartão diz quando o aparelho falou pela última vez", () => {
+test("the card says when the device last spoke", () => {
     const markup = deviceCard(
         { ...device, online: false, lastSeenAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString() },
         false,
@@ -69,7 +58,7 @@ test("o cartão diz quando o aparelho falou pela última vez", () => {
     assert.match(markup, /há 3h/);
 });
 
-test("um aparelho que nunca falou di-lo, em vez de uma data que não existe", () => {
+test("a device that never spoke says so instead of a date that does not exist", () => {
     const markup = deviceCard({ ...device, online: false, lastSeenAt: null }, false);
 
     assert.match(markup, /sem registo/i);

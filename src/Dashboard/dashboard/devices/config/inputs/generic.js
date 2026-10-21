@@ -1,7 +1,7 @@
 import { fieldLabel } from "../../../format.js";
 import { html, raw } from "../../../html.js";
 import { field } from "../../../components/form-field.js";
-import { renderPhoneControl, resetPhoneControls } from "../../../phone.js";
+import { renderPhoneControl } from "../../../phone.js";
 import { protocolPhonebookConstraints } from "../protocol-catalog.js";
 import { boolValue } from "../normalizers.js";
 import { intervalToggle, numberField } from "./shared.js";
@@ -12,11 +12,6 @@ import {
     readPhone,
     readText,
 } from "../readers.js";
-
-/**
- * Os campos que mais do que um fornecedor declara, desenhados da mesma maneira venham de onde
- * vierem; o nome nativo resolve-o a definição.
- */
 
 export function toggleField(entry) {
     return entry.fields?.[0] || "enabled";
@@ -37,10 +32,7 @@ export function toggleInput(entry, desired) {
         </div>`;
 }
 
-/**
- * Um número, sem rótulo: quem o nomeia é o título do cartão, e a unidade vai ao lado do
- * campo. O `aria-label` guarda o nome para quem não vê a linha.
- */
+/** Sem rótulo, que o nome é o título do cartão; o `aria-label` guarda-o para quem não vê a linha. */
 function numberControl(entry, desired) {
     const key = entry.fields?.[0] || "value";
     // A escala parte do mínimo declarado: o tom de pele vai de 1 a 6.
@@ -96,7 +88,7 @@ export function contactsInput(entry, desired, meta = {}) {
             : [];
     const rows = contacts.length ? contacts.slice(0, limit) : [{}];
     const phonebookConstraints = protocolPhonebookConstraints(meta.protocol || "");
-    const isPhonebookLike = String(entry.key || "") === "phonebook" || String(entry.key || "") === "call_whitelist";
+
     const nameMaxLengthValue = Math.max(
         0,
         parseInt(String(meta.name?.maxLength ?? phonebookConstraints.name?.maxLength ?? 0), 10) || 0,
@@ -106,19 +98,13 @@ export function contactsInput(entry, desired, meta = {}) {
         parseInt(String(meta.phone?.maxLength ?? phonebookConstraints.phone?.maxLength ?? 0), 10) || 0,
     );
     const nameMaxLength = nameMaxLengthValue > 0 ? html` maxlength="${nameMaxLengthValue}"` : "";
-    const nameLimitAttr = isPhonebookLike && nameMaxLengthValue > 0
-        ? html` data-phonebook-name-max-length="${nameMaxLengthValue}"`
-        : "";
-    const phoneLimitAttr = isPhonebookLike && phoneMaxLengthValue > 0
-        ? html` data-phonebook-phone-max-length="${phoneMaxLengthValue}"`
-        : "";
     return html`
         <div>
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <label class="form-label-sm mb-0">Contactos</label>
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="contacts" ${rows.length >= limit ? "disabled" : ""}>Adicionar <span data-repeat-count>(${rows.length} de ${limit})</span></button>
             </div>
-            <div class="vstack gap-2" data-repeat-list="contacts" data-repeat-limit="${limit}"${nameLimitAttr}${phoneLimitAttr}>
+            <div class="vstack gap-2" data-repeat-list="contacts" data-repeat-limit="${limit}">
                 ${rows
                     .map(
                         (contact, index) => html`
@@ -145,46 +131,10 @@ export function contactsInput(entry, desired, meta = {}) {
         </div>`;
 }
 
-function isFourPTouchPhonebookSection(section) {
-    return String(section?.dataset?.configProtocol || "") === "four-p-touch" &&
-        String(section?.dataset?.configKey || "") === "phonebook";
-}
-
-/** A primeira linha de contactos, quando a lista veio vazia e não há de onde clonar. */
-export function createContactRow(section) {
-    const phonebook = isFourPTouchPhonebookSection(section);
-    const nameMaxLength = parseInt(
-        section?.dataset.phonebookNameMaxLength || "0", 10,
-    ) || 0;
-    const phoneMaxLength = parseInt(
-        section?.dataset.phonebookPhoneMaxLength || (phonebook ? "20" : "0"), 10,
-    ) || 0;
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "row g-2 align-items-end";
-    wrapper.dataset.repeatRow = "contacts";
-    wrapper.innerHTML = html`
-        <div class="col-md-6">
-            <input class="form-control" type="text" placeholder="Nome"${phonebook && nameMaxLength > 0 ? ` maxlength="${nameMaxLength}"` : ""} data-repeat-field="name">
-        </div>
-        <div class="col-md-6">
-            <div class="d-flex gap-2">
-                <div class="flex-grow-1">
-                    ${renderPhoneControl({ repeatField: "phone", maxLength: phoneMaxLength })}
-                </div>
-                <button type="button" class="btn btn-outline-danger btn-quiet-danger btn-sm" data-action="removeRepeatRow">-</button>
-            </div>
-        </div>`;
-    resetPhoneControls(wrapper);
-    return wrapper;
-}
-
-/** As opções que a definição declara em `options: { campo: [{value, label}] }`. */
 export function selectOptions(entry) {
     const name = entry.fields?.[0] || "value";
     const options = Array.isArray(entry.options?.[name]) ? entry.options[name] : [];
-    // A definição pode dizer de onde parte. Sem isso seria a primeira da lista, que numa
-    // lista ordenada por valor — os fusos horários — é a ponta e não o meio.
+    // Sem `default` declarado seria a primeira, que numa lista ordenada (os fusos) é a ponta.
     const declared = entry.options?.default;
 
     return {
@@ -194,7 +144,6 @@ export function selectOptions(entry) {
     };
 }
 
-/** Um valor escolhido de uma lista, com o significado à vista em vez de um número solto. */
 function selectInput(entry, desired) {
     const { name, options, fallback } = selectOptions(entry);
     const current = String(desired?.[name] ?? fallback);
@@ -204,7 +153,6 @@ function selectInput(entry, desired) {
             return html`<option value="${value}"${value === current ? raw(" selected") : ""}>${String(option.label ?? value)}</option>`;
         });
 
-    // Sem rótulo: o cartão da configuração já mostra o nome por cima.
     return html`<select class="form-select" data-config-field="${name}">${choices}</select>`;
 }
 
@@ -215,8 +163,7 @@ export const INPUTS = {
             const node = section.querySelector("select[data-config-field]");
             if (!node) return {};
             const raw = String(node.value ?? "");
-            // Os valores do protocolo são inteiros; só um que não pareça número é que passa
-            // como texto.
+            // Só o que não parece número passa como texto.
             return { [node.dataset.configField]: raw !== "" && !Number.isNaN(Number(raw)) ? Number(raw) : raw };
         },
         defaults: (entry) => {
@@ -238,8 +185,7 @@ export const INPUTS = {
             const field = firstFieldName(section);
             return { [field]: readNumber(section, field) };
         },
-        // Parte de onde a escala parte: um campo que vai de 1 a 6 aberto em zero oferece um
-        // valor que o aparelho recusa.
+        // Do mínimo: um campo de 1 a 6 aberto em zero oferece um valor que o aparelho recusa.
         defaults: (entry) => ({
             [entry.fields?.[0] || "value"]: entry.options?.default ?? entry.options?.min ?? 0,
         }),
@@ -272,8 +218,7 @@ export const INPUTS = {
         }),
         defaults: () => ({ enabled: true, intervalMinutes: 60 }),
     },
-    // Uma acção não tem campo nenhum: o que se envia é o próprio pedido. Sem `render`, o
-    // cartão sabe que pode desenhar a versão de uma linha.
+    // Uma acção não tem campos; sem `render`, o cartão desenha-se numa linha.
     action: {
         read: () => ({}),
     },

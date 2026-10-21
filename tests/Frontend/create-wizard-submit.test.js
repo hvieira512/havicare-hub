@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initDeviceList } = await import("../../src/Dashboard/dashboard/devices/list.js");
@@ -12,13 +11,7 @@ const { initCreateWizard, createDeviceFromWizard } =
  * Criar um dispositivo retransmitido é escrever o dispositivo e depois autorizar cada gateway;
  * se a segunda falhar, o dispositivo já existe e reenviar só daria 409.
  */
-const els = new Proxy({}, {
-    get(target, name) {
-        if (typeof name !== "string") return undefined;
-        if (!(name in target)) target[name] = document.createElement("div");
-        return target[name];
-    },
-});
+const els = autoEls();
 
 let hidden;
 let warnings;
@@ -31,18 +24,13 @@ const answersFor = (gateways) => ({
     gateways,
 });
 
-const jsonResponse = (status, payload) => ({
-    ok: status >= 200 && status < 300,
-    status,
-    text: async () => JSON.stringify(payload),
-    headers: { get: () => "application/json" },
-});
+const jsonResponse = (status, payload) => Response.json(payload, { status });
 
 const respondWith = (perUrl) => {
     globalThis.fetch = async (url) => perUrl(String(url));
 };
 
-const emptyListing = jsonResponse(200, {
+const emptyListing = () => jsonResponse(200, {
     data: [],
     pagination: { page: 1, total_pages: 1, total: 0, limit: 20 },
 });
@@ -69,9 +57,9 @@ beforeEach(() => {
     initCreateWizard({ els, wizardModal });
 });
 
-test("criar sem gateways fecha o assistente e não devolve erro", async () => {
+test("creating without gateways closes the wizard and returns no error", async () => {
     respondWith((url) => (url.startsWith("/api/devices?") || url === "/api/devices"
-        ? emptyListing
+        ? emptyListing()
         : jsonResponse(200, { status: "ok" })));
 
     const error = await createDeviceFromWizard(answersFor([]));
@@ -81,10 +69,10 @@ test("criar sem gateways fecha o assistente e não devolve erro", async () => {
 });
 
 /** O dispositivo ficou criado: oferecer «Criar» outra vez só daria 409. */
-test("um gateway que falhe a autorizar não deixa o assistente aberto", async () => {
+test("a gateway that fails to authorize does not leave the wizard open", async () => {
     respondWith((url) => {
         if (url.includes("/links")) return jsonResponse(500, { error: { code: "gateway_gone" } });
-        if (url.startsWith("/api/devices?") || url === "/api/devices") return emptyListing;
+        if (url.startsWith("/api/devices?") || url === "/api/devices") return emptyListing();
         return jsonResponse(200, { status: "ok" });
     });
 
@@ -94,10 +82,10 @@ test("um gateway que falhe a autorizar não deixa o assistente aberto", async ()
     assert.equal(hidden, 1, "o dispositivo existe, por isso o assistente fecha-se");
 });
 
-test("o gateway que ficou por autorizar é dito, e nomeado", async () => {
+test("the gateway left unauthorized is reported, by name", async () => {
     respondWith((url) => {
         if (url.includes("/links")) return jsonResponse(500, { error: { code: "gateway_gone" } });
-        if (url.startsWith("/api/devices?") || url === "/api/devices") return emptyListing;
+        if (url.startsWith("/api/devices?") || url === "/api/devices") return emptyListing();
         return jsonResponse(200, { status: "ok" });
     });
 
@@ -110,7 +98,7 @@ test("o gateway que ficou por autorizar é dito, e nomeado", async () => {
 });
 
 /** Uma criação recusada é outra coisa: não há nada feito, e o assistente fica para se corrigir. */
-test("se a criação falhar, o assistente fica aberto com o erro", async () => {
+test("if creation fails the wizard stays open with the error", async () => {
     respondWith(() => jsonResponse(409, { error: { code: "conflict" } }));
 
     const error = await createDeviceFromWizard(answersFor([]));

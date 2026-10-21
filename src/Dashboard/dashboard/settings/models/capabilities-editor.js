@@ -17,15 +17,9 @@ import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
 import { getSettingsModelsRuntime } from "./shell.js";
 import { backToModelList } from "./list.js";
 
-/**
- * O editor das capacidades de um modelo: que capacidades suporta, e quais se podem pedir ao
- * aparelho. A vista de leitura do catálogo de um tipo vive no `settings/capabilities.js`.
- */
+/** O editor das capacidades de um modelo: que suporta, e quais se podem pedir ao aparelho. */
 
-/**
- * As secções da ficha e as chaves de cada uma: as do template do fornecedor, ou sem ele as que
- * o modelo tem ligadas -- e então desligar uma tira-lhe a linha.
- */
+/** As secções da ficha: as chaves do template do fornecedor, ou sem ele as que o modelo tem ligadas. */
 function capabilitySections(enabled) {
     const templateKeys = state.settingsModal.capabilityModelTemplateKeys || [];
     const templateSet = new Set(templateKeys);
@@ -53,11 +47,10 @@ function capabilitySections(enabled) {
         .filter(Boolean);
 }
 
-/** Quantas destas estão ligadas: é o número da pastilha de cada secção. */
 const activeCount = (entries, enabled) =>
     (entries || []).filter((feature) => enabled.has(feature)).length;
 
-/** O resumo do topo é a soma das pastilhas todas, e tem de dar o mesmo que elas. */
+/** O resumo do topo é a soma das pastilhas todas. */
 const capabilitySummaryText = (sections, enabled) =>
     `${sections.reduce((total, item) => total + activeCount(item.entries, enabled), 0)}` +
     `/${sections.reduce((total, item) => total + item.entries.length, 0)} ativos`;
@@ -73,10 +66,7 @@ function capabilitySubtitleText(supplier, templateCount, shownCount) {
         ` ${actions} ${actions === 1 ? "é uma ação, que só se pede" : "são ações, que só se pedem"} ao aparelho.`;
 }
 
-/**
- * O que o protocolo do fornecedor permite pedir, dito uma vez para a secção inteira em vez
- * de repetido por baixo de cada capacidade.
- */
+/** O que o protocolo do fornecedor permite pedir, dito uma vez para a secção inteira. */
 function telemetryProtocolNote(supplier, entries, protocolRequestable) {
     const requestable = entries.filter((feature) => protocolRequestable.has(feature)).length;
     if (requestable === 0) {
@@ -88,10 +78,7 @@ function telemetryProtocolNote(supplier, entries, protocolRequestable) {
     return `O ${supplier} envia estas leituras; ${requestable} ${requestable === 1 ? "delas também pode ser pedida" : "delas também podem ser pedidas"}.`;
 }
 
-/**
- * Acerta no sítio em vez de redesenhar, para não tirar o foco ao interruptor. Sem template a
- * linha desaparece ao desligar, e aí quem chama redesenha.
- */
+/** Acerta no sítio para não tirar o foco ao interruptor; sem template, quem chama redesenha. */
 function syncCapabilitySwitches(feature) {
     const { els } = getSettingsModelsRuntime();
     const model = state.settingsModal.currentCapabilitiesModel;
@@ -134,15 +121,11 @@ function syncCapabilitySwitches(feature) {
     }
 }
 
-/** Diz se desligar uma capacidade lhe tira a linha, e obriga por isso a redesenhar. */
 function capabilityRowsDependOnSelection() {
     return (state.settingsModal.capabilityModelTemplateKeys || []).length === 0;
 }
 
-/**
- * Os dois interruptores de uma linha, num ouvinte delegado na raiz das secções. Desligar o
- * suporte desliga o pedido com ele.
- */
+/** Os dois interruptores de uma linha; desligar o suporte desliga o pedido com ele. */
 function handleCapabilityGroupsChange(event) {
     const checkbox = event.target.closest([
         "[data-action=\"toggleCapabilitySupport\"]",
@@ -182,7 +165,6 @@ function handleCapabilityGroupsChange(event) {
     syncCapabilitySwitches(feature);
 }
 
-/** A tira da ficha troca a secção à vista, e por isso redesenha em vez de deslocar. */
 function jumpCapabilitySection(event) {
     const button = event.target.closest(
         "[data-action=\"jumpCapabilitySection\"]",
@@ -267,21 +249,17 @@ function renderCapabilitiesSection() {
                 const canBeRequested =
                     section.section === "telemetry" &&
                     protocolRequestable.has(feature);
-                // São sempre dois interruptores, na mesma posição. Quando o fornecedor não
-                // suporta pedido, o segundo fica desligado; porquê está no cabeçalho.
+                // Dois interruptores sempre; sem pedido no fornecedor, o segundo fica desligado.
                 const requestableSwitch = section.section !== "telemetry"
                     ? ""
                     : html`<div class="form-check form-switch mb-0 flex-shrink-0 text-nowrap ms-4 ms-sm-0">
                                 <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequestability" data-feature="${feature}" id="requestable-${feature}" ${canBeRequested && requestable.has(feature) ? "checked" : ""} ${canBeRequested && enabled.has(feature) ? "" : "disabled"}>
                                 <label class="form-check-label small" for="requestable-${feature}">Solicitável</label>
                                </div>`;
-                // Só a linha que diz algo que a posição não diz: esta capacidade ainda não
-                // está no modelo, e vem do catálogo do tipo.
+                // Só quando a capacidade ainda não está no modelo e vem do catálogo do tipo.
                 const description = isInModelPayload
                     ? ""
                     : html`<div class="section-label">Disponível no catálogo do tipo de dispositivo.</div>`;
-                // Num telefone os dois interruptores empilham-se: lado a lado, «Solicitável»
-                // e o nome da capacidade não cabem numa calha de 330px.
                 return html`
                         <div class="capability-model-row d-flex flex-column flex-sm-row justify-content-sm-between align-items-start gap-2 gap-sm-3 border rounded-3 px-3 py-2">
                             <div class="form-check form-switch mb-0">

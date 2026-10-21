@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import "./support/browser-env.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { changedConfigEntries } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 import { parseFragment } from "./support/dom.js";
@@ -45,7 +44,7 @@ const rowsOf = (root) => [...root.querySelectorAll("[data-config-row]")].map((ro
     pristine: row.dataset.configPristine,
 }));
 
-test("um interruptor guardado como desligado desenha-se desligado", () => {
+test("a switch stored as off is drawn off", () => {
     const root = render({
         wonlexContinuousHRSwitch: { enabled: false },
         wonlexContinuousTempSwitch: { enabled: true },
@@ -57,7 +56,7 @@ test("um interruptor guardado como desligado desenha-se desligado", () => {
 });
 
 /** A fotografia tem de bater certo com o desenho, ou o rodapé conta alterações que não há. */
-test("a fotografia do valor acompanha o que o interruptor mostra", () => {
+test("the value snapshot follows what the switch shows", () => {
     const [heartRate] = rowsOf(render({
         wonlexContinuousHRSwitch: { enabled: false },
     }));
@@ -66,14 +65,14 @@ test("a fotografia do valor acompanha o que o interruptor mostra", () => {
 });
 
 /** Sem valor guardado o interruptor nasce ligado, que é o que o aparelho traz de fábrica. */
-test("sem valor guardado o interruptor fica ligado", () => {
+test("without a stored value the switch is on", () => {
     const [heartRate] = rowsOf(render({}));
 
     assert.equal(heartRate.checked, true);
 });
 
 /** «Restringir chamadas recebidas» é um interruptor como os outros: uma linha, sem legenda de recurso. */
-test("o interruptor da restrição de chamadas cabe numa linha e lê-se de volta", () => {
+test("the call restriction switch fits on one line and reads back", () => {
     const entry = {
         ...toggle("whitelist_enabled", "Restringir chamadas recebidas", 10),
         category: "contacts",
@@ -97,7 +96,7 @@ test("o interruptor da restrição de chamadas cabe numa linha e lê-se de volta
 });
 
 /** Um zero é desligado tanto como um `false` -- a Wonlex manda os dois. */
-test("um zero guardado lê-se como desligado", () => {
+test("a stored zero reads as off", () => {
     const [heartRate] = rowsOf(render({
         wonlexContinuousHRSwitch: { enabled: 0 },
     }));

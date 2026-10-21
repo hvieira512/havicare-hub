@@ -1,12 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
-import "./support/browser-env.js";
 import { imeiEmphasis } from "../../src/Dashboard/dashboard/devices/device-card.js";
 
 /** O que se realça é medido contra os vizinhos, e não um número fixo de dígitos. */
-test("o prefixo que os vizinhos partilham esbate-se", () => {
+test("the prefix shared with neighbours fades", () => {
     const { prefix, suffix } = imeiEmphasis("594B3CB301AB", [
         "594B3CB31A87",
         "594B3CB3B417",
@@ -16,21 +14,21 @@ test("o prefixo que os vizinhos partilham esbate-se", () => {
     assert.equal(suffix, "01AB");
 });
 
-test("sem vizinhos, o identificador fica inteiro", () => {
+test("without neighbours, the identifier stays whole", () => {
     const { prefix, suffix } = imeiEmphasis("594B3CB301AB", []);
 
     assert.equal(prefix, "");
     assert.equal(suffix, "594B3CB301AB");
 });
 
-test("vizinhos sem nada em comum não esbatem nada", () => {
+test("neighbours with nothing in common fade nothing", () => {
     const { prefix, suffix } = imeiEmphasis("594B3CB301AB", ["861265061009822"]);
 
     assert.equal(prefix, "");
     assert.equal(suffix, "594B3CB301AB");
 });
 
-test("o próprio não conta como vizinho de si mesmo", () => {
+test("a device does not count as its own neighbour", () => {
     const { suffix } = imeiEmphasis("594B3CB301AB", [
         "594B3CB301AB",
         "594B3CB3B417",
@@ -39,7 +37,7 @@ test("o próprio não conta como vizinho de si mesmo", () => {
     assert.equal(suffix, "01AB");
 });
 
-test("fica sempre um punhado de dígitos a cheio, mesmo entre quase-gémeos", () => {
+test("a handful of digits always stays bold, even between near-twins", () => {
     // Estes dois diferem no antepenúltimo dígito; esbater até lá deixaria dois a cheio.
     const { prefix, suffix } = imeiEmphasis("861265061009822", ["861265061009830"]);
 
@@ -47,7 +45,7 @@ test("fica sempre um punhado de dígitos a cheio, mesmo entre quase-gémeos", ()
     assert.equal(prefix + suffix, "861265061009822");
 });
 
-test("um prefixo curto não vale o realce", () => {
+test("a short prefix is not worth highlighting", () => {
     // Dois dígitos em comum não são um padrão; esbatê-los seria ruído.
     const { prefix } = imeiEmphasis("59ABCDEF", ["59123456"]);
 

@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
@@ -53,19 +52,14 @@ const pick = (selector) => root.querySelector(selector).click();
 
 beforeEach(async () => {
     // Sem pedidos: com o estado já preenchido, o `ensure*` devolve o que lá está.
-    globalThis.fetch = async () => ({
-        ok: true,
-        status: 200,
-        text: async () => JSON.stringify({ data: [], pagination: {} }),
-        headers: { get: () => "application/json" },
-    });
+    globalThis.fetch = async () => Response.json({ data: [], pagination: {} });
     state.deviceTypeSuppliersModels = MODELS;
     state.licenses = LICENSES;
     harness();
     await openWizard();
 });
 
-test("o assistente abre no primeiro dos cinco passos", () => {
+test("the wizard opens on the first of five steps", () => {
     assert.equal(text(els.wizardStepCount), "1 de 5");
     const bar = els.wizardProgress.firstElementChild;
     assert.equal(bar.getAttribute("aria-valuenow"), "1");
@@ -77,7 +71,7 @@ test("o assistente abre no primeiro dos cinco passos", () => {
     assert.equal(els.wizardNextBtn.disabled, true, "sem tipo escolhido nao avanca");
 });
 
-test("o fornecedor é um passo com nome próprio, e conta para os cinco", () => {
+test("the supplier is a step of its own, and counts towards the five", () => {
     pick("[data-wizard-type=\"watch\"]");
 
     assert.equal(text(els.wizardStepCount), "2 de 5");
@@ -87,7 +81,7 @@ test("o fornecedor é um passo com nome próprio, e conta para os cinco", () => 
     assert.equal(root.querySelectorAll("#wizardAsk [data-wizard-supplier]").length, 2);
 });
 
-test("cada escolha leva ao passo seguinte, até ao verbo de criar", () => {
+test("each choice leads to the next step, up to the create verb", () => {
     pick("[data-wizard-type=\"watch\"]");
     pick("[data-wizard-supplier=\"Wonlex\"]");
     assert.equal(text(els.wizardStepCount), "3 de 5");
@@ -107,7 +101,7 @@ test("cada escolha leva ao passo seguinte, até ao verbo de criar", () => {
     ]);
 });
 
-test("uma migalha já respondida volta àquele passo, e não só ao anterior", () => {
+test("an answered breadcrumb goes back to that step, not just the previous one", () => {
     pick("[data-wizard-type=\"watch\"]");
     pick("[data-wizard-supplier=\"Wonlex\"]");
     pick("[data-wizard-model=\"KT26\"]");
@@ -120,7 +114,7 @@ test("uma migalha já respondida volta àquele passo, e não só ao anterior", (
     assert.notEqual(root.querySelector("#wizardAsk [data-wizard-type]"), null);
 });
 
-test("voltar a um passo dado mostra a pergunta com a resposta marcada", () => {
+test("going back to a done step shows the question with the answer marked", () => {
     pick("[data-wizard-type=\"watch\"]");
     pick("[data-wizard-supplier=\"Wonlex\"]");
     els.wizardBackBtn.click();
@@ -133,7 +127,7 @@ test("voltar a um passo dado mostra a pergunta com a resposta marcada", () => {
 });
 
 /** Um tipo com um fornecedor só não faz pergunta nenhuma: a resposta é a única que há. */
-test("um tipo com um único fornecedor responde ao passo sozinho", () => {
+test("a type with a single supplier answers its step on its own", () => {
     pick("[data-wizard-type=\"diaper_sensor\"]");
 
     assert.equal(text(els.wizardStepCount), "3 de 5");
@@ -142,14 +136,13 @@ test("um tipo com um único fornecedor responde ao passo sozinho", () => {
     ]);
 });
 
-/** Os gateways autorizados de um sensor entram como marcação, e não como texto à letra. */
 function walkToDiaperIdentity() {
     pick("[data-wizard-type=\"diaper_sensor\"]");
     pick("[data-wizard-model=\"MECS-PRO\"]");
     pick("[data-license-id=\"1001\"]");
 }
 
-test("sem gateways na licença, o aviso aparece como texto e não como marcação", () => {
+test("with no gateways in the licence, the notice shows as text, not markup", () => {
     state.wizardGateways = [];
     walkToDiaperIdentity();
 
@@ -159,7 +152,7 @@ test("sem gateways na licença, o aviso aparece como texto e não como marcaçã
     assert.doesNotMatch(text(els.wizardAsk), /<div/);
 });
 
-test("um gateway da mesma licença aparece como cartão a escolher", () => {
+test("a gateway of the same licence appears as a card to choose", () => {
     state.wizardGateways = [
         { imei: "d48c49f7909c", model: "MKGW3", company: "hitcare", licenseId: "1001" },
     ];
@@ -168,4 +161,28 @@ test("um gateway da mesma licença aparece como cartão a escolher", () => {
     const check = root.querySelector("#wizardAsk .gateway-card [data-gateway-key=\"d48c49f7909c\"]");
     assert.notEqual(check, null);
     assert.doesNotMatch(text(els.wizardAsk), /<label/);
+});
+
+test("the supplier and model names reach the picture as text, not markup", () => {
+    state.deviceTypeSuppliersModels = [
+        { supplier: "Evil<b>Co</b>", internal_model: "M<b>1</b>", commercial_name: "M1", device_type: "watch" },
+    ];
+    pick("[data-wizard-type=\"watch\"]");
+    [...root.querySelectorAll("#wizardAsk [data-wizard-model]")][0].click();
+
+    assert.equal(els.wizardArt.querySelector("b"), null);
+    assert.match(text(els.wizardArt), /Evil<b>Co<\/b> M<b>1<\/b>/);
+});
+
+test("a Tuya bracelet asks for its Tuya id and offers no gateways", () => {
+    state.deviceTypeSuppliersModels = [
+        { supplier: "PST", internal_model: "SOS-WIFI", commercial_name: "SOS Wi-Fi", device_type: "bracelet", protocol: "tuya-cloud" },
+    ];
+    state.wizardGateways = [];
+    pick("[data-wizard-type=\"bracelet\"]");
+    pick("[data-wizard-model=\"SOS-WIFI\"]");
+    pick("[data-license-id=\"1001\"]");
+
+    assert.match(text(els.wizardAsk), /ID do dispositivo na Tuya/);
+    assert.equal(root.querySelector("#wizardAsk .gateway-picker-empty"), null);
 });

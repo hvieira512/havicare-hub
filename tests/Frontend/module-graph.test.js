@@ -24,7 +24,7 @@ const CONFIG_HANDLERS = path.join(MODULE_ROOT, "devices/config/handlers.js");
 const ENTRY_POINTS = [ENTRY, APP, CONFIG_PANEL, CONFIG_HANDLERS];
 
 for (const entry of ENTRY_POINTS) {
-    test(`as ligações do grafo de módulos a partir do ${path.basename(entry)}`, async () => {
+    test(`module graph edges from ${path.basename(entry)}`, async () => {
         try {
             await import(entry);
         } catch (error) {

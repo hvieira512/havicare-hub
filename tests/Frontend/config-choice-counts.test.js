@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import {
@@ -53,7 +51,7 @@ const sendButton = (root) =>
 const choiceButton = (root, value) =>
     root.querySelector(`[data-action="selectConfigChoice"][data-config-value="${value}"]`);
 
-test("escolher outro nível acende o enviar da secção", () => {
+test("choosing another level lights the section's send button", () => {
     const root = render();
     assert.equal(sendButton(root).disabled, true);
 
@@ -65,7 +63,7 @@ test("escolher outro nível acende o enviar da secção", () => {
     assert.equal(sendButton(root).disabled, false);
 });
 
-test("voltar ao nível de partida apaga o enviar outra vez", () => {
+test("going back to the starting level turns the send button off again", () => {
     const root = render();
 
     handleDeviceConfigClick({ target: choiceButton(root, "3") });

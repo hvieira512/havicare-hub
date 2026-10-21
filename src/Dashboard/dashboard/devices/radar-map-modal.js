@@ -4,7 +4,7 @@ import {
     syncRadarLayout as apiSyncRadarLayout,
 } from "../api/index.js";
 import { areaTypeStyle } from "../radar-style.js";
-import { esc, when } from "../format.js";
+import { when } from "../format.js";
 import { html } from "../html.js";
 import { apiError, confirmDestructive, toast } from "../dialogs.js";
 import { refreshTooltips } from "../tooltips.js";
@@ -60,7 +60,7 @@ function loadKonva() {
     });
 }
 
-/** A contagem por cima da planta, como no hitCare: o número destacado e o resto discreto. */
+/** A contagem por cima da planta: o número destacado e o resto discreto. */
 function renderPeopleCount(count) {
     if (!els.radarMapPeopleCount) return;
 
@@ -68,7 +68,7 @@ function renderPeopleCount(count) {
     els.radarMapPeopleCount.innerHTML = html`<span class="fw-semibold text-${tone}">${count}</span> <span class="text-secondary">${count === 1 ? "pessoa" : "pessoas"}</span>`;
 }
 
-/** A legenda leva só os tipos que esta divisão tem: seis entradas para três áreas explicam o fabricante. */
+/** A legenda leva só os tipos que esta divisão tem. */
 function renderLegend(areas) {
     if (!els.radarMapLegend) return;
 
@@ -215,18 +215,15 @@ function currentPeople() {
 }
 
 function subtitle(imei, layout) {
-    if (!layout?.room) return esc(imei);
+    if (!layout?.room) return imei;
 
     const width = ((layout.room.x_max_dm - layout.room.x_min_dm) / 10).toFixed(1);
     const height = ((layout.room.y_max_dm - layout.room.y_min_dm) / 10).toFixed(1);
 
-    return `${esc(imei)} · ${width} × ${height} m · sincronizado ${when(layout.fetchedAt)}`;
+    return `${imei} · ${width} × ${height} m · sincronizado ${when(layout.fetchedAt)}`;
 }
 
-/**
- * Só se desenha a planta do mapa que ainda está aberto: depois de fechar, uma cena nova já
- * não teria quem a destruísse.
- */
+/** Só se desenha a planta do mapa ainda aberto: depois de fechar, ninguém destruiria a cena. */
 async function load(imei) {
     const response = await apiGetRadarLayout(imei);
     if (state.radarMap.imei !== imei) {
@@ -248,7 +245,7 @@ export async function openRadarMap(imei, { editAreas = false } = {}) {
     state.radarMap.imei = imei;
     state.radarMap.layout = null;
 
-    if (els.radarMapSubtitle) els.radarMapSubtitle.textContent = esc(imei);
+    if (els.radarMapSubtitle) els.radarMapSubtitle.textContent = imei;
     renderPeopleCount(currentPeople().length);
 
     // As pastilhas do resumo dizem só o número: o que cada uma é vive na tooltip, e as
@@ -304,8 +301,7 @@ export async function syncRadarMap() {
             return;
         }
 
-        // O `777` do fabricante diz que a cloud não conhece este aparelho, e isso não se
-        // adivinha de um "não deu": vale mais do que esconder o código.
+        // O `777` do fabricante diz que a cloud não conhece este aparelho.
         const code = Object.keys(result.codes || {}).find((key) => key !== "200");
         toast("warning", code === "777"
             ? "A cloud do fabricante não reconhece este radar."

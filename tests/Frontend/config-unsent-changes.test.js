@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { unsentConfigChanges } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 
@@ -29,35 +27,35 @@ const section = (root_, { value, pristine, stored = "1", transient = "0" }) => {
     return element;
 };
 
-test("um bloco por tocar não conta", () => {
+test("an untouched block does not count", () => {
     const host = root();
     section(host, { value: 15, pristine: JSON.stringify({ minutes: 15 }) });
 
     assert.equal(unsentConfigChanges(host), 0);
 });
 
-test("um bloco editado conta", () => {
+test("an edited block counts", () => {
     const host = root();
     section(host, { value: 30, pristine: JSON.stringify({ minutes: 15 }) });
 
     assert.equal(unsentConfigChanges(host), 1);
 });
 
-test("uma acção nunca conta, mesmo estando sempre pronta a enviar", () => {
+test("an action never counts, even though it is always ready to send", () => {
     const host = root();
     section(host, { value: 30, pristine: JSON.stringify({ minutes: 15 }), transient: "1" });
 
     assert.equal(unsentConfigChanges(host), 0);
 });
 
-test("uma definição que o aparelho nunca recebeu não conta se ninguém lhe tocou", () => {
+test("a setting the device never received does not count if nobody touched it", () => {
     const host = root();
     section(host, { value: 15, pristine: JSON.stringify({ minutes: 15 }), stored: "0" });
 
     assert.equal(unsentConfigChanges(host), 0);
 });
 
-test("as linhas de um grupo contam uma a uma", () => {
+test("the rows of a group count one by one", () => {
     const host = root();
     const group = document.createElement("div");
     group.dataset.configGroup = "health";
@@ -91,6 +89,6 @@ function jsonRoot(json) {
         </div>`);
 }
 
-test("um bloco com leitura inválida conta como alteração por enviar", () => {
+test("a block with an invalid reading counts as an unsent change", () => {
     assert.equal(unsentConfigChanges(jsonRoot("{ nao e json")), 1);
 });

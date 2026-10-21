@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 const { bindInvalidClearing, clearInvalid, markInvalid } = await import(
     "../../src/Dashboard/dashboard/validation.js",
 );
@@ -18,7 +16,7 @@ function form(html) {
 
 const feedbackAfter = (field) => field.nextElementSibling;
 
-test("marcar um campo escreve a mensagem ao lado dele", () => {
+test("marking a field writes the message next to it", () => {
     const f = form("<input id=\"a\">");
     const a = document.getElementById("a");
 
@@ -33,7 +31,7 @@ test("marcar um campo escreve a mensagem ao lado dele", () => {
     assert.equal(feedbackAfter(a).textContent, "Outra coisa");
 });
 
-test("o foco vai para o primeiro campo marcado e não para o último", () => {
+test("focus goes to the first marked field, not the last", () => {
     form("<input id=\"a\"><input id=\"b\">");
     const a = document.getElementById("a");
     const b = document.getElementById("b");
@@ -44,7 +42,7 @@ test("o foco vai para o primeiro campo marcado e não para o último", () => {
     assert.equal(document.activeElement, a);
 });
 
-test("limpar aceita o formulário inteiro ou um campo só", () => {
+test("clearing accepts the whole form or a single field", () => {
     const f = form("<input id=\"a\"><input id=\"b\">");
     const a = document.getElementById("a");
     const b = document.getElementById("b");
@@ -59,7 +57,7 @@ test("limpar aceita o formulário inteiro ou um campo só", () => {
     assert.equal(f.querySelectorAll(".is-invalid").length, 0);
 });
 
-test("escrever no campo marcado limpa-o, e clicar nele não", () => {
+test("typing in a marked field clears it, clicking does not", () => {
     form("<input id=\"a\">");
     const a = document.getElementById("a");
     bindInvalidClearing(document);
@@ -72,7 +70,7 @@ test("escrever no campo marcado limpa-o, e clicar nele não", () => {
     assert.equal(a.classList.contains("is-invalid"), false);
 });
 
-test("escolher dentro de um grupo de botões limpa a marca do grupo", () => {
+test("choosing inside a button group clears the group's mark", () => {
     form("<div id=\"g\"><button id=\"opt\" type=\"button\">Opção</button></div>");
     const g = document.getElementById("g");
     bindInvalidClearing(document);

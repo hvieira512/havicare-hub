@@ -1,8 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { allDetailItems, detailFilterChipLabels, filterDetailItems } =
     await import("../../src/Dashboard/dashboard/devices/detail-filters.js");
@@ -20,7 +18,7 @@ beforeEach(() => {
 });
 
 /** A lista não escolhe tipos à mão: um evento que o hub classificou tem lugar nela. */
-test("todo o evento com gravidade entra no histórico", () => {
+test("every event with a severity enters the history", () => {
     state.selectedDetail = {
         model: { deviceType: "diaper_sensor" },
         recent: {
@@ -40,8 +38,8 @@ test("todo o evento com gravidade entra no histórico", () => {
     );
 });
 
-/** O histórico guardado antes da gravidade tem o formato antigo, e esse já não se desenha. */
-test("um evento sem gravidade fica de fora", () => {
+/** Sem gravidade não é um acontecimento de domínio, e não tem lugar no histórico. */
+test("an event without a severity stays out", () => {
     state.selectedDetail = {
         model: { deviceType: "watch" },
         recent: { events: [event("alarm", null, { reason: "sos" })] },
@@ -50,7 +48,7 @@ test("um evento sem gravidade fica de fora", () => {
     assert.deepEqual(allDetailItems(), []);
 });
 
-test("o filtro de gravidade deixa só os alarmes, ou só os alertas", () => {
+test("the severity filter keeps only alarms, or only alerts", () => {
     const items = [
         event("fall", "alarm", { confirmed: true }),
         event("low_battery", "alert"),
@@ -65,7 +63,7 @@ test("o filtro de gravidade deixa só os alarmes, ou só os alertas", () => {
     assert.deepEqual(filterDetailItems(items).map((item) => item.payload.type), ["low_battery"]);
 });
 
-test("a pastilha do filtro de gravidade diz o que ficou", () => {
+test("the severity filter chip says what remains", () => {
     assert.deepEqual(
         detailFilterChipLabels({ from: "", to: "", type: "all", severity: "alert", q: "" }),
         [{ key: "severity", label: "Alertas" }],

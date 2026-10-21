@@ -8,11 +8,6 @@ import {
     readText,
 } from "../readers.js";
 
-/**
- * Os campos que só a Wonlex declara: quase tudo vem empacotado em `deviceConfig` e
- * `deviceMeasuringFrequency`, e cada limiar leva o seu formulário.
- */
-
 /** Os painéis Wonlex trazem o estado em `enabled` ou em `switchState`, conforme a geração. */
 const wonlexEnabled = (desired) => boolValue(desired.enabled ?? desired.switchState, true);
 
@@ -126,7 +121,6 @@ function wonlexHeartRateRangeInput(entry, desired) {
         </div>`;
 }
 
-/** Cada tipo de campo declara as suas faces juntas: desenhar, ler, valor inicial e legenda. */
 export const INPUTS = {
     wonlexBloodPressureWarning: {
         render: (_entry, desired) =>

@@ -1,17 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/index.js";
+import { asText } from "./support/dom.js";
 
 /**
  * O campo de escolha genérico desenha as opções que a definição declara, para o utilizador ver
  * «Baixo» e não `2`.
  */
-// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
 const select = {
     ...CONFIG_INPUTS.select,
-    control: (...args) => String(CONFIG_INPUTS.select.control(...args)),
+    control: asText(CONFIG_INPUTS.select.control),
 };
 
 const entry = (field, options, extra = {}) => ({
@@ -27,7 +26,7 @@ const VOLUME = [
     { value: 3, label: "Silêncio" },
 ];
 
-test("desenha cada opção com o seu rótulo, e não o número cru", () => {
+test("draws each option with its label, not the raw number", () => {
     const html = select.control(entry("volume", VOLUME), { volume: 2 });
 
     assert.match(html, /<select[^>]*data-config-field="volume"/);
@@ -36,18 +35,18 @@ test("desenha cada opção com o seu rótulo, e não o número cru", () => {
     }
 });
 
-test("a opção guardada vem escolhida", () => {
+test("the stored option comes selected", () => {
     const html = select.control(entry("volume", VOLUME), { volume: 2 });
 
     assert.match(html, /value="2"\s+selected/);
     assert.doesNotMatch(html, /value="0"\s+selected/);
 });
 
-test("sem valor guardado escolhe a primeira opção, que é o que o formulário mostra", () => {
+test("without a stored value the first option is chosen, which is what the form shows", () => {
     assert.deepEqual(select.defaults(entry("volume", VOLUME)), { volume: 0 });
 });
 
-test("a definição pode dizer de onde parte, e não a ponta da lista", () => {
+test("the setting can say where it starts, rather than the end of the list", () => {
     // Os fusos vão de −12 a +14 por ordem de valor: partir da primeira opção daria UTC−12:00.
     const zones = entry("timeZone", [
         { value: -1200, label: "UTC−12:00" },
@@ -60,7 +59,7 @@ test("a definição pode dizer de onde parte, e não a ponta da lista", () => {
     assert.match(select.control(zones, {}), /value="0"\s+selected/);
 });
 
-test("uma definição sem opções não rebenta", () => {
+test("a setting without options does not throw", () => {
     const html = select.control({ fields: ["volume"] }, {});
 
     assert.match(html, /<select/);

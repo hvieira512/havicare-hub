@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
-import "./support/browser-env.js";
 import {
     appendRepeatRow,
     removeRepeatRow,
@@ -44,7 +42,7 @@ const rowsIn = (section, kind) =>
 
 const removeButtonIn = (row) => row.querySelector("[data-action=\"removeRepeatRow\"]");
 
-test("clonar: a linha nova sai da última, sem o valor dela", () => {
+test("cloning: the new row comes from the last one, without its value", () => {
     const section = phoneList(1, 3);
 
     appendRepeatRow(section, "numbers");
@@ -54,7 +52,7 @@ test("clonar: a linha nova sai da última, sem o valor dela", () => {
     assert.equal(rows[1].querySelector("[data-phone-local]").value, "");
 });
 
-test("clonar: o indicativo volta ao inicial em vez de herdar o anterior", () => {
+test("cloning: the dialling code goes back to the initial one instead of inheriting the previous", () => {
     const section = phoneList(1, 3);
     section.querySelector("[data-phone-country]").value = "GB";
 
@@ -63,7 +61,7 @@ test("clonar: o indicativo volta ao inicial em vez de herdar o anterior", () => 
     assert.equal(rowsIn(section, "numbers")[1].querySelector("[data-phone-country]").value, "PT");
 });
 
-test("desenhar: a linha nova é construída de raiz", () => {
+test("drawing: the new row is built from scratch", () => {
     const section = reminderList(1);
 
     appendRepeatRow(section, "takePillsReminder");
@@ -74,7 +72,7 @@ test("desenhar: a linha nova é construída de raiz", () => {
     assert.ok(rows[1].querySelector("[data-takepills-field=\"reminderTime\"]"));
 });
 
-test("sem limite declarado acrescenta-se sempre", () => {
+test("without a declared limit a row is always added", () => {
     const section = reminderList(1);
 
     appendRepeatRow(section, "takePillsReminder");
@@ -83,14 +81,14 @@ test("sem limite declarado acrescenta-se sempre", () => {
     assert.equal(rowsIn(section, "takePillsReminder").length, 3);
 });
 
-test("um tipo desconhecido é ignorado em vez de rebentar", () => {
+test("an unknown kind is ignored instead of throwing", () => {
     const section = phoneList(1, 3);
 
     assert.doesNotThrow(() => appendRepeatRow(section, "not-a-row-kind"));
     assert.equal(rowsIn(section, "numbers").length, 1);
 });
 
-test("remover uma linha de várias apaga-a", () => {
+test("removing one row of several deletes it", () => {
     const section = phoneList(2, 3);
 
     removeRepeatRow(removeButtonIn(rowsIn(section, "numbers")[1]));
@@ -98,7 +96,7 @@ test("remover uma linha de várias apaga-a", () => {
     assert.equal(rowsIn(section, "numbers").length, 1);
 });
 
-test("na lista que se clona, remover a última linha limpa-a em vez de a apagar", () => {
+test("in a cloned list, removing the last row clears it instead of deleting it", () => {
     // Apagá-la deixaria a secção sem linha de onde clonar.
     const section = phoneList(1, 3);
 
@@ -110,7 +108,7 @@ test("na lista que se clona, remover a última linha limpa-a em vez de a apagar"
     assert.equal(rows[0].querySelector("[data-phone-country]").value, "PT");
 });
 
-test("na lista que se desenha, remover a última linha apaga-a", () => {
+test("in a drawn list, removing the last row deletes it", () => {
     const section = reminderList(1);
 
     removeRepeatRow(removeButtonIn(rowsIn(section, "takePillsReminder")[0]));
@@ -118,7 +116,7 @@ test("na lista que se desenha, remover a última linha apaga-a", () => {
     assert.equal(rowsIn(section, "takePillsReminder").length, 0);
 });
 
-test("remover a partir de um botão solto é inofensivo", () => {
+test("removing from a stray button is harmless", () => {
     assert.doesNotThrow(() => removeRepeatRow(null));
     assert.doesNotThrow(() =>
         removeRepeatRow(parseFragment("<button></button>").firstElementChild),
@@ -173,7 +171,7 @@ test("the sync is generic: a keepLast kind (sos_contacts) also tracks its limit"
 const ALARM_CLOCK = { input: "alarm_clock", key: "alarm_clock", fields: [] };
 
 /** O motor lê o limite do `data-repeat-limit`; o texto do cartão promete o mesmo número. */
-test("o limite anunciado pelo cartão dos alarmes chega ao motor das linhas", () => {
+test("the limit announced by the alarm card reaches the row engine", () => {
     const section = configSection(renderConfigInputs, ALARM_CLOCK, {}, { limit: 3 });
     const list = section.querySelector("[data-repeat-list=\"alarm_clock\"]");
     const button = section.querySelector("[data-action=\"addRepeatRow\"]");
@@ -206,7 +204,7 @@ const namesIn = (row) =>
  * A linha do alarme nasce por clonagem: com `id` repetidos, os rádios dos dois alarmes formam
  * um grupo só e os `for` do segundo apontam para as caixas do primeiro.
  */
-test("um alarme acrescentado não repete os id nem os grupos do anterior", () => {
+test("an added alarm does not repeat the ids or the groups of the previous one", () => {
     const section = configSection(renderConfigInputs, ALARM_CLOCK, {}, { limit: 3 });
     appendRepeatRow(section, "alarm_clock");
 
@@ -220,7 +218,7 @@ test("um alarme acrescentado não repete os id nem os grupos do anterior", () =>
     assert.deepEqual(sharedNames, [], "nenhum grupo de rádio é partilhado");
 });
 
-test("as etiquetas de um alarme apontam para dentro da própria linha", () => {
+test("an alarm's labels point inside its own row", () => {
     const section = configSection(renderConfigInputs, ALARM_CLOCK, {}, { limit: 3 });
     appendRepeatRow(section, "alarm_clock");
 

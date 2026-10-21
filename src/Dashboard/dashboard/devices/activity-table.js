@@ -3,18 +3,12 @@ import { emptyPanel } from "../components/empty-panel.js";
 import { renderInto } from "../dom.js";
 import { dayKey, dayLabel } from "../format.js";
 
-/**
- * Tabela de atividade partilhada pela telemetria e pelos pedidos: pinta as linhas já prontas
- * e trata da gaveta que abre por baixo.
- */
+/** Tabela de atividade da telemetria e dos pedidos: pinta as linhas e trata da gaveta. */
 
 /** Por chave do registo e não por posição: a lista redesenha-se a cada mensagem do stream. */
 const openActivityRows = new Set();
 
-/**
- * Com `table-layout: fixed` as larguras saem da primeira linha, que é um cabeçalho de dia com
- * `colspan`; daí o `colgroup`. O nome fica com o que sobra.
- */
+/** Com `table-layout: fixed` as larguras saem da primeira linha, que é um cabeçalho com `colspan`. */
 const COLGROUP = `<colgroup>
     <col class="telemetry-col-icon">
     <col>
@@ -68,7 +62,7 @@ function dayHeader(label, count) {
         </tr>`;
 }
 
-/** Abre ou fecha a linha carregada. Devolve `true` quando tratou do clique. */
+/** Devolve `true` quando tratou do clique. */
 export function toggleActivityRow(event) {
     const row = event.target.closest("[data-row-toggle]");
     if (!row) {
@@ -82,8 +76,7 @@ export function toggleActivityRow(event) {
         event.preventDefault();
     }
 
-    // A gaveta é a linha seguinte: o `getElementById` só acha o que já está no documento, e as
-    // listas desenham-se antes disso.
+    // A gaveta é a linha seguinte: as listas desenham-se antes de entrarem no documento.
     const panel = row.nextElementSibling;
     const key = row.dataset.rowKey || "";
     const open = row.getAttribute("aria-expanded") !== "true";
@@ -98,16 +91,12 @@ export function toggleActivityRow(event) {
     return true;
 }
 
-/**
- * Uma linha e a gaveta escondida que ela abre. Os detalhes cortam-se numa linha e o resto
- * vê-se abrindo-a, não numa tooltip, que por teclado e em telemóvel não existe.
- */
+/** Uma linha e a gaveta que ela abre: os detalhes cortam-se numa linha e o resto vê-se nela. */
 function activityRow({
     icon,
     badge = "",
     tone = "",
     name,
-    nameTitle = "",
     sub = "",
     subTitle = "",
     value = "",
@@ -124,8 +113,7 @@ function activityRow({
     const stackedTime = html`<span class="d-lg-none">${raw(sub ? " · " : "")}${time}</span>`;
     const subClass = sub ? "telemetry-row-details" : "telemetry-row-time d-lg-none";
     const subLine = html`<span class="${subClass} text-secondary lh-sm fw-normal d-block text-truncate"${subTitle ? html` title="${subTitle}"` : ""}>${sub}${stackedTime}</span>`;
-    // As pastilhas não se cortam a meio: já vêm limitadas na origem, e o que sobra do lado
-    // direito esconde-se. O texto corta-se com reticências, como o nome na coluna ao lado.
+    // As pastilhas não se cortam a meio, escondem-se; o texto corta-se com reticências.
     const detailClass = detailKind === "chips"
         ? "telemetry-row-details text-secondary lh-sm d-flex gap-1 overflow-hidden"
         : "telemetry-row-details text-secondary lh-sm d-block text-truncate";
@@ -141,8 +129,7 @@ function activityRow({
     const caret = openable
         ? raw(html`<i class="fa-solid fa-chevron-down telemetry-row-caret text-secondary ms-2" aria-hidden="true"></i>`)
         : raw("");
-    // Uma linha por campo. O texto chega simples e é escapado aqui, que é o que impede
-    // marcação de aparecer à letra no ecrã.
+    // Uma linha por campo; o texto chega simples e escapa-se aqui.
     const panel = openable
         ? html`<tr id="${panelId}" class="telemetry-row-panel${isOpen ? "" : " d-none"}">
             <td colspan="4">${raw(String(expanded).split("\n").map((line) => html`<div>${line}</div>`).join(""))}</td>
@@ -159,7 +146,7 @@ function activityRow({
         </td>
         <td class="fw-medium">
             <span class="telemetry-row-stack d-flex flex-column justify-content-center min-w-0">
-                <span class="d-block text-truncate" title="${nameTitle || name}">${name}</span>
+                <span class="d-block text-truncate" title="${name}">${name}</span>
                 ${raw(subLine)}
             </span>
         </td>

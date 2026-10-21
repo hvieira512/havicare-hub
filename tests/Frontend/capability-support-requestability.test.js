@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initSettingsModels } =
@@ -13,13 +12,7 @@ const { handleCapabilityGroupsChange } =
  * «Pode ser pedida» depende de «o modelo tem»: pedir uma leitura que o modelo não oferece
  * mandaria um comando que nunca tem resposta.
  */
-const els = new Proxy({}, {
-    get(target, name) {
-        if (typeof name !== "string") return undefined;
-        if (!(name in target)) target[name] = document.createElement("div");
-        return target[name];
-    },
-});
+const els = autoEls();
 
 const toggle = (action, feature, checked) => {
     const checkbox = document.createElement("input");
@@ -49,25 +42,25 @@ beforeEach(() => {
     state.settingsModal.activeCapabilitySection = "telemetry";
 });
 
-test("ligar o suporte acrescenta a capacidade", () => {
+test("turning support on adds the capability", () => {
     handleCapabilityGroupsChange(support("battery", true));
 
     assert.ok(enabled().includes("battery"));
 });
 
-test("uma capacidade suportada pode passar a ser pedida", () => {
+test("a supported capability can become requestable", () => {
     handleCapabilityGroupsChange(requestable("heart_rate", true));
 
     assert.ok(requested().includes("heart_rate"));
 });
 
-test("pedir uma capacidade que o modelo não suporta não guarda nada", () => {
+test("requesting a capability the model does not support saves nothing", () => {
     handleCapabilityGroupsChange(requestable("battery", true));
 
     assert.ok(!requested().includes("battery"), "não se guarda um pedido sem suporte");
 });
 
-test("desligar o suporte leva o pedido com ele", () => {
+test("turning support off takes the request with it", () => {
     handleCapabilityGroupsChange(requestable("heart_rate", true));
     assert.ok(requested().includes("heart_rate"), "o cenário começa com o pedido ligado");
 
@@ -77,7 +70,7 @@ test("desligar o suporte leva o pedido com ele", () => {
     assert.ok(!requested().includes("heart_rate"), "o pedido não pode sobreviver ao suporte");
 });
 
-test("desmarcar o pedido deixa o suporte onde estava", () => {
+test("unticking the request leaves the support where it was", () => {
     handleCapabilityGroupsChange(requestable("heart_rate", true));
     handleCapabilityGroupsChange(requestable("heart_rate", false));
 
@@ -85,7 +78,7 @@ test("desmarcar o pedido deixa o suporte onde estava", () => {
     assert.ok(enabled().includes("heart_rate"), "desligar o pedido não desliga o suporte");
 });
 
-test("um clique fora dos dois interruptores não mexe em nada", () => {
+test("a click outside both switches changes nothing", () => {
     handleCapabilityGroupsChange(toggle("outraCoisa", "heart_rate", true));
 
     assert.deepEqual(enabled(), ["heart_rate"]);

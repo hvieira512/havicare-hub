@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 
 /**
@@ -9,7 +8,7 @@ import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/card
  * tipo -- há só dois -- mas o comando que o disparou, e é esse que a linha tem de mostrar.
  */
 
-test("a chamada de ajuda diz que comando a fez", () => {
+test("a help call says which remote made it", () => {
     const card = uplinkCardContent("help_call", { pagerId: "348319" });
 
     assert.equal(card.value, "Chamada de ajuda");
@@ -18,21 +17,21 @@ test("a chamada de ajuda diz que comando a fez", () => {
     assert.equal(card.rowValue, "Pager 348319");
 });
 
-test("o cancelamento diz o mesmo comando", () => {
+test("the cancellation names the same remote", () => {
     const card = uplinkCardContent("reset", { pagerId: "348319" });
 
     assert.equal(card.value, "Cancelado");
     assert.equal(card.rowValue, "Pager 348319");
 });
 
-test("sem comando identificado a coluna do valor fica vazia em vez de repetir o nome", () => {
+test("without an identified remote the value column stays empty instead of repeating the name", () => {
     for (const data of [{}, { pagerId: "" }]) {
         assert.equal(uplinkCardContent("help_call", data).rowValue, undefined);
         assert.equal(uplinkCardContent("reset", data).rowValue, undefined);
     }
 });
 
-test("uma pulseira que declara o modo de toque continua a dizê-lo", () => {
+test("a bracelet that declares its press mode still says it", () => {
     // A W6B passa pelo mesmo renderizador e não tem pager: o que a distingue é o toque.
     const card = uplinkCardContent("help_call", { pressType: "double" });
 

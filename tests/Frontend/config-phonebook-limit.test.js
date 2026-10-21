@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
-import "./support/browser-env.js";
 import { parseFragment } from "./support/dom.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { appendRepeatRow } from "../../src/Dashboard/dashboard/devices/config/row-editing.js";
@@ -20,7 +18,7 @@ const PHONEBOOK = {
 const render = () => parseFragment(renderConfigSection("four-p-touch", PHONEBOOK, { contacts: [] }, {}, false, null, true))
     .querySelector("[data-config-section]");
 
-test("o contador acompanha as linhas acrescentadas", () => {
+test("the counter follows the added rows", () => {
     const section = render();
 
     appendRepeatRow(section, "contacts");

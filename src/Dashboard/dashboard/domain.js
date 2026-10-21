@@ -1,7 +1,4 @@
-/**
- * O que cada tipo de dispositivo tem, vindo do `DeviceTypeCatalog` pela ilha JSON
- * `#hub-device-types`. Sem ela o módulo recusa carregar: a falha é de fiação, e não de dados.
- */
+/** O que cada tipo de dispositivo tem, da ilha JSON `#hub-device-types`; sem ela o módulo não carrega. */
 const deviceTypesIsland = globalThis.document?.getElementById("hub-device-types");
 const DEVICE_TYPES = deviceTypesIsland ? JSON.parse(deviceTypesIsland.textContent) : null;
 if (!DEVICE_TYPES || Object.keys(DEVICE_TYPES).length === 0) {
@@ -22,7 +19,6 @@ export const deviceTypeOptions = Object.entries(DEVICE_TYPES).map(
     ([value, descriptor]) => ({ value, label: descriptor.label }),
 );
 
-/** A linha de um tipo, sempre utilizável, normalizada como no `normalizeDeviceType`. */
 /** Com o protocolo, o que ele corrige: a pulseira PST é Wi-Fi e não tem MAC nem gateways. */
 export function deviceTypeFields(deviceType, protocol = "") {
     const fields = DEVICE_TYPES[normalizeDeviceType(deviceType)];
@@ -82,10 +78,7 @@ export function licenseDisplayLabel(
     return name !== "" ? `${name} (${normalized})` : normalized;
 }
 
-/**
- * O protocolo de um aparelho, pelo fornecedor e pelo modelo: a mesma marca vende TCP e BLE.
- * Sem modelo vale o primeiro do fornecedor.
- */
+/** O protocolo pelo fornecedor e pelo modelo, porque a mesma marca vende TCP e BLE; sem modelo, o primeiro. */
 export function supplierProtocol(supplier, models = [], model = "") {
     const ofSupplier = (models || []).filter(
         (entry) => entry.supplier === supplier && entry.protocol,
@@ -145,10 +138,7 @@ export function modelDisplayName(supplier, model, models = []) {
     return info ? modelCommercialName(info) : model;
 }
 
-/**
- * O fornecedor à frente do nome comercial, sem o dizer duas vezes quando o nome já o traz.
- * Basta comparar o início: nenhum fornecedor é prefixo de outro.
- */
+/** O fornecedor à frente do nome comercial, sem o dizer duas vezes quando o nome já o traz. */
 export function supplierModelLabel(supplier, commercial) {
     const brand = String(supplier || "");
     const name = String(commercial || "");
@@ -167,26 +157,6 @@ export function modelsForSupplierAndType(
 ) {
     return modelsForSupplier(supplier, models).filter(
         (model) => modelDeviceType(model) === normalizeDeviceType(deviceType),
-    );
-}
-
-export function deriveFourPTouchDeviceId(imei) {
-    const digits = String(imei || "").replace(/\D+/g, "");
-    if (digits.length === 15) return digits.slice(4, 14);
-    if (digits.length === 10) return digits;
-    if (digits.length > 10) return digits.slice(-10);
-    return digits;
-}
-
-export function isFourPTouchSelection(
-    supplier = "",
-    model = "",
-    models = [],
-) {
-    return (
-        supplierProtocol(supplier, models) === "four-p-touch" ||
-        supplier === "4P Touch" ||
-        model === "4P Touch"
     );
 }
 

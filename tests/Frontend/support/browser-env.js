@@ -3,10 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import { JSDOM } from "jsdom";
 
-/**
- * Instala um DOM antes de qualquer módulo do dashboard ser importado: alguns tocam em `window`
- * ao carregar, e os módulos ES avaliam as dependências por ordem de import.
- */
+/** O DOM, instalado pelo `--import` antes de qualquer módulo: alguns tocam em `window` ao carregar. */
 const dom = new JSDOM("<!doctype html><body></body>", { url: "http://localhost/" });
 
 // O descritor dos tipos que o `index.php` serve em produção, lido do mesmo ficheiro que o PHP

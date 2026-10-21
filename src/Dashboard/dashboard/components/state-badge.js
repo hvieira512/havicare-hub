@@ -1,22 +1,15 @@
 import { html, raw } from "../html.js";
 
-/**
- * A pastilha de estado da plataforma: o ponto, o rótulo e um tom, só com classes do Bootstrap.
- * A altura de linha é fixada para caber numa célula do AG Grid; o rótulo diz sempre o estado.
- */
+/** A pastilha de estado: o ponto, o rótulo e um tom do Bootstrap. O rótulo diz sempre o estado. */
 const TONES = ["primary", "secondary", "success", "warning", "danger", "info"];
 
-/**
- * O `state-badge` é só o gancho para o layout de cada ecrã. Os três utilitários no fim põem o
- * `badge` cru no peso, na altura e no enchimento da pastilha da plataforma.
- */
+/** O `state-badge` é o gancho do layout; os utilitários dão ao `badge` o peso e a medida da pastilha. */
 const BASE =
     "state-badge badge rounded-pill d-inline-flex align-items-center gap-1 text-uppercase fw-semibold lh-sm px-2";
 
-/** Um tom que o Bootstrap não tem geraria uma classe que não existe, e a pastilha ficava nua. */
 const toneOf = (tone) => (TONES.includes(tone) ? tone : "secondary");
 
-/** Um estado neutro leva o cinzento suave do corpo, e não a ênfase do secundário, quase preta. */
+/** Um estado neutro leva o cinzento suave do corpo, e não o secundário, quase preto. */
 const textOf = (name) =>
     name === "secondary" ? "text-body-secondary" : `text-${name}-emphasis`;
 
@@ -30,8 +23,7 @@ export function stateBadge(label, tone = "secondary", options = "") {
     const classes = [BASE, `bg-${name}-subtle`, textOf(name), extraClass]
         .filter(Boolean)
         .join(" ");
-    // O ícone ocupa o lugar do ponto: são duas marcas para o mesmo sítio. Ambas são
-    // decoração -- quem lê o estado lê o rótulo --, e por isso saem do alcance do leitor.
+    // O ícone ocupa o lugar do ponto; ambos são decoração, e o leitor de ecrã lê o rótulo.
     const mark = icon
         ? html`<i class="fa-solid ${icon}" aria-hidden="true"></i>`
         : "<span class=\"state-badge-dot rounded-circle d-inline-block\" aria-hidden=\"true\"></span>";
@@ -39,7 +31,6 @@ export function stateBadge(label, tone = "secondary", options = "") {
     return html`<span class="${classes}">${raw(mark)}${label}</span>`;
 }
 
-/** Ligado ou desligado: a mesma expressão em três ecrãs, com um parâmetro só. */
 export function onlineBadge(online, options = "") {
     return stateBadge(
         online ? "Ligado" : "Desligado",

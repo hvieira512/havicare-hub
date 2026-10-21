@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import {
     readConfigPayload,
     renderConfigInputs,
@@ -22,11 +21,7 @@ const WEEKDAYS = [
 const renderAndRead = (entry, desired, meta = {}) =>
     readConfigPayload(configSection(renderConfigInputs, entry, desired, meta));
 
-/* ---------- o construtor partilhado: Vivistar e Wonlex ---------- */
-
 const SHARED_ENTRY = { input: "alarm_clock", key: "alarm_clock" };
-
-/* ---------- o 4P Touch: lembrete de comprimidos ---------- */
 
 /*
  * A posição do dia na máscara nativa prende-se no contrato; aqui prende-se a ida e volta ao
@@ -36,7 +31,7 @@ const SHARED_ENTRY = { input: "alarm_clock", key: "alarm_clock" };
 const TAKE_PILLS_ENTRY = { input: "takePills", key: "take_pills" };
 
 for (const { day, name } of WEEKDAYS) {
-    test(`take_pills escreve a ${name} na posição certa da máscara`, () => {
+    test(`take_pills writes ${name} at the right position of the mask`, () => {
         const payload = renderAndRead(
             TAKE_PILLS_ENTRY,
             {
@@ -52,9 +47,7 @@ for (const { day, name } of WEEKDAYS) {
     });
 }
 
-/* ---------- a semana toda, e o dia que ninguém escolheu ---------- */
-
-test("os sete dias marcados de uma vez ficam todos na recorrência", () => {
+test("all seven days ticked at once all end up in the recurrence", () => {
     const alarms = renderAndRead(
         SHARED_ENTRY,
         { items: [{ time: "08:30", enabled: true, recurrence: { kind: "custom", days: [1, 2, 3, 4, 5, 6, 7] } }] },
@@ -64,7 +57,7 @@ test("os sete dias marcados de uma vez ficam todos na recorrência", () => {
     assert.deepEqual(alarms.items[0].recurrence.days, [1, 2, 3, 4, 5, 6, 7]);
 });
 
-test("nenhum dia marcado numa recorrência personalizada é recusado, não gravado a zeros", () => {
+test("a custom recurrence with no day ticked is refused, not saved as zeros", () => {
     assert.throws(
         () => renderAndRead(
             SHARED_ENTRY,

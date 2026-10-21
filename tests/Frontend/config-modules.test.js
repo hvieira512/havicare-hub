@@ -1,15 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { parseFragment } from "./support/dom.js";
+import { asText, parseFragment } from "./support/dom.js";
 import {
     takePillsInput as buildTakePillsInput,
     takePillsReminderGroup as buildTakePillsReminderGroup,
 } from "../../src/Dashboard/dashboard/devices/config/four-p-touch-take-pills.js";
 
-// Os construtores devolvem um fragmento de marcação; as assertivas de texto querem texto.
-const takePillsInput = (...args) => String(buildTakePillsInput(...args));
-const takePillsReminderGroup = (...args) => String(buildTakePillsReminderGroup(...args));
+const takePillsInput = asText(buildTakePillsInput);
+const takePillsReminderGroup = asText(buildTakePillsReminderGroup);
 
 test("4P Touch medication UI escapes values and respects the reminder limit", () => {
     const html = takePillsInput({
@@ -26,7 +25,7 @@ test("4P Touch medication UI escapes values and respects the reminder limit", ()
 });
 
 /** A máscara `0111110` tem o domingo na posição 0: são segunda a sexta. */
-test("4P Touch custom-frequency reminder marca os dias da máscara, e não a máscara", () => {
+test("4P Touch custom-frequency reminder ticks the days of the mask, not the mask", () => {
     const html = takePillsReminderGroup(
         { time: "09:30", enabled: true, frequency: 3, custom: "0111110" },
         0,

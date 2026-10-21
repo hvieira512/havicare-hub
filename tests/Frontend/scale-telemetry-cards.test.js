@@ -1,12 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { cardContent as uplinkCardContent } from "./support/cards.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 
-test("a pesagem diz de quem é, pelo nome da lista da balança, e se veio da memória", () => {
+test("a weighing says whose it is, by the scale's list name, and whether it came from memory", () => {
     state.selectedDetail = {
         device: { imei: "cfe908067329" },
         configurations: { scale_users: { items: [{ id: "u-0a1b2c3d", name: "Hugo" }] } },

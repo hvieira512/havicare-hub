@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
-import "./support/browser-env.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { parseFragment } from "./support/dom.js";
@@ -35,7 +33,7 @@ const renderConfigStrip = () => parseFragment(renderDeviceConfigurationRoot({
     ],
 }));
 
-test("a lista de secções do painel de configuração diz o mesmo que a tira", () => {
+test("the settings panel section list says the same as the strip", () => {
     const links = renderConfigStrip().querySelectorAll("[data-config-section-link]");
 
     assert.ok(links.length >= 2);

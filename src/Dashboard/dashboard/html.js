@@ -1,18 +1,11 @@
 import { esc } from "./format.js";
 
-/**
- * O `html` escapa cada interpolação e devolve um `Fragment`, que passa intacto noutro `html`;
- * o resto sai escapado, porque chega pelo MQTT e pelo TCP sem passar por ninguém.
- */
+/** O `html` escapa cada interpolação e devolve um `Fragment`, que passa intacto noutro `html`. */
 
 /** Marcação em que se confia, e que por isso não volta a ser escapada. */
 class Fragment extends String {}
 
-/** Marcação construída aqui mesmo. */
 export const raw = (value) => new Fragment(String(value ?? ""));
-
-/** Marcação que veio de fora da função. É o `raw`, e o nome separa as fronteiras a rever. */
-export const trusted = raw;
 
 /** Um fragmento passa intacto, uma lista junta-se sem separador, e o resto sai escapado. */
 const render = (value) => {

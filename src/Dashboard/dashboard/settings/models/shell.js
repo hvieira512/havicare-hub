@@ -1,9 +1,4 @@
-import { state } from "../../state.js";
-
-/**
- * O contexto e a navegação do separador do catálogo: os três slides do carrossel -- a lista, o
- * formulário e a ficha -- num módulo que não importa nenhum deles.
- */
+/** O contexto e a navegação do catálogo: a lista, o formulário e a ficha. */
 let els;
 let ui;
 
@@ -16,17 +11,13 @@ export function getSettingsModelsRuntime() {
     return { els, ui };
 }
 
-/**
- * O carrossel dos três slides, criado à primeira vez que alguém precisa dele: preguiçoso e
- * não preso ao `shown.bs.tab`, que não dispara no separador de entrada.
- */
-export function modelsCarousel() {
-    if (!state.settingsModal.modelsCarousel && els?.modelsCarousel) {
-        state.settingsModal.modelsCarousel = new bootstrap.Carousel(
-            els.modelsCarousel,
-            { interval: false, wrap: false, touch: false },
-        );
-    }
+/** Mostra um dos painéis: 0 a lista, 1 o modelo novo, 2 a ficha. */
+export function showModelsPane(index) {
+    [...els.modelsPanes.children].forEach((pane, at) => {
+        pane.hidden = at !== index;
+    });
+}
 
-    return state.settingsModal.modelsCarousel;
+export function isModelListShown() {
+    return !els.modelsPanes.firstElementChild.hidden;
 }

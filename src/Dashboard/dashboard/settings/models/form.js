@@ -26,12 +26,8 @@ import {
     showNewModelSlide,
 } from "./list.js";
 
-/**
- * O modelo novo: o assistente dos dispositivos com três passos. Nasce com o template de
- * capacidades do fornecedor para o tipo, e por isso trocar um ou outro volta a buscá-lo.
- */
+/** O modelo novo, em três passos; nasce com o template de capacidades do fornecedor para o tipo. */
 
-/** Um passo por pergunta: é o que o contador, a barra e a migalha contam todos igual. */
 const STEPS = ["Tipo", "Fornecedor", "Informações"];
 
 const QUESTIONS = [
@@ -73,11 +69,9 @@ const questionOfStep = (step) => QUESTIONS.find((question) => question.step === 
 
 const wizard = createWizard({ questions: QUESTIONS, steps: STEPS });
 
-// A imagem escolhida. Fora das respostas porque o `<input type="file">` é redesenhado a
-// cada passo e não se lhe pode devolver o ficheiro.
+// A imagem escolhida fica fora das respostas: o `<input type="file">` é redesenhado a cada passo.
 let chosenImage = null;
 
-/** Os fornecedores que servem este tipo de dispositivo. */
 function suppliersForDeviceType(deviceType) {
     const group = (state.settingsModal.modelFilters || []).find(
         (entry) =>
@@ -86,8 +80,6 @@ function suppliersForDeviceType(deviceType) {
     );
     return group?.suppliers || [];
 }
-
-/* ---------- desenho ---------- */
 
 function render() {
     const { els } = getSettingsModelsRuntime();
@@ -120,7 +112,6 @@ function renderStep(step, answers) {
     return renderInfo(answers);
 }
 
-/** Quantos modelos deste tipo já existem: o mesmo subtítulo do assistente dos dispositivos. */
 function modelCountFor(deviceType) {
     return (state.settingsModal.modelCatalog || [])
         .filter(
@@ -193,8 +184,6 @@ function renderFooter() {
         : !wizard.canAdvance();
 }
 
-/* ---------- interacção ---------- */
-
 function handleModelWizardClick(event) {
     const deviceType = event.target.closest("[data-model-type]");
     if (deviceType) {
@@ -247,7 +236,6 @@ function modelWizardBack() {
     render();
 }
 
-/** O botão do rodapé: avançar nos dois primeiros passos, gravar no último. */
 function handleModelWizardSave() {
     if (!wizard.isLastStep()) {
         wizard.advance();
@@ -257,12 +245,7 @@ function handleModelWizardSave() {
     void saveModel();
 }
 
-/* ---------- o template do fornecedor ---------- */
-
-/**
- * As capacidades predefinidas do fornecedor para este tipo: é o que o modelo herda ao
- * nascer, e o número que o último passo anuncia.
- */
+/** As capacidades predefinidas do fornecedor para o tipo: o que o modelo herda ao nascer. */
 async function refreshTemplate() {
     const { els } = getSettingsModelsRuntime();
     const { deviceType, supplier } = wizard.answers();
@@ -288,14 +271,10 @@ async function refreshTemplate() {
         ? response.enabledCapabilities.map(String)
         : [];
     state.modelModal.enabledCapabilities = capabilities;
-    state.modelModal.templateSupplier = String(response.supplier || supplier.name);
-    state.modelModal.templateDeviceType = String(response.deviceType || deviceType);
     state.modelModal.templateSummary =
-        `${capabilities.length} capacidades predefinidas para ${state.modelModal.templateSupplier} (${deviceTypeLabel(deviceType)}).`;
+        `${capabilities.length} capacidades predefinidas para ${response.supplier || supplier.name} (${deviceTypeLabel(deviceType)}).`;
     els.modelWizardTemplateSummary.textContent = state.modelModal.templateSummary;
 }
-
-/* ---------- abrir e gravar ---------- */
 
 function resetModelWizard() {
     setModelPreviewObjectUrl();
@@ -337,8 +316,7 @@ async function saveModel() {
         return;
     }
 
-    // Um modelo novo entra na árvore e pode trazer um par fornecedor×tipo que ainda não
-    // existia: as três listas em memória deixam de valer.
+    // Um modelo novo pode trazer um par fornecedor×tipo novo: as listas em memória deixam de valer.
     state.settingsModal.sectionLoaded.models = false;
     state.settingsModal.sectionLoaded.modelFilters = false;
     invalidateDeviceTypeSuppliersModels();

@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
-import "./support/browser-env.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
 import { renderDeviceConfigurationRoot } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { parseFragment } from "./support/dom.js";
@@ -22,7 +20,7 @@ test.afterEach(() => {
     state.protocols = [];
 });
 
-test("uma capacidade de telemetria pedível aparece em Sistema", () => {
+test("a requestable telemetry capability appears under Sistema", () => {
     const root = render({
         protocol: "zayata-m228",
         catalog: [{
@@ -54,7 +52,7 @@ test("uma capacidade de telemetria pedível aparece em Sistema", () => {
     );
 });
 
-test("uma capacidade de telemetria que não se pede continua fora do painel", () => {
+test("a telemetry capability that cannot be requested stays out of the panel", () => {
     const root = render({
         protocol: "zayata-m228",
         catalog: [{

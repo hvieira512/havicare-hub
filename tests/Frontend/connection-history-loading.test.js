@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { setSelectedDetail, state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initDeviceDetailView, renderSelection } = await import(
@@ -12,12 +11,7 @@ const { initDeviceDetailView, renderSelection } = await import(
 
 function detailEls() {
     const tags = { telemetryColumnTab: "button", detailFilterType: "select" };
-    return new Proxy({}, {
-        get: (cache, id) => {
-            cache[id] ??= document.createElement(tags[id] || "div");
-            return cache[id];
-        },
-    });
+    return autoEls((name) => tags[name] || "div");
 }
 
 const detail = () => ({
@@ -32,7 +26,7 @@ function connectionSection(els) {
     return section;
 }
 
-test("enquanto o histórico não chega, a secção das ligações não diz «sem registo»", () => {
+test("while the history has not arrived, the connections section does not say «sem registo»", () => {
     const els = detailEls();
     const section = connectionSection(els);
     initDeviceDetailView({ els });
@@ -43,14 +37,15 @@ test("enquanto o histórico não chega, a secção das ligações não diz «sem
 
     state.selectedDetail.recent = {
         telemetry: [],
-        events: [{ payload: { type: "device.connected", occurredAt: new Date().toISOString() } }],
+        events: [],
+        connections: [{ type: "device.connected", occurredAt: new Date().toISOString() }],
         commands: [],
     };
     renderSelection();
     assert.equal(section.classList.contains("d-none"), false);
 });
 
-test("a faixa lê as ligações da lista própria, e ainda as antigas que ficaram nos eventos", () => {
+test("the band reads the connections from their own list", () => {
     const els = detailEls();
     const section = connectionSection(els);
     initDeviceDetailView({ els });
@@ -59,7 +54,7 @@ test("a faixa lê as ligações da lista própria, e ainda as antigas que ficara
 
     state.selectedDetail.recent = {
         telemetry: [],
-        events: [{ payload: { type: "device.connected", occurredAt: at(5) } }],
+        events: [],
         connections: [
             { type: "device.connected", occurredAt: at(1) },
             { type: "device.disconnected", occurredAt: at(2) },
@@ -72,7 +67,7 @@ test("a faixa lê as ligações da lista própria, e ainda as antigas que ficara
     assert.equal(els.connectionHistory.querySelectorAll(".connection-band-gap").length, 1);
 });
 
-test("um aparelho calado desde antes de haver histórico mostra a quebra desde a última vez que falou", () => {
+test("a device silent since before the history shows the gap since it last spoke", () => {
     const els = detailEls();
     const section = connectionSection(els);
     initDeviceDetailView({ els });
@@ -87,7 +82,7 @@ test("um aparelho calado desde antes de haver histórico mostra a quebra desde a
     assert.match(els.connectionHistory.textContent, /0 %/);
 });
 
-test("um aparelho desligado cujo último registo é «ligado» acaba a faixa em quebra desde que se calou", () => {
+test("an offline device whose last record is «connected» ends the band in a gap since it went silent", () => {
     const els = detailEls();
     connectionSection(els);
     initDeviceDetailView({ els });

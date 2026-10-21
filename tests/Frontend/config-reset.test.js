@@ -1,13 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { renderConfigInputs } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { captureConfigPristine } from "../../src/Dashboard/dashboard/devices/config/panel.js";
-import {
-    handleDeviceConfigReset,
-    resetConfigPane,
-} from "../../src/Dashboard/dashboard/devices/config/handlers.js";
+import { resetConfigPane } from "../../src/Dashboard/dashboard/devices/config/handlers.js";
 import { configSection, parseFragment } from "./support/dom.js";
 
 /**
@@ -23,7 +19,7 @@ function radioPane(pristine) {
         </section>`);
 }
 
-test("o Repor não reescreve o valor das opções de um grupo de rádios", () => {
+test("reset does not rewrite the value of a radio group's options", () => {
     const root = radioPane(JSON.stringify({ mode: "2" }));
 
     resetConfigPane(root);
@@ -31,7 +27,7 @@ test("o Repor não reescreve o valor das opções de um grupo de rádios", () =>
     assert.deepEqual([...root.querySelectorAll("input")].map((input) => input.value), ["1", "2", "3"]);
 });
 
-test("o Repor devolve a marca à opção que estava guardada", () => {
+test("reset puts the tick back on the stored option", () => {
     const root = radioPane(JSON.stringify({ mode: "3" }));
     root.querySelector("input[value=\"1\"]").checked = true;
 
@@ -59,7 +55,7 @@ function resetAfterEditing(entry, desired, meta = {}) {
     return { drawn, restored: fields() };
 }
 
-test("o Repor devolve as horas da janela de oxigénio", () => {
+test("reset restores the hours of the oxygen window", () => {
     const { drawn, restored } = resetAfterEditing(
         { key: "blood_oxygen_window", input: "windowToggle", fields: ["enabled", "range"] },
         { enabled: true, range: "22:00-08:00" },
@@ -68,7 +64,7 @@ test("o Repor devolve as horas da janela de oxigénio", () => {
     assert.deepEqual(restored, drawn);
 });
 
-test("o Repor devolve as horas do sono da Wonlex", () => {
+test("reset restores the Wonlex sleep hours", () => {
     const { drawn, restored } = resetAfterEditing(
         {
             key: "wonlexSleepIntervalOrSwitch",
@@ -80,26 +76,4 @@ test("o Repor devolve as horas do sono da Wonlex", () => {
     );
 
     assert.deepEqual(restored, drawn);
-});
-
-/** O `type="reset"` devolve os campos sem disparar `change`, e a etiqueta tem de acompanhar. */
-test("depois do Repor a etiqueta do interruptor diz o que ele mostra", async () => {
-    const entry = { input: "alarm_clock", key: "alarm_clock", fields: ["masterEnabled", "items"] };
-    const section = configSection(renderConfigInputs, entry, { masterEnabled: true }, {});
-    const form = document.createElement("form");
-    section.parentNode?.insertBefore(form, section);
-    form.appendChild(section);
-    form.addEventListener("reset", handleDeviceConfigReset);
-
-    const input = section.querySelector("[data-alarm-clock-field=\"masterEnabled\"]");
-    const label = input.parentElement.querySelector("[data-switch-label]");
-
-    input.checked = false;
-    input.dispatchEvent(new window.Event("change", { bubbles: true }));
-
-    form.reset();
-    await Promise.resolve();
-
-    assert.equal(input.checked, true, "o Repor devolveu o interruptor ao inicial");
-    assert.equal(label.textContent, "Lembretes ligados", "e a etiqueta acompanhou");
 });

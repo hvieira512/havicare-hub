@@ -6,10 +6,7 @@ import {
     licensePickerHtml,
 } from "./classification-ui.js";
 
-/**
- * A classificação no modal de edição, sem o motor do `wizard.js`: a verdade vive nos elementos
- * do formulário, de onde o `saveDevice` a lê, e uma segunda cópia podia discordar.
- */
+/** A classificação no modal de edição: a verdade vive nos elementos do formulário. */
 
 const TRAIL_QUESTIONS = [
     { key: "type", label: "Tipo" },
@@ -32,20 +29,14 @@ export function initEditWizard(context) {
     els.deviceNextBtn?.addEventListener("click", () => goToStep(2));
 }
 
-/**
- * Prepara o modal para um dispositivo. Abre no passo 2 e não no 1: o que se costuma vir
- * alterar é o número de série, o SIM ou os gateways, e a classificação já está feita.
- */
+/** Abre no passo 2: o que se vem alterar é a identidade, o SIM ou os gateways. */
 export function resetEditWizard(groups) {
     licenseGroups = groups;
     step = 2;
     openQuestion = null;
 }
 
-/**
- * Uma resposta dada no passo 1. Escolher o tipo leva ao modelo, porque o modelo anterior
- * não existe no tipo novo e o que fica escolhido é um palpite. As outras fecham o passo.
- */
+/** Escolher o tipo leva ao modelo, que o anterior não existe no tipo novo; as outras fecham. */
 export function editWizardAnswered(key) {
     openQuestion = key === "type" ? "model" : null;
     step = openQuestion === null ? 2 : 1;
@@ -85,7 +76,6 @@ function handleLicenseClick(event) {
     editWizardAnswered("owner");
 }
 
-/** As respostas, lidas dos elementos do formulário -- que é onde elas vivem. */
 function answerValues() {
     return {
         type: deviceTypeLabel(els.deviceForm.dataset.deviceType || "watch"),
@@ -102,8 +92,7 @@ function answerValues() {
 
 function renderTrail() {
     const values = answerValues();
-    // Enquanto o dispositivo não chegou, o formulário tem o que lá estava por omissão, que
-    // é a classificação de outro aparelho: sem badges, a trilha diz o que se sabe -- nada.
+    // Até o dispositivo chegar, o formulário tem a classificação de outro aparelho.
     const known = !state.deviceModal.loading;
 
     const shape = { questions: TRAIL_QUESTIONS, values, openKey: openQuestion || "", known };
@@ -138,10 +127,7 @@ function renderFooter() {
     els.deviceNextBtn.classList.toggle("d-none", step !== 1);
 }
 
-/**
- * O `Guardar` está sempre à vista, e guardar com uma pergunta aberta fecha-a primeiro, para a
- * validação não marcar campos escondidos.
- */
+/** Guardar com uma pergunta aberta fecha-a primeiro, para a validação não marcar escondidos. */
 export function showDeviceFields() {
     if (step === 2) return;
     goToStep(2);

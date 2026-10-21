@@ -1,7 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initSettingsModels } = await import(
@@ -50,13 +49,7 @@ const MODEL = {
 let els;
 
 beforeEach(() => {
-    els = new Proxy({}, {
-        get(target, name) {
-            if (typeof name !== "string") return undefined;
-            if (!(name in target)) target[name] = document.createElement("div");
-            return target[name];
-        },
-    });
+    els = autoEls();
     initSettingsModels({ els, ui: {} });
     state.settingsModal.currentCapabilitiesModel = MODEL;
     state.settingsModal.capabilityCatalog = CATALOG;
@@ -67,7 +60,7 @@ beforeEach(() => {
     renderCapabilitiesSection();
 });
 
-test("o cabeçalho diz o que são as capacidades do template que não se ligam aqui", () => {
+test("the header explains the template capabilities that are not toggled here", () => {
     assert.equal(
         els.capabilitySubtitle.textContent,
         "4P Touch — 5 capacidades no template: 3 ligam-se aqui e 2 são ações, que só se pedem ao aparelho.",
@@ -75,7 +68,7 @@ test("o cabeçalho diz o que são as capacidades do template que não se ligam a
     assert.equal(els.capabilitySummary.textContent, "3/3 ativos");
 });
 
-test("o que o protocolo suporta sobe uma vez para o cabeçalho da secção", () => {
+test("what the protocol supports moves up once to the section header", () => {
     const header = els.capabilityGroups.querySelector("[data-section-note]");
     assert.ok(header, "a secção não explica o protocolo");
     assert.equal(

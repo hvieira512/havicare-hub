@@ -20,23 +20,15 @@ import {
 } from "./radar.js";
 import { capabilityLabel } from "../../capability-catalog.js";
 
-/** Os cartões de telemetria. As peças genéricas de interface estão em `components/`. */
-
-/**
- * O ícone e a cor de cada capacidade: `[ícone, tom]`. O nome vem do catálogo, pelo
- * `capabilityLabel`; o tom fica aqui porque uma cor é escolha de apresentação.
- */
+/** O ícone e o tom de cada capacidade: `[ícone, tom]`. */
 const CARD_STYLE = {
-    positions: ["fa-location-crosshairs", "info"],
-    vitals: ["fa-heart-pulse", "success"],
+
     position_minute_stats: ["fa-chart-column", "secondary"],
     vitals_minute_stats: ["fa-chart-line", "secondary"],
     heart_rate: ["fa-heart-pulse", "danger"],
     blood_pressure: ["fa-stethoscope", "danger"],
     blood_oxygen: ["fa-droplet", "info"],
     blood_sugar: ["fa-vial", "warning"],
-    // Os outros dois analitos do sangue ficam na família do açúcar: o mesmo tom, e um frasco
-    // para cada um em vez do genérico.
     uric_acid: ["fa-flask", "warning"],
     blood_lipids: ["fa-vials", "warning"],
     temperature: ["fa-temperature-half", "warning"],
@@ -50,18 +42,13 @@ const CARD_STYLE = {
     steps: ["fa-shoe-prints", "primary"],
     wear_state: ["fa-hand-sparkles", "primary"],
     body_composition: ["fa-weight-scale", "primary"],
-    // Um índice e um gasto metabólico são medidas de bem-estar e não gravidades: ficam no
-    // azul da casa, como a atividade e o sono, e não no vermelho nem no âmbar.
     stress: ["fa-face-grimace", "primary"],
-    // `fa-fire` e não `fa-fire-flame-simple`: a chama simples é uma gota, e o mosaico do MET
-    // fica ao lado do oxigénio no sangue, que já é uma gota.
     met: ["fa-fire", "primary"],
     location: ["fa-location-dot", "success"],
     sleep: ["fa-bed", "primary"],
     sleep_state: ["fa-bed", "primary"],
     sleep_quality: ["fa-bed", "primary"],
     sleep_apnea: ["fa-bed-pulse", "warning"],
-    // A versão de firmware é ficha técnica e não uma leitura: fica no cinzento do sistema.
     firmware_version: ["fa-microchip", "secondary"],
     tilt: ["fa-ruler-combined", "secondary"],
     proximity: ["fa-tower-broadcast", "info"],
@@ -75,7 +62,6 @@ const CARD_STYLE = {
     "device.connected": ["fa-plug-circle-check", "success"],
     "device.disconnected": ["fa-plug-circle-xmark", "danger"],
     help_call: ["fa-triangle-exclamation", "danger"],
-    // Eventos e não leituras, mas o tom sai daqui como o de todos os outros.
     fall: ["fa-person-falling", "danger"],
     heart_rate_high: ["fa-heart-circle-exclamation", "danger"],
     heart_rate_low: ["fa-heart-circle-minus", "danger"],
@@ -125,15 +111,11 @@ const WEIGHING_PHASE = {
     heartRate: { measuring: "A medir a FC", measured: "FC medida", failed: "FC falhou" },
 };
 
-/** O ícone de uma capacidade. Sem entrada na tabela, o genérico. */
 export function cardIcon(type) {
     return CARD_STYLE[type]?.[0] || "fa-circle-info";
 }
 
-/**
- * O tamanho do lote, que é o que há a dizer de uma onda sem escalar nenhum. O `sampleCount`
- * vem primeiro: o `VeepooBridge::forDashboard()` troca as amostras por ele antes de guardar.
- */
+/** O tamanho do lote; o `sampleCount` primeiro, porque o `VeepooBridge` troca as amostras por ele. */
 function sampleTotal(data) {
     return Number.isFinite(data?.sampleCount)
         ? data.sampleCount
@@ -147,36 +129,23 @@ function sampleCount(data) {
 }
 
 /**
- * O que um renderizador pode devolver. Tudo é opcional menos o `value`, e o que não vier tem
- * omissão: o ícone sai do `CARD_STYLE`, o `rowValue` cai no `value`, o `span` em 6.
- *
- * @typedef {object} CardContent
- * @property {string} value          o valor principal, no cartão e na linha
- * @property {string} [rowValue]     o que a linha da lista mostra, quando não cabe o `value`
- * @property {string} [icon]         só quando a leitura o escolhe -- um gateway com fios
- * @property {string} [details]      a segunda linha, em texto ou em pastilhas
- * @property {"text"|"chips"} [detailsKind]
- * @property {string} [detailsTitle] o texto inteiro, para o `title` do que se corta
- * @property {number} [span]         colunas do mosaico; 12 pede a linha toda
- * @property {string} [body]         marcação própria por baixo do valor, para quem pede 12
+ * O que um renderizador devolve: o `value`, e opcionais `rowValue`, `icon`, `details`,
+ * `detailsKind` ("text"|"chips"), `detailsTitle`, `span` (12 pede a linha toda) e `body`.
  */
 
-/** @type {Record<string, (data: object, meta?: object) => CardContent>} */
 const UPLINK_CARD_RENDERERS = {
     // O radar manda as mesmas chaves e formas que um relógio e usa os cartões dele.
     presence: (data) => ({
         value: presenceValue(data),
         details: presenceDetails(data),
-        // A única que devolve pastilhas em vez de texto: o texto corta-se com reticências, e
-        // estas já vêm limitadas pelo `PRESENCE_CHIP_LIMIT`.
+        // A única com pastilhas, que já vêm limitadas pelo `PRESENCE_CHIP_LIMIT`.
         detailsKind: "chips",
         detailsTitle: presenceDetailsTitle(data),
     }),
     sleep_state: (data) => ({
         value: fieldValue("sleep_state", data?.state),
     }),
-    // Um cartão próprio para não cair no genérico: os relógios mandam texto livre, e o
-    // dispensador dois bytes que saem em hexadecimal.
+    // Os relógios mandam texto livre, e o dispensador dois bytes.
     firmware_version: (data) => ({
         value: String(data?.version ?? "").trim() || "—",
         details: compactDetails(data, ["communicationVersion"]),
@@ -265,18 +234,15 @@ const UPLINK_CARD_RENDERERS = {
             detailsTitle: [runout && `Acaba ${runout}`, inCycle, cell, level].filter(Boolean).join(" · "),
         };
     },
-    // O que interessa numa toma é como ela acabou, e numa avaria é qual foi.
     medication_intake: (data) => ({
         value: fieldValue("result", data.result),
     }),
     medication_alarm_status: (data) => medicationAlarmContent(data),
-    // A mudança de uma dose: um acontecimento, e por isso lê-se numa linha. A hora identifica
-    // a dose melhor do que o número do alarme, que é vocabulário do aparelho e não do dia.
+    // A hora identifica a dose melhor do que o número do alarme, que é vocabulário do aparelho.
     medication_alarm_change: (data) => ({
         value: `${doseLabel(data?.alarm)}: ${fieldValue("state", data?.state)}`,
     }),
     device_config: (data) => deviceConfigContent(data),
-    // Um alerta e não uma leitura: o valor diz o que aconteceu, e não leva legenda fixa.
     storage_environment: () => ({
         value: "Temperatura ou humidade fora da gama",
     }),
@@ -416,8 +382,6 @@ const UPLINK_CARD_RENDERERS = {
         value: sleepValue(data),
         details: sleepDetails(data),
     }),
-    // As pontuações são um juízo sobre a noite: o cartão mostra a nota, e a gaveta como ela
-    // se decompõe.
     sleep_quality: (data) => ({
         value: sleepQualityValue(data),
         details: compactDetails(data, [
@@ -443,24 +407,19 @@ const UPLINK_CARD_RENDERERS = {
             ["qtcMilliseconds", "hrvMilliseconds", "frequencyHz", "sampleCount"],
         ),
     }),
-    // A VFC é um escalar em milissegundos e não uma série: mostra-se o número.
     hrv: (data) => ({
         value:
             data?.milliseconds != null
                 ? `${data.milliseconds} ms`
                 : capabilityLabel("hrv"),
     }),
-    // Um escalar, ao contrário do sono, do ECG e da PPG, que são séries e se anunciam.
     breath_rate: (data) => ({
         value: `${data.breathsPerMinute ?? "-"} rpm`,
     }),
-    // Uma onda sem escalar nenhum: o que se pode dizer dela é o tamanho do lote.
     ppg: (data) => ({
         value: sampleCount(data),
         details: compactDetails(data, ["frequencyHz"]),
     }),
-    // Chegam em lote: o que cabe no cartão é quantos são e a média, que é o inverso da
-    // frequência cardíaca e portanto o número que denuncia uma leitura absurda.
     rr_interval: (data) => ({
         value: rrIntervalValue(data),
     }),
@@ -483,10 +442,7 @@ const BATTERY_STATE_LABEL = {
     absent: "Sem bateria",
 };
 
-/**
- * `meta` é o que se sabe sobre a leitura e não está dentro dela: por agora, quando chegou. O
- * ícone vem da tabela, e o renderizador só o escreve quando é diferente.
- */
+/** `meta` é o que se sabe da leitura fora dela, como quando chegou. */
 export function uplinkCardContent(type, data, meta = {}) {
     const rendered = UPLINK_CARD_RENDERERS[type]?.(data, meta) || {
         value: capabilityLabel(type),
@@ -496,10 +452,7 @@ export function uplinkCardContent(type, data, meta = {}) {
     return { icon: cardIcon(type), ...rendered };
 }
 
-/**
- * O valor reportado de uma configuração: o `device_config` traz um mapa da definição para o
- * que o aparelho diz ter lá dentro.
- */
+/** O `device_config` traz um mapa da definição para o que o aparelho diz ter lá dentro. */
 function deviceConfigContent(data) {
     const settings = Object.entries(data?.settings ?? {});
 
@@ -555,10 +508,7 @@ function settingSummary(key, value) {
         .join(" · ");
 }
 
-/**
- * Os intervalos R-R chegam em lote e sem instante próprio: mostra-se a média, cujo inverso é
- * a frequência cardíaca, e um lote absurdo salta à vista.
- */
+/** A média dos intervalos R-R: o inverso é a frequência cardíaca, e um lote absurdo salta à vista. */
 function rrIntervalValue(data) {
     const intervals = (data?.intervals || [])
         .map((entry) => entry?.milliseconds)
@@ -585,7 +535,6 @@ function batteryIcon(percent) {
     return "fa-battery-empty";
 }
 
-/** A cor é do estado, e numa bateria o estado é quanto falta para alguém ter de lá ir. */
 function batteryTone({ percent, lowBattery }) {
     if (typeof percent === "number" && percent < 10) return "danger";
     if (lowBattery === true || (typeof percent === "number" && percent < 25)) return "warning";
@@ -595,10 +544,7 @@ function batteryTone({ percent, lowBattery }) {
 /** Os relógios mandam um bit e o dispensador uma enumeração. O `full` já acabou de carregar. */
 const isCharging = (state) => state === 1 || state === "charging";
 
-/**
- * O canto do ícone diz de onde vem a energia: o relâmpago a carregar, a tomada ligado à ficha
- * sem carregar, e nada fora da ficha. O relâmpago manda sobre a tomada.
- */
+/** O canto do ícone: o relâmpago a carregar, a tomada na ficha sem carregar, nada fora dela. */
 function batteryBadge(data) {
     if (isCharging(data.chargingState)) return "fa-bolt";
 
@@ -614,7 +560,6 @@ function batteryDetails(data) {
     return joinMarkup([state]);
 }
 
-/** A cor da categoria, para o ícone. Sem entrada na tabela, o ícone fica neutro. */
 export function cardTone(type) {
     return CARD_STYLE[type]?.[1] || "";
 }

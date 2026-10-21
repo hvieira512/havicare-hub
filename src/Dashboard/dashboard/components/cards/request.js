@@ -5,35 +5,7 @@ import { telemetryCard } from "./shell.js";
 import { cardIcon, cardTone, uplinkCardContent } from "./telemetry.js";
 import { locationCoordinates } from "./location.js";
 
-/**
- * O cartão de pedido (downlink): o que se pede a um dispositivo, com a última leitura da
- * categoria e o estado do comando mais recente. Usa a casca e os renderizadores do uplink.
- */
-
-const COMMAND_FEATURE_RULES = [
-    ["heart", "heart_rate"],
-    ["blood pressure", "blood_pressure"],
-    ["oxygen", "blood_oxygen"],
-    ["bo", "blood_oxygen"],
-    ["temp", "temperature"],
-    ["location", "location"],
-    ["sleep", "sleep"],
-    ["ecg", "ecg"],
-    ["hrv", "hrv"],
-    ["breath", "breath_rate"],
-    ["ppg", "ppg"],
-    ["rr", "rr_interval"],
-];
-
-function commandFeature(command) {
-    if (command.feature) return command.feature;
-    const haystack =
-        `${command.command || ""} ${command.label || ""}`.toLowerCase();
-    for (const [needle, feature] of COMMAND_FEATURE_RULES) {
-        if (haystack.includes(needle)) return feature;
-    }
-    return "device_config";
-}
+/** O cartão de pedido: o que se pede, a última leitura da categoria e o estado do pedido. */
 
 /** Só a localização precisa disto: um relatório sem coordenadas é válido e não diz onde. */
 const USABLE_PAYLOAD = {
@@ -47,10 +19,7 @@ export function requestCardContent(type) {
     };
 }
 
-/**
- * Os estados de um pedido que o mosaico mostra. Sem `acked`, porque a resposta já é o
- * valor, nem `superseded`, porque há um pedido mais recente atrás dele.
- */
+/** Os estados que o mosaico mostra: sem `acked`, que a resposta já é o valor, nem `superseded`. */
 const REQUEST_CARD_STATE = {
     queued: { label: "em fila", tone: "secondary" },
     sent: { label: "enviado", tone: "secondary" },
@@ -80,13 +49,10 @@ export function statusBadge(status) {
     );
 }
 
-/**
- * O estado do pedido mais recente desta categoria. Uma falha só se mostra enquanto for a
- * última palavra: se chegou uma leitura depois dela, o dispositivo respondeu.
- */
+/** O pedido mais recente da categoria; uma falha só conta se não chegou leitura depois dela. */
 function latestRequestState(type, commands, lastTelemetryTime) {
     const latest = commands
-        .filter((command) => commandFeature(command) === type)
+        .filter((command) => command.feature === type)
         .sort((left, right) => commandTime(right) - commandTime(left))[0];
     if (!latest) {
         return null;
@@ -116,15 +82,6 @@ function commandTime(command) {
 }
 
 function requestTelemetryTypes(type) {
-    if (type === "positions") {
-        return ["position"];
-    }
-    if (type === "vitals") {
-        return ["vitals"];
-    }
-    if (type === "position_minute_stats" || type === "vitals_minute_stats") {
-        return [type];
-    }
     // O índice de humidade é uma capacidade à parte, mas não um cartão à parte: o cartão
     // dos canais mostra-o como valor.
     if (type === "diaper_moisture") {
@@ -139,7 +96,7 @@ export function requestCardShell(
     telemetry = [],
     commands = [],
 ) {
-    const type = commandFeature(command);
+    const type = command.feature;
     const card = requestCardContent(type);
     const requestable = command.requestable !== false;
     const telemetryTypes = requestTelemetryTypes(type);
@@ -151,8 +108,7 @@ export function requestCardShell(
         )
         .sort((a, b) => eventTime(b) - eventTime(a));
 
-    // A mais recente que serve: um relatório de localização sem posição apagaria o fixo bom
-    // de dois minutos antes. Sem nenhuma que sirva, fica a última.
+    // A mais recente que serve: um relatório sem posição apagaria o fixo bom de antes.
     const usable = USABLE_PAYLOAD[type];
     const pickOfType = (wanted) => {
         const ofType = payloads.filter(
@@ -163,8 +119,7 @@ export function requestCardShell(
     const lastTelemetry =
         (usable ? payloads.find(usable) : null) ?? payloads[0];
 
-    // A mais recente de CADA tipo, e não das duas em conjunto: a humidade da fralda tem os
-    // canais numa mensagem e o índice noutra, e ficar com uma apagava a outra.
+    // A mais recente de cada tipo: a fralda manda os canais numa mensagem e o índice noutra.
     const lastData = Object.assign(
         {},
         ...telemetryTypes
@@ -178,17 +133,14 @@ export function requestCardShell(
                 occurredAt: lastTelemetry.occurredAt || lastTelemetry.recordedAt,
             })
         : null;
-    // Sem leitura não há valor, e o mosaico não leva etiqueta a dizê-lo: o vazio já se lê como
-    // ausência de leitura.
     const lastValue = lastContent ? lastContent.value : "";
     // Um ícone tirado da leitura vence o estático: um gateway com fios não mostra Wi-Fi.
     const icon = lastContent?.icon || card.icon;
-    // Pela mesma razão o tom: uma bateria quase vazia não se lê no verde de uma cheia.
+    // Pela mesma razão o tom: uma bateria quase vazia não fica no verde de uma cheia.
     const tone = lastContent?.tone || cardTone(type);
     // O título é sempre o nome da categoria: "78%" sozinho não diz 78% de quê.
     const title = capabilityLabel(type) || card.value || type;
     const value = lastValue;
-    // Um cartão pode pedir a linha toda e trazer o seu próprio corpo.
     const span = lastContent?.span || card.span || 6;
     const bodyHtml = lastContent?.body || "";
     // A pastilha segue o estado do pedido, e não a chamada HTTP que o pôs na fila.
@@ -210,10 +162,8 @@ export function requestCardShell(
         details: lastContent?.details || "",
         detailsTitle: lastContent?.detailsTitle || "",
         body: bodyHtml,
-        // O que não responde ao clique não deve parecer que responde.
         feature: requestable ? type : "",
-        // A presença abre a planta da divisão. É o cartão que já diz quantas pessoas lá
-        // estão, e a presença só existe em radares -- não é preciso perguntar pelo tipo.
+        // A presença abre a planta da divisão, e só existe em radares.
         action: type === "presence" ? "openRadarMap" : "",
         pending: requestable && loading,
         stateLabel: loading ? "a pedir" : requestState?.label || "",

@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
-import "./support/browser-env.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 
 /**
@@ -21,7 +19,7 @@ const ENTRY = {
 
 const render = (entry) => renderConfigSection("veepoo-ble", entry, null);
 
-test("a legenda da definição aparece no cartão", () => {
+test("the setting's caption appears on the card", () => {
     const html = render(ENTRY);
 
     assert.ok(
@@ -30,7 +28,7 @@ test("a legenda da definição aparece no cartão", () => {
     );
 });
 
-test("o vocabulário do protocolo não aparece em lado nenhum do cartão", () => {
+test("the protocol's vocabulary appears nowhere on the card", () => {
     const html = render(ENTRY);
 
     assert.ok(

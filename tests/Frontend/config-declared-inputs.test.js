@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readdirSync, readFileSync } from "node:fs";
 
-import "./support/browser-env.js";
 import { CONFIG_INPUTS } from "../../src/Dashboard/dashboard/devices/config/inputs/index.js";
 
 /**
@@ -46,7 +45,7 @@ function declaredInputs() {
     return names;
 }
 
-test("as definições declaram tipos de campo que alguém desenha", () => {
+test("the definitions declare field types that something draws", () => {
     const declared = declaredInputs();
     assert.ok(declared.size > 10, "o leitor das definições não encontrou tipos suficientes");
 
@@ -57,7 +56,7 @@ test("as definições declaram tipos de campo que alguém desenha", () => {
     assert.deepEqual(orphans, [], "estes tipos caem no editor de JSON em cru");
 });
 
-test("nenhum renderizador registado ficou sem desenhar nem sem ler", () => {
+test("no registered renderer is left without a render or a read", () => {
     for (const [name, descriptor] of Object.entries(CONFIG_INPUTS)) {
         assert.equal(typeof descriptor.read, "function", `${name} não sabe ler o que desenha`);
 

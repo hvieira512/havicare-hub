@@ -1,13 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e esse
-// caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
-import "./support/browser-env.js";
 import { helpCallSummaryCard as buildCard } from "../../src/Dashboard/dashboard/devices/event-summary-cards.js";
+import { asText } from "./support/dom.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const helpCallSummaryCard = (...args) => String(buildCard(...args));
+const helpCallSummaryCard = asText(buildCard);
 
 const call = (pressType, occurredAt) => ({
     type: "help_call",

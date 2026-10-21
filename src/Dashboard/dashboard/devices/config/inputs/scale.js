@@ -3,11 +3,7 @@ import { html, raw } from "../../../html.js";
 import { state } from "../../../state.js";
 import { nextUid } from "./shared.js";
 
-/**
- * Os utilizadores da balança: um cartão por pessoa, com o estado dela e as ações do dia, e um
- * formulário que só abre para acrescentar ou editar. O identificador é do hub e viaja escondido no
- * cartão; um cartão sem ele é um registo novo.
- */
+// O identificador é do hub e viaja escondido no cartão: um cartão sem ele é um registo novo.
 
 const SEX = { male: "Homem", female: "Mulher" };
 
@@ -70,7 +66,7 @@ function userCard(user, { dirty = false, online = "", group = "" } = {}) {
 
     return html`
         <div class="scale-user d-flex align-items-center gap-3 border rounded px-3 py-2${raw(isOnline ? " scale-user-online" : "")}"
-             data-scale-user="${JSON.stringify(user)}"${raw(dirty ? " data-scale-user-dirty" : "")}>
+             data-scale-user="${JSON.stringify(user)}">
             <input class="form-check-input scale-user-radio flex-shrink-0 m-0" type="radio" name="${group}" value="${user.id || ""}"
                    aria-label="${user.name} em linha"${raw(isOnline ? " checked" : "")}${raw(saved ? "" : " disabled")}>
             <div class="flex-grow-1 min-w-0">
@@ -120,7 +116,7 @@ function scaleUsersInput(_entry, desired) {
     const online = String(desired?.onlineUserId ?? "");
     const group = nextUid("scale-online");
     return html`
-        <div class="vstack gap-2" data-scale-users>
+        <div class="vstack gap-2">
             <div class="d-flex justify-content-end"><button type="button" class="btn btn-outline-secondary btn-sm" data-action="scaleUserAdd">Adicionar</button></div>
             <div class="vstack gap-2" data-scale-user-list data-scale-group="${group}">${users.map((user) => userCard(user, { online, group }))}</div>
             ${form()}
@@ -150,7 +146,6 @@ function picked(formElement, field) {
     return formElement.querySelector(`[data-scale-field="${field}"] [aria-pressed="true"]`)?.dataset.value ?? "";
 }
 
-/** O que está no formulário, ou a razão por que não se guarda. */
 function readForm(formElement) {
     const number = (field) => {
         const text = String(formElement.querySelector(`input[data-scale-field="${field}"]`).value).trim();
@@ -195,7 +190,7 @@ function cardElement(section, user) {
     return holder.content.firstElementChild;
 }
 
-/** As ações da lista. Devolve se mexeu no que vai ser enviado. */
+/** Devolve se mexeu no que vai ser enviado. */
 export function handleScaleUserAction(section, button) {
     const action = button.dataset.action;
     const formElement = section.querySelector("[data-scale-user-form]");

@@ -28,7 +28,6 @@ $footer = '<button type="button" class="btn btn-outline-secondary" id="wizardBac
 
 render_modal(
     id: 'deviceWizardModal',
-    title: 'Adicionar dispositivo',
     body: $body,
     footer: $footer,
     size: 'lg',

@@ -1,33 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
-/** Os slides para onde se mandou o carrossel: o 0 é a lista. */
-const slides = [];
-
-/** O carrossel do Bootstrap, reduzido ao que estes módulos lhe pedem. */
-globalThis.bootstrap = {
-    Carousel: class {
-        constructor(element) {
-            this._element = element;
-        }
-
-        to(index) {
-            slides.push(index);
-        }
-    },
-};
-
-globalThis.fetch = () =>
-    Promise.resolve({
-        ok: true,
-        status: 200,
-        text: () => Promise.resolve("{\"data\":[]}"),
-    });
+globalThis.fetch = async () => Response.json({ data: [] });
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initSettingsModels } = await import(
+const { initSettingsModels, showModelsPane } = await import(
     "../../src/Dashboard/dashboard/settings/models/shell.js",
 );
 const { backToModelList, loadSettingsModelsSection, renderModelsSection } = await import(
@@ -100,7 +77,7 @@ function render(catalog = CATALOG, query = "") {
     return { root, summary };
 }
 
-test("a árvore agrupa por tipo e o fornecedor é um dado da linha, não uma pasta", () => {
+test("the tree groups by type, and the supplier is row data, not a folder", () => {
     const { root } = render();
 
     const types = [...root.querySelectorAll(".card > .card-body > button")].map(
@@ -117,25 +94,24 @@ test("a árvore agrupa por tipo e o fornecedor é um dado da linha, não uma pas
     assert.equal(root.querySelectorAll(".tree-row-nested").length, 0);
 });
 
-test("um tipo sem modelos não desenha uma moldura vazia", () => {
+test("a type without models draws no empty frame", () => {
     const { root } = render();
 
     assert.equal(root.querySelectorAll(".card").length, 3);
     assert.doesNotMatch(root.innerHTML, /Radar/);
 });
 
-test("um fornecedor que serve dois tipos aparece nos dois, e conta uma vez no resumo", () => {
+test("a supplier serving two types shows under both and counts once in the summary", () => {
     const { root, summary } = render();
 
-    // A MOKO faz gateways e pulseiras: são duas coisas diferentes de suportar, e é por
-    // isso que a tabela `supplier_device_types` existe. Dois nós, um fornecedor.
+    // A MOKO faz gateways e pulseiras: dois nós, um fornecedor.
     const mokoRows = [...root.querySelectorAll(".catalog-model")]
         .filter((row) => row.textContent.includes("MOKO"));
     assert.equal(mokoRows.length, 2);
     assert.equal(summary.textContent, "3 tipos · 3 fornecedores · 5 modelos");
 });
 
-test("a linha diz o fornecedor, e o nome interno só quando difere do comercial", () => {
+test("the row shows the supplier, and the internal name only when it differs from the commercial one", () => {
     const { root } = render();
 
     const rows = [...root.querySelectorAll(".catalog-model")];
@@ -156,7 +132,7 @@ test("a linha diz o fornecedor, e o nome interno só quando difere do comercial"
     );
 });
 
-test("a busca achata a árvore e devolve o tipo a cada linha", () => {
+test("search flattens the tree and puts the type on each row", () => {
     const { root, summary } = render(CATALOG, "moko");
 
     assert.equal(root.querySelectorAll(".card").length, 1);
@@ -174,13 +150,13 @@ test("a busca achata a árvore e devolve o tipo a cada linha", () => {
     assert.equal(summary.textContent, "2 resultados de 5");
 });
 
-test("a busca encontra pelo tipo e pelo modelo interno, não só pelo nome comercial", () => {
+test("search matches by type and internal model, not only commercial name", () => {
     assert.equal(render(CATALOG, "pulseira").root.querySelectorAll(".catalog-model").length, 1);
     assert.equal(render(CATALOG, "y6s").root.querySelectorAll(".catalog-model").length, 1);
     assert.equal(render(CATALOG, "relógio").root.querySelectorAll(".catalog-model").length, 3);
 });
 
-test("uma busca sem resultados diz que não encontrou, e não fica em branco", () => {
+test("a search with no results says so instead of staying blank", () => {
     const { root, summary } = render(CATALOG, "nao-existe");
 
     assert.match(root.textContent, /Nenhum modelo encontrado/);
@@ -195,12 +171,10 @@ const elementWithId = (id) => {
 };
 
 const els = {
-    modelsCarousel: (() => {
-        const carousel = elementWithId("modelsCarousel");
-        carousel.innerHTML =
-            "<div class=\"carousel-inner\"><div class=\"carousel-item\"></div>" +
-            "<div class=\"carousel-item\"></div><div class=\"carousel-item active\"></div></div>";
-        return carousel;
+    modelsPanes: (() => {
+        const panes = elementWithId("modelsPanes");
+        panes.innerHTML = "<div hidden></div><div hidden></div><div></div>";
+        return panes;
     })(),
     modelsBreadcrumb: elementWithId("modelsBreadcrumb"),
     modelsBreadcrumbModels: elementWithId("modelsBreadcrumbModels"),
@@ -213,36 +187,38 @@ const els = {
     modelsListSearch: elementWithId("modelsListSearch"),
 };
 
+const panesShown = () => [...els.modelsPanes.children].map((pane) => !pane.hidden);
+
 const onTheModelSheet = () => {
-    slides.length = 0;
+    showModelsPane(2);
     els.modelDetailActionBar.className = "d-flex";
     els.modelsBreadcrumb.classList.remove("d-none");
     els.modelsBreadcrumbCurrent.textContent = "R03";
-    state.settingsModal.modelsCarousel = new bootstrap.Carousel(els.modelsCarousel);
+
     state.settingsModal.currentCapabilitiesModel = { id: 92 };
 };
 
-test("voltar à lista fecha a ficha, a migalha e a barra de gravar", () => {
+test("going back to the list closes the sheet, the breadcrumb and the save bar", () => {
     initSettingsModels({ els, ui: {} });
     onTheModelSheet();
     state.settingsModal.sectionLoaded.models = true;
 
     backToModelList();
 
-    assert.deepEqual(slides, [0]);
+    assert.deepEqual(panesShown(), [true, false, false]);
     assert.equal(els.modelDetailActionBar.className, "d-none");
     assert.equal(els.modelsBreadcrumb.classList.contains("d-none"), true);
     assert.equal(state.settingsModal.currentCapabilitiesModel, null);
 });
 
 /** Carregar o separador é o que reabrir o modal faz, e a entrada dele é a lista. */
-test("carregar o catálogo traz o carrossel de volta à lista", async () => {
+test("loading the catalog brings the panes back to the list", async () => {
     initSettingsModels({ els, ui: {} });
     onTheModelSheet();
 
     await loadSettingsModelsSection();
 
-    assert.deepEqual(slides, [0], "o carrossel ficou na ficha de um modelo que já não existe");
+    assert.deepEqual(panesShown(), [true, false, false], "ficou na ficha de um modelo que já não existe");
     assert.equal(els.modelDetailActionBar.className, "d-none");
     assert.equal(state.settingsModal.currentCapabilitiesModel, null);
 });

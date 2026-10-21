@@ -1,8 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
-
 // Sem temporizadores reais: o `http.js` agenda um refresh de token só por ser importado, e
 // um timer de uma hora deixaria o processo de teste pendurado.
 window.setTimeout = () => 0;
@@ -19,13 +17,7 @@ const { state } = await import("../../src/Dashboard/dashboard/state.js");
  * juntam pedidos simultâneos num só, e nunca põem um erro em cache.
  */
 
-/** Uma resposta do `fetch` tal como o `http.js` a lê: o estado e o corpo em texto. */
-const httpResponse = (status, raw) => ({
-    ok: status >= 200 && status < 300,
-    status,
-    text: async () => raw,
-    headers: { get: () => "application/json" },
-});
+const httpResponse = (status, raw) => new Response(raw, { status });
 
 let calls = [];
 let nextResponse = () => httpResponse(200, JSON.stringify({ data: [] }));
@@ -63,9 +55,7 @@ beforeEach(() => {
     ok([]);
 });
 
-/* ---------- licenças ---------- */
-
-test("duas colunas a pedir licenças ao mesmo tempo dão uma só ida à rede", async () => {
+test("two columns asking for licences at once make one network trip", async () => {
     ok([{ id: 1, name: "Lar do Sol" }]);
     holdResponses();
 
@@ -78,7 +68,7 @@ test("duas colunas a pedir licenças ao mesmo tempo dão uma só ida à rede", a
     assert.equal(second, first, "as duas colunas ficam com a mesma lista");
 });
 
-test("licenças já carregadas não voltam à rede", async () => {
+test("loaded licences do not go back to the network", async () => {
     ok([{ id: 1 }]);
     await ensureLicensesLoaded();
     await ensureLicensesLoaded();
@@ -86,7 +76,7 @@ test("licenças já carregadas não voltam à rede", async () => {
     assert.equal(calls.length, 1);
 });
 
-test("um erro a carregar licenças não fica em cache", async () => {
+test("a licence load error is not cached", async () => {
     respondWith(500, JSON.stringify({ error: { code: "boom" } }));
     assert.equal(await ensureLicensesLoaded(), null, "quem chama distingue a falha de «não há»");
 
@@ -95,7 +85,7 @@ test("um erro a carregar licenças não fica em cache", async () => {
     assert.equal(calls.length, 2);
 });
 
-test("um erro de licenças sem corpo nenhum também não envenena a cache", async () => {
+test("a licence error without a body does not poison the cache either", async () => {
     // Um `500` sem corpo não pode ler-se como sucesso: um `response.data || []` grava a lista
     // vazia para o resto da sessão, e nenhum ecrã volta a ver uma licença.
     respondWith(500, "");
@@ -107,9 +97,7 @@ test("um erro de licenças sem corpo nenhum também não envenena a cache", asyn
     assert.equal(calls.length, 2);
 });
 
-/* ---------- catálogo de capacidades ---------- */
-
-test("duas secções a pedir o mesmo tipo dão uma só ida à rede", async () => {
+test("two sections asking for the same type make one network trip", async () => {
     ok([{ key: "heart_rate" }]);
     holdResponses();
 
@@ -125,7 +113,7 @@ test("duas secções a pedir o mesmo tipo dão uma só ida à rede", async () =>
     assert.equal(second, first);
 });
 
-test("cada tipo de dispositivo tem a sua cache", async () => {
+test("each device type has its own cache", async () => {
     ok([{ key: "heart_rate" }]);
     await ensureCapabilityCatalog("watch");
     await ensureCapabilityCatalog("radar");
@@ -134,7 +122,7 @@ test("cada tipo de dispositivo tem a sua cache", async () => {
     assert.equal(calls.length, 2, "o relógio e o radar são dois catálogos, e cada um vai uma vez");
 });
 
-test("um erro no catálogo de capacidades não fica em cache", async () => {
+test("a capability catalog error is not cached", async () => {
     respondWith(500, JSON.stringify({ error: { code: "boom" } }));
     assert.deepEqual(await ensureCapabilityCatalog("watch"), []);
 
@@ -143,7 +131,7 @@ test("um erro no catálogo de capacidades não fica em cache", async () => {
     assert.equal(calls.length, 2, "o pedido seguinte volta a tentar");
 });
 
-test("um erro de capacidades sem corpo nenhum também não envenena a cache", async () => {
+test("a capability error without a body does not poison the cache either", async () => {
     respondWith(500, "");
     assert.deepEqual(await ensureCapabilityCatalog("watch"), []);
     assert.equal(

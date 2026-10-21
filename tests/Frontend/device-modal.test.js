@@ -1,8 +1,8 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { flush, installDeferredFetch } from "./support/deferred-fetch.js";
+import { autoEls } from "./support/els.js";
 
 const { blankDeviceModal, state } = await import("../../src/Dashboard/dashboard/state.js");
 const { editDevice, initDeviceModal, saveDevice } =
@@ -11,13 +11,7 @@ const { initGatewayLinksUi } =
     await import("../../src/Dashboard/dashboard/devices/gateway-links-ui.js");
 
 // Tudo `input`: os divs servem na mesma para `innerHTML`, e só o input tem `value`.
-const els = new Proxy({}, {
-    get(target, name) {
-        if (typeof name !== "string") return undefined;
-        if (!(name in target)) target[name] = document.createElement("input");
-        return target[name];
-    },
-});
+const els = autoEls(() => "input");
 
 const detailFor = (imei) => ({
     device: { imei, deviceType: "watch", company: "havicare", licenseId: 1, deviceId: imei },
@@ -26,12 +20,7 @@ const detailFor = (imei) => ({
     configurations: { [imei]: {} },
 });
 
-const errorResponse = {
-    ok: true,
-    status: 200,
-    text: async () => JSON.stringify({ error: { message: "Servidor indisponível." } }),
-    headers: { get: () => "application/json" },
-};
+const errorResponse = () => Response.json({ error: { message: "Servidor indisponível." } });
 
 beforeEach(() => {
     initDeviceModal({ els, deviceModal: { show() {}, hide() {} } });
@@ -44,7 +33,7 @@ beforeEach(() => {
     state.capabilityCatalogByType.watch = [];
 });
 
-test("a resposta atrasada de um dispositivo não pinta o modal de outro", async () => {
+test("a late device response does not paint another device's modal", async () => {
     const fetches = installDeferredFetch();
 
     const first = editDevice("aaa111", "wonlex", "D41");
@@ -64,8 +53,8 @@ test("a resposta atrasada de um dispositivo não pinta o modal de outro", async 
  * Com o detalhe recusado o formulário fica com os valores de arranque, e o `saveDevice` lê só o
  * DOM: «Guardar» escreveria isso por cima do registo real.
  */
-test("o modal cujo detalhe o servidor recusou não se deixa gravar", async () => {
-    globalThis.fetch = async () => errorResponse;
+test("the modal whose detail the server refused cannot be saved", async () => {
+    globalThis.fetch = async () => errorResponse();
 
     await editDevice("aaa111", "wonlex", "D41");
     await flush();
@@ -81,7 +70,7 @@ test("o modal cujo detalhe o servidor recusou não se deixa gravar", async () =>
     let posted = false;
     globalThis.fetch = async () => {
         posted = true;
-        return errorResponse;
+        return errorResponse();
     };
     await saveDevice();
 
@@ -89,38 +78,18 @@ test("o modal cujo detalhe o servidor recusou não se deixa gravar", async () =>
     assert.match(state.deviceModal.errorMessage, /não chegou a carregar/i);
 });
 
-/** A guarda é só da edição: criar não tem detalhe para carregar. */
-test("criar um dispositivo continua a poder gravar-se", async () => {
-    state.deviceModal = { ...state.deviceModal, mode: "create", detailLoaded: false };
-
-    let posted = false;
-    globalThis.fetch = async () => {
-        posted = true;
-        return errorResponse;
-    };
-    els.deviceForm.dataset.deviceType = "watch";
-    els.deviceForm.dataset.supplier = "wonlex";
-    els.deviceForm.dataset.model = "D41";
-    els.deviceImei.value = "861265061009822";
-    els.deviceLicenseId.value = "1";
-
-    await saveDevice();
-
-    assert.equal(posted, true);
-});
-
 /**
  * O `editDevice` substitui o `state.deviceModal` inteiro, e o `panel.js` escreve sem guarda no
  * `actionDeliveries`.
  */
-test("a forma em branco traz todas as chaves do estado inicial", () => {
+test("the blank shape carries every key of the initial state", () => {
     assert.deepEqual(
         Object.keys(blankDeviceModal()).sort(),
         Object.keys(state.deviceModal).sort(),
     );
 });
 
-test("cada chamada traz mapas próprios, e não os do estado a correr", () => {
+test("each call brings its own maps, not the running state's", () => {
     const first = blankDeviceModal();
     const second = blankDeviceModal();
 

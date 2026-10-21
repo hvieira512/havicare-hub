@@ -13,10 +13,7 @@ import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, whileBusy } from "./row-editor.js";
 
-/**
- * Os utilizadores da API, um por linha; a busca, os filtros e a paginação são do servidor.
- * Trocar a password é um verbo do menu da linha, e criar continua a ser formulário.
- */
+/** Os utilizadores da API; a busca, os filtros e a paginação são do servidor. */
 let els;
 let licenses = [];
 let users = [];
@@ -32,7 +29,6 @@ const FILTER_CONTROLS = {
     enabled: { label: "estado", all: "Todos os estados" },
 };
 
-/** O que está escolhido em cada filtro, por parâmetro do descritor. */
 const filters = { username: "", role: "", enabled: "" };
 
 const VALUE_LABELS = {
@@ -49,7 +45,6 @@ const isEnabled = (user) => Number(user.enabled) === 1;
 
 const labelOf = (value) => VALUE_LABELS[value] ?? String(value ?? "");
 
-/** O perfil e o que ele alcança, em texto corrido por baixo do nome. */
 function contextOf(user) {
     if (user.role === "hub_admin") {
         return "Administrador · todas as licenças";
@@ -59,10 +54,8 @@ function contextOf(user) {
     return `${labelOf(user.role)} · ${license || "sem licença"}`;
 }
 
-/** Uma linha por utilizador: o nome e o contexto à esquerda, o estado por palavra, e os verbos num menu. */
-export function apiUserRow(user) {
+function apiUserRow(user) {
     const enabled = isEnabled(user);
-    // A pastilha não encolhe: num telefone estreito é ela que diz o que a cor sozinha não diz.
     const badge = stateBadge(
         enabled ? "Ativo" : "Pausado",
         enabled ? "success" : "warning",
@@ -101,7 +94,6 @@ function filterOptions(column, chosen, allLabel) {
     return html`<option value="">${allLabel}</option>${raw(options.join(""))}`;
 }
 
-/** A busca e os filtros, por cima da lista. */
 export function apiUserFilterControls(columns, chosen = {}) {
     const controls = columns
         .map((column) => filterControl(column, chosen[column.field] ?? ""))
@@ -140,7 +132,6 @@ export function initSettingsApiUsers(context) {
 const showError = (error) => toast("error", error.message);
 const run = (work) => void work.catch(showError);
 
-/** Recarregar é pedir outra vez a página que está à vista. */
 const reload = () => loadSettingsApiUsersSection(currentPage);
 
 async function fetchApiUsers(params) {
@@ -157,10 +148,7 @@ async function fetchApiUsers(params) {
     return response;
 }
 
-/**
- * Só a última leitura pedida escreve a lista: duas teclas seguidas na busca põem dois pedidos
- * no ar e nada os cancela. É o mesmo contador do `stream.js` e do `list.js`.
- */
+/** Só a última leitura pedida escreve a lista: duas teclas seguidas põem dois pedidos no ar. */
 let generation = 0;
 
 export async function loadSettingsApiUsersSection(page = 1) {
@@ -188,7 +176,6 @@ export async function loadSettingsApiUsersSection(page = 1) {
 const appliedFilters = () =>
     Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ""));
 
-/** A barra de filtros por cima, a lista por baixo, dentro do contentor da secção. */
 function mountList() {
     if (listEl !== null && els.apiUserGrid.contains(listEl)) {
         return;
@@ -251,10 +238,7 @@ function renderApiUsersPage(pagination) {
     });
 }
 
-/**
- * A licença que vai no corpo. Um admin manda em todas e por isso não fica preso a nenhuma;
- * o resto sai inteiro, porque a API declara `?int` e recusa a string em vez de a converter.
- */
+/** Um admin não fica preso a licença nenhuma; o resto vai inteiro, porque a API recusa a string. */
 export function licenseRefIdFor(role, value) {
     if (role === "hub_admin" || value === null || value === undefined || value === "") {
         return null;
@@ -263,7 +247,7 @@ export function licenseRefIdFor(role, value) {
     return Number(value);
 }
 
-/** O `PUT` substitui o registo: vai a linha inteira, e não só o campo que mudou. */
+/** O `PUT` substitui o registo: vai a linha inteira. */
 async function saveUser(user, changes = {}) {
     const body = {
         username: user.username,
@@ -318,10 +302,7 @@ const licenseOptions = (licenseList, chosen) =>
 const roleOptions = (chosen) =>
     ROLES.map((role) => html`<option value="${role}"${raw(role === chosen ? " selected" : "")}>${VALUE_LABELS[role]}</option>`).join("");
 
-/**
- * O formulário de um utilizador. Sem `user` é o de criar, que nasce cliente e ativo e é o
- * único que pede password -- trocá-la depois é outro verbo do menu da linha.
- */
+/** O formulário de um utilizador; sem `user` é o de criar, o único que pede password. */
 export function apiUserForm(user, licenseList) {
     const role = user?.role ?? ROLES[0];
     const passwordField = user !== null && user !== undefined
@@ -371,7 +352,6 @@ export function newApiUser() {
     openUserForm(null);
 }
 
-/** O `PUT` substitui o registo, e o `POST` cria: a diferença é haver id na vaga aberta. */
 async function saveApiUserRow(button) {
     const row = editorOf(button, "apiUser");
     if (!row) {
@@ -415,7 +395,6 @@ async function saveApiUserRow(button) {
     await reload();
 }
 
-/** Os cliques da secção: o formulário aberto, e os verbos do menu de cada linha. */
 export function handleApiUserListClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button) {
@@ -439,7 +418,6 @@ function applyFilter(control) {
     run(loadSettingsApiUsersSection(1));
 }
 
-/** A busca estreita a lista enquanto se escreve. */
 export function handleApiUserListInput(event) {
     const search = event.target.closest("input[data-filter]");
     if (search) {

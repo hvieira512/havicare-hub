@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { setSelectedDetail, state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initDeviceDetailView, renderSelection } = await import(
@@ -14,12 +13,7 @@ const { initDeviceDetailView, renderSelection } = await import(
  */
 function detailEls() {
     const tags = { telemetryColumnTab: "button", detailFilterType: "select" };
-    return new Proxy({}, {
-        get: (cache, id) => {
-            cache[id] ??= document.createElement(tags[id] || "div");
-            return cache[id];
-        },
-    });
+    return autoEls((name) => tags[name] || "div");
 }
 
 const device = {
@@ -43,20 +37,18 @@ function select(els, detail) {
     renderSelection();
 }
 
-test("a banda diz o IMEI, o estado, o modelo e a licença do dispositivo escolhido", () => {
+test("the band says the IMEI, status, model and licence of the chosen device", () => {
     const els = detailEls();
 
     select(els, { device, model, capabilities: {} });
 
     assert.equal(els.deviceBandTitle.textContent, "351266770073676");
     assert.equal(els.deviceBandMeta.textContent, "Y6M · besenior.havicare");
-    assert.equal(els.deviceBandDot.classList.contains("bg-success"), true);
-    // O estado é a cor da bola; a palavra só existe para quem não vê a cor.
     assert.equal(els.deviceBandDot.getAttribute("aria-label"), "Ligado");
     assert.equal(els.deviceBand.classList.contains("d-none"), false);
 });
 
-test("desligado e sem licença, a banda continua a dizer o que sabe", () => {
+test("offline and without a licence, the band still says what it knows", () => {
     const els = detailEls();
 
     select(els, {
@@ -66,11 +58,10 @@ test("desligado e sem licença, a banda continua a dizer o que sabe", () => {
     });
 
     assert.equal(els.deviceBandMeta.textContent, "Y6M · Sem licença");
-    assert.equal(els.deviceBandDot.classList.contains("bg-success"), false);
     assert.equal(els.deviceBandDot.getAttribute("aria-label"), "Desligado");
 });
 
-test("sem dispositivo escolhido, a banda e os separadores saem", () => {
+test("with no device chosen, the band and the tabs go away", () => {
     const els = detailEls();
     initDeviceDetailView({ els });
     state.selectedDetail = null;

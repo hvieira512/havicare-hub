@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
-import "./support/browser-env.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
 import { deliveryStatusFromCommand } from "../../src/Dashboard/dashboard/devices/config/delivery.js";
 import { parseFragment } from "./support/dom.js";
@@ -20,7 +18,7 @@ const ACTION = {
     actions: { on: "Fazer vibrar", off: "Parar" },
 };
 
-test("o estado de um comando traduz-se no mesmo vocabulário das configurações", () => {
+test("a command status is translated into the same vocabulary as configurations", () => {
     assert.equal(deliveryStatusFromCommand("queued"), "pending_delivery");
     assert.equal(deliveryStatusFromCommand("waiting"), "awaiting_ack");
     assert.equal(deliveryStatusFromCommand("acked"), "confirmed");
@@ -29,11 +27,11 @@ test("o estado de um comando traduz-se no mesmo vocabulário das configurações
 });
 
 /** Um comando confirmado por um aparelho que não confirma execução não mente que confirmou. */
-test("um aparelho que só acusa a receção não diz confirmado", () => {
+test("a device that only acknowledges receipt does not say confirmed", () => {
     assert.equal(deliveryStatusFromCommand("acked", "ack_only"), "confirmation_unavailable");
 });
 
-test("o cartão da acção mostra o estado do último pedido", () => {
+test("the action card shows the status of the last request", () => {
     const badge = parseFragment(renderConfigSection(
         "veepoo-ble",
         ACTION,
@@ -50,7 +48,7 @@ test("o cartão da acção mostra o estado do último pedido", () => {
 });
 
 /** Sem pedido nenhum ainda, não há estado que inventar. */
-test("uma acção que nunca foi pedida não mostra pastilha", () => {
+test("an action never requested shows no badge", () => {
     const section = parseFragment(renderConfigSection("veepoo-ble", ACTION, null));
 
     assert.equal(section.querySelector(".state-badge"), null);

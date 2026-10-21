@@ -1,29 +1,15 @@
-/**
- * A edição em linha das listagens das definições: a vaga do que está aberto, a escolha entre
- * ver e editar, a leitura dos `data-field` e o foco depois de repintar.
- */
-
-/**
- * A linha aberta para edição, numa listagem onde só pode estar uma; o `kind` deixa vários
- * tipos de linha partilharem a vaga. O id vazio é o rascunho.
- *
- * @param {() => void} render o que repintar quando a vaga muda
- */
+/** A linha aberta numa listagem onde só pode estar uma; o `kind` partilha a vaga, o id vazio é o rascunho. */
 export function inlineEditor(render) {
     let open = null;
 
     return {
-        /**
-         * Abre a linha `id` do tipo `kind`; sem `id` não faz nada, e o rascunho pede-se com o
-         * `draft()`. O `extra` vem primeiro no espalhamento para não substituir a identidade.
-         */
+        /** Abre a linha `id` do tipo `kind`; o `extra` vem primeiro para não substituir a identidade. */
         edit(kind, id, extra = {}) {
             if (id === null || id === undefined || String(id) === "") return;
             open = { ...extra, kind, id: String(id) };
             render();
         },
 
-        /** Abre a linha que ainda não existe. É a vaga com o id vazio. */
         draft(kind, extra = {}) {
             open = { ...extra, kind, id: "" };
             render();
@@ -51,10 +37,7 @@ export function inlineEditor(render) {
     };
 }
 
-/**
- * O invólucro aberto a que este botão pertence, e os seus campos; `null` fora de um editor
- * deste tipo.
- */
+/** O editor aberto a que este botão pertence, e os seus campos; `null` fora de um. */
 export function editorOf(button, kind) {
     const el = button.closest(`[data-editor="${kind}"]`);
     if (!el) return null;
@@ -65,8 +48,7 @@ export function editorOf(button, kind) {
         el,
         id: el.dataset.id || "",
         field,
-        // Um campo que não está desenhado vale vazio: um segredo já guardado mostra-se como
-        // guardado e só vira campo quando alguém carrega em «Substituir».
+        // Um campo por desenhar vale vazio, como um segredo guardado antes de «Substituir».
         value: (name) => field(name)?.value.trim() ?? "",
     };
 }
@@ -76,10 +58,7 @@ export function focusEditor(root) {
     root.querySelector("[data-editor] input, [data-editor] select")?.focus();
 }
 
-/**
- * Corre o que o botão dispara com ele desligado até acabar, para dois cliques seguidos não
- * criarem dois registos.
- */
+/** Corre o trabalho com o botão desligado, para dois cliques não criarem dois registos. */
 export async function whileBusy(button, work) {
     if (!button || button.disabled) return;
     button.disabled = true;

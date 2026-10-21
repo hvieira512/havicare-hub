@@ -29,7 +29,7 @@ export function takePillsInput(desired, meta = {}) {
         ${addAlarmButton("takePillsReminder", "Acrescentar lembrete", reminders.length, numberLimit)}
         <div class="border rounded-3 p-3 vstack gap-3">
         <div><label class="form-label-sm">Texto do lembrete</label><input class="form-control" type="text" data-config-field="reminderText" value="${reminderText}"><div class="form-text">O mesmo texto em todos os lembretes.</div></div>
-        <div class="vstack gap-2" data-takepills-audio><div class="form-label-sm mb-0">Voz dos lembretes <span class="text-secondary">· uma gravação, vale para os ${(String(numberLimit))}</span></div>
+        <div class="vstack gap-2"><div class="form-label-sm mb-0">Voz dos lembretes <span class="text-secondary">· uma gravação, vale para os ${(String(numberLimit))}</span></div>
         <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" data-config-field="voiceEnabled" ${voiceEnabled ? "checked" : ""}><label class="form-check-label" data-switch-label data-switch-on="Áudio ligado" data-switch-off="Áudio desligado">${voiceEnabled ? "Áudio ligado" : "Áudio desligado"}</label></div>
         <fieldset class="vstack gap-2" data-takepills-audio-controls ${voiceEnabled ? "" : "disabled"}><input type="hidden" data-config-field="voiceData" value="${voiceData}"><input type="hidden" data-config-field="voiceMimeType" value="${voiceMimeType}"><div class="d-flex flex-wrap align-items-center gap-2">
         <button type="button" class="btn btn-outline-primary btn-sm" data-action="takePillsRecord"><i class="fa-solid fa-microphone me-2"></i>${hasVoiceData ? "Regravar" : "Gravar"}</button><button type="button" class="btn btn-outline-secondary btn-sm d-none" data-action="takePillsStop"><i class="fa-solid fa-stop me-2"></i>Parar</button><button type="button" class="btn btn-outline-danger btn-sm" data-action="takePillsClear"><i class="fa-solid fa-trash-can me-2"></i>Limpar</button><label class="btn btn-outline-secondary btn-sm mb-0"><i class="fa-solid fa-file-audio me-2"></i>Carregar<input type="file" class="d-none" accept="audio/*" data-action="takePillsFile"></label><span class="small text-secondary" data-takepills-status>${voiceEnabled ? (hasVoiceData ? "Áudio carregado" : "Sem áudio") : "Áudio desligado"}</span></div>
@@ -102,7 +102,6 @@ export function readTakePills(section) {
     const voiceMimeType = readText(section, "voiceMimeType");
 
     const plans = groups.map((group) => {
-        // `:checked` porque a recorrência é um grupo de rádios, como no bloco dos alarmes.
         const frequency =
             parseInt(
                 String(
@@ -154,7 +153,6 @@ function normalizeVoiceEnabled(desired, hasVoiceData) {
 }
 
 function normalizeReminderSettings(desired) {
-    // A forma pública: um plano por lembrete, com uma hora cada.
     if (Array.isArray(desired?.plans)) {
         return desired.plans
             .map((plan) => (Array.isArray(plan?.times) ? plan.times[0] : plan))
@@ -163,19 +161,10 @@ function normalizeReminderSettings(desired) {
     }
 
     const base = desired?.reminderSettings;
-    if (Array.isArray(base)) return base.map(normalizeReminder);
-    if (typeof base === "string" && base.trim() !== "") return parseReminderString(base);
-    if (base && typeof base === "object") return [normalizeReminder(base)];
-    const legacy = ["reminderTime", "reminderEnabled", "reminderFrequency", "reminderCustom"].some((key) => Object.prototype.hasOwnProperty.call(desired || {}, key));
-    return legacy ? [{ time: String(desired?.reminderTime ?? "08:00"), enabled: boolValue(desired?.reminderEnabled ?? desired?.enabled ?? true, true), frequency: parseInt(String(desired?.reminderFrequency ?? desired?.frequency ?? 1), 10) || 1, custom: String(desired?.reminderCustom ?? desired?.custom ?? "") }] : [];
+    return Array.isArray(base) ? base.map(normalizeReminder) : [];
 }
 
 function normalizeReminder(item) {
-    if (typeof item === "string") {
-        const parts = item.split("-");
-        return { time: String(parts[0] ?? "08:00"), enabled: boolValue(parts[1] ?? true, true), frequency: parseInt(String(parts[2] ?? 1), 10) || 1, custom: String(parts.slice(3).join("-") ?? "") };
-    }
-    // A `recurrence` é a forma pública, a mesma que os alarmes usam; a máscara é a nativa.
     const custom = Array.isArray(item.recurrence?.days)
         ? weekdaysToFourPTouchMask(item.recurrence.days)
         : String(item.custom ?? item.reminderCustom ?? "");
@@ -191,18 +180,6 @@ function normalizeReminder(item) {
         frequency: frequency === undefined ? fromKind : (parseInt(String(frequency), 10) || 1),
         custom,
     };
-}
-
-function parseReminderString(value) {
-    const parts = value.split("-");
-    const reminders = [];
-    for (let index = 0; index < parts.length;) {
-        const time = parts[index++] ?? "08:00";
-        const enabled = boolValue(parts[index++] ?? true, true);
-        const frequency = parseInt(parts[index++] ?? "1", 10) || 1;
-        reminders.push({ time, enabled, frequency, custom: frequency === 3 && index < parts.length ? parts[index++] : "" });
-    }
-    return reminders;
 }
 
 function voicePreviewSrc(voiceData, voiceMimeType) {

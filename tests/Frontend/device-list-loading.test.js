@@ -1,25 +1,14 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
-import "./support/browser-env.js";
 import { installDeferredFetch } from "./support/deferred-fetch.js";
+import { autoEls } from "./support/els.js";
 
 const { selectImei, setDeviceListPage, state } = await import("../../src/Dashboard/dashboard/state.js");
 const { initDeviceList, loadDevice, loadSummary, selectDevice } =
     await import("../../src/Dashboard/dashboard/devices/list.js");
 
-/** Cada nome pedido devolve um elemento a sério, para não haver aqui trinta `createElement`. */
-const els = new Proxy({}, {
-    get(target, name) {
-        if (typeof name !== "string") return undefined;
-        if (!(name in target)) {
-            target[name] = document.createElement(
-                name.endsWith("Search") || name.endsWith("Limit") ? "input" : "div",
-            );
-        }
-        return target[name];
-    },
-});
+const els = autoEls((name) => (name.endsWith("Search") || name.endsWith("Limit") ? "input" : "div"));
 
 const detailFor = (imei) => ({
     device: { imei, deviceType: "watch", company: "havicare", licenseId: 1 },
@@ -52,7 +41,7 @@ beforeEach(() => {
 });
 
 /** A lista e o paginador vêm da mesma resposta, e a última a chegar não pode ganhar. */
-test("a resposta atrasada de uma página não substitui a página pedida a seguir", async () => {
+test("a late page response does not replace the page requested after it", async () => {
     const fetches = installDeferredFetch();
 
     setDeviceListPage(3);
@@ -73,7 +62,7 @@ test("a resposta atrasada de uma página não substitui a página pedida a segui
 });
 
 /** O detalhe de A por baixo da identidade de B é telemetria clínica no utente errado. */
-test("a resposta atrasada de um dispositivo não sobrepõe o que foi escolhido a seguir", async () => {
+test("a late device response does not overwrite the one chosen after it", async () => {
     const fetches = installDeferredFetch();
 
     selectImei("aaa111");
@@ -97,7 +86,7 @@ test("a resposta atrasada de um dispositivo não sobrepõe o que foi escolhido a
  * Cada filtro e cada página da lista recarregam o dispositivo escolhido. Rasgar o SSE para o
  * reabrir a seguir perde o que ele já entregou, e o `recent` só chega por ali.
  */
-test("recarregar o mesmo dispositivo não volta a abrir o stream", async () => {
+test("reloading the same device does not reopen the stream", async () => {
     const fetches = installDeferredFetch();
 
     selectImei("aaa111");
@@ -114,7 +103,7 @@ test("recarregar o mesmo dispositivo não volta a abrir o stream", async () => {
 });
 
 /** Abrir o selector relê o escolhido; com o stream aberto, o histórico não volta a chegar. */
-test("recarregar o mesmo dispositivo mantém as leituras e os pedidos que o stream entregou", async () => {
+test("reloading the same device keeps the readings and requests the stream delivered", async () => {
     const fetches = installDeferredFetch();
 
     selectImei("aaa111");
@@ -131,7 +120,7 @@ test("recarregar o mesmo dispositivo mantém as leituras e os pedidos que o stre
     assert.equal(state.selectedDetail.recent, recent);
 });
 
-test("escolher outro dispositivo abre o stream dele", async () => {
+test("choosing another device opens its stream", async () => {
     const fetches = installDeferredFetch();
 
     selectImei("aaa111");
@@ -150,7 +139,7 @@ test("escolher outro dispositivo abre o stream dele", async () => {
     );
 });
 
-test("escolher um dispositivo fecha o selector", async () => {
+test("choosing a device closes the selector", async () => {
     const fetches = installDeferredFetch();
 
     const chosen = selectDevice("aaa111");
@@ -164,7 +153,7 @@ test("escolher um dispositivo fecha o selector", async () => {
  * A listagem também relê o dispositivo escolhido quando a sua resposta chega, e essa leitura
  * pode ultrapassar a do clique.
  */
-test("o selector fecha-se mesmo quando outra leitura do mesmo dispositivo ultrapassa a do clique", async () => {
+test("the selector closes even when another read of the same device overtakes the click's", async () => {
     const fetches = installDeferredFetch();
 
     const chosen = selectDevice("aaa111");
@@ -179,7 +168,7 @@ test("o selector fecha-se mesmo quando outra leitura do mesmo dispositivo ultrap
 });
 
 /** Uma leitura que falha tira a selecção, e aí o selector fica aberto para se escolher outro. */
-test("se a leitura falhar, o selector fica aberto", async () => {
+test("if the read fails the selector stays open", async () => {
     const fetches = installDeferredFetch();
 
     const chosen = selectDevice("zzz999");

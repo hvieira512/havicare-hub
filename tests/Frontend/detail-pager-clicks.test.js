@@ -1,7 +1,6 @@
 import test, { beforeEach, describe } from "node:test";
 import assert from "node:assert/strict";
-
-import "./support/browser-env.js";
+import { autoEls } from "./support/els.js";
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const {
@@ -21,18 +20,12 @@ const pagerClick = (action) => {
     return { target: button };
 };
 
-describe("os dois paginadores", () => {
+describe("both pagers", () => {
     /**
      * Os dois paginadores correm sobre o mesmo algoritmo, cada um com a sua lista, tamanho, página e
      * acção; trocar dois desses valores não se vê num render, e por isso afirma-se o clique.
      */
-    const els = new Proxy({}, {
-        get(target, name) {
-            if (typeof name !== "string") return undefined;
-            if (!(name in target)) target[name] = document.createElement("div");
-            return target[name];
-        },
-    });
+    const els = autoEls();
 
     let drawn;
 
@@ -63,7 +56,7 @@ describe("os dois paginadores", () => {
         state.telemetryPage = 1;
     });
 
-    test("o paginador dos pedidos avança a página dos pedidos, e só essa", () => {
+    test("the requests pager advances the requests page, and only that one", () => {
         handleDownlinkPagerClick(pagerClick("downlinkNext"));
 
         assert.equal(state.downlinkPage, 2);
@@ -71,7 +64,7 @@ describe("os dois paginadores", () => {
         assert.equal(drawn.telemetry, null, "só o painel dos pedidos é redesenhado");
     });
 
-    test("o paginador da telemetria avança a página da telemetria, e só essa", () => {
+    test("the telemetry pager advances the telemetry page, and only that one", () => {
         handleTelemetryPagerClick(pagerClick("telemetryNext"));
 
         assert.equal(state.telemetryPage, 2);
@@ -80,7 +73,7 @@ describe("os dois paginadores", () => {
     });
 
     /** Cada painel conta as suas linhas: quatro pedidos a dois por página dão duas páginas. */
-    test("cada painel usa o seu tamanho de página para saber onde pára", () => {
+    test("each panel uses its own page size to know where to stop", () => {
         handleDownlinkPagerClick(pagerClick("downlinkNext"));
         handleDownlinkPagerClick(pagerClick("downlinkNext"));
 
@@ -92,7 +85,7 @@ describe("os dois paginadores", () => {
         assert.equal(state.telemetryPage, 2, "quatro leituras a três por página são duas páginas");
     });
 
-    test("cada painel recebe as linhas do seu tipo, e não as do outro", () => {
+    test("each panel gets the rows of its own kind, not the other's", () => {
         handleDownlinkPagerClick(pagerClick("downlinkNext"));
         assert.equal(drawn.downlink.length, 4, "os quatro pedidos, que a paginação corta a seguir");
 
@@ -100,7 +93,7 @@ describe("os dois paginadores", () => {
         assert.equal(drawn.telemetry.length, 4);
     });
 
-    test("um clique que não é do paginador é ignorado", () => {
+    test("a click that is not from the pager is ignored", () => {
         handleDownlinkPagerClick(pagerClick("outraCoisa"));
 
         assert.equal(state.downlinkPage, 1);
@@ -108,7 +101,7 @@ describe("os dois paginadores", () => {
     });
 });
 
-describe("o «Carregar mais» do telemóvel", () => {
+describe("the phone's «Carregar mais»", () => {
     /**
      * O «Carregar mais» do telemóvel acrescenta a página seguinte e a paginação do desktop
      * substitui-a; as duas andam sobre a mesma página.
@@ -165,14 +158,14 @@ describe("o «Carregar mais» do telemóvel", () => {
         };
     });
 
-    test("o «Carregar mais» junta a página seguinte ao fim da lista", () => {
+    test("«Carregar mais» appends the next page to the end of the list", () => {
         handleTelemetryPagerClick(pagerClick("telemetryMore"));
 
         assert.equal(state.telemetryPage, 2);
         assert.equal(listedRows(view), PAGE_SIZE * 2, "as duas páginas, e não só a segunda");
     });
 
-    test("a paginação numerada substitui a página em vez de a juntar", () => {
+    test("numbered pagination replaces the page instead of appending it", () => {
         handleTelemetryPagerClick(pagerClick("telemetryMore"));
         handleTelemetryPagerClick(pagerClick("telemetryNext"));
 
@@ -180,7 +173,7 @@ describe("o «Carregar mais» do telemóvel", () => {
         assert.equal(listedRows(view), PAGE_SIZE, "a terceira página sozinha");
     });
 
-    test("enquanto houver páginas por trazer, o botão está lá", () => {
+    test("while there are pages left the button is there", () => {
         renderTelemetryList(readings);
 
         const button = view.telemetryLoadMore.querySelector("[data-action=\"telemetryMore\"]");
@@ -188,7 +181,7 @@ describe("o «Carregar mais» do telemóvel", () => {
         assert.equal(button.textContent.trim(), "Carregar mais");
     });
 
-    test("na última página não há mais nada para trazer, e o botão sai", () => {
+    test("on the last page there is nothing more to fetch, and the button goes", () => {
         handleTelemetryPagerClick(pagerClick("telemetryMore"));
         handleTelemetryPagerClick(pagerClick("telemetryMore"));
 

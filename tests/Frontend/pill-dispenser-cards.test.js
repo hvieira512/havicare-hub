@@ -1,16 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e
-// esse caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
-import "./support/browser-env.js";
 import { requestCardShell as buildCard } from "../../src/Dashboard/dashboard/components/cards/request.js";
 
-// O construtor devolve um fragmento de marcação; as assertivas de texto querem texto.
-const requestCardShell = (...args) => String(buildCard(...args));
+const requestCardShell = asText(buildCard);
 import { cardContent } from "./support/cards.js";
 import { allDetailItems } from "../../src/Dashboard/dashboard/devices/detail-filters.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
+import { asText } from "./support/dom.js";
 
 state.capabilityCatalogByType.pill_dispenser = [{ key: "cells_remaining", label: "Células restantes" }];
 state.selectedDetail = { model: { deviceType: "pill_dispenser" } };
@@ -21,18 +18,18 @@ const card = (type, data) => requestCardShell(
     [{ type, occurredAt: "2026-09-18T20:05:04Z", data }],
 );
 
-test("a temperatura do dispensador tem chave própria e não a do corpo", () => {
+test("the dispenser temperature has its own key, not the body one", () => {
     // O `0x810E` é o ar onde o aparelho está, e não a temperatura corporal dos relógios.
     assert.match(card("ambient_temperature", { environmentCelsius: 22 }), /22 °C/);
     assert.match(card("ambient_temperature", { environmentCelsius: -5 }), /-5 °C/);
     assert.doesNotMatch(card("temperature", { environmentCelsius: 22 }), /22 °C/);
 });
 
-test("a humidade sai com a unidade", () => {
+test("humidity shows with its unit", () => {
     assert.match(card("ambient_humidity", { humidityPercent: 47 }), /47\s*%/);
 });
 
-test("o nível de medicação sai em português e não como enumeração crua", () => {
+test("the medication level shows in Portuguese, not as a raw enum", () => {
     const html = card("medication_level", { level: "low" });
 
     assert.match(html, /A acabar/);
@@ -43,7 +40,7 @@ test("o nível de medicação sai em português e não como enumeração crua", 
  * O 28 é a capacidade do prato e o 16 o que falta dispensar a partir da posição do carrossel
  * (`carregados − posição`); a posição diz em que compartimento o prato pega a seguir.
  */
-test("as células dizem quantas faltam dispensar e em que compartimento vai o prato", () => {
+test("the cells say how many are left to dispense and which cell the tray is at", () => {
     const html = card("cells_remaining", { remaining: 16, total: 28, current: 12 });
 
     assert.match(html, /16 por dispensar/);
@@ -51,7 +48,7 @@ test("as células dizem quantas faltam dispensar e em que compartimento vai o pr
     assert.doesNotMatch(html, /Remaining|Total:|Current/);
 });
 
-test("sem nenhuma por dispensar, o cartão di-lo por palavras", () => {
+test("with none left to dispense, the card says so in words", () => {
     const html = card("cells_remaining", { remaining: 0, total: 28, current: 21, level: "empty" });
 
     assert.match(html, /Nenhuma por dispensar/);
@@ -62,10 +59,10 @@ test("sem nenhuma por dispensar, o cartão di-lo por palavras", () => {
  * O prato não tem números, tem grupos de doses e uma marca de início: com três doses por dia, a
  * posição 21 lê-se como o fim do sétimo dia, e o número cru fica na gaveta.
  */
-test("com um plano de três doses por dia, a posição lê-se em dias", (t) => {
-    const anterior = state.selectedDetail;
+test("with a plan of three doses a day, the position reads in days", (t) => {
+    const previous = state.selectedDetail;
     t.after(() => {
-        state.selectedDetail = anterior;
+        state.selectedDetail = previous;
     });
     state.selectedDetail = {
         effectiveConfigurations: {
@@ -85,10 +82,10 @@ test("com um plano de três doses por dia, a posição lê-se em dias", (t) => {
     assert.match(html, /[Cc]ompartimento 21 de 28/);
 });
 
-test("sem plano, fica só o número que o aparelho conta", (t) => {
-    const anterior = state.selectedDetail;
+test("without a plan, only the device's own count remains", (t) => {
+    const previous = state.selectedDetail;
     t.after(() => {
-        state.selectedDetail = anterior;
+        state.selectedDetail = previous;
     });
     state.selectedDetail = { effectiveConfigurations: {} };
 
@@ -98,7 +95,7 @@ test("sem plano, fica só o número que o aparelho conta", (t) => {
     assert.doesNotMatch(html, /Dia \d/);
 });
 
-test("a toma mostra o resultado como valor, e a avaria mostra qual foi", () => {
+test("the intake shows its outcome as the value, and the fault shows which one", () => {
     // O valor principal é o facto que interessa, e não o nome da capacidade outra vez.
     const intake = card("medication_intake", {
         alarmSlot: 3,
@@ -113,7 +110,7 @@ test("a toma mostra o resultado como valor, e a avaria mostra qual foi", () => {
 });
 
 // Uma toma falhada fora do histórico é o pior caso desta integração.
-test("a toma e a avaria chegam à lista de atividade", () => {
+test("intake and fault reach the activity list", () => {
     state.selectedDetail.recent = {
         telemetry: [],
         events: [
@@ -129,7 +126,7 @@ test("a toma e a avaria chegam à lista de atividade", () => {
 });
 
 /** Quantas doses faltam não diz quando é preciso recarregar; a data diz. */
-test("com plano, a linha visível do cartão diz quando a medicação acaba", (t) => {
+test("with a plan, the card's visible line says when the medication runs out", (t) => {
     const previous = state.selectedDetail;
     t.after(() => {
         state.selectedDetail = previous;
@@ -154,7 +151,7 @@ test("com plano, a linha visível do cartão diz quando a medicação acaba", (t
 });
 
 /** Um período já terminado suspende o plano, e os alarmes que faltavam nunca tocam. */
-test("com o período do plano terminado, o cartão volta a falar em compartimentos", (t) => {
+test("once the plan period is over, the card goes back to cells", (t) => {
     const previous = state.selectedDetail;
     t.after(() => {
         state.selectedDetail = previous;
@@ -173,7 +170,7 @@ test("com o período do plano terminado, o cartão volta a falar em compartiment
 });
 
 /** O ambiente só chega quando dispara: o valor diz o que aconteceu, e não leva legenda fixa. */
-test("o ambiente diz o que aconteceu", () => {
+test("the environment card says what happened", () => {
     const { value, details } = cardContent("storage_environment", { outOfRange: true });
 
     assert.match(value, /[Tt]emperatura/);

@@ -1,9 +1,6 @@
 import { loadTextStorage, saveTextStorage, THEME_STORAGE_KEY } from "./storage.js";
 
-/**
- * O tema claro/escuro: o `data-bs-theme` no `<html>` troca os tokens do Bootstrap. Sem
- * preferência guardada segue-se a do sistema.
- */
+/** O tema claro/escuro pelo `data-bs-theme`; sem preferência guardada, segue o sistema. */
 
 export const LIGHT = "light";
 export const DARK = "dark";
@@ -22,7 +19,7 @@ export function preferredTheme() {
 }
 
 /** O tema que está no ecrã agora, para quem desenha fora do CSS e não o herda. */
-export function isDarkTheme() {
+function isDarkTheme() {
     return document.documentElement.getAttribute("data-bs-theme") === DARK;
 }
 
@@ -37,7 +34,7 @@ export function applyTheme(theme) {
     // sufixo é explícito porque o `bootstrap-5` sozinho segue o sistema operativo.
     document.body?.setAttribute("data-swal2-theme", `bootstrap-5-${resolved}`);
 
-    // O ícone diz para onde se vai, não onde se está. O `fa-fw` mantém a largura ao trocar.
+    // O ícone diz para onde se vai, não onde se está.
     const goingToDark = resolved === LIGHT;
     const label = goingToDark ? "Mudar para o tema escuro" : "Mudar para o tema claro";
 
