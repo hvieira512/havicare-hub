@@ -246,7 +246,6 @@ final class DeviceSchemas
                     'imei' => ['type' => 'string'],
                     'protocol' => ['type' => 'string'],
                     'nativeType' => ['type' => 'string'],
-                    'label' => ['type' => 'string'],
                     'feature' => ['type' => 'string'],
                     'configKey' => ['type' => 'string'],
                     'expectedReplyTypes' => ['type' => 'array', 'items' => ['type' => 'string']],

@@ -19,8 +19,9 @@ export const capabilityLabel = (key) => PT.capabilities[key] ?? PT.events[key] ?
 
 export const verbLabel = (verb) => PT.verbs[verb] ?? UNTRANSLATED;
 
-/** O nome de um pedido: pelo `id` quando o mesmo `feature` tem dois, senão pela capacidade. */
-export const commandLabel = (command) => PT.commands[command?.id] ?? capabilityLabel(command?.feature);
+/** O nome de um pedido: pelo `requestId` quando o mesmo `feature` tem dois, senão pela capacidade ou configuração. */
+export const commandLabel = (command) =>
+    PT.commands[command?.requestId] ?? capabilityLabel(command?.feature || command?.capability || command?.genericConfigKey);
 
 export const fieldLabel = (field) => PT.fields[field] ?? UNTRANSLATED;
 

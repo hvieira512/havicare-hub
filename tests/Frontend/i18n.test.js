@@ -40,10 +40,12 @@ test("the ECG blood pressure monitor asks for the memory screen before reading",
     assert.doesNotMatch(configText("read_blood_pressure_history", "joytech-bp").help, /MEM/);
 });
 
-/** Dois pedidos com o mesmo `feature` distinguem-se pelo `id`; os outros têm o nome da capacidade. */
-test("a command is named by its id when it needs one, else by its capability", () => {
-    assert.equal(commandLabel({ id: "pillReadConfiguration2", feature: "sync_configuration" }), "Configuração guardada (resto)");
-    assert.equal(commandLabel({ id: "dnHeartRate", feature: "heart_rate" }), "Frequência cardíaca");
+/** O registo não traz texto: o nome sai do `requestId` quando o mesmo `feature` tem dois, senão da capacidade ou da configuração. */
+test("a command record is named from the dictionary", () => {
+    assert.equal(commandLabel({ id: "9f3c", requestId: "pillReadConfiguration2", feature: "sync_configuration" }), "Configuração guardada (resto)");
+    assert.equal(commandLabel({ id: "9f3c", requestId: "dnHeartRate", feature: "heart_rate" }), "Frequência cardíaca");
+    assert.equal(commandLabel({ id: "9f3c", capability: "find_device" }), capabilityLabel("find_device"));
+    assert.equal(commandLabel({ id: "9f3c", configKey: "SOS", genericConfigKey: "sos_contacts" }), capabilityLabel("sos_contacts"));
 });
 
 test("days, languages and counts come from Intl", () => {

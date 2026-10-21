@@ -344,7 +344,6 @@ final class DeviceConfigurationUpdateService
                 // Quando uma configuração se entrega em várias operações, cada uma pode esperar a sua.
                 'expectedReplyTypes' => $commandPayload['expectedReplyTypes'] ?? $entry['expectedReplyTypes'] ?? [],
                 'confirmationMode' => $confirmationMode,
-                'label' => (string)($entry['label'] ?? $nativeKey),
             ];
             $lastCommand = $command;
         }
@@ -391,7 +390,6 @@ final class DeviceConfigurationUpdateService
             'imei' => $imei,
             'protocol' => $operation['protocol'],
             'nativeType' => $operation['nativeType'],
-            'label' => $operation['label'],
             'configKey' => $operation['nativeKey'],
             'genericConfigKey' => $operation['configKey'] ?? '',
             'changeId' => $operation['changeId'],
