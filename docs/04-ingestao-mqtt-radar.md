@@ -328,7 +328,6 @@ configurarem. O callback HTTP da cloud não se liga.
 | `src/Ingress/Mqtt/Qinglanst/MessageNormalizer.php` | Telemetria, limiares e eventos |
 | `src/Ingress/Mqtt/Qinglanst/DashboardWritePolicy.php` | Os dois travões |
 | `src/Ingress/Mqtt/Qinglanst/IngestStats.php` | O resumo periódico |
-| `simulator/benchmark-qinglanst.php` | Mede o custo da ingestão com dados gravados |
 
 A planta das divisões não vem pelo MQTT: é lida à cloud do fabricante, a pedido,
 pelo `POST /api/devices/{imei}/radar-layout/sync`.

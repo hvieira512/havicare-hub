@@ -186,6 +186,5 @@ aparelho.
 | `src/Api/Services/DeviceFeatureRequestService.php` | O `POST /requests` |
 | `src/Api/Services/DeviceConfigurationUpdateService.php` | O `PATCH /configurations` |
 | `src/Command/DeviceCommandCatalog.php` | Construir os bytes, por protocolo |
-| `src/Dashboard/DeviceCommandStore.php` | Estado dos comandos e a correlação da resposta |
+| `src/State/DeviceCommandStore.php` | Estado dos comandos e a correlação da resposta |
 | `src/Runtime/MaintenanceScheduler.php` | Repetir e expirar |
-| `simulator/vivistar-command-client.php` · `wonlex-command-client.php` | Mandar comandos à mão |

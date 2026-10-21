@@ -201,24 +201,6 @@ Duas distinções na contabilização:
 - **A ausência de resultado não constitui falha**, mas um resultado válido. É
   registada com nível informativo e não como aviso.
 
-## 7. Diagnóstico
-
-```bash
-# a partir de uma telemetria guardada
-BEACONDB_USER_AGENT='Havicare location test (ops@example.com)' \
-  composer location:probe -- --file /caminho/para/location-telemetry.json
-
-# a partir do MQTT ao vivo
-BEACONDB_USER_AGENT='Havicare location test (ops@example.com)' \
-  composer location:probe -- \
-  --topic 'havicare-hub/+/+/watch/+/telemetry' \
-  --host 127.0.0.1 --port 1883 --once
-```
-
-A ferramenta constrói o pedido, invoca a BeaconDB e apresenta a resposta. A
-chamada real **não** integra as [suites de teste](16-testes.md): o serviço tem
-estatuto experimental e as suites não dependem de serviços de terceiros.
-
 ## Implementação
 
 | Ficheiro | Responsabilidade |
@@ -231,4 +213,4 @@ estatuto experimental e as suites não dependem de serviços de terceiros.
 | `src/Location/BeaconDbRequestBuilder.php` | O pedido MLS e a higiene dos endereços |
 | `src/Location/LocationResponseValidator.php` | O que se aceita como resposta |
 | `src/Location/CircuitBreakingLocationProvider.php` | O disjuntor |
-| `bin/radio-map.php` · `simulator/location-beacondb-probe.php` | Semear e diagnosticar |
+| `bin/radio-map.php` | Semear o mapa privado |

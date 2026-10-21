@@ -10,7 +10,6 @@ trap scenario_cleanup EXIT
 # Um dispositivo do inventário semeado, e distinto do dos outros cenários: uma fila que
 # fique por drenar não segue para a corrida seguinte.
 IMEI="861265062544868"
-MODEL="VL16P"
 DEVICE_TOPIC_PREFIX="havicare/1/watch/$IMEI"
 
 export DASHBOARD_API_AUTH_REQUIRED="true"
@@ -50,7 +49,7 @@ if ! grep -q '"type":"device.downlink.queued"' "$MQTT_LOG_FILE"; then
 fi
 
 docker compose exec -T hub sh -lc 'rm -f /tmp/hub-vivistar-listener.log /tmp/hub-vivistar-listener.pid'
-docker compose exec -T hub sh -lc "php simulator/simulate.php --server tcp://127.0.0.1:9000 --model $MODEL --imei $IMEI --listen > /tmp/hub-vivistar-listener.log 2>&1 & echo \$! > /tmp/hub-vivistar-listener.pid"
+docker compose exec -T hub sh -lc "php simulator/simulate.php --server tcp://127.0.0.1:9000 --imei $IMEI --listen > /tmp/hub-vivistar-listener.log 2>&1 & echo \$! > /tmp/hub-vivistar-listener.pid"
 
 for _ in $(seq 1 20); do
   if docker compose exec -T hub sh -lc "grep -q '\\[COMMAND\\] BPXL' /tmp/hub-vivistar-listener.log"; then

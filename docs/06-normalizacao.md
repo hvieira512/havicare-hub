@@ -213,7 +213,7 @@ sair depois de ela ter apagado.
 | `weighing_status` | balança | `weightKg`, `weight` (`idle` · `settling` · `stable` · `overload`), `impedance` e `heartRate` (`idle` · `measuring` · `measured` · `failed`), `displayUnit` (`kg` · `lb` · `jin` · `st` · `st_lb`), `shuttingDown`. Sai só quando muda a fase, e não a cada oscilação do peso |
 | `motion` | pulseira | `xMg`, `yMg`, `zMg`, `magnitudeMg` |
 | `proximity` | pulseira, sensor de fralda | `gatewayId`, `state`, `rssiDbm`, `rssiMaxDbm`, `rssiMedianDbm`, `rssiMinDbm`, `samples`, `windowSeconds` |
-| `connectivity` | gateway, radar | `interface`, `networkType`, `signalQuality`, `signalStrengthDbm`. No radar vem da leitura `deviceProp`: `interface` `wifi` com `signalStrengthDbm`, ou `4g` com `signalQuality` (CSQ, 0–31) |
+| `connectivity` | gateway, radar, relógio 4P Touch, dispensador | `interface`, `networkType`, `signalQuality`, `signalStrengthDbm`. No radar vem da leitura `deviceProp`: `interface` `wifi` com `signalStrengthDbm`, ou `4g` com `signalQuality` (CSQ, 0–31) |
 | `tilt` | radar | `xDegrees`, `yDegrees`, `zDegrees`, `factoryCalibrated` — o ângulo do radar com os três eixos; no teto o X e o Y ficam dentro de ±10° |
 | `diaper_moisture` · `diaper_moisture_level` · `diaper_condition` | sensor de fralda | ver o [capítulo 17](17-sensor-de-fralda.md) |
 | `medication_intake` | dispensador | `alarmSlot` (1–9), `scheduledAt`, `takenAt`, `cellNumber`, `method`: `on_time` · `early` · `late`, `result`: `on_time` · `late` · `abnormal` · `missed` |
@@ -401,14 +401,13 @@ que são a diferença entre fornecedores do mesmo aparelho:
 O `telemetryKeysForProtocol` e o `protocolSpecificKeys` do `CapabilityCatalog`
 saem daqui.
 
-São listas distintas. Três capacidades publicadas são **deliberadamente**
+São listas distintas. Duas capacidades publicadas são **deliberadamente**
 excluídas do catálogo:
 
 | `type` publicado | Fundamento da exclusão |
 |---|---|
 | `heartbeat` | Sinal de vida, não medição. Excluído também do histórico da dashboard |
 | `device_config` | Confirmação de uma configuração, não leitura |
-| `reset` | Reinício de um botão do NCS (códigos 0–2), acontecimento e não medição |
 
 O catálogo na base de dados segue o código a cada arranque: uma capacidade que o
 código declare passa a existir na tabela `capabilities`, e é associada aos

@@ -75,7 +75,7 @@ final class BrokerSettingsTest extends TestCase
     {
         $settings = BrokerSettings::fromHubConfig($this->hubConfig(['client_id_prefix' => '']));
 
-        self::assertSame('havicare-hub', $settings->clientIdPrefix);
+        self::assertSame('health-mqtt', $settings->clientIdPrefix);
     }
 
     public function testRejectsEmptyHubHost(): void

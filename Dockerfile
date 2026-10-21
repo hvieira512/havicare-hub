@@ -4,7 +4,6 @@ FROM php:8.4-cli
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     unzip \
-    inotify-tools \
     build-essential \
     pkg-config \
     wget \
@@ -12,7 +11,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libopencore-amrwb-dev \
     libjpeg62-turbo-dev \
     libpng-dev \
-    default-libmysqlclient-dev \
     && cd /tmp \
     && wget -q https://ffmpeg.org/releases/ffmpeg-7.1.1.tar.xz \
     && tar -xf ffmpeg-7.1.1.tar.xz \

@@ -12,8 +12,7 @@ parameters:
         - src
         - bin
         - tests
-        # `simulator/` fica de fora: os scripts CLI partilham nomes de função globais com assinaturas
-        # diferentes, que colidem quando analisados no mesmo processo.
+        - simulator
     tmpDir: var/phpstan
 
     ignoreErrors:

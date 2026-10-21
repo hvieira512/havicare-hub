@@ -11,14 +11,13 @@ final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
     // Teto do cache: a chave é o hash do BSSID, e sem limite cresce com cada ponto de acesso
     // distinto que o processo de longa vida chega a ver.
     private const MAX_CACHED = 10000;
+    private const CACHE_TTL_SECONDS = 60;
 
     /** @var array<string, array{expiresAt: float, entry: array<string, mixed>|null}> */
     private array $cache = [];
 
-    public function __construct(
-        private readonly PDO $pdo,
-        private readonly int $cacheTtlSeconds = 60,
-    ) {
+    public function __construct(private readonly PDO $pdo)
+    {
     }
 
     public function findMany(array $bssidHashes): array
@@ -66,7 +65,7 @@ final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
             $found[$hash] = $entry;
         }
 
-        $expiresAt = $now + max(0, $this->cacheTtlSeconds);
+        $expiresAt = $now + self::CACHE_TTL_SECONDS;
         foreach ($missing as $hash) {
             if (!isset($this->cache[$hash]) && count($this->cache) >= self::MAX_CACHED) {
                 unset($this->cache[array_key_first($this->cache)]);
@@ -121,7 +120,7 @@ final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
             . 'source = VALUES(source), conflicted = VALUES(conflicted), first_seen_at = VALUES(first_seen_at), '
             . 'last_seen_at = VALUES(last_seen_at)');
         $stmt->execute($parameters);
-        $expiresAt = microtime(true) + max(0, $this->cacheTtlSeconds);
+        $expiresAt = microtime(true) + self::CACHE_TTL_SECONDS;
         foreach ($normalizedEntries as $bssidHash => $normalized) {
             $this->cache[$bssidHash] = ['expiresAt' => $expiresAt, 'entry' => $normalized];
         }

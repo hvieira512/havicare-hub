@@ -19,8 +19,8 @@ start_mqtt_subscriber
 wait_for_hub_tcp
 
 sleep 2
-docker compose exec -T mosquitto sh -lc "printf '%s' '$EVENT_PAYLOAD' >/tmp/ncs-event.json && mosquitto_pub -q 1 -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t '/voerka/1001/devices/bea6c3dd8e02/events' -f /tmp/ncs-event.json"
-docker compose exec -T mosquitto sh -lc "printf '%s' '$STATUS_PAYLOAD' >/tmp/ncs-status.json && mosquitto_pub -q 1 -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t '/voerka/1001/devices/bea6c3dd8e02/status/online' -f /tmp/ncs-status.json"
+docker compose exec -T mosquitto sh -lc "printf '%s' '$EVENT_PAYLOAD' >/tmp/ncs-event.json && mosquitto_pub -q 1 -h 127.0.0.1 -p 1883 -t '/voerka/1001/devices/bea6c3dd8e02/events' -f /tmp/ncs-event.json"
+docker compose exec -T mosquitto sh -lc "printf '%s' '$STATUS_PAYLOAD' >/tmp/ncs-status.json && mosquitto_pub -q 1 -h 127.0.0.1 -p 1883 -t '/voerka/1001/devices/bea6c3dd8e02/status/online' -f /tmp/ncs-status.json"
 
 for _ in $(seq 1 30); do
   capture_mqtt_log

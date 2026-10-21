@@ -10,7 +10,6 @@ trap scenario_cleanup EXIT
 # Um dispositivo do inventário semeado por `bin/seed-inventory.php`, e não um de fixture: o
 # hub resolve a empresa e a licença do tópico pela whitelist da base de dados.
 IMEI="861265062542599"
-MODEL="VL17"
 DEVICE_TOPIC_PREFIX="havicare/1/watch/$IMEI"
 
 export DASHBOARD_API_AUTH_REQUIRED="true"
@@ -23,7 +22,7 @@ start_mqtt_subscriber
 wait_for_hub_tcp
 
 docker compose exec -T hub sh -lc 'rm -f /tmp/hub-vivistar-listener.log /tmp/hub-vivistar-listener.pid'
-docker compose exec -T hub sh -lc "php simulator/simulate.php --server tcp://127.0.0.1:9000 --model $MODEL --imei $IMEI --listen > /tmp/hub-vivistar-listener.log 2>&1 & echo \$! > /tmp/hub-vivistar-listener.pid"
+docker compose exec -T hub sh -lc "php simulator/simulate.php --server tcp://127.0.0.1:9000 --imei $IMEI --listen > /tmp/hub-vivistar-listener.log 2>&1 & echo \$! > /tmp/hub-vivistar-listener.pid"
 
 for _ in $(seq 1 20); do
   capture_mqtt_log

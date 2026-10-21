@@ -47,7 +47,7 @@ final class BrokerSettings
             (int)($mqttConfig['port'] ?? 1883),
             (string)($mqttConfig['username'] ?? ''),
             (string)($mqttConfig['password'] ?? ''),
-            self::sanitizeClientIdPrefix((string)($mqttConfig['client_id_prefix'] ?? ''), 'havicare-hub'),
+            self::sanitizeClientIdPrefix((string)($mqttConfig['client_id_prefix'] ?? ''), 'health-mqtt'),
             max(1, (int)($mqttConfig['keepalive'] ?? 60)),
             $timeout,
             $timeout,

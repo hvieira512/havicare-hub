@@ -328,9 +328,7 @@ make simulate-vivistar-tcp IMEI=861265061009822 COMMAND=AP49
 make listen-vivistar-tcp   IMEI=861265061009822
 ```
 
-O simulador implementa os protocolos `vivistar-iw` e `wonlex-json`, selecionados
-pelo prefixo do parâmetro `--model` ou impostos por `--protocol`. O protocolo
-4P Touch não dispõe de simulador.
+O simulador implementa só o protocolo `vivistar-iw`.
 
 ## Implementação
 
