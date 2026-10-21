@@ -49,6 +49,8 @@ final class DevicePaths
                     'responses' => Responses::map(
                         ['201' => Responses::json('Device registered', 'DeviceCreateResponse')],
                         'invalid_request',
+                        'incomplete_owner',
+                        'forbidden',
                         'model_not_found',
                         'device_exists',
                     ),
@@ -79,6 +81,7 @@ final class DevicePaths
                     'responses' => Responses::map(
                         ['200' => Responses::json('Device updated', 'DeviceUpdateResponse')],
                         'invalid_request',
+                        'incomplete_owner',
                         'forbidden',
                         'model_not_found',
                         'device_exists',
@@ -112,6 +115,7 @@ final class DevicePaths
                         'invalid_config',
                         'unknown_protocol',
                         'not_found',
+                        'invalid_radar_areas',
                     ),
                 ],
             ],
