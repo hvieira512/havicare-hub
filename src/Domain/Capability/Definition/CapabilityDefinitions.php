@@ -66,15 +66,6 @@ abstract class CapabilityDefinitions
     }
 
     /**
-     * Se o aparelho devolve no fio a sua própria configuração, como a pulseira Veepoo; nos relógios
-     * escreve-se e nunca mais se vê.
-     */
-    protected static function publishesOwnConfiguration(): bool
-    {
-        return false;
-    }
-
-    /**
      * O papel de cada chave. Não entra no `all()` porque não é contrato -- é o conceito que
      * o ficheiro declara, e serve a quem o queira prender.
      *
@@ -110,10 +101,8 @@ abstract class CapabilityDefinitions
         foreach (static::all() as $definition) {
             $key = (string)$definition['key'];
             // Uma definição só se publica sozinha se for leitura ou acontecimento: uma
-            // escrita chega ao aparelho e não volta, salvo nos aparelhos que a devolvem.
-            $publishesByDefault = $definition['isTelemetry']
-                || ($definition['isEvent'] ?? false)
-                || static::publishesOwnConfiguration();
+            // escrita chega ao aparelho e não volta.
+            $publishesByDefault = $definition['isTelemetry'] || ($definition['isEvent'] ?? false);
             $published = $declared[$key] ?? ($publishesByDefault ? $fallback : []);
             if ($published !== []) {
                 $publishers[$key] = $published;

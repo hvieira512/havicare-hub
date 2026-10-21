@@ -16,17 +16,12 @@ final class BraceletCapabilityDefinitions extends CapabilityDefinitions
     }
 
     /**
-     * A Veepoo é a que fala: tem sessão GATT e publica tudo o que mede e tudo o que tem
-     * configurado. As W6/W6B só anunciam, e o que anunciam está no `publishedBy`.
+     * A Veepoo é a que fala: tem sessão GATT e publica tudo o que mede. As W6/W6B só anunciam,
+     * e o que anunciam está no `publishedBy`.
      */
     protected static function defaultPublishedBy(): array
     {
         return ['veepoo-ble'];
-    }
-
-    protected static function publishesOwnConfiguration(): bool
-    {
-        return true;
     }
 
     protected static function publishedBy(): array
@@ -40,6 +35,8 @@ final class BraceletCapabilityDefinitions extends CapabilityDefinitions
             // A MF91 não exporta onda nenhuma: o que a app do fabricante chama `ppgs` são as
             // cinco frequências de pulso do bloco, que já saem como `heart_rate`.
             'ppg' => [],
+            // Uma ação, mas a resposta da pulseira sai na telemetria.
+            'find_device' => ['veepoo-ble'],
         ];
     }
 

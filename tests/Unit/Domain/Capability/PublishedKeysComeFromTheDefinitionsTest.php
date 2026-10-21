@@ -40,11 +40,20 @@ final class PublishedKeysComeFromTheDefinitionsTest extends TestCase
         );
     }
 
+    /** A pulseira Veepoo publica o `find_device`, e nenhuma das definições que se lhe escrevem. */
+    public function testTheVeepooBraceletPublishesNoneOfItsSettings(): void
+    {
+        self::assertSame(['veepoo-ble'], self::protocolsPublishing('find_device', 'bracelet'));
+        self::assertSame([], self::protocolsPublishing('heart_rate_continuous', 'bracelet'));
+        self::assertSame([], self::protocolsPublishing('skin_tone', 'bracelet'));
+        self::assertSame([], self::protocolsPublishing('heart_rate_alert', 'bracelet'));
+    }
+
     /** Declarar quem publica uma chave que o ficheiro não define é engano, e não silêncio. */
     public function testDeclaringAPublisherForAnUndefinedKeyFails(): void
     {
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('capacidade_que_nao_existe');
+        $this->expectExceptionMessage('undefined_capability');
 
         DefinitionsDeclaringAnUndefinedKey::publishers();
     }
@@ -85,7 +94,7 @@ final class DefinitionsDeclaringAnUndefinedKey extends CapabilityDefinitions
 
     protected static function publishedBy(): array
     {
-        return ['capacidade_que_nao_existe' => ['wonlex-json']];
+        return ['undefined_capability' => ['wonlex-json']];
     }
 
     protected static function rows(): array
