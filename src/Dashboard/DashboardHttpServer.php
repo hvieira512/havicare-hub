@@ -11,8 +11,6 @@ use Hub\Api\Auth\LoginThrottle;
 use Hub\Api\Services\ApiUserService;
 use Hub\Api\Services\AuthService;
 use Hub\Api\Services\CapabilityService;
-use Hub\Infrastructure\Persistence\Repository\CapabilityDiscoveryRepository;
-use Hub\Api\Services\CapabilityDiscoveryService;
 use Hub\Api\Services\CompanyService;
 use Hub\Api\Services\DeviceService;
 use Hub\Api\Services\DashboardNotificationService;
@@ -89,11 +87,6 @@ final class DashboardHttpServer
                 $deviceService,
                 new ModelService($this->db),
                 new CapabilityService($this->db),
-                new CapabilityDiscoveryService(
-                    $this->db,
-                    $deviceService,
-                    new CapabilityDiscoveryRepository(dirname(__DIR__, 2) . '/var/dashboard/capability-discovery'),
-                ),
                 new SupplierService($this->db),
                 new ApiUserService($this->db),
                 new CompanyService($this->db),

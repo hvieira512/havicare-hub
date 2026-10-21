@@ -23,7 +23,6 @@ final class ApiError
         'invalid_request' => 400,
         'invalid_config' => 400,
         'invalid_link' => 400,
-        'invalid_state' => 400,
         'unsupported_feature' => 400,
         'unknown_protocol' => 400,
         'device_already_associated' => 400,
@@ -51,7 +50,6 @@ final class ApiError
         'capability_not_found' => 404,
         'company_not_found' => 404,
         'denylist_not_found' => 404,
-        'discovery_not_found' => 404,
         'license_not_found' => 404,
         'model_not_found' => 404,
         'not_found' => 404,
@@ -221,11 +219,6 @@ final class ApiError
         return new self('capability_not_found', 'Capability not found');
     }
 
-    public static function discoveryNotFound(): self
-    {
-        return new self('discovery_not_found', 'Discovery run not found');
-    }
-
     public static function notificationNotFound(): self
     {
         return new self('notification_not_found', 'Notification not found');
@@ -349,11 +342,6 @@ final class ApiError
     public static function invalidLicense(): self
     {
         return new self('invalid_license', 'A valid company license is required for license clients');
-    }
-
-    public static function discoveryMissingModelId(): self
-    {
-        return new self('invalid_state', 'Discovery run is missing the model id');
     }
 
     public static function featureNotRequestable(): self

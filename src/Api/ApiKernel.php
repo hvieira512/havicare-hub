@@ -157,7 +157,6 @@ final class ApiKernel
             ...((require __DIR__ . '/Routes/DeviceRoutes.php')($devices)),
             ...((require __DIR__ . '/Routes/ModelRoutes.php')($this->services->models)),
             ...((require __DIR__ . '/Routes/CapabilityRoutes.php')($this->services->capabilities)),
-            ...((require __DIR__ . '/Routes/CapabilityDiscoveryRoutes.php')($this->services->capabilityDiscovery)),
             ...((require __DIR__ . '/Routes/SupplierRoutes.php')($this->services->suppliers)),
             ...((require __DIR__ . '/Routes/ApiUserRoutes.php')($this->services->apiUsers)),
             ...((require __DIR__ . '/Routes/CompanyRoutes.php')($this->services->company)),
