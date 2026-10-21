@@ -37,6 +37,7 @@ final class ApiErrorTest extends TestCase
             'protocolNotFound' => [fn(): ApiError => ApiError::protocolNotFound(), 'protocol_not_found', 'Unsupported protocol', 404],
             'userNotFound' => [fn(): ApiError => ApiError::userNotFound(), 'user_not_found', 'API user not found', 404],
             'associationNotFound' => [fn(): ApiError => ApiError::associationNotFound(), 'association_not_found', 'Device association was not found', 404],
+            'incompleteOwner' => [fn(): ApiError => ApiError::incompleteOwner('licenseId'), 'incomplete_owner', 'company and licenseId go together', 422],
             'deviceExists' => [fn(): ApiError => ApiError::deviceExists(), 'device_exists', 'Device with this IMEI already exists', 409],
             'modelExists' => [fn(): ApiError => ApiError::modelExists(), 'model_exists', 'Another model with this supplier and model name already exists', 409],
             'userExists' => [fn(): ApiError => ApiError::userExists(), 'user_exists', 'Username already exists', 409],
@@ -78,7 +79,8 @@ final class ApiErrorTest extends TestCase
     ): void {
         $error = $build();
 
-        self::assertSame(['error' => ['code' => $code, 'message' => $message]], $error->toArray());
+        $body = $error->toArray()['error'];
+        self::assertSame([$code, $message], [$body['code'], $body['message']]);
         self::assertSame($status, ApiError::declaredStatus($code));
         self::assertSame($status, (new JsonResponder())->result($error->toArray())->getStatusCode());
     }

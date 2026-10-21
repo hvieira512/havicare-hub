@@ -58,6 +58,7 @@ final class ApiError
         'supplier_not_found' => 404,
         'user_not_found' => 404,
         'device_exists' => 409,
+        'incomplete_owner' => 422,
         'model_exists' => 409,
         'user_exists' => 409,
         // O nome de empresa repetido, que o `TenancyPaths` documenta como 409.
@@ -332,6 +333,16 @@ final class ApiError
     public static function invalidRefreshToken(): self
     {
         return new self('invalid_refresh_token', 'Invalid refresh token');
+    }
+
+    /** A empresa e a licença vão juntas: `$missing` é a que falta. */
+    public static function incompleteOwner(string $missing): self
+    {
+        return self::withFields(
+            'incomplete_owner',
+            'company and licenseId go together',
+            [$missing => ['company and licenseId go together']],
+        );
     }
 
     public static function invalidRole(): self

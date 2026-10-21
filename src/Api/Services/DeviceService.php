@@ -411,6 +411,10 @@ class DeviceService
         $simNumber = trim($request->simNumber);
         $deviceId = trim($request->deviceId);
         $company = DeviceMetadata::normalizeCompany($request->company);
+        $ownerError = self::ownerError($company, $licenseId);
+        if ($ownerError !== null) {
+            return $ownerError->toArray();
+        }
         if ($auth !== null && !$auth->canAccessTenant($company, $licenseId)) {
             return ApiError::forbidden()->toArray();
         }
@@ -475,6 +479,10 @@ class DeviceService
         $simNumber = trim($request->simNumber);
         $deviceId = trim($request->deviceId);
         $company = DeviceMetadata::normalizeCompany($request->company);
+        $ownerError = self::ownerError($company, $licenseId);
+        if ($ownerError !== null) {
+            return $audit->reject($ownerError, 'incomplete_owner');
+        }
         if ($newImei === '') {
             return $audit->reject(
                 ApiError::invalidRequest('imei, supplier, and model are required'),
@@ -525,6 +533,18 @@ class DeviceService
         ]);
 
         return ['status' => 'ok', 'imei' => $newImei];
+    }
+
+    private static function ownerError(string $company, int $licenseId): ?ApiError
+    {
+        if ($company === 'null' && $licenseId !== 0) {
+            return ApiError::incompleteOwner('company');
+        }
+        if ($company !== 'null' && $licenseId === 0) {
+            return ApiError::incompleteOwner('licenseId');
+        }
+
+        return null;
     }
 
     /**
