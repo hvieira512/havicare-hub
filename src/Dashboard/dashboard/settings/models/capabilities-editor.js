@@ -12,7 +12,7 @@ import {
     modelDeviceType,
     modelInternalName,
 } from "../../domain.js";
-import { capabilityLabel } from "../../i18n.js";
+import { capabilityLabel, countLabel } from "../../i18n.js";
 import { CAPABILITY_SECTION_ICONS } from "../../capability-catalog.js";
 import { getSettingsModelsRuntime } from "./shell.js";
 import { backToModelList } from "./list.js";
@@ -63,7 +63,7 @@ function capabilitySubtitleText(supplier, templateCount, shownCount) {
         return `${supplier} — ${templateCount} capacidades no template.`;
     }
     return `${supplier} — ${templateCount} capacidades no template: ${shownCount} ligam-se aqui e` +
-        ` ${actions} ${actions === 1 ? "é uma ação, que só se pede" : "são ações, que só se pedem"} ao aparelho.`;
+        ` ${countLabel(actions, "é uma ação, que só se pede", "são ações, que só se pedem")} ao aparelho.`;
 }
 
 /** O que o protocolo do fornecedor permite pedir, dito uma vez para a secção inteira. */
@@ -75,7 +75,7 @@ function telemetryProtocolNote(supplier, entries, protocolRequestable) {
     if (requestable === entries.length) {
         return `O ${supplier} envia estas leituras, e todas podem também ser pedidas.`;
     }
-    return `O ${supplier} envia estas leituras; ${requestable} ${requestable === 1 ? "delas também pode ser pedida" : "delas também podem ser pedidas"}.`;
+    return `O ${supplier} envia estas leituras; ${countLabel(requestable, "delas também pode ser pedida", "delas também podem ser pedidas")}.`;
 }
 
 /** Acerta no sítio para não tirar o foco ao interruptor; sem template, quem chama redesenha. */

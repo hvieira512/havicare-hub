@@ -5,6 +5,7 @@ import { ago } from "../format.js";
 import { apiError, toast } from "../dialogs.js";
 import { emptyPanel } from "../components/empty-panel.js";
 import { setSettingsNavCount } from "./shell.js";
+import { countLabel } from "../i18n.js";
 
 /** A denylist: só se vê e se desbloqueia; bloquear faz-se na notificação. */
 let els;
@@ -62,7 +63,7 @@ function renderDenylistSection() {
     if (els.denylistTabSummary) {
         els.denylistTabSummary.textContent = total === 0
             ? ""
-            : `${total} ${total === 1 ? "aparelho bloqueado" : "aparelhos bloqueados"}`;
+            : `${countLabel(total, "aparelho bloqueado", "aparelhos bloqueados")}`;
     }
 
     els.denylistListBody.innerHTML = total === 0

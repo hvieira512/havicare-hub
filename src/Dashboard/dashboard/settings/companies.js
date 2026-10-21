@@ -25,6 +25,7 @@ import {
     submitRadarCredentials,
     tryRadarCredentials,
 } from "./radar-credentials.js";
+import { countLabel } from "../i18n.js";
 
 /** As licenças, dentro de cada empresa; a linha que se toca é a que se transforma. */
 let els;
@@ -97,7 +98,7 @@ function rowActionsMenu(label, items) {
 /** O número da licença, quantos aparelhos a usam e, quando configurada, a cloud dos radares. */
 function licenseMetaHtml(license) {
     const devices = Number(license.device_count);
-    const meta = `licença ${license.license_id} · ${devices} ${devices === 1 ? "aparelho" : "aparelhos"}`;
+    const meta = `licença ${license.license_id} · ${countLabel(devices, "aparelho", "aparelhos")}`;
     const cloud = Number(license.radar_cloud_configured || 0) > 0
         ? html` · <span class="text-success">cloud dos radares ligada</span>`
         : "";
@@ -160,7 +161,7 @@ function companyHeaderView(company, owned) {
         <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
             <div class="fw-semibold">${company.name}</div>
             <div class="d-flex align-items-center gap-2">
-                <span class="small text-secondary">${owned.length} ${owned.length === 1 ? "licença" : "licenças"}</span>
+                <span class="small text-secondary">${countLabel(owned.length, "licença", "licenças")}</span>
                 ${raw(menu)}
             </div>
         </div>`;
@@ -216,7 +217,7 @@ function renderCompanySection() {
         const total = companies.length;
         const owned = currentLicenses.length;
         els.companiesTabSummary.textContent =
-            `${total} ${total === 1 ? "empresa" : "empresas"} · ${owned} ${owned === 1 ? "licença" : "licenças"}`;
+            `${countLabel(total, "empresa", "empresas")} · ${countLabel(owned, "licença", "licenças")}`;
         setSettingsNavCount("Company", owned);
     }
 
@@ -257,7 +258,7 @@ export function licenseDeletePrompt(license, deviceCount) {
     return {
         title: `Apagar a licença ${license.license_id}${name}?`,
         text: deviceCount > 0
-            ? `${deviceCount} ${deviceCount === 1 ? "dispositivo fica" : "dispositivos ficam"} com uma licença que já não existe.`
+            ? `${countLabel(deviceCount, "dispositivo fica", "dispositivos ficam")} com uma licença que já não existe.`
             : "Não há dispositivos a usá-la.",
     };
 }
@@ -267,7 +268,7 @@ export function companyDeletePrompt(company, licenseCount, deviceCount) {
         ? "Não tem licenças."
         : `Apaga também ${licenseCount === 1 ? "a licença dela" : `as ${licenseCount} licenças dela`}.`;
     const devices = deviceCount > 0
-        ? ` ${deviceCount} ${deviceCount === 1 ? "dispositivo fica" : "dispositivos ficam"} com uma licença que já não existe.`
+        ? ` ${countLabel(deviceCount, "dispositivo fica", "dispositivos ficam")} com uma licença que já não existe.`
         : "";
 
     return { title: `Apagar a empresa ${company.name}?`, text: licenses + devices };

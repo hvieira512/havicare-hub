@@ -61,6 +61,7 @@ import {
     refreshGatewayOptions,
     updateGatewayLinkSelection,
 } from "../devices/gateway-links-ui.js";
+import { countLabel } from "../i18n.js";
 
 let els;
 let ui;
@@ -227,7 +228,7 @@ function bindUnsentConfigGuard() {
         event.preventDefault();
         void confirmDestructive(
             "Fechar sem enviar?",
-            `${pending} ${pending === 1 ? "alteração fica" : "alterações ficam"} por enviar ao dispositivo.`,
+            `${countLabel(pending, "alteração fica", "alterações ficam")} por enviar ao dispositivo.`,
             "Fechar sem enviar",
         ).then(({ isConfirmed }) => {
             if (!isConfirmed) return;

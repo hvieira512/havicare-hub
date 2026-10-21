@@ -2,6 +2,7 @@
 
 import { runoutAt, runoutLabel } from "../medication-runout.js";
 import { state } from "../../state.js";
+import { countLabel } from "../../i18n.js";
 
 /** O modal só tem a configuração: a telemetria vem do selecionado, e só quando é o mesmo aparelho. */
 function modalDetail() {
@@ -58,7 +59,7 @@ export function loadedCellsRunoutText(loaded, now = new Date()) {
 
     return when === null
         ? ""
-        : `Com ${plans.length} ${plans.length === 1 ? "dose" : "doses"} por dia, acaba ${runoutLabel(when, now)}.`;
+        : `Com ${countLabel(plans.length, "dose", "doses")} por dia, acaba ${runoutLabel(when, now)}.`;
 }
 
 export function syncLoadedCellsRunout(input) {

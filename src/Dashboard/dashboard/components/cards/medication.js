@@ -3,6 +3,7 @@ import { medicationPlanTimes } from "../../devices/medication-plan.js";
 import { html, raw } from "../../html.js";
 import { runoutAt, runoutLabel } from "../../devices/medication-runout.js";
 import { state } from "../../state.js";
+import { countLabel } from "../../i18n.js";
 
 /** A faixa do dia: uma coluna por dose, na ordem das horas do plano de medicação. */
 
@@ -122,8 +123,8 @@ export function medicationAlarmContent(data) {
     const taken = Number(data?.takenCount ?? 0);
 
     const counts = [
-        missed > 0 ? `${missed} ${missed === 1 ? "falhada" : "falhadas"}` : "",
-        taken > 0 ? `${taken} ${taken === 1 ? "tomada" : "tomadas"}` : "",
+        missed > 0 ? `${countLabel(missed, "falhada", "falhadas")}` : "",
+        taken > 0 ? `${countLabel(taken, "tomada", "tomadas")}` : "",
     ].filter(Boolean);
 
     const strip = medicationDoseStrip(alarms);

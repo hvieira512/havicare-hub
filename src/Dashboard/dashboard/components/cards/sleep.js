@@ -1,6 +1,6 @@
 import { html } from "../../html.js";
 import { joinMarkup } from "./shared.js";
-import { valueLabel } from "../../i18n.js";
+import { valueLabel, countLabel } from "../../i18n.js";
 
 /** As fases pela ordem em que se lêem, e não pela ordem em que a noite as traz. */
 const PHASE_ORDER = ["deep_sleep", "light_sleep", "rem", "insomnia", "awake"];
@@ -66,7 +66,7 @@ export function sleepDetails(data) {
 
     const count = segments(data).length;
     if (count > 0) {
-        parts.push(html`${count} ${count === 1 ? "troço" : "troços"}`);
+        parts.push(html`${countLabel(count, "troço", "troços")}`);
     }
 
     return joinMarkup(parts);
