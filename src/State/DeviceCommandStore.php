@@ -136,15 +136,6 @@ final class DeviceCommandStore
                 if ($bytes === '') {
                     continue;
                 }
-                $normalizedBytes = DeviceCommandCatalog::normalizeQueuedDownlink(
-                    (string)($command['protocol'] ?? ''),
-                    $bytes
-                );
-                if ($normalizedBytes !== $bytes) {
-                    $bytes = $normalizedBytes;
-                    $command['bytes'] = $bytes;
-                    unset($command['bytesEncoding']);
-                }
 
                 $attempts = max(1, (int)($command['attempts'] ?? 1));
                 $commandMaxAttempts = max(1, (int)($command['maxAttempts'] ?? $maxAttempts));

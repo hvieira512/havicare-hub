@@ -463,7 +463,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
             'four-p-touch',
             'TAKEPILLS',
             [
-                'reminderSettings' => '11:25-1-3-1010101',
+                'reminderSettings' => [['time' => '11:25', 'enabled' => true, 'frequency' => 3, 'custom' => '1010101']],
                 'number' => 1,
                 'reminderText' => 'meds',
                 'voiceData' => $voiceData,

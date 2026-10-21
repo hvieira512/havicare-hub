@@ -1248,7 +1248,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ];
         // O contrário do caso da Vivistar acima: aqui o tipo é que não é suportado.
         yield '4P Touch alarm with a type' => [
-            'four-p-touch', 'alarm_clock', ['items' => [[
+            'four-p-touch', 'alarm_clock', ['alarms' => [[
                 'time' => '09:00',
                 'enabled' => true,
                 'type' => 1,

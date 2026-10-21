@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Command\Configuration\Payload;
 
-use Hub\Support\Values;
-
 final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 {
     /**
@@ -79,10 +77,9 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             ],
             'makeCall', 'centerNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
             'pushMessage' => [self::utf16Hex(self::requiredString($payload['message'] ?? null, 'message'))],
-            'restartCommand', 'powerOffCommand', 'findDeviceCommand', 'firmwareVersion', 'deviceStatus' => [],
+            'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
             'rejectUnknownCalls' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
             'alarmClock' => self::alarmClock($payload),
-            'phonebook' => self::phonebook($payload),
             'profile' => [self::soundProfileMode($payload['mode'] ?? null)],
             default => throw new \InvalidArgumentException("Unsupported 4P Touch configuration {$key}"),
         };
@@ -108,11 +105,11 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
                 $parts[] = self::takePillsReminderSettings($setting);
             }
             $reminderSettings = implode('-', $parts);
-        } elseif (is_array($settings) || is_string($settings)) {
+        } elseif (is_array($settings)) {
             $reminderSettings = self::takePillsReminderSettings($settings);
             $number = 1;
         } else {
-            throw new \InvalidArgumentException('reminderSettings must be a list, string or object');
+            throw new \InvalidArgumentException('reminderSettings must be a list or object');
         }
 
         if ($number === 0) {
@@ -350,41 +347,15 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
      */
     private static function alarmClock(array $payload): array
     {
-        $alarms = $payload['items'] ?? $payload['alarms'] ?? $payload['alarmClock'] ?? null;
-        if ($payload === []) {
-            return [];
-        }
-        if (is_string($alarms) && trim($alarms) !== '') {
-            $alarms = self::alarmClockListFromString($alarms);
-        }
-        if (!is_array($alarms)) {
-            $alarms = [$payload];
-        } elseif (!array_is_list($alarms)) {
-            $alarms = [$alarms];
-        }
-        $alarms = array_values(Values::withoutNulls($alarms));
-        if ($alarms === []) {
-            return [];
+        $alarms = $payload['alarms'] ?? [];
+        if (!is_array($alarms) || !array_is_list($alarms)) {
+            throw new \InvalidArgumentException('alarms must be a list');
         }
         if (count($alarms) > 3) {
             throw new \InvalidArgumentException('alarms must not contain more than 3 items');
         }
 
         return array_map([self::class, 'alarmClockEntry'], $alarms);
-    }
-
-    /** @return list<string> */
-    private static function alarmClockListFromString(string $value): array
-    {
-        $value = trim($value);
-        if ($value === '') {
-            return [];
-        }
-        $parts = explode(',', $value);
-
-        return count($parts) > 1
-            ? array_values(array_filter(array_map('trim', $parts), static fn(string $part): bool => $part !== ''))
-            : [$value];
     }
 
     private static function alarmClockEntry(mixed $value): string
@@ -492,36 +463,6 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     }
 
     /**
-     * @param array<string, mixed> $payload
-     * @return list<string>
-     */
-    private static function phonebook(array $payload): array
-    {
-        if (!array_key_exists('contacts', $payload) || !is_array($payload['contacts'])) {
-            throw new \InvalidArgumentException('contacts must be an array');
-        }
-        $contacts = $payload['contacts'];
-        if ($contacts === []) {
-            return [];
-        }
-        $fields = [];
-        if (count($contacts) > 5) {
-            throw new \InvalidArgumentException('contacts must not contain more than 5 items');
-        }
-        foreach ($contacts as $contact) {
-            if (!is_array($contact)) {
-                throw new \InvalidArgumentException('each contact must be an object');
-            }
-            $phone = self::phonebookPhone($contact['phone'] ?? null);
-            $name = self::phonebookName($contact['name'] ?? null);
-            $fields[] = $phone;
-            $fields[] = self::utf16Hex($name);
-        }
-
-        return $fields;
-    }
-
-    /**
      * Os contactos desejados, validados e sem o limite de nome do `PHB`.
      *
      * @param array<string, mixed> $payload
@@ -560,16 +501,6 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return $phone;
     }
 
-    private static function phonebookName(mixed $value): string
-    {
-        $name = self::requiredString($value, 'name');
-        if (self::unicodeLength($name) > 10) {
-            throw new \InvalidArgumentException('name must not exceed 10 Unicode characters');
-        }
-
-        return $name;
-    }
-
     /**
      * Os três campos vão sempre, e um slot sem número vai vazio: o comando substitui a lista
      * inteira, e o campo que ficasse de fora guardava o número anterior.
@@ -594,21 +525,6 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             },
             self::stringList($value, 3, 'numbers')
         );
-    }
-
-    private static function unicodeLength(string $value): int
-    {
-        if ($value === '') {
-            return 0;
-        }
-
-        $matches = [];
-        $count = preg_match_all('/./us', $value, $matches);
-        if ($count === false) {
-            throw new \InvalidArgumentException('value must be valid UTF-8');
-        }
-
-        return $count;
     }
 
     /** @param array<string, mixed> $payload */

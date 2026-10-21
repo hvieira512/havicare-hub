@@ -98,7 +98,7 @@ final class PhonebookCapability implements CapabilityContract, CapabilityInputSa
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
         if ($nativeKey === 'familyNumber') {
-            $contacts = $desired['contacts'] ?? $desired['familyNumbers'] ?? $desired;
+            $contacts = $desired['contacts'] ?? $desired;
             if (!is_array($contacts) || !array_is_list($contacts)) {
                 return [];
             }
