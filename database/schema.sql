@@ -40,25 +40,8 @@ CREATE TABLE IF NOT EXISTS models (
 -- Não há tabela de pares fornecedor x tipo de dispositivo: a pergunta responde-se com um
 -- `SELECT DISTINCT` sobre a `models`, que é a origem. Ver `ModelRepository::supplierDeviceTypes()`.
 
-CREATE TABLE IF NOT EXISTS capabilities (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    device_type VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'watch',
-    section ENUM('telemetry', 'health', 'contacts', 'alarms', 'reminders', 'settings_system') NOT NULL,
-    capability_key VARCHAR(64) NOT NULL,
-    label VARCHAR(96) NOT NULL,
-    -- Sem `is_telemetry`: deriva da `section`. As outras duas bandeiras não são redutíveis a ela.
-    is_configurable TINYINT(1) NOT NULL DEFAULT 0,
-    is_requestable TINYINT(1) NOT NULL DEFAULT 0,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    -- A chave única começa pelo `device_type` e serve a chave estrangeira sem índice extra.
-    UNIQUE KEY uq_capabilities_device_type_key (device_type, capability_key),
-    KEY idx_capabilities_device_type_section_label (device_type, section, label),
-    CONSTRAINT fk_capabilities_device_type FOREIGN KEY (device_type) REFERENCES device_types(device_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- A ligação modelo x capacidade, pelo par natural: o código fala em chaves, e o `ON UPDATE
--- CASCADE` leva as ligações quando uma capacidade muda de nome. A API expõe o `capabilities.id`.
+-- A ligação modelo x capacidade, pela chave do `CapabilityCatalog`: o catálogo vive só no código,
+-- e o `DatabaseSchemaGuard` recusa arrancar com uma chave que ele não declare.
 CREATE TABLE IF NOT EXISTS model_capabilities (
     model_id BIGINT UNSIGNED NOT NULL,
     device_type VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
@@ -68,12 +51,9 @@ CREATE TABLE IF NOT EXISTS model_capabilities (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (model_id, device_type, capability_key),
-    -- A chave primária não começa pelo par, e a chave estrangeira precisa de um índice que
-    -- comece.
     KEY idx_model_capabilities_capability (device_type, capability_key),
     CONSTRAINT fk_model_capabilities_model_v2 FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE,
-    CONSTRAINT fk_model_capabilities_capability_v3 FOREIGN KEY (device_type, capability_key)
-        REFERENCES capabilities(device_type, capability_key) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_model_capabilities_device_type FOREIGN KEY (device_type) REFERENCES device_types(device_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS whitelist (

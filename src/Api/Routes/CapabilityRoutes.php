@@ -12,7 +12,5 @@ return static function (
     return [
         new ApiRoute('GET', '/api/capabilities', static fn(array $params, ServerRequestInterface $request): array
             => $capabilities->list((string)$request->getUri()->getQuery())),
-        new ApiRoute('GET', '/api/capabilities/{id:\d+}', static fn(array $params): array
-            => $capabilities->show((int)$params['id'])),
     ];
 };

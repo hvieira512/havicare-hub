@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
-use Hub\Api\Http\ApiError;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
-use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceMetadata;
 
 class CapabilityService
@@ -32,32 +30,16 @@ class CapabilityService
         ];
     }
 
-    /** @return array<string, mixed> */
-    public function show(int $id): array
-    {
-        $row = $this->db->genericCapabilities->findById($id);
-        if ($row === null) {
-            return ApiError::capabilityNotFound()->toArray();
-        }
-
-        return $this->serializeCapability($row);
-    }
-
     /**
      * @param array<string, mixed> $row
      * @return array<string, mixed>
      */
     private function serializeCapability(array $row): array
     {
-        $section = (string)($row['section'] ?? '');
-
         return [
-            'id' => (int)($row['id'] ?? 0),
             'deviceType' => (string)($row['device_type'] ?? 'watch'),
-            'section' => $section,
-            'sectionLabel' => CapabilityCatalog::sections()[$section] ?? $section,
+            'section' => (string)($row['section'] ?? ''),
             'key' => (string)($row['capability_key'] ?? ''),
-            'label' => (string)($row['label'] ?? ''),
             'isTelemetry' => (bool)($row['is_telemetry'] ?? false),
             'isConfigurable' => (bool)($row['is_configurable'] ?? false),
             'isRequestable' => (bool)($row['is_requestable'] ?? false),

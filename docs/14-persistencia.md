@@ -37,15 +37,14 @@ erDiagram
 | `device_types` | Os tipos de dispositivo. Conteúdo vindo do `config/device-types.json` |
 | `suppliers` | Os fornecedores. Nome único |
 | `models` | Modelo interno, nome comercial, tipo de dispositivo, imagem |
-| `capabilities` | O catálogo genérico: chave, secção, e as bandeiras de configurável e pedível |
-| `model_capabilities` | Que capacidades cada modelo tem, com a possibilidade de sobrepor |
+| `model_capabilities` | Que capacidades cada modelo tem, com a possibilidade de sobrepor. A chave é a do `CapabilityCatalog`, que só existe no código; o `DatabaseSchemaGuard` recusa arrancar com uma chave que o catálogo não declare |
 
 **O tipo de dispositivo tem uma tabela e três chaves estrangeiras.** Era um
-`ENUM` repetido em `whitelist`, `models` e `capabilities`, e acrescentar um tipo
+`ENUM` repetido em `whitelist`, `models` e `model_capabilities`, e acrescentar um tipo
 eram três `ALTER TABLE` que tinham de concordar — a discordância não produzia
 erro, produzia um dispositivo registado e sem capacidade alguma. O conteúdo vem
 do `config/device-types.json`, que o frontend também lê. O semeador só o aplica
-numa base vazia — corre apenas quando a tabela `capabilities` está a zero —, por
+numa base vazia — corre apenas quando a `device_types` está a zero —, por
 isso acrescentar um tipo ao ficheiro num hub em serviço não chega à tabela sem
 uma migração dedicada.
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
+use Hub\Infrastructure\Persistence\Migration\DropCapabilitiesTable;
 use Hub\Infrastructure\Persistence\Migration\DropUnreadColumns;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 
@@ -18,6 +19,7 @@ final class DatabaseMigrationPlan
     {
         return [
             new DropUnreadColumns(),
+            new DropCapabilitiesTable(),
         ];
     }
 

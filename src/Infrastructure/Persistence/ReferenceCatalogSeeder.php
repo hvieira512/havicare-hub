@@ -64,14 +64,13 @@ final class ReferenceCatalogSeeder
         $this->seedDeviceTypes($pdo);
         $this->seedSuppliersAndModels($pdo);
         $this->seedCompanies($pdo);
-        $this->seedCapabilities($pdo);
     }
 
     /**
      * A `device_types` é o destino das chaves estrangeiras, e o `config/device-types.json` é
      * a origem. Vem primeiro que tudo: sem ela, nem um modelo nem uma capacidade entram.
      */
-    private function seedDeviceTypes(PDO $pdo): void
+    public function seedDeviceTypes(PDO $pdo): void
     {
         $insert = $pdo->prepare('INSERT IGNORE INTO device_types (device_type) VALUES (?)');
         foreach (DeviceTypeCatalog::keys() as $deviceType) {
@@ -126,87 +125,6 @@ final class ReferenceCatalogSeeder
     }
 
     /**
-     * Põe a tabela a dizer exactamente o que o `CapabilityCatalog` declara, a cada arranque, e
-     * devolve o que mudou. A dashboard só edita a `model_capabilities`, que aqui não se toca.
-     *
-     * @return array{added: list<string>, changed: list<string>, removed: list<string>}
-     */
-    public function reconcileCapabilities(PDO $pdo): array
-    {
-        $stored = [];
-        foreach ($pdo->query('SELECT device_type, capability_key, section, label, is_configurable, is_requestable FROM capabilities') as $row) {
-            $stored[$row['device_type'] . ':' . $row['capability_key']] = [
-                (string)$row['section'],
-                (string)$row['label'],
-                (int)$row['is_configurable'],
-                (int)$row['is_requestable'],
-            ];
-        }
-
-        $added = [];
-        $changed = [];
-        $declared = [];
-        foreach (CapabilityCatalog::definitions() as $definition) {
-            $key = $definition['deviceType'] . ':' . $definition['key'];
-            $declared[$key] = true;
-            $row = [
-                (string)$definition['section'],
-                (string)$definition['label'],
-                !empty($definition['isConfigurable']) ? 1 : 0,
-                !empty($definition['isRequestable']) ? 1 : 0,
-            ];
-
-            if (!isset($stored[$key])) {
-                $added[] = $key;
-            } elseif ($stored[$key] !== $row) {
-                $changed[] = $key;
-            }
-        }
-
-        $this->seedDeviceTypes($pdo);
-        $this->seedCapabilities($pdo);
-
-        $removed = array_values(array_diff(array_keys($stored), array_keys($declared)));
-        if ($removed !== []) {
-            $delete = $pdo->prepare('DELETE FROM capabilities WHERE device_type = ? AND capability_key = ?');
-            $deleteLinks = $pdo->prepare('DELETE FROM model_capabilities WHERE device_type = ? AND capability_key = ?');
-            foreach ($removed as $key) {
-                [$deviceType, $capabilityKey] = explode(':', $key, 2);
-                $deleteLinks->execute([$deviceType, $capabilityKey]);
-                $delete->execute([$deviceType, $capabilityKey]);
-            }
-        }
-
-        return ['added' => $added, 'changed' => $changed, 'removed' => $removed];
-    }
-
-    private function seedCapabilities(PDO $pdo): void
-    {
-        $insert = $pdo->prepare('
-            INSERT INTO capabilities (
-                device_type, section, capability_key, label,
-                is_configurable, is_requestable
-            )
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                section = VALUES(section),
-                label = VALUES(label),
-                is_configurable = VALUES(is_configurable),
-                is_requestable = VALUES(is_requestable)
-        ');
-        foreach (CapabilityCatalog::definitions() as $definition) {
-            $insert->execute([
-                (string)$definition['deviceType'],
-                (string)$definition['section'],
-                (string)$definition['key'],
-                (string)$definition['label'],
-                !empty($definition['isConfigurable']) ? 1 : 0,
-                !empty($definition['isRequestable']) ? 1 : 0,
-            ]);
-        }
-    }
-
-    /**
      * Dá a cada modelo as capacidades do protocolo que ainda não tem, lacuna a lacuna. Uma
      * desligada à mão tem `enabled = 0`, e o `INSERT IGNORE` não lhe toca.
      */
@@ -218,10 +136,6 @@ final class ReferenceCatalogSeeder
             JOIN suppliers s ON s.id = m.supplier_id
         ')->fetchAll(PDO::FETCH_ASSOC);
         $existing = $pdo->prepare('SELECT capability_key FROM model_capabilities WHERE model_id = ?');
-        // A capacidade tem de existir no catálogo: a chave estrangeira recusa o resto.
-        $capability = $pdo->prepare('
-            SELECT COUNT(*) FROM capabilities WHERE device_type = ? AND capability_key = ?
-        ');
         $insert = $pdo->prepare('
             INSERT IGNORE INTO model_capabilities (model_id, device_type, capability_key, enabled)
             VALUES (?, ?, ?, 1)
@@ -232,6 +146,7 @@ final class ReferenceCatalogSeeder
             $existing->execute([$modelId]);
             $have = array_flip($existing->fetchAll(PDO::FETCH_COLUMN));
 
+            $declared = array_flip(CapabilityCatalog::keysForDeviceType((string)$model['device_type']));
             foreach (
                 SupplierCapabilityTemplate::keysForModel(
                     (string)$model['supplier_name'],
@@ -242,8 +157,7 @@ final class ReferenceCatalogSeeder
                 if (isset($have[$key])) {
                     continue;
                 }
-                $capability->execute([(string)$model['device_type'], $key]);
-                if ((int)$capability->fetchColumn() > 0) {
+                if (isset($declared[$key])) {
                     $insert->execute([$modelId, (string)$model['device_type'], $key]);
                 }
             }

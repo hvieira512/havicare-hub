@@ -409,9 +409,9 @@ excluídas do catálogo:
 | `heartbeat` | Sinal de vida, não medição. Excluído também do histórico da dashboard |
 | `device_config` | Confirmação de uma configuração, não leitura |
 
-O catálogo na base de dados segue o código a cada arranque: uma capacidade que o
-código declare passa a existir na tabela `capabilities`, e é associada aos
-modelos cujo protocolo a publica (ver a [persistência](14-persistencia.md)).
+O catálogo vive só no código: uma capacidade que ele declare é associada, a cada
+`migrate`, aos modelos cujo protocolo a publica (ver a
+[persistência](14-persistencia.md)).
 
 ## Implementação
 

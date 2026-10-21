@@ -148,10 +148,8 @@ capacidades como na mensagem publicada. É a mesma designação usada pela
 Até setembro de 2026 o catálogo declarava `pager_call` enquanto o normalizador
 publicava `help_call`, divergência que levava as integrações baseadas no
 catálogo a aguardar um evento inexistente. Nas bases de dados anteriores a essa
-correção, a linha `ncs:pager_call` da tabela
-[`capabilities`](14-persistencia.md) é **renomeada** por migração e não
-removida: o identificador dessa linha suporta a associação do
-Voerka W812 à capacidade, e a remoção propagaria-se por chave estrangeira.
+correção, a associação do Voerka W812 a `pager_call` foi **renomeada** por
+migração para `help_call`.
 
 ## Implementação
 

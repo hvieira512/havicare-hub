@@ -374,7 +374,7 @@ forma a um inquilino grande poder crescer sem conseguir esfomear os outros.
 | GET | `/api/models/template` | **A** |
 | GET | `/api/device-types/suppliers` · `/api/device-types/suppliers/models` | **A** |
 | GET | `/api/protocols` · `/api/protocols/{protocol}/config-catalog` | **A** |
-| GET | `/api/capabilities` · `/api/capabilities/{id}` | **A** |
+| GET | `/api/capabilities` | **A** |
 
 `POST /api/models` aceita JSON **ou** `multipart/form-data`, para trazer a
 imagem do modelo no mesmo pedido.
