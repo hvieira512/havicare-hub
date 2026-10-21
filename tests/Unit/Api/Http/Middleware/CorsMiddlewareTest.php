@@ -11,6 +11,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
+use React\Promise\PromiseInterface;
+
+use function React\Promise\resolve;
 
 /** Onde a política do CORS se aplica na cadeia, e não que origens ela deixa passar. */
 final class CorsMiddlewareTest extends TestCase
@@ -85,17 +88,21 @@ final class CorsMiddlewareTest extends TestCase
         self::assertSame('86400', $response->getHeaderLine('Access-Control-Max-Age'));
     }
 
-    /** O que não é uma resposta é uma promessa do ReactPHP, e não se lhe põem cabeçalhos. */
-    public function testWhatComesBackWithoutBeingAResponseIsPassedThrough(): void
+    /** Uma rota que responde mais tarde leva os mesmos cabeçalhos quando a resposta chega. */
+    public function testAPromisedResponseCarriesTheHeaders(): void
     {
-        $promise = new \stdClass();
-
         $returned = (new CorsMiddleware(new CorsPolicy()))(
-            self::request('GET'),
-            static fn(ServerRequestInterface $request): mixed => $promise
+            self::request('POST'),
+            static fn(ServerRequestInterface $request): PromiseInterface => resolve(new Response(200))
         );
 
-        self::assertSame($promise, $returned);
+        self::assertInstanceOf(PromiseInterface::class, $returned);
+        $response = null;
+        $returned->then(static function (ResponseInterface $resolved) use (&$response): void {
+            $response = $resolved;
+        });
+        self::assertInstanceOf(ResponseInterface::class, $response);
+        self::assertSame('*', $response->getHeaderLine('Access-Control-Allow-Origin'));
     }
 
     private static function request(string $method, string $path = '/api/devices'): ServerRequest

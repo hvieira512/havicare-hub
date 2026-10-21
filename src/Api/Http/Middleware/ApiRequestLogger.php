@@ -8,6 +8,7 @@ use Hub\Api\Http\RequestContext;
 use Hub\Log\Logger;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use React\Promise\PromiseInterface;
 
 final class ApiRequestLogger
 {
@@ -39,15 +40,18 @@ final class ApiRequestLogger
             ->withAttribute(ApiLogContext::ATTRIBUTE, $context);
         $startedAt = microtime(true);
 
-        $response = $next($request);
-        if (!$response instanceof ResponseInterface) {
+        $finish = function (mixed $response) use ($request, $requestId, $startedAt, $context): mixed {
+            if (!$response instanceof ResponseInterface) {
+                return $response;
+            }
+            $response = $response->withHeader('X-Request-Id', $requestId);
+            $this->safeLog($request, $response, $startedAt, $context);
+
             return $response;
-        }
+        };
+        $response = $next($request);
 
-        $response = $response->withHeader('X-Request-Id', $requestId);
-        $this->safeLog($request, $response, $startedAt, $context);
-
-        return $response;
+        return $response instanceof PromiseInterface ? $response->then($finish) : $finish($response);
     }
 
     // Uma falha a registar não pode derrubar o pedido que já foi respondido.

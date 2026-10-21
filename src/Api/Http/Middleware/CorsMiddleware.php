@@ -8,6 +8,7 @@ use Hub\Api\Http\CorsPolicy;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
+use React\Promise\PromiseInterface;
 
 final class CorsMiddleware
 {
@@ -23,9 +24,12 @@ final class CorsMiddleware
             return $this->cors->apply(new Response(204), $request);
         }
 
+        // Uma regra só, também nos estáticos: são públicos e servidos sem credenciais.
+        $apply = fn(mixed $response): mixed => $response instanceof ResponseInterface
+            ? $this->cors->apply($response, $request)
+            : $response;
         $response = $next($request);
 
-        // Uma regra só, também nos estáticos: são públicos e servidos sem credenciais.
-        return $response instanceof ResponseInterface ? $this->cors->apply($response, $request) : $response;
+        return $response instanceof PromiseInterface ? $response->then($apply) : $apply($response);
     }
 }
