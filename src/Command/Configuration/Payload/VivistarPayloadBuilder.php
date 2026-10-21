@@ -23,12 +23,12 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
             'pushMessage' => [self::utf16Hex(self::requiredString($payload['message'] ?? null, 'message'))],
             'workingMode' => self::workingMode($payload),
             'fallDetection' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
-            'fallSensitivity' => [self::rangeInt($payload['sensitivity'] ?? null, 1, 3, 'sensitivity')],
+            'fallSensitivity' => [self::intInRange($payload['sensitivity'] ?? null, 'sensitivity', 1, 3)],
             'whitelist_enabled' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
             'reminders' => self::reminders($payload),
             'autoHealthMeasurement' => [
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
-                self::nonNegativeInt($payload['intervalMinutes'] ?? null, 'intervalMinutes'),
+                self::intInRange($payload['intervalMinutes'] ?? null, 'intervalMinutes'),
             ],
             default => throw new \InvalidArgumentException("Unsupported Vivistar configuration {$key}"),
         };
@@ -42,7 +42,7 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
      */
     private static function workingMode(array $payload): array
     {
-        $mode = self::rangeInt($payload['mode'] ?? null, 1, 8, 'mode');
+        $mode = self::intInRange($payload['mode'] ?? null, 'mode', 1, 8);
         if ($mode !== 8) {
             if (!in_array($mode, [1, 2, 3], true)) {
                 throw new \InvalidArgumentException('mode must be 1, 2, 3, or 8');
@@ -51,7 +51,7 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
             return [$mode];
         }
 
-        $interval = self::positiveInt($payload['intervalSeconds'] ?? null, 'intervalSeconds');
+        $interval = self::intInRange($payload['intervalSeconds'] ?? null, 'intervalSeconds', 1);
         if ($interval < 30) {
             throw new \InvalidArgumentException('intervalSeconds must be at least 30 for mode 8');
         }
@@ -125,7 +125,7 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
             if (!array_key_exists('type', $item) || trim((string)($item['type'] ?? '')) === '') {
                 throw new \InvalidArgumentException('type is required');
             }
-            $type = self::rangeInt($item['type'], 1, 3, 'type');
+            $type = self::intInRange($item['type'], 'type', 1, 3);
             $days = self::reminderDays($item);
             if (($item['recurrence']['kind'] ?? null) === 'custom' && $days === '') {
                 throw new \InvalidArgumentException('reminder days is required');

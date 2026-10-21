@@ -24,7 +24,7 @@ final class VeepooPayloadBuilder extends ConfigurationPayloadBuilder
             'heart_rate_alert' => self::heartRateThresholds($payload),
             // Seis posições nesta pulseira, da mais clara para a mais escura. Qual é a régua
             // vem do resumo de funções do aparelho -- `skinColorType` 0 dá duas posições.
-            'skin_tone' => ['level' => self::rangeInt($payload['level'] ?? null, 1, 6, 'level')],
+            'skin_tone' => ['level' => self::intInRange($payload['level'] ?? null, 'level', 1, 6)],
             'personal_info' => self::personalInfo($payload),
             // Os interruptores e o «encontrar dispositivo»: só um booleano.
             default => ['enabled' => (bool)self::boolInt($payload['enabled'] ?? null, 'enabled')],
@@ -46,12 +46,12 @@ final class VeepooPayloadBuilder extends ConfigurationPayloadBuilder
         }
 
         return [
-            'heightCm' => self::rangeInt($payload['heightCm'] ?? null, 50, 250, 'heightCm'),
-            'weightKg' => self::rangeInt($payload['weightKg'] ?? null, 10, 300, 'weightKg'),
-            'age' => self::rangeInt($payload['age'] ?? null, 1, 120, 'age'),
+            'heightCm' => self::intInRange($payload['heightCm'] ?? null, 'heightCm', 50, 250),
+            'weightKg' => self::intInRange($payload['weightKg'] ?? null, 'weightKg', 10, 300),
+            'age' => self::intInRange($payload['age'] ?? null, 'age', 1, 120),
             'sex' => $sex,
-            'stepGoal' => self::rangeInt($payload['stepGoal'] ?? null, 100, 100000, 'stepGoal'),
-            'sleepGoalMinutes' => self::rangeInt($payload['sleepGoalMinutes'] ?? null, 60, 900, 'sleepGoalMinutes'),
+            'stepGoal' => self::intInRange($payload['stepGoal'] ?? null, 'stepGoal', 100, 100000),
+            'sleepGoalMinutes' => self::intInRange($payload['sleepGoalMinutes'] ?? null, 'sleepGoalMinutes', 60, 900),
         ];
     }
 
@@ -64,8 +64,8 @@ final class VeepooPayloadBuilder extends ConfigurationPayloadBuilder
      */
     private static function heartRateThresholds(array $payload): array
     {
-        $max = self::rangeInt($payload['maxBpm'] ?? null, 40, 220, 'maxBpm');
-        $min = self::rangeInt($payload['minBpm'] ?? null, 30, 200, 'minBpm');
+        $max = self::intInRange($payload['maxBpm'] ?? null, 'maxBpm', 40, 220);
+        $min = self::intInRange($payload['minBpm'] ?? null, 'minBpm', 30, 200);
         if ($min >= $max) {
             throw new \InvalidArgumentException('minBpm must be below maxBpm');
         }
@@ -80,14 +80,11 @@ final class VeepooPayloadBuilder extends ConfigurationPayloadBuilder
     /** `HH:MM-HH:MM`, o mesmo formato do `timeRange` dos relógios. */
     private static function window(mixed $value): string
     {
-        $range = is_string($value) ? $value : '';
-        if (preg_match('/^(\d{2}):(\d{2})-(\d{2}):(\d{2})$/', $range, $m) !== 1) {
+        $range = explode('-', is_string($value) ? $value : '');
+        if (count($range) !== 2) {
             throw new \InvalidArgumentException('range must be HH:MM-HH:MM');
         }
-        if ((int)$m[1] > 23 || (int)$m[3] > 23 || (int)$m[2] > 59 || (int)$m[4] > 59) {
-            throw new \InvalidArgumentException('range has an impossible time');
-        }
 
-        return $range;
+        return self::hhmm($range[0], 'range') . '-' . self::hhmm($range[1], 'range');
     }
 }

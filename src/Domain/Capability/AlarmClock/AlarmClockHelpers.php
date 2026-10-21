@@ -79,19 +79,7 @@ trait AlarmClockHelpers
     /** @return list<int> */
     public static function parseDayMaskToList(string $mask): array
     {
-        $mask = trim($mask);
-        if ($mask === '' || !preg_match('/^[01]{7}$/', $mask)) {
-            return [];
-        }
-
-        $days = [];
-        for ($i = 0; $i < 7; $i++) {
-            if ($mask[$i] === '1') {
-                $days[] = $i === 0 ? 7 : $i;
-            }
-        }
-
-        return $days;
+        return Weekdays::days(trim($mask), true);
     }
 
     /** @param list<int> $days */

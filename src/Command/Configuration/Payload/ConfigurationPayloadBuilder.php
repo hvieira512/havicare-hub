@@ -39,7 +39,7 @@ abstract class ConfigurationPayloadBuilder
     }
 
     /** Uma hora `HH:MM` de 24 horas. */
-    protected static function hhmm(mixed $value, string $field): string
+    public static function hhmm(mixed $value, string $field): string
     {
         $value = is_string($value) ? trim($value) : '';
         if (preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $value) !== 1) {
@@ -61,15 +61,6 @@ abstract class ConfigurationPayloadBuilder
         throw new \InvalidArgumentException("{$field} must be boolean or 0/1");
     }
 
-    protected static function nonNegativeInt(mixed $value, string $field): int
-    {
-        if (!is_numeric((string)$value) || (int)$value < 0) {
-            throw new \InvalidArgumentException("{$field} must be a non-negative integer");
-        }
-
-        return (int)$value;
-    }
-
     protected static function nonNegativeFloat(mixed $value, string $field): int|float
     {
         if (!is_numeric((string)$value) || (float)$value < 0) {
@@ -79,43 +70,27 @@ abstract class ConfigurationPayloadBuilder
         return str_contains((string)$value, '.') ? (float)$value : (int)$value;
     }
 
-    protected static function positiveInt(mixed $value, string $field): int
+    /** Um inteiro dentro dos limites, os mesmos que a definição publica em `bounds`. */
+    protected static function intInRange(mixed $value, string $field, int $min = 0, int $max = PHP_INT_MAX): int
     {
-        if (!is_numeric((string)$value) || (int)$value <= 0) {
-            throw new \InvalidArgumentException("{$field} must be a positive integer");
+        $int = is_scalar($value) && !is_bool($value) ? filter_var($value, FILTER_VALIDATE_INT) : false;
+        if ($int === false || $int < $min || $int > $max) {
+            throw new \InvalidArgumentException($max === PHP_INT_MAX
+                ? "{$field} must be an integer from {$min}"
+                : "{$field} must be an integer between {$min} and {$max}");
         }
 
-        return (int)$value;
+        return $int;
     }
 
-    protected static function rangeInt(mixed $value, int $min, int $max, string $field): int
+    /** O texto em UTF-16BE e hexadecimal maiúsculo, como o 4P Touch e a Vivistar o querem. */
+    public static function utf16Hex(string $value): string
     {
-        $value = self::positiveInt($value, $field);
-        if ($value < $min || $value > $max) {
-            throw new \InvalidArgumentException("{$field} must be between {$min} and {$max}");
+        $encoded = iconv('UTF-8', 'UTF-16BE', $value);
+        if ($encoded === false) {
+            throw new \InvalidArgumentException('text must be valid UTF-8');
         }
 
-        return $value;
-    }
-
-    protected static function zeroBasedRangeInt(mixed $value, int $min, int $max, string $field): int
-    {
-        if (!is_numeric((string)$value)) {
-            throw new \InvalidArgumentException("{$field} must be an integer");
-        }
-
-        $value = (int)$value;
-        if ($value < $min || $value > $max) {
-            throw new \InvalidArgumentException("{$field} must be between {$min} and {$max}");
-        }
-
-        return $value;
-    }
-
-    protected static function utf16Hex(string $value): string
-    {
-        $encoded = iconv('UTF-8', 'UTF-16BE//IGNORE', $value);
-
-        return strtoupper(bin2hex($encoded !== false ? $encoded : $value));
+        return strtoupper(bin2hex($encoded));
     }
 }

@@ -979,7 +979,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public static function singleFrameProvider(): iterable
     {
         yield 'monitor number' => ['monitorNumber', ['phone' => '13100010002'], '[3G*8800000015*0013*MONITOR,13100010002]'];
-        yield 'sleep time' => ['sleepTime', ['range' => '21:10-7:30'], '[3G*8800000015*0014*SLEEPTIME,21:10-7:30]'];
+        yield 'sleep time' => ['sleepTime', ['range' => '21:10-07:30'], '[3G*8800000015*0015*SLEEPTIME,21:10-07:30]'];
         yield 'make call' => ['makeCall', ['phone' => '00000000000'], '[3G*8800000015*0010*CALL,00000000000]'];
         yield 'center number' => ['centerNumber', ['phone' => '00000000000'], '[3G*8800000015*0012*CENTER,00000000000]'];
         yield 'restart' => ['restartCommand', [], '[3G*8800000015*0005*RESET]'];
@@ -1257,7 +1257,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ];
         yield '4P Touch upload interval below the protocol minimum' => [
             'four-p-touch', 'uploadInterval', ['intervalSeconds' => 59],
-            'intervalSeconds must be between 60 and 65535',
+            'intervalSeconds must be an integer between 60 and 65535',
         ];
         yield '4P Touch health measurement below five minutes' => [
             'four-p-touch', 'healthAutoMeasurement', ['enabled' => true, 'intervalMinutes' => 4],

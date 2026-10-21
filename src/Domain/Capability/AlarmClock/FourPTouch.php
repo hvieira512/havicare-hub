@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Domain\Capability\AlarmClock;
 
+use Hub\Command\Configuration\Payload\ConfigurationPayloadBuilder;
+
 /**
  * Handler do `alarm_clock` do 4P Touch, na chave nativa `alarmClock`:
  * `{ alarmClock: { alarms: [{time, enabled, mode, custom}] } }`.
@@ -150,71 +152,13 @@ final class FourPTouch implements AlarmClockHandler
 
     private function normalizeTime(string $value): string
     {
-        $value = trim($value);
-        if (preg_match('/^(\d{1,2}):(\d{2})$/', $value, $matches) === 1) {
-            $hour = (int)$matches[1];
-            $minute = (int)$matches[2];
-            if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
-                throw new \InvalidArgumentException('alarm time must use valid 24h times');
-            }
-
-            return sprintf('%02d:%02d', $hour, $minute);
-        }
-
-        if (preg_match('/^(\d{2})(\d{2})$/', $value, $matches) === 1) {
-            $hour = (int)$matches[1];
-            $minute = (int)$matches[2];
-            if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
-                throw new \InvalidArgumentException('alarm time must use valid 24h times');
-            }
-
-            return sprintf('%02d:%02d', $hour, $minute);
-        }
-
-        if ($value === '') {
-            return '';
-        }
-
-        throw new \InvalidArgumentException('alarm time must use HH:MM or HHmm');
+        return trim($value) === '' ? '' : ConfigurationPayloadBuilder::hhmm($value, 'alarm time');
     }
 
     private function normalizeDays(mixed $value): string
     {
-        if (is_array($value)) {
-            $days = self::dayMaskFromList($value);
-            if ($days !== '') {
-                return $days;
-            }
-        }
-
-        $days = trim((string)$value);
-        if (preg_match('/^[01]{7}$/', $days) === 1) {
-            return $days;
-        }
-
-        if (preg_match('/^[1-7]+$/', $days) === 1) {
-            return self::dayMaskFromList(str_split($days));
-        }
-
-        throw new \InvalidArgumentException('alarm custom days must be a 7-digit 0/1 mask');
-    }
-
-    /** @param list<mixed> $days */
-    private static function dayMaskFromList(array $days): string
-    {
-        $mask = array_fill(0, 7, '0');
-        foreach ($days as $day) {
-            $value = (int)$day;
-            if ($value === 7) {
-                $mask[0] = '1';
-                continue;
-            }
-            if ($value >= 1 && $value <= 6) {
-                $mask[$value] = '1';
-            }
-        }
-
-        return implode('', $mask);
+        return Weekdays::mask($value, true)
+            ?? throw new \InvalidArgumentException('alarm custom days must be a 7-digit 0/1 mask');
     }
 
     /**

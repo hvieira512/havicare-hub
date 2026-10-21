@@ -40,15 +40,7 @@ final class Wonlex implements AlarmClockHandler
                 return $item;
             }
 
-            $week = trim((string)($item['week'] ?? '0000000'));
-            $days = [];
-            if (preg_match('/^[01]{7}$/', $week)) {
-                for ($index = 0; $index < 7; $index++) {
-                    if ($week[$index] === '1') {
-                        $days[] = $index + 1;
-                    }
-                }
-            }
+            $days = Weekdays::days(trim((string)($item['week'] ?? '')), false);
             $recurrence = count($days) === 7
                 ? ['kind' => 'daily']
                 : ['kind' => 'custom', 'days' => $days];

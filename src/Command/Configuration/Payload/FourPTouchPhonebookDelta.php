@@ -146,7 +146,7 @@ final class FourPTouchPhonebookDelta
             }
             $commands[] = [
                 'command' => 'PHBX2',
-                'fields' => [(string)$index, self::utf16Hex($contact['name']), $contact['phone']],
+                'fields' => [(string)$index, ConfigurationPayloadBuilder::utf16Hex($contact['name']), $contact['phone']],
             ];
         }
 
@@ -167,12 +167,5 @@ final class FourPTouchPhonebookDelta
         throw new \InvalidArgumentException(
             'contacts must not exceed ' . self::MAX_CONTACTS . ' items'
         );
-    }
-
-    private static function utf16Hex(string $value): string
-    {
-        $encoded = iconv('UTF-8', 'UTF-16BE//IGNORE', $value);
-
-        return $encoded === false ? '' : strtoupper(bin2hex($encoded));
     }
 }

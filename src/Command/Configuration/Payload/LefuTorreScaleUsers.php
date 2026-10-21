@@ -124,7 +124,7 @@ final class LefuTorreScaleUsers extends ConfigurationPayloadBuilder
             'name' => $name,
             'birthDate' => self::birthDate($item['birthDate'] ?? null, "{$field}.birthDate"),
             'sex' => $sex,
-            'heightCm' => self::rangeInt($item['heightCm'] ?? null, 50, 250, "{$field}.heightCm"),
+            'heightCm' => self::intInRange($item['heightCm'] ?? null, "{$field}.heightCm", 50, 250),
             'athlete' => (bool)self::boolInt($item['athlete'] ?? false, "{$field}.athlete"),
             'weightKg' => round((float)$weight, 2),
         ];

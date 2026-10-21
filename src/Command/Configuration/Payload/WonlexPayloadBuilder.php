@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Command\Configuration\Payload;
 
+use Hub\Domain\Capability\AlarmClock\Weekdays;
+
 final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
 {
     private const ALARM_CLOCK_LIMIT = 10;
@@ -19,7 +21,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
         }
 
         return match ($key) {
-            'locationInterval' => ['intervalTime' => self::nonNegativeInt($payload['intervalSeconds'] ?? null, 'intervalSeconds')],
+            'locationInterval' => ['intervalTime' => self::intInRange($payload['intervalSeconds'] ?? null, 'intervalSeconds')],
             'wonlexHeartRateInterval' => self::measurementInterval('upHeartRate', $payload),
             'wonlexBPInterval' => self::measurementInterval('upBP', $payload),
             'wonlexBOInterval' => self::measurementInterval('upBO', $payload),
@@ -37,8 +39,8 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'wonlexFallWarnSwitch' => self::deviceToggle('FallWarnSwitch', $payload),
             'wonlexSOSSwitch' => self::deviceToggle('SOSSwitch', $payload),
             'wonlexCallInLimitSwitch' => self::deviceToggle('CallInLimitSwitch', $payload),
-            'wonlexStepTarget' => ['configs' => ['StepTarget' => ['steps' => self::nonNegativeInt($payload['steps'] ?? null, 'steps')]]],
-            'wonlexLowPower' => ['configs' => ['LowPower' => ['Battery' => self::nonNegativeInt($payload['thresholdPercent'] ?? null, 'thresholdPercent')]]],
+            'wonlexStepTarget' => ['configs' => ['StepTarget' => ['steps' => self::intInRange($payload['steps'] ?? null, 'steps')]]],
+            'wonlexLowPower' => ['configs' => ['LowPower' => ['Battery' => self::intInRange($payload['thresholdPercent'] ?? null, 'thresholdPercent')]]],
             'wonlexSleepIntervalOrSwitch' => self::sleepSettings($payload),
             'wonlexBloodOxygenWarn' => self::reminderThreshold('bloodOxygenWarn', 'reminderValue', 'thresholdPercent', $payload),
             'wonlexTemperatureExceedRemind' => self::reminderThreshold('TemperatureExceedRemind', 'RemindValue', 'thresholdCelsius', $payload),
@@ -64,7 +66,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
      */
     private static function measurementInterval(string $metric, array $payload): array
     {
-        return ['configs' => [$metric => ['interval' => (string)self::nonNegativeInt($payload['intervalMinutes'] ?? null, 'intervalMinutes')]]];
+        return ['configs' => [$metric => ['interval' => (string)self::intInRange($payload['intervalMinutes'] ?? null, 'intervalMinutes')]]];
     }
 
     /**
@@ -87,7 +89,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
             'sleepStartTime' => str_replace(':', '', self::hhmm($payload['startTime'] ?? null, 'startTime')) . '00',
             'sleepEndTime' => str_replace(':', '', self::hhmm($payload['endTime'] ?? null, 'endTime')) . '00',
-            'sleepTarget' => self::nonNegativeInt($payload['targetMinutes'] ?? null, 'targetMinutes'),
+            'sleepTarget' => self::intInRange($payload['targetMinutes'] ?? null, 'targetMinutes'),
         ]]];
     }
 
@@ -111,11 +113,11 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
     {
         return ['configs' => [$configName => [
             'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
-            'remindValue' => self::nonNegativeInt($payload['thresholdBpm'] ?? null, 'thresholdBpm'),
+            'remindValue' => self::intInRange($payload['thresholdBpm'] ?? null, 'thresholdBpm'),
             'exerciseSwitchState' => self::boolInt($payload['exerciseEnabled'] ?? null, 'exerciseEnabled'),
-            'exerciseHRMin' => self::nonNegativeInt($payload['exerciseMinBpm'] ?? null, 'exerciseMinBpm'),
-            'exerciseHRMax' => self::nonNegativeInt($payload['exerciseMaxBpm'] ?? null, 'exerciseMaxBpm'),
-            'exerciseRemindValue' => self::nonNegativeInt($payload['exerciseThresholdBpm'] ?? null, 'exerciseThresholdBpm'),
+            'exerciseHRMin' => self::intInRange($payload['exerciseMinBpm'] ?? null, 'exerciseMinBpm'),
+            'exerciseHRMax' => self::intInRange($payload['exerciseMaxBpm'] ?? null, 'exerciseMaxBpm'),
+            'exerciseRemindValue' => self::intInRange($payload['exerciseThresholdBpm'] ?? null, 'exerciseThresholdBpm'),
         ]]];
     }
 
@@ -127,8 +129,8 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
     {
         return ['configs' => ['BPEarlyWarning' => [
             'switchState' => self::boolInt($payload['enabled'] ?? null, 'enabled'),
-            'hpWarn' => self::nonNegativeInt($payload['systolicMmHg'] ?? null, 'systolicMmHg'),
-            'LPWarn' => self::nonNegativeInt($payload['diastolicMmHg'] ?? null, 'diastolicMmHg'),
+            'hpWarn' => self::intInRange($payload['systolicMmHg'] ?? null, 'systolicMmHg'),
+            'LPWarn' => self::intInRange($payload['diastolicMmHg'] ?? null, 'diastolicMmHg'),
         ]]];
     }
 
@@ -164,21 +166,12 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                     if (!is_array($days) || !array_is_list($days) || $days === []) {
                         throw new \InvalidArgumentException('custom recurrence requires at least one day');
                     }
-                    $enabledDays = [];
                     foreach ($days as $day) {
-                        if (!(is_int($day) || (is_string($day) && ctype_digit($day)))) {
+                        if (filter_var($day, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 7]]) === false) {
                             throw new \InvalidArgumentException('custom recurrence days must be integers from 1 to 7');
                         }
-                        $day = (int)$day;
-                        if ($day < 1 || $day > 7) {
-                            throw new \InvalidArgumentException('custom recurrence days must be integers from 1 to 7');
-                        }
-                        $enabledDays[$day] = true;
                     }
-                    $week = implode('', array_map(
-                        static fn(int $day): string => isset($enabledDays[$day]) ? '1' : '0',
-                        range(1, 7)
-                    ));
+                    $week = Weekdays::mask($days, false);
                 } else {
                     throw new \InvalidArgumentException('alarm recurrence must be daily or custom');
                 }

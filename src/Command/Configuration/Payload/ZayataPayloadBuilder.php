@@ -31,34 +31,34 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             ],
             // Gamas do tipo de dispositivo 02: volume de 0 (mais alto) a 3 (silêncio) e toque até 3. O
             // «Ringtone 4» da tabela do 0x1012 é do tipo 01, e o aparelho recusa-o.
-            'alarm_volume' => ['volume' => self::zeroBasedRangeInt($payload['volume'] ?? 0, 0, 3, 'volume')],
-            'alarm_ringtone' => ['ringtone' => self::zeroBasedRangeInt($payload['ringtone'] ?? 0, 0, 3, 'ringtone')],
-            'date_format' => ['format' => self::zeroBasedRangeInt($payload['format'] ?? 0, 0, 2, 'format')],
-            'time_format' => ['format' => self::zeroBasedRangeInt($payload['format'] ?? 0, 0, 1, 'format')],
+            'alarm_volume' => ['volume' => self::intInRange($payload['volume'] ?? 0, 'volume', 0, 3)],
+            'alarm_ringtone' => ['ringtone' => self::intInRange($payload['ringtone'] ?? 0, 'ringtone', 0, 3)],
+            'date_format' => ['format' => self::intInRange($payload['format'] ?? 0, 'format', 0, 2)],
+            'time_format' => ['format' => self::intInRange($payload['format'] ?? 0, 'format', 0, 1)],
             'do_not_disturb' => [
                 'enabled' => (bool)self::boolInt($payload['enabled'] ?? false, 'enabled'),
-                'startHour' => self::zeroBasedRangeInt($payload['startHour'] ?? 22, 0, 23, 'startHour'),
-                'startMinute' => self::zeroBasedRangeInt($payload['startMinute'] ?? 0, 0, 59, 'startMinute'),
-                'endHour' => self::zeroBasedRangeInt($payload['endHour'] ?? 7, 0, 23, 'endHour'),
-                'endMinute' => self::zeroBasedRangeInt($payload['endMinute'] ?? 0, 0, 59, 'endMinute'),
+                'startHour' => self::intInRange($payload['startHour'] ?? 22, 'startHour', 0, 23),
+                'startMinute' => self::intInRange($payload['startMinute'] ?? 0, 'startMinute', 0, 59),
+                'endHour' => self::intInRange($payload['endHour'] ?? 7, 'endHour', 0, 23),
+                'endMinute' => self::intInRange($payload['endMinute'] ?? 0, 'endMinute', 0, 59),
             ],
             // Os dois tempos da toma, em minutos. O limite é o do aparelho: 86400 segundos.
             'retrieval_warning', 'retrieval_timeout' => [
-                'minutes' => self::zeroBasedRangeInt($payload['minutes'] ?? 0, 0, 1440, 'minutes'),
+                'minutes' => self::intInRange($payload['minutes'] ?? 0, 'minutes', 0, 1440),
             ],
             // O prato tem 28 compartimentos, e carregados podem estar de nenhum a todos.
-            'loaded_cells' => ['cells' => self::zeroBasedRangeInt($payload['cells'] ?? 0, 0, 28, 'cells')],
+            'loaded_cells' => ['cells' => self::intInRange($payload['cells'] ?? 0, 'cells', 0, 28)],
             // Duas línguas e mais nada: a de fábrica e o inglês.
-            'device_language' => ['language' => self::zeroBasedRangeInt($payload['language'] ?? 0, 0, 1, 'language')],
+            'device_language' => ['language' => self::intInRange($payload['language'] ?? 0, 'language', 0, 1)],
             // HHMM com sinal, e não minutos: `+100` é uma hora à frente. A gama é a da
             // especificação, de −1200 a +1400; uma zona com nome vai como o desvio de agora.
-            'time_zone' => ['timeZone' => self::zeroBasedRangeInt(
+            'time_zone' => ['timeZone' => self::intInRange(
                 is_string($payload['timeZone'] ?? null) && !is_numeric($payload['timeZone'])
                     ? TimeZoneOffset::hhmm($payload['timeZone'], new \DateTimeImmutable())
                     : $payload['timeZone'] ?? 0,
+                'timeZone',
                 -1200,
                 1400,
-                'timeZone',
             )],
             // As acções não levam payload: o que as distingue é o comando.
             default => [],
@@ -132,10 +132,10 @@ final class ZayataPayloadBuilder extends ConfigurationPayloadBuilder
             // plano pela posição, que é a única leitura que um plano antigo permite.
             $out[] = Values::withoutNulls([
                 'slot' => isset($plan['slot'])
-                    ? self::zeroBasedRangeInt($plan['slot'], 1, PillDispenserAdapter::ALARM_SLOTS, "plans[{$index}].slot")
+                    ? self::intInRange($plan['slot'], "plans[{$index}].slot", 1, PillDispenserAdapter::ALARM_SLOTS)
                     : null,
-                'hour' => self::zeroBasedRangeInt($plan['hour'] ?? 0, 0, 23, "plans[{$index}].hour"),
-                'minute' => self::zeroBasedRangeInt($plan['minute'] ?? 0, 0, 59, "plans[{$index}].minute"),
+                'hour' => self::intInRange($plan['hour'] ?? 0, "plans[{$index}].hour", 0, 23),
+                'minute' => self::intInRange($plan['minute'] ?? 0, "plans[{$index}].minute", 0, 59),
                 'enabled' => (bool)self::boolInt($plan['enabled'] ?? true, "plans[{$index}].enabled"),
             ]);
         }
