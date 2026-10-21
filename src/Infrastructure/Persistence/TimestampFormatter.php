@@ -12,26 +12,9 @@ final class TimestampFormatter
     private const DB_FORMAT = 'Y-m-d H:i:s';
     private const ISO_FORMAT = 'Y-m-d\TH:i:s\Z';
 
-    public static function toIso(?string $value = null): string
+    /** A ausência continua ausência: um instante por preencher não é o de agora. */
+    public static function toIso(mixed $value): string
     {
-        $dateTime = self::parse($value);
-        if ($dateTime === null) {
-            return gmdate(self::ISO_FORMAT);
-        }
-
-        return $dateTime->setTimezone(new DateTimeZone('UTC'))->format(self::ISO_FORMAT);
-    }
-
-    /**
-     * Como o `toIso`, mas a ausência continua ausência: o `toIso` devolve o instante actual, que
-     * mentia num `applied_at` por aplicar.
-     */
-    public static function toIsoOrEmpty(mixed $value): string
-    {
-        if ($value === null) {
-            return '';
-        }
-
         $dateTime = self::parse(is_string($value) ? $value : null);
 
         return $dateTime === null
@@ -50,7 +33,7 @@ final class TimestampFormatter
     {
         foreach ($columns as $column) {
             if (array_key_exists($column, $row)) {
-                $row[$column] = self::toIsoOrEmpty($row[$column]);
+                $row[$column] = self::toIso($row[$column]);
             }
         }
 
@@ -63,15 +46,7 @@ final class TimestampFormatter
      */
     public static function normalizeRow(array $row): array
     {
-        if (array_key_exists('created_at', $row)) {
-            $row['created_at'] = self::toIso(is_string($row['created_at']) ? $row['created_at'] : null);
-        }
-
-        if (array_key_exists('updated_at', $row)) {
-            $row['updated_at'] = self::toIso(is_string($row['updated_at']) ? $row['updated_at'] : null);
-        }
-
-        return $row;
+        return self::isoColumns($row, ['created_at', 'updated_at']);
     }
 
     /**
