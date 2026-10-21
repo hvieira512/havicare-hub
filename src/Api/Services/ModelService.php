@@ -6,7 +6,7 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionPresenter;
-use Hub\Api\Http\ModelColumns;
+use Hub\Api\Http\CollectionColumns;
 use Hub\Api\Http\ModelImageUrl;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\ModelWriteRequest;
@@ -19,8 +19,6 @@ use Hub\Domain\SupplierCapabilityTemplate;
 
 class ModelService
 {
-    private const DEFAULT_COLLECTION_LIMIT = 20;
-
     private CollectionPresenter $presenter;
     private ModelImageUrl $imageUrl;
     private RequestBinder $binder;
@@ -41,10 +39,57 @@ class ModelService
 
         return $this->presenter->present(
             $models,
-            ModelColumns::definition($models),
-            $this->presenter->params($query),
-            self::DEFAULT_COLLECTION_LIMIT,
+            new CollectionColumns(
+                sortable: ['supplier', 'internalModel', 'commercialName', 'deviceType', 'protocol'],
+                writable: ModelWriteRequest::class,
+                textFilters: ['model' => ['internalModel', 'commercialName']],
+                fixedOptions: [
+                    'supplier' => self::valuesOf($models, 'supplier'),
+                    'protocol' => self::valuesOf($models, 'protocol'),
+                    // Do catálogo e não das linhas: um tipo ainda sem modelos sai com zero.
+                    'deviceType' => CapabilityCatalog::deviceTypes(),
+                ],
+                extra: ['id'],
+            ),
+            $query,
         );
+    }
+
+    /**
+     * Os fornecedores estão definidos em código, e por isso esta colecção é só de leitura.
+     *
+     * @return array<string, mixed>
+     */
+    public function suppliers(string $query): array
+    {
+        return $this->presenter->present(
+            array_map(static fn (array $row): array => [
+                'id' => (int)$row['id'],
+                'name' => (string)$row['name'],
+                'modelCount' => (int)$row['model_count'],
+                'createdAt' => (string)$row['created_at'],
+                'updatedAt' => (string)$row['updated_at'],
+            ], $this->db->suppliers->all()),
+            new CollectionColumns(sortable: ['name', 'modelCount'], textFilters: ['name' => 'name'], extra: ['id']),
+            $query,
+        );
+    }
+
+    /**
+     * Os valores distintos de uma coluna, por ordem natural.
+     *
+     * @param list<array<string, mixed>> $models
+     * @return list<string>
+     */
+    private static function valuesOf(array $models, string $field): array
+    {
+        $values = array_values(array_unique(array_filter(
+            array_map(static fn (array $model): string => trim((string)($model[$field] ?? '')), $models),
+            static fn (string $value): bool => $value !== '',
+        )));
+        usort($values, static fn (string $left, string $right): int => strnatcasecmp($left, $right));
+
+        return $values;
     }
 
     /**
@@ -63,22 +108,37 @@ class ModelService
         ));
 
         return array_map(function (array $model) use ($enabledByModel, &$catalogByType, $baseUrl): array {
-            $modelId = (int)($model['id'] ?? 0);
-            $deviceType = (string)($model['device_type'] ?? 'watch');
+            $presented = $this->modelRow($model, $baseUrl);
+            $deviceType = $presented['deviceType'];
             $catalogByType[$deviceType] ??= $this->db->genericCapabilities->all($deviceType);
 
-            return [
-                'id' => $modelId,
-                'supplier_id' => (int)($model['supplier_id'] ?? 0),
-                'supplier' => (string)($model['supplier'] ?? ''),
-                'internalModel' => (string)($model['internal_model'] ?? ''),
-                'commercialName' => (string)($model['commercial_name'] ?? ''),
-                'deviceType' => $deviceType,
-                'protocol' => ProtocolRegistry::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? '')),
-                'image' => $this->imageUrl->resolve((string)($model['image'] ?? ''), $baseUrl),
-                'capabilities' => CapabilityCatalog::buildCapabilityMatrix($catalogByType[$deviceType], $enabledByModel[$modelId] ?? []),
+            return $presented + [
+                'capabilities' => CapabilityCatalog::buildCapabilityMatrix($catalogByType[$deviceType], $enabledByModel[$presented['id']] ?? []),
             ];
         }, $rows);
+    }
+
+    /**
+     * Uma linha de `ModelRepository::all()` como a API a mostra.
+     *
+     * @param array<string, mixed> $row
+     * @return array{id: int, supplierId: int, supplier: string, internalModel: string, commercialName: string, deviceType: string, protocol: string, image: ?string}
+     */
+    private function modelRow(array $row, string $baseUrl): array
+    {
+        $supplier = (string)$row['supplier'];
+        $internalModel = (string)$row['internal_model'];
+
+        return [
+            'id' => (int)$row['id'],
+            'supplierId' => (int)$row['supplier_id'],
+            'supplier' => $supplier,
+            'internalModel' => $internalModel,
+            'commercialName' => (string)$row['commercial_name'],
+            'deviceType' => DeviceMetadata::normalizeDeviceType((string)$row['device_type']),
+            'protocol' => ProtocolRegistry::forModel($supplier, $internalModel),
+            'image' => $this->imageUrl->resolve((string)$row['image_path'], $baseUrl),
+        ];
     }
 
     /** @return array<string, mixed> */
@@ -121,19 +181,9 @@ class ModelService
         }
 
         $modelsByDeviceTypeAndSupplier = [];
-        foreach ($this->db->models->all() as $model) {
-            $deviceType = DeviceMetadata::normalizeDeviceType((string)($model['device_type'] ?? 'watch'));
-            $supplierName = (string)($model['supplier'] ?? '');
-            $modelsByDeviceTypeAndSupplier[$deviceType][$supplierName][] = [
-                'id' => (int)($model['id'] ?? 0),
-                'supplier_id' => (int)($model['supplier_id'] ?? 0),
-                'supplier' => $supplierName,
-                'internalModel' => (string)($model['internal_model'] ?? ''),
-                'commercialName' => (string)($model['commercial_name'] ?? ''),
-                'deviceType' => $deviceType,
-                'protocol' => ProtocolRegistry::forModel($supplierName, (string)($model['internal_model'] ?? '')),
-                'image' => $this->imageUrl->resolve((string)($model['image'] ?? ''), $baseUrl),
-            ];
+        foreach ($this->db->models->all() as $row) {
+            $model = $this->modelRow($row, $baseUrl);
+            $modelsByDeviceTypeAndSupplier[$model['deviceType']][$model['supplier']][] = $model;
         }
 
         foreach ($groups as $deviceType => &$group) {
@@ -141,7 +191,7 @@ class ModelService
             foreach ($suppliersForDeviceType as $supplierName => $models) {
                 $firstModel = $models[0] ?? [];
                 $group['suppliers'][] = [
-                    'id' => (int)($firstModel['supplier_id'] ?? 0),
+                    'id' => (int)($firstModel['supplierId'] ?? 0),
                     'name' => $supplierName,
                     'models' => $models,
                 ];
@@ -162,29 +212,16 @@ class ModelService
             return ApiError::modelNotFound()->toArray();
         }
 
-        $protocol = ProtocolRegistry::forModel((string)($entry['supplier_name'] ?? ''), (string)($entry['internal_model'] ?? ''));
-        $imagePath = (string)($entry['image_path'] ?? '');
-        $deviceType = (string)($entry['device_type'] ?? 'watch');
+        $model = $this->modelRow($entry, $baseUrl);
+        $deviceType = $model['deviceType'];
         $catalog = $this->db->genericCapabilities->all($deviceType);
-        $requestableCapabilityKeys = $this->requestableTelemetryKeys(
-            $protocol,
-            (string)($entry['supplier_name'] ?? ''),
-            $deviceType
-        );
+        $requestableCapabilityKeys = $this->requestableTelemetryKeys($model['protocol'], $model['supplier'], $deviceType);
         $effectiveRequestable = array_values(array_intersect(
             $this->db->modelCapabilities->requestableTelemetryFeaturesForModelId($id),
             $requestableCapabilityKeys
         ));
 
-        return [
-            'id' => $id,
-            'supplier_id' => (int)($entry['supplier_id'] ?? 0),
-            'supplier' => (string)($entry['supplier_name'] ?? ''),
-            'internalModel' => (string)($entry['internal_model'] ?? ''),
-            'commercialName' => (string)($entry['commercial_name'] ?? ''),
-            'deviceType' => $deviceType,
-            'protocol' => $protocol,
-            'image' => $this->imageUrl->resolve($imagePath, $baseUrl),
+        return $model + [
             'capabilities' => CapabilityCatalog::buildCapabilityMatrix(
                 $catalog,
                 $this->db->modelCapabilities->enabledFeaturesForModelId($id)
@@ -197,11 +234,11 @@ class ModelService
     /** @return array<string, mixed> */
     public function template(string $query = ''): array
     {
-        $params = $this->presenter->params($query);
-        $supplierId = (int)($params['supplierId'] ?? $params['supplier_id'] ?? 0);
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($params['deviceType'] ?? $params['device_type'] ?? 'watch'));
+        parse_str($query, $params);
+        $supplierId = (int)($params['supplierId'] ?? 0);
+        $deviceType = DeviceMetadata::normalizeDeviceType((string)($params['deviceType'] ?? 'watch'));
         if ($supplierId <= 0) {
-            return ApiError::invalidRequest('supplierId is required')->toArray();
+            return ApiError::invalidField('supplierId', 'supplierId is required')->toArray();
         }
 
         $supplier = $this->db->suppliers->findById($supplierId);
@@ -219,7 +256,7 @@ class ModelService
         $enabledKeys = SupplierCapabilityTemplate::keysForSupplierDeviceType($supplierName, $deviceType);
 
         return [
-            'supplier_id' => $supplierId,
+            'supplierId' => $supplierId,
             'supplier' => $supplierName,
             'deviceType' => $deviceType,
             'protocol' => $protocol,
@@ -279,7 +316,7 @@ class ModelService
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    public function update(int $id, array $payload, mixed $imageUpload = null): array
+    public function update(int $id, array $payload, mixed $imageUpload = null, string $baseUrl = ''): array
     {
         $current = $this->db->models->findById($id);
         if ($current === null) {
@@ -314,7 +351,7 @@ class ModelService
             $this->images->delete((string)($current['image_path'] ?? ''));
         }
 
-        return ['status' => 'ok'];
+        return $this->show($id, $baseUrl);
     }
 
     /** @return array<string, mixed> */
@@ -338,7 +375,7 @@ class ModelService
     private function modelFields(array $decoded, string $mode, ?int $modelId = null): array
     {
         // A conversão de escalares corre sempre: o corpo pode ser multipart, e num JSON não toca em nada.
-        $request = $this->binder->bind(self::withCapabilityAliases($decoded), ModelWriteRequest::class, [], true);
+        $request = $this->binder->bind($decoded, ModelWriteRequest::class, [], true);
         if (is_array($request)) {
             return $request;
         }
@@ -409,31 +446,6 @@ class ModelService
             'enabled_capabilities' => $enabledCapabilities,
             'requestable_capabilities' => $hasRequestableCapabilitiesSelection ? $requestableCapabilities : null,
         ];
-    }
-
-    /**
-     * O `enabledCapabilities` é o nome antigo do `capabilities`, e continua a ser aceite. Fica aqui
-     * e não no `RequestBinder` porque é um sinónimo desta rota e de mais nenhuma.
-     *
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    private static function withCapabilityAliases(array $payload): array
-    {
-        foreach (
-            [
-            'enabledCapabilities' => 'capabilities',
-            'enabledCapabilities[]' => 'capabilities',
-            'enabledCapabilitiesConfigured' => 'capabilitiesConfigured',
-            ] as $alias => $canonical
-        ) {
-            if (array_key_exists($alias, $payload) && !array_key_exists($canonical, $payload)) {
-                $payload[$canonical] = $payload[$alias];
-            }
-            unset($payload[$alias]);
-        }
-
-        return $payload;
     }
 
     /**

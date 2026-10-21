@@ -416,12 +416,16 @@ já tinha gerado.
 
 ## 4. Formas de resposta
 
+Os nomes de campo são camelCase, nas respostas e nos corpos. As exceções são
+chaves que são valores — capacidades, configurações — e os quatro campos do
+token que o hitCare lê (ver o [Pendente do hitCare](08-contrato-mqtt.md#pendente-do-hitcare)).
+
 ### Coleções
 
 ```json
 {
   "data": [ … ],
-  "pagination": { "limit": 20, "page": 1, "total_pages": 5, "total": 87 },
+  "pagination": { "limit": 20, "page": 1, "totalPages": 5, "total": 87 },
   "filters": { "applied": { … }, "available": { … }, "counts": { … } }
 }
 ```
@@ -512,7 +516,11 @@ Ver a [configuração de dispositivos](10-configuracao-de-dispositivos.md).
 }
 ```
 
-O campo `fields` está presente apenas quando existem erros por campo.
+Toda a recusa de validação traz o `fields`, campo a campo — o `invalid_request`,
+o `invalid_config` (com a chave da configuração) e o `incomplete_owner`. O
+`message` é inglês e é para registos e para quem integra: a dashboard nunca o
+mostra, e traduz pelo `code` e pelos nomes do `fields` numa tabela só
+(`src/Dashboard/dashboard/api/errors.js`).
 
 **O estado HTTP é derivado do `code`.** Não é determinado por quem constrói a
 resposta: existe um mapa único, consultado pelo `JsonResponder`. Esta
@@ -521,17 +529,17 @@ mais curta de escrever.
 
 | Estado | Códigos |
 |---|---|
-| **400** | `invalid_request`, `invalid_config`, `invalid_link`, `unsupported_feature`, `unknown_protocol`, `device_already_associated`, `invalid_association`, `invalid_role`, `invalid_license`, `feature_not_requestable`, `unsupported_capability`, `invalid_requestable_capability`, `upload_failed`, `image_too_large`, `image_dimensions_too_large`, `gd_missing`, `gd_jpeg_missing`, `invalid_image`, `image_save_failed` |
+| **400** | `invalid_request`, `invalid_config`, `invalid_link`, `unsupported_feature`, `unknown_protocol`, `device_already_associated`, `invalid_association`, `invalid_role`, `invalid_license`, `feature_not_requestable`, `unsupported_capability`, `invalid_requestable_capability`, `upload_failed`, `image_too_large`, `image_dimensions_too_large`, `gd_missing`, `gd_jpeg_missing`, `invalid_image`, `image_save_failed`, `device_is_not_a_radar`, `license_has_no_radar_credentials` |
 | **401** | `invalid_credentials`, `invalid_refresh_token`, `unauthorized` |
 | **403** | `forbidden` |
 | **404** | `association_not_found`, `capability_not_found`, `company_not_found`, `denylist_not_found`, `license_not_found`, `model_not_found`, `not_found`, `notification_not_found`, `protocol_not_found`, `supplier_not_found`, `user_not_found` |
 | **409** | `device_exists`, `model_exists`, `user_exists`, `duplicate` |
-| **422** | `incomplete_owner` — um dispositivo tem empresa e licença, ou nenhuma; o `fields` diz a que falta |
+| **422** | `incomplete_owner` — um dispositivo tem empresa e licença, ou nenhuma; o `fields` diz a que falta · `invalid_radar_areas` — as áreas de um radar partem uma regra; o `fields` diz qual, por área (`items[i]`): `door_off_wall`, `outside_room`, `second_monitoring_bed`, ou `too_many_areas` na lista |
 | **429** | `too_many_attempts` |
 | **500** | `server_error` |
 | **503** | `too_many_streams` |
 
-São **43 códigos**. Um código não declarado responde com 400.
+São **46 códigos**. Um código não declarado responde com 400.
 
 Duas distinções relevantes:
 
@@ -548,7 +556,7 @@ Os corpos de escrita são objetos com regras — seis classes em
 
 ```mermaid
 flowchart TB
-  A["Corpo JSON"] --> B["Chaves canónicas<br/><small>license_ref_id → licenseRefId</small>"]
+  A["Corpo JSON"] --> B["Chaves canónicas<br/><small>capabilities[] → capabilities</small>"]
   B --> C["Construir por reflexão<br/><small>argumentos por nome</small>"]
   C --> D{"Tipos<br/>compatíveis?"}
   D -->|não| E["invalid_request"]

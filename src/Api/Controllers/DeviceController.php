@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Api\Controllers;
 
-use Hub\Api\Http\ApiError;
 use Hub\Api\Http\JsonResponder;
 use Hub\Api\Http\RequestContext;
 use Hub\Api\Services\DeviceService;
@@ -25,22 +24,6 @@ final class DeviceController
         private DeviceService $service,
         private JsonResponder $json,
     ) {
-    }
-
-    /** @param array<string, string> $params */
-    public function list(array $params, ServerRequestInterface $request): Response
-    {
-        $auth = RequestContext::auth($request);
-
-        return $this->json->result($this->service->list((string)$request->getUri()->getQuery(), $auth, RequestContext::baseUrl($request)));
-    }
-
-    /** @param array<string, string> $params */
-    public function show(array $params, ServerRequestInterface $request): Response
-    {
-        $auth = RequestContext::auth($request);
-
-        return $this->json->result($this->service->show($params['imei'], $auth, RequestContext::baseUrl($request)));
     }
 
     /** @param array<string, string> $params */
@@ -145,101 +128,5 @@ final class DeviceController
             'Cache-Control' => 'no-cache',
             'X-Accel-Buffering' => 'no',
         ], $stream);
-    }
-
-    /** @param array<string, string> $params */
-    public function requestFeature(array $params, ServerRequestInterface $request): Response
-    {
-        $payload = RequestContext::jsonBody($request);
-
-        return $this->json->result($payload === null
-            ? ApiError::invalidJson()->toArray()
-            : $this->service->requestFeature($params['imei'], $payload, RequestContext::auth($request), RequestContext::requestId($request)));
-    }
-
-    /** @param array<string, string> $params */
-    public function links(array $params, ServerRequestInterface $request): Response
-    {
-        return $this->json->result($this->service->links($params['imei'], RequestContext::auth($request)));
-    }
-
-    /**
-     * Em cru, para o estado de sucesso ser o que a rota declara.
-     *
-     * @param array<string, string> $params
-     * @return array<string, mixed>
-     */
-    public function createLink(array $params, ServerRequestInterface $request): array
-    {
-        return $this->service->createLink($params['imei'], $params['linkedImei'], RequestContext::auth($request));
-    }
-
-    /** @param array<string, string> $params */
-    public function deleteLink(array $params, ServerRequestInterface $request): Response
-    {
-        return $this->json->result($this->service->deleteLink($params['imei'], $params['linkedImei'], RequestContext::auth($request)));
-    }
-
-    /** @param array<string, string> $params */
-    public function patchAssociation(array $params, ServerRequestInterface $request): Response
-    {
-        $payload = RequestContext::jsonBody($request);
-
-        return $this->json->result($payload === null
-            ? ApiError::invalidJson()->toArray()
-            : $this->service->patchAssociation($params['imei'], $payload, RequestContext::auth($request)));
-    }
-
-    /** @param array<string, string> $params */
-    public function deleteAssociation(array $params, ServerRequestInterface $request): Response
-    {
-        return $this->json->result($this->service->deleteAssociation($params['imei'], RequestContext::auth($request)));
-    }
-
-    /** @param array<string, string> $params */
-    public function commandStatus(array $params, ServerRequestInterface $request): Response
-    {
-        return $this->json->result($this->service->commandStatus($params['id'], RequestContext::auth($request)));
-    }
-
-    /**
-     * Em cru, para o estado de sucesso ser o que a rota declara.
-     *
-     * @param array<string, string> $params
-     * @return array<string, mixed>
-     */
-    public function create(array $params, ServerRequestInterface $request): array
-    {
-        $payload = RequestContext::jsonBody($request);
-
-        return $payload === null
-            ? ApiError::invalidJson()->toArray()
-            : $this->service->create($payload, RequestContext::auth($request));
-    }
-
-    /** @param array<string, string> $params */
-    public function update(array $params, ServerRequestInterface $request): Response
-    {
-        $payload = RequestContext::jsonBody($request);
-
-        return $this->json->result($payload === null
-            ? ApiError::invalidJson()->toArray()
-            : $this->service->update($params['imei'], $payload, RequestContext::auth($request), RequestContext::requestId($request)));
-    }
-
-    /** @param array<string, string> $params */
-    public function updateConfigurations(array $params, ServerRequestInterface $request): Response
-    {
-        $payload = RequestContext::jsonBody($request);
-
-        return $this->json->result($payload === null
-            ? ApiError::invalidJson()->toArray()
-            : $this->service->updateConfigurations($params['imei'], $payload, RequestContext::auth($request), RequestContext::requestId($request)));
-    }
-
-    /** @param array<string, string> $params */
-    public function delete(array $params, ServerRequestInterface $request): Response
-    {
-        return $this->json->result($this->service->delete($params['imei'], RequestContext::auth($request)));
     }
 }

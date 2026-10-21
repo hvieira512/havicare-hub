@@ -41,12 +41,7 @@ final class DeviceFeatureRequestService
     public function requestFeature(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
-            Logger::channel('api')->warning('API telemetry request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'not_found',
-            ]);
-            return ApiError::deviceNotFound()->toArray();
+            return $this->reject('telemetry', $requestId, $imei, ApiError::deviceNotFound(), []);
         }
 
         $feature = trim((string)($payload['feature'] ?? ''));
@@ -55,35 +50,17 @@ final class DeviceFeatureRequestService
             return $this->requestCapabilityAction($imei, $capability, $payload, $auth, $requestId);
         }
         if ($feature === '') {
-            Logger::channel('api')->warning('API telemetry request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_request',
-                'reason' => 'missing_feature',
-            ]);
-            return ApiError::invalidRequest('feature is required')->toArray();
+            return $this->reject('telemetry', $requestId, $imei, ApiError::invalidField('feature', 'feature is required'), ['reason' => 'missing_feature']);
         }
 
         $identity = $this->directory->identify($imei);
 
         $telemetrySupport = $this->capabilities->telemetryCapabilities($identity->modelRow, $identity->protocol);
         if (!($telemetrySupport[$feature]['supported'] ?? false)) {
-            Logger::channel('api')->warning('API telemetry request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'feature' => $feature,
-                'error_code' => 'unsupported_feature',
-            ]);
-            return ApiError::unsupportedFeature('Feature is not supported for this device')->toArray();
+            return $this->reject('telemetry', $requestId, $imei, ApiError::unsupportedFeature('Feature is not supported for this device'), ['feature' => $feature]);
         }
         if (!($telemetrySupport[$feature]['requestable'] ?? false)) {
-            Logger::channel('api')->warning('API telemetry request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'feature' => $feature,
-                'error_code' => 'feature_not_requestable',
-            ]);
-            return ApiError::featureNotRequestable()->toArray();
+            return $this->reject('telemetry', $requestId, $imei, ApiError::featureNotRequestable(), ['feature' => $feature]);
         }
 
         $result = $this->sendFeatureCommands($imei, $identity->protocol, $feature, $identity->metadata, $identity->device);
@@ -129,13 +106,7 @@ final class DeviceFeatureRequestService
     ): array {
         // A reposição de fábrica devolve o aparelho ao servidor do fornecedor: só o hub a pede.
         if ($capability === 'reset_device' && $auth !== null && !$auth->isAdmin()) {
-            Logger::channel('api')->warning('API capability request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'capability' => $capability,
-                'error_code' => 'forbidden',
-            ]);
-            return ApiError::forbidden()->toArray();
+            return $this->reject('capability', $requestId, $imei, ApiError::forbidden(), ['capability' => $capability]);
         }
 
         $identity = $this->directory->identify($imei);
@@ -145,26 +116,13 @@ final class DeviceFeatureRequestService
             : CapabilityCatalog::keysForProtocol($protocol));
 
         if (!isset($enabled[$capability])) {
-            Logger::channel('api')->warning('API capability request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'capability' => $capability,
-                'error_code' => 'unsupported_feature',
-            ]);
-            return ApiError::unsupportedFeature('Capability is not supported for this device')->toArray();
+            return $this->reject('capability', $requestId, $imei, ApiError::unsupportedFeature('Capability is not supported for this device'), ['capability' => $capability]);
         }
 
         try {
             $nativeUpdates = $this->capabilityRegistry->toNative($protocol, $capability, $payload['value'] ?? null);
         } catch (\InvalidArgumentException $e) {
-            Logger::channel('api')->warning('API capability request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'capability' => $capability,
-                'error_code' => 'invalid_config',
-                'message' => $e->getMessage(),
-            ]);
-            return ApiError::invalidConfig($e->getMessage())->toArray();
+            return $this->reject('capability', $requestId, $imei, ApiError::invalidConfig($e->getMessage(), 'value'), ['capability' => $capability, 'message' => $e->getMessage()]);
         }
 
         // Fora do ciclo: só a calibração do relógio o usa, e lá dentro cada comando pagava uma
@@ -176,7 +134,7 @@ final class DeviceFeatureRequestService
         foreach ($nativeUpdates as $nativeKey => $payload) {
             $error = DeviceConfigurationCatalog::validate($protocol, $nativeKey, $payload);
             if ($error !== null) {
-                return ApiError::invalidConfig($error)->toArray();
+                return ApiError::invalidConfig($error, 'value')->toArray();
             }
 
             $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $nativeKey, $payload);
@@ -203,9 +161,7 @@ final class DeviceFeatureRequestService
             ]);
             $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $nativeKey) ?? [];
             $expectedReplyTypes = $entry['expectedReplyTypes'] ?? [];
-            $record = [
-                'status' => $status,
-                'imei' => $imei,
+            $commands[] = $this->recordCommand($imei, $id, $status, [
                 'protocol' => $protocol,
                 'capability' => $capability,
                 'nativeType' => $command,
@@ -213,17 +169,7 @@ final class DeviceFeatureRequestService
                 'expectedReplyTypes' => $expectedReplyTypes,
                 'retryable' => false,
                 'bytes' => $bytes,
-                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            ];
-            if ($status === 'sent' && $expectedReplyTypes !== []) {
-                $record['status'] = 'waiting';
-                $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
-            }
-            if ($status === 'dropped') {
-                $record['error'] = 'delivery_failed';
-            }
-            $this->store->recordCommand($imei, $id, $record);
-            $commands[] = DeviceCommandRecord::makeJsonSafe(array_merge($record, ['id' => $id]));
+            ], $expectedReplyTypes !== [], gmdate('Y-m-d\\TH:i:s\\Z'));
         }
 
         $statuses = array_values(array_unique(array_map(
@@ -273,9 +219,7 @@ final class DeviceFeatureRequestService
             // botão; não entra na chave de de-duplicação da fila, que diz *o que* está em fila.
             $status = $this->hub->submitDownlink($imei, $bytes, ['id' => $id]);
             $requestedAt = time();
-            $record = [
-                'status' => $status,
-                'imei' => $imei,
+            $commands[] = $this->recordCommand($imei, $id, $status, [
                 'protocol' => $protocol,
                 'requestId' => (string)($entry['id'] ?? $nativeCommand),
                 'feature' => $feature,
@@ -288,17 +232,7 @@ final class DeviceFeatureRequestService
                 'retryDelaySeconds' => 60,
                 'lastAttemptAt' => gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt),
                 'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt + 60),
-                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt),
-            ];
-            if ($status === 'sent') {
-                $record['status'] = 'waiting';
-                $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt);
-            }
-            if ($status === 'dropped') {
-                $record['error'] = 'delivery_failed';
-            }
-            $this->store->recordCommand($imei, $id, $record);
-            $commands[] = DeviceCommandRecord::makeJsonSafe(array_merge($record, ['id' => $id]));
+            ], true, gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt));
         }
 
         return ['status' => 'sent', 'commands' => $commands];
@@ -365,6 +299,46 @@ final class DeviceFeatureRequestService
         }
 
         return null;
+    }
+
+    /**
+     * Regista a recusa e devolve-a.
+     *
+     * @param array<string, mixed> $context
+     * @return array<string, mixed>
+     */
+    private function reject(string $kind, string $requestId, string $imei, ApiError $error, array $context): array
+    {
+        Logger::channel('api')->warning("API {$kind} request rejected", [
+            'request_id' => $requestId,
+            'imei' => $imei,
+            ...$context,
+            'error_code' => $error->code,
+        ]);
+
+        return $error->toArray();
+    }
+
+    /**
+     * Guarda o comando que acabou de sair e devolve-o como a API o mostra. Um comando enviado
+     * fica `waiting` quando espera resposta.
+     *
+     * @param array<string, mixed> $record
+     * @return array<string, mixed>
+     */
+    private function recordCommand(string $imei, string $id, string $status, array $record, bool $awaitsReply, string $now): array
+    {
+        $record = ['status' => $status, 'imei' => $imei] + $record + ['requestedAt' => $now];
+        if ($status === 'sent' && $awaitsReply) {
+            $record['status'] = 'waiting';
+            $record['sentAt'] = $now;
+        }
+        if ($status === 'dropped') {
+            $record['error'] = 'delivery_failed';
+        }
+        $this->store->recordCommand($imei, $id, $record);
+
+        return DeviceCommandRecord::makeJsonSafe(array_merge($record, ['id' => $id]));
     }
 
     /** @return array<string, mixed> */

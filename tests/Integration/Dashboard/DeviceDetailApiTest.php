@@ -226,7 +226,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
-            'licenseId' => '0',
+            'licenseId' => null,
         ]);
         self::assertSame('ok', $created['status'] ?? null);
 
@@ -331,7 +331,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
-            'licenseId' => '0',
+            'licenseId' => null,
         ]);
         self::assertSame('ok', $created['status'] ?? null);
 
@@ -379,7 +379,7 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
-            'licenseId' => '0',
+            'licenseId' => null,
         ])['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');

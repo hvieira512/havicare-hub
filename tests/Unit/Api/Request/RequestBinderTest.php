@@ -45,8 +45,8 @@ final class RequestBinderTest extends TestCase
         self::assertSame(['must be of type ?int'], $result['error']['fields']['licenseRefId']);
     }
 
-    /** As duas grafias aceitam-se por uma regra só, e não campo a campo. */
-    public function testSnakeCaseKeysAreAcceptedForTheSameField(): void
+    /** Os campos são camelCase: uma chave em snake_case não é o mesmo campo. */
+    public function testSnakeCaseKeysAreNotTheSameField(): void
     {
         $request = $this->binder->bind(
             ['username' => 'tenant', 'license_ref_id' => 7, 'company_id' => 3],
@@ -54,20 +54,8 @@ final class RequestBinderTest extends TestCase
         );
 
         self::assertInstanceOf(ApiUserWriteRequest::class, $request);
-        self::assertSame(7, $request->licenseRefId);
-        self::assertSame(3, $request->companyId);
-    }
-
-    /** Com as duas grafias no mesmo corpo ganha a que a especificação documenta. */
-    public function testCamelCaseWinsOverSnakeCaseWhenBothAreSent(): void
-    {
-        $request = $this->binder->bind(
-            ['username' => 'tenant', 'licenseRefId' => 9, 'license_ref_id' => 7],
-            ApiUserWriteRequest::class
-        );
-
-        self::assertInstanceOf(ApiUserWriteRequest::class, $request);
-        self::assertSame(9, $request->licenseRefId);
+        self::assertNull($request->licenseRefId);
+        self::assertSame(0, $request->companyId);
     }
 
     /** A palavra-passe só é obrigatória a criar; omiti-la a actualizar é não a mudar. */

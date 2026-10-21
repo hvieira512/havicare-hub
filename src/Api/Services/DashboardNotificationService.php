@@ -62,7 +62,7 @@ final class DashboardNotificationService
     public function delete(int $id): array
     {
         if ($id <= 0) {
-            return ApiError::invalidRequest('notification id must be a positive integer')->toArray();
+            return ApiError::invalidField('id', 'notification id must be a positive integer')->toArray();
         }
         if (!$this->db->dashboardNotifications->delete($id)) {
             return ApiError::notificationNotFound()->toArray();

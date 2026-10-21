@@ -46,7 +46,7 @@ const scheduleTokenRefresh = (delayOverrideMs = null) => {
         tokenRefreshTimer = null;
     }
 
-    const expiresAt = apiToken?.expires_at;
+    const expiresAt = apiToken?.expiresAt;
     const token = apiToken?.access_token || "";
     if (token === "" || typeof expiresAt !== "string" || expiresAt === "") {
         return;
@@ -66,11 +66,10 @@ const scheduleTokenRefresh = (delayOverrideMs = null) => {
     }, delayMs);
 };
 
-// A frase do browser é inglesa -- «Failed to fetch» no Chrome --; o original fica no `detail`.
+// O texto de cada código está no `api/errors.js`; a frase do browser fica no `detail`.
 const networkError = (error) => ({
     error: {
         code: "network_error",
-        message: "Não foi possível falar com o servidor. Verifique a ligação.",
         detail: error instanceof Error ? error.message : String(error),
     },
     _httpStatus: 0,
@@ -83,13 +82,7 @@ const parseJsonResponse = async (response) => {
         if (response.ok) {
             return { _httpStatus: response.status };
         }
-        return {
-            error: {
-                code: "empty_body",
-                message: `O servidor respondeu ${response.status} sem corpo.`,
-            },
-            _httpStatus: response.status,
-        };
+        return { error: { code: "empty_body" }, _httpStatus: response.status };
     }
 
     try {
@@ -98,15 +91,8 @@ const parseJsonResponse = async (response) => {
             return Object.assign({}, body, { _httpStatus: response.status });
         }
         return body;
-    } catch (error) {
-        return {
-            error: {
-                code: "invalid_json",
-                message: error instanceof Error ? error.message : "Invalid JSON response",
-            },
-            _httpStatus: response.status,
-            _rawBody: raw,
-        };
+    } catch {
+        return { error: { code: "invalid_json" }, _httpStatus: response.status, _rawBody: raw };
     }
 };
 
@@ -169,7 +155,7 @@ const refreshAccessToken = async () => {
             // Repete abaixo enquanto o token de acesso actual continuar válido.
         }
 
-        const expiresAt = apiToken?.expires_at;
+        const expiresAt = apiToken?.expiresAt;
         const expiresAtMs = typeof expiresAt === "string" ? Date.parse(expiresAt) : Number.NaN;
         if (Number.isFinite(expiresAtMs) && expiresAtMs > Date.now()) {
             const retryDelay = Math.min(TOKEN_REFRESH_RETRY_MS, Math.max(1000, expiresAtMs - Date.now() - 5000));
@@ -203,7 +189,7 @@ export async function allPages(fetchPage, params = {}) {
         const response = await fetchPage({ ...params, page, limit: 200 });
         if (response?.error) return response;
         data.push(...(response.data || []));
-        if (page >= Number(response.pagination?.total_pages || 1)) return { data };
+        if (page >= Number(response.pagination?.totalPages || 1)) return { data };
     }
 }
 

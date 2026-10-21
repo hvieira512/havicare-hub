@@ -23,7 +23,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertArrayNotHasKey('enabledCapabilities', $response);
         self::assertArrayNotHasKey('configurationCatalog', $response);
         self::assertIsArray($response['capabilities'] ?? null);
-        self::assertSame((int)$model['supplier_id'], $response['supplier_id'] ?? null);
+        self::assertSame((int)$model['supplier_id'], $response['supplierId'] ?? null);
         self::assertTrue($response['capabilities']['telemetry']['heart_rate'] ?? false);
         self::assertTrue($response['capabilities']['telemetry']['location'] ?? false);
         self::assertTrue($response['capabilities']['health']['auto_vitals_interval'] ?? false);
@@ -58,7 +58,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $payload = [
-            'supplier_id' => (int)$model['supplier_id'],
+            'supplierId' => (int)$model['supplier_id'],
             'internalModel' => (string)$model['internal_model'],
             'commercialName' => (string)$model['commercial_name'],
             'deviceType' => (string)$model['device_type'],
@@ -70,13 +70,31 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         $result = $api->update((int)$model['id'], $payload);
 
-        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame((int)$model['id'], $result['id'] ?? null);
         self::assertSame(
             ['heart_rate'],
             $db->modelCapabilities->requestableFeaturesForModelId((int)$model['id'])
         );
         $updated = $api->show((int)$model['id'], '');
         self::assertSame(['heart_rate'], $updated['requestableCapabilities'] ?? null);
+    }
+
+    /** O cliente mostra o que o servidor guardou, com as capacidades que ele aplicou. */
+    public function testUpdateAnswersWithTheSavedModel(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+        self::assertIsArray($model);
+
+        $result = $api->update((int)$model['id'], [
+            'supplierId' => (int)$model['supplier_id'],
+            'internalModel' => 'HW20PRO',
+            'commercialName' => 'Relógio HW20',
+            'deviceType' => 'watch',
+        ]);
+
+        self::assertSame($api->show((int)$model['id'], ''), $result);
+        self::assertSame('Relógio HW20', $result['commercialName'] ?? null);
     }
 
     public function testUpdateRejectsRequestableTelemetryThatIsNotSupported(): void
@@ -86,7 +104,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $payload = [
-            'supplier_id' => (int)$model['supplier_id'],
+            'supplierId' => (int)$model['supplier_id'],
             'internalModel' => (string)$model['internal_model'],
             'commercialName' => (string)$model['commercial_name'],
             'deviceType' => (string)$model['device_type'],
@@ -218,7 +236,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $voerka = $db->suppliers->findByName('Voerka');
         self::assertIsArray($voerka);
         $created = $api->create([
-            'supplier_id' => (int)$voerka['id'],
+            'supplierId' => (int)$voerka['id'],
             'internalModel' => 'R1 Teste',
             'commercialName' => 'Radar de teste',
             'deviceType' => 'radar',
@@ -293,7 +311,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $payload = [
-            'supplier_id' => (int)$model['supplier_id'],
+            'supplierId' => (int)$model['supplier_id'],
             'internalModel' => (string)$model['internal_model'],
             'commercialName' => (string)$model['commercial_name'],
             'deviceType' => (string)$model['device_type'],
@@ -303,7 +321,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         $result = $api->update((int)$model['id'], $payload);
 
-        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame((int)$model['id'], $result['id'] ?? null);
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
         sort($actual);
         self::assertSame(['call_whitelist', 'heart_rate', 'working_mode'], $actual);
@@ -322,7 +340,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($supplier);
         $result = $api->create([
-            'supplier_id' => (int)$supplier['id'],
+            'supplierId' => (int)$supplier['id'],
             'internalModel' => 'D46-PLUS',
             'commercialName' => 'D46 Plus',
             'deviceType' => 'watch',
@@ -346,7 +364,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertIsArray($existing);
 
         $result = $api->create([
-            'supplier_id' => (int)$existing['supplier_id'],
+            'supplierId' => (int)$existing['supplier_id'],
             'internalModel' => 'L08 Pro',
             'commercialName' => 'Outro nome comercial qualquer',
             'deviceType' => 'watch',
@@ -364,7 +382,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertIsArray($existing);
 
         $result = $api->create([
-            'supplier_id' => (int)$existing['supplier_id'],
+            'supplierId' => (int)$existing['supplier_id'],
             'internalModel' => 'l08 pro',
             'commercialName' => 'Outro nome comercial qualquer',
             'deviceType' => 'watch',
@@ -382,13 +400,13 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'call_whitelist']);
 
         $result = $api->update((int)$model['id'], [
-            'supplier_id' => (int)$model['supplier_id'],
+            'supplierId' => (int)$model['supplier_id'],
             'internalModel' => (string)$model['internal_model'],
             'commercialName' => 'Vivistar L08 Pro Renamed',
             'deviceType' => (string)$model['device_type'],
         ]);
 
-        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame((int)$model['id'], $result['id'] ?? null);
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
         sort($actual);
         self::assertSame(['call_whitelist', 'heart_rate'], $actual);
@@ -403,13 +421,13 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'ecg']);
 
         $result = $api->update((int)$model['id'], [
-            'supplier_id' => (int)$model['supplier_id'],
+            'supplierId' => (int)$model['supplier_id'],
             'internalModel' => (string)$model['internal_model'],
             'commercialName' => (string)$model['commercial_name'],
             'deviceType' => (string)$model['device_type'],
         ]);
 
-        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame((int)$model['id'], $result['id'] ?? null);
         self::assertSame(
             ['heart_rate'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
@@ -426,7 +444,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
 
         $result = $api->update((int)$model['id'], [
-            'supplier_id' => (int)$model['supplier_id'],
+            'supplierId' => (int)$model['supplier_id'],
             'internalModel' => (string)$model['internal_model'],
             'commercialName' => (string)$model['commercial_name'],
             'deviceType' => (string)$model['device_type'],
@@ -446,7 +464,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $result = $api->update((int)$model['id'], [
-            'supplier_id' => (int)$model['supplier_id'],
+            'supplierId' => (int)$model['supplier_id'],
             'internalModel' => (string)$model['internal_model'],
             'commercialName' => (string)$model['commercial_name'],
             'deviceType' => (string)$model['device_type'],

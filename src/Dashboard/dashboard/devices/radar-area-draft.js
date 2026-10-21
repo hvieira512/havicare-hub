@@ -5,8 +5,6 @@ import { areaName, areaTypeStyle } from "../radar-style.js";
  * é o `areaId` da telemetria: uma área mantém-no enquanto existir.
  */
 
-export const MAX_AREAS = 16;
-
 /** Os tipos que se criam, pela ordem do menu, com o tamanho com que nascem (largura × comprimento). */
 export const CREATABLE_TYPES = [
     { type: "monitoring_bed", size: [10, 19] },
@@ -17,38 +15,18 @@ export const CREATABLE_TYPES = [
     { type: "custom", size: [5, 5] },
 ];
 
-const DOOR = "door";
-const INTERFERENCE = "interference";
-const BEDS = ["bed", "monitoring_bed"];
-const MONITORING_BED = "monitoring_bed";
-/** A porta conta como encostada até 20 cm da parede. */
-const DOOR_WALL_TOLERANCE_DM = 2;
-
-const box = ({ xMinDm, yMinDm, xMaxDm, yMaxDm }) => ({ xMinDm, yMinDm, xMaxDm, yMaxDm });
-
-export function areasFromLayout(layout) {
-    return {
-        room: layout?.room ? box(layout.room) : null,
-        areas: (layout?.areas ?? []).map((area) => ({
-            key: area.key,
-            type: area.type,
-            name: areaName(area),
-            ...box(area),
-        })),
-    };
-}
-
-export function firstFreeKey(areas) {
+/** O `maxAreas` vem da planta da API. */
+export function firstFreeKey(areas, maxAreas) {
     const used = new Set(areas.map((area) => area.key));
-    for (let key = 0; key < MAX_AREAS; key += 1) {
+    for (let key = 0; key < maxAreas; key += 1) {
         if (!used.has(key)) return key;
     }
     return null;
 }
 
 /** Acrescenta uma área do tipo pedido centrada em `[x, y]`; sem `key` livre, fica como estava. */
-export function addArea(areas, type, [x, y]) {
-    const key = firstFreeKey(areas);
+export function addArea(areas, type, [x, y], maxAreas) {
+    const key = firstFreeKey(areas, maxAreas);
     if (key === null) return areas;
 
     const [width, length] = CREATABLE_TYPES.find((entry) => entry.type === type)?.size ?? [5, 5];
@@ -114,49 +92,23 @@ export function resizeArea(area, corner, dx, dy) {
     return next;
 }
 
-export const metres = (dm) => (dm / 10).toLocaleString("pt-PT", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const RULE_TEXT = {
+    door_off_wall: (area) => `A porta «${areaName(area)}» tem de ficar encostada a uma parede.`,
+    outside_room: (area) => `«${areaName(area)}» sai dos limites de deteção; o radar não vê essa parte.`,
+    second_monitoring_bed: () => "Só pode haver uma cama de monitorização: o radar mede os sinais vitais de uma só pessoa.",
+    too_many_areas: (area, maxAreas) => `O radar guarda no máximo ${maxAreas} áreas.`,
+};
 
-const overlaps = (a, b) => a.xMinDm < b.xMaxDm && a.xMaxDm > b.xMinDm && a.yMinDm < b.yMaxDm && a.yMaxDm > b.yMinDm;
+/**
+ * Os avisos de um `invalid_radar_areas`: o `items[i]` é a área `i` do que se enviou.
+ *
+ * @returns {Array<{key?: number, text: string}>}
+ */
+export function areaWarnings(result, sent, maxAreas) {
+    if (result?.error?.code !== "invalid_radar_areas") return [];
 
-/** @returns {Array<{key?: number, hard: boolean, text: string}>} `hard` é o que está mal; o resto é aviso */
-export function areaWarnings(areas, room) {
-    const live = areas.filter((area) => !area.deleted);
-    const list = [];
-
-    for (const area of live) {
-        if (area.type === DOOR) {
-            const wall = Math.min(
-                Math.abs(area.xMinDm - room.xMinDm),
-                Math.abs(area.xMaxDm - room.xMaxDm),
-                Math.abs(area.yMinDm - room.yMinDm),
-                Math.abs(area.yMaxDm - room.yMaxDm),
-            );
-            if (wall > DOOR_WALL_TOLERANCE_DM) {
-                list.push({ key: area.key, hard: true, text: `A porta «${area.name}» está a ${metres(wall)} m da parede mais próxima; tem de ficar encostada.` });
-            }
-            continue;
-        }
-        const outX = Math.max(0, room.xMinDm - area.xMinDm, area.xMaxDm - room.xMaxDm);
-        const outY = Math.max(0, room.yMinDm - area.yMinDm, area.yMaxDm - room.yMaxDm);
-        if (outX > 0 || outY > 0) {
-            list.push({ key: area.key, hard: true, text: `«${area.name}» sai ${metres(Math.max(outX, outY))} m dos limites de deteção; o radar não vê essa parte.` });
-        }
-    }
-
-    for (const interference of live.filter((area) => area.type === INTERFERENCE)) {
-        if (live.some((area) => BEDS.includes(area.type) && overlaps(interference, area))) {
-            list.push({ key: interference.key, hard: false, text: `A interferência «${interference.name}» cobre parte da cama: aí não há alarmes.` });
-        }
-    }
-
-    const monitoring = live.filter((area) => area.type === MONITORING_BED);
-    if (monitoring.length > 1) {
-        list.push({ key: monitoring[1].key, hard: false, text: "Há mais do que uma cama de monitorização; o radar mede os sinais vitais de uma só pessoa." });
-    }
-
-    if (live.length > MAX_AREAS) {
-        list.push({ hard: true, text: `O radar guarda no máximo ${MAX_AREAS} áreas.` });
-    }
-
-    return list;
+    return Object.entries(result.error.fields ?? {}).flatMap(([field, codes]) => {
+        const area = sent[Number(field.match(/^items\[(\d+)\]$/)?.[1])];
+        return codes.map((code) => ({ key: area?.key, text: RULE_TEXT[code]?.(area ?? {}, maxAreas) ?? "Esta área não cumpre as regras do radar." }));
+    });
 }

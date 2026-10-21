@@ -33,9 +33,9 @@ final class CatalogSchemas
                 'properties' => [
                     'id' => ['type' => 'integer', 'example' => 1],
                     'name' => ['type' => 'string', 'example' => 'Wonlex'],
-                    'model_count' => ['type' => 'integer', 'example' => 2],
-                    'created_at' => ['type' => 'string'],
-                    'updated_at' => ['type' => 'string'],
+                    'modelCount' => ['type' => 'integer', 'example' => 2],
+                    'createdAt' => ['type' => 'string', 'format' => 'date-time'],
+                    'updatedAt' => ['type' => 'string', 'format' => 'date-time'],
                 ],
             ],
             'SupplierListResponse' => CommonSchemas::collection('SupplierItem', withColumns: true),
@@ -63,7 +63,7 @@ final class CatalogSchemas
                 'type' => 'object',
                 'properties' => [
                     'id' => ['type' => 'integer', 'example' => 1],
-                    'supplier_id' => ['type' => 'integer', 'example' => 1],
+                    'supplierId' => ['type' => 'integer', 'example' => 1],
                     'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
                     'internalModel' => ['type' => 'string', 'example' => 'HW20PRO'],
                     'commercialName' => ['type' => 'string', 'example' => 'Wonlex HW20 Pro'],
@@ -108,7 +108,7 @@ final class CatalogSchemas
             'ModelTemplateResponse' => [
                 'type' => 'object',
                 'properties' => [
-                    'supplier_id' => ['type' => 'integer', 'example' => 1],
+                    'supplierId' => ['type' => 'integer', 'example' => 1],
                     'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
                     'deviceType' => ['type' => 'string', 'example' => 'watch'],
                     'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
@@ -148,7 +148,7 @@ final class CatalogSchemas
                 'type' => 'object',
                 'properties' => [
                     'id' => ['type' => 'integer', 'example' => 1],
-                    'supplier_id' => ['type' => 'integer', 'example' => 1],
+                    'supplierId' => ['type' => 'integer', 'example' => 1],
                     'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
                     'internalModel' => ['type' => 'string', 'example' => 'HW20PRO'],
                     'commercialName' => ['type' => 'string', 'example' => 'Wonlex HW20 Pro'],

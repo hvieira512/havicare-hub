@@ -32,7 +32,7 @@ const respondWith = (perUrl) => {
 
 const emptyListing = () => jsonResponse(200, {
     data: [],
-    pagination: { page: 1, total_pages: 1, total: 0, limit: 20 },
+    pagination: { page: 1, totalPages: 1, total: 0, limit: 20 },
 });
 
 beforeEach(() => {
@@ -99,7 +99,7 @@ test("the gateway left unauthorized is reported, by name", async () => {
 
 /** Uma criação recusada é outra coisa: não há nada feito, e o assistente fica para se corrigir. */
 test("if creation fails the wizard stays open with the error", async () => {
-    respondWith(() => jsonResponse(409, { error: { code: "conflict" } }));
+    respondWith(() => jsonResponse(409, { error: { code: "device_exists", message: "Device with this IMEI already exists" } }));
 
     const error = await createDeviceFromWizard(answersFor([]));
 

@@ -10,15 +10,15 @@ export function gatewayKeysFromLinks(links) {
     )].sort();
 }
 
-export function eligibleGateways(devices = [], company = "", licenseId = "0") {
-    const expectedCompany = String(company || "");
-    const expectedLicense = String(licenseId || "0");
+export function eligibleGateways(devices = [], company = "", licenseId = "") {
+    const expectedCompany = String(company ?? "");
+    const expectedLicense = String(licenseId ?? "");
 
     return (Array.isArray(devices) ? devices : [])
         .filter((device) =>
             String(device?.deviceType || "") === "gateway" &&
-            String(device?.company || "") === expectedCompany &&
-            String(device?.licenseId || "0") === expectedLicense,
+            String(device?.company ?? "") === expectedCompany &&
+            String(device?.licenseId ?? "") === expectedLicense,
         )
         .sort((a, b) => normalizeKey(a?.imei).localeCompare(normalizeKey(b?.imei)));
 }

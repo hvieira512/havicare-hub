@@ -516,6 +516,17 @@ publicado.
 > dispositivo mudar de estado. Um consumidor não deve exigir a ausência do
 > campo, apenas deixar de depender dele.
 
+## Pendente do hitCare
+
+O hitCare está em produção e lê partes deste contrato e da API REST tal como
+estão. Cada item abaixo fica como está até o hitCare mudar; no código está
+marcado com um comentário `hitcare:`.
+
+| No hub | O que fica | Quem bloqueia no hitCare |
+|---|---|---|
+| `src/Api/Auth/ApiTokenStore.php` | O token do login sai com `access_token`, `expires_in`, `refresh_token` e `refresh_expires_in` em snake_case; os outros campos já são camelCase | `api_v2/hub/repositories/HubApiRepository.php` |
+| `src/Api/Services/AuthService.php` | A renovação aceita `{refresh_token}` no corpo do `POST /api/auth/login` | `api_v2/hub/repositories/HubApiRepository.php` |
+
 ## Implementação
 
 | Ficheiro | Responsabilidade |

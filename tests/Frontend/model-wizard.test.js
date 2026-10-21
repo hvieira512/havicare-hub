@@ -132,7 +132,7 @@ test("the last step says how many capabilities the model inherits", async () => 
     );
 });
 
-test("with both names typed, saves the type, the supplier and the template capabilities", async () => {
+test("with both names typed, saves the type and the supplier and leaves the template to the server", async () => {
     await openWizard();
     clickIn(els.modelWizardAsk, "[data-model-type=\"watch\"]");
     clickIn(els.modelWizardAsk, "[data-model-supplier=\"4P Touch\"]");
@@ -146,11 +146,11 @@ test("with both names typed, saves the type, the supplier and the template capab
     const post = sent.find((request) => request.url === "/api/models");
     assert.ok(post, "o assistente não gravou");
     const body = post.options.body;
-    assert.equal(body.get("supplier_id"), "3");
+    assert.equal(body.get("supplierId"), "3");
     assert.equal(body.get("deviceType"), "watch");
     assert.equal(body.get("commercialName"), "R03");
     assert.equal(body.get("internalModel"), "Y6S");
-    assert.deepEqual(body.getAll("capabilities[]"), ["heart_rate", "battery", "sos"]);
+    assert.deepEqual(body.getAll("capabilities[]"), []);
 });
 
 test("going back and changing the type forgets the supplier that no longer fits", async () => {

@@ -116,7 +116,7 @@ final class RadarLayoutRepository
                     'yMaxDm' => (int)$row['room_y_max_dm'],
                 ],
                 'areas' => [],
-                'fetched_at' => (string)$row['fetched_at'],
+                'fetchedAt' => (string)$row['fetched_at'],
             ];
         }
 

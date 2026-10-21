@@ -7,7 +7,7 @@ import {
 import { getDashboardApiToken } from "./api/http.js";
 import { ago } from "./format.js";
 import { html, raw } from "./html.js";
-import { confirmDestructive, toast } from "./dialogs.js";
+import { apiError, confirmDestructive, toast } from "./dialogs.js";
 import { loadSettingsModal } from "./settings/index.js";
 
 const POLL_INTERVAL_MS = 15_000;
@@ -203,7 +203,7 @@ const dismissNotification = async (id, button) => {
         toast(
             "error",
             "Não foi possível eliminar a notificação",
-            result.error.message || "Por favor, volte a tentar.",
+            apiError(result),
         );
         return;
     }
@@ -233,7 +233,7 @@ const blockDeviceAction = async (notification, button) => {
         toast(
             "error",
             "Não foi possível bloquear o dispositivo",
-            result.error.message || "Por favor, volte a tentar.",
+            apiError(result),
         );
         return;
     }

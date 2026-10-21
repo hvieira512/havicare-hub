@@ -49,6 +49,8 @@ final class DevicePaths
                     'responses' => Responses::map(
                         ['201' => Responses::json('Device registered', 'DeviceCreateResponse')],
                         'invalid_request',
+                        'incomplete_owner',
+                        'forbidden',
                         'model_not_found',
                         'device_exists',
                     ),
@@ -79,6 +81,7 @@ final class DevicePaths
                     'responses' => Responses::map(
                         ['200' => Responses::json('Device updated', 'DeviceUpdateResponse')],
                         'invalid_request',
+                        'incomplete_owner',
                         'forbidden',
                         'model_not_found',
                         'device_exists',
@@ -112,6 +115,7 @@ final class DevicePaths
                         'invalid_config',
                         'unknown_protocol',
                         'not_found',
+                        'invalid_radar_areas',
                     ),
                 ],
             ],
@@ -135,7 +139,8 @@ final class DevicePaths
                     'parameters' => [$imei],
                     'responses' => Responses::map(
                         ['200' => Responses::json('Sync outcome and the resulting layout', 'RadarLayoutSyncResponse')],
-                        'invalid_request',
+                        'device_is_not_a_radar',
+                        'license_has_no_radar_credentials',
                         'not_found',
                     ),
                 ],
@@ -201,7 +206,7 @@ final class DevicePaths
                     'responses' => Responses::map(
                         [
                             '200' => Responses::json(
-                                'Device association updated. If the company exists but the requested license does not, the license is created automatically for that company.',
+                                'Device association updated. When a hub admin names an existing company with a license it does not have yet, that license is created; a license client can only associate to its own existing license.',
                                 'DeviceAssociationResponse',
                             ),
                         ],

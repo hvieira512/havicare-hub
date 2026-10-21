@@ -54,7 +54,7 @@ export const validAdminToken = (token) => {
         return false;
     }
 
-    const expiresAt = Date.parse(String(token.expires_at || ""));
+    const expiresAt = Date.parse(String(token.expiresAt || ""));
     return String(token.access_token || "") !== "" &&
         Number.isFinite(expiresAt) &&
         expiresAt > Date.now();

@@ -7,8 +7,8 @@ import { ensureLicensesLoaded } from "../licenses.js";
 import { stateBadge } from "../components/state-badge.js";
 import { state } from "../state.js";
 import { html, raw } from "../html.js";
-import { apiError, confirmDestructive, promptPassword, toast } from "../dialogs.js";
-import { clearInvalid, markInvalid } from "../validation.js";
+import { apiError, confirmDestructive, promptPassword, reportApiError, toast } from "../dialogs.js";
+import { clearInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, whileBusy } from "./row-editor.js";
@@ -49,7 +49,7 @@ function contextOf(user) {
     if (user.role === "hub_admin") {
         return "Administrador · todas as licenças";
     }
-    const license = [user.company_name, user.license_id].filter(Boolean).join(" / ");
+    const license = [user.companyName, user.licenseId].filter(Boolean).join(" / ");
 
     return `${labelOf(user.role)} · ${license || "sem licença"}`;
 }
@@ -255,7 +255,7 @@ async function saveUser(user, changes = {}) {
         enabled: isEnabled(user),
         ...changes,
     };
-    body.licenseRefId = licenseRefIdFor(body.role, user.license_ref_id);
+    body.licenseRefId = licenseRefIdFor(body.role, user.licenseRefId);
 
     const result = await apiSaveApiUser(user.id, body);
     if (result.error) {
@@ -296,7 +296,7 @@ export async function deleteApiUser(user) {
 const licenseOptions = (licenseList, chosen) =>
     "<option value=\"\">Selecionar licença</option>" +
     licenseList
-        .map((license) => html`<option value="${license.id}"${raw(String(license.id) === String(chosen ?? "") ? " selected" : "")}>${`${license.company_name || "-"} / ${license.license_id} — ${license.name || ""}`}</option>`)
+        .map((license) => html`<option value="${license.id}"${raw(String(license.id) === String(chosen ?? "") ? " selected" : "")}>${`${license.companyName || "-"} / ${license.licenseId} — ${license.name || ""}`}</option>`)
         .join("");
 
 const roleOptions = (chosen) =>
@@ -329,7 +329,7 @@ export function apiUserForm(user, licenseList) {
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="section-label" for="apiUserNewLicense">Licença</label>
-                    <select class="form-select form-select-sm" id="apiUserNewLicense" data-field="licenseRefId"${raw(role === "hub_admin" ? " disabled" : "")}>${raw(licenseOptions(licenseList, user?.license_ref_id))}</select>
+                    <select class="form-select form-select-sm" id="apiUserNewLicense" data-field="licenseRefId"${raw(role === "hub_admin" ? " disabled" : "")}>${raw(licenseOptions(licenseList, user?.licenseRefId))}</select>
                 </div>
             </div>
             <div class="d-flex justify-content-end gap-2 mt-3">
@@ -372,22 +372,9 @@ async function saveApiUserRow(button) {
     }
 
     clearInvalid(el);
-    if (!body.username) {
-        markInvalid(field("username"), "Utilizador é obrigatório");
-    }
-    if (id === "" && !body.password.trim()) {
-        markInvalid(field("password"), "A palavra-passe é obrigatória para um utilizador novo");
-    }
-    if (body.role === "license_client" && !body.licenseRefId) {
-        markInvalid(field("licenseRefId"), "Licença é obrigatória para clientes");
-    }
-    if (el.querySelector(".is-invalid")) {
-        return;
-    }
-
     const result = await apiSaveApiUser(id, body);
     if (result.error) {
-        toast("error", apiError(result));
+        reportApiError(result, field);
         return;
     }
 

@@ -39,3 +39,18 @@ export function bindInvalidClearing(root) {
         root.addEventListener(eventName, clear);
     }
 }
+
+/**
+ * Marca os campos do `error.fields` de uma resposta da API; `fieldFor` dá o controlo de cada um.
+ * Devolve se marcou algum.
+ */
+export function markApiFields(result, fieldFor) {
+    let marked = false;
+    for (const name of Object.keys(result?.error?.fields ?? {})) {
+        const field = fieldFor(name);
+        if (!field) continue;
+        markInvalid(field, String(field.value ?? "").trim() === "" ? "Campo obrigatório" : "Valor inválido");
+        marked = true;
+    }
+    return marked;
+}

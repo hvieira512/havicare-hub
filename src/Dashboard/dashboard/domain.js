@@ -47,28 +47,23 @@ export function deviceTypeShortLabel(deviceType) {
     return DEVICE_TYPES[deviceType]?.shortLabel || deviceTypeLabel(deviceType);
 }
 
-export function normalizeLicenseId(licenseId) {
-    const value = String(licenseId ?? "0").trim();
-    return value === "" ? "0" : value;
-}
-
 export function companyLabel(company) {
     const value = String(company ?? "").trim();
-    return value === "" || value === "null" ? "Sem empresa" : value;
+    return value === "" ? "Sem empresa" : value;
 }
 
 export function licenseDisplayLabel(
     licenseId,
     licenses = [],
 ) {
-    const normalized = normalizeLicenseId(licenseId);
-    if (normalized === "0") {
+    const normalized = String(licenseId ?? "").trim();
+    if (normalized === "") {
         return "Sem Licença";
     }
 
     const match = (licenses || []).find(
         (item) =>
-            String(item.license_id || item.licenseId || "") === normalized,
+            String(item.licenseId ?? "") === normalized,
     );
     if (!match) {
         return normalized;
@@ -94,15 +89,13 @@ export function supplierProtocol(supplier, models = [], model = "") {
 
 export function modelInternalName(model) {
     return String(
-        model?.internal_model || model?.internalModel || model?.model || "",
+        model?.internalModel || model?.model || "",
     );
 }
 
 export function modelCommercialName(model) {
     return String(
-        model?.commercial_name ||
         model?.commercialName ||
-        model?.internal_model ||
         model?.internalModel ||
         model?.model ||
         "",
@@ -111,7 +104,7 @@ export function modelCommercialName(model) {
 
 export function modelDeviceType(model) {
     return normalizeDeviceType(
-        model?.device_type || model?.deviceType || "watch",
+        model?.deviceType || "watch",
     );
 }
 

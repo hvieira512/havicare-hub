@@ -32,11 +32,8 @@ final class DeviceWriteRequest
         /** Só vale quando o modelo não o disser: o catálogo é que manda no tipo. */
         #[Example('watch')]
         public string $deviceType = 'watch',
-        /**
-         * Inteiro. Que os clientes o mandem como `"1001"` é tolerância da borda: `"mil e um"`
-         * é recusado em vez de virar zero, que quer dizer "sem licença".
-         */
-        #[Assert\PositiveOrZero(message: 'licenseId must be zero or a positive integer')]
+        /** Sem dono é `null`, com a empresa; o `0` não quer dizer nada. */
+        #[Assert\Positive(message: 'licenseId must be a positive integer or null')]
         #[Example(1001)]
         public ?int $licenseId = null,
         #[Example('+351912345678')]
@@ -44,6 +41,8 @@ final class DeviceWriteRequest
         #[Example('8800000015')]
         public string $deviceId = '',
         /** Vai com o `licenseId`: os dois, ou nenhum. */
+        #[Assert\NotBlank(message: 'company must be a name or null', allowNull: true, normalizer: 'trim')]
+        #[Assert\Regex(pattern: '/^\s*null\s*$/i', match: false, message: 'company must be a name or null')]
         #[Example('hitcare')]
         public ?string $company = null,
     ) {

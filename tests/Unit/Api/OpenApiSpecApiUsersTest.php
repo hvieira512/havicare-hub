@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Api;
 
-use Hub\Api\Http\ApiUserColumns;
 use Hub\Api\OpenApiSpec;
 use PHPUnit\Framework\TestCase;
 
@@ -35,18 +34,6 @@ final class OpenApiSpecApiUsersTest extends TestCase
         self::assertFalse($sort['required'] ?? true);
         self::assertSame('string', $sort['schema']['type']);
         self::assertStringContainsString('username:asc', (string)($sort['schema']['example'] ?? ''));
-    }
-
-    /** Cada filtro que o descritor anuncia tem de ter um parâmetro que o receba. */
-    public function testEveryFilterTheDescriptorAnnouncesIsDocumented(): void
-    {
-        foreach (ApiUserColumns::definition()->describe() as $column) {
-            if ($column['filter'] === null) {
-                continue;
-            }
-            $documented = $this->parameter($column['filter']['param']);
-            self::assertSame('string', $documented['schema']['type']);
-        }
     }
 
     /** As colunas viajam na resposta, e o esquema tem de as prever. */

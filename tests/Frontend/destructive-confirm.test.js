@@ -68,7 +68,7 @@ test("the delete-user box says which user", async () => {
 });
 
 test("the delete-licence box says the number, the name and what is left behind", () => {
-    const prompt = licenseDeletePrompt({ license_id: 1001, name: "gucc.dev" }, 12);
+    const prompt = licenseDeletePrompt({ licenseId: 1001, name: "gucc.dev" }, 12);
 
     assert.match(prompt.title, /1001/);
     assert.match(prompt.title, /gucc\.dev/);
@@ -76,7 +76,7 @@ test("the delete-licence box says the number, the name and what is left behind",
 });
 
 test("a licence without devices says so instead of counting zero", () => {
-    const prompt = licenseDeletePrompt({ license_id: 1001, name: "gucc.dev" }, 0);
+    const prompt = licenseDeletePrompt({ licenseId: 1001, name: "gucc.dev" }, 0);
 
     assert.doesNotMatch(prompt.text, /0 dispositivos/);
 });

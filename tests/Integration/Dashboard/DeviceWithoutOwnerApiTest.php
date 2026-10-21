@@ -41,9 +41,9 @@ final class DeviceWithoutOwnerApiTest extends MysqlDashboardTestCase
     public function testRemovingTheOwnerSaysNull(): void
     {
         [$api] = $this->makeApi();
-        self::assertSame('ok', $api->patchAssociation(self::IMEI, ['company' => 'hitcare', 'licenseId' => 1001])['status'] ?? null);
+        self::assertSame('ok', $api->associations->associate(self::IMEI, ['company' => 'hitcare', 'licenseId' => 1001])['status'] ?? null);
 
-        $removed = $api->deleteAssociation(self::IMEI);
+        $removed = $api->associations->remove(self::IMEI);
 
         self::assertSame(['company' => null, 'licenseId' => null], $removed['association'] ?? null);
     }

@@ -58,7 +58,7 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
         self::assertNotNull($layout);
         self::assertSame(['Lavatório'], array_column($layout['areas'], 'name'));
         self::assertSame(-10, $layout['room']['xMinDm']);
-        self::assertSame('2026-09-17 16:00:00', $layout['fetched_at']);
+        self::assertSame('2026-09-17 16:00:00', $layout['fetchedAt']);
     }
 
     /** As plantas de vários radares de uma vez: é assim que o ecrã da lista as pede. */

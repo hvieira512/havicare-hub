@@ -338,7 +338,7 @@ function drawDraftArea(state, area, { original, selected, warned }) {
         y: cy - 7,
         width: Math.max(width, 60),
         align: "center",
-        text: area.name,
+        text: areaName(area),
         fontSize: 13,
         fontFamily: "Poppins",
         fill: color,

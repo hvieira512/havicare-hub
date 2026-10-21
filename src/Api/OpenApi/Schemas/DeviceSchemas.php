@@ -140,10 +140,10 @@ final class DeviceSchemas
                     'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
                     'model' => ['type' => 'string', 'example' => 'HW20PRO'],
                     'deviceType' => ['type' => 'string', 'example' => 'diaper_sensor'],
-                    'licenseId' => ['type' => 'integer', 'example' => 1001],
-                    'company' => ['type' => 'string', 'example' => 'hitcare'],
-                    'created_at' => ['type' => 'string'],
-                    'updated_at' => ['type' => 'string'],
+                    'licenseId' => ['type' => 'integer', 'nullable' => true, 'example' => 1001],
+                    'company' => ['type' => 'string', 'nullable' => true, 'example' => 'hitcare'],
+                    'createdAt' => ['type' => 'string', 'format' => 'date-time'],
+                    'updatedAt' => ['type' => 'string', 'format' => 'date-time'],
                 ],
             ],
             'DeviceLinkListResponse' => CommonSchemas::list('DeviceLinkItem'),
@@ -169,10 +169,10 @@ final class DeviceSchemas
                                 'type' => 'object',
                                 'nullable' => true,
                                 'properties' => [
-                                    'x_min_dm' => ['type' => 'integer', 'example' => -30],
-                                    'y_min_dm' => ['type' => 'integer', 'example' => -8],
-                                    'x_max_dm' => ['type' => 'integer', 'example' => 30],
-                                    'y_max_dm' => ['type' => 'integer', 'example' => 20],
+                                    'xMinDm' => ['type' => 'integer', 'example' => -30],
+                                    'yMinDm' => ['type' => 'integer', 'example' => -8],
+                                    'xMaxDm' => ['type' => 'integer', 'example' => 30],
+                                    'yMaxDm' => ['type' => 'integer', 'example' => 20],
                                 ],
                             ],
                             'areas' => [
@@ -180,19 +180,24 @@ final class DeviceSchemas
                                 'items' => [
                                     'type' => 'object',
                                     'properties' => [
-                                        // A chave do fabricante, e também o `regionId` que a
+                                        // A chave do fabricante, e também o `areaId` que a
                                         // telemetria de presença reporta.
                                         'key' => ['type' => 'integer', 'example' => 0],
-                                        'type' => ['type' => 'integer', 'example' => 5],
-                                        'name' => ['type' => 'string', 'example' => 'Cama 1'],
-                                        'x_min_dm' => ['type' => 'integer', 'example' => -20],
-                                        'y_min_dm' => ['type' => 'integer', 'example' => -8],
-                                        'x_max_dm' => ['type' => 'integer', 'example' => -11],
-                                        'y_max_dm' => ['type' => 'integer', 'example' => 12],
+                                        'type' => [
+                                            'type' => 'string',
+                                            'enum' => ['custom', 'bed', 'interference', 'door', 'monitoring_bed', 'alarm_area', 'furniture'],
+                                            'example' => 'monitoring_bed',
+                                        ],
+                                        'name' => ['type' => 'string', 'nullable' => true, 'example' => 'Cama 1'],
+                                        'xMinDm' => ['type' => 'integer', 'example' => -20],
+                                        'yMinDm' => ['type' => 'integer', 'example' => -8],
+                                        'xMaxDm' => ['type' => 'integer', 'example' => -11],
+                                        'yMaxDm' => ['type' => 'integer', 'example' => 12],
                                     ],
                                 ],
                             ],
                             'fetchedAt' => ['type' => 'string', 'nullable' => true],
+                            'maxAreas' => ['type' => 'integer', 'description' => 'How many areas the radar keeps.', 'example' => 16],
                         ],
                     ],
                 ],
@@ -209,7 +214,7 @@ final class DeviceSchemas
                             // O código do fabricante tal como veio: `777` quer dizer que a
                             // cloud não conhece aquele aparelho, e isso não se adivinha.
                             'codes' => ['type' => 'object', 'additionalProperties' => ['type' => 'integer']],
-                            'error' => ['type' => 'string', 'nullable' => true],
+                            'error' => ['type' => 'string', 'nullable' => true, 'enum' => ['login_failed', null], 'description' => '`login_failed` when the manufacturer cloud refused the licence credentials.'],
                             'layout' => ['type' => 'object', 'nullable' => true],
                         ],
                     ],
@@ -387,7 +392,7 @@ final class DeviceSchemas
             // com o corpo: criar a licença em falta.
             'DeviceAssociationRequest' => array_merge(
                 SchemaFromRequest::schema(DeviceAssociationRequest::class),
-                ['description' => 'Associates the device to an existing company and license. If the company exists but the license row does not, the hub creates the license automatically using the requested licenseId.'],
+                ['description' => 'Associates the device to a company and license. Only a hub admin may name a license the company does not have yet, and the hub then creates it; for a license client the license must already exist.'],
             ),
             'DeviceAssociationResponse' => [
                 'type' => 'object',

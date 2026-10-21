@@ -32,7 +32,7 @@ const NUMBER_SLOT = "d-none d-md-flex";
 /** As setas e a janela de páginas entre elas; vazio quando há uma página só. */
 export function paginationControls({ pagination, actionPrefix }) {
     const goAction = `${actionPrefix}Go`;
-    const totalPages = pagination?.total_pages ?? 1;
+    const totalPages = pagination?.totalPages ?? 1;
     const currentPage = pagination?.page ?? 1;
 
     if (totalPages <= 1) {
@@ -66,7 +66,7 @@ export function paginationControls({ pagination, actionPrefix }) {
 
 /** O «Carregar mais» do telemóvel; vazio na última página. */
 export function loadMoreButton({ pagination, actionPrefix }) {
-    const totalPages = pagination?.total_pages ?? 1;
+    const totalPages = pagination?.totalPages ?? 1;
     const currentPage = pagination?.page ?? 1;
 
     if (currentPage >= totalPages) {

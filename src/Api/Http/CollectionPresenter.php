@@ -10,49 +10,41 @@ namespace Hub\Api\Http;
  */
 final class CollectionPresenter
 {
-    public function __construct(
-        private CollectionQuery $query = new CollectionQuery(),
-        private CollectionResponder $responder = new CollectionResponder(),
-    ) {
-    }
+    private const DEFAULT_LIMIT = 20;
 
-    /**
-     * Os parâmetros de uma query string, para quem serve uma listagem não ter de guardar o
-     * `CollectionQuery` só para isto.
-     *
-     * @return array<string, mixed>
-     */
-    public function params(string $query): array
+    public function __construct(private CollectionQuery $query = new CollectionQuery())
     {
-        return $this->query->params($query);
     }
 
     /**
      * @param list<array<string, mixed>> $items
-     * @param array<string, mixed> $params
      * @return array<string, mixed>
      */
-    public function present(array $items, CollectionColumns $columns, array $params, int $defaultLimit = 20): array
+    public function present(array $items, CollectionColumns $columns, string $queryString): array
     {
+        $params = $this->query->params($queryString);
         [$filtered, $applied] = $this->filter($items, $columns, $params);
         $sorted = $this->sort($filtered, $columns, $params);
 
         // Cada faceta conta-se sem o seu próprio filtro, para os outros valores continuarem à escolha.
         [$available, $counts] = $this->facets($items, $columns, $params);
 
-        $response = $this->responder->respond(
-            $sorted,
-            $this->query->page($params),
-            $this->query->limit($params, $defaultLimit),
-            $applied,
-            $available,
-        );
-        $response['columns'] = $columns->describe($counts);
-        // Como o `applied` e o `available`: o esquema declara-o objecto, e um array vazio
-        // serializaria como `[]` nas listagens sem colunas de escolha.
-        $response['filters']['counts'] = $counts === [] ? (object)[] : $counts;
+        $limit = $this->query->limit($params, self::DEFAULT_LIMIT);
+        $total = count($sorted);
+        $totalPages = max(1, (int)ceil($total / $limit));
+        $page = min($this->query->page($params), $totalPages);
 
-        return $response;
+        // Os mapas vazios saem como `{}`: o esquema declara-os objecto.
+        return [
+            'data' => array_slice($sorted, ($page - 1) * $limit, $limit),
+            'pagination' => ['limit' => $limit, 'page' => $page, 'totalPages' => $totalPages, 'total' => $total],
+            'filters' => [
+                'applied' => $applied === [] ? (object)[] : $applied,
+                'available' => $available === [] ? (object)[] : $available,
+                'counts' => $counts === [] ? (object)[] : $counts,
+            ],
+            'columns' => $columns->describe($counts),
+        ];
     }
 
     /**
@@ -102,7 +94,7 @@ final class CollectionPresenter
             return $items;
         }
 
-        $order = $this->query->sort($params, array_keys($columns->sortableColumns()), '');
+        $order = $this->query->sort($params, $columns->sortableColumns(), '');
         $order = array_values(array_filter($order, static fn(array $entry): bool => $entry['column'] !== ''));
         if ($order === []) {
             return $items;

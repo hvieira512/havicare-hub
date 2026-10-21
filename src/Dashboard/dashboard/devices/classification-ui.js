@@ -14,10 +14,10 @@ import { modelPreviewHtml } from "../components/model-image.js";
 export function licenseTree(licenses) {
     const groups = new Map();
     for (const license of licenses) {
-        const company = String(license.company_name ?? license.companyName ?? "");
+        const company = String(license.companyName ?? "");
         if (!groups.has(company)) groups.set(company, []);
         groups.get(company).push({
-            licenseId: String(license.license_id ?? license.licenseId ?? ""),
+            licenseId: String(license.licenseId ?? ""),
             name: String(license.name || ""),
         });
     }
@@ -26,7 +26,7 @@ export function licenseTree(licenses) {
 
 /** A chave de uma escolha: o `licenseId` só é único dentro da empresa. */
 function licenseKey(company, licenseId) {
-    return `${String(company ?? "")}:${String(licenseId ?? "0")}`;
+    return `${String(company ?? "")}:${String(licenseId ?? "")}`;
 }
 
 /**
@@ -35,7 +35,7 @@ function licenseKey(company, licenseId) {
  */
 export function ownerFromLicense(licenseId, tree = [], company = "") {
     const wanted = String(licenseId ?? "");
-    if (wanted === "" || wanted === "0") return null;
+    if (wanted === "") return null;
     const wantedCompany = String(company ?? "").trim().toLowerCase();
 
     const matches = (tree || []).flatMap((group) =>
@@ -57,9 +57,9 @@ export function licensePickerHtml(tree, selected = null) {
     const rows = [
         licenseRow({
             company: "",
-            licenseId: "0",
+            licenseId: "",
             label: "Sem licença",
-            selected: chosen === licenseKey("", "0"),
+            selected: chosen === licenseKey("", ""),
         }),
     ];
 
@@ -108,8 +108,8 @@ function licenseRow({ company, licenseId, label, selected, nested = false }) {
 
 /** A licença escolhida, como a badge da trilha a mostra. */
 export function licenseBadgeValue(owner, tree = []) {
-    const licenseId = String(owner?.licenseId ?? "0");
-    if (licenseId === "0") return "Sem licença";
+    const licenseId = String(owner?.licenseId ?? "");
+    if (licenseId === "") return "Sem licença";
     const company = String(owner?.company ?? "");
     const match = (tree || [])
         .find((group) => group.company === company)

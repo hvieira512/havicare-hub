@@ -39,7 +39,7 @@ final class NamedTimeZoneFollower
             $this->devices->updateConfigurations($imei, [
                 'configurations' => ['time_zone' => ['timeZone' => $zone, 'resync' => true]],
             ]);
-            $this->devices->requestFeature($imei, ['capability' => 'calibrate_clock', 'value' => []]);
+            $this->devices->featureRequests->requestFeature($imei, ['capability' => 'calibrate_clock', 'value' => []]);
             $changed[] = $imei;
         }
 

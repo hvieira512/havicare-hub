@@ -19,7 +19,6 @@ use Hub\Api\Services\RadarCredentialsService;
 use Hub\Api\Services\ModelImageStore;
 use Hub\Api\Services\ModelService;
 use Hub\Api\Services\ProtocolService;
-use Hub\Api\Services\SupplierService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Device\DeviceHubServer;
 use Hub\Device\MessageFanout;
@@ -87,7 +86,6 @@ final class DashboardHttpServer
                 $deviceService,
                 new ModelService($this->db),
                 new CapabilityService($this->db),
-                new SupplierService($this->db),
                 new ApiUserService($this->db),
                 new CompanyService($this->db),
                 new LicenseService($this->db),
@@ -98,7 +96,6 @@ final class DashboardHttpServer
                 new \Hub\Api\Services\DenylistService($this->db),
             ),
             new \Hub\Api\Http\JsonResponder(),
-            new \Hub\Api\Http\HtmlResponder(),
             new \Hub\Api\Auth\BearerTokenResolver($this->tokens),
             new \Hub\Api\Auth\RouteAccessPolicy(),
             $this->messages ?? new MessageFanout(),

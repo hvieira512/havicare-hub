@@ -14,14 +14,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  */
 final class RequestBinder
 {
-    private ValidatorInterface $validator;
-
-    public function __construct()
-    {
-        $this->validator = Validation::createValidatorBuilder()
-            ->enableAttributeMapping()
-            ->getValidator();
-    }
+    /** Um só por processo: montá-lo lê os atributos de cada classe de pedido. */
+    private static ?ValidatorInterface $validator = null;
 
     /**
      * @template T of object
@@ -68,7 +62,8 @@ final class RequestBinder
 
         // O `Default` entra sempre; os grupos extra juntam-se a ele. Sem o `Default`
         // explícito, pedir o grupo `create` desligava todas as regras que não o declaram.
-        foreach ($this->validator->validate($request, null, array_merge(['Default'], $groups)) as $violation) {
+        self::$validator ??= Validation::createValidatorBuilder()->enableAttributeMapping()->getValidator();
+        foreach (self::$validator->validate($request, null, array_merge(['Default'], $groups)) as $violation) {
             $fieldErrors[(string)$violation->getPropertyPath()][] = (string)$violation->getMessage();
         }
 
@@ -158,8 +153,7 @@ final class RequestBinder
     }
 
     /**
-     * Aceita `license_ref_id` como `licenseRefId` e `capabilities[]` como `capabilities`; o
-     * camelCase ganha quando vêm os dois.
+     * O multipart manda um array como `capabilities[]`.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
@@ -168,15 +162,7 @@ final class RequestBinder
     {
         $canonical = [];
         foreach ($payload as $key => $value) {
-            $key = (string)$key;
-            $name = str_ends_with($key, '[]') ? substr($key, 0, -2) : $key;
-            if (str_contains($name, '_')) {
-                $name = lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $name))));
-            }
-            if ($name !== $key && array_key_exists($name, $payload)) {
-                continue;
-            }
-            $canonical[$name] = $value;
+            $canonical[str_ends_with((string)$key, '[]') ? substr((string)$key, 0, -2) : (string)$key] = $value;
         }
 
         return $canonical;

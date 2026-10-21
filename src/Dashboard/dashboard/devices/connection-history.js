@@ -64,7 +64,7 @@ export function handleConnectionHistoryClick(event) {
         Object.assign(view, { page: view.page + 1, cumulative: true });
     } else {
         const totalPages = Math.max(1, Math.ceil(view.outageCount / PAGE_SIZE));
-        const page = resolvePaginationPage(event, { page: view.page, total_pages: totalPages }, "connection");
+        const page = resolvePaginationPage(event, { page: view.page, totalPages }, "connection");
         if (page === null) return;
         Object.assign(view, { page, cumulative: false });
     }
@@ -99,7 +99,7 @@ function draw(container) {
     container.dataset.connectionHistory = "";
     disposeTooltips(container);
     container.innerHTML = String(historyHtml(history, view, end === now, totalPages));
-    const pagination = { page: view.page, total_pages: totalPages };
+    const pagination = { page: view.page, totalPages };
     const pager = container.querySelector("[data-connection-pager]");
     if (pager) pager.innerHTML = paginationControls({ pagination, actionPrefix: "connection" });
     const more = container.querySelector("[data-connection-more]");

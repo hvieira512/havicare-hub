@@ -72,7 +72,7 @@ final class AuthController
         unset(
             $result['token']['refresh_token'],
             $result['token']['refresh_expires_in'],
-            $result['token']['refresh_expires_at'],
+            $result['token']['refreshExpiresAt'],
         );
 
         return SessionCookie::issue($this->json->result($result), $request, $refreshToken, $refreshTtl);

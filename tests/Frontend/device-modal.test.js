@@ -65,7 +65,7 @@ test("the modal whose detail the server refused cannot be saved", async () => {
     els.deviceForm.dataset.supplier = "wonlex";
     els.deviceForm.dataset.model = "D41";
     els.deviceImei.value = "861265061009822";
-    els.deviceLicenseId.value = "0";
+    els.deviceLicenseId.value = "";
 
     let posted = false;
     globalThis.fetch = async () => {

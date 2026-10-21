@@ -17,8 +17,8 @@ const client = {
     username: "cliente",
     role: "license_client",
     enabled: 0,
-    company_name: "havicare",
-    license_id: "22",
+    companyName: "havicare",
+    licenseId: "22",
 };
 
 /** Os filtros saem do mesmo descritor das colunas e ficam por cima da lista. */
@@ -76,13 +76,13 @@ test("a column without a filter is not in the bar", () => {
 });
 
 const LICENSES = [
-    { id: 7, company_name: "havicare", license_id: 22, name: "Lar do Sol" },
-    { id: 9, company_name: "hitcare", license_id: 3, name: "Casa Azul" },
+    { id: 7, companyName: "havicare", licenseId: 22, name: "Lar do Sol" },
+    { id: 9, companyName: "hitcare", licenseId: 3, name: "Casa Azul" },
 ];
 
 /** Criar e editar são o mesmo formulário: o que muda é o que vem preenchido. */
 test("editing puts the user inside the form", () => {
-    const form = apiUserForm({ ...client, license_ref_id: 7 }, LICENSES);
+    const form = apiUserForm({ ...client, licenseRefId: 7 }, LICENSES);
 
     assert.match(form, /data-id="2"/);
     assert.match(form, /data-field="username" value="cliente"/);

@@ -162,10 +162,10 @@ test("«Sem licença» clears the company and leaves no previous number", () => 
     const { root, els, classification } = harness();
 
     classification("[data-wizard-reopen=\"owner\"]")[0].click();
-    root.querySelector("#deviceLicensePicker [data-license-id=\"0\"]").click();
+    root.querySelector("#deviceLicensePicker [data-license-id=\"\"]").click();
 
     assert.equal(els.deviceCompany.value, "");
-    assert.equal(els.deviceLicenseId.value, "0");
+    assert.equal(els.deviceLicenseId.value, "");
 });
 
 /**

@@ -36,7 +36,7 @@ final class DeviceConfigurationUpdateService
      * @param array<string, mixed>|null $modelRow
      * @param array<string, mixed> $metadata
      * @param array<string, mixed> $device
-     * @return array{results?: list<array<string, mixed>>, error?: array<string, string>}
+     * @return array{results?: list<array<string, mixed>>, error?: array<string, mixed>}
      */
     public function update(
         string $imei,
@@ -117,6 +117,16 @@ final class DeviceConfigurationUpdateService
                 ];
             }
 
+            if ($genericKey === 'radar_areas' && is_array($payload['items'] ?? null)) {
+                $violations = RadarAreaRules::violations(
+                    array_values($payload['items']),
+                    $this->db->radarLayouts->findByImei($imei)['room'] ?? null,
+                );
+                if ($violations !== []) {
+                    return ApiError::invalidRadarAreas($violations)->toArray();
+                }
+            }
+
             // Uma ordem, não um valor: consome-se aqui e não chega ao que fica guardado.
             $commandContext = ['resync' => ($payload['resync'] ?? false) === true];
             unset($payload['resync']);
@@ -188,6 +198,7 @@ final class DeviceConfigurationUpdateService
                 }
 
                 $prepared = $this->prepareNative(
+                    $genericKey,
                     $imei,
                     $nativeKey,
                     $nativePayload,
@@ -282,6 +293,7 @@ final class DeviceConfigurationUpdateService
      * @return array<string, mixed>
      */
     private function prepareNative(
+        string $genericKey,
         string $imei,
         string $nativeKey,
         array $payload,
@@ -298,12 +310,12 @@ final class DeviceConfigurationUpdateService
 
         $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $nativeKey);
         if (($entry['transient'] ?? false) === true) {
-            return ApiError::invalidConfig("{$nativeKey} is a transient action and must be requested via /requests")->toArray();
+            return ApiError::invalidConfig("{$nativeKey} is a transient action and must be requested via /requests", $genericKey)->toArray();
         }
 
         $error = DeviceConfigurationCatalog::validate($protocol, $nativeKey, $payload);
         if ($error !== null) {
-            return ApiError::invalidConfig($error)->toArray();
+            return ApiError::invalidConfig($error, $genericKey)->toArray();
         }
 
         $operations = [];
@@ -428,7 +440,7 @@ final class DeviceConfigurationUpdateService
             'message' => $message,
         ], static fn(mixed $value): bool => $value !== ''));
 
-        return ApiError::invalidConfig($message)->toArray();
+        return ApiError::invalidConfig($message, $genericKey === '' ? 'configurations' : $genericKey)->toArray();
     }
 
     private function comparisonStoredConfigurationKey(string $key): ?string

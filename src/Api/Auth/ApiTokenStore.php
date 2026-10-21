@@ -18,73 +18,33 @@ final class ApiTokenStore
     ) {
     }
 
-    /** @return array<string, mixed> */
-    public function issue(
-        string $username,
-        string $role,
-        int $ttlSeconds,
-        ?int $userId = null,
-        int|string|null $licenseId = null,
-        ?int $licenseRefId = null,
-        ?int $companyId = null,
-        ?string $company = null,
-    ): array {
-        [$token, $payload] = $this->issueStoredToken(
-            $username,
-            $role,
-            $ttlSeconds,
-            $userId,
-            $licenseId,
-            $licenseRefId,
-            $companyId,
-            $company,
-            self::TOKEN_TYPE_ACCESS
-        );
+    /**
+     * O par de acesso e renovação para uma identidade.
+     *
+     * @return array<string, mixed>
+     */
+    public function issueTokenPair(ApiAuthContext $identity, int $accessTtlSeconds, int $refreshTtlSeconds): array
+    {
+        [$accessToken, $access] = $this->issueStoredToken($identity, $accessTtlSeconds, self::TOKEN_TYPE_ACCESS);
+        [$refreshToken, $refresh] = $this->issueStoredToken($identity, $refreshTtlSeconds, self::TOKEN_TYPE_REFRESH);
 
+        // hitcare: os quatro nomes em snake_case são os que o HubApiRepository do hitCare lê; passam a
+        // camelCase quando ele mudar.
         return [
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'username' => $username,
-            'role' => $role,
-            'license_id' => $licenseId,
-            'license_ref_id' => $licenseRefId,
-            'company_id' => $companyId,
-            'company' => $company,
-            'expires_in' => $ttlSeconds,
-            'expires_at' => $payload['expiresAt'],
+            'access_token' => $accessToken,
+            'tokenType' => 'Bearer',
+            'username' => $identity->username,
+            'role' => $identity->role,
+            'licenseId' => $identity->licenseId,
+            'licenseRefId' => $identity->licenseRefId,
+            'companyId' => $identity->companyId,
+            'company' => $identity->company,
+            'expires_in' => max(1, $accessTtlSeconds),
+            'expiresAt' => $access['expiresAt'],
+            'refresh_token' => $refreshToken,
+            'refresh_expires_in' => max(1, $refreshTtlSeconds),
+            'refreshExpiresAt' => $refresh['expiresAt'],
         ];
-    }
-
-    /** @return array<string, mixed> */
-    public function issueTokenPair(
-        string $username,
-        string $role,
-        int $accessTtlSeconds,
-        int $refreshTtlSeconds,
-        ?int $userId = null,
-        int|string|null $licenseId = null,
-        ?int $licenseRefId = null,
-        ?int $companyId = null,
-        ?string $company = null,
-    ): array {
-        $access = $this->issue($username, $role, $accessTtlSeconds, $userId, $licenseId, $licenseRefId, $companyId, $company);
-        [$refreshToken, $refreshPayload] = $this->issueStoredToken(
-            $username,
-            $role,
-            $refreshTtlSeconds,
-            $userId,
-            $licenseId,
-            $licenseRefId,
-            $companyId,
-            $company,
-            self::TOKEN_TYPE_REFRESH
-        );
-
-        $access['refresh_token'] = $refreshToken;
-        $access['refresh_expires_in'] = max(1, $refreshTtlSeconds);
-        $access['refresh_expires_at'] = $refreshPayload['expiresAt'];
-
-        return $access;
     }
 
     /**
@@ -133,32 +93,22 @@ final class ApiTokenStore
     }
 
     /** @return array{string, array<string, mixed>} */
-    private function issueStoredToken(
-        string $username,
-        string $role,
-        int $ttlSeconds,
-        ?int $userId,
-        int|string|null $licenseId,
-        ?int $licenseRefId,
-        ?int $companyId,
-        ?string $company,
-        string $tokenType
-    ): array {
+    private function issueStoredToken(ApiAuthContext $identity, int $ttlSeconds, string $tokenType): array
+    {
         $ttlSeconds = max(1, $ttlSeconds);
         $issuedAt = time();
-        $expiresAt = $issuedAt + $ttlSeconds;
         $token = bin2hex(random_bytes(32));
         $payload = [
             'tokenType' => $tokenType,
-            'userId' => $userId,
-            'username' => $username,
-            'role' => $role,
-            'licenseId' => $licenseId,
-            'licenseRefId' => $licenseRefId,
-            'companyId' => $companyId,
-            'company' => $company,
+            'userId' => $identity->userId,
+            'username' => $identity->username,
+            'role' => $identity->role,
+            'licenseId' => $identity->licenseId,
+            'licenseRefId' => $identity->licenseRefId,
+            'companyId' => $identity->companyId,
+            'company' => $identity->company,
             'issuedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $issuedAt),
-            'expiresAt' => gmdate('Y-m-d\\TH:i:s\\Z', $expiresAt),
+            'expiresAt' => gmdate('Y-m-d\\TH:i:s\\Z', $issuedAt + $ttlSeconds),
         ];
 
         $this->redis->setex($this->key($token), $ttlSeconds, json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));

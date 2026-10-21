@@ -69,7 +69,7 @@ final class DashboardLoginTimingTest extends DashboardHttpTestCase
         $payload = $this->loginPayload($server, 'tenant', 'tenant-secret');
 
         self::assertSame('hitcare', $payload['token']['company'] ?? null);
-        self::assertSame(1001, $payload['token']['license_id'] ?? null);
+        self::assertSame(1001, $payload['token']['licenseId'] ?? null);
     }
 
     /**

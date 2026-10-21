@@ -18,14 +18,14 @@ final class ModelWriteRequest
      * @param list<string>|null $requestableCapabilities
      */
     public function __construct(
-        #[Assert\Positive(message: 'supplier_id, internalModel, and commercialName are required')]
+        #[Assert\Positive(message: 'supplierId, internalModel, and commercialName are required')]
         #[Example(1)]
         public int $supplierId = 0,
-        #[Assert\NotBlank(message: 'supplier_id, internalModel, and commercialName are required')]
+        #[Assert\NotBlank(message: 'supplierId, internalModel, and commercialName are required')]
         #[Assert\Length(max: 191, maxMessage: 'internalModel must be 191 characters or fewer')]
         #[Example('HW20PRO')]
         public string $internalModel = '',
-        #[Assert\NotBlank(message: 'supplier_id, internalModel, and commercialName are required')]
+        #[Assert\NotBlank(message: 'supplierId, internalModel, and commercialName are required')]
         #[Assert\Length(max: 191, maxMessage: 'commercialName must be 191 characters or fewer')]
         #[Example('Wonlex HW20 Pro')]
         public string $commercialName = '',

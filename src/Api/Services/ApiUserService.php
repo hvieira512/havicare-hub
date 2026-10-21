@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
-use Hub\Api\Http\ApiUserColumns;
+use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Http\CollectionColumns;
 use Hub\Api\Http\CollectionPresenter;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\ApiUserWriteRequest;
@@ -13,8 +14,6 @@ use Hub\Api\Request\RequestBinder;
 
 class ApiUserService
 {
-    private const DEFAULT_COLLECTION_LIMIT = 20;
-
     /**
      * Os campos cuja recusa tem código próprio, em vez do `invalid_request` das constraints.
      *
@@ -35,10 +34,29 @@ class ApiUserService
     public function list(string $query = ''): array
     {
         return $this->presenter->present(
-            $this->db->apiUsers->all(),
-            ApiUserColumns::definition(),
-            $this->presenter->params($query),
-            self::DEFAULT_COLLECTION_LIMIT,
+            array_map(static fn (array $row): array => [
+                'id' => (int)$row['id'],
+                'username' => (string)$row['username'],
+                'role' => (string)$row['role'],
+                'enabled' => (int)$row['enabled'],
+                'licenseRefId' => $row['license_ref_id'] === null ? null : (int)$row['license_ref_id'],
+                'licenseId' => $row['license_id'] === null ? null : (int)$row['license_id'],
+                'licenseName' => $row['license_name'],
+                'companyId' => $row['company_id'] === null ? null : (int)$row['company_id'],
+                'companyName' => $row['company_name'],
+                'createdAt' => (string)$row['created_at'],
+                'updatedAt' => (string)$row['updated_at'],
+            ], $this->db->apiUsers->all()),
+            new CollectionColumns(
+                sortable: ['username', 'role', 'companyName', 'licenseId', 'enabled'],
+                writable: ApiUserWriteRequest::class,
+                textFilters: ['username' => 'username'],
+                // Conjuntos fechados e não tirados dos dados: com todos os utilizadores admin e
+                // activos, o outro valor ficaria inalcançável.
+                fixedOptions: ['role' => ApiAuthContext::roles(), 'enabled' => ['1', '0']],
+                extra: ['companyName'],
+            ),
+            $query,
         );
     }
 

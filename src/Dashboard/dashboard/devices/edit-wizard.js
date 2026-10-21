@@ -70,7 +70,7 @@ function handleLicenseClick(event) {
     if (!picked) return;
 
     els.deviceCompany.value = picked.dataset.licenseCompany || "";
-    els.deviceLicenseId.value = picked.dataset.licenseId || "0";
+    els.deviceLicenseId.value = picked.dataset.licenseId || "";
     // Os gateways autorizáveis são os da mesma empresa e licença.
     onLicenseChange();
     editWizardAnswered("owner");

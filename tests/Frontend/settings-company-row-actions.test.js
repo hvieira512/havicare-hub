@@ -13,7 +13,7 @@ const { invalidateLicenses } = await import("../../src/Dashboard/dashboard/licen
 const jsonResponse = (obj) => Response.json(obj);
 
 const COMPANIES = [{ id: 7, name: "hitcare" }];
-const LICENSES = [{ id: 31, license_id: 1001, company_id: 7, name: "gucc.dev" }];
+const LICENSES = [{ id: 31, licenseId: 1001, companyId: 7, name: "gucc.dev" }];
 
 function setupDom() {
     document.body.innerHTML = "<div id=\"summary\"></div><div id=\"body\"></div>" +

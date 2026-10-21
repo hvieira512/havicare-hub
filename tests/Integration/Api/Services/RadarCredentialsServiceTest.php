@@ -157,7 +157,7 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
         $result = $this->await($service->check($this->licenseRefId, $this->credentials()));
 
         self::assertSame(0, $result['data']['responding']);
-        self::assertSame('Qinglanst login failed', $result['data']['error']);
+        self::assertSame('login_failed', $result['data']['error']);
     }
 
     /** A verificação só experimenta os radares do par empresa e licença. */

@@ -5,7 +5,6 @@ import {
     addArea,
     areaStatus,
     areaWarnings,
-    areasFromLayout,
     draftItems,
     firstFreeKey,
     moveArea,
@@ -13,31 +12,17 @@ import {
     toggleDelete,
 } from "../../src/Dashboard/dashboard/devices/radar-area-draft.js";
 
-const ROOM = { xMinDm: -30, yMinDm: -7, xMaxDm: 19, yMaxDm: 18 };
 const area = (key, type, name, xMinDm, yMinDm, xMaxDm, yMaxDm) => ({ key, type, name, xMinDm, yMinDm, xMaxDm, yMaxDm });
 const BED = area(0, "monitoring_bed", "Cama", -4, -6, 6, 13);
 const DOOR = area(1, "door", "Porta", 17, 15, 20, 18);
 
-test("the stored layout converts to the contract shape", () => {
-    const { room, areas } = areasFromLayout({
-        room: { xMinDm: -30, yMinDm: -7, xMaxDm: 19, yMaxDm: 18 },
-        areas: [
-            { key: 0, type: "monitoring_bed", name: "Cama", xMinDm: -4, yMinDm: -6, xMaxDm: 6, yMaxDm: 13 },
-            { key: 3, type: "custom", name: null, xMinDm: 0, yMinDm: 0, xMaxDm: 5, yMaxDm: 5 },
-        ],
-    });
-
-    assert.deepEqual(room, ROOM);
-    assert.deepEqual(areas, [BED, area(3, "custom", "Área 3", 0, 0, 5, 5)]);
-});
-
 test("a new area takes the first free key from 0 to 15", () => {
-    assert.equal(firstFreeKey([BED, area(3, "custom", "Mesa", 0, 0, 5, 5)]), 1);
-    assert.equal(firstFreeKey(Array.from({ length: 16 }, (_, key) => area(key, "custom", "", 0, 0, 1, 1))), null);
+    assert.equal(firstFreeKey([BED, area(3, "custom", "Mesa", 0, 0, 5, 5)], 16), 1);
+    assert.equal(firstFreeKey(Array.from({ length: 16 }, (_, key) => area(key, "custom", "", 0, 0, 1, 1)), 16), null);
 });
 
 test("a new area starts with the type's name, centred and snapped to 10 cm", () => {
-    const areas = addArea([BED], "door", [2.4, 3.6]);
+    const areas = addArea([BED], "door", [2.4, 3.6], 16);
     const door = areas.at(-1);
 
     assert.equal(door.key, 1);
@@ -76,41 +61,17 @@ test("moving and resizing snap to the decimetre and never make the area vanish",
     assert.deepEqual(resizeArea(BED, "00", -1, 0), { ...BED, xMinDm: -5 });
 });
 
-const warnings = (areas) => areaWarnings(areas, ROOM);
+test("the API refusal turns into one warning per area, by the key of what was sent", () => {
+    const sent = [BED, area(4, "door", "Porta", 0, 0, 3, 3)];
+    const list = areaWarnings({
+        error: { code: "invalid_radar_areas", fields: { "items[1]": ["door_off_wall"], items: ["too_many_areas"] } },
+    }, sent, 16);
 
-test("an area outside the detection limits warns", () => {
-    const list = warnings([area(3, "alarm_area", "Casa de Banho", -31, 1, -25, 4)]);
-
-    assert.equal(list.length, 1);
-    assert.equal(list[0].hard, true);
-    assert.match(list[0].text, /Casa de Banho.*0,1 m/);
+    assert.deepEqual(list.map((warning) => warning.key), [4, undefined]);
+    assert.match(list[0].text, /Porta.*parede/);
+    assert.match(list[1].text, /16/);
 });
 
-test("a door has to touch a wall", () => {
-    assert.deepEqual(warnings([DOOR]), []);
-    assert.match(warnings([area(1, "door", "Porta", 0, 0, 3, 3)])[0].text, /parede/);
-});
-
-test("interference over the bed is a soft warning", () => {
-    const list = warnings([BED, area(2, "interference", "Ventoinha", 0, 0, 3, 3)]);
-
-    assert.equal(list.length, 1);
-    assert.equal(list[0].hard, false);
-});
-
-test("more than one monitoring bed is a soft warning", () => {
-    const list = warnings([BED, { ...BED, key: 2, xMinDm: -20, xMaxDm: -10 }]);
-
-    assert.equal(list.length, 1);
-    assert.equal(list[0].hard, false);
-});
-
-test("more than 16 areas do not fit the radar", () => {
-    const many = Array.from({ length: 17 }, (_, key) => area(key, "custom", `A${key}`, 0, 0, 1, 1));
-
-    assert.ok(warnings(many).some((warning) => warning.hard && /16/.test(warning.text)));
-});
-
-test("areas marked for deletion do not count for warnings", () => {
-    assert.deepEqual(warnings([{ ...area(3, "alarm_area", "Fora", -40, 1, -35, 4), deleted: true }]), []);
+test("any other refusal leaves the plan without warnings", () => {
+    assert.deepEqual(areaWarnings({ error: { code: "invalid_config", fields: { radar_areas: ["x"] } } }, [BED], 16), []);
 });

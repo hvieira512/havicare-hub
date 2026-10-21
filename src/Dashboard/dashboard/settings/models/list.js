@@ -27,9 +27,7 @@ function plural(count, singular, pluralWord) {
 function catalogGroups() {
     return (state.settingsModal.modelCatalog || [])
         .map((group) => ({
-            deviceType: normalizeDeviceType(
-                group?.deviceType || group?.device_type || "watch",
-            ),
+            deviceType: normalizeDeviceType(group?.deviceType || "watch"),
             suppliers: (Array.isArray(group?.suppliers) ? group.suppliers : [])
                 .filter((supplier) => (supplier?.models || []).length > 0),
         }))

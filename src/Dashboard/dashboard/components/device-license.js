@@ -1,14 +1,6 @@
 import { html, raw } from "../html.js";
-import { normalizeLicenseId } from "../domain.js";
-
-/** Um aparelho sem dono tem a empresa vazia ou a sentinela `null`, e a licença `0`. */
-function hasLicense(device) {
-    const company = String(device.company || "").trim();
-
-    return company !== "" &&
-        company.toLowerCase() !== "null" &&
-        normalizeLicenseId(device.licenseId) !== "0";
-}
+/** Um aparelho sem dono tem a empresa e a licença a `null`. */
+const hasLicense = (device) => Boolean(device.company && device.licenseId);
 
 /** A licença numa linha: o nome, ou a empresa quando não há nome registado. */
 export function deviceLicenseLabel(device) {
@@ -25,7 +17,7 @@ export function deviceLicenseBlock(device, { valueClass = "", noteClass = "" } =
     }
 
     const company = String(device.company).trim();
-    const licenseId = normalizeLicenseId(device.licenseId);
+    const licenseId = String(device.licenseId);
     const name = String(device.licenseName || "").trim();
     const heading = deviceLicenseLabel(device);
     const owner = name === ""

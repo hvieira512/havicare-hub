@@ -149,7 +149,7 @@ final class SystemPaths
                     'description' => 'Administrator only.',
                     'parameters' => array_merge(Parameters::pagination(), [
                         Parameters::stringQuery('identity'),
-                        Parameters::query('sort', ['type' => 'string', 'example' => 'created_at:desc']),
+                        Parameters::query('sort', ['type' => 'string', 'example' => 'createdAt:desc']),
                     ]),
                     'responses' => [
                         '200' => Responses::json('Paginated blocked identity collection', 'DenylistListResponse'),

@@ -19,7 +19,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['location']);
 
-        $response = $api->requestFeature('861265061009822', ['feature' => 'heart_rate']);
+        $response = $api->featureRequests->requestFeature('861265061009822', ['feature' => 'heart_rate']);
 
         self::assertSame('unsupported_feature', $response['error']['code'] ?? null);
     }
@@ -412,7 +412,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['push_message']);
 
-        $response = $api->requestFeature('861265061009822', [
+        $response = $api->featureRequests->requestFeature('861265061009822', [
             'capability' => 'push_message',
             'value' => ['message' => 'are you ok?'],
         ]);
@@ -442,12 +442,12 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
-            'licenseId' => '0',
+            'licenseId' => null,
         ])['status'] ?? null);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['push_message']);
         $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
 
-        $response = $api->requestFeature($imei, [
+        $response = $api->featureRequests->requestFeature($imei, [
             'capability' => 'push_message',
             'value' => ['message' => 'Hello World'],
         ]);
@@ -530,7 +530,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
-            'licenseId' => '0',
+            'licenseId' => null,
         ])['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');
@@ -609,7 +609,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
         $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 72]);
         $store->append('861265061009822', 'events', ['type' => 'sos', 'status' => 'triggered']);
-        $api->requestFeature('861265061009822', ['feature' => 'heart_rate']);
+        $api->featureRequests->requestFeature('861265061009822', ['feature' => 'heart_rate']);
 
         $response = $api->recent('861265061009822');
 
@@ -628,7 +628,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
 
-        $response = $api->requestFeature('861265061009822', ['feature' => 'heart_rate']);
+        $response = $api->featureRequests->requestFeature('861265061009822', ['feature' => 'heart_rate']);
 
         self::assertSame('waiting', $response['status'] ?? null);
         self::assertSame('heart_rate', $response['feature'] ?? null);
@@ -650,11 +650,11 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
 
-        $first = $api->requestFeature(
+        $first = $api->featureRequests->requestFeature(
             '861265061009822',
             ['feature' => 'heart_rate']
         );
-        $second = $api->requestFeature(
+        $second = $api->featureRequests->requestFeature(
             '861265061009822',
             ['feature' => 'heart_rate']
         );
@@ -697,7 +697,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
-            'licenseId' => '0',
+            'licenseId' => null,
         ]);
         self::assertSame('ok', $created['status'] ?? null);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], [...$requestableFeatures, ...$nonRequestableFeatures]);
@@ -712,7 +712,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
                 $detail['capabilities']['telemetry'][$feature] ?? null,
                 $feature
             );
-            self::assertSame('waiting', $api->requestFeature($imei, ['feature' => $feature])['status'] ?? null, $feature);
+            self::assertSame('waiting', $api->featureRequests->requestFeature($imei, ['feature' => $feature])['status'] ?? null, $feature);
         }
         foreach ($nonRequestableFeatures as $feature) {
             self::assertSame(
@@ -722,7 +722,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
             );
             self::assertSame(
                 'feature_not_requestable',
-                $api->requestFeature($imei, ['feature' => $feature])['error']['code'] ?? null,
+                $api->featureRequests->requestFeature($imei, ['feature' => $feature])['error']['code'] ?? null,
                 $feature
             );
         }
@@ -740,7 +740,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
 
-        $response = $api->requestFeature(
+        $response = $api->featureRequests->requestFeature(
             '861265061009822',
             ['feature' => 'heart_rate']
         );
@@ -773,10 +773,10 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $created = $api->requestFeature('861265061009822', ['feature' => 'heart_rate']);
+        $created = $api->featureRequests->requestFeature('861265061009822', ['feature' => 'heart_rate']);
         $id = (string)($created['commands'][0]['id'] ?? '');
 
-        $response = $api->commandStatus($id);
+        $response = $api->featureRequests->commandStatus($id);
 
         self::assertSame('861265061009822', $response['device']['imei'] ?? null);
         self::assertSame($id, $response['command']['id'] ?? null);

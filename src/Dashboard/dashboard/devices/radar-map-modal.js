@@ -10,7 +10,6 @@ import { apiError, confirmDestructive, toast } from "../dialogs.js";
 import { refreshTooltips } from "../tooltips.js";
 import { createRadarScene } from "./radar-scene.js";
 import { createAreaEditor } from "./radar-area-editor.js";
-import { areasFromLayout } from "./radar-area-draft.js";
 import { renderVitals } from "./radar-vitals.js";
 import { loadScript } from "../load-script.js";
 import { state } from "../state.js";
@@ -133,7 +132,7 @@ function startEditing() {
         scene,
         host: els.radarMapCanvas.parentElement,
         canvas: els.radarMapCanvas,
-        draft: areasFromLayout(layout),
+        draft: layout,
         onSend: sendAreas,
     });
     showLayout(layout);
@@ -175,10 +174,11 @@ async function toggleEditing() {
 async function sendAreas(items) {
     const imei = state.radarMap.imei;
     const result = await apiSaveConfiguration(imei, { configurations: { radar_areas: { items } } });
-    if (state.radarMap.imei !== imei) return;
+    if (state.radarMap.imei !== imei) return result;
     if (result.error) {
-        toast("error", apiError(result));
-        return;
+        // As regras recusadas, o editor mostra-as por cima da planta.
+        if (result.error.code !== "invalid_radar_areas") toast("error", apiError(result));
+        return result;
     }
 
     // O separador das configurações, por baixo, passa a mostrar o que se enviou.
@@ -196,6 +196,7 @@ async function sendAreas(items) {
         }, delay);
         reloadTimers.add(timer);
     }
+    return result;
 }
 
 /** O que o stream trouxe para o dispositivo escolhido, da mais recente para a mais antiga. */

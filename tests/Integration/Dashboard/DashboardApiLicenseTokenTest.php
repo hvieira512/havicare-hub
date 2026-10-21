@@ -31,11 +31,11 @@ final class DashboardApiLicenseTokenTest extends DashboardHttpTestCase
 
         self::assertSame('license_client', $token['role'] ?? null);
         self::assertSame('hitcare', $token['company'] ?? null);
-        self::assertSame(1001, (int)($token['license_id'] ?? 0));
+        self::assertSame(1001, (int)($token['licenseId'] ?? 0));
 
         $hitcare = $db->companies->findByName('hitcare');
         $license = $db->licenses->findByCompanyAndLicense((int)$hitcare['id'], 1001);
-        self::assertSame((int)$license['id'], (int)($token['license_ref_id'] ?? 0));
+        self::assertSame((int)$license['id'], (int)($token['licenseRefId'] ?? 0));
 
         // O nome sai do par, e não de quem emitiu: o tecto de streams simultâneos conta por
         // `username`, e com o do administrador os inquilinos partilhariam um balde.

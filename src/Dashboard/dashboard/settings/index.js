@@ -30,7 +30,6 @@ export async function loadSettingsModal(
     section = state.settingsModal.section,
 ) {
     resetSettingsModal();
-    state.modelModal.enabledCapabilities = [];
     state.modelModal.templateSummary = "";
 
     activateSettingsSection(section);

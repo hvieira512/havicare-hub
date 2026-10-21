@@ -6,15 +6,13 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionPresenter;
-use Hub\Api\Http\LicenseColumns;
+use Hub\Api\Http\CollectionColumns;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\LicenseWriteRequest;
 use Hub\Api\Request\RequestBinder;
 
 class LicenseService
 {
-    private const DEFAULT_COLLECTION_LIMIT = 20;
-
     private CollectionPresenter $presenter;
     private RequestBinder $binder;
 
@@ -27,23 +25,42 @@ class LicenseService
     /** @return array<string, mixed> */
     public function list(string $query = ''): array
     {
-        $params = $this->presenter->params($query);
-        // O `companyId` é o nome antigo e público do parâmetro, e continua a valer.
-        if (isset($params['companyId']) && !isset($params['company_id'])) {
-            $params['company_id'] = $params['companyId'];
-        }
-
+        // As empresas todas, também as que ainda não têm licenças.
         $companyIds = array_map(
             static fn (array $company): string => (string)($company['id'] ?? ''),
             $this->db->companies->all(),
         );
 
         return $this->presenter->present(
-            $this->db->licenses->all(),
-            LicenseColumns::definition($companyIds),
-            $params,
-            self::DEFAULT_COLLECTION_LIMIT,
+            array_map(self::present(...), $this->db->licenses->all()),
+            new CollectionColumns(
+                sortable: ['companyName', 'licenseId', 'name'],
+                writable: LicenseWriteRequest::class,
+                textFilters: ['name' => 'name', 'companyName' => 'companyName'],
+                fixedOptions: ['companyId' => $companyIds],
+                extra: ['id', 'radarCloudConfigured', 'deviceCount'],
+            ),
+            $query,
         );
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private static function present(array $row): array
+    {
+        return [
+            'id' => (int)$row['id'],
+            'companyId' => (int)$row['company_id'],
+            'companyName' => $row['company_name'] === null ? null : (string)$row['company_name'],
+            'licenseId' => (int)$row['license_id'],
+            'name' => (string)$row['name'],
+            'radarCloudConfigured' => (bool)$row['radar_cloud_configured'],
+            'deviceCount' => (int)$row['device_count'],
+            'createdAt' => (string)$row['created_at'],
+            'updatedAt' => (string)$row['updated_at'],
+        ];
     }
 
     /**
@@ -112,7 +129,7 @@ class LicenseService
     }
 
     /**
-     * O `company_id` é chave estrangeira e resolve-se antes da escrita.
+     * O `companyId` é chave estrangeira e resolve-se antes da escrita.
      *
      * @return array<string, mixed>|null
      */

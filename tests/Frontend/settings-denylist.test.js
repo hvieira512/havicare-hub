@@ -30,8 +30,8 @@ test("the tab lists blocked devices with an unblock button per row", async () =>
             identity: "357000000000123",
             protocol: "four-p-touch",
             note: "vizinho",
-            created_by: "admin",
-            created_at: "2026-09-07T10:00:00Z",
+            createdBy: "admin",
+            createdAt: "2026-09-07T10:00:00Z",
         }],
     });
 
@@ -48,10 +48,10 @@ test("the count comes from the API total, not the page rows", async () => {
     const els = setupDom();
     globalThis.fetch = async () => jsonResponse({
         data: [
-            { identity: "357000000000123", created_at: "2026-09-07T10:00:00Z" },
-            { identity: "357000000000124", created_at: "2026-09-07T10:00:00Z" },
+            { identity: "357000000000123", createdAt: "2026-09-07T10:00:00Z" },
+            { identity: "357000000000124", createdAt: "2026-09-07T10:00:00Z" },
         ],
-        pagination: { limit: 2, page: 1, total_pages: 15, total: 30 },
+        pagination: { limit: 2, page: 1, totalPages: 15, total: 30 },
     });
 
     await loadSettingsDenylistSection();

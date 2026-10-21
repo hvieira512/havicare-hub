@@ -25,7 +25,7 @@ final class CollectionPresenterTest extends TestCase
     private function columns(): CollectionColumns
     {
         return new CollectionColumns(
-            sortable: ['username' => 'username', 'role' => 'role', 'enabled' => 'enabled'],
+            sortable: ['username', 'role', 'enabled'],
             textFilters: ['username' => 'username'],
             fixedOptions: [
                 'role' => ['hub_admin', 'license_client'],
@@ -40,7 +40,7 @@ final class CollectionPresenterTest extends TestCase
      */
     private function present(array $params): array
     {
-        return (new CollectionPresenter())->present($this->users(), $this->columns(), $params);
+        return (new CollectionPresenter())->present($this->users(), $this->columns(), http_build_query($params));
     }
 
     /**
@@ -50,6 +50,17 @@ final class CollectionPresenterTest extends TestCase
     private function names(array $result): array
     {
         return array_map(static fn(array $row): string => $row['username'], $result['data']);
+    }
+
+    /** Um array PHP vazio serializa como `[]`, e um cliente com tipos estritos rebenta. */
+    public function testEmptyFiltersSerializeAsObjects(): void
+    {
+        $json = json_encode(
+            (new CollectionPresenter())->present([], new CollectionColumns(), ''),
+            JSON_THROW_ON_ERROR,
+        );
+
+        self::assertStringContainsString('"filters":{"applied":{},"available":{},"counts":{}}', $json);
     }
 
     public function testWithoutParametersEverythingComesBackInTheGivenOrder(): void
@@ -108,7 +119,7 @@ final class CollectionPresenterTest extends TestCase
         $second = $this->present(['sort' => 'username:asc', 'page' => 2, 'limit' => 2]);
 
         self::assertSame(['hitcare', 'marcus'], $this->names($second));
-        self::assertSame(['limit' => 2, 'page' => 2, 'total_pages' => 2, 'total' => 4], $second['pagination']);
+        self::assertSame(['limit' => 2, 'page' => 2, 'totalPages' => 2, 'total' => 4], $second['pagination']);
     }
 
     /** O total conta o que o filtro deixou, e não a colecção inteira. */
