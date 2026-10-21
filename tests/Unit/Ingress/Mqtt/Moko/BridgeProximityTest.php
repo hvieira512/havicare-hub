@@ -7,18 +7,13 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 use Hub\State\DeviceStore;
 use Tests\Support\Doubles\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\MokoBridge;
-use Hub\Ingress\Mqtt\Moko\MokoGatewayOptions;
-use Hub\Ingress\Mqtt\Moko\ProximityTracker;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * Uma mensagem por avistamento e por gateway, pelo contrato do `docs/05-gateways-ble.md` §5: o hub
- * reporta o sinal e diz quando se calou, e os limiares e os alarmes são do cliente.
- */
+/** Uma mensagem por avistamento e por gateway (`docs/05-gateways-ble.md` §5): o hub reporta o sinal, limiares e alarmes são do cliente. */
 final class BridgeProximityTest extends TestCase
 {
     private const GATEWAY = 'd48c49f7909c';
@@ -71,9 +66,6 @@ final class BridgeProximityTest extends TestCase
             new ArrayObservationStateStore(),
             deviceStore: $store,
             clock: fn(): float => $this->now,
-            options: new MokoGatewayOptions(
-                proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 30),
-            ),
         );
 
         return [$bridge, $mqtt, $store];
@@ -117,7 +109,7 @@ final class BridgeProximityTest extends TestCase
             $mqtt->telemetry,
             static fn(array $e): bool => ($e['payload']['type'] ?? '') === 'battery',
         ));
-        self::assertCount(1, $throttled, 'battery is unchanged, so it stays throttled');
+        self::assertCount(1, $throttled, 'a bateria não mudou, e por isso fica estrangulada');
     }
 
     public function testCarriesTheWindowStatisticsAClientDecidesOn(): void
@@ -132,11 +124,11 @@ final class BridgeProximityTest extends TestCase
 
         $proximity = $this->proximity($mqtt->telemetry);
         $data = end($proximity)['payload']['data'];
-        self::assertSame(self::GATEWAY, $data['gatewayId'], 'the pair must be named in data, not only in source');
+        self::assertSame(self::GATEWAY, $data['gatewayId'], 'o par tem de vir no data, e não só no source');
         self::assertSame('measured', $data['state']);
         self::assertSame(-52, $data['rssiDbm']);
-        self::assertSame(-52, $data['rssiMaxDbm'], 'the pass is only visible in the maximum');
-        self::assertSame(-77, $data['rssiMedianDbm'], 'and must not move the median');
+        self::assertSame(-52, $data['rssiMaxDbm'], 'a passagem só se vê no máximo');
+        self::assertSame(-77, $data['rssiMedianDbm'], 'e não pode mexer na mediana');
         self::assertSame(-78, $data['rssiMinDbm']);
         self::assertSame(4, $data['samples']);
         self::assertSame(5, $data['windowSeconds']);
@@ -154,8 +146,8 @@ final class BridgeProximityTest extends TestCase
             static fn(array $row): string => (string)(($row['payload'] ?? $row)['type'] ?? ''),
             $store->recent(self::BRACELET, 'telemetry'),
         );
-        self::assertNotContains('proximity', $types, 'at ~40 sightings a minute this would bury the history');
-        self::assertContains('battery', $types, 'the other telemetry is still recorded');
+        self::assertNotContains('proximity', $types, 'a uns 40 avistamentos por minuto, isto enterrava o histórico');
+        self::assertContains('battery', $types, 'a outra telemetria continua a ser guardada');
     }
 
     public function testAQuietPairIsReportedAsUnknownOnce(): void
@@ -164,14 +156,14 @@ final class BridgeProximityTest extends TestCase
         $this->deliver($bridge, $this->scanPayload(['rssi' => -52]));
 
         $bridge->expireStaleProximity();
-        self::assertCount(1, $this->proximity($mqtt->telemetry), 'nothing to report while it is still being heard');
+        self::assertCount(1, $this->proximity($mqtt->telemetry), 'nada a reportar enquanto ainda se ouve');
 
         $this->now += 31.0;
         $bridge->expireStaleProximity();
         $bridge->expireStaleProximity();
 
         $proximity = $this->proximity($mqtt->telemetry);
-        self::assertCount(2, $proximity, 'silence is reported once, not on every tick');
+        self::assertCount(2, $proximity, 'o silêncio reporta-se uma vez, e não a cada tique');
         $unknown = end($proximity)['payload']['data'];
         self::assertSame('unknown', $unknown['state']);
         self::assertSame(0, $unknown['samples']);
@@ -180,10 +172,7 @@ final class BridgeProximityTest extends TestCase
         self::assertArrayNotHasKey('rssiMedianDbm', $unknown);
     }
 
-    /**
-     * A manutenção (limiares de 180 e 30 segundos) corre uma vez por janela e não a cada tique
-     * de 50 ms; prova-se pelo `unknown` que só sai quando a janela a deixa correr.
-     */
+    /** A manutenção corre uma vez por janela de cinco segundos, e não a cada tique. */
     public function testMaintenanceIsThrottledToOncePerWindow(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -198,30 +187,20 @@ final class BridgeProximityTest extends TestCase
             new ArrayObservationStateStore(),
             deviceStore: new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard:maint'),
             clock: fn(): float => $this->now,
-            options: new MokoGatewayOptions(
-                proximityTracker: new ProximityTracker(windowSeconds: 5, maxSamples: 10, stalenessSeconds: 2),
-            ),
         );
 
-        // Um par ouvido, depois calado; a manutenção corre e reporta-o `unknown`.
+        // Ouvido às 1000 s, o par fica velho aos 30 s; a manutenção das 1029 s abre a janela.
         $this->deliver($bridge, $this->scanPayload(['rssi' => -52]));
-        $this->now = 1003.0;
+        $this->now = 1029.0;
         $bridge->runDueMaintenance();
 
-        // Re-ouvido e calado de novo, mas dentro da mesma janela de manutenção: repetir a
-        // manutenção não o volta a expirar, porque está estrangulada.
-        $this->deliver($bridge, $this->scanPayload(['rssi' => -52]));
-        $this->now = 1006.0;
+        $this->now = 1031.0;
         $bridge->runDueMaintenance();
-        $bridge->runDueMaintenance();
+        self::assertSame(0, $this->unknownCount($mqtt), 'dentro da janela, a manutenção não corre outra vez');
 
-        $unknowns = $this->unknownCount($mqtt);
-        self::assertSame(1, $unknowns, 'dentro da janela, a manutenção não corre outra vez');
-
-        // Passada a janela, corre e reporta o segundo silêncio.
-        $this->now = 1012.0;
+        $this->now = 1034.0;
         $bridge->runDueMaintenance();
-        self::assertSame(2, $this->unknownCount($mqtt), 'passada a janela, a manutenção corre');
+        self::assertSame(1, $this->unknownCount($mqtt), 'passada a janela, a manutenção corre');
     }
 
     private function unknownCount(RecordingHubMqttBridge $mqtt): int

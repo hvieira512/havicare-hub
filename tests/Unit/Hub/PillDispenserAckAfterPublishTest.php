@@ -23,7 +23,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
     public function testAnIntakeThatWasNotPublishedIsNotAcknowledged(): void
     {
         $mqtt = new class extends RecordingHubMqttBridge {
-            public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+            public function publishEvent(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
             {
                 if (($payload['type'] ?? '') === 'medication_alarm_change') {
                     throw new \RuntimeException('broker unavailable');
@@ -43,10 +43,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         );
     }
 
-    /**
-     * Um corpo que não se decifra dá o mesmo a cada repetição, e prendia os eventos de trás: confirma-se
-     * depois de os bytes ficarem no canal `raw`, para se decifrarem mais tarde.
-     */
+    /** Um corpo que não se decifra confirma-se depois de os bytes ficarem no `raw`, para se decifrarem mais tarde. */
     public function testAnEventThatDoesNotDecryptIsAcknowledgedOnceItsBytesAreInRaw(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -60,7 +57,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         $mqtt = new class extends RecordingHubMqttBridge {
             public int $calls = 0;
 
-            public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+            public function publishRaw(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
             {
                 if (++$this->calls > 1) {
                     throw new \RuntimeException('broker unavailable');
@@ -95,7 +92,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         $mqtt = new class extends RecordingHubMqttBridge {
             public int $failures = 1;
 
-            public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+            public function publishEvent(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
             {
                 if (($payload['type'] ?? '') === 'device_fault' && $this->failures-- > 0) {
                     throw new \RuntimeException('broker unavailable');
@@ -117,7 +114,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         $mqtt = new class extends RecordingHubMqttBridge {
             public int $failures = 1;
 
-            public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+            public function publishEvent(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
             {
                 if (($payload['type'] ?? '') === 'low_battery' && $this->failures-- > 0) {
                     throw new \RuntimeException('broker unavailable');
@@ -139,7 +136,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         $mqtt = new class extends RecordingHubMqttBridge {
             public int $failures = 1;
 
-            public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+            public function publishTelemetry(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
             {
                 if (($payload['type'] ?? '') === 'battery' && $this->failures-- > 0) {
                     throw new \RuntimeException('broker unavailable');
@@ -162,7 +159,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
     public function testQueuedCommandsWaitWhileTheRegisterIsNotAcknowledged(): void
     {
         $mqtt = new class extends RecordingHubMqttBridge {
-            public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+            public function publishTelemetry(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
             {
                 throw new \RuntimeException('broker unavailable');
             }

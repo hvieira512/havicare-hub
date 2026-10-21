@@ -106,6 +106,15 @@ final class AlarmClockCapability implements CapabilityContract
         return $meta;
     }
 
+    /** Dois despertadores concorrentes acumulam-se: a lista é o valor, e chega uma de cada vez. */
+    public function merge(mixed $existing, mixed $incoming): mixed
+    {
+        return array_merge(
+            is_array($existing) ? array_values($existing) : [],
+            is_array($incoming) ? array_values($incoming) : [],
+        );
+    }
+
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
         return [

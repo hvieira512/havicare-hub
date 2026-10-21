@@ -9,10 +9,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O `DeviceConfigurationCatalog` declara as chaves nativas e o `mapConfigurationKey()`
- * traduz-as: uma chave sem tradução compila e nunca chega à API.
- */
+/** Uma chave nativa sem tradução no `mapConfigurationKey()` compila e nunca chega à API. */
 final class ConfigurationKeyMappingTest extends TestCase
 {
     public function testEveryNativeConfigurationKeyMapsToAGenericCapabilityKey(): void

@@ -7,10 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 use Hub\Ingress\Mqtt\Moko\W6Decoder;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A leitura de uma MOKO W6 a partir do que um gateway retransmite. As observações são as que
- * um MKGW3 publica: as tramas MOKO e Eddystone chegam já lidas, sem os bytes do anúncio.
- */
+/** Observações como um MKGW3 as publica: as tramas MOKO e Eddystone chegam já lidas, sem os bytes do anúncio. */
 final class W6DecoderTest extends TestCase
 {
     private const MAC = 'fa05c2c70fc6';
@@ -47,10 +44,7 @@ final class W6DecoderTest extends TestCase
         }
     }
 
-    /**
-     * O slot de identidade anuncia-se sempre: é um avistamento e não um toque, e dá-lo como
-     * alarme levantava um pedido de ajuda a cada varrimento do gateway.
-     */
+    /** O slot de identidade anuncia-se sempre: é um avistamento, e como alarme levantaria um pedido de ajuda a cada varrimento. */
     public function testTheIdentitySlotIsASightingWithoutAnAlarm(): void
     {
         $decoded = (new W6Decoder())->decode($this->uid(['instance' => '000000000001']));
@@ -59,10 +53,7 @@ final class W6DecoderTest extends TestCase
         self::assertArrayNotHasKey('alarm', $decoded);
     }
 
-    /**
-     * Há outros beacons Eddystone ao alcance com instance ids baixos: é o namespace, que a
-     * configuração escreve como o MAC da pulseira, que os separa de um toque da W6.
-     */
+    /** Há outros beacons Eddystone ao alcance com instance ids baixos: é o namespace, o MAC da pulseira, que os separa da W6. */
     public function testAForeignNamespaceIsNotClaimed(): void
     {
         $decoded = (new W6Decoder())->decode($this->uid([

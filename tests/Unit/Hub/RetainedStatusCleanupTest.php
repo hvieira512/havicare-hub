@@ -8,10 +8,7 @@ use Hub\Device\HubMqttBridge;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O estado retido de um dispositivo que muda de cliente apaga-se do tópico que deixou, senão
- * é uma fuga entre clientes; só um payload de comprimento zero o apaga.
- */
+/** Um dispositivo que muda de cliente apaga com payload vazio o estado retido do tópico que deixou, para não haver fuga entre clientes. */
 final class RetainedStatusCleanupTest extends TestCase
 {
     public function testClearingPublishesAZeroLengthRetainedPayloadToTheOldTenantTopic(): void

@@ -23,26 +23,26 @@ final class VeepooPayloadShapeTest extends TestCase
     public static function configurations(): array
     {
         return [
-            'tom de pele' => ['skin_tone', ['level' => 4], ['level' => 4]],
-            'tom de pele em texto' => ['skin_tone', ['level' => '4'], ['level' => 4]],
-            'dados para cálculo' => [
+            'skin tone' => ['skin_tone', ['level' => 4], ['level' => 4]],
+            'skin tone as text' => ['skin_tone', ['level' => '4'], ['level' => 4]],
+            'personal info' => [
                 'personal_info',
                 ['heightCm' => 175, 'weightKg' => 72, 'age' => 34, 'sex' => 'male', 'stepGoal' => 8000, 'sleepGoalMinutes' => 480],
                 ['heightCm' => 175, 'weightKg' => 72, 'age' => 34, 'sex' => 'male', 'stepGoal' => 8000, 'sleepGoalMinutes' => 480],
             ],
-            'alerta de frequência cardíaca' => [
+            'heart rate alert' => [
                 'heart_rate_alert',
                 ['enabled' => 1, 'maxBpm' => '150', 'minBpm' => '50'],
                 ['enabled' => true, 'maxBpm' => 150, 'minBpm' => 50],
             ],
-            'janela de oxigénio' => [
+            'blood oxygen window' => [
                 'blood_oxygen_window',
                 ['enabled' => true, 'range' => '22:00-08:00'],
                 ['enabled' => true, 'range' => '22:00-08:00'],
             ],
-            'interruptor de saúde' => ['heart_rate_continuous', ['enabled' => false], ['enabled' => false]],
-            'interruptor de alarme' => ['blood_oxygen_alert', ['enabled' => true], ['enabled' => true]],
-            'acção transiente' => ['find_device', ['enabled' => true], ['enabled' => true]],
+            'health switch' => ['heart_rate_continuous', ['enabled' => false], ['enabled' => false]],
+            'alarm switch' => ['blood_oxygen_alert', ['enabled' => true], ['enabled' => true]],
+            'transient action' => ['find_device', ['enabled' => true], ['enabled' => true]],
         ];
     }
 
@@ -61,8 +61,7 @@ final class VeepooPayloadShapeTest extends TestCase
     }
 
     /**
-     * O que desce é o nome da operação, e não uma trama: quem escreve na pulseira é o gateway
-     * que tem a sessão BLE.
+     * O que desce é o nome da operação e não uma trama, porque quem escreve na pulseira é o gateway com a sessão BLE.
      *
      * @dataProvider configurations
      * @param array<string, mixed> $input
@@ -75,10 +74,7 @@ final class VeepooPayloadShapeTest extends TestCase
         self::assertSame($command, DeviceCommandCatalog::buildDownlink(self::PROTOCOL, self::IMEI, $command));
     }
 
-    /**
-     * Um campo declarado que o construtor não escreve nunca chega à pulseira, e nada o diz:
-     * o SDK ignora o que não reconhece e a configuração fica por aplicar.
-     */
+    /** O SDK ignora o que não reconhece, e um campo declarado que o construtor não escreve fica por aplicar sem aviso. */
     public function testEveryDeclaredFieldIsWrittenIntoThePayload(): void
     {
         $samples = [];

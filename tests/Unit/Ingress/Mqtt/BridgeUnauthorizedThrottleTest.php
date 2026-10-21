@@ -10,10 +10,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * O travão dos avisos de dispositivo não registado guarda uma entrada por identidade, vinda do
- * tópico; o serviço corre meses, e a que é mais velha do que a janela tem de sair.
- */
+/** O serviço corre meses e o travão guarda uma entrada por identidade: a que excede a janela tem de sair. */
 final class BridgeUnauthorizedThrottleTest extends TestCase
 {
     public function testIdentitiesOlderThanTheWindowAreForgotten(): void

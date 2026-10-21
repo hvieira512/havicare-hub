@@ -13,10 +13,7 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * O que entra no histórico cru do gateway: um scan descreve aparelhos que têm histórico próprio, e
- * um gateway publica cerca de dois por segundo para uma lista de cem entradas.
- */
+/** Um scan descreve aparelhos com histórico próprio e chega dois por segundo, e o histórico cru do gateway só tem cem entradas. */
 final class BridgeGatewayHistoryTest extends TestCase
 {
     private const GATEWAY = 'd48c49f7909c';
@@ -87,10 +84,7 @@ final class BridgeGatewayHistoryTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 
-    /**
-     * A observação de um aparelho retransmitido fica no histórico **dele**, para debugging:
-     * no do gateway afogava as tramas de estado.
-     */
+    /** A observação de um aparelho retransmitido fica no histórico dele, porque no do gateway afogaria as tramas de estado. */
     public function testTheObservationIsKeptInTheRelayedDeviceHistory(): void
     {
         [$bridge, , $store] = $this->bridge();
@@ -104,10 +98,7 @@ final class BridgeGatewayHistoryTest extends TestCase
         self::assertStringContainsString(self::BRACELET, json_encode($raw[0]['debug']['payload'] ?? []));
     }
 
-    /**
-     * O raw do aparelho retransmitido é amostrado para o histórico, como o do radar: muitas
-     * observações por segundo afogariam a janela e somariam escritas. No MQTT saem todas.
-     */
+    /** Muitas observações por segundo afogariam a janela do histórico e somariam escritas; no MQTT saem todas. */
     public function testTheRelayedRawIsSampledForTheHistory(): void
     {
         [$bridge, $mqtt, $store] = $this->bridge();
@@ -121,10 +112,7 @@ final class BridgeGatewayHistoryTest extends TestCase
         self::assertCount(2, $braceletRaw, 'no MQTT saem as duas');
     }
 
-    /**
-     * O estado sobrevive à enxurrada. Com os relatórios de scan a entrarem na lista, cem
-     * mensagens -- menos de um minuto -- bastavam para não restar uma única trama de estado.
-     */
+    /** Com os scans a entrarem, cem mensagens, menos de um minuto, bastariam para expulsar todas as tramas de estado. */
     public function testTheStatusFrameSurvivesAFloodOfScanReports(): void
     {
         [$bridge, , $store] = $this->bridge();
@@ -137,10 +125,7 @@ final class BridgeGatewayHistoryTest extends TestCase
         self::assertCount(1, $store->recent(self::GATEWAY, 'raw'));
     }
 
-    /**
-     * Nada se perde para quem integra: o histórico da dashboard é que é selectivo, o MQTT
-     * continua a levar a série completa.
-     */
+    /** O histórico da dashboard é selectivo, mas o MQTT continua a levar a série completa a quem integra. */
     public function testEveryFrameIsStillPublishedRaw(): void
     {
         [$bridge, $mqtt] = $this->bridge();

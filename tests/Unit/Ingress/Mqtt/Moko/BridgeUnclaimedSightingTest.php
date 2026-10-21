@@ -11,10 +11,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * O sinal de um avistamento que nenhum decoder leu: o RSSI é medido pelo gateway e existe na
- * mesma. A W6 anuncia em seis slots e o decoder lê dois.
- */
+/** O RSSI é medido pelo gateway e existe mesmo sem decoder: a W6 anuncia em seis slots e o decoder lê dois. */
 final class BridgeUnclaimedSightingTest extends TestCase
 {
     private const GATEWAY = 'd48c49f7909c';
@@ -97,10 +94,7 @@ final class BridgeUnclaimedSightingTest extends TestCase
         self::assertSame(self::W6, $proximity[0]['payload']['device']['id']);
     }
 
-    /**
-     * O tipo sozinho não distingue as pulseiras, e uma W6 reportada como `moko-w6b` mandava o
-     * cliente ler o protocolo errado.
-     */
+    /** O tipo sozinho não distingue as pulseiras: é o modelo que dá o protocolo. */
     public function testTheModelDecidesTheProtocolReportedForABracelet(): void
     {
         [$bridge, $mqtt] = $this->bridge();
@@ -111,10 +105,7 @@ final class BridgeUnclaimedSightingTest extends TestCase
         self::assertSame('moko-w6', $proximity[0]['payload']['source']['protocol']);
     }
 
-    /**
-     * A MF91 fala Veepoo e nenhum decoder MOKO lhe toca, mas está registada; etiquetá-la pelo tipo
-     * dava-lhe o protocolo da W6B.
-     */
+    /** A MF91 está registada mas fala Veepoo, e não leva o protocolo da W6B. */
     public function testABraceletOfAnotherSupplierKeepsItsOwnProtocol(): void
     {
         [$bridge, $mqtt] = $this->bridge();
@@ -145,10 +136,7 @@ final class BridgeUnclaimedSightingTest extends TestCase
         self::assertSame([], $this->proximity($mqtt->telemetry));
     }
 
-    /**
-     * Uma frame reclamada continua a dar uma mensagem e não duas: este caminho é só para o que
-     * ninguém reclamou.
-     */
+    /** Este caminho é só para o que ninguém reclamou: uma frame reclamada dá uma mensagem e não duas. */
     public function testAClaimedFrameIsNotReportedTwice(): void
     {
         [$bridge, $mqtt] = $this->bridge();

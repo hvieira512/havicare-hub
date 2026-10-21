@@ -81,12 +81,6 @@ final class IngressRunner
         }
     }
 
-    /** @return list<string> */
-    public function names(): array
-    {
-        return array_keys($this->ingresses);
-    }
-
     /**
      * Pela ordem em que foram registadas.
      *

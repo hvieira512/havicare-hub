@@ -7,17 +7,10 @@ namespace Tests\Unit\Command;
 use Hub\Command\DeviceConfigurationCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Uma definição que o validador do protocolo não conheça sai com payload vazio e o aparelho aceita
- * o zero; por isso entra-se pelo degrau da dashboard.
- */
+/** Uma definição que o validador não conheça sai com payload vazio e o aparelho aceita o zero, por isso entra-se pela dashboard. */
 final class PillDispenserConfigurationPayloadTest extends TestCase
 {
-    /**
-     * O alarme que o plano escolheu não se perde no caminho.
-     *
-     * Sem o `slot` vindo do validador, o construtor coloca o plano por posição.
-     */
+    /** Sem o `slot` vindo do validador, o construtor colocaria o plano por posição e perderia o alarme escolhido. */
     public function testTheAlarmSlotSurvivesTheValidator(): void
     {
         $built = DeviceConfigurationCatalog::commandPayloads('zayata-m228', 'medication_reminders', [
@@ -27,10 +20,7 @@ final class PillDispenserConfigurationPayloadTest extends TestCase
         self::assertSame(5, $built[0]['payload']['plans'][0]['slot'] ?? null);
     }
 
-    /**
-     * Uma entrada que declara campos sai do validador com eles, nem que seja com os valores de
-     * fábrica: vazia, o aparelho aceita um zero sem erro. Uma acção não declara campos.
-     */
+    /** Uma entrada com campos sai sempre com eles, nem que de fábrica, porque vazia o aparelho aceita um zero sem erro. */
     public function testEverySettingWithFieldsComesBackWithThem(): void
     {
         $empty = [];

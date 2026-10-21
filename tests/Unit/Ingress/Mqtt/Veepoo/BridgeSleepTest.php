@@ -11,21 +11,14 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * O registo de sono chega ao hub e tem de sair dele.
- *
- * O gateway publica-o em espécie própria, fora dos blocos de cinco minutos.
- */
+/** O gateway publica o registo de sono em espécie própria, fora dos blocos de cinco minutos, e o hub tem de o fazer sair. */
 final class BridgeSleepTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';
     private const BRACELET = '9f69c4866e6c';
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
-    /**
-     * O `payload` é a lista das noites e a curva vem em inteiros, um por minuto -- e não um objecto
-     * com a curva em texto, como a documentação do fabricante deixa supor.
-     */
+    /** O `payload` é a lista das noites com a curva em inteiros, um por minuto, e não o objecto com texto que a documentação sugere. */
     public function testANightArrivesWrappedInAListWithTheCurveInIntegers(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -40,10 +33,7 @@ final class BridgeSleepTest extends TestCase
         self::assertSame(10, $sleep[0]['payload']['data']['totalDurationMinutes']);
     }
 
-    /**
-     * A trama declara o desvio do fuso e o normalizador desconta-o: uma noite começada à 01:00 em
-     * Lisboa não sai como 01:00 UTC.
-     */
+    /** O normalizador desconta o desvio de fuso da trama: uma noite começada à 01:00 em Lisboa não sai como 01:00 UTC. */
     public function testTheInstantsAreConvertedFromTheBraceletClockToUtc(): void
     {
         $mqtt = new RecordingHubMqttBridge();

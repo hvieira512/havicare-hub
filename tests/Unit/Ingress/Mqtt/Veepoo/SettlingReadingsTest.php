@@ -8,11 +8,7 @@ use Hub\Ingress\Mqtt\Veepoo\BraceletContext;
 use Hub\Ingress\Mqtt\Veepoo\SettlingReadings;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A medição a assentar, vista sem o MQTT à volta.
- *
- * É a única lógica da ingestão Veepoo com semântica de tempo, e aqui o relógio é uma variável.
- */
+/** A medição a assentar sem o MQTT à volta: é a única lógica da ingestão Veepoo que depende do tempo, e aqui o relógio é variável. */
 final class SettlingReadingsTest extends TestCase
 {
     private const DEVICE = '9f69c4866e6c';

@@ -8,7 +8,7 @@ use Hub\Device\CommercialModelResolver;
 use Hub\Device\HubMqttBridge;
 use Hub\Device\PendingDownlinkQueue;
 use Hub\Device\TelemetryEnvelope;
-use Hub\Domain\DeviceProtocol;
+use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\DispatchesQueued;
 use Hub\Ingress\Mqtt\Gateway\GattDeviceContext;
@@ -246,9 +246,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
 
         if ($frame['function'] === 0x8b) {
             $this->finishReading($context->deviceKey);
-            if (isset($this->sessions[$context->deviceKey])) {
-                $this->sessions[$context->deviceKey]['memoryRead'] = true;
-            }
+            $this->sessions[$context->deviceKey]['memoryRead'] = true;
             return;
         }
         if ($frame['function'] === 0x83 && strlen($frame['data']) >= 12) {
@@ -300,7 +298,7 @@ final class JoyTechBpBridge extends MqttBridgeBase implements DispatchesQueued
     /** O 6292B e o 6679B partilham a ponte; o protocolo diz qual mede o ECG. */
     private static function protocolOf(GattDeviceContext $context): string
     {
-        $protocol = DeviceProtocol::forModel((string)($context->device['supplier'] ?? ''), (string)($context->device['model'] ?? ''));
+        $protocol = ProtocolRegistry::forModel((string)($context->device['supplier'] ?? ''), (string)($context->device['model'] ?? ''));
 
         return $protocol !== '' ? $protocol : self::PROTOCOL;
     }

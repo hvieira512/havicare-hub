@@ -8,16 +8,10 @@ use Hub\Device\FeatureNormalizer;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O canal do MQTT sai do `isEvent` do catálogo: acontecimentos por `events`, a QoS 1, leituras
- * por `telemetry`, a QoS 0. Uma lista à parte discordaria do catálogo sem dar erro.
- */
+/** O canal sai do `isEvent` do catálogo (`events` a QoS 1, `telemetry` a QoS 0), e uma lista à parte discordaria em silêncio. */
 final class EventChannelComesFromTheCatalogueTest extends TestCase
 {
-    /**
-     * O que os relógios disparam sai com o tipo do que aconteceu, e cada um tem de estar no
-     * catálogo: um que falte sai em `telemetry`, a QoS 0, sem erro nenhum.
-     */
+    /** Cada tipo de evento dos relógios tem de estar no catálogo, senão sai em `telemetry`, a QoS 0, sem erro nenhum. */
     public function testEveryWatchAlarmIsADeclaredEvent(): void
     {
         $payload = [

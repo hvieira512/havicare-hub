@@ -11,24 +11,17 @@ class DeviceSession
 
     public function __construct(
         public readonly ConnectionInterface $connection,
-        public readonly string $transport,
         public readonly bool $authenticated = false,
         public readonly string $imei = '',
         public readonly string $protocol = '',
         public readonly string $supplier = '',
         public readonly string $model = '',
         public readonly string $commercialName = '',
-        // Sem tipo por omissão: adivinhar «watch» publicava um dispensador no tópico dos relógios sem
-        // erro. O tipo chega no `authenticate`, vindo da whitelist.
+        // O tipo chega no `authenticate`, vindo da whitelist.
         public readonly string $deviceType = '',
         public readonly int $licenseId = 0,
         public readonly string $company = 'null',
     ) {
-    }
-
-    public function id(): string
-    {
-        return (string)$this->connection->resourceId;
     }
 
     /** @return array<string, mixed> */
@@ -43,7 +36,6 @@ class DeviceSession
             'commercialName' => $this->commercialName,
             'deviceType' => $this->deviceType,
             'licenseId' => $this->licenseId,
-            'transport' => $this->transport,
         ];
     }
 
@@ -58,7 +50,6 @@ class DeviceSession
     ): self {
         return new self(
             connection: $this->connection,
-            transport: $this->transport,
             authenticated: true,
             imei: $identity->imei,
             protocol: $identity->protocol,

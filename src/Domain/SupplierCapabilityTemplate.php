@@ -8,31 +8,30 @@ use Hub\Domain\Capability\CapabilityCatalog;
 
 final class SupplierCapabilityTemplate
 {
-    /**
-     * @return list<string>
-     */
+    /** @return list<string> */
     public static function keysForSupplierDeviceType(string $supplierName, string $deviceType): array
     {
-        return self::keysForModel($supplierName, '', $deviceType);
+        return self::keys(ProtocolRegistry::forSupplier($supplierName, $deviceType), $deviceType);
     }
 
     /** @return list<string> */
     public static function keysForModel(string $supplierName, string $internalModel, string $deviceType): array
     {
-        $protocol = DeviceProtocol::forModel($supplierName, $internalModel);
+        return self::keys(ProtocolRegistry::forModel($supplierName, $internalModel), $deviceType);
+    }
+
+    /** @return list<string> */
+    private static function keys(string $protocol, string $deviceType): array
+    {
         if ($protocol === '') {
             return [];
         }
 
         $available = array_flip(CapabilityCatalog::keysForDeviceType($deviceType));
-        $supported = [];
-        foreach (CapabilityCatalog::keysForProtocol($protocol) as $key) {
-            if (!isset($available[$key])) {
-                continue;
-            }
-            $supported[$key] = true;
-        }
 
-        return array_keys($supported);
+        return array_values(array_filter(
+            CapabilityCatalog::keysForProtocol($protocol),
+            static fn(string $key): bool => isset($available[$key]),
+        ));
     }
 }

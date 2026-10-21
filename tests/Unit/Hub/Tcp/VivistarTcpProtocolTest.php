@@ -39,7 +39,7 @@ final class VivistarTcpProtocolTest extends TestCase
 
     private function session(string $imei): DeviceSession
     {
-        return new DeviceSession(new VivistarFakeConnection(), 'tcp', true, $imei, 'vivistar-iw');
+        return new DeviceSession(new VivistarFakeConnection(), true, $imei, 'vivistar-iw');
     }
 }
 

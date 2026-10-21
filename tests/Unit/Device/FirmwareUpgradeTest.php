@@ -7,10 +7,7 @@ namespace Tests\Unit\Device;
 use Hub\Device\Firmware\FirmwareUpgrade;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A transferência do firmware é uma sequência travada pelo aparelho: cada pacote só sai
- * depois de ele confirmar o anterior, e é o offset no corpo que a sequencia.
- */
+/** Cada pacote só sai depois de o aparelho confirmar o anterior, e é o offset no corpo que sequencia a transferência. */
 final class FirmwareUpgradeTest extends TestCase
 {
     private const SIZE = 600;
@@ -56,10 +53,7 @@ final class FirmwareUpgradeTest extends TestCase
         self::assertSame(FirmwareUpgrade::CHUNK, $step['state']['offset']);
     }
 
-    /**
-     * A tabela do documento dá `0x8D` como resposta ao arranque e a secção 26 dá `0x8E`:
-     * aceitam-se as duas.
-     */
+    /** A tabela do documento dá `0x8D` como resposta ao arranque e a secção 26 dá `0x8E`: aceitam-se as duas. */
     public function testEitherAcknowledgementOpensTheTransfer(): void
     {
         foreach (['upgrade_start_ack', 'discover_event_ack'] as $reply) {
@@ -112,10 +106,7 @@ final class FirmwareUpgradeTest extends TestCase
         self::assertNull($step['body']);
     }
 
-    /**
-     * O resultado vem no `Status` do cabeçalho, porque o corpo das respostas é vazio: `0x08` é
-     * «Upgrade failed» e `0x07` é «Abnormal length». Qualquer um pára a transferência.
-     */
+    /** O resultado vem no `Status` do cabeçalho, com corpo vazio: `0x08` (falhou) e `0x07` (comprimento anormal) param a transferência. */
     public function testARefusedPacketStopsTheTransfer(): void
     {
         foreach ([0x07, 0x08, 0x7F] as $frameStatus) {
@@ -139,10 +130,7 @@ final class FirmwareUpgradeTest extends TestCase
         }
     }
 
-    /**
-     * Um número de série repetido arrisca o aparelho deitar fora um pacote como duplicado, e a
-     * transferência encalha sem dizer porquê.
-     */
+    /** Um número de série repetido pode fazer o aparelho descartar um pacote como duplicado e encalhar a transferência em silêncio. */
     public function testEachPacketCarriesTheNextSerial(): void
     {
         $first = FirmwareUpgrade::advance($this->state('requested', 0), $this->firmware(), 'heartbeat', 0);

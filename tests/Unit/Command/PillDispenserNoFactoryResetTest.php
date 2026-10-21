@@ -9,10 +9,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O que o dispensador não oferece. Uma reposição devolve o M228 ao servidor do fornecedor (nos
- * relógios fica, porque lá é recuperável), e a cifra o firmware recusa-se a desligar.
- */
+/** Uma reposição devolve o M228 ao servidor do fornecedor, e o firmware não deixa desligar a cifra. */
 final class PillDispenserNoFactoryResetTest extends TestCase
 {
     public function testTheDispenserCatalogDoesNotOfferThem(): void

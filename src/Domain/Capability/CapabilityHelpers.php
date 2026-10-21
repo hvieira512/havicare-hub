@@ -168,20 +168,6 @@ trait CapabilityHelpers
         return array_merge($existingList, $incomingList);
     }
 
-    /** @param array<array-key, mixed> $value */
-    protected function stringifyPhoneList(array $value): mixed
-    {
-        if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
-            return self::stringList($value['numbers']);
-        }
-
-        if (!array_is_list($value)) {
-            return $value;
-        }
-
-        return self::stringList($value);
-    }
-
     protected function normalizeComparableValue(mixed $value): mixed
     {
         if (!is_array($value)) {

@@ -76,11 +76,6 @@ final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
         return $found;
     }
 
-    public function save(string $bssidHash, array $entry): void
-    {
-        $this->saveMany([$bssidHash => $entry]);
-    }
-
     public function saveMany(array $entries): void
     {
         if ($entries === []) {

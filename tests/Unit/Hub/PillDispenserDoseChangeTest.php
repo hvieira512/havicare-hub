@@ -9,10 +9,7 @@ use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * As TAGs `0x8131`--`0x8139` chegam por dois caminhos com naturezas opostas: no `0x07` são o
- * retrato dos nove, numa notificação são o alarme que mudou. Duas capacidades, dois canais.
- */
+/** As TAGs `0x8131`--`0x8139` são o retrato dos nove no `0x07` e o alarme que mudou numa notificação: duas capacidades, dois canais. */
 final class PillDispenserDoseChangeTest extends TestCase
 {
     /** Sem contagens: um total tirado de um alarme não é total nenhum. */
@@ -89,7 +86,6 @@ final class PillDispenserDoseChangeTest extends TestCase
     {
         return new DeviceSession(
             new PillFakeConnection(),
-            'tcp',
             true,
             'AABBCCDDEEFF',
             'zayata-m228',

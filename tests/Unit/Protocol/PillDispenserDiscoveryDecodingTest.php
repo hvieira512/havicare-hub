@@ -9,10 +9,7 @@ use Hub\Ingress\Tcp\Supplier\Zayata\PillDispenserTcpProtocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O corpo de um `0x8A`–`0x8C` é uma lista de TAGs coladas e não TFLV: lido como TFLV, dá
- * telemetria fabricada com identidade correcta e CRC válido.
- */
+/** O corpo de um `0x8A`–`0x8C` é uma lista de TAGs coladas: lido como TFLV dá telemetria falsa com identidade e CRC válidos. */
 final class PillDispenserDiscoveryDecodingTest extends TestCase
 {
     /** Uma lista de TAGs bem formada não vira telemetria. */
@@ -67,7 +64,6 @@ final class PillDispenserDiscoveryDecodingTest extends TestCase
     {
         return new \Hub\Device\DeviceSession(
             new \Tests\Unit\Hub\PillFakeConnection(),
-            'tcp',
             true,
             '869243062262262',
             'zayata-m228',

@@ -9,10 +9,7 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O hub só manda as doze TAGs de controlo que o `0x0C` do aparelho de ensaio devolveu: a
- * especificação descreve a série M2 inteira, e este firmware recusa o resto.
- */
+/** A especificação descreve a série M2 inteira, e este firmware recusa as TAGs fora das doze que o `0x0C` devolve. */
 final class PillDispenserControlTagsAreServedTest extends TestCase
 {
     /**

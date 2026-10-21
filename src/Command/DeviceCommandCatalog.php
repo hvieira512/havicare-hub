@@ -9,7 +9,6 @@ use Hub\Command\Downlink\VivistarDownlink;
 use Hub\Command\Downlink\WonlexDownlink;
 use Hub\Command\Downlink\ZayataDownlink;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
-use Hub\Protocol\Adapter\WonlexAdapter;
 
 final class DeviceCommandCatalog
 {
@@ -46,12 +45,7 @@ final class DeviceCommandCatalog
         ];
     }
 
-    /**
-     * O comando com que um protocolo relê o estado do aparelho, se souber. Não é `request`
-     * porque não tem capacidade por trás, e um `request` é um mosaico que precisa de uma.
-     *
-     * @return array<string, mixed>|null
-     */
+    /** @return array<string, mixed>|null */
     public static function commandForProtocol(string $protocol, string $command): ?array
     {
         foreach (self::commandsForProtocol($protocol) as $entry) {
@@ -133,49 +127,6 @@ final class DeviceCommandCatalog
     public static function deriveFourPTouchDeviceId(string $imei): string
     {
         return FourPTouchDownlink::deriveDeviceId($imei);
-    }
-
-    public static function normalizeQueuedDownlink(string $protocol, string $bytes): string
-    {
-        if ($protocol !== 'wonlex-json') {
-            return $bytes;
-        }
-
-        $adapter = new WonlexAdapter();
-        $decoded = $adapter->decodeIncoming($bytes);
-        if (!is_array($decoded)) {
-            return $bytes;
-        }
-
-        $nativeType = (string)($decoded['type'] ?? '');
-        if (
-            !in_array($nativeType, [
-            'dnHeartRate',
-            'dnBP',
-            'dnBO',
-            'dnTemperature',
-            'dnBreathe',
-            'dnECG',
-            'dnHRV',
-            'dnPPG',
-            'dnRR',
-            ], true)
-        ) {
-            return $bytes;
-        }
-
-        $data = is_array($decoded['data'] ?? null) ? $decoded['data'] : [];
-        if (($data['fields'] ?? null) !== []) {
-            return $bytes;
-        }
-
-        unset($data['fields']);
-        if (WonlexDownlink::isRequestedWaveform($nativeType)) {
-            $data += WonlexDownlink::waveformDefaults($nativeType);
-        }
-        $decoded['data'] = $data;
-
-        return $adapter->encodeOutgoing($decoded);
     }
 
     /**

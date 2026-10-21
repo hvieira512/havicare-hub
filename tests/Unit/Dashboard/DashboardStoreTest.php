@@ -6,7 +6,6 @@ namespace Tests\Unit\Dashboard;
 
 use Hub\State\DeviceStore;
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Protocol\Adapter\WonlexAdapter;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
@@ -308,66 +307,6 @@ final class DashboardStoreTest extends TestCase
         self::assertSame(1, $command['attempts'] ?? null);
         self::assertNotEmpty($command['lastAttemptAt'] ?? null);
         self::assertGreaterThan(time(), strtotime((string)($command['nextRetryAt'] ?? '')));
-    }
-
-    public function testQueuedWonlexWaveformRequestIsNormalizedBeforeRedispatch(): void
-    {
-        $store = new DeviceStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
-        $imei = '868705080300697';
-        $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
-        $legacyWire = DeviceCommandCatalog::buildDownlink(
-            'wonlex-json',
-            $imei,
-            'dnECG',
-            [
-                'fields' => [],
-            ],
-            ['ident' => 123456]
-        );
-        $store->recordCommand($imei, 'legacy-wonlex-request', [
-            'status' => 'queued',
-            'protocol' => 'wonlex-json',
-            'nativeType' => 'dnECG',
-            'retryable' => true,
-            'bytes' => $legacyWire,
-            'attempts' => 1,
-            'maxAttempts' => 3,
-            'retryDelaySeconds' => 60,
-            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
-        ]);
-
-        $dispatched = [];
-        $store->retryWaitingCommands(
-            60,
-            3600,
-            3,
-            static function (string $dispatchedImei, string $bytes) use (&$dispatched): string {
-                $dispatched[] = [$dispatchedImei, $bytes];
-                return 'sent';
-            }
-        );
-
-        self::assertCount(1, $dispatched);
-        $decoded = (new WonlexAdapter())->decodeIncoming($dispatched[0][1]);
-        self::assertSame($imei, $dispatched[0][0]);
-        self::assertSame(123456, $decoded['ident'] ?? null);
-        self::assertSame(
-            ['type', 'imei', 'timestamp', 'frequency', 'oneTime', 'collectionLogo'],
-            array_keys($decoded['data'] ?? [])
-        );
-        self::assertSame('500', $decoded['data']['frequency'] ?? null);
-        self::assertSame(30, $decoded['data']['oneTime'] ?? null);
-        self::assertMatchesRegularExpression('/^\d{8}$/', (string)($decoded['data']['collectionLogo'] ?? ''));
-
-        $stored = $store->commands($imei)[0] ?? [];
-        self::assertSame('waiting', $stored['status'] ?? null);
-        $storedData = (new WonlexAdapter())->decodeIncoming(
-            \Hub\State\DeviceCommandRecord::wireBytes($stored)
-        )['data'] ?? [];
-        self::assertSame(
-            $decoded['data']['collectionLogo'] ?? null,
-            $storedData['collectionLogo'] ?? null
-        );
     }
 
     public function testQueuedRedispatchIgnoresSentAttemptLimitUntilFirstDelivery(): void

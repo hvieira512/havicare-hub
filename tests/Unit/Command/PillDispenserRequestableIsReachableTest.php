@@ -9,10 +9,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Dois caminhos: um comando `kind: request`, que dá mosaico no ecrã principal, ou uma acção
- * transitória no catálogo de configuração, que dá botão no modal.
- */
+/** Pedível é um comando `kind: request`, que dá mosaico no ecrã principal, ou uma acção transitória do catálogo, que dá botão no modal. */
 final class PillDispenserRequestableIsReachableTest extends TestCase
 {
     public function testEveryRequestableCapabilityHasAWayToBeAsked(): void

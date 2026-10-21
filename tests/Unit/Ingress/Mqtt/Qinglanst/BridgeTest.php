@@ -14,10 +14,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 
 final class BridgeTest extends TestCase
 {
-    /**
-     * A licença é o único campo do assistente que não se deduz do protocolo, e vai como número para a
-     * dashboard a poder pré-seleccionar.
-     */
+    /** A licença é o único campo do assistente que o protocolo não dá, e vai como número para a dashboard a pré-seleccionar. */
     public function testUnregisteredRadarNotificationCarriesTheTopicLicense(): void
     {
         $deviceStore = $this->createMock(DeviceStoreContract::class);
@@ -41,10 +38,7 @@ final class BridgeTest extends TestCase
         $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
     }
 
-    /**
-     * O histórico também alimenta o stream em directo: travar escritas é travar o mapa, e a lista já
-     * está limitada a 100 entradas.
-     */
+    /** O histórico também alimenta o stream em directo, e a lista já está limitada a 100 entradas. */
     public function testEveryPositionReadingReachesTheHistory(): void
     {
         $lists = [];
@@ -83,10 +77,7 @@ final class BridgeTest extends TestCase
         );
     }
 
-    /**
-     * A notificação de um radar desconhecido é estrangulada: ele publica ~20 mensagens por
-     * segundo, cada uma uma escrita ao MySQL.
-     */
+    /** O radar publica ~20 mensagens por segundo, e cada notificação é uma escrita no MySQL. */
     public function testUnregisteredRadarNotificationIsThrottled(): void
     {
         $deviceStore = $this->createMock(DeviceStoreContract::class);
@@ -103,10 +94,7 @@ final class BridgeTest extends TestCase
         $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
     }
 
-    /**
-     * Um radar na denylist é ignorado na fonte, sem notificação nem escrita: cala o sino em
-     * definitivo, ao contrário do estrangulamento, que só espaça.
-     */
+    /** A denylist cala o radar em definitivo na fonte, sem notificação nem escrita; o estrangulamento só espaça. */
     public function testDenylistedRadarProducesNoNotification(): void
     {
         $deviceStore = $this->createMock(DeviceStoreContract::class);
@@ -166,10 +154,7 @@ final class BridgeTest extends TestCase
         self::assertSame('Qinglanst HC2 Pro', $mqttBridge->lastTelemetry()['payload']['device']['commercialName'] ?? null);
     }
 
-    /**
-     * Um radar registado publica o `raw` da mensagem, para debugging -- fala directamente por
-     * MQTT, portanto a trama que chega é a mensagem original dele, tal como o relógio e o NCS.
-     */
+    /** O radar fala directamente por MQTT, por isso a trama que chega é a mensagem original dele, como no relógio e no NCS. */
     public function testARegisteredRadarPublishesTheRawMessage(): void
     {
         $mqttBridge = new RecordingHubMqttBridge();

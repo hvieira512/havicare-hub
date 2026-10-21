@@ -6,10 +6,7 @@ namespace Tests\Unit\Hub;
 
 use Hub\Device\ConnectionInterface;
 
-/**
- * Uma ligação que não liga a lado nenhum, escrita à mão porque o `resourceId` é uma
- * propriedade com hook que o `createStub` não sabe implementar.
- */
+/** Escrita à mão porque o `resourceId` é uma propriedade com hook que o `createStub` não sabe implementar. */
 final class PillFakeConnection implements ConnectionInterface
 {
     public int $resourceId = 1;

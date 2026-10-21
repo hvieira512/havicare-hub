@@ -7,10 +7,7 @@ namespace Tests\Unit\Command;
 use Hub\Command\DeviceConfigurationCatalog;
 use PHPUnit\Framework\TestCase;
 
-/**
- * As configurações da pulseira que levam valores. O SDK aceita em silêncio uma janela mal escrita
- * sem configurar nada, e não há construtor de tramas: a validação é aqui.
- */
+/** O SDK aceita em silêncio uma janela mal escrita sem configurar nada, e não há construtor de tramas: a validação é aqui. */
 final class VeepooConfigurationTest extends TestCase
 {
     private const PROTOCOL = 'veepoo-ble';
@@ -28,11 +25,11 @@ final class VeepooConfigurationTest extends TestCase
     public static function badWindows(): array
     {
         return [
-            'sem traço' => [['enabled' => true, 'range' => '22:00 08:00']],
-            'hora impossível' => [['enabled' => true, 'range' => '25:00-08:00']],
-            'minuto impossível' => [['enabled' => true, 'range' => '22:70-08:00']],
-            'só um lado' => [['enabled' => true, 'range' => '22:00-']],
-            'vazia' => [['enabled' => true, 'range' => '']],
+            'without a dash' => [['enabled' => true, 'range' => '22:00 08:00']],
+            'impossible hour' => [['enabled' => true, 'range' => '25:00-08:00']],
+            'impossible minute' => [['enabled' => true, 'range' => '22:70-08:00']],
+            'only one side' => [['enabled' => true, 'range' => '22:00-']],
+            'empty' => [['enabled' => true, 'range' => '']],
         ];
     }
 
@@ -49,10 +46,7 @@ final class VeepooConfigurationTest extends TestCase
         ));
     }
 
-    /**
-     * O mínimo acima do máximo passa nas validações de cada campo e deixa o alarme impossível
-     * de disparar -- é preciso compará-los.
-     */
+    /** O mínimo acima do máximo passa na validação de cada campo e torna o alarme impossível: é preciso compará-los. */
     public function testTheHeartRateThresholdsHaveToLeaveARangeBetweenThem(): void
     {
         self::assertNull(DeviceConfigurationCatalog::validate(
@@ -62,9 +56,9 @@ final class VeepooConfigurationTest extends TestCase
         ));
 
         $rejected = [
-            'mínimo acima do máximo' => ['maxBpm' => 100, 'minBpm' => 120],
-            'mínimo igual ao máximo' => ['maxBpm' => 100, 'minBpm' => 100],
-            'máximo impossível' => ['maxBpm' => 300, 'minBpm' => 50],
+            'minimum above maximum' => ['maxBpm' => 100, 'minBpm' => 120],
+            'minimum equal to maximum' => ['maxBpm' => 100, 'minBpm' => 100],
+            'impossible maximum' => ['maxBpm' => 300, 'minBpm' => 50],
         ];
 
         foreach ($rejected as $label => $bad) {
@@ -75,10 +69,7 @@ final class VeepooConfigurationTest extends TestCase
         }
     }
 
-    /**
-     * Alarmes, lembretes, brilho do ecrã e unidades existem no aparelho mas não alteram uma leitura:
-     * é comportamento de relógio de pulso e não de sensor.
-     */
+    /** Alarmes, lembretes, brilho e unidades são comportamento de relógio de pulso e não alteram nenhuma leitura do sensor. */
     public function testWhatDoesNotChangeAMeasurementIsNotOffered(): void
     {
         foreach (['reminder_water', 'alarm_clock', 'raise_to_wake', 'metric_units'] as $key) {
@@ -89,10 +80,7 @@ final class VeepooConfigurationTest extends TestCase
         }
     }
 
-    /**
-     * O tom de pele regula a potência do LED do sensor ótico, e um valor fora da escala do
-     * aparelho não é um ajuste pior -- é um byte que ele não sabe interpretar.
-     */
+    /** Um tom de pele fora da escala do aparelho não é um ajuste pior, é um byte que ele não sabe interpretar. */
     public function testTheSkinToneLevelIsLimitedToTheBandScale(): void
     {
         self::assertNull(DeviceConfigurationCatalog::validate(self::PROTOCOL, 'skin_tone', ['level' => 3]));
@@ -100,10 +88,7 @@ final class VeepooConfigurationTest extends TestCase
         self::assertNotNull(DeviceConfigurationCatalog::validate(self::PROTOCOL, 'skin_tone', ['level' => 0]));
     }
 
-    /**
-     * A informação pessoal entra no cálculo das calorias e da composição corporal, e por
-     * isso um valor absurdo não fica por um número feio no ecrã: contamina telemetria.
-     */
+    /** A informação pessoal entra no cálculo das calorias e da composição corporal, e um valor absurdo contamina a telemetria. */
     public function testPersonalInformationIsBoundedToPlausibleHumanValues(): void
     {
         $ok = [

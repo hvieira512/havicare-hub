@@ -10,10 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * A camada TCP não tem tipo de dispositivo por omissão: um `'watch'` por omissão publica um
- * dispensador debaixo de `/watch/` sem erro nenhum. O tipo sai da whitelist.
- */
+/** Um `'watch'` por omissão publicaria um dispensador debaixo de `/watch/` sem erro; o tipo sai da whitelist. */
 final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
 {
     public function testADispenserPublishesUnderItsOwnDeviceType(): void
@@ -36,6 +33,21 @@ final class TcpLayerHasNoDeviceTypeDefaultTest extends TestCase
 
         $published = [...$mqtt->statuses, ...$mqtt->events, ...$mqtt->telemetry, ...$mqtt->raw];
         self::assertNotSame([], $mqtt->telemetry, 'a leitura tem de chegar à telemetria');
+        self::assertSame(['pill_dispenser'], array_values(array_unique(array_column($published, 'deviceType'))));
+    }
+
+    /** Sem whitelist, o tipo sai do protocolo por que o aparelho fala. */
+    public function testARejectedDispenserIsPublishedUnderItsOwnDeviceType(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $hub = new DeviceHubServer(IngressFixtures::whitelist(), $mqtt);
+        $connection = new PillFakeConnection();
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, (new PillDispenserAdapter())->encodeOutgoing(['packetType' => 0x01, 'serial' => 1, 'mac' => 'AABBCCDDEEFF']));
+
+        $published = [...$mqtt->statuses, ...$mqtt->events];
+        self::assertNotSame([], $published, 'a recusa tem de sair no broker');
         self::assertSame(['pill_dispenser'], array_values(array_unique(array_column($published, 'deviceType'))));
     }
 }

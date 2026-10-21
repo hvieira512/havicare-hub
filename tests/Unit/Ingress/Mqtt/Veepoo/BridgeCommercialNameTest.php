@@ -12,10 +12,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * O `commercialName` vem do catálogo de modelos, e os campos que não se sabem omitem-se em vez de
- * saírem vazios.
- */
+/** O `commercialName` vem do catálogo de modelos, e os campos desconhecidos omitem-se em vez de saírem vazios. */
 final class BridgeCommercialNameTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';

@@ -197,7 +197,7 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
             'four-p-touch',
             'TAKEPILLS',
             [
-                'reminderSettings' => '11:25-1-3-1010101',
+                'reminderSettings' => [['time' => '11:25', 'enabled' => true, 'frequency' => 3, 'custom' => '1010101']],
                 'number' => 3,
                 'reminderText' => 'meds',
                 'voiceData' => 'data:audio/wav;base64,' . WavFixture::silenceBase64(),
@@ -255,7 +255,11 @@ final class DashboardDeviceDetailTest extends DashboardHttpTestCase
             'four-p-touch',
             'TAKEPILLS',
             [
-                'reminderSettings' => '11:25-1-2-14:30-0-1-18:00-1-3-1010101',
+                'reminderSettings' => [
+                    ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
+                    ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
+                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010101'],
+                ],
                 'number' => 3,
                 'reminderText' => 'meds',
                 'voiceData' => '',

@@ -86,6 +86,17 @@ final class BridgeTest extends TestCase
         self::assertSame([], $this->mqtt->events);
     }
 
+    /** Como nos ingressos MQTT, o aviso regista-se uma vez por minuto e não a cada mensagem. */
+    public function testAnUnregisteredButtonIsRecordedOncePerMinute(): void
+    {
+        $store = $this->createMock(DeviceStoreContract::class);
+        $store->expects(self::once())->method('recordRejectedDevice');
+        $bridge = $this->bridge(IngressFixtures::whitelist(), $store);
+
+        $bridge->handleReceivedMessage('', $this->frame($this->property('sos_state', 23, true, 1790778037435)));
+        $bridge->handleReceivedMessage('', $this->frame($this->property('battery_percentage', 3, 29, 1790778047968)));
+    }
+
     public function testAWakingButtonIsAnnouncedConnectedOnce(): void
     {
         $this->bridge->handleReceivedMessage('', $this->frame($this->online()));

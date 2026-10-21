@@ -9,10 +9,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
-/**
- * As regras que fazem do catálogo um contrato e não uma lista: a mesma chave diz a mesma
- * coisa em todos os aparelhos, e nada é anunciado sem alguém o servir.
- */
+/** A mesma chave diz a mesma coisa em todos os aparelhos, e nada é anunciado sem alguém o servir. */
 final class CatalogCoherenceTest extends TestCase
 {
     /** @var list<class-string<\Hub\Domain\Capability\Definition\CapabilityDefinitions>> */
@@ -57,10 +54,7 @@ final class CatalogCoherenceTest extends TestCase
         }
     }
 
-    /**
-     * O `isEventType` resolve pela chave e não pelo par aparelho/chave: uma chave que fosse
-     * acontecimento num aparelho e leitura noutro sairia no canal MQTT errado num dos dois.
-     */
+    /** O `isEventType` resolve só pela chave, por isso uma chave não pode ser acontecimento num aparelho e leitura noutro. */
     public function testNoKeyIsAnEventHereAndTelemetryThere(): void
     {
         $events = [];
@@ -96,10 +90,7 @@ final class CatalogCoherenceTest extends TestCase
         self::assertSame([], $orphans);
     }
 
-    /**
-     * Um `setting` viaja num comando nativo e um `hubSetting` é aplicado pelo hub: uma
-     * configuração sem comando seria um campo que não manda nada a lado nenhum.
-     */
+    /** Um `setting` viaja num comando nativo e um `hubSetting` aplica-o o hub; uma configuração sem comando não mandaria nada. */
     public function testASettingTravelsInANativeCommandAndAHubSettingDoesNot(): void
     {
         $roles = [];

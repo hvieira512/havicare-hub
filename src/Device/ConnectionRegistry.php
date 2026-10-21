@@ -6,8 +6,8 @@ namespace Hub\Device;
 
 class ConnectionRegistry
 {
-    /** @var \SplObjectStorage<ConnectionInterface, mixed> */
-    private \SplObjectStorage $connections;
+    /** @var \Closure(): int */
+    private \Closure $clock;
     /** @var array<int, DeviceSession> */
     private array $sessions = [];
     /** @var array<string, ConnectionInterface> */
@@ -15,19 +15,18 @@ class ConnectionRegistry
     /** @var array<int, int> */
     private array $lastActivityAt = [];
 
-    public function __construct()
+    /** @param (\Closure(): int)|null $clock */
+    public function __construct(?\Closure $clock = null)
     {
-        $this->connections = new \SplObjectStorage();
+        $this->clock = $clock ?? time(...);
     }
 
     public function open(ConnectionInterface $connection): DeviceSession
     {
-        // TCP é o único transporte. O valor viaja para o `debug.transport` do canal `raw`.
-        $session = new DeviceSession($connection, 'tcp');
+        $session = new DeviceSession($connection);
 
-        $this->connections->offsetSet($connection, $connection->resourceId);
         $this->sessions[$connection->resourceId] = $session;
-        $this->lastActivityAt[$connection->resourceId] = time();
+        $this->lastActivityAt[$connection->resourceId] = ($this->clock)();
 
         return $session;
     }
@@ -60,7 +59,7 @@ class ConnectionRegistry
 
         $this->sessions[$connection->resourceId] = $session;
         $this->deviceMap[$identity->imei] = $connection;
-        $this->lastActivityAt[$connection->resourceId] = time();
+        $this->lastActivityAt[$connection->resourceId] = ($this->clock)();
 
         return $session;
     }
@@ -71,7 +70,7 @@ class ConnectionRegistry
             return;
         }
 
-        $this->lastActivityAt[$connection->resourceId] = time();
+        $this->lastActivityAt[$connection->resourceId] = ($this->clock)();
     }
 
     public function close(ConnectionInterface $connection): ?DeviceSession
@@ -79,10 +78,6 @@ class ConnectionRegistry
         $session = $this->sessions[$connection->resourceId] ?? null;
         unset($this->sessions[$connection->resourceId]);
         unset($this->lastActivityAt[$connection->resourceId]);
-
-        if ($this->connections->offsetExists($connection)) {
-            $this->connections->offsetUnset($connection);
-        }
 
         if ($session !== null && $session->imei !== '' && ($this->deviceMap[$session->imei] ?? null) === $connection) {
             unset($this->deviceMap[$session->imei]);
@@ -96,19 +91,15 @@ class ConnectionRegistry
         return $this->deviceMap[$imei] ?? null;
     }
 
-    public function isOnline(string $imei): bool
-    {
-        return isset($this->deviceMap[$imei]);
-    }
-
     /** @return array<int, DeviceSession> */
     public function expireIdleConnections(int $idleSeconds): array
     {
-        $cutoff = time() - max(1, $idleSeconds);
+        $now = ($this->clock)();
+        $cutoff = $now - max(1, $idleSeconds);
         $expired = [];
 
         foreach ($this->sessions as $resourceId => $session) {
-            if (($this->lastActivityAt[$resourceId] ?? time()) > $cutoff) {
+            if (($this->lastActivityAt[$resourceId] ?? $now) > $cutoff) {
                 continue;
             }
 

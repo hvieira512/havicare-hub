@@ -21,9 +21,7 @@ final class HubMqttBridgeTest extends TestCase
             static fn (): MqttClient => $reconnectedPublisher
         );
 
-        $bridge->publishRaw('8800000015', [
-            'direction' => 'uplink',
-        ]);
+        $bridge->publishRaw('8800000015', ['direction' => 'uplink'], 'watch');
 
         self::assertSame(1, $failedPublisher->publishCalls);
         self::assertSame(1, $failedPublisher->disconnectCalls);
@@ -36,9 +34,7 @@ final class HubMqttBridgeTest extends TestCase
         $publisher = new FakeMqttPublisher();
         $bridge = new HubMqttBridge($publisher, 'prefix');
 
-        $bridge->publishEvent('8800000015', [
-            'type' => 'device.downlink.queued',
-        ]);
+        $bridge->publishEvent('8800000015', ['type' => 'device.downlink.queued'], 'watch');
 
         self::assertSame('prefix/null/0/watch/8800000015/events', $publisher->lastTopic);
         self::assertSame(MqttClient::QOS_AT_LEAST_ONCE, $publisher->lastQualityOfService);
@@ -50,7 +46,7 @@ final class HubMqttBridgeTest extends TestCase
         $publisher = new FakeMqttPublisher();
         $bridge = new HubMqttBridge($publisher, 'prefix');
 
-        $bridge->publishEvent('8800000015', ['type' => 'fall', 'data' => ['confirmed' => false]]);
+        $bridge->publishEvent('8800000015', ['type' => 'fall', 'data' => ['confirmed' => false]], 'watch');
 
         self::assertSame(
             ['type' => 'fall', 'severity' => 'alert', 'data' => ['confirmed' => false]],
@@ -64,7 +60,7 @@ final class HubMqttBridgeTest extends TestCase
         $publisher = new FakeMqttPublisher();
         $bridge = new HubMqttBridge($publisher, 'prefix');
 
-        $bridge->publishEvent('8800000015', ['type' => 'apnea', 'data' => []]);
+        $bridge->publishEvent('8800000015', ['type' => 'apnea', 'data' => []], 'watch');
 
         self::assertStringContainsString('"data":{}', (string)$publisher->lastMessage);
     }
@@ -74,7 +70,7 @@ final class HubMqttBridgeTest extends TestCase
         $publisher = new FakeMqttPublisher();
         $bridge = new HubMqttBridge($publisher, 'prefix');
 
-        $bridge->publishEvent('8800000015', ['type' => 'device.connected']);
+        $bridge->publishEvent('8800000015', ['type' => 'device.connected'], 'watch');
 
         self::assertSame(['type' => 'device.connected'], json_decode((string)$publisher->lastMessage, true));
     }
@@ -84,7 +80,7 @@ final class HubMqttBridgeTest extends TestCase
         $publisher = new FakeMqttPublisher();
         $bridge = new HubMqttBridge($publisher, 'prefix');
 
-        $bridge->publishStatus('8800000015', ['state' => 'offline']);
+        $bridge->publishStatus('8800000015', ['state' => 'offline'], true, 'watch');
 
         self::assertSame('prefix/null/0/watch/8800000015/status', $publisher->lastTopic);
         self::assertSame(MqttClient::QOS_AT_LEAST_ONCE, $publisher->lastQualityOfService);
@@ -96,7 +92,7 @@ final class HubMqttBridgeTest extends TestCase
         $publisher = new FakeMqttPublisher();
         $bridge = new HubMqttBridge($publisher, 'prefix');
 
-        $bridge->publishStatus('8800000015', ['state' => 'error'], retain: false);
+        $bridge->publishStatus('8800000015', ['state' => 'error'], false, 'watch');
 
         self::assertSame(MqttClient::QOS_AT_LEAST_ONCE, $publisher->lastQualityOfService);
         self::assertFalse($publisher->lastRetain);
@@ -107,7 +103,7 @@ final class HubMqttBridgeTest extends TestCase
         $publisher = new FakeMqttPublisher();
         $bridge = new HubMqttBridge($publisher, 'prefix');
 
-        $bridge->publishTelemetry('8800000015', ['type' => 'heart_rate']);
+        $bridge->publishTelemetry('8800000015', ['type' => 'heart_rate'], 'watch');
 
         self::assertSame(MqttClient::QOS_AT_MOST_ONCE, $publisher->lastQualityOfService);
         self::assertFalse($publisher->lastRetain);
@@ -118,16 +114,13 @@ final class HubMqttBridgeTest extends TestCase
         $publisher = new FakeMqttPublisher();
         $bridge = new HubMqttBridge($publisher, 'prefix');
 
-        $bridge->publishRaw('8800000015', ['direction' => 'uplink']);
+        $bridge->publishRaw('8800000015', ['direction' => 'uplink'], 'watch');
 
         self::assertSame(MqttClient::QOS_AT_MOST_ONCE, $publisher->lastQualityOfService);
         self::assertFalse($publisher->lastRetain);
     }
 
-    /**
-     * Um dispositivo com dono: com os sentinelas dos outros testes, um erro na ordem dos dois
-     * primeiros segmentos não se vê.
-     */
+    /** Com os sentinelas dos outros testes, uma troca na ordem dos dois primeiros segmentos não se vê. */
     public function testATopicCarriesTheCompanyAndTheLicenceInThatOrder(): void
     {
         $publisher = new FakeMqttPublisher();
@@ -173,10 +166,7 @@ final class HubMqttBridgeTest extends TestCase
         self::assertCount(5, explode('/', (string)$publisher->lastTopic));
     }
 
-    /**
-     * A derivação para os streams acontece no mesmo sítio onde a mensagem é publicada, e
-     * leva o payload já serializado -- o mesmo que vai para o fio, sem segunda codificação.
-     */
+    /** Os streams derivam-se onde a mensagem é publicada, do payload já serializado que vai para o fio, sem segunda codificação. */
     public function testPublishingFansOutUnderTheScopeOfTheDeviceThatSentIt(): void
     {
         $fanout = new MessageFanout();
@@ -197,10 +187,7 @@ final class HubMqttBridgeTest extends TestCase
         self::assertSame('{"type":"heart_rate"}', $received[0][1]);
     }
 
-    /**
-     * A 1001 do hitcare e a 1001 do havicare são clientes diferentes, e por isso a chave de
-     * encaminhamento é o par empresa+licença.
-     */
+    /** A 1001 do hitcare e a 1001 do havicare são clientes diferentes, e a chave de encaminhamento é o par empresa+licença. */
     public function testTheSameLicenceNumberInAnotherCompanyIsADifferentScope(): void
     {
         $fanout = new MessageFanout();
@@ -245,7 +232,7 @@ final class HubMqttBridgeTest extends TestCase
             $seen[] = $topic;
         });
 
-        $bridge->publishRaw('861265061009844', ['direction' => 'uplink']);
+        $bridge->publishRaw('861265061009844', ['direction' => 'uplink'], 'watch');
 
         self::assertSame(['havicare-hub/null/0/watch/861265061009844/raw'], $seen);
     }

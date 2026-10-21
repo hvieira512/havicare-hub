@@ -14,10 +14,7 @@ use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;
 
-/**
- * O que está em fila para um radar sai pela cloud. O código da resposta decide: 200 aplicado,
- * 777 radar desligado (fica à espera), 778 modo que o modelo não aceita (falha sem repetir).
- */
+/** O código da resposta da cloud decide: 200 aplicado, 777 radar desligado e fica à espera, 778 modo recusado sem repetir. */
 final class QinglanstCloudDownlinksTest extends TestCase
 {
     private const IMEI = 'AD8A613B0493';

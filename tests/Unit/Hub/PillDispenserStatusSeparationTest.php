@@ -9,16 +9,10 @@ use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Para onde vai cada leitura do estado: reutiliza-se a capacidade que já existe, junta-se o
- * que é a mesma pergunta, um alerta só fala quando dispara, e o que ninguém lê não sai.
- */
+/** Reutiliza-se a capacidade existente, junta-se a mesma pergunta, um alerta só fala quando dispara, e o que ninguém lê não sai. */
 final class PillDispenserStatusSeparationTest extends TestCase
 {
-    /**
-     * O `0x810B` de uma unidade 4G é o **CSQ do módulo**, e não dBm: converte-se pela tabela do
-     * 3GPP, `−113 + 2 × CSQ`.
-     */
+    /** O `0x810B` de uma unidade 4G é o CSQ do módulo, não dBm, e converte-se pela tabela do 3GPP: `−113 + 2 × CSQ`. */
     public function testTheCellularSignalIsConvertedFromCsq(): void
     {
         $byFeature = $this->telemetry([
@@ -114,10 +108,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         );
     }
 
-    /**
-     * Os dois sensores de estado físico não saem do descodificador: nenhum lê a peça que diz ler,
-     * e cada um responde sempre o mesmo.
-     */
+    /** Os dois sensores de estado físico não saem do descodificador: nenhum lê a peça que diz ler, e respondem sempre o mesmo. */
     public function testThePhysicalStateTagsDoNotBecomeTelemetry(): void
     {
         self::assertArrayNotHasKey('tray_lock', $this->telemetry([0x8107 => "\x01"]));
@@ -126,10 +117,7 @@ final class PillDispenserStatusSeparationTest extends TestCase
         self::assertArrayNotHasKey('medication_cup', $this->telemetry([0x8106 => "\x00"]));
     }
 
-    /**
-     * O `0x8105` diz ligado ou desligado e a janela vem só na resposta ao `0x05`. Na mesma chave,
-     * e como o `saveReported` substitui o payload inteiro, o meio apagaria o todo.
-     */
+    /** O `saveReported` substitui o payload inteiro, e o `0x8105` só com o ligado apagaria a janela vinda do `0x05`. */
     public function testTheStatusPacketDoesNotReportTheQuietHoursItOnlyHalfKnows(): void
     {
         foreach (["\x00", "\x01", "\x02"] as $state) {
@@ -224,7 +212,6 @@ final class PillDispenserStatusSeparationTest extends TestCase
     {
         return new DeviceSession(
             new PillFakeConnection(),
-            'tcp',
             true,
             'AABBCCDDEEFF',
             'zayata-m228',

@@ -6,7 +6,7 @@ namespace Hub\Domain\Capability;
 
 /**
  * A conversão de uma capacidade genérica para um protocolo: codificar, descodificar, valores
- * por omissão, metadados e forma da resposta.
+ * por omissão e metadados.
  */
 interface CapabilityProtocolHandler
 {
@@ -25,12 +25,4 @@ interface CapabilityProtocolHandler
      * @return array<string, mixed>
      */
     public function meta(array $accumulatedMeta = []): array;
-
-    public function merge(mixed $existing, mixed $incoming): mixed;
-
-    /**
-     * @param array<string, mixed> $meta
-     * @return array<string, mixed>
-     */
-    public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array;
 }

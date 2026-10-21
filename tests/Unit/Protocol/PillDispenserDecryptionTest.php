@@ -7,10 +7,7 @@ namespace Tests\Unit\Protocol;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O M228 cifra em AES128-CFB o que envia por iniciativa própria, com o bit 2 do Flag; a chave
- * e o IV são o Device Number em hexadecimal de 16 caracteres. As tramas são reais.
- */
+/** O M228 cifra em AES128-CFB o que envia por iniciativa própria (bit 2 do Flag), com chave e IV no Device Number em hexadecimal. */
 final class PillDispenserDecryptionTest extends TestCase
 {
     /** Heartbeat cifrado: bateria, sinal, temperatura e humidade. */
@@ -60,10 +57,7 @@ final class PillDispenserDecryptionTest extends TestCase
         self::assertSame("\x01", $this->decode(bin2hex($clear))['tlv'][0x8101]['value']);
     }
 
-    /**
-     * Uma trama cifrada que não abra não pode passar por telemetria vazia: identidade certa e CRC
-     * válido não denunciam nada.
-     */
+    /** Identidade certa e CRC válido não denunciam uma trama cifrada que não abre, e ela não pode passar por telemetria vazia. */
     public function testAFrameThatDoesNotOpenIsMarked(): void
     {
         // Trama bem formada — CRC válido, identidade certa — com o bit da cifra ligado e um

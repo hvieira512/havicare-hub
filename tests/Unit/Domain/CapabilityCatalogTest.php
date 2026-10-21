@@ -10,10 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CapabilityCatalogTest extends TestCase
 {
-    /**
-     * Um despertador, o plano de medicação e o toque do lembrete não são alarmes de perigo: vivem
-     * em «Lembretes», e «Alarmes e alertas» fica com o que dispara e com os seus interruptores.
-     */
+    /** Despertador, plano de medicação e toque do lembrete vivem em «Lembretes»; «Alarmes e alertas» fica com o que dispara. */
     public function testRemindersLiveApartFromAlarms(): void
     {
         $sections = [];

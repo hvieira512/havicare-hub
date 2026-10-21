@@ -6,10 +6,7 @@ namespace Hub\Ingress\Mqtt\Moko;
 
 use Hub\Domain\DiaperSensitivityLookup;
 
-/**
- * O que o gateway faz com um avistamento. Sem `proximityTracker` não há proximidade, e sem
- * `diaperSensitivity` vale o preset normal.
- */
+/** O que o gateway faz com um avistamento. Sem `diaperSensitivity` vale o preset normal. */
 final class MokoGatewayOptions
 {
     public function __construct(
@@ -17,7 +14,6 @@ final class MokoGatewayOptions
         public readonly int $telemetryRefreshSeconds = 60,
         public readonly int $gatewayIdleTimeoutSeconds = 180,
         public readonly int $rawHistorySampleSeconds = 30,
-        public readonly ?ProximityTracker $proximityTracker = null,
         public readonly ?DiaperSensitivityLookup $diaperSensitivity = null,
     ) {
     }

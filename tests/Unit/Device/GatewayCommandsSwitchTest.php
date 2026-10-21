@@ -8,10 +8,7 @@ use Hub\Device\HubMqttBridge;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A instância de dev lê os gateways reais: sem este interruptor, as ordens dela iam para os
- * aparelhos reais, e as automáticas (o relógio, a memória) saíam duas vezes.
- */
+/** A instância de dev lê os gateways reais, e sem este interruptor as ordens dela iriam para os aparelhos reais. */
 final class GatewayCommandsSwitchTest extends TestCase
 {
     public function testWithGatewayCommandsOffNothingIsPublishedToTheGateway(): void

@@ -14,10 +14,7 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\OneShotDownlinkQueue;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * A sessão do gateway com a pulseira repete-se enquanto a ligação BLE durar, e o histórico só
- * regista «Ligado» quando ela começa mesmo.
- */
+/** A sessão repete-se enquanto durar a ligação BLE, e o histórico só regista «Ligado» quando ela começa. */
 final class BridgeSessionTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';
@@ -36,10 +33,7 @@ final class BridgeSessionTest extends TestCase
         self::assertCount(1, self::eventsOfType($mqtt, 'device.connected'));
     }
 
-    /**
-     * A pulseira sai de alcance sempre que quem a usa se afasta, e o gateway di-lo: o ecrã
-     * deixa de a mostrar ligada sem esperar pelo varrimento de aparelhos parados.
-     */
+    /** A pulseira sai de alcance sempre que quem a usa se afasta, e o ecrã reflete-o sem esperar pelo varrimento de aparelhos parados. */
     public function testLosingTheSessionAnnouncesTheDisconnection(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -87,10 +81,7 @@ final class BridgeSessionTest extends TestCase
         self::assertCount(2, self::eventsOfType($mqtt, 'device.connected'));
     }
 
-    /**
-     * O gateway precisa do valor para saber se liga ou desliga, senão o «encontrar dispositivo» nunca
-     * se pararia.
-     */
+    /** O gateway precisa do valor para saber se liga ou desliga, senão o «encontrar dispositivo» nunca pára. */
     public function testTheDesiredValueTravelsWithTheCommand(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -108,10 +99,7 @@ final class BridgeSessionTest extends TestCase
         );
     }
 
-    /**
-     * A sessão e a versão repetem-se de trinta em trinta segundos, e num histórico de cem entradas
-     * expulsariam tudo o resto numa hora.
-     */
+    /** Sessão e versão repetem-se a cada trinta segundos e, num histórico de cem entradas, expulsariam tudo o resto numa hora. */
     public function testTheDashboardKeepsTheFirmwareOnlyWhenItChanges(): void
     {
         $mqtt = new RecordingHubMqttBridge();

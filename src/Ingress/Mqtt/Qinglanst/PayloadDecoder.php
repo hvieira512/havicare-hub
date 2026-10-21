@@ -84,12 +84,17 @@ final class PayloadDecoder
     }
 
     /**
-     * @return array{type: string, device_code: string, people: list<array<string, mixed>>}
+     * Dezasseis bytes por pessoa; um comprimento que não divida não se lê.
+     *
+     * @return array{type: string, device_code: string, people: list<array<string, mixed>>}|null
      */
-    private function decodePosition(string $raw, ?string $deviceCode): array
+    private function decodePosition(string $raw, ?string $deviceCode): ?array
     {
         $length = strlen($raw);
-        $count = $length / 16;
+        if ($length % 16 !== 0) {
+            return null;
+        }
+        $count = intdiv($length, 16);
         $people = [];
 
         for ($i = 0; $i < $count; $i++) {

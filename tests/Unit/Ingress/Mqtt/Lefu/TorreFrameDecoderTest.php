@@ -114,14 +114,13 @@ final class TorreFrameDecoderTest extends TestCase
         self::assertSame(['kind' => 'reply', 'replyType' => 'torre_user_02', 'accepted' => false, 'error' => 'memory_full'], $decoder->decode('fff2', '05020204'));
     }
 
-    public function testTheOtherMeasurementFrames(): void
+    /** As tramas de medição que nada consome não se descodificam. */
+    public function testTheMeasurementFramesNobodyReadsAreNotDecoded(): void
     {
         $decoder = new TorreFrameDecoder();
 
-        self::assertSame(['kind' => 'motion'], $decoder->decode('fff3', '0400'));
-        self::assertSame(['kind' => 'history_available'], $decoder->decode('fff3', '0500'));
-        self::assertSame(['kind' => 'user_selection', 'stateCode' => 2], $decoder->decode('fff3', '060102'));
-        self::assertSame(['kind' => 'impedance_failure', 'limb' => 'right_leg'], $decoder->decode('fff3', '1603000002'));
+        self::assertNull($decoder->decode('fff3', '0400'));
+        self::assertNull($decoder->decode('fff3', '1603000002'));
     }
 
     /** O histórico da captura do Marcus: o membro e seis registos de 20 bytes. */

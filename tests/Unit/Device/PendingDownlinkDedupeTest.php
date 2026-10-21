@@ -8,10 +8,7 @@ use Hub\Device\RedisPendingDownlinkQueue;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
 
-/**
- * Dois comandos só são o mesmo se mandarem fazer o mesmo: mandar a pulseira vibrar e parar
- * são ambos `config:find_device`, e só o valor os distingue.
- */
+/** Vibrar e parar são ambos `config:find_device`: dois comandos só são o mesmo se o valor também o for. */
 final class PendingDownlinkDedupeTest extends TestCase
 {
     private const DEVICE = '9f69c4866e6c';

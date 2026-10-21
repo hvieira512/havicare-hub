@@ -11,10 +11,7 @@ use Hub\Domain\Capability\HubAppliedCapability;
 use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O `supportedProtocols()` e o despacho anunciam e aceitam os mesmos protocolos: um a mais na
- * lista cai no `default` do `match` e sai com os comandos de outro fornecedor.
- */
+/** Um protocolo a mais na lista cai no `default` do `match` e sai com os comandos de outro fornecedor. */
 final class DeclaredProtocolsAreDispatchedTest extends TestCase
 {
     public function testEveryDeclaredProtocolIsServedByItsOwnDispatch(): void
@@ -69,10 +66,7 @@ final class DeclaredProtocolsAreDispatchedTest extends TestCase
         return $keys;
     }
 
-    /**
-     * Um protocolo que a capacidade não anuncia é recusado, e antes de validar: a recusa aponta
-     * o protocolo e não o valor.
-     */
+    /** A recusa vem antes da validação, para apontar o protocolo e não o valor. */
     public function testAnUndeclaredProtocolIsRefusedForBeingUnsupported(): void
     {
         $registry = new CapabilityRegistry();

@@ -213,10 +213,6 @@ vitais que chegam juntos em cada `heartbreath`.
 **O MQTT não é estrangulado.** Só as escritas na [dashboard](13-dashboard.md).
 Quem [subscreve](08-contrato-mqtt.md) recebe tudo.
 
-Há ainda um resumo periódico no log, a cada `QINGLANST_STATS_FLUSH_SECONDS`
-(300 s por omissão), com contagens, taxa e tempo por fase — e só quando houve
-mensagens, para não encher o journal de linhas a dizer que não aconteceu nada.
-
 ## 5. A chave do dispositivo
 
 O `uid` que vem no tópico de origem serve para **encontrar** o radar na
@@ -327,7 +323,6 @@ configurarem. O callback HTTP da cloud não se liga.
 | `src/Ingress/Mqtt/Qinglanst/PayloadDecoder.php` | Os quatro formatos binários, e os códigos numéricos para nomes |
 | `src/Ingress/Mqtt/Qinglanst/MessageNormalizer.php` | Telemetria, limiares e eventos |
 | `src/Ingress/Mqtt/Qinglanst/DashboardWritePolicy.php` | Os dois travões |
-| `src/Ingress/Mqtt/Qinglanst/IngestStats.php` | O resumo periódico |
 
 A planta das divisões não vem pelo MQTT: é lida à cloud do fabricante, a pedido,
 pelo `POST /api/devices/{imei}/radar-layout/sync`.

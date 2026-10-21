@@ -12,9 +12,6 @@ interface PrivateRadioMapStoreContract
      */
     public function findMany(array $bssidHashes): array;
 
-    /** @param array<string, mixed> $entry */
-    public function save(string $bssidHash, array $entry): void;
-
     /** @param array<string, array<string, mixed>> $entries entradas pelo hash do BSSID */
     public function saveMany(array $entries): void;
 }

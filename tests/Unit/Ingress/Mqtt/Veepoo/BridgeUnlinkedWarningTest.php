@@ -12,10 +12,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * Um gateway MOKO anuncia tudo o que o rodeia e o hub recusa o que não lhe está ligado; o aviso
- * leva o mesmo travão que os aparelhos não autorizados.
- */
+/** O hub recusa o que não está ligado ao gateway, e o aviso leva o travão dos aparelhos não autorizados. */
 final class BridgeUnlinkedWarningTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';

@@ -87,20 +87,4 @@ final class RawPayloadTest extends TestCase
             ],
         ], $payload);
     }
-
-    public function testDownlinkAcceptsTextEnvelope(): void
-    {
-        self::assertSame('IWBP03#', RawPayload::bytesFromDownlink([
-            'encoding' => 'text',
-            'payload' => 'IWBP03#',
-        ]));
-    }
-
-    public function testDownlinkAcceptsBase64Envelope(): void
-    {
-        self::assertSame('raw-bytes', RawPayload::bytesFromDownlink([
-            'encoding' => 'base64',
-            'payload' => base64_encode('raw-bytes'),
-        ]));
-    }
 }

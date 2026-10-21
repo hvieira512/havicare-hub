@@ -26,8 +26,7 @@ final class TelemetryEnvelope
         string $gatewayId = '',
     ): array {
         $source = ['protocol' => $protocol, 'nativeType' => $nativeType];
-        // O gateway só entra quando existe: um relógio fala directamente, e uma chave vazia
-        // dizia a quem consome que havia uma caixa pelo meio que não há.
+        // O gateway só entra quando existe: um relógio fala directamente.
         if ($gatewayId !== '') {
             $source['gatewayId'] = $gatewayId;
         }

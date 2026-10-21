@@ -9,10 +9,7 @@ use Hub\Domain\Capability\Definition\CapabilityDefinitions;
 use LogicException;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O papel é o que os ficheiros de definições escrevem, e a base expande-o nas quatro
- * bandeiras do contrato.
- */
+/** O papel é o que os ficheiros de definições escrevem, e a base expande-o nas quatro bandeiras do contrato. */
 final class CapabilityDefinitionRolesTest extends TestCase
 {
     /** As cinco combinações que existem no catálogo, e nenhuma outra. */

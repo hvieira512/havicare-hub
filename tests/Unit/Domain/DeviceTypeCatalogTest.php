@@ -48,15 +48,9 @@ final class DeviceTypeCatalogTest extends TestCase
     /** O gateway identifica-se por MAC e leva SIM: é o cartão dele que faz o backhaul. */
     public function testTheGatewayHasASimEvenThoughItIsNotIdentifiedByImei(): void
     {
-        self::assertTrue(DeviceTypeCatalog::hasSim('gateway'));
+        self::assertTrue(DeviceTypeCatalog::all()['gateway']['sim']);
         self::assertSame('deviceId', DeviceTypeCatalog::all()['gateway']['identity']['field']);
 
-        self::assertTrue(DeviceTypeCatalog::hasSim('watch'));
-    }
-
-    /** Um tipo desconhecido não tem SIM, em vez de rebentar. */
-    public function testAnUnknownTypeSimplyHasNoSim(): void
-    {
-        self::assertFalse(DeviceTypeCatalog::hasSim('nao_existe'));
+        self::assertTrue(DeviceTypeCatalog::all()['watch']['sim']);
     }
 }

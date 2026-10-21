@@ -7,10 +7,7 @@ namespace Tests\Unit\Ingress\Http\Qinglanst;
 use Hub\Ingress\Http\Qinglanst\LayoutParser;
 use PHPUnit\Framework\TestCase;
 
-/**
- * As respostas são as do `thirdparty/v2/deviceProp` para dois radares reais: o 414D74184CBF,
- * com as chaves das áreas seguidas, e o 594B3CF1B367, com buracos nelas.
- */
+/** Respostas reais do `thirdparty/v2/deviceProp` de dois radares: um com as chaves das áreas seguidas e outro com buracos. */
 final class LayoutParserTest extends TestCase
 {
     public function testParsesALayoutWhoseAreaNamesArriveAsAList(): void
@@ -39,10 +36,7 @@ final class LayoutParserTest extends TestCase
         self::assertSame('Porta', $layout['areas'][2]['name']);
     }
 
-    /**
-     * O nome liga-se à área pela chave e nunca pela posição: as chaves 0, 1, 3, 5 e 7 são
-     * esparsas, e por isso o fabricante manda um objeto em vez de uma lista.
-     */
+    /** As chaves 0, 1, 3, 5 e 7 são esparsas e chegam num objeto: o nome liga-se à área pela chave, nunca pela posição. */
     public function testJoinsAreaNamesByKeyWhenTheKeysHaveGaps(): void
     {
         $layout = (new LayoutParser())->parse([
@@ -78,10 +72,7 @@ final class LayoutParserTest extends TestCase
         self::assertSame('Área 2', $layout['areas'][0]['name']);
     }
 
-    /**
-     * Guardamos caixas, e não polígonos: as áreas em produção são todas alinhadas aos eixos, e
-     * uma que não seja fica de fora com o motivo em vez de virar a caixa envolvente.
-     */
+    /** As áreas em produção são todas alinhadas aos eixos; uma que não seja fica de fora com o motivo, e não vira caixa envolvente. */
     public function testSkipsAnAreaThatIsNotAnAxisAlignedBox(): void
     {
         $layout = (new LayoutParser())->parse([

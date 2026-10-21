@@ -80,10 +80,7 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('device_not_authorized', $mqtt->events[0][1]['error']['code']);
     }
 
-    /**
-     * Um relógio na denylist é rejeitado em silêncio: fecha-se a ligação, mas sem notificação
-     * na dashboard e sem estado/evento no broker. É o «não quero mesmo que apareça».
-     */
+    /** Rejeição silenciosa: fecha-se a ligação sem notificação na dashboard nem estado ou evento no broker. */
     public function testDenylistedDeviceIsRejectedSilently(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
@@ -173,10 +170,7 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertCount(0, $mqtt->raw);
     }
 
-    /**
-     * A ordem que esperava pelo relógio sai quando ele volta: sem resposta prevista, fica enviada; com ela,
-     * fica à espera e a repetição só vem depois do prazo.
-     */
+    /** Quando o relógio volta, a ordem sem resposta prevista fica enviada, e a com resposta fica à espera e só se repete após o prazo. */
     public function testAQueuedCommandLeavesWhenTheWatchReconnects(): void
     {
         $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
@@ -241,10 +235,7 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame(300, $pending[0]->expiresAt - $pending[0]->queuedAt);
     }
 
-    /**
-     * A manutenção renova de minuto a minuto a entrada de um comando à espera do aparelho; o
-     * anúncio é do pedido, e sai uma vez.
-     */
+    /** A manutenção renova a entrada de minuto a minuto, mas o anúncio é do pedido e sai uma vez. */
     public function testRenewingAQueuedCommandDoesNotAnnounceItAgain(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
@@ -397,10 +388,7 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertCount(0, $queue->pendingFor('868705080300697'));
     }
 
-    /**
-     * O pedido em fila sai para o aparelho e passa a esperar a resposta. É pelo `id` que se encontra:
-     * o tipo da trama não é o nome com que o pedido foi registado.
-     */
+    /** O pedido encontra-se pelo `id`, porque o tipo da trama não é o nome com que foi registado. */
     public function testAQueuedRequestWaitsForTheReplyOnceItIsFlushed(): void
     {
         $queue = new RedisPendingDownlinkQueue(new InMemoryRedisClient());
@@ -528,21 +516,21 @@ final class DeviceHubMqttContractTest extends TestCase
         ], $mqtt->events[1][1]['command']);
     }
 
-    /**
-     * Um relógio celular reconecta antes de o socket antigo fechar, e ficar online não pode
-     * arrastar um `device.disconnected` da ligação anterior.
-     */
+    /** Um relógio celular reconecta antes de o socket antigo fechar, e ficar online não pode arrastar o `device.disconnected` anterior. */
     public function testReconnectDoesNotEmitADisconnectForTheSupersededSession(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+        $now = 1_000;
+        $hub = new DeviceHubServer($this->whitelist, $mqtt, clock: static function () use (&$now): int {
+            return $now;
+        });
 
         $first = new ContractFakeConnection(5);
         $hub->onOpen($first);
         $hub->onMessage($first, 'IWAP00865028000000308#');
 
         // A primeira sessão envelhece, e só então o relógio reconecta noutro socket.
-        sleep(2);
+        $now += 2;
         $second = new ContractFakeConnection(6);
         $hub->onOpen($second);
         $hub->onMessage($second, 'IWAP00865028000000308#');
@@ -561,6 +549,24 @@ final class DeviceHubMqttContractTest extends TestCase
         // E o downlink continua a chegar ao relógio vivo -- vai para a ligação nova.
         self::assertTrue($hub->sendDownlink('865028000000308', 'IWBPXY,865028000000308,080835#'));
         self::assertNotEmpty($second->sent, 'a ligação activa recebe o comando');
+    }
+
+    /** Uma ligação cuja sessão já saiu do registo continua a receber o comando. */
+    public function testADownlinkReachesAConnectionWhoseSessionIsGone(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+        $watch = new ContractFakeConnection(5);
+        $hub->onOpen($watch);
+        $hub->onMessage($watch, 'IWAP00865028000000308#');
+
+        // Outra ligação com o mesmo `resourceId` abre e fecha, e leva a sessão do relógio.
+        $other = new ContractFakeConnection(5);
+        $hub->onOpen($other);
+        $hub->onClose($other);
+
+        self::assertTrue($hub->sendDownlink('865028000000308', 'IWBP03#'));
+        self::assertSame('IWBP03#', end($watch->sent));
     }
 
     public function testVivistarOnlineDownlinkPublishesCommandMetadata(): void
@@ -743,10 +749,7 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('alarm', $locations[0][1]['data']['reportKind']);
     }
 
-    /**
-     * O 4P Touch repete a condição de bateria fraca em cada posição: sai um `low_battery` quando
-     * ela acende, e outro só depois de ela ter apagado.
-     */
+    /** O 4P Touch repete a bateria fraca em cada posição: sai um `low_battery` quando acende, e outro só depois de apagar. */
     public function testARepeatedLowBatteryConditionRaisesTheEventOncePerDischarge(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
@@ -880,28 +883,28 @@ final class ContractRecordingHubMqttBridge extends HubMqttBridge
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+    public function publishRaw(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
     {
         $this->raw[] = [$imei, $payload];
         $this->rawTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'raw');
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+    public function publishStatus(string $imei, array $payload, bool $retain, string $deviceType, int $licenseId = 0, string $company = 'null'): void
     {
         $this->statuses[] = [$imei, $payload, $retain];
         $this->statusTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'status');
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+    public function publishEvent(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
     {
         $this->events[] = [$imei, $payload];
         $this->eventTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'events');
     }
 
     /** @param array<string, mixed> $payload */
-    public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
+    public function publishTelemetry(string $imei, array $payload, string $deviceType, int $licenseId = 0, string $company = 'null'): void
     {
         $this->telemetry[] = [$imei, $payload];
         $this->telemetryTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'telemetry');

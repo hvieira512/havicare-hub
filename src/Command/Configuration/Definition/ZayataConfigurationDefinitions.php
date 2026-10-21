@@ -223,11 +223,7 @@ final class ZayataConfigurationDefinitions
     private static function replyTo(string $command): array
     {
         return [match ($command) {
-            'readConfiguration', 'readConfiguration2' => 'read_config_ack',
-            'readStatus' => 'read_status_ack',
-            'discoverParametersConfiguration' => 'discover_config_ack',
-            'discoverParametersStatus' => 'discover_status_ack',
-            'discoverParametersControl' => 'discover_control_ack',
+            'readConfiguration' => 'read_config_ack',
             'dispenseNow', 'calibrateClock', 'muteAlarm',
             'resetTray', 'restartDevice' => 'control_ack',
             default => 'write_config_ack',

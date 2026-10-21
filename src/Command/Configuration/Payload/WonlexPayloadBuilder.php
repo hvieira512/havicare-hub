@@ -47,7 +47,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'wonlexHeartRateLowRemind' => self::heartRateRange('HeartRateBelowRemind', $payload),
             'wonlexBPEarlyWarning' => self::bloodPressureWarning($payload),
             'alarmClock' => ['alarmClockList' => self::alarmClockList($payload)],
-            'familyNumber' => ['familyNumbers' => self::familyNumbers($payload['contacts'] ?? $payload['familyNumbers'] ?? null)],
+            'familyNumber' => ['familyNumbers' => self::familyNumbers($payload['contacts'] ?? null)],
             'SOSNumber' => ['sosNumbers' => self::sosNumbers($payload['contacts'] ?? $payload['numbers'] ?? $payload['sosNumbers'] ?? [])],
             'factoryResetCommand', 'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
             'pushMessage' => [

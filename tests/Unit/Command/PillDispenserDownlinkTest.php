@@ -8,10 +8,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A descida do dispensador: o que o hub monta tem de ser lido de volta pelo próprio
- * descodificador, que é a única prova de que a trama está certa sem ter o aparelho à mão.
- */
+/** Sem o aparelho à mão, o descodificador do próprio hub ler a trama de volta é a única prova de que ela está certa. */
 final class PillDispenserDownlinkTest extends TestCase
 {
     private const MAC = 'AABBCCDDEE01';
@@ -192,10 +189,7 @@ final class PillDispenserDownlinkTest extends TestCase
         DeviceCommandCatalog::buildDownlink('zayata-m228', self::MAC, 'naoExiste', []);
     }
 
-    /**
-     * Os tipos esperados vêm à mão da tabela «TAG Definition - Device Type 02»: o `packTlv` e o
-     * `parseTlv` concordam um com o outro, e o aparelho recusa como inválido o tipo `UNKONW`.
-     */
+    /** Os tipos vêm à mão da tabela «TAG Definition - Device Type 02», porque `packTlv` e `parseTlv` concordam entre si. */
     public function testEveryDownlinkTagDeclaresTheParameterTypeTheSpecRequires(): void
     {
         $int8u = 2;

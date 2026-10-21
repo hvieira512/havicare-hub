@@ -85,14 +85,6 @@ final class Vivistar implements AlarmClockHandler
         return $meta;
     }
 
-    public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
-    {
-        return [
-            'value' => $this->fromNative(is_array($value) ? $value : []),
-            '_meta' => $this->meta($meta),
-        ];
-    }
-
     /** @return array{time: string, days: string, enabled: bool, type: int} */
     private static function normalizeItemForNative(mixed $item): array
     {

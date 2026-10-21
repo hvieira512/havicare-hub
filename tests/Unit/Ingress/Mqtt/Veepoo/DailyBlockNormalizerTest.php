@@ -95,10 +95,7 @@ final class DailyBlockNormalizerTest extends TestCase
         );
     }
 
-    /**
-     * Colapsar repetições confundia «não mudou» com «não houve leitura»; quem consome compara com
-     * o que leu antes.
-     */
+    /** As repetições não se colapsam, para não confundir «não mudou» com «não houve leitura»; quem consome compara. */
     public function testEveryBlockCarriesItsOwnWearState(): void
     {
         $n = new DailyBlockNormalizer();
@@ -123,10 +120,7 @@ final class DailyBlockNormalizerTest extends TestCase
         ], $states);
     }
 
-    /**
-     * A distância e as calorias do bloco são os passos vezes uma constante (0,86 m e 0,067 kcal em
-     * 416 blocos capturados), e não se publicam; a janela viaja com o valor.
-     */
+    /** A distância e as calorias do bloco são os passos vezes uma constante e não se publicam; a janela viaja com o valor. */
     public function testABlockCountsStepsOverItsWindow(): void
     {
         $out = (new DailyBlockNormalizer())->normalize(
@@ -161,10 +155,7 @@ final class DailyBlockNormalizerTest extends TestCase
         return array_values(array_filter($out, static fn(array $e): bool => $e['type'] === $type));
     }
 
-    /**
-     * O MET traz uma casa decimal implícita: em cru dava nove MET a quem está sentado a uma
-     * secretária, e a app do fabricante mostra 0,9 para o mesmo bloco.
-     */
+    /** O MET traz uma casa decimal implícita: quem está sentado a uma secretária faz 0,9 MET, como mostra a app do fabricante. */
     public function testMetIsScaledButStressIsNot(): void
     {
         $out = (new DailyBlockNormalizer())->normalize([
@@ -179,10 +170,7 @@ final class DailyBlockNormalizerTest extends TestCase
         self::assertSame(['score' => 39], $byType['stress']);
     }
 
-    /**
-     * Em 733 blocos o firmware só devolveu 0, 112, 136, 144, 200 e 208, com a mesma distribuição de
-     * dia e de noite: traduzi-los era inventar.
-     */
+    /** Os valores observados (0, 112, 136, 144, 200, 208) não variam entre dia e noite: traduzi-los seria inventar. */
     public function testSleepCodesAreNotPublishedWhileTheirMeaningIsUnknown(): void
     {
         $out = (new DailyBlockNormalizer())->normalize([
@@ -207,10 +195,7 @@ final class DailyBlockNormalizerTest extends TestCase
         self::assertSame('2026-09-09T10:05:00Z', $out[0]['occurredAt']);
     }
 
-    /**
-     * Captura da MF91 ao pulso: 36,2 °C e 34,0 °C às 09:40, com a app a mostrar 36,2 °C de
-     * temperatura corporal. Os nomes são os dos relógios.
-     */
+    /** Captura da MF91 ao pulso, 36,2 °C e 34,0 °C, com a app a mostrar 36,2 °C de temperatura corporal; os nomes são os dos relógios. */
     public function testBlockTemperatureCarriesBodyAndSurface(): void
     {
         $out = (new DailyBlockNormalizer())->normalize(

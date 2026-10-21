@@ -7,10 +7,7 @@ namespace Tests\Unit\Device;
 use Hub\Device\DownlinkRetryContext;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Nos protocolos de gateway os bytes em fila são só o nome da operação, e uma repetição sem o
- * valor ao lado executa-se com o interruptor a falso.
- */
+/** Nos protocolos de gateway os bytes em fila são só o nome da operação, e repetir sem o valor executa com o interruptor a falso. */
 final class DownlinkRetryContextTest extends TestCase
 {
     public function testTheValueTravelsWithTheRetry(): void
@@ -28,10 +25,7 @@ final class DownlinkRetryContextTest extends TestCase
         self::assertSame('op-1', $context['operationId']);
     }
 
-    /**
-     * É pelo identificador que o gateway distingue uma reentrega de um pedido novo, que voltaria
-     * a medir.
-     */
+    /** É pelo identificador que o gateway distingue uma reentrega de um pedido novo, que voltaria a medir. */
     public function testTheRequestKeepsItsIdentityAcrossRetries(): void
     {
         $context = DownlinkRetryContext::forCommand([
@@ -42,10 +36,7 @@ final class DownlinkRetryContextTest extends TestCase
         self::assertSame('a1b2c3d4', $context['id']);
     }
 
-    /**
-     * A chave de de-duplicação sai do identificador da operação, e sem ele uma repetição
-     * entra na fila como comando novo em vez de substituir o que lá está.
-     */
+    /** A chave de de-duplicação sai do identificador da operação, para a repetição substituir o comando em fila em vez de se somar. */
     public function testACommandWithoutAnOperationKeepsItsOwnIdentity(): void
     {
         $context = DownlinkRetryContext::forCommand([

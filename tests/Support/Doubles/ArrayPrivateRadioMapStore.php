@@ -22,16 +22,9 @@ final class ArrayPrivateRadioMapStore implements PrivateRadioMapStoreContract
         return $found;
     }
 
-    public function save(string $bssidHash, array $entry): void
-    {
-        $this->entries[$bssidHash] = $entry;
-    }
-
     public function saveMany(array $entries): void
     {
-        foreach ($entries as $hash => $entry) {
-            $this->save($hash, $entry);
-        }
+        $this->entries = $entries + $this->entries;
     }
 
     /** @return array<string, array<string, mixed>> */

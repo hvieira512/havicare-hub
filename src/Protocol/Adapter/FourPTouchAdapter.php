@@ -183,11 +183,10 @@ class FourPTouchAdapter implements DeviceAdapterInterface
         }
 
         if ($type === 'WIFIINFOUP') {
+            // A palavra-passe da rede, no campo 1, não se descodifica nem se repete.
             $data['wifiNameHex'] = $fields[0] ?? null;
-            $data['wifiPasswordHex'] = $fields[1] ?? null;
             $data['wifiSsid'] = $fields[2] ?? null;
             $data['wifiName'] = $this->hexAscii($fields[0] ?? null);
-            $data['wifiPassword'] = $this->hexAscii($fields[1] ?? null);
             return;
         }
 

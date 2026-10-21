@@ -40,6 +40,9 @@ final class TuyaBridge implements MqttIngress
     /** @var array<string, int> entregas falhadas por `messageId` */
     private array $failedDeliveries = [];
 
+    /** @var array<string, int> quando cada aparelho por registar foi anotado, uma vez por minuto */
+    private array $rejectedAt = [];
+
     public function __construct(
         private readonly string $accessId,
         private readonly string $accessSecret,
@@ -122,7 +125,8 @@ final class TuyaBridge implements MqttIngress
 
         $device = $this->whitelist->resolve($deviceId, self::PROTOCOL);
         if ($device === null) {
-            if (!$this->denylist?->contains($deviceId)) {
+            if (!$this->denylist?->contains($deviceId) && time() - ($this->rejectedAt[$deviceId] ?? 0) >= 60) {
+                $this->rejectedAt[$deviceId] = time();
                 $this->deviceStore?->recordRejectedDevice($deviceId, self::PROTOCOL, '', $deviceId, 'device_not_authorized');
             }
             return;

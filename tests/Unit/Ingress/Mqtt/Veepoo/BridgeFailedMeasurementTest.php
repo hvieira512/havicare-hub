@@ -14,10 +14,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * Uma medição impossível sai em `device.measurement_failed` e fecha o pedido: senão é reentregue
- * até expirar e a pulseira repete uma medição que não vai dar valor.
- */
+/** Sai em `device.measurement_failed` e fecha o pedido, senão é reentregue e a pulseira repete uma medição sem valor. */
 final class BridgeFailedMeasurementTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';
@@ -57,10 +54,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame([], $queue->operations());
     }
 
-    /**
-     * Um traçado todo a zeros é o mesmo caso pelo outro caminho: chega em `ecg_wave` e não
-     * traz tipo do SDK nenhum, mas o pedido que o mandou fazer é sempre o mesmo.
-     */
+    /** Um traçado todo a zeros chega em `ecg_wave` sem tipo do SDK, mas o pedido que o originou é sempre o mesmo. */
     public function testAnEcgWithoutSignalClosesTheRequest(): void
     {
         $queue = new FakeQueue();
@@ -124,10 +118,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame('not_worn', $failed[0][1]['error']);
     }
 
-    /**
-     * O gateway confirma porque executou; sem valor nem razão da pulseira, confirmado passaria a
-     * querer dizer «o gateway mandou» em vez de «a pulseira mediu».
-     */
+    /** O gateway confirma porque executou; sem valor nem razão da pulseira, confirmado diria «o gateway mandou» e não «a pulseira mediu». */
     public function testAMeasurementThatCameBackSilentIsReportedAsAFailure(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -145,10 +136,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame(['reason' => 'no_response'], $failures[0]['payload']['error']);
     }
 
-    /**
-     * Uma confirmação de um gateway antigo, sem o campo, continua a valer como sucesso: o
-     * silêncio tem de ser dito, não presumido.
-     */
+    /** Uma confirmação sem o campo, de um gateway antigo, vale como sucesso: a falha tem de ser dita, não presumida. */
     public function testAConfirmationWithoutTheFieldIsStillASuccess(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -226,10 +214,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame(['reason' => 'not_connected'], self::failures($mqtt)[0]['payload']['error']);
     }
 
-    /**
-     * Fora do pulso a pulseira responde com tramas a zero e o gateway confirma; quem sabe o que conta
-     * como leitura é o hub, e não publicou nenhuma.
-     */
+    /** Fora do pulso a pulseira responde com tramas a zero e o gateway confirma; decidir o que é leitura cabe ao hub. */
     public function testAMeasurementThatNeverProducedAReadingIsReportedAsAFailure(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -312,10 +297,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame(['not_worn', 'no_reading'], $reasons);
     }
 
-    /**
-     * A onda chega em `ecg_wave` e não em tramas de medição, e por isso não há nada a assentar quando
-     * a confirmação chega.
-     */
+    /** A onda chega em `ecg_wave` e não em tramas de medição, por isso não há nada a assentar quando a confirmação chega. */
     public function testAnEcgThatCaughtSignalIsNotReportedAsAFailure(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -336,10 +318,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame([], self::failures($mqtt));
     }
 
-    /**
-     * A confirmação que a consome pode nunca chegar, e sem prazo o pedido seguinte da mesma medição
-     * herdava o perdão e falhava em silêncio.
-     */
+    /** A marca de um pedido expira, porque a confirmação que a consome pode nunca chegar. */
     public function testTheMarkOfADeadRequestExpires(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -367,11 +346,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame(['not_worn', 'no_reading'], $reasons);
     }
 
-    /**
-     * O pedido morto ganha à leitura que chegou depois dele.
-     *
-     * As tramas que chegam depois de a pulseira sair do pulso foram medidas ao ar.
-     */
+    /** Depois de a pulseira sair do pulso as tramas são medidas ao ar, por isso o pedido morto ganha à leitura tardia. */
     public function testADeadRequestOutranksTheReadingThatCameAfterIt(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -469,10 +444,7 @@ final class BridgeFailedMeasurementTest extends TestCase
     }
 }
 
-/**
- * Uma fila cujo `remove` tira só o pedido indicado: o duplo das outras suites esvazia-se inteiro, e
- * com ele não se distingue «tirou o pedido certo» de «tirou tudo».
- */
+/** A fila tira só o pedido indicado, para distinguir «tirou o pedido certo» de «tirou tudo». */
 final class FakeQueue implements PendingDownlinkQueue
 {
     /** @var list<PendingDownlink> */

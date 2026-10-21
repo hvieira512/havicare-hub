@@ -107,7 +107,7 @@ final class ZayataDownlink
     {
         $plans = array_values(array_filter($payload['plans'] ?? [], 'is_array'));
         if (count($plans) > PillDispenserAdapter::ALARM_SLOTS) {
-            throw new \InvalidArgumentException('o M228 tem nove alarmes, e o plano traz ' . count($plans));
+            throw new \InvalidArgumentException('the M228 has nine alarms, and the plan has ' . count($plans));
         }
 
         // Cada plano diz em que alarme fica; um plano sem slot vale pela posição.
@@ -115,10 +115,10 @@ final class ZayataDownlink
         foreach ($plans as $position => $plan) {
             $slot = isset($plan['slot']) ? (int)$plan['slot'] : $position + 1;
             if ($slot < 1 || $slot > 9) {
-                throw new \InvalidArgumentException("o M228 tem nove alarmes, e o plano pede o {$slot}");
+                throw new \InvalidArgumentException("the M228 has nine alarms, and the plan asks for alarm {$slot}");
             }
             if (isset($bySlot[$slot])) {
-                throw new \InvalidArgumentException("dois planos para o alarme {$slot}");
+                throw new \InvalidArgumentException("two plans for alarm {$slot}");
             }
             $bySlot[$slot] = $plan;
         }
@@ -208,7 +208,7 @@ final class ZayataDownlink
     {
         $number = (int)$minutes;
         if ($number < 0 || $number * 60 > 86400) {
-            throw new \InvalidArgumentException("{$number} minutos fora da gama 0-1440");
+            throw new \InvalidArgumentException("{$number} minutes outside the range 0-1440");
         }
 
         return pack('V', $number * 60);
@@ -219,7 +219,7 @@ final class ZayataDownlink
     {
         $number = (int)$value;
         if ($number < -1200 || $number > 1400) {
-            throw new \InvalidArgumentException("fuso {$number} fora da gama -1200 a 1400");
+            throw new \InvalidArgumentException("time zone {$number} outside the range -1200 to 1400");
         }
 
         return pack('s', $number);
@@ -229,7 +229,7 @@ final class ZayataDownlink
     {
         $number = (int)$value;
         if ($number < 0 || $number > $max) {
-            throw new \InvalidArgumentException("valor {$number} fora da gama 0-{$max}");
+            throw new \InvalidArgumentException("value {$number} outside the range 0-{$max}");
         }
 
         return chr($number);

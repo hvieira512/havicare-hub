@@ -11,10 +11,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * A MF91 guarda blocos de cinco minutos e o gateway relê o dia corrente de cinco em cinco minutos:
- * sem porta, cada entrega republicava as mesmas medições.
- */
+/** O gateway relê o dia corrente de cinco em cinco minutos, e sem porta cada entrega republicaria as mesmas medições. */
 final class BridgeDailyBlockReplayTest extends TestCase
 {
     private const GATEWAY = 'bef341903987';
@@ -40,10 +37,7 @@ final class BridgeDailyBlockReplayTest extends TestCase
         self::assertCount($first, $mqtt->telemetry, 'a segunda entrega não acrescenta nada');
     }
 
-    /**
-     * O bloco do minuto a decorrer chega incompleto e é preenchido na leitura seguinte: a
-     * porta compara o conteúdo e não só o carimbo.
-     */
+    /** O bloco do minuto a decorrer chega incompleto e completa-se na leitura seguinte: a porta compara o conteúdo e não só o carimbo. */
     public function testABlockThatGrewIsPublishedAgain(): void
     {
         $mqtt = new RecordingHubMqttBridge();

@@ -7,10 +7,7 @@ namespace Tests\Unit\Domain;
 use Hub\Domain\Capability\Medication\MedicationRemindersCapability;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A mesma chave tem de querer dizer a mesma coisa nos dois aparelhos: um plano é um
- * medicamento com as suas horas, e quem integra lê-o sem saber de que fornecedor é.
- */
+/** Um plano é um medicamento com as suas horas, e quem integra lê-o sem saber de que fornecedor é. */
 final class MedicationRemindersPublicFormTest extends TestCase
 {
     /** Cada compartimento do M228 é um plano sem nome, com uma hora e o seu slot. */

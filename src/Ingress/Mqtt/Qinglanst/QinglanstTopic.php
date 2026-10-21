@@ -34,9 +34,4 @@ final class QinglanstTopic
 
         return new self($topic, $licenseId, $deviceUid);
     }
-
-    public function deviceKey(): string
-    {
-        return $this->deviceUid;
-    }
 }

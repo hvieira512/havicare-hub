@@ -42,11 +42,10 @@ final class FourPTouchCallWhitelistHandler implements CapabilityProtocolHandler
         return self::mergeFourPTouchMeta($accumulatedMeta, 10);
     }
 
-    public function merge(mixed $existing, mixed $incoming): mixed
-    {
-        return self::mergeAssociativeValues($existing, $incoming, ['numbers']);
-    }
-
+    /**
+     * @param array<string, mixed> $meta
+     * @return array<string, mixed>
+     */
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
         $normalizedValue = $this->normalizeValueForResponse($value);

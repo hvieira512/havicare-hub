@@ -21,7 +21,6 @@ final class MokoBridge extends MqttBridgeBase
 {
     /** Relatórios de scan, e não estado do gateway. 3070 é MKGW3; 30a0 e 30b2 são MKGW4. */
     private const SCAN_MESSAGE_IDS = ['3070', '30a0', '30b2'];
-    // O modelo desempata as pulseiras: ver `relayedProtocol()`.
 
     /**
      * Um pouco mais do que os 30 segundos que o slot anuncia, para a frame repetida dar um alarme.
@@ -71,7 +70,6 @@ final class MokoBridge extends MqttBridgeBase
             $commercialModelResolver,
             $options->telemetryRefreshSeconds,
             $options->rawHistorySampleSeconds,
-            $options->proximityTracker,
             $clock,
         );
         $this->gateways = new GatewayPresence($mqttBridge, $deviceStore, $options->gatewayIdleTimeoutSeconds, $clock);
@@ -103,7 +101,6 @@ final class MokoBridge extends MqttBridgeBase
     private readonly W6Decoder $w6Decoder;
     private readonly W6Normalizer $w6Normalizer;
 
-    /** Diz se a mensagem é de outra ingestão: as tramas MOKO, em JSON ou TLV, nunca trazem `source`. */
     /** Um gateway que reencaminha sessões GATT está vivo enquanto publica, como um MOKO. */
     private function relayingGatewaySeen(string $gatewayMac): void
     {
@@ -129,6 +126,7 @@ final class MokoBridge extends MqttBridgeBase
         $this->gateways->markOnline($this->enrichWithCommercialName($gateway), $cameOnline === true);
     }
 
+    /** Diz se a mensagem é de outra ingestão: as tramas MOKO, em JSON ou TLV, nunca trazem `source`. */
     private static function declaresForeignSource(string $payload): bool
     {
         if (!str_contains($payload, '"source"')) {

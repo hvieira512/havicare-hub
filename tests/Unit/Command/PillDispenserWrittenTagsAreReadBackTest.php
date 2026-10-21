@@ -9,10 +9,7 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Uma definição que se escreve e nunca se lê mostra para sempre a intenção em vez do que o
- * aparelho ficou a ter. O `0x05` tem de pedir todas as TAGs que o `0x06` sabe escrever.
- */
+/** O `0x05` pede todas as TAGs que o `0x06` escreve, senão o ecrã mostra a intenção e não o que o aparelho tem. */
 final class PillDispenserWrittenTagsAreReadBackTest extends TestCase
 {
     public function testEveryConfigurationTagTheHubWritesIsAlsoReadBack(): void

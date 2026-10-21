@@ -16,14 +16,6 @@ final class TorreFrameDecoder
 
     private const HISTORY_RECORD = 20;
 
-    /** O byte do membro na trama `16`: cada membro tem dois bits, um por elétrodo. */
-    private const LIMBS = [
-        0x01 => 'left_leg', 0x04 => 'left_leg',
-        0x02 => 'right_leg', 0x08 => 'right_leg',
-        0x10 => 'left_arm', 0x40 => 'left_arm',
-        0x20 => 'right_arm', 0x80 => 'right_arm',
-    ];
-
     /** O resultado dos passos de utilizador no `FFF2`; `00` é sucesso. */
     private const USER_ERRORS = [1 => 'failed', 2 => 'user_selection_in_progress', 3 => 'missing_name', 4 => 'memory_full'];
 
@@ -66,10 +58,6 @@ final class TorreFrameDecoder
                 'channel' => $b[3],
                 'impedanceOhm' => round(self::uint16($b, 4) / 10, 1),
             ] : null,
-            0x04 => ['kind' => 'motion'],
-            0x05 => ['kind' => 'history_available'],
-            0x06 => ['kind' => 'user_selection', 'stateCode' => $b[2] ?? null],
-            0x16 => ['kind' => 'impedance_failure', 'limb' => self::LIMBS[$b[4] ?? 0] ?? null],
             default => null,
         };
     }

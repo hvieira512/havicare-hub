@@ -10,10 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 final class MessageNormalizerTest extends TestCase
 {
-    /**
-     * As formas são as do `FeatureNormalizer`, as mesmas de um relógio, e é isso que dá ao
-     * radar os cartões que já existem.
-     */
+    /** Usa as formas do `FeatureNormalizer`, as mesmas dos relógios, para o radar herdar os cartões que já existem. */
     public function testHeartBreathBecomesThreeCanonicalReadings(): void
     {
         $normalizer = new MessageNormalizer();
@@ -40,10 +37,7 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame('heartbreath', $result['telemetry']['heart_rate']['source']['nativeType']);
     }
 
-    /**
-     * Um zero não é leitura: é o radar a dizer que não mediu ninguém, e "0 bpm" lê-se como um
-     * coração parado. O `Undefined` do sono é o mesmo caso.
-     */
+    /** Um zero é o radar a dizer que não mediu ninguém, e «0 bpm» lê-se como coração parado; o `Undefined` do sono é igual. */
     public function testAbsentMeasurementsDoNotBecomeReadings(): void
     {
         $normalizer = new MessageNormalizer();
@@ -155,10 +149,7 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame(2, $result['events'][0]['data']['personIndex']);
     }
 
-    /**
-     * A postura é da pessoa, como a posição: numa divisão com três, uma leitura do aparelho
-     * com uma postura só obrigava a escolher entre elas.
-     */
+    /** A postura é da pessoa, como a posição: numa divisão com três, uma postura só do aparelho não diz de quem é. */
     public function testEveryPersonKeepsTheirOwnPosture(): void
     {
         $normalizer = new MessageNormalizer();
@@ -187,10 +178,7 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame('fall', $result['events'][0]['type']);
     }
 
-    /**
-     * Uma amostra fora do normal não é alarme: o alarme é o estado de cada minuto, que o radar
-     * calcula com os limites configurados nele.
-     */
+    /** O alarme é o estado de cada minuto, calculado pelo radar com os limites dele; uma amostra fora do normal não o é. */
     public function testASampleOutsideTheUsualRangeRaisesNoAlarm(): void
     {
         $normalizer = new MessageNormalizer();
@@ -244,13 +232,13 @@ final class MessageNormalizerTest extends TestCase
         $area = ['zone' => 'area', 'personIndex' => 1, 'areaId' => 5];
 
         return [
-            'queda confirmada'  => ['fall_confirmation', 'no_event', 'fall', $fall(true, 'lying')],
-            'queda suspeita'    => ['suspected_fall', 'no_event', 'fall', $fall(false, 'lying')],
-            'sentado no chão'   => ['confirmed_sitting_on_ground', 'no_event', 'fall', $fall(true, 'sitting_on_ground')],
-            'entrou na sala'    => ['walking', 'enter_room', 'zone_entry', $room],
-            'saiu da sala'      => ['walking', 'leave_room', 'zone_exit', $room],
-            'entrou na região'  => ['walking', 'enter_area', 'zone_entry', $area],
-            'saiu da região'    => ['walking', 'leave_area', 'zone_exit', $area],
+            'confirmed fall'  => ['fall_confirmation', 'no_event', 'fall', $fall(true, 'lying')],
+            'suspected fall'    => ['suspected_fall', 'no_event', 'fall', $fall(false, 'lying')],
+            'sitting on the floor'   => ['confirmed_sitting_on_ground', 'no_event', 'fall', $fall(true, 'sitting_on_ground')],
+            'entered the room'    => ['walking', 'enter_room', 'zone_entry', $room],
+            'left the room'      => ['walking', 'leave_room', 'zone_exit', $room],
+            'entered the area'  => ['walking', 'enter_area', 'zone_entry', $area],
+            'left the area'    => ['walking', 'leave_area', 'zone_exit', $area],
         ];
     }
 
@@ -303,10 +291,7 @@ final class MessageNormalizerTest extends TestCase
         ];
     }
 
-    /**
-     * Dois alarmes na mesma mensagem saem os dois: uma apneia e uma bradicardia no mesmo
-     * minuto é precisamente quando alguém está pior.
-     */
+    /** Uma apneia e uma bradicardia no mesmo minuto é quando alguém está pior, e saem as duas. */
     public function testEveryAlarmInOneMessageSurvives(): void
     {
         $normalizer = new MessageNormalizer();
@@ -331,10 +316,7 @@ final class MessageNormalizerTest extends TestCase
         );
     }
 
-    /**
-     * Um vocabulário só no payload: os quatro estados do `hbstatics` saem em enumeração, como
-     * o `posture` e o `sleep_state`.
-     */
+    /** Os quatro estados do `hbstatics` saem em enumeração, como o `posture` e o `sleep_state`. */
     public function testTheMinuteStatsCarryEnumsAndNotVendorLabels(): void
     {
         $normalizer = new MessageNormalizer();
@@ -386,8 +368,7 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * A chave do mapa de telemetria é a capacidade e tem de ser o `type` do envelope: senão o
-     * catálogo declara uma capacidade que ninguém recebe, e a falha é calada.
+     * A chave do mapa de telemetria tem de ser o `type` do envelope, senão o catálogo declara uma capacidade que ninguém recebe.
      *
      * @dataProvider everyMessageType
      * @param array<string, mixed> $decoded
@@ -406,8 +387,7 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * O `type` de uma capacidade é snake_case; os campos dentro do `data` são camelCase. São
-     * dois vocabulários, e no radar é fácil o segundo escorregar para o primeiro.
+     * O `type` é snake_case e os campos do `data` são camelCase, e no radar o segundo escorrega facilmente para o primeiro.
      *
      * @dataProvider everyMessageType
      * @param array<string, mixed> $decoded

@@ -94,34 +94,6 @@ class RawPayload
         return $payload;
     }
 
-    public static function bytesFromDownlink(mixed $message): ?string
-    {
-        if (is_string($message)) {
-            return $message;
-        }
-
-        if (!is_array($message)) {
-            return null;
-        }
-
-        $encoding = strtolower((string)($message['encoding'] ?? 'text'));
-        $payload = $message['payload'] ?? ($message['text'] ?? null);
-        if (!is_string($payload)) {
-            return null;
-        }
-
-        if ($encoding === 'base64') {
-            $decoded = base64_decode($payload, true);
-            return $decoded === false ? null : $decoded;
-        }
-
-        if ($encoding === 'text' || $encoding === 'raw') {
-            return $payload;
-        }
-
-        return null;
-    }
-
     private static function isText(string $raw): bool
     {
         if ($raw === '') {

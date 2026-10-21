@@ -7,10 +7,7 @@ namespace Tests\Unit\Ingress\Http\Qinglanst;
 use Hub\Ingress\Http\Qinglanst\RequestSignature;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Os esperados são constantes para apanhar uma mudança na forma da cadeia assinada; o fabricante
- * recusa uma assinatura errada com um 401 seco.
- */
+/** Os esperados são constantes para apanhar uma mudança na cadeia assinada, que o fabricante recusa com um 401 seco. */
 final class RequestSignatureTest extends TestCase
 {
     private const SECRET = 'segredo';

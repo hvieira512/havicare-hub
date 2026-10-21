@@ -10,10 +10,7 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
-/**
- * O radar repete a postura e os vitais em cada trama, uma por segundo: uma queda que dura dá um
- * evento, e não um por segundo.
- */
+/** O radar repete postura e vitais a cada segundo: uma queda que dura dá um evento, e não um por segundo. */
 final class BridgeRepeatedDetectionTest extends TestCase
 {
     private const RADAR = 'radar-canonical-1';

@@ -73,7 +73,7 @@ final class WonlexTcpProtocol extends AbstractTcpProtocol
             return $responses;
         }
 
-        if ($type === '' || in_array($type, ['login', 'heartbeat'], true)) {
+        if ($type === '') {
             return $responses;
         }
 

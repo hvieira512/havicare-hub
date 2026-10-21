@@ -66,10 +66,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
         self::assertSame(['CAMA 1', 'Porta'], array_column($layout['areas'], 'name'));
     }
 
-    /**
-     * Um login por licença e não um por radar. São quinze radares numa licença, e o
-     * fabricante não distingue um login legítimo de uma tentativa de força bruta.
-     */
+    /** Um login por licença e não por radar: com quinze radares, o fabricante não distingue o login legítimo da força bruta. */
     public function testAuthenticatesOncePerLicenceAndNotOncePerRadar(): void
     {
         $client = $this->clientAnswering([
@@ -85,10 +82,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
         self::assertSame(1, $client->logins);
     }
 
-    /**
-     * O `777` do fabricante diz «não conheço este aparelho», por a conta ser de outra licença ou
-     * por o aparelho ter saído: a planta guardada continua a valer.
-     */
+    /** O `777` do fabricante diz «não conheço este aparelho», por outra licença ou por ter saído, e a planta guardada continua a valer. */
     public function testACodeThatIsNotSuccessLeavesTheStoredLayoutAlone(): void
     {
         $this->layouts->store('594B3CCBA56B', $this->storedLayout(), '{}', '2026-09-01 10:00:00');
@@ -172,10 +166,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
         self::assertNull($this->layouts->findByImei('594B3CCBA56B'));
     }
 
-    /**
-     * O caminho por onde a sincronização acontece de verdade: alguém carregou no botão de um
-     * radar. Não há relógio nenhum atrás disto.
-     */
+    /** É o caminho real da sincronização, quando alguém carrega no botão de um radar; não há relógio atrás disto. */
     public function testSyncsASingleRadarOnRequest(): void
     {
         $this->giveTheLicenceCredentials();

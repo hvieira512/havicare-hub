@@ -18,7 +18,7 @@ final class IngressRunnerTest extends TestCase
         $runner->add('NCS ingress', null);
         $runner->add('MQTT downlink', new StartableIngress());
 
-        self::assertSame(['MQTT downlink'], $runner->names());
+        self::assertSame(['MQTT downlink'], $runner->keys());
     }
 
     public function testStartsEveryRegisteredIngress(): void

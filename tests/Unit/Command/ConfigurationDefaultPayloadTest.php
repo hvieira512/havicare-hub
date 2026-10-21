@@ -9,10 +9,7 @@ use Hub\Domain\Capability\ConfigurationInputDefaults;
 use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
-/**
- * O payload por omissão é o ponto de partida do formulário de uma capacidade nunca
- * configurada, e o construtor do protocolo tem de o aceitar.
- */
+/** O payload por omissão é o ponto de partida do formulário de uma capacidade nunca configurada, e o protocolo tem de o aceitar. */
 final class ConfigurationDefaultPayloadTest extends TestCase
 {
     /** Campos que o utilizador tem de preencher: o vazio por omissão não se espera enviável. */

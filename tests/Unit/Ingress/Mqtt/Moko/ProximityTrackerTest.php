@@ -7,10 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 use Hub\Ingress\Mqtt\Moko\ProximityTracker;
 use PHPUnit\Framework\TestCase;
 
-/**
- * As estatísticas da janela sobre as quais um cliente põe limiares, com leituras reais da
- * pulseira fb:d8:7c:59:ba:8b imóvel numa mesa, via MKGW4 c5:e3:90:f3:0b:ce.
- */
+/** As estatísticas sobre as quais um cliente põe limiares, com leituras reais de uma pulseira imóvel junto de um MKGW4. */
 final class ProximityTrackerTest extends TestCase
 {
     /** Leituras reais: 15 dB de dispersão num aparelho que nunca se mexeu. */
@@ -55,8 +52,8 @@ final class ProximityTrackerTest extends TestCase
 
         $stats = $tracker->record('device', 'gateway', -52, 1004.0);
 
-        self::assertSame(-52, $stats['rssiMaxDbm'], 'a single close reading must be visible');
-        self::assertSame(-77, $stats['rssiMedianDbm'], 'and must not move the median');
+        self::assertSame(-52, $stats['rssiMaxDbm'], 'uma leitura próxima isolada tem de se ver');
+        self::assertSame(-77, $stats['rssiMedianDbm'], 'e não pode mexer na mediana');
     }
 
     public function testReadingsOlderThanTheWindowAreForgotten(): void
@@ -67,7 +64,7 @@ final class ProximityTrackerTest extends TestCase
         $stats = $tracker->record('device', 'gateway', -77, 1006.0);
 
         self::assertSame(1, $stats['samples']);
-        self::assertSame(-77, $stats['rssiMaxDbm'], 'the stale close reading must be gone');
+        self::assertSame(-77, $stats['rssiMaxDbm'], 'a leitura próxima já velha tem de ter saído');
     }
 
     public function testTheWindowIsCappedBySampleCountAsWellAsAge(): void
@@ -78,7 +75,7 @@ final class ProximityTrackerTest extends TestCase
         }
 
         self::assertSame(3, $stats['samples']);
-        self::assertSame(-60, $stats['rssiMaxDbm'], 'the oldest reading must have been dropped');
+        self::assertSame(-60, $stats['rssiMaxDbm'], 'a leitura mais antiga tem de ter caído');
     }
 
     public function testEachPairKeepsItsOwnWindow(): void
@@ -98,7 +95,7 @@ final class ProximityTrackerTest extends TestCase
         $tracker = new ProximityTracker(stalenessSeconds: 30);
         $tracker->record('bracelet', 'gateway', -70, 1000.0);
 
-        self::assertSame([], $tracker->takeStale(1020.0), 'still within the staleness window');
+        self::assertSame([], $tracker->takeStale(1020.0), 'ainda dentro da janela de validade');
         self::assertSame(
             [['deviceKey' => 'bracelet', 'gatewayKey' => 'gateway']],
             $tracker->takeStale(1031.0),

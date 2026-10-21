@@ -18,6 +18,14 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertSame(['help_call', 'reset'], $actual);
     }
 
+    /** Um fornecedor com vários protocolos dá a cada tipo de aparelho o modelo do seu. */
+    public function testASupplierWithSeveralProtocolsGivesEachDeviceTypeItsOwnTemplate(): void
+    {
+        self::assertSame(['temperature'], SupplierCapabilityTemplate::keysForSupplierDeviceType('JoyTech', 'thermometer'));
+        self::assertContains('blood_oxygen', SupplierCapabilityTemplate::keysForSupplierDeviceType('JoyTech', 'pulse_oximeter'));
+        self::assertContains('find_device', SupplierCapabilityTemplate::keysForSupplierDeviceType('Wonlex', 'bracelet'));
+    }
+
     /**
      * Nenhum relógio 4P mostrou o alarme de frequência cardíaca, e o protocolo não diz como se liga: o
      * modelo não o anuncia, mas um disparo real continua a ser acontecimento.

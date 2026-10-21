@@ -10,18 +10,6 @@ namespace Hub\Domain\Capability\AlarmClock;
 trait AlarmClockHelpers
 {
     /**
-     * Dois despertadores concorrentes acumulam-se em vez de um substituir o outro: a lista é
-     * o valor, e chega uma de cada vez.
-     */
-    public function merge(mixed $existing, mixed $incoming): mixed
-    {
-        $existingList = is_array($existing) ? array_values($existing) : [];
-        $incomingList = is_array($incoming) ? array_values($incoming) : [];
-
-        return array_merge($existingList, $incomingList);
-    }
-
-    /**
      * A lista pública de alarmes a partir do payload. O `$keys` é a precedência do fornecedor, e o
      * fim da linha é o próprio `$desired`, porque à segunda leitura já chega a lista pública.
      *

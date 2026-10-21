@@ -8,10 +8,7 @@ use Hub\Domain\DiaperSensitivity;
 use Hub\Ingress\Mqtt\Monit\MonitNormalizer;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A sensibilidade por sensor: os invariantes sobrevivem a qualquer configuração alcançável, e
- * uma mais sensível nunca dá um estado menos grave para a mesma leitura.
- */
+/** Os invariantes valem em qualquer configuração alcançável, e mais sensível nunca dá estado menos grave para a mesma leitura. */
 final class MonitSensitivityTest extends TestCase
 {
     private const DEVICE = [

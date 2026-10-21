@@ -107,10 +107,7 @@ final class BrokerSettingsTest extends TestCase
         self::assertFalse($settings->tlsEnabled);
     }
 
-    /**
-     * O radar publica no mesmo broker que o hub, e a ligação dele leva o TLS que lhe derem: sem
-     * ele, utilizador e password iriam em claro.
-     */
+    /** O radar usa o broker do hub e a ligação dele leva o TLS que lhe derem: sem ele, utilizador e password vão em claro. */
     public function testQinglanstHonoursTheTlsItIsGiven(): void
     {
         $settings = BrokerSettings::fromQinglanstConfig([

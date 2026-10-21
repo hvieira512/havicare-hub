@@ -7,10 +7,7 @@ namespace Tests\Unit\Command;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A especificação declara `STRING` de 20 para todas (`0xA101`, `0x8009`, `0x8105`), e mandar o
- * comprimento do texto dá `011`, «comprimento não corresponde».
- */
+/** A especificação declara `STRING` de 20 para todas, e mandar o comprimento do texto dá `011`, «comprimento não corresponde». */
 final class PillDispenserStringLengthTest extends TestCase
 {
     /** O valor vai preenchido até ao comprimento que a especificação declara. */
@@ -40,11 +37,7 @@ final class PillDispenserStringLengthTest extends TestCase
         self::assertSame('2026-09-22T09:49:28', $parsed[0xA101]['value']);
     }
 
-    /**
-     * Um pedido de leitura de uma TAG de texto reserva os mesmos 20 bytes.
-     *
-     * O pedido leva o valor a zeros com o comprimento da TAG, e não com um byte.
-     */
+    /** O pedido de leitura leva o valor a zeros com o comprimento da TAG de texto, e não com um byte. */
     public function testAReadRequestReservesTheFullStringLength(): void
     {
         $request = PillDispenserAdapter::readRequestTlv([0x8009]);

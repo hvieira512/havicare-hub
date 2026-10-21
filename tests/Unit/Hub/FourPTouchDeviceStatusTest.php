@@ -9,10 +9,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A resposta ao `TS` de um D45 Pro real. Nem todos os modelos respondem: o Y6M e o Y6L
- * devolvem o comando tal e qual.
- */
+/** Resposta real de um D45 Pro ao `TS`; nem todos os modelos respondem, e o Y6M e o Y6L devolvem o comando tal e qual. */
 final class FourPTouchDeviceStatusTest extends TestCase
 {
     private const REPLY = 'ver:A6C_YSC_D45Pro_En_Z_2026.04.21_18.34.39_0627_1005; '
@@ -47,10 +44,7 @@ final class FourPTouchDeviceStatusTest extends TestCase
         self::assertFalse($data['wifiConnected']);
     }
 
-    /**
-     * O `GPS:OK(2)` e o `NET:OK(100)` ficam de fora: a especificação nunca diz o que os números
-     * são, e uma grandeza sem unidade conhecida não entra no contrato.
-     */
+    /** A especificação não diz o que os números do `GPS:OK(2)` e do `NET:OK(100)` são, e uma grandeza sem unidade não entra no contrato. */
     public function testTheUndocumentedNumbersDoNotBecomeAContract(): void
     {
         $data = $this->decoded();
@@ -96,10 +90,7 @@ final class FourPTouchDeviceStatusTest extends TestCase
         self::assertNotNull($this->firstOf($events, 'firmware_version'));
     }
 
-    /**
-     * O que o descodificador publica tem de estar na matriz do protocolo: a declarar menos
-     * do que sai, a API diz que o modelo não suporta uma capacidade que o MQTT publica.
-     */
+    /** Declarar menos do que o descodificador publica faz a API negar uma capacidade que o MQTT publica. */
     public function testEveryCapabilityItPublishesIsDeclaredForTheProtocol(): void
     {
         $declared = CapabilityCatalog::keysForProtocol('four-p-touch');
@@ -115,10 +106,7 @@ final class FourPTouchDeviceStatusTest extends TestCase
         }
     }
 
-    /**
-     * O eco do Y6L não é uma resposta: a trama de subida é igual à que desceu, e sem bloco
-     * não há nada para publicar.
-     */
+    /** O eco do Y6L é a trama que desceu, sem bloco, e não há nada para publicar. */
     public function testAnEchoPublishesNothing(): void
     {
         $decoded = (new FourPTouchAdapter())->decodeIncoming('[3G*2808660424*0002*TS]');

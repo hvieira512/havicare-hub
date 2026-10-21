@@ -71,7 +71,7 @@ final class DeviceConfigurationCatalog
     /** @return array<string, mixed>|null */
     public static function configForProtocol(string $protocol, string $key): ?array
     {
-        $key = self::resolvePublicKeyAlias($protocol, $key);
+        $key = self::nativeKey($protocol, $key);
         foreach (self::configsForProtocol($protocol) as $entry) {
             if (($entry['key'] ?? '') === $key) {
                 return $entry;
@@ -128,7 +128,7 @@ final class DeviceConfigurationCatalog
         array $payload,
         array $context = []
     ): array {
-        $key = self::resolvePublicKeyAlias($protocol, $key);
+        $key = self::nativeKey($protocol, $key);
         $entry = self::configForProtocol($protocol, $key);
         if ($entry === null) {
             throw new \InvalidArgumentException("Unsupported {$protocol} configuration {$key}");
@@ -189,7 +189,7 @@ final class DeviceConfigurationCatalog
     /** @param array<string, mixed> $payload */
     public static function validate(string $protocol, string $key, array $payload): ?string
     {
-        $key = self::resolvePublicKeyAlias($protocol, $key);
+        $key = self::nativeKey($protocol, $key);
         if (self::configForProtocol($protocol, $key) === null) {
             return "Unsupported {$protocol} configuration {$key}";
         }
@@ -203,7 +203,8 @@ final class DeviceConfigurationCatalog
         return null;
     }
 
-    private static function resolvePublicKeyAlias(string $protocol, string $key): string
+    /** A chave nativa de uma chave pública; é esta a tabela, e não há outra. */
+    public static function nativeKey(string $protocol, string $key): string
     {
         $key = trim($key);
         if ($protocol === 'four-p-touch') {
@@ -222,13 +223,6 @@ final class DeviceConfigurationCatalog
         if ($key === 'fall_sensitivity') {
             return $protocol === 'vivistar-iw' ? 'fallSensitivity' : $key;
         }
-        if ($key === 'firmwareVersion') {
-            return $key;
-        }
-        if ($key === 'deviceStatus') {
-            return $key;
-        }
-
         return $key;
     }
 }

@@ -10,10 +10,7 @@ use Hub\Domain\Capability\ConfigurationInputDefaults;
 use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Várias entradas nativas fundem-se num cartão (as duas listas brancas de cinco números do 4P Touch
- * dão um de dez), e quem sabe juntar e separar é o editor da capacidade.
- */
+/** Quem junta e separa as entradas nativas de um cartão é o editor da capacidade, como nas duas listas brancas do 4P Touch. */
 final class MergedCapabilityInputTest extends TestCase
 {
     private const FUNDIDAS = [
@@ -45,10 +42,7 @@ final class MergedCapabilityInputTest extends TestCase
         self::assertSame([], $erradas);
     }
 
-    /**
-     * O nome do campo é lido aqui e na tabela de payloads por omissão: renomeá-lo só num abre o
-     * formulário vazio sem nada partir à vista.
-     */
+    /** O nome do campo é lido aqui e na tabela de payloads por omissão, e renomeá-lo só num abre o formulário vazio. */
     public function testMergedCapabilitiesKeepTheirSeedPayload(): void
     {
         $vazias = [];

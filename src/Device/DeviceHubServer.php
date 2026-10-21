@@ -7,6 +7,7 @@ namespace Hub\Device;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\Medication\MedicationRunout;
+use Hub\Domain\ProtocolRegistry;
 use Hub\Log\Logger;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\State\DeviceStoreContract;
@@ -50,11 +51,12 @@ class DeviceHubServer
         ?FirmwareUpgradeStore $firmwareUpgrades = null,
         ?\Closure $effectiveConfiguration = null,
         private readonly ?\Closure $downlinkQueued = null,
+        ?\Closure $clock = null,
     ) {
         $this->effectiveConfiguration = $effectiveConfiguration;
         $this->whitelist = $whitelist;
         $this->denylist = $denylist;
-        $this->connections = new ConnectionRegistry();
+        $this->connections = new ConnectionRegistry($clock);
         $this->authorizer = new DeviceAuthorizer($whitelist, $commercialModelResolver);
         $this->mqtt = $mqtt;
         $this->deviceStore = $deviceStore;
@@ -140,7 +142,7 @@ class DeviceHubServer
 
         $conn->send($bytes);
         $session = $this->connections->get($conn);
-        $licenseId = $this->currentLicenseId($imei, $session?->licenseId ?? '0');
+        $licenseId = $this->currentLicenseId($imei, $session?->licenseId ?? 0);
         $company = $this->currentCompany($imei, $session?->company ?? 'null');
         $commercialName = $this->currentCommercialName($imei, $session?->commercialName ?? '');
         try {
@@ -168,7 +170,7 @@ class DeviceHubServer
             if ($session !== null) {
                 $this->mqtt->publishRaw(
                     $imei,
-                    RawPayload::raw($imei, $session->supplier, $session->model, $session->transport, $session->protocol, $bytes, 'downlink', (string)$conn->resourceId, $commercialName),
+                    RawPayload::raw($imei, $session->supplier, $session->model, 'tcp', $session->protocol, $bytes, 'downlink', (string)$conn->resourceId, $commercialName),
                     $session->deviceType,
                     $licenseId,
                     $company,
@@ -329,7 +331,7 @@ class DeviceHubServer
             'licenseId' => $this->currentLicenseId($session->imei, $session->licenseId),
             'company' => $this->currentCompany($session->imei, $session->company),
             'protocol' => $identity->protocol,
-            'transport' => $session->transport,
+            'transport' => 'tcp',
             'online' => '1',
             'lastConnectionId' => (string)$conn->resourceId,
         ]);
@@ -355,7 +357,7 @@ class DeviceHubServer
         try {
             $this->mqtt->publishRaw(
                 $session->imei,
-                RawPayload::raw($session->imei, $session->supplier, $session->model, $session->transport, $session->protocol, $raw, 'uplink', $connectionId, $session->commercialName),
+                RawPayload::raw($session->imei, $session->supplier, $session->model, 'tcp', $session->protocol, $raw, 'uplink', $connectionId, $session->commercialName),
                 $session->deviceType,
                 $this->currentLicenseId($session->imei, $session->licenseId),
                 $this->currentCompany($session->imei, $session->company),
@@ -520,8 +522,9 @@ class DeviceHubServer
         try {
             // `retain: false`: uma recusa é um acontecimento e não um estado, e retida chegava a quem
             // subscrevesse depois.
-            $this->mqtt->publishStatus($identity->imei, RawPayload::status($identity->imei, '', '', 'error', $error), false);
-            $this->mqtt->publishEvent($identity->imei, RawPayload::event($identity->imei, '', '', 'device.rejected', $error));
+            $deviceType = ProtocolRegistry::describe($identity->protocol)['deviceType'];
+            $this->mqtt->publishStatus($identity->imei, RawPayload::status($identity->imei, '', '', 'error', $error), false, $deviceType);
+            $this->mqtt->publishEvent($identity->imei, RawPayload::event($identity->imei, '', '', 'device.rejected', $error), $deviceType);
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $identity->imei, $e);
         }
@@ -637,7 +640,7 @@ class DeviceHubServer
             'licenseId' => $this->currentLicenseId($session->imei, $session->licenseId),
             'company' => $this->currentCompany($session->imei, $session->company),
             'protocol' => $session->protocol,
-            'transport' => $session->transport,
+            'transport' => 'tcp',
             'online' => '1',
             'lastConnectionId' => $connectionId,
         ]);
@@ -645,7 +648,7 @@ class DeviceHubServer
             $session->imei,
             $session->supplier,
             $session->model,
-            $session->transport,
+            'tcp',
             $session->protocol,
             $raw,
             'uplink',
@@ -766,7 +769,7 @@ class DeviceHubServer
         try {
             $this->mqtt->publishRaw(
                 $session->imei,
-                RawPayload::raw($session->imei, $session->supplier, $session->model, $session->transport, $session->protocol, $response->bytes, 'downlink', $connectionId, $session->commercialName),
+                RawPayload::raw($session->imei, $session->supplier, $session->model, 'tcp', $session->protocol, $response->bytes, 'downlink', $connectionId, $session->commercialName),
                 $session->deviceType,
                 $this->currentLicenseId($session->imei, $session->licenseId),
                 $this->currentCompany($session->imei, $session->company),

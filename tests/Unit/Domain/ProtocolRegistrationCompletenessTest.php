@@ -13,10 +13,7 @@ use Hub\Protocol\AdapterRegistry;
 use Hub\Ingress\Tcp\TcpProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Um protocolo vive em cinco registos que nada liga, e um fornecedor registado em quatro
- * compila e falha num caminho só.
- */
+/** Um protocolo vive em cinco registos que nada liga, e um fornecedor registado em quatro compila e falha num caminho só. */
 final class ProtocolRegistrationCompletenessTest extends TestCase
 {
     /**
@@ -51,8 +48,9 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
         $adapters = new AdapterRegistry();
 
         foreach (self::watchProtocols() as $protocol) {
-            self::assertNotNull(
-                $adapters->get($protocol),
+            self::assertSame(
+                $protocol,
+                $adapters->require($protocol)->protocol(),
                 "O protocolo `{$protocol}` está declarado no ProtocolRegistry mas não tem adaptador."
             );
         }
@@ -80,17 +78,15 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
         self::assertContains('zayata-m228', $protocols, 'o dispensador fala TCP e tem de estar aqui');
 
         foreach ($protocols as $protocol) {
-            self::assertNotNull(
-                $adapters->get($protocol),
+            self::assertSame(
+                $protocol,
+                $adapters->require($protocol)->protocol(),
                 "O protocolo `{$protocol}` fala TCP mas não tem adaptador."
             );
         }
     }
 
-    /**
-     * E o sentido inverso: um adaptador ou uma sessão sem metadados é um protocolo que a
-     * dashboard não sabe nomear nem configurar.
-     */
+    /** Um adaptador ou uma sessão sem metadados é um protocolo que a dashboard não sabe nomear nem configurar. */
     public function testEveryRegisteredImplementationIsDeclaredInTheProtocolRegistry(): void
     {
         foreach ((new AdapterRegistry())->protocols() as $protocol) {
@@ -123,10 +119,7 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
         }
     }
 
-    /**
-     * Uma capacidade que diz suportar `wonlex` em vez de `wonlex-json` nunca casa com nada,
-     * e não há nada que se queixe: o valor genérico simplesmente não chega ao dispositivo.
-     */
+    /** Declarar `wonlex` em vez de `wonlex-json` não casa com nada, e o valor genérico deixa de chegar ao dispositivo sem erro. */
     public function testNoCapabilityClaimsAProtocolThatDoesNotExist(): void
     {
         $registry = new CapabilityRegistry();
@@ -152,10 +145,7 @@ final class ProtocolRegistrationCompletenessTest extends TestCase
         self::assertGreaterThan(0, $checked, 'Nenhuma capacidade foi verificada -- a varredura falhou.');
     }
 
-    /**
-     * Um protocolo em falta no `match` só rebenta ao carregar em Enviar. `Unsupported` é sempre
-     * defeito; o resto é a validação sobre um valor por omissão incompleto.
-     */
+    /** Um protocolo fora do `match` só rebenta ao carregar em Enviar: `Unsupported` é sempre defeito, o resto é validação. */
     public function testEveryDeclaredConfigurationReachesItsCapabilityContract(): void
     {
         $registry = new CapabilityRegistry();

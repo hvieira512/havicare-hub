@@ -9,10 +9,7 @@ use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\PillDispenserAdapter;
 use PHPUnit\Framework\TestCase;
 
-/**
- * A resposta ao `0x05` diz o que o aparelho **tem**, com as chaves e formas com que se envia:
- * o reportado desenha-se com o mesmo componente que o desejado.
- */
+/** A resposta ao `0x05` usa as chaves e formas do envio, para o reportado se desenhar com o mesmo componente que o desejado. */
 final class PillDispenserReportedConfigurationTest extends TestCase
 {
     public function testEachConfigurationComesBackUnderItsOwnKey(): void
@@ -53,10 +50,7 @@ final class PillDispenserReportedConfigurationTest extends TestCase
         );
     }
 
-    /**
-     * O «não incomodar» também se lê de volta: escrever sem ler deixa o hub sem maneira
-     * nenhuma de saber o que o aparelho tem lá dentro.
-     */
+    /** Escrever sem ler de volta deixa o hub sem maneira de saber o «não incomodar» que o aparelho tem. */
     public function testQuietHoursComeBack(): void
     {
         $settings = $this->readConfiguration([
@@ -88,10 +82,7 @@ final class PillDispenserReportedConfigurationTest extends TestCase
         self::assertSame(['plans' => []], $this->readConfiguration($tlv)['medication_reminders'] ?? null);
     }
 
-    /**
-     * Esta firmware ignora o `0x1041`: um alarme posto no aparelho pode chegar com o interruptor
-     * a zero e tocar na mesma.
-     */
+    /** Esta firmware ignora o `0x1041`, e um alarme pode chegar com o interruptor a zero e tocar na mesma. */
     public function testAnAlarmWithTheSwitchOffIsStillReported(): void
     {
         $settings = $this->readConfiguration([
@@ -165,7 +156,6 @@ final class PillDispenserReportedConfigurationTest extends TestCase
     {
         return new DeviceSession(
             new PillFakeConnection(),
-            'tcp',
             true,
             'AABBCCDDEEFF',
             'zayata-m228',

@@ -19,10 +19,7 @@ final class FirmwareUpgrade
     public const START = 0x0E;
     public const DATA = 0x0F;
 
-    /**
-     * A tabela do documento dá `0x8D` como resposta ao arranque e a secção 26 dá `0x8E`. O
-     * fornecedor disse que corrige o documento; até lá valem as duas.
-     */
+    /** A tabela do documento dá `0x8D` como resposta ao arranque e a secção 26 dá `0x8E`: valem as duas. */
     private const START_REPLIES = ['upgrade_start_ack', 'discover_event_ack'];
 
     public static function startBody(int $size, int $checksum, int $timeoutSeconds): string

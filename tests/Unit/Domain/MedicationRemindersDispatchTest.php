@@ -8,10 +8,7 @@ use Hub\Domain\Capability\Medication\MedicationRemindersCapability;
 use Hub\Domain\Capability\Medication\MedicationRemindersHandler;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Cada protocolo é servido pelo seu tratador. Os tratadores falsos dizem quem são, para não
- * depender do que cada fornecedor real faz com os dados.
- */
+/** Os tratadores falsos dizem quem são, para o teste não depender do que cada fornecedor real faz com os dados. */
 final class MedicationRemindersDispatchTest extends TestCase
 {
     private function capability(): MedicationRemindersCapability
@@ -57,10 +54,7 @@ final class MedicationRemindersDispatchTest extends TestCase
         $this->capability()->toNative('vivistar-iw', []);
     }
 
-    /**
-     * Na leitura, um protocolo sem tratador devolve o que lá está: não rebenta, mas também não
-     * descodifica com o tratador de outro.
-     */
+    /** Um protocolo sem tratador devolve na leitura o que lá está, sem rebentar nem descodificar com o tratador de outro. */
     public function testAnUnknownProtocolIsNotDecodedBySomebodyElsesHandler(): void
     {
         $desired = ['plans' => [['hour' => 8, 'minute' => 30]]];
@@ -99,11 +93,6 @@ final class NamedRemindersHandler implements MedicationRemindersHandler
     public function meta(array $accumulatedMeta = []): array
     {
         return ['who' => $this->name];
-    }
-
-    public function merge(mixed $existing, mixed $incoming): mixed
-    {
-        return $this->name;
     }
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
