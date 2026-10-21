@@ -211,11 +211,11 @@ dashboard/
     ├── capabilities.js     o separador Capacidades: o catálogo por tipo de dispositivo
     ├── companies.js        o separador Licenças: empresas com as suas licenças dentro
     ├── api-users.js        o separador Utilizadores API
-    └── models/             o separador Catálogo, que são três slides de um carrossel
-        ├── shell.js        o contexto e o carrossel
-        ├── list.js         slide 1: a árvore tipo → fornecedor → modelo
-        ├── form.js         slide 2: criar um modelo novo
-        └── detail.js       slide 3: a ficha de um modelo e as suas capacidades
+    └── models/             o separador Catálogo, que são três painéis
+        ├── shell.js        o contexto e a troca de painel
+        ├── list.js         painel 1: a árvore tipo → fornecedor → modelo
+        ├── form.js         painel 2: criar um modelo novo
+        └── detail.js       painel 3: a ficha de um modelo e as suas capacidades
 ```
 
 ## 3. Como um ecrã está montado
@@ -361,7 +361,7 @@ afirmam que certas linhas lá estão. Mover uma função entre ficheiros parte-o
 ## 8. O que ainda não está direito
 
 - **`settings/models/list.js` e `form.js` importam-se um ao outro.** A lista
-  repõe o formulário do outro slide, o formulário volta à lista depois de
+  repõe o formulário do outro painel, o formulário volta à lista depois de
   gravar. Resolvem-se em tempo de chamada e não quebram nada; parti-los
   obrigava a um registo de callbacks que custa mais do que resolve. É o único
   ciclo do grafo.
