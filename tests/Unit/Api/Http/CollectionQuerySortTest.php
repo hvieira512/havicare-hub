@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Api\Http;
 
 use Hub\Api\Http\CollectionQuery;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CollectionQuerySortTest extends TestCase
@@ -84,9 +85,8 @@ final class CollectionQuerySortTest extends TestCase
     /**
      * O valor vai parar a um `ORDER BY`, e por isso a allowlist é a fronteira: o que não
      * está nela não passa mutilado, cai para a coluna por omissão.
-     *
-     * @dataProvider rejectedValues
      */
+    #[DataProvider('rejectedValues')]
     public function testWhatIsNotOnTheAllowlistFallsBackToTheDefault(string $value): void
     {
         self::assertSame(
@@ -116,9 +116,9 @@ final class CollectionQuerySortTest extends TestCase
      * Uma tentativa de injecção que traz uma coluna válida atrás não passa a injecção: o
      * `imei DESC` não está na allowlist e cai, e sobra o `company` que estava.
      *
-     * @dataProvider injectionsThatCarryAValidColumn
      * @param list<array{column: string, descending: bool}> $expected
      */
+    #[DataProvider('injectionsThatCarryAValidColumn')]
     public function testAnInjectionKeepsOnlyTheColumnsTheAllowlistRecognises(string $value, array $expected): void
     {
         self::assertSame($expected, $this->sort(['sort' => $value]));

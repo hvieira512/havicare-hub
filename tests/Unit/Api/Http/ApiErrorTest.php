@@ -6,6 +6,7 @@ namespace Tests\Unit\Api\Http;
 
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\JsonResponder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ApiErrorTest extends TestCase
@@ -67,10 +68,8 @@ final class ApiErrorTest extends TestCase
         ];
     }
 
-    /**
-     * @param callable(): ApiError $build
-     * @dataProvider errors
-     */
+    /** @param callable(): ApiError $build */
+    #[DataProvider('errors')]
     public function testEachErrorKeepsItsCodeMessageAndStatus(
         callable $build,
         string $code,

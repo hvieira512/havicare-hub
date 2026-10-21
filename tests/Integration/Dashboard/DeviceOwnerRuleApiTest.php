@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Dashboard;
 
 use Hub\Api\Http\ApiError;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\DevicesApiFixture;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -23,7 +24,7 @@ final class DeviceOwnerRuleApiTest extends MysqlDashboardTestCase
     }
 
     /** @param array<string, mixed> $owner */
-    #[\PHPUnit\Framework\Attributes\DataProvider('halfOwners')]
+    #[DataProvider('halfOwners')]
     public function testCreatingWithHalfAnOwnerIsRefused(array $owner, string $missing): void
     {
         [$api] = $this->makeApi();
@@ -36,7 +37,7 @@ final class DeviceOwnerRuleApiTest extends MysqlDashboardTestCase
     }
 
     /** @param array<string, mixed> $owner */
-    #[\PHPUnit\Framework\Attributes\DataProvider('halfOwners')]
+    #[DataProvider('halfOwners')]
     public function testUpdatingWithHalfAnOwnerIsRefused(array $owner, string $missing): void
     {
         [$api] = $this->makeApi();

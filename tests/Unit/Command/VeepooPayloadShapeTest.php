@@ -7,6 +7,7 @@ namespace Tests\Unit\Command;
 use Hub\Command\Configuration\Definition\VeepooConfigurationDefinitions;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** A forma do payload que sai para o gateway: o SDK aceita em silêncio o que não reconhece. */
@@ -47,10 +48,10 @@ final class VeepooPayloadShapeTest extends TestCase
     }
 
     /**
-     * @dataProvider configurations
      * @param array<string, mixed> $input
      * @param array<string, mixed> $expected
      */
+    #[DataProvider('configurations')]
     public function testEachConfigurationProducesTheDeclaredPayload(string $key, array $input, array $expected): void
     {
         $built = DeviceConfigurationCatalog::commandPayload(self::PROTOCOL, $key, $input);
@@ -64,10 +65,10 @@ final class VeepooPayloadShapeTest extends TestCase
      * O que desce é o nome da operação, e não uma trama: quem escreve na pulseira é o gateway
      * que tem a sessão BLE.
      *
-     * @dataProvider configurations
      * @param array<string, mixed> $input
      * @param array<string, mixed> $expected
      */
+    #[DataProvider('configurations')]
     public function testTheQueuedBytesAreTheOperationName(string $key, array $input, array $expected): void
     {
         $command = DeviceConfigurationCatalog::commandPayload(self::PROTOCOL, $key, $input)['command'];

@@ -6,15 +6,14 @@ namespace Tests\Unit\Domain;
 
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\EventSeverity;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** A gravidade de cada acontecimento: alarme, alerta ou informação. */
 final class EventSeverityTest extends TestCase
 {
-    /**
-     * @dataProvider severities
-     * @param array<string, mixed> $data
-     */
+    /** @param array<string, mixed> $data */
+    #[DataProvider('severities')]
     public function testEachEventCarriesItsSeverity(string $type, array $data, ?string $expected): void
     {
         self::assertSame($expected, EventSeverity::of($type, $data));

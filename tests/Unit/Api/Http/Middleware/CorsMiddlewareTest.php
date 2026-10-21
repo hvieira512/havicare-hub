@@ -7,6 +7,7 @@ namespace Tests\Unit\Api\Http\Middleware;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Http\CorsPolicy;
 use Hub\Api\Http\Middleware\CorsMiddleware;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -67,11 +68,8 @@ final class CorsMiddlewareTest extends TestCase
         ];
     }
 
-    /**
-     * Uma regra só, sem excepções por caminho: o estático leva os mesmos cabeçalhos que o `/api/`.
-     *
-     * @dataProvider downstreamResponses
-     */
+    /** Uma regra só, sem excepções por caminho: o estático leva os mesmos cabeçalhos que o `/api/`. */
+    #[DataProvider('downstreamResponses')]
     public function testEveryResponseThatComesBackCarriesTheHeaders(int $status, string $path): void
     {
         $middleware = new CorsMiddleware(new CorsPolicy(['https://app.havicare.com']));

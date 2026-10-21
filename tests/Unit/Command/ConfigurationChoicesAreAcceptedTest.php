@@ -6,6 +6,7 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -35,7 +36,7 @@ final class ConfigurationChoicesAreAcceptedTest extends TestCase
         }
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('choices')]
+    #[DataProvider('choices')]
     public function testEveryOfferedChoicePasses(string $key, string $command, string $field, int $value): void
     {
         self::assertNull(DeviceConfigurationCatalog::validate(self::PROTOCOL, $key, [$field => $value]));

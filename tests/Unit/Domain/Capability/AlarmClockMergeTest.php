@@ -7,6 +7,7 @@ namespace Tests\Unit\Domain\Capability;
 use Hub\Domain\Capability\AlarmClock\AlarmClockCapability;
 use Hub\Domain\Capability\AlarmClock\FourPTouch;
 use Hub\Domain\Capability\AlarmClock\Vivistar;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -25,7 +26,7 @@ final class AlarmClockMergeTest extends TestCase
         ];
     }
 
-    /** @dataProvider handlers */
+    #[DataProvider('handlers')]
     public function testConcurrentAlarmsAccumulate(object $handler): void
     {
         self::assertSame(
@@ -34,7 +35,7 @@ final class AlarmClockMergeTest extends TestCase
         );
     }
 
-    /** @dataProvider handlers */
+    #[DataProvider('handlers')]
     public function testANonListSideCountsAsEmpty(object $handler): void
     {
         self::assertSame([['at' => '07:00']], $handler->merge(null, [['at' => '07:00']]));
@@ -42,7 +43,7 @@ final class AlarmClockMergeTest extends TestCase
         self::assertSame([], $handler->merge(null, null));
     }
 
-    /** @dataProvider handlers */
+    #[DataProvider('handlers')]
     public function testTheResultIsAlwaysAList(object $handler): void
     {
         self::assertSame(

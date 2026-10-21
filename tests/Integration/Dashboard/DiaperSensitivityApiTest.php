@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Dashboard;
 
+use Hub\Api\Services\DeviceService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\Repository\DiaperSensitivityRepository;
-use Hub\Api\Services\DeviceService;
-use Hub\State\DeviceStore;
 use Hub\Registry\Whitelist;
+use Hub\State\DeviceStore;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -129,9 +130,7 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         self::assertSame('custom', $this->sensitivityEntry($api)['value']['profile'] ?? null);
     }
 
-    /**
-     * @dataProvider invalidPairs
-     */
+    #[DataProvider('invalidPairs')]
     public function testValuesOutsideTheAcceptedRangeAreRejected(int $range, int $value): void
     {
         [$api] = $this->api();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Api\Services;
 
 use Hub\Api\Services\ConfigurationSyncStatus;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -54,9 +55,7 @@ final class ConfigurationSyncStatusTest extends TestCase
         self::assertFalse($subject->capabilityValuesEqual(['enabled' => true], ['enabled' => false]));
     }
 
-    /**
-     * @dataProvider lifecycleStatuses
-     */
+    #[DataProvider('lifecycleStatuses')]
     public function testPendingStatusReflectsTheLastCommandAndWhetherTheDeviceReported(
         string $lastStatus,
         bool $reportedExists,

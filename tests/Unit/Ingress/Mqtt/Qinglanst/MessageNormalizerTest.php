@@ -6,6 +6,7 @@ namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
 use Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer;
 use Hub\Ingress\Mqtt\Qinglanst\QinglanstTopic;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class MessageNormalizerTest extends TestCase
@@ -212,9 +213,9 @@ final class MessageNormalizerTest extends TestCase
     /**
      * Os sete ramos da detecção de posição, com o tipo e o `data` de cada um.
      *
-     * @dataProvider positionDetections
      * @param array<string, mixed> $expectedData
      */
+    #[DataProvider('positionDetections')]
     public function testEachPostureAndMovementRaisesItsOwnDetection(
         string $posture,
         string $lastEvent,
@@ -389,9 +390,9 @@ final class MessageNormalizerTest extends TestCase
      * A chave do mapa de telemetria é a capacidade e tem de ser o `type` do envelope: senão o
      * catálogo declara uma capacidade que ninguém recebe, e a falha é calada.
      *
-     * @dataProvider everyMessageType
      * @param array<string, mixed> $decoded
      */
+    #[DataProvider('everyMessageType')]
     public function testTheEnvelopeTypeIsAlwaysTheCapabilityItIsFiledUnder(array $decoded): void
     {
         $result = (new MessageNormalizer())->normalize(
@@ -409,9 +410,9 @@ final class MessageNormalizerTest extends TestCase
      * O `type` de uma capacidade é snake_case; os campos dentro do `data` são camelCase. São
      * dois vocabulários, e no radar é fácil o segundo escorregar para o primeiro.
      *
-     * @dataProvider everyMessageType
      * @param array<string, mixed> $decoded
      */
+    #[DataProvider('everyMessageType')]
     public function testNoPublishedFieldIsSnakeCase(array $decoded): void
     {
         $result = (new MessageNormalizer())->normalize(

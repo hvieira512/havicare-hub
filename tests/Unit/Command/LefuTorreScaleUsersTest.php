@@ -6,6 +6,7 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\Configuration\Payload\LefuTorreScaleUsers;
 use Hub\Command\DeviceConfigurationCatalog;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /** A lista é o estado desejado: o hub dá identificador a quem não tem e escreve só o que mudou. */
@@ -117,7 +118,7 @@ final class LefuTorreScaleUsersTest extends TestCase
         yield 'no futuro' => ['2999-01-01'];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('badBirthDates')]
+    #[DataProvider('badBirthDates')]
     public function testTheBirthDateMustBeARealDateInThePast(mixed $birthDate): void
     {
         $this->expectException(\InvalidArgumentException::class);

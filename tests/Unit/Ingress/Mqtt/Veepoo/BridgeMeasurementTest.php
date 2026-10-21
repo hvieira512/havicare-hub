@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Veepoo;
 
-use Hub\State\DeviceStoreContract;
-use Tests\Support\Doubles\ArrayObservationStateStore;
-use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
 use Hub\Ingress\Mqtt\Veepoo\MeasurementNormalizer;
+use Hub\Ingress\Mqtt\Veepoo\VeepooBridge;
+use Hub\State\DeviceStoreContract;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\ArrayObservationStateStore;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
@@ -97,10 +98,10 @@ final class BridgeMeasurementTest extends TestCase
     }
 
     /**
-     * @dataProvider measurements
      * @param array<string, mixed> $payload
      * @param array<string, mixed> $expected
      */
+    #[DataProvider('measurements')]
     public function testLiveMeasurementBecomesTelemetry(
         string $_label,
         array $payload,

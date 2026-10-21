@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Runtime;
 
 use Hub\Runtime\HubServices;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Predis\Client as RedisClient;
 
@@ -30,9 +31,8 @@ final class RedisPrefixTest extends TestCase
     /**
      * O prefixo apanha as chaves de todos os stores. Não fala com o Redis: olha para o argumento
      * que o cliente poria no fio.
-     *
-     * @dataProvider hubKeyspaces
      */
+    #[DataProvider('hubKeyspaces')]
     public function testEveryHubKeyspaceGetsThePrefix(string $key): void
     {
         $client = new RedisClient([], HubServices::redisOptions(['prefix' => 'dev:']));
