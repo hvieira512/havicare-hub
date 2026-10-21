@@ -80,7 +80,7 @@ ps:
 dev-dashboard:
 	docker compose stop hub 2>/dev/null; \
 	docker compose run --rm --service-ports --name havicare-hub-watch \
-		-e WATCH_DIRS="/app/src/Dashboard /app/config/whitelist.json" \
+		-e WATCH_DIRS="/app/src/Dashboard" \
 		hub bin/dev.sh php bin/server-hub.php
 
 # Fora dos dois diretórios do servidor não há instância nenhuma, e parar é melhor do que

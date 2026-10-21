@@ -10,7 +10,6 @@ use Hub\Api\Services\DeviceService;
 use Hub\State\DeviceStore;
 use Hub\Registry\Whitelist;
 use Tests\Support\Doubles\InMemoryRedisClient;
-use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
@@ -21,12 +20,10 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 {
     private const SENSOR = 'eec5000202f9';
 
-    private string $whitelistPath;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->whitelistPath = IngressFixtures::whitelistPath();
     }
 
     /**
@@ -45,7 +42,7 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('sent');
 
-        $api = new DeviceService($store, new Whitelist($this->whitelistPath, $db->whitelist), $hub, $db);
+        $api = new DeviceService($store, new Whitelist($db->whitelist), $hub, $db);
         $created = $api->create([
             'imei' => self::SENSOR, 'supplier' => 'MONIT', 'model' => 'MECS-PRO',
             'licenseId' => '1001', 'company' => 'hitcare',

@@ -34,7 +34,7 @@ final class DeviceTenantScopeTest extends MysqlDashboardTestCase
         parent::setUp();
 
         $this->db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $this->whitelist = new Whitelist(null, $this->db->whitelist);
+        $this->whitelist = new Whitelist($this->db->whitelist);
         $this->devices = new DeviceService(
             $this->createStub(DeviceStoreContract::class),
             $this->whitelist,

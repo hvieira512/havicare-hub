@@ -25,7 +25,7 @@ final class DeviceShowQueryCountTest extends MysqlDashboardTestCase
         $db = ApiDataAccess::fromPdo($pdo);
 
         $imei = '861265061009822';
-        $whitelist = new Whitelist(null, $db->whitelist);
+        $whitelist = new Whitelist($db->whitelist);
         $whitelist->register($imei, 'Vivistar', 'L08 Pro', 'watch', 1001, '', $imei, 'hitcare');
 
         $service = new DeviceService(

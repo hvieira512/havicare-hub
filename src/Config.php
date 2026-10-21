@@ -7,7 +7,7 @@ namespace Hub;
 /**
  * @phpstan-type TcpIngressConfig array{host: string, port: int}
  * @phpstan-type DashboardConfig array{cors_allowed_origins: list<string>, host: string, port: int, api_auth_required: bool, api_token_ttl_seconds: int, api_refresh_token_ttl_seconds: int, history_limit: int, command_timeout_seconds: int, device_idle_timeout_seconds: int, max_open_streams: int, max_open_streams_per_user: int, login_max_per_address: int, login_max_per_username: int, login_max_global: int}
- * @phpstan-type HubRuntimeConfig array{downlink_queue_ttl_seconds: int, whitelist_file: string}
+ * @phpstan-type HubRuntimeConfig array{downlink_queue_ttl_seconds: int}
  * @phpstan-type LocationResolutionConfig array{enabled: bool, endpoint: string, user_agent: string, timeout_seconds: float, max_accuracy_meters: float, cache_ttl_seconds: int, failure_cache_ttl_seconds: int, max_concurrency: int, max_queue: int, circuit_failure_threshold: int, circuit_open_seconds: int, rate_limit_open_seconds: int, radio_map_enabled: bool, radio_map_hash_key: string, radio_map_minimum_matches: int, radio_map_maximum_learning_accuracy_meters: float, radio_map_default_gps_accuracy_meters: float, radio_map_minimum_satellites: int, radio_map_maximum_observation_distance_meters: float, radio_map_cluster_radius_meters: float, radio_map_cache_ttl_seconds: int}
  * @phpstan-type NcsConfig array{enabled: bool, topic_filter: string}
  * @phpstan-type GatewayConfig array{enabled: bool, topic_filter: string, dedupe_ttl_seconds: int, telemetry_refresh_seconds: int, idle_timeout_seconds: int}
@@ -119,7 +119,6 @@ class Config
             ],
             'hub' => [
                 'downlink_queue_ttl_seconds' => $downlinkQueueTtl,
-                'whitelist_file' => getenv('WHITELIST_FILE') ?: '',
             ],
             'location_resolution' => [
                 'enabled' => $locationResolutionEnabled,

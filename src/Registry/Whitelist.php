@@ -10,39 +10,26 @@ use Hub\Infrastructure\Persistence\Repository\WhitelistRepository;
 class Whitelist
 {
     /** @var array<string, DeviceMetadata> */
-    private array $devices;
-    private string $filePath;
-    private ?WhitelistRepository $db;
+    private array $devices = [];
     private int $databaseCacheLoadedAt = 0;
 
+    /**
+     * Sem base de dados, a lista vive só em memória, semeada pelos `$devices`.
+     *
+     * @param array<array-key, array<string, mixed>> $devices
+     */
     public function __construct(
-        ?string $filePath = null,
-        ?WhitelistRepository $db = null,
+        private ?WhitelistRepository $db = null,
         private int $databaseCacheTtlSeconds = 5,
+        array $devices = [],
     ) {
-        $this->filePath = $filePath ?? __DIR__ . '/../../config/whitelist.json';
-        $this->db = $db;
         $this->databaseCacheTtlSeconds = max(0, $this->databaseCacheTtlSeconds);
-        $this->load();
-    }
-
-    private function load(): void
-    {
-        $this->devices = [];
-
         if ($this->db !== null) {
             $this->loadDatabaseCache();
             return;
         }
-
-        if (file_exists($this->filePath)) {
-            $raw = json_decode(file_get_contents($this->filePath), true) ?? [];
-            foreach ($raw as $imei => $value) {
-                if (!is_scalar($imei) || !is_array($value) || isset($this->devices[trim((string)$imei)])) {
-                    continue;
-                }
-                $this->loadEntry((string)$imei, $value);
-            }
+        foreach ($devices as $imei => $value) {
+            $this->loadEntry((string)$imei, $value);
         }
     }
 
@@ -99,9 +86,6 @@ class Whitelist
         $company = DeviceMetadata::normalizeCompany($company);
         $this->devices[$imei] = new DeviceMetadata($supplier, $model, $deviceType, $licenseId, $company, $simNumber, $deviceId);
         $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
-        if ($this->db === null) {
-            $this->saveFile();
-        }
     }
 
     /** Outro IMEI na mesma linha, que é o que leva com ele o resto. */
@@ -114,18 +98,12 @@ class Whitelist
         }
 
         $this->db?->rename($imei, $newImei);
-        if ($this->db === null) {
-            $this->saveFile();
-        }
     }
 
     public function unregister(string $imei): void
     {
         unset($this->devices[$imei]);
         $this->db?->unregister($imei);
-        if ($this->db === null) {
-            $this->saveFile();
-        }
     }
 
     public function updateAssociation(string $imei, string $company, int|string $licenseId): bool
@@ -147,9 +125,6 @@ class Whitelist
             $current->deviceId,
         );
         $this->db?->updateAssociation($imei, $company, $licenseId);
-        if ($this->db === null) {
-            $this->saveFile();
-        }
 
         return true;
     }
@@ -268,20 +243,5 @@ class Whitelist
 
         $imei = trim((string)($row['imei'] ?? ''));
         return $imei === '' ? null : ['imei' => $imei] + DeviceMetadata::fromArray($row)->toArray();
-    }
-
-    private function saveFile(): void
-    {
-        $dir = dirname($this->filePath);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-        file_put_contents(
-            $this->filePath,
-            json_encode(
-                array_map(static fn (DeviceMetadata $metadata): array => $metadata->toArray(), $this->devices),
-                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
-            )
-        );
     }
 }

@@ -139,10 +139,6 @@ O hub relê a whitelist da base de dados com uma cache de **5 segundos**. É o q
 faz com que atribuir um dispositivo a um cliente na dashboard tenha efeito quase
 imediato, sem reiniciar nada.
 
-O `config/whitelist.json` é **legado**. Só é usado quando não há base de dados —
-em testes e desenvolvimento. O hub a correr não o lê nem lhe escreve. Para
-importar um ficheiro antigo, uma vez: `php bin/import-whitelist.php`.
-
 ## 5. Reassociar um dispositivo em funcionamento
 
 Mudar um dispositivo de cliente enquanto ele está ligado tem duas armadilhas, e
