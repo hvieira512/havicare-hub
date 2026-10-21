@@ -94,19 +94,19 @@ final class QinglanstCloudCommands
         if ($layout !== null) {
             $room = $layout['room'];
             $configurations['detection_boundary'] = [
-                'leftM' => self::metres(-$room['x_min_dm']),
-                'rightM' => self::metres($room['x_max_dm']),
-                'frontM' => self::metres($room['y_max_dm']),
-                'backM' => self::metres(-$room['y_min_dm']),
+                'leftM' => self::metres(-$room['xMinDm']),
+                'rightM' => self::metres($room['xMaxDm']),
+                'frontM' => self::metres($room['yMaxDm']),
+                'backM' => self::metres(-$room['yMinDm']),
             ];
             $configurations['radar_areas'] = ['items' => array_map(static fn (array $area): array => [
                 'key' => (int)$area['key'],
                 'type' => (int)$area['type'],
                 'name' => (string)$area['name'],
-                'xMinDm' => (int)$area['x_min_dm'],
-                'yMinDm' => (int)$area['y_min_dm'],
-                'xMaxDm' => (int)$area['x_max_dm'],
-                'yMaxDm' => (int)$area['y_max_dm'],
+                'xMinDm' => (int)$area['xMinDm'],
+                'yMinDm' => (int)$area['yMinDm'],
+                'xMaxDm' => (int)$area['xMaxDm'],
+                'yMaxDm' => (int)$area['yMaxDm'],
             ], $layout['areas'])];
         }
 
@@ -334,10 +334,10 @@ final class QinglanstCloudCommands
         foreach ($this->layouts->parse($props)['areas'] ?? [] as $area) {
             $current[(int)$area['key']] = [
                 (int)$area['type'],
-                (int)$area['x_min_dm'],
-                (int)$area['y_min_dm'],
-                (int)$area['x_max_dm'],
-                (int)$area['y_max_dm'],
+                (int)$area['xMinDm'],
+                (int)$area['yMinDm'],
+                (int)$area['xMaxDm'],
+                (int)$area['yMaxDm'],
             ];
         }
 

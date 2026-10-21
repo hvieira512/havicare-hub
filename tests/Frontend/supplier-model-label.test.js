@@ -33,9 +33,9 @@ test("with one of the two missing, what is left shows without stray spaces", () 
  * (`wonlex-json`) e a pulseira MF91 fala BLE (`veepoo-ble`).
  */
 const MODELS = [
-    { supplier: "Wonlex", internal_model: "HW20PRO", protocol: "wonlex-json" },
-    { supplier: "Wonlex", internal_model: "MF91", protocol: "veepoo-ble" },
-    { supplier: "MOKO", internal_model: "W6B", protocol: "moko-w6b" },
+    { supplier: "Wonlex", internalModel: "HW20PRO", protocol: "wonlex-json" },
+    { supplier: "Wonlex", internalModel: "MF91", protocol: "veepoo-ble" },
+    { supplier: "MOKO", internalModel: "W6B", protocol: "moko-w6b" },
 ];
 
 test("the model decides the protocol when the supplier sells more than one", () => {

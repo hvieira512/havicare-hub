@@ -14,7 +14,7 @@ use ReflectionParameter;
 final class CollectionColumns
 {
     /**
-     * @param array<string, string> $sortable As colunas por que a listagem se deixa ordenar.
+     * @param list<string> $sortable As colunas por que a listagem se deixa ordenar.
      * @param class-string|null $writable O pedido de escrita, ou `null` numa listagem só de leitura.
      * @param array<string, string|list<string>> $textFilters As colunas que se estreitam por texto
      *     livre. Uma lista diz que o mesmo parâmetro procura em várias colunas.
@@ -41,7 +41,7 @@ final class CollectionColumns
         $writable = $this->writableFields();
 
         $fields = array_values(array_unique(array_merge(
-            array_keys($this->sortable),
+            $this->sortable,
             array_keys($this->textFilters),
             array_keys($this->fixedOptions),
             $this->extra,
@@ -51,7 +51,7 @@ final class CollectionColumns
         foreach ($fields as $field) {
             $columns[] = [
                 'field' => $field,
-                'sortable' => isset($this->sortable[$field]),
+                'sortable' => in_array($field, $this->sortable, true),
                 'editable' => in_array($field, $writable, true),
                 'filter' => $this->filterFor($field, $counts),
             ];
@@ -63,7 +63,7 @@ final class CollectionColumns
     /**
      * As colunas por que a listagem se deixa ordenar.
      *
-     * @return array<string, string>
+     * @return list<string>
      */
     public function sortableColumns(): array
     {

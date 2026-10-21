@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Api;
 
 use Hub\Api\Services\DenylistService;
-use Hub\Api\Services\SupplierService;
+use Hub\Api\Services\ModelService;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -21,7 +21,7 @@ final class PaginationIsUniformTest extends MysqlDashboardTestCase
         $db->denylist->add('860000000000001', 'tcp', null, 'admin');
 
         $listings = [
-            'suppliers' => (new SupplierService($db))->list(''),
+            'suppliers' => (new ModelService($db))->suppliers(''),
             'denylist' => (new DenylistService($db))->list(''),
         ];
 
@@ -51,7 +51,7 @@ final class PaginationIsUniformTest extends MysqlDashboardTestCase
 
         self::assertCount(1, $page['data']);
         self::assertSame(
-            ['limit' => 2, 'page' => 2, 'total_pages' => 2, 'total' => 3],
+            ['limit' => 2, 'page' => 2, 'totalPages' => 2, 'total' => 3],
             $page['pagination'],
         );
     }

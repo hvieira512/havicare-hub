@@ -3,9 +3,7 @@ import { html } from "../html.js";
 /** A imagem de um modelo, com o nome comercial, o interno, e o do modelo, por esta ordem. */
 
 const modelLabel = (modelInfo, fallback) =>
-    modelInfo?.commercial_name ||
     modelInfo?.commercialName ||
-    modelInfo?.internal_model ||
     modelInfo?.internalModel ||
     modelInfo?.model ||
     fallback;

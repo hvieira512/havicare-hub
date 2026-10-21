@@ -86,7 +86,7 @@ async function fetchSummary() {
         devicePagination: devicesResponse.pagination || {
             limit: state.deviceListPageSize,
             page: 1,
-            total_pages: 1,
+            totalPages: 1,
             total: 0,
         },
         deviceFiltersAvailable: devicesResponse.filters?.available || {

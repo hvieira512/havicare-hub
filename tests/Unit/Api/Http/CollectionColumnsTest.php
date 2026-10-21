@@ -31,7 +31,7 @@ final class CollectionColumnsTest extends TestCase
     private function columns(): CollectionColumns
     {
         return new CollectionColumns(
-            sortable: ['username' => 'username', 'role' => 'role'],
+            sortable: ['username', 'role'],
             writable: ApiUserWriteRequest::class,
             textFilters: ['username' => 'username'],
             fixedOptions: ['role' => ['hub_admin', 'license_client']],
@@ -75,7 +75,7 @@ final class CollectionColumnsTest extends TestCase
     /** Uma listagem sem campos editáveis declara-o, em vez de mentir que tudo se edita. */
     public function testAReadOnlyListingDeclaresNothingEditable(): void
     {
-        $columns = new CollectionColumns(sortable: ['label' => 'c.label'], writable: null);
+        $columns = new CollectionColumns(sortable: ['label'], writable: null);
         $described = $this->describedByField($columns);
 
         self::assertFalse($described['label']['editable']);
@@ -84,7 +84,7 @@ final class CollectionColumnsTest extends TestCase
     /** Uma coluna que não se filtra diz `null`, e não um filtro vazio. */
     public function testAColumnWithoutAFilterSaysSo(): void
     {
-        $columns = new CollectionColumns(sortable: ['createdAt' => 'u.created_at'], writable: null);
+        $columns = new CollectionColumns(sortable: ['createdAt'], writable: null);
 
         self::assertNull($this->describedByField($columns)['createdAt']['filter']);
     }

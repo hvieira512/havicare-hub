@@ -75,7 +75,7 @@ let chosenImage = null;
 function suppliersForDeviceType(deviceType) {
     const group = (state.settingsModal.modelFilters || []).find(
         (entry) =>
-            normalizeDeviceType(entry?.deviceType || entry?.device_type || "watch") ===
+            normalizeDeviceType(entry?.deviceType || "watch") ===
             normalizeDeviceType(deviceType),
     );
     return group?.suppliers || [];
@@ -116,7 +116,7 @@ function modelCountFor(deviceType) {
     return (state.settingsModal.modelCatalog || [])
         .filter(
             (group) =>
-                normalizeDeviceType(group?.deviceType || group?.device_type || "watch") ===
+                normalizeDeviceType(group?.deviceType || "watch") ===
                 deviceType,
         )
         .flatMap((group) => group?.suppliers || [])
@@ -298,7 +298,7 @@ async function saveModel() {
     if (!wizard.isComplete()) return;
 
     const body = new FormData();
-    body.append("supplier_id", String(supplier.id));
+    body.append("supplierId", String(supplier.id));
     body.append("internalModel", internalModel);
     body.append("commercialName", commercialName);
     body.append("deviceType", deviceType);

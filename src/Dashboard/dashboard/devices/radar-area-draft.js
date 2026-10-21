@@ -1,7 +1,7 @@
 import { areaTypeStyle } from "../radar-style.js";
 
 /**
- * O rascunho das áreas de um radar, em decímetros e no formato do contrato (`xMinDm`…). O `key`
+ * O rascunho das áreas de um radar, em decímetros e na forma da planta da API. O `key`
  * é o `regionId` da telemetria: uma área mantém-no enquanto existir.
  */
 
@@ -23,26 +23,6 @@ const BEDS = [2, 5];
 const MONITORING_BED = 5;
 /** A porta conta como encostada até 20 cm da parede. */
 const DOOR_WALL_TOLERANCE_DM = 2;
-
-const box = (source) => ({
-    xMinDm: Number(source.x_min_dm),
-    yMinDm: Number(source.y_min_dm),
-    xMaxDm: Number(source.x_max_dm),
-    yMaxDm: Number(source.y_max_dm),
-});
-
-/** O `radar-layout` da API vem em snake_case; o rascunho fala a língua do contrato. */
-export function areasFromLayout(layout) {
-    return {
-        room: layout?.room ? box(layout.room) : null,
-        areas: (layout?.areas ?? []).map((area) => ({
-            key: Number(area.key),
-            type: Number(area.type),
-            name: String(area.name ?? ""),
-            ...box(area),
-        })),
-    };
-}
 
 export function firstFreeKey(areas) {
     const used = new Set(areas.map((area) => area.key));

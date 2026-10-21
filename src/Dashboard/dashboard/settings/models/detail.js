@@ -34,9 +34,7 @@ async function openModelDetail(modelId) {
     const { els } = getSettingsModelsRuntime();
     const response = await apiGetModel(modelId);
     const model = response.data || response;
-    await loadCapabilityCatalog(
-        model.device_type || model.deviceType || "watch",
-    );
+    await loadCapabilityCatalog(model.deviceType || "watch");
 
     state.settingsModal.currentCapabilitiesModel = model;
     state.settingsModal.capabilityRequestableCapabilities = Array.isArray(
@@ -45,8 +43,8 @@ async function openModelDetail(modelId) {
         ? model.requestableCapabilities.map(String)
         : [];
 
-    const supplierId = Number(model.supplier_id || model.supplierId || 0);
-    const deviceType = model.device_type || model.deviceType || "watch";
+    const supplierId = Number(model.supplierId || 0);
+    const deviceType = model.deviceType || "watch";
     state.settingsModal.capabilityModelTemplateKeys = [];
     if (supplierId) {
         const tmpl = await ensureModelTemplate(supplierId, deviceType);
@@ -128,7 +126,7 @@ function renderModelDetailInfo(model) {
     void renderModelDetailDeleteHint(model);
 }
 
-/** Os fornecedores com o seu id, para o `supplier_id`; a ficha alcança-se sem passar pelo separador deles. */
+/** Os fornecedores com o seu id, para o `supplierId`; a ficha alcança-se sem passar pelo separador deles. */
 function modelDetailSuppliers() {
     return state.modelModalSuppliers || [];
 }
@@ -217,7 +215,7 @@ async function saveModelDetail() {
         (item) => String(item.name) === fields.supplier,
     );
     const body = new FormData();
-    body.append("supplier_id", String(supplier?.id ?? model.supplier_id));
+    body.append("supplierId", String(supplier?.id ?? model.supplierId));
     body.append("internalModel", fields.internalModel);
     body.append("commercialName", fields.commercialName);
     body.append("deviceType", fields.deviceType);
@@ -236,14 +234,11 @@ async function saveModelDetail() {
     const saved = {
         ...model,
         image: image ? state.modelPreviewObjectUrl : model.image,
-        supplier_id: supplier?.id ?? model.supplier_id,
+        supplierId: supplier?.id ?? model.supplierId,
         supplier: fields.supplier,
         internalModel: fields.internalModel,
-        internal_model: fields.internalModel,
         commercialName: fields.commercialName,
-        commercial_name: fields.commercialName,
         deviceType: fields.deviceType,
-        device_type: fields.deviceType,
     };
     state.settingsModal.currentCapabilitiesModel = saved;
     renderModelDetailInfo(saved);
@@ -252,8 +247,8 @@ async function saveModelDetail() {
     invalidateDeviceTypeSuppliersModels();
 
     // Trocar o fornecedor ou o tipo faz o servidor substituir as capacidades pelo template novo.
-    const supplierChanged = Number(supplier?.id ?? 0) !== Number(model.supplier_id || 0);
-    const typeChanged = fields.deviceType !== (model.device_type || model.deviceType);
+    const supplierChanged = Number(supplier?.id ?? 0) !== Number(model.supplierId || 0);
+    const typeChanged = fields.deviceType !== model.deviceType;
     if (supplierChanged || typeChanged) {
         await openModelDetail(model.id);
     }

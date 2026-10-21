@@ -13,6 +13,8 @@ return static function (
     return [
         new ApiRoute('GET', '/api/models', static fn(array $params, ServerRequestInterface $request): array
             => $models->list((string)$request->getUri()->getQuery(), RequestContext::baseUrl($request))),
+        new ApiRoute('GET', '/api/suppliers', static fn(array $params, ServerRequestInterface $request): array
+            => $models->suppliers((string)$request->getUri()->getQuery())),
         new ApiRoute('GET', '/api/device-types/suppliers', static fn(): array => $models->filters()),
         new ApiRoute(
             'GET',

@@ -65,8 +65,8 @@ final class GatewayDeviceLinkRepository implements GatewayDeviceLinkLookup
                 l.gateway_device_key AS gatewayDeviceKey,
                 l.linked_device_key AS linkedDeviceKey,
                 l.enabled,
-                l.created_at,
-                l.updated_at,
+                l.created_at AS createdAt,
+                l.updated_at AS updatedAt,
                 CASE WHEN l.gateway_device_key = ? THEN l.linked_device_key ELSE l.gateway_device_key END AS deviceKey,
                 w.supplier, w.model, w.device_type AS deviceType,
                 w.license_id AS licenseId, w.company
@@ -79,6 +79,9 @@ final class GatewayDeviceLinkRepository implements GatewayDeviceLinkLookup
             ORDER BY deviceKey
         ');
         $stmt->execute([$deviceKey, $deviceKey, $deviceKey, $deviceKey]);
-        return TimestampFormatter::normalizeRows($stmt->fetchAll() ?: []);
+        return array_map(
+            static fn (array $row): array => TimestampFormatter::isoColumns($row, ['createdAt', 'updatedAt']),
+            $stmt->fetchAll() ?: [],
+        );
     }
 }

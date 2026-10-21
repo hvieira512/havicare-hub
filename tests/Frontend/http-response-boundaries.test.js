@@ -25,7 +25,7 @@ test("allPages walks every page of a listing", async () => {
     const asked = [];
     const fetchPage = async (params) => {
         asked.push(params.page);
-        return { data: [`row${params.page}`], pagination: { page: params.page, total_pages: 3 } };
+        return { data: [`row${params.page}`], pagination: { page: params.page, totalPages: 3 } };
     };
 
     const result = await allPages(fetchPage, { deviceType: "gateway" });
@@ -36,7 +36,7 @@ test("allPages walks every page of a listing", async () => {
 
 test("allPages hands back the first error instead of a short list", async () => {
     const fetchPage = async (params) => (params.page === 1
-        ? { data: ["row1"], pagination: { page: 1, total_pages: 2 } }
+        ? { data: ["row1"], pagination: { page: 1, totalPages: 2 } }
         : { error: { code: "internal_error" } });
 
     const result = await allPages(fetchPage);
@@ -157,12 +157,12 @@ test("a 401 triggers the refresh and repeats the request with the new token", as
 
 /** Uma renovação no ar ao sair reacenderia o stream com o ecrã de entrada à frente. */
 test("a refresh that lands after logout does not restore the token", async () => {
-    setDashboardApiToken({ access_token: "velho", expires_at: "2099-01-01T00:00:00Z" });
+    setDashboardApiToken({ access_token: "velho", expiresAt: "2099-01-01T00:00:00Z" });
 
     let releaseLogin = () => {};
     const heldLogin = () => new Promise((resolve) => {
         releaseLogin = () => resolve(jsonResponse(200, {
-            token: { access_token: "novo", expires_at: "2099-01-01T00:00:00Z" },
+            token: { access_token: "novo", expiresAt: "2099-01-01T00:00:00Z" },
         }));
     });
     globalThis.fetch = (url) => String(url).includes("/api/auth/login")

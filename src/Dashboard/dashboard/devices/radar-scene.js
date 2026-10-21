@@ -50,10 +50,10 @@ function createTransform(bounds, cw, ch) {
  */
 function boundsOf(layout) {
     const boxes = layout.extent ? [layout.extent] : [layout.room, ...layout.areas];
-    const minX = Math.min(...boxes.map((box) => box.x_min_dm));
-    const minY = Math.min(...boxes.map((box) => box.y_min_dm));
-    const maxX = Math.max(...boxes.map((box) => box.x_max_dm));
-    const maxY = Math.max(...boxes.map((box) => box.y_max_dm));
+    const minX = Math.min(...boxes.map((box) => box.xMinDm));
+    const minY = Math.min(...boxes.map((box) => box.yMinDm));
+    const maxX = Math.max(...boxes.map((box) => box.xMaxDm));
+    const maxY = Math.max(...boxes.map((box) => box.yMaxDm));
 
     return { minX, minY, width: maxX - minX, height: maxY - minY };
 }
@@ -112,10 +112,10 @@ function fitStageToLayout(state, layout) {
 /** Uma caixa em decímetros nos quatro cantos que o `Konva.Line` fechado quer, por ordem. */
 function corners(box) {
     return [
-        box.x_min_dm, box.y_min_dm,
-        box.x_max_dm, box.y_min_dm,
-        box.x_max_dm, box.y_max_dm,
-        box.x_min_dm, box.y_max_dm,
+        box.xMinDm, box.yMinDm,
+        box.xMaxDm, box.yMinDm,
+        box.xMaxDm, box.yMaxDm,
+        box.xMinDm, box.yMaxDm,
     ];
 }
 
@@ -240,8 +240,8 @@ function drawRoom(state, layout) {
     layout.areas.forEach((area) => {
         const color = canvasColor(areaTypeStyle(area.type).color);
         const labelPos = state.transformCoords([
-            (area.x_min_dm + area.x_max_dm) / 2,
-            (area.y_min_dm + area.y_max_dm) / 2,
+            (area.xMinDm + area.xMaxDm) / 2,
+            (area.yMinDm + area.yMaxDm) / 2,
         ]);
 
         state.layer.add(new Konva.Line({
@@ -307,7 +307,6 @@ function drawDraftArea(state, area, { original, selected, warned }) {
     const typeColor = areaTypeStyle(area.type).color;
     const color = canvasColor(typeColor);
     const outline = canvasColor("var(--bs-body-bg)");
-    const box = { x_min_dm: area.xMinDm, y_min_dm: area.yMinDm, x_max_dm: area.xMaxDm, y_max_dm: area.yMaxDm };
     const layer = state.editLayer;
 
     if (original) {
@@ -322,7 +321,7 @@ function drawDraftArea(state, area, { original, selected, warned }) {
     }
 
     const shape = new Konva.Line({
-        points: state.transformCoords(corners(box)),
+        points: state.transformCoords(corners(area)),
         stroke: warned ? canvasColor("var(--bs-danger)") : color,
         strokeWidth: selected ? 3 : 2,
         dash: area.deleted ? [8, 6] : undefined,
@@ -455,9 +454,7 @@ export function createRadarScene(options = {}) {
         for (const area of ordered) {
             const original = originals.get(area.key);
             drawDraftArea(state, area, {
-                original: original && !area.deleted
-                    ? { x_min_dm: original.xMinDm, y_min_dm: original.yMinDm, x_max_dm: original.xMaxDm, y_max_dm: original.yMaxDm }
-                    : null,
+                original: original && !area.deleted ? original : null,
                 selected: area.key === selectedKey,
                 warned: warnKeys.has(area.key),
             });

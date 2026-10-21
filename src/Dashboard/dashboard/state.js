@@ -74,7 +74,7 @@ export const state = {
     wizardGateways: [],
     summary: {
         devices: [],
-        devicePagination: { limit: 20, page: 1, total_pages: 1, total: 0 },
+        devicePagination: { limit: 20, page: 1, totalPages: 1, total: 0 },
         deviceFiltersAvailable: {
             deviceType: [],
             licenseId: [],

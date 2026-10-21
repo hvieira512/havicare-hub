@@ -40,10 +40,10 @@ final class RadarLayoutRepository
             ');
             $stmt->execute([
                 $imei,
-                $layout['room']['x_min_dm'],
-                $layout['room']['y_min_dm'],
-                $layout['room']['x_max_dm'],
-                $layout['room']['y_max_dm'],
+                $layout['room']['xMinDm'],
+                $layout['room']['yMinDm'],
+                $layout['room']['xMaxDm'],
+                $layout['room']['yMaxDm'],
                 $fetchedAt,
             ]);
 
@@ -61,10 +61,10 @@ final class RadarLayoutRepository
                     $area['key'],
                     $area['type'],
                     $area['name'],
-                    $area['x_min_dm'],
-                    $area['y_min_dm'],
-                    $area['x_max_dm'],
-                    $area['y_max_dm'],
+                    $area['xMinDm'],
+                    $area['yMinDm'],
+                    $area['xMaxDm'],
+                    $area['yMaxDm'],
                 ]);
             }
 
@@ -108,13 +108,13 @@ final class RadarLayoutRepository
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $layouts[(string)$row['imei']] = [
                 'room' => [
-                    'x_min_dm' => (int)$row['room_x_min_dm'],
-                    'y_min_dm' => (int)$row['room_y_min_dm'],
-                    'x_max_dm' => (int)$row['room_x_max_dm'],
-                    'y_max_dm' => (int)$row['room_y_max_dm'],
+                    'xMinDm' => (int)$row['room_x_min_dm'],
+                    'yMinDm' => (int)$row['room_y_min_dm'],
+                    'xMaxDm' => (int)$row['room_x_max_dm'],
+                    'yMaxDm' => (int)$row['room_y_max_dm'],
                 ],
                 'areas' => [],
-                'fetched_at' => (string)$row['fetched_at'],
+                'fetchedAt' => (string)$row['fetched_at'],
             ];
         }
 
@@ -133,10 +133,10 @@ final class RadarLayoutRepository
                 'key' => (int)$row['area_key'],
                 'type' => (int)$row['area_type'],
                 'name' => (string)$row['name'],
-                'x_min_dm' => (int)$row['x_min_dm'],
-                'y_min_dm' => (int)$row['y_min_dm'],
-                'x_max_dm' => (int)$row['x_max_dm'],
-                'y_max_dm' => (int)$row['y_max_dm'],
+                'xMinDm' => (int)$row['x_min_dm'],
+                'yMinDm' => (int)$row['y_min_dm'],
+                'xMaxDm' => (int)$row['x_max_dm'],
+                'yMaxDm' => (int)$row['y_max_dm'],
             ];
         }
 

@@ -30,6 +30,8 @@ class AuthService
      */
     public function login(array $payload, string $requestId = '', string $remoteAddress = ''): array
     {
+        // hitcare: a renovação chega em `refresh_token` porque o HubApiRepository a manda assim;
+        // passa a `refreshToken` quando ele mudar.
         $refreshToken = trim((string)($payload['refresh_token'] ?? ''));
         if ($refreshToken !== '') {
             // A renovação não passa pelo teto: não chama `password_verify`, e travá-la punia o
@@ -72,26 +74,13 @@ class AuthService
 
         Logger::channel('api')->info('API login accepted', [
             'request_id' => $requestId,
-            'username' => (string)$identity['username'],
-            'role' => (string)$identity['role'],
-            'license_id' => $identity['licenseId'],
+            'username' => $identity->username,
+            'role' => $identity->role,
+            'license_id' => $identity->licenseId,
             'auth_source' => 'db_user',
         ]);
 
-        return [
-            'status' => 'ok',
-            'token' => $this->tokens->issueTokenPair(
-                (string)$identity['username'],
-                (string)$identity['role'],
-                $this->tokenTtlSeconds,
-                $this->refreshTokenTtlSeconds,
-                $identity['userId'],
-                $identity['licenseId'],
-                $identity['licenseRefId'],
-                $identity['companyId'],
-                $identity['company'],
-            ),
-        ];
+        return ['status' => 'ok', 'token' => $this->issue($identity)];
     }
 
     /**
@@ -126,48 +115,30 @@ class AuthService
             return ApiError::invalidRefreshToken()->toArray();
         }
 
-        $token = $this->tokens->issueTokenPair(
-            (string)$identity['username'],
-            (string)$identity['role'],
-            $this->tokenTtlSeconds,
-            $this->refreshTokenTtlSeconds,
-            $identity['userId'],
-            $identity['licenseId'],
-            $identity['licenseRefId'],
-            $identity['companyId'],
-            $identity['company'],
-        );
-
         Logger::channel('api')->info('API token refreshed', [
             'request_id' => $requestId,
-            'role' => (string)($token['role'] ?? ''),
-            'license_id' => $token['license_id'] ?? null,
+            'role' => $identity->role,
+            'license_id' => $identity->licenseId,
         ]);
 
-        return [
-            'status' => 'ok',
-            'token' => $token,
-        ];
+        return ['status' => 'ok', 'token' => $this->issue($identity)];
+    }
+
+    /** @return array<string, mixed> */
+    private function issue(ApiAuthContext $identity): array
+    {
+        return $this->tokens->issueTokenPair($identity, $this->tokenTtlSeconds, $this->refreshTokenTtlSeconds);
     }
 
     /**
      * A identidade relê-se de `api_users`, e não do token: um utilizador desactivado ou com o papel
      * mudado deixa de renovar. Sem `userId`, segue o contexto que o token trazia.
      *
-     * @return array<string, mixed>|null
      */
-    private function identityForRefresh(ApiAuthContext $context): ?array
+    private function identityForRefresh(ApiAuthContext $context): ?ApiAuthContext
     {
         if ($context->userId === null || $context->userId <= 0) {
-            return [
-                'userId' => null,
-                'username' => $context->username,
-                'role' => $context->role,
-                'licenseId' => $context->licenseId,
-                'licenseRefId' => $context->licenseRefId,
-                'companyId' => $context->companyId,
-                'company' => $context->company,
-            ];
+            return $context;
         }
 
         $user = $this->db->apiUsers->findById($context->userId);
@@ -177,7 +148,7 @@ class AuthService
 
         $identity = $this->identityFromUserRow($user);
         // O papel a mudar obriga a reautenticar: um token não muda de privilégios por baixo.
-        if ($identity === null || $identity['role'] !== $context->role) {
+        if ($identity === null || $identity->role !== $context->role) {
             return null;
         }
 
@@ -223,22 +194,17 @@ class AuthService
             'license_id' => $licenseId,
         ]);
 
-        return [
-            'status' => 'ok',
-            'token' => $this->tokens->issueTokenPair(
-                $username,
-                ApiAuthContext::ROLE_LICENSE_CLIENT,
-                $this->tokenTtlSeconds,
-                $this->refreshTokenTtlSeconds,
-                // Sem `userId`: não há linha em `api_users` por trás deste token, e inventar
-                // uma referência fazia-o parecer uma conta que ninguém pode desactivar.
-                null,
-                $licenseId,
-                (int)$license['id'],
-                (int)$companyRow['id'],
-                $company,
-            ),
-        ];
+        // Sem `userId`: não há linha em `api_users` por trás deste token, e inventar uma referência
+        // fazia-o parecer uma conta que ninguém pode desactivar.
+        return ['status' => 'ok', 'token' => $this->issue(new ApiAuthContext(
+            null,
+            $username,
+            ApiAuthContext::ROLE_LICENSE_CLIENT,
+            $licenseId,
+            (int)$license['id'],
+            (int)$companyRow['id'],
+            $company,
+        ))];
     }
 
     /**
@@ -252,8 +218,7 @@ class AuthService
         return $this->referenceHash ??= password_hash('', PASSWORD_DEFAULT);
     }
 
-    /** @return array<string, mixed>|null */
-    private function identityForCredentials(string $username, string $password): ?array
+    private function identityForCredentials(string $username, string $password): ?ApiAuthContext
     {
         $user = $this->db->apiUsers->findByUsername($username);
         $storedHash = is_array($user) ? (string)($user['password_hash'] ?? '') : '';
@@ -274,9 +239,8 @@ class AuthService
      * O mesmo molde no login e na renovação, que têm de aceitar as mesmas contas.
      *
      * @param array<string, mixed> $user
-     * @return array<string, mixed>|null
      */
-    private function identityFromUserRow(array $user): ?array
+    private function identityFromUserRow(array $user): ?ApiAuthContext
     {
         $enabled = ((int)($user['enabled'] ?? 0)) === 1;
         $role = trim((string)($user['role'] ?? ''));
@@ -293,14 +257,14 @@ class AuthService
             return null;
         }
 
-        return [
-            'userId' => (int)($user['id'] ?? 0),
-            'username' => (string)($user['username'] ?? ''),
-            'role' => $role,
-            'licenseId' => $licenseId,
-            'licenseRefId' => $licenseRefId,
-            'companyId' => $companyId,
-            'company' => $company,
-        ];
+        return new ApiAuthContext(
+            (int)($user['id'] ?? 0),
+            (string)($user['username'] ?? ''),
+            $role,
+            $licenseId,
+            $licenseRefId,
+            $companyId,
+            $company,
+        );
     }
 }

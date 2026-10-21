@@ -19,10 +19,10 @@ const {
 const MODEL = {
     id: 42,
     supplier: "Wonlex",
-    supplier_id: 5,
-    internal_model: "MF91",
-    commercial_name: "MF91",
-    device_type: "bracelet",
+    supplierId: 5,
+    internalModel: "MF91",
+    commercialName: "MF91",
+    deviceType: "bracelet",
     image: "",
 };
 
@@ -78,7 +78,7 @@ test("changing the supplier reloads the sheet with the new template", async () =
     const els = setupDom();
     renderModelDetailInfo(MODEL);
     const urls = recordReads({
-        "/api/models/42": { data: { ...MODEL, supplier_id: 9, supplier: "4P Touch" } },
+        "/api/models/42": { data: { ...MODEL, supplierId: 9, supplier: "4P Touch" } },
     });
 
     els.modelDetailSupplierSelect.value = "4P Touch";

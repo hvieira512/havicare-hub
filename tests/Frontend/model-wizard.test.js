@@ -146,7 +146,7 @@ test("with both names typed, saves the type, the supplier and the template capab
     const post = sent.find((request) => request.url === "/api/models");
     assert.ok(post, "o assistente não gravou");
     const body = post.options.body;
-    assert.equal(body.get("supplier_id"), "3");
+    assert.equal(body.get("supplierId"), "3");
     assert.equal(body.get("deviceType"), "watch");
     assert.equal(body.get("commercialName"), "R03");
     assert.equal(body.get("internalModel"), "Y6S");

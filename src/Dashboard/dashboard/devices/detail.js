@@ -338,7 +338,7 @@ function renderClientPager(prefix, totalRows, totalPages) {
 
     const pagination = {
         total: totalRows,
-        total_pages: totalPages,
+        totalPages,
         page: state[`${prefix}Page`],
         limit: state[`${prefix}PageSize`],
     };

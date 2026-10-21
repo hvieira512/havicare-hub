@@ -300,7 +300,7 @@ async function saveCapabilities() {
     }
 
     const body = new FormData();
-    body.append("supplier_id", String(model.supplier_id));
+    body.append("supplierId", String(model.supplierId));
     body.append("internalModel", String(modelInternalName(model)));
     body.append("commercialName", String(modelCommercialName(model)));
     body.append("deviceType", String(modelDeviceType(model)));

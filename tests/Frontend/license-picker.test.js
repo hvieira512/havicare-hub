@@ -13,9 +13,9 @@ import {
  * nome dela em cada uma.
  */
 const ROWS = [
-    { id: 1, company_id: 2, company_name: "havicare", license_id: 1, name: "hc.dev" },
-    { id: 2, company_id: 2, company_name: "havicare", license_id: 2, name: "" },
-    { id: 3, company_id: 1, company_name: "hitcare", license_id: 1001, name: "gucc.dev" },
+    { id: 1, companyId: 2, companyName: "havicare", licenseId: 1, name: "hc.dev" },
+    { id: 2, companyId: 2, companyName: "havicare", licenseId: 2, name: "" },
+    { id: 3, companyId: 1, companyName: "hitcare", licenseId: 1001, name: "gucc.dev" },
 ];
 
 test("licences group under the company that owns them", () => {
@@ -57,8 +57,8 @@ test("it is single choice, and only the chosen one is marked", () => {
 test("two companies can share a licence number, and the choice tells them apart", () => {
     // `uq_licenses_company_license` é por empresa: o `license_id` sozinho não identifica.
     const shared = [
-        { company_name: "havicare", license_id: 1, name: "hc.dev" },
-        { company_name: "hitcare", license_id: 1, name: "gucc.dev" },
+        { companyName: "havicare", licenseId: 1, name: "hc.dev" },
+        { companyName: "hitcare", licenseId: 1, name: "gucc.dev" },
     ];
     const root = parseFragment(
         licensePickerHtml(licenseTree(shared), { company: "hitcare", licenseId: "1" }),

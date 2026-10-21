@@ -33,7 +33,7 @@ function denylistRow(entry) {
     const metaLine = meta === ""
         ? ""
         : html`<span class="d-block small text-secondary text-break">${meta}</span>`;
-    const who = [entry.created_by, entry.created_at ? ago(entry.created_at) : ""]
+    const who = [entry.createdBy, entry.createdAt ? ago(entry.createdAt) : ""]
         .filter(Boolean).join(" · ");
     const whoLine = who === ""
         ? ""

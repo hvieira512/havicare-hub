@@ -43,13 +43,13 @@ final class NotificationSchemas
             ],
             'DenylistEntry' => [
                 'type' => 'object',
-                'required' => ['identity', 'protocol', 'created_by', 'created_at'],
+                'required' => ['identity', 'protocol', 'createdBy', 'createdAt'],
                 'properties' => [
                     'identity' => ['type' => 'string', 'example' => '357000000000123'],
                     'protocol' => ['type' => 'string', 'example' => 'four-p-touch'],
                     'note' => ['type' => ['string', 'null']],
-                    'created_by' => ['type' => 'string', 'example' => 'admin'],
-                    'created_at' => ['type' => 'string', 'format' => 'date-time'],
+                    'createdBy' => ['type' => 'string', 'example' => 'admin'],
+                    'createdAt' => ['type' => 'string', 'format' => 'date-time'],
                 ],
             ],
             'DenylistListResponse' => CommonSchemas::collection('DenylistEntry', withColumns: true),

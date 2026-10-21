@@ -96,9 +96,9 @@ function rowActionsMenu(label, items) {
 
 /** O número da licença, quantos aparelhos a usam e, quando configurada, a cloud dos radares. */
 function licenseMetaHtml(license) {
-    const devices = Number(license.device_count);
-    const meta = `licença ${license.license_id} · ${devices} ${devices === 1 ? "aparelho" : "aparelhos"}`;
-    const cloud = Number(license.radar_cloud_configured || 0) > 0
+    const devices = Number(license.deviceCount);
+    const meta = `licença ${license.licenseId} · ${devices} ${devices === 1 ? "aparelho" : "aparelhos"}`;
+    const cloud = license.radarCloudConfigured
         ? html` · <span class="text-success">cloud dos radares ligada</span>`
         : "";
 
@@ -132,7 +132,7 @@ function licenseEditorRow(license, companyId) {
             <div class="d-flex align-items-end gap-2 flex-wrap w-100">
                 <div style="width:8rem">
                     <label class="section-label" for="licenseRowId">ID da licença</label>
-                    <input type="text" class="form-control form-control-sm tabular-nums" id="licenseRowId" data-field="licenseId" inputmode="numeric" value="${license?.license_id || ""}" placeholder="1001">
+                    <input type="text" class="form-control form-control-sm tabular-nums" id="licenseRowId" data-field="licenseId" inputmode="numeric" value="${license?.licenseId || ""}" placeholder="1001">
                 </div>
                 <div class="flex-grow-1" style="min-width:12rem">
                     <label class="section-label" for="licenseRowName">Nome</label>
@@ -182,7 +182,7 @@ function companyHeaderEditor(company) {
 
 function companyCard(company) {
     const owned = currentLicenses.filter(
-        (license) => String(license.company_id) === String(company.id),
+        (license) => String(license.companyId) === String(company.id),
     );
     const rows = owned
         .map((license) => {
@@ -255,7 +255,7 @@ async function saveCompanyRow(button) {
 export function licenseDeletePrompt(license, deviceCount) {
     const name = license.name ? ` — ${license.name}` : "";
     return {
-        title: `Apagar a licença ${license.license_id}${name}?`,
+        title: `Apagar a licença ${license.licenseId}${name}?`,
         text: deviceCount > 0
             ? `${deviceCount} ${deviceCount === 1 ? "dispositivo fica" : "dispositivos ficam"} com uma licença que já não existe.`
             : "Não há dispositivos a usá-la.",
@@ -289,7 +289,7 @@ async function deleteCompany(id) {
 
     const prompt = companyDeletePrompt(
         company,
-        currentLicenses.filter((license) => Number(license.company_id) === Number(id)).length,
+        currentLicenses.filter((license) => Number(license.companyId) === Number(id)).length,
         deviceCountForCompany(company.name),
     );
     const { isConfirmed } = await confirmDestructive(prompt.title, prompt.text);
@@ -377,7 +377,7 @@ async function checkRadarCredentialsRow(button) {
 async function forgetRadarCredentialsFor(licenseRefId) {
     const license = currentLicenses.find((row) => Number(row.id) === Number(licenseRefId));
     const { isConfirmed } = await confirmDestructive(
-        `Esquecer as credenciais da licença ${license?.license_id ?? licenseRefId}?`,
+        `Esquecer as credenciais da licença ${license?.licenseId ?? licenseRefId}?`,
         "Os radares desta licença deixam de sincronizar a planta até alguém as voltar a pôr.",
     );
     if (!isConfirmed) return;
@@ -395,7 +395,7 @@ async function deleteLicense(id) {
     const license = currentLicenses.find((row) => Number(row.id) === Number(id));
     if (!license) return;
 
-    const prompt = licenseDeletePrompt(license, Number(license.device_count));
+    const prompt = licenseDeletePrompt(license, Number(license.deviceCount));
     const { isConfirmed } = await confirmDestructive(prompt.title, prompt.text);
     if (!isConfirmed) return;
     const result = await apiDeleteLicense(id);

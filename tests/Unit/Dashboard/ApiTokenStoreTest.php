@@ -14,7 +14,7 @@ final class ApiTokenStoreTest extends TestCase
     public function testARefreshTokenIsNotAnAccessTokenAndIsConsumedOnce(): void
     {
         $store = new ApiTokenStore(new InMemoryRedisClient());
-        $pair = $store->issueTokenPair('admin', ApiAuthContext::ROLE_HUB_ADMIN, 60, 60);
+        $pair = $store->issueTokenPair(new ApiAuthContext(null, 'admin', ApiAuthContext::ROLE_HUB_ADMIN), 60, 60);
 
         self::assertSame('admin', $pair['username']);
         self::assertInstanceOf(ApiAuthContext::class, $store->context($pair['access_token']));

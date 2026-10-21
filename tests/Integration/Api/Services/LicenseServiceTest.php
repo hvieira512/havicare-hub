@@ -50,10 +50,10 @@ final class LicenseServiceTest extends MysqlDashboardTestCase
         );
 
         $rows = (new LicenseService($db))->list('limit=1000')['data'];
-        $configured = array_column($rows, 'radar_cloud_configured', 'license_id');
+        $configured = array_column($rows, 'radarCloudConfigured', 'licenseId');
 
-        self::assertSame(1, (int)$configured[2103]);
-        self::assertSame(0, (int)$configured[2104]);
+        self::assertTrue($configured[2103]);
+        self::assertFalse($configured[2104]);
     }
 
     /** Cada licença da listagem traz quantos aparelhos a usam. */
@@ -67,9 +67,9 @@ final class LicenseServiceTest extends MysqlDashboardTestCase
         $db->whitelist->register('351266770073677', '4P Touch', 'Y6M', 'watch', 2103, '', '', 'hitcare');
 
         $rows = (new LicenseService($db))->list('limit=1000')['data'];
-        $counts = array_column($rows, 'device_count', 'license_id');
+        $counts = array_column($rows, 'deviceCount', 'licenseId');
 
-        self::assertSame(2, (int)$counts[2103]);
-        self::assertSame(0, (int)$counts[2104]);
+        self::assertSame(2, $counts[2103]);
+        self::assertSame(0, $counts[2104]);
     }
 }

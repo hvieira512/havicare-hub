@@ -222,7 +222,7 @@ function sameAnswer(previous, value) {
 
 function modelCountFor(type) {
     return (state.deviceTypeSuppliersModels || []).filter(
-        (model) => (model.device_type || model.deviceType) === type,
+        (model) => model.deviceType === type,
     ).length;
 }
 
@@ -490,7 +490,7 @@ async function loadWizardGateways() {
         model: device.model || "",
         image: device.image || "",
         company: device.company || "",
-        licenseId: device.licenseId ?? device.license_id ?? "",
+        licenseId: device.licenseId ?? "",
     }));
 }
 

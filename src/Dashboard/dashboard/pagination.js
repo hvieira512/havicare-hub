@@ -49,7 +49,7 @@ export function resolvePaginationPage(event, pagination, actionPrefix) {
     }
 
     const currentPage = pagination?.page ?? 1;
-    const totalPages = pagination?.total_pages ?? 1;
+    const totalPages = pagination?.totalPages ?? 1;
 
     if (button.dataset.action === `${actionPrefix}Prev`) {
         return Math.max(1, currentPage - 1);

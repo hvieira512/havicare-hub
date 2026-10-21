@@ -16,7 +16,6 @@ use Hub\Api\Services\ModelService;
 use Hub\Api\Services\ProtocolService;
 use Hub\Api\Services\RadarCredentialsService;
 use Hub\Api\Services\RadarLayoutService;
-use Hub\Api\Services\SupplierService;
 
 /** Os serviços das rotas num objecto só, como o `ApiDataAccess` faz aos repositórios. */
 final class ApiServices
@@ -26,7 +25,6 @@ final class ApiServices
         public readonly DeviceService $devices,
         public readonly ModelService $models,
         public readonly CapabilityService $capabilities,
-        public readonly SupplierService $suppliers,
         public readonly ApiUserService $apiUsers,
         public readonly CompanyService $company,
         public readonly LicenseService $licenses,

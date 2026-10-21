@@ -75,7 +75,7 @@ export function radarCredentialsEditorRow(license) {
             <div class="d-flex align-items-center gap-2 mb-1">
                 <i class="fa-solid fa-satellite-dish text-secondary" aria-hidden="true"></i>
                 <span class="fw-semibold">Cloud dos radares</span>
-                <span class="small text-body-secondary">Qinglanst · licença ${license.license_id}</span>
+                <span class="small text-body-secondary">Qinglanst · licença ${license.licenseId}</span>
             </div>
             <p class="small text-body-secondary mb-3">Cada licença tem a sua conta. Uma conta de outra licença autentica à mesma e só depois dá estes radares por offline — por isso testa-se antes de gravar.</p>
             <div class="row g-3">

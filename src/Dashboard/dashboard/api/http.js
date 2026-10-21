@@ -46,7 +46,7 @@ const scheduleTokenRefresh = (delayOverrideMs = null) => {
         tokenRefreshTimer = null;
     }
 
-    const expiresAt = apiToken?.expires_at;
+    const expiresAt = apiToken?.expiresAt;
     const token = apiToken?.access_token || "";
     if (token === "" || typeof expiresAt !== "string" || expiresAt === "") {
         return;
@@ -169,7 +169,7 @@ const refreshAccessToken = async () => {
             // Repete abaixo enquanto o token de acesso actual continuar válido.
         }
 
-        const expiresAt = apiToken?.expires_at;
+        const expiresAt = apiToken?.expiresAt;
         const expiresAtMs = typeof expiresAt === "string" ? Date.parse(expiresAt) : Number.NaN;
         if (Number.isFinite(expiresAtMs) && expiresAtMs > Date.now()) {
             const retryDelay = Math.min(TOKEN_REFRESH_RETRY_MS, Math.max(1000, expiresAtMs - Date.now() - 5000));
@@ -203,7 +203,7 @@ export async function allPages(fetchPage, params = {}) {
         const response = await fetchPage({ ...params, page, limit: 200 });
         if (response?.error) return response;
         data.push(...(response.data || []));
-        if (page >= Number(response.pagination?.total_pages || 1)) return { data };
+        if (page >= Number(response.pagination?.totalPages || 1)) return { data };
     }
 }
 

@@ -5,30 +5,48 @@ declare(strict_types=1);
 namespace Tests\Integration\Dashboard;
 
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
+use Hub\Api\OpenApiSpec;
+use Hub\Api\Services\ApiUserService;
 use Hub\Api\Services\CompanyService;
+use Hub\Api\Services\DenylistService;
 use Hub\Api\Services\LicenseService;
 use Hub\Api\Services\ModelService;
-use Hub\Api\Services\SupplierService;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * As quatro listagens descrevem-se como a de utilizadores: `columns` diz o que se ordena e
+ * As listagens descrevem-se como a de utilizadores: `columns` diz o que se ordena e
  * filtra, `filters.counts` quantas linhas cada valor de escolha tem.
  */
 final class CollectionDescriptorApiTest extends MysqlDashboardTestCase
 {
-    /** @return iterable<string, array{0: callable(ApiDataAccess): array<string, mixed>}> */
+    /** @return iterable<string, array{0: callable(ApiDataAccess): array<string, mixed>, 1: string}> */
     public static function listings(): iterable
     {
-        yield 'models' => [static fn (ApiDataAccess $db): array => (new ModelService($db))->list('', '')];
-        yield 'companies' => [static fn (ApiDataAccess $db): array => (new CompanyService($db))->list()];
-        yield 'licenses' => [static fn (ApiDataAccess $db): array => (new LicenseService($db))->list()];
-        yield 'suppliers' => [static fn (ApiDataAccess $db): array => (new SupplierService($db))->list()];
+        yield 'models' => [static fn (ApiDataAccess $db): array => (new ModelService($db))->list('', ''), '/api/models'];
+        yield 'companies' => [static fn (ApiDataAccess $db): array => (new CompanyService($db))->list(), '/api/companies'];
+        yield 'licenses' => [static fn (ApiDataAccess $db): array => (new LicenseService($db))->list(), '/api/licenses'];
+        yield 'suppliers' => [static fn (ApiDataAccess $db): array => (new ModelService($db))->suppliers(''), '/api/suppliers'];
+        yield 'users' => [static fn (ApiDataAccess $db): array => (new ApiUserService($db))->list(), '/api/users'];
+        yield 'denylist' => [static fn (ApiDataAccess $db): array => (new DenylistService($db))->list(), '/api/denylist'];
+    }
+
+    /** Um filtro que o descritor anuncia e a especificação não documenta é um parâmetro que ninguém conhece. */
+    #[DataProvider('listings')]
+    public function testEveryFilterTheDescriptorAnnouncesIsDocumented(callable $list, string $path): void
+    {
+        $response = $list(ApiDataAccess::fromDatabase($this->createDashboardDatabase()));
+        $documented = array_column(OpenApiSpec::get()['paths'][$path]['get']['parameters'] ?? [], 'name');
+
+        foreach ($response['columns'] as $column) {
+            if ($column['filter'] !== null) {
+                self::assertContains($column['filter']['param'], $documented);
+            }
+        }
     }
 
     #[DataProvider('listings')]
-    public function testEveryListingCarriesItsColumnDescriptor(callable $list): void
+    public function testEveryListingCarriesItsColumnDescriptor(callable $list, string $path): void
     {
         $response = $list(ApiDataAccess::fromDatabase($this->createDashboardDatabase()));
 
@@ -43,7 +61,7 @@ final class CollectionDescriptorApiTest extends MysqlDashboardTestCase
     }
 
     #[DataProvider('listings')]
-    public function testEveryListingCountsTheValuesOfItsChoiceFilters(callable $list): void
+    public function testEveryListingCountsTheValuesOfItsChoiceFilters(callable $list, string $path): void
     {
         $response = $list(ApiDataAccess::fromDatabase($this->createDashboardDatabase()));
 
@@ -61,7 +79,7 @@ final class CollectionDescriptorApiTest extends MysqlDashboardTestCase
         self::assertNotSame([], $suppliers);
         self::assertSame(['Wonlex'], array_values(array_unique($suppliers)));
         self::assertSame(
-            ['id', 'supplier_id', 'supplier', 'internalModel', 'commercialName', 'deviceType', 'protocol', 'image', 'capabilities'],
+            ['id', 'supplierId', 'supplier', 'internalModel', 'commercialName', 'deviceType', 'protocol', 'image', 'capabilities'],
             array_keys($response['data'][0]),
         );
     }
@@ -77,8 +95,7 @@ final class CollectionDescriptorApiTest extends MysqlDashboardTestCase
         self::assertContains('HW20PRO', $names);
     }
 
-    /** O `companyId` é o nome antigo do parâmetro das licenças e continua a estreitar. */
-    public function testTheLegacyCompanyIdParameterStillNarrowsTheLicenses(): void
+    public function testTheCompanyIdParameterNarrowsTheLicenses(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $license = $db->licenses->all()[0] ?? null;
@@ -91,7 +108,7 @@ final class CollectionDescriptorApiTest extends MysqlDashboardTestCase
         self::assertSame(
             [$companyId],
             array_values(array_unique(array_map(
-                static fn (array $row): int => (int)$row['company_id'],
+                static fn (array $row): int => $row['companyId'],
                 $response['data'],
             ))),
         );

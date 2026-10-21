@@ -6,15 +6,13 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionPresenter;
-use Hub\Api\Http\CompanyColumns;
+use Hub\Api\Http\CollectionColumns;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\CompanyWriteRequest;
 use Hub\Api\Request\RequestBinder;
 
 class CompanyService
 {
-    private const DEFAULT_COLLECTION_LIMIT = 20;
-
     private CollectionPresenter $presenter;
     private RequestBinder $binder;
 
@@ -28,10 +26,20 @@ class CompanyService
     public function list(string $query = ''): array
     {
         return $this->presenter->present(
-            $this->db->companies->all(),
-            CompanyColumns::definition(),
-            $this->presenter->params($query),
-            self::DEFAULT_COLLECTION_LIMIT,
+            array_map(static fn (array $row): array => [
+                'id' => (int)$row['id'],
+                'name' => (string)$row['name'],
+                'licenseCount' => (int)$row['license_count'],
+                'createdAt' => (string)$row['created_at'],
+                'updatedAt' => (string)$row['updated_at'],
+            ], $this->db->companies->all()),
+            new CollectionColumns(
+                sortable: ['name', 'licenseCount'],
+                writable: CompanyWriteRequest::class,
+                textFilters: ['name' => 'name'],
+                extra: ['id'],
+            ),
+            $query,
         );
     }
 

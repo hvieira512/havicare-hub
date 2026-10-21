@@ -68,7 +68,7 @@ export function licenseDisplayLabel(
 
     const match = (licenses || []).find(
         (item) =>
-            String(item.license_id || item.licenseId || "") === normalized,
+            String(item.licenseId ?? "") === normalized,
     );
     if (!match) {
         return normalized;
@@ -94,15 +94,13 @@ export function supplierProtocol(supplier, models = [], model = "") {
 
 export function modelInternalName(model) {
     return String(
-        model?.internal_model || model?.internalModel || model?.model || "",
+        model?.internalModel || model?.model || "",
     );
 }
 
 export function modelCommercialName(model) {
     return String(
-        model?.commercial_name ||
         model?.commercialName ||
-        model?.internal_model ||
         model?.internalModel ||
         model?.model ||
         "",
@@ -111,7 +109,7 @@ export function modelCommercialName(model) {
 
 export function modelDeviceType(model) {
     return normalizeDeviceType(
-        model?.device_type || model?.deviceType || "watch",
+        model?.deviceType || "watch",
     );
 }
 

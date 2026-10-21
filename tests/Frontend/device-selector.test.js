@@ -21,7 +21,7 @@ describe("search", () => {
     const ui = { deviceSelectorModal: { show() {} } };
 
     beforeEach(() => {
-        globalThis.fetch = async () => Response.json({ data: [], pagination: { page: 1, total_pages: 1, total: 0, limit: 20 } });
+        globalThis.fetch = async () => Response.json({ data: [], pagination: { page: 1, totalPages: 1, total: 0, limit: 20 } });
         initDeviceList({ els, ui, onChange: () => {} });
         // Licenças já carregadas: a promessa partilhada pode ter ficado pendurada noutro bloco.
         state.licenses = [{ id: 1 }];
@@ -159,7 +159,7 @@ describe("failure to load", () => {
 
         state.summary = {
             devices: [],
-            devicePagination: { limit: 20, page: 1, total_pages: 1, total: 0 },
+            devicePagination: { limit: 20, page: 1, totalPages: 1, total: 0 },
             deviceFiltersAvailable: { deviceType: [], licenseId: [], company: [], supplier: [], model: [] },
             deviceFilterCounts: { deviceType: [], supplier: [], model: [], license: { companies: [], none: 0 } },
             deviceTotals: { total: 0, online: 0 },

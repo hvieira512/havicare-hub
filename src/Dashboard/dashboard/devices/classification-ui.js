@@ -14,10 +14,10 @@ import { modelPreviewHtml } from "../components/model-image.js";
 export function licenseTree(licenses) {
     const groups = new Map();
     for (const license of licenses) {
-        const company = String(license.company_name ?? license.companyName ?? "");
+        const company = String(license.companyName ?? "");
         if (!groups.has(company)) groups.set(company, []);
         groups.get(company).push({
-            licenseId: String(license.license_id ?? license.licenseId ?? ""),
+            licenseId: String(license.licenseId ?? ""),
             name: String(license.name || ""),
         });
     }

@@ -13,13 +13,13 @@ const { initCreateWizard, openWizard } =
  */
 
 const MODELS = [
-    { supplier: "4P Touch", internal_model: "D41", commercial_name: "D41", device_type: "watch" },
-    { supplier: "Wonlex", internal_model: "KT26", commercial_name: "KT26", device_type: "watch" },
-    { supplier: "MONIT", internal_model: "MECS-PRO", commercial_name: "MECS Pro", device_type: "diaper_sensor" },
+    { supplier: "4P Touch", internalModel: "D41", commercialName: "D41", deviceType: "watch" },
+    { supplier: "Wonlex", internalModel: "KT26", commercialName: "KT26", deviceType: "watch" },
+    { supplier: "MONIT", internalModel: "MECS-PRO", commercialName: "MECS Pro", deviceType: "diaper_sensor" },
 ];
 
 const LICENSES = [
-    { company_name: "hitcare", license_id: "1001", name: "gucc.dev" },
+    { companyName: "hitcare", licenseId: "1001", name: "gucc.dev" },
 ];
 
 const IDS = [
@@ -165,7 +165,7 @@ test("a gateway of the same licence appears as a card to choose", () => {
 
 test("the supplier and model names reach the picture as text, not markup", () => {
     state.deviceTypeSuppliersModels = [
-        { supplier: "Evil<b>Co</b>", internal_model: "M<b>1</b>", commercial_name: "M1", device_type: "watch" },
+        { supplier: "Evil<b>Co</b>", internalModel: "M<b>1</b>", commercialName: "M1", deviceType: "watch" },
     ];
     pick("[data-wizard-type=\"watch\"]");
     [...root.querySelectorAll("#wizardAsk [data-wizard-model]")][0].click();
@@ -176,7 +176,7 @@ test("the supplier and model names reach the picture as text, not markup", () =>
 
 test("a Tuya bracelet asks for its Tuya id and offers no gateways", () => {
     state.deviceTypeSuppliersModels = [
-        { supplier: "PST", internal_model: "SOS-WIFI", commercial_name: "SOS Wi-Fi", device_type: "bracelet", protocol: "tuya-cloud" },
+        { supplier: "PST", internalModel: "SOS-WIFI", commercialName: "SOS Wi-Fi", deviceType: "bracelet", protocol: "tuya-cloud" },
     ];
     state.wizardGateways = [];
     pick("[data-wizard-type=\"bracelet\"]");

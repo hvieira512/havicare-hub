@@ -46,7 +46,7 @@ class RadarLayoutService
             'configured' => true,
             'room' => $layout['room'],
             'areas' => $layout['areas'],
-            'fetchedAt' => $layout['fetched_at'],
+            'fetchedAt' => $layout['fetchedAt'],
         ]];
     }
 

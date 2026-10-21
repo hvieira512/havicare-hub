@@ -18,7 +18,7 @@ const detailFor = (imei) => ({
 
 const pageResponse = (page) => ({
     data: [{ imei: `dev-${page}`, deviceType: "watch" }],
-    pagination: { page, total_pages: 9, total: 180, limit: 20 },
+    pagination: { page, totalPages: 9, total: 180, limit: 20 },
 });
 
 const streamRequests = (fetches) =>

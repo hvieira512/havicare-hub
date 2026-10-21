@@ -24,7 +24,7 @@ const past = () => new Date(Date.now() - 1_000).toISOString();
 const adminToken = (over = {}) => ({
     role: "hub_admin",
     access_token: "a",
-    expires_at: future(),
+    expiresAt: future(),
     ...over,
 });
 
@@ -37,12 +37,12 @@ test("validAdminToken refuses a non-admin role", () => {
 });
 
 test("validAdminToken refuses an expired access token", () => {
-    assert.equal(validAdminToken(adminToken({ expires_at: past() })), false);
+    assert.equal(validAdminToken(adminToken({ expiresAt: past() })), false);
 });
 
 test("validAdminToken refuses missing or garbage tokens", () => {
     assert.equal(validAdminToken(adminToken({ access_token: "" })), false);
-    assert.equal(validAdminToken(adminToken({ expires_at: "" })), false);
+    assert.equal(validAdminToken(adminToken({ expiresAt: "" })), false);
     assert.equal(validAdminToken(null), false);
     assert.equal(validAdminToken("não é objeto"), false);
 });
@@ -218,7 +218,7 @@ test("without an eye on the page, binding the behaviour does not break", () => {
 test("a non-admin login revokes the session cookie it was just given", async () => {
     installDom();
     globalThis.Swal ??= { fire: async () => ({}) };
-    const token = { role: "viewer", access_token: "viewer-token", expires_at: future() };
+    const token = { role: "viewer", access_token: "viewer-token", expiresAt: future() };
     const calls = captureFetch((url) => (url === "/api/auth/logout"
         ? sessionResponse(200, { status: "ok" })
         : sessionResponse(200, { status: "ok", token })));

@@ -62,7 +62,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
 
         $layout = $this->layouts->findByImei('594B3CCBA56B');
         self::assertNotNull($layout);
-        self::assertSame(-30, $layout['room']['x_min_dm']);
+        self::assertSame(-30, $layout['room']['xMinDm']);
         self::assertSame(['CAMA 1', 'Porta'], array_column($layout['areas'], 'name'));
     }
 
@@ -101,7 +101,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
 
         $layout = $this->layouts->findByImei('594B3CCBA56B');
         self::assertNotNull($layout);
-        self::assertSame('2026-09-01 10:00:00', $layout['fetched_at']);
+        self::assertSame('2026-09-01 10:00:00', $layout['fetchedAt']);
     }
 
     /** Um radar que rebenta não leva os seguintes atrás: a licença é percorrida até ao fim. */
@@ -273,7 +273,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
     private function storedLayout(): array
     {
         return [
-            'room' => ['x_min_dm' => -1, 'y_min_dm' => -1, 'x_max_dm' => 1, 'y_max_dm' => 1],
+            'room' => ['xMinDm' => -1, 'yMinDm' => -1, 'xMaxDm' => 1, 'yMaxDm' => 1],
             'areas' => [],
             'skipped' => [],
         ];

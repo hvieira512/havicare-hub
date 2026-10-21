@@ -416,12 +416,16 @@ já tinha gerado.
 
 ## 4. Formas de resposta
 
+Os nomes de campo são camelCase, nas respostas e nos corpos. As exceções são
+chaves que são valores — capacidades, configurações — e os quatro campos do
+token que o hitCare lê (ver o [Pendente do hitCare](08-contrato-mqtt.md#pendente-do-hitcare)).
+
 ### Coleções
 
 ```json
 {
   "data": [ … ],
-  "pagination": { "limit": 20, "page": 1, "total_pages": 5, "total": 87 },
+  "pagination": { "limit": 20, "page": 1, "totalPages": 5, "total": 87 },
   "filters": { "applied": { … }, "available": { … }, "counts": { … } }
 }
 ```
@@ -548,7 +552,7 @@ Os corpos de escrita são objetos com regras — seis classes em
 
 ```mermaid
 flowchart TB
-  A["Corpo JSON"] --> B["Chaves canónicas<br/><small>license_ref_id → licenseRefId</small>"]
+  A["Corpo JSON"] --> B["Chaves canónicas<br/><small>capabilities[] → capabilities</small>"]
   B --> C["Construir por reflexão<br/><small>argumentos por nome</small>"]
   C --> D{"Tipos<br/>compatíveis?"}
   D -->|não| E["invalid_request"]

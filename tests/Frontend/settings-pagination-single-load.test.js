@@ -20,7 +20,7 @@ function mountPager(prefix) {
 /** O ouvinte está no contentor e o clique num número borbulha até ele: resolve-se uma vez. */
 test("a click on the settings pager requests a single page", () => {
     const { root, controls } = mountPager("settingsApiUsersPagination");
-    const pagination = { page: 1, total_pages: 4, total: 40, limit: 10 };
+    const pagination = { page: 1, totalPages: 4, total: 40, limit: 10 };
     state.settingsModal.apiUsersPagination = pagination;
 
     renderPagination({

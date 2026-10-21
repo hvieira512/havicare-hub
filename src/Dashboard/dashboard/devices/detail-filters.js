@@ -361,7 +361,7 @@ function paginateDetailPanel(event, { belongsToPanel, pageSize, page, actionPref
     const more = event.target?.closest?.(`[data-action="${actionPrefix}More"]`);
     const nextPage = more
         ? Math.min(totalPages, page + 1)
-        : resolvePaginationPage(event, { page, total_pages: totalPages }, actionPrefix);
+        : resolvePaginationPage(event, { page, totalPages }, actionPrefix);
     if (nextPage === null) return;
 
     setPage(nextPage, totalPages);

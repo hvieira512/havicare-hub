@@ -142,7 +142,7 @@ class DeviceService
             'pagination' => [
                 'limit' => $limit,
                 'page' => min(max(1, $page), $totalPages),
-                'total_pages' => $totalPages,
+                'totalPages' => $totalPages,
                 'total' => (int)$result['total'],
             ],
             'filters' => [

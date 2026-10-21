@@ -6,15 +6,13 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionPresenter;
-use Hub\Api\Http\DenylistColumns;
+use Hub\Api\Http\CollectionColumns;
 use Hub\Api\Request\DenylistBlockRequest;
 use Hub\Api\Request\RequestBinder;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 
 final class DenylistService
 {
-    private const DEFAULT_COLLECTION_LIMIT = 20;
-
     private CollectionPresenter $presenter;
 
     public function __construct(private ApiDataAccess $db)
@@ -26,10 +24,20 @@ final class DenylistService
     public function list(string $query = ''): array
     {
         return $this->presenter->present(
-            $this->db->denylist->all(),
-            DenylistColumns::definition(),
-            $this->presenter->params($query),
-            self::DEFAULT_COLLECTION_LIMIT,
+            array_map(static fn (array $row): array => [
+                'identity' => (string)$row['identity'],
+                'protocol' => (string)$row['protocol'],
+                'note' => $row['note'],
+                'createdBy' => (string)$row['created_by'],
+                'createdAt' => (string)$row['created_at'],
+            ], $this->db->denylist->all()),
+            // Sem escrita: um bloqueio cria-se e remove-se inteiro, e não se edita no sítio.
+            new CollectionColumns(
+                sortable: ['identity', 'protocol', 'createdAt'],
+                textFilters: ['identity' => ['identity', 'note']],
+                extra: ['note', 'createdBy'],
+            ),
+            $query,
         );
     }
 

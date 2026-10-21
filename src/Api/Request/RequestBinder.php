@@ -158,8 +158,7 @@ final class RequestBinder
     }
 
     /**
-     * Aceita `license_ref_id` como `licenseRefId` e `capabilities[]` como `capabilities`; o
-     * camelCase ganha quando vêm os dois.
+     * O multipart manda um array como `capabilities[]`.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
@@ -168,15 +167,7 @@ final class RequestBinder
     {
         $canonical = [];
         foreach ($payload as $key => $value) {
-            $key = (string)$key;
-            $name = str_ends_with($key, '[]') ? substr($key, 0, -2) : $key;
-            if (str_contains($name, '_')) {
-                $name = lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $name))));
-            }
-            if ($name !== $key && array_key_exists($name, $payload)) {
-                continue;
-            }
-            $canonical[$name] = $value;
+            $canonical[str_ends_with((string)$key, '[]') ? substr((string)$key, 0, -2) : (string)$key] = $value;
         }
 
         return $canonical;

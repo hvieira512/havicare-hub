@@ -32,7 +32,7 @@ const respondWith = (perUrl) => {
 
 const emptyListing = () => jsonResponse(200, {
     data: [],
-    pagination: { page: 1, total_pages: 1, total: 0, limit: 20 },
+    pagination: { page: 1, totalPages: 1, total: 0, limit: 20 },
 });
 
 beforeEach(() => {

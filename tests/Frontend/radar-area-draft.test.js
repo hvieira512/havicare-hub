@@ -5,7 +5,6 @@ import {
     addArea,
     areaStatus,
     areaWarnings,
-    areasFromLayout,
     draftItems,
     firstFreeKey,
     moveArea,
@@ -17,16 +16,6 @@ const ROOM = { xMinDm: -30, yMinDm: -7, xMaxDm: 19, yMaxDm: 18 };
 const area = (key, type, name, xMinDm, yMinDm, xMaxDm, yMaxDm) => ({ key, type, name, xMinDm, yMinDm, xMaxDm, yMaxDm });
 const BED = area(0, 5, "Cama", -4, -6, 6, 13);
 const DOOR = area(1, 4, "Porta", 17, 15, 20, 18);
-
-test("the stored layout converts to the contract shape", () => {
-    const { room, areas } = areasFromLayout({
-        room: { x_min_dm: -30, y_min_dm: -7, x_max_dm: 19, y_max_dm: 18 },
-        areas: [{ key: 0, type: 5, name: "Cama", x_min_dm: -4, y_min_dm: -6, x_max_dm: 6, y_max_dm: 13 }],
-    });
-
-    assert.deepEqual(room, ROOM);
-    assert.deepEqual(areas, [BED]);
-});
 
 test("a new area takes the first free key from 0 to 15", () => {
     assert.equal(firstFreeKey([BED, area(3, 1, "Mesa", 0, 0, 5, 5)]), 1);

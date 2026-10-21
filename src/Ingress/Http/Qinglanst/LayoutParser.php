@@ -13,7 +13,7 @@ final class LayoutParser
     /**
      * @param array<string, mixed> $data o `data` da resposta do fabricante
      * @return array{
-     *     room: array{x_min_dm: int, y_min_dm: int, x_max_dm: int, y_max_dm: int},
+     *     room: array{xMinDm: int, yMinDm: int, xMaxDm: int, yMaxDm: int},
      *     areas: list<array<string, int|string>>,
      *     skipped: array<int, string>
      * }|null
@@ -87,7 +87,7 @@ final class LayoutParser
      * independentemente de quantos pontos as descrevam.
      *
      * @param list<int> $points
-     * @return array{x_min_dm: int, y_min_dm: int, x_max_dm: int, y_max_dm: int}|null
+     * @return array{xMinDm: int, yMinDm: int, xMaxDm: int, yMaxDm: int}|null
      */
     private function box(array $points): ?array
     {
@@ -111,10 +111,10 @@ final class LayoutParser
         $ys = array_keys($ys);
 
         return [
-            'x_min_dm' => min($xs),
-            'y_min_dm' => min($ys),
-            'x_max_dm' => max($xs),
-            'y_max_dm' => max($ys),
+            'xMinDm' => min($xs),
+            'yMinDm' => min($ys),
+            'xMaxDm' => max($xs),
+            'yMaxDm' => max($ys),
         ];
     }
 

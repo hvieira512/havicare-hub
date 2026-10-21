@@ -17,7 +17,7 @@ const gatewaysOfBothLicenses = {
         { imei: "gw-l1", deviceType: "gateway", company: "havicare", licenseId: "1" },
         { imei: "gw-l2", deviceType: "gateway", company: "havicare", licenseId: "2" },
     ],
-    pagination: { page: 1, total_pages: 1, total: 2, limit: 500 },
+    pagination: { page: 1, totalPages: 1, total: 2, limit: 500 },
 };
 
 beforeEach(() => {

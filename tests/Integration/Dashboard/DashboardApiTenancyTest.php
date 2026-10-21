@@ -100,7 +100,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
         self::assertSame(200, $login->getStatusCode(), (string)$login->getBody());
         $payload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
         self::assertSame('license_client', $payload['token']['role'] ?? null);
-        self::assertSame(1001, $payload['token']['license_id'] ?? null);
+        self::assertSame(1001, $payload['token']['licenseId'] ?? null);
         $token = (string)($payload['token']['access_token'] ?? '');
 
         $response = $server(new ServerRequest(
@@ -182,10 +182,10 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
 
         // E o token emitido a partir disso continua a dizer o mesmo.
         $admin = $this->loginPayload($server, 'admin', 'secret');
-        self::assertArrayHasKey('license_id', $admin['token']);
-        self::assertNull($admin['token']['license_id']);
+        self::assertArrayHasKey('licenseId', $admin['token']);
+        self::assertNull($admin['token']['licenseId']);
         $tenant = $this->loginPayload($server, 'tenant', 'tenant-secret');
-        self::assertSame(1001, $tenant['token']['license_id']);
+        self::assertSame(1001, $tenant['token']['licenseId']);
     }
 
     public function testDeviceWithoutALicenseIsInvisibleToATenantClient(): void
