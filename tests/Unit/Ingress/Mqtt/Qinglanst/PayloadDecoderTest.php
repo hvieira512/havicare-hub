@@ -101,6 +101,14 @@ final class PayloadDecoderTest extends TestCase
         self::assertSame('unknown', $payload['people'][0]['last_event']);
     }
 
+    /** Cada pessoa ocupa 16 bytes: um comprimento que não seja múltiplo de 16 não se lê. */
+    public function testAPositionWithATruncatedPersonIsNotDecoded(): void
+    {
+        $payload = (new PayloadDecoder())->decode('position', base64_encode(str_repeat("\x01", 20)), 'radar-uid-1');
+
+        self::assertNull($payload);
+    }
+
     /**
      * @param list<int> $bytes
      */
