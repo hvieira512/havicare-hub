@@ -63,6 +63,25 @@ final class DashboardStoreTest extends TestCase
         self::assertSame('failed', $store->commands('861265061009822')[0]['status'] ?? null);
     }
 
+    /** O motivo do fim substitui o de uma tentativa anterior, também no `lastError`. */
+    public function testAnExpiredCommandReplacesThePreviousReason(): void
+    {
+        $store = new DeviceStore(new InMemoryRedisClient());
+        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+        $store->recordCommand('861265061009822', 'cmd-1', [
+            'status' => 'waiting',
+            'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 7200),
+            'error' => 'delivery_failed',
+            'lastError' => 'delivery_failed',
+        ]);
+
+        $store->expireWaitingCommands(3600);
+
+        $command = $store->commands('861265061009822')[0];
+        self::assertSame('response_timeout', $command['error'] ?? null);
+        self::assertSame('response_timeout', $command['lastError'] ?? null);
+    }
+
     public function testNonRetryableQueuedCommandEventuallyFails(): void
     {
         $redis = new InMemoryRedisClient();

@@ -384,11 +384,13 @@ final class DeviceCommandStore
                 }
                 $startedAt = $this->commandStartedAt($command);
                 if ($startedAt > 0 && $startedAt <= $cutoff) {
+                    // Nunca enviado quer dizer que o dispositivo não nos deve nada: só um
+                    // comando que saiu de facto é que esgotou a espera.
+                    $error = $status === 'waiting' ? 'response_timeout' : 'delivery_failed';
                     $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
-                        // Nunca enviado quer dizer que o dispositivo não nos deve nada: só um
-                        // comando que saiu de facto é que esgotou a espera.
                         'status' => 'failed',
-                        'error' => $status === 'waiting' ? 'response_timeout' : 'delivery_failed',
+                        'error' => $error,
+                        'lastError' => $error,
                     ]));
                 }
             }
