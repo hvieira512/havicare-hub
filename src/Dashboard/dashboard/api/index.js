@@ -5,8 +5,6 @@ import { formRequest, requestJson } from "./http.js";
  * no `http.js`, e é o único módulo deste directório com lógica.
  */
 
-export { authHeaders, formRequest, getDashboardApiToken, requestJson } from "./http.js";
-
 const id = encodeURIComponent;
 
 /* ---------- dispositivos ---------- */

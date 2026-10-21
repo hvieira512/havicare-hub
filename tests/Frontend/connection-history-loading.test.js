@@ -37,14 +37,15 @@ test("enquanto o histórico não chega, a secção das ligações não diz «sem
 
     state.selectedDetail.recent = {
         telemetry: [],
-        events: [{ payload: { type: "device.connected", occurredAt: new Date().toISOString() } }],
+        events: [],
+        connections: [{ type: "device.connected", occurredAt: new Date().toISOString() }],
         commands: [],
     };
     renderSelection();
     assert.equal(section.classList.contains("d-none"), false);
 });
 
-test("a faixa lê as ligações da lista própria, e ainda as antigas que ficaram nos eventos", () => {
+test("a faixa lê as ligações da lista própria", () => {
     const els = detailEls();
     const section = connectionSection(els);
     initDeviceDetailView({ els });
@@ -53,7 +54,7 @@ test("a faixa lê as ligações da lista própria, e ainda as antigas que ficara
 
     state.selectedDetail.recent = {
         telemetry: [],
-        events: [{ payload: { type: "device.connected", occurredAt: at(5) } }],
+        events: [],
         connections: [
             { type: "device.connected", occurredAt: at(1) },
             { type: "device.disconnected", occurredAt: at(2) },

@@ -19,7 +19,6 @@ function scheduleSelectionRender() {
 }
 let abortController = null;
 let currentImei = "";
-let streamLive = false;
 let reconnectTimer = null;
 let reconnectAttempt = 0;
 let connectGeneration = 0;
@@ -28,14 +27,6 @@ let connectGeneration = 0;
 // segundo por cada dashboard aberta.
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30000;
-
-/**
- * Se o stream está a entregar. É o único caminho por onde o `recent` chega -- o
- * `GET /api/devices/{imei}` não devolve telemetria, eventos nem comandos.
- */
-export function isDeviceStreamLive() {
-    return streamLive;
-}
 
 /** Se já há stream aberto ou a abrir para este dispositivo. */
 export function isDeviceStreamFor(imei) {
@@ -117,7 +108,6 @@ async function openStream(imei, generation) {
             return;
         }
 
-        streamLive = true;
         await readFrames(response.body, generation, imei);
     } catch {
         // Um `abort()` nosso não é falha: foi o `closeDeviceStream` a fechar de propósito.
@@ -127,7 +117,6 @@ async function openStream(imei, generation) {
     }
 
     if (generation === connectGeneration && currentImei === imei) {
-        streamLive = false;
         scheduleReconnect();
     }
 }
@@ -171,11 +160,8 @@ function dispatchFrame(frame) {
         }
     }
 
-    if (data.length === 0) {
-        // Só keep-alive: prova a ligação e mais nada.
-        streamLive = true;
-        return;
-    }
+    // Só keep-alive.
+    if (data.length === 0) return;
 
     handleStreamUpdate({ type, data: data.join("\n") });
 }
@@ -187,7 +173,6 @@ export function disconnectDeviceStream() {
 }
 
 function closeDeviceStream() {
-    streamLive = false;
     if (reconnectTimer !== null) {
         window.clearTimeout(reconnectTimer);
         reconnectTimer = null;
@@ -228,7 +213,6 @@ function scheduleReconnect() {
  * que aceita e fecha logo também devolve 200.
  */
 function markStreamServed() {
-    streamLive = true;
     reconnectAttempt = 0;
 }
 

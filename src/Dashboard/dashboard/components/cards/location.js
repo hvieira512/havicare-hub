@@ -4,16 +4,8 @@ import { joinMarkup } from "./shared.js";
 
 /** Os cartões de localização: coordenadas, tipo de fix, precisão e a evidência rádio. */
 
-/**
- * Lê o `lat`/`lon` e não o `hasCoordinates`, que falta nos eventos antigos do Redis. O par
- * 0,0 é como os protocolos dizem "sem fixo".
- */
 export function locationCoordinates(data) {
-    const lat = Number(data?.lat);
-    const lon = Number(data?.lon);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-    if (lat === 0 && lon === 0) return null;
-    return { lat, lon };
+    return data?.hasCoordinates === true ? { lat: Number(data.lat), lon: Number(data.lon) } : null;
 }
 
 /**

@@ -107,7 +107,6 @@ function activityRow({
     badge = "",
     tone = "",
     name,
-    nameTitle = "",
     sub = "",
     subTitle = "",
     value = "",
@@ -159,7 +158,7 @@ function activityRow({
         </td>
         <td class="fw-medium">
             <span class="telemetry-row-stack d-flex flex-column justify-content-center min-w-0">
-                <span class="d-block text-truncate" title="${nameTitle || name}">${name}</span>
+                <span class="d-block text-truncate" title="${name}">${name}</span>
                 ${raw(subLine)}
             </span>
         </td>

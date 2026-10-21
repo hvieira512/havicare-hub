@@ -1,7 +1,6 @@
 import { html } from "../html.js";
 import {
     companyLabel,
-    deviceTypeLabel,
     deviceTypeOptions,
     modelCommercialName,
     modelInternalName,
@@ -285,5 +284,3 @@ export function supplierCardsHtml({ suppliers, attrsFor, selected = "", countFor
         }),
     );
 }
-
-export { deviceTypeLabel };

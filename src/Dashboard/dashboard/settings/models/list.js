@@ -15,7 +15,7 @@ import {
 } from "../../domain.js";
 import { setSettingsNavCount } from "../shell.js";
 import { resetModelWizard } from "./form.js";
-import { getSettingsModelsRuntime, modelsCarousel } from "./shell.js";
+import { getSettingsModelsRuntime, isModelListShown, showModelsPane } from "./shell.js";
 
 /**
  * O catálogo: um nível por tipo de dispositivo, e o modelo como folha. O fornecedor é um dado
@@ -200,20 +200,11 @@ function handleModelsListSearchInput() {
 }
 
 /**
- * Volta ao primeiro slide, a lista, e só a vai buscar outra vez se quem mudou o que a árvore
- * mostra baixou o `sectionLoaded.models`.
+ * Volta à lista, e só a vai buscar outra vez se quem mudou o que a árvore mostra baixou o
+ * `sectionLoaded.models`.
  */
 function backToModelList() {
-    const carousel = state.settingsModal.modelsCarousel;
-    if (!carousel) return;
-
-    // Já na lista não há nada a fazer: o rasto e o carrossel já estão onde deviam.
-    if (
-        carousel._element.querySelector(".carousel-item.active") ===
-        carousel._element.firstElementChild?.firstElementChild
-    ) {
-        return;
-    }
+    if (isModelListShown()) return;
 
     showModelListSlide();
     if (state.settingsModal.sectionLoaded.models) {
@@ -241,14 +232,14 @@ function showModelListSlide() {
     els.settingsCloseBtn?.classList.remove("d-none");
     els.modelDetailActionBar?.classList.replace("d-flex", "d-none");
 
-    modelsCarousel()?.to(0);
+    showModelsPane(0);
 
     state.settingsModal.currentCapabilitiesModel = null;
     state.settingsModal.capabilityModelTemplateKeys = [];
 }
 
 /**
- * O rasto e o slide do assistente de um modelo novo. O «Fechar» do rodapé do modal sai:
+ * O rasto e o painel do assistente de um modelo novo. O «Fechar» do rodapé do modal sai:
  * enquanto há formulário por gravar, o rodapé é o do assistente.
  */
 function showNewModelSlide() {
@@ -263,7 +254,7 @@ function showNewModelSlide() {
     els.modelsBreadcrumbCurrent.classList.add("d-none");
     els.modelsBreadcrumbCurrent.classList.remove("active");
 
-    modelsCarousel()?.to(1);
+    showModelsPane(1);
 }
 
 export {

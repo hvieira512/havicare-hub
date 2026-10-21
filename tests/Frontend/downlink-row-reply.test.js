@@ -21,6 +21,7 @@ const locationReport = {
         type: "location",
         occurredAt: "2026-09-29T10:35:26Z",
         data: {
+            hasCoordinates: true,
             lat: 38.7369,
             lon: -9.1427,
             source: "gps",

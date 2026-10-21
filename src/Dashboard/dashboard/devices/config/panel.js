@@ -505,8 +505,6 @@ export function renderDeviceConfigurationModal() {
         capabilities: state.deviceModal.capabilities,
         uiByKey: state.deviceModal.configUi,
         actionDeliveries: state.deviceModal.actionDeliveries,
-        supplier: state.deviceModal.supplier,
-        model: state.deviceModal.model,
         activeCategory: state.deviceModal.activeCategory,
         sectionOpen: state.deviceModal.configSectionOpen,
         disabled: !state.deviceModal.protocol,

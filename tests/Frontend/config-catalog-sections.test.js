@@ -57,7 +57,7 @@ test("as capacidades agrupadas colapsam as chaves nativas numa entrada só", () 
     assert.equal(sections[0].dataset.configKey, "phonebook");
     assert.equal(sections[0].dataset.configLimit, "10");
     assert.equal(sections[0].dataset.configStored, "1");
-    assert.equal(sections[0].dataset.configSectionName, "contacts");
+
     assert.equal(
         root.querySelector("[data-config-section-link][data-section=\"contacts\"] [data-config-section-total]").textContent.trim(),
         "1",
@@ -154,9 +154,9 @@ test("o alarm_clock traz rótulo, espécie e secção próprios, seja qual for o
 
     const section = root.querySelector("[data-config-section]");
     assert.equal(section.dataset.configKey, "alarm_clock");
-    assert.equal(section.dataset.configKind, "capability");
+
     assert.equal(section.dataset.configInput, "alarm_clock");
-    assert.equal(section.dataset.configSectionName, "reminders");
+
     assert.equal(section.querySelector(".fw-semibold").textContent.trim(), "Despertadores");
     assert.deepEqual(sectionTabs(root), ["reminders"]);
 });

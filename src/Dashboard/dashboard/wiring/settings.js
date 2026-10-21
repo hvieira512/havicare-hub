@@ -127,7 +127,7 @@ function bindModels() {
     els.modelDetailDeleteBtn.addEventListener("click", () => {
         void deleteCurrentModel();
     });
-    els.modelsCarousel.addEventListener("click", (event) => {
+    els.modelsPanes.addEventListener("click", (event) => {
         const button = event.target.closest("[data-action=\"backToModelList\"]");
         if (button) backToModelList();
     });

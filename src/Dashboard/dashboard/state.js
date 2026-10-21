@@ -144,7 +144,6 @@ export const state = {
     licenses: [],
     settingsModal: blankSettingsModal({
         section: "models",
-        modelsCarousel: null,
     }),
     modelPreviewObjectUrl: null,
     loadingCommands: new Set(),
@@ -267,8 +266,7 @@ export function updateDetailFiltersDraft(changes) {
     state.detailFiltersDraft = { ...state.detailFiltersDraft, ...changes };
 }
 
-/** Abrir as definições recomeça o modal. A secção e o carrossel sobrevivem. */
+/** Abrir as definições recomeça o modal. A secção sobrevive. */
 export function resetSettingsModal() {
-    const { section, modelsCarousel } = state.settingsModal;
-    state.settingsModal = blankSettingsModal({ section, modelsCarousel });
+    state.settingsModal = blankSettingsModal({ section: state.settingsModal.section });
 }

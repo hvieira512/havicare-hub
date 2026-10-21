@@ -23,7 +23,7 @@ import {
     modelInternalName,
 } from "../../domain.js";
 import { loadCapabilityCatalog } from "../capabilities.js";
-import { getSettingsModelsRuntime, modelsCarousel } from "./shell.js";
+import { getSettingsModelsRuntime, showModelsPane } from "./shell.js";
 import { backToModelList } from "./list.js";
 import { renderCapabilitiesSection } from "./capabilities-editor.js";
 
@@ -85,7 +85,7 @@ async function openModelDetail(modelId) {
     renderModelDetailInfo(model);
     renderCapabilitiesSection();
 
-    modelsCarousel()?.to(2);
+    showModelsPane(2);
 }
 
 /**

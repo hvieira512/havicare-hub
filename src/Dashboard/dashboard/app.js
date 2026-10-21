@@ -2,7 +2,8 @@
  * A raiz de composição da dashboard, e o único sítio que conhece toda a gente: uma
  * funcionalidade nunca importa outra, e é isso que mantém o grafo sem ciclos.
  */
-import { getDashboardApiToken, getDevice as apiGetDevice } from "./api/index.js";
+import { getDevice as apiGetDevice } from "./api/index.js";
+import { getDashboardApiToken } from "./api/http.js";
 import { refreshSelectedDetail, setDeviceFilters, state } from "./state.js";
 import { cacheElements } from "./dom.js";
 import { trackStickyTop } from "./sticky-top.js";
@@ -59,8 +60,6 @@ export async function startDashboard() {
 
     await ensureProtocolsLoaded();
 
-    // Os filtros guardados podem ser da forma antiga, com um valor por chave e `licenseId`
-    // e `company` separados: o `storedFilterList` aceita as duas para não os perder.
     const stored = loadJsonStorage(FILTERS_STORAGE_KEY);
     if (stored && typeof stored === "object") {
         setDeviceFilters({

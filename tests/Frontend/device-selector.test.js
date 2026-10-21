@@ -161,7 +161,6 @@ describe("falha a carregar", () => {
 
         state.summary = {
             devices: [],
-            models: [],
             devicePagination: { limit: 20, page: 1, total_pages: 1, total: 0 },
             deviceFiltersAvailable: { deviceType: [], licenseId: [], company: [], supplier: [], model: [] },
             deviceFilterCounts: { deviceType: [], supplier: [], model: [], license: { companies: [], none: 0 } },

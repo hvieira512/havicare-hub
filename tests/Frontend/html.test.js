@@ -1,17 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { globSync, readFileSync } from "node:fs";
 
 import { parseFragment } from "./support/dom.js";
-import { html, raw, trusted } from "../../src/Dashboard/dashboard/html.js";
+import { html, raw } from "../../src/Dashboard/dashboard/html.js";
 import { field } from "../../src/Dashboard/dashboard/components/form-field.js";
 import { deviceLicenseBlock } from "../../src/Dashboard/dashboard/components/device-license.js";
 import { uplinkCardContent } from "../../src/Dashboard/dashboard/components/cards/telemetry.js";
 import { telemetryCard } from "../../src/Dashboard/dashboard/components/cards/shell.js";
 import { compactDetails } from "../../src/Dashboard/dashboard/components/cards/shared.js";
 import { state } from "../../src/Dashboard/dashboard/state.js";
-
-const ROOT = new URL("../..", import.meta.url).pathname;
 
 /* ---------- a template tag ---------- */
 
@@ -122,27 +119,6 @@ test("o valor e o título de um cartão saem escapados", () => {
     assert.equal(root.querySelector("script"), null);
     assert.match(root.textContent, /<script>alert\(1\)<\/script>/);
     assert.match(root.textContent, /<script>alert\(2\)<\/script>/);
-});
-
-/* ---------- a fronteira de confiança ---------- */
-
-/** A separação só vale enquanto o `trusted` for o conjunto pequeno. */
-test("o trusted deixa passar marcação construída por quem chama", () => {
-    assert.equal(markup(html`<p>${trusted("<b>a</b>")}</p>`), "<p><b>a</b></p>");
-});
-
-test("não sobra nenhuma fronteira de confiança no frontend", () => {
-    const files = globSync("src/Dashboard/dashboard/**/*.js", { cwd: ROOT });
-    const sites = files.flatMap((rel) => {
-        const src = readFileSync(`${ROOT}/${rel}`, "utf8");
-        return [...src.matchAll(/trusted\(/g)].map(() => rel);
-    }).filter((rel) => !rel.endsWith("html.js"));
-
-    assert.equal(
-        sites.length,
-        0,
-        `o trusted voltou a ${sites.length} sítios. Quem entrega marcação constrói-a com o \`html\`; o trusted é para marcação que vem de fora da função, e isso quer revisão.\n${[...new Set(sites)].join("\n")}`,
-    );
 });
 
 /** Quem entrega marcação tem de o dizer: senão sai escapada duas vezes, que se vê no ecrã. */

@@ -68,7 +68,7 @@ test("a gravação de voz é uma só para todos os lembretes", () => {
 
 test("nenhum lembrete traz voz dentro nem sinal de a ter", () => {
     for (const row of threeReminders().querySelectorAll("[data-repeat-row=\"takePillsReminder\"]")) {
-        assert.equal(row.querySelector("[data-takepills-audio]"), null, "voz dentro do lembrete");
+        assert.equal(row.querySelector("[data-takepills-audio-controls]"), null, "voz dentro do lembrete");
         assert.equal(
             row.querySelector("[data-alarm-line-badges]").textContent.trim(),
             "",

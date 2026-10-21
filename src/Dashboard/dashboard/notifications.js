@@ -1,10 +1,10 @@
 import {
     blockDevice,
     deleteNotification,
-    getDashboardApiToken,
     getNotifications,
     markNotificationsRead,
 } from "./api/index.js";
+import { getDashboardApiToken } from "./api/http.js";
 import { ago } from "./format.js";
 import { html, raw } from "./html.js";
 import { confirmDestructive, toast } from "./dialogs.js";
@@ -41,7 +41,6 @@ const DEFAULT_NOTIFICATION_TYPE = {
 const notificationType = (type) =>
     NOTIFICATION_TYPES[String(type || "")] || DEFAULT_NOTIFICATION_TYPE;
 
-let initialized = false;
 let elements = null;
 let addDevice = null;
 let notifications = [];
@@ -307,12 +306,6 @@ export function initNotifications({ els, openAddDevice }) {
         list: els.dashboardNotificationsList,
     };
     addDevice = openAddDevice;
-
-    if (initialized) {
-        void load();
-        return;
-    }
-    initialized = true;
 
     elements.dropdown.addEventListener("shown.bs.dropdown", () => {
         void handleDropdownShown();

@@ -28,13 +28,6 @@ const MODEL = {
 
 const jsonResponse = (obj) => Response.json(obj);
 
-// A ficha acaba a mandar o carrossel para o slide dela; aqui só interessa que não rebente.
-class FakeCarousel {
-    to() {}
-}
-FakeCarousel.getOrCreateInstance = () => new FakeCarousel();
-globalThis.bootstrap = { Carousel: FakeCarousel };
-
 function setupDom() {
     document.body.innerHTML = `
         <div id="modelDetailFields">

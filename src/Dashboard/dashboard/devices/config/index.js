@@ -52,7 +52,6 @@ export function renderDeviceConfigurationRoot(context) {
         activeCategory = "",
         uiByKey = {},
         actionDeliveries = {},
-        quietWhenEmpty = false,
         sectionOpen = false,
     } = context;
     if (!protocol) {
@@ -62,11 +61,7 @@ export function renderDeviceConfigurationRoot(context) {
     }
 
     if (!catalog.length) {
-        // Calado quando quem chama já mostrou uma configuração decidida no hub: seria verdade
-        // sobre downlinks e mentira sobre o ecrã, que tem uma configuração logo acima.
-        return quietWhenEmpty
-            ? ""
-            : emptyPanel("Este protocolo não tem configurações suportadas.");
+        return emptyPanel("Este protocolo não tem configurações suportadas.");
     }
 
     const rowsByKey = configurations;
@@ -375,17 +370,14 @@ export function renderConfigSection(
     // Sem comando nativo, o hub aplica-a sozinho e não há vocabulário de protocolo a mostrar.
     const hideNativeCommand = (entry.configKind === "capability" && entry.key === "alarm_clock") ||
         String(entry.command || "") === "";
-    const configSectionName = entry.configSectionName || entry.configSection || "";
+
     const phonebookConstraints = protocolFieldConstraints(protocol).phonebook || {};
     const isPhonebookLike = String(entry.key || "") === "phonebook" || String(entry.key || "") === "call_whitelist";
     const phonebookNameMaxLength = isPhonebookLike
         ? parseInt(String(meta.name?.maxLength ?? phonebookConstraints.name?.maxLength ?? 0), 10) || 0
         : 0;
-    const phonebookPhoneMaxLength = isPhonebookLike
-        ? parseInt(String(meta.phone?.maxLength ?? phonebookConstraints.phone?.maxLength ?? 0), 10) || 0
-        : 0;
-    const phonebookMetaAttrs = isPhonebookLike
-        ? `${phonebookNameMaxLength > 0 ? ` data-phonebook-name-max-length="${esc(String(phonebookNameMaxLength))}"` : ""}${phonebookPhoneMaxLength > 0 ? ` data-phonebook-phone-max-length="${esc(String(phonebookPhoneMaxLength))}"` : ""}`
+    const phonebookMetaAttrs = phonebookNameMaxLength > 0
+        ? ` data-phonebook-name-max-length="${esc(String(phonebookNameMaxLength))}"`
         : "";
     // O cartão diz o que a definição faz, e mais nada: o nome do comando e o tipo de campo
     // são vocabulário de protocolo e não servem quem gere dispositivos.
@@ -422,7 +414,7 @@ export function renderConfigSection(
     // O bloco do título leva `min-w-0` para encolher em vez de empurrar a pastilha de estado
     // para a linha de baixo.
     return `
-        <section class="config-setting px-3 py-2 border-bottom" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-label="${esc(entry.label || entry.key)}"${confirmAttrs}${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
+        <section class="config-setting px-3 py-2 border-bottom" data-config-section data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-label="${esc(entry.label || entry.key)}"${confirmAttrs}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}"${verbs.length > 0 ? ` data-config-action-field="${esc(entry.fields?.[0] || "enabled")}"` : ""} data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""} data-config-delivery="${esc(String(delivery?.status || ""))}">
             <div class="d-flex gap-2 ${inlineCommands ? "align-items-center" : "align-items-start"}">
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
@@ -628,7 +620,7 @@ function capabilityForEntry(entry, capabilities) {
 
 function capabilitySectionCandidates(entry) {
     const category = String(entry.category || "");
-    const configSection = String(entry.configSectionName || entry.configSection || "");
+    const configSection = String(entry.configSectionName || "");
     const sections = [];
 
     if (configSection !== "") {

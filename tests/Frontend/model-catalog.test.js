@@ -1,26 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-/** Os slides para onde se mandou o carrossel: o 0 é a lista. */
-const slides = [];
-
-/** O carrossel do Bootstrap, reduzido ao que estes módulos lhe pedem. */
-globalThis.bootstrap = {
-    Carousel: class {
-        constructor(element) {
-            this._element = element;
-        }
-
-        to(index) {
-            slides.push(index);
-        }
-    },
-};
-
 globalThis.fetch = async () => Response.json({ data: [] });
 
 const { state } = await import("../../src/Dashboard/dashboard/state.js");
-const { initSettingsModels } = await import(
+const { initSettingsModels, showModelsPane } = await import(
     "../../src/Dashboard/dashboard/settings/models/shell.js",
 );
 const { backToModelList, loadSettingsModelsSection, renderModelsSection } = await import(
@@ -188,12 +172,10 @@ const elementWithId = (id) => {
 };
 
 const els = {
-    modelsCarousel: (() => {
-        const carousel = elementWithId("modelsCarousel");
-        carousel.innerHTML =
-            "<div class=\"carousel-inner\"><div class=\"carousel-item\"></div>" +
-            "<div class=\"carousel-item\"></div><div class=\"carousel-item active\"></div></div>";
-        return carousel;
+    modelsPanes: (() => {
+        const panes = elementWithId("modelsPanes");
+        panes.innerHTML = "<div hidden></div><div hidden></div><div></div>";
+        return panes;
     })(),
     modelsBreadcrumb: elementWithId("modelsBreadcrumb"),
     modelsBreadcrumbModels: elementWithId("modelsBreadcrumbModels"),
@@ -206,12 +188,14 @@ const els = {
     modelsListSearch: elementWithId("modelsListSearch"),
 };
 
+const panesShown = () => [...els.modelsPanes.children].map((pane) => !pane.hidden);
+
 const onTheModelSheet = () => {
-    slides.length = 0;
+    showModelsPane(2);
     els.modelDetailActionBar.className = "d-flex";
     els.modelsBreadcrumb.classList.remove("d-none");
     els.modelsBreadcrumbCurrent.textContent = "R03";
-    state.settingsModal.modelsCarousel = new bootstrap.Carousel(els.modelsCarousel);
+
     state.settingsModal.currentCapabilitiesModel = { id: 92 };
 };
 
@@ -222,7 +206,7 @@ test("voltar à lista fecha a ficha, a migalha e a barra de gravar", () => {
 
     backToModelList();
 
-    assert.deepEqual(slides, [0]);
+    assert.deepEqual(panesShown(), [true, false, false]);
     assert.equal(els.modelDetailActionBar.className, "d-none");
     assert.equal(els.modelsBreadcrumb.classList.contains("d-none"), true);
     assert.equal(state.settingsModal.currentCapabilitiesModel, null);
@@ -235,7 +219,7 @@ test("carregar o catálogo traz o carrossel de volta à lista", async () => {
 
     await loadSettingsModelsSection();
 
-    assert.deepEqual(slides, [0], "o carrossel ficou na ficha de um modelo que já não existe");
+    assert.deepEqual(panesShown(), [true, false, false], "ficou na ficha de um modelo que já não existe");
     assert.equal(els.modelDetailActionBar.className, "d-none");
     assert.equal(state.settingsModal.currentCapabilitiesModel, null);
 });

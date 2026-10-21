@@ -147,12 +147,8 @@ function flattenDeviceTypeSuppliersModels(groups = []) {
     return models;
 }
 
-async function ensureDeviceTypeSuppliersModelsLoaded(force = false) {
-    if (
-        !force &&
-        Array.isArray(state.deviceTypeSuppliersModels) &&
-        state.deviceTypeSuppliersModels.length > 0
-    ) {
+async function ensureDeviceTypeSuppliersModelsLoaded() {
+    if (state.deviceTypeSuppliersModels.length > 0) {
         return state.deviceTypeSuppliersModels;
     }
 
@@ -162,8 +158,8 @@ async function ensureDeviceTypeSuppliersModelsLoaded(force = false) {
     return state.deviceTypeSuppliersModels;
 }
 
-async function ensureProtocolsLoaded(force = false) {
-    if (!force && Array.isArray(state.protocols) && state.protocols.length > 0) {
+async function ensureProtocolsLoaded() {
+    if (state.protocols.length > 0) {
         return state.protocols;
     }
 
@@ -232,7 +228,7 @@ function renderDeviceSelector() {
  * O corpo da lista: os cartões, ou -- na falta deles -- a distinção entre um filtro sem
  * resultados e uma falha a carregar, que não se podem ler como a mesma coisa.
  */
-export function deviceListBody(summary) {
+function deviceListBody(summary) {
     if (summary.devices.length) {
         return summary.devices.map(renderDeviceCard).join("");
     }

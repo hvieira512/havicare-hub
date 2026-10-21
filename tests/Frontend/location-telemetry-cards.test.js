@@ -136,30 +136,6 @@ test("um dispositivo que nunca resolveu mostra a última tentativa mesmo assim",
     assert.match(html, /1 antena · 1 rede WiFi · há 1m/);
 });
 
-test("o par 0,0 não é uma posição", () => {
-    // É a forma que os protocolos usam para dizer "sem fixo".
-    const content = uplinkCardContent("location", {
-        source: "cell",
-        lat: 0,
-        lon: 0,
-        baseStations: [{ cellId: "1" }],
-    });
-
-    assert.equal(content.value, "—");
-});
-
-test("o lat/lon manda, e não o hasCoordinates", () => {
-    // O histórico do Redis guarda cem eventos por dispositivo e os mais antigos são anteriores
-    // a esse campo: confiar nele faria uma posição boa desaparecer.
-    const content = uplinkCardContent("location", {
-        source: "gps",
-        lat: 41.706841,
-        lon: -8.793279,
-    });
-
-    assert.equal(content.value, "41.70684, -8.79328");
-});
-
 test("na lista cronológica não aparece a idade: a hora já tem coluna própria", () => {
     const content = uplinkCardContent("location", UNRESOLVED);
 

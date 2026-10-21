@@ -181,7 +181,7 @@ function fallSensitivityLevelsInput(desired) {
             <div class="col-12 col-md-9">
                 <label class="form-label-sm">Nível de sensibilidade</label>
                 <input type="hidden" data-config-field="sensitivity" value="${(String(sensitivityLevel))}">
-                <div class="d-flex flex-wrap gap-1 w-100 sens-level-group" role="group" aria-label="Nível de sensibilidade" data-config-choice-group="sensitivity">
+                <div class="d-flex flex-wrap gap-1 w-100" role="group" aria-label="Nível de sensibilidade" data-config-choice-group="sensitivity">
                     ${levels
                             .map(
                                 ({ label, icon, btnClass }, i) => {

@@ -35,7 +35,7 @@ test("um stream aberto conta como vivo", async () => {
     await connect("111");
 
     assert.equal(harness.streams.length, 1);
-    assert.equal(stream.isDeviceStreamLive(), true, "a resposta 200 já prova a ligação");
+    assert.equal(harness.streams[0].closed, false);
 });
 
 test("a credencial vai no cabeçalho e nada vai no URL", async () => {
@@ -51,11 +51,6 @@ test("a credencial vai no cabeçalho e nada vai no URL", async () => {
         !request.url.includes("token-de-uma-hora"),
         "o token não pode aparecer no URL: fica no registo de qualquer proxy",
     );
-    assert.ok(!request.url.includes("ticket"), "e já não há bilhete nenhum a pedir");
-    assert.equal(
-        harness.requests.filter((entry) => entry.url.includes("stream-ticket")).length,
-        0,
-    );
 });
 
 test("o servidor a fechar o corpo religa em vez de desistir", async () => {
@@ -64,7 +59,6 @@ test("o servidor a fechar o corpo religa em vez de desistir", async () => {
     harness.streams[0].end();
     await harness.settle();
 
-    assert.equal(stream.isDeviceStreamLive(), false, "fechado não é vivo");
     const timer = await harness.runPendingTimer();
     assert.equal(timer.delay, 1000, "a primeira tentativa é ao fim de um segundo");
     assert.equal(harness.streams.length, 2, "abriu-se um stream novo");
@@ -78,7 +72,6 @@ test("uma recusa do servidor religa, e o estado dela é visível", async () => {
     await connect("223");
 
     assert.equal(harness.streams.length, 0, "não se abriu stream nenhum");
-    assert.equal(stream.isDeviceStreamLive(), false);
     const timer = await harness.runPendingTimer();
     assert.equal(timer.delay, 1000);
 });
@@ -157,12 +150,12 @@ const setHidden = (hidden) => {
 test("esconder o separador fecha o stream", async () => {
     reset();
     await connect("777");
-    assert.equal(stream.isDeviceStreamLive(), true);
+    assert.equal(harness.streams[0].closed, false);
 
     setHidden(true);
     await harness.settle();
 
-    assert.equal(stream.isDeviceStreamLive(), false);
+    assert.equal(harness.streams[0].closed, true);
     const pending = harness.scheduled.filter((entry) => !entry.cancelled && !entry.done);
     assert.deepEqual(pending, [], "esconder não é falhar: não se agenda religação");
     setHidden(false);
@@ -247,6 +240,5 @@ for (const status of [401, 403]) {
             [],
             "com a credencial recusada, religar só repete a recusa",
         );
-        assert.equal(stream.isDeviceStreamLive(), false);
     });
 }

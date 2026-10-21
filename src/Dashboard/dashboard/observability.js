@@ -1,8 +1,5 @@
-/**
- * Observabilidade mínima do cliente: dá rasto na consola aos erros por apanhar e às promessas
- * rejeitadas. O `report` é injetável para um dia ir a um endpoint do hub.
- */
-export function installErrorReporting(report = reportToConsole) {
+/** Dá rasto na consola aos erros por apanhar e às promessas rejeitadas. */
+export function installErrorReporting() {
     window.addEventListener("error", (event) => {
         report("uncaught", event.error ?? event.message);
     });
@@ -11,8 +8,7 @@ export function installErrorReporting(report = reportToConsole) {
     });
 }
 
-// O único uso de `console` no frontend, e de propósito: é a rede de segurança do handler
-// global, não logging de rotina espalhado pelo código.
-function reportToConsole(kind, detail) {
+// O único `console` do frontend: é a rede do handler global, e não logging de rotina.
+function report(kind, detail) {
     console.error(`[hub] ${kind}`, detail);
 }

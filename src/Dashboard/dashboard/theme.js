@@ -22,7 +22,7 @@ export function preferredTheme() {
 }
 
 /** O tema que está no ecrã agora, para quem desenha fora do CSS e não o herda. */
-export function isDarkTheme() {
+function isDarkTheme() {
     return document.documentElement.getAttribute("data-bs-theme") === DARK;
 }
 

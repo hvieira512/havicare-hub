@@ -60,7 +60,7 @@ function contextOf(user) {
 }
 
 /** Uma linha por utilizador: o nome e o contexto à esquerda, o estado por palavra, e os verbos num menu. */
-export function apiUserRow(user) {
+function apiUserRow(user) {
     const enabled = isEnabled(user);
     // A pastilha não encolhe: num telefone estreito é ela que diz o que a cor sozinha não diz.
     const badge = stateBadge(

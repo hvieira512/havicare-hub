@@ -127,17 +127,8 @@ export function allDetailItems() {
     }
     for (const row of recent.events || []) {
         const payload = rowPayload(row);
-        if (!payload) continue;
-        // Os acontecimentos de domínio levam a gravidade que o hub lhes deu; as ligações não.
-        if (payload.severity)
-            items.push({ _source: "event", raw: row, payload });
-        if (
-            payload.type === "device.connected" ||
-            payload.type === "device.disconnected"
-        )
-            items.push({ _source: "connection", raw: row, payload });
+        if (payload?.severity) items.push({ _source: "event", raw: row, payload });
     }
-    // As ligações têm lista própria; as dos eventos são as antigas, de antes de a haver.
     for (const row of recent.connections || []) {
         const payload = rowPayload(row);
         if (payload) items.push({ _source: "connection", raw: row, payload });

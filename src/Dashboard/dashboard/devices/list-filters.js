@@ -470,16 +470,6 @@ export async function clearDeviceFilters() {
     await onChange();
 }
 
-function normalizeFilterValue(value) {
-    if (!value || value === "undefined" || value === "all") return null;
-    return String(value);
-}
-
-/** Um filtro guardado, seja lista ou valor único da forma antiga. */
 export function storedFilterList(value) {
-    if (Array.isArray(value)) {
-        return value.map(String).filter((entry) => entry !== "" && entry !== "all");
-    }
-    const single = normalizeFilterValue(value);
-    return single === null ? [] : [single];
+    return Array.isArray(value) ? value.map(String) : [];
 }
