@@ -12,7 +12,7 @@ sustentar.
 
 | Suite | Onde | Ficheiros | Precisa de |
 |---|---|---|---|
-| Unitários (PHP) | `tests/Unit/` | ~200 | nada |
+| Unitários (PHP) | `tests/Unit/` | ~230 | nada |
 | Integração (PHP) | `tests/Integration/` | ~60 | MySQL e Redis |
 | Frontend (Node) | `tests/Frontend/` | ~140 | nada |
 | Cenários (shell) | `tests/scenarios/` | 5 | a pilha Docker inteira, menos um |
@@ -158,5 +158,5 @@ regressão involuntária.
 | `phpstan.neon` · `phpcs.xml.dist` · `eslint.config.js` | As três ferramentas, com as exclusões justificadas |
 | `composer.json` | O portão: os sete alvos que o `composer test` encadeia |
 | `bin/in-hub` | Leva os alvos de PHP para o contentor `hub` |
-| `tests/scenarios/run-all.sh` | Os seis cenários |
+| `tests/scenarios/run-all.sh` | Os cinco cenários |
 | `tests/Support/` | Casos-base e duplos partilhados |

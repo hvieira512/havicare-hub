@@ -14,7 +14,7 @@ Lê lá:
   nunca sobre o que estava antes. Identificadores em inglês.
 - **O teste vem primeiro** — uma funcionalidade começa pelo teste que falha, e
   confirma-se que falha pela razão certa antes de se escrever o código.
-- **A verificação é o `composer test`** — são oito coisas, e não há CI no
+- **A verificação é o `composer test`** — são sete coisas, e não há CI no
   GitHub a apanhar o que escapar. Corre antes de cada push, e não depois.
 - **Uma migração nova aplica-se logo** — na mesma alteração em que se escreve,
   senão o hub local fica em ciclo de crash.
