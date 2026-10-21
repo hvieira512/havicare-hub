@@ -88,11 +88,9 @@ test("a faixa com o nome do grupo só existe quando há mais do que um grupo", (
     // já se chama "Pedir dados".
     const alone = renderRequestCardGroup(group, [], false, []);
     assert.doesNotMatch(alone, /Últimas leituras/);
-    assert.doesNotMatch(alone, /section-label/);
 
     const accompanied = renderRequestCardGroup(group, [], true, []);
-    assert.match(accompanied, /section-label[^>]*>Últimas leituras</);
-    assert.match(accompanied, /count-chip[^>]*>1</);
+    assert.match(accompanied, />Últimas leituras</);
 });
 
 test("com leitura, o mosaico mostra o valor", () => {

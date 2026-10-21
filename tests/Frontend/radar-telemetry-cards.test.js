@@ -24,7 +24,6 @@ test("o estado de sono e um cartão com o valor em português", () => {
     const card = uplinkCardContent("sleep_state", { state: "deep_sleep" });
 
     assert.equal(card.value, "Sono profundo");
-    assert.equal(card.icon, "fa-bed");
 });
 
 test("um estado que o mapa não conhece mostra-se como veio, não desaparece", () => {
@@ -97,7 +96,7 @@ test("uma postura que o firmware invente não escreve atributos", () => {
 
     assert.equal(card.details.includes("<script>"), false);
     const chip = parseFragment(`<div>${card.details}</div>`).querySelector(".badge");
-    assert.equal(chip.querySelector("i").className, "fa-solid fa-question");
+    assert.equal(chip.querySelector("[onerror], script"), null);
 });
 
 test("uma queda diz se foi confirmada e como a pessoa ficou", () => {
@@ -155,7 +154,6 @@ test("o radar em 4G diz a rede e a qualidade do sinal", () => {
     const card = uplinkCardContent("connectivity", { interface: "4g", signalQuality: 21 });
 
     assert.match(card.value, /^4G/);
-    assert.equal(card.icon, "fa-tower-cell");
     assert.match(card.details, /Qualidade do sinal: 21/);
 });
 

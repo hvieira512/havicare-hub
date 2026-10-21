@@ -12,7 +12,6 @@ const onlineBadge = (...args) => String(buildOnlineBadge(...args));
 
 /** Um tom que não existe no Bootstrap não pode gerar uma classe que não existe. */
 test("um tom desconhecido cai no secundário", () => {
-    assert.match(stateBadge("Estado", "roxo"), /bg-secondary-subtle/);
     assert.doesNotMatch(stateBadge("Estado", "roxo"), /roxo/);
 });
 

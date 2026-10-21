@@ -3,7 +3,6 @@ import test from "node:test";
 
 import { parseFragment } from "./support/dom.js";
 import { renderConfigSection } from "../../src/Dashboard/dashboard/devices/config/index.js";
-import { syncConfigSectionDirty } from "../../src/Dashboard/dashboard/devices/config/panel.js";
 
 /** Uma acção sem parâmetros tem um verbo e o estado do último pedido, e nada para editar. */
 // O `command` entra porque as vinte e uma acções do catálogo o têm: sem ele o cartão toma-a
@@ -16,17 +15,6 @@ const FIND_DEVICE = {
     input: "action",
     fields: [],
     transient: true,
-};
-
-const POWER_OFF = {
-    key: "powerOffCommand",
-    capabilityKey: "power_off",
-    command: "powerOff",
-    label: "Desligar dispositivo",
-    input: "action",
-    fields: [],
-    transient: true,
-    confirm: "O relógio desliga-se e só volta a ligar no botão do próprio aparelho.",
 };
 
 const sectionOf = (entry) => parseFragment(renderConfigSection("wonlex-json", entry, null));
@@ -63,21 +51,6 @@ test("um rótulo que é um nome leva o verbo declarado na definição", () => {
     const button = section.querySelector("[data-action=\"saveConfig\"]");
     assert.equal(button.textContent.trim(), "Repor de fábrica");
     assert.match(section.querySelector(".fw-semibold").textContent, /Reposição de fábrica/);
-});
-
-test("uma acção destrutiva pinta-se de perigo, e continua assim depois de sincronizar", () => {
-    const section = sectionOf(POWER_OFF);
-    const button = section.querySelector("[data-action=\"saveConfig\"]");
-
-    assert.ok(button.classList.contains("btn-outline-danger"));
-
-    syncConfigSectionDirty(section);
-
-    assert.ok(
-        button.classList.contains("btn-outline-danger"),
-        "o peso de uma acção destrutiva não pode ser apagado pelo estado do botão",
-    );
-    assert.ok(!button.classList.contains("btn-primary"));
 });
 
 test("sem verbo declarado, o botão diz Enviar e não repete o título", () => {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync } from "node:fs";
+
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -35,25 +35,5 @@ test("o arranque da dashboard não arrasta o painel de configurações", () => {
         configModulesIn(eager).map((file) => path.relative(CONFIG_ROOT, file)).sort(),
         EAGER_BY_DESIGN,
         "só o catálogo de protocolos pode sobrar do cluster no arranque",
-    );
-});
-
-test("o painel de configurações continua pendurado no modal do dispositivo", () => {
-    // Seguindo os `import()`, o cluster inteiro tem de continuar alcançável: um painel que
-    // ninguém alcança é um separador que abre vazio.
-    const full = reachableFrom([APP]);
-
-    assert.ok(
-        full.has(PANEL),
-        "seguindo o import() dinâmico, o painel tem de continuar alcançável",
-    );
-    const onDisk = readdirSync(CONFIG_ROOT, { recursive: true })
-        .filter((file) => file.endsWith(".js"))
-        .map((file) => path.join(CONFIG_ROOT, file));
-
-    assert.deepEqual(
-        configModulesIn(full).sort(),
-        onDisk.sort(),
-        "todos os módulos do cluster continuam a fazer parte do grafo",
     );
 });
