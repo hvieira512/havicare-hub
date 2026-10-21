@@ -9,7 +9,7 @@ use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\State\DeviceRegistry;
 use Hub\Domain\DeviceMetadata;
-use Hub\Domain\DeviceProtocol;
+use Hub\Domain\ProtocolRegistry;
 use Hub\Registry\Whitelist;
 
 /** Encontrar um dispositivo e decidir quem o pode ver, para todas as partes da API de dispositivos. */
@@ -24,7 +24,7 @@ final class DeviceDirectory
 
     public function protocolForModel(string $supplier, string $model): string
     {
-        return DeviceProtocol::forModel($supplier, $model);
+        return ProtocolRegistry::forModel($supplier, $model);
     }
 
     public function normalizeDeviceId(string $imei, string $supplier, string $model, string $deviceType, string $deviceId): string

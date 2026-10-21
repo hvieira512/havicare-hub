@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Repository;
 
-use Hub\Domain\DeviceProtocol;
 use Hub\Domain\DeviceTypeCatalog;
 use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;

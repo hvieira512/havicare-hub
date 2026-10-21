@@ -10,10 +10,15 @@ final class ProtocolRegistry
      * Os metadados canónicos de cada protocolo; o que a dashboard precisa vive no
      * `Api\Http\ProtocolDashboardMeta`.
      *
+     * O `supplier` é o nome do fornecedor quando não é o `label`, e os `models` os modelos
+     * internos que pedem este protocolo a um fornecedor com vários.
+     *
      * @return array<string, array{
      *     label: string,
      *     deviceType: string,
-     *     supportsConfigCatalog: bool
+     *     supportsConfigCatalog: bool,
+     *     supplier?: string,
+     *     models?: list<string>
      * }>
      */
     public static function all(): array
@@ -51,6 +56,8 @@ final class ProtocolRegistry
             // ao contrário das W6/W6B.
             'veepoo-ble' => [
                 'label' => 'Veepoo',
+                'supplier' => 'Wonlex',
+                'models' => ['mf91'],
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => true,
             ],
@@ -61,6 +68,8 @@ final class ProtocolRegistry
             ],
             'moko-mkgw4' => [
                 'label' => 'MOKO MKGW4',
+                'supplier' => 'MOKO',
+                'models' => ['mkgw4'],
                 'deviceType' => 'gateway',
                 'supportsConfigCatalog' => false,
             ],
@@ -73,11 +82,15 @@ final class ProtocolRegistry
             ],
             'moko-w6b' => [
                 'label' => 'MOKO W6B',
+                'supplier' => 'MOKO',
+                'models' => ['w6b'],
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => false,
             ],
             'moko-w6' => [
                 'label' => 'MOKO W6',
+                'supplier' => 'MOKO',
+                'models' => ['w6'],
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => false,
             ],
@@ -102,22 +115,25 @@ final class ProtocolRegistry
             // Como a balança: GATT por um gateway por software, com o protocolo todo no hub.
             'joytech-bp' => [
                 'label' => 'JoyTech',
+                'models' => ['hc-6292b'],
                 'deviceType' => 'blood_pressure_monitor',
                 'supportsConfigCatalog' => true,
             ],
-            // Do mesmo fornecedor: o modelo escolhe-o no DeviceProtocol.
             'joytech-bp-ecg' => [
                 'label' => 'JoyTech',
+                'models' => ['hc-6679b'],
                 'deviceType' => 'blood_pressure_monitor',
                 'supportsConfigCatalog' => true,
             ],
             'joytech-et' => [
                 'label' => 'JoyTech',
+                'models' => ['hc-3018b'],
                 'deviceType' => 'thermometer',
                 'supportsConfigCatalog' => false,
             ],
             'joytech-spo2' => [
                 'label' => 'JoyTech',
+                'models' => ['hc-101'],
                 'deviceType' => 'pulse_oximeter',
                 'supportsConfigCatalog' => false,
             ],
@@ -193,16 +209,54 @@ final class ProtocolRegistry
         ];
     }
 
-    public static function forSupplier(string $supplierName): string
+    /** O protocolo de um modelo: o que o declara nos `models`, senão o do fornecedor. */
+    public static function forModel(string $supplierName, string $internalModel): string
     {
-        $supplierName = trim($supplierName);
-
-        foreach (self::all() as $protocol => $meta) {
-            if (($meta['label'] ?? '') === $supplierName) {
+        $model = strtolower(trim($internalModel));
+        $entries = self::ofSupplier($supplierName);
+        foreach ($entries as $protocol => $meta) {
+            if (in_array($model, $meta['models'] ?? [], true)) {
                 return $protocol;
             }
         }
 
-        return '';
+        return self::defaultOf($entries);
+    }
+
+    /**
+     * O protocolo de um fornecedor para um tipo de aparelho, sem modelo escolhido; um tipo que o
+     * fornecedor não serve fica com o protocolo por omissão dele.
+     */
+    public static function forSupplier(string $supplierName, string $deviceType): string
+    {
+        $entries = self::ofSupplier($supplierName);
+        $ofType = array_filter($entries, static fn(array $meta): bool => $meta['deviceType'] === trim($deviceType));
+
+        return self::defaultOf($ofType !== [] ? $ofType : $entries);
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $entries
+     */
+    private static function defaultOf(array $entries): string
+    {
+        foreach ($entries as $protocol => $meta) {
+            if (!isset($meta['models'])) {
+                return $protocol;
+            }
+        }
+
+        return (string)array_key_first($entries);
+    }
+
+    /** @return array<string, array<string, mixed>> */
+    private static function ofSupplier(string $supplierName): array
+    {
+        $supplier = strtolower(trim($supplierName));
+
+        return array_filter(
+            self::all(),
+            static fn(array $meta): bool => strtolower($meta['supplier'] ?? $meta['label']) === $supplier,
+        );
     }
 }

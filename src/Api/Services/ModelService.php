@@ -12,7 +12,7 @@ use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
 use Hub\Api\Request\ModelWriteRequest;
 use Hub\Api\Request\RequestBinder;
 use Hub\Command\DeviceCommandCatalog;
-use Hub\Domain\DeviceProtocol;
+use Hub\Domain\ProtocolRegistry;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\SupplierCapabilityTemplate;
@@ -74,7 +74,7 @@ class ModelService
                 'internalModel' => (string)($model['internal_model'] ?? ''),
                 'commercialName' => (string)($model['commercial_name'] ?? ''),
                 'deviceType' => $deviceType,
-                'protocol' => DeviceProtocol::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? '')),
+                'protocol' => ProtocolRegistry::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? '')),
                 'image' => $this->imageUrl->resolve((string)($model['image'] ?? ''), $baseUrl),
                 'capabilities' => CapabilityCatalog::buildCapabilityMatrix($catalogByType[$deviceType], $enabledByModel[$modelId] ?? []),
             ];
@@ -131,7 +131,7 @@ class ModelService
                 'internalModel' => (string)($model['internal_model'] ?? ''),
                 'commercialName' => (string)($model['commercial_name'] ?? ''),
                 'deviceType' => $deviceType,
-                'protocol' => DeviceProtocol::forModel($supplierName, (string)($model['internal_model'] ?? '')),
+                'protocol' => ProtocolRegistry::forModel($supplierName, (string)($model['internal_model'] ?? '')),
                 'image' => $this->imageUrl->resolve((string)($model['image'] ?? ''), $baseUrl),
             ];
         }
@@ -162,7 +162,7 @@ class ModelService
             return ApiError::modelNotFound()->toArray();
         }
 
-        $protocol = DeviceProtocol::forModel((string)($entry['supplier_name'] ?? ''), (string)($entry['internal_model'] ?? ''));
+        $protocol = ProtocolRegistry::forModel((string)($entry['supplier_name'] ?? ''), (string)($entry['internal_model'] ?? ''));
         $imagePath = (string)($entry['image_path'] ?? '');
         $deviceType = (string)($entry['device_type'] ?? 'watch');
         $catalog = $this->db->genericCapabilities->all($deviceType);
@@ -210,7 +210,7 @@ class ModelService
         }
 
         $supplierName = (string)($supplier['name'] ?? '');
-        $protocol = DeviceProtocol::forSupplier($supplierName);
+        $protocol = ProtocolRegistry::forSupplier($supplierName, $deviceType);
         if ($protocol === '') {
             return ApiError::unknownProtocol('Could not determine protocol for this supplier')->toArray();
         }
@@ -364,7 +364,7 @@ class ModelService
         }
 
         $supplierName = (string)($supplier['name'] ?? '');
-        $protocol = DeviceProtocol::forSupplier($supplierName);
+        $protocol = ProtocolRegistry::forSupplier($supplierName, $deviceType);
         if ($protocol === '') {
             return ApiError::unknownProtocol('Could not determine protocol for this supplier')->toArray();
         }

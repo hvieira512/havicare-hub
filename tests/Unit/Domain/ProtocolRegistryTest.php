@@ -27,10 +27,51 @@ final class ProtocolRegistryTest extends TestCase
         self::assertContains('monit-mecs-pro-ble', ProtocolRegistry::protocolsWithConfigCatalog());
     }
 
-    public function testForSupplierIsDerivedFromTheRegistryTable(): void
+    public function testForSupplierPicksTheProtocolOfTheDeviceType(): void
     {
-        self::assertSame('moko-mkgw3', ProtocolRegistry::forSupplier('MOKO'));
-        self::assertSame('monit-mecs-pro-ble', ProtocolRegistry::forSupplier('MONIT'));
-        self::assertSame('', ProtocolRegistry::forSupplier('Unknown'));
+        self::assertSame('moko-mkgw3', ProtocolRegistry::forSupplier('MOKO', 'gateway'));
+        self::assertSame('monit-mecs-pro-ble', ProtocolRegistry::forSupplier('MONIT', 'diaper_sensor'));
+        self::assertSame('joytech-et', ProtocolRegistry::forSupplier('JoyTech', 'thermometer'));
+        self::assertSame('veepoo-ble', ProtocolRegistry::forSupplier('Wonlex', 'bracelet'));
+        self::assertSame('wonlex-json', ProtocolRegistry::forSupplier('Wonlex', 'watch'));
+        self::assertSame('', ProtocolRegistry::forSupplier('Unknown', 'watch'));
+    }
+
+    /** A MOKO vende gateways e pulseiras: só pelo fornecedor, a W6B ficava com protocolo de gateway. */
+    public function testMokoModelsResolveToTheirOwnProtocol(): void
+    {
+        self::assertSame('moko-mkgw3', ProtocolRegistry::forModel('MOKO', 'MKGW3'));
+        self::assertSame('moko-mkgw4', ProtocolRegistry::forModel('MOKO', 'MKGW4'));
+        self::assertSame('moko-w6b', ProtocolRegistry::forModel('MOKO', 'W6B'));
+    }
+
+    public function testModelLookupIsCaseAndWhitespaceInsensitive(): void
+    {
+        self::assertSame('moko-w6b', ProtocolRegistry::forModel(' moko ', ' w6b '));
+        self::assertSame('moko-w6b', ProtocolRegistry::forModel('MoKo', 'W6b'));
+    }
+
+    public function testSingleProtocolSuppliersStillResolveBySupplier(): void
+    {
+        self::assertSame('voerka-ncs', ProtocolRegistry::forModel('Voerka', 'W812'));
+        self::assertSame('monit-mecs-pro-ble', ProtocolRegistry::forModel('MONIT', 'MECS-PRO'));
+    }
+
+    /** O MKGW-mini fala o JSON do MKGW3, e um modelo MOKO por declarar cai no mesmo. */
+    public function testUnknownMokoModelFallsBackToTheSupplierProtocol(): void
+    {
+        self::assertSame('moko-mkgw3', ProtocolRegistry::forModel('MOKO', 'SOMETHING-NEW'));
+        self::assertSame('moko-mkgw3', ProtocolRegistry::forModel('MOKO', 'MKGW-mini 03-20D'));
+    }
+
+    public function testUnknownSupplierHasNoProtocol(): void
+    {
+        self::assertSame('', ProtocolRegistry::forModel('Nobody', 'X1'));
+    }
+
+    /** A Wonlex vende relógios TCP, e esta pulseira fala BLE. */
+    public function testTheMf91BraceletSpeaksBleAndNotTheWonlexWatchProtocol(): void
+    {
+        self::assertSame('veepoo-ble', ProtocolRegistry::forModel('Wonlex', 'MF91'));
     }
 }
