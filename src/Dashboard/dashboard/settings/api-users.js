@@ -7,8 +7,8 @@ import { ensureLicensesLoaded } from "../licenses.js";
 import { stateBadge } from "../components/state-badge.js";
 import { state } from "../state.js";
 import { html, raw } from "../html.js";
-import { apiError, confirmDestructive, promptPassword, toast } from "../dialogs.js";
-import { clearInvalid, markInvalid } from "../validation.js";
+import { apiError, confirmDestructive, promptPassword, reportApiError, toast } from "../dialogs.js";
+import { clearInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, whileBusy } from "./row-editor.js";
@@ -372,22 +372,9 @@ async function saveApiUserRow(button) {
     }
 
     clearInvalid(el);
-    if (!body.username) {
-        markInvalid(field("username"), "Utilizador é obrigatório");
-    }
-    if (id === "" && !body.password.trim()) {
-        markInvalid(field("password"), "A palavra-passe é obrigatória para um utilizador novo");
-    }
-    if (body.role === "license_client" && !body.licenseRefId) {
-        markInvalid(field("licenseRefId"), "Licença é obrigatória para clientes");
-    }
-    if (el.querySelector(".is-invalid")) {
-        return;
-    }
-
     const result = await apiSaveApiUser(id, body);
     if (result.error) {
-        toast("error", apiError(result));
+        reportApiError(result, field);
         return;
     }
 

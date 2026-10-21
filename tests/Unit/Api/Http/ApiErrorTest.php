@@ -20,8 +20,10 @@ final class ApiErrorTest extends TestCase
     {
         return [
             'invalidJson' => [fn(): ApiError => ApiError::invalidJson(), 'invalid_request', 'Invalid JSON', 400],
-            'invalidRequest' => [fn(): ApiError => ApiError::invalidRequest('name is required'), 'invalid_request', 'name is required', 400],
-            'invalidConfig' => [fn(): ApiError => ApiError::invalidConfig('bad value'), 'invalid_config', 'bad value', 400],
+            'invalidField' => [fn(): ApiError => ApiError::invalidField('name', 'name is required'), 'invalid_request', 'name is required', 400],
+            'invalidConfig' => [fn(): ApiError => ApiError::invalidConfig('bad value', 'working_mode'), 'invalid_config', 'bad value', 400],
+            'deviceIsNotARadar' => [fn(): ApiError => ApiError::deviceIsNotARadar(), 'device_is_not_a_radar', 'Device is not a radar', 400],
+            'licenseHasNoRadarCredentials' => [fn(): ApiError => ApiError::licenseHasNoRadarCredentials(), 'license_has_no_radar_credentials', 'The device license has no radar cloud credentials', 400],
             'invalidLink' => [fn(): ApiError => ApiError::invalidLink('A gateway can only link to a diaper sensor or a bracelet'), 'invalid_link', 'A gateway can only link to a diaper sensor or a bracelet', 400],
             'unsupportedFeature' => [fn(): ApiError => ApiError::unsupportedFeature('Feature is not supported for this device'), 'unsupported_feature', 'Feature is not supported for this device', 400],
             'unknownProtocol' => [fn(): ApiError => ApiError::unknownProtocol('Device protocol could not be resolved'), 'unknown_protocol', 'Device protocol could not be resolved', 400],

@@ -3,6 +3,9 @@
  * `titleText:` do SweetAlert, e não o `title:`, que é HTML.
  */
 
+import { errorText } from "./api/errors.js";
+import { markApiFields } from "./validation.js";
+
 /** O "danger" é o nome do bootstrap para o que o SweetAlert chama "error". */
 export function toast(type, title, text = "") {
     void Swal.fire({
@@ -53,11 +56,10 @@ export function promptPassword(title, text = "") {
     });
 }
 
-/** A mensagem de um erro da API; o código serve de texto quando não há mensagem. */
-export function apiError(result) {
-    return (
-        result?.error?.message ||
-        result?.error?.code ||
-        "Não foi possível concluir a operação."
-    );
+/** O texto de um erro da API, em português, pelo `code`. */
+export const apiError = errorText;
+
+/** Um erro da API num formulário: marca os campos que o `fields` aponta, ou avisa no canto. */
+export function reportApiError(result, fieldFor) {
+    if (!markApiFields(result, fieldFor)) toast("error", apiError(result));
 }

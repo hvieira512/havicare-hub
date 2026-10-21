@@ -61,7 +61,7 @@ final class DeviceFeatureRequestService
                 'error_code' => 'invalid_request',
                 'reason' => 'missing_feature',
             ]);
-            return ApiError::invalidRequest('feature is required')->toArray();
+            return ApiError::invalidField('feature', 'feature is required')->toArray();
         }
 
         $identity = $this->directory->identify($imei);
@@ -164,7 +164,7 @@ final class DeviceFeatureRequestService
                 'error_code' => 'invalid_config',
                 'message' => $e->getMessage(),
             ]);
-            return ApiError::invalidConfig($e->getMessage())->toArray();
+            return ApiError::invalidConfig($e->getMessage(), 'value')->toArray();
         }
 
         // Fora do ciclo: só a calibração do relógio o usa, e lá dentro cada comando pagava uma
@@ -176,7 +176,7 @@ final class DeviceFeatureRequestService
         foreach ($nativeUpdates as $nativeKey => $payload) {
             $error = DeviceConfigurationCatalog::validate($protocol, $nativeKey, $payload);
             if ($error !== null) {
-                return ApiError::invalidConfig($error)->toArray();
+                return ApiError::invalidConfig($error, 'value')->toArray();
             }
 
             $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $nativeKey, $payload);

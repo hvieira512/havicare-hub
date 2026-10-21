@@ -516,9 +516,7 @@ export async function createDeviceFromWizard(answers) {
         answers.owner?.company || "",
     );
     if (result?.error) {
-        return result._httpStatus === 409
-            ? "Já existe um dispositivo com esta identidade."
-            : result.error.message || result.error.code;
+        return apiError(result);
     }
 
     const unauthorized = [];

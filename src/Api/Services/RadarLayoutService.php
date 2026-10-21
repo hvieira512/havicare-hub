@@ -19,8 +19,8 @@ use function React\Promise\resolve;
  */
 class RadarLayoutService
 {
-    /** Recusas do pedido, e não avarias: o cliente corrige-as, e por isso saem como 400. */
-    private const REFUSALS = ['device_is_not_a_radar', 'license_has_no_radar_credentials'];
+    /** O motivo de uma ida à cloud falhada: o login é o único passo que falha a sincronização inteira. */
+    public const LOGIN_FAILED = 'login_failed';
 
     public function __construct(
         private ApiDataAccess $db,
@@ -62,8 +62,13 @@ class RadarLayoutService
         }
 
         return $this->sync->syncDevice($imei)->then(function (array $result) use ($imei, $auth): array {
-            if (in_array($result['error'] ?? '', self::REFUSALS, true)) {
-                return ApiError::invalidRequest((string)$result['error'])->toArray();
+            $refusal = match ($result['error']) {
+                'device_is_not_a_radar' => ApiError::deviceIsNotARadar(),
+                'license_has_no_radar_credentials' => ApiError::licenseHasNoRadarCredentials(),
+                default => null,
+            };
+            if ($refusal !== null) {
+                return $refusal->toArray();
             }
 
             return ['data' => [
@@ -73,7 +78,7 @@ class RadarLayoutService
                 // O código do fabricante viaja para quem está a ver: um `777` quer dizer que
                 // a cloud não conhece aquele aparelho, e isso não se adivinha de um "falhou".
                 'codes' => $result['codes'],
-                'error' => $result['error'],
+                'error' => $result['error'] === null ? null : self::LOGIN_FAILED,
                 'layout' => $this->show($imei, $auth)['data'] ?? null,
             ]];
         });

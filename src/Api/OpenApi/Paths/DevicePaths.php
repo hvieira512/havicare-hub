@@ -135,7 +135,8 @@ final class DevicePaths
                     'parameters' => [$imei],
                     'responses' => Responses::map(
                         ['200' => Responses::json('Sync outcome and the resulting layout', 'RadarLayoutSyncResponse')],
-                        'invalid_request',
+                        'device_is_not_a_radar',
+                        'license_has_no_radar_credentials',
                         'not_found',
                     ),
                 ],

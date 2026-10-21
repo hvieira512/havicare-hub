@@ -209,7 +209,7 @@ final class DeviceSchemas
                             // O código do fabricante tal como veio: `777` quer dizer que a
                             // cloud não conhece aquele aparelho, e isso não se adivinha.
                             'codes' => ['type' => 'object', 'additionalProperties' => ['type' => 'integer']],
-                            'error' => ['type' => 'string', 'nullable' => true],
+                            'error' => ['type' => 'string', 'nullable' => true, 'enum' => ['login_failed', null], 'description' => '`login_failed` when the manufacturer cloud refused the licence credentials.'],
                             'layout' => ['type' => 'object', 'nullable' => true],
                         ],
                     ],

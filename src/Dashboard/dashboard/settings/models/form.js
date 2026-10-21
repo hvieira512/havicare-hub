@@ -249,7 +249,6 @@ function handleModelWizardSave() {
 async function refreshTemplate() {
     const { els } = getSettingsModelsRuntime();
     const { deviceType, supplier } = wizard.answers();
-    state.modelModal.enabledCapabilities = [];
     state.modelModal.templateSummary = "";
 
     if (!supplier?.id || !deviceType) {
@@ -267,12 +266,9 @@ async function refreshTemplate() {
         return;
     }
 
-    const capabilities = Array.isArray(response.enabledCapabilities)
-        ? response.enabledCapabilities.map(String)
-        : [];
-    state.modelModal.enabledCapabilities = capabilities;
+    // O modelo nasce com o template: o servidor aplica-o quando o pedido não escolhe capacidades.
     state.modelModal.templateSummary =
-        `${capabilities.length} capacidades predefinidas para ${response.supplier || supplier.name} (${deviceTypeLabel(deviceType)}).`;
+        `${(response.enabledCapabilities || []).length} capacidades predefinidas para ${response.supplier || supplier.name} (${deviceTypeLabel(deviceType)}).`;
     els.modelWizardTemplateSummary.textContent = state.modelModal.templateSummary;
 }
 
@@ -280,7 +276,6 @@ function resetModelWizard() {
     setModelPreviewObjectUrl();
     chosenImage = null;
     wizard.reset();
-    state.modelModal.enabledCapabilities = [];
     state.modelModal.templateSummary = "";
 }
 
@@ -304,10 +299,6 @@ async function saveModel() {
     body.append("deviceType", deviceType);
     if (chosenImage) {
         body.append("image", chosenImage);
-    }
-    body.append("capabilitiesConfigured", "1");
-    for (const feature of state.modelModal.enabledCapabilities || []) {
-        body.append("capabilities[]", String(feature));
     }
 
     const result = await apiSaveModel("", body);

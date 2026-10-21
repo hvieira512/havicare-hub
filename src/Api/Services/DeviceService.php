@@ -346,7 +346,7 @@ class DeviceService
                 'error_code' => 'invalid_request',
                 'reason' => 'missing_configurations_object',
             ]);
-            return ApiError::invalidRequest('configurations object is required')->toArray();
+            return ApiError::invalidField('configurations', 'configurations object is required')->toArray();
         }
 
         $identity = $this->directory->identify($imei);
@@ -448,13 +448,9 @@ class DeviceService
     {
         $audit = new DeviceWriteAudit($imei, $requestId);
 
-        if (
-            isset($payload['configurations'])
-            || isset($payload['configs'])
-            || isset($payload['capabilities'])
-        ) {
+        if (array_key_exists('configurations', $payload)) {
             return $audit->reject(
-                ApiError::invalidRequest('Use /api/devices/{imei}/configurations for device configurations'),
+                ApiError::invalidField('configurations', 'Use /api/devices/{imei}/configurations for device configurations'),
                 'configuration_payload_not_allowed_on_metadata_endpoint',
             );
         }
@@ -485,7 +481,7 @@ class DeviceService
         }
         if ($newImei === '') {
             return $audit->reject(
-                ApiError::invalidRequest('imei, supplier, and model are required'),
+                ApiError::invalidField('imei', 'imei, supplier, and model are required'),
                 'missing_required_metadata_fields',
             );
         }

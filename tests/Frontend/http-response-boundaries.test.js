@@ -88,7 +88,7 @@ test("a 401 that survives the refresh asks for authentication", async () => {
 });
 
 /** A dashboard é toda em português, e esta é a mensagem que mais aparece: a rede a cair. */
-test("a network failure speaks Portuguese and keeps the browser's text aside", async () => {
+test("a network failure carries its code and keeps the browser's text aside", async () => {
     globalThis.fetch = async () => {
         throw new Error("Failed to fetch");
     };
@@ -96,8 +96,7 @@ test("a network failure speaks Portuguese and keeps the browser's text aside", a
     const result = await requestJson("/api/devices");
 
     assert.equal(result.error.code, "network_error");
-    assert.doesNotMatch(result.error.message, /failed to fetch/i);
-    assert.match(result.error.message, /servidor/i);
+    assert.equal(result.error.message, undefined);
     assert.equal(result.error.detail, "Failed to fetch");
 });
 

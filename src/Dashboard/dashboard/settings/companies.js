@@ -9,8 +9,8 @@ import {
 import { ensureLicensesLoaded, invalidateLicenses } from "../licenses.js";
 import { state } from "../state.js";
 import { html, raw } from "../html.js";
-import { apiError, confirmDestructive, toast } from "../dialogs.js";
-import { clearInvalid, markInvalid } from "../validation.js";
+import { apiError, confirmDestructive, reportApiError, toast } from "../dialogs.js";
+import { clearInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, inlineEditor, whileBusy } from "./row-editor.js";
@@ -239,13 +239,9 @@ async function saveCompanyRow(button) {
     const name = row.value("name");
 
     clearInvalid(row.el);
-    if (!name) {
-        markInvalid(row.field("name"), "O nome é obrigatório");
-        return;
-    }
     const result = await (row.id ? apiUpdateCompany(row.id, name) : apiCreateCompany(name));
     if (result.error) {
-        toast("error", apiError(result));
+        reportApiError(result, row.field);
         return;
     }
     await reloadCompanies();
@@ -307,20 +303,14 @@ async function deleteCompany(id) {
 async function saveLicenseRow(button) {
     const row = editorOf(button, "license");
     if (!row) return;
-    const licenseId = row.value("licenseId");
-
     clearInvalid(row.el);
-    if (!licenseId) {
-        markInvalid(row.field("licenseId"), "O ID da licença é obrigatório");
-        return;
-    }
     const result = await apiSaveLicense(row.id, {
         companyId: Number(row.el.dataset.companyId),
-        licenseId,
+        licenseId: row.value("licenseId"),
         name: row.value("name"),
     });
     if (result.error) {
-        toast("error", apiError(result));
+        reportApiError(result, row.field);
         return;
     }
     await reloadLicenses();
@@ -340,9 +330,8 @@ async function saveRadarCredentialsRow(button) {
     if (!row) return;
 
     const result = await submitRadarCredentials(row);
-    if (result === null) return;
     if (result.error) {
-        toast("error", apiError(result));
+        reportApiError(result, row.field);
         return;
     }
     clearRadarCredentials();

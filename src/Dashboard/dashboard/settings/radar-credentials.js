@@ -6,7 +6,8 @@ import {
 } from "../api/index.js";
 import { state } from "../state.js";
 import { html, raw } from "../html.js";
-import { clearInvalid, markInvalid } from "../validation.js";
+import { clearInvalid } from "../validation.js";
+import { errorCodeText } from "../api/errors.js";
 
 /** As credenciais da cloud dos radares, por licença: com a conta de outra, os radares respondem offline. */
 
@@ -43,7 +44,7 @@ function secretField(id, field, label, stored) {
 /** Autenticar não prova que a conta é desta licença: diz-se quantos destes radares ela conhece. */
 export function radarCheckMessage({ radars, responding, error }) {
     if (error) {
-        return { tone: "danger", text: `Não ligou: ${error}` };
+        return { tone: "danger", text: errorCodeText(error) ?? "Não ligou." };
     }
     if (radars === 0) {
         return {
@@ -125,29 +126,15 @@ export function tryRadarCredentials(row) {
     });
 }
 
-/** Grava a linha; `null` quando falta um campo obrigatório, que fica marcado. */
-export async function submitRadarCredentials(row) {
+/** Grava a linha; os campos em falta vêm marcados no `fields` da resposta. */
+export function submitRadarCredentials(row) {
     clearInvalid(row.el);
-
-    const baseUrl = row.value("baseUrl");
-    const username = row.value("username");
-    const appId = row.value("appId");
-    const missing = [
-        [baseUrl, "baseUrl", "O endereço da API é obrigatório"],
-        [username, "username", "O utilizador é obrigatório"],
-        [appId, "appId", "O App ID é obrigatório"],
-    ].find(([value]) => !value);
-
-    if (missing) {
-        markInvalid(row.field(missing[1]), missing[2]);
-        return null;
-    }
 
     // Um segredo em branco fica como está no servidor.
     return apiSaveRadarCredentials(row.id, {
-        baseUrl,
-        username,
-        appId,
+        baseUrl: row.value("baseUrl"),
+        username: row.value("username"),
+        appId: row.value("appId"),
         password: row.value("password"),
         appSecret: row.value("appSecret"),
     });

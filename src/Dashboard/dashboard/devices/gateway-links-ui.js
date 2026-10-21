@@ -4,6 +4,7 @@ import {
     getDevices as apiGetDevices,
 } from "../api/index.js";
 import { allPages } from "../api/http.js";
+import { apiError } from "../dialogs.js";
 import { esc } from "../format.js";
 import { html, raw } from "../html.js";
 import { state } from "../state.js";
@@ -208,11 +209,11 @@ export async function syncGatewayLinks(sensorKey, currentKeys, desiredKeys) {
     const changes = gatewayLinkChanges(currentKeys, desiredKeys);
     for (const gatewayKey of changes.add) {
         const result = await apiCreateDeviceLink(gatewayKey, sensorKey);
-        if (result?.error) return result.error.message || result.error.code;
+        if (result?.error) return apiError(result);
     }
     for (const gatewayKey of changes.remove) {
         const result = await apiDeleteDeviceLink(gatewayKey, sensorKey);
-        if (result?.error) return result.error.message || result.error.code;
+        if (result?.error) return apiError(result);
     }
     return "";
 }

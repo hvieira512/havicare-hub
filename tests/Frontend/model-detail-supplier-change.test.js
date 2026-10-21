@@ -13,8 +13,8 @@ const {
 } = await import("../../src/Dashboard/dashboard/settings/models/detail.js");
 
 /**
- * Trocar o fornecedor faz o servidor substituir as capacidades pelo template do novo, e a ficha
- * tem de recarregar para mostrar e gravar a selecção que existe.
+ * O PUT responde com o modelo guardado, com as capacidades que o servidor aplicou: a ficha mostra
+ * esse e não o que se enviou.
  */
 const MODEL = {
     id: 42,
@@ -62,42 +62,21 @@ function setupDom() {
     return els;
 }
 
-/** As leituras pedidas, pela ordem por que saíram: o PUT da gravação não conta. */
-function recordReads(responses) {
+test("after saving, the sheet shows the model the server saved without reading it again", async () => {
+    const els = setupDom();
+    renderModelDetailInfo(MODEL);
+    const saved = { ...MODEL, supplierId: 9, supplier: "4P Touch", capabilities: { telemetry: { heart_rate: true } } };
     const urls = [];
     globalThis.fetch = async (url, options = {}) => {
         if ((options.method || "GET").toUpperCase() === "GET") urls.push(String(url));
-        const match = Object.keys(responses).find((part) => String(url).includes(part));
-        return jsonResponse(match ? responses[match] : { data: [] });
+        return jsonResponse((options.method || "GET").toUpperCase() === "PUT" ? saved : { data: [] });
     };
-
-    return urls;
-}
-
-test("changing the supplier reloads the sheet with the new template", async () => {
-    const els = setupDom();
-    renderModelDetailInfo(MODEL);
-    const urls = recordReads({
-        "/api/models/42": { data: { ...MODEL, supplierId: 9, supplier: "4P Touch" } },
-    });
 
     els.modelDetailSupplierSelect.value = "4P Touch";
     await saveModelDetail();
 
-    assert.ok(
-        urls.some((url) => /\/api\/models\/42(\?|$)/.test(url)),
-        `a ficha tinha de ser recarregada; pedidos: ${urls.join(", ")}`,
-    );
-});
-
-test("saving without changing the supplier does not reload the sheet", async () => {
-    const els = setupDom();
-    renderModelDetailInfo(MODEL);
-    els.modelDetailCommercialName.value = "MF91 Pro";
-    const urls = recordReads({});
-
-    await saveModelDetail();
-
+    assert.equal(state.settingsModal.currentCapabilitiesModel.supplier, "4P Touch");
+    assert.deepEqual(state.settingsModal.capabilityEnabledCapabilities, ["heart_rate"]);
     assert.equal(urls.filter((url) => /\/api\/models\/42(\?|$)/.test(url)).length, 0);
 });
 
@@ -124,7 +103,7 @@ test("saving the sheet sends the chosen image", async () => {
     const calls = [];
     globalThis.fetch = async (url, options = {}) => {
         calls.push({ url, method: options.method || "GET", body: options.body });
-        return jsonResponse({ status: "ok" });
+        return jsonResponse(MODEL);
     };
     const els = setupDom();
     renderModelDetailInfo(MODEL);

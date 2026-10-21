@@ -68,14 +68,15 @@ final class StreamController
         }
 
         if ($company === '' || $licenseId <= 0) {
-            return $this->json->result(ApiError::invalidRequest(
+            return $this->json->result(ApiError::invalidField(
+                $company === '' ? 'company' : 'licenseId',
                 'This stream requires a license client, or a hub admin naming company and licenseId'
             )->toArray());
         }
 
         $channels = $this->requestedChannels($request);
         if (is_string($channels)) {
-            return $this->json->result(ApiError::invalidRequest($channels)->toArray());
+            return $this->json->result(ApiError::invalidField('channels', $channels)->toArray());
         }
 
         return $this->serve($company, $licenseId, $channels, $user);

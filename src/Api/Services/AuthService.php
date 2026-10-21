@@ -48,7 +48,7 @@ class AuthService
                 'error_code' => 'invalid_request',
                 'reason' => 'missing_credentials',
             ]);
-            return ApiError::invalidRequest('username and password are required')->toArray();
+            return ApiError::invalidField($username === '' ? 'username' : 'password', 'username and password are required')->toArray();
         }
 
         // O teto vem antes da verificação: o custo que ele trava, 146 ms de loop bloqueado, paga-se
@@ -168,7 +168,7 @@ class AuthService
         $licenseId = DeviceMetadata::normalizeLicenseId((string)($payload['licenseId'] ?? ''));
 
         if ($company === 'null' || $licenseId <= 0) {
-            return ApiError::invalidRequest('company and licenseId are required')->toArray();
+            return ApiError::invalidField($company === 'null' ? 'company' : 'licenseId', 'company and licenseId are required')->toArray();
         }
 
         // As duas metades respondem separadamente: uma empresa conhecida sem aquela licença é o

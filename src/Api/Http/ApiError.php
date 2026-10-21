@@ -39,6 +39,8 @@ final class ApiError
         'gd_jpeg_missing' => 400,
         'invalid_image' => 400,
         'image_save_failed' => 400,
+        'device_is_not_a_radar' => 400,
+        'license_has_no_radar_credentials' => 400,
         // 401 e não 400: o pedido está bem formado, o que falha é quem o faz.
         'invalid_credentials' => 401,
         'invalid_refresh_token' => 401,
@@ -147,11 +149,10 @@ final class ApiError
         return new self($code, $message, $fields);
     }
 
-    // Pedidos mal formados: a mensagem muda com o campo em falta, o código não.
-
-    public static function invalidRequest(string $message): self
+    /** Um campo recusado, com a razão. */
+    public static function invalidField(string $field, string $message): self
     {
-        return new self('invalid_request', $message);
+        return new self('invalid_request', $message, [$field => [$message]]);
     }
 
     /** O corpo não é sequer JSON -- a rejeição mais comum da API, e sempre com este texto. */
@@ -160,9 +161,10 @@ final class ApiError
         return new self('invalid_request', 'Invalid JSON');
     }
 
-    public static function invalidConfig(string $message): self
+    /** Uma configuração recusada: o `fields` leva a chave dela. */
+    public static function invalidConfig(string $message, string $key): self
     {
-        return new self('invalid_config', $message);
+        return new self('invalid_config', $message, [$key => [$message]]);
     }
 
     public static function invalidLink(string $message): self
@@ -313,6 +315,16 @@ final class ApiError
         return new self('too_many_attempts', 'Too many authentication attempts; slow down and retry');
     }
 
+    public static function deviceIsNotARadar(): self
+    {
+        return new self('device_is_not_a_radar', 'Device is not a radar');
+    }
+
+    public static function licenseHasNoRadarCredentials(): self
+    {
+        return new self('license_has_no_radar_credentials', 'The device license has no radar cloud credentials');
+    }
+
     public static function deviceAlreadyAssociated(): self
     {
         return new self('device_already_associated', 'Device is already associated');
@@ -350,7 +362,9 @@ final class ApiError
 
     public static function invalidLicense(): self
     {
-        return new self('invalid_license', 'A valid company license is required for license clients');
+        $message = 'A valid company license is required for license clients';
+
+        return new self('invalid_license', $message, ['licenseRefId' => [$message]]);
     }
 
     public static function featureNotRequestable(): self

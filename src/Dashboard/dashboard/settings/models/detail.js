@@ -12,9 +12,9 @@ import {
     state,
 } from "../../state.js";
 import { html } from "../../html.js";
-import { apiError, confirmDestructive, toast } from "../../dialogs.js";
+import { apiError, confirmDestructive, reportApiError, toast } from "../../dialogs.js";
 import { allPages } from "../../api/http.js";
-import { clearInvalid, markInvalid } from "../../validation.js";
+import { clearInvalid } from "../../validation.js";
 import { modelPreviewHtml } from "../../components/model-image.js";
 import {
     deviceTypeOptions,
@@ -31,17 +31,22 @@ import { renderCapabilitiesSection } from "./capabilities-editor.js";
 /** A ficha de um modelo: a identidade em cima e o editor de capacidades em baixo, cada um com o seu Guardar. */
 
 async function openModelDetail(modelId) {
+    const model = await apiGetModel(modelId);
+    if (model.error) {
+        toast("error", apiError(model));
+        return;
+    }
+    await showModelDetail(model);
+}
+
+/** Mostra o modelo como o servidor o diz: as capacidades que lá vêm já são as que valem. */
+async function showModelDetail(model) {
     const { els } = getSettingsModelsRuntime();
-    const response = await apiGetModel(modelId);
-    const model = response.data || response;
     await loadCapabilityCatalog(model.deviceType || "watch");
 
     state.settingsModal.currentCapabilitiesModel = model;
-    state.settingsModal.capabilityRequestableCapabilities = Array.isArray(
-        model.requestableCapabilities,
-    )
-        ? model.requestableCapabilities.map(String)
-        : [];
+    state.settingsModal.capabilityEnabledCapabilities = flattenedCapabilityKeys(model.capabilities || {});
+    state.settingsModal.capabilityRequestableCapabilities = (model.requestableCapabilities || []).map(String);
 
     const supplierId = Number(model.supplierId || 0);
     const deviceType = model.deviceType || "watch";
@@ -53,19 +58,6 @@ async function openModelDetail(modelId) {
                 tmpl.enabledCapabilities.map(String);
         }
     }
-    // O template do fornecedor manda: o que ele não oferece não se mostra ligado.
-    const templateSet = new Set(
-        state.settingsModal.capabilityModelTemplateKeys || [],
-    );
-    state.settingsModal.capabilityEnabledCapabilities = flattenedCapabilityKeys(
-        model.capabilities || {},
-    ).filter((key) => (templateSet.size === 0 ? true : templateSet.has(key)));
-    const enabledSet = new Set(state.settingsModal.capabilityEnabledCapabilities);
-    state.settingsModal.capabilityRequestableCapabilities =
-        state.settingsModal.capabilityRequestableCapabilities.filter(
-            (key) => enabledSet.has(key),
-        );
-
     els.settingsCloseBtn?.classList.remove("d-none");
     els.modelDetailActionBar?.classList.replace("d-none", "d-flex");
     els.modelsBreadcrumb.classList.remove("d-none");
@@ -203,13 +195,6 @@ async function saveModelDetail() {
     if (!model) return;
     const fields = readModelDetailFields();
     clearInvalid(els.modelDetailFields);
-    if (fields.commercialName === "") {
-        markInvalid(els.modelDetailCommercialName, "O nome comercial é obrigatório");
-    }
-    if (fields.internalModel === "") {
-        markInvalid(els.modelDetailInternalModel, "O modelo interno é obrigatório");
-    }
-    if (els.modelDetailFields?.querySelector(".is-invalid")) return;
 
     const supplier = modelDetailSuppliers().find(
         (item) => String(item.name) === fields.supplier,
@@ -226,32 +211,17 @@ async function saveModelDetail() {
 
     const result = await apiSaveModel(model.id, body);
     if (result.error) {
-        toast("error", apiError(result));
+        reportApiError(result, (field) => ({
+            internalModel: els.modelDetailInternalModel,
+            commercialName: els.modelDetailCommercialName,
+        })[field]);
         return;
     }
 
-    // O PUT responde `{status: "ok"}`: o modelo actualizado é o que se acabou de enviar.
-    const saved = {
-        ...model,
-        image: image ? state.modelPreviewObjectUrl : model.image,
-        supplierId: supplier?.id ?? model.supplierId,
-        supplier: fields.supplier,
-        internalModel: fields.internalModel,
-        commercialName: fields.commercialName,
-        deviceType: fields.deviceType,
-    };
-    state.settingsModal.currentCapabilitiesModel = saved;
-    renderModelDetailInfo(saved);
     // O nome, o fornecedor e o tipo são o que a árvore mostra: as listas em memória deixam de valer.
     state.settingsModal.sectionLoaded.models = false;
     invalidateDeviceTypeSuppliersModels();
-
-    // Trocar o fornecedor ou o tipo faz o servidor substituir as capacidades pelo template novo.
-    const supplierChanged = Number(supplier?.id ?? 0) !== Number(model.supplierId || 0);
-    const typeChanged = fields.deviceType !== model.deviceType;
-    if (supplierChanged || typeChanged) {
-        await openModelDetail(model.id);
-    }
+    await showModelDetail(result);
 }
 
 /** Quantos dispositivos usam o modelo, ao lado do botão de apagar. */

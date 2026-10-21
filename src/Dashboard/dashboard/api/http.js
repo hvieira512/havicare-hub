@@ -66,11 +66,10 @@ const scheduleTokenRefresh = (delayOverrideMs = null) => {
     }, delayMs);
 };
 
-// A frase do browser é inglesa -- «Failed to fetch» no Chrome --; o original fica no `detail`.
+// O texto de cada código está no `api/errors.js`; a frase do browser fica no `detail`.
 const networkError = (error) => ({
     error: {
         code: "network_error",
-        message: "Não foi possível falar com o servidor. Verifique a ligação.",
         detail: error instanceof Error ? error.message : String(error),
     },
     _httpStatus: 0,
@@ -83,13 +82,7 @@ const parseJsonResponse = async (response) => {
         if (response.ok) {
             return { _httpStatus: response.status };
         }
-        return {
-            error: {
-                code: "empty_body",
-                message: `O servidor respondeu ${response.status} sem corpo.`,
-            },
-            _httpStatus: response.status,
-        };
+        return { error: { code: "empty_body" }, _httpStatus: response.status };
     }
 
     try {
@@ -98,15 +91,8 @@ const parseJsonResponse = async (response) => {
             return Object.assign({}, body, { _httpStatus: response.status });
         }
         return body;
-    } catch (error) {
-        return {
-            error: {
-                code: "invalid_json",
-                message: error instanceof Error ? error.message : "Invalid JSON response",
-            },
-            _httpStatus: response.status,
-            _rawBody: raw,
-        };
+    } catch {
+        return { error: { code: "invalid_json" }, _httpStatus: response.status, _rawBody: raw };
     }
 };
 

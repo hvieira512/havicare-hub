@@ -120,7 +120,7 @@ class RadarCredentialsService
                 'radars' => count($radars),
                 // O `200` é o fabricante a dizer que conhece o aparelho; o `777`, que não.
                 'responding' => (int)($tally['codes']['200'] ?? 0),
-                'error' => $tally['error'],
+                'error' => $tally['error'] === null ? null : RadarLayoutService::LOGIN_FAILED,
             ]],
         );
     }

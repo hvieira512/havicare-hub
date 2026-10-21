@@ -200,7 +200,7 @@ export async function editDevice(imei, supplier, model) {
         licensesLoaded = licenseGroups !== null;
         resetEditWizard(licenseGroups || []);
         if (detail?.error) {
-            setDeviceFormError(detail.error.message || "Não foi possível carregar o dispositivo.");
+            setDeviceFormError(apiError(detail));
             return;
         }
         const device = detail.device || {};
@@ -491,10 +491,6 @@ export async function saveDevice() {
         company,
     );
     if (result.error) {
-        if (result._httpStatus === 409) {
-            setDeviceFormError("Este IMEI já existe.");
-            return;
-        }
         setDeviceFormError(apiError(result));
         return;
     }

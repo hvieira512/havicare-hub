@@ -238,7 +238,7 @@ class ModelService
         $supplierId = (int)($params['supplierId'] ?? 0);
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($params['deviceType'] ?? 'watch'));
         if ($supplierId <= 0) {
-            return ApiError::invalidRequest('supplierId is required')->toArray();
+            return ApiError::invalidField('supplierId', 'supplierId is required')->toArray();
         }
 
         $supplier = $this->db->suppliers->findById($supplierId);
@@ -316,7 +316,7 @@ class ModelService
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    public function update(int $id, array $payload, mixed $imageUpload = null): array
+    public function update(int $id, array $payload, mixed $imageUpload = null, string $baseUrl = ''): array
     {
         $current = $this->db->models->findById($id);
         if ($current === null) {
@@ -351,7 +351,7 @@ class ModelService
             $this->images->delete((string)($current['image_path'] ?? ''));
         }
 
-        return ['status' => 'ok'];
+        return $this->show($id, $baseUrl);
     }
 
     /** @return array<string, mixed> */

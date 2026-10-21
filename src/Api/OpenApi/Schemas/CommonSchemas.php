@@ -165,11 +165,12 @@ final class CommonSchemas
                         'type' => 'object',
                         'required' => ['code', 'message'],
                         'properties' => [
-                            'code' => ['type' => 'string', 'example' => 'invalid_request'],
-                            'message' => ['type' => 'string', 'example' => 'Validation failed'],
+                            'code' => ['type' => 'string', 'description' => 'Stable; clients branch and translate on it.', 'example' => 'invalid_request'],
+                            'message' => ['type' => 'string', 'description' => 'English, for logs and integrators; not for display.', 'example' => 'Validation failed'],
                             'fields' => [
                                 'type' => 'object',
-                                'description' => 'Per-field validation messages, present only when there are field errors.',
+                                'additionalProperties' => ['type' => 'array', 'items' => ['type' => 'string']],
+                                'description' => 'The refused fields and why. Every validation refusal carries it: invalid_request, invalid_config (keyed by configuration), incomplete_owner and invalid_license.',
                             ],
                             'requestId' => [
                                 'type' => 'string',

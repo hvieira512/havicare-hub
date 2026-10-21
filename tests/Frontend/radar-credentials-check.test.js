@@ -47,9 +47,9 @@ test("a failed login states the cause once", () => {
     const message = radarCheckMessage({
         radars: 21,
         responding: 0,
-        error: "Qinglanst login failed",
+        error: "login_failed",
     });
 
     assert.equal(message.tone, "danger");
-    assert.match(message.text, /Qinglanst login failed/);
+    assert.equal(message.text, "Não foi possível autenticar na cloud do fabricante.");
 });

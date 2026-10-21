@@ -127,7 +127,6 @@ export const state = {
     modelModalSuppliers: [],
     modelModal: {
         capabilities: [],
-        enabledCapabilities: [],
         templateSummary: "",
     },
     protocolCatalogs: {},

@@ -44,6 +44,7 @@ return static function (
                 (int)$params['id'],
                 RequestContext::body($request),
                 $request->getUploadedFiles()['image'] ?? null,
+                RequestContext::baseUrl($request),
             ),
             body: ApiRoute::FORM_BODY,
         ),

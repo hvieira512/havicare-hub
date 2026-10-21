@@ -72,7 +72,7 @@ final class DenylistService
     {
         $identity = trim($identity);
         if ($identity === '') {
-            return ApiError::invalidRequest('identity is required')->toArray();
+            return ApiError::invalidField('identity', 'identity is required')->toArray();
         }
         if (!$this->db->denylist->remove($identity)) {
             return ApiError::denylistNotFound()->toArray();

@@ -70,13 +70,31 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         $result = $api->update((int)$model['id'], $payload);
 
-        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame((int)$model['id'], $result['id'] ?? null);
         self::assertSame(
             ['heart_rate'],
             $db->modelCapabilities->requestableFeaturesForModelId((int)$model['id'])
         );
         $updated = $api->show((int)$model['id'], '');
         self::assertSame(['heart_rate'], $updated['requestableCapabilities'] ?? null);
+    }
+
+    /** O cliente mostra o que o servidor guardou, com as capacidades que ele aplicou. */
+    public function testUpdateAnswersWithTheSavedModel(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+        self::assertIsArray($model);
+
+        $result = $api->update((int)$model['id'], [
+            'supplierId' => (int)$model['supplier_id'],
+            'internalModel' => 'HW20PRO',
+            'commercialName' => 'Relógio HW20',
+            'deviceType' => 'watch',
+        ]);
+
+        self::assertSame($api->show((int)$model['id'], ''), $result);
+        self::assertSame('Relógio HW20', $result['commercialName'] ?? null);
     }
 
     public function testUpdateRejectsRequestableTelemetryThatIsNotSupported(): void
@@ -303,7 +321,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         $result = $api->update((int)$model['id'], $payload);
 
-        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame((int)$model['id'], $result['id'] ?? null);
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
         sort($actual);
         self::assertSame(['call_whitelist', 'heart_rate', 'working_mode'], $actual);
@@ -388,7 +406,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             'deviceType' => (string)$model['device_type'],
         ]);
 
-        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame((int)$model['id'], $result['id'] ?? null);
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
         sort($actual);
         self::assertSame(['call_whitelist', 'heart_rate'], $actual);
@@ -409,7 +427,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             'deviceType' => (string)$model['device_type'],
         ]);
 
-        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame((int)$model['id'], $result['id'] ?? null);
         self::assertSame(
             ['heart_rate'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])

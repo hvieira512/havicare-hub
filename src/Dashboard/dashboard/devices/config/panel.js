@@ -11,7 +11,7 @@ import {
     renderDeviceConfigurationRoot,
 } from "./index.js";
 import { emptyPanel } from "../../components/empty-panel.js";
-import { confirmDestructive, toast } from "../../dialogs.js";
+import { apiError, confirmDestructive, toast } from "../../dialogs.js";
 import { resetPhoneControls } from "../../phone.js";
 import { state } from "../../state.js";
 import { CONFIG_INPUTS } from "./inputs/index.js";
@@ -138,7 +138,7 @@ export async function saveDeviceConfigurations(container) {
         // A resposta de um aparelho anterior não escreve no de quem está agora no ecrã.
         if (state.deviceModal.imei !== imei) return;
         if (result.error) {
-            toast("error", result.error.message || "Não foi possível enviar as alterações");
+            toast("error", apiError(result));
             return;
         }
 
@@ -214,10 +214,7 @@ export async function saveDeviceConfiguration(section, actionValue = "") {
                 phase: "idle",
                 feedback: {
                     tone: "danger",
-                    message:
-                        result.error.message ||
-                        result.error.code ||
-                        "Falha ao enviar configuração",
+                    message: apiError(result),
                 },
             });
             renderDeviceConfigurationModal();

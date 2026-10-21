@@ -129,7 +129,7 @@ final class TenancySchemas
                         'properties' => [
                             'radars' => ['type' => 'integer', 'example' => 21],
                             'responding' => ['type' => 'integer', 'example' => 21],
-                            'error' => ['type' => 'string', 'nullable' => true],
+                            'error' => ['type' => 'string', 'nullable' => true, 'enum' => ['login_failed', null]],
                         ],
                     ],
                 ],

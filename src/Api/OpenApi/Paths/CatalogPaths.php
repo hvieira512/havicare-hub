@@ -142,7 +142,7 @@ final class CatalogPaths
                     'parameters' => [$id],
                     'requestBody' => Requests::multipartOrJson('ModelWriteRequest'),
                     'responses' => Responses::map(
-                        ['200' => Responses::json('Model updated', 'StatusResponse')],
+                        ['200' => Responses::json('The model as saved, with the capabilities the server applied', 'ModelItem')],
                         ...self::MODEL_WRITE_ERRORS,
                         ...['model_not_found'],
                     ),
