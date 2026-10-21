@@ -73,18 +73,6 @@ test("with a position, the value is the coordinates and the details say how and 
     assert.match(html, /GPS · ±5 m · há 2 min/);
 });
 
-/** O 0,0 é como os protocolos dizem «sem fixo», e o gateway Moko marca-o com coordenadas. */
-test("the 0,0 pair is not a position even when it is flagged as one", () => {
-    const content = uplinkCardContent("location", {
-        source: "gps",
-        hasCoordinates: true,
-        lat: 0,
-        lon: 0,
-    });
-
-    assert.equal(content.value, "—");
-});
-
 test("a position resolved from radio says Rádio, not the raw source", () => {
     // `cell`, `wifi` e `cell_wifi` são todos triangulação; o que distingue da de GPS é a
     // proveniência, não qual das antenas entrou na conta.

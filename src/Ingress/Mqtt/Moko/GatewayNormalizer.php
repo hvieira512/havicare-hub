@@ -33,14 +33,17 @@ final class GatewayNormalizer
             if (!is_numeric($data['latitude'] ?? null) || !is_numeric($data['longitude'] ?? null)) {
                 return [];
             }
+            $gpsValid = ($data['fix_result'] ?? null) === 'gps_success';
+            // O 0,0 de um fixo falhado é a falta de posição, e não uma posição.
+            $hasCoordinates = $gpsValid || (float)$data['latitude'] !== 0.0 || (float)$data['longitude'] !== 0.0;
             return [[
                 'type' => 'location',
                 'data' => Values::withoutNulls([
                     'source' => 'gps',
-                    'gpsValid' => ($data['fix_result'] ?? null) === 'gps_success',
-                    'hasCoordinates' => true,
-                    'lat' => (float)$data['latitude'],
-                    'lon' => (float)$data['longitude'],
+                    'gpsValid' => $gpsValid,
+                    'hasCoordinates' => $hasCoordinates,
+                    'lat' => $hasCoordinates ? (float)$data['latitude'] : null,
+                    'lon' => $hasCoordinates ? (float)$data['longitude'] : null,
                     'hdop' => is_numeric($data['hdop'] ?? null) ? (float)$data['hdop'] : null,
                 ]),
             ] + $common];
