@@ -40,15 +40,15 @@ Duas regras decorrem desta definição:
 ## 2. Representação da ausência de dono
 
 Um dispositivo pode existir sem dono — registado, à espera de ser atribuído a um
-cliente. Essa ausência escreve-se de **duas** maneiras diferentes conforme o
+cliente. Essa ausência escreve-se de maneiras diferentes conforme o
 sítio, e confundi-las já causou um bug em produção.
 
 | | Empresa ausente | Licença ausente |
 |---|---|---|
 | **Em memória** | `'null'` *(o texto)* | `0` |
 | **No tópico MQTT** | `null` | `0` |
-| **No ficheiro da whitelist** | `"null"` | `0` |
 | **Na base de dados** | `NULL` *(SQL)* | `NULL` *(SQL)* |
+| **Na API** | `null` | `null` |
 
 A razão de existirem sentinelas em memória é o tópico MQTT: um tópico é um
 caminho de texto, e não há forma de lá escrever "ausente". Tem de haver alguma

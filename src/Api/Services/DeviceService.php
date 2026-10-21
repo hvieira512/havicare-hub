@@ -126,7 +126,7 @@ class DeviceService
         ));
         $items = array_map(
             fn (array $device): array => $this->presentation->attachImage(
-                $this->directory->overlayRuntimeState($device, $runtimeStates),
+                DevicePresentation::withOwner($this->directory->overlayRuntimeState($device, $runtimeStates)),
                 $this->directory->modelForSupplierAndName(
                     (string)($device['supplier'] ?? ''),
                     (string)($device['model'] ?? '')
@@ -213,7 +213,7 @@ class DeviceService
         );
 
         return $this->responseCompactor->compact([
-            'device' => $device,
+            'device' => DevicePresentation::withOwner($device),
             'model' => $model,
             'configuration' => [
                 'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),

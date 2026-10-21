@@ -455,8 +455,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
 
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
         $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
-        self::assertSame('null', $body['association']['company'] ?? null);
-        self::assertSame(0, $body['association']['licenseId'] ?? null);
+        self::assertSame(['company' => null, 'licenseId' => null], $body['association'] ?? []);
 
         $tenantRead = $server(new ServerRequest(
             'GET',
@@ -473,7 +472,7 @@ final class DashboardApiTenancyTest extends DashboardHttpTestCase
         $device = json_decode((string)$adminRead->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertSame(200, $adminRead->getStatusCode(), (string)$adminRead->getBody());
-        self::assertSame('null', $device['device']['company'] ?? null);
-        self::assertSame(0, $device['device']['licenseId'] ?? null);
+        self::assertNull($device['device']['company']);
+        self::assertNull($device['device']['licenseId']);
     }
 }

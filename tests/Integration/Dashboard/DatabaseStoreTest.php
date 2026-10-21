@@ -343,7 +343,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertNull($row['license_id']);
         self::assertNull($row['company']);
 
-        // E o que a API devolve não muda: a sentinela volta na fronteira de leitura.
+        // Em memória volta a sentinela; é a API que a diz `null`.
         $device = $db->whitelist->getDevice('861265061009822');
         self::assertIsArray($device);
         self::assertSame(0, $device['licenseId']);
