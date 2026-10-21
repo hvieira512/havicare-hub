@@ -147,13 +147,10 @@ final class PillDispenserAckAfterPublishTest extends TestCase
                 parent::publishTelemetry($imei, $payload, $deviceType, $licenseId, $company);
             }
         };
-        $path = (string)tempnam(sys_get_temp_dir(), 'fw');
-        file_put_contents($path, str_repeat('f', 600));
-        $upgrades = new InMemoryFirmwareUpgradeStore(['status' => 'requested', 'offset' => 0, 'path' => $path, 'size' => 600, 'checksum' => 1, 'timeout' => 1800]);
+        $upgrades = new InMemoryFirmwareUpgradeStore(['status' => 'requested', 'offset' => 0, 'firmware' => base64_encode(str_repeat('f', 600)), 'size' => 600, 'checksum' => 1, 'timeout' => 1800]);
         $battery = [0x8103 => ['value' => "\x50"]];
 
         $acks = $this->acks($mqtt, [$this->frame(0x01, 1, $battery), $this->frame(0x01, 1, $battery)], upgrades: $upgrades);
-        unlink($path);
 
         self::assertSame(['register_ack', 'upgrade_start'], $acks);
     }

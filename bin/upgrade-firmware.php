@@ -57,7 +57,8 @@ $store = new RedisFirmwareUpgradeStore(new RedisClient(
 $store->save($imei, [
     'status' => 'requested',
     'offset' => 0,
-    'path' => $path,
+    // Os bytes e não o caminho: o ficheiro pode mudar ou sair a meio da transferência.
+    'firmware' => base64_encode($firmware),
     'size' => $size,
     'checksum' => $checksum,
     // O aparelho espera 60 s por resposta e retransmite duas vezes; meia hora cobre a

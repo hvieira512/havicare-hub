@@ -195,8 +195,8 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
             return null;
         }
 
-        $firmware = @file_get_contents((string)($state['path'] ?? ''));
-        if ($firmware === false) {
+        $firmware = base64_decode((string)($state['firmware'] ?? ''), true);
+        if ($firmware === false || $firmware === '') {
             $this->upgrades->save($imei, ['status' => 'failed', 'error' => 'firmware_unreadable'] + $state);
 
             return null;
