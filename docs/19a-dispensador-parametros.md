@@ -367,7 +367,7 @@ sincronização forçada · `0xA004` novo registo · `0xA101` calibrar relógio 
 > serviço. Com o `0xA004` ao fim de cada lote, o lote seguinte entrega-se sozinho.
 
 > **Tirar a ficha não reinicia o aparelho.** Tem bateria, e passa a alimentar-se
-> dela: a capacidade `battery` publica `chargingState` e o cartão da dashboard
+> dela: a capacidade `battery` publica `mainsPowered: false` e o cartão da dashboard
 > mostra «Sem corrente», mas a sessão TCP não se interrompe e não há `0x01` novo.
 > Medido a 06/10/2026 com três cortes seguidos, nenhum com registo a seguir.
 >

@@ -8,16 +8,13 @@ Nenhuma das questões listadas constitui defeito que exija correção imediata.
 
 ---
 
-## 1. Duas capacidades publicadas continuam fora do catálogo, de propósito
+## 1. Uma capacidade publicada continua fora do catálogo, de propósito
 
-**O que é.** O `heartbeat` e o `device_config` saem como telemetria e não têm
-entrada no catálogo.
+**O que é.** O `device_config` sai como telemetria e não tem entrada no catálogo.
 
-**Porque está certo assim.** O `heartbeat` é o sinal de vida, não uma medição —
-e já está excluído do histórico da dashboard pela mesma razão. O `device_config`
-é a confirmação de uma configuração, não uma leitura. Declará-los como
-capacidades punha na matriz por modelo dois interruptores que ninguém quereria
-desligar.
+**Porque está certo assim.** É a confirmação de uma configuração, não uma
+leitura. Declará-lo como capacidade punha na matriz por modelo um interruptor que
+ninguém quereria desligar.
 
 Fica registado para a pergunta não voltar a ser feita do zero.
 
