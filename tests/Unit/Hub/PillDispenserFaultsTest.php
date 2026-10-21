@@ -17,11 +17,11 @@ final class PillDispenserFaultsTest extends TestCase
      */
     public static function faults(): iterable
     {
-        yield 'rotação do prato' => [0x8121, 'rotation'];
-        yield 'reposição do prato' => [0x8122, 'tray_reset'];
-        yield 'empurrador' => [0x8123, 'pusher'];
-        yield 'porta do compartimento' => [0x8124, 'cell_door'];
-        yield 'teclas' => [0x8125, 'keys'];
+        yield 'tray rotation' => [0x8121, 'rotation'];
+        yield 'tray reset' => [0x8122, 'tray_reset'];
+        yield 'pusher' => [0x8123, 'pusher'];
+        yield 'compartment door' => [0x8124, 'cell_door'];
+        yield 'keys' => [0x8125, 'keys'];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('faults')]

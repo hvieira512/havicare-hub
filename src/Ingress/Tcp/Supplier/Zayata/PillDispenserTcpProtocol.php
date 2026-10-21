@@ -129,7 +129,7 @@ final class PillDispenserTcpProtocol extends AbstractTcpProtocol
             }
         };
 
-        // Decifrar dá o mesmo a cada repetição, e o pacote prendia os de trás: fica nos bytes do `raw` e no log.
+        // Decifrar dá o mesmo a cada repetição: o pacote confirma-se, e fica nos bytes do `raw` e no log.
         $undecrypted = ($message->decoded['decrypted'] ?? true) === false;
         if ($undecrypted) {
             Logger::channel('hub')->error("Pill dispenser packet not decrypted IMEI={$imei} hex=" . bin2hex($raw));

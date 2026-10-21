@@ -170,10 +170,10 @@ final class DailyBlockNormalizer
     }
 
     /**
-     * Os cinquenta intervalos R-R do bloco, que o firmware conta em dezenas de milissegundos.
-     * Sem instante próprio: a posição na lista não diz onde caem no bloco.
+     * Os cinquenta intervalos R-R do bloco, que o firmware conta em dezenas de milissegundos; o
+     * instante é o do slot onde cada um cai.
      *
-     * @return list<array{milliseconds: int}>
+     * @return list<array{timestamp: string, milliseconds: int}>
      */
     private function rrIntervals(mixed $values, int $start): array
     {

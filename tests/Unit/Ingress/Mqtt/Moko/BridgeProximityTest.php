@@ -112,7 +112,7 @@ final class BridgeProximityTest extends TestCase
             $mqtt->telemetry,
             static fn(array $e): bool => ($e['payload']['type'] ?? '') === 'battery',
         ));
-        self::assertCount(1, $throttled, 'battery is unchanged, so it stays throttled');
+        self::assertCount(1, $throttled, 'a bateria não mudou, e por isso fica estrangulada');
     }
 
     public function testCarriesTheWindowStatisticsAClientDecidesOn(): void
@@ -127,11 +127,11 @@ final class BridgeProximityTest extends TestCase
 
         $proximity = $this->proximity($mqtt->telemetry);
         $data = end($proximity)['payload']['data'];
-        self::assertSame(self::GATEWAY, $data['gatewayId'], 'the pair must be named in data, not only in source');
+        self::assertSame(self::GATEWAY, $data['gatewayId'], 'o par tem de vir no data, e não só no source');
         self::assertSame('measured', $data['state']);
         self::assertSame(-52, $data['rssiDbm']);
-        self::assertSame(-52, $data['rssiMaxDbm'], 'the pass is only visible in the maximum');
-        self::assertSame(-77, $data['rssiMedianDbm'], 'and must not move the median');
+        self::assertSame(-52, $data['rssiMaxDbm'], 'a passagem só se vê no máximo');
+        self::assertSame(-77, $data['rssiMedianDbm'], 'e não pode mexer na mediana');
         self::assertSame(-78, $data['rssiMinDbm']);
         self::assertSame(4, $data['samples']);
         self::assertSame(5, $data['windowSeconds']);
@@ -149,8 +149,8 @@ final class BridgeProximityTest extends TestCase
             static fn(array $row): string => (string)(($row['payload'] ?? $row)['type'] ?? ''),
             $store->recent(self::BRACELET, 'telemetry'),
         );
-        self::assertNotContains('proximity', $types, 'at ~40 sightings a minute this would bury the history');
-        self::assertContains('battery', $types, 'the other telemetry is still recorded');
+        self::assertNotContains('proximity', $types, 'a uns 40 avistamentos por minuto, isto enterrava o histórico');
+        self::assertContains('battery', $types, 'a outra telemetria continua a ser guardada');
     }
 
     public function testAQuietPairIsReportedAsUnknownOnce(): void
@@ -159,14 +159,14 @@ final class BridgeProximityTest extends TestCase
         $this->deliver($bridge, $this->scanPayload(['rssi' => -52]));
 
         $bridge->expireStaleProximity();
-        self::assertCount(1, $this->proximity($mqtt->telemetry), 'nothing to report while it is still being heard');
+        self::assertCount(1, $this->proximity($mqtt->telemetry), 'nada a reportar enquanto ainda se ouve');
 
         $this->now += 31.0;
         $bridge->expireStaleProximity();
         $bridge->expireStaleProximity();
 
         $proximity = $this->proximity($mqtt->telemetry);
-        self::assertCount(2, $proximity, 'silence is reported once, not on every tick');
+        self::assertCount(2, $proximity, 'o silêncio reporta-se uma vez, e não a cada tique');
         $unknown = end($proximity)['payload']['data'];
         self::assertSame('unknown', $unknown['state']);
         self::assertSame(0, $unknown['samples']);

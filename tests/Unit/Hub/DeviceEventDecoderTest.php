@@ -821,12 +821,12 @@ final class DeviceEventDecoderTest extends TestCase
     {
         return [
             'SOS' => ['sos', 'help_call', []],
-            'bateria fraca' => ['lowBattery', 'low_battery', []],
-            'queda' => ['fall', 'fall', ['confirmed' => true]],
-            'retirado' => ['removeAlarm', 'device_removed', []],
-            'saiu da cerca' => ['outFenceAlarm', 'zone_exit', ['zone' => 'geofence']],
-            'entrou na cerca' => ['inFenceAlarm', 'zone_entry', ['zone' => 'geofence']],
-            'frequência cardíaca' => ['abnormalHeartRateAlarm', 'heart_rate_abnormal', []],
+            'low battery' => ['lowBattery', 'low_battery', []],
+            'fall' => ['fall', 'fall', ['confirmed' => true]],
+            'removed' => ['removeAlarm', 'device_removed', []],
+            'left the geofence' => ['outFenceAlarm', 'zone_exit', ['zone' => 'geofence']],
+            'entered the geofence' => ['inFenceAlarm', 'zone_entry', ['zone' => 'geofence']],
+            'heart rate' => ['abnormalHeartRateAlarm', 'heart_rate_abnormal', []],
         ];
     }
 

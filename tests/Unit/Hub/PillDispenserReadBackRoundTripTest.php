@@ -82,23 +82,23 @@ final class PillDispenserReadBackRoundTripTest extends TestCase
     public static function singleValueSettings(): iterable
     {
         yield 'volume' => ['alarmVolume', ['volume' => 2], 'alarm_volume', ['volume' => 2]];
-        yield 'toque' => ['alarmRingtone', ['ringtone' => 3], 'alarm_ringtone', ['ringtone' => 3]];
-        yield 'idioma' => ['deviceLanguage', ['language' => 1], 'device_language', ['language' => 1]];
-        yield 'fuso' => ['timeZone', ['timeZone' => 100], 'time_zone', ['timeZone' => 100]];
-        yield 'fuso a oeste' => ['timeZone', ['timeZone' => -300], 'time_zone', ['timeZone' => -300]];
-        yield 'bloqueio' => ['childLock', ['enabled' => true], 'child_lock', ['enabled' => true]];
-        yield 'toma antecipada' => ['earlyRetrieval', ['enabled' => false], 'early_dispense', ['enabled' => false]];
-        yield 'dispensar depois de falhar' =>
+        yield 'ringtone' => ['alarmRingtone', ['ringtone' => 3], 'alarm_ringtone', ['ringtone' => 3]];
+        yield 'language' => ['deviceLanguage', ['language' => 1], 'device_language', ['language' => 1]];
+        yield 'time zone' => ['timeZone', ['timeZone' => 100], 'time_zone', ['timeZone' => 100]];
+        yield 'time zone to the west' => ['timeZone', ['timeZone' => -300], 'time_zone', ['timeZone' => -300]];
+        yield 'lock' => ['childLock', ['enabled' => true], 'child_lock', ['enabled' => true]];
+        yield 'early dispense' => ['earlyRetrieval', ['enabled' => false], 'early_dispense', ['enabled' => false]];
+        yield 'dispense after missing' =>
             ['missedDispense', ['enabled' => true], 'missed_dispense', ['enabled' => true]];
-        yield 'chamada de emergência' =>
+        yield 'emergency call' =>
             ['emergencyCall', ['enabled' => false], 'emergency_call', ['enabled' => false]];
-        yield 'formato de data' => ['dateFormat', ['format' => 1], 'date_format', ['format' => 1]];
+        yield 'date format' => ['dateFormat', ['format' => 1], 'date_format', ['format' => 1]];
         // O terceiro valor da gama: o aparelho declara máximo 2 e a ficha descreve dois.
-        yield 'formato de data americano' =>
+        yield 'US date format' =>
             ['dateFormat', ['format' => 2], 'date_format', ['format' => 2]];
-        yield 'formato de hora' => ['timeFormat', ['format' => 0], 'time_format', ['format' => 0]];
-        yield 'som das teclas' => ['keyTone', ['enabled' => true], 'key_tone', ['enabled' => true]];
-        yield 'acerto automático do relógio' =>
+        yield 'time format' => ['timeFormat', ['format' => 0], 'time_format', ['format' => 0]];
+        yield 'key sound' => ['keyTone', ['enabled' => true], 'key_tone', ['enabled' => true]];
+        yield 'automatic clock sync' =>
             ['autoClock', ['enabled' => true], 'auto_clock', ['enabled' => true]];
     }
 

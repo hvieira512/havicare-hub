@@ -18,7 +18,7 @@ final class W6bNormalizer
     /**
      * @param array<string, mixed> $decoded
      * @param array<string, mixed> $device
-     * @param int|null $previousTriggerCount null while establishing the baseline
+     * @param int|null $previousTriggerCount null enquanto se estabelece a referência
      * @return array{telemetry: array<string, array<string, mixed>>, events: list<array<string, mixed>>}
      */
     public function normalize(

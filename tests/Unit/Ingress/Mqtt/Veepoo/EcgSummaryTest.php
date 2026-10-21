@@ -104,10 +104,7 @@ final class EcgSummaryTest extends TestCase
         self::assertArrayNotHasKey('heartRateBpm', $data);
     }
 
-    /**
-     * São trinta e quatro por exame e enchiam o histórico com o decorrer em vez do resultado; não dão
-     * aviso de tipo sem normalização porque são reconhecidas e resumidas.
-     */
+    /** As trinta e quatro tramas de um exame resumem-se no resultado, sem aviso de tipo por normalizar. */
     public function testTheLiveFramesAreNotPublishedOneByOne(): void
     {
         $mqtt = new RecordingHubMqttBridge();

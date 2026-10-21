@@ -97,10 +97,7 @@ final class BridgeUnclaimedSightingTest extends TestCase
         self::assertSame(self::W6, $proximity[0]['payload']['device']['id']);
     }
 
-    /**
-     * O tipo sozinho não distingue as pulseiras, e uma W6 reportada como `moko-w6b` mandava o
-     * cliente ler o protocolo errado.
-     */
+    /** O tipo sozinho não distingue as pulseiras: é o modelo que dá o protocolo. */
     public function testTheModelDecidesTheProtocolReportedForABracelet(): void
     {
         [$bridge, $mqtt] = $this->bridge();
@@ -111,10 +108,7 @@ final class BridgeUnclaimedSightingTest extends TestCase
         self::assertSame('moko-w6', $proximity[0]['payload']['source']['protocol']);
     }
 
-    /**
-     * A MF91 fala Veepoo e nenhum decoder MOKO lhe toca, mas está registada; etiquetá-la pelo tipo
-     * dava-lhe o protocolo da W6B.
-     */
+    /** A MF91 está registada mas fala Veepoo, e não leva o protocolo da W6B. */
     public function testABraceletOfAnotherSupplierKeepsItsOwnProtocol(): void
     {
         [$bridge, $mqtt] = $this->bridge();

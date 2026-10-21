@@ -28,8 +28,8 @@ final class W6bDecoder
     private const RAW_FRAME_BASE = 0x20;
 
     /**
-     * @param array<string, mixed> $observation a single entry of a 3070 scan report
-     * @return array<string, mixed>|null null when the payload is not a W6B
+     * @param array<string, mixed> $observation uma entrada de um relatório de scan 3070
+     * @return array<string, mixed>|null null quando o payload não é de uma W6B
      */
     public function decode(array $observation): ?array
     {
@@ -128,7 +128,7 @@ final class W6bDecoder
     }
 
     /**
-     * @param list<int>|null $data service data payload with the UUID stripped
+     * @param list<int>|null $data os dados de serviço sem o UUID
      * @return array<string, mixed>|null
      */
     private function rawAlarm(?array $data): ?array
@@ -157,7 +157,7 @@ final class W6bDecoder
     }
 
     /**
-     * @param list<int>|null $data service data payload with the UUID stripped
+     * @param list<int>|null $data os dados de serviço sem o UUID
      * @return array<string, mixed>|null
      */
     private function rawInfo(?array $data): ?array

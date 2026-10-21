@@ -58,12 +58,12 @@ final class FourPTouchPhonebookDelta
      */
     public static function trustedPrevious(mixed $stored, string $lastStatus): array
     {
-        $entregue = !in_array(
+        $delivered = !in_array(
             $lastStatus,
             ['created', 'failed', 'retry_exhausted', 'response_timeout', 'dropped'],
             true
         );
-        if (!$entregue || !is_array($stored) || array_is_list($stored)) {
+        if (!$delivered || !is_array($stored) || array_is_list($stored)) {
             return [];
         }
 

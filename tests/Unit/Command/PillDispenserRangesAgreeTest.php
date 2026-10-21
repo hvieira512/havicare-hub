@@ -21,12 +21,12 @@ final class PillDispenserRangesAgreeTest extends TestCase
     public static function ranges(): iterable
     {
         yield 'volume' => ['alarm_volume', 'alarmVolume', 'volume', 3, 4];
-        yield 'toque' => ['alarm_ringtone', 'alarmRingtone', 'ringtone', 3, 4];
-        yield 'idioma' => ['device_language', 'deviceLanguage', 'language', 1, 2];
-        yield 'compartimentos' => ['loaded_cells', 'loadedCells', 'cells', 28, 29];
-        yield 'aviso de atraso' => ['retrieval_warning', 'retrievalWarning', 'minutes', 1440, 1441];
-        yield 'tempo até falhar' => ['retrieval_timeout', 'retrievalTimeout', 'minutes', 1440, 1441];
-        yield 'fuso a leste' => ['time_zone', 'timeZone', 'timeZone', 1400, 1401];
+        yield 'ringtone' => ['alarm_ringtone', 'alarmRingtone', 'ringtone', 3, 4];
+        yield 'language' => ['device_language', 'deviceLanguage', 'language', 1, 2];
+        yield 'compartments' => ['loaded_cells', 'loadedCells', 'cells', 28, 29];
+        yield 'late warning' => ['retrieval_warning', 'retrievalWarning', 'minutes', 1440, 1441];
+        yield 'time until missed' => ['retrieval_timeout', 'retrievalTimeout', 'minutes', 1440, 1441];
+        yield 'time zone to the east' => ['time_zone', 'timeZone', 'timeZone', 1400, 1401];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('ranges')]

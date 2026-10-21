@@ -28,11 +28,11 @@ final class VeepooConfigurationTest extends TestCase
     public static function badWindows(): array
     {
         return [
-            'sem traço' => [['enabled' => true, 'range' => '22:00 08:00']],
-            'hora impossível' => [['enabled' => true, 'range' => '25:00-08:00']],
-            'minuto impossível' => [['enabled' => true, 'range' => '22:70-08:00']],
-            'só um lado' => [['enabled' => true, 'range' => '22:00-']],
-            'vazia' => [['enabled' => true, 'range' => '']],
+            'without a dash' => [['enabled' => true, 'range' => '22:00 08:00']],
+            'impossible hour' => [['enabled' => true, 'range' => '25:00-08:00']],
+            'impossible minute' => [['enabled' => true, 'range' => '22:70-08:00']],
+            'only one side' => [['enabled' => true, 'range' => '22:00-']],
+            'empty' => [['enabled' => true, 'range' => '']],
         ];
     }
 
@@ -62,9 +62,9 @@ final class VeepooConfigurationTest extends TestCase
         ));
 
         $rejected = [
-            'mínimo acima do máximo' => ['maxBpm' => 100, 'minBpm' => 120],
-            'mínimo igual ao máximo' => ['maxBpm' => 100, 'minBpm' => 100],
-            'máximo impossível' => ['maxBpm' => 300, 'minBpm' => 50],
+            'minimum above maximum' => ['maxBpm' => 100, 'minBpm' => 120],
+            'minimum equal to maximum' => ['maxBpm' => 100, 'minBpm' => 100],
+            'impossible maximum' => ['maxBpm' => 300, 'minBpm' => 50],
         ];
 
         foreach ($rejected as $label => $bad) {

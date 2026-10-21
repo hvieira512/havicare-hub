@@ -24,43 +24,38 @@ final class BridgeMeasurementTest extends TestCase
     private const TOPIC = 'havicare-hub/null/0/gw/bef341903987/raw';
 
     /**
-     * @return array<string, array{0: string, 1: array<string, mixed>, 2: string, 3: array<string, mixed>}>
+     * @return array<string, array{0: array<string, mixed>, 1: string, 2: array<string, mixed>}>
      */
     public static function measurements(): array
     {
         return [
-            'frequência cardíaca' => ['heart_rate', ['sdkType' => 51, 'heartRate' => 74], 'heart_rate', ['bpm' => 74]],
-            'oxigénio' => ['oxigénio', ['sdkType' => 31, 'bloodOxygen' => 97], 'blood_oxygen', ['spo2Percent' => 97]],
+            'heart rate' => [['sdkType' => 51, 'heartRate' => 74], 'heart_rate', ['bpm' => 74]],
+            'blood oxygen' => [['sdkType' => 31, 'bloodOxygen' => 97], 'blood_oxygen', ['spo2Percent' => 97]],
             // A pulseira reporta em mmol/L; o nome do campo do hub diz mg/dL e manda.
-            'glicemia' => ['glicemia', ['sdkType' => 22, 'bloodGlucose' => 6.44], 'blood_sugar', ['glucoseMgDl' => 116.0]],
-            'temperatura' => [
-                'temperatura',
+            'blood sugar' => [['sdkType' => 22, 'bloodGlucose' => 6.44], 'blood_sugar', ['glucoseMgDl' => 116.0]],
+            'temperature' => [
                 ['sdkType' => 6, 'bodyTemperature' => 36.2, 'bodySurfaceTemperature' => 33.5],
                 'temperature',
                 ['bodyCelsius' => 36.2, 'surfaceCelsius' => 33.5],
             ],
-            'stress' => ['stress', ['sdkType' => 58, 'pressure' => 23], 'stress', ['score' => 23]],
-            'tensão' => [
-                'tensão',
+            'stress' => [['sdkType' => 58, 'pressure' => 23], 'stress', ['score' => 23]],
+            'blood pressure' => [
                 ['sdkType' => 18, 'bloodPressureHigh' => 101, 'bloodPressureLow' => 74],
                 'blood_pressure',
                 ['systolicMmHg' => 101, 'diastolicMmHg' => 74],
             ],
-            // O estado de quem a manda vibrar. Fecha o pedido: é o `expectedReplyTypes` do
-            // comando, e sem ele o registo ficava à espera de uma resposta que já tinha vindo.
-            'a procurar' => ['a procurar', ['sdkType' => 17, 'value' => 'search'], 'find_device', ['state' => 'searching']],
+            // O estado de quem a manda vibrar; fecha o pedido, porque é o `expectedReplyTypes` do comando.
+            'searching' => [['sdkType' => 17, 'value' => 'search'], 'find_device', ['state' => 'searching']],
             // O acumulado do dia, que é o que `activity` significa nos relógios. A app mostra
             // estes três números no ecrã principal, e as calorias vêm em décimas.
-            'totais do dia' => [
-                'totais do dia',
+            'daily totals' => [
                 ['sdkType' => 9, 'step' => 216, 'calorie' => 146, 'distance' => 187, 'day' => 'today'],
                 'activity',
                 ['steps' => 216, 'distanceMeters' => 187, 'caloriesKcal' => 14.6],
             ],
             // Medição real na app do fabricante, conferida valor a valor. Os nomes do hub levam a
             // unidade: `muscleRate` ao lado de `muscleMass` obriga a adivinhar.
-            'composição corporal' => [
-                'composição corporal',
+            'body composition' => [
                 // Em texto, que é como o SDK os entrega.
                 [
                     'sdkType' => 32,
@@ -102,7 +97,6 @@ final class BridgeMeasurementTest extends TestCase
      * @param array<string, mixed> $expected
      */
     public function testLiveMeasurementBecomesTelemetry(
-        string $_label,
         array $payload,
         string $expectedType,
         array $expected,

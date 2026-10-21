@@ -28,10 +28,10 @@ final class GatewayDenylistTest extends TestCase
     public static function bridges(): array
     {
         return [
-            'pulseira' => ['veepoo', 'veepoo-node', 'MF91'],
-            'balança' => ['lefu', 'lefu-torre-node', 'CF632'],
-            'tensiómetro' => ['joytech-bp', 'joytech-node', 'DBP-6292B'],
-            'termómetro' => ['joytech-thermometer', 'joytech-node', 'DET-3018'],
+            'bracelet' => ['veepoo', 'veepoo-node', 'MF91'],
+            'scale' => ['lefu', 'lefu-torre-node', 'CF632'],
+            'blood pressure monitor' => ['joytech-bp', 'joytech-node', 'DBP-6292B'],
+            'thermometer' => ['joytech-thermometer', 'joytech-node', 'DET-3018'],
         ];
     }
 

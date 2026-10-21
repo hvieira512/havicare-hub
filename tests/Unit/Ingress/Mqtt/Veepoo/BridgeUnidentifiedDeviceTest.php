@@ -25,9 +25,9 @@ final class BridgeUnidentifiedDeviceTest extends TestCase
     public static function unidentified(): array
     {
         return [
-            'sem aparelho nenhum' => [null],
-            'com aparelho sem MAC' => [['model' => 'MF91']],
-            'com o MAC vazio' => [['mac' => '']],
+            'no device at all' => [null],
+            'a device without a MAC' => [['model' => 'MF91']],
+            'an empty MAC' => [['mac' => '']],
         ];
     }
 

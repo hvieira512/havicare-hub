@@ -163,8 +163,7 @@ final class GenericCapability implements CapabilityContract
     }
 
     /**
-     * Aceita os nomes normalizados da API mantendo a compatibilidade com payloads antigos
-     * que já traziam campos nativos da Wonlex.
+     * Traduz os nomes da API para os nativos da Wonlex; um nativo que já venha passa como está.
      *
      * @param array<string, mixed> $value
      * @return array<string, mixed>

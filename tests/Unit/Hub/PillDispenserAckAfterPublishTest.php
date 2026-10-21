@@ -43,10 +43,7 @@ final class PillDispenserAckAfterPublishTest extends TestCase
         );
     }
 
-    /**
-     * Um corpo que não se decifra dá o mesmo a cada repetição, e prendia os eventos de trás: confirma-se
-     * depois de os bytes ficarem no canal `raw`, para se decifrarem mais tarde.
-     */
+    /** Um corpo que não se decifra confirma-se depois de os bytes ficarem no `raw`, para se decifrarem mais tarde. */
     public function testAnEventThatDoesNotDecryptIsAcknowledgedOnceItsBytesAreInRaw(): void
     {
         $mqtt = new RecordingHubMqttBridge();

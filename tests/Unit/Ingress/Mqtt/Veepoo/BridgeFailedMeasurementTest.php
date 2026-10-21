@@ -336,10 +336,7 @@ final class BridgeFailedMeasurementTest extends TestCase
         self::assertSame([], self::failures($mqtt));
     }
 
-    /**
-     * A confirmação que a consome pode nunca chegar, e sem prazo o pedido seguinte da mesma medição
-     * herdava o perdão e falhava em silêncio.
-     */
+    /** A marca de um pedido expira, porque a confirmação que a consome pode nunca chegar. */
     public function testTheMarkOfADeadRequestExpires(): void
     {
         $mqtt = new RecordingHubMqttBridge();

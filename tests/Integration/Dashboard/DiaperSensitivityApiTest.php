@@ -150,10 +150,10 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
     public static function invalidPairs(): array
     {
         return [
-            'range abaixo do minimo' => [1, 12],
-            'range acima do maximo' => [11, 12],
-            'value abaixo do minimo' => [4, 4],
-            'value acima do maximo' => [4, 26],
+            'range below the minimum' => [1, 12],
+            'range above the maximum' => [11, 12],
+            'value below the minimum' => [4, 4],
+            'value above the maximum' => [4, 26],
         ];
     }
 }

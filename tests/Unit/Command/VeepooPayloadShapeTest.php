@@ -23,26 +23,26 @@ final class VeepooPayloadShapeTest extends TestCase
     public static function configurations(): array
     {
         return [
-            'tom de pele' => ['skin_tone', ['level' => 4], ['level' => 4]],
-            'tom de pele em texto' => ['skin_tone', ['level' => '4'], ['level' => 4]],
-            'dados para cálculo' => [
+            'skin tone' => ['skin_tone', ['level' => 4], ['level' => 4]],
+            'skin tone as text' => ['skin_tone', ['level' => '4'], ['level' => 4]],
+            'personal info' => [
                 'personal_info',
                 ['heightCm' => 175, 'weightKg' => 72, 'age' => 34, 'sex' => 'male', 'stepGoal' => 8000, 'sleepGoalMinutes' => 480],
                 ['heightCm' => 175, 'weightKg' => 72, 'age' => 34, 'sex' => 'male', 'stepGoal' => 8000, 'sleepGoalMinutes' => 480],
             ],
-            'alerta de frequência cardíaca' => [
+            'heart rate alert' => [
                 'heart_rate_alert',
                 ['enabled' => 1, 'maxBpm' => '150', 'minBpm' => '50'],
                 ['enabled' => true, 'maxBpm' => 150, 'minBpm' => 50],
             ],
-            'janela de oxigénio' => [
+            'blood oxygen window' => [
                 'blood_oxygen_window',
                 ['enabled' => true, 'range' => '22:00-08:00'],
                 ['enabled' => true, 'range' => '22:00-08:00'],
             ],
-            'interruptor de saúde' => ['heart_rate_continuous', ['enabled' => false], ['enabled' => false]],
-            'interruptor de alarme' => ['blood_oxygen_alert', ['enabled' => true], ['enabled' => true]],
-            'acção transiente' => ['find_device', ['enabled' => true], ['enabled' => true]],
+            'health switch' => ['heart_rate_continuous', ['enabled' => false], ['enabled' => false]],
+            'alarm switch' => ['blood_oxygen_alert', ['enabled' => true], ['enabled' => true]],
+            'transient action' => ['find_device', ['enabled' => true], ['enabled' => true]],
         ];
     }
 

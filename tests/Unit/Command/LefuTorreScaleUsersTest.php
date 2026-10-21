@@ -111,10 +111,10 @@ final class LefuTorreScaleUsersTest extends TestCase
     /** @return iterable<string, array{mixed}> */
     public static function badBirthDates(): iterable
     {
-        yield 'sem data' => [null];
-        yield 'idade em vez da data' => [23];
-        yield 'data que não existe' => ['2003-02-30'];
-        yield 'no futuro' => ['2999-01-01'];
+        yield 'without a date' => [null];
+        yield 'age instead of the date' => [23];
+        yield 'date that does not exist' => ['2003-02-30'];
+        yield 'in the future' => ['2999-01-01'];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('badBirthDates')]

@@ -22,34 +22,34 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
      */
     public static function everyConfiguration(): iterable
     {
-        yield 'idioma do ecrã' => ['device_language', ['language' => 1], 0x06, [0x1001]];
-        yield 'período do plano' => [
+        yield 'screen language' => ['device_language', ['language' => 1], 0x06, [0x1001]];
+        yield 'plan period' => [
             'medication_period',
             ['enabled' => true, 'startDate' => '2026-09-02', 'endDate' => '2026-09-04'],
             0x06,
             [0x1004, 0x1005, 0x1006, 0x1007, 0x1008, 0x1009, 0x100A],
         ];
-        yield 'bloqueio de criança' => ['child_lock', ['enabled' => true], 0x06, [0x100C]];
-        yield 'toma antecipada' => ['early_dispense', ['enabled' => true], 0x06, [0x100D]];
-        yield 'dispensar depois de falhar' => ['missed_dispense', ['enabled' => true], 0x06, [0x1019]];
-        yield 'chamada de emergência' => ['emergency_call', ['enabled' => false], 0x06, [0x100E]];
-        yield 'formato da data' => ['date_format', ['format' => 1], 0x06, [0x1002]];
-        yield 'formato da hora' => ['time_format', ['format' => 0], 0x06, [0x1003]];
-        yield 'som das teclas' => ['key_tone', ['enabled' => true], 0x06, [0x100B]];
-        yield 'acerto automático do relógio' => ['auto_clock', ['enabled' => true], 0x06, [0x1014]];
-        yield 'tipo de toque' => ['alarm_ringtone', ['ringtone' => 2], 0x06, [0x1012]];
+        yield 'child lock' => ['child_lock', ['enabled' => true], 0x06, [0x100C]];
+        yield 'early dispense' => ['early_dispense', ['enabled' => true], 0x06, [0x100D]];
+        yield 'dispense after missing' => ['missed_dispense', ['enabled' => true], 0x06, [0x1019]];
+        yield 'emergency call' => ['emergency_call', ['enabled' => false], 0x06, [0x100E]];
+        yield 'date format' => ['date_format', ['format' => 1], 0x06, [0x1002]];
+        yield 'time format' => ['time_format', ['format' => 0], 0x06, [0x1003]];
+        yield 'key sound' => ['key_tone', ['enabled' => true], 0x06, [0x100B]];
+        yield 'automatic clock sync' => ['auto_clock', ['enabled' => true], 0x06, [0x1014]];
+        yield 'ringtone' => ['alarm_ringtone', ['ringtone' => 2], 0x06, [0x1012]];
         yield 'volume' => ['alarm_volume', ['volume' => 1], 0x06, [0x1013]];
-        yield 'fuso horário' => ['time_zone', ['timeZone' => 100], 0x06, [0x1015]];
-        yield 'avisar de atraso' => ['retrieval_warning', ['minutes' => 30], 0x06, [0x1017]];
-        yield 'dar como falhada' => ['retrieval_timeout', ['minutes' => 60], 0x06, [0x1018]];
-        yield 'compartimentos carregados' => ['loaded_cells', ['cells' => 14], 0x06, [0x101C]];
-        yield 'não incomodar' => [
+        yield 'time zone' => ['time_zone', ['timeZone' => 100], 0x06, [0x1015]];
+        yield 'late warning' => ['retrieval_warning', ['minutes' => 30], 0x06, [0x1017]];
+        yield 'mark as missed' => ['retrieval_timeout', ['minutes' => 60], 0x06, [0x1018]];
+        yield 'loaded compartments' => ['loaded_cells', ['cells' => 14], 0x06, [0x101C]];
+        yield 'do not disturb' => [
             'do_not_disturb',
             ['enabled' => true, 'startHour' => 18, 'startMinute' => 0, 'endHour' => 9, 'endMinute' => 0],
             0x06,
             [0x1051, 0x1052, 0x1053, 0x1054, 0x1055],
         ];
-        yield 'plano de medicação' => [
+        yield 'medication plan' => [
             'medication_reminders',
             ['plans' => [['slot' => 1, 'hour' => 9, 'minute' => 35, 'enabled' => true]]],
             0x06,
@@ -85,26 +85,26 @@ final class PillDispenserDownlinkEndToEndTest extends TestCase
      */
     public static function chosenValues(): iterable
     {
-        yield 'idioma' => ['device_language', ['language' => 1], 0x1001, 1];
-        yield 'bloqueio' => ['child_lock', ['enabled' => true], 0x100C, 1];
-        yield 'toque' => ['alarm_ringtone', ['ringtone' => 2], 0x1012, 2];
+        yield 'language' => ['device_language', ['language' => 1], 0x1001, 1];
+        yield 'lock' => ['child_lock', ['enabled' => true], 0x100C, 1];
+        yield 'ringtone' => ['alarm_ringtone', ['ringtone' => 2], 0x1012, 2];
         yield 'volume' => ['alarm_volume', ['volume' => 1], 0x1013, 1];
-        yield 'avisar de atraso' => ['retrieval_warning', ['minutes' => 30], 0x1017, 1800];
-        yield 'dar como falhada' => ['retrieval_timeout', ['minutes' => 60], 0x1018, 3600];
-        yield 'compartimentos' => ['loaded_cells', ['cells' => 14], 0x101C, 14];
-        yield 'hora do primeiro alarme' => [
+        yield 'late warning' => ['retrieval_warning', ['minutes' => 30], 0x1017, 1800];
+        yield 'mark as missed' => ['retrieval_timeout', ['minutes' => 60], 0x1018, 3600];
+        yield 'compartments' => ['loaded_cells', ['cells' => 14], 0x101C, 14];
+        yield 'hour of the first alarm' => [
             'medication_reminders',
             ['plans' => [['slot' => 1, 'hour' => 9, 'minute' => 35, 'enabled' => true]]],
             0x1021,
             9,
         ];
-        yield 'minuto do primeiro alarme' => [
+        yield 'minute of the first alarm' => [
             'medication_reminders',
             ['plans' => [['slot' => 1, 'hour' => 9, 'minute' => 35, 'enabled' => true]]],
             0x1031,
             35,
         ];
-        yield 'início do silêncio' => [
+        yield 'start of the quiet period' => [
             'do_not_disturb',
             ['enabled' => true, 'startHour' => 18, 'startMinute' => 0, 'endHour' => 9, 'endMinute' => 0],
             0x1052,

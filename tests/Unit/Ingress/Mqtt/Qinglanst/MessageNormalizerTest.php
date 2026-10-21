@@ -244,13 +244,13 @@ final class MessageNormalizerTest extends TestCase
         $area = ['zone' => 'area', 'personIndex' => 1, 'areaId' => 5];
 
         return [
-            'queda confirmada'  => ['fall_confirmation', 'no_event', 'fall', $fall(true, 'lying')],
-            'queda suspeita'    => ['suspected_fall', 'no_event', 'fall', $fall(false, 'lying')],
-            'sentado no chão'   => ['confirmed_sitting_on_ground', 'no_event', 'fall', $fall(true, 'sitting_on_ground')],
-            'entrou na sala'    => ['walking', 'enter_room', 'zone_entry', $room],
-            'saiu da sala'      => ['walking', 'leave_room', 'zone_exit', $room],
-            'entrou na região'  => ['walking', 'enter_area', 'zone_entry', $area],
-            'saiu da região'    => ['walking', 'leave_area', 'zone_exit', $area],
+            'confirmed fall'  => ['fall_confirmation', 'no_event', 'fall', $fall(true, 'lying')],
+            'suspected fall'    => ['suspected_fall', 'no_event', 'fall', $fall(false, 'lying')],
+            'sitting on the floor'   => ['confirmed_sitting_on_ground', 'no_event', 'fall', $fall(true, 'sitting_on_ground')],
+            'entered the room'    => ['walking', 'enter_room', 'zone_entry', $room],
+            'left the room'      => ['walking', 'leave_room', 'zone_exit', $room],
+            'entered the area'  => ['walking', 'enter_area', 'zone_entry', $area],
+            'left the area'    => ['walking', 'leave_area', 'zone_exit', $area],
         ];
     }
 
