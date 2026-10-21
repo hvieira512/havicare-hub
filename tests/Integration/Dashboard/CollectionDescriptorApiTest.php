@@ -21,7 +21,7 @@ final class CollectionDescriptorApiTest extends MysqlDashboardTestCase
     /** @return iterable<string, array{0: callable(ApiDataAccess): array<string, mixed>}> */
     public static function listings(): iterable
     {
-        yield 'models' => [static fn (ApiDataAccess $db): array => (new ModelService($db))->list()];
+        yield 'models' => [static fn (ApiDataAccess $db): array => (new ModelService($db))->list('', '')];
         yield 'companies' => [static fn (ApiDataAccess $db): array => (new CompanyService($db))->list()];
         yield 'licenses' => [static fn (ApiDataAccess $db): array => (new LicenseService($db))->list()];
         yield 'suppliers' => [static fn (ApiDataAccess $db): array => (new SupplierService($db))->list()];
@@ -55,7 +55,7 @@ final class CollectionDescriptorApiTest extends MysqlDashboardTestCase
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $models = new ModelService($db);
 
-        $response = $models->list('supplier=Wonlex&deviceType=watch');
+        $response = $models->list('supplier=Wonlex&deviceType=watch', '');
         $suppliers = array_column($response['data'], 'supplier');
 
         self::assertNotSame([], $suppliers);
@@ -71,7 +71,7 @@ final class CollectionDescriptorApiTest extends MysqlDashboardTestCase
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
 
-        $response = (new ModelService($db))->list('model=HW20');
+        $response = (new ModelService($db))->list('model=HW20', '');
         $names = array_column($response['data'], 'internalModel');
 
         self::assertContains('HW20PRO', $names);

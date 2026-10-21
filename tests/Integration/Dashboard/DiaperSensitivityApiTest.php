@@ -66,7 +66,7 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
     /** @return array<string, mixed> */
     private function sensitivityEntry(DeviceService $api): array
     {
-        $shown = $api->show(self::SENSOR);
+        $shown = $api->show(self::SENSOR, null, '');
 
         return $shown['capabilities']['settings_system']['diaper_sensitivity'] ?? [];
     }
@@ -109,7 +109,7 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 
         // `confirmed` e não `waiting_device`: sem operações a linha fica `acked`, e a
         // interface desenha isso como "Aplicado". Não há vocabulário novo.
-        $sync = $api->show(self::SENSOR)['configurationSync']['entries']['settings_system']['diaper_sensitivity'] ?? [];
+        $sync = $api->show(self::SENSOR, null, '')['configurationSync']['entries']['settings_system']['diaper_sensitivity'] ?? [];
         self::assertSame('confirmed', $sync['status'] ?? null);
         self::assertFalse($sync['hasUnconfirmedChanges'] ?? true, 'nao ha nada a aguardar');
 

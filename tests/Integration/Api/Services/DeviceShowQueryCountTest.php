@@ -36,7 +36,7 @@ final class DeviceShowQueryCountTest extends MysqlDashboardTestCase
         );
 
         $this->queries = [];
-        $service->show($imei);
+        $service->show($imei, null, '');
 
         self::assertSame(
             1,

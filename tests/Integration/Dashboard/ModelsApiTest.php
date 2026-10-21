@@ -18,7 +18,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
-        $response = $api->show((int)$model['id']);
+        $response = $api->show((int)$model['id'], '');
 
         self::assertArrayNotHasKey('enabledCapabilities', $response);
         self::assertArrayNotHasKey('configurationCatalog', $response);
@@ -43,7 +43,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             ['blood_pressure']
         );
 
-        $response = $api->show((int)$model['id']);
+        $response = $api->show((int)$model['id'], '');
 
         self::assertTrue($response['capabilities']['telemetry']['heart_rate'] ?? false);
         self::assertContains('heart_rate', $response['requestableCapabilityKeys'] ?? []);
@@ -75,7 +75,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             ['heart_rate'],
             $db->modelCapabilities->requestableFeaturesForModelId((int)$model['id'])
         );
-        $updated = $api->show((int)$model['id']);
+        $updated = $api->show((int)$model['id'], '');
         self::assertSame(['heart_rate'], $updated['requestableCapabilities'] ?? null);
     }
 
@@ -107,7 +107,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $response = $api->show((int)$model['id']);
+        $response = $api->show((int)$model['id'], '');
 
         self::assertContains('heart_rate', $response['requestableCapabilityKeys'] ?? []);
         self::assertNotContains('blood_oxygen', $response['requestableCapabilityKeys'] ?? []);
@@ -311,7 +311,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         sort($actual);
         self::assertSame(['call_whitelist', 'heart_rate', 'working_mode'], $actual);
 
-        $updated = $api->show((int)$model['id']);
+        $updated = $api->show((int)$model['id'], '');
         self::assertTrue($updated['capabilities']['telemetry']['heart_rate'] ?? false);
         self::assertTrue($updated['capabilities']['contacts']['call_whitelist'] ?? false);
         self::assertTrue($updated['capabilities']['settings_system']['working_mode'] ?? false);

@@ -80,7 +80,7 @@ class DeviceService
     }
 
     /** @return array<string, mixed> */
-    public function list(string $query = '', ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
+    public function list(string $query, ?ApiAuthContext $auth, string $baseUrl): array
     {
         $params = $this->query->params($query);
         $page = $this->query->page($params);
@@ -176,7 +176,7 @@ class DeviceService
     }
 
     /** @return array<string, mixed> */
-    public function show(string $imei, ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
+    public function show(string $imei, ?ApiAuthContext $auth, string $baseUrl): array
     {
         $device = $this->directory->deviceSnapshot($imei);
         if (!$this->directory->canAccessDevice($imei, $auth, $device)) {
@@ -374,7 +374,7 @@ class DeviceService
             'config_keys' => array_keys($payload['configurations']),
         ]);
 
-        $snapshot = $this->show($imei, $auth);
+        $snapshot = $this->show($imei, $auth, '');
 
         return [
             'status' => 'ok',

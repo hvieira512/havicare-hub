@@ -73,7 +73,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertSame('rejectUnknownCalls', $disabled['results'][0]['operations'][0]['nativeKey'] ?? null);
         self::assertCount(1, $submitted);
         self::assertStringContainsString('DEVREFUSEPHONESWITCH,0]', $submitted[0]['bytes']);
-        $afterDisable = $api->show('637507597567372');
+        $afterDisable = $api->show('637507597567372', null, '');
         self::assertFalse($afterDisable['configurations']['whitelist_enabled']['enabled'] ?? true);
         self::assertFalse($afterDisable['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? true);
 
@@ -86,7 +86,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertSame('ok', $enabled['status'] ?? null);
         self::assertCount(2, $submitted);
         self::assertStringContainsString('DEVREFUSEPHONESWITCH,1]', $submitted[1]['bytes']);
-        $afterEnable = $api->show('637507597567372');
+        $afterEnable = $api->show('637507597567372', null, '');
         self::assertTrue($afterEnable['configurations']['whitelist_enabled']['enabled'] ?? false);
         self::assertTrue($afterEnable['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
     }
@@ -336,7 +336,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertCount(1, $cleared['results'][0]['operations'] ?? []);
         self::assertSame('[3G*1703215911*0006*SOS,,,]', $submitted[1]['bytes'] ?? null);
 
-        $detail = $api->show('868017032159118');
+        $detail = $api->show('868017032159118', null, '');
         self::assertSame([], $detail['configurations']['sos_contacts'] ?? null);
         self::assertSame([], $detail['capabilities']['contacts']['sos_contacts']['value'] ?? null);
         self::assertSame([], $detail['configurationSync']['entries']['contacts']['sos_contacts']['desired'] ?? null);
@@ -705,7 +705,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceTelemetryRequestabilityForModelId((int)$model['id'], $requestableFeatures);
         $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
 
-        $detail = $api->show($imei);
+        $detail = $api->show($imei, null, '');
         foreach ($requestableFeatures as $feature) {
             self::assertSame(
                 ['supported' => true, 'requestable' => true],

@@ -35,7 +35,7 @@ class ModelService
     }
 
     /** @return array<string, mixed> */
-    public function list(string $query = '', string $baseUrl = ''): array
+    public function list(string $query, string $baseUrl): array
     {
         $models = $this->presentRows($this->db->models->all(), $baseUrl);
 
@@ -110,7 +110,7 @@ class ModelService
     }
 
     /** @return array<string, mixed> */
-    public function deviceTypeSuppliersModels(string $baseUrl = ''): array
+    public function deviceTypeSuppliersModels(string $baseUrl): array
     {
         $groups = [];
         foreach (CapabilityCatalog::deviceTypes() as $deviceType) {
@@ -155,7 +155,7 @@ class ModelService
     }
 
     /** @return array<string, mixed> */
-    public function show(int $id, string $baseUrl = ''): array
+    public function show(int $id, string $baseUrl): array
     {
         $entry = $this->db->models->findById($id);
         if ($entry === null) {
