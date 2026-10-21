@@ -56,8 +56,8 @@ final class QinglanstBridge extends MqttBridgeBase
         $this->activeDetections = new ActiveDetections();
     }
 
-    /** Os tipos de área da planta do fabricante, pelo número com que vêm. */
-    private const AREA_TYPES = [
+    /** Os tipos de área da planta do fabricante, pelo número com que vêm, na enumeração do contrato. */
+    public const AREA_TYPES = [
         1 => 'custom',
         2 => 'bed',
         3 => 'interference',
@@ -84,8 +84,8 @@ final class QinglanstBridge extends MqttBridgeBase
         foreach (($this->layouts)($deviceKey)['areas'] ?? [] as $area) {
             if ((int)$area['key'] === (int)$areaId) {
                 $event['data'] += array_filter([
-                    'areaName' => (string)$area['name'],
-                    'areaType' => self::AREA_TYPES[(int)$area['type']] ?? null,
+                    'areaName' => $area['name'] ?? null,
+                    'areaType' => $area['type'] ?? null,
                 ], static fn (?string $value): bool => $value !== null && $value !== '');
                 break;
             }

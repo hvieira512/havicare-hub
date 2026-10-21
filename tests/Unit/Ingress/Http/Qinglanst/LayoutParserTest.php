@@ -21,18 +21,18 @@ final class LayoutParserTest extends TestCase
         ]);
 
         self::assertSame(
-            ['x_min_dm' => -30, 'y_min_dm' => -8, 'x_max_dm' => 30, 'y_max_dm' => 20],
+            ['xMinDm' => -30, 'yMinDm' => -8, 'xMaxDm' => 30, 'yMaxDm' => 20],
             $layout['room'],
         );
 
         // Cinco e não seis: o fabricante fecha o `declare_area` com uma vírgula pendurada.
         self::assertCount(5, $layout['areas']);
         self::assertSame(
-            ['key' => 0, 'type' => 2, 'name' => 'CAMA 1', 'x_min_dm' => -20, 'y_min_dm' => -8, 'x_max_dm' => -11, 'y_max_dm' => 12],
+            ['key' => 0, 'type' => 'bed', 'name' => 'CAMA 1', 'xMinDm' => -20, 'yMinDm' => -8, 'xMaxDm' => -11, 'yMaxDm' => 12],
             $layout['areas'][0],
         );
         // A porta fica fora da sala, e não é erro nenhum: o `x` vai a -31.
-        self::assertSame(-31, $layout['areas'][2]['x_min_dm']);
+        self::assertSame(-31, $layout['areas'][2]['xMinDm']);
         self::assertSame('Porta', $layout['areas'][2]['name']);
     }
 
@@ -61,7 +61,7 @@ final class LayoutParserTest extends TestCase
         );
     }
 
-    public function testFallsBackToTheKeyWhenTheAreaHasNoDeclaredName(): void
+    public function testAnAreaWithoutADeclaredNameHasNoName(): void
     {
         $layout = (new LayoutParser())->parse([
             'rectangle' => '{-10,-6;10,-6;-10,20;10,20}',
@@ -69,7 +69,7 @@ final class LayoutParserTest extends TestCase
             'declare_area_name' => [],
         ]);
 
-        self::assertSame('Área 2', $layout['areas'][0]['name']);
+        self::assertNull($layout['areas'][0]['name']);
     }
 
     /** As áreas em produção são todas alinhadas aos eixos; uma que não seja fica de fora com o motivo, e não vira caixa envolvente. */

@@ -32,22 +32,23 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
 
         self::assertNotNull($layout);
         self::assertSame(
-            ['x_min_dm' => -30, 'y_min_dm' => -8, 'x_max_dm' => 30, 'y_max_dm' => 20],
+            ['xMinDm' => -30, 'yMinDm' => -8, 'xMaxDm' => 30, 'yMaxDm' => 20],
             $layout['room'],
         );
-        self::assertSame(['CAMA 1', 'Porta'], array_column($layout['areas'], 'name'));
+        self::assertSame(['CAMA 1', null], array_column($layout['areas'], 'name'));
+        self::assertSame(['bed', 'door'], array_column($layout['areas'], 'type'));
         self::assertSame([0, 4], array_column($layout['areas'], 'key'));
     }
 
-    /** As áreas antigas desenhariam uma cama que ninguém declarou, e o `regionId` resolveria mal. */
+    /** As áreas antigas desenhariam uma cama que ninguém declarou, e o `areaId` resolveria mal. */
     public function testReplacingALayoutLeavesNoAreasBehind(): void
     {
         $this->repository->store('594B3CCBA56B', $this->layout(), '2026-09-17 15:00:00');
 
         $this->repository->store('594B3CCBA56B', [
-            'room' => ['x_min_dm' => -10, 'y_min_dm' => -6, 'x_max_dm' => 10, 'y_max_dm' => 20],
+            'room' => ['xMinDm' => -10, 'yMinDm' => -6, 'xMaxDm' => 10, 'yMaxDm' => 20],
             'areas' => [
-                ['key' => 2, 'type' => 3, 'name' => 'Lavatório', 'x_min_dm' => -9, 'y_min_dm' => -6, 'x_max_dm' => -1, 'y_max_dm' => -2],
+                ['key' => 2, 'type' => 'interference', 'name' => 'Lavatório', 'xMinDm' => -9, 'yMinDm' => -6, 'xMaxDm' => -1, 'yMaxDm' => -2],
             ],
             'skipped' => [],
         ], '2026-09-17 16:00:00');
@@ -56,7 +57,7 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
 
         self::assertNotNull($layout);
         self::assertSame(['Lavatório'], array_column($layout['areas'], 'name'));
-        self::assertSame(-10, $layout['room']['x_min_dm']);
+        self::assertSame(-10, $layout['room']['xMinDm']);
         self::assertSame('2026-09-17 16:00:00', $layout['fetched_at']);
     }
 
@@ -86,10 +87,10 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
     private function layout(): array
     {
         return [
-            'room' => ['x_min_dm' => -30, 'y_min_dm' => -8, 'x_max_dm' => 30, 'y_max_dm' => 20],
+            'room' => ['xMinDm' => -30, 'yMinDm' => -8, 'xMaxDm' => 30, 'yMaxDm' => 20],
             'areas' => [
-                ['key' => 0, 'type' => 2, 'name' => 'CAMA 1', 'x_min_dm' => -20, 'y_min_dm' => -8, 'x_max_dm' => -11, 'y_max_dm' => 12],
-                ['key' => 4, 'type' => 4, 'name' => 'Porta', 'x_min_dm' => -31, 'y_min_dm' => -8, 'x_max_dm' => -29, 'y_max_dm' => 4],
+                ['key' => 0, 'type' => 'bed', 'name' => 'CAMA 1', 'xMinDm' => -20, 'yMinDm' => -8, 'xMaxDm' => -11, 'yMaxDm' => 12],
+                ['key' => 4, 'type' => 'door', 'name' => null, 'xMinDm' => -31, 'yMinDm' => -8, 'xMaxDm' => -29, 'yMaxDm' => 4],
             ],
             'skipped' => [],
         ];

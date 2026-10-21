@@ -1,44 +1,38 @@
-import { areaTypeStyle } from "../radar-style.js";
+import { areaName, areaTypeStyle } from "../radar-style.js";
 
 /**
  * O rascunho das áreas de um radar, em decímetros e no formato do contrato (`xMinDm`…). O `key`
- * é o `regionId` da telemetria: uma área mantém-no enquanto existir.
+ * é o `areaId` da telemetria: uma área mantém-no enquanto existir.
  */
 
 export const MAX_AREAS = 16;
 
 /** Os tipos que se criam, pela ordem do menu, com o tamanho com que nascem (largura × comprimento). */
 export const CREATABLE_TYPES = [
-    { type: 5, size: [10, 19] },
-    { type: 2, size: [9, 19] },
-    { type: 4, size: [8, 3] },
-    { type: 6, size: [8, 8] },
-    { type: 3, size: [6, 6] },
-    { type: 1, size: [5, 5] },
+    { type: "monitoring_bed", size: [10, 19] },
+    { type: "bed", size: [9, 19] },
+    { type: "door", size: [8, 3] },
+    { type: "alarm_area", size: [8, 8] },
+    { type: "interference", size: [6, 6] },
+    { type: "custom", size: [5, 5] },
 ];
 
-const DOOR = 4;
-const INTERFERENCE = 3;
-const BEDS = [2, 5];
-const MONITORING_BED = 5;
+const DOOR = "door";
+const INTERFERENCE = "interference";
+const BEDS = ["bed", "monitoring_bed"];
+const MONITORING_BED = "monitoring_bed";
 /** A porta conta como encostada até 20 cm da parede. */
 const DOOR_WALL_TOLERANCE_DM = 2;
 
-const box = (source) => ({
-    xMinDm: Number(source.x_min_dm),
-    yMinDm: Number(source.y_min_dm),
-    xMaxDm: Number(source.x_max_dm),
-    yMaxDm: Number(source.y_max_dm),
-});
+const box = ({ xMinDm, yMinDm, xMaxDm, yMaxDm }) => ({ xMinDm, yMinDm, xMaxDm, yMaxDm });
 
-/** O `radar-layout` da API vem em snake_case; o rascunho fala a língua do contrato. */
 export function areasFromLayout(layout) {
     return {
         room: layout?.room ? box(layout.room) : null,
         areas: (layout?.areas ?? []).map((area) => ({
-            key: Number(area.key),
-            type: Number(area.type),
-            name: String(area.name ?? ""),
+            key: area.key,
+            type: area.type,
+            name: areaName(area),
             ...box(area),
         })),
     };

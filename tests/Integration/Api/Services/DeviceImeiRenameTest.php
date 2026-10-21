@@ -58,7 +58,7 @@ final class DeviceImeiRenameTest extends MysqlDashboardTestCase
     private function layout(): array
     {
         return [
-            'room' => ['x_min_dm' => -20, 'y_min_dm' => 0, 'x_max_dm' => 20, 'y_max_dm' => 40],
+            'room' => ['xMinDm' => -20, 'yMinDm' => 0, 'xMaxDm' => 20, 'yMaxDm' => 40],
             'areas' => [],
         ];
     }

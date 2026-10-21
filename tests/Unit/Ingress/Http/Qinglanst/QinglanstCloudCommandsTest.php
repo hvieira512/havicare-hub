@@ -48,7 +48,7 @@ final class QinglanstCloudCommandsTest extends TestCase
         self::assertSame(['mounting' => 'ceiling', 'heightCm' => 290], $configurations['radar_installation']);
         self::assertSame(['leftM' => 3.0, 'rightM' => 1.9, 'frontM' => 1.8, 'backM' => 0.7], $configurations['detection_boundary']);
         self::assertSame(
-            ['key' => 3, 'type' => 6, 'name' => 'Casa de Banho', 'xMinDm' => -31, 'yMinDm' => 1, 'xMaxDm' => -25, 'yMaxDm' => 4],
+            ['key' => 3, 'type' => 'alarm_area', 'name' => 'Casa de Banho', 'xMinDm' => -31, 'yMinDm' => 1, 'xMaxDm' => -25, 'yMaxDm' => 4],
             $configurations['radar_areas']['items'][3],
         );
     }
@@ -140,10 +140,10 @@ final class QinglanstCloudCommandsTest extends TestCase
     public function testOnlyTheAreasThatChangedAreSent(): void
     {
         $requests = (new QinglanstCloudCommands())->requests('radar_areas', ['items' => [
-            ['key' => 0, 'type' => 5, 'name' => 'Cama', 'xMinDm' => -4, 'yMinDm' => -6, 'xMaxDm' => 6, 'yMaxDm' => 13],
-            ['key' => 1, 'type' => 4, 'name' => 'Porta', 'xMinDm' => 16, 'yMinDm' => 15, 'xMaxDm' => 19, 'yMaxDm' => 18],
-            ['key' => 2, 'type' => 1, 'name' => 'Mesa', 'xMinDm' => 7, 'yMinDm' => -6, 'xMaxDm' => 12, 'yMaxDm' => -1],
-            ['key' => 4, 'type' => 3, 'name' => 'Ventoinha', 'xMinDm' => 10, 'yMinDm' => 10, 'xMaxDm' => 14, 'yMaxDm' => 14],
+            ['key' => 0, 'type' => 'monitoring_bed', 'name' => 'Cama', 'xMinDm' => -4, 'yMinDm' => -6, 'xMaxDm' => 6, 'yMaxDm' => 13],
+            ['key' => 1, 'type' => 'door', 'name' => 'Porta', 'xMinDm' => 16, 'yMinDm' => 15, 'xMaxDm' => 19, 'yMaxDm' => 18],
+            ['key' => 2, 'type' => 'custom', 'name' => 'Mesa', 'xMinDm' => 7, 'yMinDm' => -6, 'xMaxDm' => 12, 'yMaxDm' => -1],
+            ['key' => 4, 'type' => 'interference', 'name' => 'Ventoinha', 'xMinDm' => 10, 'yMinDm' => 10, 'xMaxDm' => 14, 'yMaxDm' => 14],
         ]], self::props(), self::UID);
 
         self::assertSame([

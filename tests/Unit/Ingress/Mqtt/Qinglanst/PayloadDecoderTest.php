@@ -19,9 +19,9 @@ final class PayloadDecoderTest extends TestCase
 
         self::assertIsArray($payload);
         self::assertSame('heartbreath', $payload['type']);
-        self::assertSame(18, $payload['breathing']);
-        self::assertSame(76, $payload['heart_rate']);
-        self::assertSame('deep_sleep', $payload['sleep_state']);
+        self::assertSame(18, $payload['breathsPerMinute']);
+        self::assertSame(76, $payload['heartRateBpm']);
+        self::assertSame('deep_sleep', $payload['sleepState']);
     }
 
     public function testDecodesPosStaticsPayloadWithRawNativeClass(): void
@@ -35,9 +35,9 @@ final class PayloadDecoderTest extends TestCase
         self::assertIsArray($payload);
         self::assertSame('posstatics', $payload['type']);
         self::assertSame(2, $payload['version']);
-        self::assertSame(3, $payload['people']);
-        self::assertSame(42, $payload['walking_distance']);
-        self::assertTrue($payload['breathing_active']);
+        self::assertSame(3, $payload['peopleCount']);
+        self::assertSame(42, $payload['walkingDistanceMeters']);
+        self::assertTrue($payload['breathingActive']);
     }
 
     public function testDecodesHbStaticsPayload(): void
@@ -50,10 +50,10 @@ final class PayloadDecoderTest extends TestCase
 
         self::assertIsArray($payload);
         self::assertSame('hbstatics', $payload['type']);
-        self::assertSame('apnea', $payload['breathing_status_per_minute']);
-        self::assertSame('undefined', $payload['heart_rate_status_per_minute']);
-        self::assertSame('weak', $payload['vital_signs_status']);
-        self::assertSame('light_sleep', $payload['sleep_state_status']);
+        self::assertSame('apnea', $payload['breathingStatus']);
+        self::assertSame('undefined', $payload['heartRateStatus']);
+        self::assertSame('weak', $payload['vitalSignsStatus']);
+        self::assertSame('light_sleep', $payload['sleepState']);
     }
 
     public function testDecodesPositionPayload(): void
@@ -66,9 +66,9 @@ final class PayloadDecoderTest extends TestCase
 
         self::assertIsArray($payload);
         self::assertSame('position', $payload['type']);
-        self::assertSame(-1, $payload['people'][0]['x_position_dm']);
-        self::assertSame('fall_confirmation', $payload['people'][0]['posture_state']);
-        self::assertSame('enter_room', $payload['people'][0]['last_event']);
+        self::assertSame(-1, $payload['people'][0]['xPositionDm']);
+        self::assertSame('fallen', $payload['people'][0]['posture']);
+        self::assertSame('enter_room', $payload['people'][0]['lastEvent']);
     }
 
     /** O fabricante chama-lhe «Squatting», mas é a postura de quem está sentado numa cadeira. */
@@ -81,7 +81,7 @@ final class PayloadDecoderTest extends TestCase
         ])), 'radar-uid-1');
 
         self::assertIsArray($payload);
-        self::assertSame('sitting', $payload['people'][0]['posture_state']);
+        self::assertSame('sitting', $payload['people'][0]['posture']);
     }
 
     /** O firmware pode acrescentar estados, e um código desconhecido sai na enumeração de reserva em vez de se deitar fora. */
@@ -94,8 +94,8 @@ final class PayloadDecoderTest extends TestCase
         ])), 'radar-uid-1');
 
         self::assertIsArray($payload);
-        self::assertSame('unknown', $payload['people'][0]['posture_state']);
-        self::assertSame('unknown', $payload['people'][0]['last_event']);
+        self::assertSame('unknown', $payload['people'][0]['posture']);
+        self::assertSame('unknown', $payload['people'][0]['lastEvent']);
     }
 
     /** Cada pessoa ocupa 16 bytes: um comprimento que não seja múltiplo de 16 não se lê. */

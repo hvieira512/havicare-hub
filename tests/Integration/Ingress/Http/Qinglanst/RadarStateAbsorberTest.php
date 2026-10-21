@@ -47,7 +47,7 @@ final class RadarStateAbsorberTest extends MysqlDashboardTestCase
     {
         [$db, , $absorber] = $this->absorber();
         $db->configurationLifecycle->recordRead(self::IMEI, 'radar_areas', ['items' => [
-            ['key' => 3, 'type' => 6, 'name' => 'WC', 'xMinDm' => -31, 'yMinDm' => 1, 'xMaxDm' => -25, 'yMaxDm' => 4],
+            ['key' => 3, 'type' => 'alarm_area', 'name' => 'WC', 'xMinDm' => -31, 'yMinDm' => 1, 'xMaxDm' => -25, 'yMaxDm' => 4],
         ]], 'qinglanst-radar');
 
         $absorber->absorb(self::IMEI, self::PROPS);

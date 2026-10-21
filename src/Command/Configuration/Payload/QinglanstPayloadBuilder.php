@@ -17,8 +17,8 @@ final class QinglanstPayloadBuilder extends ConfigurationPayloadBuilder
     /** O `coordKey` vai de 0 a 15: o radar guarda 16 áreas. */
     public const MAX_AREAS = 16;
 
-    /** Os tipos de área que a API aceita; o 0 apaga, e quem o envia é a entrega. */
-    public const AREA_TYPES = [1, 2, 3, 4, 5, 6];
+    /** Os tipos de área que a API aceita, os do `QinglanstBridge::AREA_TYPES` sem a mobília; apagar é da entrega. */
+    public const AREA_TYPES = ['custom', 'bed', 'interference', 'door', 'monitoring_bed', 'alarm_area'];
 
     /**
      * @param array<string, mixed> $payload
@@ -119,9 +119,9 @@ final class QinglanstPayloadBuilder extends ConfigurationPayloadBuilder
     }
 
     /**
-     * Cada área com o número que a telemetria usa como `regionId`, e a caixa em decímetros.
+     * Cada área com o número que a telemetria usa como `areaId`, e a caixa em decímetros.
      *
-     * @return list<array{key: int, type: int, name: string, xMinDm: int, yMinDm: int, xMaxDm: int, yMaxDm: int}>
+     * @return list<array{key: int, type: string, name: string, xMinDm: int, yMinDm: int, xMaxDm: int, yMaxDm: int}>
      */
     private static function areas(mixed $items): array
     {
@@ -138,8 +138,8 @@ final class QinglanstPayloadBuilder extends ConfigurationPayloadBuilder
             if (isset($areas[$key])) {
                 throw new \InvalidArgumentException("items[{$index}].key {$key} is repeated");
             }
-            $type = self::integer($item['type'] ?? null, 0, 255, "items[{$index}].type");
-            if (!in_array($type, self::AREA_TYPES, true)) {
+            $type = $item['type'] ?? null;
+            if (!is_string($type) || !in_array($type, self::AREA_TYPES, true)) {
                 throw new \InvalidArgumentException("items[{$index}].type must be one of " . implode(', ', self::AREA_TYPES));
             }
             $box = [];

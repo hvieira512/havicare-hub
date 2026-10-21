@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hub\Ingress\Http\Qinglanst;
 
+use Hub\Ingress\Mqtt\Qinglanst\QinglanstBridge;
+
 /**
  * O layout de um radar, do `thirdparty/v2/deviceProp`, reduzido a uma sala e caixas em decímetros.
  * O prefixo de cada nome em `declare_area_name` é o tipo da área, e não uma sequência.
@@ -13,8 +15,8 @@ final class LayoutParser
     /**
      * @param array<string, mixed> $data o `data` da resposta do fabricante
      * @return array{
-     *     room: array{x_min_dm: int, y_min_dm: int, x_max_dm: int, y_max_dm: int},
-     *     areas: list<array<string, int|string>>,
+     *     room: array{xMinDm: int, yMinDm: int, xMaxDm: int, yMaxDm: int},
+     *     areas: list<array{key: int, type: string, name: string|null, xMinDm: int, yMinDm: int, xMaxDm: int, yMaxDm: int}>,
      *     skipped: array<int, string>
      * }|null
      */
@@ -35,8 +37,12 @@ final class LayoutParser
                 $skipped[$key] = 'not_an_axis_aligned_box';
                 continue;
             }
+            if (!isset(QinglanstBridge::AREA_TYPES[$type])) {
+                $skipped[$key] = 'unknown_area_type';
+                continue;
+            }
 
-            $areas[] = ['key' => $key, 'type' => $type, 'name' => $names[$key] ?? "Área {$key}"] + $box;
+            $areas[] = ['key' => $key, 'type' => QinglanstBridge::AREA_TYPES[$type], 'name' => $names[$key] ?? null] + $box;
         }
 
         return ['room' => $room, 'areas' => $areas, 'skipped' => $skipped];
@@ -87,7 +93,7 @@ final class LayoutParser
      * independentemente de quantos pontos as descrevam.
      *
      * @param list<int> $points
-     * @return array{x_min_dm: int, y_min_dm: int, x_max_dm: int, y_max_dm: int}|null
+     * @return array{xMinDm: int, yMinDm: int, xMaxDm: int, yMaxDm: int}|null
      */
     private function box(array $points): ?array
     {
@@ -111,10 +117,10 @@ final class LayoutParser
         $ys = array_keys($ys);
 
         return [
-            'x_min_dm' => min($xs),
-            'y_min_dm' => min($ys),
-            'x_max_dm' => max($xs),
-            'y_max_dm' => max($ys),
+            'xMinDm' => min($xs),
+            'yMinDm' => min($ys),
+            'xMaxDm' => max($xs),
+            'yMaxDm' => max($ys),
         ];
     }
 

@@ -34,7 +34,7 @@ test("a state the map does not know shows as it came instead of vanishing", () =
 
 test("a radar that sees nobody is working", () => {
     // "Ninguém" e não "Sem leituras": a diferença entre uma divisão vazia e um radar mudo.
-    assert.equal(uplinkCardContent("presence", { count: 0, people: [] }).value, "Ninguém");
+    assert.equal(uplinkCardContent("presence", { peopleCount: 0, people: [] }).value, "Ninguém");
 });
 
 /**
@@ -51,8 +51,8 @@ const person = (index, posture) => ({
 
 test("presence shows each person's posture, not one for the device", () => {
     const card = uplinkCardContent("presence", {
-        count: 2,
-        people: [person(0, "standing"), person(1, "fall_confirmation")],
+        peopleCount: 2,
+        people: [person(0, "standing"), person(1, "fallen")],
     });
 
     assert.equal(card.value, "2 pessoas");
@@ -69,11 +69,11 @@ test("presence shows each person's posture, not one for the device", () => {
  */
 test("the fourth person becomes a counter instead of vanishing", () => {
     const card = uplinkCardContent("presence", {
-        count: 5,
+        peopleCount: 5,
         people: [
             person(0, "lying_down"),
             person(1, "standing"),
-            person(2, "fall_confirmation"),
+            person(2, "fallen"),
             person(3, "walking"),
             person(4, "walking"),
         ],
@@ -90,7 +90,7 @@ test("the fourth person becomes a counter instead of vanishing", () => {
 
 test("a posture the firmware makes up writes no attributes", () => {
     const card = uplinkCardContent("presence", {
-        count: 1,
+        peopleCount: 1,
         people: [{ personIndex: 0, posture: "\"><script>alert(1)</script>" }],
     });
 
@@ -103,12 +103,12 @@ test("a fall says whether it was confirmed and how the person ended up", () => {
     // "Queda" sozinho não distingue uma queda confirmada de uma suspeita, nem de alguém sentado no chão.
     const fall = (data) => uplinkCardContent("fall", data).value;
 
-    assert.equal(fall({ confirmed: true, posture: "lying", personIndex: 0 }), "Queda confirmada");
-    assert.equal(fall({ confirmed: false, posture: "lying", personIndex: 0 }), "Queda suspeita");
+    assert.equal(fall({ confirmed: true, posture: "lying_down", personIndex: 0 }), "Queda confirmada");
+    assert.equal(fall({ confirmed: false, posture: "lying_down", personIndex: 0 }), "Queda suspeita");
     assert.equal(fall({ confirmed: true, posture: "sitting_on_ground", personIndex: 0 }), "Sentado no chão");
     // O relógio não diz a postura: só que detetou a queda.
     assert.equal(fall({ confirmed: true }), "Queda detetada");
-    assert.equal(uplinkCardContent("fall", { confirmed: true, posture: "lying", personIndex: 1 }).details, "Pessoa 2");
+    assert.equal(uplinkCardContent("fall", { confirmed: true, posture: "lying_down", personIndex: 1 }).details, "Pessoa 2");
 });
 
 test("an entry or exit says the zone, and the area by its given name", () => {
@@ -129,8 +129,8 @@ test("abnormal vitals show the value that raised them", () => {
 /** Os quatro estados do `hbstatics` chegam em enumeração, como o `posture` e o `sleep_state`. */
 test("per-minute states show in Portuguese from the enum", () => {
     const details = uplinkCardContent("vitals_minute_stats", {
-        realTimeHeartRate: 70,
-        realTimeBreathing: 13,
+        realTimeHeartRateBpm: 70,
+        realTimeBreathsPerMinute: 13,
         breathingStatus: "hypopnea",
         heartRateStatus: "normal",
         vitalSignsStatus: "weak",
@@ -139,6 +139,11 @@ test("per-minute states show in Portuguese from the enum", () => {
     assert.match(details, /Hipopneia/);
     assert.match(details, /Normal/);
     assert.match(details, /Fraco/);
+});
+
+test("the minute stats read the averages and the people count", () => {
+    assert.equal(uplinkCardContent("vitals_minute_stats", { avgHeartRateBpm: 64, avgBreathsPerMinute: 15 }).value, "64 bpm · 15 rpm");
+    assert.equal(uplinkCardContent("position_minute_stats", { peopleCount: 2, walkingDistanceMeters: 4 }).value, "2 pessoas · 4 m");
 });
 
 /** O mosaico desenha o `details` que o `uplinkCardContent` devolve, e não só o `value`. */
@@ -150,10 +155,10 @@ test("the tile shows the detail instead of dropping it", () => {
     assert.equal(root.querySelector(".telemetry-row-details").textContent, "Pessoa 1 · x 3 dm");
 });
 
-test("a 4G radar shows the network and signal quality", () => {
-    const card = uplinkCardContent("connectivity", { interface: "4g", signalQuality: 21 });
+test("a cellular radar shows the network and signal quality", () => {
+    const card = uplinkCardContent("connectivity", { interface: "cellular", signalQuality: 21 });
 
-    assert.match(card.value, /^4G/);
+    assert.match(card.value, /^Rede móvel/);
     assert.match(card.details, /Qualidade do sinal: 21/);
 });
 

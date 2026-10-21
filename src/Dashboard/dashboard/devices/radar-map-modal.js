@@ -114,10 +114,10 @@ function editingLayout(layout) {
         ...layout,
         areas: [],
         extent: {
-            x_min_dm: Math.min(...boxes.map((box) => box.x_min_dm)) - EDIT_MARGIN_DM,
-            y_min_dm: Math.min(...boxes.map((box) => box.y_min_dm)) - EDIT_MARGIN_DM,
-            x_max_dm: Math.max(...boxes.map((box) => box.x_max_dm)) + EDIT_MARGIN_DM,
-            y_max_dm: Math.max(...boxes.map((box) => box.y_max_dm)) + EDIT_MARGIN_DM,
+            xMinDm: Math.min(...boxes.map((box) => box.xMinDm)) - EDIT_MARGIN_DM,
+            yMinDm: Math.min(...boxes.map((box) => box.yMinDm)) - EDIT_MARGIN_DM,
+            xMaxDm: Math.max(...boxes.map((box) => box.xMaxDm)) + EDIT_MARGIN_DM,
+            yMaxDm: Math.max(...boxes.map((box) => box.yMaxDm)) + EDIT_MARGIN_DM,
         },
     };
 }
@@ -217,8 +217,8 @@ function currentPeople() {
 function subtitle(imei, layout) {
     if (!layout?.room) return imei;
 
-    const width = ((layout.room.x_max_dm - layout.room.x_min_dm) / 10).toFixed(1);
-    const height = ((layout.room.y_max_dm - layout.room.y_min_dm) / 10).toFixed(1);
+    const width = ((layout.room.xMaxDm - layout.room.xMinDm) / 10).toFixed(1);
+    const height = ((layout.room.yMaxDm - layout.room.yMinDm) / 10).toFixed(1);
 
     return `${imei} · ${width} × ${height} m · sincronizado ${when(layout.fetchedAt)}`;
 }

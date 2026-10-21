@@ -7,7 +7,6 @@ const CONNECTIVITY_INTERFACE_LABELS = {
     ethernet: "Ethernet",
     ethernet_wifi: "Ethernet + Wi-Fi",
     cellular: "Rede móvel",
-    "4g": "4G",
 };
 
 const CONNECTIVITY_INTERFACE_ICONS = {
@@ -15,7 +14,6 @@ const CONNECTIVITY_INTERFACE_ICONS = {
     ethernet: "fa-ethernet",
     ethernet_wifi: "fa-network-wired",
     cellular: "fa-tower-cell",
-    "4g": "fa-tower-cell",
 };
 
 export function connectivityIcon(data) {

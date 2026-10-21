@@ -26,7 +26,7 @@ final class QinglanstConfigurationTest extends TestCase
         yield 'installation' => ['radar_installation', ['mounting' => 'wall', 'heightCm' => 150]];
         yield 'boundaries' => ['detection_boundary', ['leftM' => 1.9, 'rightM' => 3, 'frontM' => 0.7, 'backM' => 2]];
         yield 'areas' => ['radar_areas', ['items' => [
-            ['key' => 0, 'type' => 5, 'name' => 'Cama', 'xMinDm' => -4, 'yMinDm' => -6, 'xMaxDm' => 6, 'yMaxDm' => 13],
+            ['key' => 0, 'type' => 'monitoring_bed', 'name' => 'Cama', 'xMinDm' => -4, 'yMinDm' => -6, 'xMaxDm' => 6, 'yMaxDm' => 13],
         ]]];
         yield 'measure the boundaries' => ['measure_boundary', ['enabled' => true]];
         yield 'read from the radar' => ['read_device_state', []];
@@ -53,14 +53,20 @@ final class QinglanstConfigurationTest extends TestCase
         yield 'height not in decimetres' => ['radar_installation', ['mounting' => 'ceiling', 'heightCm' => 285]];
         yield 'boundary above 4 m' => ['detection_boundary', ['leftM' => 1, 'rightM' => 1, 'frontM' => 4.1, 'backM' => 0]];
         yield 'area with the same number' => ['radar_areas', ['items' => [
-            ['key' => 1, 'type' => 4, 'name' => 'Porta', 'xMinDm' => 0, 'yMinDm' => 0, 'xMaxDm' => 3, 'yMaxDm' => 3],
-            ['key' => 1, 'type' => 6, 'name' => 'Alarme', 'xMinDm' => 5, 'yMinDm' => 5, 'xMaxDm' => 8, 'yMaxDm' => 8],
+            ['key' => 1, 'type' => 'door', 'name' => 'Porta', 'xMinDm' => 0, 'yMinDm' => 0, 'xMaxDm' => 3, 'yMaxDm' => 3],
+            ['key' => 1, 'type' => 'alarm_area', 'name' => 'Alarme', 'xMinDm' => 5, 'yMinDm' => 5, 'xMaxDm' => 8, 'yMaxDm' => 8],
         ]]];
         yield 'area without size' => ['radar_areas', ['items' => [
-            ['key' => 2, 'type' => 1, 'name' => 'Mesa', 'xMinDm' => 3, 'yMinDm' => 0, 'xMaxDm' => 3, 'yMaxDm' => 5],
+            ['key' => 2, 'type' => 'custom', 'name' => 'Mesa', 'xMinDm' => 3, 'yMinDm' => 0, 'xMaxDm' => 3, 'yMaxDm' => 5],
         ]]];
         yield 'area number 16' => ['radar_areas', ['items' => [
-            ['key' => 16, 'type' => 1, 'name' => 'Mesa', 'xMinDm' => 0, 'yMinDm' => 0, 'xMaxDm' => 3, 'yMaxDm' => 5],
+            ['key' => 16, 'type' => 'custom', 'name' => 'Mesa', 'xMinDm' => 0, 'yMinDm' => 0, 'xMaxDm' => 3, 'yMaxDm' => 5],
+        ]]];
+        yield 'area type as the vendor number' => ['radar_areas', ['items' => [
+            ['key' => 0, 'type' => 5, 'name' => 'Cama', 'xMinDm' => -4, 'yMinDm' => -6, 'xMaxDm' => 6, 'yMaxDm' => 13],
+        ]]];
+        yield 'furniture, which the API does not write' => ['radar_areas', ['items' => [
+            ['key' => 0, 'type' => 'furniture', 'name' => 'Sofá', 'xMinDm' => -4, 'yMinDm' => -6, 'xMaxDm' => 6, 'yMaxDm' => 13],
         ]]];
     }
 

@@ -3,9 +3,9 @@ import { postureStyle } from "../../radar-style.js";
 import { html } from "../../html.js";
 import { compactDetails, joinMarkup } from "./shared.js";
 
-/** Quantas pessoas o radar vê, pelo `count` do hub: sem ninguém, diz «Ninguém» e não «Sem leituras». */
+/** Quantas pessoas o radar vê, pelo `peopleCount` do hub: sem ninguém, diz «Ninguém» e não «Sem leituras». */
 export function presenceValue(data) {
-    const count = Number(data?.count ?? 0) || 0;
+    const count = Number(data?.peopleCount ?? 0) || 0;
     if (count === 0) {
         return "Ninguém";
     }
@@ -63,8 +63,8 @@ export function presenceDetailsTitle(data) {
 }
 
 export function radarPositionMinuteStatsValue(data) {
-    const people = dataPointValue(data?.people);
-    const distance = dataPointValue(data?.walkingDistance);
+    const people = dataPointValue(data?.peopleCount);
+    const distance = dataPointValue(data?.walkingDistanceMeters);
     if (people === "-" && distance === "-") {
         return "Sem leituras";
     }
@@ -84,8 +84,8 @@ export function radarPositionMinuteStatsDetails(data) {
 }
 
 export function radarVitalsMinuteStatsValue(data) {
-    const heartRate = dataPointValue(data?.avgHeartRate);
-    const breathing = dataPointValue(data?.avgBreathing);
+    const heartRate = dataPointValue(data?.avgHeartRateBpm);
+    const breathing = dataPointValue(data?.avgBreathsPerMinute);
     if (heartRate === "-" && breathing === "-") {
         return "Sem leituras";
     }

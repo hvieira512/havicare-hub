@@ -26,7 +26,7 @@ const STATUS = {
     deleted: ["A apagar", "danger"],
 };
 
-const FURNITURE = 7;
+const FURNITURE = "furniture";
 const HISTORY_LIMIT = 50;
 const INSPECTOR_WIDTH = 250;
 
@@ -223,7 +223,7 @@ export function createAreaEditor({ scene, host, canvas, draft, onSend }) {
         const value = event.target.value;
         const dm = Math.max(1, Math.round(Number(value) * 10) || 1);
         updateSelected((area) => {
-            if (field === "type") area.type = Number(value);
+            if (field === "type") area.type = value;
             if (field === "name") area.name = value.trim() || areaTypeStyle(area.type).label;
             if (field === "width") area.xMaxDm = area.xMinDm + dm;
             if (field === "length") area.yMaxDm = area.yMinDm + dm;
