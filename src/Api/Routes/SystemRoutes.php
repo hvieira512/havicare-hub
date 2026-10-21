@@ -6,13 +6,10 @@ use Hub\Api\Routing\ApiRoute;
 use Hub\Api\OpenApiSpec;
 use React\Http\Message\Response;
 
-return static function (
-    callable $json,
-    callable $html
-): array {
+return static function (callable $json): array {
     return [
         new ApiRoute('GET', '/api/openapi.json', fn(): Response => $json(OpenApiSpec::get())),
-        new ApiRoute('GET', '/api/docs', fn(): Response => $html('<!doctype html>
+        new ApiRoute('GET', '/api/docs', fn(): Response => new Response(200, ['Content-Type' => 'text/html; charset=utf-8'], '<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">

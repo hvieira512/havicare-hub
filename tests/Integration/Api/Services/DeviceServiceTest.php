@@ -57,7 +57,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         $this->mockModelCapabilities([$capability]);
         $this->hub->method('submitDownlink')->willReturn('sent');
 
-        $result = $this->service->requestFeature($imei, $payload);
+        $result = $this->service->featureRequests->requestFeature($imei, $payload);
 
         self::assertSame('waiting', $result['status']);
         self::assertCount(1, $result['commands']);
@@ -80,7 +80,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         $this->mockModelCapabilities(['reset_device']);
         $client = new ApiAuthContext(7, 'havicare', ApiAuthContext::ROLE_LICENSE_CLIENT, 1001, 1, 1, 'hitcare');
 
-        $result = $this->service->requestFeature($imei, ['capability' => 'reset_device'], $client);
+        $result = $this->service->featureRequests->requestFeature($imei, ['capability' => 'reset_device'], $client);
 
         self::assertSame('forbidden', $result['error']['code'] ?? null);
     }
@@ -102,7 +102,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
 
         $this->mockDeviceAccess($imei, 'vivistar-iw', 'Vivistar', 'L08 Pro');
 
-        $result = $this->service->patchAssociation($imei, [
+        $result = $this->service->associations->associate($imei, [
             'company' => $company,
             'licenseId' => (string)$licenseId,
         ]);

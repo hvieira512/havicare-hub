@@ -96,7 +96,6 @@ final class DashboardHttpServer
                 new \Hub\Api\Services\DenylistService($this->db),
             ),
             new \Hub\Api\Http\JsonResponder(),
-            new \Hub\Api\Http\HtmlResponder(),
             new \Hub\Api\Auth\BearerTokenResolver($this->tokens),
             new \Hub\Api\Auth\RouteAccessPolicy(),
             $this->messages ?? new MessageFanout(),

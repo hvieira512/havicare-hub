@@ -32,7 +32,7 @@ class RadarLayoutService
     /** @return array<string, mixed> */
     public function show(string $imei, ?ApiAuthContext $auth = null): array
     {
-        if ($this->deviceForTenant($imei, $auth) === null) {
+        if (!$this->canAccessDevice($imei, $auth)) {
             return ApiError::deviceNotFound()->toArray();
         }
 
@@ -59,7 +59,7 @@ class RadarLayoutService
      */
     public function sync(string $imei, ?ApiAuthContext $auth = null): PromiseInterface
     {
-        if ($this->deviceForTenant($imei, $auth) === null) {
+        if (!$this->canAccessDevice($imei, $auth)) {
             return resolve(ApiError::deviceNotFound()->toArray());
         }
 
@@ -86,25 +86,17 @@ class RadarLayoutService
         });
     }
 
-    /**
-     * O aparelho, ou `null` se não existir ou pertencer a outro inquilino — que para quem
-     * pergunta é a mesma resposta.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function deviceForTenant(string $imei, ?ApiAuthContext $auth): ?array
+    /** Um aparelho que não existe e um de outro inquilino são, para quem pergunta, a mesma resposta. */
+    private function canAccessDevice(string $imei, ?ApiAuthContext $auth): bool
     {
         $device = $this->db->whitelist->get($imei);
-        if ($device === null) {
-            return null;
-        }
-        if ($auth === null) {
-            return $device;
+        if ($device === null || $auth === null) {
+            return $device !== null;
         }
 
         return $auth->canAccessTenant(
             DeviceMetadata::normalizeCompany((string)($device['company'] ?? '')),
             DeviceMetadata::normalizeLicenseId($device['license_id'] ?? 0),
-        ) ? $device : null;
+        );
     }
 }

@@ -7,7 +7,8 @@ namespace Hub\Api\Services;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\DevicePresentation;
-use Hub\Api\Http\DeviceResponseCompactor;
+use Hub\Api\Configuration\VoiceDataMarker;
+use Hub\Api\Http\ModelImageUrl;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Infrastructure\Persistence\Repository\ApiDataAccess;
@@ -25,18 +26,19 @@ use Hub\Registry\Whitelist;
 
 class DeviceService
 {
+    private const MAX_INLINE_VOICE_DATA_BYTES = 65536;
+
     private CollectionQuery $query;
-    private DevicePresentation $presentation;
-    private DeviceResponseCompactor $responseCompactor;
+    private ModelImageUrl $images;
     private CapabilityRegistry $capabilityRegistry;
     private DeviceConfigurationUpdateService $configurationUpdates;
     private DeviceConfigurationQueryService $configurationQueries;
-    private DeviceAssociationService $associations;
+    public readonly DeviceAssociationService $associations;
     private DeviceCapabilityPresenter $capabilities;
     private ConfigurationSyncStatus $configurationSync;
     private DeviceDirectory $directory;
     private ConfigurationLifecyclePresenter $lifecyclePresenter;
-    private DeviceFeatureRequestService $featureRequests;
+    public readonly DeviceFeatureRequestService $featureRequests;
     private RequestBinder $binder;
 
     public function __construct(
@@ -47,8 +49,7 @@ class DeviceService
     ) {
         $this->binder = new RequestBinder();
         $this->query = new CollectionQuery();
-        $this->presentation = new DevicePresentation();
-        $this->responseCompactor = new DeviceResponseCompactor();
+        $this->images = new ModelImageUrl();
         $this->capabilityRegistry = new CapabilityRegistry();
         $this->configurationUpdates = new DeviceConfigurationUpdateService(
             $this->store,
@@ -125,14 +126,10 @@ class DeviceService
             $result['items']
         ));
         $items = array_map(
-            fn (array $device): array => $this->presentation->attachImage(
-                DevicePresentation::withOwner($this->directory->overlayRuntimeState($device, $runtimeStates)),
-                $this->directory->modelForSupplierAndName(
-                    (string)($device['supplier'] ?? ''),
-                    (string)($device['model'] ?? '')
-                ),
-                $baseUrl
-            ),
+            fn (array $device): array => ['image' => $this->modelImage(
+                $this->directory->modelForSupplierAndName((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')),
+                $baseUrl,
+            )] + DevicePresentation::withOwner($this->directory->overlayRuntimeState($device, $runtimeStates)),
             $result['items']
         );
         $totalPages = max(1, (int)ceil(((int)$result['total']) / max(1, $limit)));
@@ -195,33 +192,22 @@ class DeviceService
                 // O que o modelo sabe fazer é declarado por protocolo no registry, e a
                 // dashboard precisa de saber qual é para o ler em vez de o adivinhar.
                 'protocol' => $protocol,
-                'image' => $this->presentation->modelImage($modelRow, $baseUrl),
+                'image' => $this->modelImage($modelRow, $baseUrl),
             ];
         }
 
         $device = array_diff_key($device, array_flip([
             'supplier', 'model', 'deviceType', 'protocol', 'transport', 'lastConnectionId',
         ]));
-        // Uma vez só: cada chamada volta a resolver o dispositivo e a lê-lo do Redis.
-        $configurations = $this->configurationQueries->current($imei, $protocol, $configRows);
-        $lifecycle = $this->lifecyclePresenter->present(
-            $imei,
-            $modelRow,
-            $protocol,
-            $configRows,
-            $configurations,
-        );
-
-        return $this->responseCompactor->compact([
+        // Os áudios grandes das configurações ficam fora do detalhe.
+        return (new VoiceDataMarker(self::MAX_INLINE_VOICE_DATA_BYTES))->mark([
             'device' => DevicePresentation::withOwner($device),
             'model' => $model,
             'configuration' => [
                 'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
                 'stored' => count($configRows),
             ],
-            'configurations' => $configurations,
-            'effectiveConfigurations' => $lifecycle['effectiveConfigurations'],
-            'configurationSync' => $lifecycle['configurationSync'],
+            ...$this->configurationState($imei, $modelRow, $protocol, $configRows),
             'capabilities' => $this->capabilities->deviceCapabilities($modelRow, $protocol, $configRows),
             'enabledCapabilityKeys' => $modelRow !== null
                 ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
@@ -230,6 +216,12 @@ class DeviceService
                 $this->db->gatewayDeviceLinks->forDevice($imei)
             ),
         ]);
+    }
+
+    /** @param array<string, mixed>|null $modelRow */
+    private function modelImage(?array $modelRow, string $baseUrl): ?string
+    {
+        return $modelRow === null ? null : $this->images->resolve((string)($modelRow['image_path'] ?? ''), $baseUrl);
     }
 
     /**
@@ -313,21 +305,6 @@ class DeviceService
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    public function requestFeature(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
-    {
-        return $this->featureRequests->requestFeature($imei, $payload, $auth, $requestId);
-    }
-
-    /** @return array<string, mixed> */
-    public function commandStatus(string $id, ?ApiAuthContext $auth = null): array
-    {
-        return $this->featureRequests->commandStatus($id, $auth);
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
     public function updateConfigurations(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
@@ -374,15 +351,34 @@ class DeviceService
             'config_keys' => array_keys($payload['configurations']),
         ]);
 
-        $snapshot = $this->show($imei, $auth, '');
-
-        return [
+        return (new VoiceDataMarker(self::MAX_INLINE_VOICE_DATA_BYTES))->mark([
             'status' => 'ok',
             'results' => $results,
-            // O `show()` já as traz: pedi-las outra vez resolvia o dispositivo de novo.
-            'configurations' => $snapshot['configurations'] ?? [],
-            'effectiveConfigurations' => $snapshot['effectiveConfigurations'] ?? [],
-            'configurationSync' => $snapshot['configurationSync'] ?? [],
+            ...$this->configurationState(
+                $imei,
+                $identity->modelRow,
+                $identity->protocol,
+                $this->db->deviceConfigurations->allForImei($imei),
+            ),
+        ]);
+    }
+
+    /**
+     * O desejado, o confirmado e a convergência entre os dois.
+     *
+     * @param array<string, mixed>|null $modelRow
+     * @param list<array<string, mixed>> $configRows
+     * @return array{configurations: array<string, mixed>, effectiveConfigurations: mixed, configurationSync: mixed}
+     */
+    private function configurationState(string $imei, ?array $modelRow, string $protocol, array $configRows): array
+    {
+        $configurations = $this->configurationQueries->current($imei, $protocol, $configRows);
+        $lifecycle = $this->lifecyclePresenter->present($imei, $modelRow, $protocol, $configRows, $configurations);
+
+        return [
+            'configurations' => $configurations,
+            'effectiveConfigurations' => $lifecycle['effectiveConfigurations'],
+            'configurationSync' => $lifecycle['configurationSync'],
         ];
     }
 
@@ -542,21 +538,6 @@ class DeviceService
         }
 
         return null;
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    public function patchAssociation(string $imei, array $payload, ?ApiAuthContext $auth = null): array
-    {
-        return $this->associations->associate($imei, $payload, $auth);
-    }
-
-    /** @return array<string, mixed> */
-    public function deleteAssociation(string $imei, ?ApiAuthContext $auth = null): array
-    {
-        return $this->associations->remove($imei, $auth);
     }
 
     /** @return array<string, mixed> */

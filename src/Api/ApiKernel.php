@@ -12,7 +12,6 @@ use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Auth\BearerTokenResolver;
 use Hub\Api\Auth\RouteAccessPolicy;
 use Hub\Api\Http\ApiError;
-use Hub\Api\Http\HtmlResponder;
 use Hub\Api\Http\JsonResponder;
 use Hub\Api\Http\Middleware\ApiLogContext;
 use Hub\Api\Http\RequestContext;
@@ -47,7 +46,6 @@ final class ApiKernel
         private bool $apiAuthRequired,
         private ApiServices $services,
         private JsonResponder $json,
-        private HtmlResponder $html,
         private BearerTokenResolver $bearerTokenResolver,
         private RouteAccessPolicy $routeAccessPolicy,
         private ?MessageFanout $messages = null,
@@ -144,12 +142,11 @@ final class ApiKernel
             $this->maxOpenStreamsPerUser,
         );
         $json = fn(array $payload, int $status = 200): Response => $this->json->respond($payload, $status);
-        $html = fn(string $body): Response => $this->html->respond($body);
 
         return [
             ...((require __DIR__ . '/Routes/AuthRoutes.php')($auth)),
             ...((require __DIR__ . '/Routes/StreamRoutes.php')($stream)),
-            ...((require __DIR__ . '/Routes/DeviceRoutes.php')($devices)),
+            ...((require __DIR__ . '/Routes/DeviceRoutes.php')($devices, $this->services->devices)),
             ...((require __DIR__ . '/Routes/ModelRoutes.php')($this->services->models)),
             ...((require __DIR__ . '/Routes/CapabilityRoutes.php')($this->services->capabilities)),
             ...((require __DIR__ . '/Routes/ApiUserRoutes.php')($this->services->apiUsers)),
@@ -160,7 +157,7 @@ final class ApiKernel
             ...((require __DIR__ . '/Routes/ProtocolRoutes.php')($this->services->protocols)),
             ...((require __DIR__ . '/Routes/DashboardNotificationRoutes.php')($this->services->notifications)),
             ...((require __DIR__ . '/Routes/DenylistRoutes.php')($this->services->denylist)),
-            ...((require __DIR__ . '/Routes/SystemRoutes.php')($json, $html)),
+            ...((require __DIR__ . '/Routes/SystemRoutes.php')($json)),
         ];
     }
 

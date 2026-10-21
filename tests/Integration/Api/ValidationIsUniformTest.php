@@ -37,9 +37,9 @@ final class ValidationIsUniformTest extends MysqlDashboardTestCase
             'model template' => (new ModelService($db))->template(''),
             'device create' => $devices->create([]),
             'device update' => $devices->update('861265061009822', ['configurations' => []]),
-            'device association' => $devices->patchAssociation('861265061009822', []),
+            'device association' => $devices->associations->associate('861265061009822', []),
             'device configurations' => $devices->updateConfigurations('861265061009822', []),
-            'device request' => $devices->requestFeature('861265061009822', []),
+            'device request' => $devices->featureRequests->requestFeature('861265061009822', []),
             'login' => $auth->login(['username' => 'admin']),
             'license token' => $auth->licenseToken([]),
         ];

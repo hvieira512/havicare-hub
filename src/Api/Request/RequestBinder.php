@@ -14,14 +14,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  */
 final class RequestBinder
 {
-    private ValidatorInterface $validator;
-
-    public function __construct()
-    {
-        $this->validator = Validation::createValidatorBuilder()
-            ->enableAttributeMapping()
-            ->getValidator();
-    }
+    /** Um só por processo: montá-lo lê os atributos de cada classe de pedido. */
+    private static ?ValidatorInterface $validator = null;
 
     /**
      * @template T of object
@@ -68,7 +62,8 @@ final class RequestBinder
 
         // O `Default` entra sempre; os grupos extra juntam-se a ele. Sem o `Default`
         // explícito, pedir o grupo `create` desligava todas as regras que não o declaram.
-        foreach ($this->validator->validate($request, null, array_merge(['Default'], $groups)) as $violation) {
+        self::$validator ??= Validation::createValidatorBuilder()->enableAttributeMapping()->getValidator();
+        foreach (self::$validator->validate($request, null, array_merge(['Default'], $groups)) as $violation) {
             $fieldErrors[(string)$violation->getPropertyPath()][] = (string)$violation->getMessage();
         }
 
