@@ -1,9 +1,10 @@
-import { areaTypeStyle, postureStyle } from "../radar-style.js";
+import { areaTypeStyle, canvasColor, postureStyle } from "../radar-style.js";
 import { fieldValue } from "../format.js";
 
 /**
  * A planta da divisão de um radar em Konva, portada do `_js/radar/scene/radar-scene.js` do
- * cliente, com as formas já lidas pelo `LayoutParser` e os campos do hub.
+ * cliente, com as formas já lidas pelo `LayoutParser` e os campos do hub. As cores são tokens
+ * do tema, resolvidos a cada desenho.
  */
 
 /** O ar entre a divisão e a borda da tela. */
@@ -122,8 +123,6 @@ function createPersonNode(peopleLayer, x, y, style, label) {
     const group = new Konva.Group({ x, y });
     const circle = new Konva.Circle({
         radius: 10,
-        fill: "#0d6efd22",
-        stroke: style.color,
         strokeWidth: 3,
     });
     const icon = new Konva.Text({
@@ -131,7 +130,6 @@ function createPersonNode(peopleLayer, x, y, style, label) {
         fontFamily: "Font Awesome 6 Free",
         fontStyle: "900",
         fontSize: 12,
-        fill: style.color,
     });
     icon.offsetX(icon.width() / 2);
     icon.offsetY(icon.height() / 2);
@@ -143,7 +141,6 @@ function createPersonNode(peopleLayer, x, y, style, label) {
         fontSize: 12,
         fontFamily: "Poppins",
         fontStyle: "bold",
-        fill: style.color,
     });
 
     group.circle = circle;
@@ -190,13 +187,15 @@ function syncPeople(state) {
             state.peopleNodes.set(key, node);
         }
 
-        node.circle.stroke(style.color);
+        const color = canvasColor(style.color);
+        node.circle.fill(canvasColor(style.color, 0.13));
+        node.circle.stroke(color);
         node.icon.text(style.glyph);
-        node.icon.fill(style.color);
+        node.icon.fill(color);
         node.icon.offsetX(node.icon.width() / 2);
         node.icon.offsetY(node.icon.height() / 2);
         node.label.text(label);
-        node.label.fill(style.color);
+        node.label.fill(color);
 
         // Sem a transição, uma pessoa a andar salta de posição a cada mensagem do radar.
         if (node.moveTween) node.moveTween.destroy();
@@ -228,16 +227,18 @@ function drawRoom(state, layout) {
     const cw = state.stage.width();
     const ch = state.stage.height();
     state.transformCoords = createTransform(boundsOf(layout), cw, ch);
+    const outline = canvasColor("var(--bs-body-bg)");
+    const brand = canvasColor("var(--brand)");
 
     state.layer.add(new Konva.Line({
         points: state.transformCoords(corners(layout.room)),
-        stroke: "gray",
+        stroke: canvasColor("var(--bs-secondary-color)"),
         strokeWidth: 3,
         closed: true,
     }));
 
     layout.areas.forEach((area) => {
-        const { color } = areaTypeStyle(area.type);
+        const color = canvasColor(areaTypeStyle(area.type).color);
         const labelPos = state.transformCoords([
             (area.x_min_dm + area.x_max_dm) / 2,
             (area.y_min_dm + area.y_max_dm) / 2,
@@ -248,8 +249,8 @@ function drawRoom(state, layout) {
             stroke: color,
             strokeWidth: 2.5,
             dash: [10, 10],
-            // O `22` no fim do hexadecimal é a opacidade: a área tinge a sala sem a tapar.
-            fill: `${color}22`,
+            // A área tinge a sala sem a tapar.
+            fill: canvasColor(areaTypeStyle(area.type).color, 0.13),
             closed: true,
         }));
 
@@ -262,9 +263,9 @@ function drawRoom(state, layout) {
             fontSize: 14,
             fontFamily: "Poppins",
             fill: color,
-            // Contorno branco por baixo do preenchimento, para o nome se ler sobre a parede. Sem
-            // sombra: as duas juntas mandam o Konva para uma tela intermédia que sai a zero.
-            stroke: "white",
+            // Contorno na cor do fundo por baixo do preenchimento, para o nome se ler sobre a parede.
+            // Sem sombra: as duas juntas mandam o Konva para uma tela intermédia que sai a zero.
+            stroke: outline,
             strokeWidth: 3,
             fillAfterStrokeEnabled: true,
         }));
@@ -277,7 +278,7 @@ function drawRoom(state, layout) {
         fontFamily: "Font Awesome 6 Free",
         fontStyle: "900",
         fontSize: 18,
-        fill: "#20c997",
+        fill: brand,
     });
     radarIcon.offsetX(radarIcon.width() / 2);
     radarIcon.offsetY(radarIcon.height() / 2);
@@ -290,7 +291,7 @@ function drawRoom(state, layout) {
         text: "Radar",
         fontSize: 11,
         fontFamily: "Poppins",
-        fill: "#20c997",
+        fill: brand,
         fontStyle: "bold",
         align: "center",
         width: 40,
@@ -303,14 +304,16 @@ const EDIT_HANDLE = 10;
 
 /** Uma área do rascunho do editor, já no formato do contrato. */
 function drawDraftArea(state, area, { original, selected, warned }) {
-    const { color } = areaTypeStyle(area.type);
+    const typeColor = areaTypeStyle(area.type).color;
+    const color = canvasColor(typeColor);
+    const outline = canvasColor("var(--bs-body-bg)");
     const box = { x_min_dm: area.xMinDm, y_min_dm: area.yMinDm, x_max_dm: area.xMaxDm, y_max_dm: area.yMaxDm };
     const layer = state.editLayer;
 
     if (original) {
         layer.add(new Konva.Line({
             points: state.transformCoords(corners(original)),
-            stroke: "#6c757d",
+            stroke: canvasColor("var(--bs-secondary-color)"),
             strokeWidth: 1,
             dash: [4, 4],
             closed: true,
@@ -320,10 +323,10 @@ function drawDraftArea(state, area, { original, selected, warned }) {
 
     const shape = new Konva.Line({
         points: state.transformCoords(corners(box)),
-        stroke: warned ? "#dc3545" : color,
+        stroke: warned ? canvasColor("var(--bs-danger)") : color,
         strokeWidth: selected ? 3 : 2,
         dash: area.deleted ? [8, 6] : undefined,
-        fill: `${color}${area.deleted ? "10" : "33"}`,
+        fill: canvasColor(typeColor, area.deleted ? 0.06 : 0.2),
         closed: true,
         areaKey: area.key,
     });
@@ -341,7 +344,7 @@ function drawDraftArea(state, area, { original, selected, warned }) {
         fontFamily: "Poppins",
         fill: color,
         opacity: area.deleted ? 0.5 : 1,
-        stroke: "white",
+        stroke: outline,
         strokeWidth: 3,
         fillAfterStrokeEnabled: true,
         listening: false,
@@ -358,8 +361,8 @@ function drawDraftArea(state, area, { original, selected, warned }) {
             y: y - EDIT_HANDLE / 2,
             width: EDIT_HANDLE,
             height: EDIT_HANDLE,
-            fill: "white",
-            stroke: "#0b163f",
+            fill: outline,
+            stroke: canvasColor("var(--brand)"),
             strokeWidth: 1.5,
             areaKey: area.key,
             corner,

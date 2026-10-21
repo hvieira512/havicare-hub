@@ -165,7 +165,6 @@ final class DashboardAssetVersionTest extends TestCase
     {
         $dashboardApiAuthRequired = true;
         $downlinkQueueTtlSeconds = 300;
-        $amchartsLicense = '';
 
         ob_start();
         require dirname(__DIR__, 3) . '/src/Dashboard/index.php';

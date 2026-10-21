@@ -11,7 +11,7 @@ import { refreshTooltips } from "../tooltips.js";
 import { createRadarScene } from "./radar-scene.js";
 import { createAreaEditor } from "./radar-area-editor.js";
 import { areasFromLayout } from "./radar-area-draft.js";
-import { destroyVitals, loadCharts, renderVitals, resizeVitals } from "./radar-vitals.js";
+import { renderVitals } from "./radar-vitals.js";
 import { loadScript } from "../load-script.js";
 import { state } from "../state.js";
 
@@ -254,22 +254,22 @@ export async function openRadarMap(imei, { editAreas = false } = {}) {
     // As pastilhas do resumo dizem só o número: o que cada uma é vive na tooltip, e as
     // tooltips do Bootstrap são por adesão.
     refreshTooltips(els.radarMapModal);
+    renderVitals(els, recentTelemetry());
 
     modal.show();
 
     try {
-        await Promise.all([loadKonva(), loadCharts()]);
+        await loadKonva();
     } catch (error) {
         toast("error", error.message);
         return;
     }
 
-    // As bibliotecas chegam da rede, e quem fechou entretanto não quer ver nada desenhado.
+    // O Konva chega da rede, e quem fechou entretanto não quer ver nada desenhado.
     if (state.radarMap.imei !== imei) {
         return;
     }
 
-    renderVitals(els, recentTelemetry());
     await load(imei);
     if (editAreas && state.radarMap.imei === imei) startEditing();
 }
@@ -328,7 +328,6 @@ export function onRadarPresence(imei) {
 export function resizeRadarMap() {
     if (scene && els.radarMapCanvas) scene.resize(els.radarMapCanvas);
     editor?.redraw();
-    resizeVitals(els, recentTelemetry());
 }
 
 export function closeRadarMap() {
@@ -339,7 +338,6 @@ export function closeRadarMap() {
     syncEditControls();
     scene?.destroy();
     scene = null;
-    destroyVitals();
     state.radarMap.imei = "";
     state.radarMap.layout = null;
 }

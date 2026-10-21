@@ -203,8 +203,6 @@ final class DashboardHttpServer
     private function page(): string
     {
         $dashboardApiAuthRequired = $this->options()->apiAuthRequired;
-        // Vazia, o amCharts desenha o logótipo dele em cada gráfico.
-        $amchartsLicense = $this->options()->amchartsLicense;
         $assetVersion = $this->assetVersion();
 
         ob_start();
