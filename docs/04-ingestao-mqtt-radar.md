@@ -180,6 +180,9 @@ em minúsculas com underscores** —
 não saem no fio: traduzir para o idioma de quem lê é trabalho de
 quem desenha a interface.
 
+A postura 3, a que o documento chama *Squatting*, sai como `sitting`: é a de quem
+está sentado numa cadeira, e não há outro código para ela.
+
 Um estado que o firmware acrescente numa versão nova sai na mesma forma, derivada
 da etiqueta, em vez de se perder num `unknown`.
 

@@ -11,7 +11,7 @@ final class PayloadDecoder
         0 => 'initialization',
         1 => 'walking',
         2 => 'suspected_fall',
-        3 => 'squatting',
+        3 => 'sitting',
         4 => 'standing',
         5 => 'fall_confirmation',
         6 => 'lying_down',

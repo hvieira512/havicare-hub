@@ -23,7 +23,7 @@ const POSTURE_STYLE = {
     lying_down: { icon: "fa-bed", glyph: "", tone: "info" },
     sitting_up_bed: { icon: "fa-bed", glyph: "", tone: "info" },
     suspected_sitting_up_bed: { icon: "fa-bed", glyph: "", tone: "warning" },
-    squatting: { icon: "fa-chair", glyph: "", tone: "warning" },
+    sitting: { icon: "fa-chair", glyph: "", tone: "warning" },
     suspected_sitting_on_ground: { icon: "fa-chair", glyph: "", tone: "warning" },
     suspected_fall: { icon: "fa-triangle-exclamation", glyph: "", tone: "warning" },
     confirmed_sitting_on_ground: { icon: "fa-chair", glyph: "", tone: "danger" },

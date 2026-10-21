@@ -345,7 +345,7 @@ const FIELD_VALUE_LABELS = {
         initialization: "A iniciar",
         walking: "A andar",
         suspected_fall: "Suspeita de queda",
-        squatting: "Agachado",
+        sitting: "Sentado",
         standing: "De pé",
         fall_confirmation: "Queda confirmada",
         lying_down: "Deitado",

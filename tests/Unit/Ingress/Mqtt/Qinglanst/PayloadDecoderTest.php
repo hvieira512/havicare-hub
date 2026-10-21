@@ -71,6 +71,19 @@ final class PayloadDecoderTest extends TestCase
         self::assertSame('enter_room', $payload['people'][0]['last_event']);
     }
 
+    /** O fabricante chama-lhe «Squatting», mas é a postura de quem está sentado numa cadeira. */
+    public function testPostureThreeIsSitting(): void
+    {
+        $decoder = new PayloadDecoder();
+
+        $payload = $decoder->decode('position', base64_encode($this->bytes([
+            0x01, 0x00, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x03, 0x00, 0x00,
+        ])), 'radar-uid-1');
+
+        self::assertIsArray($payload);
+        self::assertSame('sitting', $payload['people'][0]['posture_state']);
+    }
+
     /**
      * Um código que a tabela não conheça sai na enumeração de reserva, e não em branco: o
      * firmware pode acrescentar estados, e o que ele disse não se deita fora.
