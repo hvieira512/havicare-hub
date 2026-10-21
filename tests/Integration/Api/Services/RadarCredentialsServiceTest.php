@@ -101,35 +101,6 @@ final class RadarCredentialsServiceTest extends MysqlDashboardTestCase
         self::assertSame('o-bom', $stored['app_secret']);
     }
 
-    /**
-     * A sincronização por licença escreve aqui o `access_token` do fabricante por outro caminho:
-     * um token renovado a meio de uma edição não pode reescrever as credenciais.
-     */
-    public function testStoringAFreshTokenLeavesTheCredentialsAlone(): void
-    {
-        $this->service->save($this->licenseRefId, [
-            'baseUrl' => 'https://radarconsole.com/prod-api',
-            'username' => 'casabranca',
-            'password' => 'a-boa',
-            'appId' => 'ql-casabranca',
-            'appSecret' => 'o-bom',
-        ]);
-
-        $this->db->radarCredentials->storeToken(
-            $this->licenseRefId,
-            'token-novo',
-            'refresh-novo',
-            '2026-09-17 16:00:00',
-        );
-
-        $stored = $this->db->radarCredentials->findByLicenseRefId($this->licenseRefId);
-
-        self::assertNotNull($stored);
-        self::assertSame('token-novo', $stored['access_token']);
-        self::assertSame('a-boa', $stored['password']);
-        self::assertSame('https://radarconsole.com/prod-api', $stored['base_url']);
-    }
-
     public function testRefusesALicenceThatDoesNotExist(): void
     {
         $result = $this->service->save(4040, [

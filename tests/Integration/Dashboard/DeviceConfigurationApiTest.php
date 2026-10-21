@@ -633,7 +633,7 @@ final class DeviceConfigurationApiTest extends MysqlDashboardTestCase
         self::assertTrue($response['commands'][0]['retryable'] ?? false);
         self::assertSame($submitted[0]['bytes'], $response['commands'][0]['bytes'] ?? null);
         self::assertSame(1, $response['commands'][0]['attempts'] ?? null);
-        self::assertSame(3, $response['commands'][0]['maxAttempts'] ?? null);
+        self::assertArrayNotHasKey('maxAttempts', $response['commands'][0]);
         self::assertSame(60, $response['commands'][0]['retryDelaySeconds'] ?? null);
         self::assertNotEmpty($response['commands'][0]['nextRetryAt'] ?? null);
     }

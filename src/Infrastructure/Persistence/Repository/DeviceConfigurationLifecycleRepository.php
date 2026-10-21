@@ -100,15 +100,15 @@ final class DeviceConfigurationLifecycleRepository
                 INSERT INTO device_configurations (
                     imei, config_key, native_key, protocol, command,
                     desired_payload, reported_payload, desired_revision,
-                    current_change_id, confirmation_mode, last_status, last_error,
+                    current_change_id, confirmation_mode, last_status,
                     last_command_id, desired_updated_at, reported_at, applied_at
-                ) VALUES (?, ?, ?, ?, ?, ?, \'{}\', ?, ?, ?, ?, \'\', ?, ?, NULL, NULL)
+                ) VALUES (?, ?, ?, ?, ?, ?, \'{}\', ?, ?, ?, ?, ?, ?, NULL, NULL)
                 ON DUPLICATE KEY UPDATE
                     protocol = VALUES(protocol),
                     command = VALUES(command), desired_payload = VALUES(desired_payload),
                     desired_revision = VALUES(desired_revision), current_change_id = VALUES(current_change_id),
                     confirmation_mode = VALUES(confirmation_mode), last_status = VALUES(last_status),
-                    last_error = \'\', last_command_id = VALUES(last_command_id),
+                    last_command_id = VALUES(last_command_id),
                     desired_updated_at = VALUES(desired_updated_at)
             ');
             foreach ($nativeRows as $row) {
@@ -380,7 +380,7 @@ final class DeviceConfigurationLifecycleRepository
     {
         $stmt = $this->pdo->prepare('
             SELECT operation_id, native_key, native_type, target, confirmation_mode, delivery_status,
-                   error_code, attempts, max_attempts, created_at, updated_at, sent_at, acknowledged_at
+                   error_code, attempts, created_at, updated_at, sent_at, acknowledged_at
             FROM device_configuration_operations
             WHERE change_id = ? ORDER BY sequence_number
         ');
@@ -434,18 +434,10 @@ final class DeviceConfigurationLifecycleRepository
         $update->execute([$sync, $confirm ? 1 : 0, $confirm ? 1 : 0, $now, $now, $changeId]);
         $rows = $this->pdo->prepare('
             UPDATE device_configurations
-            SET last_status = ?, last_error = ?,
-                applied_at = IF(?, ?, applied_at)
+            SET last_status = ?, applied_at = IF(?, ?, applied_at)
             WHERE current_change_id = ?
         ');
-        $error = '';
-        foreach ($operations as $operation) {
-            if ((string)$operation['error_code'] !== '') {
-                $error = (string)$operation['error_code'];
-                break;
-            }
-        }
-        $rows->execute([$sync, $error, $confirm ? 1 : 0, $now, $changeId]);
+        $rows->execute([$sync, $confirm ? 1 : 0, $now, $changeId]);
         if ($before !== false && $before !== $sync && in_array($sync, self::OUTCOMES, true)) {
             $this->announceOutcome($changeId);
         }

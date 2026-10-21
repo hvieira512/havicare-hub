@@ -295,7 +295,6 @@ final class DeviceFeatureRequestService
                 'retryable' => true,
                 'bytes' => $bytes,
                 'attempts' => 1,
-                'maxAttempts' => 3,
                 'retryDelaySeconds' => 60,
                 'lastAttemptAt' => gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt),
                 'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt + 60),

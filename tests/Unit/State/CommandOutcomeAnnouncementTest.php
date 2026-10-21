@@ -94,7 +94,7 @@ final class CommandOutcomeAnnouncementTest extends TestCase
     {
         $this->store->recordCommand(self::DEVICE, 'c-3', [
             'status' => 'waiting', 'retryable' => true, 'nativeType' => 'weightUnit', 'bytes' => 'weightUnit',
-            'attempts' => 1, 'maxAttempts' => 3, 'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'), 'nextRetryAt' => '2000-01-01T00:00:00Z',
+            'attempts' => 1, 'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'), 'nextRetryAt' => '2000-01-01T00:00:00Z',
         ]);
 
         for ($cycle = 0; $cycle < 5; $cycle++) {

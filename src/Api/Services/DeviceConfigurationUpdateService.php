@@ -393,7 +393,6 @@ final class DeviceConfigurationUpdateService
             'payload' => $operation['payload'] ?? null,
             'bytes' => $operation['bytes'],
             'attempts' => 1,
-            'maxAttempts' => 3,
             'retryDelaySeconds' => 60,
             'lastAttemptAt' => $now,
             'nextRetryAt' => gmdate('Y-m-d\TH:i:s\Z', time() + 60),

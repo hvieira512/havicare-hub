@@ -143,7 +143,6 @@ final class DashboardStoreTest extends TestCase
             'retryable' => true,
             'bytes' => $wireBytes,
             'attempts' => 1,
-            'maxAttempts' => 3,
             'retryDelaySeconds' => 60,
             'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
             'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
@@ -296,7 +295,6 @@ final class DashboardStoreTest extends TestCase
             'retryable' => true,
             'bytes' => '[3G*2808774306*0009*LSSET,3+6]',
             'attempts' => 1,
-            'maxAttempts' => 3,
             'retryDelaySeconds' => 60,
             'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
         ]);
@@ -331,7 +329,6 @@ final class DashboardStoreTest extends TestCase
             'retryable' => true,
             'bytes' => $legacyWire,
             'attempts' => 1,
-            'maxAttempts' => 3,
             'retryDelaySeconds' => 60,
             'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
         ]);
@@ -380,7 +377,6 @@ final class DashboardStoreTest extends TestCase
             'retryable' => true,
             'bytes' => '[3G*2808774306*0009*LSSET,3+6]',
             'attempts' => 3,
-            'maxAttempts' => 3,
             'retryDelaySeconds' => 60,
             'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
         ]);

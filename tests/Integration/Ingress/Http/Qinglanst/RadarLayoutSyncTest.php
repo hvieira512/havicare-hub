@@ -91,7 +91,7 @@ final class RadarLayoutSyncTest extends MysqlDashboardTestCase
      */
     public function testACodeThatIsNotSuccessLeavesTheStoredLayoutAlone(): void
     {
-        $this->layouts->store('594B3CCBA56B', $this->storedLayout(), '{}', '2026-09-01 10:00:00');
+        $this->layouts->store('594B3CCBA56B', $this->storedLayout(), '2026-09-01 10:00:00');
 
         $client = $this->clientAnswering([
             '594B3CCBA56B' => ['code' => 777, 'msg' => 'offline'],

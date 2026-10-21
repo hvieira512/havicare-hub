@@ -147,7 +147,6 @@ final class DeviceCommandStore
                 }
 
                 $attempts = max(1, (int)($command['attempts'] ?? 1));
-                $commandMaxAttempts = max(1, (int)($command['maxAttempts'] ?? $maxAttempts));
                 $commandRetryAfterSeconds = max(1, (int)($command['retryDelaySeconds'] ?? $retryAfterSeconds));
                 $sentAt = strtotime((string)($command['sentAt'] ?? '')) ?: 0;
                 $nextRetryAt = strtotime((string)($command['nextRetryAt'] ?? '')) ?: 0;
@@ -165,7 +164,7 @@ final class DeviceCommandStore
                     continue;
                 }
 
-                if ($commandStatus === 'waiting' && $attempts >= $commandMaxAttempts) {
+                if ($commandStatus === 'waiting' && $attempts >= $maxAttempts) {
                     $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
                         'status' => 'failed',
                         'error' => 'retry_exhausted',

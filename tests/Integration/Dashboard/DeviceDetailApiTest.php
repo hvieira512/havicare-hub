@@ -723,7 +723,6 @@ final class DeviceDetailApiTest extends MysqlDashboardTestCase
         $command = $store->findCommand($commandId)['command'] ?? [];
         $store->recordCommand('861265061009822', $commandId, array_merge($command, [
             'attempts' => 3,
-            'maxAttempts' => 3,
             'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
             'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
         ]));

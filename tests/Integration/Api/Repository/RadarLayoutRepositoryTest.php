@@ -26,7 +26,7 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
 
     public function testStoresTheRoomAndItsAreas(): void
     {
-        $this->repository->store('594B3CCBA56B', $this->layout(), '{"raw":1}', '2026-09-17 15:00:00');
+        $this->repository->store('594B3CCBA56B', $this->layout(), '2026-09-17 15:00:00');
 
         $layout = $this->repository->findByImei('594B3CCBA56B');
 
@@ -42,7 +42,7 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
     /** As áreas antigas desenhariam uma cama que ninguém declarou, e o `regionId` resolveria mal. */
     public function testReplacingALayoutLeavesNoAreasBehind(): void
     {
-        $this->repository->store('594B3CCBA56B', $this->layout(), '{"raw":1}', '2026-09-17 15:00:00');
+        $this->repository->store('594B3CCBA56B', $this->layout(), '2026-09-17 15:00:00');
 
         $this->repository->store('594B3CCBA56B', [
             'room' => ['x_min_dm' => -10, 'y_min_dm' => -6, 'x_max_dm' => 10, 'y_max_dm' => 20],
@@ -50,7 +50,7 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
                 ['key' => 2, 'type' => 3, 'name' => 'Lavatório', 'x_min_dm' => -9, 'y_min_dm' => -6, 'x_max_dm' => -1, 'y_max_dm' => -2],
             ],
             'skipped' => [],
-        ], '{"raw":2}', '2026-09-17 16:00:00');
+        ], '2026-09-17 16:00:00');
 
         $layout = $this->repository->findByImei('594B3CCBA56B');
 
@@ -67,8 +67,8 @@ final class RadarLayoutRepositoryTest extends MysqlDashboardTestCase
             INSERT INTO whitelist (imei, supplier, model, device_type, license_id)
             VALUES ('414D74184CBF', 'Qinglanst', 'HC2', 'radar', 2103)
         ");
-        $this->repository->store('594B3CCBA56B', $this->layout(), '{}', '2026-09-17 15:00:00');
-        $this->repository->store('414D74184CBF', $this->layout(), '{}', '2026-09-17 15:00:00');
+        $this->repository->store('594B3CCBA56B', $this->layout(), '2026-09-17 15:00:00');
+        $this->repository->store('414D74184CBF', $this->layout(), '2026-09-17 15:00:00');
 
         $layouts = $this->repository->findByImeis(['594B3CCBA56B', '414D74184CBF', 'nao-existe']);
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
+use Hub\Infrastructure\Persistence\Migration\DropUnreadColumns;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 
 /**
@@ -15,7 +16,9 @@ final class DatabaseMigrationPlan
     /** @return list<Migration> */
     public function migrations(): array
     {
-        return [];
+        return [
+            new DropUnreadColumns(),
+        ];
     }
 
     /** @return list<string> */

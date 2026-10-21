@@ -146,7 +146,6 @@ final class RadarLayoutSync
         $this->layouts->store(
             $imei,
             $layout,
-            json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}',
             ($this->now)(),
         );
 
