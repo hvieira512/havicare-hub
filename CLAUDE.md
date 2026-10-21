@@ -100,6 +100,8 @@ também nos ficheiros de teste. Misturar as duas línguas no mesmo ficheiro é p
 do que qualquer das duas sozinha: quem lê deixa de saber, ao ver um nome, se
 está a olhar para uma peça do programa ou para vocabulário do domínio.
 
+Os títulos dos testes de JavaScript são em inglês, como os nomes dos métodos dos testes de PHP.
+
 ## O teste vem primeiro
 
 Uma funcionalidade começa pelo teste que falha. Escreve-se o teste, confirma-se
